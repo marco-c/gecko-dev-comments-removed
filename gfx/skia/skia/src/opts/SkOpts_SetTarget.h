@@ -65,6 +65,7 @@
     
     
     #if defined(__clang__) && defined(_MSC_VER)
+        #define __RTMINTRIN_H
         #include <immintrin.h>
     #endif
 

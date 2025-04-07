@@ -16,9 +16,12 @@
 #include <vector>
 
 class SkCanvas;
+class SkCodec;
+class SkData;
 class SkExecutor;
 class SkPDFArray;
 class SkPDFStructTree;
+class SkPixmap;
 class SkWStream;
 
 #define SKPDF_STRING(X) SKPDF_STRING_IMPL(X)
@@ -79,6 +82,9 @@ struct DateTime {
 
     void toISO8601(SkString* dst) const;
 };
+
+using DecodeJpegCallback = std::unique_ptr<SkCodec> (*)(sk_sp<SkData>);
+using EncodeJpegCallback = bool (*)(SkWStream* dst, const SkPixmap& src, int quality);
 
 
 
@@ -157,6 +163,7 @@ struct Metadata {
     enum class Outline : int {
         None = 0,
         StructureElementHeaders = 1,
+        StructureElements = 2,
     } fOutline = Outline::None;
 
     
@@ -186,7 +193,43 @@ struct Metadata {
     enum Subsetter {
         kHarfbuzz_Subsetter,
     } fSubsetter = kHarfbuzz_Subsetter;
+
+    
+
+
+
+
+
+    SkPDF::DecodeJpegCallback jpegDecoder = nullptr;
+
+    
+
+
+
+
+
+    SkPDF::EncodeJpegCallback jpegEncoder = nullptr;
+
+    
+    
+    
+    
+    
+    
+    bool allowNoJpegs = false;
 };
+
+namespace NodeID {
+static const constexpr int Nothing = 0;
+static const constexpr int OtherArtifact = -1;
+static const constexpr int PaginationArtifact = -2;
+static const constexpr int PaginationHeaderArtifact = -3;
+static const constexpr int PaginationFooterArtifact = -4;
+static const constexpr int PaginationWatermarkArtifact = -5;
+static const constexpr int LayoutArtifact = -6;
+static const constexpr int PageArtifact = -7;
+static const constexpr int BackgroundArtifact = -8;
+}  
 
 
 
@@ -213,9 +256,11 @@ SK_API void SetNodeId(SkCanvas* dst, int nodeID);
 
 SK_API sk_sp<SkDocument> MakeDocument(SkWStream* stream, const Metadata& metadata);
 
+#if !defined(SK_DISABLE_LEGACY_PDF_JPEG)
 static inline sk_sp<SkDocument> MakeDocument(SkWStream* stream) {
     return MakeDocument(stream, Metadata());
 }
+#endif
 
 }  
 

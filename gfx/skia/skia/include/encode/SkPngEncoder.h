@@ -23,6 +23,7 @@ class SkImage;
 class SkPixmap;
 class SkWStream;
 struct skcms_ICCProfile;
+struct SkGainmapInfo;
 
 namespace SkPngEncoder {
 
@@ -80,6 +81,19 @@ struct Options {
 
     const skcms_ICCProfile* fICCProfile = nullptr;
     const char* fICCProfileDescription = nullptr;
+
+    
+
+
+
+
+
+
+
+
+
+    const SkPixmap* fGainmap = nullptr;
+    const SkGainmapInfo* fGainmapInfo = nullptr;
 };
 
 

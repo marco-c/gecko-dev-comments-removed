@@ -414,6 +414,9 @@ public:
 
 
 
+
+
+
     Result getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options*);
 
     
@@ -783,9 +786,43 @@ public:
 
 
 
+
+
+
+
     int getRepetitionCount() {
         return this->onGetRepetitionCount();
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    enum class IsAnimated {
+        kYes,
+        kNo,
+        kUnknown,
+    };
+    IsAnimated isAnimated() { return this->onIsAnimated(); }
 
     
     
@@ -812,6 +849,7 @@ protected:
     }
 
     virtual bool onGetGainmapCodec(SkGainmapInfo*, std::unique_ptr<SkCodec>*) { return false; }
+    virtual bool onGetGainmapInfo(SkGainmapInfo*) { return false; }
 
     
     
@@ -931,6 +969,10 @@ protected:
 
     virtual int onGetRepetitionCount() {
         return 0;
+    }
+
+    virtual IsAnimated onIsAnimated() {
+        return IsAnimated::kNo;
     }
 
 private:
@@ -1053,8 +1095,9 @@ private:
     friend class PNGCodecGM;    
     friend class SkSampledCodec;
     friend class SkIcoCodec;
-    friend class SkAndroidCodec; 
-    friend class SkPDFBitmap; 
+    friend class SkPngCodec;     
+    friend class SkAndroidCodec;  
+    friend class SkCodecPriv;     
 };
 
 namespace SkCodecs {

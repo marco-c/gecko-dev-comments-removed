@@ -124,7 +124,7 @@ bool SkShaderBase::ContextRec::isLegacyCompatible(SkColorSpace* shaderColorSpace
     
     SkAlphaType shaderAT = kPremul_SkAlphaType, dstAT = kPremul_SkAlphaType;
     return 0 ==
-           SkColorSpaceXformSteps{shaderColorSpace, shaderAT, fDstColorSpace, dstAT}.flags.mask();
+           SkColorSpaceXformSteps{shaderColorSpace, shaderAT, fDstColorSpace, dstAT}.fFlags.mask();
 }
 
 sk_sp<SkShader> SkShaderBase::makeAsALocalMatrixShader(SkMatrix*) const { return nullptr; }

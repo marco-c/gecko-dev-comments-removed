@@ -95,17 +95,17 @@ public:
         return static_cast<GlyphPositioning>(fFlags & kPositioning_Mask);
     }
 
-    uint16_t* glyphBuffer() const {
+    SkGlyphID* glyphBuffer() const {
         static_assert(SkIsAlignPtr(sizeof(RunRecord)), "");
         
-        return reinterpret_cast<uint16_t*>(const_cast<RunRecord*>(this) + 1);
+        return reinterpret_cast<SkGlyphID*>(const_cast<RunRecord*>(this) + 1);
     }
 
     
     SkScalar* posBuffer() const {
         
         return reinterpret_cast<SkScalar*>(reinterpret_cast<uint8_t*>(this->glyphBuffer()) +
-                                           SkAlign4(fCount * sizeof(uint16_t)));
+                                           SkAlign4(fCount * sizeof(SkGlyphID)));
     }
 
     
@@ -202,7 +202,7 @@ public:
         SkASSERT(!this->done());
         return fCurrentRun->glyphCount();
     }
-    const uint16_t* glyphs() const {
+    const SkGlyphID* glyphs() const {
         SkASSERT(!this->done());
         return fCurrentRun->glyphBuffer();
     }

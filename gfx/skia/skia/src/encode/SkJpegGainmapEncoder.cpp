@@ -341,19 +341,7 @@ static size_t mp_segment_offset(const SkData* image) {
     
     
     
-    for (size_t segmentIndex = 0; segmentIndex < segments.size() - 1; ++segmentIndex) {
-        const auto& segment = segments[segmentIndex];
-        if (segment.marker != kExifMarker) {
-            continue;
-        }
-        auto params = SkJpegSegmentScanner::GetParameters(image, segment);
-        if (params->size() < sizeof(kExifSig) ||
-            memcmp(params->data(), kExifSig, sizeof(kExifSig)) != 0) {
-            continue;
-        }
-        
-        return segments[segmentIndex + 1].offset;
-    }
+    
 
     
     return segments.back().offset;

@@ -29,15 +29,6 @@ class SkMatrix;
 class SkRRect;
 
 
-struct SkPathVerbAnalysis {
-    bool     valid;
-    int      points, weights;
-    unsigned segmentMask;
-};
-SkPathVerbAnalysis sk_path_analyze_verbs(const uint8_t verbs[], int count);
-
-
-
 
 
 
@@ -541,7 +532,12 @@ private:
 
     void callGenIDChangeListeners();
 
+    PointsArray fPoints;
+    VerbsArray fVerbs;
+    ConicWeightsArray fConicWeights;
+
     mutable SkRect   fBounds;
+    SkRect           fArcOval;
 
     enum {
         kEmptyGenID = 1, 
@@ -549,27 +545,25 @@ private:
     mutable uint32_t    fGenerationID;
     SkIDChangeListener::List fGenIDChangeListeners;
 
-    PointsArray fPoints;
-    VerbsArray fVerbs;
-    ConicWeightsArray fConicWeights;
-
     SkDEBUGCODE(std::atomic<int> fEditorsAttached;) 
 
-    mutable uint8_t  fBoundsIsDirty;
-    mutable bool     fIsFinite;    
+    SkScalar    fArcStartAngle;
+    SkScalar    fArcSweepAngle;
 
     PathType fType;
-    
-    
-    bool     fRRectOrOvalIsCCW;
+
+    mutable uint8_t  fBoundsIsDirty;
+
     uint8_t  fRRectOrOvalStartIdx;
     uint8_t  fSegmentMask;
     
     
     SkArc::Type fArcType;
-    SkRect      fArcOval;
-    SkScalar    fArcStartAngle;
-    SkScalar    fArcSweepAngle;
+
+    mutable bool     fIsFinite;    
+    
+    
+    bool     fRRectOrOvalIsCCW;
 
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; 

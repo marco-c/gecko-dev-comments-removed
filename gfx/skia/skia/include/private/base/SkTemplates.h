@@ -15,6 +15,7 @@
 #include "include/private/base/SkTLogic.h"
 #include "include/private/base/SkTo.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -96,6 +97,7 @@ public:
 namespace skia_private {
 
 
+
 template <typename T> class AutoTArray  {
 public:
     AutoTArray() {}
@@ -163,6 +165,9 @@ private:
     std::unique_ptr<T[]> fData;
     size_t fSize = 0;
 };
+
+
+
 
 
 
@@ -256,17 +261,25 @@ private:
 #if defined(SK_BUILD_FOR_GOOGLE3)
     
     
-    static const int kMaxBytes = 4 * 1024;
-    static const int kCount = kCountRequested * sizeof(T) > kMaxBytes
+    static constexpr int kMaxBytes = 4 * 1024;
+    static constexpr int kMinCount = kCountRequested * sizeof(T) > kMaxBytes
         ? kMaxBytes / sizeof(T)
         : kCountRequested;
 #else
-    static const int kCount = kCountRequested;
+    static constexpr int kMinCount = kCountRequested;
 #endif
 
-    int fCount;
+    
+    
+    
+    
+    static_assert(alignof(int) <= alignof(T*) || alignof(int) <= alignof(T));
+    static constexpr int kCount =
+            SkAlignTo(kMinCount*sizeof(T) + sizeof(int), std::max(alignof(T*), alignof(T))) / sizeof(T);
+
     T* fArray;
-    alignas(T) char fStorage[kCount * sizeof(T)];
+    alignas(T) std::byte fStorage[kCount * sizeof(T)];
+    int fCount;
 };
 
 
@@ -409,16 +422,16 @@ public:
 
 private:
     
-    static const size_t kCountWithPadding = SkAlign4(kCountRequested*sizeof(T)) / sizeof(T);
+    static constexpr size_t kCountWithPadding = SkAlign4(kCountRequested*sizeof(T)) / sizeof(T);
 #if defined(SK_BUILD_FOR_GOOGLE3)
     
     
-    static const size_t kMaxBytes = 4 * 1024;
-    static const size_t kCount = kCountRequested * sizeof(T) > kMaxBytes
+    static constexpr size_t kMaxBytes = 4 * 1024;
+    static constexpr size_t kCount = kCountRequested * sizeof(T) > kMaxBytes
         ? kMaxBytes / sizeof(T)
         : kCountWithPadding;
 #else
-    static const size_t kCount = kCountWithPadding;
+    static constexpr size_t kCount = kCountWithPadding;
 #endif
 
     T*          fPtr;

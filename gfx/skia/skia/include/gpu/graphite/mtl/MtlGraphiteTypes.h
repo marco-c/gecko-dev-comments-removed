@@ -8,31 +8,26 @@
 #ifndef skgpu_graphite_MtlGraphiteTypes_DEFINED
 #define skgpu_graphite_MtlGraphiteTypes_DEFINED
 
+#if __OBJC__  
+
 #include "include/core/SkTypes.h"
 
-#if __OBJC__  
-#include "include/gpu/graphite/BackendTexture.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
 #include "include/gpu/graphite/TextureInfo.h"
-#include "include/ports/SkCFObject.h"
+#include "include/gpu/graphite/mtl/MtlGraphiteTypes_cpp.h"
 #include "include/private/base/SkAPI.h"
 
 #import <CoreFoundation/CoreFoundation.h>
 #import <Metal/Metal.h>
 #import <TargetConditionals.h>
 
-#if TARGET_OS_SIMULATOR
-#define SK_API_AVAILABLE_CA_METAL_LAYER SK_API_AVAILABLE(macos(10.11), ios(13.0), tvos(13.0))
-#else  
-#define SK_API_AVAILABLE_CA_METAL_LAYER SK_API_AVAILABLE(macos(10.11), ios(8.0), tvos(9.0))
-#endif  
+class SkStream;
+class SkWStream;
 
 namespace skgpu::graphite {
 
-struct SK_API MtlTextureInfo {
-    uint32_t fSampleCount = 1;
-    skgpu::Mipmapped fMipmapped = skgpu::Mipmapped::kNo;
-
+class SK_API MtlTextureInfo final : public TextureInfo::Data {
+public:
     MTLPixelFormat fFormat = MTLPixelFormatInvalid;
     MTLTextureUsage fUsage = MTLTextureUsageUnknown;
     MTLStorageMode fStorageMode = MTLStorageModeShared;
@@ -46,38 +41,35 @@ struct SK_API MtlTextureInfo {
                    MTLTextureUsage usage,
                    MTLStorageMode storageMode,
                    bool framebufferOnly)
-            : fSampleCount(sampleCount)
-            , fMipmapped(mipmapped)
+            : Data(sampleCount, mipmapped)
             , fFormat(format)
             , fUsage(usage)
             , fStorageMode(storageMode)
             , fFramebufferOnly(framebufferOnly) {}
+
+private:
+    friend class TextureInfo;
+    friend class TextureInfoPriv;
+
+    
+    static constexpr skgpu::BackendApi kBackend = skgpu::BackendApi::kMetal;
+
+    Protected isProtected() const { return Protected::kNo; }
+    TextureFormat viewFormat() const;
+
+    bool serialize(SkWStream*) const;
+    bool deserialize(SkStream*);
+
+    
+    SkString toBackendString() const override;
+
+    void copyTo(TextureInfo::AnyTextureInfoData& dstData) const override {
+        dstData.emplace<MtlTextureInfo>(*this);
+    }
+    bool isCompatible(const TextureInfo& that, bool requireExact) const override;
 };
 
-namespace TextureInfos {
-SK_API TextureInfo MakeMetal(const MtlTextureInfo&);
-SK_API TextureInfo MakeMetal(CFTypeRef mtlTexture);
-
-SK_API bool GetMtlTextureInfo(const TextureInfo&, MtlTextureInfo*);
 }  
-
-namespace BackendTextures {
-
-
-SK_API BackendTexture MakeMetal(SkISize dimensions, CFTypeRef mtlTexture);
-
-SK_API CFTypeRef GetMtlTexture(const BackendTexture&);
-}  
-
-namespace BackendSemaphores {
-
-SK_API BackendSemaphore MakeMetal(CFTypeRef mtlEvent, uint64_t value);
-
-SK_API CFTypeRef GetMtlEvent(const BackendSemaphore&);
-SK_API uint64_t GetMtlValue(const BackendSemaphore&);
-}  
-
-} 
 
 #endif  
 

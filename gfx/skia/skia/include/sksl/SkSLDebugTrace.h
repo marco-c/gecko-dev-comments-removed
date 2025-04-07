@@ -17,9 +17,6 @@ namespace SkSL {
 class DebugTrace : public SkRefCnt {
 public:
     
-    virtual void writeTrace(SkWStream* w) const = 0;
-
-    
     virtual void dump(SkWStream* o) const = 0;
 };
 

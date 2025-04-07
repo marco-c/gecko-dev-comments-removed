@@ -105,6 +105,9 @@ SKCMS_API bool skcms_TransferFunction_isHLGish (const skcms_TransferFunction*);
 
 typedef union skcms_Curve {
     struct {
+        
+        
+        
         uint32_t alias_of_table_entries;
         skcms_TransferFunction parametric;
     };
@@ -123,44 +126,44 @@ typedef struct skcms_A2B {
     
     
     
-    uint32_t        input_channels;
     skcms_Curve     input_curves[4];
-    uint8_t         grid_points[4];
     const uint8_t*  grid_8;
     const uint8_t*  grid_16;
+    uint32_t        input_channels;
+    uint8_t         grid_points[4];
 
     
     
     
-    uint32_t        matrix_channels;
     skcms_Curve     matrix_curves[3];
     skcms_Matrix3x4 matrix;
+    uint32_t        matrix_channels;
 
     
-    uint32_t        output_channels;
+    uint32_t        output_channels; 
     skcms_Curve     output_curves[3];
 } skcms_A2B;
 
 typedef struct skcms_B2A {
     
-    uint32_t        input_channels;
     skcms_Curve     input_curves[3];
+    uint32_t        input_channels;
 
     
     
     
-    uint32_t        matrix_channels;
-    skcms_Matrix3x4 matrix;
+    uint32_t        matrix_channels; 
     skcms_Curve     matrix_curves[3];
+    skcms_Matrix3x4 matrix;
 
     
     
     
-    uint32_t        output_channels;
-    uint8_t         grid_points[4];
+    skcms_Curve     output_curves[4];
     const uint8_t*  grid_8;
     const uint8_t*  grid_16;
-    skcms_Curve     output_curves[4];
+    uint8_t         grid_points[4];
+    uint32_t        output_channels;
 } skcms_B2A;
 
 typedef struct skcms_CICP {
@@ -182,30 +185,31 @@ typedef struct skcms_ICCProfile {
 
     
     
-    bool                   has_trc;
     skcms_Curve            trc[3];
 
     
     
-    bool                   has_toXYZD50;
     skcms_Matrix3x3        toXYZD50;
 
     
     
     
-    bool                   has_A2B;
     skcms_A2B              A2B;
 
     
     
     
-    bool                   has_B2A;
     skcms_B2A              B2A;
 
     
     
-    bool                   has_CICP;
     skcms_CICP             CICP;
+
+    bool                   has_trc;
+    bool                   has_toXYZD50;
+    bool                   has_A2B;
+    bool                   has_B2A;
+    bool                   has_CICP;
 } skcms_ICCProfile;
 
 

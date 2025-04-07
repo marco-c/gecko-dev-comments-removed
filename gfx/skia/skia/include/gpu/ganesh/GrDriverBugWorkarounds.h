@@ -34,16 +34,16 @@ enum GrDriverBugWorkaroundType {
 
 class SK_API GrDriverBugWorkarounds {
  public:
-  GrDriverBugWorkarounds();
+  GrDriverBugWorkarounds() = default;
   GrDriverBugWorkarounds(const GrDriverBugWorkarounds&) = default;
+  ~GrDriverBugWorkarounds() = default;
+
   explicit GrDriverBugWorkarounds(const std::vector<int32_t>& workarounds);
 
   GrDriverBugWorkarounds& operator=(const GrDriverBugWorkarounds&) = default;
 
   
   void applyOverrides(const GrDriverBugWorkarounds& workarounds);
-
-  ~GrDriverBugWorkarounds();
 
 #define GPU_OP(type, name) bool name = false;
   GPU_DRIVER_BUG_WORKAROUNDS(GPU_OP)

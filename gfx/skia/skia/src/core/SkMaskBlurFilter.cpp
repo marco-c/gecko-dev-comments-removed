@@ -7,25 +7,25 @@
 
 #include "src/core/SkMaskBlurFilter.h"
 
-#include "include/core/SkColorPriv.h"
+#include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkTPin.h"
 #include "include/private/base/SkTemplates.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkArenaAlloc.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkColorPriv.h"
 #include "src/core/SkGaussFilter.h"
 
 #include <cmath>
 #include <climits>
 
 namespace {
-static const double kPi = 3.14159265358979323846264338327950288;
 
 class PlanGauss final {
 public:
     explicit PlanGauss(double sigma) {
-        auto possibleWindow = static_cast<int>(floor(sigma * 3 * sqrt(2 * kPi) / 4 + 0.5));
+        auto possibleWindow = static_cast<int>(floor(sigma * 3 * sqrt(2 * SK_DoublePI) / 4 + 0.5));
         auto window = std::max(1, possibleWindow);
 
         fPass0Size = window - 1;
@@ -235,7 +235,7 @@ public:
     int      fPass2Size;
 };
 
-} 
+}  
 
 
 
@@ -260,7 +260,17 @@ SkMaskBlurFilter::SkMaskBlurFilter(double sigmaW, double sigmaH)
 }
 
 bool SkMaskBlurFilter::hasNoBlur() const {
-    return (3 * fSigmaW <= 1) && (3 * fSigmaH <= 1);
+    
+    
+    
+#if defined(SK_USE_LARGER_NO_BLUR_THRESHOLD)
+    constexpr double kNoWindowSigma = 0.531923;
+#else
+    
+    
+    constexpr double kNoWindowSigma = 1./3.;
+#endif
+    return fSigmaW < kNoWindowSigma && fSigmaH <= kNoWindowSigma;
 }
 
 

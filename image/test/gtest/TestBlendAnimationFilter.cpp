@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 #include "mozilla/gfx/2D.h"
-#include "skia/include/core/SkColorPriv.h"  
+#include "skia/src/core/SkColorPriv.h"  
 #include "Common.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"

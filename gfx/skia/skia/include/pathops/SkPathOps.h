@@ -65,7 +65,15 @@ bool SK_API Simplify(const SkPath& path, SkPath* result);
 
 
 
-bool SK_API TightBounds(const SkPath& path, SkRect* result);
+[[deprecated]]
+static inline bool TightBounds(const SkPath& path, SkRect* result) {
+    auto rect = path.computeTightBounds();
+    if (rect.isFinite()) {
+        *result = rect;
+        return true;
+    }
+    return false;
+}
 
 
 

@@ -9,8 +9,8 @@
 #define Sk4px_DEFINED
 
 #include "include/core/SkColor.h"
-#include "include/private/SkColorData.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkColorData.h"
 
 
 class Sk4px {

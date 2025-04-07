@@ -342,6 +342,20 @@ public:
 
 
 
+    sk_sp<SkImage> makeTemporaryImage();
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
     void draw(SkCanvas* canvas, SkScalar x, SkScalar y, const SkSamplingOptions& sampling,
               const SkPaint* paint);

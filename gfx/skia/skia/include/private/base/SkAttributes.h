@@ -56,20 +56,26 @@
 
 
 #if !defined(SK_NO_SANITIZE)
-#  define SK_NO_SANITIZE(A) SK_ATTRIBUTE(no_sanitize(A))
-#endif
-
-
-
-
-#if defined(__clang__) && defined(__has_attribute)
-  #if __has_attribute(no_sanitize)
-    #define SK_CLANG_NO_SANITIZE(A) SK_NO_SANITIZE(A)
+  #if defined(__has_attribute)
+    #if __has_attribute(no_sanitize)
+      
+      #define SK_NO_SANITIZE(A) SK_ATTRIBUTE(no_sanitize(A))
+    #else
+      
+      #define SK_NO_SANITIZE(A)
+    #endif
+  #else
+    #define SK_NO_SANITIZE(A)
   #endif
 #endif
 
-#if !defined(SK_CLANG_NO_SANITIZE)
-  #define SK_CLANG_NO_SANITIZE(A)
+
+
+
+#if defined(__clang__)
+  #define SK_NO_SANITIZE_CFI SK_NO_SANITIZE("cfi")
+#else
+  #define SK_NO_SANITIZE_CFI
 #endif
 
 

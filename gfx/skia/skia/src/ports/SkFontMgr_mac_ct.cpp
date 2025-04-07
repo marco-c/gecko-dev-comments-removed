@@ -42,34 +42,6 @@
 
 using namespace skia_private;
 
-#if (defined(SK_BUILD_FOR_IOS) && defined(__IPHONE_14_0) &&  \
-      __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_14_0) ||  \
-    (defined(SK_BUILD_FOR_MAC) && defined(__MAC_11_0) &&     \
-      __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_11_0)
-
-static uint32_t SkGetCoreTextVersion() {
-    
-    
-    static const uint32_t kCoreTextVersionNEWER = 0x000D0000;
-    return kCoreTextVersionNEWER;
-}
-
-#else
-
-static uint32_t SkGetCoreTextVersion() {
-    
-    static const bool kCoreTextIsAvailable = (&CTGetCoreTextVersion != nullptr);
-    if (kCoreTextIsAvailable) {
-        return CTGetCoreTextVersion();
-    }
-
-    
-    static const uint32_t kCoreTextVersionUNKNOWN = 0;
-    return kCoreTextVersionUNKNOWN;
-}
-
-#endif
-
 static SkUniqueCFRef<CFStringRef> make_CFString(const char s[]) {
     return SkUniqueCFRef<CFStringRef>(CFStringCreateWithCString(nullptr, s, kCFStringEncodingUTF8));
 }
@@ -101,33 +73,6 @@ static SkUniqueCFRef<CTFontDescriptorRef> create_descriptor(const char familyNam
     }
 
     
-    
-    
-    
-    
-    
-    
-    static const uint32_t kSkiaLocalCTVersionNumber10_14 = 0x000B0000;
-    static const uint32_t kSkiaLocalCTVersionNumber10_15 = 0x000C0000;
-
-    
-    
-    
-    
-    if (SkGetCoreTextVersion() < kSkiaLocalCTVersionNumber10_14) {
-        CTFontSymbolicTraits ctFontTraits = 0;
-        if (style.weight() >= SkFontStyle::kBold_Weight) {
-            ctFontTraits |= kCTFontBoldTrait;
-        }
-        if (style.slant() != SkFontStyle::kUpright_Slant) {
-            ctFontTraits |= kCTFontItalicTrait;
-        }
-        SkUniqueCFRef<CFNumberRef> cfFontTraits(
-                CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &ctFontTraits));
-        if (cfFontTraits) {
-            CFDictionaryAddValue(cfTraits.get(), kCTFontSymbolicTrait, cfFontTraits.get());
-        }
-    }
 
     
     CGFloat ctWeight = SkCTFontCTWeightForCSSWeight(style.weight());
@@ -145,13 +90,12 @@ static SkUniqueCFRef<CTFontDescriptorRef> create_descriptor(const char familyNam
     }
     
     
-    if (SkGetCoreTextVersion() != kSkiaLocalCTVersionNumber10_15) {
-        CGFloat ctSlant = style.slant() == SkFontStyle::kUpright_Slant ? 0 : 1;
-        SkUniqueCFRef<CFNumberRef> cfFontSlant(
-                CFNumberCreate(kCFAllocatorDefault, kCFNumberCGFloatType, &ctSlant));
-        if (cfFontSlant) {
-            CFDictionaryAddValue(cfTraits.get(), kCTFontSlantTrait, cfFontSlant.get());
-        }
+    static const CGFloat kSystemFontItalicSlope = 0.07;
+    CGFloat ctSlant = style.slant() == SkFontStyle::kUpright_Slant ? 0 : kSystemFontItalicSlope;
+    SkUniqueCFRef<CFNumberRef> cfFontSlant(
+            CFNumberCreate(kCFAllocatorDefault, kCFNumberCGFloatType, &ctSlant));
+    if (cfFontSlant) {
+        CFDictionaryAddValue(cfTraits.get(), kCTFontSlantTrait, cfFontSlant.get());
     }
     
     CFDictionaryAddValue(cfAttributes.get(), kCTFontTraitsAttribute, cfTraits.get());

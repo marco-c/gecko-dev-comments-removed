@@ -184,8 +184,6 @@ public:
         gUsePerfettoTrackEvents = usePerfettoTrackEvents;
         return true;
 #else 
-        
-        SkDebugf("Tracing Skia with Perfetto is not supported in this environment (host build?)");
         return false;
 #endif 
     }

@@ -1306,7 +1306,8 @@ bool Type::checkForOutOfRangeLiteral(const Context& context, const Expression& e
     if (baseType.isNumber()) {
         
         const Expression* valueExpr = ConstantFolder::GetConstantValueForVariable(expr);
-        if (valueExpr->supportsConstantValues()) {
+        
+        if (valueExpr->supportsConstantValues() && !valueExpr->type().isUnsizedArray()) {
             
             int numSlots = valueExpr->type().slotCount();
             for (int slot = 0; slot < numSlots; ++slot) {

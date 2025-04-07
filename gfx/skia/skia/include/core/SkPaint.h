@@ -325,7 +325,10 @@ public:
 
 
 
-    void setStrokeMiter(SkScalar miter);
+
+
+
+    void setStrokeMiter(SkScalar miterLimit);
 
     
 

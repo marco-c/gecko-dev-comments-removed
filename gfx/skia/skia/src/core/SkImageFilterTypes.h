@@ -10,6 +10,7 @@
 
 #include "include/core/SkColorFilter.h"
 #include "include/core/SkColorSpace.h"
+#include "include/core/SkM44.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
@@ -523,7 +524,7 @@ public:
     }
 
     bool invert(LayerSpace<SkMatrix>* inverse) const {
-        return fData.invert(&inverse->fData);
+        return fData.invert(inverse ? &inverse->fData : nullptr);
     }
 
     
@@ -559,14 +560,14 @@ public:
     Mapping() = default;
 
     
-    explicit Mapping(const SkMatrix& paramToLayer)
-            : fLayerToDevMatrix(SkMatrix::I())
+    explicit Mapping(const SkM44& paramToLayer)
+            : fLayerToDevMatrix(SkM44())
             , fParamToLayerMatrix(paramToLayer)
-            , fDevToLayerMatrix(SkMatrix::I()) {}
+            , fDevToLayerMatrix(SkM44()) {}
 
     
     
-    Mapping(const SkMatrix& layerToDev, const SkMatrix& devToLayer, const SkMatrix& paramToLayer)
+    Mapping(const SkM44& layerToDev, const SkM44& devToLayer, const SkM44& paramToLayer)
             : fLayerToDevMatrix(layerToDev)
             , fParamToLayerMatrix(paramToLayer)
             , fDevToLayerMatrix(devToLayer) {}
@@ -574,10 +575,10 @@ public:
     
     
     
-    [[nodiscard]] bool decomposeCTM(const SkMatrix& ctm,
+    [[nodiscard]] bool decomposeCTM(const SkM44& ctm,
                                     const SkImageFilter* filter,
                                     const skif::ParameterSpace<SkPoint>& representativePt);
-    [[nodiscard]] bool decomposeCTM(const SkMatrix& ctm,
+    [[nodiscard]] bool decomposeCTM(const SkM44& ctm,
                                     MatrixCapability,
                                     const skif::ParameterSpace<SkPoint>& representativePt);
 
@@ -593,34 +594,45 @@ public:
     
     
     
-    bool adjustLayerSpace(const SkMatrix& layer);
+    bool adjustLayerSpace(const SkM44& layer);
 
     
     
     void applyOrigin(const LayerSpace<SkIPoint>& origin) {
-        SkAssertResult(this->adjustLayerSpace(SkMatrix::Translate(-origin.x(), -origin.y())));
+        SkAssertResult(this->adjustLayerSpace(SkM44::Translate(-origin.x(), -origin.y())));
     }
 
-    const SkMatrix& layerToDevice() const { return fLayerToDevMatrix; }
-    const SkMatrix& deviceToLayer() const { return fDevToLayerMatrix; }
-    const SkMatrix& layerMatrix() const { return fParamToLayerMatrix; }
-    SkMatrix totalMatrix() const {
-        return SkMatrix::Concat(fLayerToDevMatrix, fParamToLayerMatrix);
+    const SkM44& layerToDevice() const { return fLayerToDevMatrix; }
+    const SkM44& deviceToLayer() const { return fDevToLayerMatrix; }
+    const SkM44& layerMatrix() const { return fParamToLayerMatrix; }
+    SkM44 totalMatrix() const {
+        return fLayerToDevMatrix * fParamToLayerMatrix;
     }
 
     template<typename T>
     LayerSpace<T> paramToLayer(const ParameterSpace<T>& paramGeometry) const {
-        return LayerSpace<T>(map(static_cast<const T&>(paramGeometry), fParamToLayerMatrix));
+        return LayerSpace<T>(map(static_cast<const T&>(paramGeometry),
+                                 fParamToLayerMatrix.asM33()));
     }
 
     template<typename T>
     LayerSpace<T> deviceToLayer(const DeviceSpace<T>& devGeometry) const {
-        return LayerSpace<T>(map(static_cast<const T&>(devGeometry), fDevToLayerMatrix));
+        
+        
+        
+        
+        
+        
+        SkMatrix devToLayer33;
+        if (!fLayerToDevMatrix.asM33().invert(&devToLayer33)) {
+            return LayerSpace<T>::Empty();
+        }
+        return LayerSpace<T>(map(static_cast<const T&>(devGeometry), devToLayer33));
     }
 
     template<typename T>
     DeviceSpace<T> layerToDevice(const LayerSpace<T>& layerGeometry) const {
-        return DeviceSpace<T>(map(static_cast<const T&>(layerGeometry), fLayerToDevMatrix));
+        return DeviceSpace<T>(map(static_cast<const T&>(layerGeometry), fLayerToDevMatrix.asM33()));
     }
 
 private:
@@ -631,12 +643,14 @@ private:
     
     
     
-    SkMatrix fLayerToDevMatrix;
-    SkMatrix fParamToLayerMatrix;
+    SkM44 fLayerToDevMatrix;
+    SkM44 fParamToLayerMatrix;
 
     
-    SkMatrix fDevToLayerMatrix;
+    
+    SkM44 fDevToLayerMatrix;
 
+    
     
     
     template<typename T>

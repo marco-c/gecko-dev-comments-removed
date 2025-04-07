@@ -76,7 +76,54 @@ struct SK_API GrContextOptions {
     GrContextOptions() {}
 
     
-    bool fSuppressPrints = false;
+
+
+
+
+
+
+
+
+    std::optional<uint64_t> fVulkanVMALargeHeapBlockSize;
+
+    
+
+
+
+
+
+    GrDirectContextDestroyedContext fContextDeleteContext = nullptr;
+    GrDirectContextDestroyedProc fContextDeleteProc = nullptr;
+
+    
+
+
+
+
+
+    SkExecutor* fExecutor = nullptr;
+
+    
+
+
+    PersistentCache* fPersistentCache = nullptr;
+
+    
+
+
+
+    ShaderErrorHandler* fShaderErrorHandler = nullptr;
+
+    
+
+
+
+    size_t fMinimumStagingBufferSize = 64 * 1024;
+
+    
+
+
+    size_t fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
 
     
 
@@ -85,6 +132,33 @@ struct SK_API GrContextOptions {
 
 
     Enable fSkipGLErrorChecks = Enable::kDefault;
+
+    
+
+
+
+    Enable fAllowMultipleGlyphCacheTextures = Enable::kDefault;
+
+    
+
+
+    Enable fUseDrawInsteadOfClear = Enable::kDefault;
+
+    
+
+
+
+
+
+    Enable fReduceOpsTaskSplitting = Enable::kDefault;
+
+    
+
+
+
+
+
+    ShaderCacheStrategy fShaderCacheStrategy = ShaderCacheStrategy::kBackendBinary;
 
     
 
@@ -100,8 +174,7 @@ struct SK_API GrContextOptions {
     
 
 
-
-    size_t fMinimumStagingBufferSize = 64 * 1024;
+    int fRuntimeProgramCacheSize = 256;
 
     
 
@@ -109,7 +182,37 @@ struct SK_API GrContextOptions {
 
 
 
-    SkExecutor* fExecutor = nullptr;
+    int  fInternalMultisampleCount = 4;
+
+    
+
+
+
+
+
+
+
+
+    int fMaxCachedVulkanSecondaryCommandBuffers = -1;
+
+    
+
+
+
+    float fMinDistanceFieldFontSize = 18;
+
+    
+
+
+#if defined(SK_BUILD_FOR_ANDROID)
+    float fGlyphsAsPathsFontSize = 384;
+#elif defined(SK_BUILD_FOR_MAC)
+    float fGlyphsAsPathsFontSize = 256;
+#else
+    float fGlyphsAsPathsFontSize = 324;
+#endif
+
+    GrDriverBugWorkarounds fDriverBugWorkarounds;
 
     
 
@@ -145,34 +248,6 @@ struct SK_API GrContextOptions {
     
 
 
-    size_t fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
-
-    
-
-
-
-    float fMinDistanceFieldFontSize = 18;
-
-    
-
-
-#if defined(SK_BUILD_FOR_ANDROID)
-    float fGlyphsAsPathsFontSize = 384;
-#elif defined(SK_BUILD_FOR_MAC)
-    float fGlyphsAsPathsFontSize = 256;
-#else
-    float fGlyphsAsPathsFontSize = 324;
-#endif
-
-    
-
-
-
-    Enable fAllowMultipleGlyphCacheTextures = Enable::kDefault;
-
-    
-
-
 
     bool fAvoidStencilBuffers = false;
 
@@ -182,19 +257,6 @@ struct SK_API GrContextOptions {
 
 
     bool fSharpenMipmappedTextures = true;
-
-    
-
-
-    Enable fUseDrawInsteadOfClear = Enable::kDefault;
-
-    
-
-
-
-
-
-    Enable fReduceOpsTaskSplitting = Enable::kDefault;
 
     
 
@@ -209,60 +271,6 @@ struct SK_API GrContextOptions {
 
 
     bool fDisableDriverCorrectnessWorkarounds = false;
-
-    
-
-
-    int fRuntimeProgramCacheSize = 256;
-
-    
-
-
-    PersistentCache* fPersistentCache = nullptr;
-
-    
-
-
-
-
-
-    ShaderCacheStrategy fShaderCacheStrategy = ShaderCacheStrategy::kBackendBinary;
-
-    
-
-
-
-    ShaderErrorHandler* fShaderErrorHandler = nullptr;
-
-    
-
-
-
-
-
-    int  fInternalMultisampleCount = 4;
-
-    
-
-
-
-
-
-
-
-
-    int fMaxCachedVulkanSecondaryCommandBuffers = -1;
-
-    
-
-
-
-
-
-
-
-
-    std::optional<uint64_t> fVulkanVMALargeHeapBlockSize;
 
     
 
@@ -308,18 +316,30 @@ struct SK_API GrContextOptions {
     bool fAlwaysUseTexStorageWhenAvailable = false;
 
     
-
-
-
-
-
-    GrDirectContextDestroyedContext fContextDeleteContext = nullptr;
-    GrDirectContextDestroyedProc fContextDeleteProc = nullptr;
+    bool fSuppressPrints = false;
 
 #if defined(GPU_TEST_UTILS)
     
 
 
+
+    
+
+
+    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kDefault;
+
+    
+
+
+
+
+
+    int fResourceCacheLimitOverride = -1;
+
+    
+
+
+    int  fMaxTextureAtlasSize = 2048;
 
     
 
@@ -368,26 +388,8 @@ struct SK_API GrContextOptions {
 
     bool fDisallowWriteAndTransferPixelRowBytes = false;
 
-    
-
-
-    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kDefault;
-
-    
-
-
-
-
-
-    int fResourceCacheLimitOverride = -1;
-
-    
-
-
-    int  fMaxTextureAtlasSize = 2048;
 #endif
 
-    GrDriverBugWorkarounds fDriverBugWorkarounds;
 };
 
 #endif

@@ -65,7 +65,7 @@ struct ProgramSettings {
     
     bool fValidateSPIRV = true;
     
-    bool fUsePushConstants = false;
+    bool fUseVulkanPushConstantsForGaneshRTAdjust = false;
     
     
     

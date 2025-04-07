@@ -8,39 +8,27 @@
 #ifndef SkMaskFilterBase_DEFINED
 #define SkMaskFilterBase_DEFINED
 
-#include "include/core/SkBlurTypes.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkMaskFilter.h"
-#include "include/core/SkPaint.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkStrokeRec.h"
 #include "include/private/base/SkNoncopyable.h"
-#include "src/base/SkTLazy.h"
 #include "src/core/SkMask.h"
 
-class GrClip;
-struct GrFPArgs;
-class GrFragmentProcessor;
-class GrPaint;
-class GrRecordingContext;
-class GrRenderTarget;
-namespace skgpu {
-namespace ganesh {
-class SurfaceDrawContext;
-}
-}  
-class GrResourceProvider;
-class GrStyledShape;
-class GrSurfaceProxyView;
-class GrTexture;
-class GrTextureProxy;
+#include <optional>
 
-class SkBitmap;
 class SkBlitter;
+class SkImageFilter;
 class SkCachedData;
 class SkMatrix;
 class SkPath;
-class SkRasterClip;
 class SkRRect;
+class SkRasterClip;
+enum SkBlurStyle : int;
 
 class SkMaskFilterBase : public SkMaskFilter {
 public:
@@ -116,16 +104,17 @@ public:
 protected:
     SkMaskFilterBase() {}
 
-    enum FilterReturn {
-        kFalse_FilterReturn,
-        kTrue_FilterReturn,
-        kUnimplemented_FilterReturn
+    enum class FilterReturn {
+        kFalse,
+        kTrue,
+        kUnimplemented,
     };
 
-    class NinePatch : ::SkNoncopyable {
+    class NinePatch final : ::SkNoncopyable {
     public:
         NinePatch(const SkMask& mask, SkIRect outerRect, SkIPoint center, SkCachedData* cache)
             : fMask(mask), fOuterRect(outerRect), fCenter(center), fCache(cache) {}
+        NinePatch(NinePatch&&) = delete;  
         ~NinePatch();
 
         SkMask      fMask;      
@@ -149,16 +138,21 @@ protected:
 
 
 
-    virtual FilterReturn filterRectsToNine(const SkRect[], int count,
+
+
+
+
+
+    virtual FilterReturn filterRectsToNine(SkSpan<const SkRect>,
                                            const SkMatrix&,
                                            const SkIRect& clipBounds,
-                                           SkTLazy<NinePatch>*) const;
+                                           std::optional<NinePatch>*) const;
     
 
 
-    virtual FilterReturn filterRRectToNine(const SkRRect&, const SkMatrix&,
-                                           const SkIRect& clipBounds,
-                                           SkTLazy<NinePatch>*) const;
+    virtual std::optional<NinePatch> filterRRectToNine(const SkRRect&,
+                                                       const SkMatrix&,
+                                                       const SkIRect& clipBounds) const;
 
 private:
     friend class SkDraw;
@@ -176,10 +170,10 @@ private:
 
 
 
-    bool filterRRect(const SkRRect& devRRect, const SkMatrix& ctm, const SkRasterClip&,
+    bool filterRRect(const SkRRect& devRRect,
+                     const SkMatrix& ctm,
+                     const SkRasterClip&,
                      SkBlitter*) const;
-
-    using INHERITED = SkFlattenable;
 };
 
 inline SkMaskFilterBase* as_MFB(SkMaskFilter* mf) {

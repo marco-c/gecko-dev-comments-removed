@@ -44,9 +44,6 @@ public:
     void setOutputStream(OutputStream* output) { fOut = output; }
 
 protected:
-#if defined(SK_USE_LEGACY_MIPMAP_LOD_BIAS)
-    static constexpr float kSharpenTexturesBias = -.5f;
-#else
     
     
     
@@ -57,7 +54,6 @@ protected:
     
     
     static constexpr float kSharpenTexturesBias = -.475f;
-#endif
 
     const Program& fProgram;
     Context fContext;

@@ -18,6 +18,7 @@
 #include "include/private/base/SkSpan_impl.h"
 #include "include/private/base/SkTArray.h"
 #include "src/core/SkEffectPriv.h"
+#include "src/core/SkKnownRuntimeEffects.h"
 #include "src/sksl/codegen/SkSLRasterPipelineBuilder.h"
 
 #include <cstddef>
@@ -79,8 +80,34 @@ public:
         return effect.hash();
     }
 
+    static bool HasName(const SkRuntimeEffect& effect) {
+        return !effect.fName.isEmpty();
+    }
+
+    static const char* GetName(const SkRuntimeEffect& effect) {
+        return effect.fName.c_str();
+    }
+
     static uint32_t StableKey(const SkRuntimeEffect& effect) {
         return effect.fStableKey;
+    }
+
+    
+    static void SetStableKey(SkRuntimeEffect* effect, uint32_t stableKey) {
+        SkASSERT(!effect->fStableKey);
+        SkASSERT(SkKnownRuntimeEffects::IsViableUserDefinedKnownRuntimeEffect(stableKey));
+        effect->fStableKey = stableKey;
+    }
+
+    
+    static void SetStableKeyOnOptions(SkRuntimeEffect::Options* options, uint32_t stableKey) {
+        SkASSERT(!options->fStableKey);
+        SkASSERT(SkKnownRuntimeEffects::IsSkiaKnownRuntimeEffect(stableKey));
+        options->fStableKey = stableKey;
+    }
+
+    static void ResetStableKey(SkRuntimeEffect* effect) {
+        effect->fStableKey = 0;
     }
 
     static const SkSL::Program& Program(const SkRuntimeEffect& effect) {
@@ -95,10 +122,6 @@ public:
 
     static void AllowPrivateAccess(SkRuntimeEffect::Options* options) {
         options->allowPrivateAccess = true;
-    }
-
-    static void SetStableKey(SkRuntimeEffect::Options* options, uint32_t stableKey) {
-        options->fStableKey = stableKey;
     }
 
     static SkRuntimeEffect::Uniform VarAsUniform(const SkSL::Variable&,

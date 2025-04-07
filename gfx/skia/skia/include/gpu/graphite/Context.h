@@ -16,6 +16,10 @@
 #include "include/gpu/graphite/Recorder.h"
 #include "include/private/base/SingleOwner.h"
 
+#if defined(GPU_TEST_UTILS)
+#include "include/private/base/SkMutex.h"
+#endif
+
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -33,7 +37,7 @@ class Context;
 class ContextPriv;
 class GlobalCache;
 class PaintOptions;
-class PlotUploadTracker;
+class PrecompileContext;
 class QueueManager;
 class Recording;
 class ResourceProvider;
@@ -52,6 +56,11 @@ public:
     BackendApi backend() const;
 
     std::unique_ptr<Recorder> makeRecorder(const RecorderOptions& = {});
+
+    
+
+
+    std::unique_ptr<PrecompileContext> makePrecompileContext();
 
     bool insertRecording(const InsertRecordingInfo&);
     bool submit(SyncToCpu = SyncToCpu::kNo);
@@ -222,6 +231,12 @@ public:
 
 
 
+    void setMaxBudgetedBytes(size_t bytes);
+
+    
+
+
+
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
     
@@ -239,6 +254,11 @@ public:
 
 
     bool supportsProtectedContent() const;
+
+    
+
+
+    GpuStatsFlags supportedGpuStats() const;
 
     
     ContextPriv priv();
@@ -343,11 +363,14 @@ private:
     mutable SingleOwner fSingleOwner;
 
 #if defined(GPU_TEST_UTILS)
+    void deregisterRecorder(const Recorder*) SK_EXCLUDES(fTestingLock);
+
     
     bool fStoreContextRefInRecorder = false;
     
     
-    std::vector<Recorder*> fTrackedRecorders;
+    SkMutex fTestingLock;
+    std::vector<Recorder*> fTrackedRecorders SK_GUARDED_BY(fTestingLock);
 #endif
 
     

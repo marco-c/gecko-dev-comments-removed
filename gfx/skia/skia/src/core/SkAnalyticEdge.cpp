@@ -132,11 +132,11 @@ static inline SkFixed quick_inverse(SkFDot6 x) {
 }
 
 static inline SkFixed quick_div(SkFDot6 a, SkFDot6 b) {
-    const int kMinBits = 3;  
-    const int kMaxBits = 31; 
+    constexpr int kMinBits = 3;   
+    constexpr int kMaxBits = 31;  
     
     
-    const int kMaxAbsA = 1 << (kMaxBits - (22 - kMinBits));
+    constexpr int kMaxAbsA = 1 << (kMaxBits - (22 - kMinBits));
     SkFDot6 abs_a = SkAbs32(a);
     SkFDot6 abs_b = SkAbs32(b);
     if (abs_b >= (1 << kMinBits) && abs_b < kInverseTableSize && abs_a < kMaxAbsA) {
@@ -155,27 +155,27 @@ static inline SkFixed quick_div(SkFDot6 a, SkFDot6 b) {
 bool SkAnalyticEdge::setLine(const SkPoint& p0, const SkPoint& p1) {
     
     
-    const int accuracy = kDefaultAccuracy;
+    constexpr int accuracy = kDefaultAccuracy;
 #ifdef SK_RASTERIZE_EVEN_ROUNDING
     SkFixed x0 = SkFDot6ToFixed(SkScalarRoundToFDot6(p0.fX, accuracy)) >> accuracy;
     SkFixed y0 = SnapY(SkFDot6ToFixed(SkScalarRoundToFDot6(p0.fY, accuracy)) >> accuracy);
     SkFixed x1 = SkFDot6ToFixed(SkScalarRoundToFDot6(p1.fX, accuracy)) >> accuracy;
     SkFixed y1 = SnapY(SkFDot6ToFixed(SkScalarRoundToFDot6(p1.fY, accuracy)) >> accuracy);
 #else
-    const int multiplier = (1 << kDefaultAccuracy);
+    constexpr int multiplier = (1 << kDefaultAccuracy);
     SkFixed x0 = SkFDot6ToFixed(SkScalarToFDot6(p0.fX * multiplier)) >> accuracy;
     SkFixed y0 = SnapY(SkFDot6ToFixed(SkScalarToFDot6(p0.fY * multiplier)) >> accuracy);
     SkFixed x1 = SkFDot6ToFixed(SkScalarToFDot6(p1.fX * multiplier)) >> accuracy;
     SkFixed y1 = SnapY(SkFDot6ToFixed(SkScalarToFDot6(p1.fY * multiplier)) >> accuracy);
 #endif
 
-    int winding = 1;
+    Winding winding = Winding::kCW;
 
     if (y0 > y1) {
         using std::swap;
         swap(x0, x1);
         swap(y0, y1);
-        winding = -1;
+        winding = Winding::kCCW;
     }
 
     
@@ -196,12 +196,16 @@ bool SkAnalyticEdge::setLine(const SkPoint& p0, const SkPoint& p1) {
     fDY         = dx == 0 || slope == 0 ? SK_MaxS32 : absSlope < kInverseTableSize
                                                     ? quick_inverse(absSlope)
                                                     : SkAbs32(quick_div(dy, dx));
-    fEdgeType   = kLine_Type;
+    fEdgeType   = Type::kLine;
     fCurveCount = 0;
-    fWinding    = SkToS8(winding);
+    fWinding    = winding;
     fCurveShift = 0;
 
     return true;
+}
+
+static SkAnalyticEdge::Winding swap_winding(SkAnalyticEdge::Winding w) {
+    return static_cast<SkAnalyticEdge::Winding>(static_cast<int8_t>(w) * -1);
 }
 
 
@@ -211,7 +215,7 @@ bool SkAnalyticEdge::updateLine(SkFixed x0, SkFixed y0, SkFixed x1, SkFixed y1, 
     
     
     
-    SkASSERT(fWinding == 1 || fWinding == -1);
+    SkASSERT(fWinding == Winding::kCW || fWinding == Winding::kCCW);
     SkASSERT(fCurveCount != 0);
 
     
@@ -220,7 +224,7 @@ bool SkAnalyticEdge::updateLine(SkFixed x0, SkFixed y0, SkFixed x1, SkFixed y1, 
         using std::swap;
         swap(x0, x1);
         swap(y0, y1);
-        fWinding = -fWinding;
+        fWinding = swap_winding(fWinding);
     }
 
     SkASSERT(y0 <= y1);
@@ -277,7 +281,7 @@ bool SkAnalyticQuadraticEdge::setQuadratic(const SkPoint pts[3]) {
     fQEdge.fQLastY = SnapY(fQEdge.fQLastY);
 
     fWinding = fQEdge.fWinding;
-    fEdgeType = kQuad_Type;
+    fEdgeType = Type::kQuad;
     fCurveCount = fQEdge.fCurveCount;
     fCurveShift = fQEdge.fCurveShift;
 
@@ -305,7 +309,9 @@ bool SkAnalyticQuadraticEdge::updateQuadratic() {
         {
             newx    = oldx + (dx >> shift);
             newy    = oldy + (dy >> shift);
-            if (SkAbs32(dy >> shift) >= SK_Fixed1 * 2) { 
+            
+            if (SkAbs32(dy >> shift) >= SK_Fixed1 * 2 &&
+                SkLeftShift((int64_t) SkAbs32(dy), 6) > SkAbs32(dx)) {
                 SkFDot6 diffY = SkFixedToFDot6(newy - fSnappedY);
                 slope = diffY ? quick_div(SkFixedToFDot6(newx - fSnappedX), diffY)
                               : SK_MaxS32;
@@ -327,8 +333,8 @@ bool SkAnalyticQuadraticEdge::updateQuadratic() {
             newy    = fQEdge.fQLastY;
             newSnappedY = newy;
             newSnappedX = newx;
-            SkFDot6 diffY = (newy - fSnappedY) >> 10;
-            slope = diffY ? quick_div((newx - fSnappedX) >> 10, diffY) : SK_MaxS32;
+            SkFDot6 diffY = SkFixedToFDot6(newy - fSnappedY);
+            slope = diffY ? quick_div(SkFixedToFDot6(newx - fSnappedX), diffY) : SK_MaxS32;
         }
         if (slope < SK_MaxS32) {
             success = this->updateLine(fSnappedX, fSnappedY, newSnappedX, newSnappedY, slope);
@@ -368,7 +374,7 @@ bool SkAnalyticCubicEdge::setCubic(const SkPoint pts[4], bool sortY) {
     fCEdge.fCLastY = SnapY(fCEdge.fCLastY);
 
     fWinding = fCEdge.fWinding;
-    fEdgeType = kCubic_Type;
+    fEdgeType = Type::kCubic;
     fCurveCount = fCEdge.fCurveCount;
     fCurveShift = fCEdge.fCurveShift;
     fCubicDShift = fCEdge.fCubicDShift;

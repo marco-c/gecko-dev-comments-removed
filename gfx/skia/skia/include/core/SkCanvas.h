@@ -34,6 +34,7 @@
 #include "include/private/base/SkDeque.h"
 #include "include/private/base/SkTArray.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -53,6 +54,7 @@ class GrRecordingContext;
 
 class SkBitmap;
 class SkBlender;
+class SkBlurMaskFilterImpl;
 class SkColorSpace;
 class SkData;
 class SkDevice;
@@ -2502,15 +2504,18 @@ private:
         void reset(SkDevice* device);
     };
 
-    
-    static constexpr int kMCRecSize      = 96; 
-    static constexpr int kMCRecCount     = 32; 
+#if defined(SK_CANVAS_SAVE_RESTORE_PREALLOC_COUNT)
+    static constexpr int kMCRecCount = SK_CANVAS_SAVE_RESTORE_PREALLOC_COUNT;
+#else
+    static constexpr int kMCRecCount = 32; 
+#endif
 
-    intptr_t fMCRecStorage[kMCRecSize * kMCRecCount / sizeof(intptr_t)];
-
-    SkDeque     fMCStack;
     
-    MCRec*      fMCRec;
+    
+    alignas(MCRec) std::byte fMCRecStorage[sizeof(MCRec) * kMCRecCount];
+
+    SkDeque     fMCStack; 
+    MCRec*      fMCRec;   
 
     
     sk_sp<SkDevice> fRootDevice;
@@ -2677,9 +2682,12 @@ private:
 
     
     
+    const SkBlurMaskFilterImpl* canAttemptBlurredRRectDraw(const SkPaint&) const;
+
     
     
     std::optional<AutoLayerForImageFilter> attemptBlurredRRectDraw(const SkRRect&,
+                                                                   const SkBlurMaskFilterImpl*,
                                                                    const SkPaint&,
                                                                    SkEnumBitMask<PredrawFlags>);
 

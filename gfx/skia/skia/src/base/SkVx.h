@@ -684,14 +684,12 @@ template <typename Fn, typename... Args, size_t... I>
 SI auto map(std::index_sequence<I...>,
             Fn&& fn, const Args&... args) -> skvx::Vec<sizeof...(I), decltype(fn(args[0]...))> {
     auto lane = [&](size_t i)
-#if defined(__clang__)
     
     
     
     
     
-    __attribute__((no_sanitize("cfi")))
-#endif
+    SK_NO_SANITIZE_CFI
     { return fn(args[static_cast<int>(i)]...); };
 
     return { lane(I)... };

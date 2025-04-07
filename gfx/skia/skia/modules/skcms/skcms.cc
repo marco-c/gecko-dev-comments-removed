@@ -1464,88 +1464,89 @@ const skcms_ICCProfile* skcms_sRGB_profile() {
 
         
         
-        true,  
-        {
+        {   
             {{0, {2.4f, (float)(1/1.055), (float)(0.055/1.055), (float)(1/12.92), 0.04045f, 0, 0}}},
             {{0, {2.4f, (float)(1/1.055), (float)(0.055/1.055), (float)(1/12.92), 0.04045f, 0, 0}}},
             {{0, {2.4f, (float)(1/1.055), (float)(0.055/1.055), (float)(1/12.92), 0.04045f, 0, 0}}},
         },
 
-        true,  
-        {{
+        {{  
             { 0.436065674f, 0.385147095f, 0.143066406f },
             { 0.222488403f, 0.716873169f, 0.060607910f },
             { 0.013916016f, 0.097076416f, 0.714096069f },
         }},
 
-        false, 
-        {
-            0,
-            {
+        {   
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
-            {0,0,0,0},
-            nullptr,
-            nullptr,
+            nullptr,   
+            nullptr,   
+            0,         
+            {0,0,0,0}, 
 
-            0,
-            {
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
-            {{
+            {{  
                 { 0,0,0,0 },
                 { 0,0,0,0 },
                 { 0,0,0,0 },
             }},
+            0,  
 
-            0,
-            {
+            0,  
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
         },
 
-        false, 
-        {
-            0,
-            {
+        {   
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
+            0,  
 
-            0,
-            {{
+            0,  
+            {   
+                {{0, {0,0, 0,0,0,0,0}}},
+                {{0, {0,0, 0,0,0,0,0}}},
+                {{0, {0,0, 0,0,0,0,0}}},
+            },
+            {{  
                 { 0,0,0,0 },
                 { 0,0,0,0 },
                 { 0,0,0,0 },
             }},
-            {
-                {{0, {0,0, 0,0,0,0,0}}},
-                {{0, {0,0, 0,0,0,0,0}}},
-                {{0, {0,0, 0,0,0,0,0}}},
-            },
 
-            0,
-            {0,0,0,0},
-            nullptr,
-            nullptr,
-            {
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
+            nullptr,    
+            nullptr,    
+            {0,0,0,0},  
+            0,          
         },
 
+        { 0, 0, 0, 0 },  
+
+        true,  
+        true,  
         false, 
-        { 0, 0, 0, 0 },
+        false, 
+        false, 
     };
     return &sRGB_profile;
 }
@@ -1560,88 +1561,89 @@ const skcms_ICCProfile* skcms_XYZD50_profile() {
         skcms_Signature_XYZ,   
         0,                     
 
-        true,  
-        {
+        {   
             {{0, {1,1, 0,0,0,0,0}}},
             {{0, {1,1, 0,0,0,0,0}}},
             {{0, {1,1, 0,0,0,0,0}}},
         },
 
-        true,  
-        {{
+        {{  
             { 1,0,0 },
             { 0,1,0 },
             { 0,0,1 },
         }},
 
-        false, 
-        {
-            0,
-            {
+        {   
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
-            {0,0,0,0},
-            nullptr,
-            nullptr,
+            nullptr,   
+            nullptr,   
+            0,         
+            {0,0,0,0}, 
 
-            0,
-            {
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
-            {{
+            {{  
                 { 0,0,0,0 },
                 { 0,0,0,0 },
                 { 0,0,0,0 },
             }},
+            0,  
 
-            0,
-            {
+            0,  
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
         },
 
-        false, 
-        {
-            0,
-            {
+        {   
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
+            0,  
 
-            0,
-            {{
+            0,  
+            {   
+                {{0, {0,0, 0,0,0,0,0}}},
+                {{0, {0,0, 0,0,0,0,0}}},
+                {{0, {0,0, 0,0,0,0,0}}},
+            },
+            {{  
                 { 0,0,0,0 },
                 { 0,0,0,0 },
                 { 0,0,0,0 },
             }},
-            {
-                {{0, {0,0, 0,0,0,0,0}}},
-                {{0, {0,0, 0,0,0,0,0}}},
-                {{0, {0,0, 0,0,0,0,0}}},
-            },
 
-            0,
-            {0,0,0,0},
-            nullptr,
-            nullptr,
-            {
+            {   
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
                 {{0, {0,0, 0,0,0,0,0}}},
             },
+            nullptr,    
+            nullptr,    
+            {0,0,0,0},  
+            0,          
         },
 
+        { 0, 0, 0, 0 },  
+
+        true,  
+        true,  
         false, 
-        { 0, 0, 0, 0 },
+        false, 
+        false, 
     };
 
     return &XYZD50_profile;
@@ -2828,25 +2830,26 @@ bool skcms_Transform(const void*             src,
     }
     switch (dstFmt >> 1) {
         default: return false;
-        case skcms_PixelFormat_A_8             >> 1: add_op(Op::store_a8);         break;
-        case skcms_PixelFormat_G_8             >> 1: add_op(Op::store_g8);         break;
-        case skcms_PixelFormat_GA_88           >> 1: add_op(Op::store_ga88);       break;
-        case skcms_PixelFormat_ABGR_4444       >> 1: add_op(Op::store_4444);       break;
-        case skcms_PixelFormat_RGB_565         >> 1: add_op(Op::store_565);        break;
-        case skcms_PixelFormat_RGB_888         >> 1: add_op(Op::store_888);        break;
-        case skcms_PixelFormat_RGBA_8888       >> 1: add_op(Op::store_8888);       break;
-        case skcms_PixelFormat_RGBA_1010102    >> 1: add_op(Op::store_1010102);    break;
-        case skcms_PixelFormat_RGB_161616LE    >> 1: add_op(Op::store_161616LE);   break;
-        case skcms_PixelFormat_RGBA_16161616LE >> 1: add_op(Op::store_16161616LE); break;
-        case skcms_PixelFormat_RGB_161616BE    >> 1: add_op(Op::store_161616BE);   break;
-        case skcms_PixelFormat_RGBA_16161616BE >> 1: add_op(Op::store_16161616BE); break;
-        case skcms_PixelFormat_RGB_hhh_Norm    >> 1: add_op(Op::store_hhh);        break;
-        case skcms_PixelFormat_RGBA_hhhh_Norm  >> 1: add_op(Op::store_hhhh);       break;
-        case skcms_PixelFormat_RGB_101010x_XR  >> 1: add_op(Op::store_101010x_XR); break;
-        case skcms_PixelFormat_RGB_hhh         >> 1: add_op(Op::store_hhh);        break;
-        case skcms_PixelFormat_RGBA_hhhh       >> 1: add_op(Op::store_hhhh);       break;
-        case skcms_PixelFormat_RGB_fff         >> 1: add_op(Op::store_fff);        break;
-        case skcms_PixelFormat_RGBA_ffff       >> 1: add_op(Op::store_ffff);       break;
+        case skcms_PixelFormat_A_8              >> 1: add_op(Op::store_a8);          break;
+        case skcms_PixelFormat_G_8              >> 1: add_op(Op::store_g8);          break;
+        case skcms_PixelFormat_GA_88            >> 1: add_op(Op::store_ga88);        break;
+        case skcms_PixelFormat_ABGR_4444        >> 1: add_op(Op::store_4444);        break;
+        case skcms_PixelFormat_RGB_565          >> 1: add_op(Op::store_565);         break;
+        case skcms_PixelFormat_RGB_888          >> 1: add_op(Op::store_888);         break;
+        case skcms_PixelFormat_RGBA_8888        >> 1: add_op(Op::store_8888);        break;
+        case skcms_PixelFormat_RGBA_1010102     >> 1: add_op(Op::store_1010102);     break;
+        case skcms_PixelFormat_RGB_161616LE     >> 1: add_op(Op::store_161616LE);    break;
+        case skcms_PixelFormat_RGBA_16161616LE  >> 1: add_op(Op::store_16161616LE);  break;
+        case skcms_PixelFormat_RGB_161616BE     >> 1: add_op(Op::store_161616BE);    break;
+        case skcms_PixelFormat_RGBA_16161616BE  >> 1: add_op(Op::store_16161616BE);  break;
+        case skcms_PixelFormat_RGB_hhh_Norm     >> 1: add_op(Op::store_hhh);         break;
+        case skcms_PixelFormat_RGBA_hhhh_Norm   >> 1: add_op(Op::store_hhhh);        break;
+        case skcms_PixelFormat_RGB_101010x_XR   >> 1: add_op(Op::store_101010x_XR);  break;
+        case skcms_PixelFormat_RGBA_10101010_XR >> 1: add_op(Op::store_10101010_XR); break;
+        case skcms_PixelFormat_RGB_hhh          >> 1: add_op(Op::store_hhh);         break;
+        case skcms_PixelFormat_RGBA_hhhh        >> 1: add_op(Op::store_hhhh);        break;
+        case skcms_PixelFormat_RGB_fff          >> 1: add_op(Op::store_fff);         break;
+        case skcms_PixelFormat_RGBA_ffff        >> 1: add_op(Op::store_ffff);        break;
 
         case skcms_PixelFormat_RGBA_8888_sRGB >> 1:
             add_op_ctx(Op::tf_rgb, skcms_sRGB_Inverse_TransferFunction());

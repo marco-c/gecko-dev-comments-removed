@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-class SkStream;
 class SkWStream;
 
 namespace SkSL {
@@ -68,10 +67,6 @@ public:
 
     
     void setSource(const std::string& source);
-
-    
-    bool readTrace(SkStream* r);
-    void writeTrace(SkWStream* w) const override;
 
     
     void dump(SkWStream* o) const override;

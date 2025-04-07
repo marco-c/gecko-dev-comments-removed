@@ -119,6 +119,8 @@
 
 
 
+
+
 #define MOZ_SKIA
 
 
@@ -141,6 +143,8 @@
 
 #define SK_USE_FREETYPE_EMBOLDEN
 
+#define SK_DISABLE_DIRECTWRITE_COLRv1 1
+
 #ifndef MOZ_IMPLICIT
 #  ifdef MOZ_CLANG_PLUGIN
 #    define MOZ_IMPLICIT __attribute__((annotate("moz_implicit")))
@@ -150,7 +154,5 @@
 #endif
 
 #define SK_DISABLE_LEGACY_IMAGE_READBUFFER
-
-#define SK_DISABLE_DIRECTWRITE_COLRv1 1
 
 #endif

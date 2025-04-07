@@ -28,6 +28,7 @@ class SkPixmap;
 class SkShader;
 class SkSurfaceProps;
 struct SkMask;
+enum class SkDrawCoverage : bool;
 
 
 
@@ -38,6 +39,11 @@ struct SkMask;
 class SkBlitter {
 public:
     virtual ~SkBlitter();
+    SkBlitter() = default;
+    SkBlitter(const SkBlitter&) = delete;
+    SkBlitter(SkBlitter&&) = delete;
+    SkBlitter& operator=(const SkBlitter&) = delete;
+    SkBlitter& operator=(SkBlitter&&) = delete;
 
     
     virtual void blitH(int x, int y, int width) = 0;
@@ -111,13 +117,6 @@ public:
 
 
 
-    virtual bool isNullBlitter() const;
-
-    
-
-
-
-
 
     virtual int requestRowsPreserved() const { return 1; }
 
@@ -146,7 +145,7 @@ public:
                              const SkMatrix& ctm,
                              const SkPaint& paint,
                              SkArenaAlloc*,
-                             bool drawCoverage,
+                             SkDrawCoverage,
                              sk_sp<SkShader> clipShader,
                              const SkSurfaceProps& props);
 
@@ -165,21 +164,20 @@ protected:
 
 
 
-class SkNullBlitter : public SkBlitter {
+class SkNullBlitter final : public SkBlitter {
 public:
-    void blitH(int x, int y, int width) override;
-    void blitAntiH(int x, int y, const SkAlpha[], const int16_t runs[]) override;
-    void blitV(int x, int y, int height, SkAlpha alpha) override;
-    void blitRect(int x, int y, int width, int height) override;
-    void blitMask(const SkMask&, const SkIRect& clip) override;
-    bool isNullBlitter() const override;
+    void blitH(int x, int y, int width) override {}
+    void blitAntiH(int x, int y, const SkAlpha[], const int16_t runs[]) override {}
+    void blitV(int x, int y, int height, SkAlpha alpha) override {}
+    void blitRect(int x, int y, int width, int height) override {}
+    void blitMask(const SkMask&, const SkIRect& clip) override {}
 };
 
 
 
 
 
-class SkRectClipBlitter : public SkBlitter {
+class SkRectClipBlitter final : public SkBlitter {
 public:
     void init(SkBlitter* blitter, const SkIRect& clipRect) {
         SkASSERT(!clipRect.isEmpty());
@@ -212,7 +210,7 @@ private:
 
 
 
-class SkRgnClipBlitter : public SkBlitter {
+class SkRgnClipBlitter final : public SkBlitter {
 public:
     void init(SkBlitter* blitter, const SkRegion* clipRgn) {
         SkASSERT(clipRgn && !clipRgn->isEmpty());
@@ -242,7 +240,7 @@ private:
 };
 
 #ifdef SK_DEBUG
-class SkRectClipCheckBlitter : public SkBlitter {
+class SkRectClipCheckBlitter final : public SkBlitter {
 public:
     void init(SkBlitter* blitter, const SkIRect& clipRect) {
         SkASSERT(blitter);
@@ -289,8 +287,5 @@ private:
     SkRectClipBlitter   fRectBlitter;
     SkRgnClipBlitter    fRgnBlitter;
 };
-
-
-enum {kSkBlitterContextSize = 3332};
 
 #endif

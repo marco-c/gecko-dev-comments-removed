@@ -43,7 +43,7 @@ bool SkCoordClampShader::appendStages(const SkStageRec& rec,
     
     
     
-    auto clampCtx = rec.fAlloc->make<SkRasterPipeline_CoordClampCtx>();
+    auto clampCtx = rec.fAlloc->make<SkRasterPipelineContexts::CoordClampCtx>();
     *clampCtx = {fSubset.fLeft, fSubset.fTop, fSubset.fRight, fSubset.fBottom};
     rec.fPipeline->append(SkRasterPipelineOp::clamp_x_and_y, clampCtx);
     return as_SB(fShader)->appendStages(rec, *childMRec);

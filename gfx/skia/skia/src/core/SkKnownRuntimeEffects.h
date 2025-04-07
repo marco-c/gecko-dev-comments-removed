@@ -8,7 +8,7 @@
 #ifndef SkKnownRuntimeEffects_DEFINED
 #define SkKnownRuntimeEffects_DEFINED
 
-#include "include/core/SkTypes.h"
+#include "include/core/SkRefCnt.h"
 #include <cstdint>
 
 class SkRuntimeEffect;
@@ -24,25 +24,19 @@ namespace SkKnownRuntimeEffects {
 
 
 
-
 static constexpr int kSkiaBuiltInReservedCnt = 500;
 static constexpr int kSkiaKnownRuntimeEffectsReservedCnt = 500;
-static constexpr int kAndroidKnownRuntimeEffectsReservedCnt = 100;
-static constexpr int kChromeKnownRuntimeEffectsReservedCnt = 100;
+static constexpr int kUserDefinedKnownRuntimeEffectsReservedCnt = 100;
 
 static constexpr int kSkiaKnownRuntimeEffectsStart = kSkiaBuiltInReservedCnt;
 static constexpr int kSkiaKnownRuntimeEffectsEnd = kSkiaKnownRuntimeEffectsStart +
                                                    kSkiaKnownRuntimeEffectsReservedCnt;
 
-static constexpr int kAndroidKnownRuntimeEffectsStart = kSkiaKnownRuntimeEffectsEnd;
-static constexpr int kAndroidKnownRuntimeEffectsEnd = kAndroidKnownRuntimeEffectsStart +
-                                                      kAndroidKnownRuntimeEffectsReservedCnt;
+static constexpr int kUserDefinedKnownRuntimeEffectsStart = kSkiaKnownRuntimeEffectsEnd;
+static constexpr int kUserDefinedKnownRuntimeEffectsEnd =
+        kUserDefinedKnownRuntimeEffectsStart + kUserDefinedKnownRuntimeEffectsReservedCnt;
 
-static constexpr int kChromeKnownRuntimeEffectsStart = kAndroidKnownRuntimeEffectsEnd;
-static constexpr int kChromeKnownRuntimeEffectsEnd = kChromeKnownRuntimeEffectsStart +
-                                                     kChromeKnownRuntimeEffectsReservedCnt;
-
-static constexpr int kUnknownRuntimeEffectIDStart = kChromeKnownRuntimeEffectsEnd;
+static constexpr int kUnknownRuntimeEffectIDStart = kUserDefinedKnownRuntimeEffectsEnd;
 
 
 
@@ -105,7 +99,24 @@ enum class StableKey : uint32_t {
 static const int kStableKeyCnt = static_cast<int>(StableKey::kLast) -
                                  static_cast<int>(StableKey::kStart) + 1;
 
+
+
+static_assert(static_cast<uint32_t>(StableKey::kStart) != 0);
+
 static_assert(static_cast<int>(StableKey::kLast) < kSkiaKnownRuntimeEffectsEnd);
+
+
+bool IsSkiaKnownRuntimeEffect(int candidate);
+
+bool IsUserDefinedRuntimeEffect(int candidate);
+
+
+
+
+bool IsViableUserDefinedKnownRuntimeEffect(int candidate);
+
+
+sk_sp<SkRuntimeEffect> MaybeGetKnownRuntimeEffect(uint32_t candidate);
 
 const SkRuntimeEffect* GetKnownRuntimeEffect(StableKey);
 

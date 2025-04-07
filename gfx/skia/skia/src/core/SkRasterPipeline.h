@@ -126,9 +126,9 @@ public:
         this->appendSetRGB(alloc, color.vec());
     }
 
-    void appendLoad   (SkColorType, const SkRasterPipeline_MemoryCtx*);
-    void appendLoadDst(SkColorType, const SkRasterPipeline_MemoryCtx*);
-    void appendStore  (SkColorType, const SkRasterPipeline_MemoryCtx*);
+    void appendLoad(SkColorType, const SkRasterPipelineContexts::MemoryCtx*);
+    void appendLoadDst(SkColorType, const SkRasterPipelineContexts::MemoryCtx*);
+    void appendStore(SkColorType, const SkRasterPipelineContexts::MemoryCtx*);
 
     void appendClampIfNormalized(const SkImageInfo&);
 
@@ -144,25 +144,29 @@ private:
 
     using StartPipelineFn = void (*)(size_t, size_t, size_t, size_t,
                                      SkRasterPipelineStage* program,
-                                     SkSpan<SkRasterPipeline_MemoryCtxPatch>,
+                                     SkSpan<SkRasterPipelineContexts::MemoryCtxPatch>,
                                      uint8_t*);
     StartPipelineFn buildPipeline(SkRasterPipelineStage*) const;
 
     void uncheckedAppend(SkRasterPipelineOp, void*);
     int stagesNeeded() const;
 
-    void addMemoryContext(SkRasterPipeline_MemoryCtx*, int bytesPerPixel, bool load, bool store);
+    void addMemoryContext(SkRasterPipelineContexts::MemoryCtx*,
+                          int bytesPerPixel,
+                          bool load,
+                          bool store);
     uint8_t* tailPointer();
 
-    SkArenaAlloc*               fAlloc;
-    SkRasterPipeline_RewindCtx* fRewindCtx;
+    SkArenaAlloc*                        fAlloc;
+    SkRasterPipelineContexts::RewindCtx* fRewindCtx;
+    
     StageList*                  fStages;
     uint8_t*                    fTailPointer;
     int                         fNumStages;
 
     
     
-    skia_private::STArray<2, SkRasterPipeline_MemoryCtxInfo> fMemoryCtxInfos;
+    skia_private::STArray<2, SkRasterPipelineContexts::MemoryCtxInfo> fMemoryCtxInfos;
 };
 
 template <size_t bytes>

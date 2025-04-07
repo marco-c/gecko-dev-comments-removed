@@ -287,10 +287,10 @@ public:
         kHinting_Mask   = kHintingBit1_Flag | kHintingBit2_Flag,
     };
 
-    SkScalerContext(sk_sp<SkTypeface>, const SkScalerContextEffects&, const SkDescriptor*);
+    SkScalerContext(SkTypeface&, const SkScalerContextEffects&, const SkDescriptor*);
     virtual ~SkScalerContext();
 
-    SkTypeface* getTypeface() const { return fTypeface.get(); }
+    SkTypeface* getTypeface() const { return &fTypeface; }
 
     SkMask::Format getMaskFormat() const {
         return fRec.fMaskFormat;
@@ -343,7 +343,7 @@ public:
     }
 
     static std::unique_ptr<SkScalerContext> MakeEmpty(
-            sk_sp<SkTypeface> typeface, const SkScalerContextEffects& effects,
+            SkTypeface& typeface, const SkScalerContextEffects& effects,
             const SkDescriptor* desc);
 
     static SkDescriptor* AutoDescriptorGivenRecAndEffects(
@@ -450,14 +450,16 @@ private:
     friend class PathText;  
     friend class PathTextBench;  
     friend class RandomScalerContext;  
-    friend class SkScalerContext_fontconfig;
+    friend class SkScalerContext_proxy;
 
     static SkScalerContextRec PreprocessRec(const SkTypeface&,
                                             const SkScalerContextEffects&,
                                             const SkDescriptor&);
 
     
-    sk_sp<SkTypeface> fTypeface;
+    
+    
+    SkTypeface& fTypeface;
 
     
     sk_sp<SkPathEffect> fPathEffect;

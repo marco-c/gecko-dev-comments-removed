@@ -213,6 +213,12 @@ public:
 
 
 
+    void setMaxBudgetedBytes(size_t bytes);
+
+    
+
+
+
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
     

@@ -617,11 +617,7 @@ private:
     
     
     
-#ifdef __clang__
-    SK_NO_SANITIZE("cfi")
-#elif defined(__GNUC__)
-    SK_ATTRIBUTE(no_sanitize_undefined)
-#endif
+    SK_NO_SANITIZE_CFI
     static T* TCast(void* buffer) {
         return (T*)buffer;
     }

@@ -11,7 +11,12 @@
 #include "include/core/SkTypes.h"
 #include "webgpu/webgpu_cpp.h"  
 
+#include <memory>
+
 namespace skgpu::graphite {
+
+class Context;
+struct ContextOptions;
 
 
 
@@ -62,6 +67,10 @@ struct SK_API DawnBackendContext {
             DawnNativeProcessEventsFunction;
 #endif
 };
+
+namespace ContextFactory {
+SK_API std::unique_ptr<Context> MakeDawn(const DawnBackendContext&, const ContextOptions&);
+} 
 
 } 
 

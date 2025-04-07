@@ -274,6 +274,11 @@ public:
     
 
 
+    skgpu::GpuStatsFlags supportedGpuStats() const;
+
+    
+
+
     using GrRecordingContext::maxTextureSize;
 
     

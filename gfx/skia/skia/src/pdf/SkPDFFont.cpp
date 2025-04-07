@@ -7,6 +7,7 @@
 
 #include "src/pdf/SkPDFFont.h"
 
+#include "include/codec/SkCodec.h"
 #include "include/core/SkAlphaType.h"
 #include "include/core/SkBitmap.h"
 #include "include/core/SkCanvas.h"
@@ -24,6 +25,7 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkPathTypes.h"
+#include "include/core/SkPixmap.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
@@ -32,8 +34,8 @@
 #include "include/core/SkStream.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTypeface.h"
+#include "include/docs/SkPDFDocument.h"
 #include "include/effects/SkDashPathEffect.h"
-#include "include/encode/SkJpegEncoder.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkTPin.h"
 #include "include/private/base/SkTemplates.h"
@@ -138,7 +140,6 @@ static bool scale_paint(SkPaint& paint, SkScalar fontToEMScale) {
     }
 
     if (paint.getStyle() != SkPaint::kFill_Style && paint.getStrokeWidth() > 0) {
-        paint.setStrokeMiter(paint.getStrokeMiter() * fontToEMScale);
         paint.setStrokeWidth(paint.getStrokeWidth() * fontToEMScale);
     }
 
@@ -280,7 +281,7 @@ const SkAdvancedTypefaceMetrics* SkPDFFont::GetMetrics(const SkTypeface& typefac
             
             int16_t stemV = SHRT_MAX;
             for (char c : {'i', 'I', '!', '1'}) {
-                uint16_t g = font.unicharToGlyph(c);
+                SkGlyphID g = font.unicharToGlyph(c);
                 SkRect bounds;
                 font.getBounds(&g, 1, &bounds, nullptr);
                 stemV = std::min(stemV, SkToS16(SkScalarRoundToInt(bounds.width())));
@@ -291,7 +292,7 @@ const SkAdvancedTypefaceMetrics* SkPDFFont::GetMetrics(const SkTypeface& typefac
             
             SkScalar capHeight = 0;
             for (char c : {'M', 'X'}) {
-                uint16_t g = font.unicharToGlyph(c);
+                SkGlyphID g = font.unicharToGlyph(c);
                 SkRect bounds;
                 font.getBounds(&g, 1, &bounds, nullptr);
                 capHeight += bounds.height();
@@ -824,21 +825,26 @@ static void emit_subset_type3(const SkPDFFont& pdfFont, SkPDFDocument* doc) {
                 content.writeText(" cm\n");
 
                 
-#ifndef MOZ_SKIA
                 if (pdfStrike.fHasMaskFilter) {
-                    SkJpegEncoder::Options jpegOptions;
-                    jpegOptions.fQuality = 50; 
-                    SkImage* image = pimg.fImage.get();
-                    sk_sp<SkData> jpegData = SkJpegEncoder::Encode(nullptr, image, jpegOptions);
-                    if (jpegData) {
-                        sk_sp<SkImage> jpegImage = SkImages::DeferredFromEncodedData(jpegData);
-                        SkASSERT(jpegImage);
-                        if (jpegImage) {
-                            pimg.fImage = jpegImage;
+                    SkPDF::EncodeJpegCallback encodeJPEG = doc->metadata().jpegEncoder;
+                    SkPDF::DecodeJpegCallback decodeJPEG = doc->metadata().jpegDecoder;
+                    if (encodeJPEG && decodeJPEG) {
+                        SkImage* image = pimg.fImage.get();
+                        SkPixmap pm;
+                        SkAssertResult(image->peekPixels(&pm));
+                        SkDynamicMemoryWStream buffer;
+                        if (encodeJPEG(&buffer, pm, SK_PDF_MASK_QUALITY)) {
+                            std::unique_ptr<SkCodec> codec =
+                                    decodeJPEG(buffer.detachAsData());
+                            SkASSERT(codec);
+                            sk_sp<SkImage> jpegImage = SkCodecs::DeferredImage(std::move(codec));
+                            SkASSERT(jpegImage);
+                            if (jpegImage) {
+                                pimg.fImage = jpegImage;
+                            }
                         }
                     }
                 }
-#endif
 
                 
                 const SkISize imageSize = pimg.fImage->dimensions();

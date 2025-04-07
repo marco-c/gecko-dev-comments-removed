@@ -123,6 +123,7 @@ public:
     
     
     
+    
 
     enum Version {
         kPictureShaderFilterParam_Version   = 82,
@@ -150,6 +151,8 @@ public:
         kMultipleFiltersOnSaveLayer         = 104,
         kUnclampedMatrixColorFilter         = 105,
         kSaveLayerBackdropTileMode          = 106,
+        kCombineColorShaders                = 107,
+        kSerializeStableKeys                = 108,
 
         
         
@@ -174,7 +177,7 @@ public:
         
         
         kMin_Version     = kPictureShaderFilterParam_Version,
-        kCurrent_Version = kSaveLayerBackdropTileMode
+        kCurrent_Version = kSerializeStableKeys
     };
 };
 

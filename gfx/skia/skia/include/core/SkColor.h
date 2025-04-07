@@ -12,6 +12,7 @@
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkCPUTypes.h"
+#include "include/private/base/SkTPin.h"
 
 #include <array>
 #include <cstdint>
@@ -414,6 +415,15 @@ struct SkRGBA4f {
 
     SkRGBA4f makeOpaque() const {
         return { fR, fG, fB, 1.0f };
+    }
+
+    
+
+
+
+
+    SkRGBA4f pinAlpha() const {
+        return { fR, fG, fB, SkTPin(fA, 0.f, 1.f) };
     }
 };
 

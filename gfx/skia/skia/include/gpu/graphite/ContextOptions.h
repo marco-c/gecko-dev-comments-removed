@@ -8,11 +8,15 @@
 #ifndef skgpu_graphite_ContextOptions_DEFINED
 #define skgpu_graphite_ContextOptions_DEFINED
 
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSpan.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkMath.h"
 
 #include <optional>
 
+class SkData;
+class SkRuntimeEffect;
 namespace skgpu { class ShaderErrorHandler; }
 
 namespace skgpu::graphite {
@@ -90,7 +94,7 @@ struct SK_API ContextOptions {
 
 
 
-    bool fDisableCachedGlyphUploads = false;
+    bool fRequireOrderedRecordings = false;
 
     static constexpr size_t kDefaultContextBudget = 256 * (1 << 20);
     
@@ -117,6 +121,37 @@ struct SK_API ContextOptions {
 
 
     std::optional<uint64_t> fVulkanVMALargeHeapBlockSize;
+
+    
+    using PipelineCallbackContext = void*;
+    
+    using PipelineCallback = void (*)(PipelineCallbackContext context, sk_sp<SkData> pipelineData);
+
+    
+
+
+
+
+
+
+
+    PipelineCallbackContext fPipelineCallbackContext = nullptr;
+    PipelineCallback fPipelineCallback = nullptr;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    SkSpan<sk_sp<SkRuntimeEffect>> fUserDefinedKnownRuntimeEffects;
 
     
 

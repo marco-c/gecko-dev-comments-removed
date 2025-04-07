@@ -34,7 +34,6 @@
 #include <utility>
 
 struct SkArc;
-class SkBitmap;
 class SkColorSpace;
 class SkMesh;
 struct SkDrawShadowRec;
@@ -206,7 +205,7 @@ public:
 
 
 
-    SkMatrix getRelativeTransform(const SkDevice&) const;
+    SkM44 getRelativeTransform(const SkDevice&) const;
 
     void setLocalToDevice(const SkM44& localToDevice) {
         fLocalToDevice = localToDevice;
@@ -358,7 +357,7 @@ public:
 
     virtual void drawPath(const SkPath& path,
                           const SkPaint& paint,
-                          bool pathIsMutable = false) = 0;
+                          bool pathIsMutable) = 0;
 
     virtual void drawImageRect(const SkImage*, const SkRect* src, const SkRect& dst,
                                const SkSamplingOptions&, const SkPaint&,
@@ -485,11 +484,6 @@ public:
                            const SkImageFilter*, const SkSamplingOptions&, const SkPaint&);
 
 protected:
-    
-    
-    virtual sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&);
-    virtual sk_sp<SkSpecialImage> makeSpecial(const SkImage*);
-
     
     
     
@@ -643,11 +637,11 @@ private:
 
 class SkAutoDeviceTransformRestore : SkNoncopyable {
 public:
-    SkAutoDeviceTransformRestore(SkDevice* device, const SkMatrix& localToDevice)
+    SkAutoDeviceTransformRestore(SkDevice* device, const SkM44& localToDevice)
         : fDevice(device)
         , fPrevLocalToDevice(device->localToDevice())
     {
-        fDevice->setLocalToDevice(SkM44(localToDevice));
+        fDevice->setLocalToDevice(localToDevice);
     }
     ~SkAutoDeviceTransformRestore() {
         fDevice->setLocalToDevice(fPrevLocalToDevice);

@@ -14,20 +14,25 @@
 
 namespace SkSL { class TraceHook; }
 
+struct SkRasterPipelineStage;
+enum class SkPerlinNoiseShaderType;
+
+namespace SkRasterPipelineContexts {
 
 
 
 
-inline static constexpr int SkRasterPipeline_kMaxStride = 16;
-inline static constexpr int SkRasterPipeline_kMaxStride_highp = 16;
+
+inline static constexpr int kMaxStride = 16;
+inline static constexpr int kMaxStride_highp = 16;
 
 
-inline static constexpr size_t SkRasterPipeline_MaxScratchPerPatch =
-        std::max(SkRasterPipeline_kMaxStride_highp * 16,  
-                 SkRasterPipeline_kMaxStride * 4);        
+inline static constexpr size_t kMaxScratchPerPatch =
+        std::max(kMaxStride_highp * 16,  
+                 kMaxStride * 4);        
 
 
-struct SkRasterPipeline_MemoryCtx {
+struct MemoryCtx {
     void* pixels;
     int   stride;
 };
@@ -47,22 +52,22 @@ struct SkRasterPipeline_MemoryCtx {
 
 
 
-struct SkRasterPipeline_MemoryCtxInfo {
-    SkRasterPipeline_MemoryCtx* context;
+struct MemoryCtxInfo {
+    MemoryCtx* context;
 
     int bytesPerPixel;
     bool load;
     bool store;
 };
 
-struct SkRasterPipeline_MemoryCtxPatch {
-    SkRasterPipeline_MemoryCtxInfo info;
+struct MemoryCtxPatch {
+    MemoryCtxInfo info;
 
     void* backup;  
-    std::byte scratch[SkRasterPipeline_MaxScratchPerPatch];
+    std::byte scratch[kMaxScratchPerPatch];
 };
 
-struct SkRasterPipeline_GatherCtx {
+struct GatherCtx {
     const void* pixels;
     int         stride;
     float       width;
@@ -73,21 +78,21 @@ struct SkRasterPipeline_GatherCtx {
 };
 
 
-struct SkRasterPipeline_SamplerCtx {
-    float      x[SkRasterPipeline_kMaxStride_highp];
-    float      y[SkRasterPipeline_kMaxStride_highp];
-    float     fx[SkRasterPipeline_kMaxStride_highp];
-    float     fy[SkRasterPipeline_kMaxStride_highp];
-    float scalex[SkRasterPipeline_kMaxStride_highp];
-    float scaley[SkRasterPipeline_kMaxStride_highp];
+struct SamplerCtx {
+    float      x[kMaxStride_highp];
+    float      y[kMaxStride_highp];
+    float     fx[kMaxStride_highp];
+    float     fy[kMaxStride_highp];
+    float scalex[kMaxStride_highp];
+    float scaley[kMaxStride_highp];
 
     
     float weights[16];
-    float wx[4][SkRasterPipeline_kMaxStride_highp];
-    float wy[4][SkRasterPipeline_kMaxStride_highp];
+    float wx[4][kMaxStride_highp];
+    float wy[4][kMaxStride_highp];
 };
 
-struct SkRasterPipeline_TileCtx {
+struct TileCtx {
     float scale;
     float invScale; 
     
@@ -97,8 +102,8 @@ struct SkRasterPipeline_TileCtx {
     int   mirrorBiasDir = -1;
 };
 
-struct SkRasterPipeline_DecalTileCtx {
-    uint32_t mask[SkRasterPipeline_kMaxStride];
+struct DecalTileCtx {
+    uint32_t mask[kMaxStride];
     float    limit_x;
     float    limit_y;
     
@@ -108,9 +113,7 @@ struct SkRasterPipeline_DecalTileCtx {
     float    inclusiveEdge_y = 0;
 };
 
-enum class SkPerlinNoiseShaderType;
-
-struct SkRasterPipeline_PerlinNoiseCtx {
+struct PerlinNoiseCtx {
     SkPerlinNoiseShaderType noiseType;
     float baseFrequencyX, baseFrequencyY;
     float stitchDataInX, stitchDataInY;
@@ -121,16 +124,16 @@ struct SkRasterPipeline_PerlinNoiseCtx {
 };
 
 
-struct SkRasterPipeline_MipmapCtx {
+struct MipmapCtx {
     
-    float x[SkRasterPipeline_kMaxStride_highp];
-    float y[SkRasterPipeline_kMaxStride_highp];
+    float x[kMaxStride_highp];
+    float y[kMaxStride_highp];
 
     
-    float r[SkRasterPipeline_kMaxStride_highp];
-    float g[SkRasterPipeline_kMaxStride_highp];
-    float b[SkRasterPipeline_kMaxStride_highp];
-    float a[SkRasterPipeline_kMaxStride_highp];
+    float r[kMaxStride_highp];
+    float g[kMaxStride_highp];
+    float b[kMaxStride_highp];
+    float a[kMaxStride_highp];
 
     
     float scaleX;
@@ -139,122 +142,119 @@ struct SkRasterPipeline_MipmapCtx {
     float lowerWeight;
 };
 
-struct SkRasterPipeline_CoordClampCtx {
+struct CoordClampCtx {
     float min_x, min_y;
     float max_x, max_y;
 };
 
-struct SkRasterPipeline_CallbackCtx {
-    void (*fn)(SkRasterPipeline_CallbackCtx* self,
-               int active_pixels );
+struct CallbackCtx {
+    void (*fn)(CallbackCtx* self, int active_pixels );
 
     
     
-    float rgba[4*SkRasterPipeline_kMaxStride_highp];
+    float rgba[4 * kMaxStride_highp];
     float* read_from = rgba;
 };
 
-
-struct SkRasterPipelineStage;
-
-struct SkRasterPipeline_RewindCtx {
-    float  r[SkRasterPipeline_kMaxStride_highp];
-    float  g[SkRasterPipeline_kMaxStride_highp];
-    float  b[SkRasterPipeline_kMaxStride_highp];
-    float  a[SkRasterPipeline_kMaxStride_highp];
-    float dr[SkRasterPipeline_kMaxStride_highp];
-    float dg[SkRasterPipeline_kMaxStride_highp];
-    float db[SkRasterPipeline_kMaxStride_highp];
-    float da[SkRasterPipeline_kMaxStride_highp];
+struct RewindCtx {
+    float  r[kMaxStride_highp];
+    float  g[kMaxStride_highp];
+    float  b[kMaxStride_highp];
+    float  a[kMaxStride_highp];
+    float dr[kMaxStride_highp];
+    float dg[kMaxStride_highp];
+    float db[kMaxStride_highp];
+    float da[kMaxStride_highp];
     std::byte* base;
     SkRasterPipelineStage* stage;
 };
 
-struct SkRasterPipeline_GradientCtx {
+constexpr size_t kRGBAChannels = 4;
+
+struct GradientCtx {
     size_t stopCount;
-    float* fs[4];
-    float* bs[4];
+    float* factors[kRGBAChannels];
+    float* biases[kRGBAChannels];
     float* ts;
 };
 
-struct SkRasterPipeline_EvenlySpaced2StopGradientCtx {
-    float f[4];
-    float b[4];
+struct EvenlySpaced2StopGradientCtx {
+    float factor[kRGBAChannels];
+    float bias[kRGBAChannels];
 };
 
-struct SkRasterPipeline_2PtConicalCtx {
-    uint32_t fMask[SkRasterPipeline_kMaxStride_highp];
+struct Conical2PtCtx {
+    uint32_t fMask[kMaxStride_highp];
     float    fP0,
              fP1;
 };
 
-struct SkRasterPipeline_UniformColorCtx {
+struct UniformColorCtx {
     float r,g,b,a;
     uint16_t rgba[4];  
 };
 
-struct SkRasterPipeline_EmbossCtx {
-    SkRasterPipeline_MemoryCtx mul,
-                               add;
+struct EmbossCtx {
+    MemoryCtx mul, add;
 };
 
-struct SkRasterPipeline_TablesCtx {
+struct TablesCtx {
     const uint8_t *r, *g, *b, *a;
 };
 
 using SkRPOffset = uint32_t;
 
-struct SkRasterPipeline_InitLaneMasksCtx {
+struct InitLaneMasksCtx {
     uint8_t* tail;
 };
 
-struct SkRasterPipeline_ConstantCtx {
+struct ConstantCtx {
     int32_t value;
     SkRPOffset dst;
 };
 
-struct SkRasterPipeline_UniformCtx {
+struct UniformCtx {
     int32_t* dst;
     const int32_t* src;
 };
 
-struct SkRasterPipeline_BinaryOpCtx {
+struct BinaryOpCtx {
     SkRPOffset dst;
     SkRPOffset src;
 };
 
-struct SkRasterPipeline_TernaryOpCtx {
+struct TernaryOpCtx {
     SkRPOffset dst;
     SkRPOffset delta;
 };
 
-struct SkRasterPipeline_MatrixMultiplyCtx {
+struct MatrixMultiplyCtx {
     SkRPOffset dst;
     uint8_t leftColumns, leftRows, rightColumns, rightRows;
 };
 
-struct SkRasterPipeline_SwizzleCtx {
+struct SwizzleCtx {
     
     
-    static_assert(SkRasterPipeline_kMaxStride_highp <= 16);
+    static_assert(kMaxStride_highp <= 16);
 
     SkRPOffset dst;
     uint8_t offsets[4];  
 };
 
-struct SkRasterPipeline_ShuffleCtx {
+struct ShuffleCtx {
     int32_t* ptr;
     int count;
     uint16_t offsets[16];  
 };
 
-struct SkRasterPipeline_SwizzleCopyCtx {
+struct SwizzleCopyCtx {
     int32_t* dst;
     const int32_t* src;   
     uint16_t offsets[4];  
 };
 
-struct SkRasterPipeline_CopyIndirectCtx {
+struct CopyIndirectCtx {
     int32_t* dst;
     const int32_t* src;
     const uint32_t *indirectOffset;  
@@ -262,47 +262,47 @@ struct SkRasterPipeline_CopyIndirectCtx {
     uint32_t slots;                  
 };
 
-struct SkRasterPipeline_SwizzleCopyIndirectCtx : public SkRasterPipeline_CopyIndirectCtx {
+struct SwizzleCopyIndirectCtx : public CopyIndirectCtx {
     uint16_t offsets[4];  
 };
 
-struct SkRasterPipeline_BranchCtx {
+struct BranchCtx {
     int offset;  
 };
 
-struct SkRasterPipeline_BranchIfAllLanesActiveCtx : public SkRasterPipeline_BranchCtx {
+struct BranchIfAllLanesActiveCtx : public BranchCtx {
     uint8_t* tail = nullptr;  
 };
 
-struct SkRasterPipeline_BranchIfEqualCtx : public SkRasterPipeline_BranchCtx {
+struct BranchIfEqualCtx : public BranchCtx {
     int value;
     const int* ptr;
 };
 
-struct SkRasterPipeline_CaseOpCtx {
+struct CaseOpCtx {
     int expectedValue;
     SkRPOffset offset;  
 };
 
-struct SkRasterPipeline_TraceFuncCtx {
+struct TraceFuncCtx {
     const int* traceMask;
     SkSL::TraceHook* traceHook;
     int funcIdx;
 };
 
-struct SkRasterPipeline_TraceScopeCtx {
+struct TraceScopeCtx {
     const int* traceMask;
     SkSL::TraceHook* traceHook;
     int delta;
 };
 
-struct SkRasterPipeline_TraceLineCtx {
+struct TraceLineCtx {
     const int* traceMask;
     SkSL::TraceHook* traceHook;
     int lineNumber;
 };
 
-struct SkRasterPipeline_TraceVarCtx {
+struct TraceVarCtx {
     const int* traceMask;
     SkSL::TraceHook* traceHook;
     int slotIdx, numSlots;
@@ -310,5 +310,7 @@ struct SkRasterPipeline_TraceVarCtx {
     const uint32_t *indirectOffset;  
     uint32_t indirectLimit;          
 };
+
+}  
 
 #endif  

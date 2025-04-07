@@ -9,6 +9,7 @@
 #define SkPDFTypes_DEFINED
 
 #include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "src/pdf/SkPDFUnion.h"
 
@@ -22,6 +23,17 @@ class SkPDFDocument;
 class SkStreamAsset;
 class SkString;
 class SkWStream;
+
+#ifndef SK_PDF_MASK_QUALITY
+    
+    
+    #define SK_PDF_MASK_QUALITY 50
+    
+    
+    
+    
+    
+#endif
 
 struct SkPDFIndirectReference {
     int fValue = -1;
@@ -69,7 +81,7 @@ private:
 
 
 
-class SkPDFArray final : public SkPDFObject {
+class SkPDFArray : public SkPDFObject {
 public:
     
 
@@ -104,6 +116,9 @@ public:
     void appendObject(std::unique_ptr<SkPDFObject>&&);
     void appendRef(SkPDFIndirectReference);
 
+protected:
+    SkSpan<const SkPDFUnion> values() const { return SkSpan(fValues); }
+
 private:
     std::vector<SkPDFUnion> fValues;
     void append(SkPDFUnion&& value);
@@ -128,6 +143,15 @@ static inline std::unique_ptr<SkPDFArray> SkPDFMakeArray(Args... args) {
     SkPDFArray_Append(ret.get(), args...);
     return ret;
 }
+
+
+
+
+
+
+class SkPDFOptionalArray final : public SkPDFArray {
+    void emitObject(SkWStream* stream) const override;
+};
 
 
 
@@ -189,12 +213,6 @@ static inline std::unique_ptr<SkPDFDict> SkPDFMakeDict(const char* type = nullpt
 enum class SkPDFSteamCompressionEnabled : bool {
     No = false,
     Yes = true,
-    Default =
-#ifdef SK_PDF_LESS_COMPRESSION
-        No,
-#else
-        Yes,
-#endif
 };
 
 
@@ -205,5 +223,5 @@ SkPDFIndirectReference SkPDFStreamOut(
     std::unique_ptr<SkPDFDict> dict,
     std::unique_ptr<SkStreamAsset> stream,
     SkPDFDocument* doc,
-    SkPDFSteamCompressionEnabled compress = SkPDFSteamCompressionEnabled::Default);
+    SkPDFSteamCompressionEnabled compress = SkPDFSteamCompressionEnabled::Yes);
 #endif

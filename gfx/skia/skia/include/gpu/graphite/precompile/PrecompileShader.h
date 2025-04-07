@@ -11,6 +11,8 @@
 #include "include/gpu/graphite/precompile/PrecompileBase.h"
 
 #include "include/core/SkBlendMode.h"
+#include "include/core/SkImageInfo.h"
+#include "include/effects/SkGradientShader.h"
 
 class SkColorSpace;
 
@@ -109,11 +111,13 @@ namespace PrecompileShaders {
     
     
     
-    SK_API sk_sp<PrecompileShader> Image();
+    SK_API sk_sp<PrecompileShader> Image(SkSpan<const SkColorInfo> = {},
+                                         SkSpan<const SkTileMode> = {});
     
     
     
-    SK_API sk_sp<PrecompileShader> RawImage();
+    SK_API sk_sp<PrecompileShader> RawImage(SkSpan<const SkColorInfo> = {},
+                                            SkSpan<const SkTileMode> = {});
 
     
     
@@ -126,10 +130,14 @@ namespace PrecompileShaders {
     SK_API sk_sp<PrecompileShader> MakeTurbulence();
 
     
-    SK_API sk_sp<PrecompileShader> LinearGradient();
-    SK_API sk_sp<PrecompileShader> RadialGradient();
-    SK_API sk_sp<PrecompileShader> TwoPointConicalGradient();
-    SK_API sk_sp<PrecompileShader> SweepGradient();
+    SK_API sk_sp<PrecompileShader> LinearGradient(
+            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+    SK_API sk_sp<PrecompileShader> RadialGradient(
+            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+    SK_API sk_sp<PrecompileShader> TwoPointConicalGradient(
+            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+    SK_API sk_sp<PrecompileShader> SweepGradient(
+            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
 
     
     

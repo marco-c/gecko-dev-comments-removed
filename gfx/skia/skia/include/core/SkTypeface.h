@@ -53,20 +53,18 @@ typedef uint32_t SkFontTableTag;
 class SK_API SkTypeface : public SkWeakRefCnt {
 public:
     
-    SkFontStyle fontStyle() const {
-        return fStyle;
-    }
+    SkFontStyle fontStyle() const;
 
     
-    bool isBold() const { return fStyle.weight() >= SkFontStyle::kSemiBold_Weight; }
+    bool isBold() const;
 
     
-    bool isItalic() const { return fStyle.slant() != SkFontStyle::kUpright_Slant; }
+    bool isItalic() const;
 
     
 
 
-    bool isFixedPitch() const { return fIsFixedPitch; }
+    bool isFixedPitch() const;
 
     
 
@@ -294,6 +292,20 @@ public:
 
 
 
+
+
+
+
+
+    int getResourceName(SkString* resourceName) const;
+
+    
+
+
+
+
+
+
     std::unique_ptr<SkStreamAsset> openStream(int* ttcIndex) const;
 
     
@@ -355,13 +367,15 @@ protected:
     
     void setFontStyle(SkFontStyle style) { fStyle = style; }
 
+    virtual SkFontStyle onGetFontStyle() const; 
+
+    virtual bool onGetFixedPitch() const; 
+
     
-    virtual std::unique_ptr<SkScalerContext> onCreateScalerContext(const SkScalerContextEffects&,
-                                                                   const SkDescriptor*) const = 0;
+    virtual std::unique_ptr<SkScalerContext> onCreateScalerContext(
+        const SkScalerContextEffects&, const SkDescriptor*) const = 0;
     virtual std::unique_ptr<SkScalerContext> onCreateScalerContextAsProxyTypeface
-                                                                  (const SkScalerContextEffects&,
-                                                                   const SkDescriptor*,
-                                                                   sk_sp<SkTypeface>) const;
+        (const SkScalerContextEffects&, const SkDescriptor*, SkTypeface* proxyTypeface) const;
     virtual void onFilterRec(SkScalerContextRec*) const = 0;
     friend class SkScalerContext;  
 
@@ -404,6 +418,7 @@ protected:
 
     virtual void onGetFamilyName(SkString* familyName) const = 0;
     virtual bool onGetPostScriptName(SkString*) const = 0;
+    virtual int onGetResourceName(SkString* resourceName) const; 
 
     
     virtual LocalizedStrings* onCreateFamilyNameIterator() const = 0;
@@ -430,9 +445,9 @@ private:
     std::unique_ptr<SkAdvancedTypefaceMetrics> getAdvancedMetrics() const;
     friend class SkRandomTypeface;   
     friend class SkPDFFont;          
-    friend class SkTypeface_fontconfig;
-
+    friend class SkTypeface_proxy;
     friend class SkFontPriv;         
+    friend void TestSkTypefaceGlyphToUnicodeMap(SkTypeface&, SkUnichar*);
 
 private:
     SkTypefaceID        fUniqueID;

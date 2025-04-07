@@ -8,7 +8,6 @@
 #include "src/core/SkBlurMask.h"
 
 #include "include/core/SkBlurTypes.h"
-#include "include/core/SkColorPriv.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
 #include "include/private/base/SkMath.h"
@@ -17,13 +16,12 @@
 #include "include/private/base/SkTemplates.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkMathPriv.h"
+#include "src/core/SkColorPriv.h"
 #include "src/core/SkMaskBlurFilter.h"
 
 #include <cmath>
 #include <cstring>
 #include <utility>
-
-class SkRRect;
 
 using namespace skia_private;
 
@@ -106,15 +104,12 @@ static void clamp_outer_with_orig(uint8_t dst[], int dstRowBytes,
 }
 
 
-
-
-void SkMask_FreeImage(uint8_t* image);
-void SkMask_FreeImage(uint8_t* image) {
-    SkMaskBuilder::FreeImage(image);
-}
-
-bool SkBlurMask::BoxBlur(SkMaskBuilder* dst, const SkMask& src, SkScalar sigma, SkBlurStyle style,
-                         SkIPoint* margin) {
+bool SkBlurMask::BoxBlur(SkMaskBuilder* dst,
+                         const SkMask& src,
+                         SkScalar sigma,
+                         SkBlurStyle style,
+                         SkIVector* margin) {
+    SkASSERT(dst);
     if (src.fFormat != SkMask::kBW_Format &&
         src.fFormat != SkMask::kA8_Format &&
         src.fFormat != SkMask::kARGB32_Format &&
@@ -136,15 +131,18 @@ bool SkBlurMask::BoxBlur(SkMaskBuilder* dst, const SkMask& src, SkScalar sigma, 
                 
                 
                 
-                *margin = SkIPoint{0,0};
+                *margin = SkIVector{0, 0};
             }
             return true;
         }
         return false;
     }
-    const SkIPoint border = blurFilter.blur(src, dst);
-    
+    const SkIVector border = blurFilter.blur(src, dst);
+
     if (src.fImage != nullptr && dst->fImage == nullptr) {
+        
+        
+        
         return false;
     }
 
@@ -404,9 +402,12 @@ void SkBlurMask::ComputeBlurredScanline(uint8_t *pixels, const uint8_t *profile,
     }
 }
 
-bool SkBlurMask::BlurRect(SkScalar sigma, SkMaskBuilder *dst,
-                          const SkRect &src, SkBlurStyle style,
-                          SkIPoint *margin, SkMaskBuilder::CreateMode createMode) {
+bool SkBlurMask::BlurRect(SkScalar sigma,
+                          SkMaskBuilder* dst,
+                          const SkRect& src,
+                          SkBlurStyle style,
+                          SkIVector* margin,
+                          SkMaskBuilder::CreateMode createMode) {
     int profileSize = SkScalarCeilToInt(6*sigma);
     if (profileSize <= 0) {
         return false;   
@@ -501,22 +502,15 @@ bool SkBlurMask::BlurRect(SkScalar sigma, SkMaskBuilder *dst,
     return true;
 }
 
-bool SkBlurMask::BlurRRect(SkScalar sigma, SkMaskBuilder *dst,
-                           const SkRRect &src, SkBlurStyle style,
-                           SkIPoint *margin, SkMaskBuilder::CreateMode createMode) {
-    
-    
-
-    return false;
-}
 
 
 
 
-
-bool SkBlurMask::BlurGroundTruth(SkScalar sigma, SkMaskBuilder* dst, const SkMask& src,
-                                 SkBlurStyle style, SkIPoint* margin) {
-
+bool SkBlurMask::BlurGroundTruth(SkScalar sigma,
+                                 SkMaskBuilder* dst,
+                                 const SkMask& src,
+                                 SkBlurStyle style,
+                                 SkIVector* margin) {
     if (src.fFormat != SkMask::kA8_Format) {
         return false;
     }

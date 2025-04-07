@@ -17,7 +17,6 @@
 
 enum SkBlurStyle : int;
 struct SkDeserialProcs;
-struct SkRect;
 
 
 
@@ -34,13 +33,6 @@ public:
 
     static sk_sp<SkMaskFilter> MakeBlur(SkBlurStyle style, SkScalar sigma,
                                         bool respectCTM = true);
-
-    
-
-
-
-
-    SkRect approximateFilteredBounds(const SkRect& src) const;
 
     static sk_sp<SkMaskFilter> Deserialize(const void* data, size_t size,
                                            const SkDeserialProcs* procs = nullptr);

@@ -37,10 +37,15 @@ public:
 
 
 
-    YUVABackendTextureInfo(const Recorder*,
-                           const SkYUVAInfo&,
+    YUVABackendTextureInfo(const SkYUVAInfo&,
                            SkSpan<const TextureInfo>,
                            Mipmapped);
+    
+    YUVABackendTextureInfo(Recorder*,
+                           const SkYUVAInfo& yuvaInfo,
+                           SkSpan<const TextureInfo> textures,
+                           Mipmapped mipmapped)
+            : YUVABackendTextureInfo(yuvaInfo, textures, mipmapped) {}
 
     bool operator==(const YUVABackendTextureInfo&) const;
     bool operator!=(const YUVABackendTextureInfo& that) const { return !(*this == that); }
@@ -95,9 +100,13 @@ public:
 
 
 
-    YUVABackendTextures(const Recorder*,
-                        const SkYUVAInfo&,
+    YUVABackendTextures(const SkYUVAInfo&,
                         SkSpan<const BackendTexture>);
+    
+    YUVABackendTextures(Recorder*,
+                        const SkYUVAInfo& yuvaInfo,
+                        SkSpan<const BackendTexture> textures)
+            : YUVABackendTextures(yuvaInfo, textures) {}
 
     SkSpan<const BackendTexture> planeTextures() const {
         return SkSpan<const BackendTexture>(fPlaneTextures);

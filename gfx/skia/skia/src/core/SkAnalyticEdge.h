@@ -20,11 +20,8 @@ struct SkPoint;
 
 struct SkAnalyticEdge {
     
-    enum Type {
-        kLine_Type,
-        kQuad_Type,
-        kCubic_Type
-    };
+    using Type = SkEdge::Type;
+    using Winding = SkEdge::Winding;
 
     SkAnalyticEdge* fNext;
     SkAnalyticEdge* fPrev;
@@ -38,17 +35,17 @@ struct SkAnalyticEdge {
     SkFixed fDY;            
                             
 
-    Type    fEdgeType;      
+    Type fEdgeType;          
 
     int8_t  fCurveCount;    
     uint8_t fCurveShift;    
     uint8_t fCubicDShift;   
-    int8_t  fWinding;       
+    Winding fWinding;
 
-    static const int kDefaultAccuracy = 2; 
+    static constexpr int kDefaultAccuracy = 2;  
 
     static inline SkFixed SnapY(SkFixed y) {
-        const int accuracy = kDefaultAccuracy;
+        constexpr int accuracy = kDefaultAccuracy;
         
         return ((unsigned)y + (SK_Fixed1 >> (accuracy + 1))) >> (16 - accuracy) << (16 - accuracy);
     }
@@ -82,8 +79,12 @@ struct SkAnalyticEdge {
 #ifdef SK_DEBUG
     void dump() const {
         SkDebugf("edge: upperY:%d lowerY:%d y:%g x:%g dx:%g w:%d\n",
-                 fUpperY, fLowerY, SkFixedToFloat(fY), SkFixedToFloat(fX),
-                 SkFixedToFloat(fDX), fWinding);
+                 fUpperY,
+                 fLowerY,
+                 SkFixedToFloat(fY),
+                 SkFixedToFloat(fX),
+                 SkFixedToFloat(fDX),
+                 static_cast<int8_t>(fWinding));
     }
 
     void validate() const {
@@ -92,7 +93,7 @@ struct SkAnalyticEdge {
          SkASSERT(fNext->fPrev == this);
 
          SkASSERT(fUpperY < fLowerY);
-         SkASSERT(SkAbs32(fWinding) == 1);
+         SkASSERT(fWinding == Winding::kCW || fWinding == Winding::kCCW);
     }
 #endif
 };

@@ -13,30 +13,31 @@
 #include "include/gpu/graphite/TextureInfo.h"
 #include "include/gpu/vk/VulkanTypes.h"
 
+class SkStream;
+class SkWStream;
+
 namespace skgpu::graphite {
 
-struct VulkanTextureInfo {
-    uint32_t fSampleCount = 1;
-    Mipmapped fMipmapped = Mipmapped::kNo;
+class SK_API VulkanTextureInfo final : public TextureInfo::Data {
+public:
+    
+    
+    
+    VkImageCreateFlags fFlags = 0;
+    VkFormat           fFormat = VK_FORMAT_UNDEFINED;
+    VkImageTiling      fImageTiling = VK_IMAGE_TILING_OPTIMAL;
+    VkImageUsageFlags  fImageUsageFlags = 0;
+    VkSharingMode      fSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    
+    
 
     
     
     
-    VkImageCreateFlags       fFlags = 0;
-    VkFormat                 fFormat = VK_FORMAT_UNDEFINED;
-    VkImageTiling            fImageTiling = VK_IMAGE_TILING_OPTIMAL;
-    VkImageUsageFlags        fImageUsageFlags = 0;
-    VkSharingMode            fSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
     
-    
-
-    
-    
-    
-    
-    VkImageAspectFlags         fAspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    VulkanYcbcrConversionInfo  fYcbcrConversionInfo;
+    VkImageAspectFlags        fAspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    VulkanYcbcrConversionInfo fYcbcrConversionInfo;
 
     VulkanTextureInfo() = default;
     VulkanTextureInfo(uint32_t sampleCount,
@@ -48,8 +49,7 @@ struct VulkanTextureInfo {
                       VkSharingMode sharingMode,
                       VkImageAspectFlags aspectMask,
                       VulkanYcbcrConversionInfo ycbcrConversionInfo)
-            : fSampleCount(sampleCount)
-            , fMipmapped(mipmapped)
+            : Data(sampleCount, mipmapped)
             , fFlags(flags)
             , fFormat(format)
             , fImageTiling(imageTiling)
@@ -57,6 +57,29 @@ struct VulkanTextureInfo {
             , fSharingMode(sharingMode)
             , fAspectMask(aspectMask)
             , fYcbcrConversionInfo(ycbcrConversionInfo) {}
+
+private:
+    friend class TextureInfo;
+    friend class TextureInfoPriv;
+
+    
+    static constexpr skgpu::BackendApi kBackend = skgpu::BackendApi::kVulkan;
+
+    Protected isProtected() const {
+        return fFlags & VK_IMAGE_CREATE_PROTECTED_BIT ? Protected::kYes : Protected::kNo;
+    }
+    TextureFormat viewFormat() const;
+
+    bool serialize(SkWStream*) const;
+    bool deserialize(SkStream*);
+
+    
+    SkString toBackendString() const override;
+
+    void copyTo(TextureInfo::AnyTextureInfoData& dstData) const override {
+        dstData.emplace<VulkanTextureInfo>(*this);
+    }
+    bool isCompatible(const TextureInfo& that, bool requireExact) const override;
 };
 
 namespace TextureInfos {
@@ -78,7 +101,6 @@ namespace BackendSemaphores {
 SK_API BackendSemaphore MakeVulkan(VkSemaphore);
 
 SK_API VkSemaphore GetVkSemaphore(const BackendSemaphore&);
-
 }  
 
 }  

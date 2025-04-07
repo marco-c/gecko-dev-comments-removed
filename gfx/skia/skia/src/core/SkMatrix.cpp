@@ -815,41 +815,53 @@ bool SkMatrix::invertNonIdentity(SkMatrix* inv) const {
 
     TypeMask mask = this->getType();
 
+    
     if (0 == (mask & ~(kScale_Mask | kTranslate_Mask))) {
-        bool invertible = true;
-        if (inv) {
-            if (mask & kScale_Mask) {
-                SkScalar invX = sk_ieee_float_divide(1.f, fMat[kMScaleX]);
-                SkScalar invY = sk_ieee_float_divide(1.f, fMat[kMScaleY]);
-                
-                
-                if (!SkIsFinite(invX, invY)) {
-                    return false;
-                }
+        if (mask & kScale_Mask) {
+            
+            SkScalar invSX = sk_ieee_float_divide(1.f, fMat[kMScaleX]);
+            SkScalar invSY = sk_ieee_float_divide(1.f, fMat[kMScaleY]);
+            
+            
+            if (!SkIsFinite(invSX, invSY)) {
+                return false;
+            }
+            SkScalar invTX = -fMat[kMTransX] * invSX;
+            SkScalar invTY = -fMat[kMTransY] * invSY;
+            
+            
+            if (!SkIsFinite(invTX, invTY)) {
+                return false;
+            }
 
-                
-                
-
+            
+            
+            if (inv) {
                 inv->fMat[kMSkewX] = inv->fMat[kMSkewY] =
                 inv->fMat[kMPersp0] = inv->fMat[kMPersp1] = 0;
 
-                inv->fMat[kMScaleX] = invX;
-                inv->fMat[kMScaleY] = invY;
+                inv->fMat[kMScaleX] = invSX;
+                inv->fMat[kMScaleY] = invSY;
                 inv->fMat[kMPersp2] = 1;
-                inv->fMat[kMTransX] = -fMat[kMTransX] * invX;
-                inv->fMat[kMTransY] = -fMat[kMTransY] * invY;
+                inv->fMat[kMTransX] = invTX;
+                inv->fMat[kMTransY] = invTY;
 
                 inv->setTypeMask(mask | kRectStaysRect_Mask);
-            } else {
-                
-                inv->setTranslate(-fMat[kMTransX], -fMat[kMTransY]);
             }
-        } else {    
-            if (!fMat[kMScaleX] || !fMat[kMScaleY]) {
-                invertible = false;
-            }
+
+            return true;
         }
-        return invertible;
+
+        
+        if (!SkIsFinite(fMat[kMTransX], fMat[kMTransY])) {
+            
+            return false;
+        }
+
+        if (inv) {
+            inv->setTranslate(-fMat[kMTransX], -fMat[kMTransY]);
+        }
+        return true;
     }
 
     int    isPersp = mask & kPerspective_Mask;

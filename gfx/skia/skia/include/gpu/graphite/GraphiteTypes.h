@@ -30,6 +30,16 @@ class Task;
 using GpuFinishedContext = void*;
 using GpuFinishedProc = void (*)(GpuFinishedContext finishedContext, CallbackResult);
 
+using GpuFinishedWithStatsProc = void (*)(GpuFinishedContext finishedContext,
+                                          CallbackResult,
+                                          const GpuStats&);
+
+
+
+
+
+
+
 
 
 
@@ -74,8 +84,10 @@ struct InsertRecordingInfo {
     size_t fNumSignalSemaphores = 0;
     BackendSemaphore* fSignalSemaphores = nullptr;
 
+    GpuStatsFlags fGpuStatsFlags = GpuStatsFlags::kNone;
     GpuFinishedContext fFinishedContext = nullptr;
     GpuFinishedProc fFinishedProc = nullptr;
+    GpuFinishedWithStatsProc fFinishedWithStatsProc = nullptr;
 };
 
 
@@ -87,8 +99,15 @@ struct InsertRecordingInfo {
 
 
 struct InsertFinishInfo {
+    InsertFinishInfo() = default;
+    InsertFinishInfo(GpuFinishedContext context, GpuFinishedProc proc)
+            : fFinishedContext{context}, fFinishedProc{proc} {}
+    InsertFinishInfo(GpuFinishedContext context, GpuFinishedWithStatsProc proc)
+            : fFinishedContext{context}, fFinishedWithStatsProc{proc} {}
     GpuFinishedContext fFinishedContext = nullptr;
     GpuFinishedProc fFinishedProc = nullptr;
+    GpuFinishedWithStatsProc fFinishedWithStatsProc = nullptr;
+    GpuStatsFlags fGpuStatsFlags = GpuStatsFlags::kNone;
 };
 
 
@@ -121,31 +140,35 @@ enum class DepthStencilFlags : int {
 
 enum DrawTypeFlags : uint16_t {
 
-    kNone             = 0b000000000,
+    kNone             = 0,
 
     
-    kBitmapText_Mask  = 0b00000001,
+    kBitmapText_Mask  = 1 << 0,
     
-    kBitmapText_LCD   = 0b00000010,
+    kBitmapText_LCD   = 1 << 1,
     
-    kBitmapText_Color = 0b00000100,
+    kBitmapText_Color = 1 << 2,
     
-    kSDFText          = 0b00001000,
+    kSDFText          = 1 << 3,
     
-    kSDFText_LCD      = 0b00010000,
-
-    
-    
-    
-    
-    kDrawVertices     = 0b00100000,
+    kSDFText_LCD      = 1 << 4,
 
     
     
     
     
+    kDrawVertices     = 1 << 5,
+
     
-    kSimpleShape      = 0b01000000,
+    
+    
+    kCircularArc      = 1 << 6,
+
+    
+    
+    
+    
+    kSimpleShape      = 1 << 7,
 
     
     
@@ -154,11 +177,10 @@ enum DrawTypeFlags : uint16_t {
     
     
     
-    kNonSimpleShape   = 0b10000000,
+    kNonSimpleShape   = 1 << 8,
 
     kLast = kNonSimpleShape,
 };
-static constexpr int kDrawTypeFlagsCnt = static_cast<int>(DrawTypeFlags::kLast) + 1;
 
 } 
 

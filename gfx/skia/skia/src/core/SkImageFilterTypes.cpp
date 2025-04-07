@@ -99,7 +99,7 @@ void decompose_transform(const SkMatrix& transform, SkPoint representativePoint,
     } else {
         
         
-        SkScalar approxScale = SkMatrixPriv::DifferentialAreaScale(transform, representativePoint);
+        float approxScale = SkMatrixPriv::DifferentialAreaScale(transform, representativePoint);
         if (SkIsFinite(approxScale) && !SkScalarNearlyZero(approxScale)) {
             
             approxScale = SkScalarSqrt(approxScale);
@@ -107,8 +107,11 @@ void decompose_transform(const SkMatrix& transform, SkPoint representativePoint,
             
             approxScale = 1.f;
         }
-        *postScaling = transform;
-        postScaling->preScale(SkScalarInvert(approxScale), SkScalarInvert(approxScale));
+        if (postScaling) {
+            *postScaling = transform;
+            float invScale = SkScalarInvert(approxScale);
+            postScaling->preScale(invScale, invScale);
+        }
         *scaling = SkMatrix::Scale(approxScale, approxScale);
     }
 }
@@ -266,25 +269,33 @@ SkIRect RoundOut(SkRect r) { return r.makeInset(kRoundEpsilon, kRoundEpsilon).ro
 
 SkIRect RoundIn(SkRect r) { return r.makeOutset(kRoundEpsilon, kRoundEpsilon).roundIn(); }
 
-bool Mapping::decomposeCTM(const SkMatrix& ctm, MatrixCapability capability,
+bool Mapping::decomposeCTM(const SkM44& ctm, MatrixCapability capability,
                            const skif::ParameterSpace<SkPoint>& representativePt) {
-    SkMatrix remainder, layer;
+    SkM44 remainder{SkM44::kUninitialized_Constructor};
+    SkM44 layer{SkM44::kUninitialized_Constructor};
     if (capability == MatrixCapability::kTranslate) {
         
         remainder = ctm;
-        layer = SkMatrix::I();
-    } else if (ctm.isScaleTranslate() || capability == MatrixCapability::kComplex) {
+        layer = SkM44();
+    } else if (SkMatrixPriv::IsScaleTranslateAsM33(ctm) ||
+               capability == MatrixCapability::kComplex) {
         
         
-        remainder = SkMatrix::I();
+        remainder = SkM44();
         layer = ctm;
     } else {
         
         
-        decompose_transform(ctm, SkPoint(representativePt), &remainder, &layer);
+        SkMatrix layer33;
+        decompose_transform(ctm.asM33(), SkPoint(representativePt),
+                            nullptr, &layer33);
+        layer = SkM44(layer33);
+        
+        remainder = ctm;
+        remainder.preScale(1.f / layer.rc(0,0), 1.f / layer.rc(1,1));
     }
 
-    SkMatrix invRemainder;
+    SkM44 invRemainder;
     if (!remainder.invert(&invRemainder)) {
         
         
@@ -299,7 +310,7 @@ bool Mapping::decomposeCTM(const SkMatrix& ctm, MatrixCapability capability,
     }
 }
 
-bool Mapping::decomposeCTM(const SkMatrix& ctm,
+bool Mapping::decomposeCTM(const SkM44& ctm,
                            const SkImageFilter* filter,
                            const skif::ParameterSpace<SkPoint>& representativePt) {
     return this->decomposeCTM(
@@ -308,8 +319,8 @@ bool Mapping::decomposeCTM(const SkMatrix& ctm,
             representativePt);
 }
 
-bool Mapping::adjustLayerSpace(const SkMatrix& layer) {
-    SkMatrix invLayer;
+bool Mapping::adjustLayerSpace(const SkM44& layer) {
+    SkM44 invLayer;
     if (!layer.invert(&invLayer)) {
         return false;
     }
@@ -592,7 +603,7 @@ public:
         }
 
         if (renderInParameterSpace) {
-            fCanvas->concat(SkMatrix(ctx.mapping().layerMatrix()));
+            fCanvas->concat(ctx.mapping().layerMatrix());
         }
     }
 
@@ -1065,11 +1076,15 @@ static bool compatible_sampling(const SkSamplingOptions& currentSampling,
 }
 
 FilterResult FilterResult::applyTransform(const Context& ctx,
-                                          const LayerSpace<SkMatrix> &transform,
+                                          const LayerSpace<SkMatrix>& transform,
                                           const SkSamplingOptions &sampling) const {
     if (!fImage || ctx.desiredOutput().isEmpty()) {
         
         SkASSERT(!fColorFilter);
+        return {};
+    }
+
+    if (!transform.invert(nullptr)) {
         return {};
     }
 
@@ -1974,9 +1989,8 @@ FilterResult FilterResult::MakeFromImage(const Context& ctx,
         
         skif::FilterResult subset{std::move(specialImage),
                                   skif::LayerSpace<SkIPoint>(srcSubset.topLeft())};
-        SkMatrix transform = SkMatrix::Concat(ctx.mapping().layerMatrix(),
-                                              SkMatrix::RectToRect(srcRect, SkRect(dstRect)));
-        return subset.applyTransform(ctx, skif::LayerSpace<SkMatrix>(transform), sampling);
+        SkM44 transform = ctx.mapping().layerMatrix() * SkM44::RectToRect(srcRect, SkRect(dstRect));
+        return subset.applyTransform(ctx, skif::LayerSpace<SkMatrix>(transform.asM33()), sampling);
     }
 
     
@@ -2012,7 +2026,7 @@ SkSpan<sk_sp<SkShader>> FilterResult::Builder::createInputShaders(
         
         
         
-        SkAssertResult(fContext.mapping().layerMatrix().invert(&layerToParam));
+        SkAssertResult(fContext.mapping().layerMatrix().asM33().invert(&layerToParam));
         
         
         if (!is_nearly_integer_translation(LayerSpace<SkMatrix>(layerToParam))) {
@@ -2166,13 +2180,12 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
 
     
     
-    PixelSpace<SkMatrix> layerToLowRes;
-    SkAssertResult(lowResImage.fTransform.invert(&layerToLowRes));
-    PixelSpace<SkSize> lowResSigma = layerToLowRes.mapSize(sigma);
     
     
-    lowResSigma = PixelSpace<SkSize>{{std::min(algorithm->maxSigma(), lowResSigma.width()),
-                                      std::min(algorithm->maxSigma(), lowResSigma.height())}};
+    const float invScaleX = sk_ieee_float_divide(1.f, lowResImage.fTransform.rc(0,0));
+    const float invScaleY = sk_ieee_float_divide(1.f, lowResImage.fTransform.rc(1,1));
+    PixelSpace<SkSize> lowResSigma{{std::min(sigma.width() * invScaleX, algorithm->maxSigma()),
+                                    std::min(sigma.height()* invScaleY, algorithm->maxSigma())}};
     PixelSpace<SkIRect> lowResMaxOutput{SkISize{lowResImage.fImage->width(),
                                                 lowResImage.fImage->height()}};
 
@@ -2185,7 +2198,7 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
     } else {
         
         
-        srcRelativeOutput = layerToLowRes.mapRect(outputBounds);
+        SkAssertResult(lowResImage.fTransform.inverseMapRect(outputBounds, &srcRelativeOutput));
 
         
         
@@ -2193,9 +2206,15 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
                                                    3.f * lowResSigma.height()}).ceil());
         srcRelativeOutput = lowResMaxOutput.relevantSubset(srcRelativeOutput,
                                                            lowResImage.tileMode());
+
         
         
-        SkASSERT(!srcRelativeOutput.isEmpty());
+        
+        
+        
+        if (srcRelativeOutput.isEmpty()) {
+            return {};
+        }
 
         
         

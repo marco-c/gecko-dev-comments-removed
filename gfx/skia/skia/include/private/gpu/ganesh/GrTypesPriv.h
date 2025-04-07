@@ -539,7 +539,7 @@ SK_MAKE_BITFIELD_CLASS_OPS(GpuPathRenderers)
 enum class GrColorType {
     kUnknown,
     kAlpha_8,
-    kBGR_565,
+    kBGR_565,    
     kRGB_565,
     kABGR_4444,  
     kRGBA_8888,

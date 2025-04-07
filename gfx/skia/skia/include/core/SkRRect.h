@@ -13,6 +13,7 @@
 #include "include/core/SkScalar.h"
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
+#include "include/private/base/SkMacros.h"
 
 #include <cstdint>
 #include <cstring>
@@ -33,6 +34,7 @@ class SkString;
 
 
 
+SK_BEGIN_REQUIRE_DENSE
 class SK_API SkRRect {
 public:
 
@@ -511,11 +513,11 @@ private:
     SkVector fRadii[4] = {{0, 0}, {0, 0}, {0,0}, {0,0}};
     
     int32_t fType = kEmpty_Type;
-    
 
     
     friend class SkPath;
     friend class SkRRectPriv;
 };
+SK_END_REQUIRE_DENSE
 
 #endif

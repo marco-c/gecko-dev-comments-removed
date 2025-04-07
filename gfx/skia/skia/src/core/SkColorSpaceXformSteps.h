@@ -46,11 +46,11 @@ struct SkColorSpaceXformSteps {
     void apply(float rgba[4]) const;
     void apply(SkRasterPipeline*) const;
 
-    Flags flags;
+    Flags fFlags;
 
-    skcms_TransferFunction srcTF,     
-                           dstTFInv;  
-    float src_to_dst_matrix[9];       
+    skcms_TransferFunction fSrcTF,     
+                           fDstTFInv;  
+    float fSrcToDstMatrix[9];          
 };
 
 #endif

@@ -82,7 +82,7 @@ private:
                                                &realname,
                                                &style,
                                                &isFixedPitch,
-                                               nullptr)) {
+                                               nullptr, nullptr)) {
                         
                         
                         continue;

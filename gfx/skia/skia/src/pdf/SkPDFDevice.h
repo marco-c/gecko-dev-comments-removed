@@ -124,10 +124,6 @@ public:
 
     const SkMatrix& initialTransform() const { return fInitialTransform; }
 
-protected:
-    sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&) override;
-    sk_sp<SkSpecialImage> makeSpecial(const SkImage*) override;
-
 private:
     
     
@@ -175,6 +171,7 @@ private:
         SkDynamicMemoryWStream* fOut;
         SkPDFStructTree::Mark fCurrentlyActiveMark;
         int fNextMarksElemId;
+        int fCurrentMarksElemId;
         bool fMadeMarks;
     } fMarkManager;
 

@@ -350,9 +350,17 @@ SkCTFontWeightMapping& SkCTFontGetDataFontWeightMapping() {
         SkOTTableOS2_V0* os2Table = SkTAddOffset<SkOTTableOS2_V0>(data->writable_data(),
                                                                   os2TableOffset);
 
+        
+        
+        
+        constexpr int kLowestUsefulWeightClassValue = 11;
         CGFloat previousWeight = -CGFLOAT_MAX;
         for (int i = 0; i < 11; ++i) {
-            os2Table->usWeightClass.value = SkEndian_SwapBE16(i * 100);
+            if (i == 0) {
+                os2Table->usWeightClass.value = SkEndian_SwapBE16(kLowestUsefulWeightClassValue);
+            } else {
+                os2Table->usWeightClass.value = SkEndian_SwapBE16(i * 100);
+            }
 
             
             
@@ -417,6 +425,9 @@ SkCTFontWeightMapping& SkCTFontGetDataFontWeightMapping() {
             previousWeight = weight;
             dataFontWeights[i] = weight;
         }
+        CGFloat slope = (dataFontWeights[1] - dataFontWeights[0]) /
+                        (100 - kLowestUsefulWeightClassValue);
+        dataFontWeights[0] = dataFontWeights[1] - (slope * (100 - 0));
         selectedDataFontWeights = &dataFontWeights;
     });
     return *selectedDataFontWeights;

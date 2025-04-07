@@ -8,12 +8,13 @@
 #ifndef SkCodecPriv_DEFINED
 #define SkCodecPriv_DEFINED
 
+#include "include/codec/SkCodec.h"
 #include "include/codec/SkEncodedOrigin.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkColorData.h"
 #include "include/private/SkEncodedInfo.h"
 #include "src/codec/SkColorPalette.h"
+#include "src/core/SkColorData.h"
 #include "src/base/SkEndian.h"
 
 #include <string_view>
@@ -24,240 +25,244 @@
     #define SkCodecPrintf(...)
 #endif
 
-
-bool sk_select_xform_format(SkColorType colorType, bool forColorTable,
-                            skcms_PixelFormat* outFormat);
-
-
-static inline float get_scale_from_sample_size(int sampleSize) {
-    return 1.0f / ((float) sampleSize);
-}
-
-static inline bool is_valid_subset(const SkIRect& subset, const SkISize& imageDims) {
-    return SkIRect::MakeSize(imageDims).contains(subset);
-}
-
-
-
-
-
-
-static inline int get_scaled_dimension(int srcDimension, int sampleSize) {
-    if (sampleSize > srcDimension) {
-        return 1;
-    }
-    return srcDimension / sampleSize;
-}
-
-
-
-
-
-
-
-static inline int get_start_coord(int sampleFactor) { return sampleFactor / 2; }
-
-
-
-
-
-
-
-
-
-static inline int get_dst_coord(int srcCoord, int sampleFactor) { return srcCoord / sampleFactor; }
-
-
-
-
-
-
-
-
-
-static inline bool is_coord_necessary(int srcCoord, int sampleFactor, int scaledDim) {
-    
-    int startCoord = get_start_coord(sampleFactor);
-
-    
-    if (srcCoord < startCoord || get_dst_coord(srcCoord, sampleFactor) >= scaledDim) {
-        return false;
-    }
-
-    
-    return ((srcCoord - startCoord) % sampleFactor) == 0;
-}
-
-static inline bool valid_alpha(SkAlphaType dstAlpha, bool srcIsOpaque) {
-    if (kUnknown_SkAlphaType == dstAlpha) {
-        return false;
-    }
-
-    if (srcIsOpaque) {
-        if (kOpaque_SkAlphaType != dstAlpha) {
-            SkCodecPrintf("Warning: an opaque image should be decoded as opaque "
-                          "- it is being decoded as non-opaque, which will draw slower\n");
-        }
-        return true;
-    }
-
-    return dstAlpha != kOpaque_SkAlphaType;
-}
-
-
-
-
-static inline const SkPMColor* get_color_ptr(SkColorPalette* colorTable) {
-     return nullptr != colorTable ? colorTable->readColors() : nullptr;
-}
-
-
-
-
-static inline size_t compute_row_bytes_ppb(int width, uint32_t pixelsPerByte) {
-    return (width + pixelsPerByte - 1) / pixelsPerByte;
-}
-
-
-
-
-static inline size_t compute_row_bytes_bpp(int width, uint32_t bytesPerPixel) {
-    return width * bytesPerPixel;
-}
-
-
-
-
-static inline size_t compute_row_bytes(int width, uint32_t bitsPerPixel) {
-    if (bitsPerPixel < 16) {
-        SkASSERT(0 == 8 % bitsPerPixel);
-        const uint32_t pixelsPerByte = 8 / bitsPerPixel;
-        return compute_row_bytes_ppb(width, pixelsPerByte);
-    } else {
-        SkASSERT(0 == bitsPerPixel % 8);
-        const uint32_t bytesPerPixel = bitsPerPixel / 8;
-        return compute_row_bytes_bpp(width, bytesPerPixel);
-    }
-}
-
-
-
-
-
-static inline uint8_t get_byte(const uint8_t* buffer, uint32_t i) {
-    return buffer[i];
-}
-
-
-
-
-
-static inline uint16_t get_short(const uint8_t* buffer, uint32_t i) {
-    uint16_t result;
-    memcpy(&result, &(buffer[i]), 2);
-#ifdef SK_CPU_BENDIAN
-    return SkEndianSwap16(result);
-#else
-    return result;
-#endif
-}
-
-
-
-
-
-static inline uint32_t get_int(const uint8_t* buffer, uint32_t i) {
-    uint32_t result;
-    memcpy(&result, &(buffer[i]), 4);
-#ifdef SK_CPU_BENDIAN
-    return SkEndianSwap32(result);
-#else
-    return result;
-#endif
-}
-
-
-
-
-
-
-
-static inline bool is_valid_endian_marker(const uint8_t* data, bool* isLittleEndian) {
-    
-    if (('I' != data[0] || 'I' != data[1]) && ('M' != data[0] || 'M' != data[1])) {
-        return false;
-    }
-
-    *isLittleEndian = ('I' == data[0]);
-    return true;
-}
-
-static inline uint16_t get_endian_short(const uint8_t* data, bool littleEndian) {
-    if (littleEndian) {
-        return (data[1] << 8) | (data[0]);
-    }
-
-    return (data[0] << 8) | (data[1]);
-}
-
-static inline uint32_t get_endian_int(const uint8_t* data, bool littleEndian) {
-    if (littleEndian) {
-        return (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | (data[0]);
-    }
-
-    return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
-}
-
-static inline SkPMColor premultiply_argb_as_rgba(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
-    if (a != 255) {
-        r = SkMulDiv255Round(r, a);
-        g = SkMulDiv255Round(g, a);
-        b = SkMulDiv255Round(b, a);
-    }
-
-    return SkPackARGB_as_RGBA(a, r, g, b);
-}
-
-static inline SkPMColor premultiply_argb_as_bgra(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
-    if (a != 255) {
-        r = SkMulDiv255Round(r, a);
-        g = SkMulDiv255Round(g, a);
-        b = SkMulDiv255Round(b, a);
-    }
-
-    return SkPackARGB_as_BGRA(a, r, g, b);
-}
-
-static inline bool is_rgba(SkColorType colorType) {
-#ifdef SK_PMCOLOR_IS_RGBA
-    return (kBGRA_8888_SkColorType != colorType);
-#else
-    return (kRGBA_8888_SkColorType == colorType);
-#endif
-}
-
-
-typedef uint32_t (*PackColorProc)(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
-
-static inline PackColorProc choose_pack_color_proc(bool isPremul, SkColorType colorType) {
-    bool isRGBA = is_rgba(colorType);
-    if (isPremul) {
-        if (isRGBA) {
-            return &premultiply_argb_as_rgba;
-        } else {
-            return &premultiply_argb_as_bgra;
-        }
-    } else {
-        if (isRGBA) {
-            return &SkPackARGB_as_RGBA;
-        } else {
-            return &SkPackARGB_as_BGRA;
-        }
-    }
-}
-
 namespace SkCodecs {
 bool HasDecoder(std::string_view id);
 }
+
+class SkCodecPriv final {
+public:
+    static const SkEncodedInfo& GetEncodedInfo(const SkCodec* codec) {
+        SkASSERT(codec);
+        return codec->getEncodedInfo();
+    }
+
+    static bool SelectXformFormat(SkColorType colorType,
+                                  bool forColorTable,
+                                  skcms_PixelFormat* outFormat);
+
+    
+    static float GetScaleFromSampleSize(int sampleSize) { return 1.0f / ((float)sampleSize); }
+
+    static bool IsValidSubset(const SkIRect& subset, const SkISize& imageDims) {
+        return SkIRect::MakeSize(imageDims).contains(subset);
+    }
+
+    
+
+
+
+    static int GetSampledDimension(int srcDimension, int sampleSize) {
+        if (sampleSize > srcDimension) {
+            return 1;
+        }
+        return srcDimension / sampleSize;
+    }
+
+    
+
+
+
+
+
+    static int GetStartCoord(int sampleFactor) { return sampleFactor / 2; }
+
+    
+
+
+
+
+
+
+
+    static int GetDstCoord(int srcCoord, int sampleFactor) { return srcCoord / sampleFactor; }
+
+    
+
+
+
+
+
+
+
+    static bool IsCoordNecessary(int srcCoord, int sampleFactor, int scaledDim) {
+        
+        int startCoord = GetStartCoord(sampleFactor);
+
+        
+        if (srcCoord < startCoord || GetDstCoord(srcCoord, sampleFactor) >= scaledDim) {
+            return false;
+        }
+
+        
+        return ((srcCoord - startCoord) % sampleFactor) == 0;
+    }
+
+    static bool ValidAlpha(SkAlphaType dstAlpha, bool srcIsOpaque) {
+        if (kUnknown_SkAlphaType == dstAlpha) {
+            return false;
+        }
+
+        if (srcIsOpaque) {
+            if (kOpaque_SkAlphaType != dstAlpha) {
+                SkCodecPrintf(
+                        "Warning: an opaque image should be decoded as opaque "
+                        "- it is being decoded as non-opaque, which will draw slower\n");
+            }
+            return true;
+        }
+
+        return dstAlpha != kOpaque_SkAlphaType;
+    }
+
+    
+
+
+    static const SkPMColor* GetColorPtr(SkColorPalette* colorTable) {
+        return nullptr != colorTable ? colorTable->readColors() : nullptr;
+    }
+
+    
+
+
+    static size_t ComputeRowBytesPixelsPerByte(int width, uint32_t pixelsPerByte) {
+        return (width + pixelsPerByte - 1) / pixelsPerByte;
+    }
+
+    
+
+
+    static size_t ComputeRowBytesBytesPerPixel(int width, uint32_t bytesPerPixel) {
+        return width * bytesPerPixel;
+    }
+
+    
+
+
+    static size_t ComputeRowBytes(int width, uint32_t bitsPerPixel) {
+        if (bitsPerPixel < 16) {
+            SkASSERT(0 == 8 % bitsPerPixel);
+            const uint32_t pixelsPerByte = 8 / bitsPerPixel;
+            return ComputeRowBytesPixelsPerByte(width, pixelsPerByte);
+        } else {
+            SkASSERT(0 == bitsPerPixel % 8);
+            const uint32_t bytesPerPixel = bitsPerPixel / 8;
+            return ComputeRowBytesBytesPerPixel(width, bytesPerPixel);
+        }
+    }
+
+    
+
+
+
+    static uint8_t UnsafeGetByte(const uint8_t* buffer, uint32_t i) { return buffer[i]; }
+
+    
+
+
+
+    static uint16_t UnsafeGetShort(const uint8_t* buffer, uint32_t i) {
+        uint16_t result;
+        memcpy(&result, &(buffer[i]), 2);
+#ifdef SK_CPU_BENDIAN
+        return SkEndianSwap16(result);
+#else
+        return result;
+#endif
+    }
+
+    
+
+
+
+    static uint32_t UnsafeGetInt(const uint8_t* buffer, uint32_t i) {
+        uint32_t result;
+        memcpy(&result, &(buffer[i]), 4);
+#ifdef SK_CPU_BENDIAN
+        return SkEndianSwap32(result);
+#else
+        return result;
+#endif
+    }
+
+    
+
+
+
+
+
+    static bool IsValidEndianMarker(const uint8_t* data, bool* isLittleEndian) {
+        
+        if (('I' != data[0] || 'I' != data[1]) && ('M' != data[0] || 'M' != data[1])) {
+            return false;
+        }
+
+        *isLittleEndian = ('I' == data[0]);
+        return true;
+    }
+
+    static uint16_t GetEndianShort(const uint8_t* data, bool littleEndian) {
+        if (littleEndian) {
+            return (data[1] << 8) | (data[0]);
+        }
+
+        return (data[0] << 8) | (data[1]);
+    }
+
+    static uint32_t GetEndianInt(const uint8_t* data, bool littleEndian) {
+        if (littleEndian) {
+            return (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | (data[0]);
+        }
+
+        return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
+    }
+
+    static SkPMColor PremultiplyARGBasRGBA(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
+        if (a != 255) {
+            r = SkMulDiv255Round(r, a);
+            g = SkMulDiv255Round(g, a);
+            b = SkMulDiv255Round(b, a);
+        }
+
+        return SkPackARGB_as_RGBA(a, r, g, b);
+    }
+
+    static SkPMColor PremultiplyARGBasBGRA(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
+        if (a != 255) {
+            r = SkMulDiv255Round(r, a);
+            g = SkMulDiv255Round(g, a);
+            b = SkMulDiv255Round(b, a);
+        }
+
+        return SkPackARGB_as_BGRA(a, r, g, b);
+    }
+
+    static bool IsRGBA(SkColorType colorType) {
+#ifdef SK_PMCOLOR_IS_RGBA
+        return (kBGRA_8888_SkColorType != colorType);
+#else
+        return (kRGBA_8888_SkColorType == colorType);
+#endif
+    }
+
+    
+    using PackColorProc = uint32_t (*)(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
+
+    static PackColorProc ChoosePackColorProc(bool isPremul, SkColorType colorType) {
+        bool isRGBA = IsRGBA(colorType);
+        if (isPremul) {
+            if (isRGBA) {
+                return &PremultiplyARGBasRGBA;
+            } else {
+                return &PremultiplyARGBasBGRA;
+            }
+        } else {
+            if (isRGBA) {
+                return &SkPackARGB_as_RGBA;
+            } else {
+                return &SkPackARGB_as_BGRA;
+            }
+        }
+    }
+};
 
 #endif 

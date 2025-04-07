@@ -29,6 +29,10 @@ namespace skia_private {
 
 
 
+
+
+
+
 template <typename T, typename K, typename Traits = T>
 class THashTable {
 public:
@@ -98,7 +102,13 @@ public:
     
     
     T* set(T val) {
-        if (4 * fCount >= 3 * fCapacity) {
+        bool shouldGrow = false;
+        if constexpr (HasShouldGrow<Traits>::value) {
+            shouldGrow = Traits::ShouldGrow(fCount, fCapacity);
+        } else {
+            shouldGrow = (4 * fCount >= 3 * fCapacity);
+        }
+        if (shouldGrow) {
             this->resize(fCapacity > 0 ? fCapacity * 2 : 4);
         }
         return this->uncheckedSet(std::move(val));
@@ -143,8 +153,16 @@ public:
             }
             if (hash == s.fHash && key == Traits::GetKey(*s)) {
                 this->removeSlot(index);
-                if (4 * fCount <= fCapacity && fCapacity > 4) {
-                    this->resize(fCapacity / 2);
+                if (fCapacity > 4) {
+                    bool shouldShrink = false;
+                    if constexpr (HasShouldShrink<Traits>::value) {
+                        shouldShrink = Traits::ShouldShrink(fCount, fCapacity);
+                    } else {
+                        shouldShrink = (4 * fCount <= fCapacity);
+                    }
+                    if (shouldShrink) {
+                        this->resize(fCapacity / 2);
+                    }
                 }
                 return true;
             }
@@ -192,7 +210,14 @@ public:
     
     void reserve(int n) {
         int newCapacity = SkNextPow2(n);
-        if (n * 4 > newCapacity * 3) {
+
+        bool shouldGrow = false;
+        if constexpr (HasShouldGrow<Traits>::value) {
+            shouldGrow = Traits::ShouldGrow(n, newCapacity);
+        } else {
+            shouldGrow = (n * 4 > newCapacity * 3);
+        }
+        if (shouldGrow) {
             newCapacity *= 2;
         }
 
@@ -274,6 +299,27 @@ public:
     };
 
 private:
+    template <typename U, typename = void> struct HasShouldGrow : std::false_type {};
+    template <typename U, typename = void> struct HasShouldShrink : std::false_type {};
+
+    template <typename U>
+    struct HasShouldGrow<
+            U,
+            std::void_t<decltype(U::ShouldGrow(std::declval<int>(), std::declval<int>()))>>
+            : std::true_type {
+        static_assert(HasShouldShrink<U>::value,
+                      "The traits class must also provide ShouldShrink() method.");
+    };
+
+    template <typename U>
+    struct HasShouldShrink<
+            U,
+            std::void_t<decltype(U::ShouldShrink(std::declval<int>(), std::declval<int>()))>>
+            : std::true_type {
+        static_assert(HasShouldGrow<U>::value,
+                      "The traits class must also provide ShouldGrow() method.");
+    };
+
     
     int firstPopulatedSlot() const {
         for (int i = 0; i < fCapacity; i++) {

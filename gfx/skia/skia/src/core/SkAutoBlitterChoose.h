@@ -25,15 +25,17 @@ public:
     SkAutoBlitterChoose(const SkDrawBase& draw,
                         const SkMatrix* ctm,
                         const SkPaint& paint,
-                        bool drawCoverage = false) {
+                        SkDrawCoverage drawCoverage = SkDrawCoverage::kNo) {
         this->choose(draw, ctm, paint, drawCoverage);
     }
 
     SkBlitter*  operator->() { return fBlitter; }
     SkBlitter*  get() const { return fBlitter; }
 
-    SkBlitter* choose(const SkDrawBase& draw, const SkMatrix* ctm,
-                      const SkPaint& paint, bool drawCoverage = false) {
+    SkBlitter* choose(const SkDrawBase& draw,
+                      const SkMatrix* ctm,
+                      const SkPaint& paint,
+                      SkDrawCoverage drawCoverage = SkDrawCoverage::kNo) {
         SkASSERT(!fBlitter);
         fBlitter = draw.fBlitterChooser(draw.fDst,
                                         ctm ? *ctm : *draw.fCTM,
@@ -49,7 +51,14 @@ private:
     
     SkBlitter* fBlitter = nullptr;
 
-    SkSTArenaAlloc<kSkBlitterContextSize> fAlloc;
+    
+    
+    
+    
+    
+    
+    static constexpr size_t kStackMemory = 2736;
+    SkSTArenaAlloc<kStackMemory> fAlloc;
 };
 
 #endif

@@ -769,9 +769,12 @@ public:
 
         PassMaker* makerX = makeMaker(sigma.width());
         PassMaker* makerY = makeMaker(sigma.height());
+
+#if !defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
         
         
         SkASSERT(makerX->window() > 1 || makerY->window() > 1);
+#endif
 
         SkIRect srcBounds = originalSrcBounds;
         SkIRect dstBounds = originalDstBounds;
@@ -860,6 +863,15 @@ public:
             }
         }
 
+#if defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
+        
+        if (makerX->window() == 1 && makerY->window() == 1) {
+            dst.writePixels(src.pixmap(),
+                            srcBounds.left() - dstBounds.left(),
+                            srcBounds.top()  - dstBounds.top());
+        }
+#endif
+
         dstBounds = originalDstBounds.makeOffset(-dstOrigin); 
         return SkSpecialImages::MakeFromRaster(dstBounds, dst, SkSurfaceProps{});
     }
@@ -879,11 +891,17 @@ public:
 class RasterBlurEngine : public SkBlurEngine {
 public:
     const Algorithm* findAlgorithm(SkSize sigma,  SkColorType colorType) const override {
+#if defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
+        
+        
+        static constexpr float kBoxBlurMinSigma = 0.f;
+#else
         static constexpr float kBoxBlurMinSigma = 2.f;
 
         
         
         SkASSERT(SkBlurEngine::BoxBlurWindow(kBoxBlurMinSigma) > 1);
+#endif
 
         
         

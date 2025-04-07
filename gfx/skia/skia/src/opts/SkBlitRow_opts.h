@@ -8,9 +8,9 @@
 #ifndef SkBlitRow_opts_DEFINED
 #define SkBlitRow_opts_DEFINED
 
-#include "include/private/SkColorData.h"
 #include "src/base/SkMSAN.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkColorData.h"
 
 
 
@@ -246,18 +246,21 @@ inline void blit_row_color32(SkPMColor* dst, int count, SkPMColor color) {
     using U16 = skvx::Vec<4*N, uint16_t>;
     using U8  = skvx::Vec<4*N, uint8_t>;
 
+    
     auto kernel = [color](U32 src) {
-        unsigned invA = 255 - SkGetPackedA32(color);
-        invA += invA >> 7;
+        unsigned invA = SkAlpha255To256(255 - SkGetPackedA32(color));
         SkASSERT(0 < invA && invA < 256);  
 
+        
+        
+        
         
         
         U8 s = sk_bit_cast<U8>(src),
            a = U8(invA);
         U16 c = skvx::cast<uint16_t>(sk_bit_cast<U8>(U32(color))),
-            d = (mull(s,a) + (c << 8) + 128)>>8;
-        return sk_bit_cast<U32>(skvx::cast<uint8_t>(d));
+            r = (mull(s,a) >> 8) + c;
+        return sk_bit_cast<U32>(skvx::cast<uint8_t>(r));
     };
 
     while (count >= N) {

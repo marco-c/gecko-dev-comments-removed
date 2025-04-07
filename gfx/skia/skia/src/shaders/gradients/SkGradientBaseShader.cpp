@@ -15,15 +15,16 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkShader.h"
 #include "include/core/SkTileMode.h"
-#include "include/private/SkColorData.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkTArray.h"
 #include "include/private/base/SkTPin.h"
 #include "include/private/base/SkTo.h"
+#include "modules/skcms/skcms.h"
 #include "src/base/SkArenaAlloc.h"
 #include "src/base/SkFloatBits.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkColorData.h"
 #include "src/core/SkColorSpacePriv.h"
 #include "src/core/SkColorSpaceXformSteps.h"
 #include "src/core/SkConvertPixels.h"
@@ -302,71 +303,81 @@ SkGradientBaseShader::SkGradientBaseShader(const Descriptor& desc, const SkMatri
 
 SkGradientBaseShader::~SkGradientBaseShader() {}
 
-static void add_stop_color(SkRasterPipeline_GradientCtx* ctx,
+static void add_stop_color(SkRasterPipelineContexts::GradientCtx* ctx,
                            size_t stop,
-                           SkPMColor4f Fs,
-                           SkPMColor4f Bs) {
-    (ctx->fs[0])[stop] = Fs.fR;
-    (ctx->fs[1])[stop] = Fs.fG;
-    (ctx->fs[2])[stop] = Fs.fB;
-    (ctx->fs[3])[stop] = Fs.fA;
+                           const SkPMColor4f& Fs,
+                           const SkPMColor4f& Bs) {
+    (ctx->factors[0])[stop] = Fs.fR;
+    (ctx->factors[1])[stop] = Fs.fG;
+    (ctx->factors[2])[stop] = Fs.fB;
+    (ctx->factors[3])[stop] = Fs.fA;
 
-    (ctx->bs[0])[stop] = Bs.fR;
-    (ctx->bs[1])[stop] = Bs.fG;
-    (ctx->bs[2])[stop] = Bs.fB;
-    (ctx->bs[3])[stop] = Bs.fA;
+    (ctx->biases[0])[stop] = Bs.fR;
+    (ctx->biases[1])[stop] = Bs.fG;
+    (ctx->biases[2])[stop] = Bs.fB;
+    (ctx->biases[3])[stop] = Bs.fA;
 }
 
-static void add_const_color(SkRasterPipeline_GradientCtx* ctx, size_t stop, SkPMColor4f color) {
+static void add_const_color(SkRasterPipelineContexts::GradientCtx* ctx,
+                            size_t stop,
+                            const SkPMColor4f& color) {
     add_stop_color(ctx, stop, {0, 0, 0, 0}, color);
 }
 
 
 
-static void init_stop_evenly(SkRasterPipeline_GradientCtx* ctx,
+
+static void init_stop_evenly(SkRasterPipelineContexts::GradientCtx* ctx,
                              float gapCount,
                              size_t stop,
-                             SkPMColor4f c_l,
-                             SkPMColor4f c_r) {
+                             const SkPMColor4f& leftC,
+                             const SkPMColor4f& rightC) {
+    auto left = skvx::float4::Load(leftC.vec());
+    auto right = skvx::float4::Load(rightC.vec());
+
+    SkPMColor4f factor, bias;
+
     
-    SkPMColor4f Fs = {
-            (c_r.fR - c_l.fR) * gapCount,
-            (c_r.fG - c_l.fG) * gapCount,
-            (c_r.fB - c_l.fB) * gapCount,
-            (c_r.fA - c_l.fA) * gapCount,
-    };
-    SkPMColor4f Bs = {
-            c_l.fR - Fs.fR * (stop / gapCount),
-            c_l.fG - Fs.fG * (stop / gapCount),
-            c_l.fB - Fs.fB * (stop / gapCount),
-            c_l.fA - Fs.fA * (stop / gapCount),
-    };
-    add_stop_color(ctx, stop, Fs, Bs);
+    
+    
+    
+    
+
+    
+    
+    
+    auto factor4 = ((right - left) * gapCount);
+    (left - (factor4 * (stop / gapCount))).store(bias.vec());
+    factor4.store(factor.vec());
+
+    add_stop_color(ctx, stop, factor, bias);
 }
 
 
 
-static void init_stop_pos(SkRasterPipeline_GradientCtx* ctx,
+static void init_stop_pos(SkRasterPipelineContexts::GradientCtx* ctx,
                           size_t stop,
                           float t_l,
-                          float c_scale,
-                          SkPMColor4f c_l,
-                          SkPMColor4f c_r) {
+                          float gapReciprocal,
+                          const SkPMColor4f& leftC,
+                          const SkPMColor4f& rightC) {
     
-    SkPMColor4f Fs = {
-            (c_r.fR - c_l.fR) * c_scale,
-            (c_r.fG - c_l.fG) * c_scale,
-            (c_r.fB - c_l.fB) * c_scale,
-            (c_r.fA - c_l.fA) * c_scale,
-    };
-    SkPMColor4f Bs = {
-            c_l.fR - Fs.fR * t_l,
-            c_l.fG - Fs.fG * t_l,
-            c_l.fB - Fs.fB * t_l,
-            c_l.fA - Fs.fA * t_l,
-    };
+    
+    SkASSERT(SkIsFinite(gapReciprocal));
+
+    auto left = skvx::float4::Load(leftC.vec());
+    auto right = skvx::float4::Load(rightC.vec());
+
+    SkPMColor4f factor, bias;
+
+    
+    
+    auto factor4 = ((right - left) * gapReciprocal);
+    (left - (factor4 * t_l)).store(bias.vec());
+    factor4.store(factor.vec());
+
     ctx->ts[stop] = t_l;
-    add_stop_color(ctx, stop, Fs, Bs);
+    add_stop_color(ctx, stop, factor, bias);
 }
 
 void SkGradientBaseShader::AppendGradientFillStages(SkRasterPipeline* p,
@@ -378,83 +389,104 @@ void SkGradientBaseShader::AppendGradientFillStages(SkRasterPipeline* p,
     if (count == 2 && positions == nullptr) {
         const SkPMColor4f c_l = pmColors[0], c_r = pmColors[1];
 
-        
-        auto ctx = alloc->make<SkRasterPipeline_EvenlySpaced2StopGradientCtx>();
-        (skvx::float4::Load(c_r.vec()) - skvx::float4::Load(c_l.vec())).store(ctx->f);
-        (skvx::float4::Load(c_l.vec())).store(ctx->b);
+        auto ctx = alloc->make<SkRasterPipelineContexts::EvenlySpaced2StopGradientCtx>();
+        (skvx::float4::Load(c_r.vec()) - skvx::float4::Load(c_l.vec())).store(ctx->factor);
+        (skvx::float4::Load(c_l.vec())).store(ctx->bias);
 
         p->append(SkRasterPipelineOp::evenly_spaced_2_stop_gradient, ctx);
-    } else {
-        auto* ctx = alloc->make<SkRasterPipeline_GradientCtx>();
-
-        
-        
-        for (int i = 0; i < 4; i++) {
-            
-            ctx->fs[i] = alloc->makeArray<float>(std::max(count + 1, 8));
-            ctx->bs[i] = alloc->makeArray<float>(std::max(count + 1, 8));
-        }
-
-        if (positions == nullptr) {
-            
-
-            size_t stopCount = count;
-            float gapCount = stopCount - 1;
-
-            SkPMColor4f c_l = pmColors[0];
-            for (size_t i = 0; i < stopCount - 1; i++) {
-                SkPMColor4f c_r = pmColors[i + 1];
-                init_stop_evenly(ctx, gapCount, i, c_l, c_r);
-                c_l = c_r;
-            }
-            add_const_color(ctx, stopCount - 1, c_l);
-
-            ctx->stopCount = stopCount;
-            p->append(SkRasterPipelineOp::evenly_spaced_gradient, ctx);
-        } else {
-            
-
-            ctx->ts = alloc->makeArray<float>(count + 1);
-
-            
-            
-            int firstStop;
-            int lastStop;
-            if (count > 2) {
-                firstStop = pmColors[0] != pmColors[1] ? 0 : 1;
-                lastStop = pmColors[count - 2] != pmColors[count - 1] ? count - 1 : count - 2;
-            } else {
-                firstStop = 0;
-                lastStop = 1;
-            }
-
-            size_t stopCount = 0;
-            float t_l = positions[firstStop];
-            SkPMColor4f c_l = pmColors[firstStop];
-            add_const_color(ctx, stopCount++, c_l);
-            
-            for (int i = firstStop; i < lastStop; i++) {
-                float t_r = positions[i + 1];
-                SkPMColor4f c_r = pmColors[i + 1];
-                SkASSERT(t_l <= t_r);
-                if (t_l < t_r) {
-                    float c_scale = sk_ieee_float_divide(1, t_r - t_l);
-                    if (SkIsFinite(c_scale)) {
-                        init_stop_pos(ctx, stopCount, t_l, c_scale, c_l, c_r);
-                        stopCount += 1;
-                    }
-                }
-                t_l = t_r;
-                c_l = c_r;
-            }
-
-            ctx->ts[stopCount] = t_l;
-            add_const_color(ctx, stopCount++, c_l);
-
-            ctx->stopCount = stopCount;
-            p->append(SkRasterPipelineOp::gradient, ctx);
-        }
+        return;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+
+    auto* ctx = alloc->make<SkRasterPipelineContexts::GradientCtx>();
+
+    
+    constexpr int kMaxRegisterSize = 8;
+
+    
+    
+    
+    const size_t factorBiasFloats = std::max(count + 1, kMaxRegisterSize);
+    const size_t tsForArbitraryStops = count + 1;
+    using SkRasterPipelineContexts::kRGBAChannels;
+
+    
+    
+    const size_t toAlloc = 2 * kRGBAChannels * factorBiasFloats + tsForArbitraryStops;
+    float* gradientCtxBuffer = alloc->makeArray<float>(toAlloc);
+    for (size_t i = 0; i < kRGBAChannels; i++) {
+        ctx->factors[i] = gradientCtxBuffer;
+        gradientCtxBuffer += factorBiasFloats;
+        ctx->biases[i] = gradientCtxBuffer;
+        gradientCtxBuffer += factorBiasFloats;
+    }
+
+    if (positions == nullptr) {
+        
+
+        size_t stopCount = count;
+        float gapCount = stopCount - 1;
+
+        SkPMColor4f c_l = pmColors[0];
+        for (size_t i = 0; i < gapCount; i++) {
+            SkPMColor4f c_r = pmColors[i + 1];
+            init_stop_evenly(ctx, gapCount, i, c_l, c_r);
+            c_l = c_r;
+        }
+        add_const_color(ctx, stopCount - 1, c_l);
+
+        ctx->stopCount = stopCount;
+        p->append(SkRasterPipelineOp::evenly_spaced_gradient, ctx);
+        return;
+    }
+
+    
+    ctx->ts = gradientCtxBuffer;
+
+    
+    
+    int firstStop;
+    int lastStop;
+    if (count > 2) {
+        firstStop = pmColors[0] != pmColors[1] ? 0 : 1;
+        lastStop = pmColors[count - 2] != pmColors[count - 1] ? count - 1 : count - 2;
+    } else {
+        firstStop = 0;
+        lastStop = 1;
+    }
+
+    size_t stopCount = 0;
+    float t_l = positions[firstStop];
+    SkPMColor4f c_l = pmColors[firstStop];
+    add_const_color(ctx, stopCount++, c_l);
+
+    for (int i = firstStop; i < lastStop; i++) {
+        float t_r = positions[i + 1];
+        SkPMColor4f c_r = pmColors[i + 1];
+        SkASSERT(t_l <= t_r);
+        if (t_l < t_r) {
+            float c_scale = sk_ieee_float_divide(1, t_r - t_l);
+            if (SkIsFinite(c_scale)) {
+                init_stop_pos(ctx, stopCount, t_l, c_scale, c_l, c_r);
+                stopCount += 1;
+            }
+        }
+        t_l = t_r;
+        c_l = c_r;
+    }
+
+    ctx->ts[stopCount] = t_l;
+    add_const_color(ctx, stopCount++, c_l);
+
+    ctx->stopCount = stopCount;
+    p->append(SkRasterPipelineOp::gradient, ctx);
 }
 
 void SkGradientBaseShader::AppendInterpolatedToDstStages(SkRasterPipeline* p,
@@ -530,7 +562,7 @@ bool SkGradientBaseShader::appendStages(const SkStageRec& rec,
                                         const SkShaders::MatrixRec& mRec) const {
     SkRasterPipeline* p = rec.fPipeline;
     SkArenaAlloc* alloc = rec.fAlloc;
-    SkRasterPipeline_DecalTileCtx* decal_ctx = nullptr;
+    SkRasterPipelineContexts::DecalTileCtx* decal_ctx = nullptr;
 
     std::optional<SkShaders::MatrixRec> newMRec = mRec.apply(rec, fPtsToUnit);
     if (!newMRec.has_value()) {
@@ -549,7 +581,7 @@ bool SkGradientBaseShader::appendStages(const SkStageRec& rec,
             p->append(SkRasterPipelineOp::repeat_x_1);
             break;
         case SkTileMode::kDecal:
-            decal_ctx = alloc->make<SkRasterPipeline_DecalTileCtx>();
+            decal_ctx = alloc->make<SkRasterPipelineContexts::DecalTileCtx>();
             decal_ctx->limit_x = SkBits2Float(SkFloat2Bits(1.0f) + 1);
             
             p->append(SkRasterPipelineOp::decal_x, decal_ctx);
@@ -641,6 +673,21 @@ static sk_sp<SkColorSpace> intermediate_color_space(SkGradientShader::Interpolat
             
             
             return SkColorSpace::MakeSRGBLinear();
+
+        
+        case ColorSpace::kDisplayP3:
+            return SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDisplayP3);
+
+        case ColorSpace::kRec2020:
+            return SkColorSpace::MakeRGB(SkNamedTransferFn::kRec2020, SkNamedGamut::kRec2020);
+
+        case ColorSpace::kProphotoRGB:
+            static skcms_Matrix3x3 lin_proPhoto_to_XYZ_D50;
+            SkNamedPrimaries::kProPhotoRGB.toXYZD50(&lin_proPhoto_to_XYZ_D50);
+            return SkColorSpace::MakeRGB(SkNamedTransferFn::kProPhotoRGB, lin_proPhoto_to_XYZ_D50);
+
+        case ColorSpace::kA98RGB:
+            return SkColorSpace::MakeRGB(SkNamedTransferFn::kA98RGB, SkNamedGamut::kAdobeRGB);
     }
     SkUNREACHABLE;
 }
@@ -960,7 +1007,7 @@ SkColor4fXformer::SkColor4fXformer(const SkGradientBaseShader* shader,
 }
 
 SkColorConverter::SkColorConverter(const SkColor* colors, int count) {
-    const float ONE_OVER_255 = 1.f / 255;
+    constexpr float ONE_OVER_255 = 1.f / 255;
     for (int i = 0; i < count; ++i) {
         fColors4f.push_back({SkColorGetR(colors[i]) * ONE_OVER_255,
                              SkColorGetG(colors[i]) * ONE_OVER_255,

@@ -375,8 +375,6 @@ int SkDCubic::searchRoots(double extremeTs[6], int extrema, double axisIntercept
 
 
 
-static const double PI = 3.141592653589793;
-
 
 
 int SkDCubic::RootsValidT(double A, double B, double C, double D, double t[3]) {
@@ -475,11 +473,11 @@ int SkDCubic::RootsReal(double A, double B, double C, double D, double s[3]) {
         r = neg2RootQ * cos(theta / 3) - adiv3;
         *roots++ = r;
 
-        r = neg2RootQ * cos((theta + 2 * PI) / 3) - adiv3;
+        r = neg2RootQ * cos((theta + 2 * SK_DoublePI) / 3) - adiv3;
         if (!AlmostDequalUlps(s[0], r)) {
             *roots++ = r;
         }
-        r = neg2RootQ * cos((theta - 2 * PI) / 3) - adiv3;
+        r = neg2RootQ * cos((theta - 2 * SK_DoublePI) / 3) - adiv3;
         if (!AlmostDequalUlps(s[0], r) && (roots - s == 1 || !AlmostDequalUlps(s[1], r))) {
             *roots++ = r;
         }

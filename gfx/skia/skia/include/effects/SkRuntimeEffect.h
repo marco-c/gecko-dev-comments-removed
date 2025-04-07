@@ -126,6 +126,8 @@ public:
         
         
         bool forceUnoptimized = false;
+        
+        std::string_view fName;
 
     private:
         friend class SkRuntimeEffect;
@@ -168,6 +170,7 @@ public:
         return MakeForColorFilter(std::move(sksl), Options{});
     }
 
+    
     
     
     static Result MakeForShader(SkString sksl, const Options&);
@@ -316,7 +319,9 @@ private:
     friend class SkRuntimeEffectPriv;
 
     uint32_t fHash;
-    uint32_t fStableKey;
+    
+    uint32_t fStableKey = 0;
+    SkString fName;
 
     std::unique_ptr<SkSL::Program> fBaseProgram;
     std::unique_ptr<SkSL::RP::Program> fRPProgram;
