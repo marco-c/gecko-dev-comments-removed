@@ -335,12 +335,15 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void Freeze(bool aIncludeSubWindows = true);
   void Thaw(bool aIncludeSubWindows = true);
   virtual bool IsFrozen() const override;
-  virtual bool HasActiveIndexedDBDatabases() override;
+  virtual bool HasActiveIndexedDBDatabases() const override;
   virtual bool HasActivePeerConnections() override;
   virtual bool HasOpenWebSockets() const override;
   virtual bool HasScheduledNormalOrHighPriorityWebTasks() const override;
   void SyncStateFromParentWindow();
   virtual void UpdateWebSocketCount(int32_t aDelta) override;
+  
+  
+  virtual void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) override;
 
   
   

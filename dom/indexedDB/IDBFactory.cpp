@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "IDBFactory.h"
 
@@ -45,7 +45,7 @@
 #include "ReportInternalError.h"
 #include "ThreadLocal.h"
 
-// Include this last to avoid path problems on Windows.
+
 #include "ActorsChild.h"
 
 namespace mozilla::dom {
@@ -58,7 +58,7 @@ namespace {
 
 constexpr nsLiteralCString kAccessError("The operation is insecure");
 
-}  // namespace
+}  
 
 struct IDBFactory::PendingRequestInfo {
   RefPtr<IDBOpenDBRequest> mRequest;
@@ -92,7 +92,7 @@ IDBFactory::~IDBFactory() {
   }
 }
 
-// static
+
 Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWindow(
     nsPIDOMWindowInner* aWindow) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -111,7 +111,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWindow(
     }
 
     auto factory =
-        MakeRefPtr<IDBFactory>(IDBFactoryGuard{}, /* aAllowed */ false);
+        MakeRefPtr<IDBFactory>(IDBFactoryGuard{},  false);
     factory->BindToOwner(aWindow->AsGlobal());
     factory->mInnerWindowID = aWindow->WindowID();
 
@@ -138,7 +138,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWindow(
   nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(aWindow);
   nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(webNav);
 
-  auto factory = MakeRefPtr<IDBFactory>(IDBFactoryGuard{}, /* aAllowed */ true);
+  auto factory = MakeRefPtr<IDBFactory>(IDBFactoryGuard{},  true);
   factory->mPrincipalInfo = std::move(principalInfo);
 
   factory->BindToOwner(aWindow->AsGlobal());
@@ -153,7 +153,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWindow(
   return factory;
 }
 
-// static
+
 Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForMainThreadJS(
     nsIGlobalObject* aGlobal) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -170,7 +170,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForMainThreadJS(
   bool isSystem;
   if (!AllowedForPrincipal(principal, &isSystem)) {
     auto factory =
-        MakeRefPtr<IDBFactory>(IDBFactoryGuard{}, /* aAllowed */ false);
+        MakeRefPtr<IDBFactory>(IDBFactoryGuard{},  false);
     factory->BindToOwner(aGlobal);
 
     return factory;
@@ -188,7 +188,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForMainThreadJS(
   return CreateForMainThreadJSInternal(aGlobal, std::move(principalInfo));
 }
 
-// static
+
 Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWorker(
     nsIGlobalObject* aGlobal, UniquePtr<PrincipalInfo>&& aPrincipalInfo,
     uint64_t aInnerWindowID) {
@@ -197,7 +197,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWorker(
 
   if (!aPrincipalInfo) {
     auto factory =
-        MakeRefPtr<IDBFactory>(IDBFactoryGuard{}, /* aAllowed */ false);
+        MakeRefPtr<IDBFactory>(IDBFactoryGuard{},  false);
     factory->BindToOwner(aGlobal);
     factory->mInnerWindowID = aInnerWindowID;
 
@@ -209,7 +209,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWorker(
   return CreateInternal(aGlobal, std::move(aPrincipalInfo), aInnerWindowID);
 }
 
-// static
+
 Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForMainThreadJSInternal(
     nsIGlobalObject* aGlobal, UniquePtr<PrincipalInfo> aPrincipalInfo) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -229,10 +229,10 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForMainThreadJSInternal(
   };
 
   return CreateInternal(aGlobal, std::move(aPrincipalInfo),
-                        /* aInnerWindowID */ 0);
+                         0);
 }
 
-// static
+
 Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateInternal(
     nsIGlobalObject* aGlobal, UniquePtr<PrincipalInfo> aPrincipalInfo,
     uint64_t aInnerWindowID) {
@@ -245,14 +245,14 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateInternal(
     NS_WARNING("IndexedDB not allowed for this principal!");
 
     auto factory =
-        MakeRefPtr<IDBFactory>(IDBFactoryGuard{}, /* aAllowed */ false);
+        MakeRefPtr<IDBFactory>(IDBFactoryGuard{},  false);
     factory->BindToOwner(aGlobal);
     factory->mInnerWindowID = aInnerWindowID;
 
     return factory;
   }
 
-  auto factory = MakeRefPtr<IDBFactory>(IDBFactoryGuard{}, /* aAllowed */ true);
+  auto factory = MakeRefPtr<IDBFactory>(IDBFactoryGuard{},  true);
   factory->mPrincipalInfo = std::move(aPrincipalInfo);
   factory->BindToOwner(aGlobal);
   factory->mEventTarget = GetCurrentSerialEventTarget();
@@ -261,7 +261,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateInternal(
   return factory;
 }
 
-// static
+
 bool IDBFactory::AllowedForWindow(nsPIDOMWindowInner* aWindow) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aWindow);
@@ -269,7 +269,7 @@ bool IDBFactory::AllowedForWindow(nsPIDOMWindowInner* aWindow) {
   return !NS_WARN_IF(NS_FAILED(AllowedForWindowInternal(aWindow, nullptr)));
 }
 
-// static
+
 nsresult IDBFactory::AllowedForWindowInternal(
     nsPIDOMWindowInner* aWindow, nsCOMPtr<nsIPrincipal>* aPrincipal) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -288,9 +288,9 @@ nsresult IDBFactory::AllowedForWindowInternal(
 
   StorageAccess access = StorageAllowedForWindow(aWindow);
 
-  // the factory callsite records whether the browser is in private browsing.
-  // and thus we don't have to respect that setting here. IndexedDB has no
-  // concept of session-local storage, and thus ignores it.
+  
+  
+  
   if (access == StorageAccess::eDeny) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
@@ -314,8 +314,8 @@ nsresult IDBFactory::AllowedForWindowInternal(
     return NS_OK;
   }
 
-  // About URIs shouldn't be able to access IndexedDB unless they have the
-  // nsIAboutModule::ENABLE_INDEXED_DB flag set on them.
+  
+  
 
   if (principal->SchemeIs("about")) {
     uint32_t flags;
@@ -334,7 +334,7 @@ nsresult IDBFactory::AllowedForWindowInternal(
   return NS_OK;
 }
 
-// static
+
 bool IDBFactory::AllowedForPrincipal(nsIPrincipal* aPrincipal,
                                      bool* aIsSystemPrincipal) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -364,11 +364,11 @@ bool IDBFactory::AllowedForPrincipal(nsIPrincipal* aPrincipal,
   return !aPrincipal->GetIsNullPrincipal();
 }
 
-// static
+
 PersistenceType IDBFactory::GetPersistenceType(
     const PrincipalInfo& aPrincipalInfo) {
   if (aPrincipalInfo.type() == PrincipalInfo::TSystemPrincipalInfo) {
-    // Chrome privilege always gets persistent storage.
+    
     return PERSISTENCE_TYPE_PERSISTENT;
   }
 
@@ -377,7 +377,7 @@ PersistenceType IDBFactory::GetPersistenceType(
         aPrincipalInfo.get_ContentPrincipalInfo().originNoSuffix();
 
     if (QuotaManager::IsOriginInternal(origin)) {
-      // Internal origins always get persistent storage.
+      
       return PERSISTENCE_TYPE_PERSISTENT;
     }
 
@@ -404,14 +404,14 @@ void IDBFactory::UpdateActiveDatabaseCount(int32_t aDelta) {
                         (mActiveDatabaseCount + aDelta) < mActiveDatabaseCount);
   mActiveDatabaseCount += aDelta;
 
-  if (nsGlobalWindowInner* win = GetOwnerWindow()) {
-    win->UpdateActiveIndexedDBDatabaseCount(aDelta);
+  if (nsIGlobalObject* global = GetOwnerGlobal()) {
+    global->UpdateActiveIndexedDBDatabaseCount(aDelta);
   }
 }
 
 bool IDBFactory::IsChrome() const {
   if (!mAllowed) {
-    return false;  // Minimal privileges
+    return false;  
   }
 
   AssertIsOnOwningThread();
@@ -431,8 +431,8 @@ RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,
   }
 
   return OpenInternal(aCx,
-                      /* aPrincipal */ nullptr, aName, aVersion,
-                      /* aDeleting */ false, aCallerType, aRv);
+                       nullptr, aName, aVersion,
+                       false, aCallerType, aRv);
 }
 
 RefPtr<IDBOpenDBRequest> IDBFactory::DeleteDatabase(JSContext* aCx,
@@ -445,8 +445,8 @@ RefPtr<IDBOpenDBRequest> IDBFactory::DeleteDatabase(JSContext* aCx,
   }
 
   return OpenInternal(aCx,
-                      /* aPrincipal */ nullptr, aName, Optional<uint64_t>(),
-                      /* aDeleting */ true, aCallerType, aRv);
+                       nullptr, aName, Optional<uint64_t>(),
+                       true, aCallerType, aRv);
 }
 
 already_AddRefed<Promise> IDBFactory::Databases(JSContext* const aCx,
@@ -462,8 +462,8 @@ already_AddRefed<Promise> IDBFactory::Databases(JSContext* const aCx,
     return promise.forget();
   }
 
-  // Nothing can be done here if we have previously failed to create a
-  // background actor.
+  
+  
   if (mBackgroundActorFailed) {
     promise->MaybeReject(NS_ERROR_FAILURE);
     return promise.forget();
@@ -565,7 +565,7 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenForPrincipal(
   }
 
   return OpenInternal(aCx, aPrincipal, aName, Optional<uint64_t>(aVersion),
-                      /* aDeleting */ false, aGuarantee, aRv);
+                       false, aGuarantee, aRv);
 }
 
 RefPtr<IDBOpenDBRequest> IDBFactory::OpenForPrincipal(
@@ -585,7 +585,7 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenForPrincipal(
   }
 
   return OpenInternal(aCx, aPrincipal, aName, aOptions.mVersion,
-                      /* aDeleting */ false, aGuarantee, aRv);
+                       false, aGuarantee, aRv);
 }
 
 RefPtr<IDBOpenDBRequest> IDBFactory::DeleteForPrincipal(
@@ -605,7 +605,7 @@ RefPtr<IDBOpenDBRequest> IDBFactory::DeleteForPrincipal(
   }
 
   return OpenInternal(aCx, aPrincipal, aName, Optional<uint64_t>(),
-                      /* aDeleting */ true, aGuarantee, aRv);
+                       true, aGuarantee, aRv);
 }
 
 nsresult IDBFactory::EnsureBackgroundActor() {
@@ -739,8 +739,8 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenInternal(
     version = aVersion.Value();
   }
 
-  // Nothing can be done here if we have previously failed to create a
-  // background actor.
+  
+  
   if (mBackgroundActorFailed) {
     IDB_REPORT_INTERNAL_ERR();
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
@@ -874,4 +874,4 @@ JSObject* IDBFactory::WrapObject(JSContext* aCx,
   return IDBFactory_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  // namespace mozilla::dom
+}  

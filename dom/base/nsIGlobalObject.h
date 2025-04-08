@@ -336,7 +336,7 @@ class nsIGlobalObject : public nsISupports {
   }
   
   
-  virtual bool HasActiveIndexedDBDatabases() { return false; }
+  virtual bool HasActiveIndexedDBDatabases() const { return false; }
   
 
 
@@ -352,6 +352,9 @@ class nsIGlobalObject : public nsISupports {
   }
 
   virtual void UpdateWebSocketCount(int32_t aDelta) {};
+  
+  
+  virtual void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) {}
 
   
 
