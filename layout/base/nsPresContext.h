@@ -1431,44 +1431,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 class nsRootPresContext final : public nsPresContext {
  public:
   nsRootPresContext(mozilla::dom::Document* aDocument, nsPresContextType aType);
-  virtual bool IsRoot() const override { return true; }
-
-  
-
-
-
-
-  void AddWillPaintObserver(nsIRunnable* aRunnable);
-
-  
-
-
-  void FlushWillPaintObservers();
-
-  virtual size_t SizeOfExcludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const override;
-
- protected:
-  class RunWillPaintObservers : public mozilla::Runnable {
-   public:
-    explicit RunWillPaintObservers(nsRootPresContext* aPresContext)
-        : Runnable("nsPresContextType::RunWillPaintObservers"),
-          mPresContext(aPresContext) {}
-    void Revoke() { mPresContext = nullptr; }
-    NS_IMETHOD Run() override {
-      if (mPresContext) {
-        mPresContext->FlushWillPaintObservers();
-      }
-      return NS_OK;
-    }
-    
-    nsRootPresContext* MOZ_NON_OWNING_REF mPresContext;
-  };
-
-  friend class nsPresContext;
-
-  nsTArray<nsCOMPtr<nsIRunnable>> mWillPaintObservers;
-  nsRevocableEventPtr<RunWillPaintObservers> mWillPaintFallbackEvent;
+  bool IsRoot() const override { return true; }
 };
 
 #ifdef MOZ_REFLOW_PERF
