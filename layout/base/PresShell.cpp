@@ -3884,8 +3884,14 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
     if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
-
-    aDestination = Some(aPositionFixedRect.TopLeft());
+    
+    
+    
+    
+    
+    
+    const nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
+    aDestination = Some(aPositionFixedRect.TopLeft() + layoutOffset);
   }
 
   
