@@ -54,6 +54,11 @@ export type TestConfig = {
   
 
 
+  blockAllFeatures: boolean;
+
+  
+
+
   logToWebSocket: boolean;
 };
 
@@ -67,6 +72,7 @@ export const globalTestConfig: TestConfig = {
   compatibility: false,
   forceFallbackAdapter: false,
   enforceDefaultLimits: false,
+  blockAllFeatures: false,
   logToWebSocket: false,
 };
 

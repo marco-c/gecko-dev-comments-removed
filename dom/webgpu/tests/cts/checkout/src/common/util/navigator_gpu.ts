@@ -77,34 +77,37 @@ export function getGPU(recorder: TestCaseRecorder | null): GPU {
     
     const origRequestDeviceFn = GPUAdapter.prototype.requestDevice;
 
-    impl.requestAdapter = async function (options?: GPURequestAdapterOptions) {
-      if (!s_defaultLimits) {
-        const tempAdapter = await origRequestAdapterFn.call(this, {
+    Object.defineProperty(impl, 'requestAdapter', {
+      configurable: true,
+      async value(options?: GPURequestAdapterOptions) {
+        if (!s_defaultLimits) {
+          const tempAdapter = await origRequestAdapterFn.call(this, {
+            ...defaultRequestAdapterOptions,
+            ...options,
+          });
+          
+          const tempDevice = await tempAdapter?.requestDevice();
+          s_defaultLimits = copyLimits(tempDevice!.limits);
+          tempDevice?.destroy();
+        }
+        const adapter = await origRequestAdapterFn.call(this, {
           ...defaultRequestAdapterOptions,
           ...options,
         });
-        
-        const tempDevice = await tempAdapter?.requestDevice();
-        s_defaultLimits = copyLimits(tempDevice!.limits);
-        tempDevice?.destroy();
-      }
-      const adapter = await origRequestAdapterFn.call(this, {
-        ...defaultRequestAdapterOptions,
-        ...options,
-      });
-      if (adapter) {
-        const limits = Object.fromEntries(
-          Object.entries(s_defaultLimits).map(([key, v]) => [key, v])
-        );
+        if (adapter) {
+          const limits = Object.fromEntries(
+            Object.entries(s_defaultLimits).map(([key, v]) => [key, v])
+          );
 
-        Object.defineProperty(adapter, 'limits', {
-          get() {
-            return limits;
-          },
-        });
-      }
-      return adapter;
-    };
+          Object.defineProperty(adapter, 'limits', {
+            get() {
+              return limits;
+            },
+          });
+        }
+        return adapter;
+      },
+    });
 
     const enforceDefaultLimits = (adapter: GPUAdapter, desc: GPUDeviceDescriptor | undefined) => {
       if (desc?.requiredLimits) {
@@ -140,6 +143,54 @@ export function getGPU(recorder: TestCaseRecorder | null): GPU {
       
       
       enforceDefaultLimits(this, desc);
+      return await origRequestDeviceFn.call(this, desc);
+    };
+  }
+
+  if (globalTestConfig.blockAllFeatures) {
+    
+    const origRequestAdapterFn = impl.requestAdapter;
+    
+    const origRequestDeviceFn = GPUAdapter.prototype.requestDevice;
+
+    Object.defineProperty(impl, 'requestAdapter', {
+      configurable: true,
+      async value(options?: GPURequestAdapterOptions) {
+        const adapter = await origRequestAdapterFn.call(this, {
+          ...defaultRequestAdapterOptions,
+          ...options,
+        });
+        if (adapter) {
+          Object.defineProperty(adapter, 'features', {
+            enumerable: false,
+            value: new Set(
+              adapter.features.has('core-features-and-limits') ? ['core-features-and-limits'] : []
+            ),
+          });
+        }
+        return adapter;
+      },
+    });
+
+    const enforceBlockedFeatures = (adapter: GPUAdapter, desc: GPUDeviceDescriptor | undefined) => {
+      if (desc?.requiredFeatures) {
+        for (const [feature] of desc.requiredFeatures) {
+          
+          
+          if (!adapter.features.has(feature)) {
+            throw new TypeError(`requested feature ${feature} does not exist on adapter`);
+          }
+        }
+      }
+    };
+
+    GPUAdapter.prototype.requestDevice = async function (
+      this: GPUAdapter,
+      desc?: GPUDeviceDescriptor | undefined
+    ) {
+      
+      
+      enforceBlockedFeatures(this, desc);
       return await origRequestDeviceFn.call(this, desc);
     };
   }

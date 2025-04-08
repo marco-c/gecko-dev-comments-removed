@@ -519,8 +519,10 @@ combine('height', [8, 16, 24])
 ).
 fn((t) => {
   const { stage, importExternalTexture, width, height } = t.params;
-  const canvas = new OffscreenCanvas(width, height);
   const size = [width, height];
+
+  t.skipIf(typeof OffscreenCanvas === 'undefined', 'OffscreenCanvas is not supported');
+  const canvas = new OffscreenCanvas(width, height);
 
   
   canvas.getContext('2d');

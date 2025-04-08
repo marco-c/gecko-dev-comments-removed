@@ -70,6 +70,9 @@ const expect = {
 };
 
 
+const kMaxDiffULPsForNormFormatWithDifferentColorSpaceCanvas = 3;
+
+
 
 
 
@@ -181,7 +184,12 @@ function checkImageResultWithDifferentColorSpaceCanvas(
     destinationColorSpace
   );
 
-  readPixelsFrom2DCanvasAndCompare(t, fromWebGPUCtx, expect, 2);
+  readPixelsFrom2DCanvasAndCompare(
+    t,
+    fromWebGPUCtx,
+    expect,
+    kMaxDiffULPsForNormFormatWithDifferentColorSpaceCanvas
+  );
 }
 
 function checkImageResult(

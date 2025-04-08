@@ -283,7 +283,8 @@ filter)
   for (let i = 0; i < output.length; i++) {
     const size = metadata[i];
     const id = metadata[output.length + i];
-    let expected = 1;
+    const u32Boundary = Math.pow(2, 32);
+    let expectedU32 = 1;
     if (filter(id, size)) {
       
       const valueModFun = function (id) {
@@ -293,15 +294,16 @@ filter)
       operation === 'subgroupInclusiveMul' ? id + 1 : operation === 'subgroupMul' ? size : id;
       for (let j = 0; j < bound; j++) {
         if (filter(j, size)) {
-          expected *= valueModFun(j);
+          
+          expectedU32 = expectedU32 * valueModFun(j) % u32Boundary;
         }
       }
     } else {
-      expected = kDataSentinel;
+      expectedU32 = kDataSentinel;
     }
-    if (expected !== output[i]) {
+    if (expectedU32 !== output[i]) {
       return new Error(`Invocation ${i}: incorrect result
-- expected: ${expected}
+- expected: ${expectedU32}
 -      got: ${output[i]}`);
     }
   }
@@ -481,14 +483,16 @@ height)
       const v =
       expected.get(subgroup_id) ?? new Uint32Array([...iterRange(kMaxSize, (x) => kIdentity)]);
       const bound = op === 'subgroupMul' ? kMaxSize : op === 'subgroupInclusiveMul' ? id + 1 : id;
-      let expect = kIdentity;
+      const u32Boundary = Math.pow(2, 32);
+      let expectU32 = kIdentity;
       for (let i = 0; i < bound; i++) {
-        expect *= v[i];
+        
+        expectU32 = expectU32 * v[i] % u32Boundary;
       }
 
-      if (res !== expect) {
+      if (res !== expectU32) {
         return new Error(`Row ${row}, col ${col}: incorrect results
-- expected: ${expect}
+- expected: ${expectU32}
 -      got: ${res}`);
       }
     }

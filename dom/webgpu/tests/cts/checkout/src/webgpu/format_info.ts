@@ -24,8 +24,21 @@ const kFormatUniversalDefaults = {
   color: undefined,
   depth: undefined,
   stencil: undefined,
+  
+
+
+
+
+
+
   colorRender: undefined,
   
+
+
+
+
+
+
   multisample: undefined,
   
   feature: undefined,
@@ -553,7 +566,8 @@ const kRegularTextureFormatInfo = formatTableWithDefaults({
         readWriteStorage: false,
         bytes: 4,
       },
-      multisample: false,
+      colorRender: { blend: true, resolve: true, byteCost: 8, alignment: 4 },
+      multisample: true,
        get bytesPerBlock() { return this.color.bytes; },
     },
 
@@ -1627,14 +1641,12 @@ export const kPossibleReadWriteStorageTextureFormats = [
 export const kPossibleMultisampledTextureFormats = [
   ...kRegularTextureFormats.filter(f => kTextureFormatInfo[f].multisample),
   ...kDepthStencilFormats.filter(f => kTextureFormatInfo[f].multisample),
-  'rg11b10ufloat',
 ] as const;
 
 
 
 export const kPossibleColorRenderableTextureFormats = [
   ...kRegularTextureFormats.filter(f => kTextureFormatInfo[f].colorRender),
-  'rg11b10ufloat',
 ] as const;
 export type PossibleColorRenderTextureFormat =
   (typeof kPossibleColorRenderableTextureFormats)[number];
@@ -1942,11 +1954,8 @@ export function getBlockInfoForTextureFormat(format: GPUTextureFormat) {
 
 
 
-
-
 export function getColorRenderByteCost(format: PossibleColorRenderTextureFormat) {
-  const byteCost =
-    format === 'rg11b10ufloat' ? 8 : kTextureFormatInfo[format].colorRender?.byteCost;
+  const byteCost = kTextureFormatInfo[format].colorRender?.byteCost;
   
   
   
@@ -1957,11 +1966,8 @@ export function getColorRenderByteCost(format: PossibleColorRenderTextureFormat)
 
 
 
-
-
 export function getColorRenderAlignment(format: PossibleColorRenderTextureFormat) {
-  const alignment =
-    format === 'rg11b10ufloat' ? 1 : kTextureFormatInfo[format].colorRender?.alignment;
+  const alignment = kTextureFormatInfo[format].colorRender?.alignment;
   
   
   
@@ -2099,8 +2105,8 @@ export function isTextureFormatUsableAsRenderAttachment(
   device: GPUDevice,
   format: GPUTextureFormat
 ) {
-  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
-    return true;
+  if (format === 'rg11b10ufloat') {
+    return device.features.has('rg11b10ufloat-renderable');
   }
   return kTextureFormatInfo[format].colorRender || isDepthOrStencilTextureFormat(format);
 }
@@ -2112,8 +2118,8 @@ export function isTextureFormatColorRenderable(
   device: GPUDevice,
   format: GPUTextureFormat
 ): boolean {
-  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
-    return true;
+  if (format === 'rg11b10ufloat') {
+    return device.features.has('rg11b10ufloat-renderable');
   }
   return !!kAllTextureFormatInfo[format].colorRender;
 }
@@ -2125,11 +2131,11 @@ export function isTextureFormatBlendable(device: GPUDevice, format: GPUTextureFo
   if (!isTextureFormatColorRenderable(device, format)) {
     return false;
   }
-  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
-    return true;
+  if (format === 'rg11b10ufloat') {
+    return device.features.has('rg11b10ufloat-renderable');
   }
-  if (is32Float(format) && device.features.has('float32-blendable')) {
-    return true;
+  if (is32Float(format)) {
+    return device.features.has('float32-blendable');
   }
   return !!kAllTextureFormatInfo[format].colorRender?.blend;
 }
@@ -2160,7 +2166,7 @@ export function getTextureFormatColorType(format: RegularTextureFormat) {
 
 export function isTextureFormatPossiblyUsableAsRenderAttachment(format: GPUTextureFormat) {
   const info = kTextureFormatInfo[format];
-  return format === 'rg11b10ufloat' || isDepthOrStencilTextureFormat(format) || !!info.colorRender;
+  return isDepthOrStencilTextureFormat(format) || !!info.colorRender;
 }
 
 
@@ -2169,7 +2175,7 @@ export function isTextureFormatPossiblyUsableAsRenderAttachment(format: GPUTextu
 
 export function isTextureFormatPossiblyUsableAsColorRenderAttachment(format: GPUTextureFormat) {
   const info = kTextureFormatInfo[format];
-  return format === 'rg11b10ufloat' || !!info.colorRender;
+  return !!info.colorRender;
 }
 
 
@@ -2178,7 +2184,7 @@ export function isTextureFormatPossiblyUsableAsColorRenderAttachment(format: GPU
 
 export function isTextureFormatPossiblyMultisampled(format: GPUTextureFormat) {
   const info = kTextureFormatInfo[format];
-  return format === 'rg11b10ufloat' || info.multisample;
+  return info.multisample;
 }
 
 
@@ -2327,8 +2333,8 @@ export function isTextureFormatMultisampled(device: GPUDevice, format: GPUTextur
       return false;
     }
   }
-  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
-    return true;
+  if (format === 'rg11b10ufloat') {
+    return device.features.has('rg11b10ufloat-renderable');
   }
   return kAllTextureFormatInfo[format].multisample;
 }
@@ -2338,8 +2344,8 @@ export function isTextureFormatMultisampled(device: GPUDevice, format: GPUTextur
 
 
 export function isTextureFormatResolvable(device: GPUDevice, format: GPUTextureFormat): boolean {
-  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
-    return true;
+  if (format === 'rg11b10ufloat') {
+    return device.features.has('rg11b10ufloat-renderable');
   }
   
   if (!isTextureFormatMultisampled(device, format)) {
@@ -2364,10 +2370,7 @@ export function computeBytesPerSampleFromFormats(formats: readonly GPUTextureFor
     
     
     
-    const info =
-      format === 'rg11b10ufloat'
-        ? { colorRender: { alignment: 4, byteCost: 8 } }
-        : kTextureFormatInfo[format];
+    const info = kTextureFormatInfo[format];
     const alignedBytesPerSample = align(bytesPerSample, info.colorRender!.alignment);
     bytesPerSample = alignedBytesPerSample + info.colorRender!.byteCost;
   }
