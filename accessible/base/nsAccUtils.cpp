@@ -91,7 +91,6 @@ void nsAccUtils::SetLiveContainerAttributes(AccAttributes* aAttributes,
       if (live.IsEmpty()) {
         
         
-        MOZ_ASSERT(GetAccService());
         if (roleMap) {
           GetLiveAttrValue(roleMap->liveAttRule, live);
         } else if (nsStaticAtom* value = GetAccService()->MarkupAttribute(
@@ -457,10 +456,8 @@ void nsAccUtils::GetLiveRegionSetting(Accessible* aAcc, nsAString& aLive) {
   
   if (const nsRoleMapEntry* roleMap = aAcc->ARIARoleMap()) {
     GetLiveAttrValue(roleMap->liveAttRule, aLive);
-  } else if (nsStaticAtom* value = GetAccService()
-                                       ? GetAccService()->MarkupAttribute(
-                                             aAcc, nsGkAtoms::aria_live)
-                                       : nullptr) {
+  } else if (nsStaticAtom* value =
+                 GetAccService()->MarkupAttribute(aAcc, nsGkAtoms::aria_live)) {
     value->ToString(aLive);
   }
 }
