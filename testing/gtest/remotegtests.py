@@ -119,8 +119,8 @@ class RemoteGTests(object):
 
         
         
-        for f in glob.glob(os.path.join(test_dir, "*")):
-            if not os.path.isdir(f):
+        for f in glob.glob(os.path.join(test_dir, "**"), recursive=True):
+            if not "gtest_bin" in os.path.abspath(f):
                 self.device.push(f, self.remote_profile)
 
         if test_filter is not None:
