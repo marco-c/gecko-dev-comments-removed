@@ -1196,6 +1196,11 @@ bool JSStructuredCloneWriter::parseTransferable() {
   RootedValue v(context());
   RootedObject tObj(context());
 
+  Rooted<GCHashSet<js::HeapPtr<JSObject*>,
+                   js::StableCellHasher<js::HeapPtr<JSObject*>>,
+                   SystemAllocPolicy>>
+      seen(context());
+
   for (uint32_t i = 0; i < length; ++i) {
     if (!CheckForInterrupt(cx)) {
       return false;
@@ -1257,9 +1262,35 @@ bool JSStructuredCloneWriter::parseTransferable() {
     }
 
     
-    if (std::find(transferableObjects.begin(), transferableObjects.end(),
-                  tObj) != transferableObjects.end()) {
-      return reportDataCloneError(JS_SCERR_DUP_TRANSFERABLE);
+    
+    
+    constexpr uint32_t MAX_LINEAR = 10;
+
+    
+    
+    if (i == MAX_LINEAR) {
+      for (JSObject* obj : transferableObjects) {
+        if (!seen.putNew(obj)) {
+          seen.clear();  
+          break;
+        }
+      }
+    }
+
+    if (seen.empty()) {
+      if (std::find(transferableObjects.begin(), transferableObjects.end(),
+                    tObj) != transferableObjects.end()) {
+        return reportDataCloneError(JS_SCERR_DUP_TRANSFERABLE);
+      }
+    } else {
+      MOZ_ASSERT(seen.count() == i);  
+      auto p = seen.lookupForAdd(tObj);
+      if (p) {
+        return reportDataCloneError(JS_SCERR_DUP_TRANSFERABLE);
+      }
+      if (!seen.add(p, tObj)) {
+        seen.clear();  
+      }
     }
 
     if (!transferableObjects.append(tObj)) {
