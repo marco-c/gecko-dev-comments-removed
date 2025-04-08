@@ -63,7 +63,6 @@
 
 
 
-
 static constexpr unsigned hb_set_digest_shifts[] = {4, 0, 6};
 
 struct hb_set_digest_t
