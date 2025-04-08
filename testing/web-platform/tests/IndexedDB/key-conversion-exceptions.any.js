@@ -1,0 +1,207 @@
+
+
+
+
+
+'use strict';
+
+
+function indexeddb_upgrade_only_test(upgrade_callback, description) {
+  indexeddb_test(upgrade_callback, t => t.done(), description);
+}
+
+
+function throwing_key(name) {
+  const throws = [];
+  throws.length = 1;
+  const err = new Error('throwing from getter');
+  err.name = name;
+  Object.defineProperty(throws, '0', {
+    get: function() {
+      throw err;
+    },
+    enumerable: true,
+  });
+  return [throws, err];
+}
+
+const valid_key = [];
+const invalid_key = {};
+
+
+
+
+
+
+function check_method(receiver, method, args) {
+  args = args || 1;
+  if (args < 2) {
+    const [key, err] = throwing_key('getter');
+    assert_throws_exactly(err, () => {
+      receiver[method](key);
+    }, 'key conversion with throwing getter should rethrow');
+
+    assert_throws_dom('DataError', () => {
+      receiver[method](invalid_key);
+    }, 'key conversion with invalid key should throw DataError');
+  } else {
+    const [key1, err1] = throwing_key('getter 1');
+    const [key2, err2] = throwing_key('getter 2');
+    assert_throws_exactly(err1, () => {
+      receiver[method](key1, key2);
+    }, 'first key conversion with throwing getter should rethrow');
+
+    assert_throws_dom('DataError', () => {
+      receiver[method](invalid_key, key2);
+    }, 'first key conversion with invalid key should throw DataError');
+
+    assert_throws_exactly(err2, () => {
+      receiver[method](valid_key, key2);
+    }, 'second key conversion with throwing getter should rethrow');
+
+    assert_throws_dom('DataError', () => {
+      receiver[method](valid_key, invalid_key);
+    }, 'second key conversion with invalid key should throw DataError');
+  }
+}
+
+
+test(
+    t => check_method(indexedDB, 'cmp', 2),
+    'IDBFactory cmp() static with throwing/invalid keys');
+
+
+indexeddb_upgrade_only_test((t, db) => {
+  const store = db.createObjectStore('store');
+  store.put('a', 1).onerror = t.unreached_func('put should succeed');
+
+  const request = store.openCursor();
+  request.onerror = t.unreached_func('openCursor should succeed');
+  request.onsuccess = t.step_func(() => {
+    const cursor = request.result;
+    assert_not_equals(cursor, null, 'cursor should find a value');
+    check_method(cursor, 'continue');
+  });
+}, 'IDBCursor continue() method with throwing/invalid keys');
+
+indexeddb_upgrade_only_test((t, db) => {
+  const store = db.createObjectStore('store');
+  const index = store.createIndex('index', 'prop');
+  store.put({prop: 'a'}, 1).onerror = t.unreached_func('put should succeed');
+
+  const request = index.openCursor();
+  request.onerror = t.unreached_func('openCursor should succeed');
+  request.onsuccess = t.step_func(() => {
+    const cursor = request.result;
+    assert_not_equals(cursor, null, 'cursor should find a value');
+
+    check_method(cursor, 'continuePrimaryKey', 2);
+  });
+}, null, 'IDBCursor continuePrimaryKey() method with throwing/invalid keys');
+
+
+indexeddb_upgrade_only_test((t, db) => {
+  const store = db.createObjectStore('store', {keyPath: 'prop'});
+  store.put({prop: 1}).onerror = t.unreached_func('put should succeed');
+
+  const request = store.openCursor();
+  request.onerror = t.unreached_func('openCursor should succeed');
+  request.onsuccess = t.step_func(() => {
+    const cursor = request.result;
+    assert_not_equals(cursor, null, 'cursor should find a value');
+
+    const value = {};
+    let err;
+    [value.prop, err] = throwing_key('getter');
+    assert_throws_exactly(err, () => {
+      cursor.update(value);
+    }, 'throwing getter should rethrow during clone');
+
+    
+    
+    
+    
+
+    value.prop = invalid_key;
+    assert_throws_dom('DataError', () => {
+      cursor.update(value);
+    }, 'key conversion with invalid key should throw DataError');
+  });
+}, 'IDBCursor update() method with throwing/invalid keys');
+
+
+['only', 'lowerBound', 'upperBound'].forEach((method) => {
+  test(
+      t => check_method(IDBKeyRange, method),
+      'IDBKeyRange ' + method + '() static with throwing/invalid keys');
+});
+
+test(
+    t => check_method(IDBKeyRange, 'bound', 2),
+    'IDBKeyRange bound() static with throwing/invalid keys');
+
+
+['add', 'put'].forEach((method) => {
+  indexeddb_upgrade_only_test((t, db) => {
+    const out_of_line = db.createObjectStore('out-of-line keys');
+    const in_line = db.createObjectStore('in-line keys', {keyPath: 'prop'});
+    let [key, err] = throwing_key('getter');
+    assert_throws_exactly(err, () => {
+      out_of_line[method]('value', key);
+    }, 'key conversion with throwing getter should rethrow');
+
+    assert_throws_dom('DataError', () => {
+      out_of_line[method]('value', invalid_key);
+    }, 'key conversion with invalid key should throw DataError');
+
+    const value = {};
+    [value.prop, err] = throwing_key('getter');
+    assert_throws_exactly(err, () => {
+      in_line[method](value);
+    }, 'throwing getter should rethrow during clone');
+
+    
+    
+    
+    
+
+    value.prop = invalid_key;
+    assert_throws_dom('DataError', () => {
+      in_line[method](value);
+    }, 'key conversion with invalid key should throw DataError');
+  }, `IDBObjectStore ${method}() method with throwing/invalid keys`);
+});
+
+
+['delete',
+ 'get',
+ 'getKey',
+ 'getAll',
+ 'getAllKeys',
+ 'count',
+ 'openCursor',
+ 'openKeyCursor',
+].forEach(method => {
+  indexeddb_upgrade_only_test((t, db) => {
+    const store = db.createObjectStore('store');
+
+    check_method(store, method);
+  }, `IDBObjectStore ${method}() method with throwing/invalid keys`);
+});
+
+
+['get',
+ 'getKey',
+ 'getAll',
+ 'getAllKeys',
+ 'count',
+ 'openCursor',
+ 'openKeyCursor',
+].forEach((method) => {
+  indexeddb_upgrade_only_test((t, db) => {
+    const store = db.createObjectStore('store');
+    const index = store.createIndex('index', 'keyPath');
+
+    check_method(index, method);
+  }, `IDBIndex ${method}() method with throwing/invalid keys`);
+});
