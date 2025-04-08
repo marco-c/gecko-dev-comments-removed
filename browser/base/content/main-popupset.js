@@ -8,6 +8,11 @@
 document.addEventListener(
   "DOMContentLoaded",
   () => {
+    const lazy = {};
+    ChromeUtils.defineESModuleGetters(lazy, {
+      TabGroupMetrics:
+        "moz-src:///browser/components/tabbrowser/TabGroupMetrics.sys.mjs",
+    });
     let mainPopupSet = document.getElementById("mainPopupSet");
     
     mainPopupSet.addEventListener("command", event => {
@@ -130,7 +135,11 @@ document.addEventListener(
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             
             
-            tabGroup.ownerGlobal.gBrowser.removeTabGroup(tabGroup);
+            tabGroup.ownerGlobal.gBrowser.removeTabGroup(tabGroup, {
+              isUserTriggered: true,
+              telemetrySource:
+                lazy.TabGroupMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
+            });
           }
           break;
 
@@ -138,14 +147,18 @@ document.addEventListener(
         case "saved-tab-group-context-menu_openInThisWindow":
           {
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            SessionStore.openSavedTabGroup(tabGroupId, window);
+            SessionStore.openSavedTabGroup(tabGroupId, window, {
+              source: lazy.TabGroupMetrics.METRIC_SOURCE.RECENT_TABS,
+            });
           }
           break;
         case "saved-tab-group-context-menu_openInNewWindow":
           {
             
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window);
+            let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window, {
+              source: lazy.TabGroupMetrics.METRIC_SOURCE.RECENT_TABS,
+            });
             gBrowser.replaceGroupWithWindow(tabGroup);
           }
           break;
