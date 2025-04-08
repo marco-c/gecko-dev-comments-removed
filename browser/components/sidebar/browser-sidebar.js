@@ -1216,20 +1216,20 @@ var SidebarController = {
     if (expandOnToggle) {
       
       this._state.updateVisibility(true, !initialExpandedValue);
-    } else {
-      const shouldShowLauncher = !this._state.launcherVisible;
-      
-      this._state.updateVisibility(shouldShowLauncher);
-      
-      if (shouldShowLauncher && this._state.command) {
-        this._show(this._state.command);
-      } else if (!shouldShowLauncher) {
-        
-        this.hide({ dismissPanel: false });
-      }
+      this.updateToolbarButton();
+      return;
     }
 
-    this.updateToolbarButton();
+    const shouldShowLauncher = !this._state.launcherVisible;
+    
+    this._state.updateVisibility(shouldShowLauncher);
+    
+    if (shouldShowLauncher && this._state.command) {
+      await this.show(this._state.command);
+    } else if (!shouldShowLauncher) {
+      
+      this.hide({ dismissPanel: false });
+    }
   },
 
   
