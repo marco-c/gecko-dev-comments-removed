@@ -2343,6 +2343,8 @@ MarkupView.prototype = {
 
         const fragment = this.doc.createDocumentFragment();
 
+        
+        const previouslyActiveElement = this.doc.activeElement;
         for (const child of children.nodes) {
           const slotted = !isShadowHost && child.isDirectShadowHostChild;
           const childContainer = this.importNode(child, flash, slotted);
@@ -2363,6 +2365,11 @@ MarkupView.prototype = {
         }
 
         container.children.appendChild(fragment);
+        
+        
+        if (container.children.contains(previouslyActiveElement)) {
+          previouslyActiveElement.focus();
+        }
         return container;
       })
       .catch(this._handleRejectionIfNotDestroyed);
