@@ -282,8 +282,6 @@ impl Glean {
             
             
             
-            
-            
             match glean
                 .core_metrics
                 .client_id
@@ -291,7 +289,17 @@ impl Glean {
             {
                 None => glean.clear_metrics(),
                 Some(uuid) => {
-                    if uuid != *KNOWN_CLIENT_ID {
+                    if uuid == *KNOWN_CLIENT_ID {
+                        
+                        
+                        if let Some(data) = glean.data_store.as_ref() {
+                            _ = data.remove_single_metric(
+                                Lifetime::User,
+                                "glean_client_info",
+                                "client_id",
+                            );
+                        }
+                    } else {
                         
                         
                         glean.upload_enabled = true;
@@ -581,14 +589,6 @@ impl Glean {
         let _lock = self.upload_manager.clear_ping_queue();
 
         
-        
-        
-        let existing_first_run_date = self
-            .core_metrics
-            .first_run_date
-            .get_value(self, "glean_client_info");
-
-        
         let ping_maker = PingMaker::new();
         let disabled_pings = self
             .ping_registry
@@ -605,8 +605,7 @@ impl Glean {
         
         if let Some(data) = self.data_store.as_ref() {
             _ = data.clear_lifetime_storage(Lifetime::User, "glean_internal_info");
-            _ = data.clear_lifetime_storage(Lifetime::User, "glean_client_info");
-            _ = data.clear_lifetime_storage(Lifetime::Application, "glean_client_info");
+            _ = data.remove_single_metric(Lifetime::User, "glean_client_info", "client_id");
             for (ping_name, ping) in &self.ping_registry {
                 if ping.follows_collection_enabled() {
                     _ = data.clear_ping_lifetime_storage(ping_name);
@@ -623,32 +622,6 @@ impl Glean {
         
         
         
-
-        {
-            
-            
-            
-            
-            
-            
-            self.upload_enabled = true;
-
-            
-            
-            
-            self.core_metrics
-                .client_id
-                .set_from_uuid_sync(self, *KNOWN_CLIENT_ID);
-
-            
-            if let Some(existing_first_run_date) = existing_first_run_date {
-                self.core_metrics
-                    .first_run_date
-                    .set_sync_chrono(self, existing_first_run_date);
-            }
-
-            self.upload_enabled = false;
-        }
     }
 
     

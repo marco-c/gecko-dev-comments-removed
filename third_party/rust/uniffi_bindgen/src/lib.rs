@@ -250,6 +250,14 @@ pub trait BindgenCrateConfigSupplier {
     fn get_toml(&self, _crate_name: &str) -> Result<Option<toml::value::Table>> {
         Ok(None)
     }
+
+    
+    
+    
+    fn get_toml_path(&self, _crate_name: &str) -> Option<Utf8PathBuf> {
+        None
+    }
+
     
     fn get_udl(&self, crate_name: &str, udl_name: &str) -> Result<String> {
         bail!("Crate {crate_name} has no UDL {udl_name}")
@@ -262,7 +270,7 @@ impl BindgenCrateConfigSupplier for EmptyCrateConfigSupplier {}
 
 
 pub fn is_cdylib(library_file: impl AsRef<Utf8Path>) -> bool {
-    crate::library_mode::calc_cdylib_name(library_file.as_ref()).is_some()
+    library_mode::calc_cdylib_name(library_file.as_ref()).is_some()
 }
 
 
@@ -311,7 +319,7 @@ pub fn generate_external_bindings<T: BindingGenerator>(
     let settings = GenerationSettings {
         cdylib: match library_file {
             Some(ref library_file) => {
-                crate::library_mode::calc_cdylib_name(library_file.as_ref()).map(ToOwned::to_owned)
+                library_mode::calc_cdylib_name(library_file.as_ref()).map(ToOwned::to_owned)
             }
             None => None,
         },
@@ -335,7 +343,8 @@ pub fn generate_component_scaffolding(
     out_dir_override: Option<&Utf8Path>,
     format_code: bool,
 ) -> Result<()> {
-    let component = parse_udl(udl_file, &crate_name_from_cargo_toml(udl_file)?)?;
+    let component = parse_udl(udl_file, &crate_name_from_cargo_toml(udl_file)?)
+        .with_context(|| format!("parsing udl file {udl_file}"))?;
     generate_component_scaffolding_inner(component, udl_file, out_dir_override, format_code)
 }
 
@@ -348,7 +357,8 @@ pub fn generate_component_scaffolding_for_crate(
     out_dir_override: Option<&Utf8Path>,
     format_code: bool,
 ) -> Result<()> {
-    let component = parse_udl(udl_file, crate_name)?;
+    let component =
+        parse_udl(udl_file, crate_name).with_context(|| format!("parsing udl file {udl_file}"))?;
     generate_component_scaffolding_inner(component, udl_file, out_dir_override, format_code)
 }
 
@@ -365,7 +375,7 @@ fn generate_component_scaffolding_inner(
     write!(f, "{}", RustScaffolding::new(&component, file_stem))
         .context("Failed to write output file")?;
     if format_code {
-        format_code_with_rustfmt(&out_path)?;
+        format_code_with_rustfmt(&out_path).context("formatting generated Rust code")?;
     }
     Ok(())
 }
@@ -538,7 +548,7 @@ fn merge_toml(a: &mut toml::value::Table, b: toml::value::Table) {
 
 #[allow(dead_code)]
 mod __unused {
-    const _: &[u8] = include_bytes!("../askama.toml");
+    const _: &[u8] = include_bytes!("../rinja.toml");
 }
 
 #[cfg(test)]

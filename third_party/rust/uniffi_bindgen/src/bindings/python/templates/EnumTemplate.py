@@ -28,10 +28,6 @@ class {{ type_name }}:
         def __init__(self, *values):
             if len(values) != {{ variant.fields().len() }}:
                 raise TypeError(f"Expected {{ variant.fields().len() }} arguments, found {len(values)}")
-        {%- for field in variant.fields() %}
-            if not isinstance(values[{{ loop.index0 }}], {{ field|type_name }}):
-                raise TypeError(f"unexpected type for tuple element {{ loop.index0 }} - expected '{{ field|type_name }}', got '{type(values[{{ loop.index0 }}])}'")
-        {%- endfor %}
             self._values = values
 
         def __getitem__(self, index):
@@ -41,7 +37,7 @@ class {{ type_name }}:
             return f"{{ type_name }}.{{ variant.name() }}{self._values!r}"
 
         def __eq__(self, other):
-            if not other.is_{{ variant.name()|var_name }}():
+            if not other.is_{{ variant.name() }}():
                 return False
             return self._values == other._values
 
@@ -64,7 +60,7 @@ class {{ type_name }}:
             return "{{ type_name }}.{{ variant.name() }}({% for field in variant.fields() %}{{ field.name() }}={}{% if loop.last %}{% else %}, {% endif %}{% endfor %})".format({% for field in variant.fields() %}self.{{ field.name() }}{% if loop.last %}{% else %}, {% endif %}{% endfor %})
 
         def __eq__(self, other):
-            if not other.is_{{ variant.name()|var_name }}():
+            if not other.is_{{ variant.name() }}():
                 return False
             {%- for field in variant.fields() %}
             if self.{{ field.name() }} != other.{{ field.name() }}:
@@ -77,8 +73,14 @@ class {{ type_name }}:
     
     
     {% for variant in e.variants() -%}
-    def is_{{ variant.name()|var_name }}(self) -> bool:
+    def is_{{ variant.name() }}(self) -> bool:
         return isinstance(self, {{ type_name }}.{{ variant.name() }})
+
+    {
+    {%- if variant.name() != variant.name().to_snake_case() %}
+    def is_{{ variant.name().to_snake_case() }}(self) -> bool:
+        return isinstance(self, {{ type_name }}.{{ variant.name() }})
+    {%- endif %}
     {% endfor %}
 
 
@@ -118,7 +120,7 @@ class {{ ffi_converter_name }}(_UniffiConverterRustBuffer):
         {%- if e.is_flat() %}
         if value == {{ type_name }}.{{ variant.name() }}:
         {%- else %}
-        if value.is_{{ variant.name()|var_name }}():
+        if value.is_{{ variant.name() }}():
         {%- endif %}
             {%- for field in variant.fields() %}
             {%- if variant.has_nameless_fields() %}
@@ -139,7 +141,7 @@ class {{ ffi_converter_name }}(_UniffiConverterRustBuffer):
         if value == {{ type_name }}.{{ variant.name() }}:
             buf.write_i32({{ loop.index }})
         {%- else %}
-        if value.is_{{ variant.name()|var_name }}():
+        if value.is_{{ variant.name() }}():
             buf.write_i32({{ loop.index }})
             {%- for field in variant.fields() %}
             {%- if variant.has_nameless_fields() %}

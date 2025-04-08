@@ -7,20 +7,16 @@ use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Debug;
 
-use anyhow::{anyhow, Context, Result};
-use askama::Template;
 use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToUpperCamelCase};
+use rinja::Template;
 use serde::{Deserialize, Serialize};
 
-use crate::backend::TemplateExpression;
-
-use crate::interface::*;
+use crate::{anyhow, bail, interface::ffi::ExternalFfiMetadata, interface::*, Context, Result};
 
 mod callback_interface;
 mod compounds;
 mod custom;
 mod enum_;
-mod external;
 mod miscellany;
 mod object;
 mod primitives;
@@ -39,7 +35,7 @@ trait CodeType: Debug {
     
     fn canonical_name(&self) -> String;
 
-    fn literal(&self, _literal: &Literal, ci: &ComponentInterface) -> String {
+    fn literal(&self, _literal: &Literal, ci: &ComponentInterface) -> Result<String> {
         unimplemented!("Unimplemented for {}", self.type_label(ci))
     }
 
@@ -56,12 +52,6 @@ trait CodeType: Debug {
     }
 
     
-    
-    fn imports(&self) -> Option<Vec<String>> {
-        None
-    }
-
-    
     fn initialization_fn(&self) -> Option<String> {
         None
     }
@@ -74,6 +64,8 @@ pub struct Config {
     pub(super) cdylib_name: Option<String>,
     generate_immutable_records: Option<bool>,
     #[serde(default)]
+    omit_checksums: bool,
+    #[serde(default)]
     custom_types: HashMap<String, CustomTypeConfig>,
     #[serde(default)]
     pub(super) external_packages: HashMap<String, String>,
@@ -83,6 +75,8 @@ pub struct Config {
     android_cleaner: Option<bool>,
     #[serde(default)]
     kotlin_target_version: Option<String>,
+    #[serde(default)]
+    disable_java_cleaner: bool,
 }
 
 impl Config {
@@ -107,6 +101,20 @@ impl Config {
             })
             .unwrap_or(KotlinVersion::new(0, 0, 0))
     }
+
+    
+    fn external_package_name(&self, module_path: &str, namespace: Option<&str>) -> String {
+        
+        let crate_name = module_path.split("::").next().unwrap();
+        match self.external_packages.get(crate_name) {
+            Some(name) => name.clone(),
+            
+            
+            
+            
+            None => format!("uniffi.{}", namespace.unwrap_or(module_path)),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -130,19 +138,40 @@ impl KotlinVersion {
             [major, minor, patch] => Ok(Self((*major, *minor, *patch))),
             [major, minor] => Ok(Self((*major, *minor, 0))),
             [major] => Ok(Self((*major, 0, 0))),
-            _ => Err(anyhow!(
-                "Invalid version string (expected 1-3 components): {version}"
-            )),
+            _ => bail!("Invalid version string (expected 1-3 components): {version}"),
         }
     }
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct CustomTypeConfig {
     imports: Option<Vec<String>>,
     type_name: Option<String>,
-    into_custom: TemplateExpression,
-    from_custom: TemplateExpression,
+    into_custom: String, 
+    lift: String,
+    from_custom: String, 
+    lower: String,
+}
+
+
+impl CustomTypeConfig {
+    fn lift(&self, name: &str) -> String {
+        let converter = if self.lift.is_empty() {
+            &self.into_custom
+        } else {
+            &self.lift
+        };
+        converter.replace("{}", name)
+    }
+    fn lower(&self, name: &str) -> String {
+        let converter = if self.lower.is_empty() {
+            &self.from_custom
+        } else {
+            &self.lower
+        };
+        converter.replace("{}", name)
+    }
 }
 
 impl Config {
@@ -165,11 +194,16 @@ impl Config {
     pub fn generate_immutable_records(&self) -> bool {
         self.generate_immutable_records.unwrap_or(false)
     }
+
+    pub fn disable_java_cleaner(&self) -> bool {
+        self.disable_java_cleaner
+    }
 }
 
 
 pub fn generate_bindings(config: &Config, ci: &ComponentInterface) -> Result<String> {
     KotlinWrapper::new(config.clone(), ci)
+        .context("failed to create a binding generator")?
         .render()
         .context("failed to render kotlin bindings")
 }
@@ -222,13 +256,8 @@ impl<'a> TypeRenderer<'a> {
 
     
     fn external_type_package_name(&self, module_path: &str, namespace: &str) -> String {
-        
-        let crate_name = module_path.split("::").next().unwrap();
-        match self.config.external_packages.get(crate_name) {
-            Some(name) => name.clone(),
-            
-            None => format!("uniffi.{namespace}"),
-        }
+        self.config
+            .external_package_name(module_path, Some(namespace))
     }
 
     
@@ -278,28 +307,96 @@ pub struct KotlinWrapper<'a> {
 }
 
 impl<'a> KotlinWrapper<'a> {
-    pub fn new(config: Config, ci: &'a ComponentInterface) -> Self {
+    pub fn new(config: Config, ci: &'a ComponentInterface) -> Result<Self> {
         let type_renderer = TypeRenderer::new(&config, ci);
-        let type_helper_code = type_renderer.render().unwrap();
+        let type_helper_code = type_renderer.render()?;
         let type_imports = type_renderer.imports.into_inner();
-        Self {
+        Ok(Self {
             config,
             ci,
             type_helper_code,
             type_imports,
-        }
+        })
     }
 
-    pub fn initialization_fns(&self) -> Vec<String> {
-        self.ci
-            .iter_types()
+    pub fn initialization_fns(&self, ci: &ComponentInterface) -> Vec<String> {
+        let init_fns = self
+            .ci
+            .iter_local_types()
             .map(|t| KotlinCodeOracle.find(t))
             .filter_map(|ct| ct.initialization_fn())
-            .collect()
+            .map(|fn_name| format!("{fn_name}(lib)"));
+
+        
+        
+        
+        let extern_module_init_fns = self
+            .ci
+            .iter_external_types()
+            .filter_map(|ty| ty.module_path())
+            .map(|module_path| {
+                let namespace = ci.namespace_for_module_path(module_path).unwrap();
+                let package_name = self
+                    .config
+                    .external_package_name(module_path, Some(namespace));
+                format!("{package_name}.uniffiEnsureInitialized()")
+            })
+            .collect::<HashSet<_>>();
+
+        init_fns.chain(extern_module_init_fns).collect()
     }
 
     pub fn imports(&self) -> Vec<ImportRequirement> {
         self.type_imports.iter().cloned().collect()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+fn object_interface_name(ci: &ComponentInterface, obj: &Object) -> String {
+    let class_name = KotlinCodeOracle.class_name(ci, obj.name());
+    if obj.has_callback_interface() {
+        class_name
+    } else {
+        format!("{class_name}Interface")
+    }
+}
+
+
+
+fn trait_interface_name(ci: &ComponentInterface, name: &str) -> Result<String> {
+    let (obj_name, has_callback_interface) = match ci.get_object_definition(name) {
+        Some(obj) => (obj.name(), obj.has_callback_interface()),
+        None => (
+            ci.get_callback_interface_definition(name)
+                .ok_or_else(|| anyhow!("no interface {}", name))?
+                .name(),
+            true,
+        ),
+    };
+    let class_name = KotlinCodeOracle.class_name(ci, obj_name);
+    if has_callback_interface {
+        Ok(class_name)
+    } else {
+        Ok(format!("{class_name}Interface"))
+    }
+}
+
+
+fn object_impl_name(ci: &ComponentInterface, obj: &Object) -> String {
+    let class_name = KotlinCodeOracle.class_name(ci, obj.name());
+    if obj.has_callback_interface() {
+        format!("{class_name}Impl")
+    } else {
+        class_name
     }
 }
 
@@ -357,11 +454,11 @@ impl KotlinCodeOracle {
         format!("Uniffi{}", nm.to_upper_camel_case())
     }
 
-    fn ffi_type_label_by_value(&self, ffi_type: &FfiType) -> String {
+    fn ffi_type_label_by_value(&self, ffi_type: &FfiType, ci: &ComponentInterface) -> String {
         match ffi_type {
-            FfiType::RustBuffer(_) => format!("{}.ByValue", self.ffi_type_label(ffi_type)),
+            FfiType::RustBuffer(_) => format!("{}.ByValue", self.ffi_type_label(ffi_type, ci)),
             FfiType::Struct(name) => format!("{}.UniffiByValue", self.ffi_struct_name(name)),
-            _ => self.ffi_type_label(ffi_type),
+            _ => self.ffi_type_label(ffi_type, ci),
         }
     }
 
@@ -369,12 +466,12 @@ impl KotlinCodeOracle {
     
     
     
-    fn ffi_type_label_for_ffi_struct(&self, ffi_type: &FfiType) -> String {
+    fn ffi_type_label_for_ffi_struct(&self, ffi_type: &FfiType, ci: &ComponentInterface) -> String {
         match ffi_type {
             
             
             FfiType::Callback(name) => format!("{}?", self.ffi_callback_name(name)),
-            _ => self.ffi_type_label_by_value(ffi_type),
+            _ => self.ffi_type_label_by_value(ffi_type, ci),
         }
     }
 
@@ -399,7 +496,7 @@ impl KotlinCodeOracle {
         }
     }
 
-    fn ffi_type_label_by_reference(&self, ffi_type: &FfiType) -> String {
+    fn ffi_type_label_by_reference(&self, ffi_type: &FfiType, ci: &ComponentInterface) -> String {
         match ffi_type {
             FfiType::Int8
             | FfiType::UInt8
@@ -410,15 +507,15 @@ impl KotlinCodeOracle {
             | FfiType::Int64
             | FfiType::UInt64
             | FfiType::Float32
-            | FfiType::Float64 => format!("{}ByReference", self.ffi_type_label(ffi_type)),
+            | FfiType::Float64 => format!("{}ByReference", self.ffi_type_label(ffi_type, ci)),
             FfiType::RustArcPtr(_) => "PointerByReference".to_owned(),
             
-            FfiType::RustBuffer(_) | FfiType::Struct(_) => self.ffi_type_label(ffi_type),
+            FfiType::RustBuffer(_) | FfiType::Struct(_) => self.ffi_type_label(ffi_type, ci),
             _ => panic!("{ffi_type:?} by reference is not implemented"),
         }
     }
 
-    fn ffi_type_label(&self, ffi_type: &FfiType) -> String {
+    fn ffi_type_label(&self, ffi_type: &FfiType, ci: &ComponentInterface) -> String {
         match ffi_type {
             
             
@@ -432,33 +529,19 @@ impl KotlinCodeOracle {
             FfiType::Handle => "Long".to_string(),
             FfiType::RustArcPtr(_) => "Pointer".to_string(),
             FfiType::RustBuffer(maybe_external) => match maybe_external {
-                Some(external_meta) => format!("RustBuffer{}", external_meta.name),
-                None => "RustBuffer".to_string(),
+                Some(external_meta) if external_meta.module_path != ci.crate_name() => {
+                    format!("RustBuffer{}", external_meta.name)
+                }
+                _ => "RustBuffer".to_string(),
             },
             FfiType::RustCallStatus => "UniffiRustCallStatus.ByValue".to_string(),
             FfiType::ForeignBytes => "ForeignBytes.ByValue".to_string(),
             FfiType::Callback(name) => self.ffi_callback_name(name),
             FfiType::Struct(name) => self.ffi_struct_name(name),
-            FfiType::Reference(inner) => self.ffi_type_label_by_reference(inner),
+            FfiType::Reference(inner) | FfiType::MutReference(inner) => {
+                self.ffi_type_label_by_reference(inner, ci)
+            }
             FfiType::VoidPointer => "Pointer".to_string(),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    fn object_names(&self, ci: &ComponentInterface, obj: &Object) -> (String, String) {
-        let class_name = self.class_name(ci, obj.name());
-        if obj.has_callback_interface() {
-            let impl_name = format!("{class_name}Impl");
-            (class_name, impl_name)
-        } else {
-            (format!("{class_name}Interface"), class_name)
         }
     }
 }
@@ -510,10 +593,18 @@ impl<T: AsType> AsCodeType for T {
                 key_type,
                 value_type,
             } => Box::new(compounds::MapCodeType::new(*key_type, *value_type)),
-            Type::External { name, .. } => Box::new(external::ExternalCodeType::new(name)),
             Type::Custom { name, .. } => Box::new(custom::CustomCodeType::new(name)),
         }
     }
+}
+
+
+fn can_render_callable(callable: &dyn Callable, ci: &ComponentInterface) -> bool {
+    
+    callable
+        .throws_type()
+        .map(|t| !ci.is_external(t))
+        .unwrap_or(true)
 }
 
 mod filters {
@@ -524,44 +615,44 @@ mod filters {
     pub(super) fn type_name(
         as_ct: &impl AsCodeType,
         ci: &ComponentInterface,
-    ) -> Result<String, askama::Error> {
+    ) -> Result<String, rinja::Error> {
         Ok(as_ct.as_codetype().type_label(ci))
     }
 
-    pub(super) fn canonical_name(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn canonical_name(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(as_ct.as_codetype().canonical_name())
     }
 
-    pub(super) fn ffi_converter_name(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn ffi_converter_name(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(as_ct.as_codetype().ffi_converter_name())
     }
 
-    pub(super) fn lower_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn lower_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(format!(
             "{}.lower",
             as_ct.as_codetype().ffi_converter_name()
         ))
     }
 
-    pub(super) fn allocation_size_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn allocation_size_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(format!(
             "{}.allocationSize",
             as_ct.as_codetype().ffi_converter_name()
         ))
     }
 
-    pub(super) fn write_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn write_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(format!(
             "{}.write",
             as_ct.as_codetype().ffi_converter_name()
         ))
     }
 
-    pub(super) fn lift_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn lift_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(format!("{}.lift", as_ct.as_codetype().ffi_converter_name()))
     }
 
-    pub(super) fn read_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
+    pub(super) fn read_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
         Ok(format!("{}.read", as_ct.as_codetype().ffi_converter_name()))
     }
 
@@ -569,104 +660,103 @@ mod filters {
         literal: &Literal,
         as_ct: &impl AsType,
         ci: &ComponentInterface,
-    ) -> Result<String, askama::Error> {
-        Ok(as_ct.as_codetype().literal(literal, ci))
+    ) -> Result<String, rinja::Error> {
+        as_ct
+            .as_codetype()
+            .literal(literal, ci)
+            .map_err(|e| to_rinja_error(&e))
     }
 
     
-    fn int_literal(t: &Option<Type>, base10: String) -> Result<String, askama::Error> {
+    fn int_literal(t: &Option<Type>, base10: String) -> Result<String, rinja::Error> {
         if let Some(t) = t {
             match t {
                 Type::Int8 | Type::Int16 | Type::Int32 | Type::Int64 => Ok(base10),
                 Type::UInt8 | Type::UInt16 | Type::UInt32 | Type::UInt64 => Ok(base10 + "u"),
-                _ => Err(askama::Error::Custom(Box::new(UniFFIError::new(
-                    "Only ints are supported.".to_string(),
-                )))),
+                _ => Err(to_rinja_error("Only ints are supported.")),
             }
         } else {
-            Err(askama::Error::Custom(Box::new(UniFFIError::new(
-                "Enum hasn't defined a repr".to_string(),
-            ))))
+            Err(to_rinja_error("Enum hasn't defined a repr"))
         }
     }
 
     
-    pub fn variant_discr_literal(e: &Enum, index: &usize) -> Result<String, askama::Error> {
+    pub fn variant_discr_literal(e: &Enum, index: &usize) -> Result<String, rinja::Error> {
         let literal = e.variant_discr(*index).expect("invalid index");
         match literal {
             
             
             LiteralMetadata::UInt(v, _, _) => int_literal(e.variant_discr_type(), v.to_string()),
             LiteralMetadata::Int(v, _, _) => int_literal(e.variant_discr_type(), v.to_string()),
-            _ => Err(askama::Error::Custom(Box::new(UniFFIError::new(
-                "Only ints are supported.".to_string(),
-            )))),
+            _ => Err(to_rinja_error("Only ints are supported.")),
         }
     }
 
-    pub fn ffi_type_name_by_value(type_: &FfiType) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.ffi_type_label_by_value(type_))
+    pub fn ffi_type_name_by_value(
+        type_: &FfiType,
+        ci: &ComponentInterface,
+    ) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.ffi_type_label_by_value(type_, ci))
     }
 
-    pub fn ffi_type_name_for_ffi_struct(type_: &FfiType) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.ffi_type_label_for_ffi_struct(type_))
+    pub fn ffi_type_name_for_ffi_struct(
+        type_: &FfiType,
+        ci: &ComponentInterface,
+    ) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.ffi_type_label_for_ffi_struct(type_, ci))
     }
 
-    pub fn ffi_default_value(type_: FfiType) -> Result<String, askama::Error> {
+    pub fn ffi_default_value(type_: FfiType) -> Result<String, rinja::Error> {
         Ok(KotlinCodeOracle.ffi_default_value(&type_))
     }
 
     
-    pub fn class_name(nm: &str, ci: &ComponentInterface) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.class_name(ci, nm))
+    pub fn class_name<S: AsRef<str>>(
+        nm: S,
+        ci: &ComponentInterface,
+    ) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.class_name(ci, nm.as_ref()))
     }
 
     
-    pub fn fn_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.fn_name(nm))
+    pub fn fn_name<S: AsRef<str>>(nm: S) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.fn_name(nm.as_ref()))
     }
 
     
-    pub fn var_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.var_name(nm))
+    pub fn var_name<S: AsRef<str>>(nm: S) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.var_name(nm.as_ref()))
     }
 
     
-    pub fn var_name_raw(nm: &str) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.var_name_raw(nm))
+    pub fn var_name_raw<S: AsRef<str>>(nm: S) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.var_name_raw(nm.as_ref()))
     }
 
     
-    pub fn variant_name(v: &Variant) -> Result<String, askama::Error> {
+    pub fn variant_name(v: &Variant) -> Result<String, rinja::Error> {
         Ok(KotlinCodeOracle.enum_variant_name(v.name()))
     }
 
-    pub fn error_variant_name(v: &Variant) -> Result<String, askama::Error> {
+    pub fn error_variant_name(v: &Variant) -> Result<String, rinja::Error> {
         let name = v.name().to_string().to_upper_camel_case();
         Ok(KotlinCodeOracle.convert_error_suffix(&name))
     }
 
     
-    pub fn ffi_callback_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.ffi_callback_name(nm))
+    pub fn ffi_callback_name<S: AsRef<str>>(nm: S) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.ffi_callback_name(nm.as_ref()))
     }
 
     
-    pub fn ffi_struct_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.ffi_struct_name(nm))
-    }
-
-    pub fn object_names(
-        obj: &Object,
-        ci: &ComponentInterface,
-    ) -> Result<(String, String), askama::Error> {
-        Ok(KotlinCodeOracle.object_names(ci, obj))
+    pub fn ffi_struct_name<S: AsRef<str>>(nm: S) -> Result<String, rinja::Error> {
+        Ok(KotlinCodeOracle.ffi_struct_name(nm.as_ref()))
     }
 
     pub fn async_poll(
         callable: impl Callable,
         ci: &ComponentInterface,
-    ) -> Result<String, askama::Error> {
+    ) -> Result<String, rinja::Error> {
         let ffi_func = callable.ffi_rust_future_poll(ci);
         Ok(format!(
             "{{ future, callback, continuation -> UniffiLib.INSTANCE.{ffi_func}(future, callback, continuation) }}"
@@ -676,18 +766,20 @@ mod filters {
     pub fn async_complete(
         callable: impl Callable,
         ci: &ComponentInterface,
-    ) -> Result<String, askama::Error> {
+    ) -> Result<String, rinja::Error> {
         let ffi_func = callable.ffi_rust_future_complete(ci);
         let call = format!("UniffiLib.INSTANCE.{ffi_func}(future, continuation)");
+        
         let call = match callable.return_type() {
-            Some(Type::External {
-                kind: ExternalKind::DataClass,
-                name,
-                ..
-            }) => {
-                
-                let suffix = KotlinCodeOracle.class_name(ci, &name);
-                format!("{call}.let {{ RustBuffer{suffix}.create(it.capacity.toULong(), it.len.toULong(), it.data) }}")
+            Some(return_type) if ci.is_external(return_type) => {
+                let ffi_type = FfiType::from(return_type);
+                match ffi_type {
+                    FfiType::RustBuffer(Some(ExternalFfiMetadata { name, .. })) => {
+                        let suffix = KotlinCodeOracle.class_name(ci, &name);
+                        format!("{call}.let {{ RustBuffer{suffix}.create(it.capacity.toULong(), it.len.toULong(), it.data) }}")
+                    }
+                    _ => call,
+                }
             }
             _ => call,
         };
@@ -697,7 +789,7 @@ mod filters {
     pub fn async_free(
         callable: impl Callable,
         ci: &ComponentInterface,
-    ) -> Result<String, askama::Error> {
+    ) -> Result<String, rinja::Error> {
         let ffi_func = callable.ffi_rust_future_free(ci);
         Ok(format!(
             "{{ future -> UniffiLib.INSTANCE.{ffi_func}(future) }}"
@@ -709,13 +801,13 @@ mod filters {
     
     
     
-    pub fn unquote(nm: &str) -> Result<String, askama::Error> {
-        Ok(nm.trim_matches('`').to_string())
+    pub fn unquote<S: AsRef<str>>(nm: S) -> Result<String, rinja::Error> {
+        Ok(nm.as_ref().trim_matches('`').to_string())
     }
 
     
-    pub fn docstring(docstring: &str, spaces: &i32) -> Result<String, askama::Error> {
-        let middle = textwrap::indent(&textwrap::dedent(docstring), " * ");
+    pub fn docstring<S: AsRef<str>>(docstring: S, spaces: &i32) -> Result<String, rinja::Error> {
+        let middle = textwrap::indent(&textwrap::dedent(docstring.as_ref()), " * ");
         let wrapped = format!("/**\n{middle}\n */");
 
         let spaces = usize::try_from(*spaces).unwrap_or_default();

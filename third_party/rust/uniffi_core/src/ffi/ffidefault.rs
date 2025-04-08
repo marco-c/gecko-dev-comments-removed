@@ -8,8 +8,6 @@
 
 
 
-use paste::paste;
-
 pub trait FfiDefault {
     fn ffi_default() -> Self;
 }
@@ -19,11 +17,9 @@ macro_rules! impl_ffi_default_with_default {
     ($($T:ty,)+) => { impl_ffi_default_with_default!($($T),+); };
     ($($T:ty),*) => {
             $(
-                paste! {
-                    impl FfiDefault for $T {
-                        fn ffi_default() -> Self {
-                            $T::default()
-                        }
+                impl FfiDefault for $T {
+                    fn ffi_default() -> Self {
+                        <$T>::default()
                     }
                 }
             )*

@@ -98,6 +98,7 @@ impl RustBuffer {
     
     
     
+    
     pub fn len(&self) -> usize {
         self.len
             .try_into()

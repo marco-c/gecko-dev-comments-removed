@@ -34,6 +34,7 @@ impl PingType {
     
     
     
+    
     #[allow(clippy::too_many_arguments)]
     pub fn new<A: Into<String>>(
         name: A,
@@ -45,6 +46,7 @@ impl PingType {
         schedules_pings: Vec<String>,
         reason_codes: Vec<String>,
         follows_collection_enabled: bool,
+        uploader_capabilities: Vec<String>,
     ) -> Self {
         let inner = glean_core::metrics::PingType::new(
             name.into(),
@@ -56,6 +58,7 @@ impl PingType {
             schedules_pings,
             reason_codes,
             follows_collection_enabled,
+            uploader_capabilities,
         );
 
         Self {

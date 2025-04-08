@@ -85,32 +85,30 @@ use std::{
     task::{Context, Poll, Wake},
 };
 
-use super::{RustFutureContinuationCallback, RustFuturePoll, Scheduler};
+use super::{RustFutureContinuationCallback, RustFuturePoll, Scheduler, UniffiCompatibleFuture};
 use crate::{rust_call_with_out_status, FfiDefault, LiftArgsError, LowerReturn, RustCallStatus};
 
+type BoxedFuture<T> = Pin<Box<dyn UniffiCompatibleFuture<Result<T, LiftArgsError>>>>;
 
-struct WrappedFuture<F, T, UT>
+
+struct WrappedFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
     
     
     
-    future: Option<F>,
+    future: Option<BoxedFuture<T>>,
     result: Option<Result<T::ReturnType, RustCallStatus>>,
 }
 
-impl<F, T, UT> WrappedFuture<F, T, UT>
+impl<T, UT> WrappedFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
-    fn new(future: F) -> Self {
+    fn new(future: BoxedFuture<T>) -> Self {
         Self {
             future: Some(future),
             result: None,
@@ -157,7 +155,7 @@ where
                 }
             }
         } else {
-            log::error!("poll with neither future nor result set");
+            trace!("poll with neither future nor result set");
             true
         }
     }
@@ -183,40 +181,34 @@ where
 
 
 
-unsafe impl<F, T, UT> Send for WrappedFuture<F, T, UT>
+unsafe impl<T, UT> Send for WrappedFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
 }
 
 
-pub(super) struct RustFuture<F, T, UT>
+pub(super) struct RustFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
     
     
-    future: Mutex<WrappedFuture<F, T, UT>>,
+    future: Mutex<WrappedFuture<T, UT>>,
     scheduler: Mutex<Scheduler>,
     
     
     _phantom: PhantomData<fn(UT) -> ()>,
 }
 
-impl<F, T, UT> RustFuture<F, T, UT>
+impl<T, UT> RustFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
-    pub(super) fn new(future: F, _tag: UT) -> Arc<Self> {
+    pub(super) fn new(future: BoxedFuture<T>, _tag: UT) -> Arc<Self> {
         Arc::new(Self {
             future: Mutex::new(WrappedFuture::new(future)),
             scheduler: Mutex::new(Scheduler::new()),
@@ -225,12 +217,14 @@ where
     }
 
     pub(super) fn poll(self: Arc<Self>, callback: RustFutureContinuationCallback, data: u64) {
-        let ready = self.is_cancelled() || {
+        let cancelled = self.is_cancelled();
+        let ready = cancelled || {
             let mut locked = self.future.lock().unwrap();
             let waker: std::task::Waker = Arc::clone(&self).into();
             locked.poll(&mut Context::from_waker(&waker))
         };
         if ready {
+            trace!("RustFuture::poll is ready (cancelled: {cancelled})");
             callback(data, RustFuturePoll::Ready)
         } else {
             self.scheduler.lock().unwrap().store(callback, data);
@@ -242,6 +236,7 @@ where
     }
 
     pub(super) fn wake(&self) {
+        trace!("RustFuture::wake called");
         self.scheduler.lock().unwrap().wake();
     }
 
@@ -261,10 +256,8 @@ where
     }
 }
 
-impl<F, T, UT> Wake for RustFuture<F, T, UT>
+impl<T, UT> Wake for RustFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -296,10 +289,8 @@ pub trait RustFutureFfi<ReturnType>: Send + Sync {
     fn ffi_free(self: Arc<Self>);
 }
 
-impl<F, T, UT> RustFutureFfi<T::ReturnType> for RustFuture<F, T, UT>
+impl<T, UT> RustFutureFfi<T::ReturnType> for RustFuture<T, UT>
 where
-    
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {

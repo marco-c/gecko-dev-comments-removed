@@ -15,7 +15,7 @@
 
 
 use anyhow::{bail, Result};
-use uniffi_meta::{Checksum, ExternalKind, ObjectImpl};
+use uniffi_meta::{Checksum, ObjectImpl};
 
 
 
@@ -32,34 +32,16 @@ pub(super) enum Attribute {
     Throws(String),
     Traits(Vec<String>),
     
-    External {
-        crate_name: String,
-        kind: ExternalKind,
-        export: bool,
-    },
-    Rust {
-        kind: RustKind,
-    },
+    External { crate_name: String },
+    Remote,
     
-    Custom,
+    Custom { crate_name: Option<String> },
     
     Trait,
     
     WithForeign,
     Async,
     NonExhaustive,
-}
-
-
-
-#[derive(Debug, Copy, Clone, Checksum)]
-pub(super) enum RustKind {
-    Object,
-    CallbackTrait,
-    Trait,
-    Record,
-    Enum,
-    CallbackInterface,
 }
 
 impl Attribute {
@@ -84,11 +66,12 @@ impl TryFrom<&weedle::attribute::ExtendedAttribute<'_>> for Attribute {
                 "ByRef" => Ok(Attribute::ByRef),
                 "Enum" => Ok(Attribute::Enum),
                 "Error" => Ok(Attribute::Error),
-                "Custom" => Ok(Attribute::Custom),
+                "Custom" => Ok(Attribute::Custom { crate_name: None }),
                 "Trait" => Ok(Attribute::Trait),
                 "WithForeign" => Ok(Attribute::WithForeign),
                 "Async" => Ok(Attribute::Async),
                 "NonExhaustive" => Ok(Attribute::NonExhaustive),
+                "Remote" => Ok(Attribute::Remote),
                 _ => anyhow::bail!("ExtendedAttributeNoArgs not supported: {:?}", (attr.0).0),
             },
             
@@ -99,36 +82,9 @@ impl TryFrom<&weedle::attribute::ExtendedAttribute<'_>> for Attribute {
                     "Self" => Ok(Attribute::SelfType(SelfType::try_from(&identity.rhs)?)),
                     "External" => Ok(Attribute::External {
                         crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::DataClass,
-                        export: false,
                     }),
-                    "ExternalExport" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::DataClass,
-                        export: true,
-                    }),
-                    "ExternalInterface" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::Interface,
-                        export: false,
-                    }),
-                    "ExternalInterfaceExport" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::Interface,
-                        export: true,
-                    }),
-                    "ExternalTrait" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::Trait,
-                        export: false,
-                    }),
-                    "ExternalTraitExport" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::Trait,
-                        export: true,
-                    }),
-                    "Rust" => Ok(Attribute::Rust {
-                        kind: rust_kind_from_id_or_string(&identity.rhs)?,
+                    "Custom" => Ok(Attribute::Custom {
+                        crate_name: Some(name_from_id_or_string(&identity.rhs)),
                     }),
                     _ => anyhow::bail!(
                         "Attribute identity Identifier not supported: {:?}",
@@ -165,26 +121,6 @@ fn name_from_id_or_string(nm: &weedle::attribute::IdentifierOrString<'_>) -> Str
     }
 }
 
-fn rust_kind_from_id_or_string(nm: &weedle::attribute::IdentifierOrString<'_>) -> Result<RustKind> {
-    Ok(match nm {
-        weedle::attribute::IdentifierOrString::String(str_lit) => match str_lit.0 {
-            
-            "interface" => RustKind::Object,
-            "object" => RustKind::Object,
-            "record" => RustKind::Record,
-            "dictionary" => RustKind::Record,
-            "enum" => RustKind::Enum,
-            "trait" => RustKind::Trait,
-            "callback" => RustKind::CallbackInterface,
-            "trait_with_foreign" => RustKind::CallbackTrait,
-            _ => anyhow::bail!("Unknown `[Rust=]` kind {:?}", str_lit.0),
-        },
-        weedle::attribute::IdentifierOrString::Identifier(_) => {
-            anyhow::bail!("Expected string attribute value, got identifier")
-        }
-    })
-}
-
 
 
 fn parse_attributes<F>(
@@ -217,6 +153,41 @@ where
 
 
 #[derive(Debug, Clone, Checksum, Default)]
+pub(super) struct DictionaryAttributes(Vec<Attribute>);
+
+impl DictionaryAttributes {
+    pub fn contains_remote(&self) -> bool {
+        self.0.iter().any(|attr| matches!(attr, Attribute::Remote))
+    }
+}
+
+impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for DictionaryAttributes {
+    type Error = anyhow::Error;
+    fn try_from(
+        weedle_attributes: &weedle::attribute::ExtendedAttributeList<'_>,
+    ) -> Result<Self, Self::Error> {
+        let attrs = parse_attributes(weedle_attributes, |attr| match attr {
+            Attribute::Remote => Ok(()),
+            _ => bail!(format!("{attr:?} not supported for dictionaries")),
+        })?;
+        Ok(Self(attrs))
+    }
+}
+
+impl<T: TryInto<DictionaryAttributes, Error = anyhow::Error>> TryFrom<Option<T>>
+    for DictionaryAttributes
+{
+    type Error = anyhow::Error;
+    fn try_from(value: Option<T>) -> Result<Self, Self::Error> {
+        match value {
+            None => Ok(Default::default()),
+            Some(v) => v.try_into(),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct EnumAttributes(Vec<Attribute>);
 
 impl EnumAttributes {
@@ -229,6 +200,10 @@ impl EnumAttributes {
             .iter()
             .any(|attr| matches!(attr, Attribute::NonExhaustive))
     }
+
+    pub fn contains_remote(&self) -> bool {
+        self.0.iter().any(|attr| matches!(attr, Attribute::Remote))
+    }
 }
 
 impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for EnumAttributes {
@@ -239,6 +214,7 @@ impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for EnumAttributes {
         let attrs = parse_attributes(weedle_attributes, |attr| match attr {
             Attribute::Error => Ok(()),
             Attribute::NonExhaustive => Ok(()),
+            Attribute::Remote => Ok(()),
             
             
             Attribute::Enum => Ok(()),
@@ -367,6 +343,10 @@ impl InterfaceAttributes {
         self.0.iter().any(|attr| matches!(attr, Attribute::Trait))
     }
 
+    pub fn contains_remote(&self) -> bool {
+        self.0.iter().any(|attr| matches!(attr, Attribute::Remote))
+    }
+
     pub fn contains_with_foreign(&self) -> bool {
         self.0
             .iter()
@@ -405,6 +385,7 @@ impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for InterfaceAttribu
             Attribute::Trait => Ok(()),
             Attribute::WithForeign => Ok(()),
             Attribute::Traits(_) => Ok(()),
+            Attribute::Remote => Ok(()),
             _ => bail!(format!("{attr:?} not supported for interface definition")),
         })?;
         if attrs.iter().any(|a| matches!(a, Attribute::Enum)) && attrs.len() != 1 {
@@ -566,43 +547,21 @@ impl TryFrom<&weedle::attribute::IdentifierOrString<'_>> for SelfType {
 pub(super) struct TypedefAttributes(Vec<Attribute>);
 
 impl TypedefAttributes {
-    pub(super) fn get_crate_name(&self) -> String {
-        self.0
-            .iter()
-            .find_map(|attr| match attr {
-                Attribute::External { crate_name, .. } => Some(crate_name.clone()),
-                _ => None,
-            })
-            .expect("must have a crate name")
+    pub(super) fn get_crate_name(&self) -> Option<String> {
+        self.0.iter().find_map(|attr| match attr {
+            Attribute::External { crate_name, .. } => Some(crate_name.clone()),
+            Attribute::Custom {
+                crate_name: Some(crate_name),
+                ..
+            } => Some(crate_name.clone()),
+            _ => None,
+        })
     }
 
     pub(super) fn is_custom(&self) -> bool {
         self.0
             .iter()
             .any(|attr| matches!(attr, Attribute::Custom { .. }))
-    }
-
-    pub(super) fn external_kind(&self) -> Option<ExternalKind> {
-        self.0.iter().find_map(|attr| match attr {
-            Attribute::External { kind, .. } => Some(*kind),
-            _ => None,
-        })
-    }
-
-    pub(super) fn rust_kind(&self) -> Option<RustKind> {
-        self.0.iter().find_map(|attr| match attr {
-            Attribute::Rust { kind, .. } => Some(*kind),
-            _ => None,
-        })
-    }
-
-    pub(super) fn external_tagged(&self) -> Option<bool> {
-        
-        self.0.iter().find_map(|attr| match attr {
-            Attribute::External { export, .. } => Some(!*export),
-            Attribute::Rust { .. } => Some(false),
-            _ => None,
-        })
     }
 }
 
@@ -612,9 +571,12 @@ impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for TypedefAttribute
         weedle_attributes: &weedle::attribute::ExtendedAttributeList<'_>,
     ) -> Result<Self, Self::Error> {
         let attrs = parse_attributes(weedle_attributes, |attr| match attr {
-            Attribute::External { .. } | Attribute::Custom | Attribute::Rust { .. } => Ok(()),
+            Attribute::External { .. } | Attribute::Custom { .. } => Ok(()),
             _ => bail!(format!("{attr:?} not supported for typedefs")),
         })?;
+        if attrs.len() > 1 {
+            bail!("Can't be [Custom] and [External]");
+        }
         Ok(Self(attrs))
     }
 }
@@ -895,6 +857,17 @@ mod test {
     }
 
     #[test]
+    fn test_dictionary_attributes() {
+        let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Remote]").unwrap();
+        let attrs = DictionaryAttributes::try_from(&node).unwrap();
+        assert!(attrs.contains_remote());
+
+        let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Trait]").unwrap();
+        let err = DictionaryAttributes::try_from(&node).unwrap_err();
+        assert_eq!(err.to_string(), "Trait not supported for dictionaries");
+    }
+
+    #[test]
     fn test_enum_attribute_on_interface() {
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Enum]").unwrap();
         let attrs = InterfaceAttributes::try_from(&node).unwrap();
@@ -920,10 +893,12 @@ mod test {
     #[test]
     fn test_enum_attributes() {
         let (_, node) =
-            weedle::attribute::ExtendedAttributeList::parse("[Error, NonExhaustive]").unwrap();
+            weedle::attribute::ExtendedAttributeList::parse("[Error, NonExhaustive, Remote]")
+                .unwrap();
         let attrs = EnumAttributes::try_from(&node).unwrap();
         assert!(attrs.contains_error_attr());
         assert!(attrs.contains_non_exhaustive_attr());
+        assert!(attrs.contains_remote());
 
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Trait]").unwrap();
         let err = EnumAttributes::try_from(&node).unwrap_err();
@@ -937,11 +912,12 @@ mod test {
         assert!(EnumAttributes::try_from(&node).is_ok());
 
         let (_, node) =
-            weedle::attribute::ExtendedAttributeList::parse("[Enum, Error, NonExhaustive]")
+            weedle::attribute::ExtendedAttributeList::parse("[Enum, Error, NonExhaustive, Remote]")
                 .unwrap();
         let attrs = EnumAttributes::try_from(&node).unwrap();
         assert!(attrs.contains_error_attr());
         assert!(attrs.contains_non_exhaustive_attr());
+        assert!(attrs.contains_remote());
 
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Enum, Trait]").unwrap();
         let err = EnumAttributes::try_from(&node).unwrap_err();
@@ -949,7 +925,11 @@ mod test {
     }
 
     #[test]
-    fn test_other_attributes_not_supported_for_interfaces() {
+    fn test_interface_attributes() {
+        let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Remote]").unwrap();
+        let attrs = InterfaceAttributes::try_from(&node).unwrap();
+        assert!(attrs.contains_remote());
+
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Trait, ByRef]").unwrap();
         let err = InterfaceAttributes::try_from(&node).unwrap_err();
         assert_eq!(
@@ -963,29 +943,27 @@ mod test {
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Custom]").unwrap();
         let attrs = TypedefAttributes::try_from(&node).unwrap();
         assert!(attrs.is_custom());
+        assert!(attrs.get_crate_name().is_none());
+
+        let (_, node) =
+            weedle::attribute::ExtendedAttributeList::parse("[Custom=\"crate_name\"]").unwrap();
+        let attrs = TypedefAttributes::try_from(&node).unwrap();
+        assert!(attrs.is_custom());
+        assert_eq!(attrs.get_crate_name().unwrap(), "crate_name");
 
         let (_, node) =
             weedle::attribute::ExtendedAttributeList::parse("[External=crate_name]").unwrap();
         let attrs = TypedefAttributes::try_from(&node).unwrap();
         assert!(!attrs.is_custom());
-        assert_eq!(attrs.get_crate_name(), "crate_name");
-
-        let (_, node) =
-            weedle::attribute::ExtendedAttributeList::parse("[ExternalInterface=crate_name ]")
-                .unwrap();
-        let attrs = TypedefAttributes::try_from(&node).unwrap();
-        assert!(!attrs.is_custom());
-        assert_eq!(attrs.get_crate_name(), "crate_name");
+        assert_eq!(attrs.get_crate_name().unwrap(), "crate_name");
     }
 
     #[test]
     fn test_typedef_attributes_malformed() {
-        let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Custom=foo]").unwrap();
+        let (_, node) =
+            weedle::attribute::ExtendedAttributeList::parse("[External=foo, Custom]").unwrap();
         let err = TypedefAttributes::try_from(&node).unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "Attribute identity Identifier not supported: \"Custom\""
-        );
+        assert_eq!(err.to_string(), "Can't be [Custom] and [External]");
 
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[External]").unwrap();
         let err = TypedefAttributes::try_from(&node).unwrap_err();

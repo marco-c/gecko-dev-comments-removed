@@ -40,6 +40,9 @@ struct InnerPing {
     
     
     follows_collection_enabled: AtomicBool,
+
+    
+    uploader_capabilities: Vec<String>,
 }
 
 impl fmt::Debug for PingType {
@@ -57,6 +60,7 @@ impl fmt::Debug for PingType {
                 "follows_collection_enabled",
                 &self.0.follows_collection_enabled.load(Ordering::Relaxed),
             )
+            .field("uploader_capabilities", &self.0.uploader_capabilities)
             .finish()
     }
 }
@@ -66,6 +70,7 @@ impl fmt::Debug for PingType {
 
 
 impl PingType {
+    
     
     
     
@@ -90,6 +95,7 @@ impl PingType {
         schedules_pings: Vec<String>,
         reason_codes: Vec<String>,
         follows_collection_enabled: bool,
+        uploader_capabilities: Vec<String>,
     ) -> Self {
         Self::new_internal(
             name,
@@ -101,6 +107,7 @@ impl PingType {
             schedules_pings,
             reason_codes,
             follows_collection_enabled,
+            uploader_capabilities,
         )
     }
 
@@ -115,6 +122,7 @@ impl PingType {
         schedules_pings: Vec<String>,
         reason_codes: Vec<String>,
         follows_collection_enabled: bool,
+        uploader_capabilities: Vec<String>,
     ) -> Self {
         let this = Self(Arc::new(InnerPing {
             name: name.into(),
@@ -126,6 +134,7 @@ impl PingType {
             schedules_pings,
             reason_codes,
             follows_collection_enabled: AtomicBool::new(follows_collection_enabled),
+            uploader_capabilities,
         }));
 
         
@@ -220,6 +229,11 @@ impl PingType {
     
     pub fn reason_codes(&self) -> &[String] {
         &self.0.reason_codes
+    }
+
+    
+    pub fn uploader_capabilities(&self) -> &[String] {
+        &self.0.uploader_capabilities
     }
 
     
@@ -343,6 +357,7 @@ impl PingType {
                         headers: Some(ping.headers),
                         body_has_info_sections: self.0.include_info_sections,
                         ping_name: self.0.name.to_string(),
+                        uploader_capabilities: self.0.uploader_capabilities.clone(),
                     };
 
                     glean.upload_manager.enqueue_ping(glean, ping);

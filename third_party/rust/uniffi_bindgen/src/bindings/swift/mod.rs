@@ -107,13 +107,27 @@ impl BindingGenerator for SwiftBindingGenerator {
             }
 
             if settings.try_format_code {
-                if let Err(e) = Command::new("swiftformat")
-                    .arg(source_file.as_str())
-                    .output()
-                {
+                let commands_to_try = [
+                    
+                    vec!["xcrun", "swift-format"],
+                    
+                    vec!["swift-format"],
+                    
+                    vec!["swift", "format"],
+                    vec!["swiftformat"],
+                ];
+
+                let successful_output = commands_to_try.into_iter().find_map(|command| {
+                    Command::new(command[0])
+                        .args(&command[1..])
+                        .arg(source_file.as_str())
+                        .output()
+                        .ok()
+                });
+                if successful_output.is_none() {
                     println!(
-                        "Warning: Unable to auto-format {} using swiftformat: {e:?}",
-                        source_file.file_name().unwrap(),
+                        "Warning: Unable to auto-format {} using swift-format. Please make sure it is installed.",
+                        source_file.as_str()
                     );
                 }
             }
@@ -196,8 +210,12 @@ pub fn generate_swift_bindings(options: SwiftBindingsOptions) -> Result<()> {
             .map(|Component { config, .. }| config.header_filename())
             .collect();
         header_filenames.sort();
-        let modulemap_source =
-            generate_modulemap(module_name, header_filenames, options.xcframework)?;
+        let modulemap_source = generate_modulemap(
+            module_name,
+            header_filenames,
+            options.xcframework,
+            options.link_frameworks,
+        )?;
         let modulemap_path = options.out_dir.join(modulemap_filename);
         fs::write(modulemap_path, modulemap_source)?;
     }
@@ -216,4 +234,5 @@ pub struct SwiftBindingsOptions {
     pub module_name: Option<String>,
     pub modulemap_filename: Option<String>,
     pub metadata_no_deps: bool,
+    pub link_frameworks: Vec<String>,
 }

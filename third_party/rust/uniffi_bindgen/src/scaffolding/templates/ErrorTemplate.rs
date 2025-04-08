@@ -2,7 +2,11 @@
 
 #}
 
+{%- if e.remote() %}
+#[::uniffi::udl_remote(Error)]
+{%- else %}
 #[::uniffi::udl_derive(Error)]
+{%- endif %}
 {% if e.is_flat() -%}
 #[uniffi(flat_error)]
 {% if ci.should_generate_error_read(e) -%}
