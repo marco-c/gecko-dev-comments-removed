@@ -249,6 +249,12 @@ interface nsIContentAnalysisRequest : nsISupports
   
   
   attribute uint32_t timeoutMultiplier;
+
+  
+  
+  
+  
+  attribute boolean testOnlyIgnoreCanceledAndAlwaysSubmitToAgent;
 };
 
 [scriptable, builtinclass, uuid(cb09fc88-118c-411b-aa89-2e1bc5e3eba6)]
