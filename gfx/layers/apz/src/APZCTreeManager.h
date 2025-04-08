@@ -1145,12 +1145,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   bool mHaveOOPIframes;
-
-#if defined(MOZ_WIDGET_ANDROID)
- private:
-  
-  CompositorScrollUpdate mLastCompositorScrollUpdate;
-#endif  
 };
 
 }  

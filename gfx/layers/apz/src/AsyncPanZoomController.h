@@ -592,17 +592,20 @@ class AsyncPanZoomController {
   const FrameMetrics& Metrics() const;
   FrameMetrics& Metrics();
 
+#ifdef MOZ_WIDGET_ANDROID
   
 
 
 
-  CompositorScrollUpdate GetCompositorScrollUpdate() const;
+  std::vector<CompositorScrollUpdate> GetCompositorScrollUpdates();
 
+ private:
+  
+  CompositorScrollUpdate mLastCompositorScrollUpdate;
+#endif  
+
+ public:
   wr::MinimapData GetMinimapData() const;
-
-  
-  
-  bool UpdateRootFrameMetricsIfChanged(CompositorScrollUpdate& aMetrics);
 
   
   SampleTime GetFrameTime() const;
