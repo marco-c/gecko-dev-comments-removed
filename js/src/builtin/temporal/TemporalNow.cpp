@@ -63,15 +63,33 @@ static bool SystemUTCEpochNanoseconds(JSContext* cx, EpochNanoseconds* result) {
 static bool SystemDateTime(JSContext* cx, Handle<Value> temporalTimeZoneLike,
                            ISODateTime* dateTime) {
   
-  Rooted<TimeZoneValue> timeZone(cx);
+  
+  
   if (temporalTimeZoneLike.isUndefined()) {
-    if (!SystemTimeZone(cx, &timeZone)) {
+    
+
+    
+    EpochNanoseconds epochNs;
+    if (!SystemUTCEpochNanoseconds(cx, &epochNs)) {
       return false;
     }
-  } else {
-    if (!ToTemporalTimeZone(cx, temporalTimeZoneLike, &timeZone)) {
-      return false;
-    }
+
+    
+    int64_t epochMillis = epochNs.floorToMilliseconds();
+    int32_t offsetMillis = DateTimeInfo::getOffsetMilliseconds(
+        DateTimeInfo::forceUTC(cx->realm()), epochMillis,
+        DateTimeInfo::TimeZoneOffset::UTC);
+    MOZ_ASSERT(std::abs(offsetMillis) < ToMilliseconds(TemporalUnit::Day));
+
+    *dateTime = GetISODateTimeFor(
+        epochNs, offsetMillis * ToNanoseconds(TemporalUnit::Millisecond));
+    return true;
+  }
+
+  
+  Rooted<TimeZoneValue> timeZone(cx);
+  if (!ToTemporalTimeZone(cx, temporalTimeZoneLike, &timeZone)) {
+    return false;
   }
 
   
