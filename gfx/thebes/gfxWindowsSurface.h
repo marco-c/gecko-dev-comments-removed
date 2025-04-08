@@ -44,11 +44,8 @@ class gfxWindowsSurface : public gfxASurface {
 
  private:
   void MakeInvalid(mozilla::gfx::IntSize& size);
-
-  bool mOwnsDC;
-
-  HDC mDC;
-  HWND mWnd;
+  
+  HDC mDC = nullptr;
 };
 
 #endif 
