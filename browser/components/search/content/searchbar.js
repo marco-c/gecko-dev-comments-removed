@@ -413,6 +413,12 @@
           params[key] = aParams[key];
         }
       }
+
+      if (aWhere == "tab") {
+        
+        
+        params.relatedToCurrent = true;
+      }
       openTrustedLinkIn(submission.uri.spec, aWhere, params);
     }
 
