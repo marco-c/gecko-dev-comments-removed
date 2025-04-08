@@ -10204,7 +10204,8 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
   }
 
   const auto wm = aChild->GetWritingMode();
-  if (aChild->StyleMargin()->HasAuto(aAxis, wm)) {
+  if (aChild->StyleMargin()->HasAuto(aAxis, wm,
+                                     aChild->StyleDisplay()->mPosition)) {
     
     
     return false;

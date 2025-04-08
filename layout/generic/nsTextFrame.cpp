@@ -1909,6 +1909,7 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
                                           Side aSide) {
       while (aFrame != aAncestor) {
         ComputedStyle* ctx = aFrame->Style();
+        const auto positionProperty = ctx->StyleDisplay()->mPosition;
         
         
         
@@ -1917,9 +1918,10 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
         
         
         
-        const auto& margin = ctx->StyleMargin()->GetMargin(aSide);
-        if (!margin.ConvertsToLength() ||
-            margin.AsLengthPercentage().ToLength() != 0) {
+        const auto margin =
+            ctx->StyleMargin()->GetMargin(aSide, positionProperty);
+        if (!margin->ConvertsToLength() ||
+            margin->AsLengthPercentage().ToLength() != 0) {
           return true;
         }
         const auto& padding = ctx->StylePadding()->mPadding.Get(aSide);

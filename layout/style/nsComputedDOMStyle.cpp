@@ -948,8 +948,10 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
     case eCSSProperty_margin_left: {
       
       
+      
+      
       Side side = SideForPaddingOrMarginOrInsetProperty(aPropID);
-      return !style->StyleMargin()->GetMargin(side).ConvertsToLength();
+      return !style->StyleMargin()->mMargin.Get(side).ConvertsToLength();
     }
     default:
       return false;
@@ -2062,7 +2064,9 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetBorderWidthFor(
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetMarginFor(Side aSide) {
-  const auto& margin = StyleMargin()->GetMargin(aSide);
+  
+  
+  const auto& margin = StyleMargin()->mMargin.Get(aSide);
   if (!mInnerFrame || margin.ConvertsToLength()) {
     auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
     SetValueToMargin(val, margin);

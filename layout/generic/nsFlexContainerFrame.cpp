@@ -2236,15 +2236,16 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   SetFlexBaseSizeAndMainSize(aFlexBaseSize);
 
   const nsStyleMargin* styleMargin = aFlexItemReflowInput.mStyleMargin;
-  mHasAnyAutoMargin = styleMargin->HasInlineAxisAuto(mCBWM) ||
-                      styleMargin->HasBlockAxisAuto(mCBWM);
+  const auto positionProperty = aFlexItemReflowInput.mStyleDisplay->mPosition;
+  mHasAnyAutoMargin = styleMargin->HasInlineAxisAuto(mCBWM, positionProperty) ||
+                      styleMargin->HasBlockAxisAuto(mCBWM, positionProperty);
 
   
   
 #ifdef DEBUG
   {
     for (const auto side : LogicalSides::All) {
-      if (styleMargin->GetMargin(side, mCBWM).IsAuto()) {
+      if (styleMargin->GetMargin(side, mCBWM, positionProperty)->IsAuto()) {
         MOZ_ASSERT(GetMarginComponentForSide(side) == 0,
                    "Someone else tried to resolve our auto margin");
       }
@@ -2473,9 +2474,10 @@ void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
 uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
   uint32_t numAutoMargins = 0;
   const auto* styleMargin = mFrame->StyleMargin();
+  const auto positionProperty = mFrame->StyleDisplay()->mPosition;
   for (const auto edge : {LogicalEdge::Start, LogicalEdge::End}) {
     const auto side = MakeLogicalSide(aAxis, edge);
-    if (styleMargin->GetMargin(side, mCBWM).IsAuto()) {
+    if (styleMargin->GetMargin(side, mCBWM, positionProperty)->IsAuto()) {
       numAutoMargins++;
     }
   }
@@ -3570,8 +3572,9 @@ MainAxisPositionTracker::MainAxisPositionTracker(
 void MainAxisPositionTracker::ResolveAutoMarginsInMainAxis(FlexItem& aItem) {
   if (mNumAutoMarginsInMainAxis) {
     const auto* styleMargin = aItem.Frame()->StyleMargin();
+    const auto positionProperty = aItem.Frame()->StyleDisplay()->mPosition;
     for (const auto side : {StartSide(), EndSide()}) {
-      if (styleMargin->GetMargin(side, mWM).IsAuto()) {
+      if (styleMargin->GetMargin(side, mWM, positionProperty)->IsAuto()) {
         
         
         nscoord curAutoMarginSize =
@@ -3969,8 +3972,9 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
   
   
   const auto* styleMargin = aItem.Frame()->StyleMargin();
+  const auto positionProperty = aItem.Frame()->StyleDisplay()->mPosition;
   for (const auto side : {StartSide(), EndSide()}) {
-    if (styleMargin->GetMargin(side, mWM).IsAuto()) {
+    if (styleMargin->GetMargin(side, mWM, positionProperty)->IsAuto()) {
       MOZ_ASSERT(aItem.GetMarginComponentForSide(side) == 0,
                  "Expecting auto margins to have value '0' before we "
                  "update them");
@@ -6546,7 +6550,8 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
           UsedAlignSelfAndFlagsForItem(childFrame);
       if (alignSelf != StyleAlignFlags::STRETCH ||
           !childStylePos->BSize(flexWM).IsAuto() ||
-          childFrame->StyleMargin()->HasBlockAxisAuto(flexWM)) {
+          childFrame->StyleMargin()->HasBlockAxisAuto(
+              flexWM, childFrame->StyleDisplay()->mPosition)) {
         
         
         
