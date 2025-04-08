@@ -1035,29 +1035,8 @@
     }
 
     #setMovingTabMode(movingTab) {
-      if (movingTab == this.#isMovingTab()) {
-        return;
-      }
-
       this.toggleAttribute("movingtab", movingTab);
       gNavToolbox.toggleAttribute("movingtab", movingTab);
-
-      if (movingTab) {
-        
-        
-        
-        
-        
-        requestAnimationFrame(() => {
-          this.addEventListener(
-            "mousemove",
-            () => {
-              this.finishAnimateTabMove();
-            },
-            { once: true }
-          );
-        });
-      }
     }
 
     #isMovingTab() {
