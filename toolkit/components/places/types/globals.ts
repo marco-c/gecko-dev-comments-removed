@@ -1,0 +1,9 @@
+export {};
+
+declare global {
+
+  
+  
+  type Extension = any;
+
+}
