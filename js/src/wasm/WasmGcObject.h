@@ -206,8 +206,8 @@ class WasmArrayObject : public WasmGcObject,
   
   
   
-  static mozilla::CheckedUint32 calcStorageBytesChecked(uint32_t elemSize,
-                                                        uint32_t numElements) {
+  static constexpr mozilla::CheckedUint32 calcStorageBytesChecked(
+      uint32_t elemSize, uint32_t numElements) {
     static_assert(sizeof(WasmArrayObject) % gc::CellAlignBytes == 0);
     mozilla::CheckedUint32 storageBytes = elemSize;
     storageBytes *= numElements;
@@ -229,7 +229,8 @@ class WasmArrayObject : public WasmGcObject,
   }
   
   
-  static inline uint32_t maxInlineElementsForElemSize(uint32_t elemSize);
+  static inline constexpr uint32_t maxInlineElementsForElemSize(
+      uint32_t elemSize);
 
   using DataHeader = uintptr_t;
   static const DataHeader DataIsIL = 0;
@@ -448,7 +449,7 @@ static_assert((WasmStructObject_MaxInlineBytes % 16) == 0);
 static_assert((WasmArrayObject_MaxInlineBytes % 16) == 0);
 
 
-inline uint32_t WasmArrayObject::maxInlineElementsForElemSize(
+inline constexpr uint32_t WasmArrayObject::maxInlineElementsForElemSize(
     uint32_t elemSize) {
   
   
@@ -513,6 +514,41 @@ inline uint8_t* WasmStructObject::fieldOffsetToAddress(
 
 static_assert(WasmStructObject_MaxInlineBytes <= wasm::NullPtrGuardSize);
 static_assert(sizeof(WasmArrayObject) <= wasm::NullPtrGuardSize);
+
+
+
+
+template <typename T>
+class MOZ_RAII StableWasmArrayObjectElements {
+  static constexpr size_t MaxInlineElements =
+      WasmArrayObject::maxInlineElementsForElemSize(sizeof(T));
+  Rooted<WasmArrayObject*> array_;
+  T* elements_;
+  mozilla::Maybe<mozilla::Vector<T, MaxInlineElements, SystemAllocPolicy>>
+      ownElements_;
+
+ public:
+  StableWasmArrayObjectElements(JSContext* cx, Handle<WasmArrayObject*> array)
+      : array_(cx, array), elements_(nullptr) {
+    if (array->isDataInline()) {
+      ownElements_.emplace();
+      if (!ownElements_->resize(array->numElements_)) {
+        
+        
+        MOZ_CRASH();
+      }
+      std::copy(array->inlineStorage(),
+                array->inlineStorage() + array->numElements_ * sizeof(T),
+                ownElements_->begin());
+      elements_ = ownElements_->begin();
+    } else {
+      elements_ = reinterpret_cast<T*>(array->data_);
+    }
+  }
+
+  T* elements() { return elements_; }
+  size_t length() const { return array_->numElements_; }
+};
 
 }  
 

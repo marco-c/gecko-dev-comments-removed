@@ -1996,7 +1996,16 @@ void* Instance::stringFromCharCodeArray(Instance* instance, void* arrayArg,
   JSLinearString* string = NewStringCopyN<NoGC, char16_t>(
       cx, (char16_t*)array->data_ + arrayStart, arrayCount);
   if (!string) {
-    return nullptr;
+    
+    
+    
+    StableWasmArrayObjectElements<uint16_t> stableElements(cx, array);
+    string = NewStringCopyN<CanGC, char16_t>(
+        cx, (char16_t*)stableElements.elements() + arrayStart, arrayCount);
+    if (!string) {
+      MOZ_ASSERT(cx->isThrowingOutOfMemory());
+      return nullptr;
+    }
   }
   return AnyRef::fromJSString(string).forCompiledCode();
 }
