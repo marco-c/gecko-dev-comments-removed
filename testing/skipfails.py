@@ -794,7 +794,11 @@ class Skipfails(object):
                 "summary",
                 "blocks",
             ]
-            bugs = self._bzapi.query(query)
+            try:
+                bugs = self._bzapi.query(query)
+            except requests.exceptions.HTTPError:
+                if not self.dry_run:
+                    raise
         return bugs
 
     def create_bug(
@@ -1012,6 +1016,7 @@ class Skipfails(object):
         For wpt anyjs is a dictionary mapping from alternate basename to
         a boolean (indicating if the basename has been handled in the manifest)
         """
+        path = path.split(":")[-1]
 
         self.vinfo(f"\n\n===== Skip failure in manifest: {manifest} =====")
         self.vinfo(f"    path: {path}")
@@ -1030,7 +1035,6 @@ class Skipfails(object):
         manifest_path = self.full_path(manifest)
         manifest_str = ""
         additional_comment = ""
-        path = path.split(":")[-1]
         comment, bug_reference, bugid, attachments = self.generate_bugzilla_comment(
             manifest,
             kind,
@@ -1316,11 +1320,12 @@ class Skipfails(object):
         if os is not None:
             if kind == Kind.LIST:
                 skip_if = self._get_list_skip_if(extra)
-            elif os_version == "11.2009":
-                skip_if = "win11_2009"  
             elif os_version is not None:
                 skip_if = "os" + eq + qq + os + qq
-                skip_if += aa + "os_version" + eq + qq + os_version + qq
+                if os == "android":
+                    skip_if += aa + "android_version" + eq + qq + os_version + qq
+                else:
+                    skip_if += aa + "os_version" + eq + qq + os_version + qq
 
         processor = extra.arch
         if skip_if is not None and kind != Kind.LIST:
@@ -1348,9 +1353,13 @@ class Skipfails(object):
                 self.failed_platforms[failure_key] = FailedPlatform(permutations)
 
             build_types = extra.build_type
-            skip_if += self.failed_platforms[failure_key].get_skip_string(
+            skip_cond = self.failed_platforms[failure_key].get_skip_string(
                 aa, build_types, extra.test_variant
             )
+            if kind == Kind.WPT:
+                
+                skip_cond = skip_cond.replace("!", "not ")
+            skip_if += skip_cond
         return skip_if
 
     def get_file_info(self, path, product="Testing", component="General"):
@@ -1553,7 +1562,12 @@ class Skipfails(object):
             if self.failure_types is not None and task.id in self.failure_types:
                 failure_types = self.failure_types[task.id]  
             else:
-                failure_types = task.failure_types
+                try:
+                    failure_types = task.failure_types
+                except requests.exceptions.HTTPError:
+                    continue
+                except TaskclusterRestFailure:
+                    continue
             for k in failure_types:
                 jft[k] = [[f[0], f[1].value] for f in task.failure_types[k]]
             jtask["failure_types"] = jft
