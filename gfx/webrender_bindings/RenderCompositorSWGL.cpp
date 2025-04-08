@@ -76,8 +76,7 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
     const wr::DeviceIntRect* aOpaqueRects, size_t aNumOpaqueRects) {
   
   MOZ_ASSERT(!mDT);
-  layers::BufferMode bufferMode = layers::BufferMode::BUFFERED;
-  mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion, &bufferMode);
+  mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion);
   if (!mDT) {
     gfxCriticalNoteOnce
         << "RenderCompositorSWGL failed mapping default framebuffer, no dt";
@@ -90,8 +89,7 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
   gfx::IntSize size;
   int32_t stride = 0;
   gfx::SurfaceFormat format = gfx::SurfaceFormat::UNKNOWN;
-  if (bufferMode != layers::BufferMode::BUFFERED && !mSurface &&
-      mDT->LockBits(&data, &size, &stride, &format) &&
+  if (!mSurface && mDT->LockBits(&data, &size, &stride, &format) &&
       (format != gfx::SurfaceFormat::B8G8R8A8 &&
        format != gfx::SurfaceFormat::B8G8R8X8)) {
     

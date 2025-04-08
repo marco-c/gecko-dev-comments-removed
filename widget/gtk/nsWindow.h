@@ -211,6 +211,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint GetClientOffset() override {
     return LayoutDeviceIntPoint(mClientMargin.left, mClientMargin.top);
   }
+  GdkPoint GetCsdOffsetInGdkCoords();
   LayoutDeviceIntPoint GetScreenEdgeSlop() override;
   nsresult GetRestoredBounds(LayoutDeviceIntRect&) override;
   bool PersistClientBounds() const override { return true; }
@@ -302,8 +303,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRegion GetOpaqueRegion() const;
 
   already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(
-      const LayoutDeviceIntRegion& aInvalidRegion,
-      mozilla::layers::BufferMode* aBufferMode) override;
+      const LayoutDeviceIntRegion& aInvalidRegion) override;
   void EndRemoteDrawingInRegion(
       mozilla::gfx::DrawTarget* aDrawTarget,
       const LayoutDeviceIntRegion& aInvalidRegion) override;
@@ -464,7 +464,6 @@ class nsWindow final : public nsBaseWidget {
   static void TransferFocusToWaylandWindow(nsWindow* aWindow);
   void FocusWaylandWindow(const char* aTokenID);
 
-  bool GetCSDDecorationOffset(int* aDx, int* aDy);
   bool SetEGLNativeWindowSize(const LayoutDeviceIntSize& aEGLWindowSize);
   void WaylandDragWorkaround(GdkEventButton* aEvent);
 
@@ -614,9 +613,7 @@ class nsWindow final : public nsBaseWidget {
   
   LayoutDeviceIntMargin mClientMargin;
   
-  static constexpr auto kCsdMarginUnknown =
-      LayoutDeviceIntMargin{-1, -1, -1, -1};
-  LayoutDeviceIntMargin mCsdMargin = kCsdMarginUnknown;
+  LayoutDeviceIntMargin mCsdMargin;
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;

@@ -258,25 +258,16 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
         return false;
       }
 
-      
-      BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
-      switch (mTransparencyMode) {
-        case TransparencyMode::Transparent:
-          
-          
-          dt->ClearRect(Rect(dt->GetRect()));
-          break;
-        default:
-          
-          doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
-          break;
+      if (mTransparencyMode == TransparencyMode::Transparent) {
+        
+        
+        dt->ClearRect(Rect(dt->GetRect()));
       }
 
       gfxContext thebesContext(dt);
 
       {
-        AutoLayerManagerSetup setupLayerManager(this, &thebesContext,
-                                                doubleBuffering);
+        AutoLayerManagerSetup setupLayerManager(this, &thebesContext);
         if (nsIWidgetListener* listener = GetPaintListener()) {
           result = listener->PaintWindow(this, region);
         }
