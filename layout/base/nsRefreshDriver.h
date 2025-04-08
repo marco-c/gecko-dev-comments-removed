@@ -204,6 +204,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool ViewManagerFlushIsPending() { return mViewManagerFlushIsPending; }
   bool HasScheduleFlush() { return mHasScheduleFlush; }
   void ClearHasScheduleFlush() { mHasScheduleFlush = false; }
+  
+  MOZ_CAN_RUN_SCRIPT bool FlushViewManagerIfNeeded();
 
   
 
