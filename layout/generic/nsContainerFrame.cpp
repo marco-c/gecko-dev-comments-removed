@@ -2207,14 +2207,14 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   const auto positionProperty = StyleDisplay()->mPosition;
   const auto styleISize =
       aSizeOverrides.mStyleISize
-          ? AnchorResolvedSize::Overridden(*aSizeOverrides.mStyleISize)
+          ? AnchorResolvedSizeHelper::Overridden(*aSizeOverrides.mStyleISize)
           : stylePos->ISize(aWM, positionProperty);
 
   
   
   const auto styleBSize =
       aSizeOverrides.mStyleBSize
-          ? AnchorResolvedSize::Overridden(*aSizeOverrides.mStyleBSize)
+          ? AnchorResolvedSizeHelper::Overridden(*aSizeOverrides.mStyleBSize)
           : stylePos->BSize(aWM, positionProperty);
   const auto& aspectRatio =
       aSizeOverrides.mAspectRatio ? *aSizeOverrides.mAspectRatio : aAspectRatio;

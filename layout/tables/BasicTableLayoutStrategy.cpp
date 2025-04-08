@@ -183,11 +183,11 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   auto maxISize = stylePos->MaxISize(aWM, positionProperty);
   if (nsIFrame::ToExtremumLength(*maxISize)) {
     if (!aIsCell || maxISize->BehavesLikeStretchOnInlineAxis()) {
-      maxISize = AnchorResolvedMaxSize::None();
+      maxISize = AnchorResolvedMaxSizeHelper::None();
     } else if (maxISize->IsFitContent() || maxISize->IsFitContentFunction()) {
       
       
-      maxISize = AnchorResolvedMaxSize::MaxContent();
+      maxISize = AnchorResolvedMaxSizeHelper::MaxContent();
     }
   }
   
@@ -212,11 +212,11 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   auto minISize = stylePos->MinISize(aWM, positionProperty);
   if (nsIFrame::ToExtremumLength(*maxISize)) {
     if (!aIsCell || minISize->BehavesLikeStretchOnInlineAxis()) {
-      minISize = AnchorResolvedSize::Zero();
+      minISize = AnchorResolvedSizeHelper::Zero();
     } else if (minISize->IsFitContent() || minISize->IsFitContentFunction()) {
       
       
-      minISize = AnchorResolvedSize::MinContent();
+      minISize = AnchorResolvedSizeHelper::MinContent();
     }
   }
 

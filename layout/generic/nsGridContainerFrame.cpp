@@ -338,7 +338,7 @@ struct RepeatTrackSizingInput {
     
     
     const auto styleSize = aAxis == LogicalAxis::Inline
-                               ? AnchorResolvedSize::Auto()
+                               ? AnchorResolvedSizeHelper::Auto()
                                : pos->BSize(aWM, positionProperty);
     if (styleSize->ConvertsToLength()) {
       size = std::clamp(adjustForBoxSizing(styleSize->ToLength()), min, max);
