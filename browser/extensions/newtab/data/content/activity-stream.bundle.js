@@ -5898,6 +5898,13 @@ const ReportContent = spocs => {
         ...report
       }]
     }));
+    dispatch(actionCreators.OnlyToOneContent({
+      type: actionTypes.SHOW_TOAST_MESSAGE,
+      data: {
+        toastId: "reportSuccessToast",
+        showNotifications: true
+      }
+    }, "ActivityStream:Content"));
   }, [dispatch, selectedReason, report, spocData]);
 
   
@@ -13391,6 +13398,39 @@ function ThumbUpThumbDownToast({
 
 
 
+function ReportContentToast({
+  onDismissClick,
+  onAnimationEnd
+}) {
+  const mozMessageBarRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const {
+      current: mozMessageBarElement
+    } = mozMessageBarRef;
+    mozMessageBarElement.addEventListener("message-bar:user-dismissed", onDismissClick, {
+      once: true
+    });
+    return () => {
+      mozMessageBarElement.removeEventListener("message-bar:user-dismissed", onDismissClick);
+    };
+  }, [onDismissClick]);
+  return external_React_default().createElement("moz-message-bar", {
+    type: "success",
+    class: "notification-feed-item",
+    dismissable: true,
+    "data-l10n-id": "newtab-toast-thanks-for-feedback",
+    ref: mozMessageBarRef,
+    onAnimationEnd: onAnimationEnd
+  });
+}
+
+;
+
+
+
+
+
+
 
 
 
@@ -13424,11 +13464,23 @@ function Notifications_Notifications({
     if (!latestToastItem) {
       throw new Error("No toast found");
     }
-    return external_React_default().createElement(ThumbUpThumbDownToast, {
-      onDismissClick: syncHiddenToastData,
-      onAnimationEnd: syncHiddenToastData,
-      key: toastCounter
-    });
+    switch (latestToastItem) {
+      case "reportSuccessToast":
+        return external_React_default().createElement(ReportContentToast, {
+          onDismissClick: syncHiddenToastData,
+          onAnimationEnd: syncHiddenToastData,
+          key: toastCounter
+        });
+      case "thumbsUpToast":
+      case "thumbsDownToast":
+        return external_React_default().createElement(ThumbUpThumbDownToast, {
+          onDismissClick: syncHiddenToastData,
+          onAnimationEnd: syncHiddenToastData,
+          key: toastCounter
+        });
+      default:
+        throw new Error(`Unexpected toast type: ${latestToastItem}`);
+    }
   }, [syncHiddenToastData, toastCounter, toastQueue]);
   (0,external_React_namespaceObject.useEffect)(() => {
     getToast();
