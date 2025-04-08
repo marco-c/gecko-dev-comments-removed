@@ -4533,17 +4533,35 @@ function AdBannerContextMenu({
 }) {
   const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showAdReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
+  const [contextMenuClassNames, setContextMenuClassNames] = (0,external_React_namespaceObject.useState)("ads-context-menu");
+
+  
+
+
+
+
+
+
+  const toggleContextMenuStyleSwitch = contextMenuOpen => {
+    if (contextMenuOpen) {
+      setContextMenuClassNames("ads-context-menu context-menu-open");
+    } else {
+      setContextMenuClassNames("ads-context-menu");
+    }
+  };
   const onClick = e => {
     e.preventDefault();
+    toggleContextMenuStyleSwitch(!showContextMenu);
     setShowContextMenu(!showContextMenu);
   };
   const onUpdate = () => {
+    toggleContextMenuStyleSwitch(!showContextMenu);
     setShowContextMenu(!showContextMenu);
   };
   return external_React_default().createElement("div", {
     className: "ads-context-menu-wrapper"
   }, external_React_default().createElement("div", {
-    className: "ads-context-menu"
+    className: contextMenuClassNames
   }, external_React_default().createElement("moz-button", {
     type: "icon",
     size: "default",
