@@ -839,11 +839,17 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       sMostRecentHighRate = rate;
     }
 
+#ifdef DEBUG
     
     
     
-#if !defined(_WIN32)
+    
+    
+#  if defined(_WIN32) || defined(MOZ_WAYLAND)
+    Unused << NS_WARN_IF(aVsyncTimestamp > tickStart);
+#  else
     MOZ_ASSERT(aVsyncTimestamp <= tickStart);
+#  endif
 #endif
 
     bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();
