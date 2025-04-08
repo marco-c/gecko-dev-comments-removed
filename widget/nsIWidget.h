@@ -82,6 +82,7 @@ namespace layers {
 class AsyncDragMetrics;
 class Compositor;
 class CompositorBridgeChild;
+struct CompositorScrollUpdate;
 struct FrameMetrics;
 class LayerManager;
 class WebRenderBridgeChild;
@@ -2022,11 +2023,8 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
-  virtual void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset,
-                                      const CSSToScreenScale& aZoom) = 0;
+  virtual void NotifyCompositorScrollUpdate(
+      const mozilla::layers::CompositorScrollUpdate& aUpdate) = 0;
 
   
 
