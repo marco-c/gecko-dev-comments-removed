@@ -797,20 +797,24 @@ bool js::temporal::TimeZoneEquals(const TimeZoneValue& one,
 
 
 static ISODateTime GetISOPartsFromEpoch(
-    const EpochNanoseconds& epochNanoseconds) {
+    const EpochNanoseconds& epochNanoseconds, int64_t offsetNanoseconds) {
   
   MOZ_ASSERT(IsValidEpochNanoseconds(epochNanoseconds));
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
+
+  auto totalNanoseconds =
+      epochNanoseconds + EpochDuration::fromNanoseconds(offsetNanoseconds);
 
   
-  int32_t remainderNs = epochNanoseconds.nanoseconds % 1'000'000;
+  int32_t remainderNs = totalNanoseconds.nanoseconds % 1'000'000;
 
   
   
   
-  int32_t millisecond = epochNanoseconds.nanoseconds / 1'000'000;
+  int32_t millisecond = totalNanoseconds.nanoseconds / 1'000'000;
 
   
-  int64_t epochMilliseconds = epochNanoseconds.floorToMilliseconds();
+  int64_t epochMilliseconds = totalNanoseconds.floorToMilliseconds();
 
   
   auto [year, month, day] = ToYearMonthDay(epochMilliseconds);
@@ -846,29 +850,6 @@ static ISODateTime GetISOPartsFromEpoch(
 
 
 
-
-static ISODateTime BalanceISODateTime(const ISODateTime& dateTime,
-                                      int64_t nanoseconds) {
-  MOZ_ASSERT(IsValidISODateTime(dateTime));
-  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
-  MOZ_ASSERT(std::abs(nanoseconds) < ToNanoseconds(TemporalUnit::Day));
-
-  const auto& [date, time] = dateTime;
-
-  
-  auto balancedTime = BalanceTime(time, nanoseconds);
-  MOZ_ASSERT(std::abs(balancedTime.days) <= 1);
-
-  
-  auto balancedDate = BalanceISODate(date, balancedTime.days);
-
-  
-  return {balancedDate, balancedTime.time};
-}
-
-
-
-
 ISODateTime js::temporal::GetISODateTimeFor(const EpochNanoseconds& epochNs,
                                             int64_t offsetNanoseconds) {
   MOZ_ASSERT(IsValidEpochNanoseconds(epochNs));
@@ -877,15 +858,7 @@ ISODateTime js::temporal::GetISODateTimeFor(const EpochNanoseconds& epochNs,
   
 
   
-
-  
-  ISODateTime dateTime = GetISOPartsFromEpoch(epochNs);
-
-  
-  auto balanced = BalanceISODateTime(dateTime, offsetNanoseconds);
-  MOZ_ASSERT(ISODateTimeWithinLimits(balanced));
-
-  return balanced;
+  return GetISOPartsFromEpoch(epochNs, offsetNanoseconds);
 }
 
 
