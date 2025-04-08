@@ -108,39 +108,26 @@ promise_test(async t => {
 }, 'Aborting Translator.translate().');
 
 promise_test(async t => {
-  let monitorCalled = false;
-  let createdTranslator = false;
+  let createResult = undefined;
   const progressEvents = [];
-  function monitor(m) {
-    monitorCalled = true;
+  let options = {sourceLanguage: 'en', targetLanguage: 'ja'};
+  const downloadComplete = new Promise(resolve => {
+    options.monitor = (m) => {
+      m.addEventListener("downloadprogress", e => {
+        assert_equals(createResult, undefined);
+        assert_equals(e.total, 1);
+        progressEvents.push(e);
+        if (e.loaded == 1) { resolve(); }
+      });
+    };
+  });
 
-    m.addEventListener('downloadprogress', e => {
-      
-      
-      assert_false(createdTranslator);
-
-      progressEvents.push(e);
-    });
-  }
-
-  await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja', monitor});
-  createdTranslator = true;
-
-  
-  assert_true(monitorCalled);
-
-  
+  createResult = await createTranslator(options);
+  await downloadComplete;
   assert_greater_than_equal(progressEvents.length, 2);
-
-  
   assert_equals(progressEvents.at(0).loaded, 0);
   assert_equals(progressEvents.at(-1).loaded, 1);
-
-  
-  for (const progressEvent of progressEvents) {
-    assert_equals(progressEvent.total, 1);
-  }
-}, 'Translator.create() monitor option is called correctly.');
+}, 'Translator.create() notifies its monitor on downloadprogress');
 
 promise_test(async t => {
   const translator =
