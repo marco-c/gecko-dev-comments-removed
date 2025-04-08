@@ -5327,6 +5327,12 @@ PhysicalAxes ScrollContainerFrame::GetOverflowAxes() const {
 nsresult ScrollContainerFrame::FireScrollPortEvent() {
   mAsyncScrollPortEvent.Forget();
 
+  
+  
+  
+  
+  
+
   PhysicalAxes overflowAxes = GetOverflowAxes();
 
   bool newVerticalOverflow = overflowAxes.contains(PhysicalAxis::Vertical);
@@ -5944,8 +5950,13 @@ void ScrollContainerFrame::PostOverflowEvent() {
     return;
   }
 
+  nsRootPresContext* rpc = PresContext()->GetRootPresContext();
+  if (!rpc) {
+    return;
+  }
+
   mAsyncScrollPortEvent = new AsyncScrollPortEvent(this);
-  nsContentUtils::AddScriptRunner(mAsyncScrollPortEvent.get());
+  rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
 }
 
 nsIFrame* ScrollContainerFrame::GetFrameForStyle() const {

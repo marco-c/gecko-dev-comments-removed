@@ -3197,3 +3197,32 @@ void nsPresContext::ValidatePresShellAndDocumentReleation() const {
 nsRootPresContext::nsRootPresContext(dom::Document* aDocument,
                                      nsPresContextType aType)
     : nsPresContext(aDocument, aType) {}
+
+void nsRootPresContext::AddWillPaintObserver(nsIRunnable* aRunnable) {
+  if (!mWillPaintFallbackEvent.IsPending()) {
+    mWillPaintFallbackEvent = new RunWillPaintObservers(this);
+    Document()->Dispatch(do_AddRef(mWillPaintFallbackEvent));
+  }
+  mWillPaintObservers.AppendElement(aRunnable);
+}
+
+
+
+
+void nsRootPresContext::FlushWillPaintObservers() {
+  mWillPaintFallbackEvent = nullptr;
+  nsTArray<nsCOMPtr<nsIRunnable>> observers = std::move(mWillPaintObservers);
+  for (uint32_t i = 0; i < observers.Length(); ++i) {
+    observers[i]->Run();
+  }
+}
+
+size_t nsRootPresContext::SizeOfExcludingThis(
+    MallocSizeOf aMallocSizeOf) const {
+  return nsPresContext::SizeOfExcludingThis(aMallocSizeOf);
+
+  
+  
+  
+  
+}
