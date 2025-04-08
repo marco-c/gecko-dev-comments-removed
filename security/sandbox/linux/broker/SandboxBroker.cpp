@@ -115,6 +115,11 @@ void SandboxBroker::Terminate() {
     shutdown(mFileDesc, SHUT_RD);
     
     PlatformThread::Join(mThread);
+  } else {
+    
+    
+    int rv = pthread_detach(pthread_self());
+    MOZ_ALWAYS_TRUE(rv == 0);
   }
 
   

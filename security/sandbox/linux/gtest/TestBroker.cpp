@@ -26,6 +26,7 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/FileDescriptor.h"
+#include "nsIThreadManager.h"
 
 namespace mozilla {
 
@@ -646,8 +647,11 @@ SandboxBrokerSigStress::DoSomething()
 
 
 
-TEST(SandboxBrokerMisc, LeakCheck)
+TEST(SandboxBrokerMisc, FileDescLeak)
 {
+  
+  
+  
   
   
   static constexpr size_t kCycles = 4096;
@@ -685,6 +689,42 @@ TEST(SandboxBrokerMisc, LeakCheck)
 
   if (changedLimit) {
     ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &oldLimit), 0) << strerror(errno);
+  }
+}
+
+
+
+
+
+
+
+
+TEST(SandboxBrokerMisc, DISABLED_StackLeak)
+{
+  
+  
+  
+  
+  
+  static constexpr size_t kCycles = 16384;
+
+  if (nsIThreadManager::DEFAULT_STACK_SIZE) {
+    EXPECT_GE(nsIThreadManager::DEFAULT_STACK_SIZE, size_t(256 * 1024));
+  }
+
+  pid_t pid = getpid();
+  for (size_t i = 0; i < kCycles; ++i) {
+    auto policy = MakeUnique<SandboxBroker::Policy>();
+    
+    
+    policy->AddPath(SandboxBroker::MAY_READ, "/dev/null",
+                    SandboxBroker::Policy::AddAlways);
+    ipc::FileDescriptor fd;
+    RefPtr<SandboxBroker> broker =
+        SandboxBroker::Create(std::move(policy), pid, fd);
+    ASSERT_TRUE(broker != nullptr) << "iter " << i;
+    ASSERT_TRUE(fd.IsValid()) << "iter " << i;
+    broker = nullptr;
   }
 }
 
