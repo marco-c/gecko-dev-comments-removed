@@ -372,43 +372,89 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   mozilla::StyleColor mBackgroundColor;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
 class AnchorResolved {
  public:
-  const T* operator->() const { return Ptr(); }
-  const T& operator*() const { return *Ptr(); }
+  const T* operator->() const {
+    if (mIsValue) {
+      return &mValue.mValue;
+    }
+    return mPtr.mPtr;
+  }
 
-  AnchorResolved(AnchorResolved&& aOther) = default;
-  AnchorResolved& operator=(AnchorResolved&& aOther) = default;
+  const T& operator*() const {
+    if (mIsValue) {
+      return mValue.mValue;
+    }
+    return *mPtr.mPtr;
+  }
+
+  AnchorResolved(AnchorResolved&& aOther) : mIsValue{aOther.mIsValue} {
+    if (mIsValue) {
+      
+      ::new (&mValue)(Body)(std::move(aOther.mValue));
+    } else {
+      mPtr.mPtr = aOther.mPtr.mPtr;
+    }
+  }
+
+  ~AnchorResolved() {
+    if (mIsValue) {
+      mValue.~Body();
+    }
+    
+  }
+
+  AnchorResolved& operator=(AnchorResolved&& aOther) {
+    if (this != &aOther) {
+      this->~AnchorResolved();
+      new (this) AnchorResolved(std::move(aOther));
+    }
+    return *this;
+  }
   AnchorResolved(const AnchorResolved& aOther) = delete;
   AnchorResolved& operator=(const AnchorResolved& aOther) = delete;
 
  protected:
   static AnchorResolved Evaluated(T&& aValue) {
-    return AnchorResolved{V{std::move(aValue)}};
+    AnchorResolved result;
+    result.mIsValue = true;
+    ::new (&result.mValue.mValue)(T)(std::move(aValue));
+    return result;
   }
 
   static AnchorResolved Unchanged(const T& aValue) {
-    return AnchorResolved{V{std::cref(aValue)}};
+    AnchorResolved result;
+    result.mPtr.mPtr = &aValue;
+    return result;
   }
 
  private:
-  
-  
-  
-  using U = std::reference_wrapper<const T>;
-
-  
-  using V = mozilla::Variant<U, T>;
-
-  explicit AnchorResolved(V&& aValue) : mValue{std::move(aValue)} {}
-
-  const T* Ptr() const {
-    return mValue.match([](const U& aValue) { return &aValue.get(); },
-                        [](const T& aValue) { return &aValue; });
-  }
-
-  V mValue;
+  AnchorResolved() {}
+  bool mIsValue = false;
+  struct Body {
+    T mValue;
+  };
+  struct Ptr {
+    const T* mPtr;
+  };
+  union {
+    Body mValue;
+    Ptr mPtr;
+  };
 };
 
 class AnchorResolvedMargin final : public AnchorResolved<mozilla::StyleMargin> {
@@ -787,8 +833,9 @@ class AnchorResolvedInset final : public AnchorResolved<mozilla::StyleInset> {
       : AnchorResolved<mozilla::StyleInset>{
             FromUnresolved(aValue, aAxis, aPosition)} {}
   inline AnchorResolvedInset(const mozilla::StyleInset& aValue,
-                      mozilla::LogicalAxis aAxis, mozilla::WritingMode aWM,
-                      mozilla::StylePositionProperty aPosition);
+                             mozilla::LogicalAxis aAxis,
+                             mozilla::WritingMode aWM,
+                             mozilla::StylePositionProperty aPosition);
 
  private:
   static AnchorResolved<mozilla::StyleInset> FromUnresolved(
