@@ -3856,18 +3856,31 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
 
     const nsSize visualViewportSize =
         rootScrollContainer->GetVisualViewportSize();
+
+    const nsSize layoutViewportSize = root->GetLayoutViewportSize();
+    const nsRect layoutViewport = nsRect(nsPoint(), layoutViewportSize);
     
     
-    if (aPositionFixedRect.y >= 0 &&
-        aPositionFixedRect.YMost() <= visualViewportSize.height &&
-        aPositionFixedRect.x >= 0 &&
-        aPositionFixedRect.XMost() <= visualViewportSize.width) {
+    
+    
+    
+    
+    
+    
+    
+    const nsRect clampedPositionFixedRect =
+        aPositionFixedRect.MoveInsideAndClamp(layoutViewport);
+    
+    
+    if (clampedPositionFixedRect.y >= 0 &&
+        clampedPositionFixedRect.YMost() <= visualViewportSize.height &&
+        clampedPositionFixedRect.x >= 0 &&
+        clampedPositionFixedRect.XMost() <= visualViewportSize.width) {
       return;
     }
 
     
     
-    const nsSize layoutViewportSize = root->GetLayoutViewportSize();
     if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
