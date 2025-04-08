@@ -120,8 +120,14 @@ class nsTableCellFrame : public nsContainerFrame,
 #endif
 
   
-  void BlockDirAlignChild(mozilla::WritingMode aWM, nscoord aMaxAscent,
-                          mozilla::ForceAlignTopForTableCell aForceAlignTop);
+  
+  
+  
+  
+  
+  
+  void AlignChildWithinCell(nscoord aMaxAscent,
+                            mozilla::ForceAlignTopForTableCell aForceAlignTop);
 
   
 

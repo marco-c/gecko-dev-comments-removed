@@ -392,80 +392,86 @@ LogicalSides nsTableCellFrame::GetLogicalSkipSides() const {
 
 nsMargin nsTableCellFrame::GetBorderOverflow() { return nsMargin(0, 0, 0, 0); }
 
-void nsTableCellFrame::BlockDirAlignChild(
-    WritingMode aWM, nscoord aMaxAscent,
-    ForceAlignTopForTableCell aForceAlignTop) {
+void nsTableCellFrame::AlignChildWithinCell(
+    nscoord aMaxAscent, ForceAlignTopForTableCell aForceAlignTop) {
   MOZ_ASSERT(aForceAlignTop != ForceAlignTopForTableCell::Yes ||
                  PresContext()->IsPaginated(),
              "We shouldn't force table-cells to do 'vertical-align:top' if "
              "we're not in printing!");
 
+  nsIFrame* const inner = Inner();
+  const WritingMode tableWM = GetWritingMode();
+  const WritingMode innerWM = inner->GetWritingMode();
+
   
-  const LogicalMargin border = GetLogicalUsedBorder(GetWritingMode())
-                                   .ApplySkipSides(GetLogicalSkipSides())
-                                   .ConvertTo(aWM, GetWritingMode());
+  
+  const nsSize containerSize = mRect.Size();
+  const LogicalRect paddingRect(innerWM, GetPaddingRectRelativeToSelf(),
+                                containerSize);
 
-  nscoord bStartInset = border.BStart(aWM);
-  nscoord bEndInset = border.BEnd(aWM);
+  const LogicalRect kidRect = inner->GetLogicalRect(innerWM, containerSize);
 
-  nscoord bSize = BSize(aWM);
-  nsIFrame* inner = Inner();
-  nsSize containerSize = mRect.Size();
-  LogicalRect kidRect = inner->GetLogicalRect(aWM, containerSize);
-  nscoord childBSize = kidRect.BSize(aWM);
+  
+  LogicalPoint kidPosition = paddingRect.Origin(innerWM);
 
   
   const auto verticalAlign = aForceAlignTop == ForceAlignTopForTableCell::Yes
                                  ? StyleVerticalAlignKeyword::Top
                                  : GetVerticalAlign();
-  nscoord kidBStart = 0;
   switch (verticalAlign) {
     case StyleVerticalAlignKeyword::Baseline:
       if (auto baseline = GetCellBaseline()) {
         
         
-        kidBStart = bStartInset + aMaxAscent - *baseline;
+        kidPosition.B(innerWM) =
+            paddingRect.BStart(innerWM) + aMaxAscent - *baseline;
         break;
       }
       
       [[fallthrough]];
     case StyleVerticalAlignKeyword::Top:
       
-      kidBStart = bStartInset;
+      
       break;
 
     case StyleVerticalAlignKeyword::Bottom:
       
       
-      kidBStart = bSize - childBSize - bEndInset;
+      kidPosition.B(innerWM) =
+          paddingRect.BEnd(innerWM) - kidRect.BSize(innerWM);
       break;
 
     default:
     case StyleVerticalAlignKeyword::Middle:
       
       
-      kidBStart = (bSize - childBSize - bEndInset + bStartInset) / 2;
+      kidPosition.B(innerWM) =
+          paddingRect.BStart(innerWM) +
+          (paddingRect.BSize(innerWM) - kidRect.BSize(innerWM)) / 2;
   }
-  
-  
-  kidBStart = std::max(bStartInset, kidBStart);
 
-  if (kidBStart != kidRect.BStart(aWM)) {
+  
+  
+  kidPosition.B(innerWM) =
+      std::max(paddingRect.BStart(innerWM), kidPosition.B(innerWM));
+
+  if (kidPosition != kidRect.Origin(innerWM)) {
     
     inner->InvalidateFrameSubtree();
   }
 
-  inner->SetPosition(aWM, LogicalPoint(aWM, kidRect.IStart(aWM), kidBStart),
-                     containerSize);
-  ReflowOutput desiredSize(aWM);
-  desiredSize.SetSize(aWM, GetLogicalSize(aWM));
+  inner->SetPosition(innerWM, kidPosition, containerSize);
+
+  ReflowOutput reflowOutput(tableWM);
+  reflowOutput.SetSize(tableWM, GetLogicalSize(tableWM));
 
   nsRect overflow(nsPoint(), GetSize());
   overflow.Inflate(GetBorderOverflow());
-  desiredSize.mOverflowAreas.SetAllTo(overflow);
-  ConsiderChildOverflow(desiredSize.mOverflowAreas, inner);
-  FinishAndStoreOverflow(&desiredSize);
-  if (kidBStart != kidRect.BStart(aWM)) {
+  reflowOutput.mOverflowAreas.SetAllTo(overflow);
+  ConsiderChildOverflow(reflowOutput.mOverflowAreas, inner);
+  FinishAndStoreOverflow(&reflowOutput);
+
+  if (kidPosition != kidRect.Origin(innerWM)) {
     
     
     nsContainerFrame::PositionChildViews(inner);
@@ -475,7 +481,7 @@ void nsTableCellFrame::BlockDirAlignChild(
   }
   if (HasView()) {
     nsContainerFrame::SyncFrameViewAfterReflow(PresContext(), this, GetView(),
-                                               desiredSize.InkOverflow(),
+                                               reflowOutput.InkOverflow(),
                                                ReflowChildFlags::Default);
   }
 }

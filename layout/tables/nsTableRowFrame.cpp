@@ -369,7 +369,7 @@ void nsTableRowFrame::DidResize(ForceAlignTopForTableCell aForceAlignTop) {
 
     
     
-    cellFrame->BlockDirAlignChild(wm, mMaxCellAscent, aForceAlignTop);
+    cellFrame->AlignChildWithinCell(mMaxCellAscent, aForceAlignTop);
 
     
     
@@ -1011,8 +1011,8 @@ nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
   
   
   if (isCompleteAndNotTruncated) {
-    aCellFrame->BlockDirAlignChild(wm, mMaxCellAscent,
-                                   ForceAlignTopForTableCell::Yes);
+    aCellFrame->AlignChildWithinCell(mMaxCellAscent,
+                                     ForceAlignTopForTableCell::Yes);
   }
 
   nsTableFrame::InvalidateTableFrame(
