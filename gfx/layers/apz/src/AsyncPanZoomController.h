@@ -8,6 +8,7 @@
 #define mozilla_layers_AsyncPanZoomController_h
 
 #include "Units.h"
+#include "mozilla/layers/CompositorScrollUpdate.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/layers/RepaintRequest.h"
 #include "mozilla/layers/SampleTime.h"
@@ -594,13 +595,14 @@ class AsyncPanZoomController {
   
 
 
-  GeckoViewMetrics GetGeckoViewMetrics() const;
+
+  CompositorScrollUpdate GetCompositorScrollUpdate() const;
 
   wr::MinimapData GetMinimapData() const;
 
   
   
-  bool UpdateRootFrameMetricsIfChanged(GeckoViewMetrics& aMetrics);
+  bool UpdateRootFrameMetricsIfChanged(CompositorScrollUpdate& aMetrics);
 
   
   SampleTime GetFrameTime() const;

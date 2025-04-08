@@ -1,0 +1,29 @@
+
+
+
+
+
+
+#ifndef mozilla_layers_CompositorScrollUpdate_h
+#define mozilla_layers_CompositorScrollUpdate_h
+
+#include "Units.h"
+
+namespace mozilla {
+namespace layers {
+
+
+
+
+
+
+
+struct CompositorScrollUpdate {
+  CSSPoint mVisualScrollOffset;
+  CSSToParentLayerScale mZoom;
+};
+
+}  
+}  
+
+#endif  

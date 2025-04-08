@@ -1626,7 +1626,7 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
   }
 
   SetState(PINCHING);
-  Telemetry::Accumulate(Telemetry::APZ_ZOOM_PINCHSOURCE, (int)aEvent.mSource);
+  glean::apz_zoom::pinchsource.AccumulateSingleSample((int)aEvent.mSource);
   SetVelocityVector(ParentLayerPoint(0, 0));
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   mLastZoomFocus =
@@ -6091,10 +6091,11 @@ const FrameMetrics& AsyncPanZoomController::Metrics() const {
   return mScrollMetadata.GetMetrics();
 }
 
-GeckoViewMetrics AsyncPanZoomController::GetGeckoViewMetrics() const {
+CompositorScrollUpdate AsyncPanZoomController::GetCompositorScrollUpdate()
+    const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  return GeckoViewMetrics{GetEffectiveScrollOffset(eForCompositing, lock),
-                          GetEffectiveZoom(eForCompositing, lock)};
+  return CompositorScrollUpdate{GetEffectiveScrollOffset(eForCompositing, lock),
+                                GetEffectiveZoom(eForCompositing, lock)};
 }
 
 wr::MinimapData AsyncPanZoomController::GetMinimapData() const {
@@ -6122,14 +6123,14 @@ wr::MinimapData AsyncPanZoomController::GetMinimapData() const {
 }
 
 bool AsyncPanZoomController::UpdateRootFrameMetricsIfChanged(
-    GeckoViewMetrics& aMetrics) {
+    CompositorScrollUpdate& aMetrics) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
   if (!Metrics().IsRootContent()) {
     return false;
   }
 
-  GeckoViewMetrics newMetrics = GetGeckoViewMetrics();
+  CompositorScrollUpdate newMetrics = GetCompositorScrollUpdate();
   bool hasChanged = RoundedToInt(aMetrics.mVisualScrollOffset) !=
                         RoundedToInt(newMetrics.mVisualScrollOffset) ||
                     aMetrics.mZoom != newMetrics.mZoom;

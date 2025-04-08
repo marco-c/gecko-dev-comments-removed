@@ -16,12 +16,13 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/DataMutex.h"   
 #include "mozilla/gfx/CompositorHitTestInfo.h"
-#include "mozilla/gfx/Logging.h"              
-#include "mozilla/gfx/Matrix.h"               
-#include "mozilla/layers/APZInputBridge.h"    
-#include "mozilla/layers/APZTestData.h"       
-#include "mozilla/layers/APZUtils.h"          
-#include "mozilla/layers/IAPZCTreeManager.h"  
+#include "mozilla/gfx/Logging.h"            
+#include "mozilla/gfx/Matrix.h"             
+#include "mozilla/layers/APZInputBridge.h"  
+#include "mozilla/layers/APZTestData.h"     
+#include "mozilla/layers/APZUtils.h"        
+#include "mozilla/layers/CompositorScrollUpdate.h"  
+#include "mozilla/layers/IAPZCTreeManager.h"        
 #include "mozilla/layers/ScrollbarData.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/KeyboardMap.h"      
@@ -1148,7 +1149,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 #if defined(MOZ_WIDGET_ANDROID)
  private:
   
-  GeckoViewMetrics mLastRootMetrics;
+  CompositorScrollUpdate mLastCompositorScrollUpdate;
 #endif  
 };
 
