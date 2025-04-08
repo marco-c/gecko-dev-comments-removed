@@ -23,17 +23,12 @@ class HTMLPreview extends Component {
 
   componentDidMount() {
     const { container } = this.refs;
-    const iframe = container.ownerDocument.createXULElement("iframe");
-    this.iframe = iframe;
-    iframe.setAttribute("type", "content");
-    iframe.setAttribute("remote", "true");
-
-    
-    
-    
-    iframe.addEventListener("dragstart", e => e.preventDefault(), {
-      capture: true,
-    });
+    const browser = container.ownerDocument.createXULElement("browser");
+    this.browser = browser;
+    browser.setAttribute("type", "content");
+    browser.setAttribute("remote", "true");
+    browser.setAttribute("maychangeremoteness", "true");
+    browser.setAttribute("disableglobalhistory", "true");
 
     
     
@@ -41,11 +36,11 @@ class HTMLPreview extends Component {
     
     
     
-    container.appendChild(iframe);
+    container.appendChild(browser);
 
     
     
-    iframe.browsingContext.allowJavascript = false;
+    browser.browsingContext.allowJavascript = false;
 
     this.#updatePreview();
   }
@@ -55,16 +50,19 @@ class HTMLPreview extends Component {
   }
 
   componentWillUnmount() {
-    this.iframe.remove();
+    this.browser.remove();
   }
 
   #updatePreview() {
     const { responseContent } = this.props;
     const htmlBody = responseContent ? responseContent.content.text : "";
-    this.iframe.setAttribute(
-      "src",
+    const uri = Services.io.newURI(
       "data:text/html;charset=UTF-8," + encodeURIComponent(htmlBody)
     );
+    const options = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    };
+    this.browser.loadURI(uri, options);
   }
 
   render() {

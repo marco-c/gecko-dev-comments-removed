@@ -134,41 +134,27 @@ async function expandNetworkRequestAndWaitForHtmlView({
   await onPayloadReady;
   node.querySelector("#response-tab").click();
 
-  info("Wait for the iframe to be rendered and loaded");
-  const iframe = await waitFor(() =>
-    node.querySelector("#response-panel .html-preview iframe")
+  info("Wait for the browser to be rendered and loaded");
+  const browser = await waitFor(() =>
+    node.querySelector("#response-panel .html-preview browser")
   );
 
-  
-  
-  
-  await waitFor(async () => {
-    
-    
-    try {
-      const rv = await SpecialPowers.spawn(iframe.browsingContext, [], () => {
-        return content.document.readyState == "complete";
-      });
-      return rv;
-    } catch (e) {
-      return false;
-    }
-  });
+  await BrowserTestUtils.browserLoaded(browser);
 
   is(
-    iframe.browsingContext.currentWindowGlobal.isInProcess,
+    browser.browsingContext.currentWindowGlobal.isInProcess,
     false,
     "The preview is loaded in a content process"
   );
 
   await SpecialPowers.spawn(
-    iframe.browsingContext,
+    browser.browsingContext,
     [expectedHtml],
     async function (_expectedHtml) {
       is(
         content.document.documentElement.outerHTML,
         _expectedHtml,
-        "iframe has the expected HTML"
+        "browser has the expected HTML"
       );
     }
   );
