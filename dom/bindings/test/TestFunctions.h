@@ -105,10 +105,12 @@ class TestFunctions : public NonRefcountedDOMObject {
   void TestAllowShared(const ArrayBufferView& aBuffer);
   void TestAllowShared(const ArrayBuffer& aBuffer);
   void TestDictWithAllowShared(const DictWithAllowSharedBufferSource& aDict);
-  void TestUnionOfBuffferSource(
+  void TestUnionOfBufferSource(
       const ArrayBufferOrArrayBufferViewOrString& aUnion);
-  void TestUnionOfAllowSharedBuffferSource(
-      const MaybeSharedArrayBufferOrMaybeSharedArrayBufferView& aUnion);
+  void TestUnionOfAllowSharedBufferSource(
+      const AllowSharedBufferSource& aUnion);
+  void TestUnionWithAllowShared(
+      const MaybeSharedInt8ArrayOrMaybeSharedInt16Array& aUnion);
 
   bool StaticAndNonStaticOverload() { return false; }
   static bool StaticAndNonStaticOverload(GlobalObject& aGlobal,
