@@ -291,9 +291,6 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
           *aWidgetFlags = GTK_ARROW_LEFT;
       }
       break;
-    case StyleAppearance::Tooltip:
-      aGtkWidgetType = MOZ_GTK_TOOLTIP;
-      break;
     case StyleAppearance::ProgressBar:
       aGtkWidgetType = MOZ_GTK_PROGRESSBAR;
       break;
@@ -868,7 +865,6 @@ bool nsNativeThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,
   }
   switch (aAppearance) {
     case StyleAppearance::Toolbarbutton:
-    case StyleAppearance::Tooltip:
     case StyleAppearance::MozWindowButtonClose:
     case StyleAppearance::MozWindowButtonMinimize:
     case StyleAppearance::MozWindowButtonMaximize:
@@ -917,21 +913,6 @@ auto nsNativeThemeGTK::IsWidgetNonNative(nsIFrame* aFrame,
   if (LookAndFeel::ColorSchemeForFrame(aFrame) ==
       PreferenceSheet::ColorSchemeForChrome()) {
     return NonNative::No;
-  }
-
-  
-  
-  
-  if (aAppearance == StyleAppearance::Tooltip) {
-    auto darkColor =
-        LookAndFeel::Color(StyleSystemColor::Infotext, ColorScheme::Dark,
-                           LookAndFeel::UseStandins::No);
-    auto lightColor =
-        LookAndFeel::Color(StyleSystemColor::Infotext, ColorScheme::Light,
-                           LookAndFeel::UseStandins::No);
-    if (darkColor == lightColor) {
-      return NonNative::No;
-    }
   }
 
   
@@ -1068,7 +1049,6 @@ bool nsNativeThemeGTK::WidgetAttributeChangeRequiresRepaint(
   
   if (aAppearance == StyleAppearance::Progresschunk ||
       aAppearance == StyleAppearance::ProgressBar ||
-      aAppearance == StyleAppearance::Tooltip ||
       aAppearance == StyleAppearance::MozWindowDecorations) {
     return false;
   }
@@ -1117,7 +1097,6 @@ nsNativeThemeGTK::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::Tab:
     
     case StyleAppearance::Tabpanels:
-    case StyleAppearance::Tooltip:
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:
     case StyleAppearance::Textfield:
@@ -1178,14 +1157,7 @@ nsITheme::Transparency nsNativeThemeGTK::GetWidgetTransparency(
     return Theme::GetWidgetTransparency(aFrame, aAppearance);
   }
 
-  switch (aAppearance) {
-    
-    
-    case StyleAppearance::Tooltip:
-      return eTransparent;
-    default:
-      return eUnknownTransparency;
-  }
+  return eUnknownTransparency;
 }
 
 already_AddRefed<Theme> do_CreateNativeThemeDoNotUseDirectly() {
