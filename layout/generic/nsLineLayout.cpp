@@ -667,10 +667,12 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
   
 
   const nsStylePosition* pos = aFrame->StylePosition();
-
-  if ((pos->ISizeDependsOnContainer(aWM) && !pos->ISize(aWM).IsAuto()) ||
-      pos->MaxISizeDependsOnContainer(aWM) ||
-      pos->MinISizeDependsOnContainer(aWM) ||
+  const auto iSize = pos->ISize(aWM, positionProperty);
+  if ((nsStylePosition::ISizeDependsOnContainer(iSize) && !iSize->IsAuto()) ||
+      nsStylePosition::MaxISizeDependsOnContainer(
+          pos->MaxISize(aWM, positionProperty)) ||
+      nsStylePosition::MinISizeDependsOnContainer(
+          pos->MinISize(aWM, positionProperty)) ||
       pos->GetAnchorResolvedInset(LogicalSide::IStart, aWM, positionProperty)
           ->HasPercent() ||
       pos->GetAnchorResolvedInset(LogicalSide::IEnd, aWM, positionProperty)
@@ -678,7 +680,7 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
     return true;
   }
 
-  if (pos->ISize(aWM).IsAuto()) {
+  if (iSize->IsAuto()) {
     
     
     const nsStyleDisplay* disp = aFrame->StyleDisplay();
@@ -701,7 +703,7 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
     nsIFrame* f = const_cast<nsIFrame*>(aFrame);
     if (f->GetAspectRatio() &&
         
-        !pos->BSize(aWM).ConvertsToLength()) {
+        !pos->BSize(aWM, positionProperty)->ConvertsToLength()) {
       const IntrinsicSize& intrinsicSize = f->GetIntrinsicSize();
       if (!intrinsicSize.width && !intrinsicSize.height) {
         return true;

@@ -474,11 +474,11 @@ nscoord nsTableRowFrame::CalcBSize(const ReflowInput& aReflowInput) {
 
   WritingMode wm = aReflowInput.GetWritingMode();
   const nsStylePosition* position = StylePosition();
-  const auto& bsizeStyleCoord = position->BSize(wm);
-  if (bsizeStyleCoord.ConvertsToLength()) {
-    SetFixedBSize(bsizeStyleCoord.ToLength());
-  } else if (bsizeStyleCoord.ConvertsToPercentage()) {
-    SetPctBSize(bsizeStyleCoord.ToPercentage());
+  const auto bsizeStyleCoord = position->BSize(wm, StyleDisplay()->mPosition);
+  if (bsizeStyleCoord->ConvertsToLength()) {
+    SetFixedBSize(bsizeStyleCoord->ToLength());
+  } else if (bsizeStyleCoord->ConvertsToPercentage()) {
+    SetPctBSize(bsizeStyleCoord->ToPercentage());
   }
 
   for (nsTableCellFrame* kidFrame = GetFirstCell(); kidFrame;
@@ -558,11 +558,12 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
 
   int32_t rowSpan = GetTableFrame()->GetEffectiveRowSpan(*aCellFrame);
 
-  const auto& bsizeStyleCoord = position->BSize(aWM);
-  if (bsizeStyleCoord.ConvertsToLength()) {
+  const auto bsizeStyleCoord =
+      position->BSize(aWM, aCellFrame->StyleDisplay()->mPosition);
+  if (bsizeStyleCoord->ConvertsToLength()) {
     
     
-    specifiedBSize = bsizeStyleCoord.ToLength();
+    specifiedBSize = bsizeStyleCoord->ToLength();
     if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
         position->mBoxSizing == StyleBoxSizing::Content) {
       specifiedBSize +=
@@ -572,9 +573,9 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
     if (1 == rowSpan) {
       SetFixedBSize(specifiedBSize);
     }
-  } else if (bsizeStyleCoord.ConvertsToPercentage()) {
+  } else if (bsizeStyleCoord->ConvertsToPercentage()) {
     if (1 == rowSpan) {
-      SetPctBSize(bsizeStyleCoord.ToPercentage());
+      SetPctBSize(bsizeStyleCoord->ToPercentage());
     }
   }
 
@@ -1255,11 +1256,12 @@ void nsTableRowFrame::InitHasCellWithStyleBSize(nsTableFrame* aTableFrame) {
   for (nsTableCellFrame* cellFrame = GetFirstCell(); cellFrame;
        cellFrame = cellFrame->GetNextCell()) {
     
-    const auto& cellBSize = cellFrame->StylePosition()->BSize(wm);
+    const auto cellBSize = cellFrame->StylePosition()->BSize(
+        wm, cellFrame->StyleDisplay()->mPosition);
     if (aTableFrame->GetEffectiveRowSpan(*cellFrame) == 1 &&
-        !cellBSize.IsAuto() &&
+        !cellBSize->IsAuto() &&
         
-        (cellBSize.ConvertsToLength() || cellBSize.ConvertsToPercentage())) {
+        (cellBSize->ConvertsToLength() || cellBSize->ConvertsToPercentage())) {
       AddStateBits(NS_ROW_HAS_CELL_WITH_STYLE_BSIZE);
       return;
     }

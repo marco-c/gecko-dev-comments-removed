@@ -401,7 +401,8 @@ void nsTableRowGroupFrame::ReflowChildren(
           
           const nsStylePosition* stylePos = StylePosition();
           if (tableFrame->IsAutoBSize(wm) &&
-              !stylePos->BSize(wm).ConvertsToLength()) {
+              !stylePos->BSize(wm, StyleDisplay()->mPosition)
+                   ->ConvertsToLength()) {
             
             
             InvalidateFrame();

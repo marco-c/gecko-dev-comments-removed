@@ -4083,9 +4083,11 @@ bool nsBlockFrame::IsSelfEmpty() {
 
   WritingMode wm = GetWritingMode();
   const nsStylePosition* position = StylePosition();
+  const auto positionProperty = StyleDisplay()->mPosition;
+  const auto bSize = position->BSize(wm, positionProperty);
 
-  if (IsNonAutoNonZeroBSize(position->MinBSize(wm)) ||
-      IsNonAutoNonZeroBSize(position->BSize(wm))) {
+  if (IsNonAutoNonZeroBSize(*position->MinBSize(wm, positionProperty)) ||
+      IsNonAutoNonZeroBSize(*bSize)) {
     return false;
   }
 
@@ -4093,7 +4095,7 @@ bool nsBlockFrame::IsSelfEmpty() {
   
   
   
-  if (position->BSize(wm).BehavesLikeInitialValueOnBlockAxis() &&
+  if (bSize->BehavesLikeInitialValueOnBlockAxis() &&
       position->mAspectRatio.HasFiniteRatio()) {
     return false;
   }
@@ -8616,9 +8618,10 @@ nsBlockFrame::FloatAvoidingISizeToClear nsBlockFrame::ISizeToClearPastFloats(
   const LogicalMargin computedMargin = sizingInput.ComputedLogicalMargin(wm);
 
   nscoord marginISize = computedMargin.IStartEnd(wm);
-  const auto& iSize = reflowInput.mStylePosition->ISize(wm);
+  const auto iSize = reflowInput.mStylePosition->ISize(
+      wm, reflowInput.mStyleDisplay->mPosition);
   if (marginISize < 0 &&
-      (iSize.IsAuto() || iSize.BehavesLikeStretchOnInlineAxis())) {
+      (iSize->IsAuto() || iSize->BehavesLikeStretchOnInlineAxis())) {
     
     
     

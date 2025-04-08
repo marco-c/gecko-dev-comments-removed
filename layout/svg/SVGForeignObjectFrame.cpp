@@ -296,10 +296,11 @@ void SVGForeignObjectFrame::NotifySVGChanged(uint32_t aFlags) {
       needNewCanvasTM = true;
     }
 
+    const auto positionProperty = StyleDisplay()->mPosition;
     
     
-    if (StylePosition()->GetWidth().HasPercent() ||
-        StylePosition()->GetHeight().HasPercent()) {
+    if (StylePosition()->GetWidth(positionProperty)->HasPercent() ||
+        StylePosition()->GetHeight(positionProperty)->HasPercent()) {
       needNewBounds = true;
       needReflow = true;
     }

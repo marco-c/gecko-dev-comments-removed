@@ -1427,8 +1427,9 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
-  const auto* stylePos =
-      nsLayoutUtils::GetStyleFrame(aChildFrame)->StylePosition();
+  const auto* styleFrame = nsLayoutUtils::GetStyleFrame(aChildFrame);
+  const auto* stylePos = styleFrame->StylePosition();
+  const auto positionProperty = styleFrame->StyleDisplay()->mPosition;
 
   
   
@@ -1442,8 +1443,9 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
     
     
     const auto& flexBasis = stylePos->mFlexBasis;
-    const auto& styleMainSize = stylePos->Size(aAxisTracker.MainAxis(), flexWM);
-    if (IsUsedFlexBasisContent(flexBasis, styleMainSize)) {
+    const auto styleMainSize =
+        stylePos->Size(aAxisTracker.MainAxis(), flexWM, positionProperty);
+    if (IsUsedFlexBasisContent(flexBasis, *styleMainSize)) {
       
       
       
@@ -1456,7 +1458,7 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
       
       
       MOZ_ASSERT(flexBasis.IsAuto());
-      styleFlexBaseSize.emplace(styleMainSize);
+      styleFlexBaseSize.emplace(*styleMainSize);
     }
 
     MOZ_ASSERT(styleFlexBaseSize, "We should've emplace styleFlexBaseSize!");
@@ -1577,10 +1579,11 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
 
   const auto itemWM = aFlexItem.GetWritingMode();
   const auto cbWM = aAxisTracker.GetWritingMode();
-  const auto& mainStyleSize =
-      aItemReflowInput.mStylePosition->Size(aAxisTracker.MainAxis(), cbWM);
-  const auto& maxMainStyleSize =
-      aItemReflowInput.mStylePosition->MaxSize(aAxisTracker.MainAxis(), cbWM);
+  const auto positionProperty = aItemReflowInput.mStyleDisplay->mPosition;
+  const auto mainStyleSize = aItemReflowInput.mStylePosition->Size(
+      aAxisTracker.MainAxis(), cbWM, positionProperty);
+  const auto maxMainStyleSize = aItemReflowInput.mStylePosition->MaxSize(
+      aAxisTracker.MainAxis(), cbWM, positionProperty);
   const auto boxSizingAdjust =
       aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
           ? aFlexItem.BorderPadding().Size(cbWM)
@@ -1594,8 +1597,8 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
     
     
     
-    if (aFlexItem.Frame()->IsPercentageResolvedAgainstZero(mainStyleSize,
-                                                           maxMainStyleSize)) {
+    if (aFlexItem.Frame()->IsPercentageResolvedAgainstZero(*mainStyleSize,
+                                                           *maxMainStyleSize)) {
       return LogicalSize(cbWM, 0, 0);
     }
     return aItemReflowInput.mContainingBlockSize.ConvertTo(cbWM, itemWM);
@@ -1610,13 +1613,13 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
     
     
     
-    if (mainStyleSize.IsLengthPercentage()) {
+    if (mainStyleSize->IsLengthPercentage()) {
       
       
       
       specifiedSizeSuggestion = aFlexItem.Frame()->ComputeISizeValue(
           cbWM, PercentageBasisForItem(), boxSizingAdjust,
-          mainStyleSize.AsLengthPercentage());
+          mainStyleSize->AsLengthPercentage());
     }
   } else {
     
@@ -1624,11 +1627,11 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
     
     
     const auto percentageBasisBSize = PercentageBasisForItem().BSize(cbWM);
-    if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, percentageBasisBSize)) {
+    if (!nsLayoutUtils::IsAutoBSize(*mainStyleSize, percentageBasisBSize)) {
       specifiedSizeSuggestion = nsLayoutUtils::ComputeBSizeValueHandlingStretch(
           percentageBasisBSize, aFlexItem.MarginSizeInMainAxis(),
           aFlexItem.BorderPaddingSizeInMainAxis(), boxSizingAdjust.BSize(cbWM),
-          mainStyleSize);
+          *mainStyleSize);
     }
   }
 
@@ -2344,8 +2347,8 @@ bool FlexItem::IsMinSizeAutoResolutionNeeded() const {
   
   
   
-  const auto& mainMinSize =
-      Frame()->StylePosition()->MinSize(MainAxis(), ContainingBlockWM());
+  const auto mainMinSize = Frame()->StylePosition()->MinSize(
+      MainAxis(), ContainingBlockWM(), Frame()->StyleDisplay()->mPosition);
 
   
   
@@ -2353,10 +2356,10 @@ bool FlexItem::IsMinSizeAutoResolutionNeeded() const {
   
   
   
-  if (mainMinSize.BehavesLikeStretchOnBlockAxis()) {
+  if (mainMinSize->BehavesLikeStretchOnBlockAxis()) {
     return false;
   }
-  return IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
+  return IsAutoOrEnumOnBSize(*mainMinSize, IsInlineAxisMainAxis()) &&
          !Frame()->StyleDisplay()->IsScrollableOverflow();
 }
 
@@ -2418,13 +2421,15 @@ nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
 }
 
 bool FlexItem::IsCrossSizeAuto() const {
-  const nsStylePosition* stylePos =
-      nsLayoutUtils::GetStyleFrame(mFrame)->StylePosition();
+  const auto* styleFrame = nsLayoutUtils::GetStyleFrame(mFrame);
+  const nsStylePosition* stylePos = styleFrame->StylePosition();
+  const auto positionProperty = styleFrame->StyleDisplay()->mPosition;
   
   
   
-  return IsInlineAxisCrossAxis() ? stylePos->ISize(mWM).IsAuto()
-                                 : stylePos->BSize(mWM).IsAuto();
+  return IsInlineAxisCrossAxis()
+             ? stylePos->ISize(mWM, positionProperty)->IsAuto()
+             : stylePos->BSize(mWM, positionProperty)->IsAuto();
 }
 
 bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
@@ -2434,16 +2439,18 @@ bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
   }
 
   const nsStylePosition* pos = aItemReflowInput.mStylePosition;
+  const auto positionProperty = aItemReflowInput.mStyleDisplay->mPosition;
   const auto itemWM = GetWritingMode();
 
   
   
   if (IsInlineAxisCrossAxis()) {
-    return !pos->ISize(itemWM).IsAuto();
+    return !pos->ISize(itemWM, positionProperty)->IsAuto();
   }
 
   nscoord cbBSize = aItemReflowInput.mContainingBlockSize.BSize(itemWM);
-  return !nsLayoutUtils::IsAutoBSize(pos->BSize(itemWM), cbBSize);
+  return !nsLayoutUtils::IsAutoBSize(*pos->BSize(itemWM, positionProperty),
+                                     cbBSize);
 }
 
 void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
@@ -2459,7 +2466,8 @@ void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
   if (HasAspectRatio() &&
       nsFlexContainerFrame::IsUsedFlexBasisContent(
           aItemReflowInput.mStylePosition->mFlexBasis,
-          aItemReflowInput.mStylePosition->Size(MainAxis(), mCBWM)) &&
+          *aItemReflowInput.mStylePosition->Size(
+              MainAxis(), mCBWM, aItemReflowInput.mStyleDisplay->mPosition)) &&
       IsCrossSizeDefinite(aItemReflowInput)) {
     const LogicalSize contentBoxSizeToBoxSizingAdjust =
         aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
@@ -4650,11 +4658,11 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   WritingMode wm = aReflowInput.GetWritingMode();
   const nsStylePosition* stylePos = StylePosition();
-  const auto& bsize = stylePos->BSize(wm);
   const auto positionProperty = StyleDisplay()->mPosition;
-  if (bsize.HasPercent() ||
+  const auto bsize = stylePos->BSize(wm, positionProperty);
+  if (bsize->HasPercent() ||
       (StyleDisplay()->IsAbsolutelyPositionedStyle() &&
-       (bsize.IsAuto() || !bsize.IsLengthPercentage()) &&
+       (bsize->IsAuto() || !bsize->IsLengthPercentage()) &&
        !stylePos
             ->GetAnchorResolvedInset(LogicalSide::BStart, wm, positionProperty)
             ->IsAuto() &&
@@ -6514,8 +6522,9 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
 
     const auto childWM = childFrame->GetWritingMode();
     const IntrinsicSizeInput childInput(aInput, childWM, flexWM);
-    const auto* childStylePos =
-        nsLayoutUtils::GetStyleFrame(childFrame)->StylePosition();
+    const auto* styleFrame = nsLayoutUtils::GetStyleFrame(childFrame);
+    const auto* childStylePos = styleFrame->StylePosition();
+    const auto childPositionProperty = styleFrame->StyleDisplay()->mPosition;
 
     
     
@@ -6549,9 +6558,9 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       [[maybe_unused]] auto [alignSelf, flags] =
           UsedAlignSelfAndFlagsForItem(childFrame);
       if (alignSelf != StyleAlignFlags::STRETCH ||
-          !childStylePos->BSize(flexWM).IsAuto() ||
-          childFrame->StyleMargin()->HasBlockAxisAuto(
-              flexWM, childFrame->StyleDisplay()->mPosition)) {
+          !childStylePos->BSize(flexWM, childPositionProperty)->IsAuto() ||
+          childFrame->StyleMargin()->HasBlockAxisAuto(flexWM,
+                                                      childPositionProperty)) {
         
         
         
