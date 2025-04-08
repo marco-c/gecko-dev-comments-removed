@@ -8,6 +8,7 @@ import android.graphics.*
 import android.graphics.Bitmap
 import android.os.SystemClock
 import android.view.MotionEvent
+import androidx.core.graphics.createBitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.* 
@@ -57,7 +58,7 @@ class DynamicToolbarTest : BaseSessionTest() {
 
 
     private fun getComparisonScreenshot(width: Int, height: Int): Bitmap {
-        val screenshotFile = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val screenshotFile = createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(screenshotFile)
         val paint = Paint()
         paint.color = Color.rgb(0, 128, 0)

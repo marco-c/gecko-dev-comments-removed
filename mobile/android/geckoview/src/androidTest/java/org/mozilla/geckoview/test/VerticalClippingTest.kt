@@ -6,6 +6,7 @@ package org.mozilla.geckoview.test
 
 import android.graphics.* 
 import android.graphics.Bitmap
+import androidx.core.graphics.createBitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers
@@ -27,7 +28,7 @@ private const val BANNER_HEIGHT = SCREEN_HEIGHT * 0.1f
 @MediumTest
 class VerticalClippingTest : BaseSessionTest() {
     private fun getComparisonScreenshot(bottomOffset: Int): Bitmap {
-        val screenshotFile = Bitmap.createBitmap(SCREEN_WIDTH, SCREEN_HEIGHT, Bitmap.Config.ARGB_8888)
+        val screenshotFile = createBitmap(SCREEN_WIDTH, SCREEN_HEIGHT, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(screenshotFile)
         val paint = Paint()
 
