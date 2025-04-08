@@ -915,9 +915,10 @@ fn resolve_anchor_functions(
 ) -> Result<Option<CalcNode>, ()> {
     let resolution = match node {
         CalcNode::Anchor(f) => {
+            let axis = info.axis.expect("Unexpected anchor()");
             
             
-            f.resolve(info.axis, info.position_property)
+            f.resolve(axis, info.position_property)
         },
         CalcNode::AnchorSize(f) => f.resolve(info.position_property),
         _ => return Ok(None),
@@ -942,7 +943,9 @@ pub struct CalcAnchorFunctionResolutionInfo {
     
     
     
-    pub axis: PhysicalAxis,
+    
+    
+    pub axis: Option<PhysicalAxis>,
     
     pub position_property: PositionProperty,
 }
