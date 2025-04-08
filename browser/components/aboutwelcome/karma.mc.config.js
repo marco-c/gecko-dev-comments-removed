@@ -169,6 +169,14 @@ module.exports = function (config) {
             "content-src/components/MultiStageProtonScreen.jsx": {
               branches: 79.07,
             },
+            
+            
+            "content-src/components/InstallButton.jsx": {
+              statements: 60,
+              lines: 60,
+              functions: 60,
+              branches: 30,
+            },
           },
         },
       },
