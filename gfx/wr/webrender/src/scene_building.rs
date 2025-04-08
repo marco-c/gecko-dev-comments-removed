@@ -649,6 +649,10 @@ impl<'a> SceneBuilder<'a> {
             &builder.interners,
         );
 
+        for pic_index in &builder.snapshot_pictures {
+            builder.picture_graph.add_root(*pic_index);
+        }
+
         
         for pic_index in &tile_cache_pictures {
             builder.picture_graph.add_root(*pic_index);
