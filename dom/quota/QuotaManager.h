@@ -503,10 +503,15 @@ class QuotaManager final : public BackgroundThreadObject {
   }
 
  private:
+  nsresult InitializeTemporaryStorageInternal();
+
   nsresult EnsureTemporaryStorageIsInitializedInternal();
 
  public:
   RefPtr<BoolPromise> InitializeAllTemporaryOrigins();
+
+  RefPtr<BoolPromise> SaveOriginAccessTime(
+      const OriginMetadata& aOriginMetadata, int64_t aTimestamp);
 
   RefPtr<OriginUsageMetadataArrayPromise> GetUsage(
       bool aGetAll, RefPtr<BoolPromise> aOnCancelPromise = nullptr);

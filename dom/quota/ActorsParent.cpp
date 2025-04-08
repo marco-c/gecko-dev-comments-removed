@@ -64,6 +64,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/Now.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
@@ -1839,7 +1840,31 @@ void QuotaManager::ShutdownInstance() {
 
     recordTimeDeltaHelper->Start();
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    const auto startExcludingSuspendMs = NowExcludingSuspendMs();
+
     gInstance->Shutdown();
+
+    const auto endExcludingSuspendMs = NowExcludingSuspendMs();
+
+    if (startExcludingSuspendMs && endExcludingSuspendMs) {
+      const auto duration = TimeDuration::FromMilliseconds(
+          *endExcludingSuspendMs - *startExcludingSuspendMs);
+
+      glean::quotamanager_shutdown::total_time_excluding_suspend
+          .AccumulateRawDuration(duration);
+    }
 
     recordTimeDeltaHelper->End();
 
@@ -2674,12 +2699,7 @@ void QuotaManager::UpdateOriginAccessTime(
 
     MutexAutoUnlock autoUnlock(mQuotaMutex);
 
-    auto op = CreateSaveOriginAccessTimeOp(WrapMovingNotNullUnchecked(this),
-                                           aOriginMetadata, timestamp);
-
-    RegisterNormalOriginOp(*op);
-
-    op->RunImmediately();
+    SaveOriginAccessTime(aOriginMetadata, timestamp);
   }
 }
 
@@ -6426,6 +6446,42 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryStorage(
       });
 }
 
+nsresult QuotaManager::InitializeTemporaryStorageInternal() {
+  AssertIsOnIOThread();
+  MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
+  MOZ_DIAGNOSTIC_ASSERT(!mTemporaryStorageInitializedInternal);
+
+  nsCOMPtr<nsIFile> storageDir;
+  QM_TRY(MOZ_TO_RESULT(
+      NS_NewLocalFile(GetStoragePath(), getter_AddRefs(storageDir))));
+
+  
+  QM_TRY_INSPECT(const bool& created, EnsureDirectory(*storageDir));
+
+  Unused << created;
+
+  QM_TRY_UNWRAP(mTemporaryStorageLimit, GetTemporaryStorageLimit(*storageDir));
+
+  QM_TRY(MOZ_TO_RESULT(LoadQuota()));
+
+  mTemporaryStorageInitializedInternal = true;
+
+  
+  
+  
+  
+  
+  if (!QuotaPrefs::LazyOriginInitializationEnabled()) {
+    CleanupTemporaryStorage();
+  }
+
+  if (mCacheUsable) {
+    QM_TRY(InvalidateCache(*mStorageConnection));
+  }
+
+  return NS_OK;
+}
+
 nsresult QuotaManager::EnsureTemporaryStorageIsInitializedInternal() {
   AssertIsOnIOThread();
   MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
@@ -6437,33 +6493,24 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitializedInternal() {
       return NS_OK;
     }
 
-    nsCOMPtr<nsIFile> storageDir;
-    QM_TRY(MOZ_TO_RESULT(
-        NS_NewLocalFile(GetStoragePath(), getter_AddRefs(storageDir))));
-
-    
-    QM_TRY_INSPECT(const bool& created, EnsureDirectory(*storageDir));
-
-    Unused << created;
-
-    QM_TRY_UNWRAP(mTemporaryStorageLimit,
-                  GetTemporaryStorageLimit(*storageDir));
-
-    QM_TRY(MOZ_TO_RESULT(LoadQuota()));
-
-    mTemporaryStorageInitializedInternal = true;
-
     
     
     
     
     
-    if (!QuotaPrefs::LazyOriginInitializationEnabled()) {
-      CleanupTemporaryStorage();
-    }
 
-    if (mCacheUsable) {
-      QM_TRY(InvalidateCache(*mStorageConnection));
+    const auto startExcludingSuspendMs = NowExcludingSuspendMs();
+
+    QM_TRY(MOZ_TO_RESULT(InitializeTemporaryStorageInternal()));
+
+    const auto endExcludingSuspendMs = NowExcludingSuspendMs();
+
+    if (startExcludingSuspendMs && endExcludingSuspendMs) {
+      const auto duration = TimeDuration::FromMilliseconds(
+          *endExcludingSuspendMs - *startExcludingSuspendMs);
+
+      glean::quotamanager_initialize_temporarystorage::
+          total_time_excluding_suspend.AccumulateRawDuration(duration);
     }
 
     return NS_OK;
@@ -6535,6 +6582,21 @@ RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
   }
 
   return promise;
+}
+
+RefPtr<BoolPromise> QuotaManager::SaveOriginAccessTime(
+    const OriginMetadata& aOriginMetadata, int64_t aTimestamp) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(aOriginMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
+
+  auto saveOriginAccessTimeOp = CreateSaveOriginAccessTimeOp(
+      WrapMovingNotNullUnchecked(this), aOriginMetadata, aTimestamp);
+
+  RegisterNormalOriginOp(*saveOriginAccessTimeOp);
+
+  saveOriginAccessTimeOp->RunImmediately();
+
+  return saveOriginAccessTimeOp->OnResults();
 }
 
 RefPtr<OriginUsageMetadataArrayPromise> QuotaManager::GetUsage(
