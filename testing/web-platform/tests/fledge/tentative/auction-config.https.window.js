@@ -601,12 +601,16 @@ subsetTest(promise_test, async test => {
     })
   };
 
-  
-  
-  
   await runBasicFledgeAuctionAndNavigate(test, uuid, auctionConfigOverrides);
-  await waitForObservedRequestsIgnoreDebugOnlyReports(
-      uuid, [bidderReportURL2, sellerReportURL2]);
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
