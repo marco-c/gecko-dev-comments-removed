@@ -278,9 +278,6 @@ void TestFunctions::TestUnionOfBufferSource(
 void TestFunctions::TestUnionOfAllowSharedBufferSource(
     const AllowSharedBufferSource& aUnion) {}
 
-void TestFunctions::TestUnionWithAllowShared(
-    const MaybeSharedInt8ArrayOrMaybeSharedInt16Array& aUnion) {}
-
 bool TestFunctions::ObjectFromAboutBlank(JSContext* aCx, JSObject* aObj) {
   
   
