@@ -32,6 +32,7 @@
 #include "SimpleVelocityTracker.h"      
 #include "Units.h"                      
 #include "UnitTransforms.h"             
+#include "apz/public/CompositorScrollUpdate.h"
 #include "base/message_loop.h"          
 #include "base/task.h"                  
 #include "gfxTypes.h"                   
@@ -6097,7 +6098,7 @@ bool CompositorScrollUpdate::operator==(
   
   return RoundedToInt(mVisualScrollOffset) ==
              RoundedToInt(aOther.mVisualScrollOffset) &&
-         mZoom == aOther.mZoom;
+         mZoom == aOther.mZoom && mSource == aOther.mSource;
 }
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -6106,9 +6107,11 @@ AsyncPanZoomController::GetCompositorScrollUpdates() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   MOZ_ASSERT(Metrics().IsRootContent());
 
+  
   CompositorScrollUpdate current{
       GetEffectiveScrollOffset(eForCompositing, lock),
-      GetEffectiveZoom(eForCompositing, lock)};
+      GetEffectiveZoom(eForCompositing, lock),
+      CompositorScrollUpdate::Source::UserInteraction};
   if (current != mLastCompositorScrollUpdate) {
     mLastCompositorScrollUpdate = current;
     return {current};

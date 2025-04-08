@@ -393,8 +393,8 @@ public class GeckoSession {
     
     @WrapForJNI(calledFrom = "ui")
     private void notifyCompositorScrollUpdate(
-        final float scrollX, final float scrollY, final float zoom) {
-      GeckoSession.this.onCompositorScrollUpdate(scrollX, scrollY, zoom);
+        final float scrollX, final float scrollY, final float zoom, final int source) {
+      GeckoSession.this.onCompositorScrollUpdate(scrollX, scrollY, zoom, source);
     }
 
     @WrapForJNI(calledFrom = "ui")
@@ -7139,11 +7139,11 @@ public class GeckoSession {
   
   public class ScrollPositionUpdate {
     
-    public static final int SOURCE_USER_INTERACTION = 0;
+    @WrapForJNI public static final int SOURCE_USER_INTERACTION = 0;
     
     
     
-    public static final int SOURCE_OTHER = 1;
+    @WrapForJNI public static final int SOURCE_OTHER = 1;
 
     
     public float scrollX;
@@ -8182,7 +8182,8 @@ public class GeckoSession {
     mOverscroll.setDistance(y, OverscrollEdgeEffect.AXIS_Y);
   }
 
-   void onCompositorScrollUpdate(final float scrollX, final float scrollY, final float zoom) {
+   void onCompositorScrollUpdate(
+      final float scrollX, final float scrollY, final float zoom, final int source) {
     if (DEBUG) {
       ThreadUtils.assertOnUiThread();
     }
@@ -8197,8 +8198,7 @@ public class GeckoSession {
     update.scrollX = scrollX;
     update.scrollY = scrollY;
     update.zoom = zoom;
-    
-    update.source = ScrollPositionUpdate.SOURCE_USER_INTERACTION;
+    update.source = source;
     if (mCompositorScrollDelegate != null) {
       mCompositorScrollDelegate.onScrollChanged(this, update);
     }

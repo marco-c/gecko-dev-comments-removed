@@ -19,8 +19,25 @@ namespace layers {
 
 
 struct CompositorScrollUpdate {
+  
+
+
+
+
+
+
+  enum class Source {
+    
+    UserInteraction,
+    
+    
+    
+    Other
+  };
+
   CSSPoint mVisualScrollOffset;
   CSSToParentLayerScale mZoom;
+  Source mSource;
 
   bool operator==(const CompositorScrollUpdate& aOther) const;
   bool operator!=(const CompositorScrollUpdate& aOther) const {
