@@ -2205,12 +2205,12 @@ void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
     MOZ_ASSERT(chunk->getKind() == ChunkKind::TenuredArenas);
     MOZ_ASSERT(!chunk->isEmpty());
 
-    if (!chunk->hasAvailableArenas()) {
+    if (chunk->info.isCurrentChunk) {
       
       continue;
     }
 
-    if (chunk->info.isCurrentChunk) {
+    if (!chunk->hasAvailableArenas()) {
       
       continue;
     }
