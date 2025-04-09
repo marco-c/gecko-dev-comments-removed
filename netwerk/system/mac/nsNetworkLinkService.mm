@@ -34,7 +34,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "nsNetworkLinkService.h"
 #include "../../base/IPv6Utils.h"
 #include "../LinkServiceCommon.h"
@@ -656,18 +656,18 @@ void nsNetworkLinkService::calculateNetworkIdInternal(void) {
     if (mNetworkId != output) {
       
       if (found4 && !found6) {
-        Telemetry::Accumulate(Telemetry::NETWORK_ID2, 1);  
+        glean::network::id.AccumulateSingleSample(1);  
       } else if (!found4 && found6) {
-        Telemetry::Accumulate(Telemetry::NETWORK_ID2, 3);  
+        glean::network::id.AccumulateSingleSample(3);  
       } else {
-        Telemetry::Accumulate(Telemetry::NETWORK_ID2, 4);  
+        glean::network::id.AccumulateSingleSample(4);  
       }
       mNetworkId = output;
       idChanged = true;
     } else {
       
       LOG(("Same network id"));
-      Telemetry::Accumulate(Telemetry::NETWORK_ID2, 2);
+      glean::network::id.AccumulateSingleSample(2);
     }
   } else {
     
@@ -676,7 +676,7 @@ void nsNetworkLinkService::calculateNetworkIdInternal(void) {
     if (!mNetworkId.IsEmpty()) {
       mNetworkId.Truncate();
       idChanged = true;
-      Telemetry::Accumulate(Telemetry::NETWORK_ID2, 0);
+      glean::network::id.AccumulateSingleSample(0);
     }
   }
 
