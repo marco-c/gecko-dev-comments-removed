@@ -29,34 +29,40 @@
 #include "prnetdb.h"
 
 
-nsHTTPSOnlyUtils::UpgradeMode nsHTTPSOnlyUtils::GetUpgradeMode(
-    bool aFromPrivateWindow,
-    nsILoadInfo::SchemelessInputType aSchemelessInputType) {
-  if (mozilla::StaticPrefs::dom_security_https_only_mode() ||
-      (aFromPrivateWindow &&
-       mozilla::StaticPrefs::dom_security_https_only_mode_pbm())) {
-    return nsHTTPSOnlyUtils::HTTPS_ONLY_MODE;
+bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
+  
+  if (mozilla::StaticPrefs::dom_security_https_only_mode()) {
+    return true;
   }
 
-  if (mozilla::StaticPrefs::dom_security_https_first() ||
-      (aFromPrivateWindow &&
-       mozilla::StaticPrefs::dom_security_https_first_pbm())) {
-    return nsHTTPSOnlyUtils::HTTPS_FIRST_MODE;
+  
+  
+  if (aFromPrivateWindow &&
+      mozilla::StaticPrefs::dom_security_https_only_mode_pbm()) {
+    return true;
   }
-
-  if (mozilla::StaticPrefs::dom_security_https_first_schemeless() &&
-      aSchemelessInputType == nsILoadInfo::SchemelessInputTypeSchemeless) {
-    return nsHTTPSOnlyUtils::SCHEMELESS_HTTPS_FIRST_MODE;
-  }
-
-  return NO_UPGRADE_MODE;
+  return false;
 }
 
 
-nsHTTPSOnlyUtils::UpgradeMode nsHTTPSOnlyUtils::GetUpgradeMode(
-    nsILoadInfo* aLoadInfo) {
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
-  return GetUpgradeMode(isPrivateWin, aLoadInfo->GetSchemelessInput());
+bool nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(bool aFromPrivateWindow) {
+  
+  if (IsHttpsOnlyModeEnabled(aFromPrivateWindow)) {
+    return false;
+  }
+
+  
+  if (mozilla::StaticPrefs::dom_security_https_first()) {
+    return true;
+  }
+
+  
+  
+  if (aFromPrivateWindow &&
+      mozilla::StaticPrefs::dom_security_https_first_pbm()) {
+    return true;
+  }
+  return false;
 }
 
 
@@ -75,11 +81,15 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  UpgradeMode upgradeMode = GetUpgradeMode(loadInfo);
+  bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
 
   
   
-  if (upgradeMode == NO_UPGRADE_MODE) {
+  if ((!IsHttpsOnlyModeEnabled(isPrivateWin) &&
+       !IsHttpsFirstModeEnabled(isPrivateWin)) &&
+      !(loadInfo->GetSchemelessInput() ==
+            nsILoadInfo::SchemelessInputTypeSchemeless &&
+        mozilla::StaticPrefs::dom_security_https_first_schemeless())) {
     return;
   }
 
@@ -122,8 +132,10 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   
   if (!mozilla::StaticPrefs::dom_security_https_first_for_custom_ports() &&
-      (upgradeMode == HTTPS_FIRST_MODE ||
-       upgradeMode == SCHEMELESS_HTTPS_FIRST_MODE)) {
+      (IsHttpsFirstModeEnabled(isPrivateWin) ||
+       (loadInfo->GetSchemelessInput() ==
+            nsILoadInfo::SchemelessInputTypeSchemeless &&
+        mozilla::StaticPrefs::dom_security_https_first_schemeless()))) {
     int32_t port = 0;
     nsresult rv = channelURI->GetPort(&port);
     int defaultPortforScheme = NS_GetDefaultPort("http");
@@ -146,7 +158,8 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
 bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
                                             nsILoadInfo* aLoadInfo) {
   
-  if (GetUpgradeMode(aLoadInfo) != HTTPS_ONLY_MODE) {
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
 
@@ -170,8 +183,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
   ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
   if (contentType != ExtContentPolicy::TYPE_DOCUMENT) {
     if (!aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
-        TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal(),
-                                HTTPS_ONLY_MODE)) {
+        TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal())) {
       return false;
     }
   }
@@ -214,7 +226,8 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
 bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
                                               nsILoadInfo* aLoadInfo) {
   
-  if (GetUpgradeMode(aLoadInfo) != HTTPS_ONLY_MODE) {
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
 
@@ -237,8 +250,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
 
   
   if (!aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
-      TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal(),
-                              HTTPS_ONLY_MODE)) {
+      TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal())) {
     return false;
   }
 
@@ -263,13 +275,13 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
     const mozilla::EnumSet<UpgradeDowngradeEndlessLoopOptions>& aOptions) {
   
   
-  UpgradeMode upgradeMode = GetUpgradeMode(aLoadInfo);
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   bool enforceForHTTPSOnlyMode =
-      upgradeMode == HTTPS_ONLY_MODE &&
+      IsHttpsOnlyModeEnabled(isPrivateWin) &&
       aOptions.contains(
           UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSOnlyMode);
   bool enforceForHTTPSFirstMode =
-      upgradeMode == HTTPS_FIRST_MODE &&
+      IsHttpsFirstModeEnabled(isPrivateWin) &&
       aOptions.contains(
           UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSFirstMode);
   bool enforceForHTTPSRR =
@@ -345,9 +357,11 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   MOZ_ASSERT(aURI->SchemeIs("http"), "how come the request is not 'http'?");
 
   
-  UpgradeMode upgradeMode = GetUpgradeMode(aLoadInfo);
-  if (upgradeMode != HTTPS_FIRST_MODE &&
-      upgradeMode != SCHEMELESS_HTTPS_FIRST_MODE) {
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  if (!IsHttpsFirstModeEnabled(isPrivateWin) &&
+      !(aLoadInfo->GetSchemelessInput() ==
+            nsILoadInfo::SchemelessInputTypeSchemeless &&
+        mozilla::StaticPrefs::dom_security_https_first_schemeless())) {
     return false;
   }
   
@@ -402,7 +416,9 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
 
   
   
-  if (upgradeMode == SCHEMELESS_HTTPS_FIRST_MODE) {
+  if (aLoadInfo->GetSchemelessInput() ==
+          nsILoadInfo::SchemelessInputTypeSchemeless &&
+      !IsHttpsFirstModeEnabled(isPrivateWin)) {
     nsAutoCString urlCString;
     aURI->GetSpec(urlCString);
     NS_ConvertUTF8toUTF16 urlString(urlCString);
@@ -588,14 +604,19 @@ void nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(
       mozilla::TimeDuration duration =
           mozilla::TimeStamp::Now() - navigationStart;
 
+      bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
+      bool isSchemeless =
+          loadInfo->GetSchemelessInput() ==
+              nsILoadInfo::SchemelessInputTypeSchemeless &&
+          !nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin);
+
       nsresult channelStatus;
       channel->GetStatus(&channelStatus);
 
       RefPtr downgradeData = mozilla::MakeRefPtr<HTTPSFirstDowngradeData>();
       downgradeData->downgradeTime = duration;
       downgradeData->isOnTimer = channelStatus == NS_ERROR_NET_TIMEOUT_EXTERNAL;
-      downgradeData->isSchemeless =
-          GetUpgradeMode(loadInfo) == SCHEMELESS_HTTPS_FIRST_MODE;
+      downgradeData->isSchemeless = isSchemeless;
       aLoadState->SetHttpsFirstDowngradeData(downgradeData);
     }
   }
@@ -628,7 +649,8 @@ void nsHTTPSOnlyUtils::SubmitHTTPSFirstTelemetry(
              nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST) {
     
 
-    if (GetUpgradeMode(aLoadInfo) == SCHEMELESS_HTTPS_FIRST_MODE) {
+    if (aLoadInfo->GetSchemelessInput() ==
+        nsILoadInfo::SchemelessInputTypeSchemeless) {
       upgraded_schemeless.Add();
     } else {
       upgraded.Add();
@@ -646,7 +668,8 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
 
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  if (GetUpgradeMode(loadInfo) != HTTPS_ONLY_MODE) {
+  bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
 
@@ -665,7 +688,7 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
 
 
 bool nsHTTPSOnlyUtils::TestIfPrincipalIsExempt(nsIPrincipal* aPrincipal,
-                                               UpgradeMode aUpgradeMode) {
+                                               bool aCheckForHTTPSFirst) {
   static nsCOMPtr<nsIPermissionManager> sPermMgr;
   if (!sPermMgr) {
     sPermMgr = mozilla::components::PermissionManager::Service();
@@ -678,12 +701,9 @@ bool nsHTTPSOnlyUtils::TestIfPrincipalIsExempt(nsIPrincipal* aPrincipal,
       aPrincipal, "https-only-load-insecure"_ns, &perm);
   NS_ENSURE_SUCCESS(rv, false);
 
-  bool checkForHTTPSFirst = aUpgradeMode == HTTPS_FIRST_MODE ||
-                            aUpgradeMode == SCHEMELESS_HTTPS_FIRST_MODE;
-
   return perm == nsIHttpsOnlyModePermission::LOAD_INSECURE_ALLOW ||
          perm == nsIHttpsOnlyModePermission::LOAD_INSECURE_ALLOW_SESSION ||
-         (checkForHTTPSFirst &&
+         (aCheckForHTTPSFirst &&
           perm == nsIHttpsOnlyModePermission::HTTPSFIRST_LOAD_INSECURE_ALLOW);
 }
 
@@ -695,9 +715,15 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  UpgradeMode upgradeMode = GetUpgradeMode(loadInfo);
-
-  if (upgradeMode == NO_UPGRADE_MODE) {
+  bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  bool isHttpsOnly = IsHttpsOnlyModeEnabled(isPrivateWin);
+  bool isHttpsFirst = IsHttpsFirstModeEnabled(isPrivateWin);
+  bool isSchemelessHttpsFirst =
+      (loadInfo->GetSchemelessInput() ==
+       nsILoadInfo::SchemelessInputTypeSchemeless) &&
+      mozilla::StaticPrefs::dom_security_https_first_schemeless() &&
+      !isHttpsOnly && !isHttpsFirst;
+  if (!isHttpsOnly && !isHttpsFirst && !isSchemelessHttpsFirst) {
     return;
   }
 
@@ -719,7 +745,8 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   NS_ENSURE_SUCCESS_VOID(rv);
 
   uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-  bool isPrincipalExempt = TestIfPrincipalIsExempt(principal, upgradeMode);
+  bool isPrincipalExempt = TestIfPrincipalIsExempt(
+      principal, isHttpsFirst || isSchemelessHttpsFirst);
   if (isPrincipalExempt) {
     httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
   }
@@ -749,7 +776,8 @@ bool nsHTTPSOnlyUtils::IsSafeToAcceptCORSOrMixedContent(
     return false;
   }
   
-  return GetUpgradeMode(aLoadInfo) == HTTPS_ONLY_MODE;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  return nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin);
 }
 
 
@@ -864,6 +892,29 @@ bool nsHTTPSOnlyUtils::UnknownPublicSuffixException(nsIURI* aURI) {
   NS_ENSURE_SUCCESS(rv, false);
 
   return !hasKnownPublicSuffix;
+}
+
+
+bool nsHTTPSOnlyUtils::ShouldUpgradeConnection(nsILoadInfo* aLoadInfo) {
+  
+  
+  if (!aLoadInfo) {
+    return false;
+  }
+
+  
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
+      !IsHttpsFirstModeEnabled(isPrivateWin)) {
+    return false;
+  }
+
+  
+  uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+    return false;
+  }
+  return true;
 }
 
 
