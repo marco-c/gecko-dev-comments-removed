@@ -59,6 +59,9 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   
   
   static UINT GetFormat(const char* aMimeStr, bool aMapHTMLMime = true);
+  
+  
+  static mozilla::Maybe<UINT> GetSecondaryFormat(const char* aMimeStr);
 
   static UINT GetClipboardFileDescriptorFormatA();
   static UINT GetClipboardFileDescriptorFormatW();
