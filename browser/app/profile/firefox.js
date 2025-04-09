@@ -19,7 +19,9 @@
   #endif
 #endif
 
-pref("browser.hiddenWindowChromeURL", "chrome://browser/content/hiddenWindowMac.xhtml");
+#ifdef XP_MACOSX
+  pref("browser.hiddenWindowChromeURL", "chrome://browser/content/hiddenWindowMac.xhtml");
+#endif
 
 
 pref("extensions.abuseReport.enabled", true);
