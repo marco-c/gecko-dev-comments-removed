@@ -8,11 +8,8 @@
 #define __PlayPromise_h__
 
 #include "mozilla/dom/Promise.h"
-#include "mozilla/Telemetry.h"
 
 namespace mozilla::dom {
-
-
 
 class PlayPromise : public Promise {
  public:
