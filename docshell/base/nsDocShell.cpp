@@ -8548,13 +8548,18 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
       if (!aState.mSameExceptHashes) {
         if (nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel()) {
           nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
+          nsHTTPSOnlyUtils::UpgradeMode upgradeMode =
+              nsHTTPSOnlyUtils::GetUpgradeMode(docLoadInfo);
           if (!docLoadInfo->GetLoadErrorPage() &&
-              nsHTTPSOnlyUtils::ShouldUpgradeConnection(docLoadInfo) &&
+              (upgradeMode == nsHTTPSOnlyUtils::HTTPS_ONLY_MODE ||
+               upgradeMode == nsHTTPSOnlyUtils::HTTPS_FIRST_MODE) &&
               nsHTTPSOnlyUtils::IsHttpDowngrade(currentExposableURI,
                                                 aLoadState->URI())) {
             uint32_t status = docLoadInfo->GetHttpsOnlyStatus();
-            if (status & (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
-                          nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
+            if ((status &
+                 (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
+                  nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) &&
+                !(status & nsILoadInfo::HTTPS_ONLY_EXEMPT)) {
               
               
               
@@ -9390,7 +9395,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     
     bool okToUnload;
     if (!isHistoryOrReload && aLoadState->IsExemptFromHTTPSFirstMode() &&
-        nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
+        nsHTTPSOnlyUtils::GetUpgradeMode(isPrivateWin) ==
+            nsHTTPSOnlyUtils::HTTPS_FIRST_MODE) {
       rv = mDocumentViewer->PermitUnload(
           nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload,
           &okToUnload);

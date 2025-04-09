@@ -1594,9 +1594,8 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     
     
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
-    if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin) ||
-        nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
+    if (nsHTTPSOnlyUtils::GetUpgradeMode(loadInfo) !=
+        nsHTTPSOnlyUtils::NO_UPGRADE_MODE) {
       uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
       httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_DOWNLOAD_IN_PROGRESS;
       loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
