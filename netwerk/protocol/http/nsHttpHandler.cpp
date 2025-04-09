@@ -71,7 +71,6 @@
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/AntiTrackingRedirectHeuristic.h"
 #include "mozilla/DynamicFpiRedirectHeuristic.h"
@@ -1887,14 +1886,18 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     rv = Preferences::GetCString(HTTP_PREF("http3.alt-svc-mapping-for-testing"),
                                  altSvcMappings);
     if (NS_SUCCEEDED(rv)) {
-      for (const nsACString& tokenSubstring :
-           nsCCharSeparatedTokenizer(altSvcMappings, ',').ToRange()) {
-        nsAutoCString token{tokenSubstring};
-        int32_t index = token.Find(";");
-        if (index != kNotFound) {
-          mAltSvcMappingTemptativeMap.InsertOrUpdate(
-              Substring(token, 0, index),
-              MakeUnique<nsCString>(Substring(token, index + 1)));
+      if (altSvcMappings.IsEmpty()) {
+        mAltSvcMappingTemptativeMap.Clear();
+      } else {
+        for (const nsACString& tokenSubstring :
+             nsCCharSeparatedTokenizer(altSvcMappings, ',').ToRange()) {
+          nsAutoCString token{tokenSubstring};
+          int32_t index = token.Find(";");
+          if (index != kNotFound) {
+            mAltSvcMappingTemptativeMap.InsertOrUpdate(
+                Substring(token, 0, index),
+                MakeUnique<nsCString>(Substring(token, index + 1)));
+          }
         }
       }
     }
@@ -2211,9 +2214,9 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
     
     if (XRE_IsParentProcess()) {
       if (!StaticPrefs::privacy_donottrackheader_enabled()) {
-        Telemetry::Accumulate(Telemetry::DNT_USAGE, 2);
+        glean::http::dnt_usage.AccumulateSingleSample(2);
       } else {
-        Telemetry::Accumulate(Telemetry::DNT_USAGE, 1);
+        glean::http::dnt_usage.AccumulateSingleSample(1);
       }
     }
 
