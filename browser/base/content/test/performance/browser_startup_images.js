@@ -55,6 +55,12 @@ const knownUnshownImages = [
     
     intermittentNotLoaded: ["win"],
   },
+
+  {
+    file: "chrome://global/skin/icons/highlights.svg",
+    platforms: ["win", "linux", "macosx"],
+    intermittentShown: ["win", "linux"],
+  },
 ];
 
 add_task(async function () {
