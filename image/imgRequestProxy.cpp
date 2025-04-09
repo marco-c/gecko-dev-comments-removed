@@ -15,7 +15,6 @@
 #include "imgINotificationObserver.h"
 #include "imgLoader.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/Telemetry.h"     
 #include "mozilla/dom/DocGroup.h"  
 #include "nsCRTGlue.h"
 #include "nsError.h"

@@ -6,7 +6,6 @@
 
 #include "PotentialCheckerboardDurationTracker.h"
 
-#include "mozilla/Telemetry.h"         
 #include "mozilla/glean/GfxMetrics.h"  
 
 namespace mozilla {

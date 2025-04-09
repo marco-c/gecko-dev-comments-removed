@@ -11,7 +11,6 @@
 #include "AsyncPanZoomController.h"
 #include "APZCTreeManager.h"
 #include "FrameMetrics.h"
-#include "mozilla/Telemetry.h"  
 
 namespace mozilla {
 namespace layers {

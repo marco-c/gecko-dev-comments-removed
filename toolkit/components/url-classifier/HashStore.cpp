@@ -38,7 +38,6 @@
 #include "zlib.h"
 #include "Classifier.h"
 #include "nsUrlClassifierDBService.h"
-#include "mozilla/Telemetry.h"
 
 
 

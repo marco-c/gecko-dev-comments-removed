@@ -27,7 +27,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/mozalloc.h"  
-#include "mozilla/Telemetry.h"
 #include "gfxConfig.h"
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  

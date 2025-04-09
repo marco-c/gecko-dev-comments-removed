@@ -6,7 +6,6 @@
 
 #include "nsXULPrototypeCache.h"
 
-#include "plstr.h"
 #include "nsXULPrototypeDocument.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
@@ -28,7 +27,6 @@
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/scache/StartupCache.h"
 #include "mozilla/scache/StartupCacheUtils.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/intl/LocaleService.h"
