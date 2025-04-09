@@ -3,10 +3,12 @@ use core::{fmt, iter::FusedIterator, marker::PhantomData};
 use crate::{
     raw::{
         Allocator, Bucket, Global, InsertSlot, RawDrain, RawExtractIf, RawIntoIter, RawIter,
-        RawTable,
+        RawIterHash, RawTable,
     },
     TryReserveError,
 };
+
+
 
 
 
@@ -130,14 +132,12 @@ where
     
     
     
-    
     pub const fn new_in(alloc: A) -> Self {
         Self {
             raw: RawTable::new_in(alloc),
         }
     }
 
-    
     
     
     
@@ -220,7 +220,6 @@ where
     
     
     
-    
     pub fn find(&self, hash: u64, eq: impl FnMut(&T) -> bool) -> Option<&T> {
         self.raw.get(hash, eq)
     }
@@ -259,12 +258,10 @@ where
     
     
     
-    
     pub fn find_mut(&mut self, hash: u64, eq: impl FnMut(&T) -> bool) -> Option<&mut T> {
         self.raw.get_mut(hash, eq)
     }
 
-    
     
     
     
@@ -358,7 +355,6 @@ where
     
     
     
-    
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn entry(
         &mut self,
@@ -380,7 +376,6 @@ where
         }
     }
 
-    
     
     
     
@@ -442,7 +437,6 @@ where
     
     
     
-    
     pub fn clear(&mut self) {
         self.raw.clear();
     }
@@ -476,12 +470,10 @@ where
     
     
     
-    
     pub fn shrink_to_fit(&mut self, hasher: impl Fn(&T) -> u64) {
         self.raw.shrink_to(self.len(), hasher)
     }
 
-    
     
     
     
@@ -555,12 +547,10 @@ where
     
     
     
-    
     pub fn reserve(&mut self, additional: usize, hasher: impl Fn(&T) -> u64) {
         self.raw.reserve(additional, hasher)
     }
 
-    
     
     
     
@@ -636,7 +626,6 @@ where
     
     
     
-    
     pub fn len(&self) -> usize {
         self.raw.len()
     }
@@ -663,12 +652,10 @@ where
     
     
     
-    
     pub fn is_empty(&self) -> bool {
         self.raw.is_empty()
     }
 
-    
     
     
     
@@ -747,7 +734,6 @@ where
     
     
     
-    
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
             inner: unsafe { self.raw.iter() },
@@ -756,6 +742,97 @@ where
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn iter_hash(&self, hash: u64) -> IterHash<'_, T> {
+        IterHash {
+            inner: unsafe { self.raw.iter_hash(hash) },
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn iter_hash_mut(&mut self, hash: u64) -> IterHashMut<'_, T> {
+        IterHashMut {
+            inner: unsafe { self.raw.iter_hash(hash) },
+            marker: PhantomData,
+        }
+    }
+
     
     
     
@@ -823,14 +900,12 @@ where
     
     
     
-    
     pub fn drain(&mut self) -> Drain<'_, T, A> {
         Drain {
             inner: self.raw.drain(),
         }
     }
 
-    
     
     
     
@@ -938,20 +1013,39 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn get_many_mut<const N: usize>(
         &mut self,
         hashes: [u64; N],
         eq: impl FnMut(usize, &T) -> bool,
-    ) -> Option<[&'_ mut T; N]> {
+    ) -> [Option<&'_ mut T>; N] {
         self.raw.get_many_mut(hashes, eq)
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1012,8 +1106,18 @@ where
         &mut self,
         hashes: [u64; N],
         eq: impl FnMut(usize, &T) -> bool,
-    ) -> Option<[&'_ mut T; N]> {
+    ) -> [Option<&'_ mut T>; N] {
         self.raw.get_many_unchecked_mut(hashes, eq)
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn allocation_size(&self) -> usize {
+        self.raw.allocation_size()
     }
 }
 
@@ -1242,7 +1346,6 @@ where
     
     
     
-    
     pub fn insert(self, value: T) -> OccupiedEntry<'a, T, A> {
         match self {
             Entry::Occupied(mut entry) => {
@@ -1253,7 +1356,6 @@ where
         }
     }
 
-    
     
     
     
@@ -1328,7 +1430,6 @@ where
     
     
     
-    
     pub fn or_insert_with(self, default: impl FnOnce() -> T) -> OccupiedEntry<'a, T, A> {
         match self {
             Entry::Occupied(entry) => entry,
@@ -1336,7 +1437,6 @@ where
         }
     }
 
-    
     
     
     
@@ -1515,7 +1615,6 @@ where
     
     
     
-    
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn remove(self) -> (T, VacantEntry<'a, T, A>) {
         let (val, slot) = unsafe { self.table.raw.remove(self.bucket) };
@@ -1529,7 +1628,6 @@ where
         )
     }
 
-    
     
     
     
@@ -1609,13 +1707,11 @@ where
     
     
     
-    
     #[inline]
     pub fn get_mut(&mut self) -> &mut T {
         unsafe { self.bucket.as_mut() }
     }
 
-    
     
     
     
@@ -1763,7 +1859,6 @@ where
     
     
     
-    
     #[inline]
     pub fn insert(self, value: T) -> OccupiedEntry<'a, T, A> {
         let bucket = unsafe {
@@ -1863,6 +1958,16 @@ pub struct Iter<'a, T> {
     marker: PhantomData<&'a T>,
 }
 
+impl<T> Default for Iter<'_, T> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        Iter {
+            inner: Default::default(),
+            marker: PhantomData,
+        }
+    }
+}
+
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
 
@@ -1897,6 +2002,23 @@ impl<T> ExactSizeIterator for Iter<'_, T> {
 impl<T> FusedIterator for Iter<'_, T> {}
 
 
+impl<'a, T> Clone for Iter<'a, T> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn clone(&self) -> Iter<'a, T> {
+        Iter {
+            inner: self.inner.clone(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
 
 
 
@@ -1909,6 +2031,15 @@ pub struct IterMut<'a, T> {
     marker: PhantomData<&'a mut T>,
 }
 
+impl<T> Default for IterMut<'_, T> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        IterMut {
+            inner: Default::default(),
+            marker: PhantomData,
+        }
+    }
+}
 impl<'a, T> Iterator for IterMut<'a, T> {
     type Item = &'a mut T;
 
@@ -1942,6 +2073,146 @@ impl<T> ExactSizeIterator for IterMut<'_, T> {
 
 impl<T> FusedIterator for IterMut<'_, T> {}
 
+impl<T> fmt::Debug for IterMut<'_, T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list()
+            .entries(Iter {
+                inner: self.inner.clone(),
+                marker: PhantomData,
+            })
+            .finish()
+    }
+}
+
+
+
+
+
+
+
+
+
+pub struct IterHash<'a, T> {
+    inner: RawIterHash<T>,
+    marker: PhantomData<&'a T>,
+}
+
+impl<T> Default for IterHash<'_, T> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        IterHash {
+            inner: Default::default(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, T> Iterator for IterHash<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        
+        match self.inner.next() {
+            Some(bucket) => Some(unsafe { bucket.as_ref() }),
+            None => None,
+        }
+    }
+
+    fn fold<B, F>(self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.inner
+            .fold(init, |acc, bucket| unsafe { f(acc, bucket.as_ref()) })
+    }
+}
+
+impl<T> FusedIterator for IterHash<'_, T> {}
+
+
+impl<'a, T> Clone for IterHash<'a, T> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn clone(&self) -> IterHash<'a, T> {
+        IterHash {
+            inner: self.inner.clone(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> fmt::Debug for IterHash<'_, T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+
+
+
+
+
+
+
+pub struct IterHashMut<'a, T> {
+    inner: RawIterHash<T>,
+    marker: PhantomData<&'a mut T>,
+}
+
+impl<T> Default for IterHashMut<'_, T> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        IterHashMut {
+            inner: Default::default(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, T> Iterator for IterHashMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        
+        match self.inner.next() {
+            Some(bucket) => Some(unsafe { bucket.as_mut() }),
+            None => None,
+        }
+    }
+
+    fn fold<B, F>(self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.inner
+            .fold(init, |acc, bucket| unsafe { f(acc, bucket.as_mut()) })
+    }
+}
+
+impl<T> FusedIterator for IterHashMut<'_, T> {}
+
+impl<T> fmt::Debug for IterHashMut<'_, T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list()
+            .entries(IterHash {
+                inner: self.inner.clone(),
+                marker: PhantomData,
+            })
+            .finish()
+    }
+}
+
 
 
 
@@ -1957,6 +2228,15 @@ where
     A: Allocator,
 {
     inner: RawIntoIter<T, A>,
+}
+
+impl<T, A: Allocator> Default for IntoIter<T, A> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        IntoIter {
+            inner: Default::default(),
+        }
+    }
 }
 
 impl<T, A> Iterator for IntoIter<T, A>
@@ -1993,6 +2273,21 @@ where
 
 impl<T, A> FusedIterator for IntoIter<T, A> where A: Allocator {}
 
+impl<T, A> fmt::Debug for IntoIter<T, A>
+where
+    T: fmt::Debug,
+    A: Allocator,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list()
+            .entries(Iter {
+                inner: self.inner.iter(),
+                marker: PhantomData,
+            })
+            .finish()
+    }
+}
+
 
 
 
@@ -2004,36 +2299,42 @@ pub struct Drain<'a, T, A: Allocator = Global> {
     inner: RawDrain<'a, T, A>,
 }
 
-impl<T, A: Allocator> Drain<'_, T, A> {
-    
-    fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            inner: self.inner.iter(),
-            marker: PhantomData,
-        }
-    }
-}
-
 impl<T, A: Allocator> Iterator for Drain<'_, T, A> {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
         self.inner.next()
     }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
     }
+
+    fn fold<B, F>(self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.inner.fold(init, f)
+    }
 }
+
 impl<T, A: Allocator> ExactSizeIterator for Drain<'_, T, A> {
     fn len(&self) -> usize {
         self.inner.len()
     }
 }
+
 impl<T, A: Allocator> FusedIterator for Drain<'_, T, A> {}
 
 impl<T: fmt::Debug, A: Allocator> fmt::Debug for Drain<'_, T, A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.debug_list()
+            .entries(Iter {
+                inner: self.inner.iter(),
+                marker: PhantomData,
+            })
+            .finish()
     }
 }
 
@@ -2068,3 +2369,15 @@ where
 }
 
 impl<T, F, A: Allocator> FusedIterator for ExtractIf<'_, T, F, A> where F: FnMut(&mut T) -> bool {}
+
+#[cfg(test)]
+mod tests {
+    use super::HashTable;
+
+    #[test]
+    fn test_allocation_info() {
+        assert_eq!(HashTable::<()>::new().allocation_size(), 0);
+        assert_eq!(HashTable::<u32>::new().allocation_size(), 0);
+        assert!(HashTable::<u32>::with_capacity(1).allocation_size() > core::mem::size_of::<u32>());
+    }
+}

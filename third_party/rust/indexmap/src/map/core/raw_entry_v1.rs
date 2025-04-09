@@ -9,13 +9,13 @@
 
 
 
-use super::raw::RawTableEntry;
-use super::IndexMapCore;
+use super::{Entries, RefMut};
 use crate::{Equivalent, HashValue, IndexMap};
 use core::fmt;
 use core::hash::{BuildHasher, Hash, Hasher};
 use core::marker::PhantomData;
 use core::mem;
+use hashbrown::hash_table;
 
 
 
@@ -245,7 +245,7 @@ impl<'a, K, V, S> RawEntryBuilder<'a, K, V, S> {
         let hash = HashValue(hash as usize);
         let entries = &*self.map.core.entries;
         let eq = move |&i: &usize| is_match(&entries[i].key);
-        self.map.core.indices.get(hash.get(), eq).copied()
+        self.map.core.indices.find(hash.get(), eq).copied()
     }
 }
 
@@ -283,18 +283,20 @@ impl<'a, K, V, S> RawEntryBuilderMut<'a, K, V, S> {
     }
 
     
-    pub fn from_hash<F>(self, hash: u64, is_match: F) -> RawEntryMut<'a, K, V, S>
+    pub fn from_hash<F>(self, hash: u64, mut is_match: F) -> RawEntryMut<'a, K, V, S>
     where
         F: FnMut(&K) -> bool,
     {
-        let hash = HashValue(hash as usize);
-        match self.map.core.raw_entry(hash, is_match) {
-            Ok(raw) => RawEntryMut::Occupied(RawOccupiedEntryMut {
-                raw,
+        let ref_entries = &*self.map.core.entries;
+        let eq = move |&i: &usize| is_match(&ref_entries[i].key);
+        match self.map.core.indices.find_entry(hash, eq) {
+            Ok(index) => RawEntryMut::Occupied(RawOccupiedEntryMut {
+                entries: &mut self.map.core.entries,
+                index,
                 hash_builder: PhantomData,
             }),
-            Err(map) => RawEntryMut::Vacant(RawVacantEntryMut {
-                map,
+            Err(absent) => RawEntryMut::Vacant(RawVacantEntryMut {
+                map: RefMut::new(absent.into_table(), &mut self.map.core.entries),
                 hash_builder: &self.map.hash_builder,
             }),
         }
@@ -377,7 +379,8 @@ impl<'a, K, V, S> RawEntryMut<'a, K, V, S> {
 
 
 pub struct RawOccupiedEntryMut<'a, K, V, S> {
-    raw: RawTableEntry<'a, K, V>,
+    entries: &'a mut Entries<K, V>,
+    index: hash_table::OccupiedEntry<'a, usize>,
     hash_builder: PhantomData<&'a S>,
 }
 
@@ -394,7 +397,12 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     #[inline]
     pub fn index(&self) -> usize {
-        self.raw.index()
+        *self.index.get()
+    }
+
+    #[inline]
+    fn into_ref_mut(self) -> RefMut<'a, K, V> {
+        RefMut::new(self.index.into_table(), self.entries)
     }
 
     
@@ -403,7 +411,7 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn key(&self) -> &K {
-        &self.raw.bucket().key
+        &self.entries[self.index()].key
     }
 
     
@@ -412,7 +420,8 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn key_mut(&mut self) -> &mut K {
-        &mut self.raw.bucket_mut().key
+        let index = self.index();
+        &mut self.entries[index].key
     }
 
     
@@ -422,12 +431,13 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn into_key(self) -> &'a mut K {
-        &mut self.raw.into_bucket().key
+        let index = self.index();
+        &mut self.entries[index].key
     }
 
     
     pub fn get(&self) -> &V {
-        &self.raw.bucket().value
+        &self.entries[self.index()].value
     }
 
     
@@ -435,29 +445,33 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn get_mut(&mut self) -> &mut V {
-        &mut self.raw.bucket_mut().value
+        let index = self.index();
+        &mut self.entries[index].value
     }
 
     
     
     pub fn into_mut(self) -> &'a mut V {
-        &mut self.raw.into_bucket().value
+        let index = self.index();
+        &mut self.entries[index].value
     }
 
     
     pub fn get_key_value(&self) -> (&K, &V) {
-        self.raw.bucket().refs()
+        self.entries[self.index()].refs()
     }
 
     
     pub fn get_key_value_mut(&mut self) -> (&mut K, &mut V) {
-        self.raw.bucket_mut().muts()
+        let index = self.index();
+        self.entries[index].muts()
     }
 
     
     
     pub fn into_key_value_mut(self) -> (&'a mut K, &'a mut V) {
-        self.raw.into_bucket().muts()
+        let index = self.index();
+        self.entries[index].muts()
     }
 
     
@@ -524,8 +538,8 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn swap_remove_entry(self) -> (K, V) {
-        let (map, index) = self.raw.remove_index();
-        map.swap_remove_finish(index)
+        let (index, entry) = self.index.remove();
+        RefMut::new(entry.into_table(), self.entries).swap_remove_finish(index)
     }
 
     
@@ -536,8 +550,8 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn shift_remove_entry(self) -> (K, V) {
-        let (map, index) = self.raw.remove_index();
-        map.shift_remove_finish(index)
+        let (index, entry) = self.index.remove();
+        RefMut::new(entry.into_table(), self.entries).shift_remove_finish(index)
     }
 
     
@@ -553,8 +567,8 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn move_index(self, to: usize) {
-        let (map, index) = self.raw.into_inner();
-        map.move_index(index, to);
+        let index = self.index();
+        self.into_ref_mut().move_index(index, to);
     }
 
     
@@ -566,15 +580,15 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     
     
     pub fn swap_indices(self, other: usize) {
-        let (map, index) = self.raw.into_inner();
-        map.swap_indices(index, other)
+        let index = self.index();
+        self.into_ref_mut().swap_indices(index, other);
     }
 }
 
 
 
 pub struct RawVacantEntryMut<'a, K, V, S> {
-    map: &'a mut IndexMapCore<K, V>,
+    map: RefMut<'a, K, V>,
     hash_builder: &'a S,
 }
 
@@ -606,8 +620,7 @@ impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
     
     pub fn insert_hashed_nocheck(self, hash: u64, key: K, value: V) -> (&'a mut K, &'a mut V) {
         let hash = HashValue(hash as usize);
-        let i = self.map.insert_unique(hash, key, value);
-        self.map.entries[i].muts()
+        self.map.insert_unique(hash, key, value).into_muts()
     }
 
     
@@ -633,7 +646,7 @@ impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
     
     
     pub fn shift_insert_hashed_nocheck(
-        self,
+        mut self,
         index: usize,
         hash: u64,
         key: K,

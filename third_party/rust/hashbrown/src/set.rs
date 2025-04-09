@@ -1,14 +1,13 @@
-#[cfg(feature = "raw")]
-use crate::raw::RawTable;
 use crate::{Equivalent, TryReserveError};
-use alloc::borrow::ToOwned;
-use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FusedIterator};
-use core::ops::{BitAnd, BitOr, BitXor, Sub};
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Sub, SubAssign};
+use core::{fmt, mem};
+use map::make_hash;
 
-use super::map::{self, DefaultHashBuilder, HashMap, Keys};
+use super::map::{self, HashMap, Keys};
 use crate::raw::{Allocator, Global, RawExtractIf};
+use crate::DefaultHashBuilder;
 
 
 
@@ -128,7 +127,7 @@ impl<T: Clone, S: Clone, A: Allocator + Clone> Clone for HashSet<T, S, A> {
     }
 }
 
-#[cfg(feature = "ahash")]
+#[cfg(feature = "default-hasher")]
 impl<T> HashSet<T, DefaultHashBuilder> {
     
     
@@ -192,7 +191,7 @@ impl<T> HashSet<T, DefaultHashBuilder> {
     }
 }
 
-#[cfg(feature = "ahash")]
+#[cfg(feature = "default-hasher")]
 impl<T: Hash + Eq, A: Allocator> HashSet<T, DefaultHashBuilder, A> {
     
     
@@ -466,6 +465,7 @@ impl<T, S> HashSet<T, S, Global> {
     
     
     #[cfg_attr(feature = "inline-more", inline)]
+    #[cfg_attr(feature = "rustc-dep-of-std", rustc_const_stable_indirect)]
     pub const fn with_hasher(hasher: S) -> Self {
         Self {
             map: HashMap::with_hasher(hasher),
@@ -553,6 +553,7 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
+    #[cfg_attr(feature = "rustc-dep-of-std", rustc_const_stable_indirect)]
     pub const fn with_hasher_in(hasher: S, alloc: A) -> Self {
         Self {
             map: HashMap::with_hasher_in(hasher, alloc),
@@ -858,9 +859,9 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn contains<Q: ?Sized>(&self, value: &Q) -> bool
+    pub fn contains<Q>(&self, value: &Q) -> bool
     where
-        Q: Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T> + ?Sized,
     {
         self.map.contains_key(value)
     }
@@ -884,9 +885,9 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn get<Q: ?Sized>(&self, value: &Q) -> Option<&T>
+    pub fn get<Q>(&self, value: &Q) -> Option<&T>
     where
-        Q: Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T> + ?Sized,
     {
         
         match self.map.get_key_value(value) {
@@ -911,13 +912,12 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn get_or_insert(&mut self, value: T) -> &T {
-        
-        
-        self.map
-            .raw_entry_mut()
-            .from_key(&value)
-            .or_insert(value, ())
-            .0
+        let hash = make_hash(&self.map.hash_builder, &value);
+        let bucket = match self.map.find_or_find_insert_slot(hash, &value) {
+            Ok(bucket) => bucket,
+            Err(slot) => unsafe { self.map.table.insert_in_slot(hash, slot, (value, ())) },
+        };
+        unsafe { &bucket.as_ref().0 }
     }
 
     
@@ -927,31 +927,6 @@ where
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn get_or_insert_owned<Q: ?Sized>(&mut self, value: &Q) -> &T
-    where
-        Q: Hash + Equivalent<T> + ToOwned<Owned = T>,
-    {
-        
-        
-        self.map
-            .raw_entry_mut()
-            .from_key(value)
-            .or_insert_with(|| (value.to_owned(), ()))
-            .0
-    }
-
     
     
     
@@ -971,18 +946,21 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn get_or_insert_with<Q: ?Sized, F>(&mut self, value: &Q, f: F) -> &T
+    pub fn get_or_insert_with<Q, F>(&mut self, value: &Q, f: F) -> &T
     where
-        Q: Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T> + ?Sized,
         F: FnOnce(&Q) -> T,
     {
-        
-        
-        self.map
-            .raw_entry_mut()
-            .from_key(value)
-            .or_insert_with(|| (f(value), ()))
-            .0
+        let hash = make_hash(&self.map.hash_builder, value);
+        let bucket = match self.map.find_or_find_insert_slot(hash, value) {
+            Ok(bucket) => bucket,
+            Err(slot) => {
+                let new = f(value);
+                assert!(value.equivalent(&new), "new value is not equivalent");
+                unsafe { self.map.table.insert_in_slot(hash, slot, (new, ())) }
+            }
+        };
+        unsafe { &bucket.as_ref().0 }
     }
 
     
@@ -1044,7 +1022,7 @@ where
     
     
     pub fn is_disjoint(&self, other: &Self) -> bool {
-        self.iter().all(|v| !other.contains(v))
+        self.intersection(other).next().is_none()
     }
 
     
@@ -1134,8 +1112,12 @@ where
     
     
     
+    
+    
+    
+    
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn insert_unique_unchecked(&mut self, value: T) -> &T {
+    pub unsafe fn insert_unique_unchecked(&mut self, value: T) -> &T {
         self.map.insert_unique_unchecked(value, ()).0
     }
 
@@ -1156,10 +1138,13 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn replace(&mut self, value: T) -> Option<T> {
-        match self.map.entry(value) {
-            map::Entry::Occupied(occupied) => Some(occupied.replace_key()),
-            map::Entry::Vacant(vacant) => {
-                vacant.insert(());
+        let hash = make_hash(&self.map.hash_builder, &value);
+        match self.map.find_or_find_insert_slot(hash, &value) {
+            Ok(bucket) => Some(mem::replace(unsafe { &mut bucket.as_mut().0 }, value)),
+            Err(slot) => {
+                unsafe {
+                    self.map.table.insert_in_slot(hash, slot, (value, ()));
+                }
                 None
             }
         }
@@ -1187,9 +1172,9 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
+    pub fn remove<Q>(&mut self, value: &Q) -> bool
     where
-        Q: Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T> + ?Sized,
     {
         self.map.remove(value).is_some()
     }
@@ -1213,9 +1198,9 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
+    pub fn take<Q>(&mut self, value: &Q) -> Option<T>
     where
-        Q: Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T> + ?Sized,
     {
         
         match self.map.remove_entry(value) {
@@ -1223,47 +1208,15 @@ where
             None => None,
         }
     }
-}
-
-impl<T, S, A: Allocator> HashSet<T, S, A> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "raw")]
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn raw_table(&self) -> &RawTable<(T, ()), A> {
-        self.map.raw_table()
-    }
 
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "raw")]
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn raw_table_mut(&mut self) -> &mut RawTable<(T, ()), A> {
-        self.map.raw_table_mut()
+    #[inline]
+    pub fn allocation_size(&self) -> usize {
+        self.map.allocation_size()
     }
 }
 
@@ -1324,7 +1277,7 @@ where
 }
 
 
-#[cfg(feature = "ahash")]
+#[cfg(feature = "default-hasher")]
 impl<T, A, const N: usize> From<[T; N]> for HashSet<T, DefaultHashBuilder, A>
 where
     T: Eq + Hash,
@@ -1410,9 +1363,9 @@ impl<T, S, A> BitOr<&HashSet<T, S, A>> for &HashSet<T, S, A>
 where
     T: Eq + Hash + Clone,
     S: BuildHasher + Default,
-    A: Allocator,
+    A: Allocator + Default,
 {
-    type Output = HashSet<T, S>;
+    type Output = HashSet<T, S, A>;
 
     
     
@@ -1434,7 +1387,7 @@ where
     
     
     
-    fn bitor(self, rhs: &HashSet<T, S, A>) -> HashSet<T, S> {
+    fn bitor(self, rhs: &HashSet<T, S, A>) -> HashSet<T, S, A> {
         self.union(rhs).cloned().collect()
     }
 }
@@ -1443,9 +1396,9 @@ impl<T, S, A> BitAnd<&HashSet<T, S, A>> for &HashSet<T, S, A>
 where
     T: Eq + Hash + Clone,
     S: BuildHasher + Default,
-    A: Allocator,
+    A: Allocator + Default,
 {
-    type Output = HashSet<T, S>;
+    type Output = HashSet<T, S, A>;
 
     
     
@@ -1467,17 +1420,18 @@ where
     
     
     
-    fn bitand(self, rhs: &HashSet<T, S, A>) -> HashSet<T, S> {
+    fn bitand(self, rhs: &HashSet<T, S, A>) -> HashSet<T, S, A> {
         self.intersection(rhs).cloned().collect()
     }
 }
 
-impl<T, S> BitXor<&HashSet<T, S>> for &HashSet<T, S>
+impl<T, S, A> BitXor<&HashSet<T, S, A>> for &HashSet<T, S, A>
 where
     T: Eq + Hash + Clone,
     S: BuildHasher + Default,
+    A: Allocator + Default,
 {
-    type Output = HashSet<T, S>;
+    type Output = HashSet<T, S, A>;
 
     
     
@@ -1499,17 +1453,18 @@ where
     
     
     
-    fn bitxor(self, rhs: &HashSet<T, S>) -> HashSet<T, S> {
+    fn bitxor(self, rhs: &HashSet<T, S, A>) -> HashSet<T, S, A> {
         self.symmetric_difference(rhs).cloned().collect()
     }
 }
 
-impl<T, S> Sub<&HashSet<T, S>> for &HashSet<T, S>
+impl<T, S, A> Sub<&HashSet<T, S, A>> for &HashSet<T, S, A>
 where
     T: Eq + Hash + Clone,
     S: BuildHasher + Default,
+    A: Allocator + Default,
 {
-    type Output = HashSet<T, S>;
+    type Output = HashSet<T, S, A>;
 
     
     
@@ -1531,8 +1486,154 @@ where
     
     
     
-    fn sub(self, rhs: &HashSet<T, S>) -> HashSet<T, S> {
+    fn sub(self, rhs: &HashSet<T, S, A>) -> HashSet<T, S, A> {
         self.difference(rhs).cloned().collect()
+    }
+}
+
+impl<T, S, A> BitOrAssign<&HashSet<T, S, A>> for HashSet<T, S, A>
+where
+    T: Eq + Hash + Clone,
+    S: BuildHasher,
+    A: Allocator,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn bitor_assign(&mut self, rhs: &HashSet<T, S, A>) {
+        for item in rhs {
+            if !self.contains(item) {
+                self.insert(item.clone());
+            }
+        }
+    }
+}
+
+impl<T, S, A> BitAndAssign<&HashSet<T, S, A>> for HashSet<T, S, A>
+where
+    T: Eq + Hash + Clone,
+    S: BuildHasher,
+    A: Allocator,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn bitand_assign(&mut self, rhs: &HashSet<T, S, A>) {
+        self.retain(|item| rhs.contains(item));
+    }
+}
+
+impl<T, S, A> BitXorAssign<&HashSet<T, S, A>> for HashSet<T, S, A>
+where
+    T: Eq + Hash + Clone,
+    S: BuildHasher,
+    A: Allocator,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn bitxor_assign(&mut self, rhs: &HashSet<T, S, A>) {
+        for item in rhs {
+            let hash = make_hash(&self.map.hash_builder, item);
+            match self.map.find_or_find_insert_slot(hash, item) {
+                Ok(bucket) => unsafe {
+                    self.map.table.remove(bucket);
+                },
+                Err(slot) => unsafe {
+                    self.map
+                        .table
+                        .insert_in_slot(hash, slot, (item.clone(), ()));
+                },
+            }
+        }
+    }
+}
+
+impl<T, S, A> SubAssign<&HashSet<T, S, A>> for HashSet<T, S, A>
+where
+    T: Eq + Hash + Clone,
+    S: BuildHasher,
+    A: Allocator,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn sub_assign(&mut self, rhs: &HashSet<T, S, A>) {
+        if rhs.len() < self.len() {
+            for item in rhs {
+                self.remove(item);
+            }
+        } else {
+            self.retain(|item| !rhs.contains(item));
+        }
     }
 }
 
@@ -1685,6 +1786,14 @@ impl<K> Clone for Iter<'_, K> {
         }
     }
 }
+impl<K> Default for Iter<'_, K> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        Iter {
+            iter: Default::default(),
+        }
+    }
+}
 impl<'a, K> Iterator for Iter<'a, K> {
     type Item = &'a K;
 
@@ -1705,7 +1814,7 @@ impl<'a, K> Iterator for Iter<'a, K> {
         self.iter.fold(init, f)
     }
 }
-impl<'a, K> ExactSizeIterator for Iter<'a, K> {
+impl<K> ExactSizeIterator for Iter<'_, K> {
     #[cfg_attr(feature = "inline-more", inline)]
     fn len(&self) -> usize {
         self.iter.len()
@@ -1719,6 +1828,14 @@ impl<K: fmt::Debug> fmt::Debug for Iter<'_, K> {
     }
 }
 
+impl<K, A: Allocator> Default for IntoIter<K, A> {
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn default() -> Self {
+        IntoIter {
+            iter: Default::default(),
+        }
+    }
+}
 impl<K, A: Allocator> Iterator for IntoIter<K, A> {
     type Item = K;
 
@@ -1851,6 +1968,7 @@ where
         let (_, upper) = self.iter.size_hint();
         (0, upper)
     }
+
     #[cfg_attr(feature = "inline-more", inline)]
     fn fold<B, F>(self, init: B, mut f: F) -> B
     where
@@ -1916,9 +2034,10 @@ where
 
     #[cfg_attr(feature = "inline-more", inline)]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let (_, upper) = self.iter.size_hint();
-        (0, upper)
+        let (lower, upper) = self.iter.size_hint();
+        (lower.saturating_sub(self.other.len()), upper)
     }
+
     #[cfg_attr(feature = "inline-more", inline)]
     fn fold<B, F>(self, init: B, mut f: F) -> B
     where
@@ -1975,10 +2094,12 @@ where
     fn next(&mut self) -> Option<&'a T> {
         self.iter.next()
     }
+
     #[cfg_attr(feature = "inline-more", inline)]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
+
     #[cfg_attr(feature = "inline-more", inline)]
     fn fold<B, F>(self, init: B, f: F) -> B
     where
@@ -2048,10 +2169,12 @@ where
     fn next(&mut self) -> Option<&'a T> {
         self.iter.next()
     }
+
     #[cfg_attr(feature = "inline-more", inline)]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
+
     #[cfg_attr(feature = "inline-more", inline)]
     fn fold<B, F>(self, init: B, f: F) -> B
     where
@@ -2247,7 +2370,7 @@ impl<'a, T, S, A: Allocator> Entry<'a, T, S, A> {
     {
         match self {
             Entry::Occupied(entry) => entry,
-            Entry::Vacant(entry) => entry.insert_entry(),
+            Entry::Vacant(entry) => entry.insert(),
         }
     }
 
@@ -2352,42 +2475,6 @@ impl<T, S, A: Allocator> OccupiedEntry<'_, T, S, A> {
     pub fn remove(self) -> T {
         self.inner.remove_entry().0
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn replace(self) -> T {
-        self.inner.replace_key()
-    }
 }
 
 impl<'a, T, S, A: Allocator> VacantEntry<'a, T, S, A> {
@@ -2442,16 +2529,7 @@ impl<'a, T, S, A: Allocator> VacantEntry<'a, T, S, A> {
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn insert(self)
-    where
-        T: Hash,
-        S: BuildHasher,
-    {
-        self.inner.insert(());
-    }
-
-    #[cfg_attr(feature = "inline-more", inline)]
-    fn insert_entry(self) -> OccupiedEntry<'a, T, S, A>
+    pub fn insert(self) -> OccupiedEntry<'a, T, S, A>
     where
         T: Hash,
         S: BuildHasher,
@@ -2500,8 +2578,8 @@ fn assert_covariance() {
 
 #[cfg(test)]
 mod test_set {
-    use super::super::map::DefaultHashBuilder;
-    use super::HashSet;
+    use super::{make_hash, Equivalent, HashSet};
+    use crate::DefaultHashBuilder;
     use std::vec::Vec;
 
     #[test]
@@ -2966,5 +3044,65 @@ mod test_set {
         
         
         let mut _set: HashSet<_> = (0..3).map(|_| ()).collect();
+    }
+
+    #[test]
+    fn test_allocation_info() {
+        assert_eq!(HashSet::<()>::new().allocation_size(), 0);
+        assert_eq!(HashSet::<u32>::new().allocation_size(), 0);
+        assert!(HashSet::<u32>::with_capacity(1).allocation_size() > core::mem::size_of::<u32>());
+    }
+
+    #[test]
+    fn duplicate_insert() {
+        let mut set = HashSet::new();
+        set.insert(1);
+        set.get_or_insert_with(&1, |_| 1);
+        set.get_or_insert_with(&1, |_| 1);
+        assert!([1].iter().eq(set.iter()));
+    }
+
+    #[test]
+    #[should_panic]
+    fn some_invalid_equivalent() {
+        use core::hash::{Hash, Hasher};
+        struct Invalid {
+            count: u32,
+            other: u32,
+        }
+
+        struct InvalidRef {
+            count: u32,
+            other: u32,
+        }
+
+        impl PartialEq for Invalid {
+            fn eq(&self, other: &Self) -> bool {
+                self.count == other.count && self.other == other.other
+            }
+        }
+        impl Eq for Invalid {}
+
+        impl Equivalent<Invalid> for InvalidRef {
+            fn equivalent(&self, key: &Invalid) -> bool {
+                self.count == key.count && self.other == key.other
+            }
+        }
+        impl Hash for Invalid {
+            fn hash<H: Hasher>(&self, state: &mut H) {
+                self.count.hash(state);
+            }
+        }
+        impl Hash for InvalidRef {
+            fn hash<H: Hasher>(&self, state: &mut H) {
+                self.count.hash(state);
+            }
+        }
+        let mut set: HashSet<Invalid> = HashSet::new();
+        let key = InvalidRef { count: 1, other: 1 };
+        let value = Invalid { count: 1, other: 2 };
+        if make_hash(set.hasher(), &key) == make_hash(set.hasher(), &value) {
+            set.get_or_insert_with(&key, |_| value);
+        }
     }
 }

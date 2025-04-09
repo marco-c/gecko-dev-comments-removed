@@ -21,9 +21,10 @@
         allocator_api,
         slice_ptr_get,
         maybe_uninit_array_assume_init,
-        strict_provenance
+        strict_provenance_lints
     )
 )]
+#![cfg_attr(feature = "rustc-dep-of-std", feature(rustc_attrs))]
 #![allow(
     clippy::doc_markdown,
     clippy::module_name_repetitions,
@@ -39,11 +40,20 @@
 #![cfg_attr(feature = "nightly", warn(fuzzy_provenance_casts))]
 #![cfg_attr(feature = "nightly", allow(internal_features))]
 
+
+#[cfg(feature = "default-hasher")]
+pub type DefaultHashBuilder = foldhash::fast::RandomState;
+
+
+#[cfg(not(feature = "default-hasher"))]
+pub enum DefaultHashBuilder {}
+
 #[cfg(test)]
 #[macro_use]
 extern crate std;
 
 #[cfg_attr(test, macro_use)]
+#[cfg_attr(feature = "rustc-dep-of-std", allow(unused_extern_crates))]
 extern crate alloc;
 
 #[cfg(feature = "nightly")]
@@ -53,31 +63,14 @@ doc_comment::doctest!("../README.md");
 #[macro_use]
 mod macros;
 
-#[cfg(feature = "raw")]
-
-
-pub mod raw {
-    
-    #[allow(missing_docs)]
-    #[path = "mod.rs"]
-    mod inner;
-    pub use inner::*;
-
-    #[cfg(feature = "rayon")]
-    
-    
-    
-    
-    
-    pub mod rayon {
-        pub use crate::external_trait_impls::rayon::raw::*;
-    }
-}
-#[cfg(not(feature = "raw"))]
+mod control;
 mod raw;
+mod util;
 
 mod external_trait_impls;
 mod map;
+#[cfg(feature = "raw-entry")]
+mod raw_entry;
 #[cfg(feature = "rustc-internal-api")]
 mod rustc_entry;
 mod scopeguard;

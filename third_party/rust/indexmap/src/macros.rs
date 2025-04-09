@@ -1,3 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! indexmap_with_default {
+    ($H:ty; $($key:expr => $value:expr,)+) => { $crate::indexmap_with_default!($H; $($key => $value),+) };
+    ($H:ty; $($key:expr => $value:expr),*) => {{
+        let builder = ::core::hash::BuildHasherDefault::<$H>::default();
+        const CAP: usize = <[()]>::len(&[$({ stringify!($key); }),*]);
+        #[allow(unused_mut)]
+        // Specify your custom `H` (must implement Default + Hasher) as the hasher:
+        let mut map = $crate::IndexMap::with_capacity_and_hasher(CAP, builder);
+        $(
+            map.insert($key, $value);
+        )*
+        map
+    }};
+}
+
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 #[macro_export]
@@ -33,6 +70,43 @@ macro_rules! indexmap {
             map
         }
     };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! indexset_with_default {
+    ($H:ty; $($value:expr,)+) => { $crate::indexset_with_default!($H; $($value),+) };
+    ($H:ty; $($value:expr),*) => {{
+        let builder = ::core::hash::BuildHasherDefault::<$H>::default();
+        const CAP: usize = <[()]>::len(&[$({ stringify!($value); }),*]);
+        #[allow(unused_mut)]
+        // Specify your custom `H` (must implement Default + Hash) as the hasher:
+        let mut set = $crate::IndexSet::with_capacity_and_hasher(CAP, builder);
+        $(
+            set.insert($value);
+        )*
+        set
+    }};
 }
 
 #[cfg(feature = "std")]
@@ -125,7 +199,7 @@ macro_rules! double_ended_iterator_methods {
 
 
 
-#[cfg(any(feature = "rayon", feature = "rustc-rayon"))]
+#[cfg(feature = "rayon")]
 macro_rules! parallel_iterator_methods {
     
     ($map_elt:expr) => {
@@ -150,7 +224,7 @@ macro_rules! parallel_iterator_methods {
 
 
 
-#[cfg(any(feature = "rayon", feature = "rustc-rayon"))]
+#[cfg(feature = "rayon")]
 macro_rules! indexed_parallel_iterator_methods {
     
     ($map_elt:expr) => {

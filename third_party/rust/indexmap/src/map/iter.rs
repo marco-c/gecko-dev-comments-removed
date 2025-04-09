@@ -221,6 +221,7 @@ impl<K, V> Default for IterMut2<'_, K, V> {
 
 
 
+#[derive(Clone)]
 pub struct IntoIter<K, V> {
     iter: vec::IntoIter<Bucket<K, V>>,
 }
@@ -431,7 +432,7 @@ impl<K, V> Default for Keys<'_, K, V> {
 
 
 
-impl<'a, K, V> Index<usize> for Keys<'a, K, V> {
+impl<K, V> Index<usize> for Keys<'_, K, V> {
     type Output = K;
 
     
@@ -666,6 +667,7 @@ where
     K: Hash + Eq,
     S: BuildHasher,
 {
+    #[track_caller]
     pub(super) fn new<R>(map: &'a mut IndexMap<K, V, S>, range: R, replace_with: I) -> Self
     where
         R: RangeBounds<usize>,
@@ -757,7 +759,7 @@ where
 {
 }
 
-impl<'a, I, K, V, S> fmt::Debug for Splice<'a, I, K, V, S>
+impl<I, K, V, S> fmt::Debug for Splice<'_, I, K, V, S>
 where
     I: fmt::Debug + Iterator<Item = (K, V)>,
     K: fmt::Debug + Hash + Eq,
