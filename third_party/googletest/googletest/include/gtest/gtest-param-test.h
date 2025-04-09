@@ -174,6 +174,7 @@ TEST_P(DerivedTest, DoesBlah) {
 
 #endif  
 
+#include <functional>
 #include <iterator>
 #include <utility>
 
@@ -441,10 +442,66 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
 
 
 
-template <typename T>
-internal::ParamConverterGenerator<T> ConvertGenerator(
-    internal::ParamGenerator<T> gen) {
-  return internal::ParamConverterGenerator<T>(gen);
+
+template <typename RequestedT>
+internal::ParamConverterGenerator<RequestedT> ConvertGenerator(
+    internal::ParamGenerator<RequestedT> gen) {
+  return internal::ParamConverterGenerator<RequestedT>(std::move(gen));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, int&... ExplicitArgumentBarrier, typename Gen,
+          typename Func,
+          typename StdFunction = decltype(std::function(std::declval<Func>()))>
+internal::ParamConverterGenerator<T, StdFunction> ConvertGenerator(Gen&& gen,
+                                                                   Func&& f) {
+  return internal::ParamConverterGenerator<T, StdFunction>(
+      std::forward<Gen>(gen), std::forward<Func>(f));
+}
+
+
+
+template <int&... ExplicitArgumentBarrier, typename Gen, typename Func,
+          typename StdFunction = decltype(std::function(std::declval<Func>()))>
+auto ConvertGenerator(Gen&& gen, Func&& f) {
+  constexpr bool is_single_arg_std_function =
+      internal::IsSingleArgStdFunction<StdFunction>::value;
+  if constexpr (is_single_arg_std_function) {
+    return ConvertGenerator<
+        typename internal::FuncSingleParamType<StdFunction>::type>(
+        std::forward<Gen>(gen), std::forward<Func>(f));
+  } else {
+    static_assert(is_single_arg_std_function,
+                  "The call signature must contain a single argument.");
+  }
 }
 
 #define TEST_P(test_suite_name, test_name)                                     \

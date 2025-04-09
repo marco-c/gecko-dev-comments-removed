@@ -257,6 +257,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <exception>
 #include <functional>
 #include <initializer_list>
@@ -2097,11 +2098,11 @@ class WhenDynamicCastToMatcher<To&> : public WhenDynamicCastToMatcherBase<To&> {
 template <typename Class, typename FieldType>
 class FieldMatcher {
  public:
-  FieldMatcher(FieldType Class::*field,
+  FieldMatcher(FieldType Class::* field,
                const Matcher<const FieldType&>& matcher)
       : field_(field), matcher_(matcher), whose_field_("whose given field ") {}
 
-  FieldMatcher(const std::string& field_name, FieldType Class::*field,
+  FieldMatcher(const std::string& field_name, FieldType Class::* field,
                const Matcher<const FieldType&>& matcher)
       : field_(field),
         matcher_(matcher),
@@ -2145,7 +2146,7 @@ class FieldMatcher {
     return MatchAndExplainImpl(std::false_type(), *p, listener);
   }
 
-  const FieldType Class::*field_;
+  const FieldType Class::* field_;
   const Matcher<const FieldType&> matcher_;
 
   
@@ -2857,6 +2858,54 @@ class ContainsMatcherImpl : public QuantifierMatcherImpl<Container> {
 
 
 
+
+
+
+
+
+template <typename V, typename T, typename Distance, typename GetDistance>
+class DistanceFromMatcherImpl : public MatcherInterface<V> {
+ public:
+  
+  
+  
+  
+  
+  DistanceFromMatcherImpl(T target, GetDistance get_distance,
+                          Matcher<const Distance&> distance_matcher)
+      : target_(std::move(target)),
+        get_distance_(std::move(get_distance)),
+        distance_matcher_(std::move(distance_matcher)) {}
+
+  
+  void DescribeTo(::std::ostream* os) const override {
+    distance_matcher_.DescribeTo(os);
+    *os << " away from " << PrintToString(target_);
+  }
+
+  void DescribeNegationTo(::std::ostream* os) const override {
+    distance_matcher_.DescribeNegationTo(os);
+    *os << " away from " << PrintToString(target_);
+  }
+
+  bool MatchAndExplain(V value, MatchResultListener* listener) const override {
+    const auto distance = get_distance_(value, target_);
+    const bool match = distance_matcher_.Matches(distance);
+    if (!match && listener->IsInterested()) {
+      *listener << "which is " << PrintToString(distance) << " away from "
+                << PrintToString(target_);
+    }
+    return match;
+  }
+
+ private:
+  const T target_;
+  const GetDistance get_distance_;
+  const Matcher<const Distance&> distance_matcher_;
+};
+
+
+
 template <typename Container>
 class EachMatcherImpl : public QuantifierMatcherImpl<Container> {
  public:
@@ -2989,6 +3038,52 @@ auto Second(T& x, Rank1) -> decltype((x.second)) {
   return x.second;
 }
 }  
+
+
+struct DefaultGetDistance {
+  template <typename T, typename U>
+  auto operator()(const T& lhs, const U& rhs) const {
+    using std::abs;
+    
+    return abs(lhs - rhs);
+  }
+};
+
+
+
+
+
+
+
+template <typename T, typename GetDistance, typename DistanceMatcher>
+class DistanceFromMatcher {
+ public:
+  
+  
+  
+  
+  
+  DistanceFromMatcher(T target, GetDistance get_distance,
+                      DistanceMatcher distance_matcher)
+      : target_(std::move(target)),
+        get_distance_(std::move(get_distance)),
+        distance_matcher_(std::move(distance_matcher)) {}
+
+  DistanceFromMatcher(const DistanceFromMatcher& other) = default;
+
+  
+  template <typename V>
+  operator Matcher<V>() const {  
+    using Distance = decltype(get_distance_(std::declval<V>(), target_));
+    return Matcher<V>(new DistanceFromMatcherImpl<V, T, Distance, GetDistance>(
+        target_, get_distance_, distance_matcher_));
+  }
+
+ private:
+  const T target_;
+  const GetDistance get_distance_;
+  const DistanceMatcher distance_matcher_;
+};
 
 
 
@@ -3197,8 +3292,8 @@ class PairMatcher {
 };
 
 template <typename T, size_t... I>
-auto UnpackStructImpl(const T& t, std::index_sequence<I...>,
-                      int) -> decltype(std::tie(get<I>(t)...)) {
+auto UnpackStructImpl(const T& t, std::index_sequence<I...>, int)
+    -> decltype(std::tie(get<I>(t)...)) {
   static_assert(std::tuple_size<T>::value == sizeof...(I),
                 "Number of arguments doesn't match the number of fields.");
   return std::tie(get<I>(t)...);
@@ -3311,6 +3406,14 @@ auto UnpackStructImpl(const T& in, std::make_index_sequence<21>, char) {
       in;
   return std::tie(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t,
                   u);
+}
+
+template <typename T>
+auto UnpackStructImpl(const T& in, std::make_index_sequence<22>, char) {
+  const auto& [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u,
+               v] = in;
+  return std::tie(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u,
+                  v);
 }
 #endif  
 
@@ -3487,7 +3590,7 @@ class ElementsAreMatcherImpl : public MatcherInterface<Container> {
     StlContainerReference stl_container = View::ConstReference(container);
     auto it = stl_container.begin();
     size_t exam_pos = 0;
-    bool mismatch_found = false;  
+    bool unmatched_found = false;
 
     
     
@@ -3503,7 +3606,19 @@ class ElementsAreMatcherImpl : public MatcherInterface<Container> {
       }
 
       if (!match) {
-        mismatch_found = true;
+        unmatched_found = true;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         break;
       }
     }
@@ -3528,10 +3643,27 @@ class ElementsAreMatcherImpl : public MatcherInterface<Container> {
       return false;
     }
 
-    if (mismatch_found) {
+    if (unmatched_found) {
       
       if (listener_interested) {
-        *listener << "whose element #" << exam_pos << " doesn't match";
+        
+        auto unmatched_it = stl_container.begin();
+        
+        
+        
+        
+        for (size_t i = 0; i != exam_pos; ++i) {
+          ++unmatched_it;
+        }
+
+        
+        
+        
+        
+        
+        *listener << "whose element #" << exam_pos << " ("
+                  << PrintToString(*unmatched_it) << ") ";
+        matchers_[exam_pos].DescribeNegationTo(listener->stream());
         PrintIfNotEmpty(explanations[exam_pos], listener->stream());
       }
       return false;
@@ -3937,15 +4069,15 @@ GTEST_API_ std::string FormatMatcherDescription(
 
 
 template <typename Optional>
-auto IsOptionalEngaged(const Optional& optional,
-                       Rank1) -> decltype(!!optional) {
+auto IsOptionalEngaged(const Optional& optional, Rank1)
+    -> decltype(!!optional) {
   
   
   return !static_cast<bool>(!optional);
 }
 template <typename Optional>
-auto IsOptionalEngaged(const Optional& optional,
-                       Rank0) -> decltype(!optional.has_value()) {
+auto IsOptionalEngaged(const Optional& optional, Rank0)
+    -> decltype(!optional.has_value()) {
   return optional.has_value();
 }
 
@@ -4375,6 +4507,42 @@ inline internal::FloatingEqMatcher<double> DoubleNear(double rhs,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, typename GetDistance, typename DistanceMatcher>
+inline internal::DistanceFromMatcher<T, GetDistance, DistanceMatcher>
+DistanceFrom(T target, GetDistance get_distance,
+             DistanceMatcher distance_matcher) {
+  return internal::DistanceFromMatcher<T, GetDistance, DistanceMatcher>(
+      std::move(target), std::move(get_distance), std::move(distance_matcher));
+}
+
+template <typename T, typename DistanceMatcher>
+inline internal::DistanceFromMatcher<T, internal::DefaultGetDistance,
+                                     DistanceMatcher>
+DistanceFrom(T target, DistanceMatcher distance_matcher) {
+  return DistanceFrom(std::move(target), internal::DefaultGetDistance(),
+                      std::move(distance_matcher));
+}
+
+
+
+
 inline internal::FloatingEqMatcher<double> NanSensitiveDoubleNear(
     double rhs, double max_abs_error) {
   return internal::FloatingEqMatcher<double>(rhs, true, max_abs_error);
@@ -4437,7 +4605,7 @@ WhenDynamicCastTo(const Matcher<To>& inner_matcher) {
 
 template <typename Class, typename FieldType, typename FieldMatcher>
 inline PolymorphicMatcher<internal::FieldMatcher<Class, FieldType>> Field(
-    FieldType Class::*field, const FieldMatcher& matcher) {
+    FieldType Class::* field, const FieldMatcher& matcher) {
   return MakePolymorphicMatcher(internal::FieldMatcher<Class, FieldType>(
       field, MatcherCast<const FieldType&>(matcher)));
   
@@ -4450,7 +4618,7 @@ inline PolymorphicMatcher<internal::FieldMatcher<Class, FieldType>> Field(
 
 template <typename Class, typename FieldType, typename FieldMatcher>
 inline PolymorphicMatcher<internal::FieldMatcher<Class, FieldType>> Field(
-    const std::string& field_name, FieldType Class::*field,
+    const std::string& field_name, FieldType Class::* field,
     const FieldMatcher& matcher) {
   return MakePolymorphicMatcher(internal::FieldMatcher<Class, FieldType>(
       field_name, field, MatcherCast<const FieldType&>(matcher)));
