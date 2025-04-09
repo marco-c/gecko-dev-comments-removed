@@ -234,6 +234,13 @@ struct FeatureImplementationStatus {
         
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1955417");
+
+      case dom::GPUFeatureName::Core_features_and_limits:
+        
+        
+        
+        
+        return implemented(0);
     }
     MOZ_CRASH("Bad GPUFeatureName.");
   }
@@ -335,6 +342,18 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aBridge,
       
     }
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mFeatures->Add(dom::GPUFeatureName::Core_features_and_limits, ignoredRv);
 
   
   
@@ -630,6 +649,18 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     for (const auto& feature : aDesc.mRequiredFeatures) {
       device->mFeatures->Add(feature, aRv);
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    device->mFeatures->Add(dom::GPUFeatureName::Core_features_and_limits, aRv);
 
     request->mPromise->Then(
         GetCurrentSerialEventTarget(), __func__,
