@@ -67,7 +67,7 @@ async function test(oaLoad, oaClear, shouldExist) {
   let exists = cache_storage.exists(make_uri(url), null);
   Assert.ok(exists, "Entry should be in cache");
 
-  Services.cache2.clearOrigin(clearPrincipal);
+  Services.cache2.clearOriginsByPrincipal(clearPrincipal);
 
   
   await new Promise(resolve => {
