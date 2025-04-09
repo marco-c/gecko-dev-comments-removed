@@ -3,6 +3,7 @@
 
 
 
+#include "core/TelemetryHistogram.h"
 #include "gtest/gtest.h"
 #include "js/Conversions.h"
 #include "mozilla/glean/GleanTestsTestMetrics.h"
@@ -152,7 +153,7 @@ TEST_F(TelemetryTestFixture, TestKeyedKeysHistogram) {
 }
 
 TEST_F(TelemetryTestFixture, AccumulateCategoricalHistogram) {
-  const uint32_t kExpectedValue = 2;
+  const uint32_t kExpectedValue = 1;
 
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
@@ -160,14 +161,8 @@ TEST_F(TelemetryTestFixture, AccumulateCategoricalHistogram) {
                        "TELEMETRY_TEST_CATEGORICAL"_ns, false);
 
   
-  
-  Telemetry::AccumulateCategorical(
-      Telemetry::LABELS_TELEMETRY_TEST_CATEGORICAL::CommonLabel);
-
-  
-  
-  Telemetry::AccumulateCategorical(Telemetry::TELEMETRY_TEST_CATEGORICAL,
-                                   "CommonLabel"_ns);
+  TelemetryHistogram::AccumulateCategorical(
+      Telemetry::TELEMETRY_TEST_CATEGORICAL, "CommonLabel"_ns);
 
   
   JS::Rooted<JS::Value> snapshot(cx.GetJSContext());
@@ -606,83 +601,6 @@ TEST_F(TelemetryTestFixture, TestKeyedKeysHistogram_MultipleSamples) {
   CheckKeyedUintScalar("telemetry.accumulate_unknown_histogram_keys",
                        "TELEMETRY_TEST_KEYED_KEYS", cx.GetJSContext(),
                        scalarsSnapshot, expectedAccumulateUnknownCount);
-}
-
-TEST_F(TelemetryTestFixture,
-       AccumulateCategoricalHistogram_MultipleStringLabels) {
-  const uint32_t kExpectedValue = 2;
-  const nsTArray<nsCString> labels({"CommonLabel"_ns, "CommonLabel"_ns});
-  AutoJSContextWithGlobal cx(mCleanGlobal);
-
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       "TELEMETRY_TEST_CATEGORICAL"_ns, false);
-
-  
-  Telemetry::AccumulateCategorical(Telemetry::TELEMETRY_TEST_CATEGORICAL,
-                                   labels);
-
-  
-  JS::Rooted<JS::Value> snapshot(cx.GetJSContext());
-  GetSnapshots(cx.GetJSContext(), mTelemetry, "TELEMETRY_TEST_CATEGORICAL",
-               &snapshot, false);
-
-  
-  JS::Rooted<JS::Value> histogram(cx.GetJSContext());
-  GetProperty(cx.GetJSContext(), "TELEMETRY_TEST_CATEGORICAL", snapshot,
-              &histogram);
-
-  
-  
-  JS::Rooted<JS::Value> values(cx.GetJSContext());
-  GetProperty(cx.GetJSContext(), "values", histogram, &values);
-
-  
-  JS::Rooted<JS::Value> value(cx.GetJSContext());
-  GetElement(cx.GetJSContext(),
-             static_cast<uint32_t>(
-                 Telemetry::LABELS_TELEMETRY_TEST_CATEGORICAL::CommonLabel),
-             values, &value);
-
-  
-  uint32_t uValue = 0;
-  JS::ToUint32(cx.GetJSContext(), value, &uValue);
-  ASSERT_EQ(uValue, kExpectedValue)
-      << "The histogram is not returning expected value";
-
-  
-  
-  
-  
-  
-
-  const nsTArray<nsCString> badLabelArray({"CommonLabel"_ns, "BadLabel"_ns});
-
-  
-  Telemetry::AccumulateCategorical(Telemetry::TELEMETRY_TEST_CATEGORICAL,
-                                   badLabelArray);
-
-  
-  GetSnapshots(cx.GetJSContext(), mTelemetry, "TELEMETRY_TEST_CATEGORICAL",
-               &snapshot, false);
-
-  
-  GetProperty(cx.GetJSContext(), "TELEMETRY_TEST_CATEGORICAL", snapshot,
-              &histogram);
-
-  
-  GetProperty(cx.GetJSContext(), "values", histogram, &values);
-
-  
-  GetElement(cx.GetJSContext(),
-             static_cast<uint32_t>(
-                 Telemetry::LABELS_TELEMETRY_TEST_CATEGORICAL::CommonLabel),
-             values, &value);
-
-  
-  uValue = 0;
-  JS::ToUint32(cx.GetJSContext(), value, &uValue);
-  ASSERT_EQ(uValue, kExpectedValue)
-      << "The histogram accumulated data when it should not have";
 }
 
 TEST_F(TelemetryTestFixture, AccumulateTimeDelta) {
