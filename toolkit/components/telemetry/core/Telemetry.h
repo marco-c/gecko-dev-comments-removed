@@ -124,29 +124,6 @@ void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
              static_cast<uint32_t>(enumValue));
 };
 
-
-
-
-
-
-
-
-
-void AccumulateTimeDelta(HistogramID id, TimeStamp start,
-                         TimeStamp end = TimeStamp::Now());
-
-
-
-
-
-
-
-
-
-
-void AccumulateTimeDelta(HistogramID id, const nsCString& key, TimeStamp start,
-                         TimeStamp end = TimeStamp::Now());
-
 const char* GetHistogramName(HistogramID id);
 
 

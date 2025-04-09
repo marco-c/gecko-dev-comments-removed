@@ -18,6 +18,7 @@
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "js/PropertyAndElement.h"  
+#include "GIFFTFwd.h"
 
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;
@@ -302,8 +303,10 @@ extern "C" NS_EXPORT void GIFFT_LabeledTimingDistributionStopAndAccumulate(
       
       
       if (!NS_WARN_IF(!optStart)) {
-        AccumulateTimeDelta(mirrorId.extract(), PromiseFlatCString(aLabel),
-                            optStart.extract());
+        Accumulate(mirrorId.extract(), PromiseFlatCString(aLabel),
+                   static_cast<uint32_t>(
+                       (mozilla::TimeStamp::Now() - optStart.extract())
+                           .ToMilliseconds()));
       }
     });
   }

@@ -30,7 +30,7 @@ void PotentialCheckerboardDurationTracker::CheckerboardDone(
   if (!Tracking()) {
     if (aRecordTelemetry) {
       mozilla::glean::gfx_checkerboard::potential_duration
-          .AccumulateRawDuration(mCurrentPeriodStart - TimeStamp::Now());
+          .AccumulateRawDuration(TimeStamp::Now() - mCurrentPeriodStart);
     }
   }
 }
@@ -59,9 +59,8 @@ void PotentialCheckerboardDurationTracker::InTransform(bool aInTransform,
     
     
     if (aRecordTelemetry) {
-      mozilla::Telemetry::AccumulateTimeDelta(
-          mozilla::Telemetry::CHECKERBOARD_POTENTIAL_DURATION,
-          mCurrentPeriodStart);
+      mozilla::glean::gfx_checkerboard::potential_duration
+          .AccumulateRawDuration(TimeStamp::Now() - mCurrentPeriodStart);
     }
   }
 }
