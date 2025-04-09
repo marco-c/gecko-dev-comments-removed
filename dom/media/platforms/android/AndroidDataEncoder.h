@@ -112,6 +112,8 @@ class AndroidDataEncoder final : public MediaDataEncoder {
   EncodedData mEncodedData;
   
   RefPtr<MediaByteBuffer> mConfigData;
+  
+  media::TimeUnit mInputSampleDuration = media::TimeUnit::Invalid();
 
   enum class DrainState { DRAINABLE, DRAINING, DRAINED };
   DrainState mDrainState = DrainState::DRAINABLE;
