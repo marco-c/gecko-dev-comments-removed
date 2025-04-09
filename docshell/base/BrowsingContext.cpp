@@ -30,6 +30,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Geolocation.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/Location.h"
@@ -3233,6 +3234,29 @@ void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
     return;
   }
   SetWatchedByDevToolsInternal(aWatchedByDevTools, aRv);
+}
+
+RefPtr<nsGeolocationService> BrowsingContext::GetGeolocationServiceOverride() {
+  
+  
+  
+  return Top()->mGeolocationServiceOverride;
+}
+
+void BrowsingContext::SetGeolocationServiceOverride(
+    const Optional<nsIDOMGeoPosition*>& aGeolocationOverride) {
+  MOZ_ASSERT(
+      IsTop(),
+      "Should only set GeolocationServiceOverride in the top browsing context");
+  if (aGeolocationOverride.WasPassed()) {
+    if (!mGeolocationServiceOverride) {
+      mGeolocationServiceOverride = new nsGeolocationService();
+      mGeolocationServiceOverride->Init();
+    }
+    mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
+  } else {
+    mGeolocationServiceOverride = nullptr;
+  }
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_DefaultLoadFlags>,

@@ -427,9 +427,8 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     return NS_OK;
   }
 
-  RefPtr<nsGeolocationService> gs =
-      nsGeolocationService::GetGeolocationService();
-
+  RefPtr<nsGeolocationService> gs = nsGeolocationService::GetGeolocationService(
+      mLocator->GetBrowsingContext());
   bool canUseCache = false;
   CachedPositionAndAccuracy lastPosition = gs->GetCachedPosition();
   if (lastPosition.position) {
@@ -447,6 +446,12 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
       canUseCache =
           isCachedWithinRequestedAccuracy && isCachedWithinRequestedTime;
     }
+  }
+
+  
+  
+  if (!canUseCache && gs != nsGeolocationService::sService.get()) {
+    canUseCache = true;
   }
 
   gs->UpdateAccuracy(WantsHighAccuracy());
@@ -646,7 +651,8 @@ void nsGeolocationRequest::Shutdown() {
   
   if (mOptions && mOptions->mEnableHighAccuracy) {
     RefPtr<nsGeolocationService> gs =
-        nsGeolocationService::GetGeolocationService();
+        nsGeolocationService::GetGeolocationService(
+            mLocator->GetBrowsingContext());
     if (gs) {
       gs->UpdateAccuracy();
     }
@@ -963,8 +969,16 @@ void nsGeolocationService::StopDevice() {
 StaticRefPtr<nsGeolocationService> nsGeolocationService::sService;
 
 already_AddRefed<nsGeolocationService>
-nsGeolocationService::GetGeolocationService() {
+nsGeolocationService::GetGeolocationService(
+    mozilla::dom::BrowsingContext* aBrowsingContext) {
   RefPtr<nsGeolocationService> result;
+  if (aBrowsingContext) {
+    result = aBrowsingContext->GetGeolocationServiceOverride();
+
+    if (result) {
+      return result.forget();
+    }
+  }
   if (nsGeolocationService::sService) {
     result = nsGeolocationService::sService;
 
@@ -1031,6 +1045,8 @@ already_AddRefed<Geolocation> Geolocation::NonWindowSingleton() {
 }
 
 nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
+  nsCOMPtr<Document> doc = aContentDom ? aContentDom->GetExtantDoc() : nullptr;
+
   
   if (aContentDom) {
     mOwner = do_GetWeakReference(aContentDom);
@@ -1039,7 +1055,6 @@ nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
     }
 
     
-    nsCOMPtr<Document> doc = aContentDom->GetDoc();
     if (!doc) {
       return NS_ERROR_FAILURE;
     }
@@ -1053,12 +1068,27 @@ nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
     }
   }
 
+  mBrowsingContext =
+      doc ? RefPtr<BrowsingContext>(doc->GetBrowsingContext()) : nullptr;
+
   
   
   
-  mService = nsGeolocationService::GetGeolocationService();
+  RefPtr<nsGeolocationService> service =
+      nsGeolocationService::GetGeolocationService(mBrowsingContext);
+  if (service != nsGeolocationService::sService.get()) {
+    mService = nsGeolocationService::GetGeolocationService();
+    mServiceOverride = service;
+  } else {
+    mService = service;
+  }
+
   if (mService) {
     mService->AddLocator(this);
+  }
+
+  if (mServiceOverride) {
+    mServiceOverride->AddLocator(this);
   }
 
   return NS_OK;
@@ -1074,7 +1104,12 @@ void Geolocation::Shutdown() {
     mService->UpdateAccuracy();
   }
 
+  if (mServiceOverride) {
+    mServiceOverride->RemoveLocator(this);
+  }
+
   mService = nullptr;
+  mServiceOverride = nullptr;
   mPrincipal = nullptr;
 }
 
