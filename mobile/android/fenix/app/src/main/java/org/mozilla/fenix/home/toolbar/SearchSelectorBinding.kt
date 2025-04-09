@@ -5,7 +5,7 @@
 package org.mozilla.fenix.home.toolbar
 
 import android.content.Context
-import android.graphics.drawable.BitmapDrawable
+import androidx.core.graphics.drawable.toDrawable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -19,17 +19,17 @@ import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.UnifiedSearch
 import org.mozilla.fenix.R
-import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.ext.increaseTapAreaVertically
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.home.ToolbarView
 import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 
 /**
  * A binding that shows the search engine in the search selector button.
  */
-class SearchSelectorBinding(
+internal class SearchSelectorBinding(
     private val context: Context,
-    private val binding: FragmentHomeBinding,
+    private val toolbarView: ToolbarView,
     private val searchSelectorMenu: SearchSelectorMenu,
     browserStore: BrowserStore,
 ) : AbstractBinding<BrowserState>(browserStore) {
@@ -37,7 +37,7 @@ class SearchSelectorBinding(
     override fun start() {
         super.start()
 
-        binding.searchSelectorButton.apply {
+        toolbarView.configureSearchSelector {
             setOnClickListener {
                 val orientation = if (context.settings().shouldUseBottomToolbar) {
                     Orientation.UP
@@ -65,7 +65,7 @@ class SearchSelectorBinding(
                 val icon = searchEngine?.let {
                     val iconSize =
                         context.resources.getDimensionPixelSize(R.dimen.preference_icon_drawable_size)
-                    BitmapDrawable(context.resources, searchEngine.icon).apply {
+                    searchEngine.icon.toDrawable(context.resources).apply {
                         setBounds(0, 0, iconSize, iconSize)
                         // Setting tint manually for icons that were converted from Drawable
                         // to Bitmap. Search Engine icons are stored as Bitmaps, hence
@@ -80,7 +80,7 @@ class SearchSelectorBinding(
                     name ?: "",
                 )
 
-                binding.searchSelectorButton.setIcon(icon, contentDescription)
+                toolbarView.configureSearchSelector { setIcon(icon, contentDescription) }
             }
     }
 
