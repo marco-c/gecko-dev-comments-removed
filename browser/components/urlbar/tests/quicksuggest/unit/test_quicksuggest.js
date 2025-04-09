@@ -1776,14 +1776,36 @@ add_task(async function ampMatchingStrategy() {
   await QuickSuggestTestUtils.forceSync();
 
   
-  for (let [key, value] of Object.entries(AmpMatchingStrategy)) {
-    await doAmpMatchingStrategyTest({ key, value });
-
+  
+  
+  info("Testing NO_KEYWORD_EXPANSION (value 0) explicitly");
+  await doAmpMatchingStrategyTest({
+    key: "NO_KEYWORD_EXPANSION",
+    value: AmpMatchingStrategy.NO_KEYWORD_EXPANSION,
     
-    await doAmpMatchingStrategyTest({
-      key: "(default)",
-      value: 0,
-    });
+    expectedStrategy: null,
+  });
+
+  
+  for (let [key, value] of Object.entries(AmpMatchingStrategy)) {
+    
+    if (value !== 0) {
+      
+      
+      await doAmpMatchingStrategyTest({
+        key,
+        value,
+        
+        expectedStrategy: value,
+      });
+
+      
+      await doAmpMatchingStrategyTest({
+        key: "(default)",
+        value: 0,
+        expectedStrategy: null,
+      });
+    }
   }
 
   
@@ -1791,11 +1813,12 @@ add_task(async function ampMatchingStrategy() {
   await doAmpMatchingStrategyTest({
     key: "FTS_AGAINST_TITLE",
     value: AmpMatchingStrategy.FTS_AGAINST_TITLE,
+    expectedStrategy: AmpMatchingStrategy.FTS_AGAINST_TITLE,
   });
   await doAmpMatchingStrategyTest({
     key: "(invalid)",
     value: 99,
-    expectedStrategy: 0,
+    expectedStrategy: null,
   });
 
   Services.prefs.clearUserPref(
@@ -1809,42 +1832,67 @@ async function doAmpMatchingStrategyTest({
   value,
   expectedStrategy = value,
 }) {
-  info("Doing ampMatchingStrategy test: " + JSON.stringify({ key, value }));
+  info(
+    "Doing ampMatchingStrategy test: " +
+      JSON.stringify({ key, value, expectedStrategy })
+  );
 
   let sandbox = sinon.createSandbox();
   let ingestSpy = sandbox.spy(QuickSuggest.rustBackend._test_store, "ingest");
 
   
   
-  Services.prefs.setIntPref(
-    "browser.urlbar.quicksuggest.ampMatchingStrategy",
-    value
-  );
-
-  let ingestCall = await TestUtils.waitForCondition(() => {
-    return ingestSpy.getCalls().find(call => {
-      let ingestConstraints = call.args[0];
-      return ingestConstraints?.providers[0] == SuggestionProvider.AMP;
-    });
-  }, "Waiting for ingest() to be called with Amp provider");
-
-  
-  let { providerConstraints } = ingestCall.args[0];
-  if (!expectedStrategy) {
-    Assert.ok(
-      !providerConstraints,
-      "ingest() should not have been called with provider constraints"
+  if (value === undefined) {
+    Services.prefs.clearUserPref(
+      "browser.urlbar.quicksuggest.ampMatchingStrategy"
     );
   } else {
-    Assert.ok(
-      providerConstraints,
-      "ingest() should have been called with provider constraints"
+    Services.prefs.setIntPref(
+      "browser.urlbar.quicksuggest.ampMatchingStrategy",
+      value
     );
-    Assert.strictEqual(
-      providerConstraints.ampAlternativeMatching,
-      expectedStrategy,
-      "ampAlternativeMatching should have been set"
-    );
+  }
+
+  
+  
+  let ingestCall;
+
+  try {
+    
+    ingestCall = await TestUtils.waitForCondition(() => {
+      return ingestSpy.getCalls().find(call => {
+        let ingestConstraints = call.args[0];
+        return ingestConstraints?.providers[0] == SuggestionProvider.AMP;
+      });
+    }, "Waiting for ingest() to be called with Amp provider");
+  } catch (e) {
+    
+    if (expectedStrategy !== null) {
+      throw e;
+    }
+    info("No ingest call occurred, but that's expected for value " + value);
+  }
+
+  
+  
+  if (ingestCall) {
+    let { providerConstraints } = ingestCall.args[0];
+    if (!expectedStrategy) {
+      Assert.ok(
+        !providerConstraints,
+        "ingest() should not have been called with provider constraints"
+      );
+    } else {
+      Assert.ok(
+        providerConstraints,
+        "ingest() should have been called with provider constraints"
+      );
+      Assert.strictEqual(
+        providerConstraints.ampAlternativeMatching,
+        expectedStrategy,
+        "ampAlternativeMatching should have been set"
+      );
+    }
   }
 
   
