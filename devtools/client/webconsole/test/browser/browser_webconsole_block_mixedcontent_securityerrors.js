@@ -35,7 +35,13 @@ const displayContentText =
   "secure page";
 
 add_task(async function () {
-  await pushPrefEnv();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["security.mixed_content.block_active_content", true],
+      ["security.mixed_content.block_display_content", true],
+      ["security.mixed_content.upgrade_display_content", false],
+    ],
+  });
 
   const hud = await openNewTabAndConsole(TEST_URI);
 
@@ -68,14 +74,23 @@ add_task(async function () {
     gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
     "Mixed Active Content state appeared on identity box"
   );
+
   
-  gIdentityHandler.disableMixedContentProtection();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["security.mixed_content.block_active_content", false],
+      ["security.mixed_content.block_display_content", false],
+      ["security.mixed_content.upgrade_display_content", false],
+    ],
+  });
 
   const waitForWarningMessage = text =>
     waitFor(() => findWarningMessage(hud, text), undefined, 100);
 
   const onMixedActiveContent = waitForWarningMessage(activeContentText);
   const onMixedDisplayContent = waitForWarningMessage(displayContentText);
+
+  gBrowser.reload();
 
   await onMixedDisplayContent;
   ok(true, "Mixed display content warning message is visible");
@@ -91,16 +106,4 @@ add_task(async function () {
     LEARN_MORE_URI,
     `Clicking the provided link opens ${response.link}`
   );
-
-  gIdentityHandler.enableMixedContentProtectionNoReload();
 });
-
-function pushPrefEnv() {
-  const prefs = [
-    ["security.mixed_content.block_active_content", true],
-    ["security.mixed_content.block_display_content", true],
-    ["security.mixed_content.upgrade_display_content", false],
-  ];
-
-  return Promise.all(prefs.map(([pref, value]) => pushPref(pref, value)));
-}

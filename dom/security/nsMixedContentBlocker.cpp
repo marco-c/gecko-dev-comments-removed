@@ -824,7 +824,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   WindowContext* topWC = requestingWindow->TopWindowContext();
   bool rootHasSecureConnection = topWC->GetIsSecure();
-  bool allowMixedContent = topWC->GetAllowMixedContent();
 
   
   
@@ -897,8 +896,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   if (classification == eMixedDisplay) {
-    if (!StaticPrefs::security_mixed_content_block_display_content() ||
-        allowMixedContent) {
+    if (!StaticPrefs::security_mixed_content_block_display_content()) {
       *aDecision = nsIContentPolicy::ACCEPT;
       
       
@@ -916,8 +914,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     MOZ_ASSERT(classification == eMixedScript);
     
     
-    if (!StaticPrefs::security_mixed_content_block_active_content() ||
-        allowMixedContent) {
+    if (!StaticPrefs::security_mixed_content_block_active_content()) {
       *aDecision = nsIContentPolicy::ACCEPT;
       
       

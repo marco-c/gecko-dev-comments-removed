@@ -8,8 +8,6 @@
 
 
 
-
-
 const TEST_URI =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
@@ -54,18 +52,5 @@ add_task(async function blockMixedActiveContentTest() {
     activeLoaded: false,
     activeBlocked: true,
     passiveLoaded: false,
-  });
-});
-
-add_task(async function overrideMCB() {
-  
-  let { gIdentityHandler } = gTestBrowser.ownerGlobal;
-  gIdentityHandler.disableMixedContentProtection();
-  await BrowserTestUtils.browserLoaded(gTestBrowser);
-
-  await assertMixedContentBlockingState(gTestBrowser, {
-    activeLoaded: true,
-    activeBlocked: false,
-    passiveLoaded: true,
   });
 });

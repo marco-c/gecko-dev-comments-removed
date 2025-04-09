@@ -46,12 +46,6 @@ add_task(async function () {
   checkIdentityPopup("security-warning.svg");
 
   
-  gIdentityHandler.disableMixedContentProtection();
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-
-  checkIdentityPopup("security-broken.svg");
-
-  
   BrowserTestUtils.startLoadingURIString(
     gBrowser.selectedBrowser,
     "https://self-signed.example.com"

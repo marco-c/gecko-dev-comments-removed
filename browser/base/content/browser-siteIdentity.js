@@ -219,12 +219,6 @@ var gIdentityHandler = {
       "identity-popup-remove-cert-exception": () => {
         this.removeCertException();
       },
-      "identity-popup-disable-mixed-content-blocking": () => {
-        this.disableMixedContentProtection();
-      },
-      "identity-popup-enable-mixed-content-blocking": () => {
-        this.enableMixedContentProtection();
-      },
       "identity-popup-more-info": event => {
         this.handleMoreInfoClick(event);
       },
@@ -488,49 +482,6 @@ var gIdentityHandler = {
     
     
     Services.focus.clearFocus(window);
-  },
-
-  disableMixedContentProtection() {
-    
-    const kMIXED_CONTENT_UNBLOCK_EVENT = 2;
-    Glean.mixedContent.unblockCounter.accumulateSingleSample(
-      kMIXED_CONTENT_UNBLOCK_EVENT
-    );
-
-    SitePermissions.setForPrincipal(
-      gBrowser.contentPrincipal,
-      "mixed-content",
-      SitePermissions.ALLOW,
-      SitePermissions.SCOPE_SESSION
-    );
-
-    
-    BrowserCommands.reloadWithFlags(
-      Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
-    );
-    if (this._popupInitialized) {
-      PanelMultiView.hidePopup(this._identityPopup);
-    }
-  },
-
-  
-  
-  
-  enableMixedContentProtectionNoReload() {
-    this.enableMixedContentProtection(false);
-  },
-
-  enableMixedContentProtection(reload = true) {
-    SitePermissions.removeFromPrincipal(
-      gBrowser.contentPrincipal,
-      "mixed-content"
-    );
-    if (reload) {
-      BrowserCommands.reload();
-    }
-    if (this._popupInitialized) {
-      PanelMultiView.hidePopup(this._identityPopup);
-    }
   },
 
   removeCertException() {
