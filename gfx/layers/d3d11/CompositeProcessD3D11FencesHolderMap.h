@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_GFX_GpuProcessD3D11FencesHolderMap_H
-#define MOZILLA_GFX_GpuProcessD3D11FencesHolderMap_H
+#ifndef MOZILLA_GFX_CompositeProcessD3D11FencesHolderMap_H
+#define MOZILLA_GFX_CompositeProcessD3D11FencesHolderMap_H
 
 #include <d3d11.h>
 #include <vector>
@@ -23,14 +23,14 @@ class FenceD3D11;
 
 
 
-class GpuProcessD3D11FencesHolderMap {
+class CompositeProcessD3D11FencesHolderMap {
  public:
   static void Init();
   static void Shutdown();
-  static GpuProcessD3D11FencesHolderMap* Get() { return sInstance; }
+  static CompositeProcessD3D11FencesHolderMap* Get() { return sInstance; }
 
-  GpuProcessD3D11FencesHolderMap();
-  ~GpuProcessD3D11FencesHolderMap();
+  CompositeProcessD3D11FencesHolderMap();
+  ~CompositeProcessD3D11FencesHolderMap();
 
   void Register(GpuProcessFencesHolderId aHolderId);
   void Unregister(GpuProcessFencesHolderId aHolderId);
@@ -59,7 +59,7 @@ class GpuProcessD3D11FencesHolderMap {
                      GpuProcessFencesHolderId::HashFn>
       mFencesHolderById;
 
-  static StaticAutoPtr<GpuProcessD3D11FencesHolderMap> sInstance;
+  static StaticAutoPtr<CompositeProcessD3D11FencesHolderMap> sInstance;
 };
 
 }  
