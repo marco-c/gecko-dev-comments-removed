@@ -148,6 +148,8 @@
 
 #define NEG32_ovflw(a) ((opus_val32)(0-(opus_uint32)(a)))
 
+#define SHL32_ovflw(a,shift) SHL32(a,shift)
+
 #define PSHR32_ovflw(a,shift) (SHR32(ADD32_ovflw(a, (EXTEND32(1)<<(shift)>>1)),shift))
 
 

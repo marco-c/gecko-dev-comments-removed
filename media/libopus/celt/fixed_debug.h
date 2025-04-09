@@ -70,6 +70,8 @@ extern opus_int64 celt_mips;
 
 #define NEG32_ovflw(a) (celt_mips+=2,(opus_val32)(0-(opus_uint32)(a)))
 
+#define SHL32_ovflw(a,shift) ((opus_int32)((opus_uint32)(a)<<(shift)))
+
 #define PSHR32_ovflw(a,shift) (SHR32(ADD32_ovflw(a, (EXTEND32(1)<<(shift)>>1)),shift))
 
 static OPUS_INLINE short NEG16(int x)
