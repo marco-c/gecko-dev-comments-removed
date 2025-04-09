@@ -110,6 +110,8 @@
         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
+        TabGroupMetrics:
+          "moz-src:///browser/components/tabbrowser/TabGroupMetrics.sys.mjs",
         TabStateFlusher:
           "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
         UrlbarProviderOpenTabs:
@@ -2218,20 +2220,6 @@
       browserSidebarContainer.className = "browserSidebarContainer";
       browserSidebarContainer.appendChild(browserContainer);
 
-      if (!isPreloadBrowser) {
-        let visibility = Services.prefs.getStringPref(
-          "sidebar.visibility",
-          "always-show"
-        );
-        let expandOnHover = Services.prefs.getBoolPref(
-          "sidebar.expandOnHover",
-          false
-        );
-        if (visibility === "expand-on-hover" && expandOnHover) {
-          SidebarController.toggleExpandOnHover(true);
-        }
-      }
-
       
       
       if (!uriIsAboutBlank || skipLoad) {
@@ -2971,6 +2959,8 @@
 
 
 
+
+
     addTabGroup(
       tabs,
       {
@@ -3039,7 +3029,22 @@
 
 
 
-    async removeTabGroup(group, options = {}) {
+
+
+
+
+
+
+
+
+
+    async removeTabGroup(
+      group,
+      options = {
+        isUserTriggered: false,
+        telemetrySource: this.TabGroupMetrics.METRIC_SOURCE.UNKNOWN,
+      }
+    ) {
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
       }
@@ -3073,6 +3078,8 @@
           bubbles: true,
           detail: {
             skipSessionStore: options.skipSessionStore,
+            isUserTriggered: options.isUserTriggered,
+            telemetrySource: options.telemetrySource,
           },
         })
       );
@@ -3938,13 +3945,22 @@
           
           this.moveTabToGroup(tab, tabGroup);
         }
+      } else if (
+        this.isTab(itemAfter) &&
+        itemAfter?.group?.tabs[0] == itemAfter
+      ) {
+        
+        
+        
+        
+        
+        
+        
+        
+        this.tabContainer.insertBefore(tab, itemAfter.group);
       } else {
         
-        
-        
-        
-        
-        this.tabContainer.insertBefore(tab, itemAfter?.group ?? itemAfter);
+        this.tabContainer.insertBefore(tab, itemAfter);
       }
 
       this._updateTabsAfterInsert();
