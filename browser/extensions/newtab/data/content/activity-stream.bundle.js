@@ -5992,21 +5992,19 @@ const ReportContent = spocs => {
     name: "report",
     ref: radioGroupRef,
     id: "report-group",
-    "data-l10n-id": "newtab-report-content-why-reporting-this"
+    "data-l10n-id": "newtab-report-content-why-reporting",
+    className: "report-content-options"
   }, external_React_default().createElement("moz-radio", {
-    "data-l10n-id": "newtab-report-content-wrong-category",
-    value: "wrong_category"
+    "data-l10n-id": "newtab-report-ads-reason-unsafe",
+    value: "unsafe_content"
   }), external_React_default().createElement("moz-radio", {
-    "data-l10n-id": "newtab-report-content-outdated",
-    value: "outdated"
+    "data-l10n-id": "newtab-report-ads-reason-inappropriate",
+    value: "inappropriate_content"
   }), external_React_default().createElement("moz-radio", {
-    "data-l10n-id": "newtab-report-content-inappropriate-offensive",
-    value: "inappropriate_or_offensive"
-  }), external_React_default().createElement("moz-radio", {
-    "data-l10n-id": "newtab-report-content-spam-misleading",
-    value: "spam_or_misleading"
+    "data-l10n-id": "newtab-report-ads-reason-seen-it-too-many-times",
+    value: "seen_too_many_times"
   }))), external_React_default().createElement("moz-button-group", null, external_React_default().createElement("moz-button", {
-    "data-l10n-id": "newtab-report-cancel",
+    "data-l10n-id": "newtab-topic-selection-cancel-button",
     onClick: handleCancel,
     className: "cancel-report-btn"
   }), external_React_default().createElement("moz-button", {
