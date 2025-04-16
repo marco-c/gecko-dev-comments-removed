@@ -13,19 +13,35 @@
 
 class nsHTTPSOnlyUtils {
  public:
+  enum UpgradeMode {
+    NO_UPGRADE_MODE,
+    HTTPS_ONLY_MODE,
+    HTTPS_FIRST_MODE,
+    SCHEMELESS_HTTPS_FIRST_MODE
+  };
+
   
 
 
 
 
-  static bool IsHttpsOnlyModeEnabled(bool aFromPrivateWindow);
+
+
+
+
+
+  static UpgradeMode GetUpgradeMode(
+      bool aFromPrivateWindow,
+      nsILoadInfo::SchemelessInputType aSchemelessInputType =
+          nsILoadInfo::SchemelessInputTypeUnset);
 
   
 
 
 
 
-  static bool IsHttpsFirstModeEnabled(bool aFromPrivateWindow);
+
+  static UpgradeMode GetUpgradeMode(nsILoadInfo* aLoadInfo);
 
   
 
@@ -132,8 +148,9 @@ class nsHTTPSOnlyUtils {
 
 
 
+
   static bool TestIfPrincipalIsExempt(nsIPrincipal* aPrincipal,
-                                      bool aCheckForHTTPSFirst = false);
+                                      UpgradeMode aUpgradeMode);
 
   
 
@@ -152,12 +169,6 @@ class nsHTTPSOnlyUtils {
 
 
   static bool IsSafeToAcceptCORSOrMixedContent(nsILoadInfo* aLoadInfo);
-
-  
-
-
-
-  static bool ShouldUpgradeConnection(nsILoadInfo* aLoadInfo);
 
   
 
