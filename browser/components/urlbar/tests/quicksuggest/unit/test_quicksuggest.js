@@ -1149,7 +1149,11 @@ add_task(async function dedupeAgainstURL_timestamps() {
 
 add_task(async function blockedSuggestionsAPI() {
   
-  await QuickSuggest.blockedSuggestions.clear();
+  await QuickSuggest.clearDismissedSuggestions();
+  Assert.ok(
+    !(await QuickSuggest.canClearDismissedSuggestions()),
+    "canClearDismissedSuggestions should return false"
+  );
   Assert.equal(
     QuickSuggest.blockedSuggestions._test_digests.size,
     0,
@@ -1169,8 +1173,17 @@ add_task(async function blockedSuggestionsAPI() {
 
   
   
+  
   for (let i = 0; i < urls.length; i++) {
+    let changedPromise = TestUtils.topicObserved(
+      "quicksuggest-dismissals-changed"
+    );
+
     await QuickSuggest.blockedSuggestions.add(urls[i]);
+
+    info("Awaiting dismissals-changed promise");
+    await changedPromise;
+
     for (let j = 0; j < urls.length; j++) {
       Assert.equal(
         await QuickSuggest.blockedSuggestions.has(urls[j]),
@@ -1178,6 +1191,10 @@ add_task(async function blockedSuggestionsAPI() {
         `Suggestion at index ${j} is blocked or not as expected`
       );
     }
+    Assert.ok(
+      await QuickSuggest.canClearDismissedSuggestions(),
+      "canClearDismissedSuggestions should return true"
+    );
   }
 
   
@@ -1214,6 +1231,10 @@ add_task(async function blockedSuggestionsAPI() {
     urls.length,
     "blockedSuggestions._test_digests still has correct size"
   );
+  Assert.ok(
+    await QuickSuggest.canClearDismissedSuggestions(),
+    "canClearDismissedSuggestions should return true"
+  );
 
   
   
@@ -1234,6 +1255,10 @@ add_task(async function blockedSuggestionsAPI() {
   array = JSON.parse(UrlbarPrefs.get("quicksuggest.blockedDigests"));
   Assert.ok(Array.isArray(array), "Parsed value of pref is an array");
   Assert.equal(array.length, urls.length, "Array has correct length");
+  Assert.ok(
+    await QuickSuggest.canClearDismissedSuggestions(),
+    "canClearDismissedSuggestions should return true"
+  );
 
   
   newURL = "http://example.com/direct-to-pref";
@@ -1255,6 +1280,10 @@ add_task(async function blockedSuggestionsAPI() {
     urls.length,
     "blockedSuggestions._test_digests has correct size"
   );
+  Assert.ok(
+    await QuickSuggest.canClearDismissedSuggestions(),
+    "canClearDismissedSuggestions should return true"
+  );
 
   
   UrlbarPrefs.clear("quicksuggest.blockedDigests");
@@ -1270,7 +1299,12 @@ add_task(async function blockedSuggestionsAPI() {
     0,
     "blockedSuggestions._test_digests is now empty"
   );
+  Assert.ok(
+    !(await QuickSuggest.canClearDismissedSuggestions()),
+    "canClearDismissedSuggestions should return false"
+  );
 
+  
   
   for (let url of urls) {
     await QuickSuggest.blockedSuggestions.add(url);
@@ -1281,7 +1315,20 @@ add_task(async function blockedSuggestionsAPI() {
       `Suggestion is blocked: ${url}`
     );
   }
-  await QuickSuggest.blockedSuggestions.clear();
+  Assert.ok(
+    await QuickSuggest.canClearDismissedSuggestions(),
+    "canClearDismissedSuggestions should return true"
+  );
+
+  let clearPromise = TestUtils.topicObserved("quicksuggest-dismissals-cleared");
+
+  info("Clearing dismissals");
+  await QuickSuggest.clearDismissedSuggestions();
+
+  
+  info("Awaiting quicksuggest-dismissals-cleared");
+  await clearPromise;
+
   for (let url of urls) {
     Assert.ok(
       !(await QuickSuggest.blockedSuggestions.has(url)),
@@ -1292,6 +1339,10 @@ add_task(async function blockedSuggestionsAPI() {
     QuickSuggest.blockedSuggestions._test_digests.size,
     0,
     "blockedSuggestions._test_digests is now empty"
+  );
+  Assert.ok(
+    !(await QuickSuggest.canClearDismissedSuggestions()),
+    "canClearDismissedSuggestions should return false"
   );
 });
 
@@ -1324,6 +1375,10 @@ add_task(async function block() {
 
     
     await QuickSuggest.blockedSuggestions.blockResult(context.results[0]);
+    Assert.ok(
+      await QuickSuggest.canClearDismissedSuggestions(),
+      "canClearDismissedSuggestions should return true"
+    );
 
     
     await check_results({
@@ -1334,7 +1389,11 @@ add_task(async function block() {
       matches: [],
     });
 
-    await QuickSuggest.blockedSuggestions.clear();
+    await QuickSuggest.clearDismissedSuggestions();
+    Assert.ok(
+      !(await QuickSuggest.canClearDismissedSuggestions()),
+      "canClearDismissedSuggestions should return false"
+    );
   }
 });
 
@@ -1379,7 +1438,7 @@ add_task(async function block_timestamp() {
     }),
     matches: [],
   });
-  await QuickSuggest.blockedSuggestions.clear();
+  await QuickSuggest.clearDismissedSuggestions();
 });
 
 add_task(async function sponsoredPriority_normal() {
