@@ -58,9 +58,6 @@ export function initialSourcesTreeState({ isWebExtension } = {}) {
     projectDirectoryRootName: prefs.projectDirectoryRootName,
 
     
-    projectDirectoryRootFullName: prefs.projectDirectoryRootFullName,
-
-    
     
     isWebExtension,
 
@@ -212,10 +209,9 @@ export default function update(state = initialSourcesTreeState(), action) {
     case "SET_SELECTED_LOCATION":
       return updateSelectedLocation(state, action.location);
 
-    case "SET_PROJECT_DIRECTORY_ROOT": {
-      const { uniquePath, name, fullName } = action;
-      return updateProjectDirectoryRoot(state, uniquePath, name, fullName);
-    }
+    case "SET_PROJECT_DIRECTORY_ROOT":
+      const { uniquePath, name } = action;
+      return updateProjectDirectoryRoot(state, uniquePath, name);
 
     case "BLACKBOX_WHOLE_SOURCES":
     case "BLACKBOX_SOURCE_RANGES": {
@@ -293,20 +289,18 @@ function updateExpanded(state, action) {
 
 
 
-function updateProjectDirectoryRoot(state, uniquePath, name, fullName) {
+function updateProjectDirectoryRoot(state, uniquePath, name) {
   
   
   if (!uniquePath || uniquePath.startsWith("top-level")) {
     prefs.projectDirectoryRoot = uniquePath;
     prefs.projectDirectoryRootName = name;
-    prefs.projectDirectoryRootFullName = fullName;
   }
 
   return {
     ...state,
     projectDirectoryRoot: uniquePath,
     projectDirectoryRootName: name,
-    projectDirectoryRootFullName: fullName,
   };
 }
 
@@ -358,14 +352,14 @@ function addSource(threadItems, source, sourceActor) {
   
   
   const { displayURL } = source;
-  const { group, origin } = displayURL;
+  const { group } = displayURL;
 
   let groupItem = threadItem.children.find(item => {
     return item.groupName == group;
   });
 
   if (!groupItem) {
-    groupItem = createGroupTreeItem(group, origin, threadItem, source);
+    groupItem = createGroupTreeItem(group, threadItem, source);
     
     
     threadItem.children = [...threadItem.children];
@@ -376,12 +370,7 @@ function addSource(threadItems, source, sourceActor) {
   
   const { path } = displayURL;
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const parentUrl = source.url.substring(0, source.url.lastIndexOf("/"));
-  const directoryItem = addOrGetParentDirectory(
-    groupItem,
-    parentPath,
-    parentUrl
-  );
+  const directoryItem = addOrGetParentDirectory(groupItem, parentPath);
 
   
   
@@ -524,9 +513,7 @@ export function sortThreads(a, b) {
 
 
 
-
-
-function addOrGetParentDirectory(groupItem, path, url) {
+function addOrGetParentDirectory(groupItem, path) {
   
   if (!path) {
     return groupItem;
@@ -541,15 +528,10 @@ function addOrGetParentDirectory(groupItem, path, url) {
   
   
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const parentUrl = url.substring(0, url.lastIndexOf("/"));
-  const parentDirectory = addOrGetParentDirectory(
-    groupItem,
-    parentPath,
-    parentUrl
-  );
+  const parentDirectory = addOrGetParentDirectory(groupItem, parentPath);
 
   
-  const directory = createDirectoryTreeItem(path, url, parentDirectory);
+  const directory = createDirectoryTreeItem(path, parentDirectory);
   
   
   parentDirectory.children = [...parentDirectory.children];
@@ -603,7 +585,7 @@ function createThreadTreeItem(thread) {
     threadActorID: thread,
   };
 }
-function createGroupTreeItem(groupName, origin, parent, source) {
+function createGroupTreeItem(groupName, parent, source) {
   return {
     ...createBaseTreeItem({
       type: "group",
@@ -614,7 +596,6 @@ function createGroupTreeItem(groupName, origin, parent, source) {
     }),
 
     groupName,
-    url: origin,
 
     
     
@@ -627,7 +608,7 @@ function createGroupTreeItem(groupName, origin, parent, source) {
     _allGroupDirectoryItems: [],
   };
 }
-function createDirectoryTreeItem(path, url, parent) {
+function createDirectoryTreeItem(path, parent) {
   
   const pathSeparator = parent.type == "directory" ? "/" : "|";
 
@@ -654,7 +635,6 @@ function createDirectoryTreeItem(path, url, parent) {
     
     
     path,
-    url,
   };
 }
 function createSourceTreeItem(source, sourceActor, parent) {

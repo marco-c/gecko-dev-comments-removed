@@ -12,11 +12,7 @@ export function focusItem(item) {
   return { type: "SET_FOCUSED_SOURCE_ITEM", item };
 }
 
-export function setProjectDirectoryRoot(
-  newRootItemUniquePath,
-  newName,
-  newFullName
-) {
+export function setProjectDirectoryRoot(newRootItemUniquePath, newName) {
   return ({ dispatch, getState }) => {
     
     
@@ -34,7 +30,6 @@ export function setProjectDirectoryRoot(
       type: "SET_PROJECT_DIRECTORY_ROOT",
       uniquePath: newRootItemUniquePath,
       name: newName,
-      fullName: newFullName,
     });
   };
 }
@@ -44,7 +39,6 @@ export function clearProjectDirectoryRoot() {
     type: "SET_PROJECT_DIRECTORY_ROOT",
     uniquePath: "",
     name: "",
-    fullName: "",
   };
 }
 
