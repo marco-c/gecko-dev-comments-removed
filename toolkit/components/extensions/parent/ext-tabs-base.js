@@ -578,6 +578,8 @@ class TabBase {
 
 
 
+
+
   matches(queryInfo) {
     const PROPS = [
       "active",
@@ -590,6 +592,7 @@ class TabBase {
       "openerTabId",
       "pinned",
       "status",
+      "groupId",
     ];
 
     function checkProperty(prop, obj) {
