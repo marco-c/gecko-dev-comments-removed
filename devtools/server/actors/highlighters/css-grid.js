@@ -221,8 +221,6 @@ const gCachedGridPattern = new Map();
 
 
 
-
-
 class CssGridHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
@@ -731,11 +729,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
     
     this._hide();
-
-    this.getElement("root").setAttribute(
-      "data-is-parent-grid",
-      !!this.options.isParent
-    );
 
     
     this.markup.content.root.firstElementChild.style.setProperty(
