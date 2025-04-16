@@ -529,6 +529,15 @@ class TabBase {
 
 
 
+  get groupId() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
 
 
 
@@ -665,6 +674,7 @@ class TabBase {
       isInReaderMode: this.isInReaderMode,
       sharingState: this.sharingState,
       successorTabId: this.successorTabId,
+      groupId: this.groupId,
       cookieStoreId: this.cookieStoreId,
     };
 

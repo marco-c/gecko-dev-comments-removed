@@ -2981,6 +2981,10 @@
       }
 
       if (!id) {
+        
+        
+        
+        
         id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
       }
       let group = this._createTabGroup(id, color, false, label);

@@ -139,6 +139,36 @@ global.replaceUrlInTab = (gBrowser, tab, uri) => {
 
 
 
+
+
+
+
+
+
+
+const fallbackTabGroupIdMap = new Map();
+let nextFallbackTabGroupId = 1;
+global.getExtTabGroupIdForInternalTabGroupId = groupIdStr => {
+  const parsedTabId = /^(\d{13})-(\d{1,3})$/.exec(groupIdStr);
+  if (parsedTabId) {
+    const groupId = parsedTabId[1] * 1000 + parseInt(parsedTabId[2], 10);
+    if (Number.isSafeInteger(groupId)) {
+      return groupId;
+    }
+  }
+  
+  let fallbackGroupId = fallbackTabGroupIdMap.get(groupIdStr);
+  if (!fallbackGroupId) {
+    fallbackGroupId = nextFallbackTabGroupId++;
+    fallbackTabGroupIdMap.set(groupIdStr, fallbackGroupId);
+  }
+  return fallbackGroupId;
+};
+
+
+
+
+
 global.TabContext = class extends EventEmitter {
   
 
@@ -876,6 +906,11 @@ class Tab extends TabBase {
   get successorTabId() {
     const { successor } = this.nativeTab;
     return successor ? tabTracker.getId(successor) : -1;
+  }
+
+  get groupId() {
+    const { group } = this.nativeTab;
+    return group ? getExtTabGroupIdForInternalTabGroupId(group.id) : -1;
   }
 
   
