@@ -3946,8 +3946,8 @@
           this.moveTabToGroup(tab, tabGroup);
         }
       } else if (
-        this.isTab(itemAfter) &&
-        itemAfter?.group?.tabs[0] == itemAfter
+        (this.isTab(itemAfter) && itemAfter.group?.tabs[0] == itemAfter) ||
+        this.isTabGroupLabel(itemAfter)
       ) {
         
         
