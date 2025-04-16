@@ -4054,6 +4054,8 @@ pref("extensions.formautofill.heuristics.detectDynamicFormChanges", true);
 pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges", true);
 
 pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges.timeout", 1000);
+pref("extensions.formautofill.heuristics.refillOnSiteClearingFields", true);
+pref("extensions.formautofill.heuristics.refillOnSiteClearingFields.timeout", 500);
 
 pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
 
