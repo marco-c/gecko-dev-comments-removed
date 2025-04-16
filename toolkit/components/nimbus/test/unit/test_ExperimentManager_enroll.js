@@ -21,9 +21,6 @@ const { NimbusTelemetry } = ChromeUtils.importESModule(
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
-const { TelemetryEvents } = ChromeUtils.importESModule(
-  "resource://normandy/lib/TelemetryEvents.sys.mjs"
-);
 const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
   "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
 );
@@ -234,7 +231,6 @@ add_task(async function test_setRolloutActive_recordEnrollment_called() {
     isRollout: true,
   };
   sandbox.spy(TelemetryEnvironment, "setExperimentActive");
-  sandbox.spy(TelemetryEvents, "sendEvent");
   sandbox.spy(NimbusTelemetry, "setExperimentActive");
   sandbox.spy(NimbusTelemetry, "recordEnrollment");
 
@@ -251,11 +247,17 @@ add_task(async function test_setRolloutActive_recordEnrollment_called() {
   );
 
   
-  var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue("events");
   Assert.equal(
+    Glean.nimbusEvents.enrollment.testGetValue("events"),
     undefined,
-    enrollmentEvents,
     "no Glean enrollment events before enrollment"
+  );
+
+  
+  Assert.equal(
+    Glean.normandy.enrollNimbusExperiment.testGetValue("events"),
+    undefined,
+    "no Glean normandy enrollment events before enrollment"
   );
 
   let result = await manager.enroll(rolloutRecipe, "test");
@@ -282,21 +284,19 @@ add_task(async function test_setRolloutActive_recordEnrollment_called() {
     true,
     "should call sendEnrollmentTelemetry after an enrollment"
   );
-  Assert.ok(
-    TelemetryEvents.sendEvent.calledOnce,
-    "Should send out enrollment telemetry"
-  );
-  Assert.ok(
-    TelemetryEvents.sendEvent.calledWith(
-      "enroll",
-      sinon.match.string,
-      enrollment.slug,
+
+  
+  Assert.deepEqual(
+    Glean.normandy.enrollNimbusExperiment
+      .testGetValue("events")
+      .map(ev => ev.extra),
+    [
       {
-        experimentType: "rollout",
+        value: enrollment.slug,
         branch: enrollment.branch.slug,
-      }
-    ),
-    "Should send telemetry with expected values"
+        experimentType: enrollment.experimentType,
+      },
+    ]
   );
 
   
@@ -307,24 +307,15 @@ add_task(async function test_setRolloutActive_recordEnrollment_called() {
   );
 
   
-  enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue("events");
-  
-  Assert.equal(1, enrollmentEvents.length);
-  
-  Assert.equal(
-    enrollment.slug,
-    enrollmentEvents[0].extra.experiment,
-    "Glean.nimbusEvents.enrollment recorded with correct experiment slug"
-  );
-  Assert.equal(
-    enrollment.branch.slug,
-    enrollmentEvents[0].extra.branch,
-    "Glean.nimbusEvents.enrollment recorded with correct branch slug"
-  );
-  Assert.equal(
-    enrollment.experimentType,
-    enrollmentEvents[0].extra.experiment_type,
-    "Glean.nimbusEvents.enrollment recorded with correct experiment type"
+  Assert.deepEqual(
+    Glean.nimbusEvents.enrollment.testGetValue("events").map(ev => ev.extra),
+    [
+      {
+        experiment: enrollment.slug,
+        branch: enrollment.branch.slug,
+        experiment_type: enrollment.experimentType,
+      },
+    ]
   );
 
   manager.unenroll("rollout");
