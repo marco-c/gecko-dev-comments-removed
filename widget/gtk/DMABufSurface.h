@@ -253,7 +253,6 @@ class DMABufSurface {
   
   int mBufferPlaneCount = 0;
   RefPtr<mozilla::gfx::FileHandleWrapper> mDmabufFds[DMABUF_BUFFER_PLANES];
-  int32_t mDrmFormats[DMABUF_BUFFER_PLANES];
   int32_t mStrides[DMABUF_BUFFER_PLANES];
   int32_t mOffsets[DMABUF_BUFFER_PLANES];
 
@@ -464,6 +463,8 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   
   int mWidthAligned[DMABUF_BUFFER_PLANES];
   int mHeightAligned[DMABUF_BUFFER_PLANES];
+  
+  int32_t mDrmFormats[DMABUF_BUFFER_PLANES];
   EGLImageKHR mEGLImage[DMABUF_BUFFER_PLANES];
   GLuint mTexture[DMABUF_BUFFER_PLANES];
   uint64_t mBufferModifiers[DMABUF_BUFFER_PLANES];
