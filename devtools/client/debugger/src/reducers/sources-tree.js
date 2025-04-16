@@ -58,6 +58,9 @@ export function initialSourcesTreeState({ isWebExtension } = {}) {
     projectDirectoryRootName: prefs.projectDirectoryRootName,
 
     
+    projectDirectoryRootFullName: prefs.projectDirectoryRootFullName,
+
+    
     
     isWebExtension,
 
@@ -209,9 +212,10 @@ export default function update(state = initialSourcesTreeState(), action) {
     case "SET_SELECTED_LOCATION":
       return updateSelectedLocation(state, action.location);
 
-    case "SET_PROJECT_DIRECTORY_ROOT":
-      const { uniquePath, name } = action;
-      return updateProjectDirectoryRoot(state, uniquePath, name);
+    case "SET_PROJECT_DIRECTORY_ROOT": {
+      const { uniquePath, name, fullName } = action;
+      return updateProjectDirectoryRoot(state, uniquePath, name, fullName);
+    }
 
     case "BLACKBOX_WHOLE_SOURCES":
     case "BLACKBOX_SOURCE_RANGES": {
@@ -289,18 +293,20 @@ function updateExpanded(state, action) {
 
 
 
-function updateProjectDirectoryRoot(state, uniquePath, name) {
+function updateProjectDirectoryRoot(state, uniquePath, name, fullName) {
   
   
   if (!uniquePath || uniquePath.startsWith("top-level")) {
     prefs.projectDirectoryRoot = uniquePath;
     prefs.projectDirectoryRootName = name;
+    prefs.projectDirectoryRootFullName = fullName;
   }
 
   return {
     ...state,
     projectDirectoryRoot: uniquePath,
     projectDirectoryRootName: name,
+    projectDirectoryRootFullName: fullName,
   };
 }
 
@@ -352,14 +358,14 @@ function addSource(threadItems, source, sourceActor) {
   
   
   const { displayURL } = source;
-  const { group } = displayURL;
+  const { group, origin } = displayURL;
 
   let groupItem = threadItem.children.find(item => {
     return item.groupName == group;
   });
 
   if (!groupItem) {
-    groupItem = createGroupTreeItem(group, threadItem, source);
+    groupItem = createGroupTreeItem(group, origin, threadItem, source);
     
     
     threadItem.children = [...threadItem.children];
@@ -370,7 +376,12 @@ function addSource(threadItems, source, sourceActor) {
   
   const { path } = displayURL;
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const directoryItem = addOrGetParentDirectory(groupItem, parentPath);
+  const parentUrl = source.url.substring(0, source.url.lastIndexOf("/"));
+  const directoryItem = addOrGetParentDirectory(
+    groupItem,
+    parentPath,
+    parentUrl
+  );
 
   
   
@@ -513,7 +524,9 @@ export function sortThreads(a, b) {
 
 
 
-function addOrGetParentDirectory(groupItem, path) {
+
+
+function addOrGetParentDirectory(groupItem, path, url) {
   
   if (!path) {
     return groupItem;
@@ -528,10 +541,15 @@ function addOrGetParentDirectory(groupItem, path) {
   
   
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const parentDirectory = addOrGetParentDirectory(groupItem, parentPath);
+  const parentUrl = url.substring(0, url.lastIndexOf("/"));
+  const parentDirectory = addOrGetParentDirectory(
+    groupItem,
+    parentPath,
+    parentUrl
+  );
 
   
-  const directory = createDirectoryTreeItem(path, parentDirectory);
+  const directory = createDirectoryTreeItem(path, url, parentDirectory);
   
   
   parentDirectory.children = [...parentDirectory.children];
@@ -585,7 +603,7 @@ function createThreadTreeItem(thread) {
     threadActorID: thread,
   };
 }
-function createGroupTreeItem(groupName, parent, source) {
+function createGroupTreeItem(groupName, origin, parent, source) {
   return {
     ...createBaseTreeItem({
       type: "group",
@@ -596,6 +614,7 @@ function createGroupTreeItem(groupName, parent, source) {
     }),
 
     groupName,
+    url: origin,
 
     
     
@@ -608,7 +627,7 @@ function createGroupTreeItem(groupName, parent, source) {
     _allGroupDirectoryItems: [],
   };
 }
-function createDirectoryTreeItem(path, parent) {
+function createDirectoryTreeItem(path, url, parent) {
   
   const pathSeparator = parent.type == "directory" ? "/" : "|";
 
@@ -635,6 +654,7 @@ function createDirectoryTreeItem(path, parent) {
     
     
     path,
+    url,
   };
 }
 function createSourceTreeItem(source, sourceActor, parent) {

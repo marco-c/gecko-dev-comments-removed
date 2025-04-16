@@ -82,6 +82,10 @@ export function getProjectDirectoryRootName(state) {
   return state.sourcesTree.projectDirectoryRootName;
 }
 
+export function getProjectDirectoryRootFullName(state) {
+  return state.sourcesTree.projectDirectoryRootFullName;
+}
+
 
 
 
