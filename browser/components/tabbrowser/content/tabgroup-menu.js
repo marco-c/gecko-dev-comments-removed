@@ -7,6 +7,9 @@
 
 
 {
+  const { TabMetrics } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs"
+  );
   const { TabStateFlusher } = ChromeUtils.importESModule(
     "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
   );
@@ -445,7 +448,12 @@
       document
         .getElementById("tabGroupEditor_deleteGroup")
         .addEventListener("command", () => {
-          gBrowser.removeTabGroup(this.activeGroup);
+          gBrowser.removeTabGroup(
+            this.activeGroup,
+            TabMetrics.userTriggeredContext(
+              TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+            )
+          );
         });
 
       this.panel.addEventListener("popupshown", this);

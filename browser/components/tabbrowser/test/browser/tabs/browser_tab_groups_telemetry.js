@@ -358,39 +358,6 @@ async function closeTabsMenu() {
 
 
 
-async function getContextMenu(triggerNode, contextMenuId) {
-  let nodeWindow = triggerNode.ownerGlobal;
-  triggerNode.scrollIntoView();
-  const contextMenu = nodeWindow.document.getElementById(contextMenuId);
-  const contextMenuShown = BrowserTestUtils.waitForPopupEvent(
-    contextMenu,
-    "shown"
-  );
-
-  EventUtils.synthesizeMouseAtCenter(
-    triggerNode,
-    { type: "contextmenu", button: 2 },
-    nodeWindow
-  );
-  await contextMenuShown;
-  return contextMenu;
-}
-
-
-
-
-
-async function closeContextMenu(contextMenu) {
-  let menuHidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
-  contextMenu.hidePopup();
-  await menuHidden;
-}
-
-
-
-
-
-
 
 async function makeTabGroup(name = "") {
   let tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
@@ -592,4 +559,67 @@ add_task(async function test_reopenSavedGroupTelemetry() {
   await doReopenTests(false);
   info("Perform reopen tests in vertical tabs mode");
   await doReopenTests(true);
+});
+
+add_task(async function test_tabContextMenu_addTabsToGroup() {
+  await resetTelemetry();
+
+  
+  
+  Services.fog.applyServerKnobsConfig(
+    JSON.stringify({
+      metrics_enabled: {
+        "tabgroup.add_tab": true,
+      },
+    })
+  );
+
+  info("set up a tab group to test with");
+  let group = await makeTabGroup();
+  let groupId = group.id;
+
+  info("create 8 ungrouped tabs to test with");
+  let moreTabs = Array.from({ length: 8 }).map(() =>
+    BrowserTestUtils.addTab(win.gBrowser, "https://example.com")
+  );
+
+  info("select first ungrouped tab and multi-select three more tabs");
+  win.gBrowser.selectedTab = moreTabs[0];
+  moreTabs.slice(1, 4).forEach(tab => win.gBrowser.addToMultiSelectedTabs(tab));
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return win.gBrowser.multiSelectedTabsCount == 4;
+  }, "Wait for Tabbrowser to update the multiselected tab state");
+
+  let menu = await getContextMenu(win.gBrowser.selectedTab, "tabContextMenu");
+  let moveTabToGroupItem = win.document.getElementById(
+    "context_moveTabToGroup"
+  );
+  let tabGroupButton = moveTabToGroupItem.querySelector(
+    `[tab-group-id="${groupId}"]`
+  );
+  tabGroupButton.click();
+  await closeContextMenu(menu);
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return Glean.tabgroup.addTab.testGetValue() !== null;
+  }, "Wait for a Glean event to be recorded");
+
+  let [addTabEvent] = Glean.tabgroup.addTab.testGetValue();
+  Assert.deepEqual(
+    addTabEvent.extra,
+    {
+      source: "tab_menu",
+      tabs: "4",
+      layout: "horizontal",
+    },
+    "should have recorded the correct event metadata"
+  );
+
+  for (let tab of moreTabs) {
+    BrowserTestUtils.removeTab(tab);
+  }
+  await removeTabGroup(group);
+
+  await resetTelemetry();
 });

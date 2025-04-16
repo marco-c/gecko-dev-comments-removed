@@ -110,8 +110,8 @@
         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
-        TabGroupMetrics:
-          "moz-src:///browser/components/tabbrowser/TabGroupMetrics.sys.mjs",
+        TabMetrics:
+          "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
         TabStateFlusher:
           "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
         UrlbarProviderOpenTabs:
@@ -3042,7 +3042,7 @@
       group,
       options = {
         isUserTriggered: false,
-        telemetrySource: this.TabGroupMetrics.METRIC_SOURCE.UNKNOWN,
+        telemetrySource: this.TabMetrics.METRIC_SOURCE.UNKNOWN,
       }
     ) {
       if (this.tabGroupMenu.panel.state != "closed") {
@@ -3943,7 +3943,7 @@
           
           
           
-          this.moveTabToGroup(tab, tabGroup);
+          tabGroup.appendChild(tab);
         }
       } else if (
         (this.isTab(itemAfter) && itemAfter.group?.tabs[0] == itemAfter) ||
@@ -5926,7 +5926,25 @@
 
 
 
-    moveTabTo(aTab, { elementIndex, tabIndex, forceUngrouped = false } = {}) {
+
+
+
+
+
+
+
+
+
+    moveTabTo(
+      aTab,
+      {
+        elementIndex,
+        tabIndex,
+        forceUngrouped = false,
+        isUserTriggered = false,
+        telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN,
+      } = {}
+    ) {
       if (typeof elementIndex == "number") {
         tabIndex = this.#elementIndexToTabIndex(elementIndex);
       }
@@ -5954,49 +5972,21 @@
         aTab = aTab.group;
       }
 
-      this.#handleTabMove(aTab, () => {
-        let neighbor = this.tabs[tabIndex];
-        if (forceUngrouped && neighbor.group) {
-          neighbor = neighbor.group;
-        }
-        if (neighbor && tabIndex > aTab._tPos) {
-          neighbor.after(aTab);
-        } else {
-          this.tabContainer.insertBefore(aTab, neighbor);
-        }
-      });
-    }
-
-    
-
-
-
-    moveTabBefore(tab, targetElement) {
-      this.#moveTabNextTo(tab, targetElement, true);
-    }
-
-    
-
-
-
-    moveTabsBefore(tabs, targetElement) {
-      this.#moveTabsNextTo(tabs, targetElement, true);
-    }
-
-    
-
-
-
-    moveTabAfter(tab, targetElement) {
-      this.#moveTabNextTo(tab, targetElement, false);
-    }
-
-    
-
-
-
-    moveTabsAfter(tabs, targetElement) {
-      this.#moveTabsNextTo(tabs, targetElement, false);
+      this.#handleTabMove(
+        aTab,
+        () => {
+          let neighbor = this.tabs[tabIndex];
+          if (forceUngrouped && neighbor.group) {
+            neighbor = neighbor.group;
+          }
+          if (neighbor && tabIndex > aTab._tPos) {
+            neighbor.after(aTab);
+          } else {
+            this.tabContainer.insertBefore(aTab, neighbor);
+          }
+        },
+        { isUserTriggered, telemetrySource }
+      );
     }
 
     
@@ -6004,9 +5994,46 @@
 
 
 
+    moveTabBefore(tab, targetElement, metricsContext) {
+      this.#moveTabNextTo(tab, targetElement, true, metricsContext);
+    }
+
+    
 
 
-    #moveTabNextTo(tab, targetElement, moveBefore = false) {
+
+
+    moveTabsBefore(tabs, targetElement, metricsContext) {
+      this.#moveTabsNextTo(tabs, targetElement, true, metricsContext);
+    }
+
+    
+
+
+
+
+    moveTabAfter(tab, targetElement, metricsContext) {
+      this.#moveTabNextTo(tab, targetElement, false, metricsContext);
+    }
+
+    
+
+
+
+
+    moveTabsAfter(tabs, targetElement, metricsContext) {
+      this.#moveTabsNextTo(tabs, targetElement, false, metricsContext);
+    }
+
+    
+
+
+
+
+
+
+
+    #moveTabNextTo(tab, targetElement, moveBefore = false, metricsContext) {
       if (this.isTabGroupLabel(targetElement)) {
         targetElement = targetElement.group;
         if (!moveBefore) {
@@ -6037,15 +6064,19 @@
         return this.tabContainer;
       };
 
-      this.#handleTabMove(tab, () => {
-        if (moveBefore) {
-          getContainer().insertBefore(tab, targetElement);
-        } else if (targetElement) {
-          targetElement.after(tab);
-        } else {
-          getContainer().appendChild(tab);
-        }
-      });
+      this.#handleTabMove(
+        tab,
+        () => {
+          if (moveBefore) {
+            getContainer().insertBefore(tab, targetElement);
+          } else if (targetElement) {
+            targetElement.after(tab);
+          } else {
+            getContainer().appendChild(tab);
+          }
+        },
+        metricsContext
+      );
     }
 
     
@@ -6053,14 +6084,21 @@
 
 
 
-    #moveTabsNextTo(tabs, targetElement, moveBefore = false) {
-      this.#moveTabNextTo(tabs[0], targetElement, moveBefore);
+
+    #moveTabsNextTo(tabs, targetElement, moveBefore = false, metricsContext) {
+      this.#moveTabNextTo(tabs[0], targetElement, moveBefore, metricsContext);
       for (let i = 1; i < tabs.length; i++) {
-        this.#moveTabNextTo(tabs[i], tabs[i - 1]);
+        this.#moveTabNextTo(tabs[i], tabs[i - 1], false, metricsContext);
       }
     }
 
-    moveTabToGroup(aTab, aGroup) {
+    
+
+
+
+
+
+    moveTabToGroup(aTab, aGroup, metricsContext) {
       if (aTab.pinned) {
         return;
       }
@@ -6069,7 +6107,7 @@
       }
 
       aGroup.collapsed = false;
-      this.#handleTabMove(aTab, () => aGroup.appendChild(aTab));
+      this.#handleTabMove(aTab, () => aGroup.appendChild(aTab), metricsContext);
       this.removeFromMultiSelectedTabs(aTab);
       this.tabContainer._notifyBackgroundTab(aTab);
     }
@@ -6079,9 +6117,70 @@
 
 
 
-    #handleTabMove(aTab, moveActionCallback) {
+
+
+    
+
+
+
+    #getTabMoveState(tab) {
+      if (!this.isTab(tab)) {
+        return undefined;
+      }
+
+      let state = {
+        tabIndex: tab._tPos,
+      };
+      if (tab.visible) {
+        state.elementIndex = tab.elementIndex;
+      }
+      if (tab.group) {
+        state.tabGroupId = tab.group.id;
+      }
+      return state;
+    }
+
+    
+
+
+
+
+
+    #notifyOnTabMove(tab, previousTabState, currentTabState, metricsContext) {
+      if (!this.isTab(tab) || !previousTabState || !currentTabState) {
+        return;
+      }
+
+      let changedPosition =
+        previousTabState.tabIndex != currentTabState.tabIndex;
+      let changedTabGroup =
+        previousTabState.tabGroupId != currentTabState.tabGroupId;
+
+      if (changedPosition || changedTabGroup) {
+        tab.dispatchEvent(
+          new CustomEvent("TabMove", {
+            bubbles: true,
+            detail: {
+              previousTabState,
+              currentTabState,
+              isUserTriggered: metricsContext?.isUserTriggered ?? false,
+              telemetrySource:
+                metricsContext?.telemetrySource ??
+                this.TabMetrics.METRIC_SOURCE.UNKNOWN,
+            },
+          })
+        );
+      }
+    }
+
+    
+
+
+
+
+    #handleTabMove(aTab, moveActionCallback, metricsContext) {
       let wasFocused = document.activeElement == this.selectedTab;
-      let oldPosition = this.isTab(aTab) && aTab._tPos;
+      let previousTabState = this.#getTabMoveState(aTab);
 
       moveActionCallback();
 
@@ -6104,13 +6203,15 @@
       if (aTab.pinned) {
         this.tabContainer._positionPinnedTabs();
       }
-      
-      
-      if (this.isTab(aTab) && oldPosition != aTab._tPos) {
-        let evt = document.createEvent("UIEvents");
-        evt.initUIEvent("TabMove", true, false, window, oldPosition);
-        aTab.dispatchEvent(evt);
-      }
+
+      let currentTabState = this.#getTabMoveState(aTab);
+
+      this.#notifyOnTabMove(
+        aTab,
+        previousTabState,
+        currentTabState,
+        metricsContext
+      );
     }
 
     
@@ -9056,8 +9157,16 @@ var TabContextMenu = {
     gTabsPanel.hideAllTabsPanel();
   },
 
+  
+
+
   moveTabsToGroup(group) {
-    group.addTabs(this.contextTabs);
+    group.addTabs(
+      this.contextTabs,
+      gBrowser.TabMetrics.userTriggeredContext(
+        gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
+      )
+    );
     group.ownerGlobal.focus();
   },
 
