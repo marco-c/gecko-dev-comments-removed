@@ -127,11 +127,6 @@
       let labelContainer = this.querySelector(".tab-label-container");
       labelContainer.addEventListener("overflow", this);
       labelContainer.addEventListener("underflow", this);
-
-      
-      
-      
-      this.setAttribute("aria-level", 1);
     }
 
     #elementIndex;
