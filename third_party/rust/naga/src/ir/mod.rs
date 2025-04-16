@@ -636,6 +636,15 @@ pub struct Type {
 }
 
 
+
+
+
+
+
+
+
+
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -679,11 +688,14 @@ pub enum TypeInner {
     
     
     
+    
+    
     Pointer {
         base: Handle<Type>,
         space: AddressSpace,
     },
 
+    
     
     
     
@@ -733,6 +745,12 @@ pub enum TypeInner {
         stride: u32,
     },
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1130,6 +1148,8 @@ pub enum MathFunction {
     Pow,
     
     Dot,
+    Dot4I8Packed,
+    Dot4U8Packed,
     Outer,
     Cross,
     Distance,

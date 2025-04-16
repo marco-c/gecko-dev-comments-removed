@@ -1470,12 +1470,14 @@ impl<W: Write> Writer<W> {
 
     
     
+    
+    
     fn put_dot_product(
         &mut self,
         arg: Handle<crate::Expression>,
         arg1: Handle<crate::Expression>,
         size: usize,
-        context: &ExpressionContext,
+        extractor: impl Fn(&mut Self, Handle<crate::Expression>, usize) -> BackendResult,
     ) -> BackendResult {
         
         
@@ -1483,22 +1485,12 @@ impl<W: Write> Writer<W> {
 
         
         for index in 0..size {
-            let component = back::COMPONENTS[index];
             
             
             write!(self.out, " + ")?;
-            
-            
-            
-            self.put_expression(arg, context, true)?;
-            
-            write!(self.out, ".{component} * ")?;
-            
-            
-            
-            self.put_expression(arg1, context, true)?;
-            
-            write!(self.out, ".{component}")?;
+            extractor(self, arg, index)?;
+            write!(self.out, " * ")?;
+            extractor(self, arg1, index)?;
         }
 
         write!(self.out, ")")?;
@@ -2194,12 +2186,48 @@ impl<W: Write> Writer<W> {
                             ..
                         } => "dot",
                         crate::TypeInner::Vector { size, .. } => {
-                            return self.put_dot_product(arg, arg1.unwrap(), size as usize, context)
+                            return self.put_dot_product(
+                                arg,
+                                arg1.unwrap(),
+                                size as usize,
+                                |writer, arg, index| {
+                                    
+                                    
+                                    
+                                    writer.put_expression(arg, context, true)?;
+                                    
+                                    write!(writer.out, ".{}", back::COMPONENTS[index])?;
+                                    Ok(())
+                                },
+                            );
                         }
                         _ => unreachable!(
                             "Correct TypeInner for dot product should be already validated"
                         ),
                     },
+                    fun @ (Mf::Dot4I8Packed | Mf::Dot4U8Packed) => {
+                        let conversion = match fun {
+                            Mf::Dot4I8Packed => "int",
+                            Mf::Dot4U8Packed => "",
+                            _ => unreachable!(),
+                        };
+
+                        return self.put_dot_product(
+                            arg,
+                            arg1.unwrap(),
+                            4,
+                            |writer, arg, index| {
+                                write!(writer.out, "({}(", conversion)?;
+                                writer.put_expression(arg, context, true)?;
+                                if index == 3 {
+                                    write!(writer.out, ") >> 24)")?;
+                                } else {
+                                    write!(writer.out, ") << {} >> 24)", (3 - index) * 8)?;
+                                }
+                                Ok(())
+                            },
+                        );
+                    }
                     Mf::Outer => return Err(Error::UnsupportedCall(format!("{fun:?}"))),
                     Mf::Cross => "cross",
                     Mf::Distance => "distance",
@@ -3176,6 +3204,10 @@ impl<W: Write> Writer<W> {
                                 _ => {}
                             }
                         }
+                    }
+                    crate::MathFunction::Dot4U8Packed | crate::MathFunction::Dot4I8Packed => {
+                        self.need_bake_expressions.insert(arg);
+                        self.need_bake_expressions.insert(arg1.unwrap());
                     }
                     crate::MathFunction::FirstLeadingBit
                     | crate::MathFunction::Pack4xI8
@@ -5346,8 +5378,21 @@ template <typename A>
                             let level = back::Level(1);
                             match scalar.kind {
                                 crate::ScalarKind::Sint => {
-                                    let min = -1i64 << (scalar.width as u32 * 8 - 1);
-                                    writeln!(self.out, "{level}return lhs / metal::select(rhs, 1, (lhs == {min} & rhs == -1) | (rhs == 0));")?
+                                    let min_val = match scalar.width {
+                                        4 => crate::Literal::I32(i32::MIN),
+                                        8 => crate::Literal::I64(i64::MIN),
+                                        _ => {
+                                            return Err(Error::GenericValidation(format!(
+                                                "Unexpected width for scalar {scalar:?}"
+                                            )));
+                                        }
+                                    };
+                                    write!(
+                                        self.out,
+                                        "{level}return lhs / metal::select(rhs, 1, (lhs == "
+                                    )?;
+                                    self.put_literal(min_val)?;
+                                    writeln!(self.out, " & rhs == -1) | (rhs == 0));")?
                                 }
                                 crate::ScalarKind::Uint => writeln!(
                                     self.out,
@@ -5415,8 +5460,18 @@ template <typename A>
                             let level = back::Level(1);
                             match scalar.kind {
                                 crate::ScalarKind::Sint => {
-                                    let min = -1i64 << (scalar.width as u32 * 8 - 1);
-                                    writeln!(self.out, "{level}{rhs_type_name} divisor = metal::select(rhs, 1, (lhs == {min} & rhs == -1) | (rhs == 0));")?;
+                                    let min_val = match scalar.width {
+                                        4 => crate::Literal::I32(i32::MIN),
+                                        8 => crate::Literal::I64(i64::MIN),
+                                        _ => {
+                                            return Err(Error::GenericValidation(format!(
+                                                "Unexpected width for scalar {scalar:?}"
+                                            )));
+                                        }
+                                    };
+                                    write!(self.out, "{level}{rhs_type_name} divisor = metal::select(rhs, 1, (lhs == ")?;
+                                    self.put_literal(min_val)?;
+                                    writeln!(self.out, " & rhs == -1) | (rhs == 0));")?;
                                     writeln!(
                                         self.out,
                                         "{level}return lhs - (lhs / divisor) * divisor;"

@@ -46,7 +46,7 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
         }
 
         
-        if expr_inner.equivalent(goal_inner, types) {
+        if self.module.compare_types(expr_resolution, goal_ty) {
             return Ok(expr);
         }
 

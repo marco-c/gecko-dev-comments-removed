@@ -4,6 +4,8 @@
 
 
 
+use crate::ir;
+
 use super::TypeResolution;
 
 impl crate::ScalarKind {
@@ -263,13 +265,30 @@ impl crate::TypeInner {
     
     
     
-    pub fn equivalent(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn non_struct_equivalent(
         &self,
-        rhs: &crate::TypeInner,
+        rhs: &ir::TypeInner,
         types: &crate::UniqueArena<crate::Type>,
     ) -> bool {
         let left = self.canonical_form(types);
         let right = rhs.canonical_form(types);
+
+        let left_struct = matches!(*self, ir::TypeInner::Struct { .. });
+        let right_struct = matches!(*rhs, ir::TypeInner::Struct { .. });
+
+        assert!(!left_struct || !right_struct);
+
         left.as_ref().unwrap_or(self) == right.as_ref().unwrap_or(rhs)
     }
 

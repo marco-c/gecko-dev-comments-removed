@@ -22,6 +22,7 @@ use crate::{FastIndexSet, Span};
 
 
 
+
 #[derive(Clone)]
 pub struct UniqueArena<T> {
     set: FastIndexSet<T>,

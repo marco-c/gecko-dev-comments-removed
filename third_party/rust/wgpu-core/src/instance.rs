@@ -408,7 +408,7 @@ impl Instance {
         {
             
             
-            profiling::scope!("enumerating", &*format!("{:?}", _backend));
+            profiling::scope!("enumerating", &*alloc::format!("{:?}", _backend));
 
             let hal_adapters = unsafe { instance.enumerate_adapters(None) };
             for raw in hal_adapters {

@@ -767,7 +767,8 @@ pub struct Writer {
     
     temp_list: Vec<Word>,
 
-    ray_get_intersection_function: Option<Word>,
+    ray_get_committed_intersection_function: Option<Word>,
+    ray_get_candidate_intersection_function: Option<Word>,
 }
 
 bitflags::bitflags! {
