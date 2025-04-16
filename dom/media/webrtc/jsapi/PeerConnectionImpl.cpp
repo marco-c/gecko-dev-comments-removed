@@ -751,8 +751,8 @@ class ConfigureCodec {
           
           videoCodec.mEnabled = mH264Enabled;
 
-          if (videoCodec.mPacketizationMode == 0 && !mSoftwareH264Enabled) {
-            
+          if (videoCodec.mPacketizationMode == 0 &&
+              !PeerConnectionCtx::GetInstance()->gmpHasH264()) {
             
             videoCodec.mEnabled = false;
           }
