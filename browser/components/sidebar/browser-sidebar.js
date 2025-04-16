@@ -1753,7 +1753,7 @@ var SidebarController = {
 
 
 
-  hide({ triggerNode, dismissPanel = true } = {}) {
+  hide({ triggerNode, dismissPanel = this.sidebarRevampEnabled } = {}) {
     if (!this.isOpen) {
       return;
     }
