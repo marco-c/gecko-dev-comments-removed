@@ -116,7 +116,8 @@ extern "C" {
 
 
 
-#if (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
+#if !defined(MOZ_PROFILING) && \
+    (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
      defined(_MSC_VER)) &&                                             \
     !defined(LIBYUV_ENABLE_ROWWIN)
 
@@ -124,7 +125,8 @@ extern "C" {
 #define HAS_I422ALPHATOARGBROW_SSSE3
 #define HAS_I444ALPHATOARGBROW_SSSE3
 #endif
-#if (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
+#if !defined(MOZ_PROFILING) && \
+    (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
      defined(_MSC_VER)) &&                                             \
     !defined(LIBYUV_ENABLE_ROWWIN)
 
