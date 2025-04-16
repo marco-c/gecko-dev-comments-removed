@@ -2249,11 +2249,9 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
       }
     }
 
-    
-    
     policies.AppendElement(
         ContentSecurityPolicy(policyString, reportOnly, deliveredViaMetaTag,
-                              hasRequireTrustedTypesForDirective, {}));
+                              hasRequireTrustedTypesForDirective));
   }
 
   
@@ -2327,14 +2325,10 @@ void nsCSPContext::SerializePolicies(
   for (auto* policy : mPolicies) {
     nsAutoString policyString;
     policy->toString(policyString);
-    nsTArray<nsString> trustedTypesDirectiveExpressions;
-    policy->getTrustedTypesDirectiveExpressions(
-        trustedTypesDirectiveExpressions);
     aPolicies.AppendElement(
         ContentSecurityPolicy(policyString, policy->getReportOnlyFlag(),
                               policy->getDeliveredViaMetaTagFlag(),
-                              policy->hasRequireTrustedTypesForDirective(),
-                              trustedTypesDirectiveExpressions));
+                              policy->hasRequireTrustedTypesForDirective()));
   }
 
   aPolicies.AppendElements(mIPCPolicies);

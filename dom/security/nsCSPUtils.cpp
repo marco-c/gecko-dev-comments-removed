@@ -1382,17 +1382,6 @@ bool nsCSPDirective::allowsAllInlineBehavior(CSPDirective aDir) const {
   return allowAll;
 }
 
-void nsCSPDirective::getTrustedTypesDirectiveExpressions(
-    nsTArray<nsString>& outExpressions) const {
-  MOZ_ASSERT(mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE);
-  MOZ_ASSERT(outExpressions.IsEmpty());
-  for (uint32_t i = 0; i < mSrcs.Length(); i++) {
-    nsAutoString expression;
-    mSrcs[i]->toString(expression);
-    outExpressions.AppendElement(expression);
-  }
-}
-
 static constexpr auto kWildcard = u"*"_ns;
 
 bool nsCSPDirective::ShouldCreateViolationForNewTrustedTypesPolicy(
@@ -1427,48 +1416,6 @@ bool nsCSPDirective::ShouldCreateViolationForNewTrustedTypesPolicy(
   }
 
   return false;
-}
-
-bool nsCSPDirective::ShouldCreateViolationForNewTrustedTypesPolicy(
-    const nsTArray<nsString>& aTrustedTypesDirectiveExpressions,
-    const nsAString& aPolicyName,
-    const nsTArray<nsString>& aCreatedPolicyNames) {
-  MOZ_ASSERT(!aTrustedTypesDirectiveExpressions.IsEmpty());
-
-  bool allowDuplicates = false;
-  bool policyNameAllowed = false;
-  for (auto& expression : aTrustedTypesDirectiveExpressions) {
-    if (CSP_IsKeyword(expression, CSP_NONE)) {
-      MOZ_ASSERT(aTrustedTypesDirectiveExpressions.Length() == 1);
-      
-      
-      return true;
-    }
-    if (CSP_IsKeyword(expression, CSP_ALLOW_DUPLICATES)) {
-      
-      
-      if (policyNameAllowed) {
-        return false;
-      }
-      
-      
-      allowDuplicates = true;
-      continue;
-    }
-    if (expression.Equals(kWildcard) || expression.Equals(aPolicyName)) {
-      
-      
-      
-      if (allowDuplicates || !aCreatedPolicyNames.Contains(aPolicyName)) {
-        return false;
-      }
-      
-      
-      policyNameAllowed = true;
-    }
-  }
-  MOZ_ASSERT(!policyNameAllowed || !allowDuplicates);
-  return true;
 }
 
 void nsCSPDirective::toString(nsAString& outStr) const {
@@ -1938,16 +1885,6 @@ bool nsCSPPolicy::allowsAllInlineBehavior(CSPDirective aDir) const {
   }
 
   return directive->allowsAllInlineBehavior(aDir);
-}
-
-void nsCSPPolicy::getTrustedTypesDirectiveExpressions(
-    nsTArray<nsString>& outExpressions) const {
-  MOZ_ASSERT(outExpressions.IsEmpty());
-  for (const auto* directive : mDirectives) {
-    if (directive->equals(nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE)) {
-      directive->getTrustedTypesDirectiveExpressions(outExpressions);
-    }
-  }
 }
 
 bool nsCSPPolicy::ShouldCreateViolationForNewTrustedTypesPolicy(
