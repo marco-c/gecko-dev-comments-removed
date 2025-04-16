@@ -182,6 +182,15 @@ class StreamFilterParent final : public PStreamFilterParent,
   
   bool mDisconnectedByOnStartRequest = false;
 
+  
+  
+  
+  
+  
+  
+  
+  bool mDisconnectedByFinishDisconnect = false;
+
   bool mBeforeOnStartRequest = true;
 
   nsCOMPtr<nsISupports> mContext;
