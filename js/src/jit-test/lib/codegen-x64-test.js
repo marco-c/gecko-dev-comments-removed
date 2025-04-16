@@ -37,7 +37,11 @@ var RIPR = `0x${HEXES}`;
 var RIPRADDR = `${HEX}{2} ${HEX}{2} ${HEX}{2} ${HEX}{2}`;
 
 
-var x64_prefix = `48 89 e5                  mov %rsp, %rbp`
+
+var x64_prefix = `
+48 89 e5                  mov %rsp, %rbp(
+4c 89 75 .0               movq %r14, (0x10|0x30)\\(%rbp\\))?
+`
 
 
 var x64_suffix = `5d                        pop %rbp`;

@@ -1,5 +1,7 @@
 
 
+setJitCompilerOption("jit.full-debug-checks", 0);
+
 codegenTestARM64_adhoc(`
   (func $testImp
     (import "wasm:js-string" "test")

@@ -63,27 +63,39 @@ const requiredArchs = ["x64", "x86", "arm64"];
 
 const prefixAndSuffix =
       {x64: {
-           prefix: `48 89 e5        mov %rsp, %rbp`,
+           
+           
+           prefix: `48 89 e5        mov %rsp, %rbp(
+                    4c 89 75 .0     movq %r14, (0x10|0x30)\\(%rbp\\))?`,
            suffix: `5d              pop %rbp`
        },
        x86: {
            
            
            
+           
+           
            prefix: `8b ec           mov %esp, %ebp(
+                    89 75 08        movl %esi, 0x08\\(%rbp\\))?(
                     b. ef be ad de  mov \\$0xDEADBEEF, %e.x)?`,
            
            suffix: `5d              pop %.bp`
        },
        arm64: {
+           
+           
            prefix: `910003fd        mov x29, sp
-                    910003fc        mov x28, sp`,
+                    910003fc        mov x28, sp(
+                    f9000bb7        str x23, \\[x29, #16\\])?`,
            suffix: `f94007fe        ldr x30, \\[sp, #8\\]
                     f94003fd        ldr x29, \\[sp\\]`
        },
        arm: {
+           
+           
            prefix: `e52db004        str fp, \\[sp, #-4\\]!
-                    e1a0b00d        mov fp, sp`,
+                    e1a0b00d        mov fp, sp(
+                    e58b9008        str r9, \\[fp, #\\+8\\])?`,
            suffix: `e49db004        ldr fp, \\[sp\\], #\\+4`
        }
       };
