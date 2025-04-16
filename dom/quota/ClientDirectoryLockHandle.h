@@ -55,7 +55,6 @@ class ClientDirectoryLock;
 
 
 
-
 class ClientDirectoryLockHandle final {
  public:
   ClientDirectoryLockHandle();

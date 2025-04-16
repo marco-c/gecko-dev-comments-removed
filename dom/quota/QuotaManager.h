@@ -73,6 +73,7 @@ class ClearRequestBase;
 class ClientStorageScope;
 class ClientUsageArray;
 class ClientDirectoryLock;
+class ClientDirectoryLockHandle;
 class DirectoryLockImpl;
 class GroupInfo;
 class GroupInfoPair;
@@ -121,6 +122,9 @@ class QuotaManager final : public BackgroundThreadObject {
   class Observer;
 
  public:
+  using ClientDirectoryLockHandlePromise =
+      MozPromise<ClientDirectoryLockHandle, nsresult, true>;
+
   QuotaManager(const nsAString& aBasePath, const nsAString& aStorageName);
 
   NS_INLINE_DECL_REFCOUNTING(QuotaManager)
@@ -319,7 +323,13 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   
-  RefPtr<ClientDirectoryLockPromise> OpenClientDirectory(
+  
+  
+  
+  
+  
+  
+  RefPtr<ClientDirectoryLockHandlePromise> OpenClientDirectory(
       const ClientMetadata& aClientMetadata, bool aInitializeOrigins = true,
       bool aCreateIfNonExistent = true,
       Maybe<RefPtr<ClientDirectoryLock>&> aPendingDirectoryLockOut = Nothing());
