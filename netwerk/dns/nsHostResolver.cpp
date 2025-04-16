@@ -485,6 +485,12 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
   
   
+  if (StaticPrefs::network_dns_always_ai_canonname()) {
+    flags |= nsIDNSService::RESOLVE_CANONICAL_NAME;
+  }
+
+  
+  
   if (!net_IsValidDNSHost(host)) {
     return NS_ERROR_UNKNOWN_HOST;
   }

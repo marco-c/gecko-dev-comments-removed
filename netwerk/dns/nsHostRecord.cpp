@@ -17,10 +17,12 @@
 
 
 
-#define RES_KEY_FLAGS(_f)                   \
-  ((_f) &                                   \
-   (nsIDNSService::RESOLVE_CANONICAL_NAME | \
-    nsIDNSService::RESOLVE_DISABLE_TRR |    \
+#define RES_KEY_FLAGS(_f)                           \
+  ((_f) &                                           \
+   ((StaticPrefs::network_dns_always_ai_canonname() \
+         ? 0                                        \
+         : nsIDNSService::RESOLVE_CANONICAL_NAME) | \
+    nsIDNSService::RESOLVE_DISABLE_TRR |            \
     nsIDNSService::RESOLVE_TRR_MODE_MASK | nsIDNSService::RESOLVE_IP_HINT))
 
 #define IS_ADDR_TYPE(_type) ((_type) == nsIDNSService::RESOLVE_TYPE_DEFAULT)
