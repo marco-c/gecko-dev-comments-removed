@@ -129,6 +129,8 @@ class SVGViewportElement : public SVGGraphicsElement {
     return !GetParent() && IsInUncomposedDoc() && IsSVGElement(nsGkAtoms::svg);
   }
 
+  bool AreWidthAndHeightUnsetOrPositive() const;
+
   
 
 
