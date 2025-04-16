@@ -45,6 +45,14 @@ var gContentSecurityPolicy = null;
 const BASE_URL = `http://example.com`;
 const CSP_REPORT_PATH = "/csp-report.sjs";
 
+server.registerPathHandler(CSP_REPORT_PATH, (request, response) => {
+  
+  
+  
+  
+  response.setStatusLine(request.httpVersion, 204, "No Content");
+});
+
 
 
 
@@ -1000,10 +1008,6 @@ function awaitLoads(urlsPromise, origins) {
   });
 }
 
-function readUTF8InputStream(stream) {
-  let buffer = NetUtil.readInputStream(stream, stream.available());
-  return new TextDecoder().decode(buffer);
-}
 
 
 
@@ -1017,13 +1021,13 @@ function readUTF8InputStream(stream) {
 
 
 
-function awaitCSP(urlsPromise) {
+function awaitCSP(urlsPromise, extension) {
   return new Promise(resolve => {
     let expectedURLs, blockedURLs, blockedSources;
     let queuedRequests = [];
 
     function checkRequest(request) {
-      let body = JSON.parse(readUTF8InputStream(request.bodyInputStream));
+      let body = request.body;
       let report = body["csp-report"];
 
       let origURL = report["blocked-uri"];
@@ -1071,9 +1075,7 @@ function awaitCSP(urlsPromise) {
       }
     });
 
-    server.registerPathHandler(CSP_REPORT_PATH, (request, response) => {
-      response.setStatusLine(request.httpVersion, 204, "No Content");
-
+    extension.onMessage("CSP_REPORT_PATH", request => {
       if (expectedURLs) {
         checkRequest(request);
       } else {
@@ -1221,6 +1223,8 @@ function catchViolation() {
 
 const EXTENSION_DATA = {
   manifest: {
+    permissions: ["webRequest", "webRequestBlocking"],
+    host_permissions: ["http://example.com/*"],
     content_scripts: [
       {
         matches: ["http://*/page.html"],
@@ -1236,6 +1240,30 @@ const EXTENSION_DATA = {
       source: "contentScript",
       origin: "contentScript",
     }),
+  },
+  background() {
+    
+    browser.webRequest.onBeforeRequest.addListener(
+      details => {
+        try {
+          let rawBody = "";
+          const decoder = new TextDecoder();
+          for (let [i, chunk] of details.requestBody.raw.entries()) {
+            const stream = i < details.requestBody.raw.length - 1;
+            rawBody += decoder.decode(chunk.bytes, { stream });
+          }
+          const body = JSON.parse(rawBody);
+          const request = { body };
+          browser.test.sendMessage("CSP_REPORT_PATH", request);
+        } catch (e) {
+          browser.test.fail(
+            `Failed to parse CSP report: ${e} :: ${JSON.stringify(details)}`
+          );
+        }
+      },
+      { urls: ["*://example.com/csp-report.sjs"], types: ["csp_report"] },
+      ["blocking", "requestBody"]
+    );
   },
 };
 
@@ -1300,11 +1328,6 @@ add_task(async function test_contentscript_triggeringPrincipals() {
 
 
 add_task(async function test_contentscript_csp() {
-  
-  
-  let chaosMode = parseInt(Services.env.get("MOZ_CHAOSMODE"), 16);
-  let checkCSPReports = !(chaosMode === 0 || chaosMode & 0x02);
-
   gContentSecurityPolicy = `default-src 'none' 'report-sample'; script-src 'nonce-deadbeef' 'unsafe-eval' 'report-sample'; report-uri ${CSP_REPORT_PATH};`;
 
   let extension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
@@ -1321,7 +1344,7 @@ add_task(async function test_contentscript_csp() {
 
   let finished = Promise.all([
     awaitLoads(urlsPromise, origins),
-    checkCSPReports && awaitCSP(urlsPromise),
+    awaitCSP(urlsPromise, extension),
   ]);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
@@ -1340,11 +1363,6 @@ add_task(async function test_contentscript_csp() {
 add_task(async function test_extension_contentscript_csp() {
   Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
-  
-  
-  let chaosMode = parseInt(Services.env.get("MOZ_CHAOSMODE"), 16);
-  let checkCSPReports = !(chaosMode === 0 || chaosMode & 0x02);
-
   gContentSecurityPolicy = `default-src 'none' 'report-sample'; script-src 'nonce-deadbeef' 'unsafe-eval' 'report-sample'; report-uri ${CSP_REPORT_PATH};`;
 
   let data = {
@@ -1352,10 +1370,7 @@ add_task(async function test_extension_contentscript_csp() {
     manifest: {
       ...EXTENSION_DATA.manifest,
       manifest_version: 3,
-      host_permissions: ["http://example.com/*"],
-      granted_host_permissions: true,
     },
-    temporarilyInstalled: true,
   };
 
   let extension = ExtensionTestUtils.loadExtension(data);
@@ -1372,7 +1387,7 @@ add_task(async function test_extension_contentscript_csp() {
 
   let finished = Promise.all([
     awaitLoads(urlsPromise, origins),
-    checkCSPReports && awaitCSP(urlsPromise),
+    awaitCSP(urlsPromise, extension),
   ]);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
