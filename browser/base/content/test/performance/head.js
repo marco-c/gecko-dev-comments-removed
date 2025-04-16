@@ -44,7 +44,25 @@ async function recordReflows(testPromise, win = window) {
   let observer = {
     reflow() {
       
-      reflows.push(new Error().stack);
+      let stack = new Error().stack;
+      let path = stack
+        .split("\n")
+        .slice(1) 
+        .map(line => line.replace(/:\d+:\d+$/, "")) 
+        .join("|");
+
+      
+      
+      if (path === "") {
+        ChromeUtils.addProfilerMarker(
+          "ignoredNativeReflow",
+          { category: "Test" },
+          "Intentionally ignoring reflow without JS stack"
+        );
+        return;
+      }
+
+      reflows.push({ stack, path });
 
       
       
@@ -152,19 +170,7 @@ function reportUnexpectedReflows(reflows, expectedReflows = []) {
     );
   }
 
-  for (let stack of reflows) {
-    let path = stack
-      .split("\n")
-      .slice(1) 
-      .map(line => line.replace(/:\d+:\d+$/, "")) 
-      .join("|");
-
-    
-    
-    if (path === "") {
-      continue;
-    }
-
+  for (let { stack, path } of reflows) {
     
     
     
