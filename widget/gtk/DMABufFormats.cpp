@@ -5,7 +5,7 @@
 
 
 
-#include <drm/xf86drm.h>
+#include <xf86drm.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 
