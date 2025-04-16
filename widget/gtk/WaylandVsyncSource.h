@@ -49,9 +49,6 @@ class WaylandVsyncSource final : public gfx::VsyncSource {
 
   static Maybe<TimeDuration> GetFastestVsyncRate();
 
-  void EnableVSyncSource();
-  void DisableVSyncSource();
-
   
   
   void VisibleWindowCallback(uint32_t aTime = 0);
@@ -71,6 +68,11 @@ class WaylandVsyncSource final : public gfx::VsyncSource {
 
   
   
+  void EnableVSyncSource();
+  void DisableVSyncSource();
+
+  
+  
   void Init();
 
  private:
@@ -81,6 +83,8 @@ class WaylandVsyncSource final : public gfx::VsyncSource {
   void* GetWindowForLogging() { return mWindow; };
 
   void SetHiddenWindowVSync();
+
+  void SetVSyncEventsLocked(const MutexAutoLock& aProofOfLock, bool aEnabled);
 
   Mutex mMutex;
 
