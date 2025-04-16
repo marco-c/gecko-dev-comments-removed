@@ -954,7 +954,8 @@ void Navigation::LogHistory() const {
 
 RefPtr<NavigationAPIMethodTracker>
 Navigation::MaybeSetUpcomingNonTraverseAPIMethodTracker(
-    const JS::Value& aInfo, nsIStructuredCloneContainer* aSerializedState) {
+    JS::Handle<JS::Value> aInfo,
+    nsIStructuredCloneContainer* aSerializedState) {
   
   
   
@@ -987,7 +988,7 @@ Navigation::MaybeSetUpcomingNonTraverseAPIMethodTracker(
 
 RefPtr<NavigationAPIMethodTracker>
 Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
-                                                const JS::Value& aInfo) {
+                                                JS::Handle<JS::Value> aInfo) {
   
   
   
