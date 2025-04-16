@@ -178,13 +178,26 @@ add_task(
 
     
     server_requests = 0;
+    lazy.DAPVisitCounter.counters[0].count = 1;
+    await lazy.DAPVisitCounter.send(30 * 1000, "test");
+
+    lazy.DAPVisitCounter.counters[0].count = 1;
+    await lazy.DAPVisitCounter.send(30 * 1000, "test");
+
+    lazy.DAPVisitCounter.counters[0].count = 0;
+    await lazy.DAPVisitCounter.send(30 * 1000, "test");
+
+    
     doExperimentCleanup();
     Services.tm.spinEventLoopUntil(
       "Wait for DAPVisitCounter to flush",
       () => lazy.DAPVisitCounter.counters === null
     );
-    Assert.equal(server_requests, 1, "Unenrollment should flush reports");
-
+    
+    
+    
+    
+    Assert.equal(server_requests, 3, "Unenrollment should flush reports");
     Assert.ok(
       lazy.DAPVisitCounter.timerId === null,
       "Submission timer should not exist after unenrollment"
