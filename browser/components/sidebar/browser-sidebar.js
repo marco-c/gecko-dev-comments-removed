@@ -1910,6 +1910,14 @@ var SidebarController = {
     
     
     this.sidebarMain.requestUpdate();
+    if (
+      !this.verticalTabsEnabled &&
+      this.sidebarRevampVisibility == "hide-sidebar"
+    ) {
+      
+      
+      this._state.updateVisibility(undefined, false);
+    }
   },
 
   debouncedMouseEnter() {
