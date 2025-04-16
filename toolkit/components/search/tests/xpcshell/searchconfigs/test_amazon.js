@@ -12,23 +12,11 @@ const test = new SearchConfigTest({
     included: [
       {
         
-        regions: ["us", "jp"],
+        regions: ["us"],
       },
     ],
   },
   details: [
-    {
-      domain: "amazon.co.jp",
-      telemetryId: "amazon-jp",
-      aliases: ["@amazon"],
-      included: [
-        {
-          regions: ["jp"],
-        },
-      ],
-      searchUrlCode: "tag=mozillajapan-fx-22",
-      noSuggestionsURL: true,
-    },
     {
       domain: "amazon.com",
       telemetryId: "amazondotcom-us-adm",
