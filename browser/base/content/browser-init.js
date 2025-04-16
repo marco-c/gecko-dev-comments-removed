@@ -134,7 +134,7 @@ var gBrowserInit = {
 
     
     
-    ToolbarIconColor.init();
+    ToolbarIconColor.init(window);
   },
 
   onDOMContentLoaded() {
@@ -1000,7 +1000,7 @@ var gBrowserInit = {
 
     CustomTitlebar.uninit();
 
-    ToolbarIconColor.uninit();
+    ToolbarIconColor.uninit(window);
 
     
     
