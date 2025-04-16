@@ -311,6 +311,7 @@ fn zero_rtt() {
     };
 
     
+    let c0 = client_send();
     let c1 = client_send();
     assertions::assert_coalesced_0rtt(&c1);
     let c2 = client_send();
@@ -322,11 +323,14 @@ fn zero_rtt() {
     assert!(server.active_connections().is_empty());
 
     
+    _ = server.process(Some(c0), now);
     let shs = server.process(Some(c1), now);
     drop(server.process(Some(c3), now));
     
-    
-    #[allow(clippy::mutable_key_type)]
+    #[expect(
+        clippy::mutable_key_type,
+        reason = "ActiveConnectionRef::Hash doesn't access any of the interior mutable types."
+    )]
     let active = server.active_connections();
     assert_eq!(active.len(), 1);
     assert_eq!(
@@ -338,7 +342,7 @@ fn zero_rtt() {
             .stats()
             .frame_rx
             .stream,
-        2
+        3
     );
 
     
@@ -349,8 +353,10 @@ fn zero_rtt() {
 
     
     drop(server.process(Some(c4), now));
-    
-    #[allow(clippy::mutable_key_type)]
+    #[expect(
+        clippy::mutable_key_type,
+        reason = "ActiveConnectionRef::Hash doesn't access any of the interior mutable types."
+    )]
     let active = server.active_connections();
     assert_eq!(active.len(), 1);
     assert_eq!(
@@ -362,7 +368,7 @@ fn zero_rtt() {
             .stats()
             .frame_rx
             .stream,
-        2
+        4
     );
 }
 
@@ -378,15 +384,19 @@ fn new_token_0rtt() {
     let client_stream = client.stream_create(StreamType::UniDi).unwrap();
     client.stream_send(client_stream, &[1, 2, 3]).unwrap();
 
-    let out = client.process_output(now()); 
-    assert!(out.as_dgram_ref().is_some());
+    let out = client.process_output(now());
+    let out2 = client.process_output(now()); 
+    assert!(out.as_dgram_ref().is_some() && out2.as_dgram_ref().is_some());
     assertions::assert_initial(out.as_dgram_ref().unwrap(), true);
-    assertions::assert_coalesced_0rtt(out.as_dgram_ref().unwrap());
-    let out = server.process(out.dgram(), now()); 
+    assertions::assert_coalesced_0rtt(out2.as_dgram_ref().unwrap());
+    _ = server.process(out.dgram(), now()); 
+    let out = server.process(out2.dgram(), now()); 
     assert!(out.as_dgram_ref().is_some());
     assertions::assert_initial(out.as_dgram_ref().unwrap(), false);
 
     let dgram = client.process(out.as_dgram_ref().cloned(), now());
+    let dgram = server.process(dgram.as_dgram_ref().cloned(), now());
+    let dgram = client.process(dgram.as_dgram_ref().cloned(), now());
     
     
     assert!(out.as_dgram_ref().is_some());
@@ -421,7 +431,8 @@ fn new_token_different_port() {
 
 #[test]
 fn bad_client_initial() {
-    let mut client = default_client();
+    
+    let mut client = new_client(ConnectionParameters::default().mlkem(false));
     let mut server = default_server();
 
     let dgram = client.process_output(now()).dgram().expect("a datagram");
@@ -567,6 +578,7 @@ fn version_negotiation_ignored() {
 
     
     let dgram = client.process_output(now()).dgram().expect("a datagram");
+    _ = client.process_output(now()).dgram().expect("a datagram");
     let mut input = dgram.to_vec();
     input[1] ^= 0x12;
     let damaged = Datagram::new(
@@ -650,16 +662,22 @@ fn version_negotiation_and_compatible() {
 
     
     let dgram = client.process_output(now()).dgram();
-    assert!(dgram.is_some());
+    let dgram2 = client.process_output(now()).dgram();
+    assert!(dgram.is_some() && dgram2.is_some());
     assertions::assert_version(dgram.as_ref().unwrap(), ORIG_VERSION.wire_version());
-    let dgram = server.process(dgram, now()).dgram();
+    _ = server.process(dgram, now()).dgram();
+    let dgram = server.process(dgram2, now()).dgram();
     assertions::assert_vn(dgram.as_ref().unwrap());
     client.process_input(dgram.unwrap(), now());
 
     let dgram = client.process_output(now()).dgram(); 
+    let dgram2 = client.process_output(now()).dgram(); 
     assertions::assert_version(dgram.as_ref().unwrap(), VN_VERSION.wire_version());
-    let dgram = server.process(dgram, now()).dgram(); 
+    _ = server.process(dgram, now()).dgram(); 
+    let dgram = server.process(dgram2, now()).dgram(); 
     assertions::assert_version(dgram.as_ref().unwrap(), COMPAT_VERSION.wire_version());
+    let dgram = client.process(dgram, now()).dgram();
+    let dgram = server.process(dgram, now()).dgram();
     client.process_input(dgram.unwrap(), now());
 
     client.authenticated(AuthenticationStatus::Ok, now());
@@ -742,6 +760,7 @@ fn closed() {
     assert_eq!(res, Output::None);
 }
 
+#[cfg(test)]
 fn can_create_streams(c: &mut Connection, t: StreamType, n: u64) {
     for _ in 0..n {
         c.stream_create(t).unwrap();
@@ -826,6 +845,10 @@ fn max_streams_after_0rtt_rejection() {
     client.enable_resumption(now(), &token).unwrap();
     _ = client.stream_create(StreamType::BiDi).unwrap();
     let dgram = client.process_output(now()).dgram();
+    let dgram2 = client.process_output(now()).dgram();
+    _ = server.process(dgram, now()).dgram();
+    let dgram = server.process(dgram2, now()).dgram();
+    let dgram = client.process(dgram, now()).dgram();
     let dgram = server.process(dgram, now()).dgram();
     let dgram = client.process(dgram, now()).dgram();
     assert!(dgram.is_some()); 

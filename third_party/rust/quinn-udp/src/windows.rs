@@ -13,9 +13,10 @@ use once_cell::sync::Lazy;
 use windows_sys::Win32::Networking::WinSock;
 
 use crate::{
+    EcnCodepoint, IO_ERROR_LOG_INTERVAL, RecvMeta, Transmit, UdpSockRef,
     cmsg::{self, CMsgHdr},
     log::debug,
-    log_sendmsg_error, EcnCodepoint, RecvMeta, Transmit, UdpSockRef, IO_ERROR_LOG_INTERVAL,
+    log_sendmsg_error,
 };
 
 
@@ -289,6 +290,30 @@ impl UdpSocketState {
     pub fn gro_segments(&self) -> usize {
         
         64
+    }
+
+    
+    #[inline]
+    pub fn set_send_buffer_size(&self, socket: UdpSockRef<'_>, bytes: usize) -> io::Result<()> {
+        socket.0.set_send_buffer_size(bytes)
+    }
+
+    
+    #[inline]
+    pub fn set_recv_buffer_size(&self, socket: UdpSockRef<'_>, bytes: usize) -> io::Result<()> {
+        socket.0.set_recv_buffer_size(bytes)
+    }
+
+    
+    #[inline]
+    pub fn send_buffer_size(&self, socket: UdpSockRef<'_>) -> io::Result<usize> {
+        socket.0.send_buffer_size()
+    }
+
+    
+    #[inline]
+    pub fn recv_buffer_size(&self, socket: UdpSockRef<'_>) -> io::Result<usize> {
+        socket.0.recv_buffer_size()
     }
 
     #[inline]

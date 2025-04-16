@@ -50,7 +50,6 @@ impl TryFrom<(MessageType, &str)> for PseudoHeaderState {
 
 pub fn is_interim(headers: &[Header]) -> Res<bool> {
     if let Some(h) = headers.iter().take(1).find_header(":status") {
-        #[allow(clippy::map_err_ignore)]
         let status_code = h.value().parse::<u16>().map_err(|_| Error::InvalidHeader)?;
         if status_code == 101 {
             

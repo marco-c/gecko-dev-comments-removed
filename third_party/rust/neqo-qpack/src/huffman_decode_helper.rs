@@ -8,6 +8,9 @@ use std::sync::OnceLock;
 
 use crate::huffman_table::HUFFMAN_TABLE;
 
+
+static_assertions::const_assert!(HUFFMAN_TABLE.len() <= u16::MAX as usize);
+
 pub struct HuffmanDecoderNode {
     pub next: [Option<Box<HuffmanDecoderNode>>; 2],
     pub value: Option<u16>,
@@ -32,10 +35,14 @@ fn make_huffman_tree(prefix: u32, len: u8) -> HuffmanDecoderNode {
         found = true;
         if iter.len == len + 1 {
             
-            let bit = usize::try_from(iter.val & 1).unwrap();
+            let bit = usize::try_from(iter.val & 1).expect("u32 fits in usize");
             next[bit] = Some(Box::new(HuffmanDecoderNode {
                 next: [None, None],
-                value: Some(u16::try_from(i).unwrap()),
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "We've checked this in a `const_assert!` above."
+                )]
+                value: Some(i as u16),
             }));
             if next[bit ^ 1].is_some() {
                 return HuffmanDecoderNode { next, value: None };

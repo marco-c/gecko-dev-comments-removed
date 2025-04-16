@@ -4,30 +4,49 @@
 
 
 
-#![allow(dead_code)]
+use enum_map::Enum;
+use strum::FromRepr;
 
-use crate::ssl;
+use crate::{ssl, Error};
 
 
 
 
 pub type Alert = u8;
 
-pub type Epoch = u16;
+#[derive(Default, Debug, Enum, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromRepr)]
+#[repr(u16)]
+pub enum Epoch {
+    
+    
+    #[default]
+    Initial = 0,
+    ZeroRtt,
+    Handshake,
+    ApplicationData,
+    
+}
 
+impl TryFrom<u16> for Epoch {
+    type Error = Error;
 
-pub const TLS_EPOCH_INITIAL: Epoch = 0_u16;
-pub const TLS_EPOCH_ZERO_RTT: Epoch = 1_u16;
-pub const TLS_EPOCH_HANDSHAKE: Epoch = 2_u16;
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        Self::from_repr(value).ok_or(Error::InvalidEpoch)
+    }
+}
 
-pub const TLS_EPOCH_APPLICATION_DATA: Epoch = 3_u16;
+impl From<Epoch> for usize {
+    fn from(e: Epoch) -> Self {
+        e as Self
+    }
+}
 
 
 
 macro_rules! remap_enum {
     { $t:ident: $s:ty { $( $n:ident = $v:path ),+ $(,)? } } => {
         pub type $t = $s;
-        $(#[allow(clippy::cast_possible_truncation)] pub const $n: $t = $v as $t; )+
+        $(#[expect(clippy::cast_possible_truncation, reason = "Inherent in macro use.")] pub const $n: $t = $v as $t; )+
     };
     { $t:ident: $s:ty => $e:ident { $( $n:ident = $v:ident ),+ $(,)? } } => {
         remap_enum!{ $t: $s { $( $n = $e::$v ),+ } }
@@ -44,6 +63,7 @@ remap_enum! {
     }
 }
 
+#[expect(dead_code, reason = "Code is bindgen-generated.")]
 mod ciphers {
     include!(concat!(env!("OUT_DIR"), "/nss_ciphers.rs"));
 }

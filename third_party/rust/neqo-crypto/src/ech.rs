@@ -107,7 +107,7 @@ pub fn generate_keys() -> Res<(PrivateKey, PublicKey)> {
     params.extend_from_slice(oid_slc);
 
     let mut public_ptr: *mut SECKEYPublicKey = null_mut();
-    let mut param_item = Item::wrap(&params);
+    let mut param_item = Item::wrap(&params)?;
 
     
     let insensitive_secret_ptr = if log::log_enabled!(log::Level::Trace) {

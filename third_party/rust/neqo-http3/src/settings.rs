@@ -4,8 +4,6 @@
 
 
 
-#![allow(clippy::module_name_repetitions)]
-
 use std::ops::Deref;
 
 use neqo_common::{Decoder, Encoder};
@@ -180,7 +178,7 @@ impl HSettings {
                 
                 (Some(_), Some(_)) => {} 
                 _ => return Err(Error::NotEnoughData),
-            };
+            }
         }
         Ok(())
     }

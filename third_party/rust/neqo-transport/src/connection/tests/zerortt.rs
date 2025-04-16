@@ -12,7 +12,7 @@ use test_fixture::{assertions, now};
 
 use super::{
     super::Connection, connect, default_client, default_server, exchange_ticket, new_server,
-    resumed_server, CountingConnectionIdGenerator,
+    resumed_server, CountingConnectionIdGenerator, Output,
 };
 use crate::{
     events::ConnectionEvent, ConnectionParameters, Error, StreamType, Version,
@@ -53,24 +53,29 @@ fn zero_rtt_send_recv() {
 
     
     let client_hs = client.process_output(now());
-    assert!(client_hs.as_dgram_ref().is_some());
+    let client_hs2 = client.process_output(now());
+    assert!(client_hs.as_dgram_ref().is_some() && client_hs2.as_dgram_ref().is_some());
+
+    
+    let delay = client.process_output(now()).callback();
 
     
     let client_stream_id = client.stream_create(StreamType::UniDi).unwrap();
     client.stream_send(client_stream_id, &[1, 2, 3]).unwrap();
-    let client_0rtt = client.process_output(now());
+    let client_0rtt = client.process_output(now() + delay);
     assert!(client_0rtt.as_dgram_ref().is_some());
     
     assert!(client_0rtt.as_dgram_ref().unwrap().len() < MIN_INITIAL_PACKET_SIZE);
 
-    let server_hs = server.process(client_hs.dgram(), now());
+    server.process_input(client_hs.dgram().unwrap(), now());
+    let server_hs = server.process(client_hs2.dgram(), now());
     assert!(server_hs.as_dgram_ref().is_some()); 
 
     let all_frames = server.stats().frame_tx.all();
     let ack_frames = server.stats().frame_tx.ack;
     let server_process_0rtt = server.process(client_0rtt.dgram(), now());
     assert!(server_process_0rtt.dgram().is_some());
-    assert_eq!(server.stats().frame_tx.all(), all_frames + 1);
+    assert_eq!(server.stats().frame_tx.all(), all_frames + 3);
     assert_eq!(server.stats().frame_tx.ack, ack_frames + 1);
 
     let server_stream_id = server
@@ -100,11 +105,14 @@ fn zero_rtt_send_coalesce() {
     
     let client_stream_id = client.stream_create(StreamType::UniDi).unwrap();
     client.stream_send(client_stream_id, &[1, 2, 3]).unwrap();
+    let client_init = client.process_output(now());
+    assert!(client_init.as_dgram_ref().is_some());
     let client_0rtt = client.process_output(now());
     assert!(client_0rtt.as_dgram_ref().is_some());
 
     assertions::assert_coalesced_0rtt(&client_0rtt.as_dgram_ref().unwrap()[..]);
 
+    _ = server.process(client_init.dgram(), now());
     let server_hs = server.process(client_0rtt.dgram(), now());
     assert!(server_hs.as_dgram_ref().is_some()); 
 
@@ -153,26 +161,30 @@ fn zero_rtt_send_reject() {
         .expect("enable 0-RTT");
 
     
+    let stream_id = client.stream_create(StreamType::UniDi).unwrap();
+    client.stream_send(stream_id, MESSAGE).unwrap();
+
+    
     let client_hs = client.process_output(now());
     assert!(client_hs.as_dgram_ref().is_some());
 
-    
-    let stream_id = client.stream_create(StreamType::UniDi).unwrap();
-    client.stream_send(stream_id, MESSAGE).unwrap();
     let client_0rtt = client.process_output(now());
     assert!(client_0rtt.as_dgram_ref().is_some());
 
     let server_hs = server.process(client_hs.dgram(), now());
     assert!(server_hs.as_dgram_ref().is_some()); 
-    let server_ignored = server.process(client_0rtt.dgram(), now());
-    assert!(server_ignored.as_dgram_ref().is_none());
+    let server_hs2 = server.process(client_0rtt.dgram(), now());
 
     
     let recvd_stream_evt = |e| matches!(e, ConnectionEvent::NewStream { .. });
     assert!(!server.events().any(recvd_stream_evt));
 
+    _ = client.process(server_hs.dgram(), now());
+    let dgram = client.process(server_hs2.dgram(), now()).dgram();
+    let dgram = server.process(dgram, now()).dgram();
+
     
-    let client_fin = client.process(server_hs.dgram(), now());
+    let client_fin = client.process(dgram, now());
     let recvd_0rtt_reject = |e| e == ConnectionEvent::ZeroRttRejected;
     assert!(client.events().any(recvd_0rtt_reject));
 
@@ -203,7 +215,7 @@ fn zero_rtt_send_reject() {
 fn zero_rtt_update_flow_control() {
     const LOW: u64 = 3;
     const HIGH: u64 = 10;
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation, reason = "OK in a test.")]
     const MESSAGE: &[u8] = &[0; HIGH as usize];
 
     let mut client = default_client();
@@ -228,14 +240,18 @@ fn zero_rtt_update_flow_control() {
 
     
     let client_hs = client.process_output(now()).dgram();
+    let client_hs2 = client.process_output(now()).dgram();
     let uni_stream = client.stream_create(StreamType::UniDi).unwrap();
     assert!(!client.stream_send_atomic(uni_stream, MESSAGE).unwrap());
     let bidi_stream = client.stream_create(StreamType::BiDi).unwrap();
     assert!(!client.stream_send_atomic(bidi_stream, MESSAGE).unwrap());
 
     
-    let server_hs = server.process(client_hs, now()).dgram();
-    client.process_input(server_hs.unwrap(), now());
+    server.process_input(client_hs.unwrap(), now());
+    let server_hs = server.process(client_hs2, now()).dgram();
+    let client_hs3 = client.process(server_hs, now()).dgram();
+    let server_hs2 = server.process(client_hs3, now()).dgram();
+    client.process_input(server_hs2.unwrap(), now());
 
     
     let mut uni_stream_event = false;
@@ -288,7 +304,9 @@ fn zero_rtt_loss_accepted() {
         client.stream_send(client_stream_id, &[1, 2, 3]).unwrap();
         let mut ci = client.process_output(now);
         assert!(ci.as_dgram_ref().is_some());
-        assertions::assert_coalesced_0rtt(&ci.as_dgram_ref().unwrap()[..]);
+        let mut c0rtt = client.process_output(now);
+        assert!(c0rtt.as_dgram_ref().is_some());
+        assertions::assert_coalesced_0rtt(&c0rtt.as_dgram_ref().unwrap()[..]);
 
         
         qdebug!("Drop CI/0-RTT {i} extra times");
@@ -296,10 +314,13 @@ fn zero_rtt_loss_accepted() {
             now += client.process_output(now).callback();
             ci = client.process_output(now);
             assert!(ci.as_dgram_ref().is_some());
+            c0rtt = client.process_output(now);
+            assert!(c0rtt.as_dgram_ref().is_some());
         }
 
         
-        let si = server.process(ci.dgram(), now);
+        server.process_input(ci.dgram().unwrap(), now);
+        let si = server.process(c0rtt.dgram(), now);
         assert!(si.as_dgram_ref().is_some());
 
         let server_stream_id = server
@@ -319,4 +340,90 @@ fn zero_rtt_loss_accepted() {
             "rejected 0-RTT after {i} extra dropped packets"
         );
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[test]
+fn zero_rtt_no_time_threshold_loss_detection_before_first_ack() {
+    const RTT: Duration = Duration::from_millis(4);
+    let mut now = now();
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+    let token = exchange_ticket(&mut client, &mut server, now);
+
+    let mut client = default_client();
+    client
+        .enable_resumption(now, token)
+        .expect("should set token");
+    let mut server = resumed_server(&client);
+
+    
+    let client_hs = client.process_output(now);
+    let client_hs2 = client.process_output(now);
+    assert!(client_hs.as_dgram_ref().is_some() && client_hs2.as_dgram_ref().is_some());
+
+    
+    let client_stream_id = client.stream_create(StreamType::UniDi).unwrap();
+    client.stream_send(client_stream_id, &[1, 2, 3]).unwrap();
+    
+    let delay = client.process_output(now).callback();
+    
+    let client_0rtt = client.process_output(now + delay);
+    assert!(client_0rtt.as_dgram_ref().is_some());
+
+    now += RTT / 2;
+
+    
+    server.process_input(client_hs.dgram().unwrap(), now);
+    let server_hs = server.process(client_hs2.dgram(), now);
+    assert!(server_hs.as_dgram_ref().is_some()); 
+
+    now += delay;
+
+    
+    let server_process_0rtt = server.process(client_0rtt.dgram(), now);
+    assert!(server_process_0rtt.as_dgram_ref().is_some());
+
+    let server_stream_id = server
+        .events()
+        .find_map(|evt| match evt {
+            ConnectionEvent::NewStream { stream_id, .. } => Some(stream_id),
+            _ => None,
+        })
+        .expect("should have received a new stream event");
+    assert_eq!(client_stream_id, server_stream_id.as_u64());
+
+    now += RTT / 2;
+
+    
+    
+    
+    let _client_pkt1 = client.process(server_hs.dgram(), now);
+    let _client_pkt2 = client.process(server_process_0rtt.dgram(), now);
+    assert!(matches!(client.process_output(now), Output::Callback(_)));
+
+    
+    
+    
+    now += RTT / 2;
+
+    
+    
+    
+    
+    assert!(client.process_output(now).dgram().is_none());
+    assert_eq!(client.stats().lost, 0);
 }

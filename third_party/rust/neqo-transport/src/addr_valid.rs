@@ -19,7 +19,8 @@ use neqo_crypto::{
 use smallvec::SmallVec;
 
 use crate::{
-    cid::ConnectionId, packet::PacketBuilder, recovery::RecoveryToken, stats::FrameStats, Res,
+    cid::ConnectionId, frame::FrameType, packet::PacketBuilder, recovery::RecoveryToken,
+    stats::FrameStats, Res,
 };
 
 
@@ -190,7 +191,7 @@ impl AddressValidation {
         for i in 0..TOKEN_IDENTIFIER_RETRY.len() {
             difference += (token[i] ^ TOKEN_IDENTIFIER_RETRY[i]).count_ones();
         }
-        usize::try_from(difference).unwrap() < TOKEN_IDENTIFIER_RETRY.len()
+        usize::try_from(difference).expect("u32 fits in usize") < TOKEN_IDENTIFIER_RETRY.len()
     }
 
     pub fn validate(
@@ -218,7 +219,7 @@ impl AddressValidation {
         let enc = &token[TOKEN_IDENTIFIER_RETRY.len()..];
         
         
-        #[allow(clippy::option_if_let_else)]
+        #[expect(clippy::option_if_let_else, reason = "Alternative is less readable.")]
         if let Some(cid) = self.decrypt_token(enc, peer_address, retry, now) {
             if retry {
                 
@@ -261,9 +262,7 @@ impl AddressValidation {
     }
 }
 
-
-
-#[allow(clippy::large_enum_variant)]
+#[expect(clippy::large_enum_variant, reason = "No way around it.")]
 pub enum NewTokenState {
     Client {
         
@@ -423,7 +422,7 @@ impl NewTokenSender {
             if t.needs_sending && t.len() <= builder.remaining() {
                 t.needs_sending = false;
 
-                builder.encode_varint(crate::frame::FRAME_TYPE_NEW_TOKEN);
+                builder.encode_varint(FrameType::NewToken);
                 builder.encode_vvec(&t.token);
 
                 tokens.push(RecoveryToken::NewToken(t.seqno));

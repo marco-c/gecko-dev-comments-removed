@@ -28,6 +28,7 @@ use crate::QlogSeq;
 
 
 #[allow(clippy::large_enum_variant)]
+#[derive(Clone, Debug)]
 pub enum Event {
     
     Qlog(crate::events::Event),
@@ -40,23 +41,20 @@ pub enum Event {
 
 
 
-pub struct QlogSeqReader {
+pub struct QlogSeqReader<'a> {
     pub qlog: QlogSeq,
-    reader: Box<dyn std::io::BufRead + Send + Sync>,
+    reader: Box<dyn std::io::BufRead + Send + Sync + 'a>,
 }
 
-impl QlogSeqReader {
+impl<'a> QlogSeqReader<'a> {
     pub fn new(
-        mut reader: Box<dyn std::io::BufRead + Send + Sync>,
+        mut reader: Box<dyn std::io::BufRead + Send + Sync + 'a>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         
         Self::read_record(reader.as_mut());
 
         let header = Self::read_record(reader.as_mut()).ok_or_else(|| {
-            std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "error reading file header bytes",
-            )
+            std::io::Error::other("error reading file header bytes")
         })?;
 
         let res: Result<QlogSeq, serde_json::Error> =
@@ -83,7 +81,7 @@ impl QlogSeqReader {
     }
 }
 
-impl Iterator for QlogSeqReader {
+impl Iterator for QlogSeqReader<'_> {
     type Item = Event;
 
     #[inline]

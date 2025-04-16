@@ -4,6 +4,8 @@
 
 
 
+#![expect(clippy::unwrap_used, reason = "OK in a build script.")]
+
 use std::env;
 
 fn main() {

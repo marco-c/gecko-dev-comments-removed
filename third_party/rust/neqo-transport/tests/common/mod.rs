@@ -4,22 +4,25 @@
 
 
 
-#![allow(unused)]
+#![allow(clippy::allow_attributes, dead_code, reason = "Exported.")]
 
-use std::{cell::RefCell, mem, ops::Range, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use neqo_common::{event::Provider as _, hex_with_len, qtrace, Datagram, Decoder, Role};
-use neqo_crypto::{
-    constants::{TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3},
-    hkdf,
-    hp::HpKey,
-    Aead, AllowZeroRtt, AuthenticationStatus, ResumptionToken,
-};
+use neqo_common::{event::Provider as _, IpTosDscp};
+use neqo_crypto::{AllowZeroRtt, AuthenticationStatus, ResumptionToken};
 use neqo_transport::{
     server::{ConnectionRef, Server, ValidateAddress},
-    Connection, ConnectionEvent, ConnectionParameters, State,
+    Connection, ConnectionEvent, ConnectionParameters, State, Stats,
 };
 use test_fixture::{default_client, now, CountingConnectionIdGenerator};
+
+
+
+
+
+pub fn assert_dscp(stats: &Stats) {
+    assert_eq!(stats.dscp_rx[IpTosDscp::Cs0], stats.packets_rx);
+}
 
 
 pub fn new_server(params: ConnectionParameters) -> Server {
@@ -42,8 +45,10 @@ pub fn default_server() -> Server {
 
 
 pub fn connected_server(server: &Server) -> ConnectionRef {
-    
-    #[allow(clippy::mutable_key_type)]
+    #[expect(
+        clippy::mutable_key_type,
+        reason = "ActiveConnectionRef::Hash doesn't access any of the interior mutable types."
+    )]
     let server_connections = server.active_connections();
     
     let mut confirmed = server_connections
@@ -59,13 +64,17 @@ pub fn connect(client: &mut Connection, server: &mut Server) -> ConnectionRef {
 
     assert_eq!(*client.state(), State::Init);
     let out = client.process_output(now()); 
-    assert!(out.as_dgram_ref().is_some());
-    let out = server.process(out.dgram(), now()); 
+    let out2 = client.process_output(now()); 
+    assert!(out.as_dgram_ref().is_some() && out2.as_dgram_ref().is_some());
+    _ = server.process(out.dgram(), now()); 
+    let out = server.process(out2.dgram(), now()); 
     assert!(out.as_dgram_ref().is_some());
 
     
     let out = client.process(out.dgram(), now());
     assert!(out.as_dgram_ref().is_some()); 
+    let out = server.process(out.dgram(), now());
+    let out = client.process(out.dgram(), now());
     let out = server.process(out.dgram(), now());
     assert!(out.as_dgram_ref().is_none()); 
 
@@ -81,10 +90,11 @@ pub fn connect(client: &mut Connection, server: &mut Server) -> ConnectionRef {
     let out = client.process(out.dgram(), now());
     assert!(out.as_dgram_ref().is_none());
     assert_eq!(*client.state(), State::Confirmed);
-
+    assert_dscp(&client.stats());
     connected_server(server)
 }
 
+#[cfg(test)]
 
 pub fn find_ticket(client: &mut Connection) -> ResumptionToken {
     client
@@ -99,10 +109,11 @@ pub fn find_ticket(client: &mut Connection) -> ResumptionToken {
         .unwrap()
 }
 
+#[cfg(test)]
 
 pub fn generate_ticket(server: &mut Server) -> ResumptionToken {
     let mut client = default_client();
-    let mut server_conn = connect(&mut client, server);
+    let server_conn = connect(&mut client, server);
 
     server_conn.borrow_mut().send_ticket(now(), &[]).unwrap();
     let out = server.process_output(now());

@@ -4,6 +4,11 @@
 
 
 
+#![allow(
+    clippy::module_name_repetitions,
+    reason = "<https://github.com/mozilla/neqo/issues/2284#issuecomment-2782711813>"
+)]
+
 use std::{mem, str};
 
 use neqo_common::{qdebug, qerror};

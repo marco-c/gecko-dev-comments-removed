@@ -4,6 +4,8 @@
 
 
 
+#![expect(clippy::unwrap_used, reason = "This is example code.")]
+
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -80,7 +82,7 @@ impl Display for HttpServer {
 }
 
 impl super::HttpServer for HttpServer {
-    fn process(&mut self, dgram: Option<Datagram<&[u8]>>, now: Instant) -> neqo_http3::Output {
+    fn process(&mut self, dgram: Option<Datagram<&mut [u8]>>, now: Instant) -> neqo_http3::Output {
         self.server.process(dgram, now)
     }
 

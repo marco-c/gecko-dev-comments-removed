@@ -123,13 +123,44 @@ impl RealAead {
                 c_uint::try_from(output.len())?,
             )
         }?;
-        Ok(&output[0..(l.try_into()?)])
+        Ok(&output[..l.try_into()?])
     }
 
     
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn encrypt_in_place<'a>(
+        &self,
+        count: u64,
+        aad: &[u8],
+        data: &'a mut [u8],
+    ) -> Res<&'a mut [u8]> {
+        let mut l: c_uint = 0;
+        unsafe {
+            SSL_AeadEncrypt(
+                *self.ctx,
+                count,
+                aad.as_ptr(),
+                c_uint::try_from(aad.len())?,
+                data.as_ptr(),
+                c_uint::try_from(data.len() - self.expansion())?,
+                data.as_ptr(),
+                &mut l,
+                c_uint::try_from(data.len())?,
+            )
+        }?;
+        Ok(&mut data[..l.try_into()?])
+    }
+
     
     
     
@@ -144,6 +175,9 @@ impl RealAead {
     ) -> Res<&'a [u8]> {
         let mut l: c_uint = 0;
         unsafe {
+            
+            
+            
             SSL_AeadDecrypt(
                 *self.ctx,
                 count,
@@ -156,7 +190,41 @@ impl RealAead {
                 c_uint::try_from(output.len())?,
             )
         }?;
-        Ok(&output[0..(l.try_into()?)])
+        Ok(&output[..l.try_into()?])
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn decrypt_in_place<'a>(
+        &self,
+        count: u64,
+        aad: &[u8],
+        data: &'a mut [u8],
+    ) -> Res<&'a mut [u8]> {
+        let mut l: c_uint = 0;
+        unsafe {
+            
+            
+            
+            SSL_AeadDecrypt(
+                *self.ctx,
+                count,
+                aad.as_ptr(),
+                c_uint::try_from(aad.len())?,
+                data.as_ptr(),
+                c_uint::try_from(data.len())?,
+                data.as_ptr(),
+                &mut l,
+                c_uint::try_from(data.len())?,
+            )
+        }?;
+        debug_assert_eq!(usize::try_from(l)?, data.len() - self.expansion());
+        Ok(&mut data[..l.try_into()?])
     }
 }
 

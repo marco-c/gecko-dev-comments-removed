@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use neqo_common::{event::Provider as _, Decoder, Encoder};
+use neqo_common::{event::Provider as _, Decoder, Encoder, IpTosDscp};
 use test_fixture::{assertions, datagram, now};
 
 use super::{
@@ -16,12 +16,20 @@ use super::{
 };
 use crate::{
     packet::PACKET_BIT_LONG,
-    tparams::{self, TransportParameter},
-    ConnectionParameters, Error, Version, MIN_INITIAL_PACKET_SIZE,
+    tparams::{TransportParameter, TransportParameterId::*},
+    ConnectionParameters, Error, Stats, Version, MIN_INITIAL_PACKET_SIZE,
 };
 
 
 const INITIAL_PTO: Duration = Duration::from_millis(300);
+
+
+
+
+
+pub fn assert_dscp(stats: &Stats) {
+    assert_eq!(stats.dscp_rx[IpTosDscp::Cs0], stats.packets_rx);
+}
 
 #[test]
 fn unknown_version() {
@@ -33,6 +41,7 @@ fn unknown_version() {
     unknown_version_packet.resize(MIN_INITIAL_PACKET_SIZE, 0x0);
     drop(client.process(Some(datagram(unknown_version_packet)), now()));
     assert_eq!(1, client.stats().dropped_rx);
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -48,6 +57,7 @@ fn server_receive_unknown_first_packet() {
     );
 
     assert_eq!(1, server.stats().dropped_rx);
+    assert_dscp(&server.stats());
 }
 
 fn create_vn(initial_pkt: &[u8], versions: &[u32]) -> Vec<u8> {
@@ -76,6 +86,7 @@ fn version_negotiation_current_version() {
         .dgram()
         .expect("a datagram")
         .to_vec();
+    _ = client.process_output(now()).dgram().expect("a datagram");
 
     let vn = create_vn(
         &initial_pkt,
@@ -83,10 +94,12 @@ fn version_negotiation_current_version() {
     );
 
     let dgram = datagram(vn);
-    let delay = client.process(Some(dgram), now()).callback();
+    let mut delay = client.process(Some(dgram), now()).callback();
+    delay += client.process_output(now() + delay).callback(); 
     assert_eq!(delay, INITIAL_PTO);
     assert_eq!(*client.state(), State::WaitInitial);
     assert_eq!(1, client.stats().dropped_rx);
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -98,14 +111,17 @@ fn version_negotiation_version0() {
         .dgram()
         .expect("a datagram")
         .to_vec();
+    _ = client.process_output(now()).dgram().expect("a datagram");
 
     let vn = create_vn(&initial_pkt, &[0, 0x1a1a_1a1a]);
 
     let dgram = datagram(vn);
-    let delay = client.process(Some(dgram), now()).callback();
+    let mut delay = client.process(Some(dgram), now()).callback();
+    delay += client.process_output(now() + delay).callback(); 
     assert_eq!(delay, INITIAL_PTO);
     assert_eq!(*client.state(), State::WaitInitial);
     assert_eq!(1, client.stats().dropped_rx);
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -128,6 +144,7 @@ fn version_negotiation_only_reserved() {
         }
         _ => panic!("Invalid client state"),
     }
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -139,14 +156,17 @@ fn version_negotiation_corrupted() {
         .dgram()
         .expect("a datagram")
         .to_vec();
+    _ = client.process_output(now()).dgram().expect("a datagram");
 
     let vn = create_vn(&initial_pkt, &[0x1a1a_1a1a, 0x2a2a_2a2a]);
 
     let dgram = datagram(vn[..vn.len() - 1].to_vec());
-    let delay = client.process(Some(dgram), now()).callback();
+    let mut delay = client.process(Some(dgram), now()).callback();
+    delay += client.process_output(now() + delay).callback(); 
     assert_eq!(delay, INITIAL_PTO);
     assert_eq!(*client.state(), State::WaitInitial);
     assert_eq!(1, client.stats().dropped_rx);
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -158,14 +178,17 @@ fn version_negotiation_empty() {
         .dgram()
         .expect("a datagram")
         .to_vec();
+    _ = client.process_output(now()).dgram().expect("a datagram");
 
     let vn = create_vn(&initial_pkt, &[]);
 
     let dgram = datagram(vn);
-    let delay = client.process(Some(dgram), now()).callback();
+    let mut delay = client.process(Some(dgram), now()).callback();
+    delay += client.process_output(now() + delay).callback(); 
     assert_eq!(delay, INITIAL_PTO);
     assert_eq!(*client.state(), State::WaitInitial);
     assert_eq!(1, client.stats().dropped_rx);
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -187,6 +210,7 @@ fn version_negotiation_not_supported() {
         }
         _ => panic!("Invalid client state"),
     }
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -198,15 +222,18 @@ fn version_negotiation_bad_cid() {
         .dgram()
         .expect("a datagram")
         .to_vec();
+    _ = client.process_output(now()).dgram().expect("a datagram");
 
     initial_pkt[6] ^= 0xc4;
     let vn = create_vn(&initial_pkt, &[0x1a1a_1a1a, 0x2a2a_2a2a, 0xff00_0001]);
 
     let dgram = datagram(vn);
-    let delay = client.process(Some(dgram), now()).callback();
+    let mut delay = client.process(Some(dgram), now()).callback();
+    delay += client.process_output(now() + delay).callback(); 
     assert_eq!(delay, INITIAL_PTO);
     assert_eq!(*client.state(), State::WaitInitial);
     assert_eq!(1, client.stats().dropped_rx);
+    assert_dscp(&client.stats());
 }
 
 #[test]
@@ -217,6 +244,8 @@ fn compatible_upgrade() {
     connect(&mut client, &mut server);
     assert_eq!(client.version(), Version::Version2);
     assert_eq!(server.version(), Version::Version2);
+    assert_dscp(&client.stats());
+    assert_dscp(&server.stats());
 }
 
 
@@ -230,7 +259,7 @@ fn compatible_upgrade_large_initial() {
     let mut client = new_client(params.clone());
     client
         .set_local_tparam(
-            0x0845_de37_00ac_a5f9,
+            TestTransportParameter,
             TransportParameter::Bytes(vec![0; 2048]),
         )
         .unwrap();
@@ -239,8 +268,10 @@ fn compatible_upgrade_large_initial() {
     
     
     let dgram = client.process_output(now()).dgram();
-    assert!(dgram.is_some());
-    let dgram = server.process(dgram, now()).dgram();
+    let dgram2 = client.process_output(now()).dgram();
+    assert!(dgram.is_some() && dgram2.is_some());
+    server.process_input(dgram.unwrap(), now());
+    let dgram = server.process(dgram2, now()).dgram();
     assert!(dgram.is_some());
     
     assertions::assert_version(dgram.as_ref().unwrap(), Version::Version1.wire_version());
@@ -251,7 +282,12 @@ fn compatible_upgrade_large_initial() {
     assert_eq!(server.version(), Version::Version2);
     
     assert_eq!(client.stats().dropped_rx, 1);
-    assert!(matches!(server.stats().dropped_rx, 1 | 2));
+    assert!(matches!(server.stats().dropped_rx, 2 | 3));
+    assert_dscp(&client.stats());
+    assert!(
+        server.stats().dscp_rx[IpTosDscp::Cs0] == server.stats().packets_rx
+            || server.stats().dscp_rx[IpTosDscp::Cs0] == server.stats().packets_rx + 1
+    );
 }
 
 
@@ -328,12 +364,14 @@ fn invalid_server_version() {
         new_server(ConnectionParameters::default().versions(Version::Version2, Version::all()));
 
     let dgram = client.process_output(now()).dgram();
+    let dgram2 = client.process_output(now()).dgram();
     server.process_input(dgram.unwrap(), now());
+    server.process_input(dgram2.unwrap(), now());
 
     
-    assert_eq!(server.stats().packets_rx, 1);
+    assert_eq!(server.stats().packets_rx, 3);
     
-    assert_eq!(server.stats().dropped_rx, 0);
+    assert_eq!(server.stats().dropped_rx, 1);
     assert_eq!(server.stats().saved_datagrams, 0);
     
     match server.state() {
@@ -354,7 +392,7 @@ fn invalid_current_version_client() {
     assert_ne!(OTHER_VERSION, client.version());
     client
         .set_local_tparam(
-            tparams::VERSION_INFORMATION,
+            VersionInformation,
             TransportParameter::Versions {
                 current: OTHER_VERSION.wire_version(),
                 other: Version::all()
@@ -390,7 +428,7 @@ fn invalid_current_version_server() {
     assert!(!Version::default().is_compatible(OTHER_VERSION));
     server
         .set_local_tparam(
-            tparams::VERSION_INFORMATION,
+            VersionInformation,
             TransportParameter::Versions {
                 current: OTHER_VERSION.wire_version(),
                 other: vec![OTHER_VERSION.wire_version()],
@@ -416,7 +454,7 @@ fn no_compatible_version() {
     assert_ne!(OTHER_VERSION, client.version());
     client
         .set_local_tparam(
-            tparams::VERSION_INFORMATION,
+            VersionInformation,
             TransportParameter::Versions {
                 current: Version::default().wire_version(),
                 other: vec![OTHER_VERSION.wire_version()],
@@ -457,9 +495,11 @@ fn compatible_upgrade_0rtt_rejected() {
 
     
     let initial = send_something(&mut client, now());
+    let initial2 = send_something(&mut client, now());
     assertions::assert_version(&initial, Version::Version1.wire_version());
-    assertions::assert_coalesced_0rtt(&initial);
+    assertions::assert_coalesced_0rtt(&initial2);
     server.process_input(initial, now());
+    server.process_input(initial2, now());
     assert!(!server
         .events()
         .any(|e| matches!(e, ConnectionEvent::NewStream { .. })));
@@ -467,6 +507,8 @@ fn compatible_upgrade_0rtt_rejected() {
     
     
     let dgram = server.process_output(now()).dgram(); 
+    let dgram = client.process(dgram, now()).dgram();
+    let dgram = server.process(dgram, now()).dgram();
     let dgram = client.process(dgram, now()).dgram(); 
     let dgram = server.process(dgram, now()).dgram(); 
     client.process_input(dgram.unwrap(), now());

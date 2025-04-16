@@ -4,8 +4,6 @@
 
 
 
-#![allow(clippy::module_name_repetitions)] 
-
 pub mod decoder;
 mod decoder_instructions;
 pub mod encoder;

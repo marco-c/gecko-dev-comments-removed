@@ -4,6 +4,8 @@
 
 
 
+#![cfg(test)]
+
 use std::sync::OnceLock;
 
 use neqo_common::event::Provider as _;

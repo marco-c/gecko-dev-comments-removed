@@ -9,52 +9,55 @@
 use std::{
     cmp::min,
     collections::VecDeque,
-    ops::{Index, IndexMut},
     time::{Duration, Instant},
 };
 
-use enum_map::{enum_map, Enum, EnumMap};
+use enum_map::{Enum, EnumMap};
+use enumset::{EnumSet, EnumSetType};
 use neqo_common::{qdebug, qinfo, qtrace, qwarn, IpTosEcn};
-use neqo_crypto::{Epoch, TLS_EPOCH_HANDSHAKE, TLS_EPOCH_INITIAL};
+use neqo_crypto::Epoch;
+use strum::{Display, EnumIter};
 
 use crate::{
     ecn,
-    frame::{FRAME_TYPE_ACK, FRAME_TYPE_ACK_ECN},
+    frame::FrameType,
     packet::{PacketBuilder, PacketNumber, PacketType},
     recovery::RecoveryToken,
     stats::FrameStats,
+    Error, Res,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq, Enum)]
+#[derive(Debug, PartialOrd, Ord, EnumSetType, Enum, EnumIter, Display)]
 pub enum PacketNumberSpace {
+    #[strum(to_string = "in")]
     Initial,
+    #[strum(to_string = "hs")]
     Handshake,
+    #[strum(to_string = "ap")]
     ApplicationData,
-}
-
-#[allow(clippy::use_self)] 
-impl PacketNumberSpace {
-    pub fn iter() -> impl Iterator<Item = &'static PacketNumberSpace> {
-        const SPACES: &[PacketNumberSpace] = &[
-            PacketNumberSpace::Initial,
-            PacketNumberSpace::Handshake,
-            PacketNumberSpace::ApplicationData,
-        ];
-        SPACES.iter()
-    }
 }
 
 impl From<Epoch> for PacketNumberSpace {
     fn from(epoch: Epoch) -> Self {
         match epoch {
-            TLS_EPOCH_INITIAL => Self::Initial,
-            TLS_EPOCH_HANDSHAKE => Self::Handshake,
-            _ => Self::ApplicationData,
+            Epoch::Initial => Self::Initial,
+            Epoch::Handshake => Self::Handshake,
+            Epoch::ApplicationData | Epoch::ZeroRtt => Self::ApplicationData,
         }
     }
 }
 
-#[allow(clippy::fallible_impl_from)]
+impl From<PacketNumberSpace> for Epoch {
+    fn from(val: PacketNumberSpace) -> Self {
+        match val {
+            PacketNumberSpace::Initial => Self::Initial,
+            PacketNumberSpace::Handshake => Self::Handshake,
+            PacketNumberSpace::ApplicationData => Self::ApplicationData,
+        }
+    }
+}
+
+#[expect(clippy::fallible_impl_from, reason = "OK here.")]
 impl From<PacketType> for PacketNumberSpace {
     fn from(pt: PacketType) -> Self {
         match pt {
@@ -66,73 +69,7 @@ impl From<PacketType> for PacketNumberSpace {
     }
 }
 
-#[derive(Clone, Copy, Default)]
-pub struct PacketNumberSpaceSet {
-    spaces: EnumMap<PacketNumberSpace, bool>,
-}
-
-impl PacketNumberSpaceSet {
-    pub fn all() -> Self {
-        Self {
-            spaces: enum_map! {
-                PacketNumberSpace::Initial => true,
-                PacketNumberSpace::Handshake => true,
-                PacketNumberSpace::ApplicationData => true,
-            },
-        }
-    }
-}
-
-impl Index<PacketNumberSpace> for PacketNumberSpaceSet {
-    type Output = bool;
-
-    fn index(&self, index: PacketNumberSpace) -> &Self::Output {
-        &self.spaces[index]
-    }
-}
-
-impl IndexMut<PacketNumberSpace> for PacketNumberSpaceSet {
-    fn index_mut(&mut self, index: PacketNumberSpace) -> &mut Self::Output {
-        &mut self.spaces[index]
-    }
-}
-
-impl<T: AsRef<[PacketNumberSpace]>> From<T> for PacketNumberSpaceSet {
-    fn from(spaces: T) -> Self {
-        let mut v = Self::default();
-        for sp in spaces.as_ref() {
-            v[*sp] = true;
-        }
-        v
-    }
-}
-
-impl std::fmt::Debug for PacketNumberSpaceSet {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let mut first = true;
-        f.write_str("(")?;
-        for sp in PacketNumberSpace::iter() {
-            if self[*sp] {
-                if !first {
-                    f.write_str("+")?;
-                    first = false;
-                }
-                std::fmt::Display::fmt(sp, f)?;
-            }
-        }
-        f.write_str(")")
-    }
-}
-
-impl std::fmt::Display for PacketNumberSpace {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.write_str(match self {
-            Self::Initial => "in",
-            Self::Handshake => "hs",
-            Self::ApplicationData => "ap",
-        })
-    }
-}
+pub type PacketNumberSpaceSet = EnumSet<PacketNumberSpace>;
 
 
 pub enum InsertionResult {
@@ -221,7 +158,13 @@ impl ::std::fmt::Display for PacketRange {
 }
 
 
-pub const DEFAULT_ACK_DELAY: Duration = Duration::from_millis(20); 
+pub const DEFAULT_LOCAL_ACK_DELAY: Duration = Duration::from_millis(20);
+
+
+
+
+
+pub const DEFAULT_REMOTE_ACK_DELAY: Duration = Duration::from_millis(25);
 
 
 pub const DEFAULT_ACK_PACKET_TOLERANCE: PacketNumber = 1;
@@ -285,7 +228,7 @@ impl RecvdPackets {
             ack_time: None,
             last_ack_time: None,
             ack_frequency_seqno: 0,
-            ack_delay: DEFAULT_ACK_DELAY,
+            ack_delay: DEFAULT_LOCAL_ACK_DELAY,
             unacknowledged_count: 0,
             unacknowledged_tolerance: if space == PacketNumberSpace::ApplicationData {
                 DEFAULT_ACK_PACKET_TOLERANCE
@@ -340,34 +283,35 @@ impl RecvdPackets {
     
     
     
-    fn add(&mut self, pn: PacketNumber) {
+    fn add(&mut self, pn: PacketNumber) -> Res<()> {
         for i in 0..self.ranges.len() {
             match self.ranges[i].add(pn) {
-                InsertionResult::Largest => return,
+                InsertionResult::Largest => return Ok(()),
                 InsertionResult::Smallest => {
                     
                     let nxt = i + 1;
                     if (nxt < self.ranges.len()) && (pn - 1 == self.ranges[nxt].largest) {
-                        let larger = self.ranges.remove(i).unwrap();
+                        let larger = self.ranges.remove(i).ok_or(Error::InternalError)?;
                         self.ranges[i].merge_larger(&larger);
                     }
-                    return;
+                    return Ok(());
                 }
                 InsertionResult::NotInserted => {
                     if self.ranges[i].largest < pn {
                         self.ranges.insert(i, PacketRange::new(pn));
-                        return;
+                        return Ok(());
                     }
                 }
             }
         }
         self.ranges.push_back(PacketRange::new(pn));
+        Ok(())
     }
 
-    fn trim_ranges(&mut self) {
+    fn trim_ranges(&mut self) -> Res<()> {
         
         if self.ranges.len() > MAX_TRACKED_RANGES {
-            let oldest = self.ranges.pop_back().unwrap();
+            let oldest = self.ranges.pop_back().ok_or(Error::InternalError)?;
             if oldest.ack_needed {
                 qwarn!("[{self}] Dropping unacknowledged ACK range: {oldest}");
             
@@ -376,16 +320,22 @@ impl RecvdPackets {
             }
             self.min_tracked = oldest.largest + 1;
         }
+        Ok(())
     }
 
     
     
-    pub fn set_received(&mut self, now: Instant, pn: PacketNumber, ack_eliciting: bool) -> bool {
+    pub fn set_received(
+        &mut self,
+        now: Instant,
+        pn: PacketNumber,
+        ack_eliciting: bool,
+    ) -> Res<bool> {
         let next_in_order_pn = self.ranges.front().map_or(0, |r| r.largest + 1);
         qtrace!("[{self}] received {pn}, next: {next_in_order_pn}");
 
-        self.add(pn);
-        self.trim_ranges();
+        self.add(pn)?;
+        self.trim_ranges()?;
 
         
         let largest = if pn >= next_in_order_pn {
@@ -416,7 +366,7 @@ impl RecvdPackets {
             qdebug!("[{self}] Set ACK timer to {ack_time:?}");
             self.ack_time = Some(ack_time);
         }
-        largest
+        Ok(largest)
     }
 
     
@@ -504,9 +454,9 @@ impl RecvdPackets {
         }
 
         builder.encode_varint(if self.ecn_count.is_some() {
-            FRAME_TYPE_ACK_ECN
+            FrameType::AckEcn
         } else {
-            FRAME_TYPE_ACK
+            FrameType::Ack
         });
         let mut iter = ranges.iter();
         let Some(first) = iter.next() else { return };
@@ -514,12 +464,18 @@ impl RecvdPackets {
         stats.largest_acknowledged = first.largest;
         stats.ack += 1;
 
-        let elapsed = now.duration_since(self.largest_pn_time.unwrap());
+        let Some(largest_pn_time) = self.largest_pn_time else {
+            return;
+        };
+        let elapsed = now.duration_since(largest_pn_time);
         
         let ack_delay = u64::try_from(elapsed.as_micros() / 8).unwrap_or(u64::MAX);
         let ack_delay = min((1 << 62) - 1, ack_delay);
         builder.encode_varint(ack_delay);
-        builder.encode_varint(u64::try_from(ranges.len() - 1).unwrap()); 
+        let Ok(extra_ranges) = u64::try_from(ranges.len() - 1) else {
+            return;
+        };
+        builder.encode_varint(extra_ranges); 
         builder.encode_varint(first.len() - 1); 
 
         let mut last = first.smallest;
@@ -649,11 +605,11 @@ impl AckTracker {
 impl Default for AckTracker {
     fn default() -> Self {
         Self {
-            spaces: enum_map! {
-                PacketNumberSpace::Initial => Some(RecvdPackets::new(PacketNumberSpace::Initial)),
-                PacketNumberSpace::Handshake => Some(RecvdPackets::new(PacketNumberSpace::Handshake)),
-                PacketNumberSpace::ApplicationData => Some(RecvdPackets::new(PacketNumberSpace::ApplicationData)),
-            },
+            spaces: EnumMap::from_array([
+                Some(RecvdPackets::new(PacketNumberSpace::Initial)),
+                Some(RecvdPackets::new(PacketNumberSpace::Handshake)),
+                Some(RecvdPackets::new(PacketNumberSpace::ApplicationData)),
+            ]),
         }
     }
 }
@@ -666,8 +622,8 @@ mod tests {
     use test_fixture::now;
 
     use super::{
-        AckTracker, Duration, Instant, PacketNumberSpace, PacketNumberSpaceSet, RecoveryToken,
-        RecvdPackets, MAX_TRACKED_RANGES,
+        AckTracker, Duration, Instant, PacketNumberSpace, RecoveryToken, RecvdPackets,
+        MAX_TRACKED_RANGES,
     };
     use crate::{
         frame::Frame,
@@ -682,7 +638,7 @@ mod tests {
         let mut packets = HashSet::new();
 
         for pn in pns {
-            rp.set_received(now(), *pn, true);
+            rp.set_received(now(), *pn, true).unwrap();
             packets.insert(*pn);
         }
 
@@ -737,7 +693,7 @@ mod tests {
 
         
         for i in 0..=MAX_TRACKED_RANGES {
-            rp.set_received(now(), (i * 2) as u64, true);
+            rp.set_received(now(), (i * 2) as u64, true).unwrap();
         }
 
         assert_eq!(rp.ranges.len(), MAX_TRACKED_RANGES);
@@ -762,14 +718,14 @@ mod tests {
 
         
         for i in 0..COUNT {
-            rp.set_received(now(), i, true);
+            rp.set_received(now(), i, true).unwrap();
             assert_eq!(Some(now() + DELAY), rp.ack_time());
             assert!(!rp.ack_now(now(), RTT));
             assert!(rp.ack_now(now() + DELAY, RTT));
         }
 
         
-        rp.set_received(now(), COUNT, true);
+        rp.set_received(now(), COUNT, true).unwrap();
         assert_eq!(Some(now()), rp.ack_time());
         assert!(rp.ack_now(now(), RTT));
     }
@@ -782,7 +738,7 @@ mod tests {
             assert!(!rp.ack_now(now(), RTT));
 
             
-            rp.set_received(now(), 0, true);
+            rp.set_received(now(), 0, true).unwrap();
             assert_eq!(Some(now()), rp.ack_time());
             assert!(rp.ack_now(now(), RTT));
         }
@@ -795,7 +751,7 @@ mod tests {
         assert!(!rp.ack_now(now(), RTT));
 
         
-        rp.set_received(now(), 1, true);
+        rp.set_received(now(), 1, true).unwrap();
         assert_eq!(Some(now()), rp.ack_time());
         assert!(rp.ack_now(now(), RTT));
     }
@@ -816,30 +772,30 @@ mod tests {
     #[test]
     fn ooo_no_ack_delay_fill() {
         let mut rp = RecvdPackets::new(PacketNumberSpace::ApplicationData);
-        rp.set_received(now(), 1, true);
+        rp.set_received(now(), 1, true).unwrap();
         write_frame(&mut rp);
 
         
-        rp.set_received(now(), 0, true);
+        rp.set_received(now(), 0, true).unwrap();
         write_frame(&mut rp);
 
         
-        rp.set_received(now(), 2, true);
+        rp.set_received(now(), 2, true).unwrap();
         assert!(!rp.ack_now(now(), RTT));
     }
 
     #[test]
     fn immediate_ack_after_rtt() {
         let mut rp = RecvdPackets::new(PacketNumberSpace::ApplicationData);
-        rp.set_received(now(), 1, true);
+        rp.set_received(now(), 1, true).unwrap();
         write_frame(&mut rp);
 
         
-        rp.set_received(now(), 0, true);
+        rp.set_received(now(), 0, true).unwrap();
         write_frame(&mut rp);
 
         
-        rp.set_received(now() + RTT, 2, true);
+        rp.set_received(now() + RTT, 2, true).unwrap();
         write_frame_at(&mut rp, now() + RTT);
     }
 
@@ -850,28 +806,28 @@ mod tests {
         
         rp.ack_freq(0, 2, Duration::from_millis(10), true);
 
-        rp.set_received(now(), 1, true);
+        rp.set_received(now(), 1, true).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 2, true);
+        rp.set_received(now(), 2, true).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 3, true);
+        rp.set_received(now(), 3, true).unwrap();
         assert_eq!(Some(now()), rp.ack_time());
     }
 
     #[test]
     fn ooo_no_ack_delay_threshold_gap() {
         let mut rp = RecvdPackets::new(PacketNumberSpace::ApplicationData);
-        rp.set_received(now(), 1, true);
+        rp.set_received(now(), 1, true).unwrap();
         write_frame(&mut rp);
 
         
         rp.ack_freq(0, 2, Duration::from_millis(10), true);
 
-        rp.set_received(now(), 3, true);
+        rp.set_received(now(), 3, true).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 4, true);
+        rp.set_received(now(), 4, true).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 5, true);
+        rp.set_received(now(), 5, true).unwrap();
         assert_eq!(Some(now()), rp.ack_time());
     }
 
@@ -883,12 +839,12 @@ mod tests {
         rp.ack_freq(0, 1, Duration::from_millis(10), true);
 
         
-        rp.set_received(now(), 0, false);
+        rp.set_received(now(), 0, false).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
         
-        rp.set_received(now(), 2, true);
+        rp.set_received(now(), 2, true).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 3, true);
+        rp.set_received(now(), 3, true).unwrap();
         assert_eq!(Some(now()), rp.ack_time());
     }
 
@@ -899,15 +855,15 @@ mod tests {
         rp.ack_freq(0, 1, Duration::from_millis(10), false);
 
         
-        rp.set_received(now(), 1, false);
+        rp.set_received(now(), 1, false).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 0, false);
+        rp.set_received(now(), 0, false).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
 
         
-        rp.set_received(now(), 2, true);
+        rp.set_received(now(), 2, true).unwrap();
         assert_ne!(Some(now()), rp.ack_time());
-        rp.set_received(now(), 3, true);
+        rp.set_received(now(), 3, true).unwrap();
         assert_eq!(Some(now()), rp.ack_time());
     }
 
@@ -920,14 +876,16 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::Handshake)
             .unwrap()
-            .set_received(now(), 0, false);
+            .set_received(now(), 0, false)
+            .unwrap();
         assert_eq!(None, tracker.ack_time(now()));
 
         
         tracker
             .get_mut(PacketNumberSpace::ApplicationData)
             .unwrap()
-            .set_received(now(), 0, true);
+            .set_received(now(), 0, true)
+            .unwrap();
         assert_eq!(Some(now() + DELAY), tracker.ack_time(now()));
 
         
@@ -935,7 +893,8 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
-            .set_received(later, 0, true);
+            .set_received(later, 0, true)
+            .unwrap();
         assert_eq!(Some(later), tracker.ack_time(now()));
     }
 
@@ -953,7 +912,8 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
-            .set_received(now(), 0, true);
+            .set_received(now(), 0, true)
+            .unwrap();
         
         assert!(tracker
             .ack_time(now().checked_sub(Duration::from_millis(1)).unwrap())
@@ -975,7 +935,8 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
-            .set_received(now(), 1, true);
+            .set_received(now(), 1, true)
+            .unwrap();
         assert!(tracker
             .ack_time(now().checked_sub(Duration::from_millis(1)).unwrap())
             .is_some());
@@ -1009,7 +970,8 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
-            .set_received(now(), 0, true);
+            .set_received(now(), 0, true)
+            .unwrap();
         assert!(tracker
             .ack_time(now().checked_sub(Duration::from_millis(1)).unwrap())
             .is_some());
@@ -1036,11 +998,13 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
-            .set_received(now(), 0, true);
+            .set_received(now(), 0, true)
+            .unwrap();
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
-            .set_received(now(), 2, true);
+            .set_received(now(), 2, true)
+            .unwrap();
         assert!(tracker
             .ack_time(now().checked_sub(Duration::from_millis(1)).unwrap())
             .is_some());
@@ -1080,7 +1044,8 @@ mod tests {
         tracker
             .get_mut(PacketNumberSpace::ApplicationData)
             .unwrap()
-            .set_received(now(), 3, true);
+            .set_received(now(), 3, true)
+            .unwrap();
         assert!(tracker.ack_time(now() + Duration::from_millis(1)).is_none());
 
         
@@ -1090,48 +1055,6 @@ mod tests {
             tracker.ack_time(now() + Duration::from_millis(1)),
             Some(now())
         );
-    }
-
-    #[test]
-    fn pnspaceset_default() {
-        let set = PacketNumberSpaceSet::default();
-        assert!(!set[PacketNumberSpace::Initial]);
-        assert!(!set[PacketNumberSpace::Handshake]);
-        assert!(!set[PacketNumberSpace::ApplicationData]);
-    }
-
-    #[test]
-    fn pnspaceset_from() {
-        let set = PacketNumberSpaceSet::from(&[PacketNumberSpace::Initial]);
-        assert!(set[PacketNumberSpace::Initial]);
-        assert!(!set[PacketNumberSpace::Handshake]);
-        assert!(!set[PacketNumberSpace::ApplicationData]);
-
-        let set =
-            PacketNumberSpaceSet::from(&[PacketNumberSpace::Handshake, PacketNumberSpace::Initial]);
-        assert!(set[PacketNumberSpace::Initial]);
-        assert!(set[PacketNumberSpace::Handshake]);
-        assert!(!set[PacketNumberSpace::ApplicationData]);
-
-        let set = PacketNumberSpaceSet::from(&[
-            PacketNumberSpace::ApplicationData,
-            PacketNumberSpace::ApplicationData,
-        ]);
-        assert!(!set[PacketNumberSpace::Initial]);
-        assert!(!set[PacketNumberSpace::Handshake]);
-        assert!(set[PacketNumberSpace::ApplicationData]);
-    }
-
-    #[test]
-    fn pnspaceset_copy() {
-        let set = PacketNumberSpaceSet::from(&[
-            PacketNumberSpace::Handshake,
-            PacketNumberSpace::ApplicationData,
-        ]);
-        let copy = set;
-        assert!(!copy[PacketNumberSpace::Initial]);
-        assert!(copy[PacketNumberSpace::Handshake]);
-        assert!(copy[PacketNumberSpace::ApplicationData]);
     }
 
     #[test]

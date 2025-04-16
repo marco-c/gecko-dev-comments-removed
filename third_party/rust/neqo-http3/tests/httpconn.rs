@@ -4,6 +4,8 @@
 
 
 
+#![cfg(test)]
+
 use std::time::{Duration, Instant};
 
 use neqo_common::{event::Provider as _, qtrace, Datagram};
@@ -92,8 +94,12 @@ fn process_client_events(conn: &mut Http3Client) {
 fn connect_peers(hconn_c: &mut Http3Client, hconn_s: &mut Http3Server) -> Option<Datagram> {
     assert_eq!(hconn_c.state(), Http3State::Initializing);
     let out = hconn_c.process_output(now()); 
-    let out = hconn_s.process(out.dgram(), now()); 
-    let out = hconn_c.process(out.dgram(), now()); 
+    let out2 = hconn_c.process_output(now()); 
+    _ = hconn_s.process(out.dgram(), now()); 
+    let out = hconn_s.process(out2.dgram(), now()); 
+    let out = hconn_c.process(out.dgram(), now());
+    let out = hconn_s.process(out.dgram(), now());
+    let out = hconn_c.process(out.dgram(), now());
     drop(hconn_s.process(out.dgram(), now())); 
     let authentication_needed = |e| matches!(e, Http3ClientEvent::AuthenticationNeeded);
     assert!(hconn_c.events().any(authentication_needed));
@@ -119,8 +125,14 @@ fn connect_peers_with_network_propagation_delay(
     assert_eq!(hconn_c.state(), Http3State::Initializing);
     let mut now = now();
     let out = hconn_c.process_output(now); 
+    let out2 = hconn_c.process_output(now); 
     now += net_delay;
-    let out = hconn_s.process(out.dgram(), now); 
+    _ = hconn_s.process(out.dgram(), now); 
+    let out = hconn_s.process(out2.dgram(), now);
+    now += net_delay;
+    let out = hconn_c.process(out.dgram(), now);
+    now += net_delay;
+    let out = hconn_s.process(out.dgram(), now);
     now += net_delay;
     let out = hconn_c.process(out.dgram(), now); 
     now += net_delay;
@@ -143,7 +155,8 @@ fn connect_peers_with_network_propagation_delay(
     (out.dgram(), now)
 }
 
-fn connect() -> (Http3Client, Http3Server, Option<Datagram>) {
+#[must_use]
+pub fn connect() -> (Http3Client, Http3Server, Option<Datagram>) {
     let mut hconn_c = default_http3_client();
     let mut hconn_s = default_http3_server();
 
@@ -242,7 +255,7 @@ fn response_103() {
 
 
 
-#[allow(clippy::cast_possible_truncation)]
+#[expect(clippy::cast_possible_truncation, reason = "OK in a test.")]
 #[test]
 fn data_writable_events_low_watermark() -> Result<(), Box<dyn std::error::Error>> {
     const STREAM_LIMIT: u64 = 5000;
@@ -446,6 +459,11 @@ fn zerortt() {
     hconn_c.stream_close_send(req).unwrap();
 
     let out = hconn_c.process(dgram, now());
+    let out2 = hconn_c.process_output(now());
+    _ = hconn_s.process(out.dgram(), now());
+    let out = hconn_s.process(out2.dgram(), now());
+
+    let out = hconn_c.process(out.dgram(), now());
     let out = hconn_s.process(out.dgram(), now());
 
     let mut request_stream = None;

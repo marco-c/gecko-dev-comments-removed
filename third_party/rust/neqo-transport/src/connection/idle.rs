@@ -25,6 +25,8 @@ enum IdleTimeoutState {
 #[derive(Debug, Clone)]
 
 
+
+
 pub struct IdleTimeout {
     timeout: Duration,
     state: IdleTimeoutState,
@@ -61,6 +63,14 @@ impl IdleTimeout {
         
         
         match self.state {
+            
+            
+            
+            
+            
+            
+            
+            
             IdleTimeoutState::AckElicitingPacketSent(_) => {}
             IdleTimeoutState::Init | IdleTimeoutState::PacketReceived(_) => {
                 self.state = IdleTimeoutState::AckElicitingPacketSent(now);

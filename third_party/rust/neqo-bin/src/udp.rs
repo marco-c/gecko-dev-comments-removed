@@ -4,9 +4,11 @@
 
 
 
+#![expect(clippy::missing_errors_doc, reason = "Passing up tokio errors.")]
+
 use std::{io, net::SocketAddr};
 
-use neqo_common::Datagram;
+use neqo_common::{qdebug, Datagram};
 use neqo_udp::{DatagramIter, RecvBuf};
 
 
@@ -24,10 +26,36 @@ pub struct Socket {
 impl Socket {
     
     pub fn bind<A: std::net::ToSocketAddrs>(addr: A) -> Result<Self, io::Error> {
+        const ONE_MB: usize = 1 << 20;
         let socket = std::net::UdpSocket::bind(addr)?;
+        let state = quinn_udp::UdpSocketState::new((&socket).into())?;
+
+        let send_buf_before = state.send_buffer_size((&socket).into())?;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        qdebug!("Default socket send buffer size is {send_buf_before}");
+
+        let recv_buf_before = state.recv_buffer_size((&socket).into())?;
+        if recv_buf_before < ONE_MB {
+            
+            
+            state.set_recv_buffer_size((&socket).into(), ONE_MB)?;
+            let recv_buf_after = state.recv_buffer_size((&socket).into())?;
+            qdebug!("Increasing socket recv buffer size from {recv_buf_before} to {ONE_MB}, now: {recv_buf_after}");
+        } else {
+            qdebug!("Default socket receive buffer size is {recv_buf_before}, not changing");
+        }
 
         Ok(Self {
-            state: quinn_udp::UdpSocketState::new((&socket).into())?,
+            state,
             inner: tokio::net::UdpSocket::from_std(socket)?,
         })
     }

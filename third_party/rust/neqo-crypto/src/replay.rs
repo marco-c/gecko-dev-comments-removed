@@ -44,7 +44,6 @@ scoped_ptr!(
 
 
 
-#[allow(clippy::module_name_repetitions)]
 pub struct AntiReplay {
     ctx: AntiReplayContext,
 }

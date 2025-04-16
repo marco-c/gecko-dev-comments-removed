@@ -4,26 +4,29 @@
 
 
 
+#![allow(
+    clippy::module_name_repetitions,
+    reason = "<https://github.com/mozilla/neqo/issues/2284#issuecomment-2782711813>"
+)]
+
 use std::fmt::Debug;
 
 use enum_map::Enum;
+use strum::{EnumIter, FromRepr};
 
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Enum, Default, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Enum, Default, Debug, FromRepr, EnumIter)]
 #[repr(u8)]
 pub enum IpTosEcn {
     #[default]
     
     NotEct = 0b00,
-
     
     Ect1 = 0b01,
-
     
     Ect0 = 0b10,
-
     
     Ce = 0b11,
 }
@@ -36,13 +39,7 @@ impl From<IpTosEcn> for u8 {
 
 impl From<u8> for IpTosEcn {
     fn from(v: u8) -> Self {
-        match v & 0b0000_0011 {
-            0b00 => Self::NotEct,
-            0b01 => Self::Ect1,
-            0b10 => Self::Ect0,
-            0b11 => Self::Ce,
-            _ => unreachable!(),
-        }
+        Self::from_repr(v & 0b0000_0011).expect("all ECN values are covered")
     }
 }
 
@@ -64,76 +61,54 @@ impl IpTosEcn {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Enum, Default, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Enum, Default, Debug, FromRepr)]
 #[repr(u8)]
 pub enum IpTosDscp {
     #[default]
     
     Cs0 = 0b0000_0000,
-
     
     Cs1 = 0b0010_0000,
-
     
     Cs2 = 0b0100_0000,
-
     
     Cs3 = 0b0110_0000,
-
     
     Cs4 = 0b1000_0000,
-
     
     Cs5 = 0b1010_0000,
-
     
     Cs6 = 0b1100_0000,
-
     
     Cs7 = 0b1110_0000,
-
     
     Af11 = 0b0010_1000,
-
     
     Af12 = 0b0011_0000,
-
     
     Af13 = 0b0011_1000,
-
     
     Af21 = 0b0100_1000,
-
     
     Af22 = 0b0101_0000,
-
     
     Af23 = 0b0101_1000,
-
     
     Af31 = 0b0110_1000,
-
     
     Af32 = 0b0111_0000,
-
     
     Af33 = 0b0111_1000,
-
     
     Af41 = 0b1000_1000,
-
     
     Af42 = 0b1001_0000,
-
     
     Af43 = 0b1001_1000,
-
     
     Ef = 0b1011_1000,
-
     
     VoiceAdmit = 0b1011_0000,
-
     
     Le = 0b0000_0100,
 }
@@ -146,32 +121,7 @@ impl From<IpTosDscp> for u8 {
 
 impl From<u8> for IpTosDscp {
     fn from(v: u8) -> Self {
-        match v & 0b1111_1100 {
-            0b0000_0000 => Self::Cs0,
-            0b0010_0000 => Self::Cs1,
-            0b0100_0000 => Self::Cs2,
-            0b0110_0000 => Self::Cs3,
-            0b1000_0000 => Self::Cs4,
-            0b1010_0000 => Self::Cs5,
-            0b1100_0000 => Self::Cs6,
-            0b1110_0000 => Self::Cs7,
-            0b0010_1000 => Self::Af11,
-            0b0011_0000 => Self::Af12,
-            0b0011_1000 => Self::Af13,
-            0b0100_1000 => Self::Af21,
-            0b0101_0000 => Self::Af22,
-            0b0101_1000 => Self::Af23,
-            0b0110_1000 => Self::Af31,
-            0b0111_0000 => Self::Af32,
-            0b0111_1000 => Self::Af33,
-            0b1000_1000 => Self::Af41,
-            0b1001_0000 => Self::Af42,
-            0b1001_1000 => Self::Af43,
-            0b1011_1000 => Self::Ef,
-            0b1011_0000 => Self::VoiceAdmit,
-            0b0000_0100 => Self::Le,
-            _ => unreachable!(),
-        }
+        Self::from_repr(v & 0b1111_1100).expect("all DCSP values are covered")
     }
 }
 

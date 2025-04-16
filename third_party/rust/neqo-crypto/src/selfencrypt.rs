@@ -126,7 +126,7 @@ impl SelfEncrypt {
     
     
     
-    #[allow(clippy::similar_names)] 
+    #[expect(clippy::similar_names, reason = "aad is similar to aead.")]
     pub fn open(&self, aad: &[u8], ciphertext: &[u8]) -> Res<Vec<u8>> {
         if ciphertext[0] != Self::VERSION {
             return Err(Error::SelfEncryptFailure);

@@ -4,7 +4,7 @@ use std::{
     time::Instant,
 };
 
-use super::{log_sendmsg_error, RecvMeta, Transmit, UdpSockRef, IO_ERROR_LOG_INTERVAL};
+use super::{IO_ERROR_LOG_INTERVAL, RecvMeta, Transmit, UdpSockRef, log_sendmsg_error};
 
 
 
@@ -84,6 +84,30 @@ impl UdpSocketState {
     #[inline]
     pub fn gro_segments(&self) -> usize {
         1
+    }
+
+    
+    #[inline]
+    pub fn set_send_buffer_size(&self, socket: UdpSockRef<'_>, bytes: usize) -> io::Result<()> {
+        socket.0.set_send_buffer_size(bytes)
+    }
+
+    
+    #[inline]
+    pub fn set_recv_buffer_size(&self, socket: UdpSockRef<'_>, bytes: usize) -> io::Result<()> {
+        socket.0.set_recv_buffer_size(bytes)
+    }
+
+    
+    #[inline]
+    pub fn send_buffer_size(&self, socket: UdpSockRef<'_>) -> io::Result<usize> {
+        socket.0.send_buffer_size()
+    }
+
+    
+    #[inline]
+    pub fn recv_buffer_size(&self, socket: UdpSockRef<'_>) -> io::Result<usize> {
+        socket.0.recv_buffer_size()
     }
 
     #[inline]
