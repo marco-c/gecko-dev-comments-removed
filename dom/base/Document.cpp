@@ -13284,45 +13284,6 @@ bool Document::HasBeenScrolled() const {
   return false;
 }
 
-bool Document::CanRewriteURL(nsIURI* aTargetURL) const {
-  if (nsContentUtils::URIIsLocalFile(aTargetURL)) {
-    
-    nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-    return NS_SUCCEEDED(principal->CheckMayLoadWithReporting(
-        mDocumentURI, false, InnerWindowID()));
-  }
-
-  nsCOMPtr<nsIScriptSecurityManager> secMan =
-      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
-  if (!secMan) {
-    return false;
-  }
-
-  
-  
-  
-  bool isPrivateWin =
-      NodePrincipal()->OriginAttributesRef().IsPrivateBrowsing();
-  if (NS_FAILED(secMan->CheckSameOriginURI(mDocumentURI, aTargetURL, true,
-                                           isPrivateWin))) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nsAutoCString currentUserPass, newUserPass;
-  (void)mDocumentURI->GetUserPass(currentUserPass);
-  (void)aTargetURL->GetUserPass(newUserPass);
-
-  return currentUserPass.Equals(newUserPass);
-}
-
 nsISupports* Document::GetCurrentContentSink() {
   return mParser ? mParser->GetContentSink() : nullptr;
 }
