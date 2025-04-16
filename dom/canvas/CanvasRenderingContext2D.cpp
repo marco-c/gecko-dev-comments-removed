@@ -1475,7 +1475,7 @@ void CanvasRenderingContext2D::RestoreClipsAndTransformToTarget() {
   for (auto& style : mStyleStack) {
     for (auto& clipOrTransform : style.clipsAndTransforms) {
       if (clipOrTransform.IsClip()) {
-        if (mClipsNeedConverting) {
+        if (clipOrTransform.clip->GetBackendType() != mPathType) {
           
           
           RefPtr<PathBuilder> pathBuilder = mTarget->CreatePathBuilder();
@@ -1488,8 +1488,6 @@ void CanvasRenderingContext2D::RestoreClipsAndTransformToTarget() {
       }
     }
   }
-
-  mClipsNeedConverting = false;
 }
 
 bool CanvasRenderingContext2D::BorrowTarget(const IntRect& aPersistedRect,
@@ -1684,7 +1682,7 @@ bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
 
   
   
-  mPathType = newTarget->GetBackendType();
+  mPathType = newTarget->GetPathType();
   MOZ_ASSERT(mPathType != BackendType::NONE);
   if (mPathBuilder && mPathBuilder->GetBackendType() != mPathType) {
     RefPtr<Path> path = mPathBuilder->Finish();
@@ -1732,7 +1730,7 @@ void CanvasRenderingContext2D::SetInitialState() {
   mPathTransformDirty = false;
   mPathType =
       (mTarget ? mTarget : gfxPlatform::ThreadLocalScreenReferenceDrawTarget())
-          ->GetBackendType();
+          ->GetPathType();
   MOZ_ASSERT(mPathType != BackendType::NONE);
 
   mStyleStack.Clear();
@@ -1846,7 +1844,6 @@ bool CanvasRenderingContext2D::TrySharedTarget(
     
     
     
-    mClipsNeedConverting = true;
     return false;
   }
 

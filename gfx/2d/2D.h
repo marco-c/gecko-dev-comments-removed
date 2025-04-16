@@ -1957,6 +1957,14 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
     return CreateSimilarDrawTarget(aSize, aFormat);
   }
 
+
+  
+
+
+
+
+  virtual BackendType GetPathType() const { return GetBackendType(); }
+
   
 
 
