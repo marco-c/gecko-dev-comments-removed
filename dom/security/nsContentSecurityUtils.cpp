@@ -1969,7 +1969,6 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
 
   static nsLiteralCString sAllowedChromePagesWithNoCSP[] = {
       "chrome://browser/content/shopping/review-checker.xhtml"_ns,
-      "chrome://geckoview/content/geckoview.xhtml"_ns,
       
       "chrome://mochikit/"_ns,
       "chrome://mochitests/"_ns,
