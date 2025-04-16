@@ -1793,7 +1793,13 @@ impl PartialPresentCompositor for WrPartialPresentCompositor {
 }
 
 
-pub struct WrShaders(SharedShaders);
+
+
+
+pub struct WrShaders {
+    shaders: SharedShaders,
+    device: Device,
+}
 
 pub struct WrGlyphRasterThread(GlyphRasterThread);
 
@@ -4455,20 +4461,23 @@ pub extern "C" fn wr_shaders_new(
         },
     };
 
-    let shaders = WrShaders(Rc::new(RefCell::new(shaders)));
-
     device.end_frame();
+
+    let shaders = WrShaders {
+        shaders: Rc::new(RefCell::new(shaders)),
+        device,
+    };
+
     Box::into_raw(Box::new(shaders))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_shaders_delete(shaders: *mut WrShaders, gl_context: *mut c_void) {
-    let mut device = wr_device_new(gl_context, None);
-    let shaders = Box::from_raw(shaders);
-    if let Ok(shaders) = Rc::try_unwrap(shaders.0) {
+pub unsafe extern "C" fn wr_shaders_delete(shaders: *mut WrShaders) {
+    
+    let WrShaders { shaders, mut device } = *Box::from_raw(shaders);
+    if let Ok(shaders) = Rc::try_unwrap(shaders) {
         shaders.into_inner().deinit(&mut device);
     }
-    
 }
 
 #[no_mangle]
