@@ -452,6 +452,10 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   
   
   
+  
+  
+  
+  
   if (!elem.mNamespace.IsEmpty()) {
     namespaceAtom = NS_AtomizeMainThread(elem.mNamespace);
   }
@@ -487,6 +491,9 @@ static CanonicalName CanonicalizeAttribute(
   MOZ_ASSERT(!attr.mName.IsVoid());
 
   RefPtr<nsAtom> namespaceAtom;
+  
+  
+
   
   
   if (!attr.mNamespace.IsEmpty()) {
@@ -712,13 +719,8 @@ void Sanitizer::RemoveUnsafe() {
 
 RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
     RefPtr<DocumentFragment> aFragment, bool aSafe, ErrorResult& aRv) {
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
-  if (!window || !window->GetDoc()) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-  
-  
+  MOZ_ASSERT(aFragment->OwnerDoc()->IsLoadedAsData(),
+             "SanitizeChildren relies on the document being inert to be safe");
 
   
 
@@ -777,7 +779,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     next = child->GetNextSibling();
 
     
-    
+    MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement());
 
     
     if (child->IsText()) {
@@ -817,7 +819,6 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     
     if constexpr (!IsDefaultConfig) {
       if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
-        
         child->RemoveFromParent();
         continue;
       }
@@ -857,7 +858,6 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     if constexpr (!IsDefaultConfig) {
       if (mRemoveElements.Contains(*elementName) ||
           (!mElements.IsEmpty() && !mElements.Contains(*elementName))) {
-        
         
         child->RemoveFromParent();
         
