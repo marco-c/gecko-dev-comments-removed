@@ -27,6 +27,14 @@ namespace mozilla::dom::quota {
 
 
 
+
+
+
+
+
+
+
+
 class ClientStorageScope {
   class Client {
     quota::Client::Type mClientType;
@@ -38,9 +46,11 @@ class ClientStorageScope {
     quota::Client::Type GetClientType() const { return mClientType; }
   };
 
+  struct Metadata {};
+
   struct Null {};
 
-  using DataType = Variant<Client, Null>;
+  using DataType = Variant<Client, Metadata, Null>;
 
   DataType mData;
 
@@ -51,11 +61,17 @@ class ClientStorageScope {
     return ClientStorageScope(std::move(Client(aClientType)));
   }
 
+  static ClientStorageScope CreateFromMetadata() {
+    return ClientStorageScope(std::move(Metadata()));
+  }
+
   static ClientStorageScope CreateFromNull() {
     return ClientStorageScope(std::move(Null()));
   }
 
   bool IsClient() const { return mData.is<Client>(); }
+
+  bool IsMetadata() const { return mData.is<Metadata>(); }
 
   bool IsNull() const { return mData.is<Null>(); }
 
@@ -81,6 +97,10 @@ class ClientStorageScope {
         return mThis.MatchesClient(aOther);
       }
 
+      bool operator()(const Metadata& aOther) {
+        return mThis.MatchesMetadata(aOther);
+      }
+
       bool operator()(const Null& aOther) { return true; }
     };
 
@@ -90,6 +110,8 @@ class ClientStorageScope {
  private:
   
   explicit ClientStorageScope(const Client&& aClient) : mData(aClient) {}
+
+  explicit ClientStorageScope(const Metadata&& aMetadata) : mData(aMetadata) {}
 
   explicit ClientStorageScope(const Null&& aNull) : mData(aNull) {}
 
@@ -106,6 +128,8 @@ class ClientStorageScope {
         return aThis.GetClientType() == mOther.GetClientType();
       }
 
+      bool operator()(const Metadata& aThis) { return false; }
+
       bool operator()(const Null& aThis) {
         
         return true;
@@ -113,6 +137,25 @@ class ClientStorageScope {
     };
 
     return mData.match(ClientMatcher(aOther));
+  }
+
+  bool MatchesMetadata(const Metadata& aOther) const {
+    struct MetadataMatcher {
+      const Metadata& mOther;
+
+      explicit MetadataMatcher(const Metadata& aOther) : mOther(aOther) {}
+
+      bool operator()(const Client& aThis) { return false; }
+
+      bool operator()(const Metadata& aThis) { return true; }
+
+      bool operator()(const Null& aThis) {
+        
+        return true;
+      }
+    };
+
+    return mData.match(MetadataMatcher(aOther));
   }
 
   bool operator==(const ClientStorageScope& aOther) = delete;
