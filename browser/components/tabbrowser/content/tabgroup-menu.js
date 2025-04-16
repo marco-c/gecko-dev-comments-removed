@@ -888,7 +888,10 @@
         case KeyEvent.DOM_VK_RETURN:
           
           
-          if (event.target.nodeName != "toolbarbutton") {
+          if (
+            event.target.localName != "toolbarbutton" &&
+            event.target.localName != "moz-button"
+          ) {
             this.close();
           }
           break;
