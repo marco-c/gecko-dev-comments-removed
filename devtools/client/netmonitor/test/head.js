@@ -642,8 +642,15 @@ function verifyRequestItemTarget(
   } = requestItem;
   const formattedIPPort = getFormattedIPAndPort(remoteAddress, remotePort);
   const remoteIP = remoteAddress ? `${formattedIPPort}` : "unknown";
-  const duration = getFormattedTime(totalTime);
-  const latency = getFormattedTime(eventTimings.timings.wait);
+  
+  const duration =
+    totalTime === undefined || isNaN(totalTime)
+      ? ""
+      : getFormattedTime(totalTime);
+  const latency =
+    eventTimings.timings.wait === undefined || isNaN(eventTimings.timings.wait)
+      ? ""
+      : getFormattedTime(eventTimings.timings.wait);
   const protocol = getFormattedProtocol(requestItem);
 
   if (fuzzyUrl) {
