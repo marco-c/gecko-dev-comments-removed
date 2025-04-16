@@ -236,6 +236,9 @@ class DOMMatrixReadOnly : public nsWrapperCache {
     return nullptr;
   }
 
+  static gfx::MatrixDouble ToValidatedMatrixDouble(
+      const DOMMatrix2DInit& aMatrixInit, ErrorResult& aRv);
+
  protected:
   nsCOMPtr<nsISupports> mParent;
   UniquePtr<gfx::MatrixDouble> mMatrix2D;
@@ -249,6 +252,7 @@ class DOMMatrixReadOnly : public nsWrapperCache {
 
 
   void SetDataFromMatrix2DInit(const DOMMatrix2DInit& aMatrixInit);
+  static gfx::MatrixDouble ToMatrixDouble(const DOMMatrix2DInit& aMatrixInit);
   void SetDataFromMatrixInit(const DOMMatrixInit& aMatrixInit);
 
   DOMMatrixReadOnly* SetMatrixValue(const nsACString&, ErrorResult&);
