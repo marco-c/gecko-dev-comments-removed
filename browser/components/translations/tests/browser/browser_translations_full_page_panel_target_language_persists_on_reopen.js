@@ -1,0 +1,46 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+add_task(
+  async function test_browser_translations_full_page_panel_target_language_persists_on_reopen() {
+    const { cleanup } = await loadTestPage({
+      page: SPANISH_PAGE_URL,
+      languagePairs: LANGUAGE_PAIRS,
+    });
+
+    await FullPageTranslationsTestUtils.assertTranslationsButton(
+      { button: true },
+      "The button is available."
+    );
+
+    await FullPageTranslationsTestUtils.openPanel({
+      expectedFromLanguage: "es",
+      expectedToLanguage: "en",
+      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
+    });
+
+    await FullPageTranslationsTestUtils.changeSelectedToLanguage({
+      langTag: "uk",
+    });
+
+    await FullPageTranslationsTestUtils.clickCancelButton();
+
+    
+    await FullPageTranslationsTestUtils.openPanel({
+      expectedFromLanguage: "es",
+      expectedToLanguage: "uk",
+      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
+    });
+
+    await cleanup();
+  }
+);
