@@ -114,29 +114,21 @@ class StaticPresData {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsStaticAtom* GetLangGroup(nsAtom* aLanguage,
-                             bool* aNeedsToCache = nullptr) const;
+  nsStaticAtom* GetLangGroup(nsAtom* aLanguage) const;
 
   
 
 
-  nsStaticAtom* GetUncachedLangGroup(nsAtom* aLanguage) const;
 
-  
+
+
+
+
+
+
+
+
+
 
 
 

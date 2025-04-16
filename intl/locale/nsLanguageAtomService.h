@@ -38,24 +38,13 @@ class nsLanguageAtomService final {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsStaticAtom* GetLanguageGroup(nsAtom* aLanguage,
-                                 bool* aNeedsToCache = nullptr);
-  nsStaticAtom* GetUncachedLanguageGroup(nsAtom* aLanguage) const;
+  nsStaticAtom* GetLanguageGroup(nsAtom* aLanguage);
 
  private:
+  
+  
+  nsStaticAtom* GetUncachedLanguageGroup(nsAtom* aLanguage) const;
+
   static mozilla::StaticAutoPtr<nsLanguageAtomService> sLangAtomService;
 
   nsTHashMap<RefPtr<nsAtom>, nsStaticAtom*> mLangToGroup MOZ_GUARDED_BY(mLock);

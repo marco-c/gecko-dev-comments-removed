@@ -308,11 +308,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   }
 
   
-  
-  
-  
-  void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr,
-                             bool aForFontEnumerationThread = false);
+  void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr);
 
  protected:
   virtual ~gfxFcPlatformFontList();
@@ -361,7 +357,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   
   bool TryLangForGroup(const nsACString& aOSLang, nsAtom* aLangGroup,
-                       nsACString& aLang, bool aForFontEnumerationThread);
+                       nsACString& aLang);
 
 #ifdef MOZ_BUNDLED_FONTS
   void ActivateBundledFonts();
