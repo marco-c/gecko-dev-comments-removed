@@ -445,7 +445,12 @@ add_task(
     };
 
     
-    await ExtensionPermissions.add(extension.id, permObj, extension.extension);
+    await ExtensionPermissions.add(
+      extension.id,
+      
+      { ...permObj },
+      extension.extension
+    );
     let details = await extension.awaitMessage("added");
     Assert.deepEqual(permObj, details, "got added event");
 
@@ -462,7 +467,8 @@ add_task(
     
     await ExtensionPermissions.remove(
       extension.id,
-      permObj,
+      
+      { ...permObj },
       extension.extension
     );
 

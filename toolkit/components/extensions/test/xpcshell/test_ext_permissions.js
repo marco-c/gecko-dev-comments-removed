@@ -74,7 +74,7 @@ add_task(
     const res = await ExtensionPermissions.get("@testextension");
     Assert.deepEqual(
       res,
-      { permissions: [], origins: [] },
+      { permissions: [], origins: [], data_collection: [] },
       "Expect ExtensionPermissions get promise to be resolved"
     );
     Assert.ok(
@@ -1250,4 +1250,76 @@ add_task(async function test_onAdded_all_urls() {
   equal(perms.permissions.join(), "", "Not expecting api permissions.");
 
   await extension.unload();
+});
+
+add_task(async function test_add_data_collection() {
+  let extensionId = "@data-collection-test";
+  
+  await ExtensionPermissions._getStore().put(extensionId, {
+    permissions: ["bookmarks"],
+    origins: [],
+  });
+
+  
+  let perms = await ExtensionPermissions._getStore().get(extensionId);
+  Assert.deepEqual(
+    perms,
+    { permissions: ["bookmarks"], origins: [] },
+    "expected permissions without data collection"
+  );
+
+  
+  await ExtensionPermissions.add(extensionId, {
+    permissions: [],
+    origins: [],
+    data_collection: ["technicalAndInteraction"],
+  });
+  
+  perms = await ExtensionPermissions.get(extensionId);
+  Assert.deepEqual(
+    perms,
+    {
+      permissions: ["bookmarks"],
+      origins: [],
+      data_collection: ["technicalAndInteraction"],
+    },
+    "expected permissions with data collection"
+  );
+});
+
+add_task(async function test_remove_data_collection() {
+  let extensionId = "@data-collection-test";
+  
+  await ExtensionPermissions._getStore().put(extensionId, {
+    permissions: ["bookmarks"],
+    origins: [],
+  });
+
+  
+  let perms = await ExtensionPermissions._getStore().get(extensionId);
+  Assert.deepEqual(
+    perms,
+    { permissions: ["bookmarks"], origins: [] },
+    "expected permissions without data collection"
+  );
+
+  
+  
+  
+  await ExtensionPermissions.remove(extensionId, {
+    permissions: ["bookmarks"],
+    origins: [],
+    data_collection: ["technicalAndInteraction"],
+  });
+  
+  perms = await ExtensionPermissions.get(extensionId);
+  Assert.deepEqual(
+    perms,
+    {
+      permissions: [],
+      origins: [],
+      data_collection: [],
+    },
+    "expected permissions with data collection"
+  );
 });

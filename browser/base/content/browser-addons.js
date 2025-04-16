@@ -146,9 +146,18 @@ customElements.define(
     }
 
     get hasNoPermissions() {
-      const { strings, showIncognitoCheckbox } =
-        this.notification.options.customElementOptions;
-      return !(showIncognitoCheckbox || strings.msgs.length);
+      const {
+        strings,
+        showIncognitoCheckbox,
+        showTechnicalAndInteractionCheckbox,
+      } = this.notification.options.customElementOptions;
+
+      return !(
+        strings.msgs.length ||
+        this.#dataCollectionPermissions?.msg ||
+        showIncognitoCheckbox ||
+        showTechnicalAndInteractionCheckbox
+      );
     }
 
     get domainsSet() {
@@ -171,9 +180,25 @@ customElements.define(
       return strings.fullDomainsList.msgIdIndex === idx;
     }
 
+    
+
+
+
+    get #dataCollectionPermissions() {
+      if (!this.notification?.options?.customElementOptions) {
+        return undefined;
+      }
+      const { strings } = this.notification.options.customElementOptions;
+      return strings.dataCollectionPermissions;
+    }
+
     render() {
-      const { strings, showIncognitoCheckbox, isUserScriptsRequest } =
-        this.notification.options.customElementOptions;
+      const {
+        strings,
+        showIncognitoCheckbox,
+        showTechnicalAndInteractionCheckbox,
+        isUserScriptsRequest,
+      } = this.notification.options.customElementOptions;
 
       const { textEl, introEl, permsListEl } = this;
 
@@ -237,6 +262,28 @@ customElements.define(
           } else {
             item.textContent = msg;
           }
+          permsListEl.appendChild(item);
+        }
+
+        if (this.#dataCollectionPermissions?.msg) {
+          let item = doc.createElementNS(HTML_NS, "li");
+          item.classList.add(
+            "webext-perm-granted",
+            "webext-data-collection-perm-granted"
+          );
+          item.textContent = this.#dataCollectionPermissions.msg;
+          permsListEl.appendChild(item);
+        }
+
+        
+        
+        if (showTechnicalAndInteractionCheckbox) {
+          let item = doc.createElementNS(HTML_NS, "li");
+          item.classList.add(
+            "webext-perm-optional",
+            "webext-data-collection-perm-optional"
+          );
+          item.appendChild(this.#createTechnicalAndInteractionDataCheckbox());
           permsListEl.appendChild(item);
         }
 
@@ -365,6 +412,28 @@ customElements.define(
         checkboxEl,
         "popup-notification-addon-privatebrowsing-checkbox"
       );
+      return checkboxEl;
+    }
+
+    #createTechnicalAndInteractionDataCheckbox() {
+      const { grantTechnicalAndInteractionDataCollection } =
+        this.notification.options.customElementOptions;
+
+      const checkboxEl = this.ownerDocument.createXULElement("checkbox");
+      checkboxEl.label = lazy.PERMISSION_L10N.formatValueSync(
+        "webext-perms-description-data-long-technicalAndInteraction"
+      );
+      checkboxEl.checked = grantTechnicalAndInteractionDataCollection;
+      checkboxEl.addEventListener("CheckboxStateChange", () => {
+        
+        
+        
+        
+        const { onTechnicalAndInteractionDataChanged } =
+          this.notification.options.customElementOptions;
+        onTechnicalAndInteractionDataChanged?.(checkboxEl.checked);
+      });
+
       return checkboxEl;
     }
   }
