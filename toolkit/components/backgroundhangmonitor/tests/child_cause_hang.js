@@ -2,6 +2,9 @@
 
 
 function ensureProfilerInitialized() {
+  if (Services.profiler.IsActive()) {
+    return;
+  }
   
   
   

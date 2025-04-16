@@ -4,8 +4,14 @@
 const { TelemetryUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryUtils.sys.mjs"
 );
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
 
 function ensureProfilerInitialized() {
+  if (Services.profiler.IsActive()) {
+    return;
+  }
   
   
   
@@ -21,6 +27,19 @@ add_task(async function test_BHRObserver() {
   }
 
   ensureProfilerInitialized();
+  do_get_profile();
+
+  Services.fog.initializeFOG();
+  Assert.equal(
+    null,
+    Glean.hangs.modules.testGetValue(),
+    "no module reported to glean before the beginning of the test"
+  );
+  Assert.equal(
+    null,
+    Glean.hangs.reports.testGetValue(),
+    "no hang reported to glean before the beginning of the test"
+  );
 
   let telSvc =
     Cc["@mozilla.org/bhr-telemetry-service;1"].getService().wrappedJSObject;
@@ -57,6 +76,13 @@ add_task(async function test_BHRObserver() {
   
   
   
+
+  
+  UserInteraction.start("testing.interaction", "val");
+  
+  setTimeout(() => {
+    UserInteraction.finish("testing.interaction");
+  }, 2000);
 
   executeSoon(() => {
     let startTime = Date.now();
@@ -121,6 +147,19 @@ add_task(async function test_BHRObserver() {
   });
 
   
+  
+  
+  let hasHangWithAnnotations = hangs.some(hang => !!hang.annotations.length);
+  (hasHangWithAnnotations ? ok : todo_check_true)(
+    hasHangWithAnnotations,
+    "at least one hang has annotations"
+  );
+  ok(
+    hangs.some(hang => !hang.annotations.length),
+    "at least one hang has no annotation"
+  );
+
+  
   Assert.greaterOrEqual(telSvc.payload.hangs.length - beforeLen, 3);
   ok(Array.isArray(telSvc.payload.modules));
   telSvc.payload.modules.forEach(module => {
@@ -153,12 +192,97 @@ add_task(async function test_BHRObserver() {
     });
 
     
-    equal(typeof hang.annotations, "object");
-    Object.keys(hang.annotations).forEach(key => {
-      equal(typeof hang.annotations[key], "string");
+    ok(Array.isArray(hang.annotations));
+    hang.annotations.forEach(annotation => {
+      ok(Array.isArray(annotation));
+      equal(annotation.length, 2);
+      equal(typeof annotation[0], "string");
+      equal(typeof annotation[1], "string");
     });
   });
 
   do_send_remote_message("bhr_hangs_detected");
   await childDone;
+
+  let pingSubmitted = false;
+  GleanPings.hangReport.testBeforeNextSubmit(() => {
+    Assert.deepEqual(
+      telSvc.payload.modules,
+      Glean.hangs.modules.testGetValue()
+    );
+    let hangs = telSvc.payload.hangs;
+    let gleanHangs = Glean.hangs.reports.testGetValue();
+    Assert.equal(
+      hangs.length,
+      gleanHangs.length,
+      "the expected hang count has been reported"
+    );
+    for (let i = 0; i < hangs.length; ++i) {
+      let hang = hangs[i];
+      let gleanHang = gleanHangs[i];
+      Assert.equal(
+        Math.round(hang.duration),
+        gleanHang.duration,
+        "the hang duration is correct"
+      );
+      Assert.equal(
+        Math.round(hang.stack.length),
+        gleanHang.stack.length,
+        "the reported stack has the expected length"
+      );
+      for (let j = 0; j < hang.stack.length; ++j) {
+        let frame = hang.stack[j];
+        let gleanFrame = gleanHang.stack[j];
+        if (typeof frame == "string") {
+          Assert.deepEqual(
+            { frame },
+            gleanFrame,
+            "label or JS frame is correct"
+          );
+        } else {
+          let module;
+          [module, frame] = frame;
+          Assert.deepEqual(
+            { frame, module },
+            gleanFrame,
+            "native frame is correct"
+          );
+        }
+      }
+      if (hang.annotations.length) {
+        Assert.deepEqual(
+          hang.annotations,
+          gleanHang.annotations,
+          "annotations have been copied to glean"
+        );
+      } else {
+        Assert.equal(
+          "undefined",
+          typeof gleanHang.annotations,
+          "no annotation"
+        );
+      }
+      for (let field of ["process", "thread", "runnableName"]) {
+        Assert.equal(hang[field], gleanHang[field], `the ${field} is correct`);
+      }
+      if (hang.remoteType) {
+        Assert.equal(
+          hang.remoteType,
+          gleanHang.remoteType,
+          "the remote type is correct"
+        );
+      } else {
+        Assert.equal(
+          "undefined",
+          typeof gleanHang.remoteType,
+          "no remote type"
+        );
+      }
+    }
+    pingSubmitted = true;
+  });
+
+  Services.prefs.setBoolPref("toolkit.telemetry.bhrPing.enabled", true);
+  telSvc.submit();
+  Assert.ok(pingSubmitted, "the glean 'hang-report' ping has been submitted");
 });
