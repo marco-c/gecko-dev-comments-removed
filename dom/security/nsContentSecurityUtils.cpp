@@ -1421,6 +1421,9 @@ static nsLiteralCString sConnectSrcAddonsAllowList[] = {
     
 };
 
+
+static nsLiteralCString sConnectSrcHttpsHostAllowList[] = {"about:logging"_ns};
+
 class DisallowingVisitor : public nsCSPSrcVisitor {
  public:
   DisallowingVisitor(CSPDirective aDirective, nsACString& aURL)
@@ -1662,6 +1665,11 @@ class ConnectSrcVisitor : public AllowBuiltinSrcVisitor {
     }
 
     return AllowBuiltinSrcVisitor::visitSchemeSrc(src);
+  }
+
+  bool visitHostSrc(const nsCSPHostSrc& src) override {
+    return VisitHostSrcWithWildcardAndHttpsHostAllowLists(
+        src, nullptr, sConnectSrcHttpsHostAllowList);
   }
 };
 
