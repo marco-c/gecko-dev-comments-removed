@@ -33,11 +33,13 @@
 #include "GLBlitHelper.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/SurfacePoolWayland.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/RenderDMABUFTextureHost.h"
 #include "mozilla/widget/WaylandSurface.h"
+#include "mozilla/StaticPrefs_widget.h"
 
 #ifdef MOZ_LOGGING
 #  undef LOG
@@ -138,25 +140,31 @@ void NativeLayerRootWayland::Init() {
   
   
   
-  mSurface->EnableDMABufFormatsLocked(lock, [this, self = RefPtr{this}](
-                                                DMABufFormats* aFormats) {
-    if (DRMFormat* format = aFormats->GetFormat(GBM_FORMAT_ARGB8888,
-                                                 true)) {
-      LOG("NativeLayerRootWayland DMABuf format refresh: we have scanout "
-          "format.");
-      mDRMFormat = format;
-      return;
-    }
-    if (DRMFormat* format = aFormats->GetFormat(GBM_FORMAT_ARGB8888,
-                                                 false)) {
-      LOG("NativeLayerRootWayland DMABuf format refresh: missing scanout "
-          "format, use generic one.");
-      mDRMFormat = format;
-      return;
-    }
-    LOG("NativeLayerRootWayland DMABuf format refresh: missing DRM "
-        "format!");
-  });
+  
+#ifdef NIGHTLY_BUILD
+  if (!gfx::gfxVars::UseDMABufSurfaceExport() &&
+      StaticPrefs::widget_dmabuf_feedback_enabled_AtStartup()) {
+    mSurface->EnableDMABufFormatsLocked(lock, [this, self = RefPtr{this}](
+                                                  DMABufFormats* aFormats) {
+      if (DRMFormat* format = aFormats->GetFormat(GBM_FORMAT_ARGB8888,
+                                                   true)) {
+        LOG("NativeLayerRootWayland DMABuf format refresh: we have scanout "
+            "format.");
+        mDRMFormat = format;
+        return;
+      }
+      if (DRMFormat* format = aFormats->GetFormat(GBM_FORMAT_ARGB8888,
+                                                   false)) {
+        LOG("NativeLayerRootWayland DMABuf format refresh: missing scanout "
+            "format, use generic one.");
+        mDRMFormat = format;
+        return;
+      }
+      LOG("NativeLayerRootWayland DMABuf format refresh: missing DRM "
+          "format!");
+    });
+  }
+#endif
 }
 
 void NativeLayerRootWayland::Shutdown() {
