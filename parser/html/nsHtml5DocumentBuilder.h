@@ -113,7 +113,7 @@ class nsHtml5DocumentBuilder : public nsContentSink {
   virtual ~nsHtml5DocumentBuilder();
 
  protected:
-  AutoTArray<nsCOMPtr<nsIContent>, 32> mOwnedElements;
+  nsTArray<nsCOMPtr<nsIContent>> mOwnedElements;
   
 
 
