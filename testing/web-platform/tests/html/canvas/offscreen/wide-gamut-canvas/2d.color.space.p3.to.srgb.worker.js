@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("test getImageData with srsb and uint8 from display p3 uint8 canvas");
+var t = async_test("test getImageData with srgb and uint8 from display p3 uint8 canvas");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
