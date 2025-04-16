@@ -695,95 +695,99 @@ bool Navigation::InnerFireNavigateEvent(
     }
 
     
+    nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
     Promise::WaitForAll(
-        GetOwnerGlobal(), promiseList,
+        globalObject, promiseList,
         [self = RefPtr(this), event,
-         apiMethodTracker](const Span<JS::Heap<JS::Value>>&) {
-          
-          
-          if (nsCOMPtr<nsPIDOMWindowInner> window =
-                  do_QueryInterface(event->GetParentObject());
-              window && !window->IsFullyActive()) {
-            return;
-          }
+         apiMethodTracker](const Span<JS::Heap<JS::Value>>&)
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              
+              if (nsCOMPtr<nsPIDOMWindowInner> window =
+                      do_QueryInterface(event->GetParentObject());
+                  window && !window->IsFullyActive()) {
+                return;
+              }
 
-          
-          if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
-            return;
-          }
+              
+              if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
+                return;
+              }
 
-          
-          MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
+              
+              MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
 
-          
-          self->mOngoingNavigateEvent = nullptr;
+              
+              self->mOngoingNavigateEvent = nullptr;
 
-          
-          event->Finish(true);
+              
+              event->Finish(true);
 
-          
-          self->FireEvent(u"navigatesuccess"_ns);
+              
+              self->FireEvent(u"navigatesuccess"_ns);
 
-          
-          if (apiMethodTracker) {
-            apiMethodTracker->mFinishedPromise->MaybeResolveWithUndefined();
-          }
+              
+              if (apiMethodTracker) {
+                apiMethodTracker->mFinishedPromise->MaybeResolveWithUndefined();
+              }
 
-          
-          if (self->mTransition) {
-            self->mTransition->Finished()->MaybeResolveWithUndefined();
-          }
+              
+              if (self->mTransition) {
+                self->mTransition->Finished()->MaybeResolveWithUndefined();
+              }
 
-          
-          self->mTransition = nullptr;
-        },
+              
+              self->mTransition = nullptr;
+            },
         [self = RefPtr(this), event,
-         apiMethodTracker](JS::Handle<JS::Value> aRejectionReason) {
-          
-          
-          if (nsCOMPtr<nsPIDOMWindowInner> window =
-                  do_QueryInterface(event->GetParentObject());
-              window && !window->IsFullyActive()) {
-            return;
-          }
+         apiMethodTracker](JS::Handle<JS::Value> aRejectionReason)
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              
+              if (nsCOMPtr<nsPIDOMWindowInner> window =
+                      do_QueryInterface(event->GetParentObject());
+                  window && !window->IsFullyActive()) {
+                return;
+              }
 
-          
-          if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
-            return;
-          }
+              
+              if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
+                return;
+              }
 
-          
-          MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
+              
+              MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
 
-          
-          self->mOngoingNavigateEvent = nullptr;
+              
+              self->mOngoingNavigateEvent = nullptr;
 
-          
-          event->Finish(false);
+              
+              event->Finish(false);
 
-          if (AutoJSAPI jsapi;
-              !NS_WARN_IF(!jsapi.Init(event->GetParentObject()))) {
-            
-            RootedDictionary<ErrorEventInit> init(jsapi.cx());
-            ExtractErrorInformation(jsapi.cx(), aRejectionReason, init);
+              if (AutoJSAPI jsapi;
+                  !NS_WARN_IF(!jsapi.Init(event->GetParentObject()))) {
+                
+                RootedDictionary<ErrorEventInit> init(jsapi.cx());
+                ExtractErrorInformation(jsapi.cx(), aRejectionReason, init);
 
-            
-            self->FireErrorEvent(u"navigateerror"_ns, init);
-          }
+                
+                self->FireErrorEvent(u"navigateerror"_ns, init);
+              }
 
-          
-          if (apiMethodTracker) {
-            apiMethodTracker->mFinishedPromise->MaybeReject(aRejectionReason);
-          }
+              
+              if (apiMethodTracker) {
+                apiMethodTracker->mFinishedPromise->MaybeReject(
+                    aRejectionReason);
+              }
 
-          
-          if (self->mTransition) {
-            self->mTransition->Finished()->MaybeReject(aRejectionReason);
-          }
+              
+              if (self->mTransition) {
+                self->mTransition->Finished()->MaybeReject(aRejectionReason);
+              }
 
-          
-          self->mTransition = nullptr;
-        });
+              
+              self->mTransition = nullptr;
+            });
   }
 
   
