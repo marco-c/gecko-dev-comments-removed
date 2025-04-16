@@ -5,11 +5,15 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "General")
+    BUG_COMPONENT = ("Firefox", "Data Loss Prevention")
 
 UNIFIED_SOURCES += [
     "content_analysis/sdk/analysis.pb.cc",
     "ContentAnalysis.cpp",
+]
+
+EXTRA_JS_MODULES += [
+    "ContentAnalysisUtils.sys.mjs",
 ]
 
 UNIFIED_SOURCES += [
