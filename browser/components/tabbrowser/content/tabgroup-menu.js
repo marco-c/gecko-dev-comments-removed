@@ -886,11 +886,7 @@
           this.close(false);
           break;
         case KeyEvent.DOM_VK_RETURN:
-          
-          
-          if (event.target.nodeName != "toolbarbutton") {
-            this.close();
-          }
+          this.close();
           break;
       }
     }
