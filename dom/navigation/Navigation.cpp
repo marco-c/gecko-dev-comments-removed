@@ -6,6 +6,8 @@
 
 #include "mozilla/dom/Navigation.h"
 
+#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
@@ -310,7 +312,7 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
 
 
 bool Navigation::FireTraverseNavigateEvent(
-    SessionHistoryInfo* aDestinationSessionHistoryInfo,
+    JSContext* aCx, SessionHistoryInfo* aDestinationSessionHistoryInfo,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   
   
@@ -348,7 +350,7 @@ bool Navigation::FireTraverseNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      NavigationType::Traverse, destination,
+      aCx, NavigationType::Traverse, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None),
        nullptr,
        Nothing(),
@@ -358,7 +360,7 @@ bool Navigation::FireTraverseNavigateEvent(
 
 
 bool Navigation::FirePushReplaceReloadNavigateEvent(
-    NavigationType aNavigationType, nsIURI* aDestinationURL,
+    JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
     bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
     Element* aSourceElement, Maybe<const FormData&> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
@@ -376,7 +378,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      aNavigationType, destination,
+      aCx, aNavigationType, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
       aFormDataEntryList, aClassicHistoryAPIState,
        u""_ns);
@@ -384,8 +386,9 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
 
 bool Navigation::FireDownloadRequestNavigateEvent(
-    nsIURI* aDestinationURL, UserNavigationInvolvement aUserInvolvement,
-    Element* aSourceElement, const nsAString& aFilename) {
+    JSContext* aCx, nsIURI* aDestinationURL,
+    UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
+    const nsAString& aFilename) {
   
   
   
@@ -399,7 +402,7 @@ bool Navigation::FireDownloadRequestNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      NavigationType::Push, destination, aUserInvolvement, aSourceElement,
+      aCx, NavigationType::Push, destination, aUserInvolvement, aSourceElement,
        Nothing(),
        nullptr, aFilename);
 }
@@ -462,9 +465,29 @@ nsresult Navigation::FireEvent(const nsAString& aName) {
   return rv.StealNSResult();
 }
 
+static void ExtractErrorInformation(JSContext* aCx,
+                                    JS::Handle<JS::Value> aError,
+                                    ErrorEventInit& aErrorEventInitDict) {
+  nsContentUtils::ExtractErrorValues(
+      aCx, aError, aErrorEventInitDict.mFilename, &aErrorEventInitDict.mLineno,
+      &aErrorEventInitDict.mColno, aErrorEventInitDict.mMessage);
+  aErrorEventInitDict.mError = aError;
+  aErrorEventInitDict.mBubbles = false;
+  aErrorEventInitDict.mCancelable = false;
+}
+
+nsresult Navigation::FireErrorEvent(const nsAString& aName,
+                                    const ErrorEventInit& aEventInitDict) {
+  RefPtr<Event> event = ErrorEvent::Constructor(this, aName, aEventInitDict);
+  ErrorResult rv;
+  DispatchEvent(*event, rv);
+  return rv.StealNSResult();
+}
+
 
 bool Navigation::InnerFireNavigateEvent(
-    NavigationType aNavigationType, NavigationDestination* aDestination,
+    JSContext* aCx, NavigationType aNavigationType,
+    NavigationDestination* aDestination,
     UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
     Maybe<const FormData&> aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
@@ -580,7 +603,7 @@ bool Navigation::InnerFireNavigateEvent(
   mOngoingNavigateEvent = event;
 
   
-  mFocusChangedDUringOngoingNavigation = false;
+  mFocusChangedDuringOngoingNavigation = false;
 
   
   mSuppressNormalScrollRestorationDuringOngoingNavigation = false;
@@ -594,7 +617,7 @@ bool Navigation::InnerFireNavigateEvent(
 
     
     if (!abortController->Signal()->Aborted()) {
-      AbortOngoingNavigation();
+      AbortOngoingNavigation(aCx);
     }
 
     
@@ -824,15 +847,71 @@ void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
 }
 
 
-void Navigation::AbortOngoingNavigation() {}
+void Navigation::AbortOngoingNavigation(JSContext* aCx,
+                                        JS::Handle<JS::Value> aError) {
+  
+  RefPtr<NavigateEvent> event = mOngoingNavigateEvent;
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(event);
+
+  
+  mFocusChangedDuringOngoingNavigation = false;
+
+  
+  mSuppressNormalScrollRestorationDuringOngoingNavigation = false;
+
+  JS::Rooted<JS::Value> error(aCx, aError);
+
+  
+  if (aError.isUndefined()) {
+    RefPtr<DOMException> exception =
+        DOMException::Create(NS_ERROR_DOM_ABORT_ERR);
+    
+    
+    GetOrCreateDOMReflector(aCx, exception, &error);
+  }
+
+  
+  if (event->HasBeenDispatched()) {
+    event->PreventDefault();
+  }
+
+  
+  event->AbortController()->Abort(aCx, error);
+
+  
+  mOngoingNavigateEvent = nullptr;
+
+  
+  RootedDictionary<ErrorEventInit> init(aCx);
+  ExtractErrorInformation(aCx, error, init);
+
+  
+  FireErrorEvent(u"navigateerror"_ns, init);
+
+  
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker->mFinishedPromise->MaybeReject(error);
+  }
+
+  
+  if (mTransition) {
+    
+    mTransition->Finished()->MaybeReject(error);
+
+    
+    mTransition = nullptr;
+  }
+}
 
 bool Navigation::FocusedChangedDuringOngoingNavigation() const {
-  return mFocusChangedDUringOngoingNavigation;
+  return mFocusChangedDuringOngoingNavigation;
 }
 
 void Navigation::SetFocusedChangedDuringOngoingNavigation(
     bool aFocusChangedDUringOngoingNavigation) {
-  mFocusChangedDUringOngoingNavigation = aFocusChangedDUringOngoingNavigation;
+  mFocusChangedDuringOngoingNavigation = aFocusChangedDUringOngoingNavigation;
 }
 
 void Navigation::LogHistory() const {
