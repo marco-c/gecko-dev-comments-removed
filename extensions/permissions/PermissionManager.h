@@ -511,12 +511,28 @@ class PermissionManager final : public nsIPermissionManager,
 
   nsresult RemoveAllModifiedSince(int64_t aModificationTime);
 
-  template <class T>
-  nsresult RemovePermissionEntries(T aCondition);
+  
+  
+  nsresult RemoveAllForPrivateBrowsing();
 
-  template <class T>
-  nsresult GetPermissionEntries(T aCondition,
-                                nsTArray<RefPtr<nsIPermission>>& aResult);
+  
+  
+  nsresult RemovePermissionEntries(
+      const std::function<bool(const PermissionEntry& aPermEntry,
+                               const nsCOMPtr<nsIPrincipal>& aPrincipal)>&
+          aCondition,
+      bool aComputePrincipalForCondition = true);
+
+  
+  
+  nsresult RemovePermissionEntries(
+      const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition);
+
+  
+  
+  nsresult GetPermissionEntries(
+      const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition,
+      nsTArray<RefPtr<nsIPermission>>& aResult);
 
   
   
