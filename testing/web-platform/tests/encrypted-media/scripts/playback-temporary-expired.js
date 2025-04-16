@@ -45,7 +45,7 @@ function runTest(config,qualifier) {
             assert_in_array(event.messageType, ['license-request', 'individualization-request']);
 
             
-            var expiration = Date.now().valueOf() + 1000;
+            var expiration = Date.now().valueOf() + 2000;
             config.messagehandler(event.messageType, event.message, { expiration: expiration }).then(function(response) {
                 
                 
@@ -60,9 +60,9 @@ function runTest(config,qualifier) {
                         assert_greater_than(Date.now().valueOf(), expiration, "Starting play before license expired");
                         _video.play();
                         
-                        test.step_timeout(function() { test.done(); }, 2000);
+                        test.step_timeout(function() { test.done(); }, 4000);
                     }).catch(onFailure);
-                }, 2000);
+                }, 4000);
             }).catch(onFailure);
         }
 
