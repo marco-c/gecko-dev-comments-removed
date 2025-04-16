@@ -857,7 +857,7 @@ function createSimpleTableMessage(columns, items, timeStamp) {
 
 function getWarningGroupLabel(firstMessage) {
   if (
-    isContentBlockingMessage(firstMessage) ||
+    isEnhancedTrackingProtectionMessage(firstMessage) ||
     isStorageIsolationMessage(firstMessage) ||
     isTrackingProtectionMessage(firstMessage)
   ) {
@@ -942,7 +942,7 @@ function getWarningGroupType(message) {
     return null;
   }
 
-  if (isContentBlockingMessage(message)) {
+  if (isEnhancedTrackingProtectionMessage(message)) {
     return MESSAGE_TYPE.CONTENT_BLOCKING_GROUP;
   }
 
@@ -1002,7 +1002,7 @@ function isWarningGroup(message) {
 
 
 
-function isContentBlockingMessage(message) {
+function isEnhancedTrackingProtectionMessage(message) {
   const { category } = message;
   return (
     category == "cookieBlockedPermission" ||
@@ -1122,7 +1122,7 @@ module.exports = {
   getNaturalOrder,
   getParentWarningGroupMessageId,
   getWarningGroupType,
-  isContentBlockingMessage,
+  isEnhancedTrackingProtectionMessage,
   isGroupType,
   isMessageNetworkError,
   isPacketPrivate,
