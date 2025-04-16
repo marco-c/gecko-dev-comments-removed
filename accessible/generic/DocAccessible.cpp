@@ -1808,9 +1808,6 @@ void DocAccessible::ProcessLoad() {
   
   
   
-  
-  
-  
   if (!IsLoadEventTarget()) return;
 
   
@@ -2984,31 +2981,7 @@ void DocAccessible::ShutdownChildrenInSubtree(LocalAccessible* aAccessible) {
 }
 
 bool DocAccessible::IsLoadEventTarget() const {
-  nsCOMPtr<nsIDocShellTreeItem> treeItem = mDocumentNode->GetDocShell();
-  if (!treeItem) {
-    return false;
-  }
-
-  nsCOMPtr<nsIDocShellTreeItem> parentTreeItem;
-  treeItem->GetInProcessParent(getter_AddRefs(parentTreeItem));
-
-  
-  if (parentTreeItem) {
-    
-    
-    nsCOMPtr<nsIDocShellTreeItem> rootTreeItem;
-    treeItem->GetInProcessRootTreeItem(getter_AddRefs(rootTreeItem));
-    if (parentTreeItem == rootTreeItem) return true;
-
-    
-    
-    
-    DocAccessible* parentDoc = ParentDocument();
-    return parentDoc && parentDoc->HasLoadState(eCompletelyLoaded);
-  }
-
-  
-  return (treeItem->ItemType() == nsIDocShellTreeItem::typeContent);
+  return mDocumentNode->GetBrowsingContext()->IsContent();
 }
 
 void DocAccessible::SetIPCDoc(DocAccessibleChild* aIPCDoc) {

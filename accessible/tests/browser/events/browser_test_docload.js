@@ -121,4 +121,4 @@ async function runTests(browser) {
 
 
 
-addAccessibleTask("", runTests);
+addAccessibleTask("", runTests, { chrome: true, topLevel: true });

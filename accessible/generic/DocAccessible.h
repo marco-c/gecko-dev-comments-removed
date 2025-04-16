@@ -627,8 +627,6 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-
-
   bool IsLoadEventTarget() const;
 
   
