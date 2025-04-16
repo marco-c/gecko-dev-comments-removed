@@ -201,6 +201,8 @@ class BaselineCodeGen {
   
   [[nodiscard]] bool emitCompare();
 
+  [[nodiscard]] bool emitConstantStrictEq(JSOp op);
+
   
   [[nodiscard]] bool emitNewObject();
 

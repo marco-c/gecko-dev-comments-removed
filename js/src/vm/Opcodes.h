@@ -551,6 +551,19 @@
 
 
 
+ \
+    MACRO(StrictConstantEq, strict_constant_eq, NULL, 3, 1, 1, JOF_UINT16) \
+    MACRO(StrictConstantNe, strict_constant_ne, NULL, 3, 1, 1, JOF_UINT16) \
+    
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3614,8 +3627,6 @@
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    MACRO(240)                                   \
-    MACRO(241)                                   \
     MACRO(242)                                   \
     MACRO(243)                                   \
     MACRO(244)                                   \
@@ -3632,8 +3643,6 @@
     MACRO(255)
 #else
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    MACRO(237)                                   \
-    MACRO(238)                                   \
     MACRO(239)                                   \
     MACRO(240)                                   \
     MACRO(241)                                   \
