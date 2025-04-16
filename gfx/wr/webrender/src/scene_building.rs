@@ -751,19 +751,43 @@ impl<'a> SceneBuilder<'a> {
         
         
         let mut shared_clip_node_id = None;
-        for cluster in &prim_list.clusters {
-            for prim_instance in &prim_instances[cluster.prim_range()] {
-                let leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
 
-                shared_clip_node_id = match shared_clip_node_id {
-                    Some(current) => {
-                        Some(clip_tree_builder.find_lowest_common_ancestor(
-                            current,
-                            leaf.node_id,
-                        ))
-                    }
-                    None => Some(leaf.node_id)
-                };
+        
+        
+        
+        
+        let is_snapshot = pictures[pic_index.0].snapshot.is_some();
+
+        if is_snapshot {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if let Some(idx) = prim_index {
+                let clip_node = clip_tree_builder.get_leaf(prim_instances[idx].clip_leaf_id).node_id;
+                shared_clip_node_id = clip_tree_builder.get_parent(clip_node);
+            }
+        } else {
+            for cluster in &prim_list.clusters {
+                for prim_instance in &prim_instances[cluster.prim_range()] {
+                    let leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
+
+                    shared_clip_node_id = match shared_clip_node_id {
+                        Some(current) => {
+                            Some(clip_tree_builder.find_lowest_common_ancestor(
+                                current,
+                                leaf.node_id,
+                            ))
+                        }
+                        None => Some(leaf.node_id)
+                    };
+                }
             }
         }
 
@@ -791,11 +815,6 @@ impl<'a> SceneBuilder<'a> {
             Some(PictureCompositeMode::SVGFEGraph( .. )) => true,
             _ => false,
         };
-
-        
-        
-        
-        let is_snapshot = pictures[pic_index.0].snapshot.is_some();
 
         
         
