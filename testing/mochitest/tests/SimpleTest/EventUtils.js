@@ -1021,6 +1021,47 @@ function synthesizeTouchAtCenter(aTarget, aEvent = {}, aWindow = window) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
   var utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
@@ -1029,6 +1070,7 @@ function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
 
   var modifiers = _parseModifiers(aEvent, aWindow);
   var options = 0;
+
   if (aEvent.isNoLineOrPageDelta) {
     options |= utils.WHEEL_EVENT_CAUSED_BY_NO_LINE_OR_PAGE_DELTA_DEVICE;
   }
@@ -1056,8 +1098,14 @@ function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
       options |= utils.WHEEL_EVENT_EXPECTED_OVERFLOW_DELTA_Y_NEGATIVE;
     }
   }
+  if (aEvent.asyncEnabled) {
+    options |= utils.WHEEL_EVENT_ASYNC_ENABLED;
+  }
 
   
+  if (!aEvent.deltaMode) {
+    aEvent.deltaMode = WheelEvent.DOM_DELTA_PIXEL;
+  }
   if (!aEvent.deltaX) {
     aEvent.deltaX = 0;
   }
@@ -1082,8 +1130,7 @@ function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
       : aEvent.deltaY > 0
         ? Math.floor(aEvent.deltaY)
         : Math.ceil(aEvent.deltaY);
-  
-  
+
   utils.sendWheelEvent(
     aLeft,
     aTop,
@@ -1110,13 +1157,13 @@ function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
 
 
 
-
-
-
-
-
-
-function synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
+function synthesizeWheel(
+  aTarget,
+  aOffsetX,
+  aOffsetY,
+  aEvent,
+  aWindow = window
+) {
   var rect = aTarget.getBoundingClientRect();
   synthesizeWheelAtPoint(
     rect.left + aOffsetX,
@@ -1224,6 +1271,10 @@ function _sendWheelAndPaint(
 
 
 
+
+
+
+
 function sendWheelAndPaint(
   aTarget,
   aOffsetX,
@@ -1242,6 +1293,14 @@ function sendWheelAndPaint(
     aWindow
   );
 }
+
+
+
+
+
+
+
+
 
 
 
