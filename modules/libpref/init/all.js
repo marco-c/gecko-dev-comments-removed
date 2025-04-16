@@ -3720,6 +3720,23 @@ pref("toolkit.aboutProcesses.profileDuration", 5);
 
 
 
+
+
+
+#if !defined(MOZ_WIDGET_ANDROID)
+  pref("toolkit.aboutLogging.uploadProfileToCloud", false);
+#else
+  pref("toolkit.aboutLogging.uploadProfileToCloud", true);
+#endif
+
+
+
+
+
+
+
+
+
 #ifdef RELEASE_OR_BETA
   pref("toolkit.crashreporter.include_context_heap", false);
 #else
