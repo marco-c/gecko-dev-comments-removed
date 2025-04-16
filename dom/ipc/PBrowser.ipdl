@@ -703,6 +703,8 @@ child:
 
     async KeyboardHeightChanged(ScreenIntCoord height);
 
+    async AndroidPipModeChanged(bool aPipMode);
+
     
 
 

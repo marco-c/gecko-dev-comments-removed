@@ -2192,6 +2192,10 @@ class Document : public nsINode,
 
 
   bool LoadedFromPrototype() const { return mPrototypeDocument; }
+
+  
+  bool InAndroidPipMode() const;
+
   
 
 
