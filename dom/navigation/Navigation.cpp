@@ -44,13 +44,28 @@ struct NavigationAPIMethodTracker final : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(NavigationAPIMethodTracker)
 
-  NavigationAPIMethodTracker() { mozilla::HoldJSObjects(this); }
+  NavigationAPIMethodTracker(Navigation* aNavigationObject,
+                             const Maybe<nsID> aKey, const JS::Value& aInfo,
+                             nsIStructuredCloneContainer* aSerializedState,
+                             NavigationHistoryEntry* aCommittedToEntry,
+                             Promise* aCommittedPromise,
+                             Promise* aFinishedPromise)
+      : mNavigationObject(aNavigationObject),
+        mKey(aKey),
+        mInfo(aInfo),
+        mSerializedState(aSerializedState),
+        mCommittedToEntry(aCommittedToEntry),
+        mCommittedPromise(aCommittedPromise),
+        mFinishedPromise(aFinishedPromise) {
+    mozilla::HoldJSObjects(this);
+  }
 
   RefPtr<Navigation> mNavigationObject;
   Maybe<nsID> mKey;
   JS::Heap<JS::Value> mInfo;
-  RefPtr<nsStructuredCloneContainer> mSerializedState;
+  RefPtr<nsIStructuredCloneContainer> mSerializedState;
   RefPtr<NavigationHistoryEntry> mCommittedToEntry;
+  RefPtr<Promise> mCommittedPromise;
   RefPtr<Promise> mFinishedPromise;
 
  private:
@@ -59,7 +74,8 @@ struct NavigationAPIMethodTracker final : public nsISupports {
 
 NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationAPIMethodTracker,
                                          (mNavigationObject, mSerializedState,
-                                          mCommittedToEntry, mFinishedPromise),
+                                          mCommittedToEntry, mCommittedPromise,
+                                          mFinishedPromise),
                                          (mInfo))
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationAPIMethodTracker)
@@ -935,4 +951,64 @@ void Navigation::LogHistory() const {
   }
 }
 
+
+RefPtr<NavigationAPIMethodTracker>
+Navigation::MaybeSetUpcomingNonTraverseAPIMethodTracker(
+    const JS::Value& aInfo, nsIStructuredCloneContainer* aSerializedState) {
+  
+  
+  
+  
+  
+  RefPtr committedPromise = Promise::CreateInfallible(GetOwnerGlobal());
+  RefPtr finishedPromise = Promise::CreateInfallible(GetOwnerGlobal());
+  
+  MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
+
+  
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      MakeAndAddRef<NavigationAPIMethodTracker>(
+          this,  Nothing{}, aInfo, aSerializedState,
+           nullptr, committedPromise, finishedPromise);
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
+
+  
+  
+  
+  if (!HasEntriesAndEventsDisabled()) {
+    mUpcomingNonTraverseAPIMethodTracker = apiMethodTracker;
+  }
+  
+  return apiMethodTracker;
+}
+
+
+RefPtr<NavigationAPIMethodTracker>
+Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
+                                                const JS::Value& aInfo) {
+  
+  
+  
+  
+  RefPtr committedPromise = Promise::CreateInfallible(GetOwnerGlobal());
+  RefPtr finishedPromise = Promise::CreateInfallible(GetOwnerGlobal());
+
+  
+  MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
+
+  
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      MakeAndAddRef<NavigationAPIMethodTracker>(
+          this, Some(aKey), aInfo,
+           nullptr,
+           nullptr, committedPromise, finishedPromise);
+
+  
+  
+  
+  return mUpcomingTraverseAPIMethodTrackers.InsertOrUpdate(aKey,
+                                                           apiMethodTracker);
+}
 }  
