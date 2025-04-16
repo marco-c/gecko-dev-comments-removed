@@ -1749,21 +1749,6 @@ static int32_t GetWhereToOpen(nsIChannel* aChannel, bool aIsDocumentLoad) {
   return nsIBrowserDOMWindow::OPEN_NEWTAB;
 }
 
-static DocumentLoadListener::ProcessBehavior GetProcessSwitchBehavior(
-    Element* aBrowserElement) {
-  if (aBrowserElement->HasAttribute(u"maychangeremoteness"_ns)) {
-    return DocumentLoadListener::ProcessBehavior::PROCESS_BEHAVIOR_STANDARD;
-  }
-  nsCOMPtr<nsIBrowser> browser = aBrowserElement->AsBrowser();
-  bool isRemoteBrowser = false;
-  browser->GetIsRemoteBrowser(&isRemoteBrowser);
-  if (isRemoteBrowser) {
-    return DocumentLoadListener::ProcessBehavior::
-        PROCESS_BEHAVIOR_SUBFRAME_ONLY;
-  }
-  return DocumentLoadListener::ProcessBehavior::PROCESS_BEHAVIOR_DISABLED;
-}
-
 static bool ContextCanProcessSwitch(CanonicalBrowsingContext* aBrowsingContext,
                                     WindowGlobalParent* aParentWindow,
                                     bool aSwitchToNewTab) {
@@ -1785,49 +1770,42 @@ static bool ContextCanProcessSwitch(CanonicalBrowsingContext* aBrowsingContext,
     return true;
   }
 
-  if (aParentWindow && !aBrowsingContext->UseRemoteSubframes()) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-            ("Process Switch Abort: remote subframes disabled"));
-    return false;
+  if (aParentWindow) {
+    
+    if (!aBrowsingContext->UseRemoteSubframes()) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+              ("Process Switch Abort: remote subframes disabled"));
+      return false;
+    }
+
+    
+    
+    if (aParentWindow->IsInProcess()) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+              ("Process Switch Abort: Subframe with in-process parent"));
+      return false;
+    }
+    return true;
   }
 
-  if (aParentWindow && aParentWindow->IsInProcess()) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-            ("Process Switch Abort: Subframe with in-process parent"));
-    return false;
-  }
-
+  
   
   
   Element* browserElement = aBrowsingContext->Top()->GetEmbedderElement();
-  if (!browserElement) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-            ("Process Switch Abort: cannot get embedder element"));
-    return false;
-  }
-  nsCOMPtr<nsIBrowser> browser = browserElement->AsBrowser();
-  if (!browser) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-            ("Process Switch Abort: not loaded within nsIBrowser"));
-    return false;
-  }
-
-  DocumentLoadListener::ProcessBehavior processBehavior =
-      GetProcessSwitchBehavior(browserElement);
-
-  
-  
-  if (processBehavior ==
-      DocumentLoadListener::ProcessBehavior::PROCESS_BEHAVIOR_DISABLED) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-            ("Process Switch Abort: switch disabled by <browser>"));
-    return false;
-  }
-  if (!aParentWindow && processBehavior ==
-                            DocumentLoadListener::ProcessBehavior::
-                                PROCESS_BEHAVIOR_SUBFRAME_ONLY) {
+  if (browserElement &&
+      !browserElement->HasAttribute(u"maychangeremoteness"_ns)) {
     MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
             ("Process Switch Abort: toplevel switch disabled by <browser>"));
+    return false;
+  }
+
+  
+  
+  
+  
+  if (!browserElement && aBrowsingContext->Windowless()) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+            ("Process Switch Abort: switch disabled by windowless browser"));
     return false;
   }
 
