@@ -163,38 +163,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   struct ProtectedOptimizationStats {
     
     
-    size_t completeNumFuncs = 0;
-    
-    size_t completeBCSize = 0;
-    
-    
-    size_t partialNumFuncs = 0;
-    
-    size_t partialBCSize = 0;
-    
-    size_t partialNumFuncsInlinedDirect = 0;
-    size_t partialNumFuncsInlinedCallRef = 0;
-    
-    size_t partialBCInlinedSizeDirect = 0;
-    size_t partialBCInlinedSizeCallRef = 0;
-    
-    size_t partialInlineBudgetOverruns = 0;
-    
-    size_t partialCodeBytesMapped = 0;
-    
-    size_t partialCodeBytesUsed = 0;
-    
-    
     
     int64_t inliningBudget = 0;
-    WASM_CHECK_CACHEABLE_POD(completeNumFuncs, completeBCSize, partialNumFuncs,
-                             partialBCSize, partialNumFuncsInlinedDirect,
-                             partialNumFuncsInlinedCallRef,
-                             partialBCInlinedSizeDirect,
-                             partialBCInlinedSizeCallRef,
-                             partialInlineBudgetOverruns,
-                             partialCodeBytesMapped, partialCodeBytesUsed,
-                             inliningBudget);
   };
   using ReadGuard = RWExclusiveData<ProtectedOptimizationStats>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedOptimizationStats>::WriteGuard;
@@ -261,9 +231,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     types = js_new<TypeContext>();
     return types;
   }
-
-  void dumpStats() const;
-  ~CodeMetadata() { dumpStats(); }
 
   
   
