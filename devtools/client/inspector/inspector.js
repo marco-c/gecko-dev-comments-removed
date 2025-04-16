@@ -179,7 +179,6 @@ function Inspector(toolbox, commands) {
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
   this.onSidebarShown = this.onSidebarShown.bind(this);
   this.onSidebarToggle = this.onSidebarToggle.bind(this);
-  this.onReflowInSelection = this.onReflowInSelection.bind(this);
   this.listenForSearchEvents = this.listenForSearchEvents.bind(this);
 
   this.prefObserver = new PrefObserver("devtools.");
@@ -241,6 +240,7 @@ Inspector.prototype = {
       
       TYPES.CSS_CHANGE,
       TYPES.DOCUMENT_EVENT,
+      TYPES.REFLOW,
     ];
     
     
@@ -366,6 +366,16 @@ Inspector.prototype = {
         isTopLevelTarget
       ) {
         this._onWillNavigate();
+      }
+
+      if (resource.resourceType === this.toolbox.resourceCommand.TYPES.REFLOW) {
+        this.emit("reflow");
+        if (resource.targetFront === this.selection?.nodeFront?.targetFront) {
+          
+          
+          
+          this.emit("reflow-in-selected-target");
+        }
       }
     }
 
@@ -1588,7 +1598,6 @@ Inspector.prototype = {
 
     this.updateAddElementButton();
     this.updateSelectionCssSelectors();
-    this.trackReflowsInSelection();
 
     const selfUpdate = this.updating("inspector-panel");
     executeSoon(() => {
@@ -1599,56 +1608,6 @@ Inspector.prototype = {
         console.error(ex);
       }
     });
-  },
-
-  
-
-
-  async trackReflowsInSelection() {
-    this.untrackReflowsInSelection();
-    if (!this.selection.nodeFront) {
-      return;
-    }
-
-    if (this._destroyed) {
-      return;
-    }
-
-    try {
-      await this.commands.resourceCommand.watchResources(
-        [this.commands.resourceCommand.TYPES.REFLOW],
-        {
-          onAvailable: this.onReflowInSelection,
-        }
-      );
-    } catch (e) {
-      
-      
-      
-      
-      if (!this._destroyed) {
-        throw e;
-      }
-    }
-  },
-
-  
-
-
-  untrackReflowsInSelection() {
-    this.commands.resourceCommand.unwatchResources(
-      [this.commands.resourceCommand.TYPES.REFLOW],
-      {
-        onAvailable: this.onReflowInSelection,
-      }
-    );
-  },
-
-  onReflowInSelection() {
-    
-    
-    
-    this.emit("reflow-in-selected-target");
   },
 
   
@@ -1788,7 +1747,6 @@ Inspector.prototype = {
     resourceCommand.unwatchResources(this._watchedResources, {
       onAvailable: this.onResourceAvailable,
     });
-    this.untrackReflowsInSelection();
 
     this._InspectorTabPanel = null;
     this._TabBar = null;
