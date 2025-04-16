@@ -48,10 +48,4 @@ LOCAL_INCLUDES += [
     "/intl/icu_capi/bindings/cpp",
 ]
 
-
-
-CXXFLAGS += [
-    "-Wno-mismatched-tags",
-]
-
 FINAL_LIBRARY = "xul"
