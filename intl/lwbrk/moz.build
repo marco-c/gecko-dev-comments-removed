@@ -44,14 +44,14 @@ else:
         "rulebrk.c",
     ]
 
-if CONFIG["JS_HAS_INTL_API"] and CONFIG["MOZ_ICU4X"]:
-    LOCAL_INCLUDES += [
-        "/intl/icu_capi/bindings/cpp",
-    ]
-    
-    
-    CXXFLAGS += [
-        "-Wno-mismatched-tags",
-    ]
+LOCAL_INCLUDES += [
+    "/intl/icu_capi/bindings/cpp",
+]
+
+
+
+CXXFLAGS += [
+    "-Wno-mismatched-tags",
+]
 
 FINAL_LIBRARY = "xul"
