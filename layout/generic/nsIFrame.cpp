@@ -5514,19 +5514,19 @@ static FrameContentRange GetRangeForFrame(const nsIFrame* aFrame) {
     content = content->GetParent();
   }
 
-  MOZ_ASSERT(!content->IsBeingRemoved());
-  nsIContent* parent = content->GetParent();
-  if (IsRelevantBlockFrame(aFrame) || IsEditingHost(aFrame) || !parent) {
-    return FrameContentRange(content, 0, content->GetChildCount());
+  if (aFrame->IsReplaced()) {
+    if (auto* parent = content->GetParent()) {
+      
+      
+      
+      Maybe<uint32_t> index = parent->ComputeIndexOf(content);
+      MOZ_ASSERT(index.isSome());
+      return FrameContentRange(parent, static_cast<int32_t>(*index),
+                               static_cast<int32_t>(*index + 1));
+    }
   }
 
-  
-  
-  
-  Maybe<uint32_t> index = parent->ComputeIndexOf(content);
-  MOZ_ASSERT(index.isSome());
-  return FrameContentRange(parent, static_cast<int32_t>(*index),
-                           static_cast<int32_t>(*index + 1));
+  return FrameContentRange(content, 0, content->GetChildCount());
 }
 
 
@@ -9577,6 +9577,8 @@ static void SetPeekResultFromFrame(PeekOffsetStruct& aPos, nsIFrame* aFrame,
   
   aPos.mContentOffset =
       aOffset < 0 ? range.end + aOffset + 1 : range.start + aOffset;
+  
+  aPos.mContentOffset = std::clamp(aPos.mContentOffset, range.start, range.end);
   if (aAtLineEdge == OffsetIsAtLineEdge::Yes) {
     aPos.mAttach = aPos.mContentOffset == range.start
                        ? CaretAssociationHint::After
