@@ -65,71 +65,14 @@ class MOZ_CAPABILITY("monitor") Monitor {
 
 
 
-
-
-
-
-
-
-class MonitorSingleWriter : public Monitor {
+class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS MonitorAutoLock {
  public:
-  
-  
-  
-  
-  explicit MonitorSingleWriter(const char* aName, SingleWriterLockOwner* aOwner)
-      : Monitor(aName)
-#ifdef DEBUG
-        ,
-        mOwner(aOwner)
-#endif
-  {
-    MOZ_COUNT_CTOR(MonitorSingleWriter);
-    MOZ_ASSERT(mOwner);
-  }
-
-  MOZ_COUNTED_DTOR(MonitorSingleWriter)
-
-  void AssertOnWritingThread() const MOZ_ASSERT_CAPABILITY(this) {
-    MOZ_ASSERT(mOwner->OnWritingThread());
-  }
-  void AssertOnWritingThreadOrHeld() const MOZ_ASSERT_CAPABILITY(this) {
-#ifdef DEBUG
-    if (!mOwner->OnWritingThread()) {
-      AssertCurrentThreadOwns();
-    }
-#endif
-  }
-
- private:
-#ifdef DEBUG
-  SingleWriterLockOwner* mOwner MOZ_UNSAFE_REF(
-      "This is normally the object that contains the MonitorSingleWriter, so "
-      "we don't want to hold a reference to ourselves");
-#endif
-
-  MonitorSingleWriter() = delete;
-  MonitorSingleWriter(const MonitorSingleWriter&) = delete;
-  MonitorSingleWriter& operator=(const MonitorSingleWriter&) = delete;
-};
-
-
-
-
-
-
-
-
-namespace detail {
-template <typename T>
-class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS BaseMonitorAutoLock {
- public:
-  explicit BaseMonitorAutoLock(T& aMonitor) MOZ_CAPABILITY_ACQUIRE(aMonitor)
+  explicit MonitorAutoLock(Monitor& aMonitor) MOZ_CAPABILITY_ACQUIRE(aMonitor)
       : mMonitor(&aMonitor) {
     mMonitor->Lock();
   }
 
-  ~BaseMonitorAutoLock() MOZ_CAPABILITY_RELEASE() { mMonitor->Unlock(); }
+  ~MonitorAutoLock() MOZ_CAPABILITY_RELEASE() { mMonitor->Unlock(); }
   
   
   
@@ -170,26 +113,23 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS BaseMonitorAutoLock {
   
   
   
-  void AssertOwns(const T& aMonitor) const MOZ_ASSERT_CAPABILITY(aMonitor) {
+  void AssertOwns(const Monitor& aMonitor) const
+      MOZ_ASSERT_CAPABILITY(aMonitor) {
     MOZ_ASSERT(&aMonitor == mMonitor);
     mMonitor->AssertCurrentThreadOwns();
   }
 
  private:
-  BaseMonitorAutoLock() = delete;
-  BaseMonitorAutoLock(const BaseMonitorAutoLock&) = delete;
-  BaseMonitorAutoLock& operator=(const BaseMonitorAutoLock&) = delete;
+  MonitorAutoLock() = delete;
+  MonitorAutoLock(const MonitorAutoLock&) = delete;
+  MonitorAutoLock& operator=(const MonitorAutoLock&) = delete;
   static void* operator new(size_t) noexcept(true);
 
   friend class MonitorAutoUnlock;
 
  protected:
-  T* mMonitor;
+  Monitor* mMonitor;
 };
-}  
-typedef detail::BaseMonitorAutoLock<Monitor> MonitorAutoLock;
-typedef detail::BaseMonitorAutoLock<MonitorSingleWriter>
-    MonitorSingleWriterAutoLock;
 
 
 
@@ -198,42 +138,24 @@ typedef detail::BaseMonitorAutoLock<MonitorSingleWriter>
 
 
 
-#define MonitorSingleWriterAutoLockOnThread(lock, monitor) \
-  MOZ_PUSH_IGNORE_THREAD_SAFETY                            \
-  MonitorSingleWriterAutoLock lock(monitor);               \
-  MOZ_POP_THREAD_SAFETY
-
-
-
-
-
-
-
-
-namespace detail {
-template <typename T>
-class MOZ_STACK_CLASS MOZ_SCOPED_CAPABILITY BaseMonitorAutoUnlock {
+class MOZ_STACK_CLASS MOZ_SCOPED_CAPABILITY MonitorAutoUnlock {
  public:
-  explicit BaseMonitorAutoUnlock(T& aMonitor)
+  explicit MonitorAutoUnlock(Monitor& aMonitor)
       MOZ_SCOPED_UNLOCK_RELEASE(aMonitor)
       : mMonitor(&aMonitor) {
     mMonitor->Unlock();
   }
 
-  ~BaseMonitorAutoUnlock() MOZ_SCOPED_UNLOCK_REACQUIRE() { mMonitor->Lock(); }
+  ~MonitorAutoUnlock() MOZ_SCOPED_UNLOCK_REACQUIRE() { mMonitor->Lock(); }
 
  private:
-  BaseMonitorAutoUnlock() = delete;
-  BaseMonitorAutoUnlock(const BaseMonitorAutoUnlock&) = delete;
-  BaseMonitorAutoUnlock& operator=(const BaseMonitorAutoUnlock&) = delete;
+  MonitorAutoUnlock() = delete;
+  MonitorAutoUnlock(const MonitorAutoUnlock&) = delete;
+  MonitorAutoUnlock& operator=(const MonitorAutoUnlock&) = delete;
   static void* operator new(size_t) noexcept(true);
 
-  T* mMonitor;
+  Monitor* mMonitor;
 };
-}  
-typedef detail::BaseMonitorAutoUnlock<Monitor> MonitorAutoUnlock;
-typedef detail::BaseMonitorAutoUnlock<MonitorSingleWriter>
-    MonitorSingleWriterAutoUnlock;
 
 
 

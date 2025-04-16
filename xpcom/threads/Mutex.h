@@ -135,82 +135,6 @@ class Mutex : public OffTheBooksMutex {
   Mutex& operator=(const Mutex&) = delete;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SingleWriterLockOwner {
- public:
-  SingleWriterLockOwner() = default;
-  ~SingleWriterLockOwner() = default;
-
-  virtual bool OnWritingThread() const = 0;
-};
-
-class MutexSingleWriter : public OffTheBooksMutex {
- public:
-  
-  
-  
-  
-  explicit MutexSingleWriter(const char* aName, SingleWriterLockOwner* aOwner)
-      : OffTheBooksMutex(aName)
-#ifdef DEBUG
-        ,
-        mOwner(aOwner)
-#endif
-  {
-    MOZ_COUNT_CTOR(MutexSingleWriter);
-    MOZ_ASSERT(mOwner);
-  }
-
-  MOZ_COUNTED_DTOR(MutexSingleWriter)
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  void AssertOnWritingThread() const MOZ_ASSERT_CAPABILITY(this) {
-    MOZ_ASSERT(mOwner->OnWritingThread());
-  }
-  void AssertOnWritingThreadOrHeld() const MOZ_ASSERT_CAPABILITY(this) {
-#ifdef DEBUG
-    if (!mOwner->OnWritingThread()) {
-      AssertCurrentThreadOwns();
-    }
-#endif
-  }
-
- private:
-#ifdef DEBUG
-  SingleWriterLockOwner* mOwner MOZ_UNSAFE_REF(
-      "This is normally the object that contains the MonitorSingleWriter, so "
-      "we don't want to hold a reference to ourselves");
-#endif
-
-  MutexSingleWriter() = delete;
-  MutexSingleWriter(const MutexSingleWriter&) = delete;
-  MutexSingleWriter& operator=(const MutexSingleWriter&) = delete;
-};
-
 namespace detail {
 template <typename T>
 class MOZ_RAII BaseAutoUnlock;
@@ -285,7 +209,6 @@ BaseAutoLock(MutexType&) -> BaseAutoLock<MutexType&>;
 }  
 
 typedef detail::BaseAutoLock<Mutex&> MutexAutoLock;
-typedef detail::BaseAutoLock<MutexSingleWriter&> MutexSingleWriterAutoLock;
 typedef detail::BaseAutoLock<OffTheBooksMutex&> OffTheBooksMutexAutoLock;
 
 
@@ -319,16 +242,6 @@ class Maybe<detail::BaseAutoLock<MutexType&>> {
  private:
   MutexType* mLock;
 };
-
-
-
-
-
-
-#define MutexSingleWriterAutoLockOnThread(lock, mutex) \
-  MOZ_PUSH_IGNORE_THREAD_SAFETY                        \
-  MutexSingleWriterAutoLock lock(mutex);               \
-  MOZ_POP_THREAD_SAFETY
 
 namespace detail {
 
@@ -442,7 +355,6 @@ BaseAutoUnlock(MutexType&) -> BaseAutoUnlock<MutexType&>;
 }  
 
 typedef detail::BaseAutoUnlock<Mutex&> MutexAutoUnlock;
-typedef detail::BaseAutoUnlock<MutexSingleWriter&> MutexSingleWriterAutoUnlock;
 typedef detail::BaseAutoUnlock<OffTheBooksMutex&> OffTheBooksMutexAutoUnlock;
 
 namespace detail {
