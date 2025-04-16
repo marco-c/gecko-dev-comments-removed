@@ -13,9 +13,9 @@
 #define nsRefreshDriver_h_
 
 #include "mozilla/FlushType.h"
+#include "mozilla/RenderingPhase.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Vector.h"
 #include "mozilla/WeakPtr.h"
 #include "nsTObserverArray.h"
 #include "nsTArray.h"
@@ -163,7 +163,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
       mDelayedResizeEventFlushObservers.AppendElement(aPresShell);
     } else {
       mResizeEventFlushObservers.AppendElement(aPresShell);
-      EnsureTimerStarted();
+      ScheduleRenderingPhase(mozilla::RenderingPhase::ResizeSteps);
     }
   }
 
@@ -228,7 +228,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     NS_ASSERTION(!mAnimationEventFlushObservers.Contains(aDispatcher),
                  "Double-adding animation event flush observer");
     mAnimationEventFlushObservers.AppendElement(aDispatcher);
-    EnsureTimerStarted();
+    ScheduleRenderingPhase(
+        mozilla::RenderingPhase::UpdateAnimationsAndSendEvents);
   }
 
   
@@ -320,8 +321,9 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::TimeStamp GetVsyncStart() override;
 
   bool IsWaitingForPaint(mozilla::TimeStamp aTime);
-
-  void ScheduleAutoFocusFlush(Document* aDocument);
+  void ScheduleAutoFocusFlush() {
+    ScheduleRenderingPhase(mozilla::RenderingPhase::FlushAutoFocusCandidates);
+  }
 
   
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override {
@@ -377,6 +379,15 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   bool HasPendingTick() const { return mActiveTimer; }
 
+  void ScheduleRenderingPhases(mozilla::RenderingPhases aPhases) {
+    mRenderingPhasesNeeded += aPhases;
+    EnsureTimerStarted();
+  }
+
+  void ScheduleRenderingPhase(mozilla::RenderingPhase aPhase) {
+    ScheduleRenderingPhases({aPhase});
+  }
+
   void EnsureIntersectionObservationsUpdateHappens() {
     
     
@@ -388,38 +399,30 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     
     
     
-    EnsureTimerStarted();
-    mNeedToUpdateIntersectionObservations = true;
-  }
-
-  void EnsureFrameRequestCallbacksHappen() {
-    EnsureTimerStarted();
-    mNeedToRunFrameRequestCallbacks = true;
+    ScheduleRenderingPhase(
+        mozilla::RenderingPhase::UpdateIntersectionObservations);
   }
 
   void EnsureResizeObserverUpdateHappens() {
-    EnsureTimerStarted();
-    mNeedToUpdateResizeObservers = true;
+    ScheduleRenderingPhase(mozilla::RenderingPhase::ResizeObservers);
   }
 
   void EnsureViewTransitionOperationsHappen() {
-    EnsureTimerStarted();
-    mNeedToUpdateViewTransitions = true;
+    ScheduleRenderingPhase(mozilla::RenderingPhase::ViewTransitionOperations);
   }
 
   void EnsureAnimationUpdate() {
-    EnsureTimerStarted();
-    mNeedToUpdateAnimations = true;
+    ScheduleRenderingPhase(
+        mozilla::RenderingPhase::UpdateAnimationsAndSendEvents);
   }
 
   void ScheduleMediaQueryListenerUpdate() {
-    EnsureTimerStarted();
-    mMightNeedMediaQueryListenerUpdate = true;
+    ScheduleRenderingPhase(
+        mozilla::RenderingPhase::EvaluateMediaQueriesAndReportChanges);
   }
 
   void EnsureContentRelevancyUpdateHappens() {
-    EnsureTimerStarted();
-    mNeedToUpdateContentRelevancy = true;
+    ScheduleRenderingPhase(mozilla::RenderingPhase::UpdateContentRelevancy);
   }
 
   
@@ -433,16 +436,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     None = 0,
     HasObservers = 1 << 0,
     HasImageRequests = 1 << 1,
-    NeedsToUpdateIntersectionObservations = 1 << 2,
-    NeedsToUpdateContentRelevancy = 1 << 3,
-    HasVisualViewportResizeEvents = 1 << 4,
-    HasScrollEvents = 1 << 5,
-    HasPendingMediaQueryListeners = 1 << 7,
-    NeedsToNotifyResizeObservers = 1 << 8,
-    RootNeedsMoreTicksForUserInput = 1 << 9,
-    NeedsToUpdateAnimations = 1 << 10,
-    NeedsToRunFrameRequestCallbacks = 1 << 11,
-    NeedsToUpdateViewTransitions = 1 << 12,
+    HasPendingRenderingSteps = 1 << 2,
+    RootNeedsMoreTicksForUserInput = 1 << 3,
   };
 
   void AddForceNotifyContentfulPaintPresContext(nsPresContext* aPresContext);
@@ -451,8 +446,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   
   void FinishedVsyncTick() { mAttemptedExtraTickSinceLastVsync = false; }
-
-  void CancelFlushAutoFocus(Document* aDocument);
 
  private:
   using VisualViewportResizeEventArray = nsTArray<RefPtr<VVPResizeEvent>>;
@@ -480,8 +473,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     operator RefPtr<nsARefreshObserver>() { return mObserver; }
   };
   using ObserverArray = nsTObserverArray<ObserverData>;
-  MOZ_CAN_RUN_SCRIPT
-  void FlushAutoFocusDocuments();
   void RunFullscreenSteps();
   void UpdateAnimationsAndSendEvents();
 
@@ -493,7 +484,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   MOZ_CAN_RUN_SCRIPT
   void RunFrameRequestCallbacks(const nsTArray<RefPtr<mozilla::dom::Document>>&,
                                 mozilla::TimeStamp aNowTime);
-  void UpdateIntersectionObservations(mozilla::TimeStamp aNowTime);
   void UpdateRemoteFrameEffects();
   void UpdateRelevancyOfContentVisibilityAutoFrames();
   MOZ_CAN_RUN_SCRIPT void PerformPendingViewTransitionOperations();
@@ -637,29 +627,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool mResizeSuppressed : 1;
 
   
-  
-  bool mNeedToUpdateIntersectionObservations : 1;
-
-  
-  
-  bool mNeedToUpdateResizeObservers : 1;
-
-  
-  bool mNeedToUpdateViewTransitions : 1;
-
-  
   bool mNeedToRunFrameRequestCallbacks : 1;
-
-  
-  bool mNeedToUpdateAnimations : 1;
-
-  
-  
-  bool mMightNeedMediaQueryListenerUpdate : 1;
-
-  
-  
-  bool mNeedToUpdateContentRelevancy : 1;
 
   
   
@@ -682,6 +650,25 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::TimeStamp mBeforeFirstContentfulPaintTimerRunningLimit;
 
   
+  mozilla::EnumSet<mozilla::RenderingPhase, uint16_t> mRenderingPhasesNeeded;
+
+  
+  
+  
+  
+  template <typename Callback>
+  MOZ_CAN_RUN_SCRIPT void RunRenderingPhaseLegacy(mozilla::RenderingPhase,
+                                                  Callback&&);
+
+  using DocFilter = bool (*)(const Document&);
+
+  
+  
+  template <typename Callback>
+  MOZ_CAN_RUN_SCRIPT void RunRenderingPhase(mozilla::RenderingPhase, Callback&&,
+                                            DocFilter = nullptr);
+
+  
   ObserverArray mObservers[3];
   nsTArray<mozilla::layers::CompositionPayload> mCompositionPayloads;
   RequestTable mRequests;
@@ -696,7 +683,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<mozilla::PresShell*, 16> mResizeEventFlushObservers;
   AutoTArray<mozilla::PresShell*, 16> mDelayedResizeEventFlushObservers;
   AutoTArray<mozilla::PresShell*, 16> mStyleFlushObservers;
-  nsTArray<RefPtr<Document>> mAutoFocusFlushDocuments;
   nsTObserverArray<nsAPostRefreshObserver*> mPostRefreshObservers;
   nsTArray<mozilla::UniquePtr<mozilla::PendingFullscreenEvent>>
       mPendingFullscreenEvents;

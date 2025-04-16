@@ -38,7 +38,7 @@ class AutoPrintEventDispatcher {
         
         
         
-        doc->EvaluateMediaQueriesAndReportChanges( false);
+        doc->EvaluateMediaQueriesAndReportChanges();
       }
     }
   }

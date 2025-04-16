@@ -23,6 +23,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/BitSet.h"
+#include "mozilla/RenderingPhase.h"
 #include "mozilla/OriginTrials.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/CORSMode.h"
@@ -2323,7 +2324,7 @@ class Document : public nsINode,
 
 
 
-  using nsDocTestFunc = bool (*)(const Document* aDocument);
+  using nsDocTestFunc = mozilla::FunctionRef<bool(const Document* aDocument)>;
   void CollectDescendantDocuments(nsTArray<RefPtr<Document>>& aDescendants,
                                   nsDocTestFunc aCallback) const;
 
@@ -2765,26 +2766,21 @@ class Document : public nsINode,
     return !EventHandlingSuppressed() && mScriptGlobalObject;
   }
 
-  void MaybeScheduleFrameRequestCallbacks();
-  
-  
-  bool ShouldFireFrameRequestCallbacks() const {
-    if (!mPresShell) {
-      return false;
-    }
-    if (!IsEventHandlingEnabled()) {
-      return false;
-    }
-    if (mRenderingSuppressedForViewTransitions) {
-      return false;
-    }
-    return true;
+  void MaybeScheduleRenderingPhases(RenderingPhases);
+  void MaybeScheduleRendering() {
+    MaybeScheduleRenderingPhases(AllRenderingPhases());
   }
+  void MaybeScheduleFrameRequestCallbacks() {
+    if (HasFrameRequestCallbacks()) {
+      MaybeScheduleRenderingPhases({RenderingPhase::AnimationFrameCallbacks});
+    }
+  }
+  bool IsRenderingSuppressed() const;
 
   void DecreaseEventSuppression() {
     MOZ_ASSERT(mEventsSuppressed);
     --mEventsSuppressed;
-    MaybeScheduleFrameRequestCallbacks();
+    MaybeScheduleRendering();
   }
 
   
@@ -3608,7 +3604,7 @@ class Document : public nsINode,
   void SetDevToolsWatchingDOMMutations(bool aValue);
 
   
-  void EvaluateMediaQueriesAndReportChanges(bool aRecurse);
+  void EvaluateMediaQueriesAndReportChanges();
 
   nsTHashSet<RefPtr<WakeLockSentinel>>& ActiveWakeLocks(WakeLockType aType);
 
@@ -3858,7 +3854,7 @@ class Document : public nsINode,
   }
   bool HasResizeObservers() const { return !mResizeObservers.IsEmpty(); }
 
-  void ScheduleResizeObserversNotification() const;
+  void ScheduleResizeObserversNotification();
   
 
 
