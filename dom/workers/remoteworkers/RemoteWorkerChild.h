@@ -84,6 +84,11 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
 
   const nsTArray<uint64_t>& WindowIDs() const { return mWindowIDs; }
 
+  void SetIsThawing(const bool aIsThawing) { mIsThawing = aIsThawing; }
+  bool IsThawing() const { return mIsThawing; }
+  void PendRemoteWorkerOp(RefPtr<RemoteWorkerOp> aOp);
+  void RunAllPendingOpsOnMainThread();
+
  private:
   class InitializeWorkerRunnable;
 
@@ -173,6 +178,23 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
   };
 
   ThreadBound<LauncherBoundData> mLauncherData;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Atomic<bool> mIsThawing{false};
+  DataMutex<nsTArray<RefPtr<RemoteWorkerOp>>> mPendingOps;
 };
 
 }  

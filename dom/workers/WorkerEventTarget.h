@@ -24,7 +24,9 @@ class WorkerEventTarget final : public nsISerialEventTarget {
   
   
   
-  enum class Behavior : uint8_t { Hybrid, ControlOnly };
+  
+  
+  enum class Behavior : uint8_t { Hybrid, ControlOnly, DebuggerOnly };
 
  private:
   mozilla::Mutex mMutex;
