@@ -26,9 +26,9 @@ void net_ShutdownURLHelperOSX();
 #endif
 
 
-nsIURLParser* net_GetAuthURLParser();
-nsIURLParser* net_GetNoAuthURLParser();
-nsIURLParser* net_GetStdURLParser();
+already_AddRefed<nsIURLParser> net_GetAuthURLParser();
+already_AddRefed<nsIURLParser> net_GetNoAuthURLParser();
+already_AddRefed<nsIURLParser> net_GetStdURLParser();
 
 
 
