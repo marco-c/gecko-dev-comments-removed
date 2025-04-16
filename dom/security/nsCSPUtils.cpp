@@ -152,19 +152,15 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
   
   bool reportOnly = false;
 
-  if (nsIURI* uri = aDoc.GetDocumentURI(); uri->SchemeIs("chrome")) {
-    nsAutoCString spec;
-    uri->GetSpec(spec);
-    if (spec.EqualsLiteral("chrome://browser/content/browser.xhtml")) {
-      
-      if (!StaticPrefs::security_browser_xhtml_csp_enabled()) {
-        return;
-      }
+  if (nsIURI* uri = aDoc.GetDocumentURI(); CSP_IsBrowserXHTML(uri)) {
+    
+    if (!StaticPrefs::security_browser_xhtml_csp_enabled()) {
+      return;
+    }
 
-      
-      if (StaticPrefs::security_browser_xhtml_csp_report_only()) {
-        reportOnly = true;
-      }
+    
+    if (StaticPrefs::security_browser_xhtml_csp_report_only()) {
+      reportOnly = true;
     }
   }
 
@@ -178,6 +174,16 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
     inner->SetCsp(csp);
   }
   aDoc.ApplySettingsFromCSP(false);
+}
+
+bool CSP_IsBrowserXHTML(nsIURI* aURI) {
+  if (!aURI->SchemeIs("chrome")) {
+    return false;
+  }
+
+  nsAutoCString spec;
+  aURI->GetSpec(spec);
+  return spec.EqualsLiteral("chrome://browser/content/browser.xhtml");
 }
 
 void CSP_GetLocalizedStr(const char* aName, const nsTArray<nsString>& aParams,

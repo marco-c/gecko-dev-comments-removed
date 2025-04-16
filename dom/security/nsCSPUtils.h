@@ -211,6 +211,9 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
                            const nsAString& aPolicyStr);
 
 
+bool CSP_IsBrowserXHTML(nsIURI* aURI);
+
+
 
 class nsCSPBaseSrc {
  public:

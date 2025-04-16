@@ -506,6 +506,16 @@ nsCSPContext::GetAllowsEval(bool* outShouldReportViolation,
   *outShouldReportViolation = false;
   *outAllowsEval = true;
 
+  if (CSP_IsBrowserXHTML(mSelfURI)) {
+    
+    
+    
+    if (StaticPrefs::
+            security_allow_unsafe_dangerous_privileged_evil_eval_AtStartup()) {
+      return NS_OK;
+    }
+  }
+
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     if (!mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_UNSAFE_EVAL, u""_ns)) {
       
