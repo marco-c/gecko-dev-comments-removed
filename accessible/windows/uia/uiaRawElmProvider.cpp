@@ -144,6 +144,11 @@ void uiaRawElmProvider::RaiseUiaEventForGeckoEvent(Accessible* aAcc,
   if (!uia) {
     return;
   }
+  
+  
+  
+  
+  CacheDomainActivationBlocker cacheBlocker;
   PROPERTYID property = 0;
   _variant_t newVal;
   bool gotNewVal = false;

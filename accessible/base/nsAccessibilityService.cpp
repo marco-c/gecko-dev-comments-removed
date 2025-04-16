@@ -2096,5 +2096,34 @@ void PrefChanged(const char* aPref, void* aClosure) {
   }
 }
 
+uint32_t CacheDomainActivationBlocker::sEntryCount = 0;
+
+CacheDomainActivationBlocker::CacheDomainActivationBlocker() {
+  AssertIsOnMainThread();
+  if (sEntryCount++ != 0) {
+    
+    
+    
+    
+    return;
+  }
+  if (nsAccessibilityService* service = GetAccService()) {
+    MOZ_ASSERT(service->mShouldAllowNewCacheDomains);
+    service->mShouldAllowNewCacheDomains = false;
+  }
+}
+
+CacheDomainActivationBlocker::~CacheDomainActivationBlocker() {
+  AssertIsOnMainThread();
+  if (--sEntryCount != 0) {
+    
+    return;
+  }
+  if (nsAccessibilityService* service = GetAccService()) {
+    MOZ_ASSERT(!service->mShouldAllowNewCacheDomains);
+    service->mShouldAllowNewCacheDomains = true;
+  }
+}
+
 }  
 }  

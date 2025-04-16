@@ -92,6 +92,23 @@ void PrefChanged(const char* aPref, void* aClosure);
 
 EPlatformDisabledState ReadPlatformDisabledState();
 
+
+
+
+
+
+
+
+class MOZ_RAII CacheDomainActivationBlocker {
+ public:
+  CacheDomainActivationBlocker();
+  ~CacheDomainActivationBlocker();
+
+ private:
+  
+  static uint32_t sEntryCount;
+};
+
 }  
 }  
 
@@ -346,6 +363,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   };
 
   static uint64_t GetActiveCacheDomains() { return gCacheDomains; }
+  bool ShouldAllowNewCacheDomains() { return mShouldAllowNewCacheDomains; }
 
 #if defined(ANDROID)
   static mozilla::Monitor& GetAndroidMonitor();
@@ -415,6 +433,10 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
   static uint64_t gCacheDomains;
+  
+  
+  
+  bool mShouldAllowNewCacheDomains = true;
 
   
   using MarkupMap = nsTHashMap<nsAtom*, const mozilla::a11y::MarkupMapInfo*>;
@@ -450,6 +472,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   friend mozilla::a11y::xpcAccessibleApplication*
   mozilla::a11y::XPCApplicationAcc();
   friend class xpcAccessibilityService;
+  friend class mozilla::a11y::CacheDomainActivationBlocker;
 };
 
 

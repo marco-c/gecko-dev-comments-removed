@@ -43,6 +43,11 @@ bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains) {
   const bool isMissingRequiredCacheDomain =
       (aRequiredCacheDomains & ~activeCacheDomains) != 0;
   if (isMissingRequiredCacheDomain) {
+    if (!accService->ShouldAllowNewCacheDomains()) {
+      
+      
+      return true;
+    }
     aRequiredCacheDomains = GetCacheDomainSuperset(aRequiredCacheDomains);
 
     const uint64_t cacheDomains = aRequiredCacheDomains | activeCacheDomains;
