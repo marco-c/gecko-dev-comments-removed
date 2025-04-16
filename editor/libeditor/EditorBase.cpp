@@ -1856,12 +1856,9 @@ nsresult EditorBase::PasteAsAction(nsIClipboard::ClipboardType aClipboardType,
   
   
   
-  RefPtr<DataTransfer> dataTransfer;
-  if (aDispatchPasteEvent == DispatchPasteEvent::Yes) {
-    dataTransfer = aDataTransfer
-                       ? RefPtr<DataTransfer>(aDataTransfer)
-                       : RefPtr<DataTransfer>(CreateDataTransferForPaste(
-                             ePaste, aClipboardType));
+  RefPtr<DataTransfer> dataTransfer = aDataTransfer;
+  if (!aDataTransfer && aDispatchPasteEvent == DispatchPasteEvent::Yes) {
+    dataTransfer = CreateDataTransferForPaste(ePaste, aClipboardType);
   }
   AutoEditActionDataSetter editActionData(*this, EditAction::ePaste,
                                           aPrincipal);
