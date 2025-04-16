@@ -6988,13 +6988,12 @@ void MacroAssembler::branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
   MOZ_ASSERT_IF(superDepth >= wasm::MinSuperTypeVectorLength,
                 scratch != Register::Invalid());
   Label fallthrough;
+  Label* successLabel = onSuccess ? label : &fallthrough;
   Label* failLabel = onSuccess ? &fallthrough : label;
 
   
   
-  
-  
-  
+  branchPtr(Assembler::Equal, subSTV, superSTV, successLabel);
 
   
   if (superDepth >= wasm::MinSuperTypeVectorLength) {
