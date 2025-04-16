@@ -810,11 +810,12 @@ export class Tracer extends Component {
       this.props;
     return [
       React.createElement(SearchInput, {
-        
-        
-        count: 2,
+        count: tracesMatchingSearch.length,
 
-        placeholder: `Search for function call argument values ("foo", 42, $0, $("canvas"), …)`,
+        placeholder: this.props.traceValues
+          ? `Search for function call argument values ("foo", 42, $0, $("canvas"), …)`
+          : "Enable tracing values to search for values",
+        disabled: !this.props.traceValues,
         size: "small",
         showClose: false,
         onChange: this.searchInputOnChange,
@@ -832,13 +833,6 @@ export class Tracer extends Component {
       
       searchExceptionMessage
         ? div({ className: "search-exception" }, searchExceptionMessage)
-        : null,
-
-      this.props.allTraces.length && !this.props.traceValues
-        ? div(
-            { className: "search-exception" },
-            "Need to enable tracing values to search for values"
-          )
         : null,
 
       
