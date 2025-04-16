@@ -9,6 +9,9 @@
 #include "nsAccessibilityService.h"
 #include "DocAccessible.h"
 #include "nsCoreUtils.h"
+#include "nsFocusManager.h"
+
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/Role.h"
 #include "States.h"
 
@@ -139,4 +142,47 @@ bool XULComboboxAccessible::AreItemsOperable() const {
   }
 
   return false;
+}
+
+
+
+
+
+Accessible* XULContentSelectDropdownAccessible::Parent() const {
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  Accessible* focusedAcc = nullptr;
+  if (auto* focusedNode = FocusMgr()->FocusedDOMNode()) {
+    
+    DocAccessible* doc =
+        GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
+    focusedAcc = doc->GetAccessible(focusedNode);
+  } else {
+    nsFocusManager* focusManagerDOM = nsFocusManager::GetFocusManager();
+    dom::BrowsingContext* focusedContext =
+        focusManagerDOM->GetFocusedBrowsingContextInChrome();
+
+    DocAccessibleParent* focusedDoc =
+        DocAccessibleParent::GetFrom(focusedContext);
+    MOZ_ASSERT(focusedDoc && focusedDoc->IsDoc(), "No focused document found");
+    focusedAcc = focusedDoc->AsDoc()->GetFocusedAcc();
+  }
+
+  if (!NS_WARN_IF(focusedAcc && focusedAcc->IsHTMLCombobox())) {
+    
+    
+    
+    
+    return LocalParent();
+  }
+
+  return focusedAcc;
 }

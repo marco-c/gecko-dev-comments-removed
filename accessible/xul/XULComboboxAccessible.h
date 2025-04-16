@@ -37,6 +37,21 @@ class XULComboboxAccessible : public AccessibleWrap {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool AreItemsOperable() const override;
 };
 
+
+
+
+
+
+
+class XULContentSelectDropdownAccessible : public XULComboboxAccessible {
+ public:
+  XULContentSelectDropdownAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : XULComboboxAccessible(aContent, aDoc) {}
+  
+
+  virtual Accessible* Parent() const override;
+};
+
 }  
 }  
 
