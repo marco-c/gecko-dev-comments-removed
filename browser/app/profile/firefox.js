@@ -2566,7 +2566,11 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
+#else
 pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", false);
+#endif
 
 
 
