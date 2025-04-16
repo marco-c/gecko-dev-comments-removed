@@ -2089,16 +2089,6 @@ void nsRefreshDriver::MaybeIncreaseMeasuredTicksSinceLoading() {
   }
 }
 
-
-void nsRefreshDriver::RunFullscreenSteps() {
-  
-  nsTArray<UniquePtr<PendingFullscreenEvent>> pendings(
-      std::move(mPendingFullscreenEvents));
-  for (UniquePtr<PendingFullscreenEvent>& event : pendings) {
-    event->Dispatch();
-  }
-}
-
 void nsRefreshDriver::UpdateRemoteFrameEffects() {
   mPresContext->Document()->UpdateRemoteFrameEffects();
 }
@@ -2558,9 +2548,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
                     });
 
   
-  RunRenderingPhaseLegacy(
-      RenderingPhase::FullscreenSteps,
-      [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { RunFullscreenSteps(); });
+  RunRenderingPhase(RenderingPhase::FullscreenSteps,
+                    [&](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      MOZ_KnownLive(aDoc).RunFullscreenSteps();
+                    });
 
   
   
@@ -3045,20 +3036,6 @@ void nsRefreshDriver::ScheduleViewManagerFlush() {
   }
   mHasScheduleFlush = true;
   EnsureTimerStarted(eNeverAdjustTimer);
-}
-
-void nsRefreshDriver::ScheduleFullscreenEvent(
-    UniquePtr<PendingFullscreenEvent> aEvent) {
-  mPendingFullscreenEvents.AppendElement(std::move(aEvent));
-  ScheduleRenderingPhase(RenderingPhase::FullscreenSteps);
-}
-
-void nsRefreshDriver::CancelPendingFullscreenEvents(Document* aDocument) {
-  for (auto i : Reversed(IntegerRange(mPendingFullscreenEvents.Length()))) {
-    if (mPendingFullscreenEvents[i]->Document() == aDocument) {
-      mPendingFullscreenEvents.RemoveElementAt(i);
-    }
-  }
 }
 
 

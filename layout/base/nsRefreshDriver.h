@@ -40,7 +40,6 @@ struct DocumentFrameCallbacks;
 
 namespace mozilla {
 class AnimationEventDispatcher;
-class PendingFullscreenEvent;
 class PresShell;
 class RefreshDriverTimer;
 class Runnable;
@@ -178,19 +177,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void ClearHasScheduleFlush() { mHasScheduleFlush = false; }
   
   MOZ_CAN_RUN_SCRIPT bool FlushViewManagerIfNeeded();
-
-  
-
-
-
-  void ScheduleFullscreenEvent(
-      mozilla::UniquePtr<mozilla::PendingFullscreenEvent> aEvent);
-
-  
-
-
-
-  void CancelPendingFullscreenEvents(Document* aDocument);
 
   
 
@@ -624,8 +610,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<nsCOMPtr<nsIRunnable>, 16> mEarlyRunners;
   AutoTArray<mozilla::PresShell*, 16> mStyleFlushObservers;
   nsTObserverArray<nsAPostRefreshObserver*> mPostRefreshObservers;
-  nsTArray<mozilla::UniquePtr<mozilla::PendingFullscreenEvent>>
-      mPendingFullscreenEvents;
 
   
   

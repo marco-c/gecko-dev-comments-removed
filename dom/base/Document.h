@@ -200,6 +200,7 @@ class FullscreenExit;
 class FullscreenRequest;
 class HTMLEditor;
 struct LangGroupFontPrefs;
+class PendingFullscreenEvent;
 class PermissionDelegateHandler;
 class PresShell;
 class ScrollTimelineAnimationTracker;
@@ -1888,6 +1889,10 @@ class Document : public nsINode,
 
   
   bool HasPendingFullscreenRequests();
+
+  void AddPendingFullscreenEvent(UniquePtr<PendingFullscreenEvent>);
+
+  MOZ_CAN_RUN_SCRIPT void RunFullscreenSteps();
 
   
 
@@ -5481,6 +5486,9 @@ class Document : public nsINode,
   
   
   mutable nsCOMPtr<nsIPrincipal> mActiveCookiePrincipal;
+
+  
+  nsTArray<UniquePtr<PendingFullscreenEvent>> mPendingFullscreenEvents;
 
   
   int32_t mNextFormNumber;
