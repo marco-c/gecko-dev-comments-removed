@@ -524,18 +524,10 @@ window.onload = function () {
   appendElementWithText(gFooter, "div", "legend hiddenOnMobile", legendText2);
 
   
-  
-  
-  let search = location.href.split("?")[1];
-  if (search) {
-    let searchSplit = search.split("&");
-    for (let s of searchSplit) {
-      if (s.toLowerCase().startsWith("file=")) {
-        let filename = s.substring("file=".length);
-        updateAboutMemoryFromFile(decodeURIComponent(filename));
-        return;
-      }
-    }
+  let { searchParams } = URL.fromURI(document.documentURIObject);
+  let fileParam = searchParams.get("file");
+  if (fileParam) {
+    updateAboutMemoryFromFile(fileParam);
   }
 };
 
