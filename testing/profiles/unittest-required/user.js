@@ -6,7 +6,6 @@
 
 
 
-user_pref("accessibility.typeaheadfind.autostart", false);
 
 user_pref("app.normandy.api_url", "");
 

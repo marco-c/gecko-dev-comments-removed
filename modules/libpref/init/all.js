@@ -500,7 +500,6 @@ pref("focusmanager.testmode", false);
 pref("accessibility.typeaheadfind", true);
 
 pref("accessibility.typeaheadfind.manual", true);
-pref("accessibility.typeaheadfind.autostart", true);
 
 
 
