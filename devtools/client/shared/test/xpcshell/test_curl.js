@@ -230,15 +230,18 @@ add_task(async function () {
   );
 
   
-  const dataBinaryParam = `--data-binary \\\n  ${isWin() ? "" : "$"}'------------14808\\r\\n`;
+  const dataBinaryPos = cmd.indexOf("--data-binary");
+  const dataBinaryParam = `--data-binary ${isWin() ? "" : "$"}${escapeNewline(
+    quote(request.postDataText)
+  )}`;
   Assert.notStrictEqual(
-    cmd.indexOf("--data-binary"),
+    dataBinaryPos,
     -1,
     "--data-binary param present in curl output"
   );
-
-  Assert.ok(
-    cmd.includes(dataBinaryParam),
+  equal(
+    cmd.substr(dataBinaryPos, dataBinaryParam.length),
+    dataBinaryParam,
     "proper multipart data present in curl output"
   );
 });
@@ -350,6 +353,14 @@ function quote(str) {
   return QUOTE + escaped + QUOTE;
 }
 
+function escapeNewline(txt) {
+  if (isWin()) {
+    
+    return txt.replace(/[\r\n]{1,2}/g, '"^$&$&"');
+  }
+  return txt.replace(/\r/g, "\\r").replace(/\n/g, "\\n");
+}
+
 
 function headerParam(h) {
   return "-H " + quote(h);
@@ -381,6 +392,6 @@ function parseCurl(curlCmd) {
   
   
   
-  const matchRe = /[-A-Za-z1-9]+(?: ([\^\\"']+)(?:\\\1|.)*?\1)?/g;
+  const matchRe = /[-A-Za-z1-9]+(?: \$?([\"'])(?:\\\1|.)*?\1)?/g;
   return curlCmd.match(matchRe);
 }
