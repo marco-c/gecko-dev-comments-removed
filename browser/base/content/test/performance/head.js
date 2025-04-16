@@ -46,14 +46,14 @@ async function recordReflows(testPromise, win = window) {
       
       let stack = new Error().stack;
       let path = stack
+        .trim()
         .split("\n")
         .slice(1) 
-        .map(line => line.replace(/:\d+:\d+$/, "")) 
-        .join("|");
+        .map(line => line.replace(/:\d+:\d+$/, "")); 
 
       
       
-      if (path === "") {
+      if (path.length === 0) {
         ChromeUtils.addProfilerMarker(
           "ignoredNativeReflow",
           { category: "Test" },
@@ -62,7 +62,15 @@ async function recordReflows(testPromise, win = window) {
         return;
       }
 
-      reflows.push({ stack, path });
+      if (
+        path[0] ===
+        "forceRefreshDriverTick@chrome://mochikit/content/tests/SimpleTest/AccessibilityUtils.js"
+      ) {
+        
+        return;
+      }
+
+      reflows.push({ stack, path: path.join("|") });
 
       
       
