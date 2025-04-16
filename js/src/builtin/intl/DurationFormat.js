@@ -1522,16 +1522,12 @@ function Intl_DurationFormat_format(durationLike) {
   }
 
   
-#ifdef JS_HAS_TEMPORAL_API
   var duration = ToTemporalDuration(durationLike);
 
   
   if (duration === null) {
     duration = ToDurationRecord(durationLike);
   }
-#else
-  var duration = ToDurationRecord(durationLike);
-#endif
 
   
   return PartitionDurationFormatPattern(
@@ -1559,16 +1555,12 @@ function Intl_DurationFormat_formatToParts(durationLike) {
   }
 
   
-#ifdef JS_HAS_TEMPORAL_API
   var duration = ToTemporalDuration(durationLike);
 
   
   if (duration === null) {
     duration = ToDurationRecord(durationLike);
   }
-#else
-  var duration = ToDurationRecord(durationLike);
-#endif
 
   
   return PartitionDurationFormatPattern(df, duration,  true);
