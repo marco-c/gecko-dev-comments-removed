@@ -463,21 +463,21 @@ struct GpuProcessTextureId {
 };
 
 
-struct GpuProcessFencesHolderId {
+struct CompositeProcessFencesHolderId {
   uint64_t mId = 0;
 
-  static GpuProcessFencesHolderId GetNext();
+  static CompositeProcessFencesHolderId GetNext();
 
   bool IsValid() const { return mId != 0; }
 
   
   explicit operator uint64_t() const { return mId; }
 
-  bool operator==(const GpuProcessFencesHolderId& aOther) const {
+  bool operator==(const CompositeProcessFencesHolderId& aOther) const {
     return mId == aOther.mId;
   }
 
-  bool operator!=(const GpuProcessFencesHolderId& aOther) const {
+  bool operator!=(const CompositeProcessFencesHolderId& aOther) const {
     return !(*this == aOther);
   }
 
@@ -486,7 +486,7 @@ struct GpuProcessFencesHolderId {
   
   
   struct HashFn {
-    std::size_t operator()(const GpuProcessFencesHolderId aKey) const {
+    std::size_t operator()(const CompositeProcessFencesHolderId aKey) const {
       return std::hash<uint64_t>{}(aKey.mId);
     }
   };
