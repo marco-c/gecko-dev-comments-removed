@@ -71,6 +71,13 @@ class PublicKeyCredential final : public Credential {
   void SetClientExtensionResultCredPropsRk(bool aResult);
 
   void SetClientExtensionResultHmacSecret(bool aHmacCreateSecret);
+
+  void InitClientExtensionResultLargeBlob();
+  void SetClientExtensionResultLargeBlobSupported(bool aSupported);
+  void SetClientExtensionResultLargeBlobValue(
+      const nsTArray<uint8_t>& aLargeBlobValue);
+  void SetClientExtensionResultLargeBlobWritten(bool aLargeBlobWritten);
+
   void InitClientExtensionResultPrf();
   void SetClientExtensionResultPrfEnabled(bool aPrfEnabled);
   void SetClientExtensionResultPrfResultsFirst(
@@ -99,6 +106,7 @@ class PublicKeyCredential final : public Credential {
   
   
   
+  Maybe<nsTArray<uint8_t>> mLargeBlobValue;
   Maybe<nsTArray<uint8_t>> mPrfResultsFirst;
   Maybe<nsTArray<uint8_t>> mPrfResultsSecond;
 };
