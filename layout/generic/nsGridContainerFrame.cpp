@@ -748,6 +748,10 @@ struct nsGridContainerFrame::GridItemInfo {
     eAutoPlacement = 0x800,
     
     eIsLastItemInMasonryTrack = 0x1000,
+
+    
+    eTrackSizingBits =
+        eIsFlexing | eContentBasedAutoMinSize | eClampMarginBoxMinSize,
   };
 
   GridItemInfo(nsIFrame* aFrame, const GridArea& aArea);
@@ -792,6 +796,9 @@ struct nsGridContainerFrame::GridItemInfo {
         mBaselineOffset[LogicalAxis::Block];
     return info;
   }
+
+  
+  void ResetTrackSizingBits(LogicalAxis aAxis);
 
   
   inline void ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd);
@@ -997,6 +1004,10 @@ GridItemInfo::GridItemInfo(nsIFrame* aFrame, const GridArea& aArea)
           StateBits::eIsSubgrid;
     }
   }
+}
+
+void GridItemInfo::ResetTrackSizingBits(LogicalAxis aAxis) {
+  mState[aAxis] &= ~StateBits::eTrackSizingBits;
 }
 
 void GridItemInfo::ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd) {
@@ -9062,7 +9073,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
 }
 
 nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
-    GridReflowInput& aGridRI, nscoord aComputedBSize,
+    GridReflowInput& aGridRI, const Grid& aGrid, nscoord aComputedBSize,
     const Maybe<nscoord>& aContainIntrinsicBSize) const {
   if (aComputedBSize != NS_UNCONSTRAINEDSIZE) {
     
@@ -9078,7 +9089,45 @@ nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
     return aGridRI.mReflowInput->ApplyMinMaxBSize(*aContainIntrinsicBSize);
   }
 
-  return NS_UNCONSTRAINEDSIZE;
+  if (!StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
+    
+    
+    return NS_UNCONSTRAINEDSIZE;
+  }
+
+  if (IsMasonry(LogicalAxis::Block)) {
+    
+    
+    return NS_UNCONSTRAINEDSIZE;
+  }
+
+  
+  
+  
+  
+  aGridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, aGrid,
+                                     NS_UNCONSTRAINEDSIZE,
+                                     SizingConstraint::NoConstraint);
+
+  nscoord result;
+  if (!IsRowSubgrid()) {
+    
+    
+    
+    result = aGridRI.mRows.SumOfGridTracksAndGaps();
+  } else {
+    result = aGridRI.mRows.GridLineEdge(aGridRI.mRows.mSizes.Length(),
+                                        GridLineSide::BeforeGridGap);
+  }
+  result = aGridRI.mReflowInput->ApplyMinMaxBSize(result);
+
+  
+  for (auto& item : aGridRI.mGridItems) {
+    item.ResetTrackSizingBits(LogicalAxis::Block);
+  }
+  aGridRI.mRows.mCanResolveLineRangeSize = false;
+
+  return result;
 }
 
 nscoord nsGridContainerFrame::ComputeIntrinsicContentBSize(
@@ -9089,6 +9138,14 @@ nscoord nsGridContainerFrame::ComputeIntrinsicContentBSize(
       aComputedBSize == NS_UNCONSTRAINEDSIZE ||
           aGridRI.mReflowInput->ShouldApplyAutomaticMinimumOnBlockAxis(),
       "Why call this method when intrinsic content block-size is not needed?");
+
+  if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() &&
+      aComputedBSize == NS_UNCONSTRAINEDSIZE) {
+    
+    
+    
+    return aBSizeForResolvingRowSizes;
+  }
 
   if (aContainIntrinsicBSize) {
     
@@ -9199,12 +9256,19 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
                                       SizingConstraint::NoConstraint);
 
     const nscoord bSizeForResolvingRowSizes = ComputeBSizeForResolvingRowSizes(
-        gridRI, computedBSize, containIntrinsicBSize);
+        gridRI, grid, computedBSize, containIntrinsicBSize);
 
     
     gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
                                       bSizeForResolvingRowSizes,
                                       SizingConstraint::NoConstraint);
+
+    NS_ASSERTION(
+        !StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() ||
+            IsMasonry(LogicalAxis::Block) ||
+            bSizeForResolvingRowSizes != NS_UNCONSTRAINEDSIZE,
+        "The block-size for resolving the row sizes should be definite in "
+        "non-masonry layout!");
 
     if (computedBSize == NS_UNCONSTRAINEDSIZE ||
         aReflowInput.ShouldApplyAutomaticMinimumOnBlockAxis()) {
@@ -9246,15 +9310,20 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   if (!prevInFlow) {
     const auto& rowSizes = gridRI.mRows.mSizes;
     if (!IsRowSubgrid()) {
-      
-      if (computedBSize == NS_UNCONSTRAINEDSIZE &&
+      if (!StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() &&
+          computedBSize == NS_UNCONSTRAINEDSIZE &&
           stylePos->mRowGap.IsLengthPercentage() &&
           stylePos->mRowGap.AsLengthPercentage().HasPercent()) {
+        
+        
+        
+        
         
         gridRI.mRows.mGridGap =
             nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, contentBSize);
       }
       if (!gridRI.mRows.mIsMasonry) {
+        
         auto alignment = stylePos->mAlignContent;
         gridRI.mRows.AlignJustifyContent(stylePos, alignment, wm, contentBSize,
                                          false);
