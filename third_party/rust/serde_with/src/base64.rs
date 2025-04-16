@@ -61,7 +61,6 @@ use crate::prelude::*;
 
 
 
-
 pub struct Base64<ALPHABET: Alphabet = Standard, PADDING: formats::Format = formats::Padded>(
     PhantomData<(ALPHABET, PADDING)>,
 );
@@ -123,7 +122,7 @@ where
     {
         struct Helper<T, ALPHABET>(PhantomData<(T, ALPHABET)>);
 
-        impl<'de, T, ALPHABET> Visitor<'de> for Helper<T, ALPHABET>
+        impl<T, ALPHABET> Visitor<'_> for Helper<T, ALPHABET>
         where
             T: TryFrom<Vec<u8>>,
             ALPHABET: Alphabet,

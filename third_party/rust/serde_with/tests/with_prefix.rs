@@ -1,10 +1,4 @@
-#![allow(
-    
-    
-    unknown_lints,
-    
-    clippy::derive_partial_eq_without_eq,
-)]
+
 
 extern crate alloc;
 
@@ -12,7 +6,6 @@ mod utils;
 
 use crate::utils::is_equal;
 use alloc::collections::BTreeMap;
-use core::iter::FromIterator;
 use expect_test::expect;
 use serde::{Deserialize, Serialize};
 use serde_with::with_prefix;

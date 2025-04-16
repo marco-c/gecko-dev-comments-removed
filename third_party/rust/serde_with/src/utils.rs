@@ -5,8 +5,17 @@ use crate::prelude::*;
 
 #[cfg(feature = "alloc")]
 #[inline]
-pub(crate) fn size_hint_cautious(hint: Option<usize>) -> usize {
-    core::cmp::min(hint.unwrap_or(0), 4096)
+pub(crate) fn size_hint_cautious<Element>(hint: Option<usize>) -> usize {
+    const MAX_PREALLOC_BYTES: usize = 1024 * 1024;
+
+    if core::mem::size_of::<Element>() == 0 {
+        0
+    } else {
+        core::cmp::min(
+            hint.unwrap_or(0),
+            MAX_PREALLOC_BYTES / core::mem::size_of::<Element>(),
+        )
+    }
 }
 
 
@@ -25,11 +34,13 @@ where
     _size_hint_from_bounds(iter.size_hint())
 }
 
-pub(crate) const NANOS_PER_SEC: u32 = 1_000_000_000;
+pub(crate) const NANOS_PER_SEC: u128 = 1_000_000_000;
+pub(crate) const NANOS_PER_SEC_F64: f64 = 1_000_000_000.0;
 
 
 
 
+pub(crate) const U64_MAX: u128 = u64::MAX as u128;
 
 pub(crate) struct MapIter<'de, A, K, V> {
     pub(crate) access: A,
@@ -104,31 +115,27 @@ where
     }
 }
 
-pub(crate) fn duration_as_secs_f64(dur: &Duration) -> f64 {
-    (dur.as_secs() as f64) + (dur.subsec_nanos() as f64) / (NANOS_PER_SEC as f64)
-}
-
 pub(crate) fn duration_signed_from_secs_f64(secs: f64) -> Result<DurationSigned, &'static str> {
-    const MAX_NANOS_F64: f64 = ((u64::max_value() as u128 + 1) * (NANOS_PER_SEC as u128)) as f64;
+    const MAX_NANOS_F64: f64 = ((U64_MAX + 1) * NANOS_PER_SEC) as f64;
     
     
-    let mut nanos = secs * (NANOS_PER_SEC as f64);
+    let mut nanos = secs * NANOS_PER_SEC_F64;
     if !nanos.is_finite() {
         return Err("got non-finite value when converting float to duration");
     }
     if nanos >= MAX_NANOS_F64 {
         return Err("overflow when converting float to duration");
     }
-    let mut sign = self::duration::Sign::Positive;
+    let mut sign = Sign::Positive;
     if nanos < 0.0 {
         nanos = -nanos;
-        sign = self::duration::Sign::Negative;
+        sign = Sign::Negative;
     }
     let nanos = nanos as u128;
-    Ok(self::duration::DurationSigned::new(
+    Ok(DurationSigned::new(
         sign,
-        (nanos / (NANOS_PER_SEC as u128)) as u64,
-        (nanos % (NANOS_PER_SEC as u128)) as u32,
+        (nanos / NANOS_PER_SEC) as u64,
+        (nanos % NANOS_PER_SEC) as u32,
     ))
 }
 
@@ -162,9 +169,6 @@ where
     
     
 
-    
-    
-    #[allow(clippy::uninit_assumed_init)]
     let mut arr: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
     
@@ -191,4 +195,48 @@ where
     
     
     Ok(unsafe { core::mem::transmute_copy::<_, [T; N]>(&arr) })
+}
+
+
+struct BufWriter<'a> {
+    bytes: &'a mut [u8],
+    offset: usize,
+}
+
+impl<'a> BufWriter<'a> {
+    fn new(bytes: &'a mut [u8]) -> Self {
+        BufWriter { bytes, offset: 0 }
+    }
+
+    fn into_str(self) -> &'a str {
+        let slice = &self.bytes[..self.offset];
+        core::str::from_utf8(slice)
+            .unwrap_or("Failed to extract valid string from BufWriter. This should never happen.")
+    }
+}
+
+impl core::fmt::Write for BufWriter<'_> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        if s.len() > self.bytes.len() - self.offset {
+            Err(fmt::Error)
+        } else {
+            self.bytes[self.offset..self.offset + s.len()].copy_from_slice(s.as_bytes());
+            self.offset += s.len();
+            Ok(())
+        }
+    }
+}
+
+
+pub(crate) fn get_unexpected_i128(value: i128, buf: &mut [u8; 58]) -> Unexpected<'_> {
+    let mut writer = BufWriter::new(buf);
+    fmt::Write::write_fmt(&mut writer, format_args!("integer `{value}` as i128")).unwrap();
+    Unexpected::Other(writer.into_str())
+}
+
+
+pub(crate) fn get_unexpected_u128(value: u128, buf: &mut [u8; 58]) -> Unexpected<'_> {
+    let mut writer = BufWriter::new(buf);
+    fmt::Write::write_fmt(&mut writer, format_args!("integer `{value}` as u128")).unwrap();
+    Unexpected::Other(writer.into_str())
 }

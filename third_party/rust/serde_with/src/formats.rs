@@ -138,3 +138,23 @@ impl Separator for ColonSeparator {
         ":"
     }
 }
+
+
+pub struct UnixLineSeparator;
+
+impl Separator for UnixLineSeparator {
+    #[inline]
+    fn separator() -> &'static str {
+        "\n"
+    }
+}
+
+
+pub struct DosLineSeparator;
+
+impl Separator for DosLineSeparator {
+    #[inline]
+    fn separator() -> &'static str {
+        "\r\n"
+    }
+}

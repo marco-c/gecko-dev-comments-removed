@@ -1,12 +1,10 @@
 
 
-#![allow(unknown_lints, non_fmt_panics)]
-
 use version_sync::{assert_contains_regex, assert_html_root_url_updated};
 
 #[test]
 fn test_changelog() {
-    assert_contains_regex!("CHANGELOG.md", r#"## \[{version}\]"#);
+    assert_contains_regex!("CHANGELOG.md", r"## \[{version}\]");
 }
 
 #[test]
@@ -20,10 +18,7 @@ fn test_serde_with_macros_dependency() {
         "../serde_with/Cargo.toml",
         r#"^serde_with_macros = .*? version = "={version}""#
     );
-    version_sync::assert_contains_regex!(
-        "../serde_with_macros/Cargo.toml",
-        r#"^version = "{version}""#
-    );
+    version_sync::assert_contains_regex!("../Cargo.toml", r#"^version = "{version}""#);
 }
 
 
@@ -63,7 +58,7 @@ fn test_docs_rs_url_point_to_current_version() -> Result<(), Box<dyn std::error:
                             line_number + 1,
                             pkg_version,
                             capture.get(0).expect("Group 0 always exists").as_str()
-                        )
+                        );
                     }
                     _ => {}
                 }

@@ -48,6 +48,8 @@
 
 
 
+
+
 #[macro_export]
 macro_rules! flattened_maybe {
     ($fn:ident, $field:tt) => {
@@ -64,7 +66,7 @@ macro_rules! flattened_maybe {
                 serde,
             };
 
-            #[derive($crate::serde::Deserialize)]
+            #[derive($crate::serde_derive::Deserialize)]
             #[serde(crate = "serde")]
             pub struct Both<T> {
                 #[serde(flatten)]

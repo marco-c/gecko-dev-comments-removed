@@ -10,7 +10,7 @@ fn test_fnv_hashset() {
 
     
     is_equal(
-        S([1, 2, 3, 4, 5].iter().cloned().collect()),
+        S([1, 2, 3, 4, 5].iter().copied().collect()),
         expect![[r#"
             [
               "5",
@@ -32,7 +32,7 @@ fn test_fnv_hashmap() {
 
     
     is_equal(
-        S([(1, 1), (3, 3), (111, 111)].iter().cloned().collect()),
+        S([(1, 1), (3, 3), (111, 111)].iter().copied().collect()),
         expect![[r#"
             {
               "1": "1",

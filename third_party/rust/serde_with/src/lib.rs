@@ -1,52 +1,29 @@
-#![warn(
-    clippy::semicolon_if_nothing_returned,
-    
-    
-    
-    
-    missing_docs,
-    rust_2018_idioms,
-    rustdoc::missing_crate_level_docs,
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_extern_crates,
-    unused_import_braces,
-    unused_qualifications,
-    variant_size_differences
-)]
-#![doc(test(attr(forbid(unsafe_code))))]
-#![doc(test(attr(deny(
-    missing_debug_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_extern_crates,
-    unused_import_braces,
-    unused_qualifications,
-))))]
-#![doc(test(attr(warn(rust_2018_idioms))))]
+#![doc(test(attr(
+    allow(
+        unknown_lints,
+        
+        
+        non_local_definitions,
+        
+        clippy::disallowed_names,
+    ),
+    deny(
+        missing_debug_implementations,
+        rust_2018_idioms,
+        trivial_casts,
+        trivial_numeric_casts,
+        unused_extern_crates,
+        unused_import_braces,
+        unused_qualifications,
+        warnings,
+    ),
+    forbid(unsafe_code),
+)))]
 
 #![doc(test(no_crate_inject))]
-#![doc(html_root_url = "https://docs.rs/serde_with/3.0.0/")]
+#![doc(html_root_url = "https://docs.rs/serde_with/3.12.0/")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![allow(
-    
-    
-    unknown_lints,
-    
-    clippy::only_used_in_recursion,
-    
-    clippy::derive_partial_eq_without_eq,
-    
-    clippy::explicit_auto_deref
-)]
 #![no_std]
-
-
-
-
-
-
-
 
 
 
@@ -296,6 +273,8 @@ extern crate alloc;
 pub extern crate core;
 #[doc(hidden)]
 pub extern crate serde;
+#[doc(hidden)]
+pub extern crate serde_derive;
 #[cfg(feature = "std")]
 extern crate std;
 
@@ -330,6 +309,9 @@ pub mod json;
 #[cfg(feature = "alloc")]
 mod key_value_map;
 pub mod rust;
+#[cfg(feature = "schemars_0_8")]
+#[cfg_attr(docsrs, doc(cfg(feature = "schemars_0_8")))]
+pub mod schemars_0_8;
 pub mod ser;
 #[cfg(feature = "std")]
 mod serde_conv;
@@ -340,6 +322,9 @@ mod utils;
 #[cfg(feature = "std")]
 #[doc(hidden)]
 pub mod with_prefix;
+#[cfg(feature = "std")]
+#[doc(hidden)]
+pub mod with_suffix;
 
 
 
@@ -375,7 +360,7 @@ macro_rules! generate_guide {
 #[cfg(feature = "guide")]
 generate_guide! {
     pub mod guide {
-        pub mod feature_flags;
+        @code pub mod feature_flags;
         pub mod serde_as;
         pub mod serde_as_transformations;
     }
@@ -403,7 +388,9 @@ pub(crate) mod prelude {
         fmt::{self, Display},
         hash::{BuildHasher, Hash},
         marker::PhantomData,
+        ops::Bound,
         option::Option,
+        pin::Pin,
         result::Result,
         str::FromStr,
         time::Duration,
@@ -451,6 +438,8 @@ use core::marker::PhantomData;
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 #[doc(inline)]
 pub use serde_with_macros::*;
+
+
 
 
 
@@ -552,6 +541,49 @@ pub struct Same;
 
 
 pub struct DisplayFromStr;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct IfIsHumanReadable<H, F = Same>(PhantomData<H>, PhantomData<F>);
 
 
 
@@ -927,10 +959,12 @@ pub struct BytesOrString;
 
 
 
+
 pub struct DurationSeconds<
     FORMAT: formats::Format = u64,
     STRICTNESS: formats::Strictness = formats::Strict,
 >(PhantomData<(FORMAT, STRICTNESS)>);
+
 
 
 
@@ -1259,10 +1293,12 @@ pub struct DurationNanoSecondsWithFrac<
 
 
 
+
 pub struct TimestampSeconds<
     FORMAT: formats::Format = i64,
     STRICTNESS: formats::Strictness = formats::Strict,
 >(PhantomData<(FORMAT, STRICTNESS)>);
+
 
 
 
@@ -1601,26 +1637,10 @@ pub struct TimestampNanoSecondsWithFrac<
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub struct Bytes;
+
+
+
 
 
 
@@ -1904,6 +1924,86 @@ pub struct FromInto<T>(PhantomData<T>);
 
 
 
+pub struct FromIntoRef<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1914,6 +2014,94 @@ pub struct FromInto<T>(PhantomData<T>);
 
 
 pub struct TryFromInto<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct TryFromIntoRef<T>(PhantomData<T>);
 
 
 
@@ -2067,6 +2255,64 @@ pub struct VecSkipError<T>(PhantomData<T>);
 
 
 
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub struct MapSkipError<K, V>(PhantomData<(K, V)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct BoolFromInt<S: formats::Strictness = formats::Strict>(PhantomData<S>);
 
 
@@ -2119,7 +2365,6 @@ pub struct BoolFromInt<S: formats::Strictness = formats::Strict>(PhantomData<S>)
 
 
 pub struct StringWithSeparator<Sep, T>(PhantomData<(Sep, T)>);
-
 
 
 
@@ -2337,3 +2582,13 @@ pub struct SetPreventDuplicates<T>(PhantomData<T>);
 
 #[cfg(feature = "alloc")]
 pub struct SetLastValueWins<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+#[cfg(feature = "schemars_0_8")]
+pub struct Schema<T: ?Sized, TA>(PhantomData<T>, PhantomData<TA>);

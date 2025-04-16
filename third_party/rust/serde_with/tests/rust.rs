@@ -1,10 +1,4 @@
-#![allow(
-    
-    
-    unknown_lints,
-    
-    clippy::derive_partial_eq_without_eq,
-)]
+
 
 extern crate alloc;
 
@@ -218,7 +212,7 @@ fn duplicate_value_first_wins_hashset() {
         where
             H: std::hash::Hasher,
         {
-            self.0.hash(state)
+            self.0.hash(state);
         }
     }
 
@@ -279,7 +273,7 @@ fn duplicate_value_last_wins_hashset() {
         where
             H: std::hash::Hasher,
         {
-            self.0.hash(state)
+            self.0.hash(state);
         }
     }
 

@@ -25,6 +25,6 @@ t!(d: Option<bool>);
 #[test]
 fn t() {
     let expected = r#"{}"#;
-    let data: Data = Default::default();
+    let data = Data::default();
     assert_eq!(expected, serde_json::to_string(&data).unwrap());
 }

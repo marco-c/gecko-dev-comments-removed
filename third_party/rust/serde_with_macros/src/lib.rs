@@ -1,36 +1,26 @@
+
+
 #![forbid(unsafe_code)]
-#![warn(
-    clippy::semicolon_if_nothing_returned,
-    missing_copy_implementations,
-    missing_debug_implementations,
-    missing_docs,
-    rust_2018_idioms,
-    rustdoc::missing_crate_level_docs,
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_extern_crates,
-    unused_import_braces,
-    unused_qualifications,
-    variant_size_differences
-)]
-#![doc(test(attr(forbid(unsafe_code))))]
-#![doc(test(attr(deny(
-    missing_copy_implementations,
-    missing_debug_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_extern_crates,
-    unused_import_braces,
-    unused_qualifications,
-))))]
-#![doc(test(attr(warn(rust_2018_idioms))))]
+#![warn(missing_copy_implementations, missing_debug_implementations)]
+#![doc(test(attr(
+    
+    
+    allow(unknown_lints, non_local_definitions),
+    deny(
+        missing_debug_implementations,
+        rust_2018_idioms,
+        trivial_casts,
+        trivial_numeric_casts,
+        unused_extern_crates,
+        unused_import_braces,
+        unused_qualifications,
+        warnings,
+    ),
+    forbid(unsafe_code),
+)))]
 
 #![doc(test(no_crate_inject))]
-#![doc(html_root_url = "https://docs.rs/serde_with_macros/3.0.0/")]
-
-#![allow(renamed_and_removed_lints)]
-
-#![allow(clippy::unknown_clippy_lints)]
+#![doc(html_root_url = "https://docs.rs/serde_with_macros/3.12.0/")]
 
 #![cfg(not(tarpaulin_include))]
 
@@ -41,13 +31,14 @@
 
 
 
-#[allow(unused_extern_crates)]
-extern crate proc_macro;
-
 mod apply;
+mod lazy_bool;
 mod utils;
 
-use crate::utils::{split_with_de_lifetime, DeriveOptions, IteratorExt as _};
+use crate::utils::{
+    split_with_de_lifetime, DeriveOptions, IteratorExt as _, SchemaFieldCondition,
+    SchemaFieldConfig,
+};
 use darling::{
     ast::NestedMeta,
     util::{Flag, Override},
@@ -315,15 +306,16 @@ where
 
 
 
+
+
+
+
+
 #[proc_macro_attribute]
 pub fn skip_serializing_none(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let res = match apply_function_to_struct_and_enum_fields(
-        input,
-        skip_serializing_none_add_attr_to_field,
-    ) {
-        Ok(res) => res,
-        Err(err) => err.to_compile_error(),
-    };
+    let res =
+        apply_function_to_struct_and_enum_fields(input, skip_serializing_none_add_attr_to_field)
+            .unwrap_or_else(|err| err.to_compile_error());
     TokenStream::from(res)
 }
 
@@ -592,12 +584,29 @@ fn field_has_attribute(field: &Field, namespace: &str, name: &str) -> bool {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[proc_macro_attribute]
 pub fn serde_as(args: TokenStream, input: TokenStream) -> TokenStream {
     #[derive(FromMeta)]
     struct SerdeContainerOptions {
         #[darling(rename = "crate")]
         alt_crate_path: Option<Path>,
+        #[darling(rename = "schemars")]
+        enable_schemars_support: Option<bool>,
     }
 
     match NestedMeta::parse_meta_list(args.into()) {
@@ -613,15 +622,19 @@ pub fn serde_as(args: TokenStream, input: TokenStream) -> TokenStream {
                 .alt_crate_path
                 .unwrap_or_else(|| syn::parse_quote!(::serde_with));
 
+            let schemars_config = match container_options.enable_schemars_support {
+                _ if cfg!(not(feature = "schemars_0_8")) => SchemaFieldConfig::False,
+                Some(condition) => condition.into(),
+                None => utils::has_derive_jsonschema(input.clone()).unwrap_or_default(),
+            };
+
             
-            let res = match apply_function_to_struct_and_enum_fields_darling(
+            let res = apply_function_to_struct_and_enum_fields_darling(
                 input,
                 &serde_with_crate_path,
-                |field| serde_as_add_attr_to_field(field, &serde_with_crate_path),
-            ) {
-                Ok(res) => res,
-                Err(err) => err.write_errors(),
-            };
+                |field| serde_as_add_attr_to_field(field, &serde_with_crate_path, &schemars_config),
+            )
+            .unwrap_or_else(darling::Error::write_errors);
             TokenStream::from(res)
         }
         Err(e) => TokenStream::from(DarlingError::from(e).write_errors()),
@@ -632,10 +645,14 @@ pub fn serde_as(args: TokenStream, input: TokenStream) -> TokenStream {
 fn serde_as_add_attr_to_field(
     field: &mut Field,
     serde_with_crate_path: &Path,
+    schemars_config: &SchemaFieldConfig,
 ) -> Result<(), DarlingError> {
     #[derive(FromField)]
     #[darling(attributes(serde_as))]
     struct SerdeAsOptions {
+        
+        ty: Type,
+
         r#as: Option<Type>,
         deserialize_as: Option<Type>,
         serialize_as: Option<Type>,
@@ -747,6 +764,7 @@ fn serde_as_add_attr_to_field(
         return Err(DarlingError::multiple(errors));
     }
 
+    let type_original = &serde_as_options.ty;
     let type_same = &syn::parse_quote!(#serde_with_crate_path::Same);
     if let Some(type_) = &serde_as_options.r#as {
         emit_borrow_annotation(&serde_options, type_, field);
@@ -756,6 +774,42 @@ fn serde_as_add_attr_to_field(
         let attr_inner_tokens = quote!(#serde_with_crate_path::As::<#replacement_type>).to_string();
         let attr = parse_quote!(#[serde(with = #attr_inner_tokens)]);
         field.attrs.push(attr);
+
+        match schemars_config {
+            SchemaFieldConfig::False => {}
+            lhs => {
+                let rhs = utils::schemars_with_attr_if(
+                    &field.attrs,
+                    &["with", "serialize_with", "deserialize_with", "schema_with"],
+                )?;
+
+                match lhs & !rhs {
+                    SchemaFieldConfig::False => {}
+                    condition => {
+                        let attr_inner_tokens = quote! {
+                            #serde_with_crate_path::Schema::<#type_original, #replacement_type>
+                        };
+                        let attr_inner_tokens = attr_inner_tokens.to_string();
+                        let attr = match condition {
+                            SchemaFieldConfig::False => unreachable!(),
+                            SchemaFieldConfig::True => {
+                                parse_quote! { #[schemars(with = #attr_inner_tokens)] }
+                            }
+                            SchemaFieldConfig::Lazy(SchemaFieldCondition(condition)) => {
+                                parse_quote! {
+                                    #[cfg_attr(
+                                        #condition,
+                                        schemars(with = #attr_inner_tokens))
+                                    ]
+                                }
+                            }
+                        };
+
+                        field.attrs.push(attr);
+                    }
+                }
+            }
+        }
     }
     if let Some(type_) = &serde_as_options.deserialize_as {
         emit_borrow_annotation(&serde_options, type_, field);
@@ -768,7 +822,7 @@ fn serde_as_add_attr_to_field(
         field.attrs.push(attr);
     }
     if let Some(type_) = serde_as_options.serialize_as {
-        let replacement_type = replace_infer_type_with_type(type_, type_same);
+        let replacement_type = replace_infer_type_with_type(type_.clone(), type_same);
         let attr_inner_tokens =
             quote!(#serde_with_crate_path::As::<#replacement_type>::serialize).to_string();
         let attr = parse_quote!(#[serde(serialize_with = #attr_inner_tokens)]);
@@ -804,45 +858,44 @@ fn replace_infer_type_with_type(to_replace: Type, replacement: &Type) -> Type {
             Type::Paren(inner)
         }
         Type::Path(mut inner) => {
-            match inner.path.segments.pop() {
-                Some(Pair::End(mut t)) | Some(Pair::Punctuated(mut t, _)) => {
-                    t.arguments = match t.arguments {
-                        PathArguments::None => PathArguments::None,
-                        PathArguments::AngleBracketed(mut inner) => {
-                            
-                            inner.args = inner
-                                .args
-                                .into_iter()
-                                .map(|generic_argument| match generic_argument {
-                                    
-                                    
-                                    GenericArgument::Type(type_) => GenericArgument::Type(
-                                        replace_infer_type_with_type(type_, replacement),
-                                    ),
-                                    ga => ga,
-                                })
-                                .collect();
-                            PathArguments::AngleBracketed(inner)
-                        }
-                        PathArguments::Parenthesized(mut inner) => {
-                            inner.inputs = inner
-                                .inputs
-                                .into_iter()
-                                .map(|type_| replace_infer_type_with_type(type_, replacement))
-                                .collect();
-                            inner.output = match inner.output {
-                                ReturnType::Type(arrow, mut type_) => {
-                                    *type_ = replace_infer_type_with_type(*type_, replacement);
-                                    ReturnType::Type(arrow, type_)
-                                }
-                                default => default,
-                            };
-                            PathArguments::Parenthesized(inner)
-                        }
-                    };
-                    inner.path.segments.push(t);
-                }
-                None => {}
+            if let Some(Pair::End(mut t)) | Some(Pair::Punctuated(mut t, _)) =
+                inner.path.segments.pop()
+            {
+                t.arguments = match t.arguments {
+                    PathArguments::None => PathArguments::None,
+                    PathArguments::AngleBracketed(mut inner) => {
+                        
+                        inner.args = inner
+                            .args
+                            .into_iter()
+                            .map(|generic_argument| match generic_argument {
+                                
+                                
+                                GenericArgument::Type(type_) => GenericArgument::Type(
+                                    replace_infer_type_with_type(type_, replacement),
+                                ),
+                                ga => ga,
+                            })
+                            .collect();
+                        PathArguments::AngleBracketed(inner)
+                    }
+                    PathArguments::Parenthesized(mut inner) => {
+                        inner.inputs = inner
+                            .inputs
+                            .into_iter()
+                            .map(|type_| replace_infer_type_with_type(type_, replacement))
+                            .collect();
+                        inner.output = match inner.output {
+                            ReturnType::Type(arrow, mut type_) => {
+                                *type_ = replace_infer_type_with_type(*type_, replacement);
+                                ReturnType::Type(arrow, type_)
+                            }
+                            default => default,
+                        };
+                        PathArguments::Parenthesized(inner)
+                    }
+                };
+                inner.path.segments.push(t);
             }
             Type::Path(inner)
         }
