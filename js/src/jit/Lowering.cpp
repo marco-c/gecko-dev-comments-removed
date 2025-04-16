@@ -8392,6 +8392,11 @@ void LIRGenerator::visitWasmRefIsSubtypeOfConcrete(
          ins);
 }
 
+void LIRGenerator::visitWasmRefConvertAnyExtern(MWasmRefConvertAnyExtern* ins) {
+  
+  return redefine(ins, ins->ref());
+}
+
 void LIRGenerator::visitWasmNewStructObject(MWasmNewStructObject* ins) {
   LWasmNewStructObject* lir =
       new (alloc()) LWasmNewStructObject(useFixed(ins->instance(), InstanceReg),
