@@ -1,11 +1,5 @@
 
 
-
-
-
-
-
-
 const m1 = new WebAssembly.Module(wasmTextToBinary(`(module
   (type (struct))
   (type $f (func))
