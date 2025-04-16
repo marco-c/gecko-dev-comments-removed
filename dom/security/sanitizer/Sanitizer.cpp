@@ -47,13 +47,74 @@ JSObject* Sanitizer::WrapObject(JSContext* aCx,
 
 
 
-already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
-                                           const SanitizerConfig& aConfig,
-                                           ErrorResult& aRv) {
-  RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+already_AddRefed<Sanitizer> Sanitizer::GetInstance(
+    nsIGlobalObject* aGlobal,
+    const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
+    bool aSafe, ErrorResult& aRv) {
+  
+  if (aOptions.IsSanitizerPresets()) {
+    
+    MOZ_ASSERT(aOptions.GetAsSanitizerPresets() == SanitizerPresets::Default);
+
+    
+    
+    
+    RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+    sanitizer->SetDefaultConfig();
+    return sanitizer.forget();
+  }
 
   
-  sanitizer->SetConfig(aConfig, aRv);
+  
+  if (aOptions.IsSanitizerConfig()) {
+    
+    RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+
+    
+    
+    sanitizer->SetConfig(aOptions.GetAsSanitizerConfig(), !aSafe, aRv);
+
+    
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    
+    return sanitizer.forget();
+  }
+
+  
+  MOZ_ASSERT(aOptions.IsSanitizer());
+
+  
+  RefPtr<Sanitizer> sanitizer = aOptions.GetAsSanitizer();
+  return sanitizer.forget();
+}
+
+
+
+already_AddRefed<Sanitizer> Sanitizer::Constructor(
+    const GlobalObject& aGlobal,
+    const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  RefPtr<Sanitizer> sanitizer = new Sanitizer(global);
+
+  
+  if (aConfig.IsSanitizerPresets()) {
+    
+    MOZ_ASSERT(aConfig.GetAsSanitizerPresets() == SanitizerPresets::Default);
+
+    
+    sanitizer->SetDefaultConfig();
+
+    
+    
+    return sanitizer.forget();
+  }
+
+  
+  
+  sanitizer->SetConfig(aConfig.GetAsSanitizerConfig(), true, aRv);
 
   
   if (aRv.Failed()) {
@@ -63,39 +124,20 @@ already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
   return sanitizer.forget();
 }
 
-
-
-already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
-                                           const SanitizerPresets aConfig,
-                                           ErrorResult& aRv) {
-  
-  RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
-
-  
-  MOZ_ASSERT(aConfig == SanitizerPresets::Default);
-
-  
-  sanitizer->SetDefaultConfig();
-
-  return sanitizer.forget();
-}
-
-
-already_AddRefed<Sanitizer> Sanitizer::Constructor(
-    const GlobalObject& aGlobal,
-    const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  if (aConfig.IsSanitizerConfig()) {
-    return New(global, aConfig.GetAsSanitizerConfig(), aRv);
-  }
-  return New(global, aConfig.GetAsSanitizerPresets(), aRv);
-}
-
 void Sanitizer::SetDefaultConfig() {
   MOZ_ASSERT(NS_IsMainThread());
   AssertNoLists();
 
   mIsDefaultConfig = true;
+
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!mComments);
+  MOZ_ASSERT(!mDataAttributes);
 
   if (sDefaultHTMLElements) {
     
@@ -149,7 +191,9 @@ void Sanitizer::SetDefaultConfig() {
 }
 
 
-void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
+void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
+                          bool aAllowCommentsAndDataAttributes,
+                          ErrorResult& aRv) {
   
   if (aConfig.mElements.WasPassed()) {
     for (const auto& element : aConfig.mElements.Value()) {
@@ -193,16 +237,25 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
   }
 
   
-
-  
   if (aConfig.mComments.WasPassed()) {
+    
+    
     SetComments(aConfig.mComments.Value());
+  } else {
+    
+    
+    SetComments(aAllowCommentsAndDataAttributes);
   }
 
   
-  
   if (aConfig.mDataAttributes.WasPassed()) {
+    
+    
     SetDataAttributes(aConfig.mDataAttributes.Value());
+  } else {
+    
+    
+    SetDataAttributes(aAllowCommentsAndDataAttributes);
   }
 
   
