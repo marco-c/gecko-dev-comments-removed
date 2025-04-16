@@ -66,6 +66,10 @@ add_setup(async function () {
   sinon.stub(NimbusFeatures.searchConfiguration, "ready").resolves();
   await test.setup();
 
+  
+  
+  do_get_profile();
+
   registerCleanupFunction(async () => {
     sinon.restore();
   });
