@@ -55,7 +55,7 @@ def bootstrap_tasks(config, tasks):
                 
                 
                 "unset MOZ_AUTOMATION",
-                f"curl -O {head_repo}/raw-file/{head_rev}/python/mozboot/bin/bootstrap.py",
+                f"curl --retry 5 -L -f -O {head_repo}/raw-file/{head_rev}/python/mozboot/bin/bootstrap.py",
                 f"python3 bootstrap.py --no-interactive --application-choice {app}",
                 "cd mozilla-unified",
                 
