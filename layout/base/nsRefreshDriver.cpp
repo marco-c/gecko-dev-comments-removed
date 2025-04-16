@@ -1860,8 +1860,7 @@ bool nsRefreshDriver::HasObservers() const {
   }
 
   return (mViewManagerFlushIsPending && !mThrottled) ||
-         !mStyleFlushObservers.IsEmpty() ||
-         !mEarlyRunners.IsEmpty();
+         !mStyleFlushObservers.IsEmpty() || !mEarlyRunners.IsEmpty();
 }
 
 void nsRefreshDriver::AppendObserverDescriptionsToString(
@@ -2126,7 +2125,7 @@ void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
       Filter);
 }
 
-static CallState UpdateAndReduceAnimations(Document& aDocument) {
+static void UpdateAndReduceAnimations(Document& aDocument) {
   for (DocumentTimeline* tl :
        ToTArray<AutoTArray<RefPtr<DocumentTimeline>, 32>>(
            aDocument.Timelines())) {
@@ -2137,39 +2136,6 @@ static CallState UpdateAndReduceAnimations(Document& aDocument) {
     if (pc->EffectCompositor()->NeedsReducing()) {
       pc->EffectCompositor()->ReduceAnimations();
     }
-  }
-  aDocument.EnumerateSubDocuments(UpdateAndReduceAnimations);
-  return CallState::Continue;
-}
-
-void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
-  if (!mPresContext) {
-    return;
-  }
-
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    nsAutoMicroTask mt;
-    RefPtr doc = mPresContext->Document();
-    UpdateAndReduceAnimations(*doc);
-  }
-
-  
-  
-  
-  AutoTArray<RefPtr<AnimationEventDispatcher>, 16> dispatchers;
-  dispatchers.AppendElements(mAnimationEventFlushObservers);
-  mAnimationEventFlushObservers.Clear();
-
-  for (auto& dispatcher : dispatchers) {
-    dispatcher->DispatchEvents();
   }
 }
 
@@ -2569,10 +2535,27 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
       });
 
   
-  RunRenderingPhaseLegacy(RenderingPhase::UpdateAnimationsAndSendEvents,
-                          [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                            UpdateAnimationsAndSendEvents();
-                          });
+  RunRenderingPhase(RenderingPhase::UpdateAnimationsAndSendEvents,
+                    [&](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        nsAutoMicroTask mt;
+                        UpdateAndReduceAnimations(aDoc);
+                      }
+                      if (RefPtr pc = aDoc.GetPresContext()) {
+                        RefPtr dispatcher = pc->AnimationEventDispatcher();
+                        dispatcher->DispatchEvents();
+                      }
+                    });
 
   
   RunRenderingPhaseLegacy(
@@ -3076,13 +3059,6 @@ void nsRefreshDriver::CancelPendingFullscreenEvents(Document* aDocument) {
       mPendingFullscreenEvents.RemoveElementAt(i);
     }
   }
-}
-
-void nsRefreshDriver::CancelPendingAnimationEvents(
-    AnimationEventDispatcher* aDispatcher) {
-  MOZ_ASSERT(aDispatcher);
-  aDispatcher->ClearEventQueue();
-  mAnimationEventFlushObservers.RemoveElement(aDispatcher);
 }
 
 

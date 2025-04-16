@@ -7416,7 +7416,7 @@ bool Document::IsRenderingSuppressed() const {
   }
   
   
-  if (!IsEventHandlingEnabled()) {
+  if (!IsEventHandlingEnabled() && !IsBeingUsedAsImage()) {
     return true;
   }
   if (!mPresShell || !mPresShell->DidInitialize()) {

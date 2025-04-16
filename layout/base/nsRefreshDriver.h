@@ -195,24 +195,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
 
 
-  void ScheduleAnimationEventDispatch(
-      mozilla::AnimationEventDispatcher* aDispatcher) {
-    NS_ASSERTION(!mAnimationEventFlushObservers.Contains(aDispatcher),
-                 "Double-adding animation event flush observer");
-    mAnimationEventFlushObservers.AppendElement(aDispatcher);
-    ScheduleRenderingPhase(
-        mozilla::RenderingPhase::UpdateAnimationsAndSendEvents);
-  }
-
-  
-
-
-  void CancelPendingAnimationEvents(
-      mozilla::AnimationEventDispatcher* aDispatcher);
-
-  
-
-
 
   void ScheduleFrameVisibilityUpdate() { mNeedToRecomputeVisibility = true; }
 
@@ -441,7 +423,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   };
   using ObserverArray = nsTObserverArray<ObserverData>;
   void RunFullscreenSteps();
-  void UpdateAnimationsAndSendEvents();
 
   MOZ_CAN_RUN_SCRIPT
   void RunVideoAndFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
@@ -645,8 +626,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   nsTObserverArray<nsAPostRefreshObserver*> mPostRefreshObservers;
   nsTArray<mozilla::UniquePtr<mozilla::PendingFullscreenEvent>>
       mPendingFullscreenEvents;
-  AutoTArray<mozilla::AnimationEventDispatcher*, 16>
-      mAnimationEventFlushObservers;
 
   
   
