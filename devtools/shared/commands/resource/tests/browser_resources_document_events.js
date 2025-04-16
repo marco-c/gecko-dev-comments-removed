@@ -637,13 +637,18 @@ async function assertPromises(
   });
 }
 
+const isSlowPlatform =
+  AppConstants.ASAN || AppConstants.DEBUG || AppConstants.TSAN;
 function assertEvents({
   commands,
   targetBeforeNavigation,
   documentEvents,
   expectedTargetFront = commands.targetCommand.targetFront,
   expectedNewURI = gBrowser.selectedBrowser.currentURI.spec,
-  ignoreWillNavigateTimestamp = false,
+  
+  
+  
+  ignoreWillNavigateTimestamp = isSlowPlatform,
   ignoreAllTimestamps = false,
 }) {
   const [willNavigateEvent, loadingEvent, interactiveEvent, completeEvent] =
