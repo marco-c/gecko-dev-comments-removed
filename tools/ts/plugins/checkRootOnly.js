@@ -8,6 +8,7 @@
 
 
 
+
 exports.default = (program, host, _, { ts }) => {
   return ts.createProgram(
     program.getRootFileNames(),
@@ -17,7 +18,7 @@ exports.default = (program, host, _, { ts }) => {
       getSourceFile(...args) {
         let file = host.getSourceFile(...args);
         
-        if (!file.checkJsDirective && file.scriptKind === ts.ScriptKind.JS) {
+        if (file.checkJsDirective?.enabled !== false) {
           
           file.checkJsDirective = {
             enabled: program.getRootFileNames().includes(file.fileName),
