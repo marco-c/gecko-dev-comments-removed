@@ -18,7 +18,7 @@ add_task(async function () {
   info("Starting test... ");
 
   
-  const QUOTE_WIN = '^"';
+  const QUOTE_WIN = '"';
   const QUOTE_POSIX = "'";
 
   const isWin = Services.appinfo.OS === "WINNT";
@@ -221,7 +221,7 @@ async function testForPlatform(tab, monitor, testData) {
         
         
         
-        const matchRe = /[-A-Za-z1-9]+(?: ([\^\\"']+)(?:\\\1|.)*?\1)?/g;
+        const matchRe = /[-A-Za-z1-9]+(?: ([\"'])(?:\\\1|.)*?\1)?/g;
 
         const actual = result.match(matchRe);
         
