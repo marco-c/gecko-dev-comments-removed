@@ -139,6 +139,45 @@ void Queue::WriteBuffer(const Buffer& aBuffer, uint64_t aBufferOffset,
       });
 }
 
+static CheckedInt<size_t> ComputeApproxSize(
+    const dom::GPUTexelCopyTextureInfo& aDestination,
+    const dom::GPUTexelCopyBufferLayout& aDataLayout,
+    const ffi::WGPUExtent3d& extent,
+    const ffi::WGPUTextureFormatBlockInfo& info) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  auto widthInBlocks = extent.width / info.width;
+  auto heightInBlocks = extent.height / info.height;
+  auto bytesInLastRow = CheckedInt<size_t>(widthInBlocks) * info.copy_size;
+
+  
+  auto bytesPerRow = CheckedInt<size_t>(aDataLayout.mBytesPerRow.WasPassed()
+                                            ? aDataLayout.mBytesPerRow.Value()
+                                            : bytesInLastRow);
+
+  if (extent.depth_or_array_layers > 1) {
+    
+    auto rowsPerImage = aDataLayout.mRowsPerImage.WasPassed()
+                            ? aDataLayout.mRowsPerImage.Value()
+                            : heightInBlocks;
+    return bytesPerRow * rowsPerImage * extent.depth_or_array_layers;
+  } else {
+    return bytesPerRow * heightInBlocks;
+  }
+}
+
 void Queue::WriteTexture(const dom::GPUTexelCopyTextureInfo& aDestination,
                          const dom::ArrayBufferViewOrArrayBuffer& aData,
                          const dom::GPUTexelCopyBufferLayout& aDataLayout,
@@ -151,14 +190,35 @@ void Queue::WriteTexture(const dom::GPUTexelCopyTextureInfo& aDestination,
   ffi::WGPUExtent3d extent = {};
   ConvertExtent3DToFFI(aSize, &extent);
 
+  auto format = ConvertTextureFormat(aDestination.mTexture->Format());
+  auto aspect = ConvertTextureAspect(aDestination.mAspect);
+  ffi::WGPUTextureFormatBlockInfo info = {};
+  bool valid = ffi::wgpu_texture_format_get_block_info(format, aspect, &info);
+  CheckedInt<size_t> approxSize;
+  if (valid) {
+    approxSize = ComputeApproxSize(aDestination, aDataLayout, extent, info);
+  } else {
+    
+    
+    
+    approxSize = CheckedInt<size_t>(SIZE_MAX) + 1;
+  }
+
   dom::ProcessTypedArraysFixed(aData, [&](const Span<const uint8_t>& aData) {
     const auto checkedSize =
         CheckedInt<size_t>(aData.Length()) - aDataLayout.mOffset;
-    if (!checkedSize.isValid()) {
-      aRv.ThrowOperationError("Offset is higher than the size");
-      return;
+    size_t size;
+    if (checkedSize.isValid() && approxSize.isValid()) {
+      size = std::min(checkedSize.value(), approxSize.value());
+    } else if (checkedSize.isValid()) {
+      size = checkedSize.value();
+    } else {
+      
+      
+      
+      dataLayout.offset = 1;
+      size = 0;
     }
-    const auto size = checkedSize.value();
 
     mozilla::ipc::MutableSharedMemoryHandle handle;
     if (size != 0) {
