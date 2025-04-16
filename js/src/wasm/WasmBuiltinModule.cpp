@@ -191,6 +191,14 @@ bool CompileBuiltinModule(JSContext* cx,
   
   
   
+  if (!StaticTypeDefs::addAllToTypeContext(codeMeta->types)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  
+  
   for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
     FuncDesc decl(funcIndex);
     if (!codeMeta->funcs.append(decl)) {
