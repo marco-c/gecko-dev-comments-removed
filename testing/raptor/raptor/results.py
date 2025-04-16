@@ -1147,9 +1147,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                             item
                         ):
                             
-                            for measurement in six.iteritems(
-                                new_result["measurements"]
-                            ):
+                            for measurement in new_result["measurements"].items():
                                 self.results[i]["measurements"][measurement[0]].extend(
                                     measurement[1]
                                 )

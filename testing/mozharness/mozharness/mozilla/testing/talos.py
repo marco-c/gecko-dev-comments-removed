@@ -16,7 +16,6 @@ import shutil
 import subprocess
 import sys
 
-import six
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
 import mozharness
@@ -576,7 +575,7 @@ class Talos(
         kw_options.update(kw)
         
         tests = kw_options.get("activeTests")
-        if tests and not isinstance(tests, six.string_types):
+        if tests and not isinstance(tests, (str,)):
             tests = ":".join(tests)  
             kw_options["activeTests"] = tests
         for key, value in kw_options.items():

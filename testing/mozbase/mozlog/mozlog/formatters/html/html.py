@@ -185,17 +185,17 @@ class HTMLFormatter(base.BaseFormatter):
                     else:
                         href = content
                 else:
-                    if not isinstance(content, (six.text_type, six.binary_type)):
+                    if not isinstance(content, (str, bytes)):
                         
                         content = json.dumps(content)
                         
-                        if not isinstance(content, six.text_type):
+                        if not isinstance(content, str):
                             content = content.decode("utf-8")
                     
                     
-                    if isinstance(content, six.text_type):
+                    if isinstance(content, str):
                         is_known_utf8 = True
-                        content_bytes = six.text_type(content).encode(
+                        content_bytes = str(content).encode(
                             "utf-8", "xmlcharrefreplace"
                         )
                     else:
@@ -274,7 +274,7 @@ class HTMLFormatter(base.BaseFormatter):
                     html.p(
                         "%i tests ran in %.1f seconds."
                         % (
-                            sum(six.itervalues(self.test_count)),
+                            sum(self.test_count.values()),
                             (self.suite_times["end"] - self.suite_times["start"])
                             / 1000.0,
                         ),

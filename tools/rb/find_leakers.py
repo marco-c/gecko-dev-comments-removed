@@ -11,8 +11,6 @@
 
 import sys
 
-import six
-
 
 def print_output(allocation, obj_to_class):
     """Formats and prints output."""
@@ -20,7 +18,7 @@ def print_output(allocation, obj_to_class):
     for (
         obj,
         count,
-    ) in six.iteritems(allocation):
+    ) in allocation.items():
         
         items.append((obj, count))
     

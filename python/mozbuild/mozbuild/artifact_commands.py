@@ -16,7 +16,6 @@ from collections import OrderedDict
 
 import gecko_taskgraph.main  
 import mozversioncontrol
-import six
 from mach.decorators import Command, CommandArgument, SubCommand
 
 from mozbuild.artifact_builds import JOB_CHOICES
@@ -496,7 +495,7 @@ def artifact_toolchain(
         record = ArtifactRecord(task_id, name)
         records[record.filename] = record
 
-    for record in six.itervalues(records):
+    for record in records.values():
         command_context.log(
             logging.INFO,
             "artifact",
