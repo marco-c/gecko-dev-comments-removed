@@ -4,10 +4,29 @@
 
 
 
-#ifndef DOM_QUOTA_DEBUGONLYMACRO_H_
-#define DOM_QUOTA_DEBUGONLYMACRO_H_
+#ifndef DOM_QUOTA_CONDITIONALCOMPILATION_H_
+#define DOM_QUOTA_CONDITIONALCOMPILATION_H_
 
 #include "mozilla/dom/quota/RemoveParen.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifdef DEBUG
 #  define DEBUGONLY(expr) MOZ_REMOVE_PAREN(expr)
