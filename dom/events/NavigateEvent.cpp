@@ -5,13 +5,16 @@
 
 
 #include "nsGlobalWindowInner.h"
+#include "nsDocShell.h"
 
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/PresShell.h"
 
 #include "mozilla/dom/AbortController.h"
 #include "mozilla/dom/NavigateEvent.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 
 namespace mozilla::dom {
 
@@ -112,8 +115,21 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
   
 }
 
+
 void NavigateEvent::Scroll(ErrorResult& aRv) {
   
+  if (PerformSharedChecks(aRv); aRv.Failed()) {
+    return;
+  }
+
+  
+  if (mInterceptionState != InterceptionState::Committed) {
+    aRv.ThrowInvalidStateError("NavigateEvent was not committed");
+    return;
+  }
+
+  
+  ProcessScrollBehavior();
 }
 
 NavigateEvent::NavigateEvent(EventTarget* aOwner)
@@ -192,6 +208,27 @@ void NavigateEvent::Finish(bool aDidFulfill) {
 
   
   mInterceptionState = InterceptionState::Finished;
+}
+
+
+void NavigateEvent::PerformSharedChecks(ErrorResult& aRv) {
+  
+  if (RefPtr document = GetDocument();
+      !document || !document->IsFullyActive()) {
+    aRv.ThrowInvalidStateError("Document isn't fully active");
+    return;
+  }
+
+  
+  if (!IsTrusted()) {
+    aRv.ThrowSecurityError("Event is untrusted");
+    return;
+  }
+
+  
+  if (DefaultPrevented()) {
+    aRv.ThrowInvalidStateError("Event was canceled");
+  }
 }
 
 
@@ -283,6 +320,31 @@ void NavigateEvent::PotentiallyProcessScrollBehavior() {
 }
 
 
+
+MOZ_CAN_RUN_SCRIPT
+static void ScrollToBeginningOfDocument(Document& aDocument) {
+  RefPtr<PresShell> presShell = aDocument.GetPresShell();
+  if (!presShell) {
+    return;
+  }
+
+  RefPtr<Element> rootElement = aDocument.GetRootElement();
+  ScrollAxis vertical(WhereToScroll::Start, WhenToScroll::Always);
+  presShell->ScrollContentIntoView(rootElement, vertical, ScrollAxis(),
+                                   ScrollFlags::TriggeredByScript);
+}
+
+
+static void RestoreScrollPositionData(Document* aDocument) {
+  if (!aDocument || aDocument->HasBeenScrolled()) {
+    return;
+  }
+
+  
+  
+}
+
+
 void NavigateEvent::ProcessScrollBehavior() {
   
   MOZ_DIAGNOSTIC_ASSERT(mInterceptionState == InterceptionState::Committed);
@@ -290,24 +352,31 @@ void NavigateEvent::ProcessScrollBehavior() {
   
   mInterceptionState = InterceptionState::Scrolled;
 
-  switch (mNavigationType) {
-      
-    case NavigationType::Traverse:
-    case NavigationType::Reload:
-      
-      
-
-      
-      return;
-    default:
-      
-      break;
+  
+  if (mNavigationType == NavigationType::Traverse ||
+      mNavigationType == NavigationType::Reload) {
+    RefPtr<Document> document = GetDocument();
+    RestoreScrollPositionData(document);
+    return;
   }
 
   
-
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetParentObject());
+  RefPtr<Document> document = GetDocument();
   
-   Unused << window->GetExtantDoc();
+  if (!document) {
+    return;
+  }
+
+  
+  nsAutoCString ref;
+  if (nsIURI* uri = document->GetDocumentURI();
+      NS_SUCCEEDED(uri->GetRef(ref)) &&
+      !nsContentUtils::GetTargetElement(document, NS_ConvertUTF8toUTF16(ref))) {
+    ScrollToBeginningOfDocument(*document);
+    return;
+  }
+
+  
+  document->ScrollToRef();
 }
 }  

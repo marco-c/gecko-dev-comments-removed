@@ -2698,6 +2698,23 @@ class Document : public nsINode,
   
 
 
+
+  bool IsFullyActive() const {
+    nsPIDOMWindowInner* inner = GetInnerWindow();
+    return inner && inner->IsFullyActive();
+  }
+
+  
+
+
+
+
+
+  bool HasBeenScrolled() const;
+
+  
+
+
   bool ShouldLoadImages() const {
     
     
