@@ -198,6 +198,7 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
   if (aConfig.mElements.WasPassed()) {
     for (const auto& element : aConfig.mElements.Value()) {
       
+      
       AllowElement(element);
     }
   }
@@ -205,6 +206,7 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
   
   if (aConfig.mRemoveElements.WasPassed()) {
     for (const auto& element : aConfig.mRemoveElements.Value()) {
+      
       
       RemoveElement(element);
     }
@@ -224,6 +226,7 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
   if (aConfig.mAttributes.WasPassed()) {
     for (const auto& attribute : aConfig.mAttributes.Value()) {
       
+      
       AllowAttribute(attribute);
     }
   }
@@ -231,6 +234,7 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
   
   if (aConfig.mRemoveAttributes.WasPassed()) {
     for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
+      
       
       RemoveAttribute(attribute);
     }
