@@ -442,7 +442,6 @@ nsWindow::nsWindow()
       mPendingBoundsChange(false),
       mPendingBoundsChangeMayChangeCsdMargin(false),
       mTitlebarBackdropState(false),
-      mIsChildWindow(false),
       mAlwaysOnTop(false),
       mNoAutoHide(false),
       mIsTransparent(false),
@@ -6015,13 +6014,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   auto* parentnsWindow = static_cast<nsWindow*>(aParent);
   LOG("  parent window [%p]", parentnsWindow);
-  if (mWindowType == WindowType::Child) {
-    
-    
-    mWindowType = WindowType::Popup;
-    mIsChildWindow = true;
-    LOG("  child widget, switch to popup");
-  }
+
+  MOZ_DIAGNOSTIC_ASSERT(mWindowType != WindowType::Child);
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup, parentnsWindow);
 
@@ -6306,15 +6300,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     
     mUpdateCursor = true;
     SetCursor(Cursor{eCursor_standard});
-  }
-
-  if (mIsChildWindow && parentnsWindow) {
-    GdkWindow* window = GetToplevelGdkWindow();
-    GdkWindow* parentWindow = parentnsWindow->GetToplevelGdkWindow();
-    LOG("  child GdkWindow %p set parent GdkWindow %p", window, parentWindow);
-    gdk_window_reparent(window, parentWindow,
-                        DevicePixelsToGdkCoordRoundDown(mBounds.x),
-                        DevicePixelsToGdkCoordRoundDown(mBounds.y));
   }
 
   

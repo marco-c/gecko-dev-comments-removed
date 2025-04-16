@@ -703,10 +703,6 @@ class nsWindow final : public nsBaseWidget {
   bool mPendingBoundsChangeMayChangeCsdMargin : 1;
   
   bool mTitlebarBackdropState : 1;
-  
-  
-  
-  bool mIsChildWindow : 1;
   bool mAlwaysOnTop : 1;
   bool mNoAutoHide : 1;
   bool mIsTransparent : 1;
