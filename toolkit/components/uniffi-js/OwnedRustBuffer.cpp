@@ -5,7 +5,7 @@
 
 
 #include "nsString.h"
-#include "mozilla/dom/OwnedRustBuffer.h"
+#include "mozilla/uniffi/OwnedRustBuffer.h"
 
 namespace mozilla::uniffi {
 
