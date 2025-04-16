@@ -86,6 +86,15 @@ public final class CompositorController {
 
 
 
+  public void onPipModeChanged(final boolean enabled) {
+    mCompositor.onPipModeChanged(enabled);
+  }
+
+  
+
+
+
+
   public int getClearColor() {
     ThreadUtils.assertOnUiThread();
     return mDefaultClearColor;
