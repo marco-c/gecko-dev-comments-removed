@@ -8209,20 +8209,25 @@ fn get_surface_rects(
             spatial_tree,
         );
 
-        let clipped = (local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale).round_out();
+        let clipped = local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale;
         let unclipped = local_to_world.map(&unclipped_local).unwrap() * surface.device_pixel_scale;
-        let source = (local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale).round_out();
+        let source = local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale;
 
         (clipped, unclipped, source)
     } else {
         
-        let clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round_out();
+        let clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
         let unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        let source = (source_local.cast_unit() * surface.device_pixel_scale).round_out();
+        let source = source_local.cast_unit() * surface.device_pixel_scale;
 
         (clipped, unclipped, source)
     };
+    let mut clipped_snapped = clipped.round_out();
+    let mut source_snapped = source.round_out();
 
+    
+    
+    
     
     
     
@@ -8233,13 +8238,12 @@ fn get_surface_rects(
     
     
     let max_dimension =
-        clipped.width().max(
-            clipped.height().max(
-                source.width().max(
-                    source.height()
+        clipped_snapped.width().max(
+            clipped_snapped.height().max(
+                source_snapped.width().max(
+                    source_snapped.height()
                 ))).ceil();
     if max_dimension > max_surface_size {
-        
         
         
         let max_dimension =
@@ -8264,12 +8268,15 @@ fn get_surface_rects(
                 Duration::from_secs_f32(new_clipped.width() * new_clipped.height() / 1000000000.0));
         }
 
-        clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round();
+        clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
         unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        source = (source_local.cast_unit() * surface.device_pixel_scale).round();
+        source = source_local.cast_unit() * surface.device_pixel_scale;
+        clipped_snapped = clipped.round();
+        source_snapped = source.round();
     }
 
-    let task_size = clipped.size().to_i32();
+    let task_size = clipped_snapped.size().to_i32();
+    
     
     
     
@@ -8284,7 +8291,7 @@ fn get_surface_rects(
         max_surface_size);
 
     let uv_rect_kind = calculate_uv_rect_kind(
-        clipped,
+        clipped_snapped,
         unclipped,
     );
 
@@ -8304,10 +8311,9 @@ fn get_surface_rects(
     Some(SurfaceAllocInfo {
         task_size,
         needs_scissor_rect,
-        clipped,
+        clipped: clipped_snapped,
         unclipped,
-        source,
-        
+        source: source_snapped,
         clipped_notsnapped: clipped,
         clipped_local,
         uv_rect_kind,
