@@ -2699,6 +2699,12 @@ class Document : public nsINode,
 
 
 
+  bool CanRewriteURL(nsIURI* aTargetURL) const;
+
+  
+
+
+
   bool IsFullyActive() const {
     nsPIDOMWindowInner* inner = GetInnerWindow();
     return inner && inner->IsFullyActive();

@@ -407,10 +407,6 @@ bool Navigation::FireDownloadRequestNavigateEvent(
        nullptr, aFilename);
 }
 
-
-
-static bool CanBeRewritten(nsIURI* aURI, nsIURI* aOtherURI) { return false; }
-
 static bool HasHistoryActionActivation(
     Maybe<nsGlobalWindowInner&> aRelevantGlobalObject) {
   return aRelevantGlobalObject
@@ -535,11 +531,10 @@ bool Navigation::InnerFireNavigateEvent(
           .valueOr(nullptr);
 
   
-  init.mCanIntercept =
-      document &&
-      CanBeRewritten(document->GetDocumentURI(), aDestination->GetURI()) &&
-      (aDestination->SameDocument() ||
-       aNavigationType != NavigationType::Traverse);
+  init.mCanIntercept = document &&
+                       document->CanRewriteURL(aDestination->GetURI()) &&
+                       (aDestination->SameDocument() ||
+                        aNavigationType != NavigationType::Traverse);
 
   
   init.mCancelable =
