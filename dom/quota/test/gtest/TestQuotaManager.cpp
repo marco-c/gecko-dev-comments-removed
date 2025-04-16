@@ -2026,9 +2026,8 @@ TEST_F(TestQuotaManager, SaveOriginAccessTime_Simple) {
 
 
 
-TEST_F(
-    TestQuotaManager,
-    DISABLED_SaveOriginAccessTime_FinishedWithOtherExclusiveClientDirectoryLock) {
+TEST_F(TestQuotaManager,
+       SaveOriginAccessTime_FinishedWithOtherExclusiveClientDirectoryLock) {
   auto testOriginMetadata = GetTestOriginMetadata();
 
   ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
@@ -2042,6 +2041,9 @@ TEST_F(
     QuotaManager* quotaManager = QuotaManager::Get();
     ASSERT_TRUE(quotaManager);
 
+    
+    
+    
     {
       int64_t timestamp = PR_Now();
 
@@ -2050,6 +2052,7 @@ TEST_F(
       ASSERT_TRUE(value.IsResolve());
     }
 
+    
     RefPtr<ClientDirectoryLock> directoryLock =
         quotaManager->CreateDirectoryLock(GetTestClientMetadata(),
                                            true);
@@ -2059,6 +2062,9 @@ TEST_F(
       ASSERT_TRUE(value.IsResolve());
     }
 
+    
+    
+    
     {
       int64_t timestamp = PR_Now();
 
