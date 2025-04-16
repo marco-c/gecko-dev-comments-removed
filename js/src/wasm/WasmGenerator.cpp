@@ -932,6 +932,8 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
   
   
   
+  uint8_t* codeStart = nullptr;
+  uint32_t codeLength = 0;
   if (partialTieringCode_) {
     
     
@@ -941,28 +943,26 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
 
     
     
-    uint8_t* codeStart = nullptr;
-    uint32_t codeLength = 0;
     codeBlock_->segment = partialTieringCode_->createFuncCodeSegmentFromPool(
         *masm_, *linkData_,  false, &codeStart,
         &codeLength);
-    if (!codeBlock_->segment) {
-      warnf("failed to allocate executable memory for module");
-      return nullptr;
-    }
-    codeBlock_->codeBase = codeStart;
-    codeBlock_->codeLength = codeLength;
   } else {
     
-    codeBlock_->segment = CodeSegment::createFromMasm(
-        *masm_, *linkData_, partialTieringCode_.get());
-    if (!codeBlock_->segment) {
-      warnf("failed to allocate executable memory for module");
-      return nullptr;
-    }
-    codeBlock_->codeBase = codeBlock_->segment->base();
-    codeBlock_->codeLength = codeBlock_->segment->lengthBytes();
+    CodeSource codeSource(*masm_, linkData_.get(), nullptr);
+    codeLength = codeSource.lengthBytes();
+    uint32_t allocationLength;
+    codeBlock_->segment = CodeSegment::allocate(codeSource, nullptr,
+                                                 true,
+                                                &codeStart, &allocationLength);
   }
+
+  if (!codeBlock_->segment) {
+    warnf("failed to allocate executable memory for module");
+    return nullptr;
+  }
+
+  codeBlock_->codeBase = codeStart;
+  codeBlock_->codeLength = codeLength;
 
   
   

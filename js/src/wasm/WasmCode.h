@@ -187,6 +187,49 @@ enum class CodeBlockKind {
 };
 
 
+class CodeSource {
+  
+  
+  jit::MacroAssembler* masm_ = nullptr;
+  
+  
+  const uint8_t* bytes_ = nullptr;
+
+  
+  
+  uint32_t length_ = 0;
+
+  
+  
+  
+  
+  const LinkData* linkData_;
+
+  
+  
+  
+  const Code* code_;
+
+ public:
+  
+  
+  CodeSource(jit::MacroAssembler& masm, const LinkData* linkData,
+             const Code* code);
+
+  
+  
+  CodeSource(const uint8_t* bytes, uint32_t length, const LinkData& linkData,
+             const Code* code);
+
+  
+  uint32_t lengthBytes() const { return length_; }
+
+  
+  bool copyAndLink(jit::AutoMarkJitCodeWritableForThread& writable,
+                   uint8_t* codeStart) const;
+};
+
+
 
 class CodeSegment : public ShareableBase<CodeSegment> {
  private:
@@ -195,119 +238,11 @@ class CodeSegment : public ShareableBase<CodeSegment> {
   const uint32_t capacityBytes_;
   const Code* code_;
 
- public:
-  CodeSegment(UniqueCodeBytes bytes, uint32_t lengthBytes,
-              uint32_t capacityBytes)
-      : bytes_(std::move(bytes)),
-        lengthBytes_(lengthBytes),
-        capacityBytes_(capacityBytes),
-        code_(nullptr) {}
-
   
   
-  static RefPtr<CodeSegment> createEmpty(size_t capacityBytes,
-                                         bool allowLastDitchGC = true);
-
-  
-  
-  static RefPtr<CodeSegment> createFromMasm(jit::MacroAssembler& masm,
-                                            const LinkData& linkData,
-                                            const Code* maybeCode,
-                                            bool allowLastDitchGC = true);
-
-  
-  
-  static RefPtr<CodeSegment> createFromBytes(const uint8_t* unlinkedBytes,
-                                             size_t unlinkedBytesLength,
-                                             const LinkData& linkData,
-                                             bool allowLastDitchGC = true);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static RefPtr<CodeSegment> claimSpaceFromPool(
-      uint32_t codeLength,
-      Vector<RefPtr<CodeSegment>, 0, SystemAllocPolicy>* segmentPool,
-      bool allowLastDitchGC, uint8_t** allocationStartOut,
-      uint8_t** codeStartOut, uint32_t* allocationLengthOut);
-
-  
-  
-  bool linkAndMakeExecutableSubRange(
-      jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
-      const Code* maybeCode, uint8_t* allocationStart, uint8_t* codeStart,
-      uint32_t allocationLength);
-  
-  
-  bool linkAndMakeExecutableSubRange(
-      jit::AutoMarkJitCodeWritableForThread& writable,
-      jit::MacroAssembler& masm, uint8_t* allocationStart, uint8_t* codeStart,
-      uint32_t allocationLength);
-
-  
-  
-  bool linkAndMakeExecutable(jit::AutoMarkJitCodeWritableForThread& writable,
-                             const LinkData& linkData, const Code* maybeCode);
-
-  void setCode(const Code& code) { code_ = &code; }
-
-  uint8_t* base() const { return bytes_.get(); }
-  uint32_t lengthBytes() const {
-    MOZ_ASSERT(lengthBytes_ != UINT32_MAX);
-    return lengthBytes_;
-  }
-  uint32_t capacityBytes() const {
-    MOZ_ASSERT(capacityBytes_ != UINT32_MAX);
-    return capacityBytes_;
-  }
+  static RefPtr<CodeSegment> create(
+      mozilla::Maybe<jit::AutoMarkJitCodeWritableForThread>& writable,
+      size_t capacityBytes, bool allowLastDitchGC = true);
 
   
   
@@ -327,6 +262,81 @@ class CodeSegment : public ShareableBase<CodeSegment> {
   
   
   void claimSpace(size_t bytes, uint8_t** claimedBase);
+
+ public:
+  CodeSegment(UniqueCodeBytes bytes, uint32_t lengthBytes,
+              uint32_t capacityBytes)
+      : bytes_(std::move(bytes)),
+        lengthBytes_(lengthBytes),
+        capacityBytes_(capacityBytes),
+        code_(nullptr) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<CodeSegment> allocate(
+      const CodeSource& codeSource,
+      Vector<RefPtr<CodeSegment>, 0, SystemAllocPolicy>* segmentPool,
+      bool allowLastDitchGC, uint8_t** codeStartOut,
+      uint32_t* allocationLengthOut);
+
+  void setCode(const Code& code) { code_ = &code; }
+
+  uint8_t* base() const { return bytes_.get(); }
+  uint32_t lengthBytes() const {
+    MOZ_ASSERT(lengthBytes_ != UINT32_MAX);
+    return lengthBytes_;
+  }
+  uint32_t capacityBytes() const {
+    MOZ_ASSERT(capacityBytes_ != UINT32_MAX);
+    return capacityBytes_;
+  }
 
   const Code& code() const { return *code_; }
 
@@ -569,13 +579,6 @@ class CodeBlock {
   
   
   
-  
-  
-  
-  
-  
-  
-  
   FuncToCodeRangeMap funcToCodeRange;
   CodeRangeVector codeRanges;
   CallSites callSites;
@@ -600,6 +603,8 @@ class CodeBlock {
       : code(nullptr),
         codeBlockIndex((size_t)-1),
         kind(kind),
+        codeBase(nullptr),
+        codeLength(0),
         unregisterOnDestroy_(false) {}
   ~CodeBlock();
 

@@ -64,6 +64,7 @@ size_t LinkData::SymbolicLinkArray::sizeOfExcludingThis(
 }
 
 static uint32_t RoundupExecutableCodePageSize(uint32_t codeLength) {
+  static_assert(MaxCodeBytesPerProcess <= INT32_MAX, "rounding won't overflow");
   
   return RoundUp(codeLength, ExecutableCodePageSize);
 }
@@ -75,12 +76,9 @@ UniqueCodeBytes wasm::AllocateCodeBytes(
     return nullptr;
   }
 
-  static_assert(MaxCodeBytesPerProcess <= INT32_MAX, "rounding won't overflow");
-  uint32_t roundedCodeLength = RoundupExecutableCodePageSize(codeLength);
-
-  void* p =
-      AllocateExecutableMemory(roundedCodeLength, ProtectionSetting::Writable,
-                               MemCheckKind::MakeUndefined);
+  MOZ_RELEASE_ASSERT(codeLength == RoundupExecutableCodePageSize(codeLength));
+  void* p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable,
+                                     MemCheckKind::MakeUndefined);
 
   
   
@@ -88,8 +86,7 @@ UniqueCodeBytes wasm::AllocateCodeBytes(
   if (!p && allowLastDitchGC) {
     if (OnLargeAllocationFailure) {
       OnLargeAllocationFailure();
-      p = AllocateExecutableMemory(roundedCodeLength,
-                                   ProtectionSetting::Writable,
+      p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable,
                                    MemCheckKind::MakeUndefined);
     }
   }
@@ -103,12 +100,8 @@ UniqueCodeBytes wasm::AllocateCodeBytes(
   writable.emplace();
 
   
-  memset(((uint8_t*)p) + codeLength, 0, roundedCodeLength - codeLength);
-
   
-  
-
-  return UniqueCodeBytes((uint8_t*)p, FreeCode(roundedCodeLength));
+  return UniqueCodeBytes((uint8_t*)p, FreeCode(codeLength));
 }
 
 void FreeCode::operator()(uint8_t* bytes) {
@@ -193,6 +186,49 @@ void wasm::StaticallyUnlink(uint8_t* base, const LinkData& linkData) {
   }
 }
 
+CodeSource::CodeSource(jit::MacroAssembler& masm, const LinkData* linkData,
+                       const Code* code)
+    : masm_(&masm),
+      bytes_(nullptr),
+      length_(masm.bytesNeeded()),
+      linkData_(linkData),
+      code_(code) {}
+
+CodeSource::CodeSource(const uint8_t* bytes, uint32_t length,
+                       const LinkData& linkData, const Code* code)
+    : masm_(nullptr),
+      bytes_(bytes),
+      length_(length),
+      linkData_(&linkData),
+      code_(code) {}
+
+bool CodeSource::copyAndLink(jit::AutoMarkJitCodeWritableForThread& writable,
+                             uint8_t* codeStart) const {
+  
+  if (masm_) {
+    masm_->executableCopy(codeStart);
+  } else {
+    memcpy(codeStart, bytes_, length_);
+  }
+
+  
+  
+  if (linkData_) {
+    return StaticallyLink(writable, codeStart, *linkData_, code_);
+  }
+
+  
+  MOZ_ASSERT(masm_);
+  
+  
+  MOZ_ASSERT(!code_);
+  PatchDebugSymbolicAccesses(codeStart, *masm_);
+  for (const CodeLabel& label : masm_->codeLabels()) {
+    Assembler::Bind(codeStart, label);
+  }
+  return true;
+}
+
 size_t CodeSegment::AllocationAlignment() {
   
   
@@ -223,130 +259,23 @@ void CodeSegment::claimSpace(size_t bytes, uint8_t** claimedBase) {
   lengthBytes_ += bytes;
 }
 
-bool CodeSegment::linkAndMakeExecutableSubRange(
-    jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
-    const Code* maybeCode, uint8_t* allocationStart, uint8_t* codeStart,
-    uint32_t allocationLength) {
-  MOZ_ASSERT(CodeSegment::IsAligned(uintptr_t(allocationStart)));
-  MOZ_ASSERT(codeStart >= allocationStart);
-  MOZ_ASSERT_IF(JitOptions.writeProtectCode,
-                uintptr_t(allocationStart) % gc::SystemPageSize() == 0 &&
-                    allocationLength % gc::SystemPageSize() == 0);
 
-  if (!StaticallyLink(writable, codeStart, linkData, maybeCode)) {
-    return false;
+SharedCodeSegment CodeSegment::create(
+    mozilla::Maybe<jit::AutoMarkJitCodeWritableForThread>& writable,
+    size_t capacityBytes, bool allowLastDitchGC) {
+  MOZ_RELEASE_ASSERT(capacityBytes ==
+                     RoundupExecutableCodePageSize(capacityBytes));
+
+  UniqueCodeBytes codeBytes;
+  if (capacityBytes != 0) {
+    codeBytes = AllocateCodeBytes(writable, capacityBytes, allowLastDitchGC);
+    if (!codeBytes) {
+      return nullptr;
+    }
   }
 
-  
-  
-  
-  return ExecutableAllocator::makeExecutableAndFlushICache(allocationStart,
-                                                           allocationLength);
-}
-
-bool CodeSegment::linkAndMakeExecutableSubRange(
-    jit::AutoMarkJitCodeWritableForThread& writable, jit::MacroAssembler& masm,
-    uint8_t* allocationStart, uint8_t* codeStart, uint32_t allocationLength) {
-  MOZ_ASSERT(CodeSegment::IsAligned(uintptr_t(allocationStart)));
-  MOZ_ASSERT(codeStart >= allocationStart);
-  MOZ_ASSERT_IF(JitOptions.writeProtectCode,
-                uintptr_t(allocationStart) % gc::SystemPageSize() == 0 &&
-                    allocationLength % gc::SystemPageSize() == 0);
-
-  PatchDebugSymbolicAccesses(codeStart, masm);
-  for (const CodeLabel& label : masm.codeLabels()) {
-    Assembler::Bind(codeStart, label);
-  }
-
-  
-  
-  
-  return ExecutableAllocator::makeExecutableAndFlushICache(allocationStart,
-                                                           allocationLength);
-}
-
-bool CodeSegment::linkAndMakeExecutable(
-    jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
-    const Code* maybeCode) {
-  MOZ_ASSERT(base() == bytes_.get());
-  return linkAndMakeExecutableSubRange(
-      writable, linkData, maybeCode,
-      base(), base(),
-      RoundupExecutableCodePageSize(lengthBytes()));
-}
-
-
-SharedCodeSegment CodeSegment::createEmpty(size_t capacityBytes,
-                                           bool allowLastDitchGC) {
-  uint32_t codeLength = 0;
-  uint32_t codeCapacity = RoundupExecutableCodePageSize(capacityBytes);
-  Maybe<AutoMarkJitCodeWritableForThread> writable;
-  UniqueCodeBytes codeBytes =
-      AllocateCodeBytes(writable, codeCapacity, allowLastDitchGC);
-  if (!codeBytes) {
-    return nullptr;
-  }
-
-  return js_new<CodeSegment>(std::move(codeBytes), codeLength, codeCapacity);
-}
-
-
-SharedCodeSegment CodeSegment::createFromMasm(MacroAssembler& masm,
-                                              const LinkData& linkData,
-                                              const Code* maybeCode,
-                                              bool allowLastDitchGC) {
-  uint32_t codeLength = masm.bytesNeeded();
-  if (codeLength == 0) {
-    return js_new<CodeSegment>(nullptr, 0, 0);
-  }
-
-  uint32_t codeCapacity = RoundupExecutableCodePageSize(codeLength);
-  Maybe<AutoMarkJitCodeWritableForThread> writable;
-  UniqueCodeBytes codeBytes =
-      AllocateCodeBytes(writable, codeCapacity, allowLastDitchGC);
-  if (!codeBytes) {
-    return nullptr;
-  }
-
-  masm.executableCopy(codeBytes.get());
-
-  SharedCodeSegment segment =
-      js_new<CodeSegment>(std::move(codeBytes), codeLength, codeCapacity);
-  if (!segment ||
-      !segment->linkAndMakeExecutable(*writable, linkData, maybeCode)) {
-    return nullptr;
-  }
-
-  return segment;
-}
-
-
-SharedCodeSegment CodeSegment::createFromBytes(const uint8_t* unlinkedBytes,
-                                               size_t unlinkedBytesLength,
-                                               const LinkData& linkData,
-                                               bool allowLastDitchGC) {
-  uint32_t codeLength = unlinkedBytesLength;
-  if (codeLength == 0) {
-    return js_new<CodeSegment>(nullptr, 0, 0);
-  }
-
-  uint32_t codeCapacity = RoundupExecutableCodePageSize(codeLength);
-  Maybe<AutoMarkJitCodeWritableForThread> writable;
-  UniqueCodeBytes codeBytes =
-      AllocateCodeBytes(writable, codeLength, allowLastDitchGC);
-  if (!codeBytes) {
-    return nullptr;
-  }
-
-  memcpy(codeBytes.get(), unlinkedBytes, unlinkedBytesLength);
-
-  SharedCodeSegment segment =
-      js_new<CodeSegment>(std::move(codeBytes), codeLength, codeCapacity);
-  if (!segment ||
-      !segment->linkAndMakeExecutable(*writable, linkData, nullptr)) {
-    return nullptr;
-  }
-  return segment;
+  return js_new<CodeSegment>(std::move(codeBytes), 0,
+                             capacityBytes);
 }
 
 
@@ -368,7 +297,6 @@ static uint32_t RandomPaddingForCodeLength(uint32_t codeLength) {
 
   
   if (!JitOptions.writeProtectCode) {
-    MOZ_ASSERT(CodeSegment::AllocationAlignment() != gc::SystemPageSize());
     return 0;
   }
 
@@ -399,41 +327,77 @@ static uint32_t RandomPaddingForCodeLength(uint32_t codeLength) {
 }
 
 
-SharedCodeSegment CodeSegment::claimSpaceFromPool(
-    uint32_t codeLength, SharedCodeSegmentVector* segmentPool,
-    bool allowLastDitchGC, uint8_t** allocationStartOut, uint8_t** codeStartOut,
-    uint32_t* allocationLengthOut) {
+SharedCodeSegment CodeSegment::allocate(const CodeSource& codeSource,
+                                        SharedCodeSegmentVector* segmentPool,
+                                        bool allowLastDitchGC,
+                                        uint8_t** codeStart,
+                                        uint32_t* allocationLength) {
+  mozilla::Maybe<AutoMarkJitCodeWritableForThread> writable;
+  uint32_t codeLength = codeSource.lengthBytes();
   uint32_t paddingLength = RandomPaddingForCodeLength(codeLength);
-  uint32_t allocationLength =
+  *allocationLength =
       CodeSegment::AlignAllocationBytes(paddingLength + codeLength);
 
   
   
-  if (segmentPool->length() == 0 ||
-      !(*segmentPool)[segmentPool->length() - 1]->hasSpace(allocationLength)) {
-    SharedCodeSegment newSegment =
-        CodeSegment::createEmpty(allocationLength, allowLastDitchGC);
-    if (!newSegment) {
+  SharedCodeSegment segment;
+  if (segmentPool && !segmentPool->empty() &&
+      segmentPool->back()->hasSpace(*allocationLength)) {
+    segment = segmentPool->back();
+  } else {
+    uint32_t newSegmentCapacity =
+        RoundupExecutableCodePageSize(*allocationLength);
+    segment =
+        CodeSegment::create(writable, newSegmentCapacity, allowLastDitchGC);
+    if (!segment) {
       return nullptr;
     }
-    if (!segmentPool->emplaceBack(std::move(newSegment))) {
+    if (segmentPool && !segmentPool->append(segment)) {
       return nullptr;
     }
   }
 
-  MOZ_ASSERT(segmentPool->length() > 0);
-  SharedCodeSegment segment = (*segmentPool)[segmentPool->length() - 1].get();
-
+  
   uint8_t* allocationStart = nullptr;
-  segment->claimSpace(allocationLength, &allocationStart);
-  uint8_t* codeStart = allocationStart + paddingLength;
+  segment->claimSpace(*allocationLength, &allocationStart);
+  *codeStart = allocationStart + paddingLength;
 
+  
   MOZ_ASSERT(CodeSegment::IsAligned(uintptr_t(segment->base())));
   MOZ_ASSERT(CodeSegment::IsAligned(allocationStart - segment->base()));
+  MOZ_ASSERT(CodeSegment::IsAligned(uintptr_t(allocationStart)));
+  MOZ_ASSERT(*codeStart >= allocationStart);
+  MOZ_ASSERT(codeLength <= *allocationLength);
+  MOZ_ASSERT_IF(JitOptions.writeProtectCode,
+                uintptr_t(allocationStart) % gc::SystemPageSize() == 0 &&
+                    *allocationLength % gc::SystemPageSize() == 0);
+  MOZ_ASSERT(uintptr_t(*codeStart) % jit::CodeAlignment == 0);
 
-  *allocationStartOut = allocationStart;
-  *codeStartOut = codeStart;
-  *allocationLengthOut = allocationLength;
+  if (!writable) {
+    writable.emplace();
+  }
+  if (!codeSource.copyAndLink(*writable, *codeStart)) {
+    return nullptr;
+  }
+
+  
+  
+  uint8_t* allocationEnd = allocationStart + *allocationLength;
+  uint8_t* codeEnd = *codeStart + codeLength;
+  MOZ_ASSERT(codeEnd <= allocationEnd);
+  size_t paddingAfterCode = allocationEnd - codeEnd;
+  
+  memset(codeEnd, JS_SWEPT_CODE_PATTERN, paddingAfterCode);
+
+  
+  
+  
+  if (*allocationLength != 0 &&
+      !ExecutableAllocator::makeExecutableAndFlushICache(allocationStart,
+                                                         *allocationLength)) {
+    return nullptr;
+  }
+
   return segment;
 }
 
@@ -502,35 +466,14 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
 
   
   uint32_t codeLength = masm.bytesNeeded();
-  uint8_t* allocationStart;
   uint8_t* codeStart;
   uint32_t allocationLength;
-  stubCodeBlock->segment = CodeSegment::claimSpaceFromPool(
-      codeLength, &guard->lazyStubSegments,
-       true, &allocationStart, &codeStart,
-      &allocationLength);
+  CodeSource codeSource(masm, nullptr, nullptr);
+  stubCodeBlock->segment = CodeSegment::allocate(
+      codeSource, &guard->lazyStubSegments,
+       true, &codeStart, &allocationLength);
   if (!stubCodeBlock->segment) {
     return false;
-  }
-
-  
-  {
-    AutoMarkJitCodeWritableForThread writable;
-
-    masm.executableCopy(codeStart);
-
-    
-    
-    uint8_t* allocationEnd = allocationStart + allocationLength;
-    uint8_t* codeEnd = codeStart + codeLength;
-    MOZ_ASSERT(codeEnd <= allocationEnd);
-    size_t paddingAfterCode = allocationEnd - codeEnd;
-    memset(codeEnd, 0, paddingAfterCode);
-
-    if (!stubCodeBlock->segment->linkAndMakeExecutableSubRange(
-            writable, masm, allocationStart, codeStart, allocationLength)) {
-      return false;
-    }
   }
 
   stubCodeBlock->codeBase = codeStart;
@@ -852,15 +795,15 @@ SharedCodeSegment Code::createFuncCodeSegmentFromPool(
   uint32_t codeLength = masm.bytesNeeded();
 
   
-  uint8_t* allocationStart;
   uint8_t* codeStart;
   uint32_t allocationLength;
   SharedCodeSegment segment;
   {
     auto guard = data_.writeLock();
-    segment = CodeSegment::claimSpaceFromPool(
-        codeLength, &guard->lazyFuncSegments, allowLastDitchGC,
-        &allocationStart, &codeStart, &allocationLength);
+    CodeSource codeSource(masm, &linkData, this);
+    segment =
+        CodeSegment::allocate(codeSource, &guard->lazyFuncSegments,
+                              allowLastDitchGC, &codeStart, &allocationLength);
     if (!segment) {
       return nullptr;
     }
@@ -871,17 +814,6 @@ SharedCodeSegment Code::createFuncCodeSegmentFromPool(
     auto guard = codeMeta().stats.writeLock();
     guard->partialCodeBytesMapped += allocationLength;
     guard->partialCodeBytesUsed += codeLength;
-  }
-
-  
-  Maybe<AutoMarkJitCodeWritableForThread> writable;
-  writable.emplace();
-
-  masm.executableCopy(codeStart);
-  if (!segment->linkAndMakeExecutableSubRange(*writable, linkData, this,
-                                              allocationStart, codeStart,
-                                              allocationLength)) {
-    return nullptr;
   }
 
   *codeStartOut = codeStart;
