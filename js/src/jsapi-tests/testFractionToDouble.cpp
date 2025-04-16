@@ -2,7 +2,7 @@
 
 
 
-#ifdef JS_HAS_TEMPORAL_API
+#ifdef JS_HAS_INTL_API
 
 #  include <cmath>
 #  include <stdint.h>
