@@ -5,16 +5,13 @@
 
 
 #include "nsGlobalWindowInner.h"
-#include "nsDocShell.h"
 
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/PresShell.h"
 
 #include "mozilla/dom/AbortController.h"
 #include "mozilla/dom/NavigateEvent.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
-#include "mozilla/dom/SessionHistoryEntry.h"
 
 namespace mozilla::dom {
 
@@ -65,7 +62,7 @@ already_AddRefed<NavigateEvent> NavigateEvent::Constructor(
     EventTarget* aEventTarget, const nsAString& aType,
     const NavigateEventInit& aEventInitDict,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
-    class AbortController* aAbortController) {
+    AbortController* aAbortController) {
   RefPtr<NavigateEvent> event =
       Constructor(aEventTarget, aType, aEventInitDict);
 
@@ -110,99 +107,13 @@ bool NavigateEvent::HasUAVisualTransition() const {
 
 Element* NavigateEvent::GetSourceElement() const { return mSourceElement; }
 
-template <typename OptionEnum>
-static void MaybeReportWarningToConsole(Document* aDocument,
-                                        const nsString& aOption,
-                                        OptionEnum aPrevious, OptionEnum aNew) {
-  if (!aDocument) {
-    return;
-  }
-
-  nsTArray<nsString> params = {aOption,
-                               NS_ConvertUTF8toUTF16(GetEnumString(aNew)),
-                               NS_ConvertUTF8toUTF16(GetEnumString(aPrevious))};
-  nsContentUtils::ReportToConsole(
-      nsIScriptError::warningFlag, "DOM"_ns, aDocument,
-      nsContentUtils::eDOM_PROPERTIES,
-      "PreviousInterceptCallOptionOverriddenWarning", params);
-}
-
 void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
                               ErrorResult& aRv) {
   
-  if (PerformSharedChecks(aRv); aRv.Failed()) {
-    return;
-  }
-
-  
-  if (!mCanIntercept) {
-    aRv.ThrowSecurityError("Event's canIntercept was initialized to false");
-    return;
-  }
-
-  
-  if (!HasBeenDispatched()) {
-    aRv.ThrowInvalidStateError("Event has never been dispatched");
-    return;
-  }
-
-  
-  MOZ_DIAGNOSTIC_ASSERT(mInterceptionState == InterceptionState::None ||
-                        mInterceptionState == InterceptionState::Intercepted);
-
-  
-  mInterceptionState = InterceptionState::Intercepted;
-
-  
-  if (aOptions.mHandler.WasPassed()) {
-    mNavigationHandlerList.AppendElement(
-        aOptions.mHandler.InternalValue().get());
-  }
-
-  
-  if (aOptions.mFocusReset.WasPassed()) {
-    
-    if (mFocusResetBehavior &&
-        *mFocusResetBehavior != aOptions.mFocusReset.Value()) {
-      RefPtr<Document> document = GetDocument();
-      MaybeReportWarningToConsole(document, u"focusReset"_ns,
-                                  *mFocusResetBehavior,
-                                  aOptions.mFocusReset.Value());
-    }
-
-    
-    mFocusResetBehavior.emplace(aOptions.mFocusReset.Value());
-  }
-
-  
-  if (aOptions.mScroll.WasPassed()) {
-    
-    if (mScrollBehavior && *mScrollBehavior != aOptions.mScroll.Value()) {
-      RefPtr<Document> document = GetDocument();
-      MaybeReportWarningToConsole(document, u"scroll"_ns, *mScrollBehavior,
-                                  aOptions.mScroll.Value());
-    }
-
-    
-    mScrollBehavior.emplace(aOptions.mScroll.Value());
-  }
 }
-
 
 void NavigateEvent::Scroll(ErrorResult& aRv) {
   
-  if (PerformSharedChecks(aRv); aRv.Failed()) {
-    return;
-  }
-
-  
-  if (mInterceptionState != InterceptionState::Committed) {
-    aRv.ThrowInvalidStateError("NavigateEvent was not committed");
-    return;
-  }
-
-  
-  ProcessScrollBehavior();
 }
 
 NavigateEvent::NavigateEvent(EventTarget* aOwner)
@@ -248,14 +159,6 @@ NavigateEvent::NavigationHandlerList() {
   return mNavigationHandlerList;
 }
 
-AbortController* NavigateEvent::AbortController() const {
-  return mAbortController;
-}
-
-bool NavigateEvent::HasBeenDispatched() const {
-  return mEvent->mFlags.mDispatchedAtLeastOnce;
-}
-
 
 void NavigateEvent::Finish(bool aDidFulfill) {
   switch (mInterceptionState) {
@@ -281,27 +184,6 @@ void NavigateEvent::Finish(bool aDidFulfill) {
 
   
   mInterceptionState = InterceptionState::Finished;
-}
-
-
-void NavigateEvent::PerformSharedChecks(ErrorResult& aRv) {
-  
-  if (RefPtr document = GetDocument();
-      !document || !document->IsFullyActive()) {
-    aRv.ThrowInvalidStateError("Document isn't fully active");
-    return;
-  }
-
-  
-  if (!IsTrusted()) {
-    aRv.ThrowSecurityError("Event is untrusted");
-    return;
-  }
-
-  
-  if (DefaultPrevented()) {
-    aRv.ThrowInvalidStateError("Event was canceled");
-  }
 }
 
 
@@ -393,31 +275,6 @@ void NavigateEvent::PotentiallyProcessScrollBehavior() {
 }
 
 
-
-MOZ_CAN_RUN_SCRIPT
-static void ScrollToBeginningOfDocument(Document& aDocument) {
-  RefPtr<PresShell> presShell = aDocument.GetPresShell();
-  if (!presShell) {
-    return;
-  }
-
-  RefPtr<Element> rootElement = aDocument.GetRootElement();
-  ScrollAxis vertical(WhereToScroll::Start, WhenToScroll::Always);
-  presShell->ScrollContentIntoView(rootElement, vertical, ScrollAxis(),
-                                   ScrollFlags::TriggeredByScript);
-}
-
-
-static void RestoreScrollPositionData(Document* aDocument) {
-  if (!aDocument || aDocument->HasBeenScrolled()) {
-    return;
-  }
-
-  
-  
-}
-
-
 void NavigateEvent::ProcessScrollBehavior() {
   
   MOZ_DIAGNOSTIC_ASSERT(mInterceptionState == InterceptionState::Committed);
@@ -425,31 +282,24 @@ void NavigateEvent::ProcessScrollBehavior() {
   
   mInterceptionState = InterceptionState::Scrolled;
 
-  
-  if (mNavigationType == NavigationType::Traverse ||
-      mNavigationType == NavigationType::Reload) {
-    RefPtr<Document> document = GetDocument();
-    RestoreScrollPositionData(document);
-    return;
+  switch (mNavigationType) {
+      
+    case NavigationType::Traverse:
+    case NavigationType::Reload:
+      
+      
+
+      
+      return;
+    default:
+      
+      break;
   }
 
   
-  RefPtr<Document> document = GetDocument();
-  
-  if (!document) {
-    return;
-  }
 
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetParentObject());
   
-  nsAutoCString ref;
-  if (nsIURI* uri = document->GetDocumentURI();
-      NS_SUCCEEDED(uri->GetRef(ref)) &&
-      !nsContentUtils::GetTargetElement(document, NS_ConvertUTF8toUTF16(ref))) {
-    ScrollToBeginningOfDocument(*document);
-    return;
-  }
-
-  
-  document->ScrollToRef();
+   Unused << window->GetExtantDoc();
 }
 }  

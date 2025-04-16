@@ -262,10 +262,10 @@ NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(WaitForAllResults, (), (mResult))
 
 
 
-void Promise::WaitForAll(nsIGlobalObject* aGlobal,
-                         const Span<RefPtr<Promise>>& aPromises,
-                         SuccessSteps aSuccessSteps,
-                         FailureSteps aFailureSteps) {
+void Promise::WaitForAll(
+    nsIGlobalObject* aGlobal, const Span<RefPtr<Promise>>& aPromises,
+    const std::function<void(const Span<JS::Heap<JS::Value>>&)>& aSuccessSteps,
+    const std::function<void(JS::Handle<JS::Value>)>& aFailureSteps) {
   
 
   

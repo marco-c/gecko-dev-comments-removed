@@ -6,8 +6,6 @@
 
 #include "mozilla/dom/Navigation.h"
 
-#include "mozilla/dom/DOMException.h"
-#include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
@@ -312,7 +310,7 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
 
 
 bool Navigation::FireTraverseNavigateEvent(
-    JSContext* aCx, SessionHistoryInfo* aDestinationSessionHistoryInfo,
+    SessionHistoryInfo* aDestinationSessionHistoryInfo,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   
   
@@ -350,7 +348,7 @@ bool Navigation::FireTraverseNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      aCx, NavigationType::Traverse, destination,
+      NavigationType::Traverse, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None),
        nullptr,
        Nothing(),
@@ -360,7 +358,7 @@ bool Navigation::FireTraverseNavigateEvent(
 
 
 bool Navigation::FirePushReplaceReloadNavigateEvent(
-    JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
+    NavigationType aNavigationType, nsIURI* aDestinationURL,
     bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
     Element* aSourceElement, Maybe<const FormData&> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
@@ -378,7 +376,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      aCx, aNavigationType, destination,
+      aNavigationType, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
       aFormDataEntryList, aClassicHistoryAPIState,
        u""_ns);
@@ -386,9 +384,8 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
 
 bool Navigation::FireDownloadRequestNavigateEvent(
-    JSContext* aCx, nsIURI* aDestinationURL,
-    UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
-    const nsAString& aFilename) {
+    nsIURI* aDestinationURL, UserNavigationInvolvement aUserInvolvement,
+    Element* aSourceElement, const nsAString& aFilename) {
   
   
   
@@ -402,7 +399,7 @@ bool Navigation::FireDownloadRequestNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      aCx, NavigationType::Push, destination, aUserInvolvement, aSourceElement,
+      NavigationType::Push, destination, aUserInvolvement, aSourceElement,
        Nothing(),
        nullptr, aFilename);
 }
@@ -465,29 +462,9 @@ nsresult Navigation::FireEvent(const nsAString& aName) {
   return rv.StealNSResult();
 }
 
-static void ExtractErrorInformation(JSContext* aCx,
-                                    JS::Handle<JS::Value> aError,
-                                    ErrorEventInit& aErrorEventInitDict) {
-  nsContentUtils::ExtractErrorValues(
-      aCx, aError, aErrorEventInitDict.mFilename, &aErrorEventInitDict.mLineno,
-      &aErrorEventInitDict.mColno, aErrorEventInitDict.mMessage);
-  aErrorEventInitDict.mError = aError;
-  aErrorEventInitDict.mBubbles = false;
-  aErrorEventInitDict.mCancelable = false;
-}
-
-nsresult Navigation::FireErrorEvent(const nsAString& aName,
-                                    const ErrorEventInit& aEventInitDict) {
-  RefPtr<Event> event = ErrorEvent::Constructor(this, aName, aEventInitDict);
-  ErrorResult rv;
-  DispatchEvent(*event, rv);
-  return rv.StealNSResult();
-}
-
 
 bool Navigation::InnerFireNavigateEvent(
-    JSContext* aCx, NavigationType aNavigationType,
-    NavigationDestination* aDestination,
+    NavigationType aNavigationType, NavigationDestination* aDestination,
     UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
     Maybe<const FormData&> aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
@@ -603,7 +580,7 @@ bool Navigation::InnerFireNavigateEvent(
   mOngoingNavigateEvent = event;
 
   
-  mFocusChangedDuringOngoingNavigation = false;
+  mFocusChangedDUringOngoingNavigation = false;
 
   
   mSuppressNormalScrollRestorationDuringOngoingNavigation = false;
@@ -617,7 +594,7 @@ bool Navigation::InnerFireNavigateEvent(
 
     
     if (!abortController->Signal()->Aborted()) {
-      AbortOngoingNavigation(aCx);
+      AbortOngoingNavigation();
     }
 
     
@@ -695,99 +672,91 @@ bool Navigation::InnerFireNavigateEvent(
     }
 
     
-    nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
     Promise::WaitForAll(
-        globalObject, promiseList,
+        GetOwnerGlobal(), promiseList,
         [self = RefPtr(this), event,
-         apiMethodTracker](const Span<JS::Heap<JS::Value>>&)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              
-              
-              if (nsCOMPtr<nsPIDOMWindowInner> window =
-                      do_QueryInterface(event->GetParentObject());
-                  window && !window->IsFullyActive()) {
-                return;
-              }
+         apiMethodTracker](const Span<JS::Heap<JS::Value>>&) {
+          
+          
+          if (nsCOMPtr<nsPIDOMWindowInner> window =
+                  do_QueryInterface(event->GetParentObject());
+              window && !window->IsFullyActive()) {
+            return;
+          }
 
-              
-              if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
-                return;
-              }
+          
+          if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
+            return;
+          }
 
-              
-              MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
+          
+          MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
 
-              
-              self->mOngoingNavigateEvent = nullptr;
+          
+          self->mOngoingNavigateEvent = nullptr;
 
-              
-              event->Finish(true);
+          
+          event->Finish(true);
 
-              
-              self->FireEvent(u"navigatesuccess"_ns);
+          
+          self->FireEvent(u"navigatesuccess"_ns);
 
-              
-              if (apiMethodTracker) {
-                apiMethodTracker->mFinishedPromise->MaybeResolveWithUndefined();
-              }
+          
+          if (apiMethodTracker) {
+            apiMethodTracker->mFinishedPromise->MaybeResolveWithUndefined();
+          }
 
-              
-              if (self->mTransition) {
-                self->mTransition->Finished()->MaybeResolveWithUndefined();
-              }
+          
+          if (self->mTransition) {
+            self->mTransition->Finished()->MaybeResolveWithUndefined();
+          }
 
-              
-              self->mTransition = nullptr;
-            },
+          self->mTransition = nullptr;
+        },
         [self = RefPtr(this), event,
-         apiMethodTracker](JS::Handle<JS::Value> aRejectionReason)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              
-              
-              if (nsCOMPtr<nsPIDOMWindowInner> window =
-                      do_QueryInterface(event->GetParentObject());
-                  window && !window->IsFullyActive()) {
-                return;
-              }
+         apiMethodTracker](JS::Handle<JS::Value> aRejectionReason) {
+          
+          
+          if (nsCOMPtr<nsPIDOMWindowInner> window =
+                  do_QueryInterface(event->GetParentObject());
+              window && !window->IsFullyActive()) {
+            return;
+          }
 
-              
-              if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
-                return;
-              }
+          
+          if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
+            return;
+          }
 
-              
-              MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
+          
+          MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
 
-              
-              self->mOngoingNavigateEvent = nullptr;
+          
+          self->mOngoingNavigateEvent = nullptr;
 
-              
-              event->Finish(false);
+          
+          event->Finish(false);
 
-              if (AutoJSAPI jsapi;
-                  !NS_WARN_IF(!jsapi.Init(event->GetParentObject()))) {
-                
-                RootedDictionary<ErrorEventInit> init(jsapi.cx());
-                ExtractErrorInformation(jsapi.cx(), aRejectionReason, init);
+          
+          
+          
 
-                
-                self->FireErrorEvent(u"navigateerror"_ns, init);
-              }
+          
+          
+          
 
-              
-              if (apiMethodTracker) {
-                apiMethodTracker->mFinishedPromise->MaybeReject(
-                    aRejectionReason);
-              }
+          
+          if (apiMethodTracker) {
+            apiMethodTracker->mFinishedPromise->MaybeReject(aRejectionReason);
+          }
 
-              
-              if (self->mTransition) {
-                self->mTransition->Finished()->MaybeReject(aRejectionReason);
-              }
+          
+          if (self->mTransition) {
+            self->mTransition->Finished()->MaybeReject(aRejectionReason);
+          }
 
-              
-              self->mTransition = nullptr;
-            });
+          self->mTransition = nullptr;
+        });
   }
 
   
@@ -855,71 +824,15 @@ void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
 }
 
 
-void Navigation::AbortOngoingNavigation(JSContext* aCx,
-                                        JS::Handle<JS::Value> aError) {
-  
-  RefPtr<NavigateEvent> event = mOngoingNavigateEvent;
-
-  
-  MOZ_DIAGNOSTIC_ASSERT(event);
-
-  
-  mFocusChangedDuringOngoingNavigation = false;
-
-  
-  mSuppressNormalScrollRestorationDuringOngoingNavigation = false;
-
-  JS::Rooted<JS::Value> error(aCx, aError);
-
-  
-  if (aError.isUndefined()) {
-    RefPtr<DOMException> exception =
-        DOMException::Create(NS_ERROR_DOM_ABORT_ERR);
-    
-    
-    GetOrCreateDOMReflector(aCx, exception, &error);
-  }
-
-  
-  if (event->HasBeenDispatched()) {
-    event->PreventDefault();
-  }
-
-  
-  event->AbortController()->Abort(aCx, error);
-
-  
-  mOngoingNavigateEvent = nullptr;
-
-  
-  RootedDictionary<ErrorEventInit> init(aCx);
-  ExtractErrorInformation(aCx, error, init);
-
-  
-  FireErrorEvent(u"navigateerror"_ns, init);
-
-  
-  if (mOngoingAPIMethodTracker) {
-    mOngoingAPIMethodTracker->mFinishedPromise->MaybeReject(error);
-  }
-
-  
-  if (mTransition) {
-    
-    mTransition->Finished()->MaybeReject(error);
-
-    
-    mTransition = nullptr;
-  }
-}
+void Navigation::AbortOngoingNavigation() {}
 
 bool Navigation::FocusedChangedDuringOngoingNavigation() const {
-  return mFocusChangedDuringOngoingNavigation;
+  return mFocusChangedDUringOngoingNavigation;
 }
 
 void Navigation::SetFocusedChangedDuringOngoingNavigation(
     bool aFocusChangedDUringOngoingNavigation) {
-  mFocusChangedDuringOngoingNavigation = aFocusChangedDUringOngoingNavigation;
+  mFocusChangedDUringOngoingNavigation = aFocusChangedDUringOngoingNavigation;
 }
 
 void Navigation::LogHistory() const {
