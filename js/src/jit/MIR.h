@@ -50,6 +50,7 @@
 #include "vm/RegExpObject.h"
 #include "vm/TypedArrayObject.h"
 #include "wasm/WasmJS.h"  
+#include "wasm/WasmValType.h"
 
 namespace JS {
 struct ExpandoAndGeneration;
@@ -532,6 +533,13 @@ class MDefinition : public MNode {
   
   
   
+  wasm::MaybeRefType wasmRefType_;
+
+  
+  
+  
+  
+  
   BailoutKind bailoutKind_;
 
   MIRType resultType_;  
@@ -563,6 +571,18 @@ class MDefinition : public MNode {
   void setPhiBlock(MBasicBlock* block) {
     MOZ_ASSERT(isPhi());
     setBlockAndKind(block, Kind::Definition);
+  }
+
+  void setWasmRefType(wasm::MaybeRefType refType) {
+    
+    MOZ_ASSERT(!(wasmRefType_.isSome() && refType.isNothing()));
+    
+    
+    MOZ_ASSERT_IF(
+        wasmRefType_.isSome(),
+        wasm::RefType::isSubTypeOf(refType.value(), wasmRefType_.value()));
+
+    wasmRefType_ = refType;
   }
 
   static HashNumber addU32ToHash(HashNumber hash, uint32_t data) {
@@ -730,6 +750,30 @@ class MDefinition : public MNode {
   using MIRTypeEnumSet = mozilla::EnumSet<MIRType, uint32_t>;
   static_assert(static_cast<size_t>(MIRType::Last) <
                 sizeof(MIRTypeEnumSet::serializedType) * CHAR_BIT);
+
+  
+  wasm::MaybeRefType wasmRefType() const { return wasmRefType_; }
+
+  
+  
+  
+  void initWasmRefType(wasm::MaybeRefType refType) {
+    MOZ_RELEASE_ASSERT(!wasmRefType_);
+    setWasmRefType(refType);
+  }
+
+  
+  
+  
+  
+  virtual wasm::MaybeRefType computeWasmRefType() const { return wasmRefType_; }
+
+  
+  
+  
+  
+  
+  bool updateWasmRefType();
 
   
   bool typeIsOneOf(MIRTypeEnumSet types) const {

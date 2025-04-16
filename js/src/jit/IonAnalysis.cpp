@@ -3480,12 +3480,11 @@ static void AssertResumePointDominatedByOperands(MResumePoint* resume) {
 }
 #endif  
 
+
+
+
 void jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer,
                                        bool force) {
-  
-  
-  
-
 #ifdef DEBUG
   if (!JitOptions.checkGraphConsistency) {
     return;
@@ -3593,6 +3592,12 @@ void jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer,
     if (MResumePoint* resume = block->outerResumePoint()) {
       AssertResumePointDominatedByOperands(resume);
       AssertResumableOperands(resume);
+    }
+
+    
+    for (MDefinitionIterator def(*block); def; def++) {
+      MOZ_ASSERT_IF(def->wasmRefType().isSome(),
+                    def->type() == MIRType::WasmAnyRef);
     }
   }
 #endif
@@ -4280,6 +4285,78 @@ bool jit::MarkLoadsUsedAsPropertyKeys(MIRGraph& graph) {
       } else {
         JitSpew(JitSpew_MarkLoadsUsedAsPropertyKeys, "- SKIP: %s not supported",
                 idVal->opName());
+      }
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+bool jit::TrackWasmRefTypes(MIRGraph& graph) {
+  
+  
+  Vector<MDefinition*, 16, SystemAllocPolicy> worklist;
+
+  
+  
+  
+  for (ReversePostorderIterator blockIter = graph.rpoBegin();
+       blockIter != graph.rpoEnd(); blockIter++) {
+    MBasicBlock* block = *blockIter;
+    for (MDefinitionIterator def(block); def; def++) {
+      
+      
+      
+      
+
+      if (def->type() != MIRType::WasmAnyRef) {
+        continue;
+      }
+
+      bool hasType = def->updateWasmRefType();
+      if (hasType) {
+        for (MUseIterator use(def->usesBegin()); use != def->usesEnd(); use++) {
+          MNode* consumer = use->consumer();
+          if (!consumer->isDefinition() || !consumer->toDefinition()->isPhi()) {
+            continue;
+          }
+          MPhi* phi = consumer->toDefinition()->toPhi();
+          if (phi->block()->isLoopHeader() &&
+              *def == phi->getLoopBackedgeOperand()) {
+            bool changed = phi->updateWasmRefType();
+            if (changed && !worklist.append(phi)) {
+              return false;
+            }
+          } else {
+            
+            
+            MOZ_ASSERT(consumer->toDefinition()->wasmRefType().isNothing());
+          }
+        }
+      }
+    }
+  }
+
+  
+  
+  while (!worklist.empty()) {
+    MDefinition* def = worklist.popCopy();
+
+    for (MUseIterator use(def->usesBegin()); use != def->usesEnd(); use++) {
+      if (!use->consumer()->isDefinition()) {
+        continue;
+      }
+      bool changed = use->consumer()->toDefinition()->updateWasmRefType();
+      if (changed && !worklist.append(use->consumer()->toDefinition())) {
+        return false;
       }
     }
   }

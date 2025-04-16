@@ -32,11 +32,6 @@
 namespace js {
 namespace wasm {
 
-class RecGroup;
-class TypeDef;
-class TypeContext;
-enum class TypeDefKind : uint8_t;
-
 
 union PackedTypeCode {
  public:
@@ -368,8 +363,13 @@ class RefType {
   PackedTypeCode* addressOfPacked() { return &ptc_; }
   const PackedTypeCode* addressOfPacked() const { return &ptc_; }
 
-#ifdef DEBUG
+  
+  
   bool isValid() const {
+    if (!ptc_.isValid()) {
+      return false;
+    }
+
     MOZ_ASSERT((ptc_.typeCode() == AbstractTypeRefCode) ==
                (ptc_.typeDef() != nullptr));
     switch (ptc_.typeCode()) {
@@ -391,7 +391,6 @@ class RefType {
         return false;
     }
   }
-#endif
 
   static RefType func() { return RefType(Func, true); }
   static RefType extern_() { return RefType(Extern, true); }
@@ -931,13 +930,47 @@ class PackedType : public T {
   bool operator!=(Kind that) const { return !(*this == that); }
 };
 
-using ValType = PackedType<ValTypeTraits>;
 using StorageType = PackedType<StorageTypeTraits>;
 
 
 
 
 using ValTypeVector = Vector<ValType, 16, SystemAllocPolicy>;
+
+
+
+
+class MaybeRefType {
+ private:
+  RefType inner_;
+
+ public:
+  
+  MaybeRefType() { MOZ_ASSERT(isNothing()); }
+
+  
+  explicit MaybeRefType(RefType type) : inner_(type) {
+    MOZ_RELEASE_ASSERT(isSome());
+  }
+
+  bool isSome() const { return inner_.isValid(); }
+  bool isNothing() const { return !isSome(); }
+
+  
+  RefType& value() & {
+    MOZ_RELEASE_ASSERT(isSome());
+    return inner_;
+  };
+  const RefType& value() const& {
+    MOZ_RELEASE_ASSERT(isSome());
+    return inner_;
+  };
+
+  bool operator==(const MaybeRefType& other) { return inner_ == other.inner_; }
+  bool operator!=(const MaybeRefType& other) { return inner_ != other.inner_; }
+
+  explicit operator bool() const { return isSome(); }
+};
 
 
 
@@ -949,6 +982,7 @@ extern UniqueChars ToString(ValType type, const TypeContext* types);
 extern UniqueChars ToString(StorageType type, const TypeContext* types);
 extern UniqueChars ToString(const mozilla::Maybe<ValType>& type,
                             const TypeContext* types);
+extern UniqueChars ToString(const MaybeRefType& type, const TypeContext* types);
 
 }  
 }  
