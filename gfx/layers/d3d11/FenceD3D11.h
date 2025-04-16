@@ -40,7 +40,8 @@ class FenceD3D11 final : public Fence {
 
   static RefPtr<FenceD3D11> Create(ID3D11Device* aDevice);
   static RefPtr<FenceD3D11> CreateFromHandle(
-      RefPtr<gfx::FileHandleWrapper> aHandle);
+      RefPtr<gfx::FileHandleWrapper> aHandle,
+      const RefPtr<ID3D11Device> aDevice);
 
   FenceD3D11* AsFenceD3D11() override { return this; }
 
@@ -62,17 +63,22 @@ class FenceD3D11 final : public Fence {
 
   uint64_t GetFenceValue() const { return mFenceValue; }
 
+  enum class OwnsFence : bool { No, Yes };
+
+  const OwnsFence mOwnsFence;
+  
+  const RefPtr<ID3D11Device> mDevice;
+  
+  
+  const RefPtr<ID3D11Fence> mSignalFence;
   const RefPtr<gfx::FileHandleWrapper> mHandle;
 
  protected:
-  explicit FenceD3D11(RefPtr<gfx::FileHandleWrapper>& aHandle);
+  FenceD3D11(const OwnsFence aOwnsFence, const RefPtr<ID3D11Device> aDevice,
+             const RefPtr<ID3D11Fence> aSignalFence,
+             const RefPtr<gfx::FileHandleWrapper>& aHandle);
   virtual ~FenceD3D11();
 
-  
-  RefPtr<ID3D11Device> mDevice;
-  
-  
-  RefPtr<ID3D11Fence> mSignalFence;
   uint64_t mFenceValue = 0;
   
   
