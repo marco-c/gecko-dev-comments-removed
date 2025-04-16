@@ -1,50 +1,24 @@
 "use strict";
 
-
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+
+const { ExperimentFakes, ExperimentTestUtils, NimbusTestUtils } =
+  ChromeUtils.importESModule(
+    "resource://testing-common/NimbusTestUtils.sys.mjs"
+  );
+
 ChromeUtils.defineESModuleGetters(this, {
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
-  ExperimentTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   RegionTestUtils: "resource://testing-common/RegionTestUtils.sys.mjs",
 });
 
-RegionTestUtils.setNetworkRegion("US");
-
-
-
-
-
-
+NimbusTestUtils.init(this);
 
 function assertEmptyStore(store) {
-  Assert.deepEqual(
-    store
-      .getAll()
-      .filter(e => e.active)
-      .map(e => e.slug),
-    [],
-    "Store should have no active enrollments"
-  );
-
-  store
-    .getAll()
-    .filter(e => !e.active)
-    .forEach(e => store._deleteForTests(e.slug));
-
-  Assert.deepEqual(
-    store
-      .getAll()
-      .filter(e => !e.active)
-      .map(e => e.slug),
-    [],
-    "Store should have no inactive enrollments"
-  );
-
-  ExperimentFakes.cleanupStorePrefCache();
+  NimbusTestUtils.assert.storeIsEmpty(store);
 }
