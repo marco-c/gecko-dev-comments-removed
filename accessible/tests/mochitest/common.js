@@ -875,23 +875,7 @@ function getTextFromClipboard() {
 
 
 function getAccessibleDOMNodeID(accessible) {
-  if (accessible instanceof nsIAccessibleDocument) {
-    
-    try {
-      return accessible.DOMNode.body.id;
-    } catch (e) {
-      
-    }
-  }
   try {
-    return accessible.DOMNode.id;
-  } catch (e) {
-    
-  }
-  try {
-    
-    
-    
     return accessible.id;
   } catch (e) {
     
