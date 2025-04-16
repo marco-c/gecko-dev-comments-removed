@@ -282,61 +282,18 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
 }
 
 
-add_task(async function block() {
-  
-  Assert.ok(
-    UrlbarPrefs.get("suggest.weather"),
-    "Sanity check: suggest.weather is true initially"
-  );
-
-  
-  let context = createContext("weather", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
+add_task(async function dismissal() {
+  await doDismissAllTest({
+    result: QuickSuggestTestUtils.weatherResult(),
+    command: "dismiss",
+    feature: QuickSuggest.getFeature("WeatherSuggestions"),
+    pref: "suggest.weather",
+    queries: [
+      {
+        query: "weather",
+      },
+    ],
   });
-  await check_results({
-    context,
-    matches: [QuickSuggestTestUtils.weatherResult()],
-  });
-
-  
-  const controller = UrlbarTestUtils.newMockController();
-  controller.setView({
-    get visibleResults() {
-      return context.results;
-    },
-    controller: {
-      removeResult() {},
-    },
-  });
-  let result = context.results[0];
-  let provider = UrlbarProvidersManager.getProvider(result.providerName);
-  Assert.ok(provider, "Sanity check: Result provider found");
-
-  provider.onEngagement(context, controller, {
-    result,
-    selType: "dismiss",
-    selIndex: context.results[0].rowIndex,
-  });
-  Assert.ok(
-    !UrlbarPrefs.get("suggest.weather"),
-    "suggest.weather is false after blocking the result"
-  );
-
-  
-  context = createContext("weather", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
-
-  
-  
-  UrlbarPrefs.set("suggest.weather", true);
-  await QuickSuggestTestUtils.forceSync();
 });
 
 
