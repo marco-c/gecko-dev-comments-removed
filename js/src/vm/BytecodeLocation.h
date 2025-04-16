@@ -11,10 +11,9 @@
 #include "js/TypeDecls.h"
 #include "vm/BuiltinObjectKind.h"
 #include "vm/BytecodeUtil.h"
-#include "vm/CheckIsObjectKind.h"       
-#include "vm/CompletionKind.h"          
-#include "vm/ConstantCompareOperand.h"  
-#include "vm/FunctionPrefixKind.h"      
+#include "vm/CheckIsObjectKind.h"   
+#include "vm/CompletionKind.h"      
+#include "vm/FunctionPrefixKind.h"  
 #include "vm/GeneratorResumeKind.h"
 #include "vm/TypeofEqOperand.h"  
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -286,11 +285,6 @@ class BytecodeLocation {
   TypeofEqOperand getTypeofEqOperand() const {
     MOZ_ASSERT(is(JSOp::TypeofEq));
     return TypeofEqOperand::fromRawValue(GET_UINT8(rawBytecode_));
-  }
-
-  ConstantCompareOperand getConstantCompareOperand() const {
-    MOZ_ASSERT(is(JSOp::StrictConstantEq) || is(JSOp::StrictConstantNe));
-    return ConstantCompareOperand::fromRawValue(GET_UINT16(rawBytecode_));
   }
 
   FunctionPrefixKind getFunctionPrefixKind() const {
