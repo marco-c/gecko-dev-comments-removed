@@ -31,7 +31,7 @@ def prepare_tmp_topsrcdir(path):
 
 
 
-class MockConfig(object):
+class MockConfig:
     def __init__(
         self,
         topsrcdir="/path/to/topsrcdir",

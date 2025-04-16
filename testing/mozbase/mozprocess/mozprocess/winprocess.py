@@ -179,7 +179,7 @@ class EnvironmentBlock:
                     k = k.decode(fs_encoding, "replace")
                 if isinstance(v, bytes):
                     v = v.decode(fs_encoding, "replace")
-                values.append("{}={}".format(k, v))
+                values.append(f"{k}={v}")
 
             
             

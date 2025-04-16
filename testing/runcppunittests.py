@@ -23,7 +23,7 @@ SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
 env["CPP_UNIT_TESTS_DIR_JS_SRC"] = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 
 
-class CPPUnitTests(object):
+class CPPUnitTests:
     
     TEST_PROC_TIMEOUT = 900
     

@@ -15,7 +15,7 @@ from gdbpp import GeckoPrettyPrinter
 
 
 @GeckoPrettyPrinter("mozilla::LinkedList", "^mozilla::LinkedList<.*>$")
-class linkedlist_printer(object):
+class linkedlist_printer:
     def __init__(self, value):
         self.value = value
         

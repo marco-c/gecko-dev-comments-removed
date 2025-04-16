@@ -13,7 +13,7 @@ mozilla.prettyprinters.clear_module_printers(__name__)
 
 
 @pretty_printer("JS::PropertyKey")
-class PropertyKey(object):
+class PropertyKey:
     
     
     

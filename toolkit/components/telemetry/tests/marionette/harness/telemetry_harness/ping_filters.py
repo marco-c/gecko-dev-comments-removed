@@ -3,7 +3,7 @@
 
 
 
-class PingFilter(object):
+class PingFilter:
     """Ping filter that accepts any pings."""
 
     def __call__(self, ping):

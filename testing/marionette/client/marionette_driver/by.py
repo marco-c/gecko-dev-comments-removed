@@ -14,7 +14,7 @@
 
 
 
-class By(object):
+class By:
     ID = "id"
     XPATH = "xpath"
     LINK_TEXT = "link text"

@@ -86,11 +86,7 @@ class ADBProcess:
         
         arg_string = " ".join(self.args)
         arg_string = re.sub(r" -s [\w-]+", "", arg_string)
-        return "args: {}, exitcode: {}, stdout: {}".format(
-            arg_string,
-            self.exitcode,
-            self.stdout,
-        )
+        return f"args: {arg_string}, exitcode: {self.exitcode}, stdout: {self.stdout}"
 
     def __iter__(self):
         assert self.stdout_file == subprocess.PIPE
@@ -3075,9 +3071,7 @@ class ADBDevice(ADBCommand):
             if "remote secure_mkdirs failed" not in str(e):
                 raise
             self._logger.warning(
-                "remote secure_mkdirs failed push('{}', '{}') {}".format(
-                    local, remote, str(e)
-                )
+                f"remote secure_mkdirs failed push('{local}', '{remote}') {str(e)}"
             )
             
             

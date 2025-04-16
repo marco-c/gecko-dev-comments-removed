@@ -18,7 +18,7 @@ from mozharness.base.log import DEBUG
 
 
 
-class TransferMixin(object):
+class TransferMixin:
     """
     Generic transfer methods.
 

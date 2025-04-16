@@ -11,7 +11,7 @@ import time
 from subprocess import PIPE, Popen
 
 
-class TaskPool(object):
+class TaskPool:
     
     
     
@@ -25,7 +25,7 @@ class TaskPool(object):
 
     
     
-    class Task(object):
+    class Task:
         def __init__(self):
             self.pipe = None
             self.start_time = None
@@ -78,7 +78,7 @@ class TaskPool(object):
     def run_all(self):
         
         running = set()
-        with open(os.devnull, "r") as devnull:
+        with open(os.devnull) as devnull:
             while True:
                 while len(running) < self.job_limit and self.next_pending:
                     task = self.next_pending

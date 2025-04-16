@@ -114,7 +114,7 @@ def preprocess(base, input, flags):
         subprocess.run(command, stdout=open(preprocessed, "wb"), check=True)
         
         
-        with open(preprocessed, "r") as fh:
+        with open(preprocessed) as fh:
             for line in fh:
                 if not line.startswith("import"):
                     continue
@@ -211,7 +211,7 @@ def merge_dlldata(out, *inputs):
             
             
             print(
-                "Error while merging dlldata. Last lines read: {}".format(lines),
+                f"Error while merging dlldata. Last lines read: {lines}",
                 file=sys.stderr,
             )
             return 1

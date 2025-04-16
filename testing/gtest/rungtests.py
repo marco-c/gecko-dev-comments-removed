@@ -20,7 +20,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 log = mozlog.unstructured.getLogger("gtest")
 
 
-class GTests(object):
+class GTests:
     
     TEST_PROC_NO_OUTPUT_TIMEOUT = 300
 

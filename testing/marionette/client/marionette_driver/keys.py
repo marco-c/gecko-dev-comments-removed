@@ -18,7 +18,7 @@
 
 
 
-class Keys(object):
+class Keys:
     NULL = "\ue000"
     CANCEL = "\ue001"  
     HELP = "\ue002"

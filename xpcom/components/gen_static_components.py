@@ -23,7 +23,7 @@ ENDIAN = (
 
 
 
-class UUIDRepr(object):
+class UUIDRepr:
     def __init__(self, uuid):
         self.uuid = uuid
 
@@ -162,7 +162,7 @@ def lower_backgroundtasks(backgroundtasks):
 
 
 
-class StringTable(object):
+class StringTable:
     def __init__(self):
         self.entries = {}
         self.entry_list = []
@@ -222,7 +222,7 @@ interfaces = []
 
 
 
-class Namespace(object):
+class Namespace:
     def __init__(self, name=None):
         self.name = name
         self.classes = set()
@@ -256,7 +256,7 @@ class Namespace(object):
 
 
 
-class ModuleEntry(object):
+class ModuleEntry:
     next_anon_id = 0
 
     def __init__(self, data, init_idx):
@@ -364,34 +364,23 @@ class ModuleEntry(object):
             else "{ 0x%x }" % NO_CONTRACT_ID
         )
 
-        return """
-        /* {name} */ {{
-          /* {{{cid_string}}} */
-          {cid},
+        return f"""
+        /* {self.name} */ {{
+          /* {{{str(self.cid)}}} */
+          {self.cid.to_cxx()},
           {contract_id},
-          {processes},
-        }}""".format(
-            name=self.name,
-            cid=self.cid.to_cxx(),
-            cid_string=str(self.cid),
-            contract_id=contract_id,
-            processes=lower_processes(self.processes),
-        )
+          {lower_processes(self.processes)},
+        }}"""
 
     
     def lower_js_service(self):
-        return """
+        return f"""
         {{
-          {js_name},
-          ModuleID::{name},
-          {{ {iface_offset} }},
-          {iface_count}
-        }}""".format(
-            js_name=strings.entry_to_cxx(self.js_name),
-            name=self.name,
-            iface_offset=self.interfaces_offset,
-            iface_count=len(self.interfaces),
-        )
+          {strings.entry_to_cxx(self.js_name)},
+          ModuleID::{self.name},
+          {{ {self.interfaces_offset} }},
+          {len(self.interfaces)}
+        }}"""
 
     
     
@@ -575,25 +564,22 @@ def pretty_string(string):
 
 
 
-class ContractEntry(object):
+class ContractEntry:
     def __init__(self, contract, module):
         self.contract = contract
         self.module = module
 
     def to_cxx(self):
-        return """
+        return f"""
         {{
-          {contract},
-          {module_id},
-        }}""".format(
-            contract=strings.entry_to_cxx(self.contract),
-            module_id=lower_module_id(self.module),
-        )
+          {strings.entry_to_cxx(self.contract)},
+          {lower_module_id(self.module)},
+        }}"""
 
 
 
 
-class ProtocolHandler(object):
+class ProtocolHandler:
     def __init__(self, config, module):
         def error(str_):
             raise Exception(
@@ -739,13 +725,11 @@ def gen_constructors(entries):
     constructors = []
     for entry in entries:
         constructors.append(
-            """\
-    case {id}: {{
-{constructor}\
+            f"""\
+    case {lower_module_id(entry)}: {{
+{entry.lower_constructor()}\
     }}
-""".format(
-                id=lower_module_id(entry), constructor=entry.lower_constructor()
-            )
+"""
         )
 
     return "".join(constructors)
@@ -1030,7 +1014,7 @@ def main(fd, conf_file, template_file):
     def open_output(filename):
         return FileAvoidWrite(os.path.join(os.path.dirname(fd.name), filename))
 
-    conf = json.load(open(conf_file, "r"))
+    conf = json.load(open(conf_file))
 
     deps = set()
 
@@ -1050,7 +1034,7 @@ def main(fd, conf_file, template_file):
         return substs[match.group(1)]
 
     with open_output("StaticComponents.cpp") as fh:
-        with open(template_file, "r") as tfh:
+        with open(template_file) as tfh:
             template = tfh.read()
 
         fh.write(re.sub(r"//# @([a-zA-Z_]+)@\n", replacer, template))

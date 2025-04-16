@@ -281,7 +281,7 @@ def get_test_host(manifest_line):
 
 def build_manifest(config, is_multidomain, manifestName):
     
-    with open(manifestName, "r") as fHandle:
+    with open(manifestName) as fHandle:
         manifestLines = fHandle.readlines()
 
     

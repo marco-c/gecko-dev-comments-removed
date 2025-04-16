@@ -6,7 +6,7 @@ import os.path
 import re
 
 
-class TPSTestPhase(object):
+class TPSTestPhase:
     lineRe = re.compile(
         r"^(.*?)test phase (?P<matchphase>[^\s]+): (?P<matchstatus>.*)$"
     )
@@ -60,7 +60,7 @@ class TPSTestPhase(object):
 
         
         found_test = False
-        f = open(self.logfile, "r")
+        f = open(self.logfile)
         for line in f:
             
             if not found_test:

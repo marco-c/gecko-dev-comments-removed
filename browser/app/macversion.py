@@ -27,9 +27,7 @@ if not options.version:
 
 
 
-define, MOZ_BUILDID, buildid = (
-    open(options.buildid, "r", encoding="utf-8").read().split()
-)
+define, MOZ_BUILDID, buildid = open(options.buildid, encoding="utf-8").read().split()
 
 
 majorVersion = re.match(r"^(\d+)[^\d].*", options.version).group(1)

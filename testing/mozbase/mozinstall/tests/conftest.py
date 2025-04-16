@@ -9,6 +9,6 @@ def get_installer(request):
 
         
         
-        return stub_dir.join("firefox.{}".format(extension)).strpath
+        return stub_dir.join(f"firefox.{extension}").strpath
 
     return _get_installer

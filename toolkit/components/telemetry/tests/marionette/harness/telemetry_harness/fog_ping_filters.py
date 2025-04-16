@@ -3,7 +3,7 @@
 
 
 
-class FOGPingFilter(object):
+class FOGPingFilter:
     """Ping filter that accepts any FOG pings."""
 
     def __call__(self, ping):

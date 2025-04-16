@@ -3,7 +3,7 @@
 
 
 
-class L10n(object):
+class L10n:
     """An API which allows Marionette to handle localized content.
 
     The `localization`_ of UI elements in Gecko based applications is done via

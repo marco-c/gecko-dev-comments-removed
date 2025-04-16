@@ -204,7 +204,7 @@ class NotSpiderMonkeyObjfileError(TypeError):
 
 
 
-class TypeCache(object):
+class TypeCache:
     def __init__(self, objfile):
         self.objfile = objfile
 
@@ -386,7 +386,7 @@ def lookup_for_objfile(objfile):
 
 
 
-class Pointer(object):
+class Pointer:
     def __new__(cls, value, cache):
         
         if value.type.strip_typedefs().code == gdb.TYPE_CODE_PTR and value == 0:

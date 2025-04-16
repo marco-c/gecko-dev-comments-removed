@@ -3,7 +3,7 @@
 
 
 
-class EmulatorGeo(object):
+class EmulatorGeo:
     def __init__(self, emulator):
         self.emulator = emulator
 

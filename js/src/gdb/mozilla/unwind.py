@@ -59,7 +59,7 @@ SizeOfFramePrefix = {
 
 
 
-class UnwinderTypeCacheFrameType(object):
+class UnwinderTypeCacheFrameType:
     def __init__(self, tc):
         self.tc = tc
 
@@ -144,7 +144,7 @@ class UnwinderTypeCache(TypeCache):
             self.frame_class_types[enumval] = class_type.pointer()
 
 
-class FrameSymbol(object):
+class FrameSymbol:
     "A symbol/value pair as expected from gdb frame decorators."
 
     def __init__(self, sym, val):
@@ -253,7 +253,7 @@ class JitFrameDecorator(FrameDecorator):
         return result
 
 
-class SpiderMonkeyFrameFilter(object):
+class SpiderMonkeyFrameFilter:
     "A frame filter for SpiderMonkey."
 
     
@@ -280,7 +280,7 @@ class SpiderMonkeyFrameFilter(object):
         return imap(self.maybe_wrap_frame, frame_iter)
 
 
-class SpiderMonkeyFrameId(object):
+class SpiderMonkeyFrameId:
     "A frame id class, as specified by the gdb unwinder API."
 
     def __init__(self, sp, pc):
@@ -288,7 +288,7 @@ class SpiderMonkeyFrameId(object):
         self.pc = pc
 
 
-class UnwinderState(object):
+class UnwinderState:
     """This holds all the state needed during a given unwind.  Each time a
     new unwind is done, a new instance of this class is created.  It
     keeps track of all the state needed to unwind JIT frames.  Note that

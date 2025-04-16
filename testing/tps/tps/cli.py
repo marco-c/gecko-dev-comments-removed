@@ -107,7 +107,7 @@ def main():
             )
 
     
-    f = open(configfile, "r")
+    f = open(configfile)
     configcontent = f.read()
     f.close()
     config = json.loads(configcontent)

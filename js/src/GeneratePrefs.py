@@ -57,7 +57,7 @@ def get_cpp_type(type):
         return "uint32_t"
     if type in ("int32_t", "RelaxedAtomicInt32"):
         return "int32_t"
-    raise Exception("Unexpected type: {}".format(type))
+    raise Exception(f"Unexpected type: {type}")
 
 
 
@@ -117,10 +117,10 @@ def generate_prefs_header(c_out, yaml_path):
         
         field_type = type
         if not is_startup_pref:
-            field_type = "mozilla::Atomic<{}, mozilla::Relaxed>".format(field_type)
-        class_fields.append("static {} {}_;".format(field_type, cpp_name))
+            field_type = f"mozilla::Atomic<{field_type}, mozilla::Relaxed>"
+        class_fields.append(f"static {field_type} {cpp_name}_;")
         class_fields_inits.append(
-            "{} JS::Prefs::{}_{{{}}};".format(field_type, cpp_name, init_value)
+            f"{field_type} JS::Prefs::{cpp_name}_{{{init_value}}};"
         )
 
         is_startup_pref_bool = "true" if is_startup_pref else "false"
@@ -128,9 +128,7 @@ def generate_prefs_header(c_out, yaml_path):
         
         
         macro_entries.append(
-            'MACRO("{}", {}, {}, {}, {})'.format(
-                name, cpp_name, type, setter_name, is_startup_pref_bool
-            )
+            f'MACRO("{name}", {cpp_name}, {type}, {setter_name}, {is_startup_pref_bool})'
         )
 
         
@@ -139,9 +137,7 @@ def generate_prefs_header(c_out, yaml_path):
         if pref.get("do_not_use_directly", False):
             browser_pref_cpp_name += "_DoNotUseDirectly"
 
-        statement = "JS::Prefs::{}(mozilla::StaticPrefs::{}());".format(
-            setter_name, browser_pref_cpp_name
-        )
+        statement = f"JS::Prefs::{setter_name}(mozilla::StaticPrefs::{browser_pref_cpp_name}());"
         browser_set_statements.append(statement)
 
         
@@ -151,25 +147,23 @@ def generate_prefs_header(c_out, yaml_path):
     contents = ""
 
     contents += "#define JS_PREF_CLASS_FIELDS \\\n"
-    contents += "".join(map(lambda s: "  {}\\\n".format(s), class_fields))
+    contents += "".join(map(lambda s: f"  {s}\\\n", class_fields))
     contents += "\n\n"
 
     contents += "#define JS_PREF_CLASS_FIELDS_INIT \\\n"
-    contents += "".join(map(lambda s: "  {}\\\n".format(s), class_fields_inits))
+    contents += "".join(map(lambda s: f"  {s}\\\n", class_fields_inits))
     contents += "\n\n"
 
     contents += "#define FOR_EACH_JS_PREF(MACRO) \\\n"
-    contents += "".join(map(lambda s: "  {}\\\n".format(s), macro_entries))
+    contents += "".join(map(lambda s: f"  {s}\\\n", macro_entries))
     contents += "\n\n"
 
     contents += "#define SET_JS_PREFS_FROM_BROWSER_PREFS \\\n"
-    contents += "".join(map(lambda s: "  {}\\\n".format(s), browser_set_statements))
+    contents += "".join(map(lambda s: f"  {s}\\\n", browser_set_statements))
     contents += "\n\n"
 
     contents += "#define SET_NON_STARTUP_JS_PREFS_FROM_BROWSER_PREFS \\\n"
-    contents += "".join(
-        map(lambda s: "  {}\\\n".format(s), browser_set_non_startup_statements)
-    )
+    contents += "".join(map(lambda s: f"  {s}\\\n", browser_set_non_startup_statements))
     contents += "\n\n"
 
     c_out.write(

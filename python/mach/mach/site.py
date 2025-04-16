@@ -1013,7 +1013,7 @@ class PythonVirtualenv:
         
         
         kwargs.setdefault("env", os.environ.copy()).setdefault(
-            "ARCHFLAGS", "-arch {}".format(platform.machine())
+            "ARCHFLAGS", f"-arch {platform.machine()}"
         )
         kwargs.setdefault("check", True)
         kwargs.setdefault("stdout", None if show_pip_output() else subprocess.PIPE)

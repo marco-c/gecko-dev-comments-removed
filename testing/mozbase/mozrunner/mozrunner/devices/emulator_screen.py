@@ -3,7 +3,7 @@
 
 
 
-class EmulatorScreen(object):
+class EmulatorScreen:
     """Class for screen related emulator commands."""
 
     SO_PORTRAIT_PRIMARY = "portrait-primary"

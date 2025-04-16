@@ -103,5 +103,5 @@ class MergedHandler:
                 val = "\n  ".join(
                     [""] + val.splitlines() + [""]
                 )  
-                print("Presets from {}:".format(handler.path))
+                print(f"Presets from {handler.path}:")
                 print(val)

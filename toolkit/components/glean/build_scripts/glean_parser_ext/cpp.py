@@ -32,9 +32,7 @@ def type_name(obj):
                 
                 
                 suffix = "Extra"
-                return "{}Metric<{}>".format(
-                    util.Camelize(obj.type), util.Camelize(obj.name) + suffix
-                )
+                return f"{util.Camelize(obj.type)}Metric<{util.Camelize(obj.name) + suffix}>"
     return util.Camelize(obj.type) + "Metric"
 
 

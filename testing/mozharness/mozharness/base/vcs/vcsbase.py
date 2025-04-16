@@ -26,7 +26,7 @@ VCS_DICT = {
 
 
 
-class VCSMixin(object):
+class VCSMixin:
     """Basic VCS methods that are vcs-agnostic.
     The vcs_class handles all the vcs-specific tasks.
     """

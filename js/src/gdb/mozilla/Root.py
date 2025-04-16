@@ -12,7 +12,7 @@ from mozilla.prettyprinters import template_pretty_printer
 mozilla.prettyprinters.clear_module_printers(__name__)
 
 
-class Common(object):
+class Common:
     
     
     

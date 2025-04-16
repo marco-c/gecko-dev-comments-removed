@@ -3,7 +3,7 @@
 
 
 
-class EmulatorBattery(object):
+class EmulatorBattery:
     def __init__(self, emulator):
         self.emulator = emulator
 

@@ -18,7 +18,7 @@ def gradle_lock(topobjdir, max_wait_seconds=600):
     
     
     
-    lock_path = "{}/gradle/mach_android.lockfile".format(topobjdir)
+    lock_path = f"{topobjdir}/gradle/mach_android.lockfile"
     ensureParentDir(lock_path)
     with SoftFileLock(lock_path, timeout=max_wait_seconds):
         yield

@@ -58,7 +58,7 @@ def make_shell_cmd(l):
 
 
 
-class Summary(object):
+class Summary:
     class SummaryBar(progressbar.ProgressBar):
         def __init__(self, limit):
             super(Summary.SummaryBar, self).__init__("", limit, 24)

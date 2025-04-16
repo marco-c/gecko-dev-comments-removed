@@ -396,7 +396,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
             if shellOptions:
                 refTestSkipIf.append(("!xulRuntime.shell", "requires shell-options"))
                 refTestOptions.extend(
-                    "shell-option({})".format(opt) for opt in sorted(shellOptions)
+                    f"shell-option({opt})" for opt in sorted(shellOptions)
                 )
 
     
@@ -409,7 +409,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
             if include in INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS
         )
         refTestOptions.extend(
-            "shell-option({})".format(opt) for opt in sorted(optionalShellOptions)
+            f"shell-option({opt})" for opt in sorted(optionalShellOptions)
         )
 
     

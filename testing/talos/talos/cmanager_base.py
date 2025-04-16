@@ -3,7 +3,7 @@
 
 
 
-class CounterManager(object):
+class CounterManager:
     counterDict = {}
 
     def __init__(self):
