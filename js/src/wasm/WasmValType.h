@@ -443,6 +443,10 @@ class RefType {
   
   RefType topType() const;
 
+  
+  
+  RefType bottomType() const;
+
   static RefType leastUpperBound(RefType a, RefType b);
 
   
