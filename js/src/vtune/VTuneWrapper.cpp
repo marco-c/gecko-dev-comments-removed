@@ -30,9 +30,11 @@ bool Initialize() {
   VTuneMutex = js_new<Mutex>(mutexid::VTuneLock);
   if (!VTuneMutex) return false;
 
-  
-  int loaded = loadiJIT_Funcs();
-  if (loaded == 1) VTuneLoaded = true;
+  if (getenv("JS_LOAD_VTUNE_LIB")) {
+    
+    int loaded = loadiJIT_Funcs();
+    if (loaded == 1) VTuneLoaded = true;
+  }
 
   return true;
 }
