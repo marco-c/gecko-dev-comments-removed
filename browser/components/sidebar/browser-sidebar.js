@@ -627,7 +627,8 @@ var SidebarController = {
     let observer = this._observer;
     if (!observer) {
       observer = new MutationObserver(() => {
-        this.title = this.sidebars.get(this.lastOpenedId).title;
+        
+        this.title = this.sidebars.get(this.lastOpenedId)?.title;
       });
       
       this._observer = observer;
