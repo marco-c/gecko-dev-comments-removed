@@ -1455,16 +1455,17 @@ gfxFontEntry* CoreTextFontList::LookupLocalFont(
     return nullptr;
   }
   AutoCFRelease<CFStringRef> name = CTFontCopyFamilyName(ctFont);
-
   
   
   nsAutoCString key;
-  
-  
-  
-  key.SetLength((CFStringGetLength(name) + 1) * 3);
-  if (!CFStringGetCString(name, key.BeginWriting(), key.Length(),
-                          kCFStringEncodingUTF8)) {
+  if (name) {
+    
+    
+    
+    key.SetLength((CFStringGetLength(name) + 1) * 3);
+  }
+  if (!name || !CFStringGetCString(name, key.BeginWriting(), key.Length(),
+                                   kCFStringEncodingUTF8)) {
     
     NS_WARNING("Failed to get family name?");
     key.Truncate(0);
