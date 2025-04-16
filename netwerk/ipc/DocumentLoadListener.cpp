@@ -2297,6 +2297,17 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   
   
 
+  
+  
+  if (mOpenPromiseResolved && !aDestinationProcess) {
+    LOG(
+        ("DocumentLoadListener::TriggerRedirectToRealChannel [this=%p] "
+         "Listeners already disconnected for non-switching redirect. Aborting.",
+         this));
+    RedirectToRealChannelFinished(NS_BINDING_ABORTED);
+    return;
+  }
+
   RefPtr<ContentParent> contentParent =
       aDestinationProcess.valueOr(mContentParent);
 
