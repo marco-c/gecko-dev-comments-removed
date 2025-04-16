@@ -271,7 +271,6 @@ using IonOpIter = OpIter<IonCompilePolicy>;
 
 
 struct InliningStats {
-  size_t rootBytecodeSize = 0;            
   size_t inlinedDirectBytecodeSize = 0;   
   size_t inlinedDirectFunctions = 0;      
   size_t inlinedCallRefBytecodeSize = 0;  
@@ -283,6 +282,7 @@ struct InliningStats {
 class RootCompiler {
   const CompilerEnvironment& compilerEnv_;
   const CodeMetadata& codeMeta_;
+  const CodeTailMetadata* codeTailMeta_;
 
   const ValTypeVector& locals_;
   const FuncCompileInput& func_;
@@ -313,7 +313,7 @@ class RootCompiler {
   InliningStats inliningStats_;
   
   
-  int64_t inliningBudget_;
+  int64_t localInliningBudget_;
 
   
   
@@ -327,11 +327,13 @@ class RootCompiler {
 
  public:
   RootCompiler(const CompilerEnvironment& compilerEnv,
-               const CodeMetadata& codeMeta, TempAllocator& alloc,
+               const CodeMetadata& codeMeta,
+               const CodeTailMetadata* codeTailMeta, TempAllocator& alloc,
                const ValTypeVector& locals, const FuncCompileInput& func,
                Decoder& decoder, wasm::TryNoteVector& tryNotes)
       : compilerEnv_(compilerEnv),
         codeMeta_(codeMeta),
+        codeTailMeta_(codeTailMeta),
         locals_(locals),
         func_(func),
         decoder_(decoder),
@@ -342,7 +344,7 @@ class RootCompiler {
         mirGen_(nullptr, options_, &alloc_, &mirGraph_, &compileInfo_,
                 IonOptimizations.get(OptimizationLevel::Wasm), &codeMeta),
         loopDepth_(0),
-        inliningBudget_(0),
+        localInliningBudget_(0),
         tryNotes_(tryNotes) {}
 
   const CompilerEnvironment& compilerEnv() const { return compilerEnv_; }
@@ -350,7 +352,7 @@ class RootCompiler {
   TempAllocator& alloc() { return alloc_; }
   MIRGraph& mirGraph() { return mirGraph_; }
   MIRGenerator& mirGen() { return mirGen_; }
-  int64_t inliningBudget() const { return inliningBudget_; }
+  int64_t inliningBudget() const { return localInliningBudget_; }
   FeatureUsage observedFeatures() const { return observedFeatures_; }
   const TierStats& tierStats() const { return tierStats_; }
 
@@ -10518,18 +10520,20 @@ bool RootCompiler::generate() {
   
   
   
-  {
-    auto guard = codeMeta_.stats.readLock();
+  if (codeTailMeta_) {
+    auto guard = codeTailMeta_->inliningBudget.lock();
 
-    if (guard->inliningBudget > 0) {
-      inliningBudget_ =
+    if (guard.get() > 0) {
+      localInliningBudget_ =
           int64_t(codeMeta_.codeSectionSize()) * PerFunctionMaxInliningRatio;
-      inliningBudget_ =
-          std::min<int64_t>(inliningBudget_, guard->inliningBudget);
+      localInliningBudget_ =
+          std::min<int64_t>(localInliningBudget_, guard.get());
     } else {
-      inliningBudget_ = 0;
+      localInliningBudget_ = 0;
     }
-    MOZ_ASSERT(inliningBudget_ >= 0);
+    MOZ_ASSERT(localInliningBudget_ >= 0);
+  } else {
+    localInliningBudget_ = 0;
   }
 
   
@@ -10552,17 +10556,15 @@ bool RootCompiler::generate() {
   tierStats_.inlinedCallRefBytecodeSize +=
       inliningStats_.inlinedCallRefBytecodeSize;
 
-  {
-    auto guard = codeMeta_.stats.writeLock();
+  if (codeTailMeta_) {
+    auto guard = codeTailMeta_->inliningBudget.lock();
     
     
     
-    if (guard->inliningBudget >= 0) {
-      guard->inliningBudget -=
-          int64_t(inliningStats_.inlinedDirectBytecodeSize);
-      guard->inliningBudget -=
-          int64_t(inliningStats_.inlinedCallRefBytecodeSize);
-      if (guard->inliningBudget < 0) {
+    if (guard.get() >= 0) {
+      guard.get() -= int64_t(inliningStats_.inlinedDirectBytecodeSize);
+      guard.get() -= int64_t(inliningStats_.inlinedCallRefBytecodeSize);
+      if (guard.get() < 0) {
         JS_LOG(wasmPerf, Info,
                "CM=..%06lx  RC::generate            "
                "Inlining budget for entire module exceeded",
@@ -10571,7 +10573,7 @@ bool RootCompiler::generate() {
     }
     
     
-    if (inliningBudget_ < 0) {
+    if (localInliningBudget_ < 0) {
       tierStats_.numInliningBudgetOverruns += 1;
     }
   }
@@ -10583,8 +10585,6 @@ CompileInfo* RootCompiler::startInlineCall(
     uint32_t callerFuncIndex, BytecodeOffset callerOffset,
     uint32_t calleeFuncIndex, uint32_t numLocals, size_t inlineeBytecodeSize,
     InliningHeuristics::CallKind callKind) {
-  
-  MOZ_ASSERT(inliningStats_.rootBytecodeSize > 0);
   if (callKind == InliningHeuristics::CallKind::Direct) {
     inliningStats_.inlinedDirectBytecodeSize += inlineeBytecodeSize;
     inliningStats_.inlinedDirectFunctions += 1;
@@ -10597,10 +10597,10 @@ CompileInfo* RootCompiler::startInlineCall(
   
   
   
-  if (inliningBudget_ >= 0) {
-    inliningBudget_ -= int64_t(inlineeBytecodeSize);
+  if (localInliningBudget_ >= 0) {
+    localInliningBudget_ -= int64_t(inlineeBytecodeSize);
 #ifdef JS_JITSPEW
-    if (inliningBudget_ <= 0) {
+    if (localInliningBudget_ <= 0) {
       JS_LOG(wasmPerf, Info,
              "CM=..%06lx  RC::startInlineCall     "
              "Inlining budget for fI=%u exceeded",
@@ -10634,12 +10634,14 @@ CompileInfo* RootCompiler::startInlineCall(
 void RootCompiler::finishInlineCall() { inlinedCallerOffsets_.popBack(); }
 
 bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
+                               const CodeTailMetadata* codeTailMeta,
                                const CompilerEnvironment& compilerEnv,
                                LifoAlloc& lifo,
                                const FuncCompileInputVector& inputs,
                                CompiledCode* code, UniqueChars* error) {
   MOZ_ASSERT(compilerEnv.tier() == Tier::Optimized);
   MOZ_ASSERT(compilerEnv.debug() == DebugEnabled::False);
+  MOZ_ASSERT_IF(compilerEnv.mode() == CompileMode::LazyTiering, !!codeTailMeta);
 
   
   
@@ -10685,8 +10687,8 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     }
 
     
-    RootCompiler rootCompiler(compilerEnv, codeMeta, alloc, locals, func, d,
-                              masm.tryNotes());
+    RootCompiler rootCompiler(compilerEnv, codeMeta, codeTailMeta, alloc,
+                              locals, func, d, masm.tryNotes());
     if (!rootCompiler.generate()) {
       return false;
     }
@@ -10783,9 +10785,15 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
     return false;
   }
 
+  
+  SharedCodeTailMetadata codeTailMeta = js_new<CodeTailMetadata>(codeMeta);
+  if (!codeTailMeta) {
+    return false;
+  }
+
   TryNoteVector tryNotes;
-  RootCompiler rootCompiler(compilerEnv, codeMeta, alloc, locals, func, d,
-                            tryNotes);
+  RootCompiler rootCompiler(compilerEnv, codeMeta, codeTailMeta.get(), alloc,
+                            locals, func, d, tryNotes);
   if (!rootCompiler.generate()) {
     return false;
   }

@@ -276,7 +276,7 @@ bool CompileBuiltinModule(JSContext* cx,
   }
 
   
-  SharedModule module = mg.finishModule(BytecodeBufferOrSource(), moduleMeta,
+  SharedModule module = mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
                                         nullptr);
   if (!module) {
     ReportOutOfMemory(cx);

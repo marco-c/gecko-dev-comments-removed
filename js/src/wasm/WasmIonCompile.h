@@ -33,6 +33,7 @@ namespace wasm {
 
 
 [[nodiscard]] bool IonCompileFunctions(const CodeMetadata& codeMeta,
+                                       const CodeTailMetadata* codeTailMeta,
                                        const CompilerEnvironment& compilerEnv,
                                        LifoAlloc& lifo,
                                        const FuncCompileInputVector& inputs,

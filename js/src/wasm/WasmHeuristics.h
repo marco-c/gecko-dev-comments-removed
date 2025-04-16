@@ -102,71 +102,6 @@ class LazyTieringHeuristics {
   }
 };
 
-class InliningHeuristics {
-  static constexpr uint32_t MIN_LEVEL = 1;
-  static constexpr uint32_t MAX_LEVEL = 9;
-
- public:
-  
-  
-  
-  
-  
-  
-  static uint32_t rawLevel() {
-    uint32_t level = JS::Prefs::wasm_inlining_level();
-    return std::clamp(level, MIN_LEVEL, MAX_LEVEL);
-  }
-  static bool rawDirectAllowed() { return JS::Prefs::wasm_direct_inlining(); }
-  static bool rawCallRefAllowed() {
-    return JS::Prefs::wasm_call_ref_inlining();
-  }
-  
-  
-  
-  static uint32_t rawCallRefPercent() {
-    uint32_t percent = JS::Prefs::wasm_call_ref_inlining_percent();
-    
-    return std::clamp(percent, 10u, 100u);
-  }
-
-  
-  
-  
-  
-  
-  
-  enum class CallKind { Direct, CallRef };
-  static bool isSmallEnoughToInline(CallKind callKind, uint32_t inliningDepth,
-                                    uint32_t bodyLength) {
-    
-    MOZ_RELEASE_ASSERT(inliningDepth <= 10);  
-    
-    if ((callKind == CallKind::Direct && !rawDirectAllowed()) ||
-        (callKind == CallKind::CallRef && !rawCallRefAllowed())) {
-      return false;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static constexpr int32_t baseSize[9] = {0,   40,  80,  120,
-                                            160,  
-                                            200, 240, 280, 320};
-    uint32_t level = rawLevel();
-    MOZ_RELEASE_ASSERT(level >= MIN_LEVEL && level <= MAX_LEVEL);
-    int32_t allowedSize = baseSize[level - MIN_LEVEL];
-    allowedSize -= int32_t(40 * inliningDepth);
-    return allowedSize > 0 && bodyLength <= uint32_t(allowedSize);
-  }
-};
-
 
 
 
@@ -260,6 +195,81 @@ static constexpr int64_t PerModuleMaxInliningRatio = 1;
 
 
 static constexpr int64_t PerFunctionMaxInliningRatio = 99;
+
+class InliningHeuristics {
+  static constexpr uint32_t MIN_LEVEL = 1;
+  static constexpr uint32_t MAX_LEVEL = 9;
+
+ public:
+  
+  
+  
+  
+  
+  
+  static uint32_t rawLevel() {
+    uint32_t level = JS::Prefs::wasm_inlining_level();
+    return std::clamp(level, MIN_LEVEL, MAX_LEVEL);
+  }
+  static bool rawDirectAllowed() { return JS::Prefs::wasm_direct_inlining(); }
+  static bool rawCallRefAllowed() {
+    return JS::Prefs::wasm_call_ref_inlining();
+  }
+  
+  
+  
+  static uint32_t rawCallRefPercent() {
+    uint32_t percent = JS::Prefs::wasm_call_ref_inlining_percent();
+    
+    return std::clamp(percent, 10u, 100u);
+  }
+
+  
+  
+  static int64_t moduleInliningBudget(size_t codeSectionSize) {
+    int64_t budget = int64_t(codeSectionSize) * PerModuleMaxInliningRatio;
+
+    
+    
+    return std::max<int64_t>(budget, 1000);
+  }
+
+  
+  
+  
+  
+  
+  
+  enum class CallKind { Direct, CallRef };
+  static bool isSmallEnoughToInline(CallKind callKind, uint32_t inliningDepth,
+                                    uint32_t bodyLength) {
+    
+    MOZ_RELEASE_ASSERT(inliningDepth <= 10);  
+    
+    if ((callKind == CallKind::Direct && !rawDirectAllowed()) ||
+        (callKind == CallKind::CallRef && !rawCallRefAllowed())) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static constexpr int32_t baseSize[9] = {0,   40,  80,  120,
+                                            160,  
+                                            200, 240, 280, 320};
+    uint32_t level = rawLevel();
+    MOZ_RELEASE_ASSERT(level >= MIN_LEVEL && level <= MAX_LEVEL);
+    int32_t allowedSize = baseSize[level - MIN_LEVEL];
+    allowedSize -= int32_t(40 * inliningDepth);
+    return allowedSize > 0 && bodyLength <= uint32_t(allowedSize);
+  }
+};
 
 }  
 }  

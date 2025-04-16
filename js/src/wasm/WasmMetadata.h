@@ -160,19 +160,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   ModuleHash debugHash;
 
   
-  struct ProtectedOptimizationStats {
-    
-    
-    
-    int64_t inliningBudget = 0;
-  };
-  using ReadGuard = RWExclusiveData<ProtectedOptimizationStats>::ReadGuard;
-  using WriteGuard = RWExclusiveData<ProtectedOptimizationStats>::WriteGuard;
-
-  
-  RWExclusiveData<ProtectedOptimizationStats> stats;
-
-  
   
   
   
@@ -214,7 +201,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         callRefHints(nullptr),
         debugEnabled(false),
         debugHash(),
-        stats(mutexid::WasmCodeMetaStats),
         funcDefsOffsetStart(UINT32_MAX),
         funcImportsOffsetStart(UINT32_MAX),
         funcExportsOffsetStart(UINT32_MAX),
@@ -417,7 +403,27 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 using MutableCodeMetadata = RefPtr<CodeMetadata>;
 using SharedCodeMetadata = RefPtr<const CodeMetadata>;
 
-WASM_DECLARE_CACHEABLE_POD(CodeMetadata::ProtectedOptimizationStats);
+using InliningBudget = ExclusiveData<int64_t>;
+
+
+
+
+struct CodeTailMetadata : public ShareableBase<CodeTailMetadata> {
+  
+  CodeTailMetadata();
+
+  
+  explicit CodeTailMetadata(const CodeMetadata& codeMeta);
+
+  
+  SharedCodeMetadata codeMeta;
+
+  
+  mutable InliningBudget inliningBudget;
+};
+
+using MutableCodeTailMetadata = RefPtr<CodeTailMetadata>;
+using SharedCodeTailMetadata = RefPtr<const CodeTailMetadata>;
 
 
 
@@ -430,7 +436,14 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
 
   
   
+  
+  
   MutableCodeMetadata codeMeta;
+
+  
+  
+  
+  MutableCodeTailMetadata codeTailMeta;
 
   
   
@@ -453,7 +466,7 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   CustomSectionVector customSections;
 
   
-  FeatureUsage featureUsage;
+  FeatureUsage featureUsage = FeatureUsage::None;
 
   explicit ModuleMetadata() = default;
 

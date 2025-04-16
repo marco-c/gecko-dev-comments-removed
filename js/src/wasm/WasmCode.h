@@ -991,6 +991,10 @@ class Code : public ShareableBase<Code> {
   
   SharedCodeMetadata codeMeta_;
   
+  
+  
+  SharedCodeTailMetadata codeTailMeta_;
+  
   SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   const CodeBlock* sharedStubs_;
@@ -1077,6 +1081,7 @@ class Code : public ShareableBase<Code> {
 
  public:
   Code(CompileMode mode, const CodeMetadata& codeMeta,
+       const CodeTailMetadata& codeTailMeta,
        const CodeMetadataForAsmJS* codeMetaForAsmJS);
   ~Code();
 
@@ -1149,6 +1154,7 @@ class Code : public ShareableBase<Code> {
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
     return codeMetaForAsmJS_;
   }
+  const CodeTailMetadata& codeTailMeta() const { return *codeTailMeta_; }
 
   const CodeBlock& sharedStubs() const { return *sharedStubs_; }
   const CodeBlock& debugCodeBlock() const {
