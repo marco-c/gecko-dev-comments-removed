@@ -1,3 +1,5 @@
+const kTestPrompt = 'Please write a sentence in English.';
+
 
 const testAbortPromise = async (t, method) => {
   
@@ -23,6 +25,43 @@ const testAbortPromise = async (t, method) => {
     
     const anotherPromise = method(controller.signal);
     await promise_rejects_exactly(t, err, anotherPromise);
+  }
+};
+
+
+const testAbortReadableStream = async (t, method) => {
+  
+  {
+    const controller = new AbortController();
+    const stream = method(controller.signal);
+    controller.abort();
+    let writableStream = new WritableStream();
+    await promise_rejects_dom(
+      t, "AbortError", stream.pipeTo(writableStream)
+    );
+
+    
+    await promise_rejects_dom(
+      t, "AbortError", new Promise(() => { method(controller.signal); })
+    );
+  }
+
+  
+  {
+    const error = new DOMException("test", "VersionError");
+    const controller = new AbortController();
+    const stream = method(controller.signal);
+    controller.abort(error);
+    let writableStream = new WritableStream();
+    await promise_rejects_exactly(
+      t, error,
+      stream.pipeTo(writableStream)
+    );
+
+    
+    await promise_rejects_exactly(
+      t, error, new Promise(() => { method(controller.signal); })
+    );
   }
 };
 
