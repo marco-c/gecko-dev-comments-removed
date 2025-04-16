@@ -971,8 +971,23 @@ pub trait Device: WasmNotSendSync {
         timeout_ms: u32,
     ) -> Result<bool, DeviceError>;
 
-    unsafe fn start_capture(&self) -> bool;
-    unsafe fn stop_capture(&self);
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn start_graphics_debugger_capture(&self) -> bool;
+
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn stop_graphics_debugger_capture(&self);
 
     #[allow(unused_variables)]
     unsafe fn pipeline_cache_get_data(
@@ -2054,6 +2069,7 @@ pub struct CommandEncoderDescriptor<'a, Q: DynQueue + ?Sized> {
 }
 
 
+#[derive(Default)]
 pub struct NagaShader {
     
     pub module: Cow<'static, naga::Module>,
@@ -2075,6 +2091,11 @@ impl fmt::Debug for NagaShader {
 #[allow(clippy::large_enum_variant)]
 pub enum ShaderInput<'a> {
     Naga(NagaShader),
+    Msl {
+        shader: String,
+        entry_point: String,
+        num_workgroups: (u32, u32, u32),
+    },
     SpirV(&'a [u32]),
 }
 

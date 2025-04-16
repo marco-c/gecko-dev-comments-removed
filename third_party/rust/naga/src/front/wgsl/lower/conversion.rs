@@ -311,17 +311,19 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
         I::IntoIter: Clone, 
     {
         let types = &self.module.types;
-        let mut inners = components
-            .into_iter()
-            .map(|&c| self.typifier()[c].inner_with(types));
+        let components_iter = components.into_iter();
         log::debug!(
             "wgsl automatic_conversion_consensus: {}",
-            inners
+            components_iter
                 .clone()
-                .map(|inner| self.type_inner_to_string(inner))
+                .map(|&expr| {
+                    let res = &self.typifier()[expr];
+                    self.type_resolution_to_string(res)
+                })
                 .collect::<Vec<String>>()
                 .join(", ")
         );
+        let mut inners = components_iter.map(|&c| self.typifier()[c].inner_with(types));
         let mut best = inners.next().unwrap().scalar().ok_or(0_usize)?;
         for (inner, i) in inners.zip(1..) {
             let scalar = inner.scalar().ok_or(i)?;
@@ -339,96 +341,6 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
 }
 
 impl crate::TypeInner {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn automatically_converts_to(
-        &self,
-        goal: &Self,
-        types: &crate::UniqueArena<crate::Type>,
-    ) -> Option<(crate::Scalar, crate::Scalar)> {
-        use crate::ScalarKind as Sk;
-        use crate::TypeInner as Ti;
-
-        
-        
-        
-        
-        
-        let expr_scalar;
-        let goal_scalar;
-        match (self, goal) {
-            (&Ti::Scalar(expr), &Ti::Scalar(goal)) => {
-                expr_scalar = expr;
-                goal_scalar = goal;
-            }
-            (
-                &Ti::Vector {
-                    size: expr_size,
-                    scalar: expr,
-                },
-                &Ti::Vector {
-                    size: goal_size,
-                    scalar: goal,
-                },
-            ) if expr_size == goal_size => {
-                expr_scalar = expr;
-                goal_scalar = goal;
-            }
-            (
-                &Ti::Matrix {
-                    rows: expr_rows,
-                    columns: expr_columns,
-                    scalar: expr,
-                },
-                &Ti::Matrix {
-                    rows: goal_rows,
-                    columns: goal_columns,
-                    scalar: goal,
-                },
-            ) if expr_rows == goal_rows && expr_columns == goal_columns => {
-                expr_scalar = expr;
-                goal_scalar = goal;
-            }
-            (
-                &Ti::Array {
-                    base: expr_base,
-                    size: expr_size,
-                    stride: _,
-                },
-                &Ti::Array {
-                    base: goal_base,
-                    size: goal_size,
-                    stride: _,
-                },
-            ) if expr_size == goal_size => {
-                return types[expr_base]
-                    .inner
-                    .automatically_converts_to(&types[goal_base].inner, types);
-            }
-            _ => return None,
-        }
-
-        match (expr_scalar.kind, goal_scalar.kind) {
-            (Sk::AbstractFloat, Sk::Float) => {}
-            (Sk::AbstractInt, Sk::Sint | Sk::Uint | Sk::AbstractFloat | Sk::Float) => {}
-            _ => return None,
-        }
-
-        log::trace!("      okay: expr {expr_scalar:?}, goal {goal_scalar:?}");
-        Some((expr_scalar, goal_scalar))
-    }
-
     fn automatically_convertible_scalar(
         &self,
         types: &crate::UniqueArena<crate::Type>,

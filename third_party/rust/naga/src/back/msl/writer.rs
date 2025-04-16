@@ -5,6 +5,7 @@ use alloc::{
     vec::Vec,
 };
 use core::{
+    cmp::Ordering,
     fmt::{Display, Error as FmtError, Formatter, Write},
     iter,
 };
@@ -17,7 +18,11 @@ use crate::{
     arena::{Handle, HandleSet},
     back::{self, Baked},
     common,
-    proc::{self, index, ExpressionKindTracker, NameKey, TypeResolution},
+    proc::{
+        self,
+        index::{self, BoundsCheck},
+        NameKey, TypeResolution,
+    },
     valid, FastHashMap, FastHashSet,
 };
 
@@ -598,10 +603,33 @@ impl crate::Type {
     }
 }
 
+#[derive(Clone, Copy)]
 enum FunctionOrigin {
     Handle(Handle<crate::Function>),
     EntryPoint(proc::EntryPointIndex),
 }
+
+trait NameKeyExt {
+    fn local(origin: FunctionOrigin, local_handle: Handle<crate::LocalVariable>) -> NameKey {
+        match origin {
+            FunctionOrigin::Handle(handle) => NameKey::FunctionLocal(handle, local_handle),
+            FunctionOrigin::EntryPoint(idx) => NameKey::EntryPointLocal(idx, local_handle),
+        }
+    }
+
+    
+    
+    
+    
+    fn oob_local_for_type(origin: FunctionOrigin, ty: Handle<crate::Type>) -> NameKey {
+        match origin {
+            FunctionOrigin::Handle(handle) => NameKey::FunctionOobLocal(handle, ty),
+            FunctionOrigin::EntryPoint(idx) => NameKey::EntryPointOobLocal(idx, ty),
+        }
+    }
+}
+
+impl NameKeyExt for NameKey {}
 
 
 
@@ -680,6 +708,7 @@ impl<'a> ExpressionContext<'a> {
             .choose_policy(pointer, &self.module.types, self.info)
     }
 
+    
     fn access_needs_check(
         &self,
         base: Handle<crate::Expression>,
@@ -692,6 +721,19 @@ impl<'a> ExpressionContext<'a> {
             &self.function.expressions,
             self.info,
         )
+    }
+
+    
+    fn bounds_check_iter(
+        &self,
+        chain: Handle<crate::Expression>,
+    ) -> impl Iterator<Item = BoundsCheck> + '_ {
+        index::bounds_check_iter(chain, self.module, self.function, self.info)
+    }
+
+    
+    fn oob_local_types(&self) -> FastHashSet<Handle<crate::Type>> {
+        index::oob_local_types(self.module, self.function, self.info, self.policies)
     }
 
     fn get_packed_vec_kind(&self, expr_handle: Handle<crate::Expression>) -> Option<crate::Scalar> {
@@ -898,6 +940,59 @@ impl<W: Write> Writer<W> {
             put_expression(self, ctx, handle)?;
         }
         write!(self.out, ")")?;
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    fn put_locals(&mut self, context: &ExpressionContext) -> BackendResult {
+        let oob_local_types = context.oob_local_types();
+        for &ty in oob_local_types.iter() {
+            let name_key = NameKey::oob_local_for_type(context.origin, ty);
+            self.names.insert(name_key, self.namer.call("oob"));
+        }
+
+        for (name_key, ty, init) in context
+            .function
+            .local_variables
+            .iter()
+            .map(|(local_handle, local)| {
+                let name_key = NameKey::local(context.origin, local_handle);
+                (name_key, local.ty, local.init)
+            })
+            .chain(oob_local_types.iter().map(|&ty| {
+                let name_key = NameKey::oob_local_for_type(context.origin, ty);
+                (name_key, ty, None)
+            }))
+        {
+            let ty_name = TypeContext {
+                handle: ty,
+                gctx: context.module.to_ctx(),
+                names: &self.names,
+                access: crate::StorageAccess::empty(),
+                first_time: false,
+            };
+            write!(
+                self.out,
+                "{}{} {}",
+                back::INDENT,
+                ty_name,
+                self.names[&name_key]
+            )?;
+            match init {
+                Some(value) => {
+                    write!(self.out, " = ")?;
+                    self.put_expression(value, context, true)?;
+                }
+                None => {
+                    write!(self.out, " = {{}}")?;
+                }
+            };
+            writeln!(self.out, ";")?;
+        }
         Ok(())
     }
 
@@ -1493,13 +1588,31 @@ impl<W: Write> Writer<W> {
                 write!(self.out, "{value}u")?;
             }
             crate::Literal::I32(value) => {
-                write!(self.out, "{value}")?;
+                
+                
+                
+                
+                if value == i32::MIN {
+                    write!(self.out, "({} - 1)", value + 1)?;
+                } else {
+                    write!(self.out, "{value}")?;
+                }
             }
             crate::Literal::U64(value) => {
                 write!(self.out, "{value}uL")?;
             }
             crate::Literal::I64(value) => {
-                write!(self.out, "{value}L")?;
+                
+                
+                
+                
+                
+                
+                if value == i64::MIN {
+                    write!(self.out, "({}L - 1L)", value + 1)?;
+                } else {
+                    write!(self.out, "{value}L")?;
+                }
             }
             crate::Literal::Bool(value) => {
                 write!(self.out, "{value}")?;
@@ -1641,7 +1754,6 @@ impl<W: Write> Writer<W> {
         }
 
         let expression = &context.function.expressions[expr_handle];
-        log::trace!("expression {:?} = {:?}", expr_handle, expression);
         match *expression {
             crate::Expression::Literal(_)
             | crate::Expression::Constant(_)
@@ -1677,7 +1789,42 @@ impl<W: Write> Writer<W> {
                 {
                     write!(self.out, " ? ")?;
                     self.put_access_chain(expr_handle, policy, context)?;
-                    write!(self.out, " : DefaultConstructible()")?;
+                    write!(self.out, " : ")?;
+
+                    if context.resolve_type(base).pointer_space().is_some() {
+                        
+                        
+                        
+                        let result_ty = context.info[expr_handle]
+                            .ty
+                            .inner_with(&context.module.types)
+                            .pointer_base_type();
+                        let result_ty_handle = match result_ty {
+                            Some(TypeResolution::Handle(handle)) => handle,
+                            Some(TypeResolution::Value(_)) => {
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                unreachable!(
+                                    "Expected type {result_ty:?} of access through pointer type {base:?} to be in the arena",
+                                );
+                            }
+                            None => {
+                                unreachable!(
+                                    "Expected access through pointer type {base:?} to return a pointer, but got {result_ty:?}",
+                                )
+                            }
+                        };
+                        let name_key =
+                            NameKey::oob_local_for_type(context.origin, result_ty_handle);
+                        self.out.write_str(&self.names[&name_key])?;
+                    } else {
+                        write!(self.out, "DefaultConstructible()")?;
+                    }
 
                     if !is_scoped {
                         write!(self.out, ")")?;
@@ -1717,14 +1864,7 @@ impl<W: Write> Writer<W> {
                 write!(self.out, "{name}")?;
             }
             crate::Expression::LocalVariable(handle) => {
-                let name_key = match context.origin {
-                    FunctionOrigin::Handle(fun_handle) => {
-                        NameKey::FunctionLocal(fun_handle, handle)
-                    }
-                    FunctionOrigin::EntryPoint(ep_index) => {
-                        NameKey::EntryPointLocal(ep_index, handle)
-                    }
-                };
+                let name_key = NameKey::local(context.origin, handle);
                 let name = &self.names[&name_key];
                 write!(self.out, "{name}")?;
             }
@@ -2628,7 +2768,7 @@ impl<W: Write> Writer<W> {
     #[allow(unused_variables)]
     fn put_bounds_checks(
         &mut self,
-        mut chain: Handle<crate::Expression>,
+        chain: Handle<crate::Expression>,
         context: &ExpressionContext,
         level: back::Level,
         prefix: &'static str,
@@ -2636,60 +2776,36 @@ impl<W: Write> Writer<W> {
         let mut check_written = false;
 
         
-        loop {
-            
-            
-            let (base, guarded_index) = match context.function.expressions[chain] {
-                crate::Expression::Access { base, index } => {
-                    (base, Some(index::GuardedIndex::Expression(index)))
-                }
-                crate::Expression::AccessIndex { base, index } => {
-                    
-                    
-                    let mut base_inner = context.resolve_type(base);
-                    if let crate::TypeInner::Pointer { base, .. } = *base_inner {
-                        base_inner = &context.module.types[base].inner;
-                    }
-                    match *base_inner {
-                        crate::TypeInner::Struct { .. } => (base, None),
-                        _ => (base, Some(index::GuardedIndex::Known(index))),
-                    }
-                }
-                _ => break,
-            };
+        for item in context.bounds_check_iter(chain) {
+            let BoundsCheck {
+                base,
+                index,
+                length,
+            } = item;
 
-            if let Some(index) = guarded_index {
-                if let Some(length) = context.access_needs_check(base, index) {
-                    if check_written {
-                        write!(self.out, " && ")?;
-                    } else {
-                        write!(self.out, "{level}{prefix}")?;
-                        check_written = true;
-                    }
-
-                    
-                    
-                    
-                    write!(self.out, "uint(")?;
-                    self.put_index(index, context, true)?;
-                    self.out.write_str(") < ")?;
-                    match length {
-                        index::IndexableLength::Known(value) => write!(self.out, "{value}")?,
-                        index::IndexableLength::Dynamic => {
-                            let global =
-                                context.function.originating_global(base).ok_or_else(|| {
-                                    Error::GenericValidation(
-                                        "Could not find originating global".into(),
-                                    )
-                                })?;
-                            write!(self.out, "1 + ")?;
-                            self.put_dynamic_array_max_index(global, context)?
-                        }
-                    }
-                }
+            if check_written {
+                write!(self.out, " && ")?;
+            } else {
+                write!(self.out, "{level}{prefix}")?;
+                check_written = true;
             }
 
-            chain = base
+            
+            
+            
+            write!(self.out, "uint(")?;
+            self.put_index(index, context, true)?;
+            self.out.write_str(") < ")?;
+            match length {
+                index::IndexableLength::Known(value) => write!(self.out, "{value}")?,
+                index::IndexableLength::Dynamic => {
+                    let global = context.function.originating_global(base).ok_or_else(|| {
+                        Error::GenericValidation("Could not find originating global".into())
+                    })?;
+                    write!(self.out, "1 + ")?;
+                    self.put_dynamic_array_max_index(global, context)?
+                }
+            }
         }
 
         Ok(check_written)
@@ -5572,7 +5688,6 @@ template <typename A>
                 info: &mod_info[fun_handle],
                 expressions: &fun.expressions,
                 named_expressions: &fun.named_expressions,
-                expr_kind_tracker: ExpressionKindTracker::from_arena(&fun.expressions),
             };
 
             writeln!(self.out)?;
@@ -5676,28 +5791,7 @@ template <typename A>
                 result_struct: None,
             };
 
-            for (local_handle, local) in fun.local_variables.iter() {
-                let ty_name = TypeContext {
-                    handle: local.ty,
-                    gctx: module.to_ctx(),
-                    names: &self.names,
-                    access: crate::StorageAccess::empty(),
-                    first_time: false,
-                };
-                let local_name = &self.names[&NameKey::FunctionLocal(fun_handle, local_handle)];
-                write!(self.out, "{}{} {}", back::INDENT, ty_name, local_name)?;
-                match local.init {
-                    Some(value) => {
-                        write!(self.out, " = ")?;
-                        self.put_expression(value, &context.expression, true)?;
-                    }
-                    None => {
-                        write!(self.out, " = {{}}")?;
-                    }
-                };
-                writeln!(self.out, ";")?;
-            }
-
+            self.put_locals(&context.expression)?;
             self.update_expressions_to_bake(fun, fun_info, &context.expression);
             self.put_block(back::Level(1), &fun.body, &context)?;
             writeln!(self.out, "}}")?;
@@ -5729,7 +5823,6 @@ template <typename A>
                 info: fun_info,
                 expressions: &fun.expressions,
                 named_expressions: &fun.named_expressions,
-                expr_kind_tracker: ExpressionKindTracker::from_arena(&fun.expressions),
             };
 
             self.write_wrapped_functions(module, &ctx)?;
@@ -6386,14 +6479,12 @@ template <typename A>
                     
                     for attribute in vbm.attributes {
                         let location = attribute.shader_location;
-                        let am_option = am_resolved.get(&location);
-                        if am_option.is_none() {
+                        let Some(am) = am_resolved.get(&location) else {
                             
                             
                             
                             continue;
-                        }
-                        let am = am_option.unwrap();
+                        };
                         let attribute_name = &am.name;
                         let attribute_ty_name = &am.ty_name;
 
@@ -6403,36 +6494,62 @@ template <typename A>
                             .expect("Should have generated this unpacking function earlier.");
                         let func_name = &func.name;
 
+                        
+                        
+                        
+                        
+                        
+
+                        let needs_padding_or_truncation = am.dimension.cmp(&func.dimension);
+
+                        if needs_padding_or_truncation != Ordering::Equal {
+                            
+                            
+                            writeln!(
+                                self.out,
+                                "{}// {attribute_ty_name} <- {:?}",
+                                back::Level(2),
+                                attribute.format
+                            )?;
+                        }
+
                         write!(self.out, "{}{attribute_name} = ", back::Level(2),)?;
 
-                        
-                        
-                        
-                        
-                        
-
-                        let needs_truncate_or_padding = am.dimension != func.dimension;
-                        if needs_truncate_or_padding {
+                        if needs_padding_or_truncation == Ordering::Greater {
+                            
                             write!(self.out, "{attribute_ty_name}(")?;
                         }
 
+                        
                         write!(self.out, "{func_name}({elem_name}.data[{offset}]",)?;
                         for i in (offset + 1)..(offset + func.byte_count) {
                             write!(self.out, ", {elem_name}.data[{i}]")?;
                         }
                         write!(self.out, ")")?;
 
-                        if needs_truncate_or_padding {
-                            let zero_value = if am.ty_is_int { "0" } else { "0.0" };
-                            let one_value = if am.ty_is_int { "1" } else { "1.0" };
-                            for i in func.dimension..am.dimension {
+                        match needs_padding_or_truncation {
+                            Ordering::Greater => {
+                                
+                                let zero_value = if am.ty_is_int { "0" } else { "0.0" };
+                                let one_value = if am.ty_is_int { "1" } else { "1.0" };
+                                for i in func.dimension..am.dimension {
+                                    write!(
+                                        self.out,
+                                        ", {}",
+                                        if i == 3 { one_value } else { zero_value }
+                                    )?;
+                                }
+                                write!(self.out, ")")?;
+                            }
+                            Ordering::Less => {
+                                
                                 write!(
                                     self.out,
-                                    ", {}",
-                                    if i == 3 { one_value } else { zero_value }
+                                    ".{}",
+                                    &"xyzw"[0..usize::try_from(am.dimension).unwrap()]
                                 )?;
                             }
-                            write!(self.out, ")")?;
+                            Ordering::Equal => {}
                         }
 
                         writeln!(self.out, ";")?;
@@ -6586,28 +6703,7 @@ template <typename A>
 
             
             
-            for (local_handle, local) in fun.local_variables.iter() {
-                let name = &self.names[&NameKey::EntryPointLocal(ep_index as _, local_handle)];
-                let ty_name = TypeContext {
-                    handle: local.ty,
-                    gctx: module.to_ctx(),
-                    names: &self.names,
-                    access: crate::StorageAccess::empty(),
-                    first_time: false,
-                };
-                write!(self.out, "{}{} {}", back::INDENT, ty_name, name)?;
-                match local.init {
-                    Some(value) => {
-                        write!(self.out, " = ")?;
-                        self.put_expression(value, &context.expression, true)?;
-                    }
-                    None => {
-                        write!(self.out, " = {{}}")?;
-                    }
-                };
-                writeln!(self.out, ";")?;
-            }
-
+            self.put_locals(&context.expression)?;
             self.update_expressions_to_bake(fun, fun_info, &context.expression);
             self.put_block(back::Level(1), &fun.body, &context)?;
             writeln!(self.out, "}}")?;

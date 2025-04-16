@@ -6,7 +6,8 @@ use alloc::{
 };
 use core::num::NonZeroU32;
 
-use crate::common::wgsl::TypeContext;
+use crate::common::wgsl::{TryToWgsl, TypeContext};
+use crate::common::ForDebugWithTypes;
 use crate::front::wgsl::error::{Error, ExpectedToken, InvalidAssignmentType};
 use crate::front::wgsl::index::Index;
 use crate::front::wgsl::parse::number::Number;
@@ -411,6 +412,14 @@ impl TypeContext for ExpressionContext<'_, '_, '_> {
             None => write!(out, "{{anonymous override {handle:?}}}"),
         }
     }
+
+    fn write_unnamed_struct<W: core::fmt::Write>(
+        &self,
+        _: &crate::TypeInner,
+        _: &mut W,
+    ) -> core::fmt::Result {
+        unreachable!("the WGSL front end should always know the type name");
+    }
 }
 
 impl<'source, 'temp, 'out> ExpressionContext<'source, 'temp, 'out> {
@@ -491,6 +500,19 @@ impl<'source, 'temp, 'out> ExpressionContext<'source, 'temp, 'out> {
         }
     }
 
+    
+    
+    
+    
+    
+    fn as_diagnostic_display<T>(
+        &self,
+        value: T,
+    ) -> crate::common::DiagnosticDisplay<(T, crate::proc::GlobalCtx)> {
+        let ctx = self.module.to_ctx();
+        crate::common::DiagnosticDisplay((value, ctx))
+    }
+
     fn append_expression(
         &mut self,
         expr: crate::Expression,
@@ -523,6 +545,19 @@ impl<'source, 'temp, 'out> ExpressionContext<'source, 'temp, 'out> {
             }
             ExpressionContextType::Constant(None) => self.module.to_ctx().eval_expr_to_u32(handle),
             ExpressionContextType::Override => Err(crate::proc::U32EvalError::NonConst),
+        }
+    }
+
+    
+    fn is_const(&self, handle: Handle<crate::Expression>) -> bool {
+        use ExpressionContextType as Ect;
+        match self.expr_type {
+            Ect::Runtime(ref ctx) | Ect::Constant(Some(ref ctx)) => {
+                ctx.local_expression_kind_tracker.is_const(handle)
+            }
+            Ect::Constant(None) | Ect::Override => {
+                self.global_expression_kind_tracker.is_const(handle)
+            }
         }
     }
 
@@ -1281,8 +1316,8 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 if !explicit_inner.equivalent(init_inner, &ectx.module.types) {
                     return Err(Box::new(Error::InitializationTypeMismatch {
                         name: name.span,
-                        expected: ectx.type_inner_to_string(explicit_inner),
-                        got: ectx.type_inner_to_string(init_inner),
+                        expected: ectx.type_to_string(explicit_ty),
+                        got: ectx.type_to_string(init_ty),
                     }));
                 }
                 ty = explicit_ty;
@@ -1490,41 +1525,39 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                     let mut emitter = Emitter::default();
                     emitter.start(&ctx.function.expressions);
 
-                    let value =
-                        self.expression(l.init, &mut ctx.as_expression(block, &mut emitter))?;
-
-                    
-                    
-                    
-                    
-                    
-                    ctx.local_expression_kind_tracker.force_non_const(value);
-
                     let explicit_ty = l
                         .ty
                         .map(|ty| self.resolve_ast_type(ty, &mut ctx.as_const(block, &mut emitter)))
                         .transpose()?;
 
-                    if let Some(ty) = explicit_ty {
-                        let mut ctx = ctx.as_expression(block, &mut emitter);
-                        let init_ty = ctx.register_type(value)?;
-                        if !ctx.module.types[ty]
-                            .inner
-                            .equivalent(&ctx.module.types[init_ty].inner, &ctx.module.types)
-                        {
-                            return Err(Box::new(Error::InitializationTypeMismatch {
-                                name: l.name.span,
-                                expected: ctx.type_to_string(ty),
-                                got: ctx.type_to_string(init_ty),
-                            }));
-                        }
-                    }
+                    let mut ectx = ctx.as_expression(block, &mut emitter);
+
+                    let (_ty, initializer) = self.type_and_init(
+                        l.name,
+                        Some(l.init),
+                        explicit_ty,
+                        AbstractRule::Concretize,
+                        &mut ectx,
+                    )?;
+
+                    
+                    
+                    let initializer =
+                        initializer.expect("type_and_init did not return an initializer");
+
+                    
+                    
+                    
+                    
+                    
+                    ctx.local_expression_kind_tracker
+                        .force_non_const(initializer);
 
                     block.extend(emitter.finish(&ctx.function.expressions));
                     ctx.local_table
-                        .insert(l.handle, Declared::Runtime(Typed::Plain(value)));
+                        .insert(l.handle, Declared::Runtime(Typed::Plain(initializer)));
                     ctx.named_expressions
-                        .insert(value, (l.name.name.to_string(), l.name.span));
+                        .insert(initializer, (l.name.name.to_string(), l.name.span));
 
                     return Ok(());
                 }
@@ -1604,7 +1637,7 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                         c.ty.map(|ast| self.resolve_ast_type(ast, &mut ectx.as_const()))
                             .transpose()?;
 
-                    let (ty, init) = self.type_and_init(
+                    let (_ty, init) = self.type_and_init(
                         c.name,
                         Some(c.init),
                         explicit_ty,
@@ -1616,13 +1649,6 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                     block.extend(emitter.finish(&ctx.function.expressions));
                     ctx.local_table
                         .insert(c.handle, Declared::Const(Typed::Plain(init)));
-                    
-                    
-                    let is_abstract = ctx.module.types[ty].inner.is_abstract(&ctx.module.types);
-                    if !is_abstract {
-                        ctx.named_expressions
-                            .insert(init, (c.name.name.to_string(), c.name.span));
-                    }
                     return Ok(());
                 }
             },
@@ -2271,16 +2297,7 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 
                 
                 
-                let expr_kind_tracker = match ctx.expr_type {
-                    ExpressionContextType::Runtime(ref ctx)
-                    | ExpressionContextType::Constant(Some(ref ctx)) => {
-                        &ctx.local_expression_kind_tracker
-                    }
-                    ExpressionContextType::Constant(None) | ExpressionContextType::Override => {
-                        &ctx.global_expression_kind_tracker
-                    }
-                };
-                if !expr_kind_tracker.is_const(right) {
+                if !ctx.is_const(right) {
                     left = ctx.concretize(left)?;
                 }
             }
@@ -2444,53 +2461,7 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
 
                     crate::Expression::Derivative { axis, ctrl, expr }
                 } else if let Some(fun) = conv::map_standard_fun(function.name) {
-                    let expected = fun.argument_count() as _;
-                    let mut args = ctx.prepare_args(arguments, expected, span);
-
-                    let arg = self.expression(args.next()?, ctx)?;
-                    let arg1 = args
-                        .next()
-                        .map(|x| self.expression(x, ctx))
-                        .ok()
-                        .transpose()?;
-                    let arg2 = args
-                        .next()
-                        .map(|x| self.expression(x, ctx))
-                        .ok()
-                        .transpose()?;
-                    let arg3 = args
-                        .next()
-                        .map(|x| self.expression(x, ctx))
-                        .ok()
-                        .transpose()?;
-
-                    args.finish()?;
-
-                    if fun == crate::MathFunction::Modf || fun == crate::MathFunction::Frexp {
-                        if let Some((size, scalar)) = match *resolve_inner!(ctx, arg) {
-                            crate::TypeInner::Scalar(scalar) => Some((None, scalar)),
-                            crate::TypeInner::Vector { size, scalar, .. } => {
-                                Some((Some(size), scalar))
-                            }
-                            _ => None,
-                        } {
-                            ctx.module.generate_predeclared_type(
-                                if fun == crate::MathFunction::Modf {
-                                    crate::PredeclaredType::ModfResult { size, scalar }
-                                } else {
-                                    crate::PredeclaredType::FrexpResult { size, scalar }
-                                },
-                            );
-                        }
-                    }
-
-                    crate::Expression::Math {
-                        fun,
-                        arg,
-                        arg1,
-                        arg2,
-                        arg3,
-                    }
+                    self.math_function_helper(span, fun, arguments, ctx)?
                 } else if let Some(fun) = Texture::map(function.name) {
                     self.texture_sample_helper(fun, arguments, span, ctx)?
                 } else if let Some((op, cop)) = conv::map_subgroup_operation(function.name) {
@@ -2971,6 +2942,252 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 Ok(Some(expr))
             }
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn math_function_helper(
+        &mut self,
+        span: Span,
+        fun: crate::ir::MathFunction,
+        ast_arguments: &[Handle<ast::Expression<'source>>],
+        ctx: &mut ExpressionContext<'source, '_, '_>,
+    ) -> Result<'source, crate::ir::Expression> {
+        let mut lowered_arguments = Vec::with_capacity(ast_arguments.len());
+        for &arg in ast_arguments {
+            let lowered = self.expression_for_abstract(arg, ctx)?;
+            ctx.grow_types(lowered)?;
+            lowered_arguments.push(lowered);
+        }
+
+        let fun_overloads = fun.overloads();
+        let rule = self.resolve_overloads(span, fun, fun_overloads, &lowered_arguments, ctx)?;
+        self.apply_automatic_conversions_for_call(&rule, &mut lowered_arguments, ctx)?;
+
+        
+        
+        
+        if let crate::proc::Conclusion::Predeclared(predeclared) = rule.conclusion {
+            ctx.module.generate_predeclared_type(predeclared);
+        }
+
+        Ok(crate::Expression::Math {
+            fun,
+            arg: lowered_arguments[0],
+            arg1: lowered_arguments.get(1).cloned(),
+            arg2: lowered_arguments.get(2).cloned(),
+            arg3: lowered_arguments.get(3).cloned(),
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn resolve_overloads<O, F>(
+        &self,
+        span: Span,
+        fun: F,
+        overloads: O,
+        arguments: &[Handle<crate::ir::Expression>],
+        ctx: &ExpressionContext<'source, '_, '_>,
+    ) -> Result<'source, crate::proc::Rule>
+    where
+        O: crate::proc::OverloadSet,
+        F: TryToWgsl + core::fmt::Debug + Copy,
+    {
+        let mut remaining_overloads = overloads.clone();
+        let min_arguments = remaining_overloads.min_arguments();
+        let max_arguments = remaining_overloads.max_arguments();
+        if arguments.len() < min_arguments {
+            return Err(Box::new(Error::WrongArgumentCount {
+                span,
+                expected: min_arguments as u32..max_arguments as u32,
+                found: arguments.len() as u32,
+            }));
+        }
+        if arguments.len() > max_arguments {
+            return Err(Box::new(Error::TooManyArguments {
+                function: fun.to_wgsl_for_diagnostics(),
+                call_span: span,
+                arg_span: ctx.get_expression_span(arguments[max_arguments]),
+                max_arguments: max_arguments as _,
+            }));
+        }
+
+        log::debug!(
+            "Initial overloads: {:#?}",
+            remaining_overloads.for_debug(&ctx.module.types)
+        );
+
+        for (arg_index, &arg) in arguments.iter().enumerate() {
+            let arg_type_resolution = &ctx.typifier()[arg];
+            let arg_inner = arg_type_resolution.inner_with(&ctx.module.types);
+            log::debug!(
+                "Supplying argument {arg_index} of type {:?}",
+                arg_type_resolution.for_debug(&ctx.module.types)
+            );
+            let next_remaining_overloads =
+                remaining_overloads.arg(arg_index, arg_inner, &ctx.module.types);
+
+            
+            
+            
+            
+            
+            
+
+            log::debug!(
+                "Remaining overloads: {:#?}",
+                next_remaining_overloads.for_debug(&ctx.module.types)
+            );
+
+            
+            
+            if next_remaining_overloads.is_empty() {
+                let function = fun.to_wgsl_for_diagnostics();
+                let call_span = span;
+                let arg_span = ctx.get_expression_span(arg);
+                let arg_ty = ctx.as_diagnostic_display(arg_type_resolution).to_string();
+
+                
+                
+                let only_this_argument = overloads.arg(arg_index, arg_inner, &ctx.module.types);
+                if only_this_argument.is_empty() {
+                    
+                    
+                    
+                    let allowed: Vec<String> = overloads
+                        .allowed_args(arg_index, &ctx.module.to_ctx())
+                        .iter()
+                        .map(|ty| ctx.type_resolution_to_string(ty))
+                        .collect();
+
+                    if allowed.is_empty() {
+                        
+                        
+                        
+                        
+                        
+                        unreachable!("expected all overloads to have the same arity");
+                    }
+
+                    
+                    
+                    return Err(Box::new(Error::WrongArgumentType {
+                        function,
+                        call_span,
+                        arg_span,
+                        arg_index: arg_index as u32,
+                        arg_ty,
+                        allowed,
+                    }));
+                }
+
+                
+                
+                
+                
+
+                
+                
+                let allowed: Vec<String> = remaining_overloads
+                    .allowed_args(arg_index, &ctx.module.to_ctx())
+                    .iter()
+                    .map(|ty| ctx.type_resolution_to_string(ty))
+                    .collect();
+
+                
+                
+                let mut remaining_overloads = overloads;
+                for (prior_index, &prior_expr) in arguments.iter().enumerate() {
+                    let prior_type_resolution = &ctx.typifier()[prior_expr];
+                    let prior_ty = prior_type_resolution.inner_with(&ctx.module.types);
+                    remaining_overloads =
+                        remaining_overloads.arg(prior_index, prior_ty, &ctx.module.types);
+                    if remaining_overloads
+                        .arg(arg_index, arg_inner, &ctx.module.types)
+                        .is_empty()
+                    {
+                        
+                        let inconsistent_span = ctx.get_expression_span(arguments[prior_index]);
+                        let inconsistent_ty =
+                            ctx.as_diagnostic_display(prior_type_resolution).to_string();
+
+                        if allowed.is_empty() {
+                            
+                            
+                            
+                            
+                            
+                            
+                            unreachable!("expected all overloads to have the same arity");
+                        }
+
+                        
+                        return Err(Box::new(Error::InconsistentArgumentType {
+                            function,
+                            call_span,
+                            arg_span,
+                            arg_index: arg_index as u32,
+                            arg_ty,
+                            inconsistent_span,
+                            inconsistent_index: prior_index as u32,
+                            inconsistent_ty,
+                            allowed,
+                        }));
+                    }
+                }
+                unreachable!("Failed to eliminate argument type when re-tried");
+            }
+            remaining_overloads = next_remaining_overloads;
+        }
+
+        
+        
+        Ok(remaining_overloads.most_preferred())
+    }
+
+    
+    
+    
+    
+    
+    fn apply_automatic_conversions_for_call(
+        &self,
+        rule: &crate::proc::Rule,
+        arguments: &mut [Handle<crate::ir::Expression>],
+        ctx: &mut ExpressionContext<'source, '_, '_>,
+    ) -> Result<'source, ()> {
+        for (i, argument) in arguments.iter_mut().enumerate() {
+            let goal_inner = rule.arguments[i].inner_with(&ctx.module.types);
+            let converted = match goal_inner.scalar_for_conversions(&ctx.module.types) {
+                Some(goal_scalar) => {
+                    let arg_span = ctx.get_expression_span(*argument);
+                    ctx.try_automatic_conversion_for_leaf_scalar(*argument, goal_scalar, arg_span)?
+                }
+                
+                None => *argument,
+            };
+
+            *argument = converted;
+        }
+
+        Ok(())
     }
 
     fn atomic_pointer(

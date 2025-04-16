@@ -21,9 +21,19 @@ pub enum NameKey {
     Function(Handle<crate::Function>),
     FunctionArgument(Handle<crate::Function>, u32),
     FunctionLocal(Handle<crate::Function>, Handle<crate::LocalVariable>),
+
+    
+    
+    
+    
+    FunctionOobLocal(Handle<crate::Function>, Handle<crate::Type>),
+
     EntryPoint(EntryPointIndex),
     EntryPointLocal(EntryPointIndex, Handle<crate::LocalVariable>),
     EntryPointArgument(EntryPointIndex, u32),
+
+    
+    EntryPointOobLocal(EntryPointIndex, Handle<crate::Type>),
 }
 
 

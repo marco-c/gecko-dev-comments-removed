@@ -20,10 +20,6 @@ impl crate::ScalarKind {
 }
 
 impl crate::Scalar {
-    pub const F16: Self = Self {
-        kind: crate::ScalarKind::Float,
-        width: 2,
-    };
     pub const I32: Self = Self {
         kind: crate::ScalarKind::Sint,
         width: 4,
@@ -31,6 +27,10 @@ impl crate::Scalar {
     pub const U32: Self = Self {
         kind: crate::ScalarKind::Uint,
         width: 4,
+    };
+    pub const F16: Self = Self {
+        kind: crate::ScalarKind::Float,
+        width: 2,
     };
     pub const F32: Self = Self {
         kind: crate::ScalarKind::Float,
@@ -102,6 +102,12 @@ impl crate::TypeInner {
     
     
     
+    
+    
+    
+    
+    
+    
     pub const fn scalar(&self) -> Option<crate::Scalar> {
         use crate::TypeInner as Ti;
         match *self {
@@ -118,6 +124,31 @@ impl crate::TypeInner {
     
     pub fn scalar_width(&self) -> Option<u8> {
         self.scalar().map(|scalar| scalar.width)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn scalar_for_conversions(
+        &self,
+        types: &crate::UniqueArena<crate::Type>,
+    ) -> Option<crate::Scalar> {
+        use crate::TypeInner as Ti;
+        match *self {
+            Ti::Scalar(scalar) | Ti::Vector { scalar, .. } | Ti::Matrix { scalar, .. } => {
+                Some(scalar)
+            }
+            Ti::Array { base, .. } => types[base].inner.scalar_for_conversions(types),
+            _ => None,
+        }
     }
 
     pub const fn pointer_space(&self) -> Option<crate::AddressSpace> {
@@ -325,6 +356,111 @@ impl crate::TypeInner {
             | crate::TypeInner::RayQuery { .. }
             | crate::TypeInner::BindingArray { .. } => false,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn automatically_converts_to(
+        &self,
+        goal: &Self,
+        types: &crate::UniqueArena<crate::Type>,
+    ) -> Option<(crate::Scalar, crate::Scalar)> {
+        use crate::ScalarKind as Sk;
+        use crate::TypeInner as Ti;
+
+        
+        
+        
+        
+        
+        let expr_scalar;
+        let goal_scalar;
+        match (self, goal) {
+            (&Ti::Scalar(expr), &Ti::Scalar(goal)) => {
+                expr_scalar = expr;
+                goal_scalar = goal;
+            }
+            (
+                &Ti::Vector {
+                    size: expr_size,
+                    scalar: expr,
+                },
+                &Ti::Vector {
+                    size: goal_size,
+                    scalar: goal,
+                },
+            ) if expr_size == goal_size => {
+                expr_scalar = expr;
+                goal_scalar = goal;
+            }
+            (
+                &Ti::Matrix {
+                    rows: expr_rows,
+                    columns: expr_columns,
+                    scalar: expr,
+                },
+                &Ti::Matrix {
+                    rows: goal_rows,
+                    columns: goal_columns,
+                    scalar: goal,
+                },
+            ) if expr_rows == goal_rows && expr_columns == goal_columns => {
+                expr_scalar = expr;
+                goal_scalar = goal;
+            }
+            (
+                &Ti::Array {
+                    base: expr_base,
+                    size: expr_size,
+                    stride: _,
+                },
+                &Ti::Array {
+                    base: goal_base,
+                    size: goal_size,
+                    stride: _,
+                },
+            ) if expr_size == goal_size => {
+                return types[expr_base]
+                    .inner
+                    .automatically_converts_to(&types[goal_base].inner, types);
+            }
+            _ => return None,
+        }
+
+        match (expr_scalar.kind, goal_scalar.kind) {
+            (Sk::AbstractFloat, Sk::Float) => {}
+            (Sk::AbstractInt, Sk::Sint | Sk::Uint | Sk::AbstractFloat | Sk::Float) => {}
+            _ => return None,
+        }
+
+        log::trace!("      okay: expr {expr_scalar:?}, goal {goal_scalar:?}");
+        Some((expr_scalar, goal_scalar))
     }
 }
 

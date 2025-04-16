@@ -1,6 +1,12 @@
 
 
+mod diagnostic_debug;
+mod diagnostic_display;
+pub mod predeclared;
 pub mod wgsl;
+
+pub use diagnostic_debug::{DiagnosticDebug, ForDebug, ForDebugWithTypes};
+pub use diagnostic_display::DiagnosticDisplay;
 
 
 pub const fn vector_size_str(size: crate::VectorSize) -> &'static str {
