@@ -107,6 +107,22 @@ void AddHighValuePermission(const nsACString& aOrigin,
 
 bool IsIsolateHighValueSiteEnabled();
 
+
+
+
+
+
+
+
+enum class ValidatePrincipalOptions {
+  AllowNullPtr,  
+  AllowSystem,
+  AllowExpanded,
+};
+bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
+    nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
+    const EnumSet<ValidatePrincipalOptions>& aOptions);
+
 }  
 
 #endif

@@ -16,6 +16,7 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/ThrottledEventQueue.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "nsFocusManager.h"
 #include "nsTHashMap.h"
 
@@ -653,6 +654,11 @@ Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
 
   
   
+  MOZ_DIAGNOSTIC_ASSERT(
+      XRE_IsParentProcess() ||
+          ValidatePrincipalCouldPotentiallyBeLoadedBy(
+              aPrincipal, ContentChild::GetSingleton()->GetRemoteType(), {}),
+      "Attempting to create document with unexpected principal");
 
   if (auto entry = mUseOriginAgentCluster.Lookup(aPrincipal)) {
     return Some(entry.Data());
