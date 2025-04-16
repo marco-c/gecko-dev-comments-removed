@@ -10,11 +10,11 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/UniFFIScaffolding.h"
 #include "mozilla/uniffi/Call.h"
 #include "mozilla/uniffi/Callbacks.h"
 #include "mozilla/uniffi/FfiValue.h"
 #include "mozilla/uniffi/PointerType.h"
-#include "mozilla/dom/UniFFIScaffolding.h"
 #include "mozilla/uniffi/Rust.h"
 
 namespace mozilla::uniffi {
@@ -302,7 +302,7 @@ private:
   {%- endmatch %}
 
 public:
-  void PrepareRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+  void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
     {%- for arg in scaffolding_call.arguments %}
     {{ arg.var_name }}.Lower(aArgs[{{ loop.index0 }}], aError);
     if (aError.Failed()) {
@@ -332,7 +332,7 @@ public:
     {%- endmatch %}
   }
 
-  virtual void ExtractSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
+  virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
     {%- match scaffolding_call.return_type %}
     {%- when Some(return_type) %}
     mUniffiReturnValue.Lift(
@@ -361,7 +361,7 @@ protected:
   
   
   
-  void PrepareArgsAndMakeRustCall(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+  void LowerArgsAndMakeRustCall(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
     {%- for arg in scaffolding_call.arguments %}
     {{ arg.ffi_value_class }} {{ arg.var_name }}{};
     {{ arg.var_name }}.Lower(aArgs[{{ loop.index0 }}], aError);
@@ -388,7 +388,7 @@ protected:
   }
 
 public:
-  void ExtractSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
+  void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
     {%- match scaffolding_call.return_type %}
     {%- when Some(return_type) %}
     mUniffiReturnValue.Lift(
