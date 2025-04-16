@@ -2139,6 +2139,8 @@ class FunctionCompiler {
   }
 
   MDefinition* tableGetAnyRef(uint32_t tableIndex, MDefinition* address) {
+    const TableDesc& table = codeMeta().tables[tableIndex];
+
     
     
     auto* length = loadTableLength(tableIndex);
@@ -2151,7 +2153,8 @@ class FunctionCompiler {
 
     
     auto* elements = loadTableElements(tableIndex);
-    auto* element = MWasmLoadTableElement::New(alloc(), elements, address);
+    auto* element =
+        MWasmLoadTableElement::New(alloc(), elements, address, table.elemType);
     curBlock_->add(element);
     return element;
   }
@@ -2159,6 +2162,8 @@ class FunctionCompiler {
   [[nodiscard]] bool tableSetAnyRef(uint32_t tableIndex, MDefinition* address,
                                     MDefinition* value,
                                     uint32_t lineOrBytecode) {
+    const TableDesc& table = codeMeta().tables[tableIndex];
+
     
     
     auto* length = loadTableLength(tableIndex);
@@ -2173,7 +2178,8 @@ class FunctionCompiler {
     auto* elements = loadTableElements(tableIndex);
 
     
-    auto* prevValue = MWasmLoadTableElement::New(alloc(), elements, address);
+    auto* prevValue =
+        MWasmLoadTableElement::New(alloc(), elements, address, table.elemType);
     curBlock_->add(prevValue);
 
     
