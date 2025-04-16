@@ -1185,8 +1185,12 @@ var gIdentityHandler = {
   },
 
   setURI(uri) {
-    if (uri instanceof Ci.nsINestedURI) {
-      uri = uri.QueryInterface(Ci.nsINestedURI).innermostURI;
+    
+    
+    
+    
+    while (uri instanceof Ci.nsINestedURI && !uri.schemeIs("about")) {
+      uri = uri.QueryInterface(Ci.nsINestedURI).innerURI;
     }
     this._uri = uri;
 
@@ -1197,7 +1201,7 @@ var gIdentityHandler = {
       this._uriHasHost = false;
     }
 
-    if (uri.schemeIs("about") || uri.schemeIs("moz-safe-about")) {
+    if (uri.schemeIs("about")) {
       let module = E10SUtils.getAboutModule(uri);
       if (module) {
         let flags = module.getURIFlags(uri);
