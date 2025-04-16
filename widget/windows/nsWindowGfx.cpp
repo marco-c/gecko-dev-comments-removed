@@ -199,7 +199,12 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     region.OrWith(translucentRegion);
     mClearedRegion = std::move(translucentRegion);
 
-    if (!regionToClear.IsEmpty()) {
+    
+    
+    
+    
+    if (!regionToClear.IsEmpty() &&
+        renderer->GetBackendType() != LayersBackend::LAYERS_NONE) {
       auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
       
       
