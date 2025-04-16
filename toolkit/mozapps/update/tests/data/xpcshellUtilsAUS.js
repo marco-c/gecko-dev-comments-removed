@@ -456,6 +456,7 @@ var gTestFilesCompleteSuccess = [
     compareFile: FILE_COMPLETE_EXE,
     originalPerms: 0o777,
     comparePerms: 0o755,
+    skipFileVerification: "macosx",
   },
   {
     description: "Added by update.manifest (add)",
@@ -478,6 +479,7 @@ var gTestFilesCompleteSuccess = [
     compareFile: FILE_COMPLETE_EXE,
     originalPerms: 0o777,
     comparePerms: 0o755,
+    skipFileVerification: "macosx",
   },
   {
     description: "Added by update.manifest (add)",
@@ -668,6 +670,7 @@ var gTestFilesPartialSuccess = [
     compareFile: FILE_PARTIAL_EXE,
     originalPerms: 0o755,
     comparePerms: 0o755,
+    skipFileVerification: "macosx",
   },
   {
     description: "Patched by update.manifest (patch)",
@@ -679,6 +682,7 @@ var gTestFilesPartialSuccess = [
     compareFile: FILE_PARTIAL_EXE,
     originalPerms: 0o755,
     comparePerms: 0o755,
+    skipFileVerification: "macosx",
   },
   {
     description: "Added by update.manifest (add)",
@@ -2003,6 +2007,21 @@ function stripQuarantineBitFromPath(aPath) {
   xattrBin.initWithPath("/usr/bin/xattr");
   stripQuarantineBitProcess.init(xattrBin);
   stripQuarantineBitProcess.run(true, args, args.length);
+}
+
+function selfSignAppBundle(aPath) {
+  if (AppConstants.platform != "macosx") {
+    do_throw("macOS-only function called by a different platform!");
+  }
+
+  let args = ["--deep", "-fs", "-", aPath];
+  let codesignProcess = Cc["@mozilla.org/process/util;1"].createInstance(
+    Ci.nsIProcess
+  );
+  let codesignBin = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  codesignBin.initWithPath("/usr/bin/codesign");
+  codesignProcess.init(codesignBin);
+  codesignProcess.run(true, args, args.length);
 }
 
 
@@ -3335,10 +3354,7 @@ async function setupUpdaterTest(
     gUpdateBin = copyTestUpdaterToBinDir();
   }
 
-  if (AppConstants.platform == "macosx") {
-    stripQuarantineBitFromPath(afterApplyBinDir.parent.parent.path);
-  }
-
+  let filesWithCompareContents = [];
   gTestFiles.forEach(function SUT_TF_FE(aTestFile) {
     debugDump("start - setup test file: " + aTestFile.fileName);
     if (aTestFile.originalFile || aTestFile.originalContents) {
@@ -3365,6 +3381,18 @@ async function setupUpdaterTest(
       } else {
         testFile = getApplyDirFile(aTestFile.relPathDir + aTestFile.fileName);
         writeFile(testFile, aTestFile.originalContents);
+        if (
+          AppConstants.platform == "macosx" &&
+          aTestFile.originalContents == aTestFile.compareContents
+        ) {
+          
+          
+          
+          filesWithCompareContents.push({
+            memFile: aTestFile,
+            diskFile: testFile,
+          });
+        }
       }
 
       
@@ -3389,7 +3417,17 @@ async function setupUpdaterTest(
           aTestFile.originalContents = fileContents;
         }
         if (!aTestFile.compareContents && !aTestFile.compareFile) {
-          aTestFile.compareContents = fileContents;
+          if (AppConstants.platform == "macosx") {
+            
+            
+            
+            filesWithCompareContents.push({
+              memFile: aTestFile,
+              diskFile: testFile,
+            });
+          } else {
+            aTestFile.compareContents = fileContents;
+          }
         }
         if (!aTestFile.comparePerms) {
           aTestFile.comparePerms = testFile.permissions;
@@ -3399,15 +3437,6 @@ async function setupUpdaterTest(
     debugDump("finish - setup test file: " + aTestFile.fileName);
   });
 
-  
-  
-  if (AppConstants.platform == "macosx") {
-    await IOUtils.setMacXAttr(
-      getApplyDirFile().path,
-      MAC_APP_XATTR_KEY,
-      new TextEncoder().encode(MAC_APP_XATTR_VALUE)
-    );
-  }
   
   
   gTestDirs.forEach(function SUT_TD_FE(aTestDir) {
@@ -3473,6 +3502,23 @@ async function setupUpdaterTest(
     }
     return false;
   }, "Waiting to setup app files");
+
+  if (AppConstants.platform == "macosx") {
+    let bundlePath = afterApplyBinDir.parent.parent.path;
+    stripQuarantineBitFromPath(bundlePath);
+    selfSignAppBundle(bundlePath);
+    filesWithCompareContents.forEach(elem => {
+      elem.memFile.originalContents = readFileBytes(elem.diskFile);
+      elem.memFile.compareContents = elem.memFile.originalContents;
+    });
+    
+    
+    await IOUtils.setMacXAttr(
+      getApplyDirFile().path,
+      MAC_APP_XATTR_KEY,
+      new TextEncoder().encode(MAC_APP_XATTR_VALUE)
+    );
+  }
 
   debugDump("finish - updater test setup");
 }
@@ -3884,32 +3930,37 @@ function checkFilesAfterUpdateSuccess(
         testFile.exists(),
         MSG_SHOULD_EXIST + getMsgPath(testFile.path)
       );
-
-      
-      
-      if (AppConstants.platform != "win" && aTestFile.comparePerms) {
+      if (
+        !aTestFile.skipFileVerification ||
+        !aTestFile.skipFileVerification.includes(AppConstants.platform)
+      ) {
         
-        Assert.equal(
-          "0o" + (testFile.permissions & 0xfff).toString(8),
-          "0o" + (aTestFile.comparePerms & 0xfff).toString(8),
-          "the file permissions" + MSG_SHOULD_EQUAL
-        );
-      }
+        
+        if (AppConstants.platform != "win" && aTestFile.comparePerms) {
+          
+          Assert.equal(
+            "0o" + (testFile.permissions & 0xfff).toString(8),
+            "0o" + (aTestFile.comparePerms & 0xfff).toString(8),
+            "the file permissions" + MSG_SHOULD_EQUAL
+          );
+        }
 
-      let fileContents1 = readFileBytes(testFile);
-      let fileContents2 = aTestFile.compareFile
-        ? readFileBytes(getTestDirFile(aTestFile.compareFile))
-        : aTestFile.compareContents;
-      
-      
-      if (fileContents1 == fileContents2) {
-        Assert.ok(true, "the file contents" + MSG_SHOULD_EQUAL);
-      } else {
-        Assert.equal(
-          fileContents1,
-          fileContents2,
-          "the file contents" + MSG_SHOULD_EQUAL
-        );
+        let fileContents1 = readFileBytes(testFile);
+        let fileContents2 = aTestFile.compareFile
+          ? readFileBytes(getTestDirFile(aTestFile.compareFile))
+          : aTestFile.compareContents;
+
+        
+        
+        if (fileContents1 == fileContents2) {
+          Assert.ok(true, "the file contents" + MSG_SHOULD_EQUAL);
+        } else {
+          Assert.equal(
+            fileContents1,
+            fileContents2,
+            "the file contents" + MSG_SHOULD_EQUAL
+          );
+        }
       }
     } else {
       Assert.ok(
@@ -4026,32 +4077,37 @@ function checkFilesAfterUpdateFailure(
         testFile.exists(),
         MSG_SHOULD_EXIST + getMsgPath(testFile.path)
       );
-
-      
-      
-      if (AppConstants.platform != "win" && aTestFile.comparePerms) {
+      if (
+        !aTestFile.skipFileVerification ||
+        !aTestFile.skipFileVerification.includes(AppConstants.platform)
+      ) {
         
-        Assert.equal(
-          testFile.permissions & 0xfff,
-          aTestFile.comparePerms & 0xfff,
-          "the file permissions" + MSG_SHOULD_EQUAL
-        );
-      }
+        
+        if (AppConstants.platform != "win" && aTestFile.comparePerms) {
+          
+          Assert.equal(
+            testFile.permissions & 0xfff,
+            aTestFile.comparePerms & 0xfff,
+            "the file permissions" + MSG_SHOULD_EQUAL
+          );
+        }
 
-      let fileContents1 = readFileBytes(testFile);
-      let fileContents2 = aTestFile.compareFile
-        ? readFileBytes(getTestDirFile(aTestFile.compareFile))
-        : aTestFile.compareContents;
-      
-      
-      if (fileContents1 == fileContents2) {
-        Assert.ok(true, "the file contents" + MSG_SHOULD_EQUAL);
-      } else {
-        Assert.equal(
-          fileContents1,
-          fileContents2,
-          "the file contents" + MSG_SHOULD_EQUAL
-        );
+        let fileContents1 = readFileBytes(testFile);
+        let fileContents2 = aTestFile.compareFile
+          ? readFileBytes(getTestDirFile(aTestFile.compareFile))
+          : aTestFile.compareContents;
+
+        
+        
+        if (fileContents1 == fileContents2) {
+          Assert.ok(true, "the file contents" + MSG_SHOULD_EQUAL);
+        } else {
+          Assert.equal(
+            fileContents1,
+            fileContents2,
+            "the file contents" + MSG_SHOULD_EQUAL
+          );
+        }
       }
     } else {
       Assert.ok(
