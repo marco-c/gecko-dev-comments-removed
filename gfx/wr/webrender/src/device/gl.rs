@@ -2169,6 +2169,7 @@ impl Device {
         
         
         if cfg!(any(target_arch = "arm", target_arch = "aarch64"))
+            && cfg!(target_os = "android")
             && being_profiled
             && !using_wrapper
         {
