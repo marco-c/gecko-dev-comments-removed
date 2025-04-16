@@ -115,6 +115,7 @@ add_task(async function testClipboardPasteIntoChatShortcut() {
   const shortcutTextArea = document.querySelector(
     ".ask-chat-shortcuts-custom-prompt"
   );
+  shortcutTextArea.value = "";
   shortcutTextArea.focus();
   
   
