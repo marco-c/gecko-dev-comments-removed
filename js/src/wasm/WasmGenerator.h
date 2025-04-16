@@ -219,6 +219,14 @@ class MOZ_STACK_CLASS ModuleGenerator {
   };
 
   
+  struct CodeBlockResult {
+    UniqueCodeBlock codeBlock;
+    UniqueLinkData linkData;
+    FuncIonPerfSpewerVector funcIonSpewers;
+    FuncBaselinePerfSpewerVector funcBaselineSpewers;
+  };
+
+  
   SharedCompileArgs const compileArgs_;
   const CompileState compileState_;
   UniqueChars* const error_;
@@ -239,8 +247,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   CallRefMetricsRangeVector funcDefCallRefMetrics_;
   AllocSitesRangeVector funcDefAllocSites_;
   FuncImportVector funcImports_;
-  UniqueLinkData sharedStubsLinkData_;
-  UniqueCodeBlock sharedStubsCodeBlock_;
+  CodeBlockResult sharedStubs_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
   FeatureUsage featureUsage_;
 
@@ -291,8 +298,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   [[nodiscard]] bool startCodeBlock(CodeBlockKind kind);
   
   
-  
-  UniqueCodeBlock finishCodeBlock(UniqueLinkData* linkData);
+  [[nodiscard]] bool finishCodeBlock(CodeBlockResult* result);
 
   
   
@@ -306,8 +312,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   [[nodiscard]] bool startPartialTier(uint32_t funcIndex);
   
-  
-  UniqueCodeBlock finishTier(UniqueLinkData* linkData, TierStats* tierStats);
+  [[nodiscard]] bool finishTier(TierStats* tierStats, CodeBlockResult* result);
 
   bool isAsmJS() const { return codeMeta_->isAsmJS(); }
   Tier tier() const { return compilerEnv_->tier(); }

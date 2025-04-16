@@ -112,52 +112,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
   
   MaybeBytecodeRange codeSectionRange;
-  
-  
-  
-  SharedBytes codeSectionBytecode;
-
-  
-  
-  
-  BytecodeRangeVector funcDefRanges;
-
-  
-  
-  
-  FeatureUsageVector funcDefFeatureUsages;
-
-  
-  
-  
-  
-  CallRefMetricsRangeVector funcDefCallRefs;
-
-  
-  
-  
-  
-  
-  AllocSitesRangeVector funcDefAllocSites;
-
-  
-  
-  
-  BytecodeBuffer debugBytecode;
-
-  
-  
-  
-  
-  
-  
-  MutableCallRefHints callRefHints;
-
-  
-  bool debugEnabled;
-  
-  
-  ModuleHash debugHash;
 
   
   
@@ -185,12 +139,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   uint32_t instanceDataLength;
 
-  
-  uint32_t numCallRefMetrics;
-
-  
-  uint32_t numAllocSites;
-
   explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
                         ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
@@ -198,9 +146,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         numFuncImports(0),
         funcImportsAreJS(false),
         numGlobalImports(0),
-        callRefHints(nullptr),
-        debugEnabled(false),
-        debugHash(),
         funcDefsOffsetStart(UINT32_MAX),
         funcImportsOffsetStart(UINT32_MAX),
         funcExportsOffsetStart(UINT32_MAX),
@@ -208,9 +153,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         memoriesOffsetStart(UINT32_MAX),
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
-        instanceDataLength(UINT32_MAX),
-        numCallRefMetrics(UINT32_MAX),
-        numAllocSites(UINT32_MAX) {}
+        instanceDataLength(UINT32_MAX) {}
 
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!types);
@@ -266,31 +209,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   const FuncType& getFuncType(uint32_t funcIndex) const {
     return getFuncTypeDef(funcIndex).funcType();
   }
-  uint32_t funcBytecodeOffset(uint32_t funcIndex) const {
-    if (funcIndex < numFuncImports) {
-      return 0;
-    }
-    uint32_t funcDefIndex = funcIndex - numFuncImports;
-    return funcDefRanges[funcDefIndex].start;
-  }
-  const BytecodeRange& funcDefRange(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= numFuncImports);
-    uint32_t funcDefIndex = funcIndex - numFuncImports;
-    return funcDefRanges[funcDefIndex];
-  }
-  BytecodeSpan funcDefBody(uint32_t funcIndex) const {
-    return funcDefRange(funcIndex)
-        .relativeTo(*codeSectionRange)
-        .toSpan(*codeSectionBytecode);
-  }
-  FeatureUsage funcDefFeatureUsage(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= numFuncImports);
-    uint32_t funcDefIndex = funcIndex - numFuncImports;
-    return funcDefFeatureUsages[funcDefIndex];
-  }
-  
-  
-  uint32_t findFuncIndex(uint32_t bytecodeOffset) const;
 
   BuiltinModuleFuncId knownFuncImport(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex < numFuncImports);
@@ -300,35 +218,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     return knownFuncImports[funcIndex];
   }
 
-  CallRefMetricsRange getFuncDefCallRefs(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= numFuncImports);
-    uint32_t funcDefIndex = funcIndex - numFuncImports;
-    return funcDefCallRefs[funcDefIndex];
-  }
-
-  AllocSitesRange getFuncDefAllocSites(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= numFuncImports);
-    uint32_t funcDefIndex = funcIndex - numFuncImports;
-    return funcDefAllocSites[funcDefIndex];
-  }
-
-  bool hasFuncDefAllocSites() const { return !funcDefAllocSites.empty(); }
-
   
   uint32_t findFuncExportIndex(uint32_t funcIndex) const;
 
   
   uint32_t numExportedFuncs() const { return exportedFuncIndices.length(); }
-
-  CallRefHint getCallRefHint(uint32_t callRefIndex) const {
-    if (!callRefHints) {
-      return CallRefHint();
-    }
-    return CallRefHint::fromRepr(callRefHints[callRefIndex]);
-  }
-  void setCallRefHint(uint32_t callRefIndex, CallRefHint hint) const {
-    callRefHints[callRefIndex] = hint.toRepr();
-  }
 
   size_t codeSectionSize() const {
     if (codeSectionRange) {
@@ -340,6 +234,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   bool getFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
+                          const ShareableBytes* nameSectionPayload,
                           UTF8Bytes* name) const;
 
   uint32_t offsetOfFuncDefInstanceData(uint32_t funcIndex) const {
@@ -419,7 +314,102 @@ struct CodeTailMetadata : public ShareableBase<CodeTailMetadata> {
   SharedCodeMetadata codeMeta;
 
   
+  SharedBytes codeSectionBytecode;
+
+  
+  bool debugEnabled;
+
+  
+  
+  ModuleHash debugHash;
+
+  
+  BytecodeBuffer debugBytecode;
+
+  
   mutable InliningBudget inliningBudget;
+
+  
+  BytecodeRangeVector funcDefRanges;
+
+  
+  FeatureUsageVector funcDefFeatureUsages;
+
+  
+  
+  CallRefMetricsRangeVector funcDefCallRefs;
+
+  
+  
+  
+  AllocSitesRangeVector funcDefAllocSites;
+
+  
+  
+  
+  
+  MutableCallRefHints callRefHints;
+
+  
+  
+  
+  SharedBytes nameSectionPayload;
+
+  
+  uint32_t numCallRefMetrics;
+
+  
+  uint32_t numAllocSites;
+
+  
+  
+  uint32_t findFuncIndex(uint32_t bytecodeOffset) const;
+  uint32_t funcBytecodeOffset(uint32_t funcIndex) const {
+    if (funcIndex < codeMeta->numFuncImports) {
+      return 0;
+    }
+    uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
+    return funcDefRanges[funcDefIndex].start;
+  }
+  const BytecodeRange& funcDefRange(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
+    return funcDefRanges[funcDefIndex];
+  }
+  BytecodeSpan funcDefBody(uint32_t funcIndex) const {
+    return funcDefRange(funcIndex)
+        .relativeTo(*codeMeta->codeSectionRange)
+        .toSpan(*codeSectionBytecode);
+  }
+  FeatureUsage funcDefFeatureUsage(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
+    return funcDefFeatureUsages[funcDefIndex];
+  }
+
+  CallRefMetricsRange getFuncDefCallRefs(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
+    return funcDefCallRefs[funcDefIndex];
+  }
+
+  AllocSitesRange getFuncDefAllocSites(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
+    return funcDefAllocSites[funcDefIndex];
+  }
+
+  bool hasFuncDefAllocSites() const { return !funcDefAllocSites.empty(); }
+
+  CallRefHint getCallRefHint(uint32_t callRefIndex) const {
+    if (!callRefHints) {
+      return CallRefHint();
+    }
+    return CallRefHint::fromRepr(callRefHints[callRefIndex]);
+  }
+  void setCallRefHint(uint32_t callRefIndex, CallRefHint hint) const {
+    callRefHints[callRefIndex] = hint.toRepr();
+  }
 };
 
 using MutableCodeTailMetadata = RefPtr<CodeTailMetadata>;

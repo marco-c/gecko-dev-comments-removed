@@ -543,7 +543,7 @@ static bool WasmHandleDebugTrap() {
   Frame* fp = activation->wasmExitFP();
   Instance* instance = GetNearestEffectiveInstance(fp);
   const Code& code = instance->code();
-  MOZ_ASSERT(code.codeMeta().debugEnabled);
+  MOZ_ASSERT(code.debugEnabled());
 
   
   

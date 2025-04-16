@@ -54,7 +54,7 @@ static const Instance* ExtractCalleeInstanceFromFrameWithInstances(
       FrameWithInstances::calleeInstanceOffset());
 }
 
-static uint32_t FuncIndexForLineOrBytecode(const CodeMetadata& codeMeta,
+static uint32_t FuncIndexForLineOrBytecode(const Code& code,
                                            uint32_t lineOrBytecode,
                                            const CodeRange& codeRange) {
   
@@ -62,11 +62,12 @@ static uint32_t FuncIndexForLineOrBytecode(const CodeMetadata& codeMeta,
   
   
   
-  if (codeMeta.isAsmJS() || lineOrBytecode == CallSite::NO_LINE_OR_BYTECODE) {
+  if (code.codeMeta().isAsmJS() ||
+      lineOrBytecode == CallSite::NO_LINE_OR_BYTECODE) {
     
     return codeRange.funcIndex();
   }
-  return codeMeta.findFuncIndex(lineOrBytecode);
+  return code.codeTailMeta().findFuncIndex(lineOrBytecode);
 }
 
 
@@ -92,8 +93,8 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
 
     const CodeRange* codeRange = code_->lookupFuncRange(unwoundPC);
     lineOrBytecode_ = trapData.trapSiteDesc.bytecodeOffset.offset();
-    funcIndex_ = FuncIndexForLineOrBytecode(code_->codeMeta(), lineOrBytecode_,
-                                            *codeRange);
+    funcIndex_ =
+        FuncIndexForLineOrBytecode(*code_, lineOrBytecode_, *codeRange);
     if (trapData.trapSiteDesc.inlinedCallerOffsets) {
       inlinedCallerOffsets_ =
           trapData.trapSiteDesc.inlinedCallerOffsets->span();
@@ -152,8 +153,8 @@ WasmFrameIter::WasmFrameIter(FrameWithInstances* fp, void* returnAddress)
 
   MOZ_ASSERT(code_ == &instance_->code());
   lineOrBytecode_ = site.lineOrBytecode();
-  funcIndex_ = FuncIndexForLineOrBytecode(code_->codeMeta(),
-                                          site.lineOrBytecode(), *codeRange);
+  funcIndex_ =
+      FuncIndexForLineOrBytecode(*code_, site.lineOrBytecode(), *codeRange);
   inlinedCallerOffsets_ = site.inlinedCallerOffsets();
 
   MOZ_ASSERT(!done());
@@ -206,7 +207,7 @@ void WasmFrameIter::popFrame() {
   
   if (enableInlinedFrames_ && inlinedCallerOffsets_.size() > 0) {
     
-    MOZ_ASSERT(!code_->codeMeta().debugEnabled);
+    MOZ_ASSERT(!code_->debugEnabled());
 
     
     
@@ -219,7 +220,7 @@ void WasmFrameIter::popFrame() {
     lineOrBytecode_ = last->offset();
     inlinedCallerOffsets_ = BytecodeOffsetSpan(first, last);
     MOZ_ASSERT(lineOrBytecode_ != CallSite::NO_LINE_OR_BYTECODE);
-    funcIndex_ = code_->codeMeta().findFuncIndex(lineOrBytecode_);
+    funcIndex_ = code_->codeTailMeta().findFuncIndex(lineOrBytecode_);
     
     
     currentFrameStackSwitched_ = false;
@@ -350,8 +351,8 @@ void WasmFrameIter::popFrame() {
   MOZ_ASSERT(code_ == &instance_->code());
 
   lineOrBytecode_ = site.lineOrBytecode();
-  funcIndex_ = FuncIndexForLineOrBytecode(code_->codeMeta(),
-                                          site.lineOrBytecode(), *codeRange);
+  funcIndex_ =
+      FuncIndexForLineOrBytecode(*code_, site.lineOrBytecode(), *codeRange);
   inlinedCallerOffsets_ = site.inlinedCallerOffsets();
   failedUnwindSignatureMismatch_ = false;
 
@@ -361,7 +362,7 @@ void WasmFrameIter::popFrame() {
 bool WasmFrameIter::hasSourceInfo() const {
   
   
-  return enableInlinedFrames_ || code_->codeMeta().debugEnabled;
+  return enableInlinedFrames_ || code_->debugEnabled();
 }
 
 const char* WasmFrameIter::filename() const {
@@ -439,7 +440,7 @@ bool WasmFrameIter::debugEnabled() const {
   
   
   
-  if (!code_->codeMeta().debugEnabled) {
+  if (!code_->debugEnabled()) {
     return false;
   }
 
