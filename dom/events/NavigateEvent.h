@@ -96,6 +96,10 @@ class NavigateEvent final : public Event {
 
   nsTArray<RefPtr<NavigationInterceptHandler>>& NavigationHandlerList();
 
+  AbortController* AbortController() const;
+
+  bool HasBeenDispatched() const;
+
   void Finish(bool aDidFulfill);
 
  private:
@@ -133,7 +137,7 @@ class NavigateEvent final : public Event {
   Maybe<NavigationScrollBehavior> mScrollBehavior;
 
   
-  RefPtr<AbortController> mAbortController;
+  RefPtr<dom::AbortController> mAbortController;
 
   
   nsCOMPtr<nsIStructuredCloneContainer> mClassicHistoryAPIState;
