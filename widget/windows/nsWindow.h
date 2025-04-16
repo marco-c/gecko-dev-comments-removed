@@ -144,7 +144,7 @@ class nsWindow final : public nsBaseWidget,
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
   MOZ_DECLARE_REFCOUNTED_TYPENAME(nsWindow)
 
-  explicit nsWindow(bool aIsChildWindow = false);
+  nsWindow();
 
   void SendAnAPZEvent(mozilla::InputData& aEvent);
 
@@ -873,9 +873,6 @@ class nsWindow final : public nsBaseWidget,
 
   
   bool mSendingSetText = false;
-
-  
-  bool mIsChildWindow : 1;
 
   
   bool mPIPWindow : 1;
