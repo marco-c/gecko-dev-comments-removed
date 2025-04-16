@@ -15,6 +15,7 @@
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkerCSPContext.h"
 
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
@@ -40,7 +41,6 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-class CSPInfo;
 }  
 
 namespace dom {
@@ -71,12 +71,7 @@ struct WorkerLoadInfoData {
   nsCOMPtr<nsIScriptContext> mScriptContext;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
-  
-  
-  
-  
-  
-  UniquePtr<mozilla::ipc::CSPInfo> mCSPInfo;
+  UniquePtr<WorkerCSPContext> mCSPContext;
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
