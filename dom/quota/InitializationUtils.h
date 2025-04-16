@@ -25,9 +25,9 @@ RefPtr<UniversalDirectoryLock> CreateDirectoryLockForInitialization(
     const OriginScope& aOriginScope, const bool aAlreadyInitialized,
     UninitChecker&& aUninitChecker, PromiseArrayIter&& aPromiseArrayIter) {
   RefPtr<UniversalDirectoryLock> directoryLock =
-      aQuotaManager.CreateDirectoryLockInternal(aPersistenceScope, aOriginScope,
-                                                Nullable<Client::Type>(),
-                                                 false);
+      aQuotaManager.CreateDirectoryLockInternal(
+          aPersistenceScope, aOriginScope, ClientStorageScope::CreateFromNull(),
+           false);
 
   auto prepareInfo = directoryLock->Prepare();
 

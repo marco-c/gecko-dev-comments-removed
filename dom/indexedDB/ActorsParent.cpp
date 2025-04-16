@@ -13104,7 +13104,7 @@ RefPtr<UniversalDirectoryLockPromise> Maintenance::OpenStorageDirectory(
   
   return quotaManager->OpenStorageDirectory(
       aPersistenceScope, OriginScope::FromNull(),
-      Nullable<Client::Type>(Client::IDB),
+      ClientStorageScope::CreateFromClient(Client::IDB),
        false, aInitializeOrigins, DirectoryLockCategory::None,
       SomeRef(mPendingDirectoryLock));
 }
