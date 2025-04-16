@@ -510,6 +510,20 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
   }
 
   
+
+  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Verbose,
+              "{}: Top level window load: aStateFlags: {}, aStatus: {:#x}",
+              __PRETTY_FUNCTION__, aStateFlags, static_cast<uint32_t>(aStatus));
+
+  
+  if (NS_FAILED(aStatus)) {
+    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Verbose,
+                "{}: Discarding failed load. aStatus: {:#x}",
+                __PRETTY_FUNCTION__, static_cast<uint32_t>(aStatus));
+    return NS_OK;
+  }
+
+  
   dom::BrowsingContext* browsingContext = aWebProgress->GetBrowsingContext();
   NS_ENSURE_TRUE(browsingContext, NS_ERROR_FAILURE);
 
