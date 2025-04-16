@@ -17,6 +17,12 @@ const { isBrowsingContextPartOfContext } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
   { global: "contextual" }
 );
+loader.lazyRequireGetter(
+  this,
+  "TRACER_LOG_METHODS",
+  "resource://devtools/shared/specs/tracer.js",
+  true
+);
 const { SUPPORTED_DATA } = SessionDataHelpers;
 const { TARGET_CONFIGURATION } = SUPPORTED_DATA;
 const LOG_DISABLED = -1;
@@ -538,6 +544,13 @@ class TargetConfigurationActor extends Actor {
       this.#pageMessagesPrefValue = undefined;
       return;
     }
+
+    
+    
+    if (options.logMethod != TRACER_LOG_METHODS.PROFILER) {
+      return;
+    }
+
     
     
     
