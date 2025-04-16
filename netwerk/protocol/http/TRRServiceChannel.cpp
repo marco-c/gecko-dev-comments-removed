@@ -387,6 +387,9 @@ nsresult TRRServiceChannel::BeginConnect() {
   mRequestHead.SetHTTPS(isHttps);
   mRequestHead.SetOrigin(scheme, host, port);
 
+  gHttpHandler->MaybeAddAltSvcForTesting(mURI, mUsername, mPrivateBrowsing,
+                                         mCallbacks, OriginAttributes());
+
   RefPtr<nsHttpConnectionInfo> connInfo = new nsHttpConnectionInfo(
       host, port, ""_ns, mUsername, proxyInfo, OriginAttributes(), isHttps);
   
@@ -1122,7 +1125,8 @@ TRRServiceChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
   return NS_ERROR_ABORT;
 }
 
-static void TelemetryReport(nsITimedChannel* aTimedChannel) {
+static void TelemetryReport(nsITimedChannel* aTimedChannel,
+                            uint64_t aRequestSize, uint64_t aTransferSize) {
   TimeStamp asyncOpen;
   nsresult rv = aTimedChannel->GetAsyncOpen(&asyncOpen);
   if (NS_FAILED(rv)) {
@@ -1208,6 +1212,8 @@ static void TelemetryReport(nsITimedChannel* aTimedChannel) {
           .AccumulateRawDuration(responseStart - asyncOpen);
     }
   }
+  glean::networking::trr_request_size.Get(key).Accumulate(aRequestSize);
+  glean::networking::trr_response_size.Get(key).Accumulate(aTransferSize);
 }
 
 NS_IMETHODIMP
@@ -1219,6 +1225,8 @@ TRRServiceChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   if (mCanceled || NS_FAILED(mStatus)) status = mStatus;
 
   mTransactionTimings = mTransaction->Timings();
+  mRequestSize = mTransaction->GetRequestSize();
+  mTransferSize = mTransaction->GetTransferSize();
   mTransaction = nullptr;
   mTransactionPump = nullptr;
 
@@ -1240,7 +1248,7 @@ TRRServiceChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   }
 
   ReleaseListeners();
-  TelemetryReport(this);
+  TelemetryReport(this, mRequestSize, mTransferSize);
   return NS_OK;
 }
 
