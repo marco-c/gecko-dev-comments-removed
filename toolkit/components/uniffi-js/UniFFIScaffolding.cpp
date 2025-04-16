@@ -12,9 +12,9 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/UniFFICall.h"
+#include "mozilla/dom/UniFFICallbacks.h"
 #include "mozilla/dom/UniFFIScaffolding.h"
-#include "mozilla/uniffi/Call.h"
-#include "mozilla/uniffi/Callbacks.h"
 
 
 

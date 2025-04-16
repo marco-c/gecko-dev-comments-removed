@@ -9,11 +9,9 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/OwnedRustBuffer.h"
+#include "mozilla/dom/UniFFIRust.h"
 #include "mozilla/dom/UniFFIScaffolding.h"
-#include "mozilla/uniffi/OwnedRustBuffer.h"
-#include "mozilla/uniffi/FfiValue.h"
-#include "mozilla/uniffi/ResultPromise.h"
-#include "mozilla/uniffi/Rust.h"
 
 namespace mozilla::uniffi {
 
@@ -30,7 +28,7 @@ namespace mozilla::uniffi {
 
 
 class UniffiCallHandlerBase {
- public:
+ protected:
   
   
   
@@ -38,7 +36,7 @@ class UniffiCallHandlerBase {
   
   
   
-  virtual void LiftSuccessfulCallResult(
+  virtual void ExtractSuccessfulCallResult(
       JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest,
       ErrorResult& aError) = 0;
 
@@ -54,17 +52,14 @@ class UniffiCallHandlerBase {
   
   
   
-  void LiftCallResult(
+  void ExtractCallResult(
       JSContext* aCx,
       dom::RootedDictionary<dom::UniFFIScaffoldingCallResult>& aDest,
       ErrorResult& aError);
 
-  virtual ~UniffiCallHandlerBase() = default;
-
- protected:
   
   int8_t mUniffiCallStatusCode = RUST_CALL_SUCCESS;
-  FfiValueRustBuffer mUniffiCallStatusErrorBuf;
+  OwnedRustBuffer mUniffiCallStatusErrorBuf;
 };
 
 
@@ -74,7 +69,7 @@ class UniffiSyncCallHandler : public UniffiCallHandlerBase {
 
   
   
-  virtual void LowerRustArgs(
+  virtual void PrepareRustArgs(
       const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError) = 0;
 
@@ -123,7 +118,7 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
   
   
   
-  virtual void LowerArgsAndMakeRustCall(
+  virtual void PrepareArgsAndMakeRustCall(
       const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError) = 0;
 
@@ -145,6 +140,11 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
   
   static void Poll(UniquePtr<UniffiAsyncCallHandler> aHandler);
 
+  
+  
+  
+  static void Finish(UniquePtr<UniffiAsyncCallHandler> aHandler);
+
  public:
   virtual ~UniffiAsyncCallHandler();
 
@@ -159,7 +159,7 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
 
  private:
   
-  ResultPromise mPromise;
+  RefPtr<dom::Promise> mPromise;
 
   
   
