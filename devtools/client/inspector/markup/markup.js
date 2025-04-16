@@ -2368,7 +2368,11 @@ MarkupView.prototype = {
         
         
         if (container.children.contains(previouslyActiveElement)) {
-          previouslyActiveElement.focus();
+          previouslyActiveElement.focus({
+            
+            
+            preventScroll: true,
+          });
         }
         return container;
       })
