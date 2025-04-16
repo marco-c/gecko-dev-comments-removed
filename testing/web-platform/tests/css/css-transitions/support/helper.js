@@ -323,4 +323,17 @@ root.supportsStartingStyle = () => {
   return sheet.cssRules.length == 1;
 };
 
+
+
+
+
+
+
+root.waitForTransitionEnd = function(element) {
+  return new Promise(resolve => {
+    element.addEventListener('transitionend', resolve, { once: true });
+  });
+};
+
+
 })(window);
