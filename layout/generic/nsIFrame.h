@@ -5636,8 +5636,10 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  void DumpFrameTree(bool aListOnlyDeterministic = false) const;
-  void DumpFrameTreeInCSSPixels(bool aListOnlyDeterministic = false) const;
+  void DumpFrameTree() const;
+  void DumpFrameTree(bool aListOnlyDeterministic) const;
+  void DumpFrameTreeInCSSPixels() const;
+  void DumpFrameTreeInCSSPixels(bool aListOnlyDeterministic) const;
 
   
 
