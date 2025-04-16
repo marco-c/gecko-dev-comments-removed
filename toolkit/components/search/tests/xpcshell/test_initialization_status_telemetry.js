@@ -5,9 +5,6 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
-});
 
 const searchService = Services.search.wrappedJSObject;
 
@@ -86,9 +83,10 @@ add_task(async function test_corrupt_settings() {
   searchService.reset();
 
   
+  
   let notificationBoxStub = sinon.stub(
-    SearchUIUtils,
-    "searchSettingsResetNotificationBox"
+    searchService,
+    "_showSearchSettingsResetNotificationBox"
   );
 
   await IOUtils.writeJSON(
