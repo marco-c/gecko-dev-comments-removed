@@ -838,6 +838,8 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     
                     if "jetstream3" in try_name and "safari-tp" not in try_name:
                         return False
+                    if "jetstream2" in try_name and "safari" in try_name:
+                        return False
                     return True
         
         elif accept_raptor_android_build(platform):
@@ -847,6 +849,13 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 return False
             
             if "chrome-m" in try_name and "tp6m" in try_name and "hw-a55" in platform:
+                
+                if (
+                    "ebay-kleinanzeigen" in try_name
+                    and "search" not in try_name
+                    and "nofis" in try_name
+                ):
+                    return False
                 return True
             if "chrome-m" in try_name and (
                 ("ebay" in try_name and "live" not in try_name)
