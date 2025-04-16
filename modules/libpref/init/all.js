@@ -647,7 +647,7 @@ pref("toolkit.dump.emit", false);
 pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com");
 
 
-pref("devtools.performance.recording.child.timeout_s", 0);
+pref("devtools.performance.recording.child.timeout_s", 15);
 
 
 
