@@ -204,9 +204,14 @@ nsresult BounceTrackingState::Init(
   dom::BrowsingContext* browsingContext = aWebProgress->GetBrowsingContext();
   NS_ENSURE_TRUE(browsingContext, NS_ERROR_FAILURE);
   mBrowserId = browsingContext->BrowserId();
+
   
   
   mOriginAttributes = browsingContext->OriginAttributesRef();
+  
+  
+  mOriginAttributes.mFirstPartyDomain.Truncate();
+
   MOZ_ASSERT(mOriginAttributes.mPartitionKey.IsEmpty(),
              "Top level BCs mus not have a partition key.");
 
