@@ -9187,6 +9187,7 @@ var TabContextMenu = {
       isUserTriggered: true,
       telemetryUserCreateSource: "tab_menu",
     });
+    gBrowser.selectedTab = this.contextTabs[0];
 
     
     
