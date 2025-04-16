@@ -3770,6 +3770,17 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
 
   
   
+  
+  if (MIMEType.Equals("video/3gpp")) {
+    nsAutoCString fileExtLowerCase(aFileExt);
+    ToLowerCase(fileExtLowerCase);
+    if (fileExtLowerCase.Equals("mp4")) {
+      return ModifyExtension_Ignore;
+    }
+  }
+
+  
+  
   bool canForce = StringBeginsWith(MIMEType, "image/"_ns) ||
                   StringBeginsWith(MIMEType, "audio/"_ns) ||
                   StringBeginsWith(MIMEType, "video/"_ns) || aFileExt.IsEmpty();
