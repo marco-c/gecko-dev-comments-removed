@@ -288,18 +288,6 @@ impl ClipTree {
         &self.nodes[id.0 as usize]
     }
 
-    pub fn get_parent(&self, id: ClipNodeId) -> Option<ClipNodeId> {
-        
-        
-        
-        let parent = self.nodes[id.0 as usize].parent;
-        if parent == ClipNodeId::NONE {
-            return None;
-        }
-
-        return Some(parent)
-    }
-
     
     pub fn get_leaf(&self, id: ClipLeafId) -> &ClipTreeLeaf {
         &self.leaves[id.0 as usize]
@@ -726,10 +714,6 @@ impl ClipTreeBuilder {
         }
 
         false
-    }
-
-    pub fn get_parent(&self, id: ClipNodeId) -> Option<ClipNodeId> {
-        self.tree.get_parent(id)
     }
 
     
