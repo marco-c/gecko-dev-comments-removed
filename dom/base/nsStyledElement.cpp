@@ -138,7 +138,10 @@ nsresult nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc) {
     nsAttrValue attrValue;
     nsAutoString stringValue;
     oldVal->ToString(stringValue);
-    ParseStyleAttribute(stringValue, nullptr, attrValue, aForceInDataDoc);
+    if (!stringValue.IsEmpty()) {
+      
+      ParseStyleAttribute(stringValue, nullptr, attrValue, aForceInDataDoc);
+    }
     
     
     bool oldValueSet;
@@ -168,8 +171,9 @@ void nsStyledElement::ParseStyleAttribute(const nsAString& aValue,
 
   if (!isNativeAnon &&
       !nsStyleUtil::CSPAllowsInlineStyle(this, doc, aMaybeScriptedPrincipal, 0,
-                                         1, aValue, nullptr))
+                                         1, aValue, nullptr)) {
     return;
+  }
 
   if (aForceInDataDoc || !doc->IsLoadedAsData() || GetExistingStyle() ||
       doc->IsStaticDocument()) {
