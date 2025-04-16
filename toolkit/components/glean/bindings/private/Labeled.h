@@ -407,11 +407,11 @@ class Labeled<TimingDistributionMetric, DynamicLabel> {
 
   TimingDistributionMetric MaybeTruncateAndGet(const nsACString& aLabel) const {
     
-    if (aLabel.Length() < 72) {  
+    if (aLabel.Length() < 112) {
       return Get(aLabel);
     }
-    nsAutoCStringN<71> truncated;  
-    truncated.Append(aLabel.BeginReading(), 68);
+    nsAutoCStringN<111> truncated;
+    truncated.Append(aLabel.BeginReading(), 108);
     truncated += "...";
     return Get(truncated);
   }
