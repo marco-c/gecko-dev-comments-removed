@@ -245,19 +245,6 @@ class HighlightersOverlay {
   }
 
   
-  
-  get parentGridHighlighters() {
-    return Array.from(this.gridHighlighters.values()).reduce((map, value) => {
-      const { parentGridNode, parentGridHighlighter } = value;
-      if (parentGridNode) {
-        map.set(parentGridNode, parentGridHighlighter);
-      }
-
-      return map;
-    }, new Map());
-  }
-
-  
 
 
 
@@ -1111,6 +1098,7 @@ class HighlightersOverlay {
       ...this.getGridHighlighterSettings(node),
       
       globalAlpha: SUBGRID_PARENT_ALPHA,
+      isParent: true,
     };
     await highlighter.show(node, options);
 
