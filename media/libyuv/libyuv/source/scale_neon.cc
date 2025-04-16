@@ -30,7 +30,7 @@ void ScaleRowDown2_NEON(const uint8_t* src_ptr,
                         int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       
       "vld2.8      {q0, q1}, [%0]!               \n"
       "subs        %2, %2, #16                   \n"  
@@ -51,7 +51,7 @@ void ScaleRowDown2Linear_NEON(const uint8_t* src_ptr,
                               int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld2.8      {q0, q1}, [%0]!               \n"  
       "subs        %2, %2, #16                   \n"  
       "vrhadd.u8   q0, q0, q1                    \n"  
@@ -73,7 +73,7 @@ void ScaleRowDown2Box_NEON(const uint8_t* src_ptr,
   asm volatile(
       
       "add         %1, %0                        \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {q0, q1}, [%0]!               \n"  
       "vld1.8      {q2, q3}, [%1]!               \n"  
       "subs        %3, %3, #16                   \n"  
@@ -102,7 +102,7 @@ void ScaleRowDown4_NEON(const uint8_t* src_ptr,
                         int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  
       "subs        %2, %2, #8                    \n"  
       "vst1.8      {d2}, [%1]!                   \n"
@@ -122,7 +122,7 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
   const uint8_t* src_ptr2 = src_ptr + src_stride * 2;
   const uint8_t* src_ptr3 = src_ptr + src_stride * 3;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {q0}, [%0]!                   \n"  
       "vld1.8      {q1}, [%3]!                   \n"
       "vld1.8      {q2}, [%4]!                   \n"
@@ -156,7 +156,7 @@ void ScaleRowDown34_NEON(const uint8_t* src_ptr,
                          int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  
       "subs        %2, %2, #24                   \n"
       "vmov        d2, d3                        \n"  
@@ -176,7 +176,7 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
   asm volatile(
       "vmov.u8     d24, #3                       \n"
       "add         %3, %0                        \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  
       "vld4.8      {d4, d5, d6, d7}, [%3]!       \n"  
       "subs        %2, %2, #24                   \n"
@@ -233,7 +233,7 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
   asm volatile(
       "vmov.u8     d24, #3                       \n"
       "add         %3, %0                        \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  
       "vld4.8      {d4, d5, d6, d7}, [%3]!       \n"  
       "subs        %2, %2, #24                   \n"
@@ -284,7 +284,7 @@ void ScaleRowDown38_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "vld1.8      {q3}, [%3]                    \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d0, d1, d2, d3}, [%0]!       \n"
       "subs        %2, %2, #12                   \n"
       "vtbl.u8     d4, {d0, d1, d2, d3}, d6      \n"
@@ -311,7 +311,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8_t* src_ptr,
       "vld1.8      {q14}, [%6]                   \n"
       "vld1.8      {q15}, [%7]                   \n"
       "add         %3, %0                        \n"
-      "1:                                        \n"
+      "1:          \n"
 
       
       
@@ -420,7 +420,7 @@ void ScaleRowDown38_2_Box_NEON(const uint8_t* src_ptr,
       "vld1.16     {q13}, [%4]                   \n"
       "vld1.8      {q14}, [%5]                   \n"
       "add         %3, %0                        \n"
-      "1:                                        \n"
+      "1:          \n"
 
       
       
@@ -512,7 +512,7 @@ void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
   asm volatile(
       "vmov.u8     d30, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d4}, [%0]!                   \n"  
       "vld1.8      {d5}, [%3]!                   \n"  
 
@@ -550,7 +550,7 @@ void ScaleRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
       "vmov.u16    q15, #3                       \n"
       "vmov.u8     d28, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d4}, [%0]!                   \n"  
       "vld1.8      {d5}, [%5]!                   \n"  
 
@@ -611,7 +611,7 @@ void ScaleRowUp2_Linear_12_NEON(const uint16_t* src_ptr,
   asm volatile(
       "vmov.u16    q15, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {q1}, [%0]!                   \n"  
       "vld1.16     {q0}, [%3]!                   \n"  
 
@@ -647,7 +647,7 @@ void ScaleRowUp2_Bilinear_12_NEON(const uint16_t* src_ptr,
   asm volatile(
       "vmov.u16    q15, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {q0}, [%0]!                   \n"  
       "vld1.16     {q1}, [%5]!                   \n"  
 
@@ -698,7 +698,7 @@ void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
   asm volatile(
       "vmov.u16    d31, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {q0}, [%0]!                   \n"  
       "vld1.16     {q1}, [%3]!                   \n"  
 
@@ -743,7 +743,7 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       "vmov.u16    d31, #3                       \n"
       "vmov.u32    q14, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {d0}, [%0]!                   \n"  
       "vld1.16     {d1}, [%5]!                   \n"  
       "vmovl.u16   q2, d0                        \n"  
@@ -794,7 +794,7 @@ void ScaleUVRowUp2_Linear_NEON(const uint8_t* src_ptr,
   asm volatile(
       "vmov.u8     d30, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d4}, [%0]!                   \n"  
       "vld1.8      {d5}, [%3]!                   \n"  
 
@@ -832,7 +832,7 @@ void ScaleUVRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
       "vmov.u16    q15, #3                       \n"
       "vmov.u8     d28, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d4}, [%0]!                   \n"  
       "vld1.8      {d5}, [%5]!                   \n"  
 
@@ -893,7 +893,7 @@ void ScaleUVRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
   asm volatile(
       "vmov.u16    d30, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {q0}, [%0]!                   \n"  
       "vld1.16     {q1}, [%3]!                   \n"  
 
@@ -939,7 +939,7 @@ void ScaleUVRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       "vmov.u16    d30, #3                       \n"
       "vmov.u32    q14, #3                       \n"
 
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d0}, [%0]!                   \n"  
       "vld1.8      {d1}, [%5]!                   \n"  
       "vmovl.u16   q2, d0                        \n"  
@@ -989,7 +989,7 @@ void ScaleAddRow_NEON(const uint8_t* src_ptr,
                       uint16_t* dst_ptr,
                       int src_width) {
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {q1, q2}, [%1]                \n"  
       "vld1.8      {q0}, [%0]!                   \n"  
       "vaddw.u8    q2, q2, d1                    \n"  
@@ -1036,7 +1036,7 @@ void ScaleFilterCols_NEON(uint8_t* dst_ptr,
     
       "vadd.s32    q2, q1, q3                    \n"
       "vshl.i32    q0, q3, #1                    \n"  
-      "1:                                        \n"
+      "1:          \n"
     LOAD2_DATA8_LANE(0)
     LOAD2_DATA8_LANE(1)
     LOAD2_DATA8_LANE(2)
@@ -1087,7 +1087,7 @@ void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
                             int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld4.32     {d0, d2, d4, d6}, [%0]!       \n"  
       "vld4.32     {d1, d3, d5, d7}, [%0]!       \n"  
       "subs        %2, %2, #8                    \n"  
@@ -1115,7 +1115,7 @@ void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
                                   int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld4.32     {d0, d2, d4, d6}, [%0]!       \n"  
       "vld4.32     {d1, d3, d5, d7}, [%0]!       \n"  
       "subs        %2, %2, #8                    \n"  
@@ -1138,7 +1138,7 @@ void ScaleARGBRowDown2Box_NEON(const uint8_t* src_ptr,
   asm volatile(
       
       "add         %1, %1, %0                    \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  
       "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"  
       "subs        %3, %3, #8                    \n"  
@@ -1176,7 +1176,7 @@ void ScaleARGBRowDownEven_NEON(const uint8_t* src_argb,
   (void)src_stride;
   asm volatile(
       "mov         r12, %3, lsl #2               \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld1.32     {d0[0]}, [%0], r12            \n"
       "vld1.32     {d0[1]}, [%0], r12            \n"
       "vld1.32     {d1[0]}, [%0], r12            \n"
@@ -1201,7 +1201,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8_t* src_argb,
   asm volatile(
       "mov         r12, %4, lsl #2               \n"
       "add         %1, %1, %0                    \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {d0}, [%0], r12               \n"  
       "vld1.8      {d1}, [%1], r12               \n"
       "vld1.8      {d2}, [%0], r12               \n"
@@ -1247,7 +1247,7 @@ void ScaleARGBCols_NEON(uint8_t* dst_argb,
   int tmp;
   const uint8_t* src_tmp = src_argb;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       
       LOAD1_DATA32_LANE(d0, 0)
       LOAD1_DATA32_LANE(d0, 1)
@@ -1300,7 +1300,7 @@ void ScaleARGBFilterCols_NEON(uint8_t* dst_argb,
       "vmov.i16    q15, #0x7f                    \n"  
     
       "vadd.s32    q8, q1, q0                    \n"
-      "1:                                        \n"
+      "1:          \n"
     
     
     LOAD2_DATA32_LANE(d0, d2, 0)
@@ -1350,7 +1350,7 @@ void ScaleUVRowDown2_NEON(const uint8_t* src_ptr,
                           int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld2.16     {d0, d2}, [%0]!               \n"  
       "vld2.16     {d1, d3}, [%0]!               \n"  
       "subs        %2, %2, #8                    \n"  
@@ -1369,7 +1369,7 @@ void ScaleUVRowDown2Linear_NEON(const uint8_t* src_ptr,
                                 int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld2.16     {d0, d2}, [%0]!               \n"  
       "vld2.16     {d1, d3}, [%0]!               \n"  
       "subs        %2, %2, #8                    \n"  
@@ -1390,7 +1390,7 @@ void ScaleUVRowDown2Box_NEON(const uint8_t* src_ptr,
   asm volatile(
       
       "add         %1, %1, %0                    \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld2.8      {d0, d2}, [%0]!               \n"  
       "vld2.8      {d1, d3}, [%0]!               \n"  
       "subs        %3, %3, #8                    \n"  
@@ -1423,7 +1423,7 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
   const uint8_t* src3_ptr = src_ptr + src_stepx * 6;
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vld1.16     {d0[0]}, [%0], %6             \n"
       "vld1.16     {d0[1]}, [%1], %6             \n"
       "vld1.16     {d0[2]}, [%2], %6             \n"

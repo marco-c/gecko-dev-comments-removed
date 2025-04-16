@@ -12,7 +12,8 @@
 
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
-    !defined(__clang__) && (defined(_M_IX86) || defined(_M_X64))
+    (defined(_M_IX86) || defined(_M_X64)) &&             \
+    (!defined(__clang__) || defined(LIBYUV_ENABLE_ROWWIN))
 
 #if defined(_M_ARM64EC)
 #include <intrin.h>
@@ -182,15 +183,52 @@ void I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
 
 
 #else  
-#ifdef HAS_ARGBTOYROW_SSSE3
+
+#ifdef HAS_ARGBTOUVROW_SSSE3
 
 
-static const vec8 kARGBToY = {13, 65, 33, 0, 13, 65, 33, 0,
-                              13, 65, 33, 0, 13, 65, 33, 0};
+static const ulvec8 kBiasUV128 = {
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
+
+
+static const lvec8 kShuffleNV21 = {
+    1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+    1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+};
+
+
+static const lvec8 kShuffleYUY2Y = {0,  0,  2,  2,  4,  4,  6,  6,  8,  8, 10,
+                                    10, 12, 12, 14, 14, 0,  0,  2,  2,  4, 4,
+                                    6,  6,  8,  8,  10, 10, 12, 12, 14, 14};
+
+
+static const lvec8 kShuffleYUY2UV = {1,  3,  1,  3,  5,  7,  5,  7,  9,  11, 9,
+                                     11, 13, 15, 13, 15, 1,  3,  1,  3,  5,  7,
+                                     5,  7,  9,  11, 9,  11, 13, 15, 13, 15};
+
+
+static const lvec8 kShuffleUYVYY = {1,  1,  3,  3,  5,  5,  7,  7,  9,  9, 11,
+                                    11, 13, 13, 15, 15, 1,  1,  3,  3,  5, 5,
+                                    7,  7,  9,  9,  11, 11, 13, 13, 15, 15};
+
+
+static const lvec8 kShuffleUYVYUV = {0,  2,  0,  2,  4,  6,  4,  6,  8,  10, 8,
+                                     10, 12, 14, 12, 14, 0,  2,  0,  2,  4,  6,
+                                     4,  6,  8,  10, 8,  10, 12, 14, 12, 14};
 
 
 static const vec8 kARGBToYJ = {15, 75, 38, 0, 15, 75, 38, 0,
                                15, 75, 38, 0, 15, 75, 38, 0};
+#endif
+
+
+static const lvec32 kPermdARGBToY_AVX = {0, 4, 1, 5, 2, 6, 3, 7};
+
+
+static const vec8 kARGBToY = {13, 65, 33, 0, 13, 65, 33, 0,
+                              13, 65, 33, 0, 13, 65, 33, 0};
 
 static const vec8 kARGBToU = {112, -74, -38, 0, 112, -74, -38, 0,
                               112, -74, -38, 0, 112, -74, -38, 0};
@@ -247,12 +285,6 @@ static const uvec8 kAddY16 = {16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
 static const vec16 kAddYJ64 = {64, 64, 64, 64, 64, 64, 64, 64};
 
 
-static const ulvec8 kBiasUV128 = {
-    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
-
-
 static const uvec8 kShuffleMaskRGB24ToARGB = {
     0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u};
 
@@ -286,32 +318,6 @@ static const uvec8 kShuffleMaskARGBToRAW = {
 
 static const uvec8 kShuffleMaskARGBToRGB24_0 = {
     0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u};
-
-
-static const lvec8 kShuffleYUY2Y = {0,  0,  2,  2,  4,  4,  6,  6,  8,  8, 10,
-                                    10, 12, 12, 14, 14, 0,  0,  2,  2,  4, 4,
-                                    6,  6,  8,  8,  10, 10, 12, 12, 14, 14};
-
-
-static const lvec8 kShuffleYUY2UV = {1,  3,  1,  3,  5,  7,  5,  7,  9,  11, 9,
-                                     11, 13, 15, 13, 15, 1,  3,  1,  3,  5,  7,
-                                     5,  7,  9,  11, 9,  11, 13, 15, 13, 15};
-
-
-static const lvec8 kShuffleUYVYY = {1,  1,  3,  3,  5,  5,  7,  7,  9,  9, 11,
-                                    11, 13, 13, 15, 15, 1,  1,  3,  3,  5, 5,
-                                    7,  7,  9,  9,  11, 11, 13, 13, 15, 15};
-
-
-static const lvec8 kShuffleUYVYUV = {0,  2,  0,  2,  4,  6,  4,  6,  8,  10, 8,
-                                     10, 12, 14, 12, 14, 0,  2,  0,  2,  4,  6,
-                                     4,  6,  8,  10, 8,  10, 12, 14, 12, 14};
-
-
-static const lvec8 kShuffleNV21 = {
-    1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
-    1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
-};
 
 
 __declspec(naked) void J400ToARGBRow_SSE2(const uint8_t* src_y,
@@ -1241,8 +1247,6 @@ __declspec(naked) void ARGBToYJRow_SSSE3(const uint8_t* src_argb,
 
 #ifdef HAS_ARGBTOYROW_AVX2
 
-static const lvec32 kPermdARGBToY_AVX = {0, 4, 1, 5, 2, 6, 3, 7};
-
 
 __declspec(naked) void ARGBToYRow_AVX2(const uint8_t* src_argb,
                                        uint8_t* dst_y,
@@ -1511,7 +1515,9 @@ __declspec(naked) void ARGBToUVJRow_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
+    
     movdqa     xmm5, xmmword ptr kBiasUV128
+        
     movdqa     xmm6, xmmword ptr kARGBToVJ
     movdqa     xmm7, xmmword ptr kARGBToUJ
     sub        edi, edx  
@@ -1552,10 +1558,12 @@ __declspec(naked) void ARGBToUVJRow_SSSE3(const uint8_t* src_argb,
     pmaddubsw  xmm3, xmm6
     phaddw     xmm0, xmm2
     phaddw     xmm1, xmm3
+        
     paddw      xmm0, xmm5  
     paddw      xmm1, xmm5
     psraw      xmm0, 8
     psraw      xmm1, 8
+    
     packsswb   xmm0, xmm1
 
         
@@ -1981,7 +1989,6 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
     ret
   }
 }
-#endif  
 
 
 #define READYUV444_AVX2 \

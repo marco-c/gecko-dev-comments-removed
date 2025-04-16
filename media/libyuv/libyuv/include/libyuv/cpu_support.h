@@ -44,21 +44,24 @@ extern "C" {
 #endif  
 
 
-#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+#if defined(__GNUC__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
+    (defined(__x86_64__) || defined(__i386__))
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
 #define GCC_HAS_AVX2 1
 #endif  
 #endif  
 
 
-#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
+#if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
+    (defined(__x86_64__) || defined(__i386__))
 #if (__clang_major__ > 3) || (__clang_major__ == 3 && (__clang_minor__ >= 4))
 #define CLANG_HAS_AVX2 1
 #endif  
 #endif  
 
 
-#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
+#if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
+    (defined(__x86_64__) || defined(__i386__))
 
 
 #if (__clang_major__ >= 7) && !defined(__APPLE__)
@@ -67,8 +70,9 @@ extern "C" {
 #endif  
 
 
-#if defined(_M_IX86) && !defined(__clang__) && defined(_MSC_VER) && \
-    _MSC_VER >= 1700
+#if defined(_M_IX86) &&                                       \
+    (!defined(__clang__) || defined(LIBYUV_ENABLE_ROWWIN)) && \
+    defined(_MSC_VER) && _MSC_VER >= 1700
 #define VISUALC_HAS_AVX2 1
 #endif  
 

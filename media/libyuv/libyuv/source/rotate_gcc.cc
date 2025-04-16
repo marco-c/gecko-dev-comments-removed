@@ -17,7 +17,9 @@ extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) &&               \
+    (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN)
 
 
 #if defined(HAS_TRANSPOSEWX8_SSSE3)
@@ -30,7 +32,7 @@ void TransposeWx8_SSSE3(const uint8_t* src,
       
       
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"
       "movq        (%0,%3),%%xmm1                \n"
       "lea         (%0,%3,2),%0                  \n"
@@ -120,7 +122,7 @@ void TransposeWx8_Fast_SSSE3(const uint8_t* src,
       
       
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      (%0,%3),%%xmm1                \n"
       "lea         (%0,%3,2),%0                  \n"
@@ -265,7 +267,7 @@ void TransposeUVWx8_SSE2(const uint8_t* src,
       
       
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      (%0,%4),%%xmm1                \n"
       "lea         (%0,%4,2),%0                  \n"
@@ -393,7 +395,7 @@ void Transpose4x4_32_SSE2(const uint8_t* src,
                           int width) {
   asm volatile(
       
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"  
       "movdqu      (%0,%3),%%xmm1                \n"  
       "lea         (%0,%3,2),%0                  \n"  
@@ -449,7 +451,7 @@ void Transpose4x4_32_AVX2(const uint8_t* src,
                           int width) {
   asm volatile(
       
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"  
       "vmovdqu     (%0,%3),%%xmm1                \n"  
       "lea         (%0,%3,2),%0                  \n"  
@@ -484,7 +486,7 @@ void Transpose4x4_32_AVX2(const uint8_t* src,
       "sub         %4,%1                         \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src),                     // %0
         "+r"(dst),                     // %1
         "+rm"(width)                   // %2
