@@ -220,14 +220,21 @@ async function clearTelemetry(histogramId) {
 
 
 
-async function setupTask(prefEnv, ...itemsToStore) {
+async function setupTask(
+  prefEnv,
+  clearPreviousTelemetry,
+  histogramId,
+  ...itemsToStore
+) {
   const itemCount = itemsToStore.length;
 
   if (prefEnv) {
     await SpecialPowers.pushPrefEnv(prefEnv);
   }
 
-  clearTelemetry();
+  if (clearPreviousTelemetry === true) {
+    clearTelemetry(histogramId);
+  }
 
   if (itemCount) {
     await setStorage(...itemsToStore);
