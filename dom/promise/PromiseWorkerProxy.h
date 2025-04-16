@@ -116,8 +116,7 @@ class WorkerPrivate;
 
 
 class PromiseWorkerProxy : public PromiseNativeHandler,
-                           public StructuredCloneHolderBase,
-                           public SingleWriterLockOwner {
+                           public StructuredCloneHolderBase {
   friend class PromiseWorkerProxyRunnable;
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -131,8 +130,6 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
                                   JSStructuredCloneWriter* aWorker,
                                   PromiseWorkerProxy* aProxy,
                                   JS::Handle<JSObject*> aObj);
-
-  bool OnWritingThread() const override;
 
   struct PromiseWorkerProxyStructuredCloneCallbacks {
     ReadCallbackOp Read;
@@ -209,6 +206,7 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
 
   const PromiseWorkerProxyStructuredCloneCallbacks* mCallbacks;
 
+  
   
   
   
