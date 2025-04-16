@@ -1,66 +1,56 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const gDashboard = Cc["@mozilla.org/network/dashboard;1"].getService(
   Ci.nsIDashboard
 );
-const gDirServ = Cc["@mozilla.org/file/directory_service;1"].getService(
-  Ci.nsIDirectoryServiceProvider
-);
 
-const { ProfilerMenuButton } = ChromeUtils.importESModule(
-  "resource://devtools/client/performance-new/popup/menu-button.sys.mjs"
-);
-const { CustomizableUI } = ChromeUtils.importESModule(
-  "resource:///modules/CustomizableUI.sys.mjs"
-);
-
-ChromeUtils.defineLazyGetter(this, "ProfilerPopupBackground", function () {
+const lazy = {};
+ChromeUtils.defineLazyGetter(lazy, "ProfilerPopupBackground", function () {
   return ChromeUtils.importESModule(
     "resource://devtools/client/performance-new/shared/background.sys.mjs"
   );
 });
 
-ChromeUtils.defineLazyGetter(this, "ProfilerPrefsPresets", function () {
+ChromeUtils.defineLazyGetter(lazy, "ProfilerPrefsPresets", function () {
   return ChromeUtils.importESModule(
     "resource://devtools/shared/performance-new/prefs-presets.sys.mjs"
   );
 });
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfilerMenuButton:
+    "resource://devtools/client/performance-new/popup/menu-button.sys.mjs",
+  RecordingUtils:
+    "resource://devtools/shared/performance-new/recording-utils.sys.mjs",
+});
+
 const $ = document.querySelector.bind(document);
 const $$ = document.querySelectorAll.bind(document);
-
-function fileEnvVarPresent() {
-  return Services.env.get("MOZ_LOG_FILE") || Services.env.get("NSPR_LOG_FILE");
-}
 
 function moduleEnvVarPresent() {
   return Services.env.get("MOZ_LOG") || Services.env.get("NSPR_LOG");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * All the information associated with a logging presets:
+ * - `modules` is the list of log modules and option, the same that would have
+ *   been set as a MOZ_LOG environment variable
+ * - l10nIds.label and l10nIds.description are the Ids of the strings that
+ *   appear in the dropdown selector, and a one-liner describing the purpose of
+ *   a particular logging preset
+ * - profilerPreset is the name of a Firefox Profiler preset [1]. In general,
+ *   the profiler preset will have the correct set of threads for a particular
+ *   logging preset, so that all logging statements are recorded in the profile
+ *   as markers.
+ *
+ * [1]: The keys of the `presets` object defined in
+ * https://searchfox.org/mozilla-central/source/devtools/client/performance-new/shared/background.sys.mjs
+ */
 
 const gOsSpecificLoggingPresets = (() => {
-  
+  // Microsoft Windows
   if (navigator.platform.startsWith("Win")) {
     return {
       windows: {
@@ -127,10 +117,10 @@ const gLoggingPresets = {
     },
     profilerPreset: "media",
   },
-  
-
-
-
+  /*
+    Please update the WebRTC debugging docs with any changes to this preset.
+    See: https://searchfox.org/mozilla-central/source/docs/contributing/debugging/debugging_webrtc_calls.rst
+  */
   webrtc: {
     modules:
       "jsep:5,sdp:5,signaling:5,mtransport:5,nicer:5,RTCRtpReceiver:5,RTCRtpSender:5,RTCDMTFSender:5,WebrtcTCPSocket:5,CamerasChild:5,CamerasParent:5,VideoEngine:5,ShmemPool:5,TabShare:5,MediaChild:5,MediaParent:5,MediaManager:5,MediaTrackGraph:5,cubeb:5,MediaStream:5,MediaStreamTrack:5,DriftCompensator:5,ForwardInputTrack:5,MediaRecorder:5,MediaEncoder:5,TrackEncoder:5,VP8TrackEncoder:5,Muxer:5,GetUserMedia:5,MediaPipeline:5,WebAudioAPI:5,webrtc_trace:5,RTCRtpTransceiver:5,ForwardedInputTrack:5,HTMLMediaElement:5,HTMLMediaElementEvents:5",
@@ -164,8 +154,8 @@ const gLoggingPresets = {
       label: "about-logging-preset-gfx-label",
       description: "about-logging-preset-gfx-description",
     },
-    
-    
+    // The graphics profiler preset enables the threads we want but loses the screenshots.
+    // We could add an extra preset for that if we miss it.
     profilerPreset: "graphics",
   },
   ...gOsSpecificLoggingPresets,
@@ -179,45 +169,35 @@ const gLoggingPresets = {
 };
 
 const gLoggingSettings = {
-  
+  // Possible values: "profiler" and "file".
   loggingOutputType: "profiler",
   running: false,
-  
-  
-  
+  // If non-null, the profiler preset to use. If null, the preset selected in
+  // the dropdown is going to be used. It is also possible to use a "custom"
+  // preset and an explicit list of modules.
   loggingPreset: null,
-  
-  
-  
-  
+  // If non-null, the profiler preset to use. If a logging preset is being used,
+  // and this is null, the profiler preset associated to the logging preset is
+  // going to be used. Otherwise, a generic profiler preset is going to be used
+  // ("firefox-platform").
   profilerPreset: null,
-  
-  
+  // If non-null, the threads that will be recorded by the Firefox Profiler. If
+  // null, the threads from the profiler presets are going to be used.
   profilerThreads: null,
-  
-  
+  // If non-null, stack traces will be recorded for MOZ_LOG profiler markers.
+  // This is set only when coming from the URL, not when the user changes the UI.
   profilerStacks: null,
 };
 
-
-
-
+// When the profiler has been started, this holds the promise the
+// Services.profiler.StartProfiler returns, to ensure the profiler has
+// effectively started.
 let gProfilerPromise = null;
 
-
-function presets() {
-  return gLoggingPresets;
-}
-
-
-function settings() {
-  return gLoggingSettings;
-}
-
-
-function profilerPromise() {
-  return gProfilerPromise;
-}
+// These functions are used in tests
+globalThis.presets = () => gLoggingPresets;
+globalThis.settings = () => gLoggingSettings;
+globalThis.profilerPromise = () => gProfilerPromise;
 
 function populatePresets() {
   let dropdown = $("#logging-preset-dropdown");
@@ -241,8 +221,8 @@ function populatePresets() {
   }
 
   dropdown.onchange = function () {
-    
-    
+    // When switching to custom, leave the existing module list, to allow
+    // editing.
     if (dropdown.value != "custom") {
       $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
     }
@@ -252,7 +232,7 @@ function populatePresets() {
 
   $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
   setPresetAndDescription(dropdown.value);
-  
+  // When changing the list switch to custom.
   $("#log-modules").oninput = () => {
     dropdown.value = "custom";
   };
@@ -266,10 +246,10 @@ function updateLoggingOutputType(profilerOutputType) {
   switch (profilerOutputType) {
     case "profiler":
       if (!gLoggingSettings.profilerStacks) {
-        
+        // If this value is set from the URL, do not allow to change it.
         $("#with-profiler-stacks-checkbox").disabled = false;
       }
-      
+      // hide options related to file output for clarity
       $("#log-file-configuration").hidden = true;
       break;
     case "file":
@@ -343,7 +323,7 @@ function parseURL() {
           threadsOverriden = v;
           break;
         case "profiler-preset":
-          if (!Object.keys(ProfilerPrefsPresets.presets).includes(v)) {
+          if (!Object.keys(lazy.ProfilerPrefsPresets.presets).includes(v)) {
             throw new Error(["about-logging-unknown-profiler-preset", k, v]);
           }
           profilerPresetOverriden = v;
@@ -360,7 +340,7 @@ function parseURL() {
     return;
   }
 
-  
+  // Detect combinations that don't make sense
   if (
     (profilerPresetOverriden || threadsOverriden) &&
     outputTypeOverriden == "file"
@@ -371,12 +351,12 @@ function parseURL() {
     return;
   }
 
-  
-  
+  // Configuration is deemed at least somewhat valid, override each setting in
+  // turn
   let someElementsDisabled = false;
 
   if (modulesOverriden || loggingPresetOverriden) {
-    
+    // Don't allow changing those if set by the URL
     let logModules = $("#log-modules");
     var dropdown = $("#logging-preset-dropdown");
     if (loggingPresetOverriden) {
@@ -488,21 +468,21 @@ function init() {
   } catch {}
 
   try {
-    let file = gDirServ.getFile("TmpD", {});
+    let file = Services.dirsvc.get("TmpD", Ci.nsIFile);
     file.append("log.txt");
     $("#log-file").value = file.path;
   } catch (e) {
     console.error(e);
   }
 
-  
+  // Update the value of the log file.
   updateLogFile();
 
-  
+  // Update the active log modules
   updateLogModules();
 
-  
-  
+  // If we can't set the file and the modules at runtime,
+  // the start and stop buttons wouldn't really do anything.
   if (
     ($("#set-log-file-button").disabled ||
       $("#set-log-modules-button").disabled) &&
@@ -516,31 +496,31 @@ function init() {
 function updateLogFile(file) {
   let logPath = "";
 
-  
+  // Try to get the environment variable for the log file
   logPath =
     Services.env.get("MOZ_LOG_FILE") || Services.env.get("NSPR_LOG_FILE");
   let currentLogFile = $("#current-log-file");
   let setLogFileButton = $("#set-log-file-button");
 
-  
-  
+  // If the log file was set from an env var, we disable the ability to set it
+  // at runtime.
   if (logPath.length) {
     currentLogFile.innerText = logPath;
     setLogFileButton.disabled = true;
   } else if (gDashboard.getLogPath() != ".moz_log") {
-    
+    // There may be a value set by a pref.
     currentLogFile.innerText = gDashboard.getLogPath();
   } else if (file !== undefined) {
     currentLogFile.innerText = file;
   } else {
     try {
-      let file = gDirServ.getFile("TmpD", {});
+      let file = Services.dirsvc.get("TmpD", Ci.nsIFile);
       file.append("log.txt");
       $("#log-file").value = file.path;
     } catch (e) {
       console.error(e);
     }
-    
+    // Fall back to the temp dir
     currentLogFile.innerText = $("#log-file").value;
   }
 
@@ -563,7 +543,7 @@ function updateLogFile(file) {
 }
 
 function updateLogModules() {
-  
+  // Try to get the environment variable for the log file
   let logModules =
     Services.env.get("MOZ_LOG") ||
     Services.env.get("MOZ_LOG_MODULES") ||
@@ -572,10 +552,10 @@ function updateLogModules() {
   let setLogModulesButton = $("#set-log-modules-button");
   if (logModules.length) {
     currentLogModules.innerText = logModules;
-    
-    
-    
-    
+    // If the log modules are set by an environment variable at startup, do not
+    // allow changing them throught a pref. It would be difficult to figure out
+    // which ones are enabled and which ones are not. The user probably knows
+    // what he they are doing.
     setLogModulesButton.disabled = true;
   } else {
     let activeLogModules = [];
@@ -595,7 +575,7 @@ function updateLogModules() {
     }
 
     if (activeLogModules.length) {
-      
+      // Add some options only if some modules are present.
       if (Services.prefs.getBoolPref("logging.config.add_timestamp", false)) {
         activeLogModules.push("timestamp");
       }
@@ -622,7 +602,7 @@ function updateLogModules() {
 function setLogFile() {
   let setLogButton = $("#set-log-file-button");
   if (setLogButton.disabled) {
-    
+    // There's no point trying since it wouldn't work anyway.
     return;
   }
   let logFile = $("#log-file").value.trim();
@@ -631,7 +611,7 @@ function setLogFile() {
 }
 
 function clearLogModules() {
-  
+  // Turn off all the modules.
   let children = Services.prefs.getBranch("logging.").getChildList("");
   for (let pref of children) {
     if (!pref.startsWith("config.")) {
@@ -645,13 +625,13 @@ function clearLogModules() {
 
 function setLogModules() {
   if (moduleEnvVarPresent()) {
-    
+    // The modules were set via env var, so we shouldn't try to change them.
     return;
   }
 
   let modules = $("#log-modules").value.trim();
 
-  
+  // Clear previously set log modules.
   clearLogModules();
 
   if (modules.length !== 0) {
@@ -660,9 +640,9 @@ function setLogModules() {
       if (module == "timestamp") {
         Services.prefs.setBoolPref("logging.config.add_timestamp", true);
       } else if (module == "rotate") {
-        
+        // XXX: rotate is not yet supported.
       } else if (module == "append") {
-        
+        // XXX: append is not yet supported.
       } else if (module == "sync") {
         Services.prefs.setBoolPref("logging.config.sync", true);
       } else if (module == "profilerstacks") {
@@ -706,60 +686,57 @@ function startStopLogging() {
 function startLogging() {
   setLogModules();
   if (gLoggingSettings.loggingOutputType === "profiler") {
-    const pageContext = "aboutlogging";
     const supportedFeatures = Services.profiler.GetFeatures();
     if (
       gLoggingSettings.loggingPreset != "custom" ||
       gLoggingSettings.profilerPreset
     ) {
-      
-      
-      
-      
+      // Change the preset before starting the profiler, so that the
+      // underlying profiler code picks up the right configuration.
+      // If a profiler preset has been explicitely provided (via URL parameters),
+      // pick it. Otherwise, pick the preset for this particular logging preset.
       const profilerPreset =
         gLoggingSettings.profilerPreset ??
         gLoggingPresets[gLoggingSettings.loggingPreset].profilerPreset;
-      ProfilerPrefsPresets.changePreset(
+      lazy.ProfilerPrefsPresets.changePreset(
         "aboutlogging",
         profilerPreset,
         supportedFeatures
       );
     } else {
-      
-      ProfilerPrefsPresets.changePreset(
+      // a baseline set of threads, and possibly others, overriden by the URL
+      lazy.ProfilerPrefsPresets.changePreset(
         "aboutlogging",
         "firefox-platform",
         supportedFeatures
       );
     }
     let { entries, interval, features, threads, duration } =
-      ProfilerPrefsPresets.getRecordingSettings(
-        pageContext,
+      lazy.ProfilerPrefsPresets.getRecordingSettings(
+        "aboutlogging",
         Services.profiler.GetFeatures()
       );
 
     if (gLoggingSettings.profilerThreads) {
       threads.push(...gLoggingSettings.profilerThreads.split(","));
-      
-      
-      
+      // Small hack: if cubeb is being logged, it's almost always necessary (and
+      // never harmful) to enable audio callback tracing, otherwise, no log
+      // statements will be recorded from real-time threads.
       if (gLoggingSettings.profilerThreads.includes("cubeb")) {
         features.push("audiocallbacktracing");
       }
     }
-    const win = Services.wm.getMostRecentWindow("navigator:browser");
-    const windowid = win?.gBrowser?.selectedBrowser?.browsingContext?.browserId;
 
-    
-    
-    ProfilerMenuButton.ensureButtonInNavbar();
+    // Force displaying the profiler button in the navbar if not preset, so
+    // that there is a visual indication profiling is in progress.
+    lazy.ProfilerMenuButton.ensureButtonInNavbar();
 
     gProfilerPromise = Services.profiler.StartProfiler(
       entries,
       interval,
       features,
       threads,
-      windowid,
+      lazy.RecordingUtils.getActiveBrowserID(),
       duration
     );
   } else {
@@ -770,7 +747,7 @@ function startLogging() {
 
 async function stopLogging() {
   if (gLoggingSettings.loggingOutputType === "profiler") {
-    await ProfilerPopupBackground.captureProfile("aboutlogging");
+    await lazy.ProfilerPopupBackground.captureProfile("aboutlogging");
   } else {
     Services.prefs.clearUserPref("logging.config.LOG_FILE");
     updateLogFile();
@@ -779,10 +756,10 @@ async function stopLogging() {
   clearLogModules();
 }
 
-
-
-
-
+// We use the pageshow event instead of onload. This is needed because sometimes
+// the page is loaded via session-restore/bfcache. In such cases we need to call
+// init() to keep the page behaviour consistent with the ticked checkboxes.
+// Mostly the issue is with the autorefresh checkbox.
 window.addEventListener("pageshow", function () {
   init();
 });
