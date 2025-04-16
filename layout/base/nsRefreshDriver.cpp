@@ -2327,22 +2327,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     return;
   }
 
-  if (StaticPrefs::layout_skip_ticks_while_page_suspended()) {
-    Document* doc = mPresContext->Document();
-    nsGlobalWindowInner* win =
-        doc ? nsGlobalWindowInner::Cast(doc->GetInnerWindow()) : nullptr;
-    if (doc && doc->GetInnerWindow()) {
-      MOZ_ASSERT(nsGlobalWindowInner::Cast(doc->GetInnerWindow()));
-    }
-    
-    
-    
-    
-    if (win && win->IsSuspended() && doc->IsInSyncOperation()) {
-      return;
-    }
-  }
-
   AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("RefreshDriver tick", LAYOUT);
 
   nsAutoCString profilerStr;
