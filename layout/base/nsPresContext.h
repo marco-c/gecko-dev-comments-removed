@@ -952,8 +952,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   void NotifyInvalidation(TransactionId aTransactionId, const nsRect& aRect);
-  
-  void NotifyInvalidation(TransactionId aTransactionId, const nsIntRect& aRect);
   void NotifyDidPaintForSubtree(
       TransactionId aTransactionId = TransactionId{0},
       const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());

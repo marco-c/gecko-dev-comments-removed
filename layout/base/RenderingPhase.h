@@ -32,7 +32,7 @@ enum class RenderingPhase : uint8_t {
   UpdateIntersectionObservations,
   
   
-  
+  Paint,
   
   Count,
 };
@@ -51,6 +51,7 @@ inline constexpr RenderingPhases AllRenderingPhases() {
       RenderingPhase::ResizeObservers,
       RenderingPhase::ViewTransitionOperations,
       RenderingPhase::UpdateIntersectionObservations,
+      RenderingPhase::Paint,
   };
 }
 

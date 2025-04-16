@@ -1344,12 +1344,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   MOZ_CAN_RUN_SCRIPT void WillPaint();
-
-  
-
-
-
-  void ScheduleViewManagerFlush();
+  void SchedulePaint();
 
   
   NS_IMETHOD SetCaretEnabled(bool aInEnable) override;

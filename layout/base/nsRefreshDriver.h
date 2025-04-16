@@ -105,7 +105,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool RemoveRefreshObserver(nsARefreshObserver* aObserver,
                              mozilla::FlushType aFlushType);
 
-
   MOZ_CAN_RUN_SCRIPT void FlushLayoutOnPendingDocsAndFixUpFocus();
 
   
@@ -168,15 +167,13 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   }
 
   
+  void SchedulePaint();
+  bool IsPaintPending() const {
+    return mRenderingPhasesNeeded.contains(mozilla::RenderingPhase::Paint);
+  }
 
-
-  void ScheduleViewManagerFlush();
-  void RevokeViewManagerFlush() { mViewManagerFlushIsPending = false; }
-  bool ViewManagerFlushIsPending() { return mViewManagerFlushIsPending; }
-  bool HasScheduleFlush() { return mHasScheduleFlush; }
-  void ClearHasScheduleFlush() { mHasScheduleFlush = false; }
   
-  MOZ_CAN_RUN_SCRIPT bool FlushViewManagerIfNeeded();
+  MOZ_CAN_RUN_SCRIPT bool PaintIfNeeded();
 
   
 
@@ -448,7 +445,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     eNone = 0,
     eForceAdjustTimer = 1 << 0,
     eAllowTimeToGoBackwards = 1 << 1,
-    eNeverAdjustTimer = 1 << 2,
   };
   void EnsureTimerStarted(EnsureTimerStartedFlags aFlags = eNone);
   void StopTimer();
@@ -530,21 +526,11 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   const mozilla::TimeDuration mMinRecomputeVisibilityInterval;
 
-  mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> mViewManagerFlushCause;
+  mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> mPaintCause;
 
   bool mThrottled : 1;
   bool mNeedToRecomputeVisibility : 1;
   bool mTestControllingRefreshes : 1;
-
-  
-  
-  
-  
-  
-  
-  bool mViewManagerFlushIsPending : 1;
-  bool mHasScheduleFlush : 1;
-
   bool mInRefresh : 1;
 
   

@@ -3687,7 +3687,7 @@ static void PrepareForFullscreenChange(nsIDocShell* aDocShell,
     
     
     
-    rd->ScheduleViewManagerFlush();
+    rd->SchedulePaint();
   }
   if (!aSize.IsEmpty()) {
     nsCOMPtr<nsIDocumentViewer> viewer;

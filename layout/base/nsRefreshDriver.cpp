@@ -1255,19 +1255,19 @@ static uint32_t GetFirstFrameDelay(imgIRequest* req) {
   return static_cast<uint32_t>(delay);
 }
 
-static constexpr std::array<const char*, size_t(RenderingPhase::Count)>
-    sRenderingPhaseNames = {
-        "Flush autofocus candidates",  
-        "Resize steps",                
-        "Scroll steps",                
-        "Evaluate media queries and report changes",  
-        "Update animations and send events",    
-        "Fullscreen steps",                     
-        "Animation and video frame callbacks",  
-        "Update content relevancy",             
-        "Resize observers",                     
-        "View transition operations",           
-        "Update intersection observations",  
+static constexpr nsLiteralCString sRenderingPhaseNames[] = {
+    "Flush autofocus candidates"_ns,                 
+    "Resize steps"_ns,                               
+    "Scroll steps"_ns,                               
+    "Evaluate media queries and report changes"_ns,  
+    "Update animations and send events"_ns,    
+    "Fullscreen steps"_ns,                     
+    "Animation and video frame callbacks"_ns,  
+    "Update content relevancy"_ns,             
+    "Resize observers"_ns,                     
+    "View transition operations"_ns,           
+    "Update intersection observations"_ns,     
+    "Paint"_ns,                                
 };
 
 static_assert(std::size(sRenderingPhaseNames) == size_t(RenderingPhase::Count),
@@ -1282,7 +1282,8 @@ void nsRefreshDriver::RunRenderingPhaseLegacy(RenderingPhase aPhase,
   mRenderingPhasesNeeded -= aPhase;
 
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR_RELEVANT_FOR_JS(
-      "Update the rendering", LAYOUT, sRenderingPhaseNames[size_t(aPhase)]);
+      "Update the rendering", LAYOUT,
+      sRenderingPhaseNames[size_t(aPhase)].get());
   aCallback();
 }
 
@@ -1427,8 +1428,6 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mThrottled(false),
       mNeedToRecomputeVisibility(false),
       mTestControllingRefreshes(false),
-      mViewManagerFlushIsPending(false),
-      mHasScheduleFlush(false),
       mInRefresh(false),
       mWaitingForTransaction(false),
       mSkippedPaints(false),
@@ -1806,15 +1805,6 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   
   
   
-  if (aFlags & eNeverAdjustTimer) {
-    return;
-  }
-
-  
-  
-  
-  
-  
   
   
   if (!(aFlags & eAllowTimeToGoBackwards)) {
@@ -1847,7 +1837,6 @@ uint32_t nsRefreshDriver::ObserverCount() const {
   
   
   sum += mStyleFlushObservers.Length();
-  sum += mViewManagerFlushIsPending;
   sum += mEarlyRunners.Length();
   return sum;
 }
@@ -1859,8 +1848,7 @@ bool nsRefreshDriver::HasObservers() const {
     }
   }
 
-  return (mViewManagerFlushIsPending && !mThrottled) ||
-         !mStyleFlushObservers.IsEmpty() || !mEarlyRunners.IsEmpty();
+  return !mStyleFlushObservers.IsEmpty() || !mEarlyRunners.IsEmpty();
 }
 
 void nsRefreshDriver::AppendObserverDescriptionsToString(
@@ -1870,9 +1858,6 @@ void nsRefreshDriver::AppendObserverDescriptionsToString(
       aStr.AppendPrintf("%s [%s], ", observer.mDescription,
                         kFlushTypeNames[observer.mFlushType]);
     }
-  }
-  if (mViewManagerFlushIsPending && !mThrottled) {
-    aStr.AppendLiteral("View manager flush pending, ");
   }
   if (!mStyleFlushObservers.IsEmpty()) {
     aStr.AppendPrintf("%zux Style flush observer, ",
@@ -2655,7 +2640,20 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   UpdateAnimatedImages(previousRefresh, aNowTime);
 
-  bool dispatchTasksAfterTick = FlushViewManagerIfNeeded();
+  bool painted = false;
+  RunRenderingPhaseLegacy(
+      RenderingPhase::Paint,
+      [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { painted = PaintIfNeeded(); });
+
+  if (!painted) {
+    
+    mCompositionPayloads.Clear();
+    mPaintCause = nullptr;
+  }
+
+  if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
+    return StopTimer();
+  }
 
   
   
@@ -2675,10 +2673,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   if (mPresContext->IsRoot() && XRE_IsContentProcess() &&
       StaticPrefs::gfx_content_always_paint()) {
-    ScheduleViewManagerFlush();
+    SchedulePaint();
   }
 
-  if (dispatchTasksAfterTick && sPendingIdleTasks) {
+  if (painted && sPendingIdleTasks) {
     UniquePtr<AutoTArray<RefPtr<Task>, 8>> tasks(sPendingIdleTasks.forget());
     for (RefPtr<Task>& taskWithDelay : *tasks) {
       TaskController::Get()->AddTask(taskWithDelay.forget());
@@ -2686,10 +2684,19 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   }
 }
 
-bool nsRefreshDriver::FlushViewManagerIfNeeded() {
-  if (!mViewManagerFlushIsPending || mThrottled) {
+bool nsRefreshDriver::PaintIfNeeded() {
+  if (mThrottled) {
+    return false;
+  }
+  if (IsPresentingInVR()) {
     
-    mCompositionPayloads.Clear();
+    
+    
+    return false;
+  }
+  if (mPresContext->Document()->IsRenderingSuppressed()) {
+    
+    
     return false;
   }
   nsCString transactionId;
@@ -2699,9 +2706,8 @@ bool nsRefreshDriver::FlushViewManagerIfNeeded() {
   }
   AUTO_PROFILER_MARKER_TEXT(
       "ViewManagerFlush", GRAPHICS,
-      MarkerOptions(
-          MarkerInnerWindowIdFromDocShell(GetDocShell(mPresContext)),
-          MarkerStack::TakeBacktrace(std::move(mViewManagerFlushCause))),
+      MarkerOptions(MarkerInnerWindowIdFromDocShell(GetDocShell(mPresContext)),
+                    MarkerStack::TakeBacktrace(std::move(mPaintCause))),
       transactionId);
 
   
@@ -2709,37 +2715,16 @@ bool nsRefreshDriver::FlushViewManagerIfNeeded() {
     nsCOMPtr<nsIWidget> widget = mPresContext->GetRootWidget();
     WindowRenderer* renderer = widget ? widget->GetWindowRenderer() : nullptr;
     if (renderer && renderer->AsWebRender()) {
-      renderer->AsWebRender()->RegisterPayloads(mCompositionPayloads);
+      renderer->AsWebRender()->RegisterPayloads(
+          std::move(mCompositionPayloads));
     }
     mCompositionPayloads.Clear();
   }
-
-#ifdef MOZ_DUMP_PAINTING
-  if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
-    printf_stderr("Starting ProcessPendingUpdates\n");
-  }
-#endif
-
-  mViewManagerFlushIsPending = false;
-  RefPtr<nsViewManager> vm = mPresContext->GetPresShell()->GetViewManager();
-  const bool skipPaint = IsPresentingInVR();
-  
-  
-  
-  
-  
-  if (!skipPaint) {
+  RefPtr<nsViewManager> vm = mPresContext->PresShell()->GetViewManager();
+  {
     PaintTelemetry::AutoRecordPaint record;
     vm->ProcessPendingUpdates();
   }
-
-#ifdef MOZ_DUMP_PAINTING
-  if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
-    printf_stderr("Ending ProcessPendingUpdates\n");
-  }
-#endif
-
-  mHasScheduleFlush = false;
   return true;
 }
 
@@ -3027,15 +3012,14 @@ bool nsRefreshDriver::IsRefreshObserver(nsARefreshObserver* aObserver,
 }
 #endif
 
-void nsRefreshDriver::ScheduleViewManagerFlush() {
+void nsRefreshDriver::SchedulePaint() {
   NS_ASSERTION(mPresContext && mPresContext->IsRoot(),
                "Should only schedule view manager flush on root prescontexts");
-  mViewManagerFlushIsPending = true;
-  if (!mViewManagerFlushCause) {
-    mViewManagerFlushCause = profiler_capture_backtrace();
+  if (!mPaintCause) {
+    mPaintCause = profiler_capture_backtrace();
   }
-  mHasScheduleFlush = true;
-  EnsureTimerStarted(eNeverAdjustTimer);
+  ScheduleRenderingPhase(RenderingPhase::Paint);
+  EnsureTimerStarted();
 }
 
 

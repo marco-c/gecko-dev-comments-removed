@@ -133,7 +133,7 @@ bool nsPresContext::IsDOMPaintEventPending() {
   }
 
   nsRootPresContext* drpc = GetRootPresContext();
-  if (drpc && drpc->mRefreshDriver->ViewManagerFlushIsPending()) {
+  if (drpc && drpc->mRefreshDriver->IsPaintPending()) {
     
     
     
@@ -2373,26 +2373,6 @@ void nsPresContext::FireDOMPaintEvent(
   event->SetTrusted(true);
   EventDispatcher::DispatchDOMEvent(dispatchTarget, nullptr,
                                     static_cast<Event*>(event), this, nullptr);
-}
-
-void nsPresContext::NotifyInvalidation(TransactionId aTransactionId,
-                                       const nsIntRect& aRect) {
-  
-  
-  
-  
-  
-  
-  nsIntRect clampedRect = nsIntRect::MaxIntRect();
-  clampedRect.ScaleInverseRoundIn(AppUnitsPerDevPixel());
-
-  clampedRect = clampedRect.Intersect(aRect);
-
-  nsRect rect(DevPixelsToAppUnits(clampedRect.x),
-              DevPixelsToAppUnits(clampedRect.y),
-              DevPixelsToAppUnits(clampedRect.width),
-              DevPixelsToAppUnits(clampedRect.height));
-  NotifyInvalidation(aTransactionId, rect);
 }
 
 nsPresContext::TransactionInvalidations* nsPresContext::GetInvalidations(
