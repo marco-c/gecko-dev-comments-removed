@@ -41,6 +41,9 @@ def test(mod, path, entity=None):
         if re.match(r"toolkit/about/[^/]*Webrtc.ftl", path):
             
             return "error"
+        if re.match(r"toolkit/about/[^/]*Logging.ftl", path):
+            
+            return "error"
         return "ignore"
 
     if mod == "dom":
