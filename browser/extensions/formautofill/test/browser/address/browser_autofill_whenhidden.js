@@ -83,13 +83,6 @@ add_setup(async function init() {
     "data:text/html," + FORM_MARKUP
   );
 
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["extensions.formautofill.heuristics.refillOnSiteClearingFields", false],
-    ],
-  });
-
   registerCleanupFunction(async () => {
     gBrowser.removeTab(tab);
     await removeAllRecords();
