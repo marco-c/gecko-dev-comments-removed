@@ -27,18 +27,10 @@ CMDLINE_TOOLS_VERSION = "13114758"
 BUNDLETOOL_VERSION = "1.18.1"
 
 
-LINUX_X86_64_ANDROID_AVD = "linux64-android-avd-x86_64-repack"
-LINUX_ARM_ANDROID_AVD = "linux64-android-avd-arm-repack"
-
-MACOS_X86_64_ANDROID_AVD = "linux64-android-avd-x86_64-repack"
-MACOS_ARM_ANDROID_AVD = "linux64-android-avd-arm-repack"
-MACOS_ARM64_ANDROID_AVD = "linux64-android-avd-arm64-repack"
-
-WINDOWS_X86_64_ANDROID_AVD = "linux64-android-avd-x86_64-repack"
-WINDOWS_ARM_ANDROID_AVD = "linux64-android-avd-arm-repack"
+X86_64_ANDROID_AVD = "linux64-android-avd-x86_64-repack"
+ARM64_ANDROID_AVD = "linux64-android-avd-arm64-repack"
 
 AVD_MANIFEST_X86_64 = Path(__file__).resolve().parent / "android-avds/x86_64.json"
-AVD_MANIFEST_ARM = Path(__file__).resolve().parent / "android-avds/arm.json"
 AVD_MANIFEST_ARM64 = Path(__file__).resolve().parent / "android-avds/arm64.json"
 
 JAVA_VERSION_MAJOR = "17"
@@ -318,6 +310,14 @@ def ensure_android(
 
     `os_name` can be 'linux', 'macosx' or 'windows'.
     """
+
+    if os_name == "windows" and os_arch == "ARM64":
+        raise NotImplementedError(
+            "Building for Android is not supported on ARM64 Windows because "
+            "Google does not distribute emulator binary for ARM64 Windows. "
+            "See also https://issuetracker.google.com/issues/264614669."
+        )
+
     
     
     
@@ -797,7 +797,7 @@ def main(argv):
     return 0
 
 
-def ensure_java(os_name, os_arch):
+def ensure_java(os_name: str, os_arch: str):
     mozbuild_path, _, _, _ = get_paths(os_name)
 
     if os_name == "macosx":
@@ -807,7 +807,7 @@ def ensure_java(os_name, os_arch):
 
     if os_arch == "x86_64":
         arch = "x64"
-    elif os_arch == "arm64":
+    elif os_arch.lower() == "arm64":
         arch = "aarch64"
     else:
         arch = os_arch
