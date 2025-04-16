@@ -443,6 +443,8 @@ class RefType {
   
   RefType topType() const;
 
+  static RefType leastUpperBound(RefType a, RefType b);
+
   
   
   TypeDefKind typeDefKind() const;
@@ -970,6 +972,13 @@ class MaybeRefType {
   bool operator!=(const MaybeRefType& other) { return inner_ != other.inner_; }
 
   explicit operator bool() const { return isSome(); }
+
+  static MaybeRefType leastUpperBound(MaybeRefType a, MaybeRefType b) {
+    if (a.isSome() && b.isSome()) {
+      return MaybeRefType(RefType::leastUpperBound(a.value(), b.value()));
+    }
+    return MaybeRefType();
+  }
 };
 
 
