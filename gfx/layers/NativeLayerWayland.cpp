@@ -101,7 +101,18 @@ already_AddRefed<NativeLayerRootWayland> NativeLayerRootWayland::Create(
 
 void NativeLayerRootWayland::Init() {
   mTmpBuffer = widget::WaylandBufferSHM::Create(LayoutDeviceIntSize(1, 1));
-  mDRMFormat = new DRMFormat(GBM_FORMAT_ARGB8888);
+
+  
+  if (!gfx::gfxVars::UseDMABufSurfaceExport()) {
+    RefPtr<DMABufFormats> formats = WaylandDisplayGet()->GetDMABufFormats();
+    if (formats) {
+      mDRMFormat = formats->GetFormat(GBM_FORMAT_ARGB8888,
+                                       true);
+    }
+    if (!mDRMFormat) {
+      mDRMFormat = new DRMFormat(GBM_FORMAT_ARGB8888);
+    }
+  }
 
   
   WaylandSurfaceLock lock(mSurface);
