@@ -275,6 +275,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "GPUOutOfMemoryError", nightly: true },
   
+  { name: "GPUPipelineError", nightly: true },
+  
   { name: "GPUPipelineLayout", nightly: true },
   
   { name: "GPUQuerySet", nightly: true },
