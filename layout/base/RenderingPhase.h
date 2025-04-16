@@ -24,10 +24,7 @@ enum class RenderingPhase : uint8_t {
   FullscreenSteps,
   
   AnimationFrameCallbacks,
-  
-  
-  UpdateContentRelevancy,
-  ResizeObservers,
+  Layout,
   ViewTransitionOperations,
   UpdateIntersectionObservations,
   
@@ -47,8 +44,7 @@ inline constexpr RenderingPhases AllRenderingPhases() {
       RenderingPhase::UpdateAnimationsAndSendEvents,
       RenderingPhase::FullscreenSteps,
       RenderingPhase::AnimationFrameCallbacks,
-      RenderingPhase::UpdateContentRelevancy,
-      RenderingPhase::ResizeObservers,
+      RenderingPhase::Layout,
       RenderingPhase::ViewTransitionOperations,
       RenderingPhase::UpdateIntersectionObservations,
       RenderingPhase::Paint,

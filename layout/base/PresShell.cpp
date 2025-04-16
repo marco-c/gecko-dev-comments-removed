@@ -448,26 +448,6 @@ struct nsCallbackEventRequest {
 
 
 
-
-
-
-#ifdef DEBUG
-#  define ASSERT_REFLOW_SCHEDULED_STATE()                                      \
-    {                                                                          \
-      if (ObservingStyleFlushes()) {                                           \
-        MOZ_ASSERT(                                                            \
-            mDocument->GetBFCacheEntry() ||                                    \
-                mPresContext->RefreshDriver()->IsStyleFlushObserver(this),     \
-            "Unexpected state");                                               \
-      } else {                                                                 \
-        MOZ_ASSERT(!mPresContext->RefreshDriver()->IsStyleFlushObserver(this), \
-                   "Unexpected state");                                        \
-      }                                                                        \
-    }
-#else
-#  define ASSERT_REFLOW_SCHEDULED_STATE()
-#endif
-
 class nsAutoCauseReflowNotifier {
  public:
   MOZ_CAN_RUN_SCRIPT explicit nsAutoCauseReflowNotifier(PresShell* aPresShell)
@@ -814,7 +794,6 @@ PresShell::PresShell(Document* aDocument)
       mIsFirstPaint(true),
       mObservesMutationsForPrint(false),
       mWasLastReflowInterrupted(false),
-      mObservingStyleFlushes(false),
       mResizeEventPending(false),
       mVisualViewportResizeEventPending(false),
       mFontSizeInflationForceEnabled(false),
@@ -1357,9 +1336,6 @@ void PresShell::Destroy() {
   
   
   
-  StopObservingRefreshDriver();
-  mObservingStyleFlushes = false;
-
   CancelAllPendingReflows();
   CancelPostedReflowCallbacks();
 
@@ -1396,20 +1372,13 @@ void PresShell::Destroy() {
   mTouchManager.Destroy();
 }
 
-void PresShell::StopObservingRefreshDriver() {
-  if (mObservingStyleFlushes) {
-    nsRefreshDriver* rd = mPresContext->RefreshDriver();
-    rd->RemoveStyleFlushObserver(this);
-  }
-}
-
 void PresShell::StartObservingRefreshDriver() {
   nsRefreshDriver* rd = mPresContext->RefreshDriver();
   if (mResizeEventPending || mVisualViewportResizeEventPending) {
     rd->ScheduleRenderingPhase(mozilla::RenderingPhase::ResizeSteps);
   }
-  if (mObservingStyleFlushes) {
-    rd->AddStyleFlushObserver(this);
+  if (mNeedLayoutFlush || mNeedStyleFlush) {
+    rd->ScheduleRenderingPhase(mozilla::RenderingPhase::Layout);
   }
 }
 
@@ -1837,7 +1806,8 @@ nsresult PresShell::Initialize() {
     FrameNeedsReflow(rootFrame, IntrinsicDirty::None, NS_FRAME_IS_DIRTY);
     NS_ASSERTION(mDirtyRoots.Contains(rootFrame),
                  "Should be in mDirtyRoots now");
-    NS_ASSERTION(mObservingStyleFlushes, "Why no reflow scheduled?");
+    NS_ASSERTION(mNeedStyleFlush || mNeedLayoutFlush,
+                 "Why no reflow scheduled?");
   }
 
   
@@ -1995,12 +1965,18 @@ bool PresShell::CanHandleUserInputEvents(WidgetGUIEvent* aGUIEvent) {
 
 void PresShell::PostScrollEvent(Runnable* aEvent) {
   MOZ_ASSERT(aEvent);
-  const bool hadEvents = !mPendingScrollEvents.IsEmpty();
   mPendingScrollEvents.AppendElement(aEvent);
-  if (!hadEvents) {
-    mPresContext->RefreshDriver()->ScheduleRenderingPhase(
-        RenderingPhase::ScrollSteps);
-  }
+
+  
+  
+  
+  
+  
+  
+  
+  mPresContext->RefreshDriver()->ScheduleRenderingPhases(
+      {RenderingPhase::ScrollSteps, RenderingPhase::Layout,
+       RenderingPhase::UpdateIntersectionObservations});
 }
 
 void PresShell::ScheduleResizeEventIfNeeded(ResizeEventKind aKind) {
@@ -2949,10 +2925,7 @@ ScrollContainerFrame* PresShell::GetScrollContainerFrameToScroll(
   return GetScrollContainerFrameToScrollForContent(content.get(), aDirections);
 }
 
-void PresShell::CancelAllPendingReflows() {
-  mDirtyRoots.Clear();
-  ASSERT_REFLOW_SCHEDULED_STATE();
-}
+void PresShell::CancelAllPendingReflows() { mDirtyRoots.Clear(); }
 
 static bool DestroyFramesAndStyleDataFor(
     Element* aElement, nsPresContext& aPresContext,
@@ -10620,15 +10593,12 @@ bool PresShell::RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver) {
   return true;
 }
 
-void PresShell::DoObserveStyleFlushes() {
-  MOZ_ASSERT(!ObservingStyleFlushes());
-  if (MOZ_UNLIKELY(IsDestroying())) {
+void PresShell::ScheduleFlush() {
+  if (MOZ_UNLIKELY(IsDestroying()) ||
+      MOZ_UNLIKELY(mDocument->GetBFCacheEntry())) {
     return;
   }
-  mObservingStyleFlushes = true;
-  if (MOZ_LIKELY(!mDocument->GetBFCacheEntry())) {
-    mPresContext->RefreshDriver()->AddStyleFlushObserver(this);
-  }
+  mPresContext->RefreshDriver()->ScheduleRenderingPhase(RenderingPhase::Layout);
 }
 
 
@@ -12577,13 +12547,8 @@ void PresShell::ScheduleContentRelevancyUpdate(ContentRelevancyReason aReason) {
   if (MOZ_UNLIKELY(mIsDestroying)) {
     return;
   }
-
   mContentVisibilityRelevancyToUpdate += aReason;
-
-  SetNeedLayoutFlush();
-  if (nsPresContext* presContext = GetPresContext()) {
-    presContext->RefreshDriver()->EnsureContentRelevancyUpdateHappens();
-  }
+  EnsureLayoutFlush();
 }
 
 PresShell::ProximityToViewportResult PresShell::DetermineProximityToViewport() {
@@ -12653,6 +12618,6 @@ void PresShell::UpdateContentRelevancyImmediately(
 
   mContentVisibilityRelevancyToUpdate += aReason;
 
-  SetNeedLayoutFlush();
+  EnsureLayoutFlush();
   UpdateRelevancyOfContentVisibilityAutoFrames();
 }

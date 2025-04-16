@@ -1263,11 +1263,10 @@ static constexpr nsLiteralCString sRenderingPhaseNames[] = {
     "Update animations and send events"_ns,    
     "Fullscreen steps"_ns,                     
     "Animation and video frame callbacks"_ns,  
-    "Update content relevancy"_ns,             
-    "Resize observers"_ns,                     
-    "View transition operations"_ns,           
-    "Update intersection observations"_ns,     
-    "Paint"_ns,                                
+    "Layout, content-visibility and resize observers"_ns,  
+    "View transition operations"_ns,        
+    "Update intersection observations"_ns,  
+    "Paint"_ns,                             
 };
 
 static_assert(std::size(sRenderingPhaseNames) == size_t(RenderingPhase::Count),
@@ -1831,12 +1830,6 @@ uint32_t nsRefreshDriver::ObserverCount() const {
   for (const ObserverArray& array : mObservers) {
     sum += array.Length();
   }
-
-  
-  
-  
-  
-  sum += mStyleFlushObservers.Length();
   sum += mEarlyRunners.Length();
   return sum;
 }
@@ -1848,7 +1841,7 @@ bool nsRefreshDriver::HasObservers() const {
     }
   }
 
-  return !mStyleFlushObservers.IsEmpty() || !mEarlyRunners.IsEmpty();
+  return !mEarlyRunners.IsEmpty();
 }
 
 void nsRefreshDriver::AppendObserverDescriptionsToString(
@@ -1858,10 +1851,6 @@ void nsRefreshDriver::AppendObserverDescriptionsToString(
       aStr.AppendPrintf("%s [%s], ", observer.mDescription,
                         kFlushTypeNames[observer.mFlushType]);
     }
-  }
-  if (!mStyleFlushObservers.IsEmpty()) {
-    aStr.AppendPrintf("%zux Style flush observer, ",
-                      mStyleFlushObservers.Length());
   }
   if (!mEarlyRunners.IsEmpty()) {
     aStr.AppendPrintf("%zux Early runner, ", mEarlyRunners.Length());
@@ -2024,50 +2013,6 @@ void nsRefreshDriver::DoTick() {
   }
 }
 
-void nsRefreshDriver::FlushLayoutOnPendingDocsAndFixUpFocus() {
-  AutoTArray<RefPtr<PresShell>, 16> observers;
-  observers.AppendElements(mStyleFlushObservers);
-  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      break;
-    }
-    
-    
-    if (!mStyleFlushObservers.RemoveElement(presShell)) {
-      continue;
-    }
-
-    LogPresShellObserver::Run run(presShell, this);
-    presShell->mWasLastReflowInterrupted = false;
-    const ChangesToFlush ctf(FlushType::InterruptibleLayout, false);
-    
-    MOZ_KnownLive(presShell)->FlushPendingNotifications(ctf);
-    const bool fixedUpFocus = MOZ_KnownLive(presShell)->FixUpFocus();
-    if (fixedUpFocus) {
-      MOZ_KnownLive(presShell)->FlushPendingNotifications(ctf);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    presShell->mObservingStyleFlushes = false;
-    if (NS_WARN_IF(presShell->NeedStyleFlush()) ||
-        NS_WARN_IF(presShell->NeedLayoutFlush()) ||
-        NS_WARN_IF(fixedUpFocus && presShell->NeedsFocusFixUp())) {
-      presShell->ObserveStyleFlushes();
-    }
-
-    
-    
-    presShell->NotifyFontFaceSetOnRefresh();
-    mNeedToRecomputeVisibility = true;
-  }
-}
-
 void nsRefreshDriver::MaybeIncreaseMeasuredTicksSinceLoading() {
   if (mPresContext && mPresContext->IsRoot()) {
     mPresContext->MaybeIncreaseMeasuredTicksSinceLoading();
@@ -2076,28 +2021,6 @@ void nsRefreshDriver::MaybeIncreaseMeasuredTicksSinceLoading() {
 
 void nsRefreshDriver::UpdateRemoteFrameEffects() {
   mPresContext->Document()->UpdateRemoteFrameEffects();
-}
-
-void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
-  auto Filter = [](const Document& aDocument) {
-    PresShell* ps = aDocument.GetPresShell();
-    if (!ps || !ps->DidInitialize()) {
-      
-      
-      return false;
-    }
-    return ps->HasContentVisibilityAutoFrames() ||
-           aDocument.HasResizeObservers() ||
-           aDocument.HasElementsWithLastRememberedSize();
-  };
-
-  RunRenderingPhase(
-      RenderingPhase::ResizeObservers,
-      [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-        MOZ_KnownLive(aDoc)
-            .DetermineProximityToViewportAndNotifyResizeObservers();
-      },
-      Filter);
 }
 
 static void UpdateAndReduceAnimations(Document& aDocument) {
@@ -2559,27 +2482,25 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   MaybeIncreaseMeasuredTicksSinceLoading();
 
-  
-  
-  
-  
-  
-  
-  FlushLayoutOnPendingDocsAndFixUpFocus();
-
   if (!mPresContext || !mPresContext->GetPresShell()) {
     return StopTimer();
   }
 
-  
-  
-  if (mNeedToRecomputeVisibility && !mThrottled &&
-      aNowTime >= mNextRecomputeVisibilityTick &&
-      !presShell->IsPaintingSuppressed()) {
-    mNextRecomputeVisibilityTick = aNowTime + mMinRecomputeVisibilityInterval;
-    mNeedToRecomputeVisibility = false;
+  if (mRenderingPhasesNeeded.contains(RenderingPhase::Layout)) {
+    mNeedToRecomputeVisibility = true;
+    
+    mRenderingPhasesNeeded += RenderingPhase::UpdateIntersectionObservations;
+  }
 
-    presShell->ScheduleApproximateFrameVisibilityUpdateNow();
+  
+  RunRenderingPhase(
+      RenderingPhase::Layout,
+      [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        MOZ_KnownLive(aDoc)
+            .DetermineProximityToViewportAndNotifyResizeObservers();
+      });
+  if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
+    return StopTimer();
   }
 
   
@@ -2590,30 +2511,13 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  RunRenderingPhase(RenderingPhase::UpdateContentRelevancy, [](Document& aDoc) {
-    if (PresShell* ps = aDoc.GetPresShell()) {
-      ps->UpdateRelevancyOfContentVisibilityAutoFrames();
-    }
-  });
-
-  
-  
-  
-  
-  mRenderingPhasesNeeded += RenderingPhase::ResizeObservers;
-  DetermineProximityToViewportAndNotifyResizeObservers();
-  if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
-    return StopTimer();
+  if (mNeedToRecomputeVisibility && !mThrottled &&
+      aNowTime >= mNextRecomputeVisibilityTick &&
+      !presShell->IsPaintingSuppressed()) {
+    mNextRecomputeVisibilityTick = aNowTime + mMinRecomputeVisibilityInterval;
+    mNeedToRecomputeVisibility = false;
+    presShell->ScheduleApproximateFrameVisibilityUpdateNow();
   }
-
-  
 
   
   
@@ -2625,10 +2529,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   
-  
-  
-  
-  mRenderingPhasesNeeded += RenderingPhase::UpdateIntersectionObservations;
   RunRenderingPhase(
       RenderingPhase::UpdateIntersectionObservations,
       [&](Document& aDoc) { aDoc.UpdateIntersections(aNowTime); });

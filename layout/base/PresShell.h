@@ -418,6 +418,8 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool UsesMobileViewportSizing() const;
 
+  void ResetWasLastReflowInterrupted() { mWasLastReflowInterrupted = false; }
+
   
 
 
@@ -544,28 +546,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   void NotifyFontFaceSetOnRefresh();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void StopObservingRefreshDriver();
   void StartObservingRefreshDriver();
-
-  bool ObservingStyleFlushes() const { return mObservingStyleFlushes; }
-  void ObserveStyleFlushes() {
-    if (!ObservingStyleFlushes()) {
-      DoObserveStyleFlushes();
-    }
-  }
 
   
 
@@ -1248,7 +1229,9 @@ class PresShell final : public nsStubDocumentObserver,
     mIsNeverPainting = aNeverPainting;
   }
 
-  bool MightHavePendingFontLoads() const { return ObservingStyleFlushes(); }
+  bool MightHavePendingFontLoads() const {
+    return mNeedLayoutFlush || mNeedStyleFlush;
+  }
 
   void SyncWindowProperties(bool aSync);
   struct WindowSizeConstraints {
@@ -1797,9 +1780,7 @@ class PresShell final : public nsStubDocumentObserver,
   void PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags);
 
   
-
-
-  void DoObserveStyleFlushes();
+  void ScheduleFlush();
 
   
 
@@ -1867,7 +1848,6 @@ class PresShell final : public nsStubDocumentObserver,
   void PopCurrentEventInfo();
   nsIContent* GetCurrentEventContent();
 
-  friend class ::nsRefreshDriver;
   friend class ::nsAutoCauseReflowNotifier;
 
   void WillCauseReflow();
@@ -3237,9 +3217,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   bool mWasLastReflowInterrupted : 1;
-
-  
-  bool mObservingStyleFlushes : 1;
 
   bool mResizeEventPending : 1;
   bool mVisualViewportResizeEventPending : 1;

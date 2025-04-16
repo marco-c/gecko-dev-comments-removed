@@ -7550,9 +7550,7 @@ void Document::SetBFCacheEntry(nsIBFCacheEntry* aEntry) {
   MOZ_ASSERT(IsBFCachingAllowed() || !aEntry, "You should have checked!");
 
   if (mPresShell) {
-    if (aEntry) {
-      mPresShell->StopObservingRefreshDriver();
-    } else if (mBFCacheEntry) {
+    if (!aEntry && mBFCacheEntry) {
       mPresShell->StartObservingRefreshDriver();
     }
   }
@@ -18010,36 +18008,67 @@ PermissionDelegateHandler* Document::GetPermissionDelegateHandler() {
 }
 
 void Document::ScheduleResizeObserversNotification() {
-  MaybeScheduleRenderingPhases({RenderingPhase::ResizeObservers});
+  MaybeScheduleRenderingPhases({RenderingPhase::Layout});
 }
 
-static void FlushLayoutForWholeBrowsingContextTree(Document& aDoc) {
-  const ChangesToFlush ctf(FlushType::Layout,  false);
+static void FlushLayoutForWholeBrowsingContextTree(Document& aDoc,
+                                                   const ChangesToFlush& aCtf) {
   BrowsingContext* bc = aDoc.GetBrowsingContext();
   if (bc && bc->GetExtantDocument() == &aDoc) {
     RefPtr<BrowsingContext> top = bc->Top();
-    top->PreOrderWalk([ctf](BrowsingContext* aCur) {
+    top->PreOrderWalk([aCtf](BrowsingContext* aCur) {
       if (Document* doc = aCur->GetExtantDocument()) {
-        doc->FlushPendingNotifications(ctf);
+        doc->FlushPendingNotifications(aCtf);
       }
     });
   } else {
     
     
-    aDoc.FlushPendingNotifications(ctf);
+    aDoc.FlushPendingNotifications(aCtf);
   }
 }
 
+
 void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
-  uint32_t shallowestTargetDepth = 0;
+  RefPtr ps = GetPresShell();
+  if (!ps) {
+    return;
+  }
+
+  
+  
+  const bool interruptible = !ps->HasContentVisibilityAutoFrames() &&
+                             !HasResizeObservers() &&
+                             !HasElementsWithLastRememberedSize();
+  ps->ResetWasLastReflowInterrupted();
+
+  
+  ps->UpdateRelevancyOfContentVisibilityAutoFrames();
+
+  
+  uint32_t resizeObserverDepth = 0;
   bool initialResetOfScrolledIntoViewFlagsDone = false;
+  const ChangesToFlush ctf(
+      interruptible ? FlushType::InterruptibleLayout : FlushType::Layout,
+       false);
+
+  
   while (true) {
     
-    
-    
-    
-    FlushLayoutForWholeBrowsingContextTree(*this);
+    if (interruptible) {
+      ps->FlushPendingNotifications(ctf);
+    } else {
+      
+      
+      
+      
+      
+      
+      FlushLayoutForWholeBrowsingContextTree(*this, ctf);
+    }
 
+    
+    
     
     
     
@@ -18051,40 +18080,45 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
     
     UpdateLastRememberedSizes();
 
-    if (PresShell* presShell = GetPresShell()) {
-      auto result = presShell->DetermineProximityToViewport();
-      if (result.mHadInitialDetermination) {
+    
+    
+    
+    
+    
+    auto result = ps->DetermineProximityToViewport();
+    if (result.mHadInitialDetermination) {
+      
+      
+      continue;
+    }
+    if (result.mAnyScrollIntoViewFlag) {
+      
+      
+      
+      
+      ps->ClearTemporarilyVisibleForScrolledIntoViewDescendantFlags();
+      ps->ScheduleContentRelevancyUpdate(ContentRelevancyReason::Visible);
+      if (!initialResetOfScrolledIntoViewFlagsDone) {
+        initialResetOfScrolledIntoViewFlagsDone = true;
         continue;
       }
-      if (result.mAnyScrollIntoViewFlag) {
-        
-        
-        
-        
-        
-        presShell->ClearTemporarilyVisibleForScrolledIntoViewDescendantFlags();
-        presShell->ScheduleContentRelevancyUpdate(
-            ContentRelevancyReason::Visible);
-        if (!initialResetOfScrolledIntoViewFlagsDone) {
-          initialResetOfScrolledIntoViewFlagsDone = true;
-          continue;
-        }
-      }
     }
 
     
     
+    GatherAllActiveResizeObservations(resizeObserverDepth);
     
-    GatherAllActiveResizeObservations(shallowestTargetDepth);
-
     if (!HasAnyActiveResizeObservations()) {
+      
       break;
     }
-
-    DebugOnly<uint32_t> oldShallowestTargetDepth = shallowestTargetDepth;
-    shallowestTargetDepth = BroadcastAllActiveResizeObservations();
-    NS_ASSERTION(oldShallowestTargetDepth < shallowestTargetDepth,
-                 "shallowestTargetDepth should be getting strictly deeper");
+    
+    
+    DebugOnly<uint32_t> oldResizeObserverDepth = resizeObserverDepth;
+    resizeObserverDepth = BroadcastAllActiveResizeObservations();
+    NS_ASSERTION(oldResizeObserverDepth < resizeObserverDepth,
+                 "resizeObserverDepth should be getting strictly deeper");
+    
   }
 
   if (HasAnySkippedResizeObservations()) {
@@ -18111,6 +18145,28 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
     
     ScheduleResizeObserversNotification();
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool fixedUpFocus = ps->FixUpFocus();
+  if (fixedUpFocus) {
+    FlushPendingNotifications(ctf);
+  }
+
+  if (NS_WARN_IF(ps->NeedStyleFlush()) || NS_WARN_IF(ps->NeedLayoutFlush()) ||
+      NS_WARN_IF(fixedUpFocus && ps->NeedsFocusFixUp())) {
+    ps->EnsureLayoutFlush();
+  }
+
+  
+  
+  ps->NotifyFontFaceSetOnRefresh();
 }
 
 void Document::GatherAllActiveResizeObservations(uint32_t aDepth) {
