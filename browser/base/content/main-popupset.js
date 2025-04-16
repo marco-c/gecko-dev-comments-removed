@@ -147,14 +147,18 @@ document.addEventListener(
         case "saved-tab-group-context-menu_openInThisWindow":
           {
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            SessionStore.openSavedTabGroup(tabGroupId, window);
+            SessionStore.openSavedTabGroup(tabGroupId, window, {
+              source: lazy.TabGroupMetrics.METRIC_SOURCE.RECENT_TABS,
+            });
           }
           break;
         case "saved-tab-group-context-menu_openInNewWindow":
           {
             
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window);
+            let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window, {
+              source: lazy.TabGroupMetrics.METRIC_SOURCE.RECENT_TABS,
+            });
             gBrowser.replaceGroupWithWindow(tabGroup);
           }
           break;
