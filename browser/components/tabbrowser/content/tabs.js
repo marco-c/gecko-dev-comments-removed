@@ -20,14 +20,8 @@
   const DIRECTION_FORWARD = 1;
 
   const isTab = element => gBrowser.isTab(element);
+  const isTabGroup = element => gBrowser.isTabGroup(element);
   const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
-
-  
-
-
-
-
-  const isTabGroup = element => !!(element?.tagName == "tab-group");
 
   class MozTabbrowserTabs extends MozElements.TabsBase {
     static observedAttributes = ["orient"];

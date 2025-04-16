@@ -5882,6 +5882,15 @@
 
 
 
+    isTabGroup(element) {
+      return !!(element?.tagName == "tab-group");
+    }
+
+    
+
+
+
+
     isTabGroupLabel(element) {
       return !!element?.classList?.contains("tab-group-label");
     }
@@ -5936,7 +5945,7 @@
 
 
     moveTabTo(
-      aTab,
+      element,
       {
         elementIndex,
         tabIndex,
@@ -5950,7 +5959,7 @@
       }
 
       
-      if (this.isTab(aTab) && aTab.pinned) {
+      if (this.isTab(element) && element.pinned) {
         tabIndex = Math.min(tabIndex, this.pinnedTabCount - 1);
       } else {
         tabIndex = Math.max(tabIndex, this.pinnedTabCount);
@@ -5958,31 +5967,33 @@
 
       
       if (
-        this.isTab(aTab) &&
-        aTab._tPos == tabIndex &&
-        !(aTab.group && forceUngrouped)
+        this.isTab(element) &&
+        element._tPos == tabIndex &&
+        !(element.group && forceUngrouped)
       ) {
         return;
       }
 
       
       
-      if (this.isTabGroupLabel(aTab)) {
+      if (this.isTabGroupLabel(element)) {
+        element = element.group;
+      }
+      if (this.isTabGroup(element)) {
         forceUngrouped = true;
-        aTab = aTab.group;
       }
 
       this.#handleTabMove(
-        aTab,
+        element,
         () => {
           let neighbor = this.tabs[tabIndex];
           if (forceUngrouped && neighbor.group) {
             neighbor = neighbor.group;
           }
-          if (neighbor && tabIndex > aTab._tPos) {
-            neighbor.after(aTab);
+          if (neighbor && this.isTab(element) && tabIndex > element._tPos) {
+            neighbor.after(element);
           } else {
-            this.tabContainer.insertBefore(aTab, neighbor);
+            this.tabContainer.insertBefore(element, neighbor);
           }
         },
         { isUserTriggered, telemetrySource }
@@ -5994,8 +6005,8 @@
 
 
 
-    moveTabBefore(tab, targetElement, metricsContext) {
-      this.#moveTabNextTo(tab, targetElement, true, metricsContext);
+    moveTabBefore(element, targetElement, metricsContext) {
+      this.#moveTabNextTo(element, targetElement, true, metricsContext);
     }
 
     
@@ -6003,8 +6014,8 @@
 
 
 
-    moveTabsBefore(tabs, targetElement, metricsContext) {
-      this.#moveTabsNextTo(tabs, targetElement, true, metricsContext);
+    moveTabsBefore(elements, targetElement, metricsContext) {
+      this.#moveTabsNextTo(elements, targetElement, true, metricsContext);
     }
 
     
@@ -6012,8 +6023,8 @@
 
 
 
-    moveTabAfter(tab, targetElement, metricsContext) {
-      this.#moveTabNextTo(tab, targetElement, false, metricsContext);
+    moveTabAfter(element, targetElement, metricsContext) {
+      this.#moveTabNextTo(element, targetElement, false, metricsContext);
     }
 
     
@@ -6021,8 +6032,8 @@
 
 
 
-    moveTabsAfter(tabs, targetElement, metricsContext) {
-      this.#moveTabsNextTo(tabs, targetElement, false, metricsContext);
+    moveTabsAfter(elements, targetElement, metricsContext) {
+      this.#moveTabsNextTo(elements, targetElement, false, metricsContext);
     }
 
     
@@ -6033,7 +6044,7 @@
 
 
 
-    #moveTabNextTo(tab, targetElement, moveBefore = false, metricsContext) {
+    #moveTabNextTo(element, targetElement, moveBefore = false, metricsContext) {
       if (this.isTabGroupLabel(targetElement)) {
         targetElement = targetElement.group;
         if (!moveBefore) {
@@ -6041,38 +6052,38 @@
           moveBefore = true;
         }
       }
-      if (this.isTabGroupLabel(tab)) {
-        tab = tab.group;
+      if (this.isTabGroupLabel(element)) {
+        element = element.group;
         if (targetElement?.group) {
           targetElement = targetElement.group;
         }
       }
 
       
-      if (tab.pinned && !targetElement?.pinned) {
+      if (element.pinned && !targetElement?.pinned) {
         targetElement = this.tabs[this.pinnedTabCount - 1];
         moveBefore = false;
-      } else if (!tab.pinned && targetElement && targetElement.pinned) {
+      } else if (!element.pinned && targetElement && targetElement.pinned) {
         targetElement = this.tabs[this.pinnedTabCount];
         moveBefore = true;
       }
 
       let getContainer = () => {
-        if (tab.pinned && this.tabContainer.verticalMode) {
+        if (element.pinned && this.tabContainer.verticalMode) {
           return this.tabContainer.verticalPinnedTabsContainer;
         }
         return this.tabContainer;
       };
 
       this.#handleTabMove(
-        tab,
+        element,
         () => {
           if (moveBefore) {
-            getContainer().insertBefore(tab, targetElement);
+            getContainer().insertBefore(element, targetElement);
           } else if (targetElement) {
-            targetElement.after(tab);
+            targetElement.after(element);
           } else {
-            getContainer().appendChild(tab);
+            getContainer().appendChild(element);
           }
         },
         metricsContext
@@ -6085,10 +6096,25 @@
 
 
 
-    #moveTabsNextTo(tabs, targetElement, moveBefore = false, metricsContext) {
-      this.#moveTabNextTo(tabs[0], targetElement, moveBefore, metricsContext);
-      for (let i = 1; i < tabs.length; i++) {
-        this.#moveTabNextTo(tabs[i], tabs[i - 1], false, metricsContext);
+    #moveTabsNextTo(
+      elements,
+      targetElement,
+      moveBefore = false,
+      metricsContext
+    ) {
+      this.#moveTabNextTo(
+        elements[0],
+        targetElement,
+        moveBefore,
+        metricsContext
+      );
+      for (let i = 1; i < elements.length; i++) {
+        this.#moveTabNextTo(
+          elements[i],
+          elements[i - 1],
+          false,
+          metricsContext
+        );
       }
     }
 
@@ -6099,6 +6125,9 @@
 
 
     moveTabToGroup(aTab, aGroup, metricsContext) {
+      if (!this.isTab(aTab)) {
+        throw new Error("Can only move a tab into a tab group");
+      }
       if (aTab.pinned) {
         return;
       }
@@ -6178,40 +6207,48 @@
 
 
 
-    #handleTabMove(aTab, moveActionCallback, metricsContext) {
+    #handleTabMove(element, moveActionCallback, metricsContext) {
+      let tabs;
+      if (this.isTab(element)) {
+        tabs = [element];
+      } else if (this.isTabGroup(element)) {
+        tabs = element.tabs;
+      } else {
+        throw new Error("Can only move a tab or tab group within the tab bar");
+      }
+
       let wasFocused = document.activeElement == this.selectedTab;
-      let previousTabState = this.#getTabMoveState(aTab);
+      let previousTabStates = tabs.map(tab => this.#getTabMoveState(tab));
 
       moveActionCallback();
 
       
       
       this.tabContainer._invalidateCachedTabs();
-
       this._lastRelatedTabMap = new WeakMap();
-
       this._updateTabsAfterInsert();
 
       if (wasFocused) {
         this.selectedTab.focus();
       }
 
-      if (aTab.selected) {
-        this.tabContainer._handleTabSelect(true);
+      for (let i = 0; i < tabs.length; i++) {
+        let tab = tabs[i];
+        if (tab.selected) {
+          this.tabContainer._handleTabSelect(true);
+        }
+        if (tab.pinned) {
+          this.tabContainer._positionPinnedTabs();
+        }
+
+        let currentTabState = this.#getTabMoveState(tab);
+        this.#notifyOnTabMove(
+          tab,
+          previousTabStates[i],
+          currentTabState,
+          metricsContext
+        );
       }
-
-      if (aTab.pinned) {
-        this.tabContainer._positionPinnedTabs();
-      }
-
-      let currentTabState = this.#getTabMoveState(aTab);
-
-      this.#notifyOnTabMove(
-        aTab,
-        previousTabState,
-        currentTabState,
-        metricsContext
-      );
     }
 
     
