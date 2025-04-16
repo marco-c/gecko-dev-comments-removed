@@ -12,6 +12,7 @@
 #include "mozilla/dom/UniFFIScaffolding.h"
 #include "mozilla/uniffi/OwnedRustBuffer.h"
 #include "mozilla/uniffi/FfiValue.h"
+#include "mozilla/uniffi/ResultPromise.h"
 #include "mozilla/uniffi/Rust.h"
 
 namespace mozilla::uniffi {
@@ -29,7 +30,7 @@ namespace mozilla::uniffi {
 
 
 class UniffiCallHandlerBase {
- protected:
+ public:
   
   
   
@@ -37,7 +38,7 @@ class UniffiCallHandlerBase {
   
   
   
-  virtual void ExtractSuccessfulCallResult(
+  virtual void LiftSuccessfulCallResult(
       JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest,
       ErrorResult& aError) = 0;
 
@@ -53,11 +54,14 @@ class UniffiCallHandlerBase {
   
   
   
-  void ExtractCallResult(
+  void LiftCallResult(
       JSContext* aCx,
       dom::RootedDictionary<dom::UniFFIScaffoldingCallResult>& aDest,
       ErrorResult& aError);
 
+  virtual ~UniffiCallHandlerBase() = default;
+
+ protected:
   
   int8_t mUniffiCallStatusCode = RUST_CALL_SUCCESS;
   FfiValueRustBuffer mUniffiCallStatusErrorBuf;
@@ -70,7 +74,7 @@ class UniffiSyncCallHandler : public UniffiCallHandlerBase {
 
   
   
-  virtual void PrepareRustArgs(
+  virtual void LowerRustArgs(
       const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError) = 0;
 
@@ -119,7 +123,7 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
   
   
   
-  virtual void PrepareArgsAndMakeRustCall(
+  virtual void LowerArgsAndMakeRustCall(
       const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError) = 0;
 
@@ -141,11 +145,6 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
   
   static void Poll(UniquePtr<UniffiAsyncCallHandler> aHandler);
 
-  
-  
-  
-  static void Finish(UniquePtr<UniffiAsyncCallHandler> aHandler);
-
  public:
   virtual ~UniffiAsyncCallHandler();
 
@@ -160,7 +159,7 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
 
  private:
   
-  RefPtr<dom::Promise> mPromise;
+  ResultPromise mPromise;
 
   
   
