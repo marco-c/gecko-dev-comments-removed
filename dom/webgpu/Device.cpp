@@ -1084,14 +1084,20 @@ void Device::Destroy() {
     mTrackedBuffers.Clear();
   }
 
-  if (!IsBridgeAlive()) {
-    
-    
-    ResolveLost(Some(dom::GPUDeviceLostReason::Destroyed), u""_ns);
-    return;
+  if (IsBridgeAlive()) {
+    mBridge->SendDeviceDestroy(mId);
   }
 
-  mBridge->SendDeviceDestroy(mId);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ResolveLost(Some(dom::GPUDeviceLostReason::Destroyed), u""_ns);
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
