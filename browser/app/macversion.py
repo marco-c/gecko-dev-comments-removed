@@ -3,7 +3,6 @@
 
 
 
-import io
 import re
 import sys
 from optparse import OptionParser
@@ -29,7 +28,7 @@ if not options.version:
 
 
 define, MOZ_BUILDID, buildid = (
-    io.open(options.buildid, "r", encoding="utf-8").read().split()
+    open(options.buildid, "r", encoding="utf-8").read().split()
 )
 
 

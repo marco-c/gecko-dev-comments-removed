@@ -149,7 +149,6 @@ def addtest(
     editor=MISSING_ARG,
     **kwargs,
 ):
-    import io
 
     import addtest
     from moztest.resolve import TEST_SUITES
@@ -223,7 +222,7 @@ def addtest(
             except OSError:
                 pass
 
-            with io.open(path, "w", newline="\n") as f:
+            with open(path, "w", newline="\n") as f:
                 f.write(template)
         else:
             

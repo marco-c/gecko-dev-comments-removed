@@ -2,7 +2,6 @@
 
 
 
-import io
 import logging
 import os
 import re
@@ -992,7 +991,7 @@ class RecursiveMakeBackend(MakeBackend):
                 obj.topobjdir = bf.environment.topobjdir
                 obj.config = bf.environment
                 self._create_makefile(obj, stub=stub)
-                with io.open(obj.output_path, encoding="utf-8") as fh:
+                with open(obj.output_path, encoding="utf-8") as fh:
                     content = fh.read()
                     
                     

@@ -1,6 +1,5 @@
 
 
-import io
 import os
 import re
 import shutil
@@ -55,7 +54,7 @@ class TestViewGeckoProfile(unittest.TestCase):
         
         temp_dir = tempfile.mkdtemp()
         profile_path = os.path.join(temp_dir, "fakeprofile.json")
-        with io.open(profile_path, "w") as f:
+        with open(profile_path, "w") as f:
             f.write("FAKE_PROFILE")
 
         

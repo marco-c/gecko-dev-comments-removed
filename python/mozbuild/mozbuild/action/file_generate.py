@@ -143,7 +143,7 @@ def main(argv):
                 
                 output.avoid_writing_to_file()
 
-    except IOError as e:
+    except OSError as e:
         print('Error opening file "{0}"'.format(e.filename), file=sys.stderr)
         traceback.print_exc()
         return 1

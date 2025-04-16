@@ -120,7 +120,7 @@ def _do_watch(qWatch, timeout):
             
             try:
                 proc.terminate()
-            except WindowsError as ex:
+            except OSError as ex:
                 
                 
                 

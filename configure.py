@@ -3,7 +3,6 @@
 
 
 import codecs
-import io
 import itertools
 import logging
 import os
@@ -276,7 +275,7 @@ def config_status(config, execute=True):
 
     
     
-    with io.open("config_status_deps.in", "w", encoding="utf-8", newline="\n") as fh:
+    with open("config_status_deps.in", "w", encoding="utf-8", newline="\n") as fh:
         for f in sorted(
             itertools.chain(
                 config["CONFIG_STATUS_DEPS"],

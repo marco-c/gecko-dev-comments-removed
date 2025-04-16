@@ -3,7 +3,6 @@
 
 
 
-import io
 import os
 import struct
 import sys
@@ -72,7 +71,7 @@ if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
     usage()
 
 for filename in sys.argv[1:]:
-    with io.open(filename, "rb") as f:
+    with open(filename, "rb") as f:
         magic = f.read(len(MAGIC))
         if magic != MAGIC:
             raise Exception("Bad magic number")

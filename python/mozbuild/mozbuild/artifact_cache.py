@@ -125,7 +125,7 @@ class ArtifactPersistLimit(dlmanager.PersistLimit):
                 continue
             try:
                 fs.remove(f.path)
-            except WindowsError:
+            except OSError:
                 
                 
                 kept.append(f)

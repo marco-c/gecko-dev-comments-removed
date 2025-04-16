@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-"
 
 
 
@@ -92,7 +91,10 @@ class PlatformInfo:
 
         build = self.build
         if build is not None and cleaned_name == "win":
-            version += "." + build
+            if build == "24h2":
+                version += ".26100"
+            else:
+                version += "." + build
         return version
 
     def _clean_arch(self) -> str:
@@ -156,7 +158,7 @@ class PlatformInfo:
         
         
         
-        if test_variant in ["no-fission"]:
+        if test_variant in ["no-fission", "1proc"]:
             mozinfo = "!" + mozinfo
         return mozinfo
 

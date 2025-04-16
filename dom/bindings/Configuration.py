@@ -2,7 +2,6 @@
 
 
 
-import io
 import itertools
 import os
 from collections import defaultdict
@@ -94,7 +93,7 @@ class Configuration(DescriptorProvider):
 
         
         glbl = {}
-        exec(io.open(filename, encoding="utf-8").read(), glbl)
+        exec(open(filename, encoding="utf-8").read(), glbl)
         config = glbl["DOMInterfaces"]
 
         self.attributeTemplates = dict()

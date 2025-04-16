@@ -2,20 +2,14 @@
 
 
 
-import sys
 import unittest
 from collections.abc import Iterable
+from io import StringIO
 from pathlib import Path
 from typing import List, Optional, Union
 
 import pytest
 from buildconfig import topsrcdir
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    
-    from io import StringIO
 
 from mach.command_util import load_commands_from_entry_point, load_commands_from_file
 from mach.main import Mach
@@ -63,10 +57,6 @@ def run_mach(request, get_mach):
 
         stdout = StringIO()
         stderr = StringIO()
-
-        if sys.version_info < (3, 0):
-            stdout.encoding = "UTF-8"
-            stderr.encoding = "UTF-8"
 
         try:
             result = m.run(argv, stdout=stdout, stderr=stderr)

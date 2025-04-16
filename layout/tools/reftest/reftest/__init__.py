@@ -2,7 +2,6 @@
 
 
 
-import io
 import os
 import re
 
@@ -143,7 +142,7 @@ class ReftestManifest(object):
         if self.finder:
             lines = self.finder.get(path).read().splitlines()
         else:
-            with io.open(path, "r", encoding="utf-8") as fh:
+            with open(path, "r", encoding="utf-8") as fh:
                 lines = fh.read().splitlines()
 
         urlprefix = ""

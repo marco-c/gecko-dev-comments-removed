@@ -2,7 +2,6 @@
 
 
 
-import io
 import os
 import sys
 
@@ -53,7 +52,7 @@ def read_ini(
     key = value = None
     section_names = set()
     if isinstance(fp, str):
-        fp = io.open(fp, encoding="utf-8")
+        fp = open(fp, encoding="utf-8")
 
     
     section = default
