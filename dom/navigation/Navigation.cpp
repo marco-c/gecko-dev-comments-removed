@@ -734,6 +734,7 @@ bool Navigation::InnerFireNavigateEvent(
             self->mTransition->Finished()->MaybeResolveWithUndefined();
           }
 
+          
           self->mTransition = nullptr;
         },
         [self = RefPtr(this), event,
@@ -760,13 +761,15 @@ bool Navigation::InnerFireNavigateEvent(
           
           event->Finish(false);
 
-          
-          
-          
+          if (AutoJSAPI jsapi;
+              !NS_WARN_IF(!jsapi.Init(event->GetParentObject()))) {
+            
+            RootedDictionary<ErrorEventInit> init(jsapi.cx());
+            ExtractErrorInformation(jsapi.cx(), aRejectionReason, init);
 
-          
-          
-          
+            
+            self->FireErrorEvent(u"navigateerror"_ns, init);
+          }
 
           
           if (apiMethodTracker) {
@@ -778,6 +781,7 @@ bool Navigation::InnerFireNavigateEvent(
             self->mTransition->Finished()->MaybeReject(aRejectionReason);
           }
 
+          
           self->mTransition = nullptr;
         });
   }
