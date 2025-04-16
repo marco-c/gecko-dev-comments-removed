@@ -154,7 +154,8 @@ class VideoFramePool<LIBAV_VER> {
   nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces;
   
   
-  int mFFMPEGPoolSize;
+  
+  int mMaxFFMPEGPoolSize;
   
   
   Maybe<bool> mTextureCreationWorks;
