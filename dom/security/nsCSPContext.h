@@ -194,18 +194,6 @@ class nsCSPContext : public nsIContentSecurityPolicy {
                              uint32_t aViolatedPolicyIndex,
                              uint32_t aLineNumber, uint32_t aColumnNumber);
 
-  enum class PolicyDataVersion {
-    Pre136,   
-    Post136,  
-              
-    V138_9PreRelease,  
-                       
-  };
-
-  nsresult TryReadPolicies(PolicyDataVersion aVersion,
-                           mozilla::Span<const uint8_t> aData,
-                           uint32_t aNumPolicies);
-
   nsCString mReferrer;
   uint64_t mInnerWindowID;          
   bool mSkipAllowInlineStyleCheck;  
