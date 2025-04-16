@@ -733,7 +733,9 @@ struct nsGridContainerFrame::GridItemInfo {
 
     
     
-    eApplyAutoMinSize = 0x40,
+    
+    
+    eContentBasedAutoMinSize = 0x40,
     
     eClampMarginBoxMinSize = 0x80,
     eIsSubgrid = 0x100,
@@ -1170,7 +1172,7 @@ void nsGridContainerFrame::GridItemInfo::Dump() const {
     if (state & ItemState::eIsFlexing) {
       printf("flexing ");
     }
-    if (state & ItemState::eApplyAutoMinSize) {
+    if (state & ItemState::eContentBasedAutoMinSize) {
       printf("auto-min-size ");
     }
     if (state & ItemState::eClampMarginBoxMinSize) {
@@ -5984,7 +5986,10 @@ static nscoord MinContribution(const GridItemInfo& aGridItem,
   
   
   
-  if (!isAuto || (aGridItem.mState[aAxis] & ItemState::eApplyAutoMinSize)) {
+  
+  
+  if (!isAuto ||
+      (aGridItem.mState[aAxis] & ItemState::eContentBasedAutoMinSize)) {
     sz += nsLayoutUtils::MinSizeContributionForAxis(
         axis, aRC, child, IntrinsicISizeType::MinISize,
         *aCache->mPercentageBasis);
@@ -6078,7 +6083,10 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     nscoord s;
     
     if (aGridItem.ShouldApplyAutoMinSize(wm, mAxis)) {
-      aGridItem.mState[mAxis] |= ItemState::eApplyAutoMinSize;
+      
+      
+      
+      aGridItem.mState[mAxis] |= ItemState::eContentBasedAutoMinSize;
       
       if (TrackSize::IsDefiniteMaxSizing(sz.mState)) {
         cache.mMinSizeClamp = aFunctions.MaxSizingFor(aRange.mStart)
@@ -6777,7 +6785,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
 
   for (auto& gridItem : aGridItems) {
     MOZ_ASSERT(!(gridItem.mState[mAxis] &
-                 (ItemState::eApplyAutoMinSize | ItemState::eIsFlexing |
+                 (ItemState::eContentBasedAutoMinSize | ItemState::eIsFlexing |
                   ItemState::eClampMarginBoxMinSize)),
                "Why are any of these bits set already?");
 
@@ -6829,6 +6837,21 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       continue;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!gridItem.mFrame->StyleDisplay()->IsScrollableOverflow() &&
+        state & TrackSize::eAutoMinSizing &&
+        (span == 1 || !(state & TrackSize::eFlexMaxSizing))) {
+      gridItem.mState[mAxis] |= ItemState::eContentBasedAutoMinSize;
+    }
+
     if (span == 1) {
       
       
@@ -6838,13 +6861,6 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     } else {
       
       
-
-      
-      if ((state & TrackSize::eAutoMinSizing) &&
-          !(state & TrackSize::eFlexMaxSizing) &&
-          gridItem.ShouldApplyAutoMinSize(wm, mAxis)) {
-        gridItem.mState[mAxis] |= ItemState::eApplyAutoMinSize;
-      }
 
       nsTArray<SpanningItemData>* items = &nonFlexSpanningItems;
       if (state & TrackSize::eFlexMaxSizing) {
@@ -6865,7 +6881,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
 
         
         if (TrackSize::IsDefiniteMaxSizing(state) &&
-            (gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize)) {
+            (gridItem.mState[mAxis] & ItemState::eContentBasedAutoMinSize)) {
           nscoord minSizeClamp = 0;
           for (auto i : lineRange.Range()) {
             minSizeClamp += aFunctions.MaxSizingFor(i).AsBreadth().Resolve(
@@ -6900,9 +6916,10 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       }
     }
 
-    MOZ_ASSERT(!(gridItem.mState[mAxis] & ItemState::eClampMarginBoxMinSize) ||
-                   (gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize),
-               "clamping only applies to Automatic Minimum Size");
+    MOZ_ASSERT(
+        !(gridItem.mState[mAxis] & ItemState::eClampMarginBoxMinSize) ||
+            (gridItem.mState[mAxis] & ItemState::eContentBasedAutoMinSize),
+        "clamping only applies to Automatic Minimum Size");
   }
 
   MOZ_ASSERT(maxSpan != 1, "Should only count spans greater than 1");
@@ -7848,7 +7865,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
     }
 
     if ((aGridItemInfo->mState[childIAxisInWM] &
-         ItemState::eApplyAutoMinSize)) {
+         ItemState::eContentBasedAutoMinSize)) {
       csFlags += ComputeSizeFlag::IApplyAutoMinSize;
     }
   }
