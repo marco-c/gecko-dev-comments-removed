@@ -653,9 +653,6 @@
       if (this.#verticalMode) {
         doScroll = true;
         scrollAmount = event.deltaY;
-        if (deltaMode == event.DOM_DELTA_PIXEL) {
-          instant = true;
-        }
       } else {
         
         
