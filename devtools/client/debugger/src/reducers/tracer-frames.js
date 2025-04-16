@@ -505,7 +505,7 @@ function registerDOMEvent(state, eventName) {
     state.domEventCategories = [...state.domEventCategories];
     addSortedCategoryOrEvent(state.domEventCategories, newCategory);
   }
-  if (!newCategory.events.some(e => e.name == name)) {
+  if (!newCategory.events.some(e => e.name == eventName)) {
     
     addSortedCategoryOrEvent(newCategory.events, { id, name });
     
