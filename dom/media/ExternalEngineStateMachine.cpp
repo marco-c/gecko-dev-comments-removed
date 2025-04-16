@@ -1411,20 +1411,25 @@ RefPtr<SetCDMPromise> ExternalEngineStateMachine::SetCDMProxy(
   return MediaDecoderStateMachineBase::SetCDMProxy(aProxy);
 }
 
-bool ExternalEngineStateMachine::IsCDMProxySupported(CDMProxy* aProxy) {
+nsresult ExternalEngineStateMachine::IsCDMProxySupported(CDMProxy* aProxy) {
 #ifdef MOZ_WMF_CDM
   MOZ_ASSERT(aProxy);
-  
-  if (StaticPrefs::media_wmf_media_engine_enabled() != 1 &&
-      StaticPrefs::media_wmf_media_engine_enabled() != 2) {
-    return false;
-  }
 
   
   
-  return aProxy->AsWMFCDMProxy();
+  if (!aProxy->AsWMFCDMProxy()) {
+    return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
+  }
+
+  
+  if (StaticPrefs::media_wmf_media_engine_enabled() != 1 &&
+      StaticPrefs::media_wmf_media_engine_enabled() != 2) {
+    return NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR;
+  }
+
+  return NS_OK;
 #else
-  return false;
+  return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
 #endif
 }
 
