@@ -787,12 +787,6 @@ var gSync = {
     if (ctaCopyVariant) {
       NimbusFeatures.fxaAvatarMenuItem.recordExposureEvent();
     }
-
-    
-    
-    if (this.isSignedIn && !UIState.get().syncEnabled) {
-      NimbusFeatures.syncSetupFlow.recordExposureEvent();
-    }
   },
 
   onFxAPanelViewHiding(panelview) {
@@ -804,11 +798,9 @@ var gSync = {
   onCommand(button) {
     switch (button.id) {
       case "PanelUI-fxa-menu-sync-prefs-button":
-      
-      case "PanelUI-fxa-menu-setup-sync-button":
         this.openPrefsFromFxaMenu("sync_settings", button);
         break;
-      case "PanelUI-fxa-menu-setup-sync-button-new":
+      case "PanelUI-fxa-menu-setup-sync-button":
         this.openChooseWhatToSync("sync_settings", button);
         break;
 
@@ -1136,16 +1128,9 @@ var gSync = {
   },
 
   _disableSyncOffIndicator() {
-    const newSyncSetupEnabled =
-      NimbusFeatures.syncSetupFlow.getVariable("enabled");
     const SYNC_PANEL_ACCESSED_PREF =
       "identity.fxaccounts.toolbar.syncSetup.panelAccessed";
-    
-    
-    if (
-      newSyncSetupEnabled &&
-      !Services.prefs.getBoolPref(SYNC_PANEL_ACCESSED_PREF, false)
-    ) {
+    if (!Services.prefs.getBoolPref(SYNC_PANEL_ACCESSED_PREF, false)) {
       
       Services.prefs.setBoolPref(SYNC_PANEL_ACCESSED_PREF, true);
     }
@@ -1154,20 +1139,13 @@ var gSync = {
   _shouldShowSyncOffIndicator() {
     
     
-    if (
-      Services.prefs.getBoolPref(
-        "identity.fxaccounts.toolbar.syncSetup.panelAccessed",
-        false
-      )
-    ) {
-      return false;
-    }
-    return NimbusFeatures.syncSetupFlow.getVariable("enabled");
+    return !Services.prefs.getBoolPref(
+      "identity.fxaccounts.toolbar.syncSetup.panelAccessed",
+      false
+    );
   },
 
   updateFxAPanel(state = {}) {
-    const isNewSyncSetupFlowEnabled =
-      NimbusFeatures.syncSetupFlow.getVariable("enabled");
     const expandedSignInCopy =
       NimbusFeatures.expandSignInButton.getVariable("ctaCopyVariant");
     const mainWindowEl = document.documentElement;
@@ -1208,6 +1186,10 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-profiles-separator"
     );
+    const syncSetupEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-setup-sync-container"
+    );
 
     const fxaToolbarMenuButton = document.getElementById(
       "fxa-toolbar-menu-button"
@@ -1216,7 +1198,6 @@ var gSync = {
 
     
     cadButtonEl.setAttribute("disabled", true);
-    cadButtonEl.hidden = isNewSyncSetupFlowEnabled;
     syncNowButtonEl.hidden = true;
     signedInContainer.hidden = true;
     fxaMenuAccountButtonEl.classList.remove("subviewbutton-nav");
@@ -1316,33 +1297,17 @@ var gSync = {
         signedInContainer.hidden = false;
         cadButtonEl.removeAttribute("disabled");
 
-        
-        
-        
-        
-        const oldSyncSetupEl = PanelMultiView.getViewNode(
-          document,
-          "PanelUI-fxa-menu-setup-sync-button"
-        );
-        const newSyncSetupEl = PanelMultiView.getViewNode(
-          document,
-          "PanelUI-fxa-menu-setup-sync-container"
-        );
-
         if (state.syncEnabled) {
           
           syncNowButtonEl.removeAttribute("hidden");
           cadButtonEl.removeAttribute("hidden");
-          oldSyncSetupEl.setAttribute("hidden", "true");
-          newSyncSetupEl.setAttribute("hidden", "true");
+          syncSetupEl.setAttribute("hidden", "true");
         } else {
           if (this._shouldShowSyncOffIndicator()) {
             fxaToolbarMenuButton?.setAttribute("badge-status", "sync-disabled");
           }
           
-          isNewSyncSetupFlowEnabled
-            ? newSyncSetupEl.removeAttribute("hidden")
-            : oldSyncSetupEl.removeAttribute("hidden");
+          syncSetupEl.removeAttribute("hidden");
         }
 
         

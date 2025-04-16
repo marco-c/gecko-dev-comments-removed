@@ -214,7 +214,8 @@ add_task(async function test_ui_state_signedin() {
       "PanelUI-fxa-menu-account-signout-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-button"],
+    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    visibleItems: [],
   });
 
   await checkProfilesButtons(
@@ -431,7 +432,6 @@ add_task(async function test_ui_state_signed_in() {
     enabledItems: [
       "PanelUI-fxa-menu-sendtab-button",
       "PanelUI-fxa-menu-connect-device-button",
-      "PanelUI-fxa-menu-setup-sync-button",
       "PanelUI-fxa-menu-account-signout-button",
     ],
     disabledItems: [],
@@ -439,6 +439,7 @@ add_task(async function test_ui_state_signed_in() {
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
     ],
+    visibleItems: ["PanelUI-fxa-menu-setup-sync-container"],
   });
   checkFxAAvatar("signedin");
   await closeFxaPanel();
@@ -476,7 +477,6 @@ add_task(async function test_ui_state_signed_in_no_display_name() {
     enabledItems: [
       "PanelUI-fxa-menu-sendtab-button",
       "PanelUI-fxa-menu-connect-device-button",
-      "PanelUI-fxa-menu-setup-sync-button",
       "PanelUI-fxa-menu-account-signout-button",
     ],
     disabledItems: [],
@@ -484,6 +484,7 @@ add_task(async function test_ui_state_signed_in_no_display_name() {
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
     ],
+    visibleItems: ["PanelUI-fxa-menu-setup-sync-container"],
   });
   checkFxAAvatar("signedin");
   await closeFxaPanel();
@@ -523,7 +524,6 @@ add_task(async function test_ui_state_unverified() {
     headerDescription: state.email,
     enabledItems: [
       "PanelUI-fxa-menu-sendtab-button",
-      "PanelUI-fxa-menu-setup-sync-button",
       "PanelUI-fxa-menu-account-signout-button",
     ],
     disabledItems: ["PanelUI-fxa-menu-connect-device-button"],
@@ -531,6 +531,7 @@ add_task(async function test_ui_state_unverified() {
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
     ],
+    visibleItems: ["PanelUI-fxa-menu-setup-sync-container"],
   });
   checkFxAAvatar("unverified");
   await closeFxaPanel();
@@ -570,7 +571,6 @@ add_task(async function test_ui_state_loginFailed() {
     headerDescription: state.displayName,
     enabledItems: [
       "PanelUI-fxa-menu-sendtab-button",
-      "PanelUI-fxa-menu-setup-sync-button",
       "PanelUI-fxa-menu-account-signout-button",
     ],
     disabledItems: ["PanelUI-fxa-menu-connect-device-button"],
@@ -578,6 +578,7 @@ add_task(async function test_ui_state_loginFailed() {
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
     ],
+    visibleItems: ["PanelUI-fxa-menu-setup-sync-container"],
   });
   checkFxAAvatar("login-failed");
   await closeFxaPanel();
@@ -691,6 +692,7 @@ add_task(async function test_experiment_ui_state_unconfigured() {
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
     ],
+    visibleItems: [],
   });
 
   
@@ -759,7 +761,8 @@ add_task(async function test_experiment_ui_state_signedin() {
       "PanelUI-fxa-menu-vpn-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-button"],
+    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    visibleItems: [],
   });
   checkFxAAvatar("signedin");
   gSync.relativeTimeFormat = origRelativeTimeFormat;
@@ -781,16 +784,7 @@ add_task(async function test_experiment_ui_state_signedin() {
   await closeTabAndMainPanel();
 });
 
-add_task(async function test_new_sync_setup_ui_exp_enabled() {
-  
-  await ExperimentAPI.ready();
-  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig({
-    featureId: NimbusFeatures.syncSetupFlow.featureId,
-    value: {
-      enabled: true,
-    },
-  });
-
+add_task(async function test_new_sync_setup_ui() {
   let state = {
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: false,
@@ -811,20 +805,21 @@ add_task(async function test_new_sync_setup_ui_exp_enabled() {
     headerDescription: "Foo Bar",
     enabledItems: [
       "PanelUI-fxa-menu-sendtab-button",
-      "PanelUI-fxa-menu-setup-sync-container", 
       "PanelUI-fxa-menu-account-signout-button",
+      "PanelUI-fxa-menu-connect-device-button",
     ],
     disabledItems: [],
     hiddenItems: [
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
-      "PanelUI-fxa-menu-connect-device-button", 
-      "PanelUI-fxa-menu-setup-sync-button", 
+    ],
+    visibleItems: [
+      "PanelUI-fxa-menu-setup-sync-container",
+      "PanelUI-fxa-menu-connect-device-button",
     ],
   });
 
   await closeFxaPanel();
-  await doCleanup();
 
   
   
@@ -832,52 +827,6 @@ add_task(async function test_new_sync_setup_ui_exp_enabled() {
     "PanelUI-fxa-menu-setup-sync-container"
   );
   newSyncSetup.setAttribute("hidden", true);
-});
-
-add_task(async function test_new_sync_setup_ui_no_exp() {
-  
-  await ExperimentAPI.ready();
-  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig({
-    featureId: NimbusFeatures.syncSetupFlow.featureId,
-    value: {
-      enabled: false,
-    },
-  });
-
-  let state = {
-    status: UIState.STATUS_SIGNED_IN,
-    syncEnabled: false,
-    email: "foo@bar.com",
-    displayName: "Foo Bar",
-    avatarURL: "https://foo.bar",
-  };
-
-  gSync.updateAllUI(state);
-
-  await openFxaPanel();
-
-  checkMenuBarItem("sync-enable");
-  checkPanelHeader();
-
-  checkFxaToolbarButtonPanel({
-    headerTitle: "Manage account",
-    headerDescription: "Foo Bar",
-    enabledItems: [
-      "PanelUI-fxa-menu-sendtab-button",
-      "PanelUI-fxa-menu-connect-device-button",
-      "PanelUI-fxa-menu-setup-sync-button", 
-      "PanelUI-fxa-menu-account-signout-button",
-    ],
-    disabledItems: [],
-    hiddenItems: [
-      "PanelUI-fxa-menu-syncnow-button",
-      "PanelUI-fxa-menu-sync-prefs-button",
-      "PanelUI-fxa-menu-setup-sync-container", 
-    ],
-  });
-
-  await doCleanup();
-  await closeFxaPanel();
 });
 
 
@@ -938,9 +887,10 @@ add_task(async function test_ui_my_services_signedin() {
     ],
     disabledItems: [],
     hiddenItems: [
-      "PanelUI-fxa-menu-setup-sync-button",
+      "PanelUI-fxa-menu-setup-sync-container",
       "PanelUI-fxa-menu-relay-button", 
     ],
+    visibleItems: [],
   });
   checkFxAAvatar("signedin");
   gSync.relativeTimeFormat = origRelativeTimeFormat;
@@ -1138,6 +1088,7 @@ async function checkFxaToolbarButtonPanel({
   enabledItems,
   disabledItems,
   hiddenItems,
+  visibleItems,
 }) {
   is(
     document.getElementById("fxa-menu-header-title").value,
@@ -1164,6 +1115,25 @@ async function checkFxaToolbarButtonPanel({
     const el = document.getElementById(id);
     is(el.getAttribute("hidden"), "true", id + " is hidden");
   }
+
+  for (const id of visibleItems) {
+    const el = document.getElementById(id);
+    ok(isElementVisible(el), `${id} is visible`);
+  }
+}
+
+function isElementVisible(el) {
+  if (!el) {
+    return false;
+  }
+  let style = window.getComputedStyle(el);
+  
+  
+  
+  
+  return (
+    !el.hidden && style.display !== "none" && style.visibility !== "hidden"
+  );
 }
 
 async function checkProfilesButtons(
