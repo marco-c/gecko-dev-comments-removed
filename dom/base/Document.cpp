@@ -1424,7 +1424,6 @@ Document::Document(const char* aContentType)
       mParserAborted(false),
       mReportedDocumentUseCounters(false),
       mHasReportedShadowDOMUsage(false),
-      mHasDelayedRefreshEvent(false),
       mLoadEventFiring(false),
       mSkipLoadEventAfterClose(false),
       mDisableCookieAccess(false),
@@ -13218,19 +13217,6 @@ void Document::UnsuppressEventHandlingAndFireEvents(bool aFireEvents) {
           std::move(doc->mSuspendedQueues);
       for (net::ChannelEventQueue* queue : queues) {
         queue->Resume();
-      }
-
-      
-      
-      
-      if (doc->mHasDelayedRefreshEvent) {
-        doc->mHasDelayedRefreshEvent = false;
-
-        if (doc->mPresShell) {
-          nsRefreshDriver* rd =
-              doc->mPresShell->GetPresContext()->RefreshDriver();
-          rd->RunDelayedEventsSoon();
-        }
       }
     }
   }

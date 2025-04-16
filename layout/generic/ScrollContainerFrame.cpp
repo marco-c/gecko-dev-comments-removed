@@ -159,7 +159,7 @@ static ScrollDirections GetOverflowChange(const nsRect& aCurScrolledRect,
 class ScrollContainerFrame::ScrollEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  explicit ScrollEvent(ScrollContainerFrame* aHelper, bool aDelayed);
+  explicit ScrollEvent(ScrollContainerFrame* aHelper);
   void Revoke() { mHelper = nullptr; }
 
  private:
@@ -169,7 +169,7 @@ class ScrollContainerFrame::ScrollEvent : public Runnable {
 class ScrollContainerFrame::ScrollEndEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  explicit ScrollEndEvent(ScrollContainerFrame* aHelper, bool aDelayed);
+  explicit ScrollEndEvent(ScrollContainerFrame* aHelper);
   void Revoke() { mHelper = nullptr; }
 
  private:
@@ -5382,29 +5382,19 @@ nsresult ScrollContainerFrame::FireScrollPortEvent() {
   return EventDispatcher::Dispatch(content, presContext, &event);
 }
 
-void ScrollContainerFrame::PostScrollEndEvent(bool aDelayed) {
+void ScrollContainerFrame::PostScrollEndEvent() {
   if (mScrollEndEvent) {
     return;
   }
 
   
-  mScrollEndEvent = new ScrollEndEvent(this, aDelayed);
+  mScrollEndEvent = new ScrollEndEvent(this);
 }
 
 void ScrollContainerFrame::FireScrollEndEvent() {
-  RefPtr<nsIContent> content = GetContent();
-  MOZ_ASSERT(content);
-
   MOZ_ASSERT(mScrollEndEvent);
   mScrollEndEvent->Revoke();
   mScrollEndEvent = nullptr;
-
-  if (content->GetComposedDoc() &&
-      content->GetComposedDoc()->EventHandlingSuppressed()) {
-    content->GetComposedDoc()->SetHasDelayedRefreshEvent();
-    PostScrollEndEvent( true);
-    return;
-  }
 
   RefPtr<nsPresContext> presContext = PresContext();
   nsEventStatus status = nsEventStatus_eIgnore;
@@ -5825,10 +5815,9 @@ void ScrollContainerFrame::CurPosAttributeChangedInternal(nsIContent* aContent,
 
 
 
-ScrollContainerFrame::ScrollEvent::ScrollEvent(ScrollContainerFrame* aHelper,
-                                               bool aDelayed)
+ScrollContainerFrame::ScrollEvent::ScrollEvent(ScrollContainerFrame* aHelper)
     : Runnable("ScrollContainerFrame::ScrollEvent"), mHelper(aHelper) {
-  mHelper->PresContext()->RefreshDriver()->PostScrollEvent(this, aDelayed);
+  mHelper->PresShell()->PostScrollEvent(this);
 }
 
 
@@ -5841,9 +5830,9 @@ ScrollContainerFrame::ScrollEvent::Run() {
 }
 
 ScrollContainerFrame::ScrollEndEvent::ScrollEndEvent(
-    ScrollContainerFrame* aHelper, bool aDelayed)
+    ScrollContainerFrame* aHelper)
     : Runnable("ScrollContainerFrame::ScrollEndEvent"), mHelper(aHelper) {
-  mHelper->PresContext()->RefreshDriver()->PostScrollEvent(this, aDelayed);
+  mHelper->PresShell()->PostScrollEvent(this);
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
@@ -5863,16 +5852,6 @@ void ScrollContainerFrame::FireScrollEvent() {
   MOZ_ASSERT(mScrollEvent);
   mScrollEvent->Revoke();
   mScrollEvent = nullptr;
-
-  
-  
-  
-  if (content->GetComposedDoc() &&
-      content->GetComposedDoc()->EventHandlingSuppressed()) {
-    content->GetComposedDoc()->SetHasDelayedRefreshEvent();
-    PostScrollEvent( true);
-    return;
-  }
 
   bool oldProcessing = mProcessingScrollEvent;
   AutoWeakFrame weakFrame(this);
@@ -5903,13 +5882,13 @@ void ScrollContainerFrame::FireScrollEvent() {
   }
 }
 
-void ScrollContainerFrame::PostScrollEvent(bool aDelayed) {
+void ScrollContainerFrame::PostScrollEvent() {
   if (mScrollEvent) {
     return;
   }
 
   
-  mScrollEvent = new ScrollEvent(this, aDelayed);
+  mScrollEvent = new ScrollEvent(this);
 }
 
 

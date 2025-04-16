@@ -1997,6 +1997,16 @@ bool PresShell::CanHandleUserInputEvents(WidgetGUIEvent* aGUIEvent) {
   return true;
 }
 
+void PresShell::PostScrollEvent(Runnable* aEvent) {
+  MOZ_ASSERT(aEvent);
+  const bool hadEvents = !mPendingScrollEvents.IsEmpty();
+  mPendingScrollEvents.AppendElement(aEvent);
+  if (!hadEvents) {
+    mPresContext->RefreshDriver()->ScheduleRenderingPhase(
+        RenderingPhase::ScrollSteps);
+  }
+}
+
 void PresShell::ScheduleResizeEventIfNeeded(ResizeEventKind aKind) {
   if (mIsDestroying) {
     return;
@@ -2011,7 +2021,7 @@ void PresShell::ScheduleResizeEventIfNeeded(ResizeEventKind aKind) {
     mVisualViewportResizeEventPending = true;
   }
   mPresContext->RefreshDriver()->ScheduleRenderingPhase(
-        mozilla::RenderingPhase::ResizeSteps);
+      RenderingPhase::ResizeSteps);
 }
 
 bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
@@ -2162,6 +2172,19 @@ void PresShell::RunResizeSteps() {
     mVisualViewportResizeEventPending = false;
     RefPtr vv = window->VisualViewport();
     vv->FireResizeEvent();
+  }
+}
+
+
+
+void PresShell::RunScrollSteps() {
+  
+  
+  
+  
+  auto events = std::move(mPendingScrollEvents);
+  for (auto& event : events) {
+    event->Run();
   }
 }
 

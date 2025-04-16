@@ -2810,8 +2810,6 @@ class Document : public nsINode,
 
   void FireOrClearPostMessageEvents(bool aFireEvents);
 
-  void SetHasDelayedRefreshEvent() { mHasDelayedRefreshEvent = true; }
-
   
 
 
@@ -4919,10 +4917,6 @@ class Document : public nsINode,
   bool mReportedDocumentUseCounters : 1;
 
   bool mHasReportedShadowDOMUsage : 1;
-
-  
-  
-  bool mHasDelayedRefreshEvent : 1;
 
   
   

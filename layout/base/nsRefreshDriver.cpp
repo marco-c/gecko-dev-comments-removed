@@ -1556,27 +1556,6 @@ bool nsRefreshDriver::RemoveRefreshObserver(nsARefreshObserver* aObserver,
   return true;
 }
 
-void nsRefreshDriver::PostScrollEvent(mozilla::Runnable* aScrollEvent,
-                                      bool aDelayed) {
-  if (aDelayed) {
-    mDelayedScrollEvents.AppendElement(aScrollEvent);
-  } else {
-    mScrollEvents.AppendElement(aScrollEvent);
-    ScheduleRenderingPhase(RenderingPhase::ScrollSteps);
-  }
-}
-
-void nsRefreshDriver::DispatchScrollEvents() {
-  
-  
-  
-  
-  ScrollEventArray events = std::move(mScrollEvents);
-  for (auto& event : events) {
-    event->Run();
-  }
-}
-
 void nsRefreshDriver::AddPostRefreshObserver(
     nsAPostRefreshObserver* aObserver) {
   MOZ_ASSERT(!mPostRefreshObservers.Contains(aObserver));
@@ -1652,17 +1631,6 @@ void nsRefreshDriver::FlushForceNotifyContentfulPaintPresContext() {
       presContext->NotifyContentfulPaint();
     }
   }
-}
-
-void nsRefreshDriver::RunDelayedEventsSoon() {
-  
-  
-  
-  
-
-  mScrollEvents.AppendElements(mDelayedScrollEvents);
-  mDelayedScrollEvents.Clear();
-  ScheduleRenderingPhase(RenderingPhase::ScrollSteps);
 }
 
 bool nsRefreshDriver::CanDoCatchUpTick() {
@@ -2584,9 +2552,12 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
                     });
 
   
-  RunRenderingPhaseLegacy(
-      RenderingPhase::ScrollSteps,
-      [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { DispatchScrollEvents(); });
+  RunRenderingPhase(RenderingPhase::ScrollSteps,
+                    [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      if (RefPtr<PresShell> ps = aDoc.GetPresShell()) {
+                        ps->RunScrollSteps();
+                      }
+                    });
 
   
   

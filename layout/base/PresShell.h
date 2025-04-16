@@ -361,6 +361,8 @@ class PresShell final : public nsStubDocumentObserver,
   enum class ResizeEventKind : uint8_t { Regular, Visual };
   void ScheduleResizeEventIfNeeded(ResizeEventKind = ResizeEventKind::Regular);
 
+  void PostScrollEvent(mozilla::Runnable*);
+
   
 
 
@@ -1175,6 +1177,7 @@ class PresShell final : public nsStubDocumentObserver,
   bool HasHandledUserInput() const { return mHasHandledUserInput; }
 
   MOZ_CAN_RUN_SCRIPT void RunResizeSteps();
+  MOZ_CAN_RUN_SCRIPT void RunScrollSteps();
 
   void NativeAnonymousContentWillBeRemoved(nsIContent* aAnonContent);
 
@@ -3101,6 +3104,8 @@ class PresShell final : public nsStubDocumentObserver,
   nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorSelection;
   nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorAdjustment;
   nsTHashSet<ScrollContainerFrame*> mPendingScrollResnap;
+  
+  nsTArray<RefPtr<Runnable>> mPendingScrollEvents;
 
   nsTHashSet<nsIContent*> mHiddenContentInForcedLayout;
 
