@@ -1812,7 +1812,8 @@ pref("browser.newtab.preload", true);
 
 
 
-pref("browser.preonboarding.onTrainRolloutPopulation",  0);
+
+pref("browser.preonboarding.onTrainRolloutPopulation",  100);
 
 
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
