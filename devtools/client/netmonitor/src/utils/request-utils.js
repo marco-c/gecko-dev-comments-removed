@@ -10,10 +10,6 @@ const {
   getUnicodeHostname,
 } = require("resource://devtools/client/shared/unicode-url.js");
 
-const {
-  L10N,
-} = require("resource://devtools/client/netmonitor/src/utils/l10n.js");
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(
   lazy,
@@ -357,31 +353,6 @@ function getUrlDetails(url) {
     url,
     path,
   };
-}
-
-
-
-
-
-
-
-function getUrlToolTip(urlDetails) {
-  const url = urlDetails.url;
-  const decodedURL = urlDetails.unicodeUrl;
-
-  
-  
-  const ORIGINAL_URL = L10N.getFormatStr(
-    "netRequest.originalFileURL.tooltip",
-    url
-  );
-  const DECODED_URL = L10N.getFormatStr(
-    "netRequest.decodedFileURL.tooltip",
-    decodedURL
-  );
-  const toolTip =
-    url === decodedURL ? url : ORIGINAL_URL + "\n\n" + DECODED_URL;
-  return toolTip;
 }
 
 
@@ -821,7 +792,6 @@ module.exports = {
   getUrlHostName,
   getUrlQuery,
   getUrlScheme,
-  getUrlToolTip,
   parseQueryString,
   parseFormData,
   updateFormDataSections,
