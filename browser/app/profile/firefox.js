@@ -908,6 +908,9 @@ pref("browser.spin_cursor_while_busy", false);
 pref("browser.contextual-password-manager.enabled", false);
 
 
+pref("sidebar.newTool.migration.passwords", '{ "visibilityPref": "browser.contextual-password-manager.enabled"}');
+
+
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
 
 
