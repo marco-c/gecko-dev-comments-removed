@@ -82,9 +82,17 @@ struct ShareableVector
 
   static const ShareableVector* fromSpan(mozilla::Span<const T> span) {
     ShareableVector* vector = js_new<ShareableVector>();
-    if (!vector || !vector->append(span.data(), span.size())) {
+    if (!vector) {
       return nullptr;
     }
+
+    
+    
+    if (!vector->append(span.data(), span.size())) {
+      js_free(vector);
+      return nullptr;
+    }
+
     return vector;
   }
 };
