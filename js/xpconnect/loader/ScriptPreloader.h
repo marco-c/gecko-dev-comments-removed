@@ -9,6 +9,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/EventTargetAndLockCapability.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Maybe.h"
@@ -70,8 +71,7 @@ class ScriptPreloader : public nsIObserver,
                         public nsIMemoryReporter,
                         public nsIRunnable,
                         public nsINamed,
-                        public nsIAsyncShutdownBlocker,
-                        public SingleWriterLockOwner {
+                        public nsIAsyncShutdownBlocker {
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
   friend class mozilla::loader::ScriptCacheChild;
@@ -104,8 +104,6 @@ class ScriptPreloader : public nsIObserver,
   static void FillCompileOptionsForCachedStencil(JS::CompileOptions& options);
   static void FillDecodeOptionsForCachedStencil(JS::DecodeOptions& options);
 
-  bool OnWritingThread() const override { return NS_IsMainThread(); }
-
   
   
   already_AddRefed<JS::Stencil> GetCachedStencil(
@@ -129,10 +127,12 @@ class ScriptPreloader : public nsIObserver,
                    TimeStamp loadTime);
 
   
-  Result<Ok, nsresult> InitCache(const nsAString& = u"scriptCache"_ns);
+  Result<Ok, nsresult> InitCache(const nsAString& = u"scriptCache"_ns)
+      MOZ_REQUIRES(sMainThreadCapability);
 
   Result<Ok, nsresult> InitCache(const Maybe<ipc::FileDescriptor>& cacheFile,
-                                 ScriptCacheChild* cacheChild);
+                                 ScriptCacheChild* cacheChild)
+      MOZ_REQUIRES(sMainThreadCapability);
 
   bool Active() const { return mCacheInitialized && !mStartupFinished; }
 
@@ -406,13 +406,13 @@ class ScriptPreloader : public nsIObserver,
   void Cleanup();
 
   void FinishPendingParses(MonitorAutoLock& aMal);
-  void InvalidateCache();
+  void InvalidateCache() MOZ_REQUIRES(sMainThreadCapability);
 
   
   Result<Ok, nsresult> OpenCache();
 
   
-  Result<Ok, nsresult> WriteCache() MOZ_REQUIRES(mSaveMonitor);
+  Result<Ok, nsresult> WriteCache() MOZ_REQUIRES(mSaveMonitor.Lock());
 
   void StartCacheWrite();
 
@@ -506,6 +506,7 @@ class ScriptPreloader : public nsIObserver,
   bool mSaveComplete = false;
   bool mDataPrepared = false;
   
+  
   bool mCacheInvalidated MOZ_GUARDED_BY(mSaveMonitor) = false;
 
   
@@ -546,8 +547,8 @@ class ScriptPreloader : public nsIObserver,
   
   AutoMemMap* mCacheData;
 
-  Monitor mMonitor;
-  MonitorSingleWriter mSaveMonitor MOZ_ACQUIRED_BEFORE(mMonitor);
+  Monitor mMonitor MOZ_ACQUIRED_AFTER(mSaveMonitor.Lock());
+  MainThreadAndLockCapability<Monitor> mSaveMonitor;
 };
 
 }  
