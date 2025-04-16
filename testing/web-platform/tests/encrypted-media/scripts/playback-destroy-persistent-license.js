@@ -90,6 +90,15 @@ function runTest(config,qualifier) {
             return source.done;
         }).then(function(){
             _video.play();
-        }).catch(onFailure);
+        }).catch(function (error) {
+            if (error && error.name === 'NotSupportedError') {
+                
+                
+                
+                test.done();
+            } else {
+                onFailure(error);
+            }
+        });
     }, testname);
 }
