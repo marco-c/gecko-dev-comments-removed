@@ -3056,9 +3056,6 @@ pref("devtools.webconsole.filter.netxhr", false);
 pref("devtools.webconsole.input.autocomplete",true);
 
 
-pref("devtools.webconsole.input.context", true);
-
-
 
 pref("devtools.webconsole.input.eagerEvaluation", true);
 

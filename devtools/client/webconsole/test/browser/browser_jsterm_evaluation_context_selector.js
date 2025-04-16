@@ -11,8 +11,6 @@ const IFRAME_PATH = `${FILE_FOLDER}/test-console-evaluation-context-selector-chi
 requestLongerTimeout(2);
 
 add_task(async function () {
-  await pushPref("devtools.webconsole.input.context", true);
-
   
   await pushPref("dom.worker.console.dispatch_events_to_main_thread", false);
 

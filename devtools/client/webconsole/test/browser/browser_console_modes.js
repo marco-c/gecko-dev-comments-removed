@@ -45,7 +45,6 @@ add_task(async function () {
   await pushPref("devtools.browsertoolbox.scope", "everything");
   
   await pushPref("devtools.chrome.enabled", true);
-  await pushPref("devtools.webconsole.input.context", true);
 
   
   await openNewTabAndConsole(TEST_URI);

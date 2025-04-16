@@ -85,8 +85,6 @@ const prefs = {
       
       EDITOR_ONBOARDING: "devtools.webconsole.input.editorOnboarding",
       
-      CONTEXT_SELECTOR: "devtools.webconsole.input.context",
-      
       ENABLE_NETWORK_MONITORING:
         "devtools.browserconsole.enableNetworkMonitoring",
     },

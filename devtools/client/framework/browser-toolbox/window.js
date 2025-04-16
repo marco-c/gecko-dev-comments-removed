@@ -80,12 +80,6 @@ var connect = async function () {
   
   
   
-  
-  Services.prefs.setBoolPref(
-    "devtools.webconsole.input.context",
-    Services.env.get("MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT") === "1"
-  );
-  
   if (Services.env.get("MOZ_BROWSER_TOOLBOX_FORCE_MULTIPROCESS") === "1") {
     Services.prefs.setCharPref("devtools.browsertoolbox.scope", "everything");
   }
