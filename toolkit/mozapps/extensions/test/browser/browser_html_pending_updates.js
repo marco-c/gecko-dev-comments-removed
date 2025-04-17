@@ -6,6 +6,7 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   PERMISSION_L10N: "resource://gre/modules/ExtensionPermissionMessages.sys.mjs",
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
 });
 
 AddonTestUtils.initMochitest(this);
@@ -591,3 +592,80 @@ add_task(async function test_pending_update_with_no_prompted_permission() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(
+  async function test_pending_update_does_not_grant_technicalAndInteraction() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["extensions.dataCollectionPermissions.enabled", true]],
+    });
+
+    const id = "@test-id";
+    const { extension } = createTestExtension({
+      id,
+      oldManifest: {
+        browser_specific_settings: {
+          gecko: {
+            id,
+            data_collection_permissions: {},
+          },
+        },
+      },
+      newManifest: {
+        permissions: ["bookmarks"],
+        browser_specific_settings: {
+          gecko: {
+            id,
+            data_collection_permissions: {
+              optional: ["technicalAndInteraction"],
+            },
+          },
+        },
+      },
+    });
+
+    await extension.startup();
+    await extension.awaitMessage("bgpage-ready");
+    const win = await loadInitialView("extension");
+
+    const dialogPromise = promisePopupNotificationShown(
+      "addon-webext-permissions"
+    );
+    win.checkForUpdates();
+    const popupContentEl = await dialogPromise;
+
+    
+    const waitForManagementUpdate = new Promise(resolve => {
+      const { Management } = ChromeUtils.importESModule(
+        "resource://gre/modules/Extension.sys.mjs"
+      );
+      Management.once("update", resolve);
+    });
+    popupContentEl.button.click();
+    await promiseUpdateAvailable(extension);
+    await completePostponedUpdate({ id, win });
+    
+    
+    info("Wait for the Management update to be emitted");
+    await waitForManagementUpdate;
+
+    
+    
+    
+    
+    const perms = await ExtensionPermissions.get(id);
+    Assert.deepEqual(
+      perms,
+      {
+        permissions: [],
+        origins: [],
+        data_collection: [],
+      },
+      "Expected no stored permission"
+    );
+
+    await closeView(win);
+    await extension.unload();
+
+    await SpecialPowers.popPrefEnv();
+  }
+);
