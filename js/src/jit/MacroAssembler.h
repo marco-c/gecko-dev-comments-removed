@@ -4032,8 +4032,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
   void branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
-                              Register scratch, uint32_t superDepth,
+                              Register scratch, const wasm::TypeDef* destType,
                               Label* label, bool onSuccess);
 
   

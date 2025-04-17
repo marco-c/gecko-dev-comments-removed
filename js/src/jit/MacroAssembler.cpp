@@ -6675,17 +6675,17 @@ BranchWasmRefIsSubtypeRegisters MacroAssembler::regsForBranchWasmRefIsSubtype(
       return BranchWasmRefIsSubtypeRegisters{
           .needSuperSTV = type.isTypeRef(),
           .needScratch1 = !type.isNone() && !type.isAny(),
-          .needScratch2 =
-              type.isTypeRef() && type.typeDef()->subTypingDepth() >=
-                                      wasm::MinSuperTypeVectorLength,
+          .needScratch2 = type.isTypeRef() && !type.typeDef()->isFinal() &&
+                          type.typeDef()->subTypingDepth() >=
+                              wasm::MinSuperTypeVectorLength,
       };
     case wasm::RefTypeHierarchy::Func:
       return BranchWasmRefIsSubtypeRegisters{
           .needSuperSTV = type.isTypeRef(),
           .needScratch1 = type.isTypeRef(),
-          .needScratch2 =
-              type.isTypeRef() && type.typeDef()->subTypingDepth() >=
-                                      wasm::MinSuperTypeVectorLength,
+          .needScratch2 = type.isTypeRef() && !type.typeDef()->isFinal() &&
+                          type.typeDef()->subTypingDepth() >=
+                              wasm::MinSuperTypeVectorLength,
       };
     case wasm::RefTypeHierarchy::Extern:
     case wasm::RefTypeHierarchy::Exn:
@@ -6815,9 +6815,8 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
           scratch1);
   if (destType.isTypeRef()) {
     
-    branchWasmSTVIsSubtype(scratch1, superSTV, scratch2,
-                           destType.typeDef()->subTypingDepth(), label,
-                           onSuccess);
+    branchWasmSTVIsSubtype(scratch1, superSTV, scratch2, destType.typeDef(),
+                           label, onSuccess);
     bind(&fallthrough);
     return;
   }
@@ -6888,9 +6887,8 @@ void MacroAssembler::branchWasmRefIsSubtypeFunc(
   
   loadPrivate(Address(ref, int32_t(FunctionExtended::offsetOfWasmSTV())),
               scratch1);
-  branchWasmSTVIsSubtype(scratch1, superSTV, scratch2,
-                         destType.typeDef()->subTypingDepth(), label,
-                         onSuccess);
+  branchWasmSTVIsSubtype(scratch1, superSTV, scratch2, destType.typeDef(),
+                         label, onSuccess);
   bind(&fallthrough);
 }
 
@@ -6983,10 +6981,20 @@ void MacroAssembler::branchWasmRefIsSubtypeExn(Register ref,
 
 void MacroAssembler::branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
                                             Register scratch,
-                                            uint32_t superDepth, Label* label,
-                                            bool onSuccess) {
-  MOZ_ASSERT_IF(superDepth >= wasm::MinSuperTypeVectorLength,
-                scratch != Register::Invalid());
+                                            const wasm::TypeDef* destType,
+                                            Label* label, bool onSuccess) {
+  if (destType->isFinal()) {
+    
+    
+    MOZ_ASSERT(scratch == Register::Invalid());
+    branchPtr(onSuccess ? Assembler::Equal : Assembler::NotEqual, subSTV,
+              superSTV, label);
+    return;
+  }
+
+  MOZ_ASSERT((destType->subTypingDepth() >= wasm::MinSuperTypeVectorLength) ==
+             (scratch != Register::Invalid()));
+
   Label fallthrough;
   Label* successLabel = onSuccess ? label : &fallthrough;
   Label* failLabel = onSuccess ? &fallthrough : label;
@@ -6996,16 +7004,17 @@ void MacroAssembler::branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
   branchPtr(Assembler::Equal, subSTV, superSTV, successLabel);
 
   
-  if (superDepth >= wasm::MinSuperTypeVectorLength) {
+  if (destType->subTypingDepth() >= wasm::MinSuperTypeVectorLength) {
     load32(Address(subSTV, wasm::SuperTypeVector::offsetOfLength()), scratch);
-    branch32(Assembler::BelowOrEqual, scratch, Imm32(superDepth), failLabel);
+    branch32(Assembler::BelowOrEqual, scratch,
+             Imm32(destType->subTypingDepth()), failLabel);
   }
 
   
   
-  loadPtr(
-      Address(subSTV, wasm::SuperTypeVector::offsetOfSTVInVector(superDepth)),
-      subSTV);
+  loadPtr(Address(subSTV, wasm::SuperTypeVector::offsetOfSTVInVector(
+                              destType->subTypingDepth())),
+          subSTV);
 
   
   branchPtr(onSuccess ? Assembler::Equal : Assembler::NotEqual, subSTV,
