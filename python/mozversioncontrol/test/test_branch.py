@@ -25,22 +25,12 @@ STEPS = {
         git commit -a -m "second commit"
         """,
     ],
-    "jj": [
-        """
-        jj bookmark set test
-        """,
-        """
-        jj new -m "xyzzy" zzzzzzzz
-        jj new -m "second commit" test
-        echo "bar" > foo
-        """,
-    ],
 }
 
 
 def test_branch(repo):
     vcs = get_repository_object(repo.dir)
-    if vcs.name in ("git", "jj"):
+    if vcs.name == "git":
         assert vcs.branch == "master"
     else:
         assert vcs.branch is None
@@ -52,22 +42,10 @@ def test_branch(repo):
     assert vcs.branch == "test"
 
     vcs.update(vcs.head_ref)
-    if repo.vcs == "jj":
-        
-        
-        
-        assert vcs.branch == "test"
-    else:
-        assert vcs.branch is None
+    assert vcs.branch is None
 
     vcs.update("test")
     assert vcs.branch == "test"
-
-    
-    
-    if repo.vcs == "jj":
-        vcs.update("description('xyzzy')")
-        assert vcs.branch is None
 
 
 if __name__ == "__main__":

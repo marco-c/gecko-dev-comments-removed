@@ -10,6 +10,5 @@ from mozversioncontrol.factory import (
 )
 from mozversioncontrol.repo.base import Repository  
 from mozversioncontrol.repo.git import GitRepository  
-from mozversioncontrol.repo.jj import JujutsuRepository  
 from mozversioncontrol.repo.mercurial import HgRepository  
 from mozversioncontrol.repo.source import SrcRepository  

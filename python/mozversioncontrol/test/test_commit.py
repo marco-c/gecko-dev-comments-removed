@@ -11,25 +11,12 @@ from mozversioncontrol import get_repository_object
 
 STEPS = {
     "hg": [
-        "",
         """
         echo "bar" >> bar
         echo "baz" > foo
         """,
     ],
     "git": [
-        "",
-        """
-        echo "bar" >> bar
-        echo "baz" > foo
-        """,
-    ],
-    "jj": [
-        """
-        jj describe -m 'Ignore file for testing'
-        echo foo > .gitignore
-        jj new
-        """,
         """
         echo "bar" >> bar
         echo "baz" > foo
@@ -44,12 +31,7 @@ def test_commit(repo):
 
     
     repo.execute_next_step()
-
-    
-    repo.execute_next_step()
-    if repo.vcs != "jj":
-        
-        assert not vcs.working_directory_clean()
+    assert not vcs.working_directory_clean()
 
     date_string = "2017-07-14 02:40:00 +0000"
 
@@ -67,17 +49,12 @@ def test_commit(repo):
     assert original_date == date_from_vcs
 
     
-    
-    
-    if repo.vcs == "jj":
-        assert vcs.working_directory_clean()
-    else:
-        assert not vcs.working_directory_clean()
+    assert not vcs.working_directory_clean()
 
     if repo.vcs == "git":
         log_cmd = ["log", "-1", "--format=%an,%ae,%aD,%B"]
         patch_cmd = ["log", "-1", "-p"]
-    elif repo.vcs == "hg":
+    else:
         log_cmd = [
             "log",
             "-l",
@@ -86,16 +63,6 @@ def test_commit(repo):
             "{person(author)},{email(author)},{date|rfc822date},{desc}",
         ]
         patch_cmd = ["log", "-l", "1", "-p"]
-    elif repo.vcs == "jj":
-        log_cmd = [
-            "log",
-            "-n1",
-            "--no-graph",
-            "-r@-",
-            "-T",
-            'separate(",", author.name(), author.email(), commit_timestamp(self).format("%a, %d %b %Y %H:%M:%S %z"), description)',
-        ]
-        patch_cmd = ["show", "@-"]
 
     
     log = vcs._run(*log_cmd).rstrip()
