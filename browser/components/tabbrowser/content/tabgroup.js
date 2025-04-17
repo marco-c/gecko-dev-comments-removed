@@ -104,6 +104,11 @@
                 
                 
                 node.setAttribute("aria-level", node.group ? 2 : 1);
+                
+                
+                
+                node.removeAttribute("aria-posinset");
+                node.removeAttribute("aria-setsize");
               }
             });
           }
@@ -116,6 +121,15 @@
               this,
               "browser-tabgroup-removed-from-dom"
             );
+          } else {
+            
+            
+            let tabs = this.tabs;
+            let tabCount = tabs.length;
+            tabs.forEach((tab, index) => {
+              tab.setAttribute("aria-posinset", index + 1);
+              tab.setAttribute("aria-setsize", tabCount);
+            });
           }
         });
       }
