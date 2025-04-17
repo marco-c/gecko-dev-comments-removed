@@ -3,15 +3,16 @@
 
 
 
+
+const depth = "../../../../";
+
 var gActiveListeners = {};
 
 loadScript("dom/quota/test/common/browser.js");
 
 function loadScript(path) {
-  
-  
-  const url = new URL(path, "chrome://mochitests/content/browser/");
-  Services.scriptloader.loadSubScript(url, this);
+  const url = new URL(depth + path, gTestPath);
+  Services.scriptloader.loadSubScript(url.href, this);
 }
 
 
