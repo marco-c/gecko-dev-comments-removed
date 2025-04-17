@@ -1,0 +1,18 @@
+
+
+
+#pragma once
+
+#include "opentelemetry/version.h"
+
+OPENTELEMETRY_BEGIN_NAMESPACE
+namespace sdk
+{
+namespace common
+{
+
+bool GetSdkDisabled();
+
+}  
+}  
+OPENTELEMETRY_END_NAMESPACE
