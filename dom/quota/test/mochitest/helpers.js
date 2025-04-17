@@ -13,7 +13,10 @@ var workerScriptPaths = [];
 loadScript("dom/quota/test/common/mochitest.js");
 
 function loadScript(path) {
-  const url = new URL(depth + path, window.location.href);
+  
+  
+  
+  const url = new URL(path, "chrome://mochitests/content/tests/");
   SpecialPowers.Services.scriptloader.loadSubScript(url.href, this);
 }
 
