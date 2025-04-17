@@ -541,7 +541,10 @@ function createBrowser() {
   
   
   
-  browser.style.colorScheme = "env(-moz-content-preferred-color-scheme)";
+  browser.setAttribute(
+    "style",
+    "color-scheme: env(-moz-content-preferred-color-scheme)"
+  );
 
   return browser;
 }
@@ -951,5 +954,3 @@ function startup() {
 
   InitializationTracker.onInitialized(performance.now());
 }
-
-window.addEventListener("DOMContentLoaded", startup, { once: true });
