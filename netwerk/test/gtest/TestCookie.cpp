@@ -132,7 +132,7 @@ void GetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
                                   uri, uri, principal,
                                   false,    
                                   nullptr,  
-                                  DocumentFlavorHTML);
+                                  DocumentFlavor::HTML);
   Unused << NS_WARN_IF(NS_FAILED(rv));
 
   nsAutoString cookie;

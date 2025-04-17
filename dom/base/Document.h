@@ -5715,12 +5715,12 @@ nsresult NS_NewVideoDocument(mozilla::dom::Document** aInstancePtrResult,
                              nsIPrincipal* aPartitionedPrincipal);
 
 
-enum DocumentFlavor {
-  DocumentFlavorLegacyGuess,  
-  DocumentFlavorHTML,         
-  DocumentFlavorSVG,          
-  DocumentFlavorXML,          
-  DocumentFlavorPlain,        
+enum class DocumentFlavor : uint8_t {
+  LegacyGuess,  
+  HTML,         
+  SVG,          
+  XML,          
+  Plain,        
 };
 
 
