@@ -1219,6 +1219,19 @@ IdentityCredential::CheckRootManifest(nsIPrincipal* aPrincipal,
         NS_ERROR_INVALID_ARG, __func__);
   }
 
+  
+  
+  
+  
+  if (!aPrincipal->GetIsNullPrincipal()) {
+    bool thirdParty = true;
+    rv = aPrincipal->IsThirdPartyURI(manifestURI, &thirdParty);
+    if (NS_SUCCEEDED(rv) && !thirdParty) {
+      return IdentityCredential::ValidationPromise::CreateAndResolve(true,
+                                                                     __func__);
+    }
+  }
+
   return IdentityNetworkHelpers::FetchWellKnownHelper(manifestURI, aPrincipal)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
