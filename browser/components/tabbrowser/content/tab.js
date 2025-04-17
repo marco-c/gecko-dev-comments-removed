@@ -7,6 +7,11 @@
 
 
 {
+  const lazy = {};
+  ChromeUtils.defineESModuleGetters(lazy, {
+    TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
+  });
+
   class MozTabbrowserTab extends MozElements.MozTab {
     static markup = `
       <stack class="tab-stack" flex="1">
@@ -550,11 +555,14 @@
 
       if (event.target.classList.contains("tab-close-button")) {
         if (this.multiselected) {
-          gBrowser.removeMultiSelectedTabs();
+          gBrowser.removeMultiSelectedTabs({
+            telemetrySource: lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP,
+          });
         } else {
           gBrowser.removeTab(this, {
             animate: true,
             triggeringEvent: event,
+            telemetrySource: lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP,
           });
         }
         
