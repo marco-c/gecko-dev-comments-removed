@@ -208,8 +208,6 @@ class DMABufDevice {
   bool IsEnabled(nsACString& aFailureId);
 
   
-  static bool IsDMABufTexturesEnabled();
-  
   static bool IsDMABufWebGLEnabled();
   static void DisableDMABufWebGL();
 
