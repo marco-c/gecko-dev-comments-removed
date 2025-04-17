@@ -261,6 +261,13 @@ extern "C" void jog_test_clear_registered_metrics_and_pings();
 extern "C" NS_EXPORT void JOG_MaybeReload() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
+  
+  if (!mozilla::glean::sFoundAndLoadedJogfile.valueOr(false)) {
+    return;
+  }
+
   gCategories = nullptr;
   gMetricNames = nullptr;
   gMetrics = nullptr;
