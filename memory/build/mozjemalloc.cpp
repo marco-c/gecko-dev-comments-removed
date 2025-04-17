@@ -1656,9 +1656,10 @@ class ArenaCollection {
       mDefaultMaxDirtyPageModifier = aModifier;
       for (auto* arena : iter()) {
         
+        
         if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
           arena->UpdateMaxDirty();
-	}
+        }
       }
     }
   }
@@ -6097,6 +6098,7 @@ inline void MozJemalloc::jemalloc_reset_small_alloc_randomization(
 
   MutexAutoLock lock(gArenas.mLock);
   for (auto* arena : gArenas.iter()) {
+    
     
     if (!arena->IsMainThreadOnly() || gArenas.IsOnMainThreadWeak()) {
       arena->ResetSmallAllocRandomization();
