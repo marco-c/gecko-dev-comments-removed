@@ -10,6 +10,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/gfx/DrawTargetRecording.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/PresShell.h"
 #include "nsContentUtils.h"
@@ -139,4 +140,28 @@ bool nsICanvasRenderingContextInternal::DispatchEvent(
         *event, mozilla::dom::CallerType::System, mozilla::IgnoreErrors());
   }
   return useDefaultHandler;
+}
+
+already_AddRefed<mozilla::gfx::SourceSurface>
+nsICanvasRenderingContextInternal::GetOptimizedSnapshot(
+    mozilla::gfx::DrawTarget* aTarget, gfxAlphaType* out_alphaType) {
+  if (aTarget &&
+      aTarget->GetBackendType() == mozilla::gfx::BackendType::RECORDING) {
+    if (auto* actor = SupportsSnapshotExternalCanvas()) {
+      
+      
+      
+      if (RefPtr<mozilla::gfx::SourceSurface> surf =
+              static_cast<mozilla::gfx::DrawTargetRecording*>(aTarget)
+                  ->SnapshotExternalCanvas(this, actor)) {
+        if (out_alphaType) {
+          *out_alphaType =
+              GetIsOpaque() ? gfxAlphaType::Opaque : gfxAlphaType::Premult;
+        }
+        return surf.forget();
+      }
+    }
+  }
+
+  return GetSurfaceSnapshot(out_alphaType);
 }

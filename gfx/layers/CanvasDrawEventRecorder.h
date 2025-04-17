@@ -91,6 +91,8 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate,
 
 
     virtual bool RestartReader() = 0;
+
+    virtual already_AddRefed<layers::CanvasChild> GetCanvasChild() const = 0;
   };
 
   bool Init(TextureType aTextureType, TextureType aWebglTextureType,
@@ -136,6 +138,10 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate,
   void ClearProcessedExternalSurfaces();
 
   void ClearProcessedExternalImages();
+
+  already_AddRefed<layers::CanvasChild> GetCanvasChild() const override {
+    return mHelpers->GetCanvasChild();
+  }
 
  protected:
   gfx::ContiguousBuffer& GetContiguousBuffer(size_t aSize) final;
