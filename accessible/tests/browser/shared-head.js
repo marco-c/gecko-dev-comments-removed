@@ -352,7 +352,9 @@ function wrapWithIFrame(doc, options = {}) {
     
     
     
-    iframeDocBodyAttrs["aria-hidden"] = "true";
+    
+    
+    iframeDocBodyAttrs.hidden = true;
   }
   if (options.remoteIframe) {
     
@@ -428,7 +430,8 @@ function snippetToURL(doc, options = {}) {
     
     
     
-    attrs["aria-hidden"] = "true";
+    
+    attrs.hidden = true;
   }
 
   const encodedDoc = encodeURIComponent(
@@ -620,7 +623,7 @@ function accessibleTask(doc, task, options = {}) {
           
           
           await invokeContentTask(browser, [], () => {
-            content.document.body.removeAttribute("aria-hidden");
+            content.document.body.removeAttribute("hidden");
           });
           await ready;
           info("contentSetup done");
