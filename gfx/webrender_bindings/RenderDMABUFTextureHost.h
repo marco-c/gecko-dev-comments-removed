@@ -37,7 +37,9 @@ class RenderDMABUFTextureHost final : public RenderTextureHostSWGL {
   RefPtr<DMABufSurface> GetSurface() { return mSurface; }
 
   
-  gfx::SurfaceFormat GetFormat() const override;
+  gfx::SurfaceFormat GetFormat() const override {
+    return mSurface->GetFormat();
+  }
   gfx::ColorDepth GetColorDepth() const override {
     return gfx::ColorDepth::COLOR_8;
   }
