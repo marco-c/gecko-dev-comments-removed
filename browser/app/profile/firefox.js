@@ -2029,6 +2029,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thu
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
 
 
+pref("browser.newtabpage.activity-stream.telemetry.surfaceId", "");
+
+
 #ifdef EARLY_BETA_OR_EARLIER
   pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.region-thumbs-config", "US, CA");
 #else
