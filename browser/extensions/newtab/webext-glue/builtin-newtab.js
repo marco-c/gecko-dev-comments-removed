@@ -16,6 +16,9 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsISubstitutingProtocolHandler"
 );
 
+const SUPPORTED_LOCALES =
+#include locales/supported-locales.json
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutHomeStartupCache: "resource:///modules/AboutHomeStartupCache.sys.mjs",
@@ -58,6 +61,21 @@ this.builtin_newtab = class extends ExtensionAPI {
     let redirector = Cc[
       "@mozilla.org/network/protocol/about;1?what=newtab"
     ].getService(Ci.nsIAboutModule).wrappedJSObject;
+
+    if (this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/")) {
+      
+      
+      const newtabFileSource = new L10nFileSource(
+        "newtab",
+        "app",
+        SUPPORTED_LOCALES,
+        `resource://newtab/locales/{locale}/`
+      );
+      L10nRegistry.getInstance().registerSources([newtabFileSource]);
+
+      
+    }
+
     redirector.builtInAddonInitialized();
   }
 

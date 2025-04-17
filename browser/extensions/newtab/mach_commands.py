@@ -26,6 +26,7 @@ COMPARE_TOOL_PATH = Path(
 REPORT_PATH = Path(WEBEXT_LOCALES_PATH, "locales-report.json")
 REPORT_LEFT_JUSTIFY_CHARS = 15
 FLUENT_FILE_ANCESTRY = Path("browser", "newtab")
+SUPPORTED_LOCALES_PATH = Path(WEBEXT_LOCALES_PATH, "supported-locales.json")
 
 
 @Command(
@@ -105,6 +106,9 @@ def update_locales(command_context):
     
     
     ANCESTRY_LENGTH = 2
+
+    
+    supported_locales = [path.parents[ANCESTRY_LENGTH].name for path in paths]
     path_strs = [path.parents[ANCESTRY_LENGTH].as_posix() for path in paths]
 
     
@@ -141,6 +145,10 @@ def update_locales(command_context):
         pass_thru=False,
         line_handler=on_line,
     )
+
+    print("Writing supported locales to %s" % SUPPORTED_LOCALES_PATH)
+    with open(SUPPORTED_LOCALES_PATH, "w") as file:
+        json.dump(supported_locales, file)
 
     print("Done")
 

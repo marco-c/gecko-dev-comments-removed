@@ -82,6 +82,8 @@ module.exports = [
 
   
   "browser/extensions/newtab/logs/",
+  
+  "browser/extensions/newtab/webext-glue/builtin-newtab.js",
 
   
   "devtools/client/debugger/bin/",
