@@ -128,6 +128,21 @@ void nsWindow::ForcePresent() {
 }
 
 bool nsWindow::OnPaint(uint32_t aNestingLevel) {
+  struct FallbackPaintContext {
+    RefPtr<gfxASurface> mTargetSurface;
+    RefPtr<DrawTarget> mDt;
+    gfxContext mGfxContext;
+    AutoLayerManagerSetup mSetup;
+
+    explicit FallbackPaintContext(nsWindow* aWindow,
+                                  RefPtr<gfxASurface> aTargetSurface,
+                                  RefPtr<DrawTarget> aDt)
+        : mTargetSurface(std::move(aTargetSurface)),
+          mDt(std::move(aDt)),
+          mGfxContext(mDt),
+          mSetup(aWindow, &mGfxContext) {}
+  };
+
   gfx::DeviceResetReason resetReason = gfx::DeviceResetReason::OK;
   if (gfxWindowsPlatform::GetPlatform()->DidRenderingDeviceReset(
           &resetReason)) {
@@ -157,6 +172,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   WebRenderLayerManager* layerManager = renderer->AsWebRender();
   const bool isFallback =
       renderer->GetBackendType() == LayersBackend::LAYERS_NONE;
+  const bool isTransparent = mTransparencyMode == TransparencyMode::Transparent;
   MOZ_ASSERT(
       isFallback || renderer->GetBackendType() == LayersBackend::LAYERS_WR,
       "Unknown layers backend");
@@ -177,6 +193,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     listener->WillPaintWindow(this);
   }
 
+  bool didPaint = false;
   
   
   
@@ -185,42 +202,6 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   
   
   HDC hDC = ::BeginPaint(mWnd, &ps);
-  LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
-  
-  if (mTransparencyMode == TransparencyMode::Transparent) {
-    auto translucentRegion = GetTranslucentRegion();
-    
-    
-    
-    
-    
-    
-    
-    LayoutDeviceIntRegion regionToClear = translucentRegion;
-    if (!mClearedRegion.IsEmpty()) {
-      mClearedRegion.SubOut(region);
-      regionToClear.SubOut(mClearedRegion);
-    }
-    region.OrWith(translucentRegion);
-    mClearedRegion = std::move(translucentRegion);
-
-    
-    
-    
-    
-    if (!regionToClear.IsEmpty() && !isFallback) {
-      auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
-      
-      
-      
-      for (auto it = regionToClear.RectIter(); !it.Done(); it.Next()) {
-        auto rect = WinUtils::ToWinRect(it.Get());
-        ::FillRect(hDC, &rect, black);
-      }
-    }
-  }
-
-  bool didPaint = false;
   auto endPaint = MakeScopeExit([&] {
     ::EndPaint(mWnd, &ps);
     if (didPaint) {
@@ -234,27 +215,34 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     }
   });
 
+  LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
+  LayoutDeviceIntRegion regionToClear;
+  
+  if (isTransparent) {
+    auto translucentRegion = GetTranslucentRegion();
+    
+    
+    
+    
+    
+    
+    
+    regionToClear = translucentRegion;
+    if (!mClearedRegion.IsEmpty()) {
+      mClearedRegion.SubOut(region);
+      regionToClear.SubOut(mClearedRegion);
+    }
+    region.OrWith(translucentRegion);
+    mClearedRegion = std::move(translucentRegion);
+  }
+
   if (region.IsEmpty() || !GetPaintListener()) {
     return false;
   }
 
-  if (knowsCompositor && layerManager) {
-    layerManager->SendInvalidRegion(region.ToUnknownRegion());
-    layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
-  }
-
-  
-  
-#ifdef WIDGET_DEBUG_OUTPUT
-  debug_DumpPaintEvent(stdout, this, region.ToUnknownRegion(), "noname",
-                       (int32_t)mWnd);
-#endif  
-
-  bool result = true;
+  Maybe<FallbackPaintContext> fallback;
   if (isFallback) {
-    uint32_t flags = mTransparencyMode == TransparencyMode::Opaque
-                         ? 0
-                         : gfxWindowsSurface::FLAG_IS_TRANSPARENT;
+    uint32_t flags = isTransparent ? gfxWindowsSurface::FLAG_IS_TRANSPARENT : 0;
     RefPtr<gfxASurface> targetSurface = new gfxWindowsSurface(hDC, flags);
     RECT paintRect;
     ::GetClientRect(mWnd, &paintRect);
@@ -266,29 +254,46 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
       return false;
     }
 
-    if (mTransparencyMode == TransparencyMode::Transparent) {
-      
-      
-      dt->ClearRect(Rect(dt->GetRect()));
-    }
+    fallback.emplace(this, std::move(targetSurface), std::move(dt));
+  }
 
-    gfxContext thebesContext(dt);
+  if (knowsCompositor && layerManager) {
+    layerManager->SendInvalidRegion(region.ToUnknownRegion());
+    layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
+  }
 
-    {
-      AutoLayerManagerSetup setupLayerManager(this, &thebesContext);
-      if (nsIWidgetListener* listener = GetPaintListener()) {
-        result = listener->PaintWindow(this, region);
+  if (!regionToClear.IsEmpty()) {
+    auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
+    
+    
+    
+    for (auto it = regionToClear.RectIter(); !it.Done(); it.Next()) {
+      if (fallback) {
+        
+        
+        
+        
+        fallback->mDt->ClearRect(Rect(it.Get().ToUnknownRect()));
+      } else {
+        auto rect = WinUtils::ToWinRect(it.Get());
+        ::FillRect(hDC, &rect, black);
       }
     }
-  } else {
-    if (nsIWidgetListener* listener = GetPaintListener()) {
-      result = listener->PaintWindow(this, region);
-    }
-    if (!gfxEnv::MOZ_DISABLE_FORCE_PRESENT()) {
-      nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
-          "nsWindow::ForcePresent", this, &nsWindow::ForcePresent);
-      NS_DispatchToMainThread(event);
-    }
+  }
+
+#ifdef WIDGET_DEBUG_OUTPUT
+  debug_DumpPaintEvent(stdout, this, region.ToUnknownRegion(), "noname",
+                       (int32_t)mWnd);
+#endif  
+
+  bool result = true;
+  if (nsIWidgetListener* listener = GetPaintListener()) {
+    result = listener->PaintWindow(this, region);
+  }
+
+  if (!isFallback && !gfxEnv::MOZ_DISABLE_FORCE_PRESENT()) {
+    NS_DispatchToMainThread(NewRunnableMethod("nsWindow::ForcePresent", this,
+                                              &nsWindow::ForcePresent));
   }
 
   didPaint = true;
