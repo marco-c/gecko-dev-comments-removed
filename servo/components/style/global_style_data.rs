@@ -26,6 +26,21 @@ pub type PlatformThreadHandle = RawPthread;
 pub type PlatformThreadHandle = RawHandle;
 
 
+
+#[cfg(all(target_arch = "wasm32", not(feature = "gecko")))]
+pub struct DummyThreadHandle;
+#[cfg(all(target_arch = "wasm32", not(feature = "gecko")))]
+impl DummyThreadHandle {
+    
+    pub fn join(&self) {
+        
+    }
+}
+#[cfg(all(target_arch = "wasm32", not(feature = "gecko")))]
+
+pub type PlatformThreadHandle = DummyThreadHandle;
+
+
 pub struct GlobalStyleData {
     
     pub shared_lock: SharedRwLock,
@@ -131,6 +146,11 @@ impl StyleThreadPool {
             let handle = join_handle.as_pthread_t();
             #[cfg(windows)]
             let handle = join_handle.as_raw_handle();
+            #[cfg(all(target_arch = "wasm32", not(feature = "gecko")))]
+            let handle = {
+                let _ = join_handle;
+                DummyThreadHandle
+            };
 
             handles.push(handle);
         }
