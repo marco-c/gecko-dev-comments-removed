@@ -39,8 +39,8 @@ pub use glean_core::{
         Datetime, DistributionData, MemoryUnit, MetricIdentifier, Rate, RecordedEvent, TimeUnit,
         TimerId,
     },
-    traits, CommonMetricData, Error, ErrorType, Glean, HistogramType, LabeledMetricData, Lifetime,
-    PingRateLimit, RecordedExperiment, Result,
+    traits, AttributionMetrics, CommonMetricData, DistributionMetrics, Error, ErrorType, Glean,
+    HistogramType, LabeledMetricData, Lifetime, PingRateLimit, RecordedExperiment, Result,
 };
 
 mod configuration;
@@ -354,6 +354,32 @@ pub fn persist_ping_lifetime_data() {
 
 pub fn get_registered_ping_names() -> Vec<String> {
     glean_core::glean_get_registered_ping_names()
+}
+
+
+
+pub fn update_attribution(attribution: AttributionMetrics) {
+    glean_core::glean_update_attribution(attribution);
+}
+
+
+
+
+pub fn test_get_attribution() -> AttributionMetrics {
+    glean_core::glean_test_get_attribution()
+}
+
+
+
+pub fn update_distribution(distribution: DistributionMetrics) {
+    glean_core::glean_update_distribution(distribution);
+}
+
+
+
+
+pub fn test_get_distribution() -> DistributionMetrics {
+    glean_core::glean_test_get_distribution()
 }
 
 #[cfg(test)]
