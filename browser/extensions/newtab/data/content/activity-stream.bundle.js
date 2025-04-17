@@ -10873,6 +10873,39 @@ function InterestPicker({
 
 
 
+const PersonalizedCard = ({
+  onDismiss
+}) => {
+  const wavingFox = "chrome://newtab/content/data/content/assets/waving-fox.svg";
+  return external_React_default().createElement("aside", {
+    className: "personalized-card-wrapper"
+  }, external_React_default().createElement("div", {
+    className: "personalized-card-dismiss"
+  }, external_React_default().createElement("moz-button", {
+    type: "icon ghost",
+    iconSrc: "chrome://global/skin/icons/close.svg",
+    onClick: onDismiss,
+    "data-l10n-id": "newtab-toast-dismiss-button"
+  })), external_React_default().createElement("div", {
+    className: "personalized-card-inner"
+  }, external_React_default().createElement("img", {
+    src: wavingFox,
+    alt: ""
+  }), external_React_default().createElement("h2", null, "Personalized Just for You"), external_React_default().createElement("p", null, "We\u2019re customizing your feed to show content that matters to you, while ensuring your privacy is always respected."), external_React_default().createElement("moz-button", {
+    type: "primary",
+    class: "personalized-card-cta"
+  }, "Manage your settings"), external_React_default().createElement("a", {
+    href: "https://www.mozilla.org/en-US/privacy/firefox/#notice"
+  }, "Learn how we protect and manage data")));
+};
+;
+
+
+
+
+
+
+
 
 
 
@@ -10898,6 +10931,10 @@ const CardSections_PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
 const CardSections_PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const CardSections_PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
 const CardSections_PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
+const PREF_INFERRED_PERSONALIZATION_ENABLED = "discoverystream.sections.personalization.inferred.enabled";
+const PREF_INFERRED_PERSONALIZATION_USER_ENABLED = "discoverystream.sections.personalization.inferred.user.enabled";
+const PREF_INFERRED_PERSONALIZATION_POSITION = "discoverystream.sections.personalization.inferred.position";
+const PREF_INFERRED_PERSONALIZATION_BLOCKED = "discoverystream.sections.personalization.inferred.blocked";
 function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
@@ -11234,6 +11271,22 @@ function CardSections({
       receivedFeedRank: interestPicker.receivedFeedRank
     }));
   }
+  const handleDismissP13nCard = () => {
+    dispatch(actionCreators.SetPref(PREF_INFERRED_PERSONALIZATION_BLOCKED, true));
+  };
+  function displayP13nCard() {
+    const row = prefs[PREF_INFERRED_PERSONALIZATION_POSITION];
+    const cardBlocked = prefs[PREF_INFERRED_PERSONALIZATION_BLOCKED];
+    const cardEnabled = prefs[PREF_INFERRED_PERSONALIZATION_ENABLED];
+    const userEnabled = prefs[PREF_INFERRED_PERSONALIZATION_USER_ENABLED];
+    if (!cardBlocked && cardEnabled && userEnabled) {
+      sectionsToRender.splice(row, 0, external_React_default().createElement(PersonalizedCard, {
+        row: row,
+        onDismiss: handleDismissP13nCard
+      }));
+    }
+  }
+  displayP13nCard();
   const isEmpty = sectionsToRender.length === 0;
   return isEmpty ? external_React_default().createElement("div", {
     className: "ds-card-grid empty"
