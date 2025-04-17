@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-disable no-restricted-globals */
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -84,7 +82,7 @@ event.synthesizeMouseAtPoint = function (left, top, opts, win) {
 };
 
 /**
- * Synthesise a touch event at a point.
+ * Synthesize a touch event at a point.
  *
  * If the type is specified in opts, a touch event of that type is
  * fired. Otherwise, a touchstart followed by a touchend is performed.
