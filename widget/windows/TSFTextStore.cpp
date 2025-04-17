@@ -61,7 +61,7 @@ namespace mozilla::widget {
 const MSG* TSFTextStore::sHandlingKeyMsg = nullptr;
 bool TSFTextStore::sIsKeyboardEventDispatched = false;
 
-TSFTextStore::TSFTextStore() {
+TSFTextStore::TSFTextStore() : TSFTextStoreBase(Editable::Yes) {
   
   mPendingActions.SetCapacity(5);
 
@@ -3151,10 +3151,8 @@ Result<RefPtr<TSFTextStore>, nsresult> TSFTextStore::CreateAndSetFocus(
   return textStore;
 }
 
-
-IMENotificationRequests TSFTextStore::GetIMENotificationRequests() {
-  if (!TSFUtils::GetActiveTextStore() ||
-      NS_WARN_IF(!TSFUtils::GetActiveTextStore()->mDocumentMgr)) {
+IMENotificationRequests TSFTextStore::GetIMENotificationRequests() const {
+  if (NS_WARN_IF(!mDocumentMgr)) {
     
     
     return IMENotificationRequests();

@@ -645,7 +645,12 @@ nsresult TSFUtils::OnFocusChange(GotFocus aGotFocus, nsWindow* aFocusedWindow,
   sActiveTextStore = nullptr;
 
   
-  if (oldTextStore && oldTextStore->MaybeHasFocus()) {
+  
+  
+  
+  
+  if (oldTextStore && oldTextStore->IsEditable() &&
+      oldTextStore->MaybeHasFocus()) {
     const RefPtr<ITfThreadMgr> threadMgr(sThreadMgr);
     
     
