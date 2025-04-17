@@ -103,24 +103,6 @@ class gfxWindowsPlatform final : public gfxPlatform {
   virtual already_AddRefed<gfxASurface> CreateOffscreenSurface(
       const IntSize& aSize, gfxImageFormat aFormat) override;
 
-  enum RenderMode {
-    
-    RENDER_GDI = 0,
-
-    
-    RENDER_IMAGE_STRETCH32,
-
-    
-
-    RENDER_IMAGE_STRETCH24,
-
-    
-    RENDER_DIRECT2D,
-
-    
-    RENDER_MODE_MAX
-  };
-
   bool IsDirect2DBackend();
 
   
@@ -210,8 +192,6 @@ class gfxWindowsPlatform final : public gfxPlatform {
   void BuildContentDeviceData(mozilla::gfx::ContentDeviceData* aOut) override;
 
   BackendPrefsData GetBackendPrefs() const override;
-
-  RenderMode mRenderMode;
 
  private:
   void Init();
