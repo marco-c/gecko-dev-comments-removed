@@ -658,6 +658,13 @@ class DesktopInstance(GeckoInstance):
         
         "browser.warnOnQuit": False,
         
+        
+        
+        
+        
+        "threads.lower_mainthread_priority_in_background.enabled": False,
+        "dom.ipc.processPriorityManager.enabled": False,
+        
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
     }
