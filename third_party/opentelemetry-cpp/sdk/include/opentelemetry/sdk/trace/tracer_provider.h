@@ -40,20 +40,13 @@ public:
 
 
 
-
-
   explicit TracerProvider(
       std::unique_ptr<SpanProcessor> processor,
       const opentelemetry::sdk::resource::Resource &resource =
           opentelemetry::sdk::resource::Resource::Create({}),
       std::unique_ptr<Sampler> sampler = std::unique_ptr<AlwaysOnSampler>(new AlwaysOnSampler),
       std::unique_ptr<IdGenerator> id_generator =
-          std::unique_ptr<IdGenerator>(new RandomIdGenerator()),
-      std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>> tracer_configurator =
-          std::make_unique<instrumentationscope::ScopeConfigurator<TracerConfig>>(
-              instrumentationscope::ScopeConfigurator<TracerConfig>::Builder(
-                  TracerConfig::Default())
-                  .Build())) noexcept;
+          std::unique_ptr<IdGenerator>(new RandomIdGenerator())) noexcept;
 
   explicit TracerProvider(
       std::vector<std::unique_ptr<SpanProcessor>> &&processors,
@@ -61,12 +54,7 @@ public:
           opentelemetry::sdk::resource::Resource::Create({}),
       std::unique_ptr<Sampler> sampler = std::unique_ptr<AlwaysOnSampler>(new AlwaysOnSampler),
       std::unique_ptr<IdGenerator> id_generator =
-          std::unique_ptr<IdGenerator>(new RandomIdGenerator()),
-      std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>> tracer_configurator =
-          std::make_unique<instrumentationscope::ScopeConfigurator<TracerConfig>>(
-              instrumentationscope::ScopeConfigurator<TracerConfig>::Builder(
-                  TracerConfig::Default())
-                  .Build())) noexcept;
+          std::unique_ptr<IdGenerator>(new RandomIdGenerator())) noexcept;
 
   
 
@@ -113,7 +101,7 @@ public:
   
 
 
-  bool Shutdown(std::chrono::microseconds timeout = (std::chrono::microseconds::max)()) noexcept;
+  bool Shutdown() noexcept;
 
   
 

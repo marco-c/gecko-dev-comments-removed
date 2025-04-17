@@ -60,7 +60,8 @@ static constexpr const char *kProcessContextSwitchType = "process.context_switch
 
 
 
-OPENTELEMETRY_DEPRECATED static constexpr const char *kProcessCpuState = "process.cpu.state";
+OPENTELEMETRY_DEPRECATED
+static constexpr const char *kProcessCpuState = "process.cpu.state";
 
 
 
@@ -81,17 +82,7 @@ static constexpr const char *kProcessExecutableBuildIdGo = "process.executable.b
 
 
 
-static constexpr const char *kProcessExecutableBuildIdHtlhash =
-    "process.executable.build_id.htlhash";
-
-
-
-
-
-
-
-
-OPENTELEMETRY_DEPRECATED static constexpr const char *kProcessExecutableBuildIdProfiling =
+static constexpr const char *kProcessExecutableBuildIdProfiling =
     "process.executable.build_id.profiling";
 
 
@@ -127,16 +118,6 @@ static constexpr const char *kProcessGroupLeaderPid = "process.group_leader.pid"
 
 
 static constexpr const char *kProcessInteractive = "process.interactive";
-
-
-
-
-
-
-
-
-
-static constexpr const char *kProcessLinuxCgroup = "process.linux.cgroup";
 
 
 

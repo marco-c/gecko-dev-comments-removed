@@ -48,13 +48,6 @@ public:
       std::unique_ptr<Sampler> sampler,
       std::unique_ptr<IdGenerator> id_generator);
 
-  static std::unique_ptr<opentelemetry::sdk::trace::TracerProvider> Create(
-      std::unique_ptr<SpanProcessor> processor,
-      const opentelemetry::sdk::resource::Resource &resource,
-      std::unique_ptr<Sampler> sampler,
-      std::unique_ptr<IdGenerator> id_generator,
-      std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>> tracer_configurator);
-
   
 
   static std::unique_ptr<opentelemetry::sdk::trace::TracerProvider> Create(
@@ -74,13 +67,6 @@ public:
       const opentelemetry::sdk::resource::Resource &resource,
       std::unique_ptr<Sampler> sampler,
       std::unique_ptr<IdGenerator> id_generator);
-
-  static std::unique_ptr<opentelemetry::sdk::trace::TracerProvider> Create(
-      std::vector<std::unique_ptr<SpanProcessor>> &&processors,
-      const opentelemetry::sdk::resource::Resource &resource,
-      std::unique_ptr<Sampler> sampler,
-      std::unique_ptr<IdGenerator> id_generator,
-      std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>> tracer_configurator);
 
   
 

@@ -4,7 +4,6 @@
 #pragma once
 
 #include <chrono>
-#include <cstdint>
 #include <string>
 
 #include "opentelemetry/version.h"
@@ -39,22 +38,6 @@ bool GetDurationEnvironmentVariable(const char *env_var_name,
 
 
 bool GetStringEnvironmentVariable(const char *env_var_name, std::string &value);
-
-
-
-
-
-
-
-bool GetUintEnvironmentVariable(const char *env_var_name, std::uint32_t &value);
-
-
-
-
-
-
-
-bool GetFloatEnvironmentVariable(const char *env_var_name, float &value);
 
 #if defined(_MSC_VER)
 inline int setenv(const char *name, const char *value, int)

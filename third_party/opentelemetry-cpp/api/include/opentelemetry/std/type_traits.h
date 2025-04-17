@@ -5,6 +5,18 @@
 
 
 
-#include <type_traits>  
+#include <type_traits>
 
-#include "opentelemetry/version.h"  
+#include "opentelemetry/version.h"
+
+OPENTELEMETRY_BEGIN_NAMESPACE
+
+namespace nostd
+{
+
+
+template <bool B, class T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
+
+}  
+OPENTELEMETRY_END_NAMESPACE

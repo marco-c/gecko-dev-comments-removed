@@ -14,7 +14,6 @@
 
 #include "opentelemetry/sdk/common/circular_buffer.h"
 #include "opentelemetry/sdk/trace/batch_span_processor_options.h"
-#include "opentelemetry/sdk/trace/batch_span_processor_runtime_options.h"
 #include "opentelemetry/sdk/trace/exporter.h"
 #include "opentelemetry/sdk/trace/processor.h"
 #include "opentelemetry/sdk/trace/recordable.h"
@@ -43,18 +42,6 @@ public:
 
   BatchSpanProcessor(std::unique_ptr<SpanExporter> &&exporter,
                      const BatchSpanProcessorOptions &options);
-
-  
-
-
-
-
-
-
-
-  BatchSpanProcessor(std::unique_ptr<SpanExporter> &&exporter,
-                     const BatchSpanProcessorOptions &options,
-                     const BatchSpanProcessorRuntimeOptions &runtime_options);
 
   
 
@@ -171,7 +158,6 @@ protected:
   std::shared_ptr<SynchronizationData> synchronization_data_;
 
   
-  std::shared_ptr<sdk::common::ThreadInstrumentation> worker_thread_instrumentation_;
   std::thread worker_thread_;
 };
 
