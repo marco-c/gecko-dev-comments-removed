@@ -77,9 +77,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
 
 
-
-  RefPtr<DocumentFragment> SanitizeFragment(RefPtr<DocumentFragment> aFragment,
-                                            bool aSafe, ErrorResult& aRv);
+  void Sanitize(nsINode* aNode, bool aSafe, ErrorResult& aRv);
 
  private:
   ~Sanitizer() = default;

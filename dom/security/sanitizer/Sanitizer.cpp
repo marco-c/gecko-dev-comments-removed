@@ -717,9 +717,8 @@ void Sanitizer::RemoveUnsafe() {
 }
 
 
-RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
-    RefPtr<DocumentFragment> aFragment, bool aSafe, ErrorResult& aRv) {
-  MOZ_ASSERT(aFragment->OwnerDoc()->IsLoadedAsData(),
+void Sanitizer::Sanitize(nsINode* aNode, bool aSafe, ErrorResult& aRv) {
+  MOZ_ASSERT(aNode->OwnerDoc()->IsLoadedAsData(),
              "SanitizeChildren relies on the document being inert to be safe");
 
   
@@ -736,12 +735,10 @@ RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
   
   if (mIsDefaultConfig) {
     AssertNoLists();
-    SanitizeChildren<true>(aFragment, aSafe);
+    SanitizeChildren<true>(aNode, aSafe);
   } else {
-    SanitizeChildren<false>(aFragment, aSafe);
+    SanitizeChildren<false>(aNode, aSafe);
   }
-
-  return aFragment.forget();
 }
 
 static RefPtr<nsAtom> ToNamespace(int32_t aNamespaceID) {
