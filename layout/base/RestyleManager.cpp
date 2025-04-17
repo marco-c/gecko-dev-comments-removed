@@ -1938,15 +1938,6 @@ uint64_t RestyleManager::GetAnimationGenerationForFrame(nsIFrame* aStyleFrame) {
   return effectSet ? effectSet->GetAnimationGeneration() : 0;
 }
 
-void RestyleManager::IncrementAnimationGeneration() {
-  
-  
-  
-  if (!mInStyleRefresh) {
-    ++mAnimationGeneration;
-  }
-}
-
 
 void RestyleManager::AddLayerChangesForAnimation(
     nsIFrame* aStyleFrame, nsIFrame* aPrimaryFrame, Element* aElement,

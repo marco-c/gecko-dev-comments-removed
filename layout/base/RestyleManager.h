@@ -433,7 +433,10 @@ class RestyleManager {
   
   
   
-  void IncrementAnimationGeneration();
+  
+  void IncrementAnimationGeneration() {
+    ++mAnimationGeneration;
+  }
 
   
   
