@@ -59,6 +59,10 @@ class Repository:
 
     def _run(self, *args, encoding="utf-8", **runargs):
         return_codes = runargs.get("return_codes", [])
+        env = self._env
+        if "env" in runargs:
+            env = env.copy()
+            env.update(runargs["env"])
 
         cmd = (str(self._tool),) + args
         
@@ -72,7 +76,7 @@ class Repository:
                 return subprocess.check_output(
                     cmd,
                     cwd=self.path,
-                    env=self._env,
+                    env=env,
                     encoding=encoding,
                 )
             except subprocess.CalledProcessError as e:
