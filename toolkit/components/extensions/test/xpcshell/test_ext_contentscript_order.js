@@ -44,7 +44,17 @@ async function loadContentPageWithoutPreloading(path) {
   return contentPage;
 }
 
-add_task(async function test_js_order() {
+
+
+
+
+
+
+
+
+
+
+async function do_test_js_order(expectOrdered = true) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       content_scripts: [
@@ -85,7 +95,7 @@ add_task(async function test_js_order() {
         
         {
           matches: ["*://example.com/hey"],
-          js: ["done_check_js.js"],
+          js: [expectOrdered ? "done_check_js.js" : "done_check_unordered.js"],
           run_at: "document_idle",
         },
       ],
@@ -95,12 +105,59 @@ add_task(async function test_js_order() {
       "2.js": "document.documentElement.className += ' _2';",
       "3.js": "document.documentElement.className += ' _3';",
       "4.js": "document.documentElement.className += ' _4';",
+      
       "done_check_js.js": () => {
+        
         browser.test.assertEq(
           "start _1 _2 _3 _2 _4",
           document.documentElement.className,
           "Content script execution order should be: run_at, then array order"
         );
+        browser.test.sendMessage("done");
+      },
+      
+      "done_check_unordered.js": () => {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        const expected = "start _1 _2 _2 _3 _4";
+        const actual = document.documentElement.className;
+        if (expected === actual) {
+          
+          browser.test.log(`Got expected order: ${expected} == ${actual}`);
+        } else {
+          
+          
+          browser.test.log(`Got unexpected order: ${expected} != ${actual}`);
+        }
+
+        browser.test.assertTrue(actual.includes("_1"), "_1 document_start ran");
+        browser.test.assertTrue(actual.includes("_2"), "_2 document_start ran");
+        const indexOf2First = actual.indexOf("_2");
+        const indexOf2Cached = actual.lastIndexOf("_2");
+        browser.test.assertTrue(
+          indexOf2First !== indexOf2Cached && indexOf2Cached !== -1,
+          "_2 (cached) executed again at document_end"
+        );
+        const indexOf3 = actual.indexOf("_3");
+        if (indexOf3 !== -1) {
+          
+          browser.test.assertTrue(indexOf3 > indexOf2Cached, "_3 after _2");
+        }
+        const indexOf4 = actual.indexOf("_4");
+        if (indexOf4 !== -1) {
+          
+          browser.test.assertTrue(indexOf4 > indexOf2Cached, "_4 after _2");
+        }
         browser.test.sendMessage("done");
       },
     },
@@ -112,7 +169,18 @@ add_task(async function test_js_order() {
   await extension.awaitMessage("done");
   await contentPage.close();
   await extension.unload();
+}
+
+add_task(async function test_js_order() {
+  await do_test_js_order( true);
 });
+
+add_task(
+  { pref_set: [["extensions.webextensions.content_scripts.ordered", false]] },
+  async function test_js_order_with_content_scripts_ordered_false_pref() {
+    await do_test_js_order( false);
+  }
+);
 
 add_task(async function test_css_order() {
   
