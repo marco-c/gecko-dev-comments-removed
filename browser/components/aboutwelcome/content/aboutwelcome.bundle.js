@@ -1258,15 +1258,38 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       role: "img"
     })), content.hero_image ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_HeroImage__WEBPACK_IMPORTED_MODULE_6__.HeroImage, {
       url: content.hero_image.url
-    }) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "message-text"
+    }) : this.renderHeroText(content.hero_text));
+  }
+  renderHeroText(hero_text) {
+    if (!hero_text) {
+      return null;
+    }
+
+    
+    
+    const isSimpleText = typeof hero_text === "string" || typeof hero_text === "object" && hero_text !== null && "string_id" in hero_text;
+    const HeroTextWrapper = ({
+      children,
+      className = ""
+    }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: `message-text ${className}`
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "spacer-top"
-    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: content.hero_text
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", null)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }), children, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "spacer-bottom"
-    }))));
+    })));
+    if (isSimpleText) {
+      return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(HeroTextWrapper, null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+        text: hero_text
+      }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", null)));
+    }
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(HeroTextWrapper, {
+      className: "hero-text"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: hero_text.title
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", null)), hero_text.subtitle && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: hero_text.subtitle
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", null)));
   }
   renderOrderedContent(content) {
     const elements = [];
