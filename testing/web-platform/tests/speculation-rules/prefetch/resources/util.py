@@ -1,0 +1,16 @@
+import os
+from wptserve.pipes import template
+
+
+
+def get_executor_html(request, additional_script):
+  content = template(
+    request,
+    open(os.path.join(os.path.dirname(__file__), "executor.sub.html"), "rb").read())
+
+  
+  content = content.replace(
+      b'<script nonce="abc">',
+      b'<script nonce="abc">' + additional_script.encode('utf-8'))
+
+  return content
