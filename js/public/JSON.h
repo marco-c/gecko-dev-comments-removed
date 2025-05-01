@@ -27,11 +27,18 @@ using JSONWriteCallback = bool (*)(const char16_t* buf, uint32_t len,
 
 
 
+
+
+
 extern JS_PUBLIC_API bool JS_Stringify(JSContext* cx,
                                        JS::MutableHandle<JS::Value> value,
                                        JS::Handle<JSObject*> replacer,
                                        JS::Handle<JS::Value> space,
                                        JSONWriteCallback callback, void* data);
+extern JS_PUBLIC_API bool JS_StringifyWithLengthHint(
+    JSContext* cx, JS::MutableHandle<JS::Value> value,
+    JS::Handle<JSObject*> replacer, JS::Handle<JS::Value> space,
+    JSONWriteCallback callback, void* data, size_t lengthHint);
 
 namespace JS {
 
