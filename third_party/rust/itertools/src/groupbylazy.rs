@@ -1,5 +1,5 @@
-use std::cell::{Cell, RefCell};
 use alloc::vec::{self, Vec};
+use std::cell::{Cell, RefCell};
 
 
 trait KeyFunction<A> {
@@ -7,8 +7,9 @@ trait KeyFunction<A> {
     fn call_mut(&mut self, arg: A) -> Self::Key;
 }
 
-impl<A, K, F: ?Sized> KeyFunction<A> for F
-    where F: FnMut(A) -> K
+impl<A, K, F> KeyFunction<A> for F
+where
+    F: FnMut(A) -> K + ?Sized,
 {
     type Key = K;
     #[inline]
@@ -18,8 +19,7 @@ impl<A, K, F: ?Sized> KeyFunction<A> for F
 }
 
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ChunkIndex {
     size: usize,
     index: usize,
@@ -29,7 +29,7 @@ struct ChunkIndex {
 impl ChunkIndex {
     #[inline(always)]
     fn new(size: usize) -> Self {
-        ChunkIndex {
+        Self {
             size,
             index: 0,
             key: 0,
@@ -50,9 +50,10 @@ impl<A> KeyFunction<A> for ChunkIndex {
     }
 }
 
-
+#[derive(Clone)]
 struct GroupInner<K, I, F>
-    where I: Iterator
+where
+    I: Iterator,
 {
     key: F,
     iter: I,
@@ -71,13 +72,15 @@ struct GroupInner<K, I, F>
     
     buffer: Vec<vec::IntoIter<I::Item>>,
     
+    
     dropped_group: usize,
 }
 
 impl<K, I, F> GroupInner<K, I, F>
-    where I: Iterator,
-          F: for<'a> KeyFunction<&'a I::Item, Key=K>,
-          K: PartialEq,
+where
+    I: Iterator,
+    F: for<'a> KeyFunction<&'a I::Item, Key = K>,
+    K: PartialEq,
 {
     
     #[inline(always)]
@@ -90,9 +93,8 @@ impl<K, I, F> GroupInner<K, I, F>
 
         if client < self.oldest_buffered_group {
             None
-        } else if client < self.top_group ||
-            (client == self.top_group &&
-             self.buffer.len() > self.top_group - self.bottom_group)
+        } else if client < self.top_group
+            || (client == self.top_group && self.buffer.len() > self.top_group - self.bottom_group)
         {
             self.lookup_buffer(client)
         } else if self.done {
@@ -118,8 +120,10 @@ impl<K, I, F> GroupInner<K, I, F>
             
             self.oldest_buffered_group += 1;
             
-            while self.buffer.get(self.oldest_buffered_group - self.bottom_group)
-                             .map_or(false, |buf| buf.len() == 0)
+            while self
+                .buffer
+                .get(self.oldest_buffered_group - self.bottom_group)
+                .map_or(false, |buf| buf.len() == 0)
             {
                 self.oldest_buffered_group += 1;
             }
@@ -144,11 +148,13 @@ impl<K, I, F> GroupInner<K, I, F>
     fn next_element(&mut self) -> Option<I::Item> {
         debug_assert!(!self.done);
         match self.iter.next() {
-            None => { self.done = true; None }
+            None => {
+                self.done = true;
+                None
+            }
             otherwise => otherwise,
         }
     }
-
 
     #[inline(never)]
     fn step_buffering(&mut self, client: usize) -> Option<I::Item> {
@@ -171,11 +177,13 @@ impl<K, I, F> GroupInner<K, I, F>
             let key = self.key.call_mut(&elt);
             match self.current_key.take() {
                 None => {}
-                Some(old_key) => if old_key != key {
-                    self.current_key = Some(key);
-                    first_elt = Some(elt);
-                    break;
-                },
+                Some(old_key) => {
+                    if old_key != key {
+                        self.current_key = Some(key);
+                        first_elt = Some(elt);
+                        break;
+                    }
+                }
             }
             self.current_key = Some(key);
             if self.top_group != self.dropped_group {
@@ -220,12 +228,14 @@ impl<K, I, F> GroupInner<K, I, F>
                 let key = self.key.call_mut(&elt);
                 match self.current_key.take() {
                     None => {}
-                    Some(old_key) => if old_key != key {
-                        self.current_key = Some(key);
-                        self.current_elt = Some(elt);
-                        self.top_group += 1;
-                        return None;
-                    },
+                    Some(old_key) => {
+                        if old_key != key {
+                            self.current_key = Some(key);
+                            self.current_elt = Some(elt);
+                            self.top_group += 1;
+                            return None;
+                        }
+                    }
                 }
                 self.current_key = Some(key);
                 Some(elt)
@@ -261,7 +271,8 @@ impl<K, I, F> GroupInner<K, I, F>
 }
 
 impl<K, I, F> GroupInner<K, I, F>
-    where I: Iterator,
+where
+    I: Iterator,
 {
     
     fn drop_group(&mut self, client: usize) {
@@ -271,6 +282,10 @@ impl<K, I, F> GroupInner<K, I, F>
         }
     }
 }
+
+#[deprecated(note = "Use `ChunkBy` instead", since = "0.13.0")]
+
+pub type GroupBy<K, I, F> = ChunkBy<K, I, F>;
 
 
 
@@ -286,8 +301,9 @@ impl<K, I, F> GroupInner<K, I, F>
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-pub struct GroupBy<K, I, F>
-    where I: Iterator,
+pub struct ChunkBy<K, I, F>
+where
+    I: Iterator,
 {
     inner: RefCell<GroupInner<K, I, F>>,
     
@@ -296,11 +312,12 @@ pub struct GroupBy<K, I, F>
 }
 
 
-pub fn new<K, J, F>(iter: J, f: F) -> GroupBy<K, J::IntoIter, F>
-    where J: IntoIterator,
-          F: FnMut(&J::Item) -> K,
+pub fn new<K, J, F>(iter: J, f: F) -> ChunkBy<K, J::IntoIter, F>
+where
+    J: IntoIterator,
+    F: FnMut(&J::Item) -> K,
 {
-    GroupBy {
+    ChunkBy {
         inner: RefCell::new(GroupInner {
             key: f,
             iter: iter.into_iter(),
@@ -317,13 +334,15 @@ pub fn new<K, J, F>(iter: J, f: F) -> GroupBy<K, J::IntoIter, F>
     }
 }
 
-impl<K, I, F> GroupBy<K, I, F>
-    where I: Iterator,
+impl<K, I, F> ChunkBy<K, I, F>
+where
+    I: Iterator,
 {
     
     fn step(&self, client: usize) -> Option<I::Item>
-        where F: FnMut(&I::Item) -> K,
-              K: PartialEq,
+    where
+        F: FnMut(&I::Item) -> K,
+        K: PartialEq,
     {
         self.inner.borrow_mut().step(client)
     }
@@ -334,11 +353,12 @@ impl<K, I, F> GroupBy<K, I, F>
     }
 }
 
-impl<'a, K, I, F> IntoIterator for &'a GroupBy<K, I, F>
-    where I: Iterator,
-          I::Item: 'a,
-          F: FnMut(&I::Item) -> K,
-          K: PartialEq
+impl<'a, K, I, F> IntoIterator for &'a ChunkBy<K, I, F>
+where
+    I: Iterator,
+    I::Item: 'a,
+    F: FnMut(&I::Item) -> K,
+    K: PartialEq,
 {
     type Item = (K, Group<'a, K, I, F>);
     type IntoIter = Groups<'a, K, I, F>;
@@ -354,20 +374,23 @@ impl<'a, K, I, F> IntoIterator for &'a GroupBy<K, I, F>
 
 
 
-
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-pub struct Groups<'a, K: 'a, I: 'a, F: 'a>
-    where I: Iterator,
-          I::Item: 'a
+pub struct Groups<'a, K, I, F>
+where
+    I: Iterator + 'a,
+    I::Item: 'a,
+    K: 'a,
+    F: 'a,
 {
-    parent: &'a GroupBy<K, I, F>,
+    parent: &'a ChunkBy<K, I, F>,
 }
 
 impl<'a, K, I, F> Iterator for Groups<'a, K, I, F>
-    where I: Iterator,
-          I::Item: 'a,
-          F: FnMut(&I::Item) -> K,
-          K: PartialEq
+where
+    I: Iterator,
+    I::Item: 'a,
+    F: FnMut(&I::Item) -> K,
+    K: PartialEq,
 {
     type Item = (K, Group<'a, K, I, F>);
 
@@ -378,11 +401,14 @@ impl<'a, K, I, F> Iterator for Groups<'a, K, I, F>
         let inner = &mut *self.parent.inner.borrow_mut();
         inner.step(index).map(|elt| {
             let key = inner.group_key(index);
-            (key, Group {
-                parent: self.parent,
-                index,
-                first: Some(elt),
-            })
+            (
+                key,
+                Group {
+                    parent: self.parent,
+                    index,
+                    first: Some(elt),
+                },
+            )
         })
     }
 }
@@ -390,18 +416,22 @@ impl<'a, K, I, F> Iterator for Groups<'a, K, I, F>
 
 
 
-pub struct Group<'a, K: 'a, I: 'a, F: 'a>
-    where I: Iterator,
-          I::Item: 'a,
+pub struct Group<'a, K, I, F>
+where
+    I: Iterator + 'a,
+    I::Item: 'a,
+    K: 'a,
+    F: 'a,
 {
-    parent: &'a GroupBy<K, I, F>,
+    parent: &'a ChunkBy<K, I, F>,
     index: usize,
     first: Option<I::Item>,
 }
 
 impl<'a, K, I, F> Drop for Group<'a, K, I, F>
-    where I: Iterator,
-          I::Item: 'a,
+where
+    I: Iterator,
+    I::Item: 'a,
 {
     fn drop(&mut self) {
         self.parent.drop_group(self.index);
@@ -409,10 +439,11 @@ impl<'a, K, I, F> Drop for Group<'a, K, I, F>
 }
 
 impl<'a, K, I, F> Iterator for Group<'a, K, I, F>
-    where I: Iterator,
-          I::Item: 'a,
-          F: FnMut(&I::Item) -> K,
-          K: PartialEq,
+where
+    I: Iterator,
+    I::Item: 'a,
+    F: FnMut(&I::Item) -> K,
+    K: PartialEq,
 {
     type Item = I::Item;
     #[inline]
@@ -428,7 +459,8 @@ impl<'a, K, I, F> Iterator for Group<'a, K, I, F>
 
 
 pub fn new_chunks<J>(iter: J, size: usize) -> IntoChunks<J::IntoIter>
-    where J: IntoIterator,
+where
+    J: IntoIterator,
 {
     IntoChunks {
         inner: RefCell::new(GroupInner {
@@ -460,10 +492,10 @@ pub fn new_chunks<J>(iter: J, size: usize) -> IntoChunks<J::IntoIter>
 
 
 
-
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct IntoChunks<I>
-    where I: Iterator,
+where
+    I: Iterator,
 {
     inner: RefCell<GroupInner<usize, I, ChunkIndex>>,
     
@@ -471,9 +503,17 @@ pub struct IntoChunks<I>
     index: Cell<usize>,
 }
 
+impl<I> Clone for IntoChunks<I>
+where
+    I: Clone + Iterator,
+    I::Item: Clone,
+{
+    clone_fields!(inner, index);
+}
 
 impl<I> IntoChunks<I>
-    where I: Iterator,
+where
+    I: Iterator,
 {
     
     fn step(&self, client: usize) -> Option<I::Item> {
@@ -487,16 +527,15 @@ impl<I> IntoChunks<I>
 }
 
 impl<'a, I> IntoIterator for &'a IntoChunks<I>
-    where I: Iterator,
-          I::Item: 'a,
+where
+    I: Iterator,
+    I::Item: 'a,
 {
     type Item = Chunk<'a, I>;
     type IntoIter = Chunks<'a, I>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Chunks {
-            parent: self,
-        }
+        Chunks { parent: self }
     }
 }
 
@@ -505,18 +544,20 @@ impl<'a, I> IntoIterator for &'a IntoChunks<I>
 
 
 
-
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-pub struct Chunks<'a, I: 'a>
-    where I: Iterator,
-          I::Item: 'a,
+#[derive(Clone)]
+pub struct Chunks<'a, I>
+where
+    I: Iterator + 'a,
+    I::Item: 'a,
 {
     parent: &'a IntoChunks<I>,
 }
 
 impl<'a, I> Iterator for Chunks<'a, I>
-    where I: Iterator,
-          I::Item: 'a,
+where
+    I: Iterator,
+    I::Item: 'a,
 {
     type Item = Chunk<'a, I>;
 
@@ -525,12 +566,10 @@ impl<'a, I> Iterator for Chunks<'a, I>
         let index = self.parent.index.get();
         self.parent.index.set(index + 1);
         let inner = &mut *self.parent.inner.borrow_mut();
-        inner.step(index).map(|elt| {
-            Chunk {
-                parent: self.parent,
-                index,
-                first: Some(elt),
-            }
+        inner.step(index).map(|elt| Chunk {
+            parent: self.parent,
+            index,
+            first: Some(elt),
         })
     }
 }
@@ -538,9 +577,10 @@ impl<'a, I> Iterator for Chunks<'a, I>
 
 
 
-pub struct Chunk<'a, I: 'a>
-    where I: Iterator,
-          I::Item: 'a,
+pub struct Chunk<'a, I>
+where
+    I: Iterator + 'a,
+    I::Item: 'a,
 {
     parent: &'a IntoChunks<I>,
     index: usize,
@@ -548,8 +588,9 @@ pub struct Chunk<'a, I: 'a>
 }
 
 impl<'a, I> Drop for Chunk<'a, I>
-    where I: Iterator,
-          I::Item: 'a,
+where
+    I: Iterator,
+    I::Item: 'a,
 {
     fn drop(&mut self) {
         self.parent.drop_group(self.index);
@@ -557,8 +598,9 @@ impl<'a, I> Drop for Chunk<'a, I>
 }
 
 impl<'a, I> Iterator for Chunk<'a, I>
-    where I: Iterator,
-          I::Item: 'a,
+where
+    I: Iterator,
+    I::Item: 'a,
 {
     type Item = I::Item;
     #[inline]

@@ -6,16 +6,7 @@ use std::fmt;
 use std::mem;
 
 
-#[derive(Clone)]
-#[deprecated(note="Use std repeat_with() instead", since="0.8.0")]
-pub struct RepeatCall<F> {
-    f: F,
-}
 
-impl<F> fmt::Debug for RepeatCall<F>
-{
-    debug_fmt_fields!(RepeatCall, );
-}
 
 
 
@@ -39,27 +30,9 @@ impl<F> fmt::Debug for RepeatCall<F>
 
 
 
-#[deprecated(note="Use std repeat_with() instead", since="0.8.0")]
-pub fn repeat_call<F, A>(function: F) -> RepeatCall<F>
-    where F: FnMut() -> A
-{
-    RepeatCall { f: function }
-}
 
-impl<A, F> Iterator for RepeatCall<F>
-    where F: FnMut() -> A
-{
-    type Item = A;
 
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        Some((self.f)())
-    }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (usize::max_value(), None)
-    }
-}
 
 
 
@@ -68,37 +41,13 @@ impl<A, F> Iterator for RepeatCall<F>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#[deprecated(
+    note = "Use [std::iter::from_fn](https://doc.rust-lang.org/std/iter/fn.from_fn.html) instead",
+    since = "0.13.0"
+)]
 pub fn unfold<A, St, F>(initial_state: St, f: F) -> Unfold<St, F>
-    where F: FnMut(&mut St) -> Option<A>
+where
+    F: FnMut(&mut St) -> Option<A>,
 {
     Unfold {
         f,
@@ -107,7 +56,8 @@ pub fn unfold<A, St, F>(initial_state: St, f: F) -> Unfold<St, F>
 }
 
 impl<St, F> fmt::Debug for Unfold<St, F>
-    where St: fmt::Debug,
+where
+    St: fmt::Debug,
 {
     debug_fmt_fields!(Unfold, state);
 }
@@ -115,6 +65,10 @@ impl<St, F> fmt::Debug for Unfold<St, F>
 
 #[derive(Clone)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
+#[deprecated(
+    note = "Use [std::iter::FromFn](https://doc.rust-lang.org/std/iter/struct.FromFn.html) instead",
+    since = "0.13.0"
+)]
 pub struct Unfold<St, F> {
     f: F,
     
@@ -122,7 +76,8 @@ pub struct Unfold<St, F> {
 }
 
 impl<A, St, F> Iterator for Unfold<St, F>
-    where F: FnMut(&mut St) -> Option<A>
+where
+    F: FnMut(&mut St) -> Option<A>,
 {
     type Item = A;
 
@@ -144,13 +99,15 @@ pub struct Iterate<St, F> {
 }
 
 impl<St, F> fmt::Debug for Iterate<St, F>
-    where St: fmt::Debug,
+where
+    St: fmt::Debug,
 {
     debug_fmt_fields!(Iterate, state);
 }
 
 impl<St, F> Iterator for Iterate<St, F>
-    where F: FnMut(&St) -> St
+where
+    F: FnMut(&St) -> St,
 {
     type Item = St;
 
@@ -162,7 +119,7 @@ impl<St, F> Iterator for Iterate<St, F>
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (usize::max_value(), None)
+        (usize::MAX, None)
     }
 }
 
@@ -173,8 +130,21 @@ impl<St, F> Iterator for Iterate<St, F>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn iterate<St, F>(initial_value: St, f: F) -> Iterate<St, F>
-    where F: FnMut(&St) -> St
+where
+    F: FnMut(&St) -> St,
 {
     Iterate {
         state: initial_value,

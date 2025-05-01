@@ -1,61 +1,258 @@
+use core::array;
+use core::borrow::BorrowMut;
 use std::fmt;
 use std::iter::FusedIterator;
 
 use super::lazy_buffer::LazyBuffer;
 use alloc::vec::Vec;
 
+use crate::adaptors::checked_binomial;
+
+
+pub type Combinations<I> = CombinationsGeneric<I, Vec<usize>>;
+
+pub type ArrayCombinations<I, const K: usize> = CombinationsGeneric<I, [usize; K]>;
+
+
+pub fn combinations<I: Iterator>(iter: I, k: usize) -> Combinations<I>
+where
+    I::Item: Clone,
+{
+    Combinations::new(iter, (0..k).collect())
+}
+
+
+pub fn array_combinations<I: Iterator, const K: usize>(iter: I) -> ArrayCombinations<I, K>
+where
+    I::Item: Clone,
+{
+    ArrayCombinations::new(iter, array::from_fn(|i| i))
+}
+
 
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-pub struct Combinations<I: Iterator> {
-    indices: Vec<usize>,
+pub struct CombinationsGeneric<I: Iterator, Idx> {
+    indices: Idx,
     pool: LazyBuffer<I>,
     first: bool,
 }
 
-impl<I> Clone for Combinations<I>
-    where I: Clone + Iterator,
-          I::Item: Clone,
+
+
+pub trait PoolIndex<T>: BorrowMut<[usize]> {
+    type Item;
+
+    fn extract_item<I: Iterator<Item = T>>(&self, pool: &LazyBuffer<I>) -> Self::Item
+    where
+        T: Clone;
+
+    fn len(&self) -> usize {
+        self.borrow().len()
+    }
+}
+
+impl<T> PoolIndex<T> for Vec<usize> {
+    type Item = Vec<T>;
+
+    fn extract_item<I: Iterator<Item = T>>(&self, pool: &LazyBuffer<I>) -> Vec<T>
+    where
+        T: Clone,
+    {
+        pool.get_at(self)
+    }
+}
+
+impl<T, const K: usize> PoolIndex<T> for [usize; K] {
+    type Item = [T; K];
+
+    fn extract_item<I: Iterator<Item = T>>(&self, pool: &LazyBuffer<I>) -> [T; K]
+    where
+        T: Clone,
+    {
+        pool.get_array(*self)
+    }
+}
+
+impl<I, Idx> Clone for CombinationsGeneric<I, Idx>
+where
+    I: Iterator + Clone,
+    I::Item: Clone,
+    Idx: Clone,
 {
     clone_fields!(indices, pool, first);
 }
 
-impl<I> fmt::Debug for Combinations<I>
-    where I: Iterator + fmt::Debug,
-          I::Item: fmt::Debug,
+impl<I, Idx> fmt::Debug for CombinationsGeneric<I, Idx>
+where
+    I: Iterator + fmt::Debug,
+    I::Item: fmt::Debug,
+    Idx: fmt::Debug,
 {
     debug_fmt_fields!(Combinations, indices, pool, first);
 }
 
+impl<I: Iterator, Idx: PoolIndex<I::Item>> CombinationsGeneric<I, Idx> {
+    
+    fn new(iter: I, indices: Idx) -> Self {
+        Self {
+            indices,
+            pool: LazyBuffer::new(iter),
+            first: true,
+        }
+    }
 
-pub fn combinations<I>(iter: I, k: usize) -> Combinations<I>
-    where I: Iterator
-{
-    let mut pool = LazyBuffer::new(iter);
-    pool.prefill(k);
+    
+    #[inline]
+    pub fn k(&self) -> usize {
+        self.indices.len()
+    }
 
-    Combinations {
-        indices: (0..k).collect(),
-        pool,
-        first: true,
+    
+    
+    #[inline]
+    pub fn n(&self) -> usize {
+        self.pool.len()
+    }
+
+    
+    #[inline]
+    pub(crate) fn src(&self) -> &LazyBuffer<I> {
+        &self.pool
+    }
+
+    
+    pub(crate) fn n_and_count(self) -> (usize, usize) {
+        let Self {
+            indices,
+            pool,
+            first,
+        } = self;
+        let n = pool.count();
+        (n, remaining_for(n, first, indices.borrow()).unwrap())
+    }
+
+    
+    
+    fn init(&mut self) -> bool {
+        self.pool.prefill(self.k());
+        let done = self.k() > self.n();
+        if !done {
+            self.first = false;
+        }
+
+        done
+    }
+
+    
+    
+    
+    
+    
+    fn increment_indices(&mut self) -> bool {
+        
+        let indices = self.indices.borrow_mut();
+
+        if indices.is_empty() {
+            return true; 
+        }
+        
+        let mut i: usize = indices.len() - 1;
+
+        
+        if indices[i] == self.pool.len() - 1 {
+            self.pool.get_next(); 
+        }
+
+        while indices[i] == i + self.pool.len() - indices.len() {
+            if i > 0 {
+                i -= 1;
+            } else {
+                
+                return true;
+            }
+        }
+
+        
+        indices[i] += 1;
+        for j in i + 1..indices.len() {
+            indices[j] = indices[j - 1] + 1;
+        }
+        
+        false
+    }
+
+    
+    pub(crate) fn try_nth(&mut self, n: usize) -> Result<<Self as Iterator>::Item, usize>
+    where
+        I: Iterator,
+        I::Item: Clone,
+    {
+        let done = if self.first {
+            self.init()
+        } else {
+            self.increment_indices()
+        };
+        if done {
+            return Err(0);
+        }
+        for i in 0..n {
+            if self.increment_indices() {
+                return Err(i + 1);
+            }
+        }
+        Ok(self.indices.extract_item(&self.pool))
     }
 }
 
+impl<I, Idx> Iterator for CombinationsGeneric<I, Idx>
+where
+    I: Iterator,
+    I::Item: Clone,
+    Idx: PoolIndex<I::Item>,
+{
+    type Item = Idx::Item;
+    fn next(&mut self) -> Option<Self::Item> {
+        let done = if self.first {
+            self.init()
+        } else {
+            self.increment_indices()
+        };
+
+        if done {
+            return None;
+        }
+
+        Some(self.indices.extract_item(&self.pool))
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.try_nth(n).ok()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (mut low, mut upp) = self.pool.size_hint();
+        low = remaining_for(low, self.first, self.indices.borrow()).unwrap_or(usize::MAX);
+        upp = upp.and_then(|upp| remaining_for(upp, self.first, self.indices.borrow()));
+        (low, upp)
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        self.n_and_count().1
+    }
+}
+
+impl<I, Idx> FusedIterator for CombinationsGeneric<I, Idx>
+where
+    I: Iterator,
+    I::Item: Clone,
+    Idx: PoolIndex<I::Item>,
+{
+}
+
 impl<I: Iterator> Combinations<I> {
-    
-    #[inline]
-    pub fn k(&self) -> usize { self.indices.len() }
-
-    
-    
-    #[inline]
-    pub fn n(&self) -> usize { self.pool.len() }
-
-    
-    #[inline]
-    pub(crate) fn src(&self) -> &I { &self.pool.it }
-
     
     
     
@@ -68,7 +265,6 @@ impl<I: Iterator> Combinations<I> {
             for i in 0..k {
                 self.indices[i] = i;
             }
-
         } else {
             for i in 0..self.indices.len() {
                 self.indices[i] = i;
@@ -79,50 +275,34 @@ impl<I: Iterator> Combinations<I> {
     }
 }
 
-impl<I> Iterator for Combinations<I>
-    where I: Iterator,
-          I::Item: Clone
-{
-    type Item = Vec<I::Item>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.first {
-            if self.k() > self.n() {
-                return None;
-            }
-            self.first = false;
-        } else if self.indices.is_empty() {
-            return None;
-        } else {
-            
-            let mut i: usize = self.indices.len() - 1;
 
-            
-            if self.indices[i] == self.pool.len() - 1 {
-                self.pool.get_next(); 
-            }
-
-            while self.indices[i] == i + self.pool.len() - self.indices.len() {
-                if i > 0 {
-                    i -= 1;
-                } else {
-                    
-                    return None;
-                }
-            }
-
-            
-            self.indices[i] += 1;
-            for j in i+1..self.indices.len() {
-                self.indices[j] = self.indices[j - 1] + 1;
-            }
-        }
+fn remaining_for(n: usize, first: bool, indices: &[usize]) -> Option<usize> {
+    let k = indices.len();
+    if n < k {
+        Some(0)
+    } else if first {
+        checked_binomial(n, k)
+    } else {
+        
+        
 
         
-        Some(self.indices.iter().map(|i| self.pool[*i].clone()).collect())
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        indices.iter().enumerate().try_fold(0usize, |sum, (i, n0)| {
+            sum.checked_add(checked_binomial(n - 1 - *n0, k - i)?)
+        })
     }
 }
-
-impl<I> FusedIterator for Combinations<I>
-    where I: Iterator,
-          I::Item: Clone
-{}

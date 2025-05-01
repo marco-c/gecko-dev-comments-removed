@@ -1,20 +1,23 @@
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 use std::fmt;
 use std::iter::FusedIterator;
 
 use super::lazy_buffer::LazyBuffer;
+use crate::adaptors::checked_binomial;
 
 
 
 
 
 #[derive(Clone)]
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct CombinationsWithReplacement<I>
 where
     I: Iterator,
     I::Item: Clone,
 {
-    indices: Vec<usize>,
+    indices: Box<[usize]>,
     pool: LazyBuffer<I>,
     first: bool,
 }
@@ -24,18 +27,7 @@ where
     I: Iterator + fmt::Debug,
     I::Item: fmt::Debug + Clone,
 {
-    debug_fmt_fields!(Combinations, indices, pool, first);
-}
-
-impl<I> CombinationsWithReplacement<I>
-where
-    I: Iterator,
-    I::Item: Clone,
-{
-    
-    fn current(&self) -> Vec<I::Item> {
-        self.indices.iter().map(|i| self.pool[*i].clone()).collect()
-    }
+    debug_fmt_fields!(CombinationsWithReplacement, indices, pool, first);
 }
 
 
@@ -44,7 +36,7 @@ where
     I: Iterator,
     I::Item: Clone,
 {
-    let indices: Vec<usize> = alloc::vec![0; k];
+    let indices = alloc::vec![0; k].into_boxed_slice();
     let pool: LazyBuffer<I> = LazyBuffer::new(iter);
 
     CombinationsWithReplacement {
@@ -54,51 +46,95 @@ where
     }
 }
 
+impl<I> CombinationsWithReplacement<I>
+where
+    I: Iterator,
+    I::Item: Clone,
+{
+    
+    
+    
+    
+    fn increment_indices(&mut self) -> bool {
+        
+        
+        self.pool.get_next();
+
+        
+        let mut increment = None;
+        for (i, indices_int) in self.indices.iter().enumerate().rev() {
+            if *indices_int < self.pool.len() - 1 {
+                increment = Some((i, indices_int + 1));
+                break;
+            }
+        }
+        match increment {
+            
+            Some((increment_from, increment_value)) => {
+                
+                
+                self.indices[increment_from..].fill(increment_value);
+                false
+            }
+            
+            None => true,
+        }
+    }
+}
+
 impl<I> Iterator for CombinationsWithReplacement<I>
 where
     I: Iterator,
     I::Item: Clone,
 {
     type Item = Vec<I::Item>;
+
     fn next(&mut self) -> Option<Self::Item> {
-        
         if self.first {
             
-            return if !(self.indices.is_empty() || self.pool.get_next()) {
-                None
-            
-            } else {
-                self.first = false;
-                Some(self.current())
-            };
+            if !(self.indices.is_empty() || self.pool.get_next()) {
+                return None;
+            }
+            self.first = false;
+        } else if self.increment_indices() {
+            return None;
         }
+        Some(self.pool.get_at(&self.indices))
+    }
 
-        
-        
-        self.pool.get_next();
-
-        
-        let mut increment: Option<(usize, usize)> = None;
-        for (i, indices_int) in self.indices.iter().enumerate().rev() {
-            if *indices_int < self.pool.len()-1 {
-                increment = Some((i, indices_int + 1));
-                break;
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if self.first {
+            
+            if !(self.indices.is_empty() || self.pool.get_next()) {
+                return None;
+            }
+            self.first = false;
+        } else if self.increment_indices() {
+            return None;
+        }
+        for _ in 0..n {
+            if self.increment_indices() {
+                return None;
             }
         }
+        Some(self.pool.get_at(&self.indices))
+    }
 
-        match increment {
-            
-            Some((increment_from, increment_value)) => {
-                
-                
-                for indices_index in increment_from..self.indices.len() {
-                    self.indices[indices_index] = increment_value;
-                }
-                Some(self.current())
-            }
-            
-            None => None,
-        }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (mut low, mut upp) = self.pool.size_hint();
+        low = remaining_for(low, self.first, &self.indices).unwrap_or(usize::MAX);
+        upp = upp.and_then(|upp| remaining_for(upp, self.first, &self.indices));
+        (low, upp)
+    }
+
+    fn count(self) -> usize {
+        let Self {
+            indices,
+            pool,
+            first,
+        } = self;
+        let n = pool.count();
+        remaining_for(n, first, &indices).unwrap()
     }
 }
 
@@ -106,4 +142,47 @@ impl<I> FusedIterator for CombinationsWithReplacement<I>
 where
     I: Iterator,
     I::Item: Clone,
-{}
+{
+}
+
+
+fn remaining_for(n: usize, first: bool, indices: &[usize]) -> Option<usize> {
+    
+    
+    
+    
+    let count = |n: usize, k: usize| {
+        let positions = if n == 0 {
+            k.saturating_sub(1)
+        } else {
+            (n - 1).checked_add(k)?
+        };
+        checked_binomial(positions, k)
+    };
+    let k = indices.len();
+    if first {
+        count(n, k)
+    } else {
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        indices.iter().enumerate().try_fold(0usize, |sum, (i, n0)| {
+            sum.checked_add(count(n - 1 - *n0, k - i)?)
+        })
+    }
+}

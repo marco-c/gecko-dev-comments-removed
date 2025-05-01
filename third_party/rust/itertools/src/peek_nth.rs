@@ -5,6 +5,7 @@ use std::iter::Fuse;
 
 
 #[derive(Clone, Debug)]
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct PeekNth<I>
 where
     I: Iterator,
@@ -40,6 +41,11 @@ where
     }
 
     
+    pub fn peek_mut(&mut self) -> Option<&mut I::Item> {
+        self.peek_nth_mut(0)
+    }
+
+    
     
     
     
@@ -69,6 +75,68 @@ where
 
         self.buf.get(n)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn peek_nth_mut(&mut self, n: usize) -> Option<&mut I::Item> {
+        let unbuffered_items = (n + 1).saturating_sub(self.buf.len());
+
+        self.buf.extend(self.iter.by_ref().take(unbuffered_items));
+
+        self.buf.get_mut(n)
+    }
+
+    
+    pub fn next_if(&mut self, func: impl FnOnce(&I::Item) -> bool) -> Option<I::Item> {
+        match self.next() {
+            Some(item) if func(&item) => Some(item),
+            Some(item) => {
+                self.buf.push_front(item);
+                None
+            }
+            _ => None,
+        }
+    }
+
+    
+    pub fn next_if_eq<T>(&mut self, expected: &T) -> Option<I::Item>
+    where
+        T: ?Sized,
+        I::Item: PartialEq<T>,
+    {
+        self.next_if(|next| next == expected)
+    }
 }
 
 impl<I> Iterator for PeekNth<I>
@@ -83,6 +151,14 @@ where
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         size_hint::add_scalar(self.iter.size_hint(), self.buf.len())
+    }
+
+    fn fold<B, F>(self, mut init: B, mut f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        init = self.buf.into_iter().fold(init, &mut f);
+        self.iter.fold(init, f)
     }
 }
 

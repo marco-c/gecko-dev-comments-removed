@@ -1,10 +1,12 @@
+use core::ops::{Deref, DerefMut};
+
 use crate::EitherOrBoth::*;
 
 use either::Either;
 
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub enum EitherOrBoth<A, B> {
+pub enum EitherOrBoth<A, B = A> {
     
     Both(A, B),
     
@@ -27,22 +29,15 @@ impl<A, B> EitherOrBoth<A, B> {
     
     
     pub fn is_left(&self) -> bool {
-        match *self {
-            Left(_) => true,
-            _ => false,
-        }
+        matches!(self, Left(_))
     }
 
     
     
     pub fn is_right(&self) -> bool {
-        match *self {
-            Right(_) => true,
-            _ => false,
-        }
+        matches!(self, Right(_))
     }
 
-    
     
     pub fn is_both(&self) -> bool {
         self.as_ref().both().is_some()
@@ -65,10 +60,90 @@ impl<A, B> EitherOrBoth<A, B> {
     }
 
     
+    
+    
+    
+    pub fn left_and_right(self) -> (Option<A>, Option<B>) {
+        self.map_any(Some, Some).or_default()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn just_left(self) -> Option<A> {
+        match self {
+            Left(left) => Some(left),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn just_right(self) -> Option<B> {
+        match self {
+            Right(right) => Some(right),
+            _ => None,
+        }
+    }
+
+    
     pub fn both(self) -> Option<(A, B)> {
         match self {
             Both(a, b) => Some((a, b)),
             _ => None,
+        }
+    }
+
+    
+    pub fn into_left(self) -> A
+    where
+        B: Into<A>,
+    {
+        match self {
+            Left(a) | Both(a, _) => a,
+            Right(b) => b.into(),
+        }
+    }
+
+    
+    pub fn into_right(self) -> B
+    where
+        A: Into<B>,
+    {
+        match self {
+            Right(b) | Both(_, b) => b,
+            Left(a) => a.into(),
         }
     }
 
@@ -83,6 +158,32 @@ impl<A, B> EitherOrBoth<A, B> {
 
     
     pub fn as_mut(&mut self) -> EitherOrBoth<&mut A, &mut B> {
+        match *self {
+            Left(ref mut left) => Left(left),
+            Right(ref mut right) => Right(right),
+            Both(ref mut left, ref mut right) => Both(left, right),
+        }
+    }
+
+    
+    pub fn as_deref(&self) -> EitherOrBoth<&A::Target, &B::Target>
+    where
+        A: Deref,
+        B: Deref,
+    {
+        match *self {
+            Left(ref left) => Left(left),
+            Right(ref right) => Right(right),
+            Both(ref left, ref right) => Both(left, right),
+        }
+    }
+
+    
+    pub fn as_deref_mut(&mut self) -> EitherOrBoth<&mut A::Target, &mut B::Target>
+    where
+        A: DerefMut,
+        B: DerefMut,
+    {
         match *self {
             Left(ref mut left) => Left(left),
             Right(ref mut right) => Right(right),
@@ -200,9 +301,9 @@ impl<A, B> EitherOrBoth<A, B> {
         B: Default,
     {
         match self {
-            EitherOrBoth::Left(l) => (l, B::default()),
-            EitherOrBoth::Right(r) => (A::default(), r),
-            EitherOrBoth::Both(l, r) => (l, r),
+            Left(l) => (l, B::default()),
+            Right(r) => (A::default(), r),
+            Both(l, r) => (l, r),
         }
     }
 
@@ -227,9 +328,159 @@ impl<A, B> EitherOrBoth<A, B> {
             Both(inner_l, inner_r) => (inner_l, inner_r),
         }
     }
+
+    
+    
+    pub fn left_or_insert(&mut self, val: A) -> &mut A {
+        self.left_or_insert_with(|| val)
+    }
+
+    
+    
+    pub fn right_or_insert(&mut self, val: B) -> &mut B {
+        self.right_or_insert_with(|| val)
+    }
+
+    
+    
+    pub fn left_or_insert_with<F>(&mut self, f: F) -> &mut A
+    where
+        F: FnOnce() -> A,
+    {
+        match self {
+            Left(left) | Both(left, _) => left,
+            Right(_) => self.insert_left(f()),
+        }
+    }
+
+    
+    
+    pub fn right_or_insert_with<F>(&mut self, f: F) -> &mut B
+    where
+        F: FnOnce() -> B,
+    {
+        match self {
+            Right(right) | Both(_, right) => right,
+            Left(_) => self.insert_right(f()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_left(&mut self, val: A) -> &mut A {
+        match self {
+            Left(left) | Both(left, _) => {
+                *left = val;
+                left
+            }
+            Right(right) => {
+                
+                
+                unsafe {
+                    
+                    let right = std::ptr::read(right as *mut _);
+                    
+                    std::ptr::write(self as *mut _, Both(val, right));
+                }
+
+                if let Both(left, _) = self {
+                    left
+                } else {
+                    
+                    
+                    unsafe { std::hint::unreachable_unchecked() }
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_right(&mut self, val: B) -> &mut B {
+        match self {
+            Right(right) | Both(_, right) => {
+                *right = val;
+                right
+            }
+            Left(left) => {
+                
+                
+                unsafe {
+                    
+                    let left = std::ptr::read(left as *mut _);
+                    
+                    std::ptr::write(self as *mut _, Both(left, val));
+                }
+                if let Both(_, right) = self {
+                    right
+                } else {
+                    
+                    
+                    unsafe { std::hint::unreachable_unchecked() }
+                }
+            }
+        }
+    }
+
+    
+    
+    pub fn insert_both(&mut self, left: A, right: B) -> (&mut A, &mut B) {
+        *self = Both(left, right);
+        if let Both(left, right) = self {
+            (left, right)
+        } else {
+            
+            
+            unsafe { std::hint::unreachable_unchecked() }
+        }
+    }
 }
 
 impl<T> EitherOrBoth<T, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn reduce<F>(self, f: F) -> T
     where
@@ -243,12 +494,21 @@ impl<T> EitherOrBoth<T, T> {
     }
 }
 
-impl<A, B> Into<Option<Either<A, B>>> for EitherOrBoth<A, B> {
-    fn into(self) -> Option<Either<A, B>> {
-        match self {
-            EitherOrBoth::Left(l) => Some(Either::Left(l)),
-            EitherOrBoth::Right(r) => Some(Either::Right(r)),
-            _ => None,
+impl<A, B> From<EitherOrBoth<A, B>> for Option<Either<A, B>> {
+    fn from(value: EitherOrBoth<A, B>) -> Self {
+        match value {
+            Left(l) => Some(Either::Left(l)),
+            Right(r) => Some(Either::Right(r)),
+            Both(..) => None,
+        }
+    }
+}
+
+impl<A, B> From<Either<A, B>> for EitherOrBoth<A, B> {
+    fn from(either: Either<A, B>) -> Self {
+        match either {
+            Either::Left(l) => Left(l),
+            Either::Right(l) => Right(l),
         }
     }
 }

@@ -5,6 +5,8 @@
 
 
 
+use std::fmt;
+
 use crate::free::put_back;
 use crate::structs::PutBack;
 
@@ -13,8 +15,9 @@ use crate::structs::PutBack;
 
 
 pub enum Diff<I, J>
-    where I: Iterator,
-          J: Iterator
+where
+    I: Iterator,
+    J: Iterator,
 {
     
     
@@ -23,6 +26,43 @@ pub enum Diff<I, J>
     Shorter(usize, PutBack<I>),
     
     Longer(usize, PutBack<J>),
+}
+
+impl<I, J> fmt::Debug for Diff<I, J>
+where
+    I: Iterator,
+    J: Iterator,
+    PutBack<I>: fmt::Debug,
+    PutBack<J>: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FirstMismatch(idx, i, j) => f
+                .debug_tuple("FirstMismatch")
+                .field(idx)
+                .field(i)
+                .field(j)
+                .finish(),
+            Self::Shorter(idx, i) => f.debug_tuple("Shorter").field(idx).field(i).finish(),
+            Self::Longer(idx, j) => f.debug_tuple("Longer").field(idx).field(j).finish(),
+        }
+    }
+}
+
+impl<I, J> Clone for Diff<I, J>
+where
+    I: Iterator,
+    J: Iterator,
+    PutBack<I>: Clone,
+    PutBack<J>: Clone,
+{
+    fn clone(&self) -> Self {
+        match self {
+            Self::FirstMismatch(idx, i, j) => Self::FirstMismatch(*idx, i.clone(), j.clone()),
+            Self::Shorter(idx, i) => Self::Shorter(*idx, i.clone()),
+            Self::Longer(idx, j) => Self::Longer(*idx, j.clone()),
+        }
+    }
 }
 
 
@@ -37,11 +77,11 @@ pub enum Diff<I, J>
 
 
 
-pub fn diff_with<I, J, F>(i: I, j: J, is_equal: F)
-    -> Option<Diff<I::IntoIter, J::IntoIter>>
-    where I: IntoIterator,
-          J: IntoIterator,
-          F: Fn(&I::Item, &J::Item) -> bool
+pub fn diff_with<I, J, F>(i: I, j: J, mut is_equal: F) -> Option<Diff<I::IntoIter, J::IntoIter>>
+where
+    I: IntoIterator,
+    J: IntoIterator,
+    F: FnMut(&I::Item, &J::Item) -> bool,
 {
     let mut i = i.into_iter();
     let mut j = j.into_iter();
@@ -49,13 +89,16 @@ pub fn diff_with<I, J, F>(i: I, j: J, is_equal: F)
     while let Some(i_elem) = i.next() {
         match j.next() {
             None => return Some(Diff::Shorter(idx, put_back(i).with_value(i_elem))),
-            Some(j_elem) => if !is_equal(&i_elem, &j_elem) {
-                let remaining_i = put_back(i).with_value(i_elem);
-                let remaining_j = put_back(j).with_value(j_elem);
-                return Some(Diff::FirstMismatch(idx, remaining_i, remaining_j));
-            },
+            Some(j_elem) => {
+                if !is_equal(&i_elem, &j_elem) {
+                    let remaining_i = put_back(i).with_value(i_elem);
+                    let remaining_j = put_back(j).with_value(j_elem);
+                    return Some(Diff::FirstMismatch(idx, remaining_i, remaining_j));
+                }
+            }
         }
         idx += 1;
     }
-    j.next().map(|j_elem| Diff::Longer(idx, put_back(j).with_value(j_elem)))
+    j.next()
+        .map(|j_elem| Diff::Longer(idx, put_back(j).with_value(j_elem)))
 }

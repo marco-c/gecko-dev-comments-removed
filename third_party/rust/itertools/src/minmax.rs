@@ -1,8 +1,7 @@
 
 
 
-
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum MinMaxResult<T> {
     
     NoElements,
@@ -12,7 +11,7 @@ pub enum MinMaxResult<T> {
 
     
     
-    MinMax(T, T)
+    MinMax(T, T),
 }
 
 impl<T: Clone> MinMaxResult<T> {
@@ -36,34 +35,36 @@ impl<T: Clone> MinMaxResult<T> {
     
     
     
-    pub fn into_option(self) -> Option<(T,T)> {
+    pub fn into_option(self) -> Option<(T, T)> {
         match self {
-            MinMaxResult::NoElements => None,
-            MinMaxResult::OneElement(x) => Some((x.clone(), x)),
-            MinMaxResult::MinMax(x, y) => Some((x, y))
+            Self::NoElements => None,
+            Self::OneElement(x) => Some((x.clone(), x)),
+            Self::MinMax(x, y) => Some((x, y)),
         }
     }
 }
 
 
-pub fn minmax_impl<I, K, F, L>(mut it: I, mut key_for: F,
-                               mut lt: L) -> MinMaxResult<I::Item>
-    where I: Iterator,
-          F: FnMut(&I::Item) -> K,
-          L: FnMut(&I::Item, &I::Item, &K, &K) -> bool,
+pub fn minmax_impl<I, K, F, L>(mut it: I, mut key_for: F, mut lt: L) -> MinMaxResult<I::Item>
+where
+    I: Iterator,
+    F: FnMut(&I::Item) -> K,
+    L: FnMut(&I::Item, &I::Item, &K, &K) -> bool,
 {
     let (mut min, mut max, mut min_key, mut max_key) = match it.next() {
         None => return MinMaxResult::NoElements,
-        Some(x) => {
-            match it.next() {
-                None => return MinMaxResult::OneElement(x),
-                Some(y) => {
-                    let xk = key_for(&x);
-                    let yk = key_for(&y);
-                    if !lt(&y, &x, &yk, &xk) {(x, y, xk, yk)} else {(y, x, yk, xk)}
+        Some(x) => match it.next() {
+            None => return MinMaxResult::OneElement(x),
+            Some(y) => {
+                let xk = key_for(&x);
+                let yk = key_for(&y);
+                if !lt(&y, &x, &yk, &xk) {
+                    (x, y, xk, yk)
+                } else {
+                    (y, x, yk, xk)
                 }
             }
-        }
+        },
     };
 
     loop {
@@ -74,7 +75,7 @@ pub fn minmax_impl<I, K, F, L>(mut it: I, mut key_for: F,
         
         let first = match it.next() {
             None => break,
-            Some(x) => x
+            Some(x) => x,
         };
         let second = match it.next() {
             None => {
@@ -86,7 +87,7 @@ pub fn minmax_impl<I, K, F, L>(mut it: I, mut key_for: F,
                 }
                 break;
             }
-            Some(x) => x
+            Some(x) => x,
         };
         let first_key = key_for(&first);
         let second_key = key_for(&second);

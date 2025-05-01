@@ -1,9 +1,10 @@
 #![cfg(feature = "use_alloc")]
-
-use crate::size_hint;
-use crate::Itertools;
+use Option::{self as State, None as ProductEnded, Some as ProductInProgress};
+use Option::{self as CurrentItems, None as NotYetPopulated, Some as Populated};
 
 use alloc::vec::Vec;
+
+use crate::size_hint;
 
 #[derive(Clone)]
 
@@ -14,16 +15,38 @@ use alloc::vec::Vec;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-pub struct MultiProduct<I>(Vec<MultiProductIter<I>>)
-    where I: Iterator + Clone,
-          I::Item: Clone;
+pub struct MultiProduct<I>(State<MultiProductInner<I>>)
+where
+    I: Iterator + Clone,
+    I::Item: Clone;
+
+#[derive(Clone)]
+
+struct MultiProductInner<I>
+where
+    I: Iterator + Clone,
+    I::Item: Clone,
+{
+    
+    iters: Vec<MultiProductIter<I>>,
+    
+    cur: CurrentItems<Vec<I::Item>>,
+}
 
 impl<I> std::fmt::Debug for MultiProduct<I>
 where
     I: Iterator + Clone + std::fmt::Debug,
     I::Item: Clone + std::fmt::Debug,
 {
-    debug_fmt_fields!(CoalesceBy, 0);
+    debug_fmt_fields!(MultiProduct, 0);
+}
+
+impl<I> std::fmt::Debug for MultiProductInner<I>
+where
+    I: Iterator + Clone + std::fmt::Debug,
+    I::Item: Clone + std::fmt::Debug,
+{
+    debug_fmt_fields!(MultiProductInner, iters, cur);
 }
 
 
@@ -31,200 +54,178 @@ where
 
 
 pub fn multi_cartesian_product<H>(iters: H) -> MultiProduct<<H::Item as IntoIterator>::IntoIter>
-    where H: Iterator,
-          H::Item: IntoIterator,
-          <H::Item as IntoIterator>::IntoIter: Clone,
-          <H::Item as IntoIterator>::Item: Clone
+where
+    H: Iterator,
+    H::Item: IntoIterator,
+    <H::Item as IntoIterator>::IntoIter: Clone,
+    <H::Item as IntoIterator>::Item: Clone,
 {
-    MultiProduct(iters.map(|i| MultiProductIter::new(i.into_iter())).collect())
+    let inner = MultiProductInner {
+        iters: iters
+            .map(|i| MultiProductIter::new(i.into_iter()))
+            .collect(),
+        cur: NotYetPopulated,
+    };
+    MultiProduct(ProductInProgress(inner))
 }
 
 #[derive(Clone, Debug)]
 
 struct MultiProductIter<I>
-    where I: Iterator + Clone,
-          I::Item: Clone
+where
+    I: Iterator + Clone,
+    I::Item: Clone,
 {
-    cur: Option<I::Item>,
     iter: I,
     iter_orig: I,
 }
 
-
-#[derive(Debug)]
-enum MultiProductIterState {
-    StartOfIter,
-    MidIter { on_first_iter: bool },
-}
-
-impl<I> MultiProduct<I>
-    where I: Iterator + Clone,
-          I::Item: Clone
-{
-    
-    
-    
-    
-    fn iterate_last(
-        multi_iters: &mut [MultiProductIter<I>],
-        mut state: MultiProductIterState
-    ) -> bool {
-        use self::MultiProductIterState::*;
-
-        if let Some((last, rest)) = multi_iters.split_last_mut() {
-            let on_first_iter = match state {
-                StartOfIter => {
-                    let on_first_iter = !last.in_progress();
-                    state = MidIter { on_first_iter };
-                    on_first_iter
-                },
-                MidIter { on_first_iter } => on_first_iter
-            };
-
-            if !on_first_iter {
-                last.iterate();
-            }
-
-            if last.in_progress() {
-                true
-            } else if MultiProduct::iterate_last(rest, state) {
-                last.reset();
-                last.iterate();
-                
-                
-                last.in_progress()
-            } else {
-                false
-            }
-        } else {
-            
-            
-            match state {
-                StartOfIter => false,
-                MidIter { on_first_iter } => on_first_iter
-            }
-        }
-    }
-
-    
-    fn curr_iterator(&self) -> Vec<I::Item> {
-        self.0.iter().map(|multi_iter| {
-            multi_iter.cur.clone().unwrap()
-        }).collect()
-    }
-
-    
-    
-    fn in_progress(&self) -> bool {
-        if let Some(last) = self.0.last() {
-            last.in_progress()
-        } else {
-            false
-        }
-    }
-}
-
 impl<I> MultiProductIter<I>
-    where I: Iterator + Clone,
-          I::Item: Clone
+where
+    I: Iterator + Clone,
+    I::Item: Clone,
 {
     fn new(iter: I) -> Self {
-        MultiProductIter {
-            cur: None,
+        Self {
             iter: iter.clone(),
-            iter_orig: iter
+            iter_orig: iter,
         }
-    }
-
-    
-    fn iterate(&mut self) {
-        self.cur = self.iter.next();
-    }
-
-    
-    fn reset(&mut self) {
-        self.iter = self.iter_orig.clone();
-    }
-
-    
-    
-    fn in_progress(&self) -> bool {
-        self.cur.is_some()
     }
 }
 
 impl<I> Iterator for MultiProduct<I>
-    where I: Iterator + Clone,
-          I::Item: Clone
+where
+    I: Iterator + Clone,
+    I::Item: Clone,
 {
     type Item = Vec<I::Item>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if MultiProduct::iterate_last(
-            &mut self.0,
-            MultiProductIterState::StartOfIter
-        ) {
-            Some(self.curr_iterator())
-        } else {
-            None
+        
+        let inner = self.0.as_mut()?;
+        match &mut inner.cur {
+            Populated(values) => {
+                debug_assert!(!inner.iters.is_empty());
+                
+                
+                for (iter, item) in inner.iters.iter_mut().zip(values.iter_mut()).rev() {
+                    if let Some(new) = iter.iter.next() {
+                        *item = new;
+                        return Some(values.clone());
+                    } else {
+                        iter.iter = iter.iter_orig.clone();
+                        
+                        *item = iter.iter.next().unwrap();
+                    }
+                }
+                self.0 = ProductEnded;
+                None
+            }
+            
+            NotYetPopulated => {
+                let next: Option<Vec<_>> = inner.iters.iter_mut().map(|i| i.iter.next()).collect();
+                if next.is_none() || inner.iters.is_empty() {
+                    
+                    self.0 = ProductEnded;
+                } else {
+                    inner.cur.clone_from(&next);
+                }
+                next
+            }
         }
     }
 
     fn count(self) -> usize {
-        if self.0.is_empty() {
-            return 0;
+        match self.0 {
+            ProductEnded => 0,
+            
+            
+            
+            ProductInProgress(MultiProductInner {
+                iters,
+                cur: NotYetPopulated,
+            }) => iters
+                .into_iter()
+                .map(|iter| iter.iter_orig.count())
+                .try_fold(1, |product, count| {
+                    if count == 0 {
+                        None
+                    } else {
+                        Some(product * count)
+                    }
+                })
+                .unwrap_or_default(),
+            
+            ProductInProgress(MultiProductInner {
+                iters,
+                cur: Populated(_),
+            }) => iters.into_iter().fold(0, |mut acc, iter| {
+                if acc != 0 {
+                    acc *= iter.iter_orig.count();
+                }
+                acc + iter.iter.count()
+            }),
         }
-
-        if !self.in_progress() {
-            return self.0.into_iter().fold(1, |acc, multi_iter| {
-                acc * multi_iter.iter.count()
-            });
-        }
-
-        self.0.into_iter().fold(
-            0,
-            |acc, MultiProductIter { iter, iter_orig, cur: _ }| {
-                let total_count = iter_orig.count();
-                let cur_count = iter.count();
-                acc * total_count + cur_count
-            }
-        )
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        
-        if self.0.is_empty() {
-            return (0, Some(0));
-        }
-
-        if !self.in_progress() {
-            return self.0.iter().fold((1, Some(1)), |acc, multi_iter| {
-                size_hint::mul(acc, multi_iter.iter.size_hint())
-            });
-        }
-
-        self.0.iter().fold(
-            (0, Some(0)),
-            |acc, &MultiProductIter { ref iter, ref iter_orig, cur: _ }| {
-                let cur_size = iter.size_hint();
-                let total_size = iter_orig.size_hint();
-                size_hint::add(size_hint::mul(acc, total_size), cur_size)
+        match &self.0 {
+            ProductEnded => (0, Some(0)),
+            ProductInProgress(MultiProductInner {
+                iters,
+                cur: NotYetPopulated,
+            }) => iters
+                .iter()
+                .map(|iter| iter.iter_orig.size_hint())
+                .fold((1, Some(1)), size_hint::mul),
+            ProductInProgress(MultiProductInner {
+                iters,
+                cur: Populated(_),
+            }) => {
+                if let [first, tail @ ..] = &iters[..] {
+                    tail.iter().fold(first.iter.size_hint(), |mut sh, iter| {
+                        sh = size_hint::mul(sh, iter.iter_orig.size_hint());
+                        size_hint::add(sh, iter.iter.size_hint())
+                    })
+                } else {
+                    
+                    unreachable!()
+                }
             }
-        )
+        }
     }
 
     fn last(self) -> Option<Self::Item> {
-        let iter_count = self.0.len();
-
-        let lasts: Self::Item = self.0.into_iter()
-            .map(|multi_iter| multi_iter.iter.last())
-            .while_some()
-            .collect();
-
-        if lasts.len() == iter_count {
-            Some(lasts)
+        let MultiProductInner { iters, cur } = self.0?;
+        
+        if let Populated(values) = cur {
+            let mut count = iters.len();
+            let last = iters
+                .into_iter()
+                .zip(values)
+                .map(|(i, value)| {
+                    i.iter.last().unwrap_or_else(|| {
+                        
+                        count -= 1;
+                        value
+                    })
+                })
+                .collect();
+            if count == 0 {
+                
+                None
+            } else {
+                Some(last)
+            }
         } else {
-            None
+            iters.into_iter().map(|i| i.iter.last()).collect()
         }
     }
+}
+
+impl<I> std::iter::FusedIterator for MultiProduct<I>
+where
+    I: Iterator + Clone,
+    I::Item: Clone,
+{
 }

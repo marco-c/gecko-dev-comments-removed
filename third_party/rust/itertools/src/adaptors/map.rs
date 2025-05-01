@@ -4,8 +4,8 @@ use std::marker::PhantomData;
 #[derive(Clone, Debug)]
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct MapSpecialCase<I, F> {
-    iter: I,
-    f: F,
+    pub(crate) iter: I,
+    pub(crate) f: F,
 }
 
 pub trait MapSpecialCaseFn<T> {
@@ -67,10 +67,6 @@ where
 
 pub type MapOk<I, F> = MapSpecialCase<I, MapSpecialCaseFnOk<F>>;
 
-
-#[deprecated(note = "Use MapOk instead", since = "0.10.0")]
-pub type MapResults<I, F> = MapOk<I, F>;
-
 impl<F, T, U, E> MapSpecialCaseFn<Result<T, E>> for MapSpecialCaseFnOk<F>
 where
     F: FnMut(T) -> U,
@@ -112,8 +108,18 @@ impl<T: Into<U>, U> MapSpecialCaseFn<T> for MapSpecialCaseFnInto<U> {
     }
 }
 
-#[derive(Clone, Debug)]
 pub struct MapSpecialCaseFnInto<U>(PhantomData<U>);
+
+impl<U> std::fmt::Debug for MapSpecialCaseFnInto<U> {
+    debug_fmt_fields!(MapSpecialCaseFnInto, 0);
+}
+
+impl<U> Clone for MapSpecialCaseFnInto<U> {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self(PhantomData)
+    }
+}
 
 
 pub fn map_into<I, R>(iter: I) -> MapInto<I, R> {

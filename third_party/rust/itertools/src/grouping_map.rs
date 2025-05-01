@@ -1,37 +1,45 @@
-#![cfg(feature = "use_std")]
-
-use crate::MinMaxResult;
-use std::collections::HashMap;
+use crate::{
+    adaptors::map::{MapSpecialCase, MapSpecialCaseFn},
+    MinMaxResult,
+};
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::hash::Hash;
 use std::iter::Iterator;
 use std::ops::{Add, Mul};
 
 
-#[derive(Clone, Debug)]
-pub struct MapForGrouping<I, F>(I, F);
+pub type MapForGrouping<I, F> = MapSpecialCase<I, GroupingMapFn<F>>;
 
-impl<I, F> MapForGrouping<I, F> {
-    pub(crate) fn new(iter: I, key_mapper: F) -> Self {
-        Self(iter, key_mapper)
+#[derive(Clone)]
+pub struct GroupingMapFn<F>(F);
+
+impl<F> std::fmt::Debug for GroupingMapFn<F> {
+    debug_fmt_fields!(GroupingMapFn,);
+}
+
+impl<V, K, F: FnMut(&V) -> K> MapSpecialCaseFn<V> for GroupingMapFn<F> {
+    type Out = (K, V);
+    fn call(&mut self, v: V) -> Self::Out {
+        ((self.0)(&v), v)
     }
 }
 
-impl<K, V, I, F> Iterator for MapForGrouping<I, F>
-    where I: Iterator<Item = V>,
-          K: Hash + Eq,
-          F: FnMut(&V) -> K,
-{
-    type Item = (K, V);
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|val| ((self.1)(&val), val))
+pub(crate) fn new_map_for_grouping<K, I: Iterator, F: FnMut(&I::Item) -> K>(
+    iter: I,
+    key_mapper: F,
+) -> MapForGrouping<I, F> {
+    MapSpecialCase {
+        iter,
+        f: GroupingMapFn(key_mapper),
     }
 }
 
 
 pub fn new<I, K, V>(iter: I) -> GroupingMap<I>
-    where I: Iterator<Item = (K, V)>,
-          K: Hash + Eq,
+where
+    I: Iterator<Item = (K, V)>,
+    K: Hash + Eq,
 {
     GroupingMap { iter }
 }
@@ -53,8 +61,9 @@ pub struct GroupingMap<I> {
 }
 
 impl<I, K, V> GroupingMap<I>
-    where I: Iterator<Item = (K, V)>,
-          K: Hash + Eq,
+where
+    I: Iterator<Item = (K, V)>,
+    K: Hash + Eq,
 {
     
     
@@ -97,7 +106,8 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn aggregate<FO, R>(self, mut operation: FO) -> HashMap<K, R>
-        where FO: FnMut(Option<R>, &K, V) -> Option<R>,
+    where
+        FO: FnMut(Option<R>, &K, V) -> Option<R>,
     {
         let mut destination_map = HashMap::new();
 
@@ -136,12 +146,21 @@ impl<I, K, V> GroupingMap<I>
     
     
     
-    pub fn fold<FO, R>(self, init: R, mut operation: FO) -> HashMap<K, R>
-        where R: Clone,
-              FO: FnMut(R, &K, V) -> R,
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn fold_with<FI, FO, R>(self, mut init: FI, mut operation: FO) -> HashMap<K, R>
+    where
+        FI: FnMut(&K, &V) -> R,
+        FO: FnMut(R, &K, V) -> R,
     {
         self.aggregate(|acc, key, val| {
-            let acc = acc.unwrap_or_else(|| init.clone());
+            let acc = acc.unwrap_or_else(|| init(key, &val));
             Some(operation(acc, key, val))
         })
     }
@@ -171,10 +190,44 @@ impl<I, K, V> GroupingMap<I>
     
     
     
+    pub fn fold<FO, R>(self, init: R, operation: FO) -> HashMap<K, R>
+    where
+        R: Clone,
+        FO: FnMut(R, &K, V) -> R,
+    {
+        self.fold_with(|_, _| init.clone(), operation)
+    }
+
     
     
-    pub fn fold_first<FO>(self, mut operation: FO) -> HashMap<K, V>
-        where FO: FnMut(V, &K, V) -> V,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reduce<FO>(self, mut operation: FO) -> HashMap<K, V>
+    where
+        FO: FnMut(V, &K, V) -> V,
     {
         self.aggregate(|acc, key, val| {
             Some(match acc {
@@ -182,6 +235,15 @@ impl<I, K, V> GroupingMap<I>
                 None => val,
             })
         })
+    }
+
+    
+    #[deprecated(note = "Use .reduce() instead", since = "0.13.0")]
+    pub fn fold_first<FO>(self, operation: FO) -> HashMap<K, V>
+    where
+        FO: FnMut(V, &K, V) -> V,
+    {
+        self.reduce(operation)
     }
 
     
@@ -203,12 +265,16 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn collect<C>(self) -> HashMap<K, C>
-        where C: Default + Extend<V>,
+    where
+        C: Default + Extend<V>,
     {
         let mut destination_map = HashMap::new();
 
         self.iter.for_each(|(key, val)| {
-            destination_map.entry(key).or_insert_with(C::default).extend(Some(val));
+            destination_map
+                .entry(key)
+                .or_insert_with(C::default)
+                .extend(Some(val));
         });
 
         destination_map
@@ -233,7 +299,8 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn max(self) -> HashMap<K, V>
-        where V: Ord,
+    where
+        V: Ord,
     {
         self.max_by(|_, v1, v2| V::cmp(v1, v2))
     }
@@ -258,11 +325,12 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn max_by<F>(self, mut compare: F) -> HashMap<K, V>
-        where F: FnMut(&K, &V, &V) -> Ordering,
+    where
+        F: FnMut(&K, &V, &V) -> Ordering,
     {
-        self.fold_first(|acc, key, val| match compare(key, &acc, &val) {
+        self.reduce(|acc, key, val| match compare(key, &acc, &val) {
             Ordering::Less | Ordering::Equal => val,
-            Ordering::Greater => acc
+            Ordering::Greater => acc,
         })
     }
 
@@ -286,8 +354,9 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn max_by_key<F, CK>(self, mut f: F) -> HashMap<K, V>
-        where F: FnMut(&K, &V) -> CK,
-              CK: Ord,
+    where
+        F: FnMut(&K, &V) -> CK,
+        CK: Ord,
     {
         self.max_by(|key, v1, v2| f(key, v1).cmp(&f(key, v2)))
     }
@@ -311,7 +380,8 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn min(self) -> HashMap<K, V>
-        where V: Ord,
+    where
+        V: Ord,
     {
         self.min_by(|_, v1, v2| V::cmp(v1, v2))
     }
@@ -336,11 +406,12 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn min_by<F>(self, mut compare: F) -> HashMap<K, V>
-        where F: FnMut(&K, &V, &V) -> Ordering,
+    where
+        F: FnMut(&K, &V, &V) -> Ordering,
     {
-        self.fold_first(|acc, key, val| match compare(key, &acc, &val) {
+        self.reduce(|acc, key, val| match compare(key, &acc, &val) {
             Ordering::Less | Ordering::Equal => acc,
-            Ordering::Greater => val
+            Ordering::Greater => val,
         })
     }
 
@@ -364,8 +435,9 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn min_by_key<F, CK>(self, mut f: F) -> HashMap<K, V>
-        where F: FnMut(&K, &V) -> CK,
-              CK: Ord,
+    where
+        F: FnMut(&K, &V) -> CK,
+        CK: Ord,
     {
         self.min_by(|key, v1, v2| f(key, v1).cmp(&f(key, v2)))
     }
@@ -398,7 +470,8 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn minmax(self) -> HashMap<K, MinMaxResult<V>>
-        where V: Ord,
+    where
+        V: Ord,
     {
         self.minmax_by(|_, v1, v2| V::cmp(v1, v2))
     }
@@ -427,7 +500,8 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn minmax_by<F>(self, mut compare: F) -> HashMap<K, MinMaxResult<V>>
-        where F: FnMut(&K, &V, &V) -> Ordering,
+    where
+        F: FnMut(&K, &V, &V) -> Ordering,
     {
         self.aggregate(|acc, key, val| {
             Some(match acc {
@@ -477,12 +551,13 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn minmax_by_key<F, CK>(self, mut f: F) -> HashMap<K, MinMaxResult<V>>
-        where F: FnMut(&K, &V) -> CK,
-              CK: Ord,
+    where
+        F: FnMut(&K, &V) -> CK,
+        CK: Ord,
     {
         self.minmax_by(|key, v1, v2| f(key, v1).cmp(&f(key, v2)))
     }
-    
+
     
     
     
@@ -503,9 +578,10 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn sum(self) -> HashMap<K, V>
-        where V: Add<V, Output = V>
+    where
+        V: Add<V, Output = V>,
     {
-        self.fold_first(|acc, _, val| acc + val)
+        self.reduce(|acc, _, val| acc + val)
     }
 
     
@@ -528,8 +604,9 @@ impl<I, K, V> GroupingMap<I>
     
     
     pub fn product(self) -> HashMap<K, V>
-        where V: Mul<V, Output = V>,
+    where
+        V: Mul<V, Output = V>,
     {
-        self.fold_first(|acc, _, val| acc * val)
+        self.reduce(|acc, _, val| acc * val)
     }
 }

@@ -1,4 +1,5 @@
-use std::iter::{Fuse,Peekable, FusedIterator};
+use std::fmt;
+use std::iter::{Fuse, FusedIterator, Peekable};
 
 
 
@@ -7,22 +8,33 @@ use std::iter::{Fuse,Peekable, FusedIterator};
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct WithPosition<I>
-    where I: Iterator,
+where
+    I: Iterator,
 {
     handled_first: bool,
     peekable: Peekable<Fuse<I>>,
 }
 
+impl<I> fmt::Debug for WithPosition<I>
+where
+    I: Iterator,
+    Peekable<Fuse<I>>: fmt::Debug,
+{
+    debug_fmt_fields!(WithPosition, handled_first, peekable);
+}
+
 impl<I> Clone for WithPosition<I>
-    where I: Clone + Iterator,
-          I::Item: Clone,
+where
+    I: Clone + Iterator,
+    I::Item: Clone,
 {
     clone_fields!(handled_first, peekable);
 }
 
 
 pub fn with_position<I>(iter: I) -> WithPosition<I>
-    where I: Iterator,
+where
+    I: Iterator,
 {
     WithPosition {
         handled_first: false,
@@ -34,32 +46,20 @@ pub fn with_position<I>(iter: I) -> WithPosition<I>
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Position<T> {
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Position {
     
-    First(T),
+    First,
     
-    Middle(T),
+    Middle,
     
-    Last(T),
+    Last,
     
-    Only(T),
-}
-
-impl<T> Position<T> {
-    
-    pub fn into_inner(self) -> T {
-        match self {
-            Position::First(x) |
-            Position::Middle(x) |
-            Position::Last(x) |
-            Position::Only(x) => x,
-        }
-    }
+    Only,
 }
 
 impl<I: Iterator> Iterator for WithPosition<I> {
-    type Item = Position<I::Item>;
+    type Item = (Position, I::Item);
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.peekable.next() {
@@ -70,15 +70,15 @@ impl<I: Iterator> Iterator for WithPosition<I> {
                     
                     
                     match self.peekable.peek() {
-                        Some(_) => Some(Position::First(item)),
-                        None => Some(Position::Only(item)),
+                        Some(_) => Some((Position::First, item)),
+                        None => Some((Position::Only, item)),
                     }
                 } else {
                     
                     
                     match self.peekable.peek() {
-                        Some(_) => Some(Position::Middle(item)),
-                        None => Some(Position::Last(item)),
+                        Some(_) => Some((Position::Middle, item)),
+                        None => Some((Position::Last, item)),
                     }
                 }
             }
@@ -90,11 +90,35 @@ impl<I: Iterator> Iterator for WithPosition<I> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.peekable.size_hint()
     }
+
+    fn fold<B, F>(mut self, mut init: B, mut f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        if let Some(mut head) = self.peekable.next() {
+            if !self.handled_first {
+                
+                
+                match self.peekable.next() {
+                    Some(second) => {
+                        let first = std::mem::replace(&mut head, second);
+                        init = f(init, (Position::First, first));
+                    }
+                    None => return f(init, (Position::Only, head)),
+                }
+            }
+            
+            init = self.peekable.fold(init, |acc, mut item| {
+                std::mem::swap(&mut head, &mut item);
+                f(acc, (Position::Middle, item))
+            });
+            
+            init = f(init, (Position::Last, head));
+        }
+        init
+    }
 }
 
-impl<I> ExactSizeIterator for WithPosition<I>
-    where I: ExactSizeIterator,
-{ }
+impl<I> ExactSizeIterator for WithPosition<I> where I: ExactSizeIterator {}
 
-impl<I: Iterator> FusedIterator for WithPosition<I> 
-{}
+impl<I: Iterator> FusedIterator for WithPosition<I> {}

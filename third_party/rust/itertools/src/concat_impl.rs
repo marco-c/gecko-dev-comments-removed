@@ -1,5 +1,3 @@
-use crate::Itertools;
-
 
 
 
@@ -15,9 +13,15 @@ use crate::Itertools;
 
 
 pub fn concat<I>(iterable: I) -> I::Item
-    where I: IntoIterator,
-          I::Item: Extend<<<I as IntoIterator>::Item as IntoIterator>::Item> + IntoIterator + Default
+where
+    I: IntoIterator,
+    I::Item: Extend<<<I as IntoIterator>::Item as IntoIterator>::Item> + IntoIterator + Default,
 {
-    #[allow(deprecated)] 
-    iterable.into_iter().fold1(|mut a, b| { a.extend(b); a }).unwrap_or_default()
+    iterable
+        .into_iter()
+        .reduce(|mut a, b| {
+            a.extend(b);
+            a
+        })
+        .unwrap_or_default()
 }

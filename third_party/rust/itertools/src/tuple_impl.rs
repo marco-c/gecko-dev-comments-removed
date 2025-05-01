@@ -1,10 +1,10 @@
 
 
+use std::iter::Cycle;
 use std::iter::Fuse;
 use std::iter::FusedIterator;
-use std::iter::Take;
-use std::iter::Cycle;
-use std::marker::PhantomData;
+
+use crate::size_hint;
 
 
 
@@ -12,9 +12,7 @@ use std::marker::PhantomData;
 
 
 
-pub trait HomogeneousTuple
-    : TupleCollect
-{}
+pub trait HomogeneousTuple: TupleCollect {}
 
 impl<T: TupleCollect> HomogeneousTuple for T {}
 
@@ -24,25 +22,25 @@ impl<T: TupleCollect> HomogeneousTuple for T {}
 
 #[derive(Clone, Debug)]
 pub struct TupleBuffer<T>
-    where T: HomogeneousTuple
+where
+    T: HomogeneousTuple,
 {
     cur: usize,
     buf: T::Buffer,
 }
 
 impl<T> TupleBuffer<T>
-    where T: HomogeneousTuple
+where
+    T: HomogeneousTuple,
 {
     fn new(buf: T::Buffer) -> Self {
-        TupleBuffer {
-            cur: 0,
-            buf,
-        }
+        Self { cur: 0, buf }
     }
 }
 
 impl<T> Iterator for TupleBuffer<T>
-    where T: HomogeneousTuple
+where
+    T: HomogeneousTuple,
 {
     type Item = T::Item;
 
@@ -61,18 +59,16 @@ impl<T> Iterator for TupleBuffer<T>
         let len = if buffer.is_empty() {
             0
         } else {
-            buffer.iter()
-                  .position(|x| x.is_none())
-                  .unwrap_or_else(|| buffer.len())
+            buffer
+                .iter()
+                .position(|x| x.is_none())
+                .unwrap_or(buffer.len())
         };
         (len, Some(len))
     }
 }
 
-impl<T> ExactSizeIterator for TupleBuffer<T>
-    where T: HomogeneousTuple
-{
-}
+impl<T> ExactSizeIterator for TupleBuffer<T> where T: HomogeneousTuple {}
 
 
 
@@ -80,8 +76,9 @@ impl<T> ExactSizeIterator for TupleBuffer<T>
 #[derive(Clone, Debug)]
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Tuples<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple,
 {
     iter: Fuse<I>,
     buf: T::Buffer,
@@ -89,8 +86,9 @@ pub struct Tuples<I, T>
 
 
 pub fn tuples<I, T>(iter: I) -> Tuples<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple,
 {
     Tuples {
         iter: iter.fuse(),
@@ -99,19 +97,50 @@ pub fn tuples<I, T>(iter: I) -> Tuples<I, T>
 }
 
 impl<I, T> Iterator for Tuples<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         T::collect_from_iter(&mut self.iter, &mut self.buf)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        
+        
+        let buffered = T::buffer_len(&self.buf);
+        
+        let (unbuffered_lo, unbuffered_hi) = self.iter.size_hint();
+        
+        
+        
+        let total_lo = add_then_div(unbuffered_lo, buffered, T::num_items()).unwrap_or(usize::MAX);
+        
+        
+        let total_hi = unbuffered_hi.and_then(|hi| add_then_div(hi, buffered, T::num_items()));
+        (total_lo, total_hi)
+    }
+}
+
+
+fn add_then_div(n: usize, a: usize, d: usize) -> Option<usize> {
+    debug_assert_ne!(d, 0);
+    (n / d).checked_add(a / d)?.checked_add((n % d + a % d) / d)
+}
+
+impl<I, T> ExactSizeIterator for Tuples<I, T>
+where
+    I: ExactSizeIterator<Item = T::Item>,
+    T: HomogeneousTuple,
+{
 }
 
 impl<I, T> Tuples<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple,
 {
     
     
@@ -132,67 +161,80 @@ impl<I, T> Tuples<I, T>
 
 
 
-
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 #[derive(Clone, Debug)]
 pub struct TupleWindows<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple,
 {
     iter: I,
     last: Option<T>,
 }
 
 
-pub fn tuple_windows<I, T>(mut iter: I) -> TupleWindows<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple,
-          T::Item: Clone
+pub fn tuple_windows<I, T>(iter: I) -> TupleWindows<I, T>
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple,
+    T::Item: Clone,
 {
-    use std::iter::once;
-
-    let mut last = None;
-    if T::num_items() != 1 {
-        
-        
-        if let Some(item) = iter.next() {
-            let iter = once(item.clone()).chain(once(item)).chain(&mut iter);
-            last = T::collect_from_iter_no_buf(iter);
-        }
-    }
-
-    TupleWindows {
-        iter,
-        last,
-    }
+    TupleWindows { last: None, iter }
 }
 
 impl<I, T> Iterator for TupleWindows<I, T>
-    where I: Iterator<Item = T::Item>,
-          T: HomogeneousTuple + Clone,
-          T::Item: Clone
+where
+    I: Iterator<Item = T::Item>,
+    T: HomogeneousTuple + Clone,
+    T::Item: Clone,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if T::num_items() == 1 {
-            return T::collect_from_iter_no_buf(&mut self.iter)
+            return T::collect_from_iter_no_buf(&mut self.iter);
         }
-        if let Some(ref mut last) = self.last {
-            if let Some(new) = self.iter.next() {
+        if let Some(new) = self.iter.next() {
+            if let Some(ref mut last) = self.last {
                 last.left_shift_push(new);
-                return Some(last.clone());
+                Some(last.clone())
+            } else {
+                use std::iter::once;
+                let iter = once(new).chain(&mut self.iter);
+                self.last = T::collect_from_iter_no_buf(iter);
+                self.last.clone()
             }
+        } else {
+            None
         }
-        None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let mut sh = self.iter.size_hint();
+        
+        
+        if self.last.is_none() {
+            sh = size_hint::sub_scalar(sh, T::num_items() - 1);
+        }
+        sh
     }
 }
 
+impl<I, T> ExactSizeIterator for TupleWindows<I, T>
+where
+    I: ExactSizeIterator<Item = T::Item>,
+    T: HomogeneousTuple + Clone,
+    T::Item: Clone,
+{
+}
+
 impl<I, T> FusedIterator for TupleWindows<I, T>
-    where I: FusedIterator<Item = T::Item>,
-          T: HomogeneousTuple + Clone,
-          T::Item: Clone
-{}
+where
+    I: FusedIterator<Item = T::Item>,
+    T: HomogeneousTuple + Clone,
+    T::Item: Clone,
+{
+}
 
 
 
@@ -201,60 +243,88 @@ impl<I, T> FusedIterator for TupleWindows<I, T>
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-#[derive(Debug)]
-pub struct CircularTupleWindows<I, T: Clone>
-    where I: Iterator<Item = T::Item> + Clone,
-          T: TupleCollect + Clone
+#[derive(Debug, Clone)]
+pub struct CircularTupleWindows<I, T>
+where
+    I: Iterator<Item = T::Item> + Clone,
+    T: TupleCollect + Clone,
 {
-    iter: Take<TupleWindows<Cycle<I>, T>>,
-    phantom_data: PhantomData<T>
+    iter: TupleWindows<Cycle<I>, T>,
+    len: usize,
 }
 
 pub fn circular_tuple_windows<I, T>(iter: I) -> CircularTupleWindows<I, T>
-    where I: Iterator<Item = T::Item> + Clone + ExactSizeIterator,
-          T: TupleCollect + Clone,
-          T::Item: Clone
+where
+    I: Iterator<Item = T::Item> + Clone + ExactSizeIterator,
+    T: TupleCollect + Clone,
+    T::Item: Clone,
 {
     let len = iter.len();
-    let iter = tuple_windows(iter.cycle()).take(len);
+    let iter = tuple_windows(iter.cycle());
 
-    CircularTupleWindows {
-        iter,
-        phantom_data: PhantomData{}
-    }
+    CircularTupleWindows { iter, len }
 }
 
 impl<I, T> Iterator for CircularTupleWindows<I, T>
-    where I: Iterator<Item = T::Item> + Clone,
-          T: TupleCollect + Clone,
-          T::Item: Clone
+where
+    I: Iterator<Item = T::Item> + Clone,
+    T: TupleCollect + Clone,
+    T::Item: Clone,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
+        if self.len != 0 {
+            self.len -= 1;
+            self.iter.next()
+        } else {
+            None
+        }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
+impl<I, T> ExactSizeIterator for CircularTupleWindows<I, T>
+where
+    I: Iterator<Item = T::Item> + Clone,
+    T: TupleCollect + Clone,
+    T::Item: Clone,
+{
+}
+
+impl<I, T> FusedIterator for CircularTupleWindows<I, T>
+where
+    I: Iterator<Item = T::Item> + Clone,
+    T: TupleCollect + Clone,
+    T::Item: Clone,
+{
 }
 
 pub trait TupleCollect: Sized {
     type Item;
     type Buffer: Default + AsRef<[Option<Self::Item>]> + AsMut<[Option<Self::Item>]>;
 
+    fn buffer_len(buf: &Self::Buffer) -> usize {
+        let s = buf.as_ref();
+        s.iter().position(Option::is_none).unwrap_or(s.len())
+    }
+
     fn collect_from_iter<I>(iter: I, buf: &mut Self::Buffer) -> Option<Self>
-        where I: IntoIterator<Item = Self::Item>;
+    where
+        I: IntoIterator<Item = Self::Item>;
 
     fn collect_from_iter_no_buf<I>(iter: I) -> Option<Self>
-        where I: IntoIterator<Item = Self::Item>;
+    where
+        I: IntoIterator<Item = Self::Item>;
 
     fn num_items() -> usize;
 
     fn left_shift_push(&mut self, item: Self::Item);
 }
 
-macro_rules! count_ident{
-    () => {0};
-    ($i0:ident, $($i:ident,)*) => {1 + count_ident!($($i,)*)};
-}
 macro_rules! rev_for_each_ident{
     ($m:ident, ) => {};
     ($m:ident, $i0:ident, $($i:ident,)*) => {
@@ -269,7 +339,7 @@ macro_rules! impl_tuple_collect {
         impl_tuple_collect!($($Y,)*);
         impl<A> TupleCollect for ($(ignore_ident!($Y, A),)*) {
             type Item = A;
-            type Buffer = [Option<A>; count_ident!($($Y,)*) - 1];
+            type Buffer = [Option<A>; count_ident!($($Y)*) - 1];
 
             #[allow(unused_assignments, unused_mut)]
             fn collect_from_iter<I>(iter: I, buf: &mut Self::Buffer) -> Option<Self>
@@ -312,7 +382,7 @@ macro_rules! impl_tuple_collect {
             }
 
             fn num_items() -> usize {
-                count_ident!($($Y,)*)
+                count_ident!($($Y)*)
             }
 
             fn left_shift_push(&mut self, mut item: A) {

@@ -1,5 +1,5 @@
+use std::cell::Cell;
 use std::fmt;
-use std::cell::RefCell;
 
 
 
@@ -7,11 +7,10 @@ use std::cell::RefCell;
 
 
 
-#[derive(Clone)]
 pub struct FormatWith<'a, I, F> {
     sep: &'a str,
     
-    inner: RefCell<Option<(I, F)>>,
+    inner: Cell<Option<(I, F)>>,
 }
 
 
@@ -21,38 +20,40 @@ pub struct FormatWith<'a, I, F> {
 
 
 
-#[derive(Clone)]
 pub struct Format<'a, I> {
     sep: &'a str,
     
-    inner: RefCell<Option<I>>,
+    inner: Cell<Option<I>>,
 }
 
 pub fn new_format<I, F>(iter: I, separator: &str, f: F) -> FormatWith<'_, I, F>
-    where I: Iterator,
-          F: FnMut(I::Item, &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result
+where
+    I: Iterator,
+    F: FnMut(I::Item, &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result,
 {
     FormatWith {
         sep: separator,
-        inner: RefCell::new(Some((iter, f))),
+        inner: Cell::new(Some((iter, f))),
     }
 }
 
 pub fn new_format_default<I>(iter: I, separator: &str) -> Format<'_, I>
-    where I: Iterator,
+where
+    I: Iterator,
 {
     Format {
         sep: separator,
-        inner: RefCell::new(Some(iter)),
+        inner: Cell::new(Some(iter)),
     }
 }
 
-impl<'a, I, F> fmt::Display for FormatWith<'a, I, F>
-    where I: Iterator,
-          F: FnMut(I::Item, &mut dyn  FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result
+impl<I, F> fmt::Display for FormatWith<'_, I, F>
+where
+    I: Iterator,
+    F: FnMut(I::Item, &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (mut iter, mut format) = match self.inner.borrow_mut().take() {
+        let (mut iter, mut format) = match self.inner.take() {
             Some(t) => t,
             None => panic!("FormatWith: was already formatted once"),
         };
@@ -70,13 +71,26 @@ impl<'a, I, F> fmt::Display for FormatWith<'a, I, F>
     }
 }
 
-impl<'a, I> Format<'a, I>
-    where I: Iterator,
+impl<I, F> fmt::Debug for FormatWith<'_, I, F>
+where
+    I: Iterator,
+    F: FnMut(I::Item, &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result,
 {
-    fn format<F>(&self, f: &mut fmt::Formatter, mut cb: F) -> fmt::Result
-        where F: FnMut(&I::Item, &mut fmt::Formatter) -> fmt::Result,
-    {
-        let mut iter = match self.inner.borrow_mut().take() {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl<I> Format<'_, I>
+where
+    I: Iterator,
+{
+    fn format(
+        &self,
+        f: &mut fmt::Formatter,
+        cb: fn(&I::Item, &mut fmt::Formatter) -> fmt::Result,
+    ) -> fmt::Result {
+        let mut iter = match self.inner.take() {
             Some(t) => t,
             None => panic!("Format: was already formatted once"),
         };
@@ -109,5 +123,56 @@ macro_rules! impl_format {
     }
 }
 
-impl_format!{Display Debug
-             UpperExp LowerExp UpperHex LowerHex Octal Binary Pointer}
+impl_format! {Display Debug UpperExp LowerExp UpperHex LowerHex Octal Binary Pointer}
+
+impl<I, F> Clone for FormatWith<'_, I, F>
+where
+    (I, F): Clone,
+{
+    fn clone(&self) -> Self {
+        struct PutBackOnDrop<'r, 'a, I, F> {
+            into: &'r FormatWith<'a, I, F>,
+            inner: Option<(I, F)>,
+        }
+        
+        impl<I, F> Drop for PutBackOnDrop<'_, '_, I, F> {
+            fn drop(&mut self) {
+                self.into.inner.set(self.inner.take())
+            }
+        }
+        let pbod = PutBackOnDrop {
+            inner: self.inner.take(),
+            into: self,
+        };
+        Self {
+            inner: Cell::new(pbod.inner.clone()),
+            sep: self.sep,
+        }
+    }
+}
+
+impl<I> Clone for Format<'_, I>
+where
+    I: Clone,
+{
+    fn clone(&self) -> Self {
+        struct PutBackOnDrop<'r, 'a, I> {
+            into: &'r Format<'a, I>,
+            inner: Option<I>,
+        }
+        
+        impl<I> Drop for PutBackOnDrop<'_, '_, I> {
+            fn drop(&mut self) {
+                self.into.inner.set(self.inner.take())
+            }
+        }
+        let pbod = PutBackOnDrop {
+            inner: self.inner.take(),
+            into: self,
+        };
+        Self {
+            inner: Cell::new(pbod.inner.clone()),
+            sep: self.sep,
+        }
+    }
+}
