@@ -94,6 +94,11 @@ const unsigned long kIdleContentAnalysisAgentTimeoutMs = 100;
 const unsigned long kMaxIdleContentAnalysisAgentTimeoutMs = UINT32_MAX;
 
 
+
+
+const uint32_t kShutdownThreadpoolTimeoutMs = 2 * 1000;
+
+
 auto kTextFormatsToAnalyze = {kTextMime, kHTMLMime};
 
 const char* SafeGetStaticErrorName(nsresult aRv) {
@@ -1366,7 +1371,7 @@ void ContentAnalysis::Close() {
   
   mUserActionMap.Clear();
 
-  mThreadPool->Shutdown();
+  mThreadPool->ShutdownWithTimeout(kShutdownThreadpoolTimeoutMs);
   mThreadPool = nullptr;
   LOGD("Content Analysis service is closed");
 }
