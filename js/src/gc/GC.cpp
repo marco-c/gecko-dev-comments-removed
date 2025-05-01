@@ -2405,6 +2405,10 @@ void GCRuntime::sweepZones(JS::GCContext* gcx, bool destroyingRuntime) {
   assertBackgroundSweepingFinished();
 
   
+  
+  AutoLockStoreBuffer lock(rt);
+
+  
   MOZ_ASSERT(zones()[0]->isAtomsZone());
   Zone** read = zones().begin() + 1;
   Zone** end = zones().end();
