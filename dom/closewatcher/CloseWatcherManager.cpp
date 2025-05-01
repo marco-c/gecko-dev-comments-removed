@@ -40,7 +40,7 @@ MOZ_CAN_RUN_SCRIPT bool CloseWatcherManager::ProcessCloseRequest() {
   for (RefPtr<CloseWatcher> watcher : group.BackwardRange()) {
     processedACloseWatcher = true;
     
-    if (!watcher->RequestToClose()) {
+    if (!watcher->RequestToClose(true)) {
       break;
     }
   }

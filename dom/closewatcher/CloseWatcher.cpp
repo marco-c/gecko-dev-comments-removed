@@ -53,7 +53,7 @@ JSObject* CloseWatcher::WrapObject(JSContext* aCx,
 }
 
 
-bool CloseWatcher::RequestToClose() {
+bool CloseWatcher::RequestToClose(bool aRequireHistoryActionActivation) {
   
   
   
@@ -70,7 +70,7 @@ bool CloseWatcher::RequestToClose() {
   
   
   
-  init.mCancelable = manager->CanGrow() && winCtx->HasValidHistoryActivation();
+  init.mCancelable = !aRequireHistoryActionActivation || (manager->CanGrow() && winCtx->HasValidHistoryActivation());
   RefPtr<Event> event = Event::Constructor(this, u"cancel"_ns, init);
   event->SetTrusted(true);
   

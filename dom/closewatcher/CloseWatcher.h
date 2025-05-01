@@ -33,11 +33,11 @@ class CloseWatcher : public DOMEventTargetHelper, public AbortFollower {
 
   
   
-  MOZ_CAN_RUN_SCRIPT void RequestClose() { RequestToClose(); }
+  MOZ_CAN_RUN_SCRIPT void RequestClose() { RequestToClose(false); }
 
   
   
-  MOZ_CAN_RUN_SCRIPT bool RequestToClose();
+  MOZ_CAN_RUN_SCRIPT bool RequestToClose(bool aRequireHistoryActionActivation);
 
   MOZ_CAN_RUN_SCRIPT void Close();
 
