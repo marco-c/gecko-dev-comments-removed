@@ -116,18 +116,10 @@ def test_simpleperf_setup_without_path(mock_exists):
     mock_platform.machine.return_value = "x86_64"
 
     
-    mock_mozbuild = Path("mock") / "mozbuild"
-    mock_sdk = Path("mock") / "sdk"
     mock_ndk = Path("mock") / "ndk"
-    mock_avd_home = Path("mock") / "avd_home"
 
     mock_android = mock.MagicMock()
-    mock_android.get_paths.return_value = (
-        mock_mozbuild,
-        mock_sdk,
-        mock_ndk,
-        mock_avd_home,
-    )
+    mock_android.NDK_PATH = mock_ndk
 
     
     with mock.patch.dict(
@@ -137,9 +129,7 @@ def test_simpleperf_setup_without_path(mock_exists):
         profiler.setup_simpleperf_path()
 
     
-    mock_android.ensure_android.assert_called_once_with(
-        "linux", "x86_64", ndk_only=True, artifact_mode=False
-    )
+    mock_android.ensure_android_ndk.assert_called_once_with("linux")
 
     
     expected_path = mock_ndk / "simpleperf"
