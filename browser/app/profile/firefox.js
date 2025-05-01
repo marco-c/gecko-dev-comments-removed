@@ -2568,7 +2568,7 @@ pref("browser.tabs.crashReporting.sendReport", true);
 pref("browser.tabs.crashReporting.includeURL", false);
 
 
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.tabs.unloadTabInContextMenu", true);
 #else
 pref("browser.tabs.unloadTabInContextMenu", false);
@@ -2576,15 +2576,15 @@ pref("browser.tabs.unloadTabInContextMenu", false);
 
 
 
-pref("browser.tabs.fadeOutUnloadedTabs", false);
-
-
-
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
 #else
 pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", false);
 #endif
+
+
+
+pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 
 
