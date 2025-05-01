@@ -23,9 +23,10 @@ extern crate rsclientcerts;
 extern crate sha2;
 #[cfg(all(target_os = "windows", not(target_arch = "aarch64")))]
 extern crate winapi;
+extern crate xpcom;
 
 use pkcs11_bindings::*;
-use rsclientcerts::manager::ManagerProxy;
+use rsclientcerts::manager::Manager;
 use std::convert::TryInto;
 use std::sync::Mutex;
 use std::thread;
@@ -48,9 +49,7 @@ use crate::backend_windows::Backend;
 
 
 
-
-static MANAGER_PROXY: Mutex<Option<ManagerProxy>> = Mutex::new(None);
-
+static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
 
 
 
@@ -58,10 +57,11 @@ static MANAGER_PROXY: Mutex<Option<ManagerProxy>> = Mutex::new(None);
 
 
 
-macro_rules! try_to_get_manager_proxy_guard {
+
+macro_rules! try_to_get_manager_guard {
     () => {
-        match MANAGER_PROXY.lock() {
-            Ok(maybe_manager_proxy) => maybe_manager_proxy,
+        match MANAGER.lock() {
+            Ok(maybe_manager) => maybe_manager,
             Err(poison_error) => {
                 log_with_thread_id!(
                     error,
@@ -74,10 +74,10 @@ macro_rules! try_to_get_manager_proxy_guard {
     };
 }
 
-macro_rules! manager_proxy_guard_to_manager {
-    ($manager_proxy_guard:ident) => {
-        match $manager_proxy_guard.as_mut() {
-            Some(manager_proxy) => manager_proxy,
+macro_rules! manager_guard_to_manager {
+    ($manager_guard:ident) => {
+        match $manager_guard.as_mut() {
+            Some(manager) => manager,
             None => {
                 log_with_thread_id!(error, "module state expected to be set, but it is not");
                 return CKR_DEVICE_ERROR;
@@ -107,16 +107,16 @@ extern "C" fn C_Initialize(_pInitArgs: CK_VOID_PTR) -> CK_RV {
         );
     }
 
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager_proxy = match ManagerProxy::new("osclientcerts", Backend {}) {
-        Ok(p) => p,
+    let backend = match Backend::new() {
+        Ok(backend) => backend,
         Err(e) => {
-            log_with_thread_id!(error, "C_Initialize: ManagerProxy: {}", e);
+            log_with_thread_id!(error, "C_Initialize: Backend::new() failed: {}", e);
             return CKR_DEVICE_ERROR;
         }
     };
-    match manager_proxy_guard.replace(manager_proxy) {
-        Some(_unexpected_previous_manager_proxy) => {
+    let mut manager_guard = try_to_get_manager_guard!();
+    match manager_guard.replace(Manager::new(backend)) {
+        Some(_unexpected_previous_manager) => {
             log_with_thread_id!(
         warn,
         "C_Initialize: replacing previously set module state (this is expected on macOS but not on Windows)"
@@ -129,16 +129,15 @@ extern "C" fn C_Initialize(_pInitArgs: CK_VOID_PTR) -> CK_RV {
 }
 
 extern "C" fn C_Finalize(_pReserved: CK_VOID_PTR) -> CK_RV {
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
-    match manager.stop() {
-        Ok(()) => {
+    let mut manager_guard = try_to_get_manager_guard!();
+    match manager_guard.take() {
+        Some(_) => {
             log_with_thread_id!(debug, "C_Finalize: CKR_OK");
             CKR_OK
         }
-        Err(e) => {
-            log_with_thread_id!(error, "C_Finalize: CKR_DEVICE_ERROR: {}", e);
-            CKR_DEVICE_ERROR
+        None => {
+            log_with_thread_id!(debug, "C_Finalize: CKR_CRYPTOKI_NOT_INITIALIZED");
+            CKR_CRYPTOKI_NOT_INITIALIZED
         }
     }
 }
@@ -316,7 +315,6 @@ extern "C" fn C_SetPIN(
 }
 
 
-
 extern "C" fn C_OpenSession(
     slotID: CK_SLOT_ID,
     _flags: CK_FLAGS,
@@ -328,8 +326,8 @@ extern "C" fn C_OpenSession(
         log_with_thread_id!(error, "C_OpenSession: CKR_ARGUMENTS_BAD");
         return CKR_ARGUMENTS_BAD;
     }
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     let session_handle = match manager.open_session() {
         Ok(session_handle) => session_handle,
         Err(e) => {
@@ -346,8 +344,8 @@ extern "C" fn C_OpenSession(
 
 
 extern "C" fn C_CloseSession(hSession: CK_SESSION_HANDLE) -> CK_RV {
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     if manager.close_session(hSession).is_err() {
         log_with_thread_id!(error, "C_CloseSession: CKR_SESSION_HANDLE_INVALID");
         return CKR_SESSION_HANDLE_INVALID;
@@ -362,8 +360,8 @@ extern "C" fn C_CloseAllSessions(slotID: CK_SLOT_ID) -> CK_RV {
         log_with_thread_id!(error, "C_CloseAllSessions: CKR_ARGUMENTS_BAD");
         return CKR_ARGUMENTS_BAD;
     }
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     match manager.close_all_sessions() {
         Ok(()) => {
             log_with_thread_id!(debug, "C_CloseAllSessions: CKR_OK");
@@ -479,8 +477,8 @@ extern "C" fn C_GetAttributeValue(
         let attr = unsafe { &*pTemplate.add(i) };
         attr_types.push(attr.type_);
     }
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     let values = match manager.get_attributes(hObject, attr_types) {
         Ok(values) => values,
         Err(e) => {
@@ -602,8 +600,8 @@ extern "C" fn C_FindObjectsInit(
         };
         attrs.push((attr_type, slice.to_owned()));
     }
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     match manager.start_search(hSession, attrs) {
         Ok(()) => {}
         Err(e) => {
@@ -628,8 +626,8 @@ extern "C" fn C_FindObjects(
         log_with_thread_id!(error, "C_FindObjects: CKR_ARGUMENTS_BAD");
         return CKR_ARGUMENTS_BAD;
     }
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     let handles = match manager.search(hSession, ulMaxObjectCount as usize) {
         Ok(handles) => handles,
         Err(e) => {
@@ -659,8 +657,8 @@ extern "C" fn C_FindObjects(
 
 
 extern "C" fn C_FindObjectsFinal(hSession: CK_SESSION_HANDLE) -> CK_RV {
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     
     match manager.clear_search(hSession) {
         Ok(()) => {
@@ -794,7 +792,6 @@ extern "C" fn C_DigestFinal(
 }
 
 
-
 extern "C" fn C_SignInit(
     hSession: CK_SESSION_HANDLE,
     pMechanism: CK_MECHANISM_PTR,
@@ -821,8 +818,8 @@ extern "C" fn C_SignInit(
     } else {
         None
     };
-    let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-    let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+    let mut manager_guard = try_to_get_manager_guard!();
+    let manager = manager_guard_to_manager!(manager_guard);
     match manager.start_sign(hSession, hKey, mechanism_params) {
         Ok(()) => {}
         Err(e) => {
@@ -850,8 +847,8 @@ extern "C" fn C_Sign(
     }
     let data = unsafe { std::slice::from_raw_parts(pData, ulDataLen as usize) };
     if pSignature.is_null() {
-        let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-        let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+        let mut manager_guard = try_to_get_manager_guard!();
+        let manager = manager_guard_to_manager!(manager_guard);
         match manager.get_signature_length(hSession, data.to_vec()) {
             Ok(signature_length) => unsafe {
                 *pulSignatureLen = signature_length as CK_ULONG;
@@ -862,8 +859,8 @@ extern "C" fn C_Sign(
             }
         }
     } else {
-        let mut manager_proxy_guard = try_to_get_manager_proxy_guard!();
-        let manager = manager_proxy_guard_to_manager!(manager_proxy_guard);
+        let mut manager_guard = try_to_get_manager_guard!();
+        let manager = manager_guard_to_manager!(manager_guard);
         match manager.sign(hSession, data.to_vec()) {
             Ok(signature) => {
                 let signature_capacity = unsafe { *pulSignatureLen } as usize;
