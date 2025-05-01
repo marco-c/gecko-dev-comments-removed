@@ -2010,6 +2010,13 @@ class nsIWidget : public nsISupports {
     MOZ_ASSERT(false, "This function should only execute in Windows");
   }
 
+  
+
+
+
+  virtual void NotifyCompositorScrollUpdate(
+      const mozilla::layers::CompositorScrollUpdate& aUpdate) = 0;
+
 #if defined(MOZ_WIDGET_ANDROID)
   
 
@@ -2018,13 +2025,6 @@ class nsIWidget : public nsISupports {
 
 
   virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) = 0;
-
-  
-
-
-
-  virtual void NotifyCompositorScrollUpdate(
-      const mozilla::layers::CompositorScrollUpdate& aUpdate) = 0;
 
   
 

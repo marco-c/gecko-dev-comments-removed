@@ -592,7 +592,6 @@ class AsyncPanZoomController {
   const FrameMetrics& Metrics() const;
   FrameMetrics& Metrics();
 
-#ifdef MOZ_WIDGET_ANDROID
   
 
 
@@ -602,7 +601,6 @@ class AsyncPanZoomController {
  private:
   
   CompositorScrollUpdate mLastCompositorScrollUpdate;
-#endif  
 
  public:
   wr::MinimapData GetMinimapData() const;

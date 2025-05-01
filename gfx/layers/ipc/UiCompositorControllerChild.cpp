@@ -230,11 +230,9 @@ UiCompositorControllerChild::RecvToolbarAnimatorMessageFromCompositor(
 mozilla::ipc::IPCResult
 UiCompositorControllerChild::RecvNotifyCompositorScrollUpdate(
     const CompositorScrollUpdate& aUpdate) {
-#if defined(MOZ_WIDGET_ANDROID)
   if (mWidget) {
     mWidget->NotifyCompositorScrollUpdate(aUpdate);
   }
-#endif  
 
   return IPC_OK();
 }
