@@ -149,7 +149,9 @@ class RenderCompositor {
   virtual void AddSurface(wr::NativeSurfaceId aId,
                           const wr::CompositorSurfaceTransform& aTransform,
                           wr::DeviceIntRect aClipRect,
-                          wr::ImageRendering aImageRendering) {}
+                          wr::ImageRendering aImageRendering,
+                          wr::DeviceIntRect aRoundedClipRect,
+                          wr::ClipRadius aClipRadius) {}
   
   
   virtual void StartCompositing(wr::ColorF aClearColor,

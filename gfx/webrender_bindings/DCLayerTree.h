@@ -41,6 +41,7 @@ struct IDXGIDecodeSwapChain;
 struct IDXGIResource;
 struct IDXGISwapChain1;
 struct IDCompositionVirtualSurface;
+struct IDCompositionRectangleClip;
 
 namespace mozilla {
 
@@ -152,7 +153,9 @@ class DCLayerTree {
   void AddSurface(wr::NativeSurfaceId aId,
                   const wr::CompositorSurfaceTransform& aTransform,
                   wr::DeviceIntRect aClipRect,
-                  wr::ImageRendering aImageRendering);
+                  wr::ImageRendering aImageRendering,
+                  wr::DeviceIntRect aRoundedClipRect,
+                  wr::ClipRadius aClipRadius);
   void BindSwapChain(wr::NativeSurfaceId aId);
   void PresentSwapChain(wr::NativeSurfaceId aId);
 
@@ -300,8 +303,10 @@ class DCSurface {
   virtual bool Initialize();
   void CreateTile(int32_t aX, int32_t aY);
   void DestroyTile(int32_t aX, int32_t aY);
+  void SetClip(wr::DeviceIntRect aClipRect, wr::ClipRadius aClipRadius);
 
-  IDCompositionVisual2* GetVisual() const { return mVisual; }
+  IDCompositionVisual2* GetContentVisual() const { return mContentVisual; }
+  IDCompositionVisual2* GetRootVisual() const { return mRootVisual; }
   DCTile* GetTile(int32_t aX, int32_t aY) const;
 
   struct TileKey {
@@ -353,7 +358,12 @@ class DCSurface {
   
   
   
-  RefPtr<IDCompositionVisual2> mVisual;
+  
+  
+  
+  RefPtr<IDCompositionVisual2> mRootVisual;
+  RefPtr<IDCompositionVisual2> mContentVisual;
+  RefPtr<IDCompositionRectangleClip> mClip;
 
   wr::DeviceIntSize mTileSize;
   bool mIsOpaque;
