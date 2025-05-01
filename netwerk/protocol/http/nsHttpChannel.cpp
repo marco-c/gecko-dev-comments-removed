@@ -9146,7 +9146,11 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
   ReleaseListeners();
 
   
-  mUploadStream = nullptr;
+  
+  
+  Unused << NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "release HttpBaseChannel::mUploadStream",
+      [uploadStream = std::move(mUploadStream)]() { Unused << uploadStream; }));
 
   return NS_OK;
 }
