@@ -901,6 +901,8 @@ class alignas(gc::CellAlignBytes) SmallBuffer : public TenuredCell {
     
     
   }
+
+  size_t allocBytes() const;
   void* data() { return this + 1; }
 };
 template <size_t bytes>
