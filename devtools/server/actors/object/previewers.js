@@ -1032,12 +1032,12 @@ previewers.Object = [
       return false;
     }
 
-    const { obj } = objectActor;
+    const { obj, allowSideEffect = false } = objectActor;
 
     
     
     
-    const invokeUnsafeGetters = !obj.isMutedError;
+    const invokeUnsafeGetters = allowSideEffect && !obj.isMutedError;
 
     const name = DevToolsUtils.getProperty(obj, "name", invokeUnsafeGetters);
     const msg = DevToolsUtils.getProperty(obj, "message", invokeUnsafeGetters);

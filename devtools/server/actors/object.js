@@ -101,10 +101,16 @@ class ObjectActor extends Actor {
 
 
 
+
+
   constructor(
     threadActor,
     obj,
-    { customFormatterObjectTagDepth, customFormatterConfigDbgObj }
+    {
+      customFormatterObjectTagDepth,
+      customFormatterConfigDbgObj,
+      allowSideEffect = true,
+    }
   ) {
     super(threadActor.conn, objectSpec);
 
@@ -118,6 +124,7 @@ class ObjectActor extends Actor {
     this.threadActor = threadActor;
     this.rawObj = obj.unsafeDereference();
     this.safeRawObj = this.#getSafeRawObject();
+    this.allowSideEffect = allowSideEffect;
 
     
     
