@@ -13538,10 +13538,11 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 function DownloadModalToggle({
-  onClick
+  onClick,
+  isActive
 }) {
   return external_React_default().createElement("button", {
-    className: "mobile-download-promo",
+    className: `mobile-download-promo ${isActive ? " is-active" : ""}`,
     onClick: onClick
   }, external_React_default().createElement("div", {
     className: "icon icon-device-phone"
@@ -14801,6 +14802,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null))), external_React_default().createElement("div", {
       className: `mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`
     }, mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(DownloadModalToggle, {
+      isActive: this.state.showDownloadHighlight,
       onClick: this.toggleDownloadHighlight
     }), this.state.showDownloadHighlight && external_React_default().createElement(MessageWrapper, {
       hiddenOverride: this.state.showDownloadHighlight,
