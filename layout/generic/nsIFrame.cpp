@@ -9245,7 +9245,8 @@ static nsresult GetNextPrevLineFromBlockFrame(PeekOffsetStruct* aPos,
       }
       
       
-      if (resultFrame->CanProvideLineIterator()) {
+      if (resultFrame->CanProvideLineIterator() &&
+          IsRelevantBlockFrame(resultFrame)) {
         aPos->mResultFrame = resultFrame;
         return NS_OK;
       }
