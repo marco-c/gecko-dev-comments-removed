@@ -34,6 +34,7 @@
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowOrWorkerGlobalScopeBinding.h"
 #include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
 
 #include "nsContentUtils.h"
 #include "nsIContentSecurityPolicy.h"
@@ -423,6 +424,14 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
 
   if (IsTrustedType(aInput)) {
     return GetAsTrustedType(aInput);
+  }
+
+  
+  
+  if (auto* principal = BasePrincipal::Cast(aPrincipalOrNull)) {
+    if (principal->ContentScriptAddonPolicyCore()) {
+      return GetAsString(aInput);
+    }
   }
 
   
