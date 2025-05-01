@@ -1,15 +1,14 @@
 import io
 import json
-import shutil
 import mimetypes
 
-from sentry_sdk._compat import text_type
+from sentry_sdk._compat import text_type, PY2
 from sentry_sdk._types import MYPY
-from sentry_sdk.sessions import Session
+from sentry_sdk.session import Session
+from sentry_sdk.utils import json_dumps, capture_internal_exceptions
 
 if MYPY:
     from typing import Any
-    from typing import Tuple
     from typing import Optional
     from typing import Union
     from typing import Dict
@@ -19,11 +18,12 @@ if MYPY:
     from sentry_sdk._types import Event, EventDataCategory
 
 
-def get_event_data_category(event):
+def parse_json(data):
     
-    if event.get("type") == "transaction":
-        return "transaction"
-    return "error"
+    
+    if not PY2 and isinstance(data, bytes):
+        data = data.decode("utf-8", "replace")
+    return json.loads(data)
 
 
 class Envelope(object):
@@ -56,6 +56,18 @@ class Envelope(object):
         
         self.add_item(Item(payload=PayloadRef(json=event), type="event"))
 
+    def add_transaction(
+        self, transaction  
+    ):
+        
+        self.add_item(Item(payload=PayloadRef(json=transaction), type="transaction"))
+
+    def add_profile(
+        self, profile  
+    ):
+        
+        self.add_item(Item(payload=PayloadRef(json=profile), type="profile"))
+
     def add_session(
         self, session  
     ):
@@ -63,6 +75,12 @@ class Envelope(object):
         if isinstance(session, Session):
             session = session.to_json()
         self.add_item(Item(payload=PayloadRef(json=session), type="session"))
+
+    def add_sessions(
+        self, sessions  
+    ):
+        
+        self.add_item(Item(payload=PayloadRef(json=sessions), type="sessions"))
 
     def add_item(
         self, item  
@@ -78,6 +96,14 @@ class Envelope(object):
                 return event
         return None
 
+    def get_transaction_event(self):
+        
+        for item in self.items:
+            event = item.get_transaction_event()
+            if event is not None:
+                return event
+        return None
+
     def __iter__(self):
         
         return iter(self.items)
@@ -86,7 +112,7 @@ class Envelope(object):
         self, f  
     ):
         
-        f.write(json.dumps(self.headers).encode("utf-8"))
+        f.write(json_dumps(self.headers))
         f.write(b"\n")
         for item in self.items:
             item.serialize_into(f)
@@ -102,7 +128,7 @@ class Envelope(object):
         cls, f  
     ):
         
-        headers = json.loads(f.readline())
+        headers = parse_json(f.readline())
         items = []
         while 1:
             item = Item.deserialize_from(f)
@@ -139,33 +165,14 @@ class PayloadRef(object):
         
         if self.bytes is None:
             if self.path is not None:
-                with open(self.path, "rb") as f:
-                    self.bytes = f.read()
+                with capture_internal_exceptions():
+                    with open(self.path, "rb") as f:
+                        self.bytes = f.read()
             elif self.json is not None:
-                self.bytes = json.dumps(self.json).encode("utf-8")
+                self.bytes = json_dumps(self.json)
             else:
                 self.bytes = b""
         return self.bytes
-
-    def _prepare_serialize(self):
-        
-        if self.path is not None and self.bytes is None:
-            f = open(self.path, "rb")
-            f.seek(0, 2)
-            length = f.tell()
-            f.seek(0, 0)
-
-            def writer(out):
-                
-                try:
-                    shutil.copyfileobj(f, out)
-                finally:
-                    f.close()
-
-            return length, writer
-
-        bytes = self.get_bytes()
-        return len(bytes), lambda f: f.write(bytes)
 
     @property
     def inferred_content_type(self):
@@ -227,17 +234,28 @@ class Item(object):
         )
 
     @property
+    def type(self):
+        
+        return self.headers.get("type")
+
+    @property
     def data_category(self):
         
-        rv = "default"  
-        event = self.get_event()
-        if event is not None:
-            rv = get_event_data_category(event)
+        ty = self.headers.get("type")
+        if ty == "session":
+            return "session"
+        elif ty == "attachment":
+            return "attachment"
+        elif ty == "transaction":
+            return "transaction"
+        elif ty == "event":
+            return "error"
+        elif ty == "client_report":
+            return "internal"
+        elif ty == "profile":
+            return "profile"
         else:
-            ty = self.headers.get("type")
-            if ty in ("session", "attachment"):
-                rv = ty
-        return rv
+            return "default"
 
     def get_bytes(self):
         
@@ -245,7 +263,16 @@ class Item(object):
 
     def get_event(self):
         
-        if self.headers.get("type") == "event" and self.payload.json is not None:
+        """
+        Returns an error event if there is one.
+        """
+        if self.type == "event" and self.payload.json is not None:
+            return self.payload.json
+        return None
+
+    def get_transaction_event(self):
+        
+        if self.type == "transaction" and self.payload.json is not None:
             return self.payload.json
         return None
 
@@ -254,11 +281,11 @@ class Item(object):
     ):
         
         headers = dict(self.headers)
-        length, writer = self.payload._prepare_serialize()
-        headers["length"] = length
-        f.write(json.dumps(headers).encode("utf-8"))
+        bytes = self.get_bytes()
+        headers["length"] = len(bytes)
+        f.write(json_dumps(headers))
         f.write(b"\n")
-        writer(f)
+        f.write(bytes)
         f.write(b"\n")
 
     def serialize(self):
@@ -275,14 +302,19 @@ class Item(object):
         line = f.readline().rstrip()
         if not line:
             return None
-        headers = json.loads(line)
-        length = headers["length"]
-        payload = f.read(length)
-        if headers.get("type") == "event":
-            rv = cls(headers=headers, payload=PayloadRef(json=json.loads(payload)))
+        headers = parse_json(line)
+        length = headers.get("length")
+        if length is not None:
+            payload = f.read(length)
+            f.readline()
+        else:
+            
+            
+            payload = f.readline().rstrip(b"\n")
+        if headers.get("type") in ("event", "transaction", "metric_buckets"):
+            rv = cls(headers=headers, payload=PayloadRef(json=parse_json(payload)))
         else:
             rv = cls(headers=headers, payload=payload)
-        f.readline()
         return rv
 
     @classmethod

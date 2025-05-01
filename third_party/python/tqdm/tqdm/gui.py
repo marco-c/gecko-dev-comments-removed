@@ -8,8 +8,6 @@ Usage:
 """
 
 
-from __future__ import absolute_import, division
-
 import re
 from warnings import warn
 
@@ -17,7 +15,7 @@ from warnings import warn
 from .std import TqdmExperimentalWarning
 from .std import tqdm as std_tqdm
 
-from .utils import _range
+
 
 __author__ = {"github.com/": ["casperdcl", "lrq3000"]}
 __all__ = ['tqdm_gui', 'tgrange', 'tqdm', 'trange']
@@ -173,17 +171,14 @@ class tqdm_gui(std_tqdm):
             "{bar}", "<bar/>")
         msg = self.format_meter(**d)
         if '<bar/>' in msg:
-            msg = "".join(re.split(r'\|?<bar/>\|?', msg, 1))
+            msg = "".join(re.split(r'\|?<bar/>\|?', msg, maxsplit=1))
         ax.set_title(msg, fontname="DejaVu Sans Mono", fontsize=11)
         self.plt.pause(1e-9)
 
 
 def tgrange(*args, **kwargs):
-    """
-    A shortcut for `tqdm.gui.tqdm(xrange(*args), **kwargs)`.
-    On Python3+, `range` is used instead of `xrange`.
-    """
-    return tqdm_gui(_range(*args), **kwargs)
+    """Shortcut for `tqdm.gui.tqdm(range(*args), **kwargs)`."""
+    return tqdm_gui(range(*args), **kwargs)
 
 
 

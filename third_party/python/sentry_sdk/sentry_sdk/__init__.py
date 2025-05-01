@@ -4,11 +4,10 @@ from sentry_sdk.transport import Transport, HttpTransport
 from sentry_sdk.client import Client
 
 from sentry_sdk.api import *  
-from sentry_sdk.api import __all__ as api_all
 
 from sentry_sdk.consts import VERSION  
 
-__all__ = api_all + [  
+__all__ = [  
     "Hub",
     "Scope",
     "Client",
@@ -16,6 +15,22 @@ __all__ = api_all + [
     "HttpTransport",
     "init",
     "integrations",
+    
+    "capture_event",
+    "capture_message",
+    "capture_exception",
+    "add_breadcrumb",
+    "configure_scope",
+    "push_scope",
+    "flush",
+    "last_event_id",
+    "start_span",
+    "start_transaction",
+    "set_tag",
+    "set_context",
+    "set_extra",
+    "set_user",
+    "set_level",
 ]
 
 

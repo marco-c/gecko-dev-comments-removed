@@ -1,9 +1,17 @@
 import weakref
+import contextlib
 from inspect import iscoroutinefunction
+from sentry_sdk.consts import OP
 
 from sentry_sdk.hub import Hub, _should_send_default_pii
+from sentry_sdk.tracing import (
+    TRANSACTION_SOURCE_COMPONENT,
+    TRANSACTION_SOURCE_ROUTE,
+    Transaction,
+)
 from sentry_sdk.utils import (
     HAS_REAL_CONTEXTVARS,
+    CONTEXTVARS_ERROR_MESSAGE,
     event_from_exception,
     capture_internal_exceptions,
     transaction_from_function,
@@ -18,7 +26,7 @@ from sentry_sdk.integrations.logging import ignore_logger
 from sentry_sdk._compat import iteritems
 
 try:
-    from tornado import version_info as TORNADO_VERSION  
+    from tornado import version_info as TORNADO_VERSION
     from tornado.web import RequestHandler, HTTPError
     from tornado.gen import coroutine
 except ImportError:
@@ -31,6 +39,7 @@ if MYPY:
     from typing import Optional
     from typing import Dict
     from typing import Callable
+    from typing import Generator
 
     from sentry_sdk._types import EventProcessor
 
@@ -48,12 +57,13 @@ class TornadoIntegration(Integration):
             
             
             raise DidNotEnable(
-                "The tornado integration for Sentry requires Python 3.6+ or the aiocontextvars package"
+                "The tornado integration for Sentry requires Python 3.7+ or the aiocontextvars package"
+                + CONTEXTVARS_ERROR_MESSAGE
             )
 
         ignore_logger("tornado.access")
 
-        old_execute = RequestHandler._execute  
+        old_execute = RequestHandler._execute
 
         awaitable = iscoroutinefunction(old_execute)
 
@@ -62,50 +72,62 @@ class TornadoIntegration(Integration):
             
             async def sentry_execute_request_handler(self, *args, **kwargs):
                 
-                hub = Hub.current
-                integration = hub.get_integration(TornadoIntegration)
-                if integration is None:
-                    return await old_execute(self, *args, **kwargs)
-
-                weak_handler = weakref.ref(self)
-
-                with Hub(hub) as hub:
-                    with hub.configure_scope() as scope:
-                        scope.clear_breadcrumbs()
-                        processor = _make_event_processor(weak_handler)  
-                        scope.add_event_processor(processor)
+                with _handle_request_impl(self):
                     return await old_execute(self, *args, **kwargs)
 
         else:
 
             @coroutine  
-            def sentry_execute_request_handler(self, *args, **kwargs):
+            def sentry_execute_request_handler(self, *args, **kwargs):  
                 
-                hub = Hub.current
-                integration = hub.get_integration(TornadoIntegration)
-                if integration is None:
-                    return old_execute(self, *args, **kwargs)
-
-                weak_handler = weakref.ref(self)
-
-                with Hub(hub) as hub:
-                    with hub.configure_scope() as scope:
-                        scope.clear_breadcrumbs()
-                        processor = _make_event_processor(weak_handler)  
-                        scope.add_event_processor(processor)
+                with _handle_request_impl(self):
                     result = yield from old_execute(self, *args, **kwargs)
                     return result
 
-        RequestHandler._execute = sentry_execute_request_handler  
+        RequestHandler._execute = sentry_execute_request_handler
 
         old_log_exception = RequestHandler.log_exception
 
         def sentry_log_exception(self, ty, value, tb, *args, **kwargs):
             
             _capture_exception(ty, value, tb)
-            return old_log_exception(self, ty, value, tb, *args, **kwargs)  
+            return old_log_exception(self, ty, value, tb, *args, **kwargs)
 
-        RequestHandler.log_exception = sentry_log_exception  
+        RequestHandler.log_exception = sentry_log_exception
+
+
+@contextlib.contextmanager
+def _handle_request_impl(self):
+    
+    hub = Hub.current
+    integration = hub.get_integration(TornadoIntegration)
+
+    if integration is None:
+        yield
+
+    weak_handler = weakref.ref(self)
+
+    with Hub(hub) as hub:
+        with hub.configure_scope() as scope:
+            scope.clear_breadcrumbs()
+            processor = _make_event_processor(weak_handler)
+            scope.add_event_processor(processor)
+
+        transaction = Transaction.continue_from_headers(
+            self.request.headers,
+            op=OP.HTTP_SERVER,
+            
+            
+            
+            
+            name="generic Tornado request",
+            source=TRANSACTION_SOURCE_ROUTE,
+        )
+
+        with hub.start_transaction(
+            transaction, custom_sampling_context={"tornado_request": self.request}
+        ):
+            yield
 
 
 def _capture_exception(ty, value, tb):
@@ -141,6 +163,7 @@ def _make_event_processor(weak_handler):
         with capture_internal_exceptions():
             method = getattr(handler, handler.request.method.lower())
             event["transaction"] = transaction_from_function(method)
+            event["transaction_info"] = {"source": TRANSACTION_SOURCE_COMPONENT}
 
         with capture_internal_exceptions():
             extractor = TornadoRequestExtractor(request)

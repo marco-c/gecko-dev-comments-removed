@@ -37,7 +37,7 @@ def get_regex(resolver_or_pattern):
 
 class RavenResolver(object):
     _optional_group_matcher = re.compile(r"\(\?\:([^\)]+)\)")
-    _named_group_matcher = re.compile(r"\(\?P<(\w+)>[^\)]+\)")
+    _named_group_matcher = re.compile(r"\(\?P<(\w+)>[^\)]+\)+")
     _non_named_group_matcher = re.compile(r"\([^\)]+\)")
     
     _either_option_matcher = re.compile(r"\[([^\]]+)\|([^\]]+)\]")
@@ -76,6 +76,8 @@ class RavenResolver(object):
             result.replace("^", "")
             .replace("$", "")
             .replace("?", "")
+            .replace("\\A", "")
+            .replace("\\Z", "")
             .replace("//", "/")
             .replace("\\", "")
         )
@@ -128,7 +130,7 @@ class RavenResolver(object):
         
         resolver = get_resolver(urlconf)
         match = self._resolve(resolver, path)
-        return match or path
+        return match
 
 
 LEGACY_RESOLVER = RavenResolver()

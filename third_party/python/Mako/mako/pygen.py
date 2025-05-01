@@ -11,7 +11,7 @@ import re
 from mako import exceptions
 
 
-class PythonPrinter(object):
+class PythonPrinter:
     def __init__(self, stream):
         
         self.indent = 0
@@ -42,6 +42,15 @@ class PythonPrinter(object):
         
         
         self.source_map = {}
+
+        self._re_space_comment = re.compile(r"^\s*#")
+        self._re_space = re.compile(r"^\s*$")
+        self._re_indent = re.compile(r":[ \t]*(?:#.*)?$")
+        self._re_compound = re.compile(r"^\s*(if|try|elif|while|for|with)")
+        self._re_indent_keyword = re.compile(
+            r"^\s*(def|class|else|elif|except|finally)"
+        )
+        self._re_unindentor = re.compile(r"^\s*(else|elif|except|finally).*\:")
 
     def _update_lineno(self, num):
         self.lineno += num
@@ -86,8 +95,8 @@ class PythonPrinter(object):
 
         if (
             line is None
-            or re.match(r"^\s*#", line)
-            or re.match(r"^\s*$", line)
+            or self._re_space_comment.match(line)
+            or self._re_space.match(line)
         ):
             hastext = False
         else:
@@ -96,18 +105,19 @@ class PythonPrinter(object):
         is_comment = line and len(line) and line[0] == "#"
 
         
-        if not is_comment and (not hastext or self._is_unindentor(line)):
-
-            if self.indent > 0:
-                self.indent -= 1
+        if (
+            not is_comment
+            and (not hastext or self._is_unindentor(line))
+            and self.indent > 0
+        ):
+            self.indent -= 1
+            
+            
+            
+            if len(self.indent_detail) == 0:
                 
-                
-                
-                if len(self.indent_detail) == 0:
-                    raise exceptions.SyntaxException(
-                        "Too many whitespace closures"
-                    )
-                self.indent_detail.pop()
+                raise exceptions.MakoException("Too many whitespace closures")
+            self.indent_detail.pop()
 
         if line is None:
             return
@@ -120,12 +130,12 @@ class PythonPrinter(object):
         
         
 
-        if re.search(r":[ \t]*(?:#.*)?$", line):
+        if self._re_indent.search(line):
             
             
             
             
-            match = re.match(r"^\s*(if|try|elif|while|for|with)", line)
+            match = self._re_compound.match(line)
             if match:
                 
                 indentor = match.group(1)
@@ -136,9 +146,7 @@ class PythonPrinter(object):
                 
                 
                 
-                m2 = re.match(
-                    r"^\s*(def|class|else|elif|except|finally)", line
-                )
+                m2 = self._re_indent_keyword.match(line)
                 if m2:
                     self.indent += 1
                     self.indent_detail.append(indentor)
@@ -166,14 +174,11 @@ class PythonPrinter(object):
 
         
         
-        match = re.match(r"^\s*(else|elif|except|finally).*\:", line)
-        if not match:
-            return False
-
+        match = self._re_unindentor.match(line)
         
         
         
-        return True
+        return bool(match)
 
         
         
@@ -195,6 +200,9 @@ class PythonPrinter(object):
 
         stripspace is a string of space that will be truncated from the
         start of the line before indenting."""
+        if stripspace == "":
+            
+            return self.indentstring * self.indent + line
 
         return re.sub(
             r"^%s" % stripspace, self.indentstring * self.indent, line
@@ -218,11 +226,7 @@ class PythonPrinter(object):
 
         current_state = self.backslashed or self.triplequoted
 
-        if re.search(r"\\$", line):
-            self.backslashed = True
-        else:
-            self.backslashed = False
-
+        self.backslashed = bool(re.search(r"\\$", line))
         triples = len(re.findall(r"\"\"\"|\'\'\'", line))
         if triples == 1 or triples % 2 != 0:
             self.triplequoted = not self.triplequoted

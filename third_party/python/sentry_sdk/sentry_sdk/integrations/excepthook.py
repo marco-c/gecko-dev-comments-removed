@@ -10,11 +10,13 @@ if MYPY:
     from typing import Callable
     from typing import Any
     from typing import Type
+    from typing import Optional
 
     from types import TracebackType
 
     Excepthook = Callable[
-        [Type[BaseException], BaseException, TracebackType], Any,
+        [Type[BaseException], BaseException, Optional[TracebackType]],
+        Any,
     ]
 
 

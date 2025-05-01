@@ -4,7 +4,6 @@
 
 
 
-from mako import compat
 from mako import util
 
 _cache_plugins = util.PluginLoader("mako.cache")
@@ -13,7 +12,7 @@ register_plugin = _cache_plugins.register
 register_plugin("beaker", "mako.ext.beaker_cache", "BeakerCacheImpl")
 
 
-class Cache(object):
+class Cache:
 
     """Represents a data content cache made available to the module
     space of a specific :class:`.Template` object.
@@ -66,7 +65,7 @@ class Cache(object):
     def __init__(self, template, *args):
         
         
-        if isinstance(template, compat.string_types) and args:
+        if isinstance(template, str) and args:
             return
         self.template = template
         self.id = template.module.__name__
@@ -181,7 +180,7 @@ class Cache(object):
         return tmpl_kw
 
 
-class CacheImpl(object):
+class CacheImpl:
 
     """Provide a cache implementation for use by :class:`.Cache`."""
 

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import logging
 import datetime
+from fnmatch import fnmatch
 
 from sentry_sdk.hub import Hub
 from sentry_sdk.utils import (
@@ -23,8 +24,26 @@ if MYPY:
 
 DEFAULT_LEVEL = logging.INFO
 DEFAULT_EVENT_LEVEL = logging.ERROR
+LOGGING_TO_EVENT_LEVEL = {
+    logging.NOTSET: "notset",
+    logging.DEBUG: "debug",
+    logging.INFO: "info",
+    logging.WARN: "warning",  
+    logging.WARNING: "warning",
+    logging.ERROR: "error",
+    logging.FATAL: "fatal",
+    logging.CRITICAL: "fatal",  
+}
 
-_IGNORED_LOGGERS = set(["sentry_sdk.errors"])
+
+
+
+
+
+
+_IGNORED_LOGGERS = set(
+    ["sentry_sdk.errors", "urllib3.connectionpool", "urllib3.connection"]
+)
 
 
 def ignore_logger(
@@ -69,7 +88,7 @@ class LoggingIntegration(Integration):
     @staticmethod
     def setup_once():
         
-        old_callhandlers = logging.Logger.callHandlers  
+        old_callhandlers = logging.Logger.callHandlers
 
         def sentry_patched_callhandlers(self, record):
             
@@ -90,14 +109,18 @@ class LoggingIntegration(Integration):
 
 def _can_record(record):
     
-    return record.name not in _IGNORED_LOGGERS
+    """Prevents ignored loggers from recording"""
+    for logger in _IGNORED_LOGGERS:
+        if fnmatch(record.name, logger):
+            return False
+    return True
 
 
 def _breadcrumb_from_record(record):
     
     return {
-        "ty": "log",
-        "level": _logging_to_event_level(record.levelname),
+        "type": "log",
+        "level": _logging_to_event_level(record),
         "category": record.name,
         "message": record.message,
         "timestamp": datetime.datetime.utcfromtimestamp(record.created),
@@ -105,9 +128,11 @@ def _breadcrumb_from_record(record):
     }
 
 
-def _logging_to_event_level(levelname):
+def _logging_to_event_level(record):
     
-    return {"critical": "fatal"}.get(levelname.lower(), levelname.lower())
+    return LOGGING_TO_EVENT_LEVEL.get(
+        record.levelno, record.levelname.lower() if record.levelname else ""
+    )
 
 
 COMMON_RECORD_ATTRS = frozenset(
@@ -175,7 +200,12 @@ class EventHandler(logging.Handler, object):
         client_options = hub.client.options
 
         
-        if record.exc_info is not None and record.exc_info[0] is not None:
+        
+        
+        
+        
+        
+        if record.exc_info and record.exc_info[0] is not None:
             event, hint = event_from_exception(
                 record.exc_info,
                 client_options=client_options,
@@ -202,9 +232,29 @@ class EventHandler(logging.Handler, object):
 
         hint["log_record"] = record
 
-        event["level"] = _logging_to_event_level(record.levelname)
+        event["level"] = _logging_to_event_level(record)
         event["logger"] = record.name
-        event["logentry"] = {"message": to_string(record.msg), "params": record.args}
+
+        
+        record_caputured_from_warnings_module = (
+            record.name == "py.warnings" and record.msg == "%s"
+        )
+        if record_caputured_from_warnings_module:
+            
+            
+            msg = record.args[0]  
+
+            event["logentry"] = {
+                "message": msg,
+                "params": (),
+            }
+
+        else:
+            event["logentry"] = {
+                "message": to_string(record.msg),
+                "params": record.args,
+            }
+
         event["extra"] = _extra_from_record(record)
 
         hub.capture_event(event, hint=hint)

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from sentry_sdk.hub import Hub
+from sentry_sdk.tracing import SOURCE_FOR_STYLE
 from sentry_sdk.utils import (
     capture_internal_exceptions,
     event_from_exception,
@@ -20,7 +21,7 @@ if MYPY:
     from typing import Optional
     from bottle import FileUpload, FormsDict, LocalRequest  
 
-    from sentry_sdk._types import EventProcessor
+    from sentry_sdk._types import EventProcessor, Event
 
 try:
     from bottle import (
@@ -40,7 +41,7 @@ TRANSACTION_STYLE_VALUES = ("endpoint", "url")
 class BottleIntegration(Integration):
     identifier = "bottle"
 
-    transaction_style = None
+    transaction_style = ""
 
     def __init__(self, transaction_style="endpoint"):
         
@@ -57,9 +58,9 @@ class BottleIntegration(Integration):
         
 
         try:
-            version = tuple(map(int, BOTTLE_VERSION.split(".")))
+            version = tuple(map(int, BOTTLE_VERSION.replace("-dev", "").split(".")))
         except (TypeError, ValueError):
-            raise DidNotEnable("Unparseable Bottle version: {}".format(version))
+            raise DidNotEnable("Unparsable Bottle version: {}".format(version))
 
         if version < (0, 12):
             raise DidNotEnable("Bottle 0.12 or newer required.")
@@ -176,24 +177,34 @@ class BottleRequestExtractor(RequestExtractor):
         return file.content_length
 
 
+def _set_transaction_name_and_source(event, transaction_style, request):
+    
+    name = ""
+
+    if transaction_style == "url":
+        name = request.route.rule or ""
+
+    elif transaction_style == "endpoint":
+        name = (
+            request.route.name
+            or transaction_from_function(request.route.callback)
+            or ""
+        )
+
+    event["transaction"] = name
+    event["transaction_info"] = {"source": SOURCE_FOR_STYLE[transaction_style]}
+
+
 def _make_request_event_processor(app, request, integration):
     
-    def inner(event, hint):
-        
 
-        try:
-            if integration.transaction_style == "endpoint":
-                event["transaction"] = request.route.name or transaction_from_function(
-                    request.route.callback
-                )
-            elif integration.transaction_style == "url":
-                event["transaction"] = request.route.rule
-        except Exception:
-            pass
+    def event_processor(event, hint):
+        
+        _set_transaction_name_and_source(event, integration.transaction_style, request)
 
         with capture_internal_exceptions():
             BottleRequestExtractor(request).extract_into_event(event)
 
         return event
 
-    return inner
+    return event_processor

@@ -1,15 +1,15 @@
 import copy
-import random
 import sys
 
 from datetime import datetime
 from contextlib import contextmanager
 
 from sentry_sdk._compat import with_metaclass
+from sentry_sdk.consts import INSTRUMENTER
 from sentry_sdk.scope import Scope
 from sentry_sdk.client import Client
-from sentry_sdk.tracing import Span
-from sentry_sdk.sessions import Session
+from sentry_sdk.tracing import NoOpSpan, Span, Transaction
+from sentry_sdk.session import Session
 from sentry_sdk.utils import (
     exc_info_from_error,
     event_from_exception,
@@ -67,7 +67,7 @@ def _update_scope(base, scope_change, scope_kwargs):
             final_scope.update_from_scope(scope_change)
     elif scope_kwargs:
         final_scope = copy.copy(base)
-        final_scope.update_from_kwargs(scope_kwargs)
+        final_scope.update_from_kwargs(**scope_kwargs)
     else:
         final_scope = base
     return final_scope
@@ -97,6 +97,20 @@ class _InitGuard(object):
             c.close()
 
 
+def _check_python_deprecations():
+    
+    version = sys.version_info[:2]
+
+    if version == (3, 4) or version == (3, 5):
+        logger.warning(
+            "sentry-sdk 2.0.0 will drop support for Python %s.",
+            "{}.{}".format(*version),
+        )
+        logger.warning(
+            "Please upgrade to the latest version to continue receiving upgrades and bugfixes."
+        )
+
+
 def _init(*args, **kwargs):
     
     """Initializes the SDK and optionally integrations.
@@ -105,6 +119,7 @@ def _init(*args, **kwargs):
     """
     client = Client(*args, **kwargs)  
     Hub.current.bind_client(client)
+    _check_python_deprecations()
     rv = _InitGuard(client)
     return rv
 
@@ -118,9 +133,8 @@ if MYPY:
     
     
 
-    class init(ClientConstructor, ContextManager[Any]):  
+    class init(ClientConstructor, _InitGuard):  
         pass
-
 
 else:
     
@@ -276,7 +290,7 @@ class Hub(with_metaclass(HubMeta)):
         else:
             raise ValueError("Integration has no name")
 
-        client = self._stack[-1][0]
+        client = self.client
         if client is not None:
             rv = client.integrations.get(integration_name)
             if rv is not None:
@@ -315,13 +329,13 @@ class Hub(with_metaclass(HubMeta)):
         **scope_args  
     ):
         
-        """Captures an event. Alias of :py:meth:`sentry_sdk.Client.capture_event`.
-        """
+        """Captures an event. Alias of :py:meth:`sentry_sdk.Client.capture_event`."""
         client, top_scope = self._stack[-1]
         scope = _update_scope(top_scope, scope, scope_args)
         if client is not None:
+            is_transaction = event.get("type") == "transaction"
             rv = client.capture_event(event, hint, scope)
-            if rv is not None:
+            if rv is not None and not is_transaction:
                 self._last_event_id = rv
             return rv
         return None
@@ -437,52 +451,122 @@ class Hub(with_metaclass(HubMeta)):
     def start_span(
         self,
         span=None,  
+        instrumenter=INSTRUMENTER.SENTRY,  
         **kwargs  
     ):
         
         """
-        Create a new span whose parent span is the currently active
-        span, if any. The return value is the span object that can
-        be used as a context manager to start and stop timing.
+        Create and start timing a new span whose parent is the currently active
+        span or transaction, if any. The return value is a span instance,
+        typically used as a context manager to start and stop timing in a `with`
+        block.
 
-        Note that you will not see any span that is not contained
-        within a transaction. Create a transaction with
-        ``start_span(transaction="my transaction")`` if an
-        integration doesn't already do this for you.
+        Only spans contained in a transaction are sent to Sentry. Most
+        integrations start a transaction at the appropriate time, for example
+        for every incoming HTTP request. Use `start_transaction` to start a new
+        transaction when one is not already in progress.
         """
+        configuration_instrumenter = self.client and self.client.options["instrumenter"]
 
-        client, scope = self._stack[-1]
+        if instrumenter != configuration_instrumenter:
+            return NoOpSpan()
+
+        
+        
+        
+        if isinstance(span, Transaction) or "transaction" in kwargs:
+            deprecation_msg = (
+                "Deprecated: use start_transaction to start transactions and "
+                "Transaction.start_child to start spans."
+            )
+            if isinstance(span, Transaction):
+                logger.warning(deprecation_msg)
+                return self.start_transaction(span)
+            if "transaction" in kwargs:
+                logger.warning(deprecation_msg)
+                name = kwargs.pop("transaction")
+                return self.start_transaction(name=name, **kwargs)
+
+        if span is not None:
+            return span
 
         kwargs.setdefault("hub", self)
 
-        if span is None:
-            span = scope.span
-            if span is not None:
-                span = span.new_span(**kwargs)
-            else:
-                span = Span(**kwargs)
+        span = self.scope.span
+        if span is not None:
+            return span.start_child(**kwargs)
 
-        if span.sampled is None and span.transaction is not None:
-            sample_rate = client and client.options["traces_sample_rate"] or 0
-            span.sampled = random.random() < sample_rate
+        return Span(**kwargs)
 
-        if span.sampled:
+    def start_transaction(
+        self,
+        transaction=None,  
+        instrumenter=INSTRUMENTER.SENTRY,  
+        **kwargs  
+    ):
+        
+        """
+        Start and return a transaction.
+
+        Start an existing transaction if given, otherwise create and start a new
+        transaction with kwargs.
+
+        This is the entry point to manual tracing instrumentation.
+
+        A tree structure can be built by adding child spans to the transaction,
+        and child spans to other spans. To start a new child span within the
+        transaction or any span, call the respective `.start_child()` method.
+
+        Every child span must be finished before the transaction is finished,
+        otherwise the unfinished spans are discarded.
+
+        When used as context managers, spans and transactions are automatically
+        finished at the end of the `with` block. If not using context managers,
+        call the `.finish()` method.
+
+        When the transaction is finished, it will be sent to Sentry with all its
+        finished child spans.
+        """
+        configuration_instrumenter = self.client and self.client.options["instrumenter"]
+
+        if instrumenter != configuration_instrumenter:
+            return NoOpSpan()
+
+        custom_sampling_context = kwargs.pop("custom_sampling_context", {})
+
+        
+        if transaction is None:
+            kwargs.setdefault("hub", self)
+            transaction = Transaction(**kwargs)
+
+        
+        
+        sampling_context = {
+            "transaction_context": transaction.to_json(),
+            "parent_sampled": transaction.parent_sampled,
+        }
+        sampling_context.update(custom_sampling_context)
+        transaction._set_initial_sampling_decision(sampling_context=sampling_context)
+
+        
+        
+        if transaction.sampled:
             max_spans = (
-                client and client.options["_experiments"].get("max_spans") or 1000
-            )
-            span.init_finished_spans(maxlen=max_spans)
+                self.client and self.client.options["_experiments"].get("max_spans")
+            ) or 1000
+            transaction.init_span_recorder(maxlen=max_spans)
 
-        return span
+        return transaction
 
-    @overload  
+    @overload
     def push_scope(
         self, callback=None  
     ):
         
         pass
 
-    @overload  
-    def push_scope(
+    @overload
+    def push_scope(  
         self, callback  
     ):
         
@@ -523,15 +607,15 @@ class Hub(with_metaclass(HubMeta)):
         assert self._stack, "stack must have at least one layer"
         return rv
 
-    @overload  
+    @overload
     def configure_scope(
         self, callback=None  
     ):
         
         pass
 
-    @overload  
-    def configure_scope(
+    @overload
+    def configure_scope(  
         self, callback  
     ):
         
@@ -539,7 +623,7 @@ class Hub(with_metaclass(HubMeta)):
 
     def configure_scope(  
         self, callback=None  
-    ):  
+    ):
         
 
         """
@@ -567,7 +651,9 @@ class Hub(with_metaclass(HubMeta)):
 
         return inner()
 
-    def start_session(self):
+    def start_session(
+        self, session_mode="application"  
+    ):
         
         """Starts a new session."""
         self.end_session()
@@ -576,6 +662,7 @@ class Hub(with_metaclass(HubMeta)):
             release=client.options["release"] if client else None,
             environment=client.options["environment"] if client else None,
             user=scope._user,
+            session_mode=session_mode,
         )
 
     def end_session(self):
@@ -583,11 +670,12 @@ class Hub(with_metaclass(HubMeta)):
         """Ends the current session if there is one."""
         client, scope = self._stack[-1]
         session = scope._session
+        self.scope._session = None
+
         if session is not None:
             session.close()
             if client is not None:
                 client.capture_session(session)
-        self._stack[-1][1]._session = None
 
     def stop_auto_session_tracking(self):
         
@@ -622,25 +710,38 @@ class Hub(with_metaclass(HubMeta)):
         if client is not None:
             return client.flush(timeout=timeout, callback=callback)
 
-    def iter_trace_propagation_headers(self):
+    def iter_trace_propagation_headers(self, span=None):
         
-        
-        client, scope = self._stack[-1]
-        span = scope.span
-
-        if span is None:
+        """
+        Return HTTP headers which allow propagation of trace data. Data taken
+        from the span representing the request, if available, or the current
+        span on the scope if not.
+        """
+        span = span or self.scope.span
+        if not span:
             return
+
+        client = self._stack[-1][0]
 
         propagate_traces = client and client.options["propagate_traces"]
         if not propagate_traces:
             return
 
-        if client and client.options["traceparent_v2"]:
-            traceparent = span.to_traceparent()
-        else:
-            traceparent = span.to_legacy_traceparent()
+        for header in span.iter_headers():
+            yield header
 
-        yield "sentry-trace", traceparent
+    def trace_propagation_meta(self, span=None):
+        
+        """
+        Return meta tags which should be injected into the HTML template
+        to allow propagation of trace data.
+        """
+        meta = ""
+
+        for name, content in self.iter_trace_propagation_headers(span):
+            meta += '<meta name="%s" content="%s">' % (name, content)
+
+        return meta
 
 
 GLOBAL_HUB = Hub()

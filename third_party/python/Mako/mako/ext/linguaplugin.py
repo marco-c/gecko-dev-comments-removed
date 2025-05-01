@@ -4,20 +4,20 @@
 
 
 
+import contextlib
 import io
 
 from lingua.extractors import Extractor
 from lingua.extractors import get_extractor
 from lingua.extractors import Message
 
-from mako import compat
 from mako.ext.extract import MessageExtractor
 
 
 class LinguaMakoExtractor(Extractor, MessageExtractor):
-
     """Mako templates"""
 
+    use_bytes = False
     extensions = [".mako"]
     default_config = {"encoding": "utf-8", "comment-tags": ""}
 
@@ -26,21 +26,21 @@ class LinguaMakoExtractor(Extractor, MessageExtractor):
         self.filename = filename
         self.python_extractor = get_extractor("x.py")
         if fileobj is None:
-            fileobj = open(filename, "rb")
-        return self.process_file(fileobj)
+            ctx = open(filename, "r")
+        else:
+            ctx = contextlib.nullcontext(fileobj)
+        with ctx as file_:
+            yield from self.process_file(file_)
 
     def process_python(self, code, code_lineno, translator_strings):
         source = code.getvalue().strip()
-        if source.endswith(compat.b(":")):
-            if source in (
-                compat.b("try:"),
-                compat.b("else:"),
-            ) or source.startswith(compat.b("except")):
-                source = compat.b("")  
-            elif source.startswith(compat.b("elif")):
+        if source.endswith(":"):
+            if source in ("try:", "else:") or source.startswith("except"):
+                source = ""  
+            elif source.startswith("elif"):
                 source = source[2:]  
-            source += compat.b("pass")
-        code = io.BytesIO(source)
+            source += "pass"
+        code = io.StringIO(source)
         for msg in self.python_extractor(
             self.filename, self.options, code, code_lineno - 1
         ):
@@ -50,7 +50,7 @@ class LinguaMakoExtractor(Extractor, MessageExtractor):
                     msg.msgid,
                     msg.msgid_plural,
                     msg.flags,
-                    compat.u(" ").join(translator_strings + [msg.comment]),
+                    " ".join(translator_strings + [msg.comment]),
                     msg.tcomment,
                     msg.location,
                 )

@@ -7,24 +7,27 @@ if MYPY:
     from typing import Tuple
     from typing import Any
     from typing import Type
-
     from typing import TypeVar
 
     T = TypeVar("T")
 
 
 PY2 = sys.version_info[0] == 2
+PY33 = sys.version_info[0] == 3 and sys.version_info[1] >= 3
+PY37 = sys.version_info[0] == 3 and sys.version_info[1] >= 7
+PY310 = sys.version_info[0] == 3 and sys.version_info[1] >= 10
+PY311 = sys.version_info[0] == 3 and sys.version_info[1] >= 11
 
 if PY2:
-    import urlparse  
+    import urlparse
 
     text_type = unicode  
-    import Queue as queue  
 
     string_types = (str, text_type)
     number_types = (int, long, float)  
     int_types = (int, long)  
     iteritems = lambda x: x.iteritems()  
+    binary_sequence_types = (bytearray, memoryview)
 
     def implements_str(cls):
         
@@ -37,13 +40,13 @@ if PY2:
 
 else:
     import urllib.parse as urlparse  
-    import queue  
 
     text_type = str
     string_types = (text_type,)  
     number_types = (int, float)  
-    int_types = (int,)  
+    int_types = (int,)
     iteritems = lambda x: x.items()
+    binary_sequence_types = (bytes, bytearray, memoryview)
 
     def implements_str(x):
         
@@ -87,6 +90,6 @@ def check_thread_support():
                 "We detected the use of uwsgi with disabled threads.  "
                 "This will cause issues with the transport you are "
                 "trying to use.  Please enable threading for uwsgi.  "
-                '(Enable the "enable-threads" flag).'
+                '(Add the "enable-threads" flag).'
             )
         )

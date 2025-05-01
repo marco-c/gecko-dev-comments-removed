@@ -1,10 +1,12 @@
 from copy import copy
 from collections import deque
-from functools import wraps
 from itertools import chain
 
-from sentry_sdk.utils import logger, capture_internal_exceptions
+from sentry_sdk._functools import wraps
 from sentry_sdk._types import MYPY
+from sentry_sdk.utils import logger, capture_internal_exceptions
+from sentry_sdk.tracing import Transaction
+from sentry_sdk.attachments import Attachment
 
 if MYPY:
     from typing import Any
@@ -25,8 +27,9 @@ if MYPY:
         Type,
     )
 
+    from sentry_sdk.profiler import Profile
     from sentry_sdk.tracing import Span
-    from sentry_sdk.sessions import Session
+    from sentry_sdk.session import Session
 
     F = TypeVar("F", bound=Callable[..., Any])
     T = TypeVar("T")
@@ -76,7 +79,10 @@ class Scope(object):
         "_level",
         "_name",
         "_fingerprint",
+        
+        
         "_transaction",
+        "_transaction_info",
         "_user",
         "_tags",
         "_contexts",
@@ -87,7 +93,9 @@ class Scope(object):
         "_should_capture",
         "_span",
         "_session",
+        "_attachments",
         "_force_auto_session_tracking",
+        "_profile",
     )
 
     def __init__(self):
@@ -104,11 +112,13 @@ class Scope(object):
         self._level = None  
         self._fingerprint = None  
         self._transaction = None  
+        self._transaction_info = {}  
         self._user = None  
 
         self._tags = {}  
         self._contexts = {}  
         self._extras = {}  
+        self._attachments = []  
 
         self.clear_breadcrumbs()
         self._should_capture = True
@@ -116,6 +126,8 @@ class Scope(object):
         self._span = None  
         self._session = None  
         self._force_auto_session_tracking = None  
+
+        self._profile = None  
 
     @_attr_setter
     def level(self, value):
@@ -134,14 +146,61 @@ class Scope(object):
         """When set this overrides the default fingerprint."""
         self._fingerprint = value
 
-    @_attr_setter
+    @property
+    def transaction(self):
+        
+        
+        """Return the transaction (root span) in the scope, if any."""
+
+        
+        if self._span is None:
+            return None
+
+        
+        if self._span.containing_transaction is None:
+            return None
+
+        
+        
+        return self._span.containing_transaction
+
+    @transaction.setter
     def transaction(self, value):
         
-        """When set this forces a specific transaction name to be set."""
+        
+        """When set this forces a specific transaction name to be set.
+
+        Deprecated: use set_transaction_name instead."""
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        logger.warning(
+            "Assigning to scope.transaction directly is deprecated: use scope.set_transaction_name() instead."
+        )
         self._transaction = value
-        span = self._span
-        if span:
-            span.transaction = value
+        if self._span and self._span.containing_transaction:
+            self._span.containing_transaction.name = value
+
+    def set_transaction_name(self, name, source=None):
+        
+        """Set the transaction name and optionally the transaction source."""
+        self._transaction = name
+
+        if self._span and self._span.containing_transaction:
+            self._span.containing_transaction.name = name
+            if source:
+                self._span.containing_transaction.source = source
+
+        if source:
+            self._transaction_info["source"] = source
 
     @_attr_setter
     def user(self, value):
@@ -159,17 +218,30 @@ class Scope(object):
     @property
     def span(self):
         
-        """Get/set current tracing span."""
+        """Get/set current tracing span or transaction."""
         return self._span
 
     @span.setter
     def span(self, span):
         
         self._span = span
-        if span is not None:
-            span_transaction = span.transaction
-            if span_transaction:
-                self._transaction = span_transaction
+        
+        
+        if isinstance(span, Transaction):
+            transaction = span
+            if transaction.name:
+                self._transaction = transaction.name
+
+    @property
+    def profile(self):
+        
+        return self._profile
+
+    @profile.setter
+    def profile(self, profile):
+        
+
+        self._profile = profile
 
     def set_tag(
         self,
@@ -223,6 +295,26 @@ class Scope(object):
         
         """Clears breadcrumb buffer."""
         self._breadcrumbs = deque()  
+
+    def add_attachment(
+        self,
+        bytes=None,  
+        filename=None,  
+        path=None,  
+        content_type=None,  
+        add_to_transactions=False,  
+    ):
+        
+        """Adds an attachment to future events sent."""
+        self._attachments.append(
+            Attachment(
+                bytes=bytes,
+                path=path,
+                filename=filename,
+                content_type=content_type,
+                add_to_transactions=add_to_transactions,
+            )
+        )
 
     def add_event_processor(
         self, func  
@@ -283,17 +375,33 @@ class Scope(object):
             logger.info("%s (%s) dropped event (%s)", ty, cause, event)
             return None
 
+        is_transaction = event.get("type") == "transaction"
+
+        
+        
+        
+        attachments_to_send = hint.get("attachments") or []
+        for attachment in self._attachments:
+            if not is_transaction or attachment.add_to_transactions:
+                attachments_to_send.append(attachment)
+        hint["attachments"] = attachments_to_send
+
         if self._level is not None:
             event["level"] = self._level
 
-        if event.get("type") != "transaction":
-            event.setdefault("breadcrumbs", []).extend(self._breadcrumbs)
+        if not is_transaction:
+            event.setdefault("breadcrumbs", {}).setdefault("values", []).extend(
+                self._breadcrumbs
+            )
 
         if event.get("user") is None and self._user is not None:
             event["user"] = self._user
 
         if event.get("transaction") is None and self._transaction is not None:
             event["transaction"] = self._transaction
+
+        if event.get("transaction_info") is None and self._transaction_info is not None:
+            event["transaction_info"] = self._transaction_info
 
         if event.get("fingerprint") is None and self._fingerprint is not None:
             event["fingerprint"] = self._fingerprint
@@ -338,6 +446,8 @@ class Scope(object):
             self._fingerprint = scope._fingerprint
         if scope._transaction is not None:
             self._transaction = scope._transaction
+        if scope._transaction_info is not None:
+            self._transaction_info.update(scope._transaction_info)
         if scope._user is not None:
             self._user = scope._user
         if scope._tags:
@@ -350,6 +460,10 @@ class Scope(object):
             self._breadcrumbs.extend(scope._breadcrumbs)
         if scope._span:
             self._span = scope._span
+        if scope._attachments:
+            self._attachments.extend(scope._attachments)
+        if scope._profile:
+            self._profile = scope._profile
 
     def update_from_kwargs(
         self,
@@ -382,6 +496,7 @@ class Scope(object):
         rv._name = self._name
         rv._fingerprint = self._fingerprint
         rv._transaction = self._transaction
+        rv._transaction_info = dict(self._transaction_info)
         rv._user = self._user
 
         rv._tags = dict(self._tags)
@@ -396,6 +511,9 @@ class Scope(object):
         rv._span = self._span
         rv._session = self._session
         rv._force_auto_session_tracking = self._force_auto_session_tracking
+        rv._attachments = list(self._attachments)
+
+        rv._profile = self._profile
 
         return rv
 

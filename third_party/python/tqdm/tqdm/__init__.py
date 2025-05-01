@@ -29,10 +29,7 @@ def tqdm_notebook(*args, **kwargs):
 
 
 def tnrange(*args, **kwargs):  
-    """
-    A shortcut for `tqdm.notebook.tqdm(xrange(*args), **kwargs)`.
-    On Python3+, `range` is used instead of `xrange`.
-    """
+    """Shortcut for `tqdm.notebook.tqdm(range(*args), **kwargs)`."""
     from warnings import warn
 
     from .notebook import trange as _tnrange

@@ -8,17 +8,13 @@ Usage:
 ...     ...
 """
 
-
-from __future__ import absolute_import, division
-
-
 import re
 import sys
+from html import escape
 from weakref import proxy
 
 
 from .std import tqdm as std_tqdm
-from .utils import _range
 
 if True:  
     
@@ -63,19 +59,16 @@ if True:
     except ImportError:
         pass
 
-    
-    try:  
-        from html import escape
-    except ImportError:  
-        from cgi import escape
-
 __author__ = {"github.com/": ["lrq3000", "casperdcl", "alexanderkuk"]}
 __all__ = ['tqdm_notebook', 'tnrange', 'tqdm', 'trange']
+WARN_NOIPYW = ("IProgress not found. Please update jupyter and ipywidgets."
+               " See https://ipywidgets.readthedocs.io/en/stable"
+               "/user_install.html")
 
 
 class TqdmHBox(HBox):
     """`ipywidgets.HBox` with a pretty representation"""
-    def _repr_json_(self, pretty=None):
+    def _json_(self, pretty=None):
         pbar = getattr(self, 'pbar', None)
         if pbar is None:
             return {}
@@ -88,7 +81,7 @@ class TqdmHBox(HBox):
         pbar = getattr(self, 'pbar', None)
         if pbar is None:
             return super(TqdmHBox, self).__repr__()
-        return pbar.format_meter(**self._repr_json_(pretty))
+        return pbar.format_meter(**self._json_(pretty))
 
     def _repr_pretty_(self, pp, *_, **__):
         pp.text(self.__repr__(True))
@@ -112,10 +105,7 @@ class tqdm_notebook(std_tqdm):
 
         
         if IProgress is None:  
-            raise ImportError(
-                "IProgress not found. Please update jupyter and ipywidgets."
-                " See https://ipywidgets.readthedocs.io/en/stable"
-                "/user_install.html")
+            raise ImportError(WARN_NOIPYW)
         if total:
             pbar = IProgress(min=0, max=total)
         else:  
@@ -167,9 +157,10 @@ class tqdm_notebook(std_tqdm):
         pbar.value = self.n
 
         if msg:
+            msg = msg.replace(' ', u'\u2007')  
             
             if '<bar/>' in msg:
-                left, right = map(escape, re.split(r'\|?<bar/>\|?', msg, 1))
+                left, right = map(escape, re.split(r'\|?<bar/>\|?', msg, maxsplit=1))
             else:
                 left, right = '', escape(msg)
 
@@ -192,6 +183,7 @@ class tqdm_notebook(std_tqdm):
                 self.container.close()
             except AttributeError:
                 self.container.visible = False
+            self.container.layout.visibility = 'hidden'  
 
         if check_delay and self.delay > 0 and not self.displayed:
             display(self.container)
@@ -254,7 +246,8 @@ class tqdm_notebook(std_tqdm):
 
     def __iter__(self):
         try:
-            for obj in super(tqdm_notebook, self).__iter__():
+            it = super(tqdm_notebook, self).__iter__()
+            for obj in it:
                 
                 yield obj
         
@@ -315,11 +308,8 @@ class tqdm_notebook(std_tqdm):
 
 
 def tnrange(*args, **kwargs):
-    """
-    A shortcut for `tqdm.notebook.tqdm(xrange(*args), **kwargs)`.
-    On Python3+, `range` is used instead of `xrange`.
-    """
-    return tqdm_notebook(_range(*args), **kwargs)
+    """Shortcut for `tqdm.notebook.tqdm(range(*args), **kwargs)`."""
+    return tqdm_notebook(range(*args), **kwargs)
 
 
 

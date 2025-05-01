@@ -4,7 +4,7 @@
 
 
 
-"""gettext message extraction via Babel: http://babel.edgewall.org/"""
+"""gettext message extraction via Babel: https://pypi.org/project/Babel/"""
 from babel.messages.extract import extract_python
 
 from mako.ext.extract import MessageExtractor
@@ -15,12 +15,12 @@ class BabelMakoExtractor(MessageExtractor):
         self.keywords = keywords
         self.options = options
         self.config = {
-            "comment-tags": u" ".join(comment_tags),
+            "comment-tags": " ".join(comment_tags),
             "encoding": options.get(
                 "input_encoding", options.get("encoding", None)
             ),
         }
-        super(BabelMakoExtractor, self).__init__()
+        super().__init__()
 
     def __call__(self, fileobj):
         return self.process_file(fileobj)
@@ -54,5 +54,4 @@ def extract(fileobj, keywords, comment_tags, options):
     :rtype: ``iterator``
     """
     extractor = BabelMakoExtractor(keywords, comment_tags, options)
-    for message in extractor(fileobj):
-        yield message
+    yield from extractor(fileobj)

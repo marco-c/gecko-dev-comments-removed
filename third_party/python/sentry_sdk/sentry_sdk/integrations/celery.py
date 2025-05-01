@@ -1,15 +1,20 @@
 from __future__ import absolute_import
 
-import functools
 import sys
+from sentry_sdk.consts import OP
 
 from sentry_sdk.hub import Hub
-from sentry_sdk.utils import capture_internal_exceptions, event_from_exception
-from sentry_sdk.tracing import Span
+from sentry_sdk.tracing import TRANSACTION_SOURCE_TASK
+from sentry_sdk.utils import (
+    capture_internal_exceptions,
+    event_from_exception,
+)
+from sentry_sdk.tracing import Transaction
 from sentry_sdk._compat import reraise
 from sentry_sdk.integrations import Integration, DidNotEnable
 from sentry_sdk.integrations.logging import ignore_logger
 from sentry_sdk._types import MYPY
+from sentry_sdk._functools import wraps
 
 if MYPY:
     from typing import Any
@@ -23,13 +28,14 @@ if MYPY:
 
 
 try:
-    from celery import VERSION as CELERY_VERSION  
+    from celery import VERSION as CELERY_VERSION
     from celery.exceptions import (  
         SoftTimeLimitExceeded,
         Retry,
         Ignore,
         Reject,
     )
+    from celery.app.trace import task_has_custom
 except ImportError:
     raise DidNotEnable("Celery not installed")
 
@@ -59,9 +65,10 @@ class CeleryIntegration(Integration):
             if not getattr(task, "_sentry_is_patched", False):
                 
                 
-                task.__call__ = _wrap_task_call(task, task.__call__)
-                task.run = _wrap_task_call(task, task.run)
-                task.apply_async = _wrap_apply_async(task, task.apply_async)
+                if task_has_custom(task, "__call__"):
+                    type(task).__call__ = _wrap_task_call(task, type(task).__call__)
+                else:
+                    task.run = _wrap_task_call(task, task.run)
 
                 
                 
@@ -71,6 +78,10 @@ class CeleryIntegration(Integration):
             return _wrap_tracer(task, old_build_tracer(name, task, *args, **kwargs))
 
         trace.build_tracer = sentry_build_tracer
+
+        from celery.app.task import Task  
+
+        Task.apply_async = _wrap_apply_async(Task.apply_async)
 
         _patch_worker_exit()
 
@@ -85,23 +96,34 @@ class CeleryIntegration(Integration):
         ignore_logger("celery.redirected")
 
 
-def _wrap_apply_async(task, f):
+def _wrap_apply_async(f):
     
-    @functools.wraps(f)
+    @wraps(f)
     def apply_async(*args, **kwargs):
         
         hub = Hub.current
         integration = hub.get_integration(CeleryIntegration)
         if integration is not None and integration.propagate_traces:
-            headers = None
-            for key, value in hub.iter_trace_propagation_headers():
-                if headers is None:
-                    headers = dict(kwargs.get("headers") or {})
-                headers[key] = value
-            if headers is not None:
-                kwargs["headers"] = headers
+            with hub.start_span(
+                op=OP.QUEUE_SUBMIT_CELERY, description=args[0].name
+            ) as span:
+                with capture_internal_exceptions():
+                    headers = dict(hub.iter_trace_propagation_headers(span))
 
-            with hub.start_span(op="celery.submit", description=task.name):
+                    if headers:
+                        
+                        
+                        kwarg_headers = kwargs.get("headers") or {}
+                        kwarg_headers.update(headers)
+
+                        
+                        
+                        
+                        
+                        
+                        kwarg_headers.setdefault("headers", {}).update(headers)
+                        kwargs["headers"] = kwarg_headers
+
                 return f(*args, **kwargs)
         else:
             return f(*args, **kwargs)
@@ -118,7 +140,7 @@ def _wrap_tracer(task, f):
     
     
     
-    @functools.wraps(f)
+    @wraps(f)
     def _inner(*args, **kwargs):
         
         hub = Hub.current
@@ -130,19 +152,35 @@ def _wrap_tracer(task, f):
             scope.clear_breadcrumbs()
             scope.add_event_processor(_make_event_processor(task, *args, **kwargs))
 
-            span = Span.continue_from_headers(args[3].get("headers") or {})
-            span.op = "celery.task"
-            span.transaction = "unknown celery task"
+            transaction = None
 
             
-            span.set_status("ok")
-
+            
             with capture_internal_exceptions():
-                
-                
-                span.transaction = task.name
+                transaction = Transaction.continue_from_headers(
+                    args[3].get("headers") or {},
+                    op=OP.QUEUE_TASK_CELERY,
+                    name="unknown celery task",
+                    source=TRANSACTION_SOURCE_TASK,
+                )
+                transaction.name = task.name
+                transaction.set_status("ok")
 
-            with hub.start_span(span):
+            if transaction is None:
+                return f(*args, **kwargs)
+
+            with hub.start_transaction(
+                transaction,
+                custom_sampling_context={
+                    "celery_job": {
+                        "task": task.name,
+                        
+                        
+                        "args": list(args[1]),
+                        "kwargs": args[2],
+                    }
+                },
+            ):
                 return f(*args, **kwargs)
 
     return _inner  
@@ -157,7 +195,7 @@ def _wrap_task_call(task, f):
     
     
     
-    @functools.wraps(f)
+    @wraps(f)
     def _inner(*args, **kwargs):
         
         try:

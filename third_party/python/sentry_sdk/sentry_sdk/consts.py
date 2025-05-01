@@ -1,6 +1,8 @@
 from sentry_sdk._types import MYPY
 
 if MYPY:
+    import sentry_sdk
+
     from typing import Optional
     from typing import Callable
     from typing import Union
@@ -11,10 +13,15 @@ if MYPY:
     from typing import Sequence
     from typing_extensions import TypedDict
 
-    from sentry_sdk.transport import Transport
     from sentry_sdk.integrations import Integration
 
-    from sentry_sdk._types import Event, EventProcessor, BreadcrumbProcessor
+    from sentry_sdk._types import (
+        BreadcrumbProcessor,
+        Event,
+        EventProcessor,
+        TracesSampler,
+        TransactionProcessor,
+    )
 
     
     
@@ -25,11 +32,53 @@ if MYPY:
         {
             "max_spans": Optional[int],
             "record_sql_params": Optional[bool],
-            "auto_enabling_integrations": Optional[bool],
-            "auto_session_tracking": Optional[bool],
+            "smart_transaction_trimming": Optional[bool],
+            "propagate_tracestate": Optional[bool],
+            "custom_measurements": Optional[bool],
+            "profiles_sample_rate": Optional[float],
+            "profiler_mode": Optional[str],
         },
         total=False,
     )
+
+DEFAULT_QUEUE_SIZE = 100
+DEFAULT_MAX_BREADCRUMBS = 100
+
+SENSITIVE_DATA_SUBSTITUTE = "[Filtered]"
+
+
+class INSTRUMENTER:
+    SENTRY = "sentry"
+    OTEL = "otel"
+
+
+class OP:
+    DB = "db"
+    DB_REDIS = "db.redis"
+    EVENT_DJANGO = "event.django"
+    FUNCTION = "function"
+    FUNCTION_AWS = "function.aws"
+    FUNCTION_GCP = "function.gcp"
+    HTTP_CLIENT = "http.client"
+    HTTP_CLIENT_STREAM = "http.client.stream"
+    HTTP_SERVER = "http.server"
+    MIDDLEWARE_DJANGO = "middleware.django"
+    MIDDLEWARE_STARLETTE = "middleware.starlette"
+    MIDDLEWARE_STARLETTE_RECEIVE = "middleware.starlette.receive"
+    MIDDLEWARE_STARLETTE_SEND = "middleware.starlette.send"
+    MIDDLEWARE_STARLITE = "middleware.starlite"
+    MIDDLEWARE_STARLITE_RECEIVE = "middleware.starlite.receive"
+    MIDDLEWARE_STARLITE_SEND = "middleware.starlite.send"
+    QUEUE_SUBMIT_CELERY = "queue.submit.celery"
+    QUEUE_TASK_CELERY = "queue.task.celery"
+    QUEUE_TASK_RQ = "queue.task.rq"
+    SUBPROCESS = "subprocess"
+    SUBPROCESS_WAIT = "subprocess.wait"
+    SUBPROCESS_COMMUNICATE = "subprocess.communicate"
+    TEMPLATE_RENDER = "template.render"
+    VIEW_RENDER = "view.render"
+    VIEW_RESPONSE_RENDER = "view.response.render"
+    WEBSOCKET_SERVER = "websocket.server"
 
 
 
@@ -39,7 +88,7 @@ class ClientConstructor(object):
         self,
         dsn=None,  
         with_locals=True,  
-        max_breadcrumbs=100,  
+        max_breadcrumbs=DEFAULT_MAX_BREADCRUMBS,  
         release=None,  
         environment=None,  
         server_name=None,  
@@ -50,6 +99,7 @@ class ClientConstructor(object):
         default_integrations=True,  
         dist=None,  
         transport=None,  
+        transport_queue_size=DEFAULT_QUEUE_SIZE,  
         sample_rate=1.0,  
         send_default_pii=False,  
         http_proxy=None,  
@@ -62,10 +112,15 @@ class ClientConstructor(object):
         attach_stacktrace=False,  
         ca_certs=None,  
         propagate_traces=True,  
-        
-        traces_sample_rate=0.0,  
-        traceparent_v2=False,  
+        traces_sample_rate=None,  
+        traces_sampler=None,  
+        auto_enabling_integrations=True,  
+        auto_session_tracking=True,  
+        send_client_reports=True,  
         _experiments={},  
+        proxy_headers=None,  
+        instrumenter=INSTRUMENTER.SENTRY,  
+        before_send_transaction=None,  
     ):
         
         pass
@@ -89,9 +144,4 @@ DEFAULT_OPTIONS = _get_default_options()
 del _get_default_options
 
 
-VERSION = "0.14.3"
-SDK_INFO = {
-    "name": "sentry.python",
-    "version": VERSION,
-    "packages": [{"name": "pypi:sentry-sdk", "version": VERSION}],
-}
+VERSION = "1.14.0"
