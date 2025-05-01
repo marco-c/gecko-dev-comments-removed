@@ -709,6 +709,12 @@ extern JS_PUBLIC_API const char* ExplainGCAbortReason(uint32_t reason);
 
 
 
+extern JS_PUBLIC_API const char* GetGCPhaseName(uint32_t phase);
+
+
+
+
+
 
 
 
