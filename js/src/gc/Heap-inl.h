@@ -14,15 +14,14 @@
 #include "util/Poison.h"
 #include "vm/Runtime.h"
 
-inline void js::gc::Arena::init(GCRuntime* gc, JS::Zone* zoneArg,
-                                AllocKind kind, const AutoLockGC& lock) {
-  MOZ_ASSERT(zoneArg);
+inline void js::gc::Arena::init(GCRuntime* gc, JS::Zone* zone, AllocKind kind) {
+  MOZ_ASSERT(zone);
   MOZ_ASSERT(IsValidAllocKind(kind));
 
   MOZ_MAKE_MEM_UNDEFINED(this, ArenaSize);
 
   allocKind = kind;
-  zone_ = zoneArg;
+  zone_ = zone;
   next = nullptr;
   isNewlyCreated_ = 1;
   onDelayedMarkingList_ = 0;
@@ -30,7 +29,7 @@ inline void js::gc::Arena::init(GCRuntime* gc, JS::Zone* zoneArg,
   hasDelayedGrayMarking_ = 0;
   nextDelayedMarkingArena_ = 0;
   if (zone_->isAtomsZone()) {
-    gc->atomMarking.registerArena(this, lock);
+    atomBitmapStart() = gc->atomMarking.allocateIndex(gc);
   } else {
     bufferedCells() = &ArenaCellSet::Empty;
   }
@@ -42,13 +41,20 @@ inline void js::gc::Arena::init(GCRuntime* gc, JS::Zone* zoneArg,
 #endif
 }
 
-inline void js::gc::Arena::release(GCRuntime* gc, const AutoLockGC* maybeLock) {
+inline void js::gc::Arena::freeAtomMarkingBitmapIndex(GCRuntime* gc,
+                                                      const AutoLockGC& lock) {
+  MOZ_ASSERT(zone_->isAtomsZone());
+  gc->atomMarking.freeIndex(atomBitmapStart(), lock);
+#ifdef DEBUG
+  atomBitmapStart() = 0;  
+#endif
+}
+
+inline void js::gc::Arena::release() {
   MOZ_ASSERT(allocated());
 
-  if (zone_->isAtomsZone()) {
-    MOZ_ASSERT(maybeLock);
-    gc->atomMarking.unregisterArena(this, *maybeLock);
-  }
+  
+  MOZ_ASSERT_IF(zone_->isAtomsZone(), atomBitmapStart_ == 0);
 
   
   AlwaysPoison(&zone_, JS_FREED_ARENA_PATTERN, sizeof(zone_),
@@ -114,14 +120,16 @@ js::gc::MarkBitmap<BytesPerMarkBit, FirstThingOffset>::markIfUnmarked(
   return true;
 }
 
+
+
+
+
+
+
 template <size_t BytesPerMarkBit, size_t FirstThingOffset>
 MOZ_ALWAYS_INLINE bool
-js::gc::MarkBitmap<BytesPerMarkBit, FirstThingOffset>::markIfUnmarkedAtomic(
+js::gc::MarkBitmap<BytesPerMarkBit, FirstThingOffset>::markIfUnmarkedThreadSafe(
     const void* cell, MarkColor color) {
-  
-  
-  
-
   MarkBitmapWord* word;
   uintptr_t mask;
   getMarkWordAndMask(cell, ColorBit::BlackBit, &word, &mask);
@@ -238,8 +246,8 @@ bool js::gc::TenuredCell::markIfUnmarked(MarkColor color ) const {
   return chunk()->markBits.markIfUnmarked(this, color);
 }
 
-bool js::gc::TenuredCell::markIfUnmarkedAtomic(MarkColor color) const {
-  return chunk()->markBits.markIfUnmarkedAtomic(this, color);
+bool js::gc::TenuredCell::markIfUnmarkedThreadSafe(MarkColor color) const {
+  return chunk()->markBits.markIfUnmarkedThreadSafe(this, color);
 }
 
 void js::gc::TenuredCell::markBlack() const {
