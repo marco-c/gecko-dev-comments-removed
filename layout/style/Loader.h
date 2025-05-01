@@ -623,8 +623,6 @@ class Loader final {
   
   void MaybeNotifyPreloadUsed(SheetLoadData&);
 
-  nsRefPtrHashtable<nsStringHashKey, StyleSheet> mInlineSheets;
-
   
   
   nsTHashtable<const SheetLoadDataHashKey> mLoadsPerformed;

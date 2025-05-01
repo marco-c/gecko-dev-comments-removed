@@ -1680,17 +1680,16 @@ void Loader::MarkLoadTreeFailed(SheetLoadData& aLoadData,
 
 RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(
     const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal) {
-  auto result = mInlineSheets.Lookup(aBuffer);
+  MOZ_ASSERT(mSheets, "Document associated loader should have sheet cache");
+  auto result = mSheets->LookupInline(LoaderPrincipal(), aBuffer);
   if (!result) {
     return nullptr;
   }
+
   StyleSheet* sheet = result.Data();
-  if (NS_WARN_IF(sheet->HasModifiedRules())) {
-    
-    
-    result.Remove();
-    return nullptr;
-  }
+  MOZ_ASSERT(!sheet->HasModifiedRules(),
+             "How did we end up with a dirty sheet?");
+
   if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
     
     
@@ -1808,7 +1807,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
                                                       true));
     completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
     if (completed == Completed::Yes) {
-      mInlineSheets.InsertOrUpdate(aBuffer, std::move(sheet));
+      mSheets->InsertInline(LoaderPrincipal(), aBuffer, data->ValueForCache());
     } else {
       data->mMustNotify = true;
     }
@@ -2271,10 +2270,6 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(Loader)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Loader)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSheets);
-  for (const auto& data : tmp->mInlineSheets.Values()) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "Inline sheet cache in Loader");
-    cb.NoteXPCOMChild(data);
-  }
   for (nsCOMPtr<nsICSSLoaderObserver>& obs : tmp->mObservers.ForwardRange()) {
     ImplCycleCollectionTraverse(cb, obs, "mozilla::css::Loader.mObservers");
   }
@@ -2288,7 +2283,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Loader)
     }
     tmp->mSheets = nullptr;
   }
-  tmp->mInlineSheets.Clear();
   tmp->mObservers.Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocGroup)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -2297,19 +2291,6 @@ size_t Loader::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
   n += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
-
-  n += mInlineSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (const auto& entry : mInlineSheets) {
-    n += entry.GetKey().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-    
-    
-    const StyleSheet* sheet = entry.GetWeak();
-    MOZ_ASSERT(!sheet->GetParentSheet(),
-               "How did an @import rule end up here?");
-    if (!sheet->GetOwnerNode()) {
-      n += sheet->SizeOfIncludingThis(aMallocSizeOf);
-    }
-  }
 
   
   
