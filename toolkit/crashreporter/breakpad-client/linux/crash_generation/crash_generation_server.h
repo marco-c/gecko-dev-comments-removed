@@ -51,24 +51,31 @@ public:
   
   
   
-  using OnClientDumpRequestCallback = void (const ClientInfo& client_info,
+  using OnClientDumpRequestCallback = void (void* dump_context,
+                                            const ClientInfo& client_info,
                                             const string& file_path);
-
 #if defined(MOZ_OXIDIZED_BREAKPAD)
-  using GetAuxvInfo = bool (pid_t pid, DirectAuxvDumpInfo*);
+  using GetAuxvInfoCallback = bool (pid_t pid, DirectAuxvDumpInfo*);
 #endif 
 
   
   
   
   
-  CrashGenerationServer(
-    const int listen_fd,
+  
+  
+  
+  
+  
+  
+  
+  CrashGenerationServer(const int listen_fd,
 #if defined(MOZ_OXIDIZED_BREAKPAD)
-    std::function<GetAuxvInfo> get_auxv_info,
+                        std::function<GetAuxvInfoCallback> get_auxv_info,
 #endif 
-    std::function<OnClientDumpRequestCallback> dump_callback,
-    const string* dump_path);
+                        std::function<OnClientDumpRequestCallback> dump_callback,
+                        void* dump_context,
+                        const string* dump_path);
 
   ~CrashGenerationServer();
 
@@ -79,6 +86,9 @@ public:
 
   
   void Stop();
+
+  
+  void SetPath(const char* dump_path);
 
   
   
@@ -115,11 +125,13 @@ private:
   int server_fd_;
 
 #if defined(MOZ_OXIDIZED_BREAKPAD)
-  std::function<GetAuxvInfo> get_auxv_info_;
+  std::function<GetAuxvInfoCallback> get_auxv_info_;
 #endif 
 
   std::function<OnClientDumpRequestCallback> dump_callback_;
+  void* dump_context_;
 
+  pthread_mutex_t dump_dir_mutex_;
   string dump_dir_;
 
   bool started_;

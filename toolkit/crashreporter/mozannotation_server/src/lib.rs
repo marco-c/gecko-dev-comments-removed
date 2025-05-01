@@ -2,7 +2,7 @@
 
 
 
-mod errors;
+pub mod errors;
 
 use crate::errors::*;
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -16,20 +16,15 @@ use mozannotation_client::{Annotation, AnnotationContents, AnnotationMutex};
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use mozannotation_client::{MozAnnotationNote, ANNOTATION_NOTE_NAME, ANNOTATION_TYPE};
 use std::cmp::min;
-use std::iter::FromIterator;
+use std::ffi::CString;
 use std::mem::{size_of, ManuallyDrop};
-use std::ptr::null_mut;
-use thin_vec::ThinVec;
 
-#[repr(C)]
-#[derive(Debug)]
 pub enum AnnotationData {
     Empty,
-    ByteBuffer(ThinVec<u8>),
+    ByteBuffer(Vec<u8>),
+    String(CString),
 }
 
-#[repr(C)]
-#[derive(Debug)]
 pub struct CAnnotation {
     #[allow(dead_code)] 
     pub id: u32,
@@ -38,39 +33,10 @@ pub struct CAnnotation {
 
 pub type ProcessHandle = process_reader::ProcessHandle;
 
-
-
-
-#[no_mangle]
-pub extern "C" fn mozannotation_retrieve(
-    process: usize,
-    max_annotations: usize,
-) -> *mut ThinVec<CAnnotation> {
-    let result = retrieve_annotations(process as _, max_annotations);
-    match result {
-        
-        Ok(annotations) => Box::into_raw(annotations) as *mut _,
-        Err(_) => null_mut(),
-    }
-}
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn mozannotation_free(ptr: *mut ThinVec<CAnnotation>) {
-    
-    
-    let _box = Box::from_raw(ptr);
-}
-
 pub fn retrieve_annotations(
     process: ProcessHandle,
     max_annotations: usize,
-) -> Result<Box<ThinVec<CAnnotation>>, AnnotationsRetrievalError> {
+) -> Result<Vec<CAnnotation>, AnnotationsRetrievalError> {
     let reader = ProcessReader::new(process)?;
     let address = find_annotations(&reader)?;
 
@@ -91,7 +57,7 @@ pub fn retrieve_annotations(
 
     let vec_pointer = annotation_table.get_ptr();
     let length = annotation_table.len();
-    let mut annotations = ThinVec::<CAnnotation>::with_capacity(min(max_annotations, length));
+    let mut annotations = Vec::<CAnnotation>::with_capacity(min(max_annotations, length));
 
     for i in 0..length {
         let annotation_address = unsafe { vec_pointer.add(i) };
@@ -100,7 +66,7 @@ pub fn retrieve_annotations(
         }
     }
 
-    Ok(Box::new(annotations))
+    Ok(annotations)
 }
 
 fn find_annotations(reader: &ProcessReader) -> Result<usize, AnnotationsRetrievalError> {
@@ -159,19 +125,19 @@ fn read_annotation(
         AnnotationContents::Empty => {}
         AnnotationContents::NSCStringPointer => {
             let string = copy_nscstring(reader, raw_annotation.address)?;
-            annotation.data = AnnotationData::ByteBuffer(string);
+            annotation.data = AnnotationData::String(string);
         }
         AnnotationContents::CStringPointer => {
             let string = copy_null_terminated_string_pointer(reader, raw_annotation.address)?;
-            annotation.data = AnnotationData::ByteBuffer(string);
+            annotation.data = AnnotationData::String(string);
         }
         AnnotationContents::CString => {
-            let string = copy_null_terminated_string(reader, raw_annotation.address)?;
-            annotation.data = AnnotationData::ByteBuffer(string);
+            annotation.data =
+                AnnotationData::String(reader.copy_null_terminated_string(raw_annotation.address)?);
         }
         AnnotationContents::ByteBuffer(size) | AnnotationContents::OwnedByteBuffer(size) => {
-            let string = copy_bytebuffer(reader, raw_annotation.address, size)?;
-            annotation.data = AnnotationData::ByteBuffer(string);
+            let buffer = copy_bytebuffer(reader, raw_annotation.address, size)?;
+            annotation.data = AnnotationData::ByteBuffer(buffer);
         }
     };
 
@@ -181,23 +147,15 @@ fn read_annotation(
 fn copy_null_terminated_string_pointer(
     reader: &ProcessReader,
     address: usize,
-) -> Result<ThinVec<u8>, process_reader::error::ReadError> {
+) -> Result<CString, process_reader::error::ReadError> {
     let buffer_address = reader.copy_object::<usize>(address)?;
-    copy_null_terminated_string(reader, buffer_address)
-}
-
-fn copy_null_terminated_string(
-    reader: &ProcessReader,
-    address: usize,
-) -> Result<ThinVec<u8>, process_reader::error::ReadError> {
-    let string = reader.copy_null_terminated_string(address)?;
-    Ok(ThinVec::<u8>::from(string.as_bytes()))
+    reader.copy_null_terminated_string(buffer_address)
 }
 
 fn copy_nscstring(
     reader: &ProcessReader,
     address: usize,
-) -> Result<ThinVec<u8>, process_reader::error::ReadError> {
+) -> Result<CString, process_reader::error::ReadError> {
     
     let length_address = address + size_of::<usize>();
     let length = reader.copy_object::<u32>(length_address)?;
@@ -214,9 +172,11 @@ fn copy_nscstring(
             vec.truncate(nul_byte_pos);
         }
 
-        Ok(ThinVec::from(vec))
+        
+        
+        Ok(unsafe { CString::from_vec_unchecked(vec) })
     } else {
-        Ok(ThinVec::<u8>::new())
+        Ok(CString::default())
     }
 }
 
@@ -224,7 +184,6 @@ fn copy_bytebuffer(
     reader: &ProcessReader,
     address: usize,
     size: u32,
-) -> Result<ThinVec<u8>, process_reader::error::ReadError> {
-    let value = reader.copy_array::<u8>(address, size as _)?;
-    Ok(ThinVec::<u8>::from_iter(value.into_iter()))
+) -> Result<Vec<u8>, process_reader::error::ReadError> {
+    reader.copy_array::<u8>(address, size as _)
 }
