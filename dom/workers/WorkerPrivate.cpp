@@ -3160,7 +3160,7 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
 
   
   
-  worker->CreateRemoteDebuggerEndpoints();
+  
 
   if (!runtimeService->RegisterWorker(*worker)) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
