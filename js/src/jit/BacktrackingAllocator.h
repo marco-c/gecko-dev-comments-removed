@@ -668,6 +668,11 @@ class BacktrackingAllocator : protected RegisterAllocator {
   friend class JSONSpewer;
 
   
+  InstructionDataMap insData;
+  Vector<CodePosition, 12, SystemAllocPolicy> entryPositions;
+  Vector<CodePosition, 12, SystemAllocPolicy> exitPositions;
+
+  
   bool testbed;
 
   using VirtualRegBitSet = SparseBitSet<BackgroundSystemAllocPolicy>;
@@ -752,6 +757,16 @@ class BacktrackingAllocator : protected RegisterAllocator {
   }
 
   uint32_t getNextBundleId() { return nextBundleId_++; }
+
+  CodePosition entryOf(const LBlock* block) {
+    return entryPositions[block->mir()->id()];
+  }
+  CodePosition exitOf(const LBlock* block) {
+    return exitPositions[block->mir()->id()];
+  }
+
+  
+  CodePosition minimalDefEnd(LNode* ins) const;
 
   
   [[nodiscard]] bool addMove(LMoveGroup* moves, LiveRange* from, LiveRange* to,
