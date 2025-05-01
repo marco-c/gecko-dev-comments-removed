@@ -115,6 +115,10 @@ class RenderCompositor {
 
   virtual bool ShouldUseNativeCompositor() { return false; }
 
+  virtual bool ShouldUseLayerCompositor() { return false; }
+
+  virtual bool EnableAsyncScreenshot() { return false; }
+
   
   virtual void CompositorBeginFrame() {}
   virtual void CompositorEndFrame() {}
