@@ -143,6 +143,17 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
   WindowGlobalParent* manager = static_cast<WindowGlobalParent*>(Manager());
   nsIPrincipal* principal = manager->DocumentPrincipal();
 
+  WindowGlobalParent* windowContext = manager;
+  while (windowContext) {
+    nsITransportSecurityInfo* securityInfo = windowContext->GetSecurityInfo();
+    if (securityInfo &&
+        !IsWebAuthnAllowedForTransportSecurityInfo(securityInfo)) {
+      aResolver(NS_ERROR_DOM_SECURITY_ERR);
+      return IPC_OK();
+    }
+    windowContext = windowContext->GetParentWindowContext();
+  }
+
   if (!IsWebAuthnAllowedForPrincipal(principal)) {
     aResolver(NS_ERROR_DOM_SECURITY_ERR);
     return IPC_OK();
@@ -341,6 +352,17 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
   WindowGlobalParent* manager = static_cast<WindowGlobalParent*>(Manager());
   nsIPrincipal* principal = manager->DocumentPrincipal();
 
+  WindowGlobalParent* windowContext = manager;
+  while (windowContext) {
+    nsITransportSecurityInfo* securityInfo = windowContext->GetSecurityInfo();
+    if (securityInfo &&
+        !IsWebAuthnAllowedForTransportSecurityInfo(securityInfo)) {
+      aResolver(NS_ERROR_DOM_SECURITY_ERR);
+      return IPC_OK();
+    }
+    windowContext = windowContext->GetParentWindowContext();
+  }
+
   if (!IsWebAuthnAllowedForPrincipal(principal)) {
     aResolver(NS_ERROR_DOM_SECURITY_ERR);
     return IPC_OK();
@@ -372,6 +394,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
     return IPC_OK();
   }
 
+  bool requestIncludesAppId = aTransactionInfo.AppId().isSome();
+
   bool requestIncludesLargeBlobRead =
       GetAssertionRequestIncludesLargeBlobRead(aTransactionInfo);
 
@@ -383,7 +407,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, inputClientData = clientDataJSON,
-           requestIncludesLargeBlobRead, resolver = std::move(aResolver)](
+           requestIncludesAppId, requestIncludesLargeBlobRead,
+           resolver = std::move(aResolver)](
               const WebAuthnSignPromise::ResolveOrRejectValue& aValue) {
             self->CompleteTransaction();
 
@@ -438,10 +463,10 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
             }
 
             nsTArray<WebAuthnExtensionResult> extensions;
-            bool usedAppId;
-            rv = signResult->GetUsedAppId(&usedAppId);
-            if (rv != NS_ERROR_NOT_AVAILABLE) {
-              if (NS_FAILED(rv)) {
+            if (requestIncludesAppId) {
+              bool usedAppId = false;
+              rv = signResult->GetUsedAppId(&usedAppId);
+              if (rv != NS_ERROR_NOT_AVAILABLE && NS_FAILED(rv)) {
                 return;
               }
               extensions.AppendElement(WebAuthnExtensionResultAppId(usedAppId));
