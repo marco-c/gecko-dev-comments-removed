@@ -146,7 +146,11 @@ nsresult nsContentAreaDragDropDataProvider::SaveURIToFile(
   NS_ENSURE_SUCCESS(rv, rv);
 
   persist->SetPersistFlags(
-      nsIWebBrowserPersist::PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION);
+      nsIWebBrowserPersist::PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION |
+      
+      
+      
+      nsIWebBrowserPersist::PERSIST_FLAGS_DISABLE_HTTPS_ONLY);
 
   
   return persist->SaveURI(inSourceURI, inTriggeringPrincipal, 0, nullptr,

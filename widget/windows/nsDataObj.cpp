@@ -102,6 +102,12 @@ nsresult nsDataObj::CStream::Init(nsIURI* pSourceURI,
     Unused << NS_WARN_IF(NS_FAILED(rv));
   }
 
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  loadInfo->SetHttpsOnlyStatus(nsILoadInfo::HTTPS_ONLY_EXEMPT);
+
   rv = mChannel->AsyncOpen(this);
   NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
