@@ -776,11 +776,7 @@ nsPageContentFrame* nsPageFrame::PageContentFrame() const {
 
 nsSize nsPageFrame::ComputePageSize() const {
   
-  const nsPageFrame* const frame =
-      StaticPrefs::layout_css_allow_mixed_page_sizes()
-          ? this
-          : static_cast<nsPageFrame*>(FirstContinuation());
-  const StylePageSize& pageSize = frame->PageContentFrame()->StylePage()->mSize;
+  const StylePageSize& pageSize = PageContentFrame()->StylePage()->mSize;
   nsSize size = PresContext()->GetPageSize();
   if (pageSize.IsSize()) {
     
@@ -822,18 +818,8 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
   MOZ_ASSERT(aContentPageSize == ComputePageSize(),
              "Incorrect content page size");
 
-  
-  
-  {
-    const nsPageFrame* const frame =
-        StaticPrefs::layout_css_allow_mixed_page_sizes()
-            ? this
-            : static_cast<nsPageFrame*>(FirstContinuation());
-    const StylePageSize& pageSize =
-        frame->PageContentFrame()->StylePage()->mSize;
-    if (pageSize.IsAuto()) {
-      return 1.0f;
-    }
+  if (PageContentFrame()->StylePage()->mSize.IsAuto()) {
+    return 1.0f;
   }
 
   const nsContainerFrame* const parent = GetParent();
