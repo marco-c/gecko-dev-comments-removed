@@ -256,7 +256,8 @@ add_task(async function test_contextual_manager_toggle() {
   await testSidebarToggle("viewCPMSidebar", gleanEvent);
   await testCustomizeToggle(
     "viewCPMSidebar",
-    Glean.contextualManager.passwordsEnabled
+    Glean.contextualManager.passwordsEnabled,
+    false 
   );
   await SpecialPowers.popPrefEnv();
   await SidebarController.waitUntilStable();
