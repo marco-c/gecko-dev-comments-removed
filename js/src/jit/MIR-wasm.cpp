@@ -939,7 +939,7 @@ MWasmShuffleSimd128* jit::BuildWasmShuffleSimd128(TempAllocator& alloc,
 }
 #endif  
 
-static MDefinition* FoldTrivialWasmCasts(TempAllocator& alloc,
+static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
   
@@ -956,8 +956,28 @@ static MDefinition* FoldTrivialWasmCasts(TempAllocator& alloc,
   return nullptr;
 }
 
+static MDefinition* FoldTrivialWasmCasts(MDefinition* ref,
+                                         wasm::RefType sourceType,
+                                         wasm::RefType destType) {
+  
+  if (wasm::RefType::isSubTypeOf(sourceType, destType)) {
+    return ref;
+  }
+
+  
+  
+  
+
+  return nullptr;
+}
+
 MDefinition* MWasmRefIsSubtypeOfAbstract::foldsTo(TempAllocator& alloc) {
-  MDefinition* folded = FoldTrivialWasmCasts(alloc, sourceType(), destType());
+  if (ref()->wasmRefType().isNothing()) {
+    return this;
+  }
+
+  MDefinition* folded =
+      FoldTrivialWasmTests(alloc, ref()->wasmRefType().value(), destType());
   if (folded) {
     return folded;
   }
@@ -965,7 +985,38 @@ MDefinition* MWasmRefIsSubtypeOfAbstract::foldsTo(TempAllocator& alloc) {
 }
 
 MDefinition* MWasmRefIsSubtypeOfConcrete::foldsTo(TempAllocator& alloc) {
-  MDefinition* folded = FoldTrivialWasmCasts(alloc, sourceType(), destType());
+  if (ref()->wasmRefType().isNothing()) {
+    return this;
+  }
+
+  MDefinition* folded =
+      FoldTrivialWasmTests(alloc, ref()->wasmRefType().value(), destType());
+  if (folded) {
+    return folded;
+  }
+  return this;
+}
+
+MDefinition* MWasmRefCastAbstract::foldsTo(TempAllocator& alloc) {
+  if (ref()->wasmRefType().isNothing()) {
+    return this;
+  }
+
+  MDefinition* folded =
+      FoldTrivialWasmCasts(ref(), ref()->wasmRefType().value(), destType());
+  if (folded) {
+    return folded;
+  }
+  return this;
+}
+
+MDefinition* MWasmRefCastConcrete::foldsTo(TempAllocator& alloc) {
+  if (ref()->wasmRefType().isNothing()) {
+    return this;
+  }
+
+  MDefinition* folded =
+      FoldTrivialWasmCasts(ref(), ref()->wasmRefType().value(), destType());
   if (folded) {
     return folded;
   }

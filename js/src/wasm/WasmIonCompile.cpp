@@ -2031,25 +2031,26 @@ class FunctionCompiler {
   }
 
   [[nodiscard]] bool storeGlobalVar(uint32_t lineOrBytecode,
-                                    uint32_t instanceDataOffset,
-                                    bool isIndirect, MDefinition* v) {
+                                    const GlobalDesc& global, MDefinition* v) {
     if (inDeadCode()) {
       return true;
     }
 
-    if (isIndirect) {
+    if (global.isIndirect()) {
       
       
       auto* valueAddr = MWasmLoadInstanceDataField::New(
-          alloc(), MIRType::Pointer, instanceDataOffset,
+          alloc(), MIRType::Pointer, global.offset(),
           true, instancePointer_);
       curBlock_->add(valueAddr);
 
       
-      if (v->type() == MIRType::WasmAnyRef) {
+      if (global.type().toMIRType() == MIRType::WasmAnyRef) {
         
+        MOZ_ASSERT(v->type() == MIRType::WasmAnyRef);
         auto* prevValue =
-            MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef, valueAddr);
+            MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef, valueAddr,
+                                     global.type().toMaybeRefType());
         curBlock_->add(prevValue);
 
         
@@ -2070,16 +2071,18 @@ class FunctionCompiler {
     
 
     
-    if (v->type() == MIRType::WasmAnyRef) {
+    if (global.type().toMIRType() == MIRType::WasmAnyRef) {
       
       auto* valueAddr = MWasmDerivedPointer::New(
           alloc(), instancePointer_,
-          wasm::Instance::offsetInData(instanceDataOffset));
+          wasm::Instance::offsetInData(global.offset()));
       curBlock_->add(valueAddr);
 
       
+      MOZ_ASSERT(v->type() == MIRType::WasmAnyRef);
       auto* prevValue =
-          MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef, valueAddr);
+          MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef, valueAddr,
+                                   global.type().toMaybeRefType());
       curBlock_->add(prevValue);
 
       
@@ -2093,8 +2096,8 @@ class FunctionCompiler {
       return postBarrierPrecise(lineOrBytecode, valueAddr, prevValue);
     }
 
-    auto* store = MWasmStoreInstanceDataField::New(alloc(), instanceDataOffset,
-                                                   v, instancePointer_);
+    auto* store = MWasmStoreInstanceDataField::New(alloc(), global.offset(), v,
+                                                   instancePointer_);
     curBlock_->add(store);
     return true;
   }
@@ -5587,46 +5590,50 @@ class FunctionCompiler {
     return true;
   }
 
-  [[nodiscard]] MDefinition* isRefSubtypeOf(MDefinition* ref,
-                                            RefType sourceType,
-                                            RefType destType) {
+  
+  
+  
+  
+  [[nodiscard]] MDefinition* refCast(MDefinition* ref, RefType destType) {
+    MInstruction* cast = nullptr;
+    if (destType.isTypeRef()) {
+      uint32_t typeIndex = codeMeta().types->indexOf(*destType.typeDef());
+      MDefinition* superSTV = loadSuperTypeVector(typeIndex);
+      if (!superSTV) {
+        return nullptr;
+      }
+      cast = MWasmRefCastConcrete::New(alloc(), ref, superSTV, destType,
+                                       trapSiteDesc());
+    } else {
+      cast = MWasmRefCastAbstract::New(alloc(), ref, destType, trapSiteDesc());
+    }
+
+    if (!cast) {
+      return nullptr;
+    }
+    curBlock_->add(cast);
+    return cast;
+  }
+
+  
+  
+  [[nodiscard]] MDefinition* refTest(MDefinition* ref, RefType destType) {
     MInstruction* isSubTypeOf = nullptr;
     if (destType.isTypeRef()) {
       uint32_t typeIndex = codeMeta().types->indexOf(*destType.typeDef());
       MDefinition* superSTV = loadSuperTypeVector(typeIndex);
-      isSubTypeOf = MWasmRefIsSubtypeOfConcrete::New(alloc(), ref, superSTV,
-                                                     sourceType, destType);
-    } else {
+      if (!superSTV) {
+        return nullptr;
+      }
       isSubTypeOf =
-          MWasmRefIsSubtypeOfAbstract::New(alloc(), ref, sourceType, destType);
+          MWasmRefIsSubtypeOfConcrete::New(alloc(), ref, superSTV, destType);
+    } else {
+      isSubTypeOf = MWasmRefIsSubtypeOfAbstract::New(alloc(), ref, destType);
     }
     MOZ_ASSERT(isSubTypeOf);
 
     curBlock_->add(isSubTypeOf);
     return isSubTypeOf;
-  }
-
-  
-  
-  
-  
-  [[nodiscard]] bool refCast(MDefinition* ref, RefType sourceType,
-                             RefType destType) {
-    MDefinition* success = isRefSubtypeOf(ref, sourceType, destType);
-    if (!success) {
-      return false;
-    }
-
-    
-    
-    return trapIfZero(wasm::Trap::BadCast, success);
-  }
-
-  
-  
-  [[nodiscard]] MDefinition* refTest(MDefinition* ref, RefType sourceType,
-                                     RefType destType) {
-    return isRefSubtypeOf(ref, sourceType, destType);
   }
 
   
@@ -5655,7 +5662,7 @@ class FunctionCompiler {
     MDefinition* ref = values.back();
     MOZ_ASSERT(ref->type() == MIRType::WasmAnyRef);
 
-    MDefinition* success = isRefSubtypeOf(ref, sourceType, destType);
+    MDefinition* success = refTest(ref, destType);
     if (!success) {
       return false;
     }
@@ -6773,8 +6780,7 @@ bool FunctionCompiler::emitSetGlobal() {
 
   const GlobalDesc& global = codeMeta().globals[id];
   MOZ_ASSERT(global.isMutable());
-  return storeGlobalVar(bytecodeOffset, global.offset(), global.isIndirect(),
-                        value);
+  return storeGlobalVar(bytecodeOffset, global, value);
 }
 
 bool FunctionCompiler::emitTeeGlobal() {
@@ -6789,8 +6795,7 @@ bool FunctionCompiler::emitTeeGlobal() {
   const GlobalDesc& global = codeMeta().globals[id];
   MOZ_ASSERT(global.isMutable());
 
-  return storeGlobalVar(bytecodeOffset, global.offset(), global.isIndirect(),
-                        value);
+  return storeGlobalVar(bytecodeOffset, global, value);
 }
 
 template <typename MIRClass>
@@ -9205,7 +9210,7 @@ bool FunctionCompiler::emitRefTest(bool nullable) {
     return true;
   }
 
-  MDefinition* success = refTest(ref, sourceType, destType);
+  MDefinition* success = refTest(ref, destType);
   if (!success) {
     return false;
   }
@@ -9226,11 +9231,12 @@ bool FunctionCompiler::emitRefCast(bool nullable) {
     return true;
   }
 
-  if (!refCast(ref, sourceType, destType)) {
+  MDefinition* castedRef = refCast(ref, destType);
+  if (!castedRef) {
     return false;
   }
 
-  iter().setResult(ref);
+  iter().setResult(castedRef);
   return true;
 }
 
