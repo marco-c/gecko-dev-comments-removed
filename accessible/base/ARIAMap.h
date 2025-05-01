@@ -10,6 +10,7 @@
 
 #include "ARIAStateMap.h"
 #include "mozilla/a11y/AccTypes.h"
+#include "mozilla/a11y/DocAccessible.h"
 #include "mozilla/a11y/Role.h"
 
 #include "nsAtom.h"
@@ -309,6 +310,14 @@ uint8_t AttrCharacteristicsFor(nsAtom* aAtom);
 
 
 bool IsValidARIAHidden(nsIContent* aContent);
+
+
+
+
+
+
+
+bool IsValidARIAHidden(DocAccessible* aDocAcc);
 
 
 
