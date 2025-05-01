@@ -279,7 +279,7 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 
                 
                 
-                let subtest_and_later_start_idx =
+                let test_and_later_start_idx =
                     match path.match_indices(':').nth(1).map(|(idx, _s)| idx) {
                         Some(some) => some,
                         None => {
@@ -294,7 +294,7 @@ fn run(args: CliArgs) -> miette::Result<()> {
                             continue;
                         }
                     };
-                let slashed = path[..subtest_and_later_start_idx].replace([':', ','], "/");
+                let slashed = path[..test_and_later_start_idx].replace([':', ','], "/");
                 cts_tests_dir.child(slashed)
             };
             if !cts_cases_by_spec_file_dir
