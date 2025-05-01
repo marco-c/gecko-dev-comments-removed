@@ -1,4 +1,4 @@
-import figma, { html } from "@figma/code-connect/html"
+import figma, { html } from "@figma/code-connect/html";
 
 
 
@@ -38,11 +38,13 @@ figma.connect(
         Dark: "dark",
       }),
     },
-    example: (props) => html`\
-<moz-message-bar
-  type=${props.type}
-  message=${props.message}
-  heading=${props.heading}
-  support-page=${props.supportPage}>${props.action}</moz-message-bar>`,
-  },
-)
+    example: props =>
+      html`<moz-message-bar
+        type=${props.type}
+        message=${props.message}
+        heading=${props.heading}
+        support-page=${props.supportPage}
+        >${props.action}</moz-message-bar
+      >`,
+  }
+);
