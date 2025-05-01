@@ -8402,15 +8402,61 @@ std::pair<int32_t, int32_t> nsTextFrame::GetOffsets() const {
   return std::make_pair(GetContentOffset(), GetContentEnd());
 }
 
-static int32_t FindEndOfPunctuationRun(const nsTextFragment* aFrag,
-                                       const gfxTextRun* aTextRun,
-                                       gfxSkipCharsIterator* aIter,
-                                       int32_t aOffset, int32_t aStart,
-                                       int32_t aEnd) {
-  int32_t i;
+static bool IsFirstLetterPrefixPunctuation(uint32_t aChar) {
+  switch (mozilla::unicode::GetGeneralCategory(aChar)) {
+    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
+    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
+      return true;
+    default:
+      return false;
+  }
+}
 
+static bool IsFirstLetterSuffixPunctuation(uint32_t aChar) {
+  switch (mozilla::unicode::GetGeneralCategory(aChar)) {
+    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
+      return true;
+    default:
+      return false;
+  }
+}
+
+static int32_t FindEndOfPrefixPunctuationRun(const nsTextFragment* aFrag,
+                                             const gfxTextRun* aTextRun,
+                                             gfxSkipCharsIterator* aIter,
+                                             int32_t aOffset, int32_t aStart,
+                                             int32_t aEnd) {
+  int32_t i;
   for (i = aStart; i < aEnd - aOffset; ++i) {
-    if (nsContentUtils::IsFirstLetterPunctuation(
+    if (IsFirstLetterPrefixPunctuation(
+            aFrag->ScalarValueAt(AssertedCast<uint32_t>(aOffset + i)))) {
+      aIter->SetOriginalOffset(aOffset + i);
+      FindClusterEnd(aTextRun, aEnd, aIter);
+      i = aIter->GetOriginalOffset() - aOffset;
+    } else {
+      break;
+    }
+  }
+  return i;
+}
+
+static int32_t FindEndOfSuffixPunctuationRun(const nsTextFragment* aFrag,
+                                             const gfxTextRun* aTextRun,
+                                             gfxSkipCharsIterator* aIter,
+                                             int32_t aOffset, int32_t aStart,
+                                             int32_t aEnd) {
+  int32_t i;
+  for (i = aStart; i < aEnd - aOffset; ++i) {
+    if (IsFirstLetterSuffixPunctuation(
             aFrag->ScalarValueAt(AssertedCast<uint32_t>(aOffset + i)))) {
       aIter->SetOriginalOffset(aOffset + i);
       FindClusterEnd(aTextRun, aEnd, aIter);
@@ -8440,7 +8486,6 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
                                  const gfxTextRun* aTextRun, int32_t aOffset,
                                  const gfxSkipCharsIterator& aIter,
                                  int32_t* aLength) {
-  int32_t i;
   int32_t length = *aLength;
   int32_t endOffset = aOffset + length;
   gfxSkipCharsIterator iter(aIter);
@@ -8465,24 +8510,38 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   };
 
   
-  i = FindEndOfPunctuationRun(
-      aFrag, aTextRun, &iter, aOffset,
-      GetTrimmableWhitespaceCount(aFrag, aOffset, length, 1), endOffset);
-  if (i == length) {
-    return false;
-  }
+  int32_t i = GetTrimmableWhitespaceCount(aFrag, aOffset, length, 1);
+  while (true) {
+    
+    
+    int32_t j = FindEndOfPrefixPunctuationRun(aFrag, aTextRun, &iter, aOffset,
+                                              i, endOffset);
+    if (j == length) {
+      return false;
+    }
 
-  
-  while (i < length) {
-    char16_t ch = aFrag->CharAt(AssertedCast<uint32_t>(aOffset + i));
-    if (ch == ' ' || ch == CH_NBSP) {
-      ++i;
-    } else {
+    
+    while (j < length) {
+      char16_t ch = aFrag->CharAt(AssertedCast<uint32_t>(aOffset + j));
+      
+      
+      if (unicode::GetGeneralCategory(ch) ==
+              HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR &&
+          ch != 0x3000) {
+        ++j;
+      } else {
+        break;
+      }
+    }
+    if (j == length) {
+      return false;
+    }
+    if (j == i) {
+      
+      
       break;
     }
-  }
-  if (i == length) {
-    return false;
+    i = j;
   }
 
   
@@ -8566,9 +8625,12 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
       break;
   }
 
+  
+  
   iter.SetOriginalOffset(aOffset + i);
   FindClusterEnd(aTextRun, endOffset, &iter, allowSplitLigature);
 
+  
   i = iter.GetOriginalOffset() - aOffset;
 
   
@@ -8617,8 +8679,43 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   }
 
   
-  i = FindEndOfPunctuationRun(aFrag, aTextRun, &iter, aOffset, i + 1,
-                              endOffset);
+  
+  
+  ++i;
+
+  while (i < length) {
+    
+    
+    
+    const int32_t preWS = i;
+    while (i < length) {
+      char16_t ch = aFrag->CharAt(AssertedCast<uint32_t>(aOffset + i));
+      
+      
+      
+      
+      if (ch == 0x0020 || ch == 0x00A0 || ch == 0x3000 ||
+          unicode::GetGeneralCategory(ch) !=
+              HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR) {
+        break;
+      } else {
+        ++i;
+      }
+    }
+
+    
+    const int32_t prePunct = i;
+    i = FindEndOfSuffixPunctuationRun(aFrag, aTextRun, &iter, aOffset, i,
+                                      endOffset);
+
+    
+    
+    if (i == prePunct) {
+      i = preWS;
+      break;
+    }
+  }
+
   if (i < length) {
     *aLength = i;
   }
