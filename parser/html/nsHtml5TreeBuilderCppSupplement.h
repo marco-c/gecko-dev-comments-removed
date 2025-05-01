@@ -547,21 +547,22 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
         }
         break;
       case kNameSpaceID_SVG:
-        if (nsGkAtoms::image == aName || nsGkAtoms::feImage == aName) {
+        if (nsGkAtoms::image == aName) {
           nsHtml5String url =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_HREF);
           if (!url) {
             url = aAttributes->getValue(nsHtml5AttributeName::ATTR_XLINK_HREF);
           }
           if (url) {
-            nsHtml5String crossOrigin =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
-            nsHtml5String fetchPriority =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_FETCHPRIORITY);
+            
+            
+            
+            
+            auto fetchPriority = nullptr;
 
             mSpeculativeLoadQueue.AppendElement()->InitImage(
-                url, crossOrigin,  nullptr, nullptr, nullptr,
-                nullptr, false, fetchPriority);
+                url, nullptr, nullptr, nullptr, nullptr, nullptr, false,
+                fetchPriority);
           }
         } else if (nsGkAtoms::script == aName) {
           nsHtml5TreeOperation* treeOp =
@@ -620,8 +621,14 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                   aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
               nsHtml5String referrerPolicy = aAttributes->getValue(
                   nsHtml5AttributeName::ATTR_REFERRERPOLICY);
-              nsHtml5String fetchPriority = aAttributes->getValue(
-                  nsHtml5AttributeName::ATTR_FETCHPRIORITY);
+
+              
+              
+              
+              
+              
+              
+              nsHtml5String fetchPriority = nsHtml5String::EmptyString();
 
               mSpeculativeLoadQueue.AppendElement()->InitScript(
                   url, nullptr, type, crossOrigin,  nullptr,
