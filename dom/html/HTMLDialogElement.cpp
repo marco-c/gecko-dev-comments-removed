@@ -48,7 +48,6 @@ class DialogCloseWatcherListener : public nsIDOMEventListener {
         }
       } else if (eventType.EqualsLiteral("close")) {
         Optional<nsAString> retValue;
-        retValue = &dialog->RequestCloseReturnValue();
         dialog->Close(retValue);
       }
     }
@@ -105,105 +104,35 @@ void HTMLDialogElement::Close(
   }
 }
 
-
-void HTMLDialogElement::RequestClose(
-    const mozilla::dom::Optional<nsAString>& aReturnValue) {
-  
-  if (!Open()) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-
-  
-  
-  if (aReturnValue.WasPassed()) {
-    mRequestCloseReturnValue = aReturnValue.Value();
-  } else {
-    mRequestCloseReturnValue.SetIsVoid(true);
-  }
-
-  
-  RunCancelDialogSteps();
-
-  
-  
-}
-
-
 void HTMLDialogElement::Show(ErrorResult& aError) {
-
-  
   if (Open()) {
     if (!IsInTopLayer()) {
       return;
     }
-
-    
     return aError.ThrowInvalidStateError(
         "Cannot call show() on an open modal dialog.");
   }
 
-  
-  
-  
-  
   if (StaticPrefs::dom_element_dialog_toggle_events_enabled()) {
     if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
       return;
     }
-
-    
     if (Open()) {
       return;
     }
-
-    
     QueueToggleEventTask();
   }
 
-  
   SetOpen(true, IgnoreErrors());
 
-  
-
-  
-  
-
-  
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    SetDialogCloseWatcher();
-  }
-
-  
   StorePreviouslyFocusedElement();
 
-  
-
-  
-  
   RefPtr<nsINode> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
-
-  
-  
-  
   if (!hideUntil) {
     hideUntil = OwnerDoc();
   }
 
-  
   OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
-
-  
   FocusDialog();
 }
 
@@ -252,96 +181,64 @@ void HTMLDialogElement::UnbindFromTree(UnbindContext& aContext) {
   nsGenericHTMLElement::UnbindFromTree(aContext);
 }
 
-
 void HTMLDialogElement::ShowModal(ErrorResult& aError) {
-
-  
-  
   if (Open()) {
     if (IsInTopLayer()) {
       return;
     }
-
-    
-    
     return aError.ThrowInvalidStateError(
         "Cannot call showModal() on an open non-modal dialog.");
   }
 
-  
-  
-  
   if (!IsInComposedDoc()) {
     return aError.ThrowInvalidStateError("Dialog element is not connected");
   }
 
-  
-  
   if (IsPopoverOpen()) {
     return aError.ThrowInvalidStateError(
         "Dialog element is already an open popover.");
   }
 
   if (StaticPrefs::dom_element_dialog_toggle_events_enabled()) {
-    
-    
-    
-    
     if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
       return;
     }
-
-    
-    
-    
     if (Open() || !IsInComposedDoc() || IsPopoverOpen()) {
       return;
     }
-
-    
     QueueToggleEventTask();
   }
 
-  
-
-  
-  SetOpen(true, aError);
-
-  
-  
-  
-  
-  
-
-  
-  
   AddToTopLayerIfNeeded();
 
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    
-    SetDialogCloseWatcher();
-  }
+  SetOpen(true, aError);
 
-  
   StorePreviouslyFocusedElement();
 
-  
-  
-  
-  
-  
-  
-  RefPtr<nsINode> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    RefPtr<Document> doc = OwnerDoc();
+    if (doc->IsActive() && doc->IsCurrentActiveDocument()) {
+      if (RefPtr window = OwnerDoc()->GetInnerWindow()) {
+        mCloseWatcher = new CloseWatcher(window);
+        RefPtr<DialogCloseWatcherListener> eventListener =
+            new DialogCloseWatcherListener(this);
+        mCloseWatcher->AddSystemEventListener(u"cancel"_ns, eventListener,
+                                              false ,
+                                              false );
+        mCloseWatcher->AddSystemEventListener(u"close"_ns, eventListener,
+                                              false ,
+                                              false );
+        window->EnsureCloseWatcherManager()->Add(*mCloseWatcher);
+      }
+    }
+  }
 
-  
+  RefPtr<nsINode> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
   if (!hideUntil) {
     hideUntil = OwnerDoc();
   }
 
-  
   OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
-
-  
   FocusDialog();
 
   aError.SuppressException();
@@ -406,13 +303,8 @@ void HTMLDialogElement::RunCancelDialogSteps() {
 
   
   
-  
-  
-  
-  
   if (defaultAction) {
     Optional<nsAString> retValue;
-    retValue = &RequestCloseReturnValue();
     Close(retValue);
   }
 }
@@ -465,43 +357,6 @@ void HTMLDialogElement::QueueToggleEventTask() {
       CreateToggleEvent(u"toggle"_ns, oldState, newState, Cancelable::eNo);
   mToggleEventDispatcher = new AsyncEventDispatcher(this, toggleEvent.forget());
   mToggleEventDispatcher->PostDOMEvent();
-}
-
-
-void HTMLDialogElement::SetDialogCloseWatcher() {
-  MOZ_ASSERT(StaticPrefs::dom_closewatcher_enabled(), "CloseWatcher enabled");
-  if (mCloseWatcher) {
-    return;
-  }
-
-  RefPtr<Document> doc = OwnerDoc();
-  RefPtr window = doc->GetInnerWindow();
-  MOZ_ASSERT(window);
-
-  
-  
-  mCloseWatcher = new CloseWatcher(window);
-  RefPtr<DialogCloseWatcherListener> eventListener =
-      new DialogCloseWatcherListener(this);
-
-  
-  
-  
-  mCloseWatcher->AddSystemEventListener(u"cancel"_ns, eventListener,
-                                        false ,
-                                        false );
-
-  
-  mCloseWatcher->AddSystemEventListener(u"close"_ns, eventListener,
-                                        false ,
-                                        false );
-
-  
-  
-  
-  
-
-  window->EnsureCloseWatcherManager()->Add(*mCloseWatcher);
 }
 
 JSObject* HTMLDialogElement::WrapNode(JSContext* aCx,
