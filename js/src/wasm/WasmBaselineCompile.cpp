@@ -7263,6 +7263,7 @@ bool BaseCompiler::emitPostBarrierWholeCell(RegRef object, RegRef value,
   Label skipBarrier;
   EmitWasmPostBarrierGuard(masm, mozilla::Some(object), temp, value,
                            &skipBarrier);
+  CheckWholeCellLastElementCache(masm, object, temp, &skipBarrier);
 
   movePtr(RegPtr(object), temp);
 
