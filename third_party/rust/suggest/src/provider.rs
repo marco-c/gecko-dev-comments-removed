@@ -228,7 +228,7 @@ pub enum AmpMatchingStrategy {
     
     
     
-    NoKeywordExpansion = 1, 
+    NoKeywordExpansion,
     
     FtsAgainstFullKeywords,
     

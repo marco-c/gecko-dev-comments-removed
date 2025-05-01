@@ -5,6 +5,7 @@
 use std::{collections::HashMap, fs::File, io::prelude::Write, sync::Arc};
 
 use error_support::{convert_log_report_error, handle_error};
+use url::Url;
 
 pub mod cache;
 pub mod client;
@@ -21,7 +22,7 @@ pub(crate) mod jexl_filter;
 mod macros;
 
 pub use client::{Attachment, RemoteSettingsRecord, RemoteSettingsResponse, RsJsonObject};
-pub use config::{BaseUrl, RemoteSettingsConfig, RemoteSettingsConfig2, RemoteSettingsServer};
+pub use config::{RemoteSettingsConfig, RemoteSettingsConfig2, RemoteSettingsServer};
 pub use context::RemoteSettingsContext;
 pub use error::{ApiResult, RemoteSettingsError, Result};
 
@@ -63,7 +64,8 @@ impl RemoteSettingsService {
     
     
     
-    pub fn make_client(&self, collection_name: String) -> Arc<RemoteSettingsClient> {
+    #[handle_error(Error)]
+    pub fn make_client(&self, collection_name: String) -> ApiResult<Arc<RemoteSettingsClient>> {
         self.internal.make_client(collection_name)
     }
 
@@ -164,32 +166,27 @@ impl RemoteSettingsClient {
     pub fn sync(&self) -> ApiResult<()> {
         self.internal.sync()
     }
-
-    
-    pub fn shutdown(&self) {
-        self.internal.shutdown()
-    }
 }
 
 impl RemoteSettingsClient {
     
     
     fn new(
-        base_url: BaseUrl,
+        base_url: Url,
         bucket_name: String,
         collection_name: String,
         #[allow(unused)] context: Option<RemoteSettingsContext>,
         storage: Storage,
-    ) -> Self {
-        Self {
+    ) -> Result<Self> {
+        Ok(Self {
             internal: client::RemoteSettingsClient::new(
                 base_url,
                 bucket_name,
                 collection_name,
                 context,
                 storage,
-            ),
-        }
+            )?,
+        })
     }
 }
 

@@ -61,8 +61,7 @@ add_task(function test_store_manager() {
     fakeRustRelevancyStore
   );
   Assert.equal(fakeRustRelevancyStore.init.callCount, 1);
-  Assert.deepEqual(fakeRustRelevancyStore.init.firstCall.args[0], "test-path");
-  
+  Assert.deepEqual(fakeRustRelevancyStore.init.firstCall.args, ["test-path"]);
   
   Assert.throws(() => storeManager.store, /StoreDisabledError/);
   
