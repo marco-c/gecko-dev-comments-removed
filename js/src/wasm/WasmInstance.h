@@ -144,7 +144,7 @@ class alignas(16) Instance {
   
   
   static constexpr size_t offsetOfLastCommonJitField() {
-    return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
+    return offsetof(Instance, allocSites_);
   }
 
   
@@ -219,6 +219,10 @@ class alignas(16) Instance {
 #ifdef JS_GC_ZEAL
   const void* addressOfGCZealModeBits_;
 #endif
+
+  
+  
+  const void* addressOfLastBufferedWholeCell_;
 
   
   
@@ -323,6 +327,9 @@ class alignas(16) Instance {
   }
   static constexpr size_t offsetOfAllocSites() {
     return offsetof(Instance, allocSites_);
+  }
+  static constexpr size_t offsetOfAddressOfLastBufferedWholeCell() {
+    return offsetof(Instance, addressOfLastBufferedWholeCell_);
   }
   static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
     return offsetof(Instance, addressOfNeedsIncrementalBarrier_);

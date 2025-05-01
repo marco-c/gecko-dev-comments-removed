@@ -462,11 +462,21 @@ void EmitWasmPreBarrierCallIndex(jit::MacroAssembler& masm,
 
 
 
-
 void EmitWasmPostBarrierGuard(jit::MacroAssembler& masm,
                               const mozilla::Maybe<jit::Register>& object,
                               jit::Register otherScratch,
                               jit::Register setValue, jit::Label* skipBarrier);
+
+
+
+
+
+
+
+void CheckWholeCellLastElementCache(jit::MacroAssembler& masm,
+                                    jit::Register instance,
+                                    jit::Register object, jit::Register temp,
+                                    jit::Label* skipBarrier);
 
 #ifdef DEBUG
 

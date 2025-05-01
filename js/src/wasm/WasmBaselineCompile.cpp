@@ -7264,6 +7264,14 @@ bool BaseCompiler::emitPostBarrierWholeCell(RegRef object, RegRef value,
   EmitWasmPostBarrierGuard(masm, mozilla::Some(object), temp, value,
                            &skipBarrier);
 
+#ifdef RABALDR_PIN_INSTANCE
+  Register instance(InstanceReg);
+#else
+  Register instance(temp);
+  fr.loadInstancePtr(instance);
+#endif
+  CheckWholeCellLastElementCache(masm, instance, object, temp, &skipBarrier);
+
   movePtr(RegPtr(object), temp);
 
   
