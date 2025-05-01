@@ -62,7 +62,6 @@ class LinuxBootstrapper(MobileAndroidBootstrapper):
                 "findutils",  
                 "gzip",
                 "libxml2",  
-                "m4",
                 "make",
                 "perl",
                 "tar",
