@@ -3526,6 +3526,12 @@ void JSObject::debugCheckNewObject(Shape* shape, js::gc::AllocKind allocKind,
                     clasp->isProxyObject());
 
   MOZ_ASSERT(!shape->isDictionary());
+
+  
+  
+  MOZ_ASSERT_IF(
+      clasp->shouldDelayMetadataBuilder() && !IsWasmGcObjectClass(clasp),
+      shape->realm()->hasActiveAutoSetNewObjectMetadata());
   MOZ_ASSERT(!shape->realm()->hasObjectPendingMetadata());
 
   
