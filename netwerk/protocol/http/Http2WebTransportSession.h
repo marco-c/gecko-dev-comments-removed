@@ -48,6 +48,10 @@ struct Http2WebTransportInitialSettings {
   uint32_t mInitialMaxStreamsUni = 0;
   
   uint32_t mInitialMaxStreamsBidi = 0;
+  
+  uint32_t mInitialLocalMaxStreamsUnidi = 16;
+  
+  uint32_t mInitialLocalMaxStreamsBidi = 16;
 };
 
 enum class CapsuleTransmissionPriority : uint8_t {
@@ -84,6 +88,7 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
   void StartReading() override;
   void Close(nsresult aReason);
 
+  void OnStreamClosed(Http2WebTransportStream* aStream);
   void SendStreamDataCapsule(UniquePtr<CapsuleEncoder>&& aData);
   void PrepareCapsulesToSend(
       mozilla::Queue<UniquePtr<CapsuleEncoder>>& aOutput);
@@ -114,6 +119,8 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
   void ProcessPendingStreamCallbacks(
       mozilla::Queue<UniquePtr<PendingStreamCallback>>& aCallbacks,
       WebTransportStreamType aStreamType);
+  bool ProcessIncomingStreamCapsule(Capsule&& aCapsule, StreamId aID,
+                                    WebTransportStreamType aStreamType);
   void SendFlowControlCapsules(CapsuleTransmissionPriority aPriority);
 
   class CapsuleQueue final {
@@ -138,10 +145,11 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
 
   mozilla::Queue<UniquePtr<PendingStreamCallback>> mBidiPendingStreamCallbacks;
   mozilla::Queue<UniquePtr<PendingStreamCallback>> mUnidiPendingStreamCallbacks;
+  Http2WebTransportInitialSettings mSettings;
   LocalStreamLimits mLocalStreamsFlowControl;
+  RemoteStreamLimits mRemoteStreamsFlowControl;
 
   RefPtr<CapsuleIOHandler> mHandler;
-  Http2WebTransportInitialSettings mSettings;
   CapsuleQueue mCapsuleQueue;
 };
 
