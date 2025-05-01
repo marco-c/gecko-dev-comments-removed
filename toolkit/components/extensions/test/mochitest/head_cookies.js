@@ -184,6 +184,7 @@ async function testCookies(options) {
     addMessageListener("options", options => {
       let domain = options.domain.replace(/^\.?/, ".");
 
+      
       Services.cookies.add(
         domain,
         "/",
@@ -199,6 +200,7 @@ async function testCookies(options) {
           ? Ci.nsICookie.SCHEME_HTTPS
           : Ci.nsICookie.SCHEME_HTTP
       );
+      
       Services.cookies.add(
         domain,
         "/",

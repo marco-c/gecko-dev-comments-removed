@@ -183,7 +183,7 @@ void InitPrefs(nsIPrefBranch* aPrefBranch) {
   aPrefBranch->SetIntPref(kCookiesPermissions, 0);  
   
   
-  aPrefBranch->SetIntPref(kPrefCookieQuotaPerHost, 49);
+  aPrefBranch->SetIntPref(kPrefCookieQuotaPerHost, 50);
   
   aPrefBranch->SetIntPref(kCookiesMaxPerHost, 50);
 

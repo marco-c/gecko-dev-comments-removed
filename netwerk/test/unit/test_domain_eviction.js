@@ -20,7 +20,7 @@ function continue_test() {
 function* do_run_test() {
   
   
-  Services.prefs.setIntPref("network.cookie.quotaPerHost", 49);
+  Services.prefs.setIntPref("network.cookie.quotaPerHost", 50);
   
   Services.prefs.setIntPref("network.cookie.maxPerHost", 50);
 

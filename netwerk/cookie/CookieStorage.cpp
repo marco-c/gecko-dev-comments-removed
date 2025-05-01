@@ -771,11 +771,16 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
     CookieEntry* entry =
         mHostTable.GetEntry(CookieKey(aBaseDomain, aOriginAttributes));
     int32_t partitionLimitExceededBytes = 0;
+    
     if (entry && entry->GetCookies().Length() >= mMaxCookiesPerHost) {
       nsTArray<CookieListIter> removedIterList;
       
       
-      uint32_t limit = mMaxCookiesPerHost - mCookieQuotaPerHost;
+      
+      uint32_t excess = entry->GetCookies().Length() - mMaxCookiesPerHost + 1;
+      uint32_t limit = mMaxCookiesPerHost - mCookieQuotaPerHost + excess;
+      
+      
       FindStaleCookies(entry, currentTime, false, removedIterList, limit);
       if (removedIterList.Length() == 0) {
         if (aCookie->IsSecure()) {
@@ -1100,12 +1105,12 @@ void CookieStorage::PrefChanged(nsIPrefBranch* aPrefBranch) {
 
   if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefCookieQuotaPerHost, &val))) {
     mCookieQuotaPerHost = static_cast<uint16_t> LIMIT(
-        val, 1, mMaxCookiesPerHost - 1, kCookieQuotaPerHost);
+        val, 1, mMaxCookiesPerHost, kCookieQuotaPerHost);
   }
 
   if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefMaxCookiesPerHost, &val))) {
     mMaxCookiesPerHost = static_cast<uint16_t> LIMIT(
-        val, mCookieQuotaPerHost + 1, 0xFFFF, kMaxCookiesPerHost);
+        val, mCookieQuotaPerHost, 0xFFFF, kMaxCookiesPerHost);
   }
 
   if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefCookiePurgeAge, &val))) {
