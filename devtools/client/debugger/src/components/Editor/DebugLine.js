@@ -70,6 +70,34 @@ export class DebugLine extends PureComponent {
 
       const { lineClass, markTextClass } = this.getTextClasses(why);
       const editorLocation = toEditorPosition(location);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      editor.setPositionContentMarker({
+        id: markerTypes.PAUSED_LOCATION_MARKER,
+
+        
+        displayLast: true,
+
+        positions: [editorLocation],
+        createPositionElementNode(_line, _column, isFirstNonSpaceColumn) {
+          const pausedLocation = document.createElement("span");
+          pausedLocation.className = `paused-location${isFirstNonSpaceColumn ? " first-column" : ""}`;
+
+          const bar = document.createElement("span");
+          bar.className = `vertical-bar`;
+          pausedLocation.appendChild(bar);
+
+          return pausedLocation;
+        },
+      });
+
       editor.setLineContentMarker({
         id: markerTypes.DEBUG_LINE_MARKER,
         lineClassName: lineClass,
@@ -119,6 +147,7 @@ export class DebugLine extends PureComponent {
       ) {
         editor.removeLineContentMarker(markerTypes.DEBUG_LINE_MARKER);
         editor.removePositionContentMarker(markerTypes.DEBUG_POSITION_MARKER);
+        editor.removePositionContentMarker(markerTypes.PAUSED_LOCATION_MARKER);
       }
     } else {
       const { why, location } = otherProps;

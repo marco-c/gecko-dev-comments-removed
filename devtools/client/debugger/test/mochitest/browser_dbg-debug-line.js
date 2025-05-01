@@ -23,12 +23,25 @@ add_task(async function () {
   
   findElement(dbg, "frame", 2).focus();
 
+  let pausedLocation = findElementWithSelector(dbg, ".paused-location");
+  ok(
+    pausedLocation.classList.contains("first-column"),
+    "This paused caret is displayed as the first element in the line"
+  );
+
   
   const dispatched = waitForDispatch(dbg.store, "ADD_INLINE_PREVIEW");
   await clickElement(dbg, "frame", 2);
   await dispatched;
   await waitForRequestsToSettle(dbg);
   await waitForSelectedSource(dbg, "simple1.js");
+  await waitForSelectedLocation(dbg, 4, 18);
+
+  pausedLocation = findElementWithSelector(dbg, ".paused-location");
+  ok(
+    !pausedLocation.classList.contains("first-column"),
+    "This paused caret is no longer displayed as the first element in the line"
+  );
 
   
   await resume(dbg);
