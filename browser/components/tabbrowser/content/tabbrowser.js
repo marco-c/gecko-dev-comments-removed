@@ -2523,7 +2523,9 @@
       
       
       
-      aTab.toggleAttribute("discarded", true);
+      if (aForceDiscard) {
+        aTab.toggleAttribute("discarded", true);
+      }
 
       
       let filter = this._tabFilters.get(aTab);
