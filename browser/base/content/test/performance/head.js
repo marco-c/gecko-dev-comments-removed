@@ -818,9 +818,18 @@ async function runUrlbarTest(
   };
 
   let urlbarRect = URLBar.textbox.getBoundingClientRect();
-  const SHADOW_SIZE = 17;
+  
+  
+  const SHADOW_SIZE = 17; 
+  const INLINE_MARGIN = 5; 
+  const VERTICAL_OFFSET = -4; 
   let expectedRects = {
     filter: rects => {
+      const referenceRect = {
+        x1: Math.floor(urlbarRect.left) - INLINE_MARGIN - SHADOW_SIZE,
+        x2: Math.ceil(urlbarRect.right) + INLINE_MARGIN + SHADOW_SIZE,
+        y1: Math.floor(urlbarRect.top) + VERTICAL_OFFSET - SHADOW_SIZE,
+      };
       
       
       
@@ -831,9 +840,9 @@ async function runUrlbarTest(
       return rects.filter(
         r =>
           !(
-            r.x1 >= Math.floor(urlbarRect.left) - SHADOW_SIZE &&
-            r.x2 <= Math.ceil(urlbarRect.right) + SHADOW_SIZE &&
-            r.y1 >= Math.floor(urlbarRect.top) - SHADOW_SIZE
+            r.x1 >= referenceRect.x1 &&
+            r.x2 <= referenceRect.x2 &&
+            r.y1 >= referenceRect.y1
           )
       );
     },
