@@ -916,8 +916,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   void traceChildren(JSTracer* trc);
 
-  inline void traceBaseAndRecordOldRoot(JSTracer* trc);
-
   
   bool isPermanentAndMayBeShared() const { return isPermanentAtom(); }
 
@@ -1244,6 +1242,10 @@ class JSLinearString : public JSString {
 static_assert(sizeof(JSLinearString) == sizeof(JSString),
               "string subclasses must be binary-compatible with JSString");
 
+namespace JS {
+enum class ContractBaseChain : bool { AllowLong = false, Contract = true };
+}
+
 class JSDependentString : public JSLinearString {
   friend class JSString;
   friend class js::gc::CellAllocator;
@@ -1272,6 +1274,11 @@ class JSDependentString : public JSLinearString {
   }
 
  public:
+  template <JS::ContractBaseChain contract>
+  static inline JSLinearString* newImpl_(JSContext* cx, JSLinearString* base,
+                                         size_t start, size_t length,
+                                         js::gc::Heap heap);
+
   
   
   static inline JSLinearString* new_(JSContext* cx, JSLinearString* base,
@@ -1289,9 +1296,9 @@ class JSDependentString : public JSLinearString {
   inline JSLinearString* rootBaseDuringMinorGC();
 
   template <typename CharT>
-  inline void updatePromotedBaseImpl();
+  inline void updateToPromotedBaseImpl(JSLinearString* base);
 
-  inline void updatePromotedBase();
+  inline void updateToPromotedBase(JSLinearString* base);
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;
@@ -1833,6 +1840,13 @@ extern JSLinearString* NewStringDontDeflate(
 extern JSLinearString* NewDependentString(
     JSContext* cx, JSString* base, size_t start, size_t length,
     js::gc::Heap heap = js::gc::Heap::Default);
+
+
+
+
+extern JSLinearString* NewDependentStringForTesting(
+    JSContext* cx, JSString* base, size_t start, size_t length,
+    JS::ContractBaseChain contract, js::gc::Heap heap);
 
 
 extern JSLinearString* NewLatin1StringZ(
@@ -2526,12 +2540,16 @@ inline JSString* TenuredCell::as<JSString>() {
 
 
 
+
+
+
 class StringRelocationOverlay : public RelocationOverlay {
   union {
     
     const JS::Latin1Char* nurseryCharsLatin1;
     const char16_t* nurseryCharsTwoByte;
 
+    
     
     
     JSLinearString* nurseryBaseOrRelocOverlay;
@@ -2542,6 +2560,15 @@ class StringRelocationOverlay : public RelocationOverlay {
     static_assert(sizeof(JSString) >= sizeof(StringRelocationOverlay));
   }
 
+  StringRelocationOverlay(Cell* dst, const JS::Latin1Char* chars)
+      : RelocationOverlay(dst), nurseryCharsLatin1(chars) {}
+
+  StringRelocationOverlay(Cell* dst, const char16_t* chars)
+      : RelocationOverlay(dst), nurseryCharsTwoByte(chars) {}
+
+  StringRelocationOverlay(Cell* dst, JSLinearString* origBase)
+      : RelocationOverlay(dst), nurseryBaseOrRelocOverlay(origBase) {}
+
   static const StringRelocationOverlay* fromCell(const Cell* cell) {
     return static_cast<const StringRelocationOverlay*>(cell);
   }
@@ -2551,8 +2578,7 @@ class StringRelocationOverlay : public RelocationOverlay {
   }
 
   void setNext(StringRelocationOverlay* next) {
-    MOZ_ASSERT(isForwarded());
-    next_ = next;
+    RelocationOverlay::setNext(next);
   }
 
   StringRelocationOverlay* next() const {
@@ -2561,7 +2587,13 @@ class StringRelocationOverlay : public RelocationOverlay {
   }
 
   template <typename CharT>
-  MOZ_ALWAYS_INLINE const CharT* savedNurseryChars() const;
+  MOZ_ALWAYS_INLINE const CharT* savedNurseryChars() const {
+    if constexpr (std::is_same_v<CharT, JS::Latin1Char>) {
+      return savedNurseryCharsLatin1();
+    } else {
+      return savedNurseryCharsTwoByte();
+    }
+  }
 
   const MOZ_ALWAYS_INLINE JS::Latin1Char* savedNurseryCharsLatin1() const {
     MOZ_ASSERT(!forwardingAddress()->as<JSString>()->hasBase());
@@ -2580,12 +2612,16 @@ class StringRelocationOverlay : public RelocationOverlay {
 
   
   
-  inline static StringRelocationOverlay* forwardCell(JSString* src, Cell* dst) {
+  inline static StringRelocationOverlay* forwardDependentString(JSString* src,
+                                                                Cell* dst);
+
+  
+  static StringRelocationOverlay* forwardString(JSString* src, Cell* dst) {
     MOZ_ASSERT(!src->isForwarded());
     MOZ_ASSERT(!dst->isForwarded());
+    MOZ_ASSERT(!src->isDependent());
 
     JS::AutoCheckCannotGC nogc;
-    StringRelocationOverlay* overlay;
 
     
     
@@ -2593,42 +2629,18 @@ class StringRelocationOverlay : public RelocationOverlay {
     
     
     
-    
-    
-    
-    if (src->hasBase()) {
-      auto nurseryBaseOrRelocOverlay = src->nurseryBaseOrRelocOverlay();
-      overlay = new (src) StringRelocationOverlay(dst);
-      overlay->nurseryBaseOrRelocOverlay = nurseryBaseOrRelocOverlay;
-    } else if (src->canOwnDependentChars()) {
+    if (src->canOwnDependentChars()) {
       if (src->hasTwoByteChars()) {
-        auto nurseryCharsTwoByte = src->asLinear().twoByteChars(nogc);
-        overlay = new (src) StringRelocationOverlay(dst);
-        overlay->nurseryCharsTwoByte = nurseryCharsTwoByte;
-      } else {
-        auto nurseryCharsLatin1 = src->asLinear().latin1Chars(nogc);
-        overlay = new (src) StringRelocationOverlay(dst);
-        overlay->nurseryCharsLatin1 = nurseryCharsLatin1;
+        auto* nurseryCharsTwoByte = src->asLinear().twoByteChars(nogc);
+        return new (src) StringRelocationOverlay(dst, nurseryCharsTwoByte);
       }
-    } else {
-      overlay = new (src) StringRelocationOverlay(dst);
+      auto* nurseryCharsLatin1 = src->asLinear().latin1Chars(nogc);
+      return new (src) StringRelocationOverlay(dst, nurseryCharsLatin1);
     }
 
-    return overlay;
+    return new (src) StringRelocationOverlay(dst);
   }
 };
-
-template <>
-MOZ_ALWAYS_INLINE const JS::Latin1Char*
-StringRelocationOverlay::savedNurseryChars() const {
-  return savedNurseryCharsLatin1();
-}
-
-template <>
-MOZ_ALWAYS_INLINE const char16_t* StringRelocationOverlay::savedNurseryChars()
-    const {
-  return savedNurseryCharsTwoByte();
-}
 
 }  
 }  

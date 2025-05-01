@@ -214,14 +214,6 @@ class StoreBuffer {
 
     const Cell** lastBufferedPtr() { return &last_; }
 
-    CellSweepSet releaseCellSweepSet() {
-      CellSweepSet set;
-      std::swap(storage_, set.storage_);
-      std::swap(sweepHead_, set.head_);
-      last_ = nullptr;
-      return set;
-    }
-
    private:
     ArenaCellSet* allocateCellSet(Arena* arena);
   };
@@ -626,10 +618,6 @@ class StoreBuffer {
   }
   void traceGenericEntries(JSTracer* trc) { bufferGeneric.trace(trc, this); }
 
-  gc::CellSweepSet releaseCellSweepSet() {
-    return bufferWholeCell.releaseCellSweepSet();
-  }
-
   
   void setAboutToOverflow(JS::GCReason);
 
@@ -694,11 +682,6 @@ class ArenaCellSet {
 
   
   bool trace(TenuringTracer& mover);
-
-  
-  
-  
-  static void sweepDependentStrings(ArenaCellSet* listHead);
 
   
   
