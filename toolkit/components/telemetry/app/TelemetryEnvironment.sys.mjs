@@ -83,7 +83,7 @@ var gActiveExperimentStartupBuffer = new Map();
 
 // For Powering arewegleanyet.com (See bug 1944592)
 // Legacy Count: 114
-// Glean Count: 32
+// Glean Count: 48
 
 var gGlobalEnvironment;
 function getGlobal() {
@@ -822,8 +822,11 @@ EnvironmentAddonBuilder.prototype = {
       // Weird addon data in the wild can lead to exceptions while collecting
       // the data.
       try {
-        // Make sure to have valid dates.
-        let updateDate = new Date(Math.max(0, addon.updateDate));
+        // Make sure to have valid dates (built-in add-ons are
+        // expected to not have a valid update date).
+        let updateDate = isNaN(addon.updateDate?.valueOf())
+          ? new Date(0)
+          : new Date(Math.max(0, addon.updateDate));
 
         activeAddons[addon.id] = {
           version: limitStringToLength(addon.version, MAX_ADDON_STRING_LENGTH),
@@ -838,7 +841,12 @@ EnvironmentAddonBuilder.prototype = {
         // getActiveAddons() gives limited data during startup and full
         // data after the addons database is loaded.
         if (fullData) {
-          let installDate = new Date(Math.max(0, addon.installDate));
+          // Make sure to have valid dates (built-in add-ons are
+          // expected to not have a valid install date).
+          let installDate = isNaN(addon.installDate?.valueOf())
+            ? new Date(0)
+            : new Date(Math.max(0, addon.installDate));
+
           Object.assign(activeAddons[addon.id], {
             blocklisted:
               addon.blocklistState !== Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
@@ -1781,6 +1789,22 @@ EnvironmentCache.prototype = {
           : data[key];
     }
     this._currentEnvironment.settings.attribution = attributionData;
+    let extAttribution = {
+      experiment: attributionData.experiment,
+      variation: attributionData.variation,
+      ua: attributionData.ua,
+      dltoken: attributionData.dltoken,
+      msstoresignedin: attributionData.msstoresignedin,
+      dlsource: attributionData.dlsource,
+    };
+    Services.fog.updateAttribution(
+      attributionData.source,
+      attributionData.medium,
+      attributionData.campaign,
+      attributionData.term,
+      attributionData.content
+    );
+    Glean.gleanAttribution.ext.set(extAttribution);
   },
 
   /**
@@ -1885,6 +1909,15 @@ EnvironmentCache.prototype = {
       PREF_APP_PARTNER_BRANCH
     );
     partnerData.partnerNames = partnerBranch.getChildList("");
+
+    Services.fog.updateDistribution(partnerData.distributionId);
+    Glean.gleanDistribution.ext.set({
+      distributionVersion: partnerData.distributionVersion,
+      partnerId: partnerData.partnerId,
+      distributor: partnerData.distributor,
+      distributorChannel: partnerData.distributorChannel,
+      partnerNames: partnerData.partnerNames,
+    });
 
     return partnerData;
   },
