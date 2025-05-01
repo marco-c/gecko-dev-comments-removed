@@ -174,7 +174,7 @@ NavigationActivation* Navigation::GetActivation() const { return mActivation; }
 
 
 bool Navigation::HasEntriesAndEventsDisabled() const {
-  Document* doc = GetDocumentIfCurrent();
+  Document* doc = GetAssociatedDocument();
   return !doc || !doc->IsCurrentActiveDocument() ||
          (NS_IsAboutBlankAllowQueryAndFragment(doc->GetDocumentURI()) &&
           doc->IsInitialDocument()) ||
@@ -396,7 +396,7 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
 void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
                         NavigationResult& aResult) {
   
-  const RefPtr<Document> document = GetDocumentIfCurrent();
+  const RefPtr<Document> document = GetAssociatedDocument();
   if (!document) {
     return;
   }
@@ -727,7 +727,7 @@ bool Navigation::InnerFireNavigateEvent(
 
   
   init.mHasUAVisualTransition =
-      HasUAVisualTransition(ToMaybeRef(GetDocumentIfCurrent()));
+      HasUAVisualTransition(ToMaybeRef(GetAssociatedDocument()));
 
   
   init.mSourceElement = aSourceElement;
@@ -1084,6 +1084,12 @@ bool Navigation::FocusedChangedDuringOngoingNavigation() const {
 void Navigation::SetFocusedChangedDuringOngoingNavigation(
     bool aFocusChangedDUringOngoingNavigation) {
   mFocusChangedDuringOngoingNavigation = aFocusChangedDUringOngoingNavigation;
+}
+
+
+Document* Navigation::GetAssociatedDocument() const {
+  nsGlobalWindowInner* window = GetOwnerWindow();
+  return window ? window->GetDocument() : nullptr;
 }
 
 void Navigation::LogHistory() const {
