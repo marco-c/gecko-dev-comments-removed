@@ -686,35 +686,22 @@ void nsToolkitProfileService::CompleteStartup() {
   nsresult rv;
   bool needsFlush = false;
 
-  
-  
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (!mCurrent) {
-    nsCString storeID;
-    rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
-    if (NS_SUCCEEDED(rv) && !storeID.IsEmpty()) {
+  nsCString storeID;
+  rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
+
+  if (NS_SUCCEEDED(rv) && !storeID.IsEmpty()) {
+    
+    if (!mCurrent) {
+      
+      
       mGroupProfile = GetProfileByStoreID(storeID);
     }
-  } else {
+  } else if (mCurrent && !mCurrent->mStoreID.IsVoid()) {
     
-    
-    if (!mCurrent->mStoreID.IsVoid()) {
-      mGroupProfile = mCurrent;
-      rv = prefs->SetCharPref(STORE_ID_PREF, mCurrent->mStoreID);
-      NS_ENSURE_SUCCESS_VOID(rv);
-    } else {
-      
-      
-      
-      nsCString storeID;
-      rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
-      if (NS_SUCCEEDED(rv) && !storeID.IsEmpty()) {
-        rv = mCurrent->SetStoreID(storeID);
-        if (NS_SUCCEEDED(rv)) {
-          needsFlush = true;
-        }
-      }
-    }
+    mGroupProfile = mCurrent;
+    rv = prefs->SetCharPref(STORE_ID_PREF, mCurrent->mStoreID);
+    NS_ENSURE_SUCCESS_VOID(rv);
   }
 
   if (mMaybeLockProfile) {

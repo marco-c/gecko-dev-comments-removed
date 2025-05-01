@@ -16,7 +16,6 @@ add_task(
         {
           name: "default",
           path: defaultProfile.leafName,
-          storeID: "bishbashbosh",
           default: true,
         },
       ],
@@ -28,16 +27,15 @@ add_task(
     };
     writeProfilesIni(profilesIni);
 
+    Services.prefs.setCharPref("toolkit.profiles.storeID", "bishbashbosh");
+
     let service = getProfileService();
     let { profile } = selectStartupProfile();
 
-    let storeID = Services.prefs.getCharPref("toolkit.profiles.storeID");
-
     Assert.equal(profile.rootDir.path, defaultProfile.path);
     Assert.equal(service.currentProfile, profile);
-    Assert.equal(service.groupProfile, profile);
-    Assert.equal(profile.storeID, "bishbashbosh");
-    Assert.equal(storeID, "bishbashbosh");
+    Assert.ok(!service.groupProfile);
+    Assert.ok(!profile.storeID);
 
     checkProfileService();
   }
