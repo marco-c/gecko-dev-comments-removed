@@ -170,7 +170,10 @@ class CallbackObjectBase {
   
   
   
-  void Reset() { ClearJSReferences(); }
+  virtual void Reset() {
+    ClearJSReferences();
+    mIncumbentGlobal = nullptr;
+  }
 
   friend class mozilla::PromiseJobRunnable;
 
@@ -346,7 +349,7 @@ class CallbackObject : public nsISupports,
     return aMallocSizeOf(this);
   }
 
-  void Reset() {
+  void Reset() final {
     CallbackObjectBase::Reset();
     mozilla::DropJSObjectsWithKey(this);
   }
