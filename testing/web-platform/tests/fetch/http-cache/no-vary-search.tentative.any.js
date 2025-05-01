@@ -13,6 +13,9 @@
 
 
 
+
+
+
 var tests = [
   {
     name: "When params is set to true, URL differs only by their parameters (other than `dispatch` and `uuid`) should not be cached as different entries.",
@@ -26,6 +29,61 @@ var tests = [
       },
       {
         expected_type: "cached"
+      }
+    ]
+  },
+  {
+    name: "Ground truth: When key-order is not set, URLs should be compared in an order-sensitive way.",
+    requests: [
+      {
+        url_params: "a=1&b=2",
+        response_headers: [
+          ["Cache-Control", "max-age=10000"],
+        ],
+      },
+      {
+        url_params: "b=2&a=1",
+        expected_type: "not_cached"
+      }
+    ]
+  },
+  {
+    name: "When key-order is set , URLs should be compared in an order-insensitive way. Matched cases:",
+    requests: [
+      {
+        url_params: "a=1&b=2",
+        response_headers: [
+          ["Cache-Control", "max-age=10000"],
+          ["No-Vary-Search", "key-order"],
+        ],
+      },
+      {
+        url_params: "b=2&a=1",
+        expected_type: "cached"
+      }
+    ]
+  },
+  {
+    name: "When key-order is set , URLs should be compared in an order-insensitive way. Not matched cases",
+    requests: [
+      {
+        url_params: "a=1&b=2",
+        response_headers: [
+          ["Cache-Control", "max-age=10000"],
+          ["No-Vary-Search", "key-order"],
+        ],
+      },
+      {
+        url_params: "b=2",
+        expected_type: "not_cached"
+      },
+      {
+        url_params: "a=2&b=2",
+        expected_type: "not_cached"
+      },
+      {
+        url_params: "a=1&b=2&c=3",
+        expected_type: "not_cached"
       }
     ]
   }
