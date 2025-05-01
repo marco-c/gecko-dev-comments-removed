@@ -771,7 +771,8 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 if "jetstream3" in try_name:
                     return False
                 
-                if "tp6m" in try_name and "a55" not in platform:
+                
+                if "tp6m" in try_name:
                     return False
                 
                 if (
