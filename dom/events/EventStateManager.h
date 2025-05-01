@@ -532,8 +532,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   
   
-  
-  void NotifyDestroyingFrameForGesture(nsIFrame* aFrame);
+  void NotifyContentWillBeRemovedForGesture(nsIContent& aContent);
 
   bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
 
