@@ -1,13 +1,6 @@
 import figma, { html } from "@figma/code-connect/html"
 
 
-
-
-
-
-
-
-
 figma.connect(
   "https://www.figma.com/design/3WoKOSGtaSjhUHKldHCXbc/Desktop-v3?node-id=32-1001&t=2gbnIP6ylasS3WuO-4",
   {
@@ -38,6 +31,30 @@ figma.connect(
       iconsrc=${props.labelProps.iconSrc}
       support-page=${props.labelProps.supportPage}
       disabled=${props.toggleProps.disabled}
+      pressed=${props.toggleProps.pressed}
+></moz-toggle>`,
+  },
+)
+
+
+figma.connect(
+  "https://www.figma.com/design/2ruSnPauajQGprFy6K333u/Desktop-Components?node-id=801-7224&m=dev",
+  {
+    props: {
+      description: figma.boolean("Description", {
+        true: "Description to edit",
+      }),
+      disabled: figma.boolean("Disabled"),
+      label: "Label to edit",
+      toggleProps: figma.nestedProps("Toggle Input", {
+        pressed: figma.boolean("Switch"),
+      }),
+    },
+    example: (props) => html`\
+<moz-toggle
+      label=${props.label}
+      description=${props.description}
+      disabled=${props.disabled}
       pressed=${props.toggleProps.pressed}
 ></moz-toggle>`,
   },
