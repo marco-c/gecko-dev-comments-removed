@@ -5,6 +5,8 @@
 
 
 #include "jit/InstructionReordering.h"
+
+#include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
 
 using namespace js;
@@ -72,7 +74,7 @@ static void MoveConstantsToStart(MBasicBlock* block,
   }
 }
 
-bool jit::ReorderInstructions(MIRGraph& graph) {
+bool jit::ReorderInstructions(MIRGenerator* mir, MIRGraph& graph) {
   
   size_t nextId = 0;
 
@@ -81,6 +83,10 @@ bool jit::ReorderInstructions(MIRGraph& graph) {
 
   for (ReversePostorderIterator block(graph.rpoBegin());
        block != graph.rpoEnd(); block++) {
+    if (mir->shouldCancel("ReorderInstructions (block loop)")) {
+      return false;
+    }
+
     
     
     bool isEntryBlock =
@@ -120,6 +126,10 @@ bool jit::ReorderInstructions(MIRGraph& graph) {
     MInstructionReverseIterator rtop = ++block->rbegin(insertionPoint);
     for (MInstructionIterator iter(block->begin(insertionPoint));
          iter != block->end();) {
+      if (mir->shouldCancel("ReorderInstructions (instruction loop)")) {
+        return false;
+      }
+
       MInstruction* ins = *iter;
 
       

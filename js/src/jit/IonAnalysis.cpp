@@ -1813,6 +1813,10 @@ bool jit::EliminatePhis(const MIRGenerator* mir, MIRGraph& graph,
   
   for (PostorderIterator block = graph.poBegin(); block != graph.poEnd();
        block++) {
+    if (mir->shouldCancel("Eliminate Phis (sweep dead phis)")) {
+      return false;
+    }
+
     MPhiIterator iter = block->phisBegin();
     while (iter != block->phisEnd()) {
       MPhi* phi = *iter++;
@@ -2967,7 +2971,7 @@ bool jit::AccountForCFGChanges(const MIRGenerator* mir, MIRGraph& graph,
   }
 
   
-  if (!BuildDominatorTree(graph)) {
+  if (!BuildDominatorTree(mir, graph)) {
     return false;
   }
 

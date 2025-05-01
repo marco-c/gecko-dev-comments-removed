@@ -198,6 +198,10 @@ bool CodeGeneratorShared::generateOutOfLineCode() {
   current = nullptr;
 
   for (OutOfLineCode* ool : outOfLineCode_) {
+    if (gen->shouldCancel("Generate Code (OOL code loop)")) {
+      return false;
+    }
+
     
     
     if (!gen->compilingWasm()) {
