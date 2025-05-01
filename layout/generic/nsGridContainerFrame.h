@@ -308,6 +308,12 @@ class nsGridContainerFrame final : public nsContainerFrame,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsGridContainerFrame* GetGridFrameWithComputedInfo(nsIFrame* aFrame);
 
+  
+
+
+  static void MarkCachedGridMeasurementsDirty(nsIFrame* aItemFrame);
+
+  class CachedBAxisMeasurement;
   struct Subgrid;
   struct UsedTrackSizes;
   struct TrackSize;
@@ -570,103 +576,6 @@ class nsGridContainerFrame final : public nsContainerFrame,
 
   
   PerLogicalAxis<PerBaseline<nscoord>> mBaseline;
-
- public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  class CachedBAxisMeasurement {
-   public:
-    NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(Prop, CachedBAxisMeasurement)
-    CachedBAxisMeasurement(const nsIFrame* aFrame, const LogicalSize& aCBSize,
-                           const nscoord aBSize)
-        : mKey(aFrame, aCBSize), mBSize(aBSize) {}
-
-    CachedBAxisMeasurement() = default;
-
-    bool IsValidFor(const nsIFrame* aFrame, const LogicalSize& aCBSize) const {
-      if (aFrame->IsSubtreeDirty()) {
-        return false;
-      }
-      const mozilla::Maybe<Key> maybeKey = Key::TryHash(aFrame, aCBSize);
-      return maybeKey.isSome() && mKey == *maybeKey;
-    }
-
-    static bool CanCacheMeasurement(const nsIFrame* aFrame,
-                                    const LogicalSize& aCBSize) {
-      return Key::CanHash(aFrame, aCBSize);
-    }
-
-    nscoord BSize() const { return mBSize; }
-
-    void Update(const nsIFrame* aFrame, const LogicalSize& aCBSize,
-                const nscoord aBSize) {
-      mKey.UpdateHash(aFrame, aCBSize);
-      mBSize = aBSize;
-    }
-
-   private:
-    class Key {
-      
-      
-      
-      
-      uint32_t mHashKey;
-
-      explicit Key(uint32_t aHashKey) : mHashKey(aHashKey) {}
-
-     public:
-      Key() = default;
-
-      Key(const nsIFrame* aFrame, const LogicalSize& aCBSize) {
-        UpdateHash(aFrame, aCBSize);
-      }
-
-      void UpdateHash(const nsIFrame* aFrame, const LogicalSize& aCBSize) {
-        const mozilla::Maybe<Key> maybeKey = TryHash(aFrame, aCBSize);
-        MOZ_ASSERT(maybeKey.isSome());
-        mHashKey = maybeKey->mHashKey;
-      }
-
-      static mozilla::Maybe<Key> TryHash(const nsIFrame* aFrame,
-                                         const LogicalSize& aCBSize) {
-        const nscoord gridAreaISize = aCBSize.ISize(aFrame->GetWritingMode());
-        const nscoord bBaselinePaddingProperty =
-            abs(aFrame->GetProperty(nsIFrame::BBaselinePadProperty()));
-
-        const uint_fast8_t bitsNeededForISize =
-            mozilla::FloorLog2(gridAreaISize) + 1;
-
-        const uint_fast8_t bitsNeededForBBaselinePadding =
-            mozilla::FloorLog2(bBaselinePaddingProperty) + 1;
-        if (bitsNeededForISize + bitsNeededForBBaselinePadding > 32) {
-          return mozilla::Nothing();
-        }
-        const uint32_t hashKey = (gridAreaISize << (32 - bitsNeededForISize)) |
-                                 bBaselinePaddingProperty;
-        return mozilla::Some(Key(hashKey));
-      }
-
-      static bool CanHash(const nsIFrame* aFrame, const LogicalSize& aCBSize) {
-        return TryHash(aFrame, aCBSize).isSome();
-      }
-
-      bool operator==(const Key& aOther) const {
-        return mHashKey == aOther.mHashKey;
-      }
-    };
-
-    Key mKey;
-    nscoord mBSize;
-  };
 };
 
 #endif 
