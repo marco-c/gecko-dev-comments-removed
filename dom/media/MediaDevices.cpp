@@ -264,7 +264,8 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
   bool dropSpeakers =
       !Preferences::GetBool("media.setsinkid.enabled") ||
       !FeaturePolicyUtils::IsFeatureAllowed(doc, u"speaker-selection"_ns);
-
+  bool shouldResistFingerprinting =
+      window->AsGlobal()->ShouldResistFingerprinting(RFPTarget::MediaDevices);
   bool legacy = IsLegacyMode(window);
   bool outputIsDefault = true;  
   bool haveDefaultOutput = false;
@@ -293,8 +294,10 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
       case MediaDeviceKind::Audiooutput:
         if (dropSpeakers ||
             (!mExplicitlyGrantedAudioOutputRawIds.Contains(device->mRawID) &&
-             
-             !exposedMicrophoneGroupIds.Contains(device->mRawGroupID))) {
+             (!mCanExposeMicrophoneInfo ||
+              (shouldResistFingerprinting &&
+               
+               !exposedMicrophoneGroupIds.Contains(device->mRawGroupID))))) {
           outputIsDefault = false;
           continue;
         }
