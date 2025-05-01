@@ -102,6 +102,7 @@ async function initQuickSuggestPingTest({
       
       
       ["browser.urlbar.suggest.openpage", false],
+      ["browser.urlbar.quicksuggest.ampTopPickCharThreshold", 0],
     ],
   });
 

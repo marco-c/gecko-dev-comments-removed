@@ -582,9 +582,7 @@ pref("browser.urlbar.quicksuggest.impressionCaps.sponsoredEnabled", false);
 
 
 
-
-
-pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 0);
+pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 5);
 
 
 
