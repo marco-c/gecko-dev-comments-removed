@@ -504,85 +504,85 @@ let interfaceNamesInGlobalScope = [
   
   { name: "GeolocationPositionError", insecureContext: true },
   
-  { name: "GPU", nightly: true },
+  { name: "GPU", earlyBetaOrEarlier: true },
   
-  { name: "GPUAdapter", nightly: true },
+  { name: "GPUAdapter", earlyBetaOrEarlier: true },
   
-  { name: "GPUAdapterInfo", nightly: true },
+  { name: "GPUAdapterInfo", earlyBetaOrEarlier: true },
   
-  { name: "GPUBindGroup", nightly: true },
+  { name: "GPUBindGroup", earlyBetaOrEarlier: true },
   
-  { name: "GPUBindGroupLayout", nightly: true },
+  { name: "GPUBindGroupLayout", earlyBetaOrEarlier: true },
   
-  { name: "GPUBuffer", nightly: true },
+  { name: "GPUBuffer", earlyBetaOrEarlier: true },
   
-  { name: "GPUBufferUsage", nightly: true },
+  { name: "GPUBufferUsage", earlyBetaOrEarlier: true },
   
-  { name: "GPUCanvasContext", nightly: true },
+  { name: "GPUCanvasContext", earlyBetaOrEarlier: true },
   
-  { name: "GPUColorWrite", nightly: true },
+  { name: "GPUColorWrite", earlyBetaOrEarlier: true },
   
-  { name: "GPUCommandBuffer", nightly: true },
+  { name: "GPUCommandBuffer", earlyBetaOrEarlier: true },
   
-  { name: "GPUCommandEncoder", nightly: true },
+  { name: "GPUCommandEncoder", earlyBetaOrEarlier: true },
   
-  { name: "GPUCompilationInfo", nightly: true },
+  { name: "GPUCompilationInfo", earlyBetaOrEarlier: true },
   
-  { name: "GPUCompilationMessage", nightly: true },
+  { name: "GPUCompilationMessage", earlyBetaOrEarlier: true },
   
-  { name: "GPUComputePassEncoder", nightly: true },
+  { name: "GPUComputePassEncoder", earlyBetaOrEarlier: true },
   
-  { name: "GPUComputePipeline", nightly: true },
+  { name: "GPUComputePipeline", earlyBetaOrEarlier: true },
   
-  { name: "GPUDevice", nightly: true },
+  { name: "GPUDevice", earlyBetaOrEarlier: true },
   
-  { name: "GPUDeviceLostInfo", nightly: true },
+  { name: "GPUDeviceLostInfo", earlyBetaOrEarlier: true },
   
-  { name: "GPUError", nightly: true },
+  { name: "GPUError", earlyBetaOrEarlier: true },
   
-  { name: "GPUExternalTexture", nightly: true },
+  { name: "GPUExternalTexture", earlyBetaOrEarlier: true },
   
-  { name: "GPUInternalError", nightly: true },
+  { name: "GPUInternalError", earlyBetaOrEarlier: true },
   
-  { name: "GPUMapMode", nightly: true },
+  { name: "GPUMapMode", earlyBetaOrEarlier: true },
   
-  { name: "GPUOutOfMemoryError", nightly: true },
+  { name: "GPUOutOfMemoryError", earlyBetaOrEarlier: true },
   
-  { name: "GPUPipelineError", nightly: true },
+  { name: "GPUPipelineError", earlyBetaOrEarlier: true },
   
-  { name: "GPUPipelineLayout", nightly: true },
+  { name: "GPUPipelineLayout", earlyBetaOrEarlier: true },
   
-  { name: "GPUQuerySet", nightly: true },
+  { name: "GPUQuerySet", earlyBetaOrEarlier: true },
   
-  { name: "GPUQueue", nightly: true },
+  { name: "GPUQueue", earlyBetaOrEarlier: true },
   
-  { name: "GPURenderBundle", nightly: true },
+  { name: "GPURenderBundle", earlyBetaOrEarlier: true },
   
-  { name: "GPURenderBundleEncoder", nightly: true },
+  { name: "GPURenderBundleEncoder", earlyBetaOrEarlier: true },
   
-  { name: "GPURenderPassEncoder", nightly: true },
+  { name: "GPURenderPassEncoder", earlyBetaOrEarlier: true },
   
-  { name: "GPURenderPipeline", nightly: true },
+  { name: "GPURenderPipeline", earlyBetaOrEarlier: true },
   
-  { name: "GPUSampler", nightly: true },
+  { name: "GPUSampler", earlyBetaOrEarlier: true },
   
-  { name: "GPUShaderModule", nightly: true },
+  { name: "GPUShaderModule", earlyBetaOrEarlier: true },
   
-  { name: "GPUShaderStage", nightly: true },
+  { name: "GPUShaderStage", earlyBetaOrEarlier: true },
   
-  { name: "GPUSupportedFeatures", nightly: true },
+  { name: "GPUSupportedFeatures", earlyBetaOrEarlier: true },
   
-  { name: "GPUSupportedLimits", nightly: true },
+  { name: "GPUSupportedLimits", earlyBetaOrEarlier: true },
   
-  { name: "GPUTexture", nightly: true },
+  { name: "GPUTexture", earlyBetaOrEarlier: true },
   
-  { name: "GPUTextureUsage", nightly: true },
+  { name: "GPUTextureUsage", earlyBetaOrEarlier: true },
   
-  { name: "GPUTextureView", nightly: true },
+  { name: "GPUTextureView", earlyBetaOrEarlier: true },
   
-  { name: "GPUUncapturedErrorEvent", nightly: true },
+  { name: "GPUUncapturedErrorEvent", earlyBetaOrEarlier: true },
   
-  { name: "GPUValidationError", nightly: true },
+  { name: "GPUValidationError", earlyBetaOrEarlier: true },
   
   { name: "HashChangeEvent", insecureContext: true },
   
@@ -1551,7 +1551,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Window", insecureContext: true },
   
-  { name: "WGSLLanguageFeatures", nightly: true },
+  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
   
   { name: "Worker", insecureContext: true },
   
