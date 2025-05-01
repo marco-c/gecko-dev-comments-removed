@@ -4452,7 +4452,8 @@ void PresShell::NotifyFontFaceSetOnRefresh() {
 
 void PresShell::DoFlushPendingNotifications(FlushType aType) {
   
-  mozilla::ChangesToFlush flush(aType, aType >= FlushType::Style);
+  mozilla::ChangesToFlush flush(aType, aType >= FlushType::Style,
+                                aType >= FlushType::Layout);
   FlushPendingNotifications(flush);
 }
 
@@ -4502,10 +4503,10 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
   FlushType flushType = aFlush.mFlushType;
 
-  
-  
-  
-  if (flushType >= mozilla::FlushType::Layout) {
+  if (aFlush.mUpdateRelevancy) {
+    
+    
+    
     UpdateRelevancyOfContentVisibilityAutoFrames();
   }
 
@@ -9868,8 +9869,9 @@ void PresShell::WillPaint() {
   
   
   
-  FlushPendingNotifications(
-      ChangesToFlush(FlushType::InterruptibleLayout, false));
+  FlushPendingNotifications(ChangesToFlush(FlushType::InterruptibleLayout,
+                                            false,
+                                            false));
 }
 
 void PresShell::DidPaintWindow() {
@@ -12578,13 +12580,15 @@ PresShell::ProximityToViewportResult PresShell::DetermineProximityToViewport() {
             DOMIntersectionObserver::IsForProximityToViewport::Yes)
             .Intersects();
     element->SetVisibleForContentVisibility(intersects);
-    if (oldVisibility.isNothing() || *oldVisibility != intersects) {
-      frame->UpdateIsRelevantContent(ContentRelevancyReason::Visible);
-    }
 
     
     if (checkForInitialDetermination && intersects) {
+      
+      
+      frame->UpdateIsRelevantContent(ContentRelevancyReason::Visible);
       result.mHadInitialDetermination = true;
+    } else if (oldVisibility.isNothing() || *oldVisibility != intersects) {
+      ScheduleContentRelevancyUpdate(ContentRelevancyReason::Visible);
     }
   }
   if (nsPresContext* presContext = GetPresContext()) {

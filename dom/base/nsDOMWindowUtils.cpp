@@ -418,12 +418,8 @@ nsDOMWindowUtils::GetDocumentMetadata(const nsAString& aName,
 
 NS_IMETHODIMP
 nsDOMWindowUtils::UpdateLayerTree() {
+  FlushLayoutWithoutThrottledAnimations();
   if (RefPtr<PresShell> presShell = GetPresShell()) {
-    
-    
-    
-    presShell->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Layout, false ));
     RefPtr<nsViewManager> vm = presShell->GetViewManager();
     if (nsView* view = vm->GetRootView()) {
       nsAutoScriptBlocker scriptBlocker;
@@ -2172,12 +2168,11 @@ nsDOMWindowUtils::NeedsFlush(int32_t aFlushType, bool* aResult) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::FlushLayoutWithoutThrottledAnimations() {
-  nsCOMPtr<Document> doc = GetDocument();
-  if (doc) {
+  if (nsCOMPtr<Document> doc = GetDocument()) {
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Layout, false ));
+        ChangesToFlush(FlushType::Layout,  false,
+                        true));
   }
-
   return NS_OK;
 }
 

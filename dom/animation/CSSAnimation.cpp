@@ -367,7 +367,7 @@ void CSSAnimationKeyframeEffect::MaybeFlushUnanimatedStyle() const {
 
   if (dom::Document* doc = GetRenderedDocument()) {
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Style, false ));
+        ChangesToFlush(FlushType::Style, false , false));
   }
 }
 
