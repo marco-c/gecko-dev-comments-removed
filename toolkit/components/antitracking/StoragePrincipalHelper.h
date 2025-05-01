@@ -359,6 +359,11 @@ class StoragePrincipalHelper final {
   
   static void UpdatePartitionKeyWithForeignAncestorBit(
       nsAString& aKey, bool aForeignByAncestorContext);
+
+  
+  
+  static nsString PartitionKeyForExpandedPrincipal(
+      nsIPrincipal* aExpandedPrincipal);
 };
 
 }  

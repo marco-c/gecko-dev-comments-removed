@@ -515,15 +515,34 @@ LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
   mBrowsingContextID = parentBC->Id();
 
   
-  
-  mCookieJarSettings = aParentWGP->CookieJarSettings();
-  if (topLevelWGP->BrowsingContext()->IsTop()) {
-    if (mCookieJarSettings) {
-      bool stopAtOurLevel = mCookieJarSettings->GetCookieBehavior() ==
-                            nsICookieService::BEHAVIOR_REJECT_TRACKER;
-      if (!stopAtOurLevel ||
-          topLevelWGP->OuterWindowId() != aParentWGP->OuterWindowId()) {
-        mTopLevelPrincipal = topLevelWGP->DocumentPrincipal();
+  if (aTriggeringPrincipal &&
+      StaticPrefs::privacy_antitracking_isolateContentScriptResources() &&
+      nsContentUtils::IsExpandedPrincipal(aTriggeringPrincipal)) {
+    bool shouldResistFingerprinting =
+        nsContentUtils::ShouldResistFingerprinting_dangerous(
+            mLoadingPrincipal,
+            "CookieJarSettings can't exist yet, we're creating it",
+            RFPTarget::IsAlwaysEnabledForPrecompute);
+    mCookieJarSettings = CookieJarSettings::Create(
+        nsICookieService::BEHAVIOR_REJECT,
+        StoragePrincipalHelper::PartitionKeyForExpandedPrincipal(
+            aTriggeringPrincipal),
+        OriginAttributes::IsFirstPartyEnabled(), false,
+        shouldResistFingerprinting);
+  }
+
+  if (!mCookieJarSettings) {
+    
+    
+    mCookieJarSettings = aParentWGP->CookieJarSettings();
+    if (topLevelWGP->BrowsingContext()->IsTop()) {
+      if (mCookieJarSettings) {
+        bool stopAtOurLevel = mCookieJarSettings->GetCookieBehavior() ==
+                              nsICookieService::BEHAVIOR_REJECT_TRACKER;
+        if (!stopAtOurLevel ||
+            topLevelWGP->OuterWindowId() != aParentWGP->OuterWindowId()) {
+          mTopLevelPrincipal = topLevelWGP->DocumentPrincipal();
+        }
       }
     }
   }
@@ -1160,13 +1179,25 @@ LoadInfo::GetCookiePolicy(uint32_t* aResult) {
 namespace {
 
 already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
-    nsContentPolicyType aContentPolicyType, bool aIsPrivate,
-    bool shouldResistFingerprinting) {
+    nsIPrincipal* aTriggeringPrincipal, nsContentPolicyType aContentPolicyType,
+    bool aIsPrivate, bool aShouldResistFingerprinting) {
+  
+  if (aTriggeringPrincipal &&
+      StaticPrefs::privacy_antitracking_isolateContentScriptResources() &&
+      nsContentUtils::IsExpandedPrincipal(aTriggeringPrincipal)) {
+    return CookieJarSettings::Create(
+        nsICookieService::BEHAVIOR_REJECT,
+        StoragePrincipalHelper::PartitionKeyForExpandedPrincipal(
+            aTriggeringPrincipal),
+        OriginAttributes::IsFirstPartyEnabled(), false,
+        aShouldResistFingerprinting);
+  }
+
   if (StaticPrefs::network_cookieJarSettings_unblocked_for_testing()) {
     return aIsPrivate ? CookieJarSettings::Create(CookieJarSettings::ePrivate,
-                                                  shouldResistFingerprinting)
+                                                  aShouldResistFingerprinting)
                       : CookieJarSettings::Create(CookieJarSettings::eRegular,
-                                                  shouldResistFingerprinting);
+                                                  aShouldResistFingerprinting);
   }
 
   
@@ -1175,12 +1206,12 @@ already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
   if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON ||
       aContentPolicyType == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
     return aIsPrivate ? CookieJarSettings::Create(CookieJarSettings::ePrivate,
-                                                  shouldResistFingerprinting)
+                                                  aShouldResistFingerprinting)
                       : CookieJarSettings::Create(CookieJarSettings::eRegular,
-                                                  shouldResistFingerprinting);
+                                                  aShouldResistFingerprinting);
   }
 
-  return CookieJarSettings::GetBlockingAll(shouldResistFingerprinting);
+  return CookieJarSettings::GetBlockingAll(aShouldResistFingerprinting);
 }
 
 }  
@@ -1197,7 +1228,8 @@ LoadInfo::GetCookieJarSettings(nsICookieJarSettings** aCookieJarSettings) {
             "CookieJarSettings can't exist yet, we're creating it",
             RFPTarget::IsAlwaysEnabledForPrecompute);
     mCookieJarSettings = CreateCookieJarSettings(
-        mInternalContentPolicyType, isPrivate, shouldResistFingerprinting);
+        mTriggeringPrincipal, mInternalContentPolicyType, isPrivate,
+        shouldResistFingerprinting);
   }
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings = mCookieJarSettings;
