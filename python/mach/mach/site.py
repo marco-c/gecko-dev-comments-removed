@@ -378,30 +378,16 @@ class MachSiteManager:
             )
 
     def ensure(self, *, force=False):
-        lock_file = Path(self._virtualenv_root).with_suffix(".lock")
-        timeout = 60
-
-        
-        
-        
-        
-        
-        try:
-            with FileLock(lock_file, timeout=timeout):
-                result = self._up_to_date()
-                if force or not result.is_up_to_date:
-                    if Path(sys.prefix) == Path(self._metadata.prefix):
-                        
-                        
-                        
-                        
-                        
-                        raise VirtualenvOutOfDateException(result.reason)
-                    self._build()
-        except Timeout:
-            self._log(
-                f"Could not acquire the lock at {lock_file} for the mach site after {timeout} seconds."
-            )
+        result = self._up_to_date()
+        if force or not result.is_up_to_date:
+            if Path(sys.prefix) == Path(self._metadata.prefix):
+                
+                
+                
+                
+                
+                raise VirtualenvOutOfDateException(result.reason)
+            self._build()
 
     def attempt_populate_optional_packages(self):
         if self._site_packages_source != SitePackagesSource.VENV:
