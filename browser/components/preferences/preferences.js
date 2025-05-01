@@ -202,7 +202,9 @@ function init_all() {
   }
   if (Services.prefs.getBoolPref("browser.preferences.experimental")) {
     
+    
     document.getElementById("category-experimental").hidden =
+      !ExperimentAPI._manager.studiesEnabled ||
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
         false
