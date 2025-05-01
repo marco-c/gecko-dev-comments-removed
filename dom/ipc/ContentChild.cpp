@@ -17,7 +17,6 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BackgroundHangMonitor.h"
-#include "mozilla/BenchmarkStorageChild.h"
 #include "mozilla/FOGIPC.h"
 #include "GMPServiceChild.h"
 #include "Geolocation.h"
@@ -2008,16 +2007,6 @@ bool ContentChild::DeallocPMediaChild(media::PMediaChild* aActor) {
   return media::DeallocPMediaChild(aActor);
 }
 
-PBenchmarkStorageChild* ContentChild::AllocPBenchmarkStorageChild() {
-  return BenchmarkStorageChild::Instance();
-}
-
-bool ContentChild::DeallocPBenchmarkStorageChild(
-    PBenchmarkStorageChild* aActor) {
-  delete aActor;
-  return true;
-}
-
 #ifdef MOZ_WEBRTC
 PWebrtcGlobalChild* ContentChild::AllocPWebrtcGlobalChild() {
   auto* child = new WebrtcGlobalChild();
@@ -2460,7 +2449,7 @@ mozilla::ipc::IPCResult ContentChild::RecvAddPermission(
   
   int64_t modificationTime = 0;
 
-  permissionManager->AddInternal(
+  permissionManager->Add(
       principal, nsCString(permission.type), permission.capability, 0,
       permission.expireType, permission.expireTime, modificationTime,
       PermissionManager::eNotify, PermissionManager::eNoDBOperation);
