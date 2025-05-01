@@ -494,7 +494,16 @@ public class GeckoThread extends Thread {
 
     if ((mInitInfo.flags & FLAG_PRELOAD_CHILD) != 0) {
       
-      GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
+      GeckoProcessManager.getInstance()
+          .preload(
+              
+              GeckoProcessType.GPU,
+              
+              
+              
+              
+              GeckoProcessType.CONTENT,
+              GeckoProcessType.CONTENT);
     }
 
     if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
