@@ -3940,7 +3940,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
 }
 
 gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
-    gfxFont::Orientation aOrientation) {
+    gfxFont::Orientation aOrientation, StyleQueryFontMetricsFlags aFlags) {
   bool isFirst;
   RefPtr<gfxFont> font = GetFirstValidFont(0x20, nullptr, &isFirst);
   auto metrics = font->GetMetrics(aOrientation);
@@ -3948,7 +3948,8 @@ gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
   
   
   
-  if (!isFirst || !font->HasCharacter('0')) {
+  if ((aFlags & StyleQueryFontMetricsFlags::NEEDS_CH) &&
+      (!isFirst || !font->HasCharacter('0'))) {
     RefPtr<gfxFont> zeroFont = GetFirstValidFont('0');
     if (zeroFont != font) {
       const auto& zeroMetrics = zeroFont->GetMetrics(aOrientation);
@@ -3957,7 +3958,8 @@ gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
   }
 
   
-  if (!isFirst || !font->HasCharacter(0x6C34)) {
+  if ((aFlags & StyleQueryFontMetricsFlags::NEEDS_IC) &&
+      (!isFirst || !font->HasCharacter(0x6C34))) {
     RefPtr<gfxFont> icFont = GetFirstValidFont(0x6C34);
     if (icFont != font) {
       const auto& icMetrics = icFont->GetMetrics(aOrientation);

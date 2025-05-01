@@ -1072,7 +1072,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  gfxFont::Metrics GetMetricsForCSSUnits(gfxFont::Orientation aOrientation);
+  
+  
+  gfxFont::Metrics GetMetricsForCSSUnits(
+      gfxFont::Orientation aOrientation,
+      mozilla::StyleQueryFontMetricsFlags aFlags);
 
  protected:
   friend class mozilla::PostTraversalTask;
