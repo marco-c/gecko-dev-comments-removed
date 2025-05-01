@@ -101,12 +101,6 @@ Maybe<nsString> ParseCodecString(const nsAString& aCodec) {
   return Some(codecs[0]);
 }
 
-bool IsSameColorSpace(const VideoColorSpaceInit& aLhs,
-                      const VideoColorSpaceInit& aRhs) {
-  return aLhs.mFullRange == aRhs.mFullRange && aLhs.mMatrix == aRhs.mMatrix &&
-         aLhs.mPrimaries == aRhs.mPrimaries && aLhs.mTransfer == aRhs.mTransfer;
-}
-
 
 
 
@@ -212,6 +206,21 @@ VideoColorSpaceInit VideoColorSpaceInternal::ToColorSpaceInit() const {
   init.mPrimaries = MaybeToNullable(mPrimaries);
   init.mTransfer = MaybeToNullable(mTransfer);
   return init;
+}
+
+nsCString VideoColorSpaceInternal::ToString() const {
+  nsCString rv("VideoColorSpace");
+  rv.AppendPrintf(" range: %s",
+                  mFullRange ? mFullRange.value() ? "true" : "false" : "none");
+  rv.AppendPrintf(" matrix: %s",
+                  mMatrix ? GetEnumString(mMatrix.value()).get() : "none");
+  rv.AppendPrintf(
+      " primaries: %s",
+      mPrimaries ? GetEnumString(mPrimaries.value()).get() : "none");
+  rv.AppendPrintf(" transfer: %s",
+                  mTransfer ? GetEnumString(mTransfer.value()).get() : "none");
+
+  return rv;
 }
 
 gfx::ColorRange ToColorRange(bool aIsFullRange) {
@@ -527,60 +536,30 @@ WebCodecsConfigurationChangeList::ToPEMChangeList() const {
   return rv.forget();
 }
 
-nsCString ColorSpaceInitToString(
-    const dom::VideoColorSpaceInit& aColorSpaceInit) {
-  nsCString rv("VideoColorSpace");
-
-  if (!aColorSpaceInit.mFullRange.IsNull()) {
-    rv.AppendPrintf(" range: %s",
-                    aColorSpaceInit.mFullRange.Value() ? "true" : "false");
-  }
-  if (!aColorSpaceInit.mMatrix.IsNull()) {
-    rv.AppendPrintf(" matrix: %s",
-                    GetEnumString(aColorSpaceInit.mMatrix.Value()).get());
-  }
-  if (!aColorSpaceInit.mTransfer.IsNull()) {
-    rv.AppendPrintf(" transfer: %s",
-                    GetEnumString(aColorSpaceInit.mTransfer.Value()).get());
-  }
-  if (!aColorSpaceInit.mPrimaries.IsNull()) {
-    rv.AppendPrintf(" primaries: %s",
-                    GetEnumString(aColorSpaceInit.mPrimaries.Value()).get());
-  }
-
-  return rv;
-}
-
 RefPtr<TaskQueue> GetWebCodecsEncoderTaskQueue() {
   return TaskQueue::Create(
       GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
       "WebCodecs encoding", false);
 }
 
-VideoColorSpaceInit FallbackColorSpaceForVideoContent() {
+VideoColorSpaceInternal FallbackColorSpaceForVideoContent() {
   
   
   
   
   
-  VideoColorSpaceInit colorSpace;
-  colorSpace.mFullRange = false;
-  colorSpace.mMatrix = VideoMatrixCoefficients::Bt709;
-  colorSpace.mTransfer = VideoTransferCharacteristics::Bt709;
-  colorSpace.mPrimaries = VideoColorPrimaries::Bt709;
-  return colorSpace;
+  return VideoColorSpaceInternal(false, VideoMatrixCoefficients::Bt709,
+                                 VideoColorPrimaries::Bt709,
+                                 VideoTransferCharacteristics::Bt709);
 }
-VideoColorSpaceInit FallbackColorSpaceForWebContent() {
+VideoColorSpaceInternal FallbackColorSpaceForWebContent() {
   
   
   
   
-  VideoColorSpaceInit colorSpace;
-  colorSpace.mFullRange = true;
-  colorSpace.mMatrix = VideoMatrixCoefficients::Rgb;
-  colorSpace.mTransfer = VideoTransferCharacteristics::Iec61966_2_1;
-  colorSpace.mPrimaries = VideoColorPrimaries::Bt709;
-  return colorSpace;
+  return VideoColorSpaceInternal(true, VideoMatrixCoefficients::Rgb,
+                                 VideoColorPrimaries::Bt709,
+                                 VideoTransferCharacteristics::Iec61966_2_1);
 }
 
 Maybe<CodecType> CodecStringToCodecType(const nsAString& aCodecString) {
