@@ -133,14 +133,6 @@ exports.rule = {
   id: PropTypes.string,
 
   
-  inheritance: PropTypes.shape({
-    
-    inherited: PropTypes.object,
-    
-    inheritedSource: PropTypes.string,
-  }),
-
-  
   isUnmatched: PropTypes.bool,
 
   
