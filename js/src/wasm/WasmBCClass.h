@@ -172,11 +172,11 @@ enum class PreBarrierKind {
 enum class PostBarrierKind {
   
   
+  Imprecise,
+  
+  
   
   Precise,
-  
-  
-  Imprecise,
   
   
   WholeCell,
@@ -1382,7 +1382,7 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool emitPostBarrierImprecise(
+  [[nodiscard]] bool emitPostBarrierEdgeImprecise(
       const mozilla::Maybe<RegRef>& object, RegPtr valueAddr, RegRef value);
 
   
@@ -1397,7 +1397,7 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool emitPostBarrierPrecise(
+  [[nodiscard]] bool emitPostBarrierEdgePrecise(
       const mozilla::Maybe<RegRef>& object, RegPtr valueAddr, RegRef prevValue,
       RegRef value);
 

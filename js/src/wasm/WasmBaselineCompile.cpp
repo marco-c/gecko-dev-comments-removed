@@ -7283,8 +7283,9 @@ bool BaseCompiler::emitPostBarrierWholeCell(RegRef object, RegRef value,
   return true;
 }
 
-bool BaseCompiler::emitPostBarrierImprecise(const Maybe<RegRef>& object,
-                                            RegPtr valueAddr, RegRef value) {
+bool BaseCompiler::emitPostBarrierEdgeImprecise(const Maybe<RegRef>& object,
+                                                RegPtr valueAddr,
+                                                RegRef value) {
   
   
   sync();
@@ -7305,7 +7306,7 @@ bool BaseCompiler::emitPostBarrierImprecise(const Maybe<RegRef>& object,
   
   
   pushPtr(valueAddr);
-  if (!emitInstanceCall(SASigPostBarrier)) {
+  if (!emitInstanceCall(SASigPostBarrierEdge)) {
     return false;
   }
 
@@ -7319,9 +7320,9 @@ bool BaseCompiler::emitPostBarrierImprecise(const Maybe<RegRef>& object,
   return true;
 }
 
-bool BaseCompiler::emitPostBarrierPrecise(const Maybe<RegRef>& object,
-                                          RegPtr valueAddr, RegRef prevValue,
-                                          RegRef value) {
+bool BaseCompiler::emitPostBarrierEdgePrecise(const Maybe<RegRef>& object,
+                                              RegPtr valueAddr,
+                                              RegRef prevValue, RegRef value) {
   
   if (object) {
     pushRef(*object);
@@ -7331,7 +7332,7 @@ bool BaseCompiler::emitPostBarrierPrecise(const Maybe<RegRef>& object,
   
   pushPtr(valueAddr);
   pushRef(prevValue);
-  if (!emitInstanceCall(SASigPostBarrierPrecise)) {
+  if (!emitInstanceCall(SASigPostBarrierEdgePrecise)) {
     return false;
   }
 
@@ -7365,11 +7366,11 @@ bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
   masm.storePtr(value, Address(valueAddr, 0));
 
   
-  if (postBarrierKind == PostBarrierKind::Precise) {
-    return emitPostBarrierPrecise(object, valueAddr, prevValue, value);
-  }
   if (postBarrierKind == PostBarrierKind::Imprecise) {
-    return emitPostBarrierImprecise(object, valueAddr, value);
+    return emitPostBarrierEdgeImprecise(object, valueAddr, value);
+  }
+  if (postBarrierKind == PostBarrierKind::Precise) {
+    return emitPostBarrierEdgePrecise(object, valueAddr, prevValue, value);
   }
   if (postBarrierKind == PostBarrierKind::WholeCell) {
     
