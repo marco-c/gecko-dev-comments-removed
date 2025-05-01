@@ -354,7 +354,7 @@ def process_gyp_result(
                         if not f:
                             continue
                         
-                        if isinstance(f, (str,)):
+                        if isinstance(f, str):
                             context[var].append(f)
                         else:
                             context[var].extend(f)
