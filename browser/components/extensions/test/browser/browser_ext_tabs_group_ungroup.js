@@ -19,13 +19,10 @@ add_task(async function group_ungroup_and_index() {
       "tab3.htm": "<title>tab3.html</title>",
     },
     async background() {
-      const { id: tabId1 } = await browser.tabs.create({ url: "tab1.htm" });
-      const { id: tabId2 } = await browser.tabs.create({ url: "tab2.htm" });
-      const { id: tabId3 } = await browser.tabs.create({ url: "tab3.htm" });
-
       let eventIds = [];
       let expected = [];
       let allEvents = Promise.withResolvers();
+      const EXPECTED_EVENT_COUNT = 16;
 
       browser.tabGroups.onCreated.addListener(group => {
         eventIds.push(group.id);
@@ -34,13 +31,22 @@ add_task(async function group_ungroup_and_index() {
       browser.tabGroups.onRemoved.addListener(group => {
         eventIds.push(-group.id);
         browser.test.log(`Events so far (${eventIds.length}): ${eventIds}`);
-        if (eventIds.length === 16) {
+        if (eventIds.length === EXPECTED_EVENT_COUNT) {
           allEvents.resolve();
         }
-        if (eventIds.length > 16) {
+        if (eventIds.length > EXPECTED_EVENT_COUNT) {
           browser.fail("Extra event received: " + group.id);
         }
       });
+      browser.tabGroups.onMoved.addListener(group => {
+        
+        eventIds.push(`moved${group.id}`);
+        browser.test.log(`Events so far (${eventIds.length}): ${eventIds}`);
+      });
+
+      const { id: tabId1 } = await browser.tabs.create({ url: "tab1.htm" });
+      const { id: tabId2 } = await browser.tabs.create({ url: "tab2.htm" });
+      const { id: tabId3 } = await browser.tabs.create({ url: "tab3.htm" });
 
       async function assertAllTabExpectations(expectations, desc) {
         const tabs = await Promise.all([
@@ -197,12 +203,16 @@ add_task(async function group_ungroup_and_index() {
       
       
       
-      
-      
-      
-      
-      browser.test.log(`Expect: ${eventIds.join()}`);
-      browser.test.log(`Actual: ${expected.join()}`);
+      browser.test.log(
+        `Waiting for events ${allEvents.length}/${EXPECTED_EVENT_COUNT}`
+      );
+      await allEvents.promise;
+
+      browser.test.assertEq(
+        eventIds.join(),
+        expected.join(),
+        "Received expected onCreated events"
+      );
 
       browser.test.sendMessage("done");
     },
