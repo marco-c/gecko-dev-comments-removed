@@ -283,13 +283,6 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
                                       getter_AddRefs(info.mCookieJarSettings));
   info.mCookieJarSettingsArgs = aData.cookieJarSettings();
   info.mIsOn3PCBExceptionList = aData.isOn3PCBExceptionList();
-
-  
-  
-  info.mEvalAllowed = true;
-  info.mReportEvalCSPViolations = false;
-  info.mWasmEvalAllowed = true;
-  info.mReportWasmEvalCSPViolations = false;
   info.mSecureContext = aData.isSecureContext()
                             ? WorkerLoadInfo::eSecureContext
                             : WorkerLoadInfo::eInsecureContext;

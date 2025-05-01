@@ -630,8 +630,6 @@ nsresult CacheLoadHandler::DataReceived() {
       
       nsresult rv = mWorkerRef->Private()->SetCsp(parent->GetCsp());
       NS_ENSURE_SUCCESS(rv, rv);
-      mWorkerRef->Private()->SetEvalAllowed(parent->IsEvalAllowed());
-      mWorkerRef->Private()->SetWasmEvalAllowed(parent->IsWasmEvalAllowed());
     }
   }
 
