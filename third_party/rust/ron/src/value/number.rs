@@ -6,7 +6,33 @@ use std::{
 use serde::{de::Visitor, Serialize, Serializer};
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Hash, Ord)]
+#[cfg_attr(doc, non_exhaustive)]
 pub enum Number {
     I8(i8),
     I16(i16),
@@ -22,6 +48,14 @@ pub enum Number {
     U128(u128),
     F32(F32),
     F64(F64),
+    #[cfg(not(doc))]
+    #[allow(private_interfaces)]
+    __NonExhaustive(private::Never),
+}
+
+mod private {
+    #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Hash, Ord)]
+    pub enum Never {}
 }
 
 impl Serialize for Number {
@@ -41,6 +75,8 @@ impl Serialize for Number {
             Self::U128(v) => serializer.serialize_u128(*v),
             Self::F32(v) => serializer.serialize_f32(v.get()),
             Self::F64(v) => serializer.serialize_f64(v.get()),
+            #[cfg(not(doc))]
+            Self::__NonExhaustive(never) => match *never {},
         }
     }
 }
@@ -65,6 +101,8 @@ impl Number {
             Self::U128(v) => visitor.visit_u128(*v),
             Self::F32(v) => visitor.visit_f32(v.get()),
             Self::F64(v) => visitor.visit_f64(v.get()),
+            #[cfg(not(doc))]
+            Self::__NonExhaustive(never) => match *never {},
         }
     }
 }
@@ -216,6 +254,8 @@ impl Number {
             Number::U128(v) => v as f64,
             Number::F32(v) => f64::from(v.get()),
             Number::F64(v) => v.get(),
+            #[cfg(not(doc))]
+            Self::__NonExhaustive(never) => match never {},
         }
     }
 }
