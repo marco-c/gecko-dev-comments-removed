@@ -313,16 +313,17 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
+  MutexData<bool> minorSweepingFinished;
+  MutexData<bool> majorSweepingFinished;
+
+  
+  
   
   MainThreadData<bool> majorStartedWhileMinorSweeping;
 
   
   
   MainThreadData<bool> majorFinishedWhileMinorSweeping;
-
-  
-  
-  MutexData<bool> minorSweepingFinished;
 
  public:
   explicit BufferAllocator(JS::Zone* zone);
@@ -351,12 +352,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void startMajorSweeping(MaybeLock& lock);
   void sweepForMajorCollection(bool shouldDecommit);
   void finishMajorCollection(const AutoLock& lock);
+  void clearAllocatedDuringCollectionState(const AutoLock& lock);
   void clearMarkStateAfterBarrierVerification();
 
   void maybeMergeSweptData();
   void maybeMergeSweptData(MaybeLock& lock);
   void mergeSweptData();
   void mergeSweptData(const AutoLock& lock);
+  void abortMajorSweeping(const AutoLock& lock);
 
   bool isEmpty() const;
 
