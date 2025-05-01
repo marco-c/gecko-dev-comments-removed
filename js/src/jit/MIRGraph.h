@@ -309,6 +309,12 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void setLoopHeader(MBasicBlock* newBackedge);
 
   
+  void setLoopHeader() {
+    MOZ_ASSERT(!isLoopHeader());
+    kind_ = LOOP_HEADER;
+  }
+
+  
   [[nodiscard]] bool inheritPhisFromBackedge(MBasicBlock* backedge);
 
   void insertBefore(MInstruction* at, MInstruction* ins);
@@ -395,6 +401,13 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void setDomIndex(uint32_t d) { domIndex_ = d; }
 
   MBasicBlock* getPredecessor(uint32_t i) const { return predecessors_[i]; }
+  void setPredecessor(uint32_t i, MBasicBlock* p) { predecessors_[i] = p; }
+  [[nodiscard]]
+  bool appendPredecessor(MBasicBlock* p) {
+    return predecessors_.append(p);
+  }
+  void erasePredecessor(uint32_t i) { predecessors_.erase(&predecessors_[i]); }
+
   size_t indexForPredecessor(MBasicBlock* block) const {
     
     MOZ_ASSERT(!block->successorWithPhis());
