@@ -1104,6 +1104,24 @@ struct MATH
 		  mathVariants.sanitize (c, this));
   }
 
+  
+  HB_INTERNAL bool is_bad_cambria (hb_font_t *font) const
+  {
+#ifndef HB_NO_MATH
+    switch HB_CODEPOINT_ENCODE3 (font->face->table.MATH.get_blob ()->length,
+                                 get_constant (HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT, font),
+                                 get_constant (HB_OT_MATH_CONSTANT_DELIMITED_SUB_FORMULA_MIN_HEIGHT, font))
+    {
+      
+
+
+      case HB_CODEPOINT_ENCODE3 (25722, 2500, 3000):
+        return true;
+    }
+#endif
+    return false;
+  }
+
   hb_position_t get_constant (hb_ot_math_constant_t  constant,
 			      hb_font_t		   *font) const
   { return (this+mathConstants).get_value (constant, font); }

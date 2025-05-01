@@ -2638,6 +2638,7 @@ struct hb_get_glyph_alternates_dispatch_t :
 
 
 
+
 HB_EXTERN unsigned
 hb_ot_layout_lookup_get_glyph_alternates (hb_face_t      *face,
 					  unsigned        lookup_index,

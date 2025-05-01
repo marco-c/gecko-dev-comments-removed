@@ -83,6 +83,8 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 
 
+
+
 typedef enum { 
   HB_SUBSET_FLAGS_DEFAULT =		     0x00000000u,
   HB_SUBSET_FLAGS_NO_HINTING =		     0x00000001u,
@@ -96,8 +98,9 @@ typedef enum {
   HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES =  0x00000100u,
   HB_SUBSET_FLAGS_NO_LAYOUT_CLOSURE =        0x00000200u,
   HB_SUBSET_FLAGS_OPTIMIZE_IUP_DELTAS	  =  0x00000400u,
+  HB_SUBSET_FLAGS_NO_BIDI_CLOSURE         =  0x00000800u,
 #ifdef HB_EXPERIMENTAL_API
-  HB_SUBSET_FLAGS_IFTB_REQUIREMENTS       =  0x00000800u,
+  HB_SUBSET_FLAGS_IFTB_REQUIREMENTS       =  0x00001000u,
 #endif
 } hb_subset_flags_t;
 

@@ -87,6 +87,20 @@ hb_position_t
 hb_ot_math_get_constant (hb_font_t *font,
 			 hb_ot_math_constant_t constant)
 {
+  
+
+
+
+
+  if ((constant == HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT ||
+       constant == HB_OT_MATH_CONSTANT_DELIMITED_SUB_FORMULA_MIN_HEIGHT) &&
+      font->face->table.MATH->is_bad_cambria (font))
+  {
+    if (constant == HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT)
+      constant = HB_OT_MATH_CONSTANT_DELIMITED_SUB_FORMULA_MIN_HEIGHT;
+    else
+      constant = HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT;
+  }
   return font->face->table.MATH->get_constant(constant, font);
 }
 
