@@ -38,9 +38,14 @@ add_setup(async function () {
       return origAddExperiment(enrollment);
     });
 
+  
+  
+  
   registerCleanupFunction(() => {
-    NimbusTestUtils.assert.storeIsEmpty(ExperimentManager.store);
-    sandbox.restore();
+    registerCleanupFunction(() => {
+      NimbusTestUtils.assert.storeIsEmpty(ExperimentManager.store);
+      sandbox.restore();
+    });
   });
 });
 
