@@ -1036,8 +1036,11 @@ previewers.Object = [
 
     
     
-    const name = DevToolsUtils.getProperty(obj, "name", true);
-    const msg = DevToolsUtils.getProperty(obj, "message", true);
+    
+    const invokeUnsafeGetters = !obj.isMutedError;
+
+    const name = DevToolsUtils.getProperty(obj, "name", invokeUnsafeGetters);
+    const msg = DevToolsUtils.getProperty(obj, "message", invokeUnsafeGetters);
     const stack = DevToolsUtils.getProperty(obj, "stack");
     const fileName = DevToolsUtils.getProperty(obj, "fileName");
     const lineNumber = DevToolsUtils.getProperty(obj, "lineNumber");
