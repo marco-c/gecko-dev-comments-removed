@@ -1618,15 +1618,8 @@ void nsNSSComponent::PrepareForShutdown() {
 
   
   
-  {
-    MutexAutoLock lock(mMutex);
-    mDefaultCertVerifier = nullptr;
-  }
-
-  
-  
-  AsyncLoadOrUnloadOSClientCertsModule(false);
-
+  MutexAutoLock lock(mMutex);
+  mDefaultCertVerifier = nullptr;
   
   
   

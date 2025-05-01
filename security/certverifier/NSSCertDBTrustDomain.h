@@ -102,6 +102,11 @@ bool LoadOSClientCertsModule();
 
 bool LoadIPCClientCertsModule();
 
+
+
+
+void UnloadUserModules();
+
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                        nsCString& nickname);
 
