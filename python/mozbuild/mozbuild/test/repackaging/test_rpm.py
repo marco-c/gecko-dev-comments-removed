@@ -2,8 +2,13 @@
 
 
 
+import pathlib
+import sys
+import tempfile
+import unittest
 from contextlib import nullcontext as does_not_raise
 
+import mozpack.path as mozpath
 import mozunit
 import pytest
 
@@ -275,45 +280,159 @@ def test_get_build_variables(
         }
 
 
+@unittest.skipIf(sys.platform.startswith("win"), "Linux only test")
 @pytest.mark.parametrize(
-    "does_path_exits, expectation",
+    "does_rpm_package_exist, expectation",
     (
         (True, does_not_raise()),
         (False, pytest.raises(rpm.NoRpmPackageFound)),
     ),
 )
-def test_generate_rpm_archive(
-    monkeypatch,
-    does_path_exits,
-    expectation,
-):
-    monkeypatch.setattr(rpm, "_get_command", lambda *_: ["mock_command"])
-    monkeypatch.setattr(rpm.subprocess, "check_call", lambda *_, **__: None)
+def test_generate_rpm_archive(monkeypatch, does_rpm_package_exist, expectation):
+    temp_testing_dir = tempfile.TemporaryDirectory()
+    temp_testing_dir_name = temp_testing_dir.name
+    copy_call_history = []  
 
-    def mock_exists(path):
-        assert path == "/target_dir/x86_64/firefox-111.0-1.x86_64.rpm"
-        return does_path_exits
+    
+    def fake_copy(src, dst):
+        copy_call_history.append(("copy", src, dst))
 
-    monkeypatch.setattr(rpm.os.path, "exists", mock_exists)
+    monkeypatch.setattr(rpm.shutil, "copy", fake_copy)
 
-    def mock_copy(source_path, destination_path):
-        assert source_path == "/tmp/firefox.tar.xz"
-        assert destination_path == "/source_dir/rpm/firefox.tar.xz"
+    monkeypatch.setattr(rpm, "_get_command", lambda src, tgt, arch: ["mock_command"])
+    monkeypatch.setattr(rpm.subprocess, "check_call", lambda command, cwd: None)
 
-    monkeypatch.setattr(rpm.shutil, "copy", mock_copy)
+    upload_dir = mozpath.join(temp_testing_dir_name, "upload_dir")
+    monkeypatch.setenv("UPLOAD_DIR", upload_dir)
+
+    
+    
+    
+    
+    def fake_exists(path):
+        expected_rpm_path = mozpath.join(
+            temp_testing_dir_name, "target_dir", "i386", "firefox-111.0-1.i386.rpm"
+        )
+        if path == expected_rpm_path:
+            return does_rpm_package_exist
+        if path == upload_dir:
+            return False  
+        return True
+
+    monkeypatch.setattr(rpm.os.path, "exists", fake_exists)
+
+    mkdir_calls = []
+
+    def fake_mkdir(path):
+        mkdir_calls.append(path)
+
+    monkeypatch.setattr(rpm.os, "mkdir", fake_mkdir)
+
+    
+    
+    original_glob = pathlib.Path.glob
+
+    def fake_glob(self, pattern):
+        if pattern == "*.rpm":
+            
+            
+            return [
+                str(
+                    self.joinpath(
+                        temp_testing_dir_name,
+                        "target_dir",
+                        "noarch",
+                        "langpack.dummy.rpm",
+                    )
+                )
+            ]
+        return original_glob(self, pattern)
+
+    monkeypatch.setattr(rpm.pathlib.Path, "glob", fake_glob)
 
     with expectation:
         rpm._generate_rpm_archive(
-            source_dir="/source_dir/rpm",
-            infile="/tmp/firefox.tar.xz",
-            target_dir="/target_dir",
-            output_path="/output",
+            source_dir=mozpath.join(temp_testing_dir_name, "source_dir", "rpm"),
+            infile=mozpath.join(temp_testing_dir_name, "tmp", "firefox.tar.xz"),
+            target_dir=mozpath.join(temp_testing_dir_name, "target_dir"),
+            output_filename="target.rpm",
             build_variables={
                 "PKG_NAME": "firefox",
                 "PKG_VERSION": "111.0",
                 "PKG_BUILD_NUMBER": 1,
             },
-            arch="x86_64",
+            arch="x86",
+        )
+
+    
+    if does_rpm_package_exist:
+        
+        expected_tar_dest = mozpath.join(
+            temp_testing_dir_name, "source_dir", "rpm", "firefox.tar.xz"
+        )
+        assert (
+            "copy",
+            mozpath.join(temp_testing_dir_name, "tmp", "firefox.tar.xz"),
+            expected_tar_dest,
+        ) in copy_call_history
+
+        
+        expected_rpm_path = mozpath.join(
+            temp_testing_dir_name, "target_dir", "i386", "firefox-111.0-1.i386.rpm"
+        )
+        assert ("copy", expected_rpm_path, "target.rpm") in copy_call_history
+
+        
+        
+        expected_dummy_path = mozpath.join(
+            temp_testing_dir_name, "target_dir", "noarch", "langpack.dummy.rpm"
+        )
+        
+        found = any(
+            src == expected_dummy_path and dst == upload_dir
+            for _, src, dst in copy_call_history
+        )
+        assert found, "The dummy langpack RPM file was not copied to the upload_dir."
+
+        
+        assert upload_dir in mkdir_calls
+
+    temp_testing_dir.cleanup()
+
+
+def test_generate_rpm_archive_missing_upload_dir(monkeypatch):
+    
+    monkeypatch.delenv("UPLOAD_DIR", raising=False)
+
+    monkeypatch.setattr(rpm.shutil, "copy", lambda src, dst: None)
+    monkeypatch.setattr(rpm, "_get_command", lambda src, tgt, arch: ["mock_command"])
+    monkeypatch.setattr(rpm.subprocess, "check_call", lambda command, cwd: None)
+
+    
+    def fake_exists(path):
+        expected_rpm_path = mozpath.join(
+            "/target_dir", "i386", "firefox-111.0-1.i386.rpm"
+        )
+        if path == expected_rpm_path:
+            return True
+        return True
+
+    monkeypatch.setattr(rpm.os.path, "exists", fake_exists)
+
+    with pytest.raises(
+        OSError, match="The 'UPLOAD_DIR' environment variable is not set."
+    ):
+        rpm._generate_rpm_archive(
+            source_dir="/source_dir/rpm",
+            infile="/tmp/firefox.tar.xz",
+            target_dir="/target_dir",
+            output_filename="target.rpm",
+            build_variables={
+                "PKG_NAME": "firefox",
+                "PKG_VERSION": "111.0",
+                "PKG_BUILD_NUMBER": 1,
+            },
+            arch="x86",
         )
 
 
