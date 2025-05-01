@@ -45,43 +45,27 @@ function with_dependent() {
     
     TD3 = NB4 = NB5 = "";
 
-    var preGC_ND2_rep = this.stringRepresentation ? JSON.parse(stringRepresentation(ND2)) : null;
     gc();
+    print(ND2);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     assertEq(ND2, "A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (!this.stringRepresentation) {
-        return;
-    }
-    var ND2_rep = JSON.parse(stringRepresentation(ND2));
-    if (preGC_ND2_rep.base.base.isTenured) {
-        print("Case 1"); 
-        assertEq(ND2_rep.flags.includes("DEPENDENT_BIT"), true);
-    } else if (preGC_ND2_rep.chars != ND2_rep.chars) {
-        print("Case 2"); 
-        assertEq(ND2_rep.flags.includes("DEPENDENT_BIT"), false);
-    } else {
-        print("Case 3"); 
-        assertEq(ND2_rep.flags.includes("DEPENDENT_BIT"), true);
-    }
 }
 
 function with_rope() {
@@ -125,7 +109,6 @@ function with_rope() {
     gc();
     print(ND2);
     assertEq(ND2, "A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME");
-    
     
     if (NB4_rep !== null) {
         assertEq(NB4_rep.flags.includes("NON_DEDUP_BIT"), true);

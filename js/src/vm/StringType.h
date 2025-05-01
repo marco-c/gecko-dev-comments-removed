@@ -1156,15 +1156,6 @@ class JSLinearString : public JSString {
     return mozilla::Range<const char16_t>(twoByteChars(nogc), length());
   }
 
-  template <typename CharT>
-  mozilla::Range<const CharT> range(const JS::AutoRequireNoGC& nogc) const {
-    if constexpr (std::is_same_v<CharT, JS::Latin1Char>) {
-      return latin1Range(nogc);
-    } else {
-      return twoByteRange(nogc);
-    }
-  }
-
   MOZ_ALWAYS_INLINE
   char16_t latin1OrTwoByteChar(size_t index) const {
     MOZ_ASSERT(JSString::isLinear());
@@ -1236,22 +1227,6 @@ class JSLinearString : public JSString {
   
   template <typename CharT>
   inline size_t maybeMallocCharsOnPromotion(js::Nursery* nursery);
-
-  
-  
-  
-  
-  
-  
-  template <typename CharT>
-  static size_t maybeCloneCharsOnPromotionTyped(JSLinearString* str);
-
-  static size_t maybeCloneCharsOnPromotion(JSLinearString* str) {
-    if (str->hasLatin1Chars()) {
-      return maybeCloneCharsOnPromotionTyped<JS::Latin1Char>(str);
-    }
-    return maybeCloneCharsOnPromotionTyped<char16_t>(str);
-  }
 
   inline void finalize(JS::GCContext* gcx);
   inline size_t allocSize() const;
@@ -2578,12 +2553,13 @@ class StringRelocationOverlay : public RelocationOverlay {
     
     
     JSLinearString* nurseryBaseOrRelocOverlay;
-
-    
-    JSString* unusedLeftChild;
   };
 
  public:
+  explicit StringRelocationOverlay(Cell* dst) : RelocationOverlay(dst) {
+    static_assert(sizeof(JSString) >= sizeof(StringRelocationOverlay));
+  }
+
   StringRelocationOverlay(Cell* dst, const JS::Latin1Char* chars)
       : RelocationOverlay(dst), nurseryCharsLatin1(chars) {}
 
@@ -2592,9 +2568,6 @@ class StringRelocationOverlay : public RelocationOverlay {
 
   StringRelocationOverlay(Cell* dst, JSLinearString* origBase)
       : RelocationOverlay(dst), nurseryBaseOrRelocOverlay(origBase) {}
-
-  StringRelocationOverlay(Cell* dst, JSString* origLeftChild)
-      : RelocationOverlay(dst), unusedLeftChild(origLeftChild) {}
 
   static const StringRelocationOverlay* fromCell(const Cell* cell) {
     return static_cast<const StringRelocationOverlay*>(cell);
@@ -2643,10 +2616,10 @@ class StringRelocationOverlay : public RelocationOverlay {
                                                                 Cell* dst);
 
   
-  
   static StringRelocationOverlay* forwardString(JSString* src, Cell* dst) {
     MOZ_ASSERT(!src->isForwarded());
     MOZ_ASSERT(!dst->isForwarded());
+    MOZ_ASSERT(!src->isDependent());
 
     JS::AutoCheckCannotGC nogc;
 
@@ -2656,22 +2629,16 @@ class StringRelocationOverlay : public RelocationOverlay {
     
     
     
-    
-    
-    
-    
-    
-    if (src->isLinear()) {
+    if (src->canOwnDependentChars()) {
       if (src->hasTwoByteChars()) {
         auto* nurseryCharsTwoByte = src->asLinear().twoByteChars(nogc);
         return new (src) StringRelocationOverlay(dst, nurseryCharsTwoByte);
       }
       auto* nurseryCharsLatin1 = src->asLinear().latin1Chars(nogc);
       return new (src) StringRelocationOverlay(dst, nurseryCharsLatin1);
-    } else {
-      return new (src) StringRelocationOverlay(
-          dst, dst->as<JSString>()->asRope().leftChild());
     }
+
+    return new (src) StringRelocationOverlay(dst);
   }
 };
 
