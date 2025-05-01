@@ -76,9 +76,17 @@ enum class CalendarId : int32_t {
 inline constexpr auto availableCalendars = {
     CalendarId::ISO8601,
     CalendarId::Buddhist,
+
+
+#ifdef NIGHTLY_BUILD
     CalendarId::Chinese,
+#endif
     CalendarId::Coptic,
+
+
+#ifdef NIGHTLY_BUILD
     CalendarId::Dangi,
+#endif
     CalendarId::Ethiopian,
     CalendarId::EthiopianAmeteAlem,
     CalendarId::Gregorian,

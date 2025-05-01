@@ -646,13 +646,6 @@ public:
 
 
 
-    virtual void adoptCalendar(Calendar *calendarToAdopt);
-
-    
-
-
-
-
 
 
 

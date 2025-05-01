@@ -477,6 +477,12 @@ class DateTimeFormat final {
     }
     return Ok();
   }
+  
+
+
+
+
+  void SetStartTimeIfGregorian(double aTime);
 
   
 

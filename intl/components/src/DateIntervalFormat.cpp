@@ -2,18 +2,12 @@
 
 
 
+#include "DateTimeFormat.h"  
 #include "DateTimeFormatUtils.h"
 #include "ScopedICUObject.h"
 
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/DateIntervalFormat.h"
-#include "mozilla/intl/DateTimeFormat.h"
-
-#if !MOZ_SYSTEM_ICU
-#  include "unicode/calendar.h"
-#  include "unicode/datefmt.h"
-#  include "unicode/dtitvfmt.h"
-#endif
 
 namespace mozilla::intl {
 
@@ -69,23 +63,7 @@ Result<UniquePtr<DateIntervalFormat>, ICUError> DateIntervalFormat::TryCreate(
     return Err(ToICUError(status));
   }
 
-  auto result = UniquePtr<DateIntervalFormat>(new DateIntervalFormat(dif));
-
-#if !MOZ_SYSTEM_ICU
-  auto* dtif = reinterpret_cast<icu::DateIntervalFormat*>(dif);
-  const icu::Calendar* calendar = dtif->getDateFormat()->getCalendar();
-
-  auto replacement = CreateCalendarOverride(calendar);
-  if (replacement.isErr()) {
-    return replacement.propagateErr();
-  }
-
-  if (auto newCalendar = replacement.unwrap()) {
-    dtif->adoptCalendar(newCalendar.release());
-  }
-#endif
-
-  return result;
+  return UniquePtr<DateIntervalFormat>(new DateIntervalFormat(dif));
 }
 
 DateIntervalFormat::~DateIntervalFormat() {
@@ -153,50 +131,6 @@ ICUResult DateIntervalFormat::TryFormatDateTime(
 
   MOZ_TRY(DateFieldsPracticallyEqual(aFormatted.Value(), aPracticallyEqual));
   return Ok();
-}
-
-ICUResult DateIntervalFormat::TryFormatDateTime(
-    double aStart, double aEnd, const DateTimeFormat* aDateTimeFormat,
-    AutoFormattedDateInterval& aFormatted, bool* aPracticallyEqual) const {
-#if MOZ_SYSTEM_ICU
-  
-  
-  
-  
-  
-  
-
-  constexpr int32_t msPerDay = 24 * 60 * 60 * 1000;
-
-  
-  constexpr double GregorianChangeDate = -12219292800000.0;
-
-  
-  constexpr double GregorianChangeDatePlusOneDay =
-      GregorianChangeDate + msPerDay;
-
-  if (aStart < GregorianChangeDatePlusOneDay ||
-      aEnd < GregorianChangeDatePlusOneDay) {
-    
-    
-    
-    auto startCal = aDateTimeFormat->CloneCalendar(aStart);
-    if (startCal.isErr()) {
-      return startCal.propagateErr();
-    }
-
-    auto endCal = aDateTimeFormat->CloneCalendar(aEnd);
-    if (endCal.isErr()) {
-      return endCal.propagateErr();
-    }
-
-    return TryFormatCalendar(*startCal.unwrap(), *endCal.unwrap(), aFormatted,
-                             aPracticallyEqual);
-  }
-#endif
-
-  
-  return TryFormatDateTime(aStart, aEnd, aFormatted, aPracticallyEqual);
 }
 
 ICUResult DateIntervalFormat::TryFormattedToParts(
