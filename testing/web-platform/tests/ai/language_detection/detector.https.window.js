@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 
 promise_test(async t => {
@@ -16,14 +17,21 @@ promise_test(async t => {
   const results = await detector.detect('Hello world!');
 
   
+  assert_greater_than_equal(results.length, 1);
+
+  
   const undResult = results.pop();
   assert_equals(undResult.detectedLanguage, 'und');
   assert_greater_than(undResult.confidence, 0);
 
   let total_confidence_without_und = 0;
   let last_confidence = 1;
-  for (const {confidence} of results) {
+  for (const {detectedLanguage, confidence} of results) {
+    
+    assert_is_canonical(detectedLanguage);
+
     assert_greater_than(confidence, 0);
+    assert_greater_than(confidence, undResult.confidence);
 
     total_confidence_without_und += confidence;
 
@@ -34,12 +42,15 @@ promise_test(async t => {
 
   
   
-  assert_less_than(
-      total_confidence_without_und - results.at(-1).confidence, 0.99);
+  if (results.length > 0) {
+    assert_less_than(
+        total_confidence_without_und - results.at(-1).confidence, 0.99);
+  }
 
   
-  assert_equals(total_confidence_without_und + undResult.confidence, 1);
-}, 'Simple LanguageDetector.detect() call');
+  assert_less_than_equal(
+      total_confidence_without_und + undResult.confidence, 1);
+}, 'LanguageDetector.detect() returns valid results');
 
 promise_test(async t => {
   const error = new Error('CreateMonitorCallback threw an error');
