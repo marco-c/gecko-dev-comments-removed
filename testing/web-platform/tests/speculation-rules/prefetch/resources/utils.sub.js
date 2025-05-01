@@ -198,6 +198,19 @@ function assert_not_prefetched (requestHeaders, description){
 
 
 
+
+
+
+
+
+function assert_prefetched_without_sec_purpose(requestHeaders, description) {
+  assert_in_array(requestHeaders.purpose, ["", "prefetch"],
+      "The vendor-specific header Purpose, if present, must be 'prefetch'.");
+  assert_equals(requestHeaders.sec_purpose, "", description);
+}
+
+
+
 function addNoVarySearchHeaderUsingQueryParam(url, value){
   if(value){
     url.searchParams.append("nvs_header", value);
