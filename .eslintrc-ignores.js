@@ -25,6 +25,9 @@ module.exports = [
   "!.*.js",
 
   
+  "*.ts",
+
+  
   ".vscode/",
 
   

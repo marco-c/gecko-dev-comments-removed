@@ -1,10 +1,24 @@
 
-
-export var
-  AddonManager, AddonManagerPrivate, AddonSettings, AddonWrapper, AsyncShutdown,
-  ExtensionMenus, ExtensionProcessScript, ExtensionScriptingStore, ExtensionUserScripts,
-  NetUtil, E10SUtils, LightweightThemeManager, ServiceWorkerCleanUp, GeckoViewConnection,
-  GeckoViewWebExtension, IndexedDB, JSONFile, Log, UrlbarUtils, WebExtensionDescriptorActor;
+export var AddonManager,
+  AddonManagerPrivate,
+  AddonSettings,
+  AddonWrapper,
+  AsyncShutdown,
+  ExtensionMenus,
+  ExtensionProcessScript,
+  ExtensionScriptingStore,
+  ExtensionUserScripts,
+  NetUtil,
+  E10SUtils,
+  LightweightThemeManager,
+  ServiceWorkerCleanUp,
+  GeckoViewConnection,
+  GeckoViewWebExtension,
+  IndexedDB,
+  JSONFile,
+  Log,
+  UrlbarUtils,
+  WebExtensionDescriptorActor;
 
 
 

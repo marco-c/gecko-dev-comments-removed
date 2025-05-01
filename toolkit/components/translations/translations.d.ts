@@ -12,7 +12,7 @@
 
 
 export interface Attachment {
-   
+  
   hash: string;
   
   size: string;
@@ -183,7 +183,7 @@ export namespace Bergamot {
     
     
     
-    sentenceMappings: boolean
+    sentenceMappings: boolean;
   }
 }
 
@@ -191,29 +191,28 @@ export namespace Bergamot {
 
 
 
-
 interface RemoteSettingsClient {
-  on: Function,
-  get: Function,
-  attachments: any,
+  on: Function;
+  get: Function;
+  attachments: any;
 }
 
 
 
 
 interface LanguageTranslationModelFile {
-  buffer: ArrayBuffer,
-  record: TranslationModelRecord,
+  buffer: ArrayBuffer;
+  record: TranslationModelRecord;
 }
 
 
 
 
 interface TranslationModelPayload {
-  sourceLanguage: string,
-  targetLanguage: string,
-  variant?: string,
-  languageModelFiles: LanguageTranslationModelFiles,
+  sourceLanguage: string;
+  targetLanguage: string;
+  variant?: string;
+  languageModelFiles: LanguageTranslationModelFiles;
 }
 
 
@@ -221,26 +220,26 @@ interface TranslationModelPayload {
 
 interface LanguageTranslationModelFiles {
   
-  model: LanguageTranslationModelFile,
+  model: LanguageTranslationModelFile;
   
   
-  lex?: LanguageTranslationModelFile,
+  lex?: LanguageTranslationModelFile;
   
-  qualityModel?: LanguageTranslationModelFile,
+  qualityModel?: LanguageTranslationModelFile;
 
   
-  vocab?: LanguageTranslationModelFile,
+  vocab?: LanguageTranslationModelFile;
 
   
-  srcvocab?: LanguageTranslationModelFile,
-  trgvocab?: LanguageTranslationModelFile,
+  srcvocab?: LanguageTranslationModelFile;
+  trgvocab?: LanguageTranslationModelFile;
 }
 
 
 
 
 type LanguageTranslationModelFilesAligned = {
-  [K in keyof LanguageTranslationModelFiles]: Bergamot.AlignedMemory
+  [K in keyof LanguageTranslationModelFiles]: Bergamot.AlignedMemory;
 };
 
 
@@ -249,9 +248,9 @@ type LanguageTranslationModelFilesAligned = {
 
 
 interface TranslationsEnginePayload {
-  bergamotWasmArrayBuffer: ArrayBuffer,
-  translationModelPayloads: TranslationModelPayload[]
-  isMocked: boolean,
+  bergamotWasmArrayBuffer: ArrayBuffer;
+  translationModelPayloads: TranslationModelPayload[];
+  isMocked: boolean;
 }
 
 
@@ -263,12 +262,12 @@ export type NodeVisibility = "in-viewport" | "out-of-viewport" | "hidden";
 
 
 export interface LangTags {
-  isDocLangTagSupported: boolean,
-  docLangTag: string | null,
-  userLangTag: string | null,
-  htmlLangAttribute: string | null,
-  identifiedLangTag: string | null,
-  identifiedLangConfident?: boolean,
+  isDocLangTagSupported: boolean;
+  docLangTag: string | null;
+  userLangTag: string | null;
+  htmlLangAttribute: string | null;
+  identifiedLangTag: string | null;
+  identifiedLangConfident?: boolean;
 }
 
 
@@ -276,10 +275,10 @@ export interface LangTags {
 
 
 export interface LanguagePair {
-  sourceLanguage: string,
-  targetLanguage: string,
-  sourceVariant?: string,
-  targetVariant?: string
+  sourceLanguage: string;
+  targetLanguage: string;
+  sourceVariant?: string;
+  targetVariant?: string;
 }
 
 
@@ -288,16 +287,16 @@ export interface LanguagePair {
 
 
 export interface NonPivotLanguagePair {
-  sourceLanguage: string,
-  targetLanguage: string,
-  variant?: string,
+  sourceLanguage: string;
+  targetLanguage: string;
+  variant?: string;
 }
 
 export interface SupportedLanguage {
-  langTag: string,
-  langTagKey: string,
-  variant: string
-  displayName: string,
+  langTag: string;
+  langTagKey: string;
+  variant: string;
+  displayName: string;
 }
 
 
@@ -305,51 +304,99 @@ export interface SupportedLanguage {
 
 
 export interface SupportedLanguages {
-  languagePairs: NonPivotLanguagePair[],
-  sourceLanguages: Array<SupportedLanguage>,
-  targetLanguages: Array<SupportedLanguage>,
+  languagePairs: NonPivotLanguagePair[];
+  sourceLanguages: Array<SupportedLanguage>;
+  targetLanguages: Array<SupportedLanguage>;
 }
 
 export type TranslationErrors = "engine-load-error";
 
 export type SelectTranslationsPanelState =
   
-  | { phase: "closed"; }
+  | { phase: "closed" }
 
   
-  | { phase: "idle"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
+  | {
+      phase: "idle";
+      sourceLanguage: string;
+      targetLanguage: string;
+      sourceText: string;
+    }
 
   
   
-  | { phase: "init-failure"; event: Event, screenX: number, screenY: number, sourceText: string, isTextSelected: boolean, langPairPromise: Promise<{sourceLanguage?: string, targetLanguage?: string}> }
+  | {
+      phase: "init-failure";
+      event: Event;
+      screenX: number;
+      screenY: number;
+      sourceText: string;
+      isTextSelected: boolean;
+      langPairPromise: Promise<{
+        sourceLanguage?: string;
+        targetLanguage?: string;
+      }>;
+    }
 
   
-  | { phase: "translation-failure"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
+  | {
+      phase: "translation-failure";
+      sourceLanguage: string;
+      targetLanguage: string;
+      sourceText: string;
+    }
 
   
-  | { phase: "translatable"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
+  | {
+      phase: "translatable";
+      sourceLanguage: string;
+      targetLanguage: string;
+      sourceText: string;
+    }
 
   
-  | { phase: "translating"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
+  | {
+      phase: "translating";
+      sourceLanguage: string;
+      targetLanguage: string;
+      sourceText: string;
+    }
 
   
-  | { phase: "translated"; sourceLanguage: string; targetLanguage: string, sourceText: string, translatedText: string, }
+  | {
+      phase: "translated";
+      sourceLanguage: string;
+      targetLanguage: string;
+      sourceText: string;
+      translatedText: string;
+    }
 
   
-  | { phase: "unsupported"; detectedLanguage: string; targetLanguage: string, sourceText: string }
+  | {
+      phase: "unsupported";
+      detectedLanguage: string;
+      targetLanguage: string;
+      sourceText: string;
+    };
 
-export type RequestTranslationsPort = (languagePair: LanguagePair) => Promise<MessagePort>
+export type RequestTranslationsPort = (
+  languagePair: LanguagePair
+) => Promise<MessagePort>;
 
 export type TranslationsPortMessages = {
-  type: "TranslationsPort:TranslationRequest",
-  translationId: string,
-  sourceText: string,
-  isHTML: boolean,
-}
+  type: "TranslationsPort:TranslationRequest";
+  translationId: string;
+  sourceText: string;
+  isHTML: boolean;
+};
 
 export type EngineStatus = "uninitialized" | "ready" | "error" | "closed";
 
 export type PortToPage =
-  | { type: "TranslationsPort:TranslationResponse", targetText: string, translationId: number }
-  | { type: "TranslationsPort:GetEngineStatusResponse", status: EngineStatus }
-  | { type: "TranslationsPort:EngineTerminated" }
+  | {
+      type: "TranslationsPort:TranslationResponse";
+      targetText: string;
+      translationId: number;
+    }
+  | { type: "TranslationsPort:GetEngineStatusResponse"; status: EngineStatus }
+  | { type: "TranslationsPort:EngineTerminated" };

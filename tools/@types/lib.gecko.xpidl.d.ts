@@ -15,10 +15,12 @@ interface nsID<uuid = string> {
 
 
 
-type nsJSIID<iface, enums = {}> = nsID & Constants<iface> & enums & {
-  new (_: never): void;
-  prototype: iface;
-}
+type nsJSIID<iface, enums = {}> = nsID &
+  Constants<iface> &
+  enums & {
+    new (_: never): void;
+    prototype: iface;
+  };
 
 
 type nsIID = nsIXPCComponents_Interfaces[keyof nsIXPCComponents_Interfaces];
