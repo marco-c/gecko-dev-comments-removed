@@ -162,56 +162,38 @@ RenderedFrameId RendererOGL::UpdateAndRender(
     const Maybe<gfx::IntSize>& aReadbackSize,
     const Maybe<wr::ImageFormat>& aReadbackFormat,
     const Maybe<Range<uint8_t>>& aReadbackBuffer, bool* aNeedsYFlip,
-    const wr::FrameReadyParams& aFrameParams, RendererStats* aOutStats) {
+    RendererStats* aOutStats) {
   mozilla::widget::WidgetRenderingContext widgetContext;
 
 #if defined(XP_MACOSX)
   widgetContext.mGL = mCompositor->gl();
 #endif
 
-  
-  
-  
-  bool present = aFrameParams.present;
-
-  LayoutDeviceIntSize size(0, 0);
-  auto bufferAge = 0;
-  bool fullRender = false;
-
-  bool beginFrame = !mThread->IsHandlingDeviceReset();
-
-  if (beginFrame && present) {
-    if (!mCompositor->GetWidget()->PreRender(&widgetContext)) {
-      
-      
-      return RenderedFrameId();
-    }
+  if (!mCompositor->GetWidget()->PreRender(&widgetContext)) {
     
-
-    if (!mCompositor->BeginFrame()) {
-      beginFrame = false;
-    }
-
-    size = mCompositor->GetBufferSize();
-    bufferAge = mCompositor->GetBufferAge();
-
-    fullRender = mCompositor->RequestFullRender();
     
-    if (mCompositor->UsePartialPresent() &&
-        (aReadbackBuffer.isSome() ||
-         layers::ProfilerScreenshots::IsEnabled())) {
-      fullRender = true;
-    }
+    return RenderedFrameId();
   }
+  
 
-  if (!beginFrame) {
+  if (mThread->IsHandlingDeviceReset() || !mCompositor->BeginFrame()) {
     CheckGraphicsResetStatus(gfx::DeviceResetDetectPlace::WR_BEGIN_FRAME,
                               true);
+    mCompositor->GetWidget()->PostRender(&widgetContext);
     return RenderedFrameId();
   }
 
+  auto size = mCompositor->GetBufferSize();
+  auto bufferAge = mCompositor->GetBufferAge();
+
   wr_renderer_update(mRenderer);
 
+  bool fullRender = mCompositor->RequestFullRender();
+  
+  if (mCompositor->UsePartialPresent() &&
+      (aReadbackBuffer.isSome() || layers::ProfilerScreenshots::IsEnabled())) {
+    fullRender = true;
+  }
   if (fullRender) {
     wr_renderer_force_redraw(mRenderer);
   }
@@ -221,46 +203,41 @@ RenderedFrameId RendererOGL::UpdateAndRender(
                                      bufferAge, aOutStats, &dirtyRects);
   FlushPipelineInfo();
   if (!rendered) {
-    if (present) {
-      mCompositor->CancelFrame();
-      mCompositor->GetWidget()->PostRender(&widgetContext);
-    }
+    mCompositor->CancelFrame();
     RenderThread::Get()->HandleWebRenderError(WebRenderError::RENDER);
+    mCompositor->GetWidget()->PostRender(&widgetContext);
     return RenderedFrameId();
   }
 
-  RenderedFrameId frameId;
-
-  if (present) {
-    if (aReadbackBuffer.isSome()) {
-      MOZ_ASSERT(aReadbackSize.isSome());
-      MOZ_ASSERT(aReadbackFormat.isSome());
-      if (!mCompositor->MaybeReadback(aReadbackSize.ref(),
-                                      aReadbackFormat.ref(),
-                                      aReadbackBuffer.ref(), aNeedsYFlip)) {
-        wr_renderer_readback(mRenderer, aReadbackSize.ref().width,
-                             aReadbackSize.ref().height, aReadbackFormat.ref(),
-                             &aReadbackBuffer.ref()[0],
-                             aReadbackBuffer.ref().length());
-        if (aNeedsYFlip != nullptr) {
-          *aNeedsYFlip = !mCompositor->SurfaceOriginIsTopLeft();
-        }
+  if (aReadbackBuffer.isSome()) {
+    MOZ_ASSERT(aReadbackSize.isSome());
+    MOZ_ASSERT(aReadbackFormat.isSome());
+    if (!mCompositor->MaybeReadback(aReadbackSize.ref(), aReadbackFormat.ref(),
+                                    aReadbackBuffer.ref(), aNeedsYFlip)) {
+      wr_renderer_readback(mRenderer, aReadbackSize.ref().width,
+                           aReadbackSize.ref().height, aReadbackFormat.ref(),
+                           &aReadbackBuffer.ref()[0],
+                           aReadbackBuffer.ref().length());
+      if (aNeedsYFlip) {
+        *aNeedsYFlip = !mCompositor->SurfaceOriginIsTopLeft();
       }
     }
-
-    if (size.Width() != 0 && size.Height() != 0) {
-      if (!mCompositor->MaybeGrabScreenshot(size.ToUnknownSize())) {
-        mScreenshotGrabber.MaybeGrabScreenshot(this, size.ToUnknownSize());
-      }
-    }
-
-    
-    
-    
-    MaybeRecordFrame(mLastPipelineInfo);
-    frameId = mCompositor->EndFrame(dirtyRects);
-    mCompositor->GetWidget()->PostRender(&widgetContext);
   }
+
+  if (size.Width() != 0 && size.Height() != 0) {
+    if (!mCompositor->MaybeGrabScreenshot(size.ToUnknownSize())) {
+      mScreenshotGrabber.MaybeGrabScreenshot(this, size.ToUnknownSize());
+    }
+  }
+
+  
+  
+  
+  MaybeRecordFrame(mLastPipelineInfo);
+
+  RenderedFrameId frameId = mCompositor->EndFrame(dirtyRects);
+
+  mCompositor->GetWidget()->PostRender(&widgetContext);
 
 #if defined(ENABLE_FRAME_LATENCY_LOG)
   if (mFrameStartTime) {
@@ -272,10 +249,8 @@ RenderedFrameId RendererOGL::UpdateAndRender(
   mFrameStartTime = TimeStamp();
 #endif
 
-  if (present) {
-    if (!mCompositor->MaybeProcessScreenshotQueue()) {
-      mScreenshotGrabber.MaybeProcessQueue(this);
-    }
+  if (!mCompositor->MaybeProcessScreenshotQueue()) {
+    mScreenshotGrabber.MaybeProcessQueue(this);
   }
 
   

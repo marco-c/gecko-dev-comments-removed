@@ -487,11 +487,12 @@ impl RenderNotifier for Notifier {
 
     fn new_frame_ready(&self,
                        _: DocumentId,
-                       _: FramePublishId,
-                       params: &FrameReadyParams) {
+                       _scrolled: bool,
+                       composite_needed: bool,
+                       _: FramePublishId) {
         
         
-        self.wake_up(params.render);
+        self.wake_up(composite_needed);
     }
 }
 
