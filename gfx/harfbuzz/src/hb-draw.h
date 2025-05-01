@@ -46,13 +46,6 @@ HB_BEGIN_DECLS
 
 
 
-
-
-
-
-
-
-
 typedef struct hb_draw_state_t {
   hb_bool_t path_open;
 
@@ -62,8 +55,6 @@ typedef struct hb_draw_state_t {
   float current_x;
   float current_y;
 
-  float slant_xy;
-
   
   hb_var_num_t   reserved1;
   hb_var_num_t   reserved2;
@@ -71,6 +62,7 @@ typedef struct hb_draw_state_t {
   hb_var_num_t   reserved4;
   hb_var_num_t   reserved5;
   hb_var_num_t   reserved6;
+  hb_var_num_t   reserved7;
 } hb_draw_state_t;
 
 
@@ -78,7 +70,7 @@ typedef struct hb_draw_state_t {
 
 
 
-#define HB_DRAW_STATE_DEFAULT {0, 0.f, 0.f, 0.f, 0.f, 0.f, {0.}, {0.}, {0.}, {0.}, {0.}, {0.}}
+#define HB_DRAW_STATE_DEFAULT {0, 0.f, 0.f, 0.f, 0.f, {0}, {0}, {0}, {0}, {0}, {0}, {0}}
 
 
 

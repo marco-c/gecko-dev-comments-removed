@@ -288,13 +288,91 @@ typedef void (*hb_font_get_glyph_shape_func_t) (hb_font_t *font, void *font_data
 
 
 
-HB_DEPRECATED_FOR (hb_font_funcs_set_draw_glyph_func)
+
+typedef void (*hb_font_draw_glyph_func_t) (hb_font_t *font, void *font_data,
+                                           hb_codepoint_t glyph,
+                                           hb_draw_funcs_t *draw_funcs, void *draw_data,
+                                           void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef hb_bool_t (*hb_font_paint_glyph_func_t) (hb_font_t *font, void *font_data,
+						 hb_codepoint_t glyph,
+						 hb_paint_funcs_t *paint_funcs, void *paint_data,
+						 unsigned int palette_index,
+						 hb_color_t foreground,
+						 void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HB_DEPRECATED_FOR (hb_font_funcs_set_draw_glyph_or_fail_func)
 HB_EXTERN void
 hb_font_funcs_set_glyph_shape_func (hb_font_funcs_t *ffuncs,
 				    hb_font_get_glyph_shape_func_t func,
 				    void *user_data, hb_destroy_func_t destroy);
 
-HB_DEPRECATED_FOR (hb_font_draw_glyph)
+
+
+
+
+
+
+
+
+
+
+
+
+HB_DEPRECATED_FOR (hb_font_funcs_set_draw_glyph_or_fail_func)
+HB_EXTERN void
+hb_font_funcs_set_draw_glyph_func (hb_font_funcs_t *ffuncs,
+                                   hb_font_draw_glyph_func_t func,
+                                   void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+
+HB_DEPRECATED_FOR (hb_font_funcs_set_paint_glyph_or_fail_func)
+HB_EXTERN void
+hb_font_funcs_set_paint_glyph_func (hb_font_funcs_t *ffuncs,
+                                    hb_font_paint_glyph_func_t func,
+                                    void *user_data, hb_destroy_func_t destroy);
+
+HB_DEPRECATED_FOR (hb_font_draw_glyph_or_fail)
 HB_EXTERN void
 hb_font_get_glyph_shape (hb_font_t *font,
 			 hb_codepoint_t glyph,

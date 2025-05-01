@@ -47,7 +47,7 @@ HB_BEGIN_DECLS
 
 
 
-#define HB_VERSION_MINOR 1
+#define HB_VERSION_MINOR 2
 
 
 
@@ -60,7 +60,7 @@ HB_BEGIN_DECLS
 
 
 
-#define HB_VERSION_STRING "11.1.0"
+#define HB_VERSION_STRING "11.2.0"
 
 
 
