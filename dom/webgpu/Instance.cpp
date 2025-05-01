@@ -6,6 +6,7 @@
 #include "Instance.h"
 
 #include "Adapter.h"
+#include "js/Value.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/gfx/Logging.h"
@@ -19,8 +20,9 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsString.h"
+#include "nsStringFwd.h"
 
-#ifdef RELEASE_OR_BETA
+#ifndef EARLY_BETA_OR_EARLIER
 #  include "mozilla/dom/WorkerPrivate.h"
 #endif
 
@@ -104,9 +106,9 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   
 
   const auto errStr = [&]() -> std::optional<std::string_view> {
-#ifdef RELEASE_OR_BETA
+#ifndef EARLY_BETA_OR_EARLIER
     if (true) {
-      return "WebGPU is not yet available in Release or Beta builds.";
+      return "WebGPU is not yet available in Release or late Beta builds.";
     }
 
     
@@ -118,7 +120,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
     if (dom::WorkerPrivate* wp = dom::GetCurrentThreadWorkerPrivate()) {
       if (wp->IsServiceWorker()) {
         return "WebGPU in service workers is not yet available in Release or "
-               "Beta builds; see "
+               "late Beta builds; see "
                "<https://bugzilla.mozilla.org/show_bug.cgi?id=1942431>.";
       }
     }
@@ -154,6 +156,31 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   }
 
   RefPtr<Instance> instance = this;
+
+  if (aOptions.mFeatureLevel.EqualsASCII("core")) {
+    
+  } else if (aOptions.mFeatureLevel.EqualsASCII("compatibility")) {
+    dom::AutoJSAPI api;
+    if (api.Init(mOwner)) {
+      JS::WarnUTF8(api.cx(),
+                   "User requested a WebGPU adapter with `featureLevel: "
+                   "\"compatibility\"`, which is not yet supported; returning "
+                   "a \"core\"-defaulting adapter for now. Subscribe to "
+                   "<https://bugzilla.mozilla.org/show_bug.cgi?id=1905951>"
+                   " for updates on its development in Firefox.");
+    }
+  } else {
+    NS_ConvertUTF16toUTF8 featureLevel(aOptions.mFeatureLevel);
+    dom::AutoJSAPI api;
+    if (api.Init(mOwner)) {
+      JS::WarnUTF8(api.cx(),
+                   "expected one of `\"core\"` or `\"compatibility\"` for "
+                   "`GPUAdapter.featureLevel`, got %s",
+                   featureLevel.get());
+    }
+    promise->MaybeResolve(JS::NullValue());
+    return promise.forget();
+  }
 
   bridge->InstanceRequestAdapter(aOptions)->Then(
       GetCurrentSerialEventTarget(), __func__,
