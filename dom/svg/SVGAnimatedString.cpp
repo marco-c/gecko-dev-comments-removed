@@ -98,7 +98,7 @@ nsresult SVGAnimatedString::SMILString::SetAnimValue(const SMILValue& aValue) {
 
 void SVGAnimatedScriptHrefString::SetBaseValue(
     const TrustedScriptURLOrString& aValue, SVGElement* aSVGElement,
-    bool aDoSetAttr, ErrorResult& aRv) {
+    bool aDoSetAttr, nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv) {
   
   
   MOZ_ASSERT(aSVGElement->IsSVGElement(nsGkAtoms::script));
@@ -108,7 +108,7 @@ void SVGAnimatedScriptHrefString::SetBaseValue(
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(
           aValue, sink, kTrustedTypesOnlySinkGroup, *svgElement,
-          compliantStringHolder, aRv);
+          aSubjectPrincipal, compliantStringHolder, aRv);
   if (aRv.Failed()) {
     return;
   }

@@ -35,7 +35,7 @@ void SVGAnimatedClassOrString::RemoveTearoff() {
 
 void SVGAnimatedClassOrString::SetBaseValue(
     const TrustedScriptURLOrString& aValue, SVGElement* aSVGElement,
-    bool aDoSetAttr, ErrorResult&) {
+    bool aDoSetAttr, nsIPrincipal*, ErrorResult&) {
   
   
   

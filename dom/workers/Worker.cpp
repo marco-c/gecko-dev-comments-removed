@@ -48,6 +48,9 @@ already_AddRefed<Worker> Worker::Constructor(
   }
 
   
+  nsCOMPtr<nsIPrincipal> principal = aGlobal.GetSubjectPrincipal();
+
+  
   
   
   
@@ -62,7 +65,7 @@ already_AddRefed<Worker> Worker::Constructor(
   if (performTrustedTypeConversion) {
     constexpr nsLiteralString sink = u"Worker constructor"_ns;
     compliantString = TrustedTypeUtils::GetTrustedTypesCompliantString(
-        aScriptURL, sink, kTrustedTypesOnlySinkGroup, *globalObject,
+        aScriptURL, sink, kTrustedTypesOnlySinkGroup, *globalObject, principal,
         compliantStringHolder, aRv);
     if (aRv.Failed()) {
       return nullptr;
