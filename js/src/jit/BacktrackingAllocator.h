@@ -683,6 +683,14 @@ class BacktrackingAllocator : protected RegisterAllocator {
   StackSlotAllocator stackSlotAllocator;
 
   
+  
+  Vector<LInstruction*, 0, JitAllocPolicy> safepoints_;
+
+  
+  
+  Vector<LInstruction*, 0, JitAllocPolicy> nonCallSafepoints_;
+
+  
   struct QueueItem {
     LiveBundle* bundle;
 
@@ -936,7 +944,9 @@ class BacktrackingAllocator : protected RegisterAllocator {
       : RegisterAllocator(mir, lir, graph),
         testbed(testbed),
         liveIn(mir->alloc()),
-        vregs(mir->alloc()) {}
+        vregs(mir->alloc()),
+        safepoints_(mir->alloc()),
+        nonCallSafepoints_(mir->alloc()) {}
 
   [[nodiscard]] bool go();
 };
