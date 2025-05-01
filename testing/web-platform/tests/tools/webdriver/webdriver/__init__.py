@@ -1,7 +1,6 @@
 
 
 from .client import (
-    Cookies,
     Find,
     Session,
     ShadowRoot,
