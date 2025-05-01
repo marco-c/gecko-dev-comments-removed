@@ -38,6 +38,26 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
     return true;
   }
 
+  if (aEvent->mEventRule == AccEvent::eRemoveDupes && !mEvents.IsEmpty()) {
+    
+    
+    
+    
+    
+    
+    
+    uint32_t last = mEvents.Length() - 1;
+    for (uint32_t index = last; index <= last; --index) {
+      AccEvent* checkEvent = mEvents[index];
+      if (checkEvent->mEventType == aEvent->mEventType &&
+          checkEvent->mEventRule == aEvent->mEventRule &&
+          checkEvent->mAccessible == aEvent->mAccessible) {
+        aEvent->mEventRule = AccEvent::eDoNotEmit;
+        return true;
+      }
+    }
+  }
+
   
   
   mEvents.AppendElement(aEvent);
@@ -45,10 +65,10 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
   
   CoalesceEvents();
 
-  if (aEvent->mEventRule != AccEvent::eDoNotEmit &&
-      (aEvent->mEventType == nsIAccessibleEvent::EVENT_NAME_CHANGE ||
-       aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
-       aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED)) {
+  if (aEvent->mEventType == nsIAccessibleEvent::EVENT_NAME_CHANGE ||
+      aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
+      aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED) {
+    MOZ_ASSERT(aEvent->mEventRule != AccEvent::eDoNotEmit);
     PushNameOrDescriptionChange(aEvent);
   }
   return true;
@@ -258,22 +278,8 @@ void EventQueue::CoalesceEvents() {
       break;  
     }
 
-    case AccEvent::eRemoveDupes: {
-      
-      
-      for (uint32_t index = tail - 1; index < tail; index--) {
-        AccEvent* accEvent = mEvents[index];
-        if (accEvent->mEventType == tailEvent->mEventType &&
-            accEvent->mEventRule == tailEvent->mEventRule &&
-            accEvent->mAccessible == tailEvent->mAccessible) {
-          tailEvent->mEventRule = AccEvent::eDoNotEmit;
-          return;
-        }
-      }
-      break;  
-    }
-
     default:
+      
       break;  
   }  
 }
