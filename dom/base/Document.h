@@ -3695,11 +3695,6 @@ class Document : public nsINode,
 
   
   
-  
-  void ReportShadowedHTMLDocumentProperties();
-
-  
-  
   void ReportLCP();
 
   
@@ -5541,10 +5536,6 @@ class Document : public nsINode,
 
   
   bool mShouldNotifyFormOrPasswordRemoved;
-
-  
-  
-  nsTArray<nsString> mShadowedHTMLDocumentProperties;
 
   
   
