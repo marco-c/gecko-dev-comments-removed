@@ -108,6 +108,13 @@ const startupPhases = {
   },
 };
 
+if (AppConstants.platform == "win") {
+  
+  startupPhases["before profile selection"].allowlist.modules.add(
+    "moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs"
+  );
+}
+
 if (
   Services.prefs.getBoolPref("browser.startup.blankWindow") &&
   Services.prefs.getCharPref(
