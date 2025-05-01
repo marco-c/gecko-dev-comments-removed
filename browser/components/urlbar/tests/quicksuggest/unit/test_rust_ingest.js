@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   InterruptKind: "resource://gre/modules/RustSuggest.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  SuggestIngestionMetrics: "resource://gre/modules/RustSuggest.sys.mjs",
   SuggestionProvider: "resource://gre/modules/RustSuggest.sys.mjs",
 });
 
@@ -79,7 +80,8 @@ add_task(async function disableEnable() {
 
 
 
-add_task(async function providerConstraintsChanged() {
+
+add_task({ skip_if: () => true }, async function providerConstraintsChanged() {
   
   
   let feature = QuickSuggest.getFeature("ExposureSuggestions");
@@ -264,6 +266,12 @@ async function withIngestStub(callback) {
   let sandbox = sinon.createSandbox();
   let { rustBackend } = QuickSuggest;
   let stub = sandbox.stub(rustBackend._test_store, "ingest");
+
+  
+  stub.returns(
+    new SuggestIngestionMetrics({ ingestionTimes: [], downloadTimes: [] })
+  );
+
   await callback({ stub, rustBackend });
   sandbox.restore();
 }

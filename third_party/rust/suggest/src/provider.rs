@@ -43,7 +43,7 @@ pub enum SuggestionProvider {
     Mdn = 6,
     Weather = 7,
     Fakespot = 8,
-    Exposure = 9,
+    Dynamic = 9,
 }
 
 impl fmt::Display for SuggestionProvider {
@@ -57,7 +57,7 @@ impl fmt::Display for SuggestionProvider {
             Self::Mdn => write!(f, "mdn"),
             Self::Weather => write!(f, "weather"),
             Self::Fakespot => write!(f, "fakespot"),
-            Self::Exposure => write!(f, "exposure"),
+            Self::Dynamic => write!(f, "dynamic"),
         }
     }
 }
@@ -83,7 +83,7 @@ impl SuggestionProvider {
             Self::Mdn,
             Self::Weather,
             Self::Fakespot,
-            Self::Exposure,
+            Self::Dynamic,
         ]
     }
 
@@ -98,7 +98,7 @@ impl SuggestionProvider {
             6 => Some(Self::Mdn),
             7 => Some(Self::Weather),
             8 => Some(Self::Fakespot),
-            9 => Some(Self::Exposure),
+            9 => Some(Self::Dynamic),
             _ => None,
         }
     }
@@ -123,7 +123,7 @@ impl SuggestionProvider {
             Self::Mdn => SuggestRecordType::Mdn,
             Self::Weather => SuggestRecordType::Weather,
             Self::Fakespot => SuggestRecordType::Fakespot,
-            Self::Exposure => SuggestRecordType::Exposure,
+            Self::Dynamic => SuggestRecordType::Dynamic,
         }
     }
 
@@ -215,9 +215,8 @@ impl SuggestionProvider {
 pub struct SuggestionProviderConstraints {
     
     
-    
     #[uniffi(default = None)]
-    pub exposure_suggestion_types: Option<Vec<String>>,
+    pub dynamic_suggestion_types: Option<Vec<String>>,
     
     
     #[uniffi(default = None)]

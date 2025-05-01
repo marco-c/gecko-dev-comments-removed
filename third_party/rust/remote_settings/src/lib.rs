@@ -2,8 +2,6 @@
 
 
 
-use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use std::{collections::HashMap, fs::File, io::prelude::Write, sync::Arc};
 
 use error_support::{convert_log_report_error, handle_error};
@@ -12,6 +10,7 @@ use url::Url;
 pub mod cache;
 pub mod client;
 pub mod config;
+pub mod context;
 pub mod error;
 pub mod schema;
 pub mod service;
@@ -24,6 +23,7 @@ mod macros;
 
 pub use client::{Attachment, RemoteSettingsRecord, RemoteSettingsResponse, RsJsonObject};
 pub use config::{RemoteSettingsConfig, RemoteSettingsConfig2, RemoteSettingsServer};
+pub use context::RemoteSettingsContext;
 pub use error::{ApiResult, RemoteSettingsError, Result};
 
 use client::Client;
@@ -31,51 +31,6 @@ use error::Error;
 use storage::Storage;
 
 uniffi::setup_scaffolding!("remote_settings");
-
-
-
-
-
-
-
-
-#[derive(Deserialize, Serialize, Debug, Clone, Default, uniffi::Record)]
-pub struct RemoteSettingsContext {
-    
-    pub app_name: String,
-    
-    pub app_id: String,
-    
-    pub channel: String,
-    
-    #[serde(rename = "version")]
-    pub app_version: Option<String>,
-    
-    pub app_build: Option<String>,
-    
-    pub architecture: Option<String>,
-    
-    pub device_manufacturer: Option<String>,
-    
-    pub device_model: Option<String>,
-    
-    pub locale: Option<String>,
-    
-    pub os: Option<String>,
-    
-    pub os_version: Option<String>,
-    
-    pub android_sdk_version: Option<String>,
-    
-    pub debug_tag: Option<String>,
-    
-    pub installation_date: Option<i64>,
-    
-    pub home_directory: Option<String>,
-    
-    #[serde(flatten)]
-    pub custom_targeting_attributes: Option<Map<String, Value>>,
-}
 
 
 
@@ -92,14 +47,22 @@ impl RemoteSettingsService {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[uniffi::constructor]
-    #[handle_error(Error)]
-    pub fn new(storage_dir: String, config: RemoteSettingsConfig2) -> ApiResult<Self> {
-        Ok(Self {
-            internal: service::RemoteSettingsService::new(storage_dir, config)?,
-        })
+    pub fn new(storage_dir: String, config: RemoteSettingsConfig2) -> Self {
+        Self {
+            internal: service::RemoteSettingsService::new(storage_dir, config),
+        }
     }
 
+    
+    
     
     #[handle_error(Error)]
     pub fn make_client(&self, collection_name: String) -> ApiResult<Arc<RemoteSettingsClient>> {

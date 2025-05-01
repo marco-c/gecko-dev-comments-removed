@@ -97,8 +97,14 @@ pub enum Suggestion {
         
         match_info: Option<FtsMatchInfo>,
     },
-    Exposure {
+    Dynamic {
         suggestion_type: String,
+        data: Option<serde_json::Value>,
+        
+        
+        
+        
+        dismissal_key: Option<String>,
         score: f64,
     },
 }
@@ -129,6 +135,29 @@ impl Ord for Suggestion {
 
 impl Suggestion {
     
+    
+    
+    pub fn dismissal_key(&self) -> Option<&str> {
+        match self {
+            Self::Amp { full_keyword, .. } => {
+                if !full_keyword.is_empty() {
+                    Some(full_keyword)
+                } else {
+                    self.raw_url()
+                }
+            }
+            Self::Pocket { .. }
+            | Self::Wikipedia { .. }
+            | Self::Amo { .. }
+            | Self::Yelp { .. }
+            | Self::Mdn { .. }
+            | Self::Weather { .. }
+            | Self::Fakespot { .. }
+            | Self::Dynamic { .. } => self.raw_url(),
+        }
+    }
+
+    
     pub fn url(&self) -> Option<&str> {
         match self {
             Self::Amp { url, .. }
@@ -138,7 +167,7 @@ impl Suggestion {
             | Self::Yelp { url, .. }
             | Self::Mdn { url, .. }
             | Self::Fakespot { url, .. } => Some(url),
-            _ => None,
+            Self::Weather { .. } | Self::Dynamic { .. } => None,
         }
     }
 
@@ -148,13 +177,15 @@ impl Suggestion {
     
     pub fn raw_url(&self) -> Option<&str> {
         match self {
-            Self::Amp { raw_url: url, .. }
-            | Self::Pocket { url, .. }
-            | Self::Wikipedia { url, .. }
-            | Self::Amo { url, .. }
-            | Self::Yelp { url, .. }
-            | Self::Mdn { url, .. } => Some(url),
-            _ => None,
+            Self::Amp { raw_url, .. } => Some(raw_url),
+            Self::Pocket { .. }
+            | Self::Wikipedia { .. }
+            | Self::Amo { .. }
+            | Self::Yelp { .. }
+            | Self::Mdn { .. }
+            | Self::Weather { .. }
+            | Self::Fakespot { .. }
+            | Self::Dynamic { .. } => self.url(),
         }
     }
 
@@ -190,7 +221,7 @@ impl Suggestion {
             | Self::Mdn { score, .. }
             | Self::Weather { score, .. }
             | Self::Fakespot { score, .. }
-            | Self::Exposure { score, .. } => *score,
+            | Self::Dynamic { score, .. } => *score,
             Self::Wikipedia { .. } => DEFAULT_SUGGESTION_SCORE,
         }
     }
