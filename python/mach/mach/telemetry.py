@@ -3,6 +3,7 @@
 
 
 import configparser
+import importlib.util
 import json
 import os
 import subprocess
@@ -50,26 +51,15 @@ def create_telemetry_from_environment(settings):
 
     is_enabled = is_telemetry_enabled(settings)
 
-    try:
-        from glean import Glean
-    except ImportError:
+    if importlib.util.find_spec("glean") is None:
         return NoopTelemetry(is_enabled)
 
-    from pathlib import Path
-
     
     
-
-    
-    
-    telemetry_interface = GleanTelemetry()
-
-    Glean.initialize(
-        "mozilla.mach",
-        "Unknown",
-        is_enabled,
-        data_dir=Path(get_state_dir()) / "glean",
+    telemetry_interface = GleanTelemetry(
+        upload_enabled=is_enabled, data_dir=Path(get_state_dir()) / "glean"
     )
+
     return telemetry_interface
 
 
