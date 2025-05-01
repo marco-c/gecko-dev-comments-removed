@@ -249,6 +249,7 @@ class API_AVAILABLE(macos(13.3)) MacOSWebAuthnService final
                           const nsTArray<uint8_t>& aAuthenticatorData,
                           const nsTArray<uint8_t>& aUserHandle,
                           const Maybe<nsString>& aAuthenticatorAttachment,
+                          const Maybe<bool>& aUsedAppId,
                           const Maybe<nsTArray<uint8_t>>& aLargeBlobValue,
                           const Maybe<bool>& aLargeBlobWritten,
                           const Maybe<nsTArray<uint8_t>>& aPrfFirst,
@@ -431,6 +432,7 @@ NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
         NSDataToArray(credential.rawAuthenticatorData));
     nsTArray<uint8_t> userHandle(NSDataToArray(credential.userID));
     mozilla::Maybe<nsString> authenticatorAttachment;
+    mozilla::Maybe<bool> usedAppId;
     mozilla::Maybe<nsTArray<uint8_t>> largeBlobValue;
     mozilla::Maybe<bool> largeBlobWritten;
     mozilla::Maybe<nsTArray<uint8_t>> prfFirst;
@@ -472,13 +474,23 @@ NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
           }
         }
       }
-    } else {
+    } else if ([credential
+                   isKindOfClass:
+                       [ASAuthorizationSecurityKeyPublicKeyCredentialAssertion
+                           class]]) {
+      ASAuthorizationSecurityKeyPublicKeyCredentialAssertion*
+          securityKeyCredential =
+              (ASAuthorizationSecurityKeyPublicKeyCredentialAssertion*)
+                  credential;
+      if (__builtin_available(macos 14.5, *)) {
+        usedAppId.emplace(securityKeyCredential.appID);
+      }
       authenticatorAttachment.emplace(u"cross-platform"_ns);
     }
     mCallback->FinishGetAssertion(credentialId, signature, rawAuthenticatorData,
                                   userHandle, authenticatorAttachment,
-                                  largeBlobValue, largeBlobWritten, prfFirst,
-                                  prfSecond);
+                                  usedAppId, largeBlobValue, largeBlobWritten,
+                                  prfFirst, prfSecond);
   } else {
     MOZ_LOG(
         gMacOSWebAuthnServiceLog, mozilla::LogLevel::Error,
@@ -1227,6 +1239,19 @@ void MacOSWebAuthnService::DoGetAssertion(
           }
         }
 
+        if (__builtin_available(macos 14.5, *)) {
+          nsString appId;
+          nsresult rv = aArgs->GetAppId(appId);
+          if (rv != NS_ERROR_NOT_AVAILABLE) {  
+            if (NS_FAILED(rv)) {
+              self->mSignPromise->Reject(rv);
+              return;
+            }
+            crossPlatformAssertionRequest.appID =
+                nsCocoaUtils::ToNSString(appId);
+          }
+        }
+
         if (__builtin_available(macos 15.0, *)) {
           bool requestedPrf;
           Unused << aArgs->GetPrf(&requestedPrf);
@@ -1292,6 +1317,7 @@ void MacOSWebAuthnService::FinishGetAssertion(
     const nsTArray<uint8_t>& aAuthenticatorData,
     const nsTArray<uint8_t>& aUserHandle,
     const Maybe<nsString>& aAuthenticatorAttachment,
+    const Maybe<bool>& aUsedAppId,
     const Maybe<nsTArray<uint8_t>>& aLargeBlobValue,
     const Maybe<bool>& aLargeBlobWritten,
     const Maybe<nsTArray<uint8_t>>& aPrfFirst,
@@ -1303,8 +1329,8 @@ void MacOSWebAuthnService::FinishGetAssertion(
 
   RefPtr<WebAuthnSignResult> result(new WebAuthnSignResult(
       aAuthenticatorData, Nothing(), aCredentialId, aSignature, aUserHandle,
-      aAuthenticatorAttachment, aLargeBlobValue, aLargeBlobWritten, aPrfFirst,
-      aPrfSecond));
+      aAuthenticatorAttachment, aUsedAppId, aLargeBlobValue, aLargeBlobWritten,
+      aPrfFirst, aPrfSecond));
   Unused << mSignPromise->Resolve(result);
   mSignPromise = nullptr;
 }
@@ -1450,42 +1476,43 @@ MacOSWebAuthnService::AddVirtualAuthenticator(
 }
 
 NS_IMETHODIMP
-MacOSWebAuthnService::RemoveVirtualAuthenticator(uint64_t authenticatorId) {
+MacOSWebAuthnService::RemoveVirtualAuthenticator(
+    const nsACString& aAuthenticatorId) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-MacOSWebAuthnService::AddCredential(uint64_t authenticatorId,
-                                    const nsACString& credentialId,
-                                    bool isResidentCredential,
-                                    const nsACString& rpId,
-                                    const nsACString& privateKey,
-                                    const nsACString& userHandle,
-                                    uint32_t signCount) {
+MacOSWebAuthnService::AddCredential(const nsACString& aAuthenticatorId,
+                                    const nsACString& aCredentialId,
+                                    bool aIsResidentCredential,
+                                    const nsACString& aRpId,
+                                    const nsACString& aPrivateKey,
+                                    const nsACString& aUserHandle,
+                                    uint32_t aSignCount) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 MacOSWebAuthnService::GetCredentials(
-    uint64_t authenticatorId,
-    nsTArray<RefPtr<nsICredentialParameters>>& _retval) {
+    const nsACString& aAuthenticatorId,
+    nsTArray<RefPtr<nsICredentialParameters>>& _aRetval) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-MacOSWebAuthnService::RemoveCredential(uint64_t authenticatorId,
-                                       const nsACString& credentialId) {
+MacOSWebAuthnService::RemoveCredential(const nsACString& aAuthenticatorId,
+                                       const nsACString& aCredentialId) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-MacOSWebAuthnService::RemoveAllCredentials(uint64_t authenticatorId) {
+MacOSWebAuthnService::RemoveAllCredentials(const nsACString& aAuthenticatorId) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-MacOSWebAuthnService::SetUserVerified(uint64_t authenticatorId,
-                                      bool isUserVerified) {
+MacOSWebAuthnService::SetUserVerified(const nsACString& aAuthenticatorId,
+                                      bool aIsUserVerified) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1493,7 +1520,7 @@ NS_IMETHODIMP
 MacOSWebAuthnService::Listen() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-MacOSWebAuthnService::RunCommand(const nsACString& cmd) {
+MacOSWebAuthnService::RunCommand(const nsACString& aCmd) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
