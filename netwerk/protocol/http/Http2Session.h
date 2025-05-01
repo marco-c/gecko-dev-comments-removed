@@ -159,6 +159,10 @@ class Http2Session final : public ASpdySession,
     SETTINGS_TYPE_ENABLE_CONNECT_PROTOCOL = 8,
     
     SETTINGS_NO_RFC7540_PRIORITIES = 9,
+    
+    
+    SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAMS_UNI = 0x2b64,
+    SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAMS_BIDI = 0x2b65,
   };
 
   
@@ -543,6 +547,9 @@ class Http2Session final : public ASpdySession,
 
   
   uint32_t mInitialRwin;
+
+  uint32_t mInitialWebTransportMaxStreamsBidi = 0;
+  uint32_t mInitialWebTransportMaxStreamsUnidi = 0;
 
   
   
