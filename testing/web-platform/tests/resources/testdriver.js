@@ -1497,6 +1497,48 @@
 
         set_protected_audience_k_anonymity: function(owner, name, hashes, context = null) {
             return window.test_driver_internal.set_protected_audience_k_anonymity(owner, name, hashes, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        set_display_features: function(features, context=null) {
+            return window.test_driver_internal.set_display_features(features, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        clear_display_features: function(context=null) {
+            return window.test_driver_internal.clear_display_features(context);
         }
     };
 
@@ -1758,6 +1800,14 @@
 
         async set_protected_audience_k_anonymity(owner, name, hashes, context=null) {
             throw new Error("set_protected_audience_k_anonymity() is not implemented by testdriver-vendor.js");
+        },
+
+        async set_display_features(features, context=null) {
+            throw new Error("set_display_features() is not implemented by testdriver-vendor.js");
+        },
+
+        async clear_display_features(context=null) {
+            throw new Error("clear_display_features() is not implemented by testdriver-vendor.js");
         }
     };
 })();
