@@ -322,9 +322,8 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   #endif
 
   
-  
   pref("media.peerconnection.dtls.version.min", 771);
-  pref("media.peerconnection.dtls.version.max", 771);
+  pref("media.peerconnection.dtls.version.max", 772);
 
 #if defined(XP_MACOSX)
   pref("media.getusermedia.audio.processing.platform.enabled", true);
