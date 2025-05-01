@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_META_H
 #define SPA_META_H
 
@@ -32,6 +12,14 @@ extern "C" {
 #include <spa/utils/defs.h>
 #include <spa/pod/pod.h>
 
+#ifndef SPA_API_META
+ #ifdef SPA_API_IMPL
+  #define SPA_API_META SPA_API_IMPL
+ #else
+  #define SPA_API_META static inline
+ #endif
+#endif
+
 
 
 
@@ -39,17 +27,18 @@ extern "C" {
 
 enum spa_meta_type {
 	SPA_META_Invalid,
-	SPA_META_Header,	
-	SPA_META_VideoCrop,	
-	SPA_META_VideoDamage,	
-	SPA_META_Bitmap,	
-	SPA_META_Cursor,	
-	SPA_META_Control,	
+	SPA_META_Header,		
+	SPA_META_VideoCrop,		
+	SPA_META_VideoDamage,		
+	SPA_META_Bitmap,		
+	SPA_META_Cursor,		
+	SPA_META_Control,		
 
-	SPA_META_Busy,		
+	SPA_META_Busy,			
 	SPA_META_VideoTransform,	
+	SPA_META_SyncTimeline,		
 
-	_SPA_META_LAST,		
+	_SPA_META_LAST,			
 };
 
 
@@ -65,9 +54,14 @@ struct spa_meta {
 	void *data;		
 };
 
-#define spa_meta_first(m)	((m)->data)
-#define spa_meta_end(m)		SPA_PTROFF((m)->data,(m)->size,void)
-#define spa_meta_check(p,m)	(SPA_PTROFF(p,sizeof(*p),void) <= spa_meta_end(m))
+SPA_API_META void *spa_meta_first(const struct spa_meta *m) {
+	return m->data;
+}
+
+SPA_API_META void *spa_meta_end(const struct spa_meta *m) {
+	return SPA_PTROFF(m->data,m->size,void);
+}
+#define spa_meta_check(p,m)	(SPA_PTROFF(p,sizeof(*(p)),void) <= spa_meta_end(m))
 
 
 
@@ -93,15 +87,15 @@ struct spa_meta_region {
 	struct spa_region region;
 };
 
-#define spa_meta_region_is_valid(m)	((m)->region.size.width != 0 && (m)->region.size.height != 0)
+SPA_API_META bool spa_meta_region_is_valid(const struct spa_meta_region *m) {
+	return m->region.size.width != 0 && m->region.size.height != 0;
+}
 
 
 #define spa_meta_for_each(pos,meta)					\
-	for (pos = (__typeof(pos))spa_meta_first(meta);			\
+	for ((pos) = (__typeof(pos))spa_meta_first(meta);		\
 	    spa_meta_check(pos, meta);					\
             (pos)++)
-
-#define spa_meta_bitmap_is_valid(m)	((m)->format != 0)
 
 
 
@@ -122,7 +116,9 @@ struct spa_meta_bitmap {
 
 };
 
-#define spa_meta_cursor_is_valid(m)	((m)->id != 0)
+SPA_API_META bool spa_meta_bitmap_is_valid(const struct spa_meta_bitmap *m) {
+	return m->format != 0;
+}
 
 
 
@@ -141,6 +137,10 @@ struct spa_meta_cursor {
 
 
 };
+
+SPA_API_META bool spa_meta_cursor_is_valid(const struct spa_meta_cursor *m) {
+	return m->id != 0;
+}
 
 
 struct spa_meta_control {
@@ -169,6 +169,26 @@ enum spa_meta_videotransform_value {
 
 struct spa_meta_videotransform {
 	uint32_t transform;			
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct spa_meta_sync_timeline {
+	uint32_t flags;
+	uint32_t padding;
+	uint64_t acquire_point;			
+
+	uint64_t release_point;			
 
 };
 

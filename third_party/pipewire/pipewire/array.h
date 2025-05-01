@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_ARRAY_H
 #define PIPEWIRE_ARRAY_H
 
@@ -32,6 +12,11 @@ extern "C" {
 #include <errno.h>
 
 #include <spa/utils/defs.h>
+
+#ifndef PW_API_ARRAY
+#define PW_API_ARRAY static inline
+#endif
+
 
 
 
@@ -50,9 +35,12 @@ struct pw_array {
 	size_t size;		
 	size_t alloc;		
 	size_t extend;		
+
 };
 
-#define PW_ARRAY_INIT(extend) (struct pw_array) { NULL, 0, 0, extend }
+
+#define PW_ARRAY_INIT(extend) ((struct pw_array) { NULL, 0, 0, (extend) })
+
 
 #define pw_array_get_len_s(a,s)			((a)->size / (s))
 #define pw_array_get_unchecked_s(a,idx,s,t)	SPA_PTROFF((a)->data,(idx)*(s),t)
@@ -67,17 +55,17 @@ struct pw_array {
 
 #define pw_array_first(a)	((a)->data)
 #define pw_array_end(a)		SPA_PTROFF((a)->data, (a)->size, void)
-#define pw_array_check(a,p)	(SPA_PTROFF(p,sizeof(*p),void) <= pw_array_end(a))
+#define pw_array_check(a,p)	(SPA_PTROFF(p,sizeof(*(p)),void) <= pw_array_end(a))
 
 #define pw_array_for_each(pos, array)					\
-	for (pos = (__typeof__(pos)) pw_array_first(array);		\
+	for ((pos) = (__typeof__(pos)) pw_array_first(array);		\
 	     pw_array_check(array, pos);				\
 	     (pos)++)
 
 #define pw_array_consume(pos, array)					\
-	for (pos = (__typeof__(pos)) pw_array_first(array);		\
+	for ((pos) = (__typeof__(pos)) pw_array_first(array);		\
 	     pw_array_check(array, pos);				\
-	     pos = (__typeof__(pos)) pw_array_first(array))
+	     (pos) = (__typeof__(pos)) pw_array_first(array))
 
 #define pw_array_remove(a,p)						\
 ({									\
@@ -87,7 +75,8 @@ struct pw_array {
 })
 
 
-static inline void pw_array_init(struct pw_array *arr, size_t extend)
+
+PW_API_ARRAY void pw_array_init(struct pw_array *arr, size_t extend)
 {
 	arr->data = NULL;
 	arr->size = arr->alloc = 0;
@@ -95,20 +84,29 @@ static inline void pw_array_init(struct pw_array *arr, size_t extend)
 }
 
 
-static inline void pw_array_clear(struct pw_array *arr)
+PW_API_ARRAY void pw_array_clear(struct pw_array *arr)
 {
-	free(arr->data);
+	if (arr->extend > 0)
+		free(arr->data);
 	pw_array_init(arr, arr->extend);
 }
 
 
-static inline void pw_array_reset(struct pw_array *arr)
+PW_API_ARRAY void pw_array_init_static(struct pw_array *arr, void *data, size_t size)
+{
+	arr->data = data;
+	arr->alloc = size;
+	arr->size = arr->extend = 0;
+}
+
+
+PW_API_ARRAY void pw_array_reset(struct pw_array *arr)
 {
 	arr->size = 0;
 }
 
 
-static inline int pw_array_ensure_size(struct pw_array *arr, size_t size)
+PW_API_ARRAY int pw_array_ensure_size(struct pw_array *arr, size_t size)
 {
 	size_t alloc, need;
 
@@ -117,10 +115,9 @@ static inline int pw_array_ensure_size(struct pw_array *arr, size_t size)
 
 	if (SPA_UNLIKELY(alloc < need)) {
 		void *data;
-		alloc = SPA_MAX(alloc, arr->extend);
-		spa_assert(alloc != 0); 
-		while (alloc < need)
-			alloc *= 2;
+		if (arr->extend == 0)
+			return -ENOSPC;
+		alloc = SPA_ROUND_UP(need, arr->extend);
 		if (SPA_UNLIKELY((data = realloc(arr->data, alloc)) == NULL))
 			return -errno;
 		arr->data = data;
@@ -131,7 +128,8 @@ static inline int pw_array_ensure_size(struct pw_array *arr, size_t size)
 
 
 
-static inline void *pw_array_add(struct pw_array *arr, size_t size)
+
+PW_API_ARRAY void *pw_array_add(struct pw_array *arr, size_t size)
 {
 	void *p;
 
@@ -146,24 +144,14 @@ static inline void *pw_array_add(struct pw_array *arr, size_t size)
 
 
 
-static inline void *pw_array_add_fixed(struct pw_array *arr, size_t size)
+PW_API_ARRAY int pw_array_add_ptr(struct pw_array *arr, void *ptr)
 {
-	void *p;
-
-	if (SPA_UNLIKELY(arr->alloc < arr->size + size)) {
-		errno = ENOSPC;
-		return NULL;
-	}
-
-	p = SPA_PTROFF(arr->data, arr->size, void);
-	arr->size += size;
-
-	return p;
+	void **p = (void **)pw_array_add(arr, sizeof(void*));
+	if (p == NULL)
+		return -errno;
+	*p = ptr;
+	return 0;
 }
-
-
-#define pw_array_add_ptr(a,p)					\
-	*((void**) pw_array_add(a, sizeof(void*))) = (p)
 
 
 

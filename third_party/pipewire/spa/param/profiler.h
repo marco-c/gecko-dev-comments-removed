@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_PARAM_PROFILER_H
 #define SPA_PARAM_PROFILER_H
 
@@ -60,7 +40,11 @@ enum spa_profiler {
 
 
 
+
+
+
 	SPA_PROFILER_driverBlock,			
+
 
 
 
@@ -73,6 +57,18 @@ enum spa_profiler {
 
 	SPA_PROFILER_START_Follower	= 0x20000,	
 	SPA_PROFILER_followerBlock,			
+
+
+
+
+
+
+
+
+
+
+	SPA_PROFILER_followerClock,			
+
 
 
 

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_IMPL_DEVICE_H
 #define PIPEWIRE_IMPL_DEVICE_H
 

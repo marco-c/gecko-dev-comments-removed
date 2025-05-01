@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_PARAM_H
 #define SPA_PARAM_H
 
@@ -59,6 +39,7 @@ enum spa_param_type {
 	SPA_PARAM_Control,		
 	SPA_PARAM_Latency,		
 	SPA_PARAM_ProcessLatency,	
+	SPA_PARAM_Tag,			
 };
 
 
@@ -72,34 +53,17 @@ struct spa_param_info {
 	uint32_t flags;
 	uint32_t user;			
 
-	uint32_t padding[5];
+	int32_t seq;			
+
+	uint32_t padding[4];
 };
 
-#define SPA_PARAM_INFO(id,flags) (struct spa_param_info){ (id), (flags) }
+#define SPA_PARAM_INFO(id,flags) ((struct spa_param_info){ (id), (flags) })
 
-
-enum spa_param_buffers {
-	SPA_PARAM_BUFFERS_START,
-	SPA_PARAM_BUFFERS_buffers,	
-	SPA_PARAM_BUFFERS_blocks,	
-	SPA_PARAM_BUFFERS_size,		
-	SPA_PARAM_BUFFERS_stride,	
-	SPA_PARAM_BUFFERS_align,	
-	SPA_PARAM_BUFFERS_dataType,	
-};
-
-
-enum spa_param_meta {
-	SPA_PARAM_META_START,
-	SPA_PARAM_META_type,	
-	SPA_PARAM_META_size,	
-};
-
-
-enum spa_param_io {
-	SPA_PARAM_IO_START,
-	SPA_PARAM_IO_id,	
-	SPA_PARAM_IO_size,	
+enum spa_param_bitorder {
+	SPA_PARAM_BITORDER_unknown,	
+	SPA_PARAM_BITORDER_msb,		
+	SPA_PARAM_BITORDER_lsb,		
 };
 
 enum spa_param_availability {
@@ -108,98 +72,10 @@ enum spa_param_availability {
 	SPA_PARAM_AVAILABILITY_yes,	
 };
 
-
-enum spa_param_profile {
-	SPA_PARAM_PROFILE_START,
-	SPA_PARAM_PROFILE_index,	
-	SPA_PARAM_PROFILE_name,		
-	SPA_PARAM_PROFILE_description,	
-	SPA_PARAM_PROFILE_priority,	
-	SPA_PARAM_PROFILE_available,	
-
-	SPA_PARAM_PROFILE_info,		
-
-
-
-	SPA_PARAM_PROFILE_classes,	
-
-
-
-
-
-
-
-
-	SPA_PARAM_PROFILE_save,		
-};
-
-enum spa_param_port_config_mode {
-	SPA_PARAM_PORT_CONFIG_MODE_none,	
-	SPA_PARAM_PORT_CONFIG_MODE_passthrough,	
-	SPA_PARAM_PORT_CONFIG_MODE_convert,	
-	SPA_PARAM_PORT_CONFIG_MODE_dsp,		
-
-
-};
-
-
-enum spa_param_port_config {
-	SPA_PARAM_PORT_CONFIG_START,
-	SPA_PARAM_PORT_CONFIG_direction,	
-	SPA_PARAM_PORT_CONFIG_mode,		
-	SPA_PARAM_PORT_CONFIG_monitor,		
-	SPA_PARAM_PORT_CONFIG_control,		
-	SPA_PARAM_PORT_CONFIG_format,		
-};
-
-
-enum spa_param_route {
-	SPA_PARAM_ROUTE_START,
-	SPA_PARAM_ROUTE_index,			
-	SPA_PARAM_ROUTE_direction,		
-	SPA_PARAM_ROUTE_device,			
-	SPA_PARAM_ROUTE_name,			
-	SPA_PARAM_ROUTE_description,		
-	SPA_PARAM_ROUTE_priority,		
-	SPA_PARAM_ROUTE_available,		
-
-	SPA_PARAM_ROUTE_info,			
-
-
-
-	SPA_PARAM_ROUTE_profiles,		
-	SPA_PARAM_ROUTE_props,			
-	SPA_PARAM_ROUTE_devices,		
-	SPA_PARAM_ROUTE_profile,		
-	SPA_PARAM_ROUTE_save,			
-};
-
-
-
-enum spa_param_latency {
-	SPA_PARAM_LATENCY_START,
-	SPA_PARAM_LATENCY_direction,		
-	SPA_PARAM_LATENCY_minQuantum,		
-	SPA_PARAM_LATENCY_maxQuantum,		
-	SPA_PARAM_LATENCY_minRate,		
-	SPA_PARAM_LATENCY_maxRate,		
-	SPA_PARAM_LATENCY_minNs,		
-	SPA_PARAM_LATENCY_maxNs,		
-};
-
-
-enum spa_param_process_latency {
-	SPA_PARAM_PROCESS_LATENCY_START,
-	SPA_PARAM_PROCESS_LATENCY_quantum,	
-	SPA_PARAM_PROCESS_LATENCY_rate,		
-	SPA_PARAM_PROCESS_LATENCY_ns,		
-};
-
-enum spa_param_bitorder {
-	SPA_PARAM_BITORDER_unknown,	
-	SPA_PARAM_BITORDER_msb,		
-	SPA_PARAM_BITORDER_lsb,		
-};
+#include <spa/param/buffers.h>
+#include <spa/param/profile.h>
+#include <spa/param/port-config.h>
+#include <spa/param/route.h>
 
 
 

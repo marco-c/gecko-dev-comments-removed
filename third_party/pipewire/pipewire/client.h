@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_CLIENT_H
 #define PIPEWIRE_CLIENT_H
 
@@ -32,6 +12,7 @@ extern "C" {
 #include <spa/utils/defs.h>
 #include <spa/param/param.h>
 
+#include <pipewire/type.h>
 #include <pipewire/proxy.h>
 #include <pipewire/permission.h>
 
@@ -45,8 +26,14 @@ extern "C" {
 
 #define PW_TYPE_INTERFACE_Client	PW_TYPE_INFO_INTERFACE_BASE "Client"
 
+#define PW_CLIENT_PERM_MASK		PW_PERM_RWXM
+
 #define PW_VERSION_CLIENT		3
 struct pw_client;
+
+#ifndef PW_API_CLIENT_IMPL
+#define PW_API_CLIENT_IMPL static inline
+#endif
 
 
 #define PW_ID_CLIENT			1
@@ -126,8 +113,12 @@ struct pw_client_methods {
 
 
 
+
+
 	int (*error) (void *object, uint32_t id, int res, const char *message);
 	
+
+
 
 
 
@@ -135,6 +126,8 @@ struct pw_client_methods {
 	int (*update_properties) (void *object, const struct spa_dict *props);
 
 	
+
+
 
 
 
@@ -156,24 +149,51 @@ struct pw_client_methods {
 
 
 
+
+
 	int (*update_permissions) (void *object, uint32_t n_permissions,
 			const struct pw_permission *permissions);
 };
 
-#define pw_client_method(o,method,version,...)				\
-({									\
-	int _res = -ENOTSUP;						\
-	spa_interface_call_res((struct spa_interface*)o,		\
-			struct pw_client_methods, _res,			\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
 
-#define pw_client_add_listener(c,...)		pw_client_method(c,add_listener,0,__VA_ARGS__)
-#define pw_client_error(c,...)			pw_client_method(c,error,0,__VA_ARGS__)
-#define pw_client_update_properties(c,...)	pw_client_method(c,update_properties,0,__VA_ARGS__)
-#define pw_client_get_permissions(c,...)	pw_client_method(c,get_permissions,0,__VA_ARGS__)
-#define pw_client_update_permissions(c,...)	pw_client_method(c,update_permissions,0,__VA_ARGS__)
+
+PW_API_CLIENT_IMPL int pw_client_add_listener(struct pw_client *object,
+			struct spa_hook *listener,
+			const struct pw_client_events *events,
+			void *data)
+{
+	return spa_api_method_r(int, -ENOTSUP, pw_client, (struct spa_interface*)object, add_listener, 0,
+			listener, events, data);
+}
+
+
+PW_API_CLIENT_IMPL int pw_client_error(struct pw_client *object, uint32_t id, int res, const char *message)
+{
+	return spa_api_method_r(int, -ENOTSUP, pw_client, (struct spa_interface*)object, error, 0,
+			id, res, message);
+}
+
+
+PW_API_CLIENT_IMPL int pw_client_update_properties(struct pw_client *object, const struct spa_dict *props)
+{
+	return spa_api_method_r(int, -ENOTSUP, pw_client, (struct spa_interface*)object, update_properties, 0,
+			props);
+}
+
+
+PW_API_CLIENT_IMPL int pw_client_get_permissions(struct pw_client *object, uint32_t index, uint32_t num)
+{
+	return spa_api_method_r(int, -ENOTSUP, pw_client, (struct spa_interface*)object, get_permissions, 0,
+			index, num);
+}
+
+
+PW_API_CLIENT_IMPL int pw_client_update_permissions(struct pw_client *object, uint32_t n_permissions,
+			const struct pw_permission *permissions)
+{
+	return spa_api_method_r(int, -ENOTSUP, pw_client, (struct spa_interface*)object, update_permissions, 0,
+			n_permissions, permissions);
+}
 
 
 

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_THREAD_LOOP_H
 #define PIPEWIRE_THREAD_LOOP_H
 
@@ -30,6 +10,13 @@ extern "C" {
 #endif
 
 #include <pipewire/loop.h>
+
+
+
+
+
+
+
 
 
 
@@ -153,7 +140,7 @@ int pw_thread_loop_get_time(struct pw_thread_loop *loop, struct timespec *abstim
 
 
 
-int pw_thread_loop_timed_wait_full(struct pw_thread_loop *loop, struct timespec *abstime);
+int pw_thread_loop_timed_wait_full(struct pw_thread_loop *loop, const struct timespec *abstime);
 
 
 void pw_thread_loop_signal(struct pw_thread_loop *loop, bool wait_for_accept);

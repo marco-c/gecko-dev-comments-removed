@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_DEVICE_H
 #define SPA_DEVICE_H
 
@@ -33,6 +13,14 @@ extern "C" {
 #include <spa/utils/hook.h>
 #include <spa/utils/dict.h>
 #include <spa/pod/event.h>
+
+#ifndef SPA_API_DEVICE
+ #ifdef SPA_API_IMPL
+  #define SPA_API_DEVICE SPA_API_IMPL
+ #else
+  #define SPA_API_DEVICE static inline
+ #endif
+#endif
 
 
 
@@ -71,7 +59,7 @@ struct spa_device_info {
 	uint32_t n_params;			
 };
 
-#define SPA_DEVICE_INFO_INIT()	(struct spa_device_info){ SPA_VERSION_DEVICE_INFO, }
+#define SPA_DEVICE_INFO_INIT()	((struct spa_device_info){ SPA_VERSION_DEVICE_INFO, })
 
 
 
@@ -92,7 +80,7 @@ struct spa_device_object_info {
 	const struct spa_dict *props;		
 };
 
-#define SPA_DEVICE_OBJECT_INFO_INIT()	(struct spa_device_object_info){ SPA_VERSION_DEVICE_OBJECT_INFO, }
+#define SPA_DEVICE_OBJECT_INFO_INIT()	((struct spa_device_object_info){ SPA_VERSION_DEVICE_OBJECT_INFO, })
 
 
 #define SPA_RESULT_TYPE_DEVICE_PARAMS	1
@@ -240,20 +228,34 @@ struct spa_device_methods {
 			  const struct spa_pod *param);
 };
 
-#define spa_device_method(o,method,version,...)				\
-({									\
-	int _res = -ENOTSUP;						\
-	struct spa_device *_o = o;					\
-	spa_interface_call_res(&_o->iface,				\
-			struct spa_device_methods, _res,		\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
+SPA_API_DEVICE int spa_device_add_listener(struct spa_device *object,
+			struct spa_hook *listener,
+			const struct spa_device_events *events,
+			void *data)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_device, &object->iface, add_listener, 0,
+			listener, events, data);
 
-#define spa_device_add_listener(d,...)	spa_device_method(d, add_listener, 0, __VA_ARGS__)
-#define spa_device_sync(d,...)		spa_device_method(d, sync, 0, __VA_ARGS__)
-#define spa_device_enum_params(d,...)	spa_device_method(d, enum_params, 0, __VA_ARGS__)
-#define spa_device_set_param(d,...)	spa_device_method(d, set_param, 0, __VA_ARGS__)
+}
+SPA_API_DEVICE int spa_device_sync(struct spa_device *object, int seq)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_device, &object->iface, sync, 0,
+			seq);
+}
+SPA_API_DEVICE int spa_device_enum_params(struct spa_device *object, int seq,
+			    uint32_t id, uint32_t index, uint32_t max,
+			    const struct spa_pod *filter)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_device, &object->iface, enum_params, 0,
+			seq, id, index, max, filter);
+}
+SPA_API_DEVICE int spa_device_set_param(struct spa_device *object,
+			  uint32_t id, uint32_t flags,
+			  const struct spa_pod *param)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_device, &object->iface, set_param, 0,
+			id, flags, param);
+}
 
 #define SPA_KEY_DEVICE_ENUM_API		"device.enum.api"	/**< the api used to discover this
 								  *  device */
@@ -291,10 +293,11 @@ struct spa_device_methods {
 								  *  "webcam", "microphone", "headset",
 								  *  "headphone", "hands-free", "car", "hifi",
 								  *  "computer", "portable" */
-#define SPA_KEY_DEVICE_PROFILE		"device.profile	"	
+#define SPA_KEY_DEVICE_PROFILE		"device.profile"	
 #define SPA_KEY_DEVICE_PROFILE_SET	"device.profile-set"	
 #define SPA_KEY_DEVICE_STRING		"device.string"		
 
+#define SPA_KEY_DEVICE_DEVIDS		"device.devids"		
 
 
 

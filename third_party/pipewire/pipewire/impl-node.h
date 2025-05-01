@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_IMPL_NODE_H
 #define PIPEWIRE_IMPL_NODE_H
 
@@ -95,6 +75,23 @@ struct pw_impl_node_events {
 	void (*peer_removed) (void *data, struct pw_impl_node *peer);
 };
 
+struct pw_impl_node_rt_events {
+#define PW_VERSION_IMPL_NODE_RT_EVENTS	0
+	uint32_t version;
+	
+	void (*drained) (void *data);
+	
+	void (*xrun) (void *data);
+	
+	void (*start) (void *data);
+	
+	void (*complete) (void *data);
+	
+	void (*incomplete) (void *data);
+	
+	void (*timeout) (void *data);
+};
+
 
 struct pw_impl_node *
 pw_context_create_node(struct pw_context *context,	
@@ -139,6 +136,14 @@ void pw_impl_node_add_listener(struct pw_impl_node *node,
 			  void *data);
 
 
+void pw_impl_node_add_rt_listener(struct pw_impl_node *node,
+			  struct spa_hook *listener,
+			  const struct pw_impl_node_rt_events *events,
+			  void *data);
+void pw_impl_node_remove_rt_listener(struct pw_impl_node *node,
+			  struct spa_hook *listener);
+
+
 
 
 
@@ -175,6 +180,10 @@ bool pw_impl_node_is_active(struct pw_impl_node *node);
 
 
 int pw_impl_node_send_command(struct pw_impl_node *node, const struct spa_command *command);
+
+
+int pw_impl_node_set_param(struct pw_impl_node *node,
+		uint32_t id, uint32_t flags, const struct spa_pod *param);
 
 
 

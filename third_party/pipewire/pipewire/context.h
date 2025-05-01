@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_CONTEXT_H
 #define PIPEWIRE_CONTEXT_H
 
@@ -63,6 +43,7 @@ struct pw_context;
 
 struct pw_global;
 struct pw_impl_client;
+struct pw_impl_node;
 
 #include <pipewire/core.h>
 #include <pipewire/loop.h>
@@ -70,7 +51,7 @@ struct pw_impl_client;
 
 
 struct pw_context_events {
-#define PW_VERSION_CONTEXT_EVENTS	0
+#define PW_VERSION_CONTEXT_EVENTS	1
 	uint32_t version;
 
 	
@@ -83,12 +64,24 @@ struct pw_context_events {
 	void (*global_added) (void *data, struct pw_global *global);
 	
 	void (*global_removed) (void *data, struct pw_global *global);
+
+	
+	void (*driver_added) (void *data, struct pw_impl_node *node);
+	
+	void (*driver_removed) (void *data, struct pw_impl_node *node);
 };
 
 
-struct pw_context * pw_context_new(struct pw_loop *main_loop,		
-			     struct pw_properties *props,	
-			     size_t user_data_size		);
+
+
+
+
+
+
+
+struct pw_context * pw_context_new(struct pw_loop *main_loop,
+			     struct pw_properties *props,
+			     size_t user_data_size);
 
 
 void pw_context_destroy(struct pw_context *context);
@@ -137,7 +130,22 @@ const struct spa_support *pw_context_get_support(struct pw_context *context, uin
 struct pw_loop *pw_context_get_main_loop(struct pw_context *context);
 
 
+
+
+struct pw_data_loop *pw_context_get_data_loop(struct pw_context *context);
+
+
+
+struct pw_loop *pw_context_acquire_loop(struct pw_context *context, const struct spa_dict *props);
+
+
+void pw_context_release_loop(struct pw_context *context, struct pw_loop *loop);
+
+
 struct pw_work_queue *pw_context_get_work_queue(struct pw_context *context);
+
+
+struct pw_mempool *pw_context_get_mempool(struct pw_context *context);
 
 
 
@@ -148,6 +156,9 @@ int pw_context_for_each_global(struct pw_context *context,
 			    void *data);
 
 
+
+
+
 struct pw_global *pw_context_find_global(struct pw_context *context,	
 				      uint32_t id		);
 
@@ -156,6 +167,7 @@ int pw_context_add_spa_lib(struct pw_context *context, const char *factory_regex
 
 
 const char * pw_context_find_spa_lib(struct pw_context *context, const char *factory_name);
+
 
 struct spa_handle *pw_context_load_spa_handle(struct pw_context *context,
 		const char *factory_name,
@@ -178,7 +190,19 @@ int pw_context_register_export_type(struct pw_context *context, struct pw_export
 const struct pw_export_type *pw_context_find_export_type(struct pw_context *context, const char *type);
 
 
+
+
+
+
+
+
+
 int pw_context_set_object(struct pw_context *context, const char *type, void *value);
+
+
+
+
+
 
 void *pw_context_get_object(struct pw_context *context, const char *type);
 

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_PARAM_PROPS_H
 #define SPA_PARAM_PROPS_H
 
@@ -74,6 +54,7 @@ enum spa_prop {
 	SPA_PROP_rate,
 	SPA_PROP_quality,
 	SPA_PROP_bluetoothAudioCodec,
+	SPA_PROP_bluetoothOffloadActive,
 
 	SPA_PROP_START_Audio	= 0x10000,	
 	SPA_PROP_waveType,
@@ -84,6 +65,10 @@ enum spa_prop {
 	SPA_PROP_ditherType,
 	SPA_PROP_truncate,
 	SPA_PROP_channelVolumes,		
+
+
+
+
 
 	SPA_PROP_volumeBase,			
 	SPA_PROP_volumeStep,			
@@ -97,7 +82,18 @@ enum spa_prop {
 	SPA_PROP_softVolumes,			
 
 
+
+
+
 	SPA_PROP_iec958Codecs,			
+
+	SPA_PROP_volumeRampSamples,		
+	SPA_PROP_volumeRampStepSamples,		
+
+	SPA_PROP_volumeRampTime,		
+	SPA_PROP_volumeRampStepTime,		
+
+	SPA_PROP_volumeRampScale,		
 
 
 	SPA_PROP_START_Video	= 0x20000,	

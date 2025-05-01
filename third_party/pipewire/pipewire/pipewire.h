@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_H
 #define PIPEWIRE_H
 
@@ -33,6 +13,7 @@ extern "C" {
 
 #include <pipewire/array.h>
 #include <pipewire/client.h>
+#include <pipewire/conf.h>
 #include <pipewire/context.h>
 #include <pipewire/device.h>
 #include <pipewire/buffers.h>
@@ -90,8 +71,6 @@ pw_get_host_name(void);
 
 const char *
 pw_get_client_name(void);
-
-bool pw_in_valgrind(void);
 
 bool pw_check_option(const char *option, const char *value);
 

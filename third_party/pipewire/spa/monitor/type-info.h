@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_DEVICE_TYPE_INFO_H
 #define SPA_DEVICE_TYPE_INFO_H
 

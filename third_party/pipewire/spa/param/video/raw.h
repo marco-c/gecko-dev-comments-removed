@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_VIDEO_RAW_H
 #define SPA_VIDEO_RAW_H
 
@@ -34,7 +14,7 @@ extern "C" {
 
 
 
-#include <spa/utils/defs.h>
+#include <spa/param/format.h>
 #include <spa/param/video/chroma.h>
 #include <spa/param/video/color.h>
 #include <spa/param/video/multiview.h>
@@ -154,10 +134,12 @@ enum spa_video_format {
 
 
 enum spa_video_flags {
-	SPA_VIDEO_FLAG_NONE = 0,			
-	SPA_VIDEO_FLAG_VARIABLE_FPS = (1 << 0),		
+	SPA_VIDEO_FLAG_NONE = 0,				
+	SPA_VIDEO_FLAG_VARIABLE_FPS = (1 << 0),			
 
-	SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA = (1 << 1),  
+	SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA = (1 << 1),		
+	SPA_VIDEO_FLAG_MODIFIER = (1 << 2),			
+	SPA_VIDEO_FLAG_MODIFIER_FIXATION_REQUIRED = (1 << 3),	
 };
 
 
@@ -186,7 +168,8 @@ enum spa_video_interlace_mode {
 
 struct spa_video_info_raw {
 	enum spa_video_format format;				
-	int64_t modifier;					
+	uint32_t flags;						
+	uint64_t modifier;					
 
 	struct spa_rectangle size;				
 	struct spa_fraction framerate;				
@@ -206,14 +189,7 @@ struct spa_video_info_raw {
 	enum spa_video_color_primaries color_primaries;		
 };
 
-#define SPA_VIDEO_INFO_RAW_INIT(...)	(struct spa_video_info_raw) { __VA_ARGS__ }
-
-struct spa_video_info_dsp {
-	enum spa_video_format format;
-	int64_t modifier;
-};
-
-#define SPA_VIDEO_INFO_DSP_INIT(...)	(struct spa_video_info_dsp) { __VA_ARGS__ }
+#define SPA_VIDEO_INFO_RAW_INIT(...)	((struct spa_video_info_raw) { __VA_ARGS__ })
 
 
 

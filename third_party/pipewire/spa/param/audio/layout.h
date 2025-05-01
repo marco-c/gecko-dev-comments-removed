@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_AUDIO_LAYOUT_H
 #define SPA_AUDIO_LAYOUT_H
 
@@ -29,9 +9,7 @@
 extern "C" {
 #endif
 
-#if !defined(__FreeBSD__) && !defined(__MidnightBSD__)
-#include <endian.h>
-#endif
+#include <spa/utils/endian.h>
 
 
 

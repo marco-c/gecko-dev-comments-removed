@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_IMPL_PORT_H
 #define PIPEWIRE_IMPL_PORT_H
 
@@ -56,7 +36,7 @@ enum pw_impl_port_state {
 
 
 struct pw_impl_port_events {
-#define PW_VERSION_IMPL_PORT_EVENTS 2
+#define PW_VERSION_IMPL_PORT_EVENTS 3
 	uint32_t version;
 
 	
@@ -92,6 +72,8 @@ struct pw_impl_port_events {
 
 	
 	void (*latency_changed) (void *data);
+	
+	void (*tag_changed) (void *data);
 };
 
 
@@ -117,6 +99,9 @@ const struct pw_port_info *pw_impl_port_get_info(struct pw_impl_port *port);
 
 
 uint32_t pw_impl_port_get_id(struct pw_impl_port *port);
+
+
+const char *pw_impl_port_state_as_string(enum pw_impl_port_state state);
 
 
 struct pw_impl_node *pw_impl_port_get_node(struct pw_impl_port *port);

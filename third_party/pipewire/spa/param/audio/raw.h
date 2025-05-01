@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_AUDIO_RAW_H
 #define SPA_AUDIO_RAW_H
 
@@ -31,9 +11,7 @@ extern "C" {
 
 #include <stdint.h>
 
-#if !defined(__FreeBSD__) && !defined(__MidnightBSD__)
-#include <endian.h>
-#endif
+#include <spa/utils/endian.h>
 
 
 
@@ -281,6 +259,12 @@ enum spa_audio_channel {
 	SPA_AUDIO_CHANNEL_START_Custom	= 0x10000,
 };
 
+enum spa_audio_volume_ramp_scale {
+	SPA_AUDIO_VOLUME_RAMP_INVALID,
+	SPA_AUDIO_VOLUME_RAMP_LINEAR,
+	SPA_AUDIO_VOLUME_RAMP_CUBIC,
+};
+
 
 #define SPA_AUDIO_FLAG_NONE		(0)		/*< no valid flag */
 #define SPA_AUDIO_FLAG_UNPOSITIONED	(1 << 0)	/*< the position array explicitly
@@ -294,7 +278,7 @@ struct spa_audio_info_raw {
 	uint32_t position[SPA_AUDIO_MAX_CHANNELS];	
 };
 
-#define SPA_AUDIO_INFO_RAW_INIT(...)		(struct spa_audio_info_raw) { __VA_ARGS__ }
+#define SPA_AUDIO_INFO_RAW_INIT(...)		((struct spa_audio_info_raw) { __VA_ARGS__ })
 
 #define SPA_KEY_AUDIO_FORMAT		"audio.format"		/**< an audio format as string,
 								  *  Ex. "S16LE" */
@@ -306,13 +290,6 @@ struct spa_audio_info_raw {
 								  *  of channels ex. "FL,FR" */
 #define SPA_KEY_AUDIO_ALLOWED_RATES	"audio.allowed-rates"	/**< a list of allowed samplerates
 								  *  ex. "[ 44100 48000 ]" */
-
-struct spa_audio_info_dsp {
-	enum spa_audio_format format;		
-};
-
-#define SPA_AUDIO_INFO_DSP_INIT(...)		(struct spa_audio_info_dsp) { __VA_ARGS__ }
-
 
 
 

@@ -2,30 +2,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_LOG_H
 #define PIPEWIRE_LOG_H
 
 #include <spa/support/log.h>
+#include <spa/utils/defs.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +28,7 @@ extern "C" {
 
 extern enum spa_log_level pw_log_level;
 
-extern struct spa_log_topic *PW_LOG_TOPIC_DEFAULT;
+extern struct spa_log_topic * const PW_LOG_TOPIC_DEFAULT;
 
 
 
@@ -59,6 +40,14 @@ struct spa_log *pw_log_get(void);
 
 
 void pw_log_set_level(enum spa_log_level level);
+
+
+
+
+
+
+
+int pw_log_set_level_string(const char *str);
 
 
 void
@@ -97,11 +86,13 @@ pw_log_logv(enum spa_log_level level,
 
 
 
+#define PW_LOG_TOPIC_DEFINE_STATIC(var, topic) \
+  static struct spa_log_topic var = SPA_LOG_TOPIC(SPA_VERSION_LOG_TOPIC, topic); \
+  static void __attribute__((constructor)) var ## _register_construct(void) { pw_log_topic_register(&var); } \
+  static void __attribute__((destructor)) var ## _register_destroy(void) { pw_log_topic_unregister(&var); }
 
 
 
-void
-_pw_log_topic_new(struct spa_log_topic *topic);
 
 
 
@@ -115,30 +106,55 @@ _pw_log_topic_new(struct spa_log_topic *topic);
 
 
 #define PW_LOG_TOPIC_STATIC(var, topic) \
-  static struct spa_log_topic var##__LINE__ = SPA_LOG_TOPIC(0, topic); \
-  static struct spa_log_topic *var = &(var##__LINE__)
+  PW_LOG_TOPIC_DEFINE_STATIC(var ## _value, topic) \
+  static struct spa_log_topic * const var = &(var ## _value)
 
 
 
 
 
 #define PW_LOG_TOPIC_EXTERN(var) \
-  extern struct spa_log_topic *var
+  extern struct spa_log_topic * const var
 
 
 
 
 
 #define PW_LOG_TOPIC(var, topic) \
-  struct spa_log_topic var##__LINE__ = SPA_LOG_TOPIC(0, topic); \
-  struct spa_log_topic *var = &(var##__LINE__)
+  PW_LOG_TOPIC_DEFINE_STATIC(var ## _value, topic) \
+  struct spa_log_topic * const var = &(var ## _value)
+
+
+
+
+
 
 #define PW_LOG_TOPIC_INIT(var) \
    spa_log_topic_init(pw_log_get(), var);
 
 
+
+
+
+
+
+
+
+void pw_log_topic_register(struct spa_log_topic *t);
+
+
+
+
+
+
+void pw_log_topic_unregister(struct spa_log_topic *t);
+
+
 #define pw_log_level_enabled(lev) (pw_log_level >= (lev))
 #define pw_log_topic_enabled(lev,t) ((t) && (t)->has_custom_level ? (t)->level >= (lev) : pw_log_level_enabled((lev)))
+
+
+#define pw_log_topic_custom_enabled(lev,t) ((t) && (t)->has_custom_level && (t)->level >= (lev))
 
 #define pw_logtv(lev,topic,fmt,ap)						\
 ({										\

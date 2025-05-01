@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_PARAM_FORMAT_H
 #define SPA_PARAM_FORMAT_H
 
@@ -68,6 +48,10 @@ enum spa_media_subtype {
 	SPA_MEDIA_SUBTYPE_g729,
 	SPA_MEDIA_SUBTYPE_amr,
 	SPA_MEDIA_SUBTYPE_gsm,
+	SPA_MEDIA_SUBTYPE_alac,		
+	SPA_MEDIA_SUBTYPE_flac,		
+	SPA_MEDIA_SUBTYPE_ape,		
+	SPA_MEDIA_SUBTYPE_opus,		
 
 	SPA_MEDIA_SUBTYPE_START_Video	= 0x20000,
 	SPA_MEDIA_SUBTYPE_h264,
@@ -106,16 +90,25 @@ enum spa_format {
 
 	
 	SPA_FORMAT_START_Audio = 0x10000,
-	SPA_FORMAT_AUDIO_format,	
-	SPA_FORMAT_AUDIO_flags,		
-	SPA_FORMAT_AUDIO_rate,		
-	SPA_FORMAT_AUDIO_channels,	
-	SPA_FORMAT_AUDIO_position,	
+	SPA_FORMAT_AUDIO_format,		
+	SPA_FORMAT_AUDIO_flags,			
+	SPA_FORMAT_AUDIO_rate,			
+	SPA_FORMAT_AUDIO_channels,		
+	SPA_FORMAT_AUDIO_position,		
 
-	SPA_FORMAT_AUDIO_iec958Codec,	
+	SPA_FORMAT_AUDIO_iec958Codec,		
 
-	SPA_FORMAT_AUDIO_bitorder,	
-	SPA_FORMAT_AUDIO_interleave,	
+	SPA_FORMAT_AUDIO_bitorder,		
+	SPA_FORMAT_AUDIO_interleave,		
+	SPA_FORMAT_AUDIO_bitrate,		
+	SPA_FORMAT_AUDIO_blockAlign,    	
+
+	SPA_FORMAT_AUDIO_AAC_streamFormat,	
+
+	SPA_FORMAT_AUDIO_WMA_profile,		
+
+	SPA_FORMAT_AUDIO_AMR_bandMode,		
+
 
 	
 	SPA_FORMAT_START_Video = 0x20000,
@@ -148,6 +141,8 @@ enum spa_format {
 	SPA_FORMAT_START_Stream = 0x50000,
 	
 	SPA_FORMAT_START_Application = 0x60000,
+	SPA_FORMAT_CONTROL_types,		
+
 };
 
 #define SPA_KEY_FORMAT_DSP		"format.dsp"		/**< a predefined DSP format,

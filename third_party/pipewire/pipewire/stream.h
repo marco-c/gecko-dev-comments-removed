@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_STREAM_H
 #define PIPEWIRE_STREAM_H
 
@@ -185,11 +165,82 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct pw_stream;
 
 #include <spa/buffer/buffer.h>
 #include <spa/param/param.h>
 #include <spa/pod/command.h>
+#include <spa/pod/event.h>
 
 
 enum pw_stream_state {
@@ -205,11 +256,21 @@ enum pw_stream_state {
 struct pw_buffer {
 	struct spa_buffer *buffer;	
 	void *user_data;		
+
+
+
+
+
 	uint64_t size;			
 
 
 
 	uint64_t requested;		
+
+
+
+
+	uint64_t time;			
 
 
 
@@ -226,6 +287,21 @@ struct pw_stream_control {
 	uint32_t n_values;		
 	uint32_t max_values;		
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -321,6 +397,10 @@ struct pw_time {
 
 	uint32_t queued_buffers;	
 	uint32_t avail_buffers;		
+	uint64_t size;			
+
+
+
 };
 
 #include <pipewire/port.h>
@@ -333,6 +413,7 @@ struct pw_stream_events {
 
 	void (*destroy) (void *data);
 	
+
 	void (*state_changed) (void *data, enum pw_stream_state old,
 				enum pw_stream_state state, const char *error);
 
@@ -362,6 +443,9 @@ struct pw_stream_events {
 	void (*command) (void *data, const struct spa_command *command);
 
 	
+
+
+
 	void (*trigger_done) (void *data);
 };
 
@@ -377,6 +461,7 @@ enum pw_stream_flags {
 
 
 	PW_STREAM_FLAG_MAP_BUFFERS	= (1 << 2),	
+
 	PW_STREAM_FLAG_DRIVER		= (1 << 3),	
 	PW_STREAM_FLAG_RT_PROCESS	= (1 << 4),	
 
@@ -392,6 +477,21 @@ enum pw_stream_flags {
 	PW_STREAM_FLAG_TRIGGER		= (1 << 9),	
 
 
+
+
+	PW_STREAM_FLAG_ASYNC		= (1 << 10),	
+
+
+
+
+
+
+	PW_STREAM_FLAG_EARLY_PROCESS	= (1 << 11),	
+
+
+
+
+	PW_STREAM_FLAG_RT_TRIGGER_DONE	= (1 << 12),	
 
 
 };
@@ -418,6 +518,8 @@ void pw_stream_add_listener(struct pw_stream *stream,
 			    const struct pw_stream_events *events,
 			    void *data);
 
+
+
 enum pw_stream_state pw_stream_get_state(struct pw_stream *stream, const char **error);
 
 const char *pw_stream_get_name(struct pw_stream *stream);
@@ -437,6 +539,13 @@ int
 pw_stream_connect(struct pw_stream *stream,		
 		  enum pw_direction direction,		
 		  uint32_t target_id,			
+
+
+
+
+
+
+
 
 
 		  enum pw_stream_flags flags,		
@@ -460,17 +569,18 @@ int pw_stream_set_error(struct pw_stream *stream,
 			...) SPA_PRINTF_FUNC(3, 4);
 
 
-
-
-
-
-
 int
 pw_stream_update_params(struct pw_stream *stream,	
 			const struct spa_pod **params,	
-
-
 			uint32_t n_params		);
+
+
+
+
+
+int pw_stream_set_param(struct pw_stream *stream,	
+			uint32_t id,			
+			const struct spa_pod *param	);
 
 
 const struct pw_stream_control *pw_stream_get_control(struct pw_stream *stream, uint32_t id);
@@ -480,6 +590,14 @@ int pw_stream_set_control(struct pw_stream *stream, uint32_t id, uint32_t n_valu
 
 
 int pw_stream_get_time_n(struct pw_stream *stream, struct pw_time *time, size_t size);
+
+
+
+uint64_t pw_stream_get_nsec(struct pw_stream *stream);
+
+
+
+struct pw_loop *pw_stream_get_data_loop(struct pw_stream *stream);
 
 
 
@@ -494,7 +612,15 @@ struct pw_buffer *pw_stream_dequeue_buffer(struct pw_stream *stream);
 int pw_stream_queue_buffer(struct pw_stream *stream, struct pw_buffer *buffer);
 
 
+
+int pw_stream_return_buffer(struct pw_stream *stream, struct pw_buffer *buffer);
+
+
 int pw_stream_set_active(struct pw_stream *stream, bool active);
+
+
+
+
 
 
 
@@ -508,7 +634,61 @@ bool pw_stream_is_driving(struct pw_stream *stream);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+bool pw_stream_is_lazy(struct pw_stream *stream);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int pw_stream_trigger_process(struct pw_stream *stream);
+
+
+
+int pw_stream_emit_event(struct pw_stream *stream, const struct spa_event *event);
+
+
+
+
+
+
+
+int pw_stream_set_rate(struct pw_stream *stream, double rate);
 
 
 

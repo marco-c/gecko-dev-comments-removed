@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_NODE_H
 #define PIPEWIRE_NODE_H
 
@@ -49,8 +29,14 @@ extern "C" {
 
 #define PW_TYPE_INTERFACE_Node	PW_TYPE_INFO_INTERFACE_BASE "Node"
 
+#define PW_NODE_PERM_MASK	PW_PERM_RWXML
+
 #define PW_VERSION_NODE		3
 struct pw_node;
+
+#ifndef PW_API_NODE_IMPL
+#define PW_API_NODE_IMPL static inline
+#endif
 
 
 enum pw_node_state {
@@ -153,9 +139,13 @@ struct pw_node_methods {
 
 
 
+
+
 	int (*subscribe_params) (void *object, uint32_t *ids, uint32_t n_ids);
 
 	
+
+
 
 
 
@@ -178,6 +168,8 @@ struct pw_node_methods {
 
 
 
+
+
 	int (*set_param) (void *object, uint32_t id, uint32_t flags,
 			const struct spa_pod *param);
 
@@ -186,24 +178,57 @@ struct pw_node_methods {
 
 
 
+
+
 	int (*send_command) (void *object, const struct spa_command *command);
 };
 
-#define pw_node_method(o,method,version,...)				\
-({									\
-	int _res = -ENOTSUP;						\
-	spa_interface_call_res((struct spa_interface*)o,		\
-			struct pw_node_methods, _res,			\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
 
 
-#define pw_node_add_listener(c,...)	pw_node_method(c,add_listener,0,__VA_ARGS__)
-#define pw_node_subscribe_params(c,...)	pw_node_method(c,subscribe_params,0,__VA_ARGS__)
-#define pw_node_enum_params(c,...)	pw_node_method(c,enum_params,0,__VA_ARGS__)
-#define pw_node_set_param(c,...)	pw_node_method(c,set_param,0,__VA_ARGS__)
-#define pw_node_send_command(c,...)	pw_node_method(c,send_command,0,__VA_ARGS__)
+
+PW_API_NODE_IMPL int pw_node_add_listener(struct pw_node *object,
+			struct spa_hook *listener,
+			const struct pw_node_events *events,
+			void *data)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			pw_node, (struct spa_interface*)object, add_listener, 0,
+			listener, events, data);
+}
+
+
+PW_API_NODE_IMPL int pw_node_subscribe_params(struct pw_node *object, uint32_t *ids, uint32_t n_ids)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			pw_node, (struct spa_interface*)object, subscribe_params, 0,
+			ids, n_ids);
+}
+
+
+PW_API_NODE_IMPL int pw_node_enum_params(struct pw_node *object,
+		int seq, uint32_t id, uint32_t start, uint32_t num,
+			    const struct spa_pod *filter)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			pw_node, (struct spa_interface*)object, enum_params, 0,
+			seq, id, start, num, filter);
+}
+
+
+PW_API_NODE_IMPL int pw_node_set_param(struct pw_node *object, uint32_t id, uint32_t flags,
+			  const struct spa_pod *param)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			pw_node, (struct spa_interface*)object, set_param, 0,
+			id, flags, param);
+}
+
+
+PW_API_NODE_IMPL int pw_node_send_command(struct pw_node *object, const struct spa_command *command)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			pw_node, (struct spa_interface*)object, send_command, 0, command);
+}
 
 
 

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_LINK_H
 #define PIPEWIRE_LINK_H
 
@@ -51,8 +31,15 @@ extern "C" {
 
 #define PW_TYPE_INTERFACE_Link	PW_TYPE_INFO_INTERFACE_BASE "Link"
 
+#define PW_LINK_PERM_MASK	PW_PERM_R | PW_PERM_X
+
 #define PW_VERSION_LINK		3
 struct pw_link;
+
+#ifndef PW_API_LINK_IMPL
+#define PW_API_LINK_IMPL static inline
+#endif
+
 
 
 enum pw_link_state {
@@ -126,16 +113,17 @@ struct pw_link_methods {
 			void *data);
 };
 
-#define pw_link_method(o,method,version,...)				\
-({									\
-	int _res = -ENOTSUP;						\
-	spa_interface_call_res((struct spa_interface*)o,		\
-			struct pw_link_methods, _res,			\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
 
-#define pw_link_add_listener(c,...)		pw_link_method(c,add_listener,0,__VA_ARGS__)
+
+PW_API_LINK_IMPL int pw_link_add_listener(struct pw_link *object,
+			struct spa_hook *listener,
+			const struct pw_link_events *events,
+			void *data)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			pw_link, (struct spa_interface*)object, add_listener, 0,
+			listener, events, data);
+}
 
 
 

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_MAP_H
 #define PIPEWIRE_MAP_H
 
@@ -34,6 +14,10 @@ extern "C" {
 
 #include <spa/utils/defs.h>
 #include <pipewire/array.h>
+
+#ifndef PW_API_MAP
+#define PW_API_MAP static inline
+#endif
 
 
 
@@ -85,7 +69,7 @@ struct pw_map {
 };
 
 
-#define PW_MAP_INIT(extend) (struct pw_map) { PW_ARRAY_INIT(extend), SPA_ID_INVALID }
+#define PW_MAP_INIT(extend) ((struct pw_map) { PW_ARRAY_INIT(extend), SPA_ID_INVALID })
 
 
 
@@ -113,7 +97,7 @@ struct pw_map {
 
 
 
-static inline void pw_map_init(struct pw_map *map, size_t size, size_t extend)
+PW_API_MAP void pw_map_init(struct pw_map *map, size_t size, size_t extend)
 {
 	pw_array_init(&map->items, extend * sizeof(union pw_map_item));
 	pw_array_ensure_size(&map->items, size * sizeof(union pw_map_item));
@@ -123,7 +107,7 @@ static inline void pw_map_init(struct pw_map *map, size_t size, size_t extend)
 
 
 
-static inline void pw_map_clear(struct pw_map *map)
+PW_API_MAP void pw_map_clear(struct pw_map *map)
 {
 	pw_array_clear(&map->items);
 }
@@ -131,7 +115,7 @@ static inline void pw_map_clear(struct pw_map *map)
 
 
 
-static inline void pw_map_reset(struct pw_map *map)
+PW_API_MAP void pw_map_reset(struct pw_map *map)
 {
 	pw_array_reset(&map->items);
 	map->free_list = SPA_ID_INVALID;
@@ -143,7 +127,7 @@ static inline void pw_map_reset(struct pw_map *map)
 
 
 
-static inline uint32_t pw_map_insert_new(struct pw_map *map, void *data)
+PW_API_MAP uint32_t pw_map_insert_new(struct pw_map *map, void *data)
 {
 	union pw_map_item *start, *item;
 	uint32_t id;
@@ -170,7 +154,7 @@ static inline uint32_t pw_map_insert_new(struct pw_map *map, void *data)
 
 
 
-static inline int pw_map_insert_at(struct pw_map *map, uint32_t id, void *data)
+PW_API_MAP int pw_map_insert_at(struct pw_map *map, uint32_t id, void *data)
 {
 	size_t size = pw_map_get_size(map);
 	union pw_map_item *item;
@@ -195,7 +179,7 @@ static inline int pw_map_insert_at(struct pw_map *map, uint32_t id, void *data)
 
 
 
-static inline void pw_map_remove(struct pw_map *map, uint32_t id)
+PW_API_MAP void pw_map_remove(struct pw_map *map, uint32_t id)
 {
 	if (pw_map_id_is_free(map, id))
 		return;
@@ -209,7 +193,7 @@ static inline void pw_map_remove(struct pw_map *map, uint32_t id)
 
 
 
-static inline void *pw_map_lookup(struct pw_map *map, uint32_t id)
+PW_API_MAP void *pw_map_lookup(const struct pw_map *map, uint32_t id)
 {
 	if (SPA_LIKELY(pw_map_check_id(map, id))) {
 		union pw_map_item *item = pw_map_get_item(map, id);
@@ -227,8 +211,8 @@ static inline void *pw_map_lookup(struct pw_map *map, uint32_t id)
 
 
 
-static inline int pw_map_for_each(struct pw_map *map,
-				   int (*func) (void *item_data, void *data), void *data)
+PW_API_MAP int pw_map_for_each(const struct pw_map *map,
+				  int (*func) (void *item_data, void *data), void *data)
 {
 	union pw_map_item *item;
 	int res = 0;

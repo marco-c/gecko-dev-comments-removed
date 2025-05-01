@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_VERSION_H
 #define PIPEWIRE_VERSION_H
 
@@ -31,10 +11,12 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 
 
 
-#define pw_get_headers_version() ("0.3.52")
+
+#define pw_get_headers_version() ("1.4.2")
 
 
 
@@ -42,17 +24,21 @@ const char* pw_get_library_version(void);
 
 
 
-
-#define PW_API_VERSION "0.3"
-
-
-#define PW_MAJOR 0
+bool pw_check_library_version(int major, int minor, int micro);
 
 
-#define PW_MINOR 3
 
 
-#define PW_MICRO 52
+#define PW_API_VERSION @PIPEWIRE_API_VERSION@
+
+
+#define PW_MAJOR 1
+
+
+#define PW_MINOR 4
+
+
+#define PW_MICRO 2
 
 
 

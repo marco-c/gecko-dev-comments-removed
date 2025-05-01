@@ -2,25 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_BUFFER_H
 #define SPA_BUFFER_H
 
@@ -30,6 +11,14 @@ extern "C" {
 
 #include <spa/utils/defs.h>
 #include <spa/buffer/meta.h>
+
+#ifndef SPA_API_BUFFER
+ #ifdef SPA_API_IMPL
+  #define SPA_API_BUFFER SPA_API_IMPL
+ #else
+  #define SPA_API_BUFFER static inline
+ #endif
+#endif
 
 
 
@@ -48,7 +37,13 @@ enum spa_data_type {
 
 	SPA_DATA_MemFd,			
 	SPA_DATA_DmaBuf,		
+
+
 	SPA_DATA_MemId,			
+
+
+	SPA_DATA_SyncObj,		
+
 
 	_SPA_DATA_LAST,			
 };
@@ -84,6 +79,9 @@ struct spa_data {
 #define SPA_DATA_FLAG_WRITABLE	(1u<<1)	/**< data is writable */
 #define SPA_DATA_FLAG_DYNAMIC	(1u<<2)	/**< data pointer can be changed */
 #define SPA_DATA_FLAG_READWRITE	(SPA_DATA_FLAG_READABLE|SPA_DATA_FLAG_WRITABLE)
+#define SPA_DATA_FLAG_MAPPABLE	(1u<<3)	/**< data is mappable with simple mmap/munmap. Some memory
+					  *  types are not simply mappable (DmaBuf) unless explicitly
+					  *  specified with this flag. */
 	uint32_t flags;			
 	int64_t fd;			
 	uint32_t mapoffset;		
@@ -101,7 +99,7 @@ struct spa_buffer {
 };
 
 
-static inline struct spa_meta *spa_buffer_find_meta(const struct spa_buffer *b, uint32_t type)
+SPA_API_BUFFER struct spa_meta *spa_buffer_find_meta(const struct spa_buffer *b, uint32_t type)
 {
 	uint32_t i;
 
@@ -112,7 +110,7 @@ static inline struct spa_meta *spa_buffer_find_meta(const struct spa_buffer *b, 
 	return NULL;
 }
 
-static inline void *spa_buffer_find_meta_data(const struct spa_buffer *b, uint32_t type, size_t size)
+SPA_API_BUFFER void *spa_buffer_find_meta_data(const struct spa_buffer *b, uint32_t type, size_t size)
 {
 	struct spa_meta *m;
 	if ((m = spa_buffer_find_meta(b, type)) && m->size >= size)

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_FILTER_H
 #define PIPEWIRE_FILTER_H
 
@@ -49,6 +29,7 @@ struct pw_filter;
 #include <spa/node/io.h>
 #include <spa/param/param.h>
 #include <spa/pod/command.h>
+#include <spa/pod/event.h>
 
 #include <pipewire/core.h>
 #include <pipewire/stream.h>
@@ -82,6 +63,7 @@ struct pw_filter_events {
 
 	void (*destroy) (void *data);
 	
+
 	void (*state_changed) (void *data, enum pw_filter_state old,
 				enum pw_filter_state state, const char *error);
 
@@ -98,6 +80,8 @@ struct pw_filter_events {
         void (*remove_buffer) (void *data, void *port_data, struct pw_buffer *buffer);
 
         
+
+
 
 
         void (*process) (void *data, struct spa_io_position *position);
@@ -121,7 +105,20 @@ enum pw_filter_flags {
 	PW_FILTER_FLAG_DRIVER		= (1 << 1),	
 	PW_FILTER_FLAG_RT_PROCESS	= (1 << 2),	
 
+
 	PW_FILTER_FLAG_CUSTOM_LATENCY	= (1 << 3),	
+
+
+	PW_FILTER_FLAG_TRIGGER		= (1 << 4),	
+
+
+
+
+	PW_FILTER_FLAG_ASYNC		= (1 << 5),	
+
+
+
+
 
 
 };
@@ -129,6 +126,7 @@ enum pw_filter_flags {
 enum pw_filter_port_flags {
 	PW_FILTER_PORT_FLAG_NONE		= 0,		
 	PW_FILTER_PORT_FLAG_MAP_BUFFERS		= (1 << 0),	
+
 	PW_FILTER_PORT_FLAG_ALLOC_BUFFERS	= (1 << 1),	
 
 
@@ -155,6 +153,8 @@ void pw_filter_add_listener(struct pw_filter *filter,
 			    struct spa_hook *listener,
 			    const struct pw_filter_events *events,
 			    void *data);
+
+
 
 enum pw_filter_state pw_filter_get_state(struct pw_filter *filter, const char **error);
 
@@ -224,6 +224,14 @@ int pw_filter_get_time(struct pw_filter *filter, struct pw_time *time);
 
 
 
+uint64_t pw_filter_get_nsec(struct pw_filter *filter);
+
+
+
+struct pw_loop *pw_filter_get_data_loop(struct pw_filter *filter);
+
+
+
 struct pw_buffer *pw_filter_dequeue_buffer(void *port_data);
 
 
@@ -237,7 +245,29 @@ int pw_filter_set_active(struct pw_filter *filter, bool active);
 
 
 
+
+
+
+
 int pw_filter_flush(struct pw_filter *filter, bool drain);
+
+
+
+
+
+bool pw_filter_is_driving(struct pw_filter *filter);
+
+
+
+bool pw_filter_is_lazy(struct pw_filter *filter);
+
+
+
+int pw_filter_trigger_process(struct pw_filter *filter);
+
+
+
+int pw_filter_emit_event(struct pw_filter *filter, const struct spa_event *event);
 
 
 

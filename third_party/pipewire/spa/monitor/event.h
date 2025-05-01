@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_EVENT_DEVICE_H
 #define SPA_EVENT_DEVICE_H
 

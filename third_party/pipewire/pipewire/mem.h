@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_MEM_H
 #define PIPEWIRE_MEM_H
 
@@ -29,6 +9,10 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef PW_API_MEM
+#define PW_API_MEM static inline
 #endif
 
 
@@ -49,6 +33,7 @@ enum pw_memblock_flags {
 	PW_MEMBLOCK_FLAG_MAP =		(1 << 3),	
 	PW_MEMBLOCK_FLAG_DONT_CLOSE =	(1 << 4),	
 	PW_MEMBLOCK_FLAG_DONT_NOTIFY =	(1 << 5),	
+	PW_MEMBLOCK_FLAG_UNMAPPABLE =	(1 << 6),	
 
 	PW_MEMBLOCK_FLAG_READWRITE = PW_MEMBLOCK_FLAG_READABLE | PW_MEMBLOCK_FLAG_WRITABLE,
 };
@@ -142,7 +127,7 @@ struct pw_memblock * pw_mempool_import(struct pw_mempool *pool,
 void pw_memblock_free(struct pw_memblock *mem);
 
 
-static inline void pw_memblock_unref(struct pw_memblock *mem)
+PW_API_MEM void pw_memblock_unref(struct pw_memblock *mem)
 {
 	if (--mem->ref == 0)
 		pw_memblock_free(mem);
@@ -192,7 +177,7 @@ struct pw_map_range {
 
 
 
-static inline void pw_map_range_init(struct pw_map_range *range,
+PW_API_MEM void pw_map_range_init(struct pw_map_range *range,
 				     uint32_t offset, uint32_t size,
 				     uint32_t page_size)
 {

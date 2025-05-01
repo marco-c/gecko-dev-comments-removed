@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_LOOP_H
 #define SPA_LOOP_H
 
@@ -29,9 +9,19 @@
 extern "C" {
 #endif
 
+#include <errno.h>
+
 #include <spa/utils/defs.h>
 #include <spa/utils/hook.h>
 #include <spa/support/system.h>
+
+#ifndef SPA_API_LOOP
+ #ifdef SPA_API_IMPL
+  #define SPA_API_LOOP SPA_API_IMPL
+ #else
+  #define SPA_API_LOOP static inline
+ #endif
+#endif
 
 
 
@@ -48,7 +38,7 @@ extern "C" {
 struct spa_loop { struct spa_interface iface; };
 
 #define SPA_TYPE_INTERFACE_LoopControl	SPA_TYPE_INFO_INTERFACE_BASE "LoopControl"
-#define SPA_VERSION_LOOP_CONTROL	0
+#define SPA_VERSION_LOOP_CONTROL	1
 struct spa_loop_control { struct spa_interface iface; };
 
 #define SPA_TYPE_INTERFACE_LoopUtils	SPA_TYPE_INFO_INTERFACE_BASE "LoopUtils"
@@ -87,18 +77,55 @@ struct spa_loop_methods {
 	uint32_t version;
 
 	
+
+
+
+
+
 	int (*add_source) (void *object,
 			   struct spa_source *source);
 
 	
+
+
+
+
+
 	int (*update_source) (void *object,
 			struct spa_source *source);
 
 	
+
+
+
+
+
 	int (*remove_source) (void *object,
 			struct spa_source *source);
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	int (*invoke) (void *object,
 		       spa_invoke_func_t func,
 		       uint32_t seq,
@@ -108,21 +135,29 @@ struct spa_loop_methods {
 		       void *user_data);
 };
 
-#define spa_loop_method(o,method,version,...)				\
-({									\
-	int _res = -ENOTSUP;						\
-	struct spa_loop *_o = o;					\
-	spa_interface_call_res(&_o->iface,				\
-			struct spa_loop_methods, _res,			\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
-
-#define spa_loop_add_source(l,...)	spa_loop_method(l,add_source,0,##__VA_ARGS__)
-#define spa_loop_update_source(l,...)	spa_loop_method(l,update_source,0,##__VA_ARGS__)
-#define spa_loop_remove_source(l,...)	spa_loop_method(l,remove_source,0,##__VA_ARGS__)
-#define spa_loop_invoke(l,...)		spa_loop_method(l,invoke,0,##__VA_ARGS__)
-
+SPA_API_LOOP int spa_loop_add_source(struct spa_loop *object, struct spa_source *source)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop, &object->iface, add_source, 0, source);
+}
+SPA_API_LOOP int spa_loop_update_source(struct spa_loop *object, struct spa_source *source)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop, &object->iface, update_source, 0, source);
+}
+SPA_API_LOOP int spa_loop_remove_source(struct spa_loop *object, struct spa_source *source)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop, &object->iface, remove_source, 0, source);
+}
+SPA_API_LOOP int spa_loop_invoke(struct spa_loop *object,
+		spa_invoke_func_t func, uint32_t seq, const void *data,
+		size_t size, bool block, void *user_data)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop, &object->iface, invoke, 0, func, seq, data,
+			size, block, user_data);
+}
 
 
 
@@ -138,21 +173,39 @@ struct spa_loop_control_hooks {
 	void (*after) (void *data);
 };
 
-#define spa_loop_control_hook_before(l)							\
-({											\
-	struct spa_hook_list *_l = l;							\
-	struct spa_hook *_h;								\
-	spa_list_for_each_reverse(_h, &_l->list, link)					\
-		spa_callbacks_call(&_h->cb, struct spa_loop_control_hooks, before, 0);	\
-})
+SPA_API_LOOP void spa_loop_control_hook_before(struct spa_hook_list *l)
+{
+	struct spa_hook *h;
+	spa_list_for_each_reverse(h, &l->list, link)
+		spa_callbacks_call_fast(&h->cb, struct spa_loop_control_hooks, before, 0);
+}
 
-#define spa_loop_control_hook_after(l)							\
-({											\
-	struct spa_hook_list *_l = l;							\
-	struct spa_hook *_h;								\
-	spa_list_for_each(_h, &_l->list, link)						\
-		spa_callbacks_call(&_h->cb, struct spa_loop_control_hooks, after, 0);	\
-})
+SPA_API_LOOP void spa_loop_control_hook_after(struct spa_hook_list *l)
+{
+	struct spa_hook *h;
+	spa_list_for_each(h, &l->list, link)
+		spa_callbacks_call_fast(&h->cb, struct spa_loop_control_hooks, after, 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -160,8 +213,17 @@ struct spa_loop_control_hooks {
 struct spa_loop_control_methods {
 	
 
-#define SPA_VERSION_LOOP_CONTROL_METHODS	0
+#define SPA_VERSION_LOOP_CONTROL_METHODS	1
 	uint32_t version;
+
+	
+
+
+
+
+
+
+
 
 	int (*get_fd) (void *object);
 
@@ -177,6 +239,7 @@ struct spa_loop_control_methods {
 			  void *data);
 
 	
+
 
 
 
@@ -202,31 +265,55 @@ struct spa_loop_control_methods {
 
 
 	int (*iterate) (void *object, int timeout);
+
+	
+
+
+
+
+
+
+
+	int (*check) (void *object);
 };
 
-#define spa_loop_control_method_v(o,method,version,...)			\
-({									\
-	struct spa_loop_control *_o = o;				\
-	spa_interface_call(&_o->iface,					\
-			struct spa_loop_control_methods,		\
-			method, version, ##__VA_ARGS__);		\
-})
-
-#define spa_loop_control_method_r(o,method,version,...)			\
-({									\
-	int _res = -ENOTSUP;						\
-	struct spa_loop_control *_o = o;				\
-	spa_interface_call_res(&_o->iface,				\
-			struct spa_loop_control_methods, _res,		\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
-
-#define spa_loop_control_get_fd(l)		spa_loop_control_method_r(l,get_fd,0)
-#define spa_loop_control_add_hook(l,...)	spa_loop_control_method_v(l,add_hook,0,__VA_ARGS__)
-#define spa_loop_control_enter(l)		spa_loop_control_method_v(l,enter,0)
-#define spa_loop_control_leave(l)		spa_loop_control_method_v(l,leave,0)
-#define spa_loop_control_iterate(l,...)		spa_loop_control_method_r(l,iterate,0,__VA_ARGS__)
+SPA_API_LOOP int spa_loop_control_get_fd(struct spa_loop_control *object)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_control, &object->iface, get_fd, 0);
+}
+SPA_API_LOOP void spa_loop_control_add_hook(struct spa_loop_control *object,
+		struct spa_hook *hook, const struct spa_loop_control_hooks *hooks,
+		void *data)
+{
+	spa_api_method_v(spa_loop_control, &object->iface, add_hook, 0,
+			hook, hooks, data);
+}
+SPA_API_LOOP void spa_loop_control_enter(struct spa_loop_control *object)
+{
+	spa_api_method_v(spa_loop_control, &object->iface, enter, 0);
+}
+SPA_API_LOOP void spa_loop_control_leave(struct spa_loop_control *object)
+{
+	spa_api_method_v(spa_loop_control, &object->iface, leave, 0);
+}
+SPA_API_LOOP int spa_loop_control_iterate(struct spa_loop_control *object,
+		int timeout)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_control, &object->iface, iterate, 0, timeout);
+}
+SPA_API_LOOP int spa_loop_control_iterate_fast(struct spa_loop_control *object,
+		int timeout)
+{
+	return spa_api_method_fast_r(int, -ENOTSUP,
+			spa_loop_control, &object->iface, iterate, 0, timeout);
+}
+SPA_API_LOOP int spa_loop_control_check(struct spa_loop_control *object)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_control, &object->iface, check, 1);
+}
 
 typedef void (*spa_source_io_func_t) (void *data, int fd, uint32_t mask);
 typedef void (*spa_source_idle_func_t) (void *data);
@@ -277,44 +364,71 @@ struct spa_loop_utils_methods {
 	void (*destroy_source) (void *object, struct spa_source *source);
 };
 
-#define spa_loop_utils_method_v(o,method,version,...)			\
-({									\
-	struct spa_loop_utils *_o = o;					\
-	spa_interface_call(&_o->iface,					\
-			struct spa_loop_utils_methods,			\
-			method, version, ##__VA_ARGS__);		\
-})
-
-#define spa_loop_utils_method_r(o,method,version,...)			\
-({									\
-	int _res = -ENOTSUP;						\
-	struct spa_loop_utils *_o = o;					\
-	spa_interface_call_res(&_o->iface,				\
-			struct spa_loop_utils_methods, _res,		\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
-#define spa_loop_utils_method_s(o,method,version,...)			\
-({									\
-	struct spa_source *_res = NULL;					\
-	struct spa_loop_utils *_o = o;					\
-	spa_interface_call_res(&_o->iface,				\
-			struct spa_loop_utils_methods, _res,		\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
-
-
-#define spa_loop_utils_add_io(l,...)		spa_loop_utils_method_s(l,add_io,0,__VA_ARGS__)
-#define spa_loop_utils_update_io(l,...)		spa_loop_utils_method_r(l,update_io,0,__VA_ARGS__)
-#define spa_loop_utils_add_idle(l,...)		spa_loop_utils_method_s(l,add_idle,0,__VA_ARGS__)
-#define spa_loop_utils_enable_idle(l,...)	spa_loop_utils_method_r(l,enable_idle,0,__VA_ARGS__)
-#define spa_loop_utils_add_event(l,...)		spa_loop_utils_method_s(l,add_event,0,__VA_ARGS__)
-#define spa_loop_utils_signal_event(l,...)	spa_loop_utils_method_r(l,signal_event,0,__VA_ARGS__)
-#define spa_loop_utils_add_timer(l,...)		spa_loop_utils_method_s(l,add_timer,0,__VA_ARGS__)
-#define spa_loop_utils_update_timer(l,...)	spa_loop_utils_method_r(l,update_timer,0,__VA_ARGS__)
-#define spa_loop_utils_add_signal(l,...)	spa_loop_utils_method_s(l,add_signal,0,__VA_ARGS__)
-#define spa_loop_utils_destroy_source(l,...)	spa_loop_utils_method_v(l,destroy_source,0,__VA_ARGS__)
+SPA_API_LOOP struct spa_source *
+spa_loop_utils_add_io(struct spa_loop_utils *object, int fd, uint32_t mask,
+		bool close, spa_source_io_func_t func, void *data)
+{
+	return spa_api_method_r(struct spa_source *, NULL,
+			spa_loop_utils, &object->iface, add_io, 0, fd, mask, close, func, data);
+}
+SPA_API_LOOP int spa_loop_utils_update_io(struct spa_loop_utils *object,
+		struct spa_source *source, uint32_t mask)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_utils, &object->iface, update_io, 0, source, mask);
+}
+SPA_API_LOOP struct spa_source *
+spa_loop_utils_add_idle(struct spa_loop_utils *object, bool enabled,
+		spa_source_idle_func_t func, void *data)
+{
+	return spa_api_method_r(struct spa_source *, NULL,
+			spa_loop_utils, &object->iface, add_idle, 0, enabled, func, data);
+}
+SPA_API_LOOP int spa_loop_utils_enable_idle(struct spa_loop_utils *object,
+		struct spa_source *source, bool enabled)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_utils, &object->iface, enable_idle, 0, source, enabled);
+}
+SPA_API_LOOP struct spa_source *
+spa_loop_utils_add_event(struct spa_loop_utils *object, spa_source_event_func_t func, void *data)
+{
+	return spa_api_method_r(struct spa_source *, NULL,
+			spa_loop_utils, &object->iface, add_event, 0, func, data);
+}
+SPA_API_LOOP int spa_loop_utils_signal_event(struct spa_loop_utils *object,
+		struct spa_source *source)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_utils, &object->iface, signal_event, 0, source);
+}
+SPA_API_LOOP struct spa_source *
+spa_loop_utils_add_timer(struct spa_loop_utils *object, spa_source_timer_func_t func, void *data)
+{
+	return spa_api_method_r(struct spa_source *, NULL,
+			spa_loop_utils, &object->iface, add_timer, 0, func, data);
+}
+SPA_API_LOOP int spa_loop_utils_update_timer(struct spa_loop_utils *object,
+		struct spa_source *source, struct timespec *value,
+		struct timespec *interval, bool absolute)
+{
+	return spa_api_method_r(int, -ENOTSUP,
+			spa_loop_utils, &object->iface, update_timer, 0, source,
+			value, interval, absolute);
+}
+SPA_API_LOOP struct spa_source *
+spa_loop_utils_add_signal(struct spa_loop_utils *object, int signal_number,
+		spa_source_signal_func_t func, void *data)
+{
+	return spa_api_method_r(struct spa_source *, NULL,
+			spa_loop_utils, &object->iface, add_signal, 0,
+			signal_number, func, data);
+}
+SPA_API_LOOP void spa_loop_utils_destroy_source(struct spa_loop_utils *object,
+		struct spa_source *source)
+{
+	spa_api_method_v(spa_loop_utils, &object->iface, destroy_source, 0, source);
+}
 
 
 

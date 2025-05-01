@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_VIDEO_MULTIVIEW_H
 #define SPA_VIDEO_MULTIVIEW_H
 
@@ -80,7 +60,6 @@ enum spa_video_multiview_mode {
 
 
 
-
 	SPA_VIDEO_MULTIVIEW_MODE_SEPARATED,		
 
 
@@ -115,8 +94,6 @@ enum spa_video_multiview_flags {
 
 
 	SPA_VIDEO_MULTIVIEW_FLAGS_MIXED_MONO = (1 << 15),	
-
-
 
 
 

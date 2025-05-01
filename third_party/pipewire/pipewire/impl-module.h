@@ -4,25 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_IMPL_MODULE_H
 #define PIPEWIRE_IMPL_MODULE_H
 
@@ -65,6 +46,7 @@ struct pw_impl_module_events {
 	uint32_t version;
 
 	
+
 	void (*destroy) (void *data);
 	
 	void (*free) (void *data);
@@ -105,6 +87,9 @@ void pw_impl_module_add_listener(struct pw_impl_module *module,
 
 
 void pw_impl_module_destroy(struct pw_impl_module *module);
+
+
+void pw_impl_module_schedule_destroy(struct pw_impl_module *module);
 
 
 

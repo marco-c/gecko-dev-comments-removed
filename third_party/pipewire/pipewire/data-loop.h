@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_DATA_LOOP_H
 #define PIPEWIRE_DATA_LOOP_H
 
@@ -79,6 +59,11 @@ struct pw_loop *
 pw_data_loop_get_loop(struct pw_data_loop *loop);
 
 
+const char * pw_data_loop_get_name(struct pw_data_loop *loop);
+
+const char * pw_data_loop_get_class(struct pw_data_loop *loop);
+
+
 void pw_data_loop_destroy(struct pw_data_loop *loop);
 
 
@@ -88,9 +73,34 @@ int pw_data_loop_start(struct pw_data_loop *loop);
 int pw_data_loop_stop(struct pw_data_loop *loop);
 
 
+
 bool pw_data_loop_in_thread(struct pw_data_loop *loop);
 
 struct spa_thread *pw_data_loop_get_thread(struct pw_data_loop *loop);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

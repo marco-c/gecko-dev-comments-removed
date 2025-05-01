@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_GLOBAL_H
 #define PIPEWIRE_GLOBAL_H
 
@@ -85,6 +65,7 @@ struct pw_global *
 pw_global_new(struct pw_context *context,	
 	      const char *type,			
 	      uint32_t version,			
+	      uint32_t permission_mask,		
 	      struct pw_properties *properties,	
 	      pw_global_bind_func_t func,	
 	      void *object			);

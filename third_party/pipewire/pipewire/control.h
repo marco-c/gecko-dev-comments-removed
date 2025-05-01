@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_CONTROL_H
 #define PIPEWIRE_CONTROL_H
 
@@ -64,6 +44,7 @@ struct pw_control_events {
 
 
 struct pw_impl_port *pw_control_get_port(struct pw_control *control);
+
 
 
 void pw_control_add_listener(struct pw_control *control,

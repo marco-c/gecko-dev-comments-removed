@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_CONTROL_H
 #define SPA_CONTROL_H
 
@@ -47,6 +27,9 @@ enum spa_control_type {
 	SPA_CONTROL_Properties,		
 	SPA_CONTROL_Midi,		
 	SPA_CONTROL_OSC,		
+	SPA_CONTROL_UMP,		
+
+
 
 	_SPA_CONTROL_LAST,		
 };

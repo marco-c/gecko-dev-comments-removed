@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_UTILS_ANSI_H
 #define SPA_UTILS_ANSI_H
 

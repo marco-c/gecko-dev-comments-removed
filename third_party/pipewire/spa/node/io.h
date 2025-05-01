@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_IO_H
 #define SPA_IO_H
 
@@ -54,11 +34,13 @@ enum spa_io_type {
 	SPA_IO_Range,		
 	SPA_IO_Clock,		
 	SPA_IO_Latency,		
+
 	SPA_IO_Control,		
 	SPA_IO_Notify,		
 	SPA_IO_Position,	
 	SPA_IO_RateMatch,	
 	SPA_IO_Memory,		
+	SPA_IO_AsyncBuffers,	
 };
 
 
@@ -100,7 +82,7 @@ struct spa_io_buffers {
 	uint32_t buffer_id;		
 };
 
-#define SPA_IO_BUFFERS_INIT  (struct spa_io_buffers) { SPA_STATUS_OK, SPA_ID_INVALID, }
+#define SPA_IO_BUFFERS_INIT  ((struct spa_io_buffers) { SPA_STATUS_OK, SPA_ID_INVALID, })
 
 
 
@@ -110,7 +92,7 @@ struct spa_io_memory {
 	uint32_t size;			
 	void *data;			
 };
-#define SPA_IO_MEMORY_INIT  (struct spa_io_memory) { SPA_STATUS_OK, 0, NULL, }
+#define SPA_IO_MEMORY_INIT  ((struct spa_io_memory) { SPA_STATUS_OK, 0, NULL, })
 
 
 struct spa_io_range {
@@ -129,22 +111,51 @@ struct spa_io_range {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct spa_io_clock {
-#define SPA_IO_CLOCK_FLAG_FREEWHEEL (1u<<0)
+#define SPA_IO_CLOCK_FLAG_FREEWHEEL	(1u<<0) /* graph is freewheeling */
+#define SPA_IO_CLOCK_FLAG_XRUN_RECOVER	(1u<<1) /* recovering from xrun */
+#define SPA_IO_CLOCK_FLAG_LAZY		(1u<<2) /* lazy scheduling */
+#define SPA_IO_CLOCK_FLAG_NO_RATE	(1u<<3) /* the rate of the clock is only approximately.
+						 * it is recommended to use the nsec as a clock source.
+						 * The rate_diff contains the measured inaccuracy. */
 	uint32_t flags;			
 	uint32_t id;			
 	char name[64];			
 
 
 	uint64_t nsec;			
+
+
 	struct spa_fraction rate;	
 	uint64_t position;		
 	uint64_t duration;		
 	int64_t delay;			
-
 	double rate_diff;		
+
 	uint64_t next_nsec;		
-	uint32_t padding[8];
+
+
+
+
+	struct spa_fraction target_rate;	
+	uint64_t target_duration;		
+	uint32_t target_seq;			
+
+	uint32_t cycle;			
+	uint64_t xrun;			
 };
 
 
@@ -158,6 +169,10 @@ struct spa_io_video_size {
 
 	uint32_t padding[4];
 };
+
+
+
+
 
 
 struct spa_io_latency {
@@ -180,7 +195,9 @@ struct spa_io_segment_bar {
 	float signature_denom;		
 	double bpm;			
 	double beat;			
-	uint32_t padding[8];
+	double bar_start_tick;
+	double ticks_per_beat;
+	uint32_t padding[4];
 };
 
 
@@ -268,6 +285,11 @@ enum spa_io_position_state {
 
 
 
+
+
+
+
+
 struct spa_io_position {
 	struct spa_io_clock clock;		
 
@@ -284,13 +306,55 @@ struct spa_io_position {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct spa_io_rate_match {
 	uint32_t delay;			
+
 	uint32_t size;			
 	double rate;			
 #define SPA_IO_RATE_MATCH_FLAG_ACTIVE	(1 << 0)
 	uint32_t flags;			
-	uint32_t padding[7];
+	int32_t delay_frac;		
+
+	uint32_t padding[6];
+};
+
+
+struct spa_io_async_buffers {
+	struct spa_io_buffers buffers[2];	
+
 };
 
 

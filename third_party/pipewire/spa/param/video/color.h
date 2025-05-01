@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_VIDEO_COLOR_H
 #define SPA_VIDEO_COLOR_H
 

@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_IMPL_CLIENT_H
 #define PIPEWIRE_IMPL_CLIENT_H
 
@@ -30,6 +10,8 @@ extern "C" {
 #endif
 
 #include <spa/utils/hook.h>
+
+
 
 
 
@@ -162,6 +144,9 @@ struct pw_resource *pw_impl_client_find_resource(struct pw_impl_client *client, 
 
 
 struct pw_global *pw_impl_client_get_global(struct pw_impl_client *client);
+
+
+struct pw_mempool *pw_impl_client_get_mempool(struct pw_impl_client *client);
 
 
 void pw_impl_client_add_listener(struct pw_impl_client *client,

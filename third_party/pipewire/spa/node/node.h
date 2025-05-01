@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_NODE_H
 #define SPA_NODE_H
 
@@ -46,6 +26,14 @@ extern "C" {
 #include <spa/buffer/buffer.h>
 #include <spa/node/event.h>
 #include <spa/node/command.h>
+
+#ifndef SPA_API_NODE
+ #ifdef SPA_API_IMPL
+  #define SPA_API_NODE SPA_API_IMPL
+ #else
+  #define SPA_API_NODE static inline
+ #endif
+#endif
 
 
 #define SPA_TYPE_INTERFACE_Node		SPA_TYPE_INFO_INTERFACE_BASE "Node"
@@ -85,7 +73,7 @@ struct spa_node_info {
 	uint32_t n_params;			
 };
 
-#define SPA_NODE_INFO_INIT()	(struct spa_node_info) { 0, }
+#define SPA_NODE_INFO_INIT()	((struct spa_node_info) { 0, })
 
 
 
@@ -124,7 +112,7 @@ struct spa_port_info {
 	uint32_t n_params;			
 };
 
-#define SPA_PORT_INFO_INIT()	(struct spa_port_info) { 0, }
+#define SPA_PORT_INFO_INIT()	((struct spa_port_info) { 0, })
 
 #define SPA_RESULT_TYPE_NODE_ERROR	1
 #define SPA_RESULT_TYPE_NODE_PARAMS	2
@@ -496,11 +484,16 @@ struct spa_node_methods {
 
 
 
+
+
+
 	int (*port_enum_params) (void *object, int seq,
 				 enum spa_direction direction, uint32_t port_id,
 				 uint32_t id, uint32_t start, uint32_t max,
 				 const struct spa_pod *filter);
 	
+
+
 
 
 
@@ -570,6 +563,7 @@ struct spa_node_methods {
 
 
 
+
 	int (*port_use_buffers) (void *object,
 				 enum spa_direction direction,
 				 uint32_t port_id,
@@ -578,6 +572,11 @@ struct spa_node_methods {
 				 uint32_t n_buffers);
 
 	
+
+
+
+
+
 
 
 
@@ -633,35 +632,129 @@ struct spa_node_methods {
 
 
 
+
+
+
+
+
+
 	int (*process) (void *object);
 };
 
-#define spa_node_method(o,method,version,...)				\
-({									\
-	int _res = -ENOTSUP;						\
-	struct spa_node *_n = o;					\
-	spa_interface_call_res(&_n->iface,				\
-			struct spa_node_methods, _res,			\
-			method, version, ##__VA_ARGS__);		\
-	_res;								\
-})
 
-#define spa_node_add_listener(n,...)		spa_node_method(n, add_listener, 0, __VA_ARGS__)
-#define spa_node_set_callbacks(n,...)		spa_node_method(n, set_callbacks, 0, __VA_ARGS__)
-#define spa_node_sync(n,...)			spa_node_method(n, sync, 0, __VA_ARGS__)
-#define spa_node_enum_params(n,...)		spa_node_method(n, enum_params, 0, __VA_ARGS__)
-#define spa_node_set_param(n,...)		spa_node_method(n, set_param, 0, __VA_ARGS__)
-#define spa_node_set_io(n,...)			spa_node_method(n, set_io, 0, __VA_ARGS__)
-#define spa_node_send_command(n,...)		spa_node_method(n, send_command, 0, __VA_ARGS__)
-#define spa_node_add_port(n,...)		spa_node_method(n, add_port, 0, __VA_ARGS__)
-#define spa_node_remove_port(n,...)		spa_node_method(n, remove_port, 0, __VA_ARGS__)
-#define spa_node_port_enum_params(n,...)	spa_node_method(n, port_enum_params, 0, __VA_ARGS__)
-#define spa_node_port_set_param(n,...)		spa_node_method(n, port_set_param, 0, __VA_ARGS__)
-#define spa_node_port_use_buffers(n,...)	spa_node_method(n, port_use_buffers, 0, __VA_ARGS__)
-#define spa_node_port_set_io(n,...)		spa_node_method(n, port_set_io, 0, __VA_ARGS__)
+SPA_API_NODE int spa_node_add_listener(struct spa_node *object,
+			struct spa_hook *listener,
+			const struct spa_node_events *events,
+			void *data)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, add_listener, 0,
+			listener, events, data);
+}
+SPA_API_NODE int spa_node_set_callbacks(struct spa_node *object,
+			      const struct spa_node_callbacks *callbacks,
+			      void *data)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, set_callbacks, 0,
+			callbacks, data);
+}
+SPA_API_NODE int spa_node_sync(struct spa_node *object, int seq)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, sync, 0,
+			seq);
+}
+SPA_API_NODE int spa_node_enum_params(struct spa_node *object, int seq,
+			    uint32_t id, uint32_t start, uint32_t max,
+			    const struct spa_pod *filter)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, enum_params, 0,
+			seq, id, start, max, filter);
+}
+SPA_API_NODE int spa_node_set_param(struct spa_node *object,
+			  uint32_t id, uint32_t flags,
+			  const struct spa_pod *param)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, set_param, 0,
+			id, flags, param);
+}
+SPA_API_NODE int spa_node_set_io(struct spa_node *object,
+		       uint32_t id, void *data, size_t size)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, set_io, 0,
+			id, data, size);
+}
+SPA_API_NODE int spa_node_send_command(struct spa_node *object,
+		const struct spa_command *command)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, send_command, 0,
+			command);
+}
+SPA_API_NODE int spa_node_add_port(struct spa_node *object,
+			enum spa_direction direction, uint32_t port_id,
+			const struct spa_dict *props)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, add_port, 0,
+			direction, port_id, props);
+}
+SPA_API_NODE int spa_node_remove_port(struct spa_node *object,
+			enum spa_direction direction, uint32_t port_id)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, remove_port, 0,
+			direction, port_id);
+}
+SPA_API_NODE int spa_node_port_enum_params(struct spa_node *object, int seq,
+				 enum spa_direction direction, uint32_t port_id,
+				 uint32_t id, uint32_t start, uint32_t max,
+				 const struct spa_pod *filter)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_enum_params, 0,
+			seq, direction, port_id, id, start, max, filter);
+}
+SPA_API_NODE int spa_node_port_set_param(struct spa_node *object,
+			       enum spa_direction direction,
+			       uint32_t port_id,
+			       uint32_t id, uint32_t flags,
+			       const struct spa_pod *param)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_set_param, 0,
+			direction, port_id, id, flags, param);
+}
+SPA_API_NODE int spa_node_port_use_buffers(struct spa_node *object,
+				 enum spa_direction direction,
+				 uint32_t port_id,
+				 uint32_t flags,
+				 struct spa_buffer **buffers,
+				 uint32_t n_buffers)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_use_buffers, 0,
+			direction, port_id, flags, buffers, n_buffers);
+}
+SPA_API_NODE int spa_node_port_set_io(struct spa_node *object,
+			    enum spa_direction direction,
+			    uint32_t port_id,
+			    uint32_t id, void *data, size_t size)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_set_io, 0,
+			direction, port_id, id, data, size);
+}
 
-#define spa_node_port_reuse_buffer(n,...)	spa_node_method(n, port_reuse_buffer, 0, __VA_ARGS__)
-#define spa_node_process(n)			spa_node_method(n, process, 0)
+SPA_API_NODE int spa_node_port_reuse_buffer(struct spa_node *object, uint32_t port_id, uint32_t buffer_id)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_reuse_buffer, 0,
+			port_id, buffer_id);
+}
+SPA_API_NODE int spa_node_port_reuse_buffer_fast(struct spa_node *object, uint32_t port_id, uint32_t buffer_id)
+{
+	return spa_api_method_fast_r(int, -ENOTSUP, spa_node, &object->iface, port_reuse_buffer, 0,
+			port_id, buffer_id);
+}
+SPA_API_NODE int spa_node_process(struct spa_node *object)
+{
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, process, 0);
+}
+SPA_API_NODE int spa_node_process_fast(struct spa_node *object)
+{
+	return spa_api_method_fast_r(int, -ENOTSUP, spa_node, &object->iface, process, 0);
+}
 
 
 

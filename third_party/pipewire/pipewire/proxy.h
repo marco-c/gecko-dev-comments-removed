@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_PROXY_H
 #define PIPEWIRE_PROXY_H
 
@@ -103,13 +83,15 @@ extern "C" {
 
 
 
+
+
 struct pw_proxy;
 
 #include <pipewire/protocol.h>
 
 
 struct pw_proxy_events {
-#define PW_VERSION_PROXY_EVENTS		0
+#define PW_VERSION_PROXY_EVENTS		1
         uint32_t version;
 
 	
@@ -127,6 +109,8 @@ struct pw_proxy_events {
 
 	
         void (*error) (void *data, int seq, int res, const char *message);
+
+        void (*bound_props) (void *data, uint32_t global_id, const struct spa_dict *props);
 };
 
 

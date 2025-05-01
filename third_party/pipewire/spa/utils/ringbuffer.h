@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_RINGBUFFER_H
 #define SPA_RINGBUFFER_H
 
@@ -45,6 +25,14 @@ struct spa_ringbuffer;
 
 #include <spa/utils/defs.h>
 
+#ifndef SPA_API_RINGBUFFER
+ #ifdef SPA_API_IMPL
+  #define SPA_API_RINGBUFFER SPA_API_IMPL
+ #else
+  #define SPA_API_RINGBUFFER static inline
+ #endif
+#endif
+
 
 
 
@@ -53,14 +41,14 @@ struct spa_ringbuffer {
 	uint32_t writeindex;	
 };
 
-#define SPA_RINGBUFFER_INIT()	(struct spa_ringbuffer) { 0, 0 }
+#define SPA_RINGBUFFER_INIT()	((struct spa_ringbuffer) { 0, 0 })
 
 
 
 
 
 
-static inline void spa_ringbuffer_init(struct spa_ringbuffer *rbuf)
+SPA_API_RINGBUFFER void spa_ringbuffer_init(struct spa_ringbuffer *rbuf)
 {
 	*rbuf = SPA_RINGBUFFER_INIT();
 }
@@ -71,7 +59,7 @@ static inline void spa_ringbuffer_init(struct spa_ringbuffer *rbuf)
 
 
 
-static inline void spa_ringbuffer_set_avail(struct spa_ringbuffer *rbuf, uint32_t size)
+SPA_API_RINGBUFFER void spa_ringbuffer_set_avail(struct spa_ringbuffer *rbuf, uint32_t size)
 {
 	rbuf->readindex = 0;
 	rbuf->writeindex = size;
@@ -87,7 +75,7 @@ static inline void spa_ringbuffer_set_avail(struct spa_ringbuffer *rbuf, uint32_
 
 
 
-static inline int32_t spa_ringbuffer_get_read_index(struct spa_ringbuffer *rbuf, uint32_t *index)
+SPA_API_RINGBUFFER int32_t spa_ringbuffer_get_read_index(struct spa_ringbuffer *rbuf, uint32_t *index)
 {
 	*index = __atomic_load_n(&rbuf->readindex, __ATOMIC_RELAXED);
 	return (int32_t) (__atomic_load_n(&rbuf->writeindex, __ATOMIC_ACQUIRE) - *index);
@@ -104,8 +92,8 @@ static inline int32_t spa_ringbuffer_get_read_index(struct spa_ringbuffer *rbuf,
 
 
 
-static inline void
-spa_ringbuffer_read_data(struct spa_ringbuffer *rbuf,
+SPA_API_RINGBUFFER void
+spa_ringbuffer_read_data(struct spa_ringbuffer *rbuf SPA_UNUSED,
 			 const void *buffer, uint32_t size,
 			 uint32_t offset, void *data, uint32_t len)
 {
@@ -121,7 +109,7 @@ spa_ringbuffer_read_data(struct spa_ringbuffer *rbuf,
 
 
 
-static inline void spa_ringbuffer_read_update(struct spa_ringbuffer *rbuf, int32_t index)
+SPA_API_RINGBUFFER void spa_ringbuffer_read_update(struct spa_ringbuffer *rbuf, int32_t index)
 {
 	__atomic_store_n(&rbuf->readindex, index, __ATOMIC_RELEASE);
 }
@@ -137,7 +125,7 @@ static inline void spa_ringbuffer_read_update(struct spa_ringbuffer *rbuf, int32
 
 
 
-static inline int32_t spa_ringbuffer_get_write_index(struct spa_ringbuffer *rbuf, uint32_t *index)
+SPA_API_RINGBUFFER int32_t spa_ringbuffer_get_write_index(struct spa_ringbuffer *rbuf, uint32_t *index)
 {
 	*index = __atomic_load_n(&rbuf->writeindex, __ATOMIC_RELAXED);
 	return (int32_t) (*index - __atomic_load_n(&rbuf->readindex, __ATOMIC_ACQUIRE));
@@ -154,8 +142,8 @@ static inline int32_t spa_ringbuffer_get_write_index(struct spa_ringbuffer *rbuf
 
 
 
-static inline void
-spa_ringbuffer_write_data(struct spa_ringbuffer *rbuf,
+SPA_API_RINGBUFFER void
+spa_ringbuffer_write_data(struct spa_ringbuffer *rbuf SPA_UNUSED,
 			  void *buffer, uint32_t size,
 			  uint32_t offset, const void *data, uint32_t len)
 {
@@ -171,7 +159,7 @@ spa_ringbuffer_write_data(struct spa_ringbuffer *rbuf,
 
 
 
-static inline void spa_ringbuffer_write_update(struct spa_ringbuffer *rbuf, int32_t index)
+SPA_API_RINGBUFFER void spa_ringbuffer_write_update(struct spa_ringbuffer *rbuf, int32_t index)
 {
 	__atomic_store_n(&rbuf->writeindex, index, __ATOMIC_RELEASE);
 }

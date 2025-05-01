@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_AUDIO_DSD_H
 #define SPA_AUDIO_DSD_H
 
@@ -68,7 +48,7 @@ struct spa_audio_info_dsd {
 	uint32_t position[SPA_AUDIO_MAX_CHANNELS];	
 };
 
-#define SPA_AUDIO_INFO_DSD_INIT(...)		(struct spa_audio_info_dsd) { __VA_ARGS__ }
+#define SPA_AUDIO_INFO_DSD_INIT(...)		((struct spa_audio_info_dsd) { __VA_ARGS__ })
 
 
 

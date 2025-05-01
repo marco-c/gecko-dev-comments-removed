@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PIPEWIRE_BUFFERS_H
 #define PIPEWIRE_BUFFERS_H
 
@@ -48,6 +28,8 @@ extern "C" {
 #define PW_BUFFERS_FLAG_SHARED		(1<<1)	/**< buffers can be shared */
 #define PW_BUFFERS_FLAG_DYNAMIC		(1<<2)	/**< buffers have dynamic data */
 #define PW_BUFFERS_FLAG_SHARED_MEM	(1<<3)	/**< buffers need shared memory */
+#define PW_BUFFERS_FLAG_IN_PRIORITY	(1<<4)	/**< input parameters have priority */
+#define PW_BUFFERS_FLAG_ASYNC		(1<<5)	/**< one of the nodes is async */
 
 struct pw_buffers {
 	struct pw_memblock *mem;	

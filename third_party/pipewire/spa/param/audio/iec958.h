@@ -2,26 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SPA_AUDIO_IEC958_H
 #define SPA_AUDIO_IEC958_H
 
@@ -56,7 +36,7 @@ struct spa_audio_info_iec958 {
 	uint32_t rate;				
 };
 
-#define SPA_AUDIO_INFO_IEC958_INIT(...)		(struct spa_audio_info_iec958) { __VA_ARGS__ }
+#define SPA_AUDIO_INFO_IEC958_INIT(...)		((struct spa_audio_info_iec958) { __VA_ARGS__ })
 
 
 
