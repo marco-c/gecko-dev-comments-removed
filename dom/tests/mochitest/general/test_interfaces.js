@@ -1483,6 +1483,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "VideoPlaybackQuality", insecureContext: true },
   
+  { name: "ViewTransition", insecureContext: true, nightly: true },
+  
   { name: "VisualViewport", insecureContext: true },
   
   { name: "VTTCue", insecureContext: true },
