@@ -4,14 +4,11 @@
 
 "use strict";
 
-var { ExtensionCommon } = ChromeUtils.importESModule(
-  "resource://gre/modules/ExtensionCommon.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(this, {
   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
   PipelineOptions: "chrome://global/content/ml/EngineProcess.sys.mjs",
   ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
+  addonIdToEngineId: "chrome://global/content/ml/Utils.sys.mjs",
 });
 
 const PREF_EXTENSIONS_ML_ENABLED = "extensions.ml.enabled";
@@ -94,12 +91,7 @@ class TrialML extends ExtensionAPI {
 
 
   static getPipelineId(extensionId) {
-    
-    
-    
-    return `ML-ENGINE-${ExtensionCommon.makeWidgetId(extensionId)
-      .replace(/^_|_$/g, "")
-      .replace(/_/g, "-")}`;
+    return addonIdToEngineId(extensionId);
   }
 
   
