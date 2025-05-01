@@ -67,6 +67,7 @@ class nsIPrincipal;
 
 #define PREF_GEO_SECURITY_ALLOWINSECURE "geo.security.allowinsecure"
 
+using mozilla::Unused;  
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::dom::geolocation;
@@ -453,12 +454,7 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     canUseCache = true;
   }
 
-  if (XRE_IsParentProcess()) {
-    
-    
-    gs->UpdateAccuracy(WantsHighAccuracy());
-  }
-
+  gs->UpdateAccuracy(WantsHighAccuracy());
   if (canUseCache) {
     
     
@@ -832,7 +828,6 @@ nsGeolocationService::Observe(nsISupports* aSubject, const char* aTopic,
 NS_IMETHODIMP
 nsGeolocationService::Update(nsIDOMGeoPosition* aSomewhere) {
   if (aSomewhere) {
-    mStarting.reset();
     SetCachedPosition(aSomewhere);
   }
 
@@ -878,16 +873,8 @@ nsresult nsGeolocationService::StartDevice() {
   SetDisconnectTimer();
 
   if (XRE_IsContentProcess()) {
-    bool highAccuracyRequested = HighAccuracyRequested();
-    if (mStarting.isSome() && *mStarting == highAccuracyRequested) {
-      
-      return NS_OK;
-    }
-    mStarting = Some(highAccuracyRequested);
     ContentChild* cpc = ContentChild::GetSingleton();
-    if (!cpc->SendAddGeolocationListener(highAccuracyRequested)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
+    cpc->SendAddGeolocationListener(HighAccuracyRequested());
     return NS_OK;
   }
 
@@ -958,7 +945,6 @@ void nsGeolocationService::StopDevice() {
   }
 
   if (XRE_IsContentProcess()) {
-    mStarting.reset();
     ContentChild* cpc = ContentChild::GetSingleton();
     cpc->SendRemoveGeolocationListener();
 

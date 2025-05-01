@@ -110,11 +110,6 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
 
   
   bool mHigherAccuracy = false;
-
-  
-  
-  
-  mozilla::Maybe<bool> mStarting;
 };
 
 namespace mozilla::dom {
