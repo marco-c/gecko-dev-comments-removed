@@ -208,9 +208,6 @@ def check_networking(binary):
     networking_functions = set(
         [
             
-            "connect",
-            "accept",
-            "listen",
             "recv",
             "send",
             
@@ -236,6 +233,19 @@ def check_networking(binary):
             "endprotoent",
         ]
     )
+    
+    
+    socket_functions = set(
+        [
+            "connect",
+            "accept",
+            "listen",
+        ]
+    )
+
+    if PLATFORM == "WINNT":
+        networking_functions |= socket_functions
+
     bad_occurences_names = set()
 
     try:
