@@ -57,13 +57,17 @@ def create_telemetry_from_environment(settings):
 
     from pathlib import Path
 
+    
+    
+    telemetry_interface = GleanTelemetry()
+
     Glean.initialize(
         "mozilla.mach",
         "Unknown",
         is_enabled,
         data_dir=Path(get_state_dir()) / "glean",
     )
-    return GleanTelemetry()
+    return telemetry_interface
 
 
 def report_invocation_metrics(telemetry, command):
