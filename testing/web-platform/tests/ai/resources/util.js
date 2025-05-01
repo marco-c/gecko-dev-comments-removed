@@ -11,41 +11,39 @@ const kTestPrompt = 'Please write a sentence in English.';
 
 
 
-const generateOptionCombinations =
-    (optionsSpec) => {
-      
-      const keys = optionsSpec.map(o => Object.keys(o)[0]);
-      
-      const valueArrays = optionsSpec.map(o => Object.values(o)[0]);
-      
-      const valueCombinations =
-          valueArrays.reduce((accumulator, currentValues) => {
-            
-            
-            if (accumulator.length === 0) {
-              return currentValues.map(value => [value]);
-            }
-            
-            return accumulator.flatMap(
-                existingCombo => currentValues.map(
-                    currentValue => [...existingCombo, currentValue]));
-          }, []);
-
-      
-      
-      return valueCombinations.map(combination => {
-        const result = {};
-        keys.forEach((key, index) => {
-          if (combination[index] !== undefined) {
-            result[key] = combination[index];
-          }
-        });
-        return result;
-      });
+function generateOptionCombinations(optionsSpec) {
+  
+  const keys = optionsSpec.map(o => Object.keys(o)[0]);
+  
+  const valueArrays = optionsSpec.map(o => Object.values(o)[0]);
+  
+  const valueCombinations = valueArrays.reduce((accumulator, currentValues) => {
+    
+    
+    if (accumulator.length === 0) {
+      return currentValues.map(value => [value]);
     }
+    
+    return accumulator.flatMap(
+        existingCombo => currentValues.map(
+            currentValue => [...existingCombo, currentValue]));
+  }, []);
+
+  
+  
+  return valueCombinations.map(combination => {
+    const result = {};
+    keys.forEach((key, index) => {
+      if (combination[index] !== undefined) {
+        result[key] = combination[index];
+      }
+    });
+    return result;
+  });
+}
 
 
-const testAbortPromise = async (t, method) => {
+async function testAbortPromise(t, method) {
   
   {
     const controller = new AbortController();
@@ -72,9 +70,47 @@ const testAbortPromise = async (t, method) => {
   }
 };
 
+async function testCreateMonitorWithAbortAt(
+    t, loadedToAbortAt, method, options = {}) {
+  const {promise: eventPromise, resolve} = Promise.withResolvers();
+  let hadEvent = false;
+  function monitor(m) {
+    m.addEventListener('downloadprogress', e => {
+      if (e.loaded != loadedToAbortAt) {
+        return;
+      }
+
+      if (hadEvent) {
+        assert_unreached(
+            'This should never be reached since LanguageDetector.create() was aborted.');
+        return;
+      }
+
+      resolve();
+      hadEvent = true;
+    });
+  }
+
+  const controller = new AbortController();
+
+  const createPromise =
+      method({...options, monitor, signal: controller.signal});
+
+  await eventPromise;
+
+  const err = new Error('test');
+  controller.abort(err);
+  await promise_rejects_exactly(t, err, createPromise);
+}
+
+async function testCreateMonitorWithAbort(t, method, options = {}) {
+  await testCreateMonitorWithAbortAt(t, 0, method, options);
+  await testCreateMonitorWithAbortAt(t, 1, method, options);
+}
 
 
-const testAbortReadableStream = async (t, method) => {
+
+async function testAbortReadableStream(t, method) {
   
   {
     const controller = new AbortController();
