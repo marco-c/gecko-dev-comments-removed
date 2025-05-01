@@ -159,63 +159,6 @@ class AsyncSetIconForPage final : public Runnable {
   PageData mPage;
 };
 
-
-
-
-
-class AsyncGetFaviconURLForPage final : public Runnable {
- public:
-  NS_DECL_NSIRUNNABLE
-
-  
-
-
-
-
-
-
-
-
-
-  AsyncGetFaviconURLForPage(const nsCOMPtr<nsIURI>& aPageURI,
-                            uint16_t aPreferredWidth,
-                            nsIFaviconDataCallback* aCallback);
-
- private:
-  uint16_t mPreferredWidth;
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
-  nsCOMPtr<nsIURI> mPageURI;
-};
-
-
-
-
-
-class AsyncGetFaviconDataForPage final : public Runnable {
- public:
-  NS_DECL_NSIRUNNABLE
-
-  
-
-
-
-
-
-
-
-
-
-
-  AsyncGetFaviconDataForPage(const nsCOMPtr<nsIURI>& aPageURI,
-                             uint16_t aPreferredWidth,
-                             nsIFaviconDataCallback* aCallback);
-
- private:
-  uint16_t mPreferredWidth;
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
-  nsCOMPtr<nsIURI> mPageURI;
-};
-
 using FaviconPromise =
     mozilla::MozPromise<nsCOMPtr<nsIFavicon>, nsresult, true>;
 
