@@ -35,6 +35,22 @@ MIRROR_TYPES = {
 }
 
 
+
+
+WEAKER_EVENT_COMPATIBILITY_PROBES = [
+    "security.ui.protectionspopup#click",
+    "intl.ui.browserLanguage#action",
+    "privacy.ui.fpp#click",
+    "slow_script_warning#shown",
+    "address#address_form",
+    "pwmgr#mgmt_interaction",
+    "relay_integration#popup_option",
+    "relay_integration#mask_panel",
+    "security.ui.certerror#click",
+    "security.ui.certerror#load",
+]
+
+
 from mozbuild.base import MozbuildObject
 
 build = MozbuildObject.from_environment()
@@ -59,15 +75,20 @@ def ensure_compatible_event(metric, probe):
     
     
     
-    
-    for key in metric.allowed_extra_keys:
-        
-        
-        if key == "value":
-            continue
+    if probe.identifier in WEAKER_EVENT_COMPATIBILITY_PROBES:
+        for key in metric.allowed_extra_keys:
+            
+            
+            if key == "value":
+                continue
+            assert (
+                key in probe.extra_keys
+            ), f"Key {key} not in mirrored event probe {probe.identifier}. Be sure to add it."
+    else:
         assert (
-            key in probe.extra_keys
-        ), f"Key {key} not in mirrored event probe {probe.identifier}. Be sure to add it."
+            metric.allowed_extra_keys == probe.extra_keys
+            or metric.allowed_extra_keys == sorted(probe.extra_keys + ["value"])
+        ), f"Metric {metric.identifier()}'s extra keys {metric.allowed_extra_keys} are not the same as probe {probe.identifier}'s extras {probe.extra_keys}."
 
 
 
