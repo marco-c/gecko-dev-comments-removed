@@ -4471,8 +4471,13 @@ static nscoord AddIntrinsicSizeOffset(
   }
 
   
-  if (aType == IntrinsicISizeType::MinISize &&
+  const bool isInlineAxis =
+      aAxis == aFrame->GetWritingMode().PhysicalAxis(LogicalAxis::Inline);
+  if (aType == IntrinsicISizeType::MinISize && isInlineAxis &&
       aFrame->IsPercentageResolvedAgainstZero(aStyleSize, aStyleMaxSize)) {
+    
+    
+    
     
     result = 0;
   } else if (Maybe<nscoord> size =
