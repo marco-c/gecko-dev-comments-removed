@@ -516,10 +516,9 @@ already_AddRefed<nsIWidget> nsBaseWidget::CreateChild(
 
 
 void nsBaseWidget::AttachViewToTopLevel(bool aUseAttachedEvents) {
-  NS_ASSERTION((mWindowType == WindowType::TopLevel ||
+  NS_ASSERTION(mWindowType == WindowType::TopLevel ||
                 mWindowType == WindowType::Dialog ||
-                mWindowType == WindowType::Invisible ||
-                mWindowType == WindowType::Child),
+                mWindowType == WindowType::Invisible,
                "Can't attach to window of that type");
 
   mUseAttachedEvents = aUseAttachedEvents;
@@ -970,7 +969,7 @@ bool nsBaseWidget::UseAPZ() const {
   }
 
   
-  if (mWindowType == WindowType::TopLevel || mWindowType == WindowType::Child) {
+  if (mWindowType == WindowType::TopLevel) {
     return true;
   }
 
@@ -986,7 +985,9 @@ bool nsBaseWidget::UseAPZ() const {
   if (HasRemoteContent()) {
     return mWindowType == WindowType::Dialog ||
            mWindowType == WindowType::Popup;
-  } else if (StaticPrefs::apz_popups_without_remote_enabled()) {
+  }
+
+  if (StaticPrefs::apz_popups_without_remote_enabled()) {
     return mWindowType == WindowType::Popup;
   }
 

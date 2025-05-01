@@ -72,24 +72,6 @@ class nsWebBrowser final : public nsIWebBrowser,
   friend class nsDocShellTreeOwner;
 
  public:
-  
-  
-  
-  class WidgetListenerDelegate : public nsIWidgetListener {
-   public:
-    explicit WidgetListenerDelegate(nsWebBrowser* aWebBrowser)
-        : mWebBrowser(aWebBrowser) {}
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void WindowActivated() override;
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void WindowDeactivated() override;
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual bool PaintWindow(
-        nsIWidget* aWidget, mozilla::LayoutDeviceIntRegion aRegion) override;
-
-   private:
-    
-    
-    nsWebBrowser* mWebBrowser;
-  };
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsWebBrowser, nsIWebBrowser)
 
@@ -122,13 +104,6 @@ class nsWebBrowser final : public nsIWebBrowser,
   void EnsureDocShellTreeOwner();
 
   nsIWidget* EnsureWidget();
-
-  
-  MOZ_CAN_RUN_SCRIPT void WindowActivated();
-  MOZ_CAN_RUN_SCRIPT void WindowDeactivated();
-  MOZ_CAN_RUN_SCRIPT bool PaintWindow(nsIWidget* aWidget,
-                                      mozilla::LayoutDeviceIntRegion aRegion);
-
   explicit nsWebBrowser(int aItemType);
 
  protected:
@@ -136,7 +111,6 @@ class nsWebBrowser final : public nsIWebBrowser,
   RefPtr<nsDocShell> mDocShell;
   mozilla::OriginAttributes mOriginAttributes;
 
-  nsCOMPtr<nsIWidget> mInternalWidget;
   nsCOMPtr<nsIWindowWatcher> mWWatch;
   const uint32_t mContentType;
   bool mShouldEnableHistory;
@@ -144,8 +118,6 @@ class nsWebBrowser final : public nsIWebBrowser,
   nsIWebProgressListener* mProgressListener;
 
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
-
-  WidgetListenerDelegate mWidgetListenerDelegate;
 
   
   nscolor mBackgroundColor;

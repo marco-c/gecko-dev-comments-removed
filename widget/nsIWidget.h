@@ -2094,7 +2094,7 @@ class nsIWidget : public nsISupports {
   nsIWidget* MOZ_NON_OWNING_REF mParent = nullptr;
   
   bool mOnDestroyCalled = false;
-  WindowType mWindowType = WindowType::Child;
+  WindowType mWindowType = WindowType::TopLevel;
   WidgetType mWidgetType = WidgetType::Native;
 };
 

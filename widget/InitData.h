@@ -16,10 +16,7 @@ namespace mozilla::widget {
 enum class WindowType : uint8_t {
   TopLevel,   
   Dialog,     
-              
   Popup,      
-  Child,      
-              
   Invisible,  
 };
 
@@ -77,7 +74,7 @@ enum class TransparencyMode : uint8_t {
 
 
 struct InitData {
-  WindowType mWindowType = WindowType::Child;
+  WindowType mWindowType = WindowType::TopLevel;
   BorderStyle mBorderStyle = BorderStyle::Default;
   PopupType mPopupHint = PopupType::Panel;
   PopupLevel mPopupLevel = PopupLevel::Top;
