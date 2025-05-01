@@ -154,14 +154,20 @@ async function checkFormChangeHappened(formId) {
         0
       );
 
-      const fieldDetectedAfterFieldMutations =
+      const fieldDetectedAfterRemovingField =
         getFieldDetectionCompletedPromiseResolver();
 
       
       removeInputField(browser, `#${formId} input[name=address-level2]`);
+
+      await fieldDetectedAfterRemovingField;
+
+      const fieldDetectedAfterAddingField =
+        getFieldDetectionCompletedPromiseResolver();
+
       addInputField(browser, formId, "address-level2");
 
-      await fieldDetectedAfterFieldMutations;
+      await fieldDetectedAfterAddingField;
 
       await openPopupOn(browser, `#${formId} input[name=address-level2]`);
 
