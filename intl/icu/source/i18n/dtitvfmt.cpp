@@ -636,6 +636,28 @@ DateIntervalFormat::getTimeZone() const
     return *(TimeZone::createDefault());
 }
 
+void DateIntervalFormat::adoptCalendar(Calendar *calendarToAdopt) {
+    if (fDateFormat != nullptr) {
+        fDateFormat->adoptCalendar(calendarToAdopt);
+    }
+
+    
+    
+    
+
+    delete fFromCalendar;
+    fFromCalendar = nullptr;
+
+    delete fToCalendar;
+    fToCalendar = nullptr;
+
+    const Calendar *calendar = fDateFormat->getCalendar();
+    if (calendar != nullptr) {
+        fFromCalendar = calendar->clone();
+        fToCalendar = calendar->clone();
+    }
+}
+
 void
 DateIntervalFormat::setContext(UDisplayContext value, UErrorCode& status)
 {
