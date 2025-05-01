@@ -816,13 +816,6 @@ MOZ_ALWAYS_INLINE bool Nursery::Space::isInside(const void* p) const {
   return false;
 }
 
-
-
-
-MOZ_ALWAYS_INLINE bool ChunkPtrIsInsideNursery(void* ptr) {
-  return gc::detail::ChunkPtrHasStoreBuffer(ptr);
-}
-
 }  
 
 #endif  
