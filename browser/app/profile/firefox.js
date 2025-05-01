@@ -219,7 +219,7 @@ pref("app.update.langpack.enabled", true);
 
 
 
-pref("app.update.multiSessionInstallLockout.enabled", false);
+pref("app.update.multiSessionInstallLockout.enabled", true);
 
 #if defined(MOZ_BACKGROUNDTASKS)
   
