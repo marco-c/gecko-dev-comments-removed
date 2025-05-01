@@ -28,14 +28,22 @@ export const description = `API Operation Tests for RenderPass StoreOp.
       TODO: test with more interesting loadOp values`;
 
 import { makeTestGroup } from '../../../../common/framework/test_group.js';
+import { assert } from '../../../../common/util/util.js';
 import {
+  EncodableTextureFormat,
   isDepthTextureFormat,
+  isSintOrUintFormat,
   isStencilTextureFormat,
   kPossibleColorRenderableTextureFormats,
   kSizedDepthStencilFormats,
 } from '../../../format_info.js';
 import { AllFeaturesMaxLimitsGPUTest } from '../../../gpu_test.js';
-import { PerTexelComponent } from '../../../util/texture/texel_data.js';
+import * as ttu from '../../../texture_test_utils.js';
+import {
+  kTexelRepresentationInfo,
+  PerTexelComponent,
+  TexelComponent,
+} from '../../../util/texture/texel_data.js';
 
 
 const kMipLevel: number[] = [0, 1];
@@ -150,35 +158,66 @@ g.test('render_pass_store_op,color_attachment_only')
       .combine('arrayLayer', kArrayLayers)
   )
   .fn(t => {
-    t.skipIfTextureFormatNotSupported(t.params.colorFormat);
-    t.skipIfTextureFormatNotUsableAsRenderAttachment(t.params.colorFormat);
+    const { colorFormat, storeOperation, mipLevel, arrayLayer } = t.params;
+    t.skipIfTextureFormatNotSupported(colorFormat);
+    t.skipIfTextureFormatNotUsableAsRenderAttachment(colorFormat);
 
     const colorAttachment = t.createTextureTracked({
-      format: t.params.colorFormat,
-      size: { width: kWidth, height: kHeight, depthOrArrayLayers: t.params.arrayLayer + 1 },
+      format: colorFormat,
+      size: { width: kWidth, height: kHeight, depthOrArrayLayers: arrayLayer + 1 },
       mipLevelCount: kMipLevelCount,
       usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
     const colorViewDesc: GPUTextureViewDescriptor = {
-      baseArrayLayer: t.params.arrayLayer,
-      baseMipLevel: t.params.mipLevel,
+      baseArrayLayer: arrayLayer,
+      baseMipLevel: mipLevel,
       mipLevelCount: 1,
       arrayLayerCount: 1,
     };
 
     const colorAttachmentView = colorAttachment.createView(colorViewDesc);
 
+    const components = new Set(
+      kTexelRepresentationInfo[colorFormat as EncodableTextureFormat]?.componentOrder ?? []
+    );
+    assert(components.size > 0);
+
     
+    
+    
+    const missingValue = { R: 0, G: 0, B: 0, A: 1 };
+    const [baseValue, maxDiff] = isSintOrUintFormat(colorFormat)
+      ? [{ R: 12, G: 34, B: 56, A: 3 }, 0]
+      : [{ R: 0.8, G: 0.75, B: 0.5, A: 1.0 }, 2 / 255];
+    const kRGBAComponents = [
+      TexelComponent.R,
+      TexelComponent.G,
+      TexelComponent.B,
+      TexelComponent.A,
+    ] as const;
+
+    const clearValueAsComponents = Object.fromEntries(
+      kRGBAComponents.map(component => [
+        component,
+        components.has(component) ? baseValue[component] : missingValue[component],
+      ])
+    );
+    const clearValue = Object.fromEntries(
+      Object.entries(clearValueAsComponents).map(([k, v]) => [k.toLowerCase(), v])
+    ) as unknown as GPUColorDict;
+
+    t.debug(`clearValue: ${JSON.stringify(clearValue)}`);
+
     
     const encoder = t.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
           view: colorAttachmentView,
-          clearValue: { r: 1.0, g: 0.0, b: 0.0, a: 1.0 },
+          clearValue,
           loadOp: 'clear',
-          storeOp: t.params.storeOperation,
+          storeOp: storeOperation,
         },
       ],
     });
@@ -187,19 +226,20 @@ g.test('render_pass_store_op,color_attachment_only')
 
     
     let expectedValue: PerTexelComponent<number> = {};
-    if (t.params.storeOperation === 'discard') {
+    if (storeOperation === 'discard') {
       
       expectedValue = { R: 0.0, G: 0.0, B: 0.0, A: 0.0 };
-    } else if (t.params.storeOperation === 'store') {
+    } else if (storeOperation === 'store') {
       
-      expectedValue = { R: 1.0, G: 0.0, B: 0.0, A: 1.0 };
+      expectedValue = clearValueAsComponents;
     }
 
-    t.expectSingleColor(colorAttachment, t.params.colorFormat, {
+    ttu.expectSingleColorWithTolerance(t, colorAttachment, colorFormat, {
       size: [kHeight, kWidth, 1],
-      slice: t.params.arrayLayer,
+      slice: arrayLayer,
       exp: expectedValue,
-      layout: { mipLevel: t.params.mipLevel },
+      layout: { mipLevel },
+      maxFractionalDiff: maxDiff,
     });
   });
 

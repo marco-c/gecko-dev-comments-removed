@@ -1,6 +1,6 @@
 
 
-import { AllFeaturesMaxLimitsValidationTest } from '../api/validation/validation_test.js';export class CompatibilityTest extends AllFeaturesMaxLimitsValidationTest {
+import { AllFeaturesMaxLimitsGPUTest } from '../gpu_test.js';export class CompatibilityTest extends AllFeaturesMaxLimitsGPUTest {
   async init() {
     await super.init();
   }

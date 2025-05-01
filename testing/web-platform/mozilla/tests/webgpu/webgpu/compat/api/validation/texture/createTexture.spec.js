@@ -76,7 +76,7 @@ fn((t) => {
         usage: GPUTextureUsage.TEXTURE_BINDING,
         dimension,
         textureBindingViewDimension
-      }); 
+      });
     },
     shouldError
   );
@@ -107,7 +107,7 @@ fn((t) => {
         format: 'rgba8unorm',
         usage: GPUTextureUsage.TEXTURE_BINDING,
         textureBindingViewDimension
-      }); 
+      });
     },
     shouldError
   );

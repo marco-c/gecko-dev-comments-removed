@@ -10,6 +10,7 @@ TODO: consider whether external_texture and copyToTexture video tests should be 
 TODO(#3193): Test video in BT.2020 color space
 `;import { makeTestGroup } from '../../../common/framework/test_group.js';
 
+import * as ttu from '../../texture_test_utils.js';
 import { TextureUploadingUtils } from '../../util/copy_to_texture.js';
 import { createCanvas } from '../../util/create_elements.js';
 import {
@@ -227,7 +228,7 @@ fn(async (t) => {
 
     
     
-    t.expectSinglePixelComparisonsAreOkInTexture({ texture: colorAttachment }, [
+    ttu.expectSinglePixelComparisonsAreOkInTexture(t, { texture: colorAttachment }, [
     
     {
       coord: { x: kWidth * 0.25, y: kHeight * 0.25 },
@@ -353,7 +354,7 @@ fn((t) => {
 
   
   
-  t.expectSinglePixelComparisonsAreOkInTexture({ texture: colorAttachment }, [
+  ttu.expectSinglePixelComparisonsAreOkInTexture(t, { texture: colorAttachment }, [
   
   {
     coord: { x: kWidth * 0.25, y: kHeight * 0.25 },
@@ -487,7 +488,7 @@ fn(async (t) => {
 
       
       
-      t.expectSinglePixelComparisonsAreOkInTexture({ texture: colorAttachment }, [
+      ttu.expectSinglePixelComparisonsAreOkInTexture(t, { texture: colorAttachment }, [
       { coord: { x: kWidth * 0.1, y: kHeight * 0.1 }, exp: cropParam.color },
       { coord: { x: kWidth * 0.9, y: kHeight * 0.1 }, exp: cropParam.color },
       { coord: { x: kWidth * 0.1, y: kHeight * 0.9 }, exp: cropParam.color },
@@ -611,7 +612,7 @@ fn(async (t) => {
     
     const expect = kVideoInfo[videoName].display;
 
-    t.expectSinglePixelComparisonsAreOkInTexture({ texture: outputTexture }, [
+    ttu.expectSinglePixelComparisonsAreOkInTexture(t, { texture: outputTexture }, [
     
     { coord: { x: 0, y: 0 }, exp: convertToUnorm8(presentColors[expect.topLeftColor]) },
     
@@ -713,7 +714,7 @@ fn(async (t) => {
     }
   });
 
-  t.expectTexelViewComparisonIsOkInTexture({ texture: colorAttachment }, expectedView, [
+  ttu.expectTexelViewComparisonIsOkInTexture(t, { texture: colorAttachment }, expectedView, [
   frameWidth,
   frameHeight,
   1]

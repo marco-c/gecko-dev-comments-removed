@@ -4045,9 +4045,26 @@ const kAdditionInterval64BitsNormalCases = {
     
     { input: [-0.1, -0.1], expected: [reinterpretU32AsF32(0xbe4ccccd), reinterpretU32AsF32(0xbe4ccccc)] },  
     
-    { input: [0.1, -0.1], expected: [reinterpretU32AsF32(0x3dcccccc)+reinterpretU32AsF32(0xbdcccccd), reinterpretU32AsF32(0x3dcccccd)+reinterpretU32AsF32(0xbdcccccc)] },  
+    { input: [0.1, -0.1], expected: [reinterpretU32AsF32(0x3dcccccc) + reinterpretU32AsF32(0xbdcccccd), reinterpretU32AsF32(0x3dcccccd) + reinterpretU32AsF32(0xbdcccccc)] },  
     
-    { input: [-0.1, 0.1], expected: [reinterpretU32AsF32(0xbdcccccd)+reinterpretU32AsF32(0x3dcccccc), reinterpretU32AsF32(0xbdcccccc)+reinterpretU32AsF32(0x3dcccccd)] },  
+    { input: [-0.1, 0.1], expected: [reinterpretU32AsF32(0xbdcccccd) + reinterpretU32AsF32(0x3dcccccc), reinterpretU32AsF32(0xbdcccccc) + reinterpretU32AsF32(0x3dcccccd)] },  
+    { input: [1, kValue.f32.positive.min], expected: [1.0, reinterpretU32AsF32(0x3f800001)] },
+    { input: [1, kValue.f32.negative.max], expected: [reinterpretU32AsF32(0x3f7fffff), 1.0] },
+    { input: [-1, kValue.f32.positive.min], expected: [-1.0, reinterpretU32AsF32(0xbf7fffff)] },
+    { input: [-1, kValue.f32.negative.max], expected: [reinterpretU32AsF32(0xbf800001), -1.0] },
+    { input: [1, kValue.f32.positive.max], expected: kUnboundedEndpoints },
+    { input: [1, kValue.f32.negative.min], expected: [reinterpretU32AsF32(0xff7fffff), reinterpretU32AsF32(0xff7ffffe)] },
+    { input: [-1, kValue.f32.positive.max], expected: [reinterpretU32AsF32(0x7f7ffffe), reinterpretU32AsF32(0x7f7fffff)] },
+    { input: [-1, kValue.f32.negative.min], expected: kUnboundedEndpoints },
+    
+    { input: [kValue.f32.positive.min, 1], expected: [1.0, reinterpretU32AsF32(0x3f800001)] },
+    { input: [kValue.f32.negative.max, 1], expected: [reinterpretU32AsF32(0x3f7fffff), 1.0] },
+    { input: [kValue.f32.positive.min, -1], expected: [-1.0, reinterpretU32AsF32(0xbf7fffff)] },
+    { input: [kValue.f32.negative.max, -1], expected: [reinterpretU32AsF32(0xbf800001), -1.0] },
+    { input: [kValue.f32.positive.max, 1], expected: kUnboundedEndpoints },
+    { input: [kValue.f32.negative.min, 1], expected: [reinterpretU32AsF32(0xff7fffff), reinterpretU32AsF32(0xff7ffffe)] },
+    { input: [kValue.f32.positive.max, -1], expected: [reinterpretU32AsF32(0x7f7ffffe), reinterpretU32AsF32(0x7f7fffff)] },
+    { input: [kValue.f32.negative.min, -1], expected: kUnboundedEndpoints },
   ] as ScalarPairToIntervalCase[],
   f16: [
     
@@ -4056,7 +4073,7 @@ const kAdditionInterval64BitsNormalCases = {
     
     { input: [-0.1, -0.1], expected: [reinterpretU16AsF16(0xb267), reinterpretU16AsF16(0xb266)] },  
     
-    { input: [0.1, -0.1], expected: [reinterpretU16AsF16(0x2e66)+reinterpretU16AsF16(0xae67), reinterpretU16AsF16(0x2e67)+reinterpretU16AsF16(0xae66)] },  
+    { input: [0.1, -0.1], expected: [reinterpretU16AsF16(0x2e66) + reinterpretU16AsF16(0xae67), reinterpretU16AsF16(0x2e67) + reinterpretU16AsF16(0xae66)] },  
     
     { input: [-0.1, 0.1], expected: [reinterpretU16AsF16(0xae67)+reinterpretU16AsF16(0x2e66), reinterpretU16AsF16(0xae66)+reinterpretU16AsF16(0x2e67)] },  
   ] as ScalarPairToIntervalCase[],
@@ -5017,6 +5034,23 @@ const kSubtractionInterval64BitsNormalCases = {
     { input: [0.1, -0.1], expected: [reinterpretU32AsF32(0x3dcccccc)-reinterpretU32AsF32(0xbdcccccc), reinterpretU32AsF32(0x3dcccccd)-reinterpretU32AsF32(0xbdcccccd)] },
     
     { input: [-0.1, 0.1], expected: [reinterpretU32AsF32(0xbdcccccd)-reinterpretU32AsF32(0x3dcccccd), reinterpretU32AsF32(0xbdcccccc)-reinterpretU32AsF32(0x3dcccccc)] },
+    { input: [1, kValue.f32.positive.min], expected: [reinterpretU32AsF32(0x3f7fffff), 1.0] },
+    { input: [1, kValue.f32.negative.max], expected: [ 1.0, reinterpretU32AsF32(0x3f800001)] },
+    { input: [-1, kValue.f32.positive.min], expected: [reinterpretU32AsF32(0xbf800001), -1.0] },
+    { input: [-1, kValue.f32.negative.max], expected: [-1.0, reinterpretU32AsF32(0xbf7fffff)] },
+    { input: [1, kValue.f32.positive.max], expected:  [reinterpretU32AsF32(0xff7fffff), reinterpretU32AsF32(0xff7ffffe)]},
+    { input: [1, kValue.f32.negative.min], expected: kUnboundedEndpoints},
+    { input: [-1, kValue.f32.positive.max], expected:kUnboundedEndpoints},
+    { input: [-1, kValue.f32.negative.min], expected:  [reinterpretU32AsF32(0x7f7ffffe) , reinterpretU32AsF32(0x7f7fffff)]  },
+    
+    { input: [kValue.f32.positive.min, 1], expected: [-1.0 , reinterpretU32AsF32(0xbf7fffff)] },
+    { input: [kValue.f32.negative.max, 1], expected: [reinterpretU32AsF32(0xbf800001), -1.0] },
+    { input: [kValue.f32.positive.min, -1], expected: [1.0, reinterpretU32AsF32(0x3f800001)] },
+    { input: [kValue.f32.negative.max, -1], expected: [reinterpretU32AsF32(0x3f7fffff), 1.0] },
+    { input: [kValue.f32.positive.max, 1], expected:  [reinterpretU32AsF32(0x7f7ffffe), reinterpretU32AsF32(0x7f7fffff)]},
+    { input: [kValue.f32.negative.min, 1], expected: kUnboundedEndpoints},
+    { input: [kValue.f32.positive.max, -1], expected:kUnboundedEndpoints},
+    { input: [kValue.f32.negative.min, -1], expected:  [reinterpretU32AsF32(0xff7fffff) , reinterpretU32AsF32(0xff7ffffe)]  },
   ] as ScalarPairToIntervalCase[],
   f16: [
     
@@ -5333,13 +5367,15 @@ const kMixImpreciseIntervalCases = {
     
     
     
-    { input: [kValue.f32.negative.min, 10.0, 1.0], expected: 0.0 },
+    { input: [kValue.f32.negative.min, 10.0, 1.0], expected: kUnboundedEndpoints},
     
-    { input: [kValue.f32.negative.min, -10.0, 1.0], expected: 0.0 },
+    { input: [kValue.f32.negative.min, -10.0, 1.0], expected:  [reinterpretU32AsF32(0xf3800000), 0.0]  },
     { input: [kValue.f32.negative.min,  10.0, 5.0], expected: kUnboundedEndpoints },
     { input: [kValue.f32.negative.min, -10.0, 5.0], expected: kUnboundedEndpoints },
-    { input: [kValue.f32.negative.min, 10.0, 0.5], expected: reinterpretU32AsF32(0xfeffffff) },
-    { input: [kValue.f32.negative.min, -10.0, 0.5], expected: reinterpretU32AsF32(0xfeffffff) },
+    { input: [kValue.f32.negative.min, 10.0, 0.5], expected: kUnboundedEndpoints },
+    { input: [kValue.f32.negative.min, -10.0, 0.5], expected:  [reinterpretU32AsF32(0xff000000),  reinterpretU32AsF32(0xfeffffff) ]},
+    
+    { input: [kValue.f32.positive.min, 1.0, kValue.f32.positive.min], expected: [reinterpretU32AsF32(0x00800000),reinterpretU32AsF32(0x01000000)]},
   ] as ScalarTripleToIntervalCase[],
   f16: [
     
@@ -5470,8 +5506,8 @@ const kMixPreciseIntervalCases = {
     { input: [kValue.f32.negative.min, -10.0, 1.0], expected: -10 },
     { input: [kValue.f32.negative.min, 10.0, 5.0], expected: kUnboundedEndpoints },
     { input: [kValue.f32.negative.min, -10.0, 5.0], expected: kUnboundedEndpoints },
-    { input: [kValue.f32.negative.min, 10.0, 0.5], expected: reinterpretU32AsF32(0xfeffffff) },
-    { input: [kValue.f32.negative.min, -10.0, 0.5], expected: reinterpretU32AsF32(0xfeffffff) },
+    { input: [kValue.f32.negative.min, 10.0, 0.5], expected: [reinterpretU32AsF32(0xfeffffff), reinterpretU32AsF32(0xfefffffe) ] },
+    { input: [kValue.f32.negative.min, -10.0, 0.5], expected: [reinterpretU32AsF32(0xff000000),reinterpretU32AsF32(0xfeffffff) ] },
 
     
     { input: [1.0, 2.0,  kPlusOneULPFunctions['f32'](kValue.f32.positive.max / 2)], expected: kUnboundedEndpoints },
@@ -5595,10 +5631,10 @@ const kSmoothStepIntervalCases = {
     { input: [0, -2, -1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
     { input: [0, -2, -0.5], expected: [reinterpretU32AsF32(0x3e1ffffb), reinterpretU32AsF32(0x3e200007)] },  
     
-    { input: [kValue.f32.positive.subnormal.max, 2, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
-    { input: [kValue.f32.positive.subnormal.min, 2, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
-    { input: [kValue.f32.negative.subnormal.max, 2, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
-    { input: [kValue.f32.negative.subnormal.min, 2, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
+    { input: [kValue.f32.positive.subnormal.max, 2, 1], expected: [reinterpretU32AsF32(0x3efffff4), reinterpretU32AsF32(0x3f00000b)] },  
+    { input: [kValue.f32.positive.subnormal.min, 2, 1], expected: [reinterpretU32AsF32(0x3efffff4), reinterpretU32AsF32(0x3f00000b)] },  
+    { input: [kValue.f32.negative.subnormal.max, 2, 1], expected: [reinterpretU32AsF32(0x3efffff2), reinterpretU32AsF32(0x3f00000c)] },  
+    { input: [kValue.f32.negative.subnormal.min, 2, 1], expected: [reinterpretU32AsF32(0x3efffff2), reinterpretU32AsF32(0x3f00000c)] },  
     { input: [0, 2, kValue.f32.positive.subnormal.max], expected: [0, kValue.f32.positive.subnormal.min] },
     { input: [0, 2, kValue.f32.positive.subnormal.min], expected: [0, kValue.f32.positive.subnormal.min] },
     { input: [0, 2, kValue.f32.negative.subnormal.max], expected: [0, kValue.f32.positive.subnormal.min] },
@@ -5608,10 +5644,10 @@ const kSmoothStepIntervalCases = {
     { input: [1, 0, 1], expected: [0, kValue.f32.positive.subnormal.min] },
     { input: [1, 0, 0], expected: [reinterpretU32AsF32(0x3f7ffffa), reinterpretU32AsF32(0x3f800003)] },  
     
-    { input: [2, kValue.f32.positive.subnormal.max, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
-    { input: [2, kValue.f32.positive.subnormal.min, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
-    { input: [2, kValue.f32.negative.subnormal.max, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
-    { input: [2, kValue.f32.negative.subnormal.min, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
+    { input: [2, kValue.f32.positive.subnormal.max, 1], expected: [reinterpretU32AsF32(0x3efffff6), reinterpretU32AsF32(0x3f00000b)] },  
+    { input: [2, kValue.f32.positive.subnormal.min, 1], expected: [reinterpretU32AsF32(0x3efffff6), reinterpretU32AsF32(0x3f00000b)] },  
+    { input: [2, kValue.f32.negative.subnormal.max, 1], expected: [reinterpretU32AsF32(0x3efffff4), reinterpretU32AsF32(0x3f000008)] },  
+    { input: [2, kValue.f32.negative.subnormal.min, 1], expected: [reinterpretU32AsF32(0x3efffff4), reinterpretU32AsF32(0x3f000008)] },  
   ] as ScalarTripleToIntervalCase[],
   f16: [
     
@@ -6060,10 +6096,12 @@ const kDotIntervalCases = {
     
     
     
+    { input: [[kValue.f32.positive.max, 1.0, 2.0, 3.0], [-1.0, kValue.f32.positive.max, -2.0, -3.0]], expected: kUnboundedEndpoints},
+    { input: [[kValue.f32.positive.max, 1.0, 2.0, 3.0], [1.0, kValue.f32.negative.min, 2.0, 3.0]], expected: kUnboundedEndpoints },
     
     
-    { input: [[kValue.f32.positive.max, 1.0, 2.0, 3.0], [-1.0, kValue.f32.positive.max, -2.0, -3.0]], expected: [-13, 0] },
-    { input: [[kValue.f32.positive.max, 1.0, 2.0, 3.0], [1.0, kValue.f32.negative.min, 2.0, 3.0]], expected: [0, 13] },
+    { input: [[reinterpretU32AsF32(0x7f7ffffd), 1.0, 2.0, 3.0], [-1.0, kValue.f32.positive.max, -2.0, -3.0]], expected:  [0.0, reinterpretU32AsF32(0x74000000)]},
+    { input: [[reinterpretU32AsF32(0x7f7ffffd), 1.0, 2.0, 3.0], [1.0, kValue.f32.negative.min, 2.0, 3.0]], expected: [reinterpretU32AsF32(0xf4000000), 0.0] },
   ] as VectorPairToIntervalCase[],
   f16: [
     

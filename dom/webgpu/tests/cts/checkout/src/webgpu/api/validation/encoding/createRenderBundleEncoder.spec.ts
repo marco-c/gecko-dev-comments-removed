@@ -16,13 +16,13 @@ import {
   kDepthStencilFormats,
   kPossibleColorRenderableTextureFormats,
 } from '../../../format_info.js';
-import { AllFeaturesMaxLimitsValidationTest } from '../validation_test.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../../../gpu_test.js';
 
 
 
 const kMaxColorAttachments = getDefaultLimits('core').maxColorAttachments.default;
 
-export const g = makeTestGroup(AllFeaturesMaxLimitsValidationTest);
+export const g = makeTestGroup(AllFeaturesMaxLimitsGPUTest);
 
 g.test('attachment_state,limits,maxColorAttachments')
   .desc(`Tests that attachment state must have <= device.limits.maxColorAttachments.`)

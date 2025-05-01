@@ -250,7 +250,7 @@ export class Fixture<S extends SubcaseBatchState = SubcaseBatchState> {
 
 
 
-  protected eventualAsyncExpectation<T>(fn: (niceStack: Error) => Promise<T>): void {
+  eventualAsyncExpectation<T>(fn: (niceStack: Error) => Promise<T>): void {
     const promise = fn(new Error());
     this.eventualExpectations.push(promise);
   }

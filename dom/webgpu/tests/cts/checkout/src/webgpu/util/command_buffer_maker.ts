@@ -16,7 +16,6 @@ type EncoderByEncoderType<T extends EncoderType> = {
 }[T];
 
 
-
 export class CommandBufferMaker<T extends EncoderType> {
   
   

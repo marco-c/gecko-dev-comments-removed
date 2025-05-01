@@ -16,7 +16,6 @@ export const kEncoderTypes = ['non-pass', ...kProgrammableEncoderTypes];
 
 
 
-
 export class CommandBufferMaker {
   
   

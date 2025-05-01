@@ -173,20 +173,8 @@ fn(async (t) => {
     );
   }
 
-  const kTimeoutMS = 1000;
-  const lostDevice = await t.requestDeviceTracked(adapter);
-  const lost = await raceWithRejectOnTimeout(
-    lostDevice.lost,
-    kTimeoutMS,
-    'adapter was not stale'
-  );
-  t.expect(lost.reason === 'unknown');
-
   
-  
-  if (device) {
-    device.destroy();
-  }
+  t.shouldReject('OperationError', t.requestDeviceTracked(adapter));
 });
 
 g.test('features,unknown').

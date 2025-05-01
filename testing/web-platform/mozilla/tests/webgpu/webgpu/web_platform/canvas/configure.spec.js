@@ -95,6 +95,11 @@ fn((t) => {
   });
 
   
+  t.shouldThrow('InvalidStateError', () => {
+    ctx.getCurrentTexture();
+  });
+
+  
   ctx.configure({
     device: t.device,
     format: 'rgba8unorm',

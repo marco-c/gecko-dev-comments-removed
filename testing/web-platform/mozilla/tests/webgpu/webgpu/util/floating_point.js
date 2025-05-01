@@ -38,6 +38,7 @@ import {
   map2DArray,
   oneULPF16,
   oneULPF32,
+  nextAfterF64,
   quantizeToF16,
   quantizeToF32,
   scalarF16Range,
@@ -706,6 +707,46 @@ export class FPTraits {
     }
 
     return new FPInterval(this.kind, n, n);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  correctlyRoundedIntervalWithUnboundedPrecisionForAddition(
+  val,
+  large_val,
+  small_val)
+  {
+    if (val === large_val && !(small_val === 0.0)) {
+      if (Math.sign(small_val) >= 0) {
+        return this.correctlyRoundedInterval(
+          this.toInterval([large_val, nextAfterF64(large_val, 'positive', 'flush')])
+        );
+      } else {
+        return this.correctlyRoundedInterval(
+          this.toInterval([nextAfterF64(large_val, 'negative', 'flush'), large_val])
+        );
+      }
+    }
+    return this.correctlyRoundedInterval(val);
   }
 
   
@@ -2797,7 +2838,14 @@ export class FPTraits {
 
   AdditionIntervalOp = {
     impl: (x, y) => {
-      return this.correctlyRoundedInterval(x + y);
+      const sum = x + y;
+      const large_val = Math.abs(x) > Math.abs(y) ? x : y;
+      const small_val = Math.abs(x) > Math.abs(y) ? y : x;
+      return this.correctlyRoundedIntervalWithUnboundedPrecisionForAddition(
+        sum,
+        large_val,
+        small_val
+      );
     }
   };
 
@@ -4317,7 +4365,17 @@ export class FPTraits {
 
   SubtractionIntervalOp = {
     impl: (x, y) => {
-      return this.correctlyRoundedInterval(x - y);
+      const difference = x - y;
+      
+      
+      
+      const large_val = Math.abs(x) > Math.abs(y) ? x : -y;
+      const small_val = Math.abs(x) > Math.abs(y) ? -y : x;
+      return this.correctlyRoundedIntervalWithUnboundedPrecisionForAddition(
+        difference,
+        large_val,
+        small_val
+      );
     }
   };
 

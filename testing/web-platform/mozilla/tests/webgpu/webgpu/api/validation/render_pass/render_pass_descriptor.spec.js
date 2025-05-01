@@ -18,13 +18,13 @@ import {
   isStencilTextureFormat,
   isTextureFormatResolvable } from
 '../../../format_info.js';
-import { AllFeaturesMaxLimitsValidationTest } from '../validation_test.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../../../gpu_test.js';
 
 
 
 const kMaxColorAttachments = getDefaultLimits('core').maxColorAttachments.default;
 
-class F extends AllFeaturesMaxLimitsValidationTest {
+class F extends AllFeaturesMaxLimitsGPUTest {
   createTestTexture(
   options =
 

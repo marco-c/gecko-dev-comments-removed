@@ -173,20 +173,8 @@ g.test('stale')
       );
     }
 
-    const kTimeoutMS = 1000;
-    const lostDevice = await t.requestDeviceTracked(adapter);
-    const lost = await raceWithRejectOnTimeout(
-      lostDevice.lost,
-      kTimeoutMS,
-      'adapter was not stale'
-    );
-    t.expect(lost.reason === 'unknown');
-
     
-    
-    if (device) {
-      device.destroy();
-    }
+    t.shouldReject('OperationError', t.requestDeviceTracked(adapter));
   });
 
 g.test('features,unknown')
@@ -513,7 +501,7 @@ g.test('always_returns_device')
     const gpu = getGPU(t.rec);
     const adapter = await gpu.requestAdapter({
       featureLevel,
-    } as GPURequestAdapterOptions);
+    });
     if (adapter) {
       const device = await t.requestDeviceTracked(adapter);
       assert(device instanceof GPUDevice, 'requestDevice must return a device or throw');

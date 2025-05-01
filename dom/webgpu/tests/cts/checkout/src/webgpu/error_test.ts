@@ -84,25 +84,56 @@ export class ErrorTest extends Fixture {
 
 
 
-  async expectUncapturedError(fn: Function): Promise<GPUUncapturedErrorEvent> {
-    return this.immediateAsyncExpectation(() => {
-      
-      const TIMEOUT_IN_MS = 1000;
 
+
+  async chunkedPopManyErrorScopes(count: number) {
+    const promises = [];
+    for (let i = 0; i < count; i++) {
+      promises.push(this.device.popErrorScope());
+      if (promises.length >= 200) {
+        this.expect((await Promise.all(promises)).every(e => e === null));
+        promises.length = 0;
+      }
+    }
+    this.expect((await Promise.all(promises)).every(e => e === null));
+  }
+
+  
+
+
+
+  async expectUncapturedError(
+    fn: Function,
+    useOnuncapturederror = false
+  ): Promise<GPUUncapturedErrorEvent> {
+    return this.immediateAsyncExpectation(() => {
       const promise: Promise<GPUUncapturedErrorEvent> = new Promise(resolve => {
-        const eventListener = ((event: GPUUncapturedErrorEvent) => {
+        const eventListener = (event: GPUUncapturedErrorEvent) => {
+          
+          
+          if (useOnuncapturederror) {
+            this.device.onuncapturederror = null;
+          } else {
+            this.device.removeEventListener('uncapturederror', eventListener);
+          }
+
           this.debug(`Got uncaptured error event with ${event.error}`);
           resolve(event);
-        }) as EventListener;
+        };
 
-        this.device.addEventListener('uncapturederror', eventListener, { once: true });
+        if (useOnuncapturederror) {
+          this.device.onuncapturederror = eventListener;
+        } else {
+          this.device.addEventListener('uncapturederror', eventListener, { once: true });
+        }
       });
 
       fn();
 
+      const kTimeoutMS = 1000;
       return raceWithRejectOnTimeout(
         promise,
-        TIMEOUT_IN_MS,
+        kTimeoutMS,
         'Timeout occurred waiting for uncaptured error'
       );
     });

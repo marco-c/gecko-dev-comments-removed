@@ -3,6 +3,7 @@
 import { isCompatibilityDevice } from '../common/framework/test_config.js';import { keysOf } from '../common/util/data_tables.js';import { assert, unreachable } from '../common/util/util.js';
 
 import { align } from './util/math.js';
+import { getTextureDimensionFromView } from './util/texture/base.js';
 
 
 
@@ -1442,6 +1443,8 @@ export const kRegularTextureFormats = keysOf(kRegularTextureFormatInfo);
 export const kSizedDepthStencilFormats = keysOf(kSizedDepthStencilFormatInfo);
 export const kUnsizedDepthStencilFormats = keysOf(kUnsizedDepthStencilFormatInfo);
 export const kCompressedTextureFormats = keysOf(kCompressedTextureFormatInfo);
+export const kBCCompressedTextureFormats = keysOf(kBCTextureFormatInfo);
+export const kASTCCompressedTextureFormats = keysOf(kASTCTextureFormatInfo);
 
 export const kColorTextureFormats = keysOf(kColorTextureFormatInfo);
 export const kEncodableTextureFormats = keysOf(kEncodableTextureFormatInfo);
@@ -1877,6 +1880,40 @@ format)
 
 
 
+
+export function textureDimensionAndFormatCompatibleForDevice(
+device,
+dimension,
+format)
+{
+  if (
+  dimension === '3d' && (
+  isBCTextureFormat(format) && device.features.has('texture-compression-bc-sliced-3d') ||
+  isASTCTextureFormat(format) && device.features.has('texture-compression-astc-sliced-3d')))
+  {
+    return true;
+  }
+  return textureDimensionAndFormatCompatible(dimension, format);
+}
+
+
+
+
+export function textureViewDimensionAndFormatCompatibleForDevice(
+device,
+dimension,
+format)
+{
+  return textureDimensionAndFormatCompatibleForDevice(
+    device,
+    getTextureDimensionFromView(dimension),
+    format
+  );
+}
+
+
+
+
 export function textureFormatsAreViewCompatible(
 device,
 a,
@@ -2075,6 +2112,14 @@ export function canCopyFromAllAspectsOfTextureFormat(format) {
 
 export function isCompressedTextureFormat(format) {
   return format in kCompressedTextureFormatInfo;
+}
+
+export function isBCTextureFormat(format) {
+  return format in kBCTextureFormatInfo;
+}
+
+export function isASTCTextureFormat(format) {
+  return format in kASTCTextureFormatInfo;
 }
 
 export function isColorTextureFormat(format) {

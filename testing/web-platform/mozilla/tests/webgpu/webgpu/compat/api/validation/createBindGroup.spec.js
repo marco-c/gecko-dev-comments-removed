@@ -139,7 +139,7 @@ fn((t) => {
     usage: GPUTextureUsage.TEXTURE_BINDING,
     ...(dimension && { dimension }),
     ...(textureBindingViewDimension && { textureBindingViewDimension })
-  }); 
+  });
 
   const effectiveTextureBindingViewDimension = getEffectiveTextureBindingViewDimension(
     dimension,

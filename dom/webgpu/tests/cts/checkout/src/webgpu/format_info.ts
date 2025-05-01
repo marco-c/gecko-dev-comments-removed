@@ -3,6 +3,7 @@ import { keysOf } from '../common/util/data_tables.js';
 import { assert, unreachable } from '../common/util/util.js';
 
 import { align } from './util/math.js';
+import { getTextureDimensionFromView } from './util/texture/base.js';
 import { ImageCopyType } from './util/texture/layout.js';
 
 
@@ -1438,10 +1439,12 @@ const kASTCTextureFormatInfo = formatTableWithDefaults({
 
  export type UncompressedTextureFormat = keyof typeof kUncompressedTextureFormatInfo;
 
- export const      kRegularTextureFormats: readonly      RegularTextureFormat[] = keysOf(     kRegularTextureFormatInfo);
- export const   kSizedDepthStencilFormats: readonly   SizedDepthStencilFormat[] = keysOf(  kSizedDepthStencilFormatInfo);
- export const kUnsizedDepthStencilFormats: readonly UnsizedDepthStencilFormat[] = keysOf(kUnsizedDepthStencilFormatInfo);
- export const   kCompressedTextureFormats: readonly   CompressedTextureFormat[] = keysOf(  kCompressedTextureFormatInfo);
+ export const        kRegularTextureFormats: readonly      RegularTextureFormat[] = keysOf(     kRegularTextureFormatInfo);
+ export const     kSizedDepthStencilFormats: readonly   SizedDepthStencilFormat[] = keysOf(  kSizedDepthStencilFormatInfo);
+ export const   kUnsizedDepthStencilFormats: readonly UnsizedDepthStencilFormat[] = keysOf(kUnsizedDepthStencilFormatInfo);
+ export const     kCompressedTextureFormats: readonly   CompressedTextureFormat[] = keysOf(  kCompressedTextureFormatInfo);
+ export const   kBCCompressedTextureFormats: readonly   CompressedTextureFormat[] = keysOf(          kBCTextureFormatInfo);
+ export const kASTCCompressedTextureFormats: readonly   CompressedTextureFormat[] = keysOf(        kASTCTextureFormatInfo);
 
  export const        kColorTextureFormats: readonly        ColorTextureFormat[] = keysOf(       kColorTextureFormatInfo);
  export const    kEncodableTextureFormats: readonly    EncodableTextureFormat[] = keysOf(   kEncodableTextureFormatInfo);
@@ -1877,6 +1880,40 @@ export function textureDimensionAndFormatCompatible(
 
 
 
+
+export function textureDimensionAndFormatCompatibleForDevice(
+  device: GPUDevice,
+  dimension: undefined | GPUTextureDimension,
+  format: GPUTextureFormat
+): boolean {
+  if (
+    dimension === '3d' &&
+    ((isBCTextureFormat(format) && device.features.has('texture-compression-bc-sliced-3d')) ||
+      (isASTCTextureFormat(format) && device.features.has('texture-compression-astc-sliced-3d')))
+  ) {
+    return true;
+  }
+  return textureDimensionAndFormatCompatible(dimension, format);
+}
+
+
+
+
+export function textureViewDimensionAndFormatCompatibleForDevice(
+  device: GPUDevice,
+  dimension: GPUTextureViewDimension,
+  format: GPUTextureFormat
+): boolean {
+  return textureDimensionAndFormatCompatibleForDevice(
+    device,
+    getTextureDimensionFromView(dimension),
+    format
+  );
+}
+
+
+
+
 export function textureFormatsAreViewCompatible(
   device: GPUDevice,
   a: GPUTextureFormat,
@@ -2075,6 +2112,14 @@ export function canCopyFromAllAspectsOfTextureFormat(format: GPUTextureFormat) {
 
 export function isCompressedTextureFormat(format: GPUTextureFormat) {
   return format in kCompressedTextureFormatInfo;
+}
+
+export function isBCTextureFormat(format: GPUTextureFormat) {
+  return format in kBCTextureFormatInfo;
+}
+
+export function isASTCTextureFormat(format: GPUTextureFormat) {
+  return format in kASTCTextureFormatInfo;
 }
 
 export function isColorTextureFormat(format: GPUTextureFormat) {

@@ -1,6 +1,7 @@
 
 
-import { LogMessageWithStack } from '../../internal/logging/log_message.js';
+import { registerShutdownTask, runShutdownTasks } from '../../framework/on_shutdown.js';import { LogMessageWithStack } from '../../internal/logging/log_message.js';
+
 
 import { timeout } from '../../util/timeout.js';
 import { assert } from '../../util/util.js';
@@ -19,14 +20,14 @@ function unregisterAllServiceWorkers() {
 
 
 
-if ('serviceWorker' in navigator) {
-  
-  
-  unregisterAllServiceWorkers();
-  window.addEventListener('beforeunload', () => {
-    unregisterAllServiceWorkers();
-  });
-}
+
+
+
+
+
+window.addEventListener('beforeunload', runShutdownTasks);
+
+window.addEventListener('pagehide', runShutdownTasks);
 
 class TestBaseWorker {
 
@@ -104,8 +105,12 @@ export class TestDedicatedWorker extends TestBaseWorker {
       const selfPath = import.meta.url;
       const selfPathDir = selfPath.substring(0, selfPath.lastIndexOf('/'));
       const workerPath = selfPathDir + '/test_worker-worker.js';
-      this.worker = new Worker(workerPath, { type: 'module' });
+      const worker = new Worker(workerPath, { type: 'module' });
+      this.worker = worker;
       this.worker.onmessage = (ev) => this.onmessage(ev);
+
+      
+      registerShutdownTask(() => worker.postMessage('shutdown'));
     } catch (ex) {
       assert(ex instanceof Error);
       
@@ -143,6 +148,9 @@ export class TestSharedWorker extends TestBaseWorker {
       this.port = worker.port;
       this.port.start();
       this.port.onmessage = (ev) => this.onmessage(ev);
+
+      
+      registerShutdownTask(() => worker.port.postMessage('shutdown'));
     } catch (ex) {
       assert(ex instanceof Error);
       
@@ -160,8 +168,25 @@ export class TestSharedWorker extends TestBaseWorker {
 }
 
 export class TestServiceWorker extends TestBaseWorker {
+  lastServiceWorker = null;
+
   constructor(ctsOptions) {
     super('service', ctsOptions);
+
+    
+    
+    
+    unregisterAllServiceWorkers();
+
+    
+    registerShutdownTask(() => {
+      this.runShutdownTasksOnLastServiceWorker();
+      unregisterAllServiceWorkers();
+    });
+  }
+
+  runShutdownTasksOnLastServiceWorker() {
+    this.lastServiceWorker?.postMessage('shutdown');
   }
 
   async runImpl(query, expectations = []) {
@@ -182,12 +207,20 @@ export class TestServiceWorker extends TestBaseWorker {
     const registration = await navigator.serviceWorker.register(serviceWorkerURL, {
       type: 'module'
     });
+    const registrationPending = () =>
+    !registration.active || registration.active.scriptURL !== serviceWorkerURL;
+
     
     
-    while (!registration.active || registration.active.scriptURL !== serviceWorkerURL) {
-      await new Promise((resolve) => timeout(resolve, 0));
+    const isNewInstance = registrationPending();
+    if (isNewInstance) {
+      this.runShutdownTasksOnLastServiceWorker();
+      do {
+        await new Promise((resolve) => timeout(resolve, 0));
+      } while (registrationPending());
     }
     const serviceWorker = registration.active;
+    this.lastServiceWorker = serviceWorker;
 
     navigator.serviceWorker.onmessage = (ev) => this.onmessage(ev);
     return this.makeRequestAndRecordResult(serviceWorker, query, expectations);
