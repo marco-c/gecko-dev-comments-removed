@@ -4142,12 +4142,15 @@ class Document : public nsINode,
     --mThrowOnDynamicMarkupInsertionCounter;
   }
 
+  
   bool ShouldIgnoreOpens() const { return mIgnoreOpensDuringUnloadCounter; }
 
+  
   void IncrementIgnoreOpensDuringUnloadCounter() {
     ++mIgnoreOpensDuringUnloadCounter;
   }
 
+  
   void DecrementIgnoreOpensDuringUnloadCounter() {
     MOZ_ASSERT(mIgnoreOpensDuringUnloadCounter);
     --mIgnoreOpensDuringUnloadCounter;
