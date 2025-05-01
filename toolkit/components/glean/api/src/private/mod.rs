@@ -147,6 +147,7 @@ pub(crate) mod profiler_utils {
     
     
     
+    #[allow(deprecated)] 
     pub(crate) fn local_now_with_offset() -> chrono::DateTime<chrono::FixedOffset> {
         use chrono::{DateTime, Local};
         #[cfg(target_os = "windows")]
@@ -195,6 +196,7 @@ pub(crate) mod profiler_utils {
     
     
     
+    #[allow(deprecated)] 
     pub(crate) fn glean_to_chrono_datetime(
         gdt: &glean::Datetime,
     ) -> Option<chrono::LocalResult<chrono::DateTime<chrono::FixedOffset>>> {

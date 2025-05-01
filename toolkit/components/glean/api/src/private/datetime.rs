@@ -134,6 +134,7 @@ impl DatetimeMetric {
     
     #[cfg_attr(not(feature = "with_gecko"), allow(dead_code))]
     #[allow(clippy::too_many_arguments)]
+    #[allow(deprecated)] 
     pub(crate) fn set_with_details(
         &self,
         year: i32,
@@ -325,6 +326,7 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
+    #[allow(deprecated)] 
     fn sets_datetime_value() {
         let _lock = lock_test();
 
@@ -356,6 +358,7 @@ mod test {
     }
 
     #[test]
+    #[allow(deprecated)] 
     fn datetime_ipc() {
         
         let _lock = lock_test();

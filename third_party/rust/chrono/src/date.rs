@@ -2,25 +2,24 @@
 
 
 
+#![allow(deprecated)]
 
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(feature = "alloc")]
 use core::borrow::Borrow;
 use core::cmp::Ordering;
-use core::ops::{Add, Sub};
+use core::ops::{Add, AddAssign, Sub, SubAssign};
 use core::{fmt, hash};
-use oldtime::Duration as OldDuration;
 
-#[cfg(feature = "unstable-locales")]
-use format::Locale;
-#[cfg(any(feature = "alloc", feature = "std", test))]
-use format::{DelayedFormat, Item, StrftimeItems};
-use naive::{self, IsoWeek, NaiveDate, NaiveTime};
-use offset::{TimeZone, Utc};
-use DateTime;
-use {Datelike, Weekday};
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 
-
-
+#[cfg(all(feature = "unstable-locales", feature = "alloc"))]
+use crate::format::Locale;
+#[cfg(feature = "alloc")]
+use crate::format::{DelayedFormat, Item, StrftimeItems};
+use crate::naive::{IsoWeek, NaiveDate, NaiveTime};
+use crate::offset::{TimeZone, Utc};
+use crate::{DateTime, Datelike, TimeDelta, Weekday};
 
 
 
@@ -43,25 +42,40 @@ use {Datelike, Weekday};
 
 
 
+
+
+
+
+
+
+
+
+
+
+#[deprecated(since = "0.4.23", note = "Use `NaiveDate` or `DateTime<Tz>` instead")]
 #[derive(Clone)]
+#[cfg_attr(feature = "rkyv", derive(Archive, Deserialize, Serialize))]
 pub struct Date<Tz: TimeZone> {
     date: NaiveDate,
     offset: Tz::Offset,
 }
 
 
-pub const MIN_DATE: Date<Utc> = Date { date: naive::MIN_DATE, offset: Utc };
+#[allow(deprecated)]
+#[deprecated(since = "0.4.20", note = "Use Date::MIN_UTC instead")]
+pub const MIN_DATE: Date<Utc> = Date::<Utc>::MIN_UTC;
 
-pub const MAX_DATE: Date<Utc> = Date { date: naive::MAX_DATE, offset: Utc };
+#[allow(deprecated)]
+#[deprecated(since = "0.4.20", note = "Use Date::MAX_UTC instead")]
+pub const MAX_DATE: Date<Utc> = Date::<Utc>::MAX_UTC;
 
 impl<Tz: TimeZone> Date<Tz> {
     
     
-    
-    
     #[inline]
+    #[must_use]
     pub fn from_utc(date: NaiveDate, offset: Tz::Offset) -> Date<Tz> {
-        Date { date: date, offset: offset }
+        Date { date, offset }
     }
 
     
@@ -69,6 +83,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_time(&self, time: NaiveTime) -> Option<DateTime<Tz>> {
         let localdt = self.naive_local().and_time(time);
         self.timezone().from_local_datetime(&localdt).single()
@@ -78,7 +93,9 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     
+    #[deprecated(since = "0.4.23", note = "Use and_hms_opt() instead")]
     #[inline]
+    #[must_use]
     pub fn and_hms(&self, hour: u32, min: u32, sec: u32) -> DateTime<Tz> {
         self.and_hms_opt(hour, min, sec).expect("invalid time")
     }
@@ -88,6 +105,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_opt(&self, hour: u32, min: u32, sec: u32) -> Option<DateTime<Tz>> {
         NaiveTime::from_hms_opt(hour, min, sec).and_then(|time| self.and_time(time))
     }
@@ -97,7 +115,9 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     
+    #[deprecated(since = "0.4.23", note = "Use and_hms_milli_opt() instead")]
     #[inline]
+    #[must_use]
     pub fn and_hms_milli(&self, hour: u32, min: u32, sec: u32, milli: u32) -> DateTime<Tz> {
         self.and_hms_milli_opt(hour, min, sec, milli).expect("invalid time")
     }
@@ -108,6 +128,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_milli_opt(
         &self,
         hour: u32,
@@ -123,7 +144,9 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     
+    #[deprecated(since = "0.4.23", note = "Use and_hms_micro_opt() instead")]
     #[inline]
+    #[must_use]
     pub fn and_hms_micro(&self, hour: u32, min: u32, sec: u32, micro: u32) -> DateTime<Tz> {
         self.and_hms_micro_opt(hour, min, sec, micro).expect("invalid time")
     }
@@ -134,6 +157,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_micro_opt(
         &self,
         hour: u32,
@@ -149,7 +173,9 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     
+    #[deprecated(since = "0.4.23", note = "Use and_hms_nano_opt() instead")]
     #[inline]
+    #[must_use]
     pub fn and_hms_nano(&self, hour: u32, min: u32, sec: u32, nano: u32) -> DateTime<Tz> {
         self.and_hms_nano_opt(hour, min, sec, nano).expect("invalid time")
     }
@@ -160,6 +186,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_nano_opt(
         &self,
         hour: u32,
@@ -173,7 +200,9 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     
+    #[deprecated(since = "0.4.23", note = "Use succ_opt() instead")]
     #[inline]
+    #[must_use]
     pub fn succ(&self) -> Date<Tz> {
         self.succ_opt().expect("out of bound")
     }
@@ -182,6 +211,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn succ_opt(&self) -> Option<Date<Tz>> {
         self.date.succ_opt().map(|date| Date::from_utc(date, self.offset.clone()))
     }
@@ -189,7 +219,9 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     
+    #[deprecated(since = "0.4.23", note = "Use pred_opt() instead")]
     #[inline]
+    #[must_use]
     pub fn pred(&self) -> Date<Tz> {
         self.pred_opt().expect("out of bound")
     }
@@ -198,18 +230,21 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn pred_opt(&self) -> Option<Date<Tz>> {
         self.date.pred_opt().map(|date| Date::from_utc(date, self.offset.clone()))
     }
 
     
     #[inline]
+    #[must_use]
     pub fn offset(&self) -> &Tz::Offset {
         &self.offset
     }
 
     
     #[inline]
+    #[must_use]
     pub fn timezone(&self) -> Tz {
         TimeZone::from_offset(&self.offset)
     }
@@ -217,6 +252,7 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn with_timezone<Tz2: TimeZone>(&self, tz: &Tz2) -> Date<Tz2> {
         tz.from_utc_date(&self.date)
     }
@@ -225,18 +261,20 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
-    pub fn checked_add_signed(self, rhs: OldDuration) -> Option<Date<Tz>> {
-        let date = try_opt!(self.date.checked_add_signed(rhs));
-        Some(Date { date: date, offset: self.offset })
+    #[must_use]
+    pub fn checked_add_signed(self, rhs: TimeDelta) -> Option<Date<Tz>> {
+        let date = self.date.checked_add_signed(rhs)?;
+        Some(Date { date, offset: self.offset })
     }
 
     
     
     
     #[inline]
-    pub fn checked_sub_signed(self, rhs: OldDuration) -> Option<Date<Tz>> {
-        let date = try_opt!(self.date.checked_sub_signed(rhs));
-        Some(Date { date: date, offset: self.offset })
+    #[must_use]
+    pub fn checked_sub_signed(self, rhs: TimeDelta) -> Option<Date<Tz>> {
+        let date = self.date.checked_sub_signed(rhs)?;
+        Some(Date { date, offset: self.offset })
     }
 
     
@@ -245,12 +283,14 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
-    pub fn signed_duration_since<Tz2: TimeZone>(self, rhs: Date<Tz2>) -> OldDuration {
+    #[must_use]
+    pub fn signed_duration_since<Tz2: TimeZone>(self, rhs: Date<Tz2>) -> TimeDelta {
         self.date.signed_duration_since(rhs.date)
     }
 
     
     #[inline]
+    #[must_use]
     pub fn naive_utc(&self) -> NaiveDate {
         self.date
     }
@@ -261,9 +301,21 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
+    #[must_use]
     pub fn naive_local(&self) -> NaiveDate {
         self.date
     }
+
+    
+    #[must_use]
+    pub fn years_since(&self, base: Self) -> Option<u32> {
+        self.date.years_since(base.date)
+    }
+
+    
+    pub const MIN_UTC: Date<Utc> = Date { date: NaiveDate::MIN, offset: Utc };
+    
+    pub const MAX_UTC: Date<Utc> = Date { date: NaiveDate::MAX, offset: Utc };
 }
 
 
@@ -279,8 +331,9 @@ where
     Tz::Offset: fmt::Display,
 {
     
-    #[cfg(any(feature = "alloc", feature = "std", test))]
+    #[cfg(feature = "alloc")]
     #[inline]
+    #[must_use]
     pub fn format_with_items<'a, I, B>(&self, items: I) -> DelayedFormat<I>
     where
         I: Iterator<Item = B> + Clone,
@@ -292,15 +345,17 @@ where
     
     
     
-    #[cfg(any(feature = "alloc", feature = "std", test))]
+    #[cfg(feature = "alloc")]
     #[inline]
+    #[must_use]
     pub fn format<'a>(&self, fmt: &'a str) -> DelayedFormat<StrftimeItems<'a>> {
         self.format_with_items(StrftimeItems::new(fmt))
     }
 
     
-    #[cfg(feature = "unstable-locales")]
+    #[cfg(all(feature = "unstable-locales", feature = "alloc"))]
     #[inline]
+    #[must_use]
     pub fn format_localized_with_items<'a, I, B>(
         &self,
         items: I,
@@ -322,8 +377,9 @@ where
     
     
     
-    #[cfg(feature = "unstable-locales")]
+    #[cfg(all(feature = "unstable-locales", feature = "alloc"))]
     #[inline]
+    #[must_use]
     pub fn format_localized<'a>(
         &self,
         fmt: &'a str,
@@ -421,7 +477,7 @@ impl<Tz: TimeZone> Eq for Date<Tz> {}
 
 impl<Tz: TimeZone> PartialOrd for Date<Tz> {
     fn partial_cmp(&self, other: &Date<Tz>) -> Option<Ordering> {
-        self.date.partial_cmp(&other.date)
+        Some(self.cmp(other))
     }
 }
 
@@ -437,36 +493,51 @@ impl<Tz: TimeZone> hash::Hash for Date<Tz> {
     }
 }
 
-impl<Tz: TimeZone> Add<OldDuration> for Date<Tz> {
+impl<Tz: TimeZone> Add<TimeDelta> for Date<Tz> {
     type Output = Date<Tz>;
 
     #[inline]
-    fn add(self, rhs: OldDuration) -> Date<Tz> {
-        self.checked_add_signed(rhs).expect("`Date + Duration` overflowed")
+    fn add(self, rhs: TimeDelta) -> Date<Tz> {
+        self.checked_add_signed(rhs).expect("`Date + TimeDelta` overflowed")
     }
 }
 
-impl<Tz: TimeZone> Sub<OldDuration> for Date<Tz> {
+impl<Tz: TimeZone> AddAssign<TimeDelta> for Date<Tz> {
+    #[inline]
+    fn add_assign(&mut self, rhs: TimeDelta) {
+        self.date = self.date.checked_add_signed(rhs).expect("`Date + TimeDelta` overflowed");
+    }
+}
+
+impl<Tz: TimeZone> Sub<TimeDelta> for Date<Tz> {
     type Output = Date<Tz>;
 
     #[inline]
-    fn sub(self, rhs: OldDuration) -> Date<Tz> {
-        self.checked_sub_signed(rhs).expect("`Date - Duration` overflowed")
+    fn sub(self, rhs: TimeDelta) -> Date<Tz> {
+        self.checked_sub_signed(rhs).expect("`Date - TimeDelta` overflowed")
+    }
+}
+
+impl<Tz: TimeZone> SubAssign<TimeDelta> for Date<Tz> {
+    #[inline]
+    fn sub_assign(&mut self, rhs: TimeDelta) {
+        self.date = self.date.checked_sub_signed(rhs).expect("`Date - TimeDelta` overflowed");
     }
 }
 
 impl<Tz: TimeZone> Sub<Date<Tz>> for Date<Tz> {
-    type Output = OldDuration;
+    type Output = TimeDelta;
 
     #[inline]
-    fn sub(self, rhs: Date<Tz>) -> OldDuration {
+    fn sub(self, rhs: Date<Tz>) -> TimeDelta {
         self.signed_duration_since(rhs)
     }
 }
 
 impl<Tz: TimeZone> fmt::Debug for Date<Tz> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}{:?}", self.naive_local(), self.offset)
+        self.naive_local().fmt(f)?;
+        self.offset.fmt(f)
     }
 }
 
@@ -475,6 +546,118 @@ where
     Tz::Offset: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", self.naive_local(), self.offset)
+        self.naive_local().fmt(f)?;
+        self.offset.fmt(f)
+    }
+}
+
+
+
+#[cfg(all(feature = "arbitrary", feature = "std"))]
+impl<'a, Tz> arbitrary::Arbitrary<'a> for Date<Tz>
+where
+    Tz: TimeZone,
+    <Tz as TimeZone>::Offset: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Date<Tz>> {
+        let date = NaiveDate::arbitrary(u)?;
+        let offset = <Tz as TimeZone>::Offset::arbitrary(u)?;
+        Ok(Date::from_utc(date, offset))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Date;
+
+    use crate::{FixedOffset, NaiveDate, TimeDelta, Utc};
+
+    #[cfg(feature = "clock")]
+    use crate::offset::{Local, TimeZone};
+
+    #[test]
+    #[cfg(feature = "clock")]
+    fn test_years_elapsed() {
+        const WEEKS_PER_YEAR: f32 = 52.1775;
+
+        
+        let one_year_ago = Utc::today() - TimeDelta::weeks((WEEKS_PER_YEAR * 1.5).ceil() as i64);
+        
+        let two_year_ago = Utc::today() - TimeDelta::weeks((WEEKS_PER_YEAR * 2.5).ceil() as i64);
+
+        assert_eq!(Utc::today().years_since(one_year_ago), Some(1));
+        assert_eq!(Utc::today().years_since(two_year_ago), Some(2));
+
+        
+        let future = Utc::today() + TimeDelta::weeks(12);
+        assert_eq!(Utc::today().years_since(future), None);
+    }
+
+    #[test]
+    fn test_date_add_assign() {
+        let naivedate = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let date = Date::<Utc>::from_utc(naivedate, Utc);
+        let mut date_add = date;
+
+        date_add += TimeDelta::days(5);
+        assert_eq!(date_add, date + TimeDelta::days(5));
+
+        let timezone = FixedOffset::east_opt(60 * 60).unwrap();
+        let date = date.with_timezone(&timezone);
+        let date_add = date_add.with_timezone(&timezone);
+
+        assert_eq!(date_add, date + TimeDelta::days(5));
+
+        let timezone = FixedOffset::west_opt(2 * 60 * 60).unwrap();
+        let date = date.with_timezone(&timezone);
+        let date_add = date_add.with_timezone(&timezone);
+
+        assert_eq!(date_add, date + TimeDelta::days(5));
+    }
+
+    #[test]
+    #[cfg(feature = "clock")]
+    fn test_date_add_assign_local() {
+        let naivedate = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+
+        let date = Local.from_utc_date(&naivedate);
+        let mut date_add = date;
+
+        date_add += TimeDelta::days(5);
+        assert_eq!(date_add, date + TimeDelta::days(5));
+    }
+
+    #[test]
+    fn test_date_sub_assign() {
+        let naivedate = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let date = Date::<Utc>::from_utc(naivedate, Utc);
+        let mut date_sub = date;
+
+        date_sub -= TimeDelta::days(5);
+        assert_eq!(date_sub, date - TimeDelta::days(5));
+
+        let timezone = FixedOffset::east_opt(60 * 60).unwrap();
+        let date = date.with_timezone(&timezone);
+        let date_sub = date_sub.with_timezone(&timezone);
+
+        assert_eq!(date_sub, date - TimeDelta::days(5));
+
+        let timezone = FixedOffset::west_opt(2 * 60 * 60).unwrap();
+        let date = date.with_timezone(&timezone);
+        let date_sub = date_sub.with_timezone(&timezone);
+
+        assert_eq!(date_sub, date - TimeDelta::days(5));
+    }
+
+    #[test]
+    #[cfg(feature = "clock")]
+    fn test_date_sub_assign_local() {
+        let naivedate = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+
+        let date = Local.from_utc_date(&naivedate);
+        let mut date_sub = date;
+
+        date_sub -= TimeDelta::days(5);
+        assert_eq!(date_sub, date - TimeDelta::days(5));
     }
 }

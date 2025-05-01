@@ -1,0 +1,7 @@
+pub(crate) fn get_timezone_inner() -> Result<String, crate::GetTimezoneError> {
+    
+    let mut contents = std::fs::read_to_string("/var/db/zoneinfo")?;
+    
+    contents.truncate(contents.trim_end().len());
+    Ok(contents)
+}

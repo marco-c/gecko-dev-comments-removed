@@ -5,7 +5,10 @@
 
 use core::fmt;
 
-use super::internals::{DateImpl, Of, YearFlags};
+use super::internals::YearFlags;
+
+#[cfg(any(feature = "rkyv", feature = "rkyv-16", feature = "rkyv-32", feature = "rkyv-64"))]
+use rkyv::{Archive, Deserialize, Serialize};
 
 
 
@@ -13,39 +16,47 @@ use super::internals::{DateImpl, Of, YearFlags};
 
 
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash)]
+#[cfg_attr(
+    any(feature = "rkyv", feature = "rkyv-16", feature = "rkyv-32", feature = "rkyv-64"),
+    derive(Archive, Deserialize, Serialize),
+    archive(compare(PartialEq, PartialOrd)),
+    archive_attr(derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash))
+)]
+#[cfg_attr(feature = "rkyv-validation", archive(check_bytes))]
 pub struct IsoWeek {
     
     
     
-    ywf: DateImpl, 
-}
-
-
-
-
-
-
-
-pub fn iso_week_from_yof(year: i32, of: Of) -> IsoWeek {
-    let (rawweek, _) = of.isoweekdate_raw();
-    let (year, week) = if rawweek < 1 {
-        
-        let prevlastweek = YearFlags::from_year(year - 1).nisoweeks();
-        (year - 1, prevlastweek)
-    } else {
-        let lastweek = of.flags().nisoweeks();
-        if rawweek > lastweek {
-            
-            (year + 1, 1)
-        } else {
-            (year, rawweek)
-        }
-    };
-    IsoWeek { ywf: (year << 10) | (week << 4) as DateImpl | DateImpl::from(of.flags().0) }
+    ywf: i32, 
 }
 
 impl IsoWeek {
+    
+    
+    
+    
+    
+    
+    pub(super) fn from_yof(year: i32, ordinal: u32, year_flags: YearFlags) -> Self {
+        let rawweek = (ordinal + year_flags.isoweek_delta()) / 7;
+        let (year, week) = if rawweek < 1 {
+            
+            let prevlastweek = YearFlags::from_year(year - 1).nisoweeks();
+            (year - 1, prevlastweek)
+        } else {
+            let lastweek = year_flags.nisoweeks();
+            if rawweek > lastweek {
+                
+                (year + 1, 1)
+            } else {
+                (year, rawweek)
+            }
+        };
+        let flags = YearFlags::from_year(year);
+        IsoWeek { ywf: (year << 10) | (week << 4) as i32 | i32::from(flags.0) }
+    }
+
     
     
     
@@ -67,7 +78,7 @@ impl IsoWeek {
     
     
     #[inline]
-    pub fn year(&self) -> i32 {
+    pub const fn year(&self) -> i32 {
         self.ywf >> 10
     }
 
@@ -84,7 +95,7 @@ impl IsoWeek {
     
     
     #[inline]
-    pub fn week(&self) -> u32 {
+    pub const fn week(&self) -> u32 {
         ((self.ywf >> 4) & 0x3f) as u32
     }
 
@@ -101,10 +112,19 @@ impl IsoWeek {
     
     
     #[inline]
-    pub fn week0(&self) -> u32 {
+    pub const fn week0(&self) -> u32 {
         ((self.ywf >> 4) & 0x3f) as u32 - 1
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -131,7 +151,7 @@ impl fmt::Debug for IsoWeek {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let year = self.year();
         let week = self.week();
-        if 0 <= year && year <= 9999 {
+        if (0..=9999).contains(&year) {
             write!(f, "{:04}-W{:02}", year, week)
         } else {
             
@@ -142,22 +162,72 @@ impl fmt::Debug for IsoWeek {
 
 #[cfg(test)]
 mod tests {
-    use naive::{internals, MAX_DATE, MIN_DATE};
-    use Datelike;
+    #[cfg(feature = "rkyv-validation")]
+    use super::IsoWeek;
+    use crate::Datelike;
+    use crate::naive::date::{self, NaiveDate};
 
     #[test]
     fn test_iso_week_extremes() {
-        let minweek = MIN_DATE.iso_week();
-        let maxweek = MAX_DATE.iso_week();
+        let minweek = NaiveDate::MIN.iso_week();
+        let maxweek = NaiveDate::MAX.iso_week();
 
-        assert_eq!(minweek.year(), internals::MIN_YEAR);
+        assert_eq!(minweek.year(), date::MIN_YEAR);
         assert_eq!(minweek.week(), 1);
         assert_eq!(minweek.week0(), 0);
-        assert_eq!(format!("{:?}", minweek), MIN_DATE.format("%G-W%V").to_string());
+        #[cfg(feature = "alloc")]
+        assert_eq!(format!("{:?}", minweek), NaiveDate::MIN.format("%G-W%V").to_string());
 
-        assert_eq!(maxweek.year(), internals::MAX_YEAR + 1);
+        assert_eq!(maxweek.year(), date::MAX_YEAR + 1);
         assert_eq!(maxweek.week(), 1);
         assert_eq!(maxweek.week0(), 0);
-        assert_eq!(format!("{:?}", maxweek), MAX_DATE.format("%G-W%V").to_string());
+        #[cfg(feature = "alloc")]
+        assert_eq!(format!("{:?}", maxweek), NaiveDate::MAX.format("%G-W%V").to_string());
+    }
+
+    #[test]
+    fn test_iso_week_equivalence_for_first_week() {
+        let monday = NaiveDate::from_ymd_opt(2024, 12, 30).unwrap();
+        let friday = NaiveDate::from_ymd_opt(2025, 1, 3).unwrap();
+
+        assert_eq!(monday.iso_week(), friday.iso_week());
+    }
+
+    #[test]
+    fn test_iso_week_equivalence_for_last_week() {
+        let monday = NaiveDate::from_ymd_opt(2026, 12, 28).unwrap();
+        let friday = NaiveDate::from_ymd_opt(2027, 1, 1).unwrap();
+
+        assert_eq!(monday.iso_week(), friday.iso_week());
+    }
+
+    #[test]
+    fn test_iso_week_ordering_for_first_week() {
+        let monday = NaiveDate::from_ymd_opt(2024, 12, 30).unwrap();
+        let friday = NaiveDate::from_ymd_opt(2025, 1, 3).unwrap();
+
+        assert!(monday.iso_week() >= friday.iso_week());
+        assert!(monday.iso_week() <= friday.iso_week());
+    }
+
+    #[test]
+    fn test_iso_week_ordering_for_last_week() {
+        let monday = NaiveDate::from_ymd_opt(2026, 12, 28).unwrap();
+        let friday = NaiveDate::from_ymd_opt(2027, 1, 1).unwrap();
+
+        assert!(monday.iso_week() >= friday.iso_week());
+        assert!(monday.iso_week() <= friday.iso_week());
+    }
+
+    #[test]
+    #[cfg(feature = "rkyv-validation")]
+    fn test_rkyv_validation() {
+        let minweek = NaiveDate::MIN.iso_week();
+        let bytes = rkyv::to_bytes::<_, 4>(&minweek).unwrap();
+        assert_eq!(rkyv::from_bytes::<IsoWeek>(&bytes).unwrap(), minweek);
+
+        let maxweek = NaiveDate::MAX.iso_week();
+        let bytes = rkyv::to_bytes::<_, 4>(&maxweek).unwrap();
+        assert_eq!(rkyv::from_bytes::<IsoWeek>(&bytes).unwrap(), maxweek);
     }
 }

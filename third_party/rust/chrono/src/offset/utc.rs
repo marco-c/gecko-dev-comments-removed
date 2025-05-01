@@ -4,16 +4,24 @@
 
 
 use core::fmt;
-
-use super::{FixedOffset, LocalResult, Offset, TimeZone};
-use naive::{NaiveDate, NaiveDateTime};
 #[cfg(all(
-    feature = "clock",
-    not(all(target_arch = "wasm32", not(target_os = "wasi"), feature = "wasmbind"))
+    feature = "now",
+    not(all(
+        target_arch = "wasm32",
+        feature = "wasmbind",
+        not(any(target_os = "emscripten", target_os = "wasi"))
+    ))
 ))]
 use std::time::{SystemTime, UNIX_EPOCH};
-#[cfg(feature = "clock")]
-use {Date, DateTime};
+
+#[cfg(any(feature = "rkyv", feature = "rkyv-16", feature = "rkyv-32", feature = "rkyv-64"))]
+use rkyv::{Archive, Deserialize, Serialize};
+
+use super::{FixedOffset, MappedLocalTime, Offset, TimeZone};
+use crate::naive::{NaiveDate, NaiveDateTime};
+#[cfg(feature = "now")]
+#[allow(deprecated)]
+use crate::{Date, DateTime};
 
 
 
@@ -32,27 +40,71 @@ use {Date, DateTime};
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    any(feature = "rkyv", feature = "rkyv-16", feature = "rkyv-32", feature = "rkyv-64"),
+    derive(Archive, Deserialize, Serialize),
+    archive(compare(PartialEq)),
+    archive_attr(derive(Clone, Copy, PartialEq, Eq, Debug, Hash))
+)]
+#[cfg_attr(feature = "rkyv-validation", archive(check_bytes))]
+#[cfg_attr(all(feature = "arbitrary", feature = "std"), derive(arbitrary::Arbitrary))]
 pub struct Utc;
 
-#[cfg(feature = "clock")]
+#[cfg(feature = "now")]
 impl Utc {
     
+    #[deprecated(
+        since = "0.4.23",
+        note = "use `Utc::now()` instead, potentially with `.date_naive()`"
+    )]
+    #[allow(deprecated)]
+    #[must_use]
     pub fn today() -> Date<Utc> {
         Utc::now().date()
     }
 
     
-    #[cfg(not(all(target_arch = "wasm32", not(target_os = "wasi"), feature = "wasmbind")))]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(all(
+        target_arch = "wasm32",
+        feature = "wasmbind",
+        not(any(target_os = "emscripten", target_os = "wasi"))
+    )))]
+    #[must_use]
     pub fn now() -> DateTime<Utc> {
         let now =
             SystemTime::now().duration_since(UNIX_EPOCH).expect("system time before Unix epoch");
-        let naive = NaiveDateTime::from_timestamp(now.as_secs() as i64, now.subsec_nanos() as u32);
-        DateTime::from_utc(naive, Utc)
+        DateTime::from_timestamp(now.as_secs() as i64, now.subsec_nanos()).unwrap()
     }
 
     
-    #[cfg(all(target_arch = "wasm32", not(target_os = "wasi"), feature = "wasmbind"))]
+    #[cfg(all(
+        target_arch = "wasm32",
+        feature = "wasmbind",
+        not(any(target_os = "emscripten", target_os = "wasi"))
+    ))]
+    #[must_use]
     pub fn now() -> DateTime<Utc> {
         let now = js_sys::Date::new_0();
         DateTime::<Utc>::from(now)
@@ -66,11 +118,11 @@ impl TimeZone for Utc {
         Utc
     }
 
-    fn offset_from_local_date(&self, _local: &NaiveDate) -> LocalResult<Utc> {
-        LocalResult::Single(Utc)
+    fn offset_from_local_date(&self, _local: &NaiveDate) -> MappedLocalTime<Utc> {
+        MappedLocalTime::Single(Utc)
     }
-    fn offset_from_local_datetime(&self, _local: &NaiveDateTime) -> LocalResult<Utc> {
-        LocalResult::Single(Utc)
+    fn offset_from_local_datetime(&self, _local: &NaiveDateTime) -> MappedLocalTime<Utc> {
+        MappedLocalTime::Single(Utc)
     }
 
     fn offset_from_utc_date(&self, _utc: &NaiveDate) -> Utc {
@@ -83,7 +135,7 @@ impl TimeZone for Utc {
 
 impl Offset for Utc {
     fn fix(&self) -> FixedOffset {
-        FixedOffset::east(0)
+        FixedOffset::east_opt(0).unwrap()
     }
 }
 

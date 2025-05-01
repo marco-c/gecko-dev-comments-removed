@@ -20,71 +20,144 @@
 
 use core::fmt;
 
-use format::{parse, ParseResult, Parsed, StrftimeItems};
-use naive::{NaiveDate, NaiveDateTime, NaiveTime};
-use Weekday;
-use {Date, DateTime};
+use crate::Weekday;
+use crate::format::{ParseResult, Parsed, StrftimeItems, parse};
+use crate::naive::{NaiveDate, NaiveDateTime, NaiveTime};
+#[allow(deprecated)]
+use crate::{Date, DateTime};
+
+pub(crate) mod fixed;
+pub use self::fixed::FixedOffset;
+
+#[cfg(feature = "clock")]
+pub(crate) mod local;
+#[cfg(feature = "clock")]
+pub use self::local::Local;
+
+pub(crate) mod utc;
+pub use self::utc::Utc;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub type MappedLocalTime<T> = LocalResult<T>;
 #[derive(Clone, PartialEq, Debug, Copy, Eq, Hash)]
+
+
 pub enum LocalResult<T> {
+    
+    Single(T),
+
+    
+    
+    
+    Ambiguous(T, T),
+
+    
+    
     
     
     None,
-    
-    Single(T),
-    
-    
-    Ambiguous(T , T ),
 }
 
-impl<T> LocalResult<T> {
+impl<T> MappedLocalTime<T> {
     
+    
+    
+    
+    
+    
+    #[must_use]
     pub fn single(self) -> Option<T> {
         match self {
-            LocalResult::Single(t) => Some(t),
+            MappedLocalTime::Single(t) => Some(t),
             _ => None,
         }
     }
 
     
+    
+    
+    
+    
+    #[must_use]
     pub fn earliest(self) -> Option<T> {
         match self {
-            LocalResult::Single(t) | LocalResult::Ambiguous(t, _) => Some(t),
+            MappedLocalTime::Single(t) | MappedLocalTime::Ambiguous(t, _) => Some(t),
             _ => None,
         }
     }
 
     
+    
+    
+    
+    
+    #[must_use]
     pub fn latest(self) -> Option<T> {
         match self {
-            LocalResult::Single(t) | LocalResult::Ambiguous(_, t) => Some(t),
+            MappedLocalTime::Single(t) | MappedLocalTime::Ambiguous(_, t) => Some(t),
             _ => None,
         }
     }
 
     
-    pub fn map<U, F: FnMut(T) -> U>(self, mut f: F) -> LocalResult<U> {
+    #[must_use]
+    pub fn map<U, F: FnMut(T) -> U>(self, mut f: F) -> MappedLocalTime<U> {
         match self {
-            LocalResult::None => LocalResult::None,
-            LocalResult::Single(v) => LocalResult::Single(f(v)),
-            LocalResult::Ambiguous(min, max) => LocalResult::Ambiguous(f(min), f(max)),
+            MappedLocalTime::None => MappedLocalTime::None,
+            MappedLocalTime::Single(v) => MappedLocalTime::Single(f(v)),
+            MappedLocalTime::Ambiguous(min, max) => MappedLocalTime::Ambiguous(f(min), f(max)),
+        }
+    }
+
+    
+    
+    
+    #[must_use]
+    pub(crate) fn and_then<U, F: FnMut(T) -> Option<U>>(self, mut f: F) -> MappedLocalTime<U> {
+        match self {
+            MappedLocalTime::None => MappedLocalTime::None,
+            MappedLocalTime::Single(v) => match f(v) {
+                Some(new) => MappedLocalTime::Single(new),
+                None => MappedLocalTime::None,
+            },
+            MappedLocalTime::Ambiguous(min, max) => match (f(min), f(max)) {
+                (Some(min), Some(max)) => MappedLocalTime::Ambiguous(min, max),
+                _ => MappedLocalTime::None,
+            },
         }
     }
 }
 
-impl<Tz: TimeZone> LocalResult<Date<Tz>> {
+#[allow(deprecated)]
+impl<Tz: TimeZone> MappedLocalTime<Date<Tz>> {
     
     
     
     
     #[inline]
-    pub fn and_time(self, time: NaiveTime) -> LocalResult<DateTime<Tz>> {
+    #[must_use]
+    pub fn and_time(self, time: NaiveTime) -> MappedLocalTime<DateTime<Tz>> {
         match self {
-            LocalResult::Single(d) => {
-                d.and_time(time).map_or(LocalResult::None, LocalResult::Single)
+            MappedLocalTime::Single(d) => {
+                d.and_time(time).map_or(MappedLocalTime::None, MappedLocalTime::Single)
             }
-            _ => LocalResult::None,
+            _ => MappedLocalTime::None,
         }
     }
 
@@ -93,12 +166,13 @@ impl<Tz: TimeZone> LocalResult<Date<Tz>> {
     
     
     #[inline]
-    pub fn and_hms_opt(self, hour: u32, min: u32, sec: u32) -> LocalResult<DateTime<Tz>> {
+    #[must_use]
+    pub fn and_hms_opt(self, hour: u32, min: u32, sec: u32) -> MappedLocalTime<DateTime<Tz>> {
         match self {
-            LocalResult::Single(d) => {
-                d.and_hms_opt(hour, min, sec).map_or(LocalResult::None, LocalResult::Single)
+            MappedLocalTime::Single(d) => {
+                d.and_hms_opt(hour, min, sec).map_or(MappedLocalTime::None, MappedLocalTime::Single)
             }
-            _ => LocalResult::None,
+            _ => MappedLocalTime::None,
         }
     }
 
@@ -108,18 +182,19 @@ impl<Tz: TimeZone> LocalResult<Date<Tz>> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_milli_opt(
         self,
         hour: u32,
         min: u32,
         sec: u32,
         milli: u32,
-    ) -> LocalResult<DateTime<Tz>> {
+    ) -> MappedLocalTime<DateTime<Tz>> {
         match self {
-            LocalResult::Single(d) => d
+            MappedLocalTime::Single(d) => d
                 .and_hms_milli_opt(hour, min, sec, milli)
-                .map_or(LocalResult::None, LocalResult::Single),
-            _ => LocalResult::None,
+                .map_or(MappedLocalTime::None, MappedLocalTime::Single),
+            _ => MappedLocalTime::None,
         }
     }
 
@@ -129,18 +204,19 @@ impl<Tz: TimeZone> LocalResult<Date<Tz>> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_micro_opt(
         self,
         hour: u32,
         min: u32,
         sec: u32,
         micro: u32,
-    ) -> LocalResult<DateTime<Tz>> {
+    ) -> MappedLocalTime<DateTime<Tz>> {
         match self {
-            LocalResult::Single(d) => d
+            MappedLocalTime::Single(d) => d
                 .and_hms_micro_opt(hour, min, sec, micro)
-                .map_or(LocalResult::None, LocalResult::Single),
-            _ => LocalResult::None,
+                .map_or(MappedLocalTime::None, MappedLocalTime::Single),
+            _ => MappedLocalTime::None,
         }
     }
 
@@ -150,29 +226,41 @@ impl<Tz: TimeZone> LocalResult<Date<Tz>> {
     
     
     #[inline]
+    #[must_use]
     pub fn and_hms_nano_opt(
         self,
         hour: u32,
         min: u32,
         sec: u32,
         nano: u32,
-    ) -> LocalResult<DateTime<Tz>> {
+    ) -> MappedLocalTime<DateTime<Tz>> {
         match self {
-            LocalResult::Single(d) => d
+            MappedLocalTime::Single(d) => d
                 .and_hms_nano_opt(hour, min, sec, nano)
-                .map_or(LocalResult::None, LocalResult::Single),
-            _ => LocalResult::None,
+                .map_or(MappedLocalTime::None, MappedLocalTime::Single),
+            _ => MappedLocalTime::None,
         }
     }
 }
 
-impl<T: fmt::Debug> LocalResult<T> {
+impl<T: fmt::Debug> MappedLocalTime<T> {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    #[track_caller]
     pub fn unwrap(self) -> T {
         match self {
-            LocalResult::None => panic!("No such local time"),
-            LocalResult::Single(t) => t,
-            LocalResult::Ambiguous(t1, t2) => {
+            MappedLocalTime::None => panic!("No such local time"),
+            MappedLocalTime::Single(t) => t,
+            MappedLocalTime::Ambiguous(t1, t2) => {
                 panic!("Ambiguous local time, ranging from {:?} to {:?}", t1, t2)
             }
         }
@@ -188,7 +276,6 @@ pub trait Offset: Sized + Clone + fmt::Debug {
 
 
 
-
 pub trait TimeZone: Sized + Clone {
     
     
@@ -200,6 +287,22 @@ pub trait TimeZone: Sized + Clone {
     
     
     
+    fn with_ymd_and_hms(
+        &self,
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        min: u32,
+        sec: u32,
+    ) -> MappedLocalTime<DateTime<Self>> {
+        match NaiveDate::from_ymd_opt(year, month, day).and_then(|d| d.and_hms_opt(hour, min, sec))
+        {
+            Some(dt) => self.from_local_datetime(&dt),
+            None => MappedLocalTime::None,
+        }
+    }
+
     
     
     
@@ -207,9 +310,8 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    
-    
-    
+    #[deprecated(since = "0.4.23", note = "use `with_ymd_and_hms()` instead")]
+    #[allow(deprecated)]
     fn ymd(&self, year: i32, month: u32, day: u32) -> Date<Self> {
         self.ymd_opt(year, month, day).unwrap()
     }
@@ -221,19 +323,12 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn ymd_opt(&self, year: i32, month: u32, day: u32) -> LocalResult<Date<Self>> {
+    #[deprecated(since = "0.4.23", note = "use `with_ymd_and_hms()` instead")]
+    #[allow(deprecated)]
+    fn ymd_opt(&self, year: i32, month: u32, day: u32) -> MappedLocalTime<Date<Self>> {
         match NaiveDate::from_ymd_opt(year, month, day) {
             Some(d) => self.from_local_date(&d),
-            None => LocalResult::None,
+            None => MappedLocalTime::None,
         }
     }
 
@@ -244,14 +339,11 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "0.4.23",
+        note = "use `from_local_datetime()` with a `NaiveDateTime` instead"
+    )]
+    #[allow(deprecated)]
     fn yo(&self, year: i32, ordinal: u32) -> Date<Self> {
         self.yo_opt(year, ordinal).unwrap()
     }
@@ -263,10 +355,15 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    fn yo_opt(&self, year: i32, ordinal: u32) -> LocalResult<Date<Self>> {
+    #[deprecated(
+        since = "0.4.23",
+        note = "use `from_local_datetime()` with a `NaiveDateTime` instead"
+    )]
+    #[allow(deprecated)]
+    fn yo_opt(&self, year: i32, ordinal: u32) -> MappedLocalTime<Date<Self>> {
         match NaiveDate::from_yo_opt(year, ordinal) {
             Some(d) => self.from_local_date(&d),
-            None => LocalResult::None,
+            None => MappedLocalTime::None,
         }
     }
 
@@ -279,14 +376,11 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "0.4.23",
+        note = "use `from_local_datetime()` with a `NaiveDateTime` instead"
+    )]
+    #[allow(deprecated)]
     fn isoywd(&self, year: i32, week: u32, weekday: Weekday) -> Date<Self> {
         self.isoywd_opt(year, week, weekday).unwrap()
     }
@@ -300,10 +394,15 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    fn isoywd_opt(&self, year: i32, week: u32, weekday: Weekday) -> LocalResult<Date<Self>> {
+    #[deprecated(
+        since = "0.4.23",
+        note = "use `from_local_datetime()` with a `NaiveDateTime` instead"
+    )]
+    #[allow(deprecated)]
+    fn isoywd_opt(&self, year: i32, week: u32, weekday: Weekday) -> MappedLocalTime<Date<Self>> {
         match NaiveDate::from_isoywd_opt(year, week, weekday) {
             Some(d) => self.from_local_date(&d),
-            None => LocalResult::None,
+            None => MappedLocalTime::None,
         }
     }
 
@@ -319,8 +418,7 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    
-    
+    #[deprecated(since = "0.4.23", note = "use `timestamp_opt()` instead")]
     fn timestamp(&self, secs: i64, nsecs: u32) -> DateTime<Self> {
         self.timestamp_opt(secs, nsecs).unwrap()
     }
@@ -331,10 +429,24 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    fn timestamp_opt(&self, secs: i64, nsecs: u32) -> LocalResult<DateTime<Self>> {
-        match NaiveDateTime::from_timestamp_opt(secs, nsecs) {
-            Some(dt) => LocalResult::Single(self.from_utc_datetime(&dt)),
-            None => LocalResult::None,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn timestamp_opt(&self, secs: i64, nsecs: u32) -> MappedLocalTime<DateTime<Self>> {
+        match DateTime::from_timestamp(secs, nsecs) {
+            Some(dt) => MappedLocalTime::Single(self.from_utc_datetime(&dt.naive_utc())),
+            None => MappedLocalTime::None,
         }
     }
 
@@ -343,14 +455,7 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "0.4.23", note = "use `timestamp_millis_opt()` instead")]
     fn timestamp_millis(&self, millis: i64) -> DateTime<Self> {
         self.timestamp_millis_opt(millis).unwrap()
     }
@@ -372,16 +477,13 @@ pub trait TimeZone: Sized + Clone {
     
     
     
-    fn timestamp_millis_opt(&self, millis: i64) -> LocalResult<DateTime<Self>> {
-        let (mut secs, mut millis) = (millis / 1000, millis % 1000);
-        if millis < 0 {
-            secs -= 1;
-            millis += 1000;
+    fn timestamp_millis_opt(&self, millis: i64) -> MappedLocalTime<DateTime<Self>> {
+        match DateTime::from_timestamp_millis(millis) {
+            Some(dt) => MappedLocalTime::Single(self.from_utc_datetime(&dt.naive_utc())),
+            None => MappedLocalTime::None,
         }
-        self.timestamp_opt(secs, millis as u32 * 1_000_000)
     }
 
-    
     
     
     
@@ -395,12 +497,7 @@ pub trait TimeZone: Sized + Clone {
     
     
     fn timestamp_nanos(&self, nanos: i64) -> DateTime<Self> {
-        let (mut secs, mut nanos) = (nanos / 1_000_000_000, nanos % 1_000_000_000);
-        if nanos < 0 {
-            secs -= 1;
-            nanos += 1_000_000_000;
-        }
-        self.timestamp_opt(secs, nanos as u32).unwrap()
+        self.from_utc_datetime(&DateTime::from_timestamp_nanos(nanos).naive_utc())
     }
 
     
@@ -413,6 +510,32 @@ pub trait TimeZone: Sized + Clone {
     
     
     
+    fn timestamp_micros(&self, micros: i64) -> MappedLocalTime<DateTime<Self>> {
+        match DateTime::from_timestamp_micros(micros) {
+            Some(dt) => MappedLocalTime::Single(self.from_utc_datetime(&dt.naive_utc())),
+            None => MappedLocalTime::None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(
+        since = "0.4.29",
+        note = "use `DateTime::parse_from_str` or `NaiveDateTime::parse_from_str` with `and_utc()` or `and_local_timezone()` instead"
+    )]
     fn datetime_from_str(&self, s: &str, fmt: &str) -> ParseResult<DateTime<Self>> {
         let mut parsed = Parsed::new();
         parse(&mut parsed, s, StrftimeItems::new(fmt))?;
@@ -423,13 +546,16 @@ pub trait TimeZone: Sized + Clone {
     fn from_offset(offset: &Self::Offset) -> Self;
 
     
-    fn offset_from_local_date(&self, local: &NaiveDate) -> LocalResult<Self::Offset>;
+    fn offset_from_local_date(&self, local: &NaiveDate) -> MappedLocalTime<Self::Offset>;
 
     
-    fn offset_from_local_datetime(&self, local: &NaiveDateTime) -> LocalResult<Self::Offset>;
+    fn offset_from_local_datetime(&self, local: &NaiveDateTime) -> MappedLocalTime<Self::Offset>;
 
     
-    fn from_local_date(&self, local: &NaiveDate) -> LocalResult<Date<Self>> {
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated(since = "0.4.23", note = "use `from_local_datetime()` instead")]
+    #[allow(deprecated)]
+    fn from_local_date(&self, local: &NaiveDate) -> MappedLocalTime<Date<Self>> {
         self.offset_from_local_date(local).map(|offset| {
             
             Date::from_utc(*local, offset)
@@ -437,9 +563,13 @@ pub trait TimeZone: Sized + Clone {
     }
 
     
-    fn from_local_datetime(&self, local: &NaiveDateTime) -> LocalResult<DateTime<Self>> {
-        self.offset_from_local_datetime(local)
-            .map(|offset| DateTime::from_utc(*local - offset.fix(), offset))
+    #[allow(clippy::wrong_self_convention)]
+    fn from_local_datetime(&self, local: &NaiveDateTime) -> MappedLocalTime<DateTime<Self>> {
+        self.offset_from_local_datetime(local).and_then(|off| {
+            local
+                .checked_sub_offset(off.fix())
+                .map(|dt| DateTime::from_naive_utc_and_offset(dt, off))
+        })
     }
 
     
@@ -450,48 +580,68 @@ pub trait TimeZone: Sized + Clone {
 
     
     
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated(since = "0.4.23", note = "use `from_utc_datetime()` instead")]
+    #[allow(deprecated)]
     fn from_utc_date(&self, utc: &NaiveDate) -> Date<Self> {
         Date::from_utc(*utc, self.offset_from_utc_date(utc))
     }
 
     
     
+    #[allow(clippy::wrong_self_convention)]
     fn from_utc_datetime(&self, utc: &NaiveDateTime) -> DateTime<Self> {
-        DateTime::from_utc(*utc, self.offset_from_utc_datetime(utc))
+        DateTime::from_naive_utc_and_offset(*utc, self.offset_from_utc_datetime(utc))
     }
 }
-
-mod fixed;
-#[cfg(feature = "clock")]
-mod local;
-mod utc;
-
-pub use self::fixed::FixedOffset;
-#[cfg(feature = "clock")]
-pub use self::local::Local;
-pub use self::utc::Utc;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    fn test_fixed_offset_min_max_dates() {
+        for offset_hour in -23..=23 {
+            dbg!(offset_hour);
+            let offset = FixedOffset::east_opt(offset_hour * 60 * 60).unwrap();
+
+            let local_max = offset.from_utc_datetime(&NaiveDateTime::MAX);
+            assert_eq!(local_max.naive_utc(), NaiveDateTime::MAX);
+            let local_min = offset.from_utc_datetime(&NaiveDateTime::MIN);
+            assert_eq!(local_min.naive_utc(), NaiveDateTime::MIN);
+
+            let local_max = offset.from_local_datetime(&NaiveDateTime::MAX);
+            if offset_hour >= 0 {
+                assert_eq!(local_max.unwrap().naive_local(), NaiveDateTime::MAX);
+            } else {
+                assert_eq!(local_max, MappedLocalTime::None);
+            }
+            let local_min = offset.from_local_datetime(&NaiveDateTime::MIN);
+            if offset_hour <= 0 {
+                assert_eq!(local_min.unwrap().naive_local(), NaiveDateTime::MIN);
+            } else {
+                assert_eq!(local_min, MappedLocalTime::None);
+            }
+        }
+    }
+
+    #[test]
     fn test_negative_millis() {
-        let dt = Utc.timestamp_millis(-1000);
+        let dt = Utc.timestamp_millis_opt(-1000).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:59 UTC");
-        let dt = Utc.timestamp_millis(-7000);
+        let dt = Utc.timestamp_millis_opt(-7000).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:53 UTC");
-        let dt = Utc.timestamp_millis(-7001);
+        let dt = Utc.timestamp_millis_opt(-7001).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:52.999 UTC");
-        let dt = Utc.timestamp_millis(-7003);
+        let dt = Utc.timestamp_millis_opt(-7003).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:52.997 UTC");
-        let dt = Utc.timestamp_millis(-999);
+        let dt = Utc.timestamp_millis_opt(-999).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:59.001 UTC");
-        let dt = Utc.timestamp_millis(-1);
+        let dt = Utc.timestamp_millis_opt(-1).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:59.999 UTC");
-        let dt = Utc.timestamp_millis(-60000);
+        let dt = Utc.timestamp_millis_opt(-60000).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:59:00 UTC");
-        let dt = Utc.timestamp_millis(-3600000);
+        let dt = Utc.timestamp_millis_opt(-3600000).unwrap();
         assert_eq!(dt.to_string(), "1969-12-31 23:00:00 UTC");
 
         for (millis, expected) in &[
@@ -500,7 +650,7 @@ mod tests {
             (-7003, "1969-12-31 23:59:52.997 UTC"),
         ] {
             match Utc.timestamp_millis_opt(*millis) {
-                LocalResult::Single(dt) => {
+                MappedLocalTime::Single(dt) => {
                     assert_eq!(dt.to_string(), *expected);
                 }
                 e => panic!("Got {:?} instead of an okay answer", e),
@@ -524,8 +674,22 @@ mod tests {
 
     #[test]
     fn test_nanos_never_panics() {
-        Utc.timestamp_nanos(i64::max_value());
+        Utc.timestamp_nanos(i64::MAX);
         Utc.timestamp_nanos(i64::default());
-        Utc.timestamp_nanos(i64::min_value());
+        Utc.timestamp_nanos(i64::MIN);
+    }
+
+    #[test]
+    fn test_negative_micros() {
+        let dt = Utc.timestamp_micros(-1_000_000).unwrap();
+        assert_eq!(dt.to_string(), "1969-12-31 23:59:59 UTC");
+        let dt = Utc.timestamp_micros(-999_999).unwrap();
+        assert_eq!(dt.to_string(), "1969-12-31 23:59:59.000001 UTC");
+        let dt = Utc.timestamp_micros(-1).unwrap();
+        assert_eq!(dt.to_string(), "1969-12-31 23:59:59.999999 UTC");
+        let dt = Utc.timestamp_micros(-60_000_000).unwrap();
+        assert_eq!(dt.to_string(), "1969-12-31 23:59:00 UTC");
+        let dt = Utc.timestamp_micros(-3_600_000_000).unwrap();
+        assert_eq!(dt.to_string(), "1969-12-31 23:00:00 UTC");
     }
 }

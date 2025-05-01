@@ -4,16 +4,10 @@
 
 
 
-use num_traits::ToPrimitive;
-use oldtime::Duration as OldDuration;
-
-use super::{ParseResult, IMPOSSIBLE, NOT_ENOUGH, OUT_OF_RANGE};
-use div::div_rem;
-use naive::{NaiveDate, NaiveDateTime, NaiveTime};
-use offset::{FixedOffset, LocalResult, Offset, TimeZone};
-use DateTime;
-use Weekday;
-use {Datelike, Timelike};
+use super::{IMPOSSIBLE, NOT_ENOUGH, OUT_OF_RANGE, ParseResult};
+use crate::naive::{NaiveDate, NaiveDateTime, NaiveTime};
+use crate::offset::{FixedOffset, MappedLocalTime, Offset, TimeZone};
+use crate::{DateTime, Datelike, TimeDelta, Timelike, Weekday};
 
 
 
@@ -22,91 +16,160 @@ use {Datelike, Timelike};
 
 
 
-#[allow(missing_copy_implementations)]
-#[derive(Clone, PartialEq, Debug)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[allow(clippy::manual_non_exhaustive)]
+#[derive(Clone, PartialEq, Eq, Debug, Default, Hash)]
 pub struct Parsed {
-    
-    
-    
-    
+    #[doc(hidden)]
     pub year: Option<i32>,
-
-    
-    
-    
-    
-    
+    #[doc(hidden)]
     pub year_div_100: Option<i32>,
-
-    
+    #[doc(hidden)]
     pub year_mod_100: Option<i32>,
-
-    
-    
-    
-    
+    #[doc(hidden)]
     pub isoyear: Option<i32>,
-
-    
-    
-    
-    
-    
-    
+    #[doc(hidden)]
     pub isoyear_div_100: Option<i32>,
-
-    
-    
+    #[doc(hidden)]
     pub isoyear_mod_100: Option<i32>,
-
-    
+    #[doc(hidden)]
+    pub quarter: Option<u32>,
+    #[doc(hidden)]
     pub month: Option<u32>,
-
-    
-    
+    #[doc(hidden)]
     pub week_from_sun: Option<u32>,
-
-    
-    
+    #[doc(hidden)]
     pub week_from_mon: Option<u32>,
-
-    
-    
+    #[doc(hidden)]
     pub isoweek: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub weekday: Option<Weekday>,
-
-    
+    #[doc(hidden)]
     pub ordinal: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub day: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub hour_div_12: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub hour_mod_12: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub minute: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub second: Option<u32>,
-
-    
+    #[doc(hidden)]
     pub nanosecond: Option<u32>,
-
-    
-    
-    
+    #[doc(hidden)]
     pub timestamp: Option<i64>,
-
-    
+    #[doc(hidden)]
     pub offset: Option<i32>,
-
-    
+    #[doc(hidden)]
     _dummy: (),
 }
 
@@ -114,124 +177,223 @@ pub struct Parsed {
 
 #[inline]
 fn set_if_consistent<T: PartialEq>(old: &mut Option<T>, new: T) -> ParseResult<()> {
-    if let Some(ref old) = *old {
-        if *old == new {
+    match old {
+        Some(old) if *old != new => Err(IMPOSSIBLE),
+        _ => {
+            *old = Some(new);
             Ok(())
-        } else {
-            Err(IMPOSSIBLE)
-        }
-    } else {
-        *old = Some(new);
-        Ok(())
-    }
-}
-
-impl Default for Parsed {
-    fn default() -> Parsed {
-        Parsed {
-            year: None,
-            year_div_100: None,
-            year_mod_100: None,
-            isoyear: None,
-            isoyear_div_100: None,
-            isoyear_mod_100: None,
-            month: None,
-            week_from_sun: None,
-            week_from_mon: None,
-            isoweek: None,
-            weekday: None,
-            ordinal: None,
-            day: None,
-            hour_div_12: None,
-            hour_mod_12: None,
-            minute: None,
-            second: None,
-            nanosecond: None,
-            timestamp: None,
-            offset: None,
-            _dummy: (),
         }
     }
 }
 
 impl Parsed {
     
+    #[must_use]
     pub fn new() -> Parsed {
         Parsed::default()
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn set_year(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.year, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.year, i32::try_from(value).map_err(|_| OUT_OF_RANGE)?)
     }
 
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_year_div_100(&mut self, value: i64) -> ParseResult<()> {
-        if value < 0 {
+        if !(0..=i32::MAX as i64).contains(&value) {
             return Err(OUT_OF_RANGE);
         }
-        set_if_consistent(&mut self.year_div_100, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.year_div_100, value as i32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_year_mod_100(&mut self, value: i64) -> ParseResult<()> {
-        if value < 0 {
+        if !(0..100).contains(&value) {
             return Err(OUT_OF_RANGE);
         }
-        set_if_consistent(&mut self.year_mod_100, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.year_mod_100, value as i32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_isoyear(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.isoyear, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.isoyear, i32::try_from(value).map_err(|_| OUT_OF_RANGE)?)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_isoyear_div_100(&mut self, value: i64) -> ParseResult<()> {
-        if value < 0 {
+        if !(0..=i32::MAX as i64).contains(&value) {
             return Err(OUT_OF_RANGE);
         }
-        set_if_consistent(&mut self.isoyear_div_100, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.isoyear_div_100, value as i32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_isoyear_mod_100(&mut self, value: i64) -> ParseResult<()> {
-        if value < 0 {
+        if !(0..100).contains(&value) {
             return Err(OUT_OF_RANGE);
         }
-        set_if_consistent(&mut self.isoyear_mod_100, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.isoyear_mod_100, value as i32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn set_quarter(&mut self, value: i64) -> ParseResult<()> {
+        if !(1..=4).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.quarter, value as u32)
+    }
+
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_month(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.month, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(1..=12).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.month, value as u32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_week_from_sun(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.week_from_sun, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(0..=53).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.week_from_sun, value as u32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_week_from_mon(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.week_from_mon, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(0..=53).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.week_from_mon, value as u32)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn set_isoweek(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.isoweek, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(1..=53).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.isoweek, value as u32)
     }
 
+    
+    
+    
+    
     
     #[inline]
     pub fn set_weekday(&mut self, value: Weekday) -> ParseResult<()> {
@@ -239,62 +401,145 @@ impl Parsed {
     }
 
     
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn set_ordinal(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.ordinal, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(1..=366).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.ordinal, value as u32)
     }
 
     
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn set_day(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.day, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(1..=31).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.day, value as u32)
     }
 
+    
+    
+    
+    
+    
     
     
     #[inline]
     pub fn set_ampm(&mut self, value: bool) -> ParseResult<()> {
-        set_if_consistent(&mut self.hour_div_12, if value { 1 } else { 0 })
+        set_if_consistent(&mut self.hour_div_12, value as u32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]
-    pub fn set_hour12(&mut self, value: i64) -> ParseResult<()> {
-        if value < 1 || value > 12 {
+    pub fn set_hour12(&mut self, mut value: i64) -> ParseResult<()> {
+        if !(1..=12).contains(&value) {
             return Err(OUT_OF_RANGE);
         }
-        set_if_consistent(&mut self.hour_mod_12, value as u32 % 12)
+        if value == 12 {
+            value = 0
+        }
+        set_if_consistent(&mut self.hour_mod_12, value as u32)
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]
     pub fn set_hour(&mut self, value: i64) -> ParseResult<()> {
-        let v = value.to_u32().ok_or(OUT_OF_RANGE)?;
-        set_if_consistent(&mut self.hour_div_12, v / 12)?;
-        set_if_consistent(&mut self.hour_mod_12, v % 12)?;
-        Ok(())
+        let (hour_div_12, hour_mod_12) = match value {
+            hour @ 0..=11 => (0, hour as u32),
+            hour @ 12..=23 => (1, hour as u32 - 12),
+            _ => return Err(OUT_OF_RANGE),
+        };
+        set_if_consistent(&mut self.hour_div_12, hour_div_12)?;
+        set_if_consistent(&mut self.hour_mod_12, hour_mod_12)
     }
 
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_minute(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.minute, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(0..=59).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.minute, value as u32)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_second(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.second, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(0..=60).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.second, value as u32)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn set_nanosecond(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.nanosecond, value.to_u32().ok_or(OUT_OF_RANGE)?)
+        if !(0..=999_999_999).contains(&value) {
+            return Err(OUT_OF_RANGE);
+        }
+        set_if_consistent(&mut self.nanosecond, value as u32)
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn set_timestamp(&mut self, value: i64) -> ParseResult<()> {
@@ -302,11 +547,31 @@ impl Parsed {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn set_offset(&mut self, value: i64) -> ParseResult<()> {
-        set_if_consistent(&mut self.offset, value.to_i32().ok_or(OUT_OF_RANGE)?)
+        set_if_consistent(&mut self.offset, i32::try_from(value).map_err(|_| OUT_OF_RANGE)?)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -333,11 +598,12 @@ impl Parsed {
                 
                 
                 
-                (Some(y), q, r @ Some(0...99)) | (Some(y), q, r @ None) => {
+                (Some(y), q, r @ Some(0..=99)) | (Some(y), q, r @ None) => {
                     if y < 0 {
-                        return Err(OUT_OF_RANGE);
+                        return Err(IMPOSSIBLE);
                     }
-                    let (q_, r_) = div_rem(y, 100);
+                    let q_ = y / 100;
+                    let r_ = y % 100;
                     if q.unwrap_or(q_) == q_ && r.unwrap_or(r_) == r_ {
                         Ok(Some(y))
                     } else {
@@ -347,9 +613,9 @@ impl Parsed {
 
                 
                 
-                (None, Some(q), Some(r @ 0...99)) => {
+                (None, Some(q), Some(r @ 0..=99)) => {
                     if q < 0 {
-                        return Err(OUT_OF_RANGE);
+                        return Err(IMPOSSIBLE);
                     }
                     let y = q.checked_mul(100).and_then(|v| v.checked_add(r));
                     Ok(Some(y.ok_or(OUT_OF_RANGE)?))
@@ -357,7 +623,7 @@ impl Parsed {
 
                 
                 
-                (None, None, Some(r @ 0...99)) => Ok(Some(r + if r < 70 { 2000 } else { 1900 })),
+                (None, None, Some(r @ 0..=99)) => Ok(Some(r + if r < 70 { 2000 } else { 1900 })),
 
                 
                 (None, Some(_), None) => Err(NOT_ENOUGH),
@@ -372,8 +638,7 @@ impl Parsed {
         let verify_ymd = |date: NaiveDate| {
             let year = date.year();
             let (year_div_100, year_mod_100) = if year >= 0 {
-                let (q, r) = div_rem(year, 100);
-                (Some(q), Some(r))
+                (Some(year / 100), Some(year % 100))
             } else {
                 (None, None) 
             };
@@ -393,8 +658,7 @@ impl Parsed {
             let isoweek = week.week();
             let weekday = date.weekday();
             let (isoyear_div_100, isoyear_mod_100) = if isoyear >= 0 {
-                let (q, r) = div_rem(isoyear, 100);
-                (Some(q), Some(r))
+                (Some(isoyear / 100), Some(isoyear % 100))
             } else {
                 (None, None) 
             };
@@ -408,9 +672,8 @@ impl Parsed {
         
         let verify_ordinal = |date: NaiveDate| {
             let ordinal = date.ordinal();
-            let weekday = date.weekday();
-            let week_from_sun = (ordinal as i32 - weekday.num_days_from_sunday() as i32 + 7) / 7;
-            let week_from_mon = (ordinal as i32 - weekday.num_days_from_monday() as i32 + 7) / 7;
+            let week_from_sun = date.weeks_from(Weekday::Sun);
+            let week_from_mon = date.weeks_from(Weekday::Mon);
             self.ordinal.unwrap_or(ordinal) == ordinal
                 && self.week_from_sun.map_or(week_from_sun, |v| v as i32) == week_from_sun
                 && self.week_from_mon.map_or(week_from_mon, |v| v as i32) == week_from_mon
@@ -432,71 +695,15 @@ impl Parsed {
                 (verify_ymd(date) && verify_isoweekdate(date) && verify_ordinal(date), date)
             }
 
-            (
-                Some(year),
-                _,
-                &Parsed { week_from_sun: Some(week_from_sun), weekday: Some(weekday), .. },
-            ) => {
+            (Some(year), _, &Parsed { week_from_sun: Some(week), weekday: Some(weekday), .. }) => {
                 
-                let newyear = NaiveDate::from_yo_opt(year, 1).ok_or(OUT_OF_RANGE)?;
-                let firstweek = match newyear.weekday() {
-                    Weekday::Sun => 0,
-                    Weekday::Mon => 6,
-                    Weekday::Tue => 5,
-                    Weekday::Wed => 4,
-                    Weekday::Thu => 3,
-                    Weekday::Fri => 2,
-                    Weekday::Sat => 1,
-                };
-
-                
-                if week_from_sun > 53 {
-                    return Err(OUT_OF_RANGE);
-                } 
-                let ndays = firstweek
-                    + (week_from_sun as i32 - 1) * 7
-                    + weekday.num_days_from_sunday() as i32;
-                let date = newyear
-                    .checked_add_signed(OldDuration::days(i64::from(ndays)))
-                    .ok_or(OUT_OF_RANGE)?;
-                if date.year() != year {
-                    return Err(OUT_OF_RANGE);
-                } 
-
+                let date = resolve_week_date(year, week, weekday, Weekday::Sun)?;
                 (verify_ymd(date) && verify_isoweekdate(date) && verify_ordinal(date), date)
             }
 
-            (
-                Some(year),
-                _,
-                &Parsed { week_from_mon: Some(week_from_mon), weekday: Some(weekday), .. },
-            ) => {
+            (Some(year), _, &Parsed { week_from_mon: Some(week), weekday: Some(weekday), .. }) => {
                 
-                let newyear = NaiveDate::from_yo_opt(year, 1).ok_or(OUT_OF_RANGE)?;
-                let firstweek = match newyear.weekday() {
-                    Weekday::Sun => 1,
-                    Weekday::Mon => 0,
-                    Weekday::Tue => 6,
-                    Weekday::Wed => 5,
-                    Weekday::Thu => 4,
-                    Weekday::Fri => 3,
-                    Weekday::Sat => 2,
-                };
-
-                
-                if week_from_mon > 53 {
-                    return Err(OUT_OF_RANGE);
-                } 
-                let ndays = firstweek
-                    + (week_from_mon as i32 - 1) * 7
-                    + weekday.num_days_from_monday() as i32;
-                let date = newyear
-                    .checked_add_signed(OldDuration::days(i64::from(ndays)))
-                    .ok_or(OUT_OF_RANGE)?;
-                if date.year() != year {
-                    return Err(OUT_OF_RANGE);
-                } 
-
+                let date = resolve_week_date(year, week, weekday, Weekday::Mon)?;
                 (verify_ymd(date) && verify_isoweekdate(date) && verify_ordinal(date), date)
             }
 
@@ -510,13 +717,25 @@ impl Parsed {
             (_, _, _) => return Err(NOT_ENOUGH),
         };
 
-        if verified {
-            Ok(parsed_date)
-        } else {
-            Err(IMPOSSIBLE)
+        if !verified {
+            return Err(IMPOSSIBLE);
+        } else if let Some(parsed) = self.quarter {
+            if parsed != parsed_date.quarter() {
+                return Err(IMPOSSIBLE);
+            }
         }
+
+        Ok(parsed_date)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -528,32 +747,32 @@ impl Parsed {
     
     pub fn to_naive_time(&self) -> ParseResult<NaiveTime> {
         let hour_div_12 = match self.hour_div_12 {
-            Some(v @ 0...1) => v,
+            Some(v @ 0..=1) => v,
             Some(_) => return Err(OUT_OF_RANGE),
             None => return Err(NOT_ENOUGH),
         };
         let hour_mod_12 = match self.hour_mod_12 {
-            Some(v @ 0...11) => v,
+            Some(v @ 0..=11) => v,
             Some(_) => return Err(OUT_OF_RANGE),
             None => return Err(NOT_ENOUGH),
         };
         let hour = hour_div_12 * 12 + hour_mod_12;
 
         let minute = match self.minute {
-            Some(v @ 0...59) => v,
+            Some(v @ 0..=59) => v,
             Some(_) => return Err(OUT_OF_RANGE),
             None => return Err(NOT_ENOUGH),
         };
 
         
         let (second, mut nano) = match self.second.unwrap_or(0) {
-            v @ 0...59 => (v, 0),
+            v @ 0..=59 => (v, 0),
             60 => (59, 1_000_000_000),
             _ => return Err(OUT_OF_RANGE),
         };
         nano += match self.nanosecond {
-            Some(v @ 0...999_999_999) if self.second.is_some() => v,
-            Some(0...999_999_999) => return Err(NOT_ENOUGH), 
+            Some(v @ 0..=999_999_999) if self.second.is_some() => v,
+            Some(0..=999_999_999) => return Err(NOT_ENOUGH), 
             Some(_) => return Err(OUT_OF_RANGE),
             None => 0,
         };
@@ -561,6 +780,18 @@ impl Parsed {
         NaiveTime::from_hms_nano_opt(hour, minute, second, nano).ok_or(OUT_OF_RANGE)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -576,7 +807,7 @@ impl Parsed {
 
             
             
-            let timestamp = datetime.timestamp() - i64::from(offset);
+            let timestamp = datetime.and_utc().timestamp() - i64::from(offset);
             if let Some(given_timestamp) = self.timestamp {
                 
                 if given_timestamp != timestamp
@@ -601,8 +832,7 @@ impl Parsed {
 
             
             let ts = timestamp.checked_add(i64::from(offset)).ok_or(OUT_OF_RANGE)?;
-            let datetime = NaiveDateTime::from_timestamp_opt(ts, 0);
-            let mut datetime = datetime.ok_or(OUT_OF_RANGE)?;
+            let mut datetime = DateTime::from_timestamp(ts, 0).ok_or(OUT_OF_RANGE)?.naive_utc();
 
             
             
@@ -614,7 +844,7 @@ impl Parsed {
                     59 => {}
                     
                     0 => {
-                        datetime -= OldDuration::seconds(1);
+                        datetime -= TimeDelta::try_seconds(1).unwrap();
                     }
                     
                     _ => return Err(IMPOSSIBLE),
@@ -641,10 +871,28 @@ impl Parsed {
     }
 
     
+    
+    
+    
+    
+    
+    
     pub fn to_fixed_offset(&self) -> ParseResult<FixedOffset> {
-        self.offset.and_then(FixedOffset::east_opt).ok_or(OUT_OF_RANGE)
+        FixedOffset::east_opt(self.offset.ok_or(NOT_ENOUGH)?).ok_or(OUT_OF_RANGE)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -652,16 +900,38 @@ impl Parsed {
     
     
     pub fn to_datetime(&self) -> ParseResult<DateTime<FixedOffset>> {
-        let offset = self.offset.ok_or(NOT_ENOUGH)?;
+        
+        let offset = match (self.offset, self.timestamp) {
+            (Some(off), _) => off,
+            (None, Some(_)) => 0, 
+            (None, None) => return Err(NOT_ENOUGH),
+        };
         let datetime = self.to_naive_datetime_with_offset(offset)?;
         let offset = FixedOffset::east_opt(offset).ok_or(OUT_OF_RANGE)?;
+
         match offset.from_local_datetime(&datetime) {
-            LocalResult::None => Err(IMPOSSIBLE),
-            LocalResult::Single(t) => Ok(t),
-            LocalResult::Ambiguous(..) => Err(NOT_ENOUGH),
+            MappedLocalTime::None => Err(IMPOSSIBLE),
+            MappedLocalTime::Single(t) => Ok(t),
+            MappedLocalTime::Ambiguous(..) => Err(NOT_ENOUGH),
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -678,8 +948,8 @@ impl Parsed {
             
             
             let nanosecond = self.nanosecond.unwrap_or(0);
-            let dt = NaiveDateTime::from_timestamp_opt(timestamp, nanosecond);
-            let dt = dt.ok_or(OUT_OF_RANGE)?;
+            let dt =
+                DateTime::from_timestamp(timestamp, nanosecond).ok_or(OUT_OF_RANGE)?.naive_utc();
             guessed_offset = tz.offset_from_utc_datetime(&dt).fix().local_minus_utc();
         }
 
@@ -696,15 +966,15 @@ impl Parsed {
         
         let datetime = self.to_naive_datetime_with_offset(guessed_offset)?;
         match tz.from_local_datetime(&datetime) {
-            LocalResult::None => Err(IMPOSSIBLE),
-            LocalResult::Single(t) => {
+            MappedLocalTime::None => Err(IMPOSSIBLE),
+            MappedLocalTime::Single(t) => {
                 if check_offset(&t) {
                     Ok(t)
                 } else {
                     Err(IMPOSSIBLE)
                 }
             }
-            LocalResult::Ambiguous(min, max) => {
+            MappedLocalTime::Ambiguous(min, max) => {
                 
                 match (check_offset(&min), check_offset(&max)) {
                     (false, false) => Err(IMPOSSIBLE),
@@ -715,16 +985,219 @@ impl Parsed {
             }
         }
     }
+
+    
+    
+    
+    #[inline]
+    pub fn year(&self) -> Option<i32> {
+        self.year
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn year_div_100(&self) -> Option<i32> {
+        self.year_div_100
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn year_mod_100(&self) -> Option<i32> {
+        self.year_mod_100
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn isoyear(&self) -> Option<i32> {
+        self.isoyear
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn isoyear_div_100(&self) -> Option<i32> {
+        self.isoyear_div_100
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn isoyear_mod_100(&self) -> Option<i32> {
+        self.isoyear_mod_100
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn quarter(&self) -> Option<u32> {
+        self.quarter
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn month(&self) -> Option<u32> {
+        self.month
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn week_from_sun(&self) -> Option<u32> {
+        self.week_from_sun
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn week_from_mon(&self) -> Option<u32> {
+        self.week_from_mon
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn isoweek(&self) -> Option<u32> {
+        self.isoweek
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn weekday(&self) -> Option<Weekday> {
+        self.weekday
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn ordinal(&self) -> Option<u32> {
+        self.ordinal
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn day(&self) -> Option<u32> {
+        self.day
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn hour_div_12(&self) -> Option<u32> {
+        self.hour_div_12
+    }
+
+    
+    
+    
+    pub fn hour_mod_12(&self) -> Option<u32> {
+        self.hour_mod_12
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn minute(&self) -> Option<u32> {
+        self.minute
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn second(&self) -> Option<u32> {
+        self.second
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn nanosecond(&self) -> Option<u32> {
+        self.nanosecond
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn timestamp(&self) -> Option<i64> {
+        self.timestamp
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn offset(&self) -> Option<i32> {
+        self.offset
+    }
+}
+
+
+
+
+
+fn resolve_week_date(
+    year: i32,
+    week: u32,
+    weekday: Weekday,
+    week_start_day: Weekday,
+) -> ParseResult<NaiveDate> {
+    if week > 53 {
+        return Err(OUT_OF_RANGE);
+    }
+
+    let first_day_of_year = NaiveDate::from_yo_opt(year, 1).ok_or(OUT_OF_RANGE)?;
+    
+    let first_week_start = 1 + week_start_day.days_since(first_day_of_year.weekday()) as i32;
+    
+    let weekday = weekday.days_since(week_start_day) as i32;
+    let ordinal = first_week_start + (week as i32 - 1) * 7 + weekday;
+    if ordinal <= 0 {
+        return Err(IMPOSSIBLE);
+    }
+    first_day_of_year.with_ordinal(ordinal as u32).ok_or(IMPOSSIBLE)
 }
 
 #[cfg(test)]
 mod tests {
     use super::super::{IMPOSSIBLE, NOT_ENOUGH, OUT_OF_RANGE};
     use super::Parsed;
-    use naive::{NaiveDate, NaiveTime, MAX_DATE, MIN_DATE};
-    use offset::{FixedOffset, TimeZone, Utc};
-    use Datelike;
-    use Weekday::*;
+    use crate::Datelike;
+    use crate::Weekday::*;
+    use crate::naive::{NaiveDate, NaiveTime};
+    use crate::offset::{FixedOffset, TimeZone, Utc};
 
     #[test]
     fn test_parsed_set_fields() {
@@ -798,6 +1271,107 @@ mod tests {
     }
 
     #[test]
+    fn test_parsed_set_range() {
+        assert_eq!(Parsed::new().set_year(i32::MIN as i64 - 1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_year(i32::MIN as i64).is_ok());
+        assert!(Parsed::new().set_year(i32::MAX as i64).is_ok());
+        assert_eq!(Parsed::new().set_year(i32::MAX as i64 + 1), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_year_div_100(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_year_div_100(0).is_ok());
+        assert!(Parsed::new().set_year_div_100(i32::MAX as i64).is_ok());
+        assert_eq!(Parsed::new().set_year_div_100(i32::MAX as i64 + 1), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_year_mod_100(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_year_mod_100(0).is_ok());
+        assert!(Parsed::new().set_year_mod_100(99).is_ok());
+        assert_eq!(Parsed::new().set_year_mod_100(100), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_isoyear(i32::MIN as i64 - 1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_isoyear(i32::MIN as i64).is_ok());
+        assert!(Parsed::new().set_isoyear(i32::MAX as i64).is_ok());
+        assert_eq!(Parsed::new().set_isoyear(i32::MAX as i64 + 1), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_isoyear_div_100(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_isoyear_div_100(0).is_ok());
+        assert!(Parsed::new().set_isoyear_div_100(99).is_ok());
+        assert_eq!(Parsed::new().set_isoyear_div_100(i32::MAX as i64 + 1), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_isoyear_mod_100(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_isoyear_mod_100(0).is_ok());
+        assert!(Parsed::new().set_isoyear_mod_100(99).is_ok());
+        assert_eq!(Parsed::new().set_isoyear_mod_100(100), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_quarter(0), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_quarter(1).is_ok());
+        assert!(Parsed::new().set_quarter(4).is_ok());
+        assert_eq!(Parsed::new().set_quarter(5), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_month(0), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_month(1).is_ok());
+        assert!(Parsed::new().set_month(12).is_ok());
+        assert_eq!(Parsed::new().set_month(13), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_week_from_sun(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_week_from_sun(0).is_ok());
+        assert!(Parsed::new().set_week_from_sun(53).is_ok());
+        assert_eq!(Parsed::new().set_week_from_sun(54), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_week_from_mon(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_week_from_mon(0).is_ok());
+        assert!(Parsed::new().set_week_from_mon(53).is_ok());
+        assert_eq!(Parsed::new().set_week_from_mon(54), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_isoweek(0), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_isoweek(1).is_ok());
+        assert!(Parsed::new().set_isoweek(53).is_ok());
+        assert_eq!(Parsed::new().set_isoweek(54), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_ordinal(0), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_ordinal(1).is_ok());
+        assert!(Parsed::new().set_ordinal(366).is_ok());
+        assert_eq!(Parsed::new().set_ordinal(367), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_day(0), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_day(1).is_ok());
+        assert!(Parsed::new().set_day(31).is_ok());
+        assert_eq!(Parsed::new().set_day(32), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_hour12(0), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_hour12(1).is_ok());
+        assert!(Parsed::new().set_hour12(12).is_ok());
+        assert_eq!(Parsed::new().set_hour12(13), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_hour(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_hour(0).is_ok());
+        assert!(Parsed::new().set_hour(23).is_ok());
+        assert_eq!(Parsed::new().set_hour(24), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_minute(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_minute(0).is_ok());
+        assert!(Parsed::new().set_minute(59).is_ok());
+        assert_eq!(Parsed::new().set_minute(60), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_second(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_second(0).is_ok());
+        assert!(Parsed::new().set_second(60).is_ok());
+        assert_eq!(Parsed::new().set_second(61), Err(OUT_OF_RANGE));
+
+        assert_eq!(Parsed::new().set_nanosecond(-1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_nanosecond(0).is_ok());
+        assert!(Parsed::new().set_nanosecond(999_999_999).is_ok());
+        assert_eq!(Parsed::new().set_nanosecond(1_000_000_000), Err(OUT_OF_RANGE));
+
+        assert!(Parsed::new().set_timestamp(i64::MIN).is_ok());
+        assert!(Parsed::new().set_timestamp(i64::MAX).is_ok());
+
+        assert_eq!(Parsed::new().set_offset(i32::MIN as i64 - 1), Err(OUT_OF_RANGE));
+        assert!(Parsed::new().set_offset(i32::MIN as i64).is_ok());
+        assert!(Parsed::new().set_offset(i32::MAX as i64).is_ok());
+        assert_eq!(Parsed::new().set_offset(i32::MAX as i64 + 1), Err(OUT_OF_RANGE));
+    }
+
+    #[test]
     fn test_parsed_to_naive_date() {
         macro_rules! parse {
             ($($k:ident: $v:expr),*) => (
@@ -805,7 +1379,7 @@ mod tests {
             )
         }
 
-        let ymd = |y, m, d| Ok(NaiveDate::from_ymd(y, m, d));
+        let ymd = |y, m, d| Ok(NaiveDate::from_ymd_opt(y, m, d).unwrap());
 
         
         assert_eq!(parse!(), Err(NOT_ENOUGH));
@@ -850,8 +1424,8 @@ mod tests {
         );
         assert_eq!(parse!(year_div_100: 19, year_mod_100: -1, month: 1, day: 1), Err(OUT_OF_RANGE));
         assert_eq!(parse!(year_div_100: 0, year_mod_100: 0, month: 1, day: 1), ymd(0, 1, 1));
-        assert_eq!(parse!(year_div_100: -1, year_mod_100: 42, month: 1, day: 1), Err(OUT_OF_RANGE));
-        let max_year = MAX_DATE.year();
+        assert_eq!(parse!(year_div_100: -1, year_mod_100: 42, month: 1, day: 1), Err(IMPOSSIBLE));
+        let max_year = NaiveDate::MAX.year();
         assert_eq!(
             parse!(year_div_100: max_year / 100,
                           year_mod_100: max_year % 100, month: 1, day: 1),
@@ -886,17 +1460,28 @@ mod tests {
         );
         assert_eq!(
             parse!(year: -1, year_div_100: -1, year_mod_100: 99, month: 1, day: 1),
-            Err(OUT_OF_RANGE)
+            Err(IMPOSSIBLE)
         );
-        assert_eq!(parse!(year: -1, year_div_100: 0, month: 1, day: 1), Err(OUT_OF_RANGE));
-        assert_eq!(parse!(year: -1, year_mod_100: 99, month: 1, day: 1), Err(OUT_OF_RANGE));
+        assert_eq!(parse!(year: -1, year_div_100: 0, month: 1, day: 1), Err(IMPOSSIBLE));
+        assert_eq!(parse!(year: -1, year_mod_100: 99, month: 1, day: 1), Err(IMPOSSIBLE));
+
+        
+        assert_eq!(parse!(year: 2000, quarter: 1), Err(NOT_ENOUGH));
+        assert_eq!(parse!(year: 2000, quarter: 1, month: 1, day: 1), ymd(2000, 1, 1));
+        assert_eq!(parse!(year: 2000, quarter: 2, month: 4, day: 1), ymd(2000, 4, 1));
+        assert_eq!(parse!(year: 2000, quarter: 3, month: 7, day: 1), ymd(2000, 7, 1));
+        assert_eq!(parse!(year: 2000, quarter: 4, month: 10, day: 1), ymd(2000, 10, 1));
+
+        
+        assert_eq!(parse!(year: 2000, quarter: 2, month: 3, day: 31), Err(IMPOSSIBLE));
+        assert_eq!(parse!(year: 2000, quarter: 4, month: 3, day: 31), Err(IMPOSSIBLE));
 
         
         assert_eq!(parse!(year: 2000, week_from_mon: 0), Err(NOT_ENOUGH));
         assert_eq!(parse!(year: 2000, week_from_sun: 0), Err(NOT_ENOUGH));
         assert_eq!(parse!(year: 2000, weekday: Sun), Err(NOT_ENOUGH));
-        assert_eq!(parse!(year: 2000, week_from_mon: 0, weekday: Fri), Err(OUT_OF_RANGE));
-        assert_eq!(parse!(year: 2000, week_from_sun: 0, weekday: Fri), Err(OUT_OF_RANGE));
+        assert_eq!(parse!(year: 2000, week_from_mon: 0, weekday: Fri), Err(IMPOSSIBLE));
+        assert_eq!(parse!(year: 2000, week_from_sun: 0, weekday: Fri), Err(IMPOSSIBLE));
         assert_eq!(parse!(year: 2000, week_from_mon: 0, weekday: Sat), ymd(2000, 1, 1));
         assert_eq!(parse!(year: 2000, week_from_sun: 0, weekday: Sat), ymd(2000, 1, 1));
         assert_eq!(parse!(year: 2000, week_from_mon: 0, weekday: Sun), ymd(2000, 1, 2));
@@ -910,9 +1495,9 @@ mod tests {
         assert_eq!(parse!(year: 2000, week_from_mon: 2, weekday: Mon), ymd(2000, 1, 10));
         assert_eq!(parse!(year: 2000, week_from_sun: 52, weekday: Sat), ymd(2000, 12, 30));
         assert_eq!(parse!(year: 2000, week_from_sun: 53, weekday: Sun), ymd(2000, 12, 31));
-        assert_eq!(parse!(year: 2000, week_from_sun: 53, weekday: Mon), Err(OUT_OF_RANGE));
+        assert_eq!(parse!(year: 2000, week_from_sun: 53, weekday: Mon), Err(IMPOSSIBLE));
         assert_eq!(parse!(year: 2000, week_from_sun: 0xffffffff, weekday: Mon), Err(OUT_OF_RANGE));
-        assert_eq!(parse!(year: 2006, week_from_sun: 0, weekday: Sat), Err(OUT_OF_RANGE));
+        assert_eq!(parse!(year: 2006, week_from_sun: 0, weekday: Sat), Err(IMPOSSIBLE));
         assert_eq!(parse!(year: 2006, week_from_sun: 1, weekday: Sun), ymd(2006, 1, 1));
 
         
@@ -992,8 +1577,8 @@ mod tests {
             )
         }
 
-        let hms = |h, m, s| Ok(NaiveTime::from_hms(h, m, s));
-        let hmsn = |h, m, s, n| Ok(NaiveTime::from_hms_nano(h, m, s, n));
+        let hms = |h, m, s| Ok(NaiveTime::from_hms_opt(h, m, s).unwrap());
+        let hmsn = |h, m, s, n| Ok(NaiveTime::from_hms_nano_opt(h, m, s, n).unwrap());
 
         
         assert_eq!(parse!(), Err(NOT_ENOUGH));
@@ -1048,9 +1633,12 @@ mod tests {
             ($($k:ident: $v:expr),*) => (parse!(offset = 0; $($k: $v),*))
         }
 
-        let ymdhms = |y, m, d, h, n, s| Ok(NaiveDate::from_ymd(y, m, d).and_hms(h, n, s));
-        let ymdhmsn =
-            |y, m, d, h, n, s, nano| Ok(NaiveDate::from_ymd(y, m, d).and_hms_nano(h, n, s, nano));
+        let ymdhms = |y, m, d, h, n, s| {
+            Ok(NaiveDate::from_ymd_opt(y, m, d).unwrap().and_hms_opt(h, n, s).unwrap())
+        };
+        let ymdhmsn = |y, m, d, h, n, s, nano| {
+            Ok(NaiveDate::from_ymd_opt(y, m, d).unwrap().and_hms_nano_opt(h, n, s, nano).unwrap())
+        };
 
         
         assert_eq!(parse!(), Err(NOT_ENOUGH));
@@ -1104,14 +1692,15 @@ mod tests {
 
         
         let max_days_from_year_1970 =
-            MAX_DATE.signed_duration_since(NaiveDate::from_ymd(1970, 1, 1));
-        let year_0_from_year_1970 =
-            NaiveDate::from_ymd(0, 1, 1).signed_duration_since(NaiveDate::from_ymd(1970, 1, 1));
+            NaiveDate::MAX.signed_duration_since(NaiveDate::from_ymd_opt(1970, 1, 1).unwrap());
+        let year_0_from_year_1970 = NaiveDate::from_ymd_opt(0, 1, 1)
+            .unwrap()
+            .signed_duration_since(NaiveDate::from_ymd_opt(1970, 1, 1).unwrap());
         let min_days_from_year_1970 =
-            MIN_DATE.signed_duration_since(NaiveDate::from_ymd(1970, 1, 1));
+            NaiveDate::MIN.signed_duration_since(NaiveDate::from_ymd_opt(1970, 1, 1).unwrap());
         assert_eq!(
             parse!(timestamp: min_days_from_year_1970.num_seconds()),
-            ymdhms(MIN_DATE.year(), 1, 1, 0, 0, 0)
+            ymdhms(NaiveDate::MIN.year(), 1, 1, 0, 0, 0)
         );
         assert_eq!(
             parse!(timestamp: year_0_from_year_1970.num_seconds()),
@@ -1119,7 +1708,7 @@ mod tests {
         );
         assert_eq!(
             parse!(timestamp: max_days_from_year_1970.num_seconds() + 86399),
-            ymdhms(MAX_DATE.year(), 12, 31, 23, 59, 59)
+            ymdhms(NaiveDate::MAX.year(), 12, 31, 23, 59, 59)
         );
 
         
@@ -1198,7 +1787,15 @@ mod tests {
         }
 
         let ymdhmsn = |y, m, d, h, n, s, nano, off| {
-            Ok(FixedOffset::east(off).ymd(y, m, d).and_hms_nano(h, n, s, nano))
+            Ok(FixedOffset::east_opt(off)
+                .unwrap()
+                .from_local_datetime(
+                    &NaiveDate::from_ymd_opt(y, m, d)
+                        .unwrap()
+                        .and_hms_nano_opt(h, n, s, nano)
+                        .unwrap(),
+                )
+                .unwrap())
         };
 
         assert_eq!(parse!(offset: 0), Err(NOT_ENOUGH));
@@ -1242,7 +1839,14 @@ mod tests {
             parse!(Utc;
                           year: 2014, ordinal: 365, hour_div_12: 0, hour_mod_12: 4,
                           minute: 26, second: 40, nanosecond: 12_345_678, offset: 0),
-            Ok(Utc.ymd(2014, 12, 31).and_hms_nano(4, 26, 40, 12_345_678))
+            Ok(Utc
+                .from_local_datetime(
+                    &NaiveDate::from_ymd_opt(2014, 12, 31)
+                        .unwrap()
+                        .and_hms_nano_opt(4, 26, 40, 12_345_678)
+                        .unwrap()
+                )
+                .unwrap())
         );
         assert_eq!(
             parse!(Utc;
@@ -1251,33 +1855,58 @@ mod tests {
             Err(IMPOSSIBLE)
         );
         assert_eq!(
-            parse!(FixedOffset::east(32400);
+            parse!(FixedOffset::east_opt(32400).unwrap();
                           year: 2014, ordinal: 365, hour_div_12: 0, hour_mod_12: 4,
                           minute: 26, second: 40, nanosecond: 12_345_678, offset: 0),
             Err(IMPOSSIBLE)
         );
         assert_eq!(
-            parse!(FixedOffset::east(32400);
+            parse!(FixedOffset::east_opt(32400).unwrap();
                           year: 2014, ordinal: 365, hour_div_12: 1, hour_mod_12: 1,
                           minute: 26, second: 40, nanosecond: 12_345_678, offset: 32400),
-            Ok(FixedOffset::east(32400).ymd(2014, 12, 31).and_hms_nano(13, 26, 40, 12_345_678))
+            Ok(FixedOffset::east_opt(32400)
+                .unwrap()
+                .from_local_datetime(
+                    &NaiveDate::from_ymd_opt(2014, 12, 31)
+                        .unwrap()
+                        .and_hms_nano_opt(13, 26, 40, 12_345_678)
+                        .unwrap()
+                )
+                .unwrap())
         );
 
         
         assert_eq!(
             parse!(Utc; timestamp: 1_420_000_000, offset: 0),
-            Ok(Utc.ymd(2014, 12, 31).and_hms(4, 26, 40))
+            Ok(Utc.with_ymd_and_hms(2014, 12, 31, 4, 26, 40).unwrap())
         );
         assert_eq!(parse!(Utc; timestamp: 1_420_000_000, offset: 32400), Err(IMPOSSIBLE));
         assert_eq!(
-            parse!(FixedOffset::east(32400); timestamp: 1_420_000_000, offset: 0),
+            parse!(FixedOffset::east_opt(32400).unwrap(); timestamp: 1_420_000_000, offset: 0),
             Err(IMPOSSIBLE)
         );
         assert_eq!(
-            parse!(FixedOffset::east(32400); timestamp: 1_420_000_000, offset: 32400),
-            Ok(FixedOffset::east(32400).ymd(2014, 12, 31).and_hms(13, 26, 40))
+            parse!(FixedOffset::east_opt(32400).unwrap(); timestamp: 1_420_000_000, offset: 32400),
+            Ok(FixedOffset::east_opt(32400)
+                .unwrap()
+                .with_ymd_and_hms(2014, 12, 31, 13, 26, 40)
+                .unwrap())
         );
 
         
+    }
+
+    #[test]
+    fn issue_551() {
+        use crate::Weekday;
+        let mut parsed = Parsed::new();
+
+        parsed.year = Some(2002);
+        parsed.week_from_mon = Some(22);
+        parsed.weekday = Some(Weekday::Mon);
+        assert_eq!(NaiveDate::from_ymd_opt(2002, 6, 3).unwrap(), parsed.to_naive_date().unwrap());
+
+        parsed.year = Some(2001);
+        assert_eq!(NaiveDate::from_ymd_opt(2001, 5, 28).unwrap(), parsed.to_naive_date().unwrap());
     }
 }
