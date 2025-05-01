@@ -412,6 +412,9 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   bool addHasSeenObjectEmulateUndefinedFuseDependency();
 
   
+  bool addHasSeenArrayExceedsInt32LengthFuseDependency();
+
+  
   
   bool hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted() {
     bool intact = gen->outerInfo().hasSeenObjectEmulateUndefinedFuseIntact();
@@ -419,6 +422,14 @@ class CodeGenerator final : public CodeGeneratorSpecific {
       bool tryToAdd = addHasSeenObjectEmulateUndefinedFuseDependency();
       
       return tryToAdd;
+    }
+    return false;
+  }
+
+  bool hasSeenArrayExceedsInt32LengthFuseIntactAndDependencyNoted() {
+    bool intact = gen->outerInfo().hasSeenArrayExceedsInt32LengthFuseIntact();
+    if (intact) {
+      return addHasSeenArrayExceedsInt32LengthFuseDependency();
     }
     return false;
   }
