@@ -203,13 +203,17 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
     
     
 
-    auto GetISizeConstraint = [this](const nsIFrame* aFrame) -> nscoord {
+    auto GetISizeConstraint = [this](const nsIFrame* aFrame,
+                                     bool* aFixed = nullptr) -> nscoord {
       nscoord limit = NS_UNCONSTRAINEDSIZE;
       const auto* pos = aFrame->StylePosition();
       const auto positionProperty = aFrame->StyleDisplay()->mPosition;
       if (auto size = nsLayoutUtils::GetAbsoluteSize(
               *pos->ISize(mWritingMode, positionProperty))) {
         limit = size.value();
+        if (aFixed) {
+          *aFixed = true;
+        }
       } else if (auto maxSize = nsLayoutUtils::GetAbsoluteSize(
                      *pos->MaxISize(mWritingMode, positionProperty))) {
         limit = maxSize.value();
@@ -225,28 +229,35 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
 
     
     const nsIFrame* cb = mFrame->GetContainingBlock();
-    nscoord cbLimit = GetISizeConstraint(cb);
+    bool isFixed = false;
+    nscoord cbLimit = GetISizeConstraint(cb, &isFixed);
+    if (isFixed) {
+      SetAvailableISize(cbLimit);
+    } else {
+      
+      
 
-    nscoord scLimit = NS_UNCONSTRAINEDSIZE;
-    
-    
-    
-    
-    if (!cb->IsScrollContainerFrame()) {
-      for (const nsIFrame* p = mFrame->GetParent(); p; p = p->GetParent()) {
-        if (p->IsScrollContainerFrame()) {
-          scLimit = GetISizeConstraint(p);
-          
-          
-          break;
+      nscoord scLimit = NS_UNCONSTRAINEDSIZE;
+      
+      
+      
+      
+      if (!cb->IsScrollContainerFrame()) {
+        for (const nsIFrame* p = mFrame->GetParent(); p; p = p->GetParent()) {
+          if (p->IsScrollContainerFrame()) {
+            scLimit = GetISizeConstraint(p);
+            
+            
+            break;
+          }
         }
       }
+
+      LogicalSize icbSize(mWritingMode, GetICBSize(aPresContext, mFrame));
+      nscoord icbLimit = icbSize.ISize(mWritingMode);
+
+      SetAvailableISize(std::min(icbLimit, std::min(scLimit, cbLimit)));
     }
-
-    LogicalSize icbSize(mWritingMode, GetICBSize(aPresContext, mFrame));
-    nscoord icbLimit = icbSize.ISize(mWritingMode);
-
-    SetAvailableISize(std::min(icbLimit, std::min(scLimit, cbLimit)));
   }
 
   
@@ -262,6 +273,10 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   mFlags.mDummyParentReflowInput = false;
   mFlags.mStaticPosIsCBOrigin = aFlags.contains(InitFlag::StaticPosIsCBOrigin);
   mFlags.mIOffsetsNeedCSSAlign = mFlags.mBOffsetsNeedCSSAlign = false;
+
+  
+  
+  mFlags.mOrthogonalCellFinalReflow = false;
 
   
   
@@ -2386,36 +2401,47 @@ void ReflowInput::InitConstraints(
         return false;
       }();
 
-      const bool shouldShrinkWrap = [&] {
-        if (isInlineLevel) {
-          return true;
-        }
-        if (mFlags.mIsReplaced && !alignCB->IsFlexOrGridContainer()) {
-          
-          
-          
-          
-          
-          
-          return true;
-        }
-        if (!alignCB->IsGridContainerFrame() &&
-            mWritingMode.IsOrthogonalTo(alignCB->GetWritingMode())) {
-          
-          
-          return true;
-        }
-        return false;
-      }();
-
-      if (shouldShrinkWrap) {
-        mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
-      }
-
-      if (cbSize.ISize(wm) == NS_UNCONSTRAINEDSIZE) {
+      if (mParentReflowInput->mFlags.mOrthogonalCellFinalReflow) {
         
         
-        cbSize.ISize(wm) = AvailableISize();
+        
+        const auto* cell = mFrame->GetParent();
+        MOZ_ASSERT(cell->IsTableCellFrame(),
+                   "unexpected mOrthogonalCellFinalReflow flag!");
+        cbSize = LogicalSize(wm, cell->GetPaddingRectRelativeToSelf().Size());
+        SetAvailableISize(cbSize.ISize(wm));
+      } else {
+        const bool shouldShrinkWrap = [&] {
+          if (isInlineLevel) {
+            return true;
+          }
+          if (mFlags.mIsReplaced && !alignCB->IsFlexOrGridContainer()) {
+            
+            
+            
+            
+            
+            
+            return true;
+          }
+          if (!alignCB->IsGridContainerFrame() &&
+              mWritingMode.IsOrthogonalTo(alignCB->GetWritingMode())) {
+            
+            
+            return true;
+          }
+          return false;
+        }();
+
+        if (shouldShrinkWrap) {
+          mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
+        }
+
+        if (cbSize.ISize(wm) == NS_UNCONSTRAINEDSIZE) {
+          
+          
+          cbSize.ISize(wm) = AvailableISize();
+        }
       }
 
       auto size =
