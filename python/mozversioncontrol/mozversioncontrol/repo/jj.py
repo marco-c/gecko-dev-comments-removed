@@ -299,21 +299,28 @@ class JujutsuRepository(Repository):
     def set_config(self, name, value):
         self._run_read_only("config", name, value)
 
-    def get_branch_nodes(self, head: Optional[str] = "@") -> List[str]:
+    def get_branch_nodes(
+        self,
+        head: Optional[str] = "@",
+        limit: Optional[int] = None,
+        follow: Optional[List[str]] = None,
+    ) -> List[str]:
         """Return a list of commit SHAs for nodes on the current branch, in order that they should be applied."""
         
-        return list(
-            reversed(
-                self._run_read_only(
-                    "log",
-                    "--no-graph",
-                    "-r",
-                    f"(::{head} & mutable()) ~ empty()",
-                    "-T",
-                    'commit_id ++ "\n"',
-                ).splitlines()
-            )
-        )
+        cmd = [
+            "log",
+            "--no-graph",
+            "-r",
+            f"(::{head} & mutable()) ~ empty()",
+            "-T",
+            'commit_id ++ "\n"',
+        ]
+        if limit is not None:
+            cmd.append(f"-n{limit}")
+        if follow is not None:
+            cmd.extend(follow)
+
+        return list(reversed(self._run_read_only(*cmd).splitlines()))
 
     def looks_like_change_id(self, id):
         return len(id) > 0 and all(letter >= "k" and letter <= "z" for letter in id)
