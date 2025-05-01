@@ -109,11 +109,18 @@ var database_check = async function () {
   root.containerOpen = false;
 
   
-  let favicon = await PlacesTestUtils.getFaviconForPage(TEST_FAVICON_PAGE_URL);
-  
-  Assert.notEqual(favicon.uri, null);
-  
-  
-  
-  Assert.equal(TEST_FAVICON_DATA_SIZE, favicon.rawData.length);
+  await new Promise(resolve => {
+    PlacesUtils.favicons.getFaviconDataForPage(
+      uri(TEST_FAVICON_PAGE_URL),
+      (aURI, aDataLen) => {
+        
+        Assert.notEqual(aURI, null);
+        
+        
+        
+        Assert.equal(TEST_FAVICON_DATA_SIZE, aDataLen);
+        resolve();
+      }
+    );
+  });
 };

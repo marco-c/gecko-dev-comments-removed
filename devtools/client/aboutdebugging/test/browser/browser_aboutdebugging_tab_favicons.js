@@ -46,7 +46,6 @@ add_task(async function () {
   
   
   
-  
   is(
     faviconTabIcon.src,
     EXPECTED_FAVICON,

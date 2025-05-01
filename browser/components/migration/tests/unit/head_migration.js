@@ -94,10 +94,26 @@ async function promiseMigration(
 
 
 
+
+
+async function getFaviconForPageURI(uri) {
+  let faviconURI = await new Promise(resolve => {
+    PlacesUtils.favicons.getFaviconDataForPage(uri, favURI => {
+      resolve(favURI);
+    });
+  });
+  return faviconURI;
+}
+
+
+
+
+
+
 async function assertFavicons(pageURIs) {
   for (let uri of pageURIs) {
-    let favicon = await PlacesUtils.favicons.getFaviconForPage(uri);
-    Assert.ok(favicon, `Got favicon for ${favicon.uri.spec}`);
+    let faviconURI = await getFaviconForPageURI(uri);
+    Assert.ok(faviconURI, `Got favicon for ${uri.spec}`);
   }
 }
 
@@ -112,12 +128,17 @@ async function assertFavicons(pageURIs) {
 
 
 async function assertFavicon(pageURI, expectedImageData, expectedMimeType) {
-  let result = await PlacesUtils.favicons.getFaviconForPage(
-    Services.io.newURI(pageURI)
-  );
+  let result = await new Promise(resolve => {
+    PlacesUtils.favicons.getFaviconDataForPage(
+      Services.io.newURI(pageURI),
+      (faviconURI, dataLen, imageData, mimeType) => {
+        resolve({ faviconURI, dataLen, imageData, mimeType });
+      }
+    );
+  });
   Assert.ok(!!result, `Got favicon for ${pageURI}`);
   Assert.equal(
-    result.rawData.join(","),
+    result.imageData.join(","),
     expectedImageData.join(","),
     "Image data is correct"
   );
