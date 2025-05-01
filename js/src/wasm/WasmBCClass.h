@@ -172,14 +172,11 @@ enum class PreBarrierKind {
 enum class PostBarrierKind {
   
   
-  Imprecise,
-  
-  
   
   Precise,
   
   
-  WholeCell,
+  Imprecise,
 };
 
 struct BranchIfRefSubtypeRegisters {
@@ -1360,18 +1357,6 @@ struct BaseCompiler final {
   
   
   
-
-  
-  
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] bool emitPostBarrierWholeCell(RegRef object, RegRef value,
-                                              RegPtr temp);
-
   
   
   
@@ -1382,22 +1367,9 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool emitPostBarrierEdgeImprecise(
+  [[nodiscard]] bool emitPostBarrierImprecise(
       const mozilla::Maybe<RegRef>& object, RegPtr valueAddr, RegRef value);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] bool emitPostBarrierEdgePrecise(
+  [[nodiscard]] bool emitPostBarrierPrecise(
       const mozilla::Maybe<RegRef>& object, RegPtr valueAddr, RegRef prevValue,
       RegRef value);
 
