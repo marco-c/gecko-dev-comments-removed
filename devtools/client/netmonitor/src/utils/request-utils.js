@@ -31,12 +31,12 @@ const {
   UPDATE_PROPS,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
 
-const CONTENT_MIME_TYPE_ABBREVIATIONS = {
-  ecmascript: "js",
-  javascript: "js",
-  "x-javascript": "js",
-  "event-stream": "eventsource",
-};
+const CONTENT_MIME_TYPE_ABBREVIATIONS = new Map([
+  ["ecmascript", "js"],
+  ["javascript", "js"],
+  ["x-javascript", "js"],
+  ["event-stream", "eventsource"],
+]);
 
 
 
@@ -186,8 +186,10 @@ function getAbbreviatedMimeType(mimeType) {
   if (!mimeType) {
     return "";
   }
-  const abbrevType = (mimeType.split(";")[0].split("/")[1] || "").split("+")[0];
-  return CONTENT_MIME_TYPE_ABBREVIATIONS[abbrevType] || abbrevType;
+  const abbrevType = (
+    mimeType.toLowerCase().split(";")[0].split("/")[1] || ""
+  ).split("+")[0];
+  return CONTENT_MIME_TYPE_ABBREVIATIONS.get(abbrevType) || abbrevType;
 }
 
 
