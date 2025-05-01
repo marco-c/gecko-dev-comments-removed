@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, # You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 import argparse
 import errno
@@ -57,6 +57,18 @@ warning heuristic.
 """
 
 
+class MissingL10nError(Exception):
+    """Raised when the l10n repositories haven’t been checked out."""
+
+    pass
+
+
+class NotAGitRepositoryError(Exception):
+    """Raised when the directory isn’t a git repository."""
+
+    pass
+
+
 class StoreDebugParamsAndWarnAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         sys.stderr.write(
@@ -89,7 +101,7 @@ def watch(command_context, verbose=False):
     if not command_context.substs.get("WATCHMAN", None):
         print(
             "mach watch requires watchman to be installed and found at configure time. See "
-            "https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Incremental_builds_with_filesystem_watching"  # noqa
+            "https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Incremental_builds_with_filesystem_watching"  
         )
         return 1
 
@@ -100,7 +112,7 @@ def watch(command_context, verbose=False):
     try:
         return daemon.watch()
     except KeyboardInterrupt:
-        # Suppress ugly stack trace when user hits Ctrl-C.
+        
         sys.exit(3)
 
 
@@ -120,32 +132,32 @@ def _cargo_config_yaml_schema():
 
     return Schema(
         {
-            # The name of the command (not checked for now, but maybe
-            #  later)
+            
+            
             Required("command"): All(str, starts_with_cargo),
-            # Whether `make` should stop immediately in case
-            # of error returned by the command. Default: False
+            
+            
             "continue_on_error": Boolean,
-            # Whether this command requires pre_export and export build
-            # targets to have run. Defaults to bool(cargo_build_flags).
+            
+            
             "requires_export": Boolean,
-            # Build flags to use.  If this variable is not
-            # defined here, the build flags are generated automatically and are
-            # the same as for `cargo build`. See available substitutions at the
-            # end.
+            
+            
+            
+            
             "cargo_build_flags": [str],
-            # Extra build flags to use. These flags are added
-            # after the cargo_build_flags both when they are provided or
-            # automatically generated. See available substitutions at the end.
+            
+            
+            
             "cargo_extra_flags": [str],
-            # Available substitutions for `cargo_*_flags`:
-            # * {arch}: architecture target
-            # * {crate}: current crate name
-            # * {directory}: Directory of the current crate within the source tree
-            # * {features}: Rust features (for `--features`)
-            # * {manifest}: full path of `Cargo.toml` file
-            # * {target}: `--lib` for library, `--bin CRATE` for executables
-            # * {topsrcdir}: Top directory of sources
+            
+            
+            
+            
+            
+            
+            
+            
         }
     )
 
@@ -227,7 +239,7 @@ def cargo(
         print(CARGO_CONFIG_NOT_FOUND_ERROR_MSG.format(subcommand=cargo_command))
         return 1
 
-    # print("yaml_config = ", yaml_config)
+    
 
     yaml_config.setdefault("continue_on_error", False)
     continue_on_error = continue_on_error or yaml_config["continue_on_error"] is True
@@ -242,8 +254,8 @@ def cargo(
 
     ret = 0
     if requires_export:
-        # This directory is created during export. If it's not there,
-        # export hasn't run already.
+        
+        
         deps = Path(command_context.topobjdir) / ".deps"
         if not deps.exists():
             build = command_context._spawn(BuildDriver)
@@ -267,14 +279,14 @@ def cargo(
         return ret
 
     if command_context.substs.get("commtopsrcdir"):
-        # Thunderbird uses its own gkrust, located in its own workspace.
+        
         gkrust_path = "comm/rust/gkrust"
         gtest_path = "comm/rust/gtest"
     else:
         gkrust_path = "toolkit/library/rust"
         gtest_path = "toolkit/library/gtest/rust"
 
-    # XXX duplication with `mach vendor rust`
+    
     crates_and_roots = {
         "gkrust": {"directory": gkrust_path, "library": True},
         "gkrust-gtest": {"directory": gtest_path, "library": True},
@@ -308,7 +320,7 @@ def cargo(
         ]
 
         directory = crate_info["directory"]
-        # you can use these variables in 'cargo_build_flags'
+        
         subst = {
             "arch": '"$(RUST_TARGET)"',
             "crate": crate,
@@ -367,8 +379,8 @@ def cargo(
 def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
     from mozbuild.bootstrap import bootstrap_toolchain
 
-    # Logging of commands enables logging from `bootstrap_toolchain` that we
-    # don't want to expose. Disable them temporarily.
+    
+    
     logger = logging.getLogger("gecko_taskgraph.generator")
     level = logger.getEffectiveLevel()
     logger.setLevel(logging.ERROR)
@@ -381,7 +393,7 @@ def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
     try:
         cargo = command_context.substs["CARGO"]
     except (BuildEnvironmentNotFoundException, KeyError):
-        # Default if this tree isn't configured.
+        
         from mozfile import which
 
         cargo = which("cargo", path=env["PATH"])
@@ -399,7 +411,7 @@ def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
     cargo_vet_dir = topsrcdir
 
     try:
-        # When run for Thunderbird, configure must run first
+        
         if override_config_toml_in := command_context.substs.get(
             "MOZ_OVERRIDE_CARGO_CONFIG"
         ):
@@ -413,8 +425,8 @@ def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
 
     locked = "--locked" in arguments
     if locked:
-        # The use of --locked requires .cargo/config.toml to exist, but other things,
-        # like cargo update, don't want it there, so remove it once we're done.
+        
+        
         shutil.copyfile(config_toml_in, config_toml)
     try:
         res = subprocess.run(
@@ -427,10 +439,10 @@ def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
         if locked:
             config_toml.unlink()
 
-    # When the function is invoked without stdout set (the default when running
-    # as a mach subcommand), exit with the returncode from cargo vet.
-    # When the function is invoked with stdout (direct function call), return
-    # the full result from subprocess.run.
+    
+    
+    
+    
     return res if stdout else res.returncode
 
 
@@ -568,9 +580,9 @@ def clobber(command_context, what, full=False):
             ]
         ret = subprocess.call(cmd, cwd=command_context.topsrcdir)
 
-        # We'll keep this around to delete the legacy "_virtualenv" dir folders
-        # so that people don't get confused if they see it and try to manipulate
-        # it but it has no effect.
+        
+        
+        
         shutil.rmtree(
             mozpath.join(command_context.topobjdir, "_virtualenvs"),
             ignore_errors=True,
@@ -581,9 +593,9 @@ def clobber(command_context, what, full=False):
 
         for specific_venv in virtualenv_dir.iterdir():
             if specific_venv.name == "mach":
-                # We can't delete the "mach" virtualenv with clobber
-                # since it's the one doing the clobbering. It always
-                # has to be removed manually.
+                
+                
+                
                 pass
             else:
                 shutil.rmtree(specific_venv, ignore_errors=True)
@@ -619,66 +631,66 @@ def show_log(command_context, log_file=None):
     if os.isatty(sys.stdout.fileno()):
         env = dict(os.environ)
         if "LESS" not in env:
-            # Sensible default flags if none have been set in the user environment.
+            
             env["LESS"] = "FRX"
         less = subprocess.Popen(
             ["less"], stdin=subprocess.PIPE, env=env, encoding="UTF-8"
         )
 
         try:
-            # Create a new logger handler with the stream being the stdin of our 'less'
-            # process so that we can pipe the logger output into 'less'
+            
+            
             less_handler = logging.StreamHandler(stream=less.stdin)
             less_handler.setFormatter(
                 command_context.log_manager.terminal_handler.formatter
             )
             less_handler.setLevel(command_context.log_manager.terminal_handler.level)
 
-            # replace the existing terminal handler with the new one for 'less' while
-            # still keeping the original one to set back later
+            
+            
             original_handler = command_context.log_manager.replace_terminal_handler(
                 less_handler
             )
 
-            # Save this value so we can set it back to the original value later
+            
             original_logging_raise_exceptions = logging.raiseExceptions
 
-            # We need to explicitly disable raising exceptions inside logging so
-            # that we can catch them here ourselves to ignore the ones we want
+            
+            
             logging.raiseExceptions = False
 
-            # Parses the log file line by line and streams
-            # (to less.stdin) the relevant records we want
+            
+            
             handle_log_file(command_context, log_file)
 
-            # At this point we've piped the entire log file to
-            # 'less', so we can close the input stream
+            
+            
             less.stdin.close()
 
-            # Wait for the user to manually terminate `less`
+            
             less.wait()
         except OSError as os_error:
-            # (POSIX)   errno.EPIPE: BrokenPipeError: [Errno 32] Broken pipe
-            # (Windows) errno.EINVAL: OSError:        [Errno 22] Invalid argument
+            
+            
             if os_error.errno == errno.EPIPE or os_error.errno == errno.EINVAL:
-                # If the user manually terminates 'less' before the entire log file
-                # is piped (without scrolling close enough to the bottom) we will get
-                # one of these errors (depends on the OS) because the logger will still
-                # attempt to stream to the now invalid less.stdin. To prevent a bunch
-                # of errors being shown after a user terminates 'less', we just catch
-                # the first of those exceptions here, and stop parsing the log file.
+                
+                
+                
+                
+                
+                
                 pass
             else:
                 raise
         except Exception:
             raise
         finally:
-            # Ensure these values are changed back to the originals, regardless of outcome
+            
             command_context.log_manager.replace_terminal_handler(original_handler)
             logging.raiseExceptions = original_logging_raise_exceptions
     else:
-        # Not in a terminal context, so just handle the log file with the
-        # default stream without piping it to a pager (less)
+        
+        
         handle_log_file(command_context, log_file)
 
 
@@ -703,7 +715,7 @@ def handle_log_file(command_context, log_file):
             command_context._logger.handle(record)
 
 
-# Provide commands for inspecting warnings.
+
 
 
 def database_path(command_context):
@@ -795,7 +807,7 @@ def list_warnings(command_context, directory=None, flags=None, report=None):
             return 1
 
     if flags:
-        # Flatten lists of flags.
+        
         flags = set(itertools.chain(*[flaglist.split(",") for flaglist in flags]))
 
     for warning in by_name:
@@ -980,7 +992,7 @@ def gtest(
     debugger,
     debugger_args,
 ):
-    # We lazy build gtest because it's slow to link
+    
     try:
         command_context.config_environment
     except Exception:
@@ -1060,14 +1072,14 @@ def gtest(
         if not args:
             return 1
 
-    # Use GTest environment variable to control test execution
-    # For details see:
-    # https://google.github.io/googletest/advanced.html#running-test-programs-advanced-options
+    
+    
+    
     gtest_env = {"GTEST_FILTER": gtest_filter}
 
-    # Note: we must normalize the path here so that gtest on Windows sees
-    # a MOZ_GMP_PATH which has only Windows dir seperators, because
-    # nsIFile cannot open the paths with non-Windows dir seperators.
+    
+    
+    
     xre_path = os.path.join(os.path.normpath(command_context.topobjdir), "dist", "bin")
     gtest_env["MOZ_XRE_DIR"] = xre_path
     gtest_env["MOZ_GMP_PATH"] = os.pathsep.join(
@@ -1124,7 +1136,7 @@ def gtest(
     from mozprocess import ProcessHandlerMixin
 
     def handle_line(job_id, line):
-        # Prepend the jobId
+        
         line = "[%d] %s" % (job_id + 1, line.strip())
         command_context.log(logging.INFO, "GTest", {"line": line}, "{line}")
 
@@ -1147,8 +1159,8 @@ def gtest(
         if status:
             exit_code = status
 
-    # Clamp error code to 255 to prevent overflowing multiple of
-    # 256 into 0
+    
+    
     if exit_code > 255:
         exit_code = 255
 
@@ -1167,14 +1179,14 @@ def android_gtest(
     libxul_path,
     install,
 ):
-    # setup logging for mozrunner
+    
     from mozlog.commandline import setup_logging
 
     format_args = {"level": command_context._mach_context.settings["test"]["level"]}
     default_format = command_context._mach_context.settings["test"]["format"]
     setup_logging("mach-gtest", {}, {default_format: sys.stdout}, format_args)
 
-    # ensure that a device is available and test app is installed
+    
     from mozrunner.devices.android_device import get_adb_path, verify_android_device
 
     verify_android_device(
@@ -1188,7 +1200,7 @@ def android_gtest(
             command_context.topobjdir, "dist", "bin", "gtest", "libxul.so"
         )
 
-    # run gtest via remotegtests.py
+    
     exit_code = 0
 
     path = os.path.join("testing", "gtest", "remotegtests.py")
@@ -1306,10 +1318,10 @@ def install(command_context, **kwargs):
     elif conditions.is_jsshell(command_context) and conditions.is_android_cpu(
         command_context
     ):
-        # Push a shell build to the phone.
-        # It would be nice to just use `ADBDevice``, but what's nice about the
-        # mozrunner android stuff is that it nicely will handle starting an emulator for you and
-        # doing the work there
+        
+        
+        
+        
         from mozrunner.devices.android_device import get_android_device
 
         [device, device_serial] = get_android_device(command_context)
@@ -1327,13 +1339,13 @@ def install(command_context, **kwargs):
             "Installing shell binary and support libarary to /data/local/tmp",
         )
 
-        # The path to the binary and libraries
+        
         distpath = command_context.topobjdir + "/dist/bin/"
 
-        # Don't need to push much.
+        
         paths_to_push = [distpath + "js", distpath + "libmozglue.so"]
 
-        # Push
+        
         for path in paths_to_push:
             device.push(path, "/data/local/tmp")
 
@@ -1687,12 +1699,12 @@ def _run_android(
     if not metadata.activity_name:
         raise RuntimeError(f"Application not recognized: {app}")
 
-    # If we want to debug an existing process, we implicitly do not want
-    # to kill it and pave over its installation with a new one.
+    
+    
     if debug and use_existing_process:
         no_install = True
 
-    # `verify_android_device` respects `DEVICE_SERIAL` if it is set and sets it otherwise.
+    
     verify_android_device(
         command_context,
         app=metadata.package_name,
@@ -1709,8 +1721,8 @@ def _run_android(
     device = _get_device(command_context.substs, device_serial=device_serial)
 
     if debug:
-        # This will terminate any existing processes, so we skip it when we
-        # want to attach to an existing one.
+        
+        
         if not use_existing_process:
             command_context.log(
                 logging.INFO,
@@ -1720,7 +1732,7 @@ def _run_android(
             )
             device.shell("am set-debug-app -w --persistent %s" % metadata.package_name)
     else:
-        # Make sure that the app doesn't block waiting for jdb
+        
         device.shell("am clear-debug-app")
 
     if not debug or not use_existing_process:
@@ -1728,9 +1740,9 @@ def _run_android(
         if profile:
             if os.path.isdir(profile):
                 host_profile = profile
-                # Always /data/local/tmp, rather than `device.test_root`, because
-                # GeckoView only takes its configuration file from /data/local/tmp,
-                # and we want to follow suit.
+                
+                
+                
                 target_profile = f"/data/local/tmp/{metadata.package_name}-profile"
                 device.rm(target_profile, recursive=True, force=True)
                 device.push(host_profile, target_profile)
@@ -1755,8 +1767,8 @@ def _run_android(
 
             args = ["--profile", shlex_quote(target_profile)]
 
-        # FIXME: When android switches to using Fission by default,
-        # MOZ_FORCE_DISABLE_FISSION will need to be configured correctly.
+        
+        
         if enable_fission:
             env.append("MOZ_FORCE_ENABLE_FISSION=1")
 
@@ -1779,8 +1791,8 @@ def _run_android(
             )
             device.stop_application(metadata.package_name)
 
-        # We'd prefer to log the actual `am start ...` command, but it's not trivial
-        # to wire the device's logger to mach's logger.
+        
+        
         command_context.log(
             logging.INFO,
             "run",
@@ -1818,7 +1830,7 @@ def _run_android(
         )
         return 1
 
-    # Give lldb-server a chance to start
+    
     command_context.log(
         logging.INFO,
         "run",
@@ -1831,20 +1843,20 @@ def _run_android(
 
         def _is_geckoview_process(proc_name, pkg_name):
             if not proc_name.startswith(pkg_name):
-                # Definitely not our package
+                
                 return False
             if len(proc_name) == len(pkg_name):
-                # Parent process from our package
+                
                 return True
             if proc_name[len(pkg_name)] == ":":
-                # Child process from our package
+                
                 return True
-            # Process name is a prefix of our package name
+            
             return False
 
-        # If we're going to attach to an existing process, we need to know
-        # who we're attaching to. Obtain a list of all processes associated
-        # with our desired app.
+        
+        
+        
         proc_list = [
             proc[:-1]
             for proc in device.get_process_list()
@@ -1862,7 +1874,7 @@ def _run_android(
         elif len(proc_list) == 1:
             pid = proc_list[0][0]
         else:
-            # Prompt the user to determine which process we should use
+            
             entries = [
                 "%2d: %6d %s" % (n, p[0], p[1])
                 for n, p in enumerate(proc_list, start=1)
@@ -1879,8 +1891,8 @@ def _run_android(
                 )
             pid = proc_list[response - 1][0]
     else:
-        # We're not using an existing process, so there should only be our
-        # parent process at this time.
+        
+        
         pids = device.pidof(app_name=metadata.package_name)
         if len(pids) != 1:
             command_context.log(
@@ -1914,16 +1926,16 @@ def _run_android(
         )
         return 0
 
-    # Beyond this point we want to be able to automatically clean up after ourselves,
-    # so we enter the following try block.
+    
+    
     try:
         command_context.log(
             logging.INFO, "run", {"msg": "Starting debugger..."}, "{msg}"
         )
 
         if not use_existing_process:
-            # The app is waiting for jdb to attach and will not continue running
-            # until we do so.
+            
+            
             def _jdb_ping(local_jdb_port):
                 java_bin_path = os.path.dirname(command_context.substs["JAVA"])
                 jdb_path = os.path.join(java_bin_path, "jdb")
@@ -1934,15 +1946,15 @@ def _run_android(
                     stderr=subprocess.DEVNULL,
                     encoding="utf-8",
                 )
-                # Wait a bit to provide enough time for jdb and lldb to connect
-                # to the debuggee
+                
+                
                 time.sleep(5)
-                # NOTE: jdb cannot detach while the debuggee is frozen in lldb,
-                # so its process might not necessarily exit immediately once the
-                # quit command has been issued.
+                
+                
+                
                 jdb_process.communicate(input="quit\n")
 
-            # We run this in the background while lldb attaches in the foreground
+            
             from threading import Thread
 
             jdb_thread = Thread(target=_jdb_ping, args=[local_jdb_port])
@@ -1965,15 +1977,15 @@ process attach {continue_flag}-p {pid!s}
         if use_existing_process:
             continue_flag = ""
         else:
-            # Tell lldb to continue after attaching; instead we'll break at
-            # the initial SEGVHandler, similarly to how things work when we
-            # attach using Android Studio. Doing this gives Android a chance
-            # to dismiss the "Waiting for Debugger" dialog.
+            
+            
+            
+            
             continue_flag = "-c "
 
         try:
-            # Write out our lldb startup commands to a temp file. We'll pass its
-            # name to lldb on its command line.
+            
+            
             with tempfile.NamedTemporaryFile(
                 mode="wt", encoding="utf-8", newline="\n", delete=False
             ) as tmp:
@@ -2033,8 +2045,8 @@ def _run_jsshell(command_context, params, debug, debugger, debugger_args):
         import mozdebug
 
         if not debugger:
-            # No debugger name was provided. Look for the default ones on
-            # current OS.
+            
+            
             debugger = mozdebug.get_default_debugger_name(
                 mozdebug.DebuggerSearch.KeepLooking
             )
@@ -2046,7 +2058,7 @@ def _run_jsshell(command_context, params, debug, debugger, debugger_args):
             print("Could not find a suitable debugger in your PATH.")
             return 1
 
-        # Prepend the debugger args.
+        
         args = [debuggerInfo.path] + debuggerInfo.args + args
 
     return command_context.run_process(
@@ -2192,16 +2204,16 @@ def _run_desktop(
 
     some_debugging_option = debug or debugger or debugger_args
 
-    # By default, because Firefox is a GUI app, on Windows it will not
-    # 'create' a console to which stdout/stderr is printed. This means
-    # printf/dump debugging is invisible. We default to adding the
-    # -attach-console argument to fix this. We avoid this if we're launched
-    # under a debugger (which can do its own picking up of stdout/stderr).
-    # We also check for both the -console and -attach-console flags:
-    # -console causes Firefox to create a separate window;
-    # -attach-console just ends us up with output that gets relayed via mach.
-    # We shouldn't override the user using -console. For more info, see
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1257155
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (
         sys.platform.startswith("win")
         and not some_debugging_option
@@ -2236,8 +2248,8 @@ def _run_desktop(
         import mozdebug
 
         if not debugger:
-            # No debugger name was provided. Look for the default ones on
-            # current OS.
+            
+            
             debugger = mozdebug.get_default_debugger_name(
                 mozdebug.DebuggerSearch.KeepLooking
             )
@@ -2249,8 +2261,8 @@ def _run_desktop(
             print("Could not find a suitable debugger in your PATH.")
             return 1
 
-        # Parameters come from the CLI. We need to convert them before
-        # their use.
+        
+        
         if debugger_args:
             from mozbuild import shellutil
 
@@ -2263,7 +2275,7 @@ def _run_desktop(
                 print("(We can't handle the %r character.)" % e.char)
                 return 1
 
-        # Prepend the debugger args.
+        
         args = [debuggerInfo.path] + debuggerInfo.args + args
 
     if dmd:
@@ -2317,8 +2329,8 @@ def environment(command_context, format, output=None, verbose=False):
     ]
 
     if output:
-        # We want to preserve mtimes if the output file already exists
-        # and the content hasn't changed.
+        
+        
         from mozbuild.util import FileAvoidWrite
 
         with FileAvoidWrite(output) as out:
@@ -2858,8 +2870,8 @@ def repackage_msi(
 @CommandArgument(
     "--publisher",
     type=str,
-    # This default is baked into enough places under `browser/` that we need
-    # not extract a constant.
+    
+    
     default="CN=Mozilla Corporation, OU=MSIX Packaging",
     required=False,
     help="The Package/Identity/Publisher string to use in the App Manifest."
@@ -2952,7 +2964,7 @@ def repackage_msix(
         return 1
 
     if not channel:
-        # Only try to guess the channel when this is clearly a local build.
+        
         if input.endswith("bin"):
             channel = firefox_to_msix_channel.get(
                 command_context.defines.get("MOZ_UPDATE_CHANNEL"), "unofficial"
@@ -2967,7 +2979,7 @@ def repackage_msix(
             return 1
 
     if not arch:
-        # Only try to guess the arch when this is clearly a local build.
+        
         if input.endswith("bin"):
             if command_context.substs["TARGET_CPU"] in ("x86", "x86_64", "aarch64"):
                 arch = command_context.substs["TARGET_CPU"]
@@ -2992,8 +3004,8 @@ def repackage_msix(
             )
             return 1
 
-        # Support `Add-AppxPackage ... -AllowUnsigned` on Windows 11.  See
-        # https://github.com/MicrosoftDocs/msix-docs/blob/769dee9364df2b6fd0b78000774f8d14de8fe814/msix-src/package/unsigned-package.md.
+        
+        
         publisher = f"{publisher}, OID.2.25.311729368913984317654407730594956997722=1"
 
     output = repackage_msix(
@@ -3007,7 +3019,7 @@ def repackage_msix(
         publisher_display_name=publisher_display_name,
         version=version,
         distribution_dirs=distribution_dirs,
-        # Configure this run.
+        
         force=True,
         verbose=verbose,
         log=command_context.log,
@@ -3161,7 +3173,7 @@ def repackage_snap(
         unpack_tarball,
     )
 
-    # Validate arguments / environment
+    
     if not snapcraft:
         snapcraft = which("snapcraft", extra_search_dirs=["/snap/bin"])
 
@@ -3205,15 +3217,15 @@ def repackage_snap(
         )
         return 1
 
-    # Set up the staging dir and unpack or copy the payload
+    
     if input_pkg:
-        # This mode of operation isn't about the current build, so the
-        # package is staged in a secure temp dir from mkdtemp instead
-        # of something under the objdir.  But when snapcraft runs
-        # itself under multipass (the default), the VM will be rebuilt
-        # whenever the staging dir changes, and this means it will
-        # change every time.  So that's not ideal, but it's not clear
-        # how to improve the experience.
+        
+        
+        
+        
+        
+        
+        
         snapdir = tempfile.mkdtemp(dir=tmp_dir, prefix="snap-repackage-")
         command_context.log(
             logging.INFO,
@@ -3225,8 +3237,8 @@ def repackage_snap(
             input_pkg, os.path.join(snapdir, "source", "usr", "lib", "firefox")
         )
     else:
-        # Deploy the current build for packaging, into the directory
-        # where snapcraft will expect it
+        
+        
         command_context._run_make(
             directory=".",
             target="stage-package",
@@ -3234,7 +3246,7 @@ def repackage_snap(
         )
         snapdir = os.path.join(command_context.distdir, "snap")
 
-    # Handle the most common cases of arch:
+    
     mozarch = command_context.substs["TARGET_CPU"]
     if mozarch == "x86":
         arch = "i386"
@@ -3252,7 +3264,7 @@ def repackage_snap(
         )
         return 1
 
-    # Create the package
+    
     snappath = repackage_snap(
         log=command_context.log,
         srcdir=command_context.topsrcdir,
@@ -3276,7 +3288,7 @@ def repackage_snap(
 
         return 0
 
-    # Cleanup: move the output, delete temp files, inform the user
+    
     if output:
         if os.path.isdir(output):
             output = os.path.join(output, os.path.basename(snappath))
@@ -3359,25 +3371,25 @@ def repackage_snap_install(command_context, snap_file, snap_name, sudo=None):
             )
             return 1
 
-    # Install
+    
     command_context.run_process(
-        # The `--dangerous` flag skips signature checks but doesn't
-        # turn off sandboxing (contrast `--devmode`), because if you
-        # need to test under Snap instead of normally, it may be
-        # because their sandbox broke something.
+        
+        
+        
+        
         [sudo, "snap", "install", "--dangerous", snap_file],
         pass_thru=True,
     )
 
-    # Fix up connections if needed
-    # (Ideally this wouldn't hard-code the app name....)
+    
+    
     for conn in missing_connections(snap_name):
         command_context.run_process(
             [sudo, "snap", "connect", conn],
             pass_thru=True,
         )
 
-    # A little help
+    
     command_context.log(
         logging.INFO,
         "repackage-snap-install-howto-run",
@@ -3434,9 +3446,9 @@ def repackage_desktop_file(
 
         from mozbuild.repackaging.desktop_file import generate_browser_desktop_entry
 
-        # This relies in existing build variables usage inherited from the
-        # debian repackage code that serves the same purpose on Flatpak, so
-        # it is just directly re-used here.
+        
+        
+        
         build_variables = {
             "PKG_NAME": release_product,
             "DBusActivatable": "false",
@@ -3476,6 +3488,46 @@ def repackage_desktop_file(
         desktop_file.write(desktop)
 
 
+def _ensure_l10n_central(command_context):
+    
+    
+    
+    
+    l10n_base_dir = Path(command_context.substs["L10NBASEDIR"])
+    moz_automation = os.environ.get("MOZ_AUTOMATION")
+    if moz_automation:
+        if not l10n_base_dir.exists():
+            raise MissingL10nError(
+                f"Automation requires l10n repositories to be checked out: {l10n_base_dir}"
+            )
+
+    nightly_build = command_context.substs["NIGHTLY_BUILD"]
+    if nightly_build:
+        git = os.environ.get("GIT", "git")
+        if not l10n_base_dir.exists():
+            l10n_base_dir.mkdir(parents=True)
+            subprocess.run(
+                [
+                    git,
+                    "clone",
+                    "https://github.com/mozilla-l10n/firefox-l10n.git",
+                    str(l10n_base_dir),
+                    "--depth",
+                    "1",
+                ],
+                check=True,
+            )
+        if not moz_automation:
+            if (l10n_base_dir / ".git").exists():
+                subprocess.run(
+                    [git, "-C", str(l10n_base_dir), "pull", "--quiet"], check=True
+                )
+            else:
+                raise NotAGitRepositoryError(
+                    f"Directory is not a git repository: {l10n_base_dir}"
+                )
+
+
 @Command(
     "package-multi-locale",
     category="post-build",
@@ -3506,11 +3558,13 @@ def package_l10n(command_context, verbose=False, locales=[]):
     locales = sorted(locale for locale in locales if locale != "en-US")
 
     append_env = {
-        # We are only (re-)packaging, we don't want to (re-)build
-        # anything inside Gradle.
+        
+        
         "GRADLE_INVOKED_WITHIN_MACH_BUILD": "1",
         "MOZ_CHROME_MULTILOCALE": " ".join(locales),
     }
+
+    _ensure_l10n_central(command_context)
 
     command_context.log(
         logging.INFO,
@@ -3577,10 +3631,10 @@ def package_l10n(command_context, verbose=False, locales=[]):
             cwd=mozpath.join(command_context.topsrcdir),
         )
 
-        # This is tricky: most Android build commands will regenerate the
-        # omnijar, producing a `res/multilocale.txt` that does not contain the
-        # set of locales packaged by this command.  To avoid regenerating, we
-        # set a special environment variable.
+        
+        
+        
+        
         print(
             "Execute `env MOZ_CHROME_MULTILOCALE='{}' ".format(
                 append_env["MOZ_CHROME_MULTILOCALE"]
@@ -3605,8 +3659,8 @@ def _prepend_debugger_args(args, debugger, debugger_args):
     import mozdebug
 
     if not debugger:
-        # No debugger name was provided. Look for the default ones on
-        # current OS.
+        
+        
         debugger = mozdebug.get_default_debugger_name(
             mozdebug.DebuggerSearch.KeepLooking
         )
@@ -3618,8 +3672,8 @@ def _prepend_debugger_args(args, debugger, debugger_args):
         print("Could not find a suitable debugger in your PATH.")
         return None
 
-    # Parameters come from the CLI. We need to convert them before
-    # their use.
+    
+    
     if debugger_args:
         from mozbuild import shellutil
 
@@ -3630,7 +3684,7 @@ def _prepend_debugger_args(args, debugger, debugger_args):
             print("(We can't handle the %r character.)" % e.char)
             return None
 
-    # Prepend the debugger args.
+    
     args = [debuggerInfo.path] + debuggerInfo.args + args
     return args
 
