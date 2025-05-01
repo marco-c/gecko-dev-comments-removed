@@ -29,25 +29,17 @@ let uniqueFaviconId = 0;
 
 
 
-
-
-function checkFaviconDataForPage(
+async function checkFaviconDataForPage(
   aPageURI,
   aExpectedMimeType,
-  aExpectedData,
-  aCallback
+  aExpectedData
 ) {
-  PlacesUtils.favicons.getFaviconDataForPage(
-    aPageURI,
-    async function (aURI, aDataLen, aData, aMimeType) {
-      Assert.equal(aExpectedMimeType, aMimeType);
-      if (aExpectedData) {
-        Assert.ok(compareArrays(aExpectedData, aData));
-      }
-      await check_guid_for_uri(aPageURI);
-      aCallback();
-    }
-  );
+  let favicon = await PlacesUtils.favicons.getFaviconForPage(aPageURI);
+  Assert.equal(aExpectedMimeType, favicon.mimeType);
+  if (aExpectedData) {
+    Assert.ok(compareArrays(aExpectedData, favicon.rawData));
+  }
+  await check_guid_for_uri(aPageURI);
 }
 
 
@@ -56,17 +48,9 @@ function checkFaviconDataForPage(
 
 
 
-
-
-function checkFaviconMissingForPage(aPageURI, aCallback) {
-  PlacesUtils.favicons.getFaviconURLForPage(aPageURI, function (aURI) {
-    Assert.ok(aURI === null);
-    aCallback();
-  });
-}
-
-function promiseFaviconMissingForPage(aPageURI) {
-  return new Promise(resolve => checkFaviconMissingForPage(aPageURI, resolve));
+async function checkFaviconMissingForPage(aPageURI) {
+  let favicon = await PlacesUtils.favicons.getFaviconForPage(aPageURI);
+  Assert.ok(!favicon);
 }
 
 function promiseFaviconChanged(aExpectedPageURI, aExpectedFaviconURI) {
