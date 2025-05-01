@@ -128,6 +128,10 @@ add_task(async function testBreakpointsPanePersistOnPauseToggle() {
 
   await resume(dbg);
 
+  
+  await waitForPaused(dbg, "simple3.js");
+  await resume(dbg);
+
   is(getPaneElements(dbg).length, 2, "Breakpoints pane is still open");
 });
 
