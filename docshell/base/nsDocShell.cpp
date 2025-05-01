@@ -9387,6 +9387,19 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
+  if (IsSubframe()) {
+    if (auto* iframe = HTMLIFrameElement::FromNodeOrNull(
+            mBrowsingContext->GetEmbedderElement())) {
+      
+      if (!(aLoadState->LoadType() & LOAD_RELOAD_NORMAL)) {
+        iframe->CancelLazyLoading(true );
+      }
+    }
+  }
+
+  
+  
+  
   if (sameDocument) {
     nsresult rv = HandleSameDocumentNavigation(
         aLoadState, sameDocumentNavigationState, sameDocument);
@@ -10192,15 +10205,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     MOZ_ASSERT(contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
                    contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME,
                "DoURILoad thinks this is a frame and InternalLoad does not");
-
-    if (auto* iframe = HTMLIFrameElement::FromNodeOrNull(
-            mBrowsingContext->GetEmbedderElement())) {
-      
-      if (!(aLoadState->LoadType() & LOAD_RELOAD_NORMAL)) {
-        iframe->CancelLazyLoading(true );
-      }
-    }
-
     if (StaticPrefs::dom_block_external_protocol_in_iframes()) {
       
       if (nsContentUtils::IsExternalProtocol(aLoadState->URI())) {
