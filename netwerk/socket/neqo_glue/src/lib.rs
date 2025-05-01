@@ -285,6 +285,7 @@ impl NeqoHttp3Conn {
             .idle_timeout(Duration::from_secs(idle_timeout.into()))
             
             .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
+            
             .mlkem(false);
 
         
