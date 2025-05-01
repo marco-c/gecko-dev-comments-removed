@@ -602,10 +602,17 @@ add_task(async function test_history_hover_buttons() {
   const rows = lists[0].rowEls;
 
   info("Open the first link.");
+  
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ focusableRule: false });
   await waitForPageLoadTask(
     () => EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow),
     URLs[1]
   );
+  AccessibilityUtils.resetEnv();
 
   info("Remove the first entry.");
   const promiseRemoved = PlacesTestUtils.waitForNotification("page-removed");
