@@ -1703,7 +1703,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onbeforeinput", insecureContext: true },
   
-  { name: "onbeforematch", insecureContext: true, nightly: true },
+  { name: "onbeforematch", insecureContext: true },
   
   { name: "onbeforeprint", insecureContext: true },
   
