@@ -7,7 +7,7 @@
 
 
 
-var interventions, shims;
+let interventions, shims;
 
 const AVAILABLE_INTERVENTIONS =
 #include data/interventions.json
