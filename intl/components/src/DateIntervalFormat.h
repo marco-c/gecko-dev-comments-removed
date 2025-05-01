@@ -17,6 +17,7 @@
 
 namespace mozilla::intl {
 class Calendar;
+class DateTimeFormat;
 
 using AutoFormattedDateInterval =
     AutoFormattedResult<UFormattedDateInterval, udtitvfmt_openResult,
@@ -76,6 +77,21 @@ class DateIntervalFormat final {
 
 
   ICUResult TryFormatDateTime(double aStart, double aEnd,
+                              AutoFormattedDateInterval& aFormatted,
+                              bool* aPracticallyEqual) const;
+
+  
+
+
+
+
+
+
+
+
+
+  ICUResult TryFormatDateTime(double aStart, double aEnd,
+                              const DateTimeFormat* aDateTimeFormat,
                               AutoFormattedDateInterval& aFormatted,
                               bool* aPracticallyEqual) const;
 
