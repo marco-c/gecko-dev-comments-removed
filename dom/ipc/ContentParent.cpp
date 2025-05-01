@@ -6171,6 +6171,22 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
     mozilla::glean::perf::PageLoadExtra&& aPageLoadEventExtra) {
   
   aPageLoadEventExtra.usingWebdriver = mozilla::Some(WebdriverRunning());
+
+#if defined(XP_WIN)
+  
+  
+  
+  
+  
+  nsresult rv;
+  nsCOMPtr<nsIPropertyBag2> infoService =
+      mozilla::components::SystemInfo::Service();
+  bool hasSSD;
+  rv = infoService->GetPropertyAsBool(u"hasSSD"_ns, &hasSSD);
+  if (NS_SUCCEEDED(rv)) {
+    aPageLoadEventExtra.hasSsd = Some(hasSSD);
+  }
+#endif
   mozilla::glean::perf::page_load.Record(mozilla::Some(aPageLoadEventExtra));
 
   
