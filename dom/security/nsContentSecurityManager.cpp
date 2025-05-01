@@ -1499,13 +1499,6 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
   return NS_OK;
 }
 
-static void AddLoadFlags(nsIRequest* aRequest, nsLoadFlags aNewFlags) {
-  nsLoadFlags flags;
-  aRequest->GetLoadFlags(&flags);
-  flags |= aNewFlags;
-  aRequest->SetLoadFlags(flags);
-}
-
 
 
 
@@ -1515,28 +1508,6 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  uint32_t cookiePolicy = loadInfo->GetCookiePolicy();
-  if (cookiePolicy == nsILoadInfo::SEC_COOKIES_SAME_ORIGIN) {
-    
-    MOZ_ASSERT(loadInfo->GetExternalContentPolicyType() !=
-               ExtContentPolicy::TYPE_DOCUMENT);
-    nsIPrincipal* loadingPrincipal = loadInfo->GetLoadingPrincipal();
-
-    
-    
-    rv = loadingPrincipal->CheckMayLoad(uri, false);
-    if (NS_FAILED(rv)) {
-      AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
-    }
-  } else if (cookiePolicy == nsILoadInfo::SEC_COOKIES_OMIT) {
-    AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
-  }
-
-  if (!CrossOriginEmbedderPolicyAllowsCredentials(aChannel)) {
-    AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
-  }
 
   nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
 
@@ -1684,6 +1655,35 @@ bool nsContentSecurityManager::IsCompatibleWithCrossOriginIsolation(
     nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) {
   return aPolicy == nsILoadInfo::EMBEDDER_POLICY_CREDENTIALLESS ||
          aPolicy == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP;
+}
+
+
+bool nsContentSecurityManager::ShouldAddCookies(nsIChannel* aChannel) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  uint32_t cookiePolicy = loadInfo->GetCookiePolicy();
+  if (cookiePolicy == nsILoadInfo::SEC_COOKIES_SAME_ORIGIN) {
+    
+    MOZ_ASSERT(loadInfo->GetExternalContentPolicyType() !=
+               ExtContentPolicy::TYPE_DOCUMENT);
+    nsIPrincipal* loadingPrincipal = loadInfo->GetLoadingPrincipal();
+
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    
+    
+    rv = loadingPrincipal->CheckMayLoad(uri, false);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+  } else if (cookiePolicy == nsILoadInfo::SEC_COOKIES_OMIT) {
+    return false;
+  }
+
+  return CrossOriginEmbedderPolicyAllowsCredentials(aChannel);
 }
 
 
