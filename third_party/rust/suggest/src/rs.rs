@@ -42,8 +42,6 @@ use serde_json::{Map, Value};
 
 use crate::{error::Error, query::full_keywords_to_fts_content, Result};
 
-use rusqlite::{types::ToSqlOutput, ToSql};
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Collection {
     Amp,
@@ -457,19 +455,10 @@ pub(crate) struct DownloadedPocketSuggestion {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(untagged)]
-pub enum DownloadedYelpLocationSign {
-    V1 { keyword: String },
-    V2(String),
-}
-impl ToSql for DownloadedYelpLocationSign {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let keyword = match self {
-            DownloadedYelpLocationSign::V1 { keyword } => keyword,
-            DownloadedYelpLocationSign::V2(keyword) => keyword,
-        };
-        Ok(ToSqlOutput::from(keyword.as_str()))
-    }
+pub(crate) struct DownloadedYelpLocationSign {
+    pub keyword: String,
+    #[serde(rename = "needLocation")]
+    pub need_location: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
