@@ -54,7 +54,6 @@ const LinkAndTarget ianaLinksCanonicalizedDifferentlyByICU[] = {
     { "America/Louisville", "America/Kentucky/Louisville" }, 
     { "America/Mendoza", "America/Argentina/Mendoza" }, 
     { "America/Rosario", "America/Argentina/Cordoba" }, 
-    { "Antarctica/South_Pole", "Antarctica/McMurdo" }, 
     { "Asia/Calcutta", "Asia/Kolkata" }, 
     { "Asia/Katmandu", "Asia/Kathmandu" }, 
     { "Asia/Rangoon", "Asia/Yangon" }, 
