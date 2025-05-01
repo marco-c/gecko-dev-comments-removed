@@ -642,7 +642,7 @@ class ElementStyle {
 
       
       if (filterCondition) {
-        for (const textProp of rule.textProps.slice(0).reverse()) {
+        for (const textProp of rule.textProps.toReversed()) {
           if (textProp.enabled) {
             textProps.push(textProp);
           }
