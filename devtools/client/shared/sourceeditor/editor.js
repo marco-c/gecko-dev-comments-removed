@@ -1171,9 +1171,6 @@ class Editor extends EventEmitter {
 
 
 
-
-
-
   setLineContentMarker(marker) {
     const cm = editors.get(this);
     
@@ -1219,37 +1216,31 @@ class Editor extends EventEmitter {
         line,
         column,
         isFirstNonSpaceColumn,
+        positionData,
         markerId,
         createElementNode,
-        getMarkerEqualityValue,
+        customEq,
       }) {
         super();
         this.line = line;
         this.column = column;
         this.isFirstNonSpaceColumn = isFirstNonSpaceColumn;
+        this.positionData = positionData;
         this.markerId = markerId;
-        this.equalityValue = getMarkerEqualityValue
-          ? getMarkerEqualityValue(line, column)
-          : {};
+        this.customEq = customEq;
         this.toDOM = () =>
-          createElementNode(line, column, isFirstNonSpaceColumn);
+          createElementNode(line, column, isFirstNonSpaceColumn, positionData);
       }
 
       eq(widget) {
-        return (
+        let eq =
           this.line == widget.line &&
           this.column == widget.column &&
-          this.markerId == widget.markerId &&
-          this.#isCustomValueEqual(widget)
-        );
-      }
-
-      #isCustomValueEqual(widget) {
-        return Object.keys(this.equalityValue).every(
-          key =>
-            widget.equalityValue.hasOwnProperty(key) &&
-            widget.equalityValue[key] === this.equalityValue[key]
-        );
+          this.markerId == widget.markerId;
+        if (this.positionData && this.customEq) {
+          eq = eq && this.customEq(this.positionData, widget.positionData);
+        }
+        return eq;
       }
     }
 
@@ -1314,9 +1305,10 @@ class Editor extends EventEmitter {
                 line: position.line,
                 column: position.column,
                 isFirstNonSpaceColumn,
+                positionData: position.positionData,
                 markerId: marker.id,
                 createElementNode: marker.createPositionElementNode,
-                getMarkerEqualityValue: marker.getMarkerEqualityValue,
+                customEq: marker.customEq,
               }),
               
               
@@ -1482,12 +1474,15 @@ class Editor extends EventEmitter {
   }
 
   /**
-   * This adds a marker used to decorate token / content at
-   * a specific position (defined by a line and column).
+   * This adds a marker used to decorate token / content at a specific position .
    * @param {Object} marker
    * @param {String} marker.id
-   * @param {Array} marker.positions
-   * @param {Function} marker.createPositionElementNode
+   * @param {Array<Object>} marker.positions - This includes the line / column and any optional positionData which defines each position.
+   * @param {Function} marker.createPositionElementNode - This describes how to render the marker.
+   *                                                      The position data (i.e line, column and positionData) are passed as arguments.
+   * @param {Function} marker.customEq - A custom function to determine the equality of the marker. This allows the user define special conditions
+   *                                     for when position details have changed and an update of the marker should happen.
+   *                                     The positionData defined for the current and the previous instance of the marker are passed as arguments.
    */
   setPositionContentMarker(marker) {
     const cm = editors.get(this);
