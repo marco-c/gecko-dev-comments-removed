@@ -309,12 +309,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void setLoopHeader(MBasicBlock* newBackedge);
 
   
-  void setLoopHeader() {
-    MOZ_ASSERT(!isLoopHeader());
-    kind_ = LOOP_HEADER;
-  }
-
-  
   [[nodiscard]] bool inheritPhisFromBackedge(MBasicBlock* backedge);
 
   void insertBefore(MInstruction* at, MInstruction* ins);
@@ -401,13 +395,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void setDomIndex(uint32_t d) { domIndex_ = d; }
 
   MBasicBlock* getPredecessor(uint32_t i) const { return predecessors_[i]; }
-  void setPredecessor(uint32_t i, MBasicBlock* p) { predecessors_[i] = p; }
-  [[nodiscard]]
-  bool appendPredecessor(MBasicBlock* p) {
-    return predecessors_.append(p);
-  }
-  void erasePredecessor(uint32_t i) { predecessors_.erase(&predecessors_[i]); }
-
   size_t indexForPredecessor(MBasicBlock* block) const {
     
     MOZ_ASSERT(!block->successorWithPhis());
@@ -621,29 +608,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   
   
   MResumePoint* activeResumePoint(MInstruction* ins);
-
-#ifdef JS_JITSPEW
-  const char* nameOfKind() const {
-    switch (kind_) {
-      case MBasicBlock::Kind::NORMAL:
-        return "NORMAL";
-      case MBasicBlock::Kind::PENDING_LOOP_HEADER:
-        return "PENDING_LOOP_HEADER";
-      case MBasicBlock::Kind::LOOP_HEADER:
-        return "LOOP_HEADER";
-      case MBasicBlock::Kind::SPLIT_EDGE:
-        return "SPLIT_EDGE";
-      case MBasicBlock::Kind::FAKE_LOOP_PRED:
-        return "FAKE_LOOP_PRED";
-      case MBasicBlock::Kind::INTERNAL:
-        return "INTERNAL";
-      case MBasicBlock::Kind::DEAD:
-        return "DEAD";
-      default:
-        return "MBasicBlock::Kind::???";
-    }
-  }
-#endif
 
  private:
   MIRGraph& graph_;

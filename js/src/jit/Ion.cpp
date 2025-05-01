@@ -51,7 +51,6 @@
 #include "jit/ScalarReplacement.h"
 #include "jit/ScriptFromCalleeToken.h"
 #include "jit/Sink.h"
-#include "jit/UnrollLoops.h"
 #include "jit/ValueNumbering.h"
 #include "jit/WarpBuilder.h"
 #include "jit/WarpOracle.h"
@@ -994,8 +993,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
 
   {
-    bool dummy;
-    if (!FoldEmptyBlocks(graph, &dummy)) {
+    if (!FoldEmptyBlocks(graph)) {
       return false;
     }
     gs.spewPass("Fold Empty Blocks");
@@ -1429,48 +1427,6 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
   AssertExtendedGraphCoherency(graph,  false,
                                 true);
-
-  
-  if (mir->compilingWasm() && JS::Prefs::wasm_unroll_loops()) {
-    bool loopsChanged;
-    if (!UnrollLoops(graph, &loopsChanged)) {
-      return false;
-    }
-
-    gs.spewPass("Unroll loops");
-
-    AssertExtendedGraphCoherency(graph);
-
-    if (mir->shouldCancel("Unroll loops")) {
-      return false;
-    }
-
-    if (loopsChanged) {
-      
-      
-      if (!gvn.run(ValueNumberer::DontUpdateAliasAnalysis)) {
-        return false;
-      }
-      
-      bool blocksFolded;
-      if (!FoldEmptyBlocks(graph, &blocksFolded)) {
-        return false;
-      }
-      if (blocksFolded) {
-        
-        ClearDominatorTree(graph);
-        if (!BuildDominatorTree(graph)) {
-          return false;
-        }
-      }
-
-      AssertExtendedGraphCoherency(graph);
-
-      if (mir->shouldCancel("Rerun GVN after loop unrolling")) {
-        return false;
-      }
-    }
-  }
 
   
   

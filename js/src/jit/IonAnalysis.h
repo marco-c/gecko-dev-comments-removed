@@ -37,7 +37,7 @@ class MTest;
 
 [[nodiscard]] bool FoldTests(MIRGraph& graph);
 
-[[nodiscard]] bool FoldEmptyBlocks(MIRGraph& graph, bool* changed);
+[[nodiscard]] bool FoldEmptyBlocks(MIRGraph& graph);
 
 [[nodiscard]] bool SplitCriticalEdges(MIRGraph& graph);
 
@@ -188,37 +188,10 @@ bool IsDiscardable(const MDefinition* def);
 bool IsDiscardableAllowEffectful(const MDefinition* def);
 
 class CompileInfo;
-
-
-
-
-
-
-
-void DumpHashedPointer(GenericPrinter& out, const void* p);
-
-
-void DumpMIRDefinitionID(GenericPrinter& out, const MDefinition* def,
-                         bool showHashedPointers = false);
-
-void DumpMIRDefinition(GenericPrinter& out, const MDefinition* def,
-                       bool showHashedPointers = false);
-
-
-void DumpMIRBlockID(GenericPrinter& out, const MBasicBlock* block,
-                    bool showHashedPointers = false);
-
-void DumpMIRBlock(GenericPrinter& out, MBasicBlock* block,
-                  bool showHashedPointers = false);
-
-
-void DumpMIRGraph(GenericPrinter& out, MIRGraph& graph,
-                  bool showHashedPointers = false);
-
-
 void DumpMIRExpressions(GenericPrinter& out, MIRGraph& graph,
-                        const CompileInfo& info, const char* phase,
-                        bool showHashedPointers = false);
+                        const CompileInfo& info, const char* phase);
+void DumpMIRDefinition(GenericPrinter& out, const MDefinition* def);
+
 }  
 }  
 
