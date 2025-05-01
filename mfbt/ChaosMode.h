@@ -80,6 +80,15 @@ class ChaosMode {
     MOZ_ASSERT(aBound != 0);
     return uint32_t(rand()) % aBound;
   }
+
+  
+
+
+
+  static int32_t randomInt32InRange(int32_t aLow, int32_t aHigh) {
+    MOZ_ASSERT(aHigh >= aLow);
+    return (int32_t(rand()) % (aHigh - aLow + 1)) + aLow;
+  }
 };
 
 } 

@@ -878,11 +878,6 @@ TimerThread::Run() {
         
         const TimeDuration timeToNextTimer = timeout - now;
 
-        
-        
-        
-        static constexpr double sChaosFractions[] = {0.0, 0.25, 0.5, 0.75,
-                                                     1.0, 1.75, 2.75};
         if (timeToNextTimer < allowedEarlyFiring) {
           goto next;  
         }
@@ -903,16 +898,14 @@ TimerThread::Run() {
         
         MOZ_ASSERT(!waitFor.IsZero());
 
-        if (chaosModeActive) {
-          
-          
-          
-          const double waitInMs = waitFor.ToMilliseconds();
-          const double chaosWaitInMs =
-              waitInMs * sChaosFractions[ChaosMode::randomUint32LessThan(
-                             std::size(sChaosFractions))];
-          waitFor = TimeDuration::FromMilliseconds(chaosWaitInMs);
-        }
+        
+        
+        const TimeDuration chaosWaitDelay =
+            !chaosModeActive
+                ? TimeDuration::Zero()
+                : TimeDuration::FromMicroseconds(
+                      ChaosMode::randomInt32InRange(-10000, 10000));
+        waitFor = std::max(TimeDuration::Zero(), waitFor + chaosWaitDelay);
 
         mIntendedWakeupTime = wakeupTime;
       } else {
