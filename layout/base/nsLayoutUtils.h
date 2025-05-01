@@ -1395,12 +1395,6 @@ class nsLayoutUtils {
   
 
 
-
-  static nsIFrame* GetNonGeneratedAncestor(nsIFrame* aFrame);
-
-  
-
-
   static bool IsNonWrapperBlock(nsIFrame* aFrame);
 
   

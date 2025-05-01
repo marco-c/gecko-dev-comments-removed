@@ -3967,18 +3967,6 @@ nsBlockFrame* nsLayoutUtils::FindNearestBlockAncestor(nsIFrame* aFrame) {
   return nullptr;
 }
 
-nsIFrame* nsLayoutUtils::GetNonGeneratedAncestor(nsIFrame* aFrame) {
-  if (!aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
-    return aFrame;
-  }
-
-  nsIFrame* f = aFrame;
-  do {
-    f = GetParentOrPlaceholderFor(f);
-  } while (f->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT));
-  return f;
-}
-
 nsIFrame* nsLayoutUtils::GetParentOrPlaceholderFor(const nsIFrame* aFrame) {
   
   
