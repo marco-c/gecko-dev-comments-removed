@@ -27,13 +27,6 @@ async function setup(recipes) {
 }
 
 add_setup(async function () {
-  const sandbox = sinon.createSandbox();
-
-  
-  
-  
-  sandbox.stub(RemoteSettingsExperimentLoader, "updateRecipes").resolves();
-
   await SpecialPowers.pushPrefEnv({
     set: [
       ["messaging-system.log", "all"],
@@ -44,14 +37,7 @@ add_setup(async function () {
   });
 
   registerCleanupFunction(async () => {
-    
-    
-    
-    
-    sandbox.stub(RemoteSettingsExperimentLoader, "onEnabledPrefChanged");
-    await RemoteSettingsExperimentLoader.disable();
     await SpecialPowers.popPrefEnv();
-    sandbox.restore();
   });
 });
 
