@@ -815,19 +815,6 @@ impl NumericType {
             _ => false,
         }
     }
-
-    fn is_compatible_with(&self, other: &NumericType) -> bool {
-        if self.scalar.kind != other.scalar.kind {
-            return false;
-        }
-        match (self.dim, other.dim) {
-            (NumericDimension::Scalar, NumericDimension::Scalar) => true,
-            (NumericDimension::Scalar, NumericDimension::Vector(_)) => true,
-            (NumericDimension::Vector(_), NumericDimension::Vector(_)) => true,
-            (NumericDimension::Matrix(..), NumericDimension::Matrix(..)) => true,
-            _ => false,
-        }
-    }
 }
 
 
@@ -1221,8 +1208,10 @@ impl Interface {
                                     
                                     
                                     naga::ShaderStage::Vertex => {
+                                        let is_compatible =
+                                            iv.ty.scalar.kind == provided.ty.scalar.kind;
                                         
-                                        (iv.ty.is_compatible_with(&provided.ty), 0)
+                                        (is_compatible, 0)
                                     }
                                     naga::ShaderStage::Fragment => {
                                         if iv.interpolation != provided.interpolation {

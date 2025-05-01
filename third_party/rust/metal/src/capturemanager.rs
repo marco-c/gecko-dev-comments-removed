@@ -78,6 +78,7 @@ impl CaptureManagerRef {
     
     
     pub fn start_capture(&self, descriptor: &CaptureDescriptorRef) -> Result<(), String> {
+        #[allow(clippy::unit_arg)]
         unsafe {
             Ok(try_objc! { err =>
                 msg_send![self, startCaptureWithDescriptor: descriptor

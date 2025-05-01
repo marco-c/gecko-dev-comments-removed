@@ -39,10 +39,12 @@ mod env;
 mod features;
 pub mod instance;
 pub mod math;
+mod transfers;
 
 pub use counters::*;
 pub use features::*;
 pub use instance::*;
+pub use transfers::*;
 
 
 
@@ -615,7 +617,54 @@ impl Default for Limits {
 impl Limits {
     
     
-    const fn defaults() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub const fn defaults() -> Self {
         Self {
             max_texture_dimension_1d: 8192,
             max_texture_dimension_2d: 8192,

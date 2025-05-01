@@ -61,103 +61,154 @@ macro_rules! cfg_if {
     };
 }
 
+
+macro_rules! prelude {
+    () => {
+        /// Frequently-used types that are available on all platforms
+        ///
+        /// We need to reexport the core types so this works with `rust-dep-of-std`.
+        mod prelude {
+            // Exports from `core`
+            #[allow(unused_imports)]
+            pub(crate) use ::core::clone::Clone;
+            #[allow(unused_imports)]
+            pub(crate) use ::core::marker::{Copy, Send, Sync};
+            #[allow(unused_imports)]
+            pub(crate) use ::core::option::Option;
+            #[allow(unused_imports)]
+            pub(crate) use ::core::{fmt, hash, iter, mem};
+
+            // Commonly used types defined in this crate
+            #[allow(unused_imports)]
+            pub(crate) use crate::{
+                c_char, c_double, c_float, c_int, c_long, c_longlong, c_short, c_uchar, c_uint,
+                c_ulong, c_ulonglong, c_ushort, c_void, intptr_t, size_t, ssize_t, uintptr_t,
+            };
+        }
+    };
+}
+
+
+
+
+
+
 macro_rules! s {
-    ($($(#[$attr:meta])* pub $t:ident $i:ident { $($field:tt)* })*) => ($(
+    ($(
+        $(#[$attr:meta])*
+        pub $t:ident $i:ident { $($field:tt)* }
+    )*) => ($(
         s!(it: $(#[$attr])* pub $t $i { $($field)* });
     )*);
+
     (it: $(#[$attr:meta])* pub union $i:ident { $($field:tt)* }) => (
         compile_error!("unions cannot derive extra traits, use s_no_extra_traits instead");
     );
+
     (it: $(#[$attr:meta])* pub struct $i:ident { $($field:tt)* }) => (
         __item! {
             #[repr(C)]
-            #[cfg_attr(feature = "extra_traits", derive(Debug, Eq, Hash, PartialEq))]
+            #[cfg_attr(
+                feature = "extra_traits",
+                ::core::prelude::v1::derive(Debug, Eq, Hash, PartialEq)
+            )]
+            #[::core::prelude::v1::derive(::core::clone::Clone, ::core::marker::Copy)]
             #[allow(deprecated)]
             $(#[$attr])*
             pub struct $i { $($field)* }
         }
-        #[allow(deprecated)]
-        impl ::Copy for $i {}
-        #[allow(deprecated)]
-        impl ::Clone for $i {
-            fn clone(&self) -> $i { *self }
-        }
     );
 }
 
-macro_rules! s_no_extra_traits {
-    ($($(#[$attr:meta])* pub $t:ident $i:ident { $($field:tt)* })*) => ($(
-        s_no_extra_traits!(it: $(#[$attr])* pub $t $i { $($field)* });
-    )*);
-    (it: $(#[$attr:meta])* pub union $i:ident { $($field:tt)* }) => (
-        cfg_if! {
-            if #[cfg(libc_union)] {
-                __item! {
-                    #[repr(C)]
-                    $(#[$attr])*
-                    pub union $i { $($field)* }
-                }
 
-                impl ::Copy for $i {}
-                impl ::Clone for $i {
-                    fn clone(&self) -> $i { *self }
-                }
-            }
-        }
-    );
-    (it: $(#[$attr:meta])* pub struct $i:ident { $($field:tt)* }) => (
-        __item! {
-            #[repr(C)]
-            $(#[$attr])*
-            pub struct $i { $($field)* }
-        }
-        #[allow(deprecated)]
-        impl ::Copy for $i {}
-        #[allow(deprecated)]
-        impl ::Clone for $i {
-            fn clone(&self) -> $i { *self }
-        }
-    );
-}
 
-macro_rules! missing {
-    ($($(#[$attr:meta])* pub enum $i:ident {})*) => ($(
-        $(#[$attr])* #[allow(missing_copy_implementations)] pub enum $i { }
-    )*);
-}
 
-macro_rules! e {
-    ($($(#[$attr:meta])* pub enum $i:ident { $($field:tt)* })*) => ($(
-        __item! {
-            #[cfg_attr(feature = "extra_traits", derive(Debug, Eq, Hash, PartialEq))]
-            $(#[$attr])*
-            pub enum $i { $($field)* }
-        }
-        impl ::Copy for $i {}
-        impl ::Clone for $i {
-            fn clone(&self) -> $i { *self }
-        }
-    )*);
-}
 
 macro_rules! s_paren {
-    ($($(#[$attr:meta])* pub struct $i:ident ( $($field:tt)* ); )* ) => ($(
+    ($(
+        $(#[$attr:meta])*
+        pub struct $i:ident ( $($field:tt)* );
+    )*) => ($(
         __item! {
-            #[cfg_attr(feature = "extra_traits", derive(Debug, Eq, Hash, PartialEq))]
+            #[cfg_attr(
+                feature = "extra_traits",
+                ::core::prelude::v1::derive(Debug, Eq, Hash, PartialEq)
+            )]
+            #[::core::prelude::v1::derive(::core::clone::Clone, ::core::marker::Copy)]
             $(#[$attr])*
             pub struct $i ( $($field)* );
         }
-        impl ::Copy for $i {}
-        impl ::Clone for $i {
-            fn clone(&self) -> $i { *self }
-        }
     )*);
 }
 
 
 
 
+macro_rules! s_no_extra_traits {
+    ($(
+        $(#[$attr:meta])*
+        pub $t:ident $i:ident { $($field:tt)* }
+    )*) => ($(
+        s_no_extra_traits!(it: $(#[$attr])* pub $t $i { $($field)* });
+    )*);
 
+    (it: $(#[$attr:meta])* pub union $i:ident { $($field:tt)* }) => (
+        __item! {
+            #[repr(C)]
+            #[::core::prelude::v1::derive(::core::clone::Clone, ::core::marker::Copy)]
+            $(#[$attr])*
+            pub union $i { $($field)* }
+        }
+
+        #[cfg(feature = "extra_traits")]
+        impl ::core::fmt::Debug for $i {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                f.debug_struct(::core::stringify!($i)).finish_non_exhaustive()
+            }
+        }
+    );
+
+    (it: $(#[$attr:meta])* pub struct $i:ident { $($field:tt)* }) => (
+        __item! {
+            #[repr(C)]
+            #[::core::prelude::v1::derive(::core::clone::Clone, ::core::marker::Copy)]
+            $(#[$attr])*
+            pub struct $i { $($field)* }
+        }
+    );
+}
+
+
+
+macro_rules! missing {
+    ($(
+        $(#[$attr:meta])*
+        pub enum $i:ident {}
+    )*) => ($(
+        $(#[$attr])*
+        #[allow(missing_copy_implementations)]
+        pub enum $i { }
+    )*);
+}
+
+
+
+macro_rules! e {
+    ($(
+        $(#[$attr:meta])*
+        pub enum $i:ident { $($field:tt)* }
+    )*) => ($(
+        __item! {
+            #[cfg_attr(
+                feature = "extra_traits",
+                ::core::prelude::v1::derive(Debug, Eq, Hash, PartialEq)
+            )]
+            #[::core::prelude::v1::derive(::core::clone::Clone, ::core::marker::Copy)]
+            $(#[$attr])*
+            pub enum $i { $($field)* }
+        }
+    )*);
+}
 
 
 
@@ -183,94 +234,87 @@ macro_rules! s_paren {
 
 cfg_if! {
     if #[cfg(libc_const_extern_fn)] {
+        /// Define an `unsafe` function that is const as long as `libc_const_extern_fn` is enabled.
         macro_rules! f {
-            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
-                        $($arg:ident: $argty:ty),*
-            ) -> $ret:ty {
-                $($body:stmt);*
-            })*) => ($(
+            ($(
+                $(#[$attr:meta])*
+                pub $({$constness:ident})* fn $i:ident($($arg:ident: $argty:ty),* $(,)*) -> $ret:ty
+                    $body:block
+            )*) => ($(
                 #[inline]
                 $(#[$attr])*
-                pub $($constness)* unsafe extern fn $i($($arg: $argty),*
-                ) -> $ret {
-                    $($body);*
-                }
+                pub $($constness)* unsafe extern "C" fn $i($($arg: $argty),*) -> $ret
+                    $body
             )*)
         }
 
+        /// Define a safe function that is const as long as `libc_const_extern_fn` is enabled.
         macro_rules! safe_f {
-            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
-                        $($arg:ident: $argty:ty),*
-            ) -> $ret:ty {
-                $($body:stmt);*
-            })*) => ($(
+            ($(
+                $(#[$attr:meta])*
+                pub $({$constness:ident})* fn $i:ident($($arg:ident: $argty:ty),* $(,)*) -> $ret:ty
+                    $body:block
+            )*) => ($(
                 #[inline]
                 $(#[$attr])*
-                pub $($constness)* extern fn $i($($arg: $argty),*
-                ) -> $ret {
-                    $($body);*
-                }
+                pub $($constness)* extern "C" fn $i($($arg: $argty),*) -> $ret
+                    $body
             )*)
         }
 
+        /// A nonpublic function that is const as long as `libc_const_extern_fn` is enabled.
         macro_rules! const_fn {
-            ($($(#[$attr:meta])* $({$constness:ident})* fn $i:ident(
-                        $($arg:ident: $argty:ty),*
-            ) -> $ret:ty {
-                $($body:stmt);*
-            })*) => ($(
+            ($(
+                $(#[$attr:meta])*
+                $({$constness:ident})* fn $i:ident($($arg:ident: $argty:ty),* $(,)*) -> $ret:ty
+                    $body:block
+            )*) => ($(
                 #[inline]
                 $(#[$attr])*
-                $($constness)* fn $i($($arg: $argty),*
-                ) -> $ret {
-                    $($body);*
-                }
+                $($constness)* fn $i($($arg: $argty),*) -> $ret
+                    $body
             )*)
         }
-
     } else {
+        /// Define an `unsafe` function that is const as long as `libc_const_extern_fn` is enabled.
         macro_rules! f {
-            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
-                        $($arg:ident: $argty:ty),*
-            ) -> $ret:ty {
-                $($body:stmt);*
-            })*) => ($(
+            ($(
+                $(#[$attr:meta])*
+                pub $({$constness:ident})* fn $i:ident($($arg:ident: $argty:ty),* $(,)*) -> $ret:ty
+                    $body:block
+            )*) => ($(
                 #[inline]
                 $(#[$attr])*
-                pub unsafe extern fn $i($($arg: $argty),*
-                ) -> $ret {
-                    $($body);*
-                }
+                pub unsafe extern "C" fn $i($($arg: $argty),*) -> $ret
+                    $body
             )*)
         }
 
+        /// Define a safe function that is const as long as `libc_const_extern_fn` is enabled.
         macro_rules! safe_f {
-            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
-                        $($arg:ident: $argty:ty),*
-            ) -> $ret:ty {
-                $($body:stmt);*
-            })*) => ($(
+            ($(
+                $(#[$attr:meta])*
+                pub $({$constness:ident})* fn $i:ident($($arg:ident: $argty:ty),* $(,)*) -> $ret:ty
+                    $body:block
+            )*) => ($(
                 #[inline]
                 $(#[$attr])*
-                pub extern fn $i($($arg: $argty),*
-                ) -> $ret {
-                    $($body);*
-                }
+                pub extern "C" fn $i($($arg: $argty),*) -> $ret
+                    $body
             )*)
         }
 
+        /// A nonpublic function that is const as long as `libc_const_extern_fn` is enabled.
         macro_rules! const_fn {
-            ($($(#[$attr:meta])* $({$constness:ident})* fn $i:ident(
-                        $($arg:ident: $argty:ty),*
-            ) -> $ret:ty {
-                $($body:stmt);*
-            })*) => ($(
+            ($(
+                $(#[$attr:meta])*
+                $({$constness:ident})* fn $i:ident($($arg:ident: $argty:ty),* $(,)*) -> $ret:ty
+                    $body:block
+            )*) => ($(
                 #[inline]
                 $(#[$attr])*
-                fn $i($($arg: $argty),*
-                ) -> $ret {
-                    $($body);*
-                }
+                fn $i($($arg: $argty),*) -> $ret
+                    $body
             )*)
         }
     }
@@ -280,24 +324,6 @@ macro_rules! __item {
     ($i:item) => {
         $i
     };
-}
-
-macro_rules! align_const {
-    ($($(#[$attr:meta])*
-       pub const $name:ident : $t1:ty
-       = $t2:ident { $($field:tt)* };)*) => ($(
-        #[cfg(libc_align)]
-        $(#[$attr])*
-        pub const $name : $t1 = $t2 {
-            $($field)*
-        };
-        #[cfg(not(libc_align))]
-        $(#[$attr])*
-        pub const $name : $t1 = $t2 {
-            $($field)*
-            __align: [],
-        };
-    )*)
 }
 
 
@@ -332,18 +358,4 @@ macro_rules! deprecated_mach {
             );
         )*
     }
-}
-
-#[cfg(not(libc_ptr_addr_of))]
-macro_rules! ptr_addr_of {
-    ($place:expr) => {
-        &$place
-    };
-}
-
-#[cfg(libc_ptr_addr_of)]
-macro_rules! ptr_addr_of {
-    ($place:expr) => {
-        ::core::ptr::addr_of!($place)
-    };
 }

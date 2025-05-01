@@ -1,36 +1,25 @@
-use std::env;
 use std::process::{Command, Output};
-use std::str;
+use std::{env, str};
 
 
 
 
 const ALLOWED_CFGS: &'static [&'static str] = &[
-    "emscripten_new_stat_abi",
-    "espidf_time64",
+    "emscripten_old_stat_abi",
+    "espidf_time32",
     "freebsd10",
     "freebsd11",
     "freebsd12",
     "freebsd13",
     "freebsd14",
     "freebsd15",
-    "libc_align",
-    "libc_cfg_target_vendor",
+    
     "libc_const_extern_fn",
-    "libc_const_extern_fn_unstable",
-    "libc_const_size_of",
-    "libc_core_cvoid",
     "libc_deny_warnings",
-    "libc_int128",
-    "libc_long_array",
-    "libc_non_exhaustive",
-    "libc_packedN",
-    "libc_priv_mod_use",
-    "libc_ptr_addr_of",
     "libc_thread_local",
-    "libc_underscore_const_names",
-    "libc_union",
     "libc_ctest",
+    
+    "linux_time_bits64",
 ];
 
 
@@ -38,7 +27,7 @@ const CHECK_CFG_EXTRA: &'static [(&'static str, &'static [&'static str])] = &[
     (
         "target_os",
         &[
-            "switch", "aix", "ohos", "hurd", "rtems", "visionos", "nuttx",
+            "switch", "aix", "ohos", "hurd", "rtems", "visionos", "nuttx", "cygwin",
         ],
     ),
     ("target_env", &["illumos", "wasi", "aix", "ohos"]),
@@ -52,32 +41,29 @@ fn main() {
     
     println!("cargo:rerun-if-changed=build.rs");
 
-    let (rustc_minor_ver, is_nightly) = rustc_minor_nightly();
+    let (rustc_minor_ver, _is_nightly) = rustc_minor_nightly();
     let rustc_dep_of_std = env::var("CARGO_FEATURE_RUSTC_DEP_OF_STD").is_ok();
-    let align_cargo_feature = env::var("CARGO_FEATURE_ALIGN").is_ok();
-    let const_extern_fn_cargo_feature = env::var("CARGO_FEATURE_CONST_EXTERN_FN").is_ok();
     let libc_ci = env::var("LIBC_CI").is_ok();
-    let libc_check_cfg = env::var("LIBC_CHECK_CFG").is_ok() || rustc_minor_ver >= 80;
-
-    if env::var("CARGO_FEATURE_USE_STD").is_ok() {
-        println!(
-            "cargo:warning=\"libc's use_std cargo feature is deprecated since libc 0.2.55; \
-             please consider using the `std` cargo feature instead\""
-        );
-    }
 
     
     
     
     
     
-    let which_freebsd = if libc_ci {
+    println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_FREEBSD_VERSION");
+    
+    let which_freebsd = if let Ok(version) = env::var("RUST_LIBC_UNSTABLE_FREEBSD_VERSION") {
+        let vers = version.parse().unwrap();
+        println!("cargo:warning=setting FreeBSD version to {vers}");
+        vers
+    } else if libc_ci {
         which_freebsd().unwrap_or(11)
     } else if rustc_dep_of_std {
         12
     } else {
         11
     };
+
     match which_freebsd {
         x if x < 10 => panic!("FreeBSD older than 10 is not supported"),
         10 => set_cfg("freebsd10"),
@@ -89,9 +75,15 @@ fn main() {
     }
 
     match emcc_version_code() {
-        Some(v) if (v >= 30142) => set_cfg("emscripten_new_stat_abi"),
+        Some(v) if (v < 30142) => set_cfg("emscripten_old_stat_abi"),
         
-        Some(_) | None => (),
+        _ => (),
+    }
+
+    let linux_time_bits64 = env::var("RUST_LIBC_UNSTABLE_LINUX_TIME_BITS64").is_ok();
+    println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_LINUX_TIME_BITS64");
+    if linux_time_bits64 {
+        set_cfg("linux_time_bits64");
     }
 
     
@@ -100,87 +92,16 @@ fn main() {
     }
 
     
-    if rustc_minor_ver >= 15 || rustc_dep_of_std {
-        set_cfg("libc_priv_mod_use");
-    }
-
-    
-    if rustc_minor_ver >= 19 || rustc_dep_of_std {
-        set_cfg("libc_union");
-    }
-
-    
-    if rustc_minor_ver >= 24 || rustc_dep_of_std {
-        set_cfg("libc_const_size_of");
-    }
-
-    
-    if rustc_minor_ver >= 25 || rustc_dep_of_std || align_cargo_feature {
-        set_cfg("libc_align");
-    }
-
-    
-    if rustc_minor_ver >= 26 || rustc_dep_of_std {
-        set_cfg("libc_int128");
-    }
-
-    
-    
-    
-    if rustc_minor_ver >= 30 || rustc_dep_of_std {
-        set_cfg("libc_core_cvoid");
-    }
-
-    
-    if rustc_minor_ver >= 33 || rustc_dep_of_std {
-        set_cfg("libc_packedN");
-        set_cfg("libc_cfg_target_vendor");
-    }
-
-    
-    if rustc_minor_ver >= 40 || rustc_dep_of_std {
-        set_cfg("libc_non_exhaustive");
-    }
-
-    
-    if rustc_minor_ver >= 47 || rustc_dep_of_std {
-        set_cfg("libc_long_array");
-    }
-
-    if rustc_minor_ver >= 51 || rustc_dep_of_std {
-        set_cfg("libc_ptr_addr_of");
-    }
-
-    
-    if rustc_minor_ver >= 37 || rustc_dep_of_std {
-        set_cfg("libc_underscore_const_names");
-    }
-
-    
     if rustc_dep_of_std {
         set_cfg("libc_thread_local");
     }
 
     
-    if rustc_minor_ver >= 62 {
-        set_cfg("libc_const_extern_fn");
-    } else {
-        
-        if const_extern_fn_cargo_feature {
-            if !is_nightly || rustc_minor_ver < 40 {
-                panic!("const-extern-fn requires a nightly compiler >= 1.40");
-            }
-            set_cfg("libc_const_extern_fn_unstable");
-            set_cfg("libc_const_extern_fn");
-        }
-    }
+    set_cfg("libc_const_extern_fn");
 
     
     
-    
-    
-    
-    if libc_check_cfg {
+    if rustc_minor_ver >= 80 {
         for cfg in ALLOWED_CFGS {
             if rustc_minor_ver >= 75 {
                 println!("cargo:rustc-check-cfg=cfg({})", cfg);
@@ -220,7 +141,7 @@ fn rustc_version_cmd(is_clippy_driver: bool) -> Output {
 
     cmd.arg("--version");
 
-    let output = cmd.output().ok().expect("Failed to get rustc version");
+    let output = cmd.output().expect("Failed to get rustc version");
 
     if !output.status.success() {
         panic!(
@@ -275,20 +196,12 @@ fn rustc_minor_nightly() -> (u32, bool) {
 }
 
 fn which_freebsd() -> Option<i32> {
-    let output = std::process::Command::new("freebsd-version").output().ok();
-    if output.is_none() {
-        return None;
-    }
-    let output = output.unwrap();
+    let output = Command::new("freebsd-version").output().ok()?;
     if !output.status.success() {
         return None;
     }
 
-    let stdout = String::from_utf8(output.stdout).ok();
-    if stdout.is_none() {
-        return None;
-    }
-    let stdout = stdout.unwrap();
+    let stdout = String::from_utf8(output.stdout).ok()?;
 
     match &stdout {
         s if s.starts_with("10") => Some(10),
@@ -302,27 +215,16 @@ fn which_freebsd() -> Option<i32> {
 }
 
 fn emcc_version_code() -> Option<u64> {
-    let output = std::process::Command::new("emcc")
-        .arg("-dumpversion")
-        .output()
-        .ok();
-    if output.is_none() {
-        return None;
-    }
-    let output = output.unwrap();
+    let output = Command::new("emcc").arg("-dumpversion").output().ok()?;
     if !output.status.success() {
         return None;
     }
 
-    let stdout = String::from_utf8(output.stdout).ok();
-    if stdout.is_none() {
-        return None;
-    }
-    let version = stdout.unwrap();
+    let version = String::from_utf8(output.stdout).ok()?;
 
     
     
-    let mut pieces = version.trim().split(|c| c == '.' || c == '-');
+    let mut pieces = version.trim().split(['.', '-']);
 
     let major = pieces.next().and_then(|x| x.parse().ok()).unwrap_or(0);
     let minor = pieces.next().and_then(|x| x.parse().ok()).unwrap_or(0);

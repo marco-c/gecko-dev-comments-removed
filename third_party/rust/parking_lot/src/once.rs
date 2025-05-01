@@ -40,20 +40,14 @@ impl OnceState {
     
     #[inline]
     pub fn poisoned(self) -> bool {
-        match self {
-            OnceState::Poisoned => true,
-            _ => false,
-        }
+        matches!(self, OnceState::Poisoned)
     }
 
     
     
     #[inline]
     pub fn done(self) -> bool {
-        match self {
-            OnceState::Done => true,
-            _ => false,
-        }
+        matches!(self, OnceState::Done)
     }
 }
 

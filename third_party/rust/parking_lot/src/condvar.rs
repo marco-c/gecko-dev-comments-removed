@@ -140,38 +140,38 @@ impl Condvar {
         
         let from = self as *const _ as usize;
         let to = mutex as usize;
-            let validate = || {
-                
-                
-                
-                
-                
-                if self.state.load(Ordering::Relaxed) != mutex {
-                    return RequeueOp::Abort;
-                }
+        let validate = || {
+            
+            
+            
+            
+            
+            if self.state.load(Ordering::Relaxed) != mutex {
+                return RequeueOp::Abort;
+            }
 
-                
-                
-                
-                
-                
-                
-                if unsafe { (*mutex).mark_parked_if_locked() } {
-                    RequeueOp::RequeueOne
-                } else {
-                    RequeueOp::UnparkOne
-                }
-            };
-            let callback = |_op, result: UnparkResult| {
-                
-                if !result.have_more_threads {
-                    self.state.store(ptr::null_mut(), Ordering::Relaxed);
-                }
-                TOKEN_NORMAL
-            };
-            let res = unsafe { parking_lot_core::unpark_requeue(from, to, validate, callback) };
+            
+            
+            
+            
+            
+            
+            if unsafe { (*mutex).mark_parked_if_locked() } {
+                RequeueOp::RequeueOne
+            } else {
+                RequeueOp::UnparkOne
+            }
+        };
+        let callback = |_op, result: UnparkResult| {
+            
+            if !result.have_more_threads {
+                self.state.store(ptr::null_mut(), Ordering::Relaxed);
+            }
+            TOKEN_NORMAL
+        };
+        let res = unsafe { parking_lot_core::unpark_requeue(from, to, validate, callback) };
 
-            res.unparked_threads + res.requeued_threads != 0
+        res.unparked_threads + res.requeued_threads != 0
     }
 
     
@@ -196,46 +196,46 @@ impl Condvar {
 
     #[cold]
     fn notify_all_slow(&self, mutex: *mut RawMutex) -> usize {
+        
+        let from = self as *const _ as usize;
+        let to = mutex as usize;
+        let validate = || {
             
-            let from = self as *const _ as usize;
-            let to = mutex as usize;
-            let validate = || {
-                
-                
-                
-                
-                
-                if self.state.load(Ordering::Relaxed) != mutex {
-                    return RequeueOp::Abort;
-                }
+            
+            
+            
+            
+            if self.state.load(Ordering::Relaxed) != mutex {
+                return RequeueOp::Abort;
+            }
 
-                
-                
-                self.state.store(ptr::null_mut(), Ordering::Relaxed);
+            
+            
+            self.state.store(ptr::null_mut(), Ordering::Relaxed);
 
-                
-                
-                
-                
-                
-                
-                if unsafe { (*mutex).mark_parked_if_locked() } {
-                    RequeueOp::RequeueAll
-                } else {
-                    RequeueOp::UnparkOneRequeueRest
-                }
-            };
-            let callback = |op, result: UnparkResult| {
-                
-                
-                if op == RequeueOp::UnparkOneRequeueRest && result.requeued_threads != 0 {
-                    unsafe { (*mutex).mark_parked() };
-                }
-                TOKEN_NORMAL
-            };
-            let res = unsafe { parking_lot_core::unpark_requeue(from, to, validate, callback) };
+            
+            
+            
+            
+            
+            
+            if unsafe { (*mutex).mark_parked_if_locked() } {
+                RequeueOp::RequeueAll
+            } else {
+                RequeueOp::UnparkOneRequeueRest
+            }
+        };
+        let callback = |op, result: UnparkResult| {
+            
+            
+            if op == RequeueOp::UnparkOneRequeueRest && result.requeued_threads != 0 {
+                unsafe { (*mutex).mark_parked() };
+            }
+            TOKEN_NORMAL
+        };
+        let res = unsafe { parking_lot_core::unpark_requeue(from, to, validate, callback) };
 
-            res.unparked_threads + res.requeued_threads
+        res.unparked_threads + res.requeued_threads
     }
 
     
@@ -294,67 +294,69 @@ impl Condvar {
     
     
     fn wait_until_internal(&self, mutex: &RawMutex, timeout: Option<Instant>) -> WaitTimeoutResult {
-            let result;
-            let mut bad_mutex = false;
-            let mut requeued = false;
-            {
-                let addr = self as *const _ as usize;
-                let lock_addr = mutex as *const _ as *mut _;
-                let validate = || {
-                    
-                    
-                    
-                    let state = self.state.load(Ordering::Relaxed);
-                    if state.is_null() {
-                        self.state.store(lock_addr, Ordering::Relaxed);
-                    } else if state != lock_addr {
-                        bad_mutex = true;
-                        return false;
-                    }
-                    true
-                };
-                let before_sleep = || {
-                    
-                    unsafe { mutex.unlock() };
-                };
-                let timed_out = |k, was_last_thread| {
-                    
-                    
-                    
-                    requeued = k != addr;
+        let result;
+        let mut bad_mutex = false;
+        let mut requeued = false;
+        {
+            let addr = self as *const _ as usize;
+            let lock_addr = mutex as *const _ as *mut _;
+            let validate = || {
+                
+                
+                
+                let state = self.state.load(Ordering::Relaxed);
+                if state.is_null() {
+                    self.state.store(lock_addr, Ordering::Relaxed);
+                } else if state != lock_addr {
+                    bad_mutex = true;
+                    return false;
+                }
+                true
+            };
+            let before_sleep = || {
+                
+                unsafe { mutex.unlock() };
+            };
+            let timed_out = |k, was_last_thread| {
+                
+                
+                
+                requeued = k != addr;
 
-                    
-                    
-                    
-                    if !requeued && was_last_thread {
-                        self.state.store(ptr::null_mut(), Ordering::Relaxed);
-                    }
-                };
-                result = unsafe { parking_lot_core::park(
+                
+                
+                
+                if !requeued && was_last_thread {
+                    self.state.store(ptr::null_mut(), Ordering::Relaxed);
+                }
+            };
+            result = unsafe {
+                parking_lot_core::park(
                     addr,
                     validate,
                     before_sleep,
                     timed_out,
                     DEFAULT_PARK_TOKEN,
                     timeout,
-                ) };
-            }
+                )
+            };
+        }
 
-            
-            
-            
-            if bad_mutex {
-                panic!("attempted to use a condition variable with more than one mutex");
-            }
+        
+        
+        
+        if bad_mutex {
+            panic!("attempted to use a condition variable with more than one mutex");
+        }
 
-            
-            if result == ParkResult::Unparked(TOKEN_HANDOFF) {
-                unsafe { deadlock::acquire_resource(mutex as *const _ as usize) };
-            } else {
-                mutex.lock();
-            }
+        
+        if result == ParkResult::Unparked(TOKEN_HANDOFF) {
+            unsafe { deadlock::acquire_resource(mutex as *const _ as usize) };
+        } else {
+            mutex.lock();
+        }
 
-            WaitTimeoutResult(!(result.is_unparked() || requeued))
+        WaitTimeoutResult(!(result.is_unparked() || requeued))
     }
 
     
@@ -563,7 +565,7 @@ mod tests {
             let data = data.clone();
             let tx = tx.clone();
             thread::spawn(move || {
-                let &(ref lock, ref cond) = &*data;
+                let (lock, cond) = &*data;
                 let mut cnt = lock.lock();
                 *cnt += 1;
                 if *cnt == N {
@@ -577,7 +579,7 @@ mod tests {
         }
         drop(tx);
 
-        let &(ref lock, ref cond) = &*data;
+        let (lock, cond) = &*data;
         rx.recv().unwrap();
         let mut cnt = lock.lock();
         *cnt = 0;
@@ -625,7 +627,7 @@ mod tests {
             let data = data.clone();
             let tx = tx.clone();
             thread::spawn(move || {
-                let &(ref lock, ref cond) = &*data;
+                let (lock, cond) = &*data;
                 let mut cnt = lock.lock();
                 *cnt += 1;
                 if *cnt == N {
@@ -639,7 +641,7 @@ mod tests {
         }
         drop(tx);
 
-        let &(ref lock, ref cond) = &*data;
+        let (lock, cond) = &*data;
         rx.recv().unwrap();
         let mut cnt = lock.lock();
         *cnt = 0;
@@ -745,8 +747,7 @@ mod tests {
         };
 
         let mut mutex_guard = mutex.lock();
-        let timeout_result = cv
-            .wait_while_until_internal(&mut mutex_guard, condition, None);
+        let timeout_result = cv.wait_while_until_internal(&mut mutex_guard, condition, None);
 
         assert!(!timeout_result.timed_out());
         assert!(*mutex_guard == 1);
@@ -767,8 +768,7 @@ mod tests {
         let timeout = Some(Instant::now() + Duration::from_millis(500));
         let handle = spawn_wait_while_notifier(mutex.clone(), cv.clone(), num_iters, timeout);
 
-        let timeout_result =
-            cv.wait_while_until_internal(&mut mutex_guard, condition, timeout);
+        let timeout_result = cv.wait_while_until_internal(&mut mutex_guard, condition, timeout);
 
         assert!(timeout_result.timed_out());
         assert!(*mutex_guard == num_iters + 1);
@@ -793,8 +793,7 @@ mod tests {
         let mut mutex_guard = mutex.lock();
         let handle = spawn_wait_while_notifier(mutex.clone(), cv.clone(), num_iters, None);
 
-        let timeout_result =
-            cv.wait_while_until_internal(&mut mutex_guard, condition, None);
+        let timeout_result = cv.wait_while_until_internal(&mut mutex_guard, condition, None);
 
         assert!(!timeout_result.timed_out());
         assert!(*mutex_guard == num_iters + 1);
@@ -833,7 +832,7 @@ mod tests {
         drop(g);
         rx.recv().unwrap();
         let _g = m.lock();
-        let _guard = PanicGuard(&*c);
+        let _guard = PanicGuard(&c);
         c.wait(&mut m3.lock());
     }
 
@@ -1055,7 +1054,7 @@ mod webkit_queue_test {
             let (should_notify, result) = {
                 let mut queue = input_queue.lock();
                 wait(
-                    &*empty_condition,
+                    &empty_condition,
                     &mut queue,
                     |state| -> bool { !state.items.is_empty() || !state.should_continue },
                     &timeout,
@@ -1068,7 +1067,7 @@ mod webkit_queue_test {
                 std::mem::drop(queue);
                 (should_notify, result)
             };
-            notify(notify_style, &*full_condition, should_notify);
+            notify(notify_style, &full_condition, should_notify);
 
             if let Some(result) = result {
                 output_queue.lock().push(result);
@@ -1090,7 +1089,7 @@ mod webkit_queue_test {
                 let should_notify = {
                     let mut queue = queue.lock();
                     wait(
-                        &*full_condition,
+                        &full_condition,
                         &mut queue,
                         |state| state.items.len() < max_queue_size,
                         &timeout,
@@ -1100,7 +1099,7 @@ mod webkit_queue_test {
                     std::mem::drop(queue);
                     should_notify
                 };
-                notify(notify_style, &*empty_condition, should_notify);
+                notify(notify_style, &empty_condition, should_notify);
             }
         })
     }

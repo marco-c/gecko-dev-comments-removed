@@ -318,34 +318,91 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/log/0.4.20"
+    html_root_url = "https://docs.rs/log/0.4.26"
 )]
 #![warn(missing_docs)]
 #![deny(missing_debug_implementations, unconditional_recursion)]
 #![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
 
+#[cfg(any(
+    all(feature = "max_level_off", feature = "max_level_error"),
+    all(feature = "max_level_off", feature = "max_level_warn"),
+    all(feature = "max_level_off", feature = "max_level_info"),
+    all(feature = "max_level_off", feature = "max_level_debug"),
+    all(feature = "max_level_off", feature = "max_level_trace"),
+    all(feature = "max_level_error", feature = "max_level_warn"),
+    all(feature = "max_level_error", feature = "max_level_info"),
+    all(feature = "max_level_error", feature = "max_level_debug"),
+    all(feature = "max_level_error", feature = "max_level_trace"),
+    all(feature = "max_level_warn", feature = "max_level_info"),
+    all(feature = "max_level_warn", feature = "max_level_debug"),
+    all(feature = "max_level_warn", feature = "max_level_trace"),
+    all(feature = "max_level_info", feature = "max_level_debug"),
+    all(feature = "max_level_info", feature = "max_level_trace"),
+    all(feature = "max_level_debug", feature = "max_level_trace"),
+))]
+compile_error!("multiple max_level_* features set");
 
-#![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
-#![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
+#[rustfmt::skip]
+#[cfg(any(
+    all(feature = "release_max_level_off", feature = "release_max_level_error"),
+    all(feature = "release_max_level_off", feature = "release_max_level_warn"),
+    all(feature = "release_max_level_off", feature = "release_max_level_info"),
+    all(feature = "release_max_level_off", feature = "release_max_level_debug"),
+    all(feature = "release_max_level_off", feature = "release_max_level_trace"),
+    all(feature = "release_max_level_error", feature = "release_max_level_warn"),
+    all(feature = "release_max_level_error", feature = "release_max_level_info"),
+    all(feature = "release_max_level_error", feature = "release_max_level_debug"),
+    all(feature = "release_max_level_error", feature = "release_max_level_trace"),
+    all(feature = "release_max_level_warn", feature = "release_max_level_info"),
+    all(feature = "release_max_level_warn", feature = "release_max_level_debug"),
+    all(feature = "release_max_level_warn", feature = "release_max_level_trace"),
+    all(feature = "release_max_level_info", feature = "release_max_level_debug"),
+    all(feature = "release_max_level_info", feature = "release_max_level_trace"),
+    all(feature = "release_max_level_debug", feature = "release_max_level_trace"),
+))]
+compile_error!("multiple release_max_level_* features set");
 
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
 
-use std::cmp;
+use std::cfg;
 #[cfg(feature = "std")]
 use std::error;
-use std::fmt;
-use std::mem;
 use std::str::FromStr;
+use std::{cmp, fmt, mem};
 
 #[macro_use]
 mod macros;
 mod serde;
 
-#[cfg(feature = "kv_unstable")]
+#[cfg(feature = "kv")]
 pub mod kv;
 
 #[cfg(target_has_atomic = "ptr")]
@@ -466,26 +523,17 @@ impl PartialOrd<LevelFilter> for Level {
     }
 }
 
-fn ok_or<T, E>(t: Option<T>, e: E) -> Result<T, E> {
-    match t {
-        Some(t) => Ok(t),
-        None => Err(e),
-    }
-}
-
 impl FromStr for Level {
     type Err = ParseLevelError;
     fn from_str(level: &str) -> Result<Level, Self::Err> {
-        ok_or(
-            LOG_LEVEL_NAMES
-                .iter()
-                .position(|&name| name.eq_ignore_ascii_case(level))
-                .into_iter()
-                .filter(|&idx| idx != 0)
-                .map(|idx| Level::from_usize(idx).unwrap())
-                .next(),
-            ParseLevelError(()),
-        )
+        LOG_LEVEL_NAMES
+            .iter()
+            .position(|&name| name.eq_ignore_ascii_case(level))
+            .into_iter()
+            .filter(|&idx| idx != 0)
+            .map(|idx| Level::from_usize(idx).unwrap())
+            .next()
+            .ok_or(ParseLevelError(()))
     }
 }
 
@@ -587,13 +635,11 @@ impl PartialOrd<Level> for LevelFilter {
 impl FromStr for LevelFilter {
     type Err = ParseLevelError;
     fn from_str(level: &str) -> Result<LevelFilter, Self::Err> {
-        ok_or(
-            LOG_LEVEL_NAMES
-                .iter()
-                .position(|&name| name.eq_ignore_ascii_case(level))
-                .map(|p| LevelFilter::from_usize(p).unwrap()),
-            ParseLevelError(()),
-        )
+        LOG_LEVEL_NAMES
+            .iter()
+            .position(|&name| name.eq_ignore_ascii_case(level))
+            .map(|p| LevelFilter::from_usize(p).unwrap())
+            .ok_or(ParseLevelError(()))
     }
 }
 
@@ -724,7 +770,7 @@ pub struct Record<'a> {
     module_path: Option<MaybeStaticStr<'a>>,
     file: Option<MaybeStaticStr<'a>>,
     line: Option<u32>,
-    #[cfg(feature = "kv_unstable")]
+    #[cfg(feature = "kv")]
     key_values: KeyValues<'a>,
 }
 
@@ -732,11 +778,11 @@ pub struct Record<'a> {
 
 
 
-#[cfg(feature = "kv_unstable")]
+#[cfg(feature = "kv")]
 #[derive(Clone)]
 struct KeyValues<'a>(&'a dyn kv::Source);
 
-#[cfg(feature = "kv_unstable")]
+#[cfg(feature = "kv")]
 impl<'a> fmt::Debug for KeyValues<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut visitor = f.debug_map();
@@ -813,14 +859,14 @@ impl<'a> Record<'a> {
     }
 
     
-    #[cfg(feature = "kv_unstable")]
+    #[cfg(feature = "kv")]
     #[inline]
     pub fn key_values(&self) -> &dyn kv::Source {
         self.key_values.0
     }
 
     
-    #[cfg(feature = "kv_unstable")]
+    #[cfg(feature = "kv")]
     #[inline]
     pub fn to_builder(&self) -> RecordBuilder {
         RecordBuilder {
@@ -905,8 +951,8 @@ impl<'a> RecordBuilder<'a> {
                 module_path: None,
                 file: None,
                 line: None,
-                #[cfg(feature = "kv_unstable")]
-                key_values: KeyValues(&Option::None::<(kv::Key, kv::Value)>),
+                #[cfg(feature = "kv")]
+                key_values: KeyValues(&None::<(kv::Key, kv::Value)>),
             },
         }
     }
@@ -975,7 +1021,7 @@ impl<'a> RecordBuilder<'a> {
     }
 
     
-    #[cfg(feature = "kv_unstable")]
+    #[cfg(feature = "kv")]
     #[inline]
     pub fn key_values(&mut self, kvs: &'a dyn kv::Source) -> &mut RecordBuilder<'a> {
         self.record.key_values = KeyValues(kvs);
@@ -1150,6 +1196,11 @@ pub trait Log: Sync + Send {
     fn log(&self, record: &Record);
 
     
+    
+    
+    
+    
+    
     fn flush(&self);
 }
 
@@ -1191,10 +1242,10 @@ where
     }
 
     fn log(&self, record: &Record) {
-        self.as_ref().log(record)
+        self.as_ref().log(record);
     }
     fn flush(&self) {
-        self.as_ref().flush()
+        self.as_ref().flush();
     }
 }
 
@@ -1208,10 +1259,10 @@ where
     }
 
     fn log(&self, record: &Record) {
-        self.as_ref().log(record)
+        self.as_ref().log(record);
     }
     fn flush(&self) {
-        self.as_ref().flush()
+        self.as_ref().flush();
     }
 }
 
@@ -1358,27 +1409,22 @@ fn set_logger_inner<F>(make_logger: F) -> Result<(), SetLoggerError>
 where
     F: FnOnce() -> &'static dyn Log,
 {
-    let old_state = match STATE.compare_exchange(
+    match STATE.compare_exchange(
         UNINITIALIZED,
         INITIALIZING,
-        Ordering::SeqCst,
-        Ordering::SeqCst,
+        Ordering::Acquire,
+        Ordering::Relaxed,
     ) {
-        Ok(s) | Err(s) => s,
-    };
-    match old_state {
-        UNINITIALIZED => {
+        Ok(UNINITIALIZED) => {
             unsafe {
                 LOGGER = make_logger();
             }
-            STATE.store(INITIALIZED, Ordering::SeqCst);
+            STATE.store(INITIALIZED, Ordering::Release);
             Ok(())
         }
-        INITIALIZING => {
-            while STATE.load(Ordering::SeqCst) == INITIALIZING {
-                
-                #[allow(deprecated)]
-                std::sync::atomic::spin_loop_hint();
+        Err(INITIALIZING) => {
+            while STATE.load(Ordering::Relaxed) == INITIALIZING {
+                std::hint::spin_loop();
             }
             Err(SetLoggerError(()))
         }
@@ -1406,10 +1452,10 @@ where
 
 
 pub unsafe fn set_logger_racy(logger: &'static dyn Log) -> Result<(), SetLoggerError> {
-    match STATE.load(Ordering::SeqCst) {
+    match STATE.load(Ordering::Acquire) {
         UNINITIALIZED => {
             LOGGER = logger;
-            STATE.store(INITIALIZED, Ordering::SeqCst);
+            STATE.store(INITIALIZED, Ordering::Release);
             Ok(())
         }
         INITIALIZING => {
@@ -1458,7 +1504,15 @@ impl error::Error for ParseLevelError {}
 
 
 pub fn logger() -> &'static dyn Log {
-    if STATE.load(Ordering::SeqCst) != INITIALIZED {
+    
+    
+    
+    
+    
+    
+    
+    
+    if STATE.load(Ordering::Acquire) != INITIALIZED {
         static NOP: NopLogger = NopLogger;
         &NOP
     } else {
@@ -1479,67 +1533,24 @@ pub mod __private_api;
 
 
 
-pub const STATIC_MAX_LEVEL: LevelFilter = MAX_LEVEL_INNER;
-
-const MAX_LEVEL_INNER: LevelFilter = get_max_level_inner();
-
-const fn get_max_level_inner() -> LevelFilter {
-    #[allow(unreachable_code)]
-    {
-        #[cfg(all(not(debug_assertions), feature = "release_max_level_off"))]
-        {
-            return LevelFilter::Off;
-        }
-        #[cfg(all(not(debug_assertions), feature = "release_max_level_error"))]
-        {
-            return LevelFilter::Error;
-        }
-        #[cfg(all(not(debug_assertions), feature = "release_max_level_warn"))]
-        {
-            return LevelFilter::Warn;
-        }
-        #[cfg(all(not(debug_assertions), feature = "release_max_level_info"))]
-        {
-            return LevelFilter::Info;
-        }
-        #[cfg(all(not(debug_assertions), feature = "release_max_level_debug"))]
-        {
-            return LevelFilter::Debug;
-        }
-        #[cfg(all(not(debug_assertions), feature = "release_max_level_trace"))]
-        {
-            return LevelFilter::Trace;
-        }
-        #[cfg(feature = "max_level_off")]
-        {
-            return LevelFilter::Off;
-        }
-        #[cfg(feature = "max_level_error")]
-        {
-            return LevelFilter::Error;
-        }
-        #[cfg(feature = "max_level_warn")]
-        {
-            return LevelFilter::Warn;
-        }
-        #[cfg(feature = "max_level_info")]
-        {
-            return LevelFilter::Info;
-        }
-        #[cfg(feature = "max_level_debug")]
-        {
-            return LevelFilter::Debug;
-        }
-
-        LevelFilter::Trace
-    }
-}
+pub const STATIC_MAX_LEVEL: LevelFilter = match cfg!(debug_assertions) {
+    false if cfg!(feature = "release_max_level_off") => LevelFilter::Off,
+    false if cfg!(feature = "release_max_level_error") => LevelFilter::Error,
+    false if cfg!(feature = "release_max_level_warn") => LevelFilter::Warn,
+    false if cfg!(feature = "release_max_level_info") => LevelFilter::Info,
+    false if cfg!(feature = "release_max_level_debug") => LevelFilter::Debug,
+    false if cfg!(feature = "release_max_level_trace") => LevelFilter::Trace,
+    _ if cfg!(feature = "max_level_off") => LevelFilter::Off,
+    _ if cfg!(feature = "max_level_error") => LevelFilter::Error,
+    _ if cfg!(feature = "max_level_warn") => LevelFilter::Warn,
+    _ if cfg!(feature = "max_level_info") => LevelFilter::Info,
+    _ if cfg!(feature = "max_level_debug") => LevelFilter::Debug,
+    _ => LevelFilter::Trace,
+};
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
-    use super::{Level, LevelFilter, ParseLevelError};
-    use tests::std::string::ToString;
+    use super::{Level, LevelFilter, ParseLevelError, STATIC_MAX_LEVEL};
 
     #[test]
     fn test_levelfilter_from_str() {
@@ -1653,6 +1664,54 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(debug_assertions), ignore)]
+    fn test_static_max_level_debug() {
+        if cfg!(feature = "max_level_off") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Off);
+        } else if cfg!(feature = "max_level_error") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Error);
+        } else if cfg!(feature = "max_level_warn") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Warn);
+        } else if cfg!(feature = "max_level_info") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Info);
+        } else if cfg!(feature = "max_level_debug") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Debug);
+        } else {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Trace);
+        }
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, ignore)]
+    fn test_static_max_level_release() {
+        if cfg!(feature = "release_max_level_off") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Off);
+        } else if cfg!(feature = "release_max_level_error") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Error);
+        } else if cfg!(feature = "release_max_level_warn") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Warn);
+        } else if cfg!(feature = "release_max_level_info") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Info);
+        } else if cfg!(feature = "release_max_level_debug") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Debug);
+        } else if cfg!(feature = "release_max_level_trace") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Trace);
+        } else if cfg!(feature = "max_level_off") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Off);
+        } else if cfg!(feature = "max_level_error") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Error);
+        } else if cfg!(feature = "max_level_warn") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Warn);
+        } else if cfg!(feature = "max_level_info") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Info);
+        } else if cfg!(feature = "max_level_debug") {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Debug);
+        } else {
+            assert_eq!(STATIC_MAX_LEVEL, LevelFilter::Trace);
+        }
+    }
+
+    #[test]
     #[cfg(feature = "std")]
     fn test_error_trait() {
         use super::SetLoggerError;
@@ -1745,16 +1804,16 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "kv_unstable")]
+    #[cfg(feature = "kv")]
     fn test_record_key_values_builder() {
         use super::Record;
-        use kv::{self, Visitor};
+        use crate::kv::{self, VisitSource};
 
-        struct TestVisitor {
+        struct TestVisitSource {
             seen_pairs: usize,
         }
 
-        impl<'kvs> Visitor<'kvs> for TestVisitor {
+        impl<'kvs> VisitSource<'kvs> for TestVisitSource {
             fn visit_pair(
                 &mut self,
                 _: kv::Key<'kvs>,
@@ -1768,7 +1827,7 @@ mod tests {
         let kvs: &[(&str, i32)] = &[("a", 1), ("b", 2)];
         let record_test = Record::builder().key_values(&kvs).build();
 
-        let mut visitor = TestVisitor { seen_pairs: 0 };
+        let mut visitor = TestVisitSource { seen_pairs: 0 };
 
         record_test.key_values().visit(&mut visitor).unwrap();
 
@@ -1776,7 +1835,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "kv_unstable")]
+    #[cfg(feature = "kv")]
     fn test_record_key_values_get_coerce() {
         use super::Record;
 

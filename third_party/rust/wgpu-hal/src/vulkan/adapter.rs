@@ -1,7 +1,7 @@
 use alloc::{borrow::ToOwned as _, collections::BTreeMap, sync::Arc, vec::Vec};
 use core::ffi::CStr;
 
-use ash::{amd, ext, google, khr, vk};
+use ash::{ext, google, khr, vk};
 use parking_lot::Mutex;
 
 use super::conv;
@@ -43,9 +43,6 @@ pub struct PhysicalDeviceFeatures {
     
     pub(super) descriptor_indexing:
         Option<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT<'static>>,
-
-    
-    imageless_framebuffer: Option<vk::PhysicalDeviceImagelessFramebufferFeaturesKHR<'static>>,
 
     
     timeline_semaphore: Option<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR<'static>>,
@@ -136,9 +133,6 @@ impl PhysicalDeviceFeatures {
     ) -> vk::DeviceCreateInfo<'a> {
         info = info.enabled_features(&self.core);
         if let Some(ref mut feature) = self.descriptor_indexing {
-            info = info.push_next(feature);
-        }
-        if let Some(ref mut feature) = self.imageless_framebuffer {
             info = info.push_next(feature);
         }
         if let Some(ref mut feature) = self.timeline_semaphore {
@@ -325,16 +319,6 @@ impl PhysicalDeviceFeatures {
                         .descriptor_binding_storage_image_update_after_bind(needs_bindless)
                         .descriptor_binding_storage_buffer_update_after_bind(needs_bindless)
                         .descriptor_binding_partially_bound(needs_partially_bound),
-                )
-            } else {
-                None
-            },
-            imageless_framebuffer: if device_api_version >= vk::API_VERSION_1_2
-                || enabled_extensions.contains(&khr::imageless_framebuffer::NAME)
-            {
-                Some(
-                    vk::PhysicalDeviceImagelessFramebufferFeaturesKHR::default()
-                        .imageless_framebuffer(private_caps.imageless_framebuffers),
                 )
             } else {
                 None
@@ -944,12 +928,7 @@ impl PhysicalDeviceProperties {
 
         if self.device_api_version < vk::API_VERSION_1_1 {
             
-            if self.supports_extension(khr::maintenance1::NAME) {
-                extensions.push(khr::maintenance1::NAME);
-            } else {
-                
-                extensions.push(amd::negative_viewport_height::NAME);
-            }
+            extensions.push(khr::maintenance1::NAME);
 
             
             if self.supports_extension(khr::maintenance2::NAME) {
@@ -979,15 +958,6 @@ impl PhysicalDeviceProperties {
             
             if self.supports_extension(khr::image_format_list::NAME) {
                 extensions.push(khr::image_format_list::NAME);
-            }
-
-            
-            if self.supports_extension(khr::imageless_framebuffer::NAME) {
-                extensions.push(khr::imageless_framebuffer::NAME);
-                
-                if self.device_api_version < vk::API_VERSION_1_1 {
-                    extensions.push(khr::maintenance2::NAME);
-                }
             }
 
             
@@ -1427,15 +1397,6 @@ impl super::InstanceShared {
 
             
             
-            if capabilities.supports_extension(khr::imageless_framebuffer::NAME) {
-                let next = features
-                    .imageless_framebuffer
-                    .insert(vk::PhysicalDeviceImagelessFramebufferFeaturesKHR::default());
-                features2 = features2.push_next(next);
-            }
-
-            
-            
             if capabilities.supports_extension(khr::timeline_semaphore::NAME) {
                 let next = features
                     .timeline_semaphore
@@ -1638,12 +1599,11 @@ impl super::Instance {
             );
             return None;
         }
-        if !phd_capabilities.supports_extension(amd::negative_viewport_height::NAME)
-            && !phd_capabilities.supports_extension(khr::maintenance1::NAME)
+        if !phd_capabilities.supports_extension(khr::maintenance1::NAME)
             && phd_capabilities.device_api_version < vk::API_VERSION_1_1
         {
             log::warn!(
-                "viewport Y-flip is not supported, hiding adapter: {}",
+                "VK_KHR_maintenance1 is not supported, hiding adapter: {}",
                 info.name
             );
             return None;
@@ -1661,14 +1621,6 @@ impl super::Instance {
         }
 
         let private_caps = super::PrivateCapabilities {
-            flip_y_requires_shift: phd_capabilities.device_api_version >= vk::API_VERSION_1_1
-                || phd_capabilities.supports_extension(khr::maintenance1::NAME),
-            imageless_framebuffers: match phd_features.imageless_framebuffer {
-                Some(features) => features.imageless_framebuffer == vk::TRUE,
-                None => phd_features
-                    .imageless_framebuffer
-                    .is_some_and(|ext| ext.imageless_framebuffer != 0),
-            },
             image_view_usage: phd_capabilities.device_api_version >= vk::API_VERSION_1_1
                 || phd_capabilities.supports_extension(khr::maintenance2::NAME),
             timeline_semaphores: match phd_features.timeline_semaphore {
@@ -2102,7 +2054,6 @@ impl super::Adapter {
             features,
             workarounds: self.workarounds,
             render_passes: Mutex::new(Default::default()),
-            framebuffers: Mutex::new(Default::default()),
             sampler_cache: Mutex::new(super::sampler::SamplerCache::new(
                 self.private_caps.maximum_samplers,
             )),

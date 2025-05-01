@@ -1,5 +1,3 @@
-#![cfg(libc_const_extern_fn)] 
-
 #[cfg(target_os = "linux")]
 const _FOO: libc::c_uint = unsafe { libc::CMSG_SPACE(1) };
 

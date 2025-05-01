@@ -1,15 +1,5 @@
-pub type c_long = i32;
-pub type c_ulong = u32;
-pub type c_char = i8;
-pub type __cpu_simple_lock_nv_t = ::c_uchar;
+use crate::prelude::*;
 
+pub type __cpu_simple_lock_nv_t = c_uchar;
 
-cfg_if! {
-    if #[cfg(libc_const_size_of)] {
-        #[doc(hidden)]
-        pub const _ALIGNBYTES: usize = ::mem::size_of::<::c_int>() - 1;
-    } else {
-        #[doc(hidden)]
-        pub const _ALIGNBYTES: usize = 4 - 1;
-    }
-}
+pub(crate) const _ALIGNBYTES: usize = mem::size_of::<c_int>() - 1;
