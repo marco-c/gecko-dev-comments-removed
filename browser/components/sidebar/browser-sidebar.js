@@ -1083,11 +1083,10 @@ var SidebarController = {
 
     
     
-    let toRects = await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        resolve(this._getRects(animatingElements));
-      });
+    await new Promise(resolve => {
+      queueMicrotask(() => resolve(this.sidebarMain.updateComplete));
     });
+    let toRects = this._getRects(animatingElements);
 
     const options = {
       duration: document.documentElement.hasAttribute("sidebar-expand-on-hover")
