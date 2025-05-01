@@ -2982,6 +2982,9 @@
 
 
 
+
+
+
     addTabGroup(
       tabs,
       {
@@ -2989,6 +2992,7 @@
         color = null,
         label = "",
         insertBefore = null,
+        isAdoptingGroup = false,
         isUserTriggered = false,
         telemetryUserCreateSource = "unknown",
       } = {}
@@ -3026,6 +3030,7 @@
         new CustomEvent("TabGroupCreate", {
           bubbles: true,
           detail: {
+            isAdoptingGroup,
             isUserTriggered,
             telemetryUserCreateSource,
           },
@@ -3144,6 +3149,7 @@
       if (group.ownerDocument == document) {
         return group;
       }
+      group.removedByAdoption = true;
       group.saveOnWindowClose = false;
 
       let newTabs = [];
@@ -3156,6 +3162,7 @@
         label: group.label,
         color: group.color,
         insertBefore: newTabs[0],
+        isAdoptingGroup: true,
       });
     }
 
