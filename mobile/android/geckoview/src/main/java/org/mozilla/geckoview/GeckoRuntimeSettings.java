@@ -601,6 +601,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().setLargeKeepaliveFactor(factor);
       return this;
     }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder lowMemoryDetection(final boolean enable) {
+      getSettings().mLowMemoryDetection = enable;
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -710,6 +722,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    boolean mForceEnableAccessibility;
    boolean mDebugPause;
    boolean mUseMaxScreenDepth;
+   boolean mLowMemoryDetection = true;
    float mDisplayDensityOverride = -1.0f;
    int mDisplayDpiOverride;
    int mScreenWidthOverride;
@@ -760,6 +773,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mForceEnableAccessibility = settings.mForceEnableAccessibility;
     mDebugPause = settings.mDebugPause;
     mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
+    mLowMemoryDetection = settings.mLowMemoryDetection;
     mDisplayDensityOverride = settings.mDisplayDensityOverride;
     mDisplayDpiOverride = settings.mDisplayDpiOverride;
     mScreenWidthOverride = settings.mScreenWidthOverride;
@@ -1174,6 +1188,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getUseMaxScreenDepth() {
     return mUseMaxScreenDepth;
+  }
+
+  
+
+
+
+
+  public boolean getLowMemoryDetection() {
+    return mLowMemoryDetection;
   }
 
   
@@ -2057,6 +2080,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     ParcelableUtils.writeBoolean(out, mForceEnableAccessibility);
     ParcelableUtils.writeBoolean(out, mDebugPause);
     ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
+    ParcelableUtils.writeBoolean(out, mLowMemoryDetection);
     out.writeFloat(mDisplayDensityOverride);
     out.writeInt(mDisplayDpiOverride);
     out.writeInt(mScreenWidthOverride);
@@ -2076,6 +2100,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mForceEnableAccessibility = ParcelableUtils.readBoolean(source);
     mDebugPause = ParcelableUtils.readBoolean(source);
     mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
+    mLowMemoryDetection = ParcelableUtils.readBoolean(source);
     mDisplayDensityOverride = source.readFloat();
     mDisplayDpiOverride = source.readInt();
     mScreenWidthOverride = source.readInt();

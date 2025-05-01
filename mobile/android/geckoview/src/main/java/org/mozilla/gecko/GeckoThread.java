@@ -32,6 +32,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.GeckoLoader;
 import org.mozilla.gecko.process.GeckoProcessManager;
 import org.mozilla.gecko.process.GeckoProcessType;
+import org.mozilla.gecko.process.MemoryController;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.BuildConfig;
@@ -144,11 +145,14 @@ public class GeckoThread extends Thread {
   public static final int FLAG_PRELOAD_CHILD = 1 << 1; 
   public static final int FLAG_ENABLE_NATIVE_CRASHREPORTER =
       1 << 2; 
+  public static final int FLAG_DISABLE_LOW_MEMORY_DETECTION =
+      1 << 3; 
 
    static final String EXTRA_ARGS = "args";
 
   private boolean mInitialized;
   private InitInfo mInitInfo;
+  private MemoryController mMemoryController;
 
   public static class InitInfo {
     public final String[] args;
@@ -455,6 +459,8 @@ public class GeckoThread extends Thread {
       env.add(0, "MOZ_ANDROID_USER_SERIAL_NUMBER=" + mInitInfo.userSerialNumber);
     }
 
+    maybeRegisterMemoryController(env);
+
     
     
     maybeStartGeckoProfiler(env);
@@ -517,6 +523,32 @@ public class GeckoThread extends Thread {
       
       System.exit(0);
     }
+  }
+
+  
+  
+  
+  
+  private void maybeRegisterMemoryController(final @NonNull List<String> env) {
+    if ((mInitInfo.flags & GeckoThread.FLAG_DISABLE_LOW_MEMORY_DETECTION) != 0) {
+      return;
+    }
+
+    final Context context = GeckoAppShell.getApplicationContext();
+
+    mMemoryController = new MemoryController();
+    waitForState(State.RUNNING)
+        .accept(
+            val -> {
+              context.registerComponentCallbacks(mMemoryController);
+            },
+            e -> Log.e(LOGTAG, "Unable to register the MemoryController", e));
+    waitForState(State.EXITING)
+        .accept(
+            val -> {
+              context.unregisterComponentCallbacks(mMemoryController);
+            },
+            e -> Log.e(LOGTAG, "Unable to unregister the MemoryController", e));
   }
 
   
