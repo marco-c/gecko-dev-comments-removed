@@ -22,12 +22,22 @@ const SUPPORTED_LOCALES =
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutHomeStartupCache: "resource:///modules/AboutHomeStartupCache.sys.mjs",
+  NewTabGleanUtils: "resource://newtab/lib/NewTabGleanUtils.sys.mjs",
 });
 
 const ResourceSubstitution = "newtab";
 
 this.builtin_newtab = class extends ExtensionAPI {
   #chromeHandle = null;
+
+  async registerMetricsFromJson() {
+    
+    
+    const version = AppConstants.MOZ_APP_VERSION.match(/\d+/)[0];
+    const metricsPath = `webext-glue/metrics/runtime-metrics-${version}.json`;
+
+    lazy.NewTabGleanUtils.registerMetricsAndPings(`resource://newtab/${metricsPath}`);
+  }
 
   onStartup() {
     if (!AppConstants.BROWSER_NEWTAB_AS_ADDON) {
@@ -74,8 +84,8 @@ this.builtin_newtab = class extends ExtensionAPI {
       L10nRegistry.getInstance().registerSources([newtabFileSource]);
 
       
+      this.registerMetricsFromJson();
     }
-
     redirector.builtInAddonInitialized();
   }
 
