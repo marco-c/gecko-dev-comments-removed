@@ -787,7 +787,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     if (
       this.browsingContext?.watchedByDevTools &&
-      !this.browsingContext.parent
+      !this.browsingContext.parent &&
+      
+      
+      !this.browsingContext.isDiscarded
     ) {
       this.browsingContext.watchedByDevTools = false;
     }
