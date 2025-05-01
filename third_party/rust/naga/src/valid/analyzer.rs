@@ -160,6 +160,9 @@ pub struct ExpressionInfo {
 
     
     
+    
+    
+    
     pub ref_count: usize,
 
     
@@ -1219,6 +1222,19 @@ impl ModuleInfo {
         )?;
         info.uniformity = uniformity.result;
         info.may_kill = uniformity.exit.contains(ExitFlags::MAY_KILL);
+
+        
+        
+        
+        
+        
+        for &handle in fun.named_expressions.keys() {
+            if let Some(global) = info[handle].assignable_global {
+                if info.global_uses[global.index()].is_empty() {
+                    info.global_uses[global.index()] = GlobalUse::QUERY;
+                }
+            }
+        }
 
         Ok(info)
     }

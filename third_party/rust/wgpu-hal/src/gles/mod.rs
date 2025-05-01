@@ -80,8 +80,6 @@
 
 
 
-
-
 #[cfg(not(any(windows, webgl)))]
 mod egl;
 #[cfg(Emscripten)]
