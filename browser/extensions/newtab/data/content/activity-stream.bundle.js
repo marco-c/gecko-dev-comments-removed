@@ -12370,7 +12370,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       }
       return external_React_default().createElement("div", {
         key: category
-      }, external_React_default().createElement("input", WallpaperCategories_extends({
+      }, external_React_default().createElement("button", WallpaperCategories_extends({
         ref: el => {
           if (el) {
             this.categoryRef[index] = el;
@@ -12378,7 +12378,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         },
         id: category,
         style: style,
-        type: "button",
         onKeyDown: e => this.handleCategoryKeyDown(e, category)
         
         ,
@@ -13420,6 +13419,20 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 
+function DownloadModalToggle() {
+  return external_React_default().createElement("button", {
+    className: "mobile-download-promo"
+  }, external_React_default().createElement("div", {
+    className: "icon icon-device-phone"
+  }));
+}
+
+;
+
+
+
+
+
 function ThumbUpThumbDownToast({
   onDismissClick,
   onAnimationEnd
@@ -13979,6 +13992,7 @@ function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : 
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const Base_PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
@@ -14439,6 +14453,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       }
     }
   }
+
+  
   render() {
     const {
       props
@@ -14491,6 +14507,14 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveSponsoredTopSites
     } = prefs;
     const supportUrl = prefs["support.url"];
+
+    
+    const mobileDownloadPromoEnabled = prefs["mobileDownloadModal.enabled"];
+    const mobileDownloadPromoVariantAEnabled = prefs["mobileDownloadModal.variant-a"];
+    const mobileDownloadPromoVariantBEnabled = prefs["mobileDownloadModal.variant-b"];
+    const mobileDownloadPromoVariantCEnabled = prefs["mobileDownloadModal.variant-c"];
+    const mobileDownloadPromoVariantABorC = mobileDownloadPromoVariantAEnabled || mobileDownloadPromoVariantBEnabled || mobileDownloadPromoVariantCEnabled;
+    const mobileDownloadPromoWrapperHeightModifier = prefs["weather.display"] === "detailed" && weatherEnabled && mayHaveWeather ? "is-tall" : "";
     const hasThumbsUpDownLayout = prefs["discoverystream.thumbsUpDown.searchTopsitesCompact"];
     const hasThumbsUpDown = prefs["discoverystream.thumbsUpDown.enabled"];
     const sectionsEnabled = prefs["discoverystream.sections.enabled"];
@@ -14498,7 +14522,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     const sectionsCustomizeMenuPanelEnabled = prefs["discoverystream.sections.customizeMenuPanel.enabled"];
     
     const mayHaveTopicSections = topicLabelsEnabled && sectionsEnabled && sectionsCustomizeMenuPanelEnabled && DiscoveryStream.feeds.loaded;
-    const featureClassName = [weatherEnabled && mayHaveWeather && "has-weather",
+    const featureClassName = [mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && "has-mobile-download-promo",
+    
+    weatherEnabled && mayHaveWeather && "has-weather",
     
     prefs.showSearch ? "has-search" : "no-search", layoutsVariantAEnabled ? "layout-variant-a" : "",
     
@@ -14547,6 +14573,8 @@ class BaseContent extends (external_React_default()).PureComponent {
     }))), external_React_default().createElement("div", {
       className: "weatherWrapper"
     }, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null))), external_React_default().createElement("div", {
+      className: `mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`
+    }, mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(DownloadModalToggle, null))), external_React_default().createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
     }, external_React_default().createElement("main", {
