@@ -2016,7 +2016,7 @@ class FunctionCompiler {
           true, instancePointer_);
       curBlock_->add(cellPtr);
       load = MWasmLoadGlobalCell::New(alloc(), global.type().toMIRType(),
-                                      cellPtr, global.type().toMaybeRefType());
+                                      cellPtr, global.type());
     } else {
       
       load = MWasmLoadInstanceDataField::New(
@@ -2046,9 +2046,8 @@ class FunctionCompiler {
       if (global.type().toMIRType() == MIRType::WasmAnyRef) {
         
         MOZ_ASSERT(v->type() == MIRType::WasmAnyRef);
-        auto* prevValue =
-            MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef, valueAddr,
-                                     global.type().toMaybeRefType());
+        auto* prevValue = MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef,
+                                                   valueAddr, global.type());
         curBlock_->add(prevValue);
 
         
@@ -2078,9 +2077,8 @@ class FunctionCompiler {
 
       
       MOZ_ASSERT(v->type() == MIRType::WasmAnyRef);
-      auto* prevValue =
-          MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef, valueAddr,
-                                   global.type().toMaybeRefType());
+      auto* prevValue = MWasmLoadGlobalCell::New(alloc(), MIRType::WasmAnyRef,
+                                                 valueAddr, global.type());
       curBlock_->add(prevValue);
 
       
