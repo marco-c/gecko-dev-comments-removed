@@ -1,0 +1,10 @@
+
+
+
+
+'use strict';
+
+promise_test(async () => {
+  assert_true(!!Summarizer);
+  assert_equals(typeof Summarizer.create, 'function');
+}, 'Summarizer.create() is defined');

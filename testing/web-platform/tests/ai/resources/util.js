@@ -1,4 +1,44 @@
+const kValidAvailabilities =
+    ['unavailable', 'downloadable', 'downloading', 'available'];
+const kAvailableAvailabilities = ['downloadable', 'downloading', 'available'];
+
 const kTestPrompt = 'Please write a sentence in English.';
+
+
+
+
+
+
+
+
+const generateOptionCombinations = (optionsSpec) => {
+  
+  const keys = optionsSpec.map(o => Object.keys(o)[0]);
+  
+  const valueArrays = optionsSpec.map(o => Object.values(o)[0]);
+  
+  const valueCombinations = valueArrays.reduce((accumulator, currentValues) => {
+    
+    if (accumulator.length === 0) {
+      return currentValues.map(value => [value]);
+    }
+    
+    return accumulator.flatMap(existingCombo =>
+      currentValues.map(currentValue => [...existingCombo, currentValue])
+    );
+  }, []);
+
+  
+  return valueCombinations.map(combination => {
+    const result = {};
+    keys.forEach((key, index) => {
+      if (combination[index] !== undefined) {
+        result[key] = combination[index];
+      }
+    });
+    return result;
+  });
+}
 
 
 const testAbortPromise = async (t, method) => {
@@ -77,7 +117,7 @@ async function testMonitor(createFunc, options = {}) {
     });
   }
 
-  await createFunc({...options, monitor});
+  result = await createFunc({...options, monitor});
   created = true;
 
   assert_greater_than_equal(progressEvents.length, 2);
@@ -93,4 +133,5 @@ async function testMonitor(createFunc, options = {}) {
     assert_greater_than(progressEvent.loaded, lastProgressEventLoaded);
     lastProgressEventLoaded = progressEvent.loaded;
   }
+  return result;
 }
