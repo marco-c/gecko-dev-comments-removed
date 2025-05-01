@@ -8,7 +8,6 @@
 UNIFIED_SOURCES += [
     "TestAccessibleCaretEventHub.cpp",
     "TestAccessibleCaretManager.cpp",
-    "TestUniqueOrNonOwningPtr.cpp",
 ]
 
 
