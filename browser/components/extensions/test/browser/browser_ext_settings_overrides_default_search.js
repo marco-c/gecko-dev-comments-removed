@@ -7,7 +7,6 @@ ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
-  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
 });
 
 const EXTENSION1_ID = "extension1@mozilla.com";
@@ -92,24 +91,6 @@ function clearTelemetry() {
 }
 
 async function checkTelemetry(source, prevEngine, newEngine) {
-  TelemetryTestUtils.assertEvents(
-    [
-      {
-        object: "change_default",
-        value: source,
-        extra: {
-          prev_id: prevEngine.id,
-          new_id: newEngine.id,
-          new_name: newEngine.name,
-          new_load_path: newEngine.loadPath,
-          
-          new_sub_url: newEngine.submissionUrl.slice(0, 80),
-        },
-      },
-    ],
-    { category: "search", method: "engine" }
-  );
-
   let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
   delete snapshot[0].timestamp;
   Assert.deepEqual(
@@ -118,7 +99,7 @@ async function checkTelemetry(source, prevEngine, newEngine) {
       category: "search.engine.default",
       name: "changed",
       extra: {
-        change_source: source,
+        change_reason: source,
         previous_engine_id: prevEngine.id,
         new_engine_id: newEngine.id,
         new_display_name: newEngine.name,
