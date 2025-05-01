@@ -681,13 +681,8 @@ add_task(async function manyQueries_manyExposureResults_hidden_5() {
 });
 
 add_task(async function suggestExposure_matched() {
-  
-  info("Skipping task: TODO Bug 1961040");
-  return;
-
-  
   await doExposureTest({
-    prefs: [["quicksuggest.exposureSuggestionTypes", "aaa"]],
+    prefs: [["quicksuggest.dynamicSuggestionTypes", "test-exposure-aaa"]],
     queries: [
       {
         query: "aaa keyword",
@@ -699,13 +694,8 @@ add_task(async function suggestExposure_matched() {
 });
 
 add_task(async function suggestExposure_notMatched() {
-  
-  info("Skipping task: TODO Bug 1961040");
-  return;
-
-  
   await doExposureTest({
-    prefs: [["quicksuggest.exposureSuggestionTypes", "aaa"]],
+    prefs: [["quicksuggest.dynamicSuggestionTypes", "test-exposure-aaa"]],
     queries: [
       {
         query: "bbb keyword",
@@ -717,14 +707,9 @@ add_task(async function suggestExposure_notMatched() {
 });
 
 add_task(async function suggestExposure_showExposureResults() {
-  
-  info("Skipping task: TODO Bug 1961040");
-  return;
-
-  
   await doExposureTest({
     prefs: [
-      ["quicksuggest.exposureSuggestionTypes", "aaa"],
+      ["quicksuggest.dynamicSuggestionTypes", "test-exposure-aaa"],
       ["showExposureResults", true],
     ],
     queries: [

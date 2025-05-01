@@ -570,7 +570,7 @@ pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 5);
 pref("browser.urlbar.quicksuggest.ampMatchingStrategy", 0);
 
 
-pref("browser.urlbar.quicksuggest.exposureSuggestionTypes", "");
+pref("browser.urlbar.quicksuggest.dynamicSuggestionTypes", "");
 
 
 pref("browser.urlbar.quicksuggest.mlEnabled", false);
