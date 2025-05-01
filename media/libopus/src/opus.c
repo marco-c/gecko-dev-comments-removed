@@ -25,19 +25,23 @@
 
 
 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include "opus.h"
+#include "celt/mathops.h"
 #include "opus_private.h"
 
 #ifndef DISABLE_FLOAT_API
-OPUS_EXPORT void opus_pcm_soft_clip(float *_x, int N, int C, float *declip_mem)
+
+void opus_pcm_soft_clip_impl(float *_x, int N, int C, float *declip_mem, int arch)
 {
    int c;
    int i;
    float *x;
+   int all_within_neg1pos1;
 
    if (C<1 || N<1 || !_x || !declip_mem) return;
 
@@ -45,8 +49,22 @@ OPUS_EXPORT void opus_pcm_soft_clip(float *_x, int N, int C, float *declip_mem)
 
 
 
-   for (i=0;i<N*C;i++)
-      _x[i] = MAX16(-2.f, MIN16(2.f, _x[i]));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   all_within_neg1pos1 = opus_limit2_checkwithin1(_x, N*C, arch);
+
    for (c=0;c<C;c++)
    {
       float a;
@@ -72,10 +90,16 @@ OPUS_EXPORT void opus_pcm_soft_clip(float *_x, int N, int C, float *declip_mem)
          float maxval;
          int special=0;
          int peak_pos;
-         for (i=curr;i<N;i++)
+         
+         if (all_within_neg1pos1)
          {
-            if (x[i*C]>1 || x[i*C]<-1)
-               break;
+            i = N;
+         } else {
+            for (i=curr;i<N;i++)
+            {
+               if (x[i*C]>1 || x[i*C]<-1)
+                  break;
+            }
          }
          if (i==N)
          {
@@ -135,6 +159,12 @@ OPUS_EXPORT void opus_pcm_soft_clip(float *_x, int N, int C, float *declip_mem)
       declip_mem[c] = a;
    }
 }
+
+OPUS_EXPORT void opus_pcm_soft_clip(float *_x, int N, int C, float *declip_mem)
+{
+   opus_pcm_soft_clip_impl(_x, N, C, declip_mem, 0);
+}
+
 #endif
 
 int encode_size(int size, unsigned char *data)

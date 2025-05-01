@@ -229,4 +229,24 @@ void celt_float2int16_c(const float * OPUS_RESTRICT in, short * OPUS_RESTRICT ou
    }
 }
 
+int opus_limit2_checkwithin1_c(float * samples, int cnt)
+{
+   int i;
+   if (cnt <= 0)
+   {
+      return 1;
+   }
+
+   for (i = 0; i < cnt; i++)
+   {
+      float clippedVal = samples[i];
+      clippedVal = FMAX(-2.0f, clippedVal);
+      clippedVal = FMIN(2.0f, clippedVal);
+      samples[i] = clippedVal;
+   }
+
+   
+   return 0;
+}
+
 #endif 
