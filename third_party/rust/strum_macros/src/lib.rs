@@ -112,6 +112,12 @@ fn debug_print_generated(ast: &DeriveInput, toks: &TokenStream) {
 
 
 
+
+
+
+
+
+
 #[proc_macro_derive(EnumString, attributes(strum))]
 pub fn from_string(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
@@ -121,6 +127,9 @@ pub fn from_string(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     debug_print_generated(&ast, &toks);
     toks.into()
 }
+
+
+
 
 
 
@@ -227,6 +236,7 @@ pub fn variant_names_deprecated(input: proc_macro::TokenStream) -> proc_macro::T
     debug_print_generated(&ast, &toks);
     toks.into()
 }
+
 
 
 
@@ -358,6 +368,9 @@ pub fn to_string(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     debug_print_generated(&ast, &toks);
     toks.into()
 }
+
+
+
 
 
 

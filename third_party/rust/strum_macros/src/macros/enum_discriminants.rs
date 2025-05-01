@@ -22,6 +22,7 @@ pub fn enum_discriminants_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
 
     
     let type_properties = ast.get_type_properties()?;
+    let strum_module_path = type_properties.crate_module_path();
 
     let derives = type_properties.discriminant_derives;
 
@@ -35,7 +36,8 @@ pub fn enum_discriminants_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
     let discriminants_name = type_properties.discriminant_name.unwrap_or(default_name);
     let discriminants_vis = type_properties
         .discriminant_vis
-        .unwrap_or_else(|| vis.clone());
+        .as_ref()
+        .unwrap_or_else(|| &vis);
 
     
     let pass_though_attributes = type_properties.discriminant_others;
@@ -132,6 +134,7 @@ pub fn enum_discriminants_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
     let impl_from = quote! {
         impl #impl_generics ::core::convert::From< #name #ty_generics > for #discriminants_name #where_clause {
+            #[inline]
             fn from(val: #name #ty_generics) -> #discriminants_name {
                 #from_fn_body
             }
@@ -149,11 +152,32 @@ pub fn enum_discriminants_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
 
         quote! {
             impl #impl_generics ::core::convert::From< #enum_life #name #ty_generics > for #discriminants_name #where_clause {
+                #[inline]
                 fn from(val: #enum_life #name #ty_generics) -> #discriminants_name {
                     #from_fn_body
                 }
             }
         }
+    };
+
+    
+    let impl_into_discriminant = match type_properties.discriminant_vis {
+        
+        None | Some(syn::Visibility::Public(..)) => quote! {
+            impl #impl_generics #strum_module_path::IntoDiscriminant for #name #ty_generics #where_clause {
+                type Discriminant = #discriminants_name;
+
+                #[inline]
+                fn discriminant(&self) -> Self::Discriminant {
+                    <Self::Discriminant as ::core::convert::From<&Self>>::from(self)
+                }
+            }
+        },
+        
+        
+        
+        
+        _ => quote! {},
     };
 
     Ok(quote! {
@@ -165,6 +189,7 @@ pub fn enum_discriminants_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
             #(#discriminants),*
         }
 
+        #impl_into_discriminant
         #impl_from
         #impl_from_ref
     })

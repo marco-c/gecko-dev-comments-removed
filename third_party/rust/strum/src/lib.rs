@@ -180,15 +180,11 @@ pub trait EnumMessage {
 
 
 
+
 pub trait EnumProperty {
     fn get_str(&self, prop: &str) -> Option<&'static str>;
-    fn get_int(&self, _prop: &str) -> Option<usize> {
-        Option::None
-    }
-
-    fn get_bool(&self, _prop: &str) -> Option<bool> {
-        Option::None
-    }
+    fn get_int(&self, _prop: &str) -> Option<i64>;
+    fn get_bool(&self, _prop: &str) -> Option<bool>;
 }
 
 
@@ -215,6 +211,15 @@ pub trait EnumCount {
 pub trait VariantNames {
     
     const VARIANTS: &'static [&'static str];
+}
+
+
+
+pub trait IntoDiscriminant {
+    
+    type Discriminant;
+
+    fn discriminant(&self) -> Self::Discriminant;
 }
 
 
