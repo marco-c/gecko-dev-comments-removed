@@ -4,6 +4,9 @@
 const { LinkPreview } = ChromeUtils.importESModule(
   "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
 );
+const { Region } = ChromeUtils.importESModule(
+  "resource://gre/modules/Region.sys.mjs"
+);
 const { LinkPreviewModel } = ChromeUtils.importESModule(
   "moz-src:///browser/components/genai/LinkPreviewModel.sys.mjs"
 );
@@ -402,4 +405,53 @@ add_task(async function test_skip_keypoints_generation_if_url_not_readable() {
   panel.remove();
   generateStub.restore();
   LinkPreview.keyboardComboActive = false;
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_no_key_points_in_disallowed_region() {
+  const currentRegion = Region.home;
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.linkPreview.enabled", true],
+      ["browser.ml.linkPreview.noKeyPointsRegions", currentRegion],
+    ],
+  });
+
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+
+  LinkPreview.keyboardComboActive = true;
+  XULBrowserWindow.setOverLink(
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html",
+    {}
+  );
+
+  let panel = await TestUtils.waitForCondition(() =>
+    document.getElementById("link-preview-panel")
+  );
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  is(
+    generateStub.callCount,
+    0,
+    "generateTextAI should not be called when region is disallowed"
+  );
+
+  panel.remove();
+  LinkPreview.keyboardComboActive = false;
+  generateStub.restore();
+
+  Services.prefs.clearUserPref("browser.ml.linkPreview.noKeyPointsRegions");
 });
