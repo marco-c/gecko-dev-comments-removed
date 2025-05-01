@@ -3891,6 +3891,61 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI,
   return InternalLoad(loadState);
 }
 
+
+
+
+
+nsresult nsDocShell::ReloadNavigable(
+    JSContext* aCx, uint32_t aReloadFlags,
+    nsIStructuredCloneContainer* aNavigationAPIState,
+    UserNavigationInvolvement aUserInvolvement) {
+  
+  if (aUserInvolvement != UserNavigationInvolvement::BrowserUI) {
+    
+    nsPIDOMWindowOuter* windowOuter = GetWindow();
+    MOZ_DIAGNOSTIC_ASSERT(windowOuter);
+    nsPIDOMWindowInner* windowInner = windowOuter->GetCurrentInnerWindow();
+    MOZ_DIAGNOSTIC_ASSERT(windowInner);
+    RefPtr navigation = windowInner->Navigation();
+    MOZ_DIAGNOSTIC_ASSERT(navigation);
+
+    
+    
+    
+    
+    RefPtr<nsIStructuredCloneContainer> destinationNavigationAPIState =
+        aNavigationAPIState;
+    if (!destinationNavigationAPIState) {
+      destinationNavigationAPIState =
+          mActiveEntry ? mActiveEntry->GetNavigationState() : nullptr;
+    }
+
+    
+    
+    
+    
+    
+    
+    RefPtr destinationURL = mActiveEntry ? mActiveEntry->GetURI() : nullptr;
+    if (!navigation->FirePushReplaceReloadNavigateEvent(
+            aCx, NavigationType::Reload, destinationURL,
+             false, Some(aUserInvolvement),
+             nullptr,  Nothing{},
+            destinationNavigationAPIState,
+             nullptr)) {
+      return NS_OK;
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  return Reload(aReloadFlags);
+}
+
 NS_IMETHODIMP
 nsDocShell::Reload(uint32_t aReloadFlags) {
   if (!IsNavigationAllowed()) {
