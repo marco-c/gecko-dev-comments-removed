@@ -80,41 +80,14 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
   }
   switch (aEvent->mMessage) {
     case eMouseEnterIntoWidget:
-      if (aEvent->mFlags.mIsSynthesizedForTests) {
-        const PointerInfo* const pointerInfo =
-            GetPointerInfo(aEvent->pointerId);
-        if (pointerInfo && !pointerInfo->mIsSynthesizedForTests) {
-          
-          
-          return;
-        }
-      }
       
       sActivePointersIds->InsertOrUpdate(
           aEvent->pointerId,
           MakeUnique<PointerInfo>(false, aEvent->mInputSource, true, false,
-                                  nullptr,
-                                  !!aEvent->mFlags.mIsSynthesizedForTests));
+                                  nullptr));
 
       MaybeCacheSpoofedPointerID(aEvent->mInputSource, aEvent->pointerId);
       break;
-    case ePointerMove:
-      
-      
-      if (!aEvent->mFlags.mIsSynthesizedForTests ||
-          aEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
-        return;
-      }
-      if (GetPointerInfo(aEvent->pointerId)) {
-        return;
-      }
-      sActivePointersIds->InsertOrUpdate(
-          aEvent->pointerId,
-          MakeUnique<PointerInfo>(
-               false, MouseEvent_Binding::MOZ_SOURCE_MOUSE,
-               true,  false,
-              nullptr,  true));
-      return;
     case ePointerDown:
       
       if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
@@ -126,8 +99,7 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
             MakeUnique<PointerInfo>(
                 true, pointerEvent->mInputSource, pointerEvent->mIsPrimary,
                 pointerEvent->mFromTouchEvent,
-                aTargetContent ? aTargetContent->OwnerDoc() : nullptr,
-                !!pointerEvent->mFlags.mIsSynthesizedForTests));
+                aTargetContent ? aTargetContent->OwnerDoc() : nullptr));
         MaybeCacheSpoofedPointerID(pointerEvent->mInputSource,
                                    pointerEvent->pointerId);
       }
@@ -144,30 +116,15 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
             MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
           sActivePointersIds->InsertOrUpdate(
               pointerEvent->pointerId,
-              MakeUnique<PointerInfo>(
-                  false, pointerEvent->mInputSource, pointerEvent->mIsPrimary,
-                  pointerEvent->mFromTouchEvent, nullptr,
-                  !!pointerEvent->mFlags.mIsSynthesizedForTests));
+              MakeUnique<PointerInfo>(false, pointerEvent->mInputSource,
+                                      pointerEvent->mIsPrimary,
+                                      pointerEvent->mFromTouchEvent, nullptr));
         } else {
-          
-          
-          
-          
-          
           sActivePointersIds->Remove(pointerEvent->pointerId);
         }
       }
       break;
     case eMouseExitFromWidget:
-      if (aEvent->mFlags.mIsSynthesizedForTests) {
-        const PointerInfo* const pointerInfo =
-            GetPointerInfo(aEvent->pointerId);
-        if (pointerInfo && !pointerInfo->mIsSynthesizedForTests) {
-          
-          
-          return;
-        }
-      }
       
       
       sActivePointersIds->Remove(aEvent->pointerId);

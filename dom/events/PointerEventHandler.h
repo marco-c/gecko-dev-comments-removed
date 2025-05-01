@@ -52,19 +52,15 @@ class PointerInfo final {
   bool mPrimaryState;
   bool mFromTouchEvent;
   bool mPreventMouseEventByContent;
-  
-  bool mIsSynthesizedForTests;
   WeakPtr<dom::Document> mActiveDocument;
   explicit PointerInfo(bool aActiveState, uint16_t aPointerType,
                        bool aPrimaryState, bool aFromTouchEvent,
-                       dom::Document* aActiveDocument,
-                       bool aIsSynthesizedForTests = false)
+                       dom::Document* aActiveDocument)
       : mPointerType(aPointerType),
         mActiveState(aActiveState),
         mPrimaryState(aPrimaryState),
         mFromTouchEvent(aFromTouchEvent),
         mPreventMouseEventByContent(false),
-        mIsSynthesizedForTests(aIsSynthesizedForTests),
         mActiveDocument(aActiveDocument) {}
 };
 
@@ -105,8 +101,6 @@ class PointerEventHandler final {
   
   static PointerCaptureInfo* GetPointerCaptureInfo(uint32_t aPointerId);
 
-  
-  
   
   
   static const PointerInfo* GetPointerInfo(uint32_t aPointerId);
