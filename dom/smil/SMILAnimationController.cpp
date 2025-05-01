@@ -51,8 +51,6 @@ SMILAnimationController::~SMILAnimationController() {
   NS_ASSERTION(mAnimationElementTable.IsEmpty(),
                "Animation controller shouldn't be tracking any animation"
                " elements when it dies");
-  MOZ_RELEASE_ASSERT(!mRegisteredWithRefreshDriver,
-                     "Leaving stale entry in refresh driver's observer list");
 }
 
 void SMILAnimationController::Disconnect() {
@@ -61,9 +59,6 @@ void SMILAnimationController::Disconnect() {
              "Expecting to disconnect when doc is sole remaining owner");
   NS_ASSERTION(mPauseState & SMILTimeContainer::PAUSE_PAGEHIDE,
                "Expecting to be paused for pagehide before disconnect");
-
-  StopSampling(GetRefreshDriver());
-
   mDocument = nullptr;  
 }
 
@@ -93,12 +88,10 @@ SMILTime SMILAnimationController::GetParentTime() const {
 }
 
 
-
-NS_IMPL_ADDREF(SMILAnimationController)
-NS_IMPL_RELEASE(SMILAnimationController)
-
-
 void SMILAnimationController::WillRefresh(mozilla::TimeStamp aTime) {
+  if (!mIsSampling) {
+    return;
+  }
   
   
   
@@ -143,6 +136,7 @@ void SMILAnimationController::WillRefresh(mozilla::TimeStamp aTime) {
   mCurrentSampleTime = aTime;
 
   Sample();
+  UpdateSampling();
 }
 
 
@@ -194,19 +188,6 @@ void SMILAnimationController::Unlink() { mLastCompositorTable = nullptr; }
 
 
 
-void SMILAnimationController::NotifyRefreshDriverCreated(
-    nsRefreshDriver* aRefreshDriver) {
-  UpdateSampling();
-}
-
-void SMILAnimationController::NotifyRefreshDriverDestroying(
-    nsRefreshDriver* aRefreshDriver) {
-  StopSampling(aRefreshDriver);
-}
-
-
-
-
 bool SMILAnimationController::ShouldSample() const {
   return !mPauseState && !mAnimationElementTable.IsEmpty() &&
          !mChildContainerTable.IsEmpty();
@@ -214,36 +195,21 @@ bool SMILAnimationController::ShouldSample() const {
 
 void SMILAnimationController::UpdateSampling() {
   const bool shouldSample = ShouldSample();
-  const bool isSampling = mRegisteredWithRefreshDriver;
-  if (shouldSample == isSampling) {
+  if (!shouldSample) {
+    mIsSampling = false;
     return;
   }
-
-  nsRefreshDriver* driver = GetRefreshDriver();
-  if (!driver) {
-    return;
-  }
-
-  if (shouldSample) {
+  mDocument->MaybeScheduleRenderingPhases(
+      {RenderingPhase::UpdateAnimationsAndSendEvents});
+  if (!mIsSampling) {
+    mIsSampling = true;
     
     
     mCurrentSampleTime = mozilla::TimeStamp::Now();
-    driver->AddRefreshObserver(this, FlushType::Style, "SMIL animations");
-    mRegisteredWithRefreshDriver = true;
+    
+    
+    
     Sample();  
-  } else {
-    StopSampling(driver);
-  }
-}
-
-void SMILAnimationController::StopSampling(nsRefreshDriver* aRefreshDriver) {
-  if (aRefreshDriver && mRegisteredWithRefreshDriver) {
-    
-    
-    MOZ_ASSERT(!GetRefreshDriver() || aRefreshDriver == GetRefreshDriver(),
-               "Stopping sampling with wrong refresh driver");
-    aRefreshDriver->RemoveRefreshObserver(this, FlushType::Style);
-    mRegisteredWithRefreshDriver = false;
   }
 }
 
