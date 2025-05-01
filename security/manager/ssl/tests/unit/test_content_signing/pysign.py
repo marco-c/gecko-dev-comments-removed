@@ -16,13 +16,9 @@ cat test.txt | python pysign.py > test.txt.signature
 """
 
 import base64
-import binascii
-import hashlib
 import pathlib
-import six
 import sys
 
-import ecdsa
 
 
 toolsDir = (pathlib.Path(__file__).parents[4] / "tools").resolve()
