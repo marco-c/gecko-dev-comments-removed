@@ -2062,7 +2062,7 @@ class FunctionCompiler {
         curBlock_->add(store);
 
         
-        return postBarrierPrecise(lineOrBytecode, valueAddr, prevValue);
+        return postBarrierEdgePrecise(lineOrBytecode, valueAddr, prevValue);
       }
 
       auto* store = MWasmStoreGlobalCell::New(alloc(), v, valueAddr);
@@ -2093,7 +2093,7 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       
-      return postBarrierPrecise(lineOrBytecode, valueAddr, prevValue);
+      return postBarrierEdgePrecise(lineOrBytecode, valueAddr, prevValue);
     }
 
     auto* store = MWasmStoreInstanceDataField::New(alloc(), global.offset(), v,
@@ -2209,7 +2209,7 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     
-    return postBarrierPrecise(lineOrBytecode, loc, prevValue);
+    return postBarrierEdgePrecise(lineOrBytecode, loc, prevValue);
   }
 
   void addInterruptCheck() {
@@ -2223,37 +2223,10 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] bool postBarrierPrecise(uint32_t lineOrBytecode,
-                                        MDefinition* valueAddr,
-                                        MDefinition* value) {
-    return emitInstanceCall2(lineOrBytecode, SASigPostBarrierPrecise, valueAddr,
-                             value);
-  }
-
-  
-  
-  
-  [[nodiscard]] bool postBarrierPreciseWithOffset(uint32_t lineOrBytecode,
-                                                  MDefinition* valueBase,
-                                                  uint32_t valueOffset,
-                                                  MDefinition* value) {
-    MDefinition* valueOffsetDef = constantI32(int32_t(valueOffset));
-    if (!valueOffsetDef) {
-      return false;
-    }
-    return emitInstanceCall3(lineOrBytecode, SASigPostBarrierPreciseWithOffset,
-                             valueBase, valueOffsetDef, value);
-  }
-
-  
-  
-  
-  
-  
-  [[nodiscard]] bool postBarrierImmediate(uint32_t lineOrBytecode,
+  [[nodiscard]] bool postBarrierWholeCell(uint32_t lineOrBytecode,
                                           MDefinition* object,
                                           MDefinition* newValue) {
-    auto* barrier = MWasmPostWriteBarrierImmediate::New(
+    auto* barrier = MWasmPostWriteBarrierWholeCell::New(
         alloc(), instancePointer_, object, newValue);
     if (!barrier) {
       return false;
@@ -2262,12 +2235,25 @@ class FunctionCompiler {
     return true;
   }
 
-  [[nodiscard]] bool postBarrierIndex(uint32_t lineOrBytecode,
-                                      MDefinition* object,
-                                      MDefinition* valueBase,
-                                      MDefinition* index, uint32_t scale,
-                                      MDefinition* newValue) {
-    auto* barrier = MWasmPostWriteBarrierIndex::New(
+  
+  
+  
+  [[nodiscard]] bool postBarrierEdgePrecise(uint32_t lineOrBytecode,
+                                            MDefinition* valueAddr,
+                                            MDefinition* value) {
+    return emitInstanceCall2(lineOrBytecode, SASigPostBarrierEdgePrecise,
+                             valueAddr, value);
+  }
+
+  
+  
+  
+  [[nodiscard]] bool postBarrierEdgeAtIndex(uint32_t lineOrBytecode,
+                                            MDefinition* object,
+                                            MDefinition* valueBase,
+                                            MDefinition* index, uint32_t scale,
+                                            MDefinition* newValue) {
+    auto* barrier = MWasmPostWriteBarrierEdgeAtIndex::New(
         alloc(), instancePointer_, object, valueBase, index, scale, newValue);
     if (!barrier) {
       return false;
@@ -4057,7 +4043,8 @@ class FunctionCompiler {
         alloc(), instancePointer_, exceptionAddr, 0, exception,
         AliasSet::WasmPendingException, WasmPreBarrierKind::Normal);
     curBlock_->add(setException);
-    if (!postBarrierPrecise(0, exceptionAddr, exception)) {
+    if (!postBarrierEdgePrecise(0, exceptionAddr,
+                                exception)) {
       return false;
     }
 
@@ -4069,7 +4056,7 @@ class FunctionCompiler {
         alloc(), instancePointer_, exceptionTagAddr, 0, tag,
         AliasSet::WasmPendingException, WasmPreBarrierKind::Normal);
     curBlock_->add(setExceptionTag);
-    return postBarrierPrecise(0, exceptionTagAddr, tag);
+    return postBarrierEdgePrecise(0, exceptionTagAddr, tag);
   }
 
   [[nodiscard]] bool endWithPadPatch(
@@ -4654,7 +4641,7 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       
-      if (!postBarrierImmediate(bytecodeOffset, exception, argValues[i])) {
+      if (!postBarrierWholeCell(bytecodeOffset, exception, argValues[i])) {
         return false;
       }
     }
@@ -4854,7 +4841,7 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     
-    return postBarrierImmediate(lineOrBytecode, keepAlive, value);
+    return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
   }
 
   
@@ -4901,8 +4888,8 @@ class FunctionCompiler {
     }
     curBlock_->add(store);
 
-    return postBarrierIndex(lineOrBytecode, keepAlive, base, index,
-                            sizeof(void*), value);
+    return postBarrierEdgeAtIndex(lineOrBytecode, keepAlive, base, index,
+                                  sizeof(void*), value);
   }
 
   
