@@ -744,7 +744,7 @@ TimerThread::Run() {
   
   
   mAllowedEarlyFiringMicroseconds = 250;
-  const TimeDuration allowedEarlyFiring =
+  const TimeDuration normalAllowedEarlyFiring =
       TimeDuration::FromMicroseconds(mAllowedEarlyFiringMicroseconds);
 
   
@@ -794,6 +794,14 @@ TimerThread::Run() {
       }
       waitFor = TimeDuration::FromMilliseconds(milliseconds);
     } else {
+      
+      
+      const TimeDuration allowedEarlyFiring =
+          !chaosModeActive
+              ? normalAllowedEarlyFiring
+              : TimeDuration::FromMicroseconds(ChaosMode::randomUint32LessThan(
+                    4 * mAllowedEarlyFiringMicroseconds));
+
       waitFor = TimeDuration::Forever();
       TimeStamp now = TimeStamp::Now();
 
@@ -868,19 +876,14 @@ TimerThread::Run() {
         
         
         
-        double microseconds = (timeout - now).ToMicroseconds();
+        const TimeDuration timeToNextTimer = timeout - now;
 
         
         
         
         static constexpr double sChaosFractions[] = {0.0, 0.25, 0.5, 0.75,
                                                      1.0, 1.75, 2.75};
-        if (chaosModeActive) {
-          microseconds *= sChaosFractions[ChaosMode::randomUint32LessThan(
-              std::size(sChaosFractions))];
-        }
-
-        if (microseconds < mAllowedEarlyFiringMicroseconds) {
+        if (timeToNextTimer < allowedEarlyFiring) {
           goto next;  
         }
 
