@@ -3,6 +3,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ContentAnalysis: "resource:///modules/ContentAnalysis.sys.mjs",
+});
+
 
 
 function xpcWrap(obj, iface) {
@@ -134,11 +138,32 @@ function makeMockContentAnalysis() {
     
     eventTarget: new EventTarget(),
 
-    setupForTest(shouldAllowRequest, waitForEvent) {
+    
+
+
+
+
+
+
+
+
+
+    setupForTest(shouldAllowRequest, waitForEvent, showDialogs) {
       this.shouldAllowRequest = shouldAllowRequest;
       this.errorValue = undefined;
       this.waitForEvent = !!waitForEvent;
+      this.showDialogs = showDialogs;
       this.clearCalls();
+      
+      
+      
+      
+      ContentAnalysis.setMockContentAnalysisForTest(
+        this.showDialogs ? this : undefined
+      );
+      
+      
+      ContentAnalysis.initialize(window);
     },
 
     setupForTestWithError(errorValue) {
@@ -150,6 +175,8 @@ function makeMockContentAnalysis() {
       this.calls = [];
       this.browsingContextsForURIs = [];
       this.agentCancelCalls = 0;
+      this.cancelledUserActions = [];
+      this.cancelledRequestTokens = [];
     },
 
     getAction() {
@@ -204,10 +231,10 @@ function makeMockContentAnalysis() {
 
     analyzeContentRequestPrivate(request, _autoAcknowledge, callback) {
       info(
-        "Mock ContentAnalysis service: analyzeContentRequestPrivate, this.shouldAllowRequest=" +
-          this.shouldAllowRequest +
-          ", this.waitForEvent=" +
-          this.waitForEvent
+        `Mock ContentAnalysis service: analyzeContentRequestPrivate, ` +
+          `this.shouldAllowRequest: ${this.shouldAllowRequest} ` +
+          `| this.waitForEvent: ${this.waitForEvent} ` +
+          `| this.showDialogs: ${this.showDialogs}`
       );
       info(
         `  Request type: ${request.analysisType} ` +
@@ -238,6 +265,9 @@ function makeMockContentAnalysis() {
       }
 
       this.calls.push(request);
+      if (this.showDialogs) {
+        Services.obs.notifyObservers(request, "dlp-request-made");
+      }
 
       
       setTimeout(async () => {
@@ -262,6 +292,9 @@ function makeMockContentAnalysis() {
           request.requestToken,
           request.userActionId
         );
+        if (this.showDialogs) {
+          Services.obs.notifyObservers(response, "dlp-response");
+        }
         callback.contentResult(response);
       }, 0);
     },
@@ -299,6 +332,18 @@ function makeMockContentAnalysis() {
     sendCancelToAgent(aUserActionId) {
       info(`got sendCancelToAgent for user action ID ${aUserActionId}`);
       this.agentCancelCalls = this.agentCancelCalls + 1;
+    },
+
+    getDiagnosticInfo() {
+      return this.realCAService.getDiagnosticInfo();
+    },
+
+    cancelRequestsByUserAction(aUserActionId) {
+      this.cancelledUserActions.push(aUserActionId);
+    },
+
+    cancelRequestsByRequestToken(aRequestToken) {
+      this.cancelledRequestTokens.push(aRequestToken);
     },
   };
 }
