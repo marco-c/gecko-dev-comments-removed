@@ -20,6 +20,13 @@ ChromeUtils.defineESModuleGetters(
   { global: "contextual" }
 );
 
+loader.lazyRequireGetter(
+  this,
+  "L10N",
+  "resource://devtools/client/netmonitor/src/utils/l10n.js",
+  true
+);
+
 const {
   UPDATE_PROPS,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
@@ -353,6 +360,31 @@ function getUrlDetails(url) {
     url,
     path,
   };
+}
+
+
+
+
+
+
+
+function getUrlToolTip(urlDetails) {
+  const url = urlDetails.url;
+  const decodedURL = urlDetails.unicodeUrl;
+
+  
+  
+  const ORIGINAL_URL = L10N.getFormatStr(
+    "netRequest.originalFileURL.tooltip",
+    url
+  );
+  const DECODED_URL = L10N.getFormatStr(
+    "netRequest.decodedFileURL.tooltip",
+    decodedURL
+  );
+  const toolTip =
+    url === decodedURL ? url : ORIGINAL_URL + "\n\n" + DECODED_URL;
+  return toolTip;
 }
 
 
@@ -792,6 +824,7 @@ module.exports = {
   getUrlHostName,
   getUrlQuery,
   getUrlScheme,
+  getUrlToolTip,
   parseQueryString,
   parseFormData,
   updateFormDataSections,
