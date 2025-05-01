@@ -4446,18 +4446,21 @@ void BacktrackingAllocator::addLiveRegistersForRange(
 
   
   CodePosition start = range->from();
-  if (range->hasDefinition() && !reg.isTemp()) {
+  if (range->hasDefinition()) {
 #ifdef CHECK_OSIPOINT_REGISTERS
     
     
     
-    if (reg.ins()->isInstruction()) {
+    
+    if (reg.ins()->isInstruction() && !reg.ins()->isCall()) {
       if (LSafepoint* safepoint = reg.ins()->toInstruction()->safepoint()) {
         safepoint->addClobberedRegister(a.toAnyRegister());
       }
     }
 #endif
-    start = start.next();
+    if (!reg.isTemp()) {
+      start = start.next();
+    }
   }
 
   *firstNonCallSafepoint =
@@ -4478,12 +4481,6 @@ void BacktrackingAllocator::addLiveRegistersForRange(
 
     LSafepoint* safepoint = ins->safepoint();
     safepoint->addLiveRegister(a.toAnyRegister());
-
-#ifdef CHECK_OSIPOINT_REGISTERS
-    if (reg.isTemp()) {
-      safepoint->addClobberedRegister(a.toAnyRegister());
-    }
-#endif
   }
 }
 

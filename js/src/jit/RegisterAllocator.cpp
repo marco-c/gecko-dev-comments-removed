@@ -152,6 +152,9 @@ bool AllocationIntegrityState::check() {
       if (safepoint) {
         
         MOZ_ASSERT_IF(ins->isCall(), safepoint->liveRegs().empty());
+#  ifdef CHECK_OSIPOINT_REGISTERS
+        MOZ_ASSERT_IF(ins->isCall(), safepoint->clobberedRegs().empty());
+#  endif
 
         
         for (LInstruction::TempIter temp(ins); !temp.done(); temp++) {
