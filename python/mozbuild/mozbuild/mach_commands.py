@@ -3423,7 +3423,7 @@ def repackage_desktop_file(
         
         
         build_variables = {
-            "DEB_PKG_NAME": release_product,
+            "PKG_NAME": release_product,
             "DBusActivatable": "false",
             "Icon": "org.mozilla.firefox",
             "StartupWMClass": release_product,
