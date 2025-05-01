@@ -730,6 +730,7 @@
         
         dataTransferOrderedTabs = [tab];
       } else {
+        this.selectedItem = tab;
         let selectedTabs = gBrowser.selectedTabs;
         let otherSelectedTabs = selectedTabs.filter(
           selectedTab => selectedTab != tab
