@@ -186,10 +186,6 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
 
   ClientSource& MutableClientSourceRef() const { return *mClientSource; }
 
-  
-  
-  void WorkerPrivateSaysForbidScript() { StartForbiddingScript(); }
-  void WorkerPrivateSaysAllowScript() { StopForbiddingScript(); }
   bool IsBackgroundInternal() const override {
     MOZ_ASSERT(mWorkerPrivate);
     return mWorkerPrivate->IsRunningInBackground();
