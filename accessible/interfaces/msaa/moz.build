@@ -4,7 +4,7 @@
 
 
 
-GeckoSharedLibrary("AccessibleMarshal")
+GeckoSharedLibrary("AccessibleMarshal", linkage=None)
 
 
 

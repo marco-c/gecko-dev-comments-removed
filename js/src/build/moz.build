@@ -26,7 +26,7 @@ LIBRARY_DEFINES["MOZ_SUPPORT_LEAKCHECKING"] = True
 
 
 if CONFIG["JS_SHARED_LIBRARY"]:
-    GeckoSharedLibrary("js")
+    GeckoSharedLibrary("js", linkage=None)
     SHARED_LIBRARY_NAME = CONFIG["JS_LIBRARY_NAME"]
 
     
