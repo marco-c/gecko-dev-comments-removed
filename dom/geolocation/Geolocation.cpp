@@ -1003,6 +1003,12 @@ void nsGeolocationService::RemoveLocator(Geolocation* aLocator) {
   mGeolocators.RemoveElement(aLocator);
 }
 
+void nsGeolocationService::MoveLocators(nsGeolocationService* aService) {
+  for (uint32_t i = 0; i < mGeolocators.Length(); i++) {
+    aService->AddLocator(mGeolocators[i]);
+  }
+}
+
 
 
 
@@ -1074,21 +1080,10 @@ nsresult Geolocation::Init(nsPIDOMWindowInner* aContentDom) {
   
   
   
-  RefPtr<nsGeolocationService> service =
-      nsGeolocationService::GetGeolocationService(mBrowsingContext);
-  if (service != nsGeolocationService::sService.get()) {
-    mService = nsGeolocationService::GetGeolocationService();
-    mServiceOverride = service;
-  } else {
-    mService = service;
-  }
+  mService = nsGeolocationService::GetGeolocationService(mBrowsingContext);
 
   if (mService) {
     mService->AddLocator(this);
-  }
-
-  if (mServiceOverride) {
-    mServiceOverride->AddLocator(this);
   }
 
   return NS_OK;
@@ -1104,12 +1099,7 @@ void Geolocation::Shutdown() {
     mService->UpdateAccuracy();
   }
 
-  if (mServiceOverride) {
-    mServiceOverride->RemoveLocator(this);
-  }
-
   mService = nullptr;
-  mServiceOverride = nullptr;
   mPrincipal = nullptr;
 }
 
