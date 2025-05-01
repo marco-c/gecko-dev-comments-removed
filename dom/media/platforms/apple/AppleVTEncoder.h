@@ -10,6 +10,7 @@
 #include <CoreMedia/CoreMedia.h>
 #include <VideoToolbox/VideoToolbox.h>
 
+#include "apple/AppleUtils.h"
 #include "PlatformEncoderModule.h"
 
 namespace mozilla {
@@ -94,7 +95,7 @@ class AppleVTEncoder final : public MediaDataEncoder {
   MediaResult mError;
 
   
-  VTCompressionSessionRef mSession;
+  AutoCFTypeRef<VTCompressionSessionRef> mSession;
   
   Atomic<bool> mIsHardwareAccelerated;
   
