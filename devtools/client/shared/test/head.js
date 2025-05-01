@@ -156,25 +156,6 @@ async function openAndCloseToolbox(nbOfTimes, usageTime, toolId) {
 
 
 
-
-
-
-function waitUntil(predicate, interval = 10) {
-  if (predicate()) {
-    return Promise.resolve(true);
-  }
-  return new Promise(resolve => {
-    setTimeout(function () {
-      waitUntil(predicate).then(() => resolve(true));
-    }, interval);
-  });
-}
-
-
-
-
-
-
 function showFilterPopupPresets(widget) {
   const onRender = widget.once("render");
   widget._togglePresets();
