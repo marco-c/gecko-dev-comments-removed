@@ -1594,13 +1594,20 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
     
     
     
-    
-    
-    
-    
-    if (iter.activation() != &activation && activation.asyncStack() &&
+    bool hasAsyncStackToAdopt =
+        iter.activation() != &activation && activation.asyncStack() &&
         (activation.asyncCallIsExplicit() || iter.done()) &&
-        !capture.is<JS::FirstSubsumedFrame>() && stackChain.length() > 0) {
+        !capture.is<JS::FirstSubsumedFrame>();
+
+    
+    
+    
+    
+    if (hasAsyncStackToAdopt && stackChain.length() == 0) {
+      break;
+    }
+
+    if (hasAsyncStackToAdopt) {
       
       
       const char* cause = activation.asyncCause();
