@@ -66,6 +66,11 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
     float sy = boundingRect.height / untransformedSize.height;
     matrix = CSSToCSSMatrix4x4Flagged::Scaling(sx, sy, 0.0f);
   }
+  auto inkOverflowOffset = aFrame->InkOverflowRectRelativeToSelf().TopLeft();
+  if (inkOverflowOffset != nsPoint()) {
+    auto cssOffset = CSSPoint::FromAppUnits(inkOverflowOffset);
+    matrix.PostTranslate(cssOffset.x, cssOffset.y, 0.0f);
+  }
   if (boundingRect.TopLeft() != CSSPoint()) {
     matrix.PostTranslate(boundingRect.x, boundingRect.y, 0.0f);
   }
@@ -190,7 +195,7 @@ struct CapturedElementOldState {
         mTriedImage(true),
         mSize(aFrame->Style()->IsRootElementStyle()
                   ? aSnapshotContainingBlockSize
-                  : aFrame->GetRect().Size()),
+                  : aFrame->InkOverflowRect().Size()),
         mTransform(EffectiveTransform(aFrame)),
         mWritingMode(aFrame->StyleVisibility()->mWritingMode),
         mDirection(aFrame->StyleVisibility()->mDirection),
@@ -825,9 +830,12 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     auto* rule = EnsureRule(capturedElement.mGroupRule);
     
     
+    
+    
+    
     auto newRect = frame->Style()->IsRootElementStyle()
                        ? SnapshotContainingBlockRect()
-                       : frame->GetRect();
+                       : frame->InkOverflowRectRelativeToSelf();
     auto size = CSSPixel::FromAppUnits(newRect);
     
     
