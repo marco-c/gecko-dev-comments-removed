@@ -91,7 +91,10 @@ already_AddRefed<DOMSVGStringList> DOMSVGStringList::GetDOMWrapper(
 
 void DOMSVGStringList::RemoveFromTearoffTable() {
   
-  SVGStringListTearoffTable().RemoveTearoff(&InternalList());
+  if (mIsInTearoffTable) {
+    SVGStringListTearoffTable().RemoveTearoff(&InternalList());
+    mIsInTearoffTable = false;
+  }
 }
 
 DOMSVGStringList::~DOMSVGStringList() { RemoveFromTearoffTable(); }
