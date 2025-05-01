@@ -977,6 +977,19 @@ class LInstruction : public LNode,
     MOZ_ASSERT(nonPhiOperandsOffset_ == offset, "offset must fit in bitfield");
   }
 
+  void changePolicyOfReusedInputToAny(LDefinition* def) {
+    
+    
+    
+    
+    MOZ_ASSERT(def->policy() == LDefinition::MUST_REUSE_INPUT);
+    LUse* inputUse = getOperand(def->getReusedInput())->toUse();
+    MOZ_ASSERT(inputUse->policy() == LUse::REGISTER);
+    MOZ_ASSERT(inputUse->usedAtStart());
+    *inputUse = LUse(inputUse->virtualRegister(), LUse::ANY,
+                      true);
+  }
+
   
   
   

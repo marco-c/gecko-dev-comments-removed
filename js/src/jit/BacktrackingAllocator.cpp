@@ -1866,16 +1866,7 @@ bool BacktrackingAllocator::buildLivenessInfo() {
         CodePosition from = outputOf(*ins);
 
         if (def->policy() == LDefinition::MUST_REUSE_INPUT) {
-          
-          
-          
-          
-          
-          LUse* inputUse = ins->getOperand(def->getReusedInput())->toUse();
-          MOZ_ASSERT(inputUse->policy() == LUse::REGISTER);
-          MOZ_ASSERT(inputUse->usedAtStart());
-          *inputUse = LUse(inputUse->virtualRegister(), LUse::ANY,
-                            true);
+          ins->changePolicyOfReusedInputToAny(def);
         }
 
         if (!vreg(def).addInitialRange(alloc(), from, from.next())) {
