@@ -70,20 +70,6 @@ nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
 
 
 
-
-
-
-nsresult IsMultiSessionInstallLockoutActive(nsIFile* updRootDir,
-                                            bool& isActive);
-
-
-
-
-
-
-
-
-
 nsresult WriteUpdateCompleteTestFile(nsIFile* updRootDir);
 
 
