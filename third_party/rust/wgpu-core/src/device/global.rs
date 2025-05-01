@@ -1977,6 +1977,8 @@ impl Global {
         let fence = device.fence.read();
         let maintain_result = device.maintain(fence, poll_type, snatch_guard);
 
+        device.lose_if_oom();
+
         
         
         device.deferred_resource_destruction();

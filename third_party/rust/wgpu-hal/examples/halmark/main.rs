@@ -94,6 +94,7 @@ impl<A: hal::Api> Example<A> {
         let instance_desc = hal::InstanceDescriptor {
             name: "example",
             flags: wgpu_types::InstanceFlags::from_build_config().with_env(),
+            memory_budget_thresholds: wgpu_types::MemoryBudgetThresholds::default(),
             
             backend_options: wgpu_types::BackendOptions::default(),
         };

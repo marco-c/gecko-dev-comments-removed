@@ -15,6 +15,8 @@ pub struct InstanceDescriptor {
     
     pub flags: InstanceFlags,
     
+    pub memory_budget_thresholds: MemoryBudgetThresholds,
+    
     pub backend_options: BackendOptions,
 }
 
@@ -23,6 +25,7 @@ impl Default for InstanceDescriptor {
         Self {
             backends: Backends::all(),
             flags: InstanceFlags::default(),
+            memory_budget_thresholds: MemoryBudgetThresholds::default(),
             backend_options: BackendOptions::default(),
         }
     }
@@ -48,6 +51,7 @@ impl InstanceDescriptor {
         Self {
             backends,
             flags,
+            memory_budget_thresholds: MemoryBudgetThresholds::default(),
             backend_options,
         }
     }
@@ -223,6 +227,24 @@ impl InstanceFlags {
 
         self
     }
+}
+
+
+
+
+#[derive(Default, Clone, Debug, Copy)]
+pub struct MemoryBudgetThresholds {
+    
+    
+    
+    
+    pub for_resource_creation: Option<u8>,
+
+    
+    
+    
+    
+    pub for_device_loss: Option<u8>,
 }
 
 
