@@ -347,7 +347,8 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
 
   mozilla::LayoutDeviceIntPoint mTargetWindowPoint;
 
-  int mWaitingForDragDataRequests = 0;
+  
+  RefPtr<GdkDragContext> mWaitingForDragDataContext;
 
   bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
 
