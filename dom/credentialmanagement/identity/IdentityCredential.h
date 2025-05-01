@@ -39,15 +39,15 @@ class IdentityCredential final : public Credential {
       GetIPCIdentityCredentialPromise;
   typedef MozPromise<CopyableTArray<IPCIdentityCredential>, nsresult, true>
       GetIPCIdentityCredentialsPromise;
-  typedef MozPromise<IdentityProviderConfig, nsresult, true>
-      GetIdentityProviderConfigPromise;
+  typedef MozPromise<IdentityProviderRequestOptions, nsresult, true>
+      GetIdentityProviderRequestOptionsPromise;
   typedef MozPromise<bool, nsresult, true> ValidationPromise;
   typedef MozPromise<IdentityProviderAPIConfig, nsresult, true>
       GetManifestPromise;
-  typedef std::tuple<IdentityProviderConfig, IdentityProviderAPIConfig>
-      IdentityProviderConfigWithManifest;
-  typedef MozPromise<IdentityProviderConfigWithManifest, nsresult, true>
-      GetIdentityProviderConfigWithManifestPromise;
+  typedef std::tuple<IdentityProviderRequestOptions, IdentityProviderAPIConfig>
+      IdentityProviderRequestOptionsWithManifest;
+  typedef MozPromise<IdentityProviderRequestOptionsWithManifest, nsresult, true>
+      GetIdentityProviderRequestOptionsWithManifestPromise;
   typedef MozPromise<
       std::tuple<IdentityProviderAPIConfig, IdentityProviderAccountList>,
       nsresult, true>
@@ -189,7 +189,7 @@ class IdentityCredential final : public Credential {
   static RefPtr<GetIPCIdentityCredentialPromise>
   CreateHeavyweightCredentialDuringDiscovery(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
-      const IdentityProviderConfig& aProvider,
+      const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   
@@ -242,7 +242,7 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetAccountListPromise> FetchAccountList(
-      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   
@@ -264,7 +264,7 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetTokenPromise> FetchToken(
-      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest,
       const IdentityProviderAccount& aAccount);
 
@@ -283,7 +283,7 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetMetadataPromise> FetchMetadata(
-      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   
@@ -298,10 +298,10 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetIdentityProviderConfigWithManifestPromise>
+  static RefPtr<GetIdentityProviderRequestOptionsWithManifestPromise>
   PromptUserToSelectProvider(
       BrowsingContext* aBrowsingContext,
-      const Sequence<IdentityProviderConfig>& aProviders,
+      const Sequence<IdentityProviderRequestOptions>& aProviders,
       const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
 
   
@@ -320,7 +320,7 @@ class IdentityCredential final : public Credential {
   static RefPtr<GetAccountPromise> PromptUserToSelectAccount(
       BrowsingContext* aBrowsingContext,
       const IdentityProviderAccountList& aAccounts,
-      const IdentityProviderConfig& aProvider,
+      const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest);
 
   
@@ -343,7 +343,7 @@ class IdentityCredential final : public Credential {
       BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
       const IdentityProviderAccount& aAccount,
       const IdentityProviderAPIConfig& aManifest,
-      const IdentityProviderConfig& aProvider);
+      const IdentityProviderRequestOptions& aProvider);
 
   
   
