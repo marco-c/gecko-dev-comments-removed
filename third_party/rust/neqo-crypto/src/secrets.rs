@@ -25,8 +25,11 @@ experimental_api!(SSL_SecretCallback(
 ));
 
 #[derive(Clone, Copy, Debug, FromRepr)]
-#[cfg_attr(windows, repr(i32))] 
-#[cfg_attr(not(windows), repr(u32))]
+
+
+
+#[cfg_attr(all(windows, not(target_env = "gnu")), repr(i32))]
+#[cfg_attr(not(all(windows, not(target_env = "gnu"))), repr(u32))]
 pub enum SecretDirection {
     Read = SSLSecretDirection::ssl_secret_read,
     Write = SSLSecretDirection::ssl_secret_write,
