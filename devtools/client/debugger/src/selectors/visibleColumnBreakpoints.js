@@ -88,17 +88,22 @@ export function getColumnBreakpoints(
       continue;
     }
     for (const breakpointPosition of positionsPerLine) {
-      const location = getSelectedLocation(breakpointPosition, selectedSource);
-      const { line } = location;
-
       
-      const breakpointsPerColumn = breakpointsPerLine.get(line);
-      if (!breakpointsPerColumn) {
+      
+      if (columnBreakpoints.length >= 100) {
         continue;
       }
 
+      const location = getSelectedLocation(breakpointPosition, selectedSource);
       
       if (!contains(location, viewport)) {
+        continue;
+      }
+
+      const { line } = location;
+      
+      const breakpointsPerColumn = breakpointsPerLine.get(line);
+      if (!breakpointsPerColumn) {
         continue;
       }
 

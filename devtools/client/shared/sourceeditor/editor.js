@@ -1774,61 +1774,55 @@ class Editor extends EventEmitter {
 
 
 
-  getLocationsInViewport() {
+
+
+
+  getLocationsInViewport(
+    offsetHorizontalCharacters = 0,
+    offsetVerticalLines = 0
+  ) {
     if (this.isDestroyed()) {
       return null;
     }
     const cm = editors.get(this);
+    let startLine, endLine, scrollLeft, charWidth, rightPosition;
     if (this.config.cm6) {
       
       if (!this.#currentDocumentId) {
         return null;
       }
       const { from, to } = cm.viewport;
-      const lineFrom = cm.state.doc.lineAt(from);
-      const lineTo = cm.state.doc.lineAt(to);
-      
-      
-      return {
-        start: { line: lineFrom.number, column: 0 },
-        end: { line: lineTo.number, column: lineTo.to - lineTo.from },
-      };
-    }
-    
-    
-    const offsetHorizontalCharacters = 100;
-    const offsetVerticalLines = 20;
-    
-    if (!cm) {
-      return {
-        start: { line: 0, column: 0 },
-        end: { line: 0, column: 0 },
-      };
-    }
-    const charWidth = cm.defaultCharWidth();
-    const scrollArea = cm.getScrollInfo();
-    const { scrollLeft } = cm.doc;
-    const rect = cm.getWrapperElement().getBoundingClientRect();
-    const topVisibleLine =
-      cm.lineAtHeight(rect.top, "window") - offsetVerticalLines;
-    const bottomVisibleLine =
-      cm.lineAtHeight(rect.bottom, "window") + offsetVerticalLines;
+      startLine = cm.state.doc.lineAt(from).number - offsetVerticalLines;
+      endLine = cm.state.doc.lineAt(to).number + offsetVerticalLines;
+      scrollLeft = cm.scrollDOM.scrollLeft;
+      charWidth = cm.defaultCharacterWidth;
+      rightPosition = scrollLeft + cm.dom.getBoundingClientRect().width;
+    } else {
+      if (!cm) {
+        return null;
+      }
 
-    const leftColumn = Math.floor(
-      scrollLeft > 0 ? scrollLeft / charWidth - offsetHorizontalCharacters : 0
-    );
-    const rightPosition = scrollLeft + (scrollArea.clientWidth - 30);
-    const rightCharacter =
-      Math.floor(rightPosition / charWidth) + offsetHorizontalCharacters;
+      const scrollArea = cm.getScrollInfo();
+      const rect = cm.getWrapperElement().getBoundingClientRect();
+      startLine = cm.lineAtHeight(rect.top, "window") - offsetVerticalLines;
+      endLine = cm.lineAtHeight(rect.bottom, "window") + offsetVerticalLines;
+      scrollLeft = cm.doc.scrollLeft;
+      charWidth = cm.defaultCharWidth();
+      rightPosition = scrollLeft + (scrollArea.clientWidth - 30);
+    }
 
     return {
       start: {
-        line: topVisibleLine || 0,
-        column: leftColumn || 0,
+        line: startLine,
+        column:
+          scrollLeft > 0
+            ? Math.floor(scrollLeft / charWidth) - offsetHorizontalCharacters
+            : 0,
       },
       end: {
-        line: bottomVisibleLine || 0,
-        column: rightCharacter,
+        line: endLine,
+        column:
+          Math.floor(rightPosition / charWidth) + offsetHorizontalCharacters,
       },
     };
   }

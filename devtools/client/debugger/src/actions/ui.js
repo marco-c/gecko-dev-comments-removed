@@ -197,7 +197,11 @@ export function updateViewport() {
   const editor = getEditor();
   return {
     type: "SET_VIEWPORT",
-    viewport: editor.getLocationsInViewport(),
+    
+    
+    
+    
+    viewport: editor.getLocationsInViewport(100, 20),
   };
 }
 
