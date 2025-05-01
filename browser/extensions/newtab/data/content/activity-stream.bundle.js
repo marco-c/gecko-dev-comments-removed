@@ -14806,8 +14806,10 @@ class BaseContent extends (external_React_default()).PureComponent {
       hiddenOverride: this.state.showDownloadHighlight,
       onDismiss: this.handleDismissDownloadHighlight,
       dispatch: this.props.dispatch
-    }, external_React_default().createElement(DownloadMobilePromoHighlight, {
-      position: "inset-block-end inset-inline-start",
+    }, external_React_default().createElement(DownloadMobilePromoHighlight
+    
+    , {
+      position: `${layoutsVariantBEnabled ? "inset-inline-start" : "inset-inline-end"} inset-block-end`,
       dispatch: this.props.dispatch
     })))), external_React_default().createElement("div", {
       className: outerClassName,
