@@ -33,6 +33,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/WidgetUtilsGtk.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "GRefPtr.h"
 #include "nsAppShell.h"
 
@@ -60,9 +61,6 @@
 
 using namespace mozilla;
 using namespace mozilla::gfx;
-
-
-#define NS_DND_TIMEOUT (1000000)
 
 
 
@@ -1448,11 +1446,12 @@ RefPtr<DragData> nsDragSession::GetDragData(GdkAtom aRequestedFlavor) {
   gtk_main_iteration();
 
   PRTime entryTime = PR_Now();
+  int32_t timeout = StaticPrefs::widget_gtk_clipboard_timeout_ms() * 1000;
   while (mWaitingForDragDataRequests && mDoingDrag) {
     
     LOGDRAGSERVICE("  doing iteration, mWaitingForDragDataRequests %d ...",
                    mWaitingForDragDataRequests);
-    if (PR_Now() - entryTime > NS_DND_TIMEOUT) {
+    if (PR_Now() - entryTime > timeout) {
       LOGDRAGSERVICE("  failed to get D&D data in time!\n");
       break;
     }
