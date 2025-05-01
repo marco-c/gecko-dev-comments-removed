@@ -3,6 +3,19 @@
 
 "use strict";
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
+add_setup(() => {
+  
+  sinon.stub(SelectableProfileService, "execProcess");
+
+  registerCleanupFunction(() => {
+    sinon.restore();
+  });
+});
+
 async function promiseAppMenuOpened() {
   let promiseViewShown = BrowserTestUtils.waitForEvent(
     PanelUI.panel,
@@ -13,15 +26,6 @@ async function promiseAppMenuOpened() {
 }
 
 add_task(async function test_appmenu_updates_on_edit() {
-  
-  
-  SelectableProfileService._execProcess = SelectableProfileService.execProcess;
-  registerCleanupFunction(() => {
-    SelectableProfileService.execProcess =
-      SelectableProfileService._execProcess;
-  });
-  SelectableProfileService.execProcess = () => {};
-
   
   
   await SelectableProfileService.createNewProfile();
