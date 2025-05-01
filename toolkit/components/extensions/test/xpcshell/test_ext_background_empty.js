@@ -1,7 +1,7 @@
 "use strict";
 
 async function testExtensionWithBackground({
-  background = {},
+  background,
   expected_manifest_warnings,
 }) {
   let extension = ExtensionTestUtils.loadExtension({
@@ -32,5 +32,35 @@ add_task(async function test_empty_background_scripts() {
     expected_manifest_warnings: [
       "Reading manifest: Warning processing background: background.scripts is empty.",
     ],
+  });
+});
+
+add_task(async function test_empty_background_object() {
+  
+  
+
+  const requireAtLeastOneOfWarning =
+    WebExtensionPolicy.backgroundServiceWorkerEnabled
+      ? 'Reading manifest: Warning processing background: Error processing background: background requires at least one of "service_worker", "scripts" or "page".'
+      : 'Reading manifest: Warning processing background: Error processing background: background requires at least one of "scripts" or "page".';
+
+  await testExtensionWithBackground({
+    background: {},
+    expected_manifest_warnings: [requireAtLeastOneOfWarning],
+  });
+
+  await testExtensionWithBackground({
+    background: {
+      unknown: true,
+    },
+    expected_manifest_warnings: [
+      "Reading manifest: Warning processing background.unknown: An unexpected property was found in the WebExtension manifest.",
+      requireAtLeastOneOfWarning,
+    ],
+  });
+
+  await testExtensionWithBackground({
+    background: null,
+    expected_manifest_warnings: [],
   });
 });
