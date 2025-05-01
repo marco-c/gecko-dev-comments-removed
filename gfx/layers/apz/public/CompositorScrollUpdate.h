@@ -22,6 +22,17 @@ struct CompositorScrollUpdate {
   
 
 
+  struct Metrics {
+    CSSPoint mVisualScrollOffset;
+    CSSToParentLayerScale mZoom;
+
+    bool operator==(const Metrics& aOther) const;
+    bool operator!=(const Metrics& aOther) const { return !(*this == aOther); }
+  };
+
+  
+
+
 
 
 
@@ -35,8 +46,7 @@ struct CompositorScrollUpdate {
     Other
   };
 
-  CSSPoint mVisualScrollOffset;
-  CSSToParentLayerScale mZoom;
+  Metrics mMetrics;
   Source mSource;
 
   bool operator==(const CompositorScrollUpdate& aOther) const;

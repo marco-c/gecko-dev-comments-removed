@@ -6092,8 +6092,7 @@ const FrameMetrics& AsyncPanZoomController::Metrics() const {
   return mScrollMetadata.GetMetrics();
 }
 
-bool CompositorScrollUpdate::operator==(
-    const CompositorScrollUpdate& aOther) const {
+bool CompositorScrollUpdate::Metrics::operator==(const Metrics& aOther) const {
   
   
   
@@ -6101,7 +6100,12 @@ bool CompositorScrollUpdate::operator==(
   
   return RoundedToInt(mVisualScrollOffset * mZoom) ==
              RoundedToInt(aOther.mVisualScrollOffset * aOther.mZoom) &&
-         mZoom == aOther.mZoom && mSource == aOther.mSource;
+         mZoom == aOther.mZoom;
+}
+
+bool CompositorScrollUpdate::operator==(
+    const CompositorScrollUpdate& aOther) const {
+  return mMetrics == aOther.mMetrics && mSource == aOther.mSource;
 }
 
 std::vector<CompositorScrollUpdate>
@@ -6111,8 +6115,8 @@ AsyncPanZoomController::GetCompositorScrollUpdates() {
 
   
   CompositorScrollUpdate current{
-      GetEffectiveScrollOffset(eForCompositing, lock),
-      GetEffectiveZoom(eForCompositing, lock),
+      {GetEffectiveScrollOffset(eForCompositing, lock),
+       GetEffectiveZoom(eForCompositing, lock)},
       CompositorScrollUpdate::Source::UserInteraction};
   if (current != mLastCompositorScrollUpdate) {
     mLastCompositorScrollUpdate = current;
