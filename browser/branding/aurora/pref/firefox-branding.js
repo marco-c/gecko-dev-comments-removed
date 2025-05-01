@@ -32,12 +32,4 @@ pref("app.update.badgeWaitTime", 345600);
 
 
 
-
-
-
-
-pref("app.update.multiSessionInstallLockout.timeoutMs", 345600000);
-
-
-
 pref("devtools.selfxss.count", 5);
