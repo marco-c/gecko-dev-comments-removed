@@ -278,9 +278,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CountQueuingStrategy", insecureContext: true },
   
-  "CookieChangeEvent",
+  { name: "CookieChangeEvent", nightly: true },
   
-  "CookieStore",
+  { name: "CookieStore", nightly: true },
   
   { name: "Credential" },
   
@@ -1611,7 +1611,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "console", insecureContext: true },
   
-  "cookieStore",
+  { name: "cookieStore", nightly: true },
   
   { name: "createImageBitmap", insecureContext: true },
   
