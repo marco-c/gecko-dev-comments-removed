@@ -449,6 +449,9 @@ struct ReflowInput : public SizeComputationInput {
     bool mHeightDependsOnAncestorCell : 1;
 
     
+    bool mOrthogonalCellFinalReflow : 1;
+
+    
     bool mIsColumnBalancing : 1;
 
     
@@ -531,12 +534,6 @@ struct ReflowInput : public SizeComputationInput {
   int16_t mReflowDepth = 0;
 
   
-  bool IsHResize() const {
-    return mWritingMode.IsVertical() ? mFlags.mIsBResize : mFlags.mIsIResize;
-  }
-  bool IsVResize() const {
-    return mWritingMode.IsVertical() ? mFlags.mIsIResize : mFlags.mIsBResize;
-  }
   bool IsIResize() const { return mFlags.mIsIResize; }
   bool IsBResize() const { return mFlags.mIsBResize; }
   bool IsBResizeForWM(WritingMode aWM) const {
@@ -549,20 +546,6 @@ struct ReflowInput : public SizeComputationInput {
     
     return !aWM.IsOrthogonalTo(mWritingMode) ? mFlags.mIsBResizeForPercentages
                                              : IsIResize();
-  }
-  void SetHResize(bool aValue) {
-    if (mWritingMode.IsVertical()) {
-      mFlags.mIsBResize = aValue;
-    } else {
-      mFlags.mIsIResize = aValue;
-    }
-  }
-  void SetVResize(bool aValue) {
-    if (mWritingMode.IsVertical()) {
-      mFlags.mIsIResize = aValue;
-    } else {
-      mFlags.mIsBResize = aValue;
-    }
   }
   void SetIResize(bool aValue) { mFlags.mIsIResize = aValue; }
   void SetBResize(bool aValue) { mFlags.mIsBResize = aValue; }
