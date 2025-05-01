@@ -20,36 +20,48 @@ function addBaseHtmlElements(body) {
   return `<html><head></head><body>${body}</body></html>`;
 }
 
+const TEST_PAGES = {
+  
+  redirect: addBaseHtmlElements(
+    `Fetch 1<script>window.parent.location.href = "${REDIRECT_URL}";</script>`
+  ),
 
-const FETCH_CONTENT_1 = addBaseHtmlElements(
-  `Fetch 1<script>window.parent.location.href = "${REDIRECT_URL}";</script>`
-);
+  
+  js: addBaseHtmlElements(
+    `Fetch 2<script>document.write("JS activated")</script>`
+  ),
 
-const FETCH_CONTENT_2 = addBaseHtmlElements(
-  `Fetch 2<script>document.write("JS activated")</script>`
-);
+  
+  forms: addBaseHtmlElements(
+    `Fetch 3<a href="${REDIRECT_URL}">link</a> -- <form action="${REDIRECT_URL}"><input type="submit"></form>`
+  ),
 
-const FETCH_CONTENT_3 = addBaseHtmlElements(
-  `Fetch 3<a href="${REDIRECT_URL}">link</a> -- <form action="${REDIRECT_URL}"><input type="submit"></form>`
-);
-
-const FETCH_CONTENT_4 = addBaseHtmlElements(`
+  
+  lineBreak: addBaseHtmlElements(`
   <a href="#" id="link1">link1</a>
   <a href="#" id="link2">link2</a>
-`);
+  `),
 
-const FETCH_CONTENT_5 = addBaseHtmlElements(`
-  <p style="color: red;">Hello World</p>
-`);
+  
+  styles: addBaseHtmlElements(`<p style="color: red;">Hello World</p>`),
+
+  
+  csp: addBaseHtmlElements(`
+  <base href="https://example.com/">
+
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4v5ThPwAG7wKklwQ/bwAAAABJRU5ErkJggg==">
+  <iframe src="/foo.html"></iframe>
+  `),
+};
 
 
-const TEST_HTML = addBaseHtmlElements(`<div id="to-copy">HTML</div><script>
-  fetch("${BASE_URL}fetch-1.html");
-  fetch("${BASE_URL}fetch-2.html");
-  fetch("${BASE_URL}fetch-3.html");
-  fetch("${BASE_URL}fetch-4.html");
-  fetch("${BASE_URL}fetch-5.html");
-</script>`);
+const TEST_HTML = addBaseHtmlElements(
+  `<div id="to-copy">HTML</div><script>` +
+    Object.keys(TEST_PAGES)
+      .map(name => `fetch("${BASE_URL}fetch-${name}.html");`)
+      .join("\n") +
+    `</script>`
+);
 const TEST_URL = BASE_URL + "doc-html-preview.html";
 
 httpServer.registerPathHandler(
@@ -59,26 +71,21 @@ httpServer.registerPathHandler(
     response.write(TEST_HTML);
   }
 );
-httpServer.registerPathHandler("/fetch-1.html", (request, response) => {
-  response.setStatusLine(request.httpVersion, 200, "OK");
-  response.write(FETCH_CONTENT_1);
-});
-httpServer.registerPathHandler("/fetch-2.html", (request, response) => {
-  response.setStatusLine(request.httpVersion, 200, "OK");
-  response.write(FETCH_CONTENT_2);
-});
-httpServer.registerPathHandler("/fetch-3.html", (request, response) => {
-  response.setStatusLine(request.httpVersion, 200, "OK");
-  response.write(FETCH_CONTENT_3);
-});
-httpServer.registerPathHandler("/fetch-4.html", (request, response) => {
-  response.setStatusLine(request.httpVersion, 200, "OK");
-  response.write(FETCH_CONTENT_4);
-});
-httpServer.registerPathHandler("/fetch-5.html", (request, response) => {
-  response.setStatusLine(request.httpVersion, 200, "OK");
-  response.write(FETCH_CONTENT_5);
-});
+
+for (const [name, content] of Object.entries(TEST_PAGES)) {
+  httpServer.registerPathHandler(`/fetch-${name}.html`, (request, response) => {
+    response.setStatusLine(request.httpVersion, 200, "OK");
+
+    if (name === "csp") {
+      
+      response.setHeaderNoCheck("Content-Security-Policy", "img-src 'none'");
+      response.setHeaderNoCheck("Content-Security-Policy", "base-uri 'self'");
+    }
+
+    response.write(content);
+  });
+}
+
 httpServer.registerPathHandler("/redirect.html", (request, response) => {
   response.setStatusLine(request.httpVersion, 200, "OK");
   response.write("Redirected!");
@@ -97,26 +104,33 @@ add_task(async function () {
 
   store.dispatch(Actions.batchEnable(false));
 
-  const onNetworkEvent = waitForNetworkEvents(monitor, 3);
+  const onNetworkEvent = waitForNetworkEvents(
+    monitor,
+    1 + Object.keys(TEST_PAGES).length
+  );
   await reloadBrowser();
   await onNetworkEvent;
 
   
-  await selectIndexAndWaitForHtmlView(0, TEST_HTML);
-  await selectIndexAndWaitForHtmlView(1, FETCH_CONTENT_1);
-  await selectIndexAndWaitForHtmlView(2, FETCH_CONTENT_2);
-  await selectIndexAndWaitForHtmlView(3, FETCH_CONTENT_3);
-  await selectIndexAndWaitForHtmlView(4, FETCH_CONTENT_4);
-  await selectIndexAndWaitForHtmlView(5, FETCH_CONTENT_5);
+  await selectIndexAndWaitForHtmlView(0, "initial-page", TEST_HTML);
+  let index = 1;
+  for (const [name, content] of Object.entries(TEST_PAGES)) {
+    await selectIndexAndWaitForHtmlView(index, name, content);
+    index++;
+  }
 
   await teardown(monitor);
 
-  async function selectIndexAndWaitForHtmlView(index, expectedHtmlPreview) {
-    info(`Select the request #${index}`);
+  async function selectIndexAndWaitForHtmlView(
+    index_,
+    name,
+    expectedHtmlPreview
+  ) {
+    info(`Select the request "${name}" #${index_}`);
     const onResponseContent = monitor.panelWin.api.once(
       TEST_EVENTS.RECEIVED_RESPONSE_CONTENT
     );
-    store.dispatch(Actions.selectRequestByIndex(index));
+    store.dispatch(Actions.selectRequestByIndex(index_));
 
     document.querySelector("#response-tab").click();
 
@@ -148,7 +162,7 @@ add_task(async function () {
       }
     );
 
-    if (expectedHtmlPreview == FETCH_CONTENT_5) {
+    if (name === "style") {
       await SpecialPowers.spawn(browser.browsingContext, [], async function () {
         const p = content.document.querySelector("p");
         const computed = content.window.getComputedStyle(p);
@@ -160,8 +174,23 @@ add_task(async function () {
       });
     }
 
+    if (name == "csp") {
+      await SpecialPowers.spawn(browser.browsingContext, [], async function () {
+        is(
+          content.document.querySelector("img").complete,
+          false,
+          "img was blocked"
+        );
+        is(
+          content.document.querySelector("iframe").src,
+          "/foo.html",
+          "URL of iframe was not changed by <base>"
+        );
+      });
+    }
+
     
-    if (expectedHtmlPreview == TEST_HTML) {
+    if (name == "initial-page") {
       await waitForClipboardPromise(async function () {
         await SpecialPowers.spawn(
           browser.browsingContext,
