@@ -38,6 +38,7 @@
 class nsWindow;
 
 namespace mozilla::widget {
+class TSFEmptyTextStore;
 class TSFTextStore;
 class TSFTextStoreBase;
 struct IMENotificationRequests;
@@ -279,6 +280,9 @@ class TSFUtils final {
 
   
   static StaticRefPtr<TSFTextStoreBase> sCurrentTextStore;
+
+  
+  static StaticRefPtr<TSFEmptyTextStore> sEmptyTextStore;
 
   
   static DWORD sClientId;

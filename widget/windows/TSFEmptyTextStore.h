@@ -67,12 +67,17 @@ class TSFEmptyTextStore final : public TSFTextStoreBase {
   [[nodiscard]] static Result<RefPtr<TSFEmptyTextStore>, nsresult>
   CreateAndSetFocus(nsWindow* aFocusedWindow, const InputContext& aContext);
 
+  nsresult SetFocusAndUpdateDocumentURLAndBrowsingMode(
+      nsWindow* aFocusedWindow, const InputContext& aContext);
+
  protected:
   TSFEmptyTextStore();
   virtual ~TSFEmptyTextStore();
 
   bool Init(nsWindow* aWidget, const InputContext& aContext);
   void ReleaseTSFObjects();
+
+  nsresult SetFocus(nsWindow* aFocusedWindow, const InputContext& aContext);
 
   
   
