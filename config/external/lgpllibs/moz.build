@@ -10,7 +10,7 @@
 
 
 
-GeckoSharedLibrary("lgpllibs", linkage=None)
+GeckoSharedLibrary("lgpllibs")
 SHARED_LIBRARY_NAME = "lgpllibs"
 
 
