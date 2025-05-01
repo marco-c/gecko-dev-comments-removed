@@ -175,7 +175,7 @@ test_description_schema = Schema(
             
             
             Required("extra-options"): optionally_keyed_by(
-                "test-platform", "variant", [str]
+                "test-platform", "variant", "subtest", "app", [str]
             ),
             
             
