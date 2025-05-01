@@ -31,6 +31,9 @@
     
     #tabChangeObserver;
 
+    
+    #wasCreatedByAdoption = false;
+
     constructor() {
       super();
     }
@@ -76,6 +79,20 @@
       this.#updateCollapsedAriaAttributes();
 
       this.addEventListener("TabSelect", this);
+
+      let tabGroupCreateDetail = this.#wasCreatedByAdoption
+        ? { isAdoptingGroup: true }
+        : {};
+      this.dispatchEvent(
+        new CustomEvent("TabGroupCreate", {
+          bubbles: true,
+          detail: tabGroupCreateDetail,
+        })
+      );
+      
+      
+      
+      this.#wasCreatedByAdoption = false;
     }
 
     disconnectedCallback() {
@@ -266,6 +283,13 @@
 
     get labelElement() {
       return this.#labelElement;
+    }
+
+    
+
+
+    set wasCreatedByAdoption(value) {
+      this.#wasCreatedByAdoption = value;
     }
 
     
