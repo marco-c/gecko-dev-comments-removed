@@ -98,13 +98,13 @@ add_task(async function disable() {
 
 
 add_task(async function resultMenu_notInterested() {
-  await doDismissTest("not_interested");
+  let result = await doDismissTest("not_interested");
 
   Assert.equal(UrlbarPrefs.get("suggest.mdn"), false);
-  const exists = await QuickSuggest.blockedSuggestions.has(
-    REMOTE_SETTINGS_DATA[0].attachment[0].url
+  Assert.ok(
+    !(await QuickSuggest.isResultDismissed(result)),
+    "The result should not be dismissed"
   );
-  Assert.ok(!exists);
 
   
   
@@ -114,13 +114,13 @@ add_task(async function resultMenu_notInterested() {
 
 
 add_task(async function resultMenu_notRelevant() {
-  await doDismissTest("not_relevant");
+  let result = await doDismissTest("not_relevant");
 
   Assert.equal(UrlbarPrefs.get("suggest.mdn"), true);
-  const exists = await QuickSuggest.blockedSuggestions.has(
-    REMOTE_SETTINGS_DATA[0].attachment[0].url
+  Assert.ok(
+    await QuickSuggest.isResultDismissed(result),
+    "The result should be dismissed"
   );
-  Assert.ok(exists);
 
   await QuickSuggest.clearDismissedSuggestions();
 });
@@ -159,12 +159,19 @@ async function doDismissTest(command) {
     "The result should be a MDN result"
   );
 
+  let { result } = details;
+
   
+  let dismissalPromise = TestUtils.topicObserved(
+    "quicksuggest-dismissals-changed"
+  );
   await UrlbarTestUtils.openResultMenuAndClickItem(
     window,
     ["[data-l10n-id=firefox-suggest-command-dont-show-mdn]", command],
     { resultIndex, openByMouse: true }
   );
+  info("Awaiting dismissal promise");
+  await dismissalPromise;
 
   
   Assert.ok(gURLBar.view.isOpen, "The view should remain open after dismissal");
@@ -234,4 +241,6 @@ async function doDismissTest(command) {
   }
 
   await UrlbarTestUtils.promisePopupClose(window);
+
+  return result;
 }

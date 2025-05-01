@@ -1079,6 +1079,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
   );
 
   function getPayload(result, keysToIgnore = []) {
+    keysToIgnore.push("suggestionObject");
     let payload = {};
     for (let [key, value] of Object.entries(result.payload)) {
       if (value !== undefined && !keysToIgnore.includes(key)) {
@@ -1156,207 +1157,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
 });
 
 
-add_task(async function blockedSuggestionsAPI() {
-  
-  await QuickSuggest.clearDismissedSuggestions();
-  Assert.ok(
-    !(await QuickSuggest.canClearDismissedSuggestions()),
-    "canClearDismissedSuggestions should return false"
-  );
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    0,
-    "blockedSuggestions._test_digests is empty"
-  );
-  Assert.equal(
-    UrlbarPrefs.get("quicksuggest.blockedDigests"),
-    "",
-    "quicksuggest.blockedDigests is an empty string"
-  );
-
-  
-  let urls = [];
-  for (let i = 0; i < 3; i++) {
-    urls.push("http://example.com/" + i);
-  }
-
-  
-  
-  
-  for (let i = 0; i < urls.length; i++) {
-    let changedPromise = TestUtils.topicObserved(
-      "quicksuggest-dismissals-changed"
-    );
-
-    await QuickSuggest.blockedSuggestions.add(urls[i]);
-
-    info("Awaiting dismissals-changed promise");
-    await changedPromise;
-
-    for (let j = 0; j < urls.length; j++) {
-      Assert.equal(
-        await QuickSuggest.blockedSuggestions.has(urls[j]),
-        j <= i,
-        `Suggestion at index ${j} is blocked or not as expected`
-      );
-    }
-    Assert.ok(
-      await QuickSuggest.canClearDismissedSuggestions(),
-      "canClearDismissedSuggestions should return true"
-    );
-  }
-
-  
-  for (let url of urls) {
-    Assert.ok(
-      await QuickSuggest.blockedSuggestions.has(url),
-      `Suggestion is blocked: ${url}`
-    );
-  }
-
-  
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    urls.length,
-    "blockedSuggestions._test_digests has correct size"
-  );
-  let array = JSON.parse(UrlbarPrefs.get("quicksuggest.blockedDigests"));
-  Assert.ok(Array.isArray(array), "Parsed value of pref is an array");
-  Assert.equal(array.length, urls.length, "Array has correct length");
-
-  
-  
-  
-  UrlbarPrefs.set("quicksuggest.blockedDigests", "not a json array");
-  await QuickSuggest.blockedSuggestions._test_readyPromise;
-  for (let url of urls) {
-    Assert.ok(
-      await QuickSuggest.blockedSuggestions.has(url),
-      `Suggestion remains blocked: ${url}`
-    );
-  }
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    urls.length,
-    "blockedSuggestions._test_digests still has correct size"
-  );
-  Assert.ok(
-    await QuickSuggest.canClearDismissedSuggestions(),
-    "canClearDismissedSuggestions should return true"
-  );
-
-  
-  
-  let newURL = "http://example.com/new-block";
-  await QuickSuggest.blockedSuggestions.add(newURL);
-  urls.push(newURL);
-  for (let url of urls) {
-    Assert.ok(
-      await QuickSuggest.blockedSuggestions.has(url),
-      `Suggestion is blocked: ${url}`
-    );
-  }
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    urls.length,
-    "blockedSuggestions._test_digests has correct size"
-  );
-  array = JSON.parse(UrlbarPrefs.get("quicksuggest.blockedDigests"));
-  Assert.ok(Array.isArray(array), "Parsed value of pref is an array");
-  Assert.equal(array.length, urls.length, "Array has correct length");
-  Assert.ok(
-    await QuickSuggest.canClearDismissedSuggestions(),
-    "canClearDismissedSuggestions should return true"
-  );
-
-  
-  newURL = "http://example.com/direct-to-pref";
-  urls.push(newURL);
-  array = JSON.parse(UrlbarPrefs.get("quicksuggest.blockedDigests"));
-  array.push(await QuickSuggest.blockedSuggestions._test_getDigest(newURL));
-  UrlbarPrefs.set("quicksuggest.blockedDigests", JSON.stringify(array));
-  await QuickSuggest.blockedSuggestions._test_readyPromise;
-
-  
-  for (let url of urls) {
-    Assert.ok(
-      await QuickSuggest.blockedSuggestions.has(url),
-      `Suggestion is blocked: ${url}`
-    );
-  }
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    urls.length,
-    "blockedSuggestions._test_digests has correct size"
-  );
-  Assert.ok(
-    await QuickSuggest.canClearDismissedSuggestions(),
-    "canClearDismissedSuggestions should return true"
-  );
-
-  
-  UrlbarPrefs.clear("quicksuggest.blockedDigests");
-  await QuickSuggest.blockedSuggestions._test_readyPromise;
-  for (let url of urls) {
-    Assert.ok(
-      !(await QuickSuggest.blockedSuggestions.has(url)),
-      `Suggestion is no longer blocked: ${url}`
-    );
-  }
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    0,
-    "blockedSuggestions._test_digests is now empty"
-  );
-  Assert.ok(
-    !(await QuickSuggest.canClearDismissedSuggestions()),
-    "canClearDismissedSuggestions should return false"
-  );
-
-  
-  
-  for (let url of urls) {
-    await QuickSuggest.blockedSuggestions.add(url);
-  }
-  for (let url of urls) {
-    Assert.ok(
-      await QuickSuggest.blockedSuggestions.has(url),
-      `Suggestion is blocked: ${url}`
-    );
-  }
-  Assert.ok(
-    await QuickSuggest.canClearDismissedSuggestions(),
-    "canClearDismissedSuggestions should return true"
-  );
-
-  let clearPromise = TestUtils.topicObserved("quicksuggest-dismissals-cleared");
-
-  info("Clearing dismissals");
-  await QuickSuggest.clearDismissedSuggestions();
-
-  
-  info("Awaiting quicksuggest-dismissals-cleared");
-  await clearPromise;
-
-  for (let url of urls) {
-    Assert.ok(
-      !(await QuickSuggest.blockedSuggestions.has(url)),
-      `Suggestion is no longer blocked: ${url}`
-    );
-  }
-  Assert.equal(
-    QuickSuggest.blockedSuggestions._test_digests.size,
-    0,
-    "blockedSuggestions._test_digests is now empty"
-  );
-  Assert.ok(
-    !(await QuickSuggest.canClearDismissedSuggestions()),
-    "canClearDismissedSuggestions should return false"
-  );
-});
-
-
-add_task(async function block() {
+add_task(async function dismissResult() {
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
@@ -1383,7 +1184,11 @@ add_task(async function block() {
     });
 
     
-    await QuickSuggest.blockedSuggestions.blockResult(context.results[0]);
+    await QuickSuggest.dismissResult(context.results[0]);
+    Assert.ok(
+      await QuickSuggest.isResultDismissed(context.results[0]),
+      "isResultDismissed should return true"
+    );
     Assert.ok(
       await QuickSuggest.canClearDismissedSuggestions(),
       "canClearDismissedSuggestions should return true"
@@ -1400,6 +1205,10 @@ add_task(async function block() {
 
     await QuickSuggest.clearDismissedSuggestions();
     Assert.ok(
+      !(await QuickSuggest.isResultDismissed(context.results[0])),
+      "isResultDismissed should return false"
+    );
+    Assert.ok(
       !(await QuickSuggest.canClearDismissedSuggestions()),
       "canClearDismissedSuggestions should return false"
     );
@@ -1407,7 +1216,7 @@ add_task(async function block() {
 });
 
 
-add_task(async function block_timestamp() {
+add_task(async function dismissResultWithTimestamp() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   await QuickSuggestTestUtils.forceSync();
@@ -1437,7 +1246,15 @@ add_task(async function block_timestamp() {
   );
 
   
-  await QuickSuggest.blockedSuggestions.blockResult(result);
+  await QuickSuggest.dismissResult(result);
+  Assert.ok(
+    await QuickSuggest.isResultDismissed(result),
+    "isResultDismissed should return true"
+  );
+  Assert.ok(
+    await QuickSuggest.canClearDismissedSuggestions(),
+    "canClearDismissedSuggestions should return true"
+  );
 
   
   await check_results({
@@ -1447,7 +1264,16 @@ add_task(async function block_timestamp() {
     }),
     matches: [],
   });
+
   await QuickSuggest.clearDismissedSuggestions();
+  Assert.ok(
+    !(await QuickSuggest.isResultDismissed(context.results[0])),
+    "isResultDismissed should return false"
+  );
+  Assert.ok(
+    !(await QuickSuggest.canClearDismissedSuggestions()),
+    "canClearDismissedSuggestions should return false"
+  );
 });
 
 add_task(async function sponsoredPriority_normal() {
