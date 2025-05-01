@@ -40,13 +40,11 @@ const kExpectedRequestsOfDynamicLoadDisabled = kExpectedRequestsOfInitialLoadDis
 
 const kExpectedRequestsOfInitialLoadForSVGImageTagDisabled = kExpectedRequestsOfInitialLoadDisabled;
 
-
 const kExpectedRequestsOfInitialLoadForSVGImageTag = kExpectedRequestsOfInitialLoadForSVGImageTagDisabled;
 
 const kExpectedRequestsOfDynamicLoadForSVGImageTagDisabled = kExpectedRequestsOfDynamicLoadDisabled;
 
-
-const kExpectedRequestsOfDynamicLoadForSVGImageTag = kExpectedRequestsOfDynamicLoadForSVGImageTagDisabled;
+const kExpectedRequestsOfDynamicLoadForSVGImageTag = kExpectedRequestsOfInitialLoad;
 
 const kExpectedRequestsShapeOutsideImage = [
     {   fileNameAndSuffix: "square_25px_x_25px.png?1",
