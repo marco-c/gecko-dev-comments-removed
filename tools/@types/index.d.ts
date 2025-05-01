@@ -21,7 +21,6 @@
 
 
 
-
 declare global {
   const Cc: nsXPCComponents_Classes;
   const Ci: nsIXPCComponents_Interfaces;

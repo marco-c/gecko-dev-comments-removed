@@ -12,6 +12,7 @@
 
 const fs = require("fs");
 const YAML = require("yaml");
+const path = require("path");
 
 const HEADER = `/**
  * NOTE: Do not modify this file by hand.
@@ -100,15 +101,15 @@ function emitGleanPings(yamlDoc) {
 }
 
 
-async function main(src_dir, ...paths) {
-  let lib = `${src_dir}/tools/@types/lib.gecko.glean.d.ts`;
+async function main(src_dir, typelib_dir, ...paths) {
+  let lib = path.join(typelib_dir, "lib.gecko.glean.d.ts");
 
   let metrics = {};
   let pings = {};
 
-  for (let path of paths) {
-    console.log(`[INFO] ${path}`);
-    let yaml = fs.readFileSync(`${src_dir}/${path}`, "utf8");
+  for (let gleanPath of paths) {
+    console.log(`[INFO] ${gleanPath}`);
+    let yaml = fs.readFileSync(`${src_dir}/${gleanPath}`, "utf8");
     let parsed = YAML.parse(yaml, { merge: true, schema: "failsafe" });
 
     if (parsed.$schema === `${SCHEMA}/metrics/2-0-0`) {
