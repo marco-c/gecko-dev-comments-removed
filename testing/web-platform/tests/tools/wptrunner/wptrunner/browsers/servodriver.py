@@ -101,7 +101,7 @@ class ServoWebDriverBrowser(WebDriverBrowser):
             
             "--ignore-certificate-errors",
             "--window-size", "800x600",
-            "data:,",
+            "about:blank",
         ]
 
         ca_cert_path = server_config.ssl_config["ca_cert_path"]
