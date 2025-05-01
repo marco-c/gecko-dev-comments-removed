@@ -34,8 +34,8 @@ AVD_MANIFEST_X86_64 = Path(__file__).resolve().parent / "android-avds/x86_64.jso
 AVD_MANIFEST_ARM64 = Path(__file__).resolve().parent / "android-avds/arm64.json"
 
 JAVA_VERSION_MAJOR = "17"
-JAVA_VERSION_MINOR = "0.14"
-JAVA_VERSION_PATCH = "7"
+JAVA_VERSION_MINOR = "0.15"
+JAVA_VERSION_PATCH = "6"
 
 ANDROID_NDK_EXISTS = """
 Looks like you have the correct version of the Android NDK installed at:
