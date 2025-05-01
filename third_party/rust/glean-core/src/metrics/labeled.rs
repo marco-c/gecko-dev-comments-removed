@@ -17,7 +17,7 @@ use crate::Glean;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
-const MAX_LABEL_LENGTH: usize = 71;
+const MAX_LABEL_LENGTH: usize = 111;
 
 
 pub type LabeledCounter = LabeledMetric<CounterMetric>;
