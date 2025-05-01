@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -18,8 +18,8 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
     await emptyInputEvent;
   }
 
-  
-  
+  // ////////////////////////////////////////////////////////////////////////
+  // insertText
   await testInsertText(acc, "hello", 0, aBefore.length);
   await isFinalValueCorrect(browser, acc, [aBefore, "hello", aAfter]);
   await testInsertText(acc, "ma ", 0, aBefore.length);
@@ -33,8 +33,8 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
     aAfter,
   ]);
 
-  
-  
+  // ////////////////////////////////////////////////////////////////////////
+  // deleteText
   await testDeleteText(acc, 0, 5, aBefore.length);
   await isFinalValueCorrect(browser, acc, [aBefore, "hello hello", aAfter]);
   await testDeleteText(acc, 5, 6, aBefore.length);
@@ -44,14 +44,14 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
   await testDeleteText(acc, 0, 5, aBefore.length);
   await isFinalValueCorrect(browser, acc, [aBefore, "", aAfter]);
 
-  
+  // XXX: clipboard operation tests don't work well with editable documents.
   if (acc.role == ROLE_DOCUMENT) {
     return;
   }
 
   await resetInput();
 
-  
+  // copyText and pasteText
   await testInsertText(acc, "hello", 0, aBefore.length);
   await isFinalValueCorrect(browser, acc, [aBefore, "hello", aAfter]);
 
@@ -67,7 +67,7 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
   await testPasteText(acc, 1, aBefore.length);
   await isFinalValueCorrect(browser, acc, [aBefore, "hehelloo", aAfter]);
 
-  
+  // cut & paste
   await testCutText(acc, 0, 1, aBefore.length);
   await isFinalValueCorrect(browser, acc, [aBefore, "ehelloo", aAfter]);
   await testPasteText(acc, 2, aBefore.length);
@@ -83,8 +83,8 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
 
   await resetInput();
 
-  
-  
+  // ////////////////////////////////////////////////////////////////////////
+  // setTextContents
   await testSetTextContents(acc, "hello", aBefore.length, [
     EVENT_TEXT_INSERTED,
   ]);
@@ -114,7 +114,7 @@ addAccessibleTask(
       ""
     );
   },
-  { chrome: true, topLevel: false  }
+  { chrome: true, topLevel: false /* bug 1834129 */ }
 );
 
 addAccessibleTask(
@@ -132,7 +132,7 @@ addAccessibleTask(
       "pseudo element"
     );
   },
-  { chrome: true, topLevel: false  }
+  { chrome: true, topLevel: false /* bug 1834129 */ }
 );
 
 addAccessibleTask(
@@ -149,7 +149,7 @@ addAccessibleTask(
       "pseudo element"
     );
   },
-  { chrome: true, topLevel: false  }
+  { chrome: true, topLevel: false /* bug 1834129 */ }
 );
 
 addAccessibleTask(
@@ -170,7 +170,7 @@ addAccessibleTask(
       "after"
     );
   },
-  { chrome: true, topLevel: false  }
+  { chrome: true, topLevel: false /* bug 1834129 */ }
 );
 
 addAccessibleTask(
@@ -185,16 +185,11 @@ addAccessibleTask(
     document.execCommand("delete");
     await testEditable(browser, findAccessibleChildByID(docAcc, "input"));
   },
-  { chrome: true, topLevel: false  }
+  { chrome: true, topLevel: false /* bug 1834129 */ }
 );
 
-if (
-  Services.prefs.getBoolPref(
-    "dom.element.contenteditable.plaintext-only.enabled"
-  )
-) {
-  addAccessibleTask(
-    `<style>
+addAccessibleTask(
+  `<style>
   #input {
     white-space: pre;
   }
@@ -206,17 +201,16 @@ if (
   }
 </style>
 <div id="input" contenteditable="plaintext-only" role="textbox"></div>`,
-    async function (browser, docAcc) {
-      await testEditable(
-        browser,
-        findAccessibleChildByID(docAcc, "input"),
-        "before",
-        "after"
-      );
-    },
-    { chrome: true, topLevel: false  }
-  );
-}
+  async function (browser, docAcc) {
+    await testEditable(
+      browser,
+      findAccessibleChildByID(docAcc, "input"),
+      "before",
+      "after"
+    );
+  },
+  { chrome: true, topLevel: false /* bug 1834129 */ }
+);
 
 addAccessibleTask(
   ``,
@@ -230,9 +224,9 @@ addAccessibleTask(
   }
 );
 
-
-
-
+/**
+ * Test PasteText replacement of selected text.
+ */
 addAccessibleTask(
   `<input id="input" value="abcdef">`,
   async function testPasteTextReplace(browser, docAcc) {
