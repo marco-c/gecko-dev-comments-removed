@@ -121,13 +121,15 @@ class nsMathMLFrame : public nsIMathMLFrame {
   
   
   
-  static void ParseAndCalcNumericValue(const nsString& aString,
-                                       nscoord* aLengthValue, uint32_t aFlags,
-                                       float aFontSizeInflation,
-                                       nsIFrame* aFrame);
+  static void ParseNumericValue(const nsString& aString, nscoord* aLengthValue,
+                                uint32_t aFlags, nsPresContext* aPresContext,
+                                mozilla::ComputedStyle* aComputedStyle,
+                                float aFontSizeInflation);
 
-  static nscoord CalcLength(const nsCSSValue& aCSSValue,
-                            float aFontSizeInflation, nsIFrame* aFrame);
+  static nscoord CalcLength(nsPresContext* aPresContext,
+                            mozilla::ComputedStyle* aComputedStyle,
+                            const nsCSSValue& aCSSValue,
+                            float aFontSizeInflation);
 
   static eMathMLFrameType GetMathMLFrameTypeFor(nsIFrame* aFrame) {
     if (aFrame->IsMathMLFrame()) {

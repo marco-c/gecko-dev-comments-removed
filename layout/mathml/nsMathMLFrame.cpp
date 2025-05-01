@@ -19,10 +19,6 @@
 #include "nsPresContextInlines.h"
 
 
-#include "mozilla/dom/SVGAnimatedLength.h"
-#include "mozilla/dom/SVGLength.h"
-
-
 #include "mozilla/ServoStyleSet.h"
 #include "nsDisplayList.h"
 
@@ -186,21 +182,33 @@ void nsMathMLFrame::GetAxisHeight(DrawTarget* aDrawTarget,
 }
 
 
-nscoord nsMathMLFrame::CalcLength(const nsCSSValue& aCSSValue,
-                                  float aFontSizeInflation, nsIFrame* aFrame) {
+nscoord nsMathMLFrame::CalcLength(nsPresContext* aPresContext,
+                                  ComputedStyle* aComputedStyle,
+                                  const nsCSSValue& aCSSValue,
+                                  float aFontSizeInflation) {
   NS_ASSERTION(aCSSValue.IsLengthUnit(), "not a length unit");
 
+  if (aCSSValue.IsPixelLengthUnit()) {
+    return aCSSValue.GetPixelLength();
+  }
+
   nsCSSUnit unit = aCSSValue.GetUnit();
-  mozilla::dom::NonSVGFrameUserSpaceMetrics userSpaceMetrics(aFrame);
+
+  if (eCSSUnit_EM == unit) {
+    const nsStyleFont* font = aComputedStyle->StyleFont();
+    return font->mFont.size.ScaledBy(aCSSValue.GetFloatValue()).ToAppUnits();
+  }
+
+  if (eCSSUnit_XHeight == unit) {
+    RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetFontMetricsForComputedStyle(
+        aComputedStyle, aPresContext, aFontSizeInflation);
+    nscoord xHeight = fm->XHeight();
+    return NSToCoordRound(aCSSValue.GetFloatValue() * (float)xHeight);
+  }
 
   
-  
-  auto axis = SVGContentUtils::X;
-
-  return nsPresContext::CSSPixelsToAppUnits(
-      aCSSValue.GetFloatValue() *
-      SVGLength::GetPixelsPerCSSUnit(userSpaceMetrics, unit, axis,
-                                      true));
+  NS_ERROR("Unsupported unit");
+  return 0;
 }
 
 
@@ -220,15 +228,15 @@ void nsMathMLFrame::GetSupDropFromChild(nsIFrame* aChild, nscoord& aSupDrop,
 }
 
 
-void nsMathMLFrame::ParseAndCalcNumericValue(const nsString& aString,
-                                             nscoord* aLengthValue,
-                                             uint32_t aFlags,
-                                             float aFontSizeInflation,
-                                             nsIFrame* aFrame) {
+void nsMathMLFrame::ParseNumericValue(const nsString& aString,
+                                      nscoord* aLengthValue, uint32_t aFlags,
+                                      nsPresContext* aPresContext,
+                                      ComputedStyle* aComputedStyle,
+                                      float aFontSizeInflation) {
   nsCSSValue cssValue;
 
-  if (!dom::MathMLElement::ParseNumericValue(
-          aString, cssValue, aFlags, aFrame->PresContext()->Document())) {
+  if (!dom::MathMLElement::ParseNumericValue(aString, cssValue, aFlags,
+                                             aPresContext->Document())) {
     
     
     return;
@@ -236,15 +244,17 @@ void nsMathMLFrame::ParseAndCalcNumericValue(const nsString& aString,
 
   nsCSSUnit unit = cssValue.GetUnit();
 
-  
-  
-  
   if (unit == eCSSUnit_Percent) {
-    *aLengthValue = NSToCoordRound(*aLengthValue * cssValue.GetPercentValue());
+    
+    *aLengthValue = NSToCoordRound(
+        *aLengthValue * (unit == eCSSUnit_Percent ? cssValue.GetPercentValue()
+                                                  : cssValue.GetFloatValue()));
     return;
   }
 
-  *aLengthValue = CalcLength(cssValue, aFontSizeInflation, aFrame);
+  
+  *aLengthValue =
+      CalcLength(aPresContext, aComputedStyle, cssValue, aFontSizeInflation);
 }
 
 namespace mozilla {
