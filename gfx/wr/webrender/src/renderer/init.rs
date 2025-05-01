@@ -76,7 +76,7 @@ pub trait SceneBuilderHooks {
     
     
     
-    fn post_scene_swap(&self, document_id: &Vec<DocumentId>, info: PipelineInfo);
+    fn post_scene_swap(&self, document_id: &Vec<DocumentId>, info: PipelineInfo, schedule_frame: bool);
     
     
     

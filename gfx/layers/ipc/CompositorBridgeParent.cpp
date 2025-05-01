@@ -62,7 +62,6 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
@@ -80,7 +79,6 @@
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/VsyncDispatcher.h"
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 #  include "VsyncSource.h"
@@ -101,8 +99,6 @@ using namespace mozilla::ipc;
 using namespace mozilla::gfx;
 
 using base::ProcessId;
-
-using mozilla::Telemetry::LABELS_CONTENT_FRAME_TIME_REASON;
 
 
 StaticMonitor CompositorBridgeParent::sIndirectLayerTreesLock;
@@ -1443,7 +1439,7 @@ CompositorBridgeParent::LayerTreeState::GetCompositorController() const {
   return mParent;
 }
 
-void CompositorBridgeParent::NotifyDidSceneBuild(
+void CompositorBridgeParent::ScheduleFrameAfterSceneBuild(
     RefPtr<const wr::WebRenderPipelineInfo> aInfo) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (mPaused) {
@@ -1451,7 +1447,7 @@ void CompositorBridgeParent::NotifyDidSceneBuild(
   }
 
   if (mWrBridge) {
-    mWrBridge->NotifyDidSceneBuild(aInfo);
+    mWrBridge->ScheduleFrameAfterSceneBuild(aInfo);
   }
 }
 
@@ -1792,8 +1788,6 @@ int32_t RecordContentFrameTime(
     
     if (fracLatencyNorm < 200) {
       
-      Telemetry::AccumulateCategorical(
-          LABELS_CONTENT_FRAME_TIME_REASON::OnTime);
       mozilla::glean::gfx_content_frame_time::reason
           .EnumGet(glean::gfx_content_frame_time::ReasonLabel::eOnTime)
           .Add();
@@ -1801,44 +1795,32 @@ int32_t RecordContentFrameTime(
       if (aCompositeId == VsyncId()) {
         
         
-        Telemetry::AccumulateCategorical(
-            LABELS_CONTENT_FRAME_TIME_REASON::NoVsyncNoId);
         mozilla::glean::gfx_content_frame_time::reason
             .EnumGet(glean::gfx_content_frame_time::ReasonLabel::eNoVsyncNoId)
             .Add();
       } else if (aTxnId >= aCompositeId) {
         
-        Telemetry::AccumulateCategorical(
-            LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
         mozilla::glean::gfx_content_frame_time::reason
             .EnumGet(glean::gfx_content_frame_time::ReasonLabel::eNoVsync)
             .Add();
       } else if (aCompositeId - aTxnId > 1) {
         
         if (aFullPaintTime >= TimeDuration::FromMilliseconds(20)) {
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLong);
           mozilla::glean::gfx_content_frame_time::reason
               .EnumGet(glean::gfx_content_frame_time::ReasonLabel::
                            eMissedCompositeLong)
               .Add();
         } else if (aFullPaintTime >= TimeDuration::FromMilliseconds(10)) {
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeMid);
           mozilla::glean::gfx_content_frame_time::reason
               .EnumGet(glean::gfx_content_frame_time::ReasonLabel::
                            eMissedCompositeMid)
               .Add();
         } else if (aFullPaintTime >= TimeDuration::FromMilliseconds(5)) {
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLow);
           mozilla::glean::gfx_content_frame_time::reason
               .EnumGet(glean::gfx_content_frame_time::ReasonLabel::
                            eMissedCompositeLow)
               .Add();
         } else {
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
           mozilla::glean::gfx_content_frame_time::reason
               .EnumGet(
                   glean::gfx_content_frame_time::ReasonLabel::eMissedComposite)
@@ -1846,8 +1828,6 @@ int32_t RecordContentFrameTime(
         }
       } else {
         
-        Telemetry::AccumulateCategorical(
-            LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
         mozilla::glean::gfx_content_frame_time::reason
             .EnumGet(glean::gfx_content_frame_time::ReasonLabel::eSlowComposite)
             .Add();
