@@ -116,30 +116,23 @@ async function testForgetAboutThisSite(
   }
 
   
-  let promptPromise;
+  let dialogPromise;
 
   
   
   if (cancelConfirmWithEsc) {
-    promptPromise = PromptTestUtils.waitForPrompt(organizer, {
-      modalType: Services.prompt.MODAL_TYPE_WINDOW,
-      promptType: "confirmEx",
-    }).then(dialog => {
-      let dialogWindow = dialog.ui.prompt;
-      let dialogClosedPromise = BrowserTestUtils.waitForEvent(
-        dialogWindow.opener,
-        "DOMModalDialogClosed"
-      );
-      EventUtils.synthesizeKey("KEY_Escape", undefined, dialogWindow);
-
+    dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+      null,
+      "chrome://browser/content/places/clearDataForSite.xhtml"
+    ).then(dialog => {
+      let dialogClosedPromise = BrowserTestUtils.waitForEvent(dialog, "unload");
+      EventUtils.synthesizeKey("KEY_Escape", undefined, dialog);
       return dialogClosedPromise;
     });
   } else {
-    
-    promptPromise = PromptTestUtils.handleNextPrompt(
-      organizer,
-      { modalType: Services.prompt.MODAL_TYPE_WINDOW, promptType: "confirmEx" },
-      { buttonNumClick: shouldForget ? 0 : 1 }
+    dialogPromise = BrowserTestUtils.promiseAlertDialog(
+      shouldForget ? "accept" : "cancel",
+      "chrome://browser/content/places/clearDataForSite.xhtml"
     );
   }
 
@@ -159,7 +152,7 @@ async function testForgetAboutThisSite(
   contextmenu.activateItem(forgetThisSite);
 
   
-  await promptPromise;
+  await dialogPromise;
 
   
   
