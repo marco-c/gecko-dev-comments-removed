@@ -2076,6 +2076,13 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
+
+
+  [[nodiscard]] nsIFrame* GetClosestAncestorFrameForAncestorView() const;
+
+  
+
+
   class MOZ_STACK_CLASS EventHandler final {
    public:
     EventHandler() = delete;
@@ -2106,10 +2113,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEvent(nsIFrame* aFrameForPresShell,
-                         WidgetGUIEvent* aGUIEvent, bool aDontRetargetEvents,
-                         nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT nsresult HandleEvent(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        bool aDontRetargetEvents, nsEventStatus* aEventStatus);
 
     
 
@@ -2149,7 +2155,6 @@ class PresShell final : public nsStubDocumentObserver,
 
    private:
     static bool InZombieDocument(nsIContent* aContent);
-    static nsIFrame* GetNearestFrameContainingPresShell(PresShell* aPresShell);
     static nsIPrincipal* GetDocumentPrincipalToCompareWithBlacklist(
         PresShell& aPresShell);
 
@@ -2166,11 +2171,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventUsingCoordinates(nsIFrame* aFrameForPresShell,
-                                         WidgetGUIEvent* aGUIEvent,
-                                         nsEventStatus* aEventStatus,
-                                         bool aDontRetargetEvents);
+    MOZ_CAN_RUN_SCRIPT nsresult HandleEventUsingCoordinates(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus, bool aDontRetargetEvents);
 
     
 
@@ -2317,9 +2320,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsIFrame* GetFrameToHandleNonTouchEvent(nsIFrame* aRootFrameToHandleEvent,
-                                            WidgetGUIEvent* aGUIEvent);
+    MOZ_CAN_RUN_SCRIPT nsIFrame* GetFrameToHandleNonTouchEvent(
+        AutoWeakFrame& aWeakRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent);
 
     
 
@@ -2333,9 +2335,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    bool ComputeEventTargetFrameAndPresShellAtEventPoint(
-        nsIFrame* aRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
+    MOZ_CAN_RUN_SCRIPT bool ComputeEventTargetFrameAndPresShellAtEventPoint(
+        AutoWeakFrame& aWeakRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
         EventTargetData* aEventTargetData);
 
     
@@ -2358,13 +2359,10 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    bool DispatchPrecedingPointerEvent(nsIFrame* aFrameForPresShell,
-                                       WidgetGUIEvent* aGUIEvent,
-                                       nsIContent* aPointerCapturingContent,
-                                       bool aDontRetargetEvents,
-                                       EventTargetData* aEventTargetData,
-                                       nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT bool DispatchPrecedingPointerEvent(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsIContent* aPointerCapturingContent, bool aDontRetargetEvents,
+        EventTargetData* aEventTargetData, nsEventStatus* aEventStatus);
 
     
 
@@ -2434,11 +2432,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    bool MaybeHandleEventWithAnotherPresShell(nsIFrame* aFrameForPresShell,
-                                              WidgetGUIEvent* aGUIEvent,
-                                              nsEventStatus* aEventStatus,
-                                              nsresult* aRv);
+    MOZ_CAN_RUN_SCRIPT bool MaybeHandleEventWithAnotherPresShell(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus, nsresult* aRv);
 
     MOZ_CAN_RUN_SCRIPT
     nsresult RetargetEventToParent(WidgetGUIEvent* aGUIEvent,
@@ -2455,10 +2451,10 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    bool MaybeHandleEventWithAccessibleCaret(nsIFrame* aFrameForPresShell,
-                                             WidgetGUIEvent* aGUIEvent,
-                                             nsEventStatus* aEventStatus);
+
+    MOZ_CAN_RUN_SCRIPT bool MaybeHandleEventWithAccessibleCaret(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus);
 
     
 
@@ -2508,8 +2504,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsIFrame* MaybeFlushThrottledStyles(nsIFrame* aFrameForPresShell);
+    MOZ_CAN_RUN_SCRIPT void MaybeFlushThrottledStyles(
+        AutoWeakFrame& aWeakFrameForPresShell);
 
     
 
@@ -2600,9 +2596,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventWithPointerCapturingContentWithoutItsFrame(
-        nsIFrame* aFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+    MOZ_CAN_RUN_SCRIPT nsresult
+    HandleEventWithPointerCapturingContentWithoutItsFrame(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
         nsIContent* aPointerCapturingContent, nsEventStatus* aEventStatus);
 
     
@@ -2681,10 +2677,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventWithFrameForPresShell(nsIFrame* aFrameForPresShell,
-                                              WidgetGUIEvent* aGUIEvent,
-                                              nsEventStatus* aEventStatus);
+    MOZ_CAN_RUN_SCRIPT nsresult HandleEventWithFrameForPresShell(
+        AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsEventStatus* aEventStatus);
 
     
 
@@ -2795,8 +2790,13 @@ class PresShell final : public nsStubDocumentObserver,
                                              LayoutDeviceIntPoint& aTargetPt,
                                              nsIWidget* aRootWidget);
 
-    nsIContent* GetOverrideClickTarget(WidgetGUIEvent* aGUIEvent,
-                                       nsIFrame* aFrame);
+    
+
+
+
+
+    [[nodiscard]] Result<nsIContent*, nsresult> GetOverrideClickTarget(
+        WidgetGUIEvent* aGUIEvent, nsIFrame* aFrameForPresShell);
 
     
 
@@ -2921,7 +2921,7 @@ class PresShell final : public nsStubDocumentObserver,
     bool UpdateFocusSequenceNumber(nsIFrame* aFrameForPresShell,
                                    uint64_t aEventFocusSequenceNumber);
 
-    OwningNonNull<PresShell> mPresShell;
+    MOZ_KNOWN_LIVE const OwningNonNull<PresShell> mPresShell;
     AutoCurrentEventInfoSetter* mCurrentEventInfoSetter;
     static TimeStamp sLastInputCreated;
     static TimeStamp sLastInputProcessed;
