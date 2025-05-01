@@ -57,7 +57,7 @@ class Repository:
     def __exit__(self, exc_type, exc_value, exc_tb):
         pass
 
-    def _run(self, *args, encoding="utf-8", **runargs):
+    def _process_run_args(self, *args, **runargs):
         return_codes = runargs.get("return_codes", [])
         env = self._env
         if "env" in runargs:
@@ -65,24 +65,38 @@ class Repository:
             env.update(runargs["env"])
 
         cmd = (str(self._tool),) + args
+        return (cmd, return_codes, env)
+
+    def _run(self, *args, encoding="utf-8", **runargs):
         
         
         
         
         if not self._tool:
             return "src"
-        else:
-            try:
-                return subprocess.check_output(
-                    cmd,
-                    cwd=self.path,
-                    env=env,
-                    encoding=encoding,
-                )
-            except subprocess.CalledProcessError as e:
-                if e.returncode in return_codes:
-                    return ""
-                raise
+
+        (cmd, return_codes, env) = self._process_run_args(*args, **runargs)
+        try:
+            return subprocess.check_output(
+                cmd,
+                cwd=self.path,
+                encoding=encoding,
+                env=env,
+            )
+        except subprocess.CalledProcessError as e:
+            if e.returncode in return_codes:
+                return ""
+            raise
+
+    def _pipefrom(self, *args, encoding="utf-8"):
+        (cmd, _return_codes, env) = self._process_run_args(*args)
+        return subprocess.Popen(
+            cmd,
+            cwd=self.path,
+            encoding=encoding,
+            env=env,
+            stdout=subprocess.PIPE,
+        ).stdout
 
     @property
     def tool_version(self):
@@ -166,6 +180,10 @@ class Repository:
         ``rev`` is a specifier for which changesets to consider for
         changes. The exact meaning depends on the vcs system being used.
         """
+
+    @abc.abstractmethod
+    def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=None):
+        """Return a BufferedReader of a diff."""
 
     @abc.abstractmethod
     def get_outgoing_files(self, diff_filter, upstream):
