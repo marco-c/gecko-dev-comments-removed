@@ -1638,10 +1638,6 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
     df = dfResult.unwrap();
   }
 
-  
-  
-  df->SetStartTimeIfGregorian(StartOfTime);
-
   return df.release();
 }
 
@@ -2578,51 +2574,12 @@ static bool PartitionDateTimeRangePattern(
   MOZ_ASSERT(x.isValid());
   MOZ_ASSERT(y.isValid());
 
-  
-  
-  
-  
-  
-  
-
-  
-  constexpr double GregorianChangeDate = -12219292800000.0;
-
-  
-  constexpr double GregorianChangeDatePlusOneDay =
-      GregorianChangeDate + msPerDay;
-
-  mozilla::intl::ICUResult result = Ok();
-  if (x.toDouble() < GregorianChangeDatePlusOneDay ||
-      y.toDouble() < GregorianChangeDatePlusOneDay) {
-    
-    
-    
-    auto startCal = df->CloneCalendar(x.toDouble());
-    if (startCal.isErr()) {
-      intl::ReportInternalError(cx, startCal.unwrapErr());
-      return false;
-    }
-
-    auto endCal = df->CloneCalendar(y.toDouble());
-    if (endCal.isErr()) {
-      intl::ReportInternalError(cx, endCal.unwrapErr());
-      return false;
-    }
-
-    result = dif->TryFormatCalendar(*startCal.unwrap(), *endCal.unwrap(),
-                                    formatted, equal);
-  } else {
-    
-    result =
-        dif->TryFormatDateTime(x.toDouble(), y.toDouble(), formatted, equal);
-  }
-
+  auto result =
+      dif->TryFormatDateTime(x.toDouble(), y.toDouble(), df, formatted, equal);
   if (result.isErr()) {
     intl::ReportInternalError(cx, result.unwrapErr());
     return false;
   }
-
   return true;
 }
 

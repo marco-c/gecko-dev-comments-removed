@@ -575,9 +575,6 @@ TEST(IntlDateTimeFormat, SetStartTimeIfGregorian)
   auto timeZone = Some(MakeStringSpan(u"UTC"));
 
   
-  constexpr double StartOfTime = -8.64e15;
-
-  
   
   constexpr double FirstJanuary1582 = -12244089600000.0;
 
@@ -597,15 +594,12 @@ TEST(IntlDateTimeFormat, SetStartTimeIfGregorian)
                         MakeStringSpan(locale), style, gen.get(), timeZone)
                         .unwrap();
 
-    const char* Dec22_1581;
     const char* Jan01_1582;
     const char* Jan01_1583;
     if (locale == "en-US-u-ca-iso8601"sv) {
-      Dec22_1581 = "1581 December 22";
       Jan01_1582 = "1582 January 1";
       Jan01_1583 = "1583 January 1";
     } else {
-      Dec22_1581 = "December 22, 1581";
       Jan01_1582 = "January 1, 1582";
       Jan01_1583 = "January 1, 1583";
     }
@@ -614,16 +608,6 @@ TEST(IntlDateTimeFormat, SetStartTimeIfGregorian)
 
     
     
-    dtFormat->TryFormat(FirstJanuary1582, buffer).unwrap();
-    ASSERT_TRUE(buffer.verboseMatches(Dec22_1581));
-
-    
-    dtFormat->TryFormat(FirstJanuary1582 + oneYear, buffer).unwrap();
-    ASSERT_TRUE(buffer.verboseMatches(Jan01_1583));
-
-    
-    dtFormat->SetStartTimeIfGregorian(StartOfTime);
-
     
     dtFormat->TryFormat(FirstJanuary1582, buffer).unwrap();
     ASSERT_TRUE(buffer.verboseMatches(Jan01_1582));
