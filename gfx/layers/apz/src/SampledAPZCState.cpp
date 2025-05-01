@@ -19,18 +19,25 @@ SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics)
   RemoveFractionalAsyncDelta();
 }
 
-SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics,
-                                   Maybe<CompositionPayload>&& aPayload,
-                                   APZScrollGeneration aGeneration)
+SampledAPZCState::SampledAPZCState(
+    const FrameMetrics& aMetrics, Maybe<CompositionPayload>&& aPayload,
+    APZScrollGeneration aGeneration,
+    std::vector<CompositorScrollUpdate>&& aUpdates)
     : mLayoutViewport(aMetrics.GetLayoutViewport()),
       mVisualScrollOffset(aMetrics.GetVisualScrollOffset()),
       mZoom(aMetrics.GetZoom()),
       mScrollPayload(std::move(aPayload)),
-      mGeneration(aGeneration) {
+      mGeneration(aGeneration),
+      mUpdates(std::move(aUpdates)) {
   RemoveFractionalAsyncDelta();
 }
 
 bool SampledAPZCState::operator==(const SampledAPZCState& aOther) const {
+  
+  
+  
+  
+  
   
   
   return mLayoutViewport.IsEqualEdges(aOther.mLayoutViewport) &&

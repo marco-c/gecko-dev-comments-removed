@@ -592,6 +592,7 @@ class AsyncPanZoomController {
   const FrameMetrics& Metrics() const;
   FrameMetrics& Metrics();
 
+  class AutoRecordCompositorScrollUpdate;
   
 
 
@@ -600,7 +601,12 @@ class AsyncPanZoomController {
 
  private:
   
-  CompositorScrollUpdate mLastCompositorScrollUpdate;
+  
+  
+  std::vector<CompositorScrollUpdate> mUpdatesSinceLastSample;
+
+  CompositorScrollUpdate::Metrics GetCurrentMetricsForCompositorScrollUpdate(
+      const RecursiveMutexAutoLock& aProofOfApzcLock) const;
 
  public:
   wr::MinimapData GetMinimapData() const;
