@@ -112,10 +112,7 @@ class JujutsuRepository(Repository):
     def branch(self):
         
         
-        bookmark = self._run(
-            "log", "--no-graph", "-r", "latest(::@ & bookmarks())", "-T", "bookmarks"
-        )
-        return bookmark or None
+        return None
 
     @property
     def has_git_cinnabar(self):
@@ -264,7 +261,10 @@ class JujutsuRepository(Repository):
             raise MissingVCSExtension("cinnabar")
 
         with self.try_commit(message, changed_files) as head:
-            self._run("git", "remote", "remove", "mach_tryserver", return_codes=[0, 1])
+            if "mach_tryserver" in self._git._run("remote"):
+                self._run(
+                    "git", "remote", "remove", "mach_tryserver", return_codes=[0, 1]
+                )
             
             self._git._run(
                 "remote", "add", "mach_tryserver", "hg::ssh://hg.mozilla.org/try"
