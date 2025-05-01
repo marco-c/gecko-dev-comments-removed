@@ -7,9 +7,6 @@ const {
   CLUSTER_METHODS,
   ANCHOR_METHODS,
   getBestAnchorClusterInfo,
-  ClusterRepresentation,
-  SMART_TAB_GROUPING_CONFIG,
-  isSearchTab,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
 );
@@ -249,31 +246,4 @@ function fetchFile(host_prefix, filename) {
     xhr.onerror = () => reject(new Error(`Network error getting ${url}`));
     xhr.send();
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-function createMockTab({ searchURL, currentURL, title }) {
-  return {
-    linkedBrowser: {
-      getAttribute(name) {
-        if (name === "triggeringSearchEngineURL") {
-          return searchURL;
-        }
-        return null;
-      },
-      currentURI: {
-        spec: currentURL,
-      },
-    },
-    label: title,
-  };
 }
