@@ -58,9 +58,6 @@ class Cookie final : public nsICookie {
 
  public:
   
-  static bool ValidateSameSite(const CookieStruct& aCookieData);
-
-  
   
   static int64_t GenerateUniqueCreationTime(int64_t aCreationTime);
 
@@ -105,11 +102,6 @@ class Cookie final : public nsICookie {
     return mOriginAttributes;
   }
   inline int32_t SameSite() const { return mData.sameSite(); }
-  inline int32_t RawSameSite() const { return mData.rawSameSite(); }
-  inline bool IsDefaultSameSite() const {
-    return SameSite() == nsICookie::SAMESITE_LAX &&
-           RawSameSite() == nsICookie::SAMESITE_NONE;
-  }
   inline uint8_t SchemeMap() const { return mData.schemeMap(); }
 
   

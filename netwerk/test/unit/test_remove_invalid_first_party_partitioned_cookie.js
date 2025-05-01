@@ -15,9 +15,12 @@ add_task(async function run_test() {
   await promise_close_profile();
 
   
+  do_get_cookie_file(profile).remove(false);
+
+  
   let schema14db = new CookieDatabaseConnection(
     do_get_cookie_file(profile),
-    14
+    15
   );
 
   let now = Math.round(Date.now() / 1000);
@@ -36,7 +39,6 @@ add_task(async function run_test() {
     false, 
     false, 
     { partitionKey: "(https,example.com)" },
-    Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SCHEME_UNSET,
     false 
@@ -58,7 +60,6 @@ add_task(async function run_test() {
     false, 
     { partitionKey: "(https,example.com)" },
     Ci.nsICookie.SAMESITE_NONE,
-    Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SCHEME_UNSET,
     true 
   );
@@ -78,7 +79,6 @@ add_task(async function run_test() {
     false, 
     false, 
     {},
-    Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SCHEME_UNSET,
     false 
@@ -100,7 +100,6 @@ add_task(async function run_test() {
     false, 
     { partitionKey: "(https,example.org)" },
     Ci.nsICookie.SAMESITE_NONE,
-    Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SCHEME_UNSET,
     false 
   );
@@ -120,7 +119,6 @@ add_task(async function run_test() {
     false, 
     false, 
     { partitionKey: "(https,example.org)" },
-    Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SCHEME_UNSET,
     true 

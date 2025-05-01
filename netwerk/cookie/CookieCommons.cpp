@@ -514,26 +514,35 @@ already_AddRefed<nsICookieJarSettings> CookieCommons::GetCookieJarSettings(
 }
 
 
-bool CookieCommons::ShouldIncludeCrossSiteCookie(Cookie* aCookie,
-                                                 bool aPartitionForeign,
-                                                 bool aInPrivateBrowsing,
-                                                 bool aUsingStorageAccess,
-                                                 bool aOn3pcbException) {
+bool CookieCommons::ShouldIncludeCrossSiteCookie(
+    Cookie* aCookie, nsIURI* aHostURI, bool aPartitionForeign,
+    bool aInPrivateBrowsing, bool aUsingStorageAccess, bool aOn3pcbException) {
   MOZ_ASSERT(aCookie);
 
   int32_t sameSiteAttr = 0;
   aCookie->GetSameSite(&sameSiteAttr);
 
   return ShouldIncludeCrossSiteCookie(
-      sameSiteAttr, aCookie->IsPartitioned() && aCookie->RawIsPartitioned(),
+      aHostURI, sameSiteAttr,
+      aCookie->IsPartitioned() && aCookie->RawIsPartitioned(),
       aPartitionForeign, aInPrivateBrowsing, aUsingStorageAccess,
       aOn3pcbException);
 }
 
 
 bool CookieCommons::ShouldIncludeCrossSiteCookie(
-    int32_t aSameSiteAttr, bool aCookiePartitioned, bool aPartitionForeign,
-    bool aInPrivateBrowsing, bool aUsingStorageAccess, bool aOn3pcbException) {
+    nsIURI* aHostURI, int32_t aSameSiteAttr, bool aCookiePartitioned,
+    bool aPartitionForeign, bool aInPrivateBrowsing, bool aUsingStorageAccess,
+    bool aOn3pcbException) {
+  if (aSameSiteAttr == nsICookie::SAMESITE_UNSET) {
+    bool laxByDefault =
+        StaticPrefs::network_cookie_sameSite_laxByDefault() &&
+        !nsContentUtils::IsURIInPrefList(
+            aHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
+    aSameSiteAttr =
+        laxByDefault ? nsICookie::SAMESITE_LAX : nsICookie::SAMESITE_NONE;
+  }
+
   
   
   

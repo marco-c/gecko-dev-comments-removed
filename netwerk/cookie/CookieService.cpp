@@ -154,13 +154,14 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
   
   
   if (aCookie->SameSite() == nsICookie::SAMESITE_NONE ||
-      (!aLaxByDefault && aCookie->IsDefaultSameSite())) {
+      (!aLaxByDefault && aCookie->SameSite() == nsICookie::SAMESITE_UNSET)) {
     return true;
   }
 
   
   
-  if (aLaxByDefault && aCookie->IsDefaultSameSite() && aHadCrossSiteRedirects &&
+  if (aLaxByDefault && aCookie->SameSite() == nsICookie::SAMESITE_UNSET &&
+      aHadCrossSiteRedirects &&
       StaticPrefs::
           network_cookie_sameSite_laxByDefault_allowBoomerangRedirect()) {
     return true;
@@ -170,7 +171,7 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
 
   
   
-  if (aLaxByDefault && aCookie->IsDefaultSameSite() &&
+  if (aLaxByDefault && aCookie->SameSite() == nsICookie::SAMESITE_UNSET &&
       StaticPrefs::network_cookie_sameSite_laxPlusPOST_timeout() > 0 &&
       currentTimeInUsec - aCookie->CreationTime() <=
           (StaticPrefs::network_cookie_sameSite_laxPlusPOST_timeout() *
@@ -179,8 +180,9 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
     return true;
   }
 
-  MOZ_ASSERT((aLaxByDefault && aCookie->IsDefaultSameSite()) ||
-             aCookie->SameSite() == nsICookie::SAMESITE_LAX);
+  MOZ_ASSERT(
+      (aLaxByDefault && aCookie->SameSite() == nsICookie::SAMESITE_UNSET) ||
+      aCookie->SameSite() == nsICookie::SAMESITE_LAX);
   
   
   return aIsSafeTopLevelNav;
@@ -757,7 +759,7 @@ CookieService::AddNative(nsIURI* aCookieURI, const nsACString& aHost,
                           nsCString(aPath), aExpiry, currentTimeInUsec,
                           Cookie::GenerateUniqueCreationTime(currentTimeInUsec),
                           aIsHttpOnly, aIsSession, aIsSecure, aIsPartitioned,
-                          aSameSite, aSameSite, aSchemeMap);
+                          aSameSite, aSchemeMap);
 
   if (!aCheck(cookieData)) {
     return NS_ERROR_FAILURE;

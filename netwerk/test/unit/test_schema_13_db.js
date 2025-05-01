@@ -22,6 +22,9 @@ add_task(async function test_schema_13_db() {
   await promise_close_profile();
 
   
+  do_get_cookie_file(profile).remove(false);
+
+  
   let schema13db = new CookieDatabaseConnection(
     do_get_cookie_file(profile),
     13
@@ -46,7 +49,6 @@ add_task(async function test_schema_13_db() {
       false,
       false,
       {},
-      Ci.nsICookie.SAMESITE_NONE,
       Ci.nsICookie.SAMESITE_NONE,
       Ci.nsICookie.SCHEME_UNSET,
       !!(i % 2) 

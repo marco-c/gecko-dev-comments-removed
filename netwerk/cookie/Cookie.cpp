@@ -70,9 +70,11 @@ already_AddRefed<Cookie> Cookie::FromCookieStruct(
 
   
   
-  if (!Cookie::ValidateSameSite(cookie->mData)) {
-    cookie->mData.sameSite() = nsICookie::SAMESITE_LAX;
-    cookie->mData.rawSameSite() = nsICookie::SAMESITE_NONE;
+  if (cookie->mData.sameSite() != nsICookie::SAMESITE_NONE &&
+      cookie->mData.sameSite() != nsICookie::SAMESITE_LAX &&
+      cookie->mData.sameSite() != nsICookie::SAMESITE_STRICT &&
+      cookie->mData.sameSite() != nsICookie::SAMESITE_UNSET) {
+    cookie->mData.sameSite() = nsICookie::SAMESITE_UNSET;
   }
 
   
@@ -204,11 +206,7 @@ NS_IMETHODIMP Cookie::GetLastAccessed(int64_t* aTime) {
   return NS_OK;
 }
 NS_IMETHODIMP Cookie::GetSameSite(int32_t* aSameSite) {
-  if (StaticPrefs::network_cookie_sameSite_laxByDefault()) {
-    *aSameSite = SameSite();
-  } else {
-    *aSameSite = RawSameSite();
-  }
+  *aSameSite = SameSite();
   return NS_OK;
 }
 NS_IMETHODIMP Cookie::GetSchemeMap(nsICookie::schemeType* aSchemeMap) {
@@ -240,19 +238,6 @@ Cookie::GetExpires(uint64_t* aExpires) {
     *aExpires = Expiry() > 0 ? Expiry() : 1;
   }
   return NS_OK;
-}
-
-
-bool Cookie::ValidateSameSite(const CookieStruct& aCookieData) {
-  
-  
-  
-  if (aCookieData.rawSameSite() == aCookieData.sameSite()) {
-    return aCookieData.rawSameSite() >= nsICookie::SAMESITE_NONE &&
-           aCookieData.rawSameSite() <= nsICookie::SAMESITE_STRICT;
-  }
-  return aCookieData.rawSameSite() == nsICookie::SAMESITE_NONE &&
-         aCookieData.sameSite() == nsICookie::SAMESITE_LAX;
 }
 
 already_AddRefed<Cookie> Cookie::Clone() const {

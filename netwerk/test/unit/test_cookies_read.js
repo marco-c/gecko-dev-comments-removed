@@ -29,7 +29,17 @@ add_task(async () => {
   
   
   Assert.ok(do_get_cookie_file(profile).exists());
+
+  
+  await promise_close_profile();
+
+  
+  do_get_cookie_file(profile).remove(false);
+
   let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 12);
+
+  
+  await promise_load_profile();
 
   let uri = NetUtil.newURI("http://foo.com/");
   let channel = NetUtil.newChannel({

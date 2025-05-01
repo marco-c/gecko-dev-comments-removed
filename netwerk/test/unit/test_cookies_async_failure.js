@@ -129,7 +129,7 @@ async function run_test_1() {
 
   
   
-  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 12);
+  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 15);
   Assert.equal(do_count_cookies_in_db(db.db), 1);
 
   
@@ -488,7 +488,7 @@ async function run_test_5() {
 
   
   
-  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 12);
+  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 15);
   db.insertCookie(cookie);
   Assert.equal(do_count_cookies_in_db(db.db, "bar.com"), 1);
   Assert.equal(do_count_cookies_in_db(db.db), 1);
