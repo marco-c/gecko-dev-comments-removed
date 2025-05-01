@@ -37,7 +37,6 @@
 #include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
-#include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
@@ -1137,7 +1136,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         }
 
         LightDismissOpenPopovers(aEvent, aTargetContent);
-        LightDismissOpenDialogs(aEvent, aTargetContent);
       }
       [[fallthrough]];
     case eMouseMove:
@@ -1172,7 +1170,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
     case ePointerUp:
       LightDismissOpenPopovers(aEvent, aTargetContent);
-      LightDismissOpenDialogs(aEvent, aTargetContent);
       GenerateMouseEnterExit(mouseEvent);
       if (mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
         NotifyTargetUserActivation(aEvent, aTargetContent);
@@ -1508,89 +1505,6 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
   }
   RefPtr<Document> doc(ancestor->OwnerDoc());
   doc->HideAllPopoversUntil(*ancestor, false, true);
-}
-
-
-
-void EventStateManager::LightDismissOpenDialogs(WidgetEvent* aEvent,
-                                                nsIContent* aTargetContent) {
-  
-  
-  
-
-  if (!StaticPrefs::dom_dialog_light_dismiss_enabled()) {
-    return;
-  }
-
-  MOZ_ASSERT(aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp,
-             "Light dismiss must be called for pointer up/down only");
-
-  if (aEvent->mFlags.mDefaultPrevented || !aEvent->IsTrusted() ||
-      !aTargetContent) {
-    return;
-  }
-
-  auto* doc = aTargetContent->OwnerDoc();
-
-  
-  if (!doc->HasOpenDialogs()) {
-    return;
-  }
-
-  
-  
-  RefPtr<HTMLDialogElement> ancestor =
-      aTargetContent->NearestClickedDialog(aEvent);
-
-  
-  
-  if (aEvent->mMessage == ePointerDown) {
-    
-    
-    
-    
-    if (!ancestor) {
-      doc->ClearLastDialogPointerdownTarget();
-    } else {
-      doc->SetLastDialogPointerdownTarget(*ancestor);
-    }
-    return;
-  }
-
-  MOZ_ASSERT(aEvent->mMessage == ePointerUp);
-
-  
-  
-  RefPtr<HTMLDialogElement> lastDialog = doc->GetLastDialogPointerdownTarget();
-  bool sameTarget = ancestor == lastDialog;
-
-  
-  doc->ClearLastDialogPointerdownTarget();
-
-  
-  if (!sameTarget) {
-    return;
-  }
-
-  
-  RefPtr<HTMLDialogElement> topmostDialog = doc->GetTopMostOpenDialog();
-
-  
-  if (ancestor == topmostDialog) {
-    return;
-  }
-
-  
-  if (!topmostDialog ||
-      topmostDialog->GetClosedBy() != HTMLDialogElement::ClosedBy::Any) {
-    return;
-  }
-
-  
-
-  
-  const mozilla::dom::Optional<nsAString> returnValue;
-  topmostDialog->RequestClose(returnValue);
 }
 
 already_AddRefed<EventStateManager> EventStateManager::ESMFromContentOrThis(

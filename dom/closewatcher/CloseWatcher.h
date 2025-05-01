@@ -48,8 +48,6 @@ class CloseWatcher : public DOMEventTargetHelper, public AbortFollower {
 
   bool IsActive() const;
 
-  void SetEnabled(bool aEnabled) { mEnabled = aEnabled; }
-
   void DisconnectFromOwner() override {
     Destroy();
     DOMEventTargetHelper::DisconnectFromOwner();
@@ -59,10 +57,6 @@ class CloseWatcher : public DOMEventTargetHelper, public AbortFollower {
   virtual ~CloseWatcher() = default;
 
   bool mIsRunningCancelAction = false;
-
-  
-  
-  bool mEnabled = true;
 };
 
 }  
