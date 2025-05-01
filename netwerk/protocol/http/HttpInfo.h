@@ -16,6 +16,8 @@ class HttpInfo {
  public:
   
   static void GetHttpConnectionData(nsTArray<HttpRetParams>*);
+  static void GetHttp3ConnectionStatsData(
+      nsTArray<Http3ConnectionStatsParams>*);
 };
 
 }  

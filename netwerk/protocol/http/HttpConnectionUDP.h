@@ -36,12 +36,8 @@ class nsHttpHandler;
 class ASpdySession;
 
 
-#define HTTPCONNECTIONUDP_IID                        \
-  {                                                  \
-    0xb97d2036, 0xb441, 0x48be, {                    \
-      0xb3, 0x1e, 0x25, 0x3e, 0xe8, 0x32, 0xdd, 0x67 \
-    }                                                \
-  }
+#define HTTPCONNECTIONUDP_IID \
+  {0xb97d2036, 0xb441, 0x48be, {0xb3, 0x1e, 0x25, 0x3e, 0xe8, 0x32, 0xdd, 0x67}}
 
 
 
@@ -90,6 +86,8 @@ class HttpConnectionUDP final : public HttpConnectionBase,
 
   void NotifyDataRead();
   void NotifyDataWrite();
+
+  Http3Stats GetStats();
 
  private:
   [[nodiscard]] nsresult OnTransactionDone(nsresult reason);
