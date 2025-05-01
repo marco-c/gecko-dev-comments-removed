@@ -160,6 +160,8 @@ class Http2Session final : public ASpdySession,
     
     SETTINGS_NO_RFC7540_PRIORITIES = 9,
     
+    SETTINGS_WEBTRANSPORT_MAX_SESSIONS = 0x2b60,
+    
     
     SETTINGS_WEBTRANSPORT_INITIAL_MAX_DATA = 0x2b61,
     SETTINGS_WEBTRANSPORT_INITIAL_MAX_STREAM_DATA_UNI = 0x2b62,
@@ -306,7 +308,7 @@ class Http2Session final : public ASpdySession,
 
   ExtendedCONNECTSupport GetExtendedCONNECTSupport() override;
 
-  already_AddRefed<nsHttpConnection> CreateTunnelStream(
+  Result<already_AddRefed<nsHttpConnection>, nsresult> CreateTunnelStream(
       nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks,
       PRIntervalTime aRtt, bool aIsExtendedCONNECT = false) override;
 
@@ -621,6 +623,10 @@ class Http2Session final : public ASpdySession,
   bool mTlsHandshakeFinished;
 
   bool mPeerFailedHandshake;
+
+  uint32_t mWebTransportMaxSessions = 0;
+
+  uint32_t mOngoingWebTransportSessions = 0;
 
  private:
   TimeStamp mLastTRRResponseTime;  

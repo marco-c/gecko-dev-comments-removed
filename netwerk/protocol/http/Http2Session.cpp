@@ -579,15 +579,34 @@ void Http2Session::CreateStream(nsAHttpTransaction* aHttpTransaction,
   }
 }
 
-already_AddRefed<nsHttpConnection> Http2Session::CreateTunnelStream(
-    nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks,
-    PRIntervalTime aRtt, bool aIsExtendedCONNECT) {
+Result<already_AddRefed<nsHttpConnection>, nsresult>
+Http2Session::CreateTunnelStream(nsAHttpTransaction* aHttpTransaction,
+                                 nsIInterfaceRequestor* aCallbacks,
+                                 PRIntervalTime aRtt, bool aIsExtendedCONNECT) {
+  bool isWebTransport =
+      aIsExtendedCONNECT && aHttpTransaction->IsForWebTransport();
+
+  
+  if (isWebTransport &&
+      mOngoingWebTransportSessions >= mWebTransportMaxSessions) {
+    LOG(
+        ("Http2Session::CreateTunnelStream WebTransport session limit "
+         "exceeded: Ongoing: %u, Max: %u",
+         mOngoingWebTransportSessions + 1, mWebTransportMaxSessions));
+    aHttpTransaction->Close(NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED);
+    return Err(NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED);
+  }
+
   RefPtr<Http2StreamTunnel> refStream = CreateTunnelStreamFromConnInfo(
       this, mCurrentBrowserId, aHttpTransaction->ConnectionInfo(),
       aIsExtendedCONNECT ? aHttpTransaction->IsForWebTransport()
                                ? ExtendedCONNECTType::WebTransport
                                : ExtendedCONNECTType::WebSocket
                          : ExtendedCONNECTType::Proxy);
+
+  if (isWebTransport) {
+    ++mOngoingWebTransportSessions;
+  }
 
   RefPtr<nsHttpConnection> newConn = refStream->CreateHttpConnection(
       aHttpTransaction, aCallbacks, aRtt, aIsExtendedCONNECT);
@@ -1787,6 +1806,14 @@ nsresult Http2Session::RecvSettings(Http2Session* self) {
           return self->SessionError(PROTOCOL_ERROR);
         }
         self->mHasTransactionWaitingForExtendedCONNECT = true;
+      } break;
+
+      case SETTINGS_WEBTRANSPORT_MAX_SESSIONS: {
+        
+        
+        
+        LOG3(("SETTINGS_WEBTRANSPORT_MAX_SESSIONS set to %u", value));
+        self->mWebTransportMaxSessions = value;
       } break;
 
       case SETTINGS_WEBTRANSPORT_INITIAL_MAX_DATA: {

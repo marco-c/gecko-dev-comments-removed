@@ -673,8 +673,13 @@ nsresult nsHttpConnection::CreateTunnelStream(
     return NS_ERROR_UNEXPECTED;
   }
 
-  RefPtr<nsHttpConnection> conn = mSpdySession->CreateTunnelStream(
-      httpTransaction, mCallbacks, mRtt, aIsExtendedCONNECT);
+  auto result = mSpdySession->CreateTunnelStream(httpTransaction, mCallbacks,
+                                                 mRtt, aIsExtendedCONNECT);
+  if (result.isErr()) {
+    return result.unwrapErr();
+  }
+  RefPtr<nsHttpConnection> conn = result.unwrap();
+
   
   
   
