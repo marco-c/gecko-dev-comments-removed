@@ -872,6 +872,9 @@ pref("browser.shopping.experience2023.showKeepSidebarClosedMessage", true);
 pref("browser.shopping.experience2023.integratedSidebar", false);
 
 
+pref("sidebar.newTool.migration.reviewchecker", '{"visibilityPref": "browser.shopping.experience2023.integratedSidebar"}');
+
+
 
 
 
