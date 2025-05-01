@@ -2549,6 +2549,11 @@ void ChromeUtils::NotifyDevToolsClosed(GlobalObject& aGlobal) {
   ChromeUtils::sDevToolsOpenedCount--;
 }
 
+
+bool ChromeUtils::IsJSIdentifier(GlobalObject& aGlobal, const nsAString& aStr) {
+  return JS_IsIdentifier(aStr.BeginReading(), aStr.Length());
+}
+
 #ifdef MOZ_WMF_CDM
 
 already_AddRefed<Promise> ChromeUtils::GetWMFContentDecryptionModuleInformation(
