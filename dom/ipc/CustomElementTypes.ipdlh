@@ -13,14 +13,14 @@ namespace mozilla {
 namespace dom {
 
 
-union IPCFormDataValue {
+union FormDataValue {
   BlobImpl;
   nsString;
 };
 
 struct FormDataTuple {
   nsString name;
-  IPCFormDataValue value;
+  FormDataValue value;
 };
 
 union CustomElementFormValue {
