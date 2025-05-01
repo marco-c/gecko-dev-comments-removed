@@ -113,6 +113,9 @@ class ServoWdspecBrowser(WebDriverBrowser):
         command = [self.binary,
                    f"--webdriver={self.port}",
                    "--hard-fail",
+                   
+                   
+                   "--ignore-certificate-errors",
                    "--headless"] + self.webdriver_args
         if self.binary_args:
             command += self.binary_args
