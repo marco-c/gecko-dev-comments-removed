@@ -63,48 +63,15 @@ class OwningNonNull;
 
 namespace dom {
 
-#define DOM_CALLBACKOBJECT_IID                       \
-  {                                                  \
-    0xbe74c190, 0x6d76, 0x4991, {                    \
-      0x84, 0xb9, 0x65, 0x06, 0x99, 0xe6, 0x93, 0x2b \
-    }                                                \
-  }
+#define DOM_CALLBACKOBJECT_IID \
+  {0xbe74c190, 0x6d76, 0x4991, {0x84, 0xb9, 0x65, 0x06, 0x99, 0xe6, 0x93, 0x2b}}
 
-class CallbackObject : public nsISupports, public JSHolderBase {
+class CallbackObjectBase {
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(DOM_CALLBACKOBJECT_IID)
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(CallbackObject)
-
-  
-  
-  
-  
-  
-  
-  
-  explicit CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
-                          JS::Handle<JSObject*> aCallbackGlobal,
-                          nsIGlobalObject* aIncumbentGlobal) {
-    if (aCx && JS::IsAsyncStackCaptureEnabledForRealm(aCx)) {
-      JS::Rooted<JSObject*> stack(aCx);
-      if (!JS::CaptureCurrentStack(aCx, &stack)) {
-        JS_ClearPendingException(aCx);
-      }
-      Init(aCallback, aCallbackGlobal, stack, aIncumbentGlobal);
-    } else {
-      Init(aCallback, aCallbackGlobal, nullptr, aIncumbentGlobal);
-    }
-  }
-
-  
-  
-  
-  explicit CallbackObject(JSObject* aCallback, JSObject* aCallbackGlobal,
-                          JSObject* aAsyncStack,
-                          nsIGlobalObject* aIncumbentGlobal) {
-    Init(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
+  CallbackObjectBase() = default;
+  CallbackObjectBase(JSObject* aCallback, JSObject* aCallbackGlobal,
+                     JSObject* aAsyncStack, nsIGlobalObject* aIncumbentGlobal) {
+    InitNoHold(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
   }
 
   
@@ -177,10 +144,6 @@ class CallbackObject : public nsISupports, public JSHolderBase {
   
   void GetDescription(nsACString& aOutString);
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    return aMallocSizeOf(this);
-  }
-
   
   
   
@@ -200,36 +163,24 @@ class CallbackObject : public nsISupports, public JSHolderBase {
   }
 
  protected:
-  virtual ~CallbackObject() { mozilla::DropJSObjectsWithKey(this); }
+  virtual ~CallbackObjectBase() = default;
 
-  explicit CallbackObject(CallbackObject* aCallbackObject) {
-    Init(aCallbackObject->mCallback, aCallbackObject->mCallbackGlobal,
-         aCallbackObject->mCreationStack, aCallbackObject->mIncumbentGlobal);
+  
+  
+  
+  
+  
+  void Reset() { ClearJSReferences(); }
+
+  friend class mozilla::PromiseJobRunnable;
+
+  inline void ClearJSReferences() {
+    mCallback = nullptr;
+    mCallbackGlobal = nullptr;
+    mCreationStack = nullptr;
+    mIncumbentJSGlobal = nullptr;
   }
 
-  bool operator==(const CallbackObject& aOther) const {
-    JSObject* wrappedThis = CallbackPreserveColor();
-    JSObject* wrappedOther = aOther.CallbackPreserveColor();
-    if (!wrappedThis || !wrappedOther) {
-      return this == &aOther;
-    }
-
-    JSObject* thisObj = js::UncheckedUnwrap(wrappedThis);
-    JSObject* otherObj = js::UncheckedUnwrap(wrappedOther);
-    return thisObj == otherObj;
-  }
-
-  class JSObjectsDropper final {
-   public:
-    explicit JSObjectsDropper(CallbackObject* aHolder) : mHolder(aHolder) {}
-
-    ~JSObjectsDropper() { mHolder->ClearJSObjects(); }
-
-   private:
-    RefPtr<CallbackObject> mHolder;
-  };
-
- private:
   inline void InitNoHold(JSObject* aCallback, JSObject* aCallbackGlobal,
                          JSObject* aCreationStack,
                          nsIGlobalObject* aIncumbentGlobal) {
@@ -250,37 +201,6 @@ class CallbackObject : public nsISupports, public JSHolderBase {
     }
   }
 
-  inline void Init(JSObject* aCallback, JSObject* aCallbackGlobal,
-                   JSObject* aCreationStack,
-                   nsIGlobalObject* aIncumbentGlobal) {
-    
-    
-    InitNoHold(aCallback, aCallbackGlobal, aCreationStack, aIncumbentGlobal);
-    mozilla::HoldJSObjectsWithKey(this);
-  }
-
-  
-  
-  
-  
-  
-  void Reset() {
-    ClearJSReferences();
-    mozilla::DropJSObjectsWithKey(this);
-  }
-  friend class mozilla::PromiseJobRunnable;
-
-  inline void ClearJSReferences() {
-    mCallback = nullptr;
-    mCallbackGlobal = nullptr;
-    mCreationStack = nullptr;
-    mIncumbentJSGlobal = nullptr;
-  }
-
-  CallbackObject(const CallbackObject&) = delete;
-  CallbackObject& operator=(const CallbackObject&) = delete;
-
- protected:
   void ClearJSObjects() {
     MOZ_ASSERT_IF(mIncumbentJSGlobal, mCallback);
     if (mCallback) {
@@ -290,30 +210,6 @@ class CallbackObject : public nsISupports, public JSHolderBase {
 
   
   void Trace(JSTracer* aTracer);
-
-  
-  
-  
-  
-  void FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx);
-
-  
-  
-  
-  
-  
-  
-  struct FastCallbackConstructor {};
-
-  
-  
-  
-  
-  
-  CallbackObject(JSObject* aCallback, JSObject* aCallbackGlobal,
-                 const FastCallbackConstructor&) {
-    InitNoHold(aCallback, aCallbackGlobal, nullptr, nullptr);
-  }
 
   
   
@@ -352,7 +248,7 @@ class CallbackObject : public nsISupports, public JSHolderBase {
     
     
     
-    CallSetup(CallbackObject* aCallback, ErrorResult& aRv,
+    CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
               const char* aExecutionReason,
               ExceptionHandling aExceptionHandling, JS::Realm* aRealm = nullptr,
               bool aIsJSImplementedWebIDL = false);
@@ -405,6 +301,122 @@ class CallbackObject : public nsISupports, public JSHolderBase {
     const ExceptionHandling mExceptionHandling;
     const bool mIsMainThread;
   };
+};
+
+class CallbackObject : public nsISupports,
+                       public CallbackObjectBase,
+                       public JSHolderBase {
+ public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(DOM_CALLBACKOBJECT_IID)
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(CallbackObject)
+
+  
+  
+  
+  
+  
+  
+  
+  explicit CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
+                          JS::Handle<JSObject*> aCallbackGlobal,
+                          nsIGlobalObject* aIncumbentGlobal) {
+    if (aCx && JS::IsAsyncStackCaptureEnabledForRealm(aCx)) {
+      JS::Rooted<JSObject*> stack(aCx);
+      if (!JS::CaptureCurrentStack(aCx, &stack)) {
+        JS_ClearPendingException(aCx);
+      }
+      Init(aCallback, aCallbackGlobal, stack, aIncumbentGlobal);
+    } else {
+      Init(aCallback, aCallbackGlobal, nullptr, aIncumbentGlobal);
+    }
+  }
+
+  
+  
+  
+  explicit CallbackObject(JSObject* aCallback, JSObject* aCallbackGlobal,
+                          JSObject* aAsyncStack,
+                          nsIGlobalObject* aIncumbentGlobal) {
+    Init(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
+  }
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this);
+  }
+
+  void Reset() {
+    CallbackObjectBase::Reset();
+    mozilla::DropJSObjectsWithKey(this);
+  }
+
+ protected:
+  virtual ~CallbackObject() { mozilla::DropJSObjectsWithKey(this); }
+
+  explicit CallbackObject(CallbackObject* aCallbackObject) {
+    Init(aCallbackObject->mCallback, aCallbackObject->mCallbackGlobal,
+         aCallbackObject->mCreationStack, aCallbackObject->mIncumbentGlobal);
+  }
+
+  
+  
+  
+  
+  void FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx);
+
+  
+  
+  
+  
+  
+  
+  struct FastCallbackConstructor {};
+
+  
+  
+  
+  
+  
+  CallbackObject(JSObject* aCallback, JSObject* aCallbackGlobal,
+                 const FastCallbackConstructor&) {
+    InitNoHold(aCallback, aCallbackGlobal, nullptr, nullptr);
+  }
+
+  bool operator==(const CallbackObject& aOther) const {
+    JSObject* wrappedThis = CallbackPreserveColor();
+    JSObject* wrappedOther = aOther.CallbackPreserveColor();
+    if (!wrappedThis || !wrappedOther) {
+      return this == &aOther;
+    }
+
+    JSObject* thisObj = js::UncheckedUnwrap(wrappedThis);
+    JSObject* otherObj = js::UncheckedUnwrap(wrappedOther);
+    return thisObj == otherObj;
+  }
+
+  class JSObjectsDropper final {
+   public:
+    explicit JSObjectsDropper(CallbackObject* aHolder) : mHolder(aHolder) {}
+
+    ~JSObjectsDropper() { mHolder->ClearJSObjects(); }
+
+   private:
+    RefPtr<CallbackObject> mHolder;
+  };
+
+ private:
+  CallbackObject(const CallbackObject&) = delete;
+  CallbackObject& operator=(const CallbackObject&) = delete;
+
+  inline void Init(JSObject* aCallback, JSObject* aCallbackGlobal,
+                   JSObject* aCreationStack,
+                   nsIGlobalObject* aIncumbentGlobal) {
+    
+    
+    InitNoHold(aCallback, aCallbackGlobal, aCreationStack, aIncumbentGlobal);
+    mozilla::HoldJSObjectsWithKey(this);
+  }
 };
 
 template <class WebIDLCallbackT, class XPCOMCallbackT>
