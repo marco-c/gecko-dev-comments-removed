@@ -41,6 +41,22 @@ server.registerPathHandler("/test-page.html", (req, res) => {
   `);
 });
 
+add_setup(() => {
+  
+  
+  
+  
+  
+  
+  
+  const FALLBACK_HIDDEN_PREF = "extensions.callFunctionAndLogExceptionDisabled";
+  Services.prefs.setBoolPref(FALLBACK_HIDDEN_PREF, true);
+  if (Services.prefs.getBoolPref(FALLBACK_HIDDEN_PREF, false)) {
+    info("Enabling use of ChromeUtils.callFunctionAndLogException");
+    Services.prefs.setBoolPref(FALLBACK_HIDDEN_PREF, false);
+  }
+});
+
 add_task(async function test_api_listener_call_exception() {
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -147,11 +163,27 @@ add_task(async function test_api_listener_call_exception() {
           },
 
           toString() {
-            browser.test.fail(`Unexpected extension code executed`);
+            return "Custom exception string";
           },
         };
         browser.storage.sync.onChanged.addListener(() => {
           throw nonError;
+        });
+        
+        
+        window.addEventListener(
+          "TestDOMEvent",
+          () => {
+            throw nonError;
+          },
+          { once: true }
+        );
+        browser.test.onMessage.addListener(msg => {
+          if (msg === "dispatch-test-dom-event") {
+            window.dispatchEvent(new CustomEvent("TestDOMEvent"));
+            return;
+          }
+          browser.test.fail(`Got unxpected test message: ${msg}`);
         });
 
         
@@ -233,7 +265,7 @@ add_task(async function test_api_listener_call_exception() {
 
     ok(
       expectedErrorRegExp.test(message),
-      `Got the expected error message: ${message}`
+      `Got the expected error message: ${message} vs ${expectedErrorRegExp}`
     );
 
     Assert.deepEqual(
@@ -263,8 +295,7 @@ add_task(async function test_api_listener_call_exception() {
       targetPage: page,
       expectedErrorRegExp,
       expectedSourceName,
-      
-      shouldIncludeStack: false,
+      shouldIncludeStack: true,
     });
   }
 
@@ -274,12 +305,10 @@ add_task(async function test_api_listener_call_exception() {
     
     
     const expectedErrorRegExp = new RegExp(
-      `uncaught exception: \\[object Object\\]`
+      `uncaught exception: Custom exception string`
     );
-    
-    
     const expectedSourceName =
-      extension.extension.baseURI.resolve("extpage.html");
+      extension.extension.baseURI.resolve("extpage.js");
 
     await page.spawn([], prepareWaitForConsoleMessage);
     notifyStorageSyncListener(extension);
@@ -287,8 +316,29 @@ add_task(async function test_api_listener_call_exception() {
       targetPage: page,
       expectedErrorRegExp,
       expectedSourceName,
-      
-      shouldIncludeStack: false,
+      shouldIncludeStack: true,
+    });
+  }
+
+  {
+    info("Test exception raised by a DOM event listener for comparison");
+    
+    
+    
+    
+    const expectedErrorRegExp = new RegExp(
+      `uncaught exception: Custom exception string`
+    );
+    const expectedSourceName =
+      extension.extension.baseURI.resolve("extpage.js");
+
+    await page.spawn([], prepareWaitForConsoleMessage);
+    extension.sendMessage("dispatch-test-dom-event");
+    await asyncAssertConsoleMessage({
+      targetPage: page,
+      expectedErrorRegExp,
+      expectedSourceName,
+      shouldIncludeStack: true,
     });
   }
 
@@ -298,18 +348,15 @@ add_task(async function test_api_listener_call_exception() {
     
     
     const expectedErrorRegExp = new RegExp(`uncaught exception: undefined`);
-    
-    
     const expectedSourceName =
-      extension.extension.baseURI.resolve("extpage.html");
+      extension.extension.baseURI.resolve("extpage.js");
     await page.spawn([], prepareWaitForConsoleMessage);
     ExtensionStorageIDB.notifyListeners(extension.id, {});
     await asyncAssertConsoleMessage({
       targetPage: page,
       expectedErrorRegExp,
       expectedSourceName,
-      
-      shouldIncludeStack: false,
+      shouldIncludeStack: true,
     });
   }
 
@@ -338,8 +385,7 @@ add_task(async function test_api_listener_call_exception() {
       targetPage: contentPage,
       expectedErrorRegExp,
       expectedSourceName,
-      
-      shouldIncludeStack: false,
+      shouldIncludeStack: true,
     });
   }
 
@@ -349,9 +395,8 @@ add_task(async function test_api_listener_call_exception() {
     
     
     const expectedErrorRegExp = new RegExp(`uncaught exception: undefined`);
-    
-    
-    const expectedSourceName = extension.extension.baseURI.resolve("/");
+    const expectedSourceName =
+      extension.extension.baseURI.resolve("contentscript.js");
 
     await contentPage.spawn([], prepareWaitForConsoleMessage);
     ExtensionStorageIDB.notifyListeners(extension.id, {});
@@ -359,8 +404,7 @@ add_task(async function test_api_listener_call_exception() {
       targetPage: contentPage,
       expectedErrorRegExp,
       expectedSourceName,
-      
-      shouldIncludeStack: false,
+      shouldIncludeStack: true,
     });
   }
 
