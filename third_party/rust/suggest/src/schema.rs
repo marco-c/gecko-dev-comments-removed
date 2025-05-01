@@ -23,7 +23,7 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 35;
+pub const VERSION: u32 = 36;
 
 
 pub const SQL: &str = "
@@ -643,6 +643,10 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
                     CREATE INDEX dynamic_custom_details_suggestion_type ON dynamic_custom_details(suggestion_type);
                     "#,
                 )?;
+                Ok(())
+            }
+            35 => {
+                
                 Ok(())
             }
             _ => Err(open_database::Error::IncompatibleVersion(version)),
