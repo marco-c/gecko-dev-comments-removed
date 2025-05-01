@@ -108,12 +108,6 @@ class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
   uint8_t mAttrEnum;
 
   bool mIsConditionalProcessingAttribute;
-
-  
-  
-  
-  
-  bool mIsInTearoffTable = true;
 };
 
 }  

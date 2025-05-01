@@ -245,12 +245,6 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
   RefPtr<dom::SVGElement> mElement;
 
   bool mIsAnimValList;
-
-  
-  
-  
-  
-  bool mIsInTearoffTable = true;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMSVGPointList, MOZILLA_DOMSVGPOINTLIST_IID)

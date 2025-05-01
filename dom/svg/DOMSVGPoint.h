@@ -17,7 +17,7 @@
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/gfx/2D.h"
 
-#define MOZ_SVG_LIST_INDEX_BIT_COUNT 29
+#define MOZ_SVG_LIST_INDEX_BIT_COUNT 30
 
 namespace mozilla::dom {
 struct DOMMatrix2DInit;
@@ -51,8 +51,7 @@ class DOMSVGPoint final : public nsWrapperCache {
         mOwner(aList),
         mListIndex(aListIndex),
         mIsAnimValItem(aIsAnimValItem),
-        mIsTranslatePoint(false),
-        mIsInTearoffTable(false) {
+        mIsTranslatePoint(false) {
     
     MOZ_ASSERT(aList && aListIndex <= MaxListIndex(), "bad arg");
 
@@ -61,10 +60,7 @@ class DOMSVGPoint final : public nsWrapperCache {
 
   
   explicit DOMSVGPoint(const Point& aPt)
-      : mListIndex(0),
-        mIsAnimValItem(false),
-        mIsTranslatePoint(false),
-        mIsInTearoffTable(false) {
+      : mListIndex(0), mIsAnimValItem(false), mIsTranslatePoint(false) {
     
     mVal = new SVGPoint(aPt.x, aPt.y);
   }
@@ -76,8 +72,7 @@ class DOMSVGPoint final : public nsWrapperCache {
         mOwner(ToSupports(aSVGSVGElement)),
         mListIndex(0),
         mIsAnimValItem(false),
-        mIsTranslatePoint(true),
-        mIsInTearoffTable(false) {}
+        mIsTranslatePoint(true) {}
 
   virtual ~DOMSVGPoint() { CleanupWeakRefs(); }
 
@@ -183,12 +178,6 @@ class DOMSVGPoint final : public nsWrapperCache {
   uint32_t mListIndex : MOZ_SVG_LIST_INDEX_BIT_COUNT;
   uint32_t mIsAnimValItem : 1;     
   uint32_t mIsTranslatePoint : 1;  
-
-  
-  
-  
-  
-  uint32_t mIsInTearoffTable : 1;
 };
 
 }  

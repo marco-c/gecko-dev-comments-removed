@@ -15,7 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "nsWrapperCache.h"
 
-#define MOZ_SVG_LIST_INDEX_BIT_COUNT 21  // supports > 2 million list items
+#define MOZ_SVG_LIST_INDEX_BIT_COUNT 22  // supports > 4 million list items
 
 namespace mozilla {
 
@@ -203,13 +203,6 @@ class DOMSVGLength final : public nsWrapperCache {
   uint32_t mListIndex : MOZ_SVG_LIST_INDEX_BIT_COUNT;
   uint32_t mAttrEnum : 4;  
   uint32_t mIsAnimValItem : 1;
-
-  
-  
-  
-  
-  
-  uint32_t mIsInTearoffTable : 1;
 
   
   uint32_t mUnit : 5;  
