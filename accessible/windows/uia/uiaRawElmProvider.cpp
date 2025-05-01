@@ -514,13 +514,14 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
   switch (aPropertyId) {
     
     case UIA_AcceleratorKeyPropertyId: {
-      if (!localAcc) {
-        
-        break;
-      }
       nsAutoString keyString;
 
-      localAcc->KeyboardShortcut().ToString(keyString);
+      if (!acc->GetStringARIAAttr(nsGkAtoms::aria_keyshortcuts, keyString)) {
+        if (localAcc) {
+          
+          localAcc->KeyboardShortcut().ToString(keyString);
+        }
+      }
 
       if (!keyString.IsEmpty()) {
         aPropertyValue->vt = VT_BSTR;

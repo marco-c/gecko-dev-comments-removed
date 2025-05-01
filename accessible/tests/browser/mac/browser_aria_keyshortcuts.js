@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+
+
+
+addAccessibleTask(
+  `
+  <div id="btn" role="button" aria-keyshortcuts="Alt+Shift+f">bar</div>
+  `,
+  (browser, accDoc) => {
+    let btn = getNativeInterface(accDoc, "btn");
+    is(
+      btn.getAttributeValue("AXKeyShortcutsValue"),
+      "Alt+Shift+f",
+      "aria-keyshortcuts value is correct"
+    );
+  }
+);
