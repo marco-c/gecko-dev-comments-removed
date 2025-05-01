@@ -40,14 +40,11 @@ struct CSPViolationData {
   
   
   
-  
-  
-  
   CSPViolationData(uint32_t aViolatedPolicyIndex, Resource&& aResource,
                    const CSPDirective aEffectiveDirective,
                    const nsACString& aSourceFile, uint32_t aLineNumber,
                    uint32_t aColumnNumber, Element* aElement,
-                   const nsAString& aSample, const nsACString& aHashSHA256 = ""_ns);
+                   const nsAString& aSample);
 
   ~CSPViolationData();
 
@@ -64,7 +61,6 @@ struct CSPViolationData {
   const uint32_t mColumnNumber;
   RefPtr<Element> mElement;
   const nsString mSample;
-  const nsCString mHashSHA256;
 };
 }  
 
