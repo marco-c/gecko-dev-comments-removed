@@ -1,0 +1,12 @@
+
+
+
+
+
+pub(crate) fn init() {
+    android_logger::init_once(
+        android_logger::Config::default()
+            .with_max_level(log::LevelFilter::Trace)
+            .with_tag("GeckoCrashHelper"),
+    );
+}
