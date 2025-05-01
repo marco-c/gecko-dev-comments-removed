@@ -351,8 +351,7 @@ class PretenuringZone {
   uint32_t highNurserySurvivalCount = 0;
 
   
-  
-  uint32_t nurseryAllocCounts[NurseryTraceKinds] = {0};
+  uint32_t nurseryPromotedCounts[NurseryTraceKinds] = {0};
 
   explicit PretenuringZone(JS::Zone* zone) {
     for (uint32_t i = 0; i < NurseryTraceKinds; i++) {
@@ -395,13 +394,10 @@ class PretenuringZone {
   bool shouldResetNurseryAllocSites();
   bool shouldResetPretenuredAllocSites();
 
-  uint32_t& nurseryAllocCount(JS::TraceKind kind) {
+  uint32_t nurseryPromotedCount(JS::TraceKind kind) const {
     size_t i = size_t(kind);
-    MOZ_ASSERT(i < NurseryTraceKinds);
-    return nurseryAllocCounts[i];
-  }
-  uint32_t nurseryAllocCount(JS::TraceKind kind) const {
-    return const_cast<PretenuringZone*>(this)->nurseryAllocCount(kind);
+    MOZ_ASSERT(i < std::size(nurseryPromotedCounts));
+    return nurseryPromotedCounts[i];
   }
 };
 
