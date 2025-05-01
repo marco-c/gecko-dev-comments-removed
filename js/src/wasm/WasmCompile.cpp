@@ -837,6 +837,7 @@ static bool TieringBeneficial(bool lazyTiering, uint32_t codeSize) {
 static bool PlatformCanTier(bool lazyTiering) {
   
   
+  
   bool synchronousTiering =
       lazyTiering && JS::Prefs::wasm_lazy_tiering_synchronous();
 
@@ -885,8 +886,11 @@ void CompilerEnvironment::computeParameters(const ModuleMetadata& moduleMeta) {
 
   
   
-  bool lazyTiering = JS::Prefs::wasm_lazy_tiering() ||
-                     (JS::Prefs::wasm_lazy_tiering_for_gc() && isGcModule);
+  
+  bool testSerialization = args_->features.testSerialization;
+  bool lazyTiering = (JS::Prefs::wasm_lazy_tiering() ||
+                      (JS::Prefs::wasm_lazy_tiering_for_gc() && isGcModule)) &&
+                     !testSerialization;
 
   if (baselineEnabled && hasSecondTier &&
       (TieringBeneficial(lazyTiering, codeSectionSize) || forceTiering) &&

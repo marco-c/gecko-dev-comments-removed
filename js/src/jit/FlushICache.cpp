@@ -60,38 +60,58 @@ bool CanFlushExecutionContextForAllThreads() {
 #  if (LINUX_HAS_MEMBARRIER || defined(__android__))
   
   
+  enum class MemBarrierAvailable : uint32_t { Unset, No, Yes };
+
+  
+  static mozilla::Atomic<MemBarrierAvailable> state(MemBarrierAvailable::Unset);
+
+  MemBarrierAvailable localState = state;
+  if (MOZ_LIKELY(localState != MemBarrierAvailable::Unset)) {
+    return localState == MemBarrierAvailable::Yes;
+  }
+
+  
+  
+
+  
+  
   
   
   
   static constexpr int kRequiredMajor = 4;
   static constexpr int kRequiredMinor = 16;
 
-  static bool computed = false;
-  static bool kernelHasMembarrier = false;
-
-  if (computed) {
-    return kernelHasMembarrier;
-  }
-
   struct utsname uts;
   int major, minor;
-  kernelHasMembarrier = uname(&uts) == 0 && strcmp(uts.sysname, "Linux") == 0 &&
-                        sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
-                        major >= kRequiredMajor &&
-                        (major != kRequiredMajor || minor >= kRequiredMinor);
+  bool memBarrierAvailable =
+      uname(&uts) == 0 && strcmp(uts.sysname, "Linux") == 0 &&
+      sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
+      major >= kRequiredMajor &&
+      (major != kRequiredMajor || minor >= kRequiredMinor);
 
   
   
   
   
   
-  if (kernelHasMembarrier &&
+  
+  
+  if (memBarrierAvailable &&
       membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE, 0) != 0) {
-    kernelHasMembarrier = false;
+    memBarrierAvailable = false;
   }
 
-  computed = true;
-  return kernelHasMembarrier;
+  bool ok = state.compareExchange(
+      MemBarrierAvailable::Unset,
+      memBarrierAvailable ? MemBarrierAvailable::Yes : MemBarrierAvailable::No);
+  if (ok) {
+    return memBarrierAvailable;
+  }
+
+  
+  MOZ_ASSERT(state != MemBarrierAvailable::Unset);
+  return state == MemBarrierAvailable::Yes;
+
 #  else
   
   
