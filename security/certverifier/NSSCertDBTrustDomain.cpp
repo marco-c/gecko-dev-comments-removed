@@ -1011,22 +1011,6 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
     return Success;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mCRLiteMode == CRLiteMode::Enforce &&
-      mOCSPFetching == FetchOCSPForDVSoftFail && mIsBuiltChainRootBuiltInRoot) {
-    return Success;
-  }
-
   if (mOCSPFetching == LocalOnlyOCSPForEV) {
     if (cachedResponseResult != Success) {
       return cachedResponseResult;
