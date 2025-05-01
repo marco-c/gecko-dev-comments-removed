@@ -614,8 +614,6 @@ pub struct Shaders {
     
     
     
-    #[allow(unused)] 
-    cs_blur_a8: ShaderHandle,
     cs_blur_rgba8: ShaderHandle,
     cs_border_segment: ShaderHandle,
     cs_border_solid: ShaderHandle,
@@ -755,13 +753,6 @@ impl Shaders {
             false ,
             false ,
             &mut loader,
-        )?;
-
-        let cs_blur_a8 = loader.create_shader(
-            ShaderKind::Cache(VertexArrayKind::Blur),
-            "cs_blur",
-            &["ALPHA_TARGET"],
-            &shader_list,
         )?;
 
         let cs_blur_rgba8 = loader.create_shader(
@@ -1068,7 +1059,6 @@ impl Shaders {
         Ok(Shaders {
             loader,
 
-            cs_blur_a8,
             cs_blur_rgba8,
             cs_border_segment,
             cs_line_decoration,
