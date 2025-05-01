@@ -23,7 +23,7 @@ addAccessibleTask(
     let n1Label = n1.getAttributeValue("AXTitleUIElement");
     
     
-    is(n1Label.getAttributeValue("AXTitle"), "Label");
+    is(n1Label.getAttributeValue("AXTitle"), "");
 
     let n2 = getNativeInterface(accDoc, "n2");
     is(n2.getAttributeValue("AXDescription"), "Two Labels");

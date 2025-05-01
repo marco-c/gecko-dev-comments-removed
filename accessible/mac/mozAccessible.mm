@@ -887,22 +887,19 @@ struct RoleDescrComparator {
                                  : nullptr;
   if (maybeRoot && maybeRoot->IsRoot() &&
       [[self moxDOMIdentifier] isEqualToString:@"a11y-announcement"]) {
+    nsAutoString name;
     
-    
-    NSArray* children = [self moxChildren];
-    MOZ_ASSERT([children count] == 1 && children[0],
-               "A11yUtil event received, but no announcement found?");
-
-    mozAccessible* announcement = children[0];
-    NSString* key;
-    if ([announcement providesLabelNotTitle]) {
-      key = [announcement moxLabel];
+    if (Accessible* announcement = mGeckoAccessible->FirstChild()) {
+      announcement->Name(name);
     } else {
-      key = [announcement moxTitle];
+      MOZ_ASSERT_UNREACHABLE(
+          "A11yUtil event received, but no announcement found?");
     }
 
     NSDictionary* info = @{
-      NSAccessibilityAnnouncementKey : key ? key : @(""),
+      NSAccessibilityAnnouncementKey : name.IsEmpty()
+          ? @("")
+          : nsCocoaUtils::ToNSString(name),
       
       
       NSAccessibilityPriorityKey : @(NSAccessibilityPriorityHigh)
