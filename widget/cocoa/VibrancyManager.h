@@ -11,7 +11,7 @@
 #include "Units.h"
 
 @class NSView;
-class nsChildView;
+class nsCocoaWindow;
 
 namespace mozilla {
 
@@ -51,7 +51,7 @@ class VibrancyManager {
 
 
 
-  VibrancyManager(const nsChildView& aCoordinateConverter,
+  VibrancyManager(const nsCocoaWindow& aCoordinateConverter,
                   NSView* aContainerView);
 
   ~VibrancyManager();
@@ -70,7 +70,7 @@ class VibrancyManager {
   void PrefChanged();
 
  protected:
-  const nsChildView& mCoordinateConverter;
+  const nsCocoaWindow& mCoordinateConverter;
   NSView* mContainerView;
   EnumeratedArray<VibrancyType, UniquePtr<ViewRegion>> mVibrantRegions;
 };

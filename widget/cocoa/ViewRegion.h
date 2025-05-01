@@ -11,7 +11,7 @@
 #include "nsRegion.h"
 #include "nsTArray.h"
 
-class nsChildView;
+class nsCocoaWindow;
 
 @class NSView;
 
@@ -39,7 +39,7 @@ class ViewRegion {
 
 
   bool UpdateRegion(const mozilla::LayoutDeviceIntRegion& aRegion,
-                    const nsChildView& aCoordinateConverter,
+                    const nsCocoaWindow& aCoordinateConverter,
                     NSView* aContainerView, NSView* (^aViewCreationCallback)());
 
   

@@ -14,6 +14,8 @@
 #include "nsBaseWidget.h"
 #include "nsCocoaUtils.h"
 #include "nsTouchBar.h"
+#include "ViewRegion.h"
+#include "mozView.h"
 #include <dlfcn.h>
 #include <queue>
 
@@ -24,6 +26,10 @@ class nsMenuBarX;
 
 namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
+class VibrancyManager;
+namespace widget {
+class TextInputHandler;
+}
 }  
 
 
@@ -57,6 +63,7 @@ enum class NativeKeyBindingsType : uint8_t;
 - (NSMutableDictionary*)exportState;
 - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState;
 - (BOOL)drawsContentsIntoWindowFrame;
+- (NSRect)childViewFrameRectForCurrentBounds;
 
 
 
@@ -213,6 +220,9 @@ class nsCocoaWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
   LayoutDeviceIntPoint GetClientOffset() override;
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
+  bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) override {
+    return false;
+  }
 
   void* GetNativeData(uint32_t aDataType) override;
 
@@ -225,6 +235,104 @@ class nsCocoaWindow final : public nsBaseWidget {
   void MoveToWorkspace(const nsAString& workspaceID) override;
   void SuppressAnimation(bool aSuppress) override;
   void HideWindowChrome(bool aShouldHide) override;
+  NSView<mozView>* GetEditorView();
+
+  nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
+                                    int32_t aNativeKeyCode,
+                                    uint32_t aModifierFlags,
+                                    const nsAString& aCharacters,
+                                    const nsAString& aUnmodifiedCharacters,
+                                    nsIObserver* aObserver) override;
+
+  nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
+                                      NativeMouseMessage aNativeMessage,
+                                      mozilla::MouseButton aButton,
+                                      nsIWidget::Modifiers aModifierFlags,
+                                      nsIObserver* aObserver) override;
+
+  nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
+                                     nsIObserver* aObserver) override {
+    return SynthesizeNativeMouseEvent(
+        aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
+        nsIWidget::Modifiers::NO_MODIFIERS, aObserver);
+  }
+  nsresult SynthesizeNativeMouseScrollEvent(
+      LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
+      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      uint32_t aAdditionalFlags, nsIObserver* aObserver) override;
+  nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
+                                      TouchPointerState aPointerState,
+                                      LayoutDeviceIntPoint aPoint,
+                                      double aPointerPressure,
+                                      uint32_t aPointerOrientation,
+                                      nsIObserver* aObserver) override;
+
+  nsresult SynthesizeNativeTouchpadDoubleTap(LayoutDeviceIntPoint aPoint,
+                                             uint32_t aModifierFlags) override;
+
+  static bool DoHasPendingInputEvent();
+  static uint32_t GetCurrentInputEventCount();
+  static void UpdateCurrentInputEventCount();
+
+  
+  int32_t CocoaPointsToDevPixels(CGFloat aPts) const {
+    return nsCocoaUtils::CocoaPointsToDevPixels(aPts, BackingScaleFactor());
+  }
+  LayoutDeviceIntPoint CocoaPointsToDevPixels(const NSPoint& aPt) const {
+    return nsCocoaUtils::CocoaPointsToDevPixels(aPt, BackingScaleFactor());
+  }
+  LayoutDeviceIntPoint CocoaPointsToDevPixelsRoundDown(
+      const NSPoint& aPt) const {
+    return nsCocoaUtils::CocoaPointsToDevPixelsRoundDown(aPt,
+                                                         BackingScaleFactor());
+  }
+  LayoutDeviceIntRect CocoaPointsToDevPixels(const NSRect& aRect) const {
+    return nsCocoaUtils::CocoaPointsToDevPixels(aRect, BackingScaleFactor());
+  }
+  CGFloat DevPixelsToCocoaPoints(int32_t aPixels) const {
+    return nsCocoaUtils::DevPixelsToCocoaPoints(aPixels, BackingScaleFactor());
+  }
+  NSRect DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect) const {
+    return nsCocoaUtils::DevPixelsToCocoaPoints(aRect, BackingScaleFactor());
+  }
+
+  
+  void UpdateFullscreen(bool aFullscreen);
+
+  void DispatchAPZWheelInputEvent(mozilla::InputData& aEvent);
+  nsEventStatus DispatchAPZInputEvent(mozilla::InputData& aEvent);
+
+  void DispatchDoubleTapGesture(mozilla::TimeStamp aEventTimeStamp,
+                                LayoutDeviceIntPoint aScreenPosition,
+                                mozilla::Modifiers aModifiers);
+
+  
+  
+  
+  
+  
+  void SuspendAsyncCATransactions();
+
+  
+  
+  void MaybeScheduleUnsuspendAsyncCATransactions();
+
+  
+  
+  
+  
+  void UnsuspendAsyncCATransactions();
+
+#ifdef DEBUG
+  
+  nsresult SetHiDPIMode(bool aHiDPI) override;
+  nsresult RestoreHiDPIMode() override;
+#endif
+
+  void UpdateVibrancy(const nsTArray<ThemeGeometry>& aThemeGeometries);
+  mozilla::VibrancyManager& EnsureVibrancyManager();
+
+  void TearDownView();
 
   bool PrepareForFullscreenTransition(nsISupports** aData) override;
   void PerformFullscreenTransition(FullscreenTransitionStage aStage,
@@ -251,12 +359,48 @@ class nsCocoaWindow final : public nsBaseWidget {
   LayoutDeviceIntRect GetScreenBounds() override;
   void ReportMoveEvent();
   void ReportSizeEvent();
+  bool WidgetTypeSupportsAcceleration() override { return true; }
+  bool ShouldUseOffMainThreadCompositing() override;
   void SetCursor(const Cursor&) override;
 
-  CGFloat BackingScaleFactor();
+  void UpdateBoundsFromView();
+  void EnsureContentLayerForMainThreadPainting();
+
+  CGFloat BackingScaleFactor() const;
   void BackingScaleFactorChanged();
   double GetDefaultScaleInternal() override;
   int32_t RoundsWidgetCoordinatesTo() override;
+
+  
+  void WillPaintWindow();
+  bool PaintWindow(LayoutDeviceIntRegion aRegion);
+  bool PaintWindowInDrawTarget(mozilla::gfx::DrawTarget* aDT,
+                               const LayoutDeviceIntRegion& aRegion,
+                               const mozilla::gfx::IntSize& aSurfaceSize);
+
+  void PaintWindowInContentLayer();
+  void HandleMainThreadCATransaction();
+
+#ifdef ACCESSIBILITY
+  already_AddRefed<mozilla::a11y::LocalAccessible> GetDocumentAccessible();
+#endif
+
+  bool WidgetPaintsBackground() override { return true; }
+
+  bool PreRender(mozilla::widget::WidgetRenderingContext* aContext) override;
+  void PostRender(mozilla::widget::WidgetRenderingContext* aContext) override;
+  RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
+
+  void UpdateWindowDraggingRegion(
+      const LayoutDeviceIntRegion& aRegion) override;
+  LayoutDeviceIntRegion GetNonDraggableRegion() {
+    return mNonDraggableRegion.Region();
+  }
+
+  void LookUpDictionary(const nsAString& aText,
+                        const nsTArray<mozilla::FontRange>& aFontRangeArray,
+                        const bool aIsVertical,
+                        const LayoutDeviceIntPoint& aPoint) override;
 
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() final {
     return mozilla::DesktopToLayoutDeviceScale(BackingScaleFactor());
@@ -265,12 +409,20 @@ class nsCocoaWindow final : public nsBaseWidget {
   nsresult SetTitle(const nsAString& aTitle) override;
 
   void Invalidate(const LayoutDeviceIntRect& aRect) override;
-  WindowRenderer* GetWindowRenderer() override;
   nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
                          nsEventStatus& aStatus) override;
   void CaptureRollupEvents(bool aDoCapture) override;
   [[nodiscard]] nsresult GetAttention(int32_t aCycleCount) override;
   bool HasPendingInputEvent() override;
+  bool SendEventToNativeMenuSystem(NSEvent* aEvent);
+  void PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) override;
+  nsresult ActivateNativeMenuItemAt(const nsAString& indexString) override;
+  nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) override;
+  [[nodiscard]] nsresult GetSelectionAsPlaintext(nsAString& aResult) override;
+  TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
+  [[nodiscard]] nsresult AttachNativeKeyEvent(
+      mozilla::WidgetKeyboardEvent& aEvent) override;
+
   TransparencyMode GetTransparencyMode() override;
   void SetTransparencyMode(TransparencyMode aMode) override;
   void SetWindowShadowStyle(mozilla::WindowShadow aStyle) override;
@@ -286,15 +438,6 @@ class nsCocoaWindow final : public nsBaseWidget {
   void SetCustomTitlebar(bool) override;
   void UpdateThemeGeometries(
       const nsTArray<ThemeGeometry>& aThemeGeometries) override;
-  nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                      NativeMouseMessage aNativeMessage,
-                                      mozilla::MouseButton aButton,
-                                      nsIWidget::Modifiers aModifierFlags,
-                                      nsIObserver* aObserver) override;
-  nsresult SynthesizeNativeMouseScrollEvent(
-      LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
-      uint32_t aAdditionalFlags, nsIObserver* aObserver) override;
   void LockAspectRatio(bool aShouldLock) override;
 
   void DispatchSizeModeEvent();
@@ -314,7 +457,7 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   void SetInputContext(const InputContext& aContext,
                        const InputContextAction& aAction) override;
-  InputContext GetInputContext() override { return mInputContext; }
+  InputContext GetInputContext() override;
   MOZ_CAN_RUN_SCRIPT bool GetEditCommands(
       mozilla::NativeKeyBindingsType aType,
       const mozilla::WidgetKeyboardEvent& aEvent,
@@ -323,14 +466,6 @@ class nsCocoaWindow final : public nsBaseWidget {
   void SetPopupWindowLevel();
 
   bool InFullScreenMode() const { return mInFullScreenMode; }
-
-  void PauseOrResumeCompositor(bool aPause) override;
-
-  bool AsyncPanZoomEnabled() const override;
-
-  bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
-                            const ScrollableLayerGuid& aGuid) override;
-  void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) override;
 
   
   
@@ -362,7 +497,6 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   nsresult CreateNativeWindow(const NSRect& aRect, BorderStyle aBorderStyle,
                               bool aRectIsFrameRect, bool aIsPrivateBrowsing);
-  nsresult CreatePopupContentView(const LayoutDeviceIntRect& aRect, InitData*);
   void DestroyNativeWindow();
   void UpdateBounds();
   int32_t GetWorkspaceID();
@@ -384,17 +518,48 @@ class nsCocoaWindow final : public nsBaseWidget {
   
   
   
-  WindowDelegate*
-      mDelegate;  
+  WindowDelegate* mDelegate =
+      nullptr;  
   RefPtr<nsMenuBarX> mMenuBar;
-  nsChildView*
-      mPopupContentView;  
+  ChildView* mChildView = nullptr;  
+#ifdef ACCESSIBILITY
+  
+  
+  nsWeakPtr mAccessible;
+#endif
+  
+  
+  
+  mozilla::Mutex mCompositingLock MOZ_UNANNOTATED{"ChildViewCompositing"};
+
+  mozilla::ViewRegion mNonDraggableRegion;
+
+  
+  
+  
+  
+  mutable CGFloat mBackingScaleFactor;
+
+  RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
+
+  
+  
+  
+  
+  RefPtr<mozilla::layers::NativeLayerCA> mContentLayer;
+  RefPtr<mozilla::layers::SurfacePoolHandle> mPoolHandle;
+
+  
+  LayoutDeviceIntRegion mContentLayerInvalidRegion;
+
+  mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
+
+  RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
+
   
   
   NSAnimation* mFullscreenTransitionAnimation;
   mozilla::WindowShadow mShadowStyle;
-
-  CGFloat mBackingScaleFactor;
   CGFloat mAspectRatio;
 
   WindowAnimationType mAnimationType;
@@ -409,6 +574,12 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   mozilla::Maybe<TransitionType> mTransitionCurrent;
   std::queue<TransitionType> mTransitionsPending;
+
+  static uint32_t sLastInputEventCount;
+
+  
+  
+  mozilla::UniquePtr<mozilla::MultiTouchInput> mSynthesizedTouchInput;
 
   
   
@@ -469,6 +640,7 @@ class nsCocoaWindow final : public nsBaseWidget {
   
   int32_t mDeferredWorkspaceID = 0;
 
+  RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
   InputContext mInputContext;
   NSWindowAnimationBehavior mWindowAnimationBehavior;
 

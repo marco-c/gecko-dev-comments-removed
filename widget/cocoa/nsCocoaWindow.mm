@@ -6,6 +6,10 @@
 
 #include "nsCocoaWindow.h"
 
+#include "mozilla/layers/NativeLayerCA.h"
+#include "mozilla/TextEventDispatcher.h"
+#include "mozilla/layers/SurfacePool.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
 #include "NativeKeyBindings.h"
 #include "ScreenHelperCocoa.h"
 #include "TextInputHandler.h"
@@ -20,6 +24,7 @@
 #include "nsIAppShellService.h"
 #include "nsIBaseWindow.h"
 #include "nsIInterfaceRequestorUtils.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
 #include "nsIAppWindow.h"
 #include "nsToolkit.h"
 #include "nsPIDOMWindow.h"
@@ -119,14 +124,17 @@ static void RollUpPopups(nsIRollupListener::AllowAnimations aAllowAnimations =
   rollupListener->Rollup(options);
 }
 
+
+#include "nsChildView.mm"
+
 nsCocoaWindow::nsCocoaWindow()
     : mWindow(nil),
       mClosedRetainedWindow(nil),
       mDelegate(nil),
-      mPopupContentView(nil),
+      mChildView(nil),
+      mBackingScaleFactor(0.0),
       mFullscreenTransitionAnimation(nil),
       mShadowStyle(WindowShadow::None),
-      mBackingScaleFactor(0.0),
       mAnimationType(nsIWidget::eGenericWindowAnimation),
       mWindowMadeHere(false),
       mSizeMode(nsSizeMode_Normal),
@@ -196,7 +204,22 @@ nsCocoaWindow::~nsCocoaWindow() {
 
   [mClosedRetainedWindow release];
 
-  NS_IF_RELEASE(mPopupContentView);
+  if (mContentLayer) {
+    mNativeLayerRoot->RemoveLayer(mContentLayer);  
+  }
+
+  DestroyCompositor();
+
+  
+  
+  
+  
+  
+  
+  
+  [mChildView widgetDestroyed];  
+  ClearParent();
+  TearDownView();  
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
@@ -280,15 +303,27 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, const DesktopIntRect& aRect,
                          mBorderStyle, false, aInitData->mIsPrivate);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (mWindowType == WindowType::Popup) {
-    
-    
-    LayoutDeviceIntRect devRect =
-        RoundedToInt(aRect * GetDesktopToDeviceScale());
-    return CreatePopupContentView(devRect, aInitData);
-  }
-
   mIsAnimationSuppressed = aInitData->mIsAnimationSuppressed;
+
+  
+  
+  NSView* contentView = mWindow.contentView;
+  mChildView = [[ChildView alloc]
+      initWithFrame:mWindow.childViewFrameRectForCurrentBounds
+         geckoChild:this];
+  mChildView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+  [contentView addSubview:mChildView];
+
+  mNativeLayerRoot =
+      NativeLayerRootCA::CreateForCALayer(mChildView.rootCALayer);
+  mNativeLayerRoot->SetBackingScale(BackingScaleFactor());
+
+  [WindowDataMap.sharedWindowDataMap ensureDataForWindow:mWindow];
+
+  NS_ASSERTION(!mTextInputHandler, "mTextInputHandler has already existed");
+  mTextInputHandler = new TextInputHandler(this, mChildView);
+
+  [mWindow makeFirstResponder:mChildView];
 
   return NS_OK;
 
@@ -503,39 +538,13 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-nsresult nsCocoaWindow::CreatePopupContentView(const LayoutDeviceIntRect& aRect,
-                                               widget::InitData* aInitData) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  
-  mPopupContentView = new nsChildView();
-  if (!mPopupContentView) return NS_ERROR_FAILURE;
-
-  NS_ADDREF(mPopupContentView);
-
-  nsIWidget* thisAsWidget = static_cast<nsIWidget*>(this);
-  nsresult rv = mPopupContentView->Create(thisAsWidget, aRect, aInitData);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  NSView* contentView = mWindow.contentView;
-  auto* childView = static_cast<ChildView*>(
-      mPopupContentView->GetNativeData(NS_NATIVE_WIDGET));
-  childView.frame = contentView.bounds;
-  childView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-  [contentView addSubview:childView];
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
-}
-
 void nsCocoaWindow::Destroy() {
   if (mOnDestroyCalled) {
     return;
   }
   mOnDestroyCalled = true;
+
+  nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
   
   if (mModal) {
@@ -546,10 +555,14 @@ void nsCocoaWindow::Destroy() {
   
   Show(false);
 
-  if (mPopupContentView) {
-    mPopupContentView->Destroy();
+  {
+    
+    
+    MutexAutoLock lock(mCompositingLock);
+    [mChildView widgetDestroyed];
   }
 
+  TearDownView();  
   if (mFullscreenTransitionAnimation) {
     [mFullscreenTransitionAnimation stopAnimation];
     ReleaseFullscreenTransitionAnimation();
@@ -569,8 +582,6 @@ void nsCocoaWindow::Destroy() {
     DestroyNativeWindow();
   }
 
-  nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
-
   nsBaseWidget::OnDestroy();
   nsBaseWidget::Destroy();
 }
@@ -584,7 +595,7 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
     
     
     case NS_NATIVE_WIDGET:
-      retVal = mWindow.contentView;
+      retVal = mChildView;
       break;
 
     case NS_NATIVE_WINDOW:
@@ -596,15 +607,12 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
       
       NS_ERROR("Requesting NS_NATIVE_GRAPHIC on a top-level window!");
       break;
-    case NS_RAW_NATIVE_IME_CONTEXT: {
+    case NS_RAW_NATIVE_IME_CONTEXT:
       retVal = GetPseudoIMEContext();
       if (retVal) {
         break;
       }
-      NSView* view = mWindow ? mWindow.contentView : nil;
-      if (view) {
-        retVal = view.inputContext;
-      }
+      retVal = [mChildView inputContext];
       
       
       
@@ -612,6 +620,9 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
       if (NS_WARN_IF(!retVal)) {
         retVal = this;
       }
+      break;
+    case NS_NATIVE_WINDOW_WEBRTC_DEVICE_ID: {
+      retVal = (void*)mWindow.windowNumber;
       break;
     }
   }
@@ -735,11 +746,6 @@ void nsCocoaWindow::Show(bool aState) {
       if (!nativeParentWindow.isVisible || nativeParentWindow.isMiniaturized) {
         return;
       }
-    }
-
-    if (mPopupContentView) {
-      
-      mPopupContentView->Show(true);
     }
 
     
@@ -871,11 +877,25 @@ bool nsCocoaWindow::NeedsRecreateToReshow() {
          NSScreen.screens.count > 1;
 }
 
-WindowRenderer* nsCocoaWindow::GetWindowRenderer() {
-  if (mPopupContentView) {
-    return mPopupContentView->GetWindowRenderer();
+bool nsCocoaWindow::ShouldUseOffMainThreadCompositing() {
+  
+  
+  if (HasRemoteContent()) {
+    return true;
   }
-  return nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  if (mWindowType == WindowType::Popup) {
+    
+    return false;
+  }
+  return nsBaseWidget::ShouldUseOffMainThreadCompositing();
 }
 
 TransparencyMode nsCocoaWindow::GetTransparencyMode() {
@@ -1471,11 +1491,8 @@ void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
 
   DispatchSizeModeEvent();
 
-  
-  nsChildView* mainChildView =
-      static_cast<nsChildView*>([[mWindow mainChildView] widget]);
-  if (mainChildView) {
-    mainChildView->UpdateFullscreen(aFullScreen);
+  if (mNativeLayerRoot) {
+    mNativeLayerRoot->SetWindowIsFullscreen(aFullScreen);
   }
 }
 
@@ -1852,7 +1869,6 @@ NSRect nsCocoaWindow::GetClientCocoaRect() {
   if (!mWindow) {
     return NSZeroRect;
   }
-
   return [mWindow childViewRectForFrameRect:mWindow.frame];
 }
 
@@ -1867,16 +1883,9 @@ LayoutDeviceIntRect nsCocoaWindow::GetClientBounds() {
 }
 
 void nsCocoaWindow::UpdateBounds() {
-  NSRect frame = NSZeroRect;
-  if (mWindow) {
-    frame = mWindow.frame;
-  }
+  NSRect frame = mWindow ? mWindow.frame : NSZeroRect;
   mBounds =
       nsCocoaUtils::CocoaRectToGeckoRectDevPix(frame, BackingScaleFactor());
-
-  if (mPopupContentView) {
-    mPopupContentView->UpdateBoundsFromView();
-  }
 }
 
 LayoutDeviceIntRect nsCocoaWindow::GetScreenBounds() {
@@ -1938,7 +1947,7 @@ static CGFloat GetBackingScaleFactor(NSWindow* aWindow) {
   return nsCocoaUtils::GetBackingScaleFactor(screen);
 }
 
-CGFloat nsCocoaWindow::BackingScaleFactor() {
+CGFloat nsCocoaWindow::BackingScaleFactor() const {
   if (mBackingScaleFactor > 0.0) {
     return mBackingScaleFactor;
   }
@@ -1957,7 +1966,11 @@ void nsCocoaWindow::BackingScaleFactorChanged() {
     return;
   }
 
+  SuspendAsyncCATransactions();
   mBackingScaleFactor = newScale;
+  if (mNativeLayerRoot) {
+    mNativeLayerRoot->SetBackingScale(newScale);
+  }
   NotifyAPZOfDPIChange();
 
   if (!mWidgetListener || mWidgetListener->GetAppWindow()) {
@@ -1974,12 +1987,6 @@ int32_t nsCocoaWindow::RoundsWidgetCoordinatesTo() {
     return 2;
   }
   return 1;
-}
-
-void nsCocoaWindow::SetCursor(const Cursor& aCursor) {
-  if (mPopupContentView) {
-    mPopupContentView->SetCursor(aCursor);
-  }
 }
 
 nsresult nsCocoaWindow::SetTitle(const nsAString& aTitle) {
@@ -2007,12 +2014,6 @@ nsresult nsCocoaWindow::SetTitle(const nsAString& aTitle) {
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-void nsCocoaWindow::Invalidate(const LayoutDeviceIntRect& aRect) {
-  if (mPopupContentView) {
-    mPopupContentView->Invalidate(aRect);
-  }
-}
-
 
 
 
@@ -2029,12 +2030,23 @@ bool nsCocoaWindow::DragEvent(unsigned int aMessage,
 
 nsresult nsCocoaWindow::DispatchEvent(WidgetGUIEvent* event,
                                       nsEventStatus& aStatus) {
+  RefPtr kungFuDeathGrip{this};
   aStatus = nsEventStatus_eIgnore;
 
-  nsCOMPtr<nsIWidget> kungFuDeathGrip(event->mWidget);
-  mozilla::Unused << kungFuDeathGrip;  
+  if (event->mFlags.mIsSynthesizedForTests) {
+    if (WidgetKeyboardEvent* keyEvent = event->AsKeyboardEvent()) {
+      nsresult rv = mTextInputHandler->AttachNativeKeyEvent(*keyEvent);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
 
-  if (mWidgetListener) {
+  
+  
+  
+  
+  if (mAttachedWidgetListener) {
+    aStatus = mAttachedWidgetListener->HandleEvent(event, mUseAttachedEvents);
+  } else if (mWidgetListener) {
     aStatus = mWidgetListener->HandleEvent(event, mUseAttachedEvents);
   }
 
@@ -2138,11 +2150,14 @@ void nsCocoaWindow::ReportSizeEvent() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   UpdateBounds();
+  LayoutDeviceIntRect innerBounds = GetClientBounds();
   if (mWidgetListener) {
-    LayoutDeviceIntRect innerBounds = GetClientBounds();
     mWidgetListener->WindowResized(this, innerBounds.width, innerBounds.height);
   }
-
+  if (mAttachedWidgetListener) {
+    mAttachedWidgetListener->WindowResized(this, innerBounds.width,
+                                           innerBounds.height);
+  }
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
@@ -2168,10 +2183,6 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
 void nsCocoaWindow::SetFocus(Raise aRaise,
                              mozilla::dom::CallerType aCallerType) {
   if (!mWindow) return;
-
-  if (mPopupContentView) {
-    return mPopupContentView->SetFocus(aRaise, aCallerType);
-  }
 
   if (aRaise == Raise::Yes && (mWindow.isVisible || mWindow.isMiniaturized)) {
     if (mWindow.isMiniaturized) {
@@ -2274,9 +2285,7 @@ nsresult nsCocoaWindow::GetAttention(int32_t aCycleCount) {
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-bool nsCocoaWindow::HasPendingInputEvent() {
-  return nsChildView::DoHasPendingInputEvent();
-}
+bool nsCocoaWindow::HasPendingInputEvent() { return DoHasPendingInputEvent(); }
 
 void nsCocoaWindow::SetWindowShadowStyle(WindowShadow aStyle) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
@@ -2476,43 +2485,6 @@ void nsCocoaWindow::SetCustomTitlebar(bool aState) {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-NS_IMETHODIMP nsCocoaWindow::SynthesizeNativeMouseEvent(
-    LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
-    nsIObserver* aObserver) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  AutoObserverNotifier notifier(aObserver, "mouseevent");
-  if (mPopupContentView) {
-    return mPopupContentView->SynthesizeNativeMouseEvent(
-        aPoint, aNativeMessage, aButton, aModifierFlags, nullptr);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
-}
-
-NS_IMETHODIMP nsCocoaWindow::SynthesizeNativeMouseScrollEvent(
-    LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-    double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
-    uint32_t aAdditionalFlags, nsIObserver* aObserver) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  AutoObserverNotifier notifier(aObserver, "mousescrollevent");
-  if (mPopupContentView) {
-    
-    
-    return mPopupContentView->SynthesizeNativeMouseScrollEvent(
-        aPoint, aNativeMessage, aDeltaX, aDeltaY, aDeltaZ, aModifierFlags,
-        aAdditionalFlags, nullptr);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
-}
-
 void nsCocoaWindow::LockAspectRatio(bool aShouldLock) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
@@ -2532,17 +2504,6 @@ void nsCocoaWindow::LockAspectRatio(bool aShouldLock) {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-void nsCocoaWindow::UpdateThemeGeometries(
-    const nsTArray<ThemeGeometry>& aThemeGeometries) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  if (mPopupContentView) {
-    return mPopupContentView->UpdateThemeGeometries(aThemeGeometries);
-  }
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
 void nsCocoaWindow::SetPopupWindowLevel() {
   if (!mWindow) {
     return;
@@ -2553,15 +2514,6 @@ void nsCocoaWindow::SetPopupWindowLevel() {
   mWindow.hidesOnDeactivate = NO;
 }
 
-void nsCocoaWindow::SetInputContext(const InputContext& aContext,
-                                    const InputContextAction& aAction) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  mInputContext = aContext;
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
 bool nsCocoaWindow::GetEditCommands(NativeKeyBindingsType aType,
                                     const WidgetKeyboardEvent& aEvent,
                                     nsTArray<CommandInt>& aCommands) {
@@ -2570,44 +2522,16 @@ bool nsCocoaWindow::GetEditCommands(NativeKeyBindingsType aType,
     return false;
   }
 
+  Maybe<WritingMode> writingMode;
+  if (aEvent.NeedsToRemapNavigationKey()) {
+    if (RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher()) {
+      writingMode = dispatcher->MaybeQueryWritingModeAtSelection();
+    }
+  }
+
   NativeKeyBindings* keyBindings = NativeKeyBindings::GetInstance(aType);
-  
-  
-  
-  
-  
-  keyBindings->GetEditCommands(aEvent, Nothing(), aCommands);
+  keyBindings->GetEditCommands(aEvent, writingMode, aCommands);
   return true;
-}
-
-void nsCocoaWindow::PauseOrResumeCompositor(bool aPause) {
-  if (auto* mainChildView =
-          static_cast<nsIWidget*>(mWindow.mainChildView.widget)) {
-    mainChildView->PauseOrResumeCompositor(aPause);
-  }
-}
-
-bool nsCocoaWindow::AsyncPanZoomEnabled() const {
-  if (mPopupContentView) {
-    return mPopupContentView->AsyncPanZoomEnabled();
-  }
-  return nsBaseWidget::AsyncPanZoomEnabled();
-}
-
-bool nsCocoaWindow::StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
-                                         const ScrollableLayerGuid& aGuid) {
-  if (mPopupContentView) {
-    return mPopupContentView->StartAsyncAutoscroll(aAnchorLocation, aGuid);
-  }
-  return nsBaseWidget::StartAsyncAutoscroll(aAnchorLocation, aGuid);
-}
-
-void nsCocoaWindow::StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) {
-  if (mPopupContentView) {
-    mPopupContentView->StopAsyncAutoscroll(aGuid);
-    return;
-  }
-  nsBaseWidget::StopAsyncAutoscroll(aGuid);
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
@@ -2616,7 +2540,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
-  nsCOMPtr<nsIWidget> window = new nsChildView();
+  nsCOMPtr<nsIWidget> window = new nsCocoaWindow();
   return window.forget();
 }
 
@@ -2905,15 +2829,13 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   RollUpPopups();
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
 
-  NSWindow* window = [aNotification object];
-  auto* mainChildView =
-      static_cast<nsChildView*>([[(BaseWindow*)window mainChildView] widget]);
-  if (mainChildView) {
-    if (mainChildView->GetInputContext().IsPasswordEditor()) {
-      TextInputHandler::EnableSecureEventInput();
-    } else {
-      TextInputHandler::EnsureSecureEventInputDisabled();
-    }
+  if (!mGeckoWindow) {
+    return;
+  }
+  if (mGeckoWindow->GetInputContext().IsPasswordEditor()) {
+    TextInputHandler::EnableSecureEventInput();
+  } else {
+    TextInputHandler::EnsureSecureEventInputDisabled();
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -3314,6 +3236,15 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   NSUInteger styleMask = [self styleMask];
   styleMask &= ~NSWindowStyleMaskFullSizeContentView;
   return [NSWindow contentRectForFrameRect:aFrameRect styleMask:styleMask];
+}
+
+
+- (NSRect)childViewFrameRectForCurrentBounds {
+  auto frame = self.frame;
+  NSRect r = [self childViewRectForFrameRect:frame];
+  r.origin.x -= frame.origin.x;
+  r.origin.y -= frame.origin.y;
+  return r;
 }
 
 - (NSRect)frameRectForChildViewRect:(NSRect)aChildViewRect {
@@ -3734,9 +3665,8 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
     self.titlebarAppearsTransparent = self.drawsContentsIntoWindowFrame;
 
     
-    
-    
-    
+    self.mainChildView.frame = self.childViewFrameRectForCurrentBounds;
+
     auto* windowDelegate = static_cast<WindowDelegate*>(self.delegate);
     if (nsCocoaWindow* geckoWindow = windowDelegate.geckoWidget) {
       

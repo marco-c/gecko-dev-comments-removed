@@ -21,7 +21,7 @@
 #include "mozilla/TextEventDispatcherListener.h"
 #include "WritingModes.h"
 
-class nsChildView;
+class nsCocoaWindow;
 
 namespace mozilla {
 namespace widget {
@@ -516,20 +516,20 @@ class TextInputHandlerBase : public TextEventDispatcherListener {
 
 
 
-  virtual bool OnDestroyWidget(nsChildView* aDestroyingWidget);
+  virtual bool OnDestroyWidget(nsCocoaWindow* aDestroyingWidget);
 
  protected:
   
   
   
-  nsChildView* mWidget;  
+  nsCocoaWindow* mWidget;  
   RefPtr<TextEventDispatcher> mDispatcher;
 
   
   
   NSView<mozView>* mView;  
 
-  TextInputHandlerBase(nsChildView* aWidget, NSView<mozView>* aNativeView);
+  TextInputHandlerBase(nsCocoaWindow* aWidget, NSView<mozView>* aNativeView);
   virtual ~TextInputHandlerBase();
 
   bool Destroyed() { return !mWidget; }
@@ -923,7 +923,7 @@ class IMEInputHandler : public TextInputHandlerBase {
                             uint32_t aIndexOfKeypress, void* aData) override;
 
  public:
-  virtual bool OnDestroyWidget(nsChildView* aDestroyingWidget) override;
+  virtual bool OnDestroyWidget(nsCocoaWindow* aDestroyingWidget) override;
 
   virtual void OnFocusChangeInGecko(bool aFocus);
 
@@ -1071,7 +1071,7 @@ class IMEInputHandler : public TextInputHandlerBase {
   NSTextCheckingResult* mCandidatedTextSubstitutionResult;
   bool mProcessTextSubstitution;
 
-  IMEInputHandler(nsChildView* aWidget, NSView<mozView>* aNativeView);
+  IMEInputHandler(nsCocoaWindow* aWidget, NSView<mozView>* aNativeView);
   virtual ~IMEInputHandler();
 
   void ResetTimer();
@@ -1261,7 +1261,7 @@ class TextInputHandler : public IMEInputHandler {
   static CFArrayRef CreateAllKeyboardLayoutList();
   static void DebugPrintAllKeyboardLayouts();
 
-  TextInputHandler(nsChildView* aWidget, NSView<mozView>* aNativeView);
+  TextInputHandler(nsCocoaWindow* aWidget, NSView<mozView>* aNativeView);
   virtual ~TextInputHandler();
 
   
