@@ -86,6 +86,7 @@ class ServoExecutor(ProcessTestExecutor):
             
             
             "--ignore-certificate-errors",
+            "--enable-experimental-web-platform-features",
             "-z", self.test_url(test),
         ]
         for stylesheet in self.browser.user_stylesheets:
