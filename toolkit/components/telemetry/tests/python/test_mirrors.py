@@ -51,6 +51,65 @@ WEAKER_EVENT_COMPATIBILITY_PROBES = [
 ]
 
 
+
+UNMIRRORED_EVENT_ALLOWLIST = [
+    "intl.ui.browserLanguage#action",
+    "messaging_experiments#reach",
+    "pwmgr#mgmt_interaction",
+    "pwmgr#open_management",
+]
+
+
+BUG_1949494_ALLOWLIST = [
+    "GC_REASON_2",
+    "GC_IS_COMPARTMENTAL",
+    "GC_ZONE_COUNT",
+    "GC_ZONES_COLLECTED",
+    "GC_MS",
+    "GC_BUDGET_MS_2",
+    "GC_BUDGET_WAS_INCREASED",
+    "GC_SLICE_WAS_LONG",
+    "GC_ANIMATION_MS",
+    "GC_MAX_PAUSE_MS_2",
+    "GC_PREPARE_MS",
+    "GC_MARK_MS",
+    "GC_SWEEP_MS",
+    "GC_COMPACT_MS",
+    "GC_MARK_ROOTS_US",
+    "GC_MARK_GRAY_MS_2",
+    "GC_MARK_WEAK_MS",
+    "GC_SLICE_MS",
+    "GC_SLOW_PHASE",
+    "GC_SLOW_TASK",
+    "GC_MMU_50",
+    "GC_RESET",
+    "GC_RESET_REASON",
+    "GC_NON_INCREMENTAL",
+    "GC_NON_INCREMENTAL_REASON",
+    "GC_MINOR_REASON",
+    "GC_MINOR_REASON_LONG",
+    "GC_MINOR_US",
+    "GC_NURSERY_BYTES_2",
+    "GC_PRETENURE_COUNT_2",
+    "GC_BUDGET_OVERRUN",
+    "GC_NURSERY_PROMOTION_RATE",
+    "GC_TENURED_SURVIVAL_RATE",
+    "GC_MARK_RATE_2",
+    "GC_TIME_BETWEEN_S",
+    "GC_TIME_BETWEEN_SLICES_MS",
+    "GC_SLICE_COUNT",
+    "GC_EFFECTIVENESS",
+    "GC_PARALLEL_MARK",
+    "GC_PARALLEL_MARK_SPEEDUP",
+    "GC_PARALLEL_MARK_UTILIZATION",
+    "GC_PARALLEL_MARK_INTERRUPTIONS",
+    "GC_TASK_START_DELAY_US",
+    "DESERIALIZE_BYTES",
+    "DESERIALIZE_ITEMS",
+    "DESERIALIZE_US",
+]
+
+
 from mozbuild.base import MozbuildObject
 
 build = MozbuildObject.from_environment()
@@ -154,7 +213,7 @@ def ensure_compatible_scalar(metric, probe):
     ) or metric.type in ["string_list", "rate"]
     assert (
         mirror_should_be_keyed == probe.keyed
-    ), f"Metric {metric.identifier()}'s type ({metric.type}) must have appropriate keyedness in the mirrored scalar probe {probe.name}."
+    ), f"Metric {metric.identifier()}'s type ({metric.type}) must have appropriate keyedness in the mirrored scalar probe {probe.label}."
 
     TYPE_MAP = {
         "boolean": "boolean",
@@ -173,7 +232,7 @@ def ensure_compatible_scalar(metric, probe):
     }
     assert (
         TYPE_MAP[metric.type] == probe.kind
-    ), f"Metric {metric.identifier()}'s type ({metric.type}) requires a mirror probe scalar of kind '{TYPE_MAP[metric.type]}' which doesn't match mirrored scalar probe {probe.name}'s kind ({probe.kind})"
+    ), f"Metric {metric.identifier()}'s type ({metric.type}) requires a mirror probe scalar of kind '{TYPE_MAP[metric.type]}' which doesn't match mirrored scalar probe {probe.label}'s kind ({probe.kind})"
 
 
 class TestTelemetryMirrors(unittest.TestCase):
@@ -249,6 +308,47 @@ class TestTelemetryMirrors(unittest.TestCase):
             assert (
                 found
             ), f"Mirror {metric.telemetry_mirror} not found for metric {metric.identifier()}"
+
+        
+        for event in events:
+            for enum in event.enum_labels:
+                event_id = event.category_cpp + "_" + enum
+                if event.identifier in UNMIRRORED_EVENT_ALLOWLIST:
+                    
+                    
+                    continue
+                if event.category in ("telemetry.test", "telemetry.test.second"):
+                    continue
+                assert any(
+                    metric.telemetry_mirror == event_id
+                    for metric in mirroring_metrics(objs)
+                ), f"No mirror metric found for event probe {event.identifier}."
+
+        for hgram in hgrams:
+            if hgram.keyed() and hgram.kind() in ("categorical", "boolean"):
+                continue  
+            if hgram.name() in BUG_1949494_ALLOWLIST:
+                continue  
+            if hgram.name().startswith("TELEMETRY_TEST_"):
+                continue
+            assert any(
+                metric.telemetry_mirror == hgram.name()
+                or metric.telemetry_mirror == "h#" + hgram.name()
+                for metric in mirroring_metrics(objs)
+            ), f"No mirror metric found for histogram probe {hgram.name()}."
+
+        for scalar in scalars:
+            if scalar.label == "mathml.doc_count":
+                continue  
+            if scalar.category in ("telemetry", "telemetry.discarded"):
+                
+                continue
+            if scalar.category == "telemetry.test":
+                continue
+            assert any(
+                metric.telemetry_mirror == scalar.enum_label
+                for metric in mirroring_metrics(objs)
+            ), f"No mirror metric found for scalar probe {scalar.label}."
 
 
 if __name__ == "__main__":
