@@ -21,6 +21,7 @@
 #include "util/Poison.h"
 
 #include "gc/Heap-inl.h"
+#include "gc/Marking-inl.h"
 
 using namespace js;
 using namespace js::gc;
@@ -747,6 +748,14 @@ void BufferAllocator::traceEdge(JSTracer* trc, Cell* owner, void** bufferp,
 
   MOZ_ASSERT(IsBufferAlloc(buffer));
 
+  if (IsLargeAlloc(buffer)) {
+    
+    
+    LargeBuffer* header = lookupLargeBuffer(buffer);
+    auto* cell = GetHeaderFromAlloc<SmallBuffer>(header);
+    TraceManuallyBarrieredEdge(trc, &cell, "LargeBuffer");
+  }
+
   if (!IsLargeAlloc(buffer) && IsSmallAlloc(buffer)) {
     auto* cell = GetHeaderFromAlloc<SmallBuffer>(buffer);
     TraceManuallyBarrieredEdge(trc, &cell, name);
@@ -892,6 +901,7 @@ void BufferAllocator::sweepForMinorCollection() {
     }
   }
 
+  
   
   
   
@@ -1180,6 +1190,60 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
   }
 }
 
+void BufferAllocator::prepareForMovingGC() {
+  maybeMergeSweptData();
+
+  MOZ_ASSERT(majorState == State::NotCollecting);
+  MOZ_ASSERT(minorState == State::NotCollecting);
+  MOZ_ASSERT(largeNurseryAllocsToSweep.ref().isEmpty());
+  MOZ_ASSERT(largeTenuredAllocsToSweep.ref().isEmpty());
+
+#ifdef DEBUG
+  MOZ_ASSERT(!movingGCInProgress);
+  movingGCInProgress = true;
+#endif
+
+  
+  
+  for (auto i = largeAllocMap.ref().iter(); !i.done(); i.next()) {
+    LargeBuffer* buffer = i.get().value();
+    if (buffer->isNurseryOwned) {
+      largeNurseryAllocs.ref().remove(buffer);
+    } else {
+      largeTenuredAllocs.ref().remove(buffer);
+    }
+  }
+
+  MOZ_ASSERT(largeNurseryAllocs.ref().isEmpty());
+  MOZ_ASSERT(largeTenuredAllocs.ref().isEmpty());
+}
+
+void BufferAllocator::fixupAfterMovingGC() {
+#ifdef DEBUG
+  MOZ_ASSERT(movingGCInProgress);
+  movingGCInProgress = false;
+#endif
+
+  
+  
+  for (auto i = largeAllocMap.ref().iter(); !i.done(); i.next()) {
+    LargeBuffer* buffer = i.get().value();
+    auto* header = GetHeaderFromAlloc<SmallBuffer>(buffer);
+    if (IsForwarded(header)) {
+      header = Forwarded(header);
+      buffer = static_cast<LargeBuffer*>(header->data());
+      i.get().value() = buffer;
+    }
+
+    MOZ_ASSERT(!buffer->isInList());
+    if (buffer->isNurseryOwned) {
+      largeNurseryAllocs.ref().pushBack(buffer);
+    } else {
+      largeTenuredAllocs.ref().pushBack(buffer);
+    }
+  }
+}
+
 void BufferAllocator::clearMarkStateAfterBarrierVerification() {
   MOZ_ASSERT(!zone->wasGCStarted());
 
@@ -1305,6 +1369,8 @@ void BufferAllocator::checkGCStateNotInUse(const AutoLock& lock) {
 
   MOZ_ASSERT(largeTenuredAllocsToSweep.ref().isEmpty());
   MOZ_ASSERT(sweptLargeTenuredAllocs.ref().isEmpty());
+
+  MOZ_ASSERT(!movingGCInProgress);
 }
 
 void BufferAllocator::checkChunkListGCStateNotInUse(
@@ -2210,6 +2276,13 @@ void* BufferAllocator::allocLarge(size_t bytes, bool nurseryOwned, bool inGC) {
   MOZ_ASSERT(bytes >= bytes);
 
   
+  static_assert(sizeof(LargeBuffer) <= MaxSmallAllocSize);
+  void* bufferPtr = allocSmall(sizeof(LargeBuffer), nurseryOwned);
+  if (!bufferPtr) {
+    return nullptr;
+  }
+
+  
   
   
   void* ptr = MapAlignedPages(bytes, ChunkSize, ShouldStallAndRetry(inGC));
@@ -2218,19 +2291,16 @@ void* BufferAllocator::allocLarge(size_t bytes, bool nurseryOwned, bool inGC) {
   }
   auto freeGuard = mozilla::MakeScopeExit([&]() { UnmapPages(ptr, bytes); });
 
-  CheckHighBitsOfPointer(ptr);
+  auto* buffer = new (bufferPtr) LargeBuffer(zone, ptr, bytes, nurseryOwned);
 
-  LargeBuffer* header = js_new<LargeBuffer>(zone, ptr, bytes, nurseryOwned);
-  if (!header) {
-    return nullptr;
-  }
+  CheckHighBitsOfPointer(ptr);
 
   {
     MaybeLock lock;
     if (needLockToAccessBufferMap()) {
       lock.emplace(this);
     }
-    if (!largeAllocMap.ref().put(header->data(), header)) {
+    if (!largeAllocMap.ref().putNew(ptr, buffer)) {
       return nullptr;
     }
   }
@@ -2238,10 +2308,10 @@ void* BufferAllocator::allocLarge(size_t bytes, bool nurseryOwned, bool inGC) {
   freeGuard.release();
 
   if (nurseryOwned) {
-    largeNurseryAllocs.ref().pushBack(header);
+    largeNurseryAllocs.ref().pushBack(buffer);
   } else {
-    header->allocatedDuringCollection = majorState != State::NotCollecting;
-    largeTenuredAllocs.ref().pushBack(header);
+    buffer->allocatedDuringCollection = majorState != State::NotCollecting;
+    largeTenuredAllocs.ref().pushBack(buffer);
   }
 
   
@@ -2281,10 +2351,15 @@ bool BufferAllocator::markLargeAlloc(void* alloc) {
     return false;
   }
 
+  auto* headerCell = GetHeaderFromAlloc<SmallBuffer>(header);
+
   if (header->isNurseryOwned) {
     
+    MOZ_ASSERT(!headerCell->isTenured());
     return false;
   }
+
+  headerCell->markBlackAtomic();
 
   return header->markAtomic();
 }
@@ -2390,8 +2465,6 @@ void BufferAllocator::unmapLarge(LargeBuffer* header, bool isSweeping,
   }
 
   UnmapPages(header->data(), bytes);
-
-  js_free(header);
 }
 
 #include "js/Printer.h"

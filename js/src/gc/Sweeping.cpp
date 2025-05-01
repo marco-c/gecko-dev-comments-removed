@@ -431,6 +431,8 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     
     
     
+    
+    
     bool decommit = shouldDecommit() && DecommitEnabled();
     zone->bufferAllocator.sweepForMajorCollection(decommit);
 
