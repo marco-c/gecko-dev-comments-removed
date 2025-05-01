@@ -285,6 +285,8 @@ const assert_array_approx_equals_ulp = (actual, expected, nulp, dataType, descri
   
 
 
+  assert(
+      typeof nulp === 'number', `unexpected type for nulp: ${typeof nulp}`);
   assert_true(
       actual.length === expected.length,
       `assert_array_approx_equals_ulp: ${description} lengths differ, ` +
