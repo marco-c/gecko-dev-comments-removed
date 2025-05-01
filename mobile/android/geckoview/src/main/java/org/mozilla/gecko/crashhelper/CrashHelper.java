@@ -6,7 +6,6 @@ package org.mozilla.gecko.crashhelper;
 
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Binder;
@@ -130,13 +129,7 @@ public final class CrashHelper extends Service {
         throws IOException {
       mBreakpadClient = ParcelFileDescriptor.dup(breakpadClientFd);
       mBreakpadServer = ParcelFileDescriptor.dup(breakpadServerFd);
-      if (!CrashHelper.set_breakpad_opts(mBreakpadServer.getFd())) {
-        throw new IOException("Could not set the proper options on the Breakpad socket");
-      }
       mListener = ParcelFileDescriptor.dup(listenerFd);
-      if (!CrashHelper.bind_and_listen(mListener.getFd())) {
-        throw new IOException("Could not listen on incoming connections");
-      }
       mClient = ParcelFileDescriptor.dup(clientFd);
       mServer = ParcelFileDescriptor.dup(serverFd);
     }
@@ -148,12 +141,13 @@ public final class CrashHelper extends Service {
   
   
   
-  public static Pipes createCrashHelperPipes(final Context context) {
+  public static Pipes createCrashHelperPipes() {
     
     
     
-    GeckoLoader.doLoadLibrary(context, "crashhelper");
-
+    
+    
+    
     try {
       final FileDescriptor breakpad_client_fd = new FileDescriptor();
       final FileDescriptor breakpad_server_fd = new FileDescriptor();
@@ -194,8 +188,4 @@ public final class CrashHelper extends Service {
 
   protected static native void crash_generator(
       int clientPid, int breakpadFd, String minidumpPath, int listenFd, int serverFd);
-
-  protected static native boolean set_breakpad_opts(int breakpadFd);
-
-  protected static native boolean bind_and_listen(int listenFd);
 }
