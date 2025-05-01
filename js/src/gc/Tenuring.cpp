@@ -945,14 +945,21 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
 
     dst = allocString(src, zone, dstKind);
 
-    using DedupHasher [[maybe_unused]] = DeduplicationStringHasher<JSString*>;
-    MOZ_ASSERT(DedupHasher::hash(src) == DedupHasher::hash(dst),
-               "src and dst must have the same hash for lookupForAdd");
+    
+    
+    
+    
+    
+    if (dst->flags() == src->flags()) {
+      using DedupHasher [[maybe_unused]] = DeduplicationStringHasher<JSString*>;
+      MOZ_ASSERT(DedupHasher::hash(src) == DedupHasher::hash(dst),
+                 "src and dst must have the same hash for lookupForAdd");
 
-    if (!stringDeDupSet->add(p, dst)) {
-      
-      
-      stringDeDupSet.reset();
+      if (!stringDeDupSet->add(p, dst)) {
+        
+        
+        stringDeDupSet.reset();
+      }
     }
   } else {
     dst = allocString(src, zone, dstKind);
@@ -1075,6 +1082,17 @@ size_t js::gc::TenuringTracer::moveString(JSString* dst, JSString* src,
   
   MOZ_ASSERT(OffsetToChunkEnd(src) >= size);
   js_memcpy(dst, src, size);
+
+  if (src->isDependent()) {
+    
+    
+    
+    
+    
+    size_t cloned =
+        JSLinearString::maybeCloneCharsOnPromotion(&dst->asDependent());
+    return size + cloned;
+  }
 
   if (!src->hasOutOfLineChars()) {
     return size;
