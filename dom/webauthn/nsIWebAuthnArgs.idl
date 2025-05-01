@@ -40,6 +40,8 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
     
     
     
+    [must_use] readonly attribute AUTF8String credentialProtectionPolicy;
+    [must_use] readonly attribute boolean enforceCredentialProtectionPolicy;
     [must_use] readonly attribute boolean credProps;
     [must_use] readonly attribute boolean hmacCreateSecret;
     [must_use] readonly attribute boolean minPinLength;
