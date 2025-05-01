@@ -325,6 +325,7 @@ enum BFCacheStatus {
   BEFOREUNLOAD_LISTENER = 1 << 15,       
   ACTIVE_LOCK = 1 << 16,                 
   ACTIVE_WEBTRANSPORT = 1 << 17,         
+  PAGE_LOADING = 1 << 18,                
 };
 
 }  
@@ -999,8 +1000,6 @@ class Document : public nsINode,
 
 
   void SetBidiEnabled() { mBidiEnabled = true; }
-
-  void SetMathMLEnabled() { mMathMLEnabled = true; }
 
   
 
@@ -4750,8 +4749,6 @@ class Document : public nsINode,
   bool mBidiEnabled : 1;
   
   bool mMayNeedFontPrefsUpdate : 1;
-  
-  bool mMathMLEnabled : 1;
 
   
   

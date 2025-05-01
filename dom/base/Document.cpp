@@ -1360,7 +1360,6 @@ Document::Document(const char* aContentType)
       mRenderingSuppressedForViewTransitions(false),
       mBidiEnabled(false),
       mMayNeedFontPrefsUpdate(true),
-      mMathMLEnabled(false),
       mIsInitialDocumentInWindow(false),
       mIsEverInitialDocumentInWindow(false),
       mIgnoreDocGroupMismatches(false),
@@ -2451,13 +2450,6 @@ Document::~Document() {
 
   if (IsTopLevelContentDocument()) {
     RemoveToplevelLoadingDocument(this);
-
-    
-    if (!IsAboutPage()) {
-      if (MOZ_UNLIKELY(mMathMLEnabled)) {
-        glean::mathml::doc_count.Add(1);
-      }
-    }
   }
 
   mInDestructor = true;
@@ -8225,6 +8217,13 @@ void Document::SetScriptGlobalObject(
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mScriptGlobalObject);
   mWindow = window;
 
+  if (mReadyState != READYSTATE_COMPLETE) {
+    if (auto* wgc = GetWindowGlobalChild()) {
+      
+      wgc->BlockBFCacheFor(BFCacheStatus::PAGE_LOADING);
+    }
+  }
+
   
   
   
@@ -12360,6 +12359,10 @@ void Document::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
     }
     DispatchPageTransition(target, u"pageshow"_ns, inFrameLoaderSwap,
                            aPersisted, aOnlySystemGroup);
+  }
+
+  if (auto* wgc = GetWindowGlobalChild()) {
+    wgc->UnblockBFCacheFor(BFCacheStatus::PAGE_LOADING);
   }
 }
 
