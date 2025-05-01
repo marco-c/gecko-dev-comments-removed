@@ -495,6 +495,10 @@ bool JS::ErrorReportBuilder::init(JSContext* cx,
     
     exnObject = &exnStack.exception().toObject();
     reportp = ErrorFromException(cx, exnObject);
+
+    if (reportp && reportp->isMuted) {
+      sniffingBehavior = SniffingBehavior::NoSideEffects;
+    }
   }
 
   
