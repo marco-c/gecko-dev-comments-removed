@@ -161,6 +161,10 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
     
     chrome_options["args"].append("--disable-features=ScrollbarAnimations")
 
+    
+    
+    blink_features = ['ViewTransitionLongCallbackTimeoutForTesting']
+
     if kwargs["enable_mojojs"]:
         blink_features = ['MojoJS', 'MojoJSTest']
         chrome_options["args"].append("--enable-blink-features=" + ','.join(blink_features))
