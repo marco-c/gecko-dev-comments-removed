@@ -167,6 +167,9 @@ struct ArenaChunkInfo {
 
   
   uint32_t numArenasFreeCommitted;
+
+  
+  bool isCurrentChunk = false;
 };
 
 

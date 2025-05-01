@@ -1100,6 +1100,11 @@ class GCRuntime {
   MainThreadData<ArenaChunk*> currentChunk_;
 
   
+  
+  GCLockData<ChunkArenaBitmap> pendingFreeCommittedArenas;
+  friend class ArenaChunk;
+
+  
 
 
 
