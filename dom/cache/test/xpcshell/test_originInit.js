@@ -3,7 +3,7 @@
 
 
 
-add_task(async function testSteps() {
+async function testSteps() {
   
   
   const basePath = `${storageDirName}/${defaultPersistenceDirName}/`;
@@ -246,4 +246,11 @@ add_task(async function testSteps() {
   }
 
   await testPermanentCacheDir();
-});
+}
+
+add_task(
+  {
+    pref_set: [["dom.quotaManager.loadQuotaFromCache", false]],
+  },
+  testSteps
+);
