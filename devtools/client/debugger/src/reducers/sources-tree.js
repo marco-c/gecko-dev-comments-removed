@@ -24,6 +24,7 @@ const IGNORED_URLS = ["debugger eval code", "XStringBundle"];
 const IGNORED_EXTENSIONS = ["css", "svg", "png"];
 import { isPretty, getRawSourceURL } from "../utils/source";
 import { prefs } from "../utils/prefs";
+import { getDisplayURL } from "../utils/sources-tree/getURL";
 
 import TargetCommand from "resource://devtools/shared/commands/target/target-command.js";
 
@@ -32,7 +33,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BinarySearch: "resource://gre/modules/BinarySearch.sys.mjs",
 });
 
-export function initialSourcesTreeState({ isWebExtension } = {}) {
+export function initialSourcesTreeState({
+  isWebExtension,
+  mainThreadProjectDirectoryRoots = {},
+} = {}) {
   return {
     
     
@@ -49,16 +53,17 @@ export function initialSourcesTreeState({ isWebExtension } = {}) {
 
     
     
-    
-    
-    
-    projectDirectoryRoot: prefs.projectDirectoryRoot,
+    mainThreadProjectDirectoryRoots,
 
     
-    projectDirectoryRootName: prefs.projectDirectoryRootName,
+    
+    projectDirectoryRoot: "",
 
     
-    projectDirectoryRootFullName: prefs.projectDirectoryRootFullName,
+    projectDirectoryRootName: "",
+
+    
+    projectDirectoryRootFullName: "",
 
     
     
@@ -167,7 +172,7 @@ export default function update(state = initialSourcesTreeState(), action) {
     case "INSERT_THREAD":
       state = { ...state };
       addThread(state, action.newThread);
-      return state;
+      return applyMainThreadProjectDirectoryRoot(state, action.newThread);
 
     case "REMOVE_THREAD": {
       const { threadActorID } = action;
@@ -193,6 +198,18 @@ export default function update(state = initialSourcesTreeState(), action) {
         }
       }
 
+      
+      let {
+        projectDirectoryRoot,
+        projectDirectoryRootName,
+        projectDirectoryRootFullName,
+      } = state;
+      if (projectDirectoryRoot.startsWith(`${threadActorID}|`)) {
+        projectDirectoryRoot = "";
+        projectDirectoryRootName = "";
+        projectDirectoryRootFullName = "";
+      }
+
       const threadItems = [...state.threadItems];
       threadItems.splice(index, 1);
       return {
@@ -200,6 +217,9 @@ export default function update(state = initialSourcesTreeState(), action) {
         threadItems,
         focusedItem,
         expanded,
+        projectDirectoryRoot,
+        projectDirectoryRootName,
+        projectDirectoryRootFullName,
       };
     }
 
@@ -213,8 +233,14 @@ export default function update(state = initialSourcesTreeState(), action) {
       return updateSelectedLocation(state, action.location);
 
     case "SET_PROJECT_DIRECTORY_ROOT": {
-      const { uniquePath, name, fullName } = action;
-      return updateProjectDirectoryRoot(state, uniquePath, name, fullName);
+      const { uniquePath, name, fullName, mainThread } = action;
+      return updateProjectDirectoryRoot(
+        state,
+        uniquePath,
+        name,
+        fullName,
+        mainThread
+      );
     }
 
     case "BLACKBOX_WHOLE_SOURCES":
@@ -293,14 +319,63 @@ function updateExpanded(state, action) {
 
 
 
-function updateProjectDirectoryRoot(state, uniquePath, name, fullName) {
-  
-  
-  if (!uniquePath || uniquePath.startsWith("top-level")) {
-    prefs.projectDirectoryRoot = uniquePath;
-    prefs.projectDirectoryRootName = name;
-    prefs.projectDirectoryRootFullName = fullName;
+function updateProjectDirectoryRoot(
+  state,
+  uniquePath,
+  name,
+  fullName,
+  mainThread
+) {
+  let directoryRoots = state.mainThreadProjectDirectoryRoots;
+  if (mainThread) {
+    const { origin } = getDisplayURL(mainThread.url);
+    if (origin) {
+      
+      directoryRoots = { ...directoryRoots };
+      if (uniquePath.startsWith(`${mainThread.actor}|`)) {
+        directoryRoots[origin] = {
+          
+          
+          
+          
+          
+          uniquePath: uniquePath.substring(mainThread.actor.length),
+          name,
+          fullName,
+        };
+      } else {
+        
+        
+        
+        delete directoryRoots[origin];
+      }
+    }
   }
+
+  return {
+    ...state,
+    mainThreadProjectDirectoryRoots: directoryRoots,
+    projectDirectoryRoot: uniquePath,
+    projectDirectoryRootName: name,
+    projectDirectoryRootFullName: fullName,
+  };
+}
+
+function applyMainThreadProjectDirectoryRoot(state, thread) {
+  if (!thread.isTopLevel || !thread.url) {
+    return state;
+  }
+  const { origin } = getDisplayURL(thread.url);
+  if (!origin) {
+    return state;
+  }
+
+  const directoryRoot = state.mainThreadProjectDirectoryRoots[origin];
+  const uniquePath = directoryRoot
+    ? thread.actor + directoryRoot.uniquePath
+    : "";
+  const name = directoryRoot?.name ?? "";
+  const fullName = directoryRoot?.fullName ?? "";
 
   return {
     ...state,

@@ -18,34 +18,18 @@ export function setProjectDirectoryRoot(
   newFullName
 ) {
   return ({ dispatch, getState }) => {
-    
-    
-    
-    
-    
-    const mainThread = getMainThread(getState());
-    if (mainThread && newRootItemUniquePath.startsWith(mainThread.actor)) {
-      newRootItemUniquePath = newRootItemUniquePath.replace(
-        mainThread.actor,
-        "top-level"
-      );
-    }
     dispatch({
       type: "SET_PROJECT_DIRECTORY_ROOT",
       uniquePath: newRootItemUniquePath,
       name: newName,
       fullName: newFullName,
+      mainThread: getMainThread(getState()),
     });
   };
 }
 
 export function clearProjectDirectoryRoot() {
-  return {
-    type: "SET_PROJECT_DIRECTORY_ROOT",
-    uniquePath: "",
-    name: "",
-    fullName: "",
-  };
+  return setProjectDirectoryRoot("", "", "");
 }
 
 export function setShowContentScripts(shouldShow) {
