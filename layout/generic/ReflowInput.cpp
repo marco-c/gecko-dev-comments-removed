@@ -2405,10 +2405,13 @@ void ReflowInput::InitConstraints(
         
         
         
-        const auto* cell = mFrame->GetParent();
-        MOZ_ASSERT(cell->IsTableCellFrame(),
+        
+        
+        MOZ_ASSERT(mFrame->GetParent()->IsTableCellFrame(),
                    "unexpected mOrthogonalCellFinalReflow flag!");
-        cbSize = LogicalSize(wm, cell->GetPaddingRectRelativeToSelf().Size());
+        cbSize = mParentReflowInput->AvailableSize().ConvertTo(
+            wm, mParentReflowInput->GetWritingMode());
+        cbSize -= mParentReflowInput->ComputedLogicalBorder(wm).Size(wm);
         SetAvailableISize(cbSize.ISize(wm));
       } else {
         const bool shouldShrinkWrap = [&] {
