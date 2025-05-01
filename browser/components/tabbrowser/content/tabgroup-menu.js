@@ -297,6 +297,7 @@
     #tabGroupMain;
     #activeGroup;
     #cancelButton;
+    #commandButtons;
     #createButton;
     #createMode;
     #keepNewlyCreatedGroup;
@@ -421,40 +422,47 @@
         return show;
       };
 
-      document
-        .getElementById("tabGroupEditor_addNewTabInGroup")
-        .addEventListener("command", () => {
-          this.#handleNewTabInGroup();
-        });
+      this.#commandButtons = {
+        addNewTabInGroup: document.getElementById(
+          "tabGroupEditor_addNewTabInGroup"
+        ),
+        moveGroupToNewWindow: document.getElementById(
+          "tabGroupEditor_moveGroupToNewWindow"
+        ),
+        ungroupTabs: document.getElementById("tabGroupEditor_ungroupTabs"),
+        saveAndCloseGroup: document.getElementById(
+          "tabGroupEditor_saveAndCloseGroup"
+        ),
+        deleteGroup: document.getElementById("tabGroupEditor_deleteGroup"),
+      };
 
-      document
-        .getElementById("tabGroupEditor_moveGroupToNewWindow")
-        .addEventListener("command", () => {
+      this.#commandButtons.addNewTabInGroup.addEventListener("command", () => {
+        this.#handleNewTabInGroup();
+      });
+
+      this.#commandButtons.moveGroupToNewWindow.addEventListener(
+        "command",
+        () => {
           gBrowser.replaceGroupWithWindow(this.activeGroup);
-        });
+        }
+      );
 
-      document
-        .getElementById("tabGroupEditor_ungroupTabs")
-        .addEventListener("command", () => {
-          this.activeGroup.ungroupTabs();
-        });
+      this.#commandButtons.ungroupTabs.addEventListener("command", () => {
+        this.activeGroup.ungroupTabs();
+      });
 
-      document
-        .getElementById("tabGroupEditor_saveAndCloseGroup")
-        .addEventListener("command", () => {
-          this.activeGroup.saveAndClose({ isUserTriggered: true });
-        });
+      this.#commandButtons.saveAndCloseGroup.addEventListener("command", () => {
+        this.activeGroup.saveAndClose({ isUserTriggered: true });
+      });
 
-      document
-        .getElementById("tabGroupEditor_deleteGroup")
-        .addEventListener("command", () => {
-          gBrowser.removeTabGroup(
-            this.activeGroup,
-            TabMetrics.userTriggeredContext(
-              TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
-            )
-          );
-        });
+      this.#commandButtons.deleteGroup.addEventListener("command", () => {
+        gBrowser.removeTabGroup(
+          this.activeGroup,
+          TabMetrics.userTriggeredContext(
+            TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+          )
+        );
+      });
 
       this.panel.addEventListener("popupshown", this);
       this.panel.addEventListener("popuphidden", this);
@@ -850,6 +858,10 @@
         this.#keepNewlyCreatedGroup = true;
       }
       this.#nameField.focus();
+
+      for (const button of Object.values(this.#commandButtons)) {
+        button.tooltipText = button.label;
+      }
     }
 
     on_popuphidden() {
@@ -989,31 +1001,31 @@
       this.#suggestionsOptin.headingIcon = "";
       this.#suggestionsOptin.isLoading = true;
 
-      
+      // Init progress with value to show determiniate progress
       this.#suggestionsOptin.progressStatus = 0;
       const runToken = Date.now();
       this.#suggestionsRunToken = runToken;
       await this.#smartTabGroupingManager.preloadAllModels(prog => {
         this.#suggestionsOptin.progressStatus = prog.percentage;
       });
-      
+      // Clean up optin UI
       this.#setFormToDisabled(false);
       this.#suggestionsOptin.isHidden = true;
       this.#suggestionsOptin.isLoading = false;
 
       if (runToken !== this.#suggestionsRunToken) {
-        
+        // User has canceled
         return;
       }
 
-      
+      // Continue on with the suggest flow
       this.#handleMLOptinTelemetry("step3-optin-completed");
       this.#initMlGroupLabel();
       this.#handleSmartSuggest();
     }
 
     async #handleSmartSuggest() {
-      
+      // Loading
       const runToken = Date.now();
       this.#suggestionsRunToken = runToken;
 
@@ -1023,17 +1035,17 @@
         gBrowser.tabs
       );
       if (this.#suggestionsRunToken != runToken) {
-        
+        // User has canceled
         return;
       }
       if (!tabs.length) {
-        
+        // No un-grouped tabs found
         this.suggestionState = this.#createMode
           ? MozTabbrowserTabGroupMenu.State.CREATE_AI_WITH_NO_SUGGESTIONS
           : MozTabbrowserTabGroupMenu.State.EDIT_AI_WITH_NO_SUGGESTIONS;
 
-        
-        
+        // there's no "save" button from the edit ai interaction with
+        // no tab suggestions, so we need to capture here
         if (!this.#createMode) {
           this.#hasSuggestedMlTabs = true;
           this.#handleMlTelemetry("save");
@@ -1054,10 +1066,10 @@
       this.#hasSuggestedMlTabs = true;
     }
 
-    
-
-
-
+    /**
+     * Sends Glean metrics if smart tab grouping is enabled
+     * @param {string} action "save", "save-popup-hidden" or "cancel"
+     */
     #handleMlTelemetry(action) {
       if (!this.smartTabGroupsEnabled || !this.smartTabGroupsOptin) {
         return;
