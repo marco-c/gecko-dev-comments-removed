@@ -179,10 +179,12 @@ class DMABufSurface {
 
   
   
-  bool IsGlobalRefSet() const;
+  bool IsGlobalRefSet();
 
   
   void GlobalRefAdd();
+  void GlobalRefAddLocked(const mozilla::MutexAutoLock& aProofOfLock);
+
   void GlobalRefRelease();
 
   static void DeleteSnapshotGLContext();
