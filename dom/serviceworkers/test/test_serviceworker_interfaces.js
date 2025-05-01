@@ -495,7 +495,7 @@ let interfaceNamesInGlobalScope = [
   
   "WindowClient",
   
-  { name: "WGSLLanguageFeatures", isEarlyBetaOrEarlier: true },
+  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
   
   "WorkerGlobalScope",
   
