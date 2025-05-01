@@ -13295,8 +13295,8 @@ bool Document::CanRewriteURL(nsIURI* aTargetURL) const {
   if (nsContentUtils::URIIsLocalFile(aTargetURL)) {
     
     nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-    return NS_SUCCEEDED(principal->CheckMayLoadWithReporting(
-        mDocumentURI, false, InnerWindowID()));
+    return NS_SUCCEEDED(principal->CheckMayLoadWithReporting(aTargetURL, false,
+                                                             InnerWindowID()));
   }
 
   nsCOMPtr<nsIScriptSecurityManager> secMan =
