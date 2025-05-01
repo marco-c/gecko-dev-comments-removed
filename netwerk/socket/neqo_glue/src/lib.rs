@@ -284,8 +284,7 @@ impl NeqoHttp3Conn {
             .sni_slicing(static_prefs::pref!("network.http.http3.sni-slicing"))
             .idle_timeout(Duration::from_secs(idle_timeout.into()))
             
-            .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
-            .mlkem(false);
+            .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")));
 
         
         #[cfg(feature = "fuzzing")]
