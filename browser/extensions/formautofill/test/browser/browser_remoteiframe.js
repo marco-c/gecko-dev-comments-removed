@@ -1,4 +1,11 @@
+
+
+
 "use strict";
+
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
+);
 
 const IFRAME_URL_PATH = BASE_URL + "autocomplete_iframe.html";
 
@@ -38,7 +45,13 @@ add_task(async function test_iframe_autocomplete() {
   
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, iframeBC);
   await expectWarningText(browser, "Also autofills organization, email");
+
   EventUtils.synthesizeKey("VK_RETURN", {});
+
+  
+  await new Promise(resolve => {
+    setTimeout(resolve, FormAutofill.fillOnDynamicFormChangeTimeout);
+  });
 
   let onLoaded = BrowserTestUtils.browserLoaded(browser, true);
   await SpecialPowers.spawn(iframeBC, [], async function () {
@@ -78,6 +91,11 @@ add_task(async function test_iframe_autocomplete() {
   EventUtils.synthesizeKey("VK_RETURN", {});
 
   await waitForAutofill(iframeBC, "#tel", "+16172535702");
+
+  
+  await new Promise(resolve => {
+    setTimeout(resolve, FormAutofill.fillOnDynamicFormChangeTimeout);
+  });
 
   
   await openPopupOnSubframe(browser, iframeBC, "#street-address");

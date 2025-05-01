@@ -1,4 +1,11 @@
+
+
+
 "use strict";
+
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
+);
 
 add_task(async function test_save_doorhanger_shown_no_profile() {
   await BrowserTestUtils.withNewTab(
@@ -223,6 +230,11 @@ add_task(
           TEST_CREDIT_CARD_1["cc-number"]
         );
 
+        
+        await new Promise(resolve => {
+          setTimeout(resolve, FormAutofill.fillOnDynamicFormChangeTimeout);
+        });
+
         await focusUpdateSubmitForm(browser, {
           focusSelector: "#cc-name",
           newValues: {
@@ -283,6 +295,11 @@ add_task(
           "#cc-number",
           TEST_CREDIT_CARD_1["cc-number"]
         );
+
+        
+        await new Promise(resolve => {
+          setTimeout(resolve, FormAutofill.fillOnDynamicFormChangeTimeout);
+        });
 
         await focusUpdateSubmitForm(browser, {
           focusSelector: "#cc-name",
