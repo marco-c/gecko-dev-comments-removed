@@ -6096,8 +6096,11 @@ bool CompositorScrollUpdate::operator==(
     const CompositorScrollUpdate& aOther) const {
   
   
-  return RoundedToInt(mVisualScrollOffset) ==
-             RoundedToInt(aOther.mVisualScrollOffset) &&
+  
+  
+  
+  return RoundedToInt(mVisualScrollOffset * mZoom) ==
+             RoundedToInt(aOther.mVisualScrollOffset * aOther.mZoom) &&
          mZoom == aOther.mZoom && mSource == aOther.mSource;
 }
 
