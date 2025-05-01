@@ -1393,7 +1393,7 @@ static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   if (!rd->IsInRefresh()) {
     return {};
   }
-  return rd->MostRecentRefresh( false);
+  return rd->MostRecentRefresh();
 }
 
 

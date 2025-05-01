@@ -3233,10 +3233,6 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   ServoStyleSet* styleSet = StyleSet();
   Document* doc = presContext->Document();
 
-  
-  
-  presContext->RefreshDriver()->MostRecentRefresh();
-
   if (!doc->GetServoRestyleRoot()) {
     
     

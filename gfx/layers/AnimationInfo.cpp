@@ -513,8 +513,7 @@ void AnimationInfo::AddAnimationForProperty(
     if (readyTime.IsNull()) {
       
       
-      readyTime = aFrame->PresContext()->RefreshDriver()->MostRecentRefresh(
-           false);
+      readyTime = aFrame->PresContext()->RefreshDriver()->MostRecentRefresh();
       MOZ_ASSERT(!readyTime.IsNull());
       aAnimation->SetPendingReadyTime(readyTime);
     }
