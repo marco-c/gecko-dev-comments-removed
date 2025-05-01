@@ -64,6 +64,7 @@ class TextInputHandler;
 - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState;
 - (BOOL)drawsContentsIntoWindowFrame;
 - (NSRect)childViewFrameRectForCurrentBounds;
+- (void)updateChildViewFrameRect;
 
 
 
