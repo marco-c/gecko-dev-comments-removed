@@ -1411,12 +1411,11 @@ CssRuleView.prototype = {
   _createEditors() {
     
     
+    let lastInherited = null;
     let lastInheritedSource = "";
-    let lastKeyframes = null;
-    let seenPseudoElement = false;
     let seenNormalElement = false;
     let seenSearchTerm = false;
-    let container = null;
+    const containers = new Map();
 
     if (!this._elementStyle.rules) {
       return Promise.resolve();
@@ -1443,8 +1442,14 @@ CssRuleView.prototype = {
         }
       }
 
+      const isNonInheritedPseudo = !!rule.pseudoElement && !rule.inherited;
+
       
-      if (seenPseudoElement && !seenNormalElement && !rule.pseudoElement) {
+      if (
+        containers.has(PSEUDO_ELEMENTS_CONTAINER_ID) &&
+        !seenNormalElement &&
+        !rule.pseudoElement
+      ) {
         seenNormalElement = true;
         const div = this.styleDocument.createElementNS(HTML_NS, "div");
         div.className = RULE_VIEW_HEADER_CLASSNAME;
@@ -1453,8 +1458,19 @@ CssRuleView.prototype = {
         this.element.appendChild(div);
       }
 
-      const inheritedSource = rule.inherited;
-      if (inheritedSource && inheritedSource !== lastInheritedSource) {
+      const { inherited, inheritedSource } = rule;
+      
+      
+      
+      
+      
+      
+      
+      
+      if (
+        inherited &&
+        (inherited !== lastInherited || inheritedSource !== lastInheritedSource)
+      ) {
         const div = this.styleDocument.createElementNS(HTML_NS, "div");
         div.classList.add(
           RULE_VIEW_HEADER_CLASSNAME,
@@ -1463,30 +1479,45 @@ CssRuleView.prototype = {
         div.setAttribute("role", "heading");
         div.setAttribute("aria-level", "3");
         div.textContent = rule.inheritedSource;
+        lastInherited = inherited;
         lastInheritedSource = inheritedSource;
         this.element.appendChild(div);
       }
 
-      if (!seenPseudoElement && rule.pseudoElement) {
-        seenPseudoElement = true;
-        container = this.createExpandableContainer(
-          this.pseudoElementLabel,
-          PSEUDO_ELEMENTS_CONTAINER_ID,
-          true
-        );
-      }
-
       const keyframes = rule.keyframes;
-      if (keyframes && keyframes !== lastKeyframes) {
-        lastKeyframes = keyframes;
-        container = this.createExpandableContainer(
-          rule.keyframesName,
-          `keyframes-container-${keyframes.name}`
-        );
+
+      let containerKey = null;
+
+      
+      
+      if (isNonInheritedPseudo) {
+        containerKey = PSEUDO_ELEMENTS_CONTAINER_ID;
+        if (!containers.has(containerKey)) {
+          containers.set(
+            containerKey,
+            this.createExpandableContainer(
+              this.pseudoElementLabel,
+              containerKey,
+              true
+            )
+          );
+        }
+      } else if (keyframes) {
+        containerKey = keyframes;
+        if (!containers.has(containerKey)) {
+          containers.set(
+            containerKey,
+            this.createExpandableContainer(
+              rule.keyframesName,
+              `keyframes-container-${keyframes.name}`
+            )
+          );
+        }
       }
 
       rule.editor.element.setAttribute("role", "article");
-      if (container && (rule.pseudoElement || keyframes)) {
+      const container = containers.get(containerKey);
+      if (container) {
         container.appendChild(rule.editor.element);
       } else {
         this.element.appendChild(rule.editor.element);
