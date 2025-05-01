@@ -2357,8 +2357,7 @@ class nsIFrame : public nsQueryFrame {
   int16_t DetermineDisplaySelection();
 
  public:
-  virtual nsresult GetContentForEvent(const mozilla::WidgetEvent* aEvent,
-                                      nsIContent** aContent);
+  virtual nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const;
 
   
   

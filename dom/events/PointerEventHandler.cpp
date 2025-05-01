@@ -457,8 +457,7 @@ void PointerEventHandler::ImplicitlyCapturePointer(nsIFrame* aFrame,
     
     return;
   }
-  nsCOMPtr<nsIContent> target;
-  aFrame->GetContentForEvent(aEvent, getter_AddRefs(target));
+  nsIContent* target = aFrame->GetContentForEvent(aEvent);
   while (target && !target->IsElement()) {
     target = target->GetParent();
   }
