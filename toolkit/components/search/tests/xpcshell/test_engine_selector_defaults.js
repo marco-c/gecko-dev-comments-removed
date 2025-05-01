@@ -112,6 +112,12 @@ const CONFIG = [
     recordType: "engineOrders",
     orders: [],
   },
+  {
+    recordType: "availableLocales",
+    
+    
+    locales: ["en-CA", "en-US", "zh-CN"],
+  },
 ];
 
 const CONFIG_DEFAULTS_OVERRIDE = [

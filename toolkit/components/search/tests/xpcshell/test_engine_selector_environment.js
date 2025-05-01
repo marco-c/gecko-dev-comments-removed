@@ -65,6 +65,9 @@ const CONFIG_EVERYWHERE = [
       },
     ],
   },
+  
+  
+  { recordType: "availableLocales", locales: ["en-CA", "en-GB", "en-US"] },
 ];
 
 const CONFIG_EXPERIMENT = [
