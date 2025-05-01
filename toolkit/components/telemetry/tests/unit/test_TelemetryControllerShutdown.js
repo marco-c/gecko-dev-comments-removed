@@ -34,6 +34,14 @@ add_task(async function test_setup() {
     "1.9.2"
   );
   finishAddonManagerStartup();
+  
+  
+  
+  
+  
+  
+  await AddonTestUtils.getXPIExports().XPIDatabase.finalize();
+
   fakeIntlReady();
   
   await setEmptyPrefWatchlist();
