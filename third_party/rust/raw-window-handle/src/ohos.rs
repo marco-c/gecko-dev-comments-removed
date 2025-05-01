@@ -1,3 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
@@ -6,9 +22,9 @@ use super::DisplayHandle;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct OrbitalDisplayHandle {}
+pub struct OhosDisplayHandle {}
 
-impl OrbitalDisplayHandle {
+impl OhosDisplayHandle {
     
     
     
@@ -37,23 +53,20 @@ impl DisplayHandle<'static> {
     
     
     
-    pub fn orbital() -> Self {
+    pub fn ohos() -> Self {
         
-        unsafe { Self::borrow_raw(OrbitalDisplayHandle::new().into()) }
+        unsafe { Self::borrow_raw(OhosDisplayHandle::new().into()) }
     }
 }
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct OrbitalWindowHandle {
-    
-    
-    
-    pub window: NonNull<c_void>,
+pub struct OhosNdkWindowHandle {
+    pub native_window: NonNull<c_void>,
 }
 
-impl OrbitalWindowHandle {
+impl OhosNdkWindowHandle {
     
     
     
@@ -68,7 +81,18 @@ impl OrbitalWindowHandle {
     
     
     
-    pub fn new(window: NonNull<c_void>) -> Self {
-        Self { window }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(native_window: NonNull<c_void>) -> Self {
+        Self { native_window }
     }
 }

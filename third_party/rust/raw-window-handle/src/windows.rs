@@ -2,6 +2,8 @@ use core::ffi::c_void;
 use core::num::NonZeroIsize;
 use core::ptr::NonNull;
 
+use super::DisplayHandle;
+
 
 
 
@@ -24,6 +26,26 @@ impl WindowsDisplayHandle {
     }
 }
 
+impl DisplayHandle<'static> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn windows() -> Self {
+        
+        unsafe { Self::borrow_raw(WindowsDisplayHandle::new().into()) }
+    }
+}
+
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,6 +57,10 @@ pub struct Win32WindowHandle {
 }
 
 impl Win32WindowHandle {
+    
+    
+    
+    
     
     
     

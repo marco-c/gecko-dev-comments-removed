@@ -1,6 +1,8 @@
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
+use super::DisplayHandle;
+
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -18,6 +20,26 @@ impl HaikuDisplayHandle {
     
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+impl DisplayHandle<'static> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn haiku() -> Self {
+        
+        unsafe { Self::borrow_raw(HaikuDisplayHandle::new().into()) }
     }
 }
 

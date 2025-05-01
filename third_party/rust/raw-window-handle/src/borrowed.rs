@@ -79,7 +79,7 @@ impl<H: HasDisplayHandle + ?Sized> HasDisplayHandle for alloc::sync::Arc<H> {
 #[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub struct DisplayHandle<'a> {
     raw: RawDisplayHandle,
-    _marker: PhantomData<&'a *const ()>,
+    _marker: PhantomData<&'a ()>,
 }
 
 impl fmt::Debug for DisplayHandle<'_> {
@@ -210,7 +210,7 @@ impl<H: HasWindowHandle + ?Sized> HasWindowHandle for alloc::sync::Arc<H> {
 #[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub struct WindowHandle<'a> {
     raw: RawWindowHandle,
-    _marker: PhantomData<&'a *const ()>,
+    _marker: PhantomData<&'a ()>,
 }
 
 impl fmt::Debug for WindowHandle<'_> {
@@ -280,11 +280,3 @@ impl HasWindowHandle for WindowHandle<'_> {
         Ok(*self)
     }
 }
-
-
-
-
-
-
-
-fn _not_send_or_sync() {}

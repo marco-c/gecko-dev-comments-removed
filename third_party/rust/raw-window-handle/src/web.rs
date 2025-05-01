@@ -1,6 +1,8 @@
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
+use super::DisplayHandle;
+
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -18,6 +20,26 @@ impl WebDisplayHandle {
     
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+impl DisplayHandle<'static> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn web() -> Self {
+        
+        unsafe { Self::borrow_raw(WebDisplayHandle::new().into()) }
     }
 }
 

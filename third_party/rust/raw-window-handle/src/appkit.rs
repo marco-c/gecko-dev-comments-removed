@@ -1,6 +1,8 @@
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
+use super::DisplayHandle;
+
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -20,6 +22,65 @@ impl AppKitDisplayHandle {
         Self {}
     }
 }
+
+impl DisplayHandle<'static> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn appkit() -> Self {
+        
+        unsafe { Self::borrow_raw(AppKitDisplayHandle::new().into()) }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[non_exhaustive]
