@@ -621,6 +621,14 @@ async function testPermissionsView({
   await SpecialPowers.popPrefEnv();
 }
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    
+    
+    set: [["extensions.dataCollectionPermissions.enabled", false]],
+  });
+});
+
 add_task(async function testPermissionsView_MV2_manifestV3disabled() {
   await testPermissionsView({ manifestV3enabled: false, manifest_version: 2 });
 });

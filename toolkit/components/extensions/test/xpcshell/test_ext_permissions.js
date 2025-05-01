@@ -15,7 +15,12 @@ const WITH_INSTALL_PROMPT = [
 ];
 const NO_INSTALL_PROMPT = [["extensions.originControls.grantByDefault", false]];
 
-Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
+
+Services.prefs.setBoolPref(
+  "extensions.dataCollectionPermissions.enabled",
+  false
+);
 
 
 

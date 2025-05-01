@@ -20,6 +20,13 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+
+
+Services.prefs.setBoolPref(
+  "extensions.dataCollectionPermissions.enabled",
+  false
+);
+
 let OptionalPermissions;
 
 add_setup(async () => {
