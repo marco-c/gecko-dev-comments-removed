@@ -2,7 +2,10 @@
 
 
 
-use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
+use nix::{
+  errno::Errno,
+  poll::{poll, PollFd, PollFlags, PollTimeout},
+};
 
 use crate::{errors::IPCError, ignore_eintr, IPCConnector, IPCEvent, IPCListener};
 
@@ -48,8 +51,14 @@ pub fn wait_for_events(
             }
         }
 
-        if revents.contains(PollFlags::POLLHUP) && (index > 0) {
-            events.push(IPCEvent::Disconnect(index - 1));
+        if revents.contains(PollFlags::POLLHUP) {
+            if index > 0 {
+                events.push(IPCEvent::Disconnect(index - 1));
+            } else {
+                
+                
+                return Err(IPCError::System(Errno::EFAULT));
+            }
         }
 
         if !revents.is_empty() {
