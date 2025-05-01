@@ -6141,10 +6141,6 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     
     if (aGridItem.ShouldApplyAutoMinSize(wm, mAxis)) {
       
-      
-      
-      aGridItem.mState[mAxis] |= ItemState::eContentBasedAutoMinSize;
-      
       if (TrackSize::IsDefiniteMaxSizing(sz.mState)) {
         cache.mMinSizeClamp = aFunctions.MaxSizingFor(aRange.mStart)
                                   .AsBreadth()
