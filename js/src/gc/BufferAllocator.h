@@ -294,7 +294,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  MutexData<LargeAllocMap> largeAllocMap;
+  MainThreadOrGCTaskData<LargeAllocMap> largeAllocMap;
 
   
   MainThreadOrGCTaskData<LargeAllocList> largeNurseryAllocsToSweep;
@@ -459,12 +459,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool sweepLargeTenured(LargeBuffer* header);
   void freeLarge(void* alloc);
   bool shrinkLarge(LargeBuffer* header, size_t newBytes);
-  void unmapLarge(LargeBuffer* header, bool isSweeping, AutoLock& lock);
+  void unmapLarge(LargeBuffer* header, bool isSweeping, MaybeLock& lock);
   bool markLargeAlloc(void* alloc);
   bool isLargeAllocMarked(void* alloc);
 
   
-  LargeBuffer* lookupLargeBuffer(void* alloc, const AutoLock& lock);
+  LargeBuffer* lookupLargeBuffer(void* alloc);
+  LargeBuffer* lookupLargeBuffer(void* alloc, MaybeLock& lock);
+  bool needLockToAccessBufferMap() const;
 
   void updateHeapSize(size_t bytes, bool checkThresholds,
                       bool updateRetainedSize);
