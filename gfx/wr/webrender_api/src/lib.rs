@@ -259,6 +259,13 @@ pub struct MinimapData {
   pub root_content_scroll_id: u64
 }
 
+#[repr(C)]
+pub struct FrameReadyParams {
+    pub present: bool,
+    pub render: bool,
+    pub scrolled: bool,
+}
+
 
 pub trait RenderNotifier: Send {
     
@@ -270,7 +277,7 @@ pub trait RenderNotifier: Send {
         composite_needed: bool,
     );
     
-    fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool, frame_publish_id: FramePublishId);
+    fn new_frame_ready(&self, _: DocumentId, publish_id: FramePublishId, params: &FrameReadyParams);
     
     
     
