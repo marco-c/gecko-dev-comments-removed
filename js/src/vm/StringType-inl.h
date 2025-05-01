@@ -404,60 +404,34 @@ inline JSDependentString::JSDependentString(JSLinearString* base, size_t start,
   }
 }
 
-template <JS::ContractBaseChain contract>
-MOZ_ALWAYS_INLINE JSLinearString* JSDependentString::newImpl_(
+MOZ_ALWAYS_INLINE JSLinearString* JSDependentString::new_(
     JSContext* cx, JSLinearString* baseArg, size_t start, size_t length,
     js::gc::Heap heap) {
   
-  JS::Rooted<JSLinearString*> base(cx, baseArg);
-
-  
-  MOZ_ASSERT_IF(base->hasTwoByteChars(),
+  MOZ_ASSERT_IF(baseArg->hasTwoByteChars(),
                 !JSInlineString::lengthFits<char16_t>(length));
-  MOZ_ASSERT_IF(!base->hasTwoByteChars(),
+  MOZ_ASSERT_IF(!baseArg->hasTwoByteChars(),
                 !JSInlineString::lengthFits<JS::Latin1Char>(length));
 
-  if constexpr (contract == JS::ContractBaseChain::Contract) {
-    
-    
-    if (base->isDependent()) {
-      start += base->asDependent().baseOffset();
-      base = base->asDependent().base();
-    }
+  
+
+
+
+  if (baseArg->isDependent()) {
+    start += baseArg->asDependent().baseOffset();
+    baseArg = baseArg->asDependent().base();
   }
 
-  MOZ_ASSERT(start + length <= base->length());
+  MOZ_ASSERT(start + length <= baseArg->length());
 
-  JSDependentString* str;
-  if constexpr (contract == JS::ContractBaseChain::Contract) {
-    return cx->newCell<JSDependentString>(heap, base, start, length);
+  JSDependentString* str =
+      cx->newCell<JSDependentString, js::NoGC>(heap, baseArg, start, length);
+  if (str) {
+    return str;
   }
 
-  str = cx->newCell<JSDependentString>(heap, base, start, length);
-  if (str && base->isDependent() && base->isTenured()) {
-    
-    
-    
-    
-    JSString* rootBase = base;
-    while (rootBase->isDependent()) {
-      rootBase = rootBase->base();
-    }
-    if (!rootBase->isTenured()) {
-      rootBase->setNonDeduplicatable();
-    }
-  }
-
-  return str;
-}
-
-
-inline JSLinearString* JSDependentString::new_(JSContext* cx,
-                                               JSLinearString* base,
-                                               size_t start, size_t length,
-                                               js::gc::Heap heap) {
-  return newImpl_<JS::ContractBaseChain::Contract>(cx, base, start, length,
-                                                   heap);
+  JS::Rooted<JSLinearString*> base(cx, baseArg);
+  return cx->newCell<JSDependentString>(heap, base, start, length);
 }
 
 inline JSLinearString::JSLinearString(const char16_t* chars, size_t length,
@@ -520,17 +494,6 @@ inline JSLinearString* JSDependentString::rootBaseDuringMinorGC() {
     }
   }
   return root;
-}
-
-
-js::gc::StringRelocationOverlay*
-js::gc::StringRelocationOverlay::forwardDependentString(JSString* src,
-                                                        Cell* dst) {
-  MOZ_ASSERT(src->isDependent());
-  MOZ_ASSERT(!src->isForwarded());
-  MOZ_ASSERT(!dst->isForwarded());
-  JSLinearString* origBase = src->asDependent().rootBaseDuringMinorGC();
-  return new (src) StringRelocationOverlay(dst, origBase);
 }
 
 template <js::AllowGC allowGC, typename CharT>

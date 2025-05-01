@@ -79,6 +79,22 @@ inline void JSString::traceChildren(JSTracer* trc) {
     asRope().traceChildren(trc);
   }
 }
+inline void JSString::traceBaseAndRecordOldRoot(JSTracer* trc) {
+  
+  
+  JSLinearString* root = asDependent().rootBaseDuringMinorGC();
+  d.s.u3.base = root;
+  if (!root->isTenured()) {
+    js::TraceManuallyBarrieredEdge(trc, &root, "base");
+    
+    
+    
+
+    if (isTenured() && root->storeBuffer()) {
+      root->storeBuffer()->putWholeCell(this);
+    }
+  }
+}
 template <uint32_t opts>
 void js::GCMarker::eagerlyMarkChildren(JSString* str) {
   if (str->isLinear()) {

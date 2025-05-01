@@ -85,6 +85,17 @@ struct LargeBuffer;
 class StoreBuffer;
 class TenuringTracer;
 
+
+
+
+struct CellSweepSet {
+  UniquePtr<LifoAlloc> storage_;
+  ArenaCellSet* head_ = nullptr;
+
+  
+  void sweep();
+};
+
 }  
 
 class Nursery {
@@ -521,6 +532,7 @@ class Nursery {
 #endif
 
   
+  
   void sweep();
 
   
@@ -720,6 +732,8 @@ class Nursery {
   using ForwardedBufferMap =
       HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>;
   ForwardedBufferMap forwardedBuffers;
+
+  gc::CellSweepSet cellsToSweep;
 
   
   
