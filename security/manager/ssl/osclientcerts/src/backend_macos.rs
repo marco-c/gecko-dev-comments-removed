@@ -16,12 +16,14 @@ use core_foundation::string::*;
 use libloading::{Library, Symbol};
 use pkcs11_bindings::*;
 use rsclientcerts::error::{Error, ErrorType};
-use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign, SlotType};
+use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
 use rsclientcerts::util::*;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::os::raw::c_void;
+use xpcom::interfaces::nsIEventTarget;
+use xpcom::{RefPtr, XpCom};
 
 
 
@@ -34,6 +36,12 @@ pub type SecIdentityRef = *const __SecIdentity;
 declare_TCFType!(SecIdentity, SecIdentityRef);
 impl_TCFType!(SecIdentity, SecIdentityRef, SecIdentityGetTypeID);
 
+
+
+
+
+unsafe impl Send for SecIdentity {}
+
 #[repr(C)]
 pub struct __SecCertificate(c_void);
 pub type SecCertificateRef = *const __SecCertificate;
@@ -45,6 +53,9 @@ pub struct __SecKey(c_void);
 pub type SecKeyRef = *const __SecKey;
 declare_TCFType!(SecKey, SecKeyRef);
 impl_TCFType!(SecKey, SecKeyRef, SecKeyGetTypeID);
+
+
+unsafe impl Send for SecKey {}
 
 #[repr(C)]
 pub struct __SecPolicy(c_void);
@@ -352,17 +363,7 @@ impl Cert {
 }
 
 impl CryptokiObject for Cert {
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        if slot_type != SlotType::Modern {
-            return false;
-        }
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
                 CKA_CLASS => self.class(),
@@ -459,25 +460,32 @@ impl<'a> SignParams<'a> {
         }
 
         
+        if let Ok((digest_oid, hash)) = read_digest_info(data) {
+            let algorithm = unsafe {
+                CFString::wrap_under_create_rule(match digest_oid {
+                    OID_BYTES_SHA_256 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA256,
+                    OID_BYTES_SHA_384 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA384,
+                    OID_BYTES_SHA_512 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA512,
+                    OID_BYTES_SHA_1 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
+                    _ => return Err(error_here!(ErrorType::UnsupportedInput)),
+                })
+            };
+            return Ok(SignParams::RSA(algorithm, hash));
+        }
+
+        
         if data.len() == 36 {
             let algorithm = unsafe {
                 CFString::wrap_under_get_rule(kSecKeyAlgorithmRSASignatureDigestPKCS1v15Raw)
             };
             return Ok(SignParams::RSA(algorithm, data));
         }
-        
-        let (digest_oid, hash) = read_digest_info(data)?;
-        let algorithm = unsafe {
-            CFString::wrap_under_create_rule(match digest_oid {
-                OID_BYTES_SHA_256 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA256,
-                OID_BYTES_SHA_384 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA384,
-                OID_BYTES_SHA_512 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA512,
-                OID_BYTES_SHA_1 => kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
-                _ => return Err(error_here!(ErrorType::UnsupportedInput)),
-            })
-        };
 
-        Ok(SignParams::RSA(algorithm, hash))
+        
+        Ok(SignParams::RSA(
+            unsafe { CFString::wrap_under_create_rule(kSecKeyAlgorithmRSASignatureRaw) },
+            data,
+        ))
     }
 
     fn get_algorithm(&self) -> SecKeyAlgorithm {
@@ -495,8 +503,141 @@ impl<'a> SignParams<'a> {
     }
 }
 
+
+struct ThreadSpecificHandles {
+    
+    thread: RefPtr<nsIEventTarget>,
+    
+    identity: Option<SecIdentity>,
+    
+    key: Option<SecKey>,
+}
+
+impl ThreadSpecificHandles {
+    fn new(identity: SecIdentity, thread: &nsIEventTarget) -> ThreadSpecificHandles {
+        ThreadSpecificHandles {
+            thread: RefPtr::new(thread),
+            identity: Some(identity),
+            key: None,
+        }
+    }
+
+    fn sign(
+        &mut self,
+        key_type_enum: KeyType,
+        maybe_modulus: Option<Vec<u8>>,
+        data: &[u8],
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+    ) -> Result<Vec<u8>, Error> {
+        let Some(identity) = self.identity.take() else {
+            return Err(error_here!(ErrorType::LibraryFailure));
+        };
+        let mut maybe_key = self.key.take();
+        let thread = self.thread.clone();
+        let data = data.to_vec();
+        let params = params.clone();
+        let task = moz_task::spawn_onto("sign", &thread, async move {
+            let result = sign_internal(&identity, &mut maybe_key, key_type_enum, &data, &params);
+            if result.is_ok() {
+                return (result, identity, maybe_key);
+            }
+            
+            
+            let _ = maybe_key.take();
+            let result = sign_internal(&identity, &mut maybe_key, key_type_enum, &data, &params);
+            
+            if result.is_ok() {
+                return (result, identity, maybe_key);
+            }
+            
+            
+            
+            let Some(params) = params.as_ref() else {
+                return (result, identity, maybe_key);
+            };
+            
+            let Some(modulus) = maybe_modulus.as_ref() else {
+                return (
+                    Err(error_here!(ErrorType::LibraryFailure)),
+                    identity,
+                    maybe_key,
+                );
+            };
+            let emsa_pss_encoded =
+                match emsa_pss_encode(&data, modulus_bit_length(modulus) - 1, &params) {
+                    Ok(emsa_pss_encoded) => emsa_pss_encoded,
+                    Err(e) => return (Err(e), identity, maybe_key),
+                };
+            (
+                sign_internal(
+                    &identity,
+                    &mut maybe_key,
+                    key_type_enum,
+                    &emsa_pss_encoded,
+                    &None,
+                ),
+                identity,
+                maybe_key,
+            )
+        });
+        let (signature_result, identity, mut maybe_key) = futures_executor::block_on(task);
+        self.identity = Some(identity);
+        self.key = maybe_key;
+        signature_result
+    }
+}
+
+fn sign_internal(
+    identity: &SecIdentity,
+    maybe_key: &mut Option<SecKey>,
+    key_type_enum: KeyType,
+    data: &[u8],
+    params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+) -> Result<Vec<u8>, Error> {
+    
+    
+    
+    
+    if maybe_key.is_none() {
+        let _ = maybe_key.replace(sec_identity_copy_private_key(identity)?);
+    }
+    let Some(key) = maybe_key.as_ref() else {
+        return Err(error_here!(ErrorType::LibraryFailure));
+    };
+    let sign_params = SignParams::new(key_type_enum, data, params)?;
+    let signing_algorithm = sign_params.get_algorithm();
+    let data_to_sign = CFData::from_buffer(sign_params.get_data_to_sign());
+    let signature = sec_key_create_signature(key, signing_algorithm, &data_to_sign)?;
+    let signature_value = match key_type_enum {
+        KeyType::EC(coordinate_width) => {
+            
+            
+            
+            
+            der_ec_sig_to_raw(signature.bytes(), coordinate_width)?
+        }
+        KeyType::RSA => signature.bytes().to_vec(),
+    };
+    Ok(signature_value)
+}
+
+impl Drop for ThreadSpecificHandles {
+    fn drop(&mut self) {
+        
+        let identity = self.identity.take();
+        let key = self.key.take();
+        let thread = self.thread.clone();
+        let task = moz_task::spawn_onto("drop", &thread, async move {
+            
+            drop(key);
+            drop(identity);
+        });
+        futures_executor::block_on(task)
+    }
+}
+
 pub struct Key {
-    identity: SecIdentity,
+    handles: ThreadSpecificHandles,
     class: Vec<u8>,
     token: Vec<u8>,
     id: Vec<u8>,
@@ -505,11 +646,10 @@ pub struct Key {
     modulus: Option<Vec<u8>>,
     ec_params: Option<Vec<u8>>,
     key_type_enum: KeyType,
-    key_handle: Option<SecKey>,
 }
 
 impl Key {
-    fn new(identity: &SecIdentity) -> Result<Key, Error> {
+    fn new(identity: &SecIdentity, thread: &nsIEventTarget) -> Result<Key, Error> {
         let certificate = sec_identity_copy_certificate(identity)?;
         let der = sec_certificate_copy_data(&certificate)?;
         let id = Sha256::digest(der.bytes()).to_vec();
@@ -549,7 +689,7 @@ impl Key {
             };
 
         Ok(Key {
-            identity: identity.clone(),
+            handles: ThreadSpecificHandles::new(identity.clone(), thread),
             class: serialize_uint(CKO_PRIVATE_KEY)?,
             token: serialize_uint(CK_TRUE)?,
             id,
@@ -558,7 +698,6 @@ impl Key {
             modulus,
             ec_params,
             key_type_enum,
-            key_handle: None,
         })
     }
 
@@ -595,55 +734,10 @@ impl Key {
             None => None,
         }
     }
-
-    fn sign_internal(
-        &mut self,
-        data: &[u8],
-        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
-    ) -> Result<Vec<u8>, Error> {
-        
-        
-        
-        
-        if self.key_handle.is_none() {
-            let _ = self
-                .key_handle
-                .replace(sec_identity_copy_private_key(&self.identity)?);
-        }
-        let key = match &self.key_handle {
-            Some(key) => key,
-            None => return Err(error_here!(ErrorType::LibraryFailure)),
-        };
-        let sign_params = SignParams::new(self.key_type_enum, data, params)?;
-        let signing_algorithm = sign_params.get_algorithm();
-        let data_to_sign = CFData::from_buffer(sign_params.get_data_to_sign());
-        let signature = sec_key_create_signature(key, signing_algorithm, &data_to_sign)?;
-        let signature_value = match self.key_type_enum {
-            KeyType::EC(coordinate_width) => {
-                
-                
-                
-                
-                der_ec_sig_to_raw(signature.bytes(), coordinate_width)?
-            }
-            KeyType::RSA => signature.bytes().to_vec(),
-        };
-        Ok(signature_value)
-    }
 }
 
 impl CryptokiObject for Key {
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        if slot_type != SlotType::Modern {
-            return false;
-        }
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
                 CKA_CLASS => self.class(),
@@ -706,14 +800,8 @@ impl Sign for Key {
         data: &[u8],
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<Vec<u8>, Error> {
-        let result = self.sign_internal(data, params);
-        if result.is_ok() {
-            return result;
-        }
-        
-        
-        let _ = self.key_handle.take();
-        self.sign_internal(data, params)
+        self.handles
+            .sign(self.key_type_enum, self.modulus.clone(), data, params)
     }
 }
 
@@ -780,59 +868,84 @@ fn get_issuers(identity: &SecIdentity) -> Result<Vec<SecCertificate>, Error> {
     Ok(certificates)
 }
 
-pub struct Backend {}
+pub struct Backend {
+    
+    
+    thread: RefPtr<nsIEventTarget>,
+}
+
+impl Backend {
+    pub fn new() -> Result<Backend, Error> {
+        let thread = moz_task::create_thread("osclientcerts").map_err(|nsresult| {
+            error_here!(ErrorType::LibraryFailure, nsresult.error_name().to_string())
+        })?;
+        Ok(Backend {
+            thread: thread
+                .query_interface::<nsIEventTarget>()
+                .ok_or(error_here!(ErrorType::LibraryFailure))?,
+        })
+    }
+}
 
 impl ClientCertsBackend for Backend {
     type Cert = Cert;
     type Key = Key;
 
     fn find_objects(&self) -> Result<(Vec<Cert>, Vec<Key>), Error> {
-        let mut certs = Vec::new();
-        let mut keys = Vec::new();
-        let identities = unsafe {
-            let class_key = CFString::wrap_under_get_rule(kSecClass);
-            let class_value = CFString::wrap_under_get_rule(kSecClassIdentity);
-            let return_ref_key = CFString::wrap_under_get_rule(kSecReturnRef);
-            let return_ref_value = CFBoolean::wrap_under_get_rule(kCFBooleanTrue);
-            let match_key = CFString::wrap_under_get_rule(kSecMatchLimit);
-            let match_value = CFString::wrap_under_get_rule(kSecMatchLimitAll);
-            let vals = vec![
-                (class_key.as_CFType(), class_value.as_CFType()),
-                (return_ref_key.as_CFType(), return_ref_value.as_CFType()),
-                (match_key.as_CFType(), match_value.as_CFType()),
-            ];
-            let dict = CFDictionary::from_CFType_pairs(&vals);
-            let mut result = std::ptr::null();
-            let status = SecItemCopyMatching(dict.as_CFTypeRef() as CFDictionaryRef, &mut result);
-            if status == errSecItemNotFound {
-                return Ok((certs, keys));
-            }
-            if status != errSecSuccess {
-                return Err(error_here!(ErrorType::ExternalError, status.to_string()));
-            }
-            if result.is_null() {
-                return Err(error_here!(ErrorType::ExternalError));
-            }
-            CFArray::<SecIdentityRef>::wrap_under_create_rule(result as CFArrayRef)
-        };
-        for identity in identities.get_all_values().iter() {
-            let identity = unsafe { SecIdentity::wrap_under_get_rule(*identity as SecIdentityRef) };
-            let cert = Cert::new_from_identity(&identity);
-            let key = Key::new(&identity);
-            if let (Ok(cert), Ok(key)) = (cert, key) {
-                certs.push(cert);
-                keys.push(key);
-            } else {
-                continue;
-            }
-            if let Ok(issuers) = get_issuers(&identity) {
-                for issuer in issuers {
-                    if let Ok(cert) = Cert::new_from_certificate(&issuer) {
-                        certs.push(cert);
-                    }
+        let thread = self.thread.clone();
+        let task = moz_task::spawn_onto("find_objects", &self.thread, async move {
+            find_objects(&thread)
+        });
+        futures_executor::block_on(task)
+    }
+}
+
+fn find_objects(thread: &nsIEventTarget) -> Result<(Vec<Cert>, Vec<Key>), Error> {
+    let mut certs = Vec::new();
+    let mut keys = Vec::new();
+    let identities = unsafe {
+        let class_key = CFString::wrap_under_get_rule(kSecClass);
+        let class_value = CFString::wrap_under_get_rule(kSecClassIdentity);
+        let return_ref_key = CFString::wrap_under_get_rule(kSecReturnRef);
+        let return_ref_value = CFBoolean::wrap_under_get_rule(kCFBooleanTrue);
+        let match_key = CFString::wrap_under_get_rule(kSecMatchLimit);
+        let match_value = CFString::wrap_under_get_rule(kSecMatchLimitAll);
+        let vals = vec![
+            (class_key.as_CFType(), class_value.as_CFType()),
+            (return_ref_key.as_CFType(), return_ref_value.as_CFType()),
+            (match_key.as_CFType(), match_value.as_CFType()),
+        ];
+        let dict = CFDictionary::from_CFType_pairs(&vals);
+        let mut result = std::ptr::null();
+        let status = SecItemCopyMatching(dict.as_CFTypeRef() as CFDictionaryRef, &mut result);
+        if status == errSecItemNotFound {
+            return Ok((certs, keys));
+        }
+        if status != errSecSuccess {
+            return Err(error_here!(ErrorType::ExternalError, status.to_string()));
+        }
+        if result.is_null() {
+            return Err(error_here!(ErrorType::ExternalError));
+        }
+        CFArray::<SecIdentityRef>::wrap_under_create_rule(result as CFArrayRef)
+    };
+    for identity in identities.get_all_values().iter() {
+        let identity = unsafe { SecIdentity::wrap_under_get_rule(*identity as SecIdentityRef) };
+        let cert = Cert::new_from_identity(&identity);
+        let key = Key::new(&identity, thread);
+        if let (Ok(cert), Ok(key)) = (cert, key) {
+            certs.push(cert);
+            keys.push(key);
+        } else {
+            continue;
+        }
+        if let Ok(issuers) = get_issuers(&identity) {
+            for issuer in issuers {
+                if let Ok(cert) = Cert::new_from_certificate(&issuer) {
+                    certs.push(cert);
                 }
             }
         }
-        Ok((certs, keys))
     }
+    Ok((certs, keys))
 }

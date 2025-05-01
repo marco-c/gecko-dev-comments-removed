@@ -3,16 +3,12 @@
 
 
 
-use digest::{Digest, DynDigest};
 use pkcs11_bindings::*;
-use rand::rngs::OsRng;
-use rand::RngCore;
 use rsclientcerts::error::{Error, ErrorType};
-use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign, SlotType};
+use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
 use rsclientcerts::util::*;
-use std::convert::TryInto;
+use sha2::{Digest, Sha256};
 use std::ffi::{c_char, c_void, CString};
-use std::iter::zip;
 
 type FindObjectsCallback = Option<
     unsafe extern "C" fn(
@@ -21,7 +17,6 @@ type FindObjectsCallback = Option<
         data: *const u8,
         extra_len: usize,
         extra: *const u8,
-        slot_type: u32,
         ctx: *mut c_void,
     ),
 >;
@@ -89,13 +84,12 @@ pub struct Cert {
     issuer: Vec<u8>,
     serial_number: Vec<u8>,
     subject: Vec<u8>,
-    slot_type: SlotType,
 }
 
 impl Cert {
-    fn new(der: &[u8], slot_type: SlotType) -> Result<Cert, Error> {
+    fn new(der: &[u8]) -> Result<Cert, Error> {
         let (serial_number, issuer, subject) = read_encoded_certificate_identifiers(der)?;
-        let id = sha2::Sha256::digest(der).to_vec();
+        let id = Sha256::digest(der).to_vec();
         Ok(Cert {
             class: serialize_uint(CKO_CERTIFICATE)?,
             token: serialize_uint(CK_TRUE)?,
@@ -105,7 +99,6 @@ impl Cert {
             issuer,
             serial_number,
             subject,
-            slot_type,
         })
     }
 
@@ -143,10 +136,7 @@ impl Cert {
 }
 
 impl CryptokiObject for Cert {
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        if self.slot_type != slot_type {
-            return false;
-        }
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
                 CKA_CLASS => self.class(),
@@ -191,17 +181,11 @@ pub struct Key {
     key_type: Vec<u8>,
     modulus: Option<Vec<u8>>,
     ec_params: Option<Vec<u8>>,
-    slot_type: SlotType,
 }
 
 impl Key {
-    fn new(
-        modulus: Option<&[u8]>,
-        ec_params: Option<&[u8]>,
-        cert: &[u8],
-        slot_type: SlotType,
-    ) -> Result<Key, Error> {
-        let id = sha2::Sha256::digest(cert).to_vec();
+    fn new(modulus: Option<&[u8]>, ec_params: Option<&[u8]>, cert: &[u8]) -> Result<Key, Error> {
+        let id = Sha256::digest(cert).to_vec();
         let key_type = if modulus.is_some() { CKK_RSA } else { CKK_EC };
         
         
@@ -218,7 +202,6 @@ impl Key {
             key_type: serialize_uint(key_type)?,
             modulus: modulus.map(|b| b.to_vec()),
             ec_params,
-            slot_type,
         })
     }
 
@@ -255,33 +238,10 @@ impl Key {
             None => None,
         }
     }
-
-    fn modulus_bit_length(&self) -> Result<usize, Error> {
-        
-        let Some(modulus) = self.modulus.as_ref() else {
-            return Err(error_here!(ErrorType::LibraryFailure));
-        };
-        let mut bit_length = modulus.len() * 8;
-        for byte in modulus {
-            if *byte != 0 {
-                let leading_zeros: usize = byte
-                    .leading_zeros()
-                    .try_into()
-                    .map_err(|_| error_here!(ErrorType::LibraryFailure))?;
-                bit_length -= leading_zeros;
-                return Ok(bit_length);
-            }
-            bit_length -= 8;
-        }
-        Ok(bit_length)
-    }
 }
 
 impl CryptokiObject for Key {
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        if self.slot_type != slot_type {
-            return false;
-        }
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
                 CKA_CLASS => self.class(),
@@ -326,130 +286,6 @@ impl CryptokiObject for Key {
     }
 }
 
-fn make_hasher(params: &CK_RSA_PKCS_PSS_PARAMS) -> Result<Box<dyn DynDigest>, Error> {
-    match params.hashAlg {
-        CKM_SHA256 => Ok(Box::new(sha2::Sha256::new())),
-        CKM_SHA384 => Ok(Box::new(sha2::Sha384::new())),
-        CKM_SHA512 => Ok(Box::new(sha2::Sha512::new())),
-        _ => Err(error_here!(ErrorType::LibraryFailure)),
-    }
-}
-
-
-fn mgf(
-    mgf_seed: &[u8],
-    mask_len: usize,
-    h_len: usize,
-    params: &CK_RSA_PKCS_PSS_PARAMS,
-) -> Result<Vec<u8>, Error> {
-    
-    
-    
-    
-    if mask_len > 1 << 30 {
-        return Err(error_here!(ErrorType::LibraryFailure));
-    }
-    
-    let mut t = Vec::with_capacity(mask_len);
-    
-    
-    for counter in 0..mask_len.div_ceil(h_len) {
-        
-        
-        
-        let c = u32::to_be_bytes(counter.try_into().unwrap());
-        
-        
-        let mut hasher = make_hasher(params)?;
-        hasher.update(mgf_seed);
-        hasher.update(&c);
-        t.extend_from_slice(&mut hasher.finalize());
-    }
-    
-    t.truncate(mask_len);
-    Ok(t)
-}
-
-
-
-
-
-fn emsa_pss_encode(
-    m_hash: &[u8],
-    em_bits: usize,
-    params: &CK_RSA_PKCS_PSS_PARAMS,
-) -> Result<Vec<u8>, Error> {
-    let em_len = em_bits.div_ceil(8);
-    let s_len: usize = params
-        .sLen
-        .try_into()
-        .map_err(|_| error_here!(ErrorType::LibraryFailure))?;
-
-    
-    
-    
-    
-
-    
-
-    
-    if em_len < m_hash.len() + s_len + 2 {
-        return Err(error_here!(ErrorType::LibraryFailure));
-    }
-
-    
-    
-    let salt = {
-        let mut salt = vec![0u8; s_len];
-        OsRng.fill_bytes(&mut salt);
-        salt
-    };
-
-    
-    
-    
-    
-    let mut hasher = make_hasher(params)?;
-    let h_len = hasher.output_size();
-    hasher.update(&[0, 0, 0, 0, 0, 0, 0, 0]);
-    hasher.update(m_hash);
-    hasher.update(&salt);
-    let h = hasher.finalize().to_vec();
-
-    
-    
-    
-    
-    
-
-    
-    let mut db_mask = mgf(&h, em_len - h_len - 1, h_len, params)?;
-
-    
-    
-    
-    let salt_index = db_mask.len() - s_len;
-    db_mask[salt_index - 1] ^= 1;
-    for (db_mask_byte, salt_byte) in zip(&mut db_mask[salt_index..], &salt) {
-        *db_mask_byte ^= salt_byte;
-    }
-    let mut masked_db = db_mask;
-
-    
-    
-    
-    let bit_diff: u32 = ((8 * em_len) - em_bits).try_into().unwrap();
-    
-    masked_db[0] &= 0xffu8.checked_shr(bit_diff).unwrap();
-
-    
-    let mut em = masked_db;
-    em.extend_from_slice(&h);
-    em.push(0xbc);
-
-    Ok(em)
-}
-
 fn new_cstring(val: &str) -> Result<CString, Error> {
     CString::new(val).map_err(|_| error_here!(ErrorType::LibraryFailure))
 }
@@ -472,10 +308,16 @@ impl Sign for Key {
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<Vec<u8>, Error> {
         let (data, algorithm) = match params {
-            Some(params) => (
-                emsa_pss_encode(data, self.modulus_bit_length()? - 1, &params)?,
-                new_cstring("raw")?,
-            ),
+            Some(params) => {
+                
+                let Some(modulus) = self.modulus.as_ref() else {
+                    return Err(error_here!(ErrorType::LibraryFailure));
+                };
+                (
+                    emsa_pss_encode(data, modulus_bit_length(modulus) - 1, &params)?,
+                    new_cstring("raw")?,
+                )
+            }
             None if self.modulus.is_some() => (data.to_vec(), new_cstring("NoneWithRSA")?),
             None if self.ec_params.is_some() => (data.to_vec(), new_cstring("NoneWithECDSA")?),
             _ => return Err(error_here!(ErrorType::LibraryFailure)),
@@ -521,7 +363,6 @@ unsafe extern "C" fn find_objects_callback(
     data: *const u8,
     extra_len: usize,
     extra: *const u8,
-    slot_type: u32,
     ctx: *mut c_void,
 ) {
     let data = if data_len == 0 {
@@ -534,22 +375,17 @@ unsafe extern "C" fn find_objects_callback(
     } else {
         std::slice::from_raw_parts(extra, extra_len)
     };
-    let slot_type = match slot_type {
-        1 => SlotType::Modern,
-        2 => SlotType::Legacy,
-        _ => return,
-    };
     let find_objects_context: &mut FindObjectsContext = std::mem::transmute(ctx);
     match typ {
-        1 => match Cert::new(data, slot_type) {
+        1 => match Cert::new(data) {
             Ok(cert) => find_objects_context.certs.push(cert),
             Err(_) => {}
         },
-        2 => match Key::new(Some(data), None, extra, slot_type) {
+        2 => match Key::new(Some(data), None, extra) {
             Ok(key) => find_objects_context.keys.push(key),
             Err(_) => {}
         },
-        3 => match Key::new(None, Some(data), extra, slot_type) {
+        3 => match Key::new(None, Some(data), extra) {
             Ok(key) => find_objects_context.keys.push(key),
             Err(_) => {}
         },
@@ -572,6 +408,12 @@ impl FindObjectsContext {
 }
 
 pub struct Backend {}
+
+impl Backend {
+    pub fn new() -> Result<Backend, Error> {
+        Ok(Backend {})
+    }
+}
 
 impl ClientCertsBackend for Backend {
     type Cert = Cert;
