@@ -32,14 +32,45 @@ def set_component_attribute(config, tasks):
 @transforms.add
 def define_ui_test_command_line(config, tasks):
     for task in tasks:
+        component = task["attributes"]["component"]
+        device_type = "arm"  
+
+        apk_app, apk_test = None, None
+
+        if component == "samples-browser":
+            
+            apk_app = "./samples/browser/build/outputs/apk/gecko/debug/samples-browser-gecko-debug.apk"
+            apk_test = "./samples/browser/build/outputs/apk/androidTest/gecko/debug/samples-browser-gecko-debug-androidTest.apk"
+
+        elif component.startswith("samples-"):
+            
+            sample = component.replace("samples-", "")
+            apk_app = (
+                f"./samples/{sample}/build/outputs/apk/debug/samples-{sample}-debug.apk"
+            )
+            apk_test = f"./samples/{sample}/build/outputs/apk/androidTest/debug/samples-{sample}-debug-androidTest.apk"
+
+        elif "-" in component:
+            
+            category, submodule = component.split("-", 1)
+            apk_app = "./samples/browser/build/outputs/apk/gecko/debug/samples-browser-gecko-debug.apk"
+            apk_test = f"./components/{category}/{submodule}/build/outputs/apk/androidTest/debug/{component}-debug-androidTest.apk"
+
+        else:
+            
+            apk_app = "./samples/browser/build/outputs/apk/gecko/debug/samples-browser-gecko-debug.apk"
+            apk_test = f"./components/{component}/engine-gecko/build/outputs/apk/androidTest/debug/browser-engine-gecko-debug-androidTest.apk"
+
         run = task.setdefault("run", {})
         post_gradlew = run.setdefault("post-gradlew", [])
         post_gradlew.append(
             [
-                "automation/taskcluster/androidTest/ui-test.sh",
-                task["attributes"]["component"],
-                "arm",
-                "1",
+                "python3",
+                "../../../taskcluster/scripts/tests/test-lab.py",
+                device_type,
+                apk_app,
+                "--apk_test",
+                apk_test,
             ]
         )
 
