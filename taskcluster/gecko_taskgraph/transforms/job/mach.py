@@ -26,6 +26,8 @@ mach_schema = Schema(
         
         Required("comm-checkout"): bool,
         
+        Optional("prefix-env"): {str: str},
+        
         Optional("workdir"): str,
         
         Optional("use-caches"): Any(bool, [str]),
@@ -64,6 +66,12 @@ def configure_mach(config, job, taskdesc):
             pass
 
         additional_prefix.append(python)
+
+    prefix_env = run.get("prefix-env")
+    if prefix_env:
+        del run["prefix-env"]
+        for name, prefix in prefix_env.items():
+            additional_prefix.append(f"{name}={prefix}${name}")
 
     command_prefix = " ".join(additional_prefix + ["./mach "])
 
