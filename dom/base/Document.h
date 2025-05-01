@@ -359,10 +359,9 @@ enum class DeprecatedOperations : uint16_t {
 #undef DEPRECATED_OPERATION
 
 class ExternalResourceMap {
- public:
   using SubDocEnumFunc = FunctionRef<CallState(Document&)>;
-  using SubDocTestFunc = FunctionRef<bool(const Document* aDocument)>;
 
+ public:
   
 
 
@@ -403,11 +402,7 @@ class ExternalResourceMap {
 
 
 
-  void EnumerateResources(SubDocEnumFunc aCallback) const;
-
-  
-  void CollectDescendantDocuments(nsTArray<RefPtr<Document>>& aDocs,
-                                  SubDocTestFunc) const;
+  void EnumerateResources(SubDocEnumFunc aCallback);
 
   
 
@@ -2327,19 +2322,16 @@ class Document : public nsINode,
 
 
 
-  using SubDocEnumFunc = ExternalResourceMap::SubDocEnumFunc;
+  using SubDocEnumFunc = FunctionRef<CallState(Document&)>;
   void EnumerateSubDocuments(SubDocEnumFunc aCallback);
 
   
 
 
 
-
-
-  using SubDocTestFunc = ExternalResourceMap::SubDocTestFunc;
-  enum class IncludeSubResources : bool { No, Yes };
+  using nsDocTestFunc = mozilla::FunctionRef<bool(const Document* aDocument)>;
   void CollectDescendantDocuments(nsTArray<RefPtr<Document>>& aDescendants,
-                                  IncludeSubResources, SubDocTestFunc) const;
+                                  nsDocTestFunc aCallback) const;
 
   
 
@@ -2659,7 +2651,7 @@ class Document : public nsINode,
 
 
 
-  void EnumerateExternalResources(SubDocEnumFunc aCallback) const;
+  void EnumerateExternalResources(SubDocEnumFunc aCallback);
 
   dom::ExternalResourceMap& ExternalResourceMap() {
     return mExternalResourceMap;

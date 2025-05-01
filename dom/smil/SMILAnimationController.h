@@ -16,6 +16,7 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
+#include "nsRefreshObservers.h"
 
 class nsRefreshDriver;
 
@@ -39,11 +40,10 @@ class SVGAnimationElement;
 
 
 
-class SMILAnimationController final : public SMILTimeContainer {
+class SMILAnimationController final : public SMILTimeContainer,
+                                      public nsARefreshObserver {
  public:
   explicit SMILAnimationController(mozilla::dom::Document* aDoc);
-
-  NS_INLINE_DECL_REFCOUNTING(SMILAnimationController)
 
   using DiscardArray = nsTObserverArray<RefPtr<dom::Element>>;
 
@@ -57,8 +57,10 @@ class SMILAnimationController final : public SMILTimeContainer {
   SMILTime GetParentTime() const override;
 
   
-  nsRefreshDriver* GetRefreshDriver();
-  void WillRefresh(mozilla::TimeStamp aTime);
+  NS_IMETHOD_(MozExternalRefCountType) AddRef() override;
+  NS_IMETHOD_(MozExternalRefCountType) Release() override;
+
+  void WillRefresh(mozilla::TimeStamp aTime) override;
 
   
   void RegisterAnimationElement(
@@ -95,6 +97,10 @@ class SMILAnimationController final : public SMILTimeContainer {
   void Unlink();
 
   
+  void NotifyRefreshDriverCreated(nsRefreshDriver* aRefreshDriver);
+  void NotifyRefreshDriverDestroying(nsRefreshDriver* aRefreshDriver);
+
+  
   bool HasRegisteredAnimations() const {
     return mAnimationElementTable.Count() != 0;
   }
@@ -116,8 +122,16 @@ class SMILAnimationController final : public SMILTimeContainer {
   using AnimationElementHashtable = nsTHashtable<AnimationElementPtrKey>;
 
   
+  nsRefreshDriver* GetRefreshDriver();
+
+  
   void UpdateSampling();
   bool ShouldSample() const;
+
+  void StopSampling(nsRefreshDriver* aRefreshDriver);
+
+  
+  void MaybeStartSampling(nsRefreshDriver* aRefreshDriver);
 
   
   void DoSample() override;
@@ -146,6 +160,8 @@ class SMILAnimationController final : public SMILTimeContainer {
   void FlagDocumentNeedsFlush();
 
   
+  nsAutoRefCnt mRefCnt;
+  NS_DECL_OWNINGTHREAD
 
   AnimationElementHashtable mAnimationElementTable;
   TimeContainerHashtable mChildContainerTable;
@@ -174,11 +190,10 @@ class SMILAnimationController final : public SMILTimeContainer {
   bool mRunningSample = false;
 
   
-  bool mMightHavePendingStyleUpdates = false;
+  bool mRegisteredWithRefreshDriver = false;
 
   
-  
-  bool mIsSampling = false;
+  bool mMightHavePendingStyleUpdates = false;
 
   
   

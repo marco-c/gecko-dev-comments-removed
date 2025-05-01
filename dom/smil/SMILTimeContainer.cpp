@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SMILTimeContainer.h"
 
@@ -36,7 +36,7 @@ SMILTimeContainer::~SMILTimeContainer() {
 
 SMILTimeValue SMILTimeContainer::ContainerToParentTime(
     SMILTime aContainerTime) const {
-  
+  // If we're paused, then future times are indefinite
   if (IsPaused() && aContainerTime > mCurrentTime)
     return SMILTimeValue::Indefinite();
 
@@ -45,7 +45,7 @@ SMILTimeValue SMILTimeContainer::ContainerToParentTime(
 
 SMILTimeValue SMILTimeContainer::ParentToContainerTime(
     SMILTime aParentTime) const {
-  
+  // If we're paused, then any time after when we paused is indefinite
   if (IsPaused() && aParentTime > mPauseStart)
     return SMILTimeValue::Indefinite();
 
@@ -58,12 +58,12 @@ void SMILTimeContainer::Begin() {
     mNeedsPauseSample = true;
   }
 
-  
-  
-  
-  
-  
-  
+  // This is a little bit complicated here. Ideally we'd just like to call
+  // Sample() and force an initial sample but this turns out to be a bad idea
+  // because this may mean that NeedsSample() no longer reports true and so when
+  // we come to the first real sample our parent will skip us over altogether.
+  // So we force the time to be updated and adopt the policy to never call
+  // Sample() ourselves but to always leave that to our parent or client.
 
   UpdateCurrentTime();
 }
@@ -97,26 +97,26 @@ void SMILTimeContainer::Resume(uint32_t aType) {
 }
 
 SMILTime SMILTimeContainer::GetCurrentTimeAsSMILTime() const {
-  
-  
-  
-  
-  
+  // The following behaviour is consistent with:
+  // http://www.w3.org/2003/01/REC-SVG11-20030114-errata
+  //  #getCurrentTime_setCurrentTime_undefined_before_document_timeline_begin
+  // which says that if GetCurrentTime is called before the document timeline
+  // has begun we should just return 0.
   if (IsPausedByType(PAUSE_BEGIN)) return 0L;
 
   return mCurrentTime;
 }
 
 void SMILTimeContainer::SetCurrentTime(SMILTime aSeekTo) {
-  
-  
+  // SVG 1.1 doesn't specify what to do for negative times so we adopt SVGT1.2's
+  // behaviour of clamping negative times to 0.
   aSeekTo = std::max<SMILTime>(0, aSeekTo);
 
-  
-  
-  
-  
-  
+  // The following behaviour is consistent with:
+  // http://www.w3.org/2003/01/REC-SVG11-20030114-errata
+  //  #getCurrentTime_setCurrentTime_undefined_before_document_timeline_begin
+  // which says that if SetCurrentTime is called before the document timeline
+  // has begun we should still adjust the offset.
   SMILTime parentTime = GetParentTime();
   mParentOffset = parentTime - aSeekTo;
   mIsSeeking = true;
@@ -127,13 +127,13 @@ void SMILTimeContainer::SetCurrentTime(SMILTime aSeekTo) {
   }
 
   if (aSeekTo < mCurrentTime) {
-    
+    // Backwards seek
     mNeedsRewind = true;
     ClearMilestones();
   }
 
-  
-  
+  // Force an update to the current time in case we get a call to GetCurrentTime
+  // before another call to Sample().
   UpdateCurrentTime();
 
   NotifyTimeChange();
@@ -155,9 +155,7 @@ void SMILTimeContainer::SyncPauseTime() {
 }
 
 void SMILTimeContainer::Sample() {
-  if (!NeedsSample()) {
-    return;
-  }
+  if (!NeedsSample()) return;
 
   UpdateCurrentTime();
   DoSample();
@@ -168,12 +166,12 @@ void SMILTimeContainer::Sample() {
 nsresult SMILTimeContainer::SetParent(SMILTimeContainer* aParent) {
   if (mParent) {
     mParent->RemoveChild(*this);
-    
-    
-    
-    
-    
-    
+    // When we're not attached to a parent time container, GetParentTime() will
+    // return 0. We need to adjust our pause state information to be relative to
+    // this new time base.
+    // Note that since "current time = parent time - parent offset" setting the
+    // parent offset and pause start as follows preserves our current time even
+    // while parent time = 0.
     mParentOffset = -mCurrentTime;
     mPauseStart = 0L;
   }
@@ -191,10 +189,10 @@ nsresult SMILTimeContainer::SetParent(SMILTimeContainer* aParent) {
 void SMILTimeContainer::AddMilestone(
     const SMILMilestone& aMilestone,
     mozilla::dom::SVGAnimationElement& aElement) {
-  
-  
-  
-  
+  // We record the milestone time and store it along with the element but this
+  // time may change (e.g. if attributes are changed on the timed element in
+  // between samples). If this happens, then we may do an unecessary sample
+  // but that's pretty cheap.
   MOZ_ASSERT(!mHoldingEntries);
   mMilestoneEntries.Push(MilestoneEntry(aMilestone, aElement));
 }
@@ -274,19 +272,19 @@ void SMILTimeContainer::UpdateCurrentTime() {
 }
 
 void SMILTimeContainer::NotifyTimeChange() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Called when the container time is changed with respect to the document
+  // time. When this happens time dependencies in other time containers need to
+  // re-resolve their times because begin and end times are stored in container
+  // time.
+  //
+  // To get the list of timed elements with dependencies we simply re-use the
+  // milestone elements. This is because any timed element with dependents and
+  // with significant transitions yet to fire should have their next milestone
+  // registered. Other timed elements don't matter.
 
-  
-  
-  
+  // Copy the timed elements to a separate array before calling
+  // HandleContainerTimeChange on each of them in case doing so mutates
+  // mMilestoneEntries.
   nsTArray<RefPtr<mozilla::dom::SVGAnimationElement>> elems;
 
   {
@@ -305,4 +303,4 @@ void SMILTimeContainer::NotifyTimeChange() {
   }
 }
 
-}  
+}  // namespace mozilla

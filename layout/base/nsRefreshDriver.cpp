@@ -36,7 +36,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/SMILAnimationController.h"
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/Hal.h"
 #include "mozilla/InputTaskManager.h"
@@ -1309,8 +1308,8 @@ void nsRefreshDriver::RunRenderingPhase(RenderingPhase aPhase,
     if (ShouldCollect(mPresContext->Document())) {
       documents.AppendElement(mPresContext->Document());
     }
-    mPresContext->Document()->CollectDescendantDocuments(
-        documents, Document::IncludeSubResources::Yes, ShouldCollect);
+    mPresContext->Document()->CollectDescendantDocuments(documents,
+                                                         ShouldCollect);
     for (auto& doc : documents) {
       aCallback(*doc);
     }
@@ -2178,8 +2177,7 @@ void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
   if (ShouldCollect(mPresContext->Document())) {
     docs.AppendElement(mPresContext->Document());
   }
-  mPresContext->Document()->CollectDescendantDocuments(
-      docs, Document::IncludeSubResources::Yes, ShouldCollect);
+  mPresContext->Document()->CollectDescendantDocuments(docs, ShouldCollect);
   if (skippedAnyThrottledDoc) {
     
     
@@ -2411,11 +2409,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   RunRenderingPhase(RenderingPhase::UpdateAnimationsAndSendEvents,
                     [&](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                      if (aDoc.HasAnimationController()) {
-                        RefPtr controller = aDoc.GetAnimationController();
-                        controller->WillRefresh(aNowTime);
-                      }
-
                       {
                         
                         
