@@ -7,8 +7,8 @@
 #define mozilla_net_Http2WebTransportStream_h
 
 #include <functional>
-#include <list>
 
+#include "mozilla/Queue.h"
 #include "WebTransportStreamBase.h"
 
 namespace mozilla::net {
@@ -16,7 +16,7 @@ namespace mozilla::net {
 class Capsule;
 class Http2WebTransportSessionImpl;
 
-class StreamData {
+class StreamData final {
  public:
   explicit StreamData(nsTArray<uint8_t>&& aData) : mData(std::move(aData)) {
     MOZ_COUNT_CTOR(StreamData);
@@ -78,7 +78,8 @@ class Http2WebTransportStream final : public WebTransportStreamBase {
   
   
   
-  std::list<StreamData> mOutgoingQueue;
+  mozilla::Queue<UniquePtr<StreamData>> mOutgoingQueue;
+  UniquePtr<StreamData> mCurrentOut;
   const RefPtr<nsISerialEventTarget> mOwnerThread;
 };
 }  
