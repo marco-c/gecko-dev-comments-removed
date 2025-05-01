@@ -59,6 +59,9 @@ def create_telemetry_from_environment(settings):
 
     
     
+
+    
+    
     telemetry_interface = GleanTelemetry()
 
     Glean.initialize(
