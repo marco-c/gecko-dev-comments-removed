@@ -47,8 +47,6 @@ uint32_t IdleSchedulerParent::sPrefConcurrentGCsMax = 0;
 uint32_t IdleSchedulerParent::sPrefConcurrentGCsCPUDivisor = 0;
 
 IdleSchedulerParent::IdleSchedulerParent() {
-  MOZ_ASSERT(!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads));
-
   sChildProcessesAlive++;
 
   uint32_t max_gcs_pref =
@@ -68,32 +66,35 @@ IdleSchedulerParent::IdleSchedulerParent() {
     sNumCPUs = 1;
 
     
-    nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-    nsCOMPtr<nsIRunnable> runnable =
-        NS_NewRunnableFunction("cpucount getter", [thread]() {
-          ProcessInfo processInfo = {};
-          if (NS_SUCCEEDED(CollectProcessInfo(processInfo))) {
-            uint32_t num_cpus = processInfo.cpuCount;
-            
-            if (MOZ_LIKELY(!AppShutdown::IsInOrBeyond(
-                    ShutdownPhase::XPCOMShutdownThreads))) {
-              nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-                  "IdleSchedulerParent::CalculateNumIdleTasks", [num_cpus]() {
-                    
-                    
-                    sNumCPUs = num_cpus;
+    
+    if (MOZ_LIKELY(!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown))) {
+      nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
+      nsCOMPtr<nsIRunnable> runnable =
+          NS_NewRunnableFunction("cpucount getter", [thread]() {
+            ProcessInfo processInfo = {};
+            if (NS_SUCCEEDED(CollectProcessInfo(processInfo))) {
+              uint32_t num_cpus = processInfo.cpuCount;
+              
+              if (MOZ_LIKELY(!AppShutdown::IsInOrBeyond(
+                      ShutdownPhase::XPCOMShutdownThreads))) {
+                nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+                    "IdleSchedulerParent::CalculateNumIdleTasks", [num_cpus]() {
+                      
+                      
+                      sNumCPUs = num_cpus;
 
-                    
-                    
-                    
-                    CalculateNumIdleTasks();
-                  });
+                      
+                      
+                      
+                      CalculateNumIdleTasks();
+                    });
 
-              thread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+                thread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+              }
             }
-          }
-        });
-    NS_DispatchBackgroundTask(runnable.forget(), NS_DISPATCH_EVENT_MAY_BLOCK);
+          });
+      NS_DispatchBackgroundTask(runnable.forget(), NS_DISPATCH_EVENT_MAY_BLOCK);
+    }
   }
 
   if (sPrefConcurrentGCsMax != max_gcs_pref ||
