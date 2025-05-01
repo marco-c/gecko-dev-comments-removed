@@ -48,4 +48,20 @@ add_task(async function () {
     text: "document.bar",
     typeSelector: ".error",
   });
+
+  info("Check location of evaluation error");
+  await toolbox.selectTool("webconsole");
+  await execute(
+    hud,
+    `const x = {};
+     x.foo.bar;`
+  );
+
+  await testOpenInDebugger(hud, {
+    text: "x.foo is undefined",
+    typeSelector: ".error",
+    
+    
+    expectUrl: false,
+  });
 });

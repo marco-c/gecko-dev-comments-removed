@@ -958,17 +958,19 @@ class WebConsoleActor extends Actor {
         exceptionStack = this.prepareStackForRemote(evalResult.stack);
 
         if (exceptionStack) {
-          
-          const {
-            filename: source,
-            sourceId,
-            lineNumber: line,
-            columnNumber: column,
-          } = exceptionStack[0];
-          frame = { source, sourceId, line, column };
-
           exceptionStack =
             WebConsoleUtils.removeFramesAboveDebuggerEval(exceptionStack);
+
+          
+          if (exceptionStack && exceptionStack.length) {
+            const {
+              filename: source,
+              sourceId,
+              lineNumber: line,
+              columnNumber: column,
+            } = exceptionStack[0];
+            frame = { source, sourceId, line, column };
+          }
         }
 
         errorMessage = String(error);
@@ -1013,7 +1015,11 @@ class WebConsoleActor extends Actor {
           const line = error.errorLineNumber;
           const column = error.errorColumnNumber;
 
-          if (typeof line === "number" && typeof column === "number") {
+          if (
+            !frame &&
+            typeof line === "number" &&
+            typeof column === "number"
+          ) {
             
             frame = {
               source: "debugger eval code",
