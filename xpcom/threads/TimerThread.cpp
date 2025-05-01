@@ -747,8 +747,6 @@ TimerThread::Run() {
   const TimeDuration allowedEarlyFiring =
       TimeDuration::FromMicroseconds(mAllowedEarlyFiringMicroseconds);
 
-  bool forceRunNextTimer = false;
-
   
   
   
@@ -783,8 +781,6 @@ TimerThread::Run() {
 
     
     TimeDuration waitFor;
-    bool forceRunThisTimer = forceRunNextTimer;
-    forceRunNextTimer = false;
 
 #ifdef DEBUG
     VerifyTimerListConsistency();
@@ -827,8 +823,7 @@ TimerThread::Run() {
       RemoveLeadingCanceledTimersInternal();
 
       if (!mTimers.IsEmpty()) {
-        if (now + allowedEarlyFiring >= mTimers[0].Value()->mTimeout ||
-            forceRunThisTimer) {
+        if (now + allowedEarlyFiring >= mTimers[0].Value()->mTimeout) {
         next:
           
           
@@ -883,11 +878,9 @@ TimerThread::Run() {
         if (chaosModeActive) {
           microseconds *= sChaosFractions[ChaosMode::randomUint32LessThan(
               std::size(sChaosFractions))];
-          forceRunNextTimer = true;
         }
 
         if (microseconds < mAllowedEarlyFiringMicroseconds) {
-          forceRunNextTimer = false;
           goto next;  
         }
 
@@ -974,9 +967,6 @@ TimerThread::Run() {
     {
       AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
       mMonitor.Wait(waitFor);
-    }
-    if (mNotified) {
-      forceRunNextTimer = false;
     }
     mWaiting = false;
   }
