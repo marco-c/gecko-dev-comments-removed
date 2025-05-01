@@ -1342,8 +1342,12 @@ static const hb_tag_t defaultFeatures[] = {
 void gfxFont::CheckForFeaturesInvolvingSpace() const {
   gfxFontEntry::SpaceFeatures flags = gfxFontEntry::SpaceFeatures::None;
 
+  
+  
+  
+  
   auto setFlags =
-      MakeScopeExit([&]() { mFontEntry->mHasSpaceFeatures = flags; });
+      MakeScopeExit([&]() { mFontEntry->mHasSpaceFeatures.exchange(flags); });
 
   bool log = LOG_FONTINIT_ENABLED();
   TimeStamp start;
