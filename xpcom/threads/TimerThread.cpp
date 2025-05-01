@@ -778,6 +778,9 @@ TimerThread::Run() {
 
   uint64_t timersFiredThisWakeup = 0;
   while (!mShutdown) {
+    const bool chaosModeActive =
+        ChaosMode::isActive(ChaosFeature::TimerScheduling);
+
     
     TimeDuration waitFor;
     bool forceRunThisTimer = forceRunNextTimer;
@@ -790,7 +793,7 @@ TimerThread::Run() {
     if (mSleeping) {
       
       uint32_t milliseconds = 100;
-      if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
+      if (chaosModeActive) {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
       waitFor = TimeDuration::FromMilliseconds(milliseconds);
@@ -877,7 +880,7 @@ TimerThread::Run() {
         
         static constexpr double sChaosFractions[] = {0.0, 0.25, 0.5, 0.75,
                                                      1.0, 1.75, 2.75};
-        if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
+        if (chaosModeActive) {
           microseconds *= sChaosFractions[ChaosMode::randomUint32LessThan(
               std::size(sChaosFractions))];
           forceRunNextTimer = true;
@@ -904,7 +907,7 @@ TimerThread::Run() {
         
         MOZ_ASSERT(!waitFor.IsZero());
 
-        if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
+        if (chaosModeActive) {
           
           
           
