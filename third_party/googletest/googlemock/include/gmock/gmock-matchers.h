@@ -1312,6 +1312,15 @@ class AllOfMatcherImpl : public MatcherInterface<const T&> {
 
   bool MatchAndExplain(const T& x,
                        MatchResultListener* listener) const override {
+    if (!listener->IsInterested()) {
+      
+      for (const Matcher<T>& matcher : matchers_) {
+        if (!matcher.Matches(x)) {
+          return false;
+        }
+      }
+      return true;
+    }
     
     
     
@@ -1431,6 +1440,15 @@ class AnyOfMatcherImpl : public MatcherInterface<const T&> {
 
   bool MatchAndExplain(const T& x,
                        MatchResultListener* listener) const override {
+    if (!listener->IsInterested()) {
+      
+      for (const Matcher<T>& matcher : matchers_) {
+        if (matcher.Matches(x)) {
+          return true;
+        }
+      }
+      return false;
+    }
     
     
     
@@ -4118,6 +4136,10 @@ class OptionalMatcher {
         return false;
       }
       const ValueType& value = *optional;
+      if (!listener->IsInterested()) {
+        
+        return value_matcher_.Matches(value);
+      }
       StringMatchResultListener value_listener;
       const bool match = value_matcher_.MatchAndExplain(value, &value_listener);
       *listener << "whose value " << PrintToString(value)
