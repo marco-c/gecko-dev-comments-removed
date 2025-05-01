@@ -34,6 +34,9 @@ add_task(async function () {
   });
 
   
+  win.gBrowser.tabContainer.setAttribute("noshadowfortests", "true");
+
+  
   
   
   Assert.equal(
