@@ -4,7 +4,8 @@
 
 
 
-FINAL_LIBRARY = "mozglue"
+if CONFIG["MOZ_BUILD_APP"] != "memory":
+  FINAL_LIBRARY = "mozglue"
 
 with Files('**'):
     BUG_COMPONENT = ('Core', 'mozglue')
