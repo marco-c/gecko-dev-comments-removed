@@ -407,12 +407,16 @@ def run(
         
         
         stdin_tempfile = tempfile.NamedTemporaryFile(
-            mode="w",
+            mode="wb",
             delete=False,
             dir=os.path.dirname(fpath),
             suffix=os.path.splitext(fpath)[1],
         )
-        stdin_tempfile.write("".join(sys.stdin))
+
+        
+        with os.fdopen(sys.stdin.fileno(), "rb", closefd=False) as stdin:
+            stdin_tempfile.write(b"".join(stdin))
+
         stdin_tempfile.close()
         paths = [stdin_tempfile.name]
         atexit.register(_remove_file, stdin_tempfile.name)
@@ -474,11 +478,11 @@ def run(
             sys.stdout = old_stdout
             dump_stdin_file = sys.stdout
         else:
-            dump_stdin_file = open(dump_stdin_file, "w")
+            dump_stdin_file = open(dump_stdin_file, "wb")
 
         try:
-            with open(stdin_tempfile.name) as fp:
-                print(fp.read().strip(), file=dump_stdin_file)
+            with open(stdin_tempfile.name, "rb") as fp:
+                dump_stdin_file.write(fp.read())
         finally:
             _remove_file(stdin_tempfile.name)
         return 0
