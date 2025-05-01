@@ -2148,30 +2148,10 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     if (this.config.cm6) {
       const el = this.getElementAtLine(line);
-      
-      
-      const markedSpans = [...el.querySelectorAll("span")].filter(span =>
-        span.className.includes("debug-expression")
-      );
-
       return {
         text: el.innerText,
         
         line: null,
-        handle: {
-          markedSpans: markedSpans
-            ? markedSpans.map(span => {
-                const { column } = lezerUtils.positionToLocation(
-                  cm.state.doc,
-                  cm.posAtDOM(span)
-                );
-                return {
-                  marker: { className: span.className },
-                  from: column,
-                };
-              })
-            : null,
-        },
         gutterMarkers: null,
         textClass: null,
         bgClass: null,
@@ -3458,13 +3438,18 @@ class Editor extends EventEmitter {
       // `coordsAtPos` returns the absolute position of the line/column location
       // so that we have to ensure comparing with same absolute position for
       // CodeMirror DOM Element.
+      //
+      // Note that it may return the coordinates for a column breakpoint marker
+      // so it may still report as visible, if the marker is on the edge of the viewport
+      // and the displayed character at line/column is actually hidden after the scrollable area.
       const coords = cm.coordsAtPos(pos);
       if (!coords) {
         return false;
       }
       const { x, y, width, height } = cm.dom.getBoundingClientRect();
+      const gutterWidth = cm.dom.querySelector(".cm-gutters").clientWidth;
 
-      inXView = withinBounds(coords.left - x, 0, width);
+      inXView = coords.left > x + gutterWidth && coords.right < x + width;
       inYView = coords.top > y && coords.bottom < y + height;
     } else {
       const { top, left } = cm.charCoords({ line, ch: column }, "local");
@@ -3548,6 +3533,7 @@ class Editor extends EventEmitter {
    * @param {Number} line - The line in the source
    * @param {Number} column - The column in the source
    * @param {String|null} yAlign - Optional value for position of the line after the line is scrolled.
+   *                               (Used by `scrollEditorIntoView` test helper)
    */
   async scrollTo(line, column, yAlign) {
     if (this.isDestroyed()) {
@@ -3566,7 +3552,7 @@ class Editor extends EventEmitter {
         }
         return cm.dispatch({
           effects: EditorView.scrollIntoView(offset, {
-            x: "nearest",
+            x: "center",
             y: yAlign || "center",
           }),
         });

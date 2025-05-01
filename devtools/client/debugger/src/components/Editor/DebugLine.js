@@ -147,7 +147,12 @@ export class DebugLine extends PureComponent {
       };
     }
 
-    return { markTextClass: "debug-expression", lineClass: "paused-line" };
+    
+    
+    return {
+      markTextClass: features.codemirrorNext ? null : "debug-expression",
+      lineClass: "paused-line",
+    };
   }
 
   render() {

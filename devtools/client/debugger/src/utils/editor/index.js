@@ -109,7 +109,7 @@ export function toEditorPosition(location) {
   
   
   const isSourceWasm = features.codemirrorNext
-    ? editor.isWasm
+    ? editor.isWasm && !location.source.isOriginal
     : isWasm(location.source.id);
   return {
     line: toEditorLine(location.source, location.line),
