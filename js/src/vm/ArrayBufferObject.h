@@ -467,6 +467,13 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
                                                    WasmArrayRawBuffer* buffer,
                                                    size_t initialSize);
 
+  
+  
+  
+  template <typename ArrayBufferType>
+  static ArrayBufferType* createFromWasmObject(
+      JSContext* cx, Handle<ArrayBufferObject*> donor);
+
   static void copyData(ArrayBufferObject* toBuffer, size_t toIndex,
                        ArrayBufferObject* fromBuffer, size_t fromIndex,
                        size_t count);
@@ -605,6 +612,11 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
 
   inline size_t maxByteLength() const;
+
+  size_t wasmClampedMaxByteLength() const {
+    MOZ_ASSERT(isWasm());
+    return wasmClampedMaxPages().byteLength();
+  }
 
   size_t associatedBytes() const;
 
