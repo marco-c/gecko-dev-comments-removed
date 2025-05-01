@@ -945,10 +945,24 @@ with only_when(cross_compiling):
 
 
 
-include("build/moz.configure/old.configure")
 
 
-include("js/sub.configure", when=compile_environment & toolkit)
+
+
+
+
+@depends("--help")
+@imports("__sandbox__")
+@imports(_from="mozbuild.configure.options", _import="Option")
+def remaining_mozconfig_options(_):
+    helper = __sandbox__._helper
+    for arg in list(helper):
+        if helper._origins[arg] != "mozconfig":
+            continue
+        name = arg.split("=", 1)[0]
+        if name.isupper() and name not in __sandbox__._options:
+            option = Option(env=name, nargs="*", help=name)
+            helper.handle(option)
 
 
 @depends(build_environment, configure_cache)
@@ -994,10 +1008,6 @@ def config_status_deps(build_env, build_project):
             os.path.join(topsrcdir, "python", "sites", "common.txt"),
             os.path.join(topsrcdir, "python", "sites", "mach.txt"),
             os.path.join(topsrcdir, "python", "mach", "mach", "site.py"),
-            os.path.join(topsrcdir, "aclocal.m4"),
-            os.path.join(topsrcdir, "old-configure.in"),
-            os.path.join(topsrcdir, "js", "src", "aclocal.m4"),
-            os.path.join(topsrcdir, "js", "src", "old-configure.in"),
         ]
         + glob.glob(os.path.join(topsrcdir, "build", "autoconf", "*.m4"))
     )

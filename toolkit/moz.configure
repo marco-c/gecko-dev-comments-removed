@@ -118,7 +118,7 @@ def all_configure_options():
         
         
         
-        if option == previous or option.env in ("OLD_CONFIGURE", "MOZCONFIG"):
+        if option == previous or option.env in ("MOZCONFIG",):
             continue
         previous = option
         value = __sandbox__._value_for(option)
