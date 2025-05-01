@@ -375,6 +375,12 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
     return;
   }
 
+  
+  
+  
+  
+  SetImpendingShutdown();
+
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
 
   
