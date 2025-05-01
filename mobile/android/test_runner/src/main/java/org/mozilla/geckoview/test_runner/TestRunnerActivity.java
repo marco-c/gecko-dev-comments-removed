@@ -452,7 +452,8 @@ public class TestRunnerActivity extends Activity {
           .contentBlocking(
               new ContentBlocking.Settings.Builder()
                   .safeBrowsingProviders(google, googleLegacy)
-                  .build());
+                  .build())
+          .lowMemoryDetection(false); 
 
       sRuntime = GeckoRuntime.create(this, runtimeSettingsBuilder.build());
 

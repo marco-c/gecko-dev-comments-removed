@@ -185,7 +185,11 @@ public class TestRuntimeService extends Service
   protected GeckoRuntime createRuntime(
       final @NonNull Context context, final @NonNull Intent intent) {
     return GeckoRuntime.create(
-        context, new GeckoRuntimeSettings.Builder().extras(intent.getExtras()).build());
+        context,
+        new GeckoRuntimeSettings.Builder()
+            .extras(intent.getExtras())
+            .lowMemoryDetection(false) 
+            .build());
   }
 
   
