@@ -1396,15 +1396,17 @@
             (RTL_UI && this._sidebarPositionStart) ||
             (!RTL_UI && !this._sidebarPositionStart)
           ) {
-            crossAxisStart = window.screenX + rect.right - 1.5 * rect.width;
+            crossAxisStart =
+              window.mozInnerScreenX + rect.right - 1.5 * rect.width;
             crossAxisEnd = window.screenX;
           } else {
             crossAxisStart = window.screenX;
-            crossAxisEnd = window.screenX + rect.left + 1.5 * rect.width;
+            crossAxisEnd =
+              window.mozInnerScreenX + rect.left + 1.5 * rect.width;
           }
         } else {
           crossAxisStart = window.screenY;
-          crossAxisEnd = window.screenY + rect.top + 1.5 * rect.height;
+          crossAxisEnd = window.mozInnerScreenY + rect.top + 1.5 * rect.height;
         }
         if (crossAxisPos > crossAxisStart && crossAxisPos < crossAxisEnd) {
           return;
