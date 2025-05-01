@@ -24,6 +24,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/Logging.h"
+#include "mozilla/media/MediaUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
@@ -92,11 +93,6 @@ const unsigned long kIdleContentAnalysisAgentTimeoutMs = 100;
 
 
 const unsigned long kMaxIdleContentAnalysisAgentTimeoutMs = UINT32_MAX;
-
-
-
-
-const uint32_t kShutdownThreadpoolTimeoutMs = 2 * 1000;
 
 
 auto kTextFormatsToAnalyze = {kTextMime, kHTMLMime};
@@ -1371,7 +1367,7 @@ void ContentAnalysis::Close() {
   
   mUserActionMap.Clear();
 
-  mThreadPool->ShutdownWithTimeout(kShutdownThreadpoolTimeoutMs);
+  mThreadPool->Shutdown();
   mThreadPool = nullptr;
   LOGD("Content Analysis service is closed");
 }
@@ -1849,7 +1845,7 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
             return;
           }
           nsresult rv =
-              contentAnalysis->mThreadPool->Dispatch(NS_NewCancelableRunnableFunction(
+              contentAnalysis->mThreadPool->Dispatch(NS_NewRunnableFunction(
                   aMethodName, [aMethodName, promise,
                                 clientCallFunc = std::move(clientCallFunc),
                                 client = std::move(client)]() mutable {
@@ -1885,7 +1881,7 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
           return;
         }
         nsresult rv =
-            contentAnalysis->mThreadPool->Dispatch(NS_NewCancelableRunnableFunction(
+            contentAnalysis->mThreadPool->Dispatch(NS_NewRunnableFunction(
                 aMethodName, [aMethodName, promise, aClientCallFunc,
                               reconnectAndRetry = std::move(reconnectAndRetry),
                               client = std::move(client)]() mutable {
@@ -1895,7 +1891,7 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
                     return;
                   }
                   nsresult rv = result.unwrapErr();
-                  NS_DispatchToMainThread(NS_NewCancelableRunnableFunction(
+                  NS_DispatchToMainThread(NS_NewRunnableFunction(
                       "reconnect to Content Analysis client",
                       [rv, reconnectAndRetry = std::move(reconnectAndRetry)]() {
                         reconnectAndRetry(rv);
@@ -3257,50 +3253,28 @@ NS_IMETHODIMP ContentAnalysis::AnalyzeContentRequestPrivate(
 }
 
 NS_IMETHODIMP
-ContentAnalysis::CancelAllRequestsAssociatedWithUserAction(const nsACString& aUserActionId) {
+ContentAnalysis::CancelRequestsByRequestToken(const nsACString& aRequestToken) {
   MOZ_ASSERT(NS_IsMainThread());
-  
-  RefPtr<const UserActionSet> compoundUserAction;
-  for (auto iter = mCompoundUserActions.iter(); !iter.done(); iter.next()) {
-    auto& entry = iter.get();
-    if (entry->has(nsCString(aUserActionId))) {
-      compoundUserAction = entry;
-      break;
+  nsAutoCString requestToken(aRequestToken);
+  LOGD("Cancelling request token: %s", requestToken.get());
+
+  nsAutoCString userActionId;
+  for (const auto& id : mUserActionMap.Keys()) {
+    if (auto entry = mUserActionMap.Lookup(id)) {
+      if (entry->mRequestTokens.Contains(aRequestToken)) {
+        userActionId = id;
+        break;
+      }
     }
   }
 
-  if (!compoundUserAction) {
-    
-    return CancelRequestsByUserAction(aUserActionId);
-  }
-  MOZ_ASSERT(!compoundUserAction->empty());
-
-  
-  
-  
-  
-  LOGD("Cancelling %u requests associated with user action ID: %s",
-      compoundUserAction->count(), aUserActionId.Data());
-  nsresult rv = NS_OK;
-  for (auto iter = compoundUserAction->iter(); !iter.done(); iter.next()) {
-    nsresult rv2 = CancelRequestsByUserAction(iter.get());
-    if (NS_FAILED(rv2)) {
-      rv = rv2;
-    }
-    
-    
-    
-    if (!mCompoundUserActions.has(compoundUserAction)) {
-      break;
-    }
+  if (!userActionId.IsEmpty()) {
+    return CancelRequestsByUserAction(userActionId);
   }
 
-  LOGD("Cancelling compound request associated with user action ID: %s %s | "
-       "Error code: %s",
-    aUserActionId.Data(),
-    (!mCompoundUserActions.has(compoundUserAction)) ? "succeeded" : "failed",
-    SafeGetStaticErrorName(rv));
-  return rv;
+  LOGD("Request not found when trying to cancel request token: %s",
+       requestToken.get());
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -3381,7 +3355,8 @@ ContentAnalysis::RespondToWarnDialog(const nsACString& aRequestToken,
 
   
   IssueResponse(entry->mResponse, nsCString(entry->mUserActionId),
-                entry->mAutoAcknowledge && haveGottenResponse, entry->mWasTimeout);
+                entry->mAutoAcknowledge && haveGottenResponse,
+                entry->mWasTimeout);
   return NS_OK;
 }
 
@@ -3778,10 +3753,11 @@ ContentAnalysis::CheckFilesInBatchMode(
     nsCOMArray<nsIFile>&& aFiles, mozilla::dom::WindowGlobalParent* aWindow,
     nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI ) {
   nsresult rv;
-  auto contentAnalysis = GetContentAnalysisFromService();
+  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
+      mozilla::components::nsIContentAnalysis::Service(&rv);
   
   
-  if (NS_WARN_IF(!contentAnalysis)) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return FilesAllowedPromise::CreateAndReject(rv, __func__);
   }
   bool contentAnalysisIsActive = false;
@@ -3795,7 +3771,7 @@ ContentAnalysis::CheckFilesInBatchMode(
 
   auto numberOfRequestsLeft = std::make_shared<size_t>(aFiles.Length());
   auto allowedFiles = MakeRefPtr<media::Refcountable<nsCOMArray<nsIFile>>>();
-  auto userActionIds = MakeRefPtr<media::Refcountable<mozilla::HashSet<nsCString>>>();
+  auto userActionIds = MakeRefPtr<media::Refcountable<nsTArray<nsCString>>>();
   auto promise = MakeRefPtr<FilesAllowedPromise::Private>(__func__);
   nsCOMPtr<nsIURI> uri;
   if (aWindow) {
@@ -3806,24 +3782,13 @@ ContentAnalysis::CheckFilesInBatchMode(
     
     uri = aURI;
   }
-
-  if (!contentAnalysis->mCompoundUserActions.put(userActionIds)) {
-    return FilesAllowedPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
-  }
-
-  auto cancelOnError = MakeScopeExit([&](){
-    
-    if (!userActionIds->empty()) {
-      contentAnalysis->CancelRequestsByUserAction(userActionIds->iter().get());
-    }
-  });
-
   for (auto* file : aFiles) {
 #ifdef XP_WIN
     nsString pathString(file->NativePath());
 #else
     nsString pathString = NS_ConvertUTF8toUTF16(file->NativePath());
 #endif
+
     RefPtr<nsIContentAnalysisRequest> request =
         new mozilla::contentanalysis::ContentAnalysisRequest(
             nsIContentAnalysisRequest::AnalysisType::eFileAttached, aReason,
@@ -3832,9 +3797,7 @@ ContentAnalysis::CheckFilesInBatchMode(
             aWindow);
     nsCString userActionId = GenerateUUID();
     MOZ_ALWAYS_SUCCEEDS(request->SetUserActionId(userActionId));
-    if (!userActionIds->put(userActionId)) {
-      return FilesAllowedPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
-    }
+    userActionIds->AppendElement(userActionId);
 
     
     
@@ -3856,8 +3819,8 @@ ContentAnalysis::CheckFilesInBatchMode(
             
             
             
-            [promise, allowedFiles, numberOfRequestsLeft,
-             file = RefPtr{file}, userActionIds](nsIContentAnalysisResult* aResult) {
+            [promise, allowedFiles, numberOfRequestsLeft, userActionIds,
+             file = RefPtr{file}](nsIContentAnalysisResult* aResult) {
               
               
               AssertIsOnMainThread();
@@ -3867,28 +3830,25 @@ ContentAnalysis::CheckFilesInBatchMode(
                   "Processing callback for batched file request, "
                   "numberOfRequestsLeft=%zu",
                   *(numberOfRequestsLeft.get()));
-              RefPtr<ContentAnalysis> owner = GetContentAnalysisFromService();
               if (response && response->GetAction() ==
                                   nsIContentAnalysisResponse::eCanceled) {
                 
                 
                 LOGD("Batched file request got cancel response");
-                
-                
-                
+                RefPtr<ContentAnalysis> owner = GetContentAnalysisFromService();
                 if (owner) {
-                  if (auto entry = owner->mCompoundUserActions.lookup(userActionIds)) {
-                    owner->mCompoundUserActions.remove(entry);
-                    for (auto iter = userActionIds->iter(); !iter.done(); iter.next()) {
-                      owner->CancelRequestsByUserAction(iter.get());
-                    }
+                  
+                  
+                  nsTArray<nsCString> localUserActionIds;
+                  userActionIds->SwapElements(localUserActionIds);
+                  for (const nsCString& userActionId : localUserActionIds) {
+                    owner->CancelRequestsByUserAction(userActionId);
                   }
                 }
                 nsCOMArray<nsIFile> emptyFiles;
                 
                 
                 promise->Resolve(std::move(emptyFiles), __func__);
-                return;
               }
               if (aResult->GetShouldAllowContent()) {
                 allowedFiles->AppendElement(file);
@@ -3896,9 +3856,6 @@ ContentAnalysis::CheckFilesInBatchMode(
               (*numberOfRequestsLeft)--;
               if (*numberOfRequestsLeft == 0) {
                 promise->Resolve(std::move(*allowedFiles), __func__);
-                if (owner) {
-                  owner->mCompoundUserActions.remove(userActionIds);
-                }
               }
             },
             [promise, userActionIds](nsresult aError) {
@@ -3907,15 +3864,13 @@ ContentAnalysis::CheckFilesInBatchMode(
               LOGE("Batched file request got error %s",
                    SafeGetStaticErrorName(aError));
               RefPtr<ContentAnalysis> owner = GetContentAnalysisFromService();
-              
-              
-              
               if (owner) {
-                if (auto entry = owner->mCompoundUserActions.lookup(userActionIds)) {
-                  owner->mCompoundUserActions.remove(entry);
-                  for (auto iter = userActionIds->iter(); !iter.done(); iter.next()) {
-                    owner->CancelRequestsByUserAction(iter.get());
-                  }
+                
+                
+                nsTArray<nsCString> localUserActionIds;
+                userActionIds->SwapElements(localUserActionIds);
+                for (const nsCString& userActionId : localUserActionIds) {
+                  owner->CancelRequestsByUserAction(userActionId);
                 }
               }
               nsCOMArray<nsIFile> emptyFiles;
@@ -3927,7 +3882,6 @@ ContentAnalysis::CheckFilesInBatchMode(
                                                     callback);
   }
 
-  cancelOnError.release();
   return promise;
 }
 

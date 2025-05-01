@@ -11,7 +11,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MaybeDiscarded.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/media/MediaUtils.h"
 #include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
@@ -20,7 +19,6 @@
 #include "nsString.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
-#include "nsTStringHasher.h"
 
 #include <atomic>
 #include <regex>
@@ -181,12 +179,8 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   friend class ::ContentAnalysisTest;
 };
 
-#define CONTENTANALYSIS_IID                          \
-  {                                                  \
-    0xa37bed74, 0x4b50, 0x443a, {                    \
-      0xbf, 0x58, 0xf4, 0xeb, 0xbd, 0x30, 0x67, 0xb4 \
-    }                                                \
-  }
+#define CONTENTANALYSIS_IID \
+  {0xa37bed74, 0x4b50, 0x443a, {0xbf, 0x58, 0xf4, 0xeb, 0xbd, 0x30, 0x67, 0xb4}}
 
 class ContentAnalysisResponse;
 class ContentAnalysis final : public nsIContentAnalysis,
@@ -247,12 +241,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
       nsITransferable* aTransferable,
       nsIClipboard::ClipboardType aClipboardType,
       ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
-
   using FilesAllowedPromise = MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
-  
-  
-  
-  
   
   
   
@@ -260,7 +249,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   static RefPtr<FilesAllowedPromise> CheckFilesInBatchMode(
       nsCOMArray<nsIFile>&& aFiles, mozilla::dom::WindowGlobalParent* aWindow,
       nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI = nullptr);
-
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
 
   
@@ -496,12 +484,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   bool mParsedUrlLists = false;
   bool mForbidFutureRequests = false;
   DataMutex<bool> mIsShutDown{false, "ContentAnalysis::IsShutDown"};
-
-  
-  using UserActionSet = media::Refcountable<mozilla::HashSet<nsCString>>;
-  using UserActionSets = mozilla::HashSet<RefPtr<const UserActionSet>,
-                                          PointerHasher<const UserActionSet*>>;
-  UserActionSets mCompoundUserActions;
 
   friend class ContentAnalysisResponse;
   friend class ::ContentAnalysisTest;

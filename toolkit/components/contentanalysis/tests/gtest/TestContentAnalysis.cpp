@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
 #include "mozilla/Assertions.h"
@@ -59,7 +59,7 @@ class ContentAnalysisTest : public testing::Test {
     MOZ_ASSERT(caSvc);
     mContentAnalysis = static_cast<ContentAnalysis*>(caSvc.get());
 
-    
+    // Tests run earlier could have altered these values
     mContentAnalysis->mParsedUrlLists = false;
     mContentAnalysis->mAllowUrlList = {};
     mContentAnalysis->mDenyUrlList = {};
@@ -74,11 +74,11 @@ class ContentAnalysisTest : public testing::Test {
     EXPECT_TRUE(isActive);
   }
 
-  
-  
-  
-  
-  
+  // Note that the constructor (and SetUp() method) get called once per test,
+  // not once for the whole fixture. Because Firefox does not currently
+  // reconnect to an agent after the DLP pipe is closed (bug 1888293), we only
+  // want to create the agent once and make sure the same process stays alive
+  // through all of these tests.
   static void SetUpTestSuite() {
     GeneratePipeName(L"contentanalysissdk-gtest-", mPipeName);
     StartAgent();
@@ -106,8 +106,8 @@ class ContentAnalysisTest : public testing::Test {
   already_AddRefed<nsIContentAnalysisRequest> CreateRequest(const char* aUrl) {
     nsCOMPtr<nsIURI> uri;
     MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(uri), aUrl));
-    
-    
+    // We will only use the URL and, implicitly, the analysisType
+    // (behavior differs for download vs other types).
     return RefPtr(new ContentAnalysisRequest(
                       nsIContentAnalysisRequest::AnalysisType::eFileTransfer,
                       nsIContentAnalysisRequest::Reason::eFilePickerDialog,
@@ -117,12 +117,21 @@ class ContentAnalysisTest : public testing::Test {
         .forget();
   }
 
+  enum class CancelMechanism {
+    // Wait for the service to assign our request tokens, then cancel using
+    // that (deprecated)
+    eCancelByRequestToken,
+    // Wait for the service to assign our requests a user action ID, then cancel
+    // using that.
+    eCancelByUserActionId,
+  };
+
   nsresult SendRequestsCancelAndExpectResponse(
       RefPtr<ContentAnalysis> contentAnalysis,
       nsTArray<RefPtr<nsIContentAnalysisRequest>>& requests,
-      bool aDelayCancel, bool aExpectFailure);
-  
-  
+      CancelMechanism aCancelMechanism, bool aExpectFailure);
+  // This is used to help tests clean up after terminating and restarting
+  // the agent.
   void SendSimpleRequestAndWaitForResponse();
   RefPtr<ContentAnalysisDiagnosticInfo> GetDiagnosticInfo(
       RefPtr<ContentAnalysis> contentAnalysis);
@@ -130,12 +139,12 @@ class ContentAnalysisTest : public testing::Test {
   static nsString mPipeName;
   static MozAgentInfo mAgentInfo;
 
-  
-  
-  
+  // Proxies for private members of ContentAnalysis.  TEST_F
+  // creates new subclasses -- they do not inherit `friend`s.
+  // (FRIEND_TEST is another more verbose solution.)
   using UrlFilterResult = ContentAnalysis::UrlFilterResult;
   UrlFilterResult FilterByUrlLists(nsIContentAnalysisRequest* aReq) {
-    
+    // For testing, just pull the URI from the request.
     nsCOMPtr<nsIURI> uri;
     MOZ_ALWAYS_SUCCEEDS(aReq->GetUrl(getter_AddRefs(uri)));
     MOZ_ASSERT(uri);
@@ -146,13 +155,7 @@ class ContentAnalysisTest : public testing::Test {
     auto map = mContentAnalysis->mUserActionIdToCanceledResponseMap.Lock();
     return map->Contains(aUserActionId);
   }
-
-  auto* GetCompoundUserActions() { return &mContentAnalysis->mCompoundUserActions; }
-  auto CancelAllRequestsAssociatedWithUserAction(const nsACString& aUserActionId) {
-    return mContentAnalysis->CancelAllRequestsAssociatedWithUserAction(aUserActionId);
-  };
 };
-
 MOZ_RUNINIT nsString ContentAnalysisTest::mPipeName;
 MOZ_RUNINIT MozAgentInfo ContentAnalysisTest::mAgentInfo;
 
@@ -242,7 +245,7 @@ RefPtr<CancelableRunnable> QueueTimeoutToMainThread(
   RefPtr<CancelableRunnable> timer = NS_NewCancelableRunnableFunction(
       "timeout", [&] { aTimedOut->mValue = true; });
 #if defined(MOZ_ASAN)
-  
+  // This can be pretty slow on ASAN builds (bug 1895256)
   constexpr uint32_t kCATimeout = 25000;
 #else
   constexpr uint32_t kCATimeout = 10000;
@@ -255,10 +258,10 @@ RefPtr<CancelableRunnable> QueueTimeoutToMainThread(
 RefPtr<ContentAnalysisDiagnosticInfo> ContentAnalysisTest::GetDiagnosticInfo(
     RefPtr<ContentAnalysis> contentAnalysis) {
   dom::AutoJSAPI jsapi;
-  
-  
-  
-  
+  // We're using this context to deserialize, stringify, and print a message
+  // manager message here. Since the messages are always sent from and to system
+  // scopes, we need to do this in a system scope, or attempting to deserialize
+  // certain privileged objects will fail.
   MOZ_ALWAYS_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
   JSContext* cx = jsapi.cx();
   bool gotResponse = false;
@@ -317,8 +320,8 @@ void ParseFromWideModifiedString(T* aTarget, const char16_t* aData) {
   std::wstring dataWideString(reinterpret_cast<const wchar_t*>(aData));
   std::vector<uint8_t> dataVector(dataWideString.size());
   for (size_t i = 0; i < dataWideString.size(); ++i) {
-    
-    
+    // Since this data is really bytes and not a null-terminated string, the
+    // calling code adds 0xFF00 to every member to ensure there are no 0 values.
     dataVector[i] = static_cast<uint8_t>(dataWideString[i] - 0xFF00);
   }
   EXPECT_TRUE(aTarget->ParseFromArray(dataVector.data(), dataVector.size()));
@@ -356,8 +359,8 @@ class RawRequestObserver final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  
-  
+  // @param aCancelOnFirstRequest  If true, the user action is canceled when
+  //                               the first request is observed.
   explicit RawRequestObserver(nsIContentAnalysis* aContentAnalysis,
                               bool aCancelOnFirstRequest = false)
       : mContentAnalysis(aContentAnalysis),
@@ -440,17 +443,14 @@ NS_IMETHODIMP ResponseObserver::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
-
-
-
 nsresult ContentAnalysisTest::SendRequestsCancelAndExpectResponse(
     RefPtr<ContentAnalysis> contentAnalysis,
     nsTArray<RefPtr<nsIContentAnalysisRequest>>& requests,
-    bool aDelayCancel, bool aExpectFailure) {
+    CancelMechanism aCancelMechanism, bool aExpectFailure) {
   bool gotResponse = false;
-  
-  
-  
+  // Make timedOut a RefPtr so if we get a response from content analysis
+  // after this function has finished we can safely check that (and don't
+  // start accessing stack values that don't exist anymore)
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   auto callback = MakeRefPtr<ContentAnalysisCallback>(
       [&, timedOut, aExpectFailure](nsIContentAnalysisResult* result) {
@@ -468,7 +468,7 @@ nsresult ContentAnalysisTest::SendRequestsCancelAndExpectResponse(
         const char* errorName = mozilla::GetStaticErrorName(error);
         errorName = errorName ? errorName : "";
         printf("Got error response code %s(%x)\n", errorName, error);
-        
+        // Errors should not have errorCode NS_OK
         EXPECT_NE(NS_OK, error);
         gotResponse = true;
         EXPECT_EQ(true, aExpectFailure);
@@ -481,7 +481,7 @@ nsresult ContentAnalysisTest::SendRequestsCancelAndExpectResponse(
       obsServ->AddObserver(rawRequestObserver, "dlp-request-sent-raw", false));
 
   nsresult rv = contentAnalysis->AnalyzeContentRequestsCallback(
-      requests, false , callback);
+      requests, false /* autoAcknowledge */, callback);
   if (NS_FAILED(rv)) {
     MOZ_ALWAYS_SUCCEEDS(
         obsServ->RemoveObserver(rawRequestObserver, "dlp-request-sent-raw"));
@@ -490,15 +490,15 @@ nsresult ContentAnalysisTest::SendRequestsCancelAndExpectResponse(
 
   RefPtr<CancelableRunnable> timer = QueueTimeoutToMainThread(timedOut);
 
-  
+  // The user action ID should be set by now, whether we set it or not.
   nsAutoCString userActionId;
   MOZ_ALWAYS_SUCCEEDS(requests[0]->GetUserActionId(userActionId));
   EXPECT_TRUE(!userActionId.IsEmpty());
 
   bool hasCanceledRequest = false;
-  if (!aDelayCancel) {
+  if (aCancelMechanism == CancelMechanism::eCancelByUserActionId) {
     MOZ_ALWAYS_SUCCEEDS(
-      contentAnalysis->CancelRequestsByUserAction(userActionId));
+        contentAnalysis->CancelRequestsByUserAction(userActionId));
     hasCanceledRequest = true;
   }
 
@@ -508,16 +508,22 @@ nsresult ContentAnalysisTest::SendRequestsCancelAndExpectResponse(
           return true;
         }
         if (!hasCanceledRequest) {
-          
-          if (!rawRequestObserver->GetRequests().empty()) {
-            MOZ_ALWAYS_SUCCEEDS(
-                contentAnalysis->CancelRequestsByUserAction(userActionId));
-            hasCanceledRequest = true;
+          // Internally, GetFinalRequests expands the request list
+          // asynchronously.  We need to wait for that.
+          // (In the case of this test, nothing actually needs to be expanded.)
+          if (aCancelMechanism == CancelMechanism::eCancelByRequestToken) {
+            if (rawRequestObserver->GetRequests().size() > 0) {
+              nsAutoCString requestToken;
+              MOZ_ALWAYS_SUCCEEDS(requests[0]->GetRequestToken(requestToken));
+              EXPECT_FALSE(requestToken.IsEmpty());
+              MOZ_ALWAYS_SUCCEEDS(
+                  contentAnalysis->CancelRequestsByRequestToken(requestToken));
+              hasCanceledRequest = true;
+            }
           }
         }
         return gotResponse;
       });
-
   timer->Cancel();
   EXPECT_TRUE(gotResponse);
   EXPECT_FALSE(timedOut->mValue);
@@ -540,9 +546,9 @@ void SendRequestAndExpectResponse(
     MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(GenerateUUID()));
   }
 
-  
-  
-  
+  // Make timedOut a RefPtr so if we get a response from content analysis
+  // after this function has finished we can safely check that (and don't
+  // start accessing stack values that don't exist anymore)
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   auto callback = MakeRefPtr<ContentAnalysisCallback>(
       [&, timedOut](nsIContentAnalysisResult* result) {
@@ -580,10 +586,10 @@ void SendRequestAndExpectResponse(
         const char* errorName = mozilla::GetStaticErrorName(error);
         errorName = errorName ? errorName : "";
         printf("Got error response code %s(%x)\n", errorName, error);
-        
+        // Errors should not have errorCode NS_OK
         EXPECT_NE(NS_OK, error);
         gotResponse = true;
-        
+        // An acknowledgement won't be sent, so don't wait for one
         gotAcknowledgement = true;
         FAIL() << "Got error response";
       });
@@ -611,8 +617,8 @@ void SendRequestAndExpectResponse(
         MOZ_ALWAYS_SUCCEEDS(request->GetRequestToken(requestToken));
         for (const auto& acknowledgement : acknowledgements) {
           if (nsCString(acknowledgement.request_token()) == requestToken) {
-            
-            
+            // Wait for the acknowledgement to happen to avoid background
+            // activity that might interfere with other tests.
             gotAcknowledgement = true;
             break;
           }
@@ -666,7 +672,7 @@ void SendRequestsAndExpectNoAgentResponseNoAwait(
         const char* errorName = mozilla::GetStaticErrorName(error);
         errorName = errorName ? errorName : "";
         printf("Got error response code %s(%x)\n", errorName, error);
-        
+        // Errors should not have errorCode NS_OK
         EXPECT_NE(NS_OK, error);
         *gotResponse = true;
         FAIL() << "Got error response";
@@ -694,9 +700,9 @@ void SendRequestAndExpectNoAgentResponse(
     nsIContentAnalysisResponse::CancelError expectedCancelError =
         nsIContentAnalysisResponse::CancelError::eNoAgent) {
   bool gotResponse = false;
-  
-  
-  
+  // Make timedOut a RefPtr so if we get a response from content analysis
+  // after this function has finished we can safely check that (and don't
+  // start accessing stack values that don't exist anymore)
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   SendRequestAndExpectNoAgentResponseNoAwait(
       contentAnalysis, request, expectedShouldAllow, expectedCancelError,
@@ -777,8 +783,8 @@ TEST_F(ContentAnalysisTest, TerminateAgent_SendAllowedTextToAgent_GetError) {
 
   SendRequestAndExpectNoAgentResponse(mContentAnalysis, request);
   StartAgent();
-  
-  
+  // NB: We are re-using the user action ID here.  That is not required to
+  // work, but currently does.  Alt: we could clear request.userActionId.
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
                                Some(false));
@@ -832,7 +838,7 @@ TEST_F(ContentAnalysisTest, CheckRawRequestWithText) {
   EXPECT_EQ(static_cast<size_t>(1), requests.size());
   time_t t = requests[0].expires_at();
   time_t secs_remaining = t - now;
-  
+  // There should be around 65 seconds remaining
   EXPECT_LE(abs(secs_remaining - 65), 8);
   const auto& request_url = requests[0].request_data().url();
   EXPECT_EQ(uri->GetSpecOrDefault(),
@@ -883,7 +889,7 @@ TEST_F(ContentAnalysisTest, CheckTwoRequestsHaveDifferentUserActionId) {
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
 
-  
+  // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain1");
   nsCOMPtr<nsIContentAnalysisRequest> request2 = new ContentAnalysisRequest(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
@@ -918,7 +924,7 @@ TEST_F(ContentAnalysisTest,
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
 
-  
+  // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain2");
   RefPtr<nsIContentAnalysisRequest> request2 = new ContentAnalysisRequest(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
@@ -933,8 +939,8 @@ TEST_F(ContentAnalysisTest,
       obsServ->AddObserver(rawRequestObserver, "dlp-request-sent-raw", false));
 
   nsresult rv = SendRequestsCancelAndExpectResponse(
-      mContentAnalysis, requests, true ,
-      false );
+      mContentAnalysis, requests, CancelMechanism::eCancelByRequestToken,
+      false /* aExpectFailure */);
   EXPECT_EQ(rv, NS_OK);
 
   auto rawRequests = rawRequestObserver->GetRequests();
@@ -954,7 +960,7 @@ TEST_F(ContentAnalysisTest, CheckAssignedUserActionIdCanCancel) {
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
 
-  
+  // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain3");
   RefPtr<nsIContentAnalysisRequest> request2 = new ContentAnalysisRequest(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
@@ -964,8 +970,8 @@ TEST_F(ContentAnalysisTest, CheckAssignedUserActionIdCanCancel) {
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
 
   nsresult rv = SendRequestsCancelAndExpectResponse(
-      mContentAnalysis, requests, false ,
-      false );
+      mContentAnalysis, requests, CancelMechanism::eCancelByUserActionId,
+      false /* aExpectFailure */);
   EXPECT_EQ(rv, NS_OK);
 }
 
@@ -981,7 +987,7 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdCanCancel) {
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr, nullptr,
       nsCString(userActionId));
 
-  
+  // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain4");
   RefPtr<nsIContentAnalysisRequest> request2 = new ContentAnalysisRequest(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
@@ -991,8 +997,8 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdCanCancel) {
       nsCString(userActionId));
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
   nsresult rv = SendRequestsCancelAndExpectResponse(
-      mContentAnalysis, requests, false ,
-      false );
+      mContentAnalysis, requests, CancelMechanism::eCancelByUserActionId,
+      false /* aExpectFailure */);
   EXPECT_EQ(rv, NS_OK);
 }
 
@@ -1009,7 +1015,7 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdsMustMatch) {
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr, nullptr,
       nsCString(userActionId1));
 
-  
+  // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain5");
   RefPtr<nsIContentAnalysisRequest> request2 = new ContentAnalysisRequest(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
@@ -1020,15 +1026,15 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdsMustMatch) {
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
 
   nsresult rv = SendRequestsCancelAndExpectResponse(
-      mContentAnalysis, requests, false ,
-      true );
+      mContentAnalysis, requests, CancelMechanism::eCancelByUserActionId,
+      true /* aExpectFailure */);
   EXPECT_EQ(rv, NS_ERROR_INVALID_ARG);
 }
 
 enum class WarnDialogResponse {
-  
+  // Simulate clicking "Allow" on warn dialog
   Allow,
-  
+  // Simulate clicking "Block" on warn dialog
   Block
 };
 
@@ -1050,9 +1056,9 @@ void SendRequestAndExpectWarnResponse(
     MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
   }
   std::atomic<bool> gotResponse = false;
-  
-  
-  
+  // Make timedOut a RefPtr so if we get a response from content analysis
+  // after this function has finished we can safely check that (and don't
+  // start accessing stack values that don't exist anymore)
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   bool warnDialogResponseIsAllow =
       aWarnDialogResponse == WarnDialogResponse::Allow;
@@ -1081,7 +1087,7 @@ void SendRequestAndExpectWarnResponse(
         const char* errorName = mozilla::GetStaticErrorName(error);
         errorName = errorName ? errorName : "";
         printf("Got error response code %s(%x)\n", errorName, error);
-        
+        // Errors should not have errorCode NS_OK
         EXPECT_NE(NS_OK, error);
         gotResponse = true;
         FAIL() << "Got error response";
@@ -1138,7 +1144,7 @@ void SendRequestAndExpectWarnResponse(
   }
   EXPECT_EQ(NS_OK, contentAnalysis->RespondToWarnDialog(
                        requestToken, warnDialogResponseIsAllow));
-  
+  // Result should happen immediately
   timer->Cancel();
   EXPECT_TRUE(gotResponse);
   EXPECT_FALSE(timedOut->mValue);
@@ -1175,11 +1181,11 @@ TEST_F(ContentAnalysisTest, WarnWithUserRespondingBlock) {
 }
 
 TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeout) {
-  
-  
-  
-  
-  
+  // Submit a request to the agent and then timeout before we get a response.
+  // When we do get a response later, check that we acknowledge as TOO_LATE.
+  // A negative timeout tells Firefox to timeout after 25ms.  The agent
+  // always takes 100ms for requests in tests.  TODO: can we further reduce
+  // these?
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutPref, -1));
   auto ignore = MakeScopeExit(
       [&] { MOZ_ALWAYS_SUCCEEDS(Preferences::ClearUser(kTimeoutPref)); });
@@ -1190,8 +1196,8 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeout) {
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
-  
-  
+  // Make sure that, if the timeout happens before the agent thread submits
+  // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
       request->SetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(true));
 
@@ -1205,11 +1211,11 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeout) {
         rawAcknowledgementObserver, "dlp-acknowledgement-sent-raw"));
   });
   SendRequestAndExpectResponse(
-      mContentAnalysis, request, Some(false) ,
+      mContentAnalysis, request, Some(false) /* expectedShouldAllow */,
       Some(nsIContentAnalysisResponse::Action::eCanceled),
-      Some(false) );
+      Some(false) /* expectIsCached */);
 
-  
+  // The request returns before the ack is sent.  Give it some time to catch up.
   RefPtr hitTimeout = MakeRefPtr<media::Refcountable<BoolStruct>>();
   RefPtr<CancelableRunnable> timer = QueueTimeoutToMainThread(hitTimeout);
 
@@ -1240,9 +1246,9 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeout) {
 }
 
 TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeoutWithDefaultTimeoutAllow) {
-  
-  
-  
+  // Submit a request to the agent and then timeout before we get a response.
+  // When we do get a response later, check that we respect the timeout_result
+  // pref.
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutPref, -1));
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutResultPref, 2));
   auto ignore = MakeScopeExit([&] {
@@ -1256,8 +1262,8 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeoutWithDefaultTimeoutAllow) {
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
-  
-  
+  // Make sure that, if the timeout happens before the agent thread submits
+  // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
       request->SetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(true));
 
@@ -1271,9 +1277,9 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeoutWithDefaultTimeoutAllow) {
         rawAcknowledgementObserver, "dlp-acknowledgement-sent-raw"));
   });
   SendRequestAndExpectResponse(mContentAnalysis, request,
-                               Some(true) ,
+                               Some(true) /* expectedShouldAllow */,
                                Some(nsIContentAnalysisResponse::Action::eAllow),
-                               Some(false) );
+                               Some(false) /* expectIsCached */);
 
   mozilla::SpinEventLoopUntil(
       "Waiting for ContentAnalysis acknowledgement"_ns, [&]() {
@@ -1322,9 +1328,9 @@ void WaitForTooLateAcknowledgement(
 
 TEST_F(ContentAnalysisTest,
        CheckBrowserReportsTimeoutWithDefaultTimeoutWarnAndUserAllow) {
-  
-  
-  
+  // Submit a request to the agent and then timeout before we get a response.
+  // When we do get a response later, check that we respect the timeout_result
+  // pref.
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutPref, -1));
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutResultPref, 1));
   auto ignore = MakeScopeExit([&] {
@@ -1340,8 +1346,8 @@ TEST_F(ContentAnalysisTest,
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
-  
-  
+  // Make sure that, if the timeout happens before the agent thread submits
+  // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
       request->SetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(true));
 
@@ -1368,9 +1374,9 @@ TEST_F(ContentAnalysisTest,
 TEST_F(
     ContentAnalysisTest,
     CheckBrowserReportsTimeoutWithDefaultTimeoutWarnAndUserAllowAfterAgentResponse) {
-  
-  
-  
+  // Submit a request to the agent and then timeout before we get a response.
+  // When we do get a response later, check that we respect the timeout_result
+  // pref.
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutPref, -1));
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutResultPref, 1));
   auto ignore = MakeScopeExit([&] {
@@ -1386,8 +1392,8 @@ TEST_F(
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
-  
-  
+  // Make sure that, if the timeout happens before the agent thread submits
+  // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
       request->SetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(true));
 
@@ -1413,9 +1419,9 @@ TEST_F(
 
 TEST_F(ContentAnalysisTest,
        CheckBrowserReportsTimeoutWithDefaultTimeoutWarnAndUserBlock) {
-  
-  
-  
+  // Submit a request to the agent and then timeout before we get a response.
+  // When we do get a response later, check that we respect the timeout_result
+  // pref.
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutPref, -1));
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutResultPref, 1));
   auto ignore = MakeScopeExit([&] {
@@ -1431,8 +1437,8 @@ TEST_F(ContentAnalysisTest,
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
-  
-  
+  // Make sure that, if the timeout happens before the agent thread submits
+  // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
       request->SetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(true));
 
@@ -1459,9 +1465,9 @@ TEST_F(ContentAnalysisTest,
 TEST_F(
     ContentAnalysisTest,
     CheckBrowserReportsTimeoutWithDefaultTimeoutWarnAndUserBlockAfterAgentResponse) {
-  
-  
-  
+  // Submit a request to the agent and then timeout before we get a response.
+  // When we do get a response later, check that we respect the timeout_result
+  // pref.
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutPref, -1));
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetInt(kTimeoutResultPref, 1));
   auto ignore = MakeScopeExit([&] {
@@ -1477,8 +1483,8 @@ TEST_F(
       false, EmptyCString(), uri,
       nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
-  
-  
+  // Make sure that, if the timeout happens before the agent thread submits
+  // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
       request->SetTestOnlyIgnoreCanceledAndAlwaysSubmitToAgent(true));
 
@@ -1550,7 +1556,7 @@ TEST_F(ContentAnalysisTest,
         const char* errorName = mozilla::GetStaticErrorName(error);
         errorName = errorName ? errorName : "";
         printf("Got error response code %s(%x)\n", errorName, error);
-        
+        // Errors should not have errorCode NS_OK
         EXPECT_NE(NS_OK, error);
         gotResponse = true;
         FAIL() << "Got error response";
@@ -1567,7 +1573,7 @@ TEST_F(ContentAnalysisTest,
 
   auto requests = rawRequestObserver->GetRequests();
   EXPECT_EQ(static_cast<size_t>(2), requests.size());
-  
+  // There should be around 65*2 seconds remaining for each request
   time_t t = requests[0].expires_at();
   time_t secs_remaining = t - now;
   EXPECT_LE(abs(secs_remaining - (65 * 2)), 8);
@@ -1578,15 +1584,15 @@ TEST_F(ContentAnalysisTest,
 
 TEST_F(ContentAnalysisTest,
        SendMultipartRequestThenCancel_CheckAgentIsNotContacted) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Sets the request thread pool to handle 2 simultaneous requests,
+  // sends 3 requests, and cancels after the first request is generated but
+  // before it is sent.
+  // All three requests will be queued to the thread pool (this is not
+  // independently checked) but none will be submitted to the agent.  We confirm
+  // that the requests were not submitted to the agent by checking that the
+  // callback is alerted, the dlp-request-sent-raw messages were received,
+  // no dlp-response-received-raw has been received, and the service is not
+  // expecting any responses from the agent for the canceled user action.
   MOZ_ALWAYS_SUCCEEDS(Preferences::SetUint(kMaxConnections, 2));
   auto removePref = MakeScopeExit(
       [&] { MOZ_ALWAYS_SUCCEEDS(Preferences::ClearUser(kMaxConnections)); });
@@ -1599,14 +1605,14 @@ TEST_F(ContentAnalysisTest,
     requests.AppendElement(new ContentAnalysisRequest(
         nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
         nsIContentAnalysisRequest::Reason::eClipboardPaste, nsString(text),
-        false , EmptyCString() , uri,
+        false /* isFilePath */, EmptyCString() /* sha1 */, uri,
         nsIContentAnalysisRequest::OperationType::eClipboard, nullptr));
   }
 
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
   auto rawRequestObserver = MakeRefPtr<RawRequestObserver>(
-      mContentAnalysis, true );
+      mContentAnalysis, true /* aCancelOnFirstRequest */);
   MOZ_ALWAYS_SUCCEEDS(
       obsServ->AddObserver(rawRequestObserver, "dlp-request-sent-raw", false));
   auto removeRequestSent = MakeScopeExit([&] {
@@ -1626,9 +1632,9 @@ TEST_F(ContentAnalysisTest,
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   RefPtr<CancelableRunnable> timer = QueueTimeoutToMainThread(timedOut);
   SendRequestsAndExpectNoAgentResponseNoAwait(
-      mContentAnalysis, requests, false ,
+      mContentAnalysis, requests, false /* expectShouldAllow */,
       nsIContentAnalysisResponse::CancelError::
-          eOtherRequestInGroupCancelled ,
+          eOtherRequestInGroupCancelled /* expectedCancelError */,
       &gotResponse, timedOut);
 
   nsAutoCString userActionId;
@@ -1646,73 +1652,6 @@ TEST_F(ContentAnalysisTest,
   EXPECT_FALSE(HasOutstandingCanceledRequests(userActionId));
   EXPECT_EQ(3ull, rawRequestObserver->GetRequests().size());
   EXPECT_EQ(0ull, rawResponseObserver->GetResponses().size());
-}
-
-TEST_F(ContentAnalysisTest,
-  SendBatchFileRequestThenCancelOneAndItsAssociatedRequests_CheckAllAreCanceled) {
-  
-  
-  
-  MOZ_ALWAYS_SUCCEEDS(Preferences::SetUint(kMaxConnections, 2));
-  auto removePref = MakeScopeExit(
-  [&] { MOZ_ALWAYS_SUCCEEDS(Preferences::ClearUser(kMaxConnections)); });
-
-  nsCOMPtr<nsIURI> uri = GetExampleDotComURI();
-
-  nsCOMPtr<nsIFile> allowFile = GetFileFromLocalDirectory(L"allowedFile.txt");
-  nsCOMArray<nsIFile> files;
-  files.AppendElement(allowFile);
-  files.AppendElement(allowFile);
-  files.AppendElement(allowFile);
-
-  bool gotResponse = false;
-  RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
-  RefPtr<CancelableRunnable> timer = QueueTimeoutToMainThread(timedOut);
-
-  auto promise = ContentAnalysis::CheckFilesInBatchMode(
-      std::move(files), nullptr,
-      nsIContentAnalysisRequest::Reason::eFilePickerDialog, uri);
-  promise->Then(
-      mozilla::GetMainThreadSerialEventTarget(), __func__,
-      [&, timedOut](nsCOMArray<nsIFile> aAllowedFiles) {
-        if (timedOut->mValue) {
-          return;
-        }
-        EXPECT_EQ(0, aAllowedFiles.Count());
-        gotResponse = true;
-      },
-      [&gotResponse, timedOut](nsresult error) {
-        if (timedOut->mValue) {
-          return;
-        }
-        const char* errorName = mozilla::GetStaticErrorName(error);
-        errorName = errorName ? errorName : "";
-        printf("Got error response code %s(%x)\n", errorName, error);
-        
-        EXPECT_NE(NS_OK, error);
-        gotResponse = true;
-        FAIL() << "Got error response";
-      });
-
-  auto* compoundActions = GetCompoundUserActions();
-  MOZ_ASSERT(compoundActions);
-  EXPECT_EQ(compoundActions->count(), 1u);
-  if (!compoundActions->empty()) {
-    const auto& compoundActionIds = compoundActions->iter().get();
-    EXPECT_EQ(compoundActionIds->count(), 3u);
-    if (!compoundActionIds->empty()) {
-      nsAutoCString userActionId(compoundActionIds->iter().get());
-      MOZ_ALWAYS_SUCCEEDS(CancelAllRequestsAssociatedWithUserAction(userActionId));
-    }
-  }
-
-  mozilla::SpinEventLoopUntil(
-  "Waiting for ContentAnalysis cancel"_ns, [&, timedOut]() {
-    return gotResponse || timedOut->mValue;
-  });
-  timer->Cancel();
-  EXPECT_FALSE(timedOut->mValue);
-  EXPECT_TRUE(gotResponse);
 }
 
 TEST_F(ContentAnalysisTest, GetDiagnosticInfo_Initial) {
@@ -1822,7 +1761,7 @@ TEST_F(ContentAnalysisTest, GetDiagnosticInfo_FailedSignatureVerification) {
   EXPECT_TRUE(info->GetFailedSignatureVerification());
 
   MOZ_ALWAYS_SUCCEEDS(Preferences::ClearUser(kClientSignaturePref));
-  
+  // Reset the agent so it's working for future tests
   mAgentInfo.TerminateProcess();
   StartAgent();
   SendSimpleRequestAndWaitForResponse();

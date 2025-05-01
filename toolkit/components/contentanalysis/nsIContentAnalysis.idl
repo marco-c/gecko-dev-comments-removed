@@ -385,7 +385,8 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  void cancelAllRequestsAssociatedWithUserAction(in ACString aUserActionId);
+
+  void cancelRequestsByRequestToken(in ACString aRequestToken);
 
   
 
