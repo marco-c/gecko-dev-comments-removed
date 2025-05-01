@@ -18,13 +18,50 @@ class nsIWebTransportReceiveStreamStats;
 
 namespace mozilla::net {
 
+
+
+
+
+
+
+class StreamId {
+ public:
+  constexpr explicit StreamId(uint64_t aId) : mId(aId) {}
+
+  constexpr bool IsBiDi() const { return (mId & 0x02) == 0; }
+
+  constexpr bool IsUni() const { return !IsBiDi(); }
+
+  constexpr WebTransportStreamType StreamType() const {
+    return IsBiDi() ? WebTransportStreamType::BiDi
+                    : WebTransportStreamType::UniDi;
+  }
+
+  constexpr bool IsClientInitiated() const { return (mId & 0x01) == 0; }
+
+  constexpr bool IsServerInitiated() const { return !IsClientInitiated(); }
+
+  void Next() { mId += 4; }
+
+  constexpr uint64_t Index() const { return mId >> 2; }
+
+  constexpr bool operator==(uint64_t aVal) const { return mId == aVal; }
+
+  static constexpr StreamId From(uint64_t aVal) { return StreamId(aVal); }
+
+  constexpr operator uint64_t() const { return mId; }
+
+ private:
+  uint64_t mId = 0;
+};
+
 class WebTransportStreamBase : public nsIInputStreamCallback,
                                public nsIOutputStreamCallback {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   explicit WebTransportStreamBase(
-      uint64_t aSessionId, WebTransportStreamType aType,
+      uint64_t aSessionId,
       std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&
           aCallback);
 
@@ -33,7 +70,8 @@ class WebTransportStreamBase : public nsIInputStreamCallback,
   void GetWriterAndReader(nsIAsyncOutputStream** aOutOutputStream,
                           nsIAsyncInputStream** aOutInputStream);
 
-  virtual uint64_t StreamId() const = 0;
+  virtual StreamId WebTransportStreamId() const = 0;
+  virtual uint64_t GetStreamId() const = 0;
   virtual void SendStopSending(uint8_t aErrorCode) = 0;
   virtual void SendFin() = 0;
   virtual void Reset(uint64_t aErrorCode) = 0;
