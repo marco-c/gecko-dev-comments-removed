@@ -354,7 +354,7 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
   
   uint32_t mDebuggerRecursionDepth;
 
-  uint32_t mMicroTaskRecursionDepth;
+  Maybe<uint32_t> mMicroTaskRecursionDepth;
 
   
   
