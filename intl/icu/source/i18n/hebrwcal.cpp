@@ -445,9 +445,8 @@ int32_t startOfYear(int32_t year, UErrorCode &status)
         if (wd == 2 || wd == 4 || wd == 6) {
             
             day += 1;
-            wd = (day % 7);
         }
-        if (wd == 1 && frac > 15*HOUR_PARTS+204 && !HebrewCalendar::isLeapYear(year) ) {
+        else if (wd == 1 && frac > 15*HOUR_PARTS+204 && !HebrewCalendar::isLeapYear(year) ) {
             
             
             
