@@ -1612,22 +1612,6 @@ bool aria::IsValidARIAHidden(nsIContent* aContent) {
          !ShouldIgnoreARIAHidden(aContent);
 }
 
-bool aria::IsValidARIAHidden(DocAccessible* aDocAcc) {
-  nsCOMPtr<nsIContent> docContent = aDocAcc->GetContent();
-  
-  bool isValid = IsValidARIAHidden(docContent);
-
-  
-  
-  
-  auto* rootElement = aDocAcc->DocumentNode()->GetRootElement();
-  if (docContent != rootElement) {
-    isValid |= IsValidARIAHidden(rootElement);
-  }
-
-  return isValid;
-}
-
 bool aria::ShouldIgnoreARIAHidden(nsIContent* aContent) {
   if (!aContent) {
     return false;

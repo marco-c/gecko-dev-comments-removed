@@ -12,73 +12,6 @@ loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 
 
-addAccessibleTask(
-  `hello world`,
-  async function testIframeRootDocument(browser) {
-    info("Loading iframe document");
-    const HIDDEN_IFRAME_URI =
-      "data:text/html,<html id='new_html' aria-hidden='true'><body id='iframeBody'><u>hello world</u></body></html>";
-    const loaded = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, "iframeBody");
-    await SpecialPowers.spawn(
-      browser,
-      [DEFAULT_IFRAME_ID, HIDDEN_IFRAME_URI],
-      (_id, _uri) => {
-        content.document.getElementById(_id).src = _uri;
-      }
-    );
-    await loaded;
-
-    const tree = {
-      INTERNAL_FRAME: [
-        {
-          DOCUMENT: [],
-        },
-      ],
-    };
-    const root = getRootAccessible(document);
-    const iframeDoc = findAccessibleChildByID(root, DEFAULT_IFRAME_ID);
-    testAccessibleTree(iframeDoc, tree);
-  },
-  {
-    chrome: false,
-    topLevel: false,
-    iframe: true,
-    remoteIframe: true,
-  }
-);
-
-
-
-
-
-
-
-addAccessibleTask(
-  `<html aria-hidden="true"><u>hello world`,
-  async function testTabRootDocument(_, accDoc) {
-    const tree = {
-      DOCUMENT: [
-        {
-          TEXT_LEAF: [],
-        },
-      ],
-    };
-    testAccessibleTree(accDoc, tree);
-  },
-  {
-    chrome: true,
-    topLevel: true,
-    iframe: false,
-    remoteIframe: false,
-  }
-);
-
-
-
-
-
-
-
 
 addAccessibleTask(
   `
@@ -251,30 +184,28 @@ addAccessibleTask(
 
 
 
-addAccessibleTask(
-  `hello world`,
-  async function testSVGIframeDocument(browser) {
-    info("Loading SVG");
-    const loaded = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, SVG_DOCUMENT_ID);
-    await SpecialPowers.spawn(
-      browser,
-      [DEFAULT_IFRAME_ID, HIDDEN_SVG_URI],
-      (_id, _uri) => {
-        content.document.getElementById(_id).src = _uri;
-      }
-    );
-    await loaded;
 
-    const tree = {
-      DOCUMENT: [],
-    };
 
-    const root = getRootAccessible(document);
-    const svgRoot = findAccessibleChildByID(root, SVG_DOCUMENT_ID);
-    testAccessibleTree(svgRoot, tree);
-  },
-  { chrome: false, topLevel: false, iframe: true, remoteIframe: true }
-);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
