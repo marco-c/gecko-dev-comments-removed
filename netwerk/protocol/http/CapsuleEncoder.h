@@ -7,6 +7,7 @@
 #ifndef mozilla_net_capsule_encoder_h
 #define mozilla_net_capsule_encoder_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
@@ -14,6 +15,12 @@
 #include "nsTArray.h"
 
 namespace mozilla::net {
+
+struct StreamMetadata {
+  uint64_t mID{0};
+  size_t mDataSize{0};
+  uint64_t mStartOfData{0};
+};
 
 
 class CapsuleEncoder final {
@@ -27,6 +34,8 @@ class CapsuleEncoder final {
   
   
   mozilla::Span<const uint8_t> GetBuffer();
+
+  Maybe<StreamMetadata>& GetStreamMetadata() { return mStreamMetadata; }
 
  private:
   RefPtr<NeqoEncoder> mEncoder;
@@ -44,6 +53,10 @@ class CapsuleEncoder final {
   CapsuleEncoder& EncodeBufferWithVarintLen(nsTArray<uint8_t>& aData);
 
   static size_t VarintLength(uint64_t aValue);
+
+  
+  
+  Maybe<StreamMetadata> mStreamMetadata;
 };
 
 }  
