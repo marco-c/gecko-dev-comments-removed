@@ -23,7 +23,7 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 36;
+pub const VERSION: u32 = 37;
 
 
 pub const SQL: &str = "
@@ -169,12 +169,6 @@ CREATE TABLE yelp_modifiers(
     keyword TEXT NOT NULL,
     record_id TEXT NOT NULL,
     PRIMARY KEY (type, keyword)
-) WITHOUT ROWID;
-
-CREATE TABLE yelp_location_signs(
-    keyword TEXT PRIMARY KEY,
-    need_location INTEGER NOT NULL,
-    record_id TEXT NOT NULL
 ) WITHOUT ROWID;
 
 CREATE TABLE yelp_custom_details(
@@ -649,6 +643,10 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
                 
                 Ok(())
             }
+            36 => {
+                tx.execute_batch("DROP TABLE IF EXISTS yelp_location_signs;")?;
+                Ok(())
+            }
             _ => Err(open_database::Error::IncompatibleVersion(version)),
         }
     }
@@ -666,7 +664,6 @@ pub fn clear_database(db: &Connection) -> rusqlite::Result<()> {
         DELETE FROM icons;
         DELETE FROM yelp_subjects;
         DELETE FROM yelp_modifiers;
-        DELETE FROM yelp_location_signs;
         DELETE FROM yelp_custom_details;
         ",
     )?;
@@ -847,6 +844,28 @@ PRAGMA user_version=16;
             "ingested_records should be empty"
         );
         conn.close().expect("Connection should be closed");
+
+        Ok(())
+    }
+
+    
+    #[test]
+    fn test_remove_yelp_location_signs_table() -> anyhow::Result<()> {
+        
+        let db_file =
+            MigratedDatabaseFile::new(SuggestConnectionInitializer::default(), V16_SCHEMA);
+
+        
+        db_file.upgrade_to(36);
+
+        
+        let conn = db_file.open();
+        conn.execute("DROP table yelp_location_signs", ())?;
+        conn.close().expect("Connection should be closed");
+
+        
+        db_file.upgrade_to(VERSION);
+        db_file.assert_schema_matches_new_database();
 
         Ok(())
     }

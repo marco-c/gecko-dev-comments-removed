@@ -17,7 +17,7 @@ use crate::{ApiResult, Error, RemoteSettingsContext, Result};
 
 
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Default, Clone, uniffi::Record)]
 pub struct RemoteSettingsConfig2 {
     
     #[uniffi(default = None)]
@@ -64,15 +64,30 @@ impl RemoteSettingsServer {
     }
 
     
+    pub fn get_base_url(&self) -> Result<BaseUrl> {
+        let base_url = BaseUrl::parse(self.raw_url())?;
+        
+        
+        
+        
+        
+        if base_url.url().scheme() != "file" {
+            Ok(base_url.join("v1"))
+        } else {
+            Ok(base_url)
+        }
+    }
+
     
     
-    pub fn get_url_with_prod_fallback(&self) -> Url {
-        match self.get_url() {
+    
+    pub fn get_base_url_with_prod_fallback(&self) -> BaseUrl {
+        match self.get_base_url() {
             Ok(url) => url,
             
             Err(_) => {
                 log::warn!("Invalid Custom URL: {}", self.raw_url());
-                Self::Prod.get_url().unwrap()
+                BaseUrl::parse(Self::Prod.raw_url()).unwrap()
             }
         }
     }
@@ -108,5 +123,46 @@ impl RemoteSettingsServer {
                 url
             }
         })
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct BaseUrl {
+    url: Url,
+}
+
+impl BaseUrl {
+    pub fn parse(url: &str) -> Result<Self> {
+        let url = Url::parse(url)?;
+        if url.cannot_be_a_base() {
+            Err(Error::UrlParsingError(
+                url::ParseError::RelativeUrlWithCannotBeABaseBase,
+            ))
+        } else {
+            Ok(Self { url })
+        }
+    }
+
+    pub fn url(&self) -> &Url {
+        &self.url
+    }
+
+    pub fn into_inner(self) -> Url {
+        self.url
+    }
+
+    pub fn join(&self, input: &str) -> BaseUrl {
+        Self {
+            
+            
+            url: self.url.join(input).unwrap(),
+        }
+    }
+
+    pub fn path_segments_mut(&mut self) -> url::PathSegmentsMut<'_> {
+        
+        
+        self.url.path_segments_mut().unwrap()
     }
 }
