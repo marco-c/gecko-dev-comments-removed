@@ -537,6 +537,75 @@ bool js::temporal::GetTemporalCalendarWithISODefault(
   return ToTemporalCalendar(cx, calendarValue, result);
 }
 
+static inline bool DayOfMonthCanBeZero(CalendarId calendarId) {
+  
+  
+  
+  static constexpr mozilla::EnumSet<CalendarId> calendars{
+      CalendarId::Islamic,
+      CalendarId::IslamicRGSA,
+      CalendarId::IslamicUmmAlQura,
+  };
+  return calendars.contains(calendarId);
+}
+
+static inline int32_t OrdinalMonth(CalendarId calendarId,
+                                   const capi::ICU4XDate* date) {
+  int32_t month = capi::ICU4XDate_ordinal_month(date);
+  MOZ_ASSERT(month > 0);
+
+  if (DayOfMonthCanBeZero(calendarId)) {
+    
+    int32_t dayOfMonth = capi::ICU4XDate_day_of_month(date);
+    if (dayOfMonth == 0) {
+      MOZ_ASSERT(month > 1);
+      month -= 1;
+    }
+  }
+
+  return month;
+}
+
+static inline int32_t DayOfMonth(CalendarId calendarId,
+                                 const capi::ICU4XDate* date) {
+  int32_t dayOfMonth = capi::ICU4XDate_day_of_month(date);
+
+  if (DayOfMonthCanBeZero(calendarId)) {
+    
+    if (dayOfMonth == 0) {
+      MOZ_ASSERT(CalendarDaysInMonth(calendarId).second == 30);
+      dayOfMonth = 30;
+    }
+  }
+
+  MOZ_ASSERT(dayOfMonth > 0);
+  return dayOfMonth;
+}
+
+static inline int32_t DayOfYear(const capi::ICU4XDate* date) {
+  int32_t dayOfYear = capi::ICU4XDate_day_of_year(date);
+  MOZ_ASSERT(dayOfYear > 0);
+  return dayOfYear;
+}
+
+static inline int32_t DaysInMonth(const capi::ICU4XDate* date) {
+  int32_t daysInMonth = capi::ICU4XDate_days_in_month(date);
+  MOZ_ASSERT(daysInMonth > 0);
+  return daysInMonth;
+}
+
+static inline int32_t DaysInYear(const capi::ICU4XDate* date) {
+  int32_t daysInYear = capi::ICU4XDate_days_in_year(date);
+  MOZ_ASSERT(daysInYear > 0);
+  return daysInYear;
+}
+
+static inline int32_t MonthsInYear(const capi::ICU4XDate* date) {
+  int32_t monthsInYear = capi::ICU4XDate_months_in_year(date);
+  MOZ_ASSERT(monthsInYear > 0);
+  return monthsInYear;
+}
+
 static auto ToAnyCalendarKind(CalendarId id) {
   switch (id) {
     case CalendarId::ISO8601:
@@ -1150,8 +1219,7 @@ static UniqueICU4XDate CreateDateFromCodes(JSContext* cx, CalendarId calendarId,
         return nullptr;
       }
 
-      int32_t daysInMonth =
-          capi::ICU4XDate_days_in_month(firstDayOfMonth.get());
+      int32_t daysInMonth = DaysInMonth(firstDayOfMonth.get());
       MOZ_ASSERT(day > daysInMonth);
       return CreateDateFromCodes(cx, calendarId, calendar, eraYear, monthCode,
                                  daysInMonth, overflow);
@@ -1225,9 +1293,8 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       if (!date) {
         return nullptr;
       }
-      MOZ_ASSERT_IF(
-          CalendarEraStartsAtYearBoundary(calendarId),
-          capi::ICU4XDate_ordinal_month(date.get()) == uint32_t(month));
+      MOZ_ASSERT_IF(CalendarEraStartsAtYearBoundary(calendarId),
+                    OrdinalMonth(calendarId, date.get()) == month);
       return date;
     }
 
@@ -1250,7 +1317,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
 
       
       
-      int32_t ordinal = capi::ICU4XDate_ordinal_month(date.get());
+      int32_t ordinal = OrdinalMonth(calendarId, date.get());
       if (ordinal == month) {
         return date;
       }
@@ -1264,7 +1331,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
         MOZ_ASSERT(1 < month && month <= 12);
 
         
-        MOZ_ASSERT(capi::ICU4XDate_months_in_year(date.get()) == 13);
+        MOZ_ASSERT(MonthsInYear(date.get()) == 13);
 
         
         
@@ -1287,7 +1354,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
             return nullptr;
           }
 
-          int32_t ordinal = capi::ICU4XDate_ordinal_month(date.get());
+          int32_t ordinal = OrdinalMonth(calendarId, date.get());
           if (ordinal == month) {
             return date;
           }
@@ -1299,7 +1366,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
         MOZ_ASSERT(ordinal == 12);
 
         
-        if (capi::ICU4XDate_months_in_year(date.get()) != 13) {
+        if (MonthsInYear(date.get()) != 13) {
           if (overflow == TemporalOverflow::Reject) {
             ReportCalendarFieldOverflow(cx, "month", month);
             return nullptr;
@@ -1317,7 +1384,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       if (!date) {
         return nullptr;
       }
-      MOZ_ASSERT(capi::ICU4XDate_ordinal_month(date.get()) == uint32_t(month),
+      MOZ_ASSERT(OrdinalMonth(calendarId, date.get()) == month,
                  "unexpected ordinal month");
       return date;
     }
@@ -1338,7 +1405,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
 
       
       
-      int32_t ordinal = capi::ICU4XDate_ordinal_month(date.get());
+      int32_t ordinal = OrdinalMonth(calendarId, date.get());
       if (ordinal == month) {
         return date;
       }
@@ -1351,7 +1418,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
         MOZ_ASSERT(1 < month && month <= 12);
 
         
-        MOZ_ASSERT(capi::ICU4XDate_months_in_year(date.get()) == 13);
+        MOZ_ASSERT(MonthsInYear(date.get()) == 13);
 
         
         
@@ -1379,7 +1446,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       if (!date) {
         return nullptr;
       }
-      MOZ_ASSERT(capi::ICU4XDate_ordinal_month(date.get()) == uint32_t(month),
+      MOZ_ASSERT(OrdinalMonth(calendarId, date.get()) == month,
                  "unexpected ordinal month");
       return date;
     }
@@ -1562,6 +1629,15 @@ static bool CalendarDateMonthCode(JSContext* cx, CalendarId calendar,
   
   if (calendar == CalendarId::Hebrew && monthCode == IrregularAdarII) {
     monthCode = RegularAdarII;
+  }
+
+  if (DayOfMonthCanBeZero(calendar)) {
+    
+    int32_t dayOfMonth = capi::ICU4XDate_day_of_month(date);
+    if (dayOfMonth == 0) {
+      MOZ_ASSERT(ordinal > 1 && !isLeapMonth);
+      monthCode = MonthCode{ordinal - 1};
+    }
   }
 
   
@@ -1939,10 +2015,11 @@ static bool CalendarFieldEraYearMatchesYear(JSContext* cx, CalendarId calendar,
 
 
 static bool CalendarFieldMonthCodeMatchesMonth(JSContext* cx,
+                                               CalendarId calendarId,
                                                Handle<CalendarFields> fields,
                                                const capi::ICU4XDate* date,
                                                int32_t month) {
-  int32_t ordinal = capi::ICU4XDate_ordinal_month(date);
+  int32_t ordinal = OrdinalMonth(calendarId, date);
 
   
   if (month != ordinal) {
@@ -2013,7 +2090,7 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendar,
 
   
   if (month.code != MonthCode{} && month.ordinal > 0) {
-    if (!CalendarFieldMonthCodeMatchesMonth(cx, fields, date.get(),
+    if (!CalendarFieldMonthCodeMatchesMonth(cx, calendar, fields, date.get(),
                                             month.ordinal)) {
       return nullptr;
     }
@@ -2224,11 +2301,11 @@ static bool CalendarMonthDayToISOReferenceDate(JSContext* cx,
       
       int32_t minDaysInMonth = CalendarDaysInMonth(calendar, monthCode).first;
       if (day > minDaysInMonth) {
-        day = capi::ICU4XDate_day_of_month(date.get());
+        day = DayOfMonth(calendar, date.get());
       }
     } else {
       MOZ_ASSERT(overflow == TemporalOverflow::Reject);
-      MOZ_ASSERT(day == int32_t(capi::ICU4XDate_day_of_month(date.get())));
+      MOZ_ASSERT(day == DayOfMonth(calendar, date.get()));
     }
   } else {
     MOZ_ASSERT(monthCode != MonthCode{});
@@ -2339,7 +2416,7 @@ static bool CalendarMonthDayToISOReferenceDate(JSContext* cx,
 
   
   if (month.code != MonthCode{} && month.ordinal > 0) {
-    if (!CalendarFieldMonthCodeMatchesMonth(cx, fields, date.get(),
+    if (!CalendarFieldMonthCodeMatchesMonth(cx, calendar, fields, date.get(),
                                             month.ordinal)) {
       return false;
     }
@@ -2573,7 +2650,7 @@ bool js::temporal::CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
     return false;
   }
 
-  int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
+  int32_t month = OrdinalMonth(calendarId, dt.get());
   result.setInt32(month);
   return true;
 }
@@ -2654,7 +2731,7 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
     return false;
   }
 
-  int32_t day = capi::ICU4XDate_day_of_month(dt.get());
+  int32_t day = DayOfMonth(calendarId, dt.get());
   result.setInt32(day);
   return true;
 }
@@ -2740,8 +2817,8 @@ bool js::temporal::CalendarDayOfYear(JSContext* cx,
     }
     auto eraYear = CalendarEraYear(calendarId, year);
 
-    int32_t dayOfYear = capi::ICU4XDate_day_of_month(dt.get());
-    int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
+    int32_t dayOfYear = DayOfMonth(calendarId, dt.get());
+    int32_t month = OrdinalMonth(calendarId, dt.get());
 
     
     
@@ -2752,16 +2829,16 @@ bool js::temporal::CalendarDayOfYear(JSContext* cx,
         return false;
       }
 
-      dayOfYear += capi::ICU4XDate_days_in_month(previousMonth.get());
+      dayOfYear += DaysInMonth(previousMonth.get());
     }
 
-    MOZ_ASSERT(dayOfYear <= capi::ICU4XDate_days_in_year(dt.get()));
+    MOZ_ASSERT(dayOfYear <= DaysInYear(dt.get()));
 
     result.setInt32(dayOfYear);
     return true;
   }
 
-  int32_t day = capi::ICU4XDate_day_of_year(dt.get());
+  int32_t day = DayOfYear(dt.get());
   result.setInt32(day);
   return true;
 }
@@ -2938,7 +3015,7 @@ bool js::temporal::CalendarDaysInMonth(JSContext* cx,
     return false;
   }
 
-  int32_t days = capi::ICU4XDate_days_in_month(dt.get());
+  int32_t days = DaysInMonth(dt.get());
   result.setInt32(days);
   return true;
 }
@@ -2971,7 +3048,7 @@ bool js::temporal::CalendarDaysInYear(JSContext* cx,
     return false;
   }
 
-  int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+  int32_t days = DaysInYear(dt.get());
   result.setInt32(days);
   return true;
 }
@@ -3004,7 +3081,7 @@ bool js::temporal::CalendarMonthsInYear(JSContext* cx,
     return false;
   }
 
-  int32_t months = capi::ICU4XDate_months_in_year(dt.get());
+  int32_t months = MonthsInYear(dt.get());
   result.setInt32(months);
   return true;
 }
@@ -3057,7 +3134,7 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
       MOZ_ASSERT(!CalendarHasLeapMonths(calendarId));
 
       
-      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+      int32_t days = DaysInYear(dt.get());
       MOZ_ASSERT(days == 365 || days == 366);
 
       
@@ -3076,7 +3153,7 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
       
       
       
-      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+      int32_t days = DaysInYear(dt.get());
       MOZ_ASSERT(days == 353 || days == 354 || days == 355);
 
       
@@ -3091,7 +3168,7 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
 
       
       
-      int32_t months = capi::ICU4XDate_months_in_year(dt.get());
+      int32_t months = MonthsInYear(dt.get());
       MOZ_ASSERT(months == 12 || months == 13);
 
       
@@ -3158,7 +3235,7 @@ static bool ISODateToFields(JSContext* cx, Handle<CalendarValue> calendar,
 
   
   if (type == DateFieldType::MonthDay || type == DateFieldType::Date) {
-    int32_t day = capi::ICU4XDate_day_of_month(dt.get());
+    int32_t day = DayOfMonth(calendarId, dt.get());
     result.setDay(day);
   }
 
@@ -3475,7 +3552,7 @@ static bool ToCalendarDate(JSContext* cx, CalendarId calendarId,
     return false;
   }
 
-  int32_t day = capi::ICU4XDate_day_of_month(dt);
+  int32_t day = DayOfMonth(calendarId, dt);
 
   *result = {year, monthCode, day};
   return true;
@@ -3492,8 +3569,9 @@ static bool ToCalendarDate(JSContext* cx, CalendarId calendarId,
   if (!CalendarDateYear(cx, calendarId, dt, &year)) {
     return false;
   }
-  int32_t month = capi::ICU4XDate_ordinal_month(dt);
-  int32_t day = capi::ICU4XDate_day_of_month(dt);
+
+  int32_t month = OrdinalMonth(calendarId, dt);
+  int32_t day = DayOfMonth(calendarId, dt);
 
   *result = {year, month, day};
   return true;
@@ -3559,9 +3637,8 @@ static bool AddYearMonthDuration(JSContext* cx, CalendarId calendarId,
     if (months > 0) {
       while (true) {
         
-        int32_t month = capi::ICU4XDate_ordinal_month(firstDayOfMonth.get());
-        int32_t monthsInYear =
-            capi::ICU4XDate_months_in_year(firstDayOfMonth.get());
+        int32_t month = OrdinalMonth(calendarId, firstDayOfMonth.get());
+        int32_t monthsInYear = MonthsInYear(firstDayOfMonth.get());
         if (month + months <= monthsInYear) {
           break;
         }
@@ -3583,7 +3660,7 @@ static bool AddYearMonthDuration(JSContext* cx, CalendarId calendarId,
 
       while (true) {
         
-        int32_t month = capi::ICU4XDate_ordinal_month(firstDayOfMonth.get());
+        int32_t month = OrdinalMonth(calendarId, firstDayOfMonth.get());
         if (month + months >= 1) {
           break;
         }
@@ -3604,8 +3681,7 @@ static bool AddYearMonthDuration(JSContext* cx, CalendarId calendarId,
     }
 
     
-    int32_t month =
-        capi::ICU4XDate_ordinal_month(firstDayOfMonth.get()) + months;
+    int32_t month = OrdinalMonth(calendarId, firstDayOfMonth.get()) + months;
     firstDayOfMonth = CreateDateFrom(cx, calendarId, calendar, eraYear, month,
                                      1, TemporalOverflow::Constrain);
     if (!firstDayOfMonth) {
@@ -4013,16 +4089,16 @@ static bool DifferenceNonISODate(JSContext* cx, CalendarId calendarId,
 
     
     if (largestUnit == TemporalUnit::Month && years != 0) {
-      auto monthsUntilEndOfYear = [](const capi::ICU4XDate* date) {
-        int32_t month = capi::ICU4XDate_ordinal_month(date);
-        int32_t monthsInYear = capi::ICU4XDate_months_in_year(date);
+      auto monthsUntilEndOfYear = [calendarId](const capi::ICU4XDate* date) {
+        int32_t month = OrdinalMonth(calendarId, date);
+        int32_t monthsInYear = MonthsInYear(date);
         MOZ_ASSERT(1 <= month && month <= monthsInYear);
 
         return monthsInYear - month + 1;
       };
 
-      auto monthsSinceStartOfYear = [](const capi::ICU4XDate* date) {
-        return capi::ICU4XDate_ordinal_month(date) - 1;
+      auto monthsSinceStartOfYear = [calendarId](const capi::ICU4XDate* date) {
+        return OrdinalMonth(calendarId, date) - 1;
       };
 
       
@@ -4041,7 +4117,7 @@ static bool DifferenceNonISODate(JSContext* cx, CalendarId calendarId,
         if (!dt) {
           return false;
         }
-        months += capi::ICU4XDate_months_in_year(dt.get()) * sign;
+        months += MonthsInYear(dt.get()) * sign;
       }
 
       
