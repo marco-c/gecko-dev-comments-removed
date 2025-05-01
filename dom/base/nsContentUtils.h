@@ -1776,6 +1776,12 @@ class nsContentUtils {
   
 
 
+  static already_AddRefed<nsAtom> GetEventType(
+      const mozilla::WidgetEvent* aEvent);
+
+  
+
+
 
   static EventMessage GetEventMessageAndAtomForListener(const nsAString& aName,
                                                         nsAtom** aOnName);

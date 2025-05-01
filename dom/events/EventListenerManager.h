@@ -508,6 +508,8 @@ class EventListenerManager final : public EventListenerManagerBase {
 
   bool HasListenersFor(nsAtom* aEventNameWithOn) const;
 
+  bool HasNonPassiveListenersFor(const WidgetEvent* aEvent) const;
+
   
 
 
@@ -749,8 +751,8 @@ class EventListenerManager final : public EventListenerManagerBase {
   nsPIDOMWindowInner* GetInnerWindowForTarget();
   already_AddRefed<nsPIDOMWindowInner> GetTargetAsInnerWindow() const;
 
-  bool ListenerCanHandle(const Listener* aListener, const WidgetEvent* aEvent,
-                         EventMessage aEventMessage) const;
+  bool ListenerCanHandle(const Listener* aListener,
+                         const WidgetEvent* aEvent) const;
 
   
   

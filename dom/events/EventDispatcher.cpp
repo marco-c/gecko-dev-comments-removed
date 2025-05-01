@@ -27,6 +27,7 @@
 #include "KeyboardEvent.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentEvents.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CloseEvent.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/DeviceOrientationEvent.h"
@@ -795,6 +796,33 @@ static void DescribeEventTargetForProfilerMarker(const EventTarget* aTarget,
 }
 
 
+
+
+
+static bool IsUncancelableIfOnlyPassiveListeners(const WidgetEvent* aEvent) {
+  if (!aEvent->IsTrusted() || !aEvent->mFlags.mCancelable) {
+    return false;
+  }
+
+  switch (aEvent->mMessage) {
+    case eTouchStart:
+    case eTouchEnd:
+    case eTouchMove:
+    case eWheel:
+    case eLegacyMouseLineOrPageScroll:
+    case eLegacyMousePixelScroll:
+      break;
+    default:
+      return false;
+  }
+
+  
+  
+  nsCOMPtr<nsIContent> target = nsIContent::FromEventTargetOrNull(aEvent->mOriginalTarget);
+  return !(XRE_IsParentProcess() && BrowserParent::GetFrom(target));
+}
+
+
 nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
                                    nsPresContext* aPresContext,
                                    WidgetEvent* aEvent, Event* aDOMEvent,
@@ -980,6 +1008,9 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   Maybe<uint32_t> activationTargetItemIndex;
 
   
+  bool maybeUncancelable = IsUncancelableIfOnlyPassiveListeners(aEvent);
+
+  
   
   nsEventStatus status = aDOMEvent && aDOMEvent->DefaultPrevented()
                              ? nsEventStatus_eConsumeNoDefault
@@ -1008,6 +1039,13 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
 
     clearTargets = ShouldClearTargets(aEvent);
   } else {
+    if (maybeUncancelable && preVisitor.mMayHaveListenerManager) {
+      if (EventListenerManager* const manager =
+              targetEtci->CurrentTarget()->GetExistingListenerManager()) {
+        maybeUncancelable = !manager->HasNonPassiveListenersFor(aEvent);
+      }
+    }
+
     
     
     nsCOMPtr<EventTarget> t = aEvent->mTarget;
@@ -1064,18 +1102,13 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
         activationTargetItemIndex.emplace(chain.Length() - 1);
       }
 
-      if (preVisitor.mCanHandle) {
-        preVisitor.mTargetInKnownToBeHandledScope = preVisitor.mEvent->mTarget;
-        topEtci = parentEtci;
-      } else {
+      if (!preVisitor.mCanHandle) {
         bool ignoreBecauseOfShadowDOM = preVisitor.mIgnoreBecauseOfShadowDOM;
         nsCOMPtr<nsINode> disabledTarget =
             nsINode::FromEventTargetOrNull(parentTarget);
         parentEtci = MayRetargetToChromeIfCanNotHandleEvent(
             chain, preVisitor, parentEtci, topEtci, disabledTarget);
         if (parentEtci && preVisitor.mCanHandle) {
-          preVisitor.mTargetInKnownToBeHandledScope =
-              preVisitor.mEvent->mTarget;
           EventTargetChainItem* item =
               EventTargetChainItem::GetFirstCanHandleEventTarget(chain);
           if (!ignoreBecauseOfShadowDOM) {
@@ -1083,10 +1116,21 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
             
             item->SetNewTarget(parentTarget);
           }
-          topEtci = parentEtci;
-          continue;
         }
+      }
+
+      if (parentEtci && preVisitor.mCanHandle) {
+        preVisitor.mTargetInKnownToBeHandledScope = preVisitor.mEvent->mTarget;
+        topEtci = parentEtci;
+      } else {
         break;
+      }
+
+      if (maybeUncancelable && preVisitor.mMayHaveListenerManager) {
+        if (EventListenerManager* const manager =
+                parentEtci->CurrentTarget()->GetExistingListenerManager()) {
+          maybeUncancelable = !manager->HasNonPassiveListenersFor(aEvent);
+        }
       }
     }
 
@@ -1096,6 +1140,10 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
     }
 
     if (NS_SUCCEEDED(rv)) {
+      if (maybeUncancelable) {
+        aEvent->mFlags.mCancelable = false;
+      }
+
       if (aTargets) {
         aTargets->Clear();
         uint32_t numTargets = chain.Length();
