@@ -186,6 +186,13 @@ struct LargeBuffer;
 
 
 
+
+
+
+
+
+
+
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinMediumAllocShift = 8;   
@@ -343,10 +350,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   void* alloc(size_t bytes, bool nurseryOwned);
   void* allocInGC(size_t bytes, bool nurseryOwned);
-  void* realloc(void* ptr, size_t bytes, bool nurseryOwned);
-  void free(void* ptr);
-  size_t getAllocSize(void* ptr);
-  bool isNurseryOwned(void* ptr);
+  void* realloc(void* alloc, size_t bytes, bool nurseryOwned);
+  void free(void* alloc);
+  size_t getAllocSize(void* alloc);
+  bool isNurseryOwned(void* alloc);
 
   void startMinorCollection(MaybeLock& lock);
   bool startMinorSweeping();
