@@ -136,58 +136,6 @@ interface nsIFaviconService : nsISupports
 
 
 
-
-
-
-
-
-  void getFaviconURLForPage(in nsIURI aPageURI,
-                            in nsIFaviconDataCallback aCallback,
-                            [optional] in unsigned short aPreferredWidth);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void getFaviconDataForPage(in nsIURI aPageURI,
-                             in nsIFaviconDataCallback aCallback,
-                             [optional] in unsigned short aPreferredWidth);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   [implicit_jscontext, must_use]
   Promise getFaviconForPage(in nsIURI aPageURI, [optional]
                             in unsigned short aPreferredWidth);
