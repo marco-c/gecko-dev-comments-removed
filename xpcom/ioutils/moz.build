@@ -5,7 +5,7 @@
 
 
 with Files("**/*"):
-    BUG_COMPONENT = ("Toolkit", "IOUtils and PathUtils")
+    BUG_COMPONENT = ("Core", "XPCOM")
 
 EXPORTS.mozilla += [
     "IOUtils.h",
