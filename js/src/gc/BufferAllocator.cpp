@@ -672,7 +672,7 @@ void BufferAllocator::markNurseryOwnedAlloc(void* alloc, bool ownerWasTenured) {
     AutoLock lock(this);
     auto* header = lookupLargeBuffer(alloc, lock);
     MOZ_ASSERT(header->zone == zone);
-    largeNurseryAllocs.ref().remove(header);
+    largeNurseryAllocsToSweep.ref().remove(header);
     if (ownerWasTenured) {
       header->isNurseryOwned = false;
       header->allocatedDuringCollection = majorState != State::NotCollecting;
@@ -680,7 +680,7 @@ void BufferAllocator::markNurseryOwnedAlloc(void* alloc, bool ownerWasTenured) {
       size_t usableSize = header->allocBytes();
       updateHeapSize(usableSize, false, false);
     } else {
-      sweptLargeNurseryAllocs.ref().pushBack(header);
+      largeNurseryAllocs.ref().pushBack(header);
     }
     return;
   }
@@ -805,17 +805,18 @@ void BufferAllocator::startMinorCollection(MaybeLock& lock) {
   MOZ_ASSERT(minorState == State::NotCollecting);
   if (majorState == State::NotCollecting) {
     checkGCStateNotInUse(lock);
-  } else {
-    
-    
-    MOZ_ASSERT(sweptLargeNurseryAllocs.ref().isEmpty());
   }
 #endif
+
+  
+  
+  MOZ_ASSERT(largeNurseryAllocsToSweep.ref().isEmpty());
+  std::swap(largeNurseryAllocs.ref(), largeNurseryAllocsToSweep.ref());
 
   minorState = State::Marking;
 }
 
-bool BufferAllocator::startMinorSweeping(LargeAllocList& largeAllocsToFree) {
+bool BufferAllocator::startMinorSweeping() {
   
   
 
@@ -828,24 +829,18 @@ bool BufferAllocator::startMinorSweeping(LargeAllocList& largeAllocsToFree) {
   }
   for (LargeBuffer* header : largeNurseryAllocs.ref()) {
     MOZ_ASSERT(header->isNurseryOwned);
-    MOZ_ASSERT(!header->marked);
+    MOZ_ASSERT(!header->marked);  
   }
-  for (LargeBuffer* header : sweptLargeNurseryAllocs.ref()) {
+  for (LargeBuffer* header : largeNurseryAllocsToSweep.ref()) {
     MOZ_ASSERT(header->isNurseryOwned);
-    MOZ_ASSERT(!header->marked);
+    MOZ_ASSERT(!header->marked);  
   }
 #endif
 
   
   
-  
-  largeAllocsToFree.append(std::move(largeNurseryAllocs.ref()));
-  MOZ_ASSERT(largeNurseryAllocs.ref().isEmpty());
-  largeNurseryAllocs.ref() = std::move(sweptLargeNurseryAllocs.ref());
-
-  
-  
-  if (mediumMixedChunks.ref().isEmpty()) {
+  if (mediumMixedChunks.ref().isEmpty() &&
+      largeNurseryAllocsToSweep.ref().isEmpty()) {
     
     minorState = State::NotCollecting;
     return false;
@@ -902,18 +897,20 @@ void BufferAllocator::sweepForMinorCollection() {
   }
 
   
+  
+  
+  
+
+  while (!largeNurseryAllocsToSweep.ref().isEmpty()) {
+    LargeBuffer* header = largeNurseryAllocsToSweep.ref().popFirst();
+    AutoLock lock(this);
+    unmapLarge(header, true, lock);
+  }
+
+  
   AutoLock lock(this);
   MOZ_ASSERT(!minorSweepingFinished);
   minorSweepingFinished = true;
-}
-
-
-void BufferAllocator::FreeLargeAllocs(LargeAllocList& largeAllocsToFree) {
-  while (!largeAllocsToFree.isEmpty()) {
-    LargeBuffer* header = largeAllocsToFree.popFirst();
-    AutoLock lock(&header->zone->bufferAllocator);
-    header->zone->bufferAllocator.unmapLarge(header, true, lock);
-  }
 }
 
 void BufferAllocator::startMajorCollection(MaybeLock& lock) {
@@ -1259,6 +1256,7 @@ void BufferAllocator::checkGCStateNotInUse(const AutoLock& lock) {
     checkChunkListGCStateNotInUse(sweptMediumTenuredChunks.ref(), false, false);
   } else {
     MOZ_ASSERT(mediumMixedChunksToSweep.ref().isEmpty());
+    MOZ_ASSERT(largeNurseryAllocsToSweep.ref().isEmpty());
 
     MOZ_ASSERT(sweptMediumMixedChunks.ref().isEmpty());
     MOZ_ASSERT(sweptMediumTenuredChunks.ref().isEmpty());
@@ -1277,8 +1275,6 @@ void BufferAllocator::checkGCStateNotInUse(const AutoLock& lock) {
   checkAllocListGCStateNotInUse(largeTenuredAllocs.ref(), false);
 
   MOZ_ASSERT(largeTenuredAllocsToSweep.ref().isEmpty());
-
-  MOZ_ASSERT(sweptLargeNurseryAllocs.ref().isEmpty());
   MOZ_ASSERT(sweptLargeTenuredAllocs.ref().isEmpty());
 }
 
