@@ -457,6 +457,21 @@
         openWindowInfo = window.arguments[11];
       }
 
+      let extraOptions;
+      if (window.arguments?.[1] instanceof Ci.nsIPropertyBag2) {
+        extraOptions = window.arguments[1];
+      }
+
+      
+      
+      
+      let triggeringRemoteType;
+      if (extraOptions?.hasKey("triggeringRemoteType")) {
+        triggeringRemoteType = extraOptions.getPropertyAsACString(
+          "triggeringRemoteType"
+        );
+      }
+
       let tabArgument = gBrowserInit.getTabToAdopt();
 
       
@@ -484,7 +499,7 @@
       } else if (openWindowInfo) {
         userContextId = openWindowInfo.originAttributes.userContextId;
         if (openWindowInfo.isRemote) {
-          remoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
+          remoteType = triggeringRemoteType ?? E10SUtils.DEFAULT_REMOTE_TYPE;
         } else {
           remoteType = E10SUtils.NOT_REMOTE;
         }
@@ -503,7 +518,7 @@
             uriToLoad,
             gMultiProcessBrowser,
             gFissionBrowser,
-            E10SUtils.DEFAULT_REMOTE_TYPE,
+            triggeringRemoteType ?? E10SUtils.DEFAULT_REMOTE_TYPE,
             null,
             oa
           );
@@ -513,6 +528,13 @@
           
           
           
+
+          if (Cu.isInAutomation) {
+            ChromeUtils.releaseAssert(
+              !triggeringRemoteType,
+              "Unexpected triggeringRemoteType with no uriToLoad"
+            );
+          }
 
           
           
@@ -2756,6 +2778,7 @@
           initialBrowsingContextGroupId,
           openWindowInfo,
           skipLoad,
+          triggeringRemoteType,
         }));
 
         if (focusUrlBar) {
@@ -3318,8 +3341,15 @@
         initialBrowsingContextGroupId,
         openWindowInfo,
         skipLoad,
+        triggeringRemoteType,
       }
     ) {
+      
+      
+      if (!preferredRemoteType && triggeringRemoteType) {
+        preferredRemoteType = triggeringRemoteType;
+      }
+
       
       
       if (!preferredRemoteType && openerBrowser) {
