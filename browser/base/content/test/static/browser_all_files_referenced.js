@@ -330,6 +330,9 @@ var allowlist = [
   },
 
   
+  { file: "resource://gre/localization/en-US/dom/xslt.ftl" },
+
+  
   { file: "chrome://browser/content/places/interactionsViewer.html" },
 ];
 
