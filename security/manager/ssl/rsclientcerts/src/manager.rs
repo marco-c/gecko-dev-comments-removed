@@ -17,17 +17,8 @@ extern "C" {
     fn IsGeckoSearchingForClientAuthCertificates() -> bool;
 }
 
-
-
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum SlotType {
-    Modern,
-    Legacy,
-}
-
 pub trait CryptokiObject {
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool;
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool;
     fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]>;
 }
 
@@ -61,9 +52,9 @@ type ManagerReturnValueReceiver = Receiver<ManagerReturnValue>;
 
 
 enum ManagerArguments {
-    OpenSession(SlotType),
+    OpenSession(),
     CloseSession(CK_SESSION_HANDLE),
-    CloseAllSessions(SlotType),
+    CloseAllSessions(),
     StartSearch(CK_SESSION_HANDLE, Vec<(CK_ATTRIBUTE_TYPE, Vec<u8>)>),
     Search(CK_SESSION_HANDLE, usize),
     ClearSearch(CK_SESSION_HANDLE),
@@ -133,15 +124,15 @@ impl ManagerProxy {
             let mut real_manager = Manager::new(backend);
             while let Ok(arguments) = manager_receiver.recv() {
                 let results = match arguments {
-                    ManagerArguments::OpenSession(slot_type) => {
-                        ManagerReturnValue::OpenSession(real_manager.open_session(slot_type))
+                    ManagerArguments::OpenSession() => {
+                        ManagerReturnValue::OpenSession(real_manager.open_session())
                     }
                     ManagerArguments::CloseSession(session_handle) => {
                         ManagerReturnValue::CloseSession(real_manager.close_session(session_handle))
                     }
-                    ManagerArguments::CloseAllSessions(slot_type) => {
+                    ManagerArguments::CloseAllSessions() => {
                         ManagerReturnValue::CloseAllSessions(
-                            real_manager.close_all_sessions(slot_type),
+                            real_manager.close_all_sessions(),
                         )
                     }
                     ManagerArguments::StartSearch(session, attrs) => {
@@ -214,10 +205,10 @@ impl ManagerProxy {
         Ok(result)
     }
 
-    pub fn open_session(&mut self, slot_type: SlotType) -> Result<CK_SESSION_HANDLE, Error> {
+    pub fn open_session(&mut self) -> Result<CK_SESSION_HANDLE, Error> {
         manager_proxy_fn_impl!(
             self,
-            ManagerArguments::OpenSession(slot_type),
+            ManagerArguments::OpenSession(),
             ManagerReturnValue::OpenSession
         )
     }
@@ -230,10 +221,10 @@ impl ManagerProxy {
         )
     }
 
-    pub fn close_all_sessions(&mut self, slot_type: SlotType) -> Result<(), Error> {
+    pub fn close_all_sessions(&mut self) -> Result<(), Error> {
         manager_proxy_fn_impl!(
             self,
-            ManagerArguments::CloseAllSessions(slot_type),
+            ManagerArguments::CloseAllSessions(),
             ManagerReturnValue::CloseAllSessions
         )
     }
@@ -348,10 +339,10 @@ enum Object<B: ClientCertsBackend> {
 }
 
 impl<B: ClientCertsBackend> Object<B> {
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         match self {
-            Object::Cert(cert) => cert.matches(slot_type, attrs),
-            Object::Key(key) => key.matches(slot_type, attrs),
+            Object::Cert(cert) => cert.matches(attrs),
+            Object::Key(key) => key.matches(attrs),
         }
     }
 
@@ -395,8 +386,7 @@ impl<B: ClientCertsBackend> Object<B> {
 
 pub struct Manager<B: ClientCertsBackend> {
     
-    
-    sessions: BTreeMap<CK_SESSION_HANDLE, SlotType>,
+    sessions: BTreeSet<CK_SESSION_HANDLE>,
     
     searches: BTreeMap<CK_SESSION_HANDLE, Vec<CK_OBJECT_HANDLE>>,
     
@@ -415,14 +405,14 @@ pub struct Manager<B: ClientCertsBackend> {
     next_handle: CK_OBJECT_HANDLE,
     
     
-    last_scan_time: Option<Instant>,
+    last_scan_finished: Option<Instant>,
     backend: B,
 }
 
 impl<B: ClientCertsBackend> Manager<B> {
     pub fn new(backend: B) -> Manager<B> {
         Manager {
-            sessions: BTreeMap::new(),
+            sessions: BTreeSet::new(),
             searches: BTreeMap::new(),
             signs: BTreeMap::new(),
             objects: BTreeMap::new(),
@@ -430,7 +420,7 @@ impl<B: ClientCertsBackend> Manager<B> {
             key_ids: BTreeSet::new(),
             next_session: 1,
             next_handle: 1,
-            last_scan_time: None,
+            last_scan_finished: None,
             backend,
         }
     }
@@ -439,17 +429,16 @@ impl<B: ClientCertsBackend> Manager<B> {
     
     
     fn maybe_find_new_objects(&mut self) -> Result<(), Error> {
-        let now = Instant::now();
-        match self.last_scan_time {
-            Some(last_scan_time) => {
-                if now.duration_since(last_scan_time) < Duration::new(2, 0) {
+        match self.last_scan_finished {
+            Some(last_scan_finished) => {
+                if Instant::now().duration_since(last_scan_finished) < Duration::new(3, 0) {
                     return Ok(());
                 }
             }
             None => {}
         }
-        self.last_scan_time = Some(now);
         let (certs, keys) = self.backend.find_objects()?;
+        self.last_scan_finished = Some(Instant::now());
         for cert in certs {
             let object = Object::Cert(cert);
             if self.cert_ids.contains(object.id()?) {
@@ -471,32 +460,22 @@ impl<B: ClientCertsBackend> Manager<B> {
         Ok(())
     }
 
-    pub fn open_session(&mut self, slot_type: SlotType) -> Result<CK_SESSION_HANDLE, Error> {
+    pub fn open_session(&mut self) -> Result<CK_SESSION_HANDLE, Error> {
         let next_session = self.next_session;
         self.next_session += 1;
-        self.sessions.insert(next_session, slot_type);
+        self.sessions.insert(next_session);
         Ok(next_session)
     }
 
     pub fn close_session(&mut self, session: CK_SESSION_HANDLE) -> Result<(), Error> {
-        self.sessions
-            .remove(&session)
-            .ok_or_else(|| error_here!(ErrorType::InvalidInput))
-            .map(|_| ())
+        if !self.sessions.remove(&session) {
+            return Err(error_here!(ErrorType::InvalidInput));
+        }
+        Ok(())
     }
 
-    pub fn close_all_sessions(&mut self, slot_type: SlotType) -> Result<(), Error> {
-        let mut to_remove = Vec::new();
-        for (session, open_slot_type) in self.sessions.iter() {
-            if slot_type == *open_slot_type {
-                to_remove.push(*session);
-            }
-        }
-        for session in to_remove {
-            if self.sessions.remove(&session).is_none() {
-                return Err(error_here!(ErrorType::LibraryFailure));
-            }
-        }
+    pub fn close_all_sessions(&mut self) -> Result<(), Error> {
+        self.sessions.clear();
         Ok(())
     }
 
@@ -515,10 +494,9 @@ impl<B: ClientCertsBackend> Manager<B> {
         session: CK_SESSION_HANDLE,
         attrs: Vec<(CK_ATTRIBUTE_TYPE, Vec<u8>)>,
     ) -> Result<(), Error> {
-        let slot_type = match self.sessions.get(&session) {
-            Some(slot_type) => *slot_type,
-            None => return Err(error_here!(ErrorType::InvalidArgument)),
-        };
+        if !self.sessions.contains(&session) {
+            return Err(error_here!(ErrorType::InvalidArgument));
+        }
         
         
         for (attr, _) in &attrs {
@@ -536,7 +514,7 @@ impl<B: ClientCertsBackend> Manager<B> {
         }
         let mut handles = Vec::new();
         for (handle, object) in &self.objects {
-            if object.matches(slot_type, &attrs) {
+            if object.matches(&attrs) {
                 handles.push(*handle);
             }
         }

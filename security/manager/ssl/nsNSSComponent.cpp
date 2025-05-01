@@ -4,8 +4,6 @@
 
 
 
-#include <atomic>
-
 #include "nsNSSComponent.h"
 
 #include "BinaryPath.h"
@@ -20,6 +18,7 @@
 #include "cert_storage/src/cert_storage.h"
 #include "certdb.h"
 #include "mozilla/AppShutdown.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
@@ -1916,12 +1915,22 @@ nsNSSComponent::AsyncClearSSLExternalAndInternalSessionCache(
   return NS_OK;
 }
 
-std::atomic<bool> sSearchingForClientAuthCertificates{false};
+Atomic<bool> sSearchingForClientAuthCertificates{false};
 
 extern "C" {
 
+
+
+
+
+
+
+
+
+
+
 bool IsGeckoSearchingForClientAuthCertificates() {
-  return sSearchingForClientAuthCertificates;
+  return sSearchingForClientAuthCertificates.exchange(false);
 }
 }
 
