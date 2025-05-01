@@ -1485,9 +1485,17 @@ TextPropertyEditor.prototype = {
 
     const dimensionObj = this._parseDimension(this.prop.value);
     const { value, unit } = dimensionObj.groups;
+    
+    
+    
+    
+    
+    
+    
+    const intScreenX = Math.floor(event.screenX + 0.5);
     this._draggingValueCache = {
       isInDeadzone: true,
-      previousScreenX: event.screenX,
+      previousScreenX: intScreenX,
       value: parseFloat(value),
       unit,
     };
