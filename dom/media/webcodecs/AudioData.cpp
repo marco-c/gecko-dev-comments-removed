@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
@@ -46,8 +46,8 @@ template <typename... Args>
   return Err(str);
 }
 
-// Only needed for refcounted objects.
-//
+
+
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(AudioData)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AudioData)
   tmp->CloseIfNeeded();
@@ -59,18 +59,18 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(AudioData)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(AudioData)
-// AudioData should be released as soon as its refcount drops to zero,
-// without waiting for async deletion by the cycle collector, since it may hold
-// a large-size PCM buffer.
+
+
+
 NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(AudioData, CloseIfNeeded())
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(AudioData)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-/*
- * W3C Webcodecs AudioData implementation
- */
+
+
+
 
 AudioData::AudioData(nsIGlobalObject* aParent,
                      const AudioDataSerializedData& aData)
@@ -80,7 +80,7 @@ AudioData::AudioData(nsIGlobalObject* aParent,
       mNumberOfFrames(aData.mNumberOfFrames),
       mSampleRate(aData.mSampleRate),
       mAudioSampleFormat(aData.mAudioSampleFormat),
-      // The resource is not copied, but referenced
+      
       mResource(aData.mResource) {
   MOZ_ASSERT(mParent);
   MOZ_ASSERT(mResource,
@@ -94,14 +94,13 @@ AudioData::AudioData(const AudioData& aOther)
       mNumberOfFrames(aOther.mNumberOfFrames),
       mSampleRate(aOther.mSampleRate),
       mAudioSampleFormat(aOther.mAudioSampleFormat),
-      // The resource is not copied, but referenced
+      
       mResource(aOther.mResource) {
   MOZ_ASSERT(mParent);
 }
 
 Result<already_AddRefed<AudioDataResource>, nsresult>
-AudioDataResource::Construct(
-    const OwningMaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aInit) {
+AudioDataResource::Construct(const OwningAllowSharedBufferSource& aInit) {
   FallibleTArray<uint8_t> copied;
   uint8_t* rv = ProcessTypedArraysFixed(
       aInit, [&](const Span<uint8_t>& aData) -> uint8_t* {
@@ -158,7 +157,7 @@ JSObject* AudioData::WrapObject(JSContext* aCx,
 }
 
 Result<Ok, nsCString> IsValidAudioDataInit(const AudioDataInit& aInit) {
-  // The sample rate is an uint32_t within Gecko
+  
   uint32_t integerSampleRate = SaturatingCast<uint32_t>(aInit.mSampleRate);
   if (integerSampleRate == 0) {
     return LogAndReturnErr("sampleRate must be positive");
@@ -194,7 +193,7 @@ Result<Ok, nsCString> IsValidAudioDataInit(const AudioDataInit& aInit) {
   return Ok();
 }
 
-/* static */
+
 already_AddRefed<AudioData> AudioData::Constructor(const GlobalObject& aGlobal,
                                                    const AudioDataInit& aInit,
                                                    ErrorResult& aRv) {
@@ -225,40 +224,43 @@ already_AddRefed<AudioData> AudioData::Constructor(const GlobalObject& aGlobal,
                                                 aInit);
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-format
+
 Nullable<mozilla::dom::AudioSampleFormat> AudioData::GetFormat() const {
   AssertIsOnOwningThread();
   return MaybeToNullable(mAudioSampleFormat);
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-samplerate
+
 float AudioData::SampleRate() const {
   AssertIsOnOwningThread();
   return mSampleRate;
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-numberofframes
+
 uint32_t AudioData::NumberOfFrames() const {
   AssertIsOnOwningThread();
   return mNumberOfFrames;
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-numberofchannels
+
 uint32_t AudioData::NumberOfChannels() const {
   AssertIsOnOwningThread();
   return mNumberOfChannels;
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-duration
+
 uint64_t AudioData::Duration() const {
   AssertIsOnOwningThread();
-  // The spec isn't clear in which direction to convert to integer.
-  // https://github.com/w3c/webcodecs/issues/726
+  if (!mNumberOfFrames) {
+    return 0;
+  }
+  
+  
   return static_cast<uint64_t>(
       static_cast<float>(USECS_PER_S * mNumberOfFrames) / mSampleRate);
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-timestamp
+
 int64_t AudioData::Timestamp() const {
   AssertIsOnOwningThread();
   return mTimestamp;
@@ -297,13 +299,13 @@ bool IsInterleaved(const AudioSampleFormat& aFormat) {
 
 size_t AudioData::ComputeCopyElementCount(
     const AudioDataCopyToOptions& aOptions, ErrorResult& aRv) {
-  // https://w3c.github.io/webcodecs/#compute-copy-element-count
-  // 1, 2
+  
+  
   auto destFormat = mAudioSampleFormat;
   if (aOptions.mFormat.WasPassed()) {
     destFormat = OptionalToMaybe(aOptions.mFormat);
   }
-  // 3, 4
+  
   MOZ_ASSERT(destFormat.isSome());
   if (IsInterleaved(destFormat.value())) {
     if (aOptions.mPlaneIndex > 0) {
@@ -322,10 +324,10 @@ size_t AudioData::ComputeCopyElementCount(
       return 0;
     }
   }
-  // 5 -- conversion between all formats supported
-  // 6 -- all planes have the same number of frames, always
+  
+  
   uint64_t frameCount = mNumberOfFrames;
-  // 7
+  
   if (aOptions.mFrameOffset >= frameCount) {
     auto msg = nsFmtCString(
         FMT_STRING("Frame offset of {} greater or equal than frame count {}"),
@@ -334,7 +336,7 @@ size_t AudioData::ComputeCopyElementCount(
     aRv.ThrowRangeError(msg);
     return 0;
   }
-  // 8, 9
+  
   uint64_t copyFrameCount = frameCount - aOptions.mFrameOffset;
   if (aOptions.mFrameCount.WasPassed()) {
     if (aOptions.mFrameCount.Value() > copyFrameCount) {
@@ -348,7 +350,7 @@ size_t AudioData::ComputeCopyElementCount(
     }
     copyFrameCount = aOptions.mFrameCount.Value();
   }
-  // 10, 11
+  
   uint64_t elementCount = copyFrameCount;
   if (IsInterleaved(destFormat.value())) {
     elementCount *= mNumberOfChannels;
@@ -356,9 +358,9 @@ size_t AudioData::ComputeCopyElementCount(
   return elementCount;
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-allocationsize
-// This method returns an int, that can be zero in case of success or error.
-// Caller should check aRv to determine success or error.
+
+
+
 uint32_t AudioData::AllocationSize(const AudioDataCopyToOptions& aOptions,
                                    ErrorResult& aRv) {
   AssertIsOnOwningThread();
@@ -371,7 +373,7 @@ uint32_t AudioData::AllocationSize(const AudioDataCopyToOptions& aOptions,
   size_t copyElementCount = ComputeCopyElementCount(aOptions, aRv);
   if (aRv.Failed()) {
     LOGD("AudioData::AllocationSize failure");
-    // ComputeCopyElementCount has set the exception type.
+    
     return 0;
   }
   Maybe<mozilla::dom::AudioSampleFormat> destFormat = mAudioSampleFormat;
@@ -381,8 +383,8 @@ uint32_t AudioData::AllocationSize(const AudioDataCopyToOptions& aOptions,
   if (destFormat.isNothing()) {
     auto msg = "AudioData has an unknown format"_ns;
     LOGD("{}", msg.get());
-    // See https://github.com/w3c/webcodecs/issues/727 -- it isn't clear yet
-    // what to do here
+    
+    
     aRv.ThrowRangeError(msg);
     return 0;
   }
@@ -405,7 +407,7 @@ void CopySamples(Span<S> aSource, Span<D> aDest, uint32_t aSourceChannelCount,
     MOZ_ASSERT(aDest.Length() >= aCopyToSpec.mFrameCount);
     MOZ_ASSERT(aSource.Length() - aCopyToSpec.mFrameOffset >=
                aCopyToSpec.mFrameCount);
-    // This turns into a regular memcpy if the types are in fact equal
+    
     ConvertAudioSamples(aSource.data() + aCopyToSpec.mFrameOffset, aDest.data(),
                         aCopyToSpec.mFrameCount * aSourceChannelCount);
     return;
@@ -415,8 +417,8 @@ void CopySamples(Span<S> aSource, Span<D> aDest, uint32_t aSourceChannelCount,
     MOZ_ASSERT(aDest.Length() >= aCopyToSpec.mFrameCount);
     MOZ_ASSERT(aSource.Length() - aCopyToSpec.mFrameOffset >=
                aCopyToSpec.mFrameCount);
-    // Interleaved to planar -- only copy samples of the correct channel to the
-    // destination
+    
+    
     size_t readIndex = aCopyToSpec.mFrameOffset * aSourceChannelCount +
                        aCopyToSpec.mPlaneIndex;
     for (size_t i = 0; i < aCopyToSpec.mFrameCount; i++) {
@@ -427,16 +429,16 @@ void CopySamples(Span<S> aSource, Span<D> aDest, uint32_t aSourceChannelCount,
   }
 
   if (!IsInterleaved(aSourceFormat) && IsInterleaved(aCopyToSpec.mFormat)) {
-    // Planar to interleaved -- copy of all channels of the source into the
-    // destination buffer.
+    
+    
     MOZ_ASSERT(aCopyToSpec.mPlaneIndex == 0);
     MOZ_ASSERT(aDest.Length() >= aCopyToSpec.mFrameCount * aSourceChannelCount);
     MOZ_ASSERT(aSource.Length() -
                    aCopyToSpec.mFrameOffset * aSourceChannelCount >=
                aCopyToSpec.mFrameCount * aSourceChannelCount);
     size_t writeIndex = 0;
-    // Scan the source linearly and put each sample at the right position in the
-    // destination interleaved buffer.
+    
+    
     size_t readIndex = 0;
     for (size_t channel = 0; channel < aSourceChannelCount; channel++) {
       writeIndex = channel;
@@ -449,7 +451,7 @@ void CopySamples(Span<S> aSource, Span<D> aDest, uint32_t aSourceChannelCount,
     return;
   }
   if (!IsInterleaved(aSourceFormat) && !IsInterleaved(aCopyToSpec.mFormat)) {
-    // Planar to Planar / convert + copy from the right index in the source.
+    
     size_t framePerPlane = aSource.Length() / aSourceChannelCount;
     size_t offset = aCopyToSpec.mPlaneIndex * framePerPlane;
     MOZ_ASSERT(aDest.Length() >= aCopyToSpec.mFrameCount,
@@ -492,7 +494,7 @@ using DataSpanType =
 
 DataSpanType GetDataSpan(Span<uint8_t> aSpan, const AudioSampleFormat aFormat) {
   const size_t Length = aSpan.Length() / BytesPerSamples(aFormat);
-  // TODO: Check size so Span can be reasonably constructed?
+  
   switch (aFormat) {
     case AudioSampleFormat::U8:
     case AudioSampleFormat::U8_planar:
@@ -531,10 +533,10 @@ void DoCopy(Span<uint8_t> aSource, Span<uint8_t> aDest,
   CopySamples(source, dest, aSourceChannelCount, aSourceFormat, aCopyToSpec);
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-copyto
-void AudioData::CopyTo(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aDestination,
-    const AudioDataCopyToOptions& aOptions, ErrorResult& aRv) {
+
+void AudioData::CopyTo(const AllowSharedBufferSource& aDestination,
+                       const AudioDataCopyToOptions& aOptions,
+                       ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
   size_t destLength = ProcessTypedArraysFixed(
@@ -582,15 +584,15 @@ void AudioData::CopyTo(
   CopyToSpec copyToSpec(framesToCopy, aOptions.mFrameOffset,
                         aOptions.mPlaneIndex, destFormat.value());
 
-  // Now a couple layers of macros to type the pointers and perform the actual
-  // copy.
+  
+  
   ProcessTypedArraysFixed(aDestination, [&](const Span<uint8_t>& aData) {
     DoCopy(mResource->Data(), aData, mNumberOfChannels,
            mAudioSampleFormat.value(), copyToSpec);
   });
 }
 
-// https://w3c.github.io/webcodecs/#dom-audiodata-clone
+
 already_AddRefed<AudioData> AudioData::Clone(ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
@@ -604,7 +606,7 @@ already_AddRefed<AudioData> AudioData::Clone(ErrorResult& aRv) {
   return MakeAndAddRef<AudioData>(*this);
 }
 
-// https://w3c.github.io/webcodecs/#close-audiodata
+
 void AudioData::Close() {
   AssertIsOnOwningThread();
 
@@ -617,18 +619,18 @@ void AudioData::Close() {
 
 bool AudioData::IsClosed() const { return !mResource; }
 
-// https://w3c.github.io/webcodecs/#ref-for-deserialization-steps%E2%91%A1
-/* static */
+
+
 JSObject* AudioData::ReadStructuredClone(JSContext* aCx,
                                          nsIGlobalObject* aGlobal,
                                          JSStructuredCloneReader* aReader,
                                          const AudioDataSerializedData& aData) {
   JS::Rooted<JS::Value> value(aCx, JS::NullValue());
-  // To avoid a rooting hazard error from returning a raw JSObject* before
-  // running the RefPtr destructor, RefPtr needs to be destructed before
-  // returning the raw JSObject*, which is why the RefPtr<AudioData> is created
-  // in the scope below. Otherwise, the static analysis infers the RefPtr cannot
-  // be safely destructed while the unrooted return JSObject* is on the stack.
+  
+  
+  
+  
+  
   {
     RefPtr<AudioData> frame = MakeAndAddRef<AudioData>(aGlobal, aData);
     if (!GetOrCreateDOMReflector(aCx, frame, &value) || !value.isObject()) {
@@ -639,45 +641,45 @@ JSObject* AudioData::ReadStructuredClone(JSContext* aCx,
   return value.toObjectOrNull();
 }
 
-// https://w3c.github.io/webcodecs/#ref-for-audiodata%E2%91%A2%E2%91%A2
+
 bool AudioData::WriteStructuredClone(JSStructuredCloneWriter* aWriter,
                                      StructuredCloneHolder* aHolder) const {
   AssertIsOnOwningThread();
 
-  // AudioData closed
+  
   if (!mResource) {
     LOGD("AudioData was already close in WriteStructuredClone");
     return false;
   }
   const uint32_t index = aHolder->AudioData().Length();
-  // https://github.com/w3c/webcodecs/issues/717
-  // For now, serialization is only allowed in the same address space, it's OK
-  // to send a refptr here instead of copying the backing buffer.
+  
+  
+  
   aHolder->AudioData().AppendElement(AudioDataSerializedData(*this));
 
   return !NS_WARN_IF(!JS_WriteUint32Pair(aWriter, SCTAG_DOM_AUDIODATA, index));
 }
 
-// https://w3c.github.io/webcodecs/#ref-for-transfer-steps
+
 UniquePtr<AudioData::TransferredData> AudioData::Transfer() {
   AssertIsOnOwningThread();
 
   if (!mResource) {
-    // Closed
+    
     LOGD("AudioData was already close in Transfer");
     return nullptr;
   }
 
-  // This adds a ref to the resource
+  
   auto serialized = MakeUnique<AudioDataSerializedData>(*this);
-  // This removes the ref to the resource, effectively transfering the backing
-  // storage.
+  
+  
   Close();
   return serialized;
 }
 
-// https://w3c.github.io/webcodecs/#ref-for-transfer-receiving-steps
-/* static */
+
+
 already_AddRefed<AudioData> AudioData::FromTransferred(nsIGlobalObject* aGlobal,
                                                        TransferredData* aData) {
   MOZ_ASSERT(aData);
@@ -692,9 +694,9 @@ void AudioData::CloseIfNeeded() {
 }
 
 RefPtr<mozilla::AudioData> AudioData::ToAudioData() const {
-  // Always convert to f32 interleaved for now, as this Gecko's prefered
-  // internal audio representation for encoding and decoding.
-  // mResource can be bigger than needed.
+  
+  
+  
   Span<uint8_t> data = mResource->Data();
   CheckedUint64 sampleCount = mNumberOfFrames;
   sampleCount *= mNumberOfChannels;
@@ -721,4 +723,4 @@ RefPtr<mozilla::AudioData> AudioData::ToAudioData() const {
 #undef LOGD
 #undef LOGE
 
-}  // namespace mozilla::dom
+}  
