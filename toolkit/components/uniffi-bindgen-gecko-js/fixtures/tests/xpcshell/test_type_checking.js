@@ -67,7 +67,7 @@ add_task(async function testEnumTypeCheck() {
     "copieEnumeration() with non-Enumeration value should throw"
   );
   await Assert.rejects(
-    Rondpoint.copieEnumeration(0), 
+    Rondpoint.copieEnumeration(99), 
     /e:/, 
     "copieEnumeration() with non-Enumeration value should throw"
   );
