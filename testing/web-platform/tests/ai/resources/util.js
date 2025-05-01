@@ -11,34 +11,38 @@ const kTestPrompt = 'Please write a sentence in English.';
 
 
 
-const generateOptionCombinations = (optionsSpec) => {
-  
-  const keys = optionsSpec.map(o => Object.keys(o)[0]);
-  
-  const valueArrays = optionsSpec.map(o => Object.values(o)[0]);
-  
-  const valueCombinations = valueArrays.reduce((accumulator, currentValues) => {
-    
-    if (accumulator.length === 0) {
-      return currentValues.map(value => [value]);
-    }
-    
-    return accumulator.flatMap(existingCombo =>
-      currentValues.map(currentValue => [...existingCombo, currentValue])
-    );
-  }, []);
+const generateOptionCombinations =
+    (optionsSpec) => {
+      
+      const keys = optionsSpec.map(o => Object.keys(o)[0]);
+      
+      const valueArrays = optionsSpec.map(o => Object.values(o)[0]);
+      
+      const valueCombinations =
+          valueArrays.reduce((accumulator, currentValues) => {
+            
+            
+            if (accumulator.length === 0) {
+              return currentValues.map(value => [value]);
+            }
+            
+            return accumulator.flatMap(
+                existingCombo => currentValues.map(
+                    currentValue => [...existingCombo, currentValue]));
+          }, []);
 
-  
-  return valueCombinations.map(combination => {
-    const result = {};
-    keys.forEach((key, index) => {
-      if (combination[index] !== undefined) {
-        result[key] = combination[index];
-      }
-    });
-    return result;
-  });
-}
+      
+      
+      return valueCombinations.map(combination => {
+        const result = {};
+        keys.forEach((key, index) => {
+          if (combination[index] !== undefined) {
+            result[key] = combination[index];
+          }
+        });
+        return result;
+      });
+    }
 
 
 const testAbortPromise = async (t, method) => {
@@ -69,6 +73,7 @@ const testAbortPromise = async (t, method) => {
 };
 
 
+
 const testAbortReadableStream = async (t, method) => {
   
   {
@@ -76,32 +81,27 @@ const testAbortReadableStream = async (t, method) => {
     const stream = method(controller.signal);
     controller.abort();
     let writableStream = new WritableStream();
-    await promise_rejects_dom(
-      t, "AbortError", stream.pipeTo(writableStream)
-    );
+    await promise_rejects_dom(t, 'AbortError', stream.pipeTo(writableStream));
 
     
-    await promise_rejects_dom(
-      t, "AbortError", new Promise(() => { method(controller.signal); })
-    );
+    await promise_rejects_dom(t, 'AbortError', new Promise(() => {
+                                method(controller.signal);
+                              }));
   }
 
   
   {
-    const error = new DOMException("test", "VersionError");
+    const error = new DOMException('test', 'VersionError');
     const controller = new AbortController();
     const stream = method(controller.signal);
     controller.abort(error);
     let writableStream = new WritableStream();
-    await promise_rejects_exactly(
-      t, error,
-      stream.pipeTo(writableStream)
-    );
+    await promise_rejects_exactly(t, error, stream.pipeTo(writableStream));
 
     
-    await promise_rejects_exactly(
-      t, error, new Promise(() => { method(controller.signal); })
-    );
+    await promise_rejects_exactly(t, error, new Promise(() => {
+                                    method(controller.signal);
+                                  }));
   }
 };
 
@@ -126,8 +126,12 @@ async function testMonitor(createFunc, options = {}) {
 
   let lastProgressEventLoaded = -1;
   for (const progressEvent of progressEvents) {
+    assert_equals(progressEvent.lengthComputable, true);
     assert_equals(progressEvent.total, 1);
     assert_less_than_equal(progressEvent.loaded, progressEvent.total);
+
+    
+    assert_equals(progressEvent.loaded % (1 / 0x10000), 0);
 
     
     assert_greater_than(progressEvent.loaded, lastProgressEventLoaded);
