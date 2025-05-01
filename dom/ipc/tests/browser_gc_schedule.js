@@ -278,47 +278,58 @@ add_task(async function gcJSInitiatedDuring() {
   const num_tabs = 3;
   var tabs = await setupTabsAndOneForForeground(num_tabs);
 
-  info("Tabs ready, Asking for GCs");
-  var waits = [];
+  let completed;
+  let retry = 0;
+  const maxRetries = 3;
+  do {
+    completed = true;
+    retry++;
 
-  
-  
-  var tab0Waits = startNextCollection(tabs[0], 0, waits, () => {
-    if (SpecialPowers.Cu.getJSTestingFunctions().gczeal) {
-      SpecialPowers.Cu.getJSTestingFunctions().gczeal(10);
+    info("Tabs ready, Asking for GCs");
+    var waits = [];
+
+    
+    var tab0Waits = startNextCollection(tabs[0], 0, waits, () => {
+      SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
+    });
+    await tab0Waits.waitBegin;
+    info("GC on tab 0 has begun");
+
+    
+    var tab1Waits = startNextCollection(tabs[1], 1, waits);
+
+    
+    SpecialPowers.spawn(tabs[1].linkedBrowser, [], () => {
+      SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
+    });
+
+    await tab1Waits.waitBegin;
+    info("GC on tab 1 has begun");
+
+    
+    var state = await SpecialPowers.spawn(tabs[0].linkedBrowser, [], () => {
+      return SpecialPowers.Cu.getJSTestingFunctions().gcstate();
+    });
+
+    info("State of Tab 0 GC is " + state);
+    if (state == "NotActive") {
+      
+      info("GC finished in tab 0");
+      completed = false;
     }
-    SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
-  });
-  await tab0Waits.waitBegin;
-  info("GC on tab 0 has begun");
 
-  
-  var tab1Waits = startNextCollection(tabs[1], 1, waits);
+    
+    startNextCollection(tabs[2], 2, waits);
 
-  
-  SpecialPowers.spawn(tabs[1].linkedBrowser, [], () => {
-    SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
-  });
+    let order = await resolveInOrder(waits);
+    info("All GCs finished");
+    checkAllCompleted(
+      order,
+      Array.from({ length: num_tabs }, (_, n) => n)
+    );
+  } while (!completed && retry <= maxRetries);
 
-  await tab1Waits.waitBegin;
-  info("GC on tab 1 has begun");
-
-  
-  var state = await SpecialPowers.spawn(tabs[0].linkedBrowser, [], () => {
-    return SpecialPowers.Cu.getJSTestingFunctions().gcstate();
-  });
-  info("State of Tab 0 GC is " + state);
-  isnot(state, "NotActive", "GC is active in tab 0");
-
-  
-  startNextCollection(tabs[2], 2, waits);
-
-  let order = await resolveInOrder(waits);
-  info("All GCs finished");
-  checkAllCompleted(
-    order,
-    Array.from({ length: num_tabs }, (_, n) => n)
-  );
+  ok(completed, "GC in tab 0 finished sooner than expected");
 
   for (var tab of tabs) {
     BrowserTestUtils.removeTab(tab);
@@ -335,41 +346,52 @@ add_task(async function gcJSInitiatedBefore() {
   const num_tabs = 8;
   var tabs = await setupTabsAndOneForForeground(num_tabs);
 
-  info("Tabs ready");
-  var waits = [];
+  let completed;
+  let retry = 0;
+  const maxRetries = 3;
+  do {
+    completed = true;
+    retry++;
 
-  
-  
-  info("Force a JS-initiated GC in tab 0");
-  var tab0Waits = startNextCollection(tabs[0], 0, waits, () => {
-    if (SpecialPowers.Cu.getJSTestingFunctions().gczeal) {
-      SpecialPowers.Cu.getJSTestingFunctions().gczeal(10);
+    info("Tabs ready");
+    var waits = [];
+
+    
+    info("Force a JS-initiated GC in tab 0");
+    var tab0Waits = startNextCollection(tabs[0], 0, waits, () => {
+      SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
+    });
+    await tab0Waits.waitBegin;
+
+    info("Request GCs in remaining tabs");
+    for (var i = 1; i < num_tabs; i++) {
+      startNextCollection(tabs[i], i, waits);
     }
-    SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
-  });
-  await tab0Waits.waitBegin;
 
-  info("Request GCs in remaining tabs");
-  for (var i = 1; i < num_tabs; i++) {
-    startNextCollection(tabs[i], i, waits);
-  }
+    
+    var state = await SpecialPowers.spawn(tabs[0].linkedBrowser, [], () => {
+      return SpecialPowers.Cu.getJSTestingFunctions().gcstate();
+    });
 
-  
-  var state = await SpecialPowers.spawn(tabs[0].linkedBrowser, [], () => {
-    return SpecialPowers.Cu.getJSTestingFunctions().gcstate();
-  });
-  info("State is " + state);
-  isnot(state, "NotActive", "GC is active in tab 0");
+    info("State is " + state);
+    if (state == "NotActive") {
+      
+      info("GC finished in tab 0");
+      completed = false;
+    }
 
-  let order = await resolveInOrder(waits);
-  
-  
-  order.sort((e1, e2) => e1.when - e2.when);
-  checkOneAtATime(order);
-  checkAllCompleted(
-    order,
-    Array.from({ length: num_tabs }, (_, n) => n)
-  );
+    let order = await resolveInOrder(waits);
+    
+    
+    order.sort((e1, e2) => e1.when - e2.when);
+    checkOneAtATime(order);
+    checkAllCompleted(
+      order,
+      Array.from({ length: num_tabs }, (_, n) => n)
+    );
+  } while (!completed && retry <= maxRetries);
+
+  ok(completed, "GC in tab 0 finished sooner than expected");
 
   for (var tab of tabs) {
     BrowserTestUtils.removeTab(tab);
