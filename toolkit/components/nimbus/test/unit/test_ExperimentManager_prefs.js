@@ -1,9 +1,6 @@
 
 
 
-const { _ExperimentFeature: ExperimentFeature, NimbusFeatures } =
-  ChromeUtils.importESModule("resource://nimbus/ExperimentAPI.sys.mjs");
-
 const { ObjectUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/ObjectUtils.sys.mjs"
 );

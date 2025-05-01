@@ -1,9 +1,6 @@
 
 
 
-const { NimbusFeatures } = ChromeUtils.importESModule(
-  "resource://nimbus/ExperimentAPI.sys.mjs"
-);
 const {
   LABS_MIGRATION_FEATURE_MAP,
   MigrationError,
