@@ -20,10 +20,6 @@ user_pref("extensions.autoDisableScopes", 10);
 
 user_pref("extensions.update.notifyUser", false);
 
-user_pref("extensions.webextensions.warnings-as-errors", false);
-
-user_pref("extensions.wpt.enabled", true);
-
 user_pref("focusmanager.testmode", true);
 
 user_pref("media.navigator.streams.fake", true);
