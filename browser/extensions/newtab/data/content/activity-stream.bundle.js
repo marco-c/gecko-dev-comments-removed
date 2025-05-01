@@ -4573,6 +4573,10 @@ function AdBannerContextMenu({
   const [contextMenuClassNames, setContextMenuClassNames] = (0,external_React_namespaceObject.useState)("ads-context-menu");
 
   
+  
+  const [isKeyboardAccess, setIsKeyboardAccess] = (0,external_React_namespaceObject.useState)(false);
+
+  
 
 
 
@@ -4586,10 +4590,27 @@ function AdBannerContextMenu({
       setContextMenuClassNames("ads-context-menu");
     }
   };
-  const onClick = e => {
-    e.preventDefault();
+
+  
+
+
+
+
+
+  const toggleContextMenu = isKeyBoard => {
     toggleContextMenuStyleSwitch(!showContextMenu);
     setShowContextMenu(!showContextMenu);
+    setIsKeyboardAccess(isKeyBoard);
+  };
+  const onClick = e => {
+    e.preventDefault();
+    toggleContextMenu(false);
+  };
+  const onKeyDown = e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleContextMenu(true);
+    }
   };
   const onUpdate = () => {
     toggleContextMenuStyleSwitch(!showContextMenu);
@@ -4603,10 +4624,12 @@ function AdBannerContextMenu({
     type: "icon",
     size: "default",
     iconsrc: "chrome://global/skin/icons/more.svg",
-    onClick: onClick
+    onClick: onClick,
+    onKeyDown: onKeyDown
   }), showContextMenu && external_React_default().createElement(LinkMenu, {
     onUpdate: onUpdate,
     dispatch: dispatch,
+    keyboardAccess: isKeyboardAccess,
     options: ADBANNER_CONTEXT_MENU_OPTIONS,
     shouldSendImpressionStats: true,
     userEvent: actionCreators.DiscoveryStreamUserEvent,
