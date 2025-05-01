@@ -1207,11 +1207,6 @@ class MockRuntime {
 
         this.enabledFeatures_ = enabled_features;
 
-        let selectedDepthType;
-        if (sessionOptions.depthOptions && sessionOptions.depthOptions.depthTypeRequest.length != 0) {
-          selectedDepthType = sessionOptions.depthOptions.depthTypeRequest[0];
-        }
-
         return Promise.resolve({
           session: {
             submitFrameSink: submit_frame_sink,
@@ -1224,12 +1219,9 @@ class MockRuntime {
               depthConfiguration: enabled_features.includes(
                                       xrSessionMojom.XRSessionFeature.DEPTH) ?
                   {
-                    
-                    
                     depthUsage: xrSessionMojom.XRDepthUsage.kCPUOptimized,
                     depthDataFormat:
                         xrSessionMojom.XRDepthDataFormat.kLuminanceAlpha,
-                    depthType: selectedDepthType,
                   } :
                   null,
               views: this._getDefaultViews(),
@@ -1258,7 +1250,6 @@ class MockRuntime {
 
     switch (feature) {
       case xrSessionMojom.XRSessionFeature.DEPTH:
-        
         
         return options.depthOptions &&
                (options.depthOptions.usagePreferences.length == 0 ||
