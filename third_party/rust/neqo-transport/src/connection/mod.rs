@@ -2562,15 +2562,14 @@ impl Connection {
             
             
             self.stats.borrow_mut().ecn_tx[pt] += IpTosEcn::from(*tos);
-            if space == PacketNumberSpace::Handshake {
-                if self.role == Role::Client {
-                    
-                    self.discard_keys(PacketNumberSpace::Initial, now);
-                } else if self.role == Role::Server && self.state == State::Confirmed {
-                    
-                    
-                    self.discard_keys(PacketNumberSpace::Handshake, now);
-                }
+
+            if space == PacketNumberSpace::Handshake
+                && self.role == Role::Server
+                && self.state == State::Confirmed
+            {
+                
+                
+                self.discard_keys(PacketNumberSpace::Handshake, now);
             }
 
             
@@ -2927,6 +2926,11 @@ impl Connection {
                 self.set_initial_limits();
             }
             if self.crypto.install_keys(self.role)? {
+                if self.role == Role::Client {
+                    
+                    
+                    self.discard_keys(PacketNumberSpace::Initial, now);
+                }
                 self.saved_datagrams.make_available(Epoch::Handshake);
             }
         }
@@ -3226,9 +3230,8 @@ impl Connection {
                     RecoveryToken::Datagram(dgram_tracker) => self
                         .events
                         .datagram_outcome(dgram_tracker, OutgoingDatagramOutcome::Acked),
-                    RecoveryToken::EcnEct0 => self.paths.acked_ecn(),
                     
-                    RecoveryToken::HandshakeDone => (),
+                    RecoveryToken::HandshakeDone | RecoveryToken::EcnEct0 => (),
                 }
             }
         }
