@@ -10712,7 +10712,6 @@ void CodeGenerator::visitWasmPostWriteBarrierImmediate(
     LWasmPostWriteBarrierImmediate* lir) {
   Register object = ToRegister(lir->object());
   Register value = ToRegister(lir->value());
-  Register valueBase = ToRegister(lir->valueBase());
   Register temp = ToRegister(lir->temp0());
   MOZ_ASSERT(ToRegister(lir->instance()) == InstanceReg);
   auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
@@ -10721,16 +10720,12 @@ void CodeGenerator::visitWasmPostWriteBarrierImmediate(
     int32_t framePushedAfterInstance = masm.framePushed();
 
     
-    Register valueAddr = valueBase;
-    masm.computeEffectiveAddress(Address(valueAddr, lir->valueOffset()), temp);
-
-    
     masm.setupWasmABICall();
     masm.passABIArg(InstanceReg);
-    masm.passABIArg(temp);
+    masm.passABIArg(object);
     int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
     masm.callWithABI(wasm::BytecodeOffset(0),
-                     wasm::SymbolicAddress::PostBarrier,
+                     wasm::SymbolicAddress::PostBarrierWholeCell,
                      mozilla::Some(instanceOffset), ABIType::General);
 
     masm.Pop(InstanceReg);

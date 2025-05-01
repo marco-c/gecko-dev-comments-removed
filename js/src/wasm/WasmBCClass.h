@@ -177,6 +177,9 @@ enum class PostBarrierKind {
   
   
   Imprecise,
+  
+  
+  WholeCell,
 };
 
 struct BranchIfRefSubtypeRegisters {
@@ -1357,6 +1360,18 @@ struct BaseCompiler final {
   
   
   
+
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] bool emitPostBarrierWholeCell(RegRef object, RegRef value,
+                                              RegPtr temp);
+
   
   
   
@@ -1369,6 +1384,19 @@ struct BaseCompiler final {
   
   [[nodiscard]] bool emitPostBarrierImprecise(
       const mozilla::Maybe<RegRef>& object, RegPtr valueAddr, RegRef value);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   [[nodiscard]] bool emitPostBarrierPrecise(
       const mozilla::Maybe<RegRef>& object, RegPtr valueAddr, RegRef prevValue,
       RegRef value);

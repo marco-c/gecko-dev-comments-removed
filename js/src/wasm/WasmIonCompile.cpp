@@ -2248,11 +2248,9 @@ class FunctionCompiler {
   
   [[nodiscard]] bool postBarrierImmediate(uint32_t lineOrBytecode,
                                           MDefinition* object,
-                                          MDefinition* valueBase,
-                                          uint32_t valueOffset,
                                           MDefinition* newValue) {
     auto* barrier = MWasmPostWriteBarrierImmediate::New(
-        alloc(), instancePointer_, object, valueBase, valueOffset, newValue);
+        alloc(), instancePointer_, object, newValue);
     if (!barrier) {
       return false;
     }
@@ -4652,8 +4650,7 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       
-      if (!postBarrierImmediate(bytecodeOffset, exception, data, offset,
-                                argValues[i])) {
+      if (!postBarrierImmediate(bytecodeOffset, exception, argValues[i])) {
         return false;
       }
     }
@@ -4853,7 +4850,7 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     
-    return postBarrierImmediate(lineOrBytecode, keepAlive, base, offset, value);
+    return postBarrierImmediate(lineOrBytecode, keepAlive, value);
   }
 
   
