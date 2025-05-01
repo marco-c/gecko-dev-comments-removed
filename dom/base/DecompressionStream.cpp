@@ -8,6 +8,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/DecompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/WritableStream.h"
@@ -47,7 +48,7 @@ class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     
 
     
-    RootedUnion<OwningArrayBufferViewOrArrayBuffer> bufferSource(cx);
+    RootedUnion<OwningBufferSource> bufferSource(cx);
     if (!bufferSource.Init(cx, aChunk)) {
       aRv.MightThrowJSException();
       aRv.StealExceptionFromJSContext(cx);

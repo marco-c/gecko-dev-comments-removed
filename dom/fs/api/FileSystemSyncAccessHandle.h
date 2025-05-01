@@ -1,12 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef DOM_FS_FILESYSTEMSYNCACCESSHANDLE_H_
 #define DOM_FS_FILESYSTEMSYNCACCESSHANDLE_H_
 
+#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/PFileSystemManager.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
 #include "nsCOMPtr.h"
@@ -26,7 +27,6 @@ class FileSystemAccessHandleChild;
 class FileSystemAccessHandleControlChild;
 struct FileSystemReadWriteOptions;
 class FileSystemManager;
-class MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer;
 class Promise;
 class StrongWorkerRef;
 
@@ -63,20 +63,18 @@ class FileSystemSyncAccessHandle final : public nsISupports,
 
   [[nodiscard]] RefPtr<BoolPromise> OnClose();
 
-  // WebIDL Boilerplate
+  
   nsIGlobalObject* GetParentObject() const;
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  // WebIDL Interface
-  uint64_t Read(
-      const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer,
-      const FileSystemReadWriteOptions& aOptions, ErrorResult& aRv);
+  
+  uint64_t Read(const AllowSharedBufferSource& aBuffer,
+                const FileSystemReadWriteOptions& aOptions, ErrorResult& aRv);
 
-  uint64_t Write(
-      const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer,
-      const FileSystemReadWriteOptions& aOptions, ErrorResult& aRv);
+  uint64_t Write(const AllowSharedBufferSource& aBuffer,
+                 const FileSystemReadWriteOptions& aOptions, ErrorResult& aRv);
 
   void Truncate(uint64_t aSize, ErrorResult& aError);
 
@@ -97,10 +95,9 @@ class FileSystemSyncAccessHandle final : public nsISupports,
 
   virtual ~FileSystemSyncAccessHandle();
 
-  uint64_t ReadOrWrite(
-      const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer,
-      const FileSystemReadWriteOptions& aOptions, const bool aRead,
-      ErrorResult& aRv);
+  uint64_t ReadOrWrite(const AllowSharedBufferSource& aBuffer,
+                       const FileSystemReadWriteOptions& aOptions,
+                       const bool aRead, ErrorResult& aRv);
 
   nsresult EnsureStream();
 
@@ -127,7 +124,7 @@ class FileSystemSyncAccessHandle final : public nsISupports,
   State mState;
 };
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-#endif  // DOM_FS_FILESYSTEMSYNCACCESSHANDLE_H_
+#endif  

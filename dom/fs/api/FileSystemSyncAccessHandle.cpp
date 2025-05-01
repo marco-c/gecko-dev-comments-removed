@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "FileSystemSyncAccessHandle.h"
 
@@ -13,6 +13,8 @@
 #include "mozilla/FixedBufferOutputStream.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/FileSystemAccessHandleChild.h"
 #include "mozilla/dom/FileSystemAccessHandleControlChild.h"
 #include "mozilla/dom/FileSystemHandleBinding.h"
@@ -40,7 +42,7 @@ namespace {
 using SizePromise = Int64Promise;
 const auto CreateAndRejectSizePromise = CreateAndRejectInt64Promise;
 
-}  // namespace
+}  
 
 FileSystemSyncAccessHandle::FileSystemSyncAccessHandle(
     nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
@@ -59,11 +61,11 @@ FileSystemSyncAccessHandle::FileSystemSyncAccessHandle(
       mState(State::Initial) {
   LOG(("Created SyncAccessHandle %p", this));
 
-  // Connect with the actor directly in the constructor. This way the actor
-  // can call `FileSystemSyncAccessHandle::ClearActor` when we call
-  // `PFileSystemAccessHandleChild::Send__delete__` even when
-  // FileSystemSyncAccessHandle::Create fails, in which case the not yet
-  // fully constructed FileSystemSyncAccessHandle is being destroyed.
+  
+  
+  
+  
+  
   mActor->SetAccessHandle(this);
 
   mControlActor->SetAccessHandle(this);
@@ -74,7 +76,7 @@ FileSystemSyncAccessHandle::~FileSystemSyncAccessHandle() {
   MOZ_ASSERT(IsClosed());
 }
 
-// static
+
 Result<RefPtr<FileSystemSyncAccessHandle>, nsresult>
 FileSystemSyncAccessHandle::Create(
     nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
@@ -123,8 +125,8 @@ FileSystemSyncAccessHandle::Create(
   RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
       workerPrivate, "FileSystemSyncAccessHandle", [result]() {
         if (result->IsOpen()) {
-          // We don't need to use the result, we just need to begin the closing
-          // process.
+          
+          
           Unused << result->BeginClose();
         }
       });
@@ -150,11 +152,11 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(FileSystemSyncAccessHandle,
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(FileSystemSyncAccessHandle)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FileSystemSyncAccessHandle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
-  // Don't unlink mManager!
+  
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   if (tmp->IsOpen()) {
-    // We don't need to use the result, we just need to begin the closing
-    // process.
+    
+    
     Unused << tmp->BeginClose();
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -164,31 +166,31 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(FileSystemSyncAccessHandle)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 void FileSystemSyncAccessHandle::LastRelease() {
-  // We can't call `FileSystemSyncAccessHandle::Close` here because it may need
-  // to keep FileSystemSyncAccessHandle object alive which isn't possible when
-  // the object is about to be deleted. There are other mechanisms which ensure
-  // that the object is correctly closed before destruction. For example the
-  // object unlinking and the worker shutdown (we get notified about it via the
-  // callback passed to `StrongWorkerRef`) are used to close the object if it
-  // hasn't been closed yet.
+  
+  
+  
+  
+  
+  
+  
 
   if (mActor) {
     PFileSystemAccessHandleChild::Send__delete__(mActor);
 
-    // `PFileSystemAccessHandleChild::Send__delete__` is supposed to call
-    // `FileSystemAccessHandleChild::ActorDestroy` which in turn calls
-    // `FileSystemSyncAccessHandle::ClearActor`, so `mActor` should be be null
-    // at this point.
+    
+    
+    
+    
     MOZ_ASSERT(!mActor);
   }
 
   if (mControlActor) {
     mControlActor->Close();
 
-    // `FileSystemAccessHandleControlChild::Close` is supposed to call
-    // `FileSystemAccessHandleControlChild::ActorDestroy` which in turn calls
-    // `FileSystemSyncAccessHandle::ClearControlActor`, so `mControlActor`
-    // should be be null at this point.
+    
+    
+    
+    
     MOZ_ASSERT(!mControlActor);
   }
 }
@@ -200,8 +202,8 @@ void FileSystemSyncAccessHandle::ClearActor() {
 }
 
 void FileSystemSyncAccessHandle::ClearControlActor() {
-  // `mControlActor` is initialized in the constructor and this method is
-  // supposed to be called only once.
+  
+  
   MOZ_ASSERT(mControlActor);
 
   mControlActor = nullptr;
@@ -240,11 +242,11 @@ RefPtr<BoolPromise> FileSystemSyncAccessHandle::BeginClose() {
                 } else {
                   LOG(("Closing (no stream)"));
 
-                  // If the stream was not deserialized, `mStreamParams` still
-                  // contains a pre-opened file descriptor which needs to be
-                  // closed here by moving `mStreamParams` to a local variable
-                  // (the file descriptor will be closed for real when
-                  // `streamParams` goes out of scope).
+                  
+                  
+                  
+                  
+                  
 
                   mozilla::ipc::RandomAccessStreamParams streamParams(
                       std::move(selfHolder->mStreamParams));
@@ -294,7 +296,7 @@ RefPtr<BoolPromise> FileSystemSyncAccessHandle::OnClose() {
   return mClosePromiseHolder.Ensure(__func__);
 }
 
-// WebIDL Boilerplate
+
 
 nsIGlobalObject* FileSystemSyncAccessHandle::GetParentObject() const {
   return mGlobal;
@@ -305,18 +307,18 @@ JSObject* FileSystemSyncAccessHandle::WrapObject(
   return FileSystemSyncAccessHandle_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-// WebIDL Interface
+
 
 uint64_t FileSystemSyncAccessHandle::Read(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer,
+    const AllowSharedBufferSource& aBuffer,
     const FileSystemReadWriteOptions& aOptions, ErrorResult& aRv) {
-  return ReadOrWrite(aBuffer, aOptions, /* aRead */ true, aRv);
+  return ReadOrWrite(aBuffer, aOptions,  true, aRv);
 }
 
 uint64_t FileSystemSyncAccessHandle::Write(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer,
+    const AllowSharedBufferSource& aBuffer,
     const FileSystemReadWriteOptions& aOptions, ErrorResult& aRv) {
-  return ReadOrWrite(aBuffer, aOptions, /* aRead */ false, aRv);
+  return ReadOrWrite(aBuffer, aOptions,  false, aRv);
 }
 
 void FileSystemSyncAccessHandle::Truncate(uint64_t aSize, ErrorResult& aError) {
@@ -351,7 +353,7 @@ void FileSystemSyncAccessHandle::Truncate(uint64_t aSize, ErrorResult& aError) {
 
         QM_TRY(MOZ_TO_RESULT(selfHolder->mStream->SetEOF()),
                CreateAndRejectBoolPromise);
-        // restore cursor position (clamp to end of file)
+        
         QM_TRY(MOZ_TO_RESULT(selfHolder->mStream->Seek(
                    nsISeekableStream::NS_SEEK_SET,
                    std::min((uint64_t)offset, aSize))),
@@ -392,9 +394,9 @@ uint64_t FileSystemSyncAccessHandle::GetSize(ErrorResult& aError) {
     return 0;
   });
 
-  // XXX Could we somehow pass the size to `StopSyncLoop` and then get it via
-  // `QM_TRY_INSPECT(const auto& size, syncLoop.Run)` ?
-  // Could we use Result<UniquePtr<...>, nsresult> for that ?
+  
+  
+  
   int64_t size;
 
   InvokeAsync(mIOTaskQueue, __func__,
@@ -492,10 +494,10 @@ void FileSystemSyncAccessHandle::Close() {
 
   MOZ_ASSERT(mWorkerRef);
 
-  // Normally mWorkerRef can be used directly for stopping the sync loop, but
-  // the async close is special because mWorkerRef is cleared as part of the
-  // operation. That's why we need to use this extra strong ref to the
-  // `StrongWorkerRef`.
+  
+  
+  
+  
   RefPtr<StrongWorkerRef> workerRef = mWorkerRef;
 
   AutoSyncLoopHolder syncLoop(workerRef->Private(), Killing);
@@ -521,7 +523,7 @@ void FileSystemSyncAccessHandle::Close() {
 }
 
 uint64_t FileSystemSyncAccessHandle::ReadOrWrite(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer,
+    const AllowSharedBufferSource& aBuffer,
     const FileSystemReadWriteOptions& aOptions, const bool aRead,
     ErrorResult& aRv) {
   if (!IsOpen()) {
@@ -536,12 +538,12 @@ uint64_t FileSystemSyncAccessHandle::ReadOrWrite(
     return 0;
   };
 
-  // Handle seek before read ('at')
+  
   const auto at = [&aOptions]() -> uint64_t {
     if (aOptions.mAt.WasPassed()) {
       return aOptions.mAt.Value();
     }
-    // Spec says default for at is 0 (2.6)
+    
     return 0;
   }();
 
@@ -605,7 +607,7 @@ uint64_t FileSystemSyncAccessHandle::ReadOrWrite(
                      inputStream, outputStream, GetCurrentSerialEventTarget(),
                      aRead ? NS_ASYNCCOPY_VIA_WRITESEGMENTS
                            : NS_ASYNCCOPY_VIA_READSEGMENTS,
-                     /* aCloseSource */ !aRead, /* aCloseSink */ aRead,
+                      !aRead,  aRead,
                      [&totalCount](uint32_t count) { totalCount += count; },
                      [promiseHolder = std::move(promiseHolder)](nsresult rv) {
                        promiseHolder->ResolveIfExists(true, __func__);
@@ -642,4 +644,4 @@ nsresult FileSystemSyncAccessHandle::EnsureStream() {
   return NS_OK;
 }
 
-}  // namespace mozilla::dom
+}  
