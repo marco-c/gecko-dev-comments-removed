@@ -109,9 +109,7 @@ var database_check = async function () {
   root.containerOpen = false;
 
   
-  let favicon = await PlacesUtils.favicons.getFaviconForPage(
-    uri(TEST_FAVICON_PAGE_URL)
-  );
+  let favicon = await PlacesTestUtils.getFaviconForPage(TEST_FAVICON_PAGE_URL);
   
   Assert.notEqual(favicon.uri, null);
   
