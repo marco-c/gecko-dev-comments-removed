@@ -1,14 +1,14 @@
-/* Any copyright is dedicated to the Public Domain.
-   https://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["sidebar.visibility", "always-show"],
-      ["sidebar.position_start", true],
-      ["sidebar.verticalTabs", true],
+      [SIDEBAR_VISIBILITY_PREF, "always-show"],
+      [POSITION_SETTING_PREF, true],
+      [VERTICAL_TABS_PREF, true],
     ],
   });
   await SidebarController.initializeUIState({
@@ -25,7 +25,7 @@ registerCleanupFunction(async () => {
 async function dragLauncher(deltaX, shouldExpand) {
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
 
-  // Let the launcher splitter stabilize before attempting a drag-and-drop.
+  
   await waitForRepaint();
 
   info(`Drag the launcher by ${deltaX} px.`);
@@ -50,7 +50,7 @@ async function mouseMoveInChunks(el, deltaX, numberOfChunks) {
   const finished = Promise.withResolvers();
 
   function synthesizeMouseMove() {
-    // mousemove by a single chunk. Queue up the next chunk if necessary.
+    
     EventUtils.synthesizeMouse(el, chunkSize, 0, { type: "mousemove" });
     if (++chunkIndex === numberOfChunks) {
       finished.resolve();
@@ -78,7 +78,7 @@ add_task(async function test_drag_expand_and_collapse() {
 
 add_task(async function test_drag_show_and_hide() {
   await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.visibility", "hide-sidebar"]],
+    set: [[SIDEBAR_VISIBILITY_PREF, "hide-sidebar"]],
   });
   await SidebarController.initializeUIState({
     launcherExpanded: true,
@@ -143,7 +143,7 @@ add_task(async function test_resize_after_toggling_revamp() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["sidebar.revamp", false],
-      ["sidebar.verticalTabs", false],
+      [VERTICAL_TABS_PREF, false],
     ],
   });
   await waitForTabstripOrientation("horizontal");
