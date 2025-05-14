@@ -815,7 +815,12 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
           ->HasPercent() ||
       !mStylePosition
            ->GetAnchorResolvedInset(LogicalSide::BEnd, wm, positionProperty)
-           ->IsAuto();
+           ->IsAuto() ||
+      
+      
+      
+      
+      (mCBReflowInput && mCBReflowInput->GetWritingMode().IsOrthogonalTo(wm));
 
   
   
