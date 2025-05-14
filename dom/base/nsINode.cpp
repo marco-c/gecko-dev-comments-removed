@@ -42,6 +42,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLDetailsElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
@@ -3435,6 +3436,50 @@ Element* nsINode::GetTopmostClickedPopover() const {
       return el;
     }
   }
+  return nullptr;
+}
+
+
+HTMLDialogElement* nsINode::NearestClickedDialog(mozilla::WidgetEvent* aEvent) {
+  
+  
+
+  WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+  if (!pointerEvent) {
+    return nullptr;
+  }
+
+  
+  
+  RefPtr dialogElement = HTMLDialogElement::FromNode(this);
+  if (dialogElement && dialogElement->IsInTopLayer()) {
+    
+    
+    auto* frame = dialogElement->GetPrimaryFrame();
+    if (!frame) {
+      return nullptr;
+    }
+    nsPoint point = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+        aEvent, pointerEvent->mRefPoint, RelativeTo{frame});
+    nsRect frameRect = frame->GetRectRelativeToSelf();
+    if (!frameRect.Contains(point)) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  
+  for (auto* currentNode :
+       InclusiveFlatTreeAncestorsOfType<HTMLDialogElement>()) {
+    
+    
+    if (currentNode->Open()) {
+      return currentNode;
+    }
+  }
+
+  
   return nullptr;
 }
 

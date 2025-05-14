@@ -19,6 +19,18 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Dialog)
 
 namespace mozilla::dom {
 
+static constexpr nsAttrValue::EnumTable kClosedbyTable[] = {
+    {"", HTMLDialogElement::ClosedBy::Auto},
+    {"none", HTMLDialogElement::ClosedBy::None},
+    {"any", HTMLDialogElement::ClosedBy::Any},
+    {"closerequest", HTMLDialogElement::ClosedBy::CloseRequest},
+    {nullptr, 0},
+};
+
+static const nsAttrValue::EnumTable* kClosedbyAuto = &kClosedbyTable[0];
+static const nsAttrValue::EnumTable* kClosedbyDefault = &kClosedbyTable[1];
+static const nsAttrValue::EnumTable* kClosedbyModalDefault = &kClosedbyTable[3];
+
 HTMLDialogElement::~HTMLDialogElement() = default;
 
 NS_IMPL_ELEMENT_CLONE(HTMLDialogElement)
@@ -61,6 +73,62 @@ class DialogCloseWatcherListener : public nsIDOMEventListener {
 };
 NS_IMPL_ISUPPORTS(DialogCloseWatcherListener, nsIDOMEventListener)
 
+
+void HTMLDialogElement::GetClosedBy(nsAString& aResult) const {
+  aResult.Truncate();
+  MOZ_ASSERT(StaticPrefs::dom_dialog_light_dismiss_enabled());
+  const nsAttrValue* val = mAttrs.GetAttr(nsGkAtoms::closedby);
+  
+  if (!val || val->GetEnumValue() == kClosedbyAuto->value) {
+    
+    
+    const char* tag =
+        (IsInTopLayer() ? kClosedbyModalDefault->tag : kClosedbyDefault->tag);
+    AppendASCIItoUTF16(nsDependentCString(tag), aResult);
+    return;
+  }
+  
+  val->GetEnumString(aResult, true);
+}
+
+
+HTMLDialogElement::ClosedBy HTMLDialogElement::GetClosedBy() const {
+  if (!StaticPrefs::dom_dialog_light_dismiss_enabled()) {
+    return static_cast<ClosedBy>(IsInTopLayer() ? kClosedbyModalDefault->value
+                                                : kClosedbyDefault->value);
+  }
+  const nsAttrValue* val = mAttrs.GetAttr(nsGkAtoms::closedby);
+  
+  if (!val || val->GetEnumValue() == kClosedbyAuto->value) {
+    
+    
+    return static_cast<ClosedBy>(IsInTopLayer() ? kClosedbyModalDefault->value
+                                                : kClosedbyDefault->value);
+  }
+  
+  return static_cast<ClosedBy>(val->GetEnumValue());
+}
+
+bool HTMLDialogElement::ParseClosedByAttribute(const nsAString& aValue,
+                                               nsAttrValue& aResult) {
+  return aResult.ParseEnumValue(aValue, kClosedbyTable,
+                                 false, kClosedbyAuto);
+}
+
+bool HTMLDialogElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                                       const nsAString& aValue,
+                                       nsIPrincipal* aMaybeScriptedPrincipal,
+                                       nsAttrValue& aResult) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (StaticPrefs::dom_dialog_light_dismiss_enabled() &&
+        aAttribute == nsGkAtoms::closedby) {
+      return ParseClosedByAttribute(aValue, aResult);
+    }
+  }
+  return nsGenericHTMLElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                              aMaybeScriptedPrincipal, aResult);
+}
+
 void HTMLDialogElement::Close(
     const mozilla::dom::Optional<nsAString>& aReturnValue) {
   if (!Open()) {
@@ -82,6 +150,9 @@ void HTMLDialogElement::Close(
   SetOpen(false, IgnoreErrors());
 
   RemoveFromTopLayerIfNeeded();
+
+  MOZ_ASSERT(!OwnerDoc()->DialogIsInOpenDialogsList(*this),
+             "Dialog should not being in Open Dialog List");
 
   RefPtr<Element> previouslyFocusedElement =
       do_QueryReferent(mPreviouslyFocusedElement);
@@ -141,13 +212,14 @@ void HTMLDialogElement::RequestClose(
 
 
 void HTMLDialogElement::Show(ErrorResult& aError) {
-
+  
   
   if (Open()) {
     if (!IsInTopLayer()) {
       return;
     }
 
+    
     
     return aError.ThrowInvalidStateError(
         "Cannot call show() on an open modal dialog.");
@@ -175,13 +247,17 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   SetOpen(true, IgnoreErrors());
 
   
-
+  
+  
+  
+  
+  
   
   
 
   
   if (StaticPrefs::dom_closewatcher_enabled()) {
-    SetDialogCloseWatcher();
+    SetDialogCloseWatcherIfNeeded();
   }
 
   
@@ -241,20 +317,39 @@ void HTMLDialogElement::StorePreviouslyFocusedElement() {
   }
 }
 
+nsresult HTMLDialogElement::BindToTree(BindContext& aContext,
+                                       nsINode& aParent) {
+  MOZ_TRY(nsGenericHTMLElement::BindToTree(aContext, aParent));
+
+  
+  
+  if (Open()) {
+    
+    SetupSteps();
+  }
+
+  return NS_OK;
+}
+
 void HTMLDialogElement::UnbindFromTree(UnbindContext& aContext) {
+  
+  
+  if (Open()) {
+    
+    CleanupSteps();
+  }
+
+  
+  
   RemoveFromTopLayerIfNeeded();
 
-  if (mCloseWatcher) {
-    mCloseWatcher->Destroy();
-    mCloseWatcher = nullptr;
-  }
+  
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 }
 
 
 void HTMLDialogElement::ShowModal(ErrorResult& aError) {
-
   
   
   if (Open()) {
@@ -268,6 +363,7 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
         "Cannot call showModal() on an open non-modal dialog.");
   }
 
+  
   
   
   
@@ -312,6 +408,12 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   
   
   
+  
+  
+  
+  
+
+  
 
   
   
@@ -319,7 +421,7 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
 
   if (StaticPrefs::dom_closewatcher_enabled()) {
     
-    SetDialogCloseWatcher();
+    SetDialogCloseWatcherIfNeeded();
   }
 
   
@@ -354,9 +456,49 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                      bool aNotify) {
   nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue, aOldValue,
                                      aMaybeScriptedPrincipal, aNotify);
-  if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::open) {
-    MOZ_ASSERT(Open() == !!aValue);
-    SetStates(ElementState::OPEN, !!aValue);
+
+  
+  
+  
+  if (aNameSpaceID != kNameSpaceID_None) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (aName == nsGkAtoms::closedby) {
+    if (StaticPrefs::dom_closewatcher_enabled() && IsInComposedDoc() &&
+        Open()) {
+      SetDialogCloseWatcherIfNeeded();
+    }
+  }
+
+  
+  if (aName != nsGkAtoms::open) {
+    return;
+  }
+
+  bool wasOpen = !!aOldValue;
+  bool isOpen = !!aValue;
+
+  MOZ_ASSERT(Open() == isOpen);
+  SetStates(ElementState::OPEN, isOpen);
+
+  
+  
+  if (!isOpen && wasOpen) {
+    CleanupSteps();
+  }
+
+  
+  
+  if (isOpen && !wasOpen) {
+    SetupSteps();
   }
 }
 
@@ -468,9 +610,10 @@ void HTMLDialogElement::QueueToggleEventTask() {
 }
 
 
-void HTMLDialogElement::SetDialogCloseWatcher() {
+void HTMLDialogElement::SetDialogCloseWatcherIfNeeded() {
   MOZ_ASSERT(StaticPrefs::dom_closewatcher_enabled(), "CloseWatcher enabled");
   if (mCloseWatcher) {
+    SetCloseWatcherEnabledState();
     return;
   }
 
@@ -492,6 +635,7 @@ void HTMLDialogElement::SetDialogCloseWatcher() {
                                         false );
 
   
+  
   mCloseWatcher->AddSystemEventListener(u"close"_ns, eventListener,
                                         false ,
                                         false );
@@ -499,9 +643,60 @@ void HTMLDialogElement::SetDialogCloseWatcher() {
   
   
   
-  
+  SetCloseWatcherEnabledState();
 
   window->EnsureCloseWatcherManager()->Add(*mCloseWatcher);
+}
+
+
+
+
+void HTMLDialogElement::SetupSteps() {
+  
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    SetDialogCloseWatcherIfNeeded();
+  }
+
+  
+  if (!IsInComposedDoc()) {
+    return;
+  }
+
+  
+  
+  
+  
+  MOZ_ASSERT(!OwnerDoc()->DialogIsInOpenDialogsList(*this));
+
+  
+  
+  
+  OwnerDoc()->AddOpenDialog(*this);
+}
+
+void HTMLDialogElement::SetCloseWatcherEnabledState() {
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    MOZ_ASSERT(mCloseWatcher);
+    mCloseWatcher->SetEnabled(GetClosedBy() != ClosedBy::None);
+  }
+}
+
+
+
+
+void HTMLDialogElement::CleanupSteps() {
+  
+  OwnerDoc()->RemoveOpenDialog(*this);
+
+  
+  
+  if (mCloseWatcher) {
+    
+    mCloseWatcher->Destroy();
+
+    
+    mCloseWatcher = nullptr;
+  }
 }
 
 JSObject* HTMLDialogElement::WrapNode(JSContext* aCx,
