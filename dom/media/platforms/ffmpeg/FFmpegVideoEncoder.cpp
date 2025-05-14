@@ -666,6 +666,7 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
 
 Result<already_AddRefed<MediaByteBuffer>, MediaResult>
 FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
+  MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   MOZ_ASSERT(aPacket);
 
   
