@@ -3713,6 +3713,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  nsIFrame* FindAnchorPosAnchor(const nsAtom* aAnchorSpec) const;
+
+  
+
+
+
+
 
 
 
@@ -4711,6 +4718,8 @@ class nsIFrame : public nsQueryFrame {
   inline bool IsAbsPosContainingBlock() const;
   inline bool IsFixedPosContainingBlock() const;
   inline bool IsRelativelyOrStickyPositioned() const;
+  
+  inline bool HasAnchorPosName() const;
 
   
   
