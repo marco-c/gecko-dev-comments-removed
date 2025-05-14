@@ -109,7 +109,7 @@ fn report_main() {
             log::error!("exiting with error: {message:#}");
             if !config.auto_submit {
                 
-                ui::error_dialog(&config, message);
+                ui::error_dialog(config, message);
             }
             std::process::exit(1);
         }
@@ -256,5 +256,5 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
 
 
 #[cfg(all(target_os = "windows", target_env = "gnu"))]
-#[link(name="bcryptprimitives")]
+#[link(name = "bcryptprimitives")]
 extern "C" {}
