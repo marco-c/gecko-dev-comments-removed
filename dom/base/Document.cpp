@@ -3947,6 +3947,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
+  MOZ_ASSERT(!BasePrincipal::Cast(principal)->Is<ExpandedPrincipal>());
   auto addonPolicy = BasePrincipal::Cast(principal)->AddonPolicy();
 
   
@@ -3972,14 +3973,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     mCSP->AppendPolicy(addonPolicy->BaseCSP(), false, false);
 
     mCSP->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
-    
-    
-    
-    
-    auto* basePrin = BasePrincipal::Cast(principal);
-    if (basePrin->Is<ExpandedPrincipal>()) {
-      basePrin->As<ExpandedPrincipal>()->SetCsp(mCSP);
-    }
   }
 
   
