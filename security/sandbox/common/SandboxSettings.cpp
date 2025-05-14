@@ -176,10 +176,8 @@ int GetEffectiveContentSandboxLevel() {
 #if defined(XP_WIN)
   
   
-  
   if (level >= 8 &&
-      (gSafeMode || !IsWebglOutOfProcessEnabled() ||
-       !PDMFactory::AllDecodersAreRemote() ||
+      (!IsWebglOutOfProcessEnabled() || !PDMFactory::AllDecodersAreRemote() ||
        !StaticPrefs::network_process_enabled() ||
        !Preferences::GetBool("media.peerconnection.mtransport_process"))) {
     level = 7;
