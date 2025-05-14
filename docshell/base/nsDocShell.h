@@ -228,11 +228,13 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult OnLinkClick(nsIContent* aContent, nsIURI* aURI,
                        const nsAString& aTargetSpec, const nsAString& aFileName,
                        nsIInputStream* aPostDataStream,
                        nsIInputStream* aHeadersDataStream,
                        bool aIsUserTriggered,
+                       mozilla::dom::UserNavigationInvolvement aUserInvolvement,
                        nsIPrincipal* aTriggeringPrincipal,
                        nsIContentSecurityPolicy* aCsp);
   

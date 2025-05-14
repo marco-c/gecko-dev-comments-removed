@@ -3560,8 +3560,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
       if (!focusEvent || !focusEvent->mIsRefocus) {
         nsAutoString target;
         GetLinkTarget(target);
-        nsContentUtils::TriggerLink(this, absURI, target,
-                                     false);
+        nsContentUtils::TriggerLinkMouseOver(this, absURI, target);
         
         aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
       }
@@ -3719,8 +3718,12 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
               
               nsAutoString target;
               GetLinkTarget(target);
-              nsContentUtils::TriggerLink(this, absURI, target,
-                                           true);
+              UserNavigationInvolvement userInvolvement =
+                  mouseEvent->IsTrusted()
+                      ? UserNavigationInvolvement::Activation
+                      : UserNavigationInvolvement::None;
+              nsContentUtils::TriggerLinkClick(this, absURI, target,
+                                               userInvolvement);
             }
             
             
@@ -3744,7 +3747,12 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
         if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
           nsAutoString target;
           GetLinkTarget(target);
-          nsContentUtils::TriggerLink(this, absURI, target,  true);
+          UserNavigationInvolvement userInvolvement =
+              aVisitor.mEvent->IsTrusted()
+                  ? UserNavigationInvolvement::Activation
+                  : UserNavigationInvolvement::None;
+          nsContentUtils::TriggerLinkClick(this, absURI, target,
+                                           userInvolvement);
           aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
         }
       }

@@ -2149,10 +2149,22 @@ class nsContentUtils {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
+  static void TriggerLinkClick(
+      nsIContent* aContent, nsIURI* aLinkURI, const nsString& aTargetSpec,
+      mozilla::dom::UserNavigationInvolvement aUserInvolvement);
+
+  
 
 
-  static void TriggerLink(nsIContent* aContent, nsIURI* aLinkURI,
-                          const nsString& aTargetSpec, bool aClick);
+
+
+
+
+
+
+  static void TriggerLinkMouseOver(nsIContent* aContent, nsIURI* aLinkURI,
+                                   const nsString& aTargetSpec);
 
   
 
