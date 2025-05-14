@@ -91,7 +91,7 @@ interface nsIWebAuthnService : nsISupports
     
     
     
-    uint64_t addVirtualAuthenticator(
+    ACString addVirtualAuthenticator(
         in ACString protocol,
         in ACString transport,
         in boolean hasResidentKey,
@@ -102,12 +102,12 @@ interface nsIWebAuthnService : nsISupports
     
     
     
-    void removeVirtualAuthenticator(in uint64_t authenticatorId);
+    void removeVirtualAuthenticator(in ACString authenticatorId);
 
     
     
     void addCredential(
-        in uint64_t authenticatorId,
+        in ACString authenticatorId,
         in ACString credentialId,
         in boolean isResidentCredential,
         in ACString rpId,
@@ -117,19 +117,19 @@ interface nsIWebAuthnService : nsISupports
 
     
     
-    Array<nsICredentialParameters> getCredentials(in uint64_t authenticatorId);
+    Array<nsICredentialParameters> getCredentials(in ACString authenticatorId);
 
     
     
-    void removeCredential(in uint64_t authenticatorId, in ACString credentialId);
+    void removeCredential(in ACString authenticatorId, in ACString credentialId);
 
     
     
-    void removeAllCredentials(in uint64_t authenticatorId);
+    void removeAllCredentials(in ACString authenticatorId);
 
     
     
-    void setUserVerified(in uint64_t authenticatorId, in boolean isUserVerified);
+    void setUserVerified(in ACString authenticatorId, in boolean isUserVerified);
 
     
     void listen();
