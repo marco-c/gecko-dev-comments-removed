@@ -1273,17 +1273,21 @@ inline gfx::Point StyleCoordinatePair<LengthPercentage>::ToGfxPoint(
                     y.ResolveToCSSPixels(aBasis->Height()));
 }
 
-inline StylePhysicalAxis GetStylePhysicalAxis(mozilla::Side aSide) {
-  return aSide == mozilla::Side::eSideTop || aSide == mozilla::Side::eSideBottom
-             ? StylePhysicalAxis::Vertical
-             : StylePhysicalAxis::Horizontal;
-}
-
-inline StylePhysicalAxis ToStylePhysicalAxis(PhysicalAxis aAxis) {
+inline StylePhysicalSide ToStylePhysicalSide(mozilla::Side aSide) {
   
-  
-  
-  return static_cast<StylePhysicalAxis>(static_cast<uint8_t>(aAxis));
+  static_assert(static_cast<uint8_t>(mozilla::Side::eSideLeft) ==
+                    static_cast<uint8_t>(StylePhysicalSide::Left),
+                "Left side doesn't match");
+  static_assert(static_cast<uint8_t>(mozilla::Side::eSideRight) ==
+                    static_cast<uint8_t>(StylePhysicalSide::Right),
+                "Left side doesn't match");
+  static_assert(static_cast<uint8_t>(mozilla::Side::eSideTop) ==
+                    static_cast<uint8_t>(StylePhysicalSide::Top),
+                "Left side doesn't match");
+  static_assert(static_cast<uint8_t>(mozilla::Side::eSideBottom) ==
+                    static_cast<uint8_t>(StylePhysicalSide::Bottom),
+                "Left side doesn't match");
+  return static_cast<StylePhysicalSide>(static_cast<uint8_t>(aSide));
 }
 
 #define DEFINE_LENGTH_PERCENTAGE_CTOR(ty_)                               \
