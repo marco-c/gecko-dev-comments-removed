@@ -10,9 +10,7 @@ const SAME_SITE_STATUSES = new Map([
   [Ci.nsICookie.SAMESITE_NONE, "no_restriction"],
   [Ci.nsICookie.SAMESITE_LAX, "lax"],
   [Ci.nsICookie.SAMESITE_STRICT, "strict"],
-
-  
-  [Ci.nsICookie.SAMESITE_UNSET, "no_restriction"],
+  [Ci.nsICookie.SAMESITE_UNSET, "unspecified"],
 ]);
 
 const isIPv4 = host => {
@@ -703,6 +701,7 @@ this.cookies = class extends ExtensionAPIPersistent {
             
             if (details.sameSite === v) {
               sameSite = k;
+              break;
             }
           }
 
