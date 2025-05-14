@@ -65,32 +65,39 @@ bool OffThreadPromiseTask::init(JSContext* cx,
   OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
 
-  if (!state.live().putNew(this)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
+  state.numRegistered_++;
   registered_ = true;
   return true;
 }
 
-bool OffThreadPromiseTask::initCancellable(JSContext* cx) {
+bool OffThreadPromiseTask::InitCancellable(
+    JSContext* cx, js::UniquePtr<OffThreadPromiseTask>&& task) {
   AutoLockHelperThreadState lock;
-  return initCancellable(cx, lock);
+  return InitCancellable(cx, lock, std::move(task));
 }
 
-bool OffThreadPromiseTask::initCancellable(
-    JSContext* cx, const AutoLockHelperThreadState& lock) {
-  MOZ_ASSERT(cx->runtime() == runtime_);
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
+bool OffThreadPromiseTask::InitCancellable(
+    JSContext* cx, const AutoLockHelperThreadState& lock,
+    js::UniquePtr<OffThreadPromiseTask>&& task) {
+  MOZ_ASSERT(cx->runtime() == task->runtime_);
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(task->runtime_));
+  OffThreadPromiseRuntimeState& state =
+      task->runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
 
-  if (!init(cx, lock)) {
+  if (!task->init(cx, lock)) {
+    ReportOutOfMemory(cx);
     return false;
   }
-  cancellable_ = true;
-  state.numCancellable_++;
+
+  OffThreadPromiseTask* rawTask = task.release();
+  if (!state.cancellable().putNew(rawTask)) {
+    state.numRegistered_--;
+    rawTask->registered_ = false;
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  rawTask->cancellable_ = true;
   return true;
 }
 
@@ -99,9 +106,9 @@ void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state) {
   AutoLockHelperThreadState lock;
   if (cancellable_) {
     cancellable_ = false;
-    state.numCancellable_--;
+    state.cancellable().remove(this);
   }
-  state.live().remove(this);
+  state.numRegistered_--;
   registered_ = false;
 }
 
@@ -167,6 +174,31 @@ void OffThreadPromiseTask::dispatchResolveAndDestroy(
   DispatchResolveAndDestroy(std::move(task), lock);
 }
 
+void OffThreadPromiseTask::removeFromCancellableListAndDispatch() {
+  AutoLockHelperThreadState lock;
+  removeFromCancellableListAndDispatch(lock);
+}
+
+void OffThreadPromiseTask::removeFromCancellableListAndDispatch(
+    const AutoLockHelperThreadState& lock) {
+  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
+  MOZ_ASSERT(state.initialized());
+  MOZ_ASSERT(state.cancellable().has(this));
+
+  MOZ_ASSERT(registered_);
+  MOZ_ASSERT(cancellable_);
+  cancellable_ = false;
+  
+  
+  state.cancellable().remove(this);
+
+  
+  js::UniquePtr<OffThreadPromiseTask> task;
+  
+  task.reset(this);
+  DispatchResolveAndDestroy(std::move(task), lock);
+}
+
 
 void OffThreadPromiseTask::DispatchResolveAndDestroy(
     js::UniquePtr<OffThreadPromiseTask>&& task) {
@@ -181,13 +213,9 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
   OffThreadPromiseRuntimeState& state =
       task->runtime()->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
-  MOZ_ASSERT(state.live().has(task.get()));
 
   MOZ_ASSERT(task->registered_);
-  if (task->cancellable_) {
-    task->cancellable_ = false;
-    state.numCancellable_--;
-  }
+  MOZ_ASSERT(!task->cancellable_);
   
   
   if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_,
@@ -200,7 +228,7 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
   
   
   
-  if (state.numFailed_ == state.live().count()) {
+  if (state.failed().length() == state.numRegistered_) {
     state.allFailed().notify_one();
   }
 }
@@ -208,13 +236,11 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
 OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
     : dispatchToEventLoopCallback_(nullptr),
       dispatchToEventLoopClosure_(nullptr),
-      numFailed_(0),
-      numCancellable_(0),
+      numRegistered_(0),
       internalDispatchQueueClosed_(false) {}
 
 OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
-  MOZ_ASSERT(live_.refNoCheck().empty());
-  MOZ_ASSERT(numFailed_ == 0);
+  MOZ_ASSERT(numRegistered_ == 0);
   MOZ_ASSERT(internalDispatchQueue_.refNoCheck().empty());
   MOZ_ASSERT(!initialized());
 }
@@ -276,7 +302,7 @@ void OffThreadPromiseRuntimeState::internalDrain(JSContext* cx) {
       AutoLockHelperThreadState lock;
 
       MOZ_ASSERT(!internalDispatchQueueClosed_);
-      MOZ_ASSERT_IF(!internalDispatchQueue().empty(), !live().empty());
+      MOZ_ASSERT_IF(!internalDispatchQueue().empty(), numRegistered_ > 0);
       if (internalDispatchQueue().empty() && !internalHasPending(lock)) {
         return;
       }
@@ -308,12 +334,15 @@ bool OffThreadPromiseRuntimeState::internalHasPending(
   MOZ_ASSERT(usingInternalDispatchQueue());
 
   MOZ_ASSERT(!internalDispatchQueueClosed_);
-  MOZ_ASSERT_IF(!internalDispatchQueue().empty(), !live().empty());
-  return live().count() > numCancellable_;
+  MOZ_ASSERT_IF(!internalDispatchQueue().empty(), numRegistered_ > 0);
+  return numRegistered_ > cancellable().count();
 }
 
 void OffThreadPromiseRuntimeState::stealFailedTask(JS::Dispatchable* task) {
-  numFailed_++;
+  js::AutoEnterOOMUnsafeRegion noOOM;
+  if (!failed().pushBack(task)) {
+    noOOM.crash("stealFailedTask");
+  }
 }
 
 void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
@@ -326,8 +355,9 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   
   
   
-  for (auto iter = live().iter(); !iter.done(); iter.next()) {
-    OffThreadPromiseTask* task = iter.get();
+  for (OffThreadPromiseTaskSet::Range r = cancellable().all(); !r.empty();
+       r.popFront()) {
+    OffThreadPromiseTask* task = r.front();
 
     
     if (task->cancellable_) {
@@ -335,6 +365,7 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
       OffThreadPromiseTask::DestroyUndispatchedTask(task);
     }
   }
+  cancellable().clear();
 
   
   
@@ -373,25 +404,28 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   
   
   
-  while (live().count() != numFailed_) {
-    MOZ_ASSERT(numFailed_ < live().count());
+  while (numRegistered_ != failed().length()) {
+    MOZ_ASSERT(failed().length() < numRegistered_);
     allFailed().wait(lock);
   }
 
-  
-  
-  for (OffThreadPromiseTaskSet::Range r = live().all(); !r.empty();
-       r.popFront()) {
-    OffThreadPromiseTask* task = r.front();
+  {
+    DispatchableFifo failedQueue;
+    {
+      std::swap(failedQueue, failed());
+      MOZ_ASSERT(failed().empty());
+    }
 
-    
-    
-    MOZ_ASSERT(task->registered_);
-    task->registered_ = false;
-    js_delete(task);
+    AutoUnlockHelperThreadState unlock(lock);
+    while (!failedQueue.empty()) {
+      js::UniquePtr<JS::Dispatchable> d = std::move(failedQueue.front());
+      failedQueue.popFront();
+      js_delete(d.release());
+    }
   }
-  live().clear();
-  numFailed_ = 0;
+
+  
+  MOZ_ASSERT(numRegistered_ == 0);
 
   
   

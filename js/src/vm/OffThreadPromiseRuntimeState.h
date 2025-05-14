@@ -123,7 +123,6 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   
   
   
-  
   bool cancellable_;
 
   void operator=(const OffThreadPromiseTask&) = delete;
@@ -168,9 +167,24 @@ class OffThreadPromiseTask : public JS::Dispatchable {
 
   
   
-  bool initCancellable(JSContext* cx);
-  bool initCancellable(JSContext* cx, const AutoLockHelperThreadState& lock);
+  
+  static bool InitCancellable(JSContext* cx,
+                              js::UniquePtr<OffThreadPromiseTask>&& task);
+  static bool InitCancellable(JSContext* cx,
+                              const AutoLockHelperThreadState& lock,
+                              js::UniquePtr<OffThreadPromiseTask>&& task);
 
+  
+  
+  
+  
+  
+  
+  void removeFromCancellableListAndDispatch();
+  void removeFromCancellableListAndDispatch(
+      const AutoLockHelperThreadState& lock);
+
+  
   
   
   void dispatchResolveAndDestroy();
@@ -206,7 +220,21 @@ class OffThreadPromiseRuntimeState {
   
   
   
-  HelperThreadLockData<OffThreadPromiseTaskSet> live_;
+  HelperThreadLockData<size_t> numRegistered_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  HelperThreadLockData<OffThreadPromiseTaskSet> cancellable_;
+
+  
+  
+  HelperThreadLockData<DispatchableFifo> failed_;
 
   
   
@@ -219,20 +247,14 @@ class OffThreadPromiseRuntimeState {
 
   
   
-  
-  
-  
-  
-  HelperThreadLockData<size_t> numCancellable_;
-
-  
-  
   HelperThreadLockData<DispatchableFifo> internalDispatchQueue_;
   HelperThreadLockData<ConditionVariable> internalDispatchQueueAppended_;
   HelperThreadLockData<bool> internalDispatchQueueClosed_;
 
-  OffThreadPromiseTaskSet& live() { return live_.ref(); }
   ConditionVariable& allFailed() { return allFailed_.ref(); }
+
+  DispatchableFifo& failed() { return failed_.ref(); }
+  OffThreadPromiseTaskSet& cancellable() { return cancellable_.ref(); }
 
   DispatchableFifo& internalDispatchQueue() {
     return internalDispatchQueue_.ref();
