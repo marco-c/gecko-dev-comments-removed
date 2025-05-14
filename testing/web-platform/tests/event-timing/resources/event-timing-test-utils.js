@@ -357,13 +357,20 @@ async function pointerdown(target) {
     .send();
 }
 
-async function pointerup(target) {
+async function orphanPointerup(target) {
   const actions = new test_driver.Actions();
-  return actions.addPointer("mousePointer", "mouse")
+  await actions.addPointer("mousePointer", "mouse")
     .pointerMove(0, 0, { origin: target })
     .pointerUp()
     .send();
+
+  
+  
+  
+  
+  await pressKey(target, 'a');
 }
+
 async function auxPointerdown(target) {
   const actions = new test_driver.Actions();
   return actions.addPointer("mousePointer", "mouse")
@@ -525,8 +532,8 @@ async function interactAndObserve(interactionType, target, observerPromise, key 
       break;
     }
     case 'orphan-pointerup': {
-      addListeners(target, ['pointerup']);
-      interactionPromise = pointerup(target);
+      addListeners(target, ['pointerup', 'keydown']);
+      interactionPromise = orphanPointerup(target);
       break;
     }
     case 'space-key-simulated-click': {
