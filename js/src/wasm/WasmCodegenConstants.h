@@ -52,8 +52,10 @@ static const uint32_t MaxInlineMemoryFillLength = 64;
 static const uint32_t MaxInlineMemoryCopyLength = 32;
 static const uint32_t MaxInlineMemoryFillLength = 32;
 #else
-static const uint32_t MaxInlineMemoryCopyLength = 0;
-static const uint32_t MaxInlineMemoryFillLength = 0;
+
+
+static const uint32_t MaxInlineMemoryCopyLength = 1;
+static const uint32_t MaxInlineMemoryFillLength = 1;
 #endif
 
 
