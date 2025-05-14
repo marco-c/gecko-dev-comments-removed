@@ -785,9 +785,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   inline bool canOwnDependentChars() const;
 
-  
-  inline void setBase(JSLinearString* newBase);
-
   bool tryReplaceWithAtomRef(JSAtom* atom);
 
   void traceBase(JSTracer* trc);
@@ -1309,6 +1306,9 @@ class JSDependentString : public JSLinearString {
   static inline JSLinearString* new_(JSContext* cx, JSLinearString* base,
                                      size_t start, size_t length,
                                      js::gc::Heap heap);
+
+  
+  void setBase(JSLinearString* newBase);
 
   template <typename T>
   void relocateBaseAndChars(JSLinearString* base, T chars, size_t offset) {
@@ -2354,12 +2354,6 @@ inline bool JSString::canOwnDependentChars() const {
   
   
   return isLinear() && !isInline() && !hasBase();
-}
-
-inline void JSString::setBase(JSLinearString* newBase) {
-  MOZ_ASSERT(hasBase());
-  MOZ_ASSERT(!newBase->isInline());
-  d.s.u3.base = newBase;
 }
 
 template <>
