@@ -157,6 +157,34 @@ struct OptimizeArraySpeciesFuse final : public InvalidatingRealmFuse {
 
 
 
+struct OptimizeArrayBufferSpeciesFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeArrayBufferSpeciesFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+
+
+
+
+
+
+
+struct OptimizeSharedArrayBufferSpeciesFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeSharedArrayBufferSpeciesFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+
+
+
+
+
+
+
 struct OptimizePromiseLookupFuse final : public RealmFuse {
   virtual const char* name() override { return "OptimizePromiseLookupFuse"; }
   virtual bool checkInvariant(JSContext* cx) override;
@@ -281,6 +309,9 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
   FUSE(IteratorPrototypeHasObjectProto, iteratorPrototypeHasObjectProto)       \
   FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty) \
   FUSE(OptimizeArraySpeciesFuse, optimizeArraySpeciesFuse)                     \
+  FUSE(OptimizeArrayBufferSpeciesFuse, optimizeArrayBufferSpeciesFuse)         \
+  FUSE(OptimizeSharedArrayBufferSpeciesFuse,                                   \
+       optimizeSharedArrayBufferSpeciesFuse)                                   \
   FUSE(OptimizePromiseLookupFuse, optimizePromiseLookupFuse)                   \
   FUSE(OptimizeRegExpPrototypeFuse, optimizeRegExpPrototypeFuse)               \
   FUSE(OptimizeStringPrototypeSymbolsFuse, optimizeStringPrototypeSymbolsFuse) \
