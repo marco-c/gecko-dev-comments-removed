@@ -16,6 +16,8 @@ ChromeUtils.defineESModuleGetters(
   {
     parseJsonLossless:
       "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs",
+    JSON_NUMBER:
+      "resource://devtools/client/shared/components/reps/reps/constants.mjs",
   },
   { global: "contextual" }
 );
@@ -731,11 +733,18 @@ function parseJSON(payloadUnclean) {
 
   
   
-  if (!error) {
-    if (typeof json !== "object") {
-      return {};
-    }
+  if (
+    !error &&
+    (typeof json !== "object" ||
+      
+      
+      
+      
+      json.type === lazy.JSON_NUMBER)
+  ) {
+    return {};
   }
+
   return {
     json,
     error,
