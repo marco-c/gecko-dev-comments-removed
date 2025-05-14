@@ -97,7 +97,7 @@ bool TSFEmptyTextStore::Init(nsWindow* aWidget, const InputContext& aContext) {
     return false;
   }
 
-  const auto EmptyContextIsSupported = [&]() -> bool {
+  const auto emptyContextIsSupported = [&]() -> bool {
     
     
     
@@ -106,13 +106,13 @@ bool TSFEmptyTextStore::Init(nsWindow* aWidget, const InputContext& aContext) {
     HRESULT hr = threadMgr->QueryInterface(
         GUID_COMPARTMENT_EMPTYCONTEXT, getter_AddRefs(emptyContextCompartment));
     return SUCCEEDED(hr);
-  };
+  }();
 
   
   RefPtr<ITfContext> context;
   hr = documentMgr->CreateContext(
       TSFUtils::ClientId(), 0,
-      EmptyContextIsSupported() ? static_cast<ITextStoreACP*>(this) : nullptr,
+      emptyContextIsSupported ? static_cast<ITextStoreACP*>(this) : nullptr,
       getter_AddRefs(context), &mEditCookie);
   if (NS_WARN_IF(FAILED(hr))) {
     MOZ_LOG(gIMELog, LogLevel::Error,
@@ -135,22 +135,24 @@ bool TSFEmptyTextStore::Init(nsWindow* aWidget, const InputContext& aContext) {
   TSFUtils::MarkContextAsKeyboardDisabled(context);
   TSFUtils::MarkContextAsEmpty(context);
 
-  hr = documentMgr->Push(context);
-  if (NS_WARN_IF(FAILED(hr))) {
-    MOZ_LOG(gIMELog, LogLevel::Error,
-            ("0x%p   TSFEmptyTextStore::Init() FAILED to push the context "
-             "(0x%08lX)",
-             this, hr));
-    return false;
-  }
-  if (NS_WARN_IF(mDestroyed)) {
-    MOZ_LOG(
-        gIMELog, LogLevel::Error,
-        ("0x%p   TSFEmptyTextStore::Init() FAILED to create ITfContext due to "
-         "TextStore being destroyed during calling ITfDocumentMgr::Push()",
-         this));
-    documentMgr->Pop(TF_POPF_ALL);
-    return false;
+  if (emptyContextIsSupported) {
+    HRESULT hr = documentMgr->Push(context);
+    if (NS_WARN_IF(FAILED(hr))) {
+      MOZ_LOG(gIMELog, LogLevel::Error,
+              ("0x%p   TSFEmptyTextStore::Init() FAILED to push the context "
+               "(0x%08lX)",
+               this, hr));
+      return false;
+    }
+    if (NS_WARN_IF(mDestroyed)) {
+      MOZ_LOG(
+          gIMELog, LogLevel::Error,
+          ("0x%p   TSFEmptyTextStore::Init() FAILED to create ITfContext due "
+           "to TextStore being destroyed during calling ITfDocumentMgr::Push()",
+           this));
+      documentMgr->Pop(TF_POPF_ALL);
+      return false;
+    }
   }
 
   mDocumentMgr = documentMgr;
