@@ -299,13 +299,14 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.116")]
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.140")]
 
 #![allow(
     clippy::collapsible_else_if,
     clippy::comparison_chain,
     clippy::deprecated_cfg_attr,
     clippy::doc_markdown,
+    clippy::elidable_lifetime_names,
     clippy::excessive_precision,
     clippy::explicit_auto_deref,
     clippy::float_cmp,
@@ -314,8 +315,10 @@
     clippy::match_single_binding,
     clippy::needless_doctest_main,
     clippy::needless_late_init,
+    clippy::needless_lifetimes,
     clippy::return_self_not_must_use,
     clippy::transmute_ptr_to_ptr,
+    clippy::unbuffered_bytes,
     clippy::unconditional_recursion, 
     clippy::unnecessary_wraps
 )]
@@ -340,6 +343,7 @@
     clippy::wildcard_imports,
     
     clippy::cast_lossless,
+    clippy::items_after_statements,
     clippy::module_name_repetitions,
     clippy::redundant_else,
     clippy::shadow_unrelated,
@@ -372,6 +376,13 @@ extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std;
+
+
+#[doc(hidden)]
+pub mod __private {
+    #[doc(hidden)]
+    pub use alloc::vec;
+}
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]

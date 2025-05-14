@@ -6,11 +6,14 @@
 
 
 
+use crate::error::Error;
 use crate::value::Value;
 use alloc::string::String;
+#[cfg(feature = "preserve_order")]
+use alloc::vec::Vec;
 use core::borrow::Borrow;
 use core::fmt::{self, Debug};
-use core::hash::Hash;
+use core::hash::{Hash, Hasher};
 use core::iter::FusedIterator;
 #[cfg(feature = "preserve_order")]
 use core::mem;
@@ -123,6 +126,19 @@ impl Map<String, Value> {
     #[inline]
     pub fn insert(&mut self, k: String, v: Value) -> Option<Value> {
         self.map.insert(k, v)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "preserve_order")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "preserve_order")))]
+    #[inline]
+    pub fn shift_insert(&mut self, index: usize, k: String, v: Value) -> Option<Value> {
+        self.map.shift_insert(index, k, v)
     }
 
     
@@ -323,6 +339,14 @@ impl Map<String, Value> {
     }
 
     
+    #[inline]
+    pub fn into_values(self) -> IntoValues {
+        IntoValues {
+            iter: self.map.into_values(),
+        }
+    }
+
+    
     
     
     
@@ -332,6 +356,29 @@ impl Map<String, Value> {
         F: FnMut(&String, &mut Value) -> bool,
     {
         self.map.retain(f);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn sort_keys(&mut self) {
+        #[cfg(feature = "preserve_order")]
+        self.map.sort_unstable_keys();
     }
 }
 
@@ -368,6 +415,21 @@ impl PartialEq for Map<String, Value> {
 
 impl Eq for Map<String, Value> {}
 
+impl Hash for Map<String, Value> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        #[cfg(not(feature = "preserve_order"))]
+        {
+            self.map.hash(state);
+        }
+
+        #[cfg(feature = "preserve_order")]
+        {
+            let mut kv = Vec::from_iter(&self.map);
+            kv.sort_unstable_by(|a, b| a.0.cmp(b.0));
+            kv.hash(state);
+        }
+    }
+}
 
 
 
@@ -384,7 +446,8 @@ impl Eq for Map<String, Value> {}
 
 
 
-impl<'a, Q> ops::Index<&'a Q> for Map<String, Value>
+
+impl<Q> ops::Index<&Q> for Map<String, Value>
 where
     String: Borrow<Q>,
     Q: ?Sized + Ord + Eq + Hash,
@@ -407,7 +470,7 @@ where
 
 
 
-impl<'a, Q> ops::IndexMut<&'a Q> for Map<String, Value>
+impl<Q> ops::IndexMut<&Q> for Map<String, Value>
 where
     String: Borrow<Q>,
     Q: ?Sized + Ord + Eq + Hash,
@@ -535,6 +598,21 @@ macro_rules! delegate_iterator {
     }
 }
 
+impl<'de> de::IntoDeserializer<'de, Error> for Map<String, Value> {
+    type Deserializer = Self;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        self
+    }
+}
+
+impl<'de> de::IntoDeserializer<'de, Error> for &'de Map<String, Value> {
+    type Deserializer = Self;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        self
+    }
+}
 
 
 
@@ -550,13 +628,9 @@ pub enum Entry<'a> {
 }
 
 
-
-
 pub struct VacantEntry<'a> {
     vacant: VacantEntryImpl<'a>,
 }
-
-
 
 
 pub struct OccupiedEntry<'a> {
@@ -862,12 +936,109 @@ impl<'a> OccupiedEntry<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn remove(self) -> Value {
         #[cfg(feature = "preserve_order")]
-        return self.occupied.swap_remove();
+        return self.swap_remove();
         #[cfg(not(feature = "preserve_order"))]
         return self.occupied.remove();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "preserve_order")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "preserve_order")))]
+    #[inline]
+    pub fn swap_remove(self) -> Value {
+        self.occupied.swap_remove()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "preserve_order")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "preserve_order")))]
+    #[inline]
+    pub fn shift_remove(self) -> Value {
+        self.occupied.shift_remove()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn remove_entry(self) -> (String, Value) {
+        #[cfg(feature = "preserve_order")]
+        return self.swap_remove_entry();
+        #[cfg(not(feature = "preserve_order"))]
+        return self.occupied.remove_entry();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "preserve_order")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "preserve_order")))]
+    #[inline]
+    pub fn swap_remove_entry(self) -> (String, Value) {
+        self.occupied.swap_remove_entry()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "preserve_order")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "preserve_order")))]
+    #[inline]
+    pub fn shift_remove_entry(self) -> (String, Value) {
+        self.occupied.shift_remove_entry()
     }
 }
 
@@ -987,3 +1158,17 @@ type ValuesMutImpl<'a> = btree_map::ValuesMut<'a, String, Value>;
 type ValuesMutImpl<'a> = indexmap::map::ValuesMut<'a, String, Value>;
 
 delegate_iterator!((ValuesMut<'a>) => &'a mut Value);
+
+
+
+
+pub struct IntoValues {
+    iter: IntoValuesImpl,
+}
+
+#[cfg(not(feature = "preserve_order"))]
+type IntoValuesImpl = btree_map::IntoValues<String, Value>;
+#[cfg(feature = "preserve_order")]
+type IntoValuesImpl = indexmap::map::IntoValues<String, Value>;
+
+delegate_iterator!((IntoValues) => Value);

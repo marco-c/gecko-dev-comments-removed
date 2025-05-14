@@ -2,7 +2,9 @@
 
 use crate::error::{Error, ErrorCode, Result};
 use crate::io;
-use alloc::string::{String, ToString};
+use alloc::string::String;
+#[cfg(feature = "raw_value")]
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::fmt::{self, Display};
 use core::num::FpCategory;
@@ -1057,7 +1059,7 @@ where
     }
 
     fn serialize_char(self, value: char) -> Result<()> {
-        self.ser.serialize_str(&value.to_string())
+        self.ser.serialize_str(value.encode_utf8(&mut [0u8; 4]))
     }
 
     fn serialize_bytes(self, _value: &[u8]) -> Result<()> {
@@ -1686,6 +1688,20 @@ pub trait Formatter {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_f32<W>(&mut self, writer: &mut W, value: f32) -> io::Result<()>
     where
@@ -1696,6 +1712,20 @@ pub trait Formatter {
         writer.write_all(s.as_bytes())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     fn write_f64<W>(&mut self, writer: &mut W, value: f64) -> io::Result<()>

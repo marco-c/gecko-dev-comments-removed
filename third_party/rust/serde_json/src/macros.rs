@@ -50,11 +50,11 @@
 
 
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! json {
     
     ($($json:tt)+) => {
-        json_internal!($($json)+)
+        $crate::json_internal!($($json)+)
     };
 }
 
@@ -65,7 +65,7 @@ macro_rules! json {
 
 
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[doc(hidden)]
 macro_rules! json_internal {
     
@@ -77,57 +77,57 @@ macro_rules! json_internal {
 
     
     (@array [$($elems:expr,)*]) => {
-        json_internal_vec![$($elems,)*]
+        $crate::__private::vec![$($elems,)*]
     };
 
     
     (@array [$($elems:expr),*]) => {
-        json_internal_vec![$($elems),*]
+        $crate::__private::vec![$($elems),*]
     };
 
     
     (@array [$($elems:expr,)*] null $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)* json_internal!(null)] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!(null)] $($rest)*)
     };
 
     
     (@array [$($elems:expr,)*] true $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)* json_internal!(true)] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!(true)] $($rest)*)
     };
 
     
     (@array [$($elems:expr,)*] false $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)* json_internal!(false)] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!(false)] $($rest)*)
     };
 
     
     (@array [$($elems:expr,)*] [$($array:tt)*] $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)* json_internal!([$($array)*])] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!([$($array)*])] $($rest)*)
     };
 
     
     (@array [$($elems:expr,)*] {$($map:tt)*} $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)* json_internal!({$($map)*})] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!({$($map)*})] $($rest)*)
     };
 
     
     (@array [$($elems:expr,)*] $next:expr, $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)* json_internal!($next),] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!($next),] $($rest)*)
     };
 
     
     (@array [$($elems:expr,)*] $last:expr) => {
-        json_internal!(@array [$($elems,)* json_internal!($last)])
+        $crate::json_internal!(@array [$($elems,)* $crate::json_internal!($last)])
     };
 
     
     (@array [$($elems:expr),*] , $($rest:tt)*) => {
-        json_internal!(@array [$($elems,)*] $($rest)*)
+        $crate::json_internal!(@array [$($elems,)*] $($rest)*)
     };
 
     
     (@array [$($elems:expr),*] $unexpected:tt $($rest:tt)*) => {
-        json_unexpected!($unexpected)
+        $crate::json_unexpected!($unexpected)
     };
 
     
@@ -146,12 +146,12 @@ macro_rules! json_internal {
     
     (@object $object:ident [$($key:tt)+] ($value:expr) , $($rest:tt)*) => {
         let _ = $object.insert(($($key)+).into(), $value);
-        json_internal!(@object $object () ($($rest)*) ($($rest)*));
+        $crate::json_internal!(@object $object () ($($rest)*) ($($rest)*));
     };
 
     
     (@object $object:ident [$($key:tt)+] ($value:expr) $unexpected:tt $($rest:tt)*) => {
-        json_unexpected!($unexpected);
+        $crate::json_unexpected!($unexpected);
     };
 
     
@@ -161,78 +161,78 @@ macro_rules! json_internal {
 
     
     (@object $object:ident ($($key:tt)+) (: null $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!(null)) $($rest)*);
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!(null)) $($rest)*);
     };
 
     
     (@object $object:ident ($($key:tt)+) (: true $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!(true)) $($rest)*);
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!(true)) $($rest)*);
     };
 
     
     (@object $object:ident ($($key:tt)+) (: false $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!(false)) $($rest)*);
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!(false)) $($rest)*);
     };
 
     
     (@object $object:ident ($($key:tt)+) (: [$($array:tt)*] $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!([$($array)*])) $($rest)*);
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!([$($array)*])) $($rest)*);
     };
 
     
     (@object $object:ident ($($key:tt)+) (: {$($map:tt)*} $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!({$($map)*})) $($rest)*);
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!({$($map)*})) $($rest)*);
     };
 
     
     (@object $object:ident ($($key:tt)+) (: $value:expr , $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!($value)) , $($rest)*);
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!($value)) , $($rest)*);
     };
 
     
     (@object $object:ident ($($key:tt)+) (: $value:expr) $copy:tt) => {
-        json_internal!(@object $object [$($key)+] (json_internal!($value)));
+        $crate::json_internal!(@object $object [$($key)+] ($crate::json_internal!($value)));
     };
 
     
     (@object $object:ident ($($key:tt)+) (:) $copy:tt) => {
         // "unexpected end of macro invocation"
-        json_internal!();
+        $crate::json_internal!();
     };
 
     
     
     (@object $object:ident ($($key:tt)+) () $copy:tt) => {
         // "unexpected end of macro invocation"
-        json_internal!();
+        $crate::json_internal!();
     };
 
     
     (@object $object:ident () (: $($rest:tt)*) ($colon:tt $($copy:tt)*)) => {
         // Takes no arguments so "no rules expected the token `:`".
-        json_unexpected!($colon);
+        $crate::json_unexpected!($colon);
     };
 
     
     (@object $object:ident ($($key:tt)*) (, $($rest:tt)*) ($comma:tt $($copy:tt)*)) => {
         // Takes no arguments so "no rules expected the token `,`".
-        json_unexpected!($comma);
+        $crate::json_unexpected!($comma);
     };
 
     
     
     (@object $object:ident () (($key:expr) : $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object ($key) (: $($rest)*) (: $($rest)*));
+        $crate::json_internal!(@object $object ($key) (: $($rest)*) (: $($rest)*));
     };
 
     
     (@object $object:ident ($($key:tt)*) (: $($unexpected:tt)+) $copy:tt) => {
-        json_expect_expr_comma!($($unexpected)+);
+        $crate::json_expect_expr_comma!($($unexpected)+);
     };
 
     
     (@object $object:ident ($($key:tt)*) ($tt:tt $($rest:tt)*) $copy:tt) => {
-        json_internal!(@object $object ($($key)* $tt) ($($rest)*) ($($rest)*));
+        $crate::json_internal!(@object $object ($($key)* $tt) ($($rest)*) ($($rest)*));
     };
 
     
@@ -254,11 +254,11 @@ macro_rules! json_internal {
     };
 
     ([]) => {
-        $crate::Value::Array(json_internal_vec![])
+        $crate::Value::Array($crate::__private::vec![])
     };
 
     ([ $($tt:tt)+ ]) => {
-        $crate::Value::Array(json_internal!(@array [] $($tt)+))
+        $crate::Value::Array($crate::json_internal!(@array [] $($tt)+))
     };
 
     ({}) => {
@@ -268,7 +268,7 @@ macro_rules! json_internal {
     ({ $($tt:tt)+ }) => {
         $crate::Value::Object({
             let mut object = $crate::Map::new();
-            json_internal!(@object object () ($($tt)+) ($($tt)+));
+            $crate::json_internal!(@object object () ($($tt)+) ($($tt)+));
             object
         })
     };
@@ -279,7 +279,6 @@ macro_rules! json_internal {
         $crate::to_value(&$other).unwrap()
     };
 }
-
 
 
 

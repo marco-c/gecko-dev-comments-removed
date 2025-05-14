@@ -119,7 +119,7 @@ pub struct RawValue {
 }
 
 impl RawValue {
-    fn from_borrowed(json: &str) -> &Self {
+    const fn from_borrowed(json: &str) -> &Self {
         unsafe { mem::transmute::<&str, &RawValue>(json) }
     }
 
@@ -148,7 +148,7 @@ impl ToOwned for RawValue {
 
 impl Default for Box<RawValue> {
     fn default() -> Self {
-        RawValue::from_borrowed("null").to_owned()
+        RawValue::NULL.to_owned()
     }
 }
 
@@ -168,6 +168,13 @@ impl Display for RawValue {
 }
 
 impl RawValue {
+    
+    pub const NULL: &'static RawValue = RawValue::from_borrowed("null");
+    
+    pub const TRUE: &'static RawValue = RawValue::from_borrowed("true");
+    
+    pub const FALSE: &'static RawValue = RawValue::from_borrowed("false");
+
     
     
     

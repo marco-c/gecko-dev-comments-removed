@@ -1,7 +1,7 @@
 use crate::error::{Error, ErrorCode, Result};
 use alloc::vec::Vec;
-use core::char;
 use core::cmp;
+use core::mem;
 use core::ops::Deref;
 use core::str;
 
@@ -191,6 +191,12 @@ where
     R: io::Read,
 {
     
+    
+    
+    
+    
+    
+    
     pub fn new(reader: R) -> Self {
         IoRead {
             iter: LineColIterator::new(reader.bytes()),
@@ -221,7 +227,7 @@ where
     {
         loop {
             let ch = tri!(next_or_eof(self));
-            if !ESCAPE[ch as usize] {
+            if !is_escape(ch, true) {
                 scratch.push(ch);
                 continue;
             }
@@ -342,7 +348,7 @@ where
     fn ignore_str(&mut self) -> Result<()> {
         loop {
             let ch = tri!(next_or_eof(self));
-            if !ESCAPE[ch as usize] {
+            if !is_escape(ch, true) {
                 continue;
             }
             match ch {
@@ -360,16 +366,14 @@ where
     }
 
     fn decode_hex_escape(&mut self) -> Result<u16> {
-        let mut n = 0;
-        for _ in 0..4 {
-            match decode_hex_val(tri!(next_or_eof(self))) {
-                None => return error(self, ErrorCode::InvalidEscape),
-                Some(val) => {
-                    n = (n << 4) + val;
-                }
-            }
+        let a = tri!(next_or_eof(self));
+        let b = tri!(next_or_eof(self));
+        let c = tri!(next_or_eof(self));
+        let d = tri!(next_or_eof(self));
+        match decode_four_hex_digits(a, b, c, d) {
+            Some(val) => Ok(val),
+            None => error(self, ErrorCode::InvalidEscape),
         }
-        Ok(n)
     }
 
     #[cfg(feature = "raw_value")]
@@ -415,19 +419,73 @@ impl<'a> SliceRead<'a> {
     }
 
     fn position_of_index(&self, i: usize) -> Position {
-        let mut position = Position { line: 1, column: 0 };
-        for ch in &self.slice[..i] {
-            match *ch {
-                b'\n' => {
-                    position.line += 1;
-                    position.column = 0;
-                }
-                _ => {
-                    position.column += 1;
-                }
+        let start_of_line = match memchr::memrchr(b'\n', &self.slice[..i]) {
+            Some(position) => position + 1,
+            None => 0,
+        };
+        Position {
+            line: 1 + memchr::memchr_iter(b'\n', &self.slice[..start_of_line]).count(),
+            column: i - start_of_line,
+        }
+    }
+
+    fn skip_to_escape(&mut self, forbid_control_characters: bool) {
+        
+        if self.index == self.slice.len()
+            || is_escape(self.slice[self.index], forbid_control_characters)
+        {
+            return;
+        }
+        self.index += 1;
+
+        let rest = &self.slice[self.index..];
+
+        if !forbid_control_characters {
+            self.index += memchr::memchr2(b'"', b'\\', rest).unwrap_or(rest.len());
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
+
+        #[cfg(fast_arithmetic = "64")]
+        type Chunk = u64;
+        #[cfg(fast_arithmetic = "32")]
+        type Chunk = u32;
+
+        const STEP: usize = mem::size_of::<Chunk>();
+        const ONE_BYTES: Chunk = Chunk::MAX / 255; 
+
+        for chunk in rest.chunks_exact(STEP) {
+            let chars = Chunk::from_le_bytes(chunk.try_into().unwrap());
+            let contains_ctrl = chars.wrapping_sub(ONE_BYTES * 0x20) & !chars;
+            let chars_quote = chars ^ (ONE_BYTES * Chunk::from(b'"'));
+            let contains_quote = chars_quote.wrapping_sub(ONE_BYTES) & !chars_quote;
+            let chars_backslash = chars ^ (ONE_BYTES * Chunk::from(b'\\'));
+            let contains_backslash = chars_backslash.wrapping_sub(ONE_BYTES) & !chars_backslash;
+            let masked = (contains_ctrl | contains_quote | contains_backslash) & (ONE_BYTES << 7);
+            if masked != 0 {
+                
+                self.index = unsafe { chunk.as_ptr().offset_from(self.slice.as_ptr()) } as usize
+                    + masked.trailing_zeros() as usize / 8;
+                return;
             }
         }
-        position
+
+        self.index += rest.len() / STEP * STEP;
+        self.skip_to_escape_slow();
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn skip_to_escape_slow(&mut self) {
+        while self.index < self.slice.len() && !is_escape(self.slice[self.index], true) {
+            self.index += 1;
+        }
     }
 
     
@@ -447,9 +505,7 @@ impl<'a> SliceRead<'a> {
         let mut start = self.index;
 
         loop {
-            while self.index < self.slice.len() && !ESCAPE[self.slice[self.index] as usize] {
-                self.index += 1;
-            }
+            self.skip_to_escape(validate);
             if self.index == self.slice.len() {
                 return error(self, ErrorCode::EofWhileParsingString);
             }
@@ -475,9 +531,7 @@ impl<'a> SliceRead<'a> {
                 }
                 _ => {
                     self.index += 1;
-                    if validate {
-                        return error(self, ErrorCode::ControlCharacterWhileParsingString);
-                    }
+                    return error(self, ErrorCode::ControlCharacterWhileParsingString);
                 }
             }
         }
@@ -543,9 +597,7 @@ impl<'a> Read<'a> for SliceRead<'a> {
 
     fn ignore_str(&mut self) -> Result<()> {
         loop {
-            while self.index < self.slice.len() && !ESCAPE[self.slice[self.index] as usize] {
-                self.index += 1;
-            }
+            self.skip_to_escape(true);
             if self.index == self.slice.len() {
                 return error(self, ErrorCode::EofWhileParsingString);
             }
@@ -565,24 +617,21 @@ impl<'a> Read<'a> for SliceRead<'a> {
         }
     }
 
+    #[inline]
     fn decode_hex_escape(&mut self) -> Result<u16> {
-        if self.index + 4 > self.slice.len() {
-            self.index = self.slice.len();
-            return error(self, ErrorCode::EofWhileParsingString);
-        }
-
-        let mut n = 0;
-        for _ in 0..4 {
-            let ch = decode_hex_val(self.slice[self.index]);
-            self.index += 1;
-            match ch {
-                None => return error(self, ErrorCode::InvalidEscape),
-                Some(val) => {
-                    n = (n << 4) + val;
+        match self.slice[self.index..] {
+            [a, b, c, d, ..] => {
+                self.index += 4;
+                match decode_four_hex_digits(a, b, c, d) {
+                    Some(val) => Ok(val),
+                    None => error(self, ErrorCode::InvalidEscape),
                 }
             }
+            _ => {
+                self.index = self.slice.len();
+                error(self, ErrorCode::EofWhileParsingString)
+            }
         }
-        Ok(n)
     }
 
     #[cfg(feature = "raw_value")]
@@ -708,9 +757,9 @@ impl<'a> Read<'a> for StrRead<'a> {
 
 
 
-impl<'a, 'de, R> private::Sealed for &'a mut R where R: Read<'de> {}
+impl<'de, R> private::Sealed for &mut R where R: Read<'de> {}
 
-impl<'a, 'de, R> Read<'de> for &'a mut R
+impl<'de, R> Read<'de> for &mut R
 where
     R: Read<'de>,
 {
@@ -784,33 +833,9 @@ pub trait Fused: private::Sealed {}
 impl<'a> Fused for SliceRead<'a> {}
 impl<'a> Fused for StrRead<'a> {}
 
-
-
-static ESCAPE: [bool; 256] = {
-    const CT: bool = true; 
-    const QU: bool = true; 
-    const BS: bool = true; 
-    const __: bool = false; 
-    [
-        
-        CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, 
-        CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, 
-        __, __, QU, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, BS, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-    ]
-};
+fn is_escape(ch: u8, including_control_characters: bool) -> bool {
+    ch == b'"' || ch == b'\\' || (including_control_characters && ch < 0x20)
+}
 
 fn next_or_eof<'de, R>(read: &mut R) -> Result<u8>
 where
@@ -862,88 +887,137 @@ fn parse_escape<'de, R: Read<'de>>(
         b'n' => scratch.push(b'\n'),
         b'r' => scratch.push(b'\r'),
         b't' => scratch.push(b'\t'),
-        b'u' => {
-            fn encode_surrogate(scratch: &mut Vec<u8>, n: u16) {
-                scratch.extend_from_slice(&[
-                    (n >> 12 & 0b0000_1111) as u8 | 0b1110_0000,
-                    (n >> 6 & 0b0011_1111) as u8 | 0b1000_0000,
-                    (n & 0b0011_1111) as u8 | 0b1000_0000,
-                ]);
-            }
-
-            let c = match tri!(read.decode_hex_escape()) {
-                n @ 0xDC00..=0xDFFF => {
-                    return if validate {
-                        error(read, ErrorCode::LoneLeadingSurrogateInHexEscape)
-                    } else {
-                        encode_surrogate(scratch, n);
-                        Ok(())
-                    };
-                }
-
-                
-                
-                
-                
-                n1 @ 0xD800..=0xDBFF => {
-                    if tri!(peek_or_eof(read)) == b'\\' {
-                        read.discard();
-                    } else {
-                        return if validate {
-                            read.discard();
-                            error(read, ErrorCode::UnexpectedEndOfHexEscape)
-                        } else {
-                            encode_surrogate(scratch, n1);
-                            Ok(())
-                        };
-                    }
-
-                    if tri!(peek_or_eof(read)) == b'u' {
-                        read.discard();
-                    } else {
-                        return if validate {
-                            read.discard();
-                            error(read, ErrorCode::UnexpectedEndOfHexEscape)
-                        } else {
-                            encode_surrogate(scratch, n1);
-                            
-                            
-                            
-                            
-                            
-                            parse_escape(read, validate, scratch)
-                        };
-                    }
-
-                    let n2 = tri!(read.decode_hex_escape());
-
-                    if n2 < 0xDC00 || n2 > 0xDFFF {
-                        return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
-                    }
-
-                    let n = (((n1 - 0xD800) as u32) << 10 | (n2 - 0xDC00) as u32) + 0x1_0000;
-
-                    match char::from_u32(n) {
-                        Some(c) => c,
-                        None => {
-                            return error(read, ErrorCode::InvalidUnicodeCodePoint);
-                        }
-                    }
-                }
-
-                
-                
-                n => char::from_u32(n as u32).unwrap(),
-            };
-
-            scratch.extend_from_slice(c.encode_utf8(&mut [0_u8; 4]).as_bytes());
-        }
-        _ => {
-            return error(read, ErrorCode::InvalidEscape);
-        }
+        b'u' => return parse_unicode_escape(read, validate, scratch),
+        _ => return error(read, ErrorCode::InvalidEscape),
     }
 
     Ok(())
+}
+
+
+
+#[cold]
+fn parse_unicode_escape<'de, R: Read<'de>>(
+    read: &mut R,
+    validate: bool,
+    scratch: &mut Vec<u8>,
+) -> Result<()> {
+    let mut n = tri!(read.decode_hex_escape());
+
+    
+    
+    
+    
+    if validate && n >= 0xDC00 && n <= 0xDFFF {
+        
+        return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
+    }
+
+    loop {
+        if n < 0xD800 || n > 0xDBFF {
+            
+            
+            push_wtf8_codepoint(n as u32, scratch);
+            return Ok(());
+        }
+
+        
+        let n1 = n;
+
+        if tri!(peek_or_eof(read)) == b'\\' {
+            read.discard();
+        } else {
+            return if validate {
+                read.discard();
+                error(read, ErrorCode::UnexpectedEndOfHexEscape)
+            } else {
+                push_wtf8_codepoint(n1 as u32, scratch);
+                Ok(())
+            };
+        }
+
+        if tri!(peek_or_eof(read)) == b'u' {
+            read.discard();
+        } else {
+            return if validate {
+                read.discard();
+                error(read, ErrorCode::UnexpectedEndOfHexEscape)
+            } else {
+                push_wtf8_codepoint(n1 as u32, scratch);
+                
+                
+                
+                
+                parse_escape(read, validate, scratch)
+            };
+        }
+
+        let n2 = tri!(read.decode_hex_escape());
+
+        if n2 < 0xDC00 || n2 > 0xDFFF {
+            if validate {
+                return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
+            }
+            push_wtf8_codepoint(n1 as u32, scratch);
+            
+            n = n2;
+            continue;
+        }
+
+        
+        
+        let n = ((((n1 - 0xD800) as u32) << 10) | (n2 - 0xDC00) as u32) + 0x1_0000;
+        push_wtf8_codepoint(n, scratch);
+        return Ok(());
+    }
+}
+
+
+
+#[inline]
+fn push_wtf8_codepoint(n: u32, scratch: &mut Vec<u8>) {
+    if n < 0x80 {
+        scratch.push(n as u8);
+        return;
+    }
+
+    scratch.reserve(4);
+
+    
+    
+    
+    
+    
+    unsafe {
+        let ptr = scratch.as_mut_ptr().add(scratch.len());
+
+        let encoded_len = match n {
+            0..=0x7F => unreachable!(),
+            0x80..=0x7FF => {
+                ptr.write(((n >> 6) & 0b0001_1111) as u8 | 0b1100_0000);
+                2
+            }
+            0x800..=0xFFFF => {
+                ptr.write(((n >> 12) & 0b0000_1111) as u8 | 0b1110_0000);
+                ptr.add(1)
+                    .write(((n >> 6) & 0b0011_1111) as u8 | 0b1000_0000);
+                3
+            }
+            0x1_0000..=0x10_FFFF => {
+                ptr.write(((n >> 18) & 0b0000_0111) as u8 | 0b1111_0000);
+                ptr.add(1)
+                    .write(((n >> 12) & 0b0011_1111) as u8 | 0b1000_0000);
+                ptr.add(2)
+                    .write(((n >> 6) & 0b0011_1111) as u8 | 0b1000_0000);
+                4
+            }
+            0x11_0000.. => unreachable!(),
+        };
+        ptr.add(encoded_len - 1)
+            .write((n & 0b0011_1111) as u8 | 0b1000_0000);
+
+        scratch.set_len(scratch.len() + encoded_len);
+    }
 }
 
 
@@ -973,34 +1047,43 @@ where
     Ok(())
 }
 
-static HEX: [u8; 256] = {
-    const __: u8 = 255; 
-    [
-        
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        00, 01, 02, 03, 04, 05, 06, 07, 08, 09, __, __, __, __, __, __, 
-        __, 10, 11, 12, 13, 14, 15, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, 10, 11, 12, 13, 14, 15, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-    ]
-};
+const fn decode_hex_val_slow(val: u8) -> Option<u8> {
+    match val {
+        b'0'..=b'9' => Some(val - b'0'),
+        b'A'..=b'F' => Some(val - b'A' + 10),
+        b'a'..=b'f' => Some(val - b'a' + 10),
+        _ => None,
+    }
+}
 
-fn decode_hex_val(val: u8) -> Option<u16> {
-    let n = HEX[val as usize] as u16;
-    if n == 255 {
-        None
+const fn build_hex_table(shift: usize) -> [i16; 256] {
+    let mut table = [0; 256];
+    let mut ch = 0;
+    while ch < 256 {
+        table[ch] = match decode_hex_val_slow(ch as u8) {
+            Some(val) => (val as i16) << shift,
+            None => -1,
+        };
+        ch += 1;
+    }
+    table
+}
+
+static HEX0: [i16; 256] = build_hex_table(0);
+static HEX1: [i16; 256] = build_hex_table(4);
+
+fn decode_four_hex_digits(a: u8, b: u8, c: u8, d: u8) -> Option<u16> {
+    let a = HEX1[a as usize] as i32;
+    let b = HEX0[b as usize] as i32;
+    let c = HEX1[c as usize] as i32;
+    let d = HEX0[d as usize] as i32;
+
+    let codepoint = ((a | b) << 8) | c | d;
+
+    
+    if codepoint >= 0 {
+        Some(codepoint as u16)
     } else {
-        Some(n)
+        None
     }
 }

@@ -78,22 +78,6 @@ impl Number {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
     pub fn is_i64(&self) -> bool {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
@@ -109,21 +93,6 @@ impl Number {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
     pub fn is_u64(&self) -> bool {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
@@ -141,19 +110,6 @@ impl Number {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
     pub fn is_f64(&self) -> bool {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
@@ -173,18 +129,6 @@ impl Number {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
     pub fn as_i64(&self) -> Option<i64> {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
@@ -204,17 +148,6 @@ impl Number {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
     pub fn as_u64(&self) -> Option<u64> {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
@@ -226,17 +159,6 @@ impl Number {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
     pub fn as_f64(&self) -> Option<f64> {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
@@ -258,9 +180,6 @@ impl Number {
     
     
     
-    
-    
-    #[inline]
     pub fn from_f64(f: f64) -> Option<Number> {
         if f.is_finite() {
             let n = {
@@ -277,6 +196,87 @@ impl Number {
         } else {
             None
         }
+    }
+
+    
+    
+    pub fn as_i128(&self) -> Option<i128> {
+        #[cfg(not(feature = "arbitrary_precision"))]
+        match self.n {
+            N::PosInt(n) => Some(n as i128),
+            N::NegInt(n) => Some(n as i128),
+            N::Float(_) => None,
+        }
+        #[cfg(feature = "arbitrary_precision")]
+        self.n.parse().ok()
+    }
+
+    
+    
+    pub fn as_u128(&self) -> Option<u128> {
+        #[cfg(not(feature = "arbitrary_precision"))]
+        match self.n {
+            N::PosInt(n) => Some(n as u128),
+            N::NegInt(_) | N::Float(_) => None,
+        }
+        #[cfg(feature = "arbitrary_precision")]
+        self.n.parse().ok()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_i128(i: i128) -> Option<Number> {
+        let n = {
+            #[cfg(not(feature = "arbitrary_precision"))]
+            {
+                if let Ok(u) = u64::try_from(i) {
+                    N::PosInt(u)
+                } else if let Ok(i) = i64::try_from(i) {
+                    N::NegInt(i)
+                } else {
+                    return None;
+                }
+            }
+            #[cfg(feature = "arbitrary_precision")]
+            {
+                i.to_string()
+            }
+        };
+        Some(Number { n })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_u128(i: u128) -> Option<Number> {
+        let n = {
+            #[cfg(not(feature = "arbitrary_precision"))]
+            {
+                if let Ok(u) = u64::try_from(i) {
+                    N::PosInt(u)
+                } else {
+                    return None;
+                }
+            }
+            #[cfg(feature = "arbitrary_precision")]
+            {
+                i.to_string()
+            }
+        };
+        Some(Number { n })
     }
 
     
@@ -368,7 +368,6 @@ impl Debug for Number {
 
 impl Serialize for Number {
     #[cfg(not(feature = "arbitrary_precision"))]
-    #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -381,7 +380,6 @@ impl Serialize for Number {
     }
 
     #[cfg(feature = "arbitrary_precision")]
-    #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -409,17 +407,30 @@ impl<'de> Deserialize<'de> for Number {
                 formatter.write_str("a JSON number")
             }
 
-            #[inline]
             fn visit_i64<E>(self, value: i64) -> Result<Number, E> {
                 Ok(value.into())
             }
 
-            #[inline]
+            fn visit_i128<E>(self, value: i128) -> Result<Number, E>
+            where
+                E: de::Error,
+            {
+                Number::from_i128(value)
+                    .ok_or_else(|| de::Error::custom("JSON number out of range"))
+            }
+
             fn visit_u64<E>(self, value: u64) -> Result<Number, E> {
                 Ok(value.into())
             }
 
-            #[inline]
+            fn visit_u128<E>(self, value: u128) -> Result<Number, E>
+            where
+                E: de::Error,
+            {
+                Number::from_u128(value)
+                    .ok_or_else(|| de::Error::custom("JSON number out of range"))
+            }
+
             fn visit_f64<E>(self, value: f64) -> Result<Number, E>
             where
                 E: de::Error,
@@ -428,7 +439,6 @@ impl<'de> Deserialize<'de> for Number {
             }
 
             #[cfg(feature = "arbitrary_precision")]
-            #[inline]
             fn visit_map<V>(self, mut visitor: V) -> Result<Number, V::Error>
             where
                 V: de::MapAccess<'de>,
@@ -522,7 +532,6 @@ fn invalid_number() -> Error {
 macro_rules! deserialize_any {
     (@expand [$($num_string:tt)*]) => {
         #[cfg(not(feature = "arbitrary_precision"))]
-        #[inline]
         fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Error>
         where
             V: Visitor<'de>,
@@ -535,7 +544,6 @@ macro_rules! deserialize_any {
         }
 
         #[cfg(feature = "arbitrary_precision")]
-        #[inline]
         fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Error>
             where V: Visitor<'de>
         {
@@ -543,6 +551,10 @@ macro_rules! deserialize_any {
                 return visitor.visit_u64(u);
             } else if let Some(i) = self.as_i64() {
                 return visitor.visit_i64(i);
+            } else if let Some(u) = self.as_u128() {
+                return visitor.visit_u128(u);
+            } else if let Some(i) = self.as_i128() {
+                return visitor.visit_i128(i);
             } else if let Some(f) = self.as_f64() {
                 if ryu::Buffer::new().format_finite(f) == self.n || f.to_string() == self.n {
                     return visitor.visit_f64(f);
@@ -609,7 +621,7 @@ impl<'de> Deserializer<'de> for Number {
     }
 }
 
-impl<'de, 'a> Deserializer<'de> for &'a Number {
+impl<'de> Deserializer<'de> for &Number {
     type Error = Error;
 
     deserialize_any!(ref);
@@ -692,7 +704,7 @@ impl From<ParserNumber> for Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    f.to_string()
+                    ryu::Buffer::new().format_finite(f).to_owned()
                 }
             }
             ParserNumber::U64(u) => {
@@ -702,7 +714,7 @@ impl From<ParserNumber> for Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    u.to_string()
+                    itoa::Buffer::new().format(u).to_owned()
                 }
             }
             ParserNumber::I64(i) => {
@@ -712,7 +724,7 @@ impl From<ParserNumber> for Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    i.to_string()
+                    itoa::Buffer::new().format(i).to_owned()
                 }
             }
             #[cfg(feature = "arbitrary_precision")]
@@ -728,7 +740,6 @@ macro_rules! impl_from_unsigned {
     ) => {
         $(
             impl From<$ty> for Number {
-                #[inline]
                 fn from(u: $ty) -> Self {
                     let n = {
                         #[cfg(not(feature = "arbitrary_precision"))]
@@ -751,7 +762,6 @@ macro_rules! impl_from_signed {
     ) => {
         $(
             impl From<$ty> for Number {
-                #[inline]
                 fn from(i: $ty) -> Self {
                     let n = {
                         #[cfg(not(feature = "arbitrary_precision"))]

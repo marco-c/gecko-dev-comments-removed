@@ -3,15 +3,27 @@ use std::env;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
+    println!("cargo:rustc-check-cfg=cfg(fast_arithmetic, values(\"32\", \"64\"))");
+
     
     
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    match target_arch.as_str() {
-        "aarch64" | "mips64" | "powerpc64" | "x86_64" | "loongarch64" => {
-            println!("cargo:rustc-cfg=limb_width_64");
-        }
-        _ => {
-            println!("cargo:rustc-cfg=limb_width_32");
-        }
+    let target_arch = env::var_os("CARGO_CFG_TARGET_ARCH").unwrap();
+    let target_pointer_width = env::var_os("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap();
+    if target_arch == "aarch64"
+        || target_arch == "loongarch64"
+        || target_arch == "mips64"
+        || target_arch == "powerpc64"
+        || target_arch == "wasm32"
+        || target_arch == "x86_64"
+        || target_pointer_width == "64"
+    {
+        
+        
+        
+        
+        
+        println!("cargo:rustc-cfg=fast_arithmetic=\"64\"");
+    } else {
+        println!("cargo:rustc-cfg=fast_arithmetic=\"32\"");
     }
 }

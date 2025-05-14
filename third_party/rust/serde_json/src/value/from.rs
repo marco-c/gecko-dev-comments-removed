@@ -1,8 +1,8 @@
 use super::Value;
 use crate::map::Map;
 use crate::number::Number;
-use alloc::borrow::Cow;
-use alloc::string::{String, ToString};
+use alloc::borrow::{Cow, ToOwned};
+use alloc::string::String;
 use alloc::vec::Vec;
 
 macro_rules! from_integer {
@@ -105,7 +105,7 @@ impl From<&str> for Value {
     
     
     fn from(f: &str) -> Self {
-        Value::String(f.to_string())
+        Value::String(f.to_owned())
     }
 }
 
@@ -180,6 +180,12 @@ impl<T: Into<Value>> From<Vec<T>> for Value {
     
     fn from(f: Vec<T>) -> Self {
         Value::Array(f.into_iter().map(Into::into).collect())
+    }
+}
+
+impl<T: Into<Value>, const N: usize> From<[T; N]> for Value {
+    fn from(array: [T; N]) -> Self {
+        Value::Array(array.into_iter().map(Into::into).collect())
     }
 }
 

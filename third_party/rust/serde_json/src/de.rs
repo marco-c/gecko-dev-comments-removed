@@ -50,6 +50,12 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn new(read: R) -> Self {
         Deserializer {
             read,
@@ -362,7 +368,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
             None => {
                 return Err(self.peek_error(ErrorCode::EofWhileParsingValue));
             }
-        };
+        }
 
         tri!(self.scan_integer128(&mut buf));
 
@@ -1378,7 +1384,7 @@ macro_rules! check_recursion {
     };
 }
 
-impl<'de, 'a, R: Read<'de>> de::Deserializer<'de> for &'a mut Deserializer<R> {
+impl<'de, R: Read<'de>> de::Deserializer<'de> for &mut Deserializer<R> {
     type Error = Error;
 
     #[inline]
@@ -1549,6 +1555,9 @@ impl<'de, 'a, R: Read<'de>> de::Deserializer<'de> for &'a mut Deserializer<R> {
         self.deserialize_str(visitor)
     }
 
+    
+    
+    
     
     
     
@@ -1870,8 +1879,9 @@ impl<'de, 'a, R: Read<'de>> de::Deserializer<'de> for &'a mut Deserializer<R> {
             Some(b'{') => {
                 check_recursion! {
                     self.eat_char();
-                    let value = tri!(visitor.visit_enum(VariantAccess::new(self)));
+                    let ret = visitor.visit_enum(VariantAccess::new(self));
                 }
+                let value = tri!(ret);
 
                 match tri!(self.parse_whitespace()) {
                     Some(b'}') => {
@@ -1922,31 +1932,37 @@ impl<'de, 'a, R: Read<'de> + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
     where
         T: de::DeserializeSeed<'de>,
     {
-        let peek = match tri!(self.de.parse_whitespace()) {
-            Some(b']') => {
-                return Ok(None);
-            }
-            Some(b',') if !self.first => {
-                self.de.eat_char();
-                tri!(self.de.parse_whitespace())
-            }
-            Some(b) => {
-                if self.first {
-                    self.first = false;
-                    Some(b)
-                } else {
-                    return Err(self.de.peek_error(ErrorCode::ExpectedListCommaOrEnd));
+        fn has_next_element<'de, 'a, R: Read<'de> + 'a>(
+            seq: &mut SeqAccess<'a, R>,
+        ) -> Result<bool> {
+            let peek = match tri!(seq.de.parse_whitespace()) {
+                Some(b) => b,
+                None => {
+                    return Err(seq.de.peek_error(ErrorCode::EofWhileParsingList));
                 }
-            }
-            None => {
-                return Err(self.de.peek_error(ErrorCode::EofWhileParsingList));
-            }
-        };
+            };
 
-        match peek {
-            Some(b']') => Err(self.de.peek_error(ErrorCode::TrailingComma)),
-            Some(_) => Ok(Some(tri!(seed.deserialize(&mut *self.de)))),
-            None => Err(self.de.peek_error(ErrorCode::EofWhileParsingValue)),
+            if peek == b']' {
+                Ok(false)
+            } else if seq.first {
+                seq.first = false;
+                Ok(true)
+            } else if peek == b',' {
+                seq.de.eat_char();
+                match tri!(seq.de.parse_whitespace()) {
+                    Some(b']') => Err(seq.de.peek_error(ErrorCode::TrailingComma)),
+                    Some(_) => Ok(true),
+                    None => Err(seq.de.peek_error(ErrorCode::EofWhileParsingValue)),
+                }
+            } else {
+                Err(seq.de.peek_error(ErrorCode::ExpectedListCommaOrEnd))
+            }
+        }
+
+        if tri!(has_next_element(self)) {
+            Ok(Some(tri!(seed.deserialize(&mut *self.de))))
+        } else {
+            Ok(None)
         }
     }
 }
@@ -1969,32 +1985,40 @@ impl<'de, 'a, R: Read<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     where
         K: de::DeserializeSeed<'de>,
     {
-        let peek = match tri!(self.de.parse_whitespace()) {
-            Some(b'}') => {
-                return Ok(None);
-            }
-            Some(b',') if !self.first => {
-                self.de.eat_char();
-                tri!(self.de.parse_whitespace())
-            }
-            Some(b) => {
-                if self.first {
-                    self.first = false;
-                    Some(b)
-                } else {
-                    return Err(self.de.peek_error(ErrorCode::ExpectedObjectCommaOrEnd));
+        fn has_next_key<'de, 'a, R: Read<'de> + 'a>(map: &mut MapAccess<'a, R>) -> Result<bool> {
+            let peek = match tri!(map.de.parse_whitespace()) {
+                Some(b) => b,
+                None => {
+                    return Err(map.de.peek_error(ErrorCode::EofWhileParsingObject));
                 }
-            }
-            None => {
-                return Err(self.de.peek_error(ErrorCode::EofWhileParsingObject));
-            }
-        };
+            };
 
-        match peek {
-            Some(b'"') => seed.deserialize(MapKey { de: &mut *self.de }).map(Some),
-            Some(b'}') => Err(self.de.peek_error(ErrorCode::TrailingComma)),
-            Some(_) => Err(self.de.peek_error(ErrorCode::KeyMustBeAString)),
-            None => Err(self.de.peek_error(ErrorCode::EofWhileParsingValue)),
+            if peek == b'}' {
+                Ok(false)
+            } else if map.first {
+                map.first = false;
+                if peek == b'"' {
+                    Ok(true)
+                } else {
+                    Err(map.de.peek_error(ErrorCode::KeyMustBeAString))
+                }
+            } else if peek == b',' {
+                map.de.eat_char();
+                match tri!(map.de.parse_whitespace()) {
+                    Some(b'"') => Ok(true),
+                    Some(b'}') => Err(map.de.peek_error(ErrorCode::TrailingComma)),
+                    Some(_) => Err(map.de.peek_error(ErrorCode::KeyMustBeAString)),
+                    None => Err(map.de.peek_error(ErrorCode::EofWhileParsingValue)),
+                }
+            } else {
+                Err(map.de.peek_error(ErrorCode::ExpectedObjectCommaOrEnd))
+            }
+        }
+
+        if tri!(has_next_key(self)) {
+            Ok(Some(tri!(seed.deserialize(MapKey { de: &mut *self.de }))))
+        } else {
+            Ok(None)
         }
     }
 
@@ -2480,7 +2504,6 @@ where
     tri!(de.end());
     Ok(value)
 }
-
 
 
 
