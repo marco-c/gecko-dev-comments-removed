@@ -1190,7 +1190,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  inline nsIContent* GetFlattenedTreeParentNodeForSelection() const;
+  inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
 
   inline mozilla::dom::Element* GetFlattenedTreeParentElement() const;
   inline mozilla::dom::Element* GetFlattenedTreeParentElementForStyle() const;
