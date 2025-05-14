@@ -61,6 +61,9 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
 
   void FrameCallbackHandler(uint32_t aTime);
 
+  RefPtr<widget::WaylandBuffer> BorrowExternalBuffer(
+      RefPtr<DMABufSurface> aDMABufSurface);
+
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
   void* GetLoggingWidget() const;
@@ -118,6 +121,10 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   
   nsTArray<RefPtr<NativeLayerWayland>> mMainThreadUpdateSublayers;
+
+  
+  
+  nsTArray<widget::WaylandBufferDMABUFHolder> mExternalBuffers;
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mFrameInProcess{false};
