@@ -5,6 +5,8 @@
 
 
 #include "PerformanceInteractionMetrics.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/TextEvents.h"
@@ -41,11 +43,11 @@ uint64_t PerformanceInteractionMetrics::IncreaseInteractionValueAndCount() {
 }
 
 
-uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
-    const WidgetEvent* aEvent) {
+Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
+    PerformanceEventTiming* aEventTiming, const WidgetEvent* aEvent) {
   
   if (!aEvent->IsTrusted()) {
-    return 0;
+    return Some(0);
   }
 
   
@@ -55,25 +57,57 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
   
   
   switch (eventType) {
+    case eKeyDown:
     case eKeyUp:
     case eCompositionStart:
     case eEditorInput:
     case ePointerCancel:
+    case ePointerDown:
     case ePointerUp:
     case ePointerClick:
       break;
     default:
-      return 0;
+      return Some(0);
   }
 
   
+
+  if (eventType == ePointerDown) {
+    uint32_t pointerId = aEvent->AsPointerEvent()->pointerId;
+
+    mPendingPointerDowns.InsertOrUpdate(pointerId, aEventTiming);
+    
+    
+    return Nothing();
+  }
+
+  if (eventType == eKeyDown) {
+    const WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
+
+    if (keyEvent->mIsComposing) {
+      return Some(0);
+    }
+
+    auto code = keyEvent->mKeyCode;
+
+    auto entry = mPendingKeyDowns.MaybeGet(code);
+    if (entry) {
+      if (code != 229) {
+        uint64_t interactionId = IncreaseInteractionValueAndCount();
+        (*entry)->SetInteractionId(interactionId);
+      }
+    }
+
+    mPendingKeyDowns.InsertOrUpdate(code, aEventTiming);
+    return Nothing();
+  }
 
   
   if (eventType == eKeyUp) {
     
     const WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
     if (keyEvent->mIsComposing) {
-      return 0;
+      return Some(0);
     }
 
     
@@ -83,7 +117,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     auto entry = mPendingKeyDowns.MaybeGet(code);
     
     if (!entry) {
-      return 0;
+      return Some(0);
     }
 
     
@@ -98,7 +132,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     mLastKeydownInteractionValue = Some(interactionId);
 
     
-    return interactionId;
+    return Some(interactionId);
   }
 
   
@@ -113,7 +147,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     
     mPendingKeyDowns.Clear();
     
-    return 0;
+    return Some(0);
   }
 
   
@@ -121,16 +155,16 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     
     const auto* inputEvent = aEvent->AsEditorInputEvent();
     if (!inputEvent) {
-      return 0;
+      return Some(0);
     }
 
     
     if (!inputEvent->mIsComposing) {
-      return 0;
+      return Some(0);
     }
 
     mLastKeydownInteractionValue = Nothing();
-    return IncreaseInteractionValueAndCount();
+    return Some(IncreaseInteractionValueAndCount());
   }
 
   
@@ -148,20 +182,20 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
       
       
       
-      return mLastKeydownInteractionValue.valueOr(0);
+      return Some(mLastKeydownInteractionValue.valueOr(0));
     }
 
     
     auto value = mPointerInteractionValueMap.MaybeGet(pointerId);
     
     if (!value) {
-      return 0;
+      return Some(0);
     }
 
     
     mPointerInteractionValueMap.Remove(pointerId);
     
-    return *value;
+    return Some(*value);
   }
 
   
@@ -171,7 +205,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
   auto entry = mPendingPointerDowns.MaybeGet(pointerId);
   
   if (!entry) {
-    return 0;
+    return Some(0);
   }
 
   
@@ -195,10 +229,10 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
 
   
   if (eventType == ePointerCancel) {
-    return 0;
+    return Some(0);
   }
 
-  return mPointerInteractionValueMap.Get(pointerId);
+  return Some(mPointerInteractionValueMap.Get(pointerId));
 }
 
 }  

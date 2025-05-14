@@ -34,7 +34,6 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
                                                const nsAString& aName,
                                                const TimeStamp& aStartTime,
                                                bool aIsCacelable,
-                                               Maybe<uint64_t> aInteractionId,
                                                EventMessage aMessage)
     : PerformanceEntry(aPerformance->GetParentObject(), aName, u"event"_ns),
       mPerformance(aPerformance),
@@ -44,7 +43,6 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
           aPerformance->GetDOMTiming()->TimeStampToDOMHighRes(aStartTime)),
       mDuration(0),
       mCancelable(aIsCacelable),
-      mInteractionId(aInteractionId),
       mMessage(aMessage) {}
 
 PerformanceEventTiming::PerformanceEventTiming(
@@ -132,12 +130,12 @@ PerformanceEventTiming::TryGenerateEventTiming(const EventTarget* aTarget,
     const char16_t* eventName = Event::GetEventName(aEvent->mMessage);
     MOZ_ASSERT(eventName,
                "User defined events shouldn't be considered as event timing");
-    return RefPtr<PerformanceEventTiming>(
-               new PerformanceEventTiming(
-                   performance, nsDependentString(eventName),
-                   aEvent->mTimeStamp, aEvent->mFlags.mCancelable,
-                   performance->ComputeInteractionId(aEvent), aEvent->mMessage))
-        .forget();
+    auto eventTiming =
+        RefPtr<PerformanceEventTiming>(new PerformanceEventTiming(
+            performance, nsDependentString(eventName), aEvent->mTimeStamp,
+            aEvent->mFlags.mCancelable, aEvent->mMessage));
+    performance->SetInteractionId(eventTiming, aEvent);
+    return eventTiming.forget();
   }
   return nullptr;
 }
@@ -210,61 +208,6 @@ void PerformanceEventTiming::FinalizeEventTiming(const WidgetEvent* aEvent) {
   }
 
   mTarget = do_GetWeakReference(element);
-
-  if (!StaticPrefs::dom_performance_event_timing_enable_interactionid()) {
-    mPerformance->InsertEventTimingEntry(this);
-    return;
-  }
-
-  if (aEvent->mMessage == ePointerDown) {
-    auto& interactionMetrics = mPerformance->GetPerformanceInteractionMetrics();
-    
-    
-    auto& pendingPointerDowns = interactionMetrics.PendingPointerDowns();
-
-    
-    uint32_t pointerId = aEvent->AsPointerEvent()->pointerId;
-
-    
-    pendingPointerDowns.InsertOrUpdate(pointerId, this);
-  } else if (aEvent->mMessage == eKeyDown) {
-    const WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
-
-    
-    if (keyEvent->mIsComposing) {
-      
-      
-      mPerformance->InsertEventTimingEntry(this);
-      
-      return;
-    }
-
-    auto& interactionMetrics = mPerformance->GetPerformanceInteractionMetrics();
-
-    
-    auto& pendingKeyDowns = interactionMetrics.PendingKeyDowns();
-    
-    auto code = keyEvent->mKeyCode;
-
-    
-    auto entry = pendingKeyDowns.MaybeGet(code);
-    
-    if (entry) {
-      
-      if (code != 229) {
-        
-        
-        uint64_t interactionId =
-            interactionMetrics.IncreaseInteractionValueAndCount();
-        
-        
-        SetInteractionId(interactionId);
-      }
-    }
-
-    
-    pendingKeyDowns.InsertOrUpdate(code, this);
-  }
 
   mPerformance->InsertEventTimingEntry(this);
 }
