@@ -50,8 +50,8 @@ MFBT_API LoadOrBranch BUncondImmDecode(const uintptr_t aPC,
 
 
 static const PCRelativeLoadTest gPCRelTests[] = {
-    {0x9FC00000, 0x10000000, nullptr},      
-    {0x9FC00000, 0x90000000, &ADRPDecode},  
+    {0x9F000000, 0x10000000, nullptr},      
+    {0x9F000000, 0x90000000, &ADRPDecode},  
     {0xFF000000, 0x58000000, nullptr},      
     {0x3B000000, 0x18000000, nullptr},      
     {0x7C000000, 0x14000000, nullptr},      
