@@ -5493,10 +5493,12 @@ EditorBase* Element::GetExtantEditor() const {
 }
 
 void Element::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
+                            const SetHTMLUnsafeOptions& aOptions,
                             nsIPrincipal* aSubjectPrincipal,
                             ErrorResult& aError) {
-  nsContentUtils::SetHTMLUnsafe(this, this, aHTML, false ,
-                                aSubjectPrincipal, aError);
+  nsContentUtils::SetHTMLUnsafe(this, this, aHTML, aOptions,
+                                false , aSubjectPrincipal,
+                                aError);
 }
 
 
