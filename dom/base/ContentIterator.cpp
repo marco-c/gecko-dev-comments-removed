@@ -550,7 +550,8 @@ nsINode* ContentIteratorBase<NodeType>::GetDeepFirstChild(nsINode* aRoot) {
 
 template <typename NodeType>
 nsIContent* ContentIteratorBase<NodeType>::GetDeepFirstChild(
-    nsIContent* aRoot, bool aAllowCrossShadowBoundary) {
+    nsIContent* aRoot,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (NS_WARN_IF(!aRoot)) {
     return nullptr;
   }
@@ -567,7 +568,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetDeepFirstChild(
     
     
     
-    MOZ_ASSERT(aAllowCrossShadowBoundary);
+    MOZ_ASSERT(aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes);
     child = shadowRoot->GetFirstChild();
   } else {
     child = node->GetFirstChild();
@@ -607,7 +608,8 @@ nsINode* ContentIteratorBase<NodeType>::GetDeepLastChild(nsINode* aRoot) {
 
 template <typename NodeType>
 nsIContent* ContentIteratorBase<NodeType>::GetDeepLastChild(
-    nsIContent* aRoot, bool aAllowCrossShadowBoundary) {
+    nsIContent* aRoot,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (NS_WARN_IF(!aRoot)) {
     return nullptr;
   }
@@ -640,7 +642,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetDeepLastChild(
 
 template <typename NodeType>
 nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
-    nsINode* aNode, bool aAllowCrossShadowBoundary) {
+    nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary,
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
@@ -655,7 +657,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
     return nullptr;
   }
 
-  if (aAllowCrossShadowBoundary) {
+  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
     
     
     
@@ -674,7 +676,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
 
 template <typename NodeType>
 nsIContent* ContentIteratorBase<NodeType>::GetPrevSibling(
-    nsINode* aNode, bool aAllowCrossShadowBoundary) {
+    nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
@@ -947,7 +949,7 @@ nsresult ContentSubtreeIterator::InitWithAllowCrossShadowBoundary(
 void ContentSubtreeIterator::CacheInclusiveAncestorsOfEndContainer() {
   mInclusiveAncestorsOfEndContainer.Clear();
   nsINode* const endContainer = ShadowDOMSelectionHelpers::GetEndContainer(
-      mRange, IterAllowCrossShadowBoundary());
+      mRange, mAllowCrossShadowBoundary);
   nsIContent* endNode =
       endContainer->IsContent() ? endContainer->AsContent() : nullptr;
   while (endNode) {
@@ -964,7 +966,7 @@ void ContentSubtreeIterator::CacheInclusiveAncestorsOfEndContainer() {
 
 nsIContent* ContentSubtreeIterator::DetermineCandidateForFirstContent() const {
   nsINode* startContainer = ShadowDOMSelectionHelpers::GetStartContainer(
-      mRange, IterAllowCrossShadowBoundary());
+      mRange, mAllowCrossShadowBoundary);
   nsIContent* firstCandidate = nullptr;
   
   nsINode* node = nullptr;
@@ -979,7 +981,7 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForFirstContent() const {
 
     MOZ_ASSERT(child == startContainer->GetChildAt_Deprecated(
                             ShadowDOMSelectionHelpers::StartOffset(
-                                mRange, IterAllowCrossShadowBoundary())));
+                                mRange, mAllowCrossShadowBoundary)));
     if (!child) {
       
       node = startContainer;
@@ -990,13 +992,13 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForFirstContent() const {
 
   if (!firstCandidate) {
     
-    firstCandidate = ContentIteratorBase::GetNextSibling(
-        node, IterAllowCrossShadowBoundary());
+    firstCandidate =
+        ContentIteratorBase::GetNextSibling(node, mAllowCrossShadowBoundary);
   }
 
   if (firstCandidate) {
     firstCandidate = ContentIteratorBase::GetDeepFirstChild(
-        firstCandidate, IterAllowCrossShadowBoundary());
+        firstCandidate, mAllowCrossShadowBoundary);
   }
 
   return firstCandidate;
@@ -1026,10 +1028,10 @@ nsIContent* ContentSubtreeIterator::DetermineFirstContent() const {
 nsIContent* ContentSubtreeIterator::DetermineCandidateForLastContent() const {
   nsIContent* lastCandidate{nullptr};
   nsINode* endContainer = ShadowDOMSelectionHelpers::GetEndContainer(
-      mRange, IterAllowCrossShadowBoundary());
+      mRange, mAllowCrossShadowBoundary);
   
-  int32_t offset = ShadowDOMSelectionHelpers::EndOffset(
-      mRange, IterAllowCrossShadowBoundary());
+  int32_t offset =
+      ShadowDOMSelectionHelpers::EndOffset(mRange, mAllowCrossShadowBoundary);
 
   int32_t numChildren = endContainer->GetChildCount();
 
@@ -1044,20 +1046,21 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForLastContent() const {
     lastCandidate = IterAllowCrossShadowBoundary()
                         ? mRange->MayCrossShadowBoundaryEndRef().Ref()
                         : mRange->EndRef().Ref();
-    MOZ_ASSERT(lastCandidate == endContainer->GetChildAt_Deprecated(--offset));
+    MOZ_ASSERT(lastCandidate ==
+               endContainer->GetChildAt_Deprecated(offset - 1));
     NS_ASSERTION(lastCandidate,
                  "tree traversal trouble in ContentSubtreeIterator::Init");
   }
 
   if (!lastCandidate) {
     
-    lastCandidate = ContentIteratorBase::GetPrevSibling(
-        node, IterAllowCrossShadowBoundary());
+    lastCandidate =
+        ContentIteratorBase::GetPrevSibling(node, mAllowCrossShadowBoundary);
   }
 
   if (lastCandidate) {
     lastCandidate = ContentIteratorBase::GetDeepLastChild(
-        lastCandidate, IterAllowCrossShadowBoundary());
+        lastCandidate, mAllowCrossShadowBoundary);
   }
 
   return lastCandidate;
@@ -1072,13 +1075,13 @@ nsresult ContentSubtreeIterator::InitWithRange() {
       mRange->GetClosestCommonInclusiveAncestor(mAllowCrossShadowBoundary);
 
   nsINode* startContainer = ShadowDOMSelectionHelpers::GetStartContainer(
-      mRange, IterAllowCrossShadowBoundary());
-  const int32_t startOffset = ShadowDOMSelectionHelpers::StartOffset(
-      mRange, IterAllowCrossShadowBoundary());
+      mRange, mAllowCrossShadowBoundary);
+  const int32_t startOffset =
+      ShadowDOMSelectionHelpers::StartOffset(mRange, mAllowCrossShadowBoundary);
   nsINode* endContainer = ShadowDOMSelectionHelpers::GetEndContainer(
-      mRange, IterAllowCrossShadowBoundary());
-  const int32_t endOffset = ShadowDOMSelectionHelpers::EndOffset(
-      mRange, IterAllowCrossShadowBoundary());
+      mRange, mAllowCrossShadowBoundary);
+  const int32_t endOffset =
+      ShadowDOMSelectionHelpers::EndOffset(mRange, mAllowCrossShadowBoundary);
   MOZ_ASSERT(mClosestCommonInclusiveAncestor && startContainer && endContainer);
   
   MOZ_ASSERT(uint32_t(startOffset) <= startContainer->Length() &&
@@ -1156,8 +1159,8 @@ void ContentSubtreeIterator::Next() {
     return;
   }
 
-  nsINode* nextNode = ContentIteratorBase::GetNextSibling(
-      mCurNode, IterAllowCrossShadowBoundary());
+  nsINode* nextNode =
+      ContentIteratorBase::GetNextSibling(mCurNode, mAllowCrossShadowBoundary);
 
   NS_ASSERTION(nextNode, "No next sibling!?! This could mean deadlock!");
 
@@ -1223,7 +1226,7 @@ nsresult ContentSubtreeIterator::PositionAt(nsINode* aCurNode) {
 nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
     nsINode* aNode) const {
   if (!aNode || !ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-                    *aNode, IterAllowCrossShadowBoundary())) {
+                    *aNode, mAllowCrossShadowBoundary)) {
     return nullptr;
   }
 
@@ -1242,7 +1245,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
   nsIContent* lastContentInShadowTree = nullptr;
   while (content) {
     nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-        *content, IterAllowCrossShadowBoundary());
+        *content, mAllowCrossShadowBoundary);
 
     
     
@@ -1255,7 +1258,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
     
     
     if (!parent || !ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-                       *parent, IterAllowCrossShadowBoundary())) {
+                       *parent, mAllowCrossShadowBoundary)) {
       return content;
     }
 
