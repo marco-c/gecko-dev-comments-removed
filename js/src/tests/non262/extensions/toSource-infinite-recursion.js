@@ -15,18 +15,9 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-try
-{
-  var e = Error('');
-  e.fileName = e;
-  e.toSource();
-  throw new Error("should have thrown");
-}
-catch (e)
-{
-  assertEq(e instanceof InternalError, true,
-           "should have thrown for over-recursion");
-}
+var e = Error('');
+e.fileName = e;
+assertEq(e.toSource(), `(new Error("", {}, 18))`);
 
 
 
