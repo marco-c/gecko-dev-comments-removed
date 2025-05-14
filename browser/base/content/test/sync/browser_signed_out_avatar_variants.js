@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { ExperimentFakes } = ChromeUtils.importESModule(
+const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
@@ -185,7 +185,7 @@ add_task(async function test_default() {
 
 
 add_task(async function test_control() {
-  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig(
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
     {
       featureId: NimbusFeatures.fxaButtonVisibility.featureId,
       value: {
@@ -206,7 +206,7 @@ add_task(async function test_control() {
 
 
 add_task(async function test_human_circle() {
-  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig(
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
     {
       featureId: NimbusFeatures.fxaButtonVisibility.featureId,
       value: {
@@ -228,7 +228,7 @@ add_task(async function test_human_circle() {
 
 
 add_task(async function test_fox_circle() {
-  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig(
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
     {
       featureId: NimbusFeatures.fxaButtonVisibility.featureId,
       value: {
