@@ -40,7 +40,7 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
 
   
   
-  RefPtr<InitPromise> Init() override;
+  RefPtr<InitPromise> Init() override = 0;  
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
@@ -50,8 +50,10 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   RefPtr<GenericPromise> SetBitrate(uint32_t aBitRate) override;
 
  protected:
+  static Result<AVCodecContext*, MediaResult> AllocateCodecContext(
+      const FFmpegLibWrapper* aLib, AVCodecID aCodecId);
+
   
-  RefPtr<InitPromise> ProcessInit();
   RefPtr<EncodePromise> ProcessEncode(RefPtr<const MediaData> aSample);
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
@@ -59,12 +61,10 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   RefPtr<EncodePromise> ProcessDrain();
   RefPtr<ShutdownPromise> ProcessShutdown();
   
-  virtual MediaResult InitSpecific() = 0;
-  
-  
-  
-  AVCodec* InitCommon();
-  MediaResult FinishInitCommon(AVCodec* aCodec);
+  virtual MediaResult InitEncoder() = 0;
+
+  void SetContextBitrate();
+
   void ShutdownInternal();
   int OpenCodecContext(const AVCodec* aCodec, AVDictionary** aOptions)
       MOZ_EXCLUDES(sMutex);
