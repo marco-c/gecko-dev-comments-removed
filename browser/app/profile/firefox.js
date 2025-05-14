@@ -2021,7 +2021,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.en
 
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config", "en-US, en-GB, en-CA");
 
-pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", true);
+#else
+  pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
+#endif
 
 
 pref("browser.newtabpage.activity-stream.telemetry.surfaceId", "");
