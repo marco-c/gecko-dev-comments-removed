@@ -582,10 +582,14 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
     zone->gcEphemeronEdges().clearAndCompact();
   }
 
-  
 #  ifdef DEBUG
-  size_t savedQueuePos = gc->queuePos;
-  mozilla::Maybe<MarkColor> savedQueueColor = gc->queueMarkColor;
+  
+  
+  
+  
+  if (gc->testMarkQueueRemaining() > 0) {
+    return;
+  }
 #  endif
 
   
@@ -684,8 +688,8 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   }
 
 #  ifdef DEBUG
-  gc->queuePos = savedQueuePos;
-  gc->queueMarkColor = savedQueueColor;
+  MOZ_ASSERT(gc->testMarkQueueRemaining() == 0);
+  MOZ_ASSERT(gc->queueMarkColor.isNothing());
 #  endif
 
   gc->incrementalState = state;

@@ -3306,6 +3306,11 @@ void GCRuntime::clearTestMarkQueue() {
 
 size_t GCRuntime::testMarkQueuePos() const { return queuePos; }
 
+size_t GCRuntime::testMarkQueueRemaining() const {
+  MOZ_ASSERT(queuePos <= testMarkQueue.length());
+  return testMarkQueue.length() - queuePos;
+}
+
 #endif
 
 GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
@@ -3431,6 +3436,10 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       }
     }
   }
+
+  
+  
+  queueMarkColor.reset();
 #endif
 
   return QueueComplete;
