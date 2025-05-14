@@ -7729,6 +7729,14 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
 
     
     
+    
+    
+    if (RefPtr transition = mActiveViewTransition) {
+      transition->SkipTransition(SkipTransitionReason::RootRemoved);
+    }
+
+    
+    
     if (aNotify) {
       MutationObservers::NotifyContentWillBeRemoved(this, aKid, aState);
       aNotify = false;
