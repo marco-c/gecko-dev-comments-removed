@@ -103,7 +103,11 @@ interface imgIContainer : nsISupports
 
 
 
-  [noscript] readonly attribute nsSize intrinsicSize;
+
+
+
+
+  [noscript] readonly attribute nsSize intrinsicSizeInAppUnits;
 
   
 
