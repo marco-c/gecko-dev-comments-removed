@@ -419,6 +419,8 @@ this.tabs = class extends ExtensionAPIPersistent {
           return;
         }
         let needed = [];
+        let updatedTab = event.originalTarget;
+
         if (event.type == "TabAttrModified") {
           let changed = event.detail.changed;
           if (
@@ -472,8 +474,14 @@ this.tabs = class extends ExtensionAPIPersistent {
           needed.push("discarded");
         } else if (event.type === "TabGrouped") {
           needed.push("groupId");
+          
+          
+          updatedTab = event.detail;
         } else if (event.type === "TabUngrouped") {
-          if (event.originalTarget.group) {
+          
+          
+          updatedTab = event.detail;
+          if (updatedTab.group) {
             
             
             return;
@@ -485,14 +493,14 @@ this.tabs = class extends ExtensionAPIPersistent {
           needed.push("hidden");
         }
 
-        let tab = tabManager.getWrapper(event.originalTarget);
+        let tab = tabManager.getWrapper(updatedTab);
 
         let changeInfo = {};
         for (let prop of needed) {
           changeInfo[prop] = tab[prop];
         }
 
-        fireForTab(tab, changeInfo, event.originalTarget);
+        fireForTab(tab, changeInfo, updatedTab);
       };
 
       let statusListener = ({ browser, status, url }) => {
