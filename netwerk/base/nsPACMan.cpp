@@ -37,11 +37,6 @@ LazyLogModule gProxyLog("proxy");
 #define MOZ_DHCP_WPAD_OPTION 252
 
 
-
-
-static Atomic<bool> sGetOptionInProgress(false);
-
-
 extern const char kProxyType_HTTPS[];
 extern const char kProxyType_DIRECT[];
 
@@ -592,16 +587,11 @@ nsresult nsPACMan::GetPACFromDHCP(nsACString& aSpec) {
          MOZ_DHCP_WPAD_OPTION));
     return NS_ERROR_NOT_IMPLEMENTED;
   }
-  if (sGetOptionInProgress) {
-    LOG(("GetPACFromDHCP task already in progress"));
-    return NS_ERROR_IN_PROGRESS;
-  }
 
   MonitorAutoLock lock(mMonitor);
   mPACStringFromDHCP.Truncate();
 
   RefPtr<nsPACMan> self = this;
-  sGetOptionInProgress = true;
   rv = NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
           "nsPACMan::GetPACFromDHCP",
@@ -622,13 +612,11 @@ nsresult nsPACMan::GetPACFromDHCP(nsACString& aSpec) {
             }
             MonitorAutoLock lock(self->mMonitor);
             self->mPACStringFromDHCP = spec;
-            sGetOptionInProgress = false;
             self->mMonitor.NotifyAll();
           }),
       NS_DISPATCH_EVENT_MAY_BLOCK);
 
   if (NS_FAILED(rv)) {
-    sGetOptionInProgress = false;
     return rv;
   }
 
