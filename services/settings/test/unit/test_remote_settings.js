@@ -447,6 +447,7 @@ add_task(async function test_get_throws_if_no_empty_fallback() {
 add_task(clear_state);
 
 add_task(async function test_get_verify_signature_no_sync() {
+  client.verifySignature = true;
   
   let error;
   try {
@@ -487,6 +488,8 @@ add_task(clear_state);
 add_task(async function test_get_can_verify_signature() {
   
   await client.maybeSync(2000);
+
+  client.verifySignature = true;
 
   
   let calledSignature;
@@ -529,6 +532,7 @@ add_task(async function test_get_does_not_verify_signature_if_load_dump() {
       return true;
     },
   };
+  clientWithDump.verifySignature = true;
 
   
   const records = await clientWithDump.get({ verifySignature: true });
@@ -536,6 +540,7 @@ add_task(async function test_get_does_not_verify_signature_if_load_dump() {
   ok(!called, "signature is missing but not verified");
 
   
+  client.verifySignature = true;
   let error;
   try {
     await clientWithDump.get({ verifySignature: true, syncIfEmpty: false });
@@ -559,6 +564,7 @@ add_task(clear_state);
 
 add_task(
   async function test_get_does_verify_signature_if_json_loaded_in_parallel() {
+    clientWithDump.verifySignature = true;
     const backup = clientWithDump._verifier;
     let callCount = 0;
     clientWithDump._verifier = {
