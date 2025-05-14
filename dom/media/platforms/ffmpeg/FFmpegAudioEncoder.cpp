@@ -477,9 +477,6 @@ FFmpegAudioEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
   if (mPacketsDelivered++ == 0) {
     
     
-    if (auto r = GetExtraData(aPacket); r.isOk()) {
-      data->mExtraData = r.unwrap();
-    }
     data->mConfig = MakeUnique<EncoderConfig>(mConfig);
   }
 
