@@ -916,12 +916,9 @@ struct nsGridContainerFrame::GridItemInfo {
   
   bool ShouldApplyAutoMinSize(WritingMode aContainerWM,
                               LogicalAxis aContainerAxis) const {
-    if ((mState[aContainerAxis] & StateBits::eIsFlexing) &&
-        mArea.LineRangeForAxis(aContainerAxis).Extent() > 1) {
-      
-      
-      return false;
-    }
+    MOZ_ASSERT(
+        mArea.LineRangeForAxis(aContainerAxis).Extent() == 1,
+        "Should not be called with grid items that span multiple tracks.");
     const LogicalAxis itemAxis =
         aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode())
             ? GetOrthogonalAxis(aContainerAxis)
