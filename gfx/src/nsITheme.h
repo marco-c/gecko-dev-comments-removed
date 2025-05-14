@@ -230,9 +230,6 @@ class nsITheme : public nsISupports {
   virtual bool ThemeDrawsFocusForWidget(nsIFrame*, StyleAppearance) = 0;
 
   
-  virtual bool ThemeWantsButtonInnerFocusRing() { return false; }
-
-  
 
 
   virtual bool ThemeNeedsComboboxDropmarker() = 0;
