@@ -94,6 +94,15 @@ const uint8_t Arena::ThingsPerArena[] = {
 };
 
 bool Arena::allocated() const {
+#if defined(DEBUG) && defined(MOZ_VALGRIND)
+  
+  
+  
+  
+  
+  VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE(&allocKind, sizeof(void*));
+#endif
+
   size_t arenaIndex = ArenaChunk::arenaIndex(this);
   size_t pageIndex = ArenaChunk::arenaToPageIndex(arenaIndex);
   bool result = !chunk()->decommittedPages[pageIndex] &&
@@ -101,6 +110,11 @@ bool Arena::allocated() const {
                 IsValidAllocKind(allocKind);
   MOZ_ASSERT_IF(result, zone_);
   MOZ_ASSERT_IF(result, (uintptr_t(zone_) & 7) == 0);
+
+#if defined(DEBUG) && defined(MOZ_VALGRIND)
+  
+  VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(&allocKind, sizeof(void*));
+#endif
   return result;
 }
 
