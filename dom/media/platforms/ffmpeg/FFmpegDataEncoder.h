@@ -80,8 +80,10 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   
   
   
-  virtual RefPtr<MediaRawData> ToMediaRawData(AVPacket* aPacket) = 0;
-  RefPtr<MediaRawData> ToMediaRawDataCommon(AVPacket* aPacket);
+  virtual Result<RefPtr<MediaRawData>, MediaResult> ToMediaRawData(
+      AVPacket* aPacket) = 0;
+  Result<RefPtr<MediaRawData>, MediaResult> ToMediaRawDataCommon(
+      AVPacket* aPacket);
   virtual Result<already_AddRefed<MediaByteBuffer>, nsresult> GetExtraData(
       AVPacket* aPacket) = 0;
   void ForceEnablingFFmpegDebugLogs();
