@@ -8,6 +8,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AddonSearchEngine: "resource://gre/modules/AddonSearchEngine.sys.mjs",
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
@@ -608,9 +609,11 @@ class EngineStore {
     var clonedObj = {
       iconURL: null,
     };
-    for (let i of ["id", "name", "alias", "hidden"]) {
+    for (let i of ["id", "name", "alias", "hidden", "isAppProvided"]) {
       clonedObj[i] = aEngine[i];
     }
+    clonedObj.isAddonEngine =
+      aEngine.wrappedJSObject instanceof lazy.AddonSearchEngine;
     clonedObj.isUserEngine =
       aEngine.wrappedJSObject instanceof lazy.UserSearchEngine;
     clonedObj.originalEngine = aEngine;
@@ -676,8 +679,8 @@ class EngineStore {
       throw new Error("Cannot remove last engine!");
     }
 
-    let engineName = aEngine.name;
-    let index = this.engines.findIndex(element => element.name == engineName);
+    let engineId = aEngine.id;
+    let index = this.engines.findIndex(element => element.id == engineId);
 
     if (index == -1) {
       throw new Error("invalid engine?");
@@ -785,9 +788,12 @@ class EngineStore {
 
 
 class EngineView {
-  _engineStore = null;
+  _engineStore;
   _engineList = null;
   tree = null;
+
+  
+
 
   constructor(aEngineStore) {
     this._engineStore = aEngineStore;
@@ -948,6 +954,55 @@ class EngineView {
 
 
 
+
+  async promptAndRemoveEngine(engine) {
+    if (engine.isAppProvided) {
+      Services.search.removeEngine(this.selectedEngine.originalEngine);
+      return;
+    }
+
+    if (engine.isAddonEngine) {
+      
+      
+      let msg = await document.l10n.formatValue("remove-addon-engine-alert");
+      alert(msg);
+      return;
+    }
+
+    let [body, removeLabel] = await document.l10n.formatValues([
+      "remove-engine-confirmation",
+      "remove-engine-remove",
+    ]);
+
+    let button = Services.prompt.confirmExBC(
+      window.browsingContext,
+      Services.prompt.MODAL_TYPE_CONTENT,
+      null,
+      body,
+      (Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0) |
+        (Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1),
+      removeLabel,
+      null,
+      null,
+      null,
+      {}
+    );
+
+    
+    if (button == 0) {
+      Services.search.removeEngine(this.selectedEngine.originalEngine);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
   _getLocalShortcut(index) {
     let engineCount = this._engineStore.engines.length;
     if (index < engineCount) {
@@ -1010,7 +1065,9 @@ class EngineView {
             this.#onRestoreDefaults();
             break;
           case "removeEngineButton":
-            Services.search.removeEngine(this.selectedEngine.originalEngine);
+            if (this.isEngineSelectedAndRemovable()) {
+              this.promptAndRemoveEngine(this.selectedEngine);
+            }
             break;
           case "editEngineButton":
             gSubDialog.open(
@@ -1110,11 +1167,12 @@ class EngineView {
         aEvent.keyCode == KeyEvent.DOM_VK_DELETE ||
         (isMac &&
           aEvent.shiftKey &&
-          aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE &&
-          this.isEngineSelectedAndRemovable())
+          aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE)
       ) {
         
-        Services.search.removeEngine(this.selectedEngine.originalEngine);
+        if (this.isEngineSelectedAndRemovable()) {
+          this.promptAndRemoveEngine(this.selectedEngine);
+        }
       }
     }
   }
