@@ -312,24 +312,49 @@ static MOZ_ALWAYS_INLINE bool CanEncodeInfoInHeader(const LAllocation& a,
 void SafepointWriter::writeNunboxParts(LSafepoint* safepoint) {
   LSafepoint::NunboxList& entries = safepoint->nunboxParts();
 
-#  ifdef JS_JITSPEW
-  if (JitSpewEnabled(JitSpew_Safepoints)) {
-    for (uint32_t i = 0; i < entries.length(); i++) {
-      SafepointNunboxEntry& entry = entries[i];
-      if (entry.type.isUse() || entry.payload.isUse()) {
-        continue;
-      }
-      JitSpewHeader(JitSpew_Safepoints);
-      Fprinter& out = JitSpewPrinter();
-      out.printf("    nunbox (type in ");
-      DumpNunboxPart(entry.type);
-      out.printf(", payload in ");
-      DumpNunboxPart(entry.payload);
-      out.printf(")\n");
-    }
-  }
-#  endif
+  
+  static_assert(VREG_TYPE_OFFSET == 0);
+  static_assert(VREG_DATA_OFFSET == 1);
 
+  
+  
+  
+  
+  auto compareEntries = [](auto a, auto b) -> bool {
+    if (a.vreg() != b.vreg()) {
+      return a.vreg() < b.vreg();
+    }
+    MOZ_ASSERT(a.isType() == b.isType());
+    return a.alloc().asRawBits() < b.alloc().asRawBits();
+  };
+  std::sort(entries.begin(), entries.end(), compareEntries);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -338,32 +363,46 @@ void SafepointWriter::writeNunboxParts(LSafepoint* safepoint) {
   stream_.writeUnsigned(entries.length());
 
   size_t count = 0;
-  for (size_t i = 0; i < entries.length(); i++) {
-    SafepointNunboxEntry& entry = entries[i];
-
-    if (entry.payload.isUse()) {
-      
+  mozilla::Maybe<SafepointNunboxEntry> lastTypeEntry;
+  for (SafepointNunboxEntry entry : entries) {
+    if (entry.isType()) {
+      lastTypeEntry = mozilla::Some(entry);
       continue;
     }
 
-    if (entry.type.isUse()) {
-      
-      
-      entry.type = safepoint->findTypeAllocation(entry.typeVreg);
-      if (entry.type.isUse()) {
-        continue;
-      }
+    
+    SafepointNunboxEntry payloadEntry = entry;
+    if (lastTypeEntry.isNothing() ||
+        lastTypeEntry->vreg() + 1 != payloadEntry.vreg()) {
+      continue;
     }
+
+    SafepointNunboxEntry typeEntry = *lastTypeEntry;
+    MOZ_ASSERT(typeEntry.isType());
+    MOZ_ASSERT(!payloadEntry.isType());
+
+#  ifdef JS_JITSPEW
+    if (JitSpewEnabled(JitSpew_Safepoints)) {
+      JitSpewHeader(JitSpew_Safepoints);
+      Fprinter& out = JitSpewPrinter();
+      out.printf("    nunbox (type in ");
+      DumpNunboxPart(typeEntry.alloc());
+      out.printf(", payload in ");
+      DumpNunboxPart(payloadEntry.alloc());
+      out.printf(")\n");
+    }
+#  endif
 
     count++;
 
     uint16_t header = 0;
 
-    header |= (AllocationToPartKind(entry.type) << TYPE_KIND_SHIFT);
-    header |= (AllocationToPartKind(entry.payload) << PAYLOAD_KIND_SHIFT);
+    header |= (AllocationToPartKind(typeEntry.alloc()) << TYPE_KIND_SHIFT);
+    header |=
+        (AllocationToPartKind(payloadEntry.alloc()) << PAYLOAD_KIND_SHIFT);
 
     uint32_t typeVal;
-    bool typeExtra = !CanEncodeInfoInHeader(entry.type, &typeVal);
+    bool typeExtra = !CanEncodeInfoInHeader(typeEntry.alloc(), &typeVal);
     if (!typeExtra) {
       header |= (typeVal << TYPE_INFO_SHIFT);
     } else {
@@ -371,7 +410,8 @@ void SafepointWriter::writeNunboxParts(LSafepoint* safepoint) {
     }
 
     uint32_t payloadVal;
-    bool payloadExtra = !CanEncodeInfoInHeader(entry.payload, &payloadVal);
+    bool payloadExtra =
+        !CanEncodeInfoInHeader(payloadEntry.alloc(), &payloadVal);
     if (!payloadExtra) {
       header |= (payloadVal << PAYLOAD_INFO_SHIFT);
     } else {

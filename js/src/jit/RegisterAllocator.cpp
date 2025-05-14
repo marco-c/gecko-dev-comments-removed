@@ -343,14 +343,11 @@ void AllocationIntegrityState::checkSafepointAllocation(LInstruction* ins,
       MOZ_ASSERT(safepoint->hasWasmAnyRef(alloc));
       break;
 #  ifdef JS_NUNBOX32
-    
-    
-    
-    
     case LDefinition::TYPE:
+      MOZ_ASSERT(safepoint->hasNunboxPart( true, alloc));
       break;
     case LDefinition::PAYLOAD:
-      MOZ_ASSERT(safepoint->hasNunboxPayload(alloc));
+      MOZ_ASSERT(safepoint->hasNunboxPart( false, alloc));
       break;
 #  else
     case LDefinition::BOX:

@@ -695,10 +695,10 @@ bool LSafepoint::addGCAllocation(uint32_t vregId, LDefinition* def,
 
 #ifdef JS_NUNBOX32
     case LDefinition::TYPE:
-      return addNunboxType(vregId, a);
+      return addNunboxPart( true, vregId, a);
 
     case LDefinition::PAYLOAD:
-      return addNunboxPayload(vregId, a);
+      return addNunboxPart( false, vregId, a);
 #else
     case LDefinition::BOX:
       return addBoxedValue(a);
