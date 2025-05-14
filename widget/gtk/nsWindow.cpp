@@ -9857,7 +9857,11 @@ void nsWindow::OnUnmap() {
 
   
   
-  if (mWindowType == WindowType::Popup) {
+  
+  
+  
+  
+  if (mWindowType == WindowType::Popup && !mPopupTemporaryHidden) {
     DestroyLayerManager();
   } else {
     
