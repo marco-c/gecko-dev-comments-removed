@@ -43,12 +43,34 @@ class ImageIntRegion;
 class WebRenderImageProvider;
 struct Orientation;
 struct Resolution;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ImageIntrinsicSize {
+  Maybe<int32_t> mWidth;
+  Maybe<int32_t> mHeight;
+};
+
 }
 }
 
 %}
 
 native AspectRatio(mozilla::AspectRatio);
+native ImageIntrinsicSize(mozilla::image::ImageIntrinsicSize);
 native ImgDrawResult(mozilla::image::ImgDrawResult);
 [ptr] native gfxContext(gfxContext);
 [ref] native gfxMatrix(gfxMatrix);
@@ -97,6 +119,20 @@ interface imgIContainer : nsISupports
 
 
   readonly attribute int32_t height;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [noscript] readonly attribute ImageIntrinsicSize intrinsicSize;
 
   
 

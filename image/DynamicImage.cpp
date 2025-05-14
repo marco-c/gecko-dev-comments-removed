@@ -98,6 +98,15 @@ nsresult DynamicImage::GetNativeSizes(nsTArray<IntSize>&) {
 size_t DynamicImage::GetNativeSizesLength() { return 0; }
 
 NS_IMETHODIMP
+DynamicImage::GetIntrinsicSize(ImageIntrinsicSize* aIntrinsicSize) {
+  IntSize intSize(mDrawable->Size());
+  aIntrinsicSize->mWidth = Some(intSize.width);
+  aIntrinsicSize->mHeight = Some(intSize.height);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 DynamicImage::GetIntrinsicSizeInAppUnits(nsSize* aSize) {
   
   IntSize intSize(mDrawable->Size());
