@@ -54,7 +54,7 @@ add_task(async function testGetFromChildNewEnrollment() {
   let childUpdated = await childSharedDataChanged(browser);
 
   
-  await ExperimentAPI._manager.enroll(
+  await ExperimentAPI.manager.enroll(
     NimbusTestUtils.factories.recipe.withFeatureConfig("foo", {
       featureId: "testFeature",
       value: {
@@ -107,7 +107,7 @@ add_task(async function testGetFromChildNewEnrollment() {
 
   childUpdated = await childSharedDataChanged(browser);
   
-  ExperimentAPI._manager.unenroll("foo");
+  ExperimentAPI.manager.unenroll("foo");
   
   Services.ppmm.sharedData.flush();
   await childUpdated.promise;
@@ -120,7 +120,7 @@ add_task(async function testGetFromChildNewEnrollment() {
     );
   });
 
-  ExperimentAPI._manager.store._deleteForTests("foo");
+  ExperimentAPI.manager.store._deleteForTests("foo");
 
   BrowserTestUtils.removeTab(tab);
 
@@ -135,7 +135,7 @@ add_task(async function testGetFromChildExistingEnrollment() {
   
   Services.ppmm.releaseCachedProcesses();
 
-  await ExperimentAPI._manager.enroll(
+  await ExperimentAPI.manager.enroll(
     NimbusTestUtils.factories.recipe.withFeatureConfig("qux", {
       branchSlug: "treatment",
       featureId: "testFeature",
@@ -187,8 +187,8 @@ add_task(async function testGetFromChildExistingEnrollment() {
     );
   });
 
-  ExperimentAPI._manager.unenroll("qux");
-  ExperimentAPI._manager.store._deleteForTests("qux");
+  ExperimentAPI.manager.unenroll("qux");
+  ExperimentAPI.manager.store._deleteForTests("qux");
   BrowserTestUtils.removeTab(tab);
 
   Services.ppmm.sharedData.flush();
