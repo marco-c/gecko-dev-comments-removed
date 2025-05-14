@@ -13,29 +13,84 @@
 
 
 
-export function makeGetOptions(requestsToUse, mediation = "required") {
-  if (typeof requestsToUse === "string") {
-    if (requestsToUse === "default" || requestsToUse === "openid4vp") {
-      return makeGetOptions([requestsToUse], mediation);
-    }
-  }
-  if (!Array.isArray(requestsToUse) || !requestsToUse?.length) {
-    return { digital: { requests: requestsToUse }, mediation };
-  }
+
+
+
+
+
+
+
+
+
+function _makeOptionsInternal(requestsInputArray, mediation, requestMapping) {
   const requests = [];
-  for (const request of requestsToUse) {
-    switch (request) {
-      case "openid4vp":
-        requests.push(makeOID4VPDict());
-        break;
-      case "default":
-        requests.push(makeDigitalCredentialRequest(undefined, undefined));
-        break;
-      default:
-        throw new Error(`Unknown request type: ${request}`);
+  for (const request of requestsInputArray) {
+    const factoryFunction = requestMapping[request];
+    if (factoryFunction) {
+      requests.push(factoryFunction()); 
+    } else {
+      
+      throw new Error(`Unknown request type within array: ${request}`);
     }
   }
   return { digital: { requests }, mediation };
+}
+
+const allMappings = {
+  get: {
+    "openid4vp": () => makeOID4VPDict(),
+    "default": () => makeDigitalCredentialGetRequest(undefined, undefined),
+  },
+  create: {
+    "openid4vci": () => makeOID4VCIDict(),
+    "default": () => makeDigitalCredentialCreateRequest(),
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+function _makeOptionsUnified(type, requestsToUse, mediation) {
+  
+  const mapping = allMappings[type];
+   
+  if (!mapping) {
+    throw new Error(`Internal error: Invalid options type specified: ${type}`);
+  }
+
+  
+  const actualRequestsToUse = requestsToUse === undefined ? ["default"] : requestsToUse;
+
+  
+  if (typeof actualRequestsToUse === 'string') {
+    if (mapping[actualRequestsToUse]) {
+      
+      return _makeOptionsInternal([actualRequestsToUse], mediation, mapping);
+    } else {
+      
+      throw new Error(`Unknown request type string '${actualRequestsToUse}' provided for operation type '${type}'`);
+    }
+  }
+
+  
+  if (Array.isArray(actualRequestsToUse)) {
+    if (actualRequestsToUse.length === 0) {
+      
+      return { digital: { requests: [] }, mediation };
+    }
+    
+    return _makeOptionsInternal(actualRequestsToUse, mediation, mapping);
+  }
+
+  
+  return { digital: { requests: [] }, mediation };
 }
 
 
@@ -43,7 +98,32 @@ export function makeGetOptions(requestsToUse, mediation = "required") {
 
 
 
-function makeDigitalCredentialRequest(protocol = "protocol", data = {}) {
+
+
+export function makeGetOptions(requestsToUse, mediation = "required") {
+  
+  return _makeOptionsUnified('get', requestsToUse, mediation);
+}
+
+
+
+
+
+
+
+
+export function makeCreateOptions(requestsToUse, mediation = "required") {
+  
+  return _makeOptionsUnified('create', requestsToUse, mediation);
+}
+
+
+
+
+
+
+
+function makeDigitalCredentialGetRequest(protocol = "protocol", data = {}) {
   return {
     protocol,
     data,
@@ -56,7 +136,31 @@ function makeDigitalCredentialRequest(protocol = "protocol", data = {}) {
 
 
 function makeOID4VPDict() {
-  return makeDigitalCredentialRequest("openid4vp", {
+  return makeDigitalCredentialGetRequest("openid4vp", {
+    
+  });
+}
+
+
+
+
+
+
+
+function makeDigitalCredentialCreateRequest(protocol = "protocol", data = {}) {
+  return {
+    protocol,
+    data,
+  };
+}
+
+
+
+
+
+
+function makeOID4VCIDict() {
+  return makeDigitalCredentialCreateRequest("openid4vci", {
     
   });
 }
