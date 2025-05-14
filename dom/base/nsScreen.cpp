@@ -7,6 +7,7 @@
 #include "nsContentUtils.h"
 #include "nsScreen.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIDocShell.h"
@@ -89,6 +90,15 @@ CSSIntRect nsScreen::GetAvailRect() {
   
   if (ShouldResistFingerprinting(RFPTarget::ScreenAvailRect)) {
     return GetTopWindowInnerRectForRFP();
+  }
+
+  if (ShouldResistFingerprinting(RFPTarget::ScreenAvailToResolution)) {
+    nsDeviceContext* context = GetDeviceContext();
+    if (NS_WARN_IF(!context)) {
+      return {};
+    }
+    return nsRFPService::GetSpoofedScreenAvailSize(context->GetRect(),
+                                                   context->GetFullZoom());
   }
 
   
