@@ -1731,28 +1731,6 @@ static bool str_toWellFormed(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-
-static MOZ_ALWAYS_INLINE bool ToClampedStringIndex(JSContext* cx,
-                                                   Handle<Value> value,
-                                                   uint32_t length,
-                                                   uint32_t* result) {
-  
-  if (value.isInt32()) {
-    int32_t i = value.toInt32();
-    *result = std::min(uint32_t(std::max(i, 0)), length);
-    return true;
-  }
-
-  double d;
-  if (!ToInteger(cx, value, &d)) {
-    return false;
-  }
-  *result = uint32_t(std::clamp(d, 0.0, double(length)));
-  return true;
-}
-
-
-
 static MOZ_ALWAYS_INLINE bool ToStringIndex(JSContext* cx, Handle<Value> value,
                                             size_t length,
                                             mozilla::Maybe<size_t>* result) {
@@ -1774,8 +1752,6 @@ static MOZ_ALWAYS_INLINE bool ToStringIndex(JSContext* cx, Handle<Value> value,
   }
   return true;
 }
-
-
 
 static MOZ_ALWAYS_INLINE bool ToRelativeStringIndex(
     JSContext* cx, Handle<Value> value, size_t length,
@@ -2374,12 +2350,25 @@ bool js::str_includes(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  uint32_t start = 0;
+  uint32_t pos = 0;
   if (args.hasDefined(1)) {
-    if (!ToClampedStringIndex(cx, args[1], str->length(), &start)) {
-      return false;
+    if (args[1].isInt32()) {
+      int i = args[1].toInt32();
+      pos = (i < 0) ? 0U : uint32_t(i);
+    } else {
+      double d;
+      if (!ToInteger(cx, args[1], &d)) {
+        return false;
+      }
+      pos = uint32_t(std::clamp(d, 0.0, double(UINT32_MAX)));
     }
   }
+
+  
+  uint32_t textLen = str->length();
+
+  
+  uint32_t start = std::min(pos, textLen);
 
   
   JSLinearString* text = str->ensureLinear(cx);
@@ -2408,7 +2397,6 @@ bool js::StringIncludes(JSContext* cx, HandleString string,
 }
 
 
-
 bool js::str_indexOf(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "indexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -2426,12 +2414,25 @@ bool js::str_indexOf(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  uint32_t start = 0;
+  uint32_t pos = 0;
   if (args.hasDefined(1)) {
-    if (!ToClampedStringIndex(cx, args[1], str->length(), &start)) {
-      return false;
+    if (args[1].isInt32()) {
+      int i = args[1].toInt32();
+      pos = (i < 0) ? 0U : uint32_t(i);
+    } else {
+      double d;
+      if (!ToInteger(cx, args[1], &d)) {
+        return false;
+      }
+      pos = uint32_t(std::clamp(d, 0.0, double(UINT32_MAX)));
     }
   }
+
+  
+  uint32_t textLen = str->length();
+
+  
+  uint32_t start = std::min(pos, textLen);
 
   if (str == searchStr) {
     
@@ -2666,15 +2667,25 @@ bool js::str_startsWith(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  uint32_t pos = 0;
+  if (args.hasDefined(1)) {
+    if (args[1].isInt32()) {
+      int i = args[1].toInt32();
+      pos = (i < 0) ? 0U : uint32_t(i);
+    } else {
+      double d;
+      if (!ToInteger(cx, args[1], &d)) {
+        return false;
+      }
+      pos = uint32_t(std::clamp(d, 0.0, double(UINT32_MAX)));
+    }
+  }
+
+  
   uint32_t textLen = str->length();
 
   
-  uint32_t start = 0;
-  if (args.hasDefined(1)) {
-    if (!ToClampedStringIndex(cx, args[1], textLen, &start)) {
-      return false;
-    }
-  }
+  uint32_t start = std::min(pos, textLen);
 
   
   uint32_t searchLen = searchStr->length();
@@ -2743,12 +2754,22 @@ bool js::str_endsWith(JSContext* cx, unsigned argc, Value* vp) {
   uint32_t textLen = str->length();
 
   
-  uint32_t end = textLen;
+  uint32_t pos = textLen;
   if (args.hasDefined(1)) {
-    if (!ToClampedStringIndex(cx, args[1], textLen, &end)) {
-      return false;
+    if (args[1].isInt32()) {
+      int i = args[1].toInt32();
+      pos = (i < 0) ? 0U : uint32_t(i);
+    } else {
+      double d;
+      if (!ToInteger(cx, args[1], &d)) {
+        return false;
+      }
+      pos = uint32_t(std::clamp(d, 0.0, double(UINT32_MAX)));
     }
   }
+
+  
+  uint32_t end = std::min(pos, textLen);
 
   
   uint32_t searchLen = searchStr->length();
