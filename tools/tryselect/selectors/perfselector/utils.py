@@ -55,3 +55,6 @@ class LogProcessor:
             if match:
                 
                 self._hg_revision = match.group(1)
+
+    def flush(self):
+        pass
