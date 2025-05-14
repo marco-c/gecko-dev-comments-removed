@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/FocusModel.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -628,12 +629,32 @@ nsIntSize HTMLImageElement::NaturalSize() {
     return {};
   }
 
-  
-  
-  
-  
-  nsIntSize size(intrinsicSize.mWidth.valueOr(0),
-                 intrinsicSize.mHeight.valueOr(0));
+  nsIntSize size;  
+  if (!StaticPrefs::image_natural_size_fallback_enabled()) {
+    size.width = intrinsicSize.mWidth.valueOr(0);
+    size.height = intrinsicSize.mHeight.valueOr(0);
+  } else {
+    
+    
+    
+    
+    
+    
+    size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
+    size.height =
+        intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
+    AspectRatio ratio = image->GetIntrinsicRatio();
+    if (ratio) {
+      if (!intrinsicSize.mHeight) {
+        
+        
+        size.height = ratio.Inverted().ApplyTo(size.width);
+      } else if (!intrinsicSize.mWidth) {
+        
+        size.width = ratio.ApplyTo(size.height);
+      }
+    }
+  }
 
   ImageResolution resolution = image->GetResolution();
   
