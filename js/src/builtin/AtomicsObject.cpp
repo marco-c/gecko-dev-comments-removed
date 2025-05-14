@@ -530,6 +530,178 @@ static bool atomics_isLockFree(JSContext* cx, unsigned argc, Value* vp) {
 
 namespace js {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class WaitAsyncNotifyTask;
 class WaitAsyncTimeoutTask;
 
@@ -548,14 +720,6 @@ class AutoLockFutexAPI {
 
   js::UniqueLock<js::Mutex>& unique() { return *unique_; }
 };
-
-
-
-
-
-
-
-
 
 
 
@@ -685,6 +849,9 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
 
 
 
+
+
+
 class WaitAsyncTimeoutTask : public JS::Dispatchable {
   AsyncFutexWaiter* waiter_;
 
@@ -742,6 +909,7 @@ static void RemoveSyncWaiter(SyncFutexWaiter* waiter, AutoLockFutexAPI& lock) {
 }
 
 FutexWaiterListHead::~FutexWaiterListHead() {
+  
   
   
   
@@ -827,6 +995,7 @@ void WaitAsyncTimeoutTask::run(JSContext* cx,
     return;
   }
 
+  
   
   
   UniquePtr<AsyncFutexWaiter> asyncWaiter(RemoveAsyncWaiter(waiter_, lock));
@@ -1231,6 +1400,7 @@ int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
       
       
 
+      
       
       
       UniquePtr<AsyncFutexWaiter> asyncWaiter(

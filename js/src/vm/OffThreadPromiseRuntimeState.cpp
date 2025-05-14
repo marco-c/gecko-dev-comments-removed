@@ -159,6 +159,7 @@ void OffThreadPromiseTask::DestroyUndispatchedTask(OffThreadPromiseTask* task) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(task->runtime_));
   MOZ_ASSERT(task->registered_);
   MOZ_ASSERT(task->cancellable_);
+  
   task->prepareForCancel();
   js_delete(task);
 }
