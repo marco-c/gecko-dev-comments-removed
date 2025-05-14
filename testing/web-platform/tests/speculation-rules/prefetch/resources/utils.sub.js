@@ -218,6 +218,28 @@ function assert_prefetched_without_sec_purpose(requestHeaders, description) {
 
 
 
+
+
+
+function assert_intercept_prefetch(interceptedRequest, expectedUrl) {
+  assert_equals(interceptedRequest.request.url, expectedUrl.toString(),
+      "intercepted request URL.");
+
+  assert_prefetched(interceptedRequest.request.headers,
+      "Prefetch request should be intercepted.");
+}
+
+
+function assert_intercept_non_prefetch(interceptedRequest, expectedUrl) {
+  assert_equals(interceptedRequest.request.url, expectedUrl.toString(),
+      "intercepted request URL.");
+
+  assert_not_prefetched(interceptedRequest.request.headers,
+      "Non-prefetch request should be intercepted.");
+}
+
+
+
 function addNoVarySearchHeaderUsingQueryParam(url, value){
   if(value){
     url.searchParams.append("nvs_header", value);
