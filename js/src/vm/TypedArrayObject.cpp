@@ -1846,40 +1846,6 @@ static bool TypedArray_set(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-
-
-static bool ToIntegerIndex(JSContext* cx, Handle<Value> value, size_t length,
-                           size_t* result) {
-  
-  
-  if (value.isInt32()) {
-    int32_t relative = value.toInt32();
-
-    if (relative >= 0) {
-      *result = std::min(size_t(relative), length);
-    } else if (mozilla::Abs(relative) <= length) {
-      *result = length - mozilla::Abs(relative);
-    } else {
-      *result = 0;
-    }
-    return true;
-  }
-
-  double relative;
-  if (!ToInteger(cx, value, &relative)) {
-    return false;
-  }
-
-  if (relative >= 0) {
-    *result = size_t(std::min(relative, double(length)));
-  } else {
-    *result = size_t(std::max(relative + double(length), 0.0));
-  }
-  return true;
-}
-
-
-
 static bool TypedArray_copyWithin(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsTypedArrayObject(args.thisv()));
 
