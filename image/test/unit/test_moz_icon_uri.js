@@ -23,7 +23,7 @@ function run_test() {
 
   
   
-  currentSpec = "moz-icon://foo.html?contentType=bar&size=button&state=normal";
+  currentSpec = "moz-icon://foo.html?contentType=bar&size=16";
   try {
     uri = ioService.newURI(currentSpec);
   } catch (e) {
@@ -33,8 +33,7 @@ function run_test() {
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
-  Assert.equal(iconURI.iconSize, "button");
-  Assert.equal(iconURI.iconState, "normal");
+  Assert.equal(iconURI.imageSize, 16);
   Assert.equal(iconURI.contentType, "bar");
   Assert.equal(iconURI.fileExtension, ".html");
 
