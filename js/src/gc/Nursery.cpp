@@ -1062,6 +1062,10 @@ void js::Nursery::renderProfileJSON(JSONPrinter& json) const {
     return;
   }
 
+  
+  
+  
+
   json.beginObject();
 
   json.property("status", "complete");
@@ -1086,6 +1090,14 @@ void js::Nursery::renderProfileJSON(JSONPrinter& json) const {
   }
   if (!timeInChunkAlloc_.IsZero()) {
     json.property("chunk_alloc_us", timeInChunkAlloc_, json.MICROSECONDS);
+  }
+
+  
+  
+  double totalTime = profileDurations_[ProfileKey::Total].ToSeconds();
+  if (totalTime > 0.0) {
+    double tenuredAllocRate = double(previousGC.tenuredBytes) / totalTime;
+    json.property("tenured_allocation_rate", size_t(tenuredAllocRate));
   }
 
   
