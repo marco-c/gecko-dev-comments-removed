@@ -18,6 +18,16 @@ GENERATED_HEADER = """
 """
 
 
+
+
+PLATFORM_SPECIFIC_COMPONENTS = [
+    "Toolkit :: Default Browser Agent",  
+]
+
+DEFAULT_TAG_CONTENT = {
+    "description": "The Bugzilla component which applies to this object."
+}
+
 DATA_REVIEW_HELP = """
 Beginning 2024-05-07[1], data reviews for projects in mozilla-central are now
 conducted on Phabricator. Simply duplicate your bug URL from the `bugs` list to
@@ -84,9 +94,14 @@ def update_glean_tags(command_context):
     for bug_component in bug_components:
         product = bug_component.product.strip()
         component = bug_component.component.strip()
-        tags[f"{product} :: {component}"] = {
-            "description": "The Bugzilla component which applies to this object."
-        }
+        tags[f"{product} :: {component}"] = DEFAULT_TAG_CONTENT
+
+    for bug_component in PLATFORM_SPECIFIC_COMPONENTS:
+        tags[bug_component] = DEFAULT_TAG_CONTENT
+
+    
+    
+    yaml.Dumper.ignore_aliases = lambda self, data: True
 
     open(tags_filename, "w").write(
         f"{LICENSE_HEADER}\n{GENERATED_HEADER}\n\n"
