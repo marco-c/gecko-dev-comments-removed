@@ -85,6 +85,13 @@ class WaylandBuffer {
   virtual void DumpToFile(const char* aHint) = 0;
 #endif
 
+  
+  
+  wl_buffer* CreateAndTakeWLBuffer();
+
+  
+  void SetExternalWLBuffer(wl_buffer* aWLBuffer);
+
  protected:
   explicit WaylandBuffer(const LayoutDeviceIntSize& aSize);
   virtual ~WaylandBuffer() = default;
@@ -104,6 +111,11 @@ class WaylandBuffer {
   
   wl_buffer* mWLBuffer = nullptr;
   uintptr_t mWLBufferID = 0;
+
+  
+  
+  
+  bool mManagingWLBuffer = true;
 
   
   
@@ -190,6 +202,21 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
   ~WaylandBufferDMABUF();
 
   RefPtr<DMABufSurface> mDMABufSurface;
+};
+
+class WaylandBufferDMABUFHolder final {
+ public:
+  bool Matches(DMABufSurface* aSurface) const;
+
+  wl_buffer* GetWLBuffer() { return mWLBuffer; }
+
+  WaylandBufferDMABUFHolder(DMABufSurface* aSurface, wl_buffer* aWLBuffer);
+  ~WaylandBufferDMABUFHolder();
+
+ private:
+  wl_buffer* mWLBuffer = nullptr;
+  uint32_t mUID = 0;
+  uint32_t mPID = 0;
 };
 
 }  
