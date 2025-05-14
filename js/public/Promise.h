@@ -558,6 +558,10 @@ extern JS_PUBLIC_API bool SetPromiseUserInputEventHandlingState(
 extern JS_PUBLIC_API JSObject* GetWaitForAllPromise(
     JSContext* cx, JS::HandleObjectVector promises);
 
+
+
+
+
 class JS_PUBLIC_API Dispatchable {
  public:
   
@@ -627,11 +631,22 @@ class JS_PUBLIC_API Dispatchable {
 
 
 
+
+
+
+
+
+
+
 typedef bool (*DispatchToEventLoopCallback)(
     void* closure, js::UniquePtr<Dispatchable>&& dispatchable);
 
-extern JS_PUBLIC_API void InitDispatchToEventLoop(
-    JSContext* cx, DispatchToEventLoopCallback callback, void* closure);
+typedef bool (*DelayedDispatchToEventLoopCallback)(
+    void* closure, js::UniquePtr<Dispatchable>&& dispatchable, uint32_t delay);
+
+extern JS_PUBLIC_API void InitDispatchsToEventLoop(
+    JSContext* cx, DispatchToEventLoopCallback callback,
+    DelayedDispatchToEventLoopCallback delayedCallback, void* closure);
 
 
 

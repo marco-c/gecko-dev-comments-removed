@@ -350,6 +350,15 @@ static bool DispatchToEventLoop(
   return NS_SUCCEEDED(rv);
 }
 
+static bool DelayedDispatchToEventLoop(
+    void* aClosure, js::UniquePtr<JS::Dispatchable>&& aDispatchable,
+    uint32_t delay) {
+  
+  
+  NS_WARNING("Trying to perform a delayed dispatch on a worklet.");
+  return false;
+}
+
 
 void WorkletThread::EnsureCycleCollectedJSContext(
     JSRuntime* aParentRuntime, const JS::ContextOptions& aOptions) {
@@ -379,8 +388,9 @@ void WorkletThread::EnsureCycleCollectedJSContext(
 
   
   
-  JS::InitDispatchToEventLoop(context->Context(), DispatchToEventLoop,
-                              NS_GetCurrentThread());
+  JS::InitDispatchsToEventLoop(context->Context(), DispatchToEventLoop,
+                               DelayedDispatchToEventLoop,
+                               NS_GetCurrentThread());
 
   JS_SetNativeStackQuota(context->Context(),
                          WORKLET_CONTEXT_NATIVE_STACK_LIMIT);

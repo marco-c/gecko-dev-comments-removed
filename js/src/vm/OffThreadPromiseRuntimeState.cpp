@@ -15,6 +15,7 @@
 #include "js/AllocPolicy.h"  
 #include "js/HeapAPI.h"      
 #include "js/Promise.h"  
+                         
 #include "js/Utility.h"  
 #include "threading/ProtectedData.h"  
 #include "vm/HelperThreads.h"         
@@ -235,6 +236,7 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
 
 OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
     : dispatchToEventLoopCallback_(nullptr),
+      delayedDispatchToEventLoopCallback_(nullptr),
       dispatchToEventLoopClosure_(nullptr),
       numRegistered_(0),
       internalDispatchQueueClosed_(false) {}
@@ -246,13 +248,27 @@ OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
 }
 
 void OffThreadPromiseRuntimeState::init(
-    JS::DispatchToEventLoopCallback callback, void* closure) {
+    JS::DispatchToEventLoopCallback callback,
+    JS::DelayedDispatchToEventLoopCallback delayedCallback, void* closure) {
   MOZ_ASSERT(!initialized());
 
   dispatchToEventLoopCallback_ = callback;
+  delayedDispatchToEventLoopCallback_ = delayedCallback;
   dispatchToEventLoopClosure_ = closure;
 
   MOZ_ASSERT(initialized());
+}
+
+bool OffThreadPromiseRuntimeState::dispatchToEventLoop(
+    js::UniquePtr<JS::Dispatchable>&& dispatchable) {
+  return dispatchToEventLoopCallback_(dispatchToEventLoopClosure_,
+                                      std::move(dispatchable));
+}
+
+bool OffThreadPromiseRuntimeState::delayedDispatchToEventLoop(
+    js::UniquePtr<JS::Dispatchable>&& dispatchable, uint32_t delay) {
+  return delayedDispatchToEventLoopCallback_(dispatchToEventLoopClosure_,
+                                             std::move(dispatchable), delay);
 }
 
 
@@ -280,12 +296,22 @@ bool OffThreadPromiseRuntimeState::internalDispatchToEventLoop(
   return true;
 }
 
+
+
+
+bool OffThreadPromiseRuntimeState::internalDelayedDispatchToEventLoop(
+    void* closure, js::UniquePtr<JS::Dispatchable>&& d, uint32_t delay) {
+  
+
+  return true;
+}
+
 bool OffThreadPromiseRuntimeState::usingInternalDispatchQueue() const {
   return dispatchToEventLoopCallback_ == internalDispatchToEventLoop;
 }
 
 void OffThreadPromiseRuntimeState::initInternalDispatchQueue() {
-  init(internalDispatchToEventLoop, this);
+  init(internalDispatchToEventLoop, internalDelayedDispatchToEventLoop, this);
   MOZ_ASSERT(usingInternalDispatchQueue());
 }
 

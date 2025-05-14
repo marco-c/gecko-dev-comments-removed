@@ -89,7 +89,7 @@ CallbackTimeoutHandler::CallbackTimeoutHandler(
     JSContext* aCx, nsIGlobalObject* aGlobal, Function* aFunction,
     nsTArray<JS::Heap<JS::Value>>&& aArguments)
     : TimeoutHandler(aCx), mGlobal(aGlobal), mFunction(aFunction) {
-  mozilla::HoldJSObjects(this);
+  mozilla::HoldJSObjectsWithKey(this);
   mArgs = std::move(aArguments);
 }
 
@@ -149,7 +149,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(CallbackTimeoutHandler)
 
 void CallbackTimeoutHandler::ReleaseJSObjects() {
   mArgs.Clear();
-  mozilla::DropJSObjects(this);
+  mozilla::DropJSObjectsWithKey(this);
 }
 
 bool CallbackTimeoutHandler::Call(const char* aExecutionReason) {
@@ -165,5 +165,34 @@ void CallbackTimeoutHandler::MarkForCC() { mFunction->MarkForCC(); }
 void CallbackTimeoutHandler::GetDescription(nsACString& aOutString) {
   mFunction->GetDescription(aOutString);
 }
+
+
+
+
+
+MOZ_CAN_RUN_SCRIPT bool DelayedJSDispatchableHandler::Call(
+    const char* ) {
+  MOZ_ASSERT(mDispatchable);
+
+  
+  
+  JSContext* cx = danger::GetJSContext();
+
+  JS::Dispatchable::Run(cx, std::move(mDispatchable),
+                        JS::Dispatchable::NotShuttingDown);
+  return true;
+}
+
+DelayedJSDispatchableHandler::~DelayedJSDispatchableHandler() {
+  if (mDispatchable) {
+    
+    
+    
+    
+    JS::Dispatchable::ReleaseFailedTask(std::move(mDispatchable));
+  }
+}
+
+NS_IMPL_ISUPPORTS(DelayedJSDispatchableHandler, nsISupports)
 
 }  

@@ -701,6 +701,14 @@ static bool DispatchToEventLoop(
   return r->Dispatch(workerPrivate);
 }
 
+static bool DelayedDispatchToEventLoop(
+    void* aClosure, js::UniquePtr<JS::Dispatchable>&& aDispatchable,
+    uint32_t delay) {
+  
+
+  return true;
+}
+
 static bool ConsumeStream(JSContext* aCx, JS::Handle<JSObject*> aObj,
                           JS::MimeType aMimeType,
                           JS::StreamConsumer* aConsumer) {
@@ -742,8 +750,9 @@ bool InitJSContextForWorker(WorkerPrivate* aWorkerPrivate,
 
   
   
-  JS::InitDispatchToEventLoop(aWorkerCx, DispatchToEventLoop,
-                              (void*)aWorkerPrivate);
+  JS::InitDispatchsToEventLoop(aWorkerCx, DispatchToEventLoop,
+                               DelayedDispatchToEventLoop,
+                               (void*)aWorkerPrivate);
 
   JS::InitConsumeStreamCallback(aWorkerCx, ConsumeStream,
                                 FetchUtil::ReportJSStreamError);

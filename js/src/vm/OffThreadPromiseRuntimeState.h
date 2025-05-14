@@ -215,6 +215,7 @@ class OffThreadPromiseRuntimeState {
   
   
   JS::DispatchToEventLoopCallback dispatchToEventLoopCallback_;
+  JS::DelayedDispatchToEventLoopCallback delayedDispatchToEventLoopCallback_;
   void* dispatchToEventLoopClosure_;
 
   
@@ -265,6 +266,8 @@ class OffThreadPromiseRuntimeState {
 
   static bool internalDispatchToEventLoop(void*,
                                           js::UniquePtr<JS::Dispatchable>&&);
+  static bool internalDelayedDispatchToEventLoop(
+      void*, js::UniquePtr<JS::Dispatchable>&&, uint32_t);
   bool usingInternalDispatchQueue() const;
 
   void operator=(const OffThreadPromiseRuntimeState&) = delete;
@@ -273,7 +276,9 @@ class OffThreadPromiseRuntimeState {
  public:
   OffThreadPromiseRuntimeState();
   ~OffThreadPromiseRuntimeState();
-  void init(JS::DispatchToEventLoopCallback callback, void* closure);
+  void init(JS::DispatchToEventLoopCallback callback,
+            JS::DelayedDispatchToEventLoopCallback delayCallback,
+            void* closure);
   void initInternalDispatchQueue();
   bool initialized() const;
 
@@ -284,6 +289,10 @@ class OffThreadPromiseRuntimeState {
   bool internalHasPending(AutoLockHelperThreadState& lock);
 
   void stealFailedTask(JS::Dispatchable* dispatchable);
+
+  bool dispatchToEventLoop(js::UniquePtr<JS::Dispatchable>&& dispatchable);
+  bool delayedDispatchToEventLoop(
+      js::UniquePtr<JS::Dispatchable>&& dispatchable, uint32_t delay);
 
   
   void shutdown(JSContext* cx);

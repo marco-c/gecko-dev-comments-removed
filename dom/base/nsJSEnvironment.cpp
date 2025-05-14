@@ -70,6 +70,7 @@
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SerializedStackHolder.h"
+#include "mozilla/dom/TimeoutManager.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "nsRefreshDriver.h"
 #include "nsJSPrincipals.h"
@@ -1726,6 +1727,38 @@ class JSDispatchableRunnable final : public Runnable {
   js::UniquePtr<JS::Dispatchable> mDispatchable;
 };
 
+static bool DelayedDispatchToEventLoop(
+    void* closure, js::UniquePtr<JS::Dispatchable>&& aDispatchable,
+    uint32_t aDelay) {
+  MOZ_ASSERT(!closure);
+
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsIGlobalObject* global = GetCurrentGlobal();
+
+  TimeoutManager* timeoutManager = global->GetTimeoutManager();
+  if (timeoutManager) {
+    JSContext* cx = nsContentUtils::GetCurrentJSContext();
+    RefPtr<TimeoutHandler> handler =
+        new DelayedJSDispatchableHandler(cx, std::move(aDispatchable));
+
+    int32_t handle;
+    timeoutManager->SetTimeout(handler, aDelay,  false,
+                               Timeout::Reason::eJSTimeout, &handle);
+  } else {
+    
+    
+    
+    
+    
+    JS::Dispatchable::ReleaseFailedTask(std::move(aDispatchable));
+    return false;
+  }
+
+  return true;
+}
+
 static bool DispatchToEventLoop(
     void* closure, js::UniquePtr<JS::Dispatchable>&& aDispatchable) {
   MOZ_ASSERT(!closure);
@@ -1784,7 +1817,8 @@ void nsJSContext::EnsureStatics() {
 
   JS::SetCreateGCSliceBudgetCallback(jsapi.cx(), CreateGCSliceBudget);
 
-  JS::InitDispatchToEventLoop(jsapi.cx(), DispatchToEventLoop, nullptr);
+  JS::InitDispatchsToEventLoop(jsapi.cx(), DispatchToEventLoop,
+                               DelayedDispatchToEventLoop, nullptr);
 
   JS::InitConsumeStreamCallback(jsapi.cx(), ConsumeStream,
                                 FetchUtil::ReportJSStreamError);
