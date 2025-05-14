@@ -5,14 +5,10 @@
 
 
 #include "UrlClassifierExceptionList.h"
-#include "nsIEffectiveTLDService.h"
 #include "nsIUrlClassifierExceptionListEntry.h"
 #include "nsIURI.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "nsNetCID.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/RustRegex.h"
 
 namespace mozilla::net {
 
@@ -29,58 +25,12 @@ UrlClassifierExceptionList::AddEntry(
     nsIUrlClassifierExceptionListEntry* aEntry) {
   NS_ENSURE_ARG_POINTER(aEntry);
 
-  
-  
+  nsAutoCString entryString;
+  Unused << aEntry->Describe(entryString);
+  UC_LOG_DEBUG(("UrlClassifierExceptionList::%s - Adding entry: %s",
+                __FUNCTION__, entryString.get()));
 
-  nsAutoCString urlPattern;
-  nsresult rv = aEntry->GetUrlPattern(urlPattern);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsAutoCString site;
-  rv = GetSchemelessSiteFromUrlPattern(urlPattern, site);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  NS_ENSURE_TRUE(!site.IsEmpty(), NS_ERROR_INVALID_ARG);
-
-  nsAutoCString topLevelUrlPattern;
-  rv = aEntry->GetTopLevelUrlPattern(topLevelUrlPattern);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsAutoCString topLevelSite;
-  rv = GetSchemelessSiteFromUrlPattern(topLevelUrlPattern, topLevelSite);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  NS_ENSURE_TRUE(topLevelUrlPattern.IsEmpty() == topLevelSite.IsEmpty(),
-                 NS_ERROR_INVALID_ARG);
-
-  if (MOZ_LOG_TEST(UrlClassifierCommon::sLog, LogLevel::Debug)) {
-    nsAutoCString entryString;
-    Unused << aEntry->Describe(entryString);
-    UC_LOG_DEBUG(("UrlClassifierExceptionList::%s - Adding entry: %s",
-                  __FUNCTION__, entryString.get()));
-  }
-
-  
-  
-  if (topLevelSite.IsEmpty()) {
-    mGlobalExceptions.LookupOrInsert(site).AppendElement(aEntry);
-    return NS_OK;
-  }
-
-  
-  mExceptions
-      
-      
-      
-      .LookupOrInsert(topLevelSite)
-      
-      .LookupOrInsert(site)
-      
-      .AppendElement(aEntry);
-
+  mEntries.AppendElement(aEntry);
   return NS_OK;
 }
 
@@ -103,78 +53,13 @@ UrlClassifierExceptionList::Matches(nsIURI* aURI, nsIURI* aTopLevelURI,
        aTopLevelURI ? aTopLevelURI->GetSpecOrDefault().get() : "null",
        aIsPrivateBrowsing));
 
-  
-  nsresult rv;
-  nsCOMPtr<nsIEffectiveTLDService> eTLDService(
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  nsAutoCString aTopLevelSite;
-  if (aTopLevelURI) {
-    rv = eTLDService->GetSchemelessSite(aTopLevelURI, aTopLevelSite);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  
-  nsAutoCString aSite;
-  rv = eTLDService->GetSchemelessSite(aURI, aSite);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-
-  
-  
-  ExceptionEntryArray* globalExceptions =
-      mGlobalExceptions.Lookup(aSite).DataPtrOrNull();
-
-  *aResult = ExceptionListMatchesLoad(globalExceptions, aURI, aTopLevelURI,
-                                      aIsPrivateBrowsing);
-  if (*aResult) {
-    
-    return NS_OK;
-  }
-
-  
-  SiteToEntries* topLevelSiteToEntries =
-      mExceptions.Lookup(aTopLevelSite).DataPtrOrNull();
-  if (topLevelSiteToEntries) {
-    ExceptionEntryArray* siteSpecificExceptions =
-        topLevelSiteToEntries->Lookup(aSite).DataPtrOrNull();
-
-    *aResult = ExceptionListMatchesLoad(siteSpecificExceptions, aURI,
-                                        aTopLevelURI, aIsPrivateBrowsing);
-    if (*aResult) {
-      return NS_OK;
-    }
-  }
-
-  if (!(*aResult)) {
-    UC_LOG_DEBUG(("%s - No match found", __FUNCTION__));
-  }
-
-  return NS_OK;
-}
-
-bool UrlClassifierExceptionList::ExceptionListMatchesLoad(
-    ExceptionEntryArray* aExceptions, nsIURI* aURI, nsIURI* aTopLevelURI,
-    bool aIsPrivateBrowsing) {
-  MOZ_ASSERT(aURI);
-  MOZ_ASSERT(aTopLevelURI);
-
-  if (!aExceptions) {
-    return false;
-  }
-  for (const auto& entry : *aExceptions) {
-    bool match = false;
+  for (auto& entry : mEntries) {
     nsresult rv =
-        entry->Matches(aURI, aTopLevelURI, aIsPrivateBrowsing, &match);
+        entry->Matches(aURI, aTopLevelURI, aIsPrivateBrowsing, aResult);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
-    if (match) {
+    if (*aResult) {
       
       if (MOZ_LOG_TEST(UrlClassifierCommon::sLog, LogLevel::Debug)) {
         nsAutoCString entryString;
@@ -184,66 +69,20 @@ bool UrlClassifierExceptionList::ExceptionListMatchesLoad(
              "entry: %s",
              __FUNCTION__, entryString.get()));
       }
-      return true;
+      return NS_OK;
     }
   }
-  return false;
-}
-
-NS_IMETHODIMP
-UrlClassifierExceptionList::GetSchemelessSiteFromUrlPattern(
-    const nsACString& aUrlPattern, nsACString& aSite) {
-  if (aUrlPattern.IsEmpty()) {
-    aSite.Truncate();
-    return NS_OK;
-  }
 
   
-  
-  mozilla::RustRegex regex("://(?:\\*\\.)?([^/*]+)");
-  mozilla::RustRegexCaptures captures = regex.FindCaptures(aUrlPattern);
-  NS_ENSURE_TRUE(captures.IsValid(), NS_ERROR_INVALID_ARG);
+  UC_LOG_DEBUG(("%s - No match found", __FUNCTION__));
 
-  
-  auto maybeMatch = captures[1];
-  NS_ENSURE_TRUE(maybeMatch, NS_ERROR_INVALID_ARG);
-
-  nsAutoCString host;
-  host.Assign(Substring(aUrlPattern, maybeMatch->start,
-                        maybeMatch->end - maybeMatch->start));
-  NS_ENSURE_TRUE(!host.IsEmpty(), NS_ERROR_INVALID_ARG);
-
-  
-  nsresult rv;
-  nsCOMPtr<nsIEffectiveTLDService> eTLDService(
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return eTLDService->GetSchemelessSiteFromHost(host, aSite);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 UrlClassifierExceptionList::TestGetEntries(
     nsTArray<RefPtr<nsIUrlClassifierExceptionListEntry>>& aEntries) {
-  
-  for (const auto& entry : mGlobalExceptions) {
-    const ExceptionEntryArray& entries = entry.GetData();
-    aEntries.AppendElements(entries);
-  }
-
-  
-  
-  for (const auto& outerEntry : mExceptions) {
-    const SiteToEntries& innerMap = outerEntry.GetData();
-
-    
-    for (const auto& innerEntry : innerMap) {
-      const ExceptionEntryArray& entries = innerEntry.GetData();
-      
-      aEntries.AppendElements(entries);
-    }
-  }
-
+  aEntries = mEntries.Clone();
   return NS_OK;
 }
 }  
