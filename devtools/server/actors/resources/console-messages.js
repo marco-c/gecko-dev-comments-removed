@@ -128,7 +128,9 @@ class ConsoleMessageWatcher {
 
 
 
-  emitMessages(messages) {
+
+
+  emitMessages(messages, argumentsAreRawObjects = true) {
     if (!this.listener) {
       throw new Error("This target actor isn't listening to console messages");
     }
@@ -138,7 +140,11 @@ class ConsoleMessageWatcher {
           throw new Error("timeStamp property is mandatory");
         }
 
-        return prepareConsoleMessageForRemote(this.targetActor, message);
+        return prepareConsoleMessageForRemote(
+          this.targetActor,
+          message,
+          argumentsAreRawObjects
+        );
       })
     );
   }
@@ -224,11 +230,19 @@ function getConsoleTableMessageItems(targetActor, result) {
 
 
 
-function prepareConsoleMessageForRemote(targetActor, message) {
+
+
+function prepareConsoleMessageForRemote(
+  targetActor,
+  message,
+  argumentsAreRawObjects = true
+) {
   const result = {
     arguments: message.arguments
       ? message.arguments.map(obj => {
-          const dbgObj = makeDebuggeeValue(targetActor, obj);
+          const dbgObj = argumentsAreRawObjects
+            ? makeDebuggeeValue(targetActor, obj)
+            : obj;
           return createValueGripForTarget(targetActor, dbgObj);
         })
       : [],
