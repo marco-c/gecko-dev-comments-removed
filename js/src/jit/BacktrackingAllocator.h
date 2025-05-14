@@ -672,9 +672,6 @@ class BacktrackingAllocator : protected RegisterAllocator {
   Vector<CodePosition, 12, SystemAllocPolicy> entryPositions;
   Vector<CodePosition, 12, SystemAllocPolicy> exitPositions;
 
-  
-  bool testbed;
-
   using VirtualRegBitSet = SparseBitSet<BackgroundSystemAllocPolicy>;
   Vector<VirtualRegBitSet, 0, JitAllocPolicy> liveIn;
   Vector<VirtualRegister, 0, JitAllocPolicy> vregs;
@@ -939,10 +936,8 @@ class BacktrackingAllocator : protected RegisterAllocator {
   
   
  public:
-  BacktrackingAllocator(MIRGenerator* mir, LIRGenerator* lir, LIRGraph& graph,
-                        bool testbed)
+  BacktrackingAllocator(MIRGenerator* mir, LIRGenerator* lir, LIRGraph& graph)
       : RegisterAllocator(mir, lir, graph),
-        testbed(testbed),
         liveIn(mir->alloc()),
         vregs(mir->alloc()),
         safepoints_(mir->alloc()),
