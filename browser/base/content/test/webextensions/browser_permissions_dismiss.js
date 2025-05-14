@@ -8,14 +8,11 @@ const INSTALL_XPI = `${BASE}/browser_webext_permissions.xpi`;
 const expectedPermsCount = 4;
 
 function assertPermissionsListCount({ grantedPermissionsCount }) {
-  let permsUL = document.getElementById("addon-webext-perm-list");
-  
-  
-  const count = grantedPermissionsCount + 1;
+  let permsUL = document.getElementById("addon-webext-perm-list-required");
   is(
     permsUL.childElementCount,
-    count,
-    `Permissions list should have ${count} entries`
+    grantedPermissionsCount,
+    `Permissions list should have ${grantedPermissionsCount} entries`
   );
 }
 

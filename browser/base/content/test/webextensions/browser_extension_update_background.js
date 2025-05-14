@@ -141,7 +141,9 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   
   
   
-  let permissionsListEl = document.getElementById("addon-webext-perm-list");
+  let permissionsListEl = document.getElementById(
+    "addon-webext-perm-list-required"
+  );
   ok(!permissionsListEl.hidden, "Permissions list is visible");
   ok(permissionsListEl.textContent, "Permissions list contains text");
   is(
