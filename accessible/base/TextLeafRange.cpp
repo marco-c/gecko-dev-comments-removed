@@ -536,7 +536,7 @@ static dom::Selection* GetDOMSelection(const nsIContent* aStartContent,
   return startFrameSel ? &startFrameSel->NormalSelection() : nullptr;
 }
 
-std::pair<nsIContent*, int32_t> TextLeafPoint::ToDOMPoint(
+std::pair<nsIContent*, uint32_t> TextLeafPoint::ToDOMPoint(
     bool aIncludeGenerated) const {
   if (!(*this) || !mAcc->IsLocal()) {
     MOZ_ASSERT_UNREACHABLE("Invalid point");
@@ -573,26 +573,37 @@ std::pair<nsIContent*, int32_t> TextLeafPoint::ToDOMPoint(
     }
   }
 
-  if (!mAcc->IsTextLeaf() && !mAcc->IsHTMLBr() && !mAcc->HasChildren()) {
+  if (mAcc->IsTextLeaf()) {
     
-    
-    MOZ_ASSERT(mOffset == 0);
-
-    if (RefPtr<TextControlElement> textControlElement =
-            TextControlElement::FromNodeOrNull(content)) {
-      
-      if (RefPtr<TextEditor> textEditor = textControlElement->GetTextEditor()) {
-        if (textEditor->IsEmpty()) {
-          MOZ_ASSERT(mOffset == 0);
-          return {textEditor->GetRoot(), 0};
-        }
-      }
-    }
-
-    return {content, 0};
+    return {content, RenderedToContentOffset(mAcc->AsLocal(), mOffset)};
   }
 
-  return {content, RenderedToContentOffset(mAcc->AsLocal(), mOffset)};
+  if (!mAcc->IsHyperText()) {
+    
+    
+    nsIContent* parent = content->GetParent();
+    MOZ_ASSERT(parent);
+    auto childIndex = parent->ComputeIndexOf(content);
+    MOZ_ASSERT(childIndex);
+    return {parent, *childIndex};
+  }
+
+  
+  
+  MOZ_ASSERT(mOffset == 0);
+
+  if (RefPtr<TextControlElement> textControlElement =
+          TextControlElement::FromNodeOrNull(content)) {
+    
+    if (RefPtr<TextEditor> textEditor = textControlElement->GetTextEditor()) {
+      if (textEditor->IsEmpty()) {
+        MOZ_ASSERT(mOffset == 0);
+        return {textEditor->GetRoot(), 0};
+      }
+    }
+  }
+
+  return {content, 0};
 }
 
 static bool IsLineBreakContinuation(nsTextFrame* aContinuation) {
