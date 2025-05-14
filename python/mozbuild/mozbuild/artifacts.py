@@ -1213,6 +1213,8 @@ class Artifacts:
                 == 0
             ):
                 return kind
+        
+        return "firefox"
 
     def _guess_artifact_job(self):
         
