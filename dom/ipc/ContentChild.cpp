@@ -4673,6 +4673,14 @@ void ContentChild::ConfigureThreadPerformanceHints(
   }
 }
 
+#ifdef MOZ_WMF_CDM
+mozilla::ipc::IPCResult ContentChild::RecvUpdateMFCDMOriginEntries(
+    const nsTArray<IPCOriginStatusEntry>& aEntries) {
+  
+  return IPC_OK();
+}
+#endif
+
 }  
 
 #if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
