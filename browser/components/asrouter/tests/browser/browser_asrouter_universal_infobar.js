@@ -35,6 +35,9 @@ add_task(async function showNotificationAllWindows() {
     { gBrowser: { selectedBrowser: "win3" } },
   ];
 
+  sinon.stub(InfoBar, "maybeLoadCustomElement");
+  sinon.stub(InfoBar, "maybeInsertFTL");
+
   let origWinManager = Services.wm;
   
   
