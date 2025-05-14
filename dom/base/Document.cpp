@@ -20338,10 +20338,7 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
     }
 
     
-    nsCOMPtr<nsINode> root = doc->GetRootElement();
-    MOZ_DIAGNOSTIC_ASSERT(root,
-                          "HTML parser should have create the <html> root");
-    sanitizer->Sanitize(root,  true, aError);
+    sanitizer->Sanitize(doc,  true, aError);
     if (aError.Failed()) {
       return nullptr;
     }
@@ -20384,9 +20381,7 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
   }
 
   
-  nsCOMPtr<nsINode> root = doc->GetRootElement();
-  MOZ_DIAGNOSTIC_ASSERT(root, "HTML parser should have create the <html> root");
-  sanitizer->Sanitize(root,  true, aError);
+  sanitizer->Sanitize(doc,  true, aError);
   if (aError.Failed()) {
     return nullptr;
   }
