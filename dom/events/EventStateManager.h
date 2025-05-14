@@ -1300,6 +1300,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   static void UpdateLastPointerPosition(WidgetMouseEvent* aMouseEvent);
 
+  void UpdateGestureContent(nsIContent* aContent);
+
   
 
 
