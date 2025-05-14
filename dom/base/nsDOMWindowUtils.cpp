@@ -3200,10 +3200,13 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   
   
   
-  presShell->ScrollContentIntoView(
-      refContent, ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
-      ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
-      ScrollFlags::ScrollOverflowHidden);
+  if (nsIFrame* frame = refContent->GetPrimaryFrame()) {
+    presShell->ScrollFrameIntoView(
+        frame, Nothing(),
+        ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
+        ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
+        ScrollFlags::ScrollOverflowHidden);
+  }
 
   RefPtr<Document> document = presShell->GetDocument();
   if (!document) {
