@@ -114,6 +114,9 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
           ctx->priv = NULL;
           ctx->init_flags = flags;
           ctx->config.enc = cfg;
+          
+          
+          
           res = ctx->iface->init(ctx, &mr_cfg);
         }
 
