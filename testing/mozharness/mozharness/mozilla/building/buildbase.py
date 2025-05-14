@@ -179,12 +179,11 @@ class BuildingConfig(BaseConfig):
     def get_cfgs_from_files(self, all_config_files, options):
         """
         Determine the configuration from the normal options and from
-        `--branch`, `--build-pool`, and `--custom-build-variant-cfg`.  If the
+        `--custom-build-variant-cfg`.  If the
         files for any of the latter options are also given with `--config-file`
         or `--opt-config-file`, they are only parsed once.
 
-        The build pool has highest precedence, followed by branch, build
-        variant, and any normally-specified configuration files.
+        The build variant has highest precedence, followed any normally-specified configuration files.
         """
         
 
@@ -193,13 +192,8 @@ class BuildingConfig(BaseConfig):
         
         all_config_dicts = []
         
-        variant_cfg_file = pool_cfg_file = ""
+        variant_cfg_file = ""
 
-        
-        
-        
-
-        
         
         
         
@@ -215,19 +209,12 @@ class BuildingConfig(BaseConfig):
         
         
         for i, cf in enumerate(all_config_files):
-            if options.build_pool:
-                if cf == BuildOptionParser.build_pool_cfg_file:
-                    pool_cfg_file = all_config_files[i]
-
             if cf == options.build_variant:
                 variant_cfg_file = all_config_files[i]
 
         
-        
-        
-        for cf in [pool_cfg_file, variant_cfg_file]:
-            if cf:
-                all_config_files.remove(cf)
+        if variant_cfg_file:
+            all_config_files.remove(variant_cfg_file)
 
         
         
@@ -236,21 +223,10 @@ class BuildingConfig(BaseConfig):
         )
 
         
-        
         if variant_cfg_file:
             
             all_config_dicts.append(
                 (variant_cfg_file, parse_config_file(variant_cfg_file))
-            )
-        config_paths = options.config_paths or ["."]
-        if pool_cfg_file:
-            
-            
-            build_pool_configs = parse_config_file(
-                pool_cfg_file, search_path=config_paths + [DEFAULT_CONFIG_PATH]
-            )
-            all_config_dicts.append(
-                (pool_cfg_file, build_pool_configs[options.build_pool])
             )
         return all_config_dicts
 
@@ -333,7 +309,6 @@ class BuildOptionParser:
         "android-geckoview-docs": path_base + "%s_geckoview_docs.py",
         "valgrind": path_base + "%s_valgrind.py",
     }
-    build_pool_cfg_file = "builds/build_pool_specifics.py"
 
     @classmethod
     def _query_pltfrm_and_bits(cls, target_option, options):
@@ -448,13 +423,6 @@ class BuildOptionParser:
         setattr(parser.values, option.dest, value)  
 
     @classmethod
-    def set_build_pool(cls, option, opt, value, parser):
-        
-        
-        parser.values.config_files.append(cls.build_pool_cfg_file)
-        setattr(parser.values, option.dest, value)  
-
-    @classmethod
     def set_build_branch(cls, option, opt, value, parser):
         
         setattr(parser.values, option.dest, value)  
@@ -517,19 +485,6 @@ BUILD_BASE_CONFIG_OPTIONS = [
             " additional config to use. Either pass a config path"
             " or use a valid shortname from: "
             "%s" % (list(BuildOptionParser.build_variants.keys()),),
-        },
-    ],
-    [
-        ["--build-pool"],
-        {
-            "action": "callback",
-            "callback": BuildOptionParser.set_build_pool,
-            "type": "string",
-            "dest": "build_pool",
-            "help": "This will update the config with specific pool"
-            " environment keys/values. The dicts for this are"
-            " in %s\nValid values: staging or"
-            " production" % ("builds/build_pool_specifics.py",),
         },
     ],
     [
@@ -612,7 +567,6 @@ class BuildScript(
     def _pre_config_lock(self, rw_config):
         c = self.config
         cfg_files_and_dicts = rw_config.all_cfg_files_and_dicts
-        build_pool = c.get("build_pool", "")
         build_variant = c.get("build_variant", "")
         variant_cfg = ""
         if build_variant:
@@ -620,22 +574,12 @@ class BuildScript(
                 BuildOptionParser.platform,
                 BuildOptionParser.bits,
             )
-        build_pool_cfg = BuildOptionParser.build_pool_cfg_file
 
         cfg_match_msg = "Script was run with '%(option)s %(type)s' and \
 '%(type)s' matches a key in '%(type_config_file)s'. Updating self.config with \
 items from that key's value."
 
         for i, (target_file, target_dict) in enumerate(cfg_files_and_dicts):
-            if build_pool_cfg and build_pool_cfg in target_file:
-                self.info(
-                    cfg_match_msg
-                    % {
-                        "option": "--build-pool",
-                        "type": build_pool,
-                        "type_config_file": build_pool_cfg,
-                    }
-                )
             if variant_cfg and variant_cfg in target_file:
                 self.info(
                     cfg_match_msg

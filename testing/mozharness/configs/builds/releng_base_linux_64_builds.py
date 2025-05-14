@@ -11,6 +11,7 @@ config = {
     
     
     
+    
     "default_actions": [
         "clobber",
         "build",
@@ -34,11 +35,9 @@ config = {
         },
     ],
     "vcs_share_base": "/builds/hg-shared",
-    
-    
-    
-    "platform": "linux64",
-    "stage_platform": "linux64",
+    "upload_env": {
+        "UPLOAD_PATH": "/builds/worker/artifacts",
+    },
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "DISPLAY": ":2",
@@ -49,11 +48,14 @@ config = {
         "TOOLTOOL_HOME": "/builds",
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "LC_ALL": "C",
-        
-        "PATH": "/usr/local/bin:/bin:" "/usr/bin:/usr/local/sbin:/usr/sbin:" "/sbin",
-        
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
     },
-    "mozconfig_platform": "linux64",
     "mozconfig_variant": "nightly",
+    
+    
+    
+    "platform": "linux64",
+    "stage_platform": "linux64",
+    "mozconfig_platform": "linux64",
     
 }
