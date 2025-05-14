@@ -249,17 +249,6 @@ static gboolean touch_event_cb(GtkWidget* aWidget, GdkEventTouch* aEvent);
 static gboolean generic_event_cb(GtkWidget* widget, GdkEvent* aEvent);
 static void widget_destroy_cb(GtkWidget* widget, gpointer user_data);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef MOZ_X11
-static GdkFilterReturn popup_take_focus_filter(GdkXEvent* gdk_xevent,
-                                               GdkEvent* event, gpointer data);
-#endif 
-#ifdef __cplusplus
-}
-#endif 
-
 static gboolean drag_motion_event_cb(GtkWidget* aWidget,
                                      GdkDragContext* aDragContext, gint aX,
                                      gint aY, guint aTime, gpointer aData);
@@ -445,7 +434,6 @@ nsWindow::nsWindow()
       mPendingBoundsChangeMayChangeCsdMargin(false),
       mTitlebarBackdropState(false),
       mAlwaysOnTop(false),
-      mNoAutoHide(false),
       mIsTransparent(false),
       mHasReceivedSizeAllocate(false),
       mWidgetCursorLocked(false),
@@ -1063,9 +1051,9 @@ void nsWindow::ResizeInt(const Maybe<LayoutDeviceIntPoint>& aMove,
   
   
   
+  
   bool isOrWillBeVisible = mHasReceivedSizeAllocate || mNeedsShow || mIsShown;
-  if (!isOrWillBeVisible ||
-      gtk_window_get_window_type(GTK_WINDOW(mShell)) == GTK_WINDOW_POPUP) {
+  if (!isOrWillBeVisible || IsPopup()) {
     mBounds.SizeTo(aSize);
     if (moved) {
       mBounds.MoveTo(*aMove);
@@ -6012,18 +6000,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   }
 
   mAlwaysOnTop = aInitData && aInitData->mAlwaysOnTop;
-  
-  
-  
-  
-  mNoAutoHide = aInitData && aInitData->mNoAutoHide;
   mIsAlert = aInitData && aInitData->mIsAlert;
   mIsDragPopup = aInitData && aInitData->mIsDragPopup;
 
-  
-  
-  
-  
   
   
   
@@ -6033,9 +6012,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   if (mWindowType == WindowType::Popup) {
     MOZ_ASSERT(aInitData);
     type = GTK_WINDOW_POPUP;
-    if (GdkIsX11Display() && mNoAutoHide) {
-      type = GTK_WINDOW_TOPLEVEL;
-    }
   }
   mShell = gtk_window_new(type);
 
@@ -6126,35 +6102,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     mGtkWindowRoleName = "Popup";
 
     LOG("  nsWindow::Create() Popup");
-
-    if (mNoAutoHide) {
-      
-      
-      if (mBorderStyle == BorderStyle::Default) {
-        gtk_window_set_decorated(GTK_WINDOW(mShell), FALSE);
-      } else {
-        bool decorate = bool(mBorderStyle & BorderStyle::Title);
-        gtk_window_set_decorated(GTK_WINDOW(mShell), decorate);
-        if (decorate) {
-          gtk_window_set_deletable(GTK_WINDOW(mShell),
-                                   bool(mBorderStyle & BorderStyle::Close));
-        }
-      }
-      gtk_window_set_skip_taskbar_hint(GTK_WINDOW(mShell), TRUE);
-      
-      
-      
-      gtk_window_set_accept_focus(GTK_WINDOW(mShell), FALSE);
-#ifdef MOZ_X11
-      
-      
-      if (GdkIsX11Display()) {
-        gtk_widget_realize(mShell);
-        gdk_window_add_filter(GetToplevelGdkWindow(), popup_take_focus_filter,
-                              nullptr);
-      }
-#endif
-    }
 
     if (mIsDragPopup) {
       gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_DND);
@@ -8085,74 +8032,6 @@ static gboolean focus_out_event_cb(GtkWidget* widget, GdkEventFocus* event) {
   return FALSE;
 }
 
-#ifdef MOZ_X11
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static GdkFilterReturn popup_take_focus_filter(GdkXEvent* gdk_xevent,
-                                               GdkEvent* event, gpointer data) {
-  auto* xevent = static_cast<XEvent*>(gdk_xevent);
-  if (xevent->type != ClientMessage) {
-    return GDK_FILTER_CONTINUE;
-  }
-
-  XClientMessageEvent& xclient = xevent->xclient;
-  if (xclient.message_type != gdk_x11_get_xatom_by_name("WM_PROTOCOLS")) {
-    return GDK_FILTER_CONTINUE;
-  }
-
-  Atom atom = xclient.data.l[0];
-  if (atom != gdk_x11_get_xatom_by_name("WM_TAKE_FOCUS")) {
-    return GDK_FILTER_CONTINUE;
-  }
-
-  guint32 timestamp = xclient.data.l[1];
-
-  GtkWidget* widget = get_gtk_widget_for_gdk_window(event->any.window);
-  if (!widget) {
-    return GDK_FILTER_CONTINUE;
-  }
-
-  GtkWindow* parent = gtk_window_get_transient_for(GTK_WINDOW(widget));
-  if (!parent) {
-    return GDK_FILTER_CONTINUE;
-  }
-
-  if (gtk_window_is_active(parent)) {
-    return GDK_FILTER_REMOVE;  
-  }
-
-  GdkWindow* parent_window = gtk_widget_get_window(GTK_WIDGET(parent));
-  if (!parent_window) {
-    return GDK_FILTER_CONTINUE;
-  }
-
-  
-  gdk_window_show_unraised(parent_window);
-
-  
-  
-  
-  gdk_window_focus(parent_window, timestamp);
-  return GDK_FILTER_REMOVE;
-}
-#endif 
-
 static gboolean key_press_event_cb(GtkWidget* widget, GdkEventKey* event) {
   LOGW("key_press_event_cb\n");
 
@@ -9788,12 +9667,6 @@ void nsWindow::OnMap() {
   }
 
   if (mWindowType == WindowType::Popup) {
-    if (mNoAutoHide) {
-      gint wmd = ConvertBorderStyles(mBorderStyle);
-      if (wmd != -1) {
-        gdk_window_set_decorations(mGdkWindow, (GdkWMDecoration)wmd);
-      }
-    }
     
     SetInputRegion(mInputRegion);
   }

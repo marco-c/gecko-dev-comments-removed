@@ -83,7 +83,6 @@ struct InitData {
   bool mClipChildren = false;
   bool mClipSiblings = false;
   bool mRTL = false;
-  bool mNoAutoHide = false;   
   bool mIsDragPopup = false;  
   
   bool mIsAnimationSuppressed = false;

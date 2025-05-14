@@ -704,7 +704,6 @@ class nsWindow final : public nsBaseWidget {
   
   bool mTitlebarBackdropState : 1;
   bool mAlwaysOnTop : 1;
-  bool mNoAutoHide : 1;
   bool mIsTransparent : 1;
   
   bool mHasReceivedSizeAllocate : 1;
