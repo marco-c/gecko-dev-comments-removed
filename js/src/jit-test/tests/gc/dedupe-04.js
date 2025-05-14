@@ -17,7 +17,37 @@
 
 
 
-function with_dependent() {
+
+
+
+function no_dedupe() {
+    
+    
+    
+    
+    var Tobj = new WeakRef(Object.create(null));
+
+    
+    Tobj.name = newString("blah", { tenured: false });
+    var NB4 = newString("diddle doodle dawdle dink. piddle poodle paddle pink. widdle woodle wattle wink.", { tenured: false });
+    var TD3 = newDependentString(NB4, 0, 70, { tenured: true });
+    var ND2 = newDependentString(TD3, 0, 60, { tenured: false, 'suppress-contraction': true });
+    Tobj.name = ND2; 
+    NB4 = TD3 = null;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    minorgc();
+    return ND2;
+}
+
+function with_dependent(mallocChars) {
     
     var base = "MY YOUNGEST MEMORY IS OF A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME IN THE LEAST. MY MOTHER WOULD HAVE BEEN HORRIFIED, BUT SHE WAS A GOOSE AND HAD ALREADY LAID THE EGG THAT CONTAINED ME SO SHE DID NOT ESPECIALLY CARE AND THOUGHT THAT IT WOULD BE GOOD TO BE TOUGHENED UP.";
     var NB5 = newString(base, { tenured: false });
@@ -27,7 +57,7 @@ function with_dependent() {
     var TD6 = newDependentString(NB5, 32, { tenured: true });
 
     
-    var NB4 = newString(base, { tenured: false });
+    var NB4 = newString(base, { tenured: false, newStringBuffer: mallocChars });
 
     
     
@@ -45,43 +75,8 @@ function with_dependent() {
     
     TD3 = NB4 = NB5 = "";
 
-    var preGC_ND2_rep = this.stringRepresentation ? JSON.parse(stringRepresentation(ND2)) : null;
-    gc();
+    minorgc();
     assertEq(ND2, "A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (!this.stringRepresentation) {
-        return;
-    }
-    var ND2_rep = JSON.parse(stringRepresentation(ND2));
-    if (preGC_ND2_rep.base.base.isTenured) {
-        print("Case 1"); 
-        assertEq(ND2_rep.flags.includes("DEPENDENT_BIT"), true);
-    } else if (preGC_ND2_rep.chars != ND2_rep.chars) {
-        print("Case 2"); 
-        assertEq(ND2_rep.flags.includes("DEPENDENT_BIT"), false);
-    } else {
-        print("Case 3"); 
-        assertEq(ND2_rep.flags.includes("DEPENDENT_BIT"), true);
-    }
 }
 
 function with_rope() {
@@ -122,7 +117,7 @@ function with_rope() {
     
     rope = suffix = TD3 = NB4 = NB5 = "";
 
-    gc();
+    minorgc();
     print(ND2);
     assertEq(ND2, "A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME");
     
@@ -132,5 +127,7 @@ function with_rope() {
     }
 }
 
-with_dependent();
+no_dedupe();
+with_dependent(false);
+with_dependent(true);
 with_rope();
