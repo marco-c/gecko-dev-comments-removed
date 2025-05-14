@@ -319,16 +319,17 @@ class nsAttrValue {
 
 
 
-  struct EnumTableEntry {
+
+  struct EnumTable {
     
     
 
-    constexpr EnumTableEntry(const char* aTag, int16_t aValue)
+    constexpr EnumTable(const char* aTag, int16_t aValue)
         : tag(aTag), value(aValue) {}
 
     template <typename T,
               typename = typename std::enable_if<std::is_enum<T>::value>::type>
-    constexpr EnumTableEntry(const char* aTag, T aValue)
+    constexpr EnumTable(const char* aTag, T aValue)
         : tag(aTag), value(static_cast<int16_t>(aValue)) {
       static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,
                     "aValue must be an enum that fits within int16_t");
@@ -342,7 +343,6 @@ class nsAttrValue {
     int16_t value;
   };
 
-  using EnumTableSpan = mozilla::Span<const EnumTableEntry>;
   
 
 
@@ -354,9 +354,9 @@ class nsAttrValue {
 
 
 
-  bool ParseEnumValue(const nsAString& aValue, EnumTableSpan aTable,
+  bool ParseEnumValue(const nsAString& aValue, const EnumTable* aTable,
                       bool aCaseSensitive,
-                      const EnumTableEntry* aDefaultValue = nullptr);
+                      const EnumTable* aDefaultValue = nullptr);
 
   
 
@@ -512,7 +512,7 @@ class nsAttrValue {
 
 
 
-  int16_t GetEnumTableIndex(EnumTableSpan aTable);
+  int16_t GetEnumTableIndex(const EnumTable* aTable);
 
   inline void SetPtrValueAndType(void* aValue, ValueBaseType aType);
   void SetIntValueAndType(int32_t aValue, ValueType aType,
@@ -541,8 +541,8 @@ class nsAttrValue {
       const nsAString& aValue) const;
   
   
-  int32_t EnumTableEntryToValue(EnumTableSpan aEnumTable,
-                                const EnumTableEntry& aTableEntry);
+  int32_t EnumTableEntryToValue(const EnumTable* aEnumTable,
+                                const EnumTable* aTableEntry);
 
   template <typename F>
   bool SubstringCheck(const nsAString& aValue,
@@ -551,7 +551,7 @@ class nsAttrValue {
   static MiscContainer* AllocMiscContainer();
   static void DeallocMiscContainer(MiscContainer* aCont);
 
-  static nsTArray<EnumTableSpan>* sEnumTableArray;
+  static nsTArray<const EnumTable*>* sEnumTableArray;
 
   
 
