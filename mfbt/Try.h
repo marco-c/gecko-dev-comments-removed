@@ -15,13 +15,6 @@
 
 
 
-#define MOZ_TRY(expr)                                   \
-  do {                                                  \
-    auto mozTryTempResult_ = ::mozilla::ToResult(expr); \
-    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {      \
-      return mozTryTempResult_.propagateErr();          \
-    }                                                   \
-  } while (0)
 
 
 
@@ -29,13 +22,25 @@
 
 
 
-#define MOZ_TRY_VAR(target, expr)                     \
-  do {                                                \
-    auto mozTryVarTempResult_ = (expr);               \
-    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) { \
-      return mozTryVarTempResult_.propagateErr();     \
-    }                                                 \
-    (target) = mozTryVarTempResult_.unwrap();         \
-  } while (0)
+
+
+
+#define MOZ_TRY(expr)                                     \
+  __extension__({                                         \
+    auto mozTryVarTempResult = ::mozilla::ToResult(expr); \
+    if (MOZ_UNLIKELY(mozTryVarTempResult.isErr())) {      \
+      return mozTryVarTempResult.propagateErr();          \
+    }                                                     \
+    mozTryVarTempResult.unwrap();                         \
+  })
+
+
+
+
+
+
+
+
+#define MOZ_TRY_VAR(target, expr) (target) = MOZ_TRY(expr);
 
 #endif  
