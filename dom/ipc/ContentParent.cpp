@@ -331,6 +331,33 @@
 #include "nsIToolkitProfileService.h"
 #include "nsIToolkitProfile.h"
 
+#ifdef MOZ_WMF_CDM
+#  include "mozilla/EMEUtils.h"
+#  include "nsIWindowsMediaFoundationCDMOriginsListService.h"
+
+namespace mozilla {
+class OriginsListLoadCallback final : public nsIOriginsListLoadCallback {
+ public:
+  explicit OriginsListLoadCallback(ContentParent* aContentParent)
+      : mContentParent(aContentParent) {}
+
+  NS_DECL_ISUPPORTS
+
+  
+  NS_IMETHODIMP OnOriginsListLoaded(nsIArray* aEntries) {
+    
+    return NS_OK;
+  }
+
+ private:
+  ~OriginsListLoadCallback() = default;
+
+  RefPtr<ContentParent> mContentParent;
+};
+NS_IMPL_ISUPPORTS(OriginsListLoadCallback, nsIOriginsListLoadCallback)
+}  
+#endif
+
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
 using base::KillProcess;
@@ -1876,6 +1903,17 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
 
   RecvRemoveGeolocationListener();
 
+#ifdef MOZ_WMF_CDM
+  if (mOriginsListCallback) {
+    nsCOMPtr<nsIWindowsMediaFoundationCDMOriginsListService> rsService =
+        do_GetService("@mozilla.org/media/wmfcdm-origins-list;1");
+    if (rsService) {
+      rsService->RemoveCallback(mOriginsListCallback);
+    }
+    mOriginsListCallback = nullptr;
+  }
+#endif
+
   
   JSActorDidDestroy();
 
@@ -2886,6 +2924,17 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
                                          nsIStyleSheetService::AUTHOR_SHEET);
     }
   }
+
+#ifdef MOZ_WMF_CDM
+  if (!mOriginsListCallback && IsMediaFoundationCDMPlaybackEnabled()) {
+    mOriginsListCallback = new OriginsListLoadCallback(this);
+    nsCOMPtr<nsIWindowsMediaFoundationCDMOriginsListService> rsService =
+        do_GetService("@mozilla.org/media/wmfcdm-origins-list;1");
+    if (rsService) {
+      rsService->SetCallback(mOriginsListCallback);
+    }
+  }
+#endif
 
 #ifdef MOZ_SANDBOX
   bool shouldSandbox = true;
