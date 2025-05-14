@@ -1920,11 +1920,3 @@ Object.defineProperty(this, "mozinfo", {
     return _mozinfo;
   },
 });
-
-
-Services.scriptloader.loadSubScript(
-  "resource://testing-common/Mochia.js",
-  this
-);
-
-Mochia(this);

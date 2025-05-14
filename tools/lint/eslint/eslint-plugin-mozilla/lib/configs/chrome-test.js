@@ -11,15 +11,11 @@ module.exports = {
   globals: {
     
     SpecialPowers: false,
-    afterEach: false,
-    beforeEach: false,
-    describe: false,
     extractJarToTmp: false,
     getChromeDir: false,
     getJar: false,
     getResolvedURI: false,
     getRootDirectory: false,
-    it: false,
   },
 
   name: "mozilla/chrome-test",

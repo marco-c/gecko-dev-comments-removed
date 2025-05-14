@@ -1936,11 +1936,3 @@ testScope.prototype = {
     }
   },
 };
-
-
-Services.scriptloader.loadSubScript(
-  "resource://testing-common/Mochia.js",
-  this
-);
-
-Mochia(testScope);
