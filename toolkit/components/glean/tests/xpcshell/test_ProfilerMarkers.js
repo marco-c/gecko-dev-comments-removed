@@ -992,104 +992,112 @@ add_task(async function test_jog_labeled_boolean_with_static_labels_markers() {
   ]);
 });
 
-add_task(async function test_fog_event_markers() {
-  let markers = await runWithProfilerAndGetMarkers("EventMetric", () => {
+add_task(
+  {
     
-    Glean.testOnlyIpc.noExtraEvent.record();
+    
+    skip_if: () =>
+      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
+  },
+  async function test_fog_event_markers() {
+    let markers = await runWithProfilerAndGetMarkers("EventMetric", () => {
+      
+      Glean.testOnlyIpc.noExtraEvent.record();
 
-    let extra = { extra1: "can set extras", extra2: "passing more data" };
-    Glean.testOnlyIpc.anEvent.record(extra);
+      let extra = { extra1: "can set extras", extra2: "passing more data" };
+      Glean.testOnlyIpc.anEvent.record(extra);
 
-    
-    
-    let extraWithUndef = { extra1: undefined, extra2: "defined" };
-    Glean.testOnlyIpc.anEvent.record(extraWithUndef);
+      
+      
+      let extraWithUndef = { extra1: undefined, extra2: "defined" };
+      Glean.testOnlyIpc.anEvent.record(extraWithUndef);
 
-    let extra2 = {
-      extra1: "can set extras",
-      extra2: 37,
-      extra3_longer_name: false,
-    };
-    Glean.testOnlyIpc.eventWithExtra.record(extra2);
-
-    
-    let extra5 = {
-      extra4CamelCase: false,
-    };
-    Glean.testOnlyIpc.eventWithExtra.record(extra5);
-
-    
-    Glean.testOnlyIpc.eventWithExtra.record(null);
-
-    
-    
-    let extra3 = {
-      extra1_nonexistent_extra: "this does not crash",
-    };
-    Glean.testOnlyIpc.eventWithExtra.record(extra3);
-
-    
-    
-    Glean.testOnlyIpc.noExtraEvent.record(extra3);
-  });
-
-  let expected_markers = [
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.noExtraEvent",
-    },
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.anEvent",
-      extra: { extra1: "can set extras", extra2: "passing more data" },
-    },
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.anEvent",
-      extra: { extra2: "defined" },
-    },
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.eventWithExtra",
-      extra: {
-        extra3_longer_name: "false",
-        extra2: "37",
+      let extra2 = {
         extra1: "can set extras",
+        extra2: 37,
+        extra3_longer_name: false,
+      };
+      Glean.testOnlyIpc.eventWithExtra.record(extra2);
+
+      
+      let extra5 = {
+        extra4CamelCase: false,
+      };
+      Glean.testOnlyIpc.eventWithExtra.record(extra5);
+
+      
+      Glean.testOnlyIpc.eventWithExtra.record(null);
+
+      
+      
+      let extra3 = {
+        extra1_nonexistent_extra: "this does not crash",
+      };
+      Glean.testOnlyIpc.eventWithExtra.record(extra3);
+
+      
+      
+      Glean.testOnlyIpc.noExtraEvent.record(extra3);
+    });
+
+    let expected_markers = [
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.noExtraEvent",
       },
-    },
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.eventWithExtra",
-      extra: { extra4CamelCase: "false" },
-    },
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.eventWithExtra",
-    },
-    
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.eventWithExtra",
-      extra: { extra1_nonexistent_extra: "this does not crash" },
-    },
-    
-    {
-      type: "EventMetric",
-      id: "testOnlyIpc.noExtraEvent",
-      extra: { extra1_nonexistent_extra: "this does not crash" },
-    },
-  ];
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.anEvent",
+        extra: { extra1: "can set extras", extra2: "passing more data" },
+      },
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.anEvent",
+        extra: { extra2: "defined" },
+      },
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.eventWithExtra",
+        extra: {
+          extra3_longer_name: "false",
+          extra2: "37",
+          extra1: "can set extras",
+        },
+      },
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.eventWithExtra",
+        extra: { extra4CamelCase: "false" },
+      },
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.eventWithExtra",
+      },
+      
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.eventWithExtra",
+        extra: { extra1_nonexistent_extra: "this does not crash" },
+      },
+      
+      {
+        type: "EventMetric",
+        id: "testOnlyIpc.noExtraEvent",
+        extra: { extra1_nonexistent_extra: "this does not crash" },
+      },
+    ];
 
-  
-  
-  markers.forEach(m => {
-    if (m.extra !== undefined) {
-      m.extra = JSON.parse(m.extra);
-    }
-  });
+    
+    
+    markers.forEach(m => {
+      if (m.extra !== undefined) {
+        m.extra = JSON.parse(m.extra);
+      }
+    });
 
-  Assert.deepEqual(markers, expected_markers);
-});
+    Assert.deepEqual(markers, expected_markers);
+  }
+);
 
 add_task(async function test_fog_memory_distribution() {
   let markers = await runWithProfilerAndGetMarkers("DistMetric", () => {
@@ -1830,144 +1838,58 @@ add_task(async function test_fog_text_unusual_character() {
   ]);
 });
 
-add_task(async function test_fog_object_markers() {
-  if (!Glean.testOnly.balloons) {
+add_task(
+  {
     
     
-    return;
-  }
-  let markers = await runWithProfilerAndGetMarkers("ObjectMetric", () => {
-    let balloons = [
-      { colour: "red", diameter: 5 },
-      { colour: "blue", diameter: 7 },
-      { colour: "orange" },
-    ];
-    Glean.testOnly.balloons.set(balloons);
-
-    
-    balloons = [
-      { colour: "inf", diameter: Infinity },
-      { colour: "negative-inf", diameter: -1 / 0 },
-      { colour: "nan", diameter: NaN },
-      { colour: "undef", diameter: undefined },
-    ];
-    Glean.testOnly.balloons.set(balloons);
-
-    
-    
-    let invalid = [{ color: "orange" }, { color: "red", diameter: "small" }];
-    Glean.testOnly.balloons.set(invalid);
-
-    Services.fog.testResetFOG();
-
-    
-    balloons = [
-      { colour: "red", diameter: 5 },
-      { colour: "blue", diameter: 7 },
-    ];
-    Glean.testOnly.balloons.set(balloons);
-
-    
-    invalid = [{ colour: "red", diameter: 5, extra: "field" }];
-    Glean.testOnly.balloons.set(invalid);
-
-    
-    Glean.testOnly.crashStack.set({});
-
-    let stack = {
-      status: "OK",
-      crash_info: {
-        typ: "main",
-        address: "0xf001ba11",
-        crashing_thread: 1,
-      },
-      main_module: 0,
-      modules: [
-        {
-          base_addr: "0x00000000",
-          end_addr: "0x00004000",
-        },
-      ],
-    };
-
-    Glean.testOnly.crashStack.set(stack);
-
-    stack = {
-      status: "OK",
-      modules: [
-        {
-          base_addr: "0x00000000",
-          end_addr: "0x00004000",
-        },
-      ],
-    };
-    Glean.testOnly.crashStack.set(stack);
-
-    stack = {
-      status: "OK",
-      modules: [],
-    };
-    Glean.testOnly.crashStack.set(stack);
-
-    stack = {
-      status: "OK",
-    };
-    Glean.testOnly.crashStack.set(stack);
-  });
-
-  let expected_markers = [
-    {
-      type: "ObjectMetric",
-      id: "testOnly.balloons",
-      value: [
+    skip_if: () =>
+      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
+  },
+  async function test_fog_object_markers() {
+    if (!Glean.testOnly.balloons) {
+      
+      
+      return;
+    }
+    let markers = await runWithProfilerAndGetMarkers("ObjectMetric", () => {
+      let balloons = [
         { colour: "red", diameter: 5 },
         { colour: "blue", diameter: 7 },
         { colour: "orange" },
-      ],
-    },
-    
-    {
-      type: "ObjectMetric",
-      id: "testOnly.balloons",
-      value: [
-        { colour: "inf", diameter: null },
-        { colour: "negative-inf", diameter: null },
-        { colour: "nan", diameter: null },
-        { colour: "undef" },
-      ],
-    },
-    
-    {
-      type: "ObjectMetric",
-      id: "testOnly.balloons",
-      value: [{ color: "orange" }, { color: "red", diameter: "small" }],
-    },
+      ];
+      Glean.testOnly.balloons.set(balloons);
 
-    {
-      type: "ObjectMetric",
-      id: "testOnly.balloons",
-      value: [
+      
+      balloons = [
+        { colour: "inf", diameter: Infinity },
+        { colour: "negative-inf", diameter: -1 / 0 },
+        { colour: "nan", diameter: NaN },
+        { colour: "undef", diameter: undefined },
+      ];
+      Glean.testOnly.balloons.set(balloons);
+
+      
+      
+      let invalid = [{ color: "orange" }, { color: "red", diameter: "small" }];
+      Glean.testOnly.balloons.set(invalid);
+
+      Services.fog.testResetFOG();
+
+      
+      balloons = [
         { colour: "red", diameter: 5 },
         { colour: "blue", diameter: 7 },
-      ],
-    },
-    
-    {
-      type: "ObjectMetric",
-      id: "testOnly.balloons",
-      value: [{ colour: "red", diameter: 5, extra: "field" }],
-    },
+      ];
+      Glean.testOnly.balloons.set(balloons);
 
-    {
-      type: "ObjectMetric",
-      id: "testOnly.crashStack",
-      value: {},
-    },
+      
+      invalid = [{ colour: "red", diameter: 5, extra: "field" }];
+      Glean.testOnly.balloons.set(invalid);
 
-    {
-      type: "ObjectMetric",
-      id: "testOnly.crashStack",
-      value: {
+      
+      Glean.testOnly.crashStack.set({});
+
+      let stack = {
         status: "OK",
         crash_info: {
           typ: "main",
@@ -1975,41 +1897,135 @@ add_task(async function test_fog_object_markers() {
           crashing_thread: 1,
         },
         main_module: 0,
-        modules: [{ base_addr: "0x00000000", end_addr: "0x00004000" }],
-      },
-    },
-    {
-      type: "ObjectMetric",
-      id: "testOnly.crashStack",
-      value: {
+        modules: [
+          {
+            base_addr: "0x00000000",
+            end_addr: "0x00004000",
+          },
+        ],
+      };
+
+      Glean.testOnly.crashStack.set(stack);
+
+      stack = {
         status: "OK",
-        modules: [{ base_addr: "0x00000000", end_addr: "0x00004000" }],
+        modules: [
+          {
+            base_addr: "0x00000000",
+            end_addr: "0x00004000",
+          },
+        ],
+      };
+      Glean.testOnly.crashStack.set(stack);
+
+      stack = {
+        status: "OK",
+        modules: [],
+      };
+      Glean.testOnly.crashStack.set(stack);
+
+      stack = {
+        status: "OK",
+      };
+      Glean.testOnly.crashStack.set(stack);
+    });
+
+    let expected_markers = [
+      {
+        type: "ObjectMetric",
+        id: "testOnly.balloons",
+        value: [
+          { colour: "red", diameter: 5 },
+          { colour: "blue", diameter: 7 },
+          { colour: "orange" },
+        ],
       },
-    },
+      
+      {
+        type: "ObjectMetric",
+        id: "testOnly.balloons",
+        value: [
+          { colour: "inf", diameter: null },
+          { colour: "negative-inf", diameter: null },
+          { colour: "nan", diameter: null },
+          { colour: "undef" },
+        ],
+      },
+      
+      {
+        type: "ObjectMetric",
+        id: "testOnly.balloons",
+        value: [{ color: "orange" }, { color: "red", diameter: "small" }],
+      },
+
+      {
+        type: "ObjectMetric",
+        id: "testOnly.balloons",
+        value: [
+          { colour: "red", diameter: 5 },
+          { colour: "blue", diameter: 7 },
+        ],
+      },
+      
+      {
+        type: "ObjectMetric",
+        id: "testOnly.balloons",
+        value: [{ colour: "red", diameter: 5, extra: "field" }],
+      },
+
+      {
+        type: "ObjectMetric",
+        id: "testOnly.crashStack",
+        value: {},
+      },
+
+      {
+        type: "ObjectMetric",
+        id: "testOnly.crashStack",
+        value: {
+          status: "OK",
+          crash_info: {
+            typ: "main",
+            address: "0xf001ba11",
+            crashing_thread: 1,
+          },
+          main_module: 0,
+          modules: [{ base_addr: "0x00000000", end_addr: "0x00004000" }],
+        },
+      },
+      {
+        type: "ObjectMetric",
+        id: "testOnly.crashStack",
+        value: {
+          status: "OK",
+          modules: [{ base_addr: "0x00000000", end_addr: "0x00004000" }],
+        },
+      },
+      
+      {
+        type: "ObjectMetric",
+        id: "testOnly.crashStack",
+        value: { status: "OK", modules: [] },
+      },
+
+      {
+        type: "ObjectMetric",
+        id: "testOnly.crashStack",
+        value: { status: "OK" },
+      },
+    ];
+
     
-    {
-      type: "ObjectMetric",
-      id: "testOnly.crashStack",
-      value: { status: "OK", modules: [] },
-    },
+    
+    markers.forEach(m => {
+      if (m.value !== undefined) {
+        m.value = JSON.parse(m.value);
+      }
+    });
 
-    {
-      type: "ObjectMetric",
-      id: "testOnly.crashStack",
-      value: { status: "OK" },
-    },
-  ];
-
-  
-  
-  markers.forEach(m => {
-    if (m.value !== undefined) {
-      m.value = JSON.parse(m.value);
-    }
-  });
-
-  Assert.deepEqual(markers, expected_markers);
-});
+    Assert.deepEqual(markers, expected_markers);
+  }
+);
 
 add_task(
   
