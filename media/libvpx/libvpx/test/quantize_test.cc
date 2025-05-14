@@ -71,7 +71,7 @@ class QuantizeTestBase {
     
     macroblockd_dst_ = reinterpret_cast<MACROBLOCKD *>(
         vpx_memalign(32, sizeof(*macroblockd_dst_)));
-    memcpy(macroblockd_dst_, &vp8_comp_->mb.e_mbd, sizeof(*macroblockd_dst_));
+    *macroblockd_dst_ = vp8_comp_->mb.e_mbd;
     
     
     vp8_setup_block_dptrs(macroblockd_dst_);
@@ -80,7 +80,7 @@ class QuantizeTestBase {
   void UpdateQuantizer(int q) {
     vp8_set_quantizer(vp8_comp_, q);
 
-    memcpy(macroblockd_dst_, &vp8_comp_->mb.e_mbd, sizeof(*macroblockd_dst_));
+    *macroblockd_dst_ = vp8_comp_->mb.e_mbd;
     vp8_setup_block_dptrs(macroblockd_dst_);
   }
 
