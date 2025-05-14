@@ -3317,7 +3317,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       return true;
     }
     
-    bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh);
+    bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh) ||
+        (!nextIsVarSelector && f->HasColorGlyphFor(aCh, kVariationSelector16));
     
     if (hasColorGlyph == PrefersColor(presentation)) {
       *aMatchType = t;
@@ -3329,7 +3330,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     
     if (aNextCh == kVariationSelector16 &&
-        presentation == FontPresentation::TextDefault &&
+        GetEmojiPresentation(aCh) == EmojiPresentation::TextDefault &&
         f->HasCharacter(aNextCh) && f->GetFontEntry()->TryGetColorGlyphs()) {
       return true;
     }
