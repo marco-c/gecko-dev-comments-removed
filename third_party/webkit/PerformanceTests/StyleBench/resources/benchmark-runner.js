@@ -126,23 +126,23 @@ BenchmarkRunner.prototype._runTest = function(suite, test, prepareReturnValue, c
     var contentWindow = self._frame.contentWindow;
     var contentDocument = self._frame.contentDocument;
 
+    
+    window._unusedHeightValue = contentDocument.body.getBoundingClientRect().height;
     self._writeMark(suite.name + '.' + test.name + '-start');
+
     var startTime = now();
     test.run(prepareReturnValue, contentWindow, contentDocument);
+    
+    window._unusedHeightValue = contentDocument.body.getBoundingClientRect().height;
     var endTime = now();
+
     self._writeMark(suite.name + '.' + test.name + '-sync-end');
 
     var syncTime = endTime - startTime;
-
-    var startTime = now();
     setTimeout(function () {
-        
-        
-        var height = self._frame.contentDocument.body.getBoundingClientRect().height;
-        var endTime = now();
-        self._frame.contentWindow._unusedHeightValue = height; 
+        var asyncTime = 1;
         self._writeMark(suite.name + '.' + test.name + '-async-end');
-        callback(syncTime, endTime - startTime, height);
+        callback(syncTime, asyncTime);
     }, 0);
 }
 
