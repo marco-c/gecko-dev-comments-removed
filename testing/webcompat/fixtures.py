@@ -99,6 +99,9 @@ class FirefoxWebDriver(WebDriver):
         if "no_overlay_scrollbars" in test_config:
             prefs["widget.gtk.overlay-scrollbars.enabled"] = False
 
+        if "disable_moztransform" in test_config:
+            prefs["layout.css.prefixes.transforms"] = False
+
         
         prefs[SYSTEM_ADDON_UPDATES_PREF] = False
 
