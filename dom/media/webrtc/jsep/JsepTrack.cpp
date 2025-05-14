@@ -421,7 +421,11 @@ void JsepTrack::CreateEncodings(
           SdpAttribute::kRtcpRsizeAttribute)) {
     rtcpMode = webrtc::RtcpMode::kReducedSize;
   }
-  negotiatedDetails->mRtpRtcpConf = RtpRtcpConfig(rtcpMode);
+  
+  constexpr bool SESSION_FALLBACK = true;
+  bool extmapAllowMixed = remote.GetAttributeList().HasAttribute(
+      SdpAttribute::kExtmapAllowMixedAttribute, SESSION_FALLBACK);
+  negotiatedDetails->mRtpRtcpConf = RtpRtcpConfig(rtcpMode, extmapAllowMixed);
 
   
 
