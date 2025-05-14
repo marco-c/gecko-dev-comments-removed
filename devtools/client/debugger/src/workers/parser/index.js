@@ -11,16 +11,7 @@ export class ParserDispatcher extends WorkerDispatcher {
     super(jestUrl || WORKER_URL);
   }
 
-  findOutOfScopeLocations = this.task("findOutOfScopeLocations");
-  findBestMatchExpression = this.task("findBestMatchExpression");
-
   getScopes = this.task("getScopes");
-
-  getSymbols = this.task("getSymbols");
-  getFunctionSymbols = this.task("getFunctionSymbols");
-  getClassSymbols = this.task("getClassSymbols");
-  getClosestFunctionName = this.task("getClosestFunctionName");
-
   async setSource(sourceId, content) {
     const astSource = {
       id: sourceId,
@@ -33,23 +24,5 @@ export class ParserDispatcher extends WorkerDispatcher {
   }
 
   mapExpression = this.task("mapExpression");
-
   clearSources = this.task("clearSources");
-
-  
-
-
-
-
-
-
-
-  isLocationSupported(location) {
-    
-    
-    
-    
-    
-    return !location.source.isWasm;
-  }
 }

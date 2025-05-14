@@ -168,7 +168,6 @@ export function updateAllFrameDisplayNames(thread) {
 
 
 
-
 export function mapFrames(thread) {
   return async function (thunkArgs) {
     const { dispatch, getState } = thunkArgs;

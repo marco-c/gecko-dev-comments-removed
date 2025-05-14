@@ -71,7 +71,7 @@ export function generateInlinePreview(selectedFrame) {
 
 
 async function getPreviews(selectedFrame, scope, thunkArgs) {
-  const { client, parserWorker, getState } = thunkArgs;
+  const { client, getState } = thunkArgs;
 
   
   
@@ -80,84 +80,41 @@ async function getPreviews(selectedFrame, scope, thunkArgs) {
     return [];
   }
 
-  if (!parserWorker.isLocationSupported(selectedLocation)) {
+  const editor = getEditor();
+  if (editor.isWasm) {
     return [];
   }
 
   const allPreviews = [];
-  if (features.codemirrorNext) {
-    
-    let allBindings = {};
-    while (scope && scope.bindings) {
-      const bindings = getScopeBindings(scope);
-      allBindings = { ...allBindings, ...bindings };
-      if (scope.type === "function") {
-        break;
-      }
-      scope = scope.parent;
+  
+  let allBindings = {};
+  while (scope && scope.bindings) {
+    const bindings = getScopeBindings(scope);
+    allBindings = { ...allBindings, ...bindings };
+    if (scope.type === "function") {
+      break;
     }
-    const editor = getEditor(features.codemirrorNext);
-    const references = await editor.getBindingReferences(
-      selectedLocation,
-      Object.keys(allBindings)
-    );
-
-    validateSelectedFrame(getState(), selectedFrame);
-
-    for (const name in references) {
-      const previews = await generatePreviewsForBinding(
-        references[name],
-        selectedLocation.line,
-        name,
-        allBindings[name].value,
-        client,
-        selectedFrame.thread
-      );
-      allPreviews.push(...previews);
-    }
-  } else {
-    const originalAstScopes = await parserWorker.getScopes(selectedLocation);
-    if (!originalAstScopes) {
-      return [];
-    }
-
-    
-    validateSelectedFrame(getState(), selectedFrame);
-    let level = 0;
-    while (scope && scope.bindings) {
-      
-      const bindings = getScopeBindings(scope);
-
-      
-      const allPreviewBindingsComplete = Object.keys(bindings).map(
-        async name => {
-          
-          const previews = await generatePreviewsForBinding(
-            originalAstScopes[level]?.bindings[name],
-            selectedLocation.line,
-            name,
-            bindings[name].value,
-            client,
-            selectedFrame.thread
-          );
-
-          allPreviews.push(...previews);
-        }
-      );
-      await Promise.all(allPreviewBindingsComplete);
-
-      
-      validateSelectedFrame(getState(), selectedFrame);
-
-      
-      
-      if (scope.type === "function") {
-        break;
-      }
-      level++;
-      scope = scope.parent;
-    }
+    scope = scope.parent;
   }
+  const references = await editor.getBindingReferences(
+    selectedLocation,
+    Object.keys(allBindings)
+  );
+
+  validateSelectedFrame(getState(), selectedFrame);
+
+  for (const name in references) {
+    const previews = await generatePreviewsForBinding(
+      references[name],
+      selectedLocation.line,
+      name,
+      allBindings[name].value,
+      client,
+      selectedFrame.thread
+    );
+    allPreviews.push(...previews);
+  }
+
   return allPreviews;
 }
 

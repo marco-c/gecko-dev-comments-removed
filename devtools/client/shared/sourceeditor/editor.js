@@ -1877,108 +1877,6 @@ class Editor extends EventEmitter {
 
 
 
-
-
-
-  #tokenAtCoords(cm, { line, column }) {
-    if (this.config.cm6) {
-      const {
-        codemirrorLanguage: { syntaxTree },
-      } = this.#CodeMirror6;
-
-      const token = lezerUtils.getTreeNodeAtLocation(
-        cm.state.doc,
-        syntaxTree(cm.state),
-        { line, column }
-      );
-      if (!token) {
-        return null;
-      }
-
-      return {
-        startColumn: column,
-        endColumn: token.to - token.from,
-        type: token.type?.name,
-      };
-    }
-    if (line < 0 || line >= cm.lineCount()) {
-      return null;
-    }
-
-    const token = cm.getTokenAt({ line: line - 1, ch: column });
-    if (!token) {
-      return null;
-    }
-
-    return { startColumn: token.start, endColumn: token.end, type: token.type };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getExpressionFromCoords(coord) {
-    const cm = editors.get(this);
-    const token = this.#tokenAtCoords(cm, coord);
-    if (!token) {
-      return null;
-    }
-
-    let expressionStart = token.startColumn;
-    const expressionEnd = token.endColumn;
-    const lineNumber = coord.line;
-
-    const lineText = this.config.cm6
-      ? cm.state.doc.line(coord.line).text
-      : cm.doc.getLine(coord.line - 1);
-
-    while (
-      expressionStart > 1 &&
-      lineText.charAt(expressionStart - 1) === "."
-    ) {
-      const tokenBefore = this.#tokenAtCoords(cm, {
-        line: coord.line,
-        column: expressionStart - 2,
-      });
-
-      if (!tokenBefore?.type) {
-        return null;
-      }
-
-      expressionStart = tokenBefore.startColumn;
-    }
-
-    const expression = lineText.substring(expressionStart, expressionEnd) || "";
-
-    if (!expression) {
-      return null;
-    }
-
-    const location = {
-      start: { line: lineNumber, column: expressionStart },
-      end: { line: lineNumber, column: expressionEnd },
-    };
-    return { expression, location };
-  }
-
-  
-
-
-
-
-
-
-
   getPositionAtScreenCoords(left, top) {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -1995,9 +1893,9 @@ class Editor extends EventEmitter {
     }
     const { line, ch } = cm.coordsChar(
       { left, top },
-      // Use the "window" context where the coordinates are relative to the top-left corner
-      // of the currently visible (scrolled) window.
-      // This enables codemirror also correctly handle wrappped lines in the editor.
+      
+      
+      
       "window"
     );
     return {
@@ -2027,17 +1925,17 @@ class Editor extends EventEmitter {
     return editors.has(this);
   }
 
-  /**
-   * Returns the currently active highlighting mode.
-   * See Editor.modes for the list of all suppoert modes.
-   */
+  
+
+
+
   getMode() {
     return this.getOption("mode");
   }
 
-  /**
-   * Loads a script into editor's containing window.
-   */
+  
+
+
   loadScript(url) {
     if (!this.container) {
       throw new Error("Can't load a script until the editor is loaded.");
@@ -2057,18 +1955,18 @@ class Editor extends EventEmitter {
     return new this.Doc(text, mode);
   }
 
-  /**
-   * Replaces the current document with a new source document
-   */
+  
+
+
   replaceDocument(doc) {
     const cm = editors.get(this);
     cm.swapDoc(doc);
   }
 
-  /**
-   * Changes the value of a currently used highlighting mode.
-   * See Editor.modes for the list of all supported modes.
-   */
+  
+
+
+
   setMode(value) {
     this.setOption("mode", value);
 
@@ -2091,10 +1989,10 @@ class Editor extends EventEmitter {
     insertCommandsController(this);
   }
 
-  /**
-   * Returns text from the text area. If line argument is provided
-   * the method returns only that line.
-   */
+  
+
+
+
   getText(line) {
     const cm = editors.get(this);
 
@@ -2113,7 +2011,7 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     if (this.config.cm6) {
       if (!this.#currentDocument) {
-        
+        // A key for caching the WASM content in the WeakMap
         this.#currentDocument = { id: this.#currentDocumentId };
       }
       return this.#currentDocument;
@@ -2148,19 +2046,19 @@ class Editor extends EventEmitter {
     return wasm.renderWasmText(this.getDoc(), content);
   }
 
-
-
-
-
-
-
+  /**
+   * Gets details about the line
+   *
+   * @param {Number} line
+   * @returns {Object} line info object
+   */
   lineInfo(line) {
     const cm = editors.get(this);
     if (this.config.cm6) {
       const el = this.getElementAtLine(line);
       return {
         text: el.innerText,
-        
+        // TODO: Expose those, or see usage for those and do things differently
         line: null,
         gutterMarkers: null,
         textClass: null,
@@ -2173,12 +2071,12 @@ class Editor extends EventEmitter {
     return cm.lineInfo(line);
   }
 
-  
-
-
-
-
-
+  /**
+   * Get the functions symbols for the current source loaded in the
+   * the editor.
+   *
+   * @param {Number} maxResults - The maximum no of results to display
+   */
   async getFunctionSymbols(maxResults) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2193,7 +2091,7 @@ class Editor extends EventEmitter {
         }
         const syntaxNode = node.node;
         const name = lezerUtils.getFunctionName(cm.state.doc, syntaxNode);
-        
+        // Ignore anonymous functions
         if (name == null) {
           return;
         }
@@ -2220,11 +2118,11 @@ class Editor extends EventEmitter {
     return functionSymbols;
   }
 
-  
-
-
-
-
+  /**
+   * Get the class symbols for the current source loaded in the the editor.
+   *
+   * @returns
+   */
   async getClassSymbols() {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2251,14 +2149,14 @@ class Editor extends EventEmitter {
     return classSymbols;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Finds the best function name for the location specified.
+   * This is used to map original function names to their corresponding
+   * generated functions.
+   *
+   * @param {Object} location
+   * @returns
+   */
   async getClosestFunctionName(location) {
     const cm = editors.get(this);
     const {
@@ -2267,21 +2165,21 @@ class Editor extends EventEmitter {
     } = this.#CodeMirror6;
 
     let doc, tree;
-    
-    
-    
+    // If the specified source is already loaded in the editor,
+    // codemirror has likely parsed most or all the source needed,
+    // just leverage that
     const sourceId = location.source.id;
     if (this.#currentDocumentId === sourceId) {
       doc = cm.state.doc;
-      
+      // Parse the rest of the if needed.
       await forceParsing(cm, doc.length, 10000);
 
       tree = syntaxTree(cm.state);
     } else {
-      
-      
-      
-      
+      // If the source is not currently loaded in the editor we will need
+      // to explicitly parse its source text.
+      // Note: The `loadSourceText` actions is called before this util `getClosestFunctionName`
+      // to make sure source content is available to use.
       const sourceContent = this.#sources.get(location.source.id);
       if (!sourceContent) {
         console.error(
@@ -2304,14 +2202,14 @@ class Editor extends EventEmitter {
     return enclosingScope ? enclosingScope.funcName : "";
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Traverse the syntaxTree and return expressions
+   * which best match the specified token location is on our
+   * list of accepted symbol types.
+   *
+   * @param {Object} tokenLocation
+   * @returns {Array} Member expression matches
+   */
   async findBestMatchExpressions(tokenLocation) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2327,7 +2225,7 @@ class Editor extends EventEmitter {
         if (node.from <= tokPos && node.to >= tokPos) {
           expressions.push({
             type: node.name,
-            
+            // Computed member expressions not currently supported
             computed: false,
             expression: cm.state.doc.sliceString(node.from, node.to),
             location: {
@@ -2351,15 +2249,15 @@ class Editor extends EventEmitter {
     // Hovered Token: `myProperty`
     // Found Expressions:
     // { name: "MemberExpression", expression: "this.myProperty.x", from: 1715, to: 1732 }
-
-
+    // { name: "MemberExpression", expression: "this.myProperty" from: 1715, to: 1730 } *
+    // { name: "PropertyName", expression: "myProperty" from: 1720, to: 1730 }
     //
     // ========================== EXAMPLE 2 ==================================
     // Full Expression: `a(b).catch`
     // Hovered Token: `b`
     // Found Expressions:
     // { name: "MemberExpression", expression: "a(b).catch", from: 1921  to: 1931 }
-
+    // { name: "VariableName", expression: "b", from: 1923  to: 1924 } *
     //
     // We sort based on the `to` make sure we return the correct property
     return expressions.sort((a, b) => {
@@ -2372,12 +2270,12 @@ class Editor extends EventEmitter {
     });
   }
 
-  
-
-
-
-
-
+  /**
+   * Get all the lines which are inscope when paused a the specified location.
+   *
+   * @param {Object} location
+   * @param {Array} in scope lines
+   */
   async getInScopeLines(location) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2420,11 +2318,11 @@ class Editor extends EventEmitter {
       scopeUtils.removeOverlapLocations(outerLocations)
     );
 
-    
-    
-    
-    
-    
+    // This operation can be very costly for large files so we sacrifice a bit of readability
+    // for performance sake.
+    // We initialize an array with a fixed size and we'll directly assign value for lines
+    // that are not out of scope. This is much faster than having an empty array and pushing
+    // into it.
     const sourceNumLines = cm.state.doc.lines;
     const sourceLines = new Array(sourceNumLines);
     for (let i = 0; i < sourceNumLines; i++) {
@@ -2434,20 +2332,20 @@ class Editor extends EventEmitter {
       }
     }
 
-    
-    
+    // Finally we need to remove any undefined values, i.e. the ones that were matching
+    // out of scope lines.
     return sourceLines.filter(i => i != undefined);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Gets the location and meta details of all the references
+   * (within the scope of the immediate enclosing function of the specified location)
+   * which are related to the bindings specified.
+   *
+   * @param {Object} location
+   * @param {Array<String>} bindings -  list of binding names
+   * @returns {Function}
+   **/
   async getBindingReferences(location, bindings) {
     const cm = editors.get(this);
     const {
@@ -2487,8 +2385,8 @@ class Editor extends EventEmitter {
           end: lezerUtils.positionToLocation(cm.state.doc, node.to),
         };
         const syntaxNode = node.node;
-        
-        
+        // Previews for member expressions are built of the meta property which is
+        // reference of the child property and so on. e.g a.b.c
         if (syntaxNode.parent.name == lezerUtils.nodeTypes.MemberExpression) {
           ref.meta = lezerUtils.getMetaBindings(
             cm.state.doc,
@@ -2506,14 +2404,14 @@ class Editor extends EventEmitter {
     return bindingReferences;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Replaces whatever is in the text area with the contents of
+   * the 'value' argument.
+   *
+   * @param {String} value: The text to replace the editor content
+   * @param {String} documentId: Optional unique id represeting the specific document which is source of the text.
+   *                 Will be null for loading and error messages.
+   */
   async setText(value, documentId) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
@@ -2628,11 +2526,11 @@ class Editor extends EventEmitter {
     return this.#sources.size;
   }
 
-  /**
-   * Reloads the state of the editor based on all current preferences.
-   * This is called automatically when any of the relevant preferences
-   * change.
-   */
+  
+
+
+
+
   reloadPreferences() {
     
     const useAutoClose = Services.prefs.getBoolPref(AUTO_CLOSE);
@@ -2647,7 +2545,7 @@ class Editor extends EventEmitter {
     this.setupAutoCompletion();
   }
 
-
+  
 
 
 
@@ -2659,7 +2557,7 @@ class Editor extends EventEmitter {
 
     const keyMap = Services.prefs.getCharPref(KEYMAP_PREF);
 
-    // If alternative keymap is provided, use it.
+    
     if (VALID_KEYMAPS.has(keyMap)) {
       if (!this.#loadedKeyMaps.has(keyMap)) {
         Services.scriptloader.loadSubScript(VALID_KEYMAPS.get(keyMap), win);
@@ -2760,9 +2658,9 @@ class Editor extends EventEmitter {
     cm.replaceRange(value, at, at);
   }
 
-  /**
-   * Deselects contents of the text area.
-   */
+  
+
+
   dropSelection() {
     if (!this.somethingSelected()) {
       return;
@@ -2779,17 +2677,17 @@ class Editor extends EventEmitter {
     return cm.listSelections().length > 1;
   }
 
-  /**
-   * Gets the first visible line number in the editor.
-   */
+  
+
+
   getFirstVisibleLine() {
     const cm = editors.get(this);
     return cm.lineAtHeight(0, "local");
   }
 
-  /**
-   * Scrolls the view such that the given line number is the first visible line.
-   */
+  
+
+
   setFirstVisibleLine(line) {
     const cm = editors.get(this);
     const { top } = cm.charCoords({ line, ch: 0 }, "local");
@@ -2808,11 +2706,11 @@ class Editor extends EventEmitter {
     this.emit("cursorActivity");
   }
 
-  /**
-   * Aligns the provided line to either "top", "center" or "bottom" of the
-   * editor view with a maximum margin of MAX_VERTICAL_OFFSET lines from top or
-   * bottom.
-   */
+  
+
+
+
+
   alignLine(line, align) {
     const cm = editors.get(this);
     const from = cm.lineAtHeight(0, "page");
@@ -2825,9 +2723,9 @@ class Editor extends EventEmitter {
       return;
     }
 
-    // Setting the offset so that the line always falls in the upper half
-    // of visible lines (lower half for bottom aligned).
-    // MAX_VERTICAL_OFFSET is the maximum allowed value.
+    
+    
+    
     const offset = Math.min(halfVisible, MAX_VERTICAL_OFFSET);
 
     let topLine =
@@ -2837,7 +2735,7 @@ class Editor extends EventEmitter {
         top: Math.max(line - offset, 0),
       }[align || "top"] || offset;
 
-    // Bringing down the topLine to total lines in the editor if exceeding.
+    
     topLine = Math.min(topLine, this.lineCount());
     this.setFirstVisibleLine(topLine);
   }
@@ -2911,10 +2809,10 @@ class Editor extends EventEmitter {
     cm.setGutterMarker(info.line, gutterName, marker);
   }
 
-  /**
-   * The reverse of addContentMarker. Removes any line's markers in the
-   * specified gutter.
-   */
+  
+
+
+
   removeContentMarker(line, gutterName) {
     const cm = editors.get(this);
     const info = this.lineInfo(line);
@@ -2947,15 +2845,15 @@ class Editor extends EventEmitter {
     cm.clearGutter(gutterName);
   }
 
-  /**
-   * Handles attaching a set of events listeners on a marker. They should
-   * be passed as an object literal with keys as event names and values as
-   * function listeners. The line number, marker node and optional data
-   * will be passed as arguments to the function listener.
-   *
-   * You don't need to worry about removing these event listeners.
-   * They're automatically orphaned when clearing markers.
-   */
+  
+
+
+
+
+
+
+
+
   setMarkerListeners(line, gutterName, markerClass, eventsArg, data) {
     if (!this.hasMarker(line, gutterName, markerClass)) {
       return;
@@ -2994,16 +2892,16 @@ class Editor extends EventEmitter {
     cm.addLineClass(line, "wrap", className);
   }
 
-  /**
-   * The reverse of addLineClass.
-   */
+  
+
+
   removeLineClass(lineOrOffset, className) {
     const cm = editors.get(this);
     const line = this.toLineIfWasmOffset(lineOrOffset);
     cm.removeLineClass(line, "wrap", className);
   }
 
-
+  
 
 
 
@@ -3036,18 +2934,18 @@ class Editor extends EventEmitter {
     return args.length === 1 ? res[0] : res;
   }
 
-  /**
-   * The reverse of getPosition. Similarly to getPosition this
-   * method returns a single value if only one argument was given
-   * and an array otherwise.
-   */
+  
+
+
+
+
   getOffset(...args) {
     const cm = editors.get(this);
     const res = args.map(pos => cm.indexFromPos(pos));
     return args.length > 1 ? res : res[0];
   }
 
-
+  
 
 
 
@@ -3056,26 +2954,26 @@ class Editor extends EventEmitter {
     return cm.coordsChar({ left, top });
   }
 
-  /**
-   * Returns true if there's something to undo and false otherwise.
-   */
+  
+
+
   canUndo() {
     const cm = editors.get(this);
     return cm.historySize().undo > 0;
   }
 
-  /**
-   * Returns true if there's something to redo and false otherwise.
-   */
+  
+
+
   canRedo() {
     const cm = editors.get(this);
     return cm.historySize().redo > 0;
   }
 
-  /**
-   * Marks the contents as clean and returns the current
-   * version number.
-   */
+  
+
+
+
   setClean() {
     const cm = editors.get(this);
     this.version = cm.changeGeneration();
@@ -3084,19 +2982,19 @@ class Editor extends EventEmitter {
     return this.version;
   }
 
-  /**
-   * Returns true if contents of the text area are
-   * clean i.e. no changes were made since the last version.
-   */
+  
+
+
+
   isClean() {
     const cm = editors.get(this);
     return cm.isClean(this.version);
   }
 
-  /**
-   * This method opens an in-editor dialog asking for a line to
-   * jump to. Once given, it changes cursor to that line.
-   */
+  
+
+
+
   jumpToLine() {
     const doc = editors.get(this).getWrapperElement().ownerDocument;
     const div = doc.createElement("div");
@@ -3120,9 +3018,9 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * Moves the content of the current line or the lines selected up a line.
-   */
+  
+
+
   moveLineUp() {
     const cm = editors.get(this);
     const start = cm.getCursor("start");
@@ -3159,9 +3057,9 @@ class Editor extends EventEmitter {
     );
   }
 
-  /**
-   * Moves the content of the current line or the lines selected down a line.
-   */
+  
+
+
   moveLineDown() {
     const cm = editors.get(this);
     const start = cm.getCursor("start");
@@ -3183,8 +3081,8 @@ class Editor extends EventEmitter {
       value += cm.getLine(start.line);
     }
 
-    // Replace the currently selected lines and the next line with the new
-    // value and maintain the selection of the text.
+    
+    
     cm.replaceRange(
       value,
       { line: start.line, ch: 0 },
@@ -3219,8 +3117,8 @@ class Editor extends EventEmitter {
       node.select();
     }
 
-    // need to call it since we prevent the propagation of the event and
-    // cancel codemirror's key handling
+    
+    
     cm.execCommand("findPersistent");
   }
 
@@ -3247,8 +3145,8 @@ class Editor extends EventEmitter {
       };
     }
 
-    // need to call it since we prevent the propagation of the event and
-    // cancel codemirror's key handling
+    
+    
     if (isFindPrev) {
       cm.execCommand("findPrev");
     } else {
@@ -3267,9 +3165,9 @@ class Editor extends EventEmitter {
     return parseInt(win.getComputedStyle(el).getPropertyValue("font-size"), 10);
   }
 
-  /**
-   * Sets font size for the editor area.
-   */
+  
+
+
   setFontSize(size) {
     const cm = editors.get(this);
     cm.getWrapperElement().style.fontSize = parseInt(size, 10) + "px";
@@ -3350,8 +3248,8 @@ class Editor extends EventEmitter {
       
       return;
     }
-    // The autocomplete module will overwrite this.initializeAutoCompletion
-    // with a mode specific autocompletion handler.
+    
+    
     if (!this.initializeAutoCompletion) {
       this.extend(
         require("resource://devtools/client/shared/sourceeditor/autocomplete.js")
@@ -3400,32 +3298,32 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * Gets the element at the specified codemirror offset
-   * @param {Number} offset
-   * @return {Element|null}
-   */
+  
+
+
+
+
   #getElementAtOffset(offset) {
     const cm = editors.get(this);
     const el = cm.domAtPos(offset).node;
     if (!el) {
       return null;
     }
-    // Text nodes do not have offset* properties, so lets use its
-    // parent element;
+    
+    
     if (el.nodeType == nodeConstants.TEXT_NODE) {
       return el.parentElement;
     }
     return el;
   }
 
-  /**
-   * This checks if the specified position (line/column) is within the current viewport
-   * bounds. it helps determine if scrolling should happen.
-   * @param {Number} line - The line in the source
-   * @param {Number} column - The column in the source
-   * @returns {Boolean}
-   */
+  
+
+
+
+
+
+
   isPositionVisible(line, column) {
     const cm = editors.get(this);
     let inXView, inYView;
@@ -3439,13 +3337,13 @@ class Editor extends EventEmitter {
       if (pos == null) {
         return false;
       }
-      // `coordsAtPos` returns the absolute position of the line/column location
-      // so that we have to ensure comparing with same absolute position for
-      // CodeMirror DOM Element.
-      //
-      // Note that it may return the coordinates for a column breakpoint marker
-      // so it may still report as visible, if the marker is on the edge of the viewport
-      // and the displayed character at line/column is actually hidden after the scrollable area.
+      
+      
+      
+      
+      
+      
+      
       const coords = cm.coordsAtPos(pos);
       if (!coords) {
         return false;
@@ -3465,8 +3363,8 @@ class Editor extends EventEmitter {
       inXView = withinBounds(
         left,
         scrollLeft,
-        // Note: 30 might relate to the margin on one of the scroll bar elements.
-        // See comment https://github.com/firefox-devtools/debugger/pull/5182#discussion_r163439209
+        
+        
         scrollLeft + (scrollArea.clientWidth - 30) - charWidth
       );
       inYView = withinBounds(
@@ -3478,30 +3376,30 @@ class Editor extends EventEmitter {
     return inXView && inYView;
   }
 
-  /**
-   * Converts  line/col to CM6 offset position
-   * @param {Number} line - The line in the source
-   * @param {Number} col - The column in the source
-   * @returns {Number}
-   */
+  
+
+
+
+
+
   #positionToOffset(line, col = 0) {
     const cm = editors.get(this);
     try {
       const offset = cm.state.doc.line(line);
       return offset.from + col;
     } catch (e) {
-      // Line likey does not exist in viewport yet
+      
       console.warn(e.message);
     }
     return null;
   }
 
-  /**
-   * This returns the line and column for the specified search cursor's position
-   *
-   * @param {RegExpSearchCursor} searchCursor
-   * @returns {Object}
-   */
+  
+
+
+
+
+
   getPositionFromSearchCursor(searchCursor) {
     const cm = editors.get(this);
     const lineFrom = cm.state.doc.lineAt(searchCursor.from);
@@ -3511,11 +3409,11 @@ class Editor extends EventEmitter {
     };
   }
 
-  /**
-   * Scrolls the editor to the specified codemirror position
-   *
-   * @param {Number} position
-   */
+  
+
+
+
+
   scrollToPosition(position) {
     const cm = editors.get(this);
     if (!this.config.cm6) {
@@ -3532,13 +3430,13 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * Scrolls the editor to the specified line and column
-   * @param {Number} line - The line in the source
-   * @param {Number} column - The column in the source
-   * @param {String|null} yAlign - Optional value for position of the line after the line is scrolled.
-   *                               (Used by `scrollEditorIntoView` test helper)
-   */
+  
+
+
+
+
+
+
   async scrollTo(line, column, yAlign) {
     if (this.isDestroyed()) {
       return null;
@@ -3659,7 +3557,7 @@ class Editor extends EventEmitter {
     return el.closest(".cm-line");
   }
 
-  // Used only in tests
+  
   getSearchQuery() {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -3683,7 +3581,7 @@ class Editor extends EventEmitter {
         cm.state.doc,
         cursor.to
       );
-      // The lines in CM6 are 1 based while CM5 is  0 based
+      
       return {
         text: cursor.match[0],
         line: cursorPosition.line - 1,
@@ -3705,7 +3603,7 @@ class Editor extends EventEmitter {
     return el;
   }
 
-  // Used only in tests
+  
   getLineCount() {
     const cm = editors.get(this);
     if (this.config.cm6) {

@@ -225,7 +225,6 @@ function waitForSelectedLocation(dbg, line, column) {
 function waitForSelectedSource(dbg, sourceOrUrl) {
   const {
     getSelectedSourceTextContent,
-    getSymbols,
     getBreakableLines,
     getSourceActorsForSource,
     getSourceActorBreakableLines,
@@ -254,20 +253,6 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         } else if (location.source.id != sourceOrUrl.id) {
           return false;
         }
-      }
-
-      const selectedFrame = getSelectedFrame(getCurrentThread());
-      
-      const hasSymbols = !isCm6Enabled ? getSymbols(location) : true;
-      
-      if (
-        
-        selectedFrame?.location.source.id == location.source.id &&
-        !hasSymbols &&
-        
-        !isWasmBinarySource(location.source)
-      ) {
-        return false;
       }
 
       
@@ -628,8 +613,6 @@ async function waitForPaused(
     await waitForLoadedScopes(dbg);
   }
 
-  
-  
   await waitForSelectedSource(dbg, url);
 
   if (options.shouldWaitForInlinePreviews) {

@@ -86,19 +86,6 @@ add_task(async function () {
   );
   let state = dbg.store.getState();
 
-  
-  if (!isCm6Enabled || location.source.isOriginal) {
-    
-    
-    ok(
-      !!Object.keys(state.ast.mutableOriginalSourcesSymbols).length,
-      "Some symbols for original sources exists"
-    );
-    ok(
-      !!Object.keys(state.ast.mutableSourceActorSymbols).length,
-      "Some symbols for generated sources exists"
-    );
-  }
   ok(!!Object.keys(state.ast.mutableInScopeLines).length, "Some scopes exists");
   Assert.greater(
     state.sourceActors.mutableSourceActors.size,
@@ -166,16 +153,6 @@ add_task(async function () {
   
   
   state = dbg.store.getState();
-  is(
-    Object.keys(state.ast.mutableOriginalSourcesSymbols).length,
-    0,
-    "No symbols for original sources exists"
-  );
-  is(
-    Object.keys(state.ast.mutableSourceActorSymbols).length,
-    0,
-    "No symbols for generated sources exists"
-  );
   is(Object.keys(state.ast.mutableInScopeLines).length, 0, "No scopes exists");
   is(state.sourceActors.mutableSourceActors.size, 0, "No source actor exists");
   is(

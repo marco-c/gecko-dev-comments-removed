@@ -199,11 +199,7 @@ class Editor extends PureComponent {
     
     
     
-    if (
-      nextProps.isPaused &&
-      features.codemirrorNext &&
-      !nextProps.isOriginalSourceAndMapScopesEnabled
-    ) {
+    if (nextProps.isPaused && !nextProps.isOriginalSourceAndMapScopesEnabled) {
       this.props.setInScopeLines(editor);
     }
   }

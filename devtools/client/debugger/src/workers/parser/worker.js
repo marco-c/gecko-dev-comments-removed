@@ -2,18 +2,9 @@
 
 
 
-import {
-  getSymbols,
-  getFunctionSymbols,
-  getClassSymbols,
-  getClosestFunctionName,
-  clearSymbols,
-} from "./getSymbols";
 import { clearASTs } from "./utils/ast";
 import getScopes, { clearScopes } from "./getScopes";
 import { setSource, clearSources } from "./sources";
-import findOutOfScopeLocations from "./findOutOfScopeLocations";
-import findBestMatchExpression from "./findBestMatchExpression";
 import mapExpression from "./mapExpression";
 
 import { workerHandler } from "../../../../shared/worker-utils";
@@ -22,16 +13,9 @@ function clearAllHelpersForSources(sourceIds) {
   clearASTs(sourceIds);
   clearScopes(sourceIds);
   clearSources(sourceIds);
-  clearSymbols(sourceIds);
 }
 
 self.onmessage = workerHandler({
-  findOutOfScopeLocations,
-  findBestMatchExpression,
-  getSymbols,
-  getFunctionSymbols,
-  getClassSymbols,
-  getClosestFunctionName,
   getScopes,
   clearSources: clearAllHelpersForSources,
   mapExpression,

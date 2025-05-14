@@ -113,8 +113,6 @@ add_task(async function () {
 
   const binaryLine = wasmOffsetToLine(dbg, binarySource.id, virtualBinaryLine);
 
-  
-  
   await dbg.actions.selectLocation(createLocation({ source: binarySource }), {
     keepContext: false,
   });

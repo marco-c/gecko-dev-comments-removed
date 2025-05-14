@@ -298,27 +298,6 @@ export function getFileURL(source, truncate = true) {
   return resolveFileURL(url, getUnicodeUrl, truncate);
 }
 
-
-
-
-
-export function getSourceLineCount(content) {
-  if (content.type === "wasm") {
-    const { binary } = content.value;
-    return binary.length;
-  }
-
-  let count = 0;
-
-  for (let i = 0; i < content.value.length; ++i) {
-    if (content.value[i] === "\n") {
-      ++count;
-    }
-  }
-
-  return count + 1;
-}
-
 function getNthLine(str, lineNum) {
   let startIndex = -1;
 

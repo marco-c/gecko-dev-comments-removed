@@ -8,58 +8,8 @@ import {
   getVisibleSelectedFrame,
 } from "../../selectors/index";
 
-import { getSourceLineCount } from "../../utils/source";
-import { features } from "../../utils/prefs";
-
 import { isFulfilled } from "../../utils/async-value";
 
-function getOutOfScopeLines(outOfScopeLocations) {
-  if (!outOfScopeLocations) {
-    return null;
-  }
-
-  const uniqueLines = new Set();
-  for (const location of outOfScopeLocations) {
-    for (let i = location.start.line; i < location.end.line; i++) {
-      uniqueLines.add(i);
-    }
-  }
-
-  return uniqueLines;
-}
-
-async function getInScopeLines(location, sourceTextContent, { parserWorker }) {
-  let locations = null;
-  if (location.line && parserWorker.isLocationSupported(location)) {
-    locations = await parserWorker.findOutOfScopeLocations(location);
-  }
-
-  const linesOutOfScope = getOutOfScopeLines(locations);
-  const sourceNumLines =
-    !sourceTextContent || !isFulfilled(sourceTextContent)
-      ? 0
-      : getSourceLineCount(sourceTextContent.value);
-
-  const noLinesOutOfScope =
-    linesOutOfScope == null || linesOutOfScope.size == 0;
-
-  
-  
-  
-  
-  
-  const sourceLines = new Array(sourceNumLines);
-  for (let i = 0; i < sourceNumLines; i++) {
-    const line = i + 1;
-    if (noLinesOutOfScope || !linesOutOfScope.has(line)) {
-      sourceLines[i] = line;
-    }
-  }
-
-  
-  
-  return sourceLines.filter(i => i != undefined);
-}
 
 
 
@@ -90,10 +40,7 @@ export function setInScopeLines(editor) {
       return;
     }
 
-    const lines =
-      features.codemirrorNext && editor
-        ? await editor.getInScopeLines(location)
-        : await getInScopeLines(location, sourceTextContent, thunkArgs);
+    const lines = await editor.getInScopeLines(location);
 
     dispatch({
       type: "IN_SCOPE_LINES",

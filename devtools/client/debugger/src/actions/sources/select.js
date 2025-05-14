@@ -6,15 +6,12 @@
 
 
 
-
-import { setSymbols } from "../sources/symbols";
-import { setInScopeLines } from "../ast/index";
 import { prettyPrintSource, prettyPrintAndSelectSource } from "./prettyPrint";
 import { addTab, closeTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
 
-import { prefs, features } from "../../utils/prefs";
+import { prefs } from "../../utils/prefs";
 import { isMinified } from "../../utils/source";
 import { createLocation } from "../../utils/location";
 import {
@@ -36,8 +33,6 @@ import {
   hasSourceActor,
   hasPrettyTab,
   isSourceActorWithSourceMap,
-  getSelectedFrame,
-  getCurrentThread,
 } from "../../selectors/index";
 
 
@@ -325,31 +320,6 @@ export function selectLocation(
     ) {
       await dispatch(prettyPrintAndSelectSource(loadedSource));
       dispatch(closeTab(loadedSource));
-    }
-
-    const selectedFrame = getSelectedFrame(
-      getState(),
-      getCurrentThread(getState())
-    );
-    if (
-      selectedFrame &&
-      (selectedFrame.location.source.id == location.source.id ||
-        selectedFrame.generatedLocation.source.id == location.source.id) &&
-      
-      !features.codemirrorNext
-    ) {
-      
-      
-      
-      await dispatch(setSymbols(location));
-
-      
-      if (getSelectedLocation(getState()) != location) {
-        return;
-      }
-
-      
-      dispatch(setInScopeLines());
     }
 
     
