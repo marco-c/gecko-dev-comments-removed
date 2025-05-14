@@ -7628,8 +7628,18 @@ LogicalSize nsGridContainerFrame::GridReflowInput::PercentageBasisFor(
   }
 
   if (aAxis == LogicalAxis::Inline || !mCols.mCanResolveLineRangeSize) {
+    if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() &&
+        aAxis == LogicalAxis::Inline && mRows.mCanResolveLineRangeSize) {
+      
+      
+      const nscoord colSize = NS_UNCONSTRAINEDSIZE;
+      const nscoord rowSize = aGridItem.mArea.mRows.ToLength(mRows.mSizes);
+      return !wm.IsOrthogonalTo(mWM) ? LogicalSize(wm, colSize, rowSize)
+                                     : LogicalSize(wm, rowSize, colSize);
+    }
     return LogicalSize(wm, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   }
+  
   
   
   MOZ_ASSERT(!mRows.mCanResolveLineRangeSize);
@@ -10006,6 +10016,34 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
 
   gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
                                     NS_UNCONSTRAINEDSIZE, constraint);
+
+  if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
+    const nscoord contentBoxBSize =
+        aInput.mPercentageBasisForChildren
+            ? aInput.mPercentageBasisForChildren->BSize(gridRI.mWM)
+            : NS_UNCONSTRAINEDSIZE;
+
+    
+    
+    
+    
+    
+    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid, contentBoxBSize,
+                                      SizingConstraint::NoConstraint);
+
+    
+    for (auto& item : gridRI.mGridItems) {
+      item.ResetTrackSizingBits(LogicalAxis::Inline);
+    }
+    gridRI.mCols.mCanResolveLineRangeSize = false;
+
+    
+    
+    
+    
+    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
+                                      NS_UNCONSTRAINEDSIZE, constraint);
+  }
 
   if (MOZ_LIKELY(!IsSubgrid())) {
     return gridRI.mCols.SumOfGridTracksAndGaps();
