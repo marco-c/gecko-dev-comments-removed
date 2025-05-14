@@ -90,16 +90,12 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
 
     auto code = keyEvent->mKeyCode;
 
-    auto entry = mPendingKeyDowns.MaybeGet(code);
-    if (entry) {
-      if (code != 229) {
-        uint64_t interactionId = IncreaseInteractionValueAndCount();
-        (*entry)->SetInteractionId(interactionId);
-      }
-    }
-
+    
+    
+    
     mPendingKeyDowns.InsertOrUpdate(code, aEventTiming);
-    return Nothing();
+    uint64_t interactionId = IncreaseInteractionValueAndCount();
+    return Some(interactionId);
   }
 
   
@@ -120,12 +116,7 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
       return Some(0);
     }
 
-    
-    
-    uint64_t interactionId = IncreaseInteractionValueAndCount();
-
-    
-    (*entry)->SetInteractionId(interactionId);
+    uint64_t interactionId = (*entry)->InteractionId();
 
     
     mPendingKeyDowns.Remove(code);
