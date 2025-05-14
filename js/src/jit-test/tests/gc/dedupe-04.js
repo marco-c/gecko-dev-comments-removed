@@ -17,6 +17,36 @@
 
 
 
+
+
+
+function no_dedupe() {
+    
+    
+    
+    
+    var Tobj = new WeakRef(Object.create(null));
+
+    
+    Tobj.name = newString("blah", { tenured: false });
+    var NB4 = newString("diddle doodle dawdle dink. piddle poodle paddle pink. widdle woodle wattle wink.", { tenured: false });
+    var TD3 = newDependentString(NB4, 0, 70, { tenured: true });
+    var ND2 = newDependentString(TD3, 0, 60, { tenured: false, 'suppress-contraction': true });
+    Tobj.name = ND2; 
+    NB4 = TD3 = null;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    minorgc();
+    return ND2;
+}
+
 function with_dependent() {
     
     var base = "MY YOUNGEST MEMORY IS OF A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME IN THE LEAST. MY MOTHER WOULD HAVE BEEN HORRIFIED, BUT SHE WAS A GOOSE AND HAD ALREADY LAID THE EGG THAT CONTAINED ME SO SHE DID NOT ESPECIALLY CARE AND THOUGHT THAT IT WOULD BE GOOD TO BE TOUGHENED UP.";
@@ -132,5 +162,6 @@ function with_rope() {
     }
 }
 
+no_dedupe();
 with_dependent();
 with_rope();
