@@ -20332,13 +20332,13 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
     nsCOMPtr<nsIGlobalObject> global =
         do_QueryInterface(aGlobal.GetAsSupports());
     RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
-        global, aOptions.mSanitizer.Value(), true, aError);
+        global, aOptions.mSanitizer.Value(),  false, aError);
     if (aError.Failed()) {
       return nullptr;
     }
 
     
-    sanitizer->Sanitize(doc,  true, aError);
+    sanitizer->Sanitize(doc,  false, aError);
     if (aError.Failed()) {
       return nullptr;
     }
@@ -20375,7 +20375,7 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
   
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<Sanitizer> sanitizer =
-      Sanitizer::GetInstance(global, aOptions.mSanitizer, true, aError);
+      Sanitizer::GetInstance(global, aOptions.mSanitizer,  true, aError);
   if (aError.Failed()) {
     return nullptr;
   }
