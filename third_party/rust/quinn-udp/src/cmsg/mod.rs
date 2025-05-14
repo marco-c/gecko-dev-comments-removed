@@ -112,6 +112,17 @@ impl<'a, M: MsgHdr> Iterator for Iter<'a, M> {
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.cmsg.take()?;
         self.cmsg = unsafe { self.hdr.cmsg_nxt_hdr(current).as_ref() };
+
+        #[cfg(apple_fast)]
+        {
+            
+            
+            
+            if current.len() < mem::size_of::<M::ControlMessage>() {
+                return None;
+            }
+        }
+
         Some(current)
     }
 }

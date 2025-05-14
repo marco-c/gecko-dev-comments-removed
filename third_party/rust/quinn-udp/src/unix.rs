@@ -208,6 +208,9 @@ impl UdpSocketState {
         match send(self, socket.0, transmit) {
             Ok(()) => Ok(()),
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => Err(e),
+            
+            
+            Err(e) if e.raw_os_error() == Some(libc::EMSGSIZE) => Ok(()),
             Err(e) => {
                 log_sendmsg_error(&self.last_send_error, e, transmit);
 
@@ -328,57 +331,53 @@ fn send(
 
     loop {
         let n = unsafe { libc::sendmsg(io.as_raw_fd(), &msg_hdr, 0) };
-        if n == -1 {
-            let e = io::Error::last_os_error();
-            match e.kind() {
-                io::ErrorKind::Interrupted => {
+
+        if n >= 0 {
+            return Ok(());
+        }
+
+        let e = io::Error::last_os_error();
+        match e.kind() {
+            
+            io::ErrorKind::Interrupted => continue,
+            io::ErrorKind::WouldBlock => return Err(e),
+            _ => {
+                
+                
+                
+                #[cfg(any(target_os = "linux", target_os = "android"))]
+                if let Some(libc::EIO) | Some(libc::EINVAL) = e.raw_os_error() {
                     
+                    
+                    if state.max_gso_segments() > 1 {
+                        crate::log::info!(
+                            "`libc::sendmsg` failed with {e}; halting segmentation offload"
+                        );
+                        state
+                            .max_gso_segments
+                            .store(1, std::sync::atomic::Ordering::Relaxed);
+                    }
+                }
+
+                
+                
+                if e.raw_os_error() == Some(libc::EINVAL) && !state.sendmsg_einval() {
+                    state.set_sendmsg_einval();
+                    prepare_msg(
+                        transmit,
+                        &dst_addr,
+                        &mut msg_hdr,
+                        &mut iovec,
+                        &mut cmsgs,
+                        encode_src_ip,
+                        state.sendmsg_einval(),
+                    );
                     continue;
                 }
-                io::ErrorKind::WouldBlock => return Err(e),
-                _ => {
-                    
-                    
-                    
-                    #[cfg(any(target_os = "linux", target_os = "android"))]
-                    if let Some(libc::EIO) | Some(libc::EINVAL) = e.raw_os_error() {
-                        
-                        
-                        if state.max_gso_segments() > 1 {
-                            crate::log::info!(
-                                "`libc::sendmsg` failed with {e}; halting segmentation offload"
-                            );
-                            state
-                                .max_gso_segments
-                                .store(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                    }
 
-                    
-                    
-                    if e.raw_os_error() == Some(libc::EINVAL) && !state.sendmsg_einval() {
-                        state.set_sendmsg_einval();
-                        prepare_msg(
-                            transmit,
-                            &dst_addr,
-                            &mut msg_hdr,
-                            &mut iovec,
-                            &mut cmsgs,
-                            encode_src_ip,
-                            state.sendmsg_einval(),
-                        );
-                        continue;
-                    }
-
-                    
-                    
-                    if e.raw_os_error() != Some(libc::EMSGSIZE) {
-                        return Err(e);
-                    }
-                }
+                return Err(e);
             }
         }
-        return Ok(());
     }
 }
 
@@ -417,24 +416,17 @@ fn send(state: &UdpSocketState, io: SockRef<'_>, transmit: &Transmit<'_>) -> io:
     }
     loop {
         let n = unsafe { sendmsg_x(io.as_raw_fd(), hdrs.as_ptr(), cnt as u32, 0) };
-        if n == -1 {
-            let e = io::Error::last_os_error();
-            match e.kind() {
-                io::ErrorKind::Interrupted => {
-                    
-                    continue;
-                }
-                io::ErrorKind::WouldBlock => return Err(e),
-                _ => {
-                    
-                    
-                    if e.raw_os_error() != Some(libc::EMSGSIZE) {
-                        return Err(e);
-                    }
-                }
-            }
+
+        if n >= 0 {
+            return Ok(());
         }
-        return Ok(());
+
+        let e = io::Error::last_os_error();
+        match e.kind() {
+            
+            io::ErrorKind::Interrupted => continue,
+            _ => return Err(e),
+        }
     }
 }
 
@@ -455,24 +447,17 @@ fn send(state: &UdpSocketState, io: SockRef<'_>, transmit: &Transmit<'_>) -> io:
     );
     loop {
         let n = unsafe { libc::sendmsg(io.as_raw_fd(), &hdr, 0) };
-        if n == -1 {
-            let e = io::Error::last_os_error();
-            match e.kind() {
-                io::ErrorKind::Interrupted => {
-                    
-                    continue;
-                }
-                io::ErrorKind::WouldBlock => return Err(e),
-                _ => {
-                    
-                    
-                    if e.raw_os_error() != Some(libc::EMSGSIZE) {
-                        return Err(e);
-                    }
-                }
-            }
+
+        if n >= 0 {
+            return Ok(());
         }
-        return Ok(());
+
+        let e = io::Error::last_os_error();
+        match e.kind() {
+            
+            io::ErrorKind::Interrupted => continue,
+            _ => return Err(e),
+        }
     }
 }
 
@@ -500,14 +485,17 @@ fn recv(io: SockRef<'_>, bufs: &mut [IoSliceMut<'_>], meta: &mut [RecvMeta]) -> 
                 ptr::null_mut::<libc::timespec>(),
             )
         };
-        if n == -1 {
-            let e = io::Error::last_os_error();
-            if e.kind() == io::ErrorKind::Interrupted {
-                continue;
-            }
-            return Err(e);
+
+        if n >= 0 {
+            break n;
         }
-        break n;
+
+        let e = io::Error::last_os_error();
+        match e.kind() {
+            
+            io::ErrorKind::Interrupted => continue,
+            _ => return Err(e),
+        }
     };
     for i in 0..(msg_count as usize) {
         meta[i] = decode_recv(&names[i], &hdrs[i].msg_hdr, hdrs[i].msg_len as usize);
@@ -518,7 +506,13 @@ fn recv(io: SockRef<'_>, bufs: &mut [IoSliceMut<'_>], meta: &mut [RecvMeta]) -> 
 #[cfg(apple_fast)]
 fn recv(io: SockRef<'_>, bufs: &mut [IoSliceMut<'_>], meta: &mut [RecvMeta]) -> io::Result<usize> {
     let mut names = [MaybeUninit::<libc::sockaddr_storage>::uninit(); BATCH_SIZE];
-    let mut ctrls = [cmsg::Aligned(MaybeUninit::<[u8; CMSG_LEN]>::uninit()); BATCH_SIZE];
+    
+    
+    
+    
+    
+    
+    let mut ctrls = [cmsg::Aligned([0u8; CMSG_LEN]); BATCH_SIZE];
     let mut hdrs = unsafe { mem::zeroed::<[msghdr_x; BATCH_SIZE]>() };
     let max_msg_count = bufs.len().min(BATCH_SIZE);
     for i in 0..max_msg_count {
@@ -526,15 +520,16 @@ fn recv(io: SockRef<'_>, bufs: &mut [IoSliceMut<'_>], meta: &mut [RecvMeta]) -> 
     }
     let msg_count = loop {
         let n = unsafe { recvmsg_x(io.as_raw_fd(), hdrs.as_mut_ptr(), max_msg_count as _, 0) };
-        match n {
-            -1 => {
-                let e = io::Error::last_os_error();
-                if e.kind() == io::ErrorKind::Interrupted {
-                    continue;
-                }
-                return Err(e);
-            }
-            n => break n,
+
+        if n >= 0 {
+            break n;
+        }
+
+        let e = io::Error::last_os_error();
+        match e.kind() {
+            
+            io::ErrorKind::Interrupted => continue,
+            _ => return Err(e),
         }
     };
     for i in 0..(msg_count as usize) {
@@ -551,17 +546,21 @@ fn recv(io: SockRef<'_>, bufs: &mut [IoSliceMut<'_>], meta: &mut [RecvMeta]) -> 
     prepare_recv(&mut bufs[0], &mut name, &mut ctrl, &mut hdr);
     let n = loop {
         let n = unsafe { libc::recvmsg(io.as_raw_fd(), &mut hdr, 0) };
-        if n == -1 {
-            let e = io::Error::last_os_error();
-            if e.kind() == io::ErrorKind::Interrupted {
-                continue;
-            }
-            return Err(e);
-        }
+
         if hdr.msg_flags & libc::MSG_TRUNC != 0 {
             continue;
         }
-        break n;
+
+        if n >= 0 {
+            break n;
+        }
+
+        let e = io::Error::last_os_error();
+        match e.kind() {
+            
+            io::ErrorKind::Interrupted => continue,
+            _ => return Err(e),
+        }
     };
     meta[0] = decode_recv(&name, &hdr, n as usize);
     Ok(1)
@@ -615,9 +614,11 @@ fn prepare_msg(
 
     
     
+    
+    
     if let Some(segment_size) = transmit
         .segment_size
-        .filter(|segment_size| *segment_size != transmit.contents.len())
+        .filter(|segment_size| *segment_size < transmit.contents.len())
     {
         gso::set_segment_size(&mut encoder, segment_size as u16);
     }
@@ -681,7 +682,7 @@ fn prepare_recv(
 fn prepare_recv(
     buf: &mut IoSliceMut,
     name: &mut MaybeUninit<libc::sockaddr_storage>,
-    ctrl: &mut cmsg::Aligned<MaybeUninit<[u8; CMSG_LEN]>>,
+    ctrl: &mut cmsg::Aligned<[u8; CMSG_LEN]>,
     hdr: &mut msghdr_x,
 ) {
     hdr.msg_name = name.as_mut_ptr() as _;
