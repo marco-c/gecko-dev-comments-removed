@@ -1400,6 +1400,8 @@
                 return "-0";
             }
             return String(val);
+        case "bigint":
+            return String(val) + 'n';
         case "object":
             if (val === null) {
                 return "null";
@@ -1780,10 +1782,15 @@
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_less_than", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_less_than", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual < expected,
                "assert_less_than", description,
@@ -1804,10 +1811,15 @@
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_greater_than", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_greater_than", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual > expected,
                "assert_greater_than", description,
@@ -1830,10 +1842,20 @@
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof lower === typeof upper,
+               "assert_between_exclusive", description,
+               "expected lower (${type_lower}) and upper (${type_upper}) types to match (test error)",
+               {type_lower:typeof lower, type_upper:typeof upper});
+
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_between_exclusive", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof lower,
+               "assert_between_exclusive", description,
+               "expected a ${type_lower} but got a ${type_actual}",
+               {type_lower:typeof lower, type_actual:typeof actual});
 
         assert(actual > lower && actual < upper,
                "assert_between_exclusive", description,
@@ -1856,10 +1878,15 @@
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_less_than_equal", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_less_than_equal", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual <= expected,
                "assert_less_than_equal", description,
@@ -1881,10 +1908,15 @@
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_greater_than_equal", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_greater_than_equal", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual >= expected,
                "assert_greater_than_equal", description,
@@ -1907,10 +1939,20 @@
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof lower === typeof upper,
+               "assert_between_inclusive", description,
+               "expected lower (${type_lower}) and upper (${type_upper}) types to match (test error)",
+               {type_lower:typeof lower, type_upper:typeof upper});
+
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_between_inclusive", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof lower,
+               "assert_between_inclusive", description,
+               "expected a ${type_lower} but got a ${type_actual}",
+               {type_lower:typeof lower, type_actual:typeof actual});
 
         assert(actual >= lower && actual <= upper,
                "assert_between_inclusive", description,
