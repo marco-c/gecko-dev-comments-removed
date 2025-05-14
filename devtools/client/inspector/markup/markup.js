@@ -347,7 +347,7 @@ function MarkupView(inspector, frame, controllerWindow) {
     this.onHighlighterHidden
   );
 
-  this._onNewSelection();
+  this._onNewSelection(this.inspector.selection.nodeFront);
   if (this.inspector.selection.nodeFront) {
     this.expandNode(this.inspector.selection.nodeFront);
   }
@@ -1013,6 +1013,11 @@ MarkupView.prototype = {
   },
 
   
+
+
+
+
+
 
 
 

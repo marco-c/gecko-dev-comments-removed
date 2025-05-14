@@ -516,10 +516,13 @@ DevTools.prototype = {
 
 
 
+
+
   async showToolbox(
     commands,
     {
       toolId,
+      toolOptions,
       hostType,
       startTime,
       raise = true,
@@ -537,7 +540,7 @@ DevTools.prototype = {
       if (toolId != null) {
         
         
-        await toolbox.selectTool(toolId, reason);
+        await toolbox.selectTool(toolId, reason, toolOptions);
       }
 
       if (raise) {
@@ -551,12 +554,12 @@ DevTools.prototype = {
       if (promise) {
         return promise;
       }
-      const toolboxPromise = this._createToolbox(
-        commands,
+      const toolboxPromise = this._createToolbox(commands, {
         toolId,
+        toolOptions,
         hostType,
-        hostOptions
-      );
+        hostOptions,
+      });
       this._creatingToolboxes.set(commands, toolboxPromise);
       toolbox = await toolboxPromise;
       this._creatingToolboxes.delete(commands);
@@ -603,7 +606,15 @@ DevTools.prototype = {
 
   async showToolboxForTab(
     tab,
-    { toolId, hostType, startTime, raise, reason, hostOptions } = {}
+    {
+      toolId,
+      toolOptions,
+      hostType,
+      startTime,
+      raise,
+      reason,
+      hostOptions,
+    } = {}
   ) {
     
     
@@ -626,6 +637,7 @@ DevTools.prototype = {
     const commands = await LocalTabCommandsFactory.createCommandsForTab(tab);
     return this.showToolbox(commands, {
       toolId,
+      toolOptions,
       hostType,
       startTime,
       raise,
@@ -729,10 +741,13 @@ DevTools.prototype = {
 
 
 
-  async _createToolbox(commands, toolId, hostType, hostOptions) {
+  async _createToolbox(
+    commands,
+    { toolId, toolOptions, hostType, hostOptions } = {}
+  ) {
     const manager = new ToolboxHostManager(commands, hostType, hostOptions);
 
-    const toolbox = await manager.create(toolId);
+    const toolbox = await manager.create(toolId, toolOptions);
 
     this._toolboxesPerCommands.set(commands, toolbox);
 
@@ -851,11 +866,24 @@ DevTools.prototype = {
 
 
   async inspectNode(tab, domReference, startTime) {
+    const toolboxWasOpened = !!gDevTools.getToolboxForTab(tab);
     const toolbox = await gDevTools.showToolboxForTab(tab, {
       toolId: "inspector",
+      toolOptions: {
+        defaultStartupNodeDomReference: domReference,
+        defaultStartupNodeSelectionReason: "browser-context-menu",
+      },
       startTime,
       reason: "inspect_dom",
     });
+
+    
+    
+    if (!toolboxWasOpened) {
+      return;
+    }
+
+    
     const inspector = toolbox.getCurrentPanel();
 
     const nodeFront =

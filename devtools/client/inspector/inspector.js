@@ -200,6 +200,13 @@ Inspector.prototype = {
 
 
 
+
+
+
+
+
+
+
   async init(options = {}) {
     
     localizeMarkup(this.panelDoc);
@@ -222,6 +229,10 @@ Inspector.prototype = {
     
     
     this._defaultStartupNode = options.defaultStartupNode;
+    this._defaultStartupNodeDomReference =
+      options.defaultStartupNodeDomReference;
+    this._defaultStartupNodeSelectionReason =
+      options.defaultStartupNodeSelectionReason;
 
     
     
@@ -399,8 +410,11 @@ Inspector.prototype = {
       }
 
       this.selection.setNodeFront(defaultNode, {
-        reason: "inspector-default-selection",
+        reason:
+          this._defaultStartupNodeSelectionReason ??
+          "inspector-default-selection",
       });
+      this._defaultStartupNodeSelectionReason = null;
 
       await this._initMarkupView();
 
@@ -610,9 +624,11 @@ Inspector.prototype = {
 
 
   async _getDefaultNodeForSelection(rootNodeFront) {
+    let node;
     if (this._defaultStartupNode) {
-      const node = this._defaultStartupNode;
+      node = this._defaultStartupNode;
       this._defaultStartupNode = null;
+      this._defaultStartupNodeDomReference = null;
       return node;
     }
 
@@ -620,9 +636,34 @@ Inspector.prototype = {
     const pendingSelectionUnique = Symbol("pending-selection");
     this._pendingSelectionUnique = pendingSelectionUnique;
 
+    if (this._defaultStartupNodeDomReference) {
+      const domReference = this._defaultStartupNodeDomReference;
+      
+      
+      
+      this._defaultStartupNode = null;
+      this._defaultStartupNodeDomReference = null;
+
+      try {
+        node =
+          await this.inspectorFront.getNodeActorFromContentDomReference(
+            domReference
+          );
+      } catch (e) {
+        console.warn(
+          "Couldn't retrieve node front from dom reference",
+          domReference
+        );
+      }
+    }
+
     if (this._pendingSelectionUnique !== pendingSelectionUnique) {
       
       return null;
+    }
+
+    if (node) {
+      return node;
     }
 
     const walker = rootNodeFront.walkerFront;
@@ -644,7 +685,7 @@ Inspector.prototype = {
 
     
     for (const selector of defaultNodeSelectors) {
-      const node = await selector();
+      node = await selector();
       if (this._pendingSelectionUnique !== pendingSelectionUnique) {
         
         return null;

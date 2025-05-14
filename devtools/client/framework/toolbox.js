@@ -262,7 +262,17 @@ const BOOLEAN_CONFIGURATION_PREFS = {
 
 
 
-function Toolbox(commands, selectedTool, hostType, contentWindow, frameId) {
+
+
+
+function Toolbox({
+  commands,
+  selectedTool,
+  selectedToolOptions,
+  hostType,
+  contentWindow,
+  frameId,
+}) {
   this._win = contentWindow;
   this.frameId = frameId;
   this.selection = new Selection();
@@ -366,6 +376,7 @@ function Toolbox(commands, selectedTool, hostType, contentWindow, frameId) {
     selectedTool = Services.prefs.getCharPref(this._prefs.LAST_TOOL);
   }
   this._defaultToolId = selectedTool;
+  this._defaultToolOptions = selectedToolOptions;
 
   this._hostType = hostType;
 
@@ -1063,7 +1074,11 @@ Toolbox.prototype = {
         { timeout: 16 }
       );
 
-      await this.selectTool(this._defaultToolId, "initial_panel");
+      await this.selectTool(
+        this._defaultToolId,
+        "initial_panel",
+        this._defaultToolOptions
+      );
 
       
       
