@@ -122,6 +122,11 @@ struct JSStructuredCloneWriter;
 #define JWK_ALG_ECDSA_P_521 "ES512"
 
 
+
+#define JWK_ALG_EDDSA "EdDSA"
+#define JWK_ALG_ED25519 "Ed25519"
+
+
 #define JWK_USE_ENC "enc"
 #define JWK_USE_SIG "sig"
 
