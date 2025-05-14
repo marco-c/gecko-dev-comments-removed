@@ -1252,8 +1252,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGDescElement", insecureContext: true },
   
-  { name: "SVGDiscardElement", insecureContext: true },
-  
   { name: "SVGElement", insecureContext: true },
   
   { name: "SVGEllipseElement", insecureContext: true },

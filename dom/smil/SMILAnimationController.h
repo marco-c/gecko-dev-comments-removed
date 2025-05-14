@@ -45,8 +45,6 @@ class SMILAnimationController final : public SMILTimeContainer {
 
   NS_INLINE_DECL_REFCOUNTING(SMILAnimationController)
 
-  using DiscardArray = nsTObserverArray<RefPtr<dom::Element>>;
-
   
   
   void Disconnect();
@@ -127,8 +125,7 @@ class SMILAnimationController final : public SMILTimeContainer {
 
   void DoMilestoneSamples();
 
-  static void SampleTimedElement(dom::SVGAnimationElement* aElement,
-                                 DiscardArray& aDiscards,
+  static void SampleTimedElement(mozilla::dom::SVGAnimationElement* aElement,
                                  TimeContainerHashtable* aActiveContainers);
 
   static void AddAnimationToCompositorTable(
