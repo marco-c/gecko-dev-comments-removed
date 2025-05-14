@@ -70,7 +70,7 @@ add_task(async function default_USER_SCRIPT_world_behavior() {
           id: "world global checker",
           matches: ["*://example.com/dummy"],
           js: [{ file: "world_checker.js" }],
-          runAt: "document_end",
+          runAt: "document_start",
           world: "USER_SCRIPT",
         },
       ]);
@@ -105,6 +105,13 @@ add_task(async function multiple_scripts_share_same_default_world() {
     },
     async background() {
       await browser.userScripts.register([
+        
+        
+        
+        
+        
+        
+        
         {
           id: "first scripts",
           matches: ["*://example.com/dummy"],
@@ -151,7 +158,14 @@ add_task(async function multiple_scripts_share_same_default_world() {
   await extension.startup();
   await extension.awaitMessage("registered");
 
-  const result = await spawnPage(() => {
+  const result = await spawnPage(async () => {
+    
+    
+    await ContentTaskUtils.waitForCondition(
+      
+      () => this.content.wrappedJSObject.r?.length === 10,
+      "Waiting for all user scripts to have completed running"
+    );
     let { x, r } = this.content.wrappedJSObject;
     return { x, r };
   });
@@ -343,6 +357,16 @@ add_task(async function test_default_and_many_non_default_worldIds() {
           worldId: `worldId ${i}`,
         });
       }
+      
+      
+      
+      
+      scripts.push({
+        id: "document_idle, runs after everything else",
+        matches: ["*://example.com/dummy"],
+        js: [{ code: `window.wrappedJSObject.allTestScriptsRan = true;` }],
+        runAt: "document_idle",
+      });
       await browser.userScripts.register(scripts);
       browser.test.sendMessage("registered_and_expected", expectedResults);
     },
@@ -351,13 +375,18 @@ add_task(async function test_default_and_many_non_default_worldIds() {
   await extension.startup();
   let expectedRes = await extension.awaitMessage("registered_and_expected");
 
-  const actualRes = await spawnPage(() => this.content.wrappedJSObject.res);
+  const actualRes = await spawnPage(async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => this.content.wrappedJSObject.allTestScriptsRan,
+      "Waiting for all user scripts to have completed running"
+    );
+    return this.content.wrappedJSObject.res;
+  });
   
   
-  info(`Actual result (unsorted): ${actualRes}`);
 
   Assert.deepEqual(
-    actualRes.toSorted((a, b) => a - b),
+    actualRes,
     expectedRes,
     "Every script should execute in the world specified by worldId"
   );
