@@ -2148,8 +2148,19 @@ add_task(async function test_prefFlips_cacheOriginalValues() {
     },
   });
 
+  const storePath = manager.store._store.path;
+
   
-  const storePath = await NimbusTestUtils.saveStore(manager.store);
+  
+  {
+    const jsonFile = manager.store._store;
+    if (jsonFile._saver.isRunning) {
+      await jsonFile._saver._runningPromise;
+    } else if (jsonFile._saver.isArmed) {
+      jsonFile._saver.disarm();
+      await jsonFile._save();
+    }
+  }
 
   const storeContents = await IOUtils.readJSON(storePath);
 
