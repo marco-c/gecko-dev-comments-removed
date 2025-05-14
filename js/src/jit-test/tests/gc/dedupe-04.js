@@ -127,7 +127,33 @@ function with_rope() {
     }
 }
 
+function atomref() {
+    
+    
+    var inlineIfLatin1 = newString("0123456789", { tenured: false, twoByte: true });
+
+    
+    
+    var s = newRope(inlineIfLatin1, "abc", { nursery: false });
+
+    
+    var rope = newRope("....", s);
+
+    
+    
+    ensureLinearString(rope);
+
+    
+    
+    ({})[s] = true;
+
+    
+    
+    minorgc();
+}
+
 no_dedupe();
 with_dependent(false);
 with_dependent(true);
 with_rope();
+atomref();
