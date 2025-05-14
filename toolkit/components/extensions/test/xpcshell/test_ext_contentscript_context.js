@@ -10,6 +10,16 @@ server.registerPathHandler("/dummy", (request, response) => {
   response.write("<!DOCTYPE html><html></html>");
 });
 
+function delayContentProcessTermination() {
+  Services.prefs.setIntPref("dom.ipc.processReuse.unusedGraceMs", 30_000);
+  registerCleanupFunction(undoDelayedContentProcessTermination);
+}
+
+function undoDelayedContentProcessTermination() {
+  Services.prefs.clearUserPref("dom.ipc.processReuse.unusedGraceMs");
+  Services.ppmm.releaseCachedProcesses();
+}
+
 function loadExtension() {
   function contentScript() {
     browser.test.sendMessage("content-script-ready");
@@ -50,50 +60,68 @@ add_task(async function test_contentscript_context() {
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/dummy"
   );
+  
+  
+  
+  const initialProcessSP = contentPage.getCurrentContentProcessSpecialPowers();
+
   await extension.awaitMessage("content-script-ready");
   await extension.awaitMessage("content-script-show");
 
   
-  await contentPage.legacySpawn(extension.id, async extensionId => {
+  await contentPage.spawn([extension.id], async extensionId => {
     const { ExtensionContent } = ChromeUtils.importESModule(
       "resource://gre/modules/ExtensionContent.sys.mjs"
     );
-    this.context = ExtensionContent.getContextByExtensionId(
+    let context = ExtensionContent.getContextByExtensionId(
       extensionId,
       this.content
     );
 
-    Assert.ok(this.context, "Got content script context");
+    Assert.ok(context, "Got content script context");
 
     Assert.equal(
-      this.context.contentWindow,
+      context.contentWindow,
       this.content,
       "Context's contentWindow property is correct"
     );
 
     
-
-    this.content.location = "http://example.org/dummy";
+    
+    ExtensionContent._rememberedContextForTest = context;
   });
+
+  
+  await contentPage.loadURL("http://example.org/dummy");
 
   await extension.awaitMessage("content-script-hide");
 
-  await contentPage.legacySpawn(null, async () => {
+  await initialProcessSP.spawn([], async () => {
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
+    );
+    let context = ExtensionContent._rememberedContextForTest;
     Assert.equal(
-      this.context.contentWindow,
+      context.contentWindow,
       null,
       "Context's contentWindow property is null"
     );
+  });
 
+  await contentPage.spawn([], async () => {
     
     this.content.history.back();
   });
 
   await extension.awaitMessage("content-script-show");
 
-  await contentPage.legacySpawn(null, async () => {
+  await contentPage.spawn([], async () => {
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
+    );
+    let context = ExtensionContent._rememberedContextForTest;
     Assert.equal(
-      this.context.contentWindow,
+      context.contentWindow,
       this.content,
       "Context's contentWindow property is correct"
     );
@@ -102,6 +130,7 @@ add_task(async function test_contentscript_context() {
   await contentPage.close();
   await extension.awaitMessage("content-script-hide");
   await extension.unload();
+  await initialProcessSP.destroy();
 });
 
 add_task(async function test_contentscript_context_incognito_not_allowed() {
@@ -137,20 +166,22 @@ add_task(async function test_contentscript_context_incognito_not_allowed() {
     },
   });
 
-  
-  if (AppConstants.platform == "android") {
-    Services.prefs.setBoolPref("dom.security.https_first_pbm", false);
-  }
-
   await extension.startup();
   await extension.awaitMessage("background-ready");
 
+  
+  
+  
+  
+  Services.prefs.setBoolPref("dom.security.https_first_pbm", false);
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/dummy",
     { privateBrowsing: true }
   );
 
-  await contentPage.legacySpawn(extension.id, async extensionId => {
+  Services.prefs.clearUserPref("dom.security.https_first_pbm");
+
+  await contentPage.spawn([extension.id], async extensionId => {
     const { ExtensionContent } = ChromeUtils.importESModule(
       "resource://gre/modules/ExtensionContent.sys.mjs"
     );
@@ -167,42 +198,41 @@ add_task(async function test_contentscript_context_incognito_not_allowed() {
 
   await contentPage.close();
   await extension.unload();
-
-  
-  if (AppConstants.platform == "android") {
-    Services.prefs.clearUserPref("dom.security.https_first_pbm");
-  }
 });
 
 add_task(async function test_contentscript_context_unload_while_in_bfcache() {
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/dummy?first"
   );
+  
+  
+  
+  const initialProcessSP = contentPage.getCurrentContentProcessSpecialPowers();
+
   let extension = loadExtension();
   await extension.startup();
   await extension.awaitMessage("content-script-ready");
 
   
-  await contentPage.legacySpawn(extension.id, async extensionId => {
+  await contentPage.spawn([extension.id], async extensionId => {
     const { ExtensionContent } = ChromeUtils.importESModule(
       "resource://gre/modules/ExtensionContent.sys.mjs"
     );
-    
-    this.context = ExtensionContent.getContextByExtensionId(
+    let context = ExtensionContent.getContextByExtensionId(
       extensionId,
       this.content
     );
 
     Assert.equal(
-      this.context.contentWindow,
+      context.contentWindow,
       this.content,
       "Context's contentWindow property is correct"
     );
 
-    this.contextUnloadedPromise = new Promise(resolve => {
-      this.context.callOnClose({ close: resolve });
+    let contextUnloadedPromise = new Promise(resolve => {
+      context.callOnClose({ close: resolve });
     });
-    this.pageshownPromise = new Promise(resolve => {
+    let pageshownPromise = new Promise(resolve => {
       this.content.addEventListener(
         "pageshow",
         () => {
@@ -218,41 +248,69 @@ add_task(async function test_contentscript_context_unload_while_in_bfcache() {
     });
 
     
-    this.content.location = "http://example.org/dummy?second";
+    ExtensionContent._rememberStateForTest = {
+      context,
+      contextUnloadedPromise,
+      pageshownPromise,
+    };
   });
+
+  
+  await contentPage.loadURL("http://example.org/dummy?second");
 
   await extension.awaitMessage("content-script-hide");
 
   await extension.unload();
-  await contentPage.legacySpawn(null, async () => {
-    await this.contextUnloadedPromise;
-    Assert.equal(this.context.unloaded, true, "Context has been unloaded");
+  await initialProcessSP.spawn([], async () => {
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
+    );
+    const { context, contextUnloadedPromise } =
+      ExtensionContent._rememberStateForTest;
+    await contextUnloadedPromise;
+    Assert.equal(context.unloaded, true, "Context has been unloaded");
 
     
     
     
     
     
-    await new Promise(resolve => this.content.setTimeout(resolve, 0));
+    const { setTimeout } = ChromeUtils.importESModule(
+      "resource://gre/modules/Timer.sys.mjs"
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
     Assert.equal(
-      this.context.contentWindow,
+      context.contentWindow,
       null,
       "Context's contentWindow property is null"
     );
+  });
 
+  await contentPage.spawn([], async () => {
     
     this.content.history.back();
+  });
 
-    await this.pageshownPromise;
+  await initialProcessSP.spawn([], async () => {
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
+    );
+    const { context, pageshownPromise } =
+      ExtensionContent._rememberStateForTest;
 
+    await pageshownPromise;
+
+    
+    
     Assert.equal(
-      this.context.contentWindow,
+      context.contentWindow,
       null,
       "Context's contentWindow property is null after restore from bfcache"
     );
   });
 
   await contentPage.close();
+  await initialProcessSP.destroy();
 });
 
 add_task(async function test_contentscript_context_valid_during_execution() {
@@ -314,39 +372,53 @@ add_task(async function test_contentscript_context_valid_during_execution() {
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/dummy?first"
   );
-  await contentPage.legacySpawn(extension.id, async extensionId => {
-    let context;
-    let checkContextIsValid = description => {
-      if (!context) {
-        const { ExtensionContent } = ChromeUtils.importESModule(
-          "resource://gre/modules/ExtensionContent.sys.mjs"
+  
+  
+  
+  const initialProcessSP = contentPage.getCurrentContentProcessSpecialPowers();
+  await initialProcessSP.spawn(
+    [contentPage.browsingContext, extension.id],
+    (browsingContext, extensionId) => {
+      const content = browsingContext.window;
+      let context;
+      let checkContextIsValid = description => {
+        if (!context) {
+          const { ExtensionContent } = ChromeUtils.importESModule(
+            "resource://gre/modules/ExtensionContent.sys.mjs"
+          );
+          context = ExtensionContent.getContextByExtensionId(
+            extensionId,
+            content
+          );
+        }
+        
+        
+        
+        
+        Assert.equal(
+          context.contentWindow,
+          content,
+          `${description}: contentWindow`
         );
-        context = ExtensionContent.getContextByExtensionId(
-          extensionId,
-          this.content
-        );
-      }
-      Assert.equal(
-        context.contentWindow,
-        this.content,
-        `${description}: contentWindow`
-      );
-      Assert.equal(context.active, true, `${description}: active`);
-    };
-    Cu.exportFunction(checkContextIsValid, this.content, {
-      defineAs: "checkContextIsValid",
-    });
-  });
+        Assert.equal(context.active, true, `${description}: active`);
+      };
+      Cu.exportFunction(checkContextIsValid, content, {
+        defineAs: "checkContextIsValid",
+      });
+    }
+  );
   await extension.startup();
   await extension.awaitMessage("content-script-ready");
 
-  await contentPage.legacySpawn(extension.id, async () => {
-    
-    this.content.location = "http://example.org/dummy?second";
-  });
+  
+  
+  delayContentProcessTermination();
+
+  
+  await contentPage.loadURL("http://example.org/dummy?second");
 
   await extension.awaitMessage("content-script-hide");
-  await contentPage.legacySpawn(null, async () => {
+  await contentPage.spawn([], async () => {
     
     this.content.history.back();
   });
@@ -356,4 +428,7 @@ add_task(async function test_contentscript_context_valid_during_execution() {
   await extension.awaitMessage("content-script-hide");
   await extension.awaitMessage("content-script-unload");
   await extension.unload();
+  await initialProcessSP.destroy();
+
+  undoDelayedContentProcessTermination();
 });
