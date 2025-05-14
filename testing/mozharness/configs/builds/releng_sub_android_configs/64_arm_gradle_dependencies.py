@@ -4,7 +4,8 @@
 
 config = {
     "stage_platform": "android-arm-gradle-dependencies",
-    "src_mozconfig": "mobile/android/config/mozconfigs/android-arm-gradle-dependencies/nightly",
+    "mozconfig_platform": "android-arm-gradle-dependencies",
+    "mozconfig_variant": "nightly",
     
     "postflight_build_mach_commands": [
         [

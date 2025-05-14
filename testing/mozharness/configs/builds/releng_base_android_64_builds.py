@@ -52,7 +52,7 @@ config = {
         "PATH": "/usr/local/bin:/bin:/usr/bin",
         "SHIP_LICENSED_FONTS": "1",
     },
-    "src_mozconfig": "mobile/android/config/mozconfigs/android/nightly",
+    "app_name": "mobile/android",
     
     
     "disable_package_metrics": True,
