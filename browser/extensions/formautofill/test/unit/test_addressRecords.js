@@ -31,6 +31,13 @@ const TEST_ADDRESS_3 = {
   "postal-code": "12345",
 };
 
+const TEST_ADDRESS_4 = {
+  name: "Timothy Berners-Lee",
+  "street-address": "32 Vassar Street",
+  "postal-code": "12345",
+  email: "timbl@w3.org",
+};
+
 const TEST_ADDRESS_WITH_EMPTY_FIELD = {
   name: "Tim Berners",
   "street-address": "",
@@ -96,11 +103,12 @@ add_task(async function test_getAll() {
   let profileStorage = await initProfileStorage(TEST_STORE_FILE_NAME, [
     TEST_ADDRESS_1,
     TEST_ADDRESS_2,
+    TEST_ADDRESS_4,
   ]);
 
   let addresses = await profileStorage.addresses.getAll();
 
-  Assert.equal(addresses.length, 2);
+  Assert.equal(addresses.length, 3);
   do_check_record_matches(addresses[0], TEST_ADDRESS_1);
   do_check_record_matches(addresses[1], TEST_ADDRESS_2);
 
@@ -110,6 +118,9 @@ add_task(async function test_getAll() {
   Assert.equal(addresses[0]["family-name"], "Berners-Lee");
   Assert.equal(addresses[0]["address-line1"], "32 Vassar Street");
   Assert.equal(addresses[0]["address-line2"], "MIT Room 32-G524");
+  
+  
+  Assert.equal(addresses[2]["address-housenumber"], "32");
 
   
   addresses = await profileStorage.addresses.getAll({ rawData: true });
