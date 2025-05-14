@@ -411,6 +411,16 @@ void QuotaManagerDependencyFixture::ClearStoragesForOriginAttributesPattern(
 }
 
 
+void QuotaManagerDependencyFixture::ProcessPendingNormalOriginOperations() {
+  PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_RELEASE_ASSERT(quotaManager);
+
+    quotaManager->ProcessPendingNormalOriginOperations();
+  });
+}
+
+
 uint64_t QuotaManagerDependencyFixture::TotalDirectoryIterations() {
   const auto result = PerformOnIOThread([]() -> uint64_t {
     QuotaManager* quotaManager = QuotaManager::Get();

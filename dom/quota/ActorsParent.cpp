@@ -1837,6 +1837,31 @@ nsIObserver* QuotaManager::GetObserver() {
 }
 
 
+void QuotaManager::ProcessPendingNormalOriginOperations() {
+  MOZ_ASSERT(IsRunningGTests());
+
+  
+  
+  
+  
+  
+  NS_ProcessPendingEvents(nullptr);
+
+  
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+      "QuotaManager::ProcessPendingNormalOriginOperations"_ns,
+      []() { return !gNormalOriginOps; }));
+
+  
+  
+  
+  
+  
+  
+  NS_ProcessPendingEvents(nullptr);
+}
+
+
 bool QuotaManager::IsShuttingDown() { return gShutdown; }
 
 

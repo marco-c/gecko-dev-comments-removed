@@ -2635,6 +2635,39 @@ TEST_F(TestQuotaManager, ShutdownStorage_OngoingWithClientDirectoryLock) {
   });
 }
 
+
+
+TEST_F(TestQuotaManager, ProcessPendingNormalOriginOperations_Basic) {
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+
+  AssertStorageNotInitialized();
+
+  PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    ASSERT_FALSE(quotaManager->IsStorageInitialized());
+
+    
+    
+    
+    
+    
+    
+    quotaManager->InitializeStorage();
+
+    ASSERT_FALSE(quotaManager->IsStorageInitialized());
+
+    quotaManager->ProcessPendingNormalOriginOperations();
+
+    ASSERT_TRUE(quotaManager->IsStorageInitialized());
+  });
+
+  AssertStorageInitialized();
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+}
+
 TEST_F(TestQuotaManager, TotalDirectoryIterations_ClearingEmptyRepository) {
   ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
 

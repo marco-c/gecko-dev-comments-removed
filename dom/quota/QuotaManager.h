@@ -158,6 +158,19 @@ class QuotaManager final : public BackgroundThreadObject {
   static nsIObserver* GetObserver();
 
   
+
+
+
+
+
+
+
+
+
+
+  static void ProcessPendingNormalOriginOperations();
+
+  
   static bool IsShuttingDown();
 
   static void ShutdownInstance();
