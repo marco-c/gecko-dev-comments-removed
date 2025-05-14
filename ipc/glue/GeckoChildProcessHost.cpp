@@ -1128,7 +1128,7 @@ Result<Ok, LaunchError> BaseProcessLauncher::DoSetup() {
     }
     geckoargs::sCrashReporter.Put(std::move(childCrashFd), mChildArgs);
 
-#  if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+#  if !defined(MOZ_WIDGET_ANDROID)
     CrashReporter::ProcessId pid = CrashReporter::GetCrashHelperPid();
     if (pid != base::kInvalidProcessId) {
       geckoargs::sCrashHelperPid.Put(pid, mChildArgs);
