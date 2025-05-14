@@ -108,8 +108,6 @@ class DelayedJSDispatchableHandler final : public TimeoutHandler {
 
  private:
   ~DelayedJSDispatchableHandler() override;
-  
-  
   js::UniquePtr<JS::Dispatchable> mDispatchable;
 };
 
