@@ -1573,10 +1573,6 @@ void Module::initGCMallocBytesExcludingCode() {
 
   
   (void)CodeModuleMetadata<MODE>(coder, moduleMeta_);
-  
-  if (!code().codeMeta().isAsmJS()) {
-    (void)CodeCodeMetadata<MODE>(coder, &code().codeMeta());
-  }
 
   
   size_t serializedSize = coder.size_.isValid() ? coder.size_.value() : 0;
