@@ -496,8 +496,9 @@ struct RoleDescrComparator {
   }
 
   if (![self providesLabelNotTitle]) {
-    NSArray* relations = [self getRelationsByType:RelationType::LABELLED_BY];
-    if ([relations count] == 1) {
+    Relation rel = mGeckoAccessible->RelationByType(RelationType::LABELLED_BY);
+    if (rel.Next() && !rel.Next()) {
+      
       return nil;
     }
   }
@@ -510,6 +511,12 @@ struct RoleDescrComparator {
 
   
   if ([self providesLabelNotTitle]) {
+    return nil;
+  }
+
+  Relation rel = mGeckoAccessible->RelationByType(RelationType::LABELLED_BY);
+  if (rel.Next() && !rel.Next()) {
+    
     return nil;
   }
 
