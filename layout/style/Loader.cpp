@@ -421,11 +421,6 @@ void SheetLoadData::SetLoadCompleted() {
     TimeDuration rawDuration = TimeStamp::Now() - mLoadStart;
     glean::performance_pageload::async_sheet_load.AccumulateRawDuration(
         rawDuration);
-    
-    
-    
-    
-    glean::glam_experiment::async_sheet_load.AccumulateRawDuration(rawDuration);
   }
 }
 
