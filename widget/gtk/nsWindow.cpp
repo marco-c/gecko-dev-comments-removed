@@ -1036,31 +1036,6 @@ void nsWindow::ResizeInt(const Maybe<LayoutDeviceIntPoint>& aMove,
   }
 
   NativeMoveResize(moved, resized);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool isOrWillBeVisible = mHasReceivedSizeAllocate || mNeedsShow || mIsShown;
-  if (!isOrWillBeVisible || IsPopup()) {
-    mBounds.SizeTo(aSize);
-    if (moved) {
-      mBounds.MoveTo(*aMove);
-      NotifyWindowMoved(mBounds.x, mBounds.y);
-    }
-    DispatchResized();
-  }
 }
 
 void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
@@ -3349,7 +3324,8 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
     
     
     
-    mBounds.MoveTo(mLastMoveRequest);
+    MOZ_ASSERT(mLastMoveRequest == oldBounds.TopLeft());
+    mBounds.MoveTo(oldBounds.TopLeft());
   }
 
   
@@ -6570,6 +6546,35 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   
   if (mNeedsShow && mIsShown && aResized) {
     NativeShow(true);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isOrWillBeVisible = mHasReceivedSizeAllocate || mNeedsShow || mIsShown;
+  if (!isOrWillBeVisible || IsPopup()) {
+    if (aResized) {
+      mBounds.SizeTo(mLastSizeRequest);
+    }
+    if (aMoved) {
+      mBounds.MoveTo(mLastMoveRequest);
+      NotifyWindowMoved(mBounds.x, mBounds.y);
+    }
+    if (aResized) {
+      DispatchResized();
+    }
   }
 }
 
