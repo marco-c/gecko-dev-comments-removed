@@ -327,49 +327,65 @@ bool WarpBuilder::buildInline() {
 
 MInstruction* WarpBuilder::buildNamedLambdaEnv(MDefinition* callee,
                                                MDefinition* env,
-                                               NamedLambdaObject* templateObj) {
+                                               NamedLambdaObject* templateObj,
+                                               gc::Heap initialHeap) {
   MOZ_ASSERT(templateObj->numDynamicSlots() == 0);
 
-  MInstruction* namedLambda = MNewNamedLambdaObject::New(alloc(), templateObj);
+  MInstruction* namedLambda =
+      MNewNamedLambdaObject::New(alloc(), templateObj, initialHeap);
   current->add(namedLambda);
 
+  
+  if (initialHeap == gc::Heap::Default) {
+    
+    
+    
+    
 #ifdef DEBUG
-  
-  current->add(MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, env));
-  current->add(
-      MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, callee));
+    current->add(
+        MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, env));
+    current->add(
+        MAssertCanElidePostWriteBarrier::New(alloc(), namedLambda, callee));
 #endif
+  } else {
+    current->add(MPostWriteBarrier::New(alloc(), namedLambda, env));
+    current->add(MPostWriteBarrier::New(alloc(), namedLambda, callee));
+  }
 
-  
-  
-  
-  
   size_t enclosingSlot = NamedLambdaObject::enclosingEnvironmentSlot();
   size_t lambdaSlot = NamedLambdaObject::lambdaSlot();
   current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda,
                                                enclosingSlot, env));
-  current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda, lambdaSlot,
-                                               callee));
+  current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda,
+                                               lambdaSlot, callee));
 
   return namedLambda;
 }
 
 MInstruction* WarpBuilder::buildCallObject(MDefinition* callee,
                                            MDefinition* env,
-                                           CallObject* templateObj) {
+                                           CallObject* templateObj,
+                                           gc::Heap initialHeap) {
   MConstant* templateCst = constant(ObjectValue(*templateObj));
 
-  MNewCallObject* callObj = MNewCallObject::New(alloc(), templateCst);
+  MNewCallObject* callObj =
+      MNewCallObject::New(alloc(), templateCst, initialHeap);
   current->add(callObj);
 
+  
+  if (initialHeap == gc::Heap::Default) {
+    
+    
 #ifdef DEBUG
-  
-  current->add(MAssertCanElidePostWriteBarrier::New(alloc(), callObj, env));
-  current->add(MAssertCanElidePostWriteBarrier::New(alloc(), callObj, callee));
+    current->add(MAssertCanElidePostWriteBarrier::New(alloc(), callObj, env));
+    current->add(
+        MAssertCanElidePostWriteBarrier::New(alloc(), callObj, callee));
 #endif
+  } else {
+    current->add(MPostWriteBarrier::New(alloc(), callObj, env));
+    current->add(MPostWriteBarrier::New(alloc(), callObj, callee));
+  }
 
-  
-  
   size_t enclosingSlot = CallObject::enclosingEnvironmentSlot();
   size_t calleeSlot = CallObject::calleeSlot();
   current->add(
@@ -399,10 +415,12 @@ bool WarpBuilder::buildEnvironmentChain() {
         MInstruction* envDef = MFunctionEnvironment::New(alloc(), callee);
         current->add(envDef);
         if (NamedLambdaObject* obj = env.namedLambdaTemplate) {
-          envDef = buildNamedLambdaEnv(callee, envDef, obj);
+          envDef = buildNamedLambdaEnv(callee, envDef, obj,
+                                       env.initialHeap);
         }
         if (CallObject* obj = env.callObjectTemplate) {
-          envDef = buildCallObject(callee, envDef, obj);
+          envDef = buildCallObject(callee, envDef, obj,
+                                   env.initialHeap);
           if (!envDef) {
             return nullptr;
           }
