@@ -920,6 +920,20 @@ struct IpcFailCustomRetVal {
 
 
 
+
+
+
+
+
+#define QM_VERBOSEONLY_TRY_UNWRAP(...) \
+  QM_REPORTONLY_TRY_ASSIGN_GLUE(Verbose, __VA_ARGS__)
+
+
+
+
+
+
+
 #define QM_OR_ELSE_REPORT(severity, expr, fallback)                \
   (expr).orElse([&](const auto& firstRes) {                        \
     mozilla::dom::quota::QM_HANDLE_ERROR(                          \
