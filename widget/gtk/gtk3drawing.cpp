@@ -577,18 +577,6 @@ static void Inset(GdkRectangle* rect, const GtkBorder& aBorder) {
 }
 
 
-static void InsetByBorderPadding(GdkRectangle* rect, GtkStyleContext* style) {
-  GtkStateFlags state = gtk_style_context_get_state(style);
-  GtkBorder padding, border;
-
-  gtk_style_context_get_padding(style, state, &padding);
-  Inset(rect, padding);
-  gtk_style_context_get_border(style, state, &border);
-  Inset(rect, border);
-}
-
-
-
 static gint moz_gtk_scale_paint(cairo_t* cr, GdkRectangle* rect,
                                 GtkWidgetState* state, GtkOrientation flags,
                                 GtkTextDirection direction) {
@@ -675,56 +663,6 @@ static gint moz_gtk_vpaned_paint(cairo_t* cr, GdkRectangle* rect,
       GetStyleContext(MOZ_GTK_SPLITTER_SEPARATOR_VERTICAL, state->image_scale,
                       GTK_TEXT_DIR_LTR, GetStateFlagsFromGtkWidgetState(state));
   gtk_render_handle(style, cr, rect->x, rect->y, rect->width, rect->height);
-  return MOZ_GTK_SUCCESS;
-}
-
-
-static gint moz_gtk_entry_paint(cairo_t* cr, const GdkRectangle* aRect,
-                                GtkWidgetState* state, GtkStyleContext* style,
-                                WidgetNodeType widget) {
-  GdkRectangle rect = *aRect;
-  gtk_render_background(style, cr, rect.x, rect.y, rect.width, rect.height);
-
-  
-  if (widget != MOZ_GTK_DROPDOWN_ENTRY || state->focused) {
-    gtk_render_frame(style, cr, rect.x, rect.y, rect.width, rect.height);
-  }
-
-  return MOZ_GTK_SUCCESS;
-}
-
-static gint moz_gtk_text_view_paint(cairo_t* cr, GdkRectangle* aRect,
-                                    GtkWidgetState* state,
-                                    GtkTextDirection direction) {
-  
-  
-  
-  
-  
-  
-  GtkStateFlags state_flags = state->disabled  ? GTK_STATE_FLAG_INSENSITIVE
-                              : state->focused ? GTK_STATE_FLAG_FOCUSED
-                                               : GTK_STATE_FLAG_NORMAL;
-
-  GtkStyleContext* style_frame = GetStyleContext(
-      MOZ_GTK_SCROLLED_WINDOW, state->image_scale, direction, state_flags);
-  gtk_render_frame(style_frame, cr, aRect->x, aRect->y, aRect->width,
-                   aRect->height);
-
-  GdkRectangle rect = *aRect;
-  InsetByBorderPadding(&rect, style_frame);
-
-  GtkStyleContext* style = GetStyleContext(
-      MOZ_GTK_TEXT_VIEW, state->image_scale, direction, state_flags);
-  gtk_render_background(style, cr, rect.x, rect.y, rect.width, rect.height);
-  
-  
-  
-  
-  style = GetStyleContext(MOZ_GTK_TEXT_VIEW_TEXT, state->image_scale, direction,
-                          state_flags);
-  gtk_render_background(style, cr, rect.x, rect.y, rect.width, rect.height);
-
   return MOZ_GTK_SUCCESS;
 }
 
@@ -1247,18 +1185,6 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
 
       return MOZ_GTK_SUCCESS;
     }
-    case MOZ_GTK_ENTRY:
-    case MOZ_GTK_DROPDOWN_ENTRY: {
-      style = GetStyleContext(widget);
-
-      
-      
-      *left = *top = *right = *bottom = -1;
-      moz_gtk_add_border_padding(style, left, top, right, bottom);
-
-      return MOZ_GTK_SUCCESS;
-    }
-    case MOZ_GTK_TEXT_VIEW:
     case MOZ_GTK_TREEVIEW: {
       style = GetStyleContext(MOZ_GTK_SCROLLED_WINDOW);
       moz_gtk_add_style_border(style, left, top, right, bottom);
@@ -1429,27 +1355,6 @@ void moz_gtk_get_arrow_size(WidgetNodeType widgetType, gint* width,
   }
 }
 
-void moz_gtk_get_entry_min_height(gint* min_content_height,
-                                  gint* border_padding_height) {
-  GtkStyleContext* style = GetStyleContext(MOZ_GTK_ENTRY);
-  if (!gtk_check_version(3, 20, 0)) {
-    gtk_style_context_get(style, gtk_style_context_get_state(style),
-                          "min-height", min_content_height, nullptr);
-  } else {
-    *min_content_height = 0;
-  }
-
-  GtkBorder border;
-  GtkBorder padding;
-  gtk_style_context_get_border(style, gtk_style_context_get_state(style),
-                               &border);
-  gtk_style_context_get_padding(style, gtk_style_context_get_state(style),
-                                &padding);
-
-  *border_padding_height =
-      (border.top + border.bottom + padding.top + padding.bottom);
-}
-
 void moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
                                gint* scale_height) {
   if (gtk_check_version(3, 20, 0) != nullptr) {
@@ -1549,16 +1454,6 @@ gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
                                        direction);
     case MOZ_GTK_TREEVIEW:
       return moz_gtk_treeview_paint(cr, rect, state, direction);
-    case MOZ_GTK_ENTRY:
-    case MOZ_GTK_DROPDOWN_ENTRY: {
-      GtkStyleContext* style =
-          GetStyleContext(widget, state->image_scale, direction,
-                          GetStateFlagsFromGtkWidgetState(state));
-      gint ret = moz_gtk_entry_paint(cr, rect, state, style, widget);
-      return ret;
-    }
-    case MOZ_GTK_TEXT_VIEW:
-      return moz_gtk_text_view_paint(cr, rect, state, direction);
     case MOZ_GTK_DROPDOWN:
       return moz_gtk_combo_box_paint(cr, rect, state, direction);
     case MOZ_GTK_FRAME:
