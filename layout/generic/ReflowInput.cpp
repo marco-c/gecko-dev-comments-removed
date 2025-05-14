@@ -795,7 +795,10 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     } else {
       SetBResize(IsIResize());
     }
-    SetBResize(IsBResize() || mFrame->IsSubtreeDirty());
+    SetBResize(IsBResize() || mFrame->IsSubtreeDirty() ||
+               
+               (aFrameType == LayoutFrameType::Table &&
+                mParentReflowInput->IsBResize()));
   } else {
     
     
