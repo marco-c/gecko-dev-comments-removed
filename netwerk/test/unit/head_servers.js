@@ -231,7 +231,12 @@ class NodeHTTP2ServerCode extends BaseNodeHTTPServerCode {
     );
 
     global.sessionCount = 0;
-    global.server.on("session", () => {
+    global.sessions = new Set();
+    global.server.on("session", session => {
+      global.sessions.add(session);
+      session.on("close", () => {
+        global.sessions.delete(session);
+      });
       global.sessionCount++;
     });
 
@@ -977,6 +982,6 @@ class HTTP3Server {
       return ports[0];
     }
 
-    return -1;
+    return undefined;
   }
 }
