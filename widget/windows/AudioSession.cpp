@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <mmdeviceapi.h>
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
@@ -89,6 +90,12 @@ StaticRefPtr<AudioSession> sService;
 void StartAudioSession() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sService);
+
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return;
+  }
+
   sService = new AudioSession();
 
   
@@ -105,13 +112,14 @@ void StartAudioSession() {
 
 void StopAudioSession() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(sService);
-  NS_DispatchBackgroundTask(
+  if (sService) {
+    NS_DispatchBackgroundTask(
       NS_NewRunnableFunction("StopAudioSession", []() -> void {
         MOZ_ASSERT(AudioSession::GetSingleton(),
                    "AudioSession should outlive background threads");
         AudioSession::GetSingleton()->Stop();
       }));
+  }
 }
 
 AudioSession* AudioSession::GetSingleton() {
@@ -263,7 +271,7 @@ void AudioSession::StopInternal(const MutexAutoLock& aProofOfLock,
         
         
         agileAsc = nullptr;
-        if (shouldRestart) {
+        if (shouldRestart && !AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
           NS_DispatchBackgroundTask(
               NS_NewCancelableRunnableFunction("RestartAudioSession", [] {
                 AudioSession* as = AudioSession::GetSingleton();
