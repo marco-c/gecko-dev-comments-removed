@@ -7,6 +7,8 @@
 #ifndef mozilla_UrlClassifierExceptionList_h
 #define mozilla_UrlClassifierExceptionList_h
 
+#include "nsHashKeys.h"
+#include "nsTHashMap.h"
 #include "nsIUrlClassifierExceptionList.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
@@ -27,8 +29,35 @@ class UrlClassifierExceptionList final : public nsIUrlClassifierExceptionList {
  private:
   ~UrlClassifierExceptionList() = default;
 
+  
+  using ExceptionEntryArray =
+      nsTArray<RefPtr<nsIUrlClassifierExceptionListEntry>>;
+
+  
+  using SiteToEntries = nsTHashMap<nsCStringHashKey, ExceptionEntryArray>;
+
+  
+  
+  static bool ExceptionListMatchesLoad(ExceptionEntryArray* aExceptions,
+                                       nsIURI* aURI, nsIURI* aTopLevelURI,
+                                       bool aIsPrivateBrowsing);
+
+  
+  NS_IMETHODIMP GetSchemelessSiteFromUrlPattern(const nsACString& aUrlPattern,
+                                                nsACString& aSite);
+
+  
   nsCString mFeature;
-  nsTArray<RefPtr<nsIUrlClassifierExceptionListEntry>> mEntries;
+
+  
+  
+  
+  
+  nsTHashMap<nsCStringHashKey, SiteToEntries> mExceptions;
+
+  
+  
+  nsTHashMap<nsCStringHashKey, ExceptionEntryArray> mGlobalExceptions;
 };
 
 }  
