@@ -655,6 +655,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetDeepLastChild(
 template <typename NodeType>
 nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
     nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary,
+    nsTArray<AncestorInfo>* aInclusiveAncestorsOfEndContainer) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
@@ -687,19 +688,29 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
     return nullptr;
   }
 
-  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
+  
+  
+  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
+      aInclusiveAncestorsOfEndContainer && parent->GetShadowRoot() == aNode) {
+    const int32_t i = aInclusiveAncestorsOfEndContainer->IndexOf(
+        parent, 0, InclusiveAncestorComparator());
+
     
     
     
     
-    if (aNode->IsShadowRoot()) {
-      if (nsIContent* child = parent->GetFirstChild()) {
-        return child;
-      }
+    
+    
+    
+    if (i != -1) {
+      MOZ_ASSERT(!aInclusiveAncestorsOfEndContainer->ElementAt(i)
+                      .mIsDescendantInShadowTree);
+      return parent->AsContent();
     }
   }
 
-  return ContentIteratorBase::GetNextSibling(parent, aAllowCrossShadowBoundary);
+  return ContentIteratorBase::GetNextSibling(parent, aAllowCrossShadowBoundary,
+                                             aInclusiveAncestorsOfEndContainer);
 }
 
 
@@ -1228,8 +1239,8 @@ void ContentSubtreeIterator::Next() {
     return;
   }
 
-  nsINode* nextNode =
-      ContentIteratorBase::GetNextSibling(mCurNode, mAllowCrossShadowBoundary);
+  nsINode* nextNode = ContentIteratorBase::GetNextSibling(
+      mCurNode, mAllowCrossShadowBoundary, &mInclusiveAncestorsOfEndContainer);
 
   NS_ASSERTION(nextNode, "No next sibling!?! This could mean deadlock!");
 
@@ -1251,8 +1262,13 @@ void ContentSubtreeIterator::Next() {
         nextNode = slot->AssignedNodes()[0];
       }
     } else {
-      MOZ_ASSERT(
-          !mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree);
+      if (root) {
+        
+        
+        
+        mCurNode = nullptr;
+        return;
+      }
       nextNode = nextNode->GetFirstChild();
     }
     NS_ASSERTION(nextNode, "Iterator error, expected a child node!");
