@@ -127,13 +127,27 @@ void DocumentChannel::ShutdownListeners(nsresult aStatusCode) {
 void DocumentChannel::DisconnectChildListeners(
     const nsresult& aStatus, const nsresult& aLoadGroupStatus) {
   MOZ_ASSERT(NS_FAILED(aStatus));
-  mStatus = aLoadGroupStatus;
+
   
   
   
-  if (mLoadGroup) {
-    mLoadGroup->RemoveRequest(this, nullptr, aStatus);
-    mLoadGroup = nullptr;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aStatus != aLoadGroupStatus) {
+    MOZ_ASSERT(aStatus == NS_BINDING_RETARGETED);
+    MOZ_ASSERT(NS_SUCCEEDED(aLoadGroupStatus));
+
+    mStatus = aLoadGroupStatus;
+    if (mLoadGroup) {
+      mLoadGroup->RemoveRequest(this, nullptr, aStatus);
+      mLoadGroup = nullptr;
+    }
   }
 
   ShutdownListeners(aStatus);
