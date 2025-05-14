@@ -101,6 +101,8 @@ class CrashReporterHost {
   const nsCString& AdditionalMinidumps() const {
     return mExtraAnnotations[CrashReporter::Annotation::additional_minidumps];
   }
+  
+  const char* ProcessType() const;
 
   
   
