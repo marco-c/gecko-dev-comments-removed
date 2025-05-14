@@ -4,8 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  ClientEnvironmentBase:
-    "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
@@ -307,12 +306,35 @@ export class DiscoveryStreamFeed {
   }
 
   setupPrefs(isStartup = false) {
-    const experimentMetadata =
-      lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
-
     let utmSource = "pocket-newtab";
-    let utmCampaign = experimentMetadata?.slug;
-    let utmContent = experimentMetadata?.branch;
+    let utmCampaign;
+    let utmContent;
+
+    // getEnrollmentMetadata was introduced in 140, so if it's available,
+    // we use that here.
+    if (lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata) {
+      const experimentMetadata =
+        lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
+
+      utmCampaign = experimentMetadata?.slug;
+      utmContent = experimentMetadata?.branch;
+    } else {
+      // Otherwise, we fallback to the old mechanism which is available in
+      // 139.
+      const pocketNewtabExperiment = lazy.ExperimentAPI.getExperimentMetaData({
+        featureId: "pocketNewtab",
+      });
+
+      const pocketNewtabRollout = lazy.ExperimentAPI.getRolloutMetaData({
+        featureId: "pocketNewtab",
+      });
+
+      // We want to know if the user is in an experiment or rollout,
+      // but we prioritize experiments over rollouts.
+      const experimentMetaData = pocketNewtabExperiment || pocketNewtabRollout;
+      utmCampaign = experimentMetaData?.slug;
+      utmContent = experimentMetaData?.branch?.slug;
+    }
 
     this.store.dispatch(
       ac.BroadcastToContent({
@@ -1680,11 +1702,31 @@ export class DiscoveryStreamFeed {
   getExperimentInfo() {
     // We want to know if the user is in an experiment or rollout,
     // but we prioritize experiments over rollouts.
-    const experimentMetadata =
-      lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
+    let experimentName;
+    let experimentBranch;
+    // getEnrollmentMetadata was introduced in 140, so if it's available,
+    // we use that here.
+    if (lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata) {
+      const experimentMetadata =
+        lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
 
-    let experimentName = experimentMetadata?.slug ?? "";
-    let experimentBranch = experimentMetadata?.branch ?? "";
+      experimentName = experimentMetadata?.slug ?? "";
+      experimentBranch = experimentMetadata?.branch ?? "";
+    } else {
+      // Otherwise, we fallback to the old mechanism which is available in
+      // 139.
+      const pocketNewtabExperiment = lazy.ExperimentAPI.getExperimentMetaData({
+        featureId: "pocketNewtab",
+      });
+
+      const pocketNewtabRollout = lazy.ExperimentAPI.getRolloutMetaData({
+        featureId: "pocketNewtab",
+      });
+
+      const experimentMetaData = pocketNewtabExperiment || pocketNewtabRollout;
+      experimentName = experimentMetaData?.slug || "";
+      experimentBranch = experimentMetaData?.branch?.slug || "";
+    }
 
     return {
       experimentName,
@@ -1978,7 +2020,6 @@ export class DiscoveryStreamFeed {
       const requestMetadata = {
         utc_offset: lazy.NewTabUtils.getUtcOffset(),
         coarse_os: lazy.NewTabUtils.normalizeOs(),
-        coarse_os_version: lazy.ClientEnvironmentBase.os.version,
         surface_id: prefs[PREF_SURFACE_ID] || "",
       };
 
