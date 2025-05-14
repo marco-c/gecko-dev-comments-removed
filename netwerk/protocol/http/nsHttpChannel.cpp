@@ -2713,10 +2713,16 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
       (httpStatus != 407)) {
     CookieVisitor cookieVisitor(mResponseHead.get());
     SetCookieHeaders(cookieVisitor.CookieHeaders());
-    nsCOMPtr<nsIParentChannel> parentChannel;
-    NS_QueryNotificationCallbacks(this, parentChannel);
-    if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
-      httpParent->SetCookieHeaders(cookieVisitor.CookieHeaders());
+    if (!LoadOnStartRequestCalled()) {
+      
+      
+      
+      nsCOMPtr<nsIParentChannel> parentChannel;
+      NS_QueryNotificationCallbacks(this, parentChannel);
+      if (RefPtr<HttpChannelParent> httpParent =
+              do_QueryObject(parentChannel)) {
+        httpParent->SetCookieHeaders(cookieVisitor.CookieHeaders());
+      }
     }
 
     
