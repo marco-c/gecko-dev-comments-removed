@@ -1515,10 +1515,20 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branch16(Condition cond, const Address& lhs, Imm32 rhs,
                        Label* label) PER_SHARED_ARCH;
 
-  inline void branch32(Condition cond, Register lhs, Register rhs,
-                       Label* label) PER_SHARED_ARCH;
-  inline void branch32(Condition cond, Register lhs, Imm32 rhs,
-                       Label* label) PER_SHARED_ARCH;
+  
+  
+  
+  
+  
+  
+  enum class LhsHighBitsAreClean { Yes, No };
+
+  inline void branch32(Condition cond, Register lhs, Register rhs, Label* label,
+                       LhsHighBitsAreClean clean = LhsHighBitsAreClean::Yes)
+      PER_SHARED_ARCH;
+  inline void branch32(Condition cond, Register lhs, Imm32 rhs, Label* label,
+                       LhsHighBitsAreClean clean = LhsHighBitsAreClean::Yes)
+      PER_SHARED_ARCH;
 
   inline void branch32(Condition cond, Register lhs, const Address& rhs,
                        Label* label) DEFINED_ON(arm64);
