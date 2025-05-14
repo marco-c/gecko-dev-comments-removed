@@ -192,15 +192,6 @@ void SMILTimedElement::RemoveInstanceTimes(InstanceTimeList& aArray,
 
 
 
-const nsAttrValue::EnumTable SMILTimedElement::sFillModeTable[] = {
-    {"remove", FILL_REMOVE}, {"freeze", FILL_FREEZE}, {nullptr, 0}};
-
-const nsAttrValue::EnumTable SMILTimedElement::sRestartModeTable[] = {
-    {"always", RESTART_ALWAYS},
-    {"whenNotActive", RESTART_WHENNOTACTIVE},
-    {"never", RESTART_NEVER},
-    {nullptr, 0}};
-
 
 
 
