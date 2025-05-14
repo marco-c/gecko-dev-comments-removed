@@ -21,7 +21,7 @@ import {
   kDepthStencilFormats,
   kRegularTextureFormats,
 
-  textureDimensionAndFormatCompatible,
+  textureFormatAndDimensionPossiblyCompatible,
   textureFormatsAreViewCompatible } from
 '../../../format_info.js';
 import { AllFeaturesMaxLimitsGPUTest } from '../../../gpu_test.js';
@@ -82,6 +82,9 @@ class F extends AllFeaturesMaxLimitsGPUTest {
   dstCopyLevel)
   {
     this.skipIfTextureFormatNotSupported(srcFormat, dstFormat);
+    this.skipIfCopyTextureToTextureNotSupportedForFormat(srcFormat, dstFormat);
+    this.skipIfTextureFormatAndDimensionNotCompatible(srcFormat, dimension);
+    this.skipIfTextureFormatAndDimensionNotCompatible(dstFormat, dimension);
 
     
     
@@ -802,8 +805,8 @@ filter(({ srcFormat, dstFormat }) => {
 combine('dimension', kTextureDimensions).
 filter(
   ({ dimension, srcFormat, dstFormat }) =>
-  textureDimensionAndFormatCompatible(dimension, srcFormat) &&
-  textureDimensionAndFormatCompatible(dimension, dstFormat)
+  textureFormatAndDimensionPossiblyCompatible(dimension, srcFormat) &&
+  textureFormatAndDimensionPossiblyCompatible(dimension, dstFormat)
 ).
 beginSubcases().
 expandWithParams((p) => {
@@ -895,11 +898,6 @@ filter(({ srcFormat, dstFormat }) => {
 
 }).
 combine('dimension', kTextureDimensions).
-filter(
-  ({ dimension, srcFormat, dstFormat }) =>
-  textureDimensionAndFormatCompatible(dimension, srcFormat) &&
-  textureDimensionAndFormatCompatible(dimension, dstFormat)
-).
 beginSubcases().
 combine('textureSizeInBlocks', [
 
@@ -931,6 +929,8 @@ fn((t) => {
     srcCopyLevel,
     dstCopyLevel
   } = t.params;
+  t.skipIfTextureFormatAndDimensionNotCompatible(srcFormat, dimension);
+  t.skipIfTextureFormatAndDimensionNotCompatible(dstFormat, dimension);
   t.skipIfCopyTextureToTextureNotSupportedForFormat(srcFormat, dstFormat);
   const { blockWidth: srcBlockWidth, blockHeight: srcBlockHeight } =
   getBlockInfoForColorTextureFormat(srcFormat);
@@ -982,8 +982,8 @@ filter(({ srcFormat, dstFormat }) => {
 combine('dimension', ['2d', '3d']).
 filter(
   ({ dimension, srcFormat, dstFormat }) =>
-  textureDimensionAndFormatCompatible(dimension, srcFormat) &&
-  textureDimensionAndFormatCompatible(dimension, dstFormat)
+  textureFormatAndDimensionPossiblyCompatible(dimension, srcFormat) &&
+  textureFormatAndDimensionPossiblyCompatible(dimension, dstFormat)
 ).
 beginSubcases().
 combine('textureSize', [
@@ -1053,11 +1053,6 @@ filter(({ srcFormat, dstFormat }) => {
 
 }).
 combine('dimension', ['2d', '3d']).
-filter(
-  ({ dimension, srcFormat, dstFormat }) =>
-  textureDimensionAndFormatCompatible(dimension, srcFormat) &&
-  textureDimensionAndFormatCompatible(dimension, dstFormat)
-).
 beginSubcases().
 combine('textureSizeInBlocks', [
 
@@ -1079,9 +1074,6 @@ fn((t) => {
     srcCopyLevel,
     dstCopyLevel
   } = t.params;
-  t.skipIfTextureFormatNotSupported(srcFormat, dstFormat);
-  t.skipIfCopyTextureToTextureNotSupportedForFormat(srcFormat, dstFormat);
-
   const { blockWidth: srcBlockWidth, blockHeight: srcBlockHeight } =
   getBlockInfoForColorTextureFormat(srcFormat);
   const { blockWidth: dstBlockWidth, blockHeight: dstBlockHeight } =

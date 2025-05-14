@@ -22,7 +22,7 @@ import {
   isCompressedFloatTextureFormat,
   isDepthTextureFormat,
   kAllTextureFormats,
-  textureDimensionAndFormatCompatible,
+  textureFormatAndDimensionPossiblyCompatible,
   isCompressedTextureFormat,
   kPossibleMultisampledTextureFormats,
   kDepthTextureFormats,
@@ -98,7 +98,7 @@ Parameters:
     u
       .combine('stage', kShortShaderStages)
       .combine('format', kAllTextureFormats)
-      .filter(t => textureDimensionAndFormatCompatible('1d', t.format))
+      .filter(t => textureFormatAndDimensionPossiblyCompatible('1d', t.format))
       
       .filter(t => !isCompressedTextureFormat(t.format))
       .beginSubcases()
@@ -109,6 +109,7 @@ Parameters:
   .fn(async t => {
     const { format, stage, C, L, samplePoints } = t.params;
     t.skipIfTextureFormatNotSupported(format);
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, '1d');
 
     
     const [width] = chooseTextureSize({ minSize: 8, minBlocks: 4, format });
@@ -260,7 +261,8 @@ Parameters:
     u
       .combine('stage', kShortShaderStages)
       .combine('format', kAllTextureFormats)
-      .filter(t => textureDimensionAndFormatCompatible('3d', t.format))
+      .filter(t => textureFormatAndDimensionPossiblyCompatible('3d', t.format))
+      .filter(t => !isCompressedFloatTextureFormat(t.format))
       .beginSubcases()
       .combine('samplePoints', kSamplePointMethods)
       .combine('C', ['i32', 'u32'] as const)
@@ -269,6 +271,7 @@ Parameters:
   .fn(async t => {
     const { format, stage, samplePoints, C, L } = t.params;
     t.skipIfTextureFormatNotSupported(format);
+    t.skipIfTextureFormatAndDimensionNotCompatible(format, '3d');
 
     
     const size = chooseTextureSize({ minSize: 8, minBlocks: 4, format, viewDimension: '3d' });

@@ -291,7 +291,10 @@ g.test('depth_test_fail')
 
 
 
-const kMiddleDepthValue = 0.5001;
+
+
+
+const kMiddleDepthValue = 0.4;
 
 g.test('depth_compare_func')
   .desc(

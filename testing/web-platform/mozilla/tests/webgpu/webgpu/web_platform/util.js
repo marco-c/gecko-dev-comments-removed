@@ -2,7 +2,7 @@
 
 import { SkipTestCase } from '../../common/framework/fixture.js';import { getResourcePath } from '../../common/framework/resources.js';import { keysOf } from '../../common/util/data_tables.js';
 import { timeout } from '../../common/util/timeout.js';
-import { ErrorWithExtra, raceWithRejectOnTimeout } from '../../common/util/util.js';
+import { ErrorWithExtra, assert, raceWithRejectOnTimeout } from '../../common/util/util.js';
 
 import { srgbToDisplayP3 } from '../util/color_space_conversion.js';
 
@@ -561,12 +561,10 @@ timeoutMessage)
 
 
 
-
-
-
-
-
-export async function captureCameraFrame(test) {
+async function getStreamFromCamera(
+test,
+videoTrackConstraints)
+{
   test.skipIf(typeof navigator === 'undefined', 'navigator does not exist in this environment');
   test.skipIf(
     typeof navigator.mediaDevices === 'undefined' ||
@@ -574,44 +572,132 @@ export async function captureCameraFrame(test) {
     "Browser doesn't support capture frame from camera."
   );
 
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  const track = stream.getVideoTracks()[0];
-
-  test.skipIf(!track, "Doesn't have valid camera captured stream for testing.");
-
-  
-  if (typeof MediaStreamTrackProcessor !== 'undefined') {
-    const trackProcessor = new MediaStreamTrackProcessor({ track });
-    const reader = trackProcessor.readable.getReader();
-    const result = await reader.read();
-    if (result.done) {
-      test.skip('MediaStreamTrackProcessor: Cannot get valid frame from readable stream.');
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: videoTrackConstraints
+  });
+  test.trackForCleanup({
+    close() {
+      for (const track of stream.getTracks()) {
+        track.stop();
+      }
     }
+  });
+  return stream;
+}
 
-    return result.value;
+
+
+
+
+async function waitForNonBlankFrame({
+  getSource,
+  waitForNextFrame
+
+
+
+}) {
+  const cvs = document.createElement('canvas');
+  [cvs.width, cvs.height] = [4, 4];
+  const ctx = cvs.getContext('2d', { willReadFrequently: true });
+  let foundNonBlankFrame = false;
+  for (let i = 0; i < 50; ++i) {
+    ctx.drawImage(getSource(), 0, 0, cvs.width, cvs.height);
+    const pixels = new Uint32Array(ctx.getImageData(0, 0, cvs.width, cvs.height).data.buffer);
+    
+    if (pixels.some((p) => (p & 0x00ffffff) !== 0)) {
+      foundNonBlankFrame = true;
+      break;
+    }
+    await waitForNextFrame();
   }
+  assert(foundNonBlankFrame, 'Failed to get a non-blank video frame');
+}
 
-  
-  
-  if (typeof ImageCapture !== 'undefined') {
-    const imageCapture = new ImageCapture(track);
-    const imageBitmap = await imageCapture.grabFrame();
-    return new VideoFrame(imageBitmap);
-  }
 
-  
+
+
+
+
+
+export async function getVideoFrameFromCamera(
+test,
+videoTrackConstraints)
+{
   test.skipIf(
-    typeof HTMLVideoElement === 'undefined',
-    'Try to use HTMLVideoElement do capture but HTMLVideoElement not available.'
+    typeof MediaStreamTrackProcessor === 'undefined',
+    'MediaStreamTrackProcessor not supported'
   );
 
-  const video = document.createElement('video');
-  video.srcObject = stream;
+  const stream = await getStreamFromCamera(test, videoTrackConstraints);
+  const tracks = stream.getVideoTracks();
+  assert(tracks.length > 0, 'no tracks found');
+  const track = tracks[0];
 
-  const frame = await getVideoFrameFromVideoElement(test, video);
+  const trackProcessor = new MediaStreamTrackProcessor({ track });
+  const reader = trackProcessor.readable.getReader();
+
+  const waitForNextFrame = async () => {
+    const result = await reader.read();
+    assert(!result.done, "MediaStreamTrackProcessor: Couldn't get valid frame from stream.");
+    return result.value;
+  };
+  let frame = await waitForNextFrame();
+  await waitForNonBlankFrame({
+    getSource: () => frame,
+    async waitForNextFrame() {
+      frame.close();
+      frame = await waitForNextFrame();
+    }
+  });
+
   test.trackForCleanup(frame);
-
   return frame;
+}
+
+
+
+
+
+
+
+export async function getVideoElementFromCamera(
+test,
+videoTrackConstraints,
+paused)
+{
+  const stream = await getStreamFromCamera(test, videoTrackConstraints);
+
+  
+  const video = document.createElement('video');
+  video.loop = false;
+  video.muted = true;
+  video.setAttribute('playsinline', '');
+  video.srcObject = stream;
+  await new Promise((resolve) => {
+    video.onloadedmetadata = resolve;
+  });
+  await startPlayingAndWaitForVideo(video, () => {});
+
+  await waitForNonBlankFrame({
+    getSource: () => video,
+    waitForNextFrame: () =>
+    new Promise((resolve) =>
+    video.requestVideoFrameCallback(() => {
+      resolve();
+    })
+    )
+  });
+
+  if (paused) {
+    
+    await new Promise((resolve) => {
+      video.onpause = resolve;
+      video.pause();
+    });
+  }
+
+  return video;
 }
 
 const kFourColorsInfo = {

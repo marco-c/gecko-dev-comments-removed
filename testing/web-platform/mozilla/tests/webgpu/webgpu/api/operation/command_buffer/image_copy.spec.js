@@ -47,7 +47,7 @@ import {
   kDepthStencilFormats,
   kColorTextureFormats,
   depthStencilBufferTextureCopySupported,
-  textureDimensionAndFormatCompatible,
+  textureFormatAndDimensionPossiblyCompatible,
   depthStencilFormatAspectSize,
 
 
@@ -1218,7 +1218,9 @@ combineWithParams(kMethodsToTest).
 combine('format', kColorTextureFormats).
 filter(formatCanBeTested).
 combine('dimension', kTextureDimensions).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combineWithParams(kRowsPerImageAndBytesPerRowParams.paddings).
 expandWithParams((p) => {
@@ -1240,7 +1242,8 @@ fn((t) => {
     initMethod,
     checkMethod
   } = t.params;
-  t.skipIfTextureFormatNotSupported(t.params.format);
+  t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
   const info = getBlockInfoForTextureFormat(format);
   
   
@@ -1321,7 +1324,9 @@ combineWithParams(kMethodsToTest).
 combine('format', kColorTextureFormats).
 filter(formatCanBeTested).
 combine('dimension', kTextureDimensions).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combineWithParams(kOffsetsAndSizesParams.offsetsAndPaddings).
 combine('copyDepth', kOffsetsAndSizesParams.copyDepth) 
@@ -1352,6 +1357,7 @@ fn((t) => {
     rowsPerImageEqualsCopyHeight
   } = t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
 
   
   if (!(t.isCompatibility && (format === 'r8snorm' || format === 'rg8snorm'))) {
@@ -1420,7 +1426,9 @@ combineWithParams(kMethodsToTest).
 combine('format', kColorTextureFormats).
 filter(formatCanBeTested).
 combine('dimension', kTextureDimensions).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combine('originValueInBlocks', [0, 7, 8]).
 combine('copySizeValueInBlocks', [0, 7, 8]).
@@ -1444,6 +1452,7 @@ fn((t) => {
     checkMethod
   } = t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
   const info = getBlockInfoForColorTextureFormat(format);
 
   let originBlocks = [1, 1, 1];
@@ -1581,7 +1590,9 @@ combineWithParams(kMethodsToTest).
 combine('format', kColorTextureFormats).
 filter(formatCanBeTested).
 combine('dimension', ['2d', '3d']).
-filter(({ dimension, format }) => textureDimensionAndFormatCompatible(dimension, format)).
+filter(({ dimension, format }) =>
+textureFormatAndDimensionPossiblyCompatible(dimension, format)
+).
 beginSubcases().
 combineWithParams([
 
@@ -1641,6 +1652,8 @@ fn((t) => {
     checkMethod
   } = t.params;
   t.skipIfTextureFormatNotSupported(format);
+  t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
+
   const info = getBlockInfoForColorTextureFormat(format);
 
   const origin = {
