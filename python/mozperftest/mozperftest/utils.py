@@ -30,7 +30,7 @@ MULTI_REVISION_ROOT = f"{API_ROOT}/namespaces"
 MULTI_TASK_ROOT = f"{API_ROOT}/tasks"
 ON_TRY = "MOZ_AUTOMATION" in os.environ
 DOWNLOAD_TIMEOUT = 30
-METRICS_MATCHER = re.compile(r"(perfMetrics\s.*)")
+METRICS_MATCHER = re.compile(r"(perfMetrics.*)")
 PRETTY_APP_NAMES = {
     "org.mozilla.fenix": "fenix",
     "org.mozilla.firefox": "fenix",
@@ -87,10 +87,8 @@ class LogProcessor:
                 continue
             self.stdout.write(data.strip("\n") + "\n")
 
-            
-            match = self.matcher.match(data)
+            match = self.matcher.search(data)
             if match:
-                
                 self._match.append(match.group(1))
 
     def flush(self):
