@@ -311,7 +311,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  mozilla::Atomic<bool, mozilla::Relaxed> sweptChunksAvailable;
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> hasMinorSweepDataToMerge;
 
   
   MainThreadData<State> minorState;

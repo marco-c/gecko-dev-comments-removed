@@ -1041,7 +1041,7 @@ void BufferAllocator::sweepForMinorCollection() {
 
       
       
-      sweptChunksAvailable = true;
+      hasMinorSweepDataToMerge = true;
     }
   }
 
@@ -1058,9 +1058,12 @@ void BufferAllocator::sweepForMinorCollection() {
   }
 
   
-  AutoLock lock(this);
-  MOZ_ASSERT(!minorSweepingFinished);
-  minorSweepingFinished = true;
+  {
+    AutoLock lock(this);
+    MOZ_ASSERT(!minorSweepingFinished);
+    minorSweepingFinished = true;
+    hasMinorSweepDataToMerge = true;
+  }
 }
 
 void BufferAllocator::startMajorCollection(MaybeLock& lock) {
@@ -1130,7 +1133,7 @@ void BufferAllocator::sweepForMajorCollection(bool shouldDecommit) {
 
       
       
-      sweptChunksAvailable = true;
+      hasMinorSweepDataToMerge = true;
     }
   }
 
@@ -1303,7 +1306,7 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
 
   largeTenuredAllocs.ref().prepend(std::move(sweptLargeTenuredAllocs.ref()));
 
-  sweptChunksAvailable = false;
+  hasMinorSweepDataToMerge = false;
 
   if (minorSweepingFinished) {
     MOZ_ASSERT(minorState == State::Sweeping);
@@ -1494,7 +1497,7 @@ void BufferAllocator::checkGCStateNotInUse(const AutoLock& lock) {
 
     MOZ_ASSERT(!majorStartedWhileMinorSweeping);
     MOZ_ASSERT(!majorFinishedWhileMinorSweeping);
-    MOZ_ASSERT(!sweptChunksAvailable);
+    MOZ_ASSERT(!hasMinorSweepDataToMerge);
     MOZ_ASSERT(!minorSweepingFinished);
     MOZ_ASSERT(!majorSweepingFinished);
   }
@@ -1705,7 +1708,7 @@ void* BufferAllocator::bumpAllocOrRetry(size_t sizeClass, bool inGC) {
     return ptr;
   }
 
-  if (sweptChunksAvailable) {
+  if (hasMinorSweepDataToMerge) {
     
     
     mergeSweptData();
@@ -2085,9 +2088,18 @@ void BufferAllocator::freeMedium(void* alloc) {
 bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
   if (minorState == State::Sweeping && chunk->hasNurseryOwnedAllocs) {
     
+
+    
     
 
-    if (!sweptChunksAvailable) {
+    if (!hasMinorSweepDataToMerge) {
+#ifdef DEBUG
+      {
+        AutoLock lock(this);
+        MOZ_ASSERT_IF(!hasMinorSweepDataToMerge, !minorSweepingFinished);
+      }
+#endif
+
       
       return true;
     }
@@ -2097,8 +2109,7 @@ bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
     
     
     mergeSweptData();
-    if (chunk->hasNurseryOwnedAllocs) {
-      
+    if (minorState == State::Sweeping && chunk->hasNurseryOwnedAllocs) {
       return true;
     }
   }
