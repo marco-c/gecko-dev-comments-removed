@@ -29,7 +29,6 @@ class GlobalObject;
 enum class BuiltinObjectKind : uint8_t {
   
   Array,
-  Int32Array,
   ListFormat,
   Map,
   Promise,
@@ -41,9 +40,6 @@ enum class BuiltinObjectKind : uint8_t {
   
   FunctionPrototype,
   IteratorPrototype,
-  ObjectPrototype,
-  RegExpPrototype,
-  StringPrototype,
 
   
   DateTimeFormatPrototype,
