@@ -64,6 +64,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
           
           return;
         }
+        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+          return;
+        }
         fire.async(this.convert(event.originalTarget));
       };
       windowTracker.addListener("TabGroupCreate", onCreate);
@@ -78,13 +81,20 @@ this.tabGroups = class extends ExtensionAPIPersistent {
     },
     onMoved({ fire }) {
       let onMove = event => {
+        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+          return;
+        }
         fire.async(this.convert(event.originalTarget));
       };
       let onCreate = event => {
-        if (event.detail.isAdoptingGroup) {
+        if (!event.detail.isAdoptingGroup) {
           
-          fire.async(this.convert(event.originalTarget));
+          return;
         }
+        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+          return;
+        }
+        fire.async(this.convert(event.originalTarget));
       };
       windowTracker.addListener("TabGroupMoved", onMove);
       windowTracker.addListener("TabGroupCreate", onCreate);
@@ -104,6 +114,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
           
           return;
         }
+        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+          return;
+        }
         fire.async(this.convert(event.originalTarget));
       };
       windowTracker.addListener("TabGroupRemoved", onRemove);
@@ -118,6 +131,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
     },
     onUpdated({ fire }) {
       let onUpdate = event => {
+        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+          return;
+        }
         fire.async(this.convert(event.originalTarget));
       };
       windowTracker.addListener("TabGroupCollapse", onUpdate);
