@@ -1,3 +1,10 @@
+
+
+
+
+
+"use strict";
+
 const { PromptTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromptTestUtils.sys.mjs"
 );
@@ -294,7 +301,12 @@ engine_list_test(async function test_remove_button(tree, doc) {
 
   
   alertSpy.restore();
-  Services.search.resetToAppDefaultEngine();
+  let updatedPromise = SearchTestUtils.promiseSearchNotification(
+    SearchUtils.MODIFIED_TYPE.CHANGED,
+    SearchUtils.TOPIC_ENGINE_MODIFIED
+  );
+  doc.getElementById("restoreDefaultSearchEngines").click();
+  await updatedPromise;
   
   
 });
