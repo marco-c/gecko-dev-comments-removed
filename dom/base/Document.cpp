@@ -15032,11 +15032,14 @@ void Document::HandleEscKey() {
   
   
   
-  for (RefPtr<HTMLDialogElement> dialog : Reversed(mOpenDialogs)) {
+  if (RefPtr<HTMLDialogElement> dialog =
+          mOpenDialogs.SafeLastElement(nullptr)) {
     if (dialog->GetClosedBy() != HTMLDialogElement::ClosedBy::None) {
+      MOZ_ASSERT(StaticPrefs::dom_dialog_light_dismiss_enabled(),
+                 "Light Dismiss must have been enabled for GetClosedBy() "
+                 "returns != ClosedBy::None");
       const mozilla::dom::Optional<nsAString> returnValue;
       dialog->RequestClose(returnValue);
-      return;
     }
   }
 }
