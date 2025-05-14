@@ -686,8 +686,6 @@ void nsXULPopupManager::PopupMoved(nsIFrame* aFrame,
     return;
   }
 
-  menuPopupFrame->WidgetPositionOrSizeDidChange();
-
   
   
   LayoutDeviceIntRect curDevBounds = view->RecalcWidgetBounds();
@@ -720,8 +718,6 @@ void nsXULPopupManager::PopupResized(nsIFrame* aFrame,
   if (!menuPopupFrame) {
     return;
   }
-
-  menuPopupFrame->WidgetPositionOrSizeDidChange();
 
   nsView* view = menuPopupFrame->GetView();
   if (!view) {

@@ -287,6 +287,7 @@
 #include "mozilla/net/RequestContextService.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsAttrValue.h"
+#include "nsMenuPopupFrame.h"
 #include "nsAttrValueInlines.h"
 #include "nsBaseHashtable.h"
 #include "nsBidiUtils.h"
@@ -17273,32 +17274,46 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
       
       return EffectsInfo::FullyHidden();
     }
-    const IntersectionOutput output = DOMIntersectionObserver::Intersect(
-        aInput, *el, DOMIntersectionObserver::BoxToUse::Content);
-    if (!output.Intersects()) {
-      
-      
-      return EffectsInfo::FullyHidden();
-    }
-    MOZ_ASSERT(el->GetPrimaryFrame(), "How do we intersect without a frame?");
     if (MOZ_UNLIKELY(NS_WARN_IF(!subDocFrame))) {
       
       
       return EffectsInfo::FullyHidden();
     }
-    Maybe<nsRect> visibleRect = subDocFrame->GetVisibleRect();
-    
-    
-    
-    if (subDocFrame->PresContext()->IsPaginated()) {
+    const bool inPopup = subDocFrame->HasAnyStateBits(NS_FRAME_IN_POPUP);
+    Maybe<nsRect> visibleRect;
+    if (inPopup) {
+      nsMenuPopupFrame* popup =
+          do_QueryFrame(nsLayoutUtils::GetDisplayRootFrame(subDocFrame));
+      MOZ_ASSERT(popup);
+      if (!popup || !popup->IsVisibleOrShowing()) {
+        return EffectsInfo::FullyHidden();
+      }
+      
+      
       visibleRect = Some(subDocFrame->GetDestRect());
-    }
-    if (!visibleRect) {
+    } else {
+      const IntersectionOutput output = DOMIntersectionObserver::Intersect(
+          aInput, *el, DOMIntersectionObserver::BoxToUse::Content);
+      if (!output.Intersects()) {
+        
+        
+        return EffectsInfo::FullyHidden();
+      }
+      visibleRect = subDocFrame->GetVisibleRect();
+      if (!visibleRect) {
+        
+        
+        
+        visibleRect.emplace(*output.mIntersectionRect -
+                            output.mTargetRect.TopLeft());
+      }
       
       
       
-      visibleRect.emplace(*output.mIntersectionRect -
-                          output.mTargetRect.TopLeft());
+      
+      if (subDocFrame->PresContext()->IsPaginated()) {
+        visibleRect = Some(subDocFrame->GetDestRect());
+      }
     }
     gfx::MatrixScales rasterScale = subDocFrame->GetRasterScale();
     ParentLayerToScreenScale2D transformToAncestorScale =

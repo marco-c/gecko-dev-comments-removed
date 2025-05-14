@@ -1753,41 +1753,6 @@ void nsMenuPopupFrame::PerformMove(const Rects& aRects) {
     mAnchorType = MenuPopupAnchorType::Rect;
     mScreenRect = aRects.mUntransformedAnchorRect;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  WidgetPositionOrSizeDidChange();
-}
-
-void nsMenuPopupFrame::WidgetPositionOrSizeDidChange() {
-  
-  
-  
-  
-  if (!HasRemoteContent()) {
-    return;
-  }
-  for (nsIContent* content = mContent->GetFirstChild(); content;
-       content = content->GetNextNode(mContent)) {
-    if (content->IsXULElement(nsGkAtoms::browser) &&
-        content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
-                                          nsGkAtoms::_true, eIgnoreCase)) {
-      if (auto* browserParent = dom::BrowserParent::GetFrom(content)) {
-        browserParent->NotifyPositionUpdatedForContentsInPopup();
-      }
-    }
-  }
 }
 
 Maybe<nsRect> nsMenuPopupFrame::GetConstraintRect(
