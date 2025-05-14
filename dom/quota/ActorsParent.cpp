@@ -8214,9 +8214,6 @@ nsresult StorageOperationBase::CreateDirectoryMetadata2(
     const OriginMetadata& aOriginMetadata) {
   AssertIsOnIOThread();
 
-  QM_TRY(ArtificialFailure(
-      nsIQuotaArtificialFailure::CATEGORY_CREATE_DIRECTORY_METADATA2));
-
   QM_TRY_INSPECT(const auto& file, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                                        nsCOMPtr<nsIFile>, aDirectory, Clone));
 
@@ -8238,16 +8235,16 @@ nsresult StorageOperationBase::CreateDirectoryMetadata2(
   QM_TRY(MOZ_TO_RESULT(stream->Write32(0)));
 
   
-  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ("")));
+  
+  
+  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(aOriginMetadata.mSuffix.get())));
+
+  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(aOriginMetadata.mGroup.get())));
+
+  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(aOriginMetadata.mOrigin.get())));
 
   
-  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ("")));
-
-  QM_TRY(MOZ_TO_RESULT(
-      stream->WriteStringZ(aOriginMetadata.mStorageOrigin.get())));
-
-  
-  QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aOriginMetadata.mIsPrivate)));
+  QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(false)));
 
   QM_TRY(MOZ_TO_RESULT(stream->Flush()));
 
