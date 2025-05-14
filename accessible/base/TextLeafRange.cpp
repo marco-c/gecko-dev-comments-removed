@@ -581,11 +581,14 @@ std::pair<nsIContent*, uint32_t> TextLeafPoint::ToDOMPoint(
   if (!mAcc->IsHyperText()) {
     
     
+    
+    
+    MOZ_ASSERT(mOffset == 0 || mOffset == 1);
     nsIContent* parent = content->GetParent();
     MOZ_ASSERT(parent);
     auto childIndex = parent->ComputeIndexOf(content);
     MOZ_ASSERT(childIndex);
-    return {parent, *childIndex};
+    return {parent, mOffset == 0 ? *childIndex : *childIndex + 1};
   }
 
   
