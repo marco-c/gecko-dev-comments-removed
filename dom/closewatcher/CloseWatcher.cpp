@@ -58,8 +58,6 @@ bool CloseWatcher::RequestToClose(bool aRequireHistoryActionActivation) {
   
   
   
-  
-  
   if (!IsActive() || mIsRunningCancelAction) {
     return true;
   }
@@ -72,9 +70,7 @@ bool CloseWatcher::RequestToClose(bool aRequireHistoryActionActivation) {
   
   
   
-  init.mCancelable =
-      !aRequireHistoryActionActivation ||
-      (manager->CanGrow() && winCtx->HasValidHistoryActivation());
+  init.mCancelable = !aRequireHistoryActionActivation || (manager->CanGrow() && winCtx->HasValidHistoryActivation());
   RefPtr<Event> event = Event::Constructor(this, u"cancel"_ns, init);
   event->SetTrusted(true);
   
@@ -102,8 +98,6 @@ void CloseWatcher::Close() {
   
   
   
-  
-  
   if (!IsActive()) {
     return;
   }
@@ -124,9 +118,6 @@ void CloseWatcher::Destroy() {
 }
 
 bool CloseWatcher::IsActive() const {
-  if (!mEnabled) {
-    return false;
-  }
   if (auto* window = GetOwnerWindow()) {
     return window->IsFullyActive() &&
            window->EnsureCloseWatcherManager()->Contains(*this);
