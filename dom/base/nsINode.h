@@ -65,6 +65,7 @@ template <typename T>
 class Maybe;
 class PresShell;
 class TextEditor;
+class WidgetEvent;
 namespace dom {
 
 
@@ -95,6 +96,7 @@ class Element;
 class EventHandlerNonNull;
 template <typename T>
 class FlatTreeAncestorsOfTypeIterator;
+class HTMLDialogElement;
 template <typename T>
 class InclusiveAncestorsOfTypeIterator;
 template <typename T>
@@ -564,6 +566,11 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   mozilla::dom::Element* GetTopmostClickedPopover() const;
+
+  
+
+
+  mozilla::dom::HTMLDialogElement* NearestClickedDialog(mozilla::WidgetEvent*);
 
   bool IsNode() const final { return true; }
 

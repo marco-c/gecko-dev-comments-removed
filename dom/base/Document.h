@@ -1910,8 +1910,25 @@ class Document : public nsINode,
 
   MOZ_CAN_RUN_SCRIPT void ProcessCloseRequest();
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void HandleLightDismissOpenDialogs(WidgetEvent*);
+
   void AddModalDialog(HTMLDialogElement&);
   void RemoveModalDialog(HTMLDialogElement&);
+  void AddOpenDialog(HTMLDialogElement&);
+  void RemoveOpenDialog(HTMLDialogElement&);
+  bool HasOpenDialogs() const;
+  HTMLDialogElement* GetTopMostOpenDialog();
+  bool DialogIsInOpenDialogsList(HTMLDialogElement&);
+
+  void SetLastDialogPointerdownTarget(HTMLDialogElement&);
+  void ClearLastDialogPointerdownTarget() {
+    mLastDialogPointerdownTarget = nullptr;
+  }
+  HTMLDialogElement* GetLastDialogPointerdownTarget();
 
   
 
@@ -5363,6 +5380,14 @@ class Document : public nsINode,
 
   
   nsTArray<nsWeakPtr> mTopLayer;
+
+  
+  
+  nsTArray<HTMLDialogElement*> mOpenDialogs;
+
+  
+  
+  nsWeakPtr mLastDialogPointerdownTarget;
 
   
   
