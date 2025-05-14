@@ -10,6 +10,8 @@ const { ClientID } = ChromeUtils.importESModule(
 const PREF_CACHED_CLIENTID = "toolkit.telemetry.cachedClientID";
 const PREF_CACHED_PROFILEGROUPID = "toolkit.telemetry.cachedProfileGroupID";
 const PREF_CACHED_USAGE_PROFILEID = "datareporting.dau.cachedUsageProfileID";
+const PREF_CACHED_USAGE_PROFILEGROUPID =
+  "datareporting.dau.cachedUsageProfileGroupID";
 
 var drsPath;
 
@@ -415,7 +417,9 @@ add_task(async function test_setCanaryIdentifiers() {
   await ClientID._reset();
 
   
+  
   let usageProfileID = await ClientID.getUsageProfileID();
+  let usageProfileGroupID = await ClientID.getUsageProfileGroupID();
 
   
   await ClientID.setCanaryIdentifiers();
@@ -433,20 +437,25 @@ add_task(async function test_setCanaryIdentifiers() {
 
   let usageProfileID2 = await ClientID.getUsageProfileID();
   Assert.equal(usageProfileID, usageProfileID2);
+  let usageProfileGroupID2 = await ClientID.getUsageProfileGroupID();
+  Assert.equal(usageProfileGroupID, usageProfileGroupID2);
 });
 
-add_task(async function test_setCanaryUsageProfileIdentifier() {
+add_task(async function test_setCanaryUsageProfileIdentifiers() {
   const KNOWN_USAGE_PROFILEID = "beefbeef-beef-beef-beef-beeefbeefbee";
+  const KNOWN_USAGE_PROFILEGROUPID = "b0bacafe-b0ba-cafe-b0ba-cafeb0bacafe";
 
   await ClientID._reset();
 
   let clientID = await ClientID.getClientID();
   let profileGroupID = await ClientID.getProfileGroupID();
 
-  await ClientID.setCanaryUsageProfileIdentifier();
+  await ClientID.setCanaryUsageProfileIdentifiers();
 
   let usageProfileID = await ClientID.getUsageProfileID();
   Assert.equal(KNOWN_USAGE_PROFILEID, usageProfileID);
+  let usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(KNOWN_USAGE_PROFILEGROUPID, usageProfileGroupID);
 
   let clientID2 = await ClientID.getClientID();
   let profileGroupID2 = await ClientID.getProfileGroupID();
@@ -507,21 +516,26 @@ add_task(async function test_usage_profile_id() {
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
   Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
   await IOUtils.remove(drsPath, { ignoreAbsent: true });
   let clientID = await ClientID.getClientID();
   let profileGroupId = await ClientID.getProfileGroupID();
   let usageProfileID = await ClientID.getUsageProfileID();
+  let usageProfileGroupID = await ClientID.getUsageProfileGroupID();
   Assert.equal(typeof usageProfileID, "string");
   Assert.ok(uuidRegex.test(usageProfileID));
   
+  
   Assert.notEqual(usageProfileID, clientID);
   Assert.notEqual(usageProfileID, profileGroupId);
+  Assert.notEqual(usageProfileID, usageProfileGroupID);
 
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
   Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
   await IOUtils.writeUTF8(drsPath, "abcd", {
     tmpPath: drsPath + ".tmp",
   });
@@ -541,17 +555,20 @@ add_task(async function test_usage_profile_id() {
   const validProfileGroupID = "5afebd62-a33c-416c-b519-5c60fb988e8e";
   const validClientID = "d06361a2-67d8-4d41-b804-6fab6ddf5461";
   const validUsageProfileId = "4d38e1a4-5034-44b1-9683-c0d8f748ee24";
+  const validUsageProfileGroupID = "01234567-890a-bcde-f012-123456789abc";
 
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
   Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
   await IOUtils.writeJSON(drsPath, {
     version: 2,
     clientID: validClientID,
     profileGroupID: validProfileGroupID,
     usageProfileID: validUsageProfileId,
+    usageProfileGroupID: validUsageProfileGroupID,
   });
   usageProfileID = await ClientID.getUsageProfileID();
   Assert.equal(usageProfileID, validUsageProfileId);
@@ -565,6 +582,7 @@ add_task(async function test_usage_profile_id() {
     version: 2,
     profileGroupID: validProfileGroupID,
     usageProfileID: validUsageProfileId,
+    usageProfileGroupID: validUsageProfileGroupID,
   });
   usageProfileID = await ClientID.getUsageProfileID();
   Assert.equal(usageProfileID, validUsageProfileId);
@@ -577,6 +595,7 @@ add_task(async function test_usage_profile_id() {
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
   Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
   usageProfileID = await ClientID.getUsageProfileID();
   Assert.equal(usageProfileID, validUsageProfileId);
   if (AppConstants.platform != "android") {
@@ -605,12 +624,145 @@ add_task(async function test_usage_profile_id() {
   }
 });
 
-add_task(async function test_usage_profile_id_is_added() {
+add_task(async function test_usage_profile_group_id() {
+  const invalidIDs = [
+    [-1, "setIntPref"],
+    [0.5, "setIntPref"],
+    ["INVALID-UUID", "setStringPref"],
+    [true, "setBoolPref"],
+    ["", "setStringPref"],
+    ["3d1e1560-682a-4043-8cf2-aaaaaaaaaaaZ", "setStringPref"],
+  ];
+
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
   Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
+  await IOUtils.remove(drsPath, { ignoreAbsent: true });
+  let clientID = await ClientID.getClientID();
+  let profileGroupID = await ClientID.getProfileGroupID();
+  let usageProfileID = await ClientID.getUsageProfileID();
+  let usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(typeof usageProfileGroupID, "string");
+  Assert.ok(uuidRegex.test(usageProfileGroupID));
+  
+  
+  Assert.notEqual(usageProfileGroupID, clientID);
+  Assert.notEqual(usageProfileGroupID, profileGroupID);
+  Assert.notEqual(usageProfileGroupID, usageProfileID);
+
+  
+  await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
+  Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
+  await IOUtils.writeUTF8(drsPath, "abcd", {
+    tmpPath: drsPath + ".tmp",
+  });
+  usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(typeof usageProfileGroupID, "string");
+  Assert.ok(uuidRegex.test(usageProfileGroupID));
+
+  
+  let oldUsageProfileGroupID = usageProfileGroupID;
+  for (let [invalidID] of invalidIDs) {
+    await ClientID._reset();
+    await IOUtils.writeJSON(drsPath, { clientID: invalidID });
+    usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+    Assert.equal(usageProfileGroupID, oldUsageProfileGroupID);
+  }
+
+  const validProfileGroupID = "5afebd62-a33c-416c-b519-5c60fb988e8e";
+  const validClientID = "d06361a2-67d8-4d41-b804-6fab6ddf5461";
+  const validUsageProfileId = "4d38e1a4-5034-44b1-9683-c0d8f748ee24";
+  const validUsageProfileGroupID = "01234567-890a-bcde-f012-123456789abc";
+
+  
+  await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
+  Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  await IOUtils.writeJSON(drsPath, {
+    version: 2,
+    clientID: validClientID,
+    profileGroupID: validProfileGroupID,
+    usageProfileID: validUsageProfileId,
+    usageProfileGroupID: validUsageProfileGroupID,
+  });
+  usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(usageProfileGroupID, validUsageProfileGroupID);
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      usageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
+  }
+
+  
+  await ClientID._reset();
+  await IOUtils.writeJSON(drsPath, {
+    version: 2,
+    profileGroupID: validProfileGroupID,
+    usageProfileID: validUsageProfileId,
+    usageProfileGroupID: validUsageProfileGroupID,
+  });
+  usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(usageProfileGroupID, validUsageProfileGroupID);
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      usageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
+  }
+
+  
+  await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
+  Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
+  usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(usageProfileGroupID, validUsageProfileGroupID);
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      usageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
+  }
+
+  
+  for (let [invalidID, prefFunc] of invalidIDs) {
+    await ClientID._reset();
+    Services.prefs[prefFunc](PREF_CACHED_USAGE_PROFILEGROUPID, invalidID);
+    let cachedGroupID = ClientID.getCachedUsageProfileGroupID();
+    Assert.strictEqual(
+      cachedGroupID,
+      null,
+      "ClientID should ignore invalid cached profile group IDs"
+    );
+    Assert.ok(
+      !Services.prefs.prefHasUserValue(PREF_CACHED_USAGE_PROFILEGROUPID),
+      "ClientID should reset invalid cached profile group IDs"
+    );
+    Assert.ok(
+      Services.prefs.getPrefType(PREF_CACHED_USAGE_PROFILEGROUPID) ==
+        Ci.nsIPrefBranch.PREF_INVALID,
+      "ClientID should reset invalid cached profile group IDs"
+    );
+  }
+});
+
+add_task(async function test_usage_ids_are_added() {
+  
+  
+  await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
+  Services.prefs.clearUserPref(PREF_CACHED_PROFILEGROUPID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
 
   const validClientID = "d06361a2-67d8-4d41-b804-6fab6ddf5461";
   const validProfileGroupID = "5afebd62-a33c-416c-b519-5c60fb988e8e";
@@ -619,6 +771,7 @@ add_task(async function test_usage_profile_id_is_added() {
     version: 2,
     clientID: validClientID,
     profileGroupID: validProfileGroupID,
+    
     
   });
 
@@ -630,12 +783,18 @@ add_task(async function test_usage_profile_id_is_added() {
   let usageProfileID = await ClientID.getUsageProfileID();
   Assert.equal(typeof usageProfileID, "string");
   Assert.ok(uuidRegex.test(usageProfileID));
+  let usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(typeof usageProfileGroupID, "string");
+  Assert.ok(uuidRegex.test(usageProfileGroupID));
 
   
   Assert.notEqual(usageProfileID, clientID);
+  
+  Assert.notEqual(usageProfileGroupID, profileGroupID);
 });
 
 add_task(async function test_set_usage_profile_id() {
+  
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEID);
@@ -712,7 +871,7 @@ add_task(async function test_set_usage_profile_id() {
   Assert.equal(
     ClientID.getCachedUsageProfileID(),
     validUsageProfileID,
-    "Cached Usage Profile ID be correct."
+    "Cached Usage Profile ID should be correct."
   );
   Assert.equal(
     await ClientID.getClientID(),
@@ -744,5 +903,130 @@ add_task(async function test_set_usage_profile_id() {
   );
   if (AppConstants.platform != "android") {
     Assert.equal(validUsageProfileID, Glean.usage.profileId.testGetValue());
+  }
+});
+
+add_task(async function test_set_usage_profile_group_id() {
+  
+  
+  await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
+  await IOUtils.remove(drsPath, { ignoreAbsent: true });
+  let clientID = await ClientID.getClientID();
+  let usageProfileGroupID = await ClientID.getUsageProfileGroupID();
+  Assert.equal(typeof usageProfileGroupID, "string");
+  Assert.ok(uuidRegex.test(usageProfileGroupID));
+
+  await Assert.rejects(
+    ClientID.setUsageProfileGroupID("INVALID-UUID"),
+    /Invalid Usage Profile Group ID/,
+    "Invalid Usage Profile Group IDs aren't accepted"
+  );
+
+  Assert.equal(
+    ClientID.getCachedUsageProfileGroupID(),
+    usageProfileGroupID,
+    "Cached Usage Profile Group ID should not have changed."
+  );
+  Assert.equal(
+    await ClientID.getUsageProfileGroupID(),
+    usageProfileGroupID,
+    "Usage Profile Group ID should not have changed."
+  );
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      usageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
+  }
+
+  let validUsageProfileGroupID = "01234567-890a-bcde-f012-123456789abc";
+  await ClientID.setUsageProfileGroupID(validUsageProfileGroupID);
+
+  Assert.equal(
+    ClientID.getCachedUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Cached Usage Profile Group ID should have changed."
+  );
+  Assert.equal(
+    await ClientID.getUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Usage Profile Group ID should have changed."
+  );
+  Assert.equal(
+    await ClientID.getClientID(),
+    clientID,
+    "Client ID should not have changed."
+  );
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      validUsageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
+  }
+
+  
+  await ClientID._reset();
+  Assert.equal(
+    ClientID.getCachedUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Cached Usage Profile Group ID should be correct."
+  );
+
+  
+  await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_USAGE_PROFILEGROUPID);
+
+  Assert.equal(
+    ClientID.getCachedUsageProfileGroupID(),
+    null,
+    "Cached Usage Profile Group ID should not be available."
+  );
+  Assert.equal(
+    await ClientID.getUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Usage Profile Group ID should be correct."
+  );
+  Assert.equal(
+    ClientID.getCachedUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Cached Usage Profile Group ID should be correct."
+  );
+  Assert.equal(
+    await ClientID.getClientID(),
+    clientID,
+    "Client ID should not have changed."
+  );
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      validUsageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
+  }
+
+  
+  await ClientID._reset();
+  await IOUtils.remove(drsPath, { ignoreAbsent: true });
+
+  Assert.equal(
+    ClientID.getCachedUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Cached Usage Profile Group ID should be correct."
+  );
+  Assert.equal(
+    await ClientID.getUsageProfileGroupID(),
+    validUsageProfileGroupID,
+    "Usage Profile Group ID should be correct."
+  );
+  Assert.equal(
+    await ClientID.getClientID(),
+    clientID,
+    "Client ID should not have changed."
+  );
+  if (AppConstants.platform != "android") {
+    Assert.equal(
+      validUsageProfileGroupID,
+      Glean.usage.profileGroupId.testGetValue()
+    );
   }
 });
