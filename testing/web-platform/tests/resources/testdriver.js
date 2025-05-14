@@ -256,6 +256,51 @@
             
 
 
+            emulation: {
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                set_geolocation_override: function (params) {
+                    
+                    assertBidiIsEnabled();
+                    return window.test_driver_internal.bidi.emulation.set_geolocation_override(
+                        params);
+                },
+            },
+            
+
+
             log: {
                 entry_added: {
                     
@@ -1574,6 +1619,12 @@
                         throw new Error(
                             'bidi.bluetooth.request_device_prompt_updated.on is not implemented by testdriver-vendor.js');
                     }
+                }
+            },
+            emulation: {
+                set_geolocation_override: function (params) {
+                    throw new Error(
+                        "bidi.emulation.set_geolocation_override is not implemented by testdriver-vendor.js");
                 }
             },
             log: {

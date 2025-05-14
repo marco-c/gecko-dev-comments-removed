@@ -261,6 +261,17 @@
                     'bluetooth.requestDevicePromptUpdated', on_event);
     };
 
+    window.test_driver_internal.bidi.emulation.set_geolocation_override =
+        function (params) {
+            return create_action("bidi.emulation.set_geolocation_override", {
+                
+                contexts: [window],
+                
+                coordinates: null,
+                ...(params ?? {})
+            });
+        }
+
     window.test_driver_internal.bidi.log.entry_added.subscribe =
         function (params) {
             return subscribe({
