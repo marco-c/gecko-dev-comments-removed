@@ -4364,8 +4364,35 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               
               
               
-              allDeltaOverflown = !ComputeScrollTarget(
-                  mCurrentTarget, wheelEvent, COMPUTE_DEFAULT_ACTION_TARGET);
+              
+              
+              nsIFrame* lastScrollFrame = WheelTransaction::GetScrollTargetFrame();
+              bool wheelTransactionHandlesInput = false;
+              if (lastScrollFrame) {
+                ScrollContainerFrame* scrollContainerFrame = lastScrollFrame->GetScrollTargetFrame();
+                if (scrollContainerFrame->IsRootScrollFrameOfDocument()) {
+                  
+                  
+                  
+                  wheelTransactionHandlesInput = true;
+                  allDeltaOverflown = !WheelHandlingUtils::CanScrollOn(scrollContainerFrame,
+                                                                       wheelEvent->mDeltaX, 0.0);
+                } else if(WheelHandlingUtils::CanScrollOn(scrollContainerFrame,
+                                                          wheelEvent->mDeltaX,
+                                                          wheelEvent->mDeltaY)) {
+                  
+                  
+                  
+                  
+                  wheelTransactionHandlesInput = true;
+                  allDeltaOverflown = false;
+                }
+              }
+              if (!wheelTransactionHandlesInput) {
+                allDeltaOverflown = !ComputeScrollTarget(
+                    mCurrentTarget, wheelEvent,
+                    COMPUTE_DEFAULT_ACTION_TARGET_WITHOUT_WHEEL_TRANSACTION);
+              }
             }
           } else {
             
