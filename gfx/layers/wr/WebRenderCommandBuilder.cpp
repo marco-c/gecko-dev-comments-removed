@@ -40,8 +40,7 @@
 
 #include <cstdint>
 
-namespace mozilla {
-namespace layers {
+namespace mozilla::layers {
 
 using namespace gfx;
 using namespace image;
@@ -1723,6 +1722,7 @@ WebRenderCommandBuilder::WebRenderCommandBuilder(
       mLastAsr(nullptr),
       mBuilderDumpIndex(0),
       mDumpIndent(0),
+      mApzEnabled(true),
       mDoGrouping(false),
       mContainsSVGGroup(false) {}
 
@@ -1942,7 +1942,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     return;
   }
 
-  bool dumpEnabled = ShouldDumpDisplayList(aDisplayListBuilder);
+  const bool dumpEnabled = ShouldDumpDisplayList(aDisplayListBuilder);
   if (dumpEnabled) {
     
     
@@ -1960,11 +1960,10 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     mClipManager.BeginList(aSc);
   }
 
-  const bool apzEnabled = mManager->AsyncPanZoomEnabled();
   do {
     nsDisplayItem* item = iter.GetNextItem();
 
-    DisplayItemType itemType = item->GetType();
+    const DisplayItemType itemType = item->GetType();
 
     
     
@@ -2019,8 +2018,12 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       }
     }
 
+    AutoRestore<bool> restoreApzEnabled(mApzEnabled);
+    mApzEnabled = mApzEnabled && mManager->AsyncPanZoomEnabled() &&
+                  itemType != DisplayItemType::TYPE_VT_CAPTURE;
+
     Maybe<NewLayerData> newLayerData;
-    if (apzEnabled) {
+    if (mApzEnabled) {
       
       
       
@@ -2122,59 +2125,57 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       }
     }
 
-    if (apzEnabled) {
-      if (newLayerData) {
+    if (newLayerData) {
+      
+      
+      mAsrStack.pop_back();
+
+      if (newLayerData->mDeferredItem) {
+        aSc.RestoreDeferredTransformItem(newLayerData->mDeferredItem);
+      }
+
+      const ActiveScrolledRoot* stopAtAsr = newLayerData->mStopAtAsr;
+
+      int32_t descendants =
+          mLayerScrollData.size() - newLayerData->mLayerCountBeforeRecursing;
+
+      nsDisplayTransform* deferred = newLayerData->mDeferredItem;
+      ScrollableLayerGuid::ViewID deferredId = newLayerData->mDeferredId;
+
+      if (newLayerData->mTransformShouldGetOwnLayer) {
         
         
-        mAsrStack.pop_back();
+        
+        
+        
+        mLayerScrollData.emplace_back();
+        mLayerScrollData.back().Initialize(
+            mManager->GetScrollData(), item, descendants,
+            deferred->GetActiveScrolledRoot(), Nothing(),
+            ScrollableLayerGuid::NULL_SCROLL_ID);
 
-        if (newLayerData->mDeferredItem) {
-          aSc.RestoreDeferredTransformItem(newLayerData->mDeferredItem);
-        }
+        
+        
+        descendants++;
 
-        const ActiveScrolledRoot* stopAtAsr = newLayerData->mStopAtAsr;
-
-        int32_t descendants =
-            mLayerScrollData.size() - newLayerData->mLayerCountBeforeRecursing;
-
-        nsDisplayTransform* deferred = newLayerData->mDeferredItem;
-        ScrollableLayerGuid::ViewID deferredId = newLayerData->mDeferredId;
-
-        if (newLayerData->mTransformShouldGetOwnLayer) {
-          
-          
-          
-          
-          
-          mLayerScrollData.emplace_back();
-          mLayerScrollData.back().Initialize(
-              mManager->GetScrollData(), item, descendants,
-              deferred->GetActiveScrolledRoot(), Nothing(),
-              ScrollableLayerGuid::NULL_SCROLL_ID);
-
-          
-          
-          descendants++;
-
-          
-          
-          
-          
-          
-          mLayerScrollData.emplace_back();
-          mLayerScrollData.back().Initialize(
-              mManager->GetScrollData(), deferred, descendants, stopAtAsr,
-              aSc.GetDeferredTransformMatrix(), deferredId);
-        } else {
-          
-          
-          
-          mLayerScrollData.emplace_back();
-          mLayerScrollData.back().Initialize(
-              mManager->GetScrollData(), item, descendants, stopAtAsr,
-              deferred ? aSc.GetDeferredTransformMatrix() : Nothing(),
-              deferredId);
-        }
+        
+        
+        
+        
+        
+        mLayerScrollData.emplace_back();
+        mLayerScrollData.back().Initialize(
+            mManager->GetScrollData(), deferred, descendants, stopAtAsr,
+            aSc.GetDeferredTransformMatrix(), deferredId);
+      } else {
+        
+        
+        
+        mLayerScrollData.emplace_back();
+        mLayerScrollData.back().Initialize(
+            mManager->GetScrollData(), item, descendants, stopAtAsr,
+            deferred ? aSc.GetDeferredTransformMatrix() : Nothing(),
+            deferredId);
       }
     }
   } while (iter.HasNext());
@@ -2954,5 +2955,4 @@ WebRenderGroupData::~WebRenderGroupData() {
   mFollowingGroup.ClearImageKey(mManager, true);
 }
 
-}  
 }  
