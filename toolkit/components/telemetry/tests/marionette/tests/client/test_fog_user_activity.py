@@ -31,9 +31,29 @@ class TestClientActivity(FOGTestCase):
         expected_pings = ["baseline", "usage-reporting"]
 
         
+        
+        
+        
+        
+        def is_startup_baseline_ping(ping):
+            return (
+                ping["request_url"]["doc_type"] == "baseline"
+                and ping["payload"]["metrics"]
+                .get("labeled_counter", {})
+                .get("glean.validation.pings_submitted", {})
+                .get("events")
+                == 1
+            )
+
         [ping0, ping1] = self.wait_for_pings(
-            self.restart_browser, DauReportFilter, 2, ping_server=self.fog_ping_server
+            self.restart_browser,
+            lambda ping: is_startup_baseline_ping(ping)
+            or ping["request_url"]["doc_type"] == "usage-reporting",
+            2,
+            ping_server=self.fog_ping_server,
         )
+
+        
         received_pings = sorted(
             [
                 ping0["request_url"]["doc_type"],
