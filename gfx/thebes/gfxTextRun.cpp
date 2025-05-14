@@ -3455,8 +3455,11 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   
+  
   if (candidateFont &&
-      candidateMatchType.generic == StyleGenericFontFamily::None) {
+      candidateMatchType.generic == StyleGenericFontFamily::None &&
+      presentation != FontPresentation::EmojiExplicit &&
+      presentation != FontPresentation::TextExplicit) {
     *aMatchType = candidateMatchType;
     return candidateFont.forget();
   }
