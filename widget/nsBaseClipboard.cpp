@@ -850,6 +850,38 @@ nsBaseClipboard::IsClipboardTypeSupported(ClipboardType aWhichClipboard,
   }
 }
 
+
+
+NS_IMETHODIMP nsBaseClipboard::GetNativeClipboardData(
+    nsITransferable* aTransferable, ClipboardType aWhichClipboard) {
+  MOZ_DIAGNOSTIC_ASSERT(aTransferable);
+  MOZ_DIAGNOSTIC_ASSERT(
+      nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
+
+  
+  
+  nsTArray<nsCString> flavors;
+  nsresult rv = aTransferable->FlavorsTransferableCanImport(flavors);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  for (const auto& flavor : flavors) {
+    auto dataOrError = GetNativeClipboardData(flavor, aWhichClipboard);
+    if (dataOrError.isErr()) {
+      continue;
+    }
+
+    if (dataOrError.inspect()) {
+      aTransferable->SetTransferData(flavor.get(), dataOrError.inspect());
+      
+      break;
+    }
+  }
+
+  return NS_OK;
+}
+
 void nsBaseClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
     const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
     HasMatchingFlavorsCallback&& aCallback) {
@@ -872,10 +904,18 @@ void nsBaseClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
   aCallback(std::move(results));
 }
 
+
+
 void nsBaseClipboard::AsyncGetNativeClipboardData(
     nsITransferable* aTransferable, ClipboardType aWhichClipboard,
     GetDataCallback&& aCallback) {
   aCallback(GetNativeClipboardData(aTransferable, aWhichClipboard));
+}
+
+void nsBaseClipboard::AsyncGetNativeClipboardData(
+    const nsACString& aFlavor, ClipboardType aWhichClipboard,
+    GetNativeDataCallback&& aCallback) {
+  aCallback(GetNativeClipboardData(aFlavor, aWhichClipboard));
 }
 
 void nsBaseClipboard::ClearClipboardCache(ClipboardType aClipboardType) {
