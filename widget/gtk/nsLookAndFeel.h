@@ -140,10 +140,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     nscolor mOddCellBackground = kWhite;
     nscolor mNativeHyperLinkText = kBlack;
     nscolor mNativeVisitedHyperLinkText = kBlack;
-    
-    
-    
-    nscolor mComboBoxText = kBlack;
     ColorPair mField;
     ColorPair mWindow;
     ColorPair mDialog;

@@ -135,8 +135,6 @@ enum WidgetNodeType : int {
   MOZ_GTK_SCALE_THUMB_HORIZONTAL,
   MOZ_GTK_SCALE_THUMB_VERTICAL,
   
-  MOZ_GTK_ENTRY,
-  
   MOZ_GTK_EXPANDER,
   
 
@@ -427,8 +425,6 @@ const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
 
 gint moz_gtk_get_titlebar_button_spacing();
 
-gint moz_gtk_get_titlebar_preferred_height();
-
 
 
 
@@ -441,12 +437,5 @@ gint moz_gtk_get_titlebar_preferred_height();
 
 size_t GetGtkHeaderBarButtonLayout(mozilla::Span<ButtonLayout>,
                                    bool* aReversedButtonsPlacement);
-
-
-
-
-
-
-GtkBorder GetTopLevelCSDDecorationSize();
 
 #endif
