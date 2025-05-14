@@ -24,6 +24,7 @@
 #include "nsQueryObject.h"
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "mozilla/StaticPrefs_network.h"
 
 #include <algorithm>
 
@@ -480,9 +481,14 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
     return;
   }
 
+  nsCOMPtr<nsIURI> uri;
+  NS_GetFinalChannelURI(channel, getter_AddRefs(uri));
+
   
   
-  if (SniffURI(aRequest)) {
+  if ((StaticPrefs::network_sniff_use_extension() ||
+       (uri && uri->SchemeIs("file"))) &&
+      SniffURI(aRequest)) {
 #ifdef DEBUG
     MutexAutoLock lock(mMutex);
     NS_ASSERTION(!mContentType.IsEmpty(),
@@ -558,7 +564,7 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest) {
 
 bool nsUnknownDecoder::SniffForXML(nsIRequest* aRequest) {
   
-  if (!SniffURI(aRequest)) {
+  if (!StaticPrefs::network_sniff_use_extension() || !SniffURI(aRequest)) {
     
     MutexAutoLock lock(mMutex);
     mContentType = TEXT_XML;
