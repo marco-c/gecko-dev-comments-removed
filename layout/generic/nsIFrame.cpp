@@ -11988,8 +11988,8 @@ nsRect nsIFrame::GetCompositorHitTestArea(nsDisplayListBuilder* aBuilder) {
 CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     nsDisplayListBuilder* aBuilder) {
   CompositorHitTestInfo result = CompositorHitTestInvisibleToHit;
-
-  if (aBuilder->IsInsidePointerEventsNoneDoc()) {
+  if (aBuilder->IsInsidePointerEventsNoneDoc() ||
+      aBuilder->IsInViewTransitionCapture()) {
     
     
     return result;
