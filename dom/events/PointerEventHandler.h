@@ -80,6 +80,10 @@ class PointerEventHandler final {
 
   
   
+  [[nodiscard]] static bool ShouldDispatchClickEventOnCapturingElement();
+
+  
+  
   static void UpdateActivePointerState(WidgetMouseEvent* aEvent,
                                        nsIContent* aTargetContent = nullptr);
 
@@ -144,6 +148,20 @@ class PointerEventHandler final {
   static dom::Element* GetPointerCapturingElement(uint32_t aPointerId);
 
   
+
+
+
+
+
+  [[nodiscard]] static RefPtr<dom::Element>
+  GetPointerCapturingElementAtLastPointerUp();
+
+  
+
+
+  static void ReleasePointerCapturingElementAtLastPointerUp();
+
+  
   
   
   static void ReleaseIfCaptureByDescendant(nsIContent* aContent);
@@ -205,11 +223,13 @@ class PointerEventHandler final {
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT static void DispatchPointerFromMouseOrTouch(
       PresShell* aShell, nsIFrame* aEventTargetFrame,
-      nsIContent* aEventTargetContent, WidgetGUIEvent* aMouseOrTouchEvent,
-      bool aDontRetargetEvents, nsEventStatus* aStatus,
-      nsIContent** aMouseOrTouchEventTarget = nullptr);
+      nsIContent* aEventTargetContent, dom::Element* aPointerCapturingElement,
+      WidgetGUIEvent* aMouseOrTouchEvent, bool aDontRetargetEvents,
+      nsEventStatus* aStatus, nsIContent** aMouseOrTouchEventTarget = nullptr);
 
   
 

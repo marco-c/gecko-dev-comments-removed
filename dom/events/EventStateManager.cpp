@@ -180,7 +180,7 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
 
 static nsINode* GetCommonAncestorForMouseUp(
     nsINode* aCurrentMouseUpTarget, nsINode* aLastMouseDownTarget,
-    Maybe<FormControlType>& aLastMouseDownInputControlType) {
+    const Maybe<FormControlType>& aLastMouseDownInputControlType) {
   if (!aCurrentMouseUpTarget || !aLastMouseDownTarget) {
     return nullptr;
   }
@@ -4221,6 +4221,12 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
             esm->PostHandleMouseUp(mouseUpEvent, aStatus, aOverrideClickTarget);
       }
 
+      
+      
+      
+      
+      PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp();
+
       if (PresShell* presShell = presContext->GetPresShell()) {
         RefPtr<nsFrameSelection> frameSelection = presShell->FrameSelection();
         frameSelection->SetDragState(false);
@@ -5986,12 +5992,28 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
       }
     }
   } else {
-    aEvent->mClickTarget =
-        !aEvent->mClickEventPrevented
-            ? GetCommonAncestorForMouseUp(
-                  mouseContent, mouseDownInfo.mLastMouseDownContent,
-                  mouseDownInfo.mLastMouseDownInputControlType)
-            : nullptr;
+    MOZ_ASSERT(aEvent->mMessage == eMouseUp);
+    aEvent->mClickTarget = [&]() -> EventTarget* {
+      if (aEvent->mClickEventPrevented ||
+          !mouseDownInfo.mLastMouseDownContent) {
+        return nullptr;
+      }
+      
+      
+      
+      if (PointerEventHandler::ShouldDispatchClickEventOnCapturingElement()) {
+        const RefPtr<Element> capturingElementAtLastPointerUp =
+            PointerEventHandler::GetPointerCapturingElementAtLastPointerUp();
+        if (capturingElementAtLastPointerUp &&
+            capturingElementAtLastPointerUp->GetPresContext(
+                Element::PresContextFor::eForComposedDoc) == mPresContext) {
+          return capturingElementAtLastPointerUp;
+        }
+      }
+      return GetCommonAncestorForMouseUp(
+          mouseContent, mouseDownInfo.mLastMouseDownContent,
+          mouseDownInfo.mLastMouseDownInputControlType);
+    }();
     if (aEvent->mClickTarget) {
       aEvent->mClickCount = mouseDownInfo.mClickCount;
       mouseDownInfo.mClickCount = 0;

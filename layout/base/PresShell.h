@@ -2366,7 +2366,7 @@ class PresShell final : public nsStubDocumentObserver,
 
     MOZ_CAN_RUN_SCRIPT bool DispatchPrecedingPointerEvent(
         AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
-        nsIContent* aPointerCapturingContent, bool aDontRetargetEvents,
+        Element* aPointerCapturingElement, bool aDontRetargetEvents,
         EventTargetData* aEventTargetData, nsEventStatus* aEventStatus);
 
     
@@ -2604,7 +2604,7 @@ class PresShell final : public nsStubDocumentObserver,
     MOZ_CAN_RUN_SCRIPT nsresult
     HandleEventWithPointerCapturingContentWithoutItsFrame(
         AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
-        nsIContent* aPointerCapturingContent, nsEventStatus* aEventStatus);
+        dom::Element* aPointerCapturingElement, nsEventStatus* aEventStatus);
 
     
 
@@ -2801,7 +2801,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
     [[nodiscard]] Result<nsIContent*, nsresult> GetOverrideClickTarget(
-        WidgetGUIEvent* aGUIEvent, nsIFrame* aFrameForPresShell);
+        WidgetGUIEvent* aGUIEvent, nsIFrame* aFrameForPresShell,
+        nsIContent* aPointerCapturingContent);
 
     
 

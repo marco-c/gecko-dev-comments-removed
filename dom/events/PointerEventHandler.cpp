@@ -5,19 +5,21 @@
 
 
 #include "PointerEventHandler.h"
-#include "mozilla/EventForwards.h"
-#include "nsIContentInlines.h"
-#include "nsIFrame.h"
+
 #include "PointerEvent.h"
 #include "PointerLockManager.h"
-#include "nsRFPService.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "nsIContentInlines.h"
+#include "nsIFrame.h"
+#include "nsIWeakReferenceUtils.h"
+#include "nsRFPService.h"
 #include "nsUserCharacteristics.h"
 
 namespace mozilla {
@@ -42,6 +44,10 @@ static nsTHashMap<nsUint32HashKey, BrowserParent*>*
     sPointerCaptureRemoteTargetTable = nullptr;
 
 
+
+MOZ_RUNINIT nsWeakPtr sPointerCapturingElementAtLastPointerUpEvent;
+
+
 void PointerEventHandler::InitializeStatics() {
   MOZ_ASSERT(!sPointerCaptureList, "InitializeStatics called multiple times!");
   sPointerCaptureList =
@@ -60,6 +66,7 @@ void PointerEventHandler::ReleaseStatics() {
   sPointerCaptureList = nullptr;
   delete sActivePointersIds;
   sActivePointersIds = nullptr;
+  sPointerCapturingElementAtLastPointerUpEvent = nullptr;
   if (sPointerCaptureRemoteTargetTable) {
     MOZ_ASSERT(XRE_IsParentProcess());
     delete sPointerCaptureRemoteTargetTable;
@@ -70,6 +77,12 @@ void PointerEventHandler::ReleaseStatics() {
 
 bool PointerEventHandler::IsPointerEventImplicitCaptureForTouchEnabled() {
   return StaticPrefs::dom_w3c_pointer_events_implicit_capture();
+}
+
+
+bool PointerEventHandler::ShouldDispatchClickEventOnCapturingElement() {
+  return StaticPrefs::
+      dom_w3c_pointer_events_dispatch_click_on_pointer_capturing_element();
 }
 
 
@@ -118,6 +131,7 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
               nullptr,  true));
       return;
     case ePointerDown:
+      sPointerCapturingElementAtLastPointerUpEvent = nullptr;
       
       if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
         
@@ -578,6 +592,16 @@ Element* PointerEventHandler::GetPointerCapturingElement(
 }
 
 
+RefPtr<Element>
+PointerEventHandler::GetPointerCapturingElementAtLastPointerUp() {
+  return do_QueryReferent(sPointerCapturingElementAtLastPointerUpEvent);
+}
+
+void PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp() {
+  sPointerCapturingElementAtLastPointerUpEvent = nullptr;
+}
+
+
 void PointerEventHandler::ReleaseIfCaptureByDescendant(nsIContent* aContent) {
   
   
@@ -764,12 +788,15 @@ EventMessage PointerEventHandler::ToPointerEventMessage(
 
 void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     PresShell* aShell, nsIFrame* aEventTargetFrame,
-    nsIContent* aEventTargetContent, WidgetGUIEvent* aMouseOrTouchEvent,
-    bool aDontRetargetEvents, nsEventStatus* aStatus,
+    nsIContent* aEventTargetContent, Element* aPointerCapturingElement,
+    WidgetGUIEvent* aMouseOrTouchEvent, bool aDontRetargetEvents,
+    nsEventStatus* aStatus,
     nsIContent** aMouseOrTouchEventTarget ) {
   MOZ_ASSERT(aEventTargetFrame || aEventTargetContent);
   MOZ_ASSERT(aMouseOrTouchEvent);
 
+  nsWeakPtr pointerCapturingElementWeak =
+      do_GetWeakReference(aPointerCapturingElement);
   EventMessage pointerMessage = eVoidEvent;
   if (aMouseOrTouchEvent->mClass == eMouseEventClass) {
     WidgetMouseEvent* mouseEvent = aMouseOrTouchEvent->AsMouseEvent();
@@ -826,6 +853,19 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     if (pointerMessage == eVoidEvent) {
       return;
     }
+    
+    
+    
+    
+    
+    
+    
+    if (touchEvent->mMessage == eTouchEnd &&
+        touchEvent->mTouches.Length() == 1) {
+      MOZ_ASSERT(!pointerCapturingElementWeak);
+      pointerCapturingElementWeak = do_GetWeakReference(
+          GetPointerCapturingElement(touchEvent->mTouches[0]->Identifier()));
+    }
     RefPtr<PresShell> shell(aShell);
     for (uint32_t i = 0; i < touchEvent->mTouches.Length(); ++i) {
       Touch* touch = touchEvent->mTouches[i];
@@ -873,6 +913,14 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
       }
     }
   }
+  
+  
+  
+  if (!aShell->IsDestroying() && pointerMessage == ePointerUp &&
+      pointerCapturingElementWeak) {
+    sPointerCapturingElementAtLastPointerUpEvent =
+        std::move(pointerCapturingElementWeak);
+  }
 }
 
 
@@ -894,6 +942,16 @@ void PointerEventHandler::NotifyDestroyPresContext(
     }
     if (data->Empty()) {
       iter.Remove();
+    }
+  }
+  if (const RefPtr<Element> capturingElementAtLastPointerUp =
+          GetPointerCapturingElementAtLastPointerUp()) {
+    
+    
+    
+    if (capturingElementAtLastPointerUp->GetPresContext(
+            Element::eForComposedDoc) == aPresContext) {
+      ReleasePointerCapturingElementAtLastPointerUp();
     }
   }
   

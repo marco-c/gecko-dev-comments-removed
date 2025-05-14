@@ -1377,6 +1377,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
       }
       break;
   }
+
+  
+  
+  
+  PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp();
+
   return IPC_OK();
 }
 
