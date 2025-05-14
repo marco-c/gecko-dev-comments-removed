@@ -2,6 +2,9 @@
 
 
 
+
+
+
 'use strict';
 
 async function assert_detects_correct_language(
@@ -36,7 +39,7 @@ promise_test(async t => {
 
   const expectedInputLanguages = Object.keys(testInput);
 
-  const detector = await LanguageDetector.create({expectedInputLanguages});
+  const detector = await createLanguageDetector({expectedInputLanguages});
 
   for (const [language, input] of Object.entries(testInput)) {
     await assert_detects_correct_language(detector, input, language);
@@ -45,7 +48,7 @@ promise_test(async t => {
 
 promise_test(async () => {
   const expectedInputLanguages = ['en', 'es'];
-  const detector = await LanguageDetector.create({expectedInputLanguages});
+  const detector = await createLanguageDetector({expectedInputLanguages});
   assert_array_equals(detector.expectedInputLanguages, expectedInputLanguages);
   assert_true(Object.isFrozen(detector.expectedInputLanguages));
 }, 'Creating LanguageDetector with expectedInputLanguages');
