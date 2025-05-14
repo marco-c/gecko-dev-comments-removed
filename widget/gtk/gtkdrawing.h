@@ -110,6 +110,12 @@ enum GtkTabFlags {
 enum WidgetNodeType : int {
   
   MOZ_GTK_BUTTON,
+  
+  MOZ_GTK_TOOLBAR_BUTTON,
+  
+  MOZ_GTK_TOGGLE_BUTTON,
+  
+  MOZ_GTK_BUTTON_ARROW,
 
   
   MOZ_GTK_SCROLLBAR_VERTICAL,
@@ -129,6 +135,8 @@ enum WidgetNodeType : int {
   MOZ_GTK_SCALE_THUMB_HORIZONTAL,
   MOZ_GTK_SCALE_THUMB_VERTICAL,
   
+  MOZ_GTK_ENTRY,
+  
   MOZ_GTK_EXPANDER,
   
 
@@ -137,6 +145,10 @@ enum WidgetNodeType : int {
   MOZ_GTK_TEXT_VIEW_TEXT,
   
   MOZ_GTK_TEXT_VIEW_TEXT_SELECTION,
+  
+  MOZ_GTK_DROPDOWN,
+  
+  MOZ_GTK_DROPDOWN_ENTRY,
 
   
   MOZ_GTK_TOOLTIP,
@@ -207,6 +219,22 @@ enum WidgetNodeType : int {
   MOZ_GTK_HEADERBAR_FIXED_MAXIMIZED,
   
   MOZ_GTK_WINDOW_CONTAINER,
+  
+  MOZ_GTK_COMBOBOX,
+  
+  MOZ_GTK_COMBOBOX_BUTTON,
+  
+  MOZ_GTK_COMBOBOX_ARROW,
+  
+  MOZ_GTK_COMBOBOX_SEPARATOR,
+  
+  MOZ_GTK_COMBOBOX_ENTRY,
+  
+  MOZ_GTK_COMBOBOX_ENTRY_TEXTAREA,
+  
+  MOZ_GTK_COMBOBOX_ENTRY_BUTTON,
+  
+  MOZ_GTK_COMBOBOX_ENTRY_ARROW,
   
   MOZ_GTK_SCROLLED_WINDOW,
   
@@ -350,6 +378,16 @@ gint moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length,
 
 
 gint moz_gtk_get_tab_scroll_arrow_size(gint* width, gint* height);
+
+
+
+
+
+
+
+
+void moz_gtk_get_arrow_size(WidgetNodeType widgetType, gint* width,
+                            gint* height);
 
 
 
