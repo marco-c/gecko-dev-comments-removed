@@ -156,7 +156,8 @@ Proceed at your own peril.
 
 
 
-MINIMUM_RECOMMENDED_GIT_VERSION = Version("2.24")
+
+MINIMUM_RECOMMENDED_GIT_VERSION = Version("2.37")
 OLD_GIT_WARNING = """
 You are running an older version of git ("{old_version}").
 We recommend upgrading to at least version "{minimum_recommended_version}" to improve
