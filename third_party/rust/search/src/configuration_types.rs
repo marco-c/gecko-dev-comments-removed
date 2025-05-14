@@ -279,11 +279,20 @@ pub(crate) struct JSONEngineOrdersRecord {
 
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct JSONAvailableLocalesRecord {
+    
+    pub locales: Vec<String>,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "recordType", rename_all = "camelCase")]
 pub(crate) enum JSONSearchConfigurationRecords {
     DefaultEngines(JSONDefaultEnginesRecord),
     Engine(Box<JSONEngineRecord>),
     EngineOrders(JSONEngineOrdersRecord),
+    AvailableLocales(JSONAvailableLocalesRecord),
     
     
     
