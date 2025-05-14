@@ -654,6 +654,8 @@ FOG::TestGetDistribution(JSContext* aCx, JS::MutableHandleValue aResult) {
 void FOG::InitMemoryReporter() { RegisterWeakMemoryReporter(this); }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(FOGMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(FOGMallocEnclosingSizeOf)
+
 
 
 
@@ -661,8 +663,11 @@ MOZ_DEFINE_MALLOC_SIZE_OF(FOGMallocSizeOf)
 
 
 extern "C" size_t fog_malloc_size_of(const void* aPtr) {
-  MOZ_REPORT(aPtr);
-  return moz_malloc_size_of(aPtr);
+  return FOGMallocSizeOf(aPtr);
+}
+
+extern "C" size_t fog_malloc_enclosing_size_of(const void* aPtr) {
+  return FOGMallocEnclosingSizeOf(aPtr);
 }
 
 NS_IMETHODIMP
