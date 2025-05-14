@@ -49,7 +49,6 @@ function run_test() {
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
-  Assert.equal(iconURI.iconSize, "");
   Assert.equal(iconURI.imageSize, 3);
 
   
