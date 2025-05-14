@@ -1805,6 +1805,11 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 pref("browser.newtab.preload", true);
 
 
+#ifdef XP_LINUX
+  pref("browser.preonboarding.enabled", false);
+#endif
+
+
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.enabled", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-a", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-b", false);
@@ -1989,7 +1994,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.sections.personalizatio
 pref("browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.locale-config", "en-US,en-GB,en-CA");
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.user.enabled", true);
-pref("browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.blocked", false);
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker.visibleSections", "");
