@@ -14,11 +14,8 @@
 
 
 
-const getNegPrecisionTolerance = (graphResources) => {
-  const toleranceValueDict = {float32: 0, float16: 0};
-  const expectedDataType =
-      getExpectedDataTypeOfSingleOutput(graphResources.expectedOutputs);
-  return {metricType: 'ULP', value: toleranceValueDict[expectedDataType]};
+const getNegPrecisionTolerance = () => {
+  return {metricType: 'ULP', value: 0};
 };
 
 const negTests = [
@@ -548,6 +545,62 @@ const negTests = [
             25.03125,    -22.265625, -35.28125,  86.1875
           ],
           'descriptor': {shape: [2, 1, 4, 1, 3], dataType: 'float16'}
+        }
+      }
+    }
+  },
+
+  
+  {
+    'name': 'neg int8 4D tensor',
+    'graph': {
+      'inputs': {
+        'negInput': {
+          'data': [
+            
+            
+            -127, 0, 126, 127
+          ],
+          'descriptor': {shape: [1, 2, 2, 1], dataType: 'int8'}
+        }
+      },
+      'operators': [{
+        'name': 'neg',
+        'arguments': [{'input': 'negInput'}],
+        'outputs': 'negOutput'
+      }],
+      'expectedOutputs': {
+        'negOutput': {
+          'data': [127, 0, -126, -127],
+          'descriptor': {shape: [1, 2, 2, 1], dataType: 'int8'}
+        }
+      }
+    }
+  },
+
+  
+  {
+    'name': 'neg int32 4D tensor',
+    'graph': {
+      'inputs': {
+        'negInput': {
+          'data': [
+            
+            
+            -2147483647, 0, 2147483646, 2147483647
+          ],
+          'descriptor': {shape: [1, 2, 2, 1], dataType: 'int32'}
+        }
+      },
+      'operators': [{
+        'name': 'neg',
+        'arguments': [{'input': 'negInput'}],
+        'outputs': 'negOutput'
+      }],
+      'expectedOutputs': {
+        'negOutput': {
+          'data': [2147483647, 0, -2147483646, -2147483647],
+          'descriptor': {shape: [1, 2, 2, 1], dataType: 'int32'}
         }
       }
     }
