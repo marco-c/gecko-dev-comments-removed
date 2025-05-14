@@ -3680,7 +3680,7 @@ pref("browser.ml.modelCacheMaxSize", 4);
 
 pref("browser.ml.modelCacheTimeout", 120000);
 
-pref("browser.ml.minimumPhysicalMemory", 4);
+pref("browser.ml.minimumPhysicalMemory", 3);
 
 pref("browser.ml.checkForMemory", true);
 
