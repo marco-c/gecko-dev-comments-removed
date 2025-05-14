@@ -1697,9 +1697,10 @@ class JSDispatchableRunnable final : public Runnable {
   ~JSDispatchableRunnable() { MOZ_ASSERT(!mDispatchable); }
 
  public:
-  explicit JSDispatchableRunnable(JS::Dispatchable* aDispatchable)
+  explicit JSDispatchableRunnable(
+      js::UniquePtr<JS::Dispatchable>&& aDispatchable)
       : mozilla::Runnable("JSDispatchableRunnable"),
-        mDispatchable(aDispatchable) {
+        mDispatchable(std::move(aDispatchable)) {
     MOZ_ASSERT(mDispatchable);
   }
 
@@ -1714,18 +1715,19 @@ class JSDispatchableRunnable final : public Runnable {
         sShuttingDown ? JS::Dispatchable::ShuttingDown
                       : JS::Dispatchable::NotShuttingDown;
 
-    mDispatchable->run(jsapi.cx(), maybeShuttingDown);
-    mDispatchable = nullptr;  
+    JS::Dispatchable::Run(jsapi.cx(), std::move(mDispatchable),
+                          maybeShuttingDown);
+    
 
     return NS_OK;
   }
 
  private:
-  JS::Dispatchable* mDispatchable;
+  js::UniquePtr<JS::Dispatchable> mDispatchable;
 };
 
-static bool DispatchToEventLoop(void* closure,
-                                JS::Dispatchable* aDispatchable) {
+static bool DispatchToEventLoop(
+    void* closure, js::UniquePtr<JS::Dispatchable>&& aDispatchable) {
   MOZ_ASSERT(!closure);
 
   
@@ -1735,10 +1737,15 @@ static bool DispatchToEventLoop(void* closure,
 
   nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadSerialEventTarget();
   if (!mainTarget) {
+    
+    
+    
+    JS::Dispatchable::ReleaseFailedTask(std::move(aDispatchable));
     return false;
   }
 
-  RefPtr<JSDispatchableRunnable> r = new JSDispatchableRunnable(aDispatchable);
+  RefPtr<JSDispatchableRunnable> r =
+      new JSDispatchableRunnable(std::move(aDispatchable));
   MOZ_ALWAYS_SUCCEEDS(mainTarget->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
   return true;
 }
@@ -1778,6 +1785,7 @@ void nsJSContext::EnsureStatics() {
   JS::SetCreateGCSliceBudgetCallback(jsapi.cx(), CreateGCSliceBudget);
 
   JS::InitDispatchToEventLoop(jsapi.cx(), DispatchToEventLoop, nullptr);
+
   JS::InitConsumeStreamCallback(jsapi.cx(), ConsumeStream,
                                 FetchUtil::ReportJSStreamError);
 

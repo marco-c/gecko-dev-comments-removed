@@ -11,9 +11,10 @@
 
 #include "jstypes.h"  
 
-#include "ds/Fifo.h"         
-#include "js/AllocPolicy.h"  
-#include "js/HashTable.h"    
+#include "ds/Fifo.h"           
+#include "ds/PriorityQueue.h"  
+#include "js/AllocPolicy.h"    
+#include "js/HashTable.h"      
 #include "js/Promise.h"  
                          
 #include "js/RootingAPI.h"                
@@ -27,6 +28,7 @@ namespace js {
 
 class AutoLockHelperThreadState;
 class OffThreadPromiseRuntimeState;
+
 
 
 
@@ -133,10 +135,17 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   OffThreadPromiseTask(JSContext* cx, JS::Handle<PromiseObject*> promise);
 
   
-  virtual bool resolve(JSContext* cx, JS::Handle<PromiseObject*> promise) = 0;
+  virtual bool resolve(JSContext* cx, JS::Handle<PromiseObject*> promise) {
+    MOZ_CRASH("Tasks should override resolve");
+  };
 
   
+  
   void run(JSContext* cx, MaybeShuttingDown maybeShuttingDown) final;
+
+  
+  
+  void transferToRuntime() final;
 
   
   
@@ -148,6 +157,8 @@ class OffThreadPromiseTask : public JS::Dispatchable {
  public:
   ~OffThreadPromiseTask() override;
   static void DestroyUndispatchedTask(OffThreadPromiseTask* task);
+
+  JSRuntime* runtime() { return runtime_; }
 
   
   
@@ -162,18 +173,27 @@ class OffThreadPromiseTask : public JS::Dispatchable {
 
   
   
-  
-  
-  
   void dispatchResolveAndDestroy();
   void dispatchResolveAndDestroy(const AutoLockHelperThreadState& lock);
+
+  
+  
+  
+  
+  
+  static void DispatchResolveAndDestroy(
+      js::UniquePtr<OffThreadPromiseTask>&& task);
+  static void DispatchResolveAndDestroy(
+      js::UniquePtr<OffThreadPromiseTask>&& task,
+      const AutoLockHelperThreadState& lock);
 };
 
 using OffThreadPromiseTaskSet =
     HashSet<OffThreadPromiseTask*, DefaultHasher<OffThreadPromiseTask*>,
             SystemAllocPolicy>;
 
-using DispatchableFifo = Fifo<JS::Dispatchable*, 0, SystemAllocPolicy>;
+using DispatchableFifo =
+    Fifo<js::UniquePtr<JS::Dispatchable>, 0, SystemAllocPolicy>;
 
 class OffThreadPromiseRuntimeState {
   friend class OffThreadPromiseTask;
@@ -221,7 +241,8 @@ class OffThreadPromiseRuntimeState {
     return internalDispatchQueueAppended_.ref();
   }
 
-  static bool internalDispatchToEventLoop(void*, JS::Dispatchable*);
+  static bool internalDispatchToEventLoop(void*,
+                                          js::UniquePtr<JS::Dispatchable>&&);
   bool usingInternalDispatchQueue() const;
 
   void operator=(const OffThreadPromiseRuntimeState&) = delete;
@@ -239,6 +260,8 @@ class OffThreadPromiseRuntimeState {
   void internalDrain(JSContext* cx);
   bool internalHasPending();
   bool internalHasPending(AutoLockHelperThreadState& lock);
+
+  void stealFailedTask(JS::Dispatchable* dispatchable);
 
   
   void shutdown(JSContext* cx);

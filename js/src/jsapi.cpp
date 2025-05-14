@@ -3100,6 +3100,28 @@ JS_PUBLIC_API bool JS::SetPromiseUserInputEventHandlingState(
 }
 
 
+void JS::Dispatchable::Run(JSContext* cx,
+                           js::UniquePtr<JS::Dispatchable>&& task,
+                           MaybeShuttingDown maybeShuttingDown) {
+  
+  JS::Dispatchable* rawTaskPtr = task.release();
+  
+  rawTaskPtr->run(cx, maybeShuttingDown);
+}
+
+
+void JS::Dispatchable::ReleaseFailedTask(
+    js::UniquePtr<JS::Dispatchable>&& task) {
+  
+  JS::Dispatchable* rawTaskPtr = task.release();
+  
+  
+  
+  
+  rawTaskPtr->transferToRuntime();
+}
+
+
 
 
 

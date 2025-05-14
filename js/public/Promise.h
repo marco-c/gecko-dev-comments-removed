@@ -558,23 +558,48 @@ extern JS_PUBLIC_API bool SetPromiseUserInputEventHandlingState(
 extern JS_PUBLIC_API JSObject* GetWaitForAllPromise(
     JSContext* cx, JS::HandleObjectVector promises);
 
-
-
-
-
 class JS_PUBLIC_API Dispatchable {
- protected:
+ public:
   
-  Dispatchable() = default;
+  
+  
   virtual ~Dispatchable() = default;
 
- public:
   
   
   enum MaybeShuttingDown { NotShuttingDown, ShuttingDown };
 
   
+  
+  static void Run(JSContext* cx, js::UniquePtr<Dispatchable>&& task,
+                  MaybeShuttingDown maybeShuttingDown);
+
+  
+  
+  
+  static void ReleaseFailedTask(js::UniquePtr<Dispatchable>&& task);
+
+ protected:
+  
+  Dispatchable() = default;
+
+  
+  
+
+  
+  
+  
+  
   virtual void run(JSContext* cx, MaybeShuttingDown maybeShuttingDown) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual void transferToRuntime() = 0;
 };
 
 
@@ -600,8 +625,10 @@ class JS_PUBLIC_API Dispatchable {
 
 
 
-typedef bool (*DispatchToEventLoopCallback)(void* closure,
-                                            Dispatchable* dispatchable);
+
+
+typedef bool (*DispatchToEventLoopCallback)(
+    void* closure, js::UniquePtr<Dispatchable>&& dispatchable);
 
 extern JS_PUBLIC_API void InitDispatchToEventLoop(
     JSContext* cx, DispatchToEventLoopCallback callback, void* closure);

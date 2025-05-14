@@ -621,7 +621,7 @@ void CTypesActivityCallback(JSContext* aCx, JS::CTypesActivityType aType) {
 
 
 class JSDispatchableRunnable final : public WorkerThreadRunnable {
-  JS::Dispatchable* mDispatchable;
+  js::UniquePtr<JS::Dispatchable> mDispatchable;
 
   ~JSDispatchableRunnable() { MOZ_ASSERT(!mDispatchable); }
 
@@ -632,17 +632,19 @@ class JSDispatchableRunnable final : public WorkerThreadRunnable {
 
   void PostDispatch(WorkerPrivate* aWorkerPrivate,
                     bool aDispatchResult) override {
-    
     if (!aDispatchResult) {
-      mDispatchable = nullptr;
+      
+      
+      
+      JS::Dispatchable::ReleaseFailedTask(std::move(mDispatchable));
     }
   }
 
  public:
   JSDispatchableRunnable(WorkerPrivate* aWorkerPrivate,
-                         JS::Dispatchable* aDispatchable)
+                         js::UniquePtr<JS::Dispatchable>&& aDispatchable)
       : WorkerThreadRunnable("JSDispatchableRunnable"),
-        mDispatchable(aDispatchable) {
+        mDispatchable(std::move(aDispatchable)) {
     MOZ_ASSERT(mDispatchable);
   }
 
@@ -653,9 +655,11 @@ class JSDispatchableRunnable final : public WorkerThreadRunnable {
     AutoJSAPI jsapi;
     jsapi.Init();
 
-    mDispatchable->run(aWorkerPrivate->GetJSContext(),
-                       JS::Dispatchable::NotShuttingDown);
-    mDispatchable = nullptr;  
+    JS::Dispatchable::Run(aWorkerPrivate->GetJSContext(),
+                          std::move(mDispatchable),
+                          JS::Dispatchable::NotShuttingDown);
+    
+    
 
     return true;
   }
@@ -666,16 +670,23 @@ class JSDispatchableRunnable final : public WorkerThreadRunnable {
     AutoJSAPI jsapi;
     jsapi.Init();
 
-    mDispatchable->run(GetCurrentThreadWorkerPrivate()->GetJSContext(),
-                       JS::Dispatchable::ShuttingDown);
-    mDispatchable = nullptr;  
+    
+    
+    
+    
+    
+    JS::Dispatchable::Run(GetCurrentThreadWorkerPrivate()->GetJSContext(),
+                          std::move(mDispatchable),
+                          JS::Dispatchable::ShuttingDown);
+    
+    
 
     return NS_OK;
   }
 };
 
-static bool DispatchToEventLoop(void* aClosure,
-                                JS::Dispatchable* aDispatchable) {
+static bool DispatchToEventLoop(
+    void* aClosure, js::UniquePtr<JS::Dispatchable>&& aDispatchable) {
   
   
 
@@ -686,7 +697,7 @@ static bool DispatchToEventLoop(void* aClosure,
   
   
   RefPtr<JSDispatchableRunnable> r =
-      new JSDispatchableRunnable(workerPrivate, aDispatchable);
+      new JSDispatchableRunnable(workerPrivate, std::move(aDispatchable));
   return r->Dispatch(workerPrivate);
 }
 
