@@ -81,6 +81,9 @@ function initialState(previousState = { searchValueOrGrip: NO_SEARCH_VALUE }) {
     selectedTraceIndex: null,
 
     
+    selectedTraceLocation: null,
+
+    
     previews: null,
 
     
@@ -153,7 +156,7 @@ function update(state = initialState(), action) {
     }
 
     case "SELECT_TRACE": {
-      const { traceIndex } = action;
+      const { traceIndex, location } = action;
       if (
         traceIndex < 0 ||
         traceIndex >= state.mutableTraces.length ||
@@ -166,6 +169,7 @@ function update(state = initialState(), action) {
       return {
         ...state,
         selectedTraceIndex: traceIndex,
+        selectedTraceLocation: location,
 
         
         
@@ -184,6 +188,7 @@ function update(state = initialState(), action) {
       return {
         ...state,
         selectedTraceIndex: null,
+        selectedTraceLocation: null,
         previews: null,
       };
     }
