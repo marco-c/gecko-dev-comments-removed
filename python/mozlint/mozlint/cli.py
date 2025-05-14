@@ -512,7 +512,7 @@ def run(
         if out:
             fh = open(path, "w") if path else sys.stdout
 
-            if not path and fh.encoding == "ascii":
+            if not path and fh.encoding in ("ascii", "iso8859-1"):
                 
                 
                 
