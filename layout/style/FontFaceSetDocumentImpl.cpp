@@ -213,8 +213,8 @@ void FontFaceSetDocumentImpl::EnsureReady() {
 
 #ifdef DEBUG
 bool FontFaceSetDocumentImpl::HasRuleFontFace(FontFaceImpl* aFontFace) {
-  for (size_t i = 0; i < mRuleFaces.Length(); i++) {
-    if (mRuleFaces[i].mFontFace == aFontFace) {
+  for (const auto& record : mRuleFaces) {
+    if (record.mFontFace == aFontFace) {
       return true;
     }
   }
@@ -400,22 +400,21 @@ bool FontFaceSetDocumentImpl::UpdateRules(
   mNonRuleFacesDirty = false;
 
   
+  
+  
+  
+  
+  nsTArray<FontFaceRecord> oldRecords = std::move(mRuleFaces);
+
+  
   nsTHashMap<nsPtrHashKey<StyleLockedFontFaceRule>, FontFaceImpl*> ruleFaceMap;
-  for (size_t i = 0, i_end = mRuleFaces.Length(); i < i_end; ++i) {
-    FontFaceImpl* f = mRuleFaces[i].mFontFace;
+  for (const FontFaceRecord& record : oldRecords) {
+    FontFaceImpl* f = record.mFontFace;
     if (!f || !f->GetOwner()) {
       continue;
     }
     ruleFaceMap.InsertOrUpdate(f->GetRule(), f);
   }
-
-  
-  
-  
-  
-  
-
-  nsTArray<FontFaceRecord> oldRecords = std::move(mRuleFaces);
 
   
   
@@ -432,12 +431,12 @@ bool FontFaceSetDocumentImpl::UpdateRules(
   
   nsTHashSet<StyleLockedFontFaceRule*> handledRules;
 
-  for (size_t i = 0, i_end = aRules.Length(); i < i_end; ++i) {
+  for (const nsFontFaceRuleContainer& container : aRules) {
     
     
     
     
-    StyleLockedFontFaceRule* rule = aRules[i].mRule;
+    StyleLockedFontFaceRule* rule = container.mRule;
     if (!handledRules.EnsureInserted(rule)) {
       
       continue;
@@ -448,12 +447,12 @@ bool FontFaceSetDocumentImpl::UpdateRules(
       face = FontFace::CreateForRule(mOwner->GetParentObject(), mOwner, rule);
       faceImpl = face->GetImpl();
     }
-    InsertRuleFontFace(faceImpl, face, aRules[i].mOrigin, oldRecords, modified);
+    InsertRuleFontFace(faceImpl, face, container.mOrigin, oldRecords, modified);
   }
 
-  for (size_t i = 0, i_end = mNonRuleFaces.Length(); i < i_end; ++i) {
+  for (const FontFaceRecord& record : mNonRuleFaces) {
     
-    InsertNonRuleFontFace(mNonRuleFaces[i].mFontFace);
+    InsertNonRuleFontFace(record.mFontFace);
   }
 
   
@@ -467,7 +466,7 @@ bool FontFaceSetDocumentImpl::UpdateRules(
   
   
   
-  if (oldRecords.Length() > 0) {
+  if (!oldRecords.IsEmpty()) {
     modified = true;
     
     
@@ -478,13 +477,10 @@ bool FontFaceSetDocumentImpl::UpdateRules(
     
     
     
-    size_t count = oldRecords.Length();
-    for (size_t i = 0; i < count; ++i) {
-      RefPtr<FontFaceImpl> f = oldRecords[i].mFontFace;
-      gfxUserFontEntry* userFontEntry = f->GetUserFontEntry();
-      if (userFontEntry) {
-        nsFontFaceLoader* loader = userFontEntry->GetLoader();
-        if (loader) {
+    for (const FontFaceRecord& record : oldRecords) {
+      RefPtr<FontFaceImpl> f = record.mFontFace;
+      if (gfxUserFontEntry* userFontEntry = f->GetUserFontEntry()) {
+        if (nsFontFaceLoader* loader = userFontEntry->GetLoader()) {
           loader->Cancel();
           RemoveLoader(loader);
         }
