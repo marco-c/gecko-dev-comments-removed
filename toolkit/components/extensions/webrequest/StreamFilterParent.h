@@ -80,6 +80,7 @@ class StreamFilterParent final : public PStreamFilterParent,
     
     
     
+    
     Disconnecting,
     
     
@@ -148,14 +149,18 @@ class StreamFilterParent final : public PStreamFilterParent,
 
   static void AssertIsMainThread() { MOZ_ASSERT(NS_IsMainThread()); }
 
+  
+  
   template <typename Function>
   void RunOnMainThread(const char* aName, Function&& aFunc);
 
   void RunOnMainThread(already_AddRefed<Runnable> aRunnable);
 
+  
   template <typename Function>
   void RunOnActorThread(const char* aName, Function&& aFunc);
 
+  
   template <typename Function>
   void RunOnIOThread(const char* aName, Function&& aFunc);
 
@@ -170,7 +175,16 @@ class StreamFilterParent final : public PStreamFilterParent,
 
   RefPtr<net::ChannelEventQueue> mQueue;
 
+  
+  
   Mutex mBufferMutex MOZ_UNANNOTATED;
+
+  
+  
+  
+  
+  
+  int mPrependedBufferCount = 0;
 
   bool mReceivedStop;
   bool mSentStop;
@@ -181,15 +195,6 @@ class StreamFilterParent final : public PStreamFilterParent,
   
   
   bool mDisconnectedByOnStartRequest = false;
-
-  
-  
-  
-  
-  
-  
-  
-  bool mDisconnectedByFinishDisconnect = false;
 
   bool mBeforeOnStartRequest = true;
 

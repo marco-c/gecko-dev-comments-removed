@@ -268,6 +268,8 @@ void StreamFilterParent::Broken() {
     case State::Initialized:
     case State::TransferringData:
     case State::Suspended: {
+      
+      
       mState = State::Disconnecting;
       RefPtr<StreamFilterParent> self(this);
       RunOnMainThread(FUNC, [=] {
@@ -276,6 +278,12 @@ void StreamFilterParent::Broken() {
         }
       });
 
+      
+      
+      
+      
+      
+      
       FinishDisconnect();
     } break;
 
@@ -370,6 +378,8 @@ IPCResult StreamFilterParent::RecvDisconnect() {
     return IPC_OK();
   }
 
+  
+  
   mState = State::Disconnecting;
   CheckResult(SendFlushData());
   return IPC_OK();
@@ -388,24 +398,49 @@ IPCResult StreamFilterParent::RecvFlushedData() {
 
 void StreamFilterParent::FinishDisconnect() {
   RefPtr<StreamFilterParent> self(this);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mPrependedBufferCount = -1;
   RunOnIOThread(FUNC, [=] {
-    self->mDisconnectedByFinishDisconnect = true;
+    
     self->FlushBufferedData();
-
-    RunOnMainThread(FUNC, [=] {
-      if (self->mReceivedStop && !self->mSentStop) {
-        nsresult rv = self->EmitStopRequest(NS_OK);
-        Unused << NS_WARN_IF(NS_FAILED(rv));
-      } else if (self->mLoadGroup && !self->mDisconnected) {
-        Unused << self->mLoadGroup->RemoveRequest(self, nullptr, NS_OK);
-      }
-      self->mDisconnected = true;
-    });
 
     RunOnActorThread(FUNC, [=] {
       if (self->mState != State::Closed) {
         self->mState = State::Disconnected;
       }
+      
+      
+      RunOnIOThread(FUNC, [=] {
+        
+        
+        
+        if (!self->mBufferedData.isEmpty()) {
+          self->FlushBufferedData();
+        }
+      });
+      RunOnMainThread(FUNC, [=] {
+        if (self->mReceivedStop && !self->mSentStop) {
+          nsresult rv = self->EmitStopRequest(NS_OK);
+          Unused << NS_WARN_IF(NS_FAILED(rv));
+        } else if (self->mLoadGroup && !self->mDisconnected) {
+          Unused << self->mLoadGroup->RemoveRequest(self, nullptr, NS_OK);
+        }
+        self->mDisconnected = true;
+      });
     });
   });
 }
@@ -654,7 +689,10 @@ StreamFilterParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   RunOnActorThread(FUNC, [=] {
     if (self->IPCActive()) {
       self->CheckResult(self->SendStopRequest(aStatusCode));
-    } else if (self->mState != State::Disconnecting) {
+    } else if (self->mState == State::Disconnected) {
+      
+      
+      
       
       
       
@@ -692,7 +730,35 @@ void StreamFilterParent::DoSendData(Data&& aData) {
 
   if (mState == State::TransferringData) {
     CheckResult(SendData(aData));
+    
+    
+    
+  } else if (mState == State::Disconnecting) {
+    
+    
+    
+
+    
+    MOZ_ASSERT(mPrependedBufferCount != -1);
+
+    MutexAutoLock al(mBufferMutex);
+    if (mPrependedBufferCount == 0) {
+      mBufferedData.insertFront(new BufferedData(std::move(aData)));
+    } else {
+      MOZ_ASSERT(!mBufferedData.isEmpty());
+      int i = 0;
+      for (BufferedData* item : mBufferedData) {
+        if (++i == mPrependedBufferCount) {
+          item->setNext(new BufferedData(std::move(aData)));
+          ++mPrependedBufferCount;
+          break;
+        }
+      }
+      MOZ_ASSERT_UNREACHABLE("mPrependedBufferCount past end of mBufferedData");
+    }
   }
+
+  
 }
 
 NS_IMETHODIMP
@@ -700,9 +766,21 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
                                     nsIInputStream* aInputStream,
                                     uint64_t aOffset, uint32_t aCount) {
   AssertIsIOThread();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  if (mDisconnectedByOnStartRequest || mDisconnectedByFinishDisconnect ||
-      mState == State::Disconnected) {
+  if (mDisconnectedByOnStartRequest || mState == State::Disconnected) {
     
     
     
@@ -711,6 +789,11 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
     
     
     if (!mBufferedData.isEmpty()) {
+      
+      
+      MOZ_ASSERT(!mDisconnectedByOnStartRequest);
+      
+      
       FlushBufferedData();
     }
 
@@ -753,6 +836,15 @@ nsresult StreamFilterParent::FlushBufferedData() {
 
   while (!mBufferedData.isEmpty()) {
     UniquePtr<BufferedData> data(mBufferedData.popFirst());
+
+    if (NS_WARN_IF(mState == State::Closed)) {
+      
+      
+      
+      
+      
+      continue;
+    }
 
     nsresult rv = Write(data->mData);
     NS_ENSURE_SUCCESS(rv, rv);
