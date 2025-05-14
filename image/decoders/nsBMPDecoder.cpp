@@ -852,6 +852,7 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::SeekColorProfile(
 
   
   
+  MOZ_ASSERT(!mReturnIterator.isSome());
   mReturnIterator = mLexer.Clone(*mIterator, SIZE_MAX);
   if (!mReturnIterator) {
     return Transition::TerminateFailure();
@@ -870,6 +871,7 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadColorProfile(
   }
 
   
+  MOZ_ASSERT(mReturnIterator.isSome());
   mIterator = std::move(mReturnIterator);
   return Transition::To(State::ALLOCATE_SURFACE, 0);
 }
@@ -910,6 +912,15 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::AllocateSurface() {
 
   mPipe = std::move(*pipe);
   ClearRowBufferRemainder();
+
+  
+  
+  MOZ_ASSERT(!mReturnIterator.isSome());
+  mReturnIterator = mLexer.Clone(*mIterator, SIZE_MAX);
+  if (!mReturnIterator) {
+    return Transition::TerminateFailure();
+  }
+
   return Transition::To(State::COLOR_TABLE, mNumColors * mBytesPerColor);
 }
 
@@ -947,13 +958,22 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadColorTable(
   
   
   
-  
   if (mPreGapLength > mH.mDataOffset) {
-    return Transition::TerminateFailure();
+    
+    
+    
+    if (mPreGapLength - aLength > mH.mDataOffset) {
+      return Transition::TerminateFailure();
+    }
+    MOZ_ASSERT(mReturnIterator.isSome());
+    mIterator = std::move(mReturnIterator);
+    uint32_t gapLength = mH.mDataOffset - (mPreGapLength - aLength);
+    return Transition::ToUnbuffered(State::AFTER_GAP, State::GAP, gapLength);
   }
 
-  uint32_t gapLength = mH.mDataOffset - mPreGapLength;
+  mReturnIterator.reset();
 
+  uint32_t gapLength = mH.mDataOffset - mPreGapLength;
   return Transition::ToUnbuffered(State::AFTER_GAP, State::GAP, gapLength);
 }
 
