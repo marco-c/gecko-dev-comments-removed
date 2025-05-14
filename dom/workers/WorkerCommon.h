@@ -55,9 +55,6 @@ bool IsWorkerDebuggerGlobal(JSObject* global);
 
 bool IsWorkerDebuggerSandbox(JSObject* object);
 
-void UpdateWorkersPlaybackState(const nsPIDOMWindowInner& aWindow,
-                                bool aIsPlayingAudio);
-
 }  
 
 #endif  
