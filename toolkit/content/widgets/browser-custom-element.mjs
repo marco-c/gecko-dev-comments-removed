@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-
-
+// This is loaded into all XUL windows. Wrap in a block to prevent
+// leaking to window scope.
 {
   const { AppConstants } = ChromeUtils.importESModule(
     "resource://gre/modules/AppConstants.sys.mjs"
@@ -40,14 +40,14 @@
   Object.defineProperty(lazy, "ProcessHangMonitor", {
     configurable: true,
     get() {
-      
-      
-      
-      
+      // Import if we can - this is a browser/ module so it may not be
+      // available, in which case we return null. We replace this getter
+      // when the module becomes available (should be on delayed startup
+      // when the first browser window loads, via BrowserGlue.sys.mjs).
       const kURL = "resource:///modules/ProcessHangMonitor.sys.mjs";
       if (Cu.isESModuleLoaded(kURL)) {
         let { ProcessHangMonitor } = ChromeUtils.importESModule(kURL);
-        
+        // eslint-disable-next-line mozilla/valid-lazy
         Object.defineProperty(lazy, "ProcessHangMonitor", {
           value: ProcessHangMonitor,
         });
@@ -57,14 +57,14 @@
     },
   });
 
-  
+  // Get SessionStore module in the same as ProcessHangMonitor above.
   Object.defineProperty(lazy, "SessionStore", {
     configurable: true,
     get() {
       const kURL = "resource:///modules/sessionstore/SessionStore.sys.mjs";
       if (Cu.isESModuleLoaded(kURL)) {
         let { SessionStore } = ChromeUtils.importESModule(kURL);
-        
+        // eslint-disable-next-line mozilla/valid-lazy
         Object.defineProperty(lazy, "SessionStore", {
           value: SessionStore,
         });
@@ -107,14 +107,14 @@
 
       this._originalURI = null;
       this._searchTerms = "";
-      
-      
-      
-      
+      // When we open a prompt in reaction to a 401, if this 401 comes from
+      // a different base domain, the url of that site will be stored here
+      // and will be used for auth prompt spoofing protections.
+      // See bug 791594 for reference.
       this._currentAuthPromptURI = null;
-      
-
-
+      /**
+       * These are managed by the tabbrowser:
+       */
       this.droppedLinkHandler = null;
       this.mIconURL = null;
       this.lastURI = null;
@@ -130,9 +130,9 @@
             return;
           }
 
-          
-          
-          
+          // For drags that appear to be internal text (for example, tab drags),
+          // set the dropEffect to 'none'. This prevents the drop even if some
+          // other listener cancelled the event.
           var types = event.dataTransfer.types;
           if (
             types.includes("text/x-moz-text-internal") &&
@@ -143,8 +143,8 @@
             event.preventDefault();
           }
 
-          
-          
+          // No need to handle "dragover" in e10s, since nsDocShellTreeOwner.cpp in the child process
+          // handles that case using "@mozilla.org/content/dropped-link-handler;1" service.
           if (this.isRemoteBrowser) {
             return;
           }
@@ -173,9 +173,9 @@
             }
 
             try {
-              
-              
-              
+              // Submit a content analysis request for the DataTransfer and
+              // stop dispatching this drop event.  Reissue the drop if all
+              // requests are permitted, otherwise issue a dragexit.
               let request = {
                 analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
                 dataTransfer: event.dataTransfer,
@@ -188,8 +188,8 @@
                 windowGlobalParent: this.browsingContext.currentWindowContext,
               };
 
-              
-              
+              // Tell browser to record the event target and to delay EndDragSession
+              // until the content analysis results are given.
               dragSession.sendStoreDropTargetAndDelayEndDragSession(event);
 
               contentAnalysis.analyzeContentRequests([request], true).then(
@@ -205,22 +205,22 @@
                 }
               );
 
-              
+              // Do not allow this drop to continue dispatch.
               event.preventDefault();
               event.stopPropagation();
             } catch (e) {
               console.error(`content analysis dnd error: ${e}`);
 
-              
-              
-              
+              // On internal error, deny any drop.  CA has its own behavior to
+              // handle internal errors, like a lost connection to the agent, but
+              // we are more strict when facing errors here.
               event.preventDefault();
               event.stopPropagation();
             }
           }
 
-          
-          
+          // No need to handle "drop" in e10s, since nsDocShellTreeOwner.cpp in the child process
+          // handles that case using "@mozilla.org/content/dropped-link-handler;1" service.
           if (
             !this.droppedLinkHandler ||
             event.defaultPrevented ||
@@ -235,7 +235,7 @@
               return;
             }
 
-            
+            // Pass true to prevent the dropping of javascript:/data: URIs
             var links = linkHandler.dropLinks(event, true);
           } catch (ex) {
             return;
@@ -250,9 +250,9 @@
       );
 
       this.addEventListener("dragstart", event => {
-        
-        
-        
+        // If we're a remote browser dealing with a dragstart, stop it
+        // from propagating up, since our content process should be dealing
+        // with the mouse movement.
         if (this.isRemoteBrowser) {
           event.stopPropagation();
         }
@@ -267,7 +267,7 @@
             "browser:purge-session-history"
           );
         } catch (ex) {
-          
+          // It's not clear why this sometimes throws an exception.
         }
         this.observer = null;
       }
@@ -279,9 +279,9 @@
             browser.purgeSessionHistory();
           } else if (aTopic == "apz:cancel-autoscroll") {
             if (aState == browser._autoScrollScrollId) {
-              
-              
-              
+              // Set this._autoScrollScrollId to null, so in stopScroll() we
+              // don't call stopApzAutoscroll() (since it's APZ that
+              // initiated the stopping).
               browser._autoScrollScrollId = null;
               browser._autoScrollPresShellId = null;
 
@@ -369,18 +369,18 @@
 
       this._autoScrollPopup = null;
 
-      
-
-
+      /**
+       * These IDs identify the scroll frame being autoscrolled.
+       */
       this._autoScrollScrollId = null;
 
       this._autoScrollPresShellId = null;
     }
 
     connectedCallback() {
-      
-      
-      
+      // We typically use this to avoid running JS that triggers a layout during parse
+      // (see comment on the delayConnectedCallback implementation). In this case, we
+      // are using it to avoid a leak - see https://bugzilla.mozilla.org/show_bug.cgi?id=1441935#c20.
       if (this.delayConnectedCallback()) {
         return;
       }
@@ -412,10 +412,10 @@
       return this.webNavigation.canGoForward;
     }
 
-    
-    
-    
-    
+    // While an auth prompt from a base domain different than the current sites is open, we want to display the url of the cross domain site.
+    // This is to prevent possible auth spoofing scenarios.
+    // The URL of the requesting origin is provided by 'currentAuthPromptURI', this will only be non null while an auth prompt is open.
+    // See bug 791594 for reference.
     get currentURI() {
       if (this.currentAuthPromptURI) {
         return this.currentAuthPromptURI;
@@ -533,10 +533,10 @@
     }
 
     get messageManager() {
-      
-      
-      
-      
+      // Bug 1524084 - Trying to get at the message manager while in the crashed state will
+      // create a new message manager that won't shut down properly when the crashed browser
+      // is removed from the DOM. We work around that right now by returning null if we're
+      // in the crashed state.
       if (this.frameLoader && !this.isCrashed) {
         return this.frameLoader.messageManager;
       }
@@ -606,9 +606,9 @@
       }
       return null;
     }
-    
-
-
+    /**
+     * Note that this overrides webNavigation on XULFrameElement, and duplicates the return value for the non-remote case
+     */
     get webNavigation() {
       return this.isRemoteBrowser
         ? this._remoteWebNavigation
@@ -876,9 +876,9 @@
       params.loadFlags = loadFlags;
     }
 
-    
-
-
+    /**
+     * throws exception for unknown schemes
+     */
     loadURI(uri, params = {}) {
       if (!uri) {
         uri = lazy.blankURI;
@@ -887,9 +887,9 @@
       this._wrapURIChangeCall(() => this.webNavigation.loadURI(uri, params));
     }
 
-    
-
-
+    /**
+     * throws exception for unknown schemes
+     */
     fixupAndLoadURIString(uriString, params = {}) {
       if (!uriString) {
         this.loadURI(null, params);
@@ -946,8 +946,8 @@
     }
 
     onPageHide() {
-      
-      
+      // If we're browsing from the tab crashed UI to a URI that keeps
+      // this browser non-remote, we'll handle that here.
       lazy.SessionStore?.maybeExitCrashedState(this);
 
       if (!this.docShell || !this.fastFind) {
@@ -978,17 +978,17 @@
       this.dispatchEvent(event);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
+    /**
+     * When the pref "media.block-autoplay-until-in-foreground" is on,
+     * Gecko delays starting playback of media resources in tabs until the
+     * tab has been in the foreground or resumed by tab's play tab icon.
+     * - When Gecko delays starting playback of a media resource in a window,
+     * it sends a message to call activeMediaBlockStarted(). This causes the
+     * tab audio indicator to show.
+     * - When a tab is foregrounded, Gecko starts playing all delayed media
+     * resources in that tab, and sends a message to call
+     * activeMediaBlockStopped(). This causes the tab audio indicator to hide.
+     */
     activeMediaBlockStarted() {
       this._hasAnyPlayingMediaBeenBlocked = true;
       let event = document.createEvent("Events");
@@ -1071,14 +1071,14 @@
       this.resetFields();
       this.mInitialized = true;
       if (this.isRemoteBrowser) {
-        
-
-
-
+        /*
+         * Don't try to send messages from this function. The message manager for
+         * the <browser> element may not be initialized yet.
+         */
 
         this._remoteWebNavigation = new lazy.RemoteWebNavigation(this);
 
-        
+        // Initialize contentPrincipal to the about:blank principal for this loadcontext
         let aboutBlank = Services.io.newURI("about:blank");
         let ssm = Services.scriptSecurityManager;
         this._contentPrincipal = ssm.getLoadContextContentPrincipal(
@@ -1086,8 +1086,8 @@
           this.loadContext
         );
         this._contentPartitionedPrincipal = this._contentPrincipal;
-        
-        
+        // CSP for about:blank is null; if we ever change _contentPrincipal above,
+        // we should re-evaluate the CSP here.
         this._csp = null;
 
         if (!this.hasAttribute("disablehistory")) {
@@ -1100,9 +1100,9 @@
       }
 
       try {
-        
-        
-        
+        // |webNavigation.sessionHistory| will have been set by the frame
+        // loader when creating the docShell as long as this xul:browser
+        // doesn't have the 'disablehistory' attribute set.
         if (this.docShell && this.webNavigation.sessionHistory) {
           Services.obs.addObserver(
             this.observer,
@@ -1110,7 +1110,7 @@
             true
           );
 
-          
+          // enable global history if we weren't told otherwise
           if (
             !this.hasAttribute("disableglobalhistory") &&
             !this.isRemoteBrowser
@@ -1118,7 +1118,7 @@
             try {
               this.docShell.browsingContext.useGlobalHistory = true;
             } catch (ex) {
-              
+              // This can occur if the Places database is locked
               console.error("Error enabling browser global history: ", ex);
             }
           }
@@ -1127,8 +1127,8 @@
         console.error(e);
       }
       try {
-        
-        var securityUI = this.securityUI; 
+        // Ensures the securityUI is initialized.
+        var securityUI = this.securityUI; // eslint-disable-line no-unused-vars
       } catch (e) {}
 
       if (!this.isRemoteBrowser) {
@@ -1137,22 +1137,22 @@
       }
     }
 
-    
-
-
-
-
+    /**
+     * This is necessary because custom elements don't have a "real" destructor.
+     * This method is called explicitly by tabbrowser, when changing remoteness,
+     * and when we're disconnected or the window unloads.
+     */
     destroy() {
       elementsToDestroyOnUnload.delete(this);
 
-      
-      
-      
-      
-      
+      // If we're browsing from the tab crashed UI to a URI that causes the tab
+      // to go remote again, we catch this here, because swapping out the
+      // non-remote browser for a remote one doesn't cause the pagehide event
+      // to be fired. Previously, we used to do this in the frame script's
+      // unload handler.
       lazy.SessionStore?.maybeExitCrashedState(this);
 
-      
+      // Make sure that any open select is closed.
       let menulist = document.getElementById("ContentSelectDropdown");
       if (menulist?.open) {
         lazy.SelectParentHelper.hide(menulist, this);
@@ -1258,7 +1258,7 @@
             return;
           }
 
-          
+          // place the entry at current index at the end of the history list, so it won't get removed
           if (sessionHistory.index < sessionHistory.count - 1) {
             let indexEntry = sessionHistory.getEntryAtIndex(
               sessionHistory.index
@@ -1271,7 +1271,7 @@
             this.browsingContext.currentWindowGlobal.documentURI !=
             "about:blank"
           ) {
-            --purge; 
+            --purge; // Don't remove the page the user's staring at from shistory
           }
 
           if (purge > 0) {
@@ -1288,7 +1288,7 @@
           "roots"
         );
       } catch (ex) {
-        
+        // This can throw if the browser has started to go away.
         if (ex.result != Cr.NS_ERROR_NOT_INITIALIZED) {
           throw ex;
         }
@@ -1330,7 +1330,7 @@
         try {
           this._autoScrollWakelock.unlock();
         } catch (e) {
-          
+          // Ignore error since wake lock is already unlocked
         }
         this._autoScrollWakelock = null;
       }
@@ -1357,7 +1357,7 @@
         try {
           Services.obs.removeObserver(this.observer, "apz:cancel-autoscroll");
         } catch (ex) {
-          
+          // It's not clear why this sometimes throws an exception
         }
 
         if (this._autoScrollScrollId != null) {
@@ -1400,8 +1400,8 @@
         return { autoscrollEnabled: false, usingApz: false };
       }
 
-      
-      
+      // The popup size is 32px for the circle plus space for a 4px box-shadow
+      // on each side.
       const POPUP_SIZE = 40;
       if (!this._autoScrollPopup) {
         this._autoScrollPopup = this._getAndMaybeCreateAutoScrollPopup();
@@ -1413,7 +1413,7 @@
         this._autoScrollPopup.style.margin = -POPUP_SIZE / 2 + "px";
       }
 
-      
+      // In desktop pixels.
       let screenXDesktopPx = screenXDevPx / window.desktopToDeviceScale;
       let screenYDesktopPx = screenYDevPx / window.desktopToDeviceScale;
 
@@ -1427,15 +1427,15 @@
         1
       );
 
-      
+      // we need these attributes so themers don't need to create per-platform packages
       if (screen.colorDepth > 8) {
-        
-        
+        // need high color for transparency
+        // Exclude second-rate platforms
         this._autoScrollPopup.setAttribute(
           "transparent",
           !/BeOS|OS\/2/.test(navigator.appVersion)
         );
-        
+        // Enable translucency on Windows and Mac
         this._autoScrollPopup.setAttribute(
           "translucent",
           AppConstants.platform == "win" || AppConstants.platform == "macosx"
@@ -1445,17 +1445,17 @@
       this._autoScrollPopup.setAttribute("scrolldir", scrolldir);
       this._autoScrollPopup.addEventListener("popuphidden", this, true);
 
-      
+      // In CSS pixels
       let popupX;
       let popupY;
       {
         let cssToDesktopScale =
           window.devicePixelRatio / window.desktopToDeviceScale;
 
-        
-        
-        
-        
+        // Sanitize screenX/screenY for available screen size with half the size
+        // of the popup removed. The popup uses negative margins to center on the
+        // coordinates we pass. Use desktop pixels to deal correctly with
+        // multi-monitor / multi-dpi scenarios.
         let left = {},
           top = {},
           width = {},
@@ -1474,7 +1474,7 @@
           Math.max(minY, Math.min(maxY, screenYDesktopPx)) / cssToDesktopScale;
       }
 
-      
+      // In CSS pixels.
       let screenX = screenXDevPx / window.devicePixelRatio;
       let screenY = screenYDevPx / window.devicePixelRatio;
 
@@ -1500,9 +1500,9 @@
         scrollId != null &&
         this.mPrefs.getBoolPref("apz.autoscroll.enabled", false)
       ) {
-        
-        
-        
+        // If APZ is handling the autoscroll, it may decide to cancel
+        // it of its own accord, so register an observer to allow it
+        // to notify us of that.
         Services.obs.addObserver(this.observer, "apz:cancel-autoscroll", true);
 
         usingApz = browsingContext.startApzAutoscroll(
@@ -1512,7 +1512,7 @@
           presShellId
         );
 
-        
+        // Save the IDs for later
         this._autoScrollScrollId = scrollId;
         this._autoScrollPresShellId = presShellId;
       }
@@ -1543,15 +1543,15 @@
           }
           case "mouseup":
           case "mousedown":
-            
-            
+            // The following mouse click/auxclick event on the autoscroller
+            // shouldn't be fired in web content for compatibility with Chrome.
             aEvent.preventClickEvent();
-          
+          // fallthrough
           case "contextmenu": {
             if (!this._ignoreMouseEvents) {
-              
-              
-              
+              // Use a timeout to prevent the mousedown from opening the popup again.
+              // Ideally, we could use preventDefault here, but contenteditable
+              // and middlemouse paste don't interact well. See bug 1188536.
               setTimeout(() => this._autoScrollPopup.hidePopup(), 0);
             }
             this._ignoreMouseEvents = false;
@@ -1563,9 +1563,9 @@
             break;
           }
           case "popuphidden": {
-            
-            
-            
+            // TODO: When the autoscroller is closed by clicking outside of it,
+            //       we need to prevent following click event for compatibility
+            //       with Chrome.  However, there is no way to do that for now.
             this._autoScrollPopup.removeEventListener(
               "popuphidden",
               this,
@@ -1576,17 +1576,17 @@
           }
           case "keydown": {
             if (aEvent.keyCode == aEvent.DOM_VK_ESCAPE) {
-              
-              
-              
+              // the escape key will be processed by
+              // nsXULPopupManager::KeyDown and the panel will be closed.
+              // So, don't consume the key event here.
               break;
             }
-            
+            // don't break here. we need to eat keydown events.
           }
-          
+          // fall through
           case "keypress":
           case "keyup": {
-            
+            // All keyevents should be eaten here during autoscrolling.
             aEvent.stopPropagation();
             aEvent.preventDefault();
             break;
@@ -1596,8 +1596,8 @@
     }
 
     closeBrowser() {
-      
-      
+      // The request comes from a XPCOM component, we'd want to redirect
+      // the request to tabbrowser.
       let tabbrowser = this.getTabBrowser();
       if (tabbrowser) {
         let tab = tabbrowser.getTabForBrowser(this);
@@ -1613,9 +1613,9 @@
     }
 
     swapBrowsers(aOtherBrowser) {
-      
-      
-      
+      // The request comes from a XPCOM component, we'd want to redirect
+      // the request to tabbrowser so tabbrowser will be setup correctly,
+      // and it will eventually call swapDocShells.
       let ourTabBrowser = this.getTabBrowser();
       let otherTabBrowser = aOtherBrowser.getTabBrowser();
       if (ourTabBrowser && otherTabBrowser) {
@@ -1625,7 +1625,7 @@
         return;
       }
 
-      
+      // One of us is not connected to a tabbrowser, so just swap.
       this.swapDocShells(aOtherBrowser);
     }
 
@@ -1636,32 +1636,32 @@
         );
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Give others a chance to swap state.
+      // IMPORTANT: Since a swapDocShells call does not swap the messageManager
+      //            instances attached to a browser to aOtherBrowser, others
+      //            will need to add the message listeners to the new
+      //            messageManager.
+      //            This is not a bug in swapDocShells or the FrameLoader,
+      //            merely a design decision: If message managers were swapped,
+      //            so that no new listeners were needed, the new
+      //            aOtherBrowser.messageManager would have listeners pointing
+      //            to the JS global of the current browser, which would rather
+      //            easily create leaks while swapping.
+      // IMPORTANT2: When the current browser element is removed from DOM,
+      //             which is quite common after a swapDocShells call, its
+      //             frame loader is destroyed, and that destroys the relevant
+      //             message manager, which will remove the listeners.
       let event = new CustomEvent("SwapDocShells", { detail: aOtherBrowser });
       this.dispatchEvent(event);
       event = new CustomEvent("SwapDocShells", { detail: this });
       aOtherBrowser.dispatchEvent(event);
 
-      
-      
-      
-      
-      
-      
+      // We need to swap fields that are tied to our docshell or related to
+      // the loaded page
+      // Fields which are built as a result of notifactions (pageshow/hide,
+      // DOMLinkAdded/Removed, onStateChange) should not be swapped here,
+      // because these notifications are dispatched again once the docshells
+      // are swapped.
       var fieldsToSwap = ["_webBrowserFind", "_rdmFullZoom"];
 
       if (this.isRemoteBrowser) {
@@ -1696,8 +1696,8 @@
       try {
         this.swapFrameLoaders(aOtherBrowser);
       } catch (ex) {
-        
-        
+        // This may not be implemented for browser elements that are not
+        // attached to a BrowserDOMWindow.
       }
 
       for (let field of fieldsToSwap) {
@@ -1706,12 +1706,12 @@
       }
 
       if (!this.isRemoteBrowser) {
-        
-        
-        
+        // Null the current nsITypeAheadFind instances so that they're
+        // lazily re-created on access. We need to do this because they
+        // might have attached the wrong docShell.
         this._fastFind = aOtherBrowser._fastFind = null;
       } else {
-        
+        // Rewire the remote listeners
         this._remoteWebNavigation.swapBrowser(this);
         aOtherBrowser._remoteWebNavigation.swapBrowser(aOtherBrowser);
 
@@ -1733,7 +1733,7 @@
       if (this.isRemoteBrowser) {
         let { remoteTab } = this.frameLoader;
         if (!remoteTab) {
-          
+          // If we're crashed, we're definitely not in this state anymore.
           aCallback(false);
           return;
         }
@@ -1785,7 +1785,7 @@
           return { permitUnload: true };
         }
 
-        
+        // Don't bother asking if this browser is hung:
         if (
           lazy.ProcessHangMonitor?.findActiveReport(this) ||
           lazy.ProcessHangMonitor?.findPausedReport(this)
@@ -1807,9 +1807,9 @@
           }
         );
 
-        
-        
-        
+        // The permitUnload() promise will, alas, not call its resolution
+        // callbacks after the browser window the promise lives in has closed,
+        // so we have to check for that case explicitly.
         Services.tm.spinEventLoopUntilOrQuit(
           "browser-custom-element.js:permitUnload",
           () => window.closed || success !== undefined
@@ -1828,33 +1828,33 @@
       };
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Gets a screenshot of this browser as an ImageBitmap.
+     *
+     * @param {Number} x
+     *   The x coordinate of the region from the underlying document to capture
+     *   as a screenshot. This is ignored if fullViewport is true.
+     * @param {Number} y
+     *   The y coordinate of the region from the underlying document to capture
+     *   as a screenshot. This is ignored if fullViewport is true.
+     * @param {Number} w
+     *   The width of the region from the underlying document to capture as a
+     *   screenshot. This is ignored if fullViewport is true.
+     * @param {Number} h
+     *   The height of the region from the underlying document to capture as a
+     *   screenshot. This is ignored if fullViewport is true.
+     * @param {Number} scale
+     *   The scale factor for the captured screenshot. See the documentation for
+     *   WindowGlobalParent.drawSnapshot for more detail.
+     * @param {String} backgroundColor
+     *   The default background color for the captured screenshot. See the
+     *   documentation for WindowGlobalParent.drawSnapshot for more detail.
+     * @param {boolean|undefined} fullViewport
+     *   True if the viewport rect should be captured. If this is true, the
+     *   x, y, w and h parameters are ignored. Defaults to false.
+     * @returns {Promise}
+     * @resolves {ImageBitmap}
+     */
     async drawSnapshot(
       x,
       y,
@@ -1908,14 +1908,14 @@
       return windowGlobal.contentBlockingEvents;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // Send an asynchronous message to the remote child via an actor.
+    // Note: use this only for messages through an actor. For old-style
+    // messages, use the message manager.
+    // The value of the scope argument determines which browsing contexts
+    // are sent to:
+    //   'all' - send to actors associated with all descendant child frames.
+    //   'roots' - send only to actors associated with process roots.
+    //   undefined/'' - send only to the top-level actor and not any descendants.
     sendMessageToActor(messageName, args, actorName, scope) {
       if (!this.frameLoader) {
         return;
@@ -1923,7 +1923,7 @@
 
       function sendToChildren(browsingContext, childScope) {
         let windowGlobal = browsingContext.currentWindowGlobal;
-        
+        // If 'roots' is set, only send if windowGlobal.isProcessRoot is true.
         if (
           windowGlobal &&
           (childScope != "roots" || windowGlobal.isProcessRoot)
@@ -1931,8 +1931,8 @@
           windowGlobal.getActor(actorName).sendAsyncMessage(messageName, args);
         }
 
-        
-        
+        // Iterate as long as scope in assigned. Note that we use the original
+        // passed in scope, not childScope here.
         if (scope) {
           for (let context of browsingContext.children) {
             sendToChildren(context, scope);
@@ -1940,7 +1940,7 @@
         }
       }
 
-      
+      // Pass no second argument to always send to the top-level browsing context.
       sendToChildren(this.browsingContext);
     }
 
@@ -1957,10 +1957,10 @@
       );
     }
 
-    
-
-
-
+    /**
+     * Can be called for a window with or without modal state.
+     * If the window is not in modal state, this is a no-op.
+     */
     maybeLeaveModalState() {
       this.sendMessageToActor(
         "LeaveModalState",
@@ -1985,51 +1985,51 @@
       return origins;
     }
 
-    
-    
-    
-    
+    // This method is replaced by frontend code in order to delay performing the
+    // process switch until some async operatin is completed.
+    //
+    // This is used by tabbrowser to flush SessionStore before a process switch.
     async prepareToChangeRemoteness() {
-      
+      /* no-op unless replaced */
     }
 
-    
-    
-    
-    
-    
-    
+    // This method is replaced by frontend code in order to handle restoring
+    // remote session history
+    //
+    // Called immediately after changing remoteness.  If this method returns
+    // `true`, Gecko will assume frontend handled resuming the load, and will
+    // not attempt to resume the load itself.
     afterChangeRemoteness() {
-      
+      /* no-op unless replaced */
       return false;
     }
 
-    
-    
+    // Called by Gecko before the remoteness change happens, allowing for
+    // listeners, etc. to be stashed before the process switch.
     beforeChangeRemoteness() {
-      
-      
+      // Fire the `WillChangeBrowserRemoteness` event, which may be hooked by
+      // frontend code for custom behaviour.
       let event = document.createEvent("Events");
       event.initEvent("WillChangeBrowserRemoteness", true, false);
       this.dispatchEvent(event);
 
-      
-      
+      // Destroy ourselves to unregister from observer notifications
+      // FIXME: Can we get away with something less destructive here?
       this.destroy();
     }
 
     finishChangeRemoteness(redirectLoadSwitchId) {
-      
+      // Re-construct ourselves after the destroy in `beforeChangeRemoteness`.
       this.construct();
 
-      
-      
+      // Fire the `DidChangeBrowserRemoteness` event, which may be hooked by
+      // frontend code for custom behaviour.
       let event = document.createEvent("Events");
       event.initEvent("DidChangeBrowserRemoteness", true, false);
       this.dispatchEvent(event);
 
-      
-      
+      // Call into frontend code which may want to handle the load (e.g. to
+      // while restoring session state).
       return this.afterChangeRemoteness(redirectLoadSwitchId);
     }
   }
