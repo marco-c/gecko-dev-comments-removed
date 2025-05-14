@@ -16,7 +16,7 @@
 
 
 
-let $M = module(`(module 
+let $M = module(`(module $$M
   (global (export "glob") (mut i32) (i32.const 0))
   (table (export "tab") 10 funcref (ref.null func))
   (memory (export "mem") 1)
@@ -140,7 +140,7 @@ assert_return(() => invoke($1, `mem`, []), [value("i32", 1)]);
 assert_return(() => invoke($1, `tag`, []), [value("i32", 1)]);
 
 
-let $N = module(`(module 
+let $N = module(`(module $$N
   (global $$glob (mut i32) (i32.const 0))
   (table $$tab 10 funcref (ref.null func))
   (memory $$mem 1)
