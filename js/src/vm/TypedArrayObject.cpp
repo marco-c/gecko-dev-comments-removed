@@ -2530,16 +2530,6 @@ static bool TypedArray_lastIndexOf(JSContext* cx, const CallArgs& args) {
     }
 
     
-    
-    len = std::min(len, tarray->length().valueOr(0));
-
-    
-    if (len == 0) {
-      args.rval().setInt32(-1);
-      return true;
-    }
-
-    
     if (fromIndex >= 0) {
       k = size_t(std::min(fromIndex, double(len - 1)));
     } else {
@@ -2549,6 +2539,24 @@ static bool TypedArray_lastIndexOf(JSContext* cx, const CallArgs& args) {
         return true;
       }
       k = size_t(d);
+    }
+    MOZ_ASSERT(k < len);
+
+    
+    
+    size_t currentLength = tarray->length().valueOr(0);
+
+    
+    if (currentLength < len) {
+      
+      if (currentLength == 0) {
+        args.rval().setInt32(-1);
+        return true;
+      }
+
+      
+      k = std::min(k, currentLength - 1);
+      len = currentLength;
     }
   }
   MOZ_ASSERT(k < len);
