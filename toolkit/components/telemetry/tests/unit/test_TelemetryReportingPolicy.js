@@ -147,7 +147,10 @@ add_task(skipIfNotBrowser(), async function test_firstRun() {
   
   
   
-  Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
+  if (AppConstants.platform !== "linux") {
+    
+    Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
+  }
 
   let promiseTimeout = () =>
     new Promise(resolve => {
@@ -693,6 +696,12 @@ add_task(
 add_task(
   skipIfNotBrowser(),
   async function test_default_modal_shows_when_not_enrolled_in_experiment() {
+    if (AppConstants.platform === "linux") {
+      info(
+        "Skipping test for Linux where preonboarding is disabled by default"
+      );
+      return;
+    }
     let modalStub = sinon.stub(Policy, "showModal").returns(true);
 
     fakeResetAcceptedPolicy();
