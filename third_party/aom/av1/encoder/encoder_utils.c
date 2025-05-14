@@ -518,8 +518,6 @@ static void process_tpl_stats_frame(AV1_COMP *cpi) {
           const int gfu_boost = get_gfu_boost_from_r0_lap(
               min_boost_factor, MAX_GFUBOOST_FACTOR, cpi->rd.r0,
               cpi->ppi->p_rc.num_stats_required_for_gfu_boost);
-          
-          
           cpi->ppi->p_rc.gfu_boost = combine_prior_with_tpl_boost(
               min_boost_factor, MAX_BOOST_COMBINE_FACTOR,
               cpi->ppi->p_rc.gfu_boost, gfu_boost,
@@ -840,9 +838,11 @@ BLOCK_SIZE av1_select_sb_size(const AV1EncoderConfig *const oxcf, int width,
   }
   assert(oxcf->tool_cfg.superblock_size == AOM_SUPERBLOCK_SIZE_DYNAMIC);
 
-  if (number_spatial_layers > 1 ||
-      oxcf->resize_cfg.resize_mode != RESIZE_NONE) {
+  if (number_spatial_layers > 1) {
     
+    
+    return BLOCK_64X64;
+  } else if (oxcf->resize_cfg.resize_mode != RESIZE_NONE) {
     
     return AOMMIN(oxcf->frm_dim_cfg.width, oxcf->frm_dim_cfg.height) > 720
                ? BLOCK_128X128
@@ -1134,8 +1134,9 @@ void av1_determine_sc_tools_with_encoding(AV1_COMP *cpi, const int q_orig) {
                       q_cfg->enable_chroma_deltaq, q_cfg->enable_hdr_deltaq,
                       oxcf->mode == ALLINTRA, oxcf->tune_cfg.tuning);
     av1_set_speed_features_qindex_dependent(cpi, oxcf->speed);
+
     av1_init_quantizer(&cpi->enc_quant_dequant_params, &cm->quant_params,
-                       cm->seq_params->bit_depth);
+                       cm->seq_params->bit_depth, oxcf->algo_cfg.sharpness);
 
     av1_set_variance_partition_thresholds(cpi, q_for_screen_content_quick_run,
                                           0);

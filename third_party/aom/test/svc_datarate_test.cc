@@ -35,6 +35,83 @@ struct FrameInfo {
   unsigned int h;
 };
 
+void ScaleForFrameNumber(unsigned int frame, unsigned int initial_w,
+                         unsigned int initial_h, unsigned int *w,
+                         unsigned int *h, int resize_pattern) {
+  *w = initial_w;
+  *h = initial_h;
+  if (resize_pattern == 1) {
+    if (frame < 50) {
+      *w = initial_w / 4;
+      *h = initial_h / 4;
+    } else if (frame < 100) {
+      *w = initial_w / 2;
+      *h = initial_h / 2;
+    } else if (frame < 150) {
+      *w = initial_w;
+      *h = initial_h;
+    } else if (frame < 200) {
+      *w = initial_w / 4;
+      *h = initial_h / 4;
+    } else if (frame < 250) {
+      *w = initial_w / 2;
+      *h = initial_h / 2;
+    }
+  } else if (resize_pattern == 2) {
+    if (frame < 50) {
+      *w = initial_w / 2;
+      *h = initial_h / 2;
+    } else if (frame < 100) {
+      *w = initial_w / 4;
+      *h = initial_h / 4;
+    } else if (frame < 150) {
+      *w = initial_w;
+      *h = initial_h;
+    } else if (frame < 200) {
+      *w = initial_w / 2;
+      *h = initial_h / 2;
+    } else if (frame < 250) {
+      *w = initial_w / 4;
+      *h = initial_h / 4;
+    }
+  }
+}
+
+class ResizingVideoSource : public ::libaom_test::DummyVideoSource {
+ public:
+  explicit ResizingVideoSource(int external_resize_pattern, int width,
+                               int height) {
+    external_resize_pattern_ = external_resize_pattern;
+    top_width_ = width;
+    top_height_ = height;
+    SetSize(top_width_, top_height_);
+    limit_ = 300;
+  }
+  ~ResizingVideoSource() override = default;
+
+ protected:
+  void Next() override {
+    ++frame_;
+    unsigned int width = 0;
+    unsigned int height = 0;
+    libaom_test::ACMRandom rnd(libaom_test::ACMRandom::DeterministicSeed());
+    ScaleForFrameNumber(frame_, top_width_, top_height_, &width, &height,
+                        external_resize_pattern_);
+    SetSize(width, height);
+    FillFrame();
+    unsigned char *image = img_->planes[0];
+    for (size_t i = 0; i < raw_sz_; ++i) {
+      image[i] = rnd.Rand8();
+    }
+  }
+
+ private:
+  int external_resize_pattern_;
+  
+  int top_width_;
+  int top_height_;
+};
+
 class DatarateTestSVC
     : public ::libaom_test::CodecTestWith4Params<libaom_test::TestMode, int,
                                                  unsigned int, int>,
@@ -99,6 +176,9 @@ class DatarateTestSVC
     simulcast_mode_ = false;
     use_last_as_scaled_ = false;
     use_last_as_scaled_single_ref_ = false;
+    external_resize_dynamic_drop_layer_ = false;
+    external_resize_pattern_ = 0;
+    dynamic_tl_ = false;
   }
 
   void PreEncodeFrameHook(::libaom_test::VideoSource *video,
@@ -132,6 +212,13 @@ class DatarateTestSVC
         encoder->Control(AV1E_SET_TUNE_CONTENT, AOM_CONTENT_SCREEN);
       }
       encoder->Control(AV1E_SET_POSTENCODE_DROP_RTC, 1);
+      
+      
+      if (external_resize_dynamic_drop_layer_) {
+        encoder->Control(AV1E_SET_POSTENCODE_DROP_RTC, 0);
+        DatarateTest::PreEncodeFrameHook(video, encoder);
+        video->Next();
+      }
     }
     if (number_spatial_layers_ == 2) {
       spatial_layer_id = (layer_frame_cnt_ % 2 == 0) ? 0 : 1;
@@ -221,9 +308,116 @@ class DatarateTestSVC
         encoder->Control(AV1E_SET_SVC_PARAMS, &svc_params_);
       }
     }
+    if (external_resize_dynamic_drop_layer_) {
+      frame_flags_ = 0;
+      for (int i = 0; i < 9; ++i) {
+        svc_params_.min_quantizers[i] = 20;
+        svc_params_.max_quantizers[i] = 56;
+      }
+      if (layer_id_.spatial_layer_id == 0 &&
+          (video->frame() == 1 || video->frame() == 150)) {
+        for (int i = 0; i < 9; ++i) {
+          bitrate_layer_[i] = svc_params_.layer_target_bitrate[i];
+        }
+        if (external_resize_pattern_ == 1) {
+          
+          
+          cfg_.rc_target_bitrate -= svc_params_.layer_target_bitrate[5] +
+                                    svc_params_.layer_target_bitrate[8];
+          for (int i = 3; i < 9; ++i) {
+            svc_params_.layer_target_bitrate[i] = 0;
+          }
+          for (int sl = 0; sl < 3; sl++) {
+            svc_params_.scaling_factor_num[sl] = 1;
+            svc_params_.scaling_factor_den[sl] = 1;
+          }
+        } else if (external_resize_pattern_ == 2) {
+          
+          
+          cfg_.rc_target_bitrate -= svc_params_.layer_target_bitrate[8];
+          for (int i = 6; i < 9; ++i) {
+            svc_params_.layer_target_bitrate[i] = 0;
+          }
+          svc_params_.scaling_factor_num[0] = 1;
+          svc_params_.scaling_factor_den[0] = 2;
+          svc_params_.scaling_factor_num[1] = 1;
+          svc_params_.scaling_factor_den[1] = 1;
+          svc_params_.scaling_factor_num[2] = 1;
+          svc_params_.scaling_factor_den[2] = 1;
+        }
+        encoder->Config(&cfg_);
+        encoder->Control(AV1E_SET_SVC_PARAMS, &svc_params_);
+      } else if (layer_id_.spatial_layer_id == 0 &&
+                 (video->frame() == 50 || video->frame() == 200)) {
+        if (external_resize_pattern_ == 1) {
+          
+          
+          cfg_.rc_target_bitrate += bitrate_layer_[5];
+          for (int i = 3; i < 6; ++i) {
+            svc_params_.layer_target_bitrate[i] = bitrate_layer_[i];
+          }
+          svc_params_.scaling_factor_num[0] = 1;
+          svc_params_.scaling_factor_den[0] = 2;
+          svc_params_.scaling_factor_num[1] = 1;
+          svc_params_.scaling_factor_den[1] = 1;
+          svc_params_.scaling_factor_num[2] = 1;
+          svc_params_.scaling_factor_den[2] = 1;
+        } else if (external_resize_pattern_ == 2) {
+          
+          
+          
+          cfg_.rc_target_bitrate -= bitrate_layer_[5];
+          for (int i = 3; i < 6; ++i) {
+            svc_params_.layer_target_bitrate[i] = 0;
+          }
+          for (int sl = 0; sl < 3; sl++) {
+            svc_params_.scaling_factor_num[sl] = 1;
+            svc_params_.scaling_factor_den[sl] = 1;
+          }
+        }
+        encoder->Config(&cfg_);
+        encoder->Control(AV1E_SET_SVC_PARAMS, &svc_params_);
+      } else if (layer_id_.spatial_layer_id == 0 &&
+                 (video->frame() == 100 || video->frame() == 250)) {
+        
+        
+        cfg_.rc_target_bitrate =
+            bitrate_layer_[2] + bitrate_layer_[5] + bitrate_layer_[8];
+        for (int i = 0; i < 9; ++i) {
+          svc_params_.layer_target_bitrate[i] = bitrate_layer_[i];
+        }
+        svc_params_.scaling_factor_num[0] = 1;
+        svc_params_.scaling_factor_den[0] = 4;
+        svc_params_.scaling_factor_num[1] = 1;
+        svc_params_.scaling_factor_den[1] = 2;
+        svc_params_.scaling_factor_num[2] = 1;
+        svc_params_.scaling_factor_den[2] = 1;
+        encoder->Config(&cfg_);
+        encoder->Control(AV1E_SET_SVC_PARAMS, &svc_params_);
+      }
+    } else if (dynamic_tl_) {
+      if (video->frame() == 100) {
+        
+        svc_params_.number_temporal_layers = 3;
+        number_temporal_layers_ = 3;
+        svc_params_.layer_target_bitrate[0] = 60 * cfg_.rc_target_bitrate / 100;
+        svc_params_.layer_target_bitrate[1] = 80 * cfg_.rc_target_bitrate / 100;
+        svc_params_.layer_target_bitrate[2] = cfg_.rc_target_bitrate;
+        svc_params_.framerate_factor[0] = 4;
+        svc_params_.framerate_factor[1] = 2;
+        svc_params_.framerate_factor[2] = 1;
+        encoder->Control(AV1E_SET_SVC_PARAMS, &svc_params_);
+      } else if (video->frame() == 200) {
+        
+        svc_params_.number_temporal_layers = 1;
+        number_temporal_layers_ = 1;
+        svc_params_.layer_target_bitrate[0] = cfg_.rc_target_bitrate;
+        svc_params_.framerate_factor[0] = 1;
+        encoder->Control(AV1E_SET_SVC_PARAMS, &svc_params_);
+      }
+    }
     layer_frame_cnt_++;
     DatarateTest::PreEncodeFrameHook(video, encoder);
-
     if (user_define_frame_qp_) {
       frame_qp_ = rnd_.PseudoUniform(63);
       encoder->Control(AV1E_SET_QUANTIZER_ONE_PASS, frame_qp_);
@@ -264,6 +458,13 @@ class DatarateTestSVC
         EXPECT_NE(pkt->data.frame.flags & AOM_FRAME_IS_KEY, AOM_FRAME_IS_KEY);
       } else if (layer_id_.spatial_layer_id == 0) {
         EXPECT_EQ(pkt->data.frame.flags & AOM_FRAME_IS_KEY, AOM_FRAME_IS_KEY);
+      }
+    }
+    if (external_resize_dynamic_drop_layer_) {
+      
+      
+      if (layer_frame_cnt_ > 1) {
+        EXPECT_NE(pkt->data.frame.flags & AOM_FRAME_IS_KEY, AOM_FRAME_IS_KEY);
       }
     }
   }
@@ -2658,6 +2859,186 @@ class DatarateTestSVC
 #endif
   }
 
+  virtual void BasicRateTargetingSVC3TL3SLExternalResizePattern1Test() {
+    cfg_.rc_buf_initial_sz = 500;
+    cfg_.rc_buf_optimal_sz = 500;
+    cfg_.rc_buf_sz = 1000;
+    cfg_.rc_dropframe_thresh = 0;
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = 63;
+    cfg_.rc_end_usage = AOM_CBR;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_error_resilient = 0;
+    const int bitrate_array[2] = { 600, 1200 };
+    cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
+    cfg_.g_w = 1280;
+    cfg_.g_h = 720;
+    ResizingVideoSource video(1, 1280, 720);
+    ResetModel();
+    external_resize_dynamic_drop_layer_ = true;
+    external_resize_pattern_ = 1;
+    number_temporal_layers_ = 3;
+    number_spatial_layers_ = 3;
+    
+    const int bitrate_sl0 = 1 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[0] = 50 * bitrate_sl0 / 100;
+    target_layer_bitrate_[1] = 70 * bitrate_sl0 / 100;
+    target_layer_bitrate_[2] = bitrate_sl0;
+    
+    const int bitrate_sl1 = 3 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[3] = 50 * bitrate_sl1 / 100;
+    target_layer_bitrate_[4] = 70 * bitrate_sl1 / 100;
+    target_layer_bitrate_[5] = bitrate_sl1;
+    
+    const int bitrate_sl2 = 4 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[6] = 50 * bitrate_sl2 / 100;
+    target_layer_bitrate_[7] = 70 * bitrate_sl2 / 100;
+    target_layer_bitrate_[8] = bitrate_sl2;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+  virtual void BasicRateTargetingSVC3TL3SLExternalResizePattern1HighResTest() {
+    cfg_.rc_buf_initial_sz = 500;
+    cfg_.rc_buf_optimal_sz = 500;
+    cfg_.rc_buf_sz = 1000;
+    cfg_.rc_dropframe_thresh = 0;
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = 63;
+    cfg_.rc_end_usage = AOM_CBR;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_error_resilient = 0;
+    const int bitrate_array[2] = { 600, 1200 };
+    cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
+    cfg_.g_w = 1850;
+    cfg_.g_h = 1110;
+    cfg_.g_forced_max_frame_width = 1850;
+    cfg_.g_forced_max_frame_height = 1110;
+    ResizingVideoSource video(1, 1850, 1110);
+    ResetModel();
+    external_resize_dynamic_drop_layer_ = true;
+    external_resize_pattern_ = 1;
+    number_temporal_layers_ = 3;
+    number_spatial_layers_ = 3;
+    
+    const int bitrate_sl0 = 1 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[0] = 50 * bitrate_sl0 / 100;
+    target_layer_bitrate_[1] = 70 * bitrate_sl0 / 100;
+    target_layer_bitrate_[2] = bitrate_sl0;
+    
+    const int bitrate_sl1 = 3 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[3] = 50 * bitrate_sl1 / 100;
+    target_layer_bitrate_[4] = 70 * bitrate_sl1 / 100;
+    target_layer_bitrate_[5] = bitrate_sl1;
+    
+    const int bitrate_sl2 = 4 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[6] = 50 * bitrate_sl2 / 100;
+    target_layer_bitrate_[7] = 70 * bitrate_sl2 / 100;
+    target_layer_bitrate_[8] = bitrate_sl2;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+  virtual void BasicRateTargetingSVC3TL3SLExternalResizePattern2Test() {
+    cfg_.rc_buf_initial_sz = 500;
+    cfg_.rc_buf_optimal_sz = 500;
+    cfg_.rc_buf_sz = 1000;
+    cfg_.rc_dropframe_thresh = 0;
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = 63;
+    cfg_.rc_end_usage = AOM_CBR;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_error_resilient = 0;
+    const int bitrate_array[2] = { 600, 1200 };
+    cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
+    cfg_.g_w = 1280;
+    cfg_.g_h = 720;
+    ResizingVideoSource video(2, 1280, 720);
+    ResetModel();
+    external_resize_dynamic_drop_layer_ = true;
+    external_resize_pattern_ = 2;
+    number_temporal_layers_ = 3;
+    number_spatial_layers_ = 3;
+    
+    const int bitrate_sl0 = 1 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[0] = 50 * bitrate_sl0 / 100;
+    target_layer_bitrate_[1] = 70 * bitrate_sl0 / 100;
+    target_layer_bitrate_[2] = bitrate_sl0;
+    
+    const int bitrate_sl1 = 3 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[3] = 50 * bitrate_sl1 / 100;
+    target_layer_bitrate_[4] = 70 * bitrate_sl1 / 100;
+    target_layer_bitrate_[5] = bitrate_sl1;
+    
+    const int bitrate_sl2 = 4 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[6] = 50 * bitrate_sl2 / 100;
+    target_layer_bitrate_[7] = 70 * bitrate_sl2 / 100;
+    target_layer_bitrate_[8] = bitrate_sl2;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+  virtual void BasicRateTargetingSVC3TL3SLExternalResizePattern2HighResTest() {
+    cfg_.rc_buf_initial_sz = 500;
+    cfg_.rc_buf_optimal_sz = 500;
+    cfg_.rc_buf_sz = 1000;
+    cfg_.rc_dropframe_thresh = 0;
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = 63;
+    cfg_.rc_end_usage = AOM_CBR;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_error_resilient = 0;
+    const int bitrate_array[2] = { 600, 1200 };
+    cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
+    cfg_.g_w = 1850;
+    cfg_.g_h = 1110;
+    cfg_.g_forced_max_frame_width = 1850;
+    cfg_.g_forced_max_frame_height = 1110;
+    ResizingVideoSource video(2, 1850, 1110);
+    ResetModel();
+    external_resize_dynamic_drop_layer_ = true;
+    external_resize_pattern_ = 2;
+    number_temporal_layers_ = 3;
+    number_spatial_layers_ = 3;
+    
+    const int bitrate_sl0 = 1 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[0] = 50 * bitrate_sl0 / 100;
+    target_layer_bitrate_[1] = 70 * bitrate_sl0 / 100;
+    target_layer_bitrate_[2] = bitrate_sl0;
+    
+    const int bitrate_sl1 = 3 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[3] = 50 * bitrate_sl1 / 100;
+    target_layer_bitrate_[4] = 70 * bitrate_sl1 / 100;
+    target_layer_bitrate_[5] = bitrate_sl1;
+    
+    const int bitrate_sl2 = 4 * cfg_.rc_target_bitrate / 8;
+    target_layer_bitrate_[6] = 50 * bitrate_sl2 / 100;
+    target_layer_bitrate_[7] = 70 * bitrate_sl2 / 100;
+    target_layer_bitrate_[8] = bitrate_sl2;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+  virtual void BasicRateTargetingSVC3TL1SLDynamicTLTest() {
+    cfg_.rc_buf_initial_sz = 500;
+    cfg_.rc_buf_optimal_sz = 500;
+    cfg_.rc_buf_sz = 1000;
+    cfg_.rc_dropframe_thresh = 0;
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = 63;
+    cfg_.rc_end_usage = AOM_CBR;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_error_resilient = 0;
+    ::libaom_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30,
+                                         1, 0, 400);
+    const int bitrate_array[2] = { 600, 1200 };
+    cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
+    target_layer_bitrate_[0] = cfg_.rc_target_bitrate;
+    cfg_.g_w = 640;
+    cfg_.g_h = 480;
+    ResetModel();
+    number_temporal_layers_ = 1;
+    number_spatial_layers_ = 1;
+    dynamic_tl_ = true;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
   int layer_frame_cnt_;
   int superframe_cnt_;
   int number_temporal_layers_;
@@ -2697,6 +3078,10 @@ class DatarateTestSVC
   int total_frame_;
   bool set_speed_per_layer_;
   libaom_test::ACMRandom rnd_;
+  bool external_resize_dynamic_drop_layer_;
+  int bitrate_layer_[9];
+  int external_resize_pattern_;
+  bool dynamic_tl_;
 };
 
 
@@ -2987,6 +3372,51 @@ TEST_P(DatarateTestSVC, BasicRateTargetingSVC1TL3SLDynDisEnabl) {
 
 TEST_P(DatarateTestSVC, BasicRateTargetingRPS1TL1SLDropFrames) {
   BasicRateTargetingRPS1TL1SLDropFramesTest();
+}
+
+
+
+
+
+
+TEST_P(DatarateTestSVC, BasicRateTargetingSVC3TL3SLExternalResizePattern1) {
+  BasicRateTargetingSVC3TL3SLExternalResizePattern1Test();
+}
+
+
+
+
+
+
+TEST_P(DatarateTestSVC,
+       BasicRateTargetingSVC3TL3SLExternalResizePattern1HighRes) {
+  BasicRateTargetingSVC3TL3SLExternalResizePattern1HighResTest();
+}
+
+
+
+
+
+
+TEST_P(DatarateTestSVC, BasicRateTargetingSVC3TL3SLExternalResizePattern2) {
+  BasicRateTargetingSVC3TL3SLExternalResizePattern2Test();
+}
+
+
+
+
+
+
+TEST_P(DatarateTestSVC,
+       BasicRateTargetingSVC3TL3SLExternalResizePattern2HighRes) {
+  BasicRateTargetingSVC3TL3SLExternalResizePattern2HighResTest();
+}
+
+
+
+
+TEST_P(DatarateTestSVC, BasicRateTargetingSVC3TL1SLDynamicTL) {
+  BasicRateTargetingSVC3TL1SLDynamicTLTest();
 }
 
 TEST(SvcParams, BitrateOverflow) {

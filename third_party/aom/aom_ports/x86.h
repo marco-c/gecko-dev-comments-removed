@@ -171,6 +171,19 @@ static inline uint64_t xgetbv(void) {
 #define BIT(n) (1u << (n))
 #endif
 
+#define MMX_BITS BIT(23)
+#define SSE_BITS BIT(25)
+#define SSE2_BITS BIT(26)
+#define SSE3_BITS BIT(0)
+#define SSSE3_BITS BIT(9)
+#define SSE4_1_BITS BIT(19)
+
+#define AVX_BITS (BIT(27) | BIT(28))
+#define AVX2_BITS BIT(5)
+
+#define FEATURE_SET(reg, feature) \
+  (((reg) & (feature##_BITS)) == (feature##_BITS))
+
 static inline int x86_simd_caps(void) {
   unsigned int flags = 0;
   unsigned int mask = ~0u;
@@ -179,11 +192,9 @@ static inline int x86_simd_caps(void) {
 
   
   env = getenv("AOM_SIMD_CAPS");
-
   if (env && *env) return (int)strtol(env, NULL, 0);
 
   env = getenv("AOM_SIMD_CAPS_MASK");
-
   if (env && *env) mask = (unsigned int)strtoul(env, NULL, 0);
 
   
@@ -194,37 +205,26 @@ static inline int x86_simd_caps(void) {
   
   cpuid(1, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
 
-  if (reg_edx & BIT(23)) flags |= HAS_MMX;
-
-  if (reg_edx & BIT(25)) flags |= HAS_SSE; 
-
-  if (reg_edx & BIT(26)) flags |= HAS_SSE2; 
-
-  if (reg_ecx & BIT(0)) flags |= HAS_SSE3;
-
-  if (reg_ecx & BIT(9)) flags |= HAS_SSSE3;
-
-  if (reg_ecx & BIT(19)) flags |= HAS_SSE4_1;
-
-  if (reg_ecx & BIT(20)) flags |= HAS_SSE4_2;
+  flags |= FEATURE_SET(reg_edx, MMX) ? HAS_MMX : 0;
+  flags |= FEATURE_SET(reg_edx, SSE) ? HAS_SSE : 0;
+  flags |= FEATURE_SET(reg_edx, SSE2) ? HAS_SSE2 : 0;
+  flags |= FEATURE_SET(reg_ecx, SSE3) ? HAS_SSE3 : 0;
+  flags |= FEATURE_SET(reg_ecx, SSSE3) ? HAS_SSSE3 : 0;
+  flags |= FEATURE_SET(reg_ecx, SSE4_1) ? HAS_SSE4_1 : 0;
 
   
-  if ((reg_ecx & (BIT(27) | BIT(28))) == (BIT(27) | BIT(28))) {
+  if (FEATURE_SET(reg_ecx, AVX)) {
     
     if ((xgetbv() & 0x6) == 0x6) {
       flags |= HAS_AVX;
-
       if (max_cpuid_val >= 7) {
         
         cpuid(7, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
-
-        if (reg_ebx & BIT(5)) flags |= HAS_AVX2;
+        flags |= FEATURE_SET(reg_ebx, AVX2) ? HAS_AVX2 : 0;
       }
     }
   }
-
   (void)reg_eax;  
-
   return flags & mask;
 }
 

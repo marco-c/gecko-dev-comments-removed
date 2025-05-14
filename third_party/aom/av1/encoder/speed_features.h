@@ -482,6 +482,11 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
 
 
   int allow_sub_blk_me_in_tf;
+
+  
+
+
+  int disable_ref_frame_mvs;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 
@@ -592,6 +597,10 @@ typedef struct GLOBAL_MOTION_SPEED_FEATURES {
 
   
   int num_refinement_steps;
+
+  
+  
+  int gm_erroradv_tr_level;
 } GLOBAL_MOTION_SPEED_FEATURES;
 
 typedef struct PARTITION_SPEED_FEATURES {
@@ -1499,6 +1508,15 @@ typedef struct LOOP_FILTER_SPEED_FEATURES {
   int use_coarse_filter_level_search;
 
   
+  
+  int adaptive_luma_loop_filter_skip;
+
+  
+  
+  
+  int skip_loop_filter_using_filt_error;
+
+  
   CDEF_PICK_METHOD cdef_pick_method;
 
   
@@ -1929,6 +1947,9 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   
   
   int rc_faster_convergence_static;
+
+  
+  int skip_newmv_mode_sad_screen;
 } REAL_TIME_SPEED_FEATURES;
 
 

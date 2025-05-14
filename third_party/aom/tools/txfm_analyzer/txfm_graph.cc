@@ -400,7 +400,6 @@ void gen_type3_graph(Node *node, int stage_num, int node_num, int stage_idx,
   for (int nj = 0; nj < N / 2; nj += N_over_i) {
     int j = nj / (N_over_i);
     int kj = bitwise_reverse(i / 4 + j, max_bit);
-    
 
     
     int offset = nj;
@@ -555,14 +554,12 @@ void gen_adst_B_graph(Node *node, int stage_num, int node_num, int stage_idx,
     int nIn = nOut + size / 2;
     connect_node(node, stage_num, node_num, stage_idx + 1, nOut, nOut, 1, nIn,
                  1);
-    
   }
   for (int ni = size / 2; ni < size; ni++) {
     int nOut = node_idx + ni;
     int nIn = nOut - size / 2;
     connect_node(node, stage_num, node_num, stage_idx + 1, nOut, nOut, -1, nIn,
                  1);
-    
   }
 }
 
@@ -774,8 +771,6 @@ void connect_layer_2d(Node *node, int stage_num, int node_num, int stage_idx,
       int nIn = node_idx + first * dct_node_num + second;
       int nOut = node_idx + second * dct_node_num + first;
 
-      
-
       connect_node(node, stage_num, node_num, sOut, nOut, nIn, 1, nIn, 0);
     }
   }
@@ -790,8 +785,6 @@ void connect_layer_2d_new(Node *node, int stage_num, int node_num,
       int sOut = stage_idx + 1;
       int nIn = node_idx + i * dct_node_num0 + j;
       int nOut = node_idx + j * dct_node_num1 + i;
-
-      
 
       connect_node(node, stage_num, node_num, sOut, nOut, nIn, 1, nIn, 0);
     }

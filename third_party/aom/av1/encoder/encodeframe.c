@@ -2019,7 +2019,8 @@ static inline void encode_frame_internal(AV1_COMP *cpi) {
   init_encode_frame_mb_context(cpi);
   set_default_interp_skip_flags(cm, &cpi->interp_search_flags);
 
-  if (cm->prev_frame && cm->prev_frame->seg.enabled)
+  if (cm->prev_frame && cm->prev_frame->seg.enabled &&
+      cpi->svc.number_spatial_layers == 1)
     cm->last_frame_seg_map = cm->prev_frame->seg_map;
   else
     cm->last_frame_seg_map = NULL;
@@ -2059,6 +2060,8 @@ static inline void encode_frame_internal(AV1_COMP *cpi) {
   start_timing(cpi, av1_setup_motion_field_time);
 #endif
   av1_calculate_ref_frame_side(cm);
+
+  features->allow_ref_frame_mvs &= !cpi->sf.hl_sf.disable_ref_frame_mvs;
   if (features->allow_ref_frame_mvs) av1_setup_motion_field(cm);
 #if CONFIG_COLLECT_COMPONENT_TIMING
   end_timing(cpi, av1_setup_motion_field_time);

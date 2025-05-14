@@ -2677,6 +2677,10 @@ typedef struct AV1_PRIMARY {
 
 
 
+
+
+
+
   int seq_params_locked;
 
   
@@ -3905,6 +3909,8 @@ void av1_set_screen_content_options(struct AV1_COMP *cpi,
 
 void av1_update_frame_size(AV1_COMP *cpi);
 
+void av1_set_svc_seq_params(AV1_PRIMARY *const ppi);
+
 typedef struct {
   int pyr_level;
   int disp_order;
@@ -4407,6 +4413,8 @@ static inline void set_postproc_filter_default_params(AV1_COMMON *cm) {
 
   lf->filter_level[0] = 0;
   lf->filter_level[1] = 0;
+  lf->backup_filter_level[0] = 0;
+  lf->backup_filter_level[1] = 0;
   cdef_info->cdef_bits = 0;
   cdef_info->cdef_strengths[0] = 0;
   cdef_info->nb_cdef_strengths = 1;
