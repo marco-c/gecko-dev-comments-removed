@@ -135,13 +135,11 @@ void HTMLDialogElement::Close(
     return;
   }
 
-  if (StaticPrefs::dom_element_dialog_toggle_events_enabled()) {
-    FireToggleEvent(u"open"_ns, u"closed"_ns, u"beforetoggle"_ns);
-    if (!Open()) {
-      return;
-    }
-    QueueToggleEventTask();
+  FireToggleEvent(u"open"_ns, u"closed"_ns, u"beforetoggle"_ns);
+  if (!Open()) {
+    return;
   }
+  QueueToggleEventTask();
 
   if (aReturnValue.WasPassed()) {
     SetReturnValue(aReturnValue.Value());
@@ -229,19 +227,17 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   
   
   
-  if (StaticPrefs::dom_element_dialog_toggle_events_enabled()) {
-    if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
-      return;
-    }
-
-    
-    if (Open()) {
-      return;
-    }
-
-    
-    QueueToggleEventTask();
+  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
+    return;
   }
+
+  
+  if (Open()) {
+    return;
+  }
+
+  
+  QueueToggleEventTask();
 
   
   SetOpen(true, IgnoreErrors());
@@ -387,30 +383,28 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
         "Dialog element is already an open popover.");
   }
 
-  if (StaticPrefs::dom_element_dialog_toggle_events_enabled()) {
-    
-    
-    
-    
-    if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
-      return;
-    }
-
-    
-    
-    
-    if (Open() || !IsInComposedDoc() || IsPopoverOpen()) {
-      return;
-    }
-
-    
-    QueueToggleEventTask();
+  
+  
+  
+  
+  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
+    return;
   }
 
   
+  
+  
+  if (Open() || !IsInComposedDoc() || IsPopoverOpen()) {
+    return;
+  }
+
+  
+  QueueToggleEventTask();
 
   
   SetOpen(true, aError);
+
+  
 
   
   
