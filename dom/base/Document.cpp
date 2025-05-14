@@ -20265,11 +20265,7 @@ static already_AddRefed<Document> CreateHTMLDocument(GlobalObject& aGlobal,
 
 already_AddRefed<Document> Document::ParseHTMLUnsafe(
     GlobalObject& aGlobal, const TrustedHTMLOrString& aHTML,
-    const SetHTMLUnsafeOptions& aOptions, nsIPrincipal* aSubjectPrincipal,
-    ErrorResult& aError) {
-  
-  
-  
+    nsIPrincipal* aSubjectPrincipal, ErrorResult& aError) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   constexpr nsLiteralString sink = u"Document parseHTMLUnsafe"_ns;
   Maybe<nsAutoString> compliantStringHolder;
@@ -20281,50 +20277,16 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
     return nullptr;
   }
 
-  
-  bool sanitize = aOptions.mSanitizer.WasPassed();
-
-  
-  
-  
-  RefPtr<Document> doc =
-      CreateHTMLDocument(aGlobal,  sanitize, aError);
+  RefPtr<Document> doc = CreateHTMLDocument(aGlobal, false, aError);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  
-  
-  
-  aError = nsContentUtils::ParseDocumentHTML(
-      *compliantString, doc,
-       !sanitize);
+  aError = nsContentUtils::ParseDocumentHTML(*compliantString, doc, false);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  if (sanitize) {
-    
-    
-    nsCOMPtr<nsIGlobalObject> global =
-        do_QueryInterface(aGlobal.GetAsSupports());
-    RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
-        global, aOptions.mSanitizer.Value(), true, aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    
-    nsCOMPtr<nsINode> root = doc->GetRootElement();
-    MOZ_DIAGNOSTIC_ASSERT(root,
-                          "HTML parser should have create the <html> root");
-    sanitizer->Sanitize(root,  true, aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-  }
-
-  
   return doc.forget();
 }
 
@@ -20336,8 +20298,7 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
                                                ErrorResult& aError) {
   
   
-  RefPtr<Document> doc =
-      CreateHTMLDocument(aGlobal,  true, aError);
+  RefPtr<Document> doc = CreateHTMLDocument(aGlobal, true, aError);
   if (aError.Failed()) {
     return nullptr;
   }

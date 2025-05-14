@@ -5327,9 +5327,125 @@ void Element::RegUnRegAccessKey(bool aDoReg) {
   }
 }
 
-void Element::SetHTML(const nsAString& aHTML, const SetHTMLOptions& aOptions,
-                      ErrorResult& aError) {
-  nsContentUtils::SetHTML(this, this, aHTML, aOptions, aError);
+
+void Element::SetHTML(const nsAString& aInnerHTML,
+                      const SetHTMLOptions& aOptions, ErrorResult& aError) {
+  
+  
+
+  
+  
+  
+  
+  if (IsHTMLElement(nsGkAtoms::script) || IsSVGElement(nsGkAtoms::script)) {
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
+                                    OwnerDoc(), nsContentUtils::eDOM_PROPERTIES,
+                                    "SetHTMLScript");
+    return;
+  }
+
+  
+  
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  if (!global) {
+    aError.ThrowInvalidStateError("Missing owner global.");
+    return;
+  }
+  RefPtr<Sanitizer> sanitizer =
+      Sanitizer::GetInstance(global, aOptions.mSanitizer, true, aError);
+  if (aError.Failed()) {
+    return;
+  }
+
+  
+  
+  
+  FragmentOrElement* target = this;
+  
+  if (target->IsTemplateElement()) {
+    DocumentFragment* frag =
+        static_cast<HTMLTemplateElement*>(target)->Content();
+    MOZ_ASSERT(frag);
+    target = frag;
+  }
+
+  
+  
+
+  
+  
+  Document* const doc = target->OwnerDoc();
+
+  
+  mozAutoSubtreeModified subtree(doc, nullptr);
+
+  target->FireNodeRemovedForChildren();
+
+  
+  mozAutoDocUpdate updateBatch(doc, true);
+
+  
+  nsAutoMutationBatch mb(target, true, false);
+  target->RemoveAllChildren(true);
+  mb.RemovalDone();
+
+  nsAutoScriptLoaderDisabler sld(doc);
+
+  FragmentOrElement* parseContext = this;
+  if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(parseContext)) {
+    
+    
+    parseContext = shadowRoot->GetHost();
+  }
+
+  
+  
+  
+  
+  
+
+  
+  
+
+  RefPtr<Document> inertDoc = nsContentUtils::CreateInertHTMLDocument(doc);
+  if (!inertDoc) {
+    aError = NS_ERROR_FAILURE;
+    return;
+  }
+
+  RefPtr<DocumentFragment> fragment = new (inertDoc->NodeInfoManager())
+      DocumentFragment(inertDoc->NodeInfoManager());
+
+  nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
+  int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
+  aError = nsContentUtils::ParseFragmentHTML(
+      aInnerHTML, fragment, contextLocalName, contextNameSpaceID, false, true);
+  if (aError.Failed()) {
+    return;
+  }
+
+  
+  
+  
+  nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
+
+  int32_t oldChildCount = static_cast<int32_t>(target->GetChildCount());
+
+  
+  sanitizer->Sanitize(fragment,  true, aError);
+  if (aError.Failed()) {
+    return;
+  }
+
+  
+  target->AppendChild(*fragment, aError);
+  if (aError.Failed()) {
+    return;
+  }
+
+  mb.NodesAdded();
+  nsContentUtils::FireMutationEventsForDirectParsing(doc, target,
+                                                     oldChildCount);
 }
 
 void Element::GetHTML(const GetHTMLOptions& aOptions, nsAString& aResult) {
@@ -5377,12 +5493,10 @@ EditorBase* Element::GetExtantEditor() const {
 }
 
 void Element::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
-                            const SetHTMLUnsafeOptions& aOptions,
                             nsIPrincipal* aSubjectPrincipal,
                             ErrorResult& aError) {
-  nsContentUtils::SetHTMLUnsafe(this, this, aHTML, aOptions,
-                                false , aSubjectPrincipal,
-                                aError);
+  nsContentUtils::SetHTMLUnsafe(this, this, aHTML, false ,
+                                aSubjectPrincipal, aError);
 }
 
 
