@@ -14,10 +14,18 @@
   
   
   
-  const GUTTER_SELECTOR =
-    AppConstants.platform == "linux"
-      ? ":scope > menuitem:not([hidden]):is([type=checkbox],[type=radio])"
-      : ":scope > menuitem:not([hidden])[checked=true]";
+  
+  const ITEM_NEEDS_GUTTER_SELECTOR = (() => {
+    if (AppConstants.platform == "macosx") {
+      return "[checked=true], [selected=true]";
+    }
+    if (AppConstants.platform == "windows") {
+      return "[checked=true]";
+    }
+    return "[type=checkbox], [type=radio]";
+  })();
+
+  const GUTTER_SELECTOR = `:scope > menuitem:not([hidden]):is(${ITEM_NEEDS_GUTTER_SELECTOR})`;
 
   document.addEventListener(
     "popupshowing",
