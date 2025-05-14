@@ -649,10 +649,6 @@ void av1_fill_coeff_costs(CoeffCosts *coeff_costs, FRAME_CONTEXT *fc,
         av1_cost_tokens_from_cdf(
             br_rate, fc->coeff_br_cdf[AOMMIN(tx_size, TX_32X32)][plane][ctx],
             NULL);
-        
-        
-        
-        
         for (i = 0; i < COEFF_BASE_RANGE; i += BR_CDF_SIZE - 1) {
           for (j = 0; j < BR_CDF_SIZE - 1; j++) {
             pcost->lps_cost[ctx][i + j] = prev_cost + br_rate[j];
@@ -660,10 +656,6 @@ void av1_fill_coeff_costs(CoeffCosts *coeff_costs, FRAME_CONTEXT *fc,
           prev_cost += br_rate[j];
         }
         pcost->lps_cost[ctx][i] = prev_cost;
-        
-        
-        
-        
       }
       for (int ctx = 0; ctx < LEVEL_CONTEXTS; ++ctx) {
         pcost->lps_cost[ctx][0 + COEFF_BASE_RANGE + 1] =

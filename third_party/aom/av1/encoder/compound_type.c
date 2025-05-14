@@ -235,12 +235,6 @@ static int64_t pick_wedge(const AV1_COMP *const cpi, const MACROBLOCK *const x,
 
     model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N,
                                                   &rate, &dist);
-    
-    
-    
-    
-    
-    
 
     rate += x->mode_costs.wedge_idx_cost[bsize][wedge_index];
     rd = RDCOST(x->rdmult, rate, dist);
