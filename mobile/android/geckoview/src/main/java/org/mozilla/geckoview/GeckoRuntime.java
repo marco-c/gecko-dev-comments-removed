@@ -106,7 +106,7 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-  public static final String EXTRA_CRASH_PROCESS_TYPE = "processType";
+  public static final String EXTRA_CRASH_PROCESS_VISIBILITY = "processVisibility";
 
   
 
@@ -120,24 +120,40 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-  public static final String CRASHED_PROCESS_TYPE_MAIN = "MAIN";
+  public static final String CRASHED_PROCESS_VISIBILITY_MAIN = "MAIN";
+
+  @Deprecated
+  @DeprecationSchedule(id = "GeckoRuntime-CRASHED_PROCESS_TYPE_MAIN", version = 142)
+  public static final String CRASHED_PROCESS_TYPE_MAIN = CRASHED_PROCESS_VISIBILITY_MAIN;
 
   
 
 
 
 
-  public static final String CRASHED_PROCESS_TYPE_FOREGROUND_CHILD = "FOREGROUND_CHILD";
+  public static final String CRASHED_PROCESS_VISIBILITY_FOREGROUND_CHILD = "FOREGROUND_CHILD";
+
+  @Deprecated
+  @DeprecationSchedule(id = "GeckoRuntime-CRASHED_PROCESS_TYPE_FOREGROUND_CHILD", version = 142)
+  public static final String CRASHED_PROCESS_TYPE_FOREGROUND_CHILD =
+      CRASHED_PROCESS_VISIBILITY_FOREGROUND_CHILD;
 
   
 
 
 
 
-  public static final String CRASHED_PROCESS_TYPE_BACKGROUND_CHILD = "BACKGROUND_CHILD";
+  public static final String CRASHED_PROCESS_VISIBILITY_BACKGROUND_CHILD = "BACKGROUND_CHILD";
+
+  @Deprecated
+  @DeprecationSchedule(id = "GeckoRuntime-CRASHED_PROCESS_TYPE_BACKGROUND_CHILD", version = 142)
+  public static final String CRASHED_PROCESS_TYPE_BACKGROUND_CHILD =
+      CRASHED_PROCESS_VISIBILITY_BACKGROUND_CHILD;
 
   private final MemoryController mMemoryController = new MemoryController();
 
+  @Deprecated
+  @DeprecationSchedule(id = "GeckoRuntime-CrashedProcessType", version = 142)
   @Retention(RetentionPolicy.SOURCE)
   @StringDef(
       value = {
@@ -146,6 +162,15 @@ public final class GeckoRuntime implements Parcelable {
         CRASHED_PROCESS_TYPE_BACKGROUND_CHILD
       })
   public @interface CrashedProcessType {}
+
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef(
+      value = {
+        CRASHED_PROCESS_VISIBILITY_MAIN,
+        CRASHED_PROCESS_VISIBILITY_FOREGROUND_CHILD,
+        CRASHED_PROCESS_VISIBILITY_BACKGROUND_CHILD
+      })
+  public @interface CrashedProcessVisibility {}
 
   private final class LifecycleListener implements LifecycleObserver {
     private boolean mPaused = false;
@@ -344,7 +369,8 @@ public final class GeckoRuntime implements Parcelable {
             final Intent i = new Intent(ACTION_CRASHED, null, context, crashHandler);
             i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
             i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
-            i.putExtra(EXTRA_CRASH_PROCESS_TYPE, message.getString(EXTRA_CRASH_PROCESS_TYPE));
+            i.putExtra(
+                EXTRA_CRASH_PROCESS_VISIBILITY, message.getString(EXTRA_CRASH_PROCESS_VISIBILITY));
             i.putExtra(EXTRA_CRASH_REMOTE_TYPE, message.getString(EXTRA_CRASH_REMOTE_TYPE));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
