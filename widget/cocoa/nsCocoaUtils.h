@@ -512,12 +512,6 @@ class nsCocoaUtils {
   
 
 
-  static already_AddRefed<nsISupports> GetDataFromPasteboardItem(
-      const nsACString& aFlavor, NSPasteboardItem* aItem);
-
-  
-
-
   static void SetTransferDataForTypeFromPasteboardItem(
       nsITransferable* aTransferable, const nsCString& aFlavor,
       NSPasteboardItem* aItem);

@@ -463,26 +463,10 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
     
     
   }
-
-  nsTArray<nsCString> flavors;
-  nsresult rv = aTransferable->FlavorsTransferableCanImport(flavors);
+  nsresult rv = GetNativeClipboardData(aTransferable, aWhichClipboard);
   if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
+    return rv;
   }
-
-  for (const auto& flavor : flavors) {
-    auto dataOrError = GetNativeClipboardData(flavor, aWhichClipboard);
-    if (dataOrError.isErr()) {
-      continue;
-    }
-
-    if (dataOrError.inspect()) {
-      aTransferable->SetTransferData(flavor.get(), dataOrError.inspect());
-      
-      break;
-    }
-  }
-
   if (!mozilla::contentanalysis::ContentAnalysis::
           CheckClipboardContentAnalysisSync(this, aWindowContext->Canonical(),
                                             aTransferable, aWhichClipboard)) {
@@ -889,9 +873,9 @@ void nsBaseClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
 }
 
 void nsBaseClipboard::AsyncGetNativeClipboardData(
-    const nsACString& aFlavor, ClipboardType aWhichClipboard,
-    GetNativeDataCallback&& aCallback) {
-  aCallback(GetNativeClipboardData(aFlavor, aWhichClipboard));
+    nsITransferable* aTransferable, ClipboardType aWhichClipboard,
+    GetDataCallback&& aCallback) {
+  aCallback(GetNativeClipboardData(aTransferable, aWhichClipboard));
 }
 
 void nsBaseClipboard::ClearClipboardCache(ClipboardType aClipboardType) {
@@ -1067,8 +1051,8 @@ NS_IMETHODIMP nsBaseClipboard::ClipboardDataSnapshot::GetData(
 
   
   
-  GetDataInternal(
-      std::move(flavors), 0, aTransferable,
+  mClipboard->AsyncGetNativeClipboardData(
+      aTransferable, mClipboardType,
       [callback = nsCOMPtr{aCallback}, self = RefPtr{this},
        transferable = nsCOMPtr{aTransferable},
        contentAnalysisCallback =
@@ -1147,18 +1131,9 @@ NS_IMETHODIMP nsBaseClipboard::ClipboardDataSnapshot::GetDataSync(
     
   }
 
-  for (const auto& flavor : flavors) {
-    auto dataOrError =
-        mClipboard->GetNativeClipboardData(flavor, mClipboardType);
-    if (dataOrError.isErr()) {
-      continue;
-    }
-
-    if (dataOrError.inspect()) {
-      aTransferable->SetTransferData(flavor.get(), dataOrError.inspect());
-      
-      break;
-    }
+  rv = mClipboard->GetNativeClipboardData(aTransferable, mClipboardType);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   bool shouldAllowContent = mozilla::contentanalysis::ContentAnalysis::
@@ -1205,46 +1180,6 @@ bool nsBaseClipboard::ClipboardDataSnapshot::IsValid() {
   }
 
   return true;
-}
-
-void nsBaseClipboard::ClipboardDataSnapshot::GetDataInternal(
-    nsTArray<nsCString>&& aTypes, nsTArray<nsCString>::index_type aIndex,
-    nsITransferable* aTransferable, GetDataInternalCallback&& aCallback) {
-  MOZ_ASSERT(aIndex < aTypes.Length());
-
-  
-  
-  mClipboard->AsyncGetNativeClipboardData(
-      aTypes[aIndex], mClipboardType,
-      [self = RefPtr{this}, types = std::move(aTypes), index = aIndex,
-       transferable = nsCOMPtr{aTransferable}, callback = std::move(aCallback)](
-          mozilla::Result<nsCOMPtr<nsISupports>, nsresult> aResult) mutable {
-        MOZ_ASSERT(index < types.Length());
-
-        
-        
-        if (!self->IsValid()) {
-          callback(NS_ERROR_NOT_AVAILABLE);
-          return;
-        }
-
-        if (!aResult.isErr() && aResult.inspect()) {
-          MOZ_ASSERT(index < types.Length());
-          transferable->SetTransferData(types[index].get(), aResult.inspect());
-          callback(NS_OK);
-          return;
-        }
-
-        
-        if (++index >= types.Length()) {
-          callback(NS_OK);
-          return;
-        }
-
-        
-        self->GetDataInternal(std::move(types), index, transferable,
-                              std::move(callback));
-      });
 }
 
 NS_IMPL_ISUPPORTS(nsBaseClipboard::ClipboardPopulatedDataSnapshot,
