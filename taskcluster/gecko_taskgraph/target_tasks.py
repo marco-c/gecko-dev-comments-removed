@@ -754,7 +754,7 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 
                 if "jetstream2" in try_name:
                     
-                    if "m-car" in try_name and "1400" in platform:
+                    if "m-car" in try_name and "1500" in platform:
                         return False
                     return True
                 return True
