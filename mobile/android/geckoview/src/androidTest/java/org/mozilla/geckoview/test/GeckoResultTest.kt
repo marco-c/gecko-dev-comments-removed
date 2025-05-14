@@ -4,7 +4,7 @@
 package org.mozilla.geckoview.test
 
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.* 
+import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.test.util.Environment
