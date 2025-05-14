@@ -2414,7 +2414,15 @@ def build_task(config, tasks):
             payload = task_def.get("payload")
             if payload:
                 env = payload.setdefault("env", {})
-                env["MOZ_AUTOMATION"] = "1"
+                env.update(
+                    {
+                        "MOZ_AUTOMATION": "1",
+                        "MOZ_BUILD_DATE": config.params["moz_build_date"],
+                        "MOZ_SCM_LEVEL": config.params["level"],
+                        "MOZ_SOURCE_CHANGESET": get_branch_rev(config),
+                        "MOZ_SOURCE_REPO": get_branch_repo(config),
+                    }
+                )
 
         dependencies = task.get("dependencies", {})
         if_dependencies = task.get("if-dependencies", [])
