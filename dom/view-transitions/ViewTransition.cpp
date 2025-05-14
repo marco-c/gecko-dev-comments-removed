@@ -77,15 +77,32 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
   return matrix;
 }
 
+
+
+
+
+
+static inline nsRect CapturedRect(const nsIFrame* aFrame) {
+  return aFrame->Style()->IsRootElementStyle()
+             ? ViewTransition::SnapshotContainingBlockRect(
+                   aFrame->PresContext())
+             : aFrame->InkOverflowRectRelativeToSelf();
+}
+static inline nsSize CapturedSize(const nsIFrame* aFrame,
+                                  const nsSize& aSnapshotContainingBlockSize) {
+  return aFrame->Style()->IsRootElementStyle()
+             ? aSnapshotContainingBlockSize
+             : aFrame->InkOverflowRectRelativeToSelf().Size();
+}
+
 static RefPtr<gfx::DataSourceSurface> CaptureFallbackSnapshot(
     nsIFrame* aFrame) {
   VT_LOG_DEBUG("CaptureFallbackSnapshot(%s)", aFrame->ListTag().get());
   nsPresContext* pc = aFrame->PresContext();
-  const bool isRoot = aFrame->Style()->IsRootElementStyle();
-  nsIFrame* frameToCapture =
-      isRoot ? pc->PresShell()->GetCanvasFrame() : aFrame;
-  const nsRect rect = isRoot ? ViewTransition::SnapshotContainingBlockRect(pc)
-                             : aFrame->InkOverflowRectRelativeToSelf();
+  nsIFrame* frameToCapture = aFrame->Style()->IsRootElementStyle()
+                                 ? pc->PresShell()->GetCanvasFrame()
+                                 : aFrame;
+  const nsRect& rect = CapturedRect(aFrame);
   const auto surfaceRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
       rect, pc->AppUnitsPerDevPixel());
 
@@ -126,8 +143,9 @@ struct OldSnapshotData {
 
   OldSnapshotData() = default;
 
-  explicit OldSnapshotData(nsIFrame* aFrame)
-      : mSize(aFrame->InkOverflowRectRelativeToSelf().Size()) {
+  explicit OldSnapshotData(nsIFrame* aFrame,
+                           const nsSize& aSnapshotContainingBlockSize)
+      : mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize)) {
     if (!StaticPrefs::dom_viewTransitions_wr_old_capture()) {
       mFallback = CaptureFallbackSnapshot(aFrame);
     }
@@ -191,11 +209,9 @@ struct CapturedElementOldState {
 
   CapturedElementOldState(nsIFrame* aFrame,
                           const nsSize& aSnapshotContainingBlockSize)
-      : mSnapshot(aFrame),
+      : mSnapshot(aFrame, aSnapshotContainingBlockSize),
         mTriedImage(true),
-        mSize(aFrame->Style()->IsRootElementStyle()
-                  ? aSnapshotContainingBlockSize
-                  : aFrame->InkOverflowRect().Size()),
+        mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize)),
         mTransform(EffectiveTransform(aFrame)),
         mWritingMode(aFrame->StyleVisibility()->mWritingMode),
         mDirection(aFrame->StyleVisibility()->mDirection),
@@ -854,12 +870,9 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     
     
     
-    
-    
-    auto newRect = frame->Style()->IsRootElementStyle()
-                       ? SnapshotContainingBlockRect()
-                       : frame->InkOverflowRectRelativeToSelf();
-    auto size = CSSPixel::FromAppUnits(newRect);
+    const auto& newSize =
+        CapturedSize(frame, mInitialSnapshotContainingBlockSize);
+    auto size = CSSPixel::FromAppUnits(newSize);
     
     
     bool groupStyleChanged =
@@ -894,8 +907,7 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     
     
     auto oldSize = capturedElement.mNewSnapshotSize;
-    capturedElement.mNewSnapshotSize =
-        frame->InkOverflowRectRelativeToSelf().Size();
+    capturedElement.mNewSnapshotSize = newSize;
     if (oldSize != capturedElement.mNewSnapshotSize && aNeedsInvalidation) {
       frame->PresShell()->FrameNeedsReflow(
           frame, IntrinsicDirty::FrameAndAncestors, NS_FRAME_IS_DIRTY);
@@ -1245,8 +1257,11 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
       mNames.AppendElement(name);
     }
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
+    
+    
+    
     capturedElement->mNewSnapshotSize =
-        aFrame->InkOverflowRectRelativeToSelf().Size();
+        CapturedSize(aFrame, mInitialSnapshotContainingBlockSize);
     SetCaptured(aFrame, true);
     return true;
   });
