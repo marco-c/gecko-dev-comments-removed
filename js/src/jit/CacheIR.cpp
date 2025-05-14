@@ -11122,45 +11122,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength(
-    bool isPossiblyWrapped) {
-  
-  
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
-
-  
-  if (isPossiblyWrapped && IsWrapper(&args_[0].toObject())) {
-    return AttachDecision::NoAction;
-  }
-
-  MOZ_ASSERT(args_[0].toObject().is<ArrayBufferObject>());
-
-  auto* buffer = &args_[0].toObject().as<ArrayBufferObject>();
-
-  
-  initializeInputOperand();
-
-  
-
-  ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-
-  if (isPossiblyWrapped) {
-    writer.guardIsNotProxy(objArgId);
-  }
-
-  if (buffer->byteLength() <= INT32_MAX) {
-    writer.loadArrayBufferByteLengthInt32Result(objArgId);
-  } else {
-    writer.loadArrayBufferByteLengthDoubleResult(objArgId);
-  }
-  writer.returnFromIC();
-
-  trackAttached("ArrayBufferByteLength");
-  return AttachDecision::Attach;
-}
-
 AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructing() {
   
   MOZ_ASSERT(args_.length() == 0);
@@ -12506,10 +12467,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     
     case InlinableNative::IntrinsicGuardToArrayBuffer:
       return tryAttachGuardToArrayBuffer();
-    case InlinableNative::IntrinsicArrayBufferByteLength:
-      return tryAttachArrayBufferByteLength( false);
-    case InlinableNative::IntrinsicPossiblyWrappedArrayBufferByteLength:
-      return tryAttachArrayBufferByteLength( true);
 
     
     case InlinableNative::IntrinsicGuardToSharedArrayBuffer:
