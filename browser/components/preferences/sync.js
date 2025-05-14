@@ -286,11 +286,11 @@ var gSyncPane = {
     }
   },
 
-  async _chooseWhatToSync(isAlreadySyncing) {
+  async _chooseWhatToSync(isSyncConfigured) {
     
     
     
-    if (!isAlreadySyncing) {
+    if (!isSyncConfigured) {
       try {
         await Weave.Service.updateLocalEnginesState();
       } catch (err) {
@@ -298,7 +298,7 @@ var gSyncPane = {
       }
     }
     let params = {};
-    if (isAlreadySyncing) {
+    if (isSyncConfigured) {
       
       params.disconnectFun = () => this.disconnectSync();
     }
@@ -306,18 +306,28 @@ var gSyncPane = {
       "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
       {
         closingCallback: event => {
-          if (!isAlreadySyncing && event.detail.button == "accept") {
+          if (event.detail.button == "accept") {
             
             
-            fxAccounts.telemetry
-              .recordConnection(["sync"], "ui")
-              .then(() => {
-                this.updateSyncUI();
-                return Weave.Service.configure();
-              })
-              .catch(err => {
-                console.error("Failed to enable sync", err);
+            if (!isSyncConfigured) {
+              fxAccounts.telemetry
+                .recordConnection(["sync"], "ui")
+                .then(() => {
+                  this.updateSyncUI();
+                  return Weave.Service.configure();
+                })
+                .catch(err => {
+                  console.error("Failed to enable sync", err);
+                });
+            } else {
+              
+              
+              
+              
+              Services.tm.dispatchToMainThread(() => {
+                Weave.Service.queueSync("cwts");
               });
+            }
           }
           
           
