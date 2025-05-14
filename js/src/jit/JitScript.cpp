@@ -59,6 +59,7 @@ ICScript::~ICScript() {
   
   
   MOZ_ASSERT(allocSitesSpace_.isEmpty());
+  MOZ_ASSERT(!envAllocSite_);
 }
 
 #ifdef DEBUG
@@ -373,6 +374,8 @@ void JitScript::forEachICScript(const F& f) const {
 }
 
 void ICScript::prepareForDestruction(Zone* zone) {
+  envAllocSite_ = nullptr;  
+
   
   
   JSRuntime* rt = zone->runtimeFromMainThread();
@@ -816,6 +819,8 @@ void jit::MarkActiveICScriptsAndCopyStubs(Zone* zone,
 
 InliningRoot* JitScript::getOrCreateInliningRoot(JSContext* cx,
                                                  JSScript* script) {
+  MOZ_ASSERT(script->jitScript() == this);
+
   if (!inliningRoot_) {
     inliningRoot_ = js::MakeUnique<InliningRoot>(cx, script);
     if (!inliningRoot_) {
@@ -834,7 +839,8 @@ gc::AllocSite* ICScript::getOrCreateAllocSite(JSScript* outerScript,
              (inliningRoot() && inliningRoot()->owningScript() == outerScript));
 
   
-  MOZ_ASSERT(pcOffset < bytecodeSize());
+  MOZ_ASSERT_IF(pcOffset != gc::AllocSite::EnvSitePCOffset,
+                pcOffset < bytecodeSize());
 
   for (gc::AllocSite* site : allocSites_) {
     if (site->pcOffset() == pcOffset) {
@@ -867,6 +873,22 @@ gc::AllocSite* ICScript::getOrCreateAllocSite(JSScript* outerScript,
   nursery.noteAllocSiteCreated();
 
   return site;
+}
+
+void ICScript::ensureEnvAllocSite(JSScript* outerScript) {
+  if (envAllocSite_) {
+    return;
+  }
+
+  
+  uint32_t pcoffset = gc::AllocSite::EnvSitePCOffset;
+  gc::AllocSite* site = getOrCreateAllocSite(outerScript, pcoffset);
+  if (!site) {
+    
+    site = outerScript->zone()->unknownAllocSite(JS::TraceKind::Object);
+  }
+
+  envAllocSite_ = site;
 }
 
 bool JitScript::resetAllocSites(bool resetNurserySites,
