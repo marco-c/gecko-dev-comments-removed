@@ -30,22 +30,8 @@ function getEnabledPrefForFeature(featureId) {
   return NimbusFeatures[featureId].manifest.variables.enabled.setPref.pref;
 }
 
-function removeExperimentManagerListeners(manager) {
-  
-  
-  
-  
-  
-  Services.prefs.removeObserver(
-    "datareporting.healthreport.uploadEnabled",
-    manager
-  );
-  Services.prefs.removeObserver("app.shield.optoutstudies.enabled", manager);
-}
-
 add_setup(function setup() {
   Services.fog.initializeFOG();
-  removeExperimentManagerListeners(ExperimentAPI._manager);
 });
 
 
@@ -106,7 +92,6 @@ async function setupTest({
     ...ctx,
     cleanup() {
       baseCleanup();
-      removeExperimentManagerListeners(ctx.manager);
       Services.prefs.deleteBranch(NIMBUS_MIGRATION_PREF);
     },
   };
@@ -429,7 +414,6 @@ add_task(async function test_migration_firefoxLabsEnrollments_idempotent() {
 
     await NimbusTestUtils.saveStore(manager.store);
 
-    removeExperimentManagerListeners(manager);
     removePrefObservers(manager);
     assertNoObservers(manager);
   }
