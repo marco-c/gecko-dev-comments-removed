@@ -1,5 +1,21 @@
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+const TEST_URL = "http://untrusted.example.com";
+const TEST_PRINCIPAL =
+  Services.scriptSecurityManager.createContentPrincipalFromOrigin(TEST_URL);
+
 function waitForEnabledButton() {
   return new Promise(resolve => {
     const button = content.document.getElementById("openInsecure");
@@ -7,43 +23,28 @@ function waitForEnabledButton() {
       for (const mutation of mutations) {
         if (
           mutation.type === "attributes" &&
-          mutation.attributeName === "inert" &&
-          !mutation.target.inert
+          mutation.attributeName === "class" &&
+          !mutation.target.classList.contains("disabled")
         ) {
           resolve();
         }
       }
     });
-    observer.observe(button, { attributeFilter: ["inert"] });
+    observer.observe(button, { attributeFilter: ["class"] });
     ok(
-      button.inert,
-      "The 'Continue to HTTP Site' button should be inert right after the error page is loaded."
+      button.classList.contains("disabled"),
+      "The 'Continue to HTTP Site' button should be disabled right after the error page is loaded/focused."
     );
   });
 }
 
-add_task(async function () {
-  waitForExplicitFinish();
+const specifiedDelay = Services.prefs.getIntPref(
+  "security.dialog_enable_delay",
+  1000
+);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.security.https_only_mode", true]],
-  });
-
-  const specifiedDelay = Services.prefs.getIntPref(
-    "security.dialog_enable_delay",
-    1000
-  );
-
-  let loaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
-  info("Loading insecure page");
+async function waitForEnabledButtonAndCheckTiming() {
   const startTime = Date.now();
-  BrowserTestUtils.startLoadingURIString(
-    gBrowser,
-    
-    
-    "http://untrusted.example.com:80"
-  );
-  await loaded;
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], waitForEnabledButton);
   const endTime = Date.now();
 
@@ -54,6 +55,49 @@ add_task(async function () {
     specifiedDelay - 100,
     `The observed delay (${observedDelay}ms) should be roughly the same or greater than the delay specified in "security.dialog_enable_delay" (${specifiedDelay}ms)`
   );
+}
 
-  finish();
+add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_only_mode", true]],
+  });
+
+  info("Loading insecure page");
+  let loaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
+  BrowserTestUtils.startLoadingURIString(gBrowser, TEST_URL);
+  await loaded;
+  await waitForEnabledButtonAndCheckTiming();
+
+  info("Opening and closing a new tab");
+  let newTab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+  });
+  await BrowserTestUtils.removeTab(newTab);
+  await waitForEnabledButtonAndCheckTiming();
+
+  info("Loading page with exception");
+  await Services.perms.addFromPrincipal(
+    TEST_PRINCIPAL,
+    "https-only-load-insecure",
+    Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION
+  );
+  loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  BrowserTestUtils.startLoadingURIString(gBrowser, TEST_URL);
+  await loaded;
+
+  info("Opening identity pane");
+  document.getElementById("identity-icon-box").click();
+  const identityPopup = document.getElementById("identity-popup");
+  ok(!!identityPopup, "Identity pane should exist");
+  await BrowserTestUtils.waitForPopupEvent(identityPopup, "shown");
+
+  info("Removing exception in identity pane");
+  const menulist = document.getElementById(
+    "identity-popup-security-httpsonlymode-menulist"
+  );
+  ok(!!menulist, "Identity pane should contain HTTPS-Only menulist");
+  loaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
+  menulist.getItemAtIndex(0).doCommand();
+  await loaded;
+  await waitForEnabledButtonAndCheckTiming();
 });

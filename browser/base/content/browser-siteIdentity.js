@@ -617,6 +617,9 @@ var gIdentityHandler = {
       if (this._popupInitialized) {
         PanelMultiView.hidePopup(this._identityPopup);
       }
+      
+      
+      gBrowser.selectedBrowser.focus();
       return;
     }
     
