@@ -2205,6 +2205,52 @@ bool js::ToIndexSlow(JSContext* cx, JS::HandleValue v,
   return true;
 }
 
+
+
+
+
+template <typename ArrayLength>
+bool js::ToIntegerIndexSlow(JSContext* cx, Handle<Value> value,
+                            ArrayLength length, ArrayLength* result) {
+  MOZ_ASSERT(!value.isInt32());
+
+  double relative;
+  if (!ToInteger(cx, value, &relative)) {
+    return false;
+  }
+
+  if (relative >= 0) {
+    *result = ArrayLength(std::min(relative, double(length)));
+  } else {
+    *result = ArrayLength(std::max(relative + double(length), 0.0));
+  }
+  return true;
+}
+
+
+
+struct Dummy {
+  explicit Dummy(double) {
+  }
+  explicit operator double() {
+    return 0;
+  }
+};
+
+
+
+
+
+using Uint64OrDummy =
+    std::conditional_t<!std::is_same_v<uint64_t, size_t>, uint64_t, Dummy>;
+
+template bool js::ToIntegerIndexSlow<size_t>(JSContext*, Handle<Value>, size_t,
+                                             size_t*);
+
+template bool js::ToIntegerIndexSlow<Uint64OrDummy>(JSContext*, Handle<Value>,
+                                                    Uint64OrDummy,
+                                                    Uint64OrDummy*);
+
 template <typename CharT>
 double js_strtod(const CharT* begin, const CharT* end, const CharT** dEnd) {
   const CharT* s = SkipSpace(begin, end);
