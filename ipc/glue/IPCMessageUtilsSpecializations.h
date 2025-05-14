@@ -536,20 +536,23 @@ struct ParamTraits<mozilla::Variant<Ts...>> {
   struct VariantReader {
     using Next = VariantReader<N - 1>;
 
-    static bool Read(MessageReader* reader, Tag tag, paramType* result) {
-      
-      
-      
-      
-      if (tag == N - 1) {
-        
-        
-        
-        
-        
-        return ReadParam(reader, &result->template emplace<N - 1>());
+    
+    
+    
+    
+    static constexpr size_t Idx = N - 1;
+    using T = typename mozilla::detail::Nth<Idx, Ts...>::Type;
+
+    static ReadResult<paramType> Read(MessageReader* reader, Tag tag) {
+      if (tag == Idx) {
+        auto p = ReadParam<T>(reader);
+        if (p) {
+          return ReadResult<paramType>(
+              std::in_place, mozilla::VariantIndex<Idx>{}, std::move(*p));
+        }
+        return {};
       } else {
-        return Next::Read(reader, tag, result);
+        return Next::Read(reader, tag);
       }
     }
 
@@ -560,17 +563,17 @@ struct ParamTraits<mozilla::Variant<Ts...>> {
   
   template <typename dummy>
   struct VariantReader<0, dummy> {
-    static bool Read(MessageReader* reader, Tag tag, paramType* result) {
-      return false;
+    static ReadResult<paramType> Read(MessageReader* reader, Tag tag) {
+      return {};
     }
   };
 
-  static bool Read(MessageReader* reader, paramType* result) {
+  static ReadResult<paramType> Read(MessageReader* reader) {
     Tag tag;
     if (ReadParam(reader, &tag)) {
-      return VariantReader<sizeof...(Ts)>::Read(reader, tag, result);
+      return VariantReader<sizeof...(Ts)>::Read(reader, tag);
     }
-    return false;
+    return {};
   }
 };
 
