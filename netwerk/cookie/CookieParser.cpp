@@ -744,12 +744,9 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     
     
     
-    if (maxageCap) {
-      aCookieData.expiry() = std::min(expires, aCurrentTime + maxageCap);
-    } else {
-      aCookieData.expiry() = expires;
-    }
 
+    aCookieData.expiry() =
+        CookieCommons::MaybeReduceExpiry(aCurrentTime, expires);
     return false;
   }
 

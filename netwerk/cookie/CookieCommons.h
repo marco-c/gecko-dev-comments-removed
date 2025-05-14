@@ -183,6 +183,10 @@ class CookieCommons final {
   static SecurityChecksResult CheckGlobalAndRetrieveCookiePrincipals(
       mozilla::dom::Document* aDocument, nsIPrincipal** aCookiePrincipal,
       nsIPrincipal** aCookiePartitionedPrincipal);
+
+  
+  static int64_t MaybeReduceExpiry(int64_t aCurrentTimeInSec,
+                                   int64_t aExpiryInSec);
 };
 
 }  
