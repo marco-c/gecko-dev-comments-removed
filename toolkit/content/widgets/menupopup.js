@@ -11,19 +11,22 @@
     "resource://gre/modules/AppConstants.sys.mjs"
   );
 
-
   
   
   
-  const GUTTER_SELECTOR = AppConstants.platform == "linux"
-    ? ":scope > menuitem:not([hidden]):is([type=checkbox],[type=radio])"
-    : ":scope > menuitem:not([hidden])[checked=true]";
+  const GUTTER_SELECTOR =
+    AppConstants.platform == "linux"
+      ? ":scope > menuitem:not([hidden]):is([type=checkbox],[type=radio])"
+      : ":scope > menuitem:not([hidden])[checked=true]";
 
   document.addEventListener(
     "popupshowing",
     function (e) {
       if (e.target.nodeName == "menupopup") {
-        e.target.toggleAttribute("needsgutter", !!e.target.querySelector(GUTTER_SELECTOR));
+        e.target.toggleAttribute(
+          "needsgutter",
+          !!e.target.querySelector(GUTTER_SELECTOR)
+        );
       }
     },
     
