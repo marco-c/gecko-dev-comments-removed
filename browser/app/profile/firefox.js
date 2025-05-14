@@ -676,6 +676,17 @@ pref("browser.urlbar.contextualSearch.enabled", true);
 pref("browser.urlbar.addons.featureGate", true);
 
 
+pref("places.semanticHistory.featureGate", false);
+
+
+
+
+pref("browser.urlbar.suggest.semanticHistory", false);
+
+
+pref("browser.urlbar.suggest.semanticHistory.minLength", 5);
+
+
 
 pref("browser.urlbar.suggest.addons", true);
 

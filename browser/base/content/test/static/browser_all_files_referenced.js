@@ -119,10 +119,6 @@ var gExceptionPaths = [
   "resource://builtin-addons/newtab/",
   "resource://newtab/",
   "chrome://newtab/",
-
-  
-  "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
-  "resource://gre/modules/PlacesSemanticHistoryDatabase.sys.mjs",
 ];
 
 
