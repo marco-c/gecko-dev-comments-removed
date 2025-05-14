@@ -394,6 +394,14 @@ TextPropertyEditor.prototype = {
       });
 
       this.valueSpan.addEventListener("click", event => {
+        if (this._hasPendingClick) {
+          
+          
+          
+          
+          event.stopImmediatePropagation();
+          return;
+        }
         const target = event.target;
 
         if (target.nodeName === "a") {
