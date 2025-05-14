@@ -40,5 +40,8 @@ check(() => { return new Array(); });
 check(() => { return new Array(150); });
 
 
+check(() => { return () => 0 });
+
+
 let fdo = new FakeDOMObject();
 check(() => { return fdo.doBar(); })

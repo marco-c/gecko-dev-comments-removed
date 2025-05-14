@@ -4630,14 +4630,36 @@ bool js::GetProperty(JSContext* cx, HandleValue v, Handle<PropertyName*> name,
   return GetProperty(cx, obj, receiver, name, vp);
 }
 
-JSObject* js::Lambda(JSContext* cx, HandleFunction fun, HandleObject parent) {
+JSObject* js::LambdaBaselineFallback(JSContext* cx, HandleFunction fun,
+                                     HandleObject parent, gc::AllocSite* site) {
+  MOZ_ASSERT(site);
+  gc::Heap heap = site->initialHeap();
+  JSObject* obj = Lambda(cx, fun, parent, heap, site);
+  MOZ_ASSERT_IF(obj && heap == gc::Heap::Tenured, obj->isTenured());
+  return obj;
+}
+
+JSObject* js::LambdaOptimizedFallback(JSContext* cx, HandleFunction fun,
+                                      HandleObject parent, gc::Heap heap) {
+  
+  
+  
+  gc::AllocSite* site = cx->zone()->optimizedAllocSite();
+  JSObject* obj = Lambda(cx, fun, parent, heap, site);
+  MOZ_ASSERT_IF(obj && heap == gc::Heap::Tenured, obj->isTenured());
+  return obj;
+}
+
+JSObject* js::Lambda(JSContext* cx, HandleFunction fun, HandleObject parent,
+                     gc::Heap heap, gc::AllocSite* site) {
   JSFunction* clone;
   if (fun->isNativeFun()) {
     MOZ_ASSERT(IsAsmJSModule(fun));
+    MOZ_ASSERT(heap == gc::Heap::Default);  
     clone = CloneAsmJSModuleFunction(cx, fun);
   } else {
     RootedObject proto(cx, fun->staticPrototype());
-    clone = CloneFunctionReuseScript(cx, fun, parent, proto);
+    clone = CloneFunctionReuseScript(cx, fun, parent, proto, heap, site);
   }
   if (!clone) {
     return nullptr;
