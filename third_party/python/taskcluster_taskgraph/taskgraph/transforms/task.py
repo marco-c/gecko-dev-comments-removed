@@ -339,7 +339,8 @@ def verify_index(config, index):
         Optional("artifacts"): [
             {
                 
-                "type": Any("file", "directory"),
+                
+                "type": Any("file", "directory", "volume"),
                 
                 "path": str,
                 

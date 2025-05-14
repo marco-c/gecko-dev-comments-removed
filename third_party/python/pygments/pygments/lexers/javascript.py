@@ -4,7 +4,7 @@
 
     Lexers for JavaScript and related languages.
 
-    :copyright: Copyright 2006-2024 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -119,6 +119,8 @@ class JavascriptLexer(RegexLexer):
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String.Double),
             (r"'(\\\\|\\[^\\]|[^'\\])*'", String.Single),
             (r'`', String.Backtick, 'interp'),
+            
+            (r'#[a-zA-Z_]\w*', Name),
         ],
         'interp': [
             (r'`', String.Backtick, '#pop'),
@@ -168,6 +170,8 @@ class TypeScriptLexer(JavascriptLexer):
             
             (r'@' + JS_IDENT, Keyword.Declaration),
             inherit,
+            
+            (r'#[a-zA-Z_]\w*', Name),
         ],
     }
 
