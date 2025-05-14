@@ -1500,11 +1500,6 @@ pub enum Appearance {
     MenulistButton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ButtonArrowDown,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ButtonArrowUp,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Menupopup,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
@@ -1577,9 +1572,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Toolbarbutton,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ToolbarbuttonDropdown,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Tooltip,
