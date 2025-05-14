@@ -1118,9 +1118,16 @@ void WaylandSurface::BufferFreeCallbackHandler(uintptr_t aWlBufferID,
 }
 
 static void BufferDetachedCallbackHandler(void* aData, wl_buffer* aBuffer) {
-  LOGS("BufferDetachedCallbackHandler() [%p] received wl_buffer [%p]", aData,
-       aBuffer);
+  LOGS(
+      "BufferDetachedCallbackHandler() WaylandSurface [%p] received wl_buffer "
+      "[%p]",
+      aData, aBuffer);
   RefPtr surface = static_cast<WaylandSurface*>(aData);
+  
+  
+  if (!surface) {
+    return;
+  }
   surface->BufferFreeCallbackHandler(reinterpret_cast<uintptr_t>(aBuffer),
                                       false);
 }
@@ -1140,26 +1147,32 @@ bool WaylandSurface::AttachLocked(WaylandSurfaceLock& aSurfaceLock,
                 gfx::IntSize((int)round(bufferSize.width / scale),
                              (int)round(bufferSize.height / scale)));
 
-  LOGWAYLAND(
-      "WaylandSurface::AttachLocked() WaylandBuffer [%p] size [%d x %d] "
-      "fractional scale %f",
-      aWaylandBuffer.get(), bufferSize.width, bufferSize.height, scale);
-
   wl_buffer* buffer = aWaylandBuffer->BorrowBuffer(aSurfaceLock);
   if (!buffer) {
     LOGWAYLAND("WaylandSurface::AttachLocked() failed, BorrowBuffer() failed");
     return false;
   }
 
+  LOGWAYLAND(
+      "WaylandSurface::AttachLocked() WaylandBuffer [%p] wl_buffer [%p] size "
+      "[%d x %d] "
+      "fractional scale %f",
+      aWaylandBuffer.get(), buffer, bufferSize.width, bufferSize.height, scale);
+
   
   
   
   
-  if (wl_buffer_add_listener(buffer, &sBufferDetachListener, this) < 0) {
-    LOGWAYLAND(
-        "WaylandSurface::AttachLocked() failed to attach buffer listener");
-    aWaylandBuffer->ReturnBufferDetached(aSurfaceLock);
-    return false;
+  if (wl_proxy_get_listener((wl_proxy*)buffer)) {
+    
+    wl_proxy_set_user_data((wl_proxy*)buffer, this);
+  } else {
+    if (wl_buffer_add_listener(buffer, &sBufferDetachListener, this) < 0) {
+      LOGWAYLAND(
+          "WaylandSurface::AttachLocked() failed to attach buffer listener");
+      aWaylandBuffer->ReturnBufferDetached(aSurfaceLock);
+      return false;
+    }
   }
 
   if (!mAttachedBuffers.Contains(aWaylandBuffer)) {
