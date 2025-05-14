@@ -8,13 +8,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "gdk/gdk.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/ipc/ByteBuf.h"
+#include "mozilla/GUniquePtr.h"
+#include "mozilla/GRefPtr.h"
 #include <algorithm>
 
 #include <gio/gio.h>
@@ -43,7 +47,8 @@ using mozilla::ipc::ByteBuf;
 
 NS_IMPL_ISUPPORTS(nsIconChannel, nsIRequest, nsIChannel)
 
-static nsresult MozGdkPixbufToByteBuf(GdkPixbuf* aPixbuf, ByteBuf* aByteBuf) {
+static nsresult MozGdkPixbufToByteBuf(GdkPixbuf* aPixbuf, gint aScale,
+                                      ByteBuf* aByteBuf) {
   int width = gdk_pixbuf_get_width(aPixbuf);
   int height = gdk_pixbuf_get_height(aPixbuf);
   NS_ENSURE_TRUE(height < 256 && width < 256 && height > 0 && width > 0 &&
@@ -107,6 +112,26 @@ static nsresult ByteBufToStream(ByteBuf&& aBuf, nsIInputStream** aStream) {
   return NS_OK;
 }
 
+static GdkRGBA GetForegroundColor(nsIMozIconURI* aIconURI) {
+  auto scheme = [&] {
+    bool dark = false;
+    if (NS_FAILED(aIconURI->GetImageDark(&dark))) {
+      return mozilla::LookAndFeel::SystemColorScheme();
+    }
+    return dark ? mozilla::ColorScheme::Dark : mozilla::ColorScheme::Light;
+  }();
+  auto color = mozilla::LookAndFeel::Color(mozilla::LookAndFeel::ColorID::Windowtext, scheme, mozilla::LookAndFeel::UseStandins::No);
+  auto ToGdk = [](uint8_t aGecko) {
+    return aGecko / 255.0;
+  };
+  return GdkRGBA {
+    .red = ToGdk(NS_GET_R(color)),
+    .green = ToGdk(NS_GET_G(color)),
+    .blue = ToGdk(NS_GET_B(color)),
+    .alpha = ToGdk(NS_GET_A(color)),
+  };
+}
+
 static nsresult StreamToChannel(already_AddRefed<nsIInputStream> aStream,
                                 nsIURI* aURI, nsIChannel** aChannel) {
   
@@ -118,24 +143,6 @@ static nsresult StreamToChannel(already_AddRefed<nsIInputStream> aStream,
       aChannel, aURI, std::move(aStream), nullPrincipal,
       nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
       nsIContentPolicy::TYPE_INTERNAL_IMAGE, nsLiteralCString(IMAGE_ICON_MS));
-}
-
-static GtkWidget* gProtoWindow = nullptr;
-static GtkWidget* gStockImageWidget = nullptr;
-
-static void ensure_stock_image_widget() {
-  
-  
-  if (!gProtoWindow) {
-    gProtoWindow = gtk_window_new(GTK_WINDOW_POPUP);
-    GtkWidget* protoLayout = gtk_fixed_new();
-    gtk_container_add(GTK_CONTAINER(gProtoWindow), protoLayout);
-
-    gStockImageWidget = gtk_image_new();
-    gtk_container_add(GTK_CONTAINER(protoLayout), gStockImageWidget);
-
-    gtk_widget_ensure_style(gStockImageWidget);
-  }
 }
 
 static GtkIconSize moz_gtk_icon_size(const char* name) {
@@ -171,39 +178,18 @@ static int32_t GetIconSize(nsIMozIconURI* aIconURI) {
 
   aIconURI->GetIconSize(iconSizeString);
   if (iconSizeString.IsEmpty()) {
-    uint32_t size;
-    mozilla::DebugOnly<nsresult> rv = aIconURI->GetImageSize(&size);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "GetImageSize failed");
-    return size;
+    return int32_t(aIconURI->GetImageSize());
   }
   int size;
-
   GtkIconSize icon_size = moz_gtk_icon_size(iconSizeString.get());
   gtk_icon_size_lookup(icon_size, &size, nullptr);
   return size;
 }
 
 
-static nsresult ScaleIconBuf(GdkPixbuf** aBuf, int32_t iconSize) {
-  
-  if (gdk_pixbuf_get_width(*aBuf) != iconSize &&
-      gdk_pixbuf_get_height(*aBuf) != iconSize) {
-    GdkPixbuf* scaled =
-        gdk_pixbuf_scale_simple(*aBuf, iconSize, iconSize, GDK_INTERP_BILINEAR);
-    
-    g_object_unref(*aBuf);
-    *aBuf = scaled;
-    if (!scaled) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-  }
-  return NS_OK;
-}
-
-
 nsresult nsIconChannel::GetIconWithGIO(nsIMozIconURI* aIconURI,
                                        ByteBuf* aDataOut) {
-  GIcon* icon = nullptr;
+  RefPtr<GIcon> icon;
   nsCOMPtr<nsIURL> fileURI;
 
   
@@ -220,11 +206,7 @@ nsresult nsIconChannel::GetIconWithGIO(nsIMozIconURI* aIconURI,
                             G_FILE_QUERY_INFO_NONE, nullptr, nullptr);
       g_object_unref(file);
       if (fileInfo) {
-        
         icon = g_file_info_get_icon(fileInfo);
-        if (icon) {
-          g_object_ref(icon);
-        }
         g_object_unref(fileInfo);
       }
     }
@@ -239,13 +221,10 @@ nsresult nsIconChannel::GetIconWithGIO(nsIMozIconURI* aIconURI,
 
     appId = Substring(appId, sizeof("moz-icon:/"));
 
-    GDesktopAppInfo* app_info = g_desktop_app_info_new(appId.get());
+    RefPtr<GDesktopAppInfo> app_info =
+        dont_AddRef(g_desktop_app_info_new(appId.get()));
     if (app_info) {
-      icon = g_app_info_get_icon((GAppInfo*)app_info);
-      if (icon) {
-        g_object_ref(icon);
-      }
-      g_object_unref(app_info);
+      icon = g_app_info_get_icon((GAppInfo*)app_info.get());
     }
   }
 
@@ -262,51 +241,45 @@ nsresult nsIconChannel::GetIconWithGIO(nsIMozIconURI* aIconURI,
         ms->GetTypeFromExtension(fileExt, type);
       }
     }
-    char* ctype = nullptr;  
+    mozilla::GUniquePtr<gchar> ctype;
     if (!type.IsEmpty()) {
-      ctype = g_content_type_from_mime_type(type.get());
+      ctype.reset(g_content_type_from_mime_type(type.get()));
     }
     if (ctype) {
-      icon = g_content_type_get_icon(ctype);
-      g_free(ctype);
+      icon = dont_AddRef(g_content_type_get_icon(ctype.get()));
     }
   }
 
   
   GtkIconTheme* iconTheme = gtk_icon_theme_get_default();
-  GtkIconInfo* iconInfo = nullptr;
   
   int32_t iconSize = GetIconSize(aIconURI);
+  int32_t scale = aIconURI->GetImageScale();
 
+  RefPtr<GtkIconInfo> iconInfo;
   if (icon) {
-    
-    iconInfo = gtk_icon_theme_lookup_by_gicon(iconTheme, icon, iconSize,
-                                              (GtkIconLookupFlags)0);
-    g_object_unref(icon);
+    iconInfo = dont_AddRef(gtk_icon_theme_lookup_by_gicon_for_scale(
+        iconTheme, icon, iconSize, scale, GtkIconLookupFlags(0)));
   }
 
   if (!iconInfo) {
     
-    iconInfo = gtk_icon_theme_lookup_icon(iconTheme, "unknown", iconSize,
-                                          (GtkIconLookupFlags)0);
+    iconInfo = dont_AddRef(gtk_icon_theme_lookup_icon_for_scale(
+        iconTheme, "unknown", iconSize, scale, GtkIconLookupFlags(0)));
     if (!iconInfo) {
       return NS_ERROR_NOT_AVAILABLE;
     }
   }
 
   
-  GdkPixbuf* buf = gtk_icon_info_load_icon(iconInfo, nullptr);
-  gtk_icon_info_free(iconInfo);
-  if (!buf) {
+  const auto fg = GetForegroundColor(aIconURI);
+  RefPtr<GdkPixbuf> pixbuf = dont_AddRef(gtk_icon_info_load_symbolic(
+      iconInfo, &fg, nullptr, nullptr, nullptr, nullptr, nullptr));
+
+  if (!pixbuf) {
     return NS_ERROR_UNEXPECTED;
   }
-
-  nsresult rv = ScaleIconBuf(&buf, iconSize);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = MozGdkPixbufToByteBuf(buf, aDataOut);
-  g_object_unref(buf);
-  return rv;
+  return MozGdkPixbufToByteBuf(pixbuf, scale, aDataOut);
 }
 
 
@@ -328,100 +301,27 @@ nsresult nsIconChannel::GetIcon(nsIURI* aURI, ByteBuf* aDataOut) {
     return GetIconWithGIO(iconURI, aDataOut);
   }
 
-  
-  nsAutoCString iconSizeString;
-  iconURI->GetIconSize(iconSizeString);
-
-  nsAutoCString iconStateString;
-  iconURI->GetIconState(iconStateString);
-
-  GtkIconSize icon_size = moz_gtk_icon_size(iconSizeString.get());
-  GtkStateType state = iconStateString.EqualsLiteral("disabled")
-                           ? GTK_STATE_INSENSITIVE
-                           : GTK_STATE_NORMAL;
-
-  
-  GtkTextDirection direction = GTK_TEXT_DIR_NONE;
-  if (StringEndsWith(stockIcon, "-ltr"_ns)) {
-    direction = GTK_TEXT_DIR_LTR;
-  } else if (StringEndsWith(stockIcon, "-rtl"_ns)) {
-    direction = GTK_TEXT_DIR_RTL;
+  GtkIconTheme* theme = gtk_icon_theme_get_default();
+  const gint iconSize = iconURI->GetImageSize();
+  const gint scale = iconURI->GetImageScale();
+  RefPtr<GtkIconInfo> iconInfo =
+      dont_AddRef(gtk_icon_theme_lookup_icon_for_scale(
+          theme, stockIcon.get(), iconSize, scale, GtkIconLookupFlags(0)));
+  if (!iconInfo) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
-
-  bool forceDirection = direction != GTK_TEXT_DIR_NONE;
-  nsAutoCString stockID;
-  bool useIconName = false;
-  if (!forceDirection) {
-    direction = gtk_widget_get_default_direction();
-    stockID = stockIcon;
-  } else {
-    
-    
-    stockID = Substring(stockIcon, 0, stockIcon.Length() - 4);
-    
-    
-    
-    
-    GtkIconTheme* icon_theme = gtk_icon_theme_get_default();
-    
-    
-    
-    gint width, height;
-    if (gtk_icon_size_lookup(icon_size, &width, &height)) {
-      gint size = std::min(width, height);
-      
-      
-      
-      
-      GtkIconInfo* icon = gtk_icon_theme_lookup_icon(
-          icon_theme, stockIcon.get(), size, (GtkIconLookupFlags)0);
-      if (icon) {
-        useIconName = true;
-        gtk_icon_info_free(icon);
-      }
-    }
-  }
-
-  ensure_stock_image_widget();
-  GtkStyle* style = gtk_widget_get_style(gStockImageWidget);
-  GtkIconSet* icon_set = nullptr;
-  if (!useIconName) {
-    icon_set = gtk_style_lookup_icon_set(style, stockID.get());
-  }
-
-  if (!icon_set) {
-    
-    
-    useIconName = true;
-    
-    
-    
-    icon_set = gtk_icon_set_new();
-    GtkIconSource* icon_source = gtk_icon_source_new();
-
-    gtk_icon_source_set_icon_name(icon_source, stockIcon.get());
-    gtk_icon_set_add_source(icon_set, icon_source);
-    gtk_icon_source_free(icon_source);
-  }
-
-  GdkPixbuf* icon = gtk_icon_set_render_icon(
-      icon_set, style, direction, state, icon_size, gStockImageWidget, nullptr);
-  if (useIconName) {
-    gtk_icon_set_unref(icon_set);
-  }
+  const auto fg = GetForegroundColor(iconURI);
+  RefPtr<GdkPixbuf> pixbuf = dont_AddRef(gtk_icon_info_load_symbolic(
+      iconInfo, &fg, nullptr, nullptr, nullptr, nullptr, nullptr));
 
   
   
   
-  if (!icon) {
+  if (!pixbuf) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsresult rv = MozGdkPixbufToByteBuf(icon, aDataOut);
-
-  g_object_unref(icon);
-
-  return rv;
+  return MozGdkPixbufToByteBuf(pixbuf, scale, aDataOut);
 }
 
 nsresult nsIconChannel::Init(nsIURI* aURI) {
@@ -495,9 +395,4 @@ nsresult nsIconChannel::Init(nsIURI* aURI) {
 }
 
 void nsIconChannel::Shutdown() {
-  if (gProtoWindow) {
-    gtk_widget_destroy(gProtoWindow);
-    gProtoWindow = nullptr;
-    gStockImageWidget = nullptr;
-  }
 }

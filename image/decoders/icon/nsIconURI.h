@@ -46,10 +46,12 @@ class nsMozIconURI final : public nsIMozIconURI,
   nsCString mFileName;  
                         
   nsCString mStockIcon;
-  int32_t mIconSize;   
-                       
-  int32_t mIconState;  
-                       
+  int32_t mIconSize = -1;   
+                            
+  int32_t mIconState = -1;  
+                            
+  uint32_t mScale = 1;
+  mozilla::Maybe<bool> mDark;
 
  private:
   nsresult Clone(nsIURI** aURI);
