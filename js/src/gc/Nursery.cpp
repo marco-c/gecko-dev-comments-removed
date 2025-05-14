@@ -1720,15 +1720,20 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   runtime()->caches().stringToAtomCache.purge();
   endProfile(ProfileKey::PurgeStringToAtomCache);
 
+#ifdef JS_GC_ZEAL
   
   startProfile(ProfileKey::CheckHashTables);
-#ifdef JS_GC_ZEAL
   if (gc->hasZealMode(ZealMode::CheckHashTablesOnMinorGC)) {
     runtime()->caches().checkEvalCacheAfterMinorGC();
     gc->checkHashTablesAfterMovingGC();
   }
-#endif
   endProfile(ProfileKey::CheckHashTables);
+
+  
+  if (gc->hasZealMode(ZealMode::VerifierPost)) {
+    gc->verifyPostBarriers(session);
+  }
+#endif
 
   if (semispaceEnabled_) {
     
