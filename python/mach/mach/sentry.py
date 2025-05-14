@@ -77,7 +77,11 @@ def _process_event(sentry_event, topsrcdir: Path):
         
         return
 
-    base_ref = repo.base_ref_as_hg()
+    if repo.name in ("git", "jj") and not repo.is_cinnabar_repo():
+        base_ref = repo.base_ref_as_commit()
+    else:
+        base_ref = repo.base_ref_as_hg()
+
     if not base_ref:
         
         
