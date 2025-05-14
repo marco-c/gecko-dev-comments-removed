@@ -16,6 +16,7 @@ use std::time::{Duration, Instant};
 
 use crate::ErrorKind;
 
+use malloc_size_of::MallocSizeOf;
 use rkv::{StoreError, StoreOptions};
 
 
@@ -141,6 +142,34 @@ pub struct Database {
     
     
     pub(crate) write_timings: RefCell<Vec<i64>>,
+}
+
+impl MallocSizeOf for Database {
+    fn size_of(&self, _ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        0
+    }
 }
 
 impl std::fmt::Debug for Database {

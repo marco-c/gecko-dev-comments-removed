@@ -4,6 +4,8 @@
 
 
 
+use malloc_size_of_derive::MallocSizeOf;
+
 const MAX_RECOVERABLE_FAILURES: u32 = 3;
 const MAX_WAIT_ATTEMPTS: u32 = 3;
 const MAX_PING_BODY_SIZE: usize = 1024 * 1024; 
@@ -18,7 +20,7 @@ const MAX_PENDING_PINGS_DIRECTORY_SIZE: u64 = 10 * 1024 * 1024;
 const MAX_PENDING_PINGS_COUNT: u64 = 250;
 
 
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 pub struct Policy {
     
     

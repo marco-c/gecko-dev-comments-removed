@@ -5,6 +5,7 @@
 use std::cmp;
 use std::collections::HashMap;
 
+use malloc_size_of_derive::MallocSizeOf;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 
@@ -36,7 +37,7 @@ fn linear_range(min: u64, max: u64, count: usize) -> Vec<u64> {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, MallocSizeOf)]
 pub struct PrecomputedLinear {
     
     

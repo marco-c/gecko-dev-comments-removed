@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 
+use malloc_size_of_derive::MallocSizeOf;
 use serde::{Deserialize, Serialize};
 
 use super::{Bucketing, Histogram};
@@ -18,7 +19,7 @@ use crate::util::floating_point_context::FloatingPointContext;
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, MallocSizeOf)]
 pub struct Functional {
     exponent: f64,
 }

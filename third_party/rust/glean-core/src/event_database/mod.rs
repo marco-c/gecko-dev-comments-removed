@@ -14,6 +14,8 @@ use std::sync::{Mutex, RwLock};
 
 use chrono::{DateTime, FixedOffset, Utc};
 
+use malloc_size_of::MallocSizeOf;
+use malloc_size_of_derive::MallocSizeOf;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
 
@@ -28,7 +30,7 @@ use crate::Result;
 use crate::{CommonMetricData, CounterMetric, Lifetime};
 
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, MallocSizeOf)]
 #[cfg_attr(test, derive(Default))]
 pub struct RecordedEvent {
     
@@ -54,7 +56,9 @@ pub struct RecordedEvent {
 }
 
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, Deserialize, Serialize, PartialEq, Eq, malloc_size_of_derive::MallocSizeOf,
+)]
 struct StoredEvent {
     #[serde(flatten)]
     event: RecordedEvent,
@@ -97,6 +101,12 @@ pub struct EventDatabase {
     event_stores: RwLock<HashMap<String, Vec<StoredEvent>>>,
     
     file_lock: Mutex<()>,
+}
+
+impl MallocSizeOf for EventDatabase {
+    fn size_of(&self, ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+        self.event_stores.read().unwrap().size_of(ops)
+    }
 }
 
 impl EventDatabase {

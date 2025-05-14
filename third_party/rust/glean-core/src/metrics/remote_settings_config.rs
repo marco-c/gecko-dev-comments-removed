@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 
+use malloc_size_of_derive::MallocSizeOf;
 use serde::{Deserialize, Serialize};
 
 
@@ -17,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, MallocSizeOf)]
 pub struct RemoteSettingsConfig {
     
     

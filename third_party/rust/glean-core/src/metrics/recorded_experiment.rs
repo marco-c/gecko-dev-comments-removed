@@ -4,11 +4,12 @@
 
 use std::collections::HashMap;
 
+use malloc_size_of_derive::MallocSizeOf;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map as JsonMap, Value as JsonValue};
 
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, MallocSizeOf)]
 pub struct RecordedExperiment {
     
     pub branch: String,

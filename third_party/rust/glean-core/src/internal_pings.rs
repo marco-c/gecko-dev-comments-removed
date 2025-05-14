@@ -2,6 +2,8 @@
 
 
 
+use malloc_size_of_derive::MallocSizeOf;
+
 use crate::metrics::PingType;
 
 
@@ -10,7 +12,7 @@ use crate::metrics::PingType;
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MallocSizeOf)]
 pub struct InternalPings {
     pub baseline: PingType,
     pub metrics: PingType,

@@ -7,10 +7,11 @@ use crate::metrics::{
 };
 use crate::{CommonMetricData, Lifetime};
 
+use malloc_size_of_derive::MallocSizeOf;
 use once_cell::sync::Lazy;
 
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, MallocSizeOf)]
 pub struct ClientInfoMetrics {
     
     pub app_build: String,

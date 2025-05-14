@@ -9,6 +9,8 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
+use malloc_size_of::MallocSizeOf;
+use malloc_size_of_derive::MallocSizeOf;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -16,7 +18,7 @@ use super::request::HeaderMap;
 use crate::{DELETION_REQUEST_PINGS_DIRECTORY, PENDING_PINGS_DIRECTORY};
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, MallocSizeOf)]
 pub struct PingPayload {
     
     pub document_id: String,
@@ -39,6 +41,28 @@ pub struct PingPayload {
 pub struct PingPayloadsByDirectory {
     pub pending_pings: Vec<(u64, PingPayload)>,
     pub deletion_request_pings: Vec<(u64, PingPayload)>,
+}
+
+impl MallocSizeOf for PingPayloadsByDirectory {
+    fn size_of(&self, ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+        
+        
+        let shallow_size = unsafe {
+            ops.malloc_size_of(self.pending_pings.as_ptr())
+                + ops.malloc_size_of(self.deletion_request_pings.as_ptr())
+        };
+
+        let mut n = shallow_size;
+        for elem in self.pending_pings.iter() {
+            n += elem.0.size_of(ops);
+            n += elem.1.size_of(ops);
+        }
+        for elem in self.deletion_request_pings.iter() {
+            n += elem.0.size_of(ops);
+            n += elem.1.size_of(ops);
+        }
+        n
+    }
 }
 
 impl PingPayloadsByDirectory {
@@ -108,7 +132,7 @@ pub fn process_metadata(path: &str, metadata: &str) -> Option<PingMetadata> {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MallocSizeOf)]
 pub struct PingDirectoryManager {
     
     pending_pings_dir: PathBuf,
