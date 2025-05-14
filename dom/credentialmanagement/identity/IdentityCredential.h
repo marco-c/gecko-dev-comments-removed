@@ -42,8 +42,6 @@ class IdentityCredential final : public Credential {
   typedef MozPromise<IdentityProviderRequestOptions, nsresult, true>
       GetIdentityProviderRequestOptionsPromise;
   typedef MozPromise<bool, nsresult, true> ValidationPromise;
-  typedef MozPromise<Maybe<IdentityProviderWellKnown>, nsresult, true>
-      GetRootManifestPromise;
   typedef MozPromise<IdentityProviderAPIConfig, nsresult, true>
       GetManifestPromise;
   typedef std::tuple<IdentityProviderRequestOptions, IdentityProviderAPIConfig>
@@ -208,7 +206,7 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetRootManifestPromise> FetchRootManifest(
+  static RefPtr<ValidationPromise> CheckRootManifest(
       nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
 
   
@@ -224,7 +222,7 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetManifestPromise> FetchManifest(
+  static RefPtr<GetManifestPromise> FetchInternalManifest(
       nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
 
   
