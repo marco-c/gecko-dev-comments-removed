@@ -84,6 +84,156 @@ function add24HourImpressionJEXLTargeting(
 const MESSAGES = () => {
   let messages = [
     {
+      id: "TAB_GROUP_ONBOARDING_CALLOUT",
+      template: "feature_callout",
+      groups: ["cfr"],
+      content: {
+        id: "TAB_GROUP_ONBOARDING_CALLOUT",
+        template: "multistage",
+        backdrop: "transparent",
+        transitions: false,
+        screens: [
+          {
+            id: "TAB_GROUP_ONBOARDING_CALLOUT_HORIZONTAL",
+            anchors: [
+              {
+                selector:
+                  "#tabbrowser-tabs:not([overflow]) .tab-content[selected]:not([pinned])",
+                panel_position: {
+                  anchor_attachment: "bottomcenter",
+                  callout_attachment: "topright",
+                },
+              },
+              {
+                selector: "#tabbrowser-tabs",
+                panel_position: {
+                  anchor_attachment: "bottomcenter",
+                  callout_attachment: "topright",
+                },
+              },
+            ],
+            content: {
+              position: "callout",
+              width: "333px",
+              padding: 16,
+              logo: {
+                imageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/hort-animated-light.svg",
+                darkModeImageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/hort-animated-dark.svg",
+                reducedMotionImageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/hort-static-light.svg",
+                darkModeReducedMotionImageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/hort-static-dark.svg",
+                height: "172px",
+                width: "300px",
+              },
+              title: {
+                string_id: "tab-groups-onboarding-feature-callout-title",
+              },
+              subtitle: {
+                string_id: "tab-groups-onboarding-feature-callout-subtitle",
+              },
+              dismiss_button: {
+                action: {
+                  dismiss: true,
+                },
+                background: true,
+                size: "small",
+                marginInline: "0 20px",
+                marginBlock: "20px 0",
+              },
+            },
+          },
+        ],
+      },
+      targeting:
+        "tabsClosedCount >= 1 && currentTabsOpen >= 8 && ('browser.tabs.groups.enabled' | preferenceValue) && (!'sidebar.verticalTabs' | preferenceValue) && currentTabGroups == 0 && savedTabGroups == 0 && !activeNotifications",
+      trigger: {
+        id: "nthTabClosed",
+      },
+      frequency: {
+        lifetime: 1,
+      },
+      skip_in_tests:
+        "not tested in automation and might pop up unexpectedly during review checker tests",
+    },
+    {
+      id: "TAB_GROUP_ONBOARDING_CALLOUT",
+      template: "feature_callout",
+      groups: ["cfr"],
+      content: {
+        id: "TAB_GROUP_ONBOARDING_CALLOUT",
+        template: "multistage",
+        backdrop: "transparent",
+        transitions: false,
+        screens: [
+          {
+            id: "TAB_GROUP_ONBOARDING_CALLOUT_VERTICAL",
+            anchors: [
+              {
+                selector:
+                  "#tabbrowser-tabs:not([overflow]) .tab-content[selected]:not([pinned])",
+                panel_position: {
+                  anchor_attachment: "rightcenter",
+                  callout_attachment: "topleft",
+                },
+              },
+              {
+                selector: "#tabbrowser-tabs",
+                panel_position: {
+                  anchor_attachment: "rightcenter",
+                  callout_attachment: "topleft",
+                },
+              },
+            ],
+            content: {
+              position: "callout",
+              width: "333px",
+              padding: 16,
+              logo: {
+                imageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/vert-animated-light.svg",
+                darkModeImageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/vert-animated-dark.svg",
+                reducedMotionImageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/vert-static-light.svg",
+                darkModeReducedMotionImageURL:
+                  "chrome://browser/content/asrouter/assets/tabgroups/vert-static-dark.svg",
+                height: "172px",
+                width: "300px",
+              },
+              title: {
+                string_id: "tab-groups-onboarding-feature-callout-title",
+              },
+              subtitle: {
+                string_id: "tab-groups-onboarding-feature-callout-subtitle",
+              },
+              dismiss_button: {
+                action: {
+                  dismiss: true,
+                },
+                background: true,
+                size: "small",
+                marginInline: "0 20px",
+                marginBlock: "20px 0",
+              },
+            },
+          },
+        ],
+      },
+      targeting:
+        "tabsClosedCount >= 1 && currentTabsOpen >= 8 && ('browser.tabs.groups.enabled' | preferenceValue) && ('sidebar.revamp' | preferenceValue) && ('sidebar.verticalTabs' | preferenceValue) && currentTabGroups == 0 && savedTabGroups == 0 && !activeNotifications",
+      trigger: {
+        id: "nthTabClosed",
+      },
+      frequency: {
+        lifetime: 1,
+      },
+      skip_in_tests:
+        "not tested in automation and might pop up unexpectedly during review checker tests",
+    },
+    {
       id: "DESKTOP_TO_MOBILE_ADOPTION_SIGNED_INTO_ACCOUNT_NON_EU",
       template: "feature_callout",
       groups: ["cfr"],
@@ -1618,8 +1768,7 @@ const MESSAGES = () => {
                   {
                     type: "action",
                     label: {
-                      string_id:
-                        "shopping-callout-not-opted-in-integrated-reminder-do-not-show",
+                      string_id: "split-dismiss-button-dont-show-option",
                     },
                     action: {
                       type: "SET_PREF",
@@ -1631,13 +1780,12 @@ const MESSAGES = () => {
                       },
                       dismiss: true,
                     },
-                    id: "shopping-callout-not-opted-in-integrated-reminder-do-not-show",
+                    id: "split-dismiss-button-dont-show-option",
                   },
                   {
                     type: "action",
                     label: {
-                      string_id:
-                        "shopping-callout-not-opted-in-integrated-reminder-show-fewer",
+                      string_id: "split-dismiss-button-show-fewer-option",
                     },
                     action: {
                       type: "MULTI_ACTION",
@@ -1666,7 +1814,7 @@ const MESSAGES = () => {
                       },
                       dismiss: true,
                     },
-                    id: "shopping-callout-not-opted-in-integrated-reminder-show-fewer",
+                    id: "split-dismiss-button-show-fewer-option",
                   },
                   {
                     type: "separator",
@@ -1674,8 +1822,7 @@ const MESSAGES = () => {
                   {
                     type: "action",
                     label: {
-                      string_id:
-                        "shopping-callout-not-opted-in-integrated-reminder-manage-settings",
+                      string_id: "split-dismiss-button-manage-settings-option",
                     },
                     action: {
                       type: "OPEN_ABOUT_PAGE",
@@ -1685,7 +1832,7 @@ const MESSAGES = () => {
                       },
                       dismiss: true,
                     },
-                    id: "shopping-callout-not-opted-in-integrated-reminder-manage-settings",
+                    id: "split-dismiss-button-manage-settings-option",
                   },
                 ],
                 attached_to: "additional_button",
@@ -1887,8 +2034,7 @@ const MESSAGES = () => {
                   {
                     type: "action",
                     label: {
-                      string_id:
-                        "shopping-callout-not-opted-in-integrated-reminder-do-not-show",
+                      string_id: "split-dismiss-button-dont-show-option",
                     },
                     action: {
                       type: "SET_PREF",
@@ -1900,13 +2046,12 @@ const MESSAGES = () => {
                       },
                       dismiss: true,
                     },
-                    id: "shopping-callout-not-opted-in-integrated-reminder-do-not-show",
+                    id: "split-dismiss-button-dont-show-option",
                   },
                   {
                     type: "action",
                     label: {
-                      string_id:
-                        "shopping-callout-not-opted-in-integrated-reminder-show-fewer",
+                      string_id: "split-dismiss-button-show-fewer-option",
                     },
                     action: {
                       type: "MULTI_ACTION",
@@ -1935,7 +2080,7 @@ const MESSAGES = () => {
                       },
                       dismiss: true,
                     },
-                    id: "shopping-callout-not-opted-in-integrated-reminder-show-fewer",
+                    id: "split-dismiss-button-show-fewer-option",
                   },
                   {
                     type: "separator",
@@ -1943,8 +2088,7 @@ const MESSAGES = () => {
                   {
                     type: "action",
                     label: {
-                      string_id:
-                        "shopping-callout-not-opted-in-integrated-reminder-manage-settings",
+                      string_id: "split-dismiss-button-manage-settings-option",
                     },
                     action: {
                       type: "OPEN_ABOUT_PAGE",
@@ -1954,7 +2098,7 @@ const MESSAGES = () => {
                       },
                       dismiss: true,
                     },
-                    id: "shopping-callout-not-opted-in-integrated-reminder-manage-settings",
+                    id: "split-dismiss-button-manage-settings-option",
                   },
                 ],
                 attached_to: "additional_button",
