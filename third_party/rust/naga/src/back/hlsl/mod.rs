@@ -119,7 +119,7 @@ use core::fmt::Error as FmtError;
 
 use thiserror::Error;
 
-use crate::{back, proc};
+use crate::{back, ir, proc};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
@@ -434,6 +434,22 @@ pub struct ReflectionInfo {
     pub entry_point_names: Vec<Result<String, EntryPointError>>,
 }
 
+
+#[derive(Debug, Default, Clone)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "deserialize", serde(default))]
+pub struct PipelineOptions {
+    
+    
+    
+    
+    
+    
+    
+    pub entry_point: Option<(ir::ShaderStage, String)>,
+}
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
@@ -448,6 +464,8 @@ pub enum Error {
     Override,
     #[error(transparent)]
     ResolveArraySizeError(#[from] proc::ResolveArraySizeError),
+    #[error("entry point with stage {0:?} and name '{1}' not found")]
+    EntryPointNotFound(ir::ShaderStage, String),
 }
 
 #[derive(PartialEq, Eq, Hash)]
@@ -520,7 +538,9 @@ pub struct Writer<'a, W> {
     
     options: &'a Options,
     
-    entry_point_io: Vec<writer::EntryPointInterface>,
+    pipeline_options: &'a PipelineOptions,
+    
+    entry_point_io: crate::FastHashMap<usize, writer::EntryPointInterface>,
     
     named_expressions: crate::NamedExpressions,
     wrapped: Wrapped,

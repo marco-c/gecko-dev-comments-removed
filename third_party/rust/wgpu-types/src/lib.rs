@@ -2771,6 +2771,13 @@ impl TextureFormat {
 
     
     #[must_use]
+    pub fn is_astc(&self) -> bool {
+        self.required_features() == Features::TEXTURE_COMPRESSION_ASTC
+            || self.required_features() == Features::TEXTURE_COMPRESSION_ASTC_HDR
+    }
+
+    
+    #[must_use]
     pub fn required_features(&self) -> Features {
         match *self {
             Self::R8Unorm

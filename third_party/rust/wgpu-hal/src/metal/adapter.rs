@@ -667,6 +667,8 @@ impl super::PrivateCapabilities {
                 || Self::supports_any(device, ASTC_PIXEL_FORMAT_FEATURES),
             
             format_astc_hdr: family_check && device.supports_family(MTLGPUFamily::Apple6),
+            
+            format_astc_3d: family_check && device.supports_family(MTLGPUFamily::Apple3),
             format_any8_unorm_srgb_all: Self::supports_any(device, ANY8_UNORM_SRGB_ALL),
             format_any8_unorm_srgb_no_write: !Self::supports_any(device, ANY8_UNORM_SRGB_ALL)
                 && !os_is_mac,
@@ -938,6 +940,7 @@ impl super::PrivateCapabilities {
         );
         features.set(F::TEXTURE_COMPRESSION_ASTC, self.format_astc);
         features.set(F::TEXTURE_COMPRESSION_ASTC_HDR, self.format_astc_hdr);
+        features.set(F::TEXTURE_COMPRESSION_ASTC_SLICED_3D, self.format_astc_3d);
         features.set(F::TEXTURE_COMPRESSION_BC, self.format_bc);
         features.set(F::TEXTURE_COMPRESSION_BC_SLICED_3D, self.format_bc); 
         features.set(F::TEXTURE_COMPRESSION_ETC2, self.format_eac_etc);

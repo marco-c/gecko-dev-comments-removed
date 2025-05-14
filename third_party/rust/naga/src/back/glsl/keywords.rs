@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use crate::racy_lock::RacyLock;
 
 use hashbrown::HashSet;
 
@@ -499,7 +499,7 @@ pub const RESERVED_KEYWORDS: &[&str] = &[
 
 
 
-pub static RESERVED_KEYWORD_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+pub static RESERVED_KEYWORD_SET: RacyLock<HashSet<&'static str>> = RacyLock::new(|| {
     let mut set = HashSet::default();
     set.reserve(RESERVED_KEYWORDS.len());
     for &word in RESERVED_KEYWORDS {
