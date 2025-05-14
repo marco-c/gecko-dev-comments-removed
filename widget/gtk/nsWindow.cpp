@@ -3350,17 +3350,6 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
   }();
   mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
 
-  
-  
-  
-  auto unconstrainedBounds = mBounds;
-  ConstrainSize(&mBounds.width, &mBounds.height);
-
-  LOG("bounds: %s -> %s (%s unconstrained)", ToString(oldBounds).c_str(),
-      ToString(mBounds).c_str(), ToString(unconstrainedBounds).c_str());
-  LOG("margin: %s -> %s", ToString(oldMargin).c_str(),
-      ToString(mClientMargin).c_str());
-
   if (IsPopup()) {
     
     
@@ -3372,20 +3361,19 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
     
     
     
-    
-    
-    
-    
-    
     mBounds.MoveTo(mLastMoveRequest);
-
-    
-    
-    
-    
-    GetWindowRenderer()->FlushRendering(wr::RenderReasons::WIDGET);
-    return;
   }
+
+  
+  
+  
+  auto unconstrainedBounds = mBounds;
+  ConstrainSize(&mBounds.width, &mBounds.height);
+
+  LOG("bounds: %s -> %s (%s unconstrained)", ToString(oldBounds).c_str(),
+      ToString(mBounds).c_str(), ToString(unconstrainedBounds).c_str());
+  LOG("margin: %s -> %s", ToString(oldMargin).c_str(),
+      ToString(mClientMargin).c_str());
 
   const bool clientMarginsChanged = oldMargin != mClientMargin;
   if (clientMarginsChanged) {
