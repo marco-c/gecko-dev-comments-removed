@@ -34,8 +34,8 @@ CSPService::~CSPService() = default;
 
 NS_IMPL_ISUPPORTS(CSPService, nsIContentPolicy, nsIChannelEventSink)
 
-
-bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
+static bool SubjectToCSP(nsILoadInfo* aLoadInfo, nsIURI* aURI,
+                         nsContentPolicyType aContentType) {
   ExtContentPolicyType contentType =
       nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
 
@@ -56,6 +56,16 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   if (aURI->SchemeIs("data") || aURI->SchemeIs("blob") ||
       aURI->SchemeIs("filesystem")) {
     return true;
+  }
+
+  
+  
+  
+  if (contentType == ExtContentPolicyType::TYPE_SCRIPT) {
+    if (BasePrincipal::Cast(aLoadInfo->GetLoadingPrincipal())
+            ->IsSystemPrincipal()) {
+      return true;
+    }
   }
 
   
@@ -129,8 +139,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  
-  if (!subjectToCSP(aContentLocation, contentType)) {
+  if (!SubjectToCSP(aLoadInfo, aContentLocation, contentType)) {
     return NS_OK;
   }
 
@@ -314,7 +323,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   
   
   nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
-  if (!subjectToCSP(aNewURI, policyType)) {
+  if (!SubjectToCSP(aLoadInfo, aNewURI, policyType)) {
     return NS_OK;
   }
 
