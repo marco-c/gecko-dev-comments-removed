@@ -90,6 +90,7 @@ already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
   return Constructor(aGlobal, aCb, IntersectionObserverInit(), aRv);
 }
 
+
 already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
     const GlobalObject& aGlobal, dom::IntersectionCallback& aCb,
     const IntersectionObserverInit& aOptions, ErrorResult& aRv) {
@@ -99,6 +100,9 @@ already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
+
+  
+  
   RefPtr<DOMIntersectionObserver> observer =
       new DOMIntersectionObserver(window.forget(), aCb);
 
@@ -111,15 +115,27 @@ already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
     }
   }
 
+  
+  
+  
   if (!observer->SetRootMargin(aOptions.mRootMargin)) {
     aRv.ThrowSyntaxError("rootMargin must be specified in pixels or percent.");
     return nullptr;
   }
 
+  
+  
+  
+  
+
+  
   if (aOptions.mThreshold.IsDoubleSequence()) {
     const Sequence<double>& thresholds =
         aOptions.mThreshold.GetAsDoubleSequence();
     observer->mThresholds.SetCapacity(thresholds.Length());
+
+    
+    
     for (const auto& thresh : thresholds) {
       if (thresh < 0.0 || thresh > 1.0) {
         aRv.ThrowRangeError<dom::MSG_THRESHOLD_RANGE_ERROR>();
@@ -127,7 +143,11 @@ already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
       }
       observer->mThresholds.AppendElement(thresh);
     }
+
+    
     observer->mThresholds.Sort();
+
+    
     if (observer->mThresholds.IsEmpty()) {
       observer->mThresholds.AppendElement(0.0);
     }
@@ -140,6 +160,24 @@ already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
     observer->mThresholds.AppendElement(thresh);
   }
 
+  
+  
+
+  
+  
+
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+
+  
   return observer.forget();
 }
 
@@ -209,7 +247,9 @@ void DOMIntersectionObserver::GetThresholds(nsTArray<double>& aRetVal) {
   aRetVal = mThresholds.Clone();
 }
 
+
 void DOMIntersectionObserver::Observe(Element& aTarget) {
+  
   bool wasPresent =
       mObservationTargetMap.WithEntryHandle(&aTarget, [](auto handle) {
         if (handle.HasEntry()) {
@@ -221,6 +261,15 @@ void DOMIntersectionObserver::Observe(Element& aTarget) {
   if (wasPresent) {
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
   aTarget.BindObject(this, [](nsISupports* aObserver, nsINode* aTarget) {
     static_cast<DOMIntersectionObserver*>(aObserver)->UnlinkTarget(
         *aTarget->AsElement());
@@ -237,12 +286,19 @@ void DOMIntersectionObserver::Observe(Element& aTarget) {
   }
 }
 
+
 void DOMIntersectionObserver::Unobserve(Element& aTarget) {
+  
+  
+  
   if (!mObservationTargetMap.Remove(&aTarget)) {
     return;
   }
 
+  
+  
   mObservationTargets.RemoveElement(&aTarget);
+
   aTarget.UnbindObject(this);
 
   MOZ_ASSERT(mObservationTargets.Length() == mObservationTargetMap.Count());
@@ -252,9 +308,16 @@ void DOMIntersectionObserver::Unobserve(Element& aTarget) {
   }
 }
 
+
+
 void DOMIntersectionObserver::UnlinkTarget(Element& aTarget) {
+  
+  
+  
+  
   mObservationTargets.RemoveElement(&aTarget);
   mObservationTargetMap.Remove(&aTarget);
+
   if (mObservationTargets.IsEmpty()) {
     Disconnect();
   }
@@ -271,21 +334,29 @@ void DOMIntersectionObserver::Connect() {
   }
 }
 
+
 void DOMIntersectionObserver::Disconnect() {
   if (!mConnected) {
     return;
   }
 
   mConnected = false;
+  
   for (Element* target : mObservationTargets) {
+    
+    
+    
+    
     target->UnbindObject(this);
   }
+
   mObservationTargets.Clear();
   mObservationTargetMap.Clear();
   if (mDocument) {
     mDocument->RemoveIntersectionObserver(*this);
   }
 }
+
 
 void DOMIntersectionObserver::TakeRecords(
     nsTArray<RefPtr<DOMIntersectionObserverEntry>>& aRetVal) {
@@ -368,6 +439,12 @@ static Maybe<nsRect> ComputeTheIntersection(
           scrollContainerFrame->GetScrollPortRectAccountingForDynamicToolbar();
 
       
+      
+      
+      
+      
+
+      
       nsRect intersectionRectRelativeToContainer =
           nsLayoutUtils::TransformFrameRectToAncestor(
               target, intersectionRect.value(), containerFrame);
@@ -376,7 +453,7 @@ static Maybe<nsRect> ComputeTheIntersection(
       
       
       
-      
+
       intersectionRect =
           intersectionRectRelativeToContainer.EdgeInclusiveIntersection(
               subFrameRect);
@@ -387,6 +464,9 @@ static Maybe<nsRect> ComputeTheIntersection(
     } else {
       const auto& disp = *containerFrame->StyleDisplay();
       auto clipAxes = containerFrame->ShouldApplyOverflowClipping(&disp);
+      
+      
+
       
       if (!clipAxes.isEmpty()) {
         
@@ -406,6 +486,9 @@ static Maybe<nsRect> ComputeTheIntersection(
         target = containerFrame;
       }
     }
+    
+    
+    
     containerFrame =
         nsLayoutUtils::GetCrossDocParentFrameInProcess(containerFrame);
   }
@@ -453,6 +536,7 @@ static Maybe<nsRect> ComputeTheIntersection(
     rect = intersectionRect.value();
   }
 
+  
   return Some(rect);
 }
 
