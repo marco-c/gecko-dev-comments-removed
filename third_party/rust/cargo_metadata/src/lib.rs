@@ -81,32 +81,44 @@
 use camino::Utf8PathBuf;
 #[cfg(feature = "builder")]
 use derive_builder::Builder;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fmt;
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::str::from_utf8;
+use std::str::{from_utf8, FromStr};
 
 pub use camino;
 pub use semver;
-use semver::{Version, VersionReq};
+use semver::Version;
 
+#[cfg(feature = "builder")]
+pub use dependency::DependencyBuilder;
 pub use dependency::{Dependency, DependencyKind};
 use diagnostic::Diagnostic;
 pub use errors::{Error, Result};
+#[cfg(feature = "unstable")]
+pub use libtest::TestMessage;
 #[allow(deprecated)]
 pub use messages::parse_messages;
 pub use messages::{
-    Artifact, ArtifactProfile, BuildFinished, BuildScript, CompilerMessage, Message, MessageIter,
+    Artifact, ArtifactDebuginfo, ArtifactProfile, BuildFinished, BuildScript, CompilerMessage,
+    Message, MessageIter,
 };
-use serde::{Deserialize, Serialize};
+#[cfg(feature = "builder")]
+pub use messages::{
+    ArtifactBuilder, ArtifactProfileBuilder, BuildFinishedBuilder, BuildScriptBuilder,
+    CompilerMessageBuilder,
+};
+use serde::{Deserialize, Deserializer, Serialize};
 
 mod dependency;
 pub mod diagnostic;
 mod errors;
+#[cfg(feature = "unstable")]
+pub mod libtest;
 mod messages;
 
 
@@ -114,14 +126,15 @@ mod messages;
 
 
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[serde(transparent)]
 pub struct PackageId {
     
     pub repr: String,
 }
 
-impl std::fmt::Display for PackageId {
+impl fmt::Display for PackageId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.repr, f)
     }
@@ -132,7 +145,7 @@ fn is_null(value: &serde_json::Value) -> bool {
     matches!(value, serde_json::Value::Null)
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "builder", derive(Builder))]
 #[non_exhaustive]
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
@@ -142,6 +155,14 @@ pub struct Metadata {
     pub packages: Vec<Package>,
     
     pub workspace_members: Vec<PackageId>,
+    
+    
+    
+    
+    
+    
+    #[serde(default, skip_serializing_if = "WorkspaceDefaultMembers::is_missing")]
+    pub workspace_default_members: WorkspaceDefaultMembers,
     
     pub resolve: Option<Resolve>,
     
@@ -181,12 +202,24 @@ impl Metadata {
             .filter(|&p| self.workspace_members.contains(&p.id))
             .collect()
     }
+
+    
+    
+    
+    
+    
+    pub fn workspace_default_packages(&self) -> Vec<&Package> {
+        self.packages
+            .iter()
+            .filter(|&p| self.workspace_default_members.contains(&p.id))
+            .collect()
+    }
 }
 
 impl<'a> std::ops::Index<&'a PackageId> for Metadata {
     type Output = Package;
 
-    fn index(&self, idx: &'a PackageId) -> &Package {
+    fn index(&self, idx: &'a PackageId) -> &Self::Output {
         self.packages
             .iter()
             .find(|p| p.id == *idx)
@@ -194,7 +227,56 @@ impl<'a> std::ops::Index<&'a PackageId> for Metadata {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash, Default)]
+#[serde(transparent)]
+
+
+
+
+
+
+
+
+
+pub struct WorkspaceDefaultMembers(Option<Vec<PackageId>>);
+
+impl WorkspaceDefaultMembers {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_available(&self) -> bool {
+        self.0.is_some()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_missing(&self) -> bool {
+        self.0.is_none()
+    }
+}
+
+impl core::ops::Deref for WorkspaceDefaultMembers {
+    type Target = [PackageId];
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+            .as_ref()
+            .expect("WorkspaceDefaultMembers should only be dereferenced on Cargo versions >= 1.71")
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "builder", derive(Builder))]
 #[non_exhaustive]
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
@@ -207,7 +289,18 @@ pub struct Resolve {
     pub root: Option<PackageId>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+impl<'a> std::ops::Index<&'a PackageId> for Resolve {
+    type Output = Node;
+
+    fn index(&self, idx: &'a PackageId) -> &Self::Output {
+        self.nodes
+            .iter()
+            .find(|p| p.id == *idx)
+            .unwrap_or_else(|| panic!("no Node with this id: {:?}", idx))
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "builder", derive(Builder))]
 #[non_exhaustive]
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
@@ -230,7 +323,7 @@ pub struct Node {
     pub features: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "builder", derive(Builder))]
 #[non_exhaustive]
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
@@ -248,7 +341,7 @@ pub struct NodeDep {
     pub dep_kinds: Vec<DepKindInfo>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "builder", derive(Builder))]
 #[non_exhaustive]
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
@@ -271,7 +364,7 @@ pub struct DepKindInfo {
     pub target: Option<dependency::Platform>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "builder", derive(Builder))]
 #[non_exhaustive]
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
@@ -281,56 +374,74 @@ pub struct DepKindInfo {
 
 pub struct Package {
     
+    
     pub name: String,
     
     pub version: Version,
     
     #[serde(default)]
+    #[cfg_attr(feature = "builder", builder(default))]
     pub authors: Vec<String>,
     
     pub id: PackageId,
     
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub source: Option<Source>,
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub description: Option<String>,
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub dependencies: Vec<Dependency>,
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub license: Option<String>,
     
     
+    
+    #[cfg_attr(feature = "builder", builder(default))]
     pub license_file: Option<Utf8PathBuf>,
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub targets: Vec<Target>,
     
-    pub features: HashMap<String, Vec<String>>,
+    #[cfg_attr(feature = "builder", builder(default))]
+    pub features: BTreeMap<String, Vec<String>>,
     
     pub manifest_path: Utf8PathBuf,
     
     #[serde(default)]
+    #[cfg_attr(feature = "builder", builder(default))]
     pub categories: Vec<String>,
     
     #[serde(default)]
+    #[cfg_attr(feature = "builder", builder(default))]
     pub keywords: Vec<String>,
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub readme: Option<Utf8PathBuf>,
     
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub repository: Option<String>,
     
     
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub homepage: Option<String>,
     
     
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub documentation: Option<String>,
     
     
     
     
+    
     #[serde(default)]
+    #[cfg_attr(feature = "builder", builder(default))]
     pub edition: Edition,
     
     
@@ -353,26 +464,51 @@ pub struct Package {
     
     
     
-    
-    
     #[serde(default, skip_serializing_if = "is_null")]
+    #[cfg_attr(feature = "builder", builder(default))]
     pub metadata: serde_json::Value,
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub links: Option<String>,
     
     
     
     
     
+    #[cfg_attr(feature = "builder", builder(default))]
     pub publish: Option<Vec<String>>,
     
     
     
+    
+    
+    #[cfg_attr(feature = "builder", builder(default))]
     pub default_run: Option<String>,
     
     
     
-    pub rust_version: Option<VersionReq>,
+    
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_rust_version")]
+    #[cfg_attr(feature = "builder", builder(default))]
+    pub rust_version: Option<Version>,
+}
+
+#[cfg(feature = "builder")]
+impl PackageBuilder {
+    
+    pub fn new(
+        name: impl Into<String>,
+        version: impl Into<Version>,
+        id: impl Into<PackageId>,
+        path: impl Into<Utf8PathBuf>,
+    ) -> Self {
+        Self::default()
+            .name(name)
+            .version(version)
+            .id(id)
+            .manifest_path(path)
+    }
 }
 
 impl Package {
@@ -398,7 +534,10 @@ impl Package {
 }
 
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+
+
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 #[serde(transparent)]
 pub struct Source {
     
@@ -412,7 +551,7 @@ impl Source {
     }
 }
 
-impl std::fmt::Display for Source {
+impl fmt::Display for Source {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.repr, f)
     }
@@ -427,12 +566,22 @@ pub struct Target {
     
     pub name: String,
     
-    pub kind: Vec<String>,
+    
+    
+    
+    
+    
+    
+    pub kind: Vec<TargetKind>,
+    
+    
+    
+    
     
     
     #[serde(default)]
     #[cfg_attr(feature = "builder", builder(default))]
-    pub crate_types: Vec<String>,
+    pub crate_types: Vec<CrateType>,
 
     #[serde(default)]
     #[cfg_attr(feature = "builder", builder(default))]
@@ -467,46 +616,211 @@ pub struct Target {
     pub doc: bool,
 }
 
+macro_rules! methods_target_is_kind {
+    ($($name:ident => $kind:expr),*) => {
+        $(
+            /// Return true if this target is of kind `$kind`.
+            pub fn $name(&self) -> bool {
+                self.is_kind($kind)
+            }
+        )*
+    }
+}
+
 impl Target {
-    fn is_kind(&self, name: &str) -> bool {
-        self.kind.iter().any(|kind| kind == name)
+    
+    pub fn is_kind(&self, name: TargetKind) -> bool {
+        self.kind.iter().any(|kind| kind == &name)
     }
 
     
-    pub fn is_lib(&self) -> bool {
-        self.is_kind("lib")
-    }
-
-    
-    pub fn is_bin(&self) -> bool {
-        self.is_kind("bin")
-    }
-
-    
-    pub fn is_example(&self) -> bool {
-        self.is_kind("example")
-    }
-
-    
-    pub fn is_test(&self) -> bool {
-        self.is_kind("test")
-    }
-
-    
-    pub fn is_bench(&self) -> bool {
-        self.is_kind("bench")
-    }
-
-    
-    pub fn is_custom_build(&self) -> bool {
-        self.is_kind("custom-build")
+    methods_target_is_kind! {
+        is_lib => TargetKind::Lib,
+        is_bin => TargetKind::Bin,
+        is_example => TargetKind::Example,
+        is_test => TargetKind::Test,
+        is_bench => TargetKind::Bench,
+        is_custom_build => TargetKind::CustomBuild,
+        is_proc_macro => TargetKind::ProcMacro,
+        is_cdylib => TargetKind::CDyLib,
+        is_dylib => TargetKind::DyLib,
+        is_rlib => TargetKind::RLib,
+        is_staticlib => TargetKind::StaticLib
     }
 }
 
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+
+
+
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[non_exhaustive]
+pub enum TargetKind {
+    
+    #[serde(rename = "bench")]
+    Bench,
+    
+    #[serde(rename = "bin")]
+    Bin,
+    
+    #[serde(rename = "custom-build")]
+    CustomBuild,
+    
+    #[serde(rename = "cdylib")]
+    CDyLib,
+    
+    #[serde(rename = "dylib")]
+    DyLib,
+    
+    #[serde(rename = "example")]
+    Example,
+    
+    #[serde(rename = "lib")]
+    Lib,
+    
+    #[serde(rename = "proc-macro")]
+    ProcMacro,
+    
+    #[serde(rename = "rlib")]
+    RLib,
+    
+    #[serde(rename = "staticlib")]
+    StaticLib,
+    
+    #[serde(rename = "test")]
+    Test,
+    
+    #[serde(untagged)]
+    Unknown(String),
+}
+
+impl From<&str> for TargetKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "example" => TargetKind::Example,
+            "test" => TargetKind::Test,
+            "bench" => TargetKind::Bench,
+            "custom-build" => TargetKind::CustomBuild,
+            "bin" => TargetKind::Bin,
+            "lib" => TargetKind::Lib,
+            "rlib" => TargetKind::RLib,
+            "dylib" => TargetKind::DyLib,
+            "cdylib" => TargetKind::CDyLib,
+            "staticlib" => TargetKind::StaticLib,
+            "proc-macro" => TargetKind::ProcMacro,
+            x => TargetKind::Unknown(x.to_string()),
+        }
+    }
+}
+
+impl FromStr for TargetKind {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(TargetKind::from(s))
+    }
+}
+
+impl fmt::Display for TargetKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Bench => "bench".fmt(f),
+            Self::Bin => "bin".fmt(f),
+            Self::CustomBuild => "custom-build".fmt(f),
+            Self::CDyLib => "cdylib".fmt(f),
+            Self::DyLib => "dylib".fmt(f),
+            Self::Example => "example".fmt(f),
+            Self::Lib => "lib".fmt(f),
+            Self::ProcMacro => "proc-macro".fmt(f),
+            Self::RLib => "rlib".fmt(f),
+            Self::StaticLib => "staticlib".fmt(f),
+            Self::Test => "test".fmt(f),
+            Self::Unknown(x) => x.fmt(f),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[non_exhaustive]
+pub enum CrateType {
+    
+    #[serde(rename = "bin")]
+    Bin,
+    
+    #[serde(rename = "cdylib")]
+    CDyLib,
+    
+    #[serde(rename = "dylib")]
+    DyLib,
+    
+    #[serde(rename = "lib")]
+    Lib,
+    
+    #[serde(rename = "proc-macro")]
+    ProcMacro,
+    
+    #[serde(rename = "rlib")]
+    RLib,
+    
+    #[serde(rename = "staticlib")]
+    StaticLib,
+    
+    #[serde(untagged)]
+    Unknown(String),
+}
+
+impl From<&str> for CrateType {
+    fn from(value: &str) -> Self {
+        match value {
+            "bin" => CrateType::Bin,
+            "lib" => CrateType::Lib,
+            "rlib" => CrateType::RLib,
+            "dylib" => CrateType::DyLib,
+            "cdylib" => CrateType::CDyLib,
+            "staticlib" => CrateType::StaticLib,
+            "proc-macro" => CrateType::ProcMacro,
+            x => CrateType::Unknown(x.to_string()),
+        }
+    }
+}
+
+impl FromStr for CrateType {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(CrateType::from(s))
+    }
+}
+
+impl fmt::Display for CrateType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Bin => "bin".fmt(f),
+            Self::CDyLib => "cdylib".fmt(f),
+            Self::DyLib => "dylib".fmt(f),
+            Self::Lib => "lib".fmt(f),
+            Self::ProcMacro => "proc-macro".fmt(f),
+            Self::RLib => "rlib".fmt(f),
+            Self::StaticLib => "staticlib".fmt(f),
+            Self::Unknown(x) => x.fmt(f),
+        }
+    }
+}
+
+
+
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum Edition {
     
@@ -518,9 +832,9 @@ pub enum Edition {
     
     #[serde(rename = "2021")]
     E2021,
-    #[doc(hidden)]
+    
     #[serde(rename = "2024")]
-    _E2024,
+    E2024,
     #[doc(hidden)]
     #[serde(rename = "2027")]
     _E2027,
@@ -537,7 +851,7 @@ impl Edition {
             E2015 => "2015",
             E2018 => "2018",
             E2021 => "2021",
-            _E2024 => "2024",
+            E2024 => "2024",
             _E2027 => "2027",
             _E2030 => "2030",
         }
@@ -595,7 +909,7 @@ pub struct MetadataCommand {
     other_options: Vec<String>,
     
     
-    env: HashMap<OsString, OsString>,
+    env: BTreeMap<OsString, OsString>,
     
     verbose: bool,
 }
@@ -734,7 +1048,7 @@ impl MetadataCommand {
             .or_else(|| env::var("CARGO").map(PathBuf::from).ok())
             .unwrap_or_else(|| PathBuf::from("cargo"));
         let mut cmd = Command::new(cargo);
-        cmd.args(&["metadata", "--format-version", "1"]);
+        cmd.args(["metadata", "--format-version", "1"]);
 
         if self.no_deps {
             cmd.arg("--no-deps");
@@ -788,5 +1102,83 @@ impl MetadataCommand {
             .find(|line| line.starts_with('{'))
             .ok_or(Error::NoJson)?;
         Self::parse(stdout)
+    }
+}
+
+
+
+
+
+
+
+
+
+fn deserialize_rust_version<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<Version>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let mut buf = match Option::<String>::deserialize(deserializer)? {
+        None => return Ok(None),
+        Some(buf) => buf,
+    };
+
+    for char in buf.chars() {
+        if char == '-' {
+            return Err(serde::de::Error::custom(
+                "pre-release identifiers are not supported in rust-version",
+            ));
+        } else if char == '+' {
+            return Err(serde::de::Error::custom(
+                "build metadata is not supported in rust-version",
+            ));
+        }
+    }
+
+    if buf.matches('.').count() == 1 {
+        
+        buf.push_str(".0");
+    }
+
+    Ok(Some(
+        Version::parse(&buf).map_err(serde::de::Error::custom)?,
+    ))
+}
+
+#[cfg(test)]
+mod test {
+    use semver::Version;
+
+    #[derive(Debug, serde::Deserialize)]
+    struct BareVersion(
+        #[serde(deserialize_with = "super::deserialize_rust_version")] Option<semver::Version>,
+    );
+
+    fn bare_version(str: &str) -> Version {
+        serde_json::from_str::<BareVersion>(&format!(r#""{}""#, str))
+            .unwrap()
+            .0
+            .unwrap()
+    }
+
+    fn bare_version_err(str: &str) -> String {
+        serde_json::from_str::<BareVersion>(&format!(r#""{}""#, str))
+            .unwrap_err()
+            .to_string()
+    }
+
+    #[test]
+    fn test_deserialize_rust_version() {
+        assert_eq!(bare_version("1.2"), Version::new(1, 2, 0));
+        assert_eq!(bare_version("1.2.0"), Version::new(1, 2, 0));
+        assert_eq!(
+            bare_version_err("1.2.0-alpha"),
+            "pre-release identifiers are not supported in rust-version"
+        );
+        assert_eq!(
+            bare_version_err("1.2.0+123"),
+            "build metadata is not supported in rust-version"
+        );
     }
 }

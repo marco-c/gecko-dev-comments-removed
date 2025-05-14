@@ -4,9 +4,9 @@
 
 use super::shared::*;
 use crate::{CallbackIds, Config, FunctionIds, ObjectIds};
+use askama::Template;
 use extend::ext;
 use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToUpperCamelCase};
-use rinja::Template;
 use uniffi_bindgen::interface::{
     Argument, AsType, Callable, CallbackInterface, ComponentInterface, Constructor, Enum, Field,
     Function, Literal, Method, Object, Radix, Record, Type, Variant,

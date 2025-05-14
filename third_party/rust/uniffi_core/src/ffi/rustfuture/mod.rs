@@ -41,10 +41,15 @@ pub type RustFutureContinuationCallback = extern "C" fn(callback_data: u64, Rust
 #[doc(hidden)]
 pub trait UniffiCompatibleFuture<T>: Future<Output = T> {}
 
+#[doc(hidden)]
+pub trait FutureLowerReturn<UT>: LowerReturn<UT> {}
+
 
 
 #[cfg(not(target_arch = "wasm32"))]
 impl<T, F> UniffiCompatibleFuture<T> for F where F: Future<Output = T> + Send {}
+#[cfg(not(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded")))]
+impl<UT, LR> FutureLowerReturn<UT> for LR where LR: LowerReturn<UT> + Send {}
 
 
 
@@ -85,6 +90,8 @@ impl<T, F> UniffiCompatibleFuture<T> for F where F: Future<Output = T> + Send {}
 
 #[cfg(target_arch = "wasm32")]
 impl<T, F> UniffiCompatibleFuture<T> for F where F: Future<Output = T> {}
+#[cfg(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded"))]
+impl<UT, LR> FutureLowerReturn<UT> for LR where LR: LowerReturn<UT> {}
 
 
 
@@ -103,7 +110,7 @@ where
     F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     
     
-    T: LowerReturn<UT> + Send + 'static,
+    T: FutureLowerReturn<UT> + 'static,
     
     UT: Send + 'static,
     

@@ -2,8 +2,8 @@ use super::{Diagnostic, PackageId, Target};
 use camino::Utf8PathBuf;
 #[cfg(feature = "builder")]
 use derive_builder::Builder;
-use serde::{Deserialize, Serialize};
-use std::fmt;
+use serde::{de, ser, Deserialize, Serialize};
+use std::fmt::{self, Write};
 use std::io::{self, BufRead, Read};
 
 
@@ -16,7 +16,8 @@ pub struct ArtifactProfile {
     
     pub opt_level: String,
     
-    pub debuginfo: Option<u32>,
+    #[serde(default)]
+    pub debuginfo: ArtifactDebuginfo,
     
     
     pub debug_assertions: bool,
@@ -24,6 +25,127 @@ pub struct ArtifactProfile {
     pub overflow_checks: bool,
     
     pub test: bool,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
+pub enum ArtifactDebuginfo {
+    
+    #[default]
+    None,
+    
+    LineDirectivesOnly,
+    
+    LineTablesOnly,
+    
+    Limited,
+    
+    Full,
+    
+    
+    
+    
+    
+    UnknownInt(i64),
+    
+    
+    
+    
+    
+    UnknownString(String),
+}
+
+impl ser::Serialize for ArtifactDebuginfo {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        match self {
+            Self::None => 0.serialize(serializer),
+            Self::LineDirectivesOnly => "line-directives-only".serialize(serializer),
+            Self::LineTablesOnly => "line-tables-only".serialize(serializer),
+            Self::Limited => 1.serialize(serializer),
+            Self::Full => 2.serialize(serializer),
+            Self::UnknownInt(n) => n.serialize(serializer),
+            Self::UnknownString(s) => s.serialize(serializer),
+        }
+    }
+}
+
+impl<'de> de::Deserialize<'de> for ArtifactDebuginfo {
+    fn deserialize<D>(d: D) -> Result<ArtifactDebuginfo, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        struct Visitor;
+
+        impl de::Visitor<'_> for Visitor {
+            type Value = ArtifactDebuginfo;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an integer or string")
+            }
+
+            fn visit_i64<E>(self, value: i64) -> Result<ArtifactDebuginfo, E>
+            where
+                E: de::Error,
+            {
+                let debuginfo = match value {
+                    0 => ArtifactDebuginfo::None,
+                    1 => ArtifactDebuginfo::Limited,
+                    2 => ArtifactDebuginfo::Full,
+                    n => ArtifactDebuginfo::UnknownInt(n),
+                };
+                Ok(debuginfo)
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<ArtifactDebuginfo, E>
+            where
+                E: de::Error,
+            {
+                self.visit_i64(value as i64)
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<ArtifactDebuginfo, E>
+            where
+                E: de::Error,
+            {
+                let debuginfo = match value {
+                    "none" => ArtifactDebuginfo::None,
+                    "limited" => ArtifactDebuginfo::Limited,
+                    "full" => ArtifactDebuginfo::Full,
+                    "line-directives-only" => ArtifactDebuginfo::LineDirectivesOnly,
+                    "line-tables-only" => ArtifactDebuginfo::LineTablesOnly,
+                    s => ArtifactDebuginfo::UnknownString(s.to_string()),
+                };
+                Ok(debuginfo)
+            }
+
+            fn visit_unit<E>(self) -> Result<ArtifactDebuginfo, E>
+            where
+                E: de::Error,
+            {
+                Ok(ArtifactDebuginfo::None)
+            }
+        }
+
+        d.deserialize_any(Visitor)
+    }
+}
+
+impl fmt::Display for ArtifactDebuginfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ArtifactDebuginfo::None => f.write_char('0'),
+            ArtifactDebuginfo::Limited => f.write_char('1'),
+            ArtifactDebuginfo::Full => f.write_char('2'),
+            ArtifactDebuginfo::LineDirectivesOnly => f.write_str("line-directives-only"),
+            ArtifactDebuginfo::LineTablesOnly => f.write_str("line-tables-only"),
+            ArtifactDebuginfo::UnknownInt(n) => write!(f, "{}", n),
+            ArtifactDebuginfo::UnknownString(s) => f.write_str(s),
+        }
+    }
 }
 
 

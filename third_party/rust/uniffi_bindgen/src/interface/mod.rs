@@ -222,6 +222,11 @@ impl ComponentInterface {
     }
 
     
+    pub fn has_object_definitions(&self) -> bool {
+        !self.objects.is_empty()
+    }
+
+    
     pub fn object_definitions(&self) -> &[Object] {
         &self.objects
     }
@@ -275,6 +280,14 @@ impl ComponentInterface {
                 .objects
                 .iter()
                 .any(|o| o.has_callback_interface() && o.has_async_method())
+    }
+
+    pub fn has_callback_definitions(&self) -> bool {
+        !self.callback_interface_definitions().is_empty()
+            || self
+                .object_definitions()
+                .iter()
+                .any(|o| o.has_callback_interface())
     }
 
     

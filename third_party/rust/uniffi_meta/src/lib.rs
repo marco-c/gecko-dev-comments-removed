@@ -3,7 +3,7 @@
 
 
 use std::{collections::BTreeMap, hash::Hasher};
-pub use uniffi_internal_macros::Checksum;
+pub use uniffi_internal_macros::{Checksum, Node};
 
 mod ffi_names;
 pub use ffi_names::*;
@@ -116,7 +116,7 @@ impl Checksum for &str {
 
 
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct NamespaceMetadata {
     pub crate_name: String,
     pub name: String,
@@ -125,7 +125,7 @@ pub struct NamespaceMetadata {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct UdlFile {
     
     pub module_path: String,
@@ -134,7 +134,7 @@ pub struct UdlFile {
     pub file_stub: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct FnMetadata {
     pub module_path: String,
     pub name: String,
@@ -156,7 +156,7 @@ impl FnMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct ConstructorMetadata {
     pub module_path: String,
     pub self_name: String,
@@ -182,7 +182,7 @@ impl ConstructorMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct MethodMetadata {
     pub module_path: String,
     pub self_name: String,
@@ -206,7 +206,7 @@ impl MethodMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct TraitMethodMetadata {
     pub module_path: String,
     pub trait_name: String,
@@ -233,7 +233,7 @@ impl TraitMethodMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct FnParamMetadata {
     pub name: String,
     pub ty: Type,
@@ -254,7 +254,7 @@ impl FnParamMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Checksum)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Checksum, Node)]
 pub enum LiteralMetadata {
     Boolean(bool),
     String(String),
@@ -286,14 +286,14 @@ impl LiteralMetadata {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Checksum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Checksum, Node)]
 pub enum Radix {
     Decimal = 10,
     Octal = 8,
     Hexadecimal = 16,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct RecordMetadata {
     pub module_path: String,
     pub name: String,
@@ -302,7 +302,7 @@ pub struct RecordMetadata {
     pub docstring: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct FieldMetadata {
     pub name: String,
     pub ty: Type,
@@ -310,7 +310,7 @@ pub struct FieldMetadata {
     pub docstring: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Checksum)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Checksum, Node)]
 pub enum EnumShape {
     Enum,
     Error { flat: bool },
@@ -335,7 +335,7 @@ impl EnumShape {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct EnumMetadata {
     pub module_path: String,
     pub name: String,
@@ -347,7 +347,7 @@ pub struct EnumMetadata {
     pub docstring: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct VariantMetadata {
     pub name: String,
     pub discr: Option<LiteralMetadata>,
@@ -355,7 +355,7 @@ pub struct VariantMetadata {
     pub docstring: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct ObjectMetadata {
     pub module_path: String,
     pub name: String,
@@ -364,7 +364,7 @@ pub struct ObjectMetadata {
     pub docstring: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct CallbackInterfaceMetadata {
     pub module_path: String,
     pub name: String,
@@ -391,7 +391,7 @@ impl ObjectMetadata {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub enum UniffiTraitMetadata {
     Debug {
         fmt: MethodMetadata,
@@ -428,10 +428,20 @@ impl UniffiTraitMetadata {
         }
         .self_name
     }
+
+    pub fn name(&self) -> &String {
+        &match self {
+            UniffiTraitMetadata::Debug { fmt } => fmt,
+            UniffiTraitMetadata::Display { fmt } => fmt,
+            UniffiTraitMetadata::Eq { eq, .. } => eq,
+            UniffiTraitMetadata::Hash { hash } => hash,
+        }
+        .name
+    }
 }
 
 #[repr(u8)]
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Node)]
 pub enum UniffiTraitDiscriminants {
     Debug,
     Display,
@@ -453,7 +463,7 @@ impl UniffiTraitDiscriminants {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct ObjectTraitImplMetadata {
     pub ty: Type,
     pub trait_name: String,
@@ -468,7 +478,7 @@ impl Checksum for ObjectTraitImplMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub struct CustomTypeMetadata {
     pub module_path: String,
     pub name: String,
@@ -487,7 +497,7 @@ pub fn checksum<T: Checksum>(val: &T) -> u16 {
 }
 
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Node)]
 pub enum Metadata {
     Namespace(NamespaceMetadata),
     UdlFile(UdlFile),
@@ -509,7 +519,7 @@ impl Metadata {
         read_metadata(data)
     }
 
-    pub(crate) fn module_path(&self) -> &str {
+    pub fn module_path(&self) -> &str {
         match self {
             Metadata::Namespace(meta) => &meta.crate_name,
             Metadata::UdlFile(meta) => &meta.module_path,

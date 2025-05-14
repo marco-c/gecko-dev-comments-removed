@@ -17,9 +17,9 @@
 
 
 
-use crate::Checksum;
+use crate::{Checksum, Node};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd, Node)]
 pub enum ObjectImpl {
     
     Struct,
@@ -54,7 +54,7 @@ impl ObjectImpl {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd, Node)]
 pub enum Type {
     
     UInt8,

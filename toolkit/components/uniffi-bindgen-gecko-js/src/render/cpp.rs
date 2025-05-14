@@ -16,8 +16,8 @@
 
 use std::collections::HashSet;
 
+use askama::Template;
 use heck::{ToSnakeCase, ToUpperCamelCase};
-use rinja::Template;
 use uniffi_bindgen::interface::{
     AsType, Callable, CallbackInterface, ComponentInterface, FfiDefinition, FfiFunction, FfiType,
 };

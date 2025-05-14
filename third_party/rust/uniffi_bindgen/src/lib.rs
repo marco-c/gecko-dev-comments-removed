@@ -105,6 +105,7 @@ pub mod bindings;
 pub mod interface;
 pub mod library_mode;
 pub mod macro_metadata;
+pub mod pipeline;
 pub mod scaffolding;
 
 #[cfg(feature = "cargo-metadata")]
@@ -548,7 +549,7 @@ fn merge_toml(a: &mut toml::value::Table, b: toml::value::Table) {
 
 #[allow(dead_code)]
 mod __unused {
-    const _: &[u8] = include_bytes!("../rinja.toml");
+    const _: &[u8] = include_bytes!("../askama.toml");
 }
 
 #[cfg(test)]

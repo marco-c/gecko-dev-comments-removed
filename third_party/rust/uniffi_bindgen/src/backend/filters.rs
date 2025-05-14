@@ -9,8 +9,8 @@ use std::fmt;
 
 
 
-pub fn to_rinja_error<T: ToString + ?Sized>(t: &T) -> rinja::Error {
-    rinja::Error::Custom(Box::new(FilterError(t.to_string())))
+pub fn to_askama_error<T: ToString + ?Sized>(t: &T) -> askama::Error {
+    askama::Error::Custom(Box::new(FilterError(t.to_string())))
 }
 
 
@@ -27,6 +27,6 @@ impl fmt::Display for FilterError {
 impl std::error::Error for FilterError {}
 
 
-pub fn ffi_type(type_: &impl AsType) -> rinja::Result<FfiType, rinja::Error> {
+pub fn ffi_type(type_: &impl AsType) -> askama::Result<FfiType, askama::Error> {
     Ok(type_.as_type().into())
 }

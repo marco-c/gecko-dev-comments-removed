@@ -3,7 +3,7 @@
 
 
 use anyhow::{bail, Context, Result};
-use rinja::Template;
+use askama::Template;
 
 use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use once_cell::sync::Lazy;
@@ -210,8 +210,6 @@ pub struct TypeRenderer<'a> {
     python_config: &'a Config,
     ci: &'a ComponentInterface,
     
-    include_once_names: RefCell<HashSet<String>>,
-    
     imports: RefCell<BTreeSet<ImportRequirement>>,
 }
 
@@ -220,22 +218,11 @@ impl<'a> TypeRenderer<'a> {
         Self {
             python_config,
             ci,
-            include_once_names: RefCell::new(HashSet::new()),
             imports: RefCell::new(BTreeSet::new()),
         }
     }
 
     
-
-    
-    
-    
-    
-    fn include_once_check(&self, name: &str) -> bool {
-        self.include_once_names
-            .borrow_mut()
-            .insert(name.to_string())
-    }
 
     
     
@@ -405,7 +392,7 @@ impl PythonCodeOracle {
             FfiType::RustArcPtr(_) => "ctypes.c_void_p".to_string(),
             FfiType::RustBuffer(maybe_external) => match maybe_external {
                 Some(external_meta) if external_meta.module_path != ci.crate_name() => {
-                    format!("_UniffiRustBuffer{}", external_meta.name)
+                    format!("_UniffiRustBuffer{}", self.class_name(&external_meta.name))
                 }
                 _ => "_UniffiRustBuffer".to_string(),
             },
@@ -424,7 +411,7 @@ impl PythonCodeOracle {
     
     
     
-    fn ffi_default_value(&self, return_type: Option<&FfiType>) -> String {
+    fn ffi_default_value(&self, return_type: Option<&FfiType>, ci: &ComponentInterface) -> String {
         match return_type {
             Some(t) => match t {
                 FfiType::UInt8
@@ -438,10 +425,10 @@ impl PythonCodeOracle {
                 FfiType::Float32 | FfiType::Float64 => "0.0".to_owned(),
                 FfiType::RustArcPtr(_) => "ctypes.c_void_p()".to_owned(),
                 FfiType::RustBuffer(maybe_external) => match maybe_external {
-                    Some(external_meta) => {
+                    Some(external_meta) if external_meta.module_path != ci.crate_name() => {
                         format!("_UniffiRustBuffer{}.default()", external_meta.name)
                     }
-                    None => "_UniffiRustBuffer.default()".to_owned(),
+                    _ => "_UniffiRustBuffer.default()".to_owned(),
                 },
                 _ => unimplemented!("FFI return type: {t:?}"),
             },
@@ -580,84 +567,90 @@ impl<T: AsType> AsCodeType for T {
 }
 
 pub mod filters {
-    use crate::backend::filters::to_rinja_error;
+    use crate::backend::filters::to_askama_error;
 
     use super::*;
 
-    pub(super) fn type_name(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn type_name(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(as_ct.as_codetype().type_label())
     }
 
-    pub(super) fn ffi_converter_name(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn ffi_converter_name(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(String::from("_Uniffi") + &as_ct.as_codetype().ffi_converter_name()[3..])
     }
 
-    pub(super) fn canonical_name(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn canonical_name(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(as_ct.as_codetype().canonical_name())
     }
 
-    pub(super) fn lift_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn lift_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(format!("{}.lift", ffi_converter_name(as_ct)?))
     }
 
-    pub(super) fn check_lower_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn check_lower_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(format!("{}.check_lower", ffi_converter_name(as_ct)?))
     }
 
-    pub(super) fn lower_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn lower_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(format!("{}.lower", ffi_converter_name(as_ct)?))
     }
 
-    pub(super) fn read_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn read_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(format!("{}.read", ffi_converter_name(as_ct)?))
     }
 
-    pub(super) fn write_fn(as_ct: &impl AsCodeType) -> Result<String, rinja::Error> {
+    pub(super) fn write_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(format!("{}.write", ffi_converter_name(as_ct)?))
     }
 
     pub(super) fn literal_py(
         literal: &Literal,
         as_ct: &impl AsCodeType,
-    ) -> Result<String, rinja::Error> {
+    ) -> Result<String, askama::Error> {
         as_ct
             .as_codetype()
             .literal(literal)
-            .map_err(|e| to_rinja_error(&e))
+            .map_err(|e| to_askama_error(&e))
     }
 
     
-    pub fn variant_discr_literal(e: &Enum, index: &usize) -> Result<String, rinja::Error> {
+    pub fn variant_discr_literal(e: &Enum, index: &usize) -> Result<String, askama::Error> {
         let literal = e
             .variant_discr(*index)
             .context("invalid index")
-            .map_err(|e| to_rinja_error(&e))?;
+            .map_err(|e| to_askama_error(&e))?;
         Type::UInt64
             .as_codetype()
             .literal(&literal)
-            .map_err(|e| to_rinja_error(&e))
+            .map_err(|e| to_askama_error(&e))
     }
 
-    pub fn ffi_type_name(type_: &FfiType, ci: &ComponentInterface) -> Result<String, rinja::Error> {
+    pub fn ffi_type_name(
+        type_: &FfiType,
+        ci: &ComponentInterface,
+    ) -> Result<String, askama::Error> {
         Ok(PythonCodeOracle.ffi_type_label(type_, ci))
     }
 
-    pub fn ffi_default_value(return_type: Option<FfiType>) -> Result<String, rinja::Error> {
-        Ok(PythonCodeOracle.ffi_default_value(return_type.as_ref()))
+    pub fn ffi_default_value(
+        return_type: Option<FfiType>,
+        ci: &ComponentInterface,
+    ) -> Result<String, askama::Error> {
+        Ok(PythonCodeOracle.ffi_default_value(return_type.as_ref(), ci))
     }
 
     
-    pub fn ffi_callback_name(nm: &str) -> Result<String, rinja::Error> {
+    pub fn ffi_callback_name(nm: &str) -> Result<String, askama::Error> {
         Ok(PythonCodeOracle.ffi_callback_name(nm))
     }
 
     
-    pub fn ffi_struct_name(nm: &str) -> Result<String, rinja::Error> {
+    pub fn ffi_struct_name(nm: &str) -> Result<String, askama::Error> {
         Ok(PythonCodeOracle.ffi_struct_name(nm))
     }
 
     
-    pub fn docstring(docstring: &str, spaces: &i32) -> Result<String, rinja::Error> {
+    pub fn docstring(docstring: &str, spaces: &i32) -> Result<String, askama::Error> {
         let docstring = textwrap::dedent(docstring);
         
         let escaped = docstring.replace(r#"""""#, r#"\"\"\""#);

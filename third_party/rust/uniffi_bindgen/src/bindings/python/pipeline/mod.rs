@@ -1,0 +1,11 @@
+
+
+
+
+use crate::pipeline::{general, initial, Pipeline};
+
+
+
+pub fn pipeline() -> Pipeline<initial::Root, general::Root> {
+    general::pipeline()
+}

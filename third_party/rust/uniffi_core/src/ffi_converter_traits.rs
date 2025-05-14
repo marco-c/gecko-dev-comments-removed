@@ -151,7 +151,25 @@ pub unsafe trait FfiConverter<UT>: Sized {
 
 
 
+#[cfg(not(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded")))]
 pub unsafe trait FfiConverterArc<UT>: Send + Sync {
+    type FfiType: FfiDefault;
+
+    fn lower(obj: Arc<Self>) -> Self::FfiType;
+    fn try_lift(v: Self::FfiType) -> Result<Arc<Self>>;
+    fn write(obj: Arc<Self>, buf: &mut Vec<u8>);
+    fn try_read(buf: &mut &[u8]) -> Result<Arc<Self>>;
+
+    const TYPE_ID_META: MetadataBuffer;
+}
+
+
+
+
+
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded"))]
+pub unsafe trait FfiConverterArc<UT> {
     type FfiType: FfiDefault;
 
     fn lower(obj: Arc<Self>) -> Self::FfiType;

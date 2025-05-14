@@ -4,13 +4,15 @@
 
 use anyhow::{bail, Context, Result};
 use camino::Utf8PathBuf;
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::fmt;
 use uniffi_bindgen::bindings::*;
+use uniffi_bindgen::pipeline::initial;
+use uniffi_pipeline::PrintOptions;
 
 
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, clap::ValueEnum)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, ValueEnum)]
 enum TargetLanguage {
     Kotlin,
     Swift,
@@ -133,10 +135,52 @@ enum Commands {
     },
 
     
-    PrintRepr {
-        
-        path: Utf8PathBuf,
-    },
+    Pipeline(PipelineArgs),
+}
+
+#[derive(Args)]
+struct PipelineArgs {
+    
+    #[clap(long = "library")]
+    library_mode: bool,
+
+    
+    source: Utf8PathBuf,
+
+    
+    
+    
+    #[clap(long = "crate")]
+    crate_name: Option<String>,
+
+    
+    
+    
+    
+    
+    #[clap(long)]
+    metadata_no_deps: bool,
+
+    
+    language: TargetLanguage,
+
+    
+    
+    
+    #[clap(short, long)]
+    pass: Option<String>,
+
+    
+    #[clap(long)]
+    no_diff: bool,
+
+    
+    #[clap(short = 't', long = "type")]
+    filter_type: Option<String>,
+
+    
+    #[clap(short = 'n', long = "name")]
+    filter_name: Option<String>,
 }
 
 fn config_supplier(
@@ -335,8 +379,24 @@ pub fn run_main() -> anyhow::Result<()> {
                 !no_format,
             )?;
         }
-        Commands::PrintRepr { path } => {
-            uniffi_bindgen::print_repr(&path)?;
+        Commands::Pipeline(args) => {
+            let config_supplier = config_supplier(args.metadata_no_deps)?;
+            let initial_root = if args.library_mode {
+                initial::Root::from_library(config_supplier, &args.source, args.crate_name)?
+            } else {
+                initial::Root::from_udl(config_supplier, &args.source, args.crate_name)?
+            };
+
+            let opts = PrintOptions {
+                pass: args.pass,
+                no_diff: args.no_diff,
+                filter_type: args.filter_type,
+                filter_name: args.filter_name,
+            };
+            match args.language {
+                TargetLanguage::Python => python::pipeline().print_passes(initial_root, opts)?,
+                language => unimplemented!("{language} does not use the bindings IR pipeline yet"),
+            };
         }
     };
     Ok(())
