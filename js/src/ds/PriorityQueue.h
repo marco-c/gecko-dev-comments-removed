@@ -37,6 +37,28 @@ class PriorityQueue {
 
   bool empty() const { return heap.empty(); }
 
+  
+  
+  
+  
+  
+  T& highest() {
+    MOZ_ASSERT(!empty());
+    return heap[0];
+  }
+
+  void popHighest() {
+    if (heap.length() == 1) {
+      heap.popBack();
+      return;
+    }
+    std::swap(heap[0], heap.back());
+    heap.popBack();
+    siftDown(0);
+  }
+
+  
+  
   T removeHighest() {
     T highest = heap[0];
     T last = heap.popCopy();
@@ -47,16 +69,16 @@ class PriorityQueue {
     return highest;
   }
 
-  [[nodiscard]] bool insert(const T& v) {
-    if (!heap.append(v)) {
+  [[nodiscard]] bool insert(T&& v) {
+    if (!heap.append(std::move(v))) {
       return false;
     }
     siftUp(heap.length() - 1);
     return true;
   }
 
-  void infallibleInsert(const T& v) {
-    heap.infallibleAppend(v);
+  void infallibleInsert(T&& v) {
+    heap.infallibleAppend(std::move(v));
     siftUp(heap.length() - 1);
   }
 
@@ -81,15 +103,15 @@ class PriorityQueue {
 
       if (left < heap.length()) {
         if (right < heap.length()) {
-          if (P::priority(heap[n]) < P::priority(heap[right]) &&
-              P::priority(heap[left]) < P::priority(heap[right])) {
+          if (P::higherPriority(heap[right], heap[n]) &&
+              P::higherPriority(heap[right], heap[left])) {
             swap(n, right);
             n = right;
             continue;
           }
         }
 
-        if (P::priority(heap[n]) < P::priority(heap[left])) {
+        if (P::higherPriority(heap[left], heap[n])) {
           swap(n, left);
           n = left;
           continue;
@@ -104,7 +126,7 @@ class PriorityQueue {
     while (n > 0) {
       size_t parent = (n - 1) / 2;
 
-      if (P::priority(heap[parent]) > P::priority(heap[n])) {
+      if (P::higherPriority(heap[parent], heap[n])) {
         break;
       }
 
@@ -113,11 +135,7 @@ class PriorityQueue {
     }
   }
 
-  void swap(size_t a, size_t b) {
-    T tmp = heap[a];
-    heap[a] = heap[b];
-    heap[b] = tmp;
-  }
+  void swap(size_t a, size_t b) { std::swap(heap[a], heap[b]); }
 };
 
 } 
