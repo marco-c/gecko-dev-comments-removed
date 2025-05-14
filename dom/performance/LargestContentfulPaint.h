@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_LargestContentfulPaint_h___
 #define mozilla_dom_LargestContentfulPaint_h___
@@ -52,7 +52,7 @@ class ImagePendingRendering final {
 
 class LCPHelpers final {
  public:
-  // Called when the size of the image is known.
+  
   static void FinalizeLCPEntryForImage(Element* aContainingBlock,
                                        imgRequestProxy* aImgRequestProxy,
                                        const nsRect& aTargetRectRelativeToSelf);
@@ -70,7 +70,7 @@ class LCPHelpers final {
   static bool CanFinalizeLCPEntry(const nsIFrame* aFrame);
 };
 
-// https://w3c.github.io/largest-contentful-paint/
+
 class LargestContentfulPaint final : public PerformanceEntry {
  public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -90,6 +90,8 @@ class LargestContentfulPaint final : public PerformanceEntry {
   DOMHighResTimeStamp RenderTime() const;
   DOMHighResTimeStamp LoadTime() const;
   DOMHighResTimeStamp StartTime() const override;
+  DOMHighResTimeStamp PaintTime() const { return RenderTime(); }
+  Nullable<DOMHighResTimeStamp> GetPresentationTime() const { return nullptr; }
 
   unsigned long Size() const { return mSize; }
   void GetId(nsAString& aId) const {
@@ -121,12 +123,12 @@ class LargestContentfulPaint final : public PerformanceEntry {
 
   RefPtr<PerformanceMainThread> mPerformance;
 
-  // This is always set but only exposed to web content if
-  // mShouldExposeRenderTime is true.
+  
+  
   const TimeStamp mRenderTime;
   const Maybe<TimeStamp> mLoadTime;
-  // This is set to false when for security reasons web content it not allowed
-  // to see the RenderTime.
+  
+  
   const bool mShouldExposeRenderTime;
   unsigned long mSize;
   nsCOMPtr<nsIURI> mURI;
@@ -134,5 +136,5 @@ class LargestContentfulPaint final : public PerformanceEntry {
   nsWeakPtr mElement;
   RefPtr<nsAtom> mId;
 };
-}  // namespace mozilla::dom
+}  
 #endif
