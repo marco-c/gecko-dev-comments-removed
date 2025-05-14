@@ -185,12 +185,7 @@ nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
       
       
       
-      
-      CopyableErrorResult rv;
-      rv.ThrowTypeError(
-          "Failed to show notification, potentially because the browser did "
-          "not have the corresponding OS-level permission."_ns);
-      mResolver.take().value()(rv);
+      mResolver.take().value()(CopyableErrorResult(NS_ERROR_FAILURE));
     }
 
     
