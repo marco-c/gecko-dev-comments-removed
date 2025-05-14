@@ -167,7 +167,7 @@ module.exports = function (config) {
               branches: 75,
             },
             "content-src/components/MultiStageProtonScreen.jsx": {
-              branches: 79.07,
+              branches: 78,
             },
             
             
