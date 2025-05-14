@@ -84,16 +84,22 @@ var openInspectorSidebarTab = async function (id) {
 
 
 
-async function openRuleView() {
+
+
+
+
+async function openRuleView({ overrideDebounce = true } = {}) {
   const { inspector, toolbox, highlighterTestFront } = await openInspector();
 
   const ruleViewPanel = inspector.getPanel("ruleview");
   await ruleViewPanel.readyPromise;
   const view = ruleViewPanel.view;
 
-  
-  
-  view.debounce = manualDebounce();
+  if (overrideDebounce) {
+    
+    
+    view.debounce = manualDebounce();
+  }
 
   return {
     toolbox,

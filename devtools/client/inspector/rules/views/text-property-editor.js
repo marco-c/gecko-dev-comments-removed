@@ -423,7 +423,19 @@ TextPropertyEditor.prototype = {
         start: this._onStartEditing,
         element: this.valueSpan,
         done: this._onValueDone,
-        destroy: this.update,
+        destroy: onValueDonePromise => {
+          const cb = this.update;
+          
+          
+          
+          if (
+            onValueDonePromise &&
+            typeof onValueDonePromise.then === "function"
+          ) {
+            return onValueDonePromise.then(cb);
+          }
+          return cb();
+        },
         validate: this._onValidate,
         advanceChars: advanceValidate,
         contentType: InplaceEditor.CONTENT_TYPES.CSS_VALUE,
@@ -1274,13 +1286,13 @@ TextPropertyEditor.prototype = {
     
     
     if ((value.trim() || isVariable) && isValueUnchanged) {
-      this.ruleEditor.rule.previewPropertyValue(
+      const onPropertySet = this.ruleEditor.rule.previewPropertyValue(
         this.prop,
         val.value,
         val.priority
       );
       this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
-      return;
+      return onPropertySet;
     }
 
     
@@ -1293,7 +1305,7 @@ TextPropertyEditor.prototype = {
     this.telemetry.recordEvent("edit_rule", "ruleview");
 
     
-    this.prop.setValue(val.value, val.priority);
+    const onPropertySet = this.prop.setValue(val.value, val.priority);
 
     if (!this.prop.enabled) {
       this.prop.setEnabled(true);
@@ -1322,6 +1334,8 @@ TextPropertyEditor.prototype = {
         }
       }, 0);
     }
+
+    return onPropertySet;
   },
 
   

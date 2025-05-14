@@ -182,6 +182,7 @@ function isKeyIn(key, ...keys) {
 
 
 
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -477,7 +478,11 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  #clear() {
+
+
+
+
+  #clear(doneCallResult) {
     if (!this.input) {
       
       return;
@@ -499,7 +504,7 @@ class InplaceEditor extends EventEmitter {
     delete this.elt;
 
     if (this.destroy) {
-      this.destroy();
+      this.destroy(doneCallResult);
     }
   }
 
@@ -1157,8 +1162,8 @@ class InplaceEditor extends EventEmitter {
     ) {
       this.#acceptPopupSuggestion();
     } else {
-      this.#apply();
-      this.#clear();
+      const onApplied = this.#apply();
+      this.#clear(onApplied);
     }
   };
 
@@ -1363,7 +1368,7 @@ class InplaceEditor extends EventEmitter {
         }
       }
 
-      this.#apply(direction, key);
+      const onApplied = this.#apply(direction, key);
 
       
       if (this.popup && this.popup.isOpen) {
@@ -1389,7 +1394,7 @@ class InplaceEditor extends EventEmitter {
         }
       }
 
-      this.#clear();
+      this.#clear(onApplied);
     } else if (isKeyIn(key, "ESCAPE")) {
       
       
@@ -1399,8 +1404,8 @@ class InplaceEditor extends EventEmitter {
         this.#hideAutocompletePopup();
       } else {
         this.cancelled = true;
-        this.#apply();
-        this.#clear();
+        const onApplied = this.#apply();
+        this.#clear(onApplied);
       }
       prevent = true;
       event.stopPropagation();
