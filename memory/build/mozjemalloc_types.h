@@ -139,6 +139,7 @@ typedef struct {
   size_t bytes_unused;       
   size_t bytes_total;        
   size_t bytes_per_run;      
+  size_t regions_per_run;    
 } jemalloc_bin_stats_t;
 
 
