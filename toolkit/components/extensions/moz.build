@@ -53,13 +53,6 @@ EXTRA_JS_MODULES += [
     "WebNavigationFrames.sys.mjs",
 ]
 
-if CONFIG["NIGHTLY_BUILD"]:
-    
-    EXTRA_JS_MODULES += [
-        "WPTMessagesChild.sys.mjs",
-        "WPTMessagesParent.sys.mjs",
-    ]
-
 EXTRA_COMPONENTS += [
     "extensions-toolkit.manifest",
 ]
