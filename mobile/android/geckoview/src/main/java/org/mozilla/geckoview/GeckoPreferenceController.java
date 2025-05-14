@@ -11,14 +11,67 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
+import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
 
 public class GeckoPreferenceController {
   private static final String LOGTAG = "GeckoPreference";
   private static final boolean DEBUG = false;
+
+  
+  public static final class Observer {
+    private static final String REGISTER_PREF = "GeckoView:Preferences:RegisterObserver";
+    private static final String UNREGISTER_PREF = "GeckoView:Preferences:UnregisterObserver";
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull GeckoResult<Void> registerPreference(
+        @NonNull final String preferenceName) {
+      final GeckoBundle bundle = new GeckoBundle();
+      bundle.putString("pref", preferenceName);
+      return EventDispatcher.getInstance().queryVoid(REGISTER_PREF, bundle);
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    public static @NonNull GeckoResult<Void> unregisterPreference(
+        @NonNull final String preferenceName) {
+      final GeckoBundle bundle = new GeckoBundle();
+      bundle.putString("pref", preferenceName);
+      return EventDispatcher.getInstance().queryVoid(UNREGISTER_PREF, bundle);
+    }
+
+    
+    public interface Delegate {
+      
+
+
+
+
+
+      @AnyThread
+      default void onGeckoPreferenceChange(
+          @NonNull final GeckoPreference<?> observedGeckoPreference) {}
+    }
+  }
 
   
 

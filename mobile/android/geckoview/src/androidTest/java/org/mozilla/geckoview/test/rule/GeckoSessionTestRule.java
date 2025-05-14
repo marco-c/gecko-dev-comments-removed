@@ -70,6 +70,7 @@ import org.mozilla.geckoview.Autofill;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
+import org.mozilla.geckoview.GeckoPreferenceController;
 import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoRuntime.ActivityDelegate;
@@ -988,6 +989,14 @@ public class GeckoSessionTestRule implements TestRule {
   
   public void setExperimentDelegate(final ExperimentDelegate delegate) {
     RuntimeCreator.setExperimentDelegate(delegate);
+  }
+
+  
+
+
+
+  public void setPreferenceDelegate(final GeckoPreferenceController.Observer.Delegate delegate) {
+    RuntimeCreator.setGeckoPreferenceDelegate(delegate);
   }
 
   public @Nullable GeckoDisplay getDisplay() {
@@ -2678,6 +2687,22 @@ public class GeckoSessionTestRule implements TestRule {
             args -> {
               args.put("prefs", new JSONArray(Arrays.asList(prefs)));
             });
+  }
+
+  
+
+
+
+
+
+
+
+  public void clearUserPref(final @NonNull String pref) {
+    webExtensionApiCall(
+        "ClearUserPref",
+        args -> {
+          args.put("pref", pref);
+        });
   }
 
   

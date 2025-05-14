@@ -92,6 +92,10 @@ this.test = class extends ExtensionAPI {
         },
 
         
+        async clearUserPref(pref) {
+          Services.prefs.clearUserPref(pref);
+        },
+        
         async getLinkColor(tabId, selector) {
           return getActorForTab(tabId, "TestSupport").sendQuery(
             "GetLinkColor",
