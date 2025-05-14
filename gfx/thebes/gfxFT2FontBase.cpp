@@ -353,6 +353,8 @@ void gfxFT2FontBase::InitMetrics() {
     
     const TT_Header* head =
         static_cast<TT_Header*>(FT_Get_Sfnt_Table(face, ft_sfnt_head));
+    gfxFloat emUnit = head->Units_Per_EM;
+    mFUnitsConvFactor = ftMetrics.x_ppem / emUnit;
     if (head) {
       
       
@@ -366,9 +368,8 @@ void gfxFT2FontBase::InitMetrics() {
         mMetrics.maxDescent *= adjustScale;
         mMetrics.maxAdvance *= adjustScale;
         lineHeight *= adjustScale;
+        mFUnitsConvFactor *= adjustScale;
       }
-      gfxFloat emUnit = head->Units_Per_EM;
-      mFUnitsConvFactor = ftMetrics.x_ppem / emUnit;
       yScale = emHeight / emUnit;
     }
   }
