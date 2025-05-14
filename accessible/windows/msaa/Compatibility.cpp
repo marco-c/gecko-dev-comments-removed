@@ -228,6 +228,12 @@ bool Compatibility::IsUiaEnabled() {
   }
   
   
+  
+  
+  
+  if (!(sConsumers & UIAUTOMATION)) {
+    InitConsumers();
+  }
   return !IsJAWS() && !IsOldJAWS() && !IsVisperoShared() &&
          !(sConsumers & NVDA);
 }

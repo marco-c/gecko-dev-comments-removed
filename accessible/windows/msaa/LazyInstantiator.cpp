@@ -410,6 +410,15 @@ LazyInstantiator::MaybeResolveRoot() {
     }                                \
   }
 
+#define RESOLVE_ROOT_UIA_RETURN_IF_FAIL                                        \
+  RESOLVE_ROOT                                                                 \
+  if (!mWeakUia) {                                                             \
+    /* UIA was previously enabled, allowing QueryInterface to a UIA interface. \
+     * It was subsequently disabled before we could resolve the root.          \
+     */                                                                        \
+    return E_FAIL;                                                             \
+  }
+
 IMPL_IUNKNOWN_QUERY_HEAD(LazyInstantiator)
 if (NS_WARN_IF(!NS_IsMainThread())) {
   
@@ -799,6 +808,7 @@ LazyInstantiator::get_ProviderOptions(
   
   
   
+  
   if (!aOptions) {
     return E_INVALIDARG;
   }
@@ -809,20 +819,21 @@ LazyInstantiator::get_ProviderOptions(
 STDMETHODIMP
 LazyInstantiator::GetPatternProvider(
     PATTERNID aPatternId, __RPC__deref_out_opt IUnknown** aPatternProvider) {
-  RESOLVE_ROOT;
+  RESOLVE_ROOT_UIA_RETURN_IF_FAIL;
   return mWeakUia->GetPatternProvider(aPatternId, aPatternProvider);
 }
 
 STDMETHODIMP
 LazyInstantiator::GetPropertyValue(PROPERTYID aPropertyId,
                                    __RPC__out VARIANT* aPropertyValue) {
-  RESOLVE_ROOT;
+  RESOLVE_ROOT_UIA_RETURN_IF_FAIL;
   return mWeakUia->GetPropertyValue(aPropertyId, aPropertyValue);
 }
 
 STDMETHODIMP
 LazyInstantiator::get_HostRawElementProvider(
     __RPC__deref_out_opt IRawElementProviderSimple** aRawElmProvider) {
+  
   
   
   
