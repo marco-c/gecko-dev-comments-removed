@@ -422,7 +422,15 @@ impl FontRelativeLength {
                 
                 
                 
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                let reference_size = if context.builder.is_root_element {
+                    context.builder
+                        .calc_line_height(
+                            context.device(),
+                            line_height_base,
+                            context.style().writing_mode,
+                        )
+                        .0
+                } else if context.in_media_query {
                     context
                         .device()
                         .calc_line_height(
