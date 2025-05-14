@@ -4001,6 +4001,26 @@ void BrowsingContext::GetContiguousHistoryEntries(
   }
 }
 
+
+
+void BrowsingContext::ConsumeHistoryActivation() {
+  
+  
+  
+  
+  PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+    RefPtr<WindowContext> windowContext =
+        aBrowsingContext->GetCurrentWindowContext();
+    
+    
+    if (aBrowsingContext->IsInProcess() && windowContext &&
+        windowContext->GetUserActivationState() ==
+            UserActivation::State::FullActivated) {
+      windowContext->UpdateLastHistoryActivation();
+    }
+  });
+}
+
 }  
 
 namespace ipc {

@@ -229,6 +229,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   void ConsumeHistoryActivation();
 
+  
+  void UpdateLastHistoryActivation();
+
   bool GetTransientUserGestureActivationModifiers(
       UserActivation::Modifiers* aModifiers);
 
@@ -403,7 +406,8 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   
   
-  TimeStamp mUserGestureStart;
+  
+  TimeStamp mLastActivationTimestamp;
 
   
   

@@ -404,7 +404,7 @@ void WindowContext::DidSet(FieldIndex<IDX_SHEntryHasUserInteraction>,
 }
 
 void WindowContext::DidSet(FieldIndex<IDX_UserActivationStateAndModifiers>) {
-  MOZ_ASSERT_IF(!IsInProcess(), mUserGestureStart.IsNull());
+  MOZ_ASSERT_IF(!IsInProcess(), mLastActivationTimestamp.IsNull());
   USER_ACTIVATION_LOG("Set user gesture activation 0x%02" PRIu8
                       " for %s browsing context 0x%08" PRIx64,
                       GetUserActivationStateAndModifiers(),
@@ -414,9 +414,9 @@ void WindowContext::DidSet(FieldIndex<IDX_UserActivationStateAndModifiers>) {
         "Set user gesture start time for %s browsing context 0x%08" PRIx64,
         XRE_IsParentProcess() ? "Parent" : "Child", Id());
     if (GetUserActivationState() == UserActivation::State::FullActivated) {
-      mUserGestureStart = TimeStamp::Now();
+      mLastActivationTimestamp = TimeStamp::Now();
     } else if (GetUserActivationState() == UserActivation::State::None) {
-      mUserGestureStart = TimeStamp();
+      mLastActivationTimestamp = TimeStamp();
     }
   }
 }
@@ -546,8 +546,9 @@ bool WindowContext::HasBeenUserGestureActivated() {
 
 const TimeStamp& WindowContext::GetUserGestureStart() const {
   MOZ_ASSERT(IsInProcess());
-  return mUserGestureStart;
+  return mLastActivationTimestamp;
 }
+
 
 bool WindowContext::HasValidTransientUserGestureActivation() {
   MOZ_ASSERT(IsInProcess());
@@ -556,35 +557,57 @@ bool WindowContext::HasValidTransientUserGestureActivation() {
     
     
     MOZ_ASSERT_IF(GetUserActivationState() == UserActivation::State::None,
-                  mUserGestureStart.IsNull());
+                  mLastActivationTimestamp.IsNull());
     return false;
   }
 
-  MOZ_ASSERT(!mUserGestureStart.IsNull(),
-             "mUserGestureStart shouldn't be null if the document has ever "
-             "been activated by user gesture");
+  MOZ_ASSERT(
+      !mLastActivationTimestamp.IsNull(),
+      "mLastActivationTimestamp shouldn't be null if the document has ever "
+      "been activated by user gesture");
+
   TimeDuration timeout = TimeDuration::FromMilliseconds(
       StaticPrefs::dom_user_activation_transient_timeout());
 
+  
+  
+  
+  
   return timeout <= TimeDuration() ||
-         (TimeStamp::Now() - mUserGestureStart) <= timeout;
+         (TimeStamp::Now() - mLastActivationTimestamp) <= timeout;
 }
+
 
 bool WindowContext::ConsumeTransientUserGestureActivation() {
   MOZ_ASSERT(IsInProcess());
   MOZ_ASSERT(IsCurrent());
 
+  
+
   if (!HasValidTransientUserGestureActivation()) {
     return false;
   }
 
+  
   BrowsingContext* top = mBrowsingContext->Top();
+
+  
+  
   top->PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+    
+    
     WindowContext* windowContext = aBrowsingContext->GetCurrentWindowContext();
+
+    
+    
+    
     if (windowContext && windowContext->GetUserActivationState() ==
                              UserActivation::State::FullActivated) {
       auto stateAndModifiers = UserActivation::StateAndModifiers(
           GetUserActivationStateAndModifiers());
+      
+      
+      
       stateAndModifiers.SetState(UserActivation::State::HasBeenActivated);
       Unused << windowContext->SetUserActivationStateAndModifiers(
           stateAndModifiers.GetRawData());
@@ -597,19 +620,32 @@ bool WindowContext::ConsumeTransientUserGestureActivation() {
 
 bool WindowContext::HasValidHistoryActivation() const {
   MOZ_ASSERT(IsInProcess());
-  return mHistoryActivation != mUserGestureStart;
+  return mHistoryActivation != mLastActivationTimestamp;
 }
+
 
 
 void WindowContext::ConsumeHistoryActivation() {
   MOZ_ASSERT(IsInProcess());
 
-  if (!HasValidHistoryActivation()) {
-    return;
-  }
+  
 
-  mHistoryActivation = mUserGestureStart;
-  return;
+  
+  RefPtr<BrowsingContext> top = mBrowsingContext->Top();
+
+  
+  
+  
+  
+  MOZ_ASSERT(XRE_IsContentProcess());
+  ContentChild::GetSingleton()->SendConsumeHistoryActivation(top);
+
+  
+  top->ConsumeHistoryActivation();
+}
+
+void WindowContext::UpdateLastHistoryActivation() {
+  mHistoryActivation = mLastActivationTimestamp;
 }
 
 bool WindowContext::GetTransientUserGestureActivationModifiers(
