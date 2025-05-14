@@ -204,7 +204,7 @@ function init_all() {
     
     
     document.getElementById("category-experimental").hidden =
-      !ExperimentAPI._manager.studiesEnabled ||
+      !ExperimentAPI.studiesEnabled ||
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
         false
