@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 function getLoadContext() {
@@ -10,43 +11,7 @@ function getLoadContext() {
 }
 
 
-
-
-const toBase64Table =
-  
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" + "0123456789+/";
-const base64Pad = "=";
-function toBase64(data) {
-  var result = "";
-  var length = data.length;
-  var i;
-  
-  for (i = 0; i < length - 2; i += 3) {
-    result += toBase64Table[data[i] >> 2];
-    result += toBase64Table[((data[i] & 0x03) << 4) + (data[i + 1] >> 4)];
-    result += toBase64Table[((data[i + 1] & 0x0f) << 2) + (data[i + 2] >> 6)];
-    result += toBase64Table[data[i + 2] & 0x3f];
-  }
-
-  
-  if (length % 3) {
-    i = length - (length % 3);
-    result += toBase64Table[data[i] >> 2];
-    if (length % 3 == 2) {
-      result += toBase64Table[((data[i] & 0x03) << 4) + (data[i + 1] >> 4)];
-      result += toBase64Table[(data[i + 1] & 0x0f) << 2];
-      result += base64Pad;
-    } else {
-      result += toBase64Table[(data[i] & 0x03) << 4];
-      result += base64Pad + base64Pad;
-    }
-  }
-
-  return result;
-}
-
-
-function getPNGFromClipboard(clipboard) {
+async function getPNGFromClipboard(clipboard) {
   let trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
     Ci.nsITransferable
   );
@@ -66,11 +31,13 @@ function getPNGFromClipboard(clipboard) {
 
   stream.setInputStream(rawStream);
 
-  var bytes = stream.readByteArray(stream.available()); 
+  let size = stream.available();
+  let data = new ArrayBuffer(size);
+  stream.readArrayBuffer(size, data);
 
-  var base64String = toBase64(bytes);
-
-  return "data:image/png;base64," + base64String;
+  let decoder = new ImageDecoder({ type: "image/png", data });
+  let { image } = await decoder.decode();
+  return image;
 }
 
 async function putOnClipboard(expected, operationFn, desc, type) {
@@ -90,50 +57,43 @@ add_task(async function test_copy() {
   await SpecialPowers.pushPrefEnv({
     set: [["clipboard.copy_image.as_png", true]],
   });
-  try {
-    await putOnClipboard(
-      "",
-      () => {
-        SpecialPowers.setCommandNode(
-          window,
-          document.getElementById("pngWithTransparency")
-        );
-        SpecialPowers.doCommand(window, "cmd_copyImageContents");
-      },
-      "copy changed clipboard when preference is disabled"
-    );
-  } catch (e) {
-    ok(false, e.toString());
-  }
+
+  await putOnClipboard(
+    "",
+    () => {
+      SpecialPowers.setCommandNode(
+        window,
+        document.getElementById("pngWithTransparency")
+      );
+      SpecialPowers.doCommand(window, "cmd_copyImageContents");
+    },
+    "copy changed clipboard when preference is disabled"
+  );
 
   
-  let dataURLString = getPNGFromClipboard(clipboard);
-  let targetPng = document.getElementById("targetPng");
-  targetPng.src = dataURLString;
-  await new Promise(resolve => {
-    targetPng.addEventListener(
-      "load",
-      () => {
-        resolve();
-      },
-      { once: true }
-    );
-  });
+  let imagePng = await getPNGFromClipboard(clipboard);
 
   
   
   let canvas = document.getElementById("targetCanvas");
   let ctx = canvas.getContext("2d");
+
   
   
   ctx.fillStyle = "rgb(10, 30, 230)";
   ctx.fillRect(0, 0, 200, 200);
-  ctx.drawImage(targetPng, 0, 0);
+  ctx.drawImage(imagePng, 0, 0);
+
   let imageData = ctx.getImageData(0, 0, 1, 1);
   
   is(imageData.data[0], 10, "R value should not have changed");
   is(imageData.data[1], 30, "G value should not have changed");
   is(imageData.data[2], 230, "B value should not have changed");
+
+  imageData = ctx.getImageData(100, 100, 1, 1);
+  is(imageData.data[0], 255, "R in circle is red");
+  
+  is(imageData.data[2], 0, "B in circle is red");
 
   cleanupAllClipboard();
   await SpecialPowers.popPrefEnv();
