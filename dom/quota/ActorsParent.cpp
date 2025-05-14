@@ -3494,6 +3494,9 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
       stream->WriteStringZ(aOriginMetadata.mStorageOrigin.get())));
 
   
+  
+  
+  
   QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aOriginMetadata.mIsPrivate)));
 
   QM_TRY(MOZ_TO_RESULT(stream->Flush()));
@@ -3573,8 +3576,11 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
       MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsCString, binaryStream, ReadCString));
 
   
-  QM_TRY_UNWRAP(fullOriginMetadata.mIsPrivate,
-                MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, ReadBoolean));
+  
+  
+  QM_TRY_INSPECT(const bool& unusedData3,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, ReadBoolean));
+  Unused << unusedData3;
 
   QM_TRY(MOZ_TO_RESULT(binaryStream->Close()));
 
@@ -3600,6 +3606,7 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
   fullOriginMetadata.mSuffix = std::move(principalMetadata.mSuffix);
   fullOriginMetadata.mGroup = std::move(principalMetadata.mGroup);
   fullOriginMetadata.mOrigin = std::move(principalMetadata.mOrigin);
+  fullOriginMetadata.mIsPrivate = principalMetadata.mIsPrivate;
 
   QM_TRY_INSPECT(const bool& groupUpdated,
                  MaybeUpdateGroupForOrigin(fullOriginMetadata));
