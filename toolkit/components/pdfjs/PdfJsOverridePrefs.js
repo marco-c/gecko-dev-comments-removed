@@ -18,6 +18,8 @@
   
   pref("pdfjs.annotationEditorMode", -1);
 
+  pref("pdfjs.capCanvasAreaFactor", 100);
+
 #else
 
   pref("pdfjs.enableUpdatedAddImage", true);
