@@ -41,6 +41,12 @@ check(() => { return new Array(150); });
 
 
 check(() => { return () => 0 });
+function f() {
+  let x = 1;
+  check(() => { return () => x });
+  x = 2;
+}
+f();
 
 
 let fdo = new FakeDOMObject();
