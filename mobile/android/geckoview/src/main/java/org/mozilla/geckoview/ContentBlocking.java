@@ -200,6 +200,23 @@ public class ContentBlocking {
 
 
 
+
+
+
+
+      public @NonNull Builder enhancedTrackingProtectionCategory(
+          final @CBEtpCategory int category) {
+        getSettings().setEnhancedTrackingProtectionCategory(category);
+        return this;
+      }
+
+      
+
+
+
+
+
+
       public @NonNull Builder emailTrackerBlockingPrivateMode(final boolean enabled) {
         getSettings().setEmailTrackerBlockingPrivateBrowsing(enabled);
         return this;
@@ -381,6 +398,9 @@ public class ContentBlocking {
         new Pref<Boolean>("privacy.trackingprotection.annotate_channels", false);
      final Pref<Boolean> mEtpStrict =
         new Pref<Boolean>("privacy.annotate_channels.strict_list.enabled", false);
+
+     final Pref<String> mEtpCategory =
+        new Pref<String>("browser.contentblocking.category", "standard");
 
      final Pref<Integer> mCbhMode =
         new Pref<Integer>(
@@ -637,10 +657,35 @@ public class ContentBlocking {
 
 
 
+
+
+
+
+
     public @NonNull Settings setEnhancedTrackingProtectionLevel(final @CBEtpLevel int level) {
       mEtpEnabled.commit(
           level == ContentBlocking.EtpLevel.DEFAULT || level == ContentBlocking.EtpLevel.STRICT);
       mEtpStrict.commit(level == ContentBlocking.EtpLevel.STRICT);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setEnhancedTrackingProtectionCategory(
+        final @CBEtpCategory int category) {
+
+      if (category == ContentBlocking.EtpCategory.STANDARD) {
+        mEtpCategory.commit("standard");
+      } else if (category == ContentBlocking.EtpCategory.STRICT) {
+        mEtpCategory.commit("strict");
+      } else if (category == ContentBlocking.EtpCategory.CUSTOM) {
+        mEtpCategory.commit("custom");
+      }
+
       return this;
     }
 
@@ -696,6 +741,22 @@ public class ContentBlocking {
         return ContentBlocking.EtpLevel.DEFAULT;
       }
       return ContentBlocking.EtpLevel.NONE;
+    }
+
+    
+
+
+
+
+    public @CBEtpCategory int getEnhancedTrackingProtectionCategory() {
+      final String category = mEtpCategory.get();
+      if ("strict".equals(category)) {
+        return ContentBlocking.EtpCategory.STRICT;
+      } else if ("standard".equals(category)) {
+        return ContentBlocking.EtpCategory.STANDARD;
+      } else {
+        return ContentBlocking.EtpCategory.CUSTOM;
+      }
     }
 
     
@@ -1608,6 +1669,22 @@ public class ContentBlocking {
 
 
     public static final int STRICT = 2;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({EtpCategory.STANDARD, EtpCategory.STRICT, EtpCategory.CUSTOM})
+  public @interface CBEtpCategory {}
+
+  
+  public static class EtpCategory {
+    
+    public static final int STANDARD = 0;
+    
+    
+    public static final int STRICT = 1;
+    
+    
+    public static final int CUSTOM = 2;
   }
 
   
