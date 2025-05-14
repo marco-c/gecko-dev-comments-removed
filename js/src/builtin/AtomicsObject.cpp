@@ -538,18 +538,33 @@ namespace js {
 
 
 
+class FutexWaiter : public FutexWaiterListNode {
+ protected:
+  FutexWaiter(JSContext* cx, size_t offset, FutexWaiterKind kind)
+      : FutexWaiterListNode(kind), offset_(offset), cx_(cx) {}
 
+  size_t offset_;  
+  JSContext* cx_;  
 
-class FutexWaiter {
  public:
-  FutexWaiter(size_t offset, JSContext* cx)
-      : offset(offset), cx(cx), lower_pri(nullptr), back(nullptr) {}
+  bool isSync() const { return kind_ == FutexWaiterKind::Sync; }
+  SyncFutexWaiter* asSync() {
+    MOZ_ASSERT(isSync());
+    return reinterpret_cast<SyncFutexWaiter*>(this);
+  }
 
-  size_t offset;           
-  JSContext* cx;           
-  FutexWaiter* lower_pri;  
-                           
-  FutexWaiter* back;       
+  size_t offset() const { return offset_; }
+  JSContext* cx() { return cx_; }
+};
+
+
+
+
+
+class MOZ_STACK_CLASS SyncFutexWaiter : public FutexWaiter {
+ public:
+  SyncFutexWaiter(JSContext* cx, size_t offset)
+      : FutexWaiter(cx, offset, FutexWaiterKind::Sync) {}
 };
 
 class AutoLockFutexAPI {
@@ -571,6 +586,25 @@ class AutoLockFutexAPI {
 }  
 
 
+static void AddWaiter(SharedArrayRawBuffer* sarb, FutexWaiter* node,
+                      AutoLockFutexAPI&) {
+  FutexWaiterListNode* listHead = sarb->waiters();
+
+  
+  node->setNext(listHead);
+  node->setPrev(listHead->prev());
+  listHead->prev()->setNext(node);
+  listHead->setPrev(node);
+}
+
+
+static void RemoveWaiter(FutexWaiterListNode* node, AutoLockFutexAPI&) {
+  node->prev()->setNext(node->next());
+  node->next()->setPrev(node->prev());
+
+  node->setNext(nullptr);
+  node->setPrev(nullptr);
+}
 
 template <typename T>
 static FutexThread::WaitResult AtomicsWait(
@@ -600,28 +634,10 @@ static FutexThread::WaitResult AtomicsWait(
   }
 
   
-  FutexWaiter w(byteOffset, cx);
-  if (FutexWaiter* waiters = sarb->waiters()) {
-    w.lower_pri = waiters;
-    w.back = waiters->back;
-    waiters->back->lower_pri = &w;
-    waiters->back = &w;
-  } else {
-    w.lower_pri = w.back = &w;
-    sarb->setWaiters(&w);
-  }
-
+  SyncFutexWaiter w(cx, byteOffset);
+  AddWaiter(sarb, &w, lock);
   FutexThread::WaitResult retval = cx->fx.wait(cx, lock.unique(), timeout);
-
-  if (w.lower_pri == &w) {
-    sarb->setWaiters(nullptr);
-  } else {
-    w.lower_pri->back = w.back;
-    w.back->lower_pri = w.lower_pri;
-    if (sarb->waiters() == &w) {
-      sarb->setWaiters(w.lower_pri);
-    }
-  }
+  RemoveWaiter(&w, lock);
 
   
   return retval;
@@ -766,27 +782,25 @@ int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
   int64_t woken = 0;
 
   
-  FutexWaiter* waiters = sarb->waiters();
-  if (waiters && count) {
-    FutexWaiter* iter = waiters;
-    do {
-      FutexWaiter* c = iter;
-      iter = iter->lower_pri;
-      if (c->offset != byteOffset || !c->cx->fx.isWaiting()) {
-        continue;
-      }
-      c->cx->fx.notify(FutexThread::NotifyExplicit);
-      
-      
-      
-      
-      
-      MOZ_RELEASE_ASSERT(woken < INT64_MAX);
-      ++woken;
-      if (count > 0) {
-        --count;
-      }
-    } while (count && iter != waiters);
+  FutexWaiterListNode* waiterListHead = sarb->waiters();
+  FutexWaiterListNode* iter = waiterListHead->next();
+  while (count && iter != waiterListHead) {
+    FutexWaiter* c = iter->toWaiter();
+    iter = iter->next();
+    if (c->offset() != byteOffset || !c->cx()->fx.isWaiting()) {
+      continue;
+    }
+    c->cx()->fx.notify(FutexThread::NotifyExplicit);
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(woken < INT64_MAX);
+    ++woken;
+    if (count > 0) {
+      --count;
+    }
   }
 
   

@@ -11,13 +11,13 @@
 
 #include "jstypes.h"
 
+#include "builtin/AtomicsObject.h"
 #include "gc/Memory.h"
 #include "vm/ArrayBufferObject.h"
 #include "wasm/WasmMemory.h"
 
 namespace js {
 
-class FutexWaiter;
 class WasmSharedArrayRawBuffer;
 
 
@@ -66,7 +66,7 @@ class SharedArrayRawBuffer {
 
   
   
-  FutexWaiter* waiters_ = nullptr;
+  FutexWaiterListHead waiters_;
 
  protected:
   SharedArrayRawBuffer(bool isGrowableJS, uint8_t* buffer, size_t length)
@@ -92,11 +92,7 @@ class SharedArrayRawBuffer {
 
   
   
-  FutexWaiter* waiters() const { return waiters_; }
-
-  
-  
-  void setWaiters(FutexWaiter* waiters) { waiters_ = waiters; }
+  FutexWaiterListNode* waiters() { return &waiters_; }
 
   inline SharedMem<uint8_t*> dataPointerShared() const;
 
