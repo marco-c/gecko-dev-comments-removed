@@ -32,7 +32,10 @@ using js::OffThreadPromiseTask;
 
 OffThreadPromiseTask::OffThreadPromiseTask(JSContext* cx,
                                            JS::Handle<PromiseObject*> promise)
-    : runtime_(cx->runtime()), promise_(cx, promise), registered_(false) {
+    : runtime_(cx->runtime()),
+      promise_(cx, promise),
+      registered_(false),
+      cancellable_(false) {
   MOZ_ASSERT(runtime_ == promise_->zone()->runtimeFromMainThread());
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
   MOZ_ASSERT(cx->runtime()->offThreadPromiseState.ref().initialized());
@@ -50,13 +53,17 @@ OffThreadPromiseTask::~OffThreadPromiseTask() {
 }
 
 bool OffThreadPromiseTask::init(JSContext* cx) {
+  AutoLockHelperThreadState lock;
+  return init(cx, lock);
+}
+
+bool OffThreadPromiseTask::init(JSContext* cx,
+                                const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(cx->runtime() == runtime_);
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
 
   OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
-
-  AutoLockHelperThreadState lock;
 
   if (!state.live().putNew(this)) {
     ReportOutOfMemory(cx);
@@ -67,9 +74,33 @@ bool OffThreadPromiseTask::init(JSContext* cx) {
   return true;
 }
 
+bool OffThreadPromiseTask::initCancellable(JSContext* cx) {
+  AutoLockHelperThreadState lock;
+  return initCancellable(cx, lock);
+}
+
+bool OffThreadPromiseTask::initCancellable(
+    JSContext* cx, const AutoLockHelperThreadState& lock) {
+  MOZ_ASSERT(cx->runtime() == runtime_);
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
+  MOZ_ASSERT(state.initialized());
+
+  if (!init(cx, lock)) {
+    return false;
+  }
+  cancellable_ = true;
+  state.numCancellable_++;
+  return true;
+}
+
 void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state) {
   MOZ_ASSERT(registered_);
   AutoLockHelperThreadState lock;
+  if (cancellable_) {
+    cancellable_ = false;
+    state.numCancellable_--;
+  }
   state.live().remove(this);
   registered_ = false;
 }
@@ -103,6 +134,15 @@ void OffThreadPromiseTask::run(JSContext* cx,
   js_delete(this);
 }
 
+
+void OffThreadPromiseTask::DestroyUndispatchedTask(OffThreadPromiseTask* task) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(task->runtime_));
+  MOZ_ASSERT(task->registered_);
+  MOZ_ASSERT(task->cancellable_);
+  task->prepareForCancel();
+  js_delete(task);
+}
+
 void OffThreadPromiseTask::dispatchResolveAndDestroy() {
   AutoLockHelperThreadState lock;
   dispatchResolveAndDestroy(lock);
@@ -110,12 +150,15 @@ void OffThreadPromiseTask::dispatchResolveAndDestroy() {
 
 void OffThreadPromiseTask::dispatchResolveAndDestroy(
     const AutoLockHelperThreadState& lock) {
-  MOZ_ASSERT(registered_);
-
   OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
-  MOZ_ASSERT(state.live().has(this));
+  MOZ_ASSERT(state.live().has(task.get()));
 
+  MOZ_ASSERT(registered_);
+  if (cancellable_) {
+    cancellable_ = false;
+    state.numCancellable_--;
+  }
   
   
   if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_,
@@ -128,21 +171,22 @@ void OffThreadPromiseTask::dispatchResolveAndDestroy(
   
   
   
-  state.numCanceled_++;
-  if (state.numCanceled_ == state.live().count()) {
-    state.allCanceled().notify_one();
+  state.numFailed_++;
+  if (state.numFailed_ == state.live().count()) {
+    state.allFailed().notify_one();
   }
 }
 
 OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
     : dispatchToEventLoopCallback_(nullptr),
       dispatchToEventLoopClosure_(nullptr),
-      numCanceled_(0),
+      numFailed_(0),
+      numCancellable_(0),
       internalDispatchQueueClosed_(false) {}
 
 OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
   MOZ_ASSERT(live_.refNoCheck().empty());
-  MOZ_ASSERT(numCanceled_ == 0);
+  MOZ_ASSERT(numFailed_ == 0);
   MOZ_ASSERT(internalDispatchQueue_.refNoCheck().empty());
   MOZ_ASSERT(!initialized());
 }
@@ -204,10 +248,11 @@ void OffThreadPromiseRuntimeState::internalDrain(JSContext* cx) {
 
       MOZ_ASSERT(!internalDispatchQueueClosed_);
       MOZ_ASSERT_IF(!internalDispatchQueue().empty(), !live().empty());
-      if (live().empty()) {
+      if (internalDispatchQueue().empty() && !internalHasPending(lock)) {
         return;
       }
 
+      
       
       
       while (internalDispatchQueue().empty()) {
@@ -223,12 +268,17 @@ void OffThreadPromiseRuntimeState::internalDrain(JSContext* cx) {
 }
 
 bool OffThreadPromiseRuntimeState::internalHasPending() {
+  AutoLockHelperThreadState lock;
+  return internalHasPending(lock);
+}
+
+bool OffThreadPromiseRuntimeState::internalHasPending(
+    AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(usingInternalDispatchQueue());
 
-  AutoLockHelperThreadState lock;
   MOZ_ASSERT(!internalDispatchQueueClosed_);
   MOZ_ASSERT_IF(!internalDispatchQueue().empty(), !live().empty());
-  return !live().empty();
+  return live().count() > numCancellable_;
 }
 
 void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
@@ -237,6 +287,19 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   }
 
   AutoLockHelperThreadState lock;
+
+  
+  
+  
+  for (auto iter = live().iter(); !iter.done(); iter.next()) {
+    OffThreadPromiseTask* task = iter.get();
+
+    
+    if (task->cancellable_) {
+      AutoUnlockHelperThreadState unlock(lock);
+      OffThreadPromiseTask::DestroyUndispatchedTask(task);
+    }
+  }
 
   
   
@@ -272,9 +335,9 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   
   
   
-  while (live().count() != numCanceled_) {
-    MOZ_ASSERT(numCanceled_ < live().count());
-    allCanceled().wait(lock);
+  while (live().count() != numFailed_) {
+    MOZ_ASSERT(numFailed_ < live().count());
+    allFailed().wait(lock);
   }
 
   
@@ -290,7 +353,7 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
     js_delete(task);
   }
   live().clear();
-  numCanceled_ = 0;
+  numFailed_ = 0;
 
   
   

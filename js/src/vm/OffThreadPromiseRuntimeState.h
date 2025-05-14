@@ -15,6 +15,7 @@
 #include "js/AllocPolicy.h"  
 #include "js/HashTable.h"    
 #include "js/Promise.h"  
+                         
 #include "js/RootingAPI.h"                
 #include "threading/ConditionVariable.h"  
 #include "vm/PromiseObject.h"             
@@ -101,12 +102,27 @@ class OffThreadPromiseRuntimeState;
 
 
 
+
+
+
+
 class OffThreadPromiseTask : public JS::Dispatchable {
   friend class OffThreadPromiseRuntimeState;
 
   JSRuntime* runtime_;
   JS::PersistentRooted<PromiseObject*> promise_;
+
+  
+  
+  
   bool registered_;
+
+  
+  
+  
+  
+  
+  bool cancellable_;
 
   void operator=(const OffThreadPromiseTask&) = delete;
   OffThreadPromiseTask(const OffThreadPromiseTask&) = delete;
@@ -122,13 +138,27 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   
   void run(JSContext* cx, MaybeShuttingDown maybeShuttingDown) final;
 
+  
+  
+  
+  virtual void prepareForCancel() {
+    MOZ_CRASH("Undispatched tasks should override prepareForCancel");
+  }
+
  public:
   ~OffThreadPromiseTask() override;
+  static void DestroyUndispatchedTask(OffThreadPromiseTask* task);
 
   
   
   
   bool init(JSContext* cx);
+  bool init(JSContext* cx, const AutoLockHelperThreadState& lock);
+
+  
+  
+  bool initCancellable(JSContext* cx);
+  bool initCancellable(JSContext* cx, const AutoLockHelperThreadState& lock);
 
   
   
@@ -155,6 +185,7 @@ class OffThreadPromiseRuntimeState {
 
   
   
+  
   HelperThreadLockData<OffThreadPromiseTaskSet> live_;
 
   
@@ -162,8 +193,17 @@ class OffThreadPromiseRuntimeState {
   
   
   
-  HelperThreadLockData<ConditionVariable> allCanceled_;
-  HelperThreadLockData<size_t> numCanceled_;
+  
+  HelperThreadLockData<ConditionVariable> allFailed_;
+  HelperThreadLockData<size_t> numFailed_;
+
+  
+  
+  
+  
+  
+  
+  HelperThreadLockData<size_t> numCancellable_;
 
   
   
@@ -172,7 +212,7 @@ class OffThreadPromiseRuntimeState {
   HelperThreadLockData<bool> internalDispatchQueueClosed_;
 
   OffThreadPromiseTaskSet& live() { return live_.ref(); }
-  ConditionVariable& allCanceled() { return allCanceled_.ref(); }
+  ConditionVariable& allFailed() { return allFailed_.ref(); }
 
   DispatchableFifo& internalDispatchQueue() {
     return internalDispatchQueue_.ref();
@@ -198,6 +238,7 @@ class OffThreadPromiseRuntimeState {
   
   void internalDrain(JSContext* cx);
   bool internalHasPending();
+  bool internalHasPending(AutoLockHelperThreadState& lock);
 
   
   void shutdown(JSContext* cx);
