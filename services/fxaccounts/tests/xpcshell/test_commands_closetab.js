@@ -17,8 +17,8 @@ const { getRemoteCommandStore, RemoteCommand } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
+  NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
 });
 
 class TelemetryMock {
@@ -81,7 +81,7 @@ add_task(async function test_closetab_isDeviceCompatible() {
   
   await ExperimentManager.onStartup();
   await ExperimentAPI.ready();
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "remoteTabManagement",
     
     value: {
