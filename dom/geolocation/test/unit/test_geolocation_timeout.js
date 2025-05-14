@@ -39,6 +39,11 @@ function run_test() {
   do_test_pending();
 
   if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+    
+    
+    
+    do_get_profile();
+
     httpserver = new HttpServer();
     httpserver.registerPathHandler("/geo", geoHandler);
     httpserver.start(-1);

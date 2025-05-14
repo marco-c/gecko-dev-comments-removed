@@ -26,6 +26,11 @@ var provider = {
 };
 
 function run_test() {
+  
+  
+  
+  do_get_profile();
+
   Components.manager.nsIComponentRegistrar.registerFactory(
     providerCID,
     "Unit test geo provider",

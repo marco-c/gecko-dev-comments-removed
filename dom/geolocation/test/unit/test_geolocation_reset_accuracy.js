@@ -40,6 +40,11 @@ var watchID2;
 
 function run_test() {
   if (runningInParent) {
+    
+    
+    
+    do_get_profile();
+
     Components.manager.nsIComponentRegistrar.registerFactory(
       providerCID,
       "Unit test geo provider",
