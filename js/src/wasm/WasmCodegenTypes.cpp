@@ -382,8 +382,26 @@ CalleeDesc CalleeDesc::wasmFuncRef() {
   return c;
 }
 
-void TierStats::print() const {
-  
+void CompileStats::merge(const CompileStats& other) {
+  MOZ_ASSERT(&other != this);
+  numFuncs += other.numFuncs;
+  bytecodeSize += other.bytecodeSize;
+  inlinedDirectCallCount += other.inlinedDirectCallCount;
+  inlinedCallRefCount += other.inlinedCallRefCount;
+  inlinedDirectCallBytecodeSize += other.inlinedDirectCallBytecodeSize;
+  inlinedCallRefBytecodeSize += other.inlinedCallRefBytecodeSize;
+  numInliningBudgetOverruns += other.numInliningBudgetOverruns;
+}
+
+void CompileAndLinkStats::merge(const CompileAndLinkStats& other) {
+  MOZ_ASSERT(&other != this);
+  CompileStats::merge(other);
+  codeBytesMapped += other.codeBytesMapped;
+  codeBytesUsed += other.codeBytesUsed;
+}
+
+void CompileAndLinkStats::print() const {
+#ifdef JS_JITSPEW
   
   
   
@@ -405,19 +423,25 @@ void TierStats::print() const {
   JS_LOG(wasmPerf, Info, "    %7zu bytes actually used for code storage",
          codeBytesUsed);
 
+  size_t inlinedTotalBytecodeSize =
+      inlinedDirectCallBytecodeSize + inlinedCallRefBytecodeSize;
+
+  
   
   
   
   float inliningExpansion =
-      float(inlinedDirectCallBytecodeSize + inlinedCallRefBytecodeSize) /
-      float(bytecodeSize);
+      inlinedTotalBytecodeSize == 0
+          ? 0.0
+          : float(inlinedTotalBytecodeSize) / float(bytecodeSize);
 
   
-  float codeSpaceUseRatio = float(codeBytesUsed) / float(codeBytesMapped);
+  float codeSpaceUseRatio =
+      codeBytesUsed == 0 ? 0.0 : float(codeBytesUsed) / float(codeBytesMapped);
 
   JS_LOG(wasmPerf, Info, "     %5.1f%% bytecode expansion caused by inlining",
          inliningExpansion * 100.0);
   JS_LOG(wasmPerf, Info, "      %4.1f%% of mapped code space used",
          codeSpaceUseRatio * 100.0);
-  
+#endif
 }

@@ -306,7 +306,7 @@ class RootCompiler {
   InlinedCallerOffsetIndex inlinedCallerOffsetsIndex_;
 
   
-  TierStats tierStats_;
+  CompileStats funcStats_;
 
   
   InliningStats inliningStats_;
@@ -359,7 +359,7 @@ class RootCompiler {
   MIRGenerator& mirGen() { return mirGen_; }
   int64_t inliningBudget() const { return localInliningBudget_; }
   FeatureUsage observedFeatures() const { return observedFeatures_; }
-  const TierStats& tierStats() const { return tierStats_; }
+  const CompileStats& funcStats() const { return funcStats_; }
 
   uint32_t loopDepth() const { return loopDepth_; }
   void startLoop() { loopDepth_++; }
@@ -10554,13 +10554,13 @@ bool RootCompiler::generate() {
 
   MOZ_ASSERT(loopDepth_ == 0);
 
-  tierStats_.numFuncs += 1;
-  tierStats_.bytecodeSize += func_.end - func_.begin;
-  tierStats_.inlinedDirectCallCount += inliningStats_.inlinedDirectFunctions;
-  tierStats_.inlinedCallRefCount += inliningStats_.inlinedCallRefFunctions;
-  tierStats_.inlinedDirectCallBytecodeSize +=
+  funcStats_.numFuncs += 1;
+  funcStats_.bytecodeSize += func_.end - func_.begin;
+  funcStats_.inlinedDirectCallCount += inliningStats_.inlinedDirectFunctions;
+  funcStats_.inlinedCallRefCount += inliningStats_.inlinedCallRefFunctions;
+  funcStats_.inlinedDirectCallBytecodeSize +=
       inliningStats_.inlinedDirectBytecodeSize;
-  tierStats_.inlinedCallRefBytecodeSize +=
+  funcStats_.inlinedCallRefBytecodeSize +=
       inliningStats_.inlinedCallRefBytecodeSize;
 
   if (codeTailMeta_) {
@@ -10581,7 +10581,7 @@ bool RootCompiler::generate() {
     
     
     if (localInliningBudget_ < 0) {
-      tierStats_.numInliningBudgetOverruns += 1;
+      funcStats_.numInliningBudgetOverruns += 1;
     }
   }
 
@@ -10708,9 +10708,6 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     code->featureUsage |= observedFeatures;
 
     
-    code->tierStats.merge(rootCompiler.tierStats());
-
-    
     {
       jit::SpewBeginWasmFunction(&rootCompiler.mirGen(), func.index);
       jit::AutoSpewEndFunction spewEndFunction(&rootCompiler.mirGen());
@@ -10754,6 +10751,9 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
         }
       }
     }
+
+    
+    code->compileStats.merge(rootCompiler.funcStats());
 
     
     if (!code->funcs.emplaceBack(func.index, observedFeatures)) {

@@ -1716,36 +1716,73 @@ using FuncBaselinePerfSpewerVector =
     Vector<FuncBaselinePerfSpewer, 8, SystemAllocPolicy>;
 using FuncBaselinePerfSpewerSpan = mozilla::Span<FuncBaselinePerfSpewer>;
 
-struct TierStats {
-  
-  size_t numFuncs = 0;
-  
-  size_t bytecodeSize = 0;
-  
-  size_t inlinedDirectCallCount = 0;
-  size_t inlinedCallRefCount = 0;
-  
-  size_t inlinedDirectCallBytecodeSize = 0;
-  size_t inlinedCallRefBytecodeSize = 0;
-  
-  size_t numInliningBudgetOverruns = 0;
-  
-  
-  size_t codeBytesMapped = 0;
-  
-  size_t codeBytesUsed = 0;
 
-  void merge(const TierStats& other) {
-    numFuncs += other.numFuncs;
-    bytecodeSize += other.bytecodeSize;
-    inlinedDirectCallCount += other.inlinedDirectCallCount;
-    inlinedCallRefCount += other.inlinedCallRefCount;
-    inlinedDirectCallBytecodeSize += other.inlinedDirectCallBytecodeSize;
-    inlinedCallRefBytecodeSize += other.inlinedCallRefBytecodeSize;
-    numInliningBudgetOverruns += other.numInliningBudgetOverruns;
-    codeBytesMapped += other.codeBytesMapped;
-    codeBytesUsed += other.codeBytesUsed;
+
+struct CompileStats {
+  
+  size_t numFuncs;
+  
+  size_t bytecodeSize;
+  
+  size_t inlinedDirectCallCount;
+  size_t inlinedCallRefCount;
+  
+  size_t inlinedDirectCallBytecodeSize;
+  size_t inlinedCallRefBytecodeSize;
+  
+  size_t numInliningBudgetOverruns;
+
+  void clear() {
+    numFuncs = 0;
+    bytecodeSize = 0;
+    inlinedDirectCallCount = 0;
+    inlinedCallRefCount = 0;
+    inlinedDirectCallBytecodeSize = 0;
+    inlinedCallRefBytecodeSize = 0;
+    numInliningBudgetOverruns = 0;
   }
+  CompileStats() { clear(); }
+
+  bool empty() const {
+    return 0 == (numFuncs | bytecodeSize | inlinedDirectCallCount |
+                 inlinedCallRefCount | inlinedDirectCallBytecodeSize |
+                 inlinedCallRefBytecodeSize | numInliningBudgetOverruns);
+  }
+
+  
+  
+  
+  
+  
+  void merge(const CompileStats& other);
+};
+
+
+struct CompileAndLinkStats : public CompileStats {
+  
+  size_t codeBytesMapped;
+  
+  size_t codeBytesUsed;
+
+  void clear() {
+    CompileStats::clear();
+    codeBytesMapped = 0;
+    codeBytesUsed = 0;
+  }
+  CompileAndLinkStats() { clear(); }
+
+  bool empty() const {
+    return 0 == (codeBytesMapped | codeBytesUsed) && CompileStats::empty();
+  }
+
+  
+  void merge(const CompileAndLinkStats& other);
+
+  
+  void mergeCompileStats(const CompileStats& other) {
+    CompileStats::merge(other);
+  }
+
   void print() const;
 };
 
