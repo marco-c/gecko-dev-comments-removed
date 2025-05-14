@@ -166,6 +166,17 @@ class DMABufSurface {
 
   
   
+  uint32_t GetPID() const { return mPID; };
+
+  bool Matches(DMABufSurface* aSurface) const {
+    return mUID == aSurface->mUID && mPID == aSurface->mPID;
+  }
+
+  bool CanRecycle() const { return mCanRecycle && mPID; }
+  void DisableRecycle() { mCanRecycle = false; }
+
+  
+  
   
   
   
@@ -273,8 +284,23 @@ class DMABufSurface {
   RefPtr<mozilla::gfx::FileHandleWrapper> mSemaphoreFd;
   RefPtr<mozilla::gl::GLContext> mGL;
 
+  
+  
+
+  
+  
   int mGlobalRefCountFd;
+
+  
+  
   uint32_t mUID;
+  uint32_t mPID;
+
+  
+  
+  
+  
+  bool mCanRecycle;
 
   mozilla::Mutex mSurfaceLock MOZ_UNANNOTATED;
 
