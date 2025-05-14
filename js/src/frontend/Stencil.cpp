@@ -52,6 +52,7 @@
 #include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
+#include "vm/JSAtomUtils.h"            
 #include "vm/JSContext.h"              
 #include "vm/JSFunction.h"  
 #include "vm/JSObject.h"      
@@ -2945,9 +2946,17 @@ bool CompilationStencil::delazifySelfHostedFunction(
     
     
     
+    UniqueChars nameStr;
+    if (JS_SHOULD_LOG(selfHosted, Debug)) {
+      nameStr = AtomToPrintableString(cx, name);
+    }
     auto& jitCache = cx->runtime()->selfHostJitCache.ref();
     auto v = jitCache.readonlyThreadsafeLookup(jitCacheKey);
     if (v && v->value()->method()) {
+      JS_LOG(selfHosted, Debug,
+             "self_hosted_cache: reusing JIT code for script '%s'",
+             nameStr.get());
+
       if (!cx->zone()->ensureJitZoneExists(cx)) {
         return false;
       }
@@ -2973,6 +2982,10 @@ bool CompilationStencil::delazifySelfHostedFunction(
     } else if (jit::IsBaselineJitEnabled(cx) && script->canBaselineCompile() &&
                !script->hasBaselineScript() &&
                jit::CanBaselineInterpretScript(script)) {
+      JS_LOG(selfHosted, Debug,
+             "self_hosted_cache: new JIT code entry for script '%s'",
+             nameStr.get());
+
       if (!cx->zone()->ensureJitZoneExists(cx)) {
         return false;
       }
@@ -2999,6 +3012,11 @@ bool CompilationStencil::delazifySelfHostedFunction(
       if (!jitCache.put(jitCacheKey, baselineScript)) {
         return false;
       }
+    } else {
+      JS_LOG(selfHosted, Debug,
+             "self_hosted_cache: script '%s' is not eligible for Baseline "
+             "compilation",
+             nameStr.get());
     }
   }
 
