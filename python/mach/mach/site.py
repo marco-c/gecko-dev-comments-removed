@@ -378,6 +378,38 @@ class MachSiteManager:
             )
 
     def ensure(self, *, force=False):
+        root = None
+        if self._virtualenv_root:
+            root = self._virtualenv_root
+        else:
+            workspace = os.environ.get("WORKSPACE")
+            if os.environ.get("MOZ_AUTOMATION") and workspace:
+                
+                
+                root = os.path.join(workspace, "mach_virtualenv")
+
+        
+        
+        if root:
+            lock_file = Path(root).with_suffix(".lock")
+            timeout = 60
+
+            
+            
+            
+            
+            
+            try:
+                with FileLock(lock_file, timeout=timeout):
+                    self._ensure(force=force)
+            except Timeout:
+                self._log(
+                    f"Could not acquire the lock at {lock_file} for the mach site after {timeout} seconds."
+                )
+        else:
+            self._ensure(force=force)
+
+    def _ensure(self, force=False):
         result = self._up_to_date()
         if force or not result.is_up_to_date:
             if Path(sys.prefix) == Path(self._metadata.prefix):
