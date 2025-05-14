@@ -50,6 +50,7 @@ class GeckoInstance:
         "browser.newtabpage.activity-stream.discoverystream.region-weather-config": "",
         
         "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
+        
         "browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled": False,
         
         "browser.newtabpage.activity-stream.showSponsoredTopSites": False,

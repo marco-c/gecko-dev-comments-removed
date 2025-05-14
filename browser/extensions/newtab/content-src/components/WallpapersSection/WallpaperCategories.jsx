@@ -384,11 +384,6 @@ export class _WallpaperCategories extends React.PureComponent {
       return arr;
     }
 
-    let categorySectionClassname = "category wallpaper-list";
-    if (prefs["newtabWallpapers.v2.enabled"]) {
-      categorySectionClassname += " ignore-color-mode";
-    }
-
     let wallpaperCustomSolidColorHex = null;
 
     const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
@@ -512,7 +507,7 @@ export class _WallpaperCategories extends React.PureComponent {
               }
               return (
                 <div key={category}>
-                  <input
+                  <button
                     ref={el => {
                       if (el) {
                         this.categoryRef[index] = el;
@@ -520,7 +515,6 @@ export class _WallpaperCategories extends React.PureComponent {
                     }}
                     id={category}
                     style={style}
-                    type="button"
                     onKeyDown={e => this.handleCategoryKeyDown(e, category)}
                     // Add overrides for custom wallpaper upload UI
                     onClick={
@@ -562,7 +556,7 @@ export class _WallpaperCategories extends React.PureComponent {
           classNames="wallpaper-list"
           unmountOnExit={true}
         >
-          <section className={categorySectionClassname}>
+          <section className="category wallpaper-list ignore-color-mode">
             <button
               className="arrow-button"
               data-l10n-id={activeCategoryFluentID}
