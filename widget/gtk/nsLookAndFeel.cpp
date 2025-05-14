@@ -1501,6 +1501,7 @@ bool nsLookAndFeel::ConfigureAltTheme() {
 
 
 
+
 void nsLookAndFeel::MaybeApplyColorOverrides() {
   auto& dark = mSystemTheme.mIsDark ? mSystemTheme : mAltTheme;
   auto& light = mSystemTheme.mIsDark ? mAltTheme : mSystemTheme;
@@ -1533,35 +1534,88 @@ void nsLookAndFeel::MaybeApplyColorOverrides() {
   }
 
   if (StaticPrefs::widget_gtk_libadwaita_colors_enabled()) {
+    
+    
+    auto ApplyLibadwaitaButtonColors = [](PerThemeData& aTheme) {
+      aTheme.mButtonBorder = NS_TRANSPARENT;
+      aTheme.mButton = aTheme.mButtonHover = aTheme.mButtonActive =
+          aTheme.mField = aTheme.mWindow;
+      
+      
+      aTheme.mButton.mBg = aTheme.mField.mBg = NS_ComposeColors(
+          aTheme.mWindow.mBg,
+          NS_RGBA(NS_GET_R(aTheme.mWindow.mFg), NS_GET_G(aTheme.mWindow.mFg),
+                  NS_GET_B(aTheme.mWindow.mFg), 26));
+      aTheme.mButtonHover.mBg = NS_ComposeColors(
+          aTheme.mWindow.mBg,
+          NS_RGBA(NS_GET_R(aTheme.mWindow.mFg), NS_GET_G(aTheme.mWindow.mFg),
+                  NS_GET_B(aTheme.mWindow.mFg), 39));
+      aTheme.mButtonActive.mBg = NS_ComposeColors(
+          aTheme.mWindow.mBg,
+          NS_RGBA(NS_GET_R(aTheme.mWindow.mFg), NS_GET_G(aTheme.mWindow.mFg),
+                  NS_GET_B(aTheme.mWindow.mFg), 77));
+    };
+
     if (light.mFamily == ThemeFamily::Adwaita) {
       
-      light.mWindow =
-          light.mDialog = {NS_RGB(0xfa, 0xfa, 0xfa), NS_RGB(0x32, 0x32, 0x32)};
-      light.mField = {NS_RGB(0xff, 0xff, 0xff), NS_RGB(0x32, 0x32, 0x32)};
+      light.mWindow.mBg = NS_RGB(0xfa, 0xfa, 0xfb);
+      light.mWindow.mFg =
+          NS_ComposeColors(light.mWindow.mBg, NS_RGBA(0, 0, 6, 204));
+      light.mDialog = light.mWindow;
+
+      ApplyLibadwaitaButtonColors(light);
 
       
       
       
       
-      light.mSidebar = light.mHeaderBar = light.mTitlebar = {
-          NS_RGB(0xeb, 0xeb, 0xeb), NS_RGB(0x2f, 0x2f, 0x2f)};
-      light.mHeaderBarInactive = light.mTitlebarInactive = {
-          NS_RGB(0xf2, 0xf2, 0xf2), NS_RGB(0x2f, 0x2f, 0x2f)};
+      light.mField.mBg = NS_RGB(0xff, 0xff, 0xff);
+
+      
+      light.mSidebar.mBg = NS_RGB(0xeb, 0xeb, 0xed);
+      light.mSidebar.mFg =
+          NS_ComposeColors(light.mSidebar.mBg, NS_RGBA(0, 0, 6, 204));
+
+      
+      
+      
+      
+      light.mHeaderBar = light.mTitlebar = light.mHeaderBarInactive =
+          light.mTitlebarInactive = light.mSidebar;
+
+      
+      light.mHeaderBarInactive.mBg = light.mTitlebarInactive.mBg =
+          light.mWindow.mBg;
+
       light.mThreeDShadow = NS_RGB(0xe0, 0xe0, 0xe0);
       light.mSidebarBorder = NS_RGBA(0, 0, 0, 18);
+
+      
+      light.mMenu.mBg = NS_RGB(0xff, 0xff, 0xff);
+      light.mMenu.mFg =
+          NS_ComposeColors(light.mMenu.mBg, NS_RGBA(0, 0, 6, 204));
     }
 
     if (dark.mFamily == ThemeFamily::Adwaita) {
-      dark.mWindow = {NS_RGB(0x24, 0x24, 0x24), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mDialog = {NS_RGB(0x38, 0x38, 0x38), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mField = {NS_RGB(0x3a, 0x3a, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mSidebar = dark.mHeaderBar =
-          dark.mTitlebar = {NS_RGB(0x30, 0x30, 0x30), NS_RGB(0xff, 0xff, 0xff)};
-      dark.mHeaderBarInactive = dark.mTitlebarInactive = {
-          NS_RGB(0x24, 0x24, 0x24), NS_RGB(0xff, 0xff, 0xff)};
+      dark.mWindow = {NS_RGB(0x22, 0x22, 0x26), NS_RGB(0xff, 0xff, 0xff)};
+      dark.mDialog = {NS_RGB(0x36, 0x36, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
+
+      ApplyLibadwaitaButtonColors(dark);
+
+      dark.mSidebar = dark.mHeaderBar = dark.mTitlebar =
+          dark.mHeaderBarInactive = dark.mTitlebarInactive = {
+              NS_RGB(0x2e, 0x2e, 0x32), NS_RGB(0xff, 0xff, 0xff)};
+
+      
+      dark.mHeaderBarInactive.mBg = dark.mTitlebarInactive.mBg =
+          dark.mWindow.mBg;
+
       
       dark.mThreeDShadow = NS_RGB(0x1f, 0x1f, 0x1f);
       dark.mSidebarBorder = NS_RGBA(0, 0, 0, 92);
+
+      
+      dark.mMenu = {NS_RGB(0x36, 0x36, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
     }
   }
 
