@@ -492,21 +492,6 @@ FFmpegDataEncoder<LIBAV_VER>::ToMediaRawDataCommon(AVPacket* aPacket) {
   }
 
   data->mKeyframe = (aPacket->flags & AV_PKT_FLAG_KEY) != 0;
-  
-  
-  
-  data->mTime = media::TimeUnit::FromMicroseconds(aPacket->pts);
-#if LIBAVCODEC_VERSION_MAJOR >= 60
-  data->mDuration = media::TimeUnit::FromMicroseconds(aPacket->duration);
-#else
-  int64_t duration;
-  if (mDurationMap.Find(aPacket->pts, duration)) {
-    data->mDuration = media::TimeUnit::FromMicroseconds(duration);
-  } else {
-    data->mDuration = media::TimeUnit::FromMicroseconds(aPacket->duration);
-  }
-#endif
-  data->mTimecode = media::TimeUnit::FromMicroseconds(aPacket->dts);
 
   if (auto r = GetExtraData(aPacket); r.isOk()) {
     data->mExtraData = r.unwrap();
