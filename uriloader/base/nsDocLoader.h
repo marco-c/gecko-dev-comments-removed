@@ -332,6 +332,11 @@ class nsDocLoader : public nsIDocumentLoader,
 
   bool mDocumentOpenedButNotLoaded;
 
+  
+
+
+  bool mIsLoadingJavascriptURI = false;
+
   bool mNotifyAboutBackgroundRequests;
 
   static const PLDHashTableOps sRequestInfoHashOps;
@@ -361,7 +366,8 @@ class nsDocLoader : public nsIDocumentLoader,
 
 
   bool IsBlockingLoadEvent() const {
-    return mIsLoadingDocument || mDocumentOpenedButNotLoaded;
+    return mIsLoadingDocument || mDocumentOpenedButNotLoaded ||
+           mIsLoadingJavascriptURI;
   }
 
   RefPtr<mozilla::intl::Localization> mL10n;
