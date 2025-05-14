@@ -509,3 +509,26 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   dispatchToEventLoopCallback_ = nullptr;
   MOZ_ASSERT(!initialized());
 }
+
+
+js::PromiseObject* OffThreadPromiseTask::ExtractAndForget(
+    OffThreadPromiseTask* task, const AutoLockHelperThreadState& lock) {
+  OffThreadPromiseRuntimeState& state =
+      task->runtime()->offThreadPromiseState.ref();
+  MOZ_ASSERT(state.initialized());
+  MOZ_ASSERT(task->registered_);
+
+  
+  
+  
+  state.numRegistered_--;
+  if (task->cancellable_) {
+    state.cancellable().remove(task);
+  }
+  task->registered_ = false;
+
+  js::PromiseObject* promise = task->promise_;
+  js_delete(task);
+
+  return promise;
+}

@@ -186,8 +186,11 @@ class FutexThread {
 
 
 
-[[nodiscard]] int64_t atomics_notify_impl(SharedArrayRawBuffer* sarb,
-                                          size_t byteOffset, int64_t count);
+
+[[nodiscard]] bool atomics_notify_impl(JSContext* cx,
+                                       SharedArrayRawBuffer* sarb,
+                                       size_t byteOffset, int64_t count,
+                                       int64_t* woken);
 
 } 
 

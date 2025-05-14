@@ -109,6 +109,12 @@ class OffThreadPromiseRuntimeState;
 
 
 
+
+
+
+
+
+
 class OffThreadPromiseTask : public JS::Dispatchable {
   friend class OffThreadPromiseRuntimeState;
 
@@ -201,6 +207,9 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   static void DispatchResolveAndDestroy(
       js::UniquePtr<OffThreadPromiseTask>&& task,
       const AutoLockHelperThreadState& lock);
+
+  static PromiseObject* ExtractAndForget(OffThreadPromiseTask* task,
+                                         const AutoLockHelperThreadState& lock);
 };
 
 using OffThreadPromiseTaskSet =

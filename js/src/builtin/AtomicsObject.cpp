@@ -702,6 +702,16 @@ namespace js {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class WaitAsyncNotifyTask;
 class WaitAsyncTimeoutTask;
 
@@ -720,7 +730,6 @@ class AutoLockFutexAPI {
 
   js::UniqueLock<js::Mutex>& unique() { return *unique_; }
 };
-
 
 
 
@@ -1365,68 +1374,91 @@ static bool atomics_wait_async(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
-                                int64_t count) {
+bool js::atomics_notify_impl(JSContext* cx, SharedArrayRawBuffer* sarb,
+                             size_t byteOffset, int64_t count, int64_t* woken) {
+  MOZ_ASSERT(woken);
+
   
   MOZ_ASSERT(sarb, "notify is only applicable to shared memory");
 
   
-  int64_t woken = 0;
+  *woken = 0;
 
-  
-  AutoLockHelperThreadState helperLock;
-  AutoLockFutexAPI lock;
-
-  
-  FutexWaiterListNode* waiterListHead = sarb->waiters();
-  FutexWaiterListNode* iter = waiterListHead->next();
-  while (count && iter != waiterListHead) {
-    FutexWaiter* waiter = iter->toWaiter();
-    iter = iter->next();
-    if (byteOffset != waiter->offset()) {
-      continue;
-    }
-
-    if (waiter->isSync()) {
-      
-      
-      
-      if (!waiter->cx()->fx.isWaiting()) {
+  Rooted<GCVector<PromiseObject*>> promisesToResolve(
+      cx, GCVector<PromiseObject*>(cx));
+  {
+    
+    AutoLockHelperThreadState helperLock;
+    AutoLockFutexAPI lock;
+    
+    FutexWaiterListNode* waiterListHead = sarb->waiters();
+    FutexWaiterListNode* iter = waiterListHead->next();
+    while (count && iter != waiterListHead) {
+      FutexWaiter* waiter = iter->toWaiter();
+      iter = iter->next();
+      if (byteOffset != waiter->offset()) {
         continue;
       }
-      waiter->cx()->fx.notify(FutexThread::NotifyExplicit);
-    } else {
-      
-      
-      
+      if (waiter->isSync()) {
+        
+        
+        
+        if (!waiter->cx()->fx.isWaiting()) {
+          continue;
+        }
+        waiter->cx()->fx.notify(FutexThread::NotifyExplicit);
+      } else {
+        
 
+        
+        
+        
+        UniquePtr<AsyncFutexWaiter> asyncWaiter(
+            RemoveAsyncWaiter(waiter->asAsync(), lock));
+        asyncWaiter->maybeClearTimeout(lock);
+        
+        
+        
+        OffThreadPromiseTask* task = asyncWaiter->notifyTask();
+        if (waiter->cx() == cx) {
+          
+          
+          PromiseObject* promise =
+              OffThreadPromiseTask::ExtractAndForget(task, helperLock);
+          if (!promisesToResolve.append(promise)) {
+            return false;
+          }
+        } else {
+          
+          task->removeFromCancellableListAndDispatch(helperLock);
+        }
+      }
       
       
       
-      UniquePtr<AsyncFutexWaiter> asyncWaiter(
-          RemoveAsyncWaiter(waiter->asAsync(), lock));
-
-      asyncWaiter->maybeClearTimeout(lock);
-
       
-      asyncWaiter->notifyTask()->removeFromCancellableListAndDispatch(
-          helperLock);
-    }
-
-    
-    
-    
-    
-    
-    MOZ_RELEASE_ASSERT(woken < INT64_MAX);
-    ++woken;
-    if (count > 0) {
-      --count;
+      
+      MOZ_RELEASE_ASSERT(*woken < INT64_MAX);
+      (*woken)++;
+      if (count > 0) {
+        --count;
+      }
     }
   }
 
   
-  return woken;
+  
+  
+  RootedValue resultMsg(cx, StringValue(cx->names().ok));
+  for (uint32_t i = 0; i < promisesToResolve.length(); i++) {
+    if (!PromiseObject::resolve(cx, promisesToResolve[i], resultMsg)) {
+      MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
+      return false;
+    }
+  }
+
+  
+  return true;
 }
 
 
@@ -1490,8 +1522,14 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
   size_t indexedPosition = intIndex * elementSize + *offset;
 
   
-  r.setNumber(double(atomics_notify_impl(unwrappedSab->rawBufferObject(),
-                                         indexedPosition, count)));
+
+  int64_t woken = 0;
+  if (!atomics_notify_impl(cx, unwrappedSab->rawBufferObject(), indexedPosition,
+                           count, &woken)) {
+    return false;
+  }
+
+  r.setNumber(double(woken));
 
   return true;
 }
