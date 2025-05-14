@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_BaselineCodeGen_h
 #define jit_BaselineCodeGen_h
@@ -30,10 +30,10 @@ enum class ScriptGCThingType {
   BigInt
 };
 
-// Base class for BaselineCompiler and BaselineInterpreterGenerator. The Handler
-// template is a class storing fields/methods that are interpreter or compiler
-// specific. This can be combined with template specialization of methods in
-// this class to specialize behavior.
+
+
+
+
 template <typename Handler>
 class BaselineCodeGen {
  protected:
@@ -44,23 +44,23 @@ class BaselineCodeGen {
 
   typename Handler::FrameInfoT& frame;
 
-  // Shared epilogue code to return to the caller.
+  
   NonAssertingLabel return_;
 
   NonAssertingLabel postBarrierSlot_;
 
-  // Prologue code where we resume for Ion prologue bailouts.
+  
   NonAssertingLabel bailoutPrologue_;
 
   CodeOffset profilerEnterFrameToggleOffset_;
   CodeOffset profilerExitFrameToggleOffset_;
 
-  // Early Ion bailouts will enter at this address. This is after frame
-  // construction and before environment chain is initialized.
+  
+  
   CodeOffset bailoutPrologueOffset_;
 
-  // Baseline Interpreter can enter Baseline Compiler code at this address. This
-  // is right after the warm-up counter check in the prologue.
+  
+  
   CodeOffset warmUpCheckPrologueOffset_;
 
   uint32_t pushedBeforeCall_ = 0;
@@ -77,48 +77,53 @@ class BaselineCodeGen {
     masm.Push(t);
   }
 
-  // Pushes the current script as argument for a VM function.
+  
   void pushScriptArg();
 
-  // Pushes the bytecode pc as argument for a VM function.
+  
   void pushBytecodePCArg();
 
-  // Pushes a name/object/scope associated with the current bytecode op (and
-  // stored in the script) as argument for a VM function.
+  
+  
   void loadScriptGCThing(ScriptGCThingType type, Register dest,
                          Register scratch);
   void pushScriptGCThingArg(ScriptGCThingType type, Register scratch1,
                             Register scratch2);
   void pushScriptNameArg(Register scratch1, Register scratch2);
 
-  // Pushes a bytecode operand as argument for a VM function.
+  
   void pushUint8BytecodeOperandArg(Register scratch);
   void pushUint16BytecodeOperandArg(Register scratch);
 
   void loadInt32LengthBytecodeOperand(Register dest);
   void loadNumFormalArguments(Register dest);
 
-  // Loads the current JSScript* in dest.
+  
   void loadScript(Register dest);
+  
+  void loadJitScript(Register dest);
 
   void saveInterpreterPCReg();
   void restoreInterpreterPCReg();
 
-  // Subtracts |script->nslots() * sizeof(Value)| from reg.
+  
   void subtractScriptSlotsSize(Register reg, Register scratch);
 
-  // Jump to the script's resume entry indicated by resumeIndex.
+  
+  void loadBaselineScriptResumeEntries(Register dest, Register scratch);
+
+  
   void jumpToResumeEntry(Register resumeIndex, Register scratch1,
                          Register scratch2);
 
-  // Load the global's lexical environment.
+  
   void loadGlobalLexicalEnvironment(Register dest);
   void pushGlobalLexicalEnvironmentValue(ValueOperand scratch);
 
-  // Load the |this|-value from the global's lexical environment.
+  
   void loadGlobalThisValue(ValueOperand dest);
 
-  // Computes the frame size. See BaselineFrame::debugFrameSize_.
+  
   void computeFrameSize(Register dest);
 
   void prepareVMCall();
@@ -138,9 +143,9 @@ class BaselineCodeGen {
     return callVM<Fn, fn>(RetAddrEntry::Kind::NonOpCallVM, phase);
   }
 
-  // ifDebuggee should be a function emitting code for when the script is a
-  // debuggee script. ifNotDebuggee (if present) is called to emit code for
-  // non-debuggee scripts.
+  
+  
+  
   template <typename F1, typename F2>
   [[nodiscard]] bool emitDebugInstrumentation(
       const F1& ifDebuggee, const mozilla::Maybe<F2>& ifNotDebuggee);
@@ -155,14 +160,14 @@ class BaselineCodeGen {
   [[nodiscard]] bool emitAfterYieldDebugInstrumentation(const F& ifDebuggee,
                                                         Register scratch);
 
-  // ifSet should be a function emitting code for when the script has |flag|
-  // set. ifNotSet emits code for when the flag isn't set.
+  
+  
   template <typename F1, typename F2>
   [[nodiscard]] bool emitTestScriptFlag(JSScript::ImmutableFlags flag,
                                         const F1& ifSet, const F2& ifNotSet,
                                         Register scratch);
 
-  // If |script->hasFlag(flag) == value|, execute the code emitted by |emit|.
+  
   template <typename F>
   [[nodiscard]] bool emitTestScriptFlag(JSScript::ImmutableFlags flag,
                                         bool value, const F& emit,
@@ -192,34 +197,34 @@ class BaselineCodeGen {
   FOR_EACH_OPCODE(EMIT_OP)
 #undef EMIT_OP
 
-  // JSOp::Pos, JSOp::Neg, JSOp::BitNot, JSOp::Inc, JSOp::Dec, JSOp::ToNumeric.
+  
   [[nodiscard]] bool emitUnaryArith();
 
-  // JSOp::BitXor, JSOp::Lsh, JSOp::Add etc.
+  
   [[nodiscard]] bool emitBinaryArith();
 
-  // Handles JSOp::Lt, JSOp::Gt, and friends
+  
   [[nodiscard]] bool emitCompare();
 
   [[nodiscard]] bool emitConstantStrictEq(JSOp op);
 
-  // Handles JSOp::NewObject and JSOp::NewInit.
+  
   [[nodiscard]] bool emitNewObject();
 
-  // For a JOF_JUMP op, jumps to the op's jump target.
+  
   void emitJump();
 
-  // For a JOF_JUMP op, jumps to the op's jump target depending on the Value
-  // in |val|.
+  
+  
   void emitTestBooleanTruthy(bool branchIfTrue, ValueOperand val);
 
-  // Converts |val| to an index in the jump table and stores this in |dest|
-  // or branches to the default pc if not int32 or out-of-range.
+  
+  
   void emitGetTableSwitchIndex(ValueOperand val, Register dest,
                                Register scratch1, Register scratch2);
 
-  // Jumps to the target of a table switch based on |key| and the
-  // firstResumeIndex stored in JSOp::TableSwitch.
+  
+  
   void emitTableSwitchJump(Register key, Register scratch1, Register scratch2);
 
   [[nodiscard]] bool emitReturn();
@@ -236,8 +241,8 @@ class BaselineCodeGen {
   [[nodiscard]] bool emitSetElemSuper(bool strict);
   [[nodiscard]] bool emitSetPropSuper(bool strict);
 
-  // Try to bake in the result of BindUnqualifiedGName instead of using an IC.
-  // Return true if we managed to optimize the op.
+  
+  
   bool tryOptimizeBindUnqualifiedGlobalName();
 
   [[nodiscard]] bool emitInitPropGetterSetter();
@@ -277,7 +282,7 @@ class BaselineCodeGen {
 using RetAddrEntryVector = js::Vector<RetAddrEntry, 16, SystemAllocPolicy>;
 using AllocSiteIndexVector = js::Vector<uint32_t, 16, SystemAllocPolicy>;
 
-// Interface used by BaselineCodeGen for BaselineCompiler.
+
 class BaselineCompilerHandler {
   CompilerFrameInfo frame_;
   TempAllocator& alloc_;
@@ -289,7 +294,7 @@ class BaselineCompilerHandler {
   RetAddrEntryVector retAddrEntries_;
   AllocSiteIndexVector allocSiteIndices_;
 
-  // Native code offsets for OSR at JSOp::LoopHead ops.
+  
   using OSREntryVector =
       Vector<BaselineScript::OSREntry, 16, SystemAllocPolicy>;
   OSREntryVector osrEntries_;
@@ -300,7 +305,7 @@ class BaselineCompilerHandler {
   JSObject* globalLexicalEnvironment_;
   JSObject* globalThis_;
 
-  // Index of the current ICEntry in the script's JitScript.
+  
   uint32_t icEntryIndex_;
 
   uint32_t baseWarmUpThreshold_;
@@ -331,14 +336,18 @@ class BaselineCompilerHandler {
   bool isDefinitelyLastOp() const { return pc_ == script_->lastPC(); }
 
   bool shouldEmitDebugEpilogueAtReturnOp() const {
-    // The JIT uses the return address -> pc mapping and bakes in the pc
-    // argument so the DebugEpilogue call needs to be part of the returning
-    // bytecode op for this to work.
+    
+    
+    
     return true;
   }
 
   JSScript* script() const { return script_; }
-  JSScript* scriptInternal() const { return script_; }
+  
+  JSScript* scriptInternal() const {
+    MOZ_ASSERT(!isSelfHosted());
+    return script_;
+  }
   JSScript* maybeScript() const { return script_; }
 
   JSFunction* function() const { return script_->function(); }
@@ -364,8 +373,8 @@ class BaselineCompilerHandler {
   [[nodiscard]] bool recordCallRetAddr(RetAddrEntry::Kind kind,
                                        uint32_t retOffset);
 
-  // If a script has more |nslots| than this the stack check must account
-  // for these slots explicitly.
+  
+  
   bool mustIncludeSlotsInStackCheck() const {
     static constexpr size_t NumSlotsLimit = 128;
     return script()->nslots() > NumSlotsLimit;
@@ -401,11 +410,11 @@ class BaselineCompilerHandler {
 using BaselineCompilerCodeGen = BaselineCodeGen<BaselineCompilerHandler>;
 
 class BaselineCompiler final : private BaselineCompilerCodeGen {
-  // Native code offsets for bytecode ops in the script's resume offsets list.
+  
   ResumeOffsetEntryVector resumeOffsetEntries_;
 
-  // Native code offsets for debug traps if the script is compiled with debug
-  // instrumentation.
+  
+  
   using DebugTrapEntryVector =
       Vector<BaselineScript::DebugTrapEntry, 0, SystemAllocPolicy>;
   DebugTrapEntryVector debugTrapEntries_;
@@ -439,34 +448,34 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
   [[nodiscard]] bool emitDebugTrap();
 };
 
-// Interface used by BaselineCodeGen for BaselineInterpreterGenerator.
+
 class BaselineInterpreterHandler {
   InterpreterFrameInfo frame_;
 
-  // Entry point to start interpreting a bytecode op. No registers are live. PC
-  // is loaded from the frame.
+  
+  
   NonAssertingLabel interpretOp_;
 
-  // Like interpretOp_ but at this point the PC is expected to be in
-  // InterpreterPCReg.
+  
+  
   NonAssertingLabel interpretOpWithPCReg_;
 
-  // Offsets of toggled jumps for debugger instrumentation.
+  
   using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
   CodeOffsetVector debugInstrumentationOffsets_;
 
-  // Offsets of toggled jumps for code coverage instrumentation.
+  
   CodeOffsetVector codeCoverageOffsets_;
   NonAssertingLabel codeCoverageAtPrologueLabel_;
   NonAssertingLabel codeCoverageAtPCLabel_;
 
-  // Offsets of IC calls for IsIonInlinableOp ops, for Ion bailouts.
+  
   BaselineInterpreter::ICReturnOffsetVector icReturnOffsets_;
 
-  // Offsets of some callVMs for BaselineDebugModeOSR.
+  
   BaselineInterpreter::CallVMOffsets callVMOffsets_;
 
-  // The current JSOp we are emitting interpreter code for.
+  
   mozilla::Maybe<JSOp> currentOp_;
 
  public:
@@ -495,16 +504,16 @@ class BaselineInterpreterHandler {
   void resetCurrentOp() { currentOp_.reset(); }
   mozilla::Maybe<JSOp> currentOp() const { return currentOp_; }
 
-  // Interpreter doesn't know the script and pc statically.
+  
   jsbytecode* maybePC() const { return nullptr; }
   bool isDefinitelyLastOp() const { return false; }
   JSScript* maybeScript() const { return nullptr; }
   JSFunction* maybeFunction() const { return nullptr; }
 
   bool shouldEmitDebugEpilogueAtReturnOp() const {
-    // The interpreter doesn't use the return address -> pc mapping and doesn't
-    // bake in bytecode PCs so it can emit a shared DebugEpilogue call instead
-    // of duplicating it for every return op.
+    
+    
+    
     return false;
   }
 
@@ -519,13 +528,13 @@ class BaselineInterpreterHandler {
 
   bool maybeIonCompileable() const { return true; }
 
-  // The interpreter doesn't know the number of slots statically so we always
-  // include them.
+  
+  
   bool mustIncludeSlotsInStackCheck() const { return true; }
 
   bool canHaveFixedSlots() const { return true; }
 
-  bool addEnvAllocSite() { return false; }  // Not supported.
+  bool addEnvAllocSite() { return false; }  
 
   bool isSelfHosted() const { return false; }
 };
@@ -533,23 +542,23 @@ class BaselineInterpreterHandler {
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;
 
 class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
-  // Offsets of patchable call instructions for debugger breakpoints/stepping.
+  
   Vector<uint32_t, 0, SystemAllocPolicy> debugTrapOffsets_;
 
-  // Offsets of move instructions for tableswitch base address.
+  
   Vector<CodeOffset, 0, SystemAllocPolicy> tableLabels_;
 
-  // Offset of the first tableswitch entry.
+  
   uint32_t tableOffset_ = 0;
 
-  // Offset of the code to start interpreting a bytecode op.
+  
   uint32_t interpretOpOffset_ = 0;
 
-  // Like interpretOpOffset_ but skips the debug trap for the current op.
+  
   uint32_t interpretOpNoDebugTrapOffset_ = 0;
 
-  // Offset of the jump (tail call) to the debug trap handler trampoline code.
-  // When the debugger is enabled, NOPs are patched to calls to this location.
+  
+  
   uint32_t debugTrapHandlerOffset_ = 0;
 
   BaselineInterpreterPerfSpewer perfSpewer_;
@@ -567,7 +576,7 @@ class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
   void emitOutOfLineCodeCoverageInstrumentation();
 };
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_BaselineCodeGen_h */
+#endif 
