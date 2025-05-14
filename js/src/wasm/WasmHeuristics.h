@@ -38,6 +38,7 @@ namespace wasm {
 class LazyTieringHeuristics {
   static constexpr uint32_t MIN_LEVEL = 1;
   static constexpr uint32_t MAX_LEVEL = 9;
+  static constexpr uint32_t SMALL_MODULE_THRESH = 150000;
 
   
   
@@ -64,8 +65,20 @@ class LazyTieringHeuristics {
   
   
 
-  static int32_t estimateIonCompilationCost(uint32_t bodyLength) {
+  static int32_t estimateIonCompilationCost(uint32_t bodyLength,
+                                            size_t codeSectionSize) {
     uint32_t level = rawLevel();
+
+    
+    
+    
+    
+    
+    MOZ_ASSERT(codeSectionSize > 0);
+    if (codeSectionSize <= SMALL_MODULE_THRESH && level < MAX_LEVEL) {
+      level += 1;
+    }
+
     if (MOZ_LIKELY(MIN_LEVEL < level && level < MAX_LEVEL)) {
       
       
