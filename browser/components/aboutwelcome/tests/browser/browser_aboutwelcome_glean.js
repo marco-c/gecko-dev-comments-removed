@@ -61,15 +61,18 @@ const TEST_DEFAULT_CONTENT = [
 
 const TEST_DEFAULT_JSON = JSON.stringify(TEST_DEFAULT_CONTENT);
 
-add_task(async function test_welcome_telemetry() {
+add_setup(async () => {
   
   await SpecialPowers.pushPrefEnv({
     set: [["browser.newtabpage.activity-stream.telemetry", true]],
   });
+
   registerCleanupFunction(async () => {
     await SpecialPowers.popPrefEnv();
   });
+});
 
+add_task(async function test_welcome_telemetry() {
   Services.fog.testResetFOG();
   
   
@@ -80,68 +83,64 @@ add_task(async function test_welcome_telemetry() {
   
   
   
-  
-  let pingSubmitted = false;
-  GleanPings.messagingSystem.testBeforeNextSubmit(() => {
-    pingSubmitted = true;
-
-    const message = Glean.messagingSystem.messageId.testGetValue();
-    
-    
-    
-    Assert.ok(
-      message.startsWith("MR_WELCOME_DEFAULT"),
-      "Ping is of an expected type"
-    );
-    Assert.equal(
-      Glean.messagingSystem.unknownKeyCount.testGetValue(),
-      undefined
-    );
-  });
-
-  let browser = await openAboutWelcome(TEST_DEFAULT_JSON);
-  
-  await TestUtils.waitForCondition(
-    () => pingSubmitted,
-    "Ping was submitted, callback was called."
-  );
-
-  
-  pingSubmitted = false;
-  GleanPings.messagingSystem.testBeforeNextSubmit(() => {
-    pingSubmitted = true;
-
-    
-    
-    
-    if (Glean.messagingSystem.event.testGetValue() === "IMPRESSION") {
-      Assert.equal(
-        Glean.messagingSystem.eventPage.testGetValue(),
-        "about:welcome"
-      );
+  let browser;
+  await GleanPings.messagingSystem.testSubmission(
+    () => {
       const message = Glean.messagingSystem.messageId.testGetValue();
+      
+      
+      
       Assert.ok(
         message.startsWith("MR_WELCOME_DEFAULT"),
         "Ping is of an expected type"
       );
-    } else {
-      
-      
-      Assert.equal(Glean.messagingSystem.event.testGetValue(), "CLICK_BUTTON");
       Assert.equal(
-        Glean.messagingSystem.eventSource.testGetValue(),
-        "primary_button"
+        Glean.messagingSystem.unknownKeyCount.testGetValue(),
+        undefined
       );
-      Assert.equal(
-        Glean.messagingSystem.messageId.testGetValue(),
-        "MR_WELCOME_DEFAULT_0_AW_STEP1"
-      );
+    },
+    async () => {
+      
+      browser = await openAboutWelcome(TEST_DEFAULT_JSON);
     }
-    Assert.equal(
-      Glean.messagingSystem.unknownKeyCount.testGetValue(),
-      undefined
-    );
-  });
-  await onButtonClick(browser, "button.primary");
-  Assert.ok(pingSubmitted, "Ping was submitted, callback was called.");
+  );
+
+  await GleanPings.messagingSystem.testSubmission(
+    () => {
+      
+      
+      
+      if (Glean.messagingSystem.event.testGetValue() === "IMPRESSION") {
+        Assert.equal(
+          Glean.messagingSystem.eventPage.testGetValue(),
+          "about:welcome"
+        );
+        const message = Glean.messagingSystem.messageId.testGetValue();
+        Assert.ok(
+          message.startsWith("MR_WELCOME_DEFAULT"),
+          "Ping is of an expected type"
+        );
+      } else {
+        
+        
+        Assert.equal(
+          Glean.messagingSystem.event.testGetValue(),
+          "CLICK_BUTTON"
+        );
+        Assert.equal(
+          Glean.messagingSystem.eventSource.testGetValue(),
+          "primary_button"
+        );
+        Assert.equal(
+          Glean.messagingSystem.messageId.testGetValue(),
+          "MR_WELCOME_DEFAULT_0_AW_STEP1"
+        );
+      }
+      Assert.equal(
+        Glean.messagingSystem.unknownKeyCount.testGetValue(),
+        undefined
+      );
+    },
+    () => onButtonClick(browser, "button.primary")
+  );
 });
