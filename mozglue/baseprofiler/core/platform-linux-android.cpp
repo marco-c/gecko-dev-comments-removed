@@ -401,27 +401,6 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
       mActivityGeneration(aActivityGeneration),
       mIntervalMicroseconds(
           std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))) {
-#if defined(USE_LUL_STACKWALK)
-  lul::LUL* lul = CorePS::Lul(aLock);
-  if (!lul && ProfilerFeature::HasStackWalkEnabled(aFeatures)) {
-    CorePS::SetLul(aLock, MakeUnique<lul::LUL>(logging_sink_for_LUL));
-    
-    lul = CorePS::Lul(aLock);
-    read_procmaps(lul);
-
-    
-    
-    
-    lul->EnableUnwinding();
-
-    
-    if (getenv("MOZ_PROFILER_LUL_TEST")) {
-      int nTests = 0, nTestsPassed = 0;
-      RunLulUnitTests(&nTests, &nTestsPassed, lul);
-    }
-  }
-#endif
-
   
   
   
