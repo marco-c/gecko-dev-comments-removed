@@ -63,6 +63,10 @@ async function setupTest() {
   };
 }
 
+async function assertEmptyStore(store) {
+  await NimbusTestUtils.removeStore(store);
+}
+
 
 
 
