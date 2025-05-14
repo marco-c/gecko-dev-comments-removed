@@ -417,11 +417,10 @@ bool CookieStoreParent::SetRequestOnMainThread(
   rv = service->AddNative(
       aCookieURI, domainWithDot, NS_ConvertUTF16toUTF8(aPath),
       NS_ConvertUTF16toUTF8(aName), NS_ConvertUTF16toUTF8(aValue),
-      true,   
-      false,  
-      aSession, aSession ? INT64_MAX : aExpires, &attrs, aSameSite,
-      nsICookie::SCHEME_HTTPS, aPartitioned, &aOperationID,
-      [&](mozilla::net::CookieStruct& aCookieStruct) -> bool {
+       true,
+       false, aSession, aSession ? INT64_MAX : aExpires, &attrs,
+      aSameSite, nsICookie::SCHEME_HTTPS, aPartitioned,  false,
+      &aOperationID, [&](mozilla::net::CookieStruct& aCookieStruct) -> bool {
         return CookieParser::CheckCookieStruct(aCookieStruct, aCookieURI, ""_ns,
                                                domain, requireMatch, false) ==
                CookieParser::NoRejection;
@@ -521,7 +520,8 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
     notificationWatcher->CallbackWhenNotified(aOperationID, notificationCb);
 
     rv = cookieManager->RemoveNative(cookie->Host(), matchName, cookie->Path(),
-                                     &attrs, &aOperationID);
+                                     &attrs,  false,
+                                     &aOperationID);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return false;
     }

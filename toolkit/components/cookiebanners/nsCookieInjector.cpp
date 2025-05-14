@@ -327,7 +327,7 @@ nsresult nsCookieInjector::InjectCookiesFromRules(
         nullptr, c.Host(), c.Path(), c.Name(), c.Value(), c.IsSecure(),
         c.IsHttpOnly(), c.IsSession(), c.Expiry(), &aOriginAttributes,
         c.SameSite(), static_cast<nsICookie::schemeType>(c.SchemeMap()),
-         false, nullptr,
+         false,  true, nullptr,
         [](mozilla::net::CookieStruct&) { return true; });
     NS_ENSURE_SUCCESS(rv, rv);
 

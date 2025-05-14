@@ -322,13 +322,19 @@ void CookieStorage::RemoveCookie(const nsACString& aBaseDomain,
                                  const OriginAttributes& aOriginAttributes,
                                  const nsACString& aHost,
                                  const nsACString& aName,
-                                 const nsACString& aPath,
+                                 const nsACString& aPath, bool aFromHttp,
                                  const nsID* aOperationID) {
   CookieListIter matchIter{};
   RefPtr<Cookie> cookie;
   if (FindCookie(aBaseDomain, aOriginAttributes, aHost, aName, aPath,
                  matchIter)) {
     cookie = matchIter.Cookie();
+
+    
+    if (cookie && !aFromHttp && cookie->IsHttpOnly()) {
+      return;
+    }
+
     RemoveCookieFromList(matchIter);
   }
 

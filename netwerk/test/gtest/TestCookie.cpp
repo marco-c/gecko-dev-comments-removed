@@ -771,6 +771,7 @@ TEST(TestCookie, TestCookieMain)
                             &attrs,               
                             nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
                             false,    
+                            true,     
                             nullptr,  
                             [](CookieStruct&) -> bool { return true; })));
   EXPECT_TRUE(NS_SUCCEEDED(
@@ -786,6 +787,7 @@ TEST(TestCookie, TestCookieMain)
                             &attrs,                          
                             nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
                             false,    
+                            true,     
                             nullptr,  
                             [](CookieStruct&) -> bool { return true; })));
   EXPECT_TRUE(NS_SUCCEEDED(
@@ -801,6 +803,7 @@ TEST(TestCookie, TestCookieMain)
                             &attrs,           
                             nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
                             false,    
+                            true,     
                             nullptr,  
                             [](CookieStruct&) -> bool { return true; })));
   
