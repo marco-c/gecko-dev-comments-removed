@@ -54,6 +54,11 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
       const FFmpegLibWrapper* aLib, AVCodecID aCodecId);
 
   
+  
+  static Result<RefPtr<MediaRawData>, MediaResult> CreateMediaRawData(
+      AVPacket* aPacket);
+
+  
   RefPtr<EncodePromise> ProcessEncode(RefPtr<const MediaData> aSample);
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
@@ -82,8 +87,6 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   
   virtual Result<RefPtr<MediaRawData>, MediaResult> ToMediaRawData(
       AVPacket* aPacket) = 0;
-  Result<RefPtr<MediaRawData>, MediaResult> ToMediaRawDataCommon(
-      AVPacket* aPacket);
   virtual Result<already_AddRefed<MediaByteBuffer>, MediaResult> GetExtraData(
       AVPacket* aPacket) = 0;
   void ForceEnablingFFmpegDebugLogs();
