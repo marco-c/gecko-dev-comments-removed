@@ -94,7 +94,7 @@ void nsTableWrapperFrame::AppendFrames(ChildListID aListID,
   
   MOZ_ASSERT(FrameChildListID::Principal == aListID, "unexpected child list");
   MOZ_ASSERT(aFrameList.IsEmpty() || aFrameList.FirstChild()->IsTableCaption(),
-             "appending non-caption frame to captionList");
+             "Why are we appending non-caption frames?");
   nsContainerFrame::AppendFrames(aListID, std::move(aFrameList));
   
   
@@ -106,7 +106,7 @@ void nsTableWrapperFrame::InsertFrames(
     const nsLineList::iterator* aPrevFrameLine, nsFrameList&& aFrameList) {
   MOZ_ASSERT(FrameChildListID::Principal == aListID, "unexpected child list");
   MOZ_ASSERT(aFrameList.IsEmpty() || aFrameList.FirstChild()->IsTableCaption(),
-             "inserting non-caption frame");
+             "Why are we inserting non-caption frames?");
   MOZ_ASSERT(!aPrevFrame || aPrevFrame->GetParent() == this,
              "inserting after sibling frame with different parent");
   nsContainerFrame::InsertFrames(aListID, aPrevFrame, aPrevFrameLine,

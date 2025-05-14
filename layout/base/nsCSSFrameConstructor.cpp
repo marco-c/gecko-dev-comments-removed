@@ -6706,6 +6706,7 @@ void nsCSSFrameConstructor::ContentInserted(nsIContent* aChild,
 
 
 
+
 void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
                                                  nsIContent* aEndChild,
                                                  InsertionKind aInsertionKind) {
