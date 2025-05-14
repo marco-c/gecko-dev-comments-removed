@@ -613,7 +613,9 @@ class AsyncFutexWaiter : public FutexWaiter {
     MOZ_ASSERT(!timeoutTask_);
     timeoutTask_ = task;
   }
+
   bool hasTimeout() const { return !!timeoutTask_; }
+  WaitAsyncTimeoutTask* timeoutTask() const { return timeoutTask_; }
 
   void maybeClearTimeout(AutoLockFutexAPI& lock);
 
@@ -638,7 +640,7 @@ class AsyncFutexWaiter : public FutexWaiter {
 
 class WaitAsyncNotifyTask : public OffThreadPromiseTask {
  public:
-  enum class Result { Ok, TimedOut };
+  enum class Result { Ok, TimedOut, Dead };
 
  private:
   Result result_ = Result::Ok;
@@ -667,6 +669,11 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
       case Result::TimedOut:
         resultMsg = StringValue(cx->names().timed_out_);
         break;
+      case Result::Dead:
+        
+        
+        
+        return true;
     }
     return PromiseObject::resolve(cx, promise, resultMsg);
   }
@@ -709,6 +716,11 @@ static void AddWaiter(SharedArrayRawBuffer* sarb, FutexWaiter* node,
 
 
 static void RemoveWaiterImpl(FutexWaiterListNode* node, AutoLockFutexAPI&) {
+  if (!node->prev()) {
+    MOZ_ASSERT(!node->next());
+    return;
+  }
+
   node->prev()->setNext(node->next());
   node->next()->setPrev(node->prev());
 
@@ -727,6 +739,50 @@ static void RemoveSyncWaiter(SyncFutexWaiter* waiter, AutoLockFutexAPI& lock) {
                                                   AutoLockFutexAPI& lock) {
   RemoveWaiterImpl(waiter, lock);
   return waiter;
+}
+
+FutexWaiterListHead::~FutexWaiterListHead() {
+  
+  
+  
+  
+  
+  
+  
+  AutoLockHelperThreadState helperLock;
+  AutoLockFutexAPI lock;
+
+  FutexWaiterListNode* iter = next();
+  while (iter != this) {
+    
+    
+    
+
+    AsyncFutexWaiter* removedWaiter =
+        RemoveAsyncWaiter(iter->toWaiter()->asAsync(), lock);
+    iter = iter->next();
+
+    if (removedWaiter->hasTimeout()) {
+      
+      
+      
+      MOZ_ASSERT(removedWaiter->timeoutTask()->cleared(lock));
+      continue;
+    }
+    
+    
+    
+    
+    
+    
+    
+    UniquePtr<AsyncFutexWaiter> ownedWaiter(removedWaiter);
+    WaitAsyncNotifyTask* task = ownedWaiter->notifyTask();
+    task->setResult(WaitAsyncNotifyTask::Result::Dead, lock);
+    task->removeFromCancellableListAndDispatch(helperLock);
+  }
+
+  RemoveWaiterImpl(this, lock);
 }
 
 
