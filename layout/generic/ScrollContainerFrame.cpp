@@ -3803,6 +3803,15 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   const bool isRootContent =
       mIsRoot && PresContext()->IsRootContentDocumentCrossProcess();
 
+  const bool capturedByViewTransition = [&] {
+    if (!mIsRoot) {
+      return false;
+    }
+    auto* styleFrame = GetFrameForStyle();
+    return styleFrame &&
+           styleFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
+  }();
+
   
   
   
@@ -4141,6 +4150,8 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
       nsDisplayListBuilder::AutoBuildingDisplayList building(
           aBuilder, this, visibleRectForChildren, dirtyRectForChildren);
+      nsDisplayListBuilder::AutoEnterViewTransitionCapture
+          inViewTransitionCaptureSetter(aBuilder, capturedByViewTransition);
 
       BuildDisplayListForChild(aBuilder, mScrolledFrame, set);
 

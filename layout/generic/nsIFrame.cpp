@@ -3382,6 +3382,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
       (DisplayPortUtils::IsFixedPosFrameInDisplayPort(this) ||
        BuilderHasScrolledClip(aBuilder));
 
+  
+  
+  const bool capturedByViewTransition =
+      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
+      !style.IsRootElementStyle();
+
   nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
       aBuilder, this, visibleRect, dirtyRect, isTransformed);
 
@@ -3484,6 +3490,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                                           usingFilter);
     nsDisplayListBuilder::AutoInEventsOnly inEventsSetter(
         aBuilder, opacityItemForEventsOnly);
+    nsDisplayListBuilder::AutoEnterViewTransitionCapture
+        inViewTransitionCaptureSetter(aBuilder, capturedByViewTransition);
 
     
     
@@ -3662,12 +3670,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
         needsActiveOpacityLayer, usingBackdropFilter);
     createdContainer = true;
   }
-
-  
-  
-  const bool capturedByViewTransition =
-      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
-      !style.IsRootElementStyle();
 
   
   if (capturedByViewTransition) {
