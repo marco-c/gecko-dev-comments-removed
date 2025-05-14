@@ -205,7 +205,7 @@ class nsBaseChannel
   
   template <class T>
   void GetCallback(nsCOMPtr<T>& result) {
-    GetInterface(NS_GET_TEMPLATE_IID(T), getter_AddRefs(result));
+    GetInterface(NS_GET_IID(T), getter_AddRefs(result));
   }
 
   

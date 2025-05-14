@@ -73,12 +73,8 @@ class DOMIntersectionObserverEntry final : public nsISupports,
   double mIntersectionRatio;
 };
 
-#define NS_DOM_INTERSECTION_OBSERVER_IID             \
-  {                                                  \
-    0x8570a575, 0xe303, 0x4d18, {                    \
-      0xb6, 0xb1, 0x4d, 0x2b, 0x49, 0xd8, 0xef, 0x94 \
-    }                                                \
-  }
+#define NS_DOM_INTERSECTION_OBSERVER_IID \
+  {0x8570a575, 0xe303, 0x4d18, {0xb6, 0xb1, 0x4d, 0x2b, 0x49, 0xd8, 0xef, 0x94}}
 
 
 struct IntersectionInput {
@@ -119,7 +115,7 @@ class DOMIntersectionObserver final : public nsISupports,
                           dom::IntersectionCallback& aCb);
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMIntersectionObserver)
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOM_INTERSECTION_OBSERVER_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_DOM_INTERSECTION_OBSERVER_IID)
 
   static already_AddRefed<DOMIntersectionObserver> Constructor(
       const GlobalObject&, dom::IntersectionCallback&, ErrorResult&);
@@ -148,13 +144,20 @@ class DOMIntersectionObserver final : public nsISupports,
 
   void TakeRecords(nsTArray<RefPtr<DOMIntersectionObserverEntry>>& aRetVal);
 
+  static StyleRect<LengthPercentage> LazyLoadingRootMargin();
+
   static IntersectionInput ComputeInput(
       const Document& aDocument, const nsINode* aRoot,
       const StyleRect<LengthPercentage>* aRootMargin);
 
   enum class IsForProximityToViewport : bool { No, Yes };
+  enum class BoxToUse : uint8_t {
+    Content,
+    Border,
+    OverflowClip,
+  };
   static IntersectionOutput Intersect(
-      const IntersectionInput&, const Element&,
+      const IntersectionInput&, const Element&, BoxToUse = BoxToUse::Border,
       IsForProximityToViewport = IsForProximityToViewport::No);
   
   static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);
@@ -202,9 +205,6 @@ class DOMIntersectionObserver final : public nsISupports,
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
   bool mConnected = false;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(DOMIntersectionObserver,
-                              NS_DOM_INTERSECTION_OBSERVER_IID)
 
 }  
 

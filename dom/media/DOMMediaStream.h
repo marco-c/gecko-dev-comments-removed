@@ -36,12 +36,8 @@ class ImageContainer;
 class OverlayImage;
 }  
 
-#define NS_DOMMEDIASTREAM_IID                        \
-  {                                                  \
-    0x8cb65468, 0x66c0, 0x444e, {                    \
-      0x89, 0x9f, 0x89, 0x1d, 0x9e, 0xd2, 0xbe, 0x7c \
-    }                                                \
-  }
+#define NS_DOMMEDIASTREAM_IID \
+  {0x8cb65468, 0x66c0, 0x444e, {0x89, 0x9f, 0x89, 0x1d, 0x9e, 0xd2, 0xbe, 0x7c}}
 
 
 
@@ -104,7 +100,7 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DOMMediaStream, DOMEventTargetHelper)
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOMMEDIASTREAM_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_DOMMEDIASTREAM_IID)
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -248,8 +244,6 @@ class DOMMediaStream : public DOMEventTargetHelper,
   
   bool mAudible = false;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(DOMMediaStream, NS_DOMMEDIASTREAM_IID)
 
 }  
 

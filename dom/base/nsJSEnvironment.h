@@ -198,22 +198,16 @@ class AsyncErrorReporter final : public mozilla::Runnable {
 
 
 
-#define NS_IJSARGARRAY_IID                           \
-  {                                                  \
-    0xb6acdac8, 0xf5c6, 0x432c, {                    \
-      0xa8, 0x6e, 0x33, 0xee, 0xb1, 0xb0, 0xcd, 0xdc \
-    }                                                \
-  }
+#define NS_IJSARGARRAY_IID \
+  {0xb6acdac8, 0xf5c6, 0x432c, {0xa8, 0x6e, 0x33, 0xee, 0xb1, 0xb0, 0xcd, 0xdc}}
 
 class nsIJSArgArray : public nsIArray {
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IJSARGARRAY_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_IJSARGARRAY_IID)
   
   
   
   virtual nsresult GetArgs(uint32_t* argc, void** argv) = 0;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIJSArgArray, NS_IJSARGARRAY_IID)
 
 #endif 

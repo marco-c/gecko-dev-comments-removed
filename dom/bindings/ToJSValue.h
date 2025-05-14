@@ -247,8 +247,7 @@ ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
 
   xpcObjectHelper helper(ToSupports(&aArgument));
   JS::Rooted<JSObject*> scope(aCx, JS::CurrentGlobalOrNull(aCx));
-  const nsIID& iid =
-      NS_GET_TEMPLATE_IID(binding_detail::ScriptableInterfaceType<T>);
+  const nsIID& iid = NS_GET_IID(binding_detail::ScriptableInterfaceType<T>);
   return XPCOMObjectToJsval(aCx, scope, helper, &iid, true, aValue);
 }
 

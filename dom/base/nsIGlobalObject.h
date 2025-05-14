@@ -88,7 +88,7 @@ class nsIGlobalObject : public nsISupports {
  public:
   using RTPCallerType = mozilla::RTPCallerType;
   using RFPTarget = mozilla::RFPTarget;
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IGLOBALOBJECT_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_IGLOBALOBJECT_IID)
 
   
 
@@ -413,7 +413,5 @@ class nsIGlobalObject : public nsISupports {
   
   RefPtr<mozilla::dom::Function> mByteLengthQueuingStrategySizeFunction;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject, NS_IGLOBALOBJECT_IID)
 
 #endif  

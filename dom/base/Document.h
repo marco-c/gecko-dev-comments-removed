@@ -577,7 +577,7 @@ class Document : public nsINode,
 
   static void Shutdown();
 
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_IDOCUMENT_IID)
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_IMETHOD_(void) DeleteCycleCollectable() override;
@@ -5627,8 +5627,6 @@ class Document : public nsINode,
                                               const SetHTMLOptions& aOptions,
                                               ErrorResult& aError);
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(Document, NS_IDOCUMENT_IID)
 
 
 

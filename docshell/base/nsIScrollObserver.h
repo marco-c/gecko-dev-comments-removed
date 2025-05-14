@@ -11,16 +11,12 @@
 #include "Units.h"
 
 
-#define NS_ISCROLLOBSERVER_IID                       \
-  {                                                  \
-    0xaa5026eb, 0x2f88, 0x4026, {                    \
-      0xa4, 0x6b, 0xf4, 0x59, 0x6b, 0x4e, 0xdf, 0x00 \
-    }                                                \
-  }
+#define NS_ISCROLLOBSERVER_IID \
+  {0xaa5026eb, 0x2f88, 0x4026, {0xa4, 0x6b, 0xf4, 0x59, 0x6b, 0x4e, 0xdf, 0x00}}
 
 class nsIScrollObserver : public nsISupports {
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISCROLLOBSERVER_IID)
+  NS_INLINE_DECL_STATIC_IID(NS_ISCROLLOBSERVER_IID)
 
   
 
@@ -39,7 +35,5 @@ class nsIScrollObserver : public nsISupports {
 
   MOZ_CAN_RUN_SCRIPT virtual void AsyncPanZoomStopped() {};
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIScrollObserver, NS_ISCROLLOBSERVER_IID)
 
 #endif 
