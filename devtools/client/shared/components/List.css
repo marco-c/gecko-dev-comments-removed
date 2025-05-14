@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* List */
 
 .list {
   background-color: var(--theme-sidebar-background);
@@ -16,10 +16,6 @@
 
 .list:focus, .list .list-item-content:focus {
   outline: 0;
-}
-
-.list::-moz-focus-inner, .list .list-item-content::-moz-focus-inner {
-  border: 0;
 }
 
 .list li.current {

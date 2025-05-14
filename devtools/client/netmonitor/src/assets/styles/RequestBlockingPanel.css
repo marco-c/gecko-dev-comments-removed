@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .request-blocking-panel {
   position: relative;
@@ -10,14 +10,14 @@
   overflow: hidden;
 }
 
-
+/* Override the devtools-checkbox style to improve hit area and alignment */
 .request-blocking-panel .devtools-checkbox-label {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin: 0;
   padding: 2px 4px;
-  
+  /* checkbox can be 13px, 14px or 16px depending on the platform */
   line-height: 16px;
   user-select: none;
   cursor: default;
@@ -40,7 +40,7 @@
   cursor: text
 }
 
-
+/* The "Enable Blocking Requests" bar */
 .request-blocking-enable-bar {
   flex: none;
   background: var(--theme-tab-toolbar-background);
@@ -63,7 +63,7 @@
   border-bottom: 1px solid var(--theme-splitter-color);
 }
 
-
+/* Blocked request list */
 .request-blocking-list {
   margin: 0;
   padding: 4px 0;
@@ -83,7 +83,7 @@
 
 .request-blocking-list li.request-blocking-edit-item {
   padding: 0;
-  
+  /* Text input is 24px but we want it to occupy the same space as our 20px rows */
   margin-block: -2px;
 }
 
@@ -93,15 +93,15 @@
 
 .request-blocking-list .devtools-checkbox-label {
   flex: 1 1 auto;
-  
-
-
-
+  /* Can't seem to make the flex-shrink reduce the element's width when the
+     content is a long URL, even if the URL container has text-overflow: ellipsis.
+     DevTools shows that "the item was clamped to its minimum size" and the shrink
+     part is thus ignored. So we're reserving 20px for the delete button. */
   max-width: calc(100% - 20px);
 }
 
 .request-blocking-remove-button {
-  
+  /* Visually hide but stay focusable in keyboard navigation */
   opacity: 0;
   flex: none;
   width: 20px;
@@ -111,10 +111,6 @@
   border: none;
   outline: none;
   background-color: transparent;
-}
-
-.request-blocking-remove-button::-moz-focus-inner {
-  border: none;
 }
 
 .request-blocking-list li:hover .request-blocking-remove-button {
@@ -138,17 +134,17 @@
   background-color: var(--theme-selection-background);
 }
 
-
-
-
+/* Footer content, progressively pushed by pattern rows in the main list and
+ * remaining "fixed" at the bottom when there is enough content to scroll,
+ * thanks to the magic of flexbox */
 .request-blocking-footer {
   position: relative;
   flex: none;
 }
 
-
-
-
+/* Draw a border 1px below the form, so that it disappears out of view when
+ * there are many pattern rows in the main container and the footer is pushed
+ * to the bottom */
 .request-blocking-footer::after {
   content: "";
   position: absolute;
@@ -158,7 +154,7 @@
   border-bottom: 1px solid var(--theme-splitter-color);
 }
 
-
+/* Text input for the addition and edition forms */
 .request-blocking-add-form input,
 .request-blocking-edit-item input {
   width: calc(100% - 1px);
