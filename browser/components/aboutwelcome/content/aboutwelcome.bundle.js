@@ -320,7 +320,7 @@ const MultiStageAboutWelcome = props => {
   
   
   
-  const [activeSingleSelects, setActiveSingleSelects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+  const [activeSingleSelectSelections, setActiveSingleSelectSelections] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
 
   
   
@@ -382,10 +382,18 @@ const MultiStageAboutWelcome = props => {
         };
       });
     };
-    const setActiveSingleSelect = valueOrFn => setActiveSingleSelects(prevState => ({
-      ...prevState,
-      [currentScreen.id]: typeof valueOrFn === "function" ? valueOrFn(prevState[currentScreen.id]) : valueOrFn
-    }));
+    const setActiveSingleSelectSelection = (valueOrFn, singleSelectId) => {
+      setActiveSingleSelectSelections(prevState => {
+        const currentScreenSelections = prevState[currentScreen.id] || {};
+        return {
+          ...prevState,
+          [currentScreen.id]: {
+            ...currentScreenSelections,
+            [singleSelectId]: typeof valueOrFn === "function" ? valueOrFn(prevState[currentScreen.id]) : valueOrFn
+          }
+        };
+      });
+    };
     return index === order ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(WelcomeScreen, {
       key: currentScreen.id + order,
       id: currentScreen.id,
@@ -409,8 +417,8 @@ const MultiStageAboutWelcome = props => {
       activeMultiSelect: activeMultiSelects[currentScreen.id],
       setActiveMultiSelect: setActiveMultiSelect,
       autoAdvance: currentScreen.auto_advance,
-      activeSingleSelect: activeSingleSelects[currentScreen.id],
-      setActiveSingleSelect: setActiveSingleSelect,
+      activeSingleSelectSelections: activeSingleSelectSelections[currentScreen.id],
+      setActiveSingleSelectSelection: setActiveSingleSelectSelection,
       negotiatedLanguage: negotiatedLanguage,
       langPackInstallPhase: langPackInstallPhase,
       forceHideStepsIndicator: currentScreen.force_hide_steps_indicator,
@@ -552,8 +560,52 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       data
     });
   }
+  logTelemetry({
+    value,
+    event,
+    source,
+    props
+  }) {
+    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name);
+
+    
+    
+    
+    if (value === "dismiss_button" && !event.name) {
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source);
+    }
+  }
+  async handleMigrationIfNeeded(action, props) {
+    const hasMigrate = a => a.type === "SHOW_MIGRATION_WIZARD" || a.type === "MULTI_ACTION" && a.data?.actions?.some(hasMigrate);
+    if (hasMigrate(action)) {
+      await window.AWWaitForMigrationClose();
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, "migrate_close");
+    }
+  }
+  applyThemeIfNeeded(action, event) {
+    if (!action.theme) {
+      return;
+    }
+    const themeToUse = action.theme === "<event>" ? event.currentTarget.value : this.props.initialTheme || action.theme;
+    this.props.setActiveTheme(themeToUse);
+    window.AWSelectTheme(themeToUse);
+  }
+  handlePickerAction(value) {
+    const tileGroups = Array.isArray(this.props.content.tiles) ? this.props.content.tiles : [this.props.content.tiles];
+    for (const tile of tileGroups) {
+      if (!tile?.data) {
+        continue;
+      }
+      for (const opt of tile.data) {
+        if (opt.id === value) {
+          _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(opt.action);
+          return;
+        }
+      }
+    }
+  }
   async handleAction(event) {
-    let {
+    const {
       props
     } = this;
     const value = event.currentTarget.value ?? event.currentTarget.getAttribute("value");
@@ -564,21 +616,30 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         action: event.action
       };
     }
-    if (!(targetContent && targetContent.action)) {
+    if (!targetContent) {
       return;
     }
-    
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name);
-
-    
-    
-    
-    if (value === "dismiss_button" && !event.name) {
-      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source);
+    let action;
+    if (Array.isArray(targetContent)) {
+      for (const tile of targetContent) {
+        const matchedTile = tile.data.find(t => t.id === value);
+        if (matchedTile?.action) {
+          action = matchedTile.action;
+          break;
+        }
+      }
+    } else if (!targetContent.action) {
+      return;
+    } else {
+      action = targetContent.action;
     }
-    let {
-      action
-    } = targetContent;
+    
+    this.logTelemetry({
+      value,
+      event,
+      source,
+      props
+    });
     action = JSON.parse(JSON.stringify(action));
     if (action.collectSelect) {
       this.setMultiSelectActions(action);
@@ -607,26 +668,13 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(action);
       }
       
-      const hasMigrate = a => a.type === "SHOW_MIGRATION_WIZARD" || a.type === "MULTI_ACTION" && a.data?.actions?.some(hasMigrate);
-      if (hasMigrate(action)) {
-        await window.AWWaitForMigrationClose();
-        _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, "migrate_close");
-      }
+      await this.handleMigrationIfNeeded(action, props);
     }
 
     
-    if (action.theme) {
-      let themeToUse = action.theme === "<event>" ? event.currentTarget.value : this.props.initialTheme || action.theme;
-      this.props.setActiveTheme(themeToUse);
-      window.AWSelectTheme(themeToUse);
-    }
+    this.applyThemeIfNeeded(action, event);
     if (action.picker) {
-      let options = props.content.tiles.data;
-      options.forEach(opt => {
-        if (opt.id === value) {
-          _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(opt.action);
-        }
-      });
+      this.handlePickerAction(value);
     }
 
     
@@ -740,8 +788,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       setScreenMultiSelects: this.props.setScreenMultiSelects,
       activeMultiSelect: this.props.activeMultiSelect,
       setActiveMultiSelect: this.props.setActiveMultiSelect,
-      activeSingleSelect: this.props.activeSingleSelect,
-      setActiveSingleSelect: this.props.setActiveSingleSelect,
+      activeSingleSelectSelections: this.props.activeSingleSelectSelections,
+      setActiveSingleSelectSelection: this.props.setActiveSingleSelectSelection,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
       appAndSystemLocaleInfo: this.props.appAndSystemLocaleInfo,
       negotiatedLanguage: this.props.negotiatedLanguage,
@@ -958,8 +1006,8 @@ const MultiStageProtonScreen = props => {
     setScreenMultiSelects: props.setScreenMultiSelects,
     activeMultiSelect: props.activeMultiSelect,
     setActiveMultiSelect: props.setActiveMultiSelect,
-    activeSingleSelect: props.activeSingleSelect,
-    setActiveSingleSelect: props.setActiveSingleSelect,
+    activeSingleSelectSelections: props.activeSingleSelectSelections,
+    setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
     totalNumberOfScreens: props.totalNumberOfScreens,
     handleAction: props.handleAction,
     isFirstScreen: props.isFirstScreen,
@@ -2229,8 +2277,9 @@ const ContentTiles = props => {
       },
       activeTheme: props.activeTheme,
       handleAction: props.handleAction,
-      activeSingleSelect: props.activeSingleSelect,
-      setActiveSingleSelect: props.setActiveSingleSelect
+      activeSingleSelectSelections: props.activeSingleSelectSelections,
+      setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
+      singleSelectId: `single-select-${index}`
     }), tile.type === "mobile_downloads" && tile.data && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MobileDownloads__WEBPACK_IMPORTED_MODULE_4__.MobileDownloads, {
       data: tile.data,
       handleAction: props.handleAction
@@ -2530,11 +2579,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const SingleSelect = ({
-  activeSingleSelect,
+  activeSingleSelectSelections = {},
+  
   activeTheme,
   content,
   handleAction,
-  setActiveSingleSelect
+  setActiveSingleSelectSelection,
+  singleSelectId
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
@@ -2561,9 +2612,9 @@ const SingleSelect = ({
   
   
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (isSingleSelect && !activeSingleSelect) {
+    if (isSingleSelect && !activeSingleSelectSelections[singleSelectId]) {
       let newActiveSingleSelect = content.tiles?.selected || content.tiles?.data[0].id;
-      setActiveSingleSelect(newActiveSingleSelect);
+      setActiveSingleSelectSelection(newActiveSingleSelect, singleSelectId);
       let selectedTile = content.tiles?.data.find(opt => opt.id === newActiveSingleSelect);
       
       
@@ -2575,11 +2626,11 @@ const SingleSelect = ({
         });
       }
     }
-  }, []); 
+  }, [activeSingleSelectSelections]); 
 
   const CONFIGURABLE_STYLES = ["background", "borderRadius", "height", "marginBlock", "marginInline", "paddingBlock", "paddingInline", "width"];
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "tiles-single-select-container"
+    className: `tiles-single-select-container`
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
     className: `tiles-single-select-section ${category}`
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
@@ -2601,11 +2652,11 @@ const SingleSelect = ({
     if (!isSingleSelect) {
       inputName = category === "theme" ? "theme" : id; 
     }
-    const selected = theme && theme === activeTheme || isSingleSelect && activeSingleSelect === value;
+    const selected = theme && theme === activeTheme || isSingleSelect && activeSingleSelectSelections[singleSelectId] === value;
     const valOrObj = val => typeof val === "object" ? val : {};
     const handleClick = evt => {
       if (isSingleSelect) {
-        setActiveSingleSelect(value);
+        setActiveSingleSelectSelection(value, singleSelectId); 
       }
       handleAction(evt);
     };
