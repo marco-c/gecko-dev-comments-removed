@@ -531,6 +531,7 @@ static bool atomics_isLockFree(JSContext* cx, unsigned argc, Value* vp) {
 namespace js {
 
 class WaitAsyncNotifyTask;
+class WaitAsyncTimeoutTask;
 
 class AutoLockFutexAPI {
   
@@ -608,9 +609,29 @@ class AsyncFutexWaiter : public FutexWaiter {
     notifyTask_ = task;
   }
 
+  void setTimeoutTask(WaitAsyncTimeoutTask* task) {
+    MOZ_ASSERT(!timeoutTask_);
+    timeoutTask_ = task;
+  }
+  bool hasTimeout() const { return !!timeoutTask_; }
+
+  void maybeClearTimeout(AutoLockFutexAPI& lock);
+
  private:
+  
+  
+  
   WaitAsyncNotifyTask* notifyTask_ = nullptr;
+  WaitAsyncTimeoutTask* timeoutTask_ = nullptr;
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -651,6 +672,25 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
   }
 
   void prepareForCancel() override;
+};
+
+
+
+
+
+class WaitAsyncTimeoutTask : public JS::Dispatchable {
+  AsyncFutexWaiter* waiter_;
+
+ public:
+  explicit WaitAsyncTimeoutTask(AsyncFutexWaiter* waiter) : waiter_(waiter) {
+    MOZ_ASSERT(waiter_);
+  }
+
+  void clear(AutoLockFutexAPI&) { waiter_ = nullptr; }
+  bool cleared(AutoLockFutexAPI&) { return !waiter_; }
+
+  void run(JSContext*, MaybeShuttingDown maybeshuttingdown) final;
+  void transferToRuntime() final;
 };
 
 }  
@@ -717,6 +757,48 @@ static PlainObject* CreateAsyncResultObject(JSContext* cx, bool async,
 void WaitAsyncNotifyTask::prepareForCancel() {
   AutoLockFutexAPI lock;
   UniquePtr<AsyncFutexWaiter> waiter(RemoveAsyncWaiter(waiter_, lock));
+  waiter->maybeClearTimeout(lock);
+}
+
+void WaitAsyncTimeoutTask::run(JSContext* cx,
+                               MaybeShuttingDown maybeShuttingDown) {
+  AutoLockHelperThreadState helperLock;
+  AutoLockFutexAPI lock;
+
+  
+  if (cleared(lock)) {
+    js_delete(this);
+    return;
+  }
+
+  
+  
+  UniquePtr<AsyncFutexWaiter> asyncWaiter(RemoveAsyncWaiter(waiter_, lock));
+
+  
+  WaitAsyncNotifyTask* task = asyncWaiter->notifyTask();
+  task->setResult(WaitAsyncNotifyTask::Result::TimedOut, lock);
+  task->removeFromCancellableListAndDispatch(helperLock);
+  js_delete(this);
+}
+
+void WaitAsyncTimeoutTask::transferToRuntime() {
+  
+  
+  
+  {
+    AutoLockFutexAPI lock;
+    clear(lock);
+  }
+  
+  
+  js_delete(this);
+}
+
+void AsyncFutexWaiter::maybeClearTimeout(AutoLockFutexAPI& lock) {
+  if (timeoutTask_) {
+    timeoutTask_->clear(lock);
+  }
 }
 
 
@@ -740,11 +822,10 @@ static FutexThread::WaitResult AtomicsWaitAsyncCriticalSection(
   }
 
   
-  if (timeout.isSome() && timeout.value().IsZero()) {
+  bool hasTimeout = timeout.isSome();
+  if (hasTimeout && timeout.value().IsZero()) {
     return FutexThread::WaitResult::TimedOut;
   }
-
-  
 
   
   
@@ -770,6 +851,16 @@ static FutexThread::WaitResult AtomicsWaitAsyncCriticalSection(
   notifyTask->setWaiter(waiter.get());
   waiter->setNotifyTask(notifyTask.get());
 
+  UniquePtr<WaitAsyncTimeoutTask> timeoutTask;
+  if (hasTimeout) {
+    timeoutTask = js::MakeUnique<WaitAsyncTimeoutTask>(waiter.get());
+    if (!timeoutTask) {
+      JS_ReportOutOfMemory(cx);
+      return FutexThread::WaitResult::Error;
+    }
+    waiter->setTimeoutTask(timeoutTask.get());
+  }
+
   
   
   if (!js::OffThreadPromiseTask::InitCancellable(cx, helperThreadLock,
@@ -779,6 +870,19 @@ static FutexThread::WaitResult AtomicsWaitAsyncCriticalSection(
 
   
   AddWaiter(sarb, waiter.release(), futexLock);
+
+  if (hasTimeout) {
+    MOZ_ASSERT(!!timeoutTask);
+    OffThreadPromiseRuntimeState& state =
+        cx->runtime()->offThreadPromiseState.ref();
+    
+    
+    
+    
+    
+    (void)state.delayedDispatchToEventLoop(std::move(timeoutTask),
+                                           timeout.value().ToMilliseconds());
+  }
 
   
   return FutexThread::WaitResult::OK;
@@ -1075,6 +1179,8 @@ int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
       
       UniquePtr<AsyncFutexWaiter> asyncWaiter(
           RemoveAsyncWaiter(waiter->asAsync(), lock));
+
+      asyncWaiter->maybeClearTimeout(lock);
 
       
       asyncWaiter->notifyTask()->removeFromCancellableListAndDispatch(
