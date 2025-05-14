@@ -3085,30 +3085,6 @@ static bool CopyArrayElements(JSContext* cx, HandleObject obj, uint64_t begin,
 
 
 
-static bool GetActualStart(JSContext* cx, HandleValue start, uint64_t len,
-                           uint64_t* result) {
-  MOZ_ASSERT(len < DOUBLE_INTEGRAL_PRECISION_LIMIT);
-
-  
-  
-
-  
-  double relativeStart;
-  if (!ToInteger(cx, start, &relativeStart)) {
-    return false;
-  }
-
-  
-  
-  if (relativeStart < 0) {
-    *result = uint64_t(std::max(double(len) + relativeStart, 0.0));
-  } else {
-    
-    *result = uint64_t(std::min(relativeStart, double(len)));
-  }
-  return true;
-}
-
 static uint32_t GetItemCount(const CallArgs& args) {
   if (args.length() < 2) {
     return 0;
@@ -3123,9 +3099,6 @@ static bool GetActualDeleteCount(JSContext* cx, const CallArgs& args,
   MOZ_ASSERT(len < DOUBLE_INTEGRAL_PRECISION_LIMIT);
   MOZ_ASSERT(actualStart <= len);
   MOZ_ASSERT(insertCount == GetItemCount(args));
-
-  
-  
 
   if (args.length() < 1) {
     
@@ -3181,10 +3154,13 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
   
   
 
-  uint64_t actualStart;
-  if (!GetActualStart(cx, args.get(0), len, &actualStart)) {
-    return false;
+  uint64_t actualStart = 0;
+  if (args.hasDefined(0)) {
+    if (!ToIntegerIndex(cx, args[0], len, &actualStart)) {
+      return false;
+    }
   }
+  MOZ_ASSERT(actualStart <= len);
 
   
   
@@ -3519,9 +3495,11 @@ static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  uint64_t actualStart;
-  if (!GetActualStart(cx, args.get(0), len, &actualStart)) {
-    return false;
+  uint64_t actualStart = 0;
+  if (args.hasDefined(0)) {
+    if (!ToIntegerIndex(cx, args[0], len, &actualStart)) {
+      return false;
+    }
   }
   MOZ_ASSERT(actualStart <= len);
 
@@ -4038,19 +4016,6 @@ static JSObject* SliceArguments(JSContext* cx, Handle<ArgumentsObject*> argsobj,
   return result;
 }
 
-template <typename T, typename ArrayLength>
-static inline ArrayLength NormalizeSliceTerm(T value, ArrayLength length) {
-  if (value < 0) {
-    value += length;
-    if (value < 0) {
-      return 0;
-    }
-  } else if (double(value) > double(length)) {
-    return length;
-  }
-  return ArrayLength(value);
-}
-
 static bool ArraySliceOrdinary(JSContext* cx, HandleObject obj, uint64_t begin,
                                uint64_t end, MutableHandleValue rval) {
   if (begin > end) {
@@ -4141,26 +4106,19 @@ static bool array_slice(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  
   uint64_t k = 0;
-  uint64_t final = length;
-  if (args.length() > 0) {
-    double d;
-    
-    if (!ToInteger(cx, args[0], &d)) {
+  if (args.hasDefined(0)) {
+    if (!ToIntegerIndex(cx, args[0], length, &k)) {
       return false;
     }
+  }
 
-    
-    k = NormalizeSliceTerm(d, length);
-
-    if (args.hasDefined(1)) {
-      
-      if (!ToInteger(cx, args[1], &d)) {
-        return false;
-      }
-
-      
-      final = NormalizeSliceTerm(d, length);
+  
+  uint64_t final = length;
+  if (args.hasDefined(1)) {
+    if (!ToIntegerIndex(cx, args[1], length, &final)) {
+      return false;
     }
   }
 
@@ -4216,6 +4174,13 @@ static bool array_slice(JSContext* cx, unsigned argc, Value* vp) {
   
   args.rval().setObject(*arr);
   return true;
+}
+
+static inline uint32_t NormalizeSliceTerm(int32_t value, uint32_t length) {
+  if (value >= 0) {
+    return std::min(uint32_t(value), length);
+  }
+  return uint32_t(std::max(int32_t(uint32_t(value) + length), 0));
 }
 
 static bool ArraySliceDenseKernel(JSContext* cx, ArrayObject* arr,
@@ -4520,26 +4485,15 @@ bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
 
   
   uint64_t k = 0;
-  if (args.length() > 1) {
-    double n;
-    if (!ToInteger(cx, args[1], &n)) {
+  if (args.hasDefined(1)) {
+    if (!ToIntegerIndex(cx, args[1], len, &k)) {
       return false;
     }
 
     
-    if (n >= double(len)) {
+    if (k >= len) {
       args.rval().setInt32(-1);
       return true;
-    }
-
-    
-    if (n >= 0) {
-      k = uint64_t(n);
-    } else {
-      double d = double(len) + n;
-      if (d >= 0) {
-        k = uint64_t(d);
-      }
     }
   }
 
@@ -4761,25 +4715,15 @@ bool js::array_includes(JSContext* cx, unsigned argc, Value* vp) {
 
   
   uint64_t k = 0;
-  if (args.length() > 1) {
-    double n;
-    if (!ToInteger(cx, args[1], &n)) {
+  if (args.hasDefined(1)) {
+    if (!ToIntegerIndex(cx, args[1], len, &k)) {
       return false;
     }
 
-    if (n >= double(len)) {
+    
+    if (k >= len) {
       args.rval().setBoolean(false);
       return true;
-    }
-
-    
-    if (n >= 0) {
-      k = uint64_t(n);
-    } else {
-      double d = double(len) + n;
-      if (d >= 0) {
-        k = uint64_t(d);
-      }
     }
   }
 
@@ -5211,7 +5155,6 @@ static const JSFunctionSpec array_methods[] = {
     JS_SELF_HOSTED_FN("flatMap", "ArrayFlatMap", 1, 0),
     JS_SELF_HOSTED_FN("flat", "ArrayFlat", 0, 0),
 
-    
     JS_SELF_HOSTED_FN("at", "ArrayAt", 1, 0),
     JS_SELF_HOSTED_FN("findLast", "ArrayFindLast", 1, 0),
     JS_SELF_HOSTED_FN("findLastIndex", "ArrayFindLastIndex", 1, 0),
