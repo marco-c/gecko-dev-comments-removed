@@ -368,6 +368,8 @@ class nsContentUtils {
                                          RFPTarget aTarget);
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell,
                                          RFPTarget aTarget);
+  static bool ShouldResistFingerprinting(const Document* aDocument,
+                                         RFPTarget aTarget);
   
   static bool ShouldResistFingerprinting(nsIChannel* aChannel,
                                          RFPTarget aTarget);
@@ -1310,9 +1312,6 @@ class nsContentUtils {
   static void ReportEmptyGetElementByIdArg(const Document* aDoc);
 
   static void LogMessageToConsole(const char* aMsg);
-
-  static bool SpoofLocaleEnglish();
-  static bool SpoofLocaleEnglish(const Document* aDocument);
 
   
 

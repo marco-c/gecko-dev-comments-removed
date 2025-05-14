@@ -2547,6 +2547,7 @@ bool nsContentUtils::ShouldResistFingerprinting(CallerType aCallerType,
   return ShouldResistFingerprinting(aGlobalObject, aTarget);
 }
 
+
 bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell,
                                                 RFPTarget aTarget) {
   if (!aDocShell) {
@@ -2555,14 +2556,20 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell,
              "with NULL docshell"));
     return ShouldResistFingerprinting("Null Object", aTarget);
   }
-  Document* doc = aDocShell->GetDocument();
-  if (!doc) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Called nsContentUtils::ShouldResistFingerprinting(nsIDocShell*) "
-             "with NULL doc"));
+  return ShouldResistFingerprinting(aDocShell->GetDocument(), aTarget);
+}
+
+
+bool nsContentUtils::ShouldResistFingerprinting(const Document* aDocument,
+                                                RFPTarget aTarget) {
+  if (!aDocument) {
+    MOZ_LOG(
+        nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+        ("Called nsContentUtils::ShouldResistFingerprinting(const Document*) "
+         "with NULL document"));
     return ShouldResistFingerprinting("Null Object", aTarget);
   }
-  return doc->ShouldResistFingerprinting(aTarget);
+  return aDocument->ShouldResistFingerprinting(aTarget);
 }
 
 
@@ -4657,25 +4664,13 @@ void nsContentUtils::AsyncPrecreateStringBundles() {
   }
 }
 
-
-bool nsContentUtils::SpoofLocaleEnglish() {
-  
-  
-  
-  return StaticPrefs::privacy_spoof_english() == 2;
-}
-
-
-bool nsContentUtils::SpoofLocaleEnglish(const Document* aDocument) {
-  return SpoofLocaleEnglish() && (!aDocument || !aDocument->AllowsL10n());
-}
-
 static nsContentUtils::PropertiesFile GetMaybeSpoofedPropertiesFile(
     nsContentUtils::PropertiesFile aFile, const char* aKey,
     Document* aDocument) {
   
   
-  bool spoofLocale = nsContentUtils::SpoofLocaleEnglish(aDocument);
+  bool spoofLocale = nsContentUtils::ShouldResistFingerprinting(
+      aDocument, RFPTarget::JSLocale);
   if (spoofLocale) {
     switch (aFile) {
       case nsContentUtils::eFORMS_PROPERTIES:
@@ -6476,14 +6471,17 @@ nsIWidget* nsContentUtils::GetTopLevelWidget(nsIWidget* aWidget) {
 const nsDependentString nsContentUtils::GetLocalizedEllipsis() {
   static char16_t sBuf[4] = {0, 0, 0, 0};
   if (!sBuf[0]) {
-    if (!SpoofLocaleEnglish()) {
+    if (!nsContentUtils::ShouldResistFingerprinting("No context",
+                                                    RFPTarget::JSLocale)) {
       nsAutoString tmp;
       Preferences::GetLocalizedString("intl.ellipsis", tmp);
       uint32_t len =
           std::min(uint32_t(tmp.Length()), uint32_t(std::size(sBuf) - 1));
       CopyUnicodeTo(tmp, 0, sBuf, len);
     }
-    if (!sBuf[0]) sBuf[0] = char16_t(0x2026);
+    if (!sBuf[0]) {
+      sBuf[0] = char16_t(0x2026);
+    }
   }
   return nsDependentString(sBuf);
 }

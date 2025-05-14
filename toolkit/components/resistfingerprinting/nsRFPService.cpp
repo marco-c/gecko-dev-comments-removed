@@ -298,7 +298,7 @@ Maybe<bool> nsRFPService::HandleExeptionalRFPTargets(
   
   if (aTarget == RFPTarget::JSLocale) {
     return Some(IsTargetActiveForMode(aTarget, aMode) &&
-                StaticPrefs::privacy_spoof_english() == 2);
+                StaticPrefs::privacy_spoof_english_DoNotUseDirectly() == 2);
   }
 
   
