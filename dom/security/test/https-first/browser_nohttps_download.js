@@ -1,0 +1,70 @@
+"use strict";
+
+
+const testPath = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
+const TEST_URI = testPath + "file_nohttps_download.html";
+const EXPECTED_DOWNLOAD_URL =
+  "example.com/browser/dom/security/test/https-first/file_nohttps_download.sjs";
+
+function promisePanelOpened() {
+  if (DownloadsPanel.panel && DownloadsPanel.panel.state == "open") {
+    return Promise.resolve();
+  }
+  return BrowserTestUtils.waitForEvent(DownloadsPanel.panel, "popupshown");
+}
+
+
+
+
+
+
+
+add_task(async function test_nohttps_download() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", true]],
+  });
+
+  
+  let downloadsList = await Downloads.getList(Downloads.PUBLIC);
+  await downloadsList.removeFinished();
+
+  let downloadsPanelPromise = promisePanelOpened();
+  let downloadsPromise = Downloads.getList(Downloads.PUBLIC);
+  BrowserTestUtils.startLoadingURIString(gBrowser, TEST_URI);
+  
+  await downloadsPanelPromise;
+  let downloadList = await downloadsPromise;
+  is(DownloadsPanel.isPanelShowing, true, "DownloadsPanel should be open.");
+  is(downloadList._downloads.length, 1, "Entry should be in downloads list.");
+  let [download] = downloadList._downloads;
+  
+  await download.unblock();
+  await download.start();
+  is(download.contentType, "text/plain", "File contentType should be correct.");
+  
+  is(
+    download.source.url,
+    
+    "http://" + EXPECTED_DOWNLOAD_URL,
+    "Scheme should be http."
+  );
+  
+  is(download.target.size, 15, "Download size is correct");
+  
+  info("cleaning up downloads");
+  try {
+    if (Services.appinfo.OS === "WINNT") {
+      
+      await IOUtils.setPermissions(download.target.path, 0o600);
+    }
+    await IOUtils.remove(download.target.path);
+  } catch (error) {
+    info("The file " + download.target.path + " is not removed, " + error);
+  }
+
+  await downloadList.remove(download);
+  await download.finalize();
+});
