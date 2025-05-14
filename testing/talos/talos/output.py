@@ -264,56 +264,6 @@ class Output:
         return filter.mean(results)
 
     @classmethod
-    def stylebench_score(cls, val_list):
-        """
-        stylebench_score: https://bug-172968-attachments.webkit.org/attachment.cgi?id=319888
-        """
-        correctionFactor = 3
-        results = [i for i, j in val_list]
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if len(results) != 380:
-            raise Exception(
-                "StyleBench requires 380 entries, found: %s instead" % len(results)
-            )
-
-        results = results[75::76]
-        
-        score = 60 * 1000 / filter.geometric_mean(results) / correctionFactor
-        return score
-
-    @classmethod
     def damp_score(cls, val_list):
         """
         damp_score: damp is only interested in the value of subtests and will
@@ -333,8 +283,6 @@ class Output:
             return self.benchmark_score(vals)
         elif testname.startswith("speedometer"):
             return self.speedometer_score(vals)
-        elif testname.startswith("stylebench"):
-            return self.stylebench_score(vals)
         elif testname.startswith("damp"):
             return self.damp_score(vals)
         elif len(vals) > 1:

@@ -367,11 +367,44 @@ class BenchmarkSupport(PageloadSupport):
             
             
             
-            if len(results) != 380:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            EXPECTED_ENTRIES = 380 + 166
+            if len(results) != EXPECTED_ENTRIES:
                 raise Exception(
-                    "StyleBench requires 380 entries, found: %s instead" % len(results)
+                    f"StyleBench requires {EXPECTED_ENTRIES} entries, found: {len(results)} instead"
                 )
-            results = results[75::76]
+            results = results[:380][75::76] + [results[-1]]
             
             return 60 * 1000 / filters.geometric_mean(results) / correctionFactor
 
