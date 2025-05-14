@@ -4,6 +4,9 @@
 
 
 
+for var in ("MOZ_CHILD_PROCESS_BUNDLENAME",):
+    DEFINES[var] = '"%s"' % CONFIG[var]
+
 EXPORTS.mozilla += [
     "Sandbox.h",
     "SandboxPolicyContent.h",
