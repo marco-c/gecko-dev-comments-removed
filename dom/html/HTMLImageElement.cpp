@@ -622,9 +622,18 @@ nsIntSize HTMLImageElement::NaturalSize() {
     return {};
   }
 
-  nsIntSize size;
-  Unused << image->GetHeight(&size.height);
-  Unused << image->GetWidth(&size.width);
+  mozilla::image::ImageIntrinsicSize intrinsicSize;
+  nsresult rv = image->GetIntrinsicSize(&intrinsicSize);
+  if (NS_FAILED(rv)) {
+    return {};
+  }
+
+  
+  
+  
+  
+  nsIntSize size(intrinsicSize.mWidth.valueOr(0),
+                 intrinsicSize.mHeight.valueOr(0));
 
   ImageResolution resolution = image->GetResolution();
   
