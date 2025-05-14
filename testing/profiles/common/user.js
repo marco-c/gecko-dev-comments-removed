@@ -16,6 +16,7 @@ user_pref("browser.newtabpage.activity-stream.asrouter.providers.messaging-exper
 user_pref("browser.newtabpage.activity-stream.feeds.system.topstories", false);
 user_pref("browser.newtabpage.activity-stream.tippyTop.service.endpoint", "");
 user_pref("browser.newtabpage.activity-stream.discoverystream.config", "[]");
+user_pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "");
 
 
 user_pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "");
@@ -101,3 +102,5 @@ user_pref("widget.gtk.overlay-scrollbars.enabled", false);
 
 
 user_pref("idle.lastDailyNotification", -1);
+
+user_pref("logging.config.clear_on_startup", false);
