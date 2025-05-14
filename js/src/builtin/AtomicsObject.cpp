@@ -689,13 +689,6 @@ static FutexThread::WaitResult AtomicsWait(
   
   MOZ_ASSERT(sarb, "wait is only applicable to shared memory");
 
-  
-  if (!cx->fx.canWait()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ATOMICS_WAIT_NOT_ALLOWED);
-    return FutexThread::WaitResult::Error;
-  }
-
   SharedMem<T*> addr =
       sarb->dataPointerShared().cast<T*>() + (byteOffset / sizeof(T));
 
@@ -711,6 +704,8 @@ static FutexThread::WaitResult AtomicsWait(
 
   
   SyncFutexWaiter w(cx, byteOffset);
+
+  
   AddWaiter(sarb, &w, lock);
   FutexThread::WaitResult retval = cx->fx.wait(cx, lock.unique(), timeout);
   RemoveWaiter(&w, lock);
@@ -734,7 +729,7 @@ FutexThread::WaitResult js::atomics_wait_impl(
 
 
 template <typename T>
-static bool DoAtomicsWait(JSContext* cx,
+static bool DoAtomicsWait(JSContext* cx, bool isAsync,
                           Handle<TypedArrayObject*> unwrappedTypedArray,
                           size_t index, T value, HandleValue timeoutv,
                           MutableHandleValue r) {
@@ -758,6 +753,13 @@ static bool DoAtomicsWait(JSContext* cx,
   }
 
   
+  if (!isAsync && !cx->fx.canWait()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ATOMICS_WAIT_NOT_ALLOWED);
+    return false;
+  }
+
+  
   Rooted<SharedArrayBufferObject*> unwrappedSab(
       cx, unwrappedTypedArray->bufferShared());
 
@@ -770,37 +772,36 @@ static bool DoAtomicsWait(JSContext* cx,
   
   
   
-  size_t indexedPosition = index * sizeof(T) + *offset;
+  size_t byteIndexInBuffer = index * sizeof(T) + *offset;
 
   
-  switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
-                            indexedPosition, value, timeout)) {
-    case FutexThread::WaitResult::NotEqual:
-      r.setString(cx->names().not_equal_);
-      return true;
-    case FutexThread::WaitResult::OK:
-      r.setString(cx->names().ok);
-      return true;
-    case FutexThread::WaitResult::TimedOut:
-      r.setString(cx->names().timed_out_);
-      return true;
-    case FutexThread::WaitResult::Error:
-      return false;
-    default:
-      MOZ_CRASH("Should not happen");
+  if (isAsync) {
+    MOZ_CRASH("TODO");
+  } else {
+    switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
+                              byteIndexInBuffer, value, timeout)) {
+      case FutexThread::WaitResult::NotEqual:
+        r.setString(cx->names().not_equal_);
+        return true;
+      case FutexThread::WaitResult::OK:
+        r.setString(cx->names().ok);
+        return true;
+      case FutexThread::WaitResult::TimedOut:
+        r.setString(cx->names().timed_out_);
+        return true;
+      case FutexThread::WaitResult::Error:
+        return false;
+      default:
+        MOZ_CRASH("Should not happen");
+    }
   }
 }
 
 
 
-static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  HandleValue objv = args.get(0);
-  HandleValue index = args.get(1);
-  HandleValue valv = args.get(2);
-  HandleValue timeoutv = args.get(3);
-  MutableHandleValue r = args.rval();
-
+static bool DoWait(JSContext* cx, bool isAsync, HandleValue objv,
+                   HandleValue index, HandleValue valv, HandleValue timeoutv,
+                   MutableHandleValue r) {
   
   Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
@@ -820,6 +821,7 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  
   if (unwrappedTypedArray->type() == Scalar::Int32) {
     
     int32_t value;
@@ -828,7 +830,8 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    return DoAtomicsWait(cx, unwrappedTypedArray, intIndex, value, timeoutv, r);
+    return DoAtomicsWait(cx, isAsync, unwrappedTypedArray, intIndex, value,
+                         timeoutv, r);
   }
 
   MOZ_ASSERT(unwrappedTypedArray->type() == Scalar::BigInt64);
@@ -840,8 +843,21 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  return DoAtomicsWait(cx, unwrappedTypedArray, intIndex,
+  return DoAtomicsWait(cx, isAsync, unwrappedTypedArray, intIndex,
                        BigInt::toInt64(value), timeoutv, r);
+}
+
+
+
+static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  HandleValue objv = args.get(0);
+  HandleValue index = args.get(1);
+  HandleValue valv = args.get(2);
+  HandleValue timeoutv = args.get(3);
+  MutableHandleValue r = args.rval();
+
+  return DoWait(cx,  false, objv, index, valv, timeoutv, r);
 }
 
 
@@ -852,10 +868,10 @@ int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
   MOZ_ASSERT(sarb, "notify is only applicable to shared memory");
 
   
-  AutoLockFutexAPI lock;
+  int64_t woken = 0;
 
   
-  int64_t woken = 0;
+  AutoLockFutexAPI lock;
 
   
   FutexWaiterListNode* waiterListHead = sarb->waiters();
