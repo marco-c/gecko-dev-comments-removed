@@ -37,6 +37,7 @@
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
 #include "js/GCAPI.h"                       
+#include "js/Prefs.h"                       
 #include "js/Printer.h"                     
 #include "js/RealmOptions.h"                
 #include "js/RootingAPI.h"                  
@@ -2929,6 +2930,9 @@ bool CompilationStencil::delazifySelfHostedFunction(
   if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
                              range.start)) {
     return false;
+  }
+
+  if (JS::Prefs::experimental_self_hosted_cache()) {
   }
 
   
