@@ -19,10 +19,10 @@ def handle_keyed_by(config, tasks):
     merge_config = config.params["merge_config"]
     fields = [
         "routes",
-        "worker.push",
+        "scopes",
         "worker-type",
         "worker.l10n-bump-info",
-        "worker.source-repo",
+        "worker.lando-repo",
     ]
     for task in tasks:
         for field in fields:
@@ -34,6 +34,7 @@ def handle_keyed_by(config, tasks):
                     "project": config.params["project"],
                     "release-type": config.params["release_type"],
                     "behavior": merge_config["behavior"],
+                    "level": config.params["level"],
                 }
             )
         yield task
@@ -66,17 +67,13 @@ def add_payload_config(config, tasks):
 
         
         for field in [
-            "from-repo",
             "from-branch",
-            "to-repo",
             "to-branch",
             "fetch-version-from",
+            "lando-repo",
         ]:
             if merge_config.get(field):
                 worker["merge-info"][field] = merge_config[field]
 
         worker["force-dry-run"] = merge_config["force-dry-run"]
-        worker["ssh-user"] = merge_config.get("ssh-user-alias", "merge_user")
-        if merge_config.get("push"):
-            worker["push"] = merge_config["push"]
         yield task
