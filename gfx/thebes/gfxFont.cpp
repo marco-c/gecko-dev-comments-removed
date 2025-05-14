@@ -2826,13 +2826,10 @@ bool gfxFont::HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh) {
   uint32_t gid = 0;
   if (gfxFontUtils::IsVarSelector(aNextCh)) {
     gid = shaper->GetVariationGlyph(aCh, aNextCh);
-    if (gid) {
-      
-      
-      return true;
-    }
   }
-  gid = shaper->GetNominalGlyph(aCh);
+  if (!gid) {
+    gid = shaper->GetNominalGlyph(aCh);
+  }
   if (!gid) {
     return false;
   }
