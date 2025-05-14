@@ -2,8 +2,8 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
 });
 
 let defaultValue;
@@ -19,7 +19,7 @@ add_task(async function remote_disable() {
     return;
   }
 
-  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig(
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
     {
       featureId: NimbusFeatures.shellService.featureId,
       value: { disablePin: true, enabled: true },
