@@ -112,13 +112,16 @@ add_task(async function test_multiselect_with_item_description() {
       `.multi-select-container .multi-select-item:last-of-type label`,
       
       `.multi-select-container .multi-select-item:last-of-type input[aria-describedby="checkbox-2-description"]`,
+      `.multi-select-container .multi-select-item:last-of-type input[aria-labelledby="checkbox-2-label"]`,
       `.multi-select-container .multi-select-item:last-of-type p#checkbox-2-description`,
+      `.multi-select-container .multi-select-item:last-of-type label#checkbox-2-label`,
     ],
     
     [
       
       `.multi-select-container .multi-select-item:first-of-type p`,
       `.multi-select-container .multi-select-item:first-of-type input[aria-describedby*="-description"]`,
+      `.multi-select-container .multi-select-item:first-of-type input[aria-labelledby*="-label"]`,
     ]
   );
 });
