@@ -453,6 +453,11 @@ pref("browser.urlbar.scotchBonnet.enableOverride", false);
 #endif
 
 
+
+
+pref("browser.urlbar.perplexity.hasBeenInSearchMode", false);
+
+
 pref("browser.urlbar.unifiedSearchButton.always", false);
 
 
