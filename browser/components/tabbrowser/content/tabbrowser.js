@@ -5396,10 +5396,6 @@
         ourBrowser.isDistinctProductPageVisit = true;
       }
 
-      if (otherBrowser.reviewCheckerWasClosed) {
-        ourBrowser.reviewCheckerWasClosed = true;
-      }
-
       SitePermissions.copyTemporaryPermissions(otherBrowser, ourBrowser);
 
       
