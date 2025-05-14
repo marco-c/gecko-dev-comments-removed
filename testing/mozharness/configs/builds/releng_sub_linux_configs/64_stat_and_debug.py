@@ -11,6 +11,9 @@ config = {
         "build",
     ],
     "vcs_share_base": "/builds/hg-shared",
+    "upload_env": {
+        "UPLOAD_PATH": "/builds/worker/artifacts",
+    },
     
     
     
@@ -26,9 +29,7 @@ config = {
         "TOOLTOOL_HOME": "/builds",
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "LC_ALL": "C",
-        
-        "PATH": "/usr/local/bin:/bin:\
-/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
         
     },
     
