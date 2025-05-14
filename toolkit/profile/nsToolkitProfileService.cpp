@@ -2442,7 +2442,14 @@ nsToolkitProfileService::AsyncFlushGroupProfile(JSContext* aCx,
 #ifndef MOZ_HAS_REMOTE
   return NS_ERROR_FAILURE;
 #else
-  if (!mGroupProfile) {
+  
+  
+  RefPtr<nsToolkitProfile> profile = mGroupProfile;
+  if (!profile) {
+    profile = mCurrent;
+  }
+
+  if (!profile) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
@@ -2460,11 +2467,11 @@ nsToolkitProfileService::AsyncFlushGroupProfile(JSContext* aCx,
   }
 
   UniquePtr<GroupProfileData> profileData = MakeUnique<GroupProfileData>();
-  profileData->mStoreID = mGroupProfile->mStoreID;
-  profileData->mShowSelector = mGroupProfile->mShowProfileSelector;
+  profileData->mStoreID = profile->mStoreID;
+  profileData->mShowSelector = profile->mShowProfileSelector;
 
   bool isRelative;
-  GetProfileDescriptor(mGroupProfile, profileData->mPath, &isRelative);
+  GetProfileDescriptor(profile, profileData->mPath, &isRelative);
 
   nsCOMPtr<nsIRemoteService> rs = GetRemoteService();
   RefPtr<nsRemoteService> remoteService =
