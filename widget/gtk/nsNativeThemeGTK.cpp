@@ -630,6 +630,10 @@ bool nsNativeThemeGTK::CreateWebRenderCommandsForWidget(
     return Theme::CreateWebRenderCommandsForWidget(
         aBuilder, aResources, aSc, aManager, aFrame, aAppearance, aRect);
   }
+  if (aAppearance == StyleAppearance::MozWindowDecorations && GdkIsWaylandDisplay()) {
+    
+    return true;
+  }
   return false;
 }
 
