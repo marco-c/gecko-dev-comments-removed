@@ -979,10 +979,6 @@ class gfxFontUtils {
                                         uint32_t aVS);
 
   
-  static bool IsDefaultUVSSequence(const uint8_t* aBuf, uint32_t aCh,
-                                   uint32_t aVS);
-
-  
   
   
   static MOZ_ALWAYS_INLINE uint32_t GetUVSFallback(uint32_t aCh, uint32_t aVS) {
