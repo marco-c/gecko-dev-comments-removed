@@ -11,6 +11,7 @@
 #include "mozilla/RangeBoundary.h"
 #include "nsIContent.h"
 #include "nsINode.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 
@@ -55,8 +56,6 @@ class RangeUtils final {
   using AbstractRange = dom::AbstractRange;
 
  public:
-  static nsINode* GetParentNodeInSameSelection(const nsINode* aNode);
-
   
 
 
@@ -137,6 +136,9 @@ class RangeUtils final {
   
 
 
+  template <TreeKind aKind = TreeKind::ShadowIncludingDOM,
+            typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
+                                        aKind == TreeKind::Flat>>
   static Maybe<bool> IsNodeContainedInRange(nsINode& aNode,
                                             AbstractRange* aAbstractRange);
 
@@ -145,12 +147,18 @@ class RangeUtils final {
 
 
 
+  template <TreeKind aKind = TreeKind::ShadowIncludingDOM,
+            typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
+                                        aKind == TreeKind::Flat>>
   static nsresult CompareNodeToRange(nsINode* aNode,
                                      AbstractRange* aAbstractRange,
                                      bool* aNodeIsBeforeRange,
                                      bool* aNodeIsAfterRange);
 
-  template <typename SPT, typename SRT, typename EPT, typename ERT>
+  template <TreeKind aKind, typename SPT, typename SRT, typename EPT,
+            typename ERT,
+            typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
+                                        aKind == TreeKind::Flat>>
   static nsresult CompareNodeToRangeBoundaries(
       nsINode* aNode, const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const RangeBoundaryBase<EPT, ERT>& aEndBoundary, bool* aNodeIsBeforeRange,
