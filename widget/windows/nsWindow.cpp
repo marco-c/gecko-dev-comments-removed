@@ -560,8 +560,10 @@ class TIPMessageHandler {
     
     
     if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
-        static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
-        !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
+        (static_cast<LONG>(aLParam) != OBJID_CLIENT &&
+         static_cast<LONG>(aLParam) != UiaRootObjectId) ||
+        !::NS_IsMainThread() || !WinUtils::GetNSWindowPtr(aHwnd) ||
+        !IsA11yBlocked()) {
       return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
                                       aTimeout, aMsgResult);
     }
