@@ -365,6 +365,10 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
 
   
   
+  if (!OwnerDoc()->IsFullyActive()) {
+    return aError.ThrowInvalidStateError("The owner document is not fully active");
+  }
+
   
   
   if (!IsInComposedDoc()) {
