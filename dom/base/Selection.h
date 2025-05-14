@@ -934,11 +934,8 @@ class Selection final : public nsSupportsWeakReference,
       PostContentIterator& aPostOrderIter, nsIContent* aContent,
       bool aSelected) const;
 
-  
-
-
-  void SelectFramesOfShadowIncludingDescendantsOfContent(nsIContent* aContent,
-                                                         bool aSelected) const;
+  void SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
+                                            bool aSelected) const;
 
   nsresult SelectFrames(nsPresContext* aPresContext, AbstractRange& aRange,
                         bool aSelect) const;
