@@ -761,8 +761,10 @@ class Pref {
         mHasDefaultValue = true;
         defaultValueChanged = true;
       }
+    } else if (mHasDefaultValue) {
+      ClearDefaultValue();
+      defaultValueChanged = true;
     }
-    
 
     const Maybe<dom::PrefValue>& userValue = aDomPref.userValue();
     bool userValueChanged = false;
@@ -820,6 +822,10 @@ class Pref {
   void ClearUserValue() {
     mUserValue.Clear(Type());
     mHasUserValue = false;
+  }
+  void ClearDefaultValue() {
+    mDefaultValue.Clear(Type());
+    mHasDefaultValue = false;
   }
 
   nsresult SetDefaultValue(PrefType aType, PrefValue aValue, bool aIsSticky,
@@ -1795,10 +1801,10 @@ Maybe<PrefWrapper> pref_Lookup(const char* aPrefName,
 }
 
 static Result<Pref*, nsresult> pref_LookupForModify(
-    const nsCString& aPrefName,
+    const char* aPrefName,
     const std::function<bool(const PrefWrapper&)>& aCheckFn) {
   Maybe<PrefWrapper> wrapper =
-      pref_Lookup(aPrefName.get(),  true);
+      pref_Lookup(aPrefName,  true);
   if (wrapper.isNothing()) {
     return Err(NS_ERROR_INVALID_ARG);
   }
@@ -1809,8 +1815,8 @@ static Result<Pref*, nsresult> pref_LookupForModify(
     return wrapper->as<Pref*>();
   }
 
-  Pref* pref = new Pref(aPrefName);
-  if (!HashTable()->putNew(aPrefName.get(), pref)) {
+  Pref* pref = new Pref(nsDependentCString{aPrefName});
+  if (!HashTable()->putNew(aPrefName, pref)) {
     delete pref;
     return Err(NS_ERROR_OUT_OF_MEMORY);
   }
@@ -1843,7 +1849,7 @@ static nsresult pref_SetPref(const nsCString& aPrefName, PrefType aType,
   Pref* pref = nullptr;
   if (gSharedMap) {
     auto result =
-        pref_LookupForModify(aPrefName, [&](const PrefWrapper& aWrapper) {
+        pref_LookupForModify(aPrefName.get(), [&](const PrefWrapper& aWrapper) {
           return !aWrapper.Matches(aType, aKind, aValue, aIsSticky, aIsLocked);
         });
     if (result.isOk() && !(pref = result.unwrap())) {
@@ -2788,16 +2794,44 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt) {
   const nsACString& branchNameNoDot =
       Substring(branchName, 0, branchName.Length() - 1);
 
-  for (auto iter = HashTable()->modIter(); !iter.done(); iter.next()) {
+  
+  AutoTArray<const char*, 32> prefNames;
+  for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
     
     
     
     
-    nsDependentCString name(iter.get()->Name());
-    if (StringBeginsWith(name, branchName) || name.Equals(branchNameNoDot)) {
-      iter.remove();
+    if (StringBeginsWith(pref->NameString(), branchName) ||
+        pref->NameString() == branchNameNoDot) {
+      prefNames.AppendElement(pref->Name());
+    }
+  }
+
+  
+  for (auto& prefName : prefNames) {
+    auto result = pref_LookupForModify(
+        prefName, [](const PrefWrapper& aPref) { return !aPref.IsTypeNone(); });
+    if (result.isErr()) {
       
-      gCallbackPref = nullptr;
+      continue;
+    }
+
+    if (Pref* pref = result.unwrap()) {
+      pref->ClearUserValue();
+      pref->ClearDefaultValue();
+
+      MOZ_ASSERT(
+          !gSharedMap || !pref->IsSanitized() || !gSharedMap->Has(pref->Name()),
+          "A sanitized pref should never be in the shared pref map.");
+      if (!pref->IsSanitized() &&
+          (!gSharedMap || !gSharedMap->Has(pref->Name()))) {
+        HashTable()->remove(prefName);
+      } else {
+        
+        
+        pref->SetType(PrefType::None);
+      }
+      NotifyCallbacks(nsDependentCString{prefName});
     }
   }
 
@@ -4002,7 +4036,7 @@ nsresult Preferences::ResetUserPrefs() {
   }
 
   for (const char* prefName : prefNames) {
-    NotifyCallbacks(nsDependentCString(prefName));
+    NotifyCallbacks(nsDependentCString{prefName});
   }
 
   Preferences::HandleDirty();
@@ -4132,6 +4166,7 @@ void Preferences::SetPreference(const dom::Pref& aDomPref) {
   bool valueChanged = false;
   pref->FromDomPref(aDomPref, &valueChanged);
 
+  
   
   
   
@@ -5254,17 +5289,15 @@ nsresult Preferences::Lock(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("Lock", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  const auto& prefName = nsDependentCString(aPrefName);
-
   Pref* pref;
   MOZ_TRY_VAR(pref,
-              pref_LookupForModify(prefName, [](const PrefWrapper& aPref) {
+              pref_LookupForModify(aPrefName, [](const PrefWrapper& aPref) {
                 return !aPref.IsLocked();
               }));
 
   if (pref) {
     pref->SetIsLocked(true);
-    NotifyCallbacks(prefName, PrefWrapper(pref));
+    NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
   }
 
   return NS_OK;
@@ -5275,17 +5308,15 @@ nsresult Preferences::Unlock(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("Unlock", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  const auto& prefName = nsDependentCString(aPrefName);
-
   Pref* pref;
   MOZ_TRY_VAR(pref,
-              pref_LookupForModify(prefName, [](const PrefWrapper& aPref) {
+              pref_LookupForModify(aPrefName, [](const PrefWrapper& aPref) {
                 return aPref.IsLocked();
               }));
 
   if (pref) {
     pref->SetIsLocked(false);
-    NotifyCallbacks(prefName, PrefWrapper(pref));
+    NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
   }
 
   return NS_OK;
@@ -5312,9 +5343,8 @@ nsresult Preferences::ClearUser(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("ClearUser", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  const auto& prefName = nsDependentCString{aPrefName};
   auto result = pref_LookupForModify(
-      prefName, [](const PrefWrapper& aPref) { return aPref.HasUserValue(); });
+      aPrefName, [](const PrefWrapper& aPref) { return aPref.HasUserValue(); });
   if (result.isErr()) {
     return NS_OK;
   }
@@ -5333,9 +5363,9 @@ nsresult Preferences::ClearUser(const char* aPrefName) {
         pref->SetType(PrefType::None);
       }
 
-      NotifyCallbacks(prefName);
+      NotifyCallbacks(nsDependentCString{aPrefName});
     } else {
-      NotifyCallbacks(prefName, PrefWrapper(pref));
+      NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
     }
 
     Preferences::HandleDirty();
