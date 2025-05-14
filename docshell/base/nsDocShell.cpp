@@ -13964,3 +13964,36 @@ bool nsDocShell::IsSameDocumentAsActiveEntry(
     const mozilla::dom::SessionHistoryInfo& aSHInfo) {
   return mActiveEntry ? mActiveEntry->SharesDocumentWith(aSHInfo) : false;
 }
+
+
+nsPIDOMWindowInner* nsDocShell::GetActiveWindow() {
+  nsPIDOMWindowOuter* outer = GetWindow();
+  return outer ? outer->GetCurrentInnerWindow() : nullptr;
+}
+
+
+void nsDocShell::InformNavigationAPIAboutAbortingNavigation(JSContext* aCx) {
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
+  
+  RefPtr<nsPIDOMWindowInner> window = GetActiveWindow();
+  if (!window) {
+    return;
+  }
+
+  
+  RefPtr<Navigation> navigation = window->Navigation();
+  if (!navigation) {
+    return;
+  }
+
+  
+  if (!navigation->HasOngoingNavigateEvent()) {
+    return;
+  }
+
+  
+  navigation->AbortOngoingNavigation(aCx);
+}
