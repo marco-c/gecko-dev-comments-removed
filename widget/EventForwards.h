@@ -152,7 +152,7 @@ const nsCString ToString(CodeNameIndex aCodeNameIndex);
 
 #define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) e##aCPPName,
 
-typedef uint8_t EditorInputTypeType;
+using EditorInputTypeType = uint8_t;
 enum class EditorInputType : EditorInputTypeType {
 #include "mozilla/InputTypeList.h"
   
@@ -160,6 +160,22 @@ enum class EditorInputType : EditorInputTypeType {
   
   eUnknown,
 };
+
+#undef NS_DEFINE_INPUTTYPE
+
+#define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) \
+  case EditorInputType::e##aCPPName:            \
+    return aStream << ("EditorInputType::e" #aCPPName);
+
+inline const std::ostream& operator<<(std::ostream& aStream,
+                                      const EditorInputType& aInputType) {
+  switch (aInputType) {
+#include "mozilla/InputTypeList.h"
+    case EditorInputType::eUnknown:
+      return aStream << "EditorInputType::eUnknown";
+  }
+  return aStream << "<Invalid EditorInputType>";
+}
 
 #undef NS_DEFINE_INPUTTYPE
 
