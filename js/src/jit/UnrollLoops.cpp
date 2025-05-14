@@ -1692,15 +1692,42 @@ bool FindInitialCandidates(MIRGraph& graph,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Vector<MBasicBlock*, 128, SystemAllocPolicy> initialHeaders;
+  {
+    MBasicBlock* backedge = nullptr;
+    uint32_t expectedNextId = 0;
+    for (auto rpoIter(graph.rpoBegin()), rpoIterEnd(graph.rpoEnd());
+         rpoIter != rpoIterEnd; ++rpoIter) {
+      MBasicBlock* block = *rpoIter;
+      MOZ_RELEASE_ASSERT(block->id() == expectedNextId);
+      expectedNextId++;
+
+      if (block->isLoopHeader()) {
+        backedge = block->backedge();
+      }
+      if (block == backedge) {
+        if (!initialHeaders.append(block->loopHeaderOfBackedge())) {
+          return false;
+        }
+      }
+    }
+  }
 
   
   
-  for (auto rpoIter(graph.rpoBegin()), rpoIterEnd(graph.rpoEnd());
-       rpoIter != rpoIterEnd; ++rpoIter) {
-    MBasicBlock* header = *rpoIter;
-    if (!header->isLoopHeader()) {
-      continue;
-    }
+  
+  for (MBasicBlock* header : initialHeaders) {
+    MOZ_ASSERT(header->isLoopHeader());
 
     bool hasOsrEntry;
     size_t numBlocks = MarkLoopBlocks(graph, header, &hasOsrEntry);
@@ -1723,74 +1750,17 @@ bool FindInitialCandidates(MIRGraph& graph,
   
   std::sort(initialCandidates.begin(), initialCandidates.end(),
             [](const InitialCandidate& cand1, const InitialCandidate& cand2) {
-              return cand1.numBlocks < cand2.numBlocks;
-            });
-
-  
-  
-  
-  
-  for (size_t i = 0; i < initialCandidates.length(); i++) {
-    const InitialCandidate& candI = initialCandidates[i];
-    MOZ_ASSERT(candI.numBlocks > 0);
-
-    for (size_t j = i + 1; j < initialCandidates.length(); j++) {
-      InitialCandidate& candJ = initialCandidates[j];
-      MOZ_ASSERT(candJ.numBlocks > 0);
-      
-      MOZ_ASSERT(candI.numBlocks <= candJ.numBlocks);
-      if (!candJ.valid) {
-        
-        continue;
-      }
-
-      
-      
-      MOZ_ASSERT(candI.numBlocks > 0);
-      if (candI.header->id() + candI.numBlocks <= candJ.header->id()) {
-        continue;  
-      }
-      if (candJ.header->id() + candJ.numBlocks <= candI.header->id()) {
-        continue;  
-      }
-      
-      MOZ_ASSERT(candJ.header->id() <= candI.header->id());
-      MOZ_ASSERT(candI.header->id() + candI.numBlocks <=
-                 candJ.header->id() + candJ.numBlocks);
-      
-      MOZ_ASSERT(candI.header->id() != candJ.header->id() ||
-                 candI.numBlocks != candJ.numBlocks);
-      candJ.valid = false;
-    }
-  }
-
-  
-  
-  {
-    size_t wr = 0;
-    size_t rd;
-    for (rd = 0; rd < initialCandidates.length(); rd++) {
-      if (initialCandidates[rd].valid) {
-        initialCandidates[wr++] = initialCandidates[rd];
-      }
-    }
-    while (wr < rd) {
-      initialCandidates.popBack();
-      wr++;
-    }
-  }
-
-  
-  std::sort(initialCandidates.begin(), initialCandidates.end(),
-            [](const InitialCandidate& cand1, const InitialCandidate& cand2) {
               return cand1.header->id() < cand2.header->id();
             });
 
   
+  
+  
+  
   for (size_t i = 1; i < initialCandidates.length(); i++) {
-    MOZ_ASSERT(initialCandidates[i - 1].header->id() +
-                   initialCandidates[i - 1].numBlocks <=
-               initialCandidates[i].header->id());
+    MOZ_RELEASE_ASSERT(initialCandidates[i - 1].header->id() +
+                       initialCandidates[i - 1].numBlocks <=
+                       initialCandidates[i].header->id());
   }
 
   
