@@ -534,6 +534,12 @@ struct JSRuntime {
       JS::GCHashMap<js::PreBarriered<JSAtom*>, js::frontend::ScriptIndexRange,
                     js::DefaultHasher<JSAtom*>, js::SystemAllocPolicy>>
       selfHostScriptMap;
+  
+  
+  js::MainThreadData<
+      js::GCHashMap<js::PreBarriered<JSAtom*>, js::jit::BaselineScript*,
+                    js::DefaultHasher<JSAtom*>, js::SystemAllocPolicy>>
+      selfHostJitCache;
 
  private:
   
