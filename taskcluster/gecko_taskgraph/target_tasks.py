@@ -823,6 +823,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 
                 
                 return False
+            
+            if "windows11" in platform and "bing-search" in try_name:
+                return False
             if "browsertime" in try_name:
                 if "chrome" in try_name:
                     if "tp6" in try_name and "essential" not in try_name:
