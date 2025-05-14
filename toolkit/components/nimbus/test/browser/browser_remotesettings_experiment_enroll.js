@@ -33,16 +33,7 @@ add_setup(async function () {
 add_task(async function test_experimentEnrollment() {
   
   
-  const recipe = ExperimentFakes.recipe("foo" + Math.random(), {
-    bucketConfig: {
-      start: 0,
-      
-      count: 10000,
-      total: 10000,
-      namespace: "mochitest",
-      randomizationUnit: "normandy_id",
-    },
-  });
+  const recipe = NimbusTestUtils.factories.recipe("foo" + Math.random());
   await rsClient.db.importChanges({}, Date.now(), [recipe], {
     clear: true,
   });
