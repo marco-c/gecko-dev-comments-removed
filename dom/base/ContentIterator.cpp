@@ -952,15 +952,27 @@ void ContentSubtreeIterator::CacheInclusiveAncestorsOfEndContainer() {
       mRange, mAllowCrossShadowBoundary);
   nsIContent* endNode =
       endContainer->IsContent() ? endContainer->AsContent() : nullptr;
-  while (endNode) {
-    mInclusiveAncestorsOfEndContainer.AppendElement(endNode);
+
+  AncestorInfo info{endNode, false};
+  while (info.mAncestor) {
+    const nsINode* child = info.mAncestor;
+    mInclusiveAncestorsOfEndContainer.AppendElement(info);
     
     nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-        *endNode, IterAllowCrossShadowBoundary());
+        *child, mAllowCrossShadowBoundary);
     if (!parent || !parent->IsContent()) {
       break;
     }
-    endNode = parent->AsContent();
+
+    const bool isDescendantInShadowTree =
+        IterAllowCrossShadowBoundary() && child->IsShadowRoot();
+
+    info.mAncestor = parent->AsContent();
+    
+    
+    
+    
+    info.mIsDescendantInShadowTree = isDescendantInShadowTree;
   }
 }
 
@@ -1164,20 +1176,20 @@ void ContentSubtreeIterator::Next() {
 
   NS_ASSERTION(nextNode, "No next sibling!?! This could mean deadlock!");
 
-  int32_t i = mInclusiveAncestorsOfEndContainer.IndexOf(nextNode);
+  int32_t i = mInclusiveAncestorsOfEndContainer.IndexOf(
+      nextNode, 0, InclusiveAncestorComparator());
+
   while (i != -1) {
     
     
     ShadowRoot* root = ShadowDOMSelectionHelpers::GetShadowRoot(
-        nextNode, IterAllowCrossShadowBoundary());
-    if (!root) {
-      nextNode = nextNode->GetFirstChild();
+        nextNode, mAllowCrossShadowBoundary);
+    if (mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree) {
+      nextNode = root->GetFirstChild();
     } else {
-      
-      
-      
-      nextNode = IterAllowCrossShadowBoundary() ? root->GetFirstChild()
-                                                : nextNode->GetFirstChild();
+      MOZ_ASSERT(
+          !mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree);
+      nextNode = nextNode->GetFirstChild();
     }
     NS_ASSERTION(nextNode, "Iterator error, expected a child node!");
 
@@ -1185,7 +1197,8 @@ void ContentSubtreeIterator::Next() {
     
     
     
-    i = mInclusiveAncestorsOfEndContainer.IndexOf(nextNode);
+    i = mInclusiveAncestorsOfEndContainer.IndexOf(
+        nextNode, 0, InclusiveAncestorComparator());
   }
 
   mCurNode = nextNode;

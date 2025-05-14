@@ -97,6 +97,20 @@ class ContentIteratorBase {
       nsIContent* aRoot,
       dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 
+  struct AncestorInfo {
+    nsIContent* mAncestor = nullptr;
+    
+    
+    
+    bool mIsDescendantInShadowTree = false;
+  };
+
+  class InclusiveAncestorComparator {
+   public:
+    bool Equals(const AncestorInfo& aA, const nsINode* aB) const {
+      return aA.mAncestor == aB;
+    }
+  };
   
   
   
@@ -330,7 +344,7 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   RefPtr<dom::AbstractRange> mRange;
 
   
-  AutoTArray<nsIContent*, 8> mInclusiveAncestorsOfEndContainer;
+  AutoTArray<AncestorInfo, 8> mInclusiveAncestorsOfEndContainer;
 
   
   dom::AllowRangeCrossShadowBoundary mAllowCrossShadowBoundary =
