@@ -1004,40 +1004,37 @@ static constexpr const char *kAndroidState = "android.state";
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kContainerCpuState = "container.cpu.state";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kContainerCpuState = "container.cpu.state";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbCassandraTable = "db.cassandra.table";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbCassandraTable = "db.cassandra.table";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbConnectionString = "db.connection_string";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbConnectionString = "db.connection_string";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbCosmosdbContainer = "db.cosmosdb.container";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbCosmosdbContainer =
+    "db.cosmosdb.container";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbElasticsearchClusterName = "db.elasticsearch.cluster.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbElasticsearchClusterName =
+    "db.elasticsearch.cluster.name";
 
 
 
@@ -1046,24 +1043,23 @@ static constexpr const char *kDbElasticsearchClusterName = "db.elasticsearch.clu
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbInstanceId = "db.instance.id";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbInstanceId = "db.instance.id";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbJdbcDriverClassname = "db.jdbc.driver_classname";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbJdbcDriverClassname =
+    "db.jdbc.driver_classname";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbMongodbCollection = "db.mongodb.collection";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbMongodbCollection =
+    "db.mongodb.collection";
 
 
 
@@ -1071,152 +1067,140 @@ static constexpr const char *kDbMongodbCollection = "db.mongodb.collection";
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbMssqlInstanceName = "db.mssql.instance_name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbMssqlInstanceName =
+    "db.mssql.instance_name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbName = "db.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbName = "db.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbOperation = "db.operation";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbOperation = "db.operation";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbRedisDatabaseIndex = "db.redis.database_index";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbRedisDatabaseIndex =
+    "db.redis.database_index";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbSqlTable = "db.sql.table";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbSqlTable = "db.sql.table";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbStatement = "db.statement";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbStatement = "db.statement";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbUser = "db.user";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbUser = "db.user";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbClientConnectionsPoolName = "db.client.connections.pool.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbClientConnectionsPoolName =
+    "db.client.connections.pool.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDbClientConnectionsState = "db.client.connections.state";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDbClientConnectionsState =
+    "db.client.connections.state";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kPoolName = "pool.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kPoolName = "pool.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kState = "state";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kState = "state";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kDeploymentEnvironment = "deployment.environment";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kDeploymentEnvironment =
+    "deployment.environment";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kEnduserId = "enduser.id";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kEnduserId = "enduser.id";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kEnduserRole = "enduser.role";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kEnduserRole = "enduser.role";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kEnduserScope = "enduser.scope";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kEnduserScope = "enduser.scope";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kGenAiUsageCompletionTokens = "gen_ai.usage.completion_tokens";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kGenAiUsageCompletionTokens =
+    "gen_ai.usage.completion_tokens";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kGenAiUsagePromptTokens = "gen_ai.usage.prompt_tokens";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kGenAiUsagePromptTokens =
+    "gen_ai.usage.prompt_tokens";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpClientIp = "http.client_ip";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpClientIp = "http.client_ip";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpFlavor = "http.flavor";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpFlavor = "http.flavor";
 
 
 
@@ -1225,32 +1209,29 @@ static constexpr const char *kHttpFlavor = "http.flavor";
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpHost = "http.host";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpHost = "http.host";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpMethod = "http.method";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpMethod = "http.method";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpRequestContentLength = "http.request_content_length";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpRequestContentLength =
+    "http.request_content_length";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpRequestContentLengthUncompressed =
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpRequestContentLengthUncompressed =
     "http.request_content_length_uncompressed";
 
 
@@ -1258,16 +1239,15 @@ static constexpr const char *kHttpRequestContentLengthUncompressed =
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpResponseContentLength = "http.response_content_length";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpResponseContentLength =
+    "http.response_content_length";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpResponseContentLengthUncompressed =
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpResponseContentLengthUncompressed =
     "http.response_content_length_uncompressed";
 
 
@@ -1275,48 +1255,42 @@ static constexpr const char *kHttpResponseContentLengthUncompressed =
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpScheme = "http.scheme";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpScheme = "http.scheme";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpServerName = "http.server_name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpServerName = "http.server_name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpStatusCode = "http.status_code";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpStatusCode = "http.status_code";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpTarget = "http.target";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpTarget = "http.target";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpUrl = "http.url";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpUrl = "http.url";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kHttpUserAgent = "http.user_agent";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kHttpUserAgent = "http.user_agent";
 
 
 
@@ -1330,16 +1304,14 @@ static constexpr const char *kHttpUserAgent = "http.user_agent";
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kIosState = "ios.state";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kIosState = "ios.state";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingDestinationPublishAnonymous =
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingDestinationPublishAnonymous =
     "messaging.destination_publish.anonymous";
 
 
@@ -1347,8 +1319,7 @@ static constexpr const char *kMessagingDestinationPublishAnonymous =
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingDestinationPublishName =
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingDestinationPublishName =
     "messaging.destination_publish.name";
 
 
@@ -1356,8 +1327,7 @@ static constexpr const char *kMessagingDestinationPublishName =
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingEventhubsConsumerGroup =
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingEventhubsConsumerGroup =
     "messaging.eventhubs.consumer.group";
 
 
@@ -1365,16 +1335,15 @@ static constexpr const char *kMessagingEventhubsConsumerGroup =
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingKafkaConsumerGroup = "messaging.kafka.consumer.group";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingKafkaConsumerGroup =
+    "messaging.kafka.consumer.group";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingKafkaDestinationPartition =
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingKafkaDestinationPartition =
     "messaging.kafka.destination.partition";
 
 
@@ -1382,65 +1351,60 @@ static constexpr const char *kMessagingKafkaDestinationPartition =
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingKafkaMessageOffset = "messaging.kafka.message.offset";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingKafkaMessageOffset =
+    "messaging.kafka.message.offset";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingOperation = "messaging.operation";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingOperation = "messaging.operation";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingRocketmqClientGroup = "messaging.rocketmq.client_group";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessagingRocketmqClientGroup =
+    "messaging.rocketmq.client_group";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessagingServicebusDestinationSubscriptionName =
-    "messaging.servicebus.destination.subscription_name";
+OPENTELEMETRY_DEPRECATED static constexpr const char
+    *kMessagingServicebusDestinationSubscriptionName =
+        "messaging.servicebus.destination.subscription_name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetHostIp = "net.host.ip";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetHostIp = "net.host.ip";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetHostName = "net.host.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetHostName = "net.host.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetHostPort = "net.host.port";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetHostPort = "net.host.port";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetPeerIp = "net.peer.ip";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetPeerIp = "net.peer.ip";
 
 
 
@@ -1449,168 +1413,151 @@ static constexpr const char *kNetPeerIp = "net.peer.ip";
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetPeerName = "net.peer.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetPeerName = "net.peer.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetPeerPort = "net.peer.port";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetPeerPort = "net.peer.port";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetProtocolName = "net.protocol.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetProtocolName = "net.protocol.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetProtocolVersion = "net.protocol.version";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetProtocolVersion = "net.protocol.version";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetSockFamily = "net.sock.family";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetSockFamily = "net.sock.family";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetSockHostAddr = "net.sock.host.addr";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetSockHostAddr = "net.sock.host.addr";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetSockHostPort = "net.sock.host.port";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetSockHostPort = "net.sock.host.port";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetSockPeerAddr = "net.sock.peer.addr";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetSockPeerAddr = "net.sock.peer.addr";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetSockPeerName = "net.sock.peer.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetSockPeerName = "net.sock.peer.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetSockPeerPort = "net.sock.peer.port";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetSockPeerPort = "net.sock.peer.port";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kNetTransport = "net.transport";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kNetTransport = "net.transport";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kOtelLibraryName = "otel.library.name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kOtelLibraryName = "otel.library.name";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kOtelLibraryVersion = "otel.library.version";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kOtelLibraryVersion = "otel.library.version";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kProcessCpuState = "process.cpu.state";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kProcessCpuState = "process.cpu.state";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessageCompressedSize = "message.compressed_size";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessageCompressedSize =
+    "message.compressed_size";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessageId = "message.id";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessageId = "message.id";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessageType = "message.type";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessageType = "message.type";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kMessageUncompressedSize = "message.uncompressed_size";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kMessageUncompressedSize =
+    "message.uncompressed_size";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kSystemCpuState = "system.cpu.state";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kSystemCpuState = "system.cpu.state";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kSystemProcessesStatus = "system.processes.status";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kSystemProcessesStatus =
+    "system.processes.status";
 
 
 
 
 
 
-OPENTELEMETRY_DEPRECATED
-static constexpr const char *kTlsClientServerName = "tls.client.server_name";
+OPENTELEMETRY_DEPRECATED static constexpr const char *kTlsClientServerName =
+    "tls.client.server_name";
 
 
 
