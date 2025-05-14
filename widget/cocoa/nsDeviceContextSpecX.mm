@@ -121,12 +121,12 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
           destination == kPMDestinationPreview) {
         mPrintViaSkPDF = true;
       } else if (destination == kPMDestinationFile) {
-        AutoCFRelease<CFURLRef> destURL(nullptr);
+        AutoCFTypeRef<CFURLRef> destURL(nullptr);
         status = ::PMSessionCopyDestinationLocation(
-            mPrintSession, mPMPrintSettings, destURL.receive());
+            mPrintSession, mPMPrintSettings, destURL.Receive());
         if (status == noErr) {
-          AutoCFRelease<CFStringRef> destPathRef =
-              CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle);
+          AutoCFTypeRef<CFStringRef> destPathRef(
+              CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle));
           NSString* destPath = (NSString*)CFStringRef(destPathRef);
           NSString* destPathExt = [destPath pathExtension];
           if ([destPathExt isEqualToString:@"pdf"]) {
@@ -195,11 +195,11 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
     if (!tmpPDFFile) {
       return NS_ERROR_FAILURE;
     }
-    AutoCFRelease<CFURLRef> pdfURL(nullptr);
+    AutoCFTypeRef<CFURLRef> pdfURL(nullptr);
     
     
     
-    nsresult rv = tmpPDFFile->GetCFURL(pdfURL.receive());
+    nsresult rv = tmpPDFFile->GetCFURL(pdfURL.Receive());
     NS_ENSURE_SUCCESS(rv, rv);
 
     PMDestinationType destination;
@@ -220,24 +220,24 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
       }
       case kPMDestinationPreview: {
         
-        AutoCFRelease<CFStringRef> pdfPath =
-            CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle);
+        AutoCFTypeRef<CFStringRef> pdfPath(
+            CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle));
         NSString* path = (NSString*)CFStringRef(pdfPath);
         NSWorkspace* ws = [NSWorkspace sharedWorkspace];
         [ws openFile:path];
         break;
       }
       case kPMDestinationFile: {
-        AutoCFRelease<CFURLRef> destURL(nullptr);
+        AutoCFTypeRef<CFURLRef> destURL(nullptr);
         status = ::PMSessionCopyDestinationLocation(
-            mPrintSession, mPMPrintSettings, destURL.receive());
+            mPrintSession, mPMPrintSettings, destURL.Receive());
         if (status == noErr) {
-          AutoCFRelease<CFStringRef> sourcePathRef =
-              CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle);
+          AutoCFTypeRef<CFStringRef> sourcePathRef(
+              CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle));
           NSString* sourcePath = (NSString*)CFStringRef(sourcePathRef);
 #  ifdef DEBUG
-          AutoCFRelease<CFStringRef> destPathRef =
-              CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle);
+          AutoCFTypeRef<CFStringRef> destPathRef(
+              CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle));
           NSString* destPath = (NSString*)CFStringRef(destPathRef);
           NSString* destPathExt = [destPath pathExtension];
           MOZ_ASSERT([destPathExt isEqualToString:@"pdf"],
