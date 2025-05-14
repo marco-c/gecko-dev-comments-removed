@@ -110,6 +110,7 @@ const getAsyncParentFrame = frame => {
     PROMISE_REACTIONS.get(frame.asyncPromise) ||
     frame.asyncPromise.getPromiseReactions();
 
+  
   while (true) {
     
     
@@ -899,13 +900,7 @@ class ThreadActor extends Actor {
     }
 
     if (this._options.logEventBreakpoints) {
-      return logEvent({
-        threadActor: this,
-        frame,
-        level: "logPoint",
-        expression: `[_event]`,
-        bindings: { _event: frame.arguments[0] },
-      });
+      return logEvent({ threadActor: this, frame });
     }
 
     return this._pauseAndRespond(frame, {
