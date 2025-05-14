@@ -67,6 +67,8 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
     
     #[inline]
     fn is_element_backed(&self) -> bool {
+        
+        
         self.is_named_view_transition() || *self == PseudoElement::DetailsContent
     }
 }

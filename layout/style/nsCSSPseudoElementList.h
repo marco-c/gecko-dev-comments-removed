@@ -65,6 +65,11 @@ CSS_PSEUDO_ELEMENT(viewTransitionNew, ":view-transition-new",
                    CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS)
 
 
+CSS_PSEUDO_ELEMENT(mozSnapshotContainingBlock,
+                   ":-moz-snapshot-containing-block",
+                   CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS)
+
+
 
 CSS_PSEUDO_ELEMENT(mozFocusInner, ":-moz-focus-inner", 0)
 

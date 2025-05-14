@@ -10844,7 +10844,7 @@ void nsContentUtils::AppendNativeAnonymousChildren(const nsIContent* aContent,
     
     if (aContent->IsRootElement()) {
       if (auto* vt = aContent->OwnerDoc()->GetActiveViewTransition()) {
-        if (auto* root = vt->GetRoot()) {
+        if (auto* root = vt->GetSnapshotContainingBlock()) {
           aKids.AppendElement(root);
         }
       }

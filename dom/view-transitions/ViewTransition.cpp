@@ -250,7 +250,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ViewTransition, mDocument,
                                       mUpdateCallback,
                                       mUpdateCallbackDonePromise, mReadyPromise,
                                       mFinishedPromise, mNamedElements,
-                                      mViewTransitionRoot)
+                                      mSnapshotContainingBlock)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ViewTransition)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -265,6 +265,12 @@ ViewTransition::ViewTransition(Document& aDoc,
     : mDocument(&aDoc), mUpdateCallback(aCb) {}
 
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
+
+Element* ViewTransition::GetViewTransitionTreeRoot() const {
+  return mSnapshotContainingBlock
+             ? mSnapshotContainingBlock->GetFirstElementChild()
+             : nullptr;
+}
 
 Maybe<nsSize> ViewTransition::GetOldSize(nsAtom* aName) const {
   auto* el = mNamedElements.Get(aName);
@@ -519,8 +525,7 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
                                             PseudoStyleType aType,
                                             nsAtom* aName) {
   RefPtr<Element> el = aDoc.CreateHTMLElement(nsGkAtoms::div);
-  if (!aName) {
-    MOZ_ASSERT(aType == PseudoStyleType::viewTransition);
+  if (aType == PseudoStyleType::mozSnapshotContainingBlock) {
     el->SetIsNativeAnonymousRoot();
   }
   el->SetPseudoElementType(aType);
@@ -659,8 +664,20 @@ bool ViewTransition::GetGroupKeyframes(nsAtom* aAnimationName,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 void ViewTransition::SetupTransitionPseudoElements() {
-  MOZ_ASSERT(!mViewTransitionRoot);
+  MOZ_ASSERT(!mSnapshotContainingBlock);
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -670,32 +687,37 @@ void ViewTransition::SetupTransitionPseudoElements() {
   }
 
   
+  constexpr bool kNotify = false;
+
+  
 
   
   
   
-  mViewTransitionRoot =
+  
+  mSnapshotContainingBlock = MakePseudo(
+      *mDocument, PseudoStyleType::mozSnapshotContainingBlock, nullptr);
+  RefPtr<Element> root =
       MakePseudo(*mDocument, PseudoStyleType::viewTransition, nullptr);
+  mSnapshotContainingBlock->AppendChildTo(root, kNotify, IgnoreErrors());
 #ifdef DEBUG
   
   
-  mViewTransitionRoot->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                                   reinterpret_cast<void*>(true));
+  mSnapshotContainingBlock->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                                        reinterpret_cast<void*>(true));
 #endif
 
   MOZ_ASSERT(mNames.Length() == mNamedElements.Count());
   
   
   for (nsAtom* transitionName : mNames) {
-    
-    constexpr bool kNotify = false;
     CapturedElement& capturedElement = *mNamedElements.Get(transitionName);
     
     
     RefPtr<Element> group = MakePseudo(
         *mDocument, PseudoStyleType::viewTransitionGroup, transitionName);
     
-    mViewTransitionRoot->AppendChildTo(group, kNotify, IgnoreErrors());
+    root->AppendChildTo(group, kNotify, IgnoreErrors());
     
     
     RefPtr<Element> imagePair = MakePseudo(
@@ -791,16 +813,17 @@ void ViewTransition::SetupTransitionPseudoElements() {
     }
   }
   BindContext context(*docElement, BindContext::ForNativeAnonymous);
-  if (NS_FAILED(mViewTransitionRoot->BindToTree(context, *docElement))) {
-    mViewTransitionRoot->UnbindFromTree();
-    mViewTransitionRoot = nullptr;
+  if (NS_FAILED(mSnapshotContainingBlock->BindToTree(context, *docElement))) {
+    mSnapshotContainingBlock->UnbindFromTree();
+    mSnapshotContainingBlock = nullptr;
     return;
   }
   if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
-    mViewTransitionRoot->QueueDevtoolsAnonymousEvent( false);
+    mSnapshotContainingBlock->QueueDevtoolsAnonymousEvent(
+         false);
   }
   if (PresShell* ps = mDocument->GetPresShell()) {
-    ps->ContentAppended(mViewTransitionRoot);
+    ps->ContentAppended(mSnapshotContainingBlock);
   }
 }
 
@@ -888,6 +911,8 @@ void ViewTransition::Activate() {
     return;
   }
 
+  
+  
   mDocument->SetRenderingSuppressedForViewTransitions(false);
 
   
@@ -958,6 +983,7 @@ void ViewTransition::PerformPendingOperations() {
 
 
 nsRect ViewTransition::SnapshotContainingBlockRect(nsPresContext* aPc) {
+  
   return aPc ? aPc->GetVisibleArea() : nsRect();
 }
 
@@ -968,10 +994,11 @@ nsRect ViewTransition::SnapshotContainingBlockRect() const {
 }
 
 Element* ViewTransition::FindPseudo(const PseudoStyleRequest& aRequest) const {
-  Element* root = GetRoot();
+  Element* root = GetViewTransitionTreeRoot();
   if (!root) {
     return nullptr;
   }
+  MOZ_ASSERT(root->GetPseudoElementType() == PseudoStyleType::viewTransition);
 
   if (aRequest.mType == PseudoStyleType::viewTransition) {
     return root;
@@ -1424,16 +1451,17 @@ void ViewTransition::ClearActiveTransition(bool aIsDocumentHidden) {
 
   
   
-  if (mViewTransitionRoot) {
+  if (mSnapshotContainingBlock) {
     nsAutoScriptBlocker scriptBlocker;
     if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
-      mViewTransitionRoot->QueueDevtoolsAnonymousEvent( true);
+      mSnapshotContainingBlock->QueueDevtoolsAnonymousEvent(
+           true);
     }
     if (PresShell* ps = mDocument->GetPresShell()) {
-      ps->ContentWillBeRemoved(mViewTransitionRoot, nullptr);
+      ps->ContentWillBeRemoved(mSnapshotContainingBlock, nullptr);
     }
-    mViewTransitionRoot->UnbindFromTree();
-    mViewTransitionRoot = nullptr;
+    mSnapshotContainingBlock->UnbindFromTree();
+    mSnapshotContainingBlock = nullptr;
 
     
     

@@ -91,7 +91,15 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   void SkipTransition(SkipTransitionReason = SkipTransitionReason::JS);
   MOZ_CAN_RUN_SCRIPT void PerformPendingOperations();
 
-  Element* GetRoot() const { return mViewTransitionRoot; }
+  
+  
+  Element* GetSnapshotContainingBlock() const {
+    return mSnapshotContainingBlock;
+  }
+  
+  
+  Element* GetViewTransitionTreeRoot() const;
+
   Maybe<nsSize> GetOldSize(nsAtom* aName) const;
   Maybe<nsSize> GetNewSize(nsAtom* aName) const;
   const wr::ImageKey* GetOldImageKey(nsAtom* aName,
@@ -164,7 +172,11 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   RefPtr<nsITimer> mTimeoutTimer;
 
   Phase mPhase = Phase::PendingCapture;
-  RefPtr<Element> mViewTransitionRoot;
+  
+  
+  
+  
+  RefPtr<Element> mSnapshotContainingBlock;
 };
 
 }  
