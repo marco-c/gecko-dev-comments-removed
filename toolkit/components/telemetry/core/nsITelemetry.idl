@@ -255,29 +255,6 @@ interface nsITelemetry : nsISupports
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise getLoadedModules();
-
-  
-
-
-
-
-
-
-
-
   [implicit_jscontext]
   readonly attribute jsval lateWrites;
 
