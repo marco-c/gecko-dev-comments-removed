@@ -630,7 +630,8 @@ class SourceCompressionTask : public HelperThreadTask {
   bool shouldStart() const {
     
     
-    return runtime_->gc.majorGCCount() > majorGCNumber_ + 1;
+    
+    return !shouldCancel() && runtime_->gc.majorGCCount() > majorGCNumber_ + 1;
   }
 
   bool shouldCancel() const {
