@@ -298,10 +298,8 @@ class nsCocoaUtils {
 
   static nsresult CreateNSImageFromImageContainer(
       imgIContainer* aImage, uint32_t aWhichFrame,
-      const nsPresContext* aPresContext,
-      const mozilla::ComputedStyle* aComputedStyle,
-      const NSSize& aPreferredSize, NSImage** aResult, CGFloat scaleFactor,
-      bool* aIsEntirelyBlack = nullptr);
+      const mozilla::SVGImageContext* aSVGContext, const NSSize& aPreferredSize,
+      NSImage** aResult, CGFloat scaleFactor, bool* aIsEntirelyBlack = nullptr);
 
   
 
@@ -318,10 +316,8 @@ class nsCocoaUtils {
 
   static nsresult CreateDualRepresentationNSImageFromImageContainer(
       imgIContainer* aImage, uint32_t aWhichFrame,
-      const nsPresContext* aPresContext,
-      const mozilla::ComputedStyle* aComputedStyle,
-      const NSSize& aPreferredSize, NSImage** aResult,
-      bool* aIsEntirelyBlack = nullptr);
+      const mozilla::SVGImageContext* aSVGContext, const NSSize& aPreferredSize,
+      NSImage** aResult, bool* aIsEntirelyBlack = nullptr);
 
   
 
@@ -512,6 +508,12 @@ class nsCocoaUtils {
 
   static bool IsValidPasteboardType(NSString* aAvailableType,
                                     bool aAllowFileURL);
+
+  
+
+
+  static already_AddRefed<nsISupports> GetDataFromPasteboardItem(
+      const nsACString& aFlavor, NSPasteboardItem* aItem);
 
   
 
