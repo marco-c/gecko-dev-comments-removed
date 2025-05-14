@@ -1818,8 +1818,8 @@ enum GetCapabilitiesExecutorSlots {
 
 
 
-[[nodiscard]] static PromiseObject*
-CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
+[[nodiscard]] PromiseObject* js::CreatePromiseObjectWithoutResolutionFunctions(
+    JSContext* cx) {
   
   PromiseObject* promise = CreatePromiseObjectInternal(cx);
   if (!promise) {

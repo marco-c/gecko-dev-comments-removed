@@ -668,7 +668,7 @@ static void AddWaiter(SharedArrayRawBuffer* sarb, FutexWaiter* node,
 }
 
 
-static void RemoveWaiter(FutexWaiterListNode* node, AutoLockFutexAPI&) {
+static void RemoveWaiterImpl(FutexWaiterListNode* node, AutoLockFutexAPI&) {
   node->prev()->setNext(node->next());
   node->next()->setPrev(node->prev());
 
@@ -676,11 +676,154 @@ static void RemoveWaiter(FutexWaiterListNode* node, AutoLockFutexAPI&) {
   node->setPrev(nullptr);
 }
 
+
+static void RemoveSyncWaiter(SyncFutexWaiter* waiter, AutoLockFutexAPI& lock) {
+  RemoveWaiterImpl(waiter, lock);
+}
+
+
+
+[[nodiscard]] AsyncFutexWaiter* RemoveAsyncWaiter(AsyncFutexWaiter* waiter,
+                                                  AutoLockFutexAPI& lock) {
+  RemoveWaiterImpl(waiter, lock);
+  return waiter;
+}
+
+
+static PlainObject* CreateAsyncResultObject(JSContext* cx, bool async,
+                                            HandleValue promiseOrString) {
+  Rooted<PlainObject*> resultObject(cx, NewPlainObject(cx));
+  if (!resultObject) {
+    return nullptr;
+  }
+
+  RootedValue isAsync(cx, BooleanValue(async));
+  if (!NativeDefineDataProperty(cx, resultObject, cx->names().async, isAsync,
+                                JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT_IF(!async, promiseOrString.isString());
+  MOZ_ASSERT_IF(async, promiseOrString.isObject() &&
+                           promiseOrString.toObject().is<PromiseObject>());
+  if (!NativeDefineDataProperty(cx, resultObject, cx->names().value,
+                                promiseOrString, JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  return resultObject;
+}
+
 void WaitAsyncNotifyTask::prepareForCancel() {
   AutoLockFutexAPI lock;
-  RemoveWaiter(waiter_, lock);
-  js_delete(waiter_);
+  UniquePtr<AsyncFutexWaiter> waiter(RemoveAsyncWaiter(waiter_, lock));
 }
+
+
+
+template <typename T>
+static FutexThread::WaitResult AtomicsWaitAsyncCriticalSection(
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, T value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout,
+    Handle<PromiseObject*> promise) {
+  
+  
+  
+  AutoLockHelperThreadState helperThreadLock;
+  AutoLockFutexAPI futexLock;
+
+  
+  SharedMem<T*> addr =
+      sarb->dataPointerShared().cast<T*>() + (byteOffset / sizeof(T));
+  if (jit::AtomicOperations::loadSafeWhenRacy(addr) != value) {
+    return FutexThread::WaitResult::NotEqual;
+  }
+
+  
+  if (timeout.isSome() && timeout.value().IsZero()) {
+    return FutexThread::WaitResult::TimedOut;
+  }
+
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  auto notifyTask = js::MakeUnique<WaitAsyncNotifyTask>(cx, promise);
+  if (!notifyTask) {
+    JS_ReportOutOfMemory(cx);
+    return FutexThread::WaitResult::Error;
+  }
+  auto waiter = js::MakeUnique<AsyncFutexWaiter>(cx, byteOffset);
+  if (!waiter) {
+    JS_ReportOutOfMemory(cx);
+    return FutexThread::WaitResult::Error;
+  }
+
+  notifyTask->setWaiter(waiter.get());
+  waiter->setNotifyTask(notifyTask.get());
+
+  
+  
+  if (!js::OffThreadPromiseTask::InitCancellable(cx, helperThreadLock,
+                                                 std::move(notifyTask))) {
+    return FutexThread::WaitResult::Error;
+  }
+
+  
+  AddWaiter(sarb, waiter.release(), futexLock);
+
+  
+  return FutexThread::WaitResult::OK;
+}
+
+
+
+
+template <typename T>
+static PlainObject* AtomicsWaitAsync(
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, T value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
+  
+  Rooted<PromiseObject*> promiseObject(
+      cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
+  if (!promiseObject) {
+    return nullptr;
+  }
+
+  
+  switch (AtomicsWaitAsyncCriticalSection(cx, sarb, byteOffset, value, timeout,
+                                          promiseObject)) {
+    case FutexThread::WaitResult::NotEqual: {
+      
+      RootedValue msg(cx, StringValue(cx->names().not_equal_));
+      return CreateAsyncResultObject(cx, false, msg);
+    }
+    case FutexThread::WaitResult::TimedOut: {
+      
+      RootedValue msg(cx, StringValue(cx->names().timed_out_));
+      return CreateAsyncResultObject(cx, false, msg);
+    }
+    case FutexThread::WaitResult::Error:
+      return nullptr;
+    case FutexThread::WaitResult::OK:
+      break;
+  }
+
+  
+  RootedValue objectValue(cx, ObjectValue(*promiseObject));
+  return CreateAsyncResultObject(cx, true, objectValue);
+}
+
+
+
 
 template <typename T>
 static FutexThread::WaitResult AtomicsWait(
@@ -708,7 +851,7 @@ static FutexThread::WaitResult AtomicsWait(
   
   AddWaiter(sarb, &w, lock);
   FutexThread::WaitResult retval = cx->fx.wait(cx, lock.unique(), timeout);
-  RemoveWaiter(&w, lock);
+  RemoveSyncWaiter(&w, lock);
 
   
   return retval;
@@ -724,6 +867,18 @@ FutexThread::WaitResult js::atomics_wait_impl(
     JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
     const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
   return AtomicsWait(cx, sarb, byteOffset, value, timeout);
+}
+
+PlainObject* js::atomics_wait_async_impl(
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int32_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
+  return AtomicsWaitAsync(cx, sarb, byteOffset, value, timeout);
+}
+
+PlainObject* js::atomics_wait_async_impl(
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
+  return AtomicsWaitAsync(cx, sarb, byteOffset, value, timeout);
 }
 
 
@@ -776,24 +931,30 @@ static bool DoAtomicsWait(JSContext* cx, bool isAsync,
 
   
   if (isAsync) {
-    MOZ_CRASH("TODO");
-  } else {
-    switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
-                              byteIndexInBuffer, value, timeout)) {
-      case FutexThread::WaitResult::NotEqual:
-        r.setString(cx->names().not_equal_);
-        return true;
-      case FutexThread::WaitResult::OK:
-        r.setString(cx->names().ok);
-        return true;
-      case FutexThread::WaitResult::TimedOut:
-        r.setString(cx->names().timed_out_);
-        return true;
-      case FutexThread::WaitResult::Error:
-        return false;
-      default:
-        MOZ_CRASH("Should not happen");
+    PlainObject* resultObject = atomics_wait_async_impl(
+        cx, unwrappedSab->rawBufferObject(), byteIndexInBuffer, value, timeout);
+    if (!resultObject) {
+      return false;
     }
+    r.setObject(*resultObject);
+    return true;
+  }
+
+  switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
+                            byteIndexInBuffer, value, timeout)) {
+    case FutexThread::WaitResult::NotEqual:
+      r.setString(cx->names().not_equal_);
+      return true;
+    case FutexThread::WaitResult::OK:
+      r.setString(cx->names().ok);
+      return true;
+    case FutexThread::WaitResult::TimedOut:
+      r.setString(cx->names().timed_out_);
+      return true;
+    case FutexThread::WaitResult::Error:
+      return false;
+    default:
+      MOZ_CRASH("Should not happen");
   }
 }
 
@@ -862,6 +1023,19 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool atomics_wait_async(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  HandleValue objv = args.get(0);
+  HandleValue index = args.get(1);
+  HandleValue valv = args.get(2);
+  HandleValue timeoutv = args.get(3);
+  MutableHandleValue r = args.rval();
+
+  return DoWait(cx,  true, objv, index, valv, timeoutv, r);
+}
+
+
+
 int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
                                 int64_t count) {
   
@@ -871,18 +1045,42 @@ int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
   int64_t woken = 0;
 
   
+  AutoLockHelperThreadState helperLock;
   AutoLockFutexAPI lock;
 
   
   FutexWaiterListNode* waiterListHead = sarb->waiters();
   FutexWaiterListNode* iter = waiterListHead->next();
   while (count && iter != waiterListHead) {
-    FutexWaiter* c = iter->toWaiter();
+    FutexWaiter* waiter = iter->toWaiter();
     iter = iter->next();
-    if (c->offset() != byteOffset || !c->cx()->fx.isWaiting()) {
+    if (byteOffset != waiter->offset()) {
       continue;
     }
-    c->cx()->fx.notify(FutexThread::NotifyExplicit);
+
+    if (waiter->isSync()) {
+      
+      
+      
+      if (!waiter->cx()->fx.isWaiting()) {
+        continue;
+      }
+      waiter->cx()->fx.notify(FutexThread::NotifyExplicit);
+    } else {
+      
+      
+      
+
+      
+      
+      UniquePtr<AsyncFutexWaiter> asyncWaiter(
+          RemoveAsyncWaiter(waiter->asAsync(), lock));
+
+      
+      asyncWaiter->notifyTask()->removeFromCancellableListAndDispatch(
+          helperLock);
+    }
+
     
     
     
@@ -1219,6 +1417,7 @@ const JSFunctionSpec AtomicsMethods[] = {
     JS_INLINABLE_FN("xor", atomics_xor, 3, 0, AtomicsXor),
     JS_INLINABLE_FN("isLockFree", atomics_isLockFree, 1, 0, AtomicsIsLockFree),
     JS_FN("wait", atomics_wait, 4, 0),
+    JS_FN("waitAsync", atomics_wait_async, 4, 0),
     JS_FN("notify", atomics_notify, 3, 0),
     JS_FN("wake", atomics_notify, 3, 0),  
     JS_INLINABLE_FN("pause", atomics_pause, 0, 0, AtomicsPause),

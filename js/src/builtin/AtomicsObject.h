@@ -13,6 +13,7 @@
 #include "threading/ConditionVariable.h"
 #include "threading/ProtectedData.h"  
 #include "vm/NativeObject.h"
+#include "vm/PlainObject.h"
 
 namespace js {
 
@@ -163,6 +164,20 @@ class FutexThread {
 
 
 [[nodiscard]] FutexThread::WaitResult atomics_wait_impl(
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+
+
+
+
+[[nodiscard]] PlainObject* atomics_wait_async_impl(
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int32_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+
+
+
+
+[[nodiscard]] PlainObject* atomics_wait_async_impl(
     JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
     const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
