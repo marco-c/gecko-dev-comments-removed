@@ -256,6 +256,14 @@ BrowserHost::CreateAboutBlankDocumentViewer(
 
   
   
+  if (NS_WARN_IF(!mRoot->Manager()->ValidatePrincipal(aPrincipal))) {
+    ContentParent::LogAndAssertFailedPrincipalValidationInfo(
+        aPrincipal, "BrowserHost::CreateAboutBlankDocumentViewer");
+    return NS_ERROR_DOM_SECURITY_ERR;
+  }
+
+  
+  
   nsresult rv = GetContentParent()->TransmitPermissionsForPrincipal(aPrincipal);
   if (NS_FAILED(rv)) {
     return rv;
