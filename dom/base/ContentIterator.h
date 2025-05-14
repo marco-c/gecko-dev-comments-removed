@@ -87,45 +87,24 @@ class ContentIteratorBase {
   static nsINode* GetDeepFirstChild(nsINode* aRoot);
   
   
-  static nsIContent* GetDeepFirstChild(
-      nsIContent* aRoot,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+  static nsIContent* GetDeepFirstChild(nsIContent* aRoot,
+                                       bool aAllowCrossShadowBoundary);
   static nsINode* GetDeepLastChild(nsINode* aRoot);
   
   
-  static nsIContent* GetDeepLastChild(
-      nsIContent* aRoot,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+  static nsIContent* GetDeepLastChild(nsIContent* aRoot,
+                                      bool aAllowCrossShadowBoundary);
 
-  struct AncestorInfo {
-    nsIContent* mAncestor = nullptr;
-    
-    
-    
-    bool mIsDescendantInShadowTree = false;
-  };
-
-  class InclusiveAncestorComparator {
-   public:
-    bool Equals(const AncestorInfo& aA, const nsINode* aB) const {
-      return aA.mAncestor == aB;
-    }
-  };
   
   
   
   
   
   
-  static nsIContent* GetNextSibling(
-      nsINode* aNode,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
-          dom::AllowRangeCrossShadowBoundary::No,
-      nsTArray<AncestorInfo>* aInclusiveAncestorsOfEndContainer = nullptr);
-  static nsIContent* GetPrevSibling(
-      nsINode* aNode,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
-          dom::AllowRangeCrossShadowBoundary::No);
+  static nsIContent* GetNextSibling(nsINode* aNode,
+                                    bool aAllowCrossShadowBoundary = false);
+  static nsIContent* GetPrevSibling(nsINode* aNode,
+                                    bool aAllowCrossShadowBoundary = false);
 
   nsINode* NextNode(nsINode* aNode);
   nsINode* PrevNode(nsINode* aNode);
@@ -345,7 +324,7 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   RefPtr<dom::AbstractRange> mRange;
 
   
-  AutoTArray<AncestorInfo, 8> mInclusiveAncestorsOfEndContainer;
+  AutoTArray<nsIContent*, 8> mInclusiveAncestorsOfEndContainer;
 
   
   dom::AllowRangeCrossShadowBoundary mAllowCrossShadowBoundary =
