@@ -3761,7 +3761,6 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
   
   double relativeIndex;
   if (!ToInteger(cx, args.get(0), &relativeIndex)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
     return false;
   }
 
