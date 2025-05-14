@@ -377,6 +377,11 @@ hb_position_t gfxHarfBuzzShaper::GetGlyphHAdvanceUncached(
                "font is lacking metrics, we shouldn't be here");
 
   if (glyph >= uint32_t(mNumLongHMetrics)) {
+    if (glyph >= mNumGlyphs) {
+      
+      
+      return 0;
+    }
     glyph = mNumLongHMetrics - 1;
   }
 
@@ -1274,6 +1279,13 @@ bool gfxHarfBuzzShaper::Initialize() {
     }
   }
 
+  gfxFontEntry::AutoTable maxpTable(entry, TRUETYPE_TAG('m', 'a', 'x', 'p'));
+  if (maxpTable && hb_blob_get_length(maxpTable) >= sizeof(MaxpTableHeader)) {
+    const MaxpTableHeader* maxp = reinterpret_cast<const MaxpTableHeader*>(
+        hb_blob_get_data(maxpTable, nullptr));
+    mNumGlyphs = uint16_t(maxp->numGlyphs);
+  }
+
   
   
   MOZ_PUSH_IGNORE_THREAD_SAFETY
@@ -1397,22 +1409,13 @@ void gfxHarfBuzzShaper::InitializeVertical() {
         hb_blob_get_data(vheaTable, &len));
     if (len >= sizeof(MetricsHeader)) {
       mNumLongVMetrics = vhea->numOfLongMetrics;
-      gfxFontEntry::AutoTable maxpTable(entry,
-                                        TRUETYPE_TAG('m', 'a', 'x', 'p'));
-      int numGlyphs = -1;  
-      if (maxpTable &&
-          hb_blob_get_length(maxpTable) >= sizeof(MaxpTableHeader)) {
-        const MaxpTableHeader* maxp = reinterpret_cast<const MaxpTableHeader*>(
-            hb_blob_get_data(maxpTable, nullptr));
-        numGlyphs = uint16_t(maxp->numGlyphs);
-      }
-      if (mNumLongVMetrics > 0 && mNumLongVMetrics <= numGlyphs &&
+      if (mNumLongVMetrics > 0 && mNumLongVMetrics <= int32_t(mNumGlyphs) &&
           int16_t(vhea->metricDataFormat) == 0) {
         mVmtxTable = entry->GetFontTable(TRUETYPE_TAG('v', 'm', 't', 'x'));
         if (mVmtxTable &&
             hb_blob_get_length(mVmtxTable) <
                 mNumLongVMetrics * sizeof(LongMetric) +
-                    (numGlyphs - mNumLongVMetrics) * sizeof(int16_t)) {
+                    (mNumGlyphs - mNumLongVMetrics) * sizeof(int16_t)) {
           
           
           hb_blob_destroy(mVmtxTable);
