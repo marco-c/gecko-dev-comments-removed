@@ -11405,18 +11405,22 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   if (nsCOMPtr<nsPIDOMWindowInner> window = document->GetInnerWindow()) {
-    if (RefPtr<Navigation> navigation = window->Navigation();
-        navigation &&
-        navigation->FirePushReplaceReloadNavigateEvent(
-            aCx, aReplace ? NavigationType::Replace : NavigationType::Push,
-            newURI,
-             true,  Nothing(),
-             nullptr,  Nothing(),
-             nullptr, scContainer)) {
-      return NS_OK;
+    if (RefPtr<Navigation> navigation = window->Navigation()) {
+      bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
+          aCx, aReplace ? NavigationType::Replace : NavigationType::Push,
+          newURI,
+           true,  Nothing(),
+           nullptr,  Nothing(),
+           nullptr, scContainer);
+
+      
+      if (!shouldContinue) {
+        return NS_OK;
+      }
     }
   }
 
+  
   
   rv = UpdateURLAndHistory(document, newURI, scContainer,
                            aReplace ? NavigationHistoryBehavior::Replace

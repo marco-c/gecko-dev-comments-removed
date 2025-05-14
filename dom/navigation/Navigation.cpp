@@ -604,7 +604,14 @@ static bool HasUAVisualTransition(Maybe<Document&>) { return false; }
 static bool EqualsExceptRef(nsIURI* aURI, nsIURI* aOtherURI) {
   bool equalsExceptRef = false;
   return aURI && aOtherURI &&
-         NS_SUCCEEDED(aURI->EqualsExceptRef(aOtherURI, &equalsExceptRef));
+         NS_SUCCEEDED(aURI->EqualsExceptRef(aOtherURI, &equalsExceptRef)) &&
+         equalsExceptRef;
+}
+
+static bool Equals(nsIURI* aURI, nsIURI* aOtherURI) {
+  bool equals = false;
+  return aURI && aOtherURI && NS_SUCCEEDED(aURI->Equals(aOtherURI, &equals)) &&
+         equals;
 }
 
 static bool HasIdenticalFragment(nsIURI* aURI, nsIURI* aOtherURI) {
@@ -764,6 +771,9 @@ bool Navigation::InnerFireNavigateEvent(
   
   RefPtr<NavigateEvent> event = NavigateEvent::Constructor(
       this, u"navigate"_ns, init, aClassicHistoryAPIState, abortController);
+  
+  
+  event->SetTrusted(true);
 
   
   mOngoingNavigateEvent = event;
@@ -829,7 +839,8 @@ bool Navigation::InnerFireNavigateEvent(
           docShell->UpdateURLAndHistory(
               document, aDestination->GetURI(), event->ClassicHistoryAPIState(),
               *NavigationUtils::NavigationHistoryBehavior(aNavigationType),
-              document->GetDocumentURI(), aDestination->SameDocument());
+              document->GetDocumentURI(),
+              Equals(aDestination->GetURI(), document->GetDocumentURI()));
         }
         break;
       case NavigationType::Reload:
@@ -1045,7 +1056,7 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
   }
 
   
-  if (event->HasBeenDispatched()) {
+  if (event->IsBeingDispatched()) {
     event->PreventDefault();
   }
 
