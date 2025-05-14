@@ -101,10 +101,19 @@ export function setLocalAndRemoteRuntimeVersion(
   };
 }
 
+
+
+
+
+let currentSearchSymbol;
+
 export function searchTraceArguments(searchString) {
   return async function ({ dispatch, client, panel }) {
     
     searchString = searchString.trim();
+
+    const searchSymbol = Symbol("CURRENT_SEARCH_SYMBOL");
+    currentSearchSymbol = searchSymbol;
 
     
     if (!searchString) {
@@ -155,6 +164,12 @@ export function searchTraceArguments(searchString) {
       selectedNodeActor,
       evalInTracer: true,
     });
+
+    if (currentSearchSymbol != searchSymbol) {
+      
+      
+      return;
+    }
 
     if (result.type == "null") {
       result = null;
