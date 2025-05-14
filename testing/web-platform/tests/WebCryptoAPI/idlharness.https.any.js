@@ -5,7 +5,7 @@
 
 
 idl_test(
-  ['WebCryptoAPI'],
+  ['webcrypto'],
   ['html', 'dom'],
   idl_array => {
     idl_array.add_objects({
