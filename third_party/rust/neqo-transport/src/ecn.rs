@@ -32,6 +32,7 @@ enum ValidationState {
     
     Testing {
         probes_sent: usize,
+        initial_probes_acked: usize,
         initial_probes_lost: usize,
     },
     
@@ -46,6 +47,7 @@ impl Default for ValidationState {
     fn default() -> Self {
         Self::Testing {
             probes_sent: 0,
+            initial_probes_acked: 0,
             initial_probes_lost: 0,
         }
     }
@@ -225,20 +227,33 @@ impl Info {
             && (self.baseline - prev_baseline)[IpTosEcn::Ce] > 0
     }
 
+    
+    pub(crate) fn acked_ecn(&mut self) {
+        if let ValidationState::Testing {
+            initial_probes_acked: probes_acked,
+            ..
+        } = &mut self.state
+        {
+            *probes_acked += 1;
+        }
+    }
+
+    
     pub(crate) fn lost_ecn(&mut self, pt: PacketType, stats: &mut Stats) {
         if pt != PacketType::Initial {
             return;
         }
 
         if let ValidationState::Testing {
-            probes_sent,
+            initial_probes_acked: probes_acked,
             initial_probes_lost: probes_lost,
+            ..
         } = &mut self.state
         {
             *probes_lost += 1;
             
             
-            if *probes_sent == *probes_lost && *probes_lost == TEST_COUNT_INITIAL_PHASE {
+            if *probes_acked == 0 && *probes_lost == TEST_COUNT_INITIAL_PHASE {
                 qdebug!(
                     "ECN validation failed, all {probes_lost} initial marked packets were lost"
                 );
