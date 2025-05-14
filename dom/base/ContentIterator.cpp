@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RangeUtils.h"
@@ -617,20 +616,9 @@ nsIContent* ContentIteratorBase<NodeType>::GetDeepLastChild(
 
   nsIContent* node = aRoot;
 
-  while (HTMLSlotElement* slot = HTMLSlotElement::FromNode(node)) {
-    
-    if (!slot->AssignedNodes().IsEmpty()) {
-      if (nsIContent* content =
-              nsIContent::FromNode(slot->AssignedNodes().LastElement())) {
-        node = content;
-        continue;
-      }
-    }
-    break;
-  }
-
   ShadowRoot* shadowRoot =
       ShadowDOMSelectionHelpers::GetShadowRoot(node, aAllowCrossShadowBoundary);
+  
   while (node->HasChildren() || (shadowRoot && shadowRoot->HasChildren())) {
     if (node->HasChildren()) {
       node = node->GetLastChild();
@@ -657,24 +645,6 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
     nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary,
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
-  }
-
-  if (aNode->IsContent() &&
-      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
-    
-    while (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
-      
-      auto currentIndex = slot->AssignedNodes().IndexOf(aNode);
-      if (currentIndex < slot->AssignedNodes().Length() - 1) {
-        nsINode* nextSlottedNode =
-            slot->AssignedNodes().ElementAt(currentIndex + 1);
-        if (nextSlottedNode->IsContent()) {
-          return nextSlottedNode->AsContent();
-        }
-      }
-      
-      aNode = slot;
-    }
   }
 
   if (nsIContent* next = aNode->GetNextSibling()) {
@@ -709,23 +679,6 @@ nsIContent* ContentIteratorBase<NodeType>::GetPrevSibling(
     nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
-  }
-
-  if (aNode->IsContent() &&
-      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
-    
-    while (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
-      
-      auto currentIndex = slot->AssignedNodes().IndexOf(aNode);
-      if (currentIndex > 0) {
-        nsINode* prevSlottedNode =
-            slot->AssignedNodes().ElementAt(currentIndex - 1);
-        if (prevSlottedNode->IsContent()) {
-          return prevSlottedNode->AsContent();
-        }
-      }
-      aNode = slot;
-    }
   }
 
   if (nsIContent* prev = aNode->GetPreviousSibling()) {
@@ -969,10 +922,8 @@ nsresult ContentSubtreeIterator::Init(const RawRangeBoundary& aStartBoundary,
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (NS_WARN_IF(range->MayCrossShadowBoundaryStartRef() != aStartBoundary) ||
-      NS_WARN_IF(range->MayCrossShadowBoundaryEndRef() != aEndBoundary)) {
-    
-    
+  if (NS_WARN_IF(range->StartRef() != aStartBoundary) ||
+      NS_WARN_IF(range->EndRef() != aEndBoundary)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1074,11 +1025,7 @@ nsIContent* ContentSubtreeIterator::DetermineFirstContent() const {
   
   
   const Maybe<bool> isNodeContainedInRange =
-      IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*firstCandidate,
-                                                               mRange)
-          : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
-                *firstCandidate, mRange);
+      RangeUtils::IsNodeContainedInRange(*firstCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
   if (!isNodeContainedInRange.value()) {
     return nullptr;
@@ -1192,11 +1139,7 @@ nsIContent* ContentSubtreeIterator::DetermineLastContent() const {
   
 
   const Maybe<bool> isNodeContainedInRange =
-      IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*lastCandidate,
-                                                               mRange)
-          : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
-                *lastCandidate, mRange);
+      RangeUtils::IsNodeContainedInRange(*lastCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
   if (!isNodeContainedInRange.value()) {
     return nullptr;
@@ -1243,13 +1186,6 @@ void ContentSubtreeIterator::Next() {
         nextNode, mAllowCrossShadowBoundary);
     if (mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree) {
       nextNode = root->GetFirstChild();
-    } else if (auto* slot = HTMLSlotElement::FromNode(nextNode);
-               slot && IterAllowCrossShadowBoundary()) {
-      
-      
-      if (!NS_WARN_IF(slot->AssignedNodes().IsEmpty())) {
-        nextNode = slot->AssignedNodes()[0];
-      }
     } else {
       MOZ_ASSERT(
           !mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree);
@@ -1312,11 +1248,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
 
   
   Maybe<bool> isNodeContainedInRange =
-      IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*aNode, mRange)
-          : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
-                *aNode, mRange);
-
+      RangeUtils::IsNodeContainedInRange(*aNode, mRange);
   NS_ASSERTION(isNodeContainedInRange && isNodeContainedInRange.value(),
                "aNode isn't in mRange, or something else weird happened");
   if (!isNodeContainedInRange || !isNodeContainedInRange.value()) {
@@ -1344,12 +1276,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
     }
 
     isNodeContainedInRange =
-        IterAllowCrossShadowBoundary()
-            ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*parent,
-                                                                 mRange)
-            : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
-                  *parent, mRange);
-
+        RangeUtils::IsNodeContainedInRange(*parent, mRange);
     MOZ_ALWAYS_TRUE(isNodeContainedInRange);
     if (!isNodeContainedInRange.value()) {
       if (IterAllowCrossShadowBoundary() && content->IsShadowRoot()) {
