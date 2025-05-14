@@ -18,6 +18,9 @@
 
 namespace sandbox {
 
+
+
+
 NTSTATUS WINAPI
 TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
                       PHANDLE section_handle,
@@ -50,15 +53,24 @@ TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
     if (!memory)
       break;
 
-    std::unique_ptr<wchar_t, NtAllocDeleter> path;
+    
+    
+    constexpr ULONG path_buffer_size =
+        (MAX_PATH * sizeof(wchar_t)) + sizeof(OBJECT_NAME_INFORMATION);
+    
+    STACK_UNINITIALIZED char path_buffer[path_buffer_size];
+    OBJECT_NAME_INFORMATION* path =
+        reinterpret_cast<OBJECT_NAME_INFORMATION*>(path_buffer);
+    ULONG out_buffer_size = 0;
+    NTSTATUS status = g_nt.QueryObject(file_handle, ObjectNameInformation, path,
+                                       path_buffer_size, &out_buffer_size);
 
-    if (!NtGetPathFromHandle(file_handle, &path))
+    if (!NT_SUCCESS(status)) {
       break;
-
-    const wchar_t* const_name = path.get();
+    }
 
     CountedParameterSet<NameBased> params;
-    params[NameBased::NAME] = ParamPickerMake(const_name);
+    params[NameBased::NAME] = ParamPickerMake(path->ObjectName.Buffer);
 
     
     if (!QueryBroker(IpcTag::NTCREATESECTION, params.GetBase()))
@@ -67,7 +79,10 @@ TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
     if (!ValidParameter(section_handle, sizeof(HANDLE), WRITE))
       break;
 
-    CrossCallReturn answer = {0};
+    
+    STACK_UNINITIALIZED CrossCallReturn answer;
+    Memset(&answer, 0, sizeof(answer));
+
     answer.nt_status = STATUS_INVALID_IMAGE_HASH;
     SharedMemIPCClient ipc(memory);
     ResultCode code =

@@ -46,8 +46,6 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
     if (!IsSameProcess(process))
       break;
 
-    
-    
     if (s_state == kBeforeKernel32) {
       const char* ansi_module_name =
           GetAnsiImageInfoFromModule(reinterpret_cast<HMODULE>(*base));
@@ -56,15 +54,6 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
       
       
       __try {
-        
-        
-        
-        if (ansi_module_name &&
-            (g_nt._strnicmp(
-                 ansi_module_name, base::win::kApplicationVerifierDllName,
-                 g_nt.strlen(base::win::kApplicationVerifierDllName) + 1) == 0))
-          break;
-
         if (ansi_module_name &&
             (g_nt._strnicmp(ansi_module_name, KERNEL32_DLL_NAME,
                             sizeof(KERNEL32_DLL_NAME)) == 0)) {
@@ -72,6 +61,12 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
         }
       } __except (EXCEPTION_EXECUTE_HANDLER) {
       }
+    }
+
+    
+    
+    if (s_state == kBeforeKernel32) {
+      break;
     }
 
     if (!InitHeap())
