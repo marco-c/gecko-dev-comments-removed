@@ -5,60 +5,22 @@
 
 add_setup(async function setup() {
   const cleanup = await setupTest();
+
+  SpecialPowers.addTaskImport(
+    "ExperimentAPI",
+    "resource://nimbus/ExperimentAPI.sys.mjs"
+  );
+  SpecialPowers.addTaskImport(
+    "NimbusFeatures",
+    "resource://nimbus/ExperimentAPI.sys.mjs"
+  );
+  SpecialPowers.addTaskImport(
+    "TestUtils",
+    "resource://testing-common/TestUtils.sys.mjs"
+  );
+
   registerCleanupFunction(cleanup);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function childSharedDataChanged(browser) {
-  const MESSAGE = "browser_experimentapi_child:shared-data-changed";
-
-  const deferred = Promise.withResolvers();
-  const listener = () => {
-    deferred.resolve();
-    Services.ppmm.removeMessageListener(MESSAGE, listener);
-  };
-
-  Services.ppmm.addMessageListener(MESSAGE, listener);
-
-  await SpecialPowers.spawn(browser, [MESSAGE], async MESSAGE => {
-    Services.cpmm.sharedData.addEventListener(
-      "change",
-      async () => {
-        await Services.cpmm.sendAsyncMessage(MESSAGE);
-      },
-      { once: true }
-    );
-  });
-
-  
-  
-  
-  return { promise: deferred.promise };
-}
 
 add_task(async function testGetFromChildNewEnrollment() {
   const browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
@@ -74,10 +36,6 @@ add_task(async function testGetFromChildNewEnrollment() {
   
   
   await SpecialPowers.spawn(browser, [], async () => {
-    const { ExperimentAPI, NimbusFeatures } = ChromeUtils.importESModule(
-      "resource://nimbus/ExperimentAPI.sys.mjs"
-    );
-
     Assert.equal(
       Services.appinfo.processType,
       Services.appinfo.PROCESS_TYPE_CONTENT,
@@ -118,13 +76,6 @@ add_task(async function testGetFromChildNewEnrollment() {
 
   
   await SpecialPowers.spawn(browser, [], async () => {
-    const { NimbusFeatures } = ChromeUtils.importESModule(
-      "resource://nimbus/ExperimentAPI.sys.mjs"
-    );
-    const { TestUtils } = ChromeUtils.importESModule(
-      "resource://testing-common/TestUtils.sys.mjs"
-    );
-
     await TestUtils.waitForCondition(
       () => NimbusFeatures.testFeature.getEnrollmentMetadata(),
       "Wait for enrollment child to sync"
@@ -163,13 +114,6 @@ add_task(async function testGetFromChildNewEnrollment() {
 
   
   await SpecialPowers.spawn(browser, [], async () => {
-    const { NimbusFeatures } = ChromeUtils.importESModule(
-      "resource://nimbus/ExperimentAPI.sys.mjs"
-    );
-    const { TestUtils } = ChromeUtils.importESModule(
-      "resource://testing-common/TestUtils.sys.mjs"
-    );
-
     await TestUtils.waitForCondition(
       () => NimbusFeatures.testFeature.getEnrollmentMetadata() === null,
       "Wait for unenrollment to sync"
@@ -217,13 +161,6 @@ add_task(async function testGetFromChildExistingEnrollment() {
 
   
   await SpecialPowers.spawn(browser, [], async () => {
-    const { ExperimentAPI, NimbusFeatures } = ChromeUtils.importESModule(
-      "resource://nimbus/ExperimentAPI.sys.mjs"
-    );
-    const { Assert } = ChromeUtils.importESModule(
-      "resource://testing-common/Assert.sys.mjs"
-    );
-
     await ExperimentAPI.ready();
 
     const meta = NimbusFeatures.testFeature.getEnrollmentMetadata();
