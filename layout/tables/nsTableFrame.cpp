@@ -1862,8 +1862,8 @@ void nsTableFrame::FixupPositionedTableParts(nsPresContext* aPresContext,
     
     
     
-    positionedPart->FinishReflowWithAbsoluteFrames(
-        PresContext(), desiredSize, reflowInput, reflowStatus, true);
+    positionedPart->FinishReflowWithAbsoluteFrames(PresContext(), desiredSize,
+                                                   reflowInput, reflowStatus);
 
     
     
