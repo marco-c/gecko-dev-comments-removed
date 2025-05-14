@@ -288,11 +288,6 @@ class alignas(uintptr_t) BaselineScript final
                              size_t retAddrEntries, size_t osrEntries,
                              size_t debugTrapEntries, size_t resumeEntries);
 
-  
-  
-  
-  static BaselineScript* Copy(JSContext* cx, BaselineScript* bs);
-
   static void Destroy(JS::GCContext* gcx, BaselineScript* script);
 
   void trace(JSTracer* trc);
@@ -610,14 +605,6 @@ struct DeletePolicy<js::jit::BaselineScript> {
 
  private:
   JSRuntime* rt_;
-};
-
-template <>
-struct GCPolicy<js::jit::BaselineScript*> {
-  static void trace(JSTracer* trc, js::jit::BaselineScript** thingp,
-                    const char* name) {
-    (*thingp)->trace(trc);
-  }
 };
 
 }  

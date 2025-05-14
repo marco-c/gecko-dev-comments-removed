@@ -54,17 +54,11 @@ class BaselineFrame {
     
     
     DEBUGGEE = 1 << 6,
-
-    
-    
-    REALM_INDEPENDENT = 1 << 7,
   };
 
  protected:  
   
-  
   JSScript* interpreterScript_;
-  
   jsbytecode* interpreterPC_;
   ICEntry* interpreterICEntry_;
 
@@ -206,6 +200,7 @@ class BaselineFrame {
     
     
     flags_ &= ~RUNNING_IN_INTERPRETER;
+    interpreterScript_ = nullptr;
     interpreterPC_ = nullptr;
   }
 
@@ -246,7 +241,6 @@ class BaselineFrame {
   }
 
   bool runningInInterpreter() const { return flags_ & RUNNING_IN_INTERPRETER; }
-  bool isRealmIndependent() const { return flags_ & REALM_INDEPENDENT; }
 
   JSScript* interpreterScript() const {
     MOZ_ASSERT(runningInInterpreter());

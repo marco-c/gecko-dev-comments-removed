@@ -32,15 +32,11 @@
 #include "frontend/StencilXdr.h"  
 #include "gc/AllocKind.h"         
 #include "gc/Tracer.h"            
-#include "jit/BaselineJIT.h"      
-#include "jit/JitRuntime.h"       
-#include "jit/JitScript.h"        
 #include "js/CallArgs.h"          
 #include "js/CompileOptions.h"  
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
 #include "js/GCAPI.h"                       
-#include "js/Prefs.h"                       
 #include "js/Printer.h"                     
 #include "js/RealmOptions.h"                
 #include "js/RootingAPI.h"                  
@@ -52,7 +48,6 @@
 #include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSAtomUtils.h"            
 #include "vm/JSContext.h"              
 #include "vm/JSFunction.h"  
 #include "vm/JSObject.h"      
@@ -68,10 +63,8 @@
 #include "vm/StringType.h"    
 #include "wasm/AsmJS.h"       
 
-#include "jit/JitScript-inl.h"         
 #include "vm/EnvironmentObject-inl.h"  
 #include "vm/JSFunction-inl.h"         
-#include "vm/JSScript-inl.h"           
 
 using namespace js;
 using namespace js::frontend;
@@ -2848,7 +2841,7 @@ JSFunction* CompilationStencil::instantiateSelfHostedLazyFunction(
 
 bool CompilationStencil::delazifySelfHostedFunction(
     JSContext* cx, CompilationAtomCache& atomCache, ScriptIndexRange range,
-    Handle<JSAtom*> name, HandleFunction fun) {
+    HandleFunction fun) {
   
   
   
@@ -2861,7 +2854,6 @@ bool CompilationStencil::delazifySelfHostedFunction(
   ScopeIndex scopeLimit = (range.limit < scriptData.size())
                               ? getOutermostScope(range.limit)
                               : ScopeIndex(scopeData.size());
-  Rooted<JSAtom*> jitCacheKey(cx, name);
 
   
   
@@ -2934,90 +2926,9 @@ bool CompilationStencil::delazifySelfHostedFunction(
   
   
   
-  Rooted<JSScript*> script(
-      cx,
-      JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(), range.start));
-  if (!script) {
+  if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
+                             range.start)) {
     return false;
-  }
-
-  if (JS::Prefs::experimental_self_hosted_cache()) {
-    
-    
-    
-    
-    UniqueChars nameStr;
-    if (JS_SHOULD_LOG(selfHosted, Debug)) {
-      nameStr = AtomToPrintableString(cx, name);
-    }
-    auto& jitCache = cx->runtime()->selfHostJitCache.ref();
-    auto v = jitCache.readonlyThreadsafeLookup(jitCacheKey);
-    if (v && v->value()->method()) {
-      JS_LOG(selfHosted, Debug,
-             "self_hosted_cache: reusing JIT code for script '%s'",
-             nameStr.get());
-
-      if (!cx->zone()->ensureJitZoneExists(cx)) {
-        return false;
-      }
-      jit::AutoKeepJitScripts keepJitScript(cx);
-      if (!script->ensureHasJitScript(cx, keepJitScript)) {
-        return false;
-      }
-      MOZ_ASSERT(!script->hasBaselineScript());
-
-      
-      
-      jit::BaselineScript* baselineScript =
-          jit::BaselineScript::Copy(cx, v->value());
-      if (!baselineScript) {
-        return false;
-      }
-      mozilla::DebugOnly<bool> instrumentationEnabled =
-          cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(
-              cx->runtime());
-      MOZ_ASSERT(instrumentationEnabled ==
-                 baselineScript->isProfilerInstrumentationOn());
-      script->jitScript()->setBaselineScript(script, baselineScript);
-    } else if (jit::IsBaselineJitEnabled(cx) && script->canBaselineCompile() &&
-               !script->hasBaselineScript() &&
-               jit::CanBaselineInterpretScript(script)) {
-      JS_LOG(selfHosted, Debug,
-             "self_hosted_cache: new JIT code entry for script '%s'",
-             nameStr.get());
-
-      if (!cx->zone()->ensureJitZoneExists(cx)) {
-        return false;
-      }
-
-      jit::AutoKeepJitScripts keep(cx);
-      if (!script->ensureHasJitScript(cx, keep)) {
-        return false;
-      }
-
-      jit::BaselineOptions options(
-          {jit::BaselineOption::ForceMainThreadCompilation});
-      jit::MethodStatus result =
-          jit::BaselineCompile(cx, script.get(), options);
-      if (result != jit::Method_Compiled) {
-        return false;
-      }
-      MOZ_ASSERT(script->hasBaselineScript());
-
-      jit::BaselineScript* baselineScript =
-          jit::BaselineScript::Copy(cx, script->baselineScript());
-      if (!baselineScript) {
-        return false;
-      }
-      if (!jitCache.put(jitCacheKey, baselineScript)) {
-        return false;
-      }
-    } else {
-      JS_LOG(selfHosted, Debug,
-             "self_hosted_cache: script '%s' is not eligible for Baseline "
-             "compilation",
-             nameStr.get());
-    }
   }
 
   

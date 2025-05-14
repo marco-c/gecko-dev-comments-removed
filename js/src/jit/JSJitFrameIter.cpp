@@ -620,8 +620,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
   JSScript* callee = frameScript();
 
   MOZ_ASSERT(entry->isIon() || entry->isIonIC() || entry->isBaseline() ||
-             entry->isBaselineInterpreter() || entry->isDummy() ||
-             entry->isSelfHostedShared());
+             entry->isBaselineInterpreter() || entry->isDummy());
 
   
   if (entry->isDummy()) {
@@ -657,14 +656,6 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
       return false;
     }
 
-    type_ = FrameType::BaselineJS;
-    resumePCinCurrentFrame_ = pc;
-    return true;
-  }
-
-  if (entry->isSelfHostedShared()) {
-    
-    
     type_ = FrameType::BaselineJS;
     resumePCinCurrentFrame_ = pc;
     return true;

@@ -1282,7 +1282,6 @@ struct CompilationStencil {
   [[nodiscard]] bool delazifySelfHostedFunction(JSContext* cx,
                                                 CompilationAtomCache& atomCache,
                                                 ScriptIndexRange range,
-                                                Handle<JSAtom*> name,
                                                 JS::Handle<JSFunction*> fun);
 
   

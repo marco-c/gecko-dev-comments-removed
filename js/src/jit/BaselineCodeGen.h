@@ -87,8 +87,6 @@ class BaselineCodeGen {
   
   void loadScriptGCThing(ScriptGCThingType type, Register dest,
                          Register scratch);
-  void loadScriptGCThingInternal(ScriptGCThingType type, Register dest,
-                                 Register scratch);
   void pushScriptGCThingArg(ScriptGCThingType type, Register scratch1,
                             Register scratch2);
   void pushScriptNameArg(Register scratch1, Register scratch2);
@@ -102,17 +100,12 @@ class BaselineCodeGen {
 
   
   void loadScript(Register dest);
-  
-  void loadJitScript(Register dest);
 
   void saveInterpreterPCReg();
   void restoreInterpreterPCReg();
 
   
   void subtractScriptSlotsSize(Register reg, Register scratch);
-
-  
-  void loadBaselineScriptResumeEntries(Register dest, Register scratch);
 
   
   void jumpToResumeEntry(Register resumeIndex, Register scratch1,
@@ -379,7 +372,7 @@ class BaselineCompilerHandler {
 
   bool canHaveFixedSlots() const { return script()->nfixed() != 0; }
 
-  JSObject* maybeGlobalLexicalEnvironment() const {
+  JSObject* globalLexicalEnvironment() const {
     return globalLexicalEnvironment_;
   }
   JSObject* globalThis() const { return globalThis_; }
@@ -399,11 +392,6 @@ class BaselineCompilerHandler {
   bool addEnvAllocSite() {
     needsEnvAllocSite_ = true;
     return true;
-  }
-
-  bool realmIndependentJitcode() const {
-    return JS::Prefs::experimental_self_hosted_cache() &&
-           script()->selfHosted();
   }
 };
 
@@ -533,11 +521,8 @@ class BaselineInterpreterHandler {
   bool mustIncludeSlotsInStackCheck() const { return true; }
 
   bool canHaveFixedSlots() const { return true; }
-  JSObject* maybeGlobalLexicalEnvironment() const { return nullptr; }
 
   bool addEnvAllocSite() { return false; }  
-
-  bool realmIndependentJitcode() const { return true; }
 };
 
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;

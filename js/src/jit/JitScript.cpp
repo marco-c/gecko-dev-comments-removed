@@ -172,11 +172,7 @@ void JSScript::releaseJitScriptOnFinalize(JS::GCContext* gcx) {
 
   if (hasBaselineScript()) {
     BaselineScript* baseline = jitScript()->clearBaselineScript(gcx, this);
-    
-    
-    if (!selfHosted()) {
-      jit::BaselineScript::Destroy(gcx, baseline);
-    }
+    jit::BaselineScript::Destroy(gcx, baseline);
   }
 
   releaseJitScript(gcx);
