@@ -76,9 +76,6 @@ class nsBaseClipboard : public nsIClipboard {
       mozilla::dom::WindowContext* aRequestingWindowContext,
       nsIClipboardGetDataSnapshotCallback* aCallback);
 
-  
-  
-  using GetDataCallback = mozilla::MoveOnlyFunction<void(nsresult)>;
   using GetNativeDataCallback = mozilla::MoveOnlyFunction<void(
       mozilla::Result<nsCOMPtr<nsISupports>, nsresult>)>;
   using HasMatchingFlavorsCallback = mozilla::MoveOnlyFunction<void(
@@ -108,20 +105,9 @@ class nsBaseClipboard : public nsIClipboard {
   
   NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     ClipboardType aWhichClipboard) = 0;
-  
-  
-  NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
-                                    ClipboardType aWhichClipboard);
   virtual mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
   GetNativeClipboardData(const nsACString& aFlavor,
-                         ClipboardType aWhichClipboard) {
-    return mozilla::Err(NS_ERROR_NOT_IMPLEMENTED);
-  }
-  
-  
-  virtual void AsyncGetNativeClipboardData(nsITransferable* aTransferable,
-                                           ClipboardType aWhichClipboard,
-                                           GetDataCallback&& aCallback);
+                         ClipboardType aWhichClipboard) = 0;
   virtual void AsyncGetNativeClipboardData(const nsACString& aFlavor,
                                            ClipboardType aWhichClipboard,
                                            GetNativeDataCallback&& aCallback);
@@ -183,6 +169,12 @@ class nsBaseClipboard : public nsIClipboard {
    private:
     virtual ~ClipboardDataSnapshot() = default;
     bool IsValid();
+
+    using GetDataInternalCallback = mozilla::MoveOnlyFunction<void(nsresult)>;
+    void GetDataInternal(nsTArray<nsCString>&& aTypes,
+                         nsTArray<nsCString>::index_type aIndex,
+                         nsITransferable* aTransferable,
+                         GetDataInternalCallback&& aCallback);
 
     
     const nsIClipboard::ClipboardType mClipboardType;
