@@ -25,11 +25,5 @@ class nsAlertsUtils final {
 
 
   static void GetSourceHostPort(nsIPrincipal* aPrincipal, nsAString& aHostPort);
-
-  
-
-
-
-  static nsresult GetOrigin(nsIPrincipal* aPrincipal, nsACString& aOrigin);
 };
 #endif 
