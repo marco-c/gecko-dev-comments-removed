@@ -87,15 +87,13 @@ class ContentIteratorBase {
   static nsINode* GetDeepFirstChild(nsINode* aRoot);
   
   
-  static nsIContent* GetDeepFirstChild(
-      nsIContent* aRoot,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+  static nsIContent* GetDeepFirstChild(nsIContent* aRoot,
+                                       bool aAllowCrossShadowBoundary);
   static nsINode* GetDeepLastChild(nsINode* aRoot);
   
   
-  static nsIContent* GetDeepLastChild(
-      nsIContent* aRoot,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+  static nsIContent* GetDeepLastChild(nsIContent* aRoot,
+                                      bool aAllowCrossShadowBoundary);
 
   
   
@@ -103,14 +101,10 @@ class ContentIteratorBase {
   
   
   
-  static nsIContent* GetNextSibling(
-      nsINode* aNode,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
-          dom::AllowRangeCrossShadowBoundary::No,
-  static nsIContent* GetPrevSibling(
-      nsINode* aNode,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
-          dom::AllowRangeCrossShadowBoundary::No);
+  static nsIContent* GetNextSibling(nsINode* aNode,
+                                    bool aAllowCrossShadowBoundary = false);
+  static nsIContent* GetPrevSibling(nsINode* aNode,
+                                    bool aAllowCrossShadowBoundary = false);
 
   nsINode* NextNode(nsINode* aNode);
   nsINode* PrevNode(nsINode* aNode);

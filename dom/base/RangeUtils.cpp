@@ -266,52 +266,47 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
 
 
 nsINode* ShadowDOMSelectionHelpers::GetStartContainer(
-    const AbstractRange* aRange,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+    const AbstractRange* aRange, bool aAllowCrossShadowBoundary) {
   MOZ_ASSERT(aRange);
   return (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-          aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes)
+          aAllowCrossShadowBoundary)
              ? aRange->GetMayCrossShadowBoundaryStartContainer()
              : aRange->GetStartContainer();
 }
 
 
 uint32_t ShadowDOMSelectionHelpers::StartOffset(
-    const AbstractRange* aRange,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+    const AbstractRange* aRange, bool aAllowCrossShadowBoundary) {
   MOZ_ASSERT(aRange);
   return (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-          aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes)
+          aAllowCrossShadowBoundary)
              ? aRange->MayCrossShadowBoundaryStartOffset()
              : aRange->StartOffset();
 }
 
 
 nsINode* ShadowDOMSelectionHelpers::GetEndContainer(
-    const AbstractRange* aRange,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+    const AbstractRange* aRange, bool aAllowCrossShadowBoundary) {
   MOZ_ASSERT(aRange);
   return (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-          aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes)
+          aAllowCrossShadowBoundary)
              ? aRange->GetMayCrossShadowBoundaryEndContainer()
              : aRange->GetEndContainer();
 }
 
 
-uint32_t ShadowDOMSelectionHelpers::EndOffset(
-    const AbstractRange* aRange,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+uint32_t ShadowDOMSelectionHelpers::EndOffset(const AbstractRange* aRange,
+                                              bool aAllowCrossShadowBoundary) {
   MOZ_ASSERT(aRange);
   return (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-          aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes)
+          aAllowCrossShadowBoundary)
              ? aRange->MayCrossShadowBoundaryEndOffset()
              : aRange->EndOffset();
 }
 
 
 nsINode* ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-    const nsINode& aNode,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+    nsINode& aNode, bool aAllowCrossShadowBoundary) {
   if (!ParentNodeIsInSameSelection(aNode)) {
     return nullptr;
   }
@@ -323,11 +318,10 @@ nsINode* ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
 
 
 ShadowRoot* ShadowDOMSelectionHelpers::GetShadowRoot(
-    const nsINode* aNode,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+    const nsINode* aNode, bool aAllowCrossShadowBoundary) {
   MOZ_ASSERT(aNode);
   return (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-          aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes)
+          aAllowCrossShadowBoundary)
              ? aNode->GetShadowRootForSelection()
              : nullptr;
 }  
