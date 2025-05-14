@@ -219,9 +219,13 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
   MOZ_ASSERT(!task->cancellable_);
   
   
-  if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_,
-                                         std::move(task))) {
-    return;
+  {
+    
+    JS::AutoSuppressGCAnalysis nogc;
+    if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_,
+                                           std::move(task))) {
+      return;
+    }
   }
 
   
