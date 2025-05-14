@@ -333,7 +333,7 @@ void DMABufSurface::GlobalRefCountDelete() {
 
 void DMABufSurface::ReleaseDMABuf() {
   LOGDMABUF("DMABufSurface::ReleaseDMABuf() UID %d", mUID);
-#ifdef DEBUG
+#ifdef MOZ_LOGGING
   for (int i = 0; i < mBufferPlaneCount; i++) {
     Unmap(i);
   }
@@ -357,7 +357,7 @@ DMABufSurface::DMABufSurface(SurfaceType aSurfaceType)
       mOffsets(),
       mGbmBufferObject(),
       mGbmBufferFlags(0),
-#ifdef DEBUG
+#ifdef MOZ_LOGGING
       mMappedRegion(),
       mMappedRegionStride(),
 #endif
@@ -1171,7 +1171,7 @@ wl_buffer* DMABufSurfaceRGBA::CreateWlBuffer() {
 }
 #endif
 
-#ifdef DEBUG
+#ifdef MOZ_LOGGING
 
 
 
@@ -1273,7 +1273,7 @@ nsresult DMABufSurface::BuildSurfaceDescriptorBuffer(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-#ifdef DEBUG
+#ifdef MOZ_LOGGING
 void DMABufSurfaceRGBA::DumpToFile(const char* pFile) {
   uint32_t stride;
 
@@ -1317,6 +1317,20 @@ void DMABufSurfaceRGBA::Clear() {
   uint32_t destStride;
   void* destData = Map(&destStride);
   memset(destData, 0, GetHeight() * destStride);
+  Unmap();
+}
+#endif
+
+#ifdef MOZ_LOGGING
+void DMABufSurfaceRGBA::Clear(unsigned int aValue) {
+  uint32_t destStride;
+  void* destData = Map(&destStride);
+
+  unsigned int* data = (unsigned int*)destData;
+  for (unsigned int i = 0; i < (GetHeight() * destStride) >> 2; i++) {
+    *data++ = aValue;
+  }
+
   Unmap();
 }
 #endif
