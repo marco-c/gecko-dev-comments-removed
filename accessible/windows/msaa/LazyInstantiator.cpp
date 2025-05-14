@@ -590,6 +590,13 @@ LazyInstantiator::get_accChild(VARIANT varChild, IDispatch** ppdispChild) {
     return S_OK;
   }
 
+  if (NS_WARN_IF(!NS_IsMainThread())) {
+    
+    
+    
+    return RPC_E_WRONG_THREAD;
+  }
+
   RESOLVE_ROOT;
   return mWeakAccessible->get_accChild(varChild, ppdispChild);
 }
