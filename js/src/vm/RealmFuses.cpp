@@ -336,16 +336,15 @@ void js::OptimizeArraySpeciesFuse::popFuse(JSContext* cx,
                                JSUseCounter::OPTIMIZE_ARRAY_SPECIES_FUSE);
 }
 
-static bool SpeciesFuseCheckInvariant(JSContext* cx, JSProtoKey protoKey,
-                                      PropertyName* selfHostedSpeciesAccessor) {
+bool js::OptimizeArraySpeciesFuse::checkInvariant(JSContext* cx) {
   
-  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(protoKey);
+  auto* proto = cx->global()->maybeGetArrayPrototype();
   if (!proto) {
     
     return true;
   }
 
-  auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(protoKey);
+  auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(JSProto_Array);
   MOZ_ASSERT(ctor);
 
   
@@ -356,23 +355,8 @@ static bool SpeciesFuseCheckInvariant(JSContext* cx, JSProtoKey protoKey,
 
   
   PropertyKey speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
-  return ObjectHasGetterFunction(ctor, speciesKey, selfHostedSpeciesAccessor);
-}
-
-bool js::OptimizeArraySpeciesFuse::checkInvariant(JSContext* cx) {
-  return SpeciesFuseCheckInvariant(cx, JSProto_Array,
-                                   cx->names().dollar_ArraySpecies_);
-}
-
-bool js::OptimizeArrayBufferSpeciesFuse::checkInvariant(JSContext* cx) {
-  return SpeciesFuseCheckInvariant(cx, JSProto_ArrayBuffer,
-                                   cx->names().dollar_ArrayBufferSpecies_);
-}
-
-bool js::OptimizeSharedArrayBufferSpeciesFuse::checkInvariant(JSContext* cx) {
-  return SpeciesFuseCheckInvariant(
-      cx, JSProto_SharedArrayBuffer,
-      cx->names().dollar_SharedArrayBufferSpecies_);
+  return ObjectHasGetterFunction(ctor, speciesKey,
+                                 cx->names().dollar_ArraySpecies_);
 }
 
 void js::OptimizePromiseLookupFuse::popFuse(JSContext* cx,
