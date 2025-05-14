@@ -2598,6 +2598,9 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   }
 
   const nsSizeMode sizeMode = mFrameState->GetSizeMode();
+  if (sizeMode == nsSizeMode_Minimized) {
+    return false;
+  }
 
   const bool hasCaption =
       bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
@@ -2641,9 +2644,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
       hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) : 0;
 
   metrics.mOffset = {};
-  if (sizeMode == nsSizeMode_Minimized) {
-    
-  } else if (sizeMode == nsSizeMode_Fullscreen) {
+  if (sizeMode == nsSizeMode_Fullscreen) {
     
     
     
