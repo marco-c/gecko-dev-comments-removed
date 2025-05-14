@@ -12,6 +12,10 @@
 
 
 
+
+
+
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -329,7 +333,7 @@ class EditEngineDialog extends EngineDialog {
   }
 
   onAccept() {
-    this.#engine.wrappedJSObject.rename(this._name.value.trim());
+    this.#engine.rename(this._name.value.trim());
     this.#engine.alias = this._alias.value.trim();
 
     let newURL = this._url.value.trim();
@@ -340,7 +344,7 @@ class EditEngineDialog extends EngineDialog {
       lazy.SearchUtils.URL_TYPE.SEARCH
     );
     if (newURL != prevURL || prevPostData != newPostData) {
-      this.#engine.wrappedJSObject.changeUrl(
+      this.#engine.changeUrl(
         lazy.SearchUtils.URL_TYPE.SEARCH,
         newURL.replace(/%s/, "{searchTerms}"),
         newPostData?.replace(/%s/, "{searchTerms}")
@@ -352,7 +356,7 @@ class EditEngineDialog extends EngineDialog {
       lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
     );
     if (newSuggestURL != prevSuggestUrl) {
-      this.#engine.wrappedJSObject.changeUrl(
+      this.#engine.changeUrl(
         lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
         newSuggestURL.replace(/%s/, "{searchTerms}"),
         null
