@@ -115,4 +115,19 @@ function valueOfExpression() {
   a("foo")
 }
 
+const workers = [];
+let worker = null;
 
+function spawnWorker() {
+  worker = new Worker("worker.js?id=123");
+  workers.push(worker);
+  
+  
+  worker.onmessage = function (e) {
+    console.log("Message received in main script, from ", e);
+  };
+
+  worker.onerror = function (e) {
+    debugger;
+  };
+}

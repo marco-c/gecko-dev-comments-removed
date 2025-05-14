@@ -107,6 +107,10 @@ add_task(async function () {
     { line: 107, column: 6, expression: "value", result: "foo" },
   ]);
 
+  await testPreviews(dbg, "spawnWorker", [
+    { line: 126, column: 6, expression: "worker", result: "Worker" },
+  ]);
+
   
   
   

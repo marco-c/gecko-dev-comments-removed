@@ -12,16 +12,24 @@
 
 
 function containsPosition(functionLocation, position) {
+  
   return (
-    functionLocation.startLine <= position.line &&
-    functionLocation.endLine >= position.line
+    (functionLocation.start.line < position.line ||
+      
+      (functionLocation.start.line == position.line &&
+        functionLocation.start.column <= position.column)) &&
+    
+    (functionLocation.end.line > position.line ||
+      
+      (functionLocation.end.line == position.line &&
+        functionLocation.end.column >= position.column))
   );
 }
 
 function containsLocation(parentLocation, childLocation) {
   return (
-    parentLocation.startLine <= childLocation.startLine &&
-    parentLocation.endLine >= childLocation.endLine
+    containsPosition(parentLocation, childLocation.start) &&
+    containsPosition(parentLocation, childLocation.end)
   );
 }
 
