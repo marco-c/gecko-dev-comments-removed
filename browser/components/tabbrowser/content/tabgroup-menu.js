@@ -830,8 +830,15 @@
       this.#panel.openPopup(group.firstChild, {
         position: this.#panelPosition,
       });
+      if (!this.smartTabGroupsOptin) {
+        return;
+      }
       
-      this.smartTabGroupsOptin && this.#initMlGroupLabel();
+      this.#initMlGroupLabel();
+      if (this.smartTabGroupsEnabled) {
+        
+        this.#smartTabGroupingManager.initEmbeddingEngine();
+      }
     }
 
     
