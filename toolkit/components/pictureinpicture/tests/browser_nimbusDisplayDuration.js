@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { ExperimentFakes } = ChromeUtils.importESModule(
+const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
@@ -49,7 +49,7 @@ add_task(async function test_experiment_control_displayDuration() {
 
 
 add_task(async function test_experiment_displayDuration_end_date_was_reached() {
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "pictureinpicture",
     value: {
       displayDuration: 1,
@@ -91,7 +91,7 @@ add_task(async function test_experiment_displayDuration_end_date_was_reached() {
 
 
 add_task(async function test_experiment_displayDuration_end_date_not_reached() {
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "pictureinpicture",
     value: {
       displayDuration: 5,
@@ -138,7 +138,7 @@ add_task(async function test_experiment_displayDuration_end_date_not_reached() {
 
 
 add_task(async function test_experiment_displayDuration_negative_duration() {
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "pictureinpicture",
     value: {
       displayDuration: -1,
@@ -179,7 +179,7 @@ add_task(async function test_experiment_displayDuration_negative_duration() {
 
 
 add_task(async function test_experiment_displayDuration_already_icon() {
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "pictureinpicture",
     value: {
       displayDuration: 1,
