@@ -279,11 +279,6 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   FocusDialog();
 }
 
-bool HTMLDialogElement::Open() const {
-  MOZ_ASSERT(GetBoolAttr(nsGkAtoms::open) == State().HasState(ElementState::OPEN));
-  return State().HasState(ElementState::OPEN);
-}
-
 bool HTMLDialogElement::IsInTopLayer() const {
   return State().HasState(ElementState::MODAL);
 }
@@ -459,6 +454,7 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                      bool aNotify) {
   nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue, aOldValue,
                                      aMaybeScriptedPrincipal, aNotify);
+
   
   
   
@@ -489,7 +485,6 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   bool isOpen = !!aValue;
 
   MOZ_ASSERT(Open() == isOpen);
-  MOZ_ASSERT(GetBoolAttr(nsGkAtoms::open) == isOpen);
   SetStates(ElementState::OPEN, isOpen);
 
   
