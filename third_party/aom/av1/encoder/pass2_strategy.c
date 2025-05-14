@@ -3408,6 +3408,9 @@ static void find_next_key_frame(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   kf_bits = calculate_boost_bits(
       AOMMIN(rc->frames_to_key, frames_to_key_clipped) - 1, p_rc->kf_boost,
       AOMMIN(twopass->kf_group_bits, kf_group_bits_clipped));
+  
+  
+  
   kf_bits = adjust_boost_bits_for_target_level(cpi, rc, kf_bits,
                                                twopass->kf_group_bits, 0);
 

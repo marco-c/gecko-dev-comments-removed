@@ -482,11 +482,6 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
 
 
   int allow_sub_blk_me_in_tf;
-
-  
-
-
-  int disable_ref_frame_mvs;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 
@@ -597,10 +592,6 @@ typedef struct GLOBAL_MOTION_SPEED_FEATURES {
 
   
   int num_refinement_steps;
-
-  
-  
-  int gm_erroradv_tr_level;
 } GLOBAL_MOTION_SPEED_FEATURES;
 
 typedef struct PARTITION_SPEED_FEATURES {
