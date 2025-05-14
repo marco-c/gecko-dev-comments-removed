@@ -73,23 +73,6 @@ class AsyncFontInfoLoader : public Runnable {
   RefPtr<FontInfoLoadCompleteEvent> mCompleteEvent;
 };
 
-class ShutdownThreadEvent : public Runnable {
-  virtual ~ShutdownThreadEvent() = default;
-
- public:
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(ShutdownThreadEvent, Runnable)
-
-  explicit ShutdownThreadEvent(nsIThread* aThread)
-      : mozilla::Runnable("ShutdownThreadEvent"), mThread(aThread) {}
-  NS_IMETHOD Run() override {
-    mThread->Shutdown();
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsIThread> mThread;
-};
-
 
 nsresult FontInfoLoadCompleteEvent::Run() {
   gfxFontInfoLoader* loader =
@@ -281,8 +264,9 @@ void gfxFontInfoLoader::CancelLoader() {
   if (mFontInfo)  
     mFontInfo->mCanceled = true;
   if (mFontLoaderThread) {
-    NS_DispatchToMainThread(new ShutdownThreadEvent(mFontLoaderThread));
-    mFontLoaderThread = nullptr;
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        __func__,
+        [thread = std::move(mFontLoaderThread)]() { thread->Shutdown(); }));
   }
   RemoveShutdownObserver();
   CleanupLoader();
