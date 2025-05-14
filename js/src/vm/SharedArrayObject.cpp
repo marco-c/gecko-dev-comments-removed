@@ -10,6 +10,8 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/TaggedAnonymousMemory.h"
 
+#include "jsnum.h"
+
 #include "gc/GCContext.h"
 #include "gc/Memory.h"
 #include "jit/AtomicOperations.h"
@@ -19,6 +21,8 @@
 #include "js/SharedArrayBuffer.h"
 #include "util/Memory.h"
 #include "util/WindowsWrapper.h"
+#include "vm/Interpreter.h"
+#include "vm/SelfHosting.h"
 #include "vm/SharedMem.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmMemory.h"
@@ -430,6 +434,114 @@ bool SharedArrayBufferObject::grow(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsGrowableSharedArrayBuffer, growImpl>(cx, args);
 }
 
+static bool IsSharedArrayBufferSpecies(JSContext* cx, JSFunction* species) {
+  return IsSelfHostedFunctionWithName(
+      species, cx->names().dollar_SharedArrayBufferSpecies_);
+}
+
+
+
+
+
+
+bool SharedArrayBufferObject::sliceImpl(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsSharedArrayBuffer(args.thisv()));
+
+  Rooted<SharedArrayBufferObject*> obj(
+      cx, &args.thisv().toObject().as<SharedArrayBufferObject>());
+
+  
+  size_t len = obj->byteLength();
+
+  
+  size_t first = 0;
+  if (args.hasDefined(0)) {
+    if (!ToIntegerIndex(cx, args[0], len, &first)) {
+      return false;
+    }
+  }
+
+  
+  size_t final_ = len;
+  if (args.hasDefined(1)) {
+    if (!ToIntegerIndex(cx, args[1], len, &final_)) {
+      return false;
+    }
+  }
+
+  
+  size_t newLen = final_ >= first ? final_ - first : 0;
+
+  
+  Rooted<JSObject*> ctor(cx,
+                         SpeciesConstructor(cx, obj, JSProto_SharedArrayBuffer,
+                                            IsSharedArrayBufferSpecies));
+  if (!ctor) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> resultObj(cx);
+  {
+    FixedConstructArgs<1> cargs(cx);
+    cargs[0].setNumber(newLen);
+
+    Rooted<Value> ctorVal(cx, ObjectValue(*ctor));
+    if (!Construct(cx, ctorVal, cargs, ctorVal, &resultObj)) {
+      return false;
+    }
+  }
+
+  
+  auto* unwrappedResult = resultObj->maybeUnwrapIf<SharedArrayBufferObject>();
+  if (!unwrappedResult) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NON_SHARED_ARRAY_BUFFER_RETURNED);
+    return false;
+  }
+
+  
+  if (obj->rawBufferObject() == unwrappedResult->rawBufferObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
+    return false;
+  }
+
+  
+  size_t resultByteLength = unwrappedResult->byteLength();
+  if (resultByteLength < newLen) {
+    ToCStringBuf resultLenCbuf;
+    const char* resultLenStr =
+        NumberToCString(&resultLenCbuf, double(resultByteLength));
+
+    ToCStringBuf newLenCbuf;
+    const char* newLenStr = NumberToCString(&newLenCbuf, double(newLen));
+
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED,
+                              newLenStr, resultLenStr);
+    return false;
+  }
+
+  
+  SharedArrayBufferObject::copyData(unwrappedResult, 0, obj, first, newLen);
+
+  
+  args.rval().setObject(*resultObj);
+  return true;
+}
+
+
+
+
+
+
+bool SharedArrayBufferObject::slice(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSharedArrayBuffer, sliceImpl>(cx, args);
+}
+
 
 
 bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
@@ -675,10 +787,10 @@ void SharedArrayBufferObject::addSizeOfExcludingThis(
 }
 
 
-void SharedArrayBufferObject::copyData(
-    Handle<ArrayBufferObjectMaybeShared*> toBuffer, size_t toIndex,
-    Handle<ArrayBufferObjectMaybeShared*> fromBuffer, size_t fromIndex,
-    size_t count) {
+void SharedArrayBufferObject::copyData(ArrayBufferObjectMaybeShared* toBuffer,
+                                       size_t toIndex,
+                                       ArrayBufferObjectMaybeShared* fromBuffer,
+                                       size_t fromIndex, size_t count) {
   MOZ_ASSERT(toBuffer->byteLength() >= count);
   MOZ_ASSERT(toBuffer->byteLength() >= toIndex + count);
   MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex);
@@ -782,7 +894,7 @@ static const JSPropertySpec sharedarray_properties[] = {
 };
 
 static const JSFunctionSpec sharedarray_proto_functions[] = {
-    JS_SELF_HOSTED_FN("slice", "SharedArrayBufferSlice", 2, 0),
+    JS_FN("slice", SharedArrayBufferObject::slice, 2, 0),
     JS_FN("grow", SharedArrayBufferObject::grow, 1, 0),
     JS_FS_END,
 };
