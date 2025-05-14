@@ -664,6 +664,13 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
     
     while (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
+      if (!ShadowDOMSelectionHelpers::GetShadowRoot(
+              slot->GetContainingShadowHost(), aAllowCrossShadowBoundary)) {
+        
+        
+        break;
+      }
+
       
       auto currentIndex = slot->AssignedNodes().IndexOf(aNode);
       if (currentIndex < slot->AssignedNodes().Length() - 1) {
@@ -726,6 +733,12 @@ nsIContent* ContentIteratorBase<NodeType>::GetPrevSibling(
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
     
     while (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
+      if (!ShadowDOMSelectionHelpers::GetShadowRoot(
+              slot->GetContainingShadowHost(), aAllowCrossShadowBoundary)) {
+        
+        
+        break;
+      }
       
       auto currentIndex = slot->AssignedNodes().IndexOf(aNode);
       if (currentIndex > 0) {
@@ -1026,15 +1039,19 @@ void ContentSubtreeIterator::CacheInclusiveAncestorsOfEndContainer() {
       break;
     }
 
-    const bool isDescendantInShadowTree =
-        IterAllowCrossShadowBoundary() && child->IsShadowRoot();
+    
+    
+    const bool isChildAShadowRootForSelection =
+        ShadowDOMSelectionHelpers::GetShadowRoot(
+            parent, mAllowCrossShadowBoundary) == child;
 
     info.mAncestor = parent->AsContent();
     
     
     
     
-    info.mIsDescendantInShadowTree = isDescendantInShadowTree;
+    info.mIsDescendantInShadowTree =
+        IterAllowCrossShadowBoundary() && isChildAShadowRootForSelection;
   }
 }
 
@@ -1255,6 +1272,7 @@ void ContentSubtreeIterator::Next() {
     ShadowRoot* root = ShadowDOMSelectionHelpers::GetShadowRoot(
         nextNode, mAllowCrossShadowBoundary);
     if (mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree) {
+      MOZ_ASSERT(root);
       nextNode = root->GetFirstChild();
     } else if (auto* slot = HTMLSlotElement::FromNode(nextNode);
                slot && IterAllowCrossShadowBoundary()) {
