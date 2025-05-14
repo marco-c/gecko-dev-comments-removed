@@ -32,6 +32,12 @@
 
 
 
+
+
+
+
+#define SPOOFED_UA_OS_OTHER "X11; Linux x86_64"
+
 #ifdef XP_WIN
 #  define SPOOFED_UA_OS "Windows NT 10.0; Win64; x64"
 #  define SPOOFED_APPVERSION "5.0 (Windows)"
@@ -50,7 +56,7 @@
 #else
 
 
-#  define SPOOFED_UA_OS "X11; Linux x86_64"
+#  define SPOOFED_UA_OS SPOOFED_UA_OS_OTHER
 #  define SPOOFED_APPVERSION "5.0 (X11)"
 #  define SPOOFED_OSCPU "Linux x86_64"
 #  define SPOOFED_MAX_TOUCH_POINTS 10
@@ -269,7 +275,8 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
 
   
-  static void GetSpoofedUserAgent(nsACString& userAgent);
+  static void GetSpoofedUserAgent(nsACString& userAgent,
+                                  bool aAndroidDesktopMode = false);
 
   
 
