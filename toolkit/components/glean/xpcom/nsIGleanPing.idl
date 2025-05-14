@@ -11,12 +11,6 @@ interface nsIGleanPingTestCallback : nsISupports
   void call(in ACString aReason);
 };
 
-[scriptable, function, uuid(576baf9b-3f90-48aa-b35b-89a9638cc823)]
-interface nsIGleanPingSubmitCallback : nsISupports
-{
-  Promise call();
-};
-
 [scriptable, uuid(5223a48b-687d-47ff-a629-fd4a72d1ecfa)]
 interface nsIGleanPing : nsISupports
 {
@@ -53,9 +47,6 @@ interface nsIGleanPing : nsISupports
 
 
 
-
-
-
   void testBeforeNextSubmit(in nsIGleanPingTestCallback aCallback);
 
   
@@ -67,30 +58,4 @@ interface nsIGleanPing : nsISupports
 
 
   void setEnabled(in boolean aValue);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise testSubmission(
-    in nsIGleanPingTestCallback aTestCallback,
-    in nsIGleanPingSubmitCallback aSubmitCallback,
-    [optional] in unsigned long aSubmitTimeoutMs);
 };
