@@ -605,8 +605,24 @@ class UpdateVerifyConfigCreator(BaseScript):
     def _get_files_from_remote_repo(self, rev, branch, *paths):
         files = []
         for path in paths:
-            url = urljoin(self.config["hg_server"], f"{branch}/raw-file/{rev}/{path}")
-            ret = self._retry_download(url, "WARNING")
+            hg_url = urljoin(
+                self.config["hg_server"], f"{branch}/raw-file/{rev}/{path}"
+            )
+            
+            
+            ret = self._retry_download(
+                hg_url, "WARNING", retry_config={"sleeptime": 5, "max_sleeptime": 5}
+            )
+            
+            if ret is None:
+                self.log("couldn't fetch file from hg; trying github")
+                
+                
+                
+                
+                git_url = f"https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/tags/{rev}/{path}"
+                ret = self._retry_download(git_url, "WARNING")
+
             files.append(ret.read().strip().decode("utf-8"))
         return files
 
