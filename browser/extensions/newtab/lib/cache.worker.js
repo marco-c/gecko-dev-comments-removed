@@ -146,7 +146,9 @@ let Agent = {
 
 
   _construct(state) {
-    state.App.isForStartupCache = true;
+    for (const key of Object.keys(state.App.isForStartupCache)) {
+      state.App.isForStartupCache[key] = true;
+    }
 
     
     

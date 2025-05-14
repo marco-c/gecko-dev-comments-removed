@@ -210,7 +210,10 @@ add_task(async function test_cache_worker() {
   
   
   
-  state.App.isForStartupCache = true;
+  state.App.isForStartupCache = {
+    App: true,
+    Wallpaper: true,
+  };
 
   
   

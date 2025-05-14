@@ -184,6 +184,8 @@ for (const type of [
   "NEW_TAB_LOAD",
   "NEW_TAB_REHYDRATED",
   "NEW_TAB_STATE_REQUEST",
+  "NEW_TAB_STATE_REQUEST_STARTUPCACHE",
+  "NEW_TAB_STATE_REQUEST_WITHOUT_STARTUPCACHE",
   "NEW_TAB_UNLOAD",
   "OPEN_ABOUT_FAKESPOT",
   "OPEN_DOWNLOAD_FILE",
@@ -3606,7 +3608,7 @@ class _DSCard extends (external_React_default()).PureComponent {
 
     
     
-    if (props.App.isForStartupCache) {
+    if (props.App.isForStartupCache.App) {
       this.state.isSeen = true;
     }
 
@@ -5164,7 +5166,7 @@ class _CardGrid extends (external_React_default()).PureComponent {
     let editorsPicksCards = [];
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
-      cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache ? external_React_default().createElement(PlaceholderDSCard, {
+      cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache.App ? external_React_default().createElement(PlaceholderDSCard, {
         key: `dscard-${index}`
       }) : external_React_default().createElement(DSCard, {
         key: `dscard-${rec.id}`,
@@ -7349,7 +7351,10 @@ const INITIAL_STATE = {
     
     initialized: false,
     locale: "",
-    isForStartupCache: false,
+    isForStartupCache: {
+      App: false,
+      Wallpaper: false,
+    },
     customizeMenuVisible: false,
   },
   Ads: {
@@ -7500,15 +7505,24 @@ function App(prevState = INITIAL_STATE.App, action) {
     case actionTypes.TOP_SITES_UPDATED:
       
       
-      return Object.assign({}, prevState, action.data || {}, {
-        isForStartupCache: false,
-      });
+      return {
+        ...prevState,
+        isForStartupCache: { ...prevState.isForStartupCache, App: false },
+      };
     case actionTypes.DISCOVERY_STREAM_SPOCS_UPDATE:
       
       
-      return Object.assign({}, prevState, action.data || {}, {
-        isForStartupCache: false,
-      });
+      return {
+        ...prevState,
+        isForStartupCache: { ...prevState.isForStartupCache, App: false },
+      };
+    case actionTypes.WALLPAPERS_CUSTOM_SET:
+      
+      
+      return {
+        ...prevState,
+        isForStartupCache: { ...prevState.isForStartupCache, Wallpaper: false },
+      };
     case actionTypes.SHOW_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: true,
@@ -9442,7 +9456,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       let topSiteLink;
       
       
-      if (!link || props.App.isForStartupCache && isSponsored(link) || topSites[i]?.isAddButton) {
+      if (!link || props.App.isForStartupCache.App && isSponsored(link) || topSites[i]?.isAddButton) {
         if (link) {
           topSiteLink = external_React_default().createElement(TopSitePlaceholder, TopSite_extends({}, slotProps, commonProps, {
             isAddButton: topSites[i] && topSites[i].isAddButton,
@@ -14469,7 +14483,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       
       uploadedWallpaper !== prevUploadedWallpaper ||
       
-      wallpaperList !== prevWallpaperList 
+      wallpaperList !== prevWallpaperList ||
+      
+      this.props.App.isForStartupCache.Wallpaper !== prevProps.App.isForStartupCache.Wallpaper 
       ) {
         this.updateWallpaper();
       }
@@ -14675,9 +14691,11 @@ class BaseContent extends (external_React_default()).PureComponent {
       if (this.uploadedWallpaperUrl) {
         URL.revokeObjectURL(this.uploadedWallpaperUrl);
       }
-      const uploadedWallpaperUrl = URL.createObjectURL(uploadedWallpaper);
-      __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper", `url(${uploadedWallpaperUrl})`);
-      __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-color", "transparent");
+      try {
+        const uploadedWallpaperUrl = URL.createObjectURL(uploadedWallpaper);
+        __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper", `url(${uploadedWallpaperUrl})`);
+        __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-color", "transparent");
+      } catch (e) {}
       return;
     }
     if (wallpaperList) {
@@ -15199,34 +15217,46 @@ const NewTab = ({
 }) => external_React_default().createElement(external_ReactRedux_namespaceObject.Provider, {
   store: store
 }, external_React_default().createElement(Base, null));
+function doRequestWhenReady() {
+  
+  
+  
+  const doRequestPromise = new Promise(resolve => {
+    let didRequest = false;
+    let requestIdleCallbackId = 0;
+    function doRequest() {
+      if (!didRequest) {
+        if (requestIdleCallbackId) {
+          cancelIdleCallback(requestIdleCallbackId);
+        }
+        didRequest = true;
+        resolve();
+      }
+    }
+    if (document.hidden) {
+      requestIdleCallbackId = requestIdleCallback(doRequest);
+      addEventListener("visibilitychange", doRequest, {
+        once: true
+      });
+    } else {
+      resolve();
+    }
+  });
+  return doRequestPromise;
+}
 function renderWithoutState() {
   const store = initStore(reducers);
   new DetectUserSessionStart(store).sendEventOrAddListener();
-
-  
-  
-  
-  let didRequest = false;
-  let requestIdleCallbackId = 0;
-  function doRequest() {
-    if (!didRequest) {
-      if (requestIdleCallbackId) {
-        cancelIdleCallback(requestIdleCallbackId);
-      }
-      didRequest = true;
-      store.dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.NEW_TAB_STATE_REQUEST
-      }));
-    }
-  }
-  if (document.hidden) {
-    requestIdleCallbackId = requestIdleCallback(doRequest);
-    addEventListener("visibilitychange", doRequest, {
-      once: true
-    });
-  } else {
-    doRequest();
-  }
+  doRequestWhenReady().then(() => {
+    
+    store.dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.NEW_TAB_STATE_REQUEST
+    }));
+    
+    store.dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.NEW_TAB_STATE_REQUEST_WITHOUT_STARTUPCACHE
+    }));
+  });
   external_ReactDOM_default().hydrate( external_React_default().createElement(NewTab, {
     store: store
   }), document.getElementById("root"));
@@ -15234,6 +15264,14 @@ function renderWithoutState() {
 function renderCache(initialState) {
   const store = initStore(reducers, initialState);
   new DetectUserSessionStart(store).sendEventOrAddListener();
+  doRequestWhenReady().then(() => {
+    
+    
+    
+    store.dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.NEW_TAB_STATE_REQUEST_STARTUPCACHE
+    }));
+  });
   external_ReactDOM_default().hydrate( external_React_default().createElement(NewTab, {
     store: store
   }), document.getElementById("root"));
