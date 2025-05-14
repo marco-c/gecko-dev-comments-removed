@@ -1242,7 +1242,14 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
 
   
   if (sProfileDir) {
-    AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
+    
+    
+    
+    
+    
+    
+    
+    AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
                      sProfileDir, u"\\shader-cache"_ns);
 
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
