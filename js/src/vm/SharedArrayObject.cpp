@@ -439,6 +439,28 @@ static bool IsSharedArrayBufferSpecies(JSContext* cx, JSFunction* species) {
       species, cx->names().dollar_SharedArrayBufferSpecies_);
 }
 
+static bool HasBuiltinSharedArrayBufferSpecies(SharedArrayBufferObject* obj,
+                                               JSContext* cx) {
+  
+  
+  if (!cx->realm()->realmFuses.optimizeSharedArrayBufferSpeciesFuse.intact()) {
+    return false;
+  }
+
+  
+  auto* proto = cx->global()->maybeGetPrototype(JSProto_SharedArrayBuffer);
+  if (!proto || obj->staticPrototype() != proto) {
+    return false;
+  }
+
+  
+  if (obj->containsPure(NameToId(cx->names().constructor))) {
+    return false;
+  }
+
+  return true;
+}
+
 
 
 
@@ -471,56 +493,76 @@ bool SharedArrayBufferObject::sliceImpl(JSContext* cx, const CallArgs& args) {
 
   
   size_t newLen = final_ >= first ? final_ - first : 0;
-
-  
-  Rooted<JSObject*> ctor(cx,
-                         SpeciesConstructor(cx, obj, JSProto_SharedArrayBuffer,
-                                            IsSharedArrayBufferSpecies));
-  if (!ctor) {
-    return false;
-  }
+  MOZ_ASSERT(newLen <= ArrayBufferObject::ByteLengthLimit);
 
   
   Rooted<JSObject*> resultObj(cx);
-  {
-    FixedConstructArgs<1> cargs(cx);
-    cargs[0].setNumber(newLen);
-
-    Rooted<Value> ctorVal(cx, ObjectValue(*ctor));
-    if (!Construct(cx, ctorVal, cargs, ctorVal, &resultObj)) {
+  SharedArrayBufferObject* unwrappedResult = nullptr;
+  if (HasBuiltinSharedArrayBufferSpecies(obj, cx)) {
+    
+    unwrappedResult = New(cx, newLen);
+    if (!unwrappedResult) {
       return false;
     }
-  }
+    resultObj.set(unwrappedResult);
 
-  
-  auto* unwrappedResult = resultObj->maybeUnwrapIf<SharedArrayBufferObject>();
-  if (!unwrappedResult) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_NON_SHARED_ARRAY_BUFFER_RETURNED);
-    return false;
-  }
+    
 
-  
-  if (obj->rawBufferObject() == unwrappedResult->rawBufferObject()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
-    return false;
-  }
+    
+    MOZ_ASSERT(obj->rawBufferObject() != unwrappedResult->rawBufferObject());
 
-  
-  size_t resultByteLength = unwrappedResult->byteLength();
-  if (resultByteLength < newLen) {
-    ToCStringBuf resultLenCbuf;
-    const char* resultLenStr =
-        NumberToCString(&resultLenCbuf, double(resultByteLength));
+    
+    MOZ_ASSERT(unwrappedResult->byteLength() == newLen);
+  } else {
+    
+    Rooted<JSObject*> ctor(
+        cx, SpeciesConstructor(cx, obj, JSProto_SharedArrayBuffer,
+                               IsSharedArrayBufferSpecies));
+    if (!ctor) {
+      return false;
+    }
 
-    ToCStringBuf newLenCbuf;
-    const char* newLenStr = NumberToCString(&newLenCbuf, double(newLen));
+    
+    {
+      FixedConstructArgs<1> cargs(cx);
+      cargs[0].setNumber(newLen);
 
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED,
-                              newLenStr, resultLenStr);
-    return false;
+      Rooted<Value> ctorVal(cx, ObjectValue(*ctor));
+      if (!Construct(cx, ctorVal, cargs, ctorVal, &resultObj)) {
+        return false;
+      }
+    }
+
+    
+    unwrappedResult = resultObj->maybeUnwrapIf<SharedArrayBufferObject>();
+    if (!unwrappedResult) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_NON_SHARED_ARRAY_BUFFER_RETURNED);
+      return false;
+    }
+
+    
+    if (obj->rawBufferObject() == unwrappedResult->rawBufferObject()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
+      return false;
+    }
+
+    
+    size_t resultByteLength = unwrappedResult->byteLength();
+    if (resultByteLength < newLen) {
+      ToCStringBuf resultLenCbuf;
+      const char* resultLenStr =
+          NumberToCString(&resultLenCbuf, double(resultByteLength));
+
+      ToCStringBuf newLenCbuf;
+      const char* newLenStr = NumberToCString(&newLenCbuf, double(newLen));
+
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED,
+                                newLenStr, resultLenStr);
+      return false;
+    }
   }
 
   
