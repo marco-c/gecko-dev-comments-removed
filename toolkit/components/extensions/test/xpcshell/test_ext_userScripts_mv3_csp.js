@@ -7,7 +7,10 @@ const { ExtensionUserScripts } = ChromeUtils.importESModule(
 const server = createHttpServer({ hosts: ["example.com", "example.net"] });
 server.registerPathHandler("/evalChecker", (request, response) => {
   response.setStatusLine(request.httpVersion, 200, "OK");
-  response.write(`<script>var res = { evalOk: [], evalBlocked: [] };</script>`);
+  response.write(`<script>
+    var res = { evalOk: [], evalBlocked: [] };
+    var userScriptsExecutionDone = Promise.withResolvers();
+  </script>`);
 });
 
 AddonTestUtils.init(this);
@@ -30,7 +33,10 @@ async function testEvalCheckerWithUserScripts() {
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/evalChecker"
   );
-  const res = await contentPage.spawn([], () => content.wrappedJSObject.res);
+  const res = await contentPage.spawn([], async () => {
+    await content.wrappedJSObject.userScriptsExecutionDone.promise;
+    return content.wrappedJSObject.res;
+  });
   await contentPage.close();
   return {
     
@@ -40,6 +46,9 @@ async function testEvalCheckerWithUserScripts() {
 }
 
 async function startEvalTesterExtension() {
+  
+  
+  
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",
     manifest: {
@@ -61,6 +70,19 @@ async function startEvalTesterExtension() {
       browser.test.onMessage.addListener(async (msg, args) => {
         if (msg === "grantUserScriptsPermission") {
           await browser.permissions.request({ permissions: ["userScripts"] });
+          
+          
+          
+          await browser.userScripts.register([
+            {
+              id: "evalChecker_done_marker",
+              matches: ["*://example.com/evalChecker"],
+              js: [{ code: "userScriptsExecutionDone.resolve();" }],
+              
+              runAt: "document_idle",
+              world: "MAIN",
+            },
+          ]);
         } else if (msg === "registerUserScriptForWorldId") {
           const worldId = args;
           await browser.userScripts.register([
