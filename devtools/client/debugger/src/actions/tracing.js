@@ -7,13 +7,10 @@ import {
   getTraceFrames,
   getIsCurrentlyTracing,
   getCurrentThread,
-  getSourceByActorId,
 } from "../selectors/index";
 import { NO_SEARCH_VALUE } from "../reducers/tracer-frames";
-import { createLocation } from "../utils/location";
-import { getOriginalLocation } from "../utils/source-maps";
 
-import { selectLocation } from "./sources/select.js";
+import { selectSourceBySourceActorID } from "./sources/select.js";
 const {
   TRACER_FIELDS_INDEXES,
 } = require("resource://devtools/server/actors/tracer.js");
@@ -50,43 +47,32 @@ export function addTraces(traces) {
 }
 
 export function selectTrace(traceIndex) {
-  return async function (thunkArgs) {
-    const { dispatch, getState } = thunkArgs;
-    const traces = getAllTraces(getState());
-    const trace = traces[traceIndex];
-    if (!trace) {
-      return;
-    }
-
-    
-    let location = null;
-    if (trace[TRACER_FIELDS_INDEXES.TYPE] != "event") {
-      const frameIndex = trace[TRACER_FIELDS_INDEXES.FRAME_INDEX];
-      const frames = getTraceFrames(getState());
-      const frame = frames[frameIndex];
-      const source = getSourceByActorId(getState(), frame.sourceId);
-      location = createLocation({
-        source,
-        line: frame.line,
-        column: frame.column,
-      });
-      location = await getOriginalLocation(location, thunkArgs);
-    }
-
+  return async function ({ dispatch, getState }) {
     
     const thread = getCurrentThread(getState());
+
     dispatch({
       type: "SELECT_TRACE",
       traceIndex,
-      location,
       thread,
     });
-
-    if (location) {
-      
-      
-      await dispatch(selectLocation(location, { highlight: false }));
+    const traces = getAllTraces(getState());
+    const trace = traces[traceIndex];
+    
+    if (!trace || trace[TRACER_FIELDS_INDEXES.TYPE] == "event") {
+      return;
     }
+
+    const frameIndex = trace[TRACER_FIELDS_INDEXES.FRAME_INDEX];
+    const frames = getTraceFrames(getState());
+    const frame = frames[frameIndex];
+
+    await dispatch(
+      selectSourceBySourceActorID(frame.sourceId, {
+        line: frame.line,
+        column: frame.column,
+      })
+    );
   };
 }
 

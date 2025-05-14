@@ -319,10 +319,6 @@ export function getInlinePreviews(state) {
       if (selectedTraceSource.id == selectedSource.id) {
         return state.tracerFrames?.previews;
       }
-
-      
-      
-      return null;
     }
   }
 

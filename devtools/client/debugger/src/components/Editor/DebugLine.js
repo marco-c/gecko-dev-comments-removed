@@ -22,7 +22,6 @@ import {
   getSourceTextContent,
   getCurrentThread,
   getViewport,
-  getSelectedTraceLocation,
 } from "../../selectors/index";
 import { features } from "../../utils/prefs";
 
@@ -181,7 +180,7 @@ export class DebugLine extends PureComponent {
     
     return {
       markTextClass: features.codemirrorNext ? null : "debug-expression",
-      lineClass: why == "tracer" ? "traced-line" : "paused-line",
+      lineClass: "paused-line",
     };
   }
 
@@ -203,26 +202,11 @@ function isDocumentReady(location, sourceTextContent) {
 const mapStateToProps = state => {
   
   
-  
-  
-  let why;
-  let location = getSelectedTraceLocation(state);
-  if (location) {
-    why = "tracer";
-  } else {
-    
-    
-    const frame = getVisibleSelectedFrame(state);
-    location = frame?.location;
-
-    
-    if (!location) {
-      return {};
-    }
-
-    why = getPauseReason(state, getCurrentThread(state));
+  const frame = getVisibleSelectedFrame(state);
+  const location = frame?.location;
+  if (!location) {
+    return {};
   }
-
   
   
   
@@ -232,15 +216,13 @@ const mapStateToProps = state => {
       return {};
     }
   }
-
   const sourceTextContent = getSourceTextContent(state, location);
   if (!isDocumentReady(location, sourceTextContent)) {
     return {};
   }
-
   return {
     location,
-    why,
+    why: getPauseReason(state, getCurrentThread(state)),
     sourceTextContent,
   };
 };
