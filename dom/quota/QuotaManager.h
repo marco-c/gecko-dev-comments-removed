@@ -82,6 +82,7 @@ class OriginDirectoryLock;
 class OriginInfo;
 class OriginScope;
 class QuotaObject;
+class SaveOriginAccessTimeOp;
 class UniversalDirectoryLock;
 
 namespace test {
@@ -106,6 +107,7 @@ class QuotaManager final : public BackgroundThreadObject {
   friend class ListCachedOriginsOp;
   friend class OriginInfo;
   friend class PersistOp;
+  friend class SaveOriginAccessTimeOp;
   friend class ShutdownStorageOp;
   friend class test::GTEST_CLASS(TestQuotaManagerAndShutdownFixture,
                                  ThumbnailPrivateIdentityTemporaryOriginCount);
@@ -660,6 +662,20 @@ class QuotaManager final : public BackgroundThreadObject {
   uint64_t TotalDirectoryIterations() const;
 
   
+
+
+
+
+  uint64_t SaveOriginAccessTimeCount() const;
+
+  
+
+
+
+
+  uint64_t SaveOriginAccessTimeCountInternal() const;
+
+  
   
   static void MaybeRecordQuotaClientShutdownStep(
       const Client::Type aClientType, const nsACString& aStepDescription);
@@ -909,6 +925,18 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void IncreaseTotalDirectoryIterations();
 
+  
+
+
+
+  void IncreaseSaveOriginAccessTimeCount();
+
+  
+
+
+
+  void IncreaseSaveOriginAccessTimeCountInternal();
+
   template <typename Iterator>
   static void MaybeInsertNonPersistedOriginInfos(
       Iterator aDest, const RefPtr<GroupInfo>& aTemporaryGroupInfo,
@@ -958,6 +986,8 @@ class QuotaManager final : public BackgroundThreadObject {
   struct BackgroundThreadAccessible {
     PrincipalMetadataArray mUninitializedGroups;
     nsTHashSet<nsCString> mInitializedGroups;
+    
+    uint64_t mSaveOriginAccessTimeCount = 0;
   };
   ThreadBound<BackgroundThreadAccessible> mBackgroundThreadAccessible;
 
@@ -973,6 +1003,8 @@ class QuotaManager final : public BackgroundThreadObject {
     
     
     uint64_t mTotalDirectoryIterations = 0;
+    
+    uint64_t mSaveOriginAccessTimeCount = 0;
     
     uint32_t mThumbnailPrivateIdentityTemporaryOriginCount = 0;
   };

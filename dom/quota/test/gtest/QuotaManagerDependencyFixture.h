@@ -76,6 +76,9 @@ class QuotaManagerDependencyFixture : public testing::Test {
 
   static uint64_t TotalDirectoryIterations();
 
+  static uint64_t SaveOriginAccessTimeCount();
+  static uint64_t SaveOriginAccessTimeCountInternal();
+
   
   template <class Invokable, class... Args>
   static auto PerformOnBackgroundThread(Invokable&& aInvokable, Args&&... aArgs)
