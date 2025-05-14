@@ -1509,9 +1509,6 @@ pub enum Appearance {
     ButtonArrowUp,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Dualbutton,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Menupopup,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]

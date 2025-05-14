@@ -186,7 +186,6 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
 
     if (aAppearance == StyleAppearance::Button ||
         aAppearance == StyleAppearance::Toolbarbutton ||
-        aAppearance == StyleAppearance::Dualbutton ||
         aAppearance == StyleAppearance::ToolbarbuttonDropdown ||
         aAppearance == StyleAppearance::MozWindowButtonMinimize ||
         aAppearance == StyleAppearance::MozWindowButtonRestore ||
@@ -206,7 +205,6 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
       
       if (aAppearance == StyleAppearance::Button ||
           aAppearance == StyleAppearance::Toolbarbutton ||
-          aAppearance == StyleAppearance::Dualbutton ||
           aAppearance == StyleAppearance::ToolbarbuttonDropdown ||
           aAppearance == StyleAppearance::Menulist) {
         bool menuOpen = IsOpenButton(aFrame);
@@ -233,7 +231,6 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
       aGtkWidgetType = MOZ_GTK_BUTTON;
       break;
     case StyleAppearance::Toolbarbutton:
-    case StyleAppearance::Dualbutton:
       if (aWidgetFlags) *aWidgetFlags = GTK_RELIEF_NONE;
       aGtkWidgetType = MOZ_GTK_TOOLBAR_BUTTON;
       break;
@@ -820,14 +817,6 @@ LayoutDeviceIntMargin nsNativeThemeGTK::GetWidgetBorder(
   CSSIntMargin result;
   GtkTextDirection direction = GetTextDirection(aFrame);
   switch (aAppearance) {
-    case StyleAppearance::Dualbutton:
-      
-      
-      
-      
-      
-      
-      break;
     case StyleAppearance::Tab: {
       WidgetNodeType gtkWidgetType;
       gint flags;
@@ -861,7 +850,6 @@ bool nsNativeThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,
     case StyleAppearance::MozWindowButtonMinimize:
     case StyleAppearance::MozWindowButtonMaximize:
     case StyleAppearance::MozWindowButtonRestore:
-    case StyleAppearance::Dualbutton:
     case StyleAppearance::ToolbarbuttonDropdown:
     case StyleAppearance::ButtonArrowUp:
     case StyleAppearance::ButtonArrowDown:
@@ -1046,7 +1034,6 @@ nsNativeThemeGTK::ThemeSupportsWidget(nsPresContext* aPresContext,
 
     case StyleAppearance::Button:
     case StyleAppearance::Toolbarbutton:
-    case StyleAppearance::Dualbutton:  
     case StyleAppearance::ToolbarbuttonDropdown:
     case StyleAppearance::ButtonArrowUp:
     case StyleAppearance::ButtonArrowDown:
