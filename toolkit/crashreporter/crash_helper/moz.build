@@ -35,6 +35,11 @@ else:
             "ws2_32",
         ]
 
+        
+        
+        if CONFIG["CC_TYPE"] != "clang-cl":
+            OS_LIBS += ["bcryptprimitives"]
+
     UNIFIED_SOURCES += [
         "crashhelper.cpp",
     ]
