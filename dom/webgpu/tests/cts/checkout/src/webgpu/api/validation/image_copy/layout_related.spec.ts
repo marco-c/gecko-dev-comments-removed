@@ -12,6 +12,7 @@ import {
   isDepthOrStencilTextureFormat,
   getBlockInfoForSizedTextureFormat,
   getBlockInfoForColorTextureFormat,
+  getMaxValidTextureSizeForFormatAndDimension,
 } from '../../../format_info.js';
 import { align } from '../../../util/math.js';
 import {
@@ -195,13 +196,14 @@ Test the computation of requiredBytesInCopy by computing the minimum data size f
     t.skipIfTextureFormatNotSupported(format);
     t.skipIfTextureFormatAndDimensionNotCompatible(format, dimension);
     const info = getBlockInfoForSizedTextureFormat(format);
+    const maxSize = getMaxValidTextureSizeForFormatAndDimension(t.device, format, dimension);
 
     
     
     
     const bytesPerRowAlignment = method === 'WriteTexture' ? 1 : 256;
-    const copyWidth = copyWidthInBlocks * info.blockWidth;
-    const copyHeight = copyHeightInBlocks * info.blockHeight;
+    const copyWidth = Math.min(copyWidthInBlocks * info.blockWidth, maxSize[0]);
+    const copyHeight = Math.min(copyHeightInBlocks * info.blockHeight, maxSize[1]);
     const rowsPerImage = copyHeight + rowsPerImagePaddingInBlocks * info.blockHeight;
     const bytesPerRow =
       align(bytesInACompleteRow(copyWidth, format), bytesPerRowAlignment) +
