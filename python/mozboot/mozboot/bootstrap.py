@@ -871,6 +871,46 @@ def update_git_tools(git: Optional[Path], root_state_dir: Path):
     return cinnabar_dir
 
 
+def ensure_watchman(top_src_dir: Path, git_str: str):
+    watchman = which("watchman")
+
+    if not watchman:
+        print(
+            "watchman is not installed. Please install `watchman` and "
+            "re-run `./mach vcs-setup` to enable faster git commands."
+        )
+
+    print("Ensuring watchman is properly configured...")
+
+    watchman_config = top_src_dir / ".git/hooks/query-watchman"
+    watchman_sample = top_src_dir / ".git/hooks/fsmonitor-watchman.sample"
+
+    if not watchman_sample.exists():
+        print(
+            "watchman is installed but the sample hook (expected here: "
+            f"{watchman_sample}) was not found. Please acquire it and copy"
+            f" it into `.git/hooks/` and re-run `./mach vcs-setup`."
+        )
+        return
+
+    if not watchman_config.exists():
+        copy_cmd = [
+            "cp",
+            ".git/hooks/fsmonitor-watchman.sample",
+            ".git/hooks/query-watchman",
+        ]
+        print(f"Copying {watchman_sample} to {watchman_config}")
+        subprocess.check_call(copy_cmd, cwd=str(top_src_dir))
+
+    watchman_config_cmd = [
+        git_str,
+        "config",
+        "core.fsmonitor",
+        ".git/hooks/query-watchman",
+    ]
+    subprocess.check_call(watchman_config_cmd, cwd=str(top_src_dir))
+
+
 def configure_git(
     git: Optional[Path],
     cinnabar: Optional[Path],
@@ -878,7 +918,6 @@ def configure_git(
     top_src_dir: Path,
 ):
     """Run the Git configuration steps."""
-
     git_str = to_optional_str(git)
 
     match = re.search(
@@ -901,9 +940,36 @@ def configure_git(
                 "full compatibility and performance."
             )
 
+    system = platform.system()
+
     subprocess.check_call(
         [git_str, "config", "core.untrackedCache", "true"], cwd=str(top_src_dir)
     )
+    
+    if system == "Windows":
+        
+        
+        
+        subprocess.check_call(
+            [git_str, "config", "core.fscache", "true"], cwd=str(top_src_dir)
+        )
+        subprocess.check_call(
+            [git_str, "config", "core.fsmonitor", "true"], cwd=str(top_src_dir)
+        )
+    elif system == "Darwin":
+        
+        subprocess.check_call(
+            [git_str, "config", "core.fsmonitor", "true"], cwd=str(top_src_dir)
+        )
+    elif system == "Linux":
+        
+        
+        subprocess.run(
+            [git_str, "config", "--unset-all", "core.fsmonitor"],
+            check=False,
+            cwd=str(top_src_dir),
+        )
+        ensure_watchman(top_src_dir, git_str)
 
     cinnabar_dir = str(update_git_tools(git, root_state_dir))
 
