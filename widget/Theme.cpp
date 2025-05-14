@@ -317,6 +317,7 @@ std::pair<sRGBColor, sRGBColor> Theme::ComputeButtonColors(
     return aColors.SystemNs(StyleSystemColor::Buttonface);
   }();
 
+  
   const sRGBColor borderColor =
       ComputeBorderColor(aState, aColors, OutlineCoversBorder::Yes);
   return std::make_pair(sRGBColor::FromABGR(backgroundColor), borderColor);
