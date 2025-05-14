@@ -79,9 +79,7 @@ class nsMathMLmfracFrame final : public nsMathMLContainerFrame {
   nscoord FixInterFrameSpacing(ReflowOutput& aDesiredSize) override;
 
   
-  nscoord CalcLineThickness(nsPresContext* aPresContext,
-                            ComputedStyle* aComputedStyle,
-                            nsString& aThicknessAttribute, nscoord onePixel,
+  nscoord CalcLineThickness(nsString& aThicknessAttribute, nscoord onePixel,
                             nscoord aDefaultRuleThickness,
                             float aFontSizeInflation);
 
