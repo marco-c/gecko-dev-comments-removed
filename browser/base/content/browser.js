@@ -4939,27 +4939,6 @@ var RestoreLastSessionObserver = {
 };
 
 
-
-var MenuTouchModeObserver = {
-  init() {
-    window.addEventListener("popupshowing", this, true);
-  },
-
-  handleEvent(event) {
-    let target = event.originalTarget;
-    if (event.inputSource == MouseEvent.MOZ_SOURCE_TOUCH) {
-      target.setAttribute("touchmode", "true");
-    } else {
-      target.removeAttribute("touchmode");
-    }
-  },
-
-  uninit() {
-    window.removeEventListener("popupshowing", this, true);
-  },
-};
-
-
 function safeModeRestart() {
   if (Services.appinfo.inSafeMode) {
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
