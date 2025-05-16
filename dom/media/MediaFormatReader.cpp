@@ -2796,6 +2796,7 @@ RefPtr<MediaFormatReader::WaitForDataPromise> MediaFormatReader::WaitForData(
   auto& decoder = GetDecoderData(trackType);
   if (!decoder.IsWaitingForData() && !decoder.IsWaitingForKey()) {
     
+    LOGV("Not waiting. Returning resolved promise");
     return WaitForDataPromise::CreateAndResolve(decoder.mType, __func__);
   }
   RefPtr<WaitForDataPromise> p = decoder.mWaitingPromise.Ensure(__func__);
