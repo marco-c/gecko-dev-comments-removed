@@ -207,7 +207,7 @@ CrashPipeType GetChildNotificationPipe() { return nullptr; }
 
 #if defined(MOZ_WIDGET_ANDROID)
 void SetCrashHelperPipes(FileHandle breakpadFd, FileHandle crashHelperFd) {}
-#endif 
+#endif  
 
 #if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
 MOZ_EXPORT ProcessId GetCrashHelperPid() { return -1; };
@@ -216,7 +216,7 @@ MOZ_EXPORT ProcessId GetCrashHelperPid() { return -1; };
 bool GetLastRunCrashID(nsAString& id) { return false; }
 
 bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe,
-                               ProcessId aCrashHelperPid) {
+                               Maybe<ProcessId> aCrashHelperPid) {
   return false;
 }
 

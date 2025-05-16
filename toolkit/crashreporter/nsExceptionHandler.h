@@ -281,8 +281,8 @@ MOZ_EXPORT ProcessId GetCrashHelperPid();
 #endif  
 
 
-MOZ_EXPORT bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe,
-                                          ProcessId aCrashHelperPid = 0);
+MOZ_EXPORT bool SetRemoteExceptionHandler(
+    CrashPipeType aCrashPipe, Maybe<ProcessId> aCrashHelperPid = Nothing());
 bool UnsetRemoteExceptionHandler(bool wasSet = true);
 
 }  
