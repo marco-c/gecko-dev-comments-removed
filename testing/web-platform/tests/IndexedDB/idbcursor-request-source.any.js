@@ -6,21 +6,111 @@
 
 'use strict';
 
-[cursor => cursor.update(0), cursor => cursor.delete()].forEach(
-    func => indexeddb_test(
-        (t, db) => {
-          db.createObjectStore('store', {autoIncrement: true});
-        },
-        (t, db) => {
-          const tx = db.transaction('store', 'readwrite');
-          const store = tx.objectStore('store');
-          store.put('value');
-          store.openCursor().onsuccess = t.step_func(e => {
-            const cursor = e.target.result;
-            assert_equals(
-                func(cursor).source, cursor,
-                `${func}.source should be the cursor itself`);
+
+
+function initializeDatabase(db) {
+  const store = db.createObjectStore('store', {autoIncrement: true});
+  store.createIndex('index',  'value');
+  store.put({value: 'z'});
+  store.put({value: 'y'});
+  store.put({value: 'x'});
+  store.put({value: 'w'});
+}
+
+function isIndex(cursorSourceType) {
+  return cursorSourceType === 'IDBIndex';
+}
+
+
+function getCursorSource(transaction, cursorSourceType) {
+  let cursorSource = transaction.objectStore('store');
+  if (isIndex(cursorSourceType)) {
+    cursorSource = cursorSource.index('index');
+  }
+  return cursorSource;
+}
+
+
+function cursor_request_source_test(
+    cursorSourceType, createRequestFunctionName, createRequestFunctionArgs) {
+  indexeddb_test(
+      (t, db) => initializeDatabase(db),
+      (t, db) => {
+        const tx = db.transaction('store', 'readwrite');
+        const cursorSource = getCursorSource(tx, cursorSourceType);
+
+        
+        const openCursorRequest = cursorSource.openCursor();
+        openCursorRequest.onerror =
+            t.unreached_func('The cursor must not fail to open.');
+
+        openCursorRequest.onsuccess = t.step_func(e => {
+          
+          const cursor = e.target.result;
+          const request =
+              cursor[createRequestFunctionName](...createRequestFunctionArgs);
+          assert_equals(
+              request.source, cursor,
+              `The request's source must be the cursor itself.`);
+          t.done();
+        });
+      },
+      `The source of the request from ${cursorSourceType}::${
+          createRequestFunctionName}() is the cursor itself`);
+}
+
+
+
+function open_cursor_request_source_test(
+    cursorSourceType, openCursorFunctionName) {
+  indexeddb_test(
+      (t, db) => initializeDatabase(db),
+      (t, db) => {
+        const tx = db.transaction('store', 'readonly');
+        const cursorSource = getCursorSource(tx, cursorSourceType);
+
+        
+        const openCursorRequest = cursorSource[openCursorFunctionName]();
+        openCursorRequest.onerror =
+            t.unreached_func('The cursor must not fail to open or iterate.');
+
+        assert_equals(
+            openCursorRequest.source, cursorSource,
+            'The request source must be the opener of the cursor.');
+
+        
+        
+        let iterationCount = 0;
+        openCursorRequest.onsuccess = t.step_func(e => {
+          assert_equals(
+              openCursorRequest.source, cursorSource,
+              'The request source must be the opener of the cursor after iterating.');
+
+          const cursor = e.target.result;
+          ++iterationCount;
+
+          if (iterationCount == 1) {
+            cursor.advance(1);
+          } else if (iterationCount == 2) {
+            cursor.continue();
+          } else if (iterationCount == 3 && isIndex(cursorSourceType)) {
+            cursor.continuePrimaryKey('z', 0);
+          } else {
             t.done();
-          });
-        },
-        `The source of the request from ${func} is the cursor itself`));
+          }
+        });
+      },
+      `${cursorSourceType}::${
+          openCursorFunctionName}'s request source must be the ${
+          cursorSourceType} instance that opened the cursor`);
+}
+
+open_cursor_request_source_test('IDBObjectStore', 'openCursor');
+open_cursor_request_source_test('IDBObjectStore', 'openKeyCursor');
+open_cursor_request_source_test('IDBIndex', 'openCursor');
+open_cursor_request_source_test('IDBIndex', 'openKeyCursor');
+
+cursor_request_source_test('IDBObjectStore', 'update', [0]);
+cursor_request_source_test('IDBObjectStore', 'delete', []);
+cursor_request_source_test('IDBIndex', 'update', [0]);
+cursor_request_source_test('IDBIndex', 'delete', []);
