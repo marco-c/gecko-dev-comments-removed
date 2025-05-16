@@ -1840,8 +1840,9 @@ class ArenaCollection {
   
   
   
-  purge_result_t MayPurgeSteps(bool aPeekOnly, uint32_t aReuseGraceMS,
-                               const Maybe<std::function<bool()>>& aKeepGoing);
+  may_purge_now_result_t MayPurgeSteps(
+      bool aPeekOnly, uint32_t aReuseGraceMS,
+      const Maybe<std::function<bool()>>& aKeepGoing);
 
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
@@ -6214,7 +6215,7 @@ inline bool MozJemalloc::moz_enable_deferred_purge(bool aEnabled) {
   return gArenas.SetDeferredPurge(aEnabled);
 }
 
-inline purge_result_t MozJemalloc::moz_may_purge_now(
+inline may_purge_now_result_t MozJemalloc::moz_may_purge_now(
     bool aPeekOnly, uint32_t aReuseGraceMS,
     const Maybe<std::function<bool()>>& aKeepGoing) {
   return gArenas.MayPurgeSteps(aPeekOnly, aReuseGraceMS, aKeepGoing);
@@ -6244,7 +6245,7 @@ inline bool ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
   return false;
 }
 
-purge_result_t ArenaCollection::MayPurgeSteps(
+may_purge_now_result_t ArenaCollection::MayPurgeSteps(
     bool aPeekOnly, uint32_t aReuseGraceMS,
     const Maybe<std::function<bool()>>& aKeepGoing) {
   
@@ -6257,7 +6258,7 @@ purge_result_t ArenaCollection::MayPurgeSteps(
   {
     MutexAutoLock lock(mPurgeListLock);
     if (mOutstandingPurges.isEmpty()) {
-      return purge_result_t::Done;
+      return may_purge_now_result_t::Done;
     }
     for (arena_t& arena : mOutstandingPurges) {
       if (now - arena.mLastSignificantReuseNS >= reuseGraceNS) {
@@ -6267,10 +6268,10 @@ purge_result_t ArenaCollection::MayPurgeSteps(
     }
 
     if (!found) {
-      return purge_result_t::WantsLater;
+      return may_purge_now_result_t::WantsLater;
     }
     if (aPeekOnly) {
-      return purge_result_t::NeedsMore;
+      return may_purge_now_result_t::NeedsMore;
     }
 
     
@@ -6307,7 +6308,7 @@ purge_result_t ArenaCollection::MayPurgeSteps(
   
   
   
-  return purge_result_t::NeedsMore;
+  return may_purge_now_result_t::NeedsMore;
 }
 
 void ArenaCollection::MayPurgeAll(PurgeCondition aCond, const char* aCaller) {
