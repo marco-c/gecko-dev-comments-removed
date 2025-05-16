@@ -212,8 +212,8 @@ ClippedImage::GetIntrinsicSizeInAppUnits(nsSize* aSize) {
     return InnerImage()->GetIntrinsicSizeInAppUnits(aSize);
   }
 
-  
-  *aSize = nsSize(mClip.Width(), mClip.Height());
+  *aSize = nsSize(nsPresContext::CSSPixelsToAppUnits(mClip.Width()),
+                  nsPresContext::CSSPixelsToAppUnits(mClip.Height()));
   return NS_OK;
 }
 
