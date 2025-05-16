@@ -1213,7 +1213,8 @@ nsresult nsCSPContext::SendReports(
   EnsureIPCPoliciesRead();
   NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
 
-  if (ShouldThrottleReport(aViolationEventInit)) {
+  if (!StaticPrefs::security_csp_reporting_enabled() ||
+      ShouldThrottleReport(aViolationEventInit)) {
     return NS_OK;
   }
 
