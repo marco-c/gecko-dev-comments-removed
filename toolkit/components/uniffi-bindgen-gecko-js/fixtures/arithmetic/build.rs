@@ -1,0 +1,7 @@
+
+
+
+
+fn main() {
+    uniffi::generate_scaffolding("src/arithmetic.udl").unwrap();
+}
