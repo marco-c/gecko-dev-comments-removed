@@ -2184,7 +2184,11 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    struct MOZ_STACK_CLASS EventTargetData final {
+    struct MOZ_STACK_CLASS EventTargetData {
+     protected:
+      EventTargetData(EventTargetData&& aOther) = default;
+
+     public:
       EventTargetData() = delete;
       EventTargetData(const EventTargetData& aOther) = delete;
       explicit EventTargetData(nsIFrame* aFrameToHandleEvent) {
@@ -2195,6 +2199,14 @@ class PresShell final : public nsStubDocumentObserver,
       void SetFrameAndComputePresShellAndContent(nsIFrame* aFrameToHandleEvent,
                                                  WidgetGUIEvent* aGUIEvent);
       void SetContentForEventFromFrame(WidgetGUIEvent* aGUIEvent);
+
+      void ClearFrameToHandleEvent() { mFrame = nullptr; }
+      virtual void Clear() {
+        mFrame = nullptr;
+        mContent = nullptr;
+        mPresShell = nullptr;
+        mOverrideClickTarget = nullptr;
+      }
 
       nsPresContext* GetPresContext() const {
         return mPresShell ? mPresShell->GetPresContext() : nullptr;
@@ -2292,6 +2304,7 @@ class PresShell final : public nsStubDocumentObserver,
       nsCOMPtr<nsIContent> mOverrideClickTarget;
 
      private:
+      
       nsIFrame* mFrame = nullptr;
       
       
@@ -2343,6 +2356,109 @@ class PresShell final : public nsStubDocumentObserver,
     MOZ_CAN_RUN_SCRIPT bool ComputeEventTargetFrameAndPresShellAtEventPoint(
         AutoWeakFrame& aWeakRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
         EventTargetData* aEventTargetData);
+
+    
+
+
+
+    struct MOZ_STACK_CLASS EventTargetDataWithCapture final
+        : public EventTargetData {
+      enum class Query : bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        PendingState,
+        
+        
+        
+        
+        
+        
+        LatestState,
+      };
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      [[nodiscard]] static MOZ_CAN_RUN_SCRIPT EventTargetDataWithCapture
+      QueryEventTargetUsingCoordinates(EventHandler& aEventHandler,
+                                       AutoWeakFrame& aWeakFrameForPresShell,
+                                       Query aQueryState,
+                                       WidgetGUIEvent* aGUIEvent,
+                                       nsEventStatus* aEventStatus = nullptr) {
+        return EventTargetDataWithCapture(aEventHandler, aWeakFrameForPresShell,
+                                          aQueryState, aGUIEvent, aEventStatus);
+      }
+
+      [[nodiscard]] bool CanHandleEvent() const {
+        return GetFrame() || GetContent() || mCapturingContent ||
+               mPointerCapturingElement;
+      }
+
+      void Clear() override {
+        EventTargetData::Clear();
+        mCapturingContent = nullptr;
+        mPointerCapturingElement = nullptr;
+        mCapturingContentIgnored = false;
+        mCaptureRetargeted = false;
+      }
+
+     private:
+      MOZ_CAN_RUN_SCRIPT explicit EventTargetDataWithCapture(
+          EventHandler& aEventHandler, AutoWeakFrame& aWeakFrameForPresShell,
+          Query aQueryState, WidgetGUIEvent* aGUIEvent,
+          nsEventStatus* aEventStatus = nullptr);
+
+      EventTargetDataWithCapture(EventTargetDataWithCapture&& aOther) = default;
+
+     public:
+      
+      
+      nsCOMPtr<nsIContent> mCapturingContent;
+      
+      
+      
+      
+      
+      RefPtr<Element> mPointerCapturingElement;
+      
+      bool mCapturingContentIgnored = false;
+      
+      bool mCaptureRetargeted = false;
+    };
 
     
 

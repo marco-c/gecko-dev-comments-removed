@@ -16,6 +16,7 @@
 #include "gfxPlatform.h"
 #include "gfxUserFontSet.h"
 #include "gfxUtils.h"
+#include "js/GCAPI.h"
 #include "MobileViewportManager.h"
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/AnimationEventDispatcher.h"
@@ -7477,12 +7478,6 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
 
   
   
-  if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
-    return NS_OK;
-  }
-
-  
-  
   
   MaybeFlushPendingNotifications(aGUIEvent);
   if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
@@ -7490,98 +7485,25 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
     return NS_OK;
   }
 
-  
-  
-  
-  nsCOMPtr<nsIContent> capturingContent =
-      EventHandler::GetCapturingContentFor(aGUIEvent);
-  if (GetDocument() && aGUIEvent->mClass == eTouchEventClass) {
-    PointerLockManager::Unlock("TouchEvent");
-  }
-
-  MaybeFlushThrottledStyles(aWeakFrameForPresShell);
-  if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
+  EventTargetDataWithCapture eventTargetData =
+      EventTargetDataWithCapture::QueryEventTargetUsingCoordinates(
+          *this, aWeakFrameForPresShell,
+          EventTargetDataWithCapture::Query::LatestState, aGUIEvent,
+          aEventStatus);
+  if (MOZ_UNLIKELY(!eventTargetData.CanHandleEvent())) {
+    
+    
+    
     return NS_OK;
   }
-
-  bool isCapturingContentIgnored = false;
-  bool isCaptureRetargeted = false;
-  AutoWeakFrame weakRootFrameToHandleEvent(ComputeRootFrameToHandleEvent(
-      aWeakFrameForPresShell.GetFrame(), aGUIEvent, capturingContent,
-      &isCapturingContentIgnored, &isCaptureRetargeted));
-  if (isCapturingContentIgnored) {
-    capturingContent = nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  PointerEventHandler::MaybeProcessPointerCapture(aGUIEvent);
-  
-  if (MOZ_UNLIKELY(!weakRootFrameToHandleEvent.IsAlive())) {
-    NS_WARNING("Nothing to handle this event!");
-    return NS_OK;
-  }
-
-  
-  const RefPtr<Element> pointerCapturingElement =
-      PointerEventHandler::GetPointerCapturingElement(aGUIEvent);
-
-  if (pointerCapturingElement) {
-    weakRootFrameToHandleEvent = pointerCapturingElement->GetPrimaryFrame();
-    if (!weakRootFrameToHandleEvent.IsAlive()) {
+  if (MOZ_UNLIKELY(!eventTargetData.GetFrame())) {
+    if (eventTargetData.mPointerCapturingElement &&
+        aWeakFrameForPresShell.IsAlive()) {
       return HandleEventWithPointerCapturingContentWithoutItsFrame(
-          aWeakFrameForPresShell, aGUIEvent, pointerCapturingElement,
+          aWeakFrameForPresShell, aGUIEvent,
+          MOZ_KnownLive(eventTargetData.mPointerCapturingElement),
           aEventStatus);
     }
-  }
-
-  WidgetMouseEvent* mouseEvent = aGUIEvent->AsMouseEvent();
-  bool isWindowLevelMouseExit =
-      (aGUIEvent->mMessage == eMouseExitFromWidget) &&
-      (mouseEvent &&
-       (mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePlatformTopLevel ||
-        mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePuppet));
-
-  
-  
-  
-  
-  
-  EventTargetData eventTargetData(weakRootFrameToHandleEvent.GetFrame());
-  if (!isCaptureRetargeted && !isWindowLevelMouseExit &&
-      !pointerCapturingElement) {
-    if (!ComputeEventTargetFrameAndPresShellAtEventPoint(
-            weakRootFrameToHandleEvent, aGUIEvent, &eventTargetData)) {
-      *aEventStatus = nsEventStatus_eIgnore;
-      return NS_OK;
-    }
-  }
-
-  
-  
-  
-  
-  if (capturingContent && !pointerCapturingElement &&
-      (PresShell::sCapturingContentInfo.mRetargetToElement ||
-       !eventTargetData.GetFrameContent() ||
-       !nsContentUtils::ContentIsCrossDocDescendantOf(
-           eventTargetData.GetFrameContent(), capturingContent))) {
-    nsIFrame* capturingFrame = capturingContent->GetPrimaryFrame();
-    if (capturingFrame) {
-      eventTargetData.SetFrameAndComputePresShell(capturingFrame);
-    }
-  }
-
-  if (NS_WARN_IF(!eventTargetData.GetFrame())) {
     return NS_OK;
   }
 
@@ -7616,7 +7538,8 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   
   
   if (!DispatchPrecedingPointerEvent(
-          aWeakFrameForPresShell, aGUIEvent, pointerCapturingElement,
+          aWeakFrameForPresShell, aGUIEvent,
+          MOZ_KnownLive(eventTargetData.mPointerCapturingElement),
           aDontRetargetEvents, &eventTargetData, aEventStatus)) {
     return NS_OK;
   }
@@ -7645,6 +7568,156 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   }
 
   return NS_OK;
+}
+
+
+PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
+    EventHandler& aEventHandler, AutoWeakFrame& aWeakFrameForPresShell,
+    Query aQueryState, WidgetGUIEvent* aGUIEvent,
+    nsEventStatus* aEventStatus )
+    : EventTargetData(aWeakFrameForPresShell.GetFrame()) {
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(aGUIEvent->IsUsingCoordinates());
+  
+  
+  
+  MOZ_ASSERT_IF(aQueryState == Query::PendingState,
+                aGUIEvent->mMessage != eMouseDown);
+  MOZ_ASSERT_IF(aQueryState == Query::PendingState,
+                aGUIEvent->mMessage != eMouseUp);
+
+  const bool queryLatestState = aQueryState == Query::LatestState;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  nsMutationGuard mutationGuard;
+  const auto assertMutation = MakeScopeExit([&]() {
+    if (!queryLatestState) {
+      MOZ_DIAGNOSTIC_ASSERT(!mutationGuard.Mutated(0));
+    }
+  });
+  Maybe<JS::AutoAssertNoGC> assertNoGC;
+  if (!queryLatestState) {
+    assertNoGC.emplace();
+  }
+#endif  
+
+  
+  
+  
+  mCapturingContent = EventHandler::GetCapturingContentFor(aGUIEvent);
+  if (queryLatestState) {
+    if (GetDocument() && aGUIEvent->mClass == eTouchEventClass) {
+      PointerLockManager::Unlock("TouchEvent");
+    }
+    aEventHandler.MaybeFlushThrottledStyles(aWeakFrameForPresShell);
+    
+    
+    
+    
+    
+    if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
+      Clear();
+      MOZ_ASSERT(!CanHandleEvent());
+      return;
+    }
+  }
+
+  AutoWeakFrame weakRootFrameToHandleEvent =
+      aEventHandler.ComputeRootFrameToHandleEvent(
+          aWeakFrameForPresShell.GetFrame(), aGUIEvent, mCapturingContent,
+          &mCapturingContentIgnored, &mCaptureRetargeted);
+  if (mCapturingContentIgnored) {
+    mCapturingContent = nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (queryLatestState) {
+    PointerEventHandler::MaybeProcessPointerCapture(aGUIEvent);
+    
+    if (NS_WARN_IF(!weakRootFrameToHandleEvent.IsAlive())) {
+      Clear();
+      MOZ_ASSERT(!CanHandleEvent());
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mPointerCapturingElement =
+      queryLatestState
+          ? PointerEventHandler::GetPointerCapturingElement(aGUIEvent)
+          : PointerEventHandler::GetPendingPointerCapturingElement(aGUIEvent);
+
+  if (mPointerCapturingElement) {
+    weakRootFrameToHandleEvent = mPointerCapturingElement->GetPrimaryFrame();
+    if (!weakRootFrameToHandleEvent.IsAlive()) {
+      
+      
+      ClearFrameToHandleEvent();
+      
+      
+      MOZ_ASSERT(CanHandleEvent());
+      return;
+    }
+  }
+
+  const WidgetMouseEvent* mouseEvent = aGUIEvent->AsMouseEvent();
+  const bool isWindowLevelMouseExit =
+      (aGUIEvent->mMessage == eMouseExitFromWidget) &&
+      (mouseEvent &&
+       (mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePlatformTopLevel ||
+        mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePuppet));
+
+  
+  
+  
+  
+  
+  SetFrameAndComputePresShell(weakRootFrameToHandleEvent.GetFrame());
+  if (!mCaptureRetargeted && !isWindowLevelMouseExit &&
+      !mPointerCapturingElement) {
+    if (!aEventHandler.ComputeEventTargetFrameAndPresShellAtEventPoint(
+            weakRootFrameToHandleEvent, aGUIEvent, this)) {
+      Clear();
+      MOZ_ASSERT(!CanHandleEvent());
+      if (aEventStatus) {
+        *aEventStatus = nsEventStatus_eIgnore;
+      }
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  if (mCapturingContent && !mPointerCapturingElement &&
+      (PresShell::sCapturingContentInfo.mRetargetToElement ||
+       !GetFrameContent() ||
+       !nsContentUtils::ContentIsCrossDocDescendantOf(GetFrameContent(),
+                                                      mCapturingContent))) {
+    if (nsIFrame* const capturingFrame = mCapturingContent->GetPrimaryFrame()) {
+      SetFrameAndComputePresShell(capturingFrame);
+    }
+  }
+
+  MOZ_ASSERT(CanHandleEvent());
 }
 
 bool PresShell::EventHandler::MaybeFlushPendingNotifications(
@@ -8701,12 +8774,6 @@ nsresult PresShell::EventHandler::HandleEventWithFrameForPresShell(
   MOZ_ASSERT(!aGUIEvent->IsUsingCoordinates());
   MOZ_ASSERT(!aGUIEvent->IsTargetedAtFocusedContent());
   MOZ_ASSERT(aEventStatus);
-
-  
-  
-  if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
-    return NS_OK;
-  }
 
   AutoCurrentEventInfoSetter eventInfoSetter(
       *this, EventTargetInfo(aGUIEvent->mMessage,

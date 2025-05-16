@@ -143,9 +143,25 @@ class PointerEventHandler final {
 
 
 
-  static dom::Element* GetPointerCapturingElement(WidgetGUIEvent* aEvent);
+  static dom::Element* GetPointerCapturingElement(const WidgetGUIEvent* aEvent);
 
   static dom::Element* GetPointerCapturingElement(uint32_t aPointerId);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static dom::Element* GetPendingPointerCapturingElement(
+      const WidgetGUIEvent* aEvent);
+  static dom::Element* GetPendingPointerCapturingElement(uint32_t aPointerId);
 
   
 
@@ -300,6 +316,10 @@ class PointerEventHandler final {
   static void DispatchGotOrLostPointerCaptureEvent(
       bool aIsGotCapture, const WidgetPointerEvent* aPointerEvent,
       dom::Element* aCaptureTarget);
+
+  enum class CapturingState { Pending, Override };
+  static dom::Element* GetPointerCapturingElementInternal(
+      CapturingState aCapturingState, const WidgetGUIEvent* aEvent);
 
   
   
