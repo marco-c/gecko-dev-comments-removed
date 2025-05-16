@@ -19,17 +19,7 @@
 namespace webrtc {
 
 
-bool ScreenCapturerSckAvailable();
-
-
-
-bool GenericCapturerSckWithPickerAvailable();
-
-
 std::unique_ptr<DesktopCapturer> CreateScreenCapturerSck(
-    const DesktopCaptureOptions& options);
-
-std::unique_ptr<DesktopCapturer> CreateGenericCapturerSck(
     const DesktopCaptureOptions& options);
 
 }  
