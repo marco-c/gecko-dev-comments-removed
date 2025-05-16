@@ -1394,8 +1394,12 @@ void nsBidiPresUtils::TraverseFrames(nsIFrame* aCurrentFrame,
         
         
         
-        aBpd->AppendUnichar(
-            content->IsHTMLElement(nsGkAtoms::wbr) ? kZWSP : kObjectSubstitute);
+        
+        
+        aBpd->AppendUnichar(content->IsHTMLElement(nsGkAtoms::wbr) ||
+                                    (frame->IsInlineFrame() && frame->IsEmpty())
+                                ? kZWSP
+                                : kObjectSubstitute);
         if (!frame->IsInlineOutside()) {
           
           ResolveParagraphWithinBlock(aBpd);
