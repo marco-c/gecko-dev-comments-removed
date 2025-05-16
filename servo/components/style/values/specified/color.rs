@@ -272,7 +272,6 @@ pub enum SystemColor {
 
     
     
-    MozEventreerow,
     MozOddtreerow,
 
     

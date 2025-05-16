@@ -153,8 +153,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_TREEVIEW,
   
-  MOZ_GTK_TREEVIEW_VIEW,
-  
   MOZ_GTK_TREE_HEADER_CELL,
   
   MOZ_GTK_MENUPOPUP,
