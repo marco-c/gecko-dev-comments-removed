@@ -15,6 +15,12 @@
 
 class ProcessWatcher {
  public:
+#ifdef NS_FREE_PERMANENT_DATA
+  static constexpr bool kDefaultForce = false;
+#else
+  static constexpr bool kDefaultForce = true;
+#endif
+
   
   
   
@@ -29,7 +35,7 @@ class ProcessWatcher {
   
   
   static void EnsureProcessTerminated(base::ProcessHandle process_handle,
-                                      bool force = true);
+                                      bool force = kDefaultForce);
 
 #ifdef XP_UNIX
   static mozilla::UniqueFileHandle GetSignalPipe();

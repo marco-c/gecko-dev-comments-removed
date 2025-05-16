@@ -18,6 +18,7 @@
 #include "base/process_util.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ipc/IOThread.h"
 #include "nsITimer.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -96,6 +97,7 @@ struct PendingChild {
 static mozilla::StaticDataMutex<mozilla::StaticAutoPtr<nsTArray<PendingChild>>>
     gPendingChildren("ProcessWatcher::gPendingChildren");
 static int gSignalPipe[2] = {-1, -1};
+static mozilla::Atomic<bool> gProcessWatcherShutdown;
 
 
 
@@ -284,6 +286,7 @@ class ProcessCleaner final : public MessageLoopForIO::Watcher,
   }
 
   void WillDestroyCurrentMessageLoop() override {
+    gProcessWatcherShutdown = true;
     mWatcher.StopWatchingFileDescriptor();
     auto lock = gPendingChildren.Lock();
     auto& children = lock.ref();
@@ -315,6 +318,9 @@ class ProcessCleaner final : public MessageLoopForIO::Watcher,
       }
       children = nullptr;
     }
+#ifdef MOZ_ENABLE_FORKSERVER
+    mozilla::ipc::ForkServiceChild::StopForkServer();
+#endif
     delete this;
   }
 
@@ -433,6 +439,30 @@ void ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
                                              bool force) {
   DCHECK(process != base::GetCurrentProcId());
   DCHECK(process > 0);
+
+  if (gProcessWatcherShutdown) {
+    
+    
+    mozilla::ipc::AssertIOThread();
+    
+    
+    
+    DCHECK(!MessageLoop::current()->IsAcceptingTasks());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!force) {
+      (void)IsProcessDead(process, BlockingWait::Yes);
+    }
+    return;
+  }
 
   EnsureProcessWatcher();
 
