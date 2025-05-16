@@ -312,10 +312,17 @@ class WorkerPrivate final
   
   
   void SetIsRunningInBackground();
+  void SetIsPlayingAudio(bool aIsPlayingAudio);
+
+  bool IsPlayingAudio() {
+    AssertIsOnWorkerThread();
+    return mIsPlayingAudio;
+  }
 
   void SetIsRunningInForeground();
 
   bool ChangeBackgroundStateInternal(bool aIsBackground);
+  bool ChangePlaybackStateInternal(bool aIsPlayingAudio);
 
   
   bool IsRunningInBackground() const { return mIsInBackground; }
@@ -1664,6 +1671,7 @@ class WorkerPrivate final
 
   bool mDebuggerRegistered MOZ_GUARDED_BY(mMutex);
   mozilla::Atomic<bool> mIsInBackground;
+  bool mIsPlayingAudio{};
 
   
   
