@@ -71,14 +71,11 @@ class ForkServiceChild {
   static bool WasUsed() { return sForkServiceUsed; }
 
  private:
-  
-  void OnMessageReceived(UniquePtr<IPC::Message> message);
   void OnError();
 
   UniquePtr<MiniTransceiver> mTcver;
   static UniquePtr<ForkServiceChild> sForkServiceChild;
   static Atomic<bool> sForkServiceUsed;
-  pid_t mRecvPid;
   bool mFailed;  
   GeckoChildProcessHost* mProcess;
 };
