@@ -624,8 +624,10 @@ class TabTracker extends TabTrackerBase {
       
       
       
-      let adoptedBy = window.gBrowser.tabs[0];
-      this.adopt(adoptedBy, tabToAdopt);
+      if (window.gBrowser.isTab(tabToAdopt)) {
+        let adoptedBy = window.gBrowser.tabs[0];
+        this.adopt(adoptedBy, tabToAdopt);
+      }
     } else {
       for (let nativeTab of window.gBrowser.tabs) {
         this.emitCreated(nativeTab);

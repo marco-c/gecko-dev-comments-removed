@@ -5730,10 +5730,14 @@
 
 
 
+
+
     replaceTabWithWindow(aTab, aOptions) {
       if (this.tabs.length == 1) {
         return null;
       }
+      
+      
 
       var options = "chrome,dialog=no,all";
       for (var name in aOptions) {
@@ -5746,7 +5750,7 @@
 
       
       
-      if (!gReduceMotion) {
+      if (!gReduceMotion && this.isTab(aTab)) {
         aTab.style.maxWidth = ""; 
         aTab.removeAttribute("fadein");
       }
@@ -5841,42 +5845,7 @@
 
 
     replaceGroupWithWindow(group) {
-      
-      
-      let selectedIndex = group.tabs.indexOf(gBrowser.selectedTab);
-      if (selectedIndex < 0) {
-        
-        selectedIndex = 0;
-      }
-      let firstTab = group.tabs[selectedIndex];
-      group.removedByAdoption = true;
-      let newWindow = this.replaceTabWithWindow(firstTab);
-
-      newWindow.addEventListener(
-        "before-initial-tab-adopted",
-        () => {
-          let tabsToGroup = group.tabs.map((tab, i) => {
-            
-            
-            
-            if (i == selectedIndex) {
-              return newWindow.gBrowser.visibleTabs[0];
-            }
-            return tab;
-          });
-          
-          
-          newWindow.gBrowser.addTabGroup(tabsToGroup, {
-            id: group.id,
-            label: group.label,
-            color: group.color,
-            isAdoptingGroup: true,
-          });
-          Glean.tabgroup.groupInteractions.move_window.add(1);
-        },
-        { once: true }
-      );
-      return newWindow;
+      return this.replaceTabWithWindow(group);
     }
 
     
