@@ -7,6 +7,7 @@
 #define __FORKSERVER_H_
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "base/process_util.h"
 #include "mozilla/ipc/MiniTransceiver.h"
 
@@ -19,14 +20,14 @@ class ForkServer {
   ~ForkServer() = default;
 
   void InitProcess(int* aArgc, char*** aArgv);
-  bool HandleMessages();
-
-  
-  bool OnMessageReceived(UniquePtr<IPC::Message> message);
 
   static bool RunForkServer(int* aArgc, char*** aArgv);
 
  private:
+  bool HandleMessages();
+  bool HandleForkNewSubprocess(UniquePtr<IPC::Message> aMessage);
+  void HandleWaitPid(UniquePtr<IPC::Message> aMessage);
+
   UniqueFileHandle mIpcFd;
   UniquePtr<MiniTransceiver> mTcver;
 
@@ -38,6 +39,8 @@ enum {
   Msg_ForkNewSubprocess__ID = 0x7f0,  
   Reply_ForkNewSubprocess__ID,
   Msg_SubprocessExecInfo__ID,
+  Msg_WaitPid__ID,
+  Reply_WaitPid__ID,
 };
 
 }  

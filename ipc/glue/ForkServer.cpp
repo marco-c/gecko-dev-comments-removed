@@ -6,6 +6,7 @@
 
 #include "mozilla/ipc/ForkServer.h"
 
+#include "base/eintr_wrapper.h"
 #include "chrome/common/chrome_switches.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/BlockingResourceBase.h"
@@ -22,6 +23,7 @@
 
 #include <fcntl.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
@@ -35,11 +37,14 @@ namespace ipc {
 
 LazyLogModule gForkServiceLog("ForkService");
 
-ForkServer::ForkServer(int* aArgc, char*** aArgv) : mArgc(aArgc), mArgv(aArgv) {
-  
-  
-  signal(SIGCHLD, SIG_IGN);
+static int gSignalPipe = -1;
+static void HandleSigChld(int aSignal) {
+  MOZ_ASSERT(aSignal == SIGCHLD);
+  const char msg = 0;
+  HANDLE_EINTR(write(gSignalPipe, &msg, 1));
+}
 
+ForkServer::ForkServer(int* aArgc, char*** aArgv) : mArgc(aArgc), mArgv(aArgv) {
   SetThisProcessName("forkserver");
 
   Maybe<UniqueFileHandle> ipcHandle = geckoargs::sIPCHandle.Get(*aArgc, *aArgv);
@@ -51,6 +56,14 @@ ForkServer::ForkServer(int* aArgc, char*** aArgv) : mArgc(aArgc), mArgv(aArgv) {
   mIpcFd = ipcHandle.extract();
   mTcver = MakeUnique<MiniTransceiver>(mIpcFd.get(),
                                        DataBufferClear::AfterReceiving);
+
+  auto signalPipe = geckoargs::sSignalPipe.Get(*aArgc, *aArgv);
+  if (signalPipe) {
+    gSignalPipe = signalPipe->release();
+    signal(SIGCHLD, HandleSigChld);
+  } else {
+    signal(SIGCHLD, SIG_IGN);
+  }
 }
 
 
@@ -73,9 +86,19 @@ bool ForkServer::HandleMessages() {
       break;
     }
 
-    if (OnMessageReceived(std::move(msg))) {
-      
-      return false;
+    switch (msg->type()) {
+      case Msg_ForkNewSubprocess__ID:
+        if (HandleForkNewSubprocess(std::move(msg))) {
+          
+          return false;
+        }
+        break;
+      case Msg_WaitPid__ID:
+        HandleWaitPid(std::move(msg));
+        break;
+      default:
+        MOZ_LOG(gForkServiceLog, LogLevel::Verbose,
+                ("unknown message type %d\n", msg->type()));
     }
   }
   
@@ -97,17 +120,10 @@ static void ReadParamInfallible(IPC::MessageReader* aReader, P* aResult,
 static bool ParseForkNewSubprocess(IPC::Message& aMsg,
                                    UniqueFileHandle* aExecFd,
                                    base::LaunchOptions* aOptions) {
-  if (aMsg.type() != Msg_ForkNewSubprocess__ID) {
-    MOZ_LOG(gForkServiceLog, LogLevel::Verbose,
-            ("unknown message type %d (!= %d)\n", aMsg.type(),
-             Msg_ForkNewSubprocess__ID));
-    return false;
-  }
-
+  
+  MOZ_ASSERT(aMsg.type() == Msg_ForkNewSubprocess__ID);
   IPC::MessageReader reader(aMsg);
 
-  
-  
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   ReadParamInfallible(&reader, &aOptions->fork_flags,
                       "Error deserializing 'int'");
@@ -150,9 +166,13 @@ static bool ParseSubprocessExecInfo(IPC::Message& aMsg,
 
 static void ForkedChildProcessInit(int aExecFd, int* aArgc, char*** aArgv) {
   
-  
-  
   signal(SIGCHLD, SIG_DFL);
+  
+  
+  if (gSignalPipe >= 0) {
+    close(gSignalPipe);
+    gSignalPipe = -1;
+  }
 
   
   MiniTransceiver execTcver(aExecFd);
@@ -200,10 +220,10 @@ static void ForkedChildProcessInit(int aExecFd, int* aArgc, char*** aArgv) {
 
 
 
-bool ForkServer::OnMessageReceived(UniquePtr<IPC::Message> message) {
+bool ForkServer::HandleForkNewSubprocess(UniquePtr<IPC::Message> aMessage) {
   UniqueFileHandle execFd;
   base::LaunchOptions options;
-  if (!ParseForkNewSubprocess(*message, &execFd, &options)) {
+  if (!ParseForkNewSubprocess(*aMessage, &execFd, &options)) {
     return false;
   }
 
@@ -252,6 +272,36 @@ bool ForkServer::OnMessageReceived(UniquePtr<IPC::Message> message) {
   mTcver->SendInfallible(reply, "failed to send a reply message");
 
   return false;
+}
+
+void ForkServer::HandleWaitPid(UniquePtr<IPC::Message> aMessage) {
+  MOZ_ASSERT(aMessage->type() == Msg_WaitPid__ID);
+  IPC::MessageReader reader(*aMessage);
+
+  pid_t pid;
+  bool block;
+  ReadParamInfallible(&reader, &pid, "Error deserializing 'pid_t'");
+  ReadParamInfallible(&reader, &block, "Error deserializing 'bool'");
+
+  
+  
+  
+  
+  int status;
+  pid_t rv = HANDLE_EINTR(waitpid(pid, &status, block ? 0 : WNOHANG));
+  
+  
+  
+  
+  bool isErr = rv <= 0;
+  int err = rv < 0 ? errno : 0;
+  MOZ_ASSERT(isErr || rv == pid);
+
+  IPC::Message reply(MSG_ROUTING_CONTROL, Reply_WaitPid__ID);
+  IPC::MessageWriter writer(reply);
+  WriteParam(&writer, isErr);
+  WriteParam(&writer, isErr ? err : status);
+  mTcver->SendInfallible(reply, "failed to send a reply message");
 }
 
 

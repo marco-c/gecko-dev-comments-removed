@@ -155,6 +155,18 @@ already_AddRefed<nsITimer> DelayedKill(pid_t aPid) {
   nsresult rv = NS_NewTimerWithCallback(
       getter_AddRefs(timer),
       [aPid](nsITimer*) {
+        
+        
+        
+        
+        
+        if (IsProcessDead(aPid, BlockingWait::No)) {
+          return;
+        }
+        
+        
+        
+        
         if (kill(aPid, SIGKILL) != 0) {
           const int err = errno;
       
@@ -171,6 +183,8 @@ already_AddRefed<nsITimer> DelayedKill(pid_t aPid) {
                                 << strerror(err);
           }
         }
+        
+        
       },
       kMaxWaitMs, nsITimer::TYPE_ONE_SHOT, "ProcessWatcher::DelayedKill",
       XRE_GetAsyncIOEventTarget());
@@ -382,7 +396,21 @@ static void ProcessWatcherInit() {
       }));
 }
 
+static void EnsureProcessWatcher() {
+  static std::once_flag sInited;
+  std::call_once(sInited, ProcessWatcherInit);
+}
+
 }  
+
+mozilla::UniqueFileHandle ProcessWatcher::GetSignalPipe() {
+  EnsureProcessWatcher();
+  int fd = gSignalPipe[1];
+  MOZ_ASSERT(fd >= 0);
+  fd = dup(fd);
+  MOZ_ASSERT(fd >= 0);
+  return mozilla::UniqueFileHandle(fd);
+}
 
 
 
@@ -406,8 +434,7 @@ void ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
   DCHECK(process != base::GetCurrentProcId());
   DCHECK(process > 0);
 
-  static std::once_flag sInited;
-  std::call_once(sInited, ProcessWatcherInit);
+  EnsureProcessWatcher();
 
   auto lock = gPendingChildren.Lock();
   auto& children = lock.ref();
@@ -442,12 +469,14 @@ void ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
         
         
         
+        
+        
+        
+        
 
         CHROMIUM_LOG(WARNING) << "EnsureProcessTerminated: duplicate process"
                                  " ID "
-                              << process
-                              << "; assuming this is because of the fork"
-                                 " server.";
+                              << process;
 
         
         

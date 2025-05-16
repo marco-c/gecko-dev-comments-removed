@@ -54,6 +54,26 @@ class ForkServiceChild final {
 
 
 
+  struct ProcStatus {
+    int status;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+  Result<ProcStatus, int> SendWaitPid(pid_t aPid, bool aBlock);
+
+  
+
+
+
 
 
 

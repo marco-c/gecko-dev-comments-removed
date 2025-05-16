@@ -203,123 +203,51 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int)) {
   }
 }
 
-#ifdef MOZ_ENABLE_FORKSERVER
-
-
-
-static bool IsZombieProcess(pid_t pid) {
-#  ifdef XP_LINUX
-  auto path = mozilla::Smprintf("/proc/%d/stat", pid);
-  int fd = open(path.get(), O_RDONLY | O_CLOEXEC);
-  if (fd < 0) {
-    int e = errno;
-    DLOG(ERROR) << "failed to open " << path.get() << ": " << strerror(e);
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  char buffer[64];
-  ssize_t len = HANDLE_EINTR(read(fd, buffer, sizeof(buffer) - 1));
-  int e = errno;
-  close(fd);
-  if (len < 1) {
-    DLOG(ERROR) << "failed to read " << path.get() << ": " << strerror(e);
-    return true;
-  }
-
-  buffer[len] = '\0';
-  char* rparen = strrchr(buffer, ')');
-  if (!rparen || rparen[1] != ' ' || rparen[2] == '\0') {
-    DCHECK(false) << "/proc/{pid}/stat parse error";
-    CHROMIUM_LOG(ERROR) << "bad data in /proc/" << pid << "/stat";
-    return true;
-  }
-  if (rparen[2] == 'Z') {
-    DLOG(ERROR) << "process " << pid << " is a zombie";
-    return true;
-  }
-  return false;
-#  else  
-  
-  
-  return false;
-#  endif
-}
-#endif  
-
 ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
                              int* info_out) {
   *info_out = 0;
 
-  
-  
-  
-  
+#if defined(MOZ_ENABLE_FORKSERVER) || !defined(HAVE_WAITID)
+  auto handleStatus = [&](int status) -> ProcessStatus {
+    if (WIFEXITED(status)) {
+      *info_out = WEXITSTATUS(status);
+      return ProcessStatus::Exited;
+    }
+    if (WIFSIGNALED(status)) {
+      *info_out = WTERMSIG(status);
+      return ProcessStatus::Killed;
+    }
+    LOG_AND_ASSERT << "unexpected wait status: " << status;
+    return ProcessStatus::Error;
+  };
+#endif
+
   auto handleForkServer = [&]() -> mozilla::Maybe<ProcessStatus> {
 #ifdef MOZ_ENABLE_FORKSERVER
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static constexpr long kDelayMS = 500;
-    static constexpr int kAttempts = 10;
-
     if (errno != ECHILD || !mozilla::ipc::ForkServiceChild::WasUsed()) {
       return mozilla::Nothing();
     }
 
-    
-    for (int attempt = 0; attempt < kAttempts; ++attempt) {
-      const int rv = kill(handle, 0);
-      if (rv == 0) {
-        
-        if (blocking == BlockingWait::No) {
-          
-          
-          
-          
-          return mozilla::Some(IsZombieProcess(handle)
-                                   ? ProcessStatus::Exited
-                                   : ProcessStatus::Running);
-        }
-      } else {
-        if (errno == ESRCH) {
-          return mozilla::Some(ProcessStatus::Exited);
-        }
-        
-        *info_out = errno;
-        CHROMIUM_LOG(WARNING) << "Unexpected error probing process " << handle;
-        return mozilla::Some(ProcessStatus::Error);
-      }
-
-      
-      DCHECK(blocking == BlockingWait::Yes);
-      struct timespec delay = {(kDelayMS / 1000),
-                               (kDelayMS % 1000) * 1000 * 1000};
-      HANDLE_EINTR(nanosleep(&delay, &delay));
+    auto forkService = mozilla::ipc::ForkServiceChild::Get();
+    if (!forkService) {
+      DLOG(WARNING) << "fork server exited too soon";
+      return mozilla::Nothing();
     }
 
-    *info_out = ETIME;  
-    return mozilla::Some(ProcessStatus::Error);
+    auto result =
+        forkService->SendWaitPid(handle, blocking == BlockingWait::Yes);
+    if (result.isOk()) {
+      return mozilla::Some(handleStatus(result.unwrap().status));
+    }
+
+    int err = result.unwrapErr();
+    if (err == ECHILD) {
+      return mozilla::Nothing();
+    }
+
+    *info_out = err;
+    return mozilla::Some(err == 0 ? ProcessStatus::Running
+                                  : ProcessStatus::Error);
 #else
     return mozilla::Nothing();
 #endif
@@ -328,7 +256,6 @@ ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
   const int maybe_wnohang = (blocking == BlockingWait::No) ? WNOHANG : 0;
 
 #ifdef HAVE_WAITID
-
   
   
   
@@ -343,7 +270,8 @@ ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
       return *forkServerReturn;
     }
 
-    CHROMIUM_LOG(ERROR) << "waitid failed pid:" << handle << " errno:" << errno;
+    CHROMIUM_LOG(INFO) << "waitid failed pid:" << handle
+                       << " errno:" << wait_err;
     *info_out = wait_err;
     return ProcessStatus::Error;
   }
@@ -394,35 +322,26 @@ ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
   DCHECK(si.si_code == old_si_code);
   return status;
 
-#else  
+#else   
 
   int status;
   const int result = waitpid(handle, &status, maybe_wnohang);
   if (result == -1) {
-    *info_out = errno;
+    int wait_err = errno;
     if (auto forkServerReturn = handleForkServer()) {
       return *forkServerReturn;
     }
 
-    CHROMIUM_LOG(ERROR) << "waitpid failed pid:" << handle
-                        << " errno:" << errno;
+    CHROMIUM_LOG(INFO) << "waitpid failed pid:" << handle
+                       << " errno:" << wait_err;
+    *info_out = wait_err;
     return ProcessStatus::Error;
   }
   if (result == 0) {
     return ProcessStatus::Running;
   }
 
-  if (WIFEXITED(status)) {
-    *info_out = WEXITSTATUS(status);
-    return ProcessStatus::Exited;
-  }
-  if (WIFSIGNALED(status)) {
-    *info_out = WTERMSIG(status);
-    return ProcessStatus::Killed;
-  }
-  LOG_AND_ASSERT << "unexpected wait status: " << status;
-  return ProcessStatus::Error;
-
+  return handleStatus(status);
 #endif  
 }
 
