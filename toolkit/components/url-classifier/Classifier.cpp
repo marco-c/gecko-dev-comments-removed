@@ -1651,9 +1651,7 @@ nsresult Classifier::LoadHashStore(nsIFile* aDirectory, nsACString& aResult,
     HashStore store(table, GetProvider(table), mRootStoreDirectory);
 
     nsresult rv = store.Open();
-    RefPtr<LookupCache> cache = GetLookupCache(table);
-
-    if (NS_FAILED(rv) || !cache || !cache->MaybeVerifyCRC32()) {
+    if (NS_FAILED(rv) || !GetLookupCache(table)) {
       
       
       
@@ -1712,7 +1710,7 @@ nsresult Classifier::LoadMetadata(nsIFile* aDirectory, nsACString& aResult,
     RefPtr<LookupCache> c = GetLookupCache(table);
     RefPtr<LookupCacheV4> lookupCacheV4 = LookupCache::Cast<LookupCacheV4>(c);
 
-    if (!lookupCacheV4 || !lookupCacheV4->MaybeVerifyCRC32()) {
+    if (!lookupCacheV4) {
       aFailedTableNames.AppendElement(table);
       continue;
     }
