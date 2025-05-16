@@ -880,7 +880,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       aColor = mIsDark ? *GenericDarkColor(aID) : NS_RGB(0xDC, 0xDC, 0xDC);
       break;
 
-    case ColorID::MozEventreerow:
     case ColorID::Field:
       aColor = mField.mBg;
       break;
@@ -914,11 +913,9 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::MozMenuhovertext:
       aColor = mMenuHover.mFg;
       break;
+    case ColorID::MozOddtreerow:
     case ColorID::MozMenuhoverdisabled:
       aColor = NS_TRANSPARENT;
-      break;
-    case ColorID::MozOddtreerow:
-      aColor = mOddCellBackground;
       break;
     case ColorID::Linktext:
       aColor = mNativeHyperLinkText;
@@ -2366,21 +2363,6 @@ void nsLookAndFeel::PerThemeData::Init() {
   if (!NS_GET_A(mButtonActive.mBg)) {
     mButtonActive.mBg = mWindow.mBg;
   }
-
-  
-  
-  
-  
-  
-  
-  style = GetStyleContext(MOZ_GTK_TREEVIEW);
-
-  
-  gtk_style_context_save(style);
-  gtk_style_context_add_region(style, GTK_STYLE_REGION_ROW, GTK_REGION_ODD);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  mOddCellBackground = GDK_RGBA_TO_NS_RGBA(color);
-  gtk_style_context_restore(style);
 
   
   style = GetStyleContext(MOZ_GTK_TREE_HEADER_CELL);

@@ -326,7 +326,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       break;
     case ColorID::MozColheader:
     case ColorID::MozColheaderhover:
-    case ColorID::MozEventreerow:
       
       aColor =
           GetColorFromNSColor(NSColor.controlAlternatingRowBackgroundColors[0]);
