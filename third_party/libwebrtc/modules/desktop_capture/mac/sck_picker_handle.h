@@ -42,8 +42,7 @@ class API_AVAILABLE(macos(14.0)) SckPickerHandleInterface {
 
 
 
-std::unique_ptr<SckPickerHandleInterface> API_AVAILABLE(macos(14.0))
-    CreateSckPickerHandle();
+std::unique_ptr<SckPickerHandleInterface> API_AVAILABLE(macos(14.0)) CreateSckPickerHandle();
 
 }  
 
