@@ -3029,7 +3029,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsTHashSet<WeakFrame*> mWeakFrames;
 
-  nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
+  nsTHashMap<RefPtr<const nsAtom>, nsIFrame*> mAnchorPosAnchors;
 
   
   DepthOrderedFrameList mDirtyRoots;
