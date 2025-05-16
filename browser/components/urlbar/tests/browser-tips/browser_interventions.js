@@ -139,7 +139,9 @@ add_task(async function testIsActive() {
     
     UrlbarProviderInterventions.currentTip = null;
 
-    const isActive = UrlbarProviderInterventions.isActive({ searchString });
+    const isActive = await UrlbarProviderInterventions.isActive({
+      searchString,
+    });
     Assert.equal(isActive, expectedActive, "Result of isActive is correct");
     const isScoreCalculated = UrlbarProviderInterventions.currentTip !== null;
     Assert.equal(
