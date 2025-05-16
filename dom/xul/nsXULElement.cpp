@@ -569,7 +569,7 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 
 #ifdef DEBUG
-  if (!doc.AllowXULXBL() && !doc.IsUnstyledDocument()) {
+  if (!doc.AllowXULXBL() && !doc.IsLoadedAsData()) {
     
     
     
