@@ -227,6 +227,18 @@ function assert_intercept_prefetch(interceptedRequest, expectedUrl) {
 
   assert_prefetched(interceptedRequest.request.headers,
       "Prefetch request should be intercepted.");
+
+  if (new URL(location.href).searchParams.has('clientId')) {
+    
+    
+    assert_equals(interceptedRequest.resultingClientId, "",
+        "resultingClientId shouldn't be exposed.");
+
+    
+    
+    assert_false(interceptedRequest.clientId === "",
+        "clientId should be initiator.");
+  }
 }
 
 
@@ -236,6 +248,16 @@ function assert_intercept_non_prefetch(interceptedRequest, expectedUrl) {
 
   assert_not_prefetched(interceptedRequest.request.headers,
       "Non-prefetch request should be intercepted.");
+
+  if (new URL(location.href).searchParams.has('clientId')) {
+    
+    
+    assert_not_equals(interceptedRequest.resultingClientId, "",
+        "resultingClientId can be exposed.");
+
+    assert_not_equals(interceptedRequest.clientId, "",
+        "clientId should be initiator.");
+  }
 }
 
 
