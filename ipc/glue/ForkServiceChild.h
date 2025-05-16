@@ -12,7 +12,12 @@
 #include "nsString.h"
 #include "mozilla/ipc/MiniTransceiver.h"
 #include "mozilla/ipc/LaunchError.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/ThreadSafety.h"
 
 #include <sys/types.h>
 #include <poll.h>
@@ -29,11 +34,9 @@ class GeckoChildProcessHost;
 
 
 
-class ForkServiceChild {
+class ForkServiceChild final {
  public:
-  ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess);
-  virtual ~ForkServiceChild();
-
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ForkServiceChild)
   
 
 
@@ -45,7 +48,7 @@ class ForkServiceChild {
 
   Result<Ok, LaunchError> SendForkNewSubprocess(
       geckoargs::ChildProcessArgs&& aArgs, base::LaunchOptions&& aOptions,
-      pid_t* aPid);
+      pid_t* aPid) MOZ_EXCLUDES(mMutex);
 
   
 
@@ -60,10 +63,8 @@ class ForkServiceChild {
   
 
 
-  static ForkServiceChild* Get() {
-    auto child = sForkServiceChild.get();
-    return child == nullptr || child->mFailed ? nullptr : child;
-  }
+
+  static RefPtr<ForkServiceChild> Get();
 
   
 
@@ -71,19 +72,24 @@ class ForkServiceChild {
   static bool WasUsed() { return sForkServiceUsed; }
 
  private:
-  void OnError();
+  ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess);
+  ~ForkServiceChild();
 
-  UniquePtr<MiniTransceiver> mTcver;
-  static UniquePtr<ForkServiceChild> sForkServiceChild;
+  void OnError() MOZ_REQUIRES(mMutex);
+
+  static StaticMutex sMutex;
+  static StaticRefPtr<ForkServiceChild> sSingleton MOZ_GUARDED_BY(sMutex);
   static Atomic<bool> sForkServiceUsed;
-  bool mFailed;  
+  Mutex mMutex;
+  UniquePtr<MiniTransceiver> mTcver MOZ_GUARDED_BY(mMutex);
+  bool mFailed MOZ_GUARDED_BY(mMutex);  
   GeckoChildProcessHost* mProcess;
 };
 
 
 
 
-class ForkServerLauncher : public nsIObserver {
+class ForkServerLauncher final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -93,7 +99,7 @@ class ForkServerLauncher : public nsIObserver {
 
  private:
   friend class ForkServiceChild;
-  virtual ~ForkServerLauncher();
+  ~ForkServerLauncher();
 
   static void RestartForkServer();
 
