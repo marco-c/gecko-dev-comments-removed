@@ -526,7 +526,7 @@ bool Navigation::FireTraverseNavigateEvent(
        nullptr,
        Nothing(),
        nullptr,
-       u""_ns);
+       VoidString());
 }
 
 
@@ -552,7 +552,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
       aCx, aNavigationType, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
       aFormDataEntryList, aClassicHistoryAPIState,
-       u""_ns);
+       VoidString());
 }
 
 
