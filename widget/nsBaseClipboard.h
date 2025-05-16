@@ -76,7 +76,11 @@ class nsBaseClipboard : public nsIClipboard {
       mozilla::dom::WindowContext* aRequestingWindowContext,
       nsIClipboardGetDataSnapshotCallback* aCallback);
 
+  
+  
   using GetDataCallback = mozilla::MoveOnlyFunction<void(nsresult)>;
+  using GetNativeDataCallback = mozilla::MoveOnlyFunction<void(
+      mozilla::Result<nsCOMPtr<nsISupports>, nsresult>)>;
   using HasMatchingFlavorsCallback = mozilla::MoveOnlyFunction<void(
       mozilla::Result<nsTArray<nsCString>, nsresult>)>;
 
@@ -104,11 +108,23 @@ class nsBaseClipboard : public nsIClipboard {
   
   NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     ClipboardType aWhichClipboard) = 0;
+  
+  
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
-                                    ClipboardType aWhichClipboard) = 0;
+                                    ClipboardType aWhichClipboard);
+  virtual mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
+  GetNativeClipboardData(const nsACString& aFlavor,
+                         ClipboardType aWhichClipboard) {
+    return mozilla::Err(NS_ERROR_NOT_IMPLEMENTED);
+  }
+  
+  
   virtual void AsyncGetNativeClipboardData(nsITransferable* aTransferable,
                                            ClipboardType aWhichClipboard,
                                            GetDataCallback&& aCallback);
+  virtual void AsyncGetNativeClipboardData(const nsACString& aFlavor,
+                                           ClipboardType aWhichClipboard,
+                                           GetNativeDataCallback&& aCallback);
   virtual nsresult EmptyNativeClipboardData(ClipboardType aWhichClipboard) = 0;
   virtual mozilla::Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
       const nsTArray<nsCString>& aFlavorList,
