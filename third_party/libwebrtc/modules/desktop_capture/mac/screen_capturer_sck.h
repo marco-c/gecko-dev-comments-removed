@@ -19,6 +19,9 @@
 namespace webrtc {
 
 
+bool ScreenCapturerSckAvailable();
+
+
 std::unique_ptr<DesktopCapturer> CreateScreenCapturerSck(
     const DesktopCaptureOptions& options);
 
