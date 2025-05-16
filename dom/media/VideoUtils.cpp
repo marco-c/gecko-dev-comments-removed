@@ -274,13 +274,14 @@ already_AddRefed<SharedThreadPool> GetMediaThreadPool(MediaThreadType aType) {
       SharedThreadPool::Get(nsDependentCString(name), threads);
 
   
-  if (aType == MediaThreadType::PLATFORM_DECODER) {
-    uint32_t minStackSize = 512 * 1024;
-    #ifdef XP_WIN
-    
-    
-    minStackSize *= 4;
-    #endif
+  bool needsLargerStacks = aType == MediaThreadType::PLATFORM_DECODER;
+
+
+#ifdef XP_WIN
+  needsLargerStacks |= aType == MediaThreadType::PLATFORM_ENCODER;
+#endif
+  if (needsLargerStacks) {
+    const uint32_t minStackSize = 512 * 1024;
     uint32_t stackSize;
     MOZ_ALWAYS_SUCCEEDS(pool->GetThreadStackSize(&stackSize));
     if (stackSize < minStackSize) {
