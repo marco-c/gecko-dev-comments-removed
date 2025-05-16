@@ -641,13 +641,35 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   
   void FlushAllCoalescedMouseData();
+
   void ProcessPendingCoalescedMouseDataAndDispatchEvents();
 
   void ProcessPendingCoalescedTouchData();
 
+  
+
+
+
+
+
+  void HandleMouseRawUpdateEvent(const WidgetMouseEvent& aPendingMouseEvent,
+                                 const ScrollableLayerGuid& aGuid,
+                                 const uint64_t& aInputBlockId);
+
   void HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
                                   const ScrollableLayerGuid& aGuid,
                                   const uint64_t& aInputBlockId);
+
+  
+
+
+
+
+
+  void HandleTouchRawUpdateEvent(const WidgetTouchEvent& aPendingTouchEvent,
+                                 const ScrollableLayerGuid& aGuid,
+                                 const uint64_t& aInputBlockId,
+                                 const nsEventStatus& aApzResponse);
 
   void SetCancelContentJSEpoch(int32_t aEpoch) {
     mCancelContentJSEpoch = aEpoch;
@@ -716,7 +738,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   void OnPointerRawUpdateEventListenerAdded(const nsPIDOMWindowInner* aWindow);
   void OnPointerRawUpdateEventListenerRemoved(
       const nsPIDOMWindowInner* aWindow);
-  [[nodiscard]] bool HasWindowHavingPointerRawUpdateEventListeners() const {
+  [[nodiscard]] bool HasPointerRawUpdateEventListeners() const {
     return !!mPointerRawUpdateWindowCount;
   }
 

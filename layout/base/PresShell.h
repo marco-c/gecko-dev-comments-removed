@@ -1996,6 +1996,15 @@ class PresShell final : public nsStubDocumentObserver,
   
   void RestoreRootScrollPosition();
 
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult EnsurePrecedingPointerRawUpdate(
+      AutoWeakFrame& aWeakFrameForPresShell, const WidgetGUIEvent& aSourceEvent,
+      bool aDontRetargetEvents);
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void MaybeReleaseCapturingContent();
 
   class DelayedEvent {

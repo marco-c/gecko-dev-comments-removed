@@ -4895,13 +4895,16 @@ void HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   
   
   switch (aVisitor.mEvent->mMessage) {
-    case ePointerDown:
-    case ePointerUp:
-    case eTouchEnd:
+    case eTouchRawUpdate:
+      MOZ_FALLTHROUGH_ASSERT(
+          "eTouchRawUpdate event shouldn't be dispatched into the DOM");
     
     
     case eTouchMove:
+    case eTouchEnd:
     case eTouchStart:
+    case ePointerDown:
+    case ePointerUp:
     case ePointerClick:
     case eMouseDoubleClick:
     case eMouseDown:
@@ -4911,7 +4914,11 @@ void HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
     
     
+    case eMouseRawUpdate:
+      MOZ_FALLTHROUGH_ASSERT(
+          "eMouseRawUpdate event shouldn't be dispatched into the DOM");
     case ePointerMove:
+    case ePointerRawUpdate:
     case eMouseMove: {
       nsINode* node =
           nsINode::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
