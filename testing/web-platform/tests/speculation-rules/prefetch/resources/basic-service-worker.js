@@ -32,6 +32,13 @@ if (swOption !== 'no-fetch-handler') {
 
     if (swOption === 'fetch-handler') {
       event.respondWith(fetch(event.request));
+    } else if (swOption === 'fetch-handler-synthetic') {
+      const finalUrl = new URL(event.request.url).searchParams.get('location');
+      if (finalUrl) {
+        event.respondWith(Response.redirect(finalUrl));
+      } else {
+        
+      }
     } else if (swOption === 'fetch-handler-modify-url') {
       
       
