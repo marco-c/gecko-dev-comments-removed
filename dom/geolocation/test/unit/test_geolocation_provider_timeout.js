@@ -23,11 +23,6 @@ function errorCallback() {
 function run_test() {
   do_test_pending();
 
-  
-  
-  
-  do_get_profile();
-
   httpserver = new HttpServer();
   httpserver.registerPathHandler("/geo", geoHandler);
   httpserver.start(-1);
