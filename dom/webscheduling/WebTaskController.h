@@ -28,6 +28,10 @@ class WebTaskController : public AbortController {
   void SetPriority(TaskPriority aPriority, ErrorResult& aRv);
 
  private:
+  
+  void SignalPriorityChange(TaskSignal* aTaskSignal, TaskPriority aPriority,
+                            ErrorResult& aRv);
+
   ~WebTaskController() = default;
 };
 }  

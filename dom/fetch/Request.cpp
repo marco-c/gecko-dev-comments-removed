@@ -63,7 +63,10 @@ Request::Request(nsIGlobalObject* aOwner, SafeRefPtr<InternalRequest> aRequest,
     
     
     AutoTArray<OwningNonNull<AbortSignal>, 1> array{OwningNonNull(*aSignal)};
-    mSignal = AbortSignal::Any(aOwner, mozilla::Span{array});
+    mSignal = AbortSignal::Any(aOwner, array, [](nsIGlobalObject* aGlobal) {
+      return AbortSignal::Create(aGlobal, SignalAborted::No,
+                                 JS::UndefinedHandleValue);
+    });
   }
 }
 
@@ -507,7 +510,8 @@ Headers* Request::Headers_() {
 
 AbortSignal* Request::GetOrCreateSignal() {
   if (!mSignal) {
-    mSignal = new AbortSignal(mOwner, false, JS::UndefinedHandleValue);
+    mSignal = AbortSignal::Create(mOwner, SignalAborted::No,
+                                  JS::UndefinedHandleValue);
   }
 
   return mSignal;

@@ -322,11 +322,12 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
     
     
     newState->SetPrioritySource(
-        new TaskSignal(GetParentObject(), taskPriority.Value()));
+        TaskSignal::Create(GetParentObject(), taskPriority.Value()));
   } else if (signalValue && signalValue->IsTaskSignal()) {
     
     
-    newState->SetPrioritySource(static_cast<TaskSignal*>(signalValue));
+    newState->SetPrioritySource(
+        do_AddRef(static_cast<TaskSignal*>(signalValue)));
   }
 
   if (!newState->GetPrioritySource()) {
@@ -334,7 +335,7 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
     
     
     newState->SetPrioritySource(
-        new TaskSignal(GetParentObject(), TaskPriority::User_visible));
+        TaskSignal::Create(GetParentObject(), TaskPriority::User_visible));
   }
 
   MOZ_ASSERT(newState->GetPrioritySource());
@@ -420,7 +421,7 @@ already_AddRefed<Promise> WebTaskScheduler::YieldImpl() {
     
     
     prioritySource =
-        new TaskSignal(GetParentObject(), TaskPriority::User_visible);
+        TaskSignal::Create(GetParentObject(), TaskPriority::User_visible);
   }
 
   

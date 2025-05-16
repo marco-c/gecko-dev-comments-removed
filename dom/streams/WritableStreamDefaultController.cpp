@@ -149,8 +149,10 @@ void SetUpWritableStreamDefaultController(
   ResetQueue(aController);
 
   
-  RefPtr<AbortSignal> signal = new AbortSignal(aController->GetParentObject(),
-                                               false, JS::UndefinedHandleValue);
+  RefPtr<AbortSignal> signal =
+      AbortSignal::Create(aController->GetParentObject(), SignalAborted::No,
+                          JS::UndefinedHandleValue);
+
   aController->SetSignal(signal);
 
   

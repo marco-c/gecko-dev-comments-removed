@@ -63,7 +63,7 @@ void IdleRequest::IdleRun(nsPIDOMWindowInner* aWindow,
   
   
   newState->SetPrioritySource(
-      new TaskSignal(aWindow->AsGlobal(), TaskPriority::Background));
+      TaskSignal::Create(aWindow->AsGlobal(), TaskPriority::Background));
   
   innerWindow->SetWebTaskSchedulingState(newState);
   callback->Call(*deadline, "requestIdleCallback handler");
