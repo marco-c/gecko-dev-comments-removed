@@ -57,16 +57,20 @@ async function watchServiceWorkerTargets(tab) {
 
 async function waitForRegistrationReady(tab, expectedPageUrl, workerUrl) {
   await asyncWaitUntil(() =>
-    SpecialPowers.spawn(tab.linkedBrowser, [expectedPageUrl], function (_url) {
-      try {
-        const win = content.wrappedJSObject;
-        const isExpectedUrl = win.location.href === _url;
-        const hasRegistration = !!win.registrationPromise;
-        return isExpectedUrl && hasRegistration;
-      } catch (e) {
-        return false;
+    SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [expectedPageUrl],
+      async function (_url) {
+        try {
+          const win = content.wrappedJSObject;
+          const isExpectedUrl = win.location.href === _url;
+          const hasRegistration = !!(await win.registrationPromise);
+          return isExpectedUrl && hasRegistration;
+        } catch (e) {
+          return false;
+        }
       }
-    })
+    )
   );
   
   
