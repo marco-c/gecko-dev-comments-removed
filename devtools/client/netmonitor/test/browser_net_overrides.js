@@ -4,6 +4,9 @@
 "use strict";
 
 
+requestLongerTimeout(2);
+
+
 Services.scriptloader.loadSubScript(
   CHROME_URL_ROOT + "network-overrides-test-helpers.js",
   this
