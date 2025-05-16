@@ -971,7 +971,12 @@ var gIdentityHandler = {
       "identity-popup-mainView"
     );
     identityPopupPanelView.removeAttribute("footerVisible");
-    if (this._uriHasHost && !this._pageExtensionPolicy) {
+    
+    if (
+      !PrivateBrowsingUtils.isWindowPrivate(window) &&
+      this._uriHasHost &&
+      !this._pageExtensionPolicy
+    ) {
       SiteDataManager.hasSiteData(this._uri.asciiHost).then(hasData => {
         this._clearSiteDataFooter.hidden = !hasData;
         identityPopupPanelView.setAttribute("footerVisible", hasData);
