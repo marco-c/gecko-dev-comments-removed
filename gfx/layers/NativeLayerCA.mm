@@ -2068,8 +2068,8 @@ bool NativeLayerCA::WillUpdateAffectLayers(
 }
 
 
-Maybe<SurfaceWithInvalidRegion> NativeLayerCA::GetUnusedSurfaceAndCleanUp(
-    const MutexAutoLock& aProofOfLock) {
+Maybe<NativeLayerCA::SurfaceWithInvalidRegion>
+NativeLayerCA::GetUnusedSurfaceAndCleanUp(const MutexAutoLock& aProofOfLock) {
   std::vector<SurfaceWithInvalidRegionAndCheckCount> usedSurfaces;
   Maybe<SurfaceWithInvalidRegion> unusedSurface;
 
