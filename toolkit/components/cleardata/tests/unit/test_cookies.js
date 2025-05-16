@@ -463,4 +463,18 @@ add_task(async function test_ipv6_cookies() {
 
   
   Assert.equal(Services.cookies.cookies.length, 0);
+
+  
+  addCookiesForHost("[::1]");
+  Assert.equal(Services.cookies.cookies.length, 1);
+  await new Promise(aResolve => {
+    Services.clearData.deleteDataFromSite(
+      "[::1]",
+      {},
+      false,
+      Ci.nsIClearDataService.CLEAR_COOKIES,
+      aResolve
+    );
+  });
+  Assert.equal(Services.cookies.cookies.length, 0);
 });
