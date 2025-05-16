@@ -457,6 +457,11 @@ TEST_F(SoftokenTest, CreateObjectReadBreakLine) {
   ASSERT_TRUE(NSS_IsInitialized());
 }
 
+
+
+
+#if !GTEST_OS_MAC
+
 class SoftokenNonAsciiTest : public SoftokenTest {
  protected:
   SoftokenNonAsciiTest() : SoftokenTest("SoftokenTest.\xF7-") {}
@@ -469,6 +474,7 @@ TEST_F(SoftokenNonAsciiTest, NonAsciiPathWorking) {
   EXPECT_EQ(SECSuccess, PK11_ResetToken(slot.get(), nullptr));
   EXPECT_EQ(SECSuccess, PK11_InitPin(slot.get(), nullptr, nullptr));
 }
+#endif
 
 
 static unsigned char certDER[] = {

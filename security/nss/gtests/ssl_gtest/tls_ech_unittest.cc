@@ -632,6 +632,27 @@ TEST_F(TlsConnectStreamTls13Ech, EchFixedConfig) {
   Connect();
 }
 
+TEST_F(TlsConnectTest, RenegotiateClientECHGrease) {
+  EnsureTlsSetup();
+
+  
+  client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
+                           SSL_LIBRARY_VERSION_TLS_1_3);
+  EXPECT_EQ(SECSuccess, SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_TRUE));
+
+  
+  server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
+                           SSL_LIBRARY_VERSION_TLS_1_2);
+
+  Connect();
+
+  
+  client_->PrepareForRenegotiate();
+  server_->StartRenegotiate();
+  Handshake();
+  CheckConnected();
+}
+
 
 
 
