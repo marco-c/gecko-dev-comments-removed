@@ -19,6 +19,8 @@
 #include "nsUrlClassifierInfo.h"
 #include "nsUrlClassifierUtils.h"
 #include "nsUrlClassifierDBService.h"
+#include "mozilla/StaticPrefs_urlclassifier.h"
+#include "mozilla/ProfilerMarkers.h"
 
 #ifdef DEBUG
 #  include "nsPrintfCString.h"
@@ -185,6 +187,7 @@ LookupCache::LookupCache(const nsACString& aTableName,
                          const nsACString& aProvider,
                          nsCOMPtr<nsIFile>& aRootStoreDir)
     : mPrimed(false),
+      mNeedCRC32Verification(false),
       mTableName(aTableName),
       mProvider(aProvider),
       mRootStoreDirectory(aRootStoreDir),
@@ -362,6 +365,7 @@ void LookupCache::ClearAll() {
   ClearCache();
   ClearPrefixes();
   mPrimed = false;
+  mNeedCRC32Verification = false;
 }
 
 nsresult LookupCache::ClearPrefixes() {
@@ -759,6 +763,8 @@ nsresult LookupCache::StoreToFile(nsCOMPtr<nsIFile>& aFile) {
 
 nsresult LookupCache::LoadFromFile(nsCOMPtr<nsIFile>& aFile) {
   NS_ENSURE_ARG_POINTER(aFile);
+  AUTO_PROFILER_MARKER_UNTYPED("LookupCache::LoadFromFile", OTHER,
+                               MarkerTiming::IntervalStart());
 
   auto timer = glean::urlclassifier::vlps_fileload_time.Measure();
 
@@ -811,16 +817,66 @@ nsresult LookupCache::LoadFromFile(nsCOMPtr<nsIFile>& aFile) {
     return rv;
   }
 
-  
-  rv = VerifyCRC32(in);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (StaticPrefs::urlclassifier_delay_prefixes_crc32_check()) {
+    
+    
+    
+    mNeedCRC32Verification = true;
+  } else {
+    
+    rv = VerifyCRC32(in);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   mPrimed = true;
 
   LOG(("[%s] Loading PrefixSet successful", mTableName.get()));
   return NS_OK;
+}
+
+bool LookupCache::MaybeVerifyCRC32() {
+  
+  
+  if (!mNeedCRC32Verification) {
+    return true;
+  }
+
+  
+  mNeedCRC32Verification = false;
+
+  
+  nsCOMPtr<nsIFile> psFile;
+  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(psFile));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  rv = psFile->AppendNative(mTableName + GetPrefixSetSuffix());
+  NS_ENSURE_SUCCESS(rv, false);
+
+  nsCOMPtr<nsIInputStream> fileIn;
+  rv = NS_NewLocalFileInputStream(getter_AddRefs(fileIn), psFile,
+                                  PR_RDONLY | nsIFile::OS_READAHEAD);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  int64_t fileSize;
+  rv = psFile->GetFileSize(&fileSize);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  uint32_t bufferSize =
+      std::min<uint32_t>(static_cast<uint32_t>(fileSize), MAX_BUFFER_SIZE);
+
+  nsCOMPtr<nsIInputStream> in;
+  rv = NS_NewBufferedInputStream(getter_AddRefs(in), fileIn.forget(),
+                                 bufferSize);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  rv = VerifyCRC32(in);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  return true;
 }
 
 
