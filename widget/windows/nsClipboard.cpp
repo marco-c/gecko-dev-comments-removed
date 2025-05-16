@@ -960,6 +960,125 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
 }
 
 
+mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
+nsClipboard::GetDataFromDataObject(IDataObject* aDataObject, UINT anIndex,
+                                   nsIWidget* aWindow,
+                                   const nsCString& aFlavor) {
+  MOZ_CLIPBOARD_LOG("%s", __FUNCTION__);
+
+  UINT format = GetFormat(aFlavor.get());
+
+  
+  
+  void* data = nullptr;
+  uint32_t dataLen = 0;
+  bool dataFound = false;
+  if (nullptr != aDataObject) {
+    if (NS_SUCCEEDED(GetNativeDataOffClipboard(
+            aDataObject, anIndex, format, aFlavor.get(), &data, &dataLen))) {
+      dataFound = true;
+    }
+  } else if (nullptr != aWindow) {
+    if (NS_SUCCEEDED(GetNativeDataOffClipboard(aWindow, anIndex, format, &data,
+                                               &dataLen))) {
+      dataFound = true;
+    }
+  }
+
+  
+  
+  
+  if (!dataFound) {
+    if (aFlavor.EqualsLiteral(kTextMime)) {
+      dataFound =
+          FindUnicodeFromPlainText(aDataObject, anIndex, &data, &dataLen);
+    } else if (aFlavor.EqualsLiteral(kURLMime)) {
+      
+      
+      dataFound = FindURLFromNativeURL(aDataObject, anIndex, &data, &dataLen);
+      if (!dataFound) {
+        dataFound = FindURLFromLocalFile(aDataObject, anIndex, &data, &dataLen);
+      }
+    } else {
+      mozilla::Maybe<UINT> secondaryFormat = GetSecondaryFormat(aFlavor.get());
+      if (secondaryFormat) {
+        
+        dataFound = NS_SUCCEEDED(GetNativeDataOffClipboard(
+            aDataObject, anIndex, secondaryFormat.value(), aFlavor.get(), &data,
+            &dataLen));
+      }
+    }
+  }  
+
+  if (!dataFound) {
+    return nsCOMPtr<nsISupports>{};
+  }
+
+  
+  nsCOMPtr<nsISupports> genericDataWrapper;
+  if (aFlavor.EqualsLiteral(kFileMime)) {
+    
+    nsDependentString filepath(reinterpret_cast<char16_t*>(data));
+    nsCOMPtr<nsIFile> file;
+    if (NS_SUCCEEDED(NS_NewLocalFile(filepath, getter_AddRefs(file)))) {
+      genericDataWrapper = do_QueryInterface(file);
+    }
+    free(data);
+  } else if (aFlavor.EqualsLiteral(kNativeHTMLMime)) {
+    uint32_t dummy;
+    
+    
+    
+    if (FindPlatformHTML(aDataObject, anIndex, &data, &dummy, &dataLen)) {
+      nsPrimitiveHelpers::CreatePrimitiveForData(
+          aFlavor, data, dataLen, getter_AddRefs(genericDataWrapper));
+    }
+    free(data);
+  } else if (aFlavor.EqualsLiteral(kHTMLMime)) {
+    uint32_t startOfData = 0;
+    
+    
+    
+    if (FindPlatformHTML(aDataObject, anIndex, &data, &startOfData, &dataLen)) {
+      dataLen -= startOfData;
+      nsPrimitiveHelpers::CreatePrimitiveForCFHTML(
+          static_cast<char*>(data) + startOfData, &dataLen,
+          getter_AddRefs(genericDataWrapper));
+    }
+    free(data);
+  } else if (aFlavor.EqualsLiteral(kJPEGImageMime) ||
+             aFlavor.EqualsLiteral(kJPGImageMime) ||
+             aFlavor.EqualsLiteral(kPNGImageMime)) {
+    nsIInputStream* imageStream = reinterpret_cast<nsIInputStream*>(data);
+    genericDataWrapper = do_QueryInterface(imageStream);
+    NS_IF_RELEASE(imageStream);
+  } else {
+    
+    if (!aFlavor.EqualsLiteral(kCustomTypesMime)) {
+      bool isRTF = aFlavor.EqualsLiteral(kRTFMime);
+      
+      
+      int32_t signedLen = static_cast<int32_t>(dataLen);
+      nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(isRTF, &data,
+                                                         &signedLen);
+      dataLen = signedLen;
+
+      if (isRTF) {
+        
+        if (dataLen > 0 && static_cast<char*>(data)[dataLen - 1] == '\0') {
+          dataLen--;
+        }
+      }
+    }
+
+    nsPrimitiveHelpers::CreatePrimitiveForData(
+        aFlavor, data, dataLen, getter_AddRefs(genericDataWrapper));
+    free(data);
+  }
+
+  return std::move(genericDataWrapper);
+}
+
 nsresult nsClipboard::GetDataFromDataObject(IDataObject* aDataObject,
                                             UINT anIndex, nsIWidget* aWindow,
                                             nsITransferable* aTransferable) {
@@ -970,12 +1089,10 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject* aDataObject,
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsresult res = NS_ERROR_FAILURE;
-
   
   
   nsTArray<nsCString> flavors;
-  res = aTransferable->FlavorsTransferableCanImport(flavors);
+  nsresult res = aTransferable->FlavorsTransferableCanImport(flavors);
   if (NS_FAILED(res)) {
     return NS_ERROR_FAILURE;
   }
@@ -983,137 +1100,22 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject* aDataObject,
   
   
   for (uint32_t i = 0; i < flavors.Length(); i++) {
-    nsCString& flavorStr = flavors[i];
-    UINT format = GetFormat(flavorStr.get());
+    const nsCString& flavorStr = flavors[i];
 
-    
-    
-    void* data = nullptr;
-    uint32_t dataLen = 0;
-    bool dataFound = false;
-    if (nullptr != aDataObject) {
-      if (NS_SUCCEEDED(GetNativeDataOffClipboard(aDataObject, anIndex, format,
-                                                 flavorStr.get(), &data,
-                                                 &dataLen))) {
-        dataFound = true;
-      }
-    } else if (nullptr != aWindow) {
-      if (NS_SUCCEEDED(GetNativeDataOffClipboard(aWindow, anIndex, format,
-                                                 &data, &dataLen))) {
-        dataFound = true;
-      }
+    auto dataOrError =
+        GetDataFromDataObject(aDataObject, anIndex, aWindow, flavorStr);
+    if (dataOrError.isErr() || !dataOrError.inspect()) {
+      continue;
     }
 
+    NS_ASSERTION(dataOrError.inspect(),
+                 "About to put null data into the transferable");
+    aTransferable->SetTransferData(flavorStr.get(), dataOrError.inspect());
     
-    
-    
-    if (!dataFound) {
-      if (flavorStr.EqualsLiteral(kTextMime)) {
-        dataFound =
-            FindUnicodeFromPlainText(aDataObject, anIndex, &data, &dataLen);
-      } else if (flavorStr.EqualsLiteral(kURLMime)) {
-        
-        
-        dataFound = FindURLFromNativeURL(aDataObject, anIndex, &data, &dataLen);
-        if (!dataFound) {
-          dataFound =
-              FindURLFromLocalFile(aDataObject, anIndex, &data, &dataLen);
-        }
-      } else {
-        mozilla::Maybe<UINT> secondaryFormat =
-            GetSecondaryFormat(flavorStr.get());
-        if (secondaryFormat) {
-          
-          dataFound = NS_SUCCEEDED(GetNativeDataOffClipboard(
-              aDataObject, anIndex, secondaryFormat.value(), flavorStr.get(),
-              &data, &dataLen));
-        }
-      }
-    }  
-
-    
-    if (dataFound) {
-      nsCOMPtr<nsISupports> genericDataWrapper;
-      if (flavorStr.EqualsLiteral(kFileMime)) {
-        
-        nsDependentString filepath(reinterpret_cast<char16_t*>(data));
-        nsCOMPtr<nsIFile> file;
-        if (NS_SUCCEEDED(NS_NewLocalFile(filepath, getter_AddRefs(file)))) {
-          genericDataWrapper = do_QueryInterface(file);
-        }
-        free(data);
-      } else if (flavorStr.EqualsLiteral(kNativeHTMLMime)) {
-        uint32_t dummy;
-        
-        
-        
-        if (FindPlatformHTML(aDataObject, anIndex, &data, &dummy, &dataLen)) {
-          nsPrimitiveHelpers::CreatePrimitiveForData(
-              flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
-        } else {
-          free(data);
-          continue;  
-                     
-        }
-        free(data);
-      } else if (flavorStr.EqualsLiteral(kHTMLMime)) {
-        uint32_t startOfData = 0;
-        
-        
-        
-        if (FindPlatformHTML(aDataObject, anIndex, &data, &startOfData,
-                             &dataLen)) {
-          dataLen -= startOfData;
-          nsPrimitiveHelpers::CreatePrimitiveForCFHTML(
-              static_cast<char*>(data) + startOfData, &dataLen,
-              getter_AddRefs(genericDataWrapper));
-        } else {
-          free(data);
-          continue;  
-                     
-        }
-        free(data);
-      } else if (flavorStr.EqualsLiteral(kJPEGImageMime) ||
-                 flavorStr.EqualsLiteral(kJPGImageMime) ||
-                 flavorStr.EqualsLiteral(kPNGImageMime)) {
-        nsIInputStream* imageStream = reinterpret_cast<nsIInputStream*>(data);
-        genericDataWrapper = do_QueryInterface(imageStream);
-        NS_IF_RELEASE(imageStream);
-      } else {
-        
-        if (!flavorStr.EqualsLiteral(kCustomTypesMime)) {
-          bool isRTF = flavorStr.EqualsLiteral(kRTFMime);
-          
-          
-          int32_t signedLen = static_cast<int32_t>(dataLen);
-          nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(isRTF, &data,
-                                                             &signedLen);
-          dataLen = signedLen;
-
-          if (isRTF) {
-            
-            if (dataLen > 0 && static_cast<char*>(data)[dataLen - 1] == '\0') {
-              dataLen--;
-            }
-          }
-        }
-
-        nsPrimitiveHelpers::CreatePrimitiveForData(
-            flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
-        free(data);
-      }
-
-      NS_ASSERTION(genericDataWrapper,
-                   "About to put null data into the transferable");
-      aTransferable->SetTransferData(flavorStr.get(), genericDataWrapper);
-      res = NS_OK;
-
-      
-      break;
-    }
+    break;
   }  
 
-  return res;
+  return NS_OK;
 }
 
 
@@ -1382,24 +1384,24 @@ bool nsClipboard ::IsInternetShortcut(const nsAString& inFileName) {
 }  
 
 
-NS_IMETHODIMP
-nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
+mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
+nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
                                     ClipboardType aWhichClipboard) {
-  MOZ_DIAGNOSTIC_ASSERT(aTransferable);
   MOZ_DIAGNOSTIC_ASSERT(
       nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
 
   MOZ_CLIPBOARD_LOG("%s aWhichClipboard=%i", __FUNCTION__, aWhichClipboard);
 
-  nsresult res;
   
   IDataObject* dataObj;
   if (S_OK == RepeatedlyTryOleGetClipboard(&dataObj)) {
+    auto dataObjRelease = mozilla::MakeScopeExit([&] { dataObj->Release(); });
     
     MOZ_CLIPBOARD_LOG("    use OLE IDataObject:");
     if (MOZ_CLIPBOARD_LOG_ENABLED()) {
       IEnumFORMATETC* pEnum = nullptr;
       if (S_OK == dataObj->EnumFormatEtc(DATADIR_GET, &pEnum)) {
+        auto pEnumRelease = mozilla::MakeScopeExit([&] { pEnum->Release(); });
         FORMATETC fEtc;
         while (S_OK == pEnum->Next(1, &fEtc, nullptr)) {
           nsAutoString format;
@@ -1409,16 +1411,13 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
                             NS_ConvertUTF16toUTF8(format).get());
         }
       }
-      pEnum->Release();
     }
 
-    res = GetDataFromDataObject(dataObj, 0, nullptr, aTransferable);
-    dataObj->Release();
-  } else {
-    
-    res = GetDataFromDataObject(nullptr, 0, mWindow, aTransferable);
+    return GetDataFromDataObject(dataObj, 0, nullptr, PromiseFlatCString(aFlavor));
   }
-  return res;
+
+  
+  return GetDataFromDataObject(nullptr, 0, mWindow, PromiseFlatCString(aFlavor));
 }
 
 nsresult nsClipboard::EmptyNativeClipboardData(ClipboardType aWhichClipboard) {
