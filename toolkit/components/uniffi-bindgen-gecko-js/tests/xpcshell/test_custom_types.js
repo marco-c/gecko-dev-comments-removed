@@ -1,0 +1,12 @@
+
+
+
+const { roundtripCustomType } = ChromeUtils.importESModule(
+  "resource://gre/modules/RustUniffiBindingsTests.sys.mjs"
+);
+
+
+Assert.equal(roundtripCustomType(100), 100);
+
+
+

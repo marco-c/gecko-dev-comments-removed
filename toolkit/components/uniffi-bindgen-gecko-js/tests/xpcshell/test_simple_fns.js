@@ -1,0 +1,9 @@
+
+
+
+const { testFunc } = ChromeUtils.importESModule(
+  "resource://gre/modules/RustUniffiBindingsTests.sys.mjs"
+);
+
+
+testFunc();
