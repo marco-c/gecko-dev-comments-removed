@@ -82,17 +82,12 @@ typedef struct arena_params_s {
 
   uint32_t mFlags;
 
-  
-  
-  const char* mLabel;
-
 #ifdef __cplusplus
   arena_params_s()
       : mMaxDirty(0),
         mMaxDirtyIncreaseOverride(0),
         mMaxDirtyDecreaseOverride(0),
-        mFlags(0),
-        mLabel(nullptr) {}
+        mFlags(0) {}
 #endif
 } arena_params_t;
 
@@ -221,22 +216,7 @@ static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
 }
 
 
-enum ArenaPurgeResult {
-  
-  ReachedThreshold,
-
-  
-  NotDone,
-
-  
-  Busy,
-
-  
-  Dying,
-};
-
-
-enum may_purge_now_result_t {
+enum purge_result_t {
   
   Done,
 

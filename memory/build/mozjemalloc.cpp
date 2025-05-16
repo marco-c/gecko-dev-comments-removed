@@ -124,7 +124,6 @@
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
-#include "mozjemalloc_profiling.h"
 
 #include <cstring>
 #include <cerrno>
@@ -156,7 +155,6 @@
 #include "mozilla/Literals.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/RandomNum.h"
-#include "mozilla/RefPtr.h"
 
 
 #include "mozilla/TaggedAnonymousMemory.h"
@@ -643,14 +641,6 @@ static Atomic<size_t> gRecycledSize;
 #define DIRTY_MAX_DEFAULT (1U << 8)
 
 static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
-
-#ifdef MOZJEMALLOC_PROFILING_CALLBACKS
-
-
-
-
-static RefPtr<MallocProfilerCallbacks> sCallbacks;
-#endif
 
 
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
@@ -1308,12 +1298,6 @@ struct arena_t {
   
   bool mMustDeleteAfterPurge MOZ_GUARDED_BY(mLock) = false;
 
-  
-  
-  
-  static constexpr size_t LABEL_MAX_CAPACITY = 128;
-  char mLabel[LABEL_MAX_CAPACITY];
-
  private:
   
   
@@ -1451,24 +1435,19 @@ struct arena_t {
       MOZ_REQUIRES(mLock);
 #endif
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ArenaPurgeResult Purge(PurgeCondition aCond, PurgeStats& aStats)
-      MOZ_EXCLUDES(mLock);
+  enum PurgeResult {
+    
+    Done,
+
+    
+    Continue,
+
+    
+    Busy,
+
+    
+    Dying,
+  };
 
   
   
@@ -1481,9 +1460,12 @@ struct arena_t {
   
   
   
-  ArenaPurgeResult PurgeLoop(
-      PurgeCondition aCond, const char* aCaller, uint32_t aReuseGraceMS = 0,
-      Maybe<std::function<bool()>> aKeepGoing = Nothing()) MOZ_EXCLUDES(mLock);
+  
+  
+  
+  
+  
+  PurgeResult Purge(PurgeCondition aCond) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
    private:
@@ -1497,10 +1479,6 @@ struct arena_t {
 
     arena_chunk_t* mChunk = nullptr;
 
-   private:
-    PurgeStats& mPurgeStats;
-
-   public:
     size_t FreeRunLenBytes() const { return mFreeRunLen << gPageSize2Pow; }
 
     
@@ -1534,8 +1512,8 @@ struct arena_t {
     
     void FinishPurgingInChunk(bool aAddToMAdvised) MOZ_REQUIRES(mArena.mLock);
 
-    explicit PurgeInfo(arena_t& arena, arena_chunk_t* chunk, PurgeStats& stats)
-        : mArena(arena), mChunk(chunk), mPurgeStats(stats) {}
+    explicit PurgeInfo(arena_t& arena, arena_chunk_t* chunk)
+        : mArena(arena), mChunk(chunk) {}
   };
 
   void HardPurge();
@@ -1553,8 +1531,7 @@ struct arena_t {
   inline purge_action_t ShouldStartPurge() MOZ_REQUIRES(mLock);
 
   
-  inline void MayDoOrQueuePurge(purge_action_t aAction, const char* aCaller)
-      MOZ_EXCLUDES(mLock);
+  inline void MayDoOrQueuePurge(purge_action_t aAction) MOZ_EXCLUDES(mLock);
 
   
   
@@ -1615,7 +1592,6 @@ class ArenaCollection {
     arena_params_t params;
     
     params.mMaxDirty = opt_dirty_max;
-    params.mLabel = "Default";
     mDefaultArena =
         mLock.Init() ? CreateArena( false, &params) : nullptr;
     mPurgeListLock.Init();
@@ -1787,7 +1763,7 @@ class ArenaCollection {
       }
     }
     if (ret != aEnable) {
-      MayPurgeAll(PurgeIfThreshold, __func__);
+      MayPurgeAll(PurgeIfThreshold);
     }
     return ret;
   }
@@ -1803,7 +1779,7 @@ class ArenaCollection {
       MOZ_EXCLUDES(mPurgeListLock);
 
   
-  void MayPurgeAll(PurgeCondition aCond, const char* aCaller);
+  void MayPurgeAll(PurgeCondition aCond);
 
   
   
@@ -1825,9 +1801,8 @@ class ArenaCollection {
   
   
   
-  may_purge_now_result_t MayPurgeSteps(
-      bool aPeekOnly, uint32_t aReuseGraceMS,
-      const Maybe<std::function<bool()>>& aKeepGoing);
+  purge_result_t MayPurgeSteps(bool aPeekOnly, uint32_t aReuseGraceMS,
+                               const Maybe<std::function<bool()>>& aKeepGoing);
 
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
@@ -2194,17 +2169,6 @@ void* MozVirtualAlloc(void* lpAddress, size_t dwSize, uint32_t flAllocationType,
 }  
 
 #endif  
-
-#ifdef MOZJEMALLOC_PROFILING_CALLBACKS
-namespace mozilla {
-
-void jemalloc_set_profiler_callbacks(
-    RefPtr<MallocProfilerCallbacks>&& aCallbacks) {
-  sCallbacks = aCallbacks;
-}
-
-}  
-#endif
 
 
 
@@ -2976,9 +2940,8 @@ static inline arena_t* thread_local_arena(bool enabled) {
     
     
     
-    arena_params_t params;
-    params.mLabel = "Thread local";
-    arena = gArenas.CreateArena( false, &params);
+    arena =
+        gArenas.CreateArena( false,  nullptr);
   } else {
     arena = gArenas.GetDefault();
   }
@@ -3538,7 +3501,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
+arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
   arena_chunk_t* chunk;
 
   
@@ -3562,7 +3525,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 
     if (!ShouldContinuePurge(aCond)) {
       mIsPurgePending = false;
-      return ReachedThreshold;
+      return Done;
     }
 
     
@@ -3594,7 +3557,6 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     MOZ_ASSERT(!chunk->mIsPurging);
     mChunksDirty.Remove(chunk);
     chunk->mIsPurging = true;
-    aStats.chunks++;
   }  
 
   
@@ -3610,7 +3572,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
   while (continue_purge_chunk && continue_purge_arena) {
     
     
-    PurgeInfo purge_info(*this, chunk, aStats);
+    PurgeInfo purge_info(*this, chunk);
 
     {
       
@@ -3640,7 +3602,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       }
       
       
-      return continue_purge_arena ? NotDone : ReachedThreshold;
+      return continue_purge_arena ? Continue : Done;
     }
 
 #ifdef MALLOC_DECOMMIT
@@ -3689,44 +3651,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     purged_once = true;
   }
 
-  return continue_purge_arena ? NotDone : ReachedThreshold;
-}
-
-ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
-                                    uint32_t aReuseGraceMS,
-                                    Maybe<std::function<bool()>> aKeepGoing) {
-  PurgeStats purge_stats(mId, mLabel, aCaller);
-
-#ifdef MOZJEMALLOC_PROFILING_CALLBACKS
-  
-  
-  RefPtr<MallocProfilerCallbacks> callbacks = sCallbacks;
-  TimeStamp start;
-  if (callbacks) {
-    start = TimeStamp::Now();
-  }
-#endif
-
-  uint64_t reuseGraceNS = (uint64_t)aReuseGraceMS * 1000 * 1000;
-  uint64_t now = aReuseGraceMS ? 0 : GetTimestampNS();
-  ArenaPurgeResult pr;
-  do {
-    pr = Purge(aCond, purge_stats);
-    now = aReuseGraceMS ? 0 : GetTimestampNS();
-  } while (
-      pr == NotDone &&
-      (!aReuseGraceMS || (now - mLastSignificantReuseNS >= reuseGraceNS)) &&
-      (!aKeepGoing || (*aKeepGoing)()));
-
-#ifdef MOZJEMALLOC_PROFILING_CALLBACKS
-  if (callbacks) {
-    TimeStamp end = TimeStamp::Now();
-    
-    callbacks->OnPurge(start, end, purge_stats, pr);
-  }
-#endif
-
-  return pr;
+  return continue_purge_arena ? Continue : Done;
 }
 
 bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
@@ -3837,8 +3762,6 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
 #endif
 
   mArena.mStats.committed -= mDirtyNPages;
-  mPurgeStats.pages += mDirtyNPages;
-  mPurgeStats.system_calls++;
 
   if (mChunk->mDying) {
     
@@ -4835,7 +4758,7 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
     chunk_dealloc((void*)chunk_dealloc_delay, kChunkSize, ARENA_CHUNK);
   }
 
-  arena->MayDoOrQueuePurge(purge_action, "arena_dalloc");
+  arena->MayDoOrQueuePurge(purge_action);
 }
 
 static inline void idalloc(void* ptr, arena_t* aArena) {
@@ -4865,8 +4788,7 @@ inline purge_action_t arena_t::ShouldStartPurge() {
   return purge_action_t::None;
 }
 
-inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction,
-                                       const char* aCaller) {
+inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction) {
   switch (aAction) {
     case purge_action_t::Queue:
       
@@ -4876,14 +4798,16 @@ inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction,
       
       gArenas.AddToOutstandingPurges(this);
       break;
-    case purge_action_t::PurgeNow: {
-      ArenaPurgeResult pr = PurgeLoop(PurgeIfThreshold, aCaller);
+    case purge_action_t::PurgeNow:
+      PurgeResult pr;
+      do {
+        pr = Purge(PurgeIfThreshold);
+      } while (pr == arena_t::PurgeResult::Continue);
       
       
       
-      MOZ_RELEASE_ASSERT(pr != ArenaPurgeResult::Dying);
+      MOZ_RELEASE_ASSERT(pr != arena_t::PurgeResult::Dying);
       break;
-    }
     case purge_action_t::None:
       
       break;
@@ -4914,7 +4838,7 @@ void arena_t::RallocShrinkLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
 
     purge_action = ShouldStartPurge();
   }
-  MayDoOrQueuePurge(purge_action, "RallocShrinkLarge");
+  MayDoOrQueuePurge(purge_action);
 }
 
 
@@ -5080,22 +5004,9 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
 
     mMaxDirtyIncreaseOverride = aParams->mMaxDirtyIncreaseOverride;
     mMaxDirtyDecreaseOverride = aParams->mMaxDirtyDecreaseOverride;
-
-    if (aParams->mLabel) {
-      
-      
-      strncpy(mLabel, aParams->mLabel, LABEL_MAX_CAPACITY - 1);
-      mLabel[LABEL_MAX_CAPACITY - 1] = 0;
-      
-      MOZ_ASSERT(strlen(aParams->mLabel) < LABEL_MAX_CAPACITY);
-    } else {
-      mLabel[0] = 0;
-    }
   } else {
     mMaxDirtyIncreaseOverride = 0;
     mMaxDirtyDecreaseOverride = 0;
-
-    mLabel[0] = 0;
   }
 
   mLastSignificantReuseNS = GetTimestampNS();
@@ -6069,13 +5980,13 @@ inline void MozJemalloc::jemalloc_purge_freed_pages() {
 
 inline void MozJemalloc::jemalloc_free_dirty_pages(void) {
   if (malloc_initialized) {
-    gArenas.MayPurgeAll(PurgeUnconditional, __func__);
+    gArenas.MayPurgeAll(PurgeUnconditional);
   }
 }
 
 inline void MozJemalloc::jemalloc_free_excess_dirty_pages(void) {
   if (malloc_initialized) {
-    gArenas.MayPurgeAll(PurgeIfThreshold, __func__);
+    gArenas.MayPurgeAll(PurgeIfThreshold);
   }
 }
 
@@ -6201,7 +6112,7 @@ inline bool MozJemalloc::moz_enable_deferred_purge(bool aEnabled) {
   return gArenas.SetDeferredPurge(aEnabled);
 }
 
-inline may_purge_now_result_t MozJemalloc::moz_may_purge_now(
+inline purge_result_t MozJemalloc::moz_may_purge_now(
     bool aPeekOnly, uint32_t aReuseGraceMS,
     const Maybe<std::function<bool()>>& aKeepGoing) {
   return gArenas.MayPurgeSteps(aPeekOnly, aReuseGraceMS, aKeepGoing);
@@ -6231,7 +6142,7 @@ inline bool ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
   return false;
 }
 
-may_purge_now_result_t ArenaCollection::MayPurgeSteps(
+purge_result_t ArenaCollection::MayPurgeSteps(
     bool aPeekOnly, uint32_t aReuseGraceMS,
     const Maybe<std::function<bool()>>& aKeepGoing) {
   
@@ -6244,7 +6155,7 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
   {
     MutexAutoLock lock(mPurgeListLock);
     if (mOutstandingPurges.isEmpty()) {
-      return may_purge_now_result_t::Done;
+      return purge_result_t::Done;
     }
     for (arena_t& arena : mOutstandingPurges) {
       if (now - arena.mLastSignificantReuseNS >= reuseGraceNS) {
@@ -6254,10 +6165,10 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
     }
 
     if (!found) {
-      return may_purge_now_result_t::WantsLater;
+      return purge_result_t::WantsLater;
     }
     if (aPeekOnly) {
-      return may_purge_now_result_t::NeedsMore;
+      return purge_result_t::NeedsMore;
     }
 
     
@@ -6266,10 +6177,15 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
     mOutstandingPurges.remove(found);
   }
 
-  ArenaPurgeResult pr =
-      found->PurgeLoop(PurgeIfThreshold, __func__, aReuseGraceMS, aKeepGoing);
+  arena_t::PurgeResult pr;
+  do {
+    pr = found->Purge(PurgeIfThreshold);
+    now = GetTimestampNS();
+  } while (pr == arena_t::PurgeResult::Continue &&
+           (now - found->mLastSignificantReuseNS >= reuseGraceNS) &&
+           aKeepGoing && (*aKeepGoing)());
 
-  if (pr == ArenaPurgeResult::NotDone) {
+  if (pr == arena_t::PurgeResult::Continue) {
     
     
     
@@ -6286,7 +6202,7 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
       
       mOutstandingPurges.pushFront(found);
     }
-  } else if (pr == ArenaPurgeResult::Dying) {
+  } else if (pr == arena_t::PurgeResult::Dying) {
     delete found;
   }
 
@@ -6294,22 +6210,25 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
   
   
   
-  return may_purge_now_result_t::NeedsMore;
+  return purge_result_t::NeedsMore;
 }
 
-void ArenaCollection::MayPurgeAll(PurgeCondition aCond, const char* aCaller) {
+void ArenaCollection::MayPurgeAll(PurgeCondition aCond) {
   MutexAutoLock lock(mLock);
   for (auto* arena : iter()) {
     
     
     if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
       RemoveFromOutstandingPurges(arena);
-      ArenaPurgeResult pr = arena->PurgeLoop(aCond, aCaller);
+      arena_t::PurgeResult pr;
+      do {
+        pr = arena->Purge(aCond);
+      } while (pr == arena_t::PurgeResult::Continue);
 
       
       
       
-      MOZ_RELEASE_ASSERT(pr != ArenaPurgeResult::Dying);
+      MOZ_RELEASE_ASSERT(pr != arena_t::PurgeResult::Dying);
     }
   }
 }
