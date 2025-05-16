@@ -149,6 +149,7 @@ class MFCDMChild final : public PMFCDMChild {
   std::unordered_map<uint32_t, MozPromiseHolder<GenericPromise>>
       mPendingGenericPromises MOZ_GUARDED_BY(mMutex);
 
+  
   RefPtr<WMFCDMProxyCallback> mProxyCallback;
 };
 
