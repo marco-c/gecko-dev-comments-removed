@@ -29,6 +29,11 @@ if CONFIG["OS_TARGET"] == "Darwin":
     
     
     SOURCES["Replay.cpp"].flags += ["-Wno-unguarded-availability-new"]
+elif CONFIG["OS_TARGET"] == "Android":
+    
+    
+    SOURCES["Replay.cpp"].flags += ["-Wno-unguarded-availability"]
+
 
 if CONFIG["MOZ_REPLACE_MALLOC_STATIC"] and (CONFIG["MOZ_DMD"] or CONFIG["MOZ_PHC"]):
     UNIFIED_SOURCES += [
