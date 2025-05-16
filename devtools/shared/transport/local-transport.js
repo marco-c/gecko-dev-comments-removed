@@ -86,10 +86,11 @@ LocalDebuggerTransport.prototype = {
 
 
 
-  startBulkSend({ actor, type, length }) {
+  startBulkSend(sentPacket) {
+    const { actor, type, length } = sentPacket;
     const serial = this._serial.count++;
-
     dumpn("Sent bulk packet " + serial + " for actor " + actor);
+
     if (!this.other) {
       const error = new Error("startBulkSend: other side of transport missing");
       return Promise.reject(error);
@@ -99,14 +100,22 @@ LocalDebuggerTransport.prototype = {
 
     DevToolsUtils.executeSoon(
       DevToolsUtils.makeInfallible(() => {
-        dumpn("Received bulk packet " + serial);
+        
+        if (flags.wantLogging) {
+          dumpn(
+            "Received bulk packet " +
+              serial +
+              ": " +
+              JSON.stringify(sentPacket, null, 2)
+          );
+        }
         if (!this.other.hooks) {
           return;
         }
 
         
         new Promise(receiverResolve => {
-          const packet = {
+          const receivedPacket = {
             actor,
             type,
             length,
@@ -123,7 +132,7 @@ LocalDebuggerTransport.prototype = {
             done: receiverResolve,
           };
 
-          this.other.hooks.onBulkPacket(packet);
+          this.other.hooks.onBulkPacket(receivedPacket);
         })
           
           .then(() => pipe.inputStream.close(), this.close);
