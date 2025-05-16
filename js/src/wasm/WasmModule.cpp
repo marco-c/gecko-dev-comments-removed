@@ -28,8 +28,10 @@
 #include "js/StreamConsumer.h"
 #include "threading/LockGuard.h"
 #include "threading/Thread.h"
+#include "util/DifferentialTesting.h"
 #include "vm/HelperThreadState.h"  
 #include "vm/PlainObject.h"        
+#include "vm/Warnings.h"           
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmDebug.h"
@@ -981,6 +983,28 @@ bool Module::instantiate(JSContext* cx, ImportValues& imports,
       codeMeta().isAsmJS() ? JSUseCounter::ASMJS : JSUseCounter::WASM;
   cx->runtime()->setUseCounter(instance, useCounter);
   SetUseCountersForFeatureUsage(cx, instance, moduleMeta().featureUsage);
+
+  
+  
+  if (!js::SupportDifferentialTesting()) {
+    
+    if (moduleMeta().featureUsage & FeatureUsage::LegacyExceptions) {
+      if (!js::WarnNumberASCII(cx, JSMSG_WASM_LEGACY_EXCEPTIONS_DEPRECATED)) {
+        if (cx->isExceptionPending()) {
+          cx->clearPendingException();
+        }
+      }
+    }
+
+    
+    if (JS::Prefs::warn_asmjs_deprecation() && codeMeta().isAsmJS()) {
+      if (!js::WarnNumberASCII(cx, JSMSG_USE_ASM_DEPRECATED)) {
+        if (cx->isExceptionPending()) {
+          cx->clearPendingException();
+        }
+      }
+    }
+  }
 
   if (cx->options().testWasmAwaitTier2() &&
       code().mode() != CompileMode::LazyTiering) {
