@@ -65,6 +65,8 @@ inline void WaitFor(MediaEventSourceImpl<Lp, void>& aEvent) {
 
 
 
+
+
 template <typename R, typename E, bool Exc>
 inline Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
   Maybe<R> success;
@@ -80,6 +82,46 @@ inline Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
     return success.extract();
   }
   return Err(error.extract());
+}
+
+
+
+
+
+template <typename R, typename E, bool Exc>
+inline R WaitForResolve(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
+  Maybe<R> success;
+  
+  using RRef = typename std::conditional_t<Exc, R&&, const R&>;
+  using ERef = typename std::conditional_t<Exc, E&&, const E&>;
+  aPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [&](RRef aResult) { success.emplace(std::forward<RRef>(aResult)); },
+      [&](ERef aError) { MOZ_CRASH("rejection was not expected"); });
+  SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
+      "WaitForResolve(const RefPtr<MozPromise<R, E, Exc>>& aPromise)"_ns,
+      [&] { return success.isSome(); });
+  return success.extract();
+}
+
+
+
+
+
+template <typename R, typename E, bool Exc>
+inline E WaitForReject(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
+  Maybe<E> error;
+  
+  using RRef = typename std::conditional_t<Exc, R&&, const R&>;
+  using ERef = typename std::conditional_t<Exc, E&&, const E&>;
+  aPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [&](RRef aResult) { MOZ_CRASH("resolution was not expected"); },
+      [&](ERef aError) { error.emplace(std::forward<ERef>(aError)); });
+  SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
+      "WaitForReject(const RefPtr<MozPromise<R, E, Exc>>& aPromise)"_ns,
+      [&] { return error.isSome(); });
+  return error.extract();
 }
 
 
