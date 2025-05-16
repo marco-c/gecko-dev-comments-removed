@@ -1451,20 +1451,6 @@ struct arena_t {
       MOZ_REQUIRES(mLock);
 #endif
 
-  enum PurgeResult {
-    
-    Done,
-
-    
-    Continue,
-
-    
-    Busy,
-
-    
-    Dying,
-  };
-
   
   
   
@@ -1481,7 +1467,7 @@ struct arena_t {
   
   
   
-  PurgeResult Purge(PurgeCondition aCond, PurgeStats& aStats)
+  ArenaPurgeResult Purge(PurgeCondition aCond, PurgeStats& aStats)
       MOZ_EXCLUDES(mLock);
 
   
@@ -1495,10 +1481,9 @@ struct arena_t {
   
   
   
-  PurgeResult PurgeLoop(PurgeCondition aCond, const char* aCaller,
-                        uint32_t aReuseGraceMS = 0,
-                        Maybe<std::function<bool()>> aKeepGoing = Nothing())
-      MOZ_EXCLUDES(mLock);
+  ArenaPurgeResult PurgeLoop(
+      PurgeCondition aCond, const char* aCaller, uint32_t aReuseGraceMS = 0,
+      Maybe<std::function<bool()>> aKeepGoing = Nothing()) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
    private:
@@ -3553,7 +3538,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
+ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
   arena_chunk_t* chunk;
 
   
@@ -3577,7 +3562,7 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 
     if (!ShouldContinuePurge(aCond)) {
       mIsPurgePending = false;
-      return Done;
+      return ReachedThreshold;
     }
 
     
@@ -3654,7 +3639,7 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       }
       
       
-      return continue_purge_arena ? Continue : Done;
+      return continue_purge_arena ? NotDone : ReachedThreshold;
     }
 
 #ifdef MALLOC_DECOMMIT
@@ -3703,12 +3688,12 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     purged_once = true;
   }
 
-  return continue_purge_arena ? Continue : Done;
+  return continue_purge_arena ? NotDone : ReachedThreshold;
 }
 
-arena_t::PurgeResult arena_t::PurgeLoop(
-    PurgeCondition aCond, const char* aCaller, uint32_t aReuseGraceMS,
-    Maybe<std::function<bool()>> aKeepGoing) {
+ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
+                                    uint32_t aReuseGraceMS,
+                                    Maybe<std::function<bool()>> aKeepGoing) {
   PurgeStats purge_stats(mId, mLabel, aCaller);
 
 #ifdef MOZJEMALLOC_PROFILING_CALLBACKS
@@ -3723,12 +3708,12 @@ arena_t::PurgeResult arena_t::PurgeLoop(
 
   uint64_t reuseGraceNS = (uint64_t)aReuseGraceMS * 1000 * 1000;
   uint64_t now = aReuseGraceMS ? 0 : GetTimestampNS();
-  PurgeResult pr;
+  ArenaPurgeResult pr;
   do {
     pr = Purge(aCond, purge_stats);
     now = aReuseGraceMS ? 0 : GetTimestampNS();
   } while (
-      pr == Continue &&
+      pr == NotDone &&
       (!aReuseGraceMS || (now - mLastSignificantReuseNS >= reuseGraceNS)) &&
       (!aKeepGoing || (*aKeepGoing)()));
 
@@ -4891,11 +4876,11 @@ inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction,
       gArenas.AddToOutstandingPurges(this);
       break;
     case purge_action_t::PurgeNow: {
-      PurgeResult pr = PurgeLoop(PurgeIfThreshold, aCaller);
+      ArenaPurgeResult pr = PurgeLoop(PurgeIfThreshold, aCaller);
       
       
       
-      MOZ_RELEASE_ASSERT(pr != arena_t::PurgeResult::Dying);
+      MOZ_RELEASE_ASSERT(pr != ArenaPurgeResult::Dying);
       break;
     }
     case purge_action_t::None:
@@ -6280,10 +6265,10 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
     mOutstandingPurges.remove(found);
   }
 
-  arena_t::PurgeResult pr;
-  pr = found->PurgeLoop(PurgeIfThreshold, __func__, aReuseGraceMS, aKeepGoing);
+  ArenaPurgeResult pr =
+      found->PurgeLoop(PurgeIfThreshold, __func__, aReuseGraceMS, aKeepGoing);
 
-  if (pr == arena_t::PurgeResult::Continue) {
+  if (pr == ArenaPurgeResult::NotDone) {
     
     
     
@@ -6300,7 +6285,7 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
       
       mOutstandingPurges.pushFront(found);
     }
-  } else if (pr == arena_t::PurgeResult::Dying) {
+  } else if (pr == ArenaPurgeResult::Dying) {
     delete found;
   }
 
@@ -6318,12 +6303,12 @@ void ArenaCollection::MayPurgeAll(PurgeCondition aCond, const char* aCaller) {
     
     if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
       RemoveFromOutstandingPurges(arena);
-      arena_t::PurgeResult pr = arena->PurgeLoop(aCond, aCaller);
+      ArenaPurgeResult pr = arena->PurgeLoop(aCond, aCaller);
 
       
       
       
-      MOZ_RELEASE_ASSERT(pr != arena_t::PurgeResult::Dying);
+      MOZ_RELEASE_ASSERT(pr != ArenaPurgeResult::Dying);
     }
   }
 }
