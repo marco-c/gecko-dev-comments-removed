@@ -75,6 +75,9 @@ namespace mozilla {
 
 extern already_AddRefed<PlatformDecoderModule> CreateNullDecoderModule();
 
+MOZ_RUNINIT static StaticDataMutex<StaticRefPtr<PlatformDecoderModule>>
+    sForcedPDM("Forced PDM");
+
 class PDMInitializer final {
  public:
   
@@ -485,7 +488,20 @@ DecodeSupportSet PDMFactory::Supports(
   return current->Supports(aParams, aDiagnostics);
 }
 
+
+void PDMFactory::ForcePDM(PlatformDecoderModule* aPDM) {
+  auto forced = sForcedPDM.Lock();
+  *forced = aPDM;
+}
+
 void PDMFactory::CreatePDMs() {
+  {
+    auto forced = sForcedPDM.Lock();
+    if (*forced) {
+      StartupPDM(do_AddRef(*forced));
+      return;
+    }
+  }
   if (StaticPrefs::media_use_blank_decoder()) {
     StartupPDM(BlankDecoderModule::Create());
     
