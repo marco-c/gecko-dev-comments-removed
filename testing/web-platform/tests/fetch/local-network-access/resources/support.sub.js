@@ -175,7 +175,6 @@ const FetchTestResult = {
 };
 
 
-
 function checkTestResult(actual, expected) {
   assert_equals(actual.error, expected.error, "error mismatch");
   assert_equals(actual.ok, expected.ok, "response ok mismatch");
