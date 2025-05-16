@@ -264,13 +264,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CloseEvent", insecureContext: true },
   
-  {
-    name: "CloseWatcher",
-    insecureContext: true,
-    nightly: true,
-    android: false,
-  },
-  
   { name: "Comment", insecureContext: true },
   
   { name: "CompositionEvent", insecureContext: true },
