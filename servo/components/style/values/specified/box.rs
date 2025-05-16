@@ -1549,9 +1549,6 @@ pub enum Appearance {
     SpinnerDownbutton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Splitter,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Statusbar,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
