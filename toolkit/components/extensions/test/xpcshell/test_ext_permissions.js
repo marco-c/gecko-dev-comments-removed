@@ -16,10 +16,9 @@ const WITH_INSTALL_PROMPT = [
 const NO_INSTALL_PROMPT = [["extensions.originControls.grantByDefault", false]];
 
 
-
 Services.prefs.setBoolPref(
   "extensions.dataCollectionPermissions.enabled",
-  false
+  true
 );
 
 
@@ -363,6 +362,7 @@ async function test_permissions({
   let allPermissions = {
     permissions: [...REQUIRED_PERMISSIONS, ...OPTIONAL_PERMISSIONS],
     origins: [...REQUIRED_ORIGINS_EXPECTED, ...OPTIONAL_ORIGINS_NORMALIZED],
+    data_collection: [],
   };
 
   result = await call("getAll");
@@ -406,6 +406,7 @@ async function test_permissions({
   let perms = {
     permissions: REQUIRED_PERMISSIONS,
     origins: [...REQUIRED_ORIGINS_EXPECTED, ...OPTIONAL_ORIGINS_NORMALIZED],
+    data_collection: [],
   };
 
   result = await call("getAll");
@@ -579,7 +580,10 @@ add_task(async function test_startup() {
 
   async function checkPermissions(extension, permissions) {
     perms = await extension.awaitMessage("perms");
-    let expect = Object.assign({ permissions: [], origins: [] }, permissions);
+    let expect = Object.assign(
+      { permissions: [], origins: [], data_collection: [] },
+      permissions
+    );
     deepEqual(perms, expect, "Extension got correct permissions on startup");
   }
 

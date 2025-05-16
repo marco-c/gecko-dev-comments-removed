@@ -72,11 +72,7 @@ pref("extensions.langpacks.signatures.required", true);
 pref("xpinstall.signatures.required", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.dataCollectionPermissions.enabled", true);
-#else
-  pref("extensions.dataCollectionPermissions.enabled", false);
-#endif
+pref("extensions.dataCollectionPermissions.enabled", true);
 
 
 pref("browser.dictionaries.download.url", "https://addons.mozilla.org/%LOCALE%/firefox/language-tools/");
