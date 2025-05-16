@@ -288,23 +288,65 @@ impl<'a, E: TElement + 'a> Default for ToInvalidate<'a, E> {
     }
 }
 
-fn dependency_selectors_match(a: &Dependency, b: &Dependency) -> bool {
+fn dependencies_can_collapse(a: &Dependency, b: &Dependency) -> bool {
+    
+    
+    
+
+    
     if a.invalidation_kind() != b.invalidation_kind() {
         return false;
     }
+
+    
     if SelectorKey::new(&a.selector) != SelectorKey::new(&b.selector) {
         return false;
     }
+
+    
+    
     let mut a_parent = a.parent.as_ref();
     let mut b_parent = b.parent.as_ref();
     while let (Some(a_p), Some(b_p)) = (a_parent, b_parent) {
+        
+        
+        
+        
         if SelectorKey::new(&a_p.selector) != SelectorKey::new(&b_p.selector) {
             return false;
         }
         a_parent = a_p.parent.as_ref();
         b_parent = b_p.parent.as_ref();
     }
-    a_parent.is_none() && b_parent.is_none()
+    if a_parent.is_some() || b_parent.is_some() {
+        return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let mut a_iter = a.selector.iter_from(a.selector_offset);
+    let mut b_iter = b.selector.iter_from(b.selector_offset);
+    loop {
+        let a_component = a_iter.next();
+        let b_component = b_iter.next();
+
+        if a_component != b_component {
+            return false;
+        }
+        let Some(component) = a_component else { return true };
+        if component.has_indexed_selector_in_subject() {
+            
+            return false;
+        }
+    }
 }
 
 impl<'a, E> RelativeSelectorDependencyCollector<'a, E>
@@ -329,9 +371,10 @@ where
         match self
             .invalidations
             .iter_mut()
-            .find(|(_, _, d)| dependency_selectors_match(dependency, d))
+            .find(|(_, _, d)| dependencies_can_collapse(dependency, d))
         {
             Some((e, h, d)) => {
+                
                 
                 if d.selector_offset > dependency.selector_offset {
                     (*e, *h, *d) = (element, host, dependency);
