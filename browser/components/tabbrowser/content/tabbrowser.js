@@ -6243,8 +6243,17 @@
         this.selectedTab.focus();
       }
 
+      
+      
+      
+      
+      
+      let reverseEvents =
+        tabs.length > 1 && tabs[0]._tPos > previousTabStates[0].tabIndex;
+
       for (let i = 0; i < tabs.length; i++) {
-        let tab = tabs[i];
+        let ii = reverseEvents ? tabs.length - i - 1 : i;
+        let tab = tabs[ii];
         if (tab.selected) {
           this.tabContainer._handleTabSelect(true);
         }
@@ -6255,7 +6264,7 @@
         let currentTabState = this.#getTabMoveState(tab);
         this.#notifyOnTabMove(
           tab,
-          previousTabStates[i],
+          previousTabStates[ii],
           currentTabState,
           metricsContext
         );
