@@ -308,9 +308,6 @@ function defaultProfilePreferences(
     'extensions.installDistroAddons': false,
 
     
-    'extensions.screenshots.disabled': true,
-
-    
     'extensions.update.enabled': false,
 
     
@@ -368,6 +365,9 @@ function defaultProfilePreferences(
     
     
     'remote.enabled': true,
+
+    
+    'screenshots.browser.component.enabled': false,
 
     
     'security.certerrors.mitm.priming.enabled': false,

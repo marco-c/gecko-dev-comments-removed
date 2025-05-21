@@ -2727,9 +2727,6 @@ pref("browser.sessionstore.restore_tabs_lazily", true);
 pref("browser.suppress_first_window_animation", true);
 
 
-pref("extensions.screenshots.disabled", false);
-
-
 pref("screenshots.browser.component.enabled", true);
 
 

@@ -7,7 +7,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
 });
 
-const PREF_DISABLE_FX_SCREENSHOTS = "extensions.screenshots.disabled";
+const PREF_DISABLE_FX_SCREENSHOTS = "screenshots.browser.component.enabled";
 
 async function checkScreenshots(shouldBeEnabled) {
   let menu = document.getElementById("contentAreaContextMenu");
@@ -36,12 +36,9 @@ add_task(async function test_disable_firefox_screenshots() {
   
   
   
-  
-  
 
-  is(
-    Services.prefs.getBoolPref(PREF_DISABLE_FX_SCREENSHOTS),
-    true,
+  ok(
+    !Services.prefs.getBoolPref(PREF_DISABLE_FX_SCREENSHOTS),
     "Screenshots pref is disabled"
   );
 
