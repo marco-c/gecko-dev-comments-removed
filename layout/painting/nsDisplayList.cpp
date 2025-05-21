@@ -7224,14 +7224,17 @@ float nsDisplayTransform::GetHitDepthAtPoint(nsDisplayListBuilder* aBuilder,
 
   Matrix4x4 inverse = matrix;
   inverse.Invert();
-  Point4D point =
-      inverse.ProjectPoint(Point(NSAppUnitsToFloatPixels(aPoint.x, factor),
-                                 NSAppUnitsToFloatPixels(aPoint.y, factor)));
 
-  Point point2d = point.As2DPoint();
-
-  Point3D transformed = matrix.TransformPoint(Point3D(point2d.x, point2d.y, 0));
-  return transformed.z;
+  
+  
+  
+  
+  
+  
+  return -(NSAppUnitsToFloatPixels(aPoint.x, factor) * inverse._13 +
+           NSAppUnitsToFloatPixels(aPoint.y, factor) * inverse._23 +
+           inverse._43) /
+         inverse._33;
 }
 
 
