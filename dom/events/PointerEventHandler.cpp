@@ -430,7 +430,7 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
     return;
   }
 
-  const RefPtr<Element> overrideElement = captureInfo->mOverrideElement;
+  RefPtr<Element> overrideElement = captureInfo->mOverrideElement;
   RefPtr<Element> pendingElement = captureInfo->mPendingElement;
 
   
@@ -438,36 +438,15 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
   captureInfo->mOverrideElement = captureInfo->mPendingElement;
   if (captureInfo->Empty()) {
     sPointerCaptureList->Remove(aEvent->pointerId);
-    captureInfo = nullptr;
   }
 
   if (overrideElement) {
     DispatchGotOrLostPointerCaptureEvent( false, aEvent,
                                          overrideElement);
-    
-    
-    
-    if (pendingElement && !pendingElement->IsInComposedDoc()) {
-      
-      
-      
-      if ((captureInfo = GetPointerCaptureInfo(aEvent->pointerId)) &&
-          captureInfo->mOverrideElement == pendingElement) {
-        captureInfo->mOverrideElement = nullptr;
-        if (captureInfo->Empty()) {
-          sPointerCaptureList->Remove(aEvent->pointerId);
-          captureInfo = nullptr;
-        }
-      }
-      pendingElement = nullptr;
-    } else {
-      captureInfo = nullptr;  
-    }
   }
   if (pendingElement) {
     DispatchGotOrLostPointerCaptureEvent( true, aEvent,
                                          pendingElement);
-    captureInfo = nullptr;  
   }
 
   
@@ -648,10 +627,9 @@ void PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp() {
 
 
 void PointerEventHandler::ReleaseIfCaptureByDescendant(nsIContent* aContent) {
-  MOZ_ASSERT(aContent);
   
   
-  if (!sPointerCaptureList->IsEmpty() && aContent->IsElement()) {
+  if (!sPointerCaptureList->IsEmpty()) {
     for (const auto& entry : *sPointerCaptureList) {
       PointerCaptureInfo* data = entry.GetWeak();
       if (data && data->mPendingElement &&
@@ -1101,12 +1079,8 @@ bool PointerEventHandler::HasActiveTouchPointer() {
 void PointerEventHandler::DispatchGotOrLostPointerCaptureEvent(
     bool aIsGotCapture, const WidgetPointerEvent* aPointerEvent,
     Element* aCaptureTarget) {
-  
-  if (NS_WARN_IF(aIsGotCapture && !aCaptureTarget->IsInComposedDoc())) {
-    return;
-  }
-  const OwningNonNull<Document> targetDoc = *aCaptureTarget->OwnerDoc();
-  const RefPtr<PresShell> presShell = targetDoc->GetPresShell();
+  Document* targetDoc = aCaptureTarget->OwnerDoc();
+  RefPtr<PresShell> presShell = targetDoc->GetPresShell();
   if (NS_WARN_IF(!presShell || presShell->IsDestroying())) {
     return;
   }
