@@ -39,7 +39,7 @@ add_task(async function run_test() {
     false, 
     false, 
     { partitionKey: "(https,example.com)" },
-    Ci.nsICookie.SAMESITE_NONE,
+    Ci.nsICookie.SAMESITE_UNSET,
     Ci.nsICookie.SCHEME_UNSET,
     false 
   );
@@ -59,7 +59,7 @@ add_task(async function run_test() {
     false, 
     false, 
     { partitionKey: "(https,example.com)" },
-    Ci.nsICookie.SAMESITE_NONE,
+    Ci.nsICookie.SAMESITE_UNSET,
     Ci.nsICookie.SCHEME_UNSET,
     true 
   );
@@ -79,7 +79,7 @@ add_task(async function run_test() {
     false, 
     false, 
     {},
-    Ci.nsICookie.SAMESITE_NONE,
+    Ci.nsICookie.SAMESITE_UNSET,
     Ci.nsICookie.SCHEME_UNSET,
     false 
   );
@@ -99,7 +99,7 @@ add_task(async function run_test() {
     false, 
     false, 
     { partitionKey: "(https,example.org)" },
-    Ci.nsICookie.SAMESITE_NONE,
+    Ci.nsICookie.SAMESITE_UNSET,
     Ci.nsICookie.SCHEME_UNSET,
     false 
   );
@@ -119,7 +119,7 @@ add_task(async function run_test() {
     false, 
     false, 
     { partitionKey: "(https,example.org)" },
-    Ci.nsICookie.SAMESITE_NONE,
+    Ci.nsICookie.SAMESITE_UNSET,
     Ci.nsICookie.SCHEME_UNSET,
     true 
   );
