@@ -143,8 +143,8 @@ const contextOptions = kContextOptionsForVariant[variant];
 const assertDescriptorsEquals = (outputOperand, expected) => {
   const dataType =
       expected.castedType ? expected.castedType : expected.dataType;
-  assert_true(
-      outputOperand.dataType === dataType,
+  assert_equals(
+      outputOperand.dataType, dataType,
       'actual output dataType should be equal to expected output dataType');
   assert_array_equals(
       outputOperand.shape, expected.shape,
@@ -292,33 +292,25 @@ const assert_array_approx_equals_ulp = (actual, expected, nulp, dataType, descri
   
 
 
-  assert(
-      typeof nulp === 'number', `unexpected type for nulp: ${typeof nulp}`);
-  assert_true(
-      actual.length === expected.length,
-      `assert_array_approx_equals_ulp: ${description} lengths differ, ` +
-          `expected ${expected.length} but got ${actual.length}`);
-  let distance;
+  assert_equals(
+      actual.length, expected.length,
+      `assert_array_approx_equals_ulp: ${description} lengths differ`);
   for (let i = 0; i < actual.length; i++) {
     if (actual[i] === expected[i]) {
       continue;
     } else {
-      distance = ulpDistance(actual[i], expected[i], dataType);
+      let distance = ulpDistance(actual[i], expected[i], dataType);
 
       
-      
-      
-      if (distance > nulp) {
-        assert_true(
-            false,
+      nulp = typeof distance === 'bigint' ? BigInt(nulp) : Number(nulp);
+
+      assert_less_than_equal(distance, nulp,
             `assert_array_approx_equals_ulp: ${description} actual ` +
                 `${
                     dataType === 'float16' ?
                         float16AsUint16ToNumber(actual[i]) :
                         actual[i]} should be close enough to expected ` +
-                `${expected[i]} by the acceptable ${nulp} ULP distance, ` +
-                `but they have ${distance} ULP distance`);
-      }
+                `${expected[i]} by ULP distance:`);
     }
   }
 };
