@@ -79,8 +79,17 @@ class PointerEventHandler final {
   static bool IsPointerEventImplicitCaptureForTouchEnabled();
 
   
-  
-  [[nodiscard]] static bool ShouldDispatchClickEventOnCapturingElement();
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool ShouldDispatchClickEventOnCapturingElement(
+      const WidgetGUIEvent* aSourceEvent = nullptr);
 
   
   

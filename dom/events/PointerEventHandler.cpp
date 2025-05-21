@@ -80,9 +80,30 @@ bool PointerEventHandler::IsPointerEventImplicitCaptureForTouchEnabled() {
 }
 
 
-bool PointerEventHandler::ShouldDispatchClickEventOnCapturingElement() {
-  return StaticPrefs::
-      dom_w3c_pointer_events_dispatch_click_on_pointer_capturing_element();
+bool PointerEventHandler::ShouldDispatchClickEventOnCapturingElement(
+    const WidgetGUIEvent* aSourceEvent ) {
+  if (!StaticPrefs::
+          dom_w3c_pointer_events_dispatch_click_on_pointer_capturing_element()) {
+    return false;
+  }
+  if (!aSourceEvent ||
+      !StaticPrefs::
+          dom_w3c_pointer_events_dispatch_click_on_pointer_capturing_element_except_touch()) {
+    return true;
+  }
+  MOZ_ASSERT(aSourceEvent->mMessage == eMouseUp ||
+             aSourceEvent->mMessage == ePointerUp ||
+             aSourceEvent->mMessage == eTouchEnd);
+  
+  
+  
+  
+  if (aSourceEvent->mClass == eTouchEventClass) {
+    return false;
+  }
+  const WidgetMouseEvent* const sourceMouseEvent = aSourceEvent->AsMouseEvent();
+  return sourceMouseEvent &&
+         sourceMouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
 }
 
 

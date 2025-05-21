@@ -6035,7 +6035,8 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
       
       
       
-      if (PointerEventHandler::ShouldDispatchClickEventOnCapturingElement()) {
+      if (PointerEventHandler::ShouldDispatchClickEventOnCapturingElement(
+              aEvent)) {
         const RefPtr<Element> capturingElementAtLastPointerUp =
             PointerEventHandler::GetPointerCapturingElementAtLastPointerUp();
         if (capturingElementAtLastPointerUp &&
