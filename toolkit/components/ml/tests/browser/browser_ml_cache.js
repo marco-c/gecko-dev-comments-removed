@@ -1671,7 +1671,7 @@ add_task(async function test_DeleteFileByEngines() {
   );
 
   
-  await cache.deleteFilesByEngine(engineOne);
+  await cache.deleteFilesByEngine({ engineId: engineOne });
 
   retrievedData = await cache.getFile({
     engineId: engineTwo,
@@ -1686,7 +1686,7 @@ add_task(async function test_DeleteFileByEngines() {
   );
 
   
-  await cache.deleteFilesByEngine(engineTwo);
+  await cache.deleteFilesByEngine({ engineId: engineTwo });
 
   
   const dataAfterDelete = await cache.getFile({
@@ -1728,7 +1728,7 @@ add_task(async function test_ModelHub_DeleteFileByEngines() {
     headers: null,
   });
 
-  await hub.deleteFilesByEngine(engineOne);
+  await hub.deleteFilesByEngine({ engineId: engineOne });
 
   
   const dataAfterDelete = await cache.getFile({
