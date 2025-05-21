@@ -1918,7 +1918,15 @@ HelperThreadTask* GlobalHelperThreadState::maybeGetWasmPartialTier2CompileTask(
     return nullptr;
   }
 
-  return wasmPartialTier2CompileWorklist(lock).popCopy();
+  
+  
+  
+  wasm::PartialTier2CompileTaskPtrVector& worklist =
+      wasmPartialTier2CompileWorklist(lock);
+  MOZ_ASSERT(!worklist.empty());
+  HelperThreadTask* task = worklist[0];
+  worklist.erase(worklist.begin());
+  return task;
 }
 
 bool GlobalHelperThreadState::submitTask(
@@ -1929,6 +1937,10 @@ bool GlobalHelperThreadState::submitTask(
 
   wasm::PartialTier2CompileTaskPtrVector& workList =
       wasmPartialTier2CompileWorklist(lock);
+
+  
+  
+  
   if (!workList.append(task.get())) {
     return false;
   }
