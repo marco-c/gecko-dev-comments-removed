@@ -83,7 +83,7 @@ class MOZ_IS_REFPTR RefPtr {
 
   
 
-  RefPtr()
+  constexpr RefPtr()
       : mRawPtr(nullptr)
   
   {}
