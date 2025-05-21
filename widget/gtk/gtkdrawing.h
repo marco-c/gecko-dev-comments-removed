@@ -81,16 +81,6 @@ struct CSDWindowDecorationSize {
 };
 
 
-enum GtkTabFlags {
-  
-  MOZ_GTK_TAB_MARGIN_MASK = 0xFF,
-  
-  MOZ_GTK_TAB_FIRST = 1 << 9,
-  
-  MOZ_GTK_TAB_SELECTED = 1 << 10
-};
-
-
 #define MOZ_GTK_SUCCESS 0
 #define MOZ_GTK_UNKNOWN_WIDGET -1
 #define MOZ_GTK_UNSAFE_THEME -2
@@ -111,8 +101,6 @@ enum WidgetNodeType : int {
   MOZ_GTK_SCROLLBAR_THUMB_VERTICAL,
 
   
-  MOZ_GTK_EXPANDER,
-  
 
   MOZ_GTK_TEXT_VIEW,
   
@@ -131,19 +119,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_FRAME_BORDER,
   
-  MOZ_GTK_RESIZER,
-  
-  MOZ_GTK_NOTEBOOK,
-  
-
-  MOZ_GTK_NOTEBOOK_HEADER,
-  
-  MOZ_GTK_TAB_TOP,
-  
-  MOZ_GTK_TAB_BOTTOM,
-  
-  MOZ_GTK_TABPANELS,
-  
   MOZ_GTK_TREEVIEW,
   
   MOZ_GTK_TREE_HEADER_CELL,
@@ -151,8 +126,6 @@ enum WidgetNodeType : int {
   MOZ_GTK_MENUPOPUP,
   
   MOZ_GTK_MENUBAR,
-  
-  MOZ_GTK_TOOLBARBUTTON_ARROW,
   
   MOZ_GTK_MENUITEM,
   
@@ -242,94 +215,6 @@ gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
 gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
                                gint* right, gint* bottom,
                                GtkTextDirection direction);
-
-
-
-
-
-
-
-
-
-
-
-gint moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom,
-                            GtkTextDirection direction, GtkTabFlags flags,
-                            WidgetNodeType widget);
-
-
-
-
-
-
-
-
-
-
-
-
-gint moz_gtk_button_get_default_overflow(gint* border_top, gint* border_left,
-                                         gint* border_bottom,
-                                         gint* border_right);
-
-
-
-
-
-
-
-void moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
-                               gint* scale_height);
-
-
-
-
-
-
-
-
-
-gint moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length,
-                                    gint* thumb_height);
-
-
-
-
-
-
-
-
-gint moz_gtk_get_tab_scroll_arrow_size(gint* width, gint* height);
-
-
-
-
-
-
-void moz_gtk_get_entry_min_height(gint* min_content_height,
-                                  gint* border_padding_height);
-
-
-
-
-
-
-
-gint moz_gtk_get_toolbar_separator_width(gint* size);
-
-
-
-
-
-
-
-
-gint moz_gtk_splitter_get_metrics(gint orientation, gint* size);
-
-
-
-
-gint moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
 
 gint moz_gtk_get_titlebar_button_spacing();
 
