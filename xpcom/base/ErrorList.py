@@ -89,6 +89,7 @@ modules["ERRORRESULT"] = Mod(43)
 
 modules["WIN32"] = Mod(44)
 modules["WDBA"] = Mod(45)
+modules["DOM_QM"] = Mod(46)
 
 
 
@@ -1237,6 +1238,11 @@ with modules["WDBA"]:
     errors["NS_ERROR_WDBA_REJECTED"] = FAILURE(3)
     errors["NS_ERROR_WDBA_BUILD"] = FAILURE(4)
 
+
+
+
+with modules["DOM_QM"]:
+    errors["NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED"] = FAILURE(1)
 
 
 

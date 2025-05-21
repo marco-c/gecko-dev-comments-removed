@@ -413,6 +413,17 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
   if (maybeRv) {
     nsresult rv = *maybeRv;
 
+    
+    
+    
+    
+    
+    
+    
+    if (rv == NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED) {
+      return;
+    }
+
     rvCode = nsPrintfCString("0x%" PRIX32, static_cast<uint32_t>(rv));
 
     

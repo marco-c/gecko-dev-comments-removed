@@ -2379,9 +2379,17 @@ nsresult InitializeTemporaryClientOp::DoDirectoryWork(
   QM_TRY(MOZ_TO_RESULT(aQuotaManager.IsTemporaryStorageInitializedInternal()),
          NS_ERROR_FAILURE);
 
+  
+  
+  
+  
+  
+  
   QM_TRY(MOZ_TO_RESULT(aQuotaManager.IsTemporaryOriginInitializedInternal(
-             mClientMetadata)),
-         NS_ERROR_FAILURE);
+                           mClientMetadata))
+             .mapErr([](const nsresult) {
+               return NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED;
+             }));
 
   QM_TRY_UNWRAP(mCreated,
                 (aQuotaManager
