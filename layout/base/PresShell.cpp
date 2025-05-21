@@ -7069,8 +7069,6 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       break;
     }
     case ePointerMove:
-    case ePointerRawUpdate:
-    case eMouseRawUpdate:
       if (!aEvent->AsMouseEvent()->IsReal()) {
         break;
       }
@@ -7155,7 +7153,6 @@ PresShell* PresShell::GetShellForEventTarget(nsIFrame* aFrame,
 PresShell* PresShell::GetShellForTouchEvent(WidgetGUIEvent* aEvent) {
   switch (aEvent->mMessage) {
     case eTouchMove:
-    case eTouchRawUpdate:
     case eTouchCancel:
     case eTouchEnd: {
       
@@ -7307,7 +7304,6 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
   if (mPresContext) {
     switch (aGUIEvent->mMessage) {
       case eMouseMove:
-      case eMouseRawUpdate:
         if (!aGUIEvent->AsMouseEvent()->IsReal()) {
           break;
         }
@@ -7352,122 +7348,9 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!aDontRetargetEvents &&
-      StaticPrefs::dom_event_pointer_rawupdate_enabled()) {
-    nsresult rv = EnsurePrecedingPointerRawUpdate(
-        weakFrameForPresShell, *aGUIEvent, aDontRetargetEvents);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (!CanHandleUserInputEvents(aGUIEvent)) {
-      return NS_OK;
-    }
-  }
-
   EventHandler eventHandler(*this);
   return eventHandler.HandleEvent(weakFrameForPresShell, aGUIEvent,
                                   aDontRetargetEvents, aEventStatus);
-}
-
-nsresult PresShell::EnsurePrecedingPointerRawUpdate(
-    AutoWeakFrame& aWeakFrameForPresShell, const WidgetGUIEvent& aSourceEvent,
-    bool aDontRetargetEvents) {
-  MOZ_ASSERT(StaticPrefs::dom_event_pointer_rawupdate_enabled());
-  if (PointerEventHandler::ToPointerEventMessage(&aSourceEvent) !=
-      ePointerMove) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT(aSourceEvent.mMessage != eMouseRawUpdate);
-  MOZ_ASSERT(aSourceEvent.mMessage != eTouchRawUpdate);
-
-  
-  
-  if (auto* const browserChild = BrowserChild::GetFrom(this)) {
-    if (!browserChild->HasPointerRawUpdateEventListeners()) {
-      return NS_OK;
-    }
-  }
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  static bool sDispatchingRawUpdateEventFromHere = false;
-  MOZ_DIAGNOSTIC_ASSERT(
-      !sDispatchingRawUpdateEventFromHere,
-      "Dispatching ePointerRawUpdate should not be done recursively");
-  AutoRestore<bool> restoreDispathingFlag(sDispatchingRawUpdateEventFromHere);
-  sDispatchingRawUpdateEventFromHere = true;
-#endif  
-
-  if (const WidgetMouseEvent* const mouseEvent = aSourceEvent.AsMouseEvent()) {
-    
-    
-    
-    
-    
-    
-    if (mouseEvent->IsSynthesized() || !mouseEvent->convertToPointer ||
-        !mouseEvent->convertToPointerRawUpdate) {
-      return NS_OK;
-    }
-    WidgetMouseEvent mouseRawUpdateEvent(*mouseEvent);
-    mouseRawUpdateEvent.mMessage = eMouseRawUpdate;
-    mouseRawUpdateEvent.mCoalescedWidgetEvents = nullptr;
-    nsEventStatus rawUpdateStatus = nsEventStatus_eIgnore;
-    EventHandler eventHandler(*this);
-    return eventHandler.HandleEvent(aWeakFrameForPresShell,
-                                    &mouseRawUpdateEvent, aDontRetargetEvents,
-                                    &rawUpdateStatus);
-  }
-  if (const WidgetTouchEvent* const touchEvent = aSourceEvent.AsTouchEvent()) {
-    WidgetTouchEvent touchRawUpdate(*touchEvent,
-                                    WidgetTouchEvent::CloneTouches::No);
-    touchRawUpdate.mMessage = eTouchRawUpdate;
-    touchRawUpdate.mTouches.Clear();
-    for (const RefPtr<Touch>& touch : touchEvent->mTouches) {
-      
-      
-      
-      
-      
-      
-      
-      if (!touch->convertToPointerRawUpdate ||
-          !TouchManager::ShouldConvertTouchToPointer(touch, &touchRawUpdate)) {
-        continue;
-      }
-      RefPtr<Touch> newTouch = new Touch(*touch);
-      newTouch->mMessage = eTouchRawUpdate;
-      newTouch->mCoalescedWidgetEvents = nullptr;
-      touchRawUpdate.mTouches.AppendElement(std::move(newTouch));
-    }
-    nsEventStatus rawUpdateStatus = nsEventStatus_eIgnore;
-    if (touchRawUpdate.mTouches.IsEmpty()) {
-      return NS_OK;
-    }
-    EventHandler eventHandler(*this);
-    return eventHandler.HandleEvent(aWeakFrameForPresShell, &touchRawUpdate,
-                                    aDontRetargetEvents, &rawUpdateStatus);
-  }
-  MOZ_ASSERT_UNREACHABLE("Handle the event to dispatch ePointerRawUpdate");
-  return NS_OK;
 }
 
 bool PresShell::EventHandler::UpdateFocusSequenceNumber(
@@ -7602,24 +7485,6 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
     return NS_OK;
   }
 
-  
-  
-  
-  if (aGUIEvent->mMessage == eMouseRawUpdate ||
-      aGUIEvent->mMessage == eTouchRawUpdate) {
-    EventTargetDataWithCapture eventTargetData =
-        EventTargetDataWithCapture::QueryEventTargetUsingCoordinates(
-            *this, aWeakFrameForPresShell,
-            EventTargetDataWithCapture::Query::PendingState, aGUIEvent);
-    if (!PointerEventHandler::NeedToDispatchPointerRawUpdate(
-            eventTargetData.GetDocument())) {
-      return NS_OK;
-    }
-    
-    
-    
-  }
-
   EventTargetDataWithCapture eventTargetData =
       EventTargetDataWithCapture::QueryEventTargetUsingCoordinates(
           *this, aWeakFrameForPresShell,
@@ -7744,12 +7609,6 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
     if (GetDocument() && aGUIEvent->mClass == eTouchEventClass) {
       PointerLockManager::Unlock("TouchEvent");
     }
-    
-    
-    
-    
-    
-    
     aEventHandler.MaybeFlushThrottledStyles(aWeakFrameForPresShell);
     
     
@@ -8055,15 +7914,11 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
       aPointerCapturingElement, aGUIEvent, aDontRetargetEvents, aEventStatus,
       getter_AddRefs(mouseOrTouchEventTargetContent));
 
-  const bool maybeCallerCanHandleEvent =
-      aGUIEvent->mMessage != eMouseRawUpdate &&
-      aGUIEvent->mMessage != eTouchRawUpdate;
-
   
   
   if (weakTargetFrame.IsAlive() && weakFrame.IsAlive()) {
     aEventTargetData->UpdateTouchEventTarget(aGUIEvent);
-    return maybeCallerCanHandleEvent;
+    return true;
   }
 
   presShell->FlushPendingNotifications(FlushType::Layout);
@@ -8101,7 +7956,7 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
   }
 
   aEventTargetData->UpdateTouchEventTarget(aGUIEvent);
-  return maybeCallerCanHandleEvent;
+  return true;
 }
 
 
@@ -8520,16 +8375,6 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
     nsIFrame* aFrameToHandleEvent, WidgetGUIEvent* aGUIEvent) {
   MOZ_ASSERT(aFrameToHandleEvent);
   MOZ_ASSERT(aGUIEvent);
-
-  
-  
-  
-  
-  if (aGUIEvent->mMessage == eMouseRawUpdate ||
-      aGUIEvent->mMessage == eTouchRawUpdate ||
-      aGUIEvent->mMessage == ePointerRawUpdate) {
-    return false;
-  }
 
   if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
     return false;
@@ -9232,11 +9077,6 @@ bool PresShell::EventHandler::PrepareToDispatchEvent(
       MaybeHandleKeyboardEventBeforeDispatch(keyboardEvent);
       return true;
     }
-    case eMouseRawUpdate:
-      MOZ_ASSERT_UNREACHABLE(
-          "eMouseRawUpdate shouldn't be handled as a DOM event");
-      return false;
-
     case eMouseMove: {
       bool allowCapture = EventStateManager::GetActiveEventStateManager() &&
                           GetPresContext() &&
@@ -9291,10 +9131,6 @@ bool PresShell::EventHandler::PrepareToDispatchEvent(
       return mPresShell->mTouchManager.PreHandleEvent(
           aEvent, aEventStatus, *aTouchIsNew,
           mPresShell->mCurrentEventTarget.mContent);
-    case eTouchRawUpdate:
-      MOZ_ASSERT_UNREACHABLE(
-          "eTouchRawUpdate shouldn't be handled as a DOM event");
-      return false;
     default:
       return true;
   }
@@ -9336,10 +9172,6 @@ void PresShell::EventHandler::FinalizeHandlingEvent(
       
       PresShell::ReleaseCapturingContent();
       break;
-    case eMouseRawUpdate:
-      MOZ_ASSERT_UNREACHABLE(
-          "eMouseRawUpdate shouldn't be handled as a DOM event");
-      break;
     case eMouseMove:
       PresShell::AllowMouseCapture(false);
       break;
@@ -9369,10 +9201,6 @@ void PresShell::EventHandler::FinalizeHandlingEvent(
       mPresShell->mTouchManager.PostHandleEvent(aEvent, aStatus);
       break;
     }
-    case eTouchRawUpdate:
-      MOZ_ASSERT_UNREACHABLE(
-          "eTouchRawUpdate shouldn't be handled as a DOM event");
-      break;
     default:
       break;
   }
@@ -9485,10 +9313,6 @@ void PresShell::EventHandler::RecordEventPreparationPerformance(
           nsPresContext::InteractionType::ClickInteraction, aEvent->mTimeStamp);
       return;
 
-    case eMouseRawUpdate:
-      MOZ_ASSERT_UNREACHABLE(
-          "eMouseRawUpdate shouldn't be handled as a DOM event");
-      break;
     case eMouseMove:
       GetPresContext()->RecordInteractionTime(
           nsPresContext::InteractionType::MouseMoveInteraction,
@@ -9669,7 +9493,6 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
 void PresShell::EventHandler::DispatchTouchEventToDOM(
     WidgetEvent* aEvent, nsEventStatus* aEventStatus,
     nsPresShellEventCB* aEventCB, bool aTouchIsNew) {
-  MOZ_ASSERT(aEvent->mMessage != eTouchRawUpdate);
   
   
   

@@ -46,7 +46,6 @@ class nsIHttpChannel;
 class nsIRequest;
 class nsISerialEventTarget;
 class nsIWebProgress;
-class nsPIDOMWindowInner;
 class nsWebBrowser;
 class nsDocShellLoadState;
 
@@ -641,35 +640,13 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   
   void FlushAllCoalescedMouseData();
-
   void ProcessPendingCoalescedMouseDataAndDispatchEvents();
 
   void ProcessPendingCoalescedTouchData();
 
-  
-
-
-
-
-
-  void HandleMouseRawUpdateEvent(const WidgetMouseEvent& aPendingMouseEvent,
-                                 const ScrollableLayerGuid& aGuid,
-                                 const uint64_t& aInputBlockId);
-
   void HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
                                   const ScrollableLayerGuid& aGuid,
                                   const uint64_t& aInputBlockId);
-
-  
-
-
-
-
-
-  void HandleTouchRawUpdateEvent(const WidgetTouchEvent& aPendingTouchEvent,
-                                 const ScrollableLayerGuid& aGuid,
-                                 const uint64_t& aInputBlockId,
-                                 const nsEventStatus& aApzResponse);
 
   void SetCancelContentJSEpoch(int32_t aEpoch) {
     mCancelContentJSEpoch = aEpoch;
@@ -734,13 +711,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvDispatchToDropTargetAndResumeEndDragSession(
       bool aShouldDrop);
-
-  void OnPointerRawUpdateEventListenerAdded(const nsPIDOMWindowInner* aWindow);
-  void OnPointerRawUpdateEventListenerRemoved(
-      const nsPIDOMWindowInner* aWindow);
-  [[nodiscard]] bool HasPointerRawUpdateEventListeners() const {
-    return !!mPointerRawUpdateWindowCount;
-  }
 
  protected:
   virtual ~BrowserChild();
@@ -853,8 +823,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   Maybe<CodeNameIndex> mPreviousConsumedKeyDownCode;
   uint32_t mChromeFlags;
   uint32_t mMaxTouchPoints;
-  
-  uint32_t mPointerRawUpdateWindowCount = 0;
   layers::LayersId mLayersId;
   CSSRect mUnscaledOuterRect;
   Maybe<bool> mLayersConnected;

@@ -43,22 +43,22 @@ class WidgetPointerEventHolder final {
 
 class WidgetPointerHelper {
  public:
-  uint32_t pointerId = 0;
-  int32_t tiltX = 0;
-  int32_t tiltY = 0;
-  int32_t twist = 0;
-  float tangentialPressure = 0.0f;
-  bool convertToPointer = true;
-  
-  
-  
-  
-  
-  
-  bool convertToPointerRawUpdate = true;
+  uint32_t pointerId;
+  int32_t tiltX;
+  int32_t tiltY;
+  int32_t twist;
+  float tangentialPressure;
+  bool convertToPointer;
   RefPtr<WidgetPointerEventHolder> mCoalescedWidgetEvents;
 
-  WidgetPointerHelper() = default;
+  WidgetPointerHelper()
+      : pointerId(0),
+        tiltX(0),
+        tiltY(0),
+        twist(0),
+        tangentialPressure(0),
+        convertToPointer(true) {}
+
   WidgetPointerHelper(uint32_t aPointerId, uint32_t aTiltX, uint32_t aTiltY,
                       uint32_t aTwist = 0, float aTangentialPressure = 0)
       : pointerId(aPointerId),
@@ -108,7 +108,6 @@ class WidgetPointerHelper {
     twist = aEvent.twist;
     tangentialPressure = aEvent.tangentialPressure;
     convertToPointer = aEvent.convertToPointer;
-    convertToPointerRawUpdate = aEvent.convertToPointerRawUpdate;
     if (aCopyCoalescedEvents) {
       mCoalescedWidgetEvents = aEvent.mCoalescedWidgetEvents;
     }
@@ -414,13 +413,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
 
 
 
-  [[nodiscard]] bool IsReal() const { return mReason == eReal; }
-
-  
-
-
-
-  [[nodiscard]] bool IsSynthesized() const { return mReason == eSynthesized; }
+  bool IsReal() const { return mReason == eReal; }
 
   
 

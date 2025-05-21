@@ -228,29 +228,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  bool HasPointerRawUpdateEventListeners() const {
-    return mMayHavePointerRawUpdateEventListener;
-  }
-
-  
-
-
-
-
-  void MaybeSetHasPointerRawUpdateEventListeners();
-
- protected:
-  
-
-
-
-  void ClearHasPointerRawUpdateEventListeners();
-
- public:
-  
-
-
-
   bool HasTransitionEventListeners() { return mMayHaveTransitionEventListener; }
 
   
@@ -672,25 +649,24 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   RefPtr<mozilla::dom::Navigator> mNavigator;
 
   
-  uint32_t mMutationBits = 0;
+  uint32_t mMutationBits;
 
   uint32_t mActivePeerConnections = 0;
 
-  bool mIsDocumentLoaded = false;
-  bool mIsHandlingResizeEvent = false;
-  bool mMayHaveDOMActivateEventListeners = false;
-  bool mMayHaveTouchEventListener = false;
-  bool mMayHaveSelectionChangeEventListener = false;
-  bool mMayHaveFormSelectEventListener = false;
-  bool mMayHaveMouseEnterLeaveEventListener = false;
-  bool mMayHavePointerEnterLeaveEventListener = false;
-  bool mMayHavePointerRawUpdateEventListener = false;
-  bool mMayHaveTransitionEventListener = false;
-  bool mMayHaveSMILTimeEventListener = false;
+  bool mIsDocumentLoaded;
+  bool mIsHandlingResizeEvent;
+  bool mMayHaveDOMActivateEventListeners;
+  bool mMayHaveTouchEventListener;
+  bool mMayHaveSelectionChangeEventListener;
+  bool mMayHaveFormSelectEventListener;
+  bool mMayHaveMouseEnterLeaveEventListener;
+  bool mMayHavePointerEnterLeaveEventListener;
+  bool mMayHaveTransitionEventListener;
+  bool mMayHaveSMILTimeEventListener;
   
   
-  bool mMayHaveBeforeInputEventListenerForTelemetry = false;
-  bool mMutationObserverHasObservedNodeForTelemetry = false;
+  bool mMayHaveBeforeInputEventListenerForTelemetry;
+  bool mMutationObserverHasObservedNodeForTelemetry;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
@@ -711,11 +687,11 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  uint64_t mWindowID = 0;
+  uint64_t mWindowID;
 
   
   
-  bool mHasNotifiedGlobalCreated = false;
+  bool mHasNotifiedGlobalCreated;
 
   
   
@@ -723,7 +699,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   bool mUnknownFocusMethodShouldShowOutline = true;
 
-  uint32_t mMarkedCCGeneration = 0;
+  uint32_t mMarkedCCGeneration;
 
   
   
@@ -732,17 +708,17 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   
-  bool mHasTriedToCacheTopInnerWindow = false;
+  bool mHasTriedToCacheTopInnerWindow;
 
   
-  uint32_t mNumOfIndexedDBDatabases = 0;
+  uint32_t mNumOfIndexedDBDatabases;
 
   
-  uint32_t mNumOfOpenWebSockets = 0;
+  uint32_t mNumOfOpenWebSockets;
 
   
   
-  mozilla::dom::Event* mEvent = nullptr;
+  mozilla::dom::Event* mEvent;
 
   
   
@@ -750,7 +726,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   RefPtr<mozilla::dom::WindowGlobalChild> mWindowGlobalChild;
 
-  bool mWasSuspendedByGroup = false;
+  bool mWasSuspendedByGroup;
 
   
 

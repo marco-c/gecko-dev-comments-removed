@@ -1504,13 +1504,6 @@ void BrowserChild::ProcessPendingCoalescedMouseDataAndDispatchEvents() {
       
       
       
-      
-      MOZ_ASSERT_IF(mToBeDispatchedMouseData.GetSize() > 0,
-                    !event->convertToPointerRawUpdate);
-      
-      
-      
-      
       HandleRealMouseButtonEvent(*event, data->GetScrollableLayerGuid(),
                                  data->GetInputBlockId());
     }
@@ -1563,20 +1556,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     CoalescedMouseData* data =
         mCoalescedMouseData.GetOrInsertNew(aEvent.pointerId);
     MOZ_ASSERT(data);
-    if (data->CanCoalesce(aEvent, aGuid, aInputBlockId,
-                          mCoalescedMouseEventFlusher->GetRefreshDriver())) {
-      
-      
-      
-      
-      WidgetMouseEvent pendingMouseMoveEvent(aEvent);
-      pendingMouseMoveEvent.convertToPointerRawUpdate = false;
-      data->Coalesce(pendingMouseMoveEvent, aGuid, aInputBlockId);
+    if (data->CanCoalesce(aEvent, aGuid, aInputBlockId)) {
+      data->Coalesce(aEvent, aGuid, aInputBlockId);
       mCoalescedMouseEventFlusher->StartObserver();
-      HandleMouseRawUpdateEvent(pendingMouseMoveEvent, aGuid, aInputBlockId);
       return IPC_OK();
     }
-
     
     
     
@@ -1591,48 +1575,15 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
         mCoalescedMouseData
             .InsertOrUpdate(aEvent.pointerId, MakeUnique<CoalescedMouseData>())
             .get();
-    
-    
-    
-    
-    WidgetMouseEvent pendingMouseMoveEvent(aEvent);
-    pendingMouseMoveEvent.convertToPointerRawUpdate = false;
-    newData->Coalesce(pendingMouseMoveEvent, aGuid, aInputBlockId);
+    newData->Coalesce(aEvent, aGuid, aInputBlockId);
 
     
     ProcessPendingCoalescedMouseDataAndDispatchEvents();
-
     mCoalescedMouseEventFlusher->StartObserver();
-    
-    HandleMouseRawUpdateEvent(pendingMouseMoveEvent, aGuid, aInputBlockId);
-    return IPC_OK();
-  }
-
-  if (!RecvRealMouseButtonEvent(aEvent, aGuid, aInputBlockId)) {
+  } else if (!RecvRealMouseButtonEvent(aEvent, aGuid, aInputBlockId)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
-}
-
-void BrowserChild::HandleMouseRawUpdateEvent(
-    const WidgetMouseEvent& aPendingMouseEvent,
-    const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId) {
-  
-  
-  
-  if (!mPointerRawUpdateWindowCount || aPendingMouseEvent.IsSynthesized()) {
-    return;
-  }
-  WidgetMouseEvent mouseRawUpdateEvent(aPendingMouseEvent);
-  mouseRawUpdateEvent.mMessage = eMouseRawUpdate;
-  mouseRawUpdateEvent.mCoalescedWidgetEvents = nullptr;
-  mouseRawUpdateEvent.convertToPointer = true;
-  
-  
-  
-  
-  mouseRawUpdateEvent.convertToPointerRawUpdate = true;
-  HandleRealMouseButtonEvent(mouseRawUpdateEvent, aGuid, aInputBlockId);
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEventForTests(
@@ -1686,16 +1637,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseButtonEvent(
     UniquePtr<CoalescedMouseData> dispatchData =
         MakeUnique<CoalescedMouseData>();
 
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(aEvent.convertToPointerRawUpdate);
     dispatchData->Coalesce(aEvent, aGuid, aInputBlockId);
-
     mToBeDispatchedMouseData.Push(dispatchData.release());
+
     ProcessPendingCoalescedMouseDataAndDispatchEvents();
     return IPC_OK();
   }
@@ -1886,7 +1830,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
       ProcessPendingCoalescedTouchData();
     }
 
-    if (aEvent.mMessage != eTouchMove && aEvent.mMessage != eTouchRawUpdate) {
+    if (aEvent.mMessage != eTouchMove) {
       sConsecutiveTouchMoveCount = 0;
     }
   }
@@ -1949,88 +1893,33 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
     ++sConsecutiveTouchMoveCount;
     if (mCoalescedTouchMoveEventFlusher) {
       MOZ_ASSERT(aEvent.mMessage == eTouchMove);
-      
-      
-      
-      const auto PostponeDispatchingTouchMove = [&]() {
-        return sConsecutiveTouchMoveCount > 1;
-      };
       if (mCoalescedTouchData.IsEmpty() ||
           mCoalescedTouchData.CanCoalesce(aEvent, aGuid, aInputBlockId,
                                           aApzResponse)) {
-        if (PostponeDispatchingTouchMove()) {
-          WidgetTouchEvent pendingTouchMoveEvent(
-              aEvent, WidgetTouchEvent::CloneTouches::Yes);
-          
-          
-          
-          
-          pendingTouchMoveEvent.SetConvertToPointerRawUpdate(false);
-          mCoalescedTouchData.Coalesce(pendingTouchMoveEvent, aGuid,
-                                       aInputBlockId, aApzResponse);
-          MOZ_ASSERT(PostponeDispatchingTouchMove());
-          mCoalescedTouchMoveEventFlusher->StartObserver();
-          
-          
-          HandleTouchRawUpdateEvent(pendingTouchMoveEvent, aGuid, aInputBlockId,
-                                    aApzResponse);
-          return IPC_OK();
-        }
-
-        
-        
-        MOZ_ASSERT(aEvent.CanConvertToPointerRawUpdate());
         mCoalescedTouchData.Coalesce(aEvent, aGuid, aInputBlockId,
                                      aApzResponse);
-        MOZ_ASSERT(!PostponeDispatchingTouchMove());
       } else {
         UniquePtr<WidgetTouchEvent> touchMoveEvent =
             mCoalescedTouchData.TakeCoalescedEvent();
-        MOZ_ASSERT(touchMoveEvent->mMessage == eTouchMove);
 
-        
-        
-        
-        
-        
-        MOZ_ASSERT(aEvent.CanConvertToPointerRawUpdate());
         mCoalescedTouchData.Coalesce(aEvent, aGuid, aInputBlockId,
                                      aApzResponse);
-        MOZ_ASSERT(!PostponeDispatchingTouchMove());
 
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!touchMoveEvent->CanConvertToPointerRawUpdate());
-        const uint32_t generation = mCoalescedTouchData.Generation();
         if (!RecvRealTouchEvent(*touchMoveEvent,
                                 mCoalescedTouchData.GetScrollableLayerGuid(),
                                 mCoalescedTouchData.GetInputBlockId(),
                                 mCoalescedTouchData.GetApzResponse())) {
           return IPC_FAIL_NO_REASON(this);
         }
-        
-        
-        if (PostponeDispatchingTouchMove()) {
-          mCoalescedTouchMoveEventFlusher->StartObserver();
-          if (generation == mCoalescedTouchData.Generation()) {
-            
-            
-            
-            
-            mCoalescedTouchData.NotifyTouchRawUpdateOfHandled(aEvent);
-            HandleTouchRawUpdateEvent(aEvent, aGuid, aInputBlockId,
-                                      aApzResponse);
-          }
-          return IPC_OK();
-        }
       }
-      
-      
-      ProcessPendingCoalescedTouchData();
+
+      if (sConsecutiveTouchMoveCount > 1) {
+        mCoalescedTouchMoveEventFlusher->StartObserver();
+      } else {
+        
+        
+        ProcessPendingCoalescedTouchData();
+      }
       return IPC_OK();
     }
   }
@@ -2039,30 +1928,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
-}
-
-void BrowserChild::HandleTouchRawUpdateEvent(
-    const WidgetTouchEvent& aPendingTouchEvent,
-    const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
-    const nsEventStatus& aApzResponse) {
-  if (!mPointerRawUpdateWindowCount) {
-    return;  
-  }
-
-  WidgetTouchEvent touchRawUpdateEvent(aPendingTouchEvent,
-                                       WidgetTouchEvent::CloneTouches::Yes);
-  touchRawUpdateEvent.mMessage = eTouchRawUpdate;
-  for (Touch* const touch : touchRawUpdateEvent.mTouches) {
-    touch->mMessage = eTouchRawUpdate;
-    touch->mCoalescedWidgetEvents = nullptr;
-    touch->convertToPointer = true;
-    
-    
-    
-    
-    touch->convertToPointerRawUpdate = true;
-  }
-  RecvRealTouchEvent(touchRawUpdateEvent, aGuid, aInputBlockId, aApzResponse);
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityRealTouchMoveEvent(
@@ -4167,27 +4032,6 @@ already_AddRefed<nsIDragSession> BrowserChild::GetDragSession() {
 
 void BrowserChild::SetDragSession(nsIDragSession* aSession) {
   mDragSession = aSession;
-}
-
-LazyLogModule gPointerRawUpdateEventListenersLog(
-    "PointerRawUpdateEventListeners");
-
-void BrowserChild::OnPointerRawUpdateEventListenerAdded(
-    const nsPIDOMWindowInner* aWindow) {
-  mPointerRawUpdateWindowCount++;
-  MOZ_LOG(gPointerRawUpdateEventListenersLog, LogLevel::Info,
-          ("Added for %p (total: %u)", aWindow, mPointerRawUpdateWindowCount));
-}
-
-void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
-    const nsPIDOMWindowInner* aWindow) {
-  MOZ_ASSERT(mPointerRawUpdateWindowCount);
-  if (MOZ_LIKELY(mPointerRawUpdateWindowCount)) {
-    mPointerRawUpdateWindowCount--;
-  }
-  MOZ_LOG(gPointerRawUpdateEventListenersLog, LogLevel::Info,
-          ("Removed for %p (remaining: %u)", aWindow,
-           mPointerRawUpdateWindowCount));
 }
 
 BrowserChildMessageManager::BrowserChildMessageManager(

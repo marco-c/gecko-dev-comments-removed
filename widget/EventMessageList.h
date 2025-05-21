@@ -93,26 +93,11 @@ NS_EVENT_MESSAGE(eMouseEnter)
 NS_EVENT_MESSAGE(eMouseLeave)
 NS_EVENT_MESSAGE(eMouseTouchDrag)
 NS_EVENT_MESSAGE(eMouseLongTap)
-
-
-
-
-
-
-
-NS_EVENT_MESSAGE(eMouseRawUpdate)
 NS_EVENT_MESSAGE(eMouseExploreByTouch)
 NS_EVENT_MESSAGE_FIRST_LAST(eMouseEvent, eMouseMove, eMouseExploreByTouch)
 
 NS_EVENT_MESSAGE(ePointerClick)
 NS_EVENT_MESSAGE(ePointerAuxClick)
-
-
-
-
-
-
-
 
 
 NS_EVENT_MESSAGE(ePointerMove)
@@ -123,7 +108,6 @@ NS_EVENT_MESSAGE(ePointerOut)
 NS_EVENT_MESSAGE(ePointerEnter)
 NS_EVENT_MESSAGE(ePointerLeave)
 NS_EVENT_MESSAGE(ePointerCancel)
-NS_EVENT_MESSAGE(ePointerRawUpdate)
 NS_EVENT_MESSAGE(ePointerGotCapture)
 NS_EVENT_MESSAGE(ePointerLostCapture)
 NS_EVENT_MESSAGE_FIRST_LAST(ePointerEvent, ePointerMove, ePointerLostCapture)
@@ -448,14 +432,6 @@ NS_EVENT_MESSAGE(eTouchMove)
 NS_EVENT_MESSAGE(eTouchEnd)
 NS_EVENT_MESSAGE(eTouchCancel)
 NS_EVENT_MESSAGE(eTouchPointerCancel)
-
-
-
-
-
-
-
-NS_EVENT_MESSAGE(eTouchRawUpdate)
 
 
 NS_EVENT_MESSAGE(ePointerLockChange)

@@ -715,9 +715,7 @@ void PointerEventHandler::InitPointerEventFromTouch(
     WidgetPointerEvent& aPointerEvent, const WidgetTouchEvent& aTouchEvent,
     const mozilla::dom::Touch& aTouch) {
   
-  int16_t button = aTouchEvent.mMessage == eTouchRawUpdate ||
-                           aTouchEvent.mMessage == eTouchMove
-                       ? MouseButton::eNotPressed
+  int16_t button = aTouchEvent.mMessage == eTouchMove ? MouseButton::eNotPressed
                    : aTouchEvent.mButton != MouseButton::eNotPressed
                        ? aTouchEvent.mButton
                        : MouseButton::ePrimary;
@@ -785,9 +783,6 @@ EventMessage PointerEventHandler::ToPointerEventMessage(
   MOZ_ASSERT(aMouseOrTouchEvent);
 
   switch (aMouseOrTouchEvent->mMessage) {
-    case eMouseRawUpdate:
-    case eTouchRawUpdate:
-      return ePointerRawUpdate;
     case eMouseMove:
       return ePointerMove;
     case eMouseUp:
@@ -812,15 +807,6 @@ EventMessage PointerEventHandler::ToPointerEventMessage(
     default:
       return eVoidEvent;
   }
-}
-
-
-bool PointerEventHandler::NeedToDispatchPointerRawUpdate(
-    const Document* aDocument) {
-  const nsPIDOMWindowInner* const innerWindow =
-      aDocument ? aDocument->GetInnerWindow() : nullptr;
-  return innerWindow && innerWindow->HasPointerRawUpdateEventListeners() &&
-         innerWindow->IsSecureContext();
 }
 
 
@@ -853,7 +839,9 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
 
     
     
-    if (!mouseEvent->convertToPointer || mouseEvent->IsSynthesized()) {
+    
+    if (!mouseEvent->convertToPointer ||
+        !aMouseOrTouchEvent->IsAllowedToDispatchDOMEvent()) {
       return;
     }
 
@@ -861,30 +849,6 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     if (pointerMessage == eVoidEvent) {
       return;
     }
-#ifdef DEBUG
-    if (pointerMessage == ePointerRawUpdate) {
-      const nsIContent* const targetContent =
-          aEventTargetContent ? aEventTargetContent
-                              : aEventTargetFrame->GetContent();
-      NS_ASSERTION(targetContent, "Where do we want to try to dispatch?");
-      if (targetContent) {
-        NS_ASSERTION(
-            targetContent->IsInComposedDoc(),
-            nsPrintfCString("Do we want to dispatch ePointerRawUpdate onto "
-                            "disconnected content? (targetContent=%s)",
-                            ToString(*targetContent).c_str())
-                .get());
-        if (!NeedToDispatchPointerRawUpdate(targetContent->OwnerDoc())) {
-          NS_ASSERTION(
-              false,
-              nsPrintfCString(
-                  "Did we fail to retarget the document? (targetContent=%s)",
-                  ToString(*targetContent).c_str())
-                  .get());
-        }
-      }
-    }
-#endif  
     WidgetPointerEvent event(*mouseEvent);
     InitPointerEventFromMouse(&event, mouseEvent, pointerMessage);
     event.convertToPointer = mouseEvent->convertToPointer = false;
@@ -1028,15 +992,9 @@ void PointerEventHandler::NotifyDestroyPresContext(
 bool PointerEventHandler::IsDragAndDropEnabled(WidgetMouseEvent& aEvent) {
   
   
-  if (aEvent.IsSynthesized()) {
+  if (!aEvent.IsReal()) {
     return false;
   }
-  
-  
-  if (aEvent.mMessage == ePointerRawUpdate) {
-    return false;
-  }
-  MOZ_ASSERT(aEvent.mMessage != eMouseRawUpdate);
 #ifdef XP_WIN
   if (StaticPrefs::dom_w3c_pointer_events_dispatch_by_pointer_messages()) {
     

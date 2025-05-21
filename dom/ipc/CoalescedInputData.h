@@ -24,21 +24,12 @@ class CoalescedInputData {
 
   UniquePtr<InputEventType> mCoalescedInputEvent;
   ScrollableLayerGuid mGuid;
-  uint64_t mInputBlockId = 0;
-  uint32_t mGeneration = 0;
-
-  void AdvanceGeneration() {
-    if (!IsEmpty()) {
-      mGeneration++;
-    }
-  }
+  uint64_t mInputBlockId;
 
  public:
-  CoalescedInputData() = default;
+  CoalescedInputData() : mInputBlockId(0) {}
 
   void RetrieveDataFrom(CoalescedInputData& aSource) {
-    aSource.AdvanceGeneration();
-    AdvanceGeneration();
     mCoalescedInputEvent = std::move(aSource.mCoalescedInputEvent);
     mGuid = aSource.mGuid;
     mInputBlockId = aSource.mInputBlockId;
@@ -51,23 +42,12 @@ class CoalescedInputData {
                    const uint64_t& aInputBlockId);
 
   UniquePtr<InputEventType> TakeCoalescedEvent() {
-    AdvanceGeneration();
     return std::move(mCoalescedInputEvent);
   }
 
   ScrollableLayerGuid GetScrollableLayerGuid() { return mGuid; }
 
   uint64_t GetInputBlockId() { return mInputBlockId; }
-
-  
-
-
-
-
-
-
-
-  [[nodiscard]] uint32_t Generation() const { return mGeneration; }
 };
 
 class CoalescedInputFlusher : public nsARefreshObserver {
@@ -81,17 +61,12 @@ class CoalescedInputFlusher : public nsARefreshObserver {
   void StartObserver();
   void RemoveObserver();
 
-  
-
-
-
-  [[nodiscard]] nsRefreshDriver* GetRefreshDriver();
-
  protected:
   virtual ~CoalescedInputFlusher();
 
+  nsRefreshDriver* GetRefreshDriver();
+
   BrowserChild* mBrowserChild;
-  
   RefPtr<nsRefreshDriver> mRefreshDriver;
 };
 }  

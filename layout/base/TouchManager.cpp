@@ -303,9 +303,6 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       }
       break;
     }
-    case eTouchRawUpdate:
-      MOZ_ASSERT_UNREACHABLE("eTouchRawUpdate shouldn't be handled as a touch");
-      break;
     case eTouchMove: {
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
@@ -451,9 +448,6 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
 void TouchManager::PostHandleEvent(const WidgetEvent* aEvent,
                                    const nsEventStatus* aStatus) {
   switch (aEvent->mMessage) {
-    case eTouchRawUpdate:
-      MOZ_ASSERT_UNREACHABLE("eTouchRawUpdate shouldn't be handled as a touch");
-      break;
     case eTouchMove: {
       if (sSingleTouchStartTimeStamp.IsNull()) {
         break;
@@ -565,8 +559,7 @@ bool TouchManager::ShouldConvertTouchToPointer(const Touch* aTouch,
       
       return false;
     }
-    case eTouchMove:
-    case eTouchRawUpdate: {
+    case eTouchMove: {
       return !aTouch->Equals(info.mTouch);
     }
     default:
