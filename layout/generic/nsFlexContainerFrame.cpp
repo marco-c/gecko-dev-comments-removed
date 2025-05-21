@@ -64,17 +64,6 @@ static const char* BoolToYesNo(bool aArg) { return aArg ? "yes" : "no"; }
 
 
 
-
-static bool IsLegacyBox(const nsIFrame* aFlexContainer) {
-  MOZ_ASSERT(aFlexContainer->IsFlexContainerFrame(),
-             "only flex containers may be passed to this function");
-  return aFlexContainer->HasAnyStateBits(
-      NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
-}
-
-
-
-
 static CSSOrderAwareFrameIterator::OrderState OrderStateForIter(
     const nsFlexContainerFrame* aFlexContainer) {
   return aFlexContainer->HasAnyStateBits(
@@ -87,7 +76,7 @@ static CSSOrderAwareFrameIterator::OrderState OrderStateForIter(
 
 static CSSOrderAwareFrameIterator::OrderingProperty OrderingPropertyForIter(
     const nsFlexContainerFrame* aFlexContainer) {
-  return IsLegacyBox(aFlexContainer)
+  return aFlexContainer->IsLegacyWebkitBox()
              ? CSSOrderAwareFrameIterator::OrderingProperty::BoxOrdinalGroup
              : CSSOrderAwareFrameIterator::OrderingProperty::Order;
 }
@@ -1381,7 +1370,7 @@ nsFlexContainerFrame::UsedAlignSelfAndFlagsForItem(
     const nsIFrame* aFlexItem) const {
   MOZ_ASSERT(aFlexItem->IsFlexItem());
 
-  if (IsLegacyBox(this)) {
+  if (IsLegacyWebkitBox()) {
     
     
     
@@ -1435,7 +1424,7 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   StyleSizeOverrides sizeOverrides;
-  if (!IsLegacyBox(this)) {
+  if (!IsLegacyWebkitBox()) {
     Maybe<StyleSize> styleFlexBaseSize;
 
     
@@ -1485,7 +1474,7 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   float flexGrow, flexShrink;
-  if (IsLegacyBox(this)) {
+  if (IsLegacyWebkitBox()) {
     flexGrow = flexShrink = aChildFrame->StyleXUL()->mBoxFlex;
   } else {
     flexGrow = stylePos->mFlexGrow;
@@ -1692,7 +1681,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
   nscoord resolvedMinSize;  
   bool minSizeNeedsToMeasureContent = false;  
   if (isMainMinSizeAuto) {
-    if (IsLegacyBox(this)) {
+    if (IsLegacyWebkitBox()) {
       
       
       
@@ -2958,8 +2947,6 @@ void nsFlexContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     displayInside = GetParent()->StyleDisplay()->DisplayInside();
   }
 
-  
-  
   if (displayInside == StyleDisplayInside::WebkitBox) {
     AddStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
   }
@@ -4106,7 +4093,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
 FlexboxAxisInfo::FlexboxAxisInfo(const nsIFrame* aFlexContainer) {
   MOZ_ASSERT(aFlexContainer && aFlexContainer->IsFlexContainerFrame(),
              "Only flex containers may be passed to this constructor!");
-  if (IsLegacyBox(aFlexContainer)) {
+  if (aFlexContainer->IsLegacyWebkitBox()) {
     InitAxesFromLegacyProps(aFlexContainer);
   } else {
     InitAxesFromModernProps(aFlexContainer);
@@ -5252,7 +5239,7 @@ bool nsFlexContainerFrame::IsItemInlineAxisMainAxis(nsIFrame* aFrame) {
   const WritingMode flexItemWM = aFrame->GetWritingMode();
   const nsIFrame* flexContainer = aFrame->GetParent();
 
-  if (IsLegacyBox(flexContainer)) {
+  if (flexContainer->IsLegacyWebkitBox()) {
     
     
     
@@ -5433,7 +5420,7 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
   }
 
   const auto justifyContent =
-      IsLegacyBox(aReflowInput.mFrame)
+      aReflowInput.mFrame->IsLegacyWebkitBox()
           ? ConvertLegacyStyleToJustifyContent(StyleXUL())
           : aReflowInput.mStylePosition->mJustifyContent;
 

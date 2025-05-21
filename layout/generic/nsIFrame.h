@@ -4702,6 +4702,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+  inline bool IsLegacyWebkitBox() const;
+
+  
+
+
+
   inline bool IsMasonry(mozilla::LogicalAxis aAxis) const;
 
   

@@ -113,7 +113,6 @@ class MOZ_STACK_CLASS FlexboxAxisInfo final {
 
 
 
-
 class nsFlexContainerFrame final : public nsContainerFrame,
                                    public nsILineIterator {
  public:

@@ -231,8 +231,7 @@ static inline bool IsAnonymousItem(const nsIFrame* aFrame) {
 
 
 static inline bool IsFlexContainerForLegacyWebKitBox(const nsIFrame* aFrame) {
-  return aFrame->IsFlexContainerFrame() &&
-         aFrame->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
+  return aFrame->IsFlexContainerFrame() && aFrame->IsLegacyWebkitBox();
 }
 
 #if DEBUG
