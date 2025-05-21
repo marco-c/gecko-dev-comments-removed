@@ -54,11 +54,14 @@ class BaselineFrame {
     
     
     DEBUGGEE = 1 << 6,
+    SELF_HOSTED = 1 << 7,
   };
 
  protected:  
   
+  
   JSScript* interpreterScript_;
+  
   jsbytecode* interpreterPC_;
   ICEntry* interpreterICEntry_;
 
@@ -200,7 +203,6 @@ class BaselineFrame {
     
     
     flags_ &= ~RUNNING_IN_INTERPRETER;
-    interpreterScript_ = nullptr;
     interpreterPC_ = nullptr;
   }
 
@@ -241,6 +243,7 @@ class BaselineFrame {
   }
 
   bool runningInInterpreter() const { return flags_ & RUNNING_IN_INTERPRETER; }
+  bool isSelfHosted() const { return flags_ & SELF_HOSTED; }
 
   JSScript* interpreterScript() const {
     MOZ_ASSERT(runningInInterpreter());
