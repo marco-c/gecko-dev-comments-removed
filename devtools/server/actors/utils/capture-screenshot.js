@@ -87,15 +87,13 @@ async function captureScreenshot(args, browsingContext) {
   }
 
   let { left, top, width, height } = args.rect || {};
+  let _showScreenshotTruncationWarning = false;
 
   
   if (width && (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT)) {
+    _showScreenshotTruncationWarning = true;
     width = Math.min(width, MAX_IMAGE_WIDTH);
     height = Math.min(height, MAX_IMAGE_HEIGHT);
-    messages.push({
-      level: "warn",
-      text: L10N.getFormatStr("screenshotTruncationWarning", width, height),
-    });
   }
 
   let rect = null;
@@ -167,6 +165,17 @@ async function captureScreenshot(args, browsingContext) {
 
   if (data && args.disableFlash !== true) {
     simulateCameraFlash(browsingContext);
+  }
+
+  
+  
+  
+  
+  if (_showScreenshotTruncationWarning) {
+    messages.push({
+      level: "warn",
+      text: L10N.getFormatStr("screenshotTruncationWarning", width, height),
+    });
   }
 
   return {
