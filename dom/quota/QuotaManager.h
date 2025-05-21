@@ -509,16 +509,17 @@ class QuotaManager final : public BackgroundThreadObject {
   EnsurePersistentClientIsInitialized(const ClientMetadata& aClientMetadata);
 
   RefPtr<BoolPromise> InitializeTemporaryClient(
-      const ClientMetadata& aClientMetadata);
+      const ClientMetadata& aClientMetadata, bool aCreateIfNonExistent);
 
   RefPtr<BoolPromise> InitializeTemporaryClient(
-      const ClientMetadata& aClientMetadata,
+      const ClientMetadata& aClientMetadata, bool aCreateIfNonExistent,
       RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-  EnsureTemporaryClientIsInitialized(const ClientMetadata& aClientMetadata);
+  EnsureTemporaryClientIsInitialized(const ClientMetadata& aClientMetadata,
+                                     bool aCreateIfNonExistent);
 
   RefPtr<BoolPromise> InitializeTemporaryStorage();
 

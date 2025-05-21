@@ -214,10 +214,14 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+
+
+
   [must_use] nsIQuotaRequest
   initializeTemporaryClient(in ACString aPersistenceType,
                             in nsIPrincipal aPrincipal,
-                            in AString aClientType);
+                            in AString aClientType,
+                            [optional] in boolean aCreateIfNonExistent);
 
   
 

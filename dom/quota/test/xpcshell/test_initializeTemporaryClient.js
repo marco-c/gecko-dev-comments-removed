@@ -47,7 +47,8 @@ async function testSteps() {
   request = initTemporaryClient(
     clientMetadata.persistence,
     clientMetadata.principal,
-    clientMetadata.client
+    clientMetadata.client,
+     true
   );
   await requestFinished(request);
 
