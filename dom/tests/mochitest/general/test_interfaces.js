@@ -1857,7 +1857,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onpointerover", insecureContext: true },
   
-  { name: "onpointerrawupdate", disabled: true },
+  { name: "onpointerrawupdate" },
   
   { name: "onpointerup", insecureContext: true },
   
