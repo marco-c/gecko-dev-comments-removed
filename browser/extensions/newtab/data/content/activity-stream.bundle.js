@@ -3549,10 +3549,7 @@ const DefaultMeta = ({
     className: "title clamp"
   }, title), excerpt && external_React_default().createElement("p", {
     className: "excerpt clamp"
-  }, excerpt)), format === "rectangle" &&
-  
-  
-  external_React_default().createElement("h3", {
+  }, excerpt)), format === "rectangle" && external_React_default().createElement("h3", {
     className: "title clamp",
     "data-l10n-id": "newtab-label-sponsored-fixed"
   })), !isListCard && format !== "rectangle" && !mayHaveSectionsCards && mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
