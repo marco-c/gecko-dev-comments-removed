@@ -86,6 +86,9 @@ enum class ObjectFlag : uint16_t {
   
   HasFuseProperty = 1 << 14,
 
+  
+  
+  HasPreservedWrapper = 1 << 15,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;

@@ -253,7 +253,7 @@ def idlTypeNeedsCallContext(type, descriptor=None, allowTreatNonCallableAsNull=F
 
 
 
-def wantsAddProperty(desc):
+def wantsPreservedWrapper(desc):
     return desc.concrete and desc.wrapperCache and not desc.isGlobal()
 
 
@@ -697,6 +697,9 @@ class CGDOMJSClass(CGThing):
                 )
             classFlags += " | JSCLASS_SKIP_NURSERY_FINALIZE"
 
+        if wantsPreservedWrapper(self.descriptor):
+            classFlags += " | JSCLASS_PRESERVES_WRAPPER"
+
         if self.descriptor.interface.getExtendedAttribute("NeedResolve"):
             resolveHook = RESOLVE_HOOK_NAME
             mayResolveHook = MAY_RESOLVE_HOOK_NAME
@@ -713,7 +716,7 @@ class CGDOMJSClass(CGThing):
         return fill(
             """
             static const JSClassOps sClassOps = {
-              ${addProperty}, /* addProperty */
+              nullptr,               /* addProperty */
               nullptr,               /* delProperty */
               nullptr,               /* enumerate */
               ${newEnumerate}, /* newEnumerate */
@@ -742,11 +745,6 @@ class CGDOMJSClass(CGThing):
             """,
             name=self.descriptor.interface.getClassName(),
             flags=classFlags,
-            addProperty=(
-                "NativeTypeHelpers<%s>::AddProperty" % self.descriptor.nativeType
-                if wantsAddProperty(self.descriptor)
-                else "nullptr"
-            ),
             newEnumerate=newEnumerateHook,
             resolve=resolveHook,
             mayResolve=mayResolveHook,
@@ -2038,40 +2036,6 @@ class CGAbstractClassHook(CGAbstractStaticMethod):
 
     def generate_code(self):
         assert False  
-
-
-class CGAddPropertyHook(CGAbstractClassHook):
-    """
-    A hook for addProperty, used to preserve our wrapper from GC.
-    """
-
-    def __init__(self, descriptor):
-        args = [
-            Argument("JSContext*", "cx"),
-            Argument("JS::Handle<JSObject*>", "obj"),
-            Argument("JS::Handle<jsid>", "id"),
-            Argument("JS::Handle<JS::Value>", "val"),
-        ]
-        CGAbstractClassHook.__init__(
-            self, descriptor, ADDPROPERTY_HOOK_NAME, "bool", args
-        )
-
-    def generate_code(self):
-        assert self.descriptor.wrapperCache
-        
-        
-        
-        
-        return dedent(
-            """
-            // We don't want to preserve if we don't have a wrapper, and we
-            // obviously can't preserve if we're not initialized.
-            if (self && self->GetWrapperPreserveColor()) {
-              PreserveWrapper(self);
-            }
-            return true;
-            """
-        )
 
 
 class CGGetWrapperCacheHook(CGAbstractClassHook):
