@@ -100,12 +100,17 @@ class BaselineCodeGen {
 
   
   void loadScript(Register dest);
+  
+  void loadJitScript(Register dest);
 
   void saveInterpreterPCReg();
   void restoreInterpreterPCReg();
 
   
   void subtractScriptSlotsSize(Register reg, Register scratch);
+
+  
+  void loadBaselineScriptResumeEntries(Register dest, Register scratch);
 
   
   void jumpToResumeEntry(Register resumeIndex, Register scratch1,
@@ -338,7 +343,11 @@ class BaselineCompilerHandler {
   }
 
   JSScript* script() const { return script_; }
-  JSScript* scriptInternal() const { return script_; }
+  
+  JSScript* scriptInternal() const {
+    MOZ_ASSERT(!isSelfHosted());
+    return script_;
+  }
   JSScript* maybeScript() const { return script_; }
 
   JSFunction* function() const { return script_->function(); }
