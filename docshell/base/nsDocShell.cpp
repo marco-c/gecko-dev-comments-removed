@@ -8691,6 +8691,29 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
          aState.mNewURIHasRef;
 }
 
+static bool IsSamePrincipalForDocumentURI(nsIPrincipal* aCurrentPrincipal,
+                                          nsIURI* aCurrentURI,
+                                          nsIURI* aNewURI) {
+  if (!StaticPrefs::dom_security_setdocumenturi()) {
+    return true;
+  }
+  nsCOMPtr<nsIURI> principalURI = aCurrentPrincipal->GetURI();
+  if (aCurrentPrincipal->GetIsNullPrincipal()) {
+    nsCOMPtr<nsIPrincipal> precursor =
+        aCurrentPrincipal->GetPrecursorPrincipal();
+    if (precursor) {
+      principalURI = precursor->GetURI();
+    }
+  }
+
+  return !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                               aNewURI) &&
+         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                               aCurrentURI) &&
+         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(aCurrentURI,
+                                                               aNewURI);
+}
+
 nsresult nsDocShell::HandleSameDocumentNavigation(
     nsDocShellLoadState* aLoadState, SameDocumentNavigationState& aState,
     bool& aSameDocument) {
@@ -8707,13 +8730,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   RefPtr<Document> doc = GetDocument();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-  doc->DoNotifyPossibleTitleChange();
-
-  
-  
-  
-  doc->FragmentDirective()->SetTextDirectives(
-      std::move(aState.mTextDirectives));
 
   nsCOMPtr<nsIURI> currentURI = mCurrentURI;
 
@@ -8725,32 +8741,56 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
             ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
   }
 
-  if (StaticPrefs::dom_security_setdocumenturi()) {
+  
+  
+  if (!IsSamePrincipalForDocumentURI(doc->NodePrincipal(), mCurrentURI,
+                                     newURI)) {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("nsDocShell[%p]: possible violation of the same origin policy "
+             "during same document navigation",
+             this));
+    return NS_OK;
+  }
+
+  if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow()) {
     
     
-    nsCOMPtr<nsIPrincipal> origPrincipal = doc->NodePrincipal();
-    nsCOMPtr<nsIURI> principalURI = origPrincipal->GetURI();
-    if (origPrincipal->GetIsNullPrincipal()) {
-      nsCOMPtr<nsIPrincipal> precursor = origPrincipal->GetPrecursorPrincipal();
-      if (precursor) {
-        principalURI = precursor->GetURI();
+    if (RefPtr<Navigation> navigation = window->Navigation()) {
+      
+      RefPtr<nsIStructuredCloneContainer> destinationNavigationAPIState =
+          mActiveEntry ? mActiveEntry->GetNavigationState() : nullptr;
+      
+      if (aLoadState->GetNavigationAPIState()) {
+        destinationNavigationAPIState = aLoadState->GetNavigationAPIState();
+      }
+
+      AutoJSAPI jsapi;
+      if (jsapi.Init(window)) {
+        RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
+        
+        bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
+            jsapi.cx(), aLoadState->GetNavigationType(), newURI,
+             true,
+            Some(aLoadState->UserNavigationInvolvement()), sourceElement,
+             Nothing(),
+             destinationNavigationAPIState,
+             nullptr);
+
+        
+        if (!shouldContinue) {
+          return NS_OK;
+        }
       }
     }
-
-    if (nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                             newURI) ||
-        nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                             mCurrentURI) ||
-        nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(mCurrentURI,
-                                                             newURI)) {
-      aSameDocument = false;
-      MOZ_LOG(gSHLog, LogLevel::Debug,
-              ("nsDocShell[%p]: possible violation of the same origin policy "
-               "during same document navigation",
-               this));
-      return NS_OK;
-    }
   }
+
+  doc->DoNotifyPossibleTitleChange();
+
+  
+  
+  
+  doc->FragmentDirective()->SetTextDirectives(
+      std::move(aState.mTextDirectives));
 
 #ifdef DEBUG
   if (aState.mSameExceptHashes) {
