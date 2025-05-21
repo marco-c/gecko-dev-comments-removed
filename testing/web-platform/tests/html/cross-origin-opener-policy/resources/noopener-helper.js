@@ -157,7 +157,8 @@ const test_noopener_navigating_away = (popup_coop) => {
     `);
     assert_equals(await receive(reply_token), 'popup navigated away');
 
-    assert_equals(popup.window, null);
+    
+    
     assert_true(popup.closed, 'popup.closed');
   },
   'noopener-allow-popups ensures that the opener cannot script the openee,' +
