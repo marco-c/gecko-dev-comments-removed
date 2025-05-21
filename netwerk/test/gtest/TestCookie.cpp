@@ -24,6 +24,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/net/CookieValidation.h"
 #include "Cookie.h"
 #include "CookieParser.h"
 #include "nsIURI.h"
@@ -262,7 +263,7 @@ TEST(TestCookie, TestCookieMain)
   
   
   SetACookie(cookieService, "http://www.domain.com",
-             "test=domain; domain=domain.com");
+             "test=domain; domain=domain.com; sameSite=lax");
   GetACookie(cookieService, "http://domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
   GetACookie(cookieService, "http://domain.com.", cookie);
@@ -757,23 +758,28 @@ TEST(TestCookie, TestCookieMain)
 
   
   EXPECT_NS_SUCCEEDED(cookieMgr->RemoveAll());
+
+  nsCOMPtr<nsICookieValidation> cv;
   
-  EXPECT_TRUE(NS_SUCCEEDED(
-      cookieMgr2->AddNative(uri,
-                            "cookiemgr.test"_ns,  
-                            "/foo"_ns,            
-                            "test1"_ns,           
-                            "yes"_ns,             
-                            false,                
-                            false,                
-                            true,                 
-                            INT64_MAX,            
-                            &attrs,               
-                            nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
-                            false,    
-                            true,     
-                            nullptr,  
-                            [](CookieStruct&) -> bool { return true; })));
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(uri,
+                                                 "cookiemgr.test"_ns,  
+                                                 "/foo"_ns,            
+                                                 "test1"_ns,           
+                                                 "yes"_ns,             
+                                                 false,      
+                                                 false,      
+                                                 true,       
+                                                 INT64_MAX,  
+                                                 &attrs,     
+                                                 nsICookie::SAMESITE_LAX,
+                                                 nsICookie::SCHEME_HTTP,
+                                                 false,    
+                                                 true,     
+                                                 nullptr,  
+                                                 getter_AddRefs(cv))));
+  EXPECT_TRUE(!!cv);
+  EXPECT_EQ(CookieValidation::Cast(cv)->Result(), nsICookieValidation::eOK);
+
   EXPECT_TRUE(NS_SUCCEEDED(
       cookieMgr2->AddNative(uri,
                             "cookiemgr.test"_ns,             
@@ -785,27 +791,33 @@ TEST(TestCookie, TestCookieMain)
                             true,                            
                             PR_Now() / PR_USEC_PER_SEC + 2,  
                             &attrs,                          
-                            nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
+                            nsICookie::SAMESITE_LAX, nsICookie::SCHEME_HTTP,
                             false,    
                             true,     
                             nullptr,  
-                            [](CookieStruct&) -> bool { return true; })));
-  EXPECT_TRUE(NS_SUCCEEDED(
-      cookieMgr2->AddNative(uri,
-                            "new.domain"_ns,  
-                            "/rabbit"_ns,     
-                            "test3"_ns,       
-                            "yes"_ns,         
-                            false,            
-                            false,            
-                            true,             
-                            INT64_MAX,        
-                            &attrs,           
-                            nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
-                            false,    
-                            true,     
-                            nullptr,  
-                            [](CookieStruct&) -> bool { return true; })));
+                            getter_AddRefs(cv))));
+  EXPECT_TRUE(!!cv);
+  EXPECT_EQ(CookieValidation::Cast(cv)->Result(), nsICookieValidation::eOK);
+
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(uri,
+                                                 "new.domain"_ns,  
+                                                 "/rabbit"_ns,     
+                                                 "test3"_ns,       
+                                                 "yes"_ns,         
+                                                 false,            
+                                                 false,      
+                                                 true,       
+                                                 INT64_MAX,  
+                                                 &attrs,     
+                                                 nsICookie::SAMESITE_LAX,
+                                                 nsICookie::SCHEME_HTTP,
+                                                 false,    
+                                                 true,     
+                                                 nullptr,  
+                                                 getter_AddRefs(cv))));
+  EXPECT_TRUE(!!cv);
+  EXPECT_EQ(CookieValidation::Cast(cv)->Result(), nsICookieValidation::eOK);
+
   
   nsTArray<RefPtr<nsICookie>> cookies;
   EXPECT_NS_SUCCEEDED(cookieMgr->GetCookies(cookies));
