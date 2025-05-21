@@ -709,6 +709,10 @@ pref("browser.urlbar.yelp.mlEnabled", false);
 
 
 
+pref("browser.urlbar.yelp.serviceResultDistinction", false);
+
+
+
 pref("browser.urlbar.suggest.yelp", true);
 
 
