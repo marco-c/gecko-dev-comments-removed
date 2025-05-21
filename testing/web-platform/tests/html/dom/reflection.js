@@ -967,6 +967,7 @@ ReflectionTests.reflects = function(data, idlName, idlObj, domName, domObj) {
                                                "previous value", "getAttribute()");
                 ReflectionHarness.assertEquals(idlObj[idlName], previousIdl, "IDL get");
             } else {
+                var previousValue = domObj.getAttribute(domName);
                 idlObj[idlName] = idlTests[i];
                 if (data.type == "boolean") {
                     
@@ -976,6 +977,11 @@ ReflectionTests.reflects = function(data, idlName, idlObj, domName, domObj) {
                     var expected = idlDomExpected[i] + "";
                     if (data.isNullable && idlDomExpected[i] === null) {
                         expected = null;
+                    } else if (idlName == "nonce") {
+                        
+                        
+                        
+                        expected = previousValue;
                     }
                     ReflectionHarness.assertEquals(domObj.getAttribute(domName), expected,
                                                    "getAttribute()");
