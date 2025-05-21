@@ -14,6 +14,7 @@
 
 #include <atomic>
 
+#include "absl/strings/str_format.h"
 #include "api/sequence_checker.h"
 #include "modules/desktop_capture/mac/desktop_frame_iosurface.h"
 #include "modules/desktop_capture/shared_desktop_frame.h"
@@ -21,6 +22,7 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
+#include "sck_picker_handle.h"
 #include "sdk/objc/helpers/scoped_cftyperef.h"
 
 using webrtc::DesktopFrameIOSurface;
@@ -34,7 +36,9 @@ class ScreenCapturerSck;
 
 
 API_AVAILABLE(macos(14.0))
-@interface SckHelper : NSObject <SCStreamDelegate, SCStreamOutput>
+@interface SckHelper : NSObject <SCStreamDelegate,
+                                 SCStreamOutput,
+                                 SCContentSharingPickerObserver>
 
 - (instancetype)initWithCapturer:(webrtc::ScreenCapturerSck*)capturer;
 
@@ -55,7 +59,8 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
     : public DesktopCapturer {
  public:
   explicit ScreenCapturerSck(const DesktopCaptureOptions& options);
-
+  ScreenCapturerSck(const DesktopCaptureOptions& options,
+                    SCContentSharingPickerMode modes);
   ScreenCapturerSck(const ScreenCapturerSck&) = delete;
   ScreenCapturerSck& operator=(const ScreenCapturerSck&) = delete;
 
@@ -65,7 +70,16 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
   void Start(DesktopCapturer::Callback* callback) override;
   void SetMaxFrameRate(uint32_t max_frame_rate) override;
   void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
+  
+  
+  void EnsureVisible();
+  
+  
+  void NotifySourceSelection(SCContentFilter* filter, SCStream* stream);
+  void NotifySourceCancelled(SCStream* stream);
+  void NotifySourceError();
 
   
   void NotifyCaptureStopped(SCStream* stream);
@@ -104,7 +118,19 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
 
   
   
+  std::unique_ptr<SckPickerHandleInterface> picker_handle_
+      RTC_GUARDED_BY(api_checker_);
+
+  
+  bool picker_handle_registered_ RTC_GUARDED_BY(api_checker_) = false;
+
+  
+  
   const DesktopCaptureOptions capture_options_;
+
+  
+  
+  const SCContentSharingPickerMode picker_modes_;
 
   
   
@@ -153,11 +179,59 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
       RTC_GUARDED_BY(latest_frame_lock_);
 };
 
-ScreenCapturerSck::ScreenCapturerSck(const DesktopCaptureOptions& options)
-    : api_checker_(SequenceChecker::kDetached), capture_options_(options) {
-  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " created";
+
+
+
+struct StringifiableSCContentSharingPickerMode {
+  const SCContentSharingPickerMode modes_;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink,
+                            const StringifiableSCContentSharingPickerMode& m) {
+    auto modes = m.modes_;
+    if (@available(macos 14, *)) {
+      bool empty = true;
+      const std::tuple<SCContentSharingPickerMode, const char*> all_modes[] = {
+          {SCContentSharingPickerModeSingleWindow, "SingleWindow"},
+          {SCContentSharingPickerModeMultipleWindows, "MultiWindow"},
+          {SCContentSharingPickerModeSingleApplication, "SingleApp"},
+          {SCContentSharingPickerModeMultipleApplications, "MultiApp"},
+          {SCContentSharingPickerModeSingleDisplay, "SingleDisplay"}};
+      for (const auto& [mode, text] : all_modes) {
+        if (modes & mode) {
+          modes = modes & (~mode);
+          absl::Format(&sink, "%s%s", empty ? "" : "|", text);
+          empty = false;
+        }
+      }
+      if (modes) {
+        absl::Format(&sink, "%sRemaining=%v", empty ? "" : "|", modes);
+      }
+      return;
+    }
+    absl::Format(&sink, "%v", modes);
+  }
+};
+
+ScreenCapturerSck::ScreenCapturerSck(const DesktopCaptureOptions& options,
+                                     SCContentSharingPickerMode modes)
+    : api_checker_(SequenceChecker::kDetached),
+      capture_options_(options),
+      picker_modes_(modes) {
+  if (capture_options_.allow_sck_system_picker()) {
+    picker_handle_ = CreateSckPickerHandle();
+  }
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this
+                   << " created. allow_sck_system_picker="
+                   << capture_options_.allow_sck_system_picker() << ", source="
+                   << (picker_handle_ ? picker_handle_->Source() : -1)
+                   << ", modes="
+                   << StringifiableSCContentSharingPickerMode{.modes_ = modes};
   helper_ = [[SckHelper alloc] initWithCapturer:this];
 }
+
+ScreenCapturerSck::ScreenCapturerSck(const DesktopCaptureOptions& options)
+    : ScreenCapturerSck(options, SCContentSharingPickerModeSingleDisplay) {}
 
 ScreenCapturerSck::~ScreenCapturerSck() {
   RTC_DCHECK_RUN_ON(&api_checker_);
@@ -172,6 +246,10 @@ void ScreenCapturerSck::Start(DesktopCapturer::Callback* callback) {
   callback_ = callback;
   desktop_config_ =
       capture_options_.configuration_monitor()->desktop_configuration();
+  if (capture_options_.allow_sck_system_picker()) {
+    EnsureVisible();
+    return;
+  }
   StartOrReconfigureCapturer();
 }
 
@@ -244,6 +322,105 @@ void ScreenCapturerSck::CaptureFrame() {
   }
 }
 
+void ScreenCapturerSck::EnsureVisible() {
+  RTC_DCHECK_RUN_ON(&api_checker_);
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " " << __func__ << ".";
+  if (picker_handle_) {
+    if (!picker_handle_registered_) {
+      picker_handle_registered_ = true;
+      [picker_handle_->GetPicker() addObserver:helper_];
+    }
+  } else {
+    
+    RTC_LOG(LS_ERROR)
+        << "ScreenCapturerSck " << this
+        << " EnsureVisible() reached the maximum number of streams.";
+    permanent_error_ = true;
+    return;
+  }
+  SCContentSharingPicker* picker = picker_handle_->GetPicker();
+  SCStream* stream;
+  {
+    MutexLock lock(&lock_);
+    stream = stream_;
+    stream_ = nil;
+    filter_ = nil;
+    MutexLock lock2(&latest_frame_lock_);
+    frame_needs_reconfigure_ = false;
+    frame_reconfigure_img_size_ = std::nullopt;
+  }
+  [stream removeStreamOutput:helper_ type:SCStreamOutputTypeScreen error:nil];
+  [stream stopCaptureWithCompletionHandler:nil];
+  SCContentSharingPickerConfiguration* config = picker.defaultConfiguration;
+  config.allowedPickerModes = picker_modes_;
+  picker.defaultConfiguration = config;
+  SCShareableContentStyle style = SCShareableContentStyleNone;
+  
+  if (@available(macOS 15, *)) {
+    
+    
+    
+  } else {
+    
+    
+    
+    style = SCShareableContentStyleDisplay;
+  }
+  if (picker_modes_ == SCContentSharingPickerModeSingleDisplay) {
+    style = SCShareableContentStyleDisplay;
+  } else if (picker_modes_ == SCContentSharingPickerModeSingleWindow ||
+             picker_modes_ == SCContentSharingPickerModeMultipleWindows) {
+    style = SCShareableContentStyleWindow;
+  } else if (picker_modes_ == SCContentSharingPickerModeSingleApplication ||
+             picker_modes_ == SCContentSharingPickerModeMultipleApplications) {
+    style = SCShareableContentStyleApplication;
+  }
+  
+  
+  
+  [picker presentPickerForStream:stream usingContentStyle:style];
+}
+
+void ScreenCapturerSck::NotifySourceSelection(SCContentFilter* filter,
+                                              SCStream* stream) {
+  MutexLock lock(&lock_);
+  if (stream_ != stream) {
+    
+    RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " " << __func__
+                     << ". stream_ != stream.";
+    return;
+  }
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " " << __func__
+                   << ". Starting.";
+  StartWithFilter(filter);
+}
+
+void ScreenCapturerSck::NotifySourceCancelled(SCStream* stream) {
+  MutexLock lock(&lock_);
+  if (stream_ != stream) {
+    
+    return;
+  }
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " " << __func__ << ".";
+  if (!stream_) {
+    
+    permanent_error_ = true;
+  }
+}
+
+void ScreenCapturerSck::NotifySourceError() {
+  {
+    MutexLock lock(&lock_);
+    if (stream_) {
+      
+      
+      return;
+    }
+  }
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " " << __func__ << ".";
+  permanent_error_ = true;
+}
+
 void ScreenCapturerSck::NotifyCaptureStopped(SCStream* stream) {
   MutexLock lock(&lock_);
   if (stream_ != stream) {
@@ -253,8 +430,22 @@ void ScreenCapturerSck::NotifyCaptureStopped(SCStream* stream) {
   permanent_error_ = true;
 }
 
+bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
+  RTC_DCHECK_RUN_ON(&api_checker_);
+  sources->clear();
+  if (capture_options_.allow_sck_system_picker() && picker_handle_) {
+    sources->push_back({picker_handle_->Source(), std::string()});
+  }
+  return true;
+}
+
 bool ScreenCapturerSck::SelectSource(SourceId id) {
   RTC_DCHECK_RUN_ON(&api_checker_);
+
+  if (capture_options_.allow_sck_system_picker()) {
+    return true;
+  }
+
   RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " SelectSource(id=" << id
                    << ").";
   bool stream_started = false;
@@ -528,6 +719,14 @@ void ScreenCapturerSck::OnNewIOSurface(IOSurfaceRef io_surface,
 }
 
 void ScreenCapturerSck::StartOrReconfigureCapturer() {
+  if (capture_options_.allow_sck_system_picker()) {
+    MutexLock lock(&lock_);
+    if (filter_) {
+      StartWithFilter(filter_);
+    }
+    return;
+  }
+
   RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " " << __func__ << ".";
   
   
@@ -554,6 +753,27 @@ std::unique_ptr<DesktopCapturer> CreateScreenCapturerSck(
     const DesktopCaptureOptions& options) {
   if (@available(macOS 14.0, *)) {
     return std::make_unique<ScreenCapturerSck>(options);
+  }
+  return nullptr;
+}
+
+bool GenericCapturerSckWithPickerAvailable() {
+  bool available = false;
+  if (@available(macOS 14.0, *)) {
+    available = true;
+  }
+  return available;
+}
+
+std::unique_ptr<DesktopCapturer> CreateGenericCapturerSck(
+    const DesktopCaptureOptions& options) {
+  if (@available(macOS 14.0, *)) {
+    if (options.allow_sck_system_picker()) {
+      return std::make_unique<ScreenCapturerSck>(
+          options,
+          SCContentSharingPickerModeSingleDisplay |
+              SCContentSharingPickerModeMultipleWindows);
+    }
   }
   return nullptr;
 }
@@ -599,6 +819,36 @@ std::unique_ptr<DesktopCapturer> CreateScreenCapturerSck(
                    << ".";
   if (_capturer) {
     _capturer->NotifyCaptureStopped(stream);
+  }
+}
+
+- (void)contentSharingPicker:(SCContentSharingPicker*)picker
+         didUpdateWithFilter:(SCContentFilter*)filter
+                   forStream:(SCStream*)stream {
+  webrtc::MutexLock lock(&_capturer_lock);
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << _capturer << " " << __func__
+                   << ".";
+  if (_capturer) {
+    _capturer->NotifySourceSelection(filter, stream);
+  }
+}
+
+- (void)contentSharingPicker:(SCContentSharingPicker*)picker
+          didCancelForStream:(SCStream*)stream {
+  webrtc::MutexLock lock(&_capturer_lock);
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << _capturer << " " << __func__
+                   << ".";
+  if (_capturer) {
+    _capturer->NotifySourceCancelled(stream);
+  }
+}
+
+- (void)contentSharingPickerStartDidFailWithError:(NSError*)error {
+  webrtc::MutexLock lock(&_capturer_lock);
+  RTC_LOG(LS_INFO) << "ScreenCapturerSck " << _capturer << " " << __func__
+                   << ". error.code=" << error.code;
+  if (_capturer) {
+    _capturer->NotifySourceError();
   }
 }
 
