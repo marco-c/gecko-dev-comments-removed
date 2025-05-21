@@ -259,7 +259,9 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       break;
     }
     case StyleImage::Tag::ImageSet:
-      MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
+      MOZ_FALLTHROUGH_ASSERT("image-set() should be resolved already");
+    case StyleImage::Tag::LightDark:
+      MOZ_FALLTHROUGH_ASSERT("light-dark() should be resolved already");
     
     case StyleImage::Tag::CrossFade:
     
@@ -517,7 +519,9 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
       break;
     }
     case StyleImage::Tag::ImageSet:
-      MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
+      MOZ_FALLTHROUGH_ASSERT("image-set() should be resolved already");
+    case StyleImage::Tag::LightDark:
+      MOZ_FALLTHROUGH_ASSERT("light-dark() should be resolved already");
     
     
     case StyleImage::Tag::CrossFade:
