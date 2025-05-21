@@ -703,7 +703,21 @@ UiaTextRange::GetBoundingRectangles(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
   }
 
   
-  const nsTArray<LayoutDeviceIntRect> lineRects = range.LineRects();
+  nsTArray<LayoutDeviceIntRect> lineRects = range.LineRects();
+  if (lineRects.IsEmpty() && !mIsEndOfLineInsertionPoint &&
+      range.Start() == range.End()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    lineRects.AppendElement(range.Start().CharBounds());
+  }
 
   
   
