@@ -454,14 +454,11 @@ static int nr_ice_candidate_copy_for_triggered_check(nr_ice_cand_pair *pair)
     return(_status);
 }
 
-int nr_ice_candidate_pair_do_triggered_check(nr_ice_peer_ctx *pctx, nr_ice_cand_pair *pair)
+int nr_ice_candidate_pair_do_triggered_check(nr_ice_peer_ctx *pctx, nr_ice_cand_pair *pair, int force)
   {
     int r,_status;
 
-    if(pair->state==NR_ICE_PAIR_STATE_CANCELLED) {
-      r_log(LOG_ICE,LOG_DEBUG,"ICE-PEER(%s)/CAND_PAIR(%s): Ignoring matching but canceled pair",pctx->label,pair->codeword);
-      return(0);
-    } else if(pair->state==NR_ICE_PAIR_STATE_SUCCEEDED) {
+    if(pair->state==NR_ICE_PAIR_STATE_SUCCEEDED) {
       r_log(LOG_ICE,LOG_DEBUG,"ICE-PEER(%s)/CAND_PAIR(%s): No new trigger check for succeeded pair",pctx->label,pair->codeword);
       return(0);
     } else if (pair->local->stream->obsolete) {
@@ -473,7 +470,10 @@ int nr_ice_candidate_pair_do_triggered_check(nr_ice_peer_ctx *pctx, nr_ice_cand_
     }
 
     
-    if(!pair->triggered){
+
+
+
+    if(!pair->triggered || force){
       r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): triggered check on %s",pctx->label,pair->codeword,pair->as_string);
 
       pair->triggered=1;
@@ -492,6 +492,9 @@ int nr_ice_candidate_pair_do_triggered_check(nr_ice_peer_ctx *pctx, nr_ice_cand_
           r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): Inserting pair to trigger check queue: %s",pctx->label,pair->codeword,pair->as_string);
           nr_ice_candidate_pair_trigger_check_append(&pair->remote->stream->trigger_check_queue,pair);
           break;
+        case NR_ICE_PAIR_STATE_CANCELLED:
+          r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): received STUN check on cancelled pair, resurrecting: %s",pctx->label,pair->codeword,pair->as_string);
+          
         case NR_ICE_PAIR_STATE_IN_PROGRESS:
           
 
