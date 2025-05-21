@@ -20258,7 +20258,6 @@ bool Document::AllowsDeclarativeShadowRoots() const {
 }
 
 static already_AddRefed<Document> CreateHTMLDocument(GlobalObject& aGlobal,
-                                                     bool aLoadedAsData,
                                                      ErrorResult& aError) {
   nsCOMPtr<nsIURI> uri;
   aError = NS_NewURI(getter_AddRefs(uri), "about:blank");
@@ -20267,9 +20266,9 @@ static already_AddRefed<Document> CreateHTMLDocument(GlobalObject& aGlobal,
   }
 
   nsCOMPtr<Document> doc;
-  aError =
-      NS_NewHTMLDocument(getter_AddRefs(doc), aGlobal.GetSubjectPrincipal(),
-                         aGlobal.GetSubjectPrincipal(), aLoadedAsData);
+  aError = NS_NewHTMLDocument(
+      getter_AddRefs(doc), aGlobal.GetSubjectPrincipal(),
+      aGlobal.GetSubjectPrincipal(),  true);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -20309,9 +20308,7 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
 
   
   
-  
-  RefPtr<Document> doc =
-      CreateHTMLDocument(aGlobal,  sanitize, aError);
+  RefPtr<Document> doc = CreateHTMLDocument(aGlobal, aError);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -20356,8 +20353,7 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
                                                ErrorResult& aError) {
   
   
-  RefPtr<Document> doc =
-      CreateHTMLDocument(aGlobal,  true, aError);
+  RefPtr<Document> doc = CreateHTMLDocument(aGlobal, aError);
   if (aError.Failed()) {
     return nullptr;
   }
