@@ -212,8 +212,10 @@ parent:
   
   
   
-  async GetIdentityCredential(IdentityCredentialRequestOptions aOptions, CredentialMediationRequirement aMediationRequirement)
-      returns (IPCIdentityCredential? identityCredential, nsresult rv);
+  async GetIdentityCredential(IdentityCredentialRequestOptions aOptions,
+                              CredentialMediationRequirement aMediationRequirement,
+                              bool aHasUserActivation)
+    returns (IPCIdentityCredential? identityCredential, nsresult rv);
   async StoreIdentityCredential(IPCIdentityCredential aCredential)
       returns (nsresult rv);
   async DisconnectIdentityCredential(IdentityCredentialDisconnectOptions aOptions) returns (nsresult rv);
