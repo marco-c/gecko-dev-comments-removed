@@ -62,6 +62,18 @@ void PopoverData::EnsureCloseWatcher(nsGenericHTMLElement* aElement) {
 
 CloseWatcher* PopoverData::GetCloseWatcher() { return mCloseWatcher; }
 
+
+
+void PopoverData::DestroyCloseWatcher() {
+  
+  if (mCloseWatcher) {
+    
+    mCloseWatcher->Destroy();
+    
+    mCloseWatcher = nullptr;
+  }
+};
+
 PopoverToggleEventTask::PopoverToggleEventTask(nsWeakPtr aElement,
                                                PopoverVisibilityState aOldState)
     : Runnable("PopoverToggleEventTask"),

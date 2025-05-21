@@ -15773,36 +15773,58 @@ void Document::HideAllPopoversUntil(nsINode& aEndpoint,
   } while (repeatingHide);
 }
 
+
 void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
                            bool aFireEvents, ErrorResult& aRv) {
   RefPtr<nsGenericHTMLElement> popoverHTMLEl =
       nsGenericHTMLElement::FromNode(aPopover);
   NS_ASSERTION(popoverHTMLEl, "Not a HTML element");
 
+  
+  
   if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                            nullptr, aRv)) {
     return;
   }
 
+  
+
+  
   bool wasShowingOrHiding =
       popoverHTMLEl->GetPopoverData()->IsShowingOrHiding();
+
+  
   popoverHTMLEl->GetPopoverData()->SetIsShowingOrHiding(true);
+
+  
   const bool fireEvents = aFireEvents && !wasShowingOrHiding;
+
+  
   auto cleanupHidingFlag = MakeScopeExit([&]() {
     if (auto* popoverData = popoverHTMLEl->GetPopoverData()) {
+      
+      
       popoverData->SetIsShowingOrHiding(wasShowingOrHiding);
-      if (auto* closeWatcher = popoverData->GetCloseWatcher()) {
-        closeWatcher->Destroy();
-      }
+      
+      
+      
+      popoverData->DestroyCloseWatcher();
     }
   });
 
+  
   if (popoverHTMLEl->IsAutoPopover()) {
+    
+    
     HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, fireEvents);
+
+    
+    
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              nullptr, aRv)) {
       return;
     }
+
     
     
     
@@ -15824,12 +15846,17 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   data->SetInvoker(nullptr);
 
   
+  
   if (fireEvents) {
+    
+    
+    
     
     
     popoverHTMLEl->FireToggleEvent(u"open"_ns, u"closed"_ns,
                                    u"beforetoggle"_ns);
 
+    
     
     
     
@@ -15839,24 +15866,47 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
       HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, false);
     }
 
+    
+    
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              nullptr, aRv)) {
       return;
     }
+
+    
+
+    
+    
   }
 
+  
+  
+  
   RemovePopoverFromTopLayer(aPopover);
 
+  
+  
+
+  
+  
   popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
   popoverHTMLEl->GetPopoverData()->SetPopoverVisibilityState(
       PopoverVisibilityState::Hidden);
 
   
+  
   if (fireEvents) {
     popoverHTMLEl->QueuePopoverEventTask(PopoverVisibilityState::Showing);
   }
 
+  
+  
   if (aFocusPreviousElement) {
+    
+    
+    
+    
+    
     popoverHTMLEl->FocusPreviousElementAfterHidingPopover();
   } else {
     popoverHTMLEl->ForgetPreviouslyFocusedElementAfterHidingPopover();
