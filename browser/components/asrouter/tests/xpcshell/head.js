@@ -1,15 +1,22 @@
 
 
 
+
+
+
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+ChromeUtils.defineESModuleGetters(this, {
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
 });
 
 function assertValidates(validator, obj, msg) {
@@ -31,7 +38,7 @@ async function fetchSchema(uri) {
 
 async function schemaValidatorFor(uri, { common = false } = {}) {
   const schema = await fetchSchema(uri);
-  const validator = new lazy.JsonSchema.Validator(schema);
+  const validator = new JsonSchema.Validator(schema);
 
   if (common) {
     const commonSchema = await fetchSchema(
