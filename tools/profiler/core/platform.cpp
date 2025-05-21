@@ -3282,6 +3282,28 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
 static void StreamMetaPlatformSampleUnits(PSLockRef aLock,
                                           SpliceableJSONWriter& aWriter);
 
+static void MaybeWriteRawStartTimeValue(SpliceableJSONWriter& aWriter,
+                                        const TimeStamp& aStartTime) {
+#ifdef XP_LINUX
+  aWriter.DoubleProperty(
+      "startTimeAsClockMonotonicNanosecondsSinceBoot",
+      static_cast<double>(aStartTime.RawClockMonotonicNanosecondsSinceBoot()));
+#endif
+
+#ifdef XP_DARWIN
+  aWriter.DoubleProperty(
+      "startTimeAsMachAbsoluteTimeNanoseconds",
+      static_cast<double>(aStartTime.RawMachAbsoluteTimeNanoseconds()));
+#endif
+
+#ifdef XP_WIN
+  Maybe<uint64_t> startTimeQPC = aStartTime.RawQueryPerformanceCounterValue();
+  if (startTimeQPC)
+    aWriter.DoubleProperty("startTimeAsQueryPerformanceCounterValue",
+                           static_cast<double>(*startTimeQPC));
+#endif
+}
+
 static void StreamMetaJSCustomObject(
     PSLockRef aLock, SpliceableJSONWriter& aWriter, bool aIsShuttingDown,
     const PreRecordedMetaInformation& aPreRecordedMetaInformation) {
@@ -3294,10 +3316,16 @@ static void StreamMetaJSCustomObject(
   
   
   
-  TimeDuration delta = TimeStamp::Now() - CorePS::ProcessStartTime();
-  aWriter.DoubleProperty(
-      "startTime",
-      static_cast<double>(PR_Now() / 1000.0 - delta.ToMilliseconds()));
+  
+  TimeStamp startTime = CorePS::ProcessStartTime();
+  TimeStamp now = TimeStamp::Now();
+  double millisecondsSinceUnixEpoch = static_cast<double>(PR_Now()) / 1000.0;
+  double millisecondsSinceStartTime = (now - startTime).ToMilliseconds();
+  double millisecondsBetweenUnixEpochAndStartTime =
+      millisecondsSinceUnixEpoch - millisecondsSinceStartTime;
+  aWriter.DoubleProperty("startTime", millisecondsBetweenUnixEpochAndStartTime);
+
+  MaybeWriteRawStartTimeValue(aWriter, startTime);
 
   aWriter.DoubleProperty("profilingStartTime", (ActivePS::ProfilingStartTime() -
                                                 CorePS::ProcessStartTime())
@@ -3757,7 +3785,9 @@ locked_profiler_stream_json_for_this_process(
 
   
   aWriter.StartArrayProperty("pages");
-  { StreamPages(aLock, aWriter); }
+  {
+    StreamPages(aLock, aWriter);
+  }
   aWriter.EndArray();
   aProgressLogger.SetLocalProgress(6_pc, "Wrote pages");
 
@@ -5847,7 +5877,7 @@ void profiler_dump_and_stop() {
 #if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
 void profiler_init_signal_handlers() {
   
-  struct sigaction prof_start_sa {};
+  struct sigaction prof_start_sa{};
   memset(&prof_start_sa, 0, sizeof(struct sigaction));
   prof_start_sa.sa_sigaction = profiler_start_signal_handler;
   prof_start_sa.sa_flags = SA_RESTART | SA_SIGINFO;
@@ -5856,7 +5886,7 @@ void profiler_init_signal_handlers() {
   MOZ_ASSERT(rstart == 0, "Failed to install Profiler SIGUSR1 handler");
 
   
-  struct sigaction prof_stop_sa {};
+  struct sigaction prof_stop_sa{};
   memset(&prof_stop_sa, 0, sizeof(struct sigaction));
   prof_stop_sa.sa_sigaction = profiler_stop_signal_handler;
   prof_stop_sa.sa_flags = SA_RESTART | SA_SIGINFO;

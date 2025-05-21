@@ -1603,6 +1603,28 @@ static void StreamMarkerSchema(SpliceableJSONWriter& aWriter) {
 
 static int64_t MicrosecondsSince1970();
 
+static void MaybeWriteRawStartTimeValue(SpliceableJSONWriter& aWriter,
+                                        const TimeStamp& aStartTime) {
+#ifdef XP_LINUX
+  aWriter.DoubleProperty(
+      "startTimeAsClockMonotonicNanosecondsSinceBoot",
+      static_cast<double>(aStartTime.RawClockMonotonicNanosecondsSinceBoot()));
+#endif
+
+#ifdef XP_DARWIN
+  aWriter.DoubleProperty(
+      "startTimeAsMachAbsoluteTimeNanoseconds",
+      static_cast<double>(aStartTime.RawMachAbsoluteTimeNanoseconds()));
+#endif
+
+#ifdef XP_WIN
+  Maybe<uint64_t> startTimeQPC = aStartTime.RawQueryPerformanceCounterValue();
+  if (startTimeQPC)
+    aWriter.DoubleProperty("startTimeAsQueryPerformanceCounterValue",
+                           static_cast<double>(*startTimeQPC));
+#endif
+}
+
 static void StreamMetaJSCustomObject(PSLockRef aLock,
                                      SpliceableJSONWriter& aWriter,
                                      bool aIsShuttingDown) {
@@ -1615,9 +1637,17 @@ static void StreamMetaJSCustomObject(PSLockRef aLock,
   
   
   
-  TimeDuration delta = TimeStamp::Now() - CorePS::ProcessStartTime();
-  aWriter.DoubleProperty(
-      "startTime", MicrosecondsSince1970() / 1000.0 - delta.ToMilliseconds());
+  
+  TimeStamp startTime = CorePS::ProcessStartTime();
+  TimeStamp now = TimeStamp::Now();
+  double millisecondsSinceUnixEpoch =
+      static_cast<double>(MicrosecondsSince1970()) / 1000.0;
+  double millisecondsSinceStartTime = (now - startTime).ToMilliseconds();
+  double millisecondsBetweenUnixEpochAndStartTime =
+      millisecondsSinceUnixEpoch - millisecondsSinceStartTime;
+  aWriter.DoubleProperty("startTime", millisecondsBetweenUnixEpochAndStartTime);
+
+  MaybeWriteRawStartTimeValue(aWriter, startTime);
 
   aWriter.DoubleProperty("profilingStartTime", (ActivePS::ProfilingStartTime() -
                                                 CorePS::ProcessStartTime())
