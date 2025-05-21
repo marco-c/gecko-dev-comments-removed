@@ -7,10 +7,7 @@
 #define _NS_DEVICECONTEXT_H_
 
 #include <stdint.h>                   
-#include <sys/types.h>                
 #include "gfxTypes.h"                 
-#include "gfxFont.h"                  
-#include "mozilla/Assertions.h"       
 #include "mozilla/RefPtr.h"           
 #include "nsCOMPtr.h"                 
 #include "nsCoord.h"                  
@@ -21,8 +18,7 @@
 #include "mozilla/AppUnits.h"         
 #include "nsFontMetrics.h"            
 #include "mozilla/gfx/Point.h"        
-#include "mozilla/gfx/PrintTarget.h"  
-#include "mozilla/gfx/PrintPromise.h"
+#include "mozilla/gfx/PrintPromise.h" 
 
 class gfxContext;
 class gfxTextPerfMetrics;
@@ -45,6 +41,9 @@ enum class ScreenOrientation : uint32_t;
 namespace widget {
 class Screen;
 }  
+namespace gfx {
+class PrintTarget;
+}
 }  
 
 class nsDeviceContext final {

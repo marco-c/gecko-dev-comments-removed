@@ -63,7 +63,17 @@ static int gLastGdkError;
 
 
 
-static inline CSSToLayoutDeviceScale GetWidgetScaleFactor(nsIFrame* aFrame) {
+
+static inline CSSToLayoutDeviceScale GetWidgetScaleFactor(
+    nsIFrame* aFrame, StyleAppearance aAppearance) {
+  if (aAppearance == StyleAppearance::MozWindowDecorations) {
+    
+    return CSSToLayoutDeviceScale{
+        float(AppUnitsPerCSSPixel()) /
+        float(aFrame->PresContext()
+                  ->DeviceContext()
+                  ->AppUnitsPerDevPixelAtUnitFullZoom())};
+  }
   return aFrame->PresContext()->CSSToDevPixelScale();
 }
 
@@ -503,7 +513,7 @@ nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
   Transparency transparency = GetWidgetTransparency(aFrame, aAppearance);
 
   
-  auto scaleFactor = GetWidgetScaleFactor(aFrame);
+  auto scaleFactor = GetWidgetScaleFactor(aFrame, aAppearance);
   LayoutDeviceIntRect gdkDevRect(-drawingRect.TopLeft(), widgetRect.Size());
 
   auto gdkCssRect = CSSIntRect::RoundIn(gdkDevRect / scaleFactor);
@@ -632,7 +642,8 @@ LayoutDeviceIntMargin nsNativeThemeGTK::GetWidgetBorder(
 
   GtkTextDirection direction = GetTextDirection(aFrame);
   CSSIntMargin result = GetCachedWidgetBorder(aFrame, aAppearance, direction);
-  return (CSSMargin(result) * GetWidgetScaleFactor(aFrame)).Rounded();
+  return (CSSMargin(result) * GetWidgetScaleFactor(aFrame, aAppearance))
+      .Rounded();
 }
 
 bool nsNativeThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,

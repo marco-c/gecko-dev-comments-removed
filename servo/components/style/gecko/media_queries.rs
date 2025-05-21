@@ -479,6 +479,20 @@ impl Device {
     }
 
     
+    fn app_units_per_device_pixel_at_unit_full_zoom(&self) -> i32 {
+        match self.pres_context() {
+            Some(pc) => unsafe { (*pc.mDeviceContext.mRawPtr).mAppUnitsPerDevPixelAtUnitFullZoom },
+            None => AU_PER_PX,
+        }
+    }
+
+    
+    pub fn device_pixel_ratio_ignoring_full_zoom(&self) -> Scale<f32, CSSPixel, DevicePixel> {
+        let au_per_px = AU_PER_PX as f32;
+        Scale::new(au_per_px / self.app_units_per_device_pixel_at_unit_full_zoom() as f32)
+    }
+
+    
     pub fn device_pixel_ratio(&self) -> Scale<f32, CSSPixel, DevicePixel> {
         let pc = match self.pres_context() {
             Some(pc) => pc,
