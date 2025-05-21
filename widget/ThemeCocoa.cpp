@@ -10,16 +10,16 @@
 
 namespace mozilla::widget {
 
-void ThemeCocoa::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
-                                      StyleAppearance aAppearance,
-                                      const nsRect& aRect,
-                                      const nsRect& aDirtyRect,
-                                      DrawOverflow aDrawOverflow) {
+NS_IMETHODIMP
+ThemeCocoa::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
+                                 StyleAppearance aAppearance,
+                                 const nsRect& aRect, const nsRect& aDirtyRect,
+                                 DrawOverflow aDrawOverflow) {
   switch (aAppearance) {
     case StyleAppearance::Tooltip:
       
       
-      return;
+      return NS_OK;
     default:
       break;
   }
