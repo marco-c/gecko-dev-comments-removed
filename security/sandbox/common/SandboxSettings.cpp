@@ -177,9 +177,15 @@ int GetEffectiveContentSandboxLevel() {
   
   
   if (level >= 8 &&
-      (!IsWebglOutOfProcessEnabled() || !PDMFactory::AllDecodersAreRemote() ||
-       !StaticPrefs::network_process_enabled() ||
-       !Preferences::GetBool("media.peerconnection.mtransport_process"))) {
+      (!IsWebglOutOfProcessEnabled() ||
+       !PDMFactory::AllDecodersAreRemote()
+#  if defined(MOZ_WEBRTC) && !defined(MOZ_THUNDERBIRD)
+       
+       
+       || !StaticPrefs::network_process_enabled() ||
+       !Preferences::GetBool("media.peerconnection.mtransport_process")
+#  endif
+           )) {
     level = 7;
   }
 #endif
