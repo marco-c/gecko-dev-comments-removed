@@ -2495,7 +2495,7 @@ struct nsGridContainerFrame::Tracks {
       nsTArray<SpanningItemData>::iterator aIter,
       nsTArray<SpanningItemData>::iterator aIterEnd,
       nsTArray<uint32_t>& aTracks, nsTArray<TrackSize>& aPlan,
-      nsTArray<TrackSize>& aItemPlan, TrackSize::StateBits aSelector,
+      nsTArray<TrackSize>& aItemPlan, SizingConstraint aConstraint,
       bool aIsGridIntrinsicSizing, const TrackSizingFunctions& aFunctions,
       const FitContentClamper& aFitContentClamper = nullptr,
       bool aNeedInfinitelyGrowableFlag = false);
@@ -2545,12 +2545,14 @@ struct nsGridContainerFrame::Tracks {
 
 
 
+
   nscoord CollectGrowable(TrackSizingStep aStep, TrackSizingPhase aPhase,
                           nscoord aAvailableSpace, const LineRange& aRange,
-                          TrackSize::StateBits aSelector,
+                          SizingConstraint aConstraint,
                           nsTArray<uint32_t>& aGrowableTracks) const {
     MOZ_ASSERT(aAvailableSpace > 0, "why call me?");
     nscoord space = aAvailableSpace - mGridGap * (aRange.Extent() - 1);
+    const TrackSize::StateBits selector = SelectorForPhase(aPhase, aConstraint);
     for (auto i : aRange.Range()) {
       const TrackSize& sz = mSizes[i];
       space -= StartSizeInDistribution(aPhase, sz);
@@ -2562,7 +2564,7 @@ struct nsGridContainerFrame::Tracks {
           !(sz.mState & TrackSize::eFlexMaxSizing)) {
         continue;
       }
-      if (sz.mState & aSelector) {
+      if (sz.mState & selector) {
         aGrowableTracks.AppendElement(i);
       }
     }
@@ -2725,26 +2727,23 @@ struct nsGridContainerFrame::Tracks {
   static uint32_t MarkExcludedTracks(TrackSizingPhase aPhase,
                                      nsTArray<TrackSize>& aPlan,
                                      const nsTArray<uint32_t>& aGrowableTracks,
-                                     TrackSize::StateBits aSelector) {
+                                     SizingConstraint aConstraint) {
     uint32_t numGrowable = aGrowableTracks.Length();
     if (aPhase == TrackSizingPhase::IntrinsicMaximums ||
         aPhase == TrackSizingPhase::MaxContentMaximums) {
       
       return numGrowable;
     }
-    MOZ_ASSERT(aSelector == (aSelector & TrackSize::eIntrinsicMinSizing) &&
-                   (aSelector & TrackSize::eMaxContentMinSizing),
-               "Should only get here for track sizing steps 2.1 to 2.3");
-    
+
+    TrackSize::StateBits selector = SelectorForPhase(aPhase, aConstraint);
     numGrowable = MarkExcludedTracks(
         aPlan, numGrowable, aGrowableTracks, TrackSize::eMaxContentMinSizing,
         TrackSize::eMaxContentMaxSizing, TrackSize::eSkipGrowUnlimited1);
     
-    auto minOrAutoSelector = aSelector & ~TrackSize::eMaxContentMinSizing;
-    if (minOrAutoSelector) {
-      numGrowable = MarkExcludedTracks(
-          aPlan, numGrowable, aGrowableTracks, minOrAutoSelector,
-          TrackSize::eIntrinsicMaxSizing, TrackSize::eSkipGrowUnlimited2);
+    if ((selector &= ~TrackSize::eMaxContentMinSizing)) {
+      numGrowable = MarkExcludedTracks(aPlan, numGrowable, aGrowableTracks,
+                                       selector, TrackSize::eIntrinsicMaxSizing,
+                                       TrackSize::eSkipGrowUnlimited2);
     }
     return numGrowable;
   }
@@ -2850,7 +2849,7 @@ struct nsGridContainerFrame::Tracks {
                               nsTArray<TrackSize>& aPlan,
                               nsTArray<TrackSize>& aItemPlan,
                               nsTArray<uint32_t>& aGrowableTracks,
-                              TrackSize::StateBits aSelector,
+                              SizingConstraint aConstraint,
                               const TrackSizingFunctions& aFunctions,
                               const FitContentClamper& aFitContentClamper) {
     InitializeItemPlan(aPhase, aItemPlan, aGrowableTracks);
@@ -2865,7 +2864,7 @@ struct nsGridContainerFrame::Tracks {
 
     if (space > 0) {
       uint32_t numGrowable =
-          MarkExcludedTracks(aPhase, aItemPlan, aGrowableTracks, aSelector);
+          MarkExcludedTracks(aPhase, aItemPlan, aGrowableTracks, aConstraint);
       GrowSelectedTracksUnlimited(space, aItemPlan, aGrowableTracks,
                                   numGrowable, aFitContentClamper);
     }
@@ -6792,7 +6791,7 @@ bool nsGridContainerFrame::Tracks::GrowSizeForSpanningItems(
     nsTArray<SpanningItemData>::iterator aIter,
     nsTArray<SpanningItemData>::iterator aIterEnd, nsTArray<uint32_t>& aTracks,
     nsTArray<TrackSize>& aPlan, nsTArray<TrackSize>& aItemPlan,
-    TrackSize::StateBits aSelector, bool aIsGridIntrinsicSizing,
+    SizingConstraint aConstraint, bool aIsGridIntrinsicSizing,
     const TrackSizingFunctions& aFunctions,
     const FitContentClamper& aFitContentClamper,
     bool aNeedInfinitelyGrowableFlag) {
@@ -6802,7 +6801,7 @@ bool nsGridContainerFrame::Tracks::GrowSizeForSpanningItems(
   InitializePlan(aPhase, aPlan);
   for (; aIter != aIterEnd; ++aIter) {
     const SpanningItemData& item = *aIter;
-    if (!(item.mState & aSelector)) {
+    if (!(item.mState & SelectorForPhase(aPhase, aConstraint))) {
       continue;
     }
     if (isMaxSizingPhase) {
@@ -6820,11 +6819,11 @@ bool nsGridContainerFrame::Tracks::GrowSizeForSpanningItems(
       continue;
     }
     aTracks.ClearAndRetainStorage();
-    space = CollectGrowable(aStep, aPhase, space, item.mLineRange, aSelector,
+    space = CollectGrowable(aStep, aPhase, space, item.mLineRange, aConstraint,
                             aTracks);
     if (space > 0) {
       DistributeToTrackSizes(aStep, aPhase, space, aPlan, aItemPlan, aTracks,
-                             aSelector, aFunctions, aFitContentClamper);
+                             aConstraint, aFunctions, aFitContentClamper);
       needToUpdateSizes = true;
     }
   }
@@ -7066,34 +7065,31 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
                  "Non-flex spanning items should not include any flex tracks");
       bool updatedBase = false;  
       TrackSizingPhase phase = TrackSizingPhase::IntrinsicMinimums;
-      TrackSize::StateBits selector = SelectorForPhase(phase, aConstraint);
-      if (stateBitsForSpan & selector) {
+      if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
         
         updatedBase = GrowSizeForSpanningItems(
             TrackSizingStep::NotFlex, phase, spanGroupStart, spanGroupEnd,
-            tracks, plan, itemPlan, selector, aGridRI.mIsGridIntrinsicSizing,
+            tracks, plan, itemPlan, aConstraint, aGridRI.mIsGridIntrinsicSizing,
             aFunctions);
       }
 
       phase = TrackSizingPhase::ContentBasedMinimums;
-      selector = SelectorForPhase(phase, aConstraint);
-      if (stateBitsForSpan & selector) {
+      if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
         
         
         updatedBase |= GrowSizeForSpanningItems(
             TrackSizingStep::NotFlex, phase, spanGroupStart, spanGroupEnd,
-            tracks, plan, itemPlan, selector, aGridRI.mIsGridIntrinsicSizing,
+            tracks, plan, itemPlan, aConstraint, aGridRI.mIsGridIntrinsicSizing,
             aFunctions);
       }
 
       phase = TrackSizingPhase::MaxContentMinimums;
-      selector = SelectorForPhase(phase, aConstraint);
-      if (stateBitsForSpan & selector) {
+      if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
         
         
         updatedBase |= GrowSizeForSpanningItems(
             TrackSizingStep::NotFlex, phase, spanGroupStart, spanGroupEnd,
-            tracks, plan, itemPlan, selector, aGridRI.mIsGridIntrinsicSizing,
+            tracks, plan, itemPlan, aConstraint, aGridRI.mIsGridIntrinsicSizing,
             aFunctions);
       }
 
@@ -7107,24 +7103,22 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       }
 
       phase = TrackSizingPhase::IntrinsicMaximums;
-      selector = SelectorForPhase(phase, aConstraint);
       bool willRunStep3_6 = false;
-      if (stateBitsForSpan & selector) {
+      if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
         willRunStep3_6 =
             stateBitsForSpan & TrackSize::eAutoOrMaxContentMaxSizing;
         
         GrowSizeForSpanningItems(
             TrackSizingStep::NotFlex, phase, spanGroupStart, spanGroupEnd,
-            tracks, plan, itemPlan, selector, aGridRI.mIsGridIntrinsicSizing,
+            tracks, plan, itemPlan, aConstraint, aGridRI.mIsGridIntrinsicSizing,
             aFunctions, fitContentClamper, willRunStep3_6);
       }
       if (willRunStep3_6) {
         
         phase = TrackSizingPhase::MaxContentMaximums;
-        selector = SelectorForPhase(phase, aConstraint);
         GrowSizeForSpanningItems(
             TrackSizingStep::NotFlex, phase, spanGroupStart, spanGroupEnd,
-            tracks, plan, itemPlan, selector, aGridRI.mIsGridIntrinsicSizing,
+            tracks, plan, itemPlan, aConstraint, aGridRI.mIsGridIntrinsicSizing,
             aFunctions, fitContentClamper);
       }
     }
@@ -7140,34 +7134,31 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     }
     bool updatedBase = false;  
     TrackSizingPhase phase = TrackSizingPhase::IntrinsicMinimums;
-    TrackSize::StateBits selector = SelectorForPhase(phase, aConstraint);
-    if (stateBitsForSpan & selector) {
+    if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
       
       updatedBase = GrowSizeForSpanningItems(
           TrackSizingStep::Flex, phase, flexSpanningItems.begin(),
-          flexSpanningItems.end(), tracks, plan, itemPlan, selector,
+          flexSpanningItems.end(), tracks, plan, itemPlan, aConstraint,
           aGridRI.mIsGridIntrinsicSizing, aFunctions);
     }
 
     phase = TrackSizingPhase::ContentBasedMinimums;
-    selector = SelectorForPhase(phase, aConstraint);
-    if (stateBitsForSpan & selector) {
+    if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
       
       
       updatedBase |= GrowSizeForSpanningItems(
           TrackSizingStep::Flex, phase, flexSpanningItems.begin(),
-          flexSpanningItems.end(), tracks, plan, itemPlan, selector,
+          flexSpanningItems.end(), tracks, plan, itemPlan, aConstraint,
           aGridRI.mIsGridIntrinsicSizing, aFunctions);
     }
 
     phase = TrackSizingPhase::MaxContentMinimums;
-    selector = SelectorForPhase(phase, aConstraint);
-    if (stateBitsForSpan & selector) {
+    if (stateBitsForSpan & SelectorForPhase(phase, aConstraint)) {
       
       
       updatedBase |= GrowSizeForSpanningItems(
           TrackSizingStep::Flex, phase, flexSpanningItems.begin(),
-          flexSpanningItems.end(), tracks, plan, itemPlan, selector,
+          flexSpanningItems.end(), tracks, plan, itemPlan, aConstraint,
           aGridRI.mIsGridIntrinsicSizing, aFunctions);
     }
 
