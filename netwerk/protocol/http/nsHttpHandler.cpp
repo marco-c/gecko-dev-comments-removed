@@ -358,6 +358,8 @@ nsresult nsHttpHandler::Init() {
 
   
   if (!IsNeckoChild()) {
+    mActiveTabPriority =
+        Preferences::GetBool(HTTP_PREF("active_tab_priority"), true);
     if (XRE_IsParentProcess()) {
       std::bitset<3> usageOfHTTPSRRPrefs;
       usageOfHTTPSRRPrefs[0] = StaticPrefs::network_dns_upgrade_with_https_rr();
