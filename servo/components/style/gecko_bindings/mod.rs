@@ -16,6 +16,7 @@
     non_upper_case_globals,
     missing_docs,
     unnecessary_transmutes,
+    unknown_lints,
 )]
 
 
