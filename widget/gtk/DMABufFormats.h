@@ -107,6 +107,28 @@ RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
     const std::function<void(DMABufFormats*)>& aFormatRefreshCB = nullptr);
 #endif
 
+class GlobalDMABufFormats final {
+ public:
+  DRMFormat* GetDRMFormat(int32_t aFOURCCFormat);
+
+  GlobalDMABufFormats();
+
+ private:
+  void LoadFormatModifiers();
+  void SetModifiersToGfxVars();
+  void GetModifiersFromGfxVars();
+
+  
+  
+  
+  RefPtr<DRMFormat> mFormatRGBA;
+  RefPtr<DRMFormat> mFormatRGBX;
+  RefPtr<DRMFormat> mFormatP010;
+  RefPtr<DRMFormat> mFormatNV12;
+};
+
+GlobalDMABufFormats* GetGlobalDMABufFormats();
+
 }  
 
 #endif  
