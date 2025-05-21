@@ -34,6 +34,8 @@ constexpr const int sColorPrimariesNum =
 
 class DMABufFormats;
 
+using GdkMonitor = struct _GdkMonitor;
+
 
 
 
