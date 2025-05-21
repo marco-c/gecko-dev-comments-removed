@@ -93,7 +93,7 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
 
   
   
-  DesktopCaptureOptions capture_options_;
+  const DesktopCaptureOptions capture_options_;
 
   
   
