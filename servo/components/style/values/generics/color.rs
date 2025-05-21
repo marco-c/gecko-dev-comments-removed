@@ -5,7 +5,7 @@
 
 
 use crate::color::{mix::ColorInterpolationMethod, AbsoluteColor, ColorFunction};
-use crate::values::{specified::percentage::ToPercentage, computed::ToComputedValue, Parser, ParseError};
+use crate::values::specified::percentage::ToPercentage;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -208,50 +208,3 @@ impl<C> GenericCaretColor<C> {
 }
 
 pub use self::GenericCaretColor as CaretColor;
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem, ToCss, ToResolvedValue)]
-#[css(function, comma)]
-#[repr(C)]
-pub struct GenericLightDark<T> {
-    
-    pub light: T,
-    
-    pub dark: T,
-}
-
-impl<T> GenericLightDark<T> {
-    
-    pub fn parse_args_with<'i>(
-        input: &mut Parser<'i, '_>,
-        mut parse_one: impl FnMut(&mut Parser<'i, '_>) -> Result<T, ParseError<'i>>,
-    ) -> Result<Self, ParseError<'i>> {
-        let light = parse_one(input)?;
-        input.expect_comma()?;
-        let dark = parse_one(input)?;
-        Ok(Self { light, dark })
-    }
-
-    
-    pub fn parse_with<'i>(
-        input: &mut Parser<'i, '_>,
-        parse_one: impl FnMut(&mut Parser<'i, '_>) -> Result<T, ParseError<'i>>,
-    ) -> Result<Self, ParseError<'i>> {
-        input.expect_function_matching("light-dark")?;
-        input.parse_nested_block(|input| Self::parse_args_with(input, parse_one))
-    }
-}
-
-impl<T: ToComputedValue> GenericLightDark<T> {
-    
-    pub fn compute(&self, cx: &crate::values::computed::Context) -> T::ComputedValue {
-        let dark = cx.device().is_dark_color_scheme(cx.builder.color_scheme);
-        if cx.for_non_inherited_property {
-            cx.rule_cache_conditions
-                .borrow_mut()
-                .set_color_scheme_dependency(cx.builder.color_scheme);
-        }
-        let chosen = if dark { &self.dark } else { &self.light };
-        chosen.to_computed_value(cx)
-    }
-}
