@@ -38,7 +38,7 @@ static_assert(sizeof(nsTLiteralString<char16_t>) == sizeof(nsTString<char16_t>),
 
 
 
-class NS_LossyConvertUTF16toASCII : public nsAutoCString {
+class MOZ_GSL_OWNER NS_LossyConvertUTF16toASCII : public nsAutoCString {
  public:
   explicit NS_LossyConvertUTF16toASCII(const char16ptr_t aString) {
     LossyAppendUTF16toASCII(mozilla::MakeStringSpan(aString), *this);

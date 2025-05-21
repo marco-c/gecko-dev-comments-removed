@@ -360,7 +360,7 @@ constexpr Maybe<U> Some(T&& aValue);
 
 
 template <class T>
-class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
+class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_GSL_OWNER Maybe
     : private detail::MaybeStorage<T>,
       public detail::Maybe_CopyMove_Enabler<T> {
   template <typename, bool, bool, bool>
@@ -575,23 +575,24 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
   constexpr const T* operator->() const;
 
   
-  constexpr T& ref() &;
-  constexpr const T& ref() const&;
-  constexpr T&& ref() &&;
-  constexpr const T&& ref() const&&;
+  constexpr T& ref() & MOZ_LIFETIME_BOUND;
+  constexpr const T& ref() const& MOZ_LIFETIME_BOUND;
+  constexpr T&& ref() && MOZ_LIFETIME_BOUND;
+  constexpr const T&& ref() const&& MOZ_LIFETIME_BOUND;
 
   
 
 
 
-  constexpr T& refOr(T& aDefault) {
+  constexpr T& refOr(T& aDefault MOZ_LIFETIME_BOUND) MOZ_LIFETIME_BOUND {
     if (isSome()) {
       return ref();
     }
     return aDefault;
   }
 
-  constexpr const T& refOr(const T& aDefault) const {
+  constexpr const T& refOr(const T& aDefault MOZ_LIFETIME_BOUND) const
+      MOZ_LIFETIME_BOUND {
     if (isSome()) {
       return ref();
     }
@@ -618,10 +619,10 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
     return aFunc();
   }
 
-  constexpr T& operator*() &;
-  constexpr const T& operator*() const&;
-  constexpr T&& operator*() &&;
-  constexpr const T&& operator*() const&&;
+  constexpr T& operator*() & MOZ_LIFETIME_BOUND;
+  constexpr const T& operator*() const& MOZ_LIFETIME_BOUND;
+  constexpr T&& operator*() && MOZ_LIFETIME_BOUND;
+  constexpr const T&& operator*() const&& MOZ_LIFETIME_BOUND;
 
   
 

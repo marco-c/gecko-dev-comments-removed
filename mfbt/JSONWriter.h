@@ -250,8 +250,8 @@ class JSONWriter {
   static constexpr Span<const char> scTopObjectEndString = MakeStringSpan("}");
   static constexpr Span<const char> scTrueString = MakeStringSpan("true");
 
-  JSONWriteFunc& mWriter;
   const UniquePtr<JSONWriteFunc> mMaybeOwnedWriter;
+  JSONWriteFunc& mWriter;
   Vector<bool, 8> mNeedComma;     
   Vector<bool, 8> mNeedNewlines;  
   size_t mDepth;                  
@@ -352,8 +352,8 @@ class JSONWriter {
 
   explicit JSONWriter(UniquePtr<JSONWriteFunc> aWriter,
                       CollectionStyle aStyle = MultiLineStyle)
-      : mWriter(*aWriter),
-        mMaybeOwnedWriter(std::move(aWriter)),
+      : mMaybeOwnedWriter(std::move(aWriter)),
+        mWriter(*mMaybeOwnedWriter),
         mNeedComma(),
         mNeedNewlines(),
         mDepth(0) {
@@ -365,7 +365,7 @@ class JSONWriter {
 
   
   
-  JSONWriteFunc& WriteFunc() const { return mWriter; }
+  JSONWriteFunc& WriteFunc() const MOZ_LIFETIME_BOUND { return mWriter; }
 
   
   

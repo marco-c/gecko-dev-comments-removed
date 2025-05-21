@@ -457,6 +457,39 @@
 
 
 
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(gsl::Owner)
+#    define MOZ_GSL_OWNER [[gsl::Owner]]
+#  else
+#    define MOZ_GSL_OWNER
+#  endif
+#else
+#  define MOZ_GSL_OWNER
+#endif
+
+
+
+
+
+
+
+
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(gsl::Pointer)
+#    define MOZ_GSL_POINTER [[gsl::Pointer]]
+#  else
+#    define MOZ_GSL_POINTER
+#  endif
+#else
+#  define MOZ_GSL_POINTER
+#endif
+
+
+
+
+
+
+
 
 #if defined(__clang__) && defined(__has_cpp_attribute)
 #  if __has_cpp_attribute(clang::lifetimebound)
