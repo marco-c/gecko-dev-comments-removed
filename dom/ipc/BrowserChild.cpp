@@ -1559,6 +1559,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     if (data->CanCoalesce(aEvent, aGuid, aInputBlockId)) {
       data->Coalesce(aEvent, aGuid, aInputBlockId);
       mCoalescedMouseEventFlusher->StartObserver();
+      if (mPointerRawUpdateWindowCount) {
+        
+      }
       return IPC_OK();
     }
     
@@ -1915,6 +1918,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
 
       if (sConsecutiveTouchMoveCount > 1) {
         mCoalescedTouchMoveEventFlusher->StartObserver();
+        if (mPointerRawUpdateWindowCount) {
+          
+        }
       } else {
         
         
@@ -4032,6 +4038,27 @@ already_AddRefed<nsIDragSession> BrowserChild::GetDragSession() {
 
 void BrowserChild::SetDragSession(nsIDragSession* aSession) {
   mDragSession = aSession;
+}
+
+LazyLogModule gPointerRawUpdateEventListenersLog(
+    "PointerRawUpdateEventListeners");
+
+void BrowserChild::OnPointerRawUpdateEventListenerAdded(
+    const nsPIDOMWindowInner* aWindow) {
+  mPointerRawUpdateWindowCount++;
+  MOZ_LOG(gPointerRawUpdateEventListenersLog, LogLevel::Info,
+          ("Added for %p (total: %u)", aWindow, mPointerRawUpdateWindowCount));
+}
+
+void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
+    const nsPIDOMWindowInner* aWindow) {
+  MOZ_ASSERT(mPointerRawUpdateWindowCount);
+  if (MOZ_LIKELY(mPointerRawUpdateWindowCount)) {
+    mPointerRawUpdateWindowCount--;
+  }
+  MOZ_LOG(gPointerRawUpdateEventListenersLog, LogLevel::Info,
+          ("Removed for %p (remaining: %u)", aWindow,
+           mPointerRawUpdateWindowCount));
 }
 
 BrowserChildMessageManager::BrowserChildMessageManager(

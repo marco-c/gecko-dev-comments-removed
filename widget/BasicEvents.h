@@ -454,9 +454,9 @@ class WidgetEvent : public WidgetEventTime {
         break;
       case ePointerEventClass:
         mFlags.mCancelable =
-            (mMessage != ePointerEnter && mMessage != ePointerLeave &&
-             mMessage != ePointerCancel && mMessage != ePointerGotCapture &&
-             mMessage != ePointerLostCapture);
+            (mMessage != ePointerRawUpdate && mMessage != ePointerEnter &&
+             mMessage != ePointerLeave && mMessage != ePointerCancel &&
+             mMessage != ePointerGotCapture && mMessage != ePointerLostCapture);
         mFlags.mBubbles =
             (mMessage != ePointerEnter && mMessage != ePointerLeave);
         break;
@@ -931,12 +931,12 @@ class WidgetEvent : public WidgetEventTime {
       case ePointerEventClass:
         
         mFlags.mComposed =
+            mMessage == ePointerRawUpdate || mMessage == ePointerMove ||
             mMessage == ePointerClick || mMessage == ePointerAuxClick ||
             mMessage == eContextMenu || mMessage == ePointerDown ||
-            mMessage == ePointerMove || mMessage == ePointerUp ||
-            mMessage == ePointerCancel || mMessage == ePointerOver ||
-            mMessage == ePointerOut || mMessage == ePointerGotCapture ||
-            mMessage == ePointerLostCapture;
+            mMessage == ePointerUp || mMessage == ePointerCancel ||
+            mMessage == ePointerOver || mMessage == ePointerOut ||
+            mMessage == ePointerGotCapture || mMessage == ePointerLostCapture;
         break;
       case eTouchEventClass:
         
@@ -1011,6 +1011,7 @@ class WidgetEvent : public WidgetEventTime {
         aEventTypeArg.EqualsLiteral("pointerout") ||
         aEventTypeArg.EqualsLiteral("pointerenter") ||
         aEventTypeArg.EqualsLiteral("pointerleave") ||
+        aEventTypeArg.EqualsLiteral("pointerrawupdate") ||
         aEventTypeArg.EqualsLiteral("gotpointercapture") ||
         aEventTypeArg.EqualsLiteral("lostpointercapture") ||
         
