@@ -231,9 +231,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
 
           let tabIndex = adjustIndexForMove(group, win, index);
           if (win !== group.ownerGlobal) {
-            
-            
-            group = win.gBrowser.adoptTabGroup(group, tabIndex);
+            group = win.gBrowser.adoptTabGroup(group, { tabIndex });
           } else {
             win.gBrowser.moveTabTo(group, { tabIndex });
           }

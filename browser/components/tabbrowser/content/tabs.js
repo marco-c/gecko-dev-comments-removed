@@ -1253,7 +1253,9 @@
           }
         }
       } else if (isTabGroupLabel(draggedTab)) {
-        gBrowser.adoptTabGroup(draggedTab.group, this.#getDropIndex(event));
+        gBrowser.adoptTabGroup(draggedTab.group, {
+          elementIndex: this.#getDropIndex(event),
+        });
       } else if (draggedTab) {
         
         

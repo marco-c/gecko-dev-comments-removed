@@ -2650,8 +2650,9 @@
         forceAllowDataURI,
         fromExternal,
         inBackground = true,
-        index,
         elementIndex,
+        tabIndex,
+        index,
         lazyTabTitle,
         name,
         noInitialLabel,
@@ -2753,11 +2754,14 @@
           skipBackgroundNotify,
         });
         if (insertTab) {
-          if (typeof index == "number") {
-            elementIndex = this.#tabIndexToElementIndex(index);
-          }
           
-          this.#insertTabAtElementIndex(t, elementIndex, {
+          
+          if (typeof index == "number") {
+            tabIndex = index;
+          }
+          this.#insertTabAtIndex(t, {
+            elementIndex,
+            tabIndex,
             ownerTab,
             openerTab,
             pinned,
@@ -2923,19 +2927,6 @@
         element = element.group.tabs[0];
       }
       return element._tPos;
-    }
-
-    #tabIndexToElementIndex(tabIndex) {
-      if (tabIndex < 0) {
-        return -1;
-      }
-      let tab;
-      while ((tab = this.tabs.at(tabIndex)) && !tab.visible) {
-        tabIndex++;
-      }
-      return tab?.visible
-        ? tab.elementIndex
-        : this.tabContainer.ariaFocusableItems.length;
     }
 
     
@@ -3155,7 +3146,9 @@
 
 
 
-    adoptTabGroup(group, elementIndex) {
+
+
+    adoptTabGroup(group, { elementIndex, tabIndex } = {}) {
       if (group.ownerDocument == document) {
         return group;
       }
@@ -3164,8 +3157,11 @@
 
       let newTabs = [];
       for (let tab of group.tabs) {
-        newTabs.push(this.adoptTab(tab, { elementIndex }));
-        ++elementIndex;
+        let adoptedTab = this.adoptTab(tab, { elementIndex, tabIndex });
+        newTabs.push(adoptedTab);
+        
+        elementIndex = undefined;
+        tabIndex = adoptedTab._tPos + 1;
       }
 
       return this.addTabGroup(newTabs, {
@@ -3870,10 +3866,18 @@
 
 
 
-    #insertTabAtElementIndex(
+
+    #insertTabAtIndex(
       tab,
-      index,
-      { ownerTab, openerTab, pinned, bulkOrderedOpen, tabGroup } = {}
+      {
+        tabIndex,
+        elementIndex,
+        ownerTab,
+        openerTab,
+        pinned,
+        bulkOrderedOpen,
+        tabGroup,
+      } = {}
     ) {
       
       if (ownerTab) {
@@ -3881,9 +3885,9 @@
       }
 
       
-      if (typeof index != "number") {
+      if (typeof elementIndex != "number" && typeof tabIndex != "number") {
         
-        index = Infinity;
+        elementIndex = Infinity;
         if (
           !bulkOrderedOpen &&
           ((openerTab &&
@@ -3904,11 +3908,11 @@
             ) &&
             previousTab.pinned
           ) {
-            index = Infinity;
+            elementIndex = Infinity;
           } else if (previousTab.visible) {
-            index = previousTab.elementIndex + 1;
+            elementIndex = previousTab.elementIndex + 1;
           } else if (previousTab == FirefoxViewHandler.tab) {
-            index = 0;
+            elementIndex = 0;
           }
 
           if (lastRelatedTab) {
@@ -3923,21 +3927,30 @@
         }
       }
 
-      
-      
-      tab.initialize();
-
+      let allItems;
+      let index;
+      if (typeof elementIndex == "number") {
+        allItems = this.tabContainer.ariaFocusableItems;
+        index = elementIndex;
+      } else {
+        allItems = this.tabs;
+        index = tabIndex;
+      }
       
       if (tab.pinned) {
         index = Math.max(index, 0);
         index = Math.min(index, this.pinnedTabCount);
       } else {
         index = Math.max(index, this.pinnedTabCount);
-        index = Math.min(index, this.tabContainer.ariaFocusableItems.length);
+        index = Math.min(index, allItems.length);
       }
+      
+      let itemAfter = allItems.at(index);
 
       
-      let itemAfter = this.tabContainer.ariaFocusableItems.at(index);
+      
+      tab.initialize();
+
       this.tabContainer._invalidateCachedTabs();
 
       if (tabGroup) {
@@ -6292,12 +6305,17 @@
       
       
       
-      if (typeof tabIndex == "number") {
-        elementIndex = this.#tabIndexToElementIndex(tabIndex);
-      }
       let linkedBrowser = aTab.linkedBrowser;
       let createLazyBrowser = !aTab.linkedPanel;
-      let nextElement = this.tabContainer.ariaFocusableItems.at(elementIndex);
+      let index;
+      let nextElement;
+      if (typeof elementIndex == "number") {
+        index = elementIndex;
+        nextElement = this.tabContainer.ariaFocusableItems.at(elementIndex);
+      } else {
+        index = tabIndex;
+        nextElement = this.tabs.at(tabIndex);
+      }
       let tabInGroup = !!aTab.group;
       let params = {
         eventDetail: { adoptedTab: aTab },
@@ -6305,15 +6323,13 @@
         initialBrowsingContextGroupId: linkedBrowser.browsingContext?.group.id,
         skipAnimation: true,
         elementIndex,
+        tabIndex,
         tabGroup: this.isTab(nextElement) && nextElement.group,
         createLazyBrowser,
       };
 
       let numPinned = this.pinnedTabCount;
-      if (
-        elementIndex < numPinned ||
-        (aTab.pinned && elementIndex == numPinned)
-      ) {
+      if (index < numPinned || (aTab.pinned && index == numPinned)) {
         params.pinned = true;
       }
 
