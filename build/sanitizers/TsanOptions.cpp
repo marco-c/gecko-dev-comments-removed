@@ -135,6 +135,7 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
          
          "mutex:libdbus-1\n"
          "mutex:swrast_dri.so\n"
+         "mutex:libgallium-*.so\n"
          
          "race:libavcodec.so*\n"
          "race:libavutil.so*\n"
@@ -163,6 +164,7 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
          "race:radeonsi_dri\n"
          
          "race:swrast_dri.so\n"
+         "race:libgallium-*.so\n"
          
          "race:libffi.so\n"
          "race:mozilla::widget::WaylandBuffer::BufferReleaseCallbackHandler\n"
