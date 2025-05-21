@@ -408,6 +408,9 @@ class nsDocShellLoadState final {
 
   void MaybeStripTrackerQueryStrings(mozilla::dom::BrowsingContext* aContext);
 
+  void SetSourceElement(mozilla::dom::Element* aElement);
+  already_AddRefed<mozilla::dom::Element> GetSourceElement() const;
+
  protected:
   
   
@@ -658,6 +661,8 @@ class nsDocShellLoadState final {
   
   nsILoadInfo::HTTPSUpgradeTelemetryType mHttpsUpgradeTelemetry =
       nsILoadInfo::NOT_INITIALIZED;
+
+  nsWeakPtr mSourceElement;
 };
 
 #endif 
