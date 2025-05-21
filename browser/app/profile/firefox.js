@@ -2024,6 +2024,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thu
   pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
 #endif
 
+  pref("browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled", false);
+
+  
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.inferredInterests.enabled", false);
+
 
 pref("browser.newtabpage.activity-stream.telemetry.surfaceId", "");
 
