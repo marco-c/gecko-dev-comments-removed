@@ -19,7 +19,7 @@
 - (id)moxRequired;
 
 
-- (NSNumber*)moxInvalid;
+- (NSString*)moxInvalid;
 
 
 - (NSNumber*)moxInsertionPointLineNumber;

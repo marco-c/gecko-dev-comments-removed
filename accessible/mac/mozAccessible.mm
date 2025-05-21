@@ -593,6 +593,15 @@ struct RoleDescrComparator {
   return @YES;
 }
 
+- (NSString*)moxInvalid {
+  
+  
+  
+  
+  
+  return ([self stateWithMask:states::INVALID] != 0) ? @"true" : @"false";
+}
+
 - (NSNumber*)moxFocused {
   return @([self stateWithMask:states::FOCUSED] != 0);
 }
