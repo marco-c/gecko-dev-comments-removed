@@ -1,11 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/*
+ * Page container for worker + manifest views
+ */
 
 .app-page {
   padding: calc(var(--base-unit) * 3) calc(var(--base-unit) * 8);
@@ -40,6 +39,6 @@
   fill: var(--dimmed-icon-color);
   -moz-context-properties: fill;
 
-  
+  /* alignment fix for text to compensate for low baseline */
   margin-block-start: var(--base-unit);
 }

@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/******************************************************************************/
+/* General */
 
 body {
   padding: 0;
@@ -23,24 +23,24 @@ body {
   overflow: auto;
 }
 
-
-
+/******************************************************************************/
+/* TreeView Customization */
 
 .treeTable {
   width: 100%;
 }
 
-
+/* Space for read only properties icon */
 .treeTable td.treeValueCell {
   padding-inline-start: 16px;
 }
 
 .treeTable .treeLabel,
 .treeTable td.treeValueCell .objectBox {
-  direction: ltr; 
+  direction: ltr; /* Don't change the direction of english labels */
 }
 
-
+/* Read only properties have a padlock icon */
 .treeTable tr:not(.writable) td.treeValueCell {
   background: url("chrome://devtools/skin/images/lock.svg") no-repeat;
   background-position: 1px 4px;
@@ -57,7 +57,7 @@ body {
   fill: var(--theme-selection-color);
 }
 
-
+/* Non-enumerable properties are grayed out */
 .treeTable tr:not(.enumerable) td.treeValueCell {
   opacity: 0.7;
 }
@@ -66,7 +66,7 @@ body {
   border-bottom: 1px solid var(--grey-20);
 }
 
-
+/* Label Types */
 .treeTable .userLabel,
 .treeTable .userClassLabel,
 .treeTable .userFunctionLabel {
@@ -78,11 +78,11 @@ body {
 }
 
 .treeTable .userClassLabel {
-  color: #E90000;
+  color: #e90000;
 }
 
 .treeTable .userFunctionLabel {
-  color: #025E2A;
+  color: #025e2a;
 }
 
 .treeTable .domLabel {
@@ -90,11 +90,11 @@ body {
 }
 
 .treeTable .domClassLabel {
-  color: #E90000;
+  color: #e90000;
 }
 
 .treeTable .domFunctionLabel {
-  color: #025E2A;
+  color: #025e2a;
 }
 
 .treeTable .ordinalLabel {
@@ -102,8 +102,8 @@ body {
   font-weight: bold;
 }
 
-
-
+/******************************************************************************/
+/* Refresh button */
 #dom-refresh-button::before {
   background-image: url("chrome://devtools/skin/images/reload.svg");
 }

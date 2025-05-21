@@ -1,20 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * The current layout of a registration is
+ *
+ *  +------+----------------------+----------------+
+ *  | Header - scope + timestamp  | Unregister_btn |
+ *  +------+----------------------+----------------|
+ *  | worker 1                                     |
+    | worker 2                                     |
+    | ...                                          |
+    +----------------------------------------------+
+    |                              Unregister btn  |
+    +----------------------------------------------+
+ */
 
 .registration {
   line-height: 1.5;
@@ -24,21 +24,22 @@
   grid-template-rows: minmax(calc(var(--base-unit) * 6), auto) 1fr auto;
   grid-column-gap: calc(4 * var(--base-unit));
   grid-row-gap: calc(2 * var(--base-unit));
-  grid-template-areas: "header          header-controls"
-                       "workers         workers"
-                       "footer-controls footer-controls";
+  grid-template-areas:
+    "header          header-controls"
+    "workers         workers"
+    "footer-controls footer-controls";
 }
 
-
-@media(max-width: 700px) {
+/* vertical layout */
+@media (max-width: 700px) {
   .registration__controls {
     grid-area: footer-controls;
     justify-self: end;
   }
 }
 
-
-@media(min-width: 701px) {
+/* wide layout */
+@media (min-width: 701px) {
   .registration__controls {
     grid-area: header-controls;
   }

@@ -1,16 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
- 
-
-
+/*
+* Global styles
+*/
 @import "chrome://devtools/content/application/src/base.css";
 
-
-
-
-
+/*
+* Components
+*/
 @import "chrome://devtools/content/application/src/components/App.css";
 @import "chrome://devtools/content/application/src/components/manifest/ManifestColorItem.css";
 @import "chrome://devtools/content/application/src/components/manifest/ManifestIconItem.css";
