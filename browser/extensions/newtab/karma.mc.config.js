@@ -262,12 +262,13 @@ module.exports = function (config) {
             
 
 
-            "content-src/components/WallpapersSection/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
+            "content-src/components/WallpaperCategories/WallpaperCategories.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             
 
 
