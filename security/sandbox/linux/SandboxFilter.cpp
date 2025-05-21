@@ -952,6 +952,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             
             .ElseIf(clk_id == CLOCK_MONOTONIC_COARSE, Allow())
 #endif
+#ifdef CLOCK_MONOTONIC_RAW
+            .ElseIf(clk_id == CLOCK_MONOTONIC_RAW, Allow())
+#endif
             .ElseIf(clk_id == CLOCK_PROCESS_CPUTIME_ID, Allow())
             .ElseIf(clk_id == CLOCK_REALTIME, Allow())
 #ifdef CLOCK_REALTIME_COARSE
