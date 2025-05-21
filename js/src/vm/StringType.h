@@ -1239,15 +1239,15 @@ class JSLinearString : public JSString {
   
   
   
-  
   template <typename CharT>
-  static size_t maybeCloneCharsOnPromotionTyped(JSLinearString* str);
+  static void maybeCloneCharsOnPromotionTyped(JSLinearString* str);
 
-  static size_t maybeCloneCharsOnPromotion(JSLinearString* str) {
+  static void maybeCloneCharsOnPromotion(JSLinearString* str) {
     if (str->hasLatin1Chars()) {
-      return maybeCloneCharsOnPromotionTyped<JS::Latin1Char>(str);
+      maybeCloneCharsOnPromotionTyped<JS::Latin1Char>(str);
+    } else {
+      maybeCloneCharsOnPromotionTyped<char16_t>(str);
     }
-    return maybeCloneCharsOnPromotionTyped<char16_t>(str);
   }
 
   inline void finalize(JS::GCContext* gcx);

@@ -1103,9 +1103,12 @@ size_t js::gc::TenuringTracer::moveString(JSString* dst, JSString* src,
     
     
     
-    size_t cloned =
-        JSLinearString::maybeCloneCharsOnPromotion(&dst->asDependent());
-    return size + cloned;
+    
+    
+    
+    
+    JSLinearString::maybeCloneCharsOnPromotion(&dst->asDependent());
+    return size;
   }
 
   if (!src->hasOutOfLineChars()) {

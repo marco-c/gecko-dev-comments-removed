@@ -57,7 +57,7 @@ function with_dependent(mallocChars) {
     var TD6 = newDependentString(NB5, 32, { tenured: true });
 
     
-    var NB4 = newString(base, { tenured: false, newStringBuffer: mallocChars });
+    var NB4 = newString(base, { tenured: false });
 
     
     
@@ -75,7 +75,8 @@ function with_dependent(mallocChars) {
     
     TD3 = NB4 = NB5 = "";
 
-    minorgc();
+    var preGC_ND2_rep = this.stringRepresentation ? JSON.parse(stringRepresentation(ND2)) : null;
+    gc();
     assertEq(ND2, "A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME");
 }
 
@@ -117,7 +118,7 @@ function with_rope() {
     
     rope = suffix = TD3 = NB4 = NB5 = "";
 
-    minorgc();
+    gc();
     print(ND2);
     assertEq(ND2, "A TOE, A GIANT BLUE TOE, IT MADE FUN OF ME INCESSANTLY BUT THAT DID NOT BOTHER ME");
     
@@ -152,8 +153,6 @@ function atomref() {
     minorgc();
 }
 
-no_dedupe();
-with_dependent(false);
-with_dependent(true);
+with_dependent();
 with_rope();
 atomref();

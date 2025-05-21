@@ -2548,20 +2548,20 @@ static bool PtrIsWithinRange(const CharT* ptr,
 
 
 template <typename CharT>
-size_t JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
+void JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
   MOZ_ASSERT(!InCollectedNurseryRegion(str), "str should have been promoted");
   MOZ_ASSERT(str->isDependent());
   JSLinearString* root = str->asDependent().rootBaseDuringMinorGC();
   if (!root->isTenured()) {
     
-    return 0;
+    return;
   }
 
   
   JS::AutoCheckCannotGC nogc;
   const CharT* chars = str->chars<CharT>(nogc);
   if (PtrIsWithinRange(chars, root->range<CharT>(nogc))) {
-    return 0;
+    return;
   }
 
   
@@ -2578,13 +2578,11 @@ size_t JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
   
   new (str) JSLinearString(data, len, false );
   str->zone()->addCellMemory(str, nbytes, js::MemoryUse::StringContents);
-
-  return nbytes;
 }
 
-template size_t JSLinearString::maybeCloneCharsOnPromotionTyped<JS::Latin1Char>(
+template void JSLinearString::maybeCloneCharsOnPromotionTyped<JS::Latin1Char>(
     JSLinearString* str);
-template size_t JSLinearString::maybeCloneCharsOnPromotionTyped<char16_t>(
+template void JSLinearString::maybeCloneCharsOnPromotionTyped<char16_t>(
     JSLinearString* str);
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
