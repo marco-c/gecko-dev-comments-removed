@@ -9,7 +9,10 @@ var {
   findPlaceholders,
   getPath,
 } = require("resource://devtools/shared/protocol/utils.js");
-var { types } = require("resource://devtools/shared/protocol/types.js");
+var {
+  types,
+  BULK_REQUEST,
+} = require("resource://devtools/shared/protocol/types.js");
 
 
 
@@ -18,8 +21,20 @@ var { types } = require("resource://devtools/shared/protocol/types.js");
 
 
 
-var Request = function (template = {}) {
-  this.type = template.type;
+
+
+
+
+var Request = function (type, template = {}) {
+  
+  
+  
+  
+  
+  
+  
+  this.type = template.type || type;
+
   this.template = template;
   this.args = findPlaceholders(template, Arg);
 };
@@ -35,17 +50,35 @@ Request.prototype = {
 
 
   write(fnArgs, ctx) {
-    const ret = {};
+    
+    
+    
+    if (this.template === BULK_REQUEST) {
+      
+      
+      
+      if (typeof fnArgs[0].length != "number") {
+        throw new Error(
+          "This front's method is expected to send a bulk request and should be called with an object argument with a length attribute."
+        );
+      }
+      return { type: this.type, length: fnArgs[0].length };
+    }
+
+    const ret = {
+      type: this.type,
+    };
     for (const key in this.template) {
       const value = this.template[key];
-      if (value instanceof Arg) {
+      if (value instanceof Arg || value instanceof Option) {
         ret[key] = value.write(
           value.index in fnArgs ? fnArgs[value.index] : undefined,
           ctx,
           key
         );
       } else if (key == "type") {
-        ret[key] = value;
+        
+        continue;
       } else {
         throw new Error(
           "Request can only an object with `Arg` or `Option` properties"
@@ -65,6 +98,13 @@ Request.prototype = {
 
 
   read(packet, ctx) {
+    if (this.template === BULK_REQUEST) {
+      
+      
+      
+      return [{ length: packet.length, copyTo: packet.copyTo }];
+    }
+
     const fnArgs = [];
     for (const templateArg of this.args) {
       const arg = templateArg.placeholder;

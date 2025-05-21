@@ -439,7 +439,8 @@ DevToolsServerConnection.prototype = {
     let ret;
     if (actor.requestTypes?.[type]) {
       try {
-        ret = actor.requestTypes[type].call(actor, packet);
+        
+        ret = actor.requestTypes[type].call(actor, packet, this);
       } catch (error) {
         const prefix = `error occurred while processing bulk packet '${type}'`;
         this.transport.send(this._unknownError(actorKey, prefix, error));

@@ -273,22 +273,42 @@ class Front extends Pool {
   
 
 
-  send(packet) {
-    if (packet.to) {
+
+
+
+
+
+
+
+
+
+
+
+  send(packet, { bulk = false, clientBulkCallback = null } = {}) {
+    
+    if (!this.conn?._transport) {
+      return;
+    }
+
+    if (!bulk) {
+      if (!packet.to) {
+        packet.to = this.actorID;
+      }
       this.conn._transport.send(packet);
     } else {
-      packet.to = this.actorID;
-      
-      if (this.conn && this.conn._transport) {
-        this.conn._transport.send(packet);
+      if (!packet.actor) {
+        packet.actor = this.actorID;
       }
+      this.conn._transport.startBulkSend(packet).then(clientBulkCallback);
     }
   }
 
   
 
 
-  request(packet) {
+
+
+  request(packet, { bulk = false, clientBulkCallback = null } = {}) {
     const deferred = Promise.withResolvers();
     
     const { to, type } = packet;
@@ -298,8 +318,9 @@ class Front extends Pool {
       type,
       packet,
       stack: getStack(),
+      clientBulkCallback,
     });
-    this.send(packet);
+    this.send(packet, { bulk, clientBulkCallback });
     return deferred.promise;
   }
 
@@ -394,6 +415,14 @@ class Front extends Pool {
       stack,
       "DevTools RDP"
     );
+  }
+
+  
+
+
+  onBulkPacket(packet) {
+    
+    this.onPacket(packet);
   }
 
   hasRequests() {

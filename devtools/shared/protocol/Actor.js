@@ -7,6 +7,14 @@
 var { Pool } = require("resource://devtools/shared/protocol/Pool.js");
 
 
+loader.lazyRequireGetter(
+  this,
+  "BULK_RESPONSE",
+  "resource://devtools/shared/protocol/types.js",
+  true
+);
+
+
 
 
 
@@ -195,10 +203,32 @@ var generateRequestTypes = function (actorSpec) {
               ` method that isn't implemented by the actor`
           );
         }
+
+        
+        
+        
+        const isBulkResponse = spec.response.template === BULK_RESPONSE;
+        if (isBulkResponse) {
+          args.push(length => {
+            return this.conn.startBulkSend({
+              actor: this.actorID,
+              length,
+            });
+          });
+        }
         const ret = this[spec.name].apply(this, args);
 
         const sendReturn = retToSend => {
           if (spec.oneway) {
+            
+            return;
+          }
+          if (isBulkResponse) {
+            if (retToSend) {
+              throw new Actor(
+                `Actor method '${this.typeName}.${spec.name}' is supposed to return a bulk response, but returned some value.`
+              );
+            }
             
             return;
           }

@@ -4,6 +4,10 @@
 
 "use strict";
 
+var {
+  BULK_REQUEST,
+  BULK_RESPONSE,
+} = require("resource://devtools/shared/protocol/types.js");
 var { Front } = require("resource://devtools/shared/protocol/Front.js");
 
 
@@ -20,7 +24,7 @@ var generateRequestMethods = function (actorSpec, frontProto) {
   
   const methods = actorSpec.methods;
   methods.forEach(spec => {
-    const name = spec.name;
+    const { name } = spec;
 
     frontProto[name] = function (...args) {
       
@@ -44,7 +48,25 @@ var generateRequestMethods = function (actorSpec, frontProto) {
         return undefined;
       }
 
-      return this.request(packet).then(response => {
+      
+      const isSendingBulkData = spec.request.template === BULK_REQUEST;
+
+      
+      const clientBulkCallback = isSendingBulkData ? args.at(-1) : null;
+
+      return this.request(packet, {
+        bulk: isSendingBulkData,
+        clientBulkCallback,
+      }).then(response => {
+        
+        
+        
+        
+        const isReceivingBulkData = spec.response.template === BULK_RESPONSE;
+        if (isReceivingBulkData) {
+          return response;
+        }
+
         let ret;
         if (!this.conn) {
           throw new Error("Missing conn on " + this);

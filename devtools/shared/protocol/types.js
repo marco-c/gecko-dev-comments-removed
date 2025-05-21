@@ -37,6 +37,14 @@ exports.registeredTypes = registeredTypes;
 
 
 
+exports.BULK_REQUEST = Symbol("request");
+exports.BULK_RESPONSE = Symbol("response");
+
+
+
+
+
+
 
 
 
