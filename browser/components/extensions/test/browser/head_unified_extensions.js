@@ -19,6 +19,8 @@
 
 
 
+
+
 const assertExtensionsButtonHidden = (win = window) => {
   const { button } = win.gUnifiedExtensions;
   ok(BrowserTestUtils.isHidden(button), "Extensions button should be hidden");
@@ -146,6 +148,32 @@ const createExtensions = (
       incognitoOverride,
       files,
     })
+  );
+};
+
+const openCustomizationUI = async (win = window) => {
+  const customizationReady = BrowserTestUtils.waitForEvent(
+    win.gNavToolbox,
+    "customizationready"
+  );
+  win.gCustomizeMode.enter();
+  await customizationReady;
+  ok(
+    win.CustomizationHandler.isCustomizing(),
+    "expected customizing mode to be enabled"
+  );
+};
+
+const closeCustomizationUI = async (win = window) => {
+  const afterCustomization = BrowserTestUtils.waitForEvent(
+    win.gNavToolbox,
+    "aftercustomization"
+  );
+  win.gCustomizeMode.exit();
+  await afterCustomization;
+  ok(
+    !win.CustomizationHandler.isCustomizing(),
+    "expected customizing mode to be disabled"
   );
 };
 

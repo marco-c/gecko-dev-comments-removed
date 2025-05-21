@@ -1850,6 +1850,7 @@ var gUnifiedExtensions = {
     lazy.ExtensionPermissions.addListener(this.permListener);
 
     gNavToolbox.addEventListener("customizationstarting", this);
+    gNavToolbox.addEventListener("aftercustomization", this);
     CustomizableUI.addListener(this);
     AddonManager.addManagerListener(this);
 
@@ -1869,6 +1870,7 @@ var gUnifiedExtensions = {
     this.permListener = null;
 
     gNavToolbox.removeEventListener("customizationstarting", this);
+    gNavToolbox.removeEventListener("aftercustomization", this);
     CustomizableUI.removeListener(this);
     AddonManager.removeManagerListener(this);
   },
@@ -1897,7 +1899,11 @@ var gUnifiedExtensions = {
       
       this._button.open ||
       
-      this._buttonShownBeforeButtonOpen;
+      this._buttonShownBeforeButtonOpen ||
+      
+      
+      
+      CustomizationHandler.isCustomizing();
 
     if (shouldShowButton) {
       this._button.hidden = false;
@@ -2064,6 +2070,11 @@ var gUnifiedExtensions = {
 
       case "customizationstarting":
         this.panel.hidePopup();
+        this.updateButtonVisibility();
+        break;
+
+      case "aftercustomization":
+        this.updateButtonVisibility();
         break;
 
       case "toolbarvisibilitychange":
@@ -2775,6 +2786,14 @@ var gUnifiedExtensions = {
     Services.prefs.setBoolPref(
       "extensions.unifiedExtensions.button.always_visible",
       false
+    );
+  },
+
+  showExtensionsButtonInToolbar() {
+    
+    Services.prefs.setBoolPref(
+      "extensions.unifiedExtensions.button.always_visible",
+      true
     );
   },
 };
