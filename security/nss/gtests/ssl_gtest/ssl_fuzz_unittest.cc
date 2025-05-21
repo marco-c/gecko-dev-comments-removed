@@ -65,6 +65,7 @@ static std::unordered_set<PRInt32> gFuzzedSslOptions = {
     SSL_SUPPRESS_END_OF_EARLY_DATA,
     SSL_ENABLE_GREASE,                    
     SSL_ENABLE_CH_EXTENSION_PERMUTATION,  
+    SSL_DB_LOAD_CERTIFICATE_CHAIN,
 };
 
 const uint8_t kShortEmptyFinished[8] = {0};

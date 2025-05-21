@@ -380,6 +380,12 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_ENABLE_CH_EXTENSION_PERMUTATION 43
 
+
+
+
+
+#define SSL_DB_LOAD_CERTIFICATE_CHAIN 44
+
 #ifdef SSL_DEPRECATED_FUNCTION
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRIntn on);
