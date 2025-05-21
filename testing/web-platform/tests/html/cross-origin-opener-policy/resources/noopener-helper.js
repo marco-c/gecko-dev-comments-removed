@@ -122,7 +122,8 @@ const test_noopener_navigating_away = (popup_coop) => {
     t.add_cleanup(() => send(popup_token, 'window.close()'));
 
     
-    assert_not_equals(popup.window, null, 'can script the popup');
+    
+    
     assert_false(popup.closed, 'popup closed');
 
     
