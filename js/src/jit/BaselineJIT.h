@@ -288,6 +288,11 @@ class alignas(uintptr_t) BaselineScript final
                              size_t retAddrEntries, size_t osrEntries,
                              size_t debugTrapEntries, size_t resumeEntries);
 
+  
+  
+  
+  static BaselineScript* Copy(JSContext* cx, BaselineScript* bs);
+
   static void Destroy(JS::GCContext* gcx, BaselineScript* script);
 
   void trace(JSTracer* trc);
