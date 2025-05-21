@@ -41,6 +41,16 @@ const tabDescriptorSpec = generateActorSpec({
       },
       response: {},
     },
+    
+    goBack: {
+      request: {},
+      response: {},
+    },
+    
+    goForward: {
+      request: {},
+      response: {},
+    },
     reloadDescriptor: {
       request: {
         bypassCache: Option(0, "boolean"),

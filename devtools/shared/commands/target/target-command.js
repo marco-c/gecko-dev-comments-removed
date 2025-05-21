@@ -1101,7 +1101,7 @@ class TargetCommand extends EventEmitter {
 
 
   navigateTo(url, waitForLoad = true) {
-    if (this.descriptorFront.traits.supportsNavigateTo) {
+    if (this.descriptorFront.traits.supportsNavigation) {
       return this.descriptorFront.navigateTo(url, waitForLoad);
     }
 
@@ -1112,6 +1112,34 @@ class TargetCommand extends EventEmitter {
     
     
     return this.targetFront.navigateTo({ url });
+  }
+
+  goBack() {
+    if (this.descriptorFront.traits.supportsNavigation) {
+      return this.descriptorFront.goBack();
+    }
+
+    
+    
+    
+    
+    
+    
+    return this.targetFront.goBack();
+  }
+
+  goForward() {
+    if (this.descriptorFront.traits.supportsNavigation) {
+      return this.descriptorFront.goForward();
+    }
+
+    
+    
+    
+    
+    
+    
+    return this.targetFront.goForward();
   }
 
   
