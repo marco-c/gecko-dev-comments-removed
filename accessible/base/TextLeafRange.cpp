@@ -2020,22 +2020,49 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
 }
 
 LayoutDeviceIntRect TextLeafPoint::CharBounds() {
-  if (mAcc && !mAcc->IsText()) {
+  if (!mAcc) {
+    return LayoutDeviceIntRect();
+  }
+
+  if (mAcc->IsHTMLBr()) {
+    
+    
+    
+    
+    LayoutDeviceIntRect bounds = mAcc->Bounds();
+    if (bounds.width == 0) {
+      bounds.width = 1;
+    }
+    if (bounds.height == 0) {
+      bounds.height = 1;
+    }
+    return bounds;
+  }
+
+  if (!mAcc->IsTextLeaf()) {
+    
     
     
     return mAcc->Bounds();
   }
 
-  if (!mAcc || (mAcc->IsRemote() && !mAcc->AsRemote()->mCachedFields)) {
-    return LayoutDeviceIntRect();
-  }
+  auto maybeAdjustLineFeedBounds = [this](LayoutDeviceIntRect& aBounds) {
+    if (!IsLineFeedChar()) {
+      return;
+    }
+    
+    
+    
+    MOZ_ASSERT(aBounds.IsZeroArea());
+    if (aBounds.width == 0) {
+      aBounds.width = 1;
+    }
+    if (aBounds.height == 0) {
+      aBounds.height = 1;
+    }
+  };
 
   if (LocalAccessible* local = mAcc->AsLocal()) {
-    if (!local->IsTextLeaf() || nsAccUtils::TextLength(local) == 0) {
-      
-      return local->Bounds();
-    }
-
     if (mOffset >= 0 &&
         static_cast<uint32_t>(mOffset) >= nsAccUtils::TextLength(local)) {
       
@@ -2062,6 +2089,7 @@ LayoutDeviceIntRect TextLeafPoint::CharBounds() {
     bounds.MoveBy(-orgRectPixels.X(), -orgRectPixels.Y());
     bounds.ScaleRoundOut(presContext->PresShell()->GetResolution());
     bounds.MoveBy(orgRectPixels.X(), orgRectPixels.Y());
+    maybeAdjustLineFeedBounds(bounds);
     return bounds;
   }
 
@@ -2069,9 +2097,18 @@ LayoutDeviceIntRect TextLeafPoint::CharBounds() {
     return LayoutDeviceIntRect();
   }
   RemoteAccessible* remote = mAcc->AsRemote();
+  if (!remote->mCachedFields) {
+    return LayoutDeviceIntRect();
+  }
+
   nsRect charBounds = remote->GetCachedCharRect(mOffset);
-  if (!charBounds.IsEmpty()) {
-    return remote->BoundsWithOffset(Some(charBounds));
+  
+  
+  
+  if (!charBounds.IsEqualRect(0, 0, 0, 0)) {
+    LayoutDeviceIntRect bounds = remote->BoundsWithOffset(Some(charBounds));
+    maybeAdjustLineFeedBounds(bounds);
+    return bounds;
   }
 
   return LayoutDeviceIntRect();
@@ -2413,15 +2450,6 @@ bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
     TextLeafPoint lastPointInLine = nextLineStartPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
     MOZ_ASSERT(currPoint <= lastPointInLine);
-
-    if (lastPointInLine != currPoint && lastPointInLine.IsLineFeedChar()) {
-      
-      
-      
-      
-      lastPointInLine = lastPointInLine.FindBoundary(
-          nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    }
 
     LayoutDeviceIntRect currLineRect = currPoint.CharBounds();
     currLineRect.UnionRect(currLineRect, lastPointInLine.CharBounds());
