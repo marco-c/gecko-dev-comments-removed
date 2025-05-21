@@ -30,6 +30,11 @@ function getTimers() {
       return false;
     }
 
+    if (t.name == "CCGCScheduler::EnsureGCRunner") {
+      
+      return false;
+    }
+
     if (AppConstants.platform == "win" && t.name == "nsAnonTempFileRemover") {
       
       
