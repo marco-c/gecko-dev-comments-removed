@@ -14,9 +14,10 @@ const REMOTE_SETTINGS_RECORDS = [
   {
     type: "yelp-suggestions",
     attachment: {
+      subjects: [],
       
       
-      subjects: ["coffee"],
+      businessSubjects: ["coffee"],
       preModifiers: [],
       postModifiers: [],
       locationSigns: ["in", "nearby"],
