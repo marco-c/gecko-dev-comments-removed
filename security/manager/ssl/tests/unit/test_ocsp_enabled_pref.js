@@ -93,6 +93,93 @@ async function testOn() {
   await stopOCSPResponder(ocspResponder);
 }
 
+async function testCRLiteEnforced() {
+  Services.prefs.setBoolPref("security.OCSP.require", false);
+  info("Setting security.OCSP.require to false");
+
+  Services.prefs.setIntPref("security.OCSP.enabled", 1);
+  info("Setting security.OCSP.enabled to 1");
+
+  Services.prefs.setIntPref("security.pki.crlite_mode", 2);
+  info("Setting security.pki.crlite_mode to 2");
+
+  
+  
+  clearOCSPCache();
+  let ocspResponder = getOCSPResponder(["non-ev-root-path-ee"]);
+  await checkCertErrorGeneric(
+    gCertDB,
+    certFromFile("non-ev-root-path-ee"),
+    PRErrorCodeSuccess,
+    Ci.nsIX509CertDB.verifyUsageTLSServer
+  );
+  await stopOCSPResponder(ocspResponder);
+
+  
+  
+  if (!AppConstants.DEBUG) {
+    return;
+  }
+
+  
+  
+  let nonEVRootCert = certFromFile("non-evroot-ca");
+  Services.prefs.setCharPref(
+    "security.test.built_in_root_hash",
+    nonEVRootCert.sha256Fingerprint
+  );
+  info(
+    "Setting security.test.built_in_root_hash to " +
+      nonEVRootCert.sha256Fingerprint
+  );
+
+  clearOCSPCache();
+  ocspResponder = getOCSPResponder([]);
+  await checkCertErrorGeneric(
+    gCertDB,
+    certFromFile("non-ev-root-path-ee"),
+    PRErrorCodeSuccess,
+    Ci.nsIX509CertDB.verifyUsageTLSServer
+  );
+  await stopOCSPResponder(ocspResponder);
+
+  
+  
+  Services.prefs.setBoolPref("security.OCSP.require", true);
+  info("Setting security.OCSP.require to true");
+  clearOCSPCache();
+  ocspResponder = getOCSPResponder(["non-ev-root-path-ee"]);
+  await checkCertErrorGeneric(
+    gCertDB,
+    certFromFile("non-ev-root-path-ee"),
+    PRErrorCodeSuccess,
+    Ci.nsIX509CertDB.verifyUsageTLSServer
+  );
+  await stopOCSPResponder(ocspResponder);
+
+  
+  Services.prefs.setBoolPref("security.OCSP.require", true);
+  info("Setting security.OCSP.require to true");
+  let evroot = certFromFile("evroot");
+  Services.prefs.setCharPref(
+    "security.test.built_in_root_hash",
+    evroot.sha256Fingerprint
+  );
+  info(
+    "Setting security.test.built_in_root_hash to " + evroot.sha256Fingerprint
+  );
+
+  clearOCSPCache();
+  ocspResponder = getOCSPResponder(["test-oid-path-ee"]);
+  await checkEVStatus(
+    gCertDB,
+    certFromFile("test-oid-path-ee"),
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    gEVExpected
+  );
+  await stopOCSPResponder(ocspResponder);
+}
+
 
 async function testEVOnly() {
   Services.prefs.setIntPref("security.OCSP.enabled", 2);
@@ -129,6 +216,8 @@ add_task(async function () {
     Services.prefs.clearUserPref("network.dns.localDomains");
     Services.prefs.clearUserPref("security.OCSP.enabled");
     Services.prefs.clearUserPref("security.OCSP.require");
+    Services.prefs.clearUserPref("security.pki.crlite_mode");
+    Services.prefs.clearUserPref("security.test.built_in_root_hash");
   });
   Services.prefs.setCharPref("network.dns.localDomains", "www.example.com");
   
@@ -143,4 +232,5 @@ add_task(async function () {
   await testOff();
   await testOn();
   await testEVOnly();
+  await testCRLiteEnforced();
 });
