@@ -324,9 +324,6 @@ class NativeLayerCA : public NativeLayer {
                            const gfx::IntRect& aDisplayRect,
                            const gfx::IntRegion& aUpdateRegion, F&& aCopyFn);
 
-  Maybe<SurfaceWithInvalidRegion> GetUnusedSurfaceAndCleanUp(
-      const MutexAutoLock& aProofOfLock);
-
   bool IsVideo(const MutexAutoLock& aProofOfLock);
   bool ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock);
   bool HasExtent() const { return mHasExtent; }
@@ -407,56 +404,10 @@ class NativeLayerCA : public NativeLayer {
   
   Mutex mMutex MOZ_UNANNOTATED;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  Maybe<NativeLayerMacSurfaceHandler> mSurfaceHandler;
 
-  
-  
-  
-  Maybe<SurfaceWithInvalidRegion> mInProgressSurface;
-  Maybe<gfx::IntRegion> mInProgressUpdateRegion;
-  Maybe<gfx::IntRect> mInProgressDisplayRect;
-
-  
-  
-  
-  Maybe<SurfaceWithInvalidRegion> mFrontSurface;
-
-  
-  
-  
-  std::vector<SurfaceWithInvalidRegionAndCheckCount> mSurfaces;
-
-  
-  RefPtr<MacIOSurface> mInProgressLockedIOSurface;
-
-  RefPtr<SurfacePoolHandleCA> mSurfacePoolHandle;
   RefPtr<wr::RenderMacIOSurfaceTextureHost> mTextureHost;
+  bool mTextureHostIsVideo = false;
 
   Representation mOnscreenRepresentation;
   Representation mOffscreenRepresentation;
@@ -475,7 +426,6 @@ class NativeLayerCA : public NativeLayer {
   bool mSpecializeVideo = false;
   bool mHasExtent = false;
   bool mIsDRM = false;
-  bool mIsTextureHostVideo = false;
 
 #ifdef NIGHTLY_BUILD
   
