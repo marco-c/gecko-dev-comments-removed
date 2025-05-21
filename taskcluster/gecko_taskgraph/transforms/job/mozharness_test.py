@@ -172,6 +172,8 @@ def mozharness_test_on_docker(config, job, taskdesc):
     
     if "wayland" in job["label"]:
         env["MOZ_ENABLE_WAYLAND"] = "1"
+    else:
+        assert "MOZ_ENABLE_WAYLAND" not in env
 
     if mozharness.get("mochitest-flavor"):
         env["MOCHITEST_FLAVOR"] = mozharness["mochitest-flavor"]
