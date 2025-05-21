@@ -616,39 +616,55 @@ static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage) {
   rv = NS_NewLocalFileOutputStream(getter_AddRefs(stream), aFile);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  gfx::DataSourceSurface::MappedSurface map;
-  if (!dataSurface->Map(gfx::DataSourceSurface::MapType::READ, &map)) {
+  
+  if (NS_WARN_IF(!stream)) {
+    MOZ_ASSERT(stream, "rv should have failed when stream is not initialized.");
     return NS_ERROR_FAILURE;
   }
 
+  gfx::DataSourceSurface::MappedSurface map;
+  if (!dataSurface->Map(gfx::DataSourceSurface::MapType::READ, &map)) {
+    
+    rv = NS_ERROR_FAILURE;
+  }
+
   
-  rv = NS_ERROR_FAILURE;
-  if (stream) {
+  if (NS_SUCCEEDED(rv)) {
+    
     uint32_t written;
-    stream->Write((const char*)&bf, sizeof(BITMAPFILEHEADER), &written);
-    if (written == sizeof(BITMAPFILEHEADER)) {
-      stream->Write((const char*)&bmi, sizeof(BITMAPINFOHEADER), &written);
-      if (written == sizeof(BITMAPINFOHEADER)) {
+    rv = stream->Write((const char*)&bf, sizeof(BITMAPFILEHEADER), &written);
+    if (NS_SUCCEEDED(rv)) {
+      rv = stream->Write((const char*)&bmi, sizeof(BITMAPINFOHEADER), &written);
+      if (NS_SUCCEEDED(rv)) {
         
         
         uint32_t i = map.mStride * height;
         do {
           i -= map.mStride;
-          stream->Write(((const char*)map.mData) + i, bytesPerRow, &written);
-          if (written == bytesPerRow) {
-            rv = NS_OK;
-          } else {
-            rv = NS_ERROR_FAILURE;
+          rv = stream->Write(((const char*)map.mData) + i, bytesPerRow,
+                             &written);
+          if (NS_FAILED(rv)) {
             break;
           }
         } while (i != 0);
       }
     }
 
-    stream->Close();
+    dataSurface->Unmap();
   }
 
-  dataSurface->Unmap();
+  stream->Close();
+
+  
+  
+  
+  if (NS_FAILED(rv)) {
+    if (NS_WARN_IF(NS_FAILED(aFile->Remove(PR_FALSE)))) {
+      MOZ_LOG(sLog, LogLevel::Warning,
+              ("Failed to remove empty bitmap file : %s",
+               aFile->HumanReadablePath().get()));
+    }
+  }
 
   return rv;
 }
