@@ -2,6 +2,13 @@
 
 "use strict";
 
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Unexpected undefined tabState for onMoveToNewWindow/
+);
+
 add_task(async function test_tabGroups_move_index() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
