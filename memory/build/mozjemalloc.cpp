@@ -1298,6 +1298,12 @@ struct arena_t {
   
   bool mMustDeleteAfterPurge MOZ_GUARDED_BY(mLock) = false;
 
+  
+  
+  
+  static constexpr size_t LABEL_MAX_CAPACITY = 128;
+  char mLabel[LABEL_MAX_CAPACITY];
+
  private:
   
   
@@ -1592,6 +1598,7 @@ class ArenaCollection {
     arena_params_t params;
     
     params.mMaxDirty = opt_dirty_max;
+    params.mLabel = "Default";
     mDefaultArena =
         mLock.Init() ? CreateArena( false, &params) : nullptr;
     mPurgeListLock.Init();
@@ -2940,8 +2947,9 @@ static inline arena_t* thread_local_arena(bool enabled) {
     
     
     
-    arena =
-        gArenas.CreateArena( false,  nullptr);
+    arena_params_t params;
+    params.mLabel = "Thread local";
+    arena = gArenas.CreateArena( false, &params);
   } else {
     arena = gArenas.GetDefault();
   }
@@ -5004,9 +5012,22 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
 
     mMaxDirtyIncreaseOverride = aParams->mMaxDirtyIncreaseOverride;
     mMaxDirtyDecreaseOverride = aParams->mMaxDirtyDecreaseOverride;
+
+    if (aParams->mLabel) {
+      
+      
+      strncpy(mLabel, aParams->mLabel, LABEL_MAX_CAPACITY - 1);
+      mLabel[LABEL_MAX_CAPACITY - 1] = 0;
+      
+      MOZ_ASSERT(strlen(aParams->mLabel) < LABEL_MAX_CAPACITY);
+    } else {
+      mLabel[0] = 0;
+    }
   } else {
     mMaxDirtyIncreaseOverride = 0;
     mMaxDirtyDecreaseOverride = 0;
+
+    mLabel[0] = 0;
   }
 
   mLastSignificantReuseNS = GetTimestampNS();
