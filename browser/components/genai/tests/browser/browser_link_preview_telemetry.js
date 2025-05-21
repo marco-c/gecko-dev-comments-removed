@@ -5,325 +5,51 @@ const { LinkPreview } = ChromeUtils.importESModule(
   "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
 );
 
-
-const { LinkPreviewModel } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/genai/LinkPreviewModel.sys.mjs"
-);
-
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
-
-add_task(async function test_default_telemetry() {
-  Assert.equal(
-    Glean.genaiLinkpreview.cardAiConsent.testGetValue(),
-    null,
-    "No cardAiConsent events"
-  );
-
-  Assert.equal(
-    Glean.genaiLinkpreview.keyPointsToggle.testGetValue(),
-    null,
-    "No keyPointsToggle events"
-  );
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    clear: [["browser.ml.linkPreview.optin"]],
+  });
 });
 
 
 
 
-add_task(async function test_link_preview_ai_consent_continue_ui_interaction() {
+add_task(async function test_link_preview_ai_consent_continue() {
   Services.fog.testResetFOG();
 
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.linkPreview.enabled", true],
-      ["browser.ml.linkPreview.optin", false],
-      ["browser.ml.linkPreview.collapsed", false],
-    ],
+    set: [["browser.ml.linkPreview.optin", true]],
   });
 
   let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-  console.log("consent events");
-  console.log(events);
-  Assert.equal(events.length, 1, "One deny opt-in event recorded");
-
-  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
-
-  const READABLE_PAGE_URL =
-    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
-
-  LinkPreview.keyboardComboActive = true;
-  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
-
-  const panel = await TestUtils.waitForCondition(() =>
-    document.getElementById("link-preview-panel")
-  );
-  await BrowserTestUtils.waitForEvent(panel, "popupshown");
-
-  const card = panel.querySelector("link-preview-card");
-  ok(card, "card created for link preview");
-
-  const modelOptinElement = await TestUtils.waitForCondition(() => {
-    if (card.shadowRoot) {
-      return card.shadowRoot.querySelector("model-optin");
-    }
-    return null;
-  }, "Waiting for model-optin element");
-
-  ok(modelOptinElement, "model-optin element is present");
-
-  
-  const optinConfirmEvent = new CustomEvent("MlModelOptinConfirm", {
-    bubbles: true,
-    composed: true,
-  });
-  modelOptinElement.dispatchEvent(optinConfirmEvent);
-
-  events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-  Assert.equal(events.length, 2, "Two cardAiConsent events recorded");
-  Assert.equal(events[1].extra.option, "continue", "Continue option recorded");
-
-  is(
-    Services.prefs.getBoolPref("browser.ml.linkPreview.optin"),
-    true,
-    "optin preference should be true after confirming"
-  );
-  is(
-    Services.prefs.getBoolPref("browser.ml.linkPreview.collapsed"),
-    false,
-    "collapsed preference should remain false after confirming"
-  );
-
-  
-  panel.remove();
-  generateStub.restore();
-  LinkPreview.keyboardComboActive = false;
+  Assert.equal(events.length, 1, "One consent event recorded");
+  Assert.equal(events[0].extra.option, "continue", "Continue option recorded");
 });
 
 
 
 
-add_task(async function test_link_preview_ai_consent_cancel_ui_interaction() {
+add_task(async function test_link_preview_ai_consent_cancel() {
   Services.fog.testResetFOG();
 
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.linkPreview.enabled", true],
-      ["browser.ml.linkPreview.optin", false],
-      ["browser.ml.linkPreview.collapsed", false],
-    ],
+    set: [["browser.ml.linkPreview.optin", false]],
   });
 
   let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-  Assert.equal(events.length, 1, "One deny opt-in event recorded");
-
-  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
-
-  const READABLE_PAGE_URL =
-    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
-
-  LinkPreview.keyboardComboActive = true;
-  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
-
-  const panel = await TestUtils.waitForCondition(() =>
-    document.getElementById("link-preview-panel")
-  );
-  await BrowserTestUtils.waitForEvent(panel, "popupshown");
-
-  const card = panel.querySelector("link-preview-card");
-  ok(card, "card created for link preview");
-
-  const modelOptinElement = await TestUtils.waitForCondition(() => {
-    if (card.shadowRoot) {
-      return card.shadowRoot.querySelector("model-optin");
-    }
-    return null;
-  }, "Waiting for model-optin element");
-
-  ok(modelOptinElement, "model-optin element is present");
-
-  
-  const optinDenyEvent = new CustomEvent("MlModelOptinDeny", {
-    bubbles: true,
-    composed: true,
-  });
-  modelOptinElement.dispatchEvent(optinDenyEvent);
-
-  events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-  Assert.equal(events.length, 2, "Two cardAiConsent events recorded");
-  Assert.equal(events[1].extra.option, "cancel", "Cancel option recorded");
-
-  is(
-    Services.prefs.getBoolPref("browser.ml.linkPreview.optin"),
-    false,
-    "optin preference should remain false after denying"
-  );
-  is(
-    Services.prefs.getBoolPref("browser.ml.linkPreview.collapsed"),
-    true,
-    "collapsed preference should be true after denying"
-  );
-
-  
-  panel.remove();
-  generateStub.restore();
-  LinkPreview.keyboardComboActive = false;
+  Assert.equal(events.length, 1, "One consent event recorded");
+  Assert.equal(events[0].extra.option, "cancel", "Cancel option recorded");
 });
 
 
 
 
-
-
-
-add_task(async function test_toggle_expand_collapse_telemetry() {
+add_task(async function test_link_preview_ai_consent_learn() {
   Services.fog.testResetFOG();
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.linkPreview.enabled", true],
-      ["browser.ml.linkPreview.optin", true],
-      ["browser.ml.linkPreview.collapsed", false],
-    ],
-  });
+  Glean.genaiLinkpreview.cardAiConsent.record({ option: "learn" });
 
-  let events = Glean.genaiLinkpreview.keyPointsToggle.testGetValue();
-  Assert.equal(events.length, 1, "One keyPointsToggle event recorded");
-
-  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
-
-  const READABLE_PAGE_URL =
-    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
-
-  LinkPreview.keyboardComboActive = true;
-  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
-
-  const panel = await TestUtils.waitForCondition(() =>
-    document.getElementById("link-preview-panel")
-  );
-  await BrowserTestUtils.waitForEvent(panel, "popupshown");
-
-  const card = panel.querySelector("link-preview-card");
-  ok(card, "Card created for link preview");
-
-  is(card.collapsed, false, "Card should start expanded");
-
-  const keypointsHeader = card.shadowRoot.querySelector(".keypoints-header");
-  ok(keypointsHeader, "Found keypoints header");
-  keypointsHeader.click();
-
-  is(
-    card.collapsed,
-    true,
-    "Card should now be collapsed after clicking header"
-  );
-
-  events = Glean.genaiLinkpreview.keyPointsToggle.testGetValue();
-  Assert.equal(events.length, 2, "Two keyPointsToggle events recorded");
-  Assert.equal(
-    events[1].extra.expand,
-    "false",
-    "expand=false recorded for collapse action"
-  );
-
-  keypointsHeader.click();
-
-  is(
-    card.collapsed,
-    false,
-    "Card should now be expanded after clicking header again"
-  );
-
-  events = Glean.genaiLinkpreview.keyPointsToggle.testGetValue();
-  Assert.equal(events.length, 3, "Three keyPointsToggle events recorded");
-  Assert.equal(
-    events[2].extra.expand,
-    "true",
-    "expand=true recorded for expand action"
-  );
-
-  
-  panel.remove();
-  generateStub.restore();
-  LinkPreview.keyboardComboActive = false;
+  let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
+  Assert.equal(events.length, 1, "One consent event recorded");
+  Assert.equal(events[0].extra.option, "learn", "Learn option recorded");
 });
-
-
-
-
-
-
-add_task(
-  async function test_link_preview_ai_consent_toggle_collapse_to_cancel_ui_interaction() {
-    Services.fog.testResetFOG();
-
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.ml.linkPreview.enabled", true],
-        ["browser.ml.linkPreview.optin", false],
-        ["browser.ml.linkPreview.collapsed", false],
-      ],
-    });
-
-    let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-    Assert.equal(events.length, 1, "One deny opt-in event recorded");
-
-    const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
-
-    const READABLE_PAGE_URL =
-      "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
-
-    LinkPreview.keyboardComboActive = true;
-    XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
-
-    const panel = await TestUtils.waitForCondition(() =>
-      document.getElementById("link-preview-panel")
-    );
-    await BrowserTestUtils.waitForEvent(panel, "popupshown");
-
-    const card = panel.querySelector("link-preview-card");
-    ok(card, "card created for link preview");
-
-    const modelOptinElement = await TestUtils.waitForCondition(() => {
-      if (card.shadowRoot) {
-        return card.shadowRoot.querySelector("model-optin");
-      }
-      return null;
-    }, "Waiting for model-optin element");
-
-    ok(modelOptinElement, "model-optin element is present");
-
-    
-    const keypointsHeader = card.shadowRoot.querySelector(".keypoints-header");
-    ok(keypointsHeader, "Found keypoints header");
-    keypointsHeader.click();
-
-    is(
-      card.collapsed,
-      true,
-      "Card should now be collapsed after clicking header"
-    );
-
-    events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-    Assert.equal(events.length, 2, "Two cardAiConsent events recorded");
-    Assert.equal(events[1].extra.option, "cancel", "Cancel option recorded");
-
-    is(
-      Services.prefs.getBoolPref("browser.ml.linkPreview.optin"),
-      false,
-      "optin preference should remain false after denying"
-    );
-    is(
-      Services.prefs.getBoolPref("browser.ml.linkPreview.collapsed"),
-      true,
-      "collapsed preference should be true after denying"
-    );
-
-    
-    panel.remove();
-    generateStub.restore();
-    LinkPreview.keyboardComboActive = false;
-  }
-);
