@@ -138,6 +138,20 @@ static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
 
 
 
+static bool IsSingleLine(const nsIFrame* aFlexContainer,
+                         const nsStylePosition* aStylePos) {
+  MOZ_ASSERT(aFlexContainer->IsFlexContainerFrame());
+
+  if (aFlexContainer->IsLegacyWebkitBox()) {
+    
+    
+    return true;
+  }
+  return aStylePos->mFlexWrap == StyleFlexWrap::Nowrap;
+}
+
+
+
 
 class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
  public:
@@ -1522,9 +1536,8 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
-  const bool isSingleLine =
-      StyleFlexWrap::Nowrap == aParentReflowInput.mStylePosition->mFlexWrap;
-  if (isSingleLine) {
+  if (IsSingleLine(aParentReflowInput.mFrame,
+                   aParentReflowInput.mStylePosition)) {
     
     
     
@@ -3627,9 +3640,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     mAlignContent.primary = StyleAlignFlags::STRETCH;
   }
 
-  const bool isSingleLine =
-      StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
-  if (isSingleLine) {
+  if (IsSingleLine(aReflowInput.mFrame, aReflowInput.mStylePosition)) {
     MOZ_ASSERT(aLines.Length() == 1,
                "If we're styled as single-line, we should only have 1 line");
     
@@ -4177,15 +4188,12 @@ void nsFlexContainerFrame::GenerateFlexLines(
     return aLines.EmplaceBack(aMainGapSize);
   };
 
-  const bool isSingleLine =
-      StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
-
   
   
   FlexLine* curLine = ConstructNewFlexLine();
 
   nscoord wrapThreshold;
-  if (isSingleLine) {
+  if (IsSingleLine(aReflowInput.mFrame, aReflowInput.mStylePosition)) {
     
     wrapThreshold = NS_UNCONSTRAINEDSIZE;
   } else {
@@ -5582,7 +5590,7 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
   FrameHashtable overflowIncompleteItems;
 
   const bool isSingleLine =
-      StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
+      IsSingleLine(aReflowInput.mFrame, aReflowInput.mStylePosition);
   const FlexLine& startmostLine = StartmostLine(aFlr.mLines, aAxisTracker);
   const FlexLine& endmostLine = EndmostLine(aFlr.mLines, aAxisTracker);
   const FlexItem* startmostItem =
@@ -6487,7 +6495,7 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
 
   const bool useMozBoxCollapseBehavior =
       StyleVisibility()->UseLegacyCollapseBehavior();
-  const bool isSingleLine = StyleFlexWrap::Nowrap == stylePos->mFlexWrap;
+  const bool isSingleLine = IsSingleLine(this, stylePos);
   const auto flexWM = GetWritingMode();
 
   
