@@ -55,7 +55,7 @@ add_task(async function test_purge_counting_per_host() {
   Assert.equal(validCookies, cookieCountMax);
 
   
-  const cv = Services.cookies.add(
+  Services.cookies.add(
     host,
     "/", 
     "cookie-name-x",
@@ -65,10 +65,9 @@ add_task(async function test_purge_counting_per_host() {
     true, 
     futureExpiry,
     {}, 
-    Ci.nsICookie.SAMESITE_UNSET, 
+    Ci.nsICookie.SAMESITE_NONE, 
     Ci.nsICookie.SCHEME_HTTPS
   );
-  Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
 
   
   validCookies = Services.cookies.countCookiesFromHost(host);

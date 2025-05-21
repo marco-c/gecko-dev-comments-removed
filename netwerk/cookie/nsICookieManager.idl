@@ -19,8 +19,7 @@ class CookieStruct;
 %}
 
 [ptr] native OriginAttributesPtr(mozilla::OriginAttributes);
-
-interface nsICookieValidation;
+native CheckStructFunctionRef(const std::function< bool(mozilla::net::CookieStruct&) > &);
 
 
 
@@ -133,41 +132,18 @@ interface nsICookieManager : nsISupports
 
 
   [implicit_jscontext]
-  nsICookieValidation add(in AUTF8String aHost,
-                          in AUTF8String aPath,
-                          in ACString    aName,
-                          in AUTF8String aValue,
-                          in boolean     aIsSecure,
-                          in boolean     aIsHttpOnly,
-                          in boolean     aIsSession,
-                          in int64_t     aExpiry,
-                          in jsval aOriginAttributes,
-                          in int32_t aSameSite,
-                          in nsICookie_schemeType aSchemeMap,
-                          [optional] in boolean aIsPartitioned);
-
-  
-
-
-
-  [implicit_jscontext]
-  nsICookieValidation addForAddOn(in AUTF8String aHost,
-                                  in AUTF8String aPath,
-                                  in ACString    aName,
-                                  in AUTF8String aValue,
-                                  in boolean     aIsSecure,
-                                  in boolean     aIsHttpOnly,
-                                  in boolean     aIsSession,
-                                  in int64_t     aExpiry,
-                                  in jsval aOriginAttributes,
-                                  in int32_t aSameSite,
-                                  in nsICookie_schemeType aSchemeMap,
-                                  [optional] in boolean aIsPartitioned);
-
-  
-
-
-
+  void add(in AUTF8String aHost,
+           in AUTF8String aPath,
+           in ACString    aName,
+           in AUTF8String aValue,
+           in boolean     aIsSecure,
+           in boolean     aIsHttpOnly,
+           in boolean     aIsSession,
+           in int64_t     aExpiry,
+           in jsval aOriginAttributes,
+           in int32_t aSameSite,
+           in nsICookie_schemeType aSchemeMap,
+           [optional] in boolean aIsPartitioned);
 
   [notxpcom]
   nsresult addNative(in nsIURI aCookieURI,
@@ -185,7 +161,7 @@ interface nsICookieManager : nsISupports
                      in boolean     aIsPartitioned,
                      in boolean     aFromHttp,
                      in nsIDPtr     aOperationID,
-                     out nsICookieValidation aValidation);
+                     in CheckStructFunctionRef aCheckValid);
 
   
 
