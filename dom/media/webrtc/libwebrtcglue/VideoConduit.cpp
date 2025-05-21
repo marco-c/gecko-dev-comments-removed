@@ -1529,6 +1529,14 @@ void WebrtcVideoConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
                                        webrtc::RTPHeader&& aHeader) {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
+  
+  if (!mControl.mReceiving) {
+    
+    
+    
+    return;
+  }
+
   mRemoteSendSSRC = aHeader.ssrc;
 
   if (mAllowSsrcChange || mRecvStreamConfig.rtp.remote_ssrc == 0) {
