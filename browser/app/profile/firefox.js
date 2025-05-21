@@ -680,11 +680,6 @@ pref("browser.urlbar.addons.featureGate", true);
 pref("places.semanticHistory.featureGate", false);
 
 
-
-
-pref("browser.urlbar.suggest.semanticHistory", false);
-
-
 pref("browser.urlbar.suggest.semanticHistory.minLength", 5);
 
 
