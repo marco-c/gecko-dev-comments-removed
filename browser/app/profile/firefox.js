@@ -3390,3 +3390,8 @@ pref("toolkit.contentRelevancy.enabled", false);
 pref("toolkit.contentRelevancy.ingestEnabled", false);
 
 pref("toolkit.contentRelevancy.log", false);
+
+
+
+pref("browser.contextual-services.contextId.rotation-in-days", 0);
+pref("browser.contextual-services.contextId.rust-component.enabled", false);
