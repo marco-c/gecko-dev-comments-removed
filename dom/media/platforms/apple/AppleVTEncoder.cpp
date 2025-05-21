@@ -1242,6 +1242,9 @@ void AppleVTEncoder::ForceOutputIfNeeded() {
   if (__builtin_available(macos 11.0, *)) {
     return;
   }
+
+  AssertOnTaskQueue();
+
   
   
   
