@@ -647,8 +647,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
       AutoWeakFrame aCurrentTarget, bool aNoContentDispatch,
       nsIContent* aOverrideClickTarget);
 
-  nsresult SetClickCount(WidgetMouseEvent* aEvent, nsEventStatus* aStatus,
-                         nsIContent* aOverrideClickTarget = nullptr);
+  
+
+
+
+  void PrepareForFollowingClickEvent(
+      WidgetMouseEvent& aEvent, nsIContent* aOverrideClickTarget = nullptr);
 
   
 
