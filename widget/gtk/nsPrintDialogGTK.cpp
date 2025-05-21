@@ -259,8 +259,10 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter* aParent,
   g_object_set(header_footer_label, "valign", 0, NULL);
 
   
-  GtkWidget* header_footer_table = gtk_table_new(3, 3, FALSE);  
-  g_object_set(header_footer_table, "padding", 8, 0, 12, 0, NULL);
+  GtkWidget* header_footer_grid = gtk_grid_new();  
+  g_object_set(header_footer_grid, "margin", 8, 0, 12, 0, NULL);
+  gtk_grid_set_row_spacing(GTK_GRID(header_footer_grid), 4);
+  gtk_grid_set_column_spacing(GTK_GRID(header_footer_grid), 4);
 
   nsString header_footer_str[3];
 
@@ -273,17 +275,17 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter* aParent,
         ConstructHeaderFooterDropdown(header_footer_str[i].get());
     
     
-    gtk_table_attach(GTK_TABLE(header_footer_table), header_dropdown[i], i,
-                     (i + 1), 0, 1, (GtkAttachOptions)0, (GtkAttachOptions)0, 2,
-                     2);
+    gtk_grid_attach(GTK_GRID(header_footer_grid), header_dropdown[i],
+                     i,
+                     0,  1,  1);
   }
 
   const char labelKeys[][7] = {"left", "center", "right"};
   for (unsigned int i = 0; i < std::size(labelKeys); i++) {
-    gtk_table_attach(GTK_TABLE(header_footer_table),
-                     gtk_label_new(GetUTF8FromBundle(labelKeys[i]).get()), i,
-                     (i + 1), 1, 2, (GtkAttachOptions)0, (GtkAttachOptions)0, 2,
-                     2);
+    gtk_grid_attach(GTK_GRID(header_footer_grid),
+                    gtk_label_new(GetUTF8FromBundle(labelKeys[i]).get()),
+                     i,
+                     1,  1,  1);
   }
 
   aSettings->GetFooterStrLeft(header_footer_str[0]);
@@ -293,9 +295,9 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter* aParent,
   for (unsigned int i = 0; i < std::size(footer_dropdown); i++) {
     footer_dropdown[i] =
         ConstructHeaderFooterDropdown(header_footer_str[i].get());
-    gtk_table_attach(GTK_TABLE(header_footer_table), footer_dropdown[i], i,
-                     (i + 1), 2, 3, (GtkAttachOptions)0, (GtkAttachOptions)0, 2,
-                     2);
+    gtk_grid_attach(GTK_GRID(header_footer_grid), footer_dropdown[i],
+                     i,
+                     2,  1,  1);
   }
   
 
@@ -304,7 +306,7 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter* aParent,
   gtk_box_pack_start(GTK_BOX(header_footer_vertical_squasher),
                      header_footer_label, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(header_footer_vertical_squasher),
-                     header_footer_table, FALSE, FALSE, 0);
+                     header_footer_grid, FALSE, FALSE, 0);
 
   
   gtk_box_pack_start(GTK_BOX(custom_options_tab), check_buttons_container,
