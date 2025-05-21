@@ -6,11 +6,11 @@ import sys
 
 
 def main(output, filename):
-    file = open(filename)
-    output.write('R"(')  
-    for line in file:
-        output.write(line)
-    output.write(')"')  
+    with open(filename) as file:
+        output.write('R"(')  
+        for line in file:
+            output.write(line)
+        output.write(')"')  
 
 
 if __name__ == "__main__":
