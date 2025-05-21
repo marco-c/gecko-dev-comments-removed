@@ -34,6 +34,7 @@ class OriginAttributes;
 template <typename, class>
 class UniquePtr;
 namespace dom {
+class FormData;
 class DocShellLoadStateInit;
 }  
 }  
@@ -195,14 +196,6 @@ class nsDocShellLoadState final {
       mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> aLoadingInfo);
 
   bool LoadIsFromSessionHistory() const;
-
-  nsIStructuredCloneContainer* GetNavigationAPIState() const;
-
-  
-  
-  void SetNavigationAPIState(nsIStructuredCloneContainer* aNavigationAPIState);
-
-  mozilla::dom::NavigationType GetNavigationType() const;
 
   const nsString& Target() const;
 
@@ -417,8 +410,22 @@ class nsDocShellLoadState final {
 
   void MaybeStripTrackerQueryStrings(mozilla::dom::BrowsingContext* aContext);
 
+  
   void SetSourceElement(mozilla::dom::Element* aElement);
   already_AddRefed<mozilla::dom::Element> GetSourceElement() const;
+
+  
+  
+  nsIStructuredCloneContainer* GetNavigationAPIState() const;
+  void SetNavigationAPIState(nsIStructuredCloneContainer* aNavigationAPIState);
+
+  
+  mozilla::dom::NavigationType GetNavigationType() const;
+
+  
+  
+  mozilla::dom::FormData* GetFormDataEntryList();
+  void SetFormDataEntryList(mozilla::dom::FormData* aFormDataEntryList);
 
  protected:
   
@@ -561,8 +568,6 @@ class nsDocShellLoadState final {
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo>
       mLoadingSessionHistoryInfo;
 
-  nsCOMPtr<nsIStructuredCloneContainer> mNavigationAPIState;
-
   
   nsString mTarget;
 
@@ -674,6 +679,10 @@ class nsDocShellLoadState final {
       nsILoadInfo::NOT_INITIALIZED;
 
   nsWeakPtr mSourceElement;
+
+  nsCOMPtr<nsIStructuredCloneContainer> mNavigationAPIState;
+
+  RefPtr<mozilla::dom::FormData> mFormDataEntryList;
 };
 
 #endif 

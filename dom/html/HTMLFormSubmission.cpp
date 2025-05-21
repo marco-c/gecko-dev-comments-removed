@@ -33,6 +33,7 @@
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/File.h"
+#include "mozilla/dom/FormData.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/RandomNum.h"
 
@@ -770,6 +771,7 @@ void GetEnumAttr(nsGenericHTMLElement* aContent, nsAtom* atom,
 nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
                                          nsGenericHTMLElement* aSubmitter,
                                          NotNull<const Encoding*>& aEncoding,
+                                         FormData* aFormData,
                                          HTMLFormSubmission** aFormSubmission) {
   
   NS_ASSERTION(aForm->GetComposedDoc(),
@@ -862,6 +864,13 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
     }
     *aFormSubmission =
         new FSURLEncoded(actionURL, target, aEncoding, method, doc, aSubmitter);
+  }
+
+  
+  
+  
+  if (method == NS_FORM_METHOD_POST) {
+    (*aFormSubmission)->mFormData = aFormData;
   }
 
   return NS_OK;

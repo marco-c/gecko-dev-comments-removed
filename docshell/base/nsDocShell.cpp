@@ -7,6 +7,7 @@
 #include "nsDocShell.h"
 
 #include <algorithm>
+#include "mozilla/dom/HTMLFormElement.h"
 
 #ifdef XP_WIN
 #  include <process.h>
@@ -3930,7 +3931,7 @@ nsresult nsDocShell::ReloadNavigable(
     if (!navigation->FirePushReplaceReloadNavigateEvent(
             aCx, NavigationType::Reload, destinationURL,
              false, Some(aUserInvolvement),
-             nullptr,  Nothing{},
+             nullptr,  nullptr,
             destinationNavigationAPIState,
              nullptr)) {
       return NS_OK;
@@ -8772,7 +8773,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
             jsapi.cx(), aLoadState->GetNavigationType(), newURI,
              true,
             Some(aLoadState->UserNavigationInvolvement()), sourceElement,
-             Nothing(),
+             nullptr,
              destinationNavigationAPIState,
              nullptr);
 
@@ -9276,6 +9277,8 @@ uint32_t nsDocShell::GetLoadTypeForFormSubmission(
              : LOAD_LINK;
 }
 
+
+
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
                                   Maybe<uint32_t> aCacheKey) {
   MOZ_ASSERT(aLoadState, "need a load state!");
@@ -9485,6 +9488,52 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   if (mTiming && !isDownload) {
     mTiming->NotifyBeforeUnload();
   }
+
+  
+  
+  if (RefPtr<Document> document = GetDocument();
+      document &&
+      aLoadState->UserNavigationInvolvement() !=
+          UserNavigationInvolvement::BrowserUI &&
+      !document->IsInitialDocument() &&
+      !NS_IsAboutBlankAllowQueryAndFragment(document->GetDocumentURI()) &&
+      NS_IsFetchScheme(aLoadState->URI()) &&
+      document->NodePrincipal()->Subsumes(aLoadState->TriggeringPrincipal())) {
+    if (nsCOMPtr<nsPIDOMWindowInner> window = document->GetInnerWindow()) {
+      
+      if (RefPtr<Navigation> navigation = window->Navigation()) {
+        AutoJSAPI jsapi;
+        if (jsapi.Init(window)) {
+          RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
+
+          
+          RefPtr<FormData> formData = aLoadState->GetFormDataEntryList();
+
+          
+          RefPtr<nsIStructuredCloneContainer> navigationAPIStateForFiring =
+              aLoadState->GetNavigationAPIState();
+          if (!navigationAPIStateForFiring) {
+            navigationAPIStateForFiring = nullptr;
+          }
+
+          nsCOMPtr<nsIURI> destinationURL = aLoadState->URI();
+          
+          bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
+              jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
+               false,
+              Some(aLoadState->UserNavigationInvolvement()), sourceElement,
+              formData.forget(), navigationAPIStateForFiring,
+               nullptr);
+
+          
+          if (!shouldContinue) {
+            return NS_OK;
+          }
+        }
+      }
+    }
+  }
+
   
   
   
@@ -11450,7 +11499,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
           aCx, aReplace ? NavigationType::Replace : NavigationType::Push,
           newURI,
            true,  Nothing(),
-           nullptr,  Nothing(),
+           nullptr,  nullptr,
            nullptr, scContainer);
 
       
@@ -13265,6 +13314,7 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
   aLoadState->SetTypeHint(NS_ConvertUTF16toUTF8(typeHint));
   aLoadState->SetLoadType(loadType);
   aLoadState->SetSourceBrowsingContext(mBrowsingContext);
+  aLoadState->SetSourceElement(aContent->AsElement());
 
   nsresult rv = InternalLoad(aLoadState);
 

@@ -307,9 +307,18 @@ already_AddRefed<FormData> FormData::Constructor(
     const GlobalObject& aGlobal,
     const Optional<NonNull<HTMLFormElement> >& aFormElement,
     nsGenericHTMLElement* aSubmitter, ErrorResult& aRv) {
+  return Constructor(aGlobal.GetAsSupports(),
+                     aFormElement.WasPassed() ? &aFormElement.Value() : nullptr,
+                     aSubmitter, aRv);
+}
+
+
+already_AddRefed<FormData> FormData::Constructor(
+    nsISupports* aGlobal, HTMLFormElement* aFormElement,
+    nsGenericHTMLElement* aSubmitter, ErrorResult& aRv) {
   RefPtr<FormData> formData;
   
-  if (aFormElement.WasPassed()) {
+  if (aFormElement) {
     
     if (aSubmitter) {
       const nsIFormControl* fc = nsIFormControl::FromNode(aSubmitter);
@@ -322,7 +331,7 @@ already_AddRefed<FormData> FormData::Constructor(
 
       
       
-      if (fc->GetForm() != &aFormElement.Value()) {
+      if (fc->GetForm() != aFormElement) {
         aRv.ThrowNotFoundError("The submitter is not owned by this form.");
         return nullptr;
       }
@@ -330,9 +339,8 @@ already_AddRefed<FormData> FormData::Constructor(
 
     
     
-    formData =
-        new FormData(aGlobal.GetAsSupports(), UTF_8_ENCODING, aSubmitter);
-    aRv = aFormElement.Value().ConstructEntryList(formData);
+    formData = new FormData(aGlobal, UTF_8_ENCODING, aSubmitter);
+    aRv = aFormElement->ConstructEntryList(formData);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
@@ -341,7 +349,7 @@ already_AddRefed<FormData> FormData::Constructor(
     
     formData = formData->Clone();
   } else {
-    formData = new FormData(aGlobal.GetAsSupports());
+    formData = new FormData(aGlobal);
   }
 
   return formData.forget();

@@ -524,7 +524,7 @@ bool Navigation::FireTraverseNavigateEvent(
       aCx, NavigationType::Traverse, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None),
        nullptr,
-       Nothing(),
+       nullptr,
        nullptr,
        VoidString());
 }
@@ -533,7 +533,7 @@ bool Navigation::FireTraverseNavigateEvent(
 bool Navigation::FirePushReplaceReloadNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
     bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
-    Element* aSourceElement, Maybe<const FormData&> aFormDataEntryList,
+    Element* aSourceElement, already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState) {
   
@@ -551,7 +551,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
   return InnerFireNavigateEvent(
       aCx, aNavigationType, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
-      aFormDataEntryList, aClassicHistoryAPIState,
+      std::move(aFormDataEntryList), aClassicHistoryAPIState,
        VoidString());
 }
 
@@ -574,7 +574,7 @@ bool Navigation::FireDownloadRequestNavigateEvent(
   
   return InnerFireNavigateEvent(
       aCx, NavigationType::Push, destination, aUserInvolvement, aSourceElement,
-       Nothing(),
+       nullptr,
        nullptr, aFilename);
 }
 
@@ -663,7 +663,7 @@ bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
     NavigationDestination* aDestination,
     UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
-    Maybe<const FormData&> aFormDataEntryList,
+    already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename) {
   
@@ -758,7 +758,7 @@ bool Navigation::InnerFireNavigateEvent(
   init.mUserInitiated = aUserInvolvement != UserNavigationInvolvement::None;
 
   
-  init.mFormData = aFormDataEntryList ? aFormDataEntryList->Clone() : nullptr;
+  init.mFormData = aFormDataEntryList;
 
   
   MOZ_DIAGNOSTIC_ASSERT(!mOngoingNavigateEvent);
