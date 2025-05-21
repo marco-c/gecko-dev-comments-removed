@@ -52,7 +52,9 @@ pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     ImageSet(Box<GenericImageSet<Self, Resolution>>),
 
     
-    LightDark(Box<GenericLightDark<Self>>),
+    
+    
+    LightDark(#[css(skip)] Box<GenericLightDark<Self>>),
 }
 
 pub use self::GenericImage as Image;
