@@ -1097,6 +1097,30 @@ class TargetCommand extends EventEmitter {
 
 
 
+
+
+
+  navigateTo(url, waitForLoad = true) {
+    if (this.descriptorFront.traits.supportsNavigateTo) {
+      return this.descriptorFront.navigateTo(url, waitForLoad);
+    }
+
+    
+    
+    
+    
+    
+    
+    return this.targetFront.navigateTo({ url });
+  }
+
+  
+
+
+
+
+
+
   async switchToTarget(newTarget) {
     
     

@@ -43,8 +43,8 @@ add_task(async function () {
   const onRequest = onPageResourceRequest();
 
   info("Navigate to the slow loading page");
-  const target = inspector.toolbox.target;
-  await target.navigateTo({ url: TEST_URL });
+  
+  await inspector.toolbox.commands.targetCommand.navigateTo(TEST_URL, false);
 
   info("Wait for request made to the image");
   const response = await onRequest;

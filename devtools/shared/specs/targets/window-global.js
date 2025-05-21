@@ -76,6 +76,9 @@ const windowGlobalTargetSpecPrototype = {
       },
       response: {},
     },
+    
+    
+    
     navigateTo: {
       request: {
         url: Option(0, "string"),
