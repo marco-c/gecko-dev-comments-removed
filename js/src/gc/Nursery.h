@@ -553,6 +553,9 @@ class Nursery {
   
   void freeChunksFrom(Space& space, unsigned firstFreeChunk);
 
+  
+  
+  
   inline bool shouldTenure(gc::Cell* cell);
 
   void sendTelemetry(JS::GCReason reason, mozilla::TimeDuration totalTime,

@@ -995,20 +995,19 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
     
 
     JSLinearString* base = src->asDependent().rootBaseDuringMinorGC();
-    if (!InCollectedNurseryRegion(base)) {
-      StringRelocationOverlay::forwardDependentString(src, dst);
-    } else {
-      
-      
-      JSString* promotedBase = promoteOrForward(base);
-      MOZ_ASSERT(!promotedBase->isDependent());
-      if (dst->isTenured() && !promotedBase->isTenured()) {
-        MOZ_ASSERT(!InCollectedNurseryRegion(promotedBase));
-        runtime()->gc.storeBuffer().putWholeCell(dst);
-      }
-      StringRelocationOverlay::forwardDependentString(src, dst);
+
+    
+    
+    JSString* promotedBase =
+        InCollectedNurseryRegion(base) ? promoteOrForward(base) : base;
+    MOZ_ASSERT(!promotedBase->isDependent());
+
+    dst->asDependent().setBase(&promotedBase->asLinear());
+    if (InCollectedNurseryRegion(base)) {
       dst->asDependent().updateToPromotedBase(base);
     }
+
+    StringRelocationOverlay::forwardDependentString(src, dst);
   } else {
     
     
