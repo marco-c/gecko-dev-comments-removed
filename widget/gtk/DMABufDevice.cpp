@@ -5,7 +5,7 @@
 
 
 
-#include "DMABufLibWrapper.h"
+#include "DMABufDevice.h"
 #include "DMABufFormats.h"
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
