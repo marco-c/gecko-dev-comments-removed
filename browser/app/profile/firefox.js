@@ -1852,10 +1852,6 @@ pref("browser.newtabpage.activity-stream.newtabLayouts.variant-b", true);
 pref("browser.newtabpage.activity-stream.newtabShortcuts.refresh", true);
 
 
-pref("browser.newtabpage.activity-stream.newtabAdSize.variant-a", false);
-pref("browser.newtabpage.activity-stream.newtabAdSize.variant-b", false);
-
-
 #ifndef RELEASE_OR_BETA
   pref("browser.newtabpage.activity-stream.debug", false);
 #endif
