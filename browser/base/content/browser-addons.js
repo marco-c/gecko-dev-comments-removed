@@ -1818,6 +1818,7 @@ var BrowserAddonUI = {
 
 var gUnifiedExtensions = {
   _initialized: false,
+  
 
   
   
@@ -1834,13 +1835,9 @@ var gUnifiedExtensions = {
       return;
     }
 
-    this._button = document.getElementById("unified-extensions-button");
     
-    this._button.hidden = false;
-
-    document
-      .getElementById("nav-bar")
-      .setAttribute("unifiedextensionsbuttonshown", true);
+    this._button = document.getElementById("unified-extensions-button");
+    this.updateButtonVisibility();
 
     gBrowser.addTabsProgressListener(this);
     window.addEventListener("TabSelect", () => this.updateAttention());
@@ -1883,6 +1880,21 @@ var gUnifiedExtensions = {
       !(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)
     ) {
       this.updateAttention();
+    }
+  },
+
+  updateButtonVisibility() {
+    const navbar = document.getElementById("nav-bar");
+
+    
+    let shouldShowButton = this.buttonAlwaysVisible;
+
+    if (shouldShowButton) {
+      this._button.hidden = false;
+      navbar.setAttribute("unifiedextensionsbuttonshown", true);
+    } else {
+      this._button.hidden = true;
+      navbar.removeAttribute("unifiedextensionsbuttonshown");
     }
   },
 
@@ -2727,3 +2739,14 @@ var gUnifiedExtensions = {
     );
   },
 };
+XPCOMUtils.defineLazyPreferenceGetter(
+  gUnifiedExtensions,
+  "buttonAlwaysVisible",
+  "extensions.unifiedExtensions.button.always_visible",
+  true,
+  () => {
+    if (gUnifiedExtensions._initialized) {
+      gUnifiedExtensions.updateButtonVisibility();
+    }
+  }
+);
