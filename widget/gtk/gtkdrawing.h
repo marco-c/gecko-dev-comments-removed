@@ -69,17 +69,10 @@ struct MozGtkSize {
   }
 };
 
-struct ToolbarButtonGTKMetrics {
-  MozGtkSize minSizeWithBorder{};
-  gint iconXPosition = 0;
-  gint iconYPosition = 0;
-};
-
 #define TOOLBAR_BUTTONS 3
 struct ToolbarGTKMetrics {
   bool initialized = false;
   gint inlineSpacing = 0;
-  ToolbarButtonGTKMetrics button[TOOLBAR_BUTTONS];
 };
 
 struct CSDWindowDecorationSize {
@@ -182,19 +175,6 @@ enum WidgetNodeType : int {
   MOZ_GTK_HEADER_BAR,
   
   MOZ_GTK_HEADER_BAR_MAXIMIZED,
-  
-
-
-
-  MOZ_GTK_HEADER_BAR_BUTTON_CLOSE,
-  MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE,
-  MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE,
-
-  
-
-
-
-  MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE,
 
   
   MOZ_GTK_WINDOW_DECORATION,
@@ -206,7 +186,8 @@ enum WidgetNodeType : int {
 
 
 struct ButtonLayout {
-  WidgetNodeType mType;
+  enum class Type { Close, Minimize, Maximize };
+  Type mType;
 };
 
 
@@ -349,12 +330,6 @@ gint moz_gtk_splitter_get_metrics(gint orientation, gint* size);
 
 
 gint moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
-
-
-
-
-const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
-    WidgetNodeType aAppearance);
 
 gint moz_gtk_get_titlebar_button_spacing();
 
