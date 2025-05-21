@@ -246,10 +246,15 @@ function prepareConsoleMessageForRemote(
           return createValueGripForTarget(targetActor, dbgObj);
         })
       : [],
+
+    
+    lineNumber: message.lineNumber,
+    
     columnNumber: message.columnNumber,
+
     filename: message.filename,
     level: message.level,
-    lineNumber: message.lineNumber,
+
     
     timeStamp: message.microSecondTimeStamp
       ? message.microSecondTimeStamp / 1000

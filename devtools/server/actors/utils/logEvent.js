@@ -121,8 +121,13 @@ function emitConsoleMessage(threadActor, frameLocation, args, level) {
 
   const message = {
     filename: sourceActor.url,
+
+    
     lineNumber: line,
-    columnNumber: column,
+    
+    
+    columnNumber: column + 1,
+
     arguments: args,
     level,
     timeStamp: ChromeUtils.dateNow(),

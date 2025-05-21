@@ -35,8 +35,14 @@ function savedFrameToLocation(frame) {
   const { source: url, line, column, sourceId } = frame;
   return {
     url,
+
+    
     line,
-    column,
+
+    
+    
+    column: column - 1,
+
     
     
     
@@ -152,8 +158,11 @@ class Frame extends Component {
     const source = currentLocation.url || "";
     const line =
       currentLocation.line != void 0 ? Number(currentLocation.line) : null;
+    
     const column =
-      currentLocation.column != void 0 ? Number(currentLocation.column) : null;
+      currentLocation.column != void 0
+        ? Number(currentLocation.column) + 1
+        : null;
     return {
       source,
       line,

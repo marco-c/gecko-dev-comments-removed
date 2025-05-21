@@ -405,7 +405,8 @@ function transformTraceResource(traceResource) {
           source: frame[TRACER_FIELDS_INDEXES.FRAME_URL],
           sourceId: frame[TRACER_FIELDS_INDEXES.FRAME_SOURCEID],
           line: frame[TRACER_FIELDS_INDEXES.FRAME_LINE],
-          column: frame[TRACER_FIELDS_INDEXES.FRAME_COLUMN],
+          
+          column: frame[TRACER_FIELDS_INDEXES.FRAME_COLUMN] + 1,
         },
         depth,
         implementation: frame[TRACER_FIELDS_INDEXES.FRAME_IMPLEMENTATION],

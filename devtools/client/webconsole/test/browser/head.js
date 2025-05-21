@@ -628,8 +628,10 @@ async function checkClickOnNode(
     const column = frameLinkNode.getAttribute("data-column");
     ok(column, `source column found ("${column}")`);
 
+    
     is(
-      parseInt(dbg._selectors.getSelectedLocation(dbg._getState()).column, 10),
+      parseInt(dbg._selectors.getSelectedLocation(dbg._getState()).column, 10) +
+        1,
       parseInt(column, 10),
       "expected source column"
     );
