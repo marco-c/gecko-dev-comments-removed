@@ -1555,9 +1555,6 @@ pub enum Appearance {
     Tab,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Tabpanel,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Tabpanels,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
