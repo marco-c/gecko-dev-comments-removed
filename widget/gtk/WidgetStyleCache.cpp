@@ -36,29 +36,6 @@ static GtkStyleContext* sStyleStorage[MOZ_GTK_WIDGET_NODE_COUNT];
 static GtkStyleContext* GetWidgetRootStyle(WidgetNodeType aNodeType);
 static GtkStyleContext* GetCssNodeStyleInternal(WidgetNodeType aNodeType);
 
-
-
-
-
-
-
-
-
-
-
-
-
-static void InvalidateStyleForOldGtk(GtkStyleContext* aContext) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  gtk_style_context_invalidate(aContext);
-#pragma GCC diagnostic pop
-}
-
-static void InvalidateStyleForOldGtk(GtkWidget* aWidget) {
-  InvalidateStyleForOldGtk(gtk_widget_get_style_context(aWidget));
-}
-
 static GtkWidget* CreateWindowWidget() {
   GtkWidget* widget = gtk_window_new(GTK_WINDOW_POPUP);
   MOZ_RELEASE_ASSERT(widget, "We're missing GtkWindow widget!");
@@ -247,8 +224,6 @@ static void CreateHeaderBarWidget(WidgetNodeType aAppearance) {
   gtk_container_add(GTK_CONTAINER(window), fixed);
   gtk_container_add(GTK_CONTAINER(fixed), headerBar);
 
-  InvalidateStyleForOldGtk(headerBarStyle);
-  InvalidateStyleForOldGtk(fixedStyle);
   gtk_widget_show_all(headerBar);
 
   
@@ -341,7 +316,6 @@ GtkWidget* GetWidget(WidgetNodeType aAppearance) {
     if (!widget) {
       return nullptr;
     }
-    InvalidateStyleForOldGtk(widget);
     sWidgetStorage[aAppearance] = widget;
   }
   return widget;
@@ -432,21 +406,6 @@ GtkStyleContext* CreateCSSNode(const char* aName, GtkStyleContext* aParentStyle,
   gtk_style_context_set_path(context, path);
   gtk_style_context_set_parent(context, aParentStyle);
   gtk_widget_path_unref(path);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (GTK_MAJOR_VERSION == 3 && gtk_get_minor_version() < 6) {
-    GdkRGBA unused;
-    gtk_style_context_get_color(context, GTK_STATE_FLAG_NORMAL, &unused);
-  }
 
   return context;
 }
@@ -741,7 +700,6 @@ GtkStyleContext* GetStyleContext(WidgetNodeType aNodeType, int aScale,
     style = GetCssNodeStyleInternal(aNodeType);
     StyleContextSetScale(style, aScale);
   }
-  bool stateChanged = false;
   GtkStateFlags oldState = gtk_style_context_get_state(style);
   MOZ_ASSERT(!(aStateFlags & (STATE_FLAG_DIR_LTR | STATE_FLAG_DIR_RTL)));
   unsigned newState = aStateFlags;
@@ -763,19 +721,6 @@ GtkStyleContext* GetStyleContext(WidgetNodeType aNodeType, int aScale,
   }
   if (oldState != newState) {
     gtk_style_context_set_state(style, static_cast<GtkStateFlags>(newState));
-    stateChanged = true;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (stateChanged && sWidgetStorage[aNodeType]) {
-    InvalidateStyleForOldGtk(style);
   }
   return style;
 }
