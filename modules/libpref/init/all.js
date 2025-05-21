@@ -1285,15 +1285,6 @@ pref("network.http.send_window_size", 1024);
 
 
 
-#ifdef ANDROID
-  
-  pref("network.http.active_tab_priority", false);
-#else
-  pref("network.http.active_tab_priority", true);
-#endif
-
-
-
 
 pref("network.http.accept", "");
 

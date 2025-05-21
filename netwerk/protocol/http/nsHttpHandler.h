@@ -465,8 +465,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
     return mFocusedWindowTransactionRatio;
   }
 
-  bool ActiveTabPriority() const { return mActiveTabPriority; }
-
   
   
   
@@ -740,9 +738,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   float mFocusedWindowTransactionRatio{0.9f};
-
-  
-  bool mActiveTabPriority{true};
 
   HttpTrafficAnalyzer mHttpTrafficAnalyzer;
 
