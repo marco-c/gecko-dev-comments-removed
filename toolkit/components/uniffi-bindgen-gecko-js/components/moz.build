@@ -4,7 +4,7 @@
 
 
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "generated/RustContextId.sys.mjs",
     "generated/RustRelevancy.sys.mjs",
     "generated/RustRemoteSettings.sys.mjs",
