@@ -2,10 +2,10 @@
 
 
 
+import pickle
 from collections import defaultdict
 
 import mozpack.path as mozpath
-import six.moves.cPickle as pickle
 
 from mozbuild.backend.base import PartialBackend
 from mozbuild.frontend.data import TestManifest

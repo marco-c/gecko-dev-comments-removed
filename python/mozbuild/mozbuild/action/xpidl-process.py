@@ -11,7 +11,6 @@ import argparse
 import os
 import sys
 
-import six
 from buildconfig import topsrcdir
 from mozpack import path as mozpath
 from xpidl import jsonxpt, typescript
@@ -50,7 +49,7 @@ def process(
 
     
     
-    rule.add_dependencies(six.ensure_text(s) for s in iter_modules_in_path(topsrcdir))
+    rule.add_dependencies(s for s in iter_modules_in_path(topsrcdir))
 
     for path in idl_files:
         basename = os.path.basename(path)
@@ -67,7 +66,7 @@ def process(
         xpts.append(jsonxpt.build_typelib(idl))
         ts_data.append(typescript.ts_source(idl))
 
-        rule.add_dependencies(six.ensure_text(s) for s in idl.deps)
+        rule.add_dependencies(idl.deps)
 
         
         
@@ -104,7 +103,7 @@ def process(
     with open(ts_path, "w", encoding="utf-8", newline="\n") as fh:
         typescript.write(ts_data, fh)
 
-    rule.add_targets([six.ensure_text(xpt_path)])
+    rule.add_targets([xpt_path])
     if deps_dir:
         deps_path = os.path.join(deps_dir, "%s.pp" % module)
         with FileAvoidWrite(deps_path) as fh:
