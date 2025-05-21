@@ -13209,7 +13209,7 @@ class _Search extends (external_React_default()).PureComponent {
     return external_React_default().createElement("div", {
       className: wrapperClassName
     }, this.props.showLogo && external_React_default().createElement(Logo, null), !this.props.handoffEnabled && external_React_default().createElement("div", {
-      className: "search-inner-wrapper"
+      className: "search-inner-wrapper no-handoff"
     }, external_React_default().createElement("input", {
       id: "newtab-search-text",
       "data-l10n-id": "newtab-search-box-input",
