@@ -1,11 +1,10 @@
 
 use super::TryClone;
 use crate::TryReserveError;
-use alloc::alloc::Layout;
 use alloc::boxed::Box;
 use core::borrow::Borrow;
+use core::mem::ManuallyDrop;
 use core::ops::Deref;
-use core::ptr::NonNull;
 
 
 pub trait FallibleBox<T> {
@@ -63,47 +62,15 @@ impl<T> Deref for TryBox<T> {
     }
 }
 
-fn alloc(layout: Layout) -> Result<NonNull<u8>, TryReserveError> {
-    #[cfg(all(feature = "unstable", not(feature = "rust_1_57")))] 
-    {
-        use alloc::collections::TryReserveErrorKind;
-        use core::alloc::Allocator;
-        alloc::alloc::Global
-            .allocate(layout)
-            .map_err(|_e| {
-                TryReserveErrorKind::AllocError {
-                    layout,
-                    non_exhaustive: (),
-                }
-                .into()
-            })
-            .map(|v| v.cast())
-    }
-    #[cfg(any(not(feature = "unstable"), feature = "rust_1_57"))]
-    {
-        match layout.size() {
-            0 => {
-                
-                
-                Ok(NonNull::dangling())
-            }
-            1..=core::usize::MAX => {
-                let ptr = unsafe { alloc::alloc::alloc(layout) };
-                core::ptr::NonNull::new(ptr).ok_or(TryReserveError::AllocError { layout })
-            }
-            _ => unreachable!("size must be non-negative"),
-        }
-    }
-}
-
 impl<T> FallibleBox<T> for Box<T> {
     fn try_new(t: T) -> Result<Self, TryReserveError> {
-        let layout = Layout::for_value(&t);
-        let ptr = alloc(layout)?.as_ptr() as *mut T;
-        unsafe {
-            core::ptr::write(ptr, t);
-            Ok(Box::from_raw(ptr))
-        }
+        let mut vec = alloc::vec::Vec::new();
+        vec.try_reserve_exact(1)?;
+        vec.push(t);
+        
+        
+        let ptr: *mut T = ManuallyDrop::new(vec.into_boxed_slice()).as_mut_ptr();
+        Ok(unsafe { Box::from_raw(ptr) })
     }
 }
 
