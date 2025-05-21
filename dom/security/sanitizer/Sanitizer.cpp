@@ -776,7 +776,9 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     next = child->GetNextSibling();
 
     
-    MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement() || child->NodeType() == nsINode::DOCUMENT_TYPE_NODE);
+    
+    MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement() ||
+               child->NodeType() == nsINode::DOCUMENT_TYPE_NODE);
 
     
     if (child->NodeType() == nsINode::DOCUMENT_TYPE_NODE) {

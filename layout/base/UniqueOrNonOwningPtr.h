@@ -36,8 +36,10 @@ struct UniqueOfUniqueOrNonOwningSelector<T[N]>;
 template <typename T, typename... Args>
 typename detail::UniqueOfUniqueOrNonOwningSelector<T>::SingleObject
 MakeUniqueOfUniqueOrNonOwning(Args&&... aArgs) {
-  return UniqueOrNonOwningPtr<T>::UniquelyOwning(new T(std::forward<Args>(aArgs)...));
+  return UniqueOrNonOwningPtr<T>::UniquelyOwning(
+      new T(std::forward<Args>(aArgs)...));
 }
+
 
 
 
@@ -67,7 +69,8 @@ template <typename T>
 class UniqueOrNonOwningPtr {
  public:
   
-  static_assert(alignof(T) != 1, "Can't support data aligned to byte boundaries.");
+  static_assert(alignof(T) != 1,
+                "Can't support data aligned to byte boundaries.");
   
   UniqueOrNonOwningPtr() : mBits{0} {}
   UniqueOrNonOwningPtr(const UniqueOrNonOwningPtr&) = delete;
@@ -97,19 +100,22 @@ class UniqueOrNonOwningPtr {
 
   static UniqueOrNonOwningPtr NonOwning(T* aPtr) {
     const uintptr_t bits = reinterpret_cast<uintptr_t>(aPtr);
-    MOZ_ASSERT((bits & kUniquelyOwningBit) == 0, "Odd-aligned non-owning pointer?");
+    MOZ_ASSERT((bits & kUniquelyOwningBit) == 0,
+               "Odd-aligned non-owning pointer?");
     return UniqueOrNonOwningPtr{bits};
   }
 
   std::add_lvalue_reference_t<T> operator*() const {
-    MOZ_ASSERT(get(),
-               "dereferencing a UniqueOrNonOwningPtr containing nullptr with *");
+    MOZ_ASSERT(
+        get(),
+        "dereferencing a UniqueOrNonOwningPtr containing nullptr with *");
     return *get();
   }
 
   T* operator->() const {
-    MOZ_ASSERT(get(),
-               "dereferencing a UniqueOrNonOwningPtr containing nullptr with ->");
+    MOZ_ASSERT(
+        get(),
+        "dereferencing a UniqueOrNonOwningPtr containing nullptr with ->");
     return get();
   }
 
@@ -118,9 +124,7 @@ class UniqueOrNonOwningPtr {
   T* get() const { return reinterpret_cast<T*>(mBits & ~kUniquelyOwningBit); }
 
  private:
-  bool IsUniquelyOwning() const {
-    return (mBits & kUniquelyOwningBit) != 0;
-  }
+  bool IsUniquelyOwning() const { return (mBits & kUniquelyOwningBit) != 0; }
 
   
   

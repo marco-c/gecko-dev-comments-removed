@@ -14,12 +14,8 @@
 #include "mozilla/Attributes.h"
 
 
-#define NS_CACHEDFAVICONPROTOCOLHANDLER_CID          \
-  {                                                  \
-    0xe8b8bdb7, 0xc96c, 0x4d82, {                    \
-      0x9c, 0x6f, 0x2b, 0x3c, 0x58, 0x5e, 0xc7, 0xea \
-    }                                                \
-  }
+#define NS_CACHEDFAVICONPROTOCOLHANDLER_CID \
+  {0xe8b8bdb7, 0xc96c, 0x4d82, {0x9c, 0x6f, 0x2b, 0x3c, 0x58, 0x5e, 0xc7, 0xea}}
 
 class nsCachedFaviconProtocolHandler final : public nsIProtocolHandler,
                                              public nsSupportsWeakReference {

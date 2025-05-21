@@ -98,24 +98,16 @@ TransportSecurityInfo::GetErrorCodeString(nsAString& aErrorString) {
 }
 
 
-#define TRANSPORTSECURITYINFO_CID                    \
-  {                                                  \
-    0x16786594, 0x0296, 0x4471, {                    \
-      0x80, 0x96, 0x8f, 0x84, 0x49, 0x7c, 0xa4, 0x28 \
-    }                                                \
-  }
+#define TRANSPORTSECURITYINFO_CID \
+  {0x16786594, 0x0296, 0x4471, {0x80, 0x96, 0x8f, 0x84, 0x49, 0x7c, 0xa4, 0x28}}
 static NS_DEFINE_CID(kTransportSecurityInfoCID, TRANSPORTSECURITYINFO_CID);
 
 
 
 
 
-#define TRANSPORTSECURITYINFOMAGIC                   \
-  {                                                  \
-    0xa9863a23, 0x1faa, 0x4169, {                    \
-      0xb0, 0xd2, 0x81, 0x29, 0xec, 0x7c, 0xb1, 0xde \
-    }                                                \
-  }
+#define TRANSPORTSECURITYINFOMAGIC \
+  {0xa9863a23, 0x1faa, 0x4169, {0xb0, 0xd2, 0x81, 0x29, 0xec, 0x7c, 0xb1, 0xde}}
 static NS_DEFINE_CID(kTransportSecurityInfoMagic, TRANSPORTSECURITYINFOMAGIC);
 
 NS_IMETHODIMP

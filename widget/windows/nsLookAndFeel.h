@@ -106,7 +106,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     
     
     
-    return mTitlebarColors.mUseAccent && mTitlebarColors.mAccentInactive.isSome();
+    return mTitlebarColors.mUseAccent &&
+           mTitlebarColors.mAccentInactive.isSome();
   }
 
  private:

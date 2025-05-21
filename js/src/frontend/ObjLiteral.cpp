@@ -144,8 +144,8 @@ static gc::AllocKind AllocKindForObjectLiteral(
 
   
   if (kind == PropertySetKind::Normal) {
-    propCount = CountNonIndexPropertiesUpTo(literalInsns,
-                                            gc::MaxGCObjectFixedSlots);
+    propCount =
+        CountNonIndexPropertiesUpTo(literalInsns, gc::MaxGCObjectFixedSlots);
   }
 
   return gc::GetGCObjectKind(propCount);

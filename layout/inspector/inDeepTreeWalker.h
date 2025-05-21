@@ -51,11 +51,7 @@ class inDeepTreeWalker final : public inIDeepTreeWalker {
 };
 
 
-#define IN_DEEPTREEWALKER_CID                        \
-  {                                                  \
-    0xbfcb82c2, 0x5611, 0x4318, {                    \
-      0x90, 0xd6, 0xba, 0xf4, 0xa7, 0x86, 0x42, 0x52 \
-    }                                                \
-  }
+#define IN_DEEPTREEWALKER_CID \
+  {0xbfcb82c2, 0x5611, 0x4318, {0x90, 0xd6, 0xba, 0xf4, 0xa7, 0x86, 0x42, 0x52}}
 
 #endif  

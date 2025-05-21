@@ -614,7 +614,9 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
   }
 
   
-  if (mShadowedHTMLDocumentProperties.Length() <= 10 && HTMLDocument_Binding::InterfaceHasNonEventHandlerProperty(aName)) {
+  
+  if (mShadowedHTMLDocumentProperties.Length() <= 10 &&
+      HTMLDocument_Binding::InterfaceHasNonEventHandlerProperty(aName)) {
     if (!mShadowedHTMLDocumentProperties.Contains(aName)) {
       mShadowedHTMLDocumentProperties.AppendElement(aName);
     }

@@ -3317,7 +3317,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       return true;
     }
     
-    bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh) ||
+    bool hasColorGlyph =
+        f->HasColorGlyphFor(aCh, aNextCh) ||
         (!nextIsVarSelector && f->HasColorGlyphFor(aCh, kVariationSelector16));
     
     if (hasColorGlyph == PrefersColor(presentation)) {

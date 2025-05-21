@@ -26,8 +26,8 @@ namespace mozilla {
 
 
 template <typename T>
-class MOZ_STATIC_LOCAL_CLASS MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
-    NeverDestroyed {
+class MOZ_STATIC_LOCAL_CLASS
+MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS NeverDestroyed {
  public:
   static_assert(
       !std::is_trivially_destructible_v<T>,

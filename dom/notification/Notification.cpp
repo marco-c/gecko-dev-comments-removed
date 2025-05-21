@@ -615,6 +615,7 @@ nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
     nsAutoCString src;
     srcUri->GetSpec(src);
     
+    
     CopyUTF8toUTF16(src, aDecodedUrl);
   }
 

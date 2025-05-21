@@ -300,7 +300,7 @@ void nsBrowserStatusFilter::MaybeSendProgress() {
   if (mCurProgress > mMaxProgress || mCurProgress <= 0) return;
 
   
-  int32_t percentage = (int32_t) double(mCurProgress) * 100 / mMaxProgress;
+  int32_t percentage = (int32_t)double(mCurProgress) * 100 / mMaxProgress;
 
   
   if (percentage > (mCurrentPercentage + 3)) {

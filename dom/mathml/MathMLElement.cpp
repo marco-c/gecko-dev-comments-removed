@@ -326,7 +326,8 @@ bool MathMLElement::ParseNumericValue(const nsString& aString,
     return true;
   } else {
     uint8_t unitType = SVGLength::GetUnitTypeForString(unit);
-    if (unitType == SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN) { 
+    if (unitType ==
+        SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN) {  
       if (!(aFlags & PARSE_SUPPRESS_WARNINGS)) {
         ReportLengthParseError(aString, aDocument);
       }

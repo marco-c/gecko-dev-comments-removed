@@ -90,13 +90,13 @@ void TerminationSignalHandler(int sig) {
 
 struct glibc_pthread {
   union {
-#if defined(ARCH_CPU_X86_64)
+#  if defined(ARCH_CPU_X86_64)
     
     
     
     
     char header[704];
-#endif
+#  endif
     void* padding[24];
   } header;
   void* list[2];
@@ -155,8 +155,7 @@ base::Process NamespaceSandbox::LaunchProcess(
 
 
 base::Process NamespaceSandbox::LaunchProcessWithOptions(
-    const base::CommandLine& cmdline,
-    const base::LaunchOptions& launch_options,
+    const base::CommandLine& cmdline, const base::LaunchOptions& launch_options,
     const Options& ns_sandbox_options) {
   return LaunchProcessWithOptions(cmdline.argv(), launch_options,
                                   ns_sandbox_options);
@@ -244,14 +243,11 @@ void NamespaceSandbox::InstallDefaultTerminationSignalHandlers() {
 }
 
 
-bool NamespaceSandbox::InstallTerminationSignalHandler(
-    int sig,
-    int exit_code) {
+bool NamespaceSandbox::InstallTerminationSignalHandler(int sig, int exit_code) {
   struct sigaction old_action;
   PCHECK(sys_sigaction(sig, nullptr, &old_action) == 0);
 
-  if (old_action.sa_flags & SA_SIGINFO &&
-      old_action.sa_sigaction != nullptr) {
+  if (old_action.sa_flags & SA_SIGINFO && old_action.sa_sigaction != nullptr) {
     return false;
   }
 

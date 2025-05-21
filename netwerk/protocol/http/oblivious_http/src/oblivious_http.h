@@ -10,12 +10,8 @@
 #include "nsISupportsUtils.h"  
 
 
-#define NS_OBLIVIOUS_HTTP_CID                        \
-  {                                                  \
-    0xd581149e, 0x3319, 0x4563, {                    \
-      0xb9, 0x5e, 0x46, 0xc6, 0x4a, 0xf5, 0xc4, 0xe8 \
-    }                                                \
-  }
+#define NS_OBLIVIOUS_HTTP_CID \
+  {0xd581149e, 0x3319, 0x4563, {0xb9, 0x5e, 0x46, 0xc6, 0x4a, 0xf5, 0xc4, 0xe8}}
 
 extern "C" {
 nsresult oblivious_http_constructor(REFNSIID iid, void** result);

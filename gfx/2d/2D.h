@@ -1957,7 +1957,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
     return CreateSimilarDrawTarget(aSize, aFormat);
   }
 
-
   
 
 

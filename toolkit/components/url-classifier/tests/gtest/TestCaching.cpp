@@ -216,10 +216,14 @@ void TestInvalidateExpiredCacheEntry() {
 }
 
 TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV2)
-{ TestInvalidateExpiredCacheEntry<LookupCacheV2>(); }
+{
+  TestInvalidateExpiredCacheEntry<LookupCacheV2>();
+}
 
 TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV4)
-{ TestInvalidateExpiredCacheEntry<LookupCacheV4>(); }
+{
+  TestInvalidateExpiredCacheEntry<LookupCacheV4>();
+}
 
 
 

@@ -41,7 +41,6 @@ class PriorityQueue {
   
   
   
-  
   T& highest() {
     MOZ_ASSERT(!empty());
     return heap[0];

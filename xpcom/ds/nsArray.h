@@ -14,12 +14,8 @@
 #include "mozilla/Attributes.h"
 
 
-#define NS_ARRAY_CID                                 \
-  {                                                  \
-    0x35c66fd1, 0x95e9, 0x4e0a, {                    \
-      0x80, 0xc5, 0xc3, 0xbd, 0x2b, 0x37, 0x54, 0x81 \
-    }                                                \
-  }
+#define NS_ARRAY_CID \
+  {0x35c66fd1, 0x95e9, 0x4e0a, {0x80, 0xc5, 0xc3, 0xbd, 0x2b, 0x37, 0x54, 0x81}}
 
 
 class nsArrayBase : public nsIMutableArray {

@@ -14,12 +14,8 @@
 class nsIOutputStream;
 
 
-#define NS_CONVERTEROUTPUTSTREAM_CID                 \
-  {                                                  \
-    0xff8780a5, 0xbbb1, 0x4bc5, {                    \
-      0x8e, 0xe7, 0x05, 0x7e, 0x7b, 0xc5, 0xc9, 0x25 \
-    }                                                \
-  }
+#define NS_CONVERTEROUTPUTSTREAM_CID \
+  {0xff8780a5, 0xbbb1, 0x4bc5, {0x8e, 0xe7, 0x05, 0x7e, 0x7b, 0xc5, 0xc9, 0x25}}
 
 class nsConverterOutputStream final : public nsIConverterOutputStream {
  public:

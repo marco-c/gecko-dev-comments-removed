@@ -7,7 +7,7 @@
 #ifndef jit_VMFunctionList_inl_h
 #define jit_VMFunctionList_inl_h
 
-#include "mozilla/MacroArgs.h" 
+#include "mozilla/MacroArgs.h"  
 
 #include "builtin/Eval.h"
 #include "builtin/ModuleObject.h"  
@@ -404,8 +404,9 @@ VMFUNCTION_LIST(DEF_TEMPLATE)
 
 
 namespace check_fully_qualified {
-#define CHECK_NS_VISIBILITY(name, fp, ...) \
-  [[maybe_unused]] static constexpr decltype(&fp) MOZ_CONCAT(fp_, __COUNTER__) = nullptr;
+#define CHECK_NS_VISIBILITY(name, fp, ...)                    \
+  [[maybe_unused]] static constexpr decltype(&fp) MOZ_CONCAT( \
+      fp_, __COUNTER__) = nullptr;
 VMFUNCTION_LIST(CHECK_NS_VISIBILITY)
 #undef CHECK_NS_VISIBILITY
 }  

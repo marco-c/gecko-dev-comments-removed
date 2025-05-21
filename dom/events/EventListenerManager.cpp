@@ -1852,16 +1852,20 @@ bool EventListenerManager::HasNonPassiveListenersFor(
     
     
     if (aEvent->mMessage == eWheel) {
-      if (const auto& listeners = mListenerMap.GetListenersForType(nsGkAtoms::onDOMMouseScroll)) {
+      if (const auto& listeners =
+              mListenerMap.GetListenersForType(nsGkAtoms::onDOMMouseScroll)) {
         for (const Listener& listener : listeners->NonObservingRange()) {
-          if (!listener.mFlags.mPassive && ListenerCanHandle(&listener, aEvent)) {
+          if (!listener.mFlags.mPassive &&
+              ListenerCanHandle(&listener, aEvent)) {
             return true;
           }
         }
       }
-      if (const auto& listeners = mListenerMap.GetListenersForType(nsGkAtoms::onMozMousePixelScroll)) {
+      if (const auto& listeners = mListenerMap.GetListenersForType(
+              nsGkAtoms::onMozMousePixelScroll)) {
         for (const Listener& listener : listeners->NonObservingRange()) {
-          if (!listener.mFlags.mPassive && ListenerCanHandle(&listener, aEvent)) {
+          if (!listener.mFlags.mPassive &&
+              ListenerCanHandle(&listener, aEvent)) {
             return true;
           }
         }

@@ -878,7 +878,7 @@ static void LogRequest(
 ContentAnalysisResponse::ContentAnalysisResponse(
     content_analysis::sdk::ContentAnalysisResponse&& aResponse,
     const nsCString& aUserActionId)
-    : mUserActionId(aUserActionId), mIsAgentResponse(true) {
+    : mUserActionId(aUserActionId) {
   mAction = Action::eUnspecified;
   for (const auto& result : aResponse.results()) {
     if (!result.has_status() ||
@@ -909,7 +909,8 @@ ContentAnalysisResponse::ContentAnalysisResponse(
     const nsACString& aUserActionId)
     : mAction(aAction),
       mRequestToken(aRequestToken),
-      mUserActionId(aUserActionId) {
+      mUserActionId(aUserActionId),
+      mIsSyntheticResponse(true) {
   MOZ_ASSERT(mAction != Action::eUnspecified);
 }
 
@@ -1021,8 +1022,8 @@ ContentAnalysisResponse::GetIsCachedResponse(bool* aIsCachedResponse) {
 }
 
 NS_IMETHODIMP
-ContentAnalysisResponse::GetIsAgentResponse(bool* aIsAgentResponse) {
-  *aIsAgentResponse = mIsAgentResponse;
+ContentAnalysisResponse::GetIsSyntheticResponse(bool* aIsSyntheticResponse) {
+  *aIsSyntheticResponse = mIsSyntheticResponse;
   return NS_OK;
 }
 
@@ -1754,7 +1755,7 @@ NS_IMETHODIMP ContentAnalysis::SendCancelToAgent(
       __func__,
       [userActionId = nsCString(aUserActionId)](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
-      -> Result<std::nullptr_t, nsresult> {
+          -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
         auto owner = GetContentAnalysisFromService();
         if (!owner) {
@@ -3999,7 +4000,7 @@ nsresult ContentAnalysis::RunAcknowledgeTask(
       __func__,
       [pbAck = std::move(pbAck)](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
-      -> Result<std::nullptr_t, nsresult> {
+          -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
         RefPtr<ContentAnalysis> owner = GetContentAnalysisFromService();
         if (!owner) {
@@ -4038,7 +4039,7 @@ ContentAnalysis::GetDiagnosticInfo(JSContext* aCx, dom::Promise** aPromise) {
       __func__,
       [promiseHolder](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
-      -> Result<std::nullptr_t, nsresult> {
+          -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
         
         
@@ -4149,8 +4150,11 @@ NS_IMETHODIMP ContentAnalysis::MakeResponseForTest(
     nsIContentAnalysisResponse::Action aAction, const nsACString& aToken,
     const nsACString& aUserActionId,
     nsIContentAnalysisResponse** aNewResponse) {
-  MakeRefPtr<ContentAnalysisResponse>(aAction, aToken, aUserActionId)
-      .forget(aNewResponse);
+  auto response =
+      MakeRefPtr<ContentAnalysisResponse>(aAction, aToken, aUserActionId);
+  
+  response->SetIsSyntheticResponse(false);
+  response.forget(aNewResponse);
   return NS_OK;
 }
 

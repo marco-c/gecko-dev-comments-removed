@@ -4368,20 +4368,22 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               
               
               
-              nsIFrame* lastScrollFrame = WheelTransaction::GetScrollTargetFrame();
+              nsIFrame* lastScrollFrame =
+                  WheelTransaction::GetScrollTargetFrame();
               bool wheelTransactionHandlesInput = false;
               if (lastScrollFrame) {
-                ScrollContainerFrame* scrollContainerFrame = lastScrollFrame->GetScrollTargetFrame();
+                ScrollContainerFrame* scrollContainerFrame =
+                    lastScrollFrame->GetScrollTargetFrame();
                 if (scrollContainerFrame->IsRootScrollFrameOfDocument()) {
                   
                   
                   
                   wheelTransactionHandlesInput = true;
-                  allDeltaOverflown = !WheelHandlingUtils::CanScrollOn(scrollContainerFrame,
-                                                                       wheelEvent->mDeltaX, 0.0);
-                } else if(WheelHandlingUtils::CanScrollOn(scrollContainerFrame,
-                                                          wheelEvent->mDeltaX,
-                                                          wheelEvent->mDeltaY)) {
+                  allDeltaOverflown = !WheelHandlingUtils::CanScrollOn(
+                      scrollContainerFrame, wheelEvent->mDeltaX, 0.0);
+                } else if (WheelHandlingUtils::CanScrollOn(
+                               scrollContainerFrame, wheelEvent->mDeltaX,
+                               wheelEvent->mDeltaY)) {
                   
                   
                   

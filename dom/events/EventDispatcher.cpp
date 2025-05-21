@@ -818,7 +818,8 @@ static bool IsUncancelableIfOnlyPassiveListeners(const WidgetEvent* aEvent) {
 
   
   
-  nsCOMPtr<nsIContent> target = nsIContent::FromEventTargetOrNull(aEvent->mOriginalTarget);
+  nsCOMPtr<nsIContent> target =
+      nsIContent::FromEventTargetOrNull(aEvent->mOriginalTarget);
   return !(XRE_IsParentProcess() && BrowserParent::GetFrom(target));
 }
 

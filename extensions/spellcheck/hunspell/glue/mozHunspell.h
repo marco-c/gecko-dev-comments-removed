@@ -80,12 +80,8 @@
 
 #define MOZ_HUNSPELL_CONTRACTID "@mozilla.org/spellchecker/engine;1"
 #define MOZ_HUNSPELL_CID
-         \
-  {                                                  \
-    0x56c778e4, 0x1bee, 0x45f3, {                    \
-      0xa6, 0x89, 0x88, 0x66, 0x92, 0xa9, 0x7f, 0xe7 \
-    }                                                \
-  }
+ \
+  {0x56c778e4, 0x1bee, 0x45f3, {0xa6, 0x89, 0x88, 0x66, 0x92, 0xa9, 0x7f, 0xe7}}
 
 class mozHunspell final : public mozISpellCheckingEngine,
                           public nsIObserver,

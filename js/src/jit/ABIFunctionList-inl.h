@@ -7,8 +7,8 @@
 #ifndef jit_ABIFunctionList_inl_h
 #define jit_ABIFunctionList_inl_h
 
-#include "mozilla/MacroArgs.h" 
-#include "mozilla/SIMD.h"  
+#include "mozilla/MacroArgs.h"  
+#include "mozilla/SIMD.h"       
 
 #include "jslibmath.h"  
 #include "jsmath.h"     
@@ -250,10 +250,10 @@ namespace jit {
 ABIFUNCTION_LIST(DEF_TEMPLATE)
 #undef DEF_TEMPLATE
 
-#define DEF_TEMPLATE(fp, ...)                 \
-  template <>                                 \
-  struct ABIFunctionData<__VA_ARGS__, fp> { \
-    static constexpr bool registered = true;  \
+#define DEF_TEMPLATE(fp, ...)                \
+  template <>                                \
+  struct ABIFunctionData<__VA_ARGS__, fp> {  \
+    static constexpr bool registered = true; \
   };
 ABIFUNCTION_AND_TYPE_LIST(DEF_TEMPLATE)
 #undef DEF_TEMPLATE
@@ -284,8 +284,9 @@ ABIFUNCTIONSIG_LIST(DEF_TEMPLATE)
 
 
 namespace check_fully_qualified {
-#define CHECK_NS_VISIBILITY(fp) \
-  [[maybe_unused]] static constexpr decltype(&fp) MOZ_CONCAT(fp_, __COUNTER__) = nullptr;
+#define CHECK_NS_VISIBILITY(fp)                               \
+  [[maybe_unused]] static constexpr decltype(&fp) MOZ_CONCAT( \
+      fp_, __COUNTER__) = nullptr;
 ABIFUNCTION_LIST(CHECK_NS_VISIBILITY)
 #undef CHECK_NS_VISIBILITY
 }  

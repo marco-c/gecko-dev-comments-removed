@@ -2230,11 +2230,8 @@ bool js::ToIntegerIndexSlow(JSContext* cx, Handle<Value> value,
 
 
 struct Dummy {
-  explicit Dummy(double) {
-  }
-  explicit operator double() {
-    return 0;
-  }
+  explicit Dummy(double) {}
+  explicit operator double() { return 0; }
 };
 
 

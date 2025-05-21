@@ -1460,9 +1460,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_NEWTAB_STORY_IMPRESSION);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_STORY_CLICK_TIMESTAMP);
+    rv = mMainConn->ExecuteSimpleSQL(
+        CREATE_IDX_MOZ_NEWTAB_STORY_CLICK_TIMESTAMP);
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_IMPRESSION_TIMESTAMP);
+    rv =
+        mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_IMPRESSION_TIMESTAMP);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2180,6 +2182,7 @@ nsresult Database::MigrateV78Up() {
 }
 
 nsresult Database::MigrateV79Up() {
+  
   
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = mMainConn->CreateStatement(

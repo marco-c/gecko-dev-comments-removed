@@ -140,7 +140,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE_AND_DESTROY(nsIContent,
                                                                LastRelease(),
                                                                Destroy())
 
-nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
+nsIContent*
+nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   
   
   
