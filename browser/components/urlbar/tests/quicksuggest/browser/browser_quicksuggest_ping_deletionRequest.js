@@ -1,45 +1,89 @@
 
 
 
-
-
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+});
 
-add_task(async function suggestDisabled() {
-  await assertPingSubmitted(() => {
+if (ContextId.rotationEnabled) {
+  
+  
+  add_task(async function suggestDisabled() {
+    let sandbox = sinon.createSandbox();
+    sandbox.stub(ContextId, "forceRotation");
+
     UrlbarPrefs.set("quicksuggest.enabled", false);
+    Assert.ok(
+      ContextId.forceRotation.calledOnce,
+      "Should have forced context ID rotation upon disabling suggest"
+    );
+
+    UrlbarPrefs.clear("quicksuggest.enabled");
+    await QuickSuggestTestUtils.forceSync();
+
+    sandbox.restore();
   });
 
-  UrlbarPrefs.clear("quicksuggest.enabled");
-  await QuickSuggestTestUtils.forceSync();
-});
+  
+  
+  add_task(async function ampDisabled() {
+    let sandbox = sinon.createSandbox();
+    sandbox.stub(ContextId, "forceRotation");
 
-
-add_task(async function ampDisabled() {
-  await assertPingSubmitted(() => {
     UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+    Assert.ok(
+      ContextId.forceRotation.calledOnce,
+      "Should have forced context ID rotation upon disabling sponsored suggest"
+    );
+
+    UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+    await QuickSuggestTestUtils.forceSync();
+
+    sandbox.restore();
+  });
+} else {
+  
+  
+
+  
+  add_task(async function suggestDisabled() {
+    await assertPingSubmitted(() => {
+      UrlbarPrefs.set("quicksuggest.enabled", false);
+    });
+
+    UrlbarPrefs.clear("quicksuggest.enabled");
+    await QuickSuggestTestUtils.forceSync();
   });
 
-  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
-  await QuickSuggestTestUtils.forceSync();
-});
+  
+  add_task(async function ampDisabled() {
+    await assertPingSubmitted(() => {
+      UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+    });
 
-async function assertPingSubmitted(callback) {
-  let submitted = false;
-  GleanPings.quickSuggestDeletionRequest.testBeforeNextSubmit(() => {
-    submitted = true;
+    UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+    await QuickSuggestTestUtils.forceSync();
   });
 
-  await callback();
-  await TestUtils.waitForCondition(
-    () => submitted,
-    "Waiting for testBeforeNextSubmit"
-  );
+  async function assertPingSubmitted(callback) {
+    let submitted = false;
+    GleanPings.quickSuggestDeletionRequest.testBeforeNextSubmit(() => {
+      submitted = true;
+    });
 
-  Assert.equal(
-    Glean.quickSuggest.contextId.testGetValue(),
-    expectedPingContextId(),
-    "The ping should have contextId set"
-  );
+    await callback();
+    await TestUtils.waitForCondition(
+      () => submitted,
+      "Waiting for testBeforeNextSubmit"
+    );
+
+    Assert.equal(
+      Glean.quickSuggest.contextId.testGetValue(),
+      expectedPingContextId(),
+      "The ping should have contextId set"
+    );
+  }
 }
