@@ -44,45 +44,7 @@ style_path_print(GtkStyleContext *context)
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-static GtkStateFlags GetStateFlagsFromGtkWidgetState(GtkWidgetState* state) {
-  GtkStateFlags stateFlags = GTK_STATE_FLAG_NORMAL;
-
-  if (state->disabled)
-    stateFlags = GTK_STATE_FLAG_INSENSITIVE;
-  else {
-    if (state->depressed || state->active)
-      stateFlags =
-          static_cast<GtkStateFlags>(stateFlags | GTK_STATE_FLAG_ACTIVE);
-    if (state->inHover)
-      stateFlags =
-          static_cast<GtkStateFlags>(stateFlags | GTK_STATE_FLAG_PRELIGHT);
-    if (state->focused)
-      stateFlags =
-          static_cast<GtkStateFlags>(stateFlags | GTK_STATE_FLAG_FOCUSED);
-    if (state->backdrop)
-      stateFlags =
-          static_cast<GtkStateFlags>(stateFlags | GTK_STATE_FLAG_BACKDROP);
-  }
-
-  return stateFlags;
-}
-
-gint moz_gtk_init() {
-  moz_gtk_refresh();
-
-  return MOZ_GTK_SUCCESS;
-}
+void moz_gtk_init() { moz_gtk_refresh(); }
 
 void moz_gtk_refresh() {
   sToolbarMetrics.initialized = false;
@@ -165,56 +127,39 @@ gint moz_gtk_get_titlebar_button_spacing() {
   return sToolbarMetrics.inlineSpacing;
 }
 
-static gint moz_gtk_window_decoration_paint(cairo_t* cr,
-                                            const GdkRectangle* rect,
-                                            GtkWidgetState* state,
-                                            GtkTextDirection direction) {
+static void moz_gtk_window_decoration_paint(cairo_t* cr,
+                                            const GtkDrawingParams& aParams) {
   if (mozilla::widget::GdkIsWaylandDisplay()) {
     
-    return MOZ_GTK_SUCCESS;
+    return;
   }
-  GtkStateFlags state_flags = GetStateFlagsFromGtkWidgetState(state);
   GtkStyleContext* windowStyle =
-      GetStyleContext(MOZ_GTK_HEADERBAR_WINDOW, state->image_scale);
+      GetStyleContext(MOZ_GTK_HEADERBAR_WINDOW, aParams.image_scale);
   const bool solidDecorations =
       gtk_style_context_has_class(windowStyle, "solid-csd");
   GtkStyleContext* decorationStyle =
       GetStyleContext(solidDecorations ? MOZ_GTK_WINDOW_DECORATION_SOLID
                                        : MOZ_GTK_WINDOW_DECORATION,
-                      state->image_scale, GTK_TEXT_DIR_LTR, state_flags);
+                      aParams.image_scale, aParams.state);
 
-  gtk_render_background(decorationStyle, cr, rect->x, rect->y, rect->width,
-                        rect->height);
-  gtk_render_frame(decorationStyle, cr, rect->x, rect->y, rect->width,
-                   rect->height);
-  return MOZ_GTK_SUCCESS;
-}
-
-gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
-                               gint* right, gint* bottom,
-                               
-                               
-                               GtkTextDirection direction) {
-  *left = *top = *right = *bottom = 0;
-  return MOZ_GTK_SUCCESS;
+  const auto& rect = aParams.rect;
+  gtk_render_background(decorationStyle, cr, rect.x, rect.y, rect.width,
+                        rect.height);
+  gtk_render_frame(decorationStyle, cr, rect.x, rect.y, rect.width,
+                   rect.height);
 }
 
 
-gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
-                          GdkRectangle* rect, GtkWidgetState* state, gint flags,
-                          GtkTextDirection direction) {
+void moz_gtk_widget_paint(cairo_t* cr, const GtkDrawingParams* aParams) {
   
-
   cairo_new_path(cr);
-
-  switch (widget) {
+  switch (aParams->widget) {
     case MOZ_GTK_WINDOW_DECORATION:
-      return moz_gtk_window_decoration_paint(cr, rect, state, direction);
+      return moz_gtk_window_decoration_paint(cr, *aParams);
     default:
-      g_warning("Unknown widget type: %d", widget);
+      g_warning("Unknown widget type: %d", aParams->widget);
+      return;
   }
-
-  return MOZ_GTK_UNKNOWN_WIDGET;
 }
 
 gint moz_gtk_shutdown() {

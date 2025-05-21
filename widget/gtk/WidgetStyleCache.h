@@ -12,8 +12,6 @@
 
 GtkWidget* GetWidget(WidgetNodeType aNodeType);
 
-cairo_surface_t* GetWidgetIconSurface(GtkWidget* aWidgetIcon, int aScale);
-
 
 
 
@@ -32,32 +30,13 @@ GtkStyleContext* CreateCSSNode(const char* aName, GtkStyleContext* aParentStyle,
 
 
 
-
-
 GtkStyleContext* GetStyleContext(
     WidgetNodeType aNodeType, int aScale = 1,
-    GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
-    GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL);
-
-
-
-
-
-
-
-GtkStyleContext* CreateStyleContextWithStates(
-    WidgetNodeType aNodeType, int aScale = 1,
-    GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
     GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL);
 
 void ResetWidgetCache();
-
 bool IsSolidCSDStyleUsed();
-
-void StyleContextSetScale(GtkStyleContext* style, gint aScaleFactor);
-
 gint GetBorderRadius(GtkStyleContext* aStyle);
-
-bool HeaderBarShouldDrawContainer(WidgetNodeType);
+bool HeaderBarShouldDrawContainer();
 
 #endif  

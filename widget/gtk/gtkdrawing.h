@@ -21,24 +21,6 @@
 #include "mozilla/Span.h"
 
 
-typedef struct {
-  guint8 active;
-  guint8 focused;
-  guint8 selected;
-  guint8 inHover;
-  guint8 disabled;
-  guint8 isDefault;
-  guint8 canDefault;
-  
-
-  guint8 depressed;
-  guint8 backdrop;
-  gint32 curpos; 
-  gint32 maxpos;
-  gint32 image_scale; 
-} GtkWidgetState;
-
-
 
 
 struct MozGtkSize {
@@ -83,11 +65,6 @@ struct CSDWindowDecorationSize {
 
 #define MOZ_GTK_SUCCESS 0
 #define MOZ_GTK_UNKNOWN_WIDGET -1
-#define MOZ_GTK_UNSAFE_THEME -2
-
-
-#define MOZ_GTK_WIDGET_CHECKED 1
-#define MOZ_GTK_WIDGET_INCONSISTENT (1 << 1)
 
 
 enum WidgetNodeType : int {
@@ -162,10 +139,7 @@ struct ButtonLayout {
 
 
 
-
-
-
-gint moz_gtk_init();
+void moz_gtk_init();
 
 
 
@@ -182,33 +156,19 @@ gint moz_gtk_shutdown();
 
 
 
+struct GtkDrawingParams {
+  
+  WidgetNodeType widget;
+  
+  GdkRectangle rect{};
+  GtkStateFlags state = GTK_STATE_FLAG_NORMAL;
+  gint image_scale = 1;
+};
 
 
+void moz_gtk_widget_paint(cairo_t* cr, const GtkDrawingParams* aParams);
 
 
-
-
-
-
-
-gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
-                          GdkRectangle* rect, GtkWidgetState* state, gint flags,
-                          GtkTextDirection direction);
-
-
-
-
-
-
-
-
-
-
-
-
-gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
-                               gint* right, gint* bottom,
-                               GtkTextDirection direction);
 
 gint moz_gtk_get_titlebar_button_spacing();
 
