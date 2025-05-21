@@ -1,7 +1,0 @@
-
-
-
-
-fn main() {
-    uniffi::generate_scaffolding("src/todolist.udl").unwrap();
-}
