@@ -387,8 +387,8 @@ IdentityCredential::GetCredentialInMainProcess(
               
               
               if (aResult.Length() == 0) {
-                DiscoverFromExternalSourceInMainProcess(principal, cbc,
-                                                        aOptions)
+                DiscoverFromExternalSourceInMainProcess(
+                    principal, cbc, aOptions, aMediationRequirement)
                     ->Then(
                         GetCurrentSerialEventTarget(), __func__,
                         [result](const IPCIdentityCredential& credential) {
@@ -418,7 +418,8 @@ IdentityCredential::GetCredentialInMainProcess(
   } else {
     
     
-    DiscoverFromExternalSourceInMainProcess(principal, cbc, aOptions)
+    DiscoverFromExternalSourceInMainProcess(principal, cbc, aOptions,
+                                            aMediationRequirement)
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [result](const IPCIdentityCredential& credential) {
@@ -1010,7 +1011,8 @@ IdentityCredential::DiscoverLightweightFromExternalSourceInMainProcess(
 RefPtr<IdentityCredential::GetIPCIdentityCredentialPromise>
 IdentityCredential::DiscoverFromExternalSourceInMainProcess(
     nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-    const IdentityCredentialRequestOptions& aOptions) {
+    const IdentityCredentialRequestOptions& aOptions,
+    const CredentialMediationRequirement& aMediationRequirement) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aBrowsingContext);
@@ -1100,6 +1102,18 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
             const Sequence<MozPromise<IdentityProviderAPIConfig, nsresult,
                                       true>::ResolveOrRejectValue>
                 resultsSequence(std::move(results));
+
+            
+            
+            Maybe<IdentityProviderRequestOptionsWithManifest>
+                autoSelectedIdentityProvider =
+                    SkipAccountChooser(aOptions.mProviders, resultsSequence);
+            if (autoSelectedIdentityProvider.isSome()) {
+              return GetIdentityProviderRequestOptionsWithManifestPromise::
+                  CreateAndResolve(autoSelectedIdentityProvider.extract(),
+                                   __func__);
+            }
+
             
             return PromptUserToSelectProvider(
                 browsingContext, aOptions.mProviders, resultsSequence);
@@ -1111,7 +1125,7 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
           })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [principal,
+          [aMediationRequirement, principal,
            browsingContext](const IdentityProviderRequestOptionsWithManifest&
                                 providerAndManifest) {
             IdentityProviderAPIConfig manifest;
@@ -1119,7 +1133,8 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
             std::tie(provider, manifest) = providerAndManifest;
             return IdentityCredential::
                 CreateHeavyweightCredentialDuringDiscovery(
-                    principal, browsingContext, provider, manifest);
+                    principal, browsingContext, provider, manifest,
+                    aMediationRequirement);
           },
           [](nsresult error) {
             return IdentityCredential::GetIPCIdentityCredentialPromise::
@@ -1146,11 +1161,97 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
 }
 
 
+Maybe<IdentityCredential::IdentityProviderRequestOptionsWithManifest>
+IdentityCredential::SkipAccountChooser(
+    const Sequence<IdentityProviderRequestOptions>& aProviders,
+    const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests) {
+  if (aProviders.Length() != 1) {
+    return Nothing();
+  }
+  if (aManifests.Length() != 1) {
+    return Nothing();
+  }
+  if (!aManifests.ElementAt(0).IsResolve()) {
+    return Nothing();
+  }
+  const IdentityProviderRequestOptions& resolvedProvider =
+      aProviders.ElementAt(0);
+  const IdentityProviderAPIConfig& resolvedManifest =
+      aManifests.ElementAt(0).ResolveValue();
+  return Some(std::make_tuple(resolvedProvider, resolvedManifest));
+
+
+
+Maybe<IdentityProviderAccount> IdentityCredential::FindAccountToReauthenticate(
+    const IdentityProviderRequestOptions& aProvider, nsIPrincipal* aRPPrincipal,
+    const IdentityProviderAccountList& aAccountList) {
+  if (!aAccountList.mAccounts.WasPassed()) {
+    return Nothing();
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIIdentityCredentialStorageService> icStorageService =
+      mozilla::components::IdentityCredentialStorageService::Service(&rv);
+  if (NS_WARN_IF(!icStorageService)) {
+    return Nothing();
+  }
+
+  Maybe<IdentityProviderAccount> result = Nothing();
+  for (const IdentityProviderAccount& account :
+       aAccountList.mAccounts.Value()) {
+    
+    
+    if (account.mApproved_clients.WasPassed()) {
+      if (!aProvider.mClientId.WasPassed() ||
+          !account.mApproved_clients.Value().Contains(
+              NS_ConvertUTF8toUTF16(aProvider.mClientId.Value()))) {
+        continue;
+      }
+    }
+
+    RefPtr<nsIURI> configURI;
+    nsresult rv =
+        NS_NewURI(getter_AddRefs(configURI), aProvider.mConfigURL.Value());
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+    nsCOMPtr<nsIPrincipal> idpPrincipal = BasePrincipal::CreateContentPrincipal(
+        configURI, aRPPrincipal->OriginAttributesRef());
+
+    
+    bool connected = false;
+    rv = icStorageService->Connected(aRPPrincipal, idpPrincipal, &connected);
+    if (NS_WARN_IF(NS_FAILED(rv)) || !connected) {
+      continue;
+    }
+
+    
+    bool silentAllowed = false;
+    rv = CanSilentlyCollect(aRPPrincipal, idpPrincipal, &silentAllowed);
+    if (!NS_WARN_IF(NS_FAILED(rv)) && !silentAllowed) {
+      continue;
+    }
+
+    
+    if (result.isSome()) {
+      return Nothing();
+    }
+
+    
+    
+    result = Some(account);
+  }
+
+  return result;
+}
+
+
 RefPtr<IdentityCredential::GetIPCIdentityCredentialPromise>
 IdentityCredential::CreateHeavyweightCredentialDuringDiscovery(
     nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
     const IdentityProviderRequestOptions& aProvider,
-    const IdentityProviderAPIConfig& aManifest) {
+    const IdentityProviderAPIConfig& aManifest,
+    const CredentialMediationRequirement& aMediationRequirement) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aBrowsingContext);
@@ -1162,7 +1263,8 @@ IdentityCredential::CreateHeavyweightCredentialDuringDiscovery(
                                               aManifest)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [argumentPrincipal, browsingContext, aProvider](
+          [argumentPrincipal, browsingContext, aManifest, aMediationRequirement,
+           aProvider](
               const std::tuple<IdentityProviderAPIConfig,
                                IdentityProviderAccountList>& promiseResult) {
             IdentityProviderAPIConfig currentManifest;
@@ -1228,6 +1330,21 @@ IdentityCredential::CreateHeavyweightCredentialDuringDiscovery(
                     }
                     return true;
                   });
+            }
+
+            
+            
+            if (aMediationRequirement !=
+                CredentialMediationRequirement::Required) {
+              Maybe<IdentityProviderAccount> reauthenticatingAccount =
+                  FindAccountToReauthenticate(aProvider, argumentPrincipal,
+                                              accountList);
+              if (reauthenticatingAccount.isSome()) {
+                return GetAccountPromise::CreateAndResolve(
+                    std::make_tuple(aManifest,
+                                    reauthenticatingAccount.extract()),
+                    __func__);
+              }
             }
 
             return PromptUserToSelectAccount(browsingContext, accountList,
