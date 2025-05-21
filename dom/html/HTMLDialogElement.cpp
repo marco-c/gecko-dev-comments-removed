@@ -625,7 +625,12 @@ void HTMLDialogElement::SetDialogCloseWatcherIfNeeded() {
 
   RefPtr<Document> doc = OwnerDoc();
   RefPtr window = doc->GetInnerWindow();
-  MOZ_ASSERT(window);
+  
+  
+  
+  if (!window) {
+    return;
+  }
 
   
   
