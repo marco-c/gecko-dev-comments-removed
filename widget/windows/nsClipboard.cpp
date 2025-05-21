@@ -578,6 +578,7 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(
 }
 
 
+
 nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void** aData,
                                     uint32_t* aLen) {
   MOZ_CLIPBOARD_LOG("%s", __FUNCTION__);
@@ -703,6 +704,29 @@ HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
 
 
 
+
+
+
+
+template <typename CharType>
+static nsresult GetCharDataFromGlobalData(STGMEDIUM& aStm, CharType** aData,
+                                   uint32_t* aLen) {
+  uint32_t nBytes = 0;
+  MOZ_TRY(nsClipboard::GetGlobalData(aStm.hGlobal,
+                                     reinterpret_cast<void**>(aData), &nBytes));
+  auto nChars = nBytes / sizeof(CharType);
+  if (nChars < 1) {
+    *aLen = 0;
+    return NS_OK;
+  }
+  bool hasNullTerminator = (*aData)[nChars - 1] == CharType(0);
+  *aLen = hasNullTerminator ? nBytes - sizeof(CharType) : nBytes;
+  return NS_OK;
+}
+
+
+
+
 nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
                                                 UINT aIndex, UINT aFormat,
                                                 const char* aMIMEImageFormat,
@@ -764,31 +788,13 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
   
   switch (fe.cfFormat) {
     case CF_TEXT: {
-      
-      
-      
-      
-      
-      
-      
-      uint32_t allocLen = 0;
-      MOZ_TRY(GetGlobalData(stm.hGlobal, aData, &allocLen));
-      *aLen = strlen(reinterpret_cast<char*>(*aData));
-      return NS_OK;
+      return GetCharDataFromGlobalData(stm, reinterpret_cast<char**>(aData),
+                                       aLen);
     }
 
     case CF_UNICODETEXT: {
-      
-      
-      
-      
-      
-      
-      
-      uint32_t allocLen = 0;
-      MOZ_TRY(GetGlobalData(stm.hGlobal, aData, &allocLen));
-      *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 2;
-      return NS_OK;
+      return GetCharDataFromGlobalData(stm, reinterpret_cast<char16_t**>(aData),
+                                       aLen);
     }
 
     case CF_DIBV5: {
