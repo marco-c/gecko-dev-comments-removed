@@ -110,6 +110,25 @@ enum class StreamCaptureBehavior : uint8_t {
   FINISH_WHEN_ENDED
 };
 
+
+
+
+enum MediaPreloadAttrValue : uint8_t {
+  PRELOAD_ATTR_NONE,      
+  PRELOAD_ATTR_METADATA,  
+  PRELOAD_ATTR_AUTO       
+};
+
+
+static const nsAttrValue::EnumTableEntry kPreloadTable[] = {
+    {"none", MediaPreloadAttrValue::PRELOAD_ATTR_NONE},
+    {"metadata", MediaPreloadAttrValue::PRELOAD_ATTR_METADATA},
+    {"auto", MediaPreloadAttrValue::PRELOAD_ATTR_AUTO},
+};
+
+static constexpr const nsAttrValue::EnumTableEntry* kPreloadDefaultType =
+    &kPreloadTable[std::size(kPreloadTable) - 1];
+
 class HTMLMediaElement : public nsGenericHTMLElement,
                          public MediaDecoderOwner,
                          public PrincipalChangeObserver<MediaStreamTrack>,
@@ -521,7 +540,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
       nsGkAtoms::none->ToString(aValue);
       return;
     }
-    GetEnumAttr(nsGkAtoms::preload, nullptr, aValue);
+    GetEnumAttr(nsGkAtoms::preload, kPreloadDefaultType->tag, aValue);
   }
   void SetPreload(const nsAString& aValue, ErrorResult& aRv) {
     if (mSrcAttrStream) {
@@ -1164,16 +1183,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   void NotifyShutdownEvent();
-
-  
-
-
-  enum PreloadAttrValue : uint8_t {
-    PRELOAD_ATTR_EMPTY,     
-    PRELOAD_ATTR_NONE,      
-    PRELOAD_ATTR_METADATA,  
-    PRELOAD_ATTR_AUTO       
-  };
 
   
 
