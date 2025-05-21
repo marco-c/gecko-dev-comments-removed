@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=717878
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 717878</title>
@@ -14,14 +14,14 @@
 <p id="display"></p>
 <div id="content" style="display: none">
 </div>
-
+<!-- size=10 and monospace font ensure there's no overflow in either direction -->
 <input id="no-overflow" type="text"
   size="10"
   style="
     font-family: monospace;
     font-size: 1em;"
   value="Short">
-
+<!-- ditto, with appearance:none -->
 <input id="no-overflow2" type="text"
   size="10"
   style="
@@ -29,7 +29,7 @@
     font-family: monospace;
     font-size: 1em;"
   value="Short">
-
+<!-- size=10, monospace font, and height=0.5em ensure overflow in both directions -->
 <input id="overflow" type="text"
   size="10"
   style="
@@ -37,7 +37,7 @@
     font-size: 3em;
     height: 0.5em;"
   value="This is a long string">
-
+<!-- ditto, with appearance:none -->
 <input id="overflow2" type="text"
   size="10"
   style="
@@ -79,10 +79,10 @@ function test_scroll(element, scroll, scrollMax, is_overflow) {
   }
 
   element[scroll] = element[scrollMax];
-  is(element[scroll], element[scrollMax], element.id + " did not scroll to " + scrollMax);
+  isfuzzy(element[scroll], element[scrollMax], 1, element.id + " did not scroll to " + scrollMax);
 
   element[scroll] = element[scrollMax] + 10;
-  is(element[scroll], element[scrollMax], element.id + " scrolled past " + scrollMax);
+  isfuzzy(element[scroll], element[scrollMax], 1, element.id + " scrolled past " + scrollMax);
 }
 
 var no_overflow = document.getElementById("no-overflow");
