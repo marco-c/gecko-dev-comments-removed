@@ -2074,7 +2074,6 @@ var SidebarController = {
   async handleEvent(e) {
     switch (e.type) {
       case "popupshown":
-        this.mouseEnterTask?.disarm();
         
         if (e.composedTarget.id !== "tab-preview-panel") {
           MousePosTracker.removeListener(this);
@@ -2163,8 +2162,9 @@ var SidebarController = {
 };
 
 ChromeUtils.defineESModuleGetters(SidebarController, {
-  SidebarManager: "resource:///modules/SidebarManager.sys.mjs",
-  SidebarState: "resource:///modules/SidebarState.sys.mjs",
+  SidebarManager:
+    "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
+  SidebarState: "moz-src:///browser/components/sidebar/SidebarState.sys.mjs",
 });
 
 
