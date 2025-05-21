@@ -207,7 +207,9 @@ LoadInfo::LoadInfo(
 
       
       
-      mCookieJarSettings = aLoadingContext->OwnerDoc()->CookieJarSettings();
+      mCookieJarSettings = CookieJarSettings::Cast(
+                               aLoadingContext->OwnerDoc()->CookieJarSettings())
+                               ->Clone();
     }
 
     mInnerWindowID = aLoadingContext->OwnerDoc()->InnerWindowID();
@@ -534,7 +536,8 @@ LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
   if (!mCookieJarSettings) {
     
     
-    mCookieJarSettings = aParentWGP->CookieJarSettings();
+    mCookieJarSettings =
+        CookieJarSettings::Cast(aParentWGP->CookieJarSettings())->Clone();
     if (topLevelWGP->BrowsingContext()->IsTop()) {
       if (mCookieJarSettings) {
         bool stopAtOurLevel = mCookieJarSettings->GetCookieBehavior() ==
