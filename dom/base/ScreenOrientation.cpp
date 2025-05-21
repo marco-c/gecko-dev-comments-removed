@@ -217,8 +217,22 @@ ScreenOrientation::LockOrientationTask::Run() {
               return;
             }
 
-            if (!self->mDocument) {
+            if (!self->mDocument || !self->mDocument->IsFullyActive()) {
+              
+              
               self->mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
+              
+              
+              if (self->mDocument) {
+                BrowsingContext* bc = self->mDocument->GetBrowsingContext();
+                bc = bc ? bc->Top() : nullptr;
+                if (bc) {
+                  bc->SetOrientationLock(hal::ScreenOrientation::None,
+                                         IgnoreErrors());
+                  self->mScreenOrientation->UnlockDeviceOrientation();
+                }
+              }
+
               return;
             }
 
