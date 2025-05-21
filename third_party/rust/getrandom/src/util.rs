@@ -49,6 +49,7 @@ fn ptr_from_ref<T: ?Sized>(r: &T) -> *const T {
 }
 
 
+#[inline]
 pub fn inner_u32() -> Result<u32, Error> {
     let mut res = MaybeUninit::<u32>::uninit();
     
@@ -63,6 +64,7 @@ pub fn inner_u32() -> Result<u32, Error> {
 }
 
 
+#[inline]
 pub fn inner_u64() -> Result<u64, Error> {
     let mut res = MaybeUninit::<u64>::uninit();
     

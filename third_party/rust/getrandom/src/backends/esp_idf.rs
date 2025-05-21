@@ -8,6 +8,7 @@ extern "C" {
     fn esp_fill_random(buf: *mut c_void, len: usize) -> u32;
 }
 
+#[inline]
 pub fn fill_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     
     

@@ -173,11 +173,12 @@
 
 
 
-
 #![no_std]
 
 #[cfg(feature = "std")]
 extern crate std;
+
+pub mod ext;
 
 
 mod bindings;
@@ -229,6 +230,7 @@ pub mod cli {
         
         
         
+        
         #[doc(inline)]
         pub use crate::command::_export_command as export;
     }
@@ -238,6 +240,7 @@ pub mod http {
     pub use super::bindings::wasi::http::*;
 
     pub mod proxy {
+        
         
         
         

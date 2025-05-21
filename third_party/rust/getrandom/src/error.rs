@@ -1,15 +1,20 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-use core::{fmt, num::NonZeroU32};
+use core::fmt;
 
 
 
 cfg_if::cfg_if!(
     if #[cfg(target_os = "uefi")] {
+        // See the UEFI spec for more information:
+        // https://uefi.org/specs/UEFI/2.10/Apx_D_Status_Codes.html
         type RawOsError = usize;
+        type NonZeroRawOsError = core::num::NonZeroUsize;
+        const UEFI_ERROR_FLAG: RawOsError = 1 << (RawOsError::BITS - 1);
     } else {
         type RawOsError = i32;
+        type NonZeroRawOsError = core::num::NonZeroI32;
     }
 );
 
@@ -28,7 +33,7 @@ cfg_if::cfg_if!(
 
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct Error(NonZeroU32);
+pub struct Error(NonZeroRawOsError);
 
 impl Error {
     
@@ -39,28 +44,31 @@ impl Error {
     pub const UNEXPECTED: Error = Self::new_internal(2);
 
     
+    const INTERNAL_START: RawOsError = 1 << 16;
     
-    
-    pub const INTERNAL_START: u32 = 1 << 31;
+    const CUSTOM_START: RawOsError = 1 << 17;
 
     
-    
-    pub const CUSTOM_START: u32 = (1 << 31) + (1 << 30);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[cfg(not(target_os = "uefi"))]
     #[allow(dead_code)]
-    pub(super) fn from_os_error(code: u32) -> Self {
-        match NonZeroU32::new(code) {
-            Some(code) if code.get() < Self::INTERNAL_START => Self(code),
-            _ => Self::UNEXPECTED,
+    pub(super) fn from_neg_error_code(code: RawOsError) -> Self {
+        if code < 0 {
+            let code = NonZeroRawOsError::new(code).expect("`code` is negative");
+            Self(code)
+        } else {
+            Error::UNEXPECTED
+        }
+    }
+
+    
+    #[cfg(target_os = "uefi")]
+    #[allow(dead_code)]
+    pub(super) fn from_uefi_code(code: RawOsError) -> Self {
+        if code & UEFI_ERROR_FLAG != 0 {
+            let code = NonZeroRawOsError::new(code).expect("The highest bit of `code` is set to 1");
+            Self(code)
+        } else {
+            Self::UNEXPECTED
         }
     }
 
@@ -79,27 +87,53 @@ impl Error {
     #[inline]
     pub fn raw_os_error(self) -> Option<RawOsError> {
         let code = self.0.get();
-        if code >= Self::INTERNAL_START {
-            return None;
+
+        
+        
+        
+
+        #[cfg(target_os = "uefi")]
+        {
+            if code & UEFI_ERROR_FLAG != 0 {
+                Some(code)
+            } else {
+                None
+            }
         }
-        let errno = RawOsError::try_from(code).ok()?;
-        #[cfg(target_os = "solid_asp3")]
-        let errno = -errno;
-        Some(errno)
+
+        #[cfg(not(target_os = "uefi"))]
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if code >= 0 {
+                None
+            } else if cfg!(not(target_os = "solid_asp3")) {
+                code.checked_neg()
+            } else {
+                Some(code)
+            }
+        }
     }
 
     
     pub const fn new_custom(n: u16) -> Error {
         
-        let code = Error::CUSTOM_START + (n as u32);
-        Error(unsafe { NonZeroU32::new_unchecked(code) })
+        let code = Error::CUSTOM_START + (n as RawOsError);
+        Error(unsafe { NonZeroRawOsError::new_unchecked(code) })
     }
 
     
     pub(crate) const fn new_internal(n: u16) -> Error {
         
-        let code = Error::INTERNAL_START + (n as u32);
-        Error(unsafe { NonZeroU32::new_unchecked(code) })
+        let code = Error::INTERNAL_START + (n as RawOsError);
+        Error(unsafe { NonZeroRawOsError::new_unchecked(code) })
     }
 
     fn internal_desc(&self) -> Option<&'static str> {
@@ -174,17 +208,5 @@ impl fmt::Display for Error {
         } else {
             write!(f, "Unknown Error: {}", self.0.get())
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Error;
-    use core::mem::size_of;
-
-    #[test]
-    fn test_size() {
-        assert_eq!(size_of::<Error>(), 4);
-        assert_eq!(size_of::<Result<(), Error>>(), 4);
     }
 }

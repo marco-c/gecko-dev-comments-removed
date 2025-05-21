@@ -29,11 +29,26 @@ pub use crate::util::{inner_u32, inner_u64};
 
 
 
+#[cfg_attr(
+    target_arch = "x86",
+    link(
+        name = "bcryptprimitives",
+        kind = "raw-dylib",
+        import_name_type = "undecorated"
+    )
+)]
+#[cfg_attr(
+    not(target_arch = "x86"),
+    link(name = "bcryptprimitives", kind = "raw-dylib")
+)]
+extern "system" {
+    fn ProcessPrng(pbdata: *mut u8, cbdata: usize) -> BOOL;
+}
+#[allow(clippy::upper_case_acronyms)]
+type BOOL = core::ffi::c_int; 
+const TRUE: BOOL = 1;
 
-
-
-windows_targets::link!("bcryptprimitives.dll" "system" fn ProcessPrng(pbdata: *mut u8, cbdata: usize) -> i32);
-
+#[inline]
 pub fn fill_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     let result = unsafe { ProcessPrng(dest.as_mut_ptr().cast::<u8>(), dest.len()) };
     
@@ -41,6 +56,6 @@ pub fn fill_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     
     
     
-    debug_assert!(result == 1);
+    debug_assert!(result == TRUE);
     Ok(())
 }

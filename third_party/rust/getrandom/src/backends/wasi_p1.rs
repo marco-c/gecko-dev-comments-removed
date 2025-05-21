@@ -11,6 +11,11 @@ extern "C" {
     fn random_get(arg0: i32, arg1: i32) -> i32;
 }
 
+
+
+const MAX_ERROR_CODE: i32 = u16::MAX as i32;
+
+#[inline]
 pub fn fill_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     
     
@@ -20,11 +25,8 @@ pub fn fill_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     let ret = unsafe { random_get(dest.as_mut_ptr() as i32, dest.len() as i32) };
     match ret {
         0 => Ok(()),
-        code => {
-            let err = u32::try_from(code)
-                .map(Error::from_os_error)
-                .unwrap_or(Error::UNEXPECTED);
-            Err(err)
-        }
+        
+        code if code <= MAX_ERROR_CODE => Err(Error::from_neg_error_code(-code)),
+        _ => Err(Error::UNEXPECTED),
     }
 }

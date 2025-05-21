@@ -2,7 +2,7 @@ use crate::Error;
 use core::mem::MaybeUninit;
 
 cfg_if! {
-    if #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "android"))] {
+    if #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "android", target_os = "cygwin"))] {
         use libc::__errno as errno_location;
     } else if #[cfg(any(target_os = "linux", target_os = "emscripten", target_os = "hurd", target_os = "redox", target_os = "dragonfly"))] {
         use libc::__errno_location as errno_location;
@@ -34,14 +34,16 @@ cfg_if! {
 }
 
 pub(crate) fn last_os_error() -> Error {
-    let errno: libc::c_int = unsafe { get_errno() };
-
     
-    const _: () = assert!(core::mem::size_of::<libc::c_int>() == core::mem::size_of::<u32>());
+    let errno: i32 = unsafe { get_errno() };
 
-    match u32::try_from(errno) {
-        Ok(code) if code != 0 => Error::from_os_error(code),
-        _ => Error::ERRNO_NOT_POSITIVE,
+    if errno > 0 {
+        let code = errno
+            .checked_neg()
+            .expect("Positive number can be always negated");
+        Error::from_neg_error_code(code)
+    } else {
+        Error::ERRNO_NOT_POSITIVE
     }
 }
 

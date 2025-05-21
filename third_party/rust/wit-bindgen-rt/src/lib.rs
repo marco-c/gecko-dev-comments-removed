@@ -3,6 +3,12 @@
 extern crate alloc;
 
 
+#[cfg(feature = "bitflags")]
+#[doc(hidden)]
+pub use bitflags;
+
+
+#[cfg(not(target_env = "p2"))]
 mod cabi_realloc;
 
 
@@ -13,7 +19,7 @@ mod cabi_realloc;
 
 
 pub fn maybe_link_cabi_realloc() {
-    #[cfg(target_family = "wasm")]
+    #[cfg(all(target_family = "wasm", not(target_env = "p2")))]
     {
         extern "C" {
             fn cabi_realloc(
@@ -44,6 +50,7 @@ pub fn maybe_link_cabi_realloc() {
 
 
 
+#[cfg(not(target_env = "p2"))]
 pub unsafe fn cabi_realloc(
     old_ptr: *mut u8,
     old_len: usize,
@@ -79,3 +86,33 @@ pub unsafe fn cabi_realloc(
     }
     return ptr;
 }
+
+
+
+
+
+
+
+#[cfg(target_arch = "wasm32")]
+pub fn run_ctors_once() {
+    static mut RUN: bool = false;
+    unsafe {
+        if !RUN {
+            
+            
+            
+            
+            
+            
+            extern "C" {
+                fn __wasm_call_ctors();
+            }
+            __wasm_call_ctors();
+            RUN = true;
+        }
+    }
+}
+
+
+#[cfg(feature = "async")]
+pub mod async_support;
