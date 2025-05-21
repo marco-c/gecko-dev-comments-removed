@@ -136,7 +136,8 @@ async function doMigrateTest({
     
     await QuickSuggest._test_reinit({
       ...testOverrides,
-      shouldEnable,
+      region: shouldEnable ? "US" : "XX",
+      locale: shouldEnable ? "en-US" : "xx-XX",
     });
 
     

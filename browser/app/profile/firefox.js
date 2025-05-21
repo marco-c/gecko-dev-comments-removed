@@ -466,7 +466,7 @@ pref("browser.urlbar.richSuggestions.featureGate", true);
 pref("browser.search.param.search_rich_suggestions", "fen");
 
 
-pref("browser.urlbar.weather.featureGate", true);
+pref("browser.urlbar.weather.featureGate", false);
 
 
 pref("browser.urlbar.clipboard.featureGate", false);
@@ -674,7 +674,7 @@ pref("browser.urlbar.merino.clientVariants", "");
 pref("browser.urlbar.contextualSearch.enabled", true);
 
 
-pref("browser.urlbar.addons.featureGate", true);
+pref("browser.urlbar.addons.featureGate", false);
 
 
 pref("places.semanticHistory.featureGate", false);
@@ -687,11 +687,14 @@ pref("browser.urlbar.suggest.semanticHistory.minLength", 5);
 pref("browser.urlbar.suggest.addons", true);
 
 
+pref("browser.urlbar.mdn.featureGate", false);
+
+
 
 pref("browser.urlbar.suggest.mdn", true);
 
 
-pref("browser.urlbar.yelp.featureGate", true);
+pref("browser.urlbar.yelp.featureGate", false);
 
 
 

@@ -6,41 +6,50 @@
 
 
 
-
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  Preferences: "resource://gre/modules/Preferences.sys.mjs",
+});
 
 
-const PREFS = [
-  {
-    name: "browser.urlbar.quicksuggest.enabled",
-    get: "getBoolPref",
-    set: "setBoolPref",
-    expectedWhenSuggestEnabled: true,
-    expectedWhenSuggestDisabled: false,
+const EXPECTED_PREFS_BY_REGION = {
+  US: {
+    "quicksuggest.enabled": true,
+    "quicksuggest.dataCollection.enabled": false,
+    "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.FULL,
+    "suggest.quicksuggest.nonsponsored": true,
+    "suggest.quicksuggest.sponsored": true,
+    "addons.featureGate": true,
+    "mdn.featureGate": true,
+    "weather.featureGate": true,
+    "yelp.featureGate": true,
   },
-  {
-    name: "browser.urlbar.quicksuggest.dataCollection.enabled",
-    get: "getBoolPref",
-    set: "setBoolPref",
-    expectedWhenSuggestEnabled: false,
-    expectedWhenSuggestDisabled: false,
+  GB: {
+    "quicksuggest.enabled": true,
+    "quicksuggest.dataCollection.enabled": false,
+    "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
+    "suggest.quicksuggest.nonsponsored": true,
+    "suggest.quicksuggest.sponsored": true,
+    "addons.featureGate": false,
+    "mdn.featureGate": false,
+    "weather.featureGate": true,
+    "yelp.featureGate": false,
   },
-  {
-    name: "browser.urlbar.suggest.quicksuggest.nonsponsored",
-    get: "getBoolPref",
-    set: "setBoolPref",
-    expectedWhenSuggestEnabled: true,
-    expectedWhenSuggestDisabled: false,
-  },
-  {
-    name: "browser.urlbar.suggest.quicksuggest.sponsored",
-    get: "getBoolPref",
-    set: "setBoolPref",
-    expectedWhenSuggestEnabled: true,
-    expectedWhenSuggestDisabled: false,
-  },
-];
+};
+
+
+const EXPECTED_PREFS_DISABLED = {
+  "quicksuggest.enabled": false,
+  "quicksuggest.dataCollection.enabled": false,
+  "quicksuggest.settingsUi": 0,
+  "suggest.quicksuggest.nonsponsored": false,
+  "suggest.quicksuggest.sponsored": false,
+  "addons.featureGate": false,
+  "mdn.featureGate": false,
+  "weather.featureGate": false,
+  "yelp.featureGate": false,
+};
 
 add_setup(async () => {
   await UrlbarTestUtils.initNimbusFeature();
@@ -48,17 +57,23 @@ add_setup(async () => {
 
 add_task(async function test() {
   let tests = [
-    { locale: "en-US", home: "US", expectSuggestToBeEnabled: true },
-    { locale: "en-US", home: "CA", expectSuggestToBeEnabled: false },
-    { locale: "en-CA", home: "US", expectSuggestToBeEnabled: true },
-    { locale: "en-CA", home: "CA", expectSuggestToBeEnabled: false },
-    { locale: "en-GB", home: "US", expectSuggestToBeEnabled: true },
-    { locale: "en-GB", home: "GB", expectSuggestToBeEnabled: false },
-    { locale: "de", home: "US", expectSuggestToBeEnabled: false },
-    { locale: "de", home: "DE", expectSuggestToBeEnabled: false },
+    
+    { region: "US", locale: "en-US", expectSuggestToBeEnabled: true },
+    { region: "US", locale: "en-CA", expectSuggestToBeEnabled: true },
+    { region: "US", locale: "en-GB", expectSuggestToBeEnabled: true },
+    { region: "GB", locale: "en-US", expectSuggestToBeEnabled: true },
+    { region: "GB", locale: "en-CA", expectSuggestToBeEnabled: true },
+    { region: "GB", locale: "en-GB", expectSuggestToBeEnabled: true },
+
+    
+    { region: "US", locale: "de", expectSuggestToBeEnabled: false },
+    { region: "GB", locale: "de", expectSuggestToBeEnabled: false },
+    { region: "CA", locale: "en-US", expectSuggestToBeEnabled: false },
+    { region: "CA", locale: "en-CA", expectSuggestToBeEnabled: false },
+    { region: "DE", locale: "de", expectSuggestToBeEnabled: false },
   ];
-  for (let { locale, home, expectSuggestToBeEnabled } of tests) {
-    await doTest({ locale, home, expectSuggestToBeEnabled });
+  for (let { locale, region, expectSuggestToBeEnabled } of tests) {
+    await doTest({ locale, region, expectSuggestToBeEnabled });
   }
 });
 
@@ -76,56 +91,62 @@ add_task(async function test() {
 
 
 
-async function doTest({ locale, home, expectSuggestToBeEnabled }) {
+async function doTest({ locale, region, expectSuggestToBeEnabled }) {
+  let expectedPrefs = EXPECTED_PREFS_DISABLED;
+  if (expectSuggestToBeEnabled) {
+    expectedPrefs = EXPECTED_PREFS_BY_REGION[region];
+    Assert.ok(
+      expectedPrefs,
+      "EXPECTED_PREFS_BY_REGION should have an entry for region since expectSuggestToBeEnabled is true, region=" +
+        region
+    );
+  }
+
+  let defaults = new Preferences({
+    branch: "browser.urlbar.",
+    defaultBranch: true,
+  });
+
   
-  for (let pref of PREFS) {
-    Services.prefs.clearUserPref(pref.name);
-    pref.originalDefault = Services.prefs
-      .getDefaultBranch(pref.name)
-      [pref.get]("");
+  let originalDefaults = {};
+  for (let name of Object.keys(expectedPrefs)) {
+    Services.prefs.clearUserPref("browser.urlbar." + name);
+    originalDefaults[name] = defaults.get(name);
   }
 
   
   await QuickSuggestTestUtils.withLocales({
-    homeRegion: home,
+    homeRegion: region,
     locales: [locale],
     callback: async () => {
       await QuickSuggest._test_reinit();
-      for (let {
-        name,
-        get,
-        expectedWhenSuggestEnabled,
-        expectedWhenSuggestDisabled,
-      } of PREFS) {
-        let expectedValue = expectSuggestToBeEnabled
-          ? expectedWhenSuggestEnabled
-          : expectedWhenSuggestDisabled;
 
+      for (let [name, value] of Object.entries(expectedPrefs)) {
         
         Assert.strictEqual(
-          Services.prefs.getDefaultBranch(name)[get](""),
-          expectedValue,
-          `Default pref value for ${name}, locale ${locale}, home ${home}`
+          defaults.get(name),
+          value,
+          `Default pref value for ${name}, locale ${locale}, region ${region}`
         );
 
         
         
         
         UrlbarPrefs.get(
-          name.replace("browser.urlbar.", ""),
-          expectedValue,
-          `UrlbarPrefs.get() value for ${name}, locale ${locale}, home ${home}`
+          name,
+          value,
+          `UrlbarPrefs.get() value for ${name}, locale ${locale}, region ${region}`
         );
       }
     },
   });
 
   
-  for (let { name, originalDefault, set } of PREFS) {
+  for (let [name, originalDefault] of Object.entries(originalDefaults)) {
     if (originalDefault === undefined) {
-      Services.prefs.deleteBranch(name);
+      Services.prefs.deleteBranch("browser.urlbar." + name);
     } else {
-      Services.prefs.getDefaultBranch(name)[set]("", originalDefault);
+      defaults.set(name, originalDefault);
     }
   }
 }

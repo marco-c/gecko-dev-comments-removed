@@ -428,10 +428,9 @@ async function doMaxResultsTest({
   }
 
   
-  if (includeAmp) {
-    UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-    await QuickSuggestTestUtils.forceSync();
-  }
+  
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", includeAmp);
+  await QuickSuggestTestUtils.forceSync();
 
   
   
@@ -453,10 +452,8 @@ async function doMaxResultsTest({
   if (historyProvider) {
     UrlbarProvidersManager.unregisterProvider(historyProvider);
   }
-  if (includeAmp) {
-    UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
-    await QuickSuggestTestUtils.forceSync();
-  }
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+  await QuickSuggestTestUtils.forceSync();
 }
 
 

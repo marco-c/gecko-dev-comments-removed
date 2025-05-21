@@ -571,7 +571,7 @@ async function checkEnrollments(options) {
     
     
     
-    let effectivePrefs = { ...QuickSuggest.DEFAULT_PREFS };
+    let effectivePrefs = QuickSuggest.intendedDefaultPrefs("US", "en-US");
     for (let [name, value] of Object.entries(expectedUserBranch)) {
       effectivePrefs[name] = value;
     }

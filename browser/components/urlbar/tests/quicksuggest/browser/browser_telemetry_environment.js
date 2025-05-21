@@ -62,7 +62,7 @@ add_task(async function telemetryEnvironmentOnStartup() {
   await TelemetryEnvironment.testCleanRestart().onInitialized();
 
   
-  let prefs = Object.keys(QuickSuggest.DEFAULT_PREFS);
+  let prefs = Object.keys(QuickSuggest.intendedDefaultPrefs("US", "en-US"));
 
   
   
@@ -109,7 +109,6 @@ add_task(async function telemetryEnvironmentOnStartup() {
   
   
   await QuickSuggest._test_reinit({
-    shouldEnable: true,
     defaultPrefs: Object.fromEntries(
       Object.entries(defaultValues).map(([p, value]) => [p, !value])
     ),
