@@ -1215,7 +1215,7 @@ add_task(async function test_listFilesUsingTaskName() {
     headers,
   });
 
-  const { files } = await cache.listFiles({ taskName });
+  const { files } = await cache.listFiles({ taskName, model, revision });
   const expected = [
     {
       path: "file.txt",
@@ -1373,7 +1373,7 @@ add_task(async function test_initDbFromExistingEmpty() {
   ];
 
   
-  const { files } = await cache.listFiles({ taskName });
+  const { files } = await cache.listFiles({ taskName, model, revision });
   Assert.deepEqual(files, expected);
 
   await deleteCache(cache);
@@ -1474,7 +1474,7 @@ add_task(async function test_initDbFromExistingElseWhereStoreChanges() {
   ];
 
   
-  const { files } = await cache2.listFiles({ taskName });
+  const { files } = await cache2.listFiles({ taskName, model, revision });
   Assert.deepEqual(files, expected);
 
   await deleteCache(cache2);

@@ -1677,11 +1677,17 @@ var BrowserAddonUI = {
       );
     }
 
+    
+    let body = null;
+    if (addon.type === "mlmodel") {
+      body = await lazy.l10n.formatValue("addon-mlmodel-removal-body");
+    }
+
     let checkboxState = { value: false };
     let result = confirmEx(
       window,
       title,
-      null,
+      body,
       btnFlags,
       btnTitle,
        null,
