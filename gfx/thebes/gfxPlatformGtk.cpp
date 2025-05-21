@@ -83,12 +83,6 @@ using namespace mozilla::unicode;
 using namespace mozilla::widget;
 
 static FT_Library gPlatformFTLibrary = nullptr;
-static int32_t sDPI;
-
-static void screen_resolution_changed(GdkScreen* aScreen, GParamSpec* aPspec,
-                                      gpointer aClosure) {
-  sDPI = 0;
-}
 
 #if defined(MOZ_X11)
 
@@ -127,12 +121,6 @@ gfxPlatformGtk::gfxPlatformGtk() {
   gPlatformFTLibrary = Factory::NewFTLibrary();
   MOZ_RELEASE_ASSERT(gPlatformFTLibrary);
   Factory::SetFTLibrary(gPlatformFTLibrary);
-
-  GdkScreen* gdkScreen = gdk_screen_get_default();
-  if (gdkScreen) {
-    g_signal_connect(gdkScreen, "notify::resolution",
-                     G_CALLBACK(screen_resolution_changed), nullptr);
-  }
 
   
   
@@ -458,33 +446,6 @@ void gfxPlatformGtk::ReadSystemFontList(
 
 bool gfxPlatformGtk::CreatePlatformFontList() {
   return gfxPlatformFontList::Initialize(new gfxFcPlatformFontList);
-}
-
-int32_t gfxPlatformGtk::GetFontScaleDPI() {
-  MOZ_ASSERT(XRE_IsParentProcess(),
-             "You can access this via LookAndFeel if you need it in child "
-             "processes");
-  if (MOZ_LIKELY(sDPI != 0)) {
-    return sDPI;
-  }
-  int32_t dpi = 0;
-  if (GdkScreen* screen = gdk_screen_get_default()) {
-    
-    gtk_settings_get_for_screen(screen);
-    dpi = int32_t(round(gdk_screen_get_resolution(screen)));
-  }
-  if (dpi <= 0) {
-    
-    dpi = 96;
-  }
-  sDPI = dpi;
-  return dpi;
-}
-
-double gfxPlatformGtk::GetFontScaleFactor() {
-  
-  
-  return GetFontScaleDPI() / 96.0;
 }
 
 gfxImageFormat gfxPlatformGtk::GetOffscreenFormat() {

@@ -113,6 +113,14 @@ static void kde_colors_changed(GFileMonitor* self, void*, void*,
   OnSettingsChange(lnf, NativeChangeKind::GtkTheme);
 }
 
+static float GetGtkTextScaleFactor() {
+  GdkScreen* s = gdk_screen_get_default();
+  if (!s) {
+    return 1.0f;
+  }
+  return float(gdk_screen_get_resolution(s) / 96.0);
+}
+
 static bool sCSDAvailable;
 
 static nsCString GVariantToString(GVariant* aVariant) {
@@ -1266,7 +1274,7 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
       aResult = mSystemTheme.mCaretRatio;
       break;
     case FloatID::TextScaleFactor:
-      aResult = gfxPlatformGtk::GetFontScaleFactor();
+      aResult = mTextScaleFactor;
       break;
     default:
       aResult = -1.0;
@@ -1303,7 +1311,7 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
   
   if (pango_font_description_get_size_is_absolute(desc)) {
     
-    size /= gfxPlatformGtk::GetFontScaleFactor();
+    size /= GetGtkTextScaleFactor();
   } else {
     
     size *= 96 / POINTS_PER_INCH_FLOAT;
@@ -1317,11 +1325,12 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
 
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                   gfxFontStyle& aFontStyle) {
-  return mSystemTheme.GetFont(aID, aFontName, aFontStyle);
+  return mSystemTheme.GetFont(aID, aFontName, aFontStyle, mTextScaleFactor);
 }
 
 bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
-                                          gfxFontStyle& aFontStyle) const {
+                                          gfxFontStyle& aFontStyle,
+                                          float aTextScaleFactor) const {
   switch (aID) {
     case FontID::Menu:             
     case FontID::MozPullDownMenu:  
@@ -1354,9 +1363,7 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
   
   
   
-  
-  aFontStyle.size *=
-      gfxPlatformGtk::GetFontScaleFactor() / LookAndFeel::GetTextScaleFactor();
+  aFontStyle.size *= aTextScaleFactor / LookAndFeel::GetTextScaleFactor();
   return true;
 }
 
@@ -1755,6 +1762,8 @@ void nsLookAndFeel::Initialize() {
 
 void nsLookAndFeel::InitializeGlobalSettings() {
   GtkSettings* settings = gtk_settings_get_default();
+
+  mTextScaleFactor = GetGtkTextScaleFactor();
 
   mColorSchemePreference = ComputeColorSchemeSetting();
 
