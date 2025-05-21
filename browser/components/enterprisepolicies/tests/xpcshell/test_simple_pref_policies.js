@@ -45,12 +45,6 @@ const POLICIES_TESTS = [
 
   
   {
-    policies: { DisableBuiltinPDFViewer: true },
-    lockedPrefs: { "pdfjs.disabled": true },
-  },
-
-  
-  {
     policies: { DisableFormHistory: true },
     lockedPrefs: { "browser.formfill.enable": false },
   },
