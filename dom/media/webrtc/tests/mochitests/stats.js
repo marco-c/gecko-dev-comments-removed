@@ -349,6 +349,11 @@ function pedanticChecks(report) {
   report.forEach((statObj, mapKey) => {
     info(`"${mapKey} = ${JSON.stringify(statObj, null, 2)}`);
   });
+
+  
+  let sending = false;
+  let receiving = false;
+
   
   report.forEach((statObj, mapKey) => {
     let tested = {};
@@ -382,6 +387,7 @@ function pedanticChecks(report) {
       date.getFullYear() > 1970,
       `${stat.type}.timestamp is relative to current time, date=${date}`
     );
+
     
     
     
@@ -511,6 +517,8 @@ function pedanticChecks(report) {
     }
 
     if (stat.type == "inbound-rtp") {
+      receiving = true;
+
       
       
       
@@ -869,6 +877,8 @@ function pedanticChecks(report) {
           `${stat.kind} test. value=${stat.roundTripTimeMeasurements}`
       );
     } else if (stat.type == "outbound-rtp") {
+      sending = true;
+
       
       
       
@@ -1421,17 +1431,21 @@ function pedanticChecks(report) {
             `(${stat.kind})`
         );
 
-        
-        ok(
-          stat.bytesSent > 100,
-          `${stat.type}.bytesSent is a sane number (>100) if media is flowing. ` +
-            `value=${stat.bytesSent}`
-        );
+        const sentExpectation = sending ? 100 : 0;
 
         
         ok(
-          stat.bytesReceived > 100,
-          `${stat.type}.bytesReceived is a sane number (>100) if media is flowing. ` +
+          stat.bytesSent >= sentExpectation,
+          `${stat.type}.bytesSent is a sane number (>${sentExpectation}) if media is flowing. ` +
+            `value=${stat.bytesSent}`
+        );
+
+        const recvExpectation = receiving ? 100 : 0;
+
+        
+        ok(
+          stat.bytesReceived >= recvExpectation,
+          `${stat.type}.bytesReceived is a sane number (>${recvExpectation}) if media is flowing. ` +
             `value=${stat.bytesReceived}`
         );
 
