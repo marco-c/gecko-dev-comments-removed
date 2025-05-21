@@ -534,85 +534,35 @@ static bool GetColorFromImagePattern(const GValue* aValue, nscolor* aColor) {
   return false;
 }
 
-static bool GetUnicoBorderGradientColors(GtkStyleContext* aContext,
-                                         GdkRGBA* aLightColor,
-                                         GdkRGBA* aDarkColor) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const char* propertyName = "-unico-border-gradient";
-  if (!gtk_style_properties_lookup_property(propertyName, nullptr, nullptr))
-    return false;
-
-  
-  GtkThemingEngine* engine;
-  GtkStateFlags state = gtk_style_context_get_state(aContext);
-  gtk_style_context_get(aContext, state, "engine", &engine, nullptr);
-  if (strcmp(g_type_name(G_TYPE_FROM_INSTANCE(engine)), "UnicoEngine") != 0)
-    return false;
-
-  
-  
-  GValue value = G_VALUE_INIT;
-  gtk_style_context_get_property(aContext, propertyName, state, &value);
-
-  bool result = GetGradientColors(&value, aLightColor, aDarkColor);
-
-  g_value_unset(&value);
-  return result;
-}
 
 
 
 
 
-
-static bool GetBorderColors(GtkStyleContext* aContext, GdkRGBA* aLightColor,
-                            GdkRGBA* aDarkColor) {
+static Maybe<nscolor> GetBorderColor(GtkStyleContext* aContext) {
   
   GtkStateFlags state = gtk_style_context_get_state(aContext);
-  GtkBorderStyle borderStyle;
+  GtkBorderStyle borderStyle = GTK_BORDER_STYLE_NONE;
   gtk_style_context_get(aContext, state, GTK_STYLE_PROPERTY_BORDER_STYLE,
                         &borderStyle, nullptr);
-  bool visible = borderStyle != GTK_BORDER_STYLE_NONE &&
-                 borderStyle != GTK_BORDER_STYLE_HIDDEN;
-  if (visible) {
-    
-    
-    GtkBorder border;
-    gtk_style_context_get_border(aContext, state, &border);
-    visible = border.top != 0 || border.right != 0 || border.bottom != 0 ||
-              border.left != 0;
+  if (borderStyle == GTK_BORDER_STYLE_NONE ||
+                 borderStyle == GTK_BORDER_STYLE_HIDDEN) {
+    return {};
+  }
+  
+  
+  GtkBorder border;
+  gtk_style_context_get_border(aContext, state, &border);
+  if (!border.top && !border.right && !border.bottom && !border.left) {
+    return {};
   }
 
-  if (visible &&
-      GetUnicoBorderGradientColors(aContext, aLightColor, aDarkColor))
-    return true;
-
   
   
   
-  gtk_style_context_get_border_color(aContext, state, aDarkColor);
-  
-  
-  
-  *aLightColor = *aDarkColor;
-  return visible;
-}
-
-static bool GetBorderColors(GtkStyleContext* aContext, nscolor* aLightColor,
-                            nscolor* aDarkColor) {
-  GdkRGBA lightColor, darkColor;
-  bool ret = GetBorderColors(aContext, &lightColor, &darkColor);
-  *aLightColor = GDK_RGBA_TO_NS_RGBA(lightColor);
-  *aDarkColor = GDK_RGBA_TO_NS_RGBA(darkColor);
-  return ret;
+  GdkRGBA color{};
+  gtk_style_context_get_border_color(aContext, state, &color);
+  return Some(GDK_RGBA_TO_NS_RGBA(color));
 }
 
 
@@ -865,18 +815,13 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       break;
 
     case ColorID::Buttonhighlight:
-      
-    case ColorID::Threedhighlight:
-      
-      aColor = mThreeDHighlight;
-      break;
-
     case ColorID::Buttonshadow:
-      
+    case ColorID::Threedhighlight:
     case ColorID::Threedshadow:
       
-      aColor = mThreeDShadow;
+      aColor = mFrameBorder;
       break;
+
     case ColorID::Buttonborder:
       aColor = mButtonBorder;
       break;
@@ -1595,7 +1540,7 @@ void nsLookAndFeel::MaybeApplyColorOverrides() {
       light.mHeaderBarInactive.mBg = light.mTitlebarInactive.mBg =
           light.mWindow.mBg;
 
-      light.mThreeDShadow = NS_RGB(0xe0, 0xe0, 0xe0);
+      light.mFrameBorder = NS_RGB(0xe0, 0xe0, 0xe0);
       light.mSidebarBorder = NS_RGBA(0, 0, 0, 18);
 
       
@@ -1619,7 +1564,7 @@ void nsLookAndFeel::MaybeApplyColorOverrides() {
           dark.mWindow.mBg;
 
       
-      dark.mThreeDShadow = NS_RGB(0x1f, 0x1f, 0x1f);
+      dark.mFrameBorder = NS_RGB(0x1f, 0x1f, 0x1f);
       dark.mSidebarBorder = NS_RGBA(0, 0, 0, 92);
 
       
@@ -2391,13 +2336,14 @@ void nsLookAndFeel::PerThemeData::Init() {
   
   
   style = GetStyleContext(MOZ_GTK_FRAME_BORDER);
-  bool themeUsesColors =
-      GetBorderColors(style, &mThreeDHighlight, &mThreeDShadow);
-  if (!themeUsesColors) {
-    style = GetStyleContext(MOZ_GTK_FRAME);
-    GetBorderColors(style, &mThreeDHighlight, &mThreeDShadow);
+  if (auto color = GetBorderColor(GetStyleContext(MOZ_GTK_FRAME_BORDER))) {
+    mFrameBorder = *color;
+  } else if (auto color = GetBorderColor(GetStyleContext(MOZ_GTK_FRAME))) {
+    mFrameBorder = *color;
+  } else {
+    mFrameBorder = kBlack;
   }
-  mSidebarBorder = mThreeDShadow;
+  mSidebarBorder = mFrameBorder;
 
   
   gboolean supports_menubar_drag = FALSE;
