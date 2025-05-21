@@ -151,6 +151,10 @@ extern "C" MOZ_EXPORT const char* __lsan_default_suppressions() {
 
          
          
+         "leak:mesa_cache_db_open\n"
+
+         
+         
          
          
          
