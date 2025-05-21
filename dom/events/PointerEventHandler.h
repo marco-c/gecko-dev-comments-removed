@@ -270,14 +270,16 @@ class PointerEventHandler final {
       const WidgetPointerEvent& aSourceEvent);
 
   static bool ShouldGeneratePointerEventFromMouse(WidgetGUIEvent* aEvent) {
-    return aEvent->mMessage == eMouseDown || aEvent->mMessage == eMouseUp ||
+    return aEvent->mMessage == eMouseRawUpdate ||
+           aEvent->mMessage == eMouseDown || aEvent->mMessage == eMouseUp ||
            (aEvent->mMessage == eMouseMove &&
             aEvent->AsMouseEvent()->IsReal()) ||
            aEvent->mMessage == eMouseExitFromWidget;
   }
 
   static bool ShouldGeneratePointerEventFromTouch(WidgetGUIEvent* aEvent) {
-    return aEvent->mMessage == eTouchStart || aEvent->mMessage == eTouchMove ||
+    return aEvent->mMessage == eTouchRawUpdate ||
+           aEvent->mMessage == eTouchStart || aEvent->mMessage == eTouchMove ||
            aEvent->mMessage == eTouchEnd || aEvent->mMessage == eTouchCancel ||
            aEvent->mMessage == eTouchPointerCancel;
   }
@@ -290,11 +292,18 @@ class PointerEventHandler final {
 
   static bool IsDragAndDropEnabled(WidgetMouseEvent& aEvent);
 
- private:
   
-  static EventMessage ToPointerEventMessage(
+  [[nodiscard]] static EventMessage ToPointerEventMessage(
       const WidgetGUIEvent* aMouseOrTouchEvent);
 
+  
+
+
+
+  [[nodiscard]] static bool NeedToDispatchPointerRawUpdate(
+      const dom::Document* aDocument);
+
+ private:
   
   static void SetPointerCaptureById(uint32_t aPointerId,
                                     dom::Element* aElement);
