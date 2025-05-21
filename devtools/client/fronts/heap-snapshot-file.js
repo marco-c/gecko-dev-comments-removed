@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+const {
+  heapSnapshotFileSpec,
+} = require("resource://devtools/shared/specs/heap-snapshot-file.js");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("resource://devtools/shared/protocol.js");
+
+class HeapSnapshotFileFront extends FrontClassWithSpec(heapSnapshotFileSpec) {
+  
+  formAttributeName = "heapSnapshotFileActor";
+}
+
+module.exports = HeapSnapshotFileFront;
+registerFront(HeapSnapshotFileFront);

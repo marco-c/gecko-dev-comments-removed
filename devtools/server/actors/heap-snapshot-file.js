@@ -45,7 +45,15 @@ exports.HeapSnapshotFileActor = class HeapSnapshotFileActor extends Actor {
   
 
 
-  async transferHeapSnapshot(snapshotId) {
+
+
+
+
+
+
+
+
+  async transferHeapSnapshot(snapshotId, startBulkSend) {
     const snapshotFilePath =
       HeapSnapshotFileUtils.getHeapSnapshotTempFilePath(snapshotId);
     if (!snapshotFilePath) {
@@ -55,11 +63,7 @@ exports.HeapSnapshotFileActor = class HeapSnapshotFileActor extends Actor {
     const streamPromise = DevToolsUtils.openFileStream(snapshotFilePath);
 
     const { size } = await IOUtils.stat(snapshotFilePath);
-    const bulkPromise = this.conn.startBulkSend({
-      actor: this.actorID,
-      type: "heap-snapshot",
-      length: size,
-    });
+    const bulkPromise = startBulkSend(size);
 
     const [bulk, stream] = await Promise.all([bulkPromise, streamPromise]);
 
