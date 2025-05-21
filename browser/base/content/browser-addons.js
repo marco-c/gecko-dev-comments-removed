@@ -1819,6 +1819,7 @@ var BrowserAddonUI = {
 var gUnifiedExtensions = {
   _initialized: false,
   
+  _buttonShownBeforeButtonOpen: null,
 
   
   
@@ -1838,6 +1839,8 @@ var gUnifiedExtensions = {
     
     this._button = document.getElementById("unified-extensions-button");
     this.updateButtonVisibility();
+    this._buttonAttrObs = new MutationObserver(() => this.onButtonOpenChange());
+    this._buttonAttrObs.observe(this._button, { attributeFilter: ["open"] });
 
     gBrowser.addTabsProgressListener(this);
     window.addEventListener("TabSelect", () => this.updateAttention());
@@ -1857,6 +1860,8 @@ var gUnifiedExtensions = {
     if (!this._initialized) {
       return;
     }
+
+    this._buttonAttrObs.disconnect();
 
     window.removeEventListener("toolbarvisibilitychange", this);
 
@@ -1887,7 +1892,12 @@ var gUnifiedExtensions = {
     const navbar = document.getElementById("nav-bar");
 
     
-    let shouldShowButton = this.buttonAlwaysVisible;
+    let shouldShowButton =
+      this.buttonAlwaysVisible ||
+      
+      this._button.open ||
+      
+      this._buttonShownBeforeButtonOpen;
 
     if (shouldShowButton) {
       this._button.hidden = false;
@@ -1895,6 +1905,26 @@ var gUnifiedExtensions = {
     } else {
       this._button.hidden = true;
       navbar.removeAttribute("unifiedextensionsbuttonshown");
+    }
+  },
+
+  ensureButtonShownBeforeAttachingPanel(panel) {
+    if (!this.buttonAlwaysVisible && !this._button.open) {
+      
+      
+      
+      
+      this._buttonShownBeforeButtonOpen = panel;
+      this.updateButtonVisibility();
+    }
+  },
+
+  onButtonOpenChange() {
+    if (this._button.open) {
+      this._buttonShownBeforeButtonOpen = false;
+    }
+    if (!this.buttonAlwaysVisible && !this._button.open) {
+      this.updateButtonVisibility();
     }
   },
 
@@ -2308,6 +2338,7 @@ var gUnifiedExtensions = {
         }
 
         panel.hidden = false;
+        this.ensureButtonShownBeforeAttachingPanel(panel);
         PanelMultiView.openPopup(panel, this._button, {
           position: "bottomright topright",
           triggerEvent: aEvent,
