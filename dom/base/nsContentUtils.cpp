@@ -3535,7 +3535,8 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
     if (aParent1->GetShadowRoot() == closestCommonAncestorChild2) {
       
       
-      return aOffset1 > 0 ? Some(-1) : Some(1);
+      
+      return aOffset1 > 0 ? Some(1) : Some(-1);
     }
 
     
