@@ -8,8 +8,7 @@
 
 use crate::color::mix::ColorInterpolationMethod;
 use crate::custom_properties;
-use crate::values::generics::position::PositionComponent;
-use crate::values::generics::Optional;
+use crate::values::generics::{position::PositionComponent, color::GenericLightDark, Optional};
 use crate::values::serialize_atom_identifier;
 use crate::Atom;
 use crate::Zero;
@@ -19,9 +18,8 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-
 #[derive(
-    Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
+    Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToResolvedValue, ToShmem,
 )]
 #[repr(C, u8)]
 pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
@@ -51,7 +49,10 @@ pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     CrossFade(Box<GenericCrossFade<Self, Color, Percentage>>),
 
     
-    ImageSet(#[compute(field_bound)] Box<GenericImageSet<Self, Resolution>>),
+    ImageSet(Box<GenericImageSet<Self, Resolution>>),
+
+    
+    LightDark(Box<GenericLightDark<Self>>),
 }
 
 pub use self::GenericImage as Image;
@@ -426,6 +427,7 @@ where
             },
             Image::ImageSet(ref is) => is.to_css(dest),
             Image::CrossFade(ref cf) => cf.to_css(dest),
+            Image::LightDark(ref ld) => ld.to_css(dest),
         }
     }
 }
