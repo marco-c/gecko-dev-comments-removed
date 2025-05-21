@@ -217,6 +217,10 @@ using namespace mozilla;
 
 
 
+
+
+
+
 #ifndef MALLOC_RUNTIME_CONFIG
 #  if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) &&       \
       !defined(__aarch64__) && !defined(__powerpc__) && !defined(XP_MACOSX) && \
@@ -2814,12 +2818,15 @@ static void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase) {
 
 #ifdef MOZ_DEBUG
 static void chunk_assert_zero(void* aPtr, size_t aSize) {
+
+#  ifdef MALLOC_DEBUG_VIGILANT
   size_t i;
   size_t* p = (size_t*)(uintptr_t)aPtr;
 
   for (i = 0; i < aSize / sizeof(size_t); i++) {
     MOZ_ASSERT(p[i] == 0);
   }
+#  endif
 }
 #endif
 
