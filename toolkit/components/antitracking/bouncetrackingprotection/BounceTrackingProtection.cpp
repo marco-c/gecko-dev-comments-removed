@@ -1002,6 +1002,20 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                     }
                   }
 
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  Unused << NimbusFeatures::RecordExposureEvent(
+                      "bounceTrackingProtection"_ns, false);
+
                   if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
                       nsIBounceTrackingProtection::MODE_ENABLED) {
                     
@@ -1021,15 +1035,6 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                       
                       
                       ReportPurgedTrackersToAntiTrackingDB(purgedSites);
-
-                      
-                      
-                      
-                      
-                      
-                      
-                      Unused << NimbusFeatures::RecordExposureEvent(
-                          "bounceTrackingProtection"_ns, false);
                     }
                   }
 
