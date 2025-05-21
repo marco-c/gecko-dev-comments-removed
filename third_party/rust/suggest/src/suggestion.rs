@@ -17,6 +17,16 @@ const TIMESTAMP_TEMPLATE: &str = "%YYYYMMDDHH%";
 const TIMESTAMP_LENGTH: usize = 10;
 
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, uniffi::Enum)]
+#[repr(u8)]
+pub enum YelpSubjectType {
+    
+    Service = 0,
+    
+    Business = 1,
+}
+
+
 #[derive(Clone, Debug, PartialEq, uniffi::Enum)]
 pub enum Suggestion {
     Amp {
@@ -66,6 +76,7 @@ pub enum Suggestion {
         score: f64,
         has_location_sign: bool,
         subject_exact_match: bool,
+        subject_type: YelpSubjectType,
         location_param: String,
     },
     Mdn {
