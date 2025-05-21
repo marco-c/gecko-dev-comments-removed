@@ -291,7 +291,6 @@ class ArenaLists {
   inline bool arenaListsAreEmpty() const;
 
   inline bool doneBackgroundFinalize(AllocKind kind) const;
-  inline bool needBackgroundFinalizeWait(AllocKind kind) const;
 
   
   inline void clearFreeLists();

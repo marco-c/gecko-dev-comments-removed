@@ -336,12 +336,10 @@ void ArenaLists::backgroundFinalize(JS::GCContext* gcx, AllocKind kind,
   
   
   ArenaList sweptArenas = finalizedSorted.convertToArenaList();
-  bool wasEmpty = sweptArenas.isEmpty();
 
   AutoLockGC lock(gcx->runtimeFromAnyThread());
   collectingArenaList(kind) = std::move(sweptArenas);
-  concurrentUse(kind) = wasEmpty ? ConcurrentUse::None
-                                 : ConcurrentUse::BackgroundFinalizeFinished;
+  concurrentUse(kind) = ConcurrentUse::BackgroundFinalizeFinished;
 }
 
 void ArenaLists::mergeBackgroundSweptArenas() {
@@ -358,8 +356,8 @@ void ArenaLists::maybeMergeSweptArenas(AllocKind kind) {
   MOZ_ASSERT(concurrentUse(kind) != ConcurrentUse::BackgroundFinalize);
 
   if (concurrentUse(kind) == ConcurrentUse::BackgroundFinalizeFinished) {
-    mergeSweptArenas(kind, collectingArenaList(kind));
     concurrentUse(kind) = ConcurrentUse::None;
+    mergeSweptArenas(kind, collectingArenaList(kind));
   }
 
   MOZ_ASSERT(collectingArenaList(kind).isEmpty());
@@ -372,9 +370,7 @@ void ArenaLists::maybeMergeSweptArenas(AllocKind kind) {
 
 void ArenaLists::mergeSweptArenas(AllocKind kind, ArenaList& sweptArenas) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
-  MOZ_ASSERT_IF(
-      IsBackgroundFinalized(kind),
-      concurrentUse(kind) == ConcurrentUse::BackgroundFinalizeFinished);
+  MOZ_ASSERT(concurrentUse(kind) == ConcurrentUse::None);
 
   arenaList(kind).prepend(std::move(sweptArenas));
 }

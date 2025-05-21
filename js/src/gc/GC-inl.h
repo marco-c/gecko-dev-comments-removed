@@ -153,9 +153,11 @@ class ZoneAllCellIter<TenuredCell> {
     
     
     
-    if (IsBackgroundFinalized(kind) &&
-        zone->arenas.needBackgroundFinalizeWait(kind)) {
-      rt->gc.waitBackgroundSweepEnd();
+    if (IsBackgroundFinalized(kind)) {
+      ArenaLists& arenas = zone->arenas;
+      if (zone->isGCFinished() && !arenas.doneBackgroundFinalize(kind)) {
+        rt->gc.waitBackgroundSweepEnd();
+      }
     }
     iter.emplace(zone, kind);
   }
