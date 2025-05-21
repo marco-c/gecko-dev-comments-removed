@@ -2536,3 +2536,48 @@ async function _maybeOpenAncestorMenu(menuItem) {
   parentMenu.openMenu(true);
   await shown;
 }
+
+
+
+
+
+
+
+
+
+async function findConsoleMessages(toolbox, query) {
+  const webConsole = await toolbox.getPanel("webconsole");
+  const win = webConsole._frameWindow;
+  return Array.prototype.filter.call(
+    win.document.querySelectorAll(".message"),
+    e => e.innerText.includes(query)
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+async function waitForConsoleMessageLink(toolbox, messageText, linkText) {
+  await toolbox.selectTool("webconsole");
+
+  return waitFor(async () => {
+    
+    const [message] = await findConsoleMessages(toolbox, messageText);
+    if (!message) {
+      return false;
+    }
+    const linkEl = message.querySelector(".frame-link-source");
+    if (!linkEl || linkEl.textContent !== linkText) {
+      return false;
+    }
+
+    return linkEl;
+  });
+}
