@@ -367,13 +367,15 @@ class IsItemInRangeComparator {
     Maybe<int32_t> cmp = ComparePoints(
         &mNode, mEndOffset, aRange->GetMayCrossShadowBoundaryStartContainer(),
         aRange->MayCrossShadowBoundaryStartOffset(), mCache);
-    MOZ_ASSERT(cmp.isSome());  
-    if (cmp.value() == 1) {
+    
+    
+    
+    if (cmp.valueOr(1) == 1) {
       cmp = ComparePoints(&mNode, mStartOffset,
                           aRange->GetMayCrossShadowBoundaryEndContainer(),
                           aRange->MayCrossShadowBoundaryEndOffset(), mCache);
-      MOZ_ASSERT(cmp.isSome());
-      if (cmp.value() == -1) {
+      
+      if (cmp.valueOr(1) == -1) {
         return 0;
       }
       return 1;
