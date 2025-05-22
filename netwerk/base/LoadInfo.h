@@ -267,6 +267,8 @@ class LoadInfo final : public nsILoadInfo {
       bool aIsSameDocumentNavigation, bool aAllowDeprecatedSystemRequests,
       bool aIsInDevToolsContext, bool aParserCreatedScript,
       nsILoadInfo::StoragePermissionState aStoragePermission,
+      nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+      nsILoadInfo::IPAddressSpace aIPAddressSpace,
       const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings,
       bool aIsMetaRefresh, uint32_t aRequestBlockingReason,
       nsINode* aLoadingContext,
@@ -311,6 +313,8 @@ class LoadInfo final : public nsILoadInfo {
   void UpdateFrameBrowsingContextID(uint64_t aFrameBrowsingContextID) {
     mFrameBrowsingContextID = aFrameBrowsingContextID;
   }
+
+  void UpdateParentAddressSpaceInfo();
   MOZ_NEVER_INLINE void ReleaseMembers();
 
   
@@ -395,6 +399,10 @@ class LoadInfo final : public nsILoadInfo {
   bool mParserCreatedScript = false;
   nsILoadInfo::StoragePermissionState mStoragePermission =
       nsILoadInfo::NoStoragePermission;
+  
+  nsILoadInfo::IPAddressSpace mParentIPAddressSpace = nsILoadInfo::Public;
+  nsILoadInfo::IPAddressSpace mIPAddressSpace = nsILoadInfo::Public;
+
   Maybe<RFPTargetSet> mOverriddenFingerprintingSettings;
 #ifdef DEBUG
   
@@ -443,10 +451,10 @@ class LoadInfo final : public nsILoadInfo {
 };
 
 
-
 already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(nsIPrincipal*);
 
 }  
+
 }  
 
 #endif  

@@ -650,13 +650,13 @@ interface nsILoadInfo : nsISupports
 
 
 
-  attribute nsILoadInfo_IPAddressSpace ipAddressSpace;
+  [infallible] attribute nsILoadInfo_IPAddressSpace ipAddressSpace;
 
 
 
 
 
-  attribute nsILoadInfo_IPAddressSpace parentIpAddressSpace;
+  [infallible] attribute nsILoadInfo_IPAddressSpace parentIpAddressSpace;
 
   
 
