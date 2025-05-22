@@ -30,7 +30,7 @@ class nsIconChannel final : public nsIChannel {
 
 
 
-  nsresult Init(nsIURI* aURI);
+  nsresult Init(nsIURI* aURI, nsILoadInfo* aLoadInfo);
 
  private:
   ~nsIconChannel() {}

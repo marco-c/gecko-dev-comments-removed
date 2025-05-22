@@ -132,19 +132,6 @@ static GdkRGBA GetForegroundColor(nsIMozIconURI* aIconURI) {
   };
 }
 
-static nsresult StreamToChannel(already_AddRefed<nsIInputStream> aStream,
-                                nsIURI* aURI, nsIChannel** aChannel) {
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> nullPrincipal =
-      mozilla::NullPrincipal::CreateWithoutOriginAttributes();
-  return NS_NewInputStreamChannel(
-      aChannel, aURI, std::move(aStream), nullPrincipal,
-      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-      nsIContentPolicy::TYPE_INTERNAL_IMAGE, nsLiteralCString(IMAGE_ICON_MS));
-}
-
 
 nsresult nsIconChannel::GetIconWithGIO(nsIMozIconURI* aIconURI,
                                        ByteBuf* aDataOut) {
@@ -283,7 +270,7 @@ nsresult nsIconChannel::GetIcon(nsIURI* aURI, ByteBuf* aDataOut) {
   return MozGdkPixbufToByteBuf(pixbuf, scale, aDataOut);
 }
 
-nsresult nsIconChannel::Init(nsIURI* aURI) {
+nsresult nsIconChannel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   nsCOMPtr<nsIInputStream> stream;
 
   using ContentChild = mozilla::dom::ContentChild;
@@ -350,7 +337,9 @@ nsresult nsIconChannel::Init(nsIURI* aURI) {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  return StreamToChannel(stream.forget(), aURI, getter_AddRefs(mRealChannel));
+  return NS_NewInputStreamChannelInternal(
+      getter_AddRefs(mRealChannel), aURI, stream.forget(),
+      nsLiteralCString(IMAGE_ICON_MS),  ""_ns, aLoadInfo);
 }
 
 void nsIconChannel::Shutdown() {}
