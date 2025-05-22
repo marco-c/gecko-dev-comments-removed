@@ -741,6 +741,9 @@ pref("browser.urlbar.pocket.featureGate", false);
 
 pref("browser.urlbar.suggest.pocket", true);
 
+
+pref("browser.urlbar.update2.engineAliasRefresh", true);
+
 pref("browser.altClickSave", false);
 
 
