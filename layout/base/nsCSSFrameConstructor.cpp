@@ -8437,6 +8437,12 @@ static bool ShouldRecreateContainerForNativeAnonymousContentRoot(
     return false;
   }
   if (auto* el = Element::FromNode(aContent)) {
+    if (el->GetPseudoElementType() ==
+        PseudoStyleType::mozSnapshotContainingBlock) {
+      
+      
+      return false;
+    }
     if (auto* classes = el->GetClasses()) {
       if (classes->Contains(nsGkAtoms::mozCustomContentContainer,
                             eCaseMatters)) {
