@@ -95,6 +95,8 @@ add_task(async function test_about_translations_enabled() {
 
 
 
+
+
 add_task(async function test_language_identification_for_page_translation() {
   await autoTranslatePage({
     page: NO_LANGUAGE_URL,
