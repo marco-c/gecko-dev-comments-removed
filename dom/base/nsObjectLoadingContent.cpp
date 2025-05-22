@@ -613,15 +613,11 @@ bool nsObjectLoadingContent::CheckLoadPolicy(int16_t* aContentPolicy) {
 
   nsContentPolicyType contentPolicyType = GetContentPolicyType();
 
-  Result<RefPtr<LoadInfo>, nsresult> maybeLoadInfo =
-      LoadInfo::Create(doc->NodePrincipal(),  
-                       doc->NodePrincipal(),  
-                       el, nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-                       contentPolicyType);
-  if (NS_WARN_IF(maybeLoadInfo.isErr())) {
-    return false;
-  }
-  RefPtr<LoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
+      new LoadInfo(doc->NodePrincipal(),  
+                   doc->NodePrincipal(),  
+                   el, nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                   contentPolicyType);
 
   *aContentPolicy = nsIContentPolicy::ACCEPT;
   nsresult rv =
@@ -657,14 +653,10 @@ bool nsObjectLoadingContent::CheckProcessPolicy(int16_t* aContentPolicy) {
       return false;
   }
 
-  Result<RefPtr<LoadInfo>, nsresult> maybeLoadInfo = LoadInfo::Create(
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new LoadInfo(
       doc->NodePrincipal(),  
       doc->NodePrincipal(),  
       el, nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, objectType);
-  if (NS_WARN_IF(maybeLoadInfo.isErr())) {
-    return false;
-  }
-  RefPtr<LoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
 
   *aContentPolicy = nsIContentPolicy::ACCEPT;
   nsresult rv = NS_CheckContentProcessPolicy(
@@ -1441,7 +1433,7 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   }
 
   
-  RefPtr<LoadInfo> loadInfo = MOZ_TRY(LoadInfo::Create(
+  RefPtr<LoadInfo> loadInfo = new LoadInfo(
        nullptr,
        nullptr,
        el,
@@ -1449,7 +1441,7 @@ nsresult nsObjectLoadingContent::OpenChannel() {
        contentPolicyType,
        Nothing(),
        Nothing(),
-       sandboxFlags));
+       sandboxFlags);
 
   if (inheritAttrs) {
     loadInfo->SetPrincipalToInherit(el->NodePrincipal());

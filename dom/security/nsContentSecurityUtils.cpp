@@ -2220,14 +2220,10 @@ long nsContentSecurityUtils::ClassifyDownload(
     loadingPrincipal = loadInfo->TriggeringPrincipal();
   }
   
-  Result<RefPtr<net::LoadInfo>, nsresult> maybeLoadInfo = net::LoadInfo::Create(
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
       loadingPrincipal, loadInfo->TriggeringPrincipal(), nullptr,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
       nsIContentPolicy::TYPE_FETCH);
-  if (maybeLoadInfo.isErr()) {
-    return nsITransfer::DOWNLOAD_FORBIDDEN;
-  }
-  RefPtr<net::LoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
   
   
   

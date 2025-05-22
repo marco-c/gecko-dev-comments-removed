@@ -763,12 +763,12 @@ nsresult nsXMLContentSink::MaybeProcessXSLTLink(
                                          mDocument->InnerWindowID());
   NS_ENSURE_SUCCESS(rv, NS_OK);
 
-  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = MOZ_TRY(
-      net::LoadInfo::Create(mDocument->NodePrincipal(),  
-                            mDocument->NodePrincipal(),  
-                            aProcessingInstruction,
-                            nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-                            nsIContentPolicy::TYPE_XSLT));
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
+      new net::LoadInfo(mDocument->NodePrincipal(),  
+                        mDocument->NodePrincipal(),  
+                        aProcessingInstruction,
+                        nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                        nsIContentPolicy::TYPE_XSLT);
 
   
   int16_t decision = nsIContentPolicy::ACCEPT;
