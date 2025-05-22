@@ -6323,34 +6323,29 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
 
     const bool isOrthogonal = containerWM.IsOrthogonalTo(childWM);
     const bool isInlineAxis = mAxis == LogicalAxis::Inline;  
-
-    
-    
-    
     const bool itemHasBaselineParallelToTrack = isInlineAxis == isOrthogonal;
-    if (itemHasBaselineParallelToTrack) {
-      
-      auto selfAlignment =
-          isOrthogonal
-              ? child->StylePosition()->UsedJustifySelf(containerStyle)._0
-              : child->StylePosition()->UsedAlignSelf(containerStyle)._0;
-      selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
-      if (selfAlignment == StyleAlignFlags::BASELINE) {
-        state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
-        const GridArea& area = gridItem.mArea;
-        baselineTrack = isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
-      } else if (selfAlignment == StyleAlignFlags::LAST_BASELINE) {
-        state |= ItemState::eLastBaseline | ItemState::eSelfBaseline;
-        const GridArea& area = gridItem.mArea;
-        baselineTrack = (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
-      }
 
-      
-      
-      
-      
-      
-      
+    
+    auto selfAlignment =
+        isInlineAxis
+            ? child->StylePosition()->UsedJustifySelf(containerStyle)._0
+            : child->StylePosition()->UsedAlignSelf(containerStyle)._0;
+    selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
+    if (selfAlignment == StyleAlignFlags::BASELINE) {
+      state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
+      const GridArea& area = gridItem.mArea;
+      baselineTrack = isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
+    } else if (selfAlignment == StyleAlignFlags::LAST_BASELINE) {
+      state |= ItemState::eLastBaseline | ItemState::eSelfBaseline;
+      const GridArea& area = gridItem.mArea;
+      baselineTrack = (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
+    }
+
+    
+    
+    
+    
+    if (!isInlineAxis) {
       
       auto alignContent = child->StylePosition()->mAlignContent.primary;
       alignContent &= ~StyleAlignFlags::FLAG_BITS;
@@ -6370,13 +6365,10 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
           bool sameSide =
               containerWM.ParallelAxisStartsOnSameSide(alignAxis, childWM);
           if (selfAlignment == StyleAlignFlags::LEFT) {
-            selfAlignment = !isInlineAxis || containerWM.IsBidiLTR()
-                                ? StyleAlignFlags::START
-                                : StyleAlignFlags::END;
+            selfAlignment = containerWM.IsBidiLTR() ? StyleAlignFlags::START
+                                                    : StyleAlignFlags::END;
           } else if (selfAlignment == StyleAlignFlags::RIGHT) {
-            selfAlignment = isInlineAxis && containerWM.IsBidiLTR()
-                                ? StyleAlignFlags::END
-                                : StyleAlignFlags::START;
+            selfAlignment = StyleAlignFlags::START;
           }
 
           if (selfAlignment == StyleAlignFlags::START ||
@@ -6393,12 +6385,10 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
           const GridArea& area = gridItem.mArea;
           if (alignContent == StyleAlignFlags::BASELINE) {
             state |= ItemState::eFirstBaseline | ItemState::eContentBaseline;
-            baselineTrack =
-                isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
+            baselineTrack = area.mRows.mStart;
           } else if (alignContent == StyleAlignFlags::LAST_BASELINE) {
             state |= ItemState::eLastBaseline | ItemState::eContentBaseline;
-            baselineTrack =
-                (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
+            baselineTrack = area.mRows.mEnd - 1;
           }
         }
       }
@@ -6458,8 +6448,10 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
                              ? grid->GetBBaseline(baselineAlignment)
                              : grid->GetIBaseline(baselineAlignment));
       } else {
-        baseline = child->GetNaturalBaselineBOffset(
-            childWM, baselineAlignment, BaselineExportContext::Other);
+        if (itemHasBaselineParallelToTrack) {
+          baseline = child->GetNaturalBaselineBOffset(
+              childWM, baselineAlignment, BaselineExportContext::Other);
+        }
 
         if (!baseline) {
           
