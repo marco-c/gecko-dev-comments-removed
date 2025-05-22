@@ -1562,7 +1562,7 @@ class Document : public nsINode,
 
   
   
-  void DestroyElementMaps();
+  void WillRemoveRoot();
 
   Element* GetRootElementInternal() const;
 

@@ -2494,9 +2494,7 @@ Document::~Document() {
 
   nsAutoScriptBlocker scriptBlocker;
 
-  
-  
-  DestroyElementMaps();
+  WillRemoveRoot();
 
   
   InvalidateChildNodes();
@@ -3035,9 +3033,7 @@ void Document::DisconnectNodeTree() {
   {  
     MOZ_AUTO_DOC_UPDATE(this, true);
 
-    
-    
-    DestroyElementMaps();
+    WillRemoveRoot();
 
     
     InvalidateChildNodes();
@@ -7720,16 +7716,8 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
   const bool removingRoot = aKid->IsElement();
   if (removingRoot) {
     updateBatch.emplace(this, aNotify);
-    
-    DestroyElementMaps();
 
-    
-    
-    
-    
-    if (RefPtr transition = mActiveViewTransition) {
-      transition->SkipTransition(SkipTransitionReason::RootRemoved);
-    }
+    WillRemoveRoot();
 
     
     
@@ -12555,7 +12543,7 @@ void Document::MutationEventDispatched(nsINode* aTarget) {
   }
 }
 
-void Document::DestroyElementMaps() {
+void Document::WillRemoveRoot() {
 #ifdef DEBUG
   mStyledLinksCleared = true;
 #endif
@@ -12567,6 +12555,15 @@ void Document::DestroyElementMaps() {
   mIdentifierMap.Clear();
   mComposedShadowRoots.Clear();
   mResponsiveContent.Clear();
+
+  
+  
+  
+  
+  if (RefPtr transition = mActiveViewTransition) {
+    transition->SkipTransition(SkipTransitionReason::RootRemoved);
+  }
+
   IncrementExpandoGeneration(*this);
 }
 
