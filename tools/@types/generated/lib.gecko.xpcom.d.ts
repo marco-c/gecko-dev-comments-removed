@@ -3085,6 +3085,13 @@ interface nsIScriptError extends nsIConsoleMessage {
 
 
 
+interface mozITestInterfaceJS extends nsISupports {
+  testThrowNsresult(): void;
+  testThrowNsresultFromNative(): void;
+}
+
+
+
 
 
 interface nsIDOMGeoPosition extends nsISupports {
@@ -5273,6 +5280,37 @@ interface nsIStyleSheetService extends nsISupports {
   preloadSheet(sheetURI: nsIURI, type: u32): nsIPreloadedStyleSheet;
   preloadSheetAsync(sheetURI: nsIURI, type: u32): any;
   unregisterSheet(sheetURI: nsIURI, type: u32): void;
+}
+
+
+
+}  
+
+declare enum nsILayoutDebuggingTools_DumpFrameFlags {
+  DUMP_FRAME_FLAGS_CSS_PIXELS = 1,
+  DUMP_FRAME_FLAGS_DETERMINISTIC = 2,
+}
+
+declare global {
+
+namespace nsILayoutDebuggingTools {
+  type DumpFrameFlags = nsILayoutDebuggingTools_DumpFrameFlags;
+}
+
+interface nsILayoutDebuggingTools extends nsISupports, Enums<typeof nsILayoutDebuggingTools_DumpFrameFlags> {
+  init(win: mozIDOMWindow): void;
+  forceRefresh(): void;
+  setReflowCounts(enabled: boolean): void;
+  setPagedMode(enabled: boolean): void;
+  dumpContent(anonymousSubtrees: boolean): void;
+  dumpFrames(flags: u8): void;
+  dumpTextRuns(): void;
+  dumpViews(): void;
+  dumpCounterManager(): void;
+  dumpStyleSheets(): void;
+  dumpMatchedRules(): void;
+  dumpComputedStyles(): void;
+  dumpReflowStats(): void;
 }
 
 
@@ -10170,6 +10208,13 @@ interface mozISandboxSettings extends nsISupports {
 
 
 
+interface mozISandboxTest extends nsISupports {
+  startTests(aProcessesList: string[]): void;
+  finishTests(): void;
+}
+
+
+
 interface nsIFormFillController extends nsISupports {
   readonly focusedElement: Element;
   readonly passwordPopupAutomaticallyOpened: boolean;
@@ -11148,7 +11193,7 @@ interface nsIContentAnalysisResponse extends nsIContentAnalysisResult, Enums<typ
   readonly requestToken: string;
   readonly userActionId: string;
   readonly isCachedResponse: boolean;
-  readonly isAgentResponse: boolean;
+  readonly isSyntheticResponse: boolean;
   acknowledge(aCaa: nsIContentAnalysisAcknowledgement): void;
 }
 
@@ -11510,6 +11555,8 @@ declare enum nsISearchService_DefaultEngineChangeReason {
   CHANGE_REASON_UITOUR = 12,
   CHANGE_REASON_ENGINE_UPDATE = 13,
   CHANGE_REASON_USER_PRIVATE_PREF_ENABLED = 14,
+  CHANGE_REASON_ENGINE_IGNORE_LIST_UPDATED = 15,
+  CHANGE_REASON_NO_EXISTING_DEFAULT_ENGINE = 16,
 }
 
 declare global {
@@ -12835,7 +12882,7 @@ interface nsIDragSession extends nsISupports {
   updateDragEffect(): void;
   updateDragImage(aImage: Node, aImageX: i32, aImageY: i32): void;
   setDragEndPoint(aScreenX: i32, aScreenY: i32): void;
-  setDragEndPointForTests(aScreenX: i32, aScreenY: i32): void;
+  setDragEndPointForTests(aScreenX: float, aScreenY: float): void;
   endDragSession(aDoneDrag: boolean, aKeyModifiers?: u32): void;
   sendStoreDropTargetAndDelayEndDragSession(aEvent: DragEvent): void;
   sendDispatchToDropTargetAndResumeEndDragSession(aShouldDrop: boolean): void;
@@ -15448,6 +15495,7 @@ interface nsIXPCComponents_Interfaces {
   nsITextInputProcessorCallback: nsJSIID<nsITextInputProcessorCallback>;
   nsIScriptErrorNote: nsJSIID<nsIScriptErrorNote>;
   nsIScriptError: nsJSIID<nsIScriptError>;
+  mozITestInterfaceJS: nsJSIID<mozITestInterfaceJS>;
   nsIDOMGeoPosition: nsJSIID<nsIDOMGeoPosition>;
   nsIDOMGeoPositionCallback: nsJSIID<nsIDOMGeoPositionCallback>;
   nsIDOMGeoPositionCoords: nsJSIID<nsIDOMGeoPositionCoords>;
@@ -15641,6 +15689,7 @@ interface nsIXPCComponents_Interfaces {
   nsIPreloadedStyleSheet: nsJSIID<nsIPreloadedStyleSheet>;
   nsISVGPaintContext: nsJSIID<nsISVGPaintContext>;
   nsIStyleSheetService: nsJSIID<nsIStyleSheetService>;
+  nsILayoutDebuggingTools: nsJSIID<nsILayoutDebuggingTools, typeof nsILayoutDebuggingTools_DumpFrameFlags>;
   nsITreeSelection: nsJSIID<nsITreeSelection>;
   nsITreeView: nsJSIID<nsITreeView>;
   mozILocaleService: nsJSIID<mozILocaleService>;
@@ -16015,6 +16064,7 @@ interface nsIXPCComponents_Interfaces {
   nsIApplicationReputationQuery: nsJSIID<nsIApplicationReputationQuery>;
   nsIApplicationReputationCallback: nsJSIID<nsIApplicationReputationCallback>;
   mozISandboxSettings: nsJSIID<mozISandboxSettings>;
+  mozISandboxTest: nsJSIID<mozISandboxTest>;
   nsIFormFillController: nsJSIID<nsIFormFillController>;
   nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
   mozIAppServicesLogger: nsJSIID<mozIAppServicesLogger>;
