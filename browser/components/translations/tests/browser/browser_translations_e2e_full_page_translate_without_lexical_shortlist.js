@@ -9,7 +9,7 @@
 
 
 add_task(
-  async function test_full_page_translate_end_to_end_without_lexical_shortlist() {
+  async function test_lazy_full_page_translate_end_to_end_with_lexical_shortlist() {
     const { cleanup, runInPage } = await loadTestPage({
       endToEndTest: true,
       page: SPANISH_PAGE_URL,
@@ -39,6 +39,46 @@ add_task(
         runInPage,
       }
     );
+
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+add_task(
+  async function test_content_eager_full_page_translate_end_to_end_with_lexical_shortlist() {
+    const { cleanup, runInPage } = await loadTestPage({
+      endToEndTest: true,
+      page: SPANISH_PAGE_URL,
+      languagePairs: LANGUAGE_PAIRS,
+      contentEagerMode: true,
+      prefs: [["browser.translations.useLexicalShortlist", false]],
+    });
+
+    await FullPageTranslationsTestUtils.assertTranslationsButton(
+      { button: true, circleArrows: false, locale: false, icon: true },
+      "The button is available."
+    );
+
+    await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
+
+    await FullPageTranslationsTestUtils.openPanel({
+      expectedFromLanguage: "es",
+      expectedToLanguage: "en",
+      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
+    });
+
+    await FullPageTranslationsTestUtils.clickTranslateButton();
+    await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
+      endToEndTest: true,
+      fromLanguage: "es",
+      toLanguage: "en",
+      runInPage,
+    });
 
     await cleanup();
   }
