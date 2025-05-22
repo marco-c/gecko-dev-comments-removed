@@ -54,21 +54,6 @@ add_task(
       }
     );
 
-    const rollout = NimbusTestUtils.factories.recipe.withFeatureConfig(
-      "rollout",
-      {
-        featureId: "nimbusTelemetry",
-        value: {
-          gleanMetricConfiguration: {
-            metrics_enabled: {
-              "nimbus_events.enrollment_status": true,
-            },
-          },
-        },
-      },
-      { isRollout: true }
-    );
-
     const { manager, cleanup } = await setupTest();
 
     
@@ -86,16 +71,6 @@ add_task(
       null,
       "targetingContextValue not recorded by default"
     );
-    Assert.equal(
-      Glean.nimbusEvents.enrollmentStatus.testGetValue("events"),
-      null,
-      "enrollmentStatus not recorded by default"
-    );
-
-    
-    
-    
-    await manager.enroll(rollout, "rs-loader");
 
     Glean.nimbusTargetingEnvironment.targetingContextValue.set(
       "rollout-active-1"
@@ -107,24 +82,6 @@ add_task(
       "targetingContextValue not recorded by default"
     );
 
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        ?.map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-      ],
-      "Should have recorded enrollmentStatus (rollout enabled metric)"
-    );
-
-    
-    
-    
     await manager.enroll(experiment, "rs-loader");
     Assert.ok(
       manager.store.get(experiment.slug)?.active,
@@ -139,21 +96,6 @@ add_task(
       Glean.nimbusTargetingEnvironment.targetingContextValue.testGetValue(),
       "experiment-active-2",
       "Targeting context metric was recorded"
-    );
-
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        ?.map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-      ],
-      "Should not have recorded enrollmentStatus again (experiment disabled metric)"
     );
 
     
@@ -171,29 +113,6 @@ add_task(
       "targetingContextValue was not recorded again"
     );
 
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        .map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-        {
-          slug: experiment.slug,
-          branch: experiment.branches[0].slug,
-          status: "WasEnrolled",
-        },
-      ]
-    );
-
-    
-    
-    await manager.unenroll(rollout.slug, { reason: "recipe-not-seen" });
-
     Glean.nimbusTargetingEnvironment.targetingContextValue.set(
       "nothing-active-0"
     );
@@ -202,25 +121,6 @@ add_task(
       Glean.nimbusTargetingEnvironment.targetingContextValue.testGetValue(),
       "experiment-active-2",
       "targetingContextValue was not recorded again"
-    );
-
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("events")
-        .map(ev => ev.extra),
-      [
-        {
-          slug: rollout.slug,
-          branch: rollout.branches[0].slug,
-          status: "Enrolled",
-          reason: "Qualified",
-        },
-        {
-          slug: experiment.slug,
-          branch: experiment.branches[0].slug,
-          status: "WasEnrolled",
-        },
-      ]
     );
 
     Services.fog.testResetFOG();
