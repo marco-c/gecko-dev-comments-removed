@@ -5,9 +5,6 @@
 
 
 
-const TOPICDATA_DISTRIBUTION_CUSTOMIZATION = "force-distribution-customization";
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-
 registerCleanupFunction(async function () {
   
   
@@ -38,15 +35,11 @@ add_task(async function () {
 });
 
 add_task(async function () {
-  
-  let glue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-    Ci.nsIObserver
+  let { DistributionManagement } = ChromeUtils.importESModule(
+    "resource:///modules/distribution.sys.mjs"
   );
-  glue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_DISTRIBUTION_CUSTOMIZATION
-  );
+
+  DistributionManagement.applyCustomizations();
 
   var defaultBranch = Services.prefs.getDefaultBranch(null);
 

@@ -8,9 +8,7 @@
 const PREF_BMPROCESSED = "distribution.516444.bookmarksProcessed";
 const PREF_DISTRIBUTION_ID = "distribution.id";
 
-const TOPICDATA_DISTRIBUTION_CUSTOMIZATION = "force-distribution-customization";
 const TOPIC_CUSTOMIZATION_COMPLETE = "distribution-customization-complete";
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
 
 function run_test() {
   
@@ -47,14 +45,13 @@ registerCleanupFunction(function () {
 });
 
 add_task(async function () {
-  let { DistributionCustomizer } = ChromeUtils.importESModule(
+  let { DistributionManagement } = ChromeUtils.importESModule(
     "resource:///modules/distribution.sys.mjs"
   );
-  let distribution = new DistributionCustomizer();
 
-  let glue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-    Ci.nsIObserver
-  );
+  
+  Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver);
+
   
   
   Assert.equal(
@@ -62,11 +59,7 @@ add_task(async function () {
     PlacesUtils.history.DATABASE_STATUS_CREATE
   );
   
-  glue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_DISTRIBUTION_CUSTOMIZATION
-  );
+  DistributionManagement.applyCustomizations();
 
   
   await promiseTopicObserved(TOPIC_CUSTOMIZATION_COMPLETE);
@@ -78,7 +71,7 @@ add_task(async function () {
   });
   Assert.equal(menuItem.title, "Menu Link Before");
   Assert.ok(
-    menuItem.guid.startsWith(distribution.BOOKMARK_GUID_PREFIX),
+    menuItem.guid.startsWith(DistributionManagement.BOOKMARK_GUID_PREFIX),
     "Guid of this bookmark has expected prefix"
   );
 
@@ -113,7 +106,7 @@ add_task(async function () {
   });
   Assert.equal(toolbarItem.title, "Toolbar Folder After");
   Assert.ok(
-    toolbarItem.guid.startsWith(distribution.FOLDER_GUID_PREFIX),
+    toolbarItem.guid.startsWith(DistributionManagement.FOLDER_GUID_PREFIX),
     "Guid of this folder has expected prefix"
   );
 
