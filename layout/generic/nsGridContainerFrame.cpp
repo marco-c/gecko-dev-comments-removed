@@ -6304,12 +6304,6 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
   const WritingMode containerWM = aGridRI.mWM;
   ComputedStyle* containerStyle = aGridRI.mFrame->Style();
 
-  
-  
-  
-  auto containerBlockStartSide =
-      containerWM.PhysicalSide(MakeLogicalSide(mAxis, LogicalEdge::Start));
-
   for (GridItemInfo& gridItem : aGridItems) {
     if (gridItem.IsSubgrid(mAxis)) {
       
@@ -6397,25 +6391,14 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
     if (state & ItemState::eIsBaselineAligned) {
       
       
-      BaselineSharingGroup baselineAlignment =
-          (state & ItemState::eFirstBaseline) ? BaselineSharingGroup::First
-                                              : BaselineSharingGroup::Last;
-
-      BaselineSharingGroup baselineSharingGroup = [&]() {
-        {
-          auto childAxis = isOrthogonal ? GetOrthogonalAxis(mAxis) : mAxis;
-          auto childBlockStartSide = childWM.PhysicalSide(
-              MakeLogicalSide(childAxis, LogicalEdge::Start));
-          bool isFirstBaseline = (state & ItemState::eFirstBaseline) != 0;
-          const bool containerAndChildHasEqualBaselineSide =
-              containerBlockStartSide == childBlockStartSide;
-
-          return isFirstBaseline == containerAndChildHasEqualBaselineSide
-                     ? BaselineSharingGroup::First
-                     : BaselineSharingGroup::Last;
-        }
-      }();
-
+      bool isFirstBaseline = (state & ItemState::eFirstBaseline) != 0;
+      BaselineSharingGroup baselineAlignment = isFirstBaseline
+                                                   ? BaselineSharingGroup::First
+                                                   : BaselineSharingGroup::Last;
+      auto sameSide = containerWM.ParallelAxisStartsOnSameSide(mAxis, childWM);
+      BaselineSharingGroup baselineSharingGroup =
+          isFirstBaseline == sameSide ? BaselineSharingGroup::First
+                                      : BaselineSharingGroup::Last;
       
       
 
@@ -6476,8 +6459,42 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
           
           if (!isTrackAutoSize ||
               !gridItem.IsBSizeDependentOnContainerSize(containerWM)) {
-            baseline.emplace(Baseline::SynthesizeBOffsetFromBorderBox(
-                child, containerWM, baselineAlignment));
+            
+            
+            
+
+            if (containerWM.IsCentralBaseline()) {
+              
+              
+              
+              
+              
+              baseline.emplace(frameSize / 2);
+            } else {
+              
+              
+              bool isInverted =
+                  (mAxis == LogicalAxis::Block)
+                      ? containerWM.IsLineInverted()
+                      : (!containerWM.IsVertical() && containerWM.IsBidiLTR());
+
+              
+              
+              bool isLineUnderSameSide = sameSide && !isInverted;
+
+              
+              
+              
+              
+              
+              
+              const bool baselineOffsetIsFrameSize =
+                  itemHasBaselineParallelToTrack
+                      ? (!childWM.IsLineInverted() == isFirstBaseline)
+                      : (isLineUnderSameSide == isFirstBaseline);
+
+              baseline.emplace(baselineOffsetIsFrameSize ? frameSize : 0);
+            }
           }
         }
       }
