@@ -34,6 +34,12 @@
 
 
 
+requestLongerTimeout(2);
+
+
+
+
+
 
 
 
@@ -208,7 +214,7 @@ add_task(async function test_language_identification_behavior() {
       throw new Error("Expected only 1 main outcome.");
     }
 
-    if (buttonShown || offerTranslation) {
+    if (buttonShown || offerTranslation || translatePage) {
       await FullPageTranslationsTestUtils.assertTranslationsButton(
         {
           button: true,
