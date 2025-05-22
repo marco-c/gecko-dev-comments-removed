@@ -5,6 +5,7 @@
 
 #include "nsISupports.idl"
 
+interface nsIFile;
 interface nsITransferable;
 interface nsIURI;
 webidl BrowsingContext;
@@ -91,7 +92,8 @@ interface nsIContentAnalysisResponse : nsIContentAnalysisResult
   
   
   
-  [infallible] readonly attribute boolean isAgentResponse;
+  
+  [infallible] readonly attribute boolean isSyntheticResponse;
 
   
 
@@ -187,7 +189,7 @@ interface nsIContentAnalysisRequest : nsISupports
   
   
   
-  readonly attribute DataTransfer dataTransfer;
+  attribute DataTransfer dataTransfer;
 
   
   
@@ -328,6 +330,7 @@ interface nsIContentAnalysis : nsISupports
 
 
 
+
   [implicit_jscontext]
   Promise analyzeContentRequests(in Array<nsIContentAnalysisRequest> aCars,
                                  in boolean aAutoAcknowledge);
@@ -350,6 +353,24 @@ interface nsIContentAnalysis : nsISupports
                                       in boolean aAutoAcknowledge,
                                       in nsIContentAnalysisCallback callback);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise analyzeBatchContentRequest(in nsIContentAnalysisRequest aCar,
+                                     in boolean aAutoAcknowledge);
   
 
 
