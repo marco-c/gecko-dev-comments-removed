@@ -122,11 +122,13 @@ add_task(
       }
     );
 
-    await FullPageTranslationsTestUtils.assertPageIsTranslated({
-      fromLanguage: "es",
-      toLanguage: "fr",
-      runInPage,
-    });
+    await FullPageTranslationsTestUtils.assertOnlyIntersectingContentIsTranslated(
+      {
+        fromLanguage: "es",
+        toLanguage: "fr",
+        runInPage,
+      }
+    );
 
     await SelectTranslationsTestUtils.openPanel(runInPage, {
       selectFrenchSection: true,
@@ -171,9 +173,9 @@ add_task(
           auto_translate: false,
           source_text_code_units:
             AppConstants.platform === "win"
-              ? 1718 
-              : 1709, 
-          source_text_word_count: 281,
+              ? 1616 
+              : 1607, 
+          source_text_word_count: 257,
         },
       }
     );
