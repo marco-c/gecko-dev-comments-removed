@@ -11,7 +11,6 @@
 #include <bitset>
 #include "ErrorList.h"
 #include "PLDHashTable.h"
-#include "Units.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ContentBlockingLog.h"
 #include "mozilla/gfx/Types.h"
@@ -334,40 +333,6 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
 
   
-
-
-
-
-
-
-
-
-
-  static nsSize GetSpoofedScreenSize(const nsSize& aInner, float aFullZoom);
-
-  
-
-
-
-
-
-  static CSSIntSize GetOuterOffset();
-
-  
-
-
-
-
-
-
-
-
-  static CSSIntRect GetSpoofedScreenAvailSize(const nsSize& aScreenSize,
-                                              float aScale);
-
-  
-
-  
   
   static Maybe<nsTArray<uint8_t>> GenerateKey(nsIChannel* aChannel);
   static Maybe<nsTArray<uint8_t>> GenerateKeyForServiceWorker(
@@ -444,6 +409,9 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
 
   
   static void GetExemptedDomainsLowercase(nsCString& aExemptedDomains);
+
+  static CSSIntRect GetSpoofedScreenAvailSize(const nsRect& aRect,
+                                              float aScale);
 
  private:
   nsresult Init();
