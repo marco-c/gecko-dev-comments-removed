@@ -715,6 +715,7 @@ class TranslationsBencher {
           { fromLang: "en", toLang: targetLanguage },
         ],
         prefs: [["browser.translations.logLevel", "Error"]],
+        contentEagerMode: true,
       });
 
       
@@ -722,7 +723,9 @@ class TranslationsBencher {
         memorySampleInterval
       );
 
-      await TranslationsBencher.#injectTranslationCompleteObserver(runInPage);
+      await TranslationsBencher.#injectFinalParagraphTranslatedObserver(
+        runInPage
+      );
 
       await FullPageTranslationsTestUtils.assertTranslationsButton(
         { button: true, circleArrows: false, locale: false, icon: true },
@@ -799,9 +802,12 @@ class TranslationsBencher {
           { fromLang: "en", toLang: targetLanguage },
         ],
         prefs: [["browser.translations.logLevel", "Error"]],
+        contentEagerMode: true,
       });
 
-      await TranslationsBencher.#injectTranslationCompleteObserver(runInPage);
+      await TranslationsBencher.#injectFinalParagraphTranslatedObserver(
+        runInPage
+      );
 
       await FullPageTranslationsTestUtils.assertTranslationsButton(
         { button: true, circleArrows: false, locale: false, icon: true },
@@ -859,7 +865,10 @@ class TranslationsBencher {
 
 
 
-  static async #injectTranslationCompleteObserver(runInPage) {
+
+
+
+  static async #injectFinalParagraphTranslatedObserver(runInPage) {
     await runInPage(TranslationsTest => {
       const { getLastParagraph } = TranslationsTest.getSelectors();
       const lastParagraph = getLastParagraph();
@@ -871,7 +880,7 @@ class TranslationsBencher {
       const observer = new content.MutationObserver(
         (_mutationsList, _observer) => {
           content.document.dispatchEvent(
-            new CustomEvent("TranslationComplete")
+            new CustomEvent("FinalParagraphTranslated")
           );
         }
       );
@@ -920,13 +929,31 @@ class TranslationsBencher {
 
   static async #getTranslationCompleteTimestampPromise(runInPage) {
     await runInPage(async () => {
-      const { promise, resolve } = Promise.withResolvers();
-
-      content.document.addEventListener("TranslationComplete", resolve, {
-        once: true,
+      
+      await new Promise(resolve => {
+        content.document.addEventListener("FinalParagraphTranslated", resolve, {
+          once: true,
+        });
       });
 
-      await promise;
+      const translationsChild =
+        content.windowGlobalChild.getActor("Translations");
+
+      if (
+        translationsChild.hasPendingCallbackOnEventLoop() ||
+        translationsChild.hasPendingTranslationRequests() ||
+        translationsChild.isObservingAnyElementForContentIntersection()
+      ) {
+        
+        
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            !translationsChild.hasPendingCallbackOnEventLoop() &&
+            !translationsChild.hasPendingTranslationRequests() &&
+            !translationsChild.isObservingAnyElementForContentIntersection(),
+          "Waiting for all pending translation requests to complete."
+        );
+      }
     });
 
     return performance.now();
