@@ -254,7 +254,8 @@ class ContentAnalysis final : public nsIContentAnalysis,
   
   
   static RefPtr<FilesAllowedPromise> CheckFilesInBatchMode(
-      nsCOMArray<nsIFile>&& aFiles, mozilla::dom::WindowGlobalParent* aWindow,
+      nsCOMArray<nsIFile>&& aFiles, bool aAutoAcknowledge,
+      mozilla::dom::WindowGlobalParent* aWindow,
       nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI = nullptr);
 
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
@@ -514,6 +515,9 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   void DoNotAcknowledge() { mDoNotAcknowledge = true; }
   void SetCancelError(CancelError aCancelError);
   void SetIsCachedResponse() { mIsCachedResponse = true; }
+  void SetIsSyntheticResponse(bool aIsSyntheticResponse) {
+    mIsSyntheticResponse = aIsSyntheticResponse;
+  }
 
  private:
   virtual ~ContentAnalysisResponse() = default;
@@ -567,7 +571,8 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   
   
   
-  bool mIsAgentResponse = false;
+  
+  bool mIsSyntheticResponse = false;
 
   friend class ContentAnalysis;
 };

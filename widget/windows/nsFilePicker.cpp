@@ -739,7 +739,7 @@ nsFilePicker::CheckContentAnalysisService() {
   
   
   return mozilla::contentanalysis::ContentAnalysis::CheckFilesInBatchMode(
-      std::move(files), windowGlobal,
+      std::move(files),  true, windowGlobal,
       nsIContentAnalysisRequest::Reason::eFilePickerDialog);
 };
 
