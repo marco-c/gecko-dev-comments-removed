@@ -102,23 +102,32 @@ void CanvasContext::GetCanvas(
   }
 }
 
-void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig) {
+
+
+void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
+                              ErrorResult& aRv) {
   Unconfigure();
 
   
-
+  
   
   switch (aConfig.mFormat) {
     case dom::GPUTextureFormat::Rgba8unorm:
-    case dom::GPUTextureFormat::Rgba8unorm_srgb:
       mGfxFormat = gfx::SurfaceFormat::R8G8B8A8;
       break;
     case dom::GPUTextureFormat::Bgra8unorm:
-    case dom::GPUTextureFormat::Bgra8unorm_srgb:
       mGfxFormat = gfx::SurfaceFormat::B8G8R8A8;
       break;
+    case dom::GPUTextureFormat::Rgba16float:
+      aRv.ThrowTypeError(
+          "Canvas texture format `rgba16float` is not yet supported. "
+          "Subscribe to <https://bugzilla.mozilla.org/show_bug.cgi?id=1967329>"
+          " for updates on its development in Firefox.");
+      return;
     default:
-      NS_WARNING("Specified swap chain format is not supported");
+      aRv.ThrowTypeError(
+          nsPrintfCString("`%s` is not a supported context format.",
+                          dom::GetEnumString(aConfig.mFormat).get()));
       return;
   }
 
@@ -185,7 +194,9 @@ NS_IMETHODIMP CanvasContext::SetDimensions(int32_t aWidth, int32_t aHeight) {
   if (mConfiguration) {
     const auto copy = dom::GPUCanvasConfiguration{
         *mConfiguration};  
-    Configure(copy);
+    
+    
+    Configure(copy, IgnoredErrorResult());
   }
   return NS_OK;
 }
