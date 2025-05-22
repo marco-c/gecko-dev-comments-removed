@@ -1711,11 +1711,11 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
     
     
     
-    nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new net::LoadInfo(
+    nsCOMPtr<nsILoadInfo> secCheckLoadInfo = MOZ_TRY(net::LoadInfo::Create(
         aPrincipal,  
         aPrincipal,  
         originDoc, nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-        nsIContentPolicy::TYPE_WEBSOCKET, aClientInfo);
+        nsIContentPolicy::TYPE_WEBSOCKET, aClientInfo));
 
     if (aCSPEventListener) {
       secCheckLoadInfo->SetCspEventListener(aCSPEventListener);
