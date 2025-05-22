@@ -137,7 +137,40 @@ interface nsICertOverrideService : nsISupports {
 
 
 
-  void setDisableAllSecurityChecksAndLetAttackersInterceptMyData(in boolean aDisable);
+  void setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    in boolean aDisable);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void setDisableAllSecurityChecksAndLetAttackersInterceptMyDataForUserContext(
+    in uint32_t aUserContextId,
+    in boolean aDisable);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void resetDisableAllSecurityChecksAndLetAttackersInterceptMyDataForUserContext(
+    in uint32_t aUserContextId);
 
   readonly attribute boolean securityCheckDisabled;
 };
