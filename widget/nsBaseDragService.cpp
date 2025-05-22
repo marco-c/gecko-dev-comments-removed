@@ -1302,11 +1302,27 @@ nsBaseDragSession::SendStoreDropTargetAndDelayEndDragSession(
 
 NS_IMETHODIMP
 nsBaseDragSession::SendDispatchToDropTargetAndResumeEndDragSession(
-    bool aShouldDrop) {
+    bool aShouldDrop, const nsTArray<RefPtr<nsIFile>>& aAllowedFiles) {
   MOZ_ASSERT(mDelayedDropBrowserParent);
+  nsTHashSet<nsString> allowedFilePaths;
+  if (aShouldDrop) {
+    for (const auto& allowedFile : aAllowedFiles) {
+      nsString filePath;
+      nsresult rv = allowedFile->GetPath(filePath);
+      if (NS_FAILED(rv)) {
+        
+        Unused << mDelayedDropBrowserParent
+                      ->SendDispatchToDropTargetAndResumeEndDragSession(
+                          false , nsTHashSet<nsString>());
+        mDelayedDropBrowserParent = nullptr;
+        return rv;
+      }
+      allowedFilePaths.Insert(filePath);
+    }
+  }
   Unused << mDelayedDropBrowserParent
                 ->SendDispatchToDropTargetAndResumeEndDragSession(
-                    aShouldDrop, allowedFilePaths);
+                    aShouldDrop, std::move(allowedFilePaths));
   mDelayedDropBrowserParent = nullptr;
   return NS_OK;
 }
