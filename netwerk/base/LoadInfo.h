@@ -19,6 +19,7 @@
 #include "nsTArray.h"
 
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 
@@ -67,6 +68,18 @@ class LoadInfo final : public nsILoadInfo {
   NS_DECL_NSILOADINFO
 
   
+  
+  static mozilla::Result<already_AddRefed<LoadInfo>, nsresult> Create(
+      nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
+      nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
+      nsContentPolicyType aContentPolicyType,
+      const Maybe<mozilla::dom::ClientInfo>& aLoadingClientInfo =
+          Maybe<mozilla::dom::ClientInfo>(),
+      const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController =
+          Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
+      uint32_t aSandboxFlags = 0);
+
+  
   static already_AddRefed<LoadInfo> CreateForDocument(
       dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURI,
       nsIPrincipal* aTriggeringPrincipal,
@@ -88,6 +101,16 @@ class LoadInfo final : public nsILoadInfo {
       uint32_t aSandboxFlags);
 
   
+  
+  
+  LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIURI* aURI,
+           nsIPrincipal* aTriggeringPrincipal,
+           nsISupports* aContextForTopLevelLoad, nsSecurityFlags aSecurityFlags,
+           uint32_t aSandboxFlags);
+
+ private:
+  
+  
   LoadInfo(nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
            nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
            nsContentPolicyType aContentPolicyType,
@@ -97,15 +120,6 @@ class LoadInfo final : public nsILoadInfo {
                Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
            uint32_t aSandboxFlags = 0);
 
-  
-  
-  
-  LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIURI* aURI,
-           nsIPrincipal* aTriggeringPrincipal,
-           nsISupports* aContextForTopLevelLoad, nsSecurityFlags aSecurityFlags,
-           uint32_t aSandboxFlags);
-
- private:
   
   
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURI,

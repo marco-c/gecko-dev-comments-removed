@@ -354,12 +354,18 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
     
     
     
-    nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
-        principal,  
-        principal,  
-        maybeDoc,   
-        nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-        nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER, Some(aClientInfo));
+    Result<RefPtr<net::LoadInfo>, nsresult> maybeLoadInfo =
+        net::LoadInfo::Create(
+            principal,  
+            principal,  
+            maybeDoc,   
+            nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+            nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER, Some(aClientInfo));
+    if (NS_WARN_IF(maybeLoadInfo.isErr())) {
+      aResult.ThrowSecurityError("Script URL is not allowed by policy.");
+      return;
+    }
+    RefPtr<net::LoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
 
     if (cspListener) {
       rv = secCheckLoadInfo->SetCspEventListener(cspListener);
