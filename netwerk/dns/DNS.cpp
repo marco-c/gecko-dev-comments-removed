@@ -159,30 +159,8 @@ bool NetAddr::IsLoopbackAddr() const {
     return false;
   }
 
-  if (IPv6ADDR_IS_V4MAPPED(&addr->inet6.ip)) {
-    return IPv6ADDR_V4MAPPED_TO_IPADDR(&addr->inet6.ip) ==
-           htonl(INADDR_LOOPBACK);
-  }
-
-  
-  uint64_t ipv6Addr1 = ntohl(addr->inet6.ip.u64[0]);
-  uint64_t ipv6Addr2 = ntohl(addr->inet6.ip.u64[1]);
-  return (ipv6Addr1 == 0 && ipv6Addr2 == 1);
-}
-
-bool NetAddr::IsBenchMarkingAddress() const {
-  
-  if (this->raw.family == AF_INET) {
-    uint32_t addr = ntohl(this->inet.ip) >> 17;
-    return addr == (0xC612 >> 1);
-  }
-
-  if (IPv6ADDR_IS_V4MAPPED(&this->inet6.ip)) {
-    uint32_t addr = ntohl(IPv6ADDR_V4MAPPED_TO_IPADDR(&this->inet6.ip)) >> 17;
-    return addr == (0xC612 >> 1);
-  }
-
-  return false;
+  return IPv6ADDR_IS_V4MAPPED(&addr->inet6.ip) &&
+         IPv6ADDR_V4MAPPED_TO_IPADDR(&addr->inet6.ip) == htonl(INADDR_LOOPBACK);
 }
 
 bool NetAddr::IsLoopBackAddressWithoutIPv6Mapping() const {
@@ -236,21 +214,6 @@ bool NetAddr::IsIPAddrAny() const {
 
 NetAddr::NetAddr(const PRNetAddr* prAddr) { PRNetAddrToNetAddr(prAddr, this); }
 
-nsILoadInfo::IPAddressSpace NetAddr::GetIpAddressSpace() const {
-  const NetAddr* addr = this;
-
-  if (addr->IsBenchMarkingAddress() || addr->IsLoopbackAddr() ||
-      addr->IsIPAddrAny()) {
-    return nsILoadInfo::IPAddressSpace::Local;
-  }
-
-  if (addr->IsIPAddrLocal() || addr->IsIPAddrShared()) {
-    return nsILoadInfo::IPAddressSpace::Private;
-  }
-
-  return nsILoadInfo::IPAddressSpace::Public;
-}
-
 nsresult NetAddr::InitFromString(const nsACString& aString, uint16_t aPort) {
   PRNetAddr prAddr{};
   memset(&prAddr, 0, sizeof(PRNetAddr));
@@ -282,7 +245,7 @@ static bool isLocalIPv4(uint32_t networkEndianIP) {
   uint32_t addr32 = ntohl(networkEndianIP);
   return addr32 >> 24 == 0x00 ||    
          addr32 >> 24 == 0x0A ||    
-         addr32 >> 20 == 0x0AC1 ||  
+         addr32 >> 20 == 0xAC1 ||   
          addr32 >> 16 == 0xC0A8 ||  
          addr32 >> 16 == 0xA9FE;    
 }

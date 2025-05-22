@@ -634,30 +634,6 @@ interface nsILoadInfo : nsISupports
     StoragePermissionAllowListed = 2,
   };
 
-
-
-
-
-  cenum IPAddressSpace : 8 {
-    Unknown = 0,
-    Local = 1,
-    Private = 2,
-    Public = 3,
-    Invalid,
-  };
-
-
-
-
-
-  [infallible] attribute nsILoadInfo_IPAddressSpace ipAddressSpace;
-
-
-
-
-
-  [infallible] attribute nsILoadInfo_IPAddressSpace parentIpAddressSpace;
-
   
 
 

@@ -890,12 +890,6 @@ struct ParamTraits<std::bitset<N>> {
   }
 };
 
-template <>
-struct ParamTraits<nsILoadInfo::IPAddressSpace>
-    : public ContiguousEnumSerializer<nsILoadInfo::IPAddressSpace,
-                                      nsILoadInfo::IPAddressSpace::Unknown,
-                                      nsILoadInfo::IPAddressSpace::Invalid> {};
-
 } 
 
 #endif 
