@@ -2635,8 +2635,6 @@ void LoadInfo::UpdateParentAddressSpaceInfo() {
   RefPtr<mozilla::dom::BrowsingContext> bc;
   GetBrowsingContext(getter_AddRefs(bc));
   if (!bc) {
-    
-    
     mParentIPAddressSpace = nsILoadInfo::Local;
     return;
   }
