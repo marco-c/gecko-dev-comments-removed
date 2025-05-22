@@ -438,28 +438,67 @@ function createControlledTranslatorPort() {
   const parser = new DOMParser();
 
   const canceledTranslations = new Set();
-  let resolvers = Promise.withResolvers();
-  let translationCount = 0;
 
-  async function resolveRequests() {
-    info("Resolving all pending translation requests");
-    await TestUtils.waitForTick();
-    resolvers.resolve();
-    resolvers = Promise.withResolvers();
-    await TestUtils.waitForTick();
-    const count = translationCount;
-    translationCount = 0;
-    return count;
+  let resolvers = [];
+
+  let engineStatusCount = 0;
+  let cancelCount = 0;
+  let passthroughCount = 0;
+  let cachedCount = 0;
+  let requestCount = 0;
+
+  function resolveRequests() {
+    const resolvedCount = resolvers.length;
+
+    let resolver = resolvers.pop();
+    while (resolver) {
+      let { translationId, resolve, debugText } = resolver;
+      info(`Resolving promise for request (id:${translationId}): ${debugText}`);
+      resolve();
+
+      resolver = resolvers.pop();
+    }
+
+    return resolvedCount;
+  }
+
+  function resetPortData() {
+    if (resolveRequests() > 0) {
+      throw new Error(
+        "Attempt to collect port data with pending translation requests."
+      );
+    }
+
+    engineStatusCount = 0;
+    cancelCount = 0;
+    passthroughCount = 0;
+    cachedCount = 0;
+    requestCount = 0;
+  }
+
+  function collectPortData(resetCounters = true) {
+    info("Collecting data from port messages");
+    const portData = {
+      engineStatusCount,
+      cancelCount,
+      passthroughCount,
+      cachedCount,
+      requestCount,
+    };
+
+    if (resetCounters) {
+      resetPortData();
+    }
+
+    return portData;
   }
 
   const mockedTranslatorPort = {
     async postMessage(message) {
       switch (message.type) {
-        case "TranslationsPort:CancelSingleTranslation":
-          info("Canceling translation id:" + message.translationId);
-          canceledTranslations.add(message.translationId);
-          break;
-        case "TranslationsPort:GetEngineStatusRequest":
+        case "TranslationsPort:GetEngineStatusRequest": {
+          engineStatusCount++;
+
           mockedTranslatorPort.onmessage({
             data: {
               type: "TranslationsPort:GetEngineStatusResponse",
@@ -467,7 +506,88 @@ function createControlledTranslatorPort() {
             },
           });
           break;
+        }
+        case "TranslationsPort:CancelSingleTranslation": {
+          cancelCount++;
+
+          info("Canceling translation id:" + message.translationId);
+          canceledTranslations.add(message.translationId);
+          break;
+        }
+        case "TranslationsPort:Passthrough": {
+          passthroughCount++;
+
+          const { translationId } = message;
+
+          
+          let debugText = null;
+
+          info(
+            `Translation requested for (id:${translationId}): "${debugText}"`
+          );
+
+          const { promise, resolve } = Promise.withResolvers();
+
+          resolvers.push({ translationId, resolve, debugText });
+
+          info(
+            `Waiting for promise for (id:${translationId}) to resolve: "${debugText}`
+          );
+
+          await promise;
+
+          info(`Promise for (id:${translationId}) resolved: "${debugText}`);
+
+          mockedTranslatorPort.onmessage({
+            data: {
+              type: "TranslationsPort:TranslationResponse",
+              translationId,
+              targetText: null,
+            },
+          });
+
+          break;
+        }
+        case "TranslationsPort:CachedTranslation": {
+          cachedCount++;
+
+          const { cachedTranslation, translationId } = message;
+
+          
+          let debugText = cachedTranslation.trim().replaceAll("\n", "");
+          if (debugText.length > 50) {
+            debugText = debugText.slice(0, 50) + "...";
+          }
+
+          info(
+            `Translation requested for (id:${translationId}): "${debugText}"`
+          );
+
+          const { promise, resolve } = Promise.withResolvers();
+
+          resolvers.push({ translationId, resolve, debugText });
+
+          info(
+            `Waiting for promise for (id:${translationId}) to resolve: "${debugText}`
+          );
+
+          await promise;
+
+          info(`Promise for (id:${translationId}) resolved: "${debugText}`);
+
+          mockedTranslatorPort.onmessage({
+            data: {
+              type: "TranslationsPort:TranslationResponse",
+              translationId,
+              targetText: cachedTranslation,
+            },
+          });
+
+          break;
+        }
         case "TranslationsPort:TranslationRequest": {
+          requestCount++;
+
           const { translationId, sourceText } = message;
 
           
@@ -477,21 +597,31 @@ function createControlledTranslatorPort() {
           }
 
           info(
-            `Translation requested (id:${message.translationId}) "${debugText}"`
+            `Translation requested for (id:${translationId}): "${debugText}"`
           );
-          await resolvers.promise;
+
+          const { promise, resolve } = Promise.withResolvers();
+
+          resolvers.push({ translationId, resolve, debugText });
+
+          info(
+            `Waiting for promise for (id:${translationId}) to resolve: "${debugText}`
+          );
+
+          await promise;
+
+          info(`Promise for (id:${translationId}) resolved: "${debugText}`);
 
           if (canceledTranslations.has(translationId)) {
-            info("Cancelled translation id:" + translationId);
+            info(`Cancelled translation for request (id:${translationId})`);
           } else {
-            info(
-              "Translation completed, responding id:" + message.translationId
-            );
-            translationCount++;
+            info(`Translation completed for request (id:${translationId})`);
+
             const translatedDoc = parser.parseFromString(
               sourceText,
               "text/html"
             );
+
             diacriticizeNode(translatedDoc.body);
             const targetText =
               translatedDoc.body.innerHTML.trim() + ` (id:${translationId})`;
@@ -510,7 +640,7 @@ function createControlledTranslatorPort() {
     },
   };
 
-  return { mockedTranslatorPort, resolveRequests };
+  return { mockedTranslatorPort, resolveRequests, collectPortData };
 }
 
 
@@ -544,9 +674,11 @@ async function createTranslationsDoc(html, options) {
   
   document.body.style.display = "block";
 
+  let translationsDoc = null;
+
   const translate = () => {
     info("Creating the TranslationsDocument.");
-    return new TranslationsDocument(
+    translationsDoc = new TranslationsDocument(
       document,
       "en",
       "EN",
@@ -556,8 +688,12 @@ async function createTranslationsDoc(html, options) {
         throw new Error("Cannot request a new port");
       },
       options?.mockedReportVisibleChange ?? (() => {}),
-      new LRUCache()
+      new LRUCache(),
+      false
     );
+
+    translationsDoc.simulateIntersectionObservationForNonPendingNodes();
+    return translationsDoc;
   };
 
   
@@ -566,22 +702,164 @@ async function createTranslationsDoc(html, options) {
 
 
 
-  async function htmlMatches(message, html, element = document.body) {
-    const expected = naivelyPrettify(html);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  function expectedHtmlToRegex(html) {
+    
+    
+    const ESCAPABLE_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
+
+    
+    
+    const REGEX_LITERAL = /\{\{(.*?)\}\}/gsu;
+
+    
+    const ESCAPED_REGEX_LITERAL = /\\\{\\\{.*?\\\}\\\}/su;
+
+    
+    
+    const regexLiterals = [...html.matchAll(REGEX_LITERAL)].map(
+      match => match[1]
+    );
+
+    let pattern = html
+      
+      .replaceAll(ESCAPABLE_CHARACTERS, "\\$&")
+      
+      .replaceAll(/\s*</g, "\\s*<")
+      
+      .replaceAll(/>\s*/g, ">\\s*")
+      
+      .replaceAll(/\s\s+/g, "\\s+")
+      
+      .replace(/^\\s\+/, "\\s*")
+      
+      .replace(/\\s\+$/, "\\s*");
+
+    
+    
+    for (const regexLiteral of regexLiterals) {
+      pattern = pattern.replace(ESCAPED_REGEX_LITERAL, regexLiteral.trim());
+    }
+
+    return new RegExp(`^${pattern}$`, "su");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async function htmlMatches(
+    message,
+    expectedHtml,
+    sourceDoc = document,
+    resolveRequests
+  ) {
+    const prettyHtml = naivelyPrettify(expectedHtml);
+    const expected = expectedHtmlToRegex(expectedHtml);
+
+    let didSimulateIntersectionObservation = false;
+
     try {
-      await waitForCondition(
-        () => naivelyPrettify(element.innerHTML) === expected,
-        "Waiting for HTML to match."
-      );
+      await waitForCondition(async () => {
+        await waitForCondition(
+          () => !translationsDoc.hasPendingCallbackOnEventLoop()
+        );
+
+        while (
+          translationsDoc.hasPendingCallbackOnEventLoop() ||
+          translationsDoc.hasPendingTranslationRequests()
+        ) {
+          if (resolveRequests) {
+            
+            
+            await waitForCondition(
+              () =>
+                resolveRequests() ||
+                (!translationsDoc.hasPendingCallbackOnEventLoop() &&
+                  !translationsDoc.hasPendingTranslationRequests()),
+              "Manually resolving requests as they come in..."
+            );
+          } else {
+            
+            
+            
+            await waitForCondition(
+              () =>
+                !translationsDoc.hasPendingCallbackOnEventLoop() &&
+                !translationsDoc.hasPendingTranslationRequests(),
+              "Waiting for all requests to come in..."
+            );
+          }
+        }
+
+        await waitForCondition(
+          () => !translationsDoc.hasPendingCallbackOnEventLoop()
+        );
+
+        const actualHtml = naivelyPrettify(sourceDoc.body.innerHTML);
+        const htmlMatches = expected.test(actualHtml);
+
+        if (!htmlMatches && !didSimulateIntersectionObservation) {
+          
+          
+          
+          
+          
+          
+          
+          didSimulateIntersectionObservation = true;
+          translationsDoc.simulateIntersectionObservationForNonPendingNodes();
+        }
+
+        if (htmlMatches) {
+          await waitForCondition(
+            () =>
+              !translationsDoc.hasPendingCallbackOnEventLoop() &&
+              !translationsDoc.hasPendingTranslationRequests() &&
+              !translationsDoc.isObservingAnyElementForContentIntersection() &&
+              !translationsDoc.isObservingAnyElementForAttributeIntersection(),
+            "Ensuring that the entire document is translated."
+          );
+        }
+
+        return htmlMatches;
+      }, "Waiting for HTML to match.");
       ok(true, message);
     } catch (error) {
       console.error(error);
 
       
-      const actual = naivelyPrettify(element.innerHTML);
+      const actual = naivelyPrettify(sourceDoc.body.innerHTML);
       ok(
         false,
-        `${message}\n\nExpected HTML:\n\n${expected}\n\nActual HTML:\n\n${actual}\n\n`
+        `${message}\n\nExpected HTML:\n\n${
+          prettyHtml
+        }\n\nActual HTML:\n\n${actual}\n\n${String(error)}`
       );
     }
   }
