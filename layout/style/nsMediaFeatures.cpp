@@ -63,8 +63,16 @@ static nsSize GetSize(const Document& aDocument) {
 
 
 static nsSize GetDeviceSize(const Document& aDocument) {
+  nsPresContext* pc = aDocument.GetPresContext();
+
   if (aDocument.ShouldResistFingerprinting(RFPTarget::CSSDeviceSize)) {
-    return GetSize(aDocument);
+    nsSize size = GetSize(aDocument);
+    if (Gecko_MediaFeatures_GetDisplayMode(&aDocument) ==
+        StyleDisplayMode::Fullscreen) {
+      return size;
+    }
+    return nsRFPService::GetSpoofedScreenSize(
+        size, pc ? pc->GetDeviceFullZoom() : 1.0f);
   }
 
   
@@ -75,7 +83,6 @@ static nsSize GetDeviceSize(const Document& aDocument) {
     return CSSPixel::ToAppUnits(deviceSize.value());
   }
 
-  nsPresContext* pc = aDocument.GetPresContext();
   
   
   

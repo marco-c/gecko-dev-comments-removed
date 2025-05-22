@@ -16,26 +16,6 @@ var test = function (isContent) {
   }
 
   
-  
-  let pairs = [
-    ["screenX", 0],
-    ["screenY", 0],
-    ["mozInnerScreenX", 0],
-    ["mozInnerScreenY", 0],
-    ["screen.pixelDepth", 24],
-    ["screen.colorDepth", 24],
-    ["screen.availWidth", "outerWidth"],
-    ["screen.availHeight", "outerHeight"],
-    ["screen.left", 0],
-    ["screen.top", 0],
-    ["screen.availLeft", 0],
-    ["screen.availTop", 0],
-    ["screen.width", "outerWidth"],
-    ["screen.height", "outerHeight"],
-    ["devicePixelRatio", 2],
-  ];
-
-  
   let checkPair = function (a, b) {
     
     is(eval(a), eval(b), a + " should be equal to " + b);
@@ -57,6 +37,48 @@ var test = function (isContent) {
     SpecialPowers.pushPrefEnv(
       { set: [["privacy.resistFingerprinting", prefValue]] },
       function () {
+        let sizes = [
+          [1920, 1080],
+          [3840, 2160],
+          [7680, 4320],
+        ];
+        let screenSize;
+        for (let s of sizes) {
+          
+          screenSize = s;
+          if (window.outerWidth <= s[0] && window.outerHeight <= s[1]) {
+            break;
+          }
+        }
+
+        
+        let availOffset = 0;
+        if (SpecialPowers.Services.appinfo.OS == "WINNT") {
+          availOffset = 48;
+        } else if (SpecialPowers.Services.appinfo.OS == "Darwin") {
+          availOffset = 76;
+        }
+
+        
+        
+        let pairs = [
+          ["screenX", 0],
+          ["screenY", 0],
+          ["mozInnerScreenX", 0],
+          ["mozInnerScreenY", 0],
+          ["screen.pixelDepth", 24],
+          ["screen.colorDepth", 24],
+          ["screen.availWidth", screenSize[0]],
+          ["screen.availHeight", screenSize[1] - availOffset],
+          ["screen.left", 0],
+          ["screen.top", 0],
+          ["screen.availLeft", 0],
+          ["screen.availTop", 0],
+          ["screen.width", screenSize[0]],
+          ["screen.height", screenSize[1]],
+          ["devicePixelRatio", 2],
+        ];
+
         
         
         let resisting = prefValue && isContent;
