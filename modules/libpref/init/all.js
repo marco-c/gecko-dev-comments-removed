@@ -3440,11 +3440,7 @@ pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.removeEngineInfobar.enabled", true);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("browser.search.rustSelector.featureGate", true);
-#else
-  pref("browser.search.rustSelector.featureGate", false);
-#endif
+pref("browser.search.rustSelector.featureGate", true);
 
 
 
