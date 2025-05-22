@@ -263,10 +263,26 @@ class WalkerSearch {
   }
 
   _searchSelectors(query, options, results) {
+    if (!options.types.includes("selector")) {
+      return;
+    }
+
     
     
-    const isSelector = query && query.match(/[ >~.#\[\]]/);
-    if (!options.types.includes("selector") || !isSelector) {
+    if (
+      
+      query.match(/^[a-z]+$/i) ||
+      
+      InspectorUtils.isCustomElementName(
+        query,
+        this.walker.targetActor.window.document.documentElement.namespaceURI
+      )
+    ) {
+      return;
+    }
+
+    
+    if (!CSS.supports(`selector(${query})`)) {
       return;
     }
 
