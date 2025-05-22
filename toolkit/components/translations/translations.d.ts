@@ -256,7 +256,7 @@ interface TranslationsEnginePayload {
 
 
 
-export type NodeVisibility = "in-viewport" | "out-of-viewport" | "hidden";
+export type NodeVisibility = "in-viewport" | "beyond-viewport" | "hidden";
 
 
 
@@ -383,19 +383,30 @@ export type RequestTranslationsPort = (
   languagePair: LanguagePair
 ) => Promise<MessagePort>;
 
-export type TranslationsPortMessages = {
-  type: "TranslationsPort:TranslationRequest";
-  translationId: string;
-  sourceText: string;
-  isHTML: boolean;
-};
+export type TranslationsPortMessages =
+  
+  | { type: "TranslationsPort:Passthrough"; translationId: string }
+  
+  | {
+      type: "TranslationsPort:CachedTranslation";
+      translationId: string;
+      targetText: string;
+    }
+  
+  | {
+      type: "TranslationsPort:TranslationRequest";
+      translationId: string;
+      sourceText: string;
+      isHTML: boolean;
+    };
 
 export type EngineStatus = "uninitialized" | "ready" | "error" | "closed";
 
 export type PortToPage =
+  
   | {
       type: "TranslationsPort:TranslationResponse";
-      targetText: string;
+      targetText: string | null;
       translationId: number;
     }
   | { type: "TranslationsPort:GetEngineStatusResponse"; status: EngineStatus }
