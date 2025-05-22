@@ -99,6 +99,7 @@ add_task(async function test_enroll_optin_recipe_branch_selection() {
   
   sandbox.stub(manager, "_enroll").returns(true);
 
+  await manager.store.init();
   await manager.onStartup();
 
   const optInRecipe = NimbusTestUtils.factories.recipe("opt-in-recipe", {
@@ -148,6 +149,7 @@ add_task(async function test_setExperimentActive_recordEnrollment_called() {
   sandbox.spy(NimbusTelemetry, "setExperimentActive");
   sandbox.spy(NimbusTelemetry, "recordEnrollment");
 
+  await manager.store.init();
   await manager.onStartup();
 
   
@@ -221,6 +223,7 @@ add_task(async function test_setRolloutActive_recordEnrollment_called() {
   sandbox.spy(NimbusTelemetry, "setExperimentActive");
   sandbox.spy(NimbusTelemetry, "recordEnrollment");
 
+  await manager.store.init();
   await manager.onStartup();
 
   
