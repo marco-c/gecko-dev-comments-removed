@@ -15,7 +15,13 @@
 
 
 
-async function openContextMenu(browser, videoID) {
+
+
+async function openContextMenu(
+  browser,
+  videoID,
+  modifiers = { type: "contextmenu", button: 2 }
+) {
   let contextMenu = document.getElementById("contentAreaContextMenu");
   let popupShownPromise = BrowserTestUtils.waitForEvent(
     contextMenu,
@@ -23,7 +29,7 @@ async function openContextMenu(browser, videoID) {
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "#" + videoID,
-    { type: "contextmenu", button: 2 },
+    modifiers,
     browser
   );
   await popupShownPromise;
@@ -48,11 +54,7 @@ async function closeContextMenu(contextMenu) {
   await popupHiddenPromise;
 }
 
-
-
-
-
-add_task(async () => {
+async function runTaskOpenClosePiPWithContextMenu(isCtrlClick = false) {
   for (const videoId of ["with-controls", "no-controls"]) {
     info(`Testing ${videoId} case.`);
 
@@ -62,7 +64,16 @@ add_task(async () => {
         gBrowser,
       },
       async browser => {
-        let contextMenu = await openContextMenu(browser, videoId);
+        let contextMenu;
+
+        if (!isCtrlClick) {
+          contextMenu = await openContextMenu(browser, videoId);
+        } else {
+          contextMenu = await openContextMenu(browser, videoId, {
+            type: "contextmenu",
+            shiftKey: true,
+          });
+        }
 
         info("Context menu is open.");
 
@@ -104,6 +115,22 @@ add_task(async () => {
         });
       }
     );
+  }
+}
+
+
+
+
+
+add_task(async () => {
+  
+  await runTaskOpenClosePiPWithContextMenu();
+
+  
+  let isMac = AppConstants.platform == "macosx";
+  if (isMac) {
+    info("Mac detected. Testing with ctrl + click");
+    await runTaskOpenClosePiPWithContextMenu(isMac);
   }
 });
 
