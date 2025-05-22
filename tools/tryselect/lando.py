@@ -471,3 +471,5 @@ def push_to_lando_try(
     
     if duration > 30:
         build.notify(success_msg)
+
+    return job_id
