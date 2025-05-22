@@ -1325,6 +1325,27 @@ class MockedA11yUtils {
   }
 }
 
+
+
+
+
+
+
+
+
+
+async function ensureWindowSize(win, width, height) {
+  if (win.outerWidth < width + 50 && win.outerHeight < height + 50) {
+    return;
+  }
+
+  const resizePromise = BrowserTestUtils.waitForEvent(win, "resize");
+
+  win.resizeTo(width, height);
+
+  await resizePromise;
+}
+
 async function loadTestPage({
   languagePairs,
   endToEndTest = false,
@@ -1350,6 +1371,8 @@ async function loadTestPage({
   const restoreA11yUtils = MockedA11yUtils.mockForWindow(win);
 
   if (isFirstTimeSetup) {
+    await ensureWindowSize(win, 1000, 600);
+
     
     await EngineProcess.destroyTranslationsEngine();
 
