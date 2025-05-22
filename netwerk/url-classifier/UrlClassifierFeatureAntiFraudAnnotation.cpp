@@ -97,6 +97,7 @@ UrlClassifierFeatureAntiFraudAnnotation::MaybeCreate(nsIChannel* aChannel) {
   }
 
   
+  
   if (!StaticPrefs::privacy_trackingprotection_fingerprinting_enabled()) {
     return nullptr;
   }
