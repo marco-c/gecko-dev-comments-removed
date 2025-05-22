@@ -1490,7 +1490,7 @@ nsRegion FilterInstance::GetPreFilterNeededArea(
                            true, nullptr, tm,
                           &aPostFilterDirtyRegion);
   if (!instance.IsInitialized()) {
-    return aPostFilterDirtyRegion;
+    return nsRect();
   }
 
   
