@@ -249,7 +249,9 @@ async def test_page_with_cached_link_stylesheet(
     )
 
     
-    await bidi_session.browsing_context.reload(context=top_context["context"])
+    await bidi_session.browsing_context.reload(
+        context=top_context["context"], wait="complete"
+    )
 
     
     wait = AsyncPoll(bidi_session, timeout=2)
@@ -324,7 +326,9 @@ async def test_page_with_cached_import_stylesheet(
     )
 
     
-    await bidi_session.browsing_context.reload(context=top_context["context"])
+    await bidi_session.browsing_context.reload(
+        context=top_context["context"], wait="complete"
+    )
 
     
     wait = AsyncPoll(bidi_session, timeout=2)
@@ -418,7 +422,9 @@ async def test_page_with_cached_duplicated_stylesheets(
     )
 
     
-    await bidi_session.browsing_context.reload(context=top_context["context"])
+    await bidi_session.browsing_context.reload(
+        context=top_context["context"], wait="complete"
+    )
 
     
     wait = AsyncPoll(bidi_session, timeout=2)
@@ -491,7 +497,9 @@ async def test_page_with_cached_script_javascript(
     )
 
     
-    await bidi_session.browsing_context.reload(context=top_context["context"])
+    await bidi_session.browsing_context.reload(
+        context=top_context["context"], wait="complete"
+    )
 
     
     wait = AsyncPoll(bidi_session, timeout=2)
@@ -622,7 +630,9 @@ async def test_page_with_cached_javascript_module(
     )
 
     
-    await bidi_session.browsing_context.reload(context=top_context["context"])
+    await bidi_session.browsing_context.reload(
+        context=top_context["context"], wait="complete"
+    )
 
     
     wait = AsyncPoll(bidi_session, timeout=2)
@@ -727,7 +737,9 @@ async def test_page_with_cached_image(
     )
 
     
-    await bidi_session.browsing_context.reload(context=top_context["context"])
+    await bidi_session.browsing_context.reload(
+        context=top_context["context"], wait="complete"
+    )
 
     
     wait = AsyncPoll(bidi_session, timeout=2)
