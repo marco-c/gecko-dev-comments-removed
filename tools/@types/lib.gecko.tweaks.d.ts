@@ -131,3 +131,13 @@ interface XULBrowserElement extends XULFrameElement, FrameLoader {
 interface Localization {
   formatValuesSync(aKeys: L10nKey[]): (string | null)[];
 }
+
+
+
+
+
+
+
+interface DOMStringMap {
+  [name: string]: string | undefined;
+}
