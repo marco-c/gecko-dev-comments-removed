@@ -48,7 +48,8 @@ using CompleteTier2Listener = RefPtr<JS::OptimizedEncodingListener>;
 
 
 
-void ReportTier2ResultsOffThread(bool success, Maybe<uint32_t> maybeFuncIndex,
+void ReportTier2ResultsOffThread(bool cancelled, bool success,
+                                 Maybe<uint32_t> maybeFuncIndex,
                                  const ScriptedCaller& scriptedCaller,
                                  const UniqueChars& error,
                                  const UniqueCharsVector& warnings);
