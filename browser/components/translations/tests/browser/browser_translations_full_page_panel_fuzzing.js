@@ -225,6 +225,7 @@ add_task(async function test_translations_panel_fuzzing() {
   for (let i = 0; i < fuzzSteps; i++) {
     
     
+    
     while (true) {
       const operation = opsArray[Math.floor(Math.random() * opsArray.length)];
       if (await operation()) {
