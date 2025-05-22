@@ -19,7 +19,7 @@ add_task(async function test_toggle_always_translate_language_menuitem() {
     "The translations button is visible."
   );
 
-  await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+  await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
   await FullPageTranslationsTestUtils.openPanel({
     expectedFromLanguage: "es",
@@ -79,7 +79,7 @@ add_task(async function test_toggle_always_translate_language_menuitem() {
     "Only the button appears"
   );
 
-  await FullPageTranslationsTestUtils.assertPageIsUntranslated(runInPage);
+  await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
   await cleanup();
 });
