@@ -311,8 +311,16 @@ var InterventionHelpers = {
     if (min_version && firefoxVersion < min_version) {
       return true;
     }
-    if (max_version && firefoxVersion > max_version) {
-      return true;
+    if (max_version) {
+      
+      
+      if (String(max_version).includes(".")) {
+        if (firefoxVersion > max_version) {
+          return true;
+        }
+      } else if (Math.floor(firefoxVersion) > max_version) {
+        return true;
+      }
     }
     if (skip_if) {
       try {
