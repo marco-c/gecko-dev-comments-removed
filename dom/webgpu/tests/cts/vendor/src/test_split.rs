@@ -181,6 +181,7 @@ impl<'a> Entry<'a> {
 
 
 pub(crate) fn assert_seen<'a>(
+    what: &'static str,
     entries: impl Iterator<Item = (&'a &'a str, &'a Entry<'a>)>,
     mut in_: impl FnMut(&'a SeenIn) -> &'a bool,
 ) {
@@ -194,9 +195,9 @@ pub(crate) fn assert_seen<'a>(
         panic!(
             concat!(
                 "did not find the following test split config. entries ",
-                "in test listing output: {:#?}",
+                "in {}: {:#?}",
             ),
-            unseen
+            what, unseen
         );
     }
 }
