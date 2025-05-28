@@ -57,8 +57,9 @@ void fillAbortMessage(char (&msg)[N], uintptr_t retAddress) {
 }
 #endif
 
-#if defined(XP_UNIX) && !defined(MOZ_ASAN) && !defined(MOZ_TSAN) && \
-    !defined(MOZ_UBSAN)
+#if defined(XP_UNIX) && !defined(MOZ_ASAN) && !defined(MOZ_TSAN) &&    \
+    !defined(MOZ_UBSAN) && !defined(LIBFUZZER) && !defined(AFLFUZZ) && \
+    !defined(FUZZING_JS_FUZZILLI)
 
 
 
