@@ -18,6 +18,8 @@ add_setup(async function () {
     set: [
       ["browser.urlbar.showSearchTerms.featureGate", true],
       ["browser.urlbar.scotchBonnet.enableOverride", true],
+      
+      ["extensions.pocket.enabled", true],
     ],
   });
   let cleanup = await installPersistTestEngines();
