@@ -2220,23 +2220,6 @@ CSSToLayoutDeviceScale nsIWidget::GetFallbackDefaultScale() {
   return s->GetCSSToLayoutDeviceScale(Screen::IncludeOSZoom::No);
 }
 
-nsresult nsIWidget::ClearNativeTouchSequence(nsIObserver* aObserver) {
-  AutoObserverNotifier notifier(aObserver, "cleartouch");
-
-  
-  
-  
-  if (!mLongTapTimer) {
-    return NS_OK;
-  }
-  mLongTapTimer->Cancel();
-  mLongTapTimer = nullptr;
-  SynthesizeNativeTouchPoint(mLongTapTouchPoint->mPointerId, TOUCH_CANCEL,
-                             mLongTapTouchPoint->mPosition, 0, 0, nullptr);
-  mLongTapTouchPoint = nullptr;
-  return NS_OK;
-}
-
 MultiTouchInput nsBaseWidget::UpdateSynthesizedTouchState(
     MultiTouchInput* aState, mozilla::TimeStamp aTimeStamp, uint32_t aPointerId,
     TouchPointerState aPointerState, LayoutDeviceIntPoint aPoint,
