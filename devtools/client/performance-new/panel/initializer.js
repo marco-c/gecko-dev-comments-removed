@@ -133,9 +133,29 @@ async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
   
 
 
-  const onProfileReceived = async ({ profile, additionalInformation }) => {
+
+  const onProfileReceived = async (profileAndAdditionalInformation, error) => {
     const objdirs = selectors.getObjdirs(store.getState());
     const profilerViewMode = getProfilerViewModeForCurrentPreset(pageContext);
+    const browser = await openProfilerTab({ profilerViewMode });
+
+    if (error || !profileAndAdditionalInformation) {
+      if (!error) {
+        error =
+          "No profile data has been passed to onProfileReceived, and no specific error has been specified. This is unexpected.";
+      }
+      
+
+
+      const profileCaptureResult = {
+        type: "ERROR",
+        error: typeof error === "string" ? new Error(error) : error,
+      };
+      registerProfileCaptureForBrowser(browser, profileCaptureResult, null);
+      return;
+    }
+
+    const { profile, additionalInformation } = profileAndAdditionalInformation;
     const sharedLibraries = additionalInformation?.sharedLibraries ?? [];
     if (!sharedLibraries.length) {
       console.error(
@@ -147,7 +167,6 @@ async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
       objdirs,
       perfFront
     );
-    const browser = await openProfilerTab({ profilerViewMode });
 
     
 

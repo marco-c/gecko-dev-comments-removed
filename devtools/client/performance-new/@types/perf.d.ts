@@ -215,7 +215,8 @@ export interface SymbolicationService {
 
 
 export type OnProfileReceived = (
-  profileAndAdditionalInformation: ProfileAndAdditionalInformation
+  profileAndAdditionalInformation: ProfileAndAdditionalInformation | null,
+  error?: Error | string
 ) => void;
 
 
@@ -643,7 +644,7 @@ export class ProfilerWebChannel {
 
 export type ProfilerBrowserInfo = {
   profileCaptureResult: ProfileCaptureResult;
-  symbolicationService: SymbolicationService;
+  symbolicationService: SymbolicationService | null;
 };
 
 export type ProfileCaptureResult =

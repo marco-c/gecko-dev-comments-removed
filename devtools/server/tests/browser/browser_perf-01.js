@@ -78,7 +78,26 @@ add_task(async function () {
     "The profiler was stopped and the profile discarded."
   );
 
-  
+  await front.destroy();
+  await client.close();
+});
+
+add_task(async function test_error_case() {
+  const { front, client } = await initPerfFront();
+
+  try {
+    
+    
+    await front.getProfileAndStopProfiler();
+    ok(false, "Getting the profile should fail");
+  } catch (e) {
+    Assert.stringContains(
+      e.message,
+      "The profiler is not active.",
+      "The error contains the expected error message."
+    );
+  }
+
   await front.destroy();
   await client.close();
 });
