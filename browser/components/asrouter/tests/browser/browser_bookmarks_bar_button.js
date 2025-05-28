@@ -228,7 +228,7 @@ add_task(async function test_bookmarks_bar_button_experiment_update() {
   ok(doc.querySelector(buttonSelector), "Bookmarks Bar Button exists");
 
   
-  cleanup();
+  await cleanup();
 
   
   await TestUtils.waitForCondition(
