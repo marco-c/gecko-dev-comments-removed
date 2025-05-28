@@ -46,7 +46,11 @@ export interface Commands {
   client: any;
   targetCommand: {
     targetFront: {
-      getTrait: (traitName: string) => unknown;
+      
+      getTrait(
+        traitName: "useBulkTransferForPerformanceProfile"
+      ): boolean | undefined;
+      getTrait(traitName: string): unknown;
     };
   };
 }
@@ -84,6 +88,13 @@ export interface PreferenceFront {
 }
 
 export interface RootTraits {
+  
+  
+  
+  
+  useBulkTransferForPerformanceProfile?: boolean;
+
+  
   
 }
 

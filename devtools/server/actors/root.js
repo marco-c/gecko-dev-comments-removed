@@ -144,6 +144,9 @@ class RootActor extends Actor {
       
       
       supportsEnableWindowGlobalThreadActors: true,
+      
+      
+      useBulkTransferForPerformanceProfile: true,
     };
   }
 
