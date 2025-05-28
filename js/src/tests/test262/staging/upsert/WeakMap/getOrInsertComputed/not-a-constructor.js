@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(WeakMap.prototype.getOrInsertComputed),
+  false,
+  'isConstructor(WeakMap.prototype.getOrInsertComputed) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let wm = new WeakMap(); new wm.getOrInsertComputed({}, () => 1);
+});
+
+
+reportCompare(0, 0);

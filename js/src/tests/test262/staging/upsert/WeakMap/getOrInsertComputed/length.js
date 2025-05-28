@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(WeakMap.prototype.getOrInsertComputed, "length", {
+  value: 2,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+
+reportCompare(0, 0);

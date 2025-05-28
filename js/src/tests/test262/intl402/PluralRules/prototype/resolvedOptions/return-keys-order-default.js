@@ -10,6 +10,7 @@
 const allKeys = [
     'locale',
     'type',
+    'notation',
     'minimumIntegerDigits',
     'minimumFractionDigits',
     'maximumFractionDigits',

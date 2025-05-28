@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Map.prototype.getOrInsert, "name", {
+  value: "getOrInsert",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+
+reportCompare(0, 0);

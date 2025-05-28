@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+assert.sameValue(stack.defer(_ => {}), undefined);
+
+reportCompare(0, 0);

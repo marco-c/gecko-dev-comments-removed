@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+
+assert.sameValue(stack.disposed, false);
+
+reportCompare(0, 0);

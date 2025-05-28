@@ -1,0 +1,9 @@
+
+
+
+
+globalThis.executionStarted();
+
+export let x = 1;
+
+await globalThis.promise;

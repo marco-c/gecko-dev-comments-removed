@@ -1,0 +1,61 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+assert.throws(TypeError, function() {
+  stack.use({ [Symbol.dispose]: undefined });
+}, 'true');
+
+reportCompare(0, 0);

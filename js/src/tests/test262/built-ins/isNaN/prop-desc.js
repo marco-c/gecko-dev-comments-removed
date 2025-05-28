@@ -8,7 +8,7 @@
 
 
 
-verifyProperty(this, "isNaN", {
+verifyPrimordialCallableProperty(this, "isNaN", "isNaN", 1, {
   writable: true,
   enumerable: false,
   configurable: true

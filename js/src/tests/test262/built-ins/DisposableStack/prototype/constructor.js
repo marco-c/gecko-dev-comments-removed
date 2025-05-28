@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var actual = Object.prototype.hasOwnProperty.call(DisposableStack, 'constructor');
+
+
+if (actual) {
+  verifyProperty(DisposableStack.prototype, 'constructor', {
+    value: DisposableStack,
+    writable: true,
+    enumerable: false,
+    configurable: true
+  });
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+var resource = {
+    disposed: false,
+    [Symbol.dispose]() {
+        this.disposed = true;
+    }
+};
+stack.use(resource);
+stack.dispose();
+assert.sameValue(resource.disposed, true, 'Expected resource to have been disposed');
+
+reportCompare(0, 0);

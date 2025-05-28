@@ -12,6 +12,7 @@ let optionKeys = [
     
     "localeMatcher",
     "type",
+    "notation",
     
         "minimumIntegerDigits",
         "minimumFractionDigits",

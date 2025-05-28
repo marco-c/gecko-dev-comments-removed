@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof WeakMap.prototype.getOrInsert,
+  'function',
+  'typeof WeakMap.prototype.getOrInsert is "function"'
+);
+
+verifyProperty(WeakMap.prototype, "getOrInsert", {
+  value: WeakMap.prototype.getOrInsert,
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+
+reportCompare(0, 0);

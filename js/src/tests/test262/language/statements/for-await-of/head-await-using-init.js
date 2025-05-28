@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+async function fn() {
+  const obj = { async [Symbol.asyncDispose]() {} };
+  for await (await using x = obj of []) {}
+}

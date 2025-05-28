@@ -17,7 +17,7 @@
 
 
 function asyncTest(testFunc) {
-  if (!Object.hasOwn(globalThis, "$DONE")) {
+  if (!Object.prototype.hasOwnProperty.call(globalThis, "$DONE")) {
     throw new Test262Error("asyncTest called without async flag");
   }
   if (typeof testFunc !== "function") {

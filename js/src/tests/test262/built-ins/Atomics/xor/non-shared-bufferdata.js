@@ -14,8 +14,8 @@ testWithAtomicsFriendlyTypedArrayConstructors(TA => {
     new ArrayBuffer(TA.BYTES_PER_ELEMENT * 4)
   );
 
-  assert.sameValue(Atomics.and(view, 0, 1), 0, 'Atomics.and(view, 0, 1) returns 0');
-  assert.sameValue(Atomics.load(view, 0), 0, 'Atomics.load(view, 0) returns 0');
+  assert.sameValue(Atomics.xor(view, 0, 1), 0, 'Atomics.xor(view, 0, 1) returns 0');
+  assert.sameValue(Atomics.load(view, 0), 1, 'Atomics.load(view, 0) returns 1');
 });
 
 reportCompare(0, 0);

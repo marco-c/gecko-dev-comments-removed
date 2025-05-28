@@ -10,18 +10,16 @@
 
 
 
+assert.sameValue(
+  new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", "gregory").yearOfWeek,
+  undefined,
+  "Gregorian calendar does not provide week numbers"
+);
 
-
-let calendar = "gregory";
-
-
-const date = new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", calendar);
-
-assert.sameValue(date.yearOfWeek, 2024);
-
-calendar = "hebrew";
-const nonisodate = new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", calendar);
-
-assert.sameValue(nonisodate.yearOfWeek, undefined);
+assert.sameValue(
+  new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", "hebrew").yearOfWeek,
+  undefined,
+  "Hebrew calendar does not provide week numbers"
+);
 
 reportCompare(0, 0);

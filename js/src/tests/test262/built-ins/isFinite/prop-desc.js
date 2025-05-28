@@ -8,7 +8,7 @@
 
 
 
-verifyProperty(this, "isFinite", {
+verifyPrimordialCallableProperty(this, "isFinite", "isFinite", 1, {
   writable: true,
   enumerable: false,
   configurable: true

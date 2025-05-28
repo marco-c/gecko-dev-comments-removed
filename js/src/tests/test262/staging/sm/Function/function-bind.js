@@ -261,9 +261,7 @@ function testBound(fun)
 testBound(strict);
 testBound(nonstrict);
 
-var nativeFunctionRegex = /^function\s*\(\)\s*{\s*\[native code\]\s*}$/
-assert.sameValue(nativeFunctionRegex.test((function unbound(){"body"}).bind().toString()), true);
-
+assertNativeFunction((function unbound(){"body"}).bind());
 
 
 var passim = function p(){}.bind(1);

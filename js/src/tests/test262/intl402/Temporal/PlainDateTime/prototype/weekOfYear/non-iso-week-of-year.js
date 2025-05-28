@@ -10,16 +10,16 @@
 
 
 
+assert.sameValue(
+  new Temporal.PlainDateTime(2024, 1, 1, 12, 34, 56, 987, 654, 321, "gregory").weekOfYear,
+  undefined,
+  "Gregorian calendar does not provide week numbers"
+);
 
-
-let calendar = "gregory";
-const date = new Temporal.PlainDateTime(2024, 1, 1, 12, 34, 56, 987, 654, 321, calendar);
-
-assert.sameValue(date.weekOfYear, 1);
-
-calendar = "hebrew";
-const nonisodate = new Temporal.PlainDateTime(2024, 1, 1, 12, 34, 56, 987, 654, 321, calendar);
-
-assert.sameValue(nonisodate.weekOfYear, undefined);
+assert.sameValue(
+  new Temporal.PlainDateTime(2024, 1, 1, 12, 34, 56, 987, 654, 321, "hebrew").weekOfYear,
+  undefined,
+  "Hebrew calendar does not provide week numbers"
+);
 
 reportCompare(0, 0);

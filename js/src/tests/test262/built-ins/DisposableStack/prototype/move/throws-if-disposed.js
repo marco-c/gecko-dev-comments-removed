@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+stack.dispose();
+
+assert.throws(ReferenceError, function() {
+  stack.move();
+}, 'undefined');
+
+reportCompare(0, 0);

@@ -14,8 +14,8 @@ testWithNonAtomicsFriendlyTypedArrayConstructors(TA => {
   const view = new TA(buffer);
 
   assert.throws(TypeError, function() {
-    Atomics.and(view, 0, 1);
-  }, `Atomics.and(new ${TA.name}(buffer), 0, 1) throws TypeError`);
+    Atomics.xor(view, 0, 1);
+  }, `Atomics.xor(new ${TA.name}(buffer), 0, 1) throws TypeError`);
 });
 
 reportCompare(0, 0);

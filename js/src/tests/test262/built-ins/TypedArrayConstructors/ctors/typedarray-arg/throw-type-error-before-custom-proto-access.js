@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var newTarget = function () {}.bind(null);
+Object.defineProperty(newTarget, "prototype", {
+  get() {
+    throw new Test262Error();
+  },
+});
+
+testWithTypedArrayConstructors(function (TA) {
+  assert.throws(TypeError, function () {
+    Reflect.construct(TA, [Symbol()], newTarget);
+  });
+});
+
+reportCompare(0, 0);

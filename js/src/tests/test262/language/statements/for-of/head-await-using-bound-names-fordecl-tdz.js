@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await assert.throwsAsync(ReferenceError, async function() {
+    let x = { async [Symbol.asyncDispose]() { } };
+    for (await using x of [x]) {}
+  });
+});
