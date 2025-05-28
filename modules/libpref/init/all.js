@@ -3870,12 +3870,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("marionette.port", 2828);
 
   
-  
-  
-  
-  pref("remote.active-protocols", 1);
-
-  
   #if defined(NIGHTLY_BUILD)
     pref("remote.experimental.enabled", true);
   #else

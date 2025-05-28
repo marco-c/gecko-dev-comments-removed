@@ -107,8 +107,6 @@ class FirefoxWebDriver(WebDriver):
         
         prefs[SYSTEM_ADDON_UPDATES_PREF] = False
 
-        
-        
         cookieBehavior = 4 if test_config.get("without_tcp") else 5
         prefs[CB_PREF] = cookieBehavior
         prefs[CB_PBM_PREF] = cookieBehavior

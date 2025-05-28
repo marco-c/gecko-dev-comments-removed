@@ -7,7 +7,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_navigator_webdriver_enabled(inline, browser):
     
-    current_browser = browser(use_bidi=True, extra_prefs={"remote.active-protocols": 1})
+    current_browser = browser(use_bidi=True)
     server_host = current_browser.remote_agent_host
     server_port = current_browser.remote_agent_port
 

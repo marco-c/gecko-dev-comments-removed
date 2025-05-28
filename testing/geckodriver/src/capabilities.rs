@@ -323,6 +323,7 @@ impl BrowserCapabilities for FirefoxCapabilities<'_> {
                     ));
                 }
             }
+            
             "moz:debuggerAddress" => {
                 if !value.is_boolean() {
                     return Err(WebDriverError::new(
