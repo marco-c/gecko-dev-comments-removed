@@ -79,6 +79,32 @@ class TextDirectiveCreator {
   static Result<UniquePtr<TextDirectiveCreator>, ErrorResult> CreateInstance(
       Document& aDocument, AbstractRange* aRange);
 
+  
+
+
+
+
+  virtual Result<Ok, ErrorResult> CollectContextTerms() = 0;
+
+  
+
+
+  Result<Ok, ErrorResult> CollectPrefixContextTerm();
+
+  
+
+
+  Result<Ok, ErrorResult> CollectSuffixContextTerm();
+
+  nsString mPrefixContent;
+  nsString mPrefixFoldCaseContent;
+
+  nsString mStartContent;
+  nsString mStartFoldCaseContent;
+
+  nsString mSuffixContent;
+  nsString mSuffixFoldCaseContent;
+
   Document& mDocument;
   RefPtr<AbstractRange> mRange;
 
@@ -100,6 +126,10 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
  private:
   using TextDirectiveCreator::TextDirectiveCreator;
 
+  Result<Ok, ErrorResult> CollectContextTerms() override;
+
+  nsString mEndContent;
+  nsString mEndFoldCaseContent;
 };
 
 
@@ -109,6 +139,8 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
 class ExactMatchTextDirectiveCreator : public TextDirectiveCreator {
  private:
   using TextDirectiveCreator::TextDirectiveCreator;
+
+  Result<Ok, ErrorResult> CollectContextTerms() override;
 
 };
 }  
