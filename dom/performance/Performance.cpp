@@ -590,22 +590,38 @@ static std::string GetMarkerFilename() {
   return s.str();
 }
 
-std::pair<TimeStamp, TimeStamp> Performance::GetTimeStampsForMarker(
+Maybe<std::pair<TimeStamp, TimeStamp>> Performance::GetTimeStampsForMarker(
     const Maybe<const nsAString&>& aStartMark,
     const Optional<nsAString>& aEndMark,
-    const Maybe<const PerformanceMeasureOptions&>& aOptions, ErrorResult& aRv) {
+    const Maybe<const PerformanceMeasureOptions&>& aOptions) {
+  ErrorResult err;
   const DOMHighResTimeStamp unclampedStartTime = ResolveStartTimeForMeasure(
-      aStartMark, aOptions, aRv,  true);
+      aStartMark, aOptions, err,  true);
   const DOMHighResTimeStamp unclampedEndTime =
-      ResolveEndTimeForMeasure(aEndMark, aOptions, aRv, 
-                               true);
+      ResolveEndTimeForMeasure(aEndMark, aOptions, 
+                               err, true);
+
+  if (err.Failed()) {
+    return Nothing();
+  }
+
+  
+  
+  
+  
+  
+  
+  static constexpr double kMaxFuture_ms = 31536000000.0;
+  if (unclampedStartTime > kMaxFuture_ms || unclampedEndTime > kMaxFuture_ms) {
+    return Nothing();
+  }
 
   TimeStamp startTimeStamp =
       CreationTimeStamp() + TimeDuration::FromMilliseconds(unclampedStartTime);
   TimeStamp endTimeStamp =
       CreationTimeStamp() + TimeDuration::FromMilliseconds(unclampedEndTime);
 
-  return std::make_pair(startTimeStamp, endTimeStamp);
+  return Some(std::make_pair(startTimeStamp, endTimeStamp));
 }
 
 
@@ -679,13 +695,12 @@ void Performance::MaybeEmitExternalProfilerMarker(
   }
 
 #if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
-  ErrorResult rv;
-  auto [startTimeStamp, endTimeStamp] =
-      GetTimeStampsForMarker(aStartMark, aEndMark, aOptions, rv);
-
-  if (NS_WARN_IF(rv.Failed())) {
+  Maybe<std::pair<TimeStamp, TimeStamp>> tsPair =
+      GetTimeStampsForMarker(aStartMark, aEndMark, aOptions);
+  if (tsPair.isNothing()) {
     return;
   }
+  auto [startTimeStamp, endTimeStamp] = tsPair.value();
 #endif
 
 #ifdef XP_LINUX
@@ -728,9 +743,12 @@ void MOZ_NEVER_INLINE Performance::AddProfileMarker(
     const Maybe<const PerformanceMeasureOptions&>& options,
     const Maybe<const nsAString&>& aStartMark,
     const Optional<nsAString>& aEndMark) {
-  ErrorResult rv;
-  auto [startTimeStamp, endTimeStamp] =
-      GetTimeStampsForMarker(aStartMark, aEndMark, options, rv);
+  Maybe<std::pair<TimeStamp, TimeStamp>> tsPair =
+      GetTimeStampsForMarker(aStartMark, aEndMark, options);
+  if (tsPair.isNothing()) {
+    return;
+  }
+  auto [startTimeStamp, endTimeStamp] = tsPair.value();
 
   Maybe<nsString> endMark;
   if (aEndMark.WasPassed()) {
