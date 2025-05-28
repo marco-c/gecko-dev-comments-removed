@@ -525,11 +525,31 @@ class Longhand(Property):
             return False
         
         return self.predefined_type in {
+            "BorderSpacing",
+            "FontSize",
+            "Inset",
             "Length",
             "LengthPercentage",
-            "FontSize",
+            "LengthPercentageOrAuto",
+            "LetterSpacing",
             "LineHeight",
+            "LineWidth",
+            "MaxSize",
+            "NonNegativeLength",
+            "NonNegativeLengthOrAuto",
+            "NonNegativeLengthOrNumber",
+            "NonNegativeLengthOrNumberRect",
+            "NonNegativeLengthPercentage",
+            "NonNegativeLengthPercentageOrNormal",
+            "Position",
+            "PositionOrAuto",
+            "SimpleShadow",
             "Size",
+            "SVGLength",
+            "SVGStrokeDashArray",
+            "SVGWidth",
+            "TextDecorationLength",
+            "TextIndent",
             "WordSpacing",
         }
 
