@@ -70,20 +70,6 @@ class nsCanvasFrame final : public nsContainerFrame,
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                 uint32_t aFilter) override;
 
-  Element* GetCustomContentContainer() const { return mCustomContentContainer; }
-
-  
-
-
-
-  void ShowCustomContentContainer();
-
-  
-
-
-
-  void HideCustomContentContainer();
-
   
 
 
@@ -109,7 +95,6 @@ class nsCanvasFrame final : public nsContainerFrame,
   bool mDoPaintFocus;
   bool mAddedScrollPositionListener;
 
-  nsCOMPtr<Element> mCustomContentContainer;
   nsCOMPtr<Element> mTooltipContent;
 };
 

@@ -1307,13 +1307,18 @@ class Document : public nsINode,
 
   nsresult GetSrcdocData(nsAString& aSrcdocData);
 
-  already_AddRefed<AnonymousContent> InsertAnonymousContent(bool aForce,
-                                                            ErrorResult&);
+  already_AddRefed<AnonymousContent> InsertAnonymousContent(ErrorResult&);
   void RemoveAnonymousContent(AnonymousContent&);
   nsTArray<RefPtr<AnonymousContent>>& GetAnonymousContents() {
     return mAnonymousContents;
   }
+  Element* GetCustomContentContainer() const { return mCustomContentContainer; }
 
+ private:
+  void CreateCustomContentContainerIfNeeded();
+  void RemoveCustomContentContainer();
+
+ public:
   TimeStamp GetPageUnloadingEventTimeStamp() const {
     if (!mParentDocument) {
       return mPageUnloadingEventTimeStamp;
@@ -5260,6 +5265,10 @@ class Document : public nsINode,
   UniquePtr<dom::XPathEvaluator> mXPathEvaluator;
 
   nsTArray<RefPtr<AnonymousContent>> mAnonymousContents;
+
+  
+  
+  RefPtr<Element> mCustomContentContainer;
 
   uint32_t mBlockDOMContentLoaded;
 

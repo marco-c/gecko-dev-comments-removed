@@ -541,8 +541,8 @@ static bool IsFontSizeInflationContainer(nsIFrame* aFrame,
   if (content && content->IsInNativeAnonymousSubtree()) {
     
     
-    nsCanvasFrame* canvas = aFrame->PresShell()->GetCanvasFrame();
-    return canvas && canvas->GetCustomContentContainer() == content;
+    return content ==
+           aFrame->PresContext()->Document()->GetCustomContentContainer();
   }
 
   LayoutFrameType frameType = aFrame->Type();

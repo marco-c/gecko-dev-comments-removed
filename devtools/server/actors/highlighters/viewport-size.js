@@ -31,8 +31,6 @@ class ViewportSizeHighlighter {
 
 
 
-
-
   constructor(highlighterEnv, parent, options = {}) {
     this.env = highlighterEnv;
     this.parent = parent;
@@ -45,8 +43,6 @@ class ViewportSizeHighlighter {
       this._buildMarkup.bind(this),
       {
         waitForDocumentToLoad: options?.waitForDocumentToLoad ?? true,
-        avoidForcedSynchronousLayoutUpdate:
-          options?.avoidForcedSynchronousLayoutUpdate ?? false,
       }
     );
     this._onPageResize = this._onPageResize.bind(this);

@@ -23,12 +23,6 @@ class ViewportSizeOnResizeHighlighter extends ViewportSizeHighlighter {
       prefix: "viewport-size-on-resize-highlighter-",
       hideTimeout: HIDE_TIMEOUT_MS,
       waitForDocumentToLoad: false,
-      
-      
-      
-      
-      
-      avoidForcedSynchronousLayoutUpdate: true,
     });
   }
 }

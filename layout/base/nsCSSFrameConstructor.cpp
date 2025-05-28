@@ -2377,6 +2377,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   }
 
   
+  
+  
   if (!aDocElement->HasServoData()) {
     mPresShell->StyleSet()->StyleNewSubtree(aDocElement);
   }
@@ -2626,8 +2628,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   
   
   
-  ConstructAnonymousContentForCanvas(
-      state, mCanvasFrame, mRootElementFrame->GetContent(), frameList);
+  ConstructAnonymousContentForRoot(state, mCanvasFrame,
+                                   mRootElementFrame->GetContent(), frameList);
   mCanvasFrame->AppendFrames(FrameChildListID::Principal, std::move(frameList));
 
   return newFrame;
@@ -2882,23 +2884,38 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   }
 }
 
-void nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(
-    nsFrameConstructorState& aState, nsContainerFrame* aFrame,
+void nsCSSFrameConstructor::ConstructAnonymousContentForRoot(
+    nsFrameConstructorState& aState, nsContainerFrame* aCanvasFrame,
     nsIContent* aDocElement, nsFrameList& aFrameList) {
-  NS_ASSERTION(aFrame->IsCanvasFrame(), "aFrame should be canvas frame!");
+  NS_ASSERTION(aCanvasFrame->IsCanvasFrame(), "aFrame should be canvas frame!");
   MOZ_ASSERT(mRootElementFrame->GetContent() == aDocElement);
 
   AutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
-  GetAnonymousContent(aDocElement, aFrame, anonymousItems);
+  GetAnonymousContent(aDocElement, aCanvasFrame, anonymousItems);
+
+  
+  
+  
+  if (auto* container =
+          aState.mPresContext->Document()->GetCustomContentContainer()) {
+    
+    
+    
+    if (!container->HasServoData()) {
+      mPresShell->StyleSet()->StyleNewSubtree(container);
+    }
+    anonymousItems.AppendElement(container);
+  }
+
   if (anonymousItems.IsEmpty()) {
     return;
   }
 
   AutoFrameConstructionItemList itemsToConstruct(this);
-  AutoFrameConstructionPageName pageNameTracker(aState, aFrame);
-  AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
+  AutoFrameConstructionPageName pageNameTracker(aState, aCanvasFrame);
+  AddFCItemsForAnonymousContent(aState, aCanvasFrame, anonymousItems,
                                 itemsToConstruct, pageNameTracker);
-  ConstructFramesFromItemList(aState, itemsToConstruct, aFrame,
+  ConstructFramesFromItemList(aState, itemsToConstruct, aCanvasFrame,
                                false,
                               aFrameList);
 }

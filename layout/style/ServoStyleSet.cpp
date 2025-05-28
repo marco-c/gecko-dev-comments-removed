@@ -795,14 +795,7 @@ bool ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags) {
     return false;
   }
 
-  Element* rootElement = mDocument->GetRootElement();
-  if (rootElement && MOZ_UNLIKELY(!rootElement->HasServoData())) {
-    StyleNewSubtree(rootElement);
-    return true;
-  }
-
   PreTraverse(aFlags);
-  AutoPrepareTraversal guard(this);
   const SnapshotTable& snapshots = Snapshots();
 
   
@@ -822,31 +815,37 @@ bool ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags) {
     MOZ_ASSERT_IF(parent,
                   !parent->HasAnyOfFlags(Element::kAllServoDescendantBits));
 
+    if (MOZ_UNLIKELY(!root->HasServoData()) && !parent) {
+      StyleNewSubtree(root);
+      postTraversalRequired = true;
+      continue;
+    }
+
+    AutoPrepareTraversal guard(this);
+
     postTraversalRequired |=
         Servo_TraverseSubtree(root, mRawData.get(), &snapshots, aFlags) ||
         root->HasAnyOfFlags(Element::kAllServoDescendantBits |
                             NODE_NEEDS_FRAME);
 
-    {
-      uint32_t existingBits = mDocument->GetServoRestyleRootDirtyBits();
-      Element* newRoot = nullptr;
-      while (parent && parent->HasDirtyDescendantsForServo()) {
-        MOZ_ASSERT(root == mDocument->GetServoRestyleRoot(),
-                   "Restyle root shouldn't have magically changed");
-        
-        
-        
-        
-        parent->SetFlags(existingBits);
-        newRoot = parent;
-        parent = parent->GetFlattenedTreeParentElementForStyle();
-      }
+    uint32_t existingBits = mDocument->GetServoRestyleRootDirtyBits();
+    Element* newRoot = nullptr;
+    while (parent && parent->HasDirtyDescendantsForServo()) {
+      MOZ_ASSERT(root == mDocument->GetServoRestyleRoot(),
+                 "Restyle root shouldn't have magically changed");
+      
+      
+      
+      
+      parent->SetFlags(existingBits);
+      newRoot = parent;
+      parent = parent->GetFlattenedTreeParentElementForStyle();
+    }
 
-      if (newRoot) {
-        mDocument->SetServoRestyleRoot(
-            newRoot, existingBits | ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
-        postTraversalRequired = true;
-      }
+    if (newRoot) {
+      mDocument->SetServoRestyleRoot(
+          newRoot, existingBits | ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+      postTraversalRequired = true;
     }
   }
 

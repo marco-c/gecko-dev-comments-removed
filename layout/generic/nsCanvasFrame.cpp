@@ -52,103 +52,13 @@ NS_QUERYFRAME_HEAD(nsCanvasFrame)
   NS_QUERYFRAME_ENTRY(nsIPopupContainer)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
-void nsCanvasFrame::ShowCustomContentContainer() {
-  if (mCustomContentContainer) {
-    mCustomContentContainer->UnsetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
-                                       true);
-  }
-}
-
-void nsCanvasFrame::HideCustomContentContainer() {
-  if (mCustomContentContainer) {
-    mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
-                                     u"true"_ns, true);
-  }
-}
-
-
-
-void InsertAnonymousContentInContainer(Document& aDoc, Element& aContainer) {
-  if (!aContainer.IsInComposedDoc() || aDoc.GetAnonymousContents().IsEmpty()) {
-    return;
-  }
-  for (RefPtr<AnonymousContent>& anonContent : aDoc.GetAnonymousContents()) {
-    if (nsCOMPtr<nsINode> parent = anonContent->Host()->GetParentNode()) {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(parent != &aContainer);
-      MOZ_ASSERT(parent->IsElement());
-      MOZ_ASSERT(parent->AsElement()->IsRootOfNativeAnonymousSubtree());
-      MOZ_ASSERT(!parent->IsInComposedDoc());
-      MOZ_ASSERT(!parent->GetParentNode());
-
-      parent->RemoveChildNode(anonContent->Host(), true);
-    }
-    aContainer.AppendChildTo(anonContent->Host(), true, IgnoreErrors());
-  }
-  
-  
-  
-  
-  
-  
-  aDoc.FlushPendingNotifications(FlushType::Frames);
-}
-
 nsresult nsCanvasFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
-  MOZ_ASSERT(!mCustomContentContainer);
-
   if (!mContent) {
     return NS_OK;
   }
 
   Document* doc = mContent->OwnerDoc();
-
-  
-  mCustomContentContainer = doc->CreateHTMLElement(nsGkAtoms::div);
-#ifdef DEBUG
-  
-  
-  
-  
-  mCustomContentContainer->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                                       reinterpret_cast<void*>(true));
-#endif  
-
-  mCustomContentContainer->SetProperty(
-      nsGkAtoms::docLevelNativeAnonymousContent, reinterpret_cast<void*>(true));
-
-  
-  
-  
-  
-  
-  mCustomContentContainer->SetIsNativeAnonymousRoot();
-
-  aElements.AppendElement(mCustomContentContainer);
-
-  
-  mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::role,
-                                   u"presentation"_ns, false);
-
-  mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                                   u"moz-custom-content-container"_ns, false);
-
-  
-  if (doc->GetAnonymousContents().IsEmpty()) {
-    HideCustomContentContainer();
-  } else {
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "InsertAnonymousContentInContainer",
-        [doc = RefPtr{doc}, container = RefPtr{mCustomContentContainer.get()}] {
-          InsertAnonymousContentInContainer(*doc, *container);
-        }));
-  }
 
   
   if (XRE_IsParentProcess() && doc->NodePrincipal()->IsSystemPrincipal()) {
@@ -187,9 +97,6 @@ nsresult nsCanvasFrame::CreateAnonymousContent(
 
 void nsCanvasFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                              uint32_t aFilter) {
-  if (mCustomContentContainer) {
-    aElements.AppendElement(mCustomContentContainer);
-  }
   if (mTooltipContent) {
     aElements.AppendElement(mTooltipContent);
   }
@@ -200,7 +107,6 @@ void nsCanvasFrame::Destroy(DestroyContext& aContext) {
     sf->RemoveScrollPositionListener(this);
   }
 
-  aContext.AddAnonymousContent(mCustomContentContainer.forget());
   if (mTooltipContent) {
     aContext.AddAnonymousContent(mTooltipContent.forget());
   }
