@@ -315,12 +315,15 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
   
 
   
-  
-  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new LoadInfo(
+  Result<nsCOMPtr<nsILoadInfo>, nsresult> maybeLoadInfo = LoadInfo::Create(
       aPrincipal,  
       aPrincipal,  
       nullptr ,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, contentPolicyType);
+  if (NS_WARN_IF(maybeLoadInfo.isErr())) {
+    return;
+  }
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
 
   if (aCSPHeader.Length() != 0) {
     
