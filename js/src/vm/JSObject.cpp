@@ -641,7 +641,9 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
 
     
     
+    
     if (nobj->is<TypedArrayObject>() &&
+        !nobj->is<ImmutableTypedArrayObject>() &&
         nobj->as<TypedArrayObject>().length().valueOr(0) > 0) {
       *result = false;
       return true;

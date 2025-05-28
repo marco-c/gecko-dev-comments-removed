@@ -50,6 +50,7 @@
 #include "util/Text.h"
 #include "util/WindowsWrapper.h"
 #include "vm/ArrayBufferObject.h"
+#include "vm/EqualityOperations.h"
 #include "vm/Float16.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GlobalObject.h"
@@ -1243,6 +1244,8 @@ template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::setElement(
     JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
+  MOZ_ASSERT(!obj->is<ImmutableTypedArrayObject>());
+
   
   NativeType nativeValue;
   if (!convertValue(cx, v, &nativeValue)) {
@@ -5184,7 +5187,10 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   
-  if (desc.hasConfigurable() && !desc.configurable()) {
+  bool modifiable = !obj->is<ImmutableTypedArrayObject>();
+
+  
+  if (desc.hasConfigurable() && desc.configurable() != modifiable) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
@@ -5199,13 +5205,29 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   
-  if (desc.hasWritable() && !desc.writable()) {
+  if (desc.hasWritable() && desc.writable() != modifiable) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
   
   if (desc.hasValue()) {
-    return SetTypedArrayElement(cx, obj, index, desc.value(), result);
+    if (modifiable) {
+      return SetTypedArrayElement(cx, obj, index, desc.value(), result);
+    }
+
+    Rooted<Value> currentValue(cx);
+    if (!obj->getElement<CanGC>(cx, index, &currentValue)) {
+      return false;
+    }
+
+    bool sameValue;
+    if (!SameValue(cx, desc.value(), currentValue, &sameValue)) {
+      return false;
+    }
+
+    if (!sameValue) {
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
+    }
   }
 
   
