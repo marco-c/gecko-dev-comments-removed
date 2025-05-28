@@ -3770,11 +3770,16 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
 
   
   
-  
-  if (MIMEType.Equals("video/3gpp")) {
-    nsAutoCString fileExtLowerCase(aFileExt);
-    ToLowerCase(fileExtLowerCase);
-    if (fileExtLowerCase.Equals("mp4")) {
+  static constexpr std::pair<nsLiteralCString, nsLiteralCString>
+      ignoreMimeExtPairs[] = {
+          {"video/3gpp"_ns, "mp4"_ns},   
+          {"audio/x-wav"_ns, "mp2"_ns},  
+      };
+
+  nsAutoCString fileExtLowerCase(aFileExt);
+  ToLowerCase(fileExtLowerCase);
+  for (const auto& [mime, ext] : ignoreMimeExtPairs) {
+    if (MIMEType.Equals(mime) && fileExtLowerCase.Equals(ext)) {
       return ModifyExtension_Ignore;
     }
   }
