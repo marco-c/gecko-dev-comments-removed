@@ -40,8 +40,6 @@ class TextDirectiveUtil final {
 
   static Result<nsString, ErrorResult> RangeContentAsString(nsRange* aRange);
 
-  static Result<nsString, ErrorResult> RangeContentAsFoldCase(nsRange* aRange);
-
   
 
 
@@ -62,20 +60,6 @@ class TextDirectiveUtil final {
       const RangeBoundary& aSearchStart, const RangeBoundary& aSearchEnd,
       const nsAString& aQuery, bool aWordStartBounded, bool aWordEndBounded,
       nsContentUtils::NodeIndexCache* aCache = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static RangeBoundary MoveRangeBoundaryOneWord(
-      const RangeBoundary& aRangeBoundary, TextScanDirection aDirection);
 
   
 
@@ -141,23 +125,6 @@ class TextDirectiveUtil final {
 
 
   static bool NodeIsPartOfNonSearchableSubTree(nsINode& aNode);
-  
-
-
-
-
-
-
-
-
-
-
-  static bool IsAtWordBoundary(const nsAString& aText, uint32_t aPosition);
-
-  enum class IsEndIndex : bool { No, Yes };
-  static RangeBoundary GetBoundaryPointAtIndex(
-      uint32_t aIndex, const nsTArray<RefPtr<Text>>& aTextNodeList,
-      IsEndIndex aIsEndIndex);
 
   
 
@@ -169,14 +136,6 @@ class TextDirectiveUtil final {
 
 
   static RangeBoundary MoveToNextBoundaryPoint(const RangeBoundary& aPoint);
-
-  static RangeBoundary MoveBoundaryToNextNonWhitespacePosition(
-      const RangeBoundary& aRangeBoundary);
-  static RangeBoundary MoveBoundaryToPreviousNonWhitespacePosition(
-      const RangeBoundary& aRangeBoundary);
-
-  static Result<Maybe<RangeBoundary>, ErrorResult> FindBlockBoundaryInRange(
-      const nsRange& aRange, TextScanDirection aDirection);
 
   static Result<RangeBoundary, ErrorResult> FindNextBlockBoundary(
       const RangeBoundary& aRangeBoundary, TextScanDirection aDirection);
@@ -200,57 +159,6 @@ class TextDirectiveUtil final {
       const RangeBoundary& aRangeBoundary1,
       const RangeBoundary& aRangeBoundary2,
       nsContentUtils::NodeIndexCache* aCache = nullptr);
-
-  
-
-
-
-
-
-
-  static Result<Ok, ErrorResult> ExtendRangeToWordBoundaries(nsRange& aRange);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static Result<TextDirective, ErrorResult> CreateTextDirectiveFromRanges(
-      nsRange* aPrefix, nsRange* aStart, nsRange* aEnd, nsRange* aSuffix);
-
-  
-
-
-
-
-  static uint32_t FindCommonPrefix(const nsAString& aFoldedStr1,
-                                   const nsAString& aFoldedStr2);
-
-  
-
-
-
-
-  static uint32_t FindCommonSuffix(const nsAString& aFoldedStr1,
-                                   const nsAString& aFoldedStr2);
-
-  
-
-
-
-
-
-
-
-
-  static RangeBoundary CreateRangeBoundaryByMovingOffsetFromRangeStart(
-      nsRange* aRange, uint32_t aLogicalOffset);
 };
 
 class TimeoutWatchdog final {
