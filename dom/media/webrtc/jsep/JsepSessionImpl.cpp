@@ -920,7 +920,11 @@ nsresult JsepSessionImpl::SetLocalDescriptionOffer(UniquePtr<Sdp> offer) {
   std::vector<JsepTrack*> recvTracks;
   recvTracks.reserve(mTransceivers.size());
   for (auto& transceiver : mTransceivers) {
-    recvTracks.push_back(&transceiver.mRecvTrack);
+    if (transceiver.mJsDirection & sdp::kRecv) {
+      recvTracks.push_back(&transceiver.mRecvTrack);
+    } else {
+      transceiver.mRecvTrack.ResetReceivePayloadTypes();
+    }
   }
 
   JsepTrack::SetReceivePayloadTypes(recvTracks, true);
@@ -1156,7 +1160,17 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
   std::vector<JsepTrack*> receiveTracks;
   receiveTracks.reserve(mTransceivers.size());
   for (auto& transceiver : mTransceivers) {
-    receiveTracks.push_back(&transceiver.mRecvTrack);
+    
+    
+    
+    
+    
+    
+    if (transceiver.mRecvTrack.GetActive()) {
+      receiveTracks.push_back(&transceiver.mRecvTrack);
+    } else {
+      transceiver.mRecvTrack.ResetReceivePayloadTypes();
+    }
   }
   JsepTrack::SetReceivePayloadTypes(receiveTracks);
 
