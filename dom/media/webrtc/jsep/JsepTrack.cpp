@@ -731,8 +731,8 @@ nsresult JsepTrack::Negotiate(const SdpMediaSection& answer,
 
 
 
-void JsepTrack::SetUniqueReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
-                                             bool localOffer) {
+void JsepTrack::SetReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
+                                       bool localOffer) {
   
   std::multimap<uint16_t, JsepTrack*> payloadTypeToTracks;
 
