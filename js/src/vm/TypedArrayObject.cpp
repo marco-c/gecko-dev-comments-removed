@@ -540,6 +540,7 @@ class TypedArrayObjectTemplate {
     
     *byteOffset = 0;
     if (!byteOffsetValue.isUndefined()) {
+      
       if (!ToIndex(cx, byteOffsetValue, byteOffset)) {
         return false;
       }
@@ -588,8 +589,11 @@ class TypedArrayObjectTemplate {
     size_t bufferByteLength = bufferMaybeUnwrapped->byteLength();
     MOZ_ASSERT(bufferByteLength <= ByteLengthLimit);
 
+    
     size_t len;
     if (lengthIndex == UINT64_MAX) {
+      
+      
       
       if (byteOffset > bufferByteLength) {
         JS_ReportErrorNumberASCII(
@@ -599,6 +603,8 @@ class TypedArrayObjectTemplate {
         return false;
       }
 
+      
+      
       
       if (bufferMaybeUnwrapped->isResizable()) {
         *length = 0;
@@ -637,6 +643,7 @@ class TypedArrayObjectTemplate {
       len = size_t(lengthIndex);
     }
 
+    
     MOZ_ASSERT(len <= ByteLengthLimit / BYTES_PER_ELEMENT);
     *length = len;
     *autoLength = AutoLength::No;
@@ -657,8 +664,8 @@ class TypedArrayObjectTemplate {
       return nullptr;
     }
 
+    
     if (!buffer->isResizable()) {
-      
       return FixedLengthTypedArray::makeInstance(cx, buffer, byteOffset, length,
                                                  proto);
     }
