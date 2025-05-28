@@ -688,9 +688,7 @@ bool UrlClassifierCommon::IsPassiveContent(nsIChannel* aChannel) {
   
   
   return contentType == ExtContentPolicy::TYPE_IMAGE ||
-         contentType == ExtContentPolicy::TYPE_MEDIA ||
-         (contentType == ExtContentPolicy::TYPE_OBJECT_SUBREQUEST &&
-          !StaticPrefs::security_mixed_content_block_object_subrequest());
+         contentType == ExtContentPolicy::TYPE_MEDIA;
 }
 
 

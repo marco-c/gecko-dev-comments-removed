@@ -535,13 +535,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  
-  
-  
-  
-  
-  
-  
 
   switch (contentType) {
     
@@ -580,13 +573,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     case ExtContentPolicy::TYPE_IMAGE:
     case ExtContentPolicy::TYPE_MEDIA:
       classification = eMixedDisplay;
-      break;
-    case ExtContentPolicy::TYPE_OBJECT_SUBREQUEST:
-      if (StaticPrefs::security_mixed_content_block_object_subrequest()) {
-        classification = eMixedScript;
-      } else {
-        classification = eMixedDisplay;
-      }
       break;
 
     
@@ -876,19 +862,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
         cc->SendAccumulateMixedContentHSTS(innerContentLocation, active,
                                            originAttributes);
       }
-    }
-  }
-
-  
-  if (contentType == ExtContentPolicyType::TYPE_OBJECT_SUBREQUEST &&
-      aReportError) {
-    if (!StaticPrefs::security_mixed_content_block_object_subrequest()) {
-      nsAutoCString messageLookUpKey(
-          "LoadingMixedDisplayObjectSubrequestDeprecation");
-
-      LogMixedContentMessage(classification, aContentLocation, topWC->Id(),
-                             eUserOverride, requestingLocation,
-                             messageLookUpKey);
     }
   }
 

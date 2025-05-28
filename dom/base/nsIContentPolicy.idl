@@ -102,7 +102,6 @@ interface nsIContentPolicy : nsISupports
     
 
 
-    TYPE_OBJECT_SUBREQUEST = 12,
 
     
 
@@ -600,7 +599,6 @@ enum class ExtContentPolicyType : uint8_t {
   TYPE_SUBDOCUMENT = nsIContentPolicy::TYPE_SUBDOCUMENT,
   TYPE_PING = nsIContentPolicy::TYPE_PING,
   TYPE_XMLHTTPREQUEST = nsIContentPolicy::TYPE_XMLHTTPREQUEST,
-  TYPE_OBJECT_SUBREQUEST = nsIContentPolicy::TYPE_OBJECT_SUBREQUEST,
   TYPE_DTD = nsIContentPolicy::TYPE_DTD,
   TYPE_FONT = nsIContentPolicy::TYPE_FONT,
   TYPE_MEDIA = nsIContentPolicy::TYPE_MEDIA,
