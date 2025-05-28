@@ -153,6 +153,39 @@ assertErrorMessage(
 );
 
 
+var inst = wasmEvalText(`
+(module
+  (func (export "f") (result nullexnref)
+    unreachable
+  )
+)`);
+assertErrorMessage(() => inst.exports.f(), TypeError, /cannot pass value to or from JS/);
+
+inst = wasmEvalText(`
+(module
+  (func (export "f") (result exnref)
+    unreachable
+  )
+)`);
+assertErrorMessage(() => inst.exports.f(), TypeError, /cannot pass value to or from JS/);
+
+inst = wasmEvalText(`
+(module
+  (func (export "f") (result (ref exn))
+    unreachable
+  )
+)`);
+assertErrorMessage(() => inst.exports.f(), TypeError, /cannot pass value to or from JS/);
+
+inst = wasmEvalText(`
+(module
+  (func (export "f") (result (ref noexn))
+    unreachable
+  )
+)`);
+assertErrorMessage(() => inst.exports.f(), TypeError, /cannot pass value to or from JS/);
+
+
 {
   const exn1 = new WebAssembly.Exception(tag1, []);
   assertEq(exn1.is(tag1), true);
