@@ -1,34 +1,34 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-// The `*testPaths` defined below for test paths are the main path formats we
-// prefer to support for tests as they are commonly used across the tree.
 
-// We prefer the tests to be in named directories as this makes it easier
-// to identify the types of tests developers are working with. Additionally,
-// it is not possible to scope ESLint rules to individual files based on .ini
-// files without a build step that would break editors, or an expensive loading
-// cycle.
 
-// Please do not add more cases of multiple test types in a single
-// directory. This may cause ESLint rules to be incorrectly applied to the wrong
-// tests, leading to false negatives. It could cause the wrong sets of globals
-// to be defined in the scope, causing false positives when checking for no
-// undefined variables.
 
-// See https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint.html#i-m-adding-tests-how-do-i-set-up-the-right-configuration
-// for more information.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const browserTestPaths = ["**/test*/**/browser*/"];
 
 const chromeTestPaths = ["**/test*/chrome/"];
 
 const mochitestTestPaths = [
-  // Note: we do not want to match testing/mochitest as that would apply
-  // too many globals for that directory.
+  
+  
   "**/test/mochitest*/",
   "**/tests/mochitest*/",
   "testing/mochitest/tests/SimpleTest/",
@@ -41,8 +41,8 @@ const xpcshellTestPaths = [
   "**/test*/xpcshell/**/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
-// of the file.
+
+
 
 const extraXpcshellTestPaths = [
   "devtools/client/shared/remote-debugging/adb/xpcshell/",
@@ -53,6 +53,7 @@ const extraXpcshellTestPaths = [
   "ipc/testshell/tests/",
   "memory/replace/dmd/test/",
   "netwerk/test/httpserver/test/",
+  "testing/mochitest/tests/Harness_sanity/",
   "toolkit/components/backgroundhangmonitor/tests/",
   "toolkit/components/downloads/test/data/",
   "toolkit/components/mozintl/test/",
@@ -72,8 +73,8 @@ const extraXpcshellTestPaths = [
   "widget/headless/tests/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
-// of the file.
+
+
 
 const extraBrowserTestPaths = [
   "dom/ipc/tests/",
@@ -93,6 +94,7 @@ const extraBrowserTestPaths = [
   "browser/base/content/test/gesture/",
   "browser/base/content/test/historySwipeAnimation/",
   "browser/base/content/test/keyboard/",
+  "browser/base/content/test/linkHandling/",
   "browser/base/content/test/menubar/",
   "browser/base/content/test/metaTags/",
   "browser/base/content/test/notificationbox/",
@@ -221,8 +223,8 @@ const extraBrowserTestPaths = [
   "uriloader/exthandler/tests/mochitest/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
-// of the file.
+
+
 
 const extraChromeTestPaths = [
   "devtools/shared/security/tests/chrome/",
@@ -270,8 +272,8 @@ const extraChromeTestPaths = [
   "xpfe/appshell/test/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
-// of the file.
+
+
 
 const extraMochitestTestPaths = [
   "dom/ipc/tests/",
@@ -362,6 +364,7 @@ const extraMochitestTestPaths = [
   "parser/htmlparser/tests/mochitest/",
   "services/sync/tests/tps/",
   "testing/mochitest/baselinecoverage/plain/",
+  "testing/mochitest/tests/Harness_sanity/",
   "testing/mochitest/tests/python/files/",
   "toolkit/components/alerts/test/",
   "toolkit/components/passwordmgr/test/mochitest/",
@@ -376,9 +379,9 @@ const extraMochitestTestPaths = [
   "widget/tests/",
 ];
 
-// Please DO NOT add more entries to the list below.
-// Doing so may cause conflicts in ESLint rules and globals, and cause
-// unexpected issues to be raised or missed.
+
+
+
 let expectedDupePaths = new Set([
   "caps/tests/mochitest/",
   "docshell/test/navigation/",
@@ -430,6 +433,7 @@ let expectedDupePaths = new Set([
   "layout/svg/tests/",
   "layout/xul/test/",
   "parser/htmlparser/tests/mochitest/",
+  "testing/mochitest/tests/Harness_sanity/",
   "testing/mochitest/tests/python/files/",
   "toolkit/components/alerts/test/",
   "toolkit/components/printing/tests/",
@@ -442,7 +446,7 @@ let expectedDupePaths = new Set([
   "uriloader/exthandler/tests/mochitest/",
   "widget/tests/",
 ]);
-// Please DO NOT add more paths to the list above.
+
 
 let paths = new Set(extraXpcshellTestPaths);
 for (let path of [
