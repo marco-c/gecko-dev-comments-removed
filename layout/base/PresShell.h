@@ -1775,10 +1775,6 @@ class PresShell final : public nsStubDocumentObserver,
     return mSelectionNodeCache;
   }
 
-  
-  
-  void AddOrthogonalFlow(nsIFrame* aFrame) { mOrthogonalFlows.Insert(aFrame); }
-
  private:
   ~PresShell();
 
@@ -3222,10 +3218,6 @@ class PresShell final : public nsStubDocumentObserver,
   nsTHashSet<nsIContent*> mHiddenContentInForcedLayout;
 
   nsTHashSet<nsIFrame*> mContentVisibilityAutoFrames;
-
-  
-  
-  nsTHashSet<nsIFrame*> mOrthogonalFlows;
 
   
   
