@@ -51,12 +51,6 @@ static bool ReportDetachedArrayBuffer(JSContext* cx) {
   return false;
 }
 
-static bool ReportImmutableBuffer(JSContext* cx) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_ARRAYBUFFER_IMMUTABLE);
-  return false;
-}
-
 static bool ReportResizedArrayBuffer(JSContext* cx) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                             JSMSG_TYPED_ARRAY_RESIZED_BOUNDS);
@@ -70,14 +64,14 @@ static bool ReportOutOfRange(JSContext* cx) {
   return false;
 }
 
-enum class AccessMode { Read, Write };
-
 
 
 
 static bool ValidateIntegerTypedArray(
-    JSContext* cx, HandleValue typedArray, bool waitable, AccessMode accessMode,
+    JSContext* cx, HandleValue typedArray, bool waitable,
     MutableHandle<TypedArrayObject*> unwrappedTypedArray) {
+  
+
   
   auto* unwrapped = UnwrapAndTypeCheckValue<TypedArrayObject>(
       cx, typedArray, [cx]() { ReportBadArrayType(cx); });
@@ -87,11 +81,6 @@ static bool ValidateIntegerTypedArray(
 
   if (unwrapped->hasDetachedBuffer()) {
     return ReportDetachedArrayBuffer(cx);
-  }
-
-  if (accessMode == AccessMode::Write &&
-      unwrapped->is<ImmutableTypedArrayObject>()) {
-    return ReportImmutableBuffer(cx);
   }
 
   
@@ -264,12 +253,10 @@ struct ArrayOps<uint64_t> {
 
 
 template <typename Op>
-static bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index,
-                         AccessMode accessMode, Op op) {
+bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
   
   Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
-  if (!ValidateIntegerTypedArray(cx, obj, false, accessMode,
-                                 &unwrappedTypedArray)) {
+  if (!ValidateIntegerTypedArray(cx, obj, false, &unwrappedTypedArray)) {
     return false;
   }
 
@@ -339,7 +326,7 @@ static bool atomics_compareExchange(JSContext* cx, unsigned argc, Value* vp) {
   HandleValue index = args.get(1);
 
   return AtomicAccess(
-      cx, typedArray, index, AccessMode::Write,
+      cx, typedArray, index,
       [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
@@ -376,7 +363,7 @@ static bool atomics_load(JSContext* cx, unsigned argc, Value* vp) {
   HandleValue index = args.get(1);
 
   return AtomicAccess(
-      cx, typedArray, index, AccessMode::Read,
+      cx, typedArray, index,
       [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
@@ -401,7 +388,7 @@ static bool atomics_store(JSContext* cx, unsigned argc, Value* vp) {
   HandleValue index = args.get(1);
 
   return AtomicAccess(
-      cx, typedArray, index, AccessMode::Write,
+      cx, typedArray, index,
       [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
@@ -431,7 +418,7 @@ static bool AtomicReadModifyWrite(JSContext* cx, const CallArgs& args,
   HandleValue index = args.get(1);
 
   return AtomicAccess(
-      cx, typedArray, index, AccessMode::Write,
+      cx, typedArray, index,
       [cx, &args, op](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                       size_t index) {
         using T = typename decltype(ops)::Type;
@@ -1316,8 +1303,7 @@ static bool DoWait(JSContext* cx, bool isAsync, HandleValue objv,
                    MutableHandleValue r) {
   
   Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
-  if (!ValidateIntegerTypedArray(cx, objv, true, AccessMode::Read,
-                                 &unwrappedTypedArray)) {
+  if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
   MOZ_ASSERT(unwrappedTypedArray->type() == Scalar::Int32 ||
@@ -1486,8 +1472,7 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
 
   
   Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
-  if (!ValidateIntegerTypedArray(cx, objv, true, AccessMode::Read,
-                                 &unwrappedTypedArray)) {
+  if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
   MOZ_ASSERT(unwrappedTypedArray->type() == Scalar::Int32 ||

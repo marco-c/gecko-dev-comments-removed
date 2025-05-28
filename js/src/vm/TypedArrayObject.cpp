@@ -50,7 +50,6 @@
 #include "util/Text.h"
 #include "util/WindowsWrapper.h"
 #include "vm/ArrayBufferObject.h"
-#include "vm/EqualityOperations.h"
 #include "vm/Float16.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GlobalObject.h"
@@ -136,7 +135,7 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
   }
 
   MOZ_ASSERT(typedArray->is<FixedLengthTypedArrayObject>(),
-             "Resizable and immutable TypedArrays always use an ArrayBuffer");
+             "Resizable TypedArrays always use an ArrayBuffer");
 
   Rooted<FixedLengthTypedArrayObject*> tarray(
       cx, &typedArray->as<FixedLengthTypedArrayObject>());
@@ -353,8 +352,7 @@ static TypedArrayType* NewTypedArrayObject(JSContext* cx, const JSClass* clasp,
   allocKind = gc::GetFinalizedAllocKindForClass(allocKind, clasp);
 
   static_assert(std::is_same_v<TypedArrayType, FixedLengthTypedArrayObject> ||
-                std::is_same_v<TypedArrayType, ResizableTypedArrayObject> ||
-                std::is_same_v<TypedArrayType, ImmutableTypedArrayObject>);
+                std::is_same_v<TypedArrayType, ResizableTypedArrayObject>);
 
   
   
@@ -382,15 +380,11 @@ template <typename NativeType>
 class ResizableTypedArrayObjectTemplate;
 
 template <typename NativeType>
-class ImmutableTypedArrayObjectTemplate;
-
-template <typename NativeType>
 class TypedArrayObjectTemplate {
   friend class js::TypedArrayObject;
 
   using FixedLengthTypedArray = FixedLengthTypedArrayObjectTemplate<NativeType>;
   using ResizableTypedArray = ResizableTypedArrayObjectTemplate<NativeType>;
-  using ImmutableTypedArray = ImmutableTypedArrayObjectTemplate<NativeType>;
   using AutoLength = ArrayBufferViewObject::AutoLength;
 
   static constexpr auto ByteLengthLimit = TypedArrayObject::ByteLengthLimit;
@@ -546,7 +540,6 @@ class TypedArrayObjectTemplate {
     
     *byteOffset = 0;
     if (!byteOffsetValue.isUndefined()) {
-      
       if (!ToIndex(cx, byteOffsetValue, byteOffset)) {
         return false;
       }
@@ -595,11 +588,8 @@ class TypedArrayObjectTemplate {
     size_t bufferByteLength = bufferMaybeUnwrapped->byteLength();
     MOZ_ASSERT(bufferByteLength <= ByteLengthLimit);
 
-    
     size_t len;
     if (lengthIndex == UINT64_MAX) {
-      
-      
       
       if (byteOffset > bufferByteLength) {
         JS_ReportErrorNumberASCII(
@@ -609,8 +599,6 @@ class TypedArrayObjectTemplate {
         return false;
       }
 
-      
-      
       
       if (bufferMaybeUnwrapped->isResizable()) {
         *length = 0;
@@ -649,7 +637,6 @@ class TypedArrayObjectTemplate {
       len = size_t(lengthIndex);
     }
 
-    
     MOZ_ASSERT(len <= ByteLengthLimit / BYTES_PER_ELEMENT);
     *length = len;
     *autoLength = AutoLength::No;
@@ -670,17 +657,14 @@ class TypedArrayObjectTemplate {
       return nullptr;
     }
 
-    
-    if (buffer->isResizable()) {
-      return ResizableTypedArray::makeInstance(cx, buffer, byteOffset, length,
-                                               autoLength, proto);
+    if (!buffer->isResizable()) {
+      
+      return FixedLengthTypedArray::makeInstance(cx, buffer, byteOffset, length,
+                                                 proto);
     }
-    if (buffer->isImmutable()) {
-      return ImmutableTypedArray::makeInstance(cx, buffer, byteOffset, length,
-                                               proto);
-    }
-    return FixedLengthTypedArray::makeInstance(cx, buffer, byteOffset, length,
-                                               proto);
+
+    return ResizableTypedArray::makeInstance(cx, buffer, byteOffset, length,
+                                             autoLength, proto);
   }
 
   
@@ -741,15 +725,12 @@ class TypedArrayObjectTemplate {
         return nullptr;
       }
 
-      if (unwrappedBuffer->isResizable()) {
-        typedArray = ResizableTypedArray::makeInstance(
-            cx, unwrappedBuffer, byteOffset, length, autoLength, wrappedProto);
-      } else if (unwrappedBuffer->isImmutable()) {
-        typedArray = ImmutableTypedArray::makeInstance(
-            cx, unwrappedBuffer, byteOffset, length, wrappedProto);
-      } else {
+      if (!unwrappedBuffer->isResizable()) {
         typedArray = FixedLengthTypedArray::makeInstance(
             cx, unwrappedBuffer, byteOffset, length, wrappedProto);
+      } else {
+        typedArray = ResizableTypedArray::makeInstance(
+            cx, unwrappedBuffer, byteOffset, length, autoLength, wrappedProto);
       }
       if (!typedArray) {
         return nullptr;
@@ -1116,91 +1097,6 @@ class ResizableTypedArrayObjectTemplate
 };
 
 template <typename NativeType>
-class ImmutableTypedArrayObjectTemplate
-    : public ImmutableTypedArrayObject,
-      public TypedArrayObjectTemplate<NativeType> {
-  friend class js::TypedArrayObject;
-
-  using TypedArrayTemplate = TypedArrayObjectTemplate<NativeType>;
-
- public:
-  using TypedArrayTemplate::ArrayTypeID;
-  using TypedArrayTemplate::BYTES_PER_ELEMENT;
-  using TypedArrayTemplate::protoKey;
-
-  static inline const JSClass* instanceClass() {
-    static_assert(ArrayTypeID() <
-                  std::size(TypedArrayObject::immutableClasses));
-    return &TypedArrayObject::immutableClasses[ArrayTypeID()];
-  }
-
-  static ImmutableTypedArrayObject* newBuiltinClassInstance(
-      JSContext* cx, gc::AllocKind allocKind, gc::Heap heap) {
-    RootedObject proto(cx, GlobalObject::getOrCreatePrototype(cx, protoKey()));
-    if (!proto) {
-      return nullptr;
-    }
-    return NewTypedArrayObject<ImmutableTypedArrayObject>(
-        cx, instanceClass(), proto, allocKind, heap);
-  }
-
-  static ImmutableTypedArrayObject* makeProtoInstance(JSContext* cx,
-                                                      HandleObject proto,
-                                                      gc::AllocKind allocKind) {
-    MOZ_ASSERT(proto);
-    return NewTypedArrayObject<ImmutableTypedArrayObject>(
-        cx, instanceClass(), proto, allocKind, gc::Heap::Default);
-  }
-
-  static ImmutableTypedArrayObject* makeInstance(
-      JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> buffer,
-      size_t byteOffset, size_t len, HandleObject proto) {
-    MOZ_ASSERT(buffer);
-    MOZ_ASSERT(buffer->isImmutable());
-    MOZ_ASSERT(!buffer->isDetached());
-    MOZ_ASSERT(len <= ByteLengthLimit / BYTES_PER_ELEMENT);
-
-    gc::AllocKind allocKind = gc::GetGCObjectKind(instanceClass());
-
-    AutoSetNewObjectMetadata metadata(cx);
-    ImmutableTypedArrayObject* obj;
-    if (proto) {
-      obj = makeProtoInstance(cx, proto, allocKind);
-    } else {
-      obj = newBuiltinClassInstance(cx, allocKind, gc::Heap::Default);
-    }
-    if (!obj || !obj->init(cx, buffer, byteOffset, len, BYTES_PER_ELEMENT)) {
-      return nullptr;
-    }
-
-    return obj;
-  }
-
-  static ImmutableTypedArrayObject* makeTemplateObject(JSContext* cx) {
-    gc::AllocKind allocKind = gc::GetGCObjectKind(instanceClass());
-
-    AutoSetNewObjectMetadata metadata(cx);
-
-    auto* tarray = newBuiltinClassInstance(cx, allocKind, gc::Heap::Tenured);
-    if (!tarray) {
-      return nullptr;
-    }
-
-    tarray->initFixedSlot(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
-    tarray->initFixedSlot(TypedArrayObject::LENGTH_SLOT,
-                          PrivateValue(size_t(0)));
-    tarray->initFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT,
-                          PrivateValue(size_t(0)));
-
-    
-    
-    MOZ_ASSERT(tarray->getReservedSlot(DATA_SLOT).isUndefined());
-
-    return tarray;
-  }
-};
-
-template <typename NativeType>
 bool TypedArrayObjectTemplate<NativeType>::convertValue(JSContext* cx,
                                                         HandleValue v,
                                                         NativeType* result) {
@@ -1244,8 +1140,6 @@ template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::setElement(
     JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
-  MOZ_ASSERT(!obj->is<ImmutableTypedArrayObject>());
-
   
   NativeType nativeValue;
   if (!convertValue(cx, v, &nativeValue)) {
@@ -1603,23 +1497,17 @@ static bool GetTemplateObjectForNative(JSContext* cx,
     return true;
   }
 
-  if (obj->is<ArrayBufferObjectMaybeShared>()) {
-    if (obj->as<ArrayBufferObjectMaybeShared>().isResizable()) {
-      res.set(ResizableTypedArrayObjectTemplate<T>::makeTemplateObject(cx));
-      return !!res;
-    }
-
-    if (obj->as<ArrayBufferObjectMaybeShared>().isImmutable()) {
-      res.set(ImmutableTypedArrayObjectTemplate<T>::makeTemplateObject(cx));
-      return !!res;
-    }
-  }
-
   
   
   uint32_t len = 0;
 
-  res.set(FixedLengthTypedArrayObjectTemplate<T>::makeTemplateObject(cx, len));
+  if (!obj->is<ArrayBufferObjectMaybeShared>() ||
+      !obj->as<ArrayBufferObjectMaybeShared>().isResizable()) {
+    res.set(
+        FixedLengthTypedArrayObjectTemplate<T>::makeTemplateObject(cx, len));
+  } else {
+    res.set(ResizableTypedArrayObjectTemplate<T>::makeTemplateObject(cx));
+  }
   return !!res;
 }
 
@@ -1891,13 +1779,6 @@ static bool TypedArray_set(JSContext* cx, const CallArgs& args) {
       cx, &args.thisv().toObject().as<TypedArrayObject>());
 
   
-  if (target->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
-    return false;
-  }
-
-  
   double targetOffset = 0;
   if (args.length() > 1) {
     
@@ -1975,13 +1856,6 @@ static bool TypedArray_copyWithin(JSContext* cx, const CallArgs& args) {
   auto arrayLength = tarray->length();
   if (!arrayLength) {
     ReportOutOfBounds(cx, tarray);
-    return false;
-  }
-
-  
-  if (tarray->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
     return false;
   }
 
@@ -2972,15 +2846,6 @@ static bool TypedArray_fill(JSContext* cx, const CallArgs& args) {
     ReportOutOfBounds(cx, tarray);
     return false;
   }
-
-  
-  if (tarray->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
-    return false;
-  }
-
-  
   size_t len = *arrayLength;
 
   
@@ -3092,15 +2957,6 @@ static bool TypedArray_reverse(JSContext* cx, const CallArgs& args) {
     ReportOutOfBounds(cx, tarray);
     return false;
   }
-
-  
-  if (tarray->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
-    return false;
-  }
-
-  
   size_t len = *arrayLength;
 
   
@@ -4082,13 +3938,6 @@ static bool uint8array_setFromBase64(JSContext* cx, const CallArgs& args) {
       cx, &args.thisv().toObject().as<TypedArrayObject>());
 
   
-  if (tarray->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
-    return false;
-  }
-
-  
   if (!args.get(0).isString()) {
     return ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK,
                             args.get(0), nullptr, "not a string");
@@ -4181,13 +4030,6 @@ static bool uint8array_setFromBase64(JSContext* cx, unsigned argc, Value* vp) {
 static bool uint8array_setFromHex(JSContext* cx, const CallArgs& args) {
   Rooted<TypedArrayObject*> tarray(
       cx, &args.thisv().toObject().as<TypedArrayObject>());
-
-  
-  if (tarray->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
-    return false;
-  }
 
   
   if (!args.get(0).isString()) {
@@ -4787,19 +4629,6 @@ static const JSClassOps ResizableTypedArrayClassOps = {
     ArrayBufferViewObject::trace,  
 };
 
-static const JSClassOps ImmutableTypedArrayClassOps = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    ArrayBufferViewObject::trace,  
-};
-
 static const ClassExtension TypedArrayClassExtension = {
     FixedLengthTypedArrayObject::objectMoved,  
 };
@@ -4867,8 +4696,7 @@ static const ClassSpec
 
 
 
-
-const JSClass TypedArrayObject::anyClasses[3][Scalar::MaxTypedArrayViewType] = {
+const JSClass TypedArrayObject::anyClasses[2][Scalar::MaxTypedArrayViewType] = {
     
     {
 #define IMPL_TYPED_ARRAY_CLASS(ExternalType, NativeType, Name)             \
@@ -4881,23 +4709,6 @@ const JSClass TypedArrayObject::anyClasses[3][Scalar::MaxTypedArrayViewType] = {
       &TypedArrayClassOps,                                                 \
       &TypedArrayObjectClassSpecs[Scalar::Type::Name],                     \
       &TypedArrayClassExtension,                                           \
-  },
-
-        JS_FOR_EACH_TYPED_ARRAY(IMPL_TYPED_ARRAY_CLASS)
-#undef IMPL_TYPED_ARRAY_CLASS
-    },
-
-    
-    {
-#define IMPL_TYPED_ARRAY_CLASS(ExternalType, NativeType, Name)                \
-  {                                                                           \
-      #Name "Array",                                                          \
-      JSCLASS_HAS_RESERVED_SLOTS(ImmutableTypedArrayObject::RESERVED_SLOTS) | \
-          JSCLASS_HAS_CACHED_PROTO(JSProto_##Name##Array) |                   \
-          JSCLASS_DELAY_METADATA_BUILDER,                                     \
-      &ImmutableTypedArrayClassOps,                                           \
-      &TypedArrayObjectClassSpecs[Scalar::Type::Name],                        \
-      JS_NULL_CLASS_EXT,                                                      \
   },
 
         JS_FOR_EACH_TYPED_ARRAY(IMPL_TYPED_ARRAY_CLASS)
@@ -5233,10 +5044,7 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   
-  bool modifiable = !obj->is<ImmutableTypedArrayObject>();
-
-  
-  if (desc.hasConfigurable() && desc.configurable() != modifiable) {
+  if (desc.hasConfigurable() && !desc.configurable()) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
@@ -5251,29 +5059,13 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   
-  if (desc.hasWritable() && desc.writable() != modifiable) {
+  if (desc.hasWritable() && !desc.writable()) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
   
   if (desc.hasValue()) {
-    if (modifiable) {
-      return SetTypedArrayElement(cx, obj, index, desc.value(), result);
-    }
-
-    Rooted<Value> currentValue(cx);
-    if (!obj->getElement<CanGC>(cx, index, &currentValue)) {
-      return false;
-    }
-
-    bool sameValue;
-    if (!SameValue(cx, desc.value(), currentValue, &sameValue)) {
-      return false;
-    }
-
-    if (!sameValue) {
-      return result.fail(JSMSG_CANT_REDEFINE_PROP);
-    }
+    return SetTypedArrayElement(cx, obj, index, desc.value(), result);
   }
 
   
@@ -5696,13 +5488,6 @@ static MOZ_ALWAYS_INLINE bool TypedArraySortPrologue(JSContext* cx,
   }
 
   
-  if (tarrayUnwrapped->is<ImmutableTypedArrayObject>()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ARRAYBUFFER_IMMUTABLE);
-    return false;
-  }
-
-  
   size_t len = *arrayLength;
 
   
@@ -5931,9 +5716,7 @@ ArraySortResult js::TypedArraySortFromJit(
     if (clasp != FixedLengthTypedArrayObjectTemplate<                         \
                      NativeType>::instanceClass() &&                          \
         clasp !=                                                              \
-            ResizableTypedArrayObjectTemplate<NativeType>::instanceClass() && \
-        clasp !=                                                              \
-            ImmutableTypedArrayObjectTemplate<NativeType>::instanceClass()) { \
+            ResizableTypedArrayObjectTemplate<NativeType>::instanceClass()) { \
       return nullptr;                                                         \
     }                                                                         \
     return obj;                                                               \
@@ -6035,8 +5818,6 @@ namespace JS {
 
 const JSClass* const TypedArray_base::fixedLengthClasses =
     TypedArrayObject::fixedLengthClasses;
-const JSClass* const TypedArray_base::immutableClasses =
-    TypedArrayObject::immutableClasses;
 const JSClass* const TypedArray_base::resizableClasses =
     TypedArrayObject::resizableClasses;
 
@@ -6072,15 +5853,6 @@ bool JS::ArrayBufferOrView::isResizable() const {
     return obj->as<ArrayBufferObjectMaybeShared>().isResizable();
   } else {
     return obj->as<ArrayBufferViewObject>().hasResizableBuffer();
-  }
-}
-
-bool JS::ArrayBufferOrView::isImmutable() const {
-  MOZ_ASSERT(obj);
-  if (obj->is<ArrayBufferObjectMaybeShared>()) {
-    return obj->as<ArrayBufferObjectMaybeShared>().isImmutable();
-  } else {
-    return obj->as<ArrayBufferViewObject>().hasImmutableBuffer();
   }
 }
 

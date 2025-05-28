@@ -19,11 +19,11 @@ function ViewedArrayBufferIfReified(tarray) {
   return IsObject(buf) ? buf : null;
 }
 
-function GetArrayBufferFlagsOrZero(buffer) {
+function IsDetachedBuffer(buffer) {
   
   
   if (buffer === null) {
-    return 0;
+    return false;
   }
 
   assert(
@@ -34,35 +34,23 @@ function GetArrayBufferFlagsOrZero(buffer) {
 
   
   if ((buffer = GuardToArrayBuffer(buffer)) === null) {
-    return 0;
+    return false;
   }
 
-  return UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
+  var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
+  return (flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0;
 }
 
-function EnsureAttachedArrayBuffer(tarray) {
+function GetAttachedArrayBuffer(tarray) {
   var buffer = ViewedArrayBufferIfReified(tarray);
-  var flags = GetArrayBufferFlagsOrZero(buffer);
-  if ((flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0) {
+  if (IsDetachedBuffer(buffer)) {
     ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
   }
+  return buffer;
 }
 
-function EnsureAttachedMutableArrayBuffer(tarray) {
-  var buffer = ViewedArrayBufferIfReified(tarray);
-  var flags = GetArrayBufferFlagsOrZero(buffer);
-  if ((flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0) {
-    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-  }
-
-  
-  if ((flags & JS_ARRAYBUFFER_IMMUTABLE_FLAG) !== 0) {
-    ThrowTypeError(JSMSG_ARRAYBUFFER_IMMUTABLE);
-  }
-}
-
-function EnsureAttachedArrayBufferMethod() {
-  EnsureAttachedArrayBuffer(this);
+function GetAttachedArrayBufferMethod() {
+  return GetAttachedArrayBuffer(this);
 }
 
 
@@ -71,14 +59,14 @@ function EnsureAttachedArrayBufferMethod() {
 
 function EnsureTypedArrayWithArrayBuffer(arg) {
   if (IsObject(arg) && IsTypedArray(arg)) {
-    EnsureAttachedArrayBuffer(arg);
+    GetAttachedArrayBuffer(arg);
     return;
   }
 
   callFunction(
     CallTypedArrayMethodIfWrapped,
     arg,
-    "EnsureAttachedArrayBufferMethod"
+    "GetAttachedArrayBufferMethod"
   );
 }
 
@@ -132,7 +120,7 @@ function ValidateTypedArray(obj) {
     
     if (IsTypedArray(obj)) {
       
-      EnsureAttachedArrayBuffer(obj);
+      GetAttachedArrayBuffer(obj);
       return;
     }
 
@@ -140,34 +128,6 @@ function ValidateTypedArray(obj) {
     if (IsPossiblyWrappedTypedArray(obj)) {
       if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj)) {
         ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-      }
-      return;
-    }
-  }
-
-  
-  ThrowTypeError(JSMSG_NON_TYPED_ARRAY_RETURNED);
-}
-
-
-
-function ValidateWritableTypedArray(obj) {
-  if (IsObject(obj)) {
-    
-    if (IsTypedArray(obj)) {
-      
-      
-      EnsureAttachedMutableArrayBuffer(obj);
-      return;
-    }
-
-    
-    if (IsPossiblyWrappedTypedArray(obj)) {
-      if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj)) {
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-      }
-      if (PossiblyWrappedTypedArrayHasImmutableBuffer(obj)) {
-        ThrowTypeError(JSMSG_ARRAYBUFFER_IMMUTABLE);
       }
       return;
     }
@@ -188,7 +148,7 @@ function TypedArrayCreateWithLength(constructor, length) {
   );
 
   
-  ValidateWritableTypedArray(newTypedArray);
+  ValidateTypedArray(newTypedArray);
 
   
   var len = PossiblyWrappedTypedArrayLength(newTypedArray);
@@ -731,7 +691,7 @@ function TypedArraySlice(start, end) {
     );
   }
 
-  EnsureAttachedArrayBuffer(O);
+  GetAttachedArrayBuffer(O);
 
   
   var len = TypedArrayLength(O);
@@ -1010,7 +970,7 @@ function TypedArrayAt(index) {
       "TypedArrayAt"
     );
   }
-  EnsureAttachedArrayBuffer(obj);
+  GetAttachedArrayBuffer(obj);
 
   
   var len = TypedArrayLength(obj);
@@ -1189,7 +1149,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
       ) {
         
         
-        EnsureAttachedArrayBuffer(source);
+        GetAttachedArrayBuffer(source);
 
         
         var len = TypedArrayLength(source);

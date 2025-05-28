@@ -38,8 +38,7 @@
 #include "jit/AtomicOperations.h"
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"  
-#include "js/ArrayBufferMaybeShared.h"  
-#include "js/CallAndConstruct.h"        
+#include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
@@ -3531,12 +3530,6 @@ static bool ImplicitConvert(JSContext* cx, HandleValue val,
         break;
       } else if (val.isObject() && JS::IsArrayBufferObject(valObj)) {
         
-        if (JS::IsImmutableArrayBufferMaybeShared(valObj)) {
-          return ConvError(cx, targetType, val, convType, funObj, argIndex,
-                           arrObj, arrIndex);
-        }
-
-        
         
         
         
@@ -3564,12 +3557,6 @@ static bool ImplicitConvert(JSContext* cx, HandleValue val,
         return ConvError(cx, targetType, val, convType, funObj, argIndex,
                          arrObj, arrIndex);
       } else if (val.isObject() && JS_IsArrayBufferViewObject(valObj)) {
-        
-        if (JS::IsImmutableArrayBufferView(valObj)) {
-          return ConvError(cx, targetType, val, convType, funObj, argIndex,
-                           arrObj, arrIndex);
-        }
-
         
         
         if (!CanConvertTypedArrayItemTo(baseType, valObj, cx)) {

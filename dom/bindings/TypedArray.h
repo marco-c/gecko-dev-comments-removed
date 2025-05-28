@@ -711,9 +711,6 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     MOZ_RELEASE_ASSERT(
         !ArrayT::fromObject(mImplObj).isResizable(),
         "Bindings must have checked ArrayBuffer{View} is non-resizable");
-    MOZ_RELEASE_ASSERT(
-        !ArrayT::fromObject(mImplObj).isImmutable(),
-        "Bindings must have checked ArrayBuffer{View} is mutable");
 
     
     

@@ -178,6 +178,12 @@ class DataViewObject : public ArrayBufferViewObject {
 class FixedLengthDataViewObject : public DataViewObject {
  public:
   static const JSClass class_;
+
+  size_t byteOffset() const {
+    return ArrayBufferViewObject::byteOffsetSlotValue();
+  }
+
+  size_t byteLength() const { return ArrayBufferViewObject::lengthSlotValue(); }
 };
 
 
@@ -198,20 +204,6 @@ class ResizableDataViewObject : public DataViewObject {
 };
 
 
-
-
-class ImmutableDataViewObject : public DataViewObject {
-  friend class DataViewObject;
-
-  static ImmutableDataViewObject* create(
-      JSContext* cx, size_t byteOffset, size_t byteLength,
-      Handle<ArrayBufferObjectMaybeShared*> arrayBuffer, HandleObject proto);
-
- public:
-  static const JSClass class_;
-};
-
-
 JSObject* NewDataView(JSContext* cx, HandleObject buffer, size_t byteOffset);
 
 }  
@@ -219,7 +211,7 @@ JSObject* NewDataView(JSContext* cx, HandleObject buffer, size_t byteOffset);
 template <>
 inline bool JSObject::is<js::DataViewObject>() const {
   return is<js::FixedLengthDataViewObject>() ||
-         is<js::ResizableDataViewObject>() || is<js::ImmutableDataViewObject>();
+         is<js::ResizableDataViewObject>();
 }
 
 #endif 

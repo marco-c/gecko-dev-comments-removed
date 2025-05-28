@@ -2514,18 +2514,12 @@ static bool SetNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
       MOZ_ASSERT(pobj == obj || !obj->is<TypedArrayObject>(),
                  "prototype chain not traversed for typed array indices");
 
-      auto tobj = HandleObject(pobj).as<TypedArrayObject>();
-
-      
-      if (tobj->is<ImmutableTypedArrayObject>()) {
-        return result.fail(JSMSG_ARRAYBUFFER_IMMUTABLE);
-      }
-
       
       if (receiver.isObject() && pobj == &receiver.toObject()) {
         mozilla::Maybe<uint64_t> index = ToTypedArrayIndex(id);
         MOZ_ASSERT(index, "typed array out-of-range reported by non-index?");
 
+        auto tobj = HandleObject(pobj).as<TypedArrayObject>();
         return SetTypedArrayElement(cx, tobj, *index, v, result);
       }
 
@@ -2595,7 +2589,7 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
   
 
   
-  if (prop.isDenseElement()) {
+  if (prop.isDenseElement() || prop.isTypedArrayElement()) {
     
     if (pobj->denseElementsAreFrozen()) {
       return result.fail(JSMSG_READ_ONLY);
@@ -2603,38 +2597,15 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
 
     
     if (receiver.isObject() && pobj == &receiver.toObject()) {
+      if (prop.isTypedArrayElement()) {
+        Rooted<TypedArrayObject*> tobj(cx, &pobj->as<TypedArrayObject>());
+        size_t idx = prop.typedArrayElementIndex();
+        return SetTypedArrayElement(cx, tobj, idx, v, result);
+      }
+
       return SetDenseElement(cx, pobj, prop.denseElementIndex(), v, result);
     }
 
-    
-    return SetPropertyByDefining(cx, id, v, receiver, result);
-  }
-
-  
-  if (prop.isTypedArrayElement()) {
-    auto tobj = HandleObject(pobj).as<TypedArrayObject>();
-
-    
-    
-    
-    MOZ_ASSERT(!tobj->denseElementsAreFrozen());
-
-    
-    if (tobj->is<ImmutableTypedArrayObject>()) {
-      return result.fail(JSMSG_ARRAYBUFFER_IMMUTABLE);
-    }
-
-    
-    if (receiver.isObject() && pobj == &receiver.toObject()) {
-      size_t idx = prop.typedArrayElementIndex();
-      return SetTypedArrayElement(cx, tobj, idx, v, result);
-    }
-
-    
-    
-    
-
-    
     
     return SetPropertyByDefining(cx, id, v, receiver, result);
   }
