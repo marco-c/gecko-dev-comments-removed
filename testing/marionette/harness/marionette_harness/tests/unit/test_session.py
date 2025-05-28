@@ -2,8 +2,6 @@
 
 
 
-import six
-
 from marionette_driver import errors
 
 from marionette_harness import MarionetteTestCase
@@ -33,11 +31,11 @@ class TestSession(MarionetteTestCase):
         self.marionette.start_session()
 
         self.assertTrue(self.marionette.session_id is not None)
-        self.assertTrue(isinstance(self.marionette.session_id, six.text_type))
+        self.assertTrue(isinstance(self.marionette.session_id, str))
 
     def test_session_already_started(self):
         self.marionette.start_session()
-        self.assertTrue(isinstance(self.marionette.session_id, six.text_type))
+        self.assertTrue(isinstance(self.marionette.session_id, str))
         with self.assertRaises(errors.SessionNotCreatedException):
             self.marionette._send_message("WebDriver:NewSession", {})
 

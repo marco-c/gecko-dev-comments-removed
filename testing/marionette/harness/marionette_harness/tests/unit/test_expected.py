@@ -2,7 +2,7 @@
 
 
 
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from marionette_driver import expected
 from marionette_driver.by import By

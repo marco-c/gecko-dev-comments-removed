@@ -2,11 +2,10 @@
 
 
 
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from marionette_driver.by import By
 from marionette_driver.errors import (
-    DetachedShadowRootException,
     NoSuchShadowRootException,
 )
 from marionette_driver.marionette import ShadowRoot

@@ -2,8 +2,6 @@
 
 
 
-import six
-
 from marionette_harness.marionette_test import (
     parameterized,
     with_parameters,
@@ -12,8 +10,7 @@ from marionette_harness.marionette_test import (
 )
 
 
-@six.add_metaclass(MetaParameterized)
-class Parameterizable(object):
+class Parameterizable(object, metaclass=MetaParameterized):
     pass
 
 
