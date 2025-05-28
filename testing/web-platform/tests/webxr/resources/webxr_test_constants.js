@@ -25,8 +25,12 @@ const VALID_POSE_TRANSFORM = {
     orientation: [0.5, 0.5, 0.5, 0.5]
 };
 
-const VALID_PROJECTION_MATRIX =
-    [1, 0, 0, 0, 0, 1, 0, 0, 3, 2, -1, -1, 0, 0, -0.2, 0];
+const VALID_PROJECTION_MATRIX = [
+    1,  0,  0,  0,
+    0,  1,  0,  0,
+    3,  2, -1, -1,
+    0,  0, -0.2, 0
+];
 
 
 const VALID_FIELD_OF_VIEW = {
@@ -35,6 +39,16 @@ const VALID_FIELD_OF_VIEW = {
     leftDegrees:-63.4349,
     rightDegrees: 75.9637
 };
+
+
+
+
+const VALID_DEPTH_PROJECTION_MATRIX = [
+    1,  0,  0,     0,
+    0,  1,  0,     0,
+    3,  2, -1,    -1,
+    0,  0, -0.002, 0
+];
 
 
 const VALID_GRIP = [1, 0, 0, 0,
@@ -91,6 +105,13 @@ const LEFT_OFFSET = {
 
 const RIGHT_OFFSET = {
     position: [0.1, 0, 0],
+    orientation: [0, 0, 0, 1]
+};
+
+
+
+const DEPTH_OFFSET = {
+    position: [-0.1, 0.01, 0],
     orientation: [0, 0, 0, 1]
 };
 
