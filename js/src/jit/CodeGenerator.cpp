@@ -2441,6 +2441,22 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   return true;
 }
 
+
+
+template <uint32_t FromBitMask, uint32_t ToBitMask>
+static void ShiftFlag32(MacroAssembler& masm, Register reg) {
+  static_assert(mozilla::IsPowerOfTwo(FromBitMask));
+  static_assert(mozilla::IsPowerOfTwo(ToBitMask));
+  static_assert(FromBitMask != ToBitMask);
+  constexpr uint32_t fromShift = __builtin_ctz(FromBitMask);
+  constexpr uint32_t toShift = __builtin_ctz(ToBitMask);
+  if (fromShift < toShift) {
+    masm.lshift32(Imm32(toShift - fromShift), reg);
+  } else {
+    masm.rshift32(Imm32(fromShift - toShift), reg);
+  }
+}
+
 static void EmitInitDependentStringBase(MacroAssembler& masm,
                                         Register dependent, Register base,
                                         Register temp1, Register temp2,
@@ -2461,10 +2477,18 @@ static void EmitInitDependentStringBase(MacroAssembler& masm,
   {
     
     
+    
+    
+    
+    
+    
+    
+    
+    masm.or32(Imm32(~JSString::ATOM_BIT), temp1, temp2);
+    masm.not32(temp2);
+    ShiftFlag32<JSString::ATOM_BIT, JSString::DEPENDED_ON_BIT>(masm, temp2);
+    masm.or32(temp2, temp1);
     masm.movePtr(base, temp2);
-    masm.branchTest32(Assembler::NonZero, temp1, Imm32(JSString::ATOM_BIT),
-                      &markedDependedOn);
-    masm.or32(Imm32(JSString::DEPENDED_ON_BIT), temp1);
     masm.store32(temp1, Address(temp2, JSString::offsetOfFlags()));
   }
   masm.bind(&markedDependedOn);
