@@ -4000,13 +4000,12 @@ class _DSCard extends (external_React_default()).PureComponent {
       format,
       alt_text
     } = this.props;
+    const refinedCardsLayout = Prefs.values["discoverystream.refinedCardsLayout.enabled"];
+    const refinedCardsClassName = refinedCardsLayout ? `refined-cards` : ``;
     if (this.props.placeholder || !this.state.isSeen) {
       
       const placeholderClassName = this.state.isSeen ? `placeholder-seen` : ``;
-      return external_React_default().createElement("div", {
-        className: `ds-card placeholder ${placeholderClassName} ${isListCard ? "list-card-placeholder" : ""}`,
-        ref: this.setPlaceholderRef
-      }, external_React_default().createElement("div", {
+      let placeholderElements = external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
         className: "placeholder-image placeholder-fill"
       }), external_React_default().createElement("div", {
         className: "placeholder-label placeholder-fill"
@@ -4015,6 +4014,19 @@ class _DSCard extends (external_React_default()).PureComponent {
       }), external_React_default().createElement("div", {
         className: "placeholder-description placeholder-fill"
       }));
+      if (refinedCardsLayout) {
+        placeholderElements = external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+          className: "placeholder-image placeholder-fill"
+        }), external_React_default().createElement("div", {
+          className: "placeholder-description placeholder-fill"
+        }), external_React_default().createElement("div", {
+          className: "placeholder-header placeholder-fill"
+        }));
+      }
+      return external_React_default().createElement("div", {
+        className: `ds-card placeholder ${placeholderClassName} ${isListCard ? "list-card-placeholder" : ""} ${refinedCardsClassName}`,
+        ref: this.setPlaceholderRef
+      }, placeholderElements);
     }
     let source = this.props.source || this.props.publisher;
     if (!source) {
@@ -4035,7 +4047,6 @@ class _DSCard extends (external_React_default()).PureComponent {
     const layoutsVariantAEnabled = Prefs.values["newtabLayouts.variant-a"];
     const layoutsVariantBEnabled = Prefs.values["newtabLayouts.variant-b"];
     const sectionsEnabled = Prefs.values["discoverystream.sections.enabled"];
-    const refinedCardsLayout = Prefs.values["discoverystream.refinedCardsLayout.enabled"];
     const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
     const smartCrop = Prefs.values["images.smart"];
     const faviconEnabled = Prefs.values["discoverystream.publisherFavicon.enabled"];
@@ -4061,7 +4072,6 @@ class _DSCard extends (external_React_default()).PureComponent {
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     const isMediumRectangle = format === "rectangle";
     const spocFormatClassName = isMediumRectangle ? `ds-spoc-rectangle` : ``;
-    const refinedCardsClassName = refinedCardsLayout ? `refined-cards` : ``;
     let sizes = [];
     if (!isMediumRectangle) {
       sizes = this.dsImageSizes;
