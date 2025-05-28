@@ -21,6 +21,21 @@ const withTimeoutMessage =
   ]);
 }
 
+
+
+const waitForUrlToEndWith = async (url) => {
+  return new Promise((resolve) => {
+    window.addEventListener('popstate', () => {
+      if (location.href.endsWith(url)) {
+        resolve();
+      } else {
+        reject(
+            'Got ' + location.href + ' - expected URL ends with "' + url + '"');
+      }
+    }, {once: true});
+  });
+};
+
 const testSoftNavigation = options => {
   const addContent = options.addContent;
   const link = options.link;
@@ -182,10 +197,11 @@ const setEvent =
         const url = URL + '?' + counter;
         if (pushState) {
           
+          
           if (pushUrl) {
-            pushState(url);
+            await pushState(url);
           } else {
-            pushState();
+            await pushState();
           }
         }
 
