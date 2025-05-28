@@ -25,37 +25,27 @@ interface nsIBinaryInputStream : nsIInputStream {
 
 
 
-    boolean readBoolean();
+    [must_use] boolean readBoolean();
 
-    uint8_t read8();
-    uint16_t read16();
-    uint32_t read32();
-    uint64_t read64();
+    [must_use] uint8_t read8();
+    [must_use] uint16_t read16();
+    [must_use] uint32_t read32();
+    [must_use] uint64_t read64();
 
-    float readFloat();
-    double readDouble();
-
-    
-
-
-
-    ACString readCString();
+    [must_use] float readFloat();
+    [must_use] double readDouble();
 
     
 
 
 
-    AString readString();
+    [must_use] ACString readCString();
 
     
 
 
 
-
-
-
-    void readBytes(in uint32_t aLength,
-                   [size_is(aLength), retval] out string aString);
+    [must_use] AString readString();
 
     
 
@@ -64,8 +54,8 @@ interface nsIBinaryInputStream : nsIInputStream {
 
 
 
-
-    Array<uint8_t> readByteArray(in uint32_t aLength);
+    [must_use] void readBytes(in uint32_t aLength,
+                              [size_is(aLength), retval] out string aString);
 
     
 
@@ -75,9 +65,19 @@ interface nsIBinaryInputStream : nsIInputStream {
 
 
 
+    [must_use] Array<uint8_t> readByteArray(in uint32_t aLength);
+
+    
 
 
-    [implicit_jscontext]
+
+
+
+
+
+
+
+    [implicit_jscontext, must_use]
     uint64_t readArrayBuffer(in uint64_t aLength, in jsval aArrayBuffer);
 };
 
