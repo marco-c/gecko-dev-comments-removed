@@ -3938,7 +3938,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   CodeOffset wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
                                            const ABIArg& instanceArg,
                                            wasm::SymbolicAddress builtin,
-                                           wasm::FailureMode failureMode);
+                                           wasm::FailureMode failureMode,
+                                           wasm::Trap failureTrap);
 
   
   
@@ -3946,6 +3947,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void wasmTrapOnFailedInstanceCall(Register resultRegister,
                                     wasm::FailureMode failureMode,
+                                    wasm::Trap failureTrap,
                                     const wasm::TrapSiteDesc& trapSiteDesc);
 
   

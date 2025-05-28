@@ -22,6 +22,7 @@
 #include "intgemm/IntegerGemmIntrinsic.h"
 #include "jit/IonTypes.h"
 #include "wasm/WasmBuiltinModuleGenerated.h"
+#include "wasm/WasmConstants.h"
 
 namespace js {
 class JitFrameIter;
@@ -174,7 +175,7 @@ enum class FailureMode : uint8_t {
   FailOnNegI32,
   FailOnMaxI32,
   FailOnNullPtr,
-  FailOnInvalidRef
+  FailOnInvalidRef,
 };
 
 
@@ -194,6 +195,8 @@ struct SymbolicAddressSignature {
   const jit::MIRType retType;
   
   const FailureMode failureMode;
+  
+  const Trap failureTrap;
   
   const uint8_t numArgs;
   

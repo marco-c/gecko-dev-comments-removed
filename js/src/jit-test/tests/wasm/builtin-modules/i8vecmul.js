@@ -26,6 +26,14 @@ let {i8vecmul} = instance.exports;
 
 
 {
+  assertErrorMessage(() => i8vecmul(PageSizeInBytes - 1, 0, 0, 2), WebAssembly.RuntimeError, /index out of bounds/);
+  assertErrorMessage(() => i8vecmul(0, PageSizeInBytes - 1, 0, 2), WebAssembly.RuntimeError, /index out of bounds/);
+  assertErrorMessage(() => i8vecmul(0, 0, PageSizeInBytes - 1, 2), WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
   let linkInstance = wasmEvalText(`(module
     (import "" "i8vecmul" (func (param i32 i32 i32 i32)))
   )`, {"": instance.exports});
