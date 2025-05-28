@@ -494,6 +494,20 @@ typedef enum JSGCParamKey {
 
 
   JSGC_HIGH_FREQUENCY_MODE = 56,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  JSGC_NURSERY_MAX_TIME_GOAL_MS = 57,
 } JSGCParamKey;
 
 

@@ -1021,6 +1021,9 @@ pref("javascript.options.mem.nursery_eager_collection_threshold_percent", 25);
 
 pref("javascript.options.mem.nursery_eager_collection_timeout_ms", 5000);
 
+
+pref("javascript.options.mem.nursery_max_time_goal_ms", 4);
+
 #ifdef JS_GC_ZEAL
 pref("javascript.options.mem.gc_zeal.mode", 0);
 pref("javascript.options.mem.gc_zeal.frequency", 5000);

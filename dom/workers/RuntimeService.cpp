@@ -375,6 +375,7 @@ void LoadJSGCMemoryOptions(const char* aPrefName, void* ) {
 #ifdef NIGHTLY_BUILD
       PREF("gc_experimental_semispace_nursery", JSGC_SEMISPACE_NURSERY_ENABLED),
 #endif
+      PREF("nursery_max_time_goal_ms", JSGC_NURSERY_MAX_TIME_GOAL_MS),
       
       
       
@@ -454,6 +455,7 @@ void LoadJSGCMemoryOptions(const char* aPrefName, void* ) {
       case JSGC_HEAP_GROWTH_FACTOR:
       case JSGC_PARALLEL_MARKING_THRESHOLD_MB:
       case JSGC_MAX_MARKING_THREADS:
+      case JSGC_NURSERY_MAX_TIME_GOAL_MS:
         UpdateCommonJSGCMemoryOption(rts, pref->fullName, pref->key);
         break;
       default:
