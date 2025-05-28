@@ -2,6 +2,7 @@
 
 
 
+use crate::error::error;
 use serde_derive::*;
 
 use super::Command;
@@ -98,12 +99,12 @@ impl CommandRecord {
             match &self.args[0] {
                 Some(name) => Some(name.into()),
                 None => {
-                    log::error!("Incoming '{cmd_name}' command has null argument");
+                    error!("Incoming '{cmd_name}' command has null argument");
                     None
                 }
             }
         } else {
-            log::error!(
+            error!(
                 "Incoming '{cmd_name}' command has wrong number of arguments ({})",
                 self.args.len()
             );
@@ -121,7 +122,7 @@ impl CommandRecord {
                 if self.args.is_empty() {
                     Some(Command::ResetAll)
                 } else {
-                    log::error!("Invalid arguments for 'resetAll' command");
+                    error!("Invalid arguments for 'resetAll' command");
                     None
                 }
             }

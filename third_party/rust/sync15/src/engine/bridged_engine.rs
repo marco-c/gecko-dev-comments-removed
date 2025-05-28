@@ -2,6 +2,7 @@
 
 
 
+use crate::error::debug;
 use crate::{telemetry, ServerTimestamp};
 use anyhow::Result;
 
@@ -144,7 +145,7 @@ impl<A: BridgedEngineAdaptor> BridgedEngine for A {
         let engine = self.engine();
         let assoc = engine.get_sync_assoc()?;
         if matches!(assoc, EngineSyncAssociation::Connected(c) if c.coll == sync_id) {
-            log::debug!("ensure_current_sync_id is current");
+            debug!("ensure_current_sync_id is current");
         } else {
             let new_coll_ids = CollSyncIds {
                 global: Guid::empty(),

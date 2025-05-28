@@ -3,6 +3,9 @@
 
 
 use error_support::{ErrorHandling, GetErrorHandling};
+
+pub use error_support::{debug, error, info, trace, warn};
+
 use interrupt_support::Interrupted;
 use std::fmt;
 
@@ -95,17 +98,17 @@ impl GetErrorHandling for Error {
     fn get_error_handling(&self) -> ErrorHandling<Self::ExternalError> {
         match self {
             Error::QuotaError(reason) => {
-                log::info!("webext-storage-quota-error");
+                info!("webext-storage-quota-error");
                 ErrorHandling::convert(WebExtStorageApiError::QuotaError { reason: *reason })
             }
             Error::JsonError(e) => {
-                log::info!("webext-storage-json-error");
+                info!("webext-storage-json-error");
                 ErrorHandling::convert(WebExtStorageApiError::JsonError {
                     reason: e.to_string(),
                 })
             }
             _ => {
-                log::info!("webext-storage-unexpected-error");
+                info!("webext-storage-unexpected-error");
                 ErrorHandling::convert(WebExtStorageApiError::UnexpectedError {
                     reason: self.to_string(),
                 })

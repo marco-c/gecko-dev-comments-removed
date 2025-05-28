@@ -4,6 +4,8 @@
 
 use error_support::{ErrorHandling, GetErrorHandling};
 
+pub use error_support::{debug, error, info, trace, warn};
+
 pub type ApiResult<T> = std::result::Result<T, RemoteSettingsError>;
 pub type Result<T> = std::result::Result<T, Error>;
 

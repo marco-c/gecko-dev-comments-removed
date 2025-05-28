@@ -2,6 +2,34 @@
 
 
 
+
+#[cfg(not(feature = "tracing-logging"))]
+pub use log::{debug, error, info, trace, warn, Level};
+
+#[cfg(feature = "tracing-logging")]
+pub use tracing_support::{debug, error, info, trace, warn, Level};
+
+#[cfg(all(feature = "testing", not(feature = "tracing-logging")))]
+pub fn init_for_tests() {
+    let _ = env_logger::try_init();
+}
+
+#[cfg(all(feature = "testing", not(feature = "tracing-logging")))]
+pub fn init_for_tests_with_level(level: Level) {
+    
+    let level_name = match level {
+        Level::Debug => "debug",
+        Level::Trace => "trace",
+        Level::Info => "info",
+        Level::Warn => "warn",
+        Level::Error => "error",
+    };
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(level_name)).init();
+}
+
+#[cfg(all(feature = "testing", feature = "tracing-logging"))]
+pub use tracing_support::init_for_tests;
+
 mod macros;
 
 #[cfg(feature = "backtrace")]
@@ -39,13 +67,25 @@ pub mod backtrace {
 mod redact;
 pub use redact::*;
 
+#[cfg(not(feature = "tracing-reporting"))]
 mod reporting;
+#[cfg(not(feature = "tracing-reporting"))]
 pub use reporting::{
-    report_breadcrumb, report_error_to_app, set_application_error_reporter,
-    unset_application_error_reporter, ApplicationErrorReporter,
+    set_application_error_reporter, unset_application_error_reporter, ApplicationErrorReporter,
 };
 
-pub use reporting::{ArcReporterAdapter, TestErrorReporter};
+#[cfg(feature = "tracing-reporting")]
+mod reporting {
+    pub fn report_error_to_app(type_name: String, message: String) {
+        tracing::event!(target: "app-services-error-reporter::error", tracing::Level::ERROR, message, type_name);
+    }
+
+    pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32) {
+        tracing::event!(target: "app-services-error-reporter::breadcrumb", tracing::Level::INFO, message, module, line, column);
+    }
+}
+
+pub use reporting::{report_breadcrumb, report_error_to_app};
 
 pub use error_support_macros::handle_error;
 
@@ -173,4 +213,4 @@ macro_rules! define_error {
     };
 }
 
-uniffi::include_scaffolding!("errorsupport");
+uniffi::setup_scaffolding!("errorsupport");

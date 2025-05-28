@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 
-use error_support::{breadcrumb, handle_error};
+use error_support::{breadcrumb, handle_error, trace};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use remote_settings::{self, RemoteSettingsError, RemoteSettingsServer, RemoteSettingsService};
@@ -20,7 +20,7 @@ use crate::{
     config::{SuggestGlobalConfig, SuggestProviderConfig},
     db::{ConnectionType, IngestedRecord, Sqlite3Extension, SuggestDao, SuggestDb},
     error::Error,
-    geoname::{Geoname, GeonameMatch, GeonameType},
+    geoname::{Geoname, GeonameAlternates, GeonameMatch},
     metrics::{MetricsContext, SuggestIngestionMetrics, SuggestQueryMetrics},
     provider::{SuggestionProvider, SuggestionProviderConstraints, DEFAULT_INGEST_PROVIDERS},
     rs::{
@@ -307,35 +307,25 @@ impl SuggestStore {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[handle_error(Error)]
     pub fn fetch_geonames(
         &self,
         query: &str,
         match_name_prefix: bool,
-        geoname_type: Option<GeonameType>,
         filter: Option<Vec<Geoname>>,
     ) -> SuggestApiResult<Vec<GeonameMatch>> {
-        self.inner
-            .fetch_geonames(query, match_name_prefix, geoname_type, filter)
+        self.inner.fetch_geonames(query, match_name_prefix, filter)
+    }
+
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn fetch_geoname_alternates(
+        &self,
+        geoname: &Geoname,
+    ) -> SuggestApiResult<GeonameAlternates> {
+        self.inner.fetch_geoname_alternates(geoname)
     }
 }
 
@@ -569,17 +559,21 @@ impl<S> SuggestStoreInner<S> {
         &self,
         query: &str,
         match_name_prefix: bool,
-        geoname_type: Option<GeonameType>,
         filter: Option<Vec<Geoname>>,
     ) -> Result<Vec<GeonameMatch>> {
         self.dbs()?.reader.read(|dao| {
             dao.fetch_geonames(
                 query,
                 match_name_prefix,
-                geoname_type,
                 filter.as_ref().map(|f| f.iter().collect()),
             )
         })
+    }
+
+    pub fn fetch_geoname_alternates(&self, geoname: &Geoname) -> Result<GeonameAlternates> {
+        self.dbs()?
+            .reader
+            .read(|dao| dao.fetch_geoname_alternates(geoname))
     }
 }
 
@@ -664,7 +658,7 @@ where
         context: &mut MetricsContext,
     ) -> Result<()> {
         for record in &changes.new {
-            log::trace!("Ingesting record ID: {}", record.id.as_str());
+            trace!("Ingesting record ID: {}", record.id.as_str());
             self.process_record(dao, record, constraints, context)?;
         }
         for record in &changes.updated {
@@ -672,20 +666,20 @@ where
             
             
             
-            log::trace!("Reingesting updated record ID: {}", record.id.as_str());
+            trace!("Reingesting updated record ID: {}", record.id.as_str());
             dao.delete_record_data(&record.id)?;
             self.process_record(dao, record, constraints, context)?;
         }
         for record in &changes.unchanged {
             if self.should_reprocess_record(dao, record, constraints)? {
-                log::trace!("Reingesting unchanged record ID: {}", record.id.as_str());
+                trace!("Reingesting unchanged record ID: {}", record.id.as_str());
                 self.process_record(dao, record, constraints, context)?;
             } else {
-                log::trace!("Skipping unchanged record ID: {}", record.id.as_str());
+                trace!("Skipping unchanged record ID: {}", record.id.as_str());
             }
         }
         for record in &changes.deleted {
-            log::trace!("Deleting record ID: {:?}", record.id);
+            trace!("Deleting record ID: {:?}", record.id);
             dao.delete_record_data(&record.id)?;
         }
         dao.update_ingested_records(
@@ -776,7 +770,10 @@ where
                     )?;
                 }
             }
-            SuggestRecord::Geonames => self.process_geoname_record(dao, record, context)?,
+            SuggestRecord::Geonames => self.process_geonames_record(dao, record, context)?,
+            SuggestRecord::GeonamesAlternates => {
+                self.process_geonames_alternates_record(dao, record, context)?
+            }
         }
         Ok(())
     }
@@ -1062,11 +1059,10 @@ pub(crate) mod tests {
             &self,
             query: &str,
             match_name_prefix: bool,
-            geoname_type: Option<GeonameType>,
             filter: Option<Vec<Geoname>>,
         ) -> Vec<GeonameMatch> {
             self.inner
-                .fetch_geonames(query, match_name_prefix, geoname_type, filter)
+                .fetch_geonames(query, match_name_prefix, filter)
                 .expect("Error fetching geonames")
         }
     }

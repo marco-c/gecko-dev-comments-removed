@@ -5,7 +5,7 @@
 use super::{CollectionUpdate, GlobalState, LocalCollStateMachine, Sync15StorageClient};
 use crate::clients_engine;
 use crate::engine::SyncEngine;
-use crate::error::Error;
+use crate::error::{info, warn, Error};
 use crate::telemetry;
 use crate::KeyBundle;
 use interrupt_support::Interruptee;
@@ -22,14 +22,14 @@ pub fn synchronize_with_clients_engine(
     interruptee: &dyn Interruptee,
 ) -> Result<(), Error> {
     let collection = engine.collection_name();
-    log::info!("Syncing collection {}", collection);
+    info!("Syncing collection {}", collection);
 
     
     let coll_state = match LocalCollStateMachine::get_state(engine, global_state, root_sync_key)? {
         Some(coll_state) => coll_state,
         None => {
             
-            log::warn!(
+            warn!(
                 "can't setup for the {} collection - hopefully it works later",
                 collection
             );
@@ -44,7 +44,7 @@ pub fn synchronize_with_clients_engine(
     
     match engine.get_collection_request(coll_state.last_modified)? {
         None => {
-            log::info!("skipping incoming for {} - not needed.", collection);
+            info!("skipping incoming for {} - not needed.", collection);
         }
         Some(collection_request) => {
             
@@ -64,7 +64,7 @@ pub fn synchronize_with_clients_engine(
             
             
             let incoming = super::fetch_incoming(client, &coll_state, collection_request)?;
-            log::info!("Downloaded {} remote changes", incoming.len());
+            info!("Downloaded {} remote changes", incoming.len());
             engine.stage_incoming(incoming, telem_engine)?;
             interruptee.err_if_interrupted()?;
         }
@@ -74,7 +74,7 @@ pub fn synchronize_with_clients_engine(
     
     
     
-    log::info!("Applying changes");
+    info!("Applying changes");
     let outgoing = engine.apply(coll_state.last_modified, telem_engine)?;
     interruptee.err_if_interrupted()?;
 
@@ -83,7 +83,7 @@ pub fn synchronize_with_clients_engine(
     
     
     
-    log::info!("Uploading {} outgoing changes", outgoing.len());
+    info!("Uploading {} outgoing changes", outgoing.len());
     let upload_info = CollectionUpdate::new_from_changeset(
         client,
         &coll_state,
@@ -92,7 +92,7 @@ pub fn synchronize_with_clients_engine(
         fully_atomic,
     )?
     .upload()?;
-    log::info!(
+    info!(
         "Upload success ({} records success, {} records failed)",
         upload_info.successful_ids.len(),
         upload_info.failed_ids.len()
@@ -109,6 +109,6 @@ pub fn synchronize_with_clients_engine(
 
     engine.sync_finished()?;
 
-    log::info!("Sync finished!");
+    info!("Sync finished!");
     Ok(())
 }

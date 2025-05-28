@@ -8,7 +8,7 @@
 #[derive(Debug, Default)]
 pub struct ErrorReporting {
     
-    log_level: Option<log::Level>,
+    log_level: Option<crate::Level>,
     
     report_class: Option<String>,
 }
@@ -35,7 +35,7 @@ impl<E> ErrorHandling<E> {
     }
 
     
-    pub fn log(self, level: log::Level) -> Self {
+    pub fn log(self, level: crate::Level) -> Self {
         Self {
             err: self.err,
             reporting: ErrorReporting {
@@ -60,12 +60,12 @@ impl<E> ErrorHandling<E> {
 
     
     pub fn log_warning(self) -> Self {
-        self.log(log::Level::Warn)
+        self.log(crate::Level::Warn)
     }
 
     
     pub fn log_info(self) -> Self {
-        self.log(log::Level::Info)
+        self.log(crate::Level::Info)
     }
 
     
@@ -73,7 +73,7 @@ impl<E> ErrorHandling<E> {
         Self {
             err: self.err,
             reporting: ErrorReporting {
-                log_level: Some(log::Level::Error),
+                log_level: Some(crate::Level::Error),
                 report_class: Some(report_class.into()),
             },
         }
@@ -99,9 +99,17 @@ where
     let handling = e.get_error_handling();
     let reporting = handling.reporting;
     if let Some(level) = reporting.log_level {
-        match &reporting.report_class {
-            Some(report_class) => log::log!(level, "{report_class}: {}", e.to_string()),
-            None => log::log!(level, "{}", e.to_string()),
+        
+        let message = match &reporting.report_class {
+            Some(report_class) => format!("{report_class}: {}", e),
+            None => format!("{}", e),
+        };
+        match level {
+            crate::Level::Trace => crate::trace!("{}", message),
+            crate::Level::Debug => crate::debug!("{}", message),
+            crate::Level::Info => crate::info!("{}", message),
+            crate::Level::Warn => crate::warn!("{}", message),
+            crate::Level::Error => crate::error!("{}", message),
         }
     }
     if let Some(report_class) = reporting.report_class {

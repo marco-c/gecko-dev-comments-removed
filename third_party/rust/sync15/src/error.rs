@@ -5,6 +5,10 @@
 use interrupt_support::Interrupted;
 
 
+#[allow(unused_imports)] 
+pub use error_support::{debug, error, info, trace, warn};
+
+
 #[cfg(feature = "sync-client")]
 #[derive(Debug, Clone)]
 pub enum ErrorResponse {

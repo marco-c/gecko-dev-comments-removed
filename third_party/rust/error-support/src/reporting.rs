@@ -4,7 +4,6 @@
 
 use parking_lot::RwLock;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, Mutex};
 
 
 
@@ -29,6 +28,7 @@ fn get_breadcrumb_counter_value() -> u32 {
 
 
 
+#[uniffi::export(callback_interface)]
 pub trait ApplicationErrorReporter: Sync + Send {
     
     
@@ -50,10 +50,15 @@ lazy_static::lazy_static! {
     pub(crate) static ref APPLICATION_ERROR_REPORTER: RwLock<Box<dyn ApplicationErrorReporter>> = RwLock::new(Box::new(DefaultApplicationErrorReporter));
 }
 
-pub fn set_application_error_reporter(reporter: Box<dyn ApplicationErrorReporter>) {
-    *APPLICATION_ERROR_REPORTER.write() = reporter;
+
+#[uniffi::export]
+pub fn set_application_error_reporter(error_reporter: Box<dyn ApplicationErrorReporter>) {
+    *APPLICATION_ERROR_REPORTER.write() = error_reporter;
 }
 
+
+
+#[uniffi::export]
 pub fn unset_application_error_reporter() {
     *APPLICATION_ERROR_REPORTER.write() = Box::new(DefaultApplicationErrorReporter)
 }
@@ -69,60 +74,4 @@ pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32
     APPLICATION_ERROR_REPORTER
         .read()
         .report_breadcrumb(message, module, line, column);
-}
-
-
-
-
-#[derive(Default)]
-pub struct TestErrorReporter {
-    errors: Mutex<Vec<(String, String)>>,
-}
-
-impl TestErrorReporter {
-    pub fn new() -> Self {
-        Self {
-            errors: Mutex::new(Vec::new()),
-        }
-    }
-
-    pub fn get_errors(&self) -> Vec<(String, String)> {
-        self.errors.lock().unwrap().clone()
-    }
-}
-
-impl ApplicationErrorReporter for TestErrorReporter {
-    fn report_error(&self, type_name: String, message: String) {
-        if let Ok(mut errors) = self.errors.lock() {
-            errors.push((type_name, message));
-        }
-    }
-
-    fn report_breadcrumb(&self, _message: String, _module: String, _line: u32, _column: u32) {}
-}
-
-
-
-
-
-
-
-pub struct ArcReporterAdapter {
-    inner: Arc<TestErrorReporter>,
-}
-
-impl ArcReporterAdapter {
-    pub fn new(inner: Arc<TestErrorReporter>) -> Self {
-        Self { inner }
-    }
-}
-
-impl ApplicationErrorReporter for ArcReporterAdapter {
-    fn report_error(&self, type_name: String, message: String) {
-        self.inner.report_error(type_name, message)
-    }
-
-    fn report_breadcrumb(&self, message: String, module: String, line: u32, column: u32) {
-        self.inner.report_breadcrumb(message, module, line, column)
-    }
 }

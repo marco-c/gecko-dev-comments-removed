@@ -12,6 +12,7 @@ use std::ops::Deref;
 use std::time::Instant;
 
 use crate::maybe_cached::MaybeCached;
+use crate::{debug, warn};
 
 
 
@@ -332,19 +333,19 @@ impl<'conn> UncheckedTransaction<'conn> {
     
     pub fn commit(mut self) -> SqlResult<()> {
         if self.finished {
-            log::warn!("ignoring request to commit an already finished transaction");
+            warn!("ignoring request to commit an already finished transaction");
             return Ok(());
         }
         self.finished = true;
         self.conn.execute_batch("COMMIT")?;
-        log::debug!("Transaction commited after {:?}", self.started_at.elapsed());
+        debug!("Transaction commited after {:?}", self.started_at.elapsed());
         Ok(())
     }
 
     
     pub fn rollback(mut self) -> SqlResult<()> {
         if self.finished {
-            log::warn!("ignoring request to rollback an already finished transaction");
+            warn!("ignoring request to rollback an already finished transaction");
             return Ok(());
         }
         self.rollback_()
@@ -377,7 +378,7 @@ impl Deref for UncheckedTransaction<'_> {
 impl Drop for UncheckedTransaction<'_> {
     fn drop(&mut self) {
         if let Err(e) = self.finish_() {
-            log::warn!("Error dropping an unchecked transaction: {}", e);
+            warn!("Error dropping an unchecked transaction: {}", e);
         }
     }
 }
