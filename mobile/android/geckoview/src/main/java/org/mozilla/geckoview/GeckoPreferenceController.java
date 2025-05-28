@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 import java.util.Objects;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -25,6 +26,7 @@ public class GeckoPreferenceController {
 
   private static final String GET_PREF = "GeckoView:Preferences:GetPref";
   private static final String SET_PREF = "GeckoView:Preferences:SetPref";
+  private static final String CLEAR_PREF = "GeckoView:Preferences:ClearPref";
 
   
 
@@ -117,6 +119,23 @@ public class GeckoPreferenceController {
   }
 
   
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public static @NonNull GeckoResult<Void> clearGeckoUserPref(@NonNull final String prefName) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("pref", prefName);
+    return EventDispatcher.getInstance().queryVoid(CLEAR_PREF, bundle);
+  }
+
+  
   public static final class Observer {
     private static final String REGISTER_PREF = "GeckoView:Preferences:RegisterObserver";
     private static final String UNREGISTER_PREF = "GeckoView:Preferences:UnregisterObserver";
@@ -132,8 +151,22 @@ public class GeckoPreferenceController {
     @AnyThread
     public static @NonNull GeckoResult<Void> registerPreference(
         @NonNull final String preferenceName) {
+      return registerPreferences(List.of(preferenceName));
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull GeckoResult<Void> registerPreferences(
+        @NonNull final List<String> preferenceNames) {
       final GeckoBundle bundle = new GeckoBundle();
-      bundle.putString("pref", preferenceName);
+      bundle.putStringArray("prefs", preferenceNames);
       return EventDispatcher.getInstance().queryVoid(REGISTER_PREF, bundle);
     }
 
@@ -148,8 +181,22 @@ public class GeckoPreferenceController {
     @UiThread
     public static @NonNull GeckoResult<Void> unregisterPreference(
         @NonNull final String preferenceName) {
+      return unregisterPreferences(List.of(preferenceName));
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    public static @NonNull GeckoResult<Void> unregisterPreferences(
+        @NonNull final List<String> preferenceNames) {
       final GeckoBundle bundle = new GeckoBundle();
-      bundle.putString("pref", preferenceName);
+      bundle.putStringArray("prefs", preferenceNames);
       return EventDispatcher.getInstance().queryVoid(UNREGISTER_PREF, bundle);
     }
 

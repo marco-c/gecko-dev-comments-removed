@@ -208,7 +208,7 @@ class PreferencesTest : BaseSessionTest() {
 
 
     @Test
-    fun multiPrefObservation() {
+    fun multiPrefObservationRegistrationAndDeregistration() {
         var timesCalled = 0
 
         
@@ -266,25 +266,10 @@ class PreferencesTest : BaseSessionTest() {
                 }
             },
         )
+
         sessionRule.waitForResult(
             GeckoPreferenceController.Observer
-                .registerPreference(intPref),
-        )
-        sessionRule.waitForResult(
-            GeckoPreferenceController.Observer
-                .registerPreference(stringPref),
-        )
-        sessionRule.waitForResult(
-            GeckoPreferenceController.Observer
-                .registerPreference(floatPref),
-        )
-        sessionRule.waitForResult(
-            GeckoPreferenceController.Observer
-                .registerPreference(boolPref),
-        )
-        sessionRule.waitForResult(
-            GeckoPreferenceController.Observer
-                .registerPreference(unknownPref),
+                .registerPreferences(listOf(intPref, stringPref, floatPref, boolPref, unknownPref)),
         )
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
@@ -296,6 +281,26 @@ class PreferencesTest : BaseSessionTest() {
             ),
         )
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", 5, timesCalled)
+
+        sessionRule.waitForResult(
+            GeckoPreferenceController.Observer
+                .unregisterPreferences(listOf(intPref, stringPref, floatPref, boolPref, unknownPref)),
+        )
+
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                intPref to 4,
+                stringPref to "#111111",
+                floatPref to "2.2",
+                boolPref to true,
+                unknownPref to "hello-world-2",
+            ),
+        )
+        assertEquals(
+            "Unregistered successfully, subsequent pref changes didn't trigger onGeckoPreferenceChange: $timesCalled",
+            5,
+            timesCalled,
+        )
     }
 
     
@@ -749,5 +754,40 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Pref name matches as expected.", intPref, result.pref)
         assertEquals("Pref type matches as expected.", PREF_TYPE_INT, result.type)
         assertEquals("Pref value matches as expected.", intInitial, result.value)
+    }
+
+    
+
+
+    @Test
+    fun clearUserPref() {
+        val arbitraryPref = "some.arbitrary.pref.test"
+        val arbitraryPrefValue = "hello-world"
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                arbitraryPref to arbitraryPrefValue,
+            ),
+        )
+        val initiallyExists =
+            sessionRule.waitForResult(
+                GeckoPreferenceController.getGeckoPref(
+                    arbitraryPref,
+                ),
+            )
+        assertEquals("Pref exists as expected.", arbitraryPref, initiallyExists.pref)
+        assertEquals("Pref value is as expected.", arbitraryPrefValue, initiallyExists.value)
+        assertEquals("Pref type is as expected.", PREF_TYPE_STRING, initiallyExists.type)
+
+        sessionRule.waitForResult(GeckoPreferenceController.clearGeckoUserPref(arbitraryPref))
+
+        val postClearing =
+            sessionRule.waitForResult(
+                GeckoPreferenceController.getGeckoPref(
+                    arbitraryPref,
+                ),
+            )
+        assertEquals("Pref name after clearing is as expected.", arbitraryPref, postClearing.pref)
+        assertEquals("Pref value after clearing is null as expected.", null, postClearing.value)
+        assertEquals("Pref type after clearing is as expected.", PREF_TYPE_INVALID, postClearing.type)
     }
 }
