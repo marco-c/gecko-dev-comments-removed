@@ -396,7 +396,9 @@ var BrowserCommands = {
 
     
     if (gBrowser.multiSelectedTabsCount) {
-      gBrowser.removeMultiSelectedTabs();
+      gBrowser.removeMultiSelectedTabs(
+        gBrowser.TabMetrics.userTriggeredContext()
+      );
       return;
     }
 
@@ -414,7 +416,10 @@ var BrowserCommands = {
     }
 
     
-    gBrowser.removeCurrentTab({ animate: true });
+    gBrowser.removeCurrentTab({
+      animate: true,
+      ...gBrowser.TabMetrics.userTriggeredContext(),
+    });
   },
 
   tryToCloseWindow(event) {
