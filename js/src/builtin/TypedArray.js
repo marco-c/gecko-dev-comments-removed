@@ -48,6 +48,19 @@ function EnsureAttachedArrayBuffer(tarray) {
   }
 }
 
+function EnsureAttachedMutableArrayBuffer(tarray) {
+  var buffer = ViewedArrayBufferIfReified(tarray);
+  var flags = GetArrayBufferFlagsOrZero(buffer);
+  if ((flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0) {
+    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+
+  
+  if ((flags & JS_ARRAYBUFFER_IMMUTABLE_FLAG) !== 0) {
+    ThrowTypeError(JSMSG_ARRAYBUFFER_IMMUTABLE);
+  }
+}
+
 function EnsureAttachedArrayBufferMethod() {
   EnsureAttachedArrayBuffer(this);
 }
@@ -138,6 +151,34 @@ function ValidateTypedArray(obj) {
 
 
 
+function ValidateWritableTypedArray(obj) {
+  if (IsObject(obj)) {
+    
+    if (IsTypedArray(obj)) {
+      
+      
+      EnsureAttachedMutableArrayBuffer(obj);
+      return;
+    }
+
+    
+    if (IsPossiblyWrappedTypedArray(obj)) {
+      if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj)) {
+        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+      }
+      if (PossiblyWrappedTypedArrayHasImmutableBuffer(obj)) {
+        ThrowTypeError(JSMSG_ARRAYBUFFER_IMMUTABLE);
+      }
+      return;
+    }
+  }
+
+  
+  ThrowTypeError(JSMSG_NON_TYPED_ARRAY_RETURNED);
+}
+
+
+
 function TypedArrayCreateWithLength(constructor, length) {
   
   var newTypedArray = constructContentFunction(
@@ -147,7 +188,7 @@ function TypedArrayCreateWithLength(constructor, length) {
   );
 
   
-  ValidateTypedArray(newTypedArray);
+  ValidateWritableTypedArray(newTypedArray);
 
   
   var len = PossiblyWrappedTypedArrayLength(newTypedArray);
