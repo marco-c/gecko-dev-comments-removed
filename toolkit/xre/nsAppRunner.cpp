@@ -392,6 +392,7 @@ using mozilla::dom::quota::QuotaManager;
 using mozilla::intl::LocaleService;
 using mozilla::scache::StartupCache;
 
+#ifndef XP_WIN
 
 static void MOZ_NEVER_INLINE SaveWordToEnv(const char* name,
                                            const nsACString& word) {
@@ -400,6 +401,7 @@ static void MOZ_NEVER_INLINE SaveWordToEnv(const char* name,
   if (expr) PR_SetEnv(expr);
   
 }
+#endif
 
 
 static void SaveFileToEnv(const char* name, nsIFile* file) {
@@ -4317,25 +4319,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
             getter_AddRefs(userAppDataDir)))) {
       CrashReporter::SetupExtraData(userAppDataDir,
                                     nsDependentCString(mAppData->buildID));
-
-      
-      
-      nsCOMPtr<nsIFile> overrideini;
-      if (NS_SUCCEEDED(
-              mDirProvider.GetAppDir()->Clone(getter_AddRefs(overrideini))) &&
-          NS_SUCCEEDED(
-              overrideini->AppendNative("crashreporter-override.ini"_ns))) {
-#ifdef XP_WIN
-        nsAutoString overridePathW;
-        overrideini->GetPath(overridePathW);
-        NS_ConvertUTF16toUTF8 overridePath(overridePathW);
-#else
-        nsAutoCString overridePath;
-        overrideini->GetNativePath(overridePath);
-#endif
-
-        SaveWordToEnv("MOZ_CRASHREPORTER_STRINGS_OVERRIDE", overridePath);
-      }
     }
   } else {
     
