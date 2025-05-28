@@ -565,9 +565,20 @@ bool NativeObject::changeProperty(JSContext* cx, Handle<NativeObject*> obj,
 
   const JSClass* clasp = obj->shape()->getObjectClass();
 
+  
+  
+  
+  
+  
+  const uint32_t MaxCopiedMaps = 4;
+  bool hasReasonableGap =
+      map->isShared() && map->asShared()->numPreviousMaps() -
+                                 propMap->asShared()->numPreviousMaps() <=
+                             MaxCopiedMaps;
+
   bool isLast = propMap == map && propIndex == mapLength - 1;
   bool nonLastCustomProperty = oldProp.isCustomDataProperty() && !isLast;
-  if (map->isShared() && !nonLastCustomProperty) {
+  if (map->isShared() && !nonLastCustomProperty && hasReasonableGap) {
     
     
     
@@ -640,7 +651,8 @@ bool NativeObject::changeProperty(JSContext* cx, Handle<NativeObject*> obj,
   if (map->isShared()) {
     
     
-    MOZ_ASSERT(nonLastCustomProperty);
+    
+    
     if (!NativeObject::toDictionaryMode(cx, obj)) {
       return false;
     }
