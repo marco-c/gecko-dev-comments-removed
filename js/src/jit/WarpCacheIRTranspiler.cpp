@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/WarpCacheIRTranspiler.h"
 
@@ -24,9 +24,9 @@
 #include "jit/WarpBuilder.h"
 #include "jit/WarpBuilderShared.h"
 #include "jit/WarpSnapshot.h"
-#include "js/ScalarType.h"  // js::Scalar::Type
+#include "js/ScalarType.h"  
 #include "vm/BytecodeLocation.h"
-#include "vm/TypeofEqOperand.h"  // TypeofEqOperand
+#include "vm/TypeofEqOperand.h"  
 #include "wasm/WasmCode.h"
 
 #include "gc/ObjectKind-inl.h"
@@ -36,20 +36,20 @@
 using namespace js;
 using namespace js::jit;
 
-// The CacheIR transpiler generates MIR from Baseline CacheIR.
+
 class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   WarpBuilder* builder_;
   BytecodeLocation loc_;
   const CacheIRStubInfo* stubInfo_;
   const uint8_t* stubData_;
 
-  // Vector mapping OperandId to corresponding MDefinition.
+  
   using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
   MDefinitionStackVector operands_;
 
   CallInfo* callInfo_;
 
-  // Array mapping call arguments to OperandId.
+  
   using ArgumentKindArray =
       mozilla::EnumeratedArray<ArgumentKind, OperandId,
                                size_t(ArgumentKind::NumKinds)>;
@@ -64,8 +64,8 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   void updateArgumentsFromOperands();
 
 #ifdef DEBUG
-  // Used to assert that there is only one effectful instruction
-  // per stub. And that this instruction has a resume point.
+  
+  
   MInstruction* effectful_ = nullptr;
   bool pushedResult_ = false;
 #endif
@@ -73,10 +73,10 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   inline void addUnchecked(MInstruction* ins) {
     current->add(ins);
 
-    // If we have not set a more specific bailout kind, mark this instruction
-    // as transpiled CacheIR. If one of these instructions bails out, we
-    // expect to hit the baseline fallback stub and invalidate the Warp script
-    // in tryAttach.
+    
+    
+    
+    
     if (ins->bailoutKind() == BailoutKind::Unknown) {
       ins->setBailoutKind(BailoutKind::TranspiledCacheIR);
     }
@@ -96,7 +96,7 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
 #endif
   }
 
-  // Bypasses all checks in addEffectful. Use with caution!
+  
   inline void addEffectfulUnsafe(MInstruction* ins) {
     MOZ_ASSERT(ins->isEffectful());
     addUnchecked(ins);
@@ -110,8 +110,8 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
     return resumeAfterUnchecked(ins);
   }
 
-  // CacheIR instructions writing to the IC's result register (the *Result
-  // instructions) must call this to push the result onto the virtual stack.
+  
+  
   void pushResult(MDefinition* result) {
     MOZ_ASSERT(!pushedResult_, "Can't have more than one result");
     current->push(result);
@@ -203,14 +203,14 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
     return mozilla::BitwiseCast<double>(raw);
   }
 
-  // This must only be called when the caller knows the object is tenured and
-  // not a nursery index.
+  
+  
   JSObject* tenuredObjectStubField(uint32_t offset) {
     WarpObjectField field = WarpObjectField::fromData(readStubWord(offset));
     return field.toObject();
   }
 
-  // Returns either MConstant or MNurseryIndex. See WarpObjectField.
+  
   MInstruction* objectStubField(uint32_t offset);
 
   const JSClass* classForGuardClassKind(GuardClassKind kind);
@@ -278,9 +278,9 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   [[nodiscard]] bool emitLoadArgumentSlot(ValOperandId resultId,
                                           uint32_t slotIndex);
 
-  // Calls are either Native (native function without a JitEntry),
-  // a DOM Native (native function with a JitInfo OpType::Method),
-  // or Scripted (scripted function or native function with a JitEntry).
+  
+  
+  
   enum class CallKind { Native, DOM, Scripted };
 
   [[nodiscard]] bool updateCallInfo(MDefinition* callee, CallFlags flags);
@@ -356,16 +356,16 @@ bool WarpCacheIRTranspiler::transpile(
     }
   } while (reader.more());
 
-  // Effectful instructions should have a resume point. We allow a limited
-  // number of exceptions:
-  // - MIonToWasmCall: Resumes after MInt64ToBigInt
-  // - MLoadUnboxedScalar: Resumes after MInt64ToBigInt
-  // - MAtomicTypedArrayElementBinop: Resumes after MInt64ToBigInt
-  // - MAtomicExchangeTypedArrayElement: Resumes after MInt64ToBigInt
-  // - MCompareExchangeTypedArrayElement: Resumes after MInt64ToBigInt
-  // - MResizableTypedArrayLength: Resumes after MPostIntPtrConversion
-  // - MResizableDataViewByteLength: Resumes after MPostIntPtrConversion
-  // - MGrowableSharedArrayBufferByteLength: Resumes after MPostIntPtrConversion
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT_IF(effectful_,
                 effectful_->resumePoint() || effectful_->isIonToWasmCall() ||
                     effectful_->isLoadUnboxedScalar() ||
@@ -415,7 +415,7 @@ bool WarpCacheIRTranspiler::emitGuardEitherClass(ObjOperandId objId,
                                                  GuardClassKind kind2) {
   MDefinition* def = getOperand(objId);
 
-  // We don't yet need this case, so it's unsupported for now.
+  
   MOZ_ASSERT(kind1 != GuardClassKind::JSFunction &&
              kind2 != GuardClassKind::JSFunction);
 
@@ -472,8 +472,8 @@ bool WarpCacheIRTranspiler::emitGuardShape(ObjOperandId objId,
                                            uint32_t shapeOffset) {
   MDefinition* def = getOperand(objId);
 
-  // No read barrier is required because snapshot data is not weak and is traced
-  // as part of IonCompileTask.
+  
+  
   Shape* shape = shapeStubField(shapeOffset);
 
   auto* ins = MGuardShape::New(alloc(), def, shape);
@@ -507,8 +507,8 @@ struct RealmFuseDependency final : public CompilationDependency {
 };
 
 bool WarpCacheIRTranspiler::emitGuardFuse(RealmFuses::FuseIndex fuseIndex) {
-  // Register a compilation dependency (for invalidating realm fuses) or add a
-  // fuse guard (for other fuses).
+  
+  
   switch (fuseIndex) {
     case RealmFuses::FuseIndex::OptimizeGetIteratorFuse: {
       using Dependency =
@@ -704,7 +704,7 @@ bool WarpCacheIRTranspiler::emitCallDOMGetterResult(ObjOperandId objId,
   if (jitInfo->isAlwaysInSlot) {
     ins = MGetDOMMember::New(alloc(), jitInfo, obj, nullptr, nullptr);
   } else {
-    // TODO(post-Warp): realms, guard operands (movable?).
+    
     ins = MGetDOMProperty::New(alloc(), jitInfo, DOMObjectKind::Native,
                                (JS::Realm*)mirGen().realm->realmPtr(), obj,
                                nullptr, nullptr);
@@ -914,6 +914,26 @@ bool WarpCacheIRTranspiler::emitValueToIteratorResult(ValOperandId valId) {
   return resumeAfter(ins);
 }
 
+bool WarpCacheIRTranspiler::emitGuardToArrayBuffer(ObjOperandId objId) {
+  MDefinition* obj = getOperand(objId);
+
+  auto* ins = MGuardToArrayBuffer::New(alloc(), obj);
+  add(ins);
+
+  setOperand(objId, ins);
+  return true;
+}
+
+bool WarpCacheIRTranspiler::emitGuardToSharedArrayBuffer(ObjOperandId objId) {
+  MDefinition* obj = getOperand(objId);
+
+  auto* ins = MGuardToSharedArrayBuffer::New(alloc(), obj);
+  add(ins);
+
+  setOperand(objId, ins);
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitGuardIsNotArrayBufferMaybeShared(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
@@ -996,7 +1016,7 @@ bool WarpCacheIRTranspiler::emitGuardDynamicSlotIsSpecificObject(
   add(unbox);
 
   auto* guard = MGuardObjectIdentity::New(alloc(), unbox, expected,
-                                          /* bailOnEquality = */ false);
+                                           false);
   add(guard);
   return true;
 }
@@ -1144,7 +1164,7 @@ bool WarpCacheIRTranspiler::emitGuardSpecificObject(ObjOperandId objId,
   MDefinition* expected = objectStubField(expectedOffset);
 
   auto* ins = MGuardObjectIdentity::New(alloc(), obj, expected,
-                                        /* bailOnEquality = */ false);
+                                         false);
   add(ins);
 
   setOperand(objId, ins);
@@ -1278,7 +1298,7 @@ bool WarpCacheIRTranspiler::emitGuardNotClassConstructor(ObjOperandId funId) {
 
   auto* ins =
       MGuardFunctionKind::New(alloc(), fun, FunctionFlags::ClassConstructor,
-                              /*bailOnEquality=*/true);
+                              true);
   add(ins);
 
   setOperand(funId, ins);
@@ -1394,12 +1414,12 @@ bool WarpCacheIRTranspiler::emitGuardBooleanToInt32(ValOperandId inputId,
 bool WarpCacheIRTranspiler::emitGuardIsNumber(ValOperandId inputId) {
   MDefinition* def = getOperand(inputId);
 
-  // No guard needed when the input is already a number type.
+  
   if (IsNumberType(def->type())) {
     return true;
   }
 
-  // MIRType::Double also implies int32 in Ion.
+  
   return emitGuardTo(inputId, MIRType::Double);
 }
 
@@ -1510,7 +1530,7 @@ bool WarpCacheIRTranspiler::emitGuardToInt32Index(ValOperandId inputId,
   auto* ins =
       MToNumberInt32::New(alloc(), input, IntConversionInputKind::NumbersOnly);
 
-  // ToPropertyKey(-0) is "0", so we can silently convert -0 to 0 here.
+  
   ins->setNeedsNegativeZeroCheck(false);
   add(ins);
 
@@ -1597,7 +1617,7 @@ bool WarpCacheIRTranspiler::emitInt32ToStringWithBaseResult(
   auto* guardedBase = MGuardInt32Range::New(alloc(), base, 2, 36);
   add(guardedBase);
 
-  // Use lower-case characters by default.
+  
   constexpr bool lower = true;
 
   auto* ins = MInt32ToStringWithBase::New(alloc(), input, guardedBase, lower);
@@ -2036,7 +2056,7 @@ bool WarpCacheIRTranspiler::emitGuardObjectIdentity(ObjOperandId obj1Id,
   MDefinition* obj2 = getOperand(obj2Id);
 
   auto* guard = MGuardObjectIdentity::New(alloc(), obj1, obj2,
-                                          /* bailOnEquality = */ false);
+                                           false);
   add(guard);
   return true;
 }
@@ -2106,9 +2126,9 @@ bool WarpCacheIRTranspiler::emitLoadArrayBufferViewLengthInt32Result(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Use a separate instruction for converting the length to Int32, so that we
-  // can fold the MArrayBufferViewLength instruction with length instructions
-  // added for bounds checks.
+  
+  
+  
 
   auto* length = MArrayBufferViewLength::New(alloc(), obj);
   add(length);
@@ -2154,19 +2174,19 @@ MInstruction* WarpCacheIRTranspiler::addBoundsCheck(MDefinition* index,
   }
 
   if (JitOptions.spectreIndexMasking) {
-    // Use a separate MIR instruction for the index masking. Doing this as
-    // part of MBoundsCheck would be unsound because bounds checks can be
-    // optimized or eliminated completely. Consider this:
-    //
-    //   for (var i = 0; i < x; i++)
-    //        res = arr[i];
-    //
-    // If we can prove |x < arr.length|, we are able to eliminate the bounds
-    // check, but we should not get rid of the index masking because the
-    // |i < x| branch could still be mispredicted.
-    //
-    // Using a separate instruction lets us eliminate the bounds check
-    // without affecting the index masking.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     check = MSpectreMaskIndex::New(alloc(), check, length);
     add(check);
   }
@@ -2254,17 +2274,17 @@ bool WarpCacheIRTranspiler::emitLoadDenseElementExistsResult(
   MDefinition* obj = getOperand(objId);
   MDefinition* index = getOperand(indexId);
 
-  // Get the elements vector.
+  
   auto* elements = MElements::New(alloc(), obj);
   add(elements);
 
   auto* length = MInitializedLength::New(alloc(), elements);
   add(length);
 
-  // Check if id < initLength.
+  
   index = addBoundsCheck(index, length);
 
-  // And check elem[id] is not a hole.
+  
   auto* guard = MGuardElementNotHole::New(alloc(), elements, index);
   add(guard);
 
@@ -2277,14 +2297,14 @@ bool WarpCacheIRTranspiler::emitLoadDenseElementHoleExistsResult(
   MDefinition* obj = getOperand(objId);
   MDefinition* index = getOperand(indexId);
 
-  // Get the elements vector.
+  
   auto* elements = MElements::New(alloc(), obj);
   add(elements);
 
   auto* length = MInitializedLength::New(alloc(), elements);
   add(length);
 
-  // Check if id < initLength and elem[id] not a hole.
+  
   auto* ins = MInArray::New(alloc(), elements, index, length);
   add(ins);
 
@@ -2313,12 +2333,12 @@ MInstruction* WarpCacheIRTranspiler::emitTypedArrayLength(
     return length;
   }
 
-  // Bounds check doesn't require a memory barrier. See IsValidIntegerIndex
-  // abstract operation which reads the underlying buffer byte length using
-  // "unordered" memory order.
+  
+  
+  
   auto barrier = MemoryBarrierRequirement::NotRequired;
 
-  // Movable and removable because no memory barrier is needed.
+  
   auto* length = MResizableTypedArrayLength::New(alloc(), obj, barrier);
   length->setMovable();
   length->setNotGuard();
@@ -2334,7 +2354,7 @@ bool WarpCacheIRTranspiler::emitLoadTypedArrayElementExistsResult(
 
   auto* length = emitTypedArrayLength(viewKind, obj);
 
-  // Unsigned comparison to catch negative indices.
+  
   auto* ins = MCompare::New(alloc(), index, length, JSOp::Lt,
                             MCompare::Compare_UIntPtr);
   add(ins);
@@ -2378,7 +2398,7 @@ bool WarpCacheIRTranspiler::emitLoadTypedArrayElementResult(
   auto* length = emitTypedArrayLength(viewKind, obj);
 
   if (!handleOOB) {
-    // MLoadTypedArrayElementHole does the bounds checking.
+    
     index = addBoundsCheck(index, length);
   }
 
@@ -2743,7 +2763,7 @@ bool WarpCacheIRTranspiler::emitStringTrimResult(StringOperandId strId) {
   auto* end = MStringTrimEndIndex::New(alloc(), linear, start);
   add(end);
 
-  // Safe to truncate because both operands are positive and end >= start.
+  
   auto* length = MSub::New(alloc(), end, start, MIRType::Int32);
   length->setTruncateKind(TruncateKind::Truncate);
   add(length);
@@ -2767,7 +2787,7 @@ bool WarpCacheIRTranspiler::emitStringTrimStartResult(StringOperandId strId) {
   auto* end = MStringLength::New(alloc(), linear);
   add(end);
 
-  // Safe to truncate because both operands are positive and end >= start.
+  
   auto* length = MSub::New(alloc(), end, start, MIRType::Int32);
   length->setTruncateKind(TruncateKind::Truncate);
   add(length);
@@ -2958,7 +2978,7 @@ bool WarpCacheIRTranspiler::emitStoreDenseElementHole(ObjOperandId objId,
 
   MInstruction* store;
   if (handleAdd) {
-    // TODO(post-Warp): Consider changing MStoreElementHole to match IC code.
+    
     store = MStoreElementHole::New(alloc(), obj, elements, index, rhs);
   } else {
     auto* length = MInitializedLength::New(alloc(), elements);
@@ -2988,7 +3008,7 @@ bool WarpCacheIRTranspiler::emitStoreTypedArrayElement(
   auto* length = emitTypedArrayLength(viewKind, obj);
 
   if (!handleOOB) {
-    // MStoreTypedArrayElementHole does the bounds checking.
+    
     index = addBoundsCheck(index, length);
   }
 
@@ -3016,12 +3036,12 @@ MInstruction* WarpCacheIRTranspiler::emitDataViewLength(
     return length;
   }
 
-  // Bounds check doesn't require a memory barrier. See GetViewValue and
-  // SetViewValue abstract operations which read the underlying buffer byte
-  // length using "unordered" memory order.
+  
+  
+  
   auto barrier = MemoryBarrierRequirement::NotRequired;
 
-  // Movable and removable because no memory barrier is needed.
+  
   auto* length = MResizableDataViewByteLength::New(alloc(), obj, barrier);
   length->setMovable();
   length->setNotGuard();
@@ -3036,11 +3056,11 @@ void WarpCacheIRTranspiler::addDataViewData(ArrayBufferViewKind viewKind,
                                             MInstruction** elements) {
   auto* length = emitDataViewLength(viewKind, obj);
 
-  // Adjust the length to account for accesses near the end of the dataview.
+  
   if (size_t byteSize = Scalar::byteSize(type); byteSize > 1) {
-    // To ensure |0 <= offset && offset + byteSize <= length|, first adjust the
-    // length by subtracting |byteSize - 1| (bailing out if that becomes
-    // negative).
+    
+    
+    
     length = MAdjustDataViewLength::New(alloc(), length, byteSize);
     add(length);
   }
@@ -3059,11 +3079,11 @@ bool WarpCacheIRTranspiler::emitLoadDataViewValueResult(
   MDefinition* offset = getOperand(offsetId);
   MDefinition* littleEndian = getOperand(littleEndianId);
 
-  // Add bounds check and get the DataViewObject's elements.
+  
   MInstruction* elements;
   addDataViewData(viewKind, obj, elementType, &offset, &elements);
 
-  // Load the element.
+  
   MInstruction* load;
   if (Scalar::byteSize(elementType) == 1) {
     load = MLoadUnboxedScalar::New(alloc(), elements, offset, elementType);
@@ -3097,11 +3117,11 @@ bool WarpCacheIRTranspiler::emitStoreDataViewValueResult(
   MDefinition* value = getOperand(ValOperandId(valueId));
   MDefinition* littleEndian = getOperand(littleEndianId);
 
-  // Add bounds check and get the DataViewObject's elements.
+  
   MInstruction* elements;
   addDataViewData(viewKind, obj, elementType, &offset, &elements);
 
-  // Store the element.
+  
   MInstruction* store;
   if (Scalar::byteSize(elementType) == 1) {
     store =
@@ -3680,8 +3700,8 @@ bool WarpCacheIRTranspiler::emitCompareNullUndefinedResult(
 
   MOZ_ASSERT(IsEqualityOp(op));
 
-  // A previously emitted guard ensures that one side of the comparison
-  // is null or undefined.
+  
+  
   MDefinition* cst =
       isUndefined ? constant(UndefinedValue()) : constant(NullValue());
   auto compareType =
@@ -3797,8 +3817,8 @@ bool WarpCacheIRTranspiler::emitMathHypot4NumberResult(
 
 bool WarpCacheIRTranspiler::emitMathRandomResult(uint32_t rngOffset) {
 #ifdef DEBUG
-  // CodeGenerator uses CompileRealm::addressOfRandomNumberGenerator. Assert it
-  // matches the RNG pointer stored in the stub field.
+  
+  
   const void* rng = rawPointerField(rngOffset);
   MOZ_ASSERT(rng == mirGen().realm->addressOfRandomNumberGenerator());
 #endif
@@ -4180,7 +4200,7 @@ bool WarpCacheIRTranspiler::emitPackedArraySliceResult(
   MDefinition* begin = getOperand(beginId);
   MDefinition* end = getOperand(endId);
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
 
   auto* ins = MArraySlice::New(alloc(), array, begin, end, templateObj, heap);
@@ -4199,7 +4219,7 @@ bool WarpCacheIRTranspiler::emitArgumentsSliceResult(
   MDefinition* begin = getOperand(beginId);
   MDefinition* end = getOperand(endId);
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
 
   auto* ins =
@@ -4307,10 +4327,10 @@ bool WarpCacheIRTranspiler::emitRegExpHasCaptureGroupsResult(
 }
 
 MInstruction* WarpCacheIRTranspiler::convertToBoolean(MDefinition* input) {
-  // Convert to bool with the '!!' idiom.
-  //
-  // The FoldTests and GVN passes both specifically handle this pattern. If you
-  // change this code, make sure to update FoldTests and GVN, too.
+  
+  
+  
+  
 
   auto* resultInverted = MNot::New(alloc(), input);
   add(resultInverted);
@@ -4541,7 +4561,7 @@ bool WarpCacheIRTranspiler::emitResizableTypedArrayLengthInt32Result(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Explicit |length| accesses are seq-consistent atomic loads.
+  
   auto barrier = MemoryBarrierRequirement::Required;
 
   auto* length = MResizableTypedArrayLength::New(alloc(), obj, barrier);
@@ -4561,7 +4581,7 @@ bool WarpCacheIRTranspiler::emitResizableTypedArrayLengthDoubleResult(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Explicit |length| accesses are seq-consistent atomic loads.
+  
   auto barrier = MemoryBarrierRequirement::Required;
 
   auto* length = MResizableTypedArrayLength::New(alloc(), obj, barrier);
@@ -4626,7 +4646,7 @@ bool WarpCacheIRTranspiler::emitResizableTypedArrayByteLengthInt32Result(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Explicit |byteLength| accesses are seq-consistent atomic loads.
+  
   auto barrier = MemoryBarrierRequirement::Required;
 
   auto* length = MResizableTypedArrayLength::New(alloc(), obj, barrier);
@@ -4653,7 +4673,7 @@ bool WarpCacheIRTranspiler::emitResizableTypedArrayByteLengthDoubleResult(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Explicit |byteLength| accesses are seq-consistent atomic loads.
+  
   auto barrier = MemoryBarrierRequirement::Required;
 
   auto* length = MResizableTypedArrayLength::New(alloc(), obj, barrier);
@@ -4694,7 +4714,7 @@ bool WarpCacheIRTranspiler::emitResizableDataViewByteLengthInt32Result(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Explicit |byteLength| accesses are seq-consistent atomic loads.
+  
   auto barrier = MemoryBarrierRequirement::Required;
 
   auto* length = MResizableDataViewByteLength::New(alloc(), obj, barrier);
@@ -4714,7 +4734,7 @@ bool WarpCacheIRTranspiler::emitResizableDataViewByteLengthDoubleResult(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
-  // Explicit |byteLength| accesses are seq-consistent atomic loads.
+  
   auto barrier = MemoryBarrierRequirement::Required;
 
   auto* length = MResizableDataViewByteLength::New(alloc(), obj, barrier);
@@ -4872,7 +4892,7 @@ bool WarpCacheIRTranspiler::emitObjectCreateResult(
 
   auto* templateConst = constant(ObjectValue(*templateObj));
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
   auto* obj =
       MNewObject::New(alloc(), templateConst, heap, MNewObject::ObjectCreate);
@@ -4924,7 +4944,7 @@ bool WarpCacheIRTranspiler::emitNewTypedArrayFromLengthResult(
                            ->as<FixedLengthTypedArrayObject>();
   MDefinition* length = getOperand(lengthId);
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
 
   if (length->isConstant()) {
@@ -4953,7 +4973,7 @@ bool WarpCacheIRTranspiler::emitNewTypedArrayFromArrayBufferResult(
   MDefinition* byteOffset = getOperand(byteOffsetId);
   MDefinition* length = getOperand(lengthId);
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
 
   auto* obj = MNewTypedArrayFromArrayBuffer::New(alloc(), buffer, byteOffset,
@@ -4969,7 +4989,7 @@ bool WarpCacheIRTranspiler::emitNewTypedArrayFromArrayResult(
   JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
   MDefinition* array = getOperand(arrayId);
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
 
   auto* obj = MNewTypedArrayFromArray::New(alloc(), array, templateObj, heap);
@@ -5009,7 +5029,7 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
     result =
         MInt64ToBigInt::New(alloc(), cas, Scalar::isSignedIntType(elementType));
 
-    // Make non-movable so we can attach a resume point.
+    
     result->setNotMovable();
 
     add(result);
@@ -5047,7 +5067,7 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
     result = MInt64ToBigInt::New(alloc(), exchange,
                                  Scalar::isSignedIntType(elementType));
 
-    // Make non-movable so we can attach a resume point.
+    
     result->setNotMovable();
 
     add(result);
@@ -5093,7 +5113,7 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
     result = MInt64ToBigInt::New(alloc(), binop,
                                  Scalar::isSignedIntType(elementType));
 
-    // Make non-movable so we can attach a resume point.
+    
     result->setNotMovable();
 
     add(result);
@@ -5165,7 +5185,7 @@ bool WarpCacheIRTranspiler::emitAtomicsLoadResult(
     result = MInt64ToBigInt::New(alloc(), load,
                                  Scalar::isSignedIntType(elementType));
 
-    // Make non-movable so we can attach a resume point.
+    
     result->setNotMovable();
 
     add(result);
@@ -5639,9 +5659,9 @@ bool WarpCacheIRTranspiler::emitMapSizeResult(ObjOperandId mapId) {
 bool WarpCacheIRTranspiler::emitDateFillLocalTimeSlots(ObjOperandId dateId) {
   MDefinition* date = getOperand(dateId);
 
-  // MDateFillLocalTimeSlots is effectful because it can store into fixed slots,
-  // but it's safe to repeat this action after a bailout, therefore it's okay to
-  // use |addEffectfulUnsafe|.
+  
+  
+  
   auto* ins = MDateFillLocalTimeSlots::New(alloc(), date);
   addEffectfulUnsafe(ins);
 
@@ -5737,14 +5757,14 @@ bool WarpCacheIRTranspiler::emitLoadWrapperTarget(ObjOperandId objId,
   return defineOperand(resultId, ins);
 }
 
-// When we transpile a call, we may generate guards for some
-// arguments.  To make sure the call instruction depends on those
-// guards, when the transpiler creates an operand for an argument, we
-// register the OperandId of that argument in argumentIds_. (See
-// emitLoadArgumentSlot.) Before generating the call, we update the
-// CallInfo to use the appropriate value from operands_.
-// Note: The callee is an explicit argument to the call op, and is
-// tracked separately.
+
+
+
+
+
+
+
+
 void WarpCacheIRTranspiler::updateArgumentsFromOperands() {
   for (uint32_t i = 0; i < uint32_t(ArgumentKind::NumKinds); i++) {
     ArgumentKind kind = ArgumentKind(i);
@@ -5791,24 +5811,24 @@ void WarpCacheIRTranspiler::updateArgumentsFromOperands() {
 
 bool WarpCacheIRTranspiler::emitLoadArgumentSlot(ValOperandId resultId,
                                                  uint32_t slotIndex) {
-  // Reverse of GetIndexOfArgument.
+  
 
-  // Layout:
-  // NewTarget | Args.. (reversed)      | ThisValue | Callee
-  // 0         | ArgC .. Arg1 Arg0 (+1) | argc (+1) | argc + 1 (+ 1)
-  // ^ (if constructing)
+  
+  
+  
+  
 
-  // NewTarget (optional)
+  
   if (callInfo_->constructing()) {
     if (slotIndex == 0) {
       setArgumentId(ArgumentKind::NewTarget, resultId);
       return defineOperand(resultId, callInfo_->getNewTarget());
     }
 
-    slotIndex -= 1;  // Adjust slot index to match non-constructing calls.
+    slotIndex -= 1;  
   }
 
-  // Args..
+  
   if (slotIndex < callInfo_->argc()) {
     uint32_t arg = callInfo_->argc() - 1 - slotIndex;
     ArgumentKind kind = ArgumentKindForArgIndex(arg);
@@ -5817,13 +5837,13 @@ bool WarpCacheIRTranspiler::emitLoadArgumentSlot(ValOperandId resultId,
     return defineOperand(resultId, callInfo_->getArg(arg));
   }
 
-  // ThisValue
+  
   if (slotIndex == callInfo_->argc()) {
     setArgumentId(ArgumentKind::This, resultId);
     return defineOperand(resultId, callInfo_->thisArg());
   }
 
-  // Callee
+  
   MOZ_ASSERT(slotIndex == callInfo_->argc() + 1);
   return defineOperand(resultId, callInfo_->callee());
 }
@@ -5849,10 +5869,10 @@ WrappedFunction* WarpCacheIRTranspiler::maybeWrappedFunction(
     MDefinition* callee, CallKind kind, uint16_t nargs, FunctionFlags flags) {
   MOZ_ASSERT(callee->isConstant() || callee->isNurseryObject());
 
-  // If this is a native without a JitEntry, WrappedFunction needs to know the
-  // target JSFunction.
-  // TODO: support nursery-allocated natives with WrappedFunction, maybe by
-  // storing the JSNative in the Baseline stub like flags/nargs.
+  
+  
+  
+  
   bool isNative = flags.isNativeWithoutJitEntry();
   if (isNative && !callee->isConstant()) {
     return nullptr;
@@ -5873,16 +5893,16 @@ WrappedFunction* WarpCacheIRTranspiler::maybeWrappedFunction(
 
 WrappedFunction* WarpCacheIRTranspiler::maybeCallTarget(MDefinition* callee,
                                                         CallKind kind) {
-  // CacheIR emits the following for specialized calls:
-  //     GuardSpecificFunction <callee> <func> ..
-  //     Call(Native|Scripted)Function <callee> ..
-  // or:
-  //     GuardClass <callee> ..
-  //     GuardFunctionScript <callee> <script> ..
-  //     CallScriptedFunction <callee> ..
-  //
-  // We can use the <func> JSFunction or <script> BaseScript to specialize this
-  // call.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (callee->isGuardSpecificFunction()) {
     auto* guard = callee->toGuardSpecificFunction();
     return maybeWrappedFunction(guard->expected(), kind, guard->nargs(),
@@ -5892,24 +5912,24 @@ WrappedFunction* WarpCacheIRTranspiler::maybeCallTarget(MDefinition* callee,
     MOZ_ASSERT(kind == CallKind::Scripted);
     auto* guard = callee->toGuardFunctionScript();
     WrappedFunction* wrappedTarget = new (alloc()) WrappedFunction(
-        /* nativeFun = */ nullptr, guard->nargs(), guard->flags());
+         nullptr, guard->nargs(), guard->flags());
     MOZ_ASSERT(wrappedTarget->hasJitEntry());
     return wrappedTarget;
   }
   return nullptr;
 }
 
-// If it is possible to use MCall for this call, update callInfo_ to use
-// the correct arguments. Otherwise, update the ArgFormat of callInfo_.
+
+
 bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
                                            CallFlags flags) {
-  // The transpilation will add various guards to the callee.
-  // We replace the callee referenced by the CallInfo, so that
-  // the resulting call instruction depends on these guards.
+  
+  
+  
   callInfo_->setCallee(callee);
 
-  // The transpilation may also add guards to other arguments.
-  // We replace those arguments in the CallInfo here.
+  
+  
   updateArgumentsFromOperands();
 
   switch (flags.getArgFormat()) {
@@ -5920,20 +5940,20 @@ bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
       MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Array);
       break;
     case CallFlags::FunCall:
-      // Note: We already changed the callee to the target
-      // function instead of the |call| function.
+      
+      
       MOZ_ASSERT(!callInfo_->constructing());
       MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
 
       if (callInfo_->argc() == 0) {
-        // Special case for fun.call() with no arguments.
+        
         auto* undef = constant(UndefinedValue());
         callInfo_->setThis(undef);
       } else {
-        // The first argument for |call| is the new this value.
+        
         callInfo_->setThis(callInfo_->getArg(0));
 
-        // Shift down all other arguments by removing the first.
+        
         callInfo_->removeArg(0);
       }
       break;
@@ -5952,8 +5972,8 @@ bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
       break;
     }
     case CallFlags::FunApplyNullUndefined:
-      // Note: We already changed the callee to the target
-      // function instead of the |apply| function.
+      
+      
       MOZ_ASSERT(callInfo_->argc() == 2);
       MOZ_ASSERT(!callInfo_->constructing());
       MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
@@ -5968,17 +5988,17 @@ bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
   return true;
 }
 
-// Returns true if we are generating a call to CreateThisFromIon and
-// must check its return value.
+
+
 bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
                                             CallFlags flags, CallKind kind) {
   MOZ_ASSERT(kind != CallKind::DOM, "DOM functions are not constructors");
   MDefinition* thisArg = callInfo_->thisArg();
 
   if (kind == CallKind::Native) {
-    // Native functions keep the is-constructing MagicValue as |this|.
-    // If one of the arguments uses spread syntax this can be a loop phi with
-    // MIRType::Value.
+    
+    
+    
     MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
                thisArg->isPhi());
     return false;
@@ -5986,8 +6006,8 @@ bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
   MOZ_ASSERT(kind == CallKind::Scripted);
 
   if (thisArg->isNewPlainObject()) {
-    // We have already updated |this| based on MetaScriptedThisShape. We do
-    // not need to generate a check.
+    
+    
     return false;
   }
   if (flags.needsUninitializedThis()) {
@@ -5996,7 +6016,7 @@ bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
     callInfo_->setThis(uninit);
     return false;
   }
-  // See the Native case above.
+  
   MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
              thisArg->isPhi());
 
@@ -6016,20 +6036,20 @@ bool WarpCacheIRTranspiler::emitCallFunction(
     mozilla::Maybe<uint32_t> siteOffset) {
   MDefinition* callee = getOperand(calleeId);
   if (kind == CallKind::Scripted && callInfo_ && callInfo_->isInlined()) {
-    // We are transpiling to generate the correct guards. We also
-    // update the CallInfo to use the correct arguments. Code for the
-    // inlined function itself will be generated in
-    // WarpBuilder::buildInlinedCall.
+    
+    
+    
+    
     if (!updateCallInfo(callee, flags)) {
       return false;
     }
     if (callInfo_->constructing()) {
       MOZ_ASSERT(flags.isConstructing());
 
-      // We call maybeCreateThis to update |this|, but inlined constructors
-      // never need a VM call. CallIRGenerator::getThisForScripted ensures that
-      // we don't attach a specialized stub unless we have a template object or
-      // know that the constructor needs uninitialized this.
+      
+      
+      
+      
       MOZ_ALWAYS_FALSE(maybeCreateThis(callee, flags, CallKind::Scripted));
       mozilla::DebugOnly<MDefinition*> thisArg = callInfo_->thisArg();
       MOZ_ASSERT(thisArg->isNewPlainObject() ||
@@ -6064,7 +6084,7 @@ bool WarpCacheIRTranspiler::emitCallFunction(
 
   if (kind == CallKind::DOM) {
     MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard);
-    // For DOM calls |this| has a class guard.
+    
     MDefinition* thisObj = getOperand(*thisObjId);
     callInfo_->setThis(thisObj);
   }
@@ -6157,7 +6177,7 @@ bool WarpCacheIRTranspiler::emitCallNativeFunction(ObjOperandId calleeId,
                                                    CallFlags flags,
                                                    uint32_t argcFixed,
                                                    bool ignoresReturnValue) {
-  // Instead of ignoresReturnValue we use CallInfo::ignoresReturnValue.
+  
   return emitCallFunction(calleeId, argcId, mozilla::Nothing(), flags,
                           CallKind::Native);
 }
@@ -6224,11 +6244,11 @@ bool WarpCacheIRTranspiler::emitCallInlinedFunction(ObjOperandId calleeId,
 bool WarpCacheIRTranspiler::emitCallScriptedProxyGetShared(
     MDefinition* target, MDefinition* receiver, MDefinition* handler,
     MDefinition* id, MDefinition* trapDef, WrappedFunction* trap) {
-  CallInfo callInfo(alloc(), /* constructing = */ false,
-                    /* ignoresRval = */ false);
+  CallInfo callInfo(alloc(),  false,
+                     false);
   callInfo.initForProxyGet(trapDef, handler, target, id, receiver);
 
-  MCall* call = makeCall(callInfo, /* needsThisCheck = */ false, trap);
+  MCall* call = makeCall(callInfo,  false, trap);
   if (!call) {
     return false;
   }
@@ -6311,8 +6331,8 @@ bool WarpCacheIRTranspiler::emitCallClassHook(ObjOperandId calleeId,
   MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
   MOZ_ASSERT(flags.getArgFormat() == CallFlags::ArgFormat::Standard);
 
-  // Callees can be from any realm. If this changes, we should update
-  // MCallClassHook::maybeCrossRealm.
+  
+  
   MOZ_ASSERT(!flags.isSameRealm());
 
   auto* call = MCallClassHook::New(alloc(), target, callInfo_->argc(),
@@ -6449,8 +6469,8 @@ bool WarpCacheIRTranspiler::emitSpecializedBindFunctionResult(
 
   auto initSlot = [&](size_t slot, MDefinition* value) {
 #ifdef DEBUG
-    // Assert we can elide the post write barrier. See also the comment in
-    // WarpBuilder::buildNamedLambdaEnv.
+    
+    
     add(MAssertCanElidePostWriteBarrier::New(alloc(), bound, value));
 #endif
     addUnchecked(MStoreFixedSlot::NewUnbarriered(alloc(), bound, slot, value));
@@ -6520,47 +6540,47 @@ bool WarpCacheIRTranspiler::emitCallWasmFunction(
 
   addEffectful(call);
 
-  // Add any post-function call conversions that are necessary.
+  
   MInstruction* postConversion = call;
   const wasm::ValTypeVector& results = sig.results();
   MOZ_ASSERT(results.length() <= 1, "Multi-value returns not supported.");
   if (results.length() == 0) {
-    // No results to convert.
+    
   } else {
     switch (results[0].kind()) {
       case wasm::ValType::I64:
-        // JS expects a BigInt from I64 types.
+        
         postConversion =
-            MInt64ToBigInt::New(alloc(), call, /* isSigned = */ true);
+            MInt64ToBigInt::New(alloc(), call,  true);
 
-        // Make non-movable so we can attach a resume point.
+        
         postConversion->setNotMovable();
 
         add(postConversion);
         break;
       default:
-        // No spectre.index_masking of i32 results required, as the generated
-        // stub takes care of that.
+        
+        
         break;
     }
   }
 
-  // The resume point has to be attached to the post-conversion instruction
-  // (if present) instead of to the call. This way, if the call triggers an
-  // invalidation bailout, we will have the BigInt value on the Baseline stack.
-  // Potential alternative solution: attach the resume point to the call and
-  // have bailouts turn the Int64 value into a BigInt, maybe with a recover
-  // instruction.
+  
+  
+  
+  
+  
+  
   pushResult(postConversion);
   return resumeAfterUnchecked(postConversion);
 }
 
 MDefinition* WarpCacheIRTranspiler::convertWasmArg(MDefinition* arg,
                                                    wasm::ValType::Kind kind) {
-  // An invariant in this code is that any type conversion operation that has
-  // externally visible effects, such as invoking valueOf on an object argument,
-  // must bailout so that we don't have to worry about replaying effects during
-  // argument conversion.
+  
+  
+  
+  
   MInstruction* conversion = nullptr;
   switch (kind) {
     case wasm::ValType::I32:
@@ -6578,9 +6598,9 @@ MDefinition* WarpCacheIRTranspiler::convertWasmArg(MDefinition* arg,
     case wasm::ValType::V128:
       MOZ_CRASH("Unexpected type for Wasm JitEntry");
     case wasm::ValType::Ref:
-      // Transform the JS representation into an AnyRef representation.
-      // The resulting type is MIRType::WasmAnyRef.  These cases are all
-      // effect-free.
+      
+      
+      
       switch (arg->type()) {
         case MIRType::Object:
           conversion = MWasmAnyRefFromJSObject::New(alloc(), arg);
@@ -6620,13 +6640,13 @@ bool WarpCacheIRTranspiler::emitCallGetterResult(CallKind kind,
   MDefinition* receiver = getOperand(receiverId);
   MDefinition* getter = objectStubField(getterOffset);
   if (kind == CallKind::Scripted && callInfo_ && callInfo_->isInlined()) {
-    // We are transpiling to generate the correct guards. We also update the
-    // CallInfo to use the correct arguments. Code for the inlined getter
-    // itself will be generated in WarpBuilder::buildInlinedCall.
+    
+    
+    
     callInfo_->initForGetterCall(getter, receiver);
     callInfo_->setInliningResumeMode(ResumeMode::InlinedAccessor);
 
-    // Make sure there's enough room to push the arguments on the stack.
+    
     if (!current->ensureHasSlots(2)) {
       return false;
     }
@@ -6641,10 +6661,10 @@ bool WarpCacheIRTranspiler::emitCallGetterResult(CallKind kind,
       maybeWrappedFunction(getter, kind, nargs, flags);
 
   bool ignoresRval = loc_.resultIsPopped();
-  CallInfo callInfo(alloc(), /* constructing = */ false, ignoresRval);
+  CallInfo callInfo(alloc(),  false, ignoresRval);
   callInfo.initForGetterCall(getter, receiver);
 
-  MCall* call = makeCall(callInfo, /* needsThisCheck = */ false, wrappedTarget);
+  MCall* call = makeCall(callInfo,  false, wrappedTarget);
   if (!call) {
     return false;
   }
@@ -6689,13 +6709,13 @@ bool WarpCacheIRTranspiler::emitCallSetter(CallKind kind,
   MDefinition* setter = objectStubField(setterOffset);
   MDefinition* rhs = getOperand(rhsId);
   if (kind == CallKind::Scripted && callInfo_ && callInfo_->isInlined()) {
-    // We are transpiling to generate the correct guards. We also update the
-    // CallInfo to use the correct arguments. Code for the inlined setter
-    // itself will be generated in WarpBuilder::buildInlinedCall.
+    
+    
+    
     callInfo_->initForSetterCall(setter, receiver, rhs);
     callInfo_->setInliningResumeMode(ResumeMode::InlinedAccessor);
 
-    // Make sure there's enough room to push the arguments on the stack.
+    
     if (!current->ensureHasSlots(3)) {
       return false;
     }
@@ -6709,11 +6729,11 @@ bool WarpCacheIRTranspiler::emitCallSetter(CallKind kind,
   WrappedFunction* wrappedTarget =
       maybeWrappedFunction(setter, kind, nargs, flags);
 
-  CallInfo callInfo(alloc(), /* constructing = */ false,
-                    /* ignoresReturnValue = */ true);
+  CallInfo callInfo(alloc(),  false,
+                     true);
   callInfo.initForSetterCall(setter, receiver, rhs);
 
-  MCall* call = makeCall(callInfo, /* needsThisCheck = */ false, wrappedTarget);
+  MCall* call = makeCall(callInfo,  false, wrappedTarget);
   if (!call) {
     return false;
   }
@@ -6757,7 +6777,7 @@ bool WarpCacheIRTranspiler::emitMetaScriptedThisShape(
   MConstant* shapeConst = MConstant::NewShape(alloc(), shape);
   add(shapeConst);
 
-  // TODO: support pre-tenuring.
+  
   gc::Heap heap = gc::Heap::Default;
 
   uint32_t numFixedSlots = shape->numFixedSlots();
@@ -6788,7 +6808,7 @@ bool WarpCacheIRTranspiler::emitBailout() {
 bool WarpCacheIRTranspiler::emitAssertPropertyLookup(ObjOperandId objId,
                                                      uint32_t idOffset,
                                                      uint32_t slotOffset) {
-  // We currently only emit checks in baseline.
+  
   return true;
 }
 
@@ -6807,16 +6827,16 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
     ValOperandId valId, bool mustBeRecovered) {
   MDefinition* val = getOperand(valId);
 
-  // Don't assert for recovered instructions when recovering is disabled.
+  
   if (JitOptions.disableRecoverIns) {
     pushResult(constant(UndefinedValue()));
     return true;
   }
 
   if (JitOptions.checkRangeAnalysis) {
-    // If we are checking the range of all instructions, then the guards
-    // inserted by Range Analysis prevent the use of recover instruction. Thus,
-    // we just disable these checks.
+    
+    
+    
     pushResult(constant(UndefinedValue()));
     return true;
   }
@@ -6825,9 +6845,9 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
   addEffectfulUnsafe(assert);
   current->push(assert);
 
-  // Create an instruction sequence which implies that the argument of the
-  // assertRecoveredOnBailout function would be encoded at least in one
-  // Snapshot.
+  
+  
+  
   auto* nop = MNop::New(alloc());
   add(nop);
 
@@ -6849,8 +6869,8 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
 
 bool WarpCacheIRTranspiler::emitGuardNoAllocationMetadataBuilder(
     uint32_t builderAddrOffset) {
-  // This is a no-op because we discard all JIT code when set an allocation
-  // metadata callback.
+  
+  
   return true;
 }
 
@@ -6899,8 +6919,8 @@ bool WarpCacheIRTranspiler::emitNewFunctionCloneResult(uint32_t canonicalOffset,
 
   MDefinition* env = currentBlock()->environmentChain();
 
-  // The environment chain must be an object, but the MIR type can be Value when
-  // phis are involved.
+  
+  
   if (env->type() != MIRType::Object) {
     MOZ_ASSERT(env->type() == MIRType::Value);
     auto* unbox =
@@ -6943,13 +6963,13 @@ bool WarpCacheIRTranspiler::emitCloseIterScriptedResult(ObjOperandId iterId,
     return resumeAfter(call);
   }
 
-  // If we bail out here, after the call but before the CheckIsObj, we
-  // can't simply resume in the baseline interpreter. If we resume
-  // after the CloseIter, we won't check the return value. If we
-  // resume at the CloseIter, we will call the |return| method twice.
-  // Instead, we use a special resume mode that captures the
-  // intermediate value, and then checks that it's an object while
-  // bailing out.
+  
+  
+  
+  
+  
+  
+  
   current->push(call);
   MResumePoint* resumePoint =
       MResumePoint::New(alloc(), current, loc_.toRawBytecode(),
@@ -6995,33 +7015,33 @@ bool WarpCacheIRTranspiler::emitFuzzilliHashResult(ValOperandId valId) {
 
 static void MaybeSetImplicitlyUsed(uint32_t numInstructionIdsBefore,
                                    MDefinition* input) {
-  // When building MIR from bytecode, for each MDefinition that's an operand to
-  // a bytecode instruction, we must either add an SSA use or set the
-  // ImplicitlyUsed flag on that definition. The ImplicitlyUsed flag prevents
-  // the backend from optimizing-out values that will be used by Baseline after
-  // a bailout.
-  //
-  // WarpBuilder uses WarpPoppedValueUseChecker to assert this invariant in
-  // debug builds.
-  //
-  // This function is responsible for setting the ImplicitlyUsed flag for an
-  // input when using the transpiler. It looks at the input's most recent use
-  // and if that's an instruction that was added while transpiling this JSOp
-  // (based on the MIR instruction id) we don't set the ImplicitlyUsed flag.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (input->isImplicitlyUsed()) {
-    // Nothing to do.
+    
     return;
   }
 
-  // If the most recent use of 'input' is an instruction we just added, there is
-  // nothing to do.
+  
+  
   MDefinition* inputUse = input->maybeMostRecentlyAddedDefUse();
   if (inputUse && inputUse->id() >= numInstructionIdsBefore) {
     return;
   }
 
-  // The transpiler didn't add a use for 'input'.
+  
   input->setImplicitlyUsed();
 }
 
