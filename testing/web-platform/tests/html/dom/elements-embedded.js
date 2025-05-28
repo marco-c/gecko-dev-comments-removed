@@ -89,7 +89,7 @@ var embeddedElements = {
     src: "url",
     crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
     
-    preload: {type: "enum", keywords: ["none", "metadata", "auto"], nonCanon: {"": "auto"}, defaultVal: null},
+    preload: {type: "enum", keywords: ["none", "metadata", "auto"], nonCanon: {"": "auto"}, defaultVal: ["none", "metadata", "auto"]},
     autoplay: "boolean",
     loop: "boolean",
     controls: "boolean",
@@ -106,7 +106,7 @@ var embeddedElements = {
     src: "url",
     crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
     
-    preload: {type: "enum", keywords: ["none", "metadata", "auto"], nonCanon: {"": "auto"}, defaultVal: null},
+    preload: {type: "enum", keywords: ["none", "metadata", "auto"], nonCanon: {"": "auto"}, defaultVal: ["none", "metadata", "auto"]},
     autoplay: "boolean",
     loop: "boolean",
     controls: "boolean",

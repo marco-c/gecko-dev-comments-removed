@@ -137,6 +137,26 @@ ReflectionHarness.assertEquals = function(expected, actual, description) {
 
 
 
+
+ReflectionHarness.assertInArray = function(expected, actual, description) {
+  if (actual.includes(expected)) {
+    this.increment(this.passed);
+  } else {
+    this.increment(this.failed);
+    this.reportFailure(this.currentTestDescription +
+        (description ? " followed by " + description : "") +
+        ' (expected one of ' + this.stringRep(actual) + ', got ' +
+        this.stringRep(expected) + ')');
+  }
+}
+
+
+
+
+
+
+
+
 ReflectionHarness.assertThrows = function(exceptionName, fn) {
   try {
     fn();
