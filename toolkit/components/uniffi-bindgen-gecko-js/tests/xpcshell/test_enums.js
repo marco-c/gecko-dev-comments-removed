@@ -5,15 +5,22 @@ const {
   roundtripEnumNoData,
   roundtripEnumWithData,
   roundtripComplexEnum,
+  ComplexEnum,
   EnumNoData,
   EnumWithData,
-  ComplexEnum,
+  ExplicitValuedEnum,
+  GappedEnum,
   SimpleRec,
 } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/tests/generated/RustUniffiBindingsTests.sys.mjs"
 );
 
-Assert.deepEqual(roundtripEnumNoData(EnumNoData.B), EnumNoData.B);
+
+
+
+
+Assert.throws(() => roundtripEnumNoData(EnumNoData.A - 1), /TypeError/);
+Assert.throws(() => roundtripEnumNoData(EnumNoData.C + 1), /TypeError/);
 
 Assert.deepEqual(
   roundtripEnumWithData(new EnumWithData.A(10)),
@@ -40,3 +47,23 @@ Assert.deepEqual(
   roundtripComplexEnum(new ComplexEnum.C(new SimpleRec({ a: 30 }))),
   new ComplexEnum.C(new SimpleRec({ a: 30 }))
 );
+
+
+
+
+Assert.equal(EnumNoData.A, 0);
+Assert.equal(EnumNoData.B, 1);
+Assert.equal(EnumNoData.C, 2);
+
+
+Assert.equal(ExplicitValuedEnum.FIRST, 1);
+Assert.equal(ExplicitValuedEnum.SECOND, 2);
+Assert.equal(ExplicitValuedEnum.FOURTH, 4);
+Assert.equal(ExplicitValuedEnum.TENTH, 10);
+Assert.equal(ExplicitValuedEnum.ELEVENTH, 11);
+Assert.equal(ExplicitValuedEnum.THIRTEENTH, 13);
+
+
+Assert.equal(GappedEnum.ONE, 10);
+Assert.equal(GappedEnum.TWO, 11); 
+Assert.equal(GappedEnum.THREE, 14); 
