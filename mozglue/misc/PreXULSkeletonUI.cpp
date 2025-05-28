@@ -1535,7 +1535,7 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
 
       
       
-      "marionette",
+      "marionette", "remote-allow-system-access",
 
       
       
