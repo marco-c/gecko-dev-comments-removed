@@ -133,9 +133,10 @@ add_task(async function testResizing() {
       document.getElementById("browser")
     ).top;
 
-    let initialWidth = 500 - 8;
+    let initialWidth = 500;
     let initialHeight = 400 - chromeHeight;
 
+    
     await waitForExpectedSize(helper, initialWidth, initialHeight);
 
     
@@ -147,7 +148,7 @@ add_task(async function testResizing() {
       sheetIndicator: true,
     });
 
-    await resizeWindow(600, 500);
+    await resizeWindow(700, 650 + chromeHeight);
 
     await checkPreviewNavigationVisibility({
       navigateHome: true,
@@ -158,12 +159,16 @@ add_task(async function testResizing() {
     });
 
     
-    let updatedWidth = initialWidth + 100 + 8 - 32;
-    await waitForExpectedSize(helper, updatedWidth, initialHeight + 100);
+    let updatedWidth = 650;
+    let updatedHeight = 625;
+    await waitForExpectedSize(helper, updatedWidth, updatedHeight);
 
-    await resizeWindow(1100, 900);
+    await resizeWindow(1100, 900 + chromeHeight);
 
-    await waitForExpectedSize(helper, 1000, 650);
+    
+    updatedWidth = 880;
+    updatedHeight = 810;
+    await waitForExpectedSize(helper, updatedWidth, updatedHeight);
 
     await checkPreviewNavigationVisibility({
       navigateHome: true,
