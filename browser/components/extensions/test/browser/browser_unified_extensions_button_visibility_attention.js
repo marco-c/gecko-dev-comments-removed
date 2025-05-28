@@ -90,9 +90,6 @@ add_task(async function test_button_ignore_attention_pref() {
 
 
 add_task(async function test_contextmenu_on_button_with_attention() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.button.customizable", true]],
-  });
   Services.fog.testResetFOG();
   gBrowser.selectedTab = TAB_WITHOUT_ATTENTION;
   gBrowser.selectedTab = TAB_WITH_ATTENTION;
@@ -171,7 +168,6 @@ add_task(async function test_contextmenu_on_button_with_attention() {
 
   gBrowser.selectedTab = TAB_WITHOUT_ATTENTION;
   assertExtensionsButtonHidden();
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_button_shown_by_attention_from_blocklist() {

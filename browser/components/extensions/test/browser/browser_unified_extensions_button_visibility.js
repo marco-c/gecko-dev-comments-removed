@@ -130,9 +130,10 @@ add_task(async function test_delay_hide_button_while_mouse_is_on_toolbar() {
   resetButtonVisibilityToDefault();
 });
 
-
-
-add_task(async function test_remove_from_toolbar_disabled_by_default() {
+add_task(async function test_remove_from_toolbar_disabled_by_pref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.unifiedExtensions.button.customizable", false]],
+  });
   const contextMenu = await openChromeContextMenu(
     "toolbar-context-menu",
     "#unified-extensions-button"
@@ -142,12 +143,10 @@ add_task(async function test_remove_from_toolbar_disabled_by_default() {
   );
   ok(removeFromToolbar.hasAttribute("disabled"), "removeFromToolbar disabled");
   await closeChromeContextMenu(contextMenu.id, null);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_hide_button_via_contextmenu() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.button.customizable", true]],
-  });
   Services.fog.testResetFOG();
   
   
@@ -189,16 +188,12 @@ add_task(async function test_hide_button_via_contextmenu() {
 
   await BrowserTestUtils.closeWindow(win);
   resetButtonVisibilityToDefault();
-  await SpecialPowers.popPrefEnv();
 });
 
 
 
 
 add_task(async function test_menu_items_on_hidden_button() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.button.customizable", true]],
-  });
   Services.fog.testResetFOG();
 
   hideButtonWithPref();
@@ -263,12 +258,12 @@ add_task(async function test_menu_items_on_hidden_button() {
   await closeChromeContextMenu(contextMenu2.id);
 
   resetButtonVisibilityToDefault();
-  await SpecialPowers.popPrefEnv();
 });
 
-
-
-add_task(async function test_customization_disabled_by_default() {
+add_task(async function test_customization_disabled_by_pref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.unifiedExtensions.button.customizable", false]],
+  });
   await openCustomizationUI();
   const contextMenu = await openChromeContextMenu(
     "toolbar-context-menu",
@@ -280,12 +275,10 @@ add_task(async function test_customization_disabled_by_default() {
   is(item.hidden, true, "Not expecting menu item to hide button");
   await closeChromeContextMenu(contextMenu.id);
   await closeCustomizationUI();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_customization_option_hidden_if_not_customizing() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.button.customizable", true]],
-  });
   const contextMenu = await openChromeContextMenu(
     "toolbar-context-menu",
     "#unified-extensions-button"
@@ -295,16 +288,12 @@ add_task(async function test_customization_option_hidden_if_not_customizing() {
   );
   is(item.hidden, true, "Not expecting menu item to hide button");
   await closeChromeContextMenu(contextMenu.id);
-  await SpecialPowers.popPrefEnv();
 });
 
 
 
 
 add_task(async function test_customization_button_and_menu_item_visibility() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.button.customizable", true]],
-  });
   Services.fog.testResetFOG();
   resetExtensionsButtonTelemetry();
 
@@ -419,5 +408,4 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
   assertExtensionsButtonTelemetry({ customize: 1 });
 
   resetButtonVisibilityToDefault();
-  await SpecialPowers.popPrefEnv();
 });
