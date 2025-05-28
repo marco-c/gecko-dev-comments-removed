@@ -21,9 +21,6 @@ enum class ABIKind {
   
   
   Wasm,
-  
-  
-  WasmBuiltin,
 };
 
 enum class ABIType {

@@ -1303,7 +1303,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
     
     
-    jit::ABIArgIter<MIRTypeVector> argsIter(coerceArgTypes, ABIKind::Wasm);
+    jit::ABIArgIter<MIRTypeVector> argsIter(coerceArgTypes, ABIKind::System);
 
     
     if (argsIter->kind() == ABIArg::GPR) {
@@ -2486,7 +2486,7 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
   
   
   
-  MOZ_ASSERT(abiKind == ABIKind::WasmBuiltin || abiKind == ABIKind::Wasm);
+  MOZ_ASSERT(abiKind == ABIKind::System || abiKind == ABIKind::Wasm);
 
   AssertExpectedSP(masm);
   masm.setFramePushed(0);
@@ -2500,23 +2500,36 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
   GenerateExitPrologue(masm, framePushed, exitReason, offsets);
 
   
+  
+  Register scratch = ABINonArgReturnReg0;
 
   
   
-  unsigned offsetFromFPToCallerStackArgs =
-      sizeof(FrameWithInstances) - jit::ShadowStackSpace;
-  Register scratch = ABINonArgReturnReg0;
-  for (ABIArgIter i(args, ABIKind::System); !i.done(); i++) {
-    if (i->argInRegister()) {
+  ABIArgIter selfArgs(args, abiKind);
+  ABIArgIter callArgs(args, ABIKind::System);
+
+  
+  
+  
+  unsigned offsetFromFPToCallerStackArgs = sizeof(wasm::Frame);
+
+  for (; !selfArgs.done(); selfArgs++, callArgs++) {
+    
+    
+    MOZ_ASSERT(!callArgs.done());
+    MOZ_ASSERT(selfArgs->argInRegister() == callArgs->argInRegister());
+    MOZ_ASSERT(selfArgs.mirType() == callArgs.mirType());
+
+    if (selfArgs->argInRegister()) {
 #ifdef JS_CODEGEN_ARM
       
       
       if (abiKind == ABIKind::Wasm && !ARMFlags::UseHardFpABI() &&
-          IsFloatingPointType(i.mirType())) {
-        FloatRegister input = i->fpu();
-        if (i.mirType() == MIRType::Float32) {
+          IsFloatingPointType(selfArgs.mirType())) {
+        FloatRegister input = selfArgs->fpu();
+        if (selfArgs.mirType() == MIRType::Float32) {
           masm.ma_vxfer(input, Register::FromCode(input.id()));
-        } else if (i.mirType() == MIRType::Double) {
+        } else if (selfArgs.mirType() == MIRType::Double) {
           uint32_t regId = input.singleOverlay().id();
           masm.ma_vxfer(input, Register::FromCode(regId),
                         Register::FromCode(regId + 1));
@@ -2527,11 +2540,14 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
     }
 
     Address src(FramePointer,
-                offsetFromFPToCallerStackArgs + i->offsetFromArgBase());
-    Address dst(masm.getStackPointer(), i->offsetFromArgBase());
-    StackCopy(masm, i.mirType(), scratch, src, dst);
+                offsetFromFPToCallerStackArgs + selfArgs->offsetFromArgBase());
+    Address dst(masm.getStackPointer(), callArgs->offsetFromArgBase());
+    StackCopy(masm, selfArgs.mirType(), scratch, src, dst);
   }
+  
+  MOZ_ASSERT(callArgs.done());
 
+  
   AssertStackAlignment(masm, ABIStackAlignment);
   MoveSPForJitABI(masm);
   masm.call(ImmPtr(funcPtr, ImmPtr::NoCheckToken()));
