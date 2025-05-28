@@ -174,16 +174,26 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
         
         chrome_options["args"].extend(["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"])
 
-    if kwargs["enable_experimental"]:
-        chrome_options["args"].extend(["--enable-experimental-web-platform-features"])
-
     
     
     binary_args = kwargs.get("binary_args", []) + subsuite.config.get("binary_args", [])
     for arg in binary_args:
+        if arg == "--stable-release-mode":
+            continue
         if arg not in chrome_options["args"]:
             chrome_options["args"].append(arg)
 
+    
+    
+    
+    
+    if kwargs["enable_experimental"] is None and "--stable-release-mode" not in binary_args:
+        chrome_options["args"].extend(["--enable-experimental-web-platform-features",
+                                       "--enable-blink-test-features"])
+
+    
+    if kwargs["enable_experimental"]:
+        chrome_options["args"].extend(["--enable-experimental-web-platform-features"])
 
     
     

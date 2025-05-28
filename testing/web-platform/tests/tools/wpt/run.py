@@ -515,6 +515,9 @@ class Chrome(BrowserSetup):
             if kwargs["enable_webtransport_h3"] is None:
                 
                 kwargs["enable_webtransport_h3"] = True
+        elif browser_channel is not None:
+            
+            kwargs["enable_experimental"] = False
         if os.getenv("TASKCLUSTER_ROOT_URL"):
             
             
