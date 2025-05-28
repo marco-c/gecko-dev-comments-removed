@@ -3600,7 +3600,11 @@ nsCSSFrameConstructor::FindImgControlData(const Element& aElement,
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindSearchControlData(const Element& aElement,
                                              ComputedStyle& aStyle) {
-  if (StaticPrefs::layout_forms_input_type_search_enabled()) {
+  
+  
+  
+  if (StaticPrefs::layout_forms_input_type_search_enabled() ||
+      aElement.OwnerDoc()->ChromeRulesEnabled()) {
     static constexpr FrameConstructionData sSearchControlData(
         NS_NewSearchControlFrame);
     return &sSearchControlData;
