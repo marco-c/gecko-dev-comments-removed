@@ -556,6 +556,12 @@ void RunTestsContent(SandboxTestingChild* child) {
     munmap(mapping, kMapSize);
   }
 
+  child->ErrnoValueTest("ioctl_dma_buf"_ns, ENOSYS, [] {
+    
+    
+    
+    return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
+  });
 #  endif  
 
 #  ifdef XP_MACOSX

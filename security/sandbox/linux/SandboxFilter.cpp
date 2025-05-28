@@ -1486,8 +1486,9 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
             
             .ElseIf(request == FIONBIO, Allow())
             
-            
-            .ElseIf(shifted_type != kTtyIoctls, Allow())
+            .ElseIf(
+                BelowLevel(6) ? shifted_type != kTtyIoctls : BoolConst(false),
+                Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 

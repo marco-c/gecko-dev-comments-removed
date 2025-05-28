@@ -7,6 +7,7 @@
 #include "mozilla/SandboxSettings.h"
 #include "mozISandboxSettings.h"
 #include "nsServiceManagerUtils.h"
+#include "nsAppRunner.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
@@ -20,7 +21,6 @@
 #ifdef XP_WIN
 #  include "mozilla/gfx/gfxVars.h"
 #  include "mozilla/WindowsVersion.h"
-#  include "nsAppRunner.h"
 #  include "nsExceptionHandler.h"
 #  include "PDMFactory.h"
 #endif  
@@ -171,6 +171,10 @@ int GetEffectiveContentSandboxLevel() {
   
   if (level > 3 && !StaticPrefs::media_cubeb_sandbox()) {
     level = 3;
+  }
+  
+  if (level > 5 && gSafeMode) {
+    level = 5;
   }
 #endif
 #if defined(XP_WIN)
