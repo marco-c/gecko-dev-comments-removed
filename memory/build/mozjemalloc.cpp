@@ -3601,6 +3601,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     MOZ_ASSERT(!chunk->mIsPurging);
     mChunksDirty.Remove(chunk);
     chunk->mIsPurging = true;
+    aStats.chunks++;
   }  
 
   
@@ -3728,7 +3729,7 @@ ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
   if (callbacks) {
     TimeStamp end = TimeStamp::Now();
     
-    callbacks->OnPurge(start, end, purge_stats);
+    callbacks->OnPurge(start, end, purge_stats, pr);
   }
 #endif
 
