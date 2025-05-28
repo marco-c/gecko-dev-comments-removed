@@ -131,7 +131,7 @@ describe("AboutPreferences Feed", () => {
       await instance.observe(window, PREFERENCES_LOADED_EVENT);
 
       
-      assert.callCount(renderPreferenceSection, 5);
+      assert.callCount(renderPreferenceSection, 6);
 
       
       assert.calledOnce(toggleRestoreDefaults);
