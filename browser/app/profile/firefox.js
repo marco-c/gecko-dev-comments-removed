@@ -830,56 +830,6 @@ pref("browser.search.widget.removeAfterDaysUnused", 120);
 pref("browser.search.totalSearches", 0);
 
 
-
-pref("browser.shopping.experience2023.enabled", false);
-
-
-
-
-
-
-pref("browser.shopping.experience2023.optedIn", 0);
-
-
-
-
-pref("browser.shopping.experience2023.active", true);
-
-
-
-
-
-pref("browser.shopping.experience2023.ads.enabled", false);
-
-
-
-
-pref("browser.shopping.experience2023.ads.userEnabled", true);
-
-
-pref("browser.shopping.experience2023.survey.enabled", true);
-
-
-pref("browser.shopping.experience2023.survey.hasSeen", false);
-
-
-pref("browser.shopping.experience2023.survey.pdpVisits", 0);
-
-
-
-
-pref("browser.shopping.experience2023.autoOpen.enabled", false);
-
-
-pref("browser.shopping.experience2023.autoOpen.userEnabled", true);
-
-
-pref("browser.shopping.experience2023.sidebarClosedCount", 0);
-
-
-pref("browser.shopping.experience2023.showKeepSidebarClosedMessage", true);
-
-
 pref("browser.spin_cursor_while_busy", false);
 
 
