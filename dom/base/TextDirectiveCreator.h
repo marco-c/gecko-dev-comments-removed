@@ -142,6 +142,57 @@ class TextDirectiveCreator {
       const nsString& aSearchQuery, const RangeBoundary& aSearchStart,
       const RangeBoundary& aSearchEnd);
 
+  
+
+
+
+
+
+  Result<nsCString, ErrorResult> CreateTextDirective();
+
+  
+
+
+
+  static std::tuple<nsTArray<uint32_t>, nsTArray<uint32_t>>
+  ExtendSubstringLengthsToWordBoundaries(
+      const nsTArray<std::tuple<uint32_t, uint32_t>>& aExactSubstringLengths,
+      const Span<const uint32_t>& aFirstWordPositions,
+      const Span<const uint32_t>& aSecondWordPositions);
+
+  
+
+
+  virtual Maybe<TextDirective> FindShortestCombination() const = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static Maybe<std::tuple<uint32_t, uint32_t>> CheckAllCombinations(
+      const nsTArray<std::tuple<uint32_t, uint32_t>>& aExactWordLengths,
+      const nsTArray<uint32_t>& aFirstExtendedToWordBoundaries,
+      const nsTArray<uint32_t>& aSecondExtendedToWordBoundaries);
+
   nsString mPrefixContent;
   nsString mPrefixFoldCaseContent;
   nsTArray<uint32_t> mPrefixWordBeginDistances;
@@ -188,6 +239,8 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
   void FindEndMatchCommonSubstringLengths(
       const nsTArray<RefPtr<AbstractRange>>& aMatchRanges);
 
+  Maybe<TextDirective> FindShortestCombination() const override;
+
   nsString mEndContent;
   nsString mEndFoldCaseContent;
 
@@ -214,6 +267,8 @@ class ExactMatchTextDirectiveCreator : public TextDirectiveCreator {
 
   void FindCommonSubstringLengths(
       const nsTArray<RefPtr<AbstractRange>>& aMatchRanges);
+
+  Maybe<TextDirective> FindShortestCombination() const override;
 
   nsTArray<std::tuple<uint32_t, uint32_t>> mCommonSubstringLengths;
 };
