@@ -8,6 +8,7 @@
 
 #include "AccessibleCaretLogger.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/PresShell.h"
@@ -205,7 +206,6 @@ void AccessibleCaret::CreateCaretElement() const {
   
   
   
-  
 
   constexpr bool kNotify = false;
 
@@ -215,20 +215,7 @@ void AccessibleCaret::CreateCaretElement() const {
 
   ShadowRoot* root = mCaretElementHolder->Root();
   Document* doc = host.OwnerDoc();
-  {
-    RefPtr<NodeInfo> linkNodeInfo = doc->NodeInfoManager()->GetNodeInfo(
-        nsGkAtoms::link, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
-    RefPtr<nsGenericHTMLElement> link =
-        NS_NewHTMLLinkElement(linkNodeInfo.forget());
-    if (NS_WARN_IF(!link)) {
-      return;
-    }
-    link->SetAttr(nsGkAtoms::rel, u"stylesheet"_ns, IgnoreErrors());
-    link->SetAttr(nsGkAtoms::href,
-                  u"resource://content-accessible/accessiblecaret.css"_ns,
-                  IgnoreErrors());
-    root->AppendChildTo(link, kNotify, IgnoreErrors());
-  }
+  root->AppendBuiltInStyleSheet(BuiltInStyleSheet::AccessibleCaret);
 
   auto CreateAndAppendChildElement = [&](const nsLiteralString& aElementId) {
     RefPtr<Element> child = doc->CreateHTMLElement(nsGkAtoms::div);
