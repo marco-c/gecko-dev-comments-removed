@@ -2,8 +2,6 @@
 
 
 
-import { features } from "../prefs";
-
 function _isInvalidTarget(target) {
   if (!target || !target.innerText) {
     return true;
@@ -24,12 +22,6 @@ function _isInvalidTarget(target) {
   
   
   const INVALID_TARGET_CLASSES = [
-    
-    "cm-atom",
-    "cm-number",
-    "cm-operator",
-    "cm-string",
-    "cm-tag",
     
     "tok-string",
     "tok-punctuation",
@@ -93,11 +85,7 @@ function _isInvalidTarget(target) {
 }
 
 function _dispatch(editor, eventName, data) {
-  if (features.codemirrorNext) {
-    editor.emit(eventName, data);
-  } else {
-    editor.codeMirror.constructor.signal(editor.codeMirror, eventName, data);
-  }
+  editor.emit(eventName, data);
 }
 
 function _invalidLeaveTarget(target) {

@@ -6,7 +6,6 @@
 
 
 
-import { removeDocument } from "../utils/editor/index";
 import { selectSource } from "./sources/index";
 
 import { getSelectedLocation, getSourcesForTabs } from "../selectors/index";
@@ -43,10 +42,6 @@ export function closeTabs(sources) {
   return ({ dispatch, getState }) => {
     if (!sources.length) {
       return;
-    }
-
-    for (const source of sources) {
-      removeDocument(source.id);
     }
 
     

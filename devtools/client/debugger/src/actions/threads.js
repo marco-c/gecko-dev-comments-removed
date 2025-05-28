@@ -4,7 +4,6 @@
 
 import { createThread } from "../client/firefox/create";
 import { getSourcesToRemoveForThread } from "../selectors/index";
-import { clearDocumentsForSources } from "../utils/editor/source-documents";
 import { getEditor } from "../utils/editor/index";
 
 export function addTarget(targetFront) {
@@ -25,10 +24,6 @@ export function removeTarget(targetFront) {
       getState(),
       threadActorID
     );
-
-    
-    
-    clearDocumentsForSources(sources);
 
     
     

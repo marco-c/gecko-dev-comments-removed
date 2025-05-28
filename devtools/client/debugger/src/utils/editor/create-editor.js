@@ -51,9 +51,8 @@ export function createEditor(config = { cm6: false }) {
 
 
 
-
-export function createHeadlessEditor(useCm6) {
-  const editor = createEditor({ cm6: useCm6 });
+export function createHeadlessEditor() {
+  const editor = createEditor({ cm6: true });
   editor.appendToLocalElement(document.createElement("div"));
   return editor;
 }
