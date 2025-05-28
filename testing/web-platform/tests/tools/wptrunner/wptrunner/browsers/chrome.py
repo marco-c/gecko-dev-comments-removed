@@ -143,10 +143,11 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
     
     
     
+    
     address_space_overrides_ports = [
-        ("http-private", "private"),
+        ("http-local", "local"),
         ("http-public", "public"),
-        ("https-private", "private"),
+        ("https-local", "local"),
         ("https-public", "public"),
     ]
     address_space_overrides_arg = ",".join(
