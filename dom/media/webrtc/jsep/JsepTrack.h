@@ -136,7 +136,7 @@ class JsepTrack {
       mVideoPreferredCodec = rhs.mVideoPreferredCodec;
       mUniqueReceivePayloadTypes = rhs.mUniqueReceivePayloadTypes;
       mReceivePayloadTypes = rhs.mReceivePayloadTypes;
-      mOtherReceivePayloadTypes = rhs.mOtherReceivePayloadTypes;
+      mDuplicateReceivePayloadTypes = rhs.mDuplicateReceivePayloadTypes;
 
       mPrototypeCodecs.clear();
       for (const auto& codec : rhs.mPrototypeCodecs) {
@@ -217,8 +217,8 @@ class JsepTrack {
   virtual nsresult Negotiate(const SdpMediaSection& answer,
                              const SdpMediaSection& remote,
                              const SdpMediaSection& local);
-  static void SetReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
-                                     bool localOffer = false);
+  static void SetUniqueReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
+                                           bool localOffer = false);
   virtual void GetNegotiatedPayloadTypes(
       std::vector<uint16_t>* payloadTypes) const;
 
@@ -261,17 +261,12 @@ class JsepTrack {
     return mVideoPreferredCodec;
   }
 
-  void ResetReceivePayloadTypes() {
-    mUniqueReceivePayloadTypes.clear();
-    mOtherReceivePayloadTypes.clear();
-  }
-
-  const std::vector<uint8_t>& GetUniqueReceivePayloadTypes() const {
+  std::vector<uint8_t> GetUniqueReceivePayloadTypes() const {
     return mUniqueReceivePayloadTypes;
   }
 
-  const std::vector<uint8_t>& GetOtherReceivePayloadTypes() const {
-    return mOtherReceivePayloadTypes;
+  std::vector<uint8_t> GetDuplicateReceivePayloadTypes() const {
+    return mDuplicateReceivePayloadTypes;
   }
 
  private:
@@ -347,7 +342,7 @@ class JsepTrack {
   std::vector<uint8_t> mUniqueReceivePayloadTypes;
   std::vector<uint16_t> mReceivePayloadTypes;
   
-  std::vector<uint8_t> mOtherReceivePayloadTypes;
+  std::vector<uint8_t> mDuplicateReceivePayloadTypes;
 };
 
 }  

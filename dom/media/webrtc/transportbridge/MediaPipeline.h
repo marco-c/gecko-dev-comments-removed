@@ -119,7 +119,6 @@ class MediaPipeline : public sigslot::has_slots<> {
                          UniquePtr<MediaPipelineFilter>&& aFilter,
                          bool aSignalingStable);
 
-  void UpdateActive();
   virtual DirectionType Direction() const { return mDirection; }
   size_t Level() const { return mLevel; }
   virtual bool IsVideo() const = 0;
@@ -210,8 +209,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   
   
   Mirror<bool> mActive;
-  
-  bool mActiveSts;
   Atomic<size_t> mLevel;
   std::string mTransportId;
   const RefPtr<MediaTransportHandler> mTransportHandler;

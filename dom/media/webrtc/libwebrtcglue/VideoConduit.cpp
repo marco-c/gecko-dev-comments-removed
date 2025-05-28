@@ -1530,12 +1530,10 @@ void WebrtcVideoConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
   
-  
   if (!mControl.mReceiving) {
-    CSFLogVerbose(LOGTAG,
-                  "VideoConduit %p: Discarding packet SEQ# %u SSRC %u as not "
-                  "configured to receive.",
-                  this, aPacket.SequenceNumber(), aHeader.ssrc);
+    
+    
+    
     return;
   }
 

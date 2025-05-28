@@ -731,17 +731,14 @@ nsresult JsepTrack::Negotiate(const SdpMediaSection& answer,
 
 
 
-void JsepTrack::SetReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
-                                       bool localOffer) {
+void JsepTrack::SetUniqueReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
+                                             bool localOffer) {
   
-  
-  
-  
-  std::map<uint16_t, Maybe<JsepTrack*>> payloadTypeToTrackCount;
+  std::multimap<uint16_t, JsepTrack*> payloadTypeToTracks;
 
   for (JsepTrack* track : tracks) {
     track->mUniqueReceivePayloadTypes.clear();
-    track->mOtherReceivePayloadTypes.clear();
+    track->mDuplicateReceivePayloadTypes.clear();
 
     if (track->GetMediaType() == SdpMediaSection::kApplication) {
       continue;
@@ -760,27 +757,23 @@ void JsepTrack::SetReceivePayloadTypes(std::vector<JsepTrack*>& tracks,
     }
 
     for (uint16_t pt : payloadTypesForTrack) {
-      
-      
-      auto& entry = payloadTypeToTrackCount[pt];
-      entry = entry
-                  
-                  .andThen([](JsepTrack*) { return Some<JsepTrack*>(nullptr); })
-                  
-                  .orElse([track] { return Some(track); });
+      payloadTypeToTracks.insert({pt, track});
     }
   }
 
-  for (const auto& [key, track] : payloadTypeToTrackCount) {
+  for (auto it = payloadTypeToTracks.begin(), end = payloadTypeToTracks.end();
+       it != end;) {
+    const auto& [key, firstTrackForPt] = *it;
     const auto pt = AssertedCast<uint8_t>(key);
-    JsepTrack* uniqueTrack = *track;
-    if (uniqueTrack) {
-      uniqueTrack->mUniqueReceivePayloadTypes.push_back(pt);
+    const size_t count = payloadTypeToTracks.count(key);
+    if (count == 1) {
+      firstTrackForPt->mUniqueReceivePayloadTypes.push_back(pt);
+      ++it;
+      continue;
     }
-    for (JsepTrack* track : tracks) {
-      if (track != uniqueTrack) {
-        track->mOtherReceivePayloadTypes.push_back(pt);
-      }
+    for (auto next = payloadTypeToTracks.upper_bound(key); it != next; ++it) {
+      const auto& [_pt, track] = *it;
+      track->mDuplicateReceivePayloadTypes.push_back(pt);
     }
   }
 }
