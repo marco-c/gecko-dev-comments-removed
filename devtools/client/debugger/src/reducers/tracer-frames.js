@@ -196,7 +196,9 @@ function update(state = initialState(), action) {
     case "SET_SELECTED_LOCATION": {
       
       
-      if (action.location.source.isOriginal) return state;
+      if (action.location.source.isOriginal) {
+        return state;
+      }
 
       
       if (

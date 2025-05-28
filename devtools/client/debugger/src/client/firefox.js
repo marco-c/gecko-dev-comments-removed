@@ -275,7 +275,9 @@ async function onTracingToggled() {
 function onDocumentEventAvailable(events) {
   for (const event of events) {
     
-    if (!event.targetFront.isTopLevel) continue;
+    if (!event.targetFront.isTopLevel) {
+      continue;
+    }
     
     
     
