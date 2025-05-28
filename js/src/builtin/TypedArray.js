@@ -19,11 +19,11 @@ function ViewedArrayBufferIfReified(tarray) {
   return IsObject(buf) ? buf : null;
 }
 
-function IsDetachedBuffer(buffer) {
+function GetArrayBufferFlagsOrZero(buffer) {
   
   
   if (buffer === null) {
-    return false;
+    return 0;
   }
 
   assert(
@@ -34,23 +34,22 @@ function IsDetachedBuffer(buffer) {
 
   
   if ((buffer = GuardToArrayBuffer(buffer)) === null) {
-    return false;
+    return 0;
   }
 
-  var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
-  return (flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0;
+  return UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
 }
 
-function GetAttachedArrayBuffer(tarray) {
+function EnsureAttachedArrayBuffer(tarray) {
   var buffer = ViewedArrayBufferIfReified(tarray);
-  if (IsDetachedBuffer(buffer)) {
+  var flags = GetArrayBufferFlagsOrZero(buffer);
+  if ((flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0) {
     ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
   }
-  return buffer;
 }
 
-function GetAttachedArrayBufferMethod() {
-  return GetAttachedArrayBuffer(this);
+function EnsureAttachedArrayBufferMethod() {
+  EnsureAttachedArrayBuffer(this);
 }
 
 
@@ -59,14 +58,14 @@ function GetAttachedArrayBufferMethod() {
 
 function EnsureTypedArrayWithArrayBuffer(arg) {
   if (IsObject(arg) && IsTypedArray(arg)) {
-    GetAttachedArrayBuffer(arg);
+    EnsureAttachedArrayBuffer(arg);
     return;
   }
 
   callFunction(
     CallTypedArrayMethodIfWrapped,
     arg,
-    "GetAttachedArrayBufferMethod"
+    "EnsureAttachedArrayBufferMethod"
   );
 }
 
@@ -120,7 +119,7 @@ function ValidateTypedArray(obj) {
     
     if (IsTypedArray(obj)) {
       
-      GetAttachedArrayBuffer(obj);
+      EnsureAttachedArrayBuffer(obj);
       return;
     }
 
@@ -691,7 +690,7 @@ function TypedArraySlice(start, end) {
     );
   }
 
-  GetAttachedArrayBuffer(O);
+  EnsureAttachedArrayBuffer(O);
 
   
   var len = TypedArrayLength(O);
@@ -970,7 +969,7 @@ function TypedArrayAt(index) {
       "TypedArrayAt"
     );
   }
-  GetAttachedArrayBuffer(obj);
+  EnsureAttachedArrayBuffer(obj);
 
   
   var len = TypedArrayLength(obj);
@@ -1149,7 +1148,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
       ) {
         
         
-        GetAttachedArrayBuffer(source);
+        EnsureAttachedArrayBuffer(source);
 
         
         var len = TypedArrayLength(source);
