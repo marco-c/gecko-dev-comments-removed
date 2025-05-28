@@ -307,6 +307,7 @@ function IteratorHelperReturn() {
 
 
 
+
 function IteratorMap(mapper) {
   
   var iterator = this;
@@ -318,6 +319,9 @@ function IteratorMap(mapper) {
 
   
   if (!IsCallable(mapper)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapper));
   }
 
@@ -339,6 +343,7 @@ function IteratorMap(mapper) {
   
   return result;
 }
+
 
 
 
@@ -390,6 +395,7 @@ function* IteratorMapGenerator(iterator, nextMethod, mapper) {
 
 
 
+
 function IteratorFilter(predicate) {
   
   var iterator = this;
@@ -401,6 +407,9 @@ function IteratorFilter(predicate) {
 
   
   if (!IsCallable(predicate)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
@@ -422,6 +431,7 @@ function IteratorFilter(predicate) {
   
   return result;
 }
+
 
 
 
@@ -642,6 +652,7 @@ function* IteratorDropGenerator(iterator, nextMethod, remaining) {
 
 
 
+
 function IteratorFlatMap(mapper) {
   
   var iterator = this;
@@ -653,6 +664,9 @@ function IteratorFlatMap(mapper) {
 
   
   if (!IsCallable(mapper)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapper));
   }
 
@@ -674,6 +688,9 @@ function IteratorFlatMap(mapper) {
   
   return result;
 }
+
+
+
 
 
 
@@ -734,6 +751,7 @@ function* IteratorFlatMapGenerator(iterator, nextMethod, mapper) {
 
 
 
+
 function IteratorReduce(reducer ) {
   
   var iterator = this;
@@ -745,6 +763,9 @@ function IteratorReduce(reducer ) {
 
   
   if (!IsCallable(reducer)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, reducer));
   }
 
@@ -797,6 +818,7 @@ function IteratorReduce(reducer ) {
 
 
 
+
 function IteratorToArray() {
   
   var iterator = this;
@@ -818,6 +840,7 @@ function IteratorToArray() {
 
 
 
+
 function IteratorForEach(fn) {
   
   var iterator = this;
@@ -829,6 +852,9 @@ function IteratorForEach(fn) {
 
   
   if (!IsCallable(fn)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
   }
 
@@ -854,6 +880,7 @@ function IteratorForEach(fn) {
 
 
 
+
 function IteratorSome(predicate) {
   
   var iterator = this;
@@ -865,6 +892,9 @@ function IteratorSome(predicate) {
 
   
   if (!IsCallable(predicate)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
@@ -893,6 +923,7 @@ function IteratorSome(predicate) {
 
 
 
+
 function IteratorEvery(predicate) {
   
   var iterator = this;
@@ -904,6 +935,9 @@ function IteratorEvery(predicate) {
 
   
   if (!IsCallable(predicate)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
@@ -932,6 +966,7 @@ function IteratorEvery(predicate) {
 
 
 
+
 function IteratorFind(predicate) {
   
   var iterator = this;
@@ -943,6 +978,9 @@ function IteratorFind(predicate) {
 
   
   if (!IsCallable(predicate)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
