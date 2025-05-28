@@ -3,17 +3,7 @@
 
 
 import buildQuery from "../build-query";
-import { features } from "../prefs";
 import { markerTypes } from "../../constants";
-
-
-
-
-
-function getSearchCursor(cm, query, pos, modifiers) {
-  const regexQuery = buildQuery(query, modifiers, { isGlobal: true });
-  return cm.getSearchCursor(regexQuery, pos);
-}
 
 
 
@@ -36,71 +26,6 @@ function getSearchState(cm) {
 
 function isWhitespace(query) {
   return !query.match(/\S/);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function searchOverlay(query, modifiers) {
-  const regexQuery = buildQuery(query, modifiers, {
-    ignoreSpaces: true,
-    
-    isGlobal: true,
-  });
-
-  return {
-    token(stream) {
-      
-      
-      regexQuery.lastIndex = stream.pos;
-      const match = regexQuery.exec(stream.string);
-      if (match && match.index === stream.pos) {
-        
-        
-        stream.pos += match[0].length || 1;
-        return "highlight highlight-full";
-      }
-
-      if (match) {
-        
-        
-        stream.pos = match.index;
-      } else {
-        
-        stream.skipToEnd();
-      }
-
-      return null;
-    },
-  };
-}
-
-
-
-
-
-function updateOverlay(cm, state, query, modifiers) {
-  cm.removeOverlay(state.overlay);
-  state.overlay = searchOverlay(query, modifiers);
-  cm.addOverlay(state.overlay, { opaque: false });
-}
-
-function updateCursor(cm, state, keepSelection) {
-  state.posTo = cm.getCursor("anchor");
-  state.posFrom = cm.getCursor("head");
-
-  if (!keepSelection) {
-    state.posTo = { line: 0, ch: 0 };
-    state.posFrom = { line: 0, ch: 0 };
-  }
 }
 
 export function getMatchIndex(count, currentIndex, rev) {
@@ -133,68 +58,35 @@ function doSearch(
   query,
   keepSelection,
   modifiers,
-  { focusFirstResult = true, shouldScroll = true }
+  { shouldScroll = true }
 ) {
-  const { cm, editor } = ctx;
-
-  if (features.codemirrorNext) {
-    if (!query || isWhitespace(query)) {
-      editor.clearSearchMatches();
-      return null;
-    }
-    const regexQuery = buildQuery(query, modifiers, {
-      ignoreSpaces: true,
-      
-      isGlobal: true,
-    });
-
-    if (editor.searchState.query?.toString() !== regexQuery.toString()) {
-      editor.highlightSearchMatches(regexQuery, "cm-highlight");
-    }
-    const cursor = editor.getNextSearchCursor(rev);
-    if (!cursor) {
-      return null;
-    }
-    editor.setPositionContentMarker({
-      id: markerTypes.ACTIVE_SELECTION_MARKER,
-      positionClassName: "cm-matchhighlight",
-      positions: [{ from: cursor.from, to: cursor.to }],
-    });
-
-    if (shouldScroll) {
-      editor.scrollToPosition(cursor.from);
-    }
-    return editor.getPositionFromSearchCursor(cursor);
-  }
-
-  if (!cm) {
+  const { editor } = ctx;
+  if (!query || isWhitespace(query)) {
+    editor.clearSearchMatches();
     return null;
   }
-  const defaultIndex = { line: -1, ch: -1 };
-
-  return cm.operation(function () {
-    if (!query || isWhitespace(query)) {
-      clearSearch(ctx);
-      return null;
-    }
-
-    const state = getSearchState(cm);
-    const isNewQuery = state.query !== query;
-    state.query = query;
-
-    updateOverlay(cm, state, query, modifiers);
-    updateCursor(cm, state, keepSelection);
-    const searchLocation = searchNext(ctx, rev, query, isNewQuery, modifiers);
-
+  const regexQuery = buildQuery(query, modifiers, {
+    ignoreSpaces: true,
     
-    
-    if (!cm.state.selectingText && searchLocation && focusFirstResult) {
-      editor.alignLine(searchLocation.from.line, "center");
-      cm.setSelection(searchLocation.from, searchLocation.to);
-    }
-
-    return searchLocation ? searchLocation.from : defaultIndex;
+    isGlobal: true,
   });
+
+  if (editor.searchState.query?.toString() !== regexQuery.toString()) {
+    editor.highlightSearchMatches(regexQuery, "cm-highlight");
+  }
+  const cursor = editor.getNextSearchCursor(rev);
+  if (!cursor) {
+    return null;
+  }
+  editor.setPositionContentMarker({
+    id: markerTypes.ACTIVE_SELECTION_MARKER,
+    positionClassName: "cm-matchhighlight",
+    positions: [{ from: cursor.from, to: cursor.to }],
+  });
+  if (shouldScroll) {
+    editor.scrollToPosition(cursor.from);
+  }
+  return editor.getPositionFromSearchCursor(cursor);
 }
 
 export function searchSourceForHighlight(
@@ -202,109 +94,23 @@ export function searchSourceForHighlight(
   rev,
   query,
   keepSelection,
-  modifiers,
-  line,
-  ch
+  modifiers
 ) {
-  const { cm, editor } = ctx;
-
-  if (features.codemirrorNext) {
-    if (!query || isWhitespace(query)) {
-      editor.clearSearchMatches();
-      return;
-    }
-
-    const regexQuery = buildQuery(query, modifiers, {
-      ignoreSpaces: true,
-      
-      isGlobal: true,
-    });
-
-    if (editor.searchState.query?.toString() !== regexQuery.toString()) {
-      editor.highlightSearchMatches(regexQuery, "cm-highlight");
-    }
+  const { editor } = ctx;
+  if (!query || isWhitespace(query)) {
+    editor.clearSearchMatches();
     return;
   }
 
-  if (!cm) {
-    return;
-  }
-
-  cm.operation(function () {
-    const state = getSearchState(cm);
-    const isNewQuery = state.query !== query;
-    state.query = query;
-
-    updateOverlay(cm, state, query, modifiers);
-    updateCursor(cm, state, keepSelection);
-    findNextOnLine(ctx, rev, query, isNewQuery, modifiers, line, ch);
-  });
-}
-
-function getCursorPos(newQuery, rev, state) {
-  if (newQuery) {
-    return rev ? state.posFrom : state.posTo;
-  }
-
-  return rev ? state.posTo : state.posFrom;
-}
-
-
-
-
-
-
-
-function searchNext(ctx, rev, query, newQuery, modifiers) {
-  const { cm } = ctx;
-  let nextMatch;
-  cm.operation(function () {
-    const state = getSearchState(cm);
-    const pos = getCursorPos(newQuery, rev, state);
-
-    if (!state.query) {
-      return;
-    }
-
-    let cursor = getSearchCursor(cm, state.query, pos, modifiers);
-
-    const location = rev
-      ? { line: cm.lastLine(), ch: null }
-      : { line: cm.firstLine(), ch: 0 };
-
-    if (!cursor.find(rev) && state.query) {
-      cursor = getSearchCursor(cm, state.query, location, modifiers);
-      if (!cursor.find(rev)) {
-        return;
-      }
-    }
-
-    nextMatch = { from: cursor.from(), to: cursor.to() };
-  });
-
-  return nextMatch;
-}
-
-function findNextOnLine(ctx, rev, query, newQuery, modifiers, line, ch) {
-  const { cm, editor } = ctx;
-  cm.operation(function () {
-    const pos = { line: line - 1, ch };
-    let cursor = getSearchCursor(cm, query, pos, modifiers);
-
-    if (!cursor.find(rev) && query) {
-      cursor = getSearchCursor(cm, query, pos, modifiers);
-      if (!cursor.find(rev)) {
-        return;
-      }
-    }
-
+  const regexQuery = buildQuery(query, modifiers, {
+    ignoreSpaces: true,
     
-    
-    if (!cm.state.selectingText) {
-      editor.alignLine(cursor.from().line, "center");
-      cm.setSelection(cursor.from(), cursor.to());
-    }
+    isGlobal: true,
   });
+
+  if (editor.searchState.query?.toString() !== regexQuery.toString()) {
+    editor.highlightSearchMatches(regexQuery, "cm-highlight");
+  }
 }
 
 
@@ -327,20 +133,9 @@ export function removeOverlay(ctx) {
 
 
 export function clearSearch(ctx) {
-  const { cm, editor } = ctx;
-  if (features.codemirrorNext) {
-    editor.clearSearchMatches();
-    editor.removePositionContentMarker("active-selection-marker");
-    return;
-  }
-  const state = getSearchState(cm);
-  state.results = [];
-
-  if (!state.query) {
-    return;
-  }
-  cm.removeOverlay(state.overlay);
-  state.query = null;
+  const { editor } = ctx;
+  editor.clearSearchMatches();
+  editor.removePositionContentMarker("active-selection-marker");
 }
 
 
