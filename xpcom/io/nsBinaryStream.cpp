@@ -39,9 +39,9 @@
 
 #include "js/ArrayBuffer.h"  
 #include "js/ArrayBufferMaybeShared.h"  
-#include "js/GCAPI.h"        
-#include "js/RootingAPI.h"  
-#include "js/Value.h"       
+#include "js/GCAPI.h"                   
+#include "js/RootingAPI.h"              
+#include "js/Value.h"                   
 
 using mozilla::AsBytes;
 using mozilla::MakeUnique;

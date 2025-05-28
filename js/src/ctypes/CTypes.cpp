@@ -39,7 +39,7 @@
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"  
 #include "js/ArrayBufferMaybeShared.h"  
-#include "js/CallAndConstruct.h"  
+#include "js/CallAndConstruct.h"        
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
