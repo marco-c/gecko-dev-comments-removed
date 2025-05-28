@@ -131,6 +131,51 @@ function getSystemAddonXPI(num, version) {
   return _systemXPIs.get(key);
 }
 
+async function promiseUpdateSystemAddonsSet(systemAddonUpdates) {
+  const waitForStartupIDs = new Set();
+
+  let promises = [];
+  let updates = [];
+  for (const { id, version, waitForStartup = true } of systemAddonUpdates) {
+    let xpi = AddonTestUtils.createTempWebExtensionFile({
+      manifest: {
+        version,
+        browser_specific_settings: {
+          gecko: { id },
+        },
+      },
+    });
+    updates.push({ id, version, xpi, path: xpi.leafName });
+
+    if (waitForStartup) {
+      waitForStartupIDs.add(id);
+    } else {
+      
+      promises.push(
+        AddonTestUtils.promiseAddonEvent(
+          "onInstalled",
+          addon => addon.id === id
+        )
+      );
+    }
+  }
+
+  let xml = buildSystemAddonUpdates(updates);
+  promises.push(installSystemAddons(xml, Array.from(waitForStartupIDs)));
+  return Promise.all(promises);
+}
+
+async function promiseUpdateSystemAddon(id, version, waitForStartup = true) {
+  const ADDON_ID = "updates@test";
+  return promiseUpdateSystemAddonsSet([
+    {
+      id: id ?? ADDON_ID,
+      version,
+      waitForStartup,
+    },
+  ]);
+}
+
 async function getSystemBuiltin(num, addon_version, res_url) {
   const id = `system${num}@tests.mozilla.org`;
   const version = addon_version ?? "1.0";
@@ -303,16 +348,10 @@ async function checkInstalledSystemAddons(conditions, distroDir) {
         uri = uri.JARFile;
       }
 
-      let asBuiltin = conditions[i].asBuiltin;
-      if (asBuiltin && !isUpgrade) {
-        Assert.equal(uri.spec, `resource://test-builtin-ext${i + 1}/`);
-      } else {
-        Assert.ok(uri instanceof Ci.nsIFileURL);
-        Assert.equal(uri.file.path, file.path);
-      }
-
       if (isUpgrade) {
         Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
+      } else {
+        Assert.equal(uri.spec, `resource://test-builtin-ext${i + 1}/`);
       }
     } else {
       info(`Checking state of add-on ${id}, expecting it to be missing`);
@@ -392,31 +431,27 @@ async function setupSystemAddonConditions(setup, distroDir) {
       continue;
     }
 
-    if (state.asBuiltin) {
-      const res_path = `test-builtin-ext${i + 1}`;
-      let version = distroDir.path.endsWith("hidden") ? "1.0" : "2.0";
-      await setupBuiltinExtension(
-        {
-          manifest: {
-            name: `Built-In System Add-on ${i + 1}`,
-            version,
-            browser_specific_settings: {
-              gecko: {
-                id: `system${i + 1}@tests.mozilla.org`,
-              },
+    const res_path = `test-builtin-ext${i + 1}`;
+    let version = distroDir.path.endsWith("hidden") ? "1.0" : "2.0";
+    await setupBuiltinExtension(
+      {
+        manifest: {
+          name: `Built-In System Add-on ${i + 1}`,
+          version,
+          browser_specific_settings: {
+            gecko: {
+              id: `system${i + 1}@tests.mozilla.org`,
             },
           },
         },
-        res_path
-      );
-      overriddenBuiltInsData.builtins.push({
-        addon_id: id,
-        addon_version: version,
-        res_url: `resource://${res_path}/`,
-      });
-    } else {
-      overriddenBuiltInsData.system.push(id);
-    }
+      },
+      res_path
+    );
+    overriddenBuiltInsData.builtins.push({
+      addon_id: id,
+      addon_version: version,
+      res_url: `resource://${res_path}/`,
+    });
     startupPromises.push(promiseWebExtensionStartup(id));
   }
 
@@ -430,6 +465,21 @@ async function setupSystemAddonConditions(setup, distroDir) {
   
   info("Checking initial state.");
   await checkInstalledSystemAddons(setup.initialState, distroDir);
+}
+
+
+function verifySystemAddonSetPref(expectedAddons) {
+  let addonSet = Services.prefs.getCharPref(PREF_SYSTEM_ADDON_SET);
+  let addonSetDir = JSON.parse(addonSet).directory;
+  Assert.equal(
+    addonSet,
+    JSON.stringify({
+      schema: 1,
+      directory: addonSetDir,
+      addons: expectedAddons,
+    }),
+    "Got the expected addons listed in the extensions.systemAddonSet pref"
+  );
 }
 
 
@@ -499,24 +549,20 @@ async function verifySystemAddonState(
     builtins: [],
   };
 
-  for (const [i, state] of finalState.entries()) {
+  for (const [i] of finalState.entries()) {
     const id = `system${i + 1}@tests.mozilla.org`;
 
     if (!preinstalledList.includes(id)) {
       continue;
     }
 
-    if (state.asBuiltin) {
-      const res_path = `test-builtin-ext${i + 1}`;
-      let version = distroDir.path.endsWith("hidden") ? "1.0" : "2.0";
-      overriddenBuiltInsData.builtins.push({
-        addon_id: id,
-        addon_version: version,
-        res_url: `resource://${res_path}/`,
-      });
-    } else {
-      overriddenBuiltInsData.system.push(id);
-    }
+    const res_path = `test-builtin-ext${i + 1}`;
+    let version = distroDir.path.endsWith("hidden") ? "1.0" : "2.0";
+    overriddenBuiltInsData.builtins.push({
+      addon_id: id,
+      addon_version: version,
+      res_url: `resource://${res_path}/`,
+    });
   }
 
   await overrideBuiltIns(overriddenBuiltInsData);
