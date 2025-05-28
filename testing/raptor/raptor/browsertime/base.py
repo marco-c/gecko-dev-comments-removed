@@ -676,7 +676,7 @@ class Browsertime(Perftest):
             (
                 "gecko_profile_entries",
                 "--firefox.geckoProfilerParams.bufferSize",
-                str(13_107_200 * 5),  
+                str(128 * 1024 * 1024),  
             ),
         ):
             
