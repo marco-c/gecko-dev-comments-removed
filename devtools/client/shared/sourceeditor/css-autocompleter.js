@@ -899,10 +899,19 @@ class CSSCompleter {
       return [];
     }
 
-    result = result.suggestions;
+    const { suggestions } = result;
     const query = this.selector;
     const completion = [];
-    for (let [value, count, state] of result) {
+
+    
+    
+    const suggestionNewShape =
+      this.walker.traits.getSuggestionsForQueryWithoutCount;
+
+    for (const suggestion of suggestions) {
+      let value = suggestion[0];
+      const state = suggestionNewShape ? suggestion[1] : suggestion[2];
+
       switch (this.selectorState) {
         case CSSCompleter.CSS_SELECTOR_STATE_ID:
         case CSSCompleter.CSS_SELECTOR_STATE_CLASS:
@@ -932,7 +941,6 @@ class CSSCompleter {
         label: value,
         preLabel: query,
         text: value,
-        score: count,
       };
 
       

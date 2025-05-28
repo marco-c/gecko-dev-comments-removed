@@ -133,22 +133,26 @@ class InspectorCommand {
           firstPart,
           state
         );
-        for (const [suggestion, count, type] of suggestions) {
+
+        
+        
+        const suggestionNewShape =
+          walker.traits.getSuggestionsForQueryWithoutCount;
+        for (const suggestion of suggestions) {
+          const value = suggestion[0];
+          const type = suggestionNewShape ? suggestion[1] : suggestion[2];
+
           
-          
-          const existing = mergedSuggestions.find(
-            ([s, , t]) => s == suggestion && t == type
+          const existing = mergedSuggestions.some(
+            ([s, t]) => s == value && t == type
           );
-          if (existing) {
-            existing[1] += count;
-          } else {
-            mergedSuggestions.push([suggestion, count, type]);
+          if (!existing) {
+            mergedSuggestions.push([value, type]);
           }
         }
       })
     );
 
-    
     return sortSuggestions(mergedSuggestions);
   }
 
@@ -459,10 +463,6 @@ class InspectorCommand {
 function sortSuggestions(suggestions) {
   const sorted = suggestions.sort((a, b) => {
     
-    let sortA = 10000 - a[1] + a[0];
-    let sortB = 10000 - b[1] + b[0];
-
-    
     const firstA = a[0].substring(0, 1);
     const firstB = b[0].substring(0, 1);
 
@@ -476,8 +476,8 @@ function sortSuggestions(suggestions) {
       return "0";
     };
 
-    sortA = getSortKeyPrefix(firstA) + sortA;
-    sortB = getSortKeyPrefix(firstB) + sortB;
+    const sortA = getSortKeyPrefix(firstA) + a[0];
+    const sortB = getSortKeyPrefix(firstB) + b[0];
 
     
     return sortA.localeCompare(sortB);

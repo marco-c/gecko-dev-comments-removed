@@ -409,12 +409,14 @@ class SelectorAutocompleter extends EventEmitter {
 
 
 
-  #showPopup(list, popupState) {
+
+
+  #showPopup(suggestions, popupState) {
     let total = 0;
     const query = this.searchBox.value;
     const items = [];
 
-    for (let [value, , state] of list) {
+    for (let [value, state] of suggestions) {
       if (query.match(/[\s>+~]$/)) {
         
         value = query + value;
