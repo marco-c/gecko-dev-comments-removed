@@ -2056,8 +2056,15 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetDecoderSandboxPolicy(
 
 
 class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
+ private:
+  SocketProcessSandboxParams mParams;
+
+  bool BelowLevel(int aLevel) const { return mParams.mLevel < aLevel; }
+
  public:
-  explicit SocketProcessSandboxPolicy(SandboxBrokerClient* aBroker) {
+  explicit SocketProcessSandboxPolicy(SandboxBrokerClient* aBroker,
+                                      SocketProcessSandboxParams&& aParams)
+      : mParams(std::move(aParams)) {
     mBroker = aBroker;
     mMayCreateShmem = true;
   }
@@ -2140,8 +2147,9 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             
             .ElseIf(request == FIONREAD, Allow())
             
-            
-            .ElseIf(shifted_type != kTtyIoctls, Allow())
+            .ElseIf(
+                BelowLevel(2) ? shifted_type != kTtyIoctls : BoolConst(false),
+                Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
@@ -2193,9 +2201,9 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
 };
 
 UniquePtr<sandbox::bpf_dsl::Policy> GetSocketProcessSandboxPolicy(
-    SandboxBrokerClient* aMaybeBroker) {
+    SandboxBrokerClient* aMaybeBroker, SocketProcessSandboxParams&& aParams) {
   return UniquePtr<sandbox::bpf_dsl::Policy>(
-      new SocketProcessSandboxPolicy(aMaybeBroker));
+      new SocketProcessSandboxPolicy(aMaybeBroker, std::move(aParams)));
 }
 
 class UtilitySandboxPolicy : public SandboxPolicyCommon {

@@ -207,6 +207,13 @@ int GetEffectiveSocketProcessSandboxLevel() {
   int level =
       StaticPrefs::security_sandbox_socket_process_level_DoNotUseDirectly();
 
+#ifdef XP_LINUX
+  
+  if (level > 1 && gSafeMode) {
+    level = 1;
+  }
+#endif
+
   return level;
 }
 

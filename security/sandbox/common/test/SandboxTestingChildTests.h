@@ -721,6 +721,13 @@ void RunTestsSocket(SandboxTestingChild* child) {
                "are available");
     return 0;
   });
+
+  child->ErrnoValueTest("ioctl_dma_buf"_ns, ENOSYS, [] {
+    
+    
+    
+    return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
+  });
 #  endif  
 #elif XP_MACOSX
   RunMacTestLaunchProcess(child);
