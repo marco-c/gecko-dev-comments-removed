@@ -417,7 +417,21 @@ MOZ_ALWAYS_INLINE JSLinearString* JSDependentString::newImpl_(
   MOZ_ASSERT_IF(!base->hasTwoByteChars(),
                 !JSInlineString::lengthFits<JS::Latin1Char>(length));
 
+  
+  
+  
+  
+  
+  
+  bool mustContract;
   if constexpr (contract == JS::ContractBaseChain::Contract) {
+    mustContract = true;
+  } else {
+    auto& nursery = cx->runtime()->gc.nursery();
+    mustContract = nursery.isInside(base->nonInlineCharsRaw());
+  }
+
+  if (mustContract) {
     
     
     if (base->isDependent()) {
