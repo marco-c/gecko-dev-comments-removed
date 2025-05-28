@@ -461,6 +461,9 @@ ChromeUtils.defineLazyGetter(this, "PopupNotifications", () => {
       
       
       gURLBar.maybeHandleRevertFromPopup(anchorElement);
+      anchorElement?.dispatchEvent(
+        new CustomEvent("PopupNotificationsBeforeAnchor", { bubbles: true })
+      );
       if (anchorElement?.checkVisibility()) {
         return anchorElement;
       }
