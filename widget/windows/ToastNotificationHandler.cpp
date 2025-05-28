@@ -545,8 +545,8 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
 
     AddActionNode(toastXml, actionsNode, disableButtonTitle,
                   
-                  launchArgWithoutAction, ActionArgsJSONString(u"snooze"_ns),
-                  u"contextmenu"_ns);
+                  launchArgWithoutAction,
+                  ActionArgsJSONString(kAlertActionDisable), u"contextmenu"_ns);
   }
 
   bool wantSettings = true;
@@ -565,7 +565,7 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
     success = AddActionNode(
         toastXml, actionsNode, settingsButtonTitle, launchArgWithoutAction,
         
-        ActionArgsJSONString(u"settings"_ns), u"contextmenu"_ns);
+        ActionArgsJSONString(kAlertActionSettings), u"contextmenu"_ns);
     NS_ENSURE_TRUE(success, nullptr);
   }
 
@@ -865,9 +865,9 @@ ToastNotificationHandler::OnActivate(
       
       
       SendFinished();
-    } else if (actionString.EqualsLiteral("settings")) {
+    } else if (actionString == kAlertActionSettings) {
       mAlertListener->Observe(nullptr, "alertsettingscallback", mCookie.get());
-    } else if (actionString.EqualsLiteral("snooze")) {
+    } else if (actionString == kAlertActionDisable) {
       mAlertListener->Observe(nullptr, "alertdisablecallback", mCookie.get());
     } else if (mClickable) {
       
