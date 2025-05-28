@@ -218,6 +218,13 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         } else {
             Ok(false)
         }
+    } else if !config.dump_file().exists() {
+        
+        
+        
+        Err(anyhow::anyhow!(
+            config.string("crashreporter-error-failed-to-generate-minidump")
+        ))
     } else {
         
         #[cfg(not(mock))]
