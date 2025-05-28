@@ -486,6 +486,7 @@ function* IteratorFilterGenerator(iterator, nextMethod, predicate) {
 
 
 
+
 function IteratorTake(limit) {
   
   var iterator = this;
@@ -496,8 +497,22 @@ function IteratorTake(limit) {
   }
 
   
-  var integerLimit = std_Math_trunc(limit);
+  var numLimit;
+  try {
+    numLimit = +limit;
+  } catch (e) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    throw e;
+  }
+
+  
+  var integerLimit = std_Math_trunc(numLimit);
   if (!(integerLimit >= 0)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
@@ -519,6 +534,7 @@ function IteratorTake(limit) {
   
   return result;
 }
+
 
 
 
@@ -573,6 +589,7 @@ function* IteratorTakeGenerator(iterator, nextMethod, remaining) {
 
 
 
+
 function IteratorDrop(limit) {
   
   var iterator = this;
@@ -583,8 +600,22 @@ function IteratorDrop(limit) {
   }
 
   
-  var integerLimit = std_Math_trunc(limit);
+  var numLimit;
+  try {
+    numLimit = +limit;
+  } catch (e) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    throw e;
+  }
+
+  
+  var integerLimit = std_Math_trunc(numLimit);
   if (!(integerLimit >= 0)) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
@@ -606,6 +637,7 @@ function IteratorDrop(limit) {
   
   return result;
 }
+
 
 
 
