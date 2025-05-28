@@ -96,14 +96,32 @@ class TextDirectiveCreator {
 
   Result<Ok, ErrorResult> CollectSuffixContextTerm();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void CollectContextTermWordBoundaryDistances() = 0;
+
   nsString mPrefixContent;
   nsString mPrefixFoldCaseContent;
+  nsTArray<uint32_t> mPrefixWordBeginDistances;
 
   nsString mStartContent;
   nsString mStartFoldCaseContent;
 
   nsString mSuffixContent;
   nsString mSuffixFoldCaseContent;
+  nsTArray<uint32_t> mSuffixWordEndDistances;
 
   Document& mDocument;
   RefPtr<AbstractRange> mRange;
@@ -128,8 +146,13 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
 
   Result<Ok, ErrorResult> CollectContextTerms() override;
 
+  void CollectContextTermWordBoundaryDistances() override;
+
   nsString mEndContent;
   nsString mEndFoldCaseContent;
+
+  nsTArray<uint32_t> mStartWordEndDistances;
+  nsTArray<uint32_t> mEndWordBeginDistances;
 };
 
 
@@ -142,6 +165,7 @@ class ExactMatchTextDirectiveCreator : public TextDirectiveCreator {
 
   Result<Ok, ErrorResult> CollectContextTerms() override;
 
+  void CollectContextTermWordBoundaryDistances() override;
 };
 }  
 #endif
