@@ -14,8 +14,137 @@ use crate::{
     api::units::*, api::ColorDepth, api::ColorF, api::ExternalImageId, api::ImageRendering, api::YuvRangedColorSpace,
     Compositor, CompositorCapabilities, CompositorSurfaceTransform, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
     profiler, MappableCompositor, SWGLCompositeSurfaceInfo, WindowVisibility,
-    device::Device, ClipRadius,
+    device::Device, ClipRadius
 };
+
+
+const INDIRECT_BUFFER_WIDTH: i32 = 64;
+const INDIRECT_BUFFER_HEIGHT: i32 = 64;
+
+
+#[derive(Debug, Copy, Clone)]
+struct RoundedClip {
+    rect: DeviceIntRect,
+    radii: ClipRadius,
+}
+
+impl RoundedClip {
+    
+    fn zero() -> Self {
+        RoundedClip {
+            rect: DeviceIntRect::zero(),
+            radii: ClipRadius::EMPTY,
+        }
+    }
+
+    
+    fn is_valid(&self) -> bool {
+        self.radii != ClipRadius::EMPTY
+    }
+
+    
+    fn affects_rect(&self, rect: &DeviceIntRect) -> bool {
+        
+        if !self.is_valid() {
+            return false;
+        }
+
+        
+        let rect_tl = DeviceIntRect::from_origin_and_size(
+            self.rect.min,
+            DeviceIntSize::new(self.radii.top_left, self.radii.top_left),
+        );
+        if rect_tl.intersects(rect) {
+            return true;
+        }
+
+        let rect_tr = DeviceIntRect::from_origin_and_size(
+            DeviceIntPoint::new(
+                self.rect.max.x - self.radii.top_right,
+                self.rect.min.y,
+            ),
+            DeviceIntSize::new(self.radii.top_right, self.radii.top_right),
+        );
+        if rect_tr.intersects(rect) {
+            return true;
+        }
+
+        let rect_br = DeviceIntRect::from_origin_and_size(
+            DeviceIntPoint::new(
+                self.rect.max.x - self.radii.bottom_right,
+                self.rect.max.y - self.radii.bottom_right,
+            ),
+            DeviceIntSize::new(self.radii.bottom_right, self.radii.bottom_right),
+        );
+        if rect_br.intersects(rect) {
+            return true;
+        }
+
+        let rect_bl = DeviceIntRect::from_origin_and_size(
+            DeviceIntPoint::new(
+                self.rect.min.x,
+                self.rect.max.y - self.radii.bottom_left,
+            ),
+            DeviceIntSize::new(self.radii.bottom_left, self.radii.bottom_left),
+        );
+        if rect_bl.intersects(rect) {
+            return true;
+        }
+
+        
+        
+
+        false
+    }
+}
+
+
+
+pub struct SwCompositeJobContext {
+    
+    mask: swgl::LockedResource,
+    
+    indirect: swgl::LockedResource,
+}
+
+impl SwCompositeJobContext {
+    
+    fn new(gl: &swgl::Context) -> Self {
+        let texture_ids = gl.gen_textures(2);
+        let indirect_id = texture_ids[0];
+        let mask_id = texture_ids[1];
+
+        gl.set_texture_buffer(
+            indirect_id,
+            gl::RGBA8,
+            INDIRECT_BUFFER_WIDTH,
+            INDIRECT_BUFFER_HEIGHT,
+            0,
+            ptr::null_mut(),
+            INDIRECT_BUFFER_WIDTH,
+            INDIRECT_BUFFER_HEIGHT,
+        );
+
+        gl.set_texture_buffer(
+            mask_id,
+            gl::R8,
+            INDIRECT_BUFFER_WIDTH,
+            INDIRECT_BUFFER_HEIGHT,
+            0,
+            ptr::null_mut(),
+            INDIRECT_BUFFER_WIDTH,
+            INDIRECT_BUFFER_HEIGHT,
+        );
+
+        let indirect = gl.lock_texture(indirect_id).expect("bug: unable to lock indirect");
+        let mask = gl.lock_texture(mask_id).expect("bug: unable to lock mask");
+
+        SwCompositeJobContext {
+            indirect,
+            mask,
+        }
+    }
+}
 
 pub struct SwTile {
     x: i32,
@@ -133,6 +262,8 @@ pub struct SwSurface {
     tiles: Vec<SwTile>,
     
     external_image: Option<ExternalImageId>,
+    
+    rounded_clip: RoundedClip,
 }
 
 impl SwSurface {
@@ -142,6 +273,7 @@ impl SwSurface {
             is_opaque,
             tiles: Vec::new(),
             external_image: None,
+            rounded_clip: RoundedClip::zero(),
         }
     }
 
@@ -231,11 +363,266 @@ struct SwCompositeJob {
     filter: ImageRendering,
     
     num_bands: u8,
+    
+    rounded_clip: RoundedClip,
 }
 
 impl SwCompositeJob {
     
-    fn process(&self, band_index: i32) {
+    
+    fn create_mask(
+        &self,
+        band_clip: &DeviceIntRect,
+        ctx: &SwCompositeJobContext,
+    ) {
+        assert!(band_clip.width() <= INDIRECT_BUFFER_WIDTH);
+        assert!(band_clip.height() <= INDIRECT_BUFFER_HEIGHT);
+
+        
+        let (mask_pixels, mask_width, mask_height, _) = ctx.mask.get_buffer();
+        let mask_pixels = unsafe {
+            std::slice::from_raw_parts_mut(
+                mask_pixels as *mut u8,
+                mask_width as usize * mask_height as usize,
+            )
+        };
+
+        
+        
+        
+        
+
+        fn sd_round_box(
+            pos: DevicePoint,
+            half_box_size: DeviceSize,
+            radii: &ClipRadius,
+        ) -> f32 {
+            let radius = if pos.x < 0.0 {
+                if pos.y < 0.0 { radii.bottom_right } else { radii.top_right }
+            } else {
+                if pos.y < 0.0 { radii.bottom_left } else { radii.top_left }
+            } as f32;
+
+            let qx = pos.x.abs() - half_box_size.width + radius;
+            let qy = pos.y.abs() - half_box_size.height + radius;
+
+            let qxp = qx.max(0.0);
+            let qyp = qy.max(0.0);
+
+            let d1 = qx.max(qy).min(0.0);
+            let d2 = ((qxp*qxp) + (qyp*qyp)).sqrt();
+
+            d1 + d2 - radius
+        }
+
+        let half_clip_box_size = self.rounded_clip.rect.size().to_f32() * 0.5;
+
+        for y in 0 .. mask_height {
+            let py = band_clip.min.y + y;
+
+            for x in 0 .. mask_width {
+                let px = band_clip.min.x + x;
+
+                let pos = DevicePoint::new(
+                    self.rounded_clip.rect.min.x as f32 + half_clip_box_size.width - px as f32,
+                    self.rounded_clip.rect.min.y as f32 + half_clip_box_size.height - py as f32,
+                );
+
+                let i = (y * mask_width + x) as usize;
+                let d = sd_round_box(
+                    pos,
+                    half_clip_box_size,
+                    &self.rounded_clip.radii,
+                );
+
+                mask_pixels[i] = ((1.0 - d.min(1.0).max(0.0)) * 255.0) as u8;
+            }
+        }
+    }
+
+    
+    
+    fn composite_rect(
+        &self,
+        band_clip: &DeviceIntRect,
+        use_indirect: bool,
+        ctx: &SwCompositeJobContext,
+    ) {
+        match self.locked_src {
+            SwCompositeSource::BGRA(ref resource) => {
+                if use_indirect {
+                    
+                    ctx.indirect.composite(
+                        resource,
+
+                        self.src_rect.min.x,
+                        self.src_rect.min.y,
+                        self.src_rect.width(),
+                        self.src_rect.height(),
+
+                        -band_clip.min.x + self.dst_rect.min.x,
+                        -band_clip.min.y + self.dst_rect.min.y,
+                        self.dst_rect.width(),
+                        self.dst_rect.height(),
+
+                        true,
+                        self.flip_x,
+                        self.flip_y,
+                        image_rendering_to_gl_filter(self.filter),
+
+                        0,
+                        0,
+                        band_clip.width(),
+                        band_clip.height(),
+                    );
+
+                    
+                    ctx.indirect.apply_mask(&ctx.mask);
+
+                    
+                    self.locked_dst.composite(
+                        &ctx.indirect,
+
+                        0,
+                        0,
+                        band_clip.width(),
+                        band_clip.height(),
+
+                        band_clip.min.x,
+                        band_clip.min.y,
+                        band_clip.width(),
+                        band_clip.height(),
+
+                        false,
+                        false,
+                        false,
+                        gl::NEAREST,
+
+                        band_clip.min.x,
+                        band_clip.min.y,
+                        band_clip.width(),
+                        band_clip.height(),
+                    );
+                } else {
+                    self.locked_dst.composite(
+                        resource,
+                        self.src_rect.min.x,
+                        self.src_rect.min.y,
+                        self.src_rect.width(),
+                        self.src_rect.height(),
+                        self.dst_rect.min.x,
+                        self.dst_rect.min.y,
+                        self.dst_rect.width(),
+                        self.dst_rect.height(),
+                        self.opaque,
+                        self.flip_x,
+                        self.flip_y,
+                        image_rendering_to_gl_filter(self.filter),
+                        band_clip.min.x,
+                        band_clip.min.y,
+                        band_clip.width(),
+                        band_clip.height(),
+                    );
+                }
+            }
+            SwCompositeSource::YUV(ref y, ref u, ref v, color_space, color_depth) => {
+                let swgl_color_space = match color_space {
+                    YuvRangedColorSpace::Rec601Narrow => swgl::YuvRangedColorSpace::Rec601Narrow,
+                    YuvRangedColorSpace::Rec601Full => swgl::YuvRangedColorSpace::Rec601Full,
+                    YuvRangedColorSpace::Rec709Narrow => swgl::YuvRangedColorSpace::Rec709Narrow,
+                    YuvRangedColorSpace::Rec709Full => swgl::YuvRangedColorSpace::Rec709Full,
+                    YuvRangedColorSpace::Rec2020Narrow => swgl::YuvRangedColorSpace::Rec2020Narrow,
+                    YuvRangedColorSpace::Rec2020Full => swgl::YuvRangedColorSpace::Rec2020Full,
+                    YuvRangedColorSpace::GbrIdentity => swgl::YuvRangedColorSpace::GbrIdentity,
+                };
+                if use_indirect {
+                    
+                    ctx.indirect.composite_yuv(
+                        y,
+                        u,
+                        v,
+                        swgl_color_space,
+                        color_depth.bit_depth(),
+
+                        self.src_rect.min.x,
+                        self.src_rect.min.y,
+                        self.src_rect.width(),
+                        self.src_rect.height(),
+
+                        -band_clip.min.x + self.dst_rect.min.x,
+                        -band_clip.min.y + self.dst_rect.min.y,
+                        self.dst_rect.width(),
+                        self.dst_rect.height(),
+
+                        self.flip_x,
+                        self.flip_y,
+
+                        0,
+                        0,
+                        band_clip.width(),
+                        band_clip.height(),
+                    );
+
+                    
+                    ctx.indirect.apply_mask(&ctx.mask);
+
+                    
+                    self.locked_dst.composite(
+                        &ctx.indirect,
+
+                        0,
+                        0,
+                        band_clip.width(),
+                        band_clip.height(),
+
+                        band_clip.min.x,
+                        band_clip.min.y,
+                        band_clip.width(),
+                        band_clip.height(),
+
+                        false,
+                        false,
+                        false,
+                        gl::NEAREST,
+
+                        band_clip.min.x,
+                        band_clip.min.y,
+                        band_clip.width(),
+                        band_clip.height(),
+                    );
+                } else {
+                    self.locked_dst.composite_yuv(
+                        y,
+                        u,
+                        v,
+                        swgl_color_space,
+                        color_depth.bit_depth(),
+                        self.src_rect.min.x,
+                        self.src_rect.min.y,
+                        self.src_rect.width(),
+                        self.src_rect.height(),
+                        self.dst_rect.min.x,
+                        self.dst_rect.min.y,
+                        self.dst_rect.width(),
+                        self.dst_rect.height(),
+                        self.flip_x,
+                        self.flip_y,
+                        band_clip.min.x,
+                        band_clip.min.y,
+                        band_clip.width(),
+                        band_clip.height(),
+                    );
+                }
+            }
+        }
+    }
+
+    
+    fn process(
+        &self,
+        band_index: i32,
+        ctx: &SwCompositeJobContext,
+    ) {
         
         let num_bands = self.num_bands as i32;
         let band_index = num_bands - 1 - band_index;
@@ -248,60 +635,52 @@ impl SwCompositeJob {
             DeviceIntPoint::new(self.clipped_dst.min.x, self.clipped_dst.min.y + band_offset),
             DeviceIntSize::new(self.clipped_dst.width(), band_height),
         );
-        match self.locked_src {
-            SwCompositeSource::BGRA(ref resource) => {
-                self.locked_dst.composite(
-                    resource,
-                    self.src_rect.min.x,
-                    self.src_rect.min.y,
-                    self.src_rect.width(),
-                    self.src_rect.height(),
-                    self.dst_rect.min.x,
-                    self.dst_rect.min.y,
-                    self.dst_rect.width(),
-                    self.dst_rect.height(),
-                    self.opaque,
-                    self.flip_x,
-                    self.flip_y,
-                    image_rendering_to_gl_filter(self.filter),
-                    band_clip.min.x,
-                    band_clip.min.y,
-                    band_clip.width(),
-                    band_clip.height(),
+
+        
+
+        if self.rounded_clip.affects_rect(&band_clip) {
+            
+            
+
+            let num_x_tiles = (self.clipped_dst.width() + INDIRECT_BUFFER_WIDTH-1) / INDIRECT_BUFFER_WIDTH;
+
+            for x in 0 .. num_x_tiles {
+                let x_offset = (self.clipped_dst.width() * x) / num_x_tiles;
+                let tile_width = (self.clipped_dst.width() * (x + 1)) / num_x_tiles - x_offset;
+
+                let tile_rect = DeviceIntRect::from_origin_and_size(
+                    DeviceIntPoint::new(
+                        self.clipped_dst.min.x + x_offset,
+                        self.clipped_dst.min.y + band_offset,
+                    ),
+                    DeviceIntSize::new(
+                        tile_width,
+                        band_height,
+                    ),
+                );
+
+                
+                
+
+                let use_indirect = self.rounded_clip.affects_rect(&tile_rect);
+
+                if use_indirect {
+                    self.create_mask(&tile_rect, ctx);
+                }
+
+                self.composite_rect(
+                    &tile_rect,
+                    use_indirect,
+                    ctx,
                 );
             }
-            SwCompositeSource::YUV(ref y, ref u, ref v, color_space, color_depth) => {
-                let swgl_color_space = match color_space {
-                    YuvRangedColorSpace::Rec601Narrow => swgl::YuvRangedColorSpace::Rec601Narrow,
-                    YuvRangedColorSpace::Rec601Full => swgl::YuvRangedColorSpace::Rec601Full,
-                    YuvRangedColorSpace::Rec709Narrow => swgl::YuvRangedColorSpace::Rec709Narrow,
-                    YuvRangedColorSpace::Rec709Full => swgl::YuvRangedColorSpace::Rec709Full,
-                    YuvRangedColorSpace::Rec2020Narrow => swgl::YuvRangedColorSpace::Rec2020Narrow,
-                    YuvRangedColorSpace::Rec2020Full => swgl::YuvRangedColorSpace::Rec2020Full,
-                    YuvRangedColorSpace::GbrIdentity => swgl::YuvRangedColorSpace::GbrIdentity,
-                };
-                self.locked_dst.composite_yuv(
-                    y,
-                    u,
-                    v,
-                    swgl_color_space,
-                    color_depth.bit_depth(),
-                    self.src_rect.min.x,
-                    self.src_rect.min.y,
-                    self.src_rect.width(),
-                    self.src_rect.height(),
-                    self.dst_rect.min.x,
-                    self.dst_rect.min.y,
-                    self.dst_rect.width(),
-                    self.dst_rect.height(),
-                    self.flip_x,
-                    self.flip_y,
-                    band_clip.min.x,
-                    band_clip.min.y,
-                    band_clip.width(),
-                    band_clip.height(),
-                );
-            }
+        } else {
+            
+            self.composite_rect(
+                &band_clip,
+                false,
+                ctx,
+            );
         }
     }
 }
@@ -430,9 +809,13 @@ impl SwCompositeGraphNode {
     }
 
     
-    fn process_job(&self, band_index: i32) {
+    fn process_job(
+        &self,
+        band_index: i32,
+        ctx: &SwCompositeJobContext,
+    ) {
         if let Some(ref job) = self.job {
-            job.process(band_index);
+            job.process(band_index, ctx);
         }
     }
 
@@ -482,6 +865,10 @@ struct SwCompositeThread {
     waiting_for_jobs: AtomicBool,
     
     shutting_down: AtomicBool,
+    
+    ctx_main: SwCompositeJobContext,
+    
+    ctx_thread: SwCompositeJobContext,
 }
 
 
@@ -497,7 +884,10 @@ type SwCompositeThreadLock<'a> = MutexGuard<'a, SwCompositeJobQueue>;
 impl SwCompositeThread {
     
     
-    fn new() -> Arc<SwCompositeThread> {
+    fn new(
+        ctx_main: SwCompositeJobContext,
+        ctx_thread: SwCompositeJobContext,
+    ) -> Arc<SwCompositeThread> {
         let info = Arc::new(SwCompositeThread {
             jobs: Mutex::new(SwCompositeJobQueue::new()),
             current_job: AtomicPtr::new(ptr::null_mut()),
@@ -505,6 +895,8 @@ impl SwCompositeThread {
             jobs_completed: AtomicBool::new(true),
             waiting_for_jobs: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
+            ctx_main,
+            ctx_thread,
         });
         let result = info.clone();
         let thread_name = "SwComposite";
@@ -523,7 +915,7 @@ impl SwCompositeThread {
                 
                 
                 while let Some((job, band)) = info.take_job(true) {
-                    info.process_job(job, band);
+                    info.process_job(job, band, &info.ctx_thread);
                 }
                 profiler::unregister_thread();
             })
@@ -541,9 +933,14 @@ impl SwCompositeThread {
     
     
     
-    fn process_job(&self, graph_node: &mut SwCompositeGraphNode, band: i32) {
+    fn process_job(
+        &self,
+        graph_node: &mut SwCompositeGraphNode,
+        band: i32,
+        ctx: &SwCompositeJobContext,
+    ) {
         
-        graph_node.process_job(band);
+        graph_node.process_job(band, ctx);
         
         graph_node.unblock_children(self);
     }
@@ -555,26 +952,16 @@ impl SwCompositeThread {
         locked_dst: swgl::LockedResource,
         src_rect: DeviceIntRect,
         dst_rect: DeviceIntRect,
-        clip_rect: DeviceIntRect,
+        clipped_dst: DeviceIntRect,
+        rounded_clip: RoundedClip,
         opaque: bool,
         flip_x: bool,
         flip_y: bool,
         filter: ImageRendering,
+        num_bands: u8,
         mut graph_node: SwCompositeGraphNodeRef,
         job_queue: &mut SwCompositeJobQueue,
     ) {
-        
-        
-        let clipped_dst = match dst_rect.intersection(&clip_rect) {
-            Some(clipped_dst) => clipped_dst,
-            None => return,
-        };
-
-        let num_bands = if clipped_dst.width() >= 64 && clipped_dst.height() >= 64 {
-            (clipped_dst.height() / 64).min(4) as u8
-        } else {
-            1
-        };
         let job = SwCompositeJob {
             locked_src,
             locked_dst,
@@ -586,6 +973,7 @@ impl SwCompositeThread {
             flip_y,
             filter,
             num_bands,
+            rounded_clip,
         };
         if graph_node.set_job(job, num_bands) {
             self.send_job(job_queue, graph_node);
@@ -710,7 +1098,7 @@ impl SwCompositeThread {
         
         if !sync {
             while let Some((job, band)) = self.take_job(false) {
-                self.process_job(job, band);
+                self.process_job(job, band, &self.ctx_main);
             }
             
             
@@ -785,7 +1173,11 @@ impl SwCompositor {
         
         
         let composite_thread = if !use_native_compositor {
-            Some(SwCompositeThread::new())
+            
+            let ctx_main = SwCompositeJobContext::new(&gl);
+            let ctx_thread = SwCompositeJobContext::new(&gl);
+
+            Some(SwCompositeThread::new(ctx_main, ctx_thread))
         } else {
             None
         };
@@ -861,7 +1253,12 @@ impl SwCompositor {
 
         
         fn valid_occluder(surface: &SwSurface) -> bool {
-            surface.is_opaque && surface.has_all_tiles()
+            surface.is_opaque &&
+            surface.has_all_tiles() &&
+            
+            
+            
+            !surface.rounded_clip.is_valid()
         }
 
         
@@ -1037,19 +1434,34 @@ impl SwCompositor {
                     return;
                 };
                 if let Some(ref framebuffer) = self.locked_framebuffer {
-                    composite_thread.queue_composite(
-                        source,
-                        framebuffer.clone(),
-                        src_rect,
-                        dst_rect,
-                        *clip_rect,
-                        surface.is_opaque,
-                        flip_x,
-                        flip_y,
-                        filter,
-                        tile.graph_node.clone(),
-                        job_queue,
-                    );
+                    if let Some(clipped_dst) = dst_rect.intersection(clip_rect) {
+                        let num_bands = if surface.rounded_clip.affects_rect(&clipped_dst) {
+                            
+                            ((clipped_dst.height() + INDIRECT_BUFFER_HEIGHT-1) / INDIRECT_BUFFER_HEIGHT) as u8
+                        } else if clipped_dst.width() >= 64 && clipped_dst.height() >= 64 {
+                            
+                            
+                            (clipped_dst.height() / 64).min(4) as u8
+                        } else {
+                            1
+                        };
+
+                        composite_thread.queue_composite(
+                            source,
+                            framebuffer.clone(),
+                            src_rect,
+                            dst_rect,
+                            clipped_dst,
+                            surface.rounded_clip,
+                            surface.is_opaque,
+                            flip_x,
+                            flip_y,
+                            filter,
+                            num_bands,
+                            tile.graph_node.clone(),
+                            job_queue,
+                        );
+                    }
                 }
             }
         }
@@ -1424,9 +1836,16 @@ impl Compositor for SwCompositor {
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         filter: ImageRendering,
-        _rounded_clip_rect: DeviceIntRect,
-        _rounded_clip_radii: ClipRadius,
+        rounded_clip_rect: DeviceIntRect,
+        rounded_clip_radii: ClipRadius,
     ) {
+        
+        let surface = self.surfaces.get_mut(&id).expect("bug: unknown surface");
+        surface.rounded_clip = RoundedClip {
+            rect: rounded_clip_rect,
+            radii: rounded_clip_radii,
+        };
+
         if self.use_native_compositor {
             self.compositor.add_surface(
                 device,
@@ -1434,8 +1853,8 @@ impl Compositor for SwCompositor {
                 transform,
                 clip_rect,
                 filter,
-                _rounded_clip_rect,
-                _rounded_clip_radii,
+                rounded_clip_rect,
+                rounded_clip_radii,
             );
         }
 
