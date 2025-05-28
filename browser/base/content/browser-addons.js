@@ -15,7 +15,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AMBrowserExtensionsImport: "resource://gre/modules/AddonManager.sys.mjs",
   AbuseReporter: "resource://gre/modules/AbuseReporter.sys.mjs",
-  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
   OriginControls: "resource://gre/modules/ExtensionPermissions.sys.mjs",
@@ -738,104 +737,19 @@ customElements.define(
   }
 );
 
-class BrowserActionWidgetObserver {
-  #connected = false;
-  
-
-
-
-
-
-  constructor(addonId, onButtonAreaChanged) {
-    this.addonId = addonId;
-    
-    
-    this.widgetId = `${lazy.ExtensionCommon.makeWidgetId(addonId)}-browser-action`;
-    this.onButtonAreaChanged = onButtonAreaChanged;
-  }
-
-  startObserving() {
-    if (this.#connected) {
-      return;
-    }
-    this.#connected = true;
-    CustomizableUI.addListener(this);
-    window.addEventListener("unload", this);
-  }
-
-  stopObserving() {
-    if (!this.#connected) {
-      return;
-    }
-    this.#connected = false;
-    CustomizableUI.removeListener(this);
-    window.removeEventListener("unload", this);
-  }
-
-  hasBrowserActionUI() {
-    const policy = WebExtensionPolicy.getByID(this.addonId);
-    if (!policy?.canAccessWindow(window)) {
-      
-      
-      return false;
-    }
-    if (!gUnifiedExtensions.browserActionFor(policy)) {
-      
-      return false;
-    }
-    return true;
-  }
-
-  onWidgetCreated(aWidgetId) {
-    
-    
-    
-    if (aWidgetId === this.widgetId) {
-      this.onButtonAreaChanged();
-    }
-  }
-
-  onWidgetAdded(aWidgetId) {
-    if (aWidgetId === this.widgetId) {
-      this.onButtonAreaChanged();
-    }
-  }
-
-  onWidgetMoved(aWidgetId) {
-    if (aWidgetId === this.widgetId) {
-      this.onButtonAreaChanged();
-    }
-  }
-
-  handleEvent(event) {
-    if (event.type === "unload") {
-      this.stopObserving();
-    }
-  }
-}
-
 customElements.define(
   "addon-installed-notification",
   class MozAddonInstalledNotification extends customElements.get(
     "popupnotification"
   ) {
-    #shouldIgnoreCheckboxStateChangeEvent = false;
-    #browserActionWidgetObserver;
     connectedCallback() {
       this.descriptionEl = this.querySelector("#addon-install-description");
-      this.pinExtensionEl = this.querySelector(
-        "#addon-pin-toolbarbutton-checkbox"
-      );
 
       this.addEventListener("click", this);
-      this.pinExtensionEl.addEventListener("CheckboxStateChange", this);
-      this.#browserActionWidgetObserver?.startObserving();
     }
 
     disconnectedCallback() {
       this.removeEventListener("click", this);
-      this.pinExtensionEl.removeEventListener("CheckboxStateChange", this);
-      this.#browserActionWidgetObserver?.stopObserving();
     }
 
     get #settingsLinkId() {
@@ -849,19 +763,13 @@ customElements.define(
         case "click": {
           if (target.id === this.#settingsLinkId) {
             const { addonId } = this.notification.options.customElementOptions;
+
             BrowserAddonUI.openAddonsMgr(
               "addons://detail/" + encodeURIComponent(addonId)
             );
           }
           break;
         }
-        case "CheckboxStateChange":
-          
-          
-          if (!this.#shouldIgnoreCheckboxStateChangeEvent) {
-            this.#handlePinnedCheckboxStateChange();
-          }
-          break;
       }
     }
 
@@ -878,16 +786,7 @@ customElements.define(
         );
       }
 
-      this.#browserActionWidgetObserver?.stopObserving();
-      this.#browserActionWidgetObserver = new BrowserActionWidgetObserver(
-        this.notification.options.customElementOptions.addonId,
-        () => this.#renderPinToolbarButtonCheckbox()
-      );
-
       this.render();
-      if (this.isConnected) {
-        this.#browserActionWidgetObserver.startObserving();
-      }
     }
 
     render() {
@@ -909,7 +808,6 @@ customElements.define(
       }
 
       this.ownerDocument.l10n.setAttributes(this.descriptionEl, fluentId);
-      this.#renderPinToolbarButtonCheckbox();
     }
 
     get #dataCollectionPermissionsEnabled() {
@@ -917,50 +815,6 @@ customElements.define(
         "extensions.dataCollectionPermissions.enabled",
         false
       );
-    }
-
-    #renderPinToolbarButtonCheckbox() {
-      
-      
-      
-      this.pinExtensionEl.hidden = true;
-
-      if (!this.#browserActionWidgetObserver.hasBrowserActionUI()) {
-        return;
-      }
-      const widgetId = this.#browserActionWidgetObserver.widgetId;
-
-      
-      
-      
-      
-      
-      
-      const area = CustomizableUI.getPlacementOfWidget(widgetId)?.area;
-      let shouldPinToToolbar = area !== CustomizableUI.AREA_ADDONS;
-      if (shouldPinToToolbar && area !== CustomizableUI.AREA_NAVBAR) {
-        
-        return;
-      }
-      this.#shouldIgnoreCheckboxStateChangeEvent = true;
-      this.pinExtensionEl.checked = shouldPinToToolbar;
-      this.#shouldIgnoreCheckboxStateChangeEvent = false;
-      this.pinExtensionEl.hidden = false;
-    }
-
-    #handlePinnedCheckboxStateChange() {
-      if (!this.#browserActionWidgetObserver.hasBrowserActionUI()) {
-        
-        
-        const { addonId } = this.notification.options.customElementOptions;
-        throw new Error(`No browser action widget found for ${addonId}!`);
-      }
-      const widgetId = this.#browserActionWidgetObserver.widgetId;
-      const shouldPinToToolbar = this.pinExtensionEl.checked;
-      if (shouldPinToToolbar) {
-        gUnifiedExtensions._maybeMoveWidgetNodeBack(widgetId);
-      }
-      gUnifiedExtensions.pinToToolbar(widgetId, shouldPinToToolbar);
     }
   },
   { extends: "popupnotification" }
