@@ -220,6 +220,10 @@ var ignoreFunctions = {
     "free": true,
 
     
+    
+    "void arena_t::MayDoOrQueuePurge(int32, int8*)": true,
+
+    
     "NS_LogInit": true,
     "NS_LogTerm": true,
     "NS_LogAddRef": true,
