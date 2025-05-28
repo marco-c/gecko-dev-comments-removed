@@ -215,7 +215,7 @@ using PendingInlineReturnVector =
 
 struct CallCompileState {
   
-  WasmABIArgGenerator abi;
+  ABIArgGenerator abi;
 
   
   bool hardFP = true;
@@ -249,7 +249,7 @@ struct CallCompileState {
   
   MBasicBlock* prePadBlock = nullptr;
 
-  explicit CallCompileState(ABIKind abiKind) : abiKind(abiKind) {
+  explicit CallCompileState(ABIKind abiKind) : abi(abiKind), abiKind(abiKind) {
     if (abiKind == ABIKind::WasmBuiltin) {
       
 #if defined(JS_CODEGEN_ARM)

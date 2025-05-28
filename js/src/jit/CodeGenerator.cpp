@@ -9994,7 +9994,7 @@ void CodeGenerator::prepareWasmStackSwitchTrampolineCall(Register suspender,
   
   unsigned argDecrement;
   {
-    WasmABIArgGenerator abi;
+    ABIArgGenerator abi(ABIKind::Wasm);
     ABIArg arg;
     arg = abi.next(MIRType::Pointer);
     arg = abi.next(MIRType::Pointer);
@@ -10004,7 +10004,7 @@ void CodeGenerator::prepareWasmStackSwitchTrampolineCall(Register suspender,
   masm.reserveStack(argDecrement);
 
   
-  WasmABIArgGenerator abi;
+  ABIArgGenerator abi(ABIKind::Wasm);
   ABIArg arg;
   arg = abi.next(MIRType::Pointer);
   if (arg.kind() == ABIArg::GPR) {
@@ -10453,7 +10453,7 @@ void CodeGenerator::visitWasmStackContinueOnSuspendable(
   masm.setFramePushed(0);
 
   
-  WasmABIArgGenerator abi;
+  ABIArgGenerator abi(ABIKind::Wasm);
   unsigned reserveBeforeCall = abi.stackBytesConsumedSoFar();
   MOZ_ASSERT(masm.framePushed() == 0);
   unsigned argDecrement =
@@ -21679,7 +21679,7 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
   const wasm::FuncType& sig =
       mir->instance()->code().codeMeta().getFuncType(funcExport.funcIndex());
 
-  WasmABIArgGenerator abi;
+  ABIArgGenerator abi(ABIKind::Wasm);
   for (size_t i = 0; i < lir->numOperands(); i++) {
     MIRType argMir;
     switch (sig.args()[i].kind()) {

@@ -720,7 +720,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   
   const unsigned argBase = sizeof(void*) + nonVolatileRegsPushSize;
-  ABIArgGenerator abi;
+  ABIArgGenerator abi(ABIKind::System);
   ABIArg arg;
 
   
@@ -1645,14 +1645,13 @@ static void FillArgumentArrayForInterpExit(MacroAssembler& masm,
                                            Register scratch) {
   
   
-  const unsigned offsetFromFPToCallerStackArgs =
-      sizeof(FrameWithInstances) - jit::ShadowStackSpace;
+  const unsigned offsetFromFPToCallerStackArgs = sizeof(Frame);
 
   GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; arguments ",
             funcImportIndex);
 
   ArgTypeVector args(funcType);
-  for (ABIArgIter i(args); !i.done(); i++) {
+  for (WasmABIArgIter i(args); !i.done(); i++) {
     Address dst(masm.getStackPointer(), argOffset + i.index() * sizeof(Value));
 
     MIRType type = i.mirType();
@@ -2931,7 +2930,7 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   
   
   
-  ABIArgGenerator abi;
+  ABIArgGenerator abi(ABIKind::System);
   ABIArg arg = abi.next(MIRType::Pointer);
 #ifndef JS_CODEGEN_X86
   

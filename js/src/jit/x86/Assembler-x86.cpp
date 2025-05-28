@@ -8,11 +8,10 @@
 
 #include "gc/Marking.h"
 #include "util/Memory.h"
+#include "wasm/WasmFrame.h"
 
 using namespace js;
 using namespace js::jit;
-
-ABIArgGenerator::ABIArgGenerator() : stackOffset_(0), current_() {}
 
 ABIArg ABIArgGenerator::next(MIRType type) {
   switch (type) {
@@ -31,6 +30,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       stackOffset_ += sizeof(uint64_t);
       break;
     case MIRType::Simd128:
+      MOZ_ASSERT(kind_ == ABIKind::Wasm);
       
       
       

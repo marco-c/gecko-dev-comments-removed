@@ -8,21 +8,23 @@
 
 #include "gc/Tracer.h"
 #include "util/Memory.h"
+#include "wasm/WasmFrame.h"
 
 using namespace js;
 using namespace js::jit;
 
-ABIArgGenerator::ABIArgGenerator()
-    :
+ABIArgGenerator::ABIArgGenerator(ABIKind kind)
+    : ABIArgGeneratorShared(kind),
 #if defined(XP_WIN)
       regIndex_(0),
-      stackOffset_(ShadowStackSpace)
 #else
       intRegIndex_(0),
-      floatRegIndex_(0),
-      stackOffset_(0)
+      floatRegIndex_(0)
 #endif
 {
+#if defined(XP_WIN)
+  stackOffset_ += ShadowStackSpace;
+#endif
 }
 
 ABIArg ABIArgGenerator::next(MIRType type) {
@@ -34,6 +36,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       
       
       
+      MOZ_ASSERT(kind_ == ABIKind::Wasm);
       stackOffset_ = AlignBytes(stackOffset_, SimdMemoryAlignment);
       current_ = ABIArg(stackOffset_);
       stackOffset_ += Simd128DataSize;
@@ -59,6 +62,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       current_ = ABIArg(FloatArgRegs[regIndex_++]);
       break;
     case MIRType::Simd128:
+      MOZ_ASSERT(kind_ == ABIKind::Wasm);
       
       
       

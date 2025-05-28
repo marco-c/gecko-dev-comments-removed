@@ -141,17 +141,39 @@ struct AccessCheck {
 
 
 struct FunctionCall {
-  FunctionCall()
-      : restoreState(RestoreState::None),
-        abiKind(ABIKind::Wasm),
+  FunctionCall(ABIKind abiKind, RestoreState restoreState)
+      : abi(abiKind),
+        restoreState(restoreState),
+        abiKind(abiKind),
 #ifdef JS_CODEGEN_ARM
         hardFP(true),
 #endif
         frameAlignAdjustment(0),
         stackArgAreaSize(0) {
+    
+    
+    
+    MOZ_ASSERT_IF(abiKind == ABIKind::WasmBuiltin,
+                  restoreState == RestoreState::None ||
+                      restoreState == RestoreState::PinnedRegs);
+    
+    MOZ_ASSERT_IF(abiKind == ABIKind::Wasm,
+                  restoreState == RestoreState::None ||
+                      restoreState == RestoreState::All);
+    if (abiKind == ABIKind::WasmBuiltin) {
+      
+#if defined(JS_CODEGEN_ARM)
+      hardFP = ARMFlags::UseHardFpABI();
+      abi.setUseHardFp(hardFP);
+#endif
+    } else {
+#if defined(JS_CODEGEN_ARM)
+      MOZ_ASSERT(hardFP, "The WASM ABI passes FP arguments in registers");
+#endif
+    }
   }
 
-  WasmABIArgGenerator abi;
+  ABIArgGenerator abi;
   RestoreState restoreState;
   ABIKind abiKind;
 #ifdef JS_CODEGEN_ARM
@@ -977,8 +999,7 @@ struct BaseCompiler final {
   
   
 
-  void beginCall(FunctionCall& call, ABIKind abiKind,
-                 RestoreState restoreState);
+  void beginCall(FunctionCall& call);
   void endCall(FunctionCall& call, size_t stackSpace);
 
   void startCallArgs(size_t stackArgAreaSizeUnaligned, FunctionCall* call);

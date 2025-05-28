@@ -814,8 +814,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
  private:
   
   
-  template <class ABIArgGeneratorT>
-  void setupABICallHelper();
+  void setupABICallHelper(ABIKind kind);
 
   
   

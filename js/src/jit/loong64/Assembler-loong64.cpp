@@ -13,6 +13,7 @@
 #include "jit/AutoWritableJitCode.h"
 #include "jit/ExecutableAllocator.h"
 #include "vm/Realm.h"
+#include "wasm/WasmFrame.h"
 
 using mozilla::DebugOnly;
 
@@ -21,6 +22,10 @@ using namespace js::jit;
 
 
 
+
+void ABIArgGenerator::startWasm() {
+  stackOffset_ += wasm::FrameWithInstances::sizeOfInstanceFields();
+}
 
 
 
@@ -47,6 +52,9 @@ ABIArg ABIArgGenerator::next(MIRType type) {
     case MIRType::Float32:
     case MIRType::Double: {
       if (floatRegIndex_ == NumFloatArgRegs) {
+        
+        
+        MOZ_ASSERT(kind_ == ABIKind::Wasm);
         current_ = ABIArg(stackOffset_);
         stackOffset_ += sizeof(double);
         break;

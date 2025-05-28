@@ -20,6 +20,7 @@
 #include "jit/ExecutableAllocator.h"
 #include "jit/MacroAssembler.h"
 #include "vm/Realm.h"
+#include "wasm/WasmFrame.h"
 
 using namespace js;
 using namespace js::jit;
@@ -36,10 +37,10 @@ void dbg_break() {}
 
 
 
-ABIArgGenerator::ABIArgGenerator()
-    : intRegIndex_(0),
+ABIArgGenerator::ABIArgGenerator(ABIKind kind)
+    : ABIArgGeneratorShared(kind),
+      intRegIndex_(0),
       floatRegIndex_(0),
-      stackOffset_(0),
       current_(),
       useHardFp_(true) {}
 

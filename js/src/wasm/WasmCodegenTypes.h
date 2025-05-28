@@ -41,7 +41,7 @@
 namespace js {
 
 namespace jit {
-template <class VecT, class ABIArgGeneratorT>
+template <class VecT, ABIKind Kind>
 class ABIArgIterBase;
 }  
 
@@ -72,7 +72,7 @@ class ArgTypeVector {
   
   
   size_t length() const { return args_.length() + size_t(hasStackResults_); }
-  template <class VecT, class ABIArgGeneratorT>
+  template <class VecT, jit::ABIKind Kind>
   friend class jit::ABIArgIterBase;
 
  public:
