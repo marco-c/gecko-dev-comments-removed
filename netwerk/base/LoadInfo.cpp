@@ -84,9 +84,57 @@ static nsContentPolicyType InternalContentPolicyTypeForFrame(
     const Maybe<mozilla::dom::ClientInfo>& aLoadingClientInfo,
     const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController,
     uint32_t aSandboxFlags) {
-  return MakeAndAddRef<LoadInfo>(
+  RefPtr<LoadInfo> loadInfo(new LoadInfo(
       aLoadingPrincipal, aTriggeringPrincipal, aLoadingContext, aSecurityFlags,
-      aContentPolicyType, aLoadingClientInfo, aController, aSandboxFlags);
+      aContentPolicyType, aLoadingClientInfo, aController, aSandboxFlags));
+  if (loadInfo->IsDocumentMissingClientInfo()) {
+    return Err(NS_ERROR_CONTENT_BLOCKED);
+  }
+  return loadInfo.forget();
+}
+
+bool LoadInfo::IsDocumentMissingClientInfo() {
+  
+  if (!XRE_IsContentProcess() || mClientInfo.isSome()) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsINode> node = LoadingNode();
+  if (!node) {
+    return false;
+  }
+
+  
+  
+  if (mLoadingPrincipal->IsSystemPrincipal()) {
+    return false;
+  }
+  if (mLoadingPrincipal->SchemeIs("about") &&
+      !mLoadingPrincipal->IsContentAccessibleAboutURI()) {
+    return false;
+  }
+
+  
+  Document* doc = node->OwnerDoc();
+  if (doc->IsLoadedAsData() || doc->IsResourceDoc()) {
+    return false;
+  }
+
+  ExtContentPolicy externalType = nsILoadInfo::GetExternalContentPolicyType();
+  if (externalType == ExtContentPolicy::TYPE_DTD ||
+      externalType == ExtContentPolicy::TYPE_OTHER ||
+      externalType == ExtContentPolicy::TYPE_SPECULATIVE ||
+      externalType == ExtContentPolicy::TYPE_SAVEAS_DOWNLOAD ||
+      externalType == ExtContentPolicy::TYPE_DOCUMENT ||
+      externalType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    return false;
+  }
+
+  NS_WARNING(
+      "Prevented the creation of a LoadInfo for a document without a "
+      "ClientInfo!");
+  return true;
 }
 
  already_AddRefed<LoadInfo> LoadInfo::CreateForDocument(

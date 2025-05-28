@@ -295,6 +295,8 @@ class LoadInfo final : public nsILoadInfo {
   void ComputeIsThirdPartyContext(nsPIDOMWindowOuter* aOuterWindow);
   void ComputeIsThirdPartyContext(dom::WindowGlobalParent* aGlobal);
 
+  bool IsDocumentMissingClientInfo();
+
   
   
   
