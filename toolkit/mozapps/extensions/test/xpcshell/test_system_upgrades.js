@@ -88,25 +88,6 @@ async function promiseInstallSystemProfileAddon(id, version) {
   return install.install();
 }
 
-async function promiseUpdateSystemAddon(id, version, waitForStartup = true) {
-  let xpi = createWebExtensionFile(id, version);
-  let xml = buildSystemAddonUpdates([
-    {
-      id: ADDON_ID,
-      version,
-      path: xpi.leafName,
-      xpi,
-    },
-  ]);
-  
-  let promises = [];
-  if (!waitForStartup) {
-    promises.push(AddonTestUtils.promiseAddonEvent("onInstalled"));
-  }
-  promises.push(installSystemAddons(xml, waitForStartup ? [ADDON_ID] : []));
-  return Promise.all(promises);
-}
-
 async function promiseClearSystemAddons() {
   let xml = buildSystemAddonUpdates([]);
   return installSystemAddons(xml, []);
