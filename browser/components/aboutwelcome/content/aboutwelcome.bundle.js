@@ -3375,7 +3375,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
-function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 
 
 
