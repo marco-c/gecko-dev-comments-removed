@@ -1,0 +1,7 @@
+
+
+
+
+fn main() {
+    uniffi::generate_scaffolding("./src/custom-types.udl").unwrap();
+}
