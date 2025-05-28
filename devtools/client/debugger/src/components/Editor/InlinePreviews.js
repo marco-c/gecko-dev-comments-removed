@@ -6,14 +6,11 @@ import React, { Component } from "devtools/client/shared/vendor/react";
 import ReactDOM from "devtools/client/shared/vendor/react-dom";
 
 import actions from "../../actions/index";
-import { div } from "devtools/client/shared/vendor/react-dom-factories";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import InlinePreviewRow from "./InlinePreviewRow";
 import InlinePreview from "./InlinePreview";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import { getInlinePreviews } from "../../selectors/index";
 
-import { features } from "../../utils/prefs";
 import { markerTypes } from "../../constants";
 
 function hasPreviews(previews) {
@@ -44,10 +41,6 @@ class InlinePreviews extends Component {
       highlightDomElement,
       unHighlightDomElement,
     } = this.props;
-
-    if (!features.codemirrorNext) {
-      return;
-    }
 
     if (!previews) {
       editor.removeLineContentMarker(markerTypes.INLINE_PREVIEW_MARKER);
@@ -94,39 +87,13 @@ class InlinePreviews extends Component {
   }
 
   componentWillUnmount() {
-    if (!features.codemirrorNext) {
-      return;
-    }
     this.props.editor.removeLineContentMarker(
       markerTypes.INLINE_PREVIEW_MARKER
     );
   }
 
   render() {
-    const { editor, previews } = this.props;
-
-    if (features.codemirrorNext) {
-      return null;
-    }
-
-    if (!previews) {
-      return null;
-    }
-    const previewsObj = previews;
-
-    let inlinePreviewRows;
-    editor.codeMirror.operation(() => {
-      inlinePreviewRows = Object.keys(previewsObj).map(line => {
-        const lineNum = parseInt(line, 10);
-        return React.createElement(InlinePreviewRow, {
-          editor,
-          key: line,
-          line: lineNum,
-          previews: previewsObj[line],
-        });
-      });
-    });
-    return div(null, inlinePreviewRows);
+    return null;
   }
 }
 
