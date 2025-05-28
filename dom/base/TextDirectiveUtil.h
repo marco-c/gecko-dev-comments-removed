@@ -165,6 +165,11 @@ class TextDirectiveUtil final {
 
   static void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
 
+  
+
+
+  static RangeBoundary MoveToNextBoundaryPoint(const RangeBoundary& aPoint);
+
   static RangeBoundary MoveBoundaryToNextNonWhitespacePosition(
       const RangeBoundary& aRangeBoundary);
   static RangeBoundary MoveBoundaryToPreviousNonWhitespacePosition(

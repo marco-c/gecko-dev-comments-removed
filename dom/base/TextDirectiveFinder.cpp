@@ -144,10 +144,9 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
 
       
       
+      MOZ_DIAGNOSTIC_ASSERT(prefixMatch->GetStartContainer()->IsText());
       const RangeBoundary boundaryPoint =
-          TextDirectiveUtil::MoveRangeBoundaryOneWord(
-              {prefixMatch->GetStartContainer(), prefixMatch->StartOffset()},
-              TextScanDirection::Right);
+          TextDirectiveUtil::MoveToNextBoundaryPoint(prefixMatch->StartRef());
       if (!boundaryPoint.IsSetAndValid()) {
         return nullptr;
       }
@@ -250,11 +249,11 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       }
       
       
-      RangeBoundary newRangeBoundary =
-          TextDirectiveUtil::MoveRangeBoundaryOneWord(
-              {potentialMatch->GetStartContainer(),
-               potentialMatch->StartOffset()},
-              TextScanDirection::Right);
+      MOZ_DIAGNOSTIC_ASSERT(potentialMatch->GetStartContainer()->IsText());
+      const RangeBoundary newRangeBoundary =
+          TextDirectiveUtil::MoveToNextBoundaryPoint(
+              potentialMatch->StartRef());
+
       if (!newRangeBoundary.IsSetAndValid()) {
         return nullptr;
       }

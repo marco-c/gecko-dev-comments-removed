@@ -295,6 +295,26 @@ TextDirectiveUtil::RangeContentAsFoldCase(nsRange* aRange) {
   }
 }
 
+
+
+RangeBoundary TextDirectiveUtil::MoveToNextBoundaryPoint(
+    const RangeBoundary& aPoint) {
+  MOZ_DIAGNOSTIC_ASSERT(aPoint.IsSetAndValid());
+  Text* node = Text::FromNode(aPoint.GetContainer());
+  MOZ_ASSERT(node);
+  uint32_t pos =
+      *aPoint.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets);
+  if (!node) {
+    return {};
+  }
+  ++pos;
+  if (pos < node->Length() &&
+      node->GetText()->IsLowSurrogateFollowingHighSurrogateAt(pos)) {
+    ++pos;
+  }
+  return {node, pos};
+}
+
  RangeBoundary
 TextDirectiveUtil::MoveBoundaryToNextNonWhitespacePosition(
     const RangeBoundary& aRangeBoundary) {
