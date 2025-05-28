@@ -20,6 +20,19 @@ class DOM_Quota_DirectoryLock : public QuotaManagerDependencyFixture {
   static void TearDownTestCase() { ASSERT_NO_FATAL_FAILURE(ShutdownFixture()); }
 };
 
+TEST_F(DOM_Quota_DirectoryLock, MutableManagerRef) {
+  PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    RefPtr<ClientDirectoryLock> directoryLock =
+        quotaManager->CreateDirectoryLock(GetTestClientMetadata(),
+                                           false);
+
+    EXPECT_EQ(&directoryLock->MutableManagerRef(), quotaManager);
+  });
+}
+
 
 TEST_F(DOM_Quota_DirectoryLock, Drop_Timing) {
   PerformOnBackgroundThread([]() {
