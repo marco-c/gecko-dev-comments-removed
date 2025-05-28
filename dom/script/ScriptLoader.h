@@ -139,7 +139,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   explicit ScriptLoader(Document* aDocument);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(ScriptLoader)
 
   
@@ -417,14 +417,13 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  virtual void PreloadURI(nsIURI* aURI, const nsAString& aCharset,
-                          const nsAString& aType, const nsAString& aCrossOrigin,
-                          const nsAString& aNonce,
-                          const nsAString& aFetchPriority,
-                          const nsAString& aIntegrity, bool aScriptFromHead,
-                          bool aAsync, bool aDefer, bool aLinkPreload,
-                          const ReferrerPolicy aReferrerPolicy,
-                          uint64_t aEarlyHintPreloaderId);
+  void PreloadURI(nsIURI* aURI, const nsAString& aCharset,
+                  const nsAString& aType, const nsAString& aCrossOrigin,
+                  const nsAString& aNonce, const nsAString& aFetchPriority,
+                  const nsAString& aIntegrity, bool aScriptFromHead,
+                  bool aAsync, bool aDefer, bool aLinkPreload,
+                  const ReferrerPolicy aReferrerPolicy,
+                  uint64_t aEarlyHintPreloaderId);
 
   
 
@@ -604,7 +603,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  virtual void ProcessPendingRequestsAsync();
+  void ProcessPendingRequestsAsync();
 
   void ProcessPendingRequestsAsyncBypassParserBlocking();
 

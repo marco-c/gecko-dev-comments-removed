@@ -236,10 +236,10 @@ class ModuleLoaderBase : public nsISupports {
 
 
   class LoadingRequest final : public nsISupports {
-    virtual ~LoadingRequest() = default;
+    ~LoadingRequest() = default;
 
    public:
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+    NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
     NS_DECL_CYCLE_COLLECTION_CLASS(LoadingRequest)
 
     
