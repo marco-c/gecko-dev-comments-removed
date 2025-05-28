@@ -25,14 +25,6 @@ loader.lazyRequireGetter(
 );
 
 
-loader.lazyRequireGetter(
-  this,
-  "EnvironmentActor",
-  "resource://devtools/server/actors/environment.js",
-  true
-);
-
-
 
 
 

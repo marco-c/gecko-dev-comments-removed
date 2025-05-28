@@ -4,7 +4,8 @@
 
 "use strict";
 
-const { DevToolsServer } = require("resource://devtools/server/devtools-server.js");
+
+
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 loader.lazyRequireGetter(
   this,
@@ -229,63 +230,56 @@ const previewers = {
   ],
 
   "Temporal.Instant": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.Instant, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainDate": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainDate, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainDateTime": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainDateTime, objectActor, grip);
       return true;
     },
   ],
 
-  "Temporal.PlainDate": [
-    function(objectActor, grip, depth) {
-      temporalPreviewer(Temporal.PlainDate, objectActor, grip);
-      return true;
-    },
-  ],
-
   "Temporal.PlainMonthDay": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainMonthDay, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainTime": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainTime, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.PlainYearMonth": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.PlainYearMonth, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.ZonedDateTime": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.ZonedDateTime, objectActor, grip);
       return true;
     },
   ],
 
   "Temporal.Duration": [
-    function(objectActor, grip, depth) {
+    function(objectActor, grip, _depth) {
       temporalPreviewer(Temporal.Duration, objectActor, grip);
       return true;
     },
@@ -848,6 +842,7 @@ function temporalPreviewer(cls, objectActor, grip) {
     )
   }
 }
+
 
 
 

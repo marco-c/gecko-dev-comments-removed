@@ -10,6 +10,7 @@
 
 "use strict";
 
+
 const Babel = require("./babel");
 const fs = require("fs");
 const _path = require("path");
@@ -19,7 +20,8 @@ const defaultPlugins = ["proposal-class-properties"];
 function transform(filePath) {
   
   const plugins = filePath.includes("devtools/client/debugger")
-    ? require("./build-debugger")(filePath)
+    ? 
+      require("./build-debugger")(filePath)
     : defaultPlugins;
 
   const doc = fs.readFileSync(filePath, "utf8");

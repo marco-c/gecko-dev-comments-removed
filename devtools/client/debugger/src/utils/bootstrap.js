@@ -58,6 +58,7 @@ export function bootstrapStore(client, workers, panel, initialState) {
   registerStoreObserver(store, updatePrefs);
 
   const actions = bindActionCreators(
+    
     require("../actions/index").default,
     store.dispatch
   );

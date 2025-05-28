@@ -9,9 +9,10 @@
 
 
 class ObjectCommand {
-  constructor({ commands, descriptorFront, watcherFront }) {
+  constructor({ commands, _descriptorFront, _watcherFront }) {
     this.#commands = commands;
   }
+  
   #commands = null;
 
   

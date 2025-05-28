@@ -544,6 +544,7 @@ function makeNodesForOwnProps(propertiesNames, parent, ownProperties) {
   });
 }
 
+
 function makeNodesForProperties(objProps, parent) {
   const {
     ownProperties = {},

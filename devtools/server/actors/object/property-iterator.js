@@ -54,8 +54,8 @@ class PropertyIteratorActor extends Actor {
       if (!DevToolsUtils.isSafeDebuggerObject(objectActor.obj)) {
         this.iterator = {
           size: 0,
-          propertyName: index => undefined,
-          propertyDescription: index => undefined,
+          propertyName: _index => undefined,
+          propertyDescription: _index => undefined,
         };
       } else if (options.enumEntries) {
         const cls = objectActor.className;
@@ -663,6 +663,7 @@ function enumCustomStateSetEntries(objectActor, depth) {
   
   
   const values = Array.from(
+    
     waiveXrays(CustomStateSet.prototype.values.call(waiveXrays(rawObj)))
   );
 
