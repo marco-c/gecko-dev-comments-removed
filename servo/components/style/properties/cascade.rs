@@ -627,6 +627,7 @@ impl<'a> Declarations<'a> {
 struct Cascade<'b> {
     first_line_reparenting: FirstLineReparenting<'b>,
     ignore_colors: bool,
+    zoom_for_inheritance: computed::Zoom,
     seen: LonghandIdSet,
     author_specified: LonghandIdSet,
     reverted_set: LonghandIdSet,
@@ -639,6 +640,7 @@ impl<'b> Cascade<'b> {
         Self {
             first_line_reparenting,
             ignore_colors,
+            zoom_for_inheritance: computed::Zoom::ONE,
             seen: LonghandIdSet::default(),
             author_specified: LonghandIdSet::default(),
             reverted_set: Default::default(),
@@ -774,11 +776,15 @@ impl<'b> Cascade<'b> {
                 .builder
                 .inherited_effective_zoom()
                 .compute_effective(context.builder.specified_zoom());
-            
-            
-            
-            
-            self.recompute_font_size_for_zoom_change(&mut context.builder);
+            self.zoom_for_inheritance = context.builder.resolved_specified_zoom();
+            if !self.zoom_for_inheritance.is_one() {
+                
+                
+                
+                
+                
+                self.recompute_font_size_for_zoom_change(&mut context.builder);
+            }
         }
 
         
@@ -881,6 +887,28 @@ impl<'b> Cascade<'b> {
                 }
             }
         }
+
+        if !self.zoom_for_inheritance.is_one() {
+            self.recompute_zoom_dependent_inherited_lengths(context);
+        }
+    }
+
+    #[cold]
+    fn recompute_zoom_dependent_inherited_lengths(&self, context: &mut computed::Context) {
+        debug_assert!(self.seen.contains(LonghandId::Zoom));
+        debug_assert!(!self.zoom_for_inheritance.is_one());
+        let old_effective_zoom = context.builder.effective_zoom;
+        context.builder.effective_zoom = self.zoom_for_inheritance;
+        for prop in LonghandIdSet::zoom_dependent_inherited_properties() {
+            if self.seen.contains(*prop) {
+                continue;
+            }
+            let declaration = PropertyDeclaration::css_wide_keyword(*prop, CSSWideKeyword::Inherit);
+            unsafe {
+                self.do_apply_declaration(context, *prop, &declaration);
+            }
+        }
+        context.builder.effective_zoom = old_effective_zoom;
     }
 
     fn apply_one_longhand(
