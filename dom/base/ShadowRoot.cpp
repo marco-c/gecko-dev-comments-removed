@@ -23,6 +23,7 @@
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/UnbindContext.h"
+#include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/PresShell.h"
@@ -546,6 +547,15 @@ void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
     Servo_AuthorStyles_RemoveStyleSheet(mServoStyles.get(), &aSheet);
     ApplicableRulesChanged();
   }
+}
+
+void ShadowRoot::AppendBuiltInStyleSheet(BuiltInStyleSheet aSheet) {
+  auto* cache = GlobalStyleSheetCache::Singleton();
+  
+  
+  
+  RefPtr sheet = cache->BuiltInSheet(aSheet)->Clone(nullptr, nullptr);
+  AppendStyleSheet(*sheet);
 }
 
 void ShadowRoot::RemoveSheetFromStyles(StyleSheet& aSheet) {
