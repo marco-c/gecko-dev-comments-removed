@@ -1665,18 +1665,7 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
     }
   }
 
-  if (*aState & states::FOCUSABLE) {
-    
-    const LocalAccessible* ancestor = this;
-    while ((ancestor = ancestor->LocalParent()) && !ancestor->IsDoc()) {
-      dom::Element* el = ancestor->Elm();
-      if (el && nsAccUtils::ARIAAttrValueIs(el, nsGkAtoms::aria_disabled,
-                                            nsGkAtoms::_true, eCaseMatters)) {
-        *aState |= states::UNAVAILABLE;
-        break;
-      }
-    }
-  } else {
+  if (!(*aState & states::FOCUSABLE)) {
     
     
     
