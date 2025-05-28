@@ -895,9 +895,28 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     }
 
     
-    
-    if (!mouseEvent->convertToPointer || mouseEvent->IsSynthesized()) {
+    if (!mouseEvent->convertToPointer) {
       return;
+    }
+
+    
+    
+    
+    
+    if (mouseEvent->IsSynthesized()) {
+      if (!StaticPrefs::
+              dom_event_pointer_boundary_dispatch_when_layout_change() ||
+          !mouseEvent->InputSourceSupportsHover()) {
+        return;
+      }
+      
+      
+      
+      PointerCaptureInfo* const captureInfo =
+          GetPointerCaptureInfo(mouseEvent->pointerId);
+      if (captureInfo && captureInfo->mOverrideElement) {
+        return;
+      }
     }
 
     pointerMessage = PointerEventHandler::ToPointerEventMessage(mouseEvent);
