@@ -50,9 +50,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
  public:
   static const TypeInfo kUserMessageTypeInfo;
 
-  using routeid_t = int64_t;
-  using msgid_t = uint32_t;
-  using seqno_t = int64_t;
+  typedef uint32_t msgid_t;
 
   enum NestedLevel {
     NOT_NESTED = 1,
@@ -177,8 +175,8 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   
   
-  Message(routeid_t routing_id, msgid_t type,
-          uint32_t segment_capacity = 0,  
+  Message(int32_t routing_id, msgid_t type,
+          uint32_t segmentCapacity = 0,  
           HeaderFlags flags = HeaderFlags());
 
   Message(const char* data, int data_len);
@@ -192,7 +190,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   
   
-  static mozilla::UniquePtr<Message> IPDLMessage(routeid_t routing_id,
+  static mozilla::UniquePtr<Message> IPDLMessage(int32_t routing_id,
                                                  msgid_t type,
                                                  uint32_t segmentCapacity,
                                                  HeaderFlags flags);
@@ -221,17 +219,17 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   msgid_t type() const { return header()->type; }
 
-  routeid_t routing_id() const { return header()->routing; }
+  int32_t routing_id() const { return header()->routing; }
 
-  void set_routing_id(routeid_t new_id) { header()->routing = new_id; }
+  void set_routing_id(int32_t new_id) { header()->routing = new_id; }
 
-  seqno_t transaction_id() const { return header()->txid; }
+  int32_t transaction_id() const { return header()->txid; }
 
-  void set_transaction_id(seqno_t txid) { header()->txid = txid; }
+  void set_transaction_id(int32_t txid) { header()->txid = txid; }
 
-  seqno_t seqno() const { return header()->seqno; }
+  int32_t seqno() const { return header()->seqno; }
 
-  void set_seqno(seqno_t aSeqno) { header()->seqno = aSeqno; }
+  void set_seqno(int32_t aSeqno) { header()->seqno = aSeqno; }
 
   const char* name() const { return StringFromIPCMessageType(type()); }
 
@@ -371,7 +369,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 #endif
 
   struct Header : Pickle::Header {
-    
+    int32_t routing;       
     msgid_t type;          
     HeaderFlags flags;     
     uint32_t num_handles;  
@@ -380,10 +378,12 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     uint32_t num_send_rights;  
                                
 #endif
-    routeid_t routing;  
-    seqno_t txid;   
-    seqno_t seqno;  
-    uint32_t event_footer_size;  
+    
+    int32_t txid;
+    
+    int32_t seqno;
+    
+    uint32_t event_footer_size;
   };
 
   Header* header() { return headerT<Header>(); }
@@ -423,12 +423,15 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
 }  
 
-enum SpecialRoutingIDs : IPC::Message::routeid_t {
+enum SpecialRoutingIDs {
   
-  MSG_ROUTING_NONE = INT64_MIN,
+  MSG_ROUTING_NONE = kint32min,
 
   
-  MSG_ROUTING_CONTROL = INT64_MAX
+  MSG_ROUTING_CONTROL = kint32max
 };
+
+#define IPC_REPLY_ID 0xFFF0    // Special message id for replies
+#define IPC_LOGGING_ID 0xFFF1  // Special message id for logging
 
 #endif  
