@@ -6,20 +6,40 @@
 const ORIGINAL_URL = "https://example.com/document-builder.sjs?html=page1";
 const OTHER_URL = "https://example.org/document-builder.sjs?html=page2";
 
-async function waitForUrl(url, toolbox, browserTab, win) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function startWaitingForUrl(url, toolbox, browserTab, win) {
   const { onDomCompleteResource } =
     await waitForNextTopLevelDomCompleteResource(toolbox.commands);
 
-  return Promise.all([
-    waitUntil(
+  return async function () {
+    info("Wait for URL");
+    await waitUntil(
       () =>
         toolbox.target.url === url &&
         browserTab.linkedBrowser.currentURI.spec === url
-    ),
-    onDomCompleteResource,
-    toolbox.commands.client.waitForRequestsToSettle(),
-    waitForAboutDebuggingRequests(win.AboutDebugging.store),
-  ]);
+    );
+
+    info("Wait for dom complete");
+    await onDomCompleteResource;
+
+    info("Wait for toolbox requests to settle");
+    await toolbox.commands.client.waitForRequestsToSettle();
+
+    info("Wait for about debugging requests to settle");
+    await waitForAboutDebuggingRequests(win.AboutDebugging.store);
+  };
 }
 
 
@@ -43,21 +63,34 @@ add_task(async function () {
   info("Navigating to another URL");
   let onTargetSwitched = toolbox.commands.targetCommand.once("switched-target");
   const urlInput = devtoolsDocument.querySelector(".devtools-textinput");
+  let onURLReady = await startWaitingForUrl(
+    OTHER_URL,
+    toolbox,
+    browserTab,
+    window
+  );
   await synthesizeUrlKeyInput(devToolsToolbox, urlInput, OTHER_URL);
-  await waitForUrl(OTHER_URL, toolbox, browserTab, window);
+  await onURLReady();
   await onTargetSwitched;
 
   info("Clicking back button");
   onTargetSwitched = toolbox.commands.targetCommand.once("switched-target");
+  onURLReady = await startWaitingForUrl(
+    ORIGINAL_URL,
+    toolbox,
+    browserTab,
+    window
+  );
   devtoolsDocument.querySelector(".qa-back-button").click();
-  await waitForUrl(ORIGINAL_URL, toolbox, browserTab, window);
+  await onURLReady();
   await onTargetSwitched;
 
   info("Clicking the forward button");
   onTargetSwitched = toolbox.commands.targetCommand.once("switched-target");
+  onURLReady = await startWaitingForUrl(OTHER_URL, toolbox, browserTab, window);
   devtoolsDocument.querySelector(".qa-forward-button").click();
-  await waitForUrl(OTHER_URL, toolbox, browserTab, window);
   await onTargetSwitched;
+  await onURLReady();
 
   ok(true, "Clicking back and forward works!");
 });
