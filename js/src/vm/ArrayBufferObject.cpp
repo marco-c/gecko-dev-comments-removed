@@ -471,6 +471,11 @@ static ArrayBufferObject* ArrayBufferCopyAndDetach(
                               JSMSG_TYPED_ARRAY_DETACHED);
     return nullptr;
   }
+  if (arrayBuffer->isImmutable()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
+    return nullptr;
+  }
   if (arrayBuffer->isLengthPinned()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_ARRAYBUFFER_LENGTH_PINNED);
@@ -698,6 +703,9 @@ bool ArrayBufferObject::resizeImpl(JSContext* cx, const CallArgs& args) {
   }
 
   
+  MOZ_ASSERT(!obj->isImmutable(), "resizable array buffers aren't immutable");
+
+  
   if (newByteLength > obj->maxByteLength()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
@@ -865,6 +873,13 @@ bool ArrayBufferObject::sliceImpl(JSContext* cx, const CallArgs& args) {
     if (unwrappedResult->isDetached()) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TYPED_ARRAY_DETACHED);
+      return false;
+    }
+
+    
+    if (unwrappedResult->isImmutable()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_ARRAYBUFFER_IMMUTABLE);
       return false;
     }
 
