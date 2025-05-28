@@ -4,10 +4,7 @@
 
 import os
 
-from android_taskgraph import register as register_android_taskgraph
-from mozilla_taskgraph import register as register_mozilla_taskgraph
 from taskgraph import config as taskgraph_config
-from taskgraph import generator
 from taskgraph import morph as taskgraph_morph
 from taskgraph.util import schema
 from taskgraph.util import taskcluster as tc_util
@@ -48,32 +45,30 @@ def register(graph_config):
     Args:
         graph_config: The graph configuration object.
     """
+    import android_taskgraph
+    from taskgraph import generator
+
+    
+    
+    
     from taskgraph.optimize.base import registry
-    from taskgraph.transforms.task import payload_builders
 
-    from gecko_taskgraph import (  
-        filter_tasks,
-        morph,
-        target_tasks,  
-    )
-    from gecko_taskgraph.parameters import register_parameters
-    from gecko_taskgraph.util import (
-        dependencies,  
-    )
-    from gecko_taskgraph.util.verify import verifications
-
-    
-    
-    
     del registry["skip-unless-changed"]
 
-    
-    del payload_builders["beetmover"]
-    del payload_builders["docker-worker"]
-    del payload_builders["generic-worker"]
+    from gecko_taskgraph import (  
+        
+        morph,  
+        filter_tasks,
+        target_tasks,
+    )
 
-    register_mozilla_taskgraph(graph_config)
-    register_android_taskgraph(graph_config)
+    android_taskgraph.register(graph_config)
+
+    from gecko_taskgraph.parameters import register_parameters
+
+    
+    from gecko_taskgraph.util import dependencies  
+    from gecko_taskgraph.util.verify import verifications
 
     
     
