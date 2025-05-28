@@ -828,6 +828,48 @@ def build_generic_worker_payload(config, task, task_def):
                 Optional("singleFileGlobs"): [str],
             }
         ],
+    },
+)
+def build_scriptworker_signing_payload(config, task, task_def):
+    worker = task["worker"]
+
+    task_def["payload"] = {
+        "maxRunTime": worker["max-run-time"],
+        "upstreamArtifacts": worker["upstream-artifacts"],
+    }
+
+    artifacts = set(task.setdefault("attributes", {}).get("release_artifacts", []))
+    for upstream_artifact in worker["upstream-artifacts"]:
+        for path in upstream_artifact["paths"]:
+            artifacts.update(
+                get_signed_artifacts(
+                    input=path,
+                    formats=upstream_artifact["formats"],
+                    behavior=worker.get("mac-behavior"),
+                )
+            )
+    task["attributes"]["release_artifacts"] = sorted(list(artifacts))
+
+
+@payload_builder(
+    "iscript",
+    schema={
+        
+        Required("max-run-time"): int,
+        
+        Required("upstream-artifacts"): [
+            {
+                
+                Required("taskId"): taskref_or_string,
+                
+                Required("taskType"): str,
+                
+                Required("paths"): [str],
+                
+                Required("formats"): [str],
+                Optional("singleFileGlobs"): [str],
+            }
+        ],
         
         Optional("mac-behavior"): Any(
             "apple_notarization",
@@ -859,7 +901,7 @@ def build_generic_worker_payload(config, task, task_def):
         ],
     },
 )
-def build_scriptworker_signing_payload(config, task, task_def):
+def build_iscript_payload(config, task, task_def):
     worker = task["worker"]
 
     task_def["payload"] = {
@@ -1761,11 +1803,12 @@ def set_defaults(config, tasks):
                 )
             worker.setdefault("chain-of-trust", False)
         elif worker["implementation"] in (
-            "scriptworker-signing",
             "beetmover",
             "beetmover-push-to-release",
             "beetmover-maven",
             "beetmover-import-from-gcs-to-artifact-registry",
+            "iscript",
+            "scriptworker-signing",
         ):
             worker.setdefault("max-run-time", 600)
         elif worker["implementation"] == "push-apk":
