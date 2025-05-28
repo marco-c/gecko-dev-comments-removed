@@ -76,26 +76,6 @@ using ZeroOnOverflow = bool;
 
 class BaseStackFrame;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class UseABI { Wasm, Builtin };
 enum class RestoreState {
   
   None,

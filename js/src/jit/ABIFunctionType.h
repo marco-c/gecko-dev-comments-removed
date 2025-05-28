@@ -15,6 +15,17 @@
 namespace js {
 namespace jit {
 
+enum class ABIKind {
+  
+  System,
+  
+  
+  Wasm,
+  
+  
+  WasmBuiltin,
+};
+
 enum class ABIType {
   
   General = 0x1,

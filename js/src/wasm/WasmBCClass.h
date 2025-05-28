@@ -143,7 +143,7 @@ struct AccessCheck {
 struct FunctionCall {
   FunctionCall()
       : restoreState(RestoreState::None),
-        useABI(UseABI::Wasm),
+        abiKind(ABIKind::Wasm),
 #ifdef JS_CODEGEN_ARM
         hardFP(true),
 #endif
@@ -153,7 +153,7 @@ struct FunctionCall {
 
   WasmABIArgGenerator abi;
   RestoreState restoreState;
-  UseABI useABI;
+  ABIKind abiKind;
 #ifdef JS_CODEGEN_ARM
   bool hardFP;
 #endif
@@ -977,16 +977,46 @@ struct BaseCompiler final {
   
   
 
-  void beginCall(FunctionCall& call, UseABI useABI, RestoreState restoreState);
+  void beginCall(FunctionCall& call, ABIKind abiKind,
+                 RestoreState restoreState);
   void endCall(FunctionCall& call, size_t stackSpace);
+
   void startCallArgs(size_t stackArgAreaSizeUnaligned, FunctionCall* call);
   ABIArg reservePointerArgument(FunctionCall* call);
   void passArg(ValType type, const Stk& arg, FunctionCall* call);
-  CodeOffset callDefinition(uint32_t funcIndex, const FunctionCall& call);
-  CodeOffset callSymbolic(SymbolicAddress callee, const FunctionCall& call);
 
   
+  enum class CalleeOnStack {
+    
+    
+    
+    
+    True,
 
+    
+    False
+  };
+  
+  
+  template <typename T>
+  [[nodiscard]] bool emitCallArgs(const ValTypeVector& argTypes, T results,
+                                  FunctionCall* baselineCall,
+                                  CalleeOnStack calleeOnStack);
+
+  [[nodiscard]] bool pushStackResultsForWasmCall(const ResultType& type,
+                                                 RegPtr temp,
+                                                 StackResultsLoc* loc);
+  void popStackResultsAfterWasmCall(const StackResultsLoc& results,
+                                    uint32_t stackArgBytes);
+
+  void pushBuiltinCallResult(const FunctionCall& call, MIRType type);
+  [[nodiscard]] bool pushWasmCallResults(const FunctionCall& call,
+                                         ResultType type,
+                                         const StackResultsLoc& loc);
+
+  
+  CodeOffset callDefinition(uint32_t funcIndex, const FunctionCall& call);
+  CodeOffset callSymbolic(SymbolicAddress callee, const FunctionCall& call);
   bool callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
                     const Stk& indexVal, const FunctionCall& call,
                     bool tailCall, CodeOffset* fastCallOffset,
@@ -1002,8 +1032,6 @@ struct BaseCompiler final {
   CodeOffset builtinInstanceMethodCall(const SymbolicAddressSignature& builtin,
                                        const ABIArg& instanceArg,
                                        const FunctionCall& call);
-  [[nodiscard]] bool pushCallResults(const FunctionCall& call, ResultType type,
-                                     const StackResultsLoc& loc);
 
   
   inline RegI32 captureReturnedI32();
@@ -1467,26 +1495,6 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitBrTable();
   [[nodiscard]] bool emitDrop();
   [[nodiscard]] bool emitReturn();
-
-  
-  enum class CalleeOnStack {
-    
-    
-    
-    
-    True,
-
-    
-    False
-  };
-
-  
-  
-  template <typename T>
-  [[nodiscard]] bool emitCallArgs(const ValTypeVector& argTypes, T results,
-                                  FunctionCall* baselineCall,
-                                  CalleeOnStack calleeOnStack);
-
   [[nodiscard]] bool emitCall();
   [[nodiscard]] bool emitReturnCall();
   [[nodiscard]] bool emitCallIndirect();
@@ -1519,12 +1527,6 @@ struct BaseCompiler final {
   [[nodiscard]] bool endTryTable(ResultType type);
 
   void doReturn(ContinuationKind kind);
-  void pushReturnValueOfCall(const FunctionCall& call, MIRType type);
-
-  [[nodiscard]] bool pushStackResultsForCall(const ResultType& type,
-                                             RegPtr temp, StackResultsLoc* loc);
-  void popStackResultsAfterCall(const StackResultsLoc& results,
-                                uint32_t stackArgBytes);
 
   void emitCompareI32(Assembler::Condition compareOp, ValType compareType);
   void emitCompareI64(Assembler::Condition compareOp, ValType compareType);

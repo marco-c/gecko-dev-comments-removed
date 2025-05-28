@@ -4536,9 +4536,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
     ma_mov(secondScratchReg_, lr);
   }
 
-  
-  
-  if (!callFromWasm && !ARMFlags::UseHardFpABI()) {
+  if (!ARMFlags::UseHardFpABI()) {
     switch (result) {
       case ABIType::Float64:
         

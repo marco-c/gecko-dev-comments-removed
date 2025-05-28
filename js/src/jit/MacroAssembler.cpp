@@ -4791,12 +4791,6 @@ void MacroAssembler::setupNativeABICall() {
 void MacroAssembler::setupWasmABICall() {
   MOZ_ASSERT(IsCompilingWasm(), "non-wasm should use setupAlignedABICall");
   setupABICallHelper<WasmABIArgGenerator>();
-
-#if defined(JS_CODEGEN_ARM)
-  
-  
-  abiArgs_.setUseHardFp(true);
-#endif
   dynamicAlignment_ = false;
 }
 

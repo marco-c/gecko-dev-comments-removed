@@ -2478,9 +2478,16 @@ struct ABIFunctionArgs {
   }
 };
 
-bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
-                                ExitReason exitReason, void* funcPtr,
-                                CallableOffsets* offsets) {
+bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
+                                ABIFunctionType abiType, ExitReason exitReason,
+                                void* funcPtr, CallableOffsets* offsets) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(abiKind == ABIKind::WasmBuiltin || abiKind == ABIKind::Wasm);
+
   AssertExpectedSP(masm);
   masm.setFramePushed(0);
 
@@ -2503,7 +2510,9 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
     if (i->argInRegister()) {
 #ifdef JS_CODEGEN_ARM
       
-      if (!ARMFlags::UseHardFpABI() && IsFloatingPointType(i.mirType())) {
+      
+      if (abiKind == ABIKind::Wasm && !ARMFlags::UseHardFpABI() &&
+          IsFloatingPointType(i.mirType())) {
         FloatRegister input = i->fpu();
         if (i.mirType() == MIRType::Float32) {
           masm.ma_vxfer(input, Register::FromCode(input.id()));
@@ -2531,21 +2540,27 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
   
 #elif defined(JS_CODEGEN_X86)
   
-  Operand op(esp, 0);
-  MIRType retType = ToMIRType(ABIType(
-      std::underlying_type_t<ABIFunctionType>(abiType) & ABITypeArgMask));
-  if (retType == MIRType::Float32) {
-    masm.fstp32(op);
-    masm.loadFloat32(op, ReturnFloat32Reg);
-  } else if (retType == MIRType::Double) {
-    masm.fstp(op);
-    masm.loadDouble(op, ReturnDoubleReg);
+  
+  if (abiKind == ABIKind::Wasm) {
+    
+    Operand op(esp, 0);
+    MIRType retType = ToMIRType(ABIType(
+        std::underlying_type_t<ABIFunctionType>(abiType) & ABITypeArgMask));
+    if (retType == MIRType::Float32) {
+      masm.fstp32(op);
+      masm.loadFloat32(op, ReturnFloat32Reg);
+    } else if (retType == MIRType::Double) {
+      masm.fstp(op);
+      masm.loadDouble(op, ReturnDoubleReg);
+    }
   }
 #elif defined(JS_CODEGEN_ARM)
   
+  
   MIRType retType = ToMIRType(ABIType(
       std::underlying_type_t<ABIFunctionType>(abiType) & ABITypeArgMask));
-  if (!ARMFlags::UseHardFpABI() && IsFloatingPointType(retType)) {
+  if (abiKind == ABIKind::Wasm && !ARMFlags::UseHardFpABI() &&
+      IsFloatingPointType(retType)) {
     masm.ma_vxfer(r0, r1, d0);
   }
 #endif
