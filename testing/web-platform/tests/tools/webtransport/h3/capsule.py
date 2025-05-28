@@ -1,11 +1,7 @@
-
-
 from enum import IntEnum
 from typing import Iterator, Optional
 
-
-
-from aioquic.buffer import UINT_VAR_MAX_SIZE, Buffer, BufferReadError  
+from aioquic.buffer import UINT_VAR_MAX_SIZE, Buffer, BufferReadError
 
 
 class CapsuleType(IntEnum):
