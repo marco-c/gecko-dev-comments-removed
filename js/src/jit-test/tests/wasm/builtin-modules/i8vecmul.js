@@ -8,7 +8,7 @@ let instance = new WebAssembly.Instance(module, {
 let {i8vecmul} = instance.exports;
 
 
-{
+let test = () => {
   
   for (let i = 0; i < 4; i++) {
     bytes[i] = i;
@@ -22,7 +22,23 @@ let {i8vecmul} = instance.exports;
   for (let i = 0; i < 4; i++) {
     assertEq(bytes[8 + i], i * i * 2);
   }
+};
+test();
+
+if (WasmHelpers.isSingleStepProfilingEnabled) {
+  const {
+      assertEqImpreciseStacks,
+      startProfiling,
+      endProfiling
+  } = WasmHelpers;
+
+  enableGeckoProfiling();
+  startProfiling();
+  test();
+  assertEqImpreciseStacks(endProfiling(), ["", ">", "0,>", "", "0,>", ">", ""]);
+  disableGeckoProfiling();
 }
+
 
 
 {

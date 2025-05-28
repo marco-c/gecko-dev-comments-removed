@@ -834,6 +834,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void callWithABIPost(uint32_t stackAdjust, ABIType result,
                        bool callFromWasm = false) PER_ARCH;
 
+#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
+  
+  void wasmCheckUnsafeCallWithABIPre();
+  
+  void wasmCheckUnsafeCallWithABIPost();
+#endif
+
   
   
   inline void appendSignatureType(ABIType type);
