@@ -1,4 +1,5 @@
-let swOption = new URL(location.href).searchParams.get('sw');
+const originalSwOption = new URL(location.href).searchParams.get('sw');
+let swOption = originalSwOption;
 
 if (swOption === 'fetch-handler-navigation-preload') {
   self.addEventListener('activate', event => {
@@ -66,6 +67,10 @@ if (swOption !== 'no-fetch-handler') {
       
       const url = new URL(event.request.url);
       url.searchParams.set('intercepted', 'true');
+      if (originalSwOption === 'race-fetch-handler-modify-url') {
+        
+        url.searchParams.set('delay', '500');
+      }
       event.respondWith(fetch(url, {headers: event.request.headers}));
     } else if (swOption === 'fetch-handler-modify-referrer') {
       event.respondWith(fetch(event.request,
