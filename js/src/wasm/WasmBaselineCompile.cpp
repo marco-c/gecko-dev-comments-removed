@@ -475,7 +475,7 @@ bool BaseCompiler::beginFunction() {
   
 
   ArgTypeVector args(funcType());
-  size_t inboundStackArgBytes = StackArgAreaSizeUnaligned(args);
+  size_t inboundStackArgBytes = StackArgAreaSizeUnaligned(args, ABIKind::Wasm);
   MOZ_ASSERT(inboundStackArgBytes % sizeof(void*) == 0);
   stackMapGenerator_.numStackArgBytes = inboundStackArgBytes;
 
@@ -486,7 +486,7 @@ bool BaseCompiler::beginFunction() {
   }
 
   
-  for (WasmABIArgIter i(args); !i.done(); i++) {
+  for (ABIArgIter i(args, ABIKind::Wasm); !i.done(); i++) {
     ABIArg argLoc = *i;
     if (argLoc.kind() == ABIArg::Stack &&
         args[i.index()] == MIRType::WasmAnyRef) {
@@ -573,7 +573,7 @@ bool BaseCompiler::beginFunction() {
   }
 
   
-  for (WasmABIArgIter i(args); !i.done(); i++) {
+  for (ABIArgIter i(args, ABIKind::Wasm); !i.done(); i++) {
     if (args.isSyntheticStackResultPointerArg(i.index())) {
       
       
@@ -1841,7 +1841,8 @@ bool BaseCompiler::emitCallArgs(const ValTypeVector& argTypes, T results,
   ArgTypeVector args(argTypes, results.stackResults());
   uint32_t naturalArgCount = argTypes.length();
   uint32_t abiArgCount = args.lengthWithStackResults();
-  startCallArgs(StackArgAreaSizeUnaligned(args), baselineCall);
+  startCallArgs(StackArgAreaSizeUnaligned(args, baselineCall->abiKind),
+                baselineCall);
 
   
   size_t argsDepth = results.onStackCount();
@@ -2026,8 +2027,8 @@ class OutOfLineAbortingTrap : public OutOfLineCode {
 static ReturnCallAdjustmentInfo BuildReturnCallAdjustmentInfo(
     const FuncType& callerType, const FuncType& calleeType) {
   return ReturnCallAdjustmentInfo(
-      StackArgAreaSizeUnaligned(ArgTypeVector(calleeType)),
-      StackArgAreaSizeUnaligned(ArgTypeVector(callerType)));
+      StackArgAreaSizeUnaligned(ArgTypeVector(calleeType), ABIKind::Wasm),
+      StackArgAreaSizeUnaligned(ArgTypeVector(callerType), ABIKind::Wasm));
 }
 
 bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
@@ -6519,7 +6520,8 @@ bool BaseCompiler::emitInstanceCall(const SymbolicAddressSignature& builtin) {
 
   ABIArg instanceArg = reservePointerArgument(&baselineCall);
 
-  startCallArgs(StackArgAreaSizeUnaligned(builtin), &baselineCall);
+  startCallArgs(StackArgAreaSizeUnaligned(builtin, baselineCall.abiKind),
+                &baselineCall);
   for (uint32_t i = 1; i < builtin.numArgs; i++) {
     ValType t;
     switch (argTypes[i]) {

@@ -41,8 +41,8 @@
 namespace js {
 
 namespace jit {
-template <class VecT, ABIKind Kind>
-class ABIArgIterBase;
+template <class VecT>
+class ABIArgIter;
 }  
 
 namespace wasm {
@@ -72,8 +72,8 @@ class ArgTypeVector {
   
   
   size_t length() const { return args_.length() + size_t(hasStackResults_); }
-  template <class VecT, jit::ABIKind Kind>
-  friend class jit::ABIArgIterBase;
+  template <class VecT>
+  friend class jit::ABIArgIter;
 
  public:
   ArgTypeVector(const ValTypeVector& args, StackResults stackResults)
