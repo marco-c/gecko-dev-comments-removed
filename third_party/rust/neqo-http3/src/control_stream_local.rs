@@ -4,7 +4,10 @@
 
 
 
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    fmt::{self, Display, Formatter},
+};
 
 use neqo_common::{qtrace, Encoder};
 use neqo_transport::{Connection, StreamId, StreamType};
@@ -21,8 +24,8 @@ pub struct ControlStreamLocal {
     outstanding_priority_update: VecDeque<StreamId>,
 }
 
-impl ::std::fmt::Display for ControlStreamLocal {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl Display for ControlStreamLocal {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "Local control stream {:?}", self.stream)
     }
 }

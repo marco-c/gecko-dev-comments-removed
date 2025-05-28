@@ -39,9 +39,9 @@ const RECV_BUF_SIZE: usize = u16::MAX as usize;
 
 
 
-#[cfg(not(apple))]
+#[cfg(not(all(apple, feature = "fast-apple-datapath")))]
 const NUM_BUFS: usize = 1;
-#[cfg(apple)]
+#[cfg(all(apple, feature = "fast-apple-datapath"))]
 
 const NUM_BUFS: usize = 16;
 
@@ -294,7 +294,10 @@ mod tests {
 
     
     #[test]
-    #[cfg_attr(not(any(target_os = "linux", target_os = "windows")), ignore)]
+    #[cfg_attr(
+        not(any(target_os = "linux", target_os = "windows")),
+        ignore = "GRO not available"
+    )]
     fn many_datagrams_through_gro() -> Result<(), io::Error> {
         const SEGMENT_SIZE: usize = 128;
 

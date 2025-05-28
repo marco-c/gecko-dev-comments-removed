@@ -4,6 +4,8 @@
 
 
 
+use std::fmt::{self, Display, Formatter};
+
 use neqo_common::qdebug;
 use neqo_transport::{Connection, StreamId};
 
@@ -20,8 +22,8 @@ pub struct ControlStreamRemote {
     frame_reader: FrameReader,
 }
 
-impl ::std::fmt::Display for ControlStreamRemote {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl Display for ControlStreamRemote {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "Http3 remote control stream {:?}", self.stream_id)
     }
 }

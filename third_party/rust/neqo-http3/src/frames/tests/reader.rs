@@ -4,7 +4,7 @@
 
 
 
-use std::fmt::Debug;
+use std::{cmp::min, fmt::Debug};
 
 use neqo_common::Encoder;
 use neqo_transport::{Connection, StreamId, StreamType};
@@ -277,7 +277,7 @@ fn complete_and_incomplete_unknown_frame() {
     let mut buf: Vec<_> = enc.into();
     buf.resize(UNKNOWN_FRAME_LEN + buf.len(), 0);
 
-    let len = std::cmp::min(buf.len() - 1, 10);
+    let len = min(buf.len() - 1, 10);
     for i in 1..len {
         test_reading_frame::<HFrame>(
             &buf[..i],
@@ -321,7 +321,7 @@ fn test_complete_and_incomplete_frame<T: FrameDecoder<T> + PartialEq + Debug>(
     
     
     
-    let len = std::cmp::min(buf.len() - 1, 10);
+    let len = min(buf.len() - 1, 10);
     for i in 1..len {
         test_reading_frame::<T>(
             &buf[..i],

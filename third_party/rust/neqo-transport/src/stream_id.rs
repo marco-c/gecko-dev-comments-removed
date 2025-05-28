@@ -6,6 +6,8 @@
 
 
 
+use std::fmt::{self, Display, Formatter};
+
 use neqo_common::Role;
 
 
@@ -144,8 +146,8 @@ impl AsRef<u64> for StreamId {
     }
 }
 
-impl ::std::fmt::Display for StreamId {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl Display for StreamId {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.as_u64())
     }
 }

@@ -36,32 +36,32 @@ pub struct SharedArgs {
     
     
     
-    pub alpn: String,
+    alpn: String,
 
     #[arg(name = "qlog-dir", long, value_parser=clap::value_parser!(PathBuf))]
     
-    pub qlog_dir: Option<PathBuf>,
+    qlog_dir: Option<PathBuf>,
 
     #[arg(name = "encoder-table-size", long, default_value = "16384")]
-    pub max_table_size_encoder: u64,
+    max_table_size_encoder: u64,
 
     #[arg(name = "decoder-table-size", long, default_value = "16384")]
-    pub max_table_size_decoder: u64,
+    max_table_size_decoder: u64,
 
     #[arg(name = "max-blocked-streams", short = 'b', long, default_value = "10")]
-    pub max_blocked_streams: u16,
+    max_blocked_streams: u16,
 
     #[arg(short = 'c', long, number_of_values = 1)]
     
     
-    pub ciphers: Vec<String>,
+    ciphers: Vec<String>,
 
     #[arg(name = "qns-test", long)]
     
-    pub qns_test: Option<String>,
+    qns_test: Option<String>,
 
     #[command(flatten)]
-    pub quic_parameters: QuicParameters,
+    quic_parameters: QuicParameters,
 }
 
 #[cfg(any(test, feature = "bench"))]

@@ -106,11 +106,6 @@ impl SentPacket {
     }
 
     
-    #[allow(
-        clippy::allow_attributes,
-        clippy::missing_const_for_fn,
-        reason = "TODO: False positive on nightly."
-    )]
     #[must_use]
     pub fn tokens(&self) -> &[RecoveryToken] {
         &self.tokens

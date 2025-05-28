@@ -4,7 +4,10 @@
 
 
 
-use std::mem;
+use std::{
+    fmt::{self, Display, Formatter},
+    mem,
+};
 
 use neqo_common::{qdebug, qtrace};
 use neqo_transport::StreamId;
@@ -69,8 +72,8 @@ pub struct DecoderInstructionReader {
     instruction: DecoderInstruction,
 }
 
-impl ::std::fmt::Display for DecoderInstructionReader {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl Display for DecoderInstructionReader {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "InstructionReader")
     }
 }

@@ -239,7 +239,7 @@ impl DerefMut for DscpCount {
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct Stats {
-    info: String,
+    pub info: String,
 
     
     pub packets_rx: usize,
