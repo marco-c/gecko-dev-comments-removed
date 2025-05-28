@@ -9,6 +9,7 @@
 #include "AccessibleCaretLogger.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BuiltInStyleSheets.h"
+#include "mozilla/Components.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/PresShell.h"
@@ -24,6 +25,7 @@
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
+#include "nsIPrefetchService.h"
 
 namespace mozilla {
 using namespace dom;
@@ -215,6 +217,12 @@ void AccessibleCaret::CreateCaretElement() const {
 
   ShadowRoot* root = mCaretElementHolder->Root();
   Document* doc = host.OwnerDoc();
+  {
+    
+    
+    nsCOMPtr<nsIPrefetchService> prefetchService(components::Prefetch::Service());
+    Unused << prefetchService;
+  }
   root->AppendBuiltInStyleSheet(BuiltInStyleSheet::AccessibleCaret);
 
   auto CreateAndAppendChildElement = [&](const nsLiteralString& aElementId) {
