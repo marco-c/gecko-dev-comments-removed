@@ -5215,7 +5215,7 @@ class _CardGrid extends (external_React_default()).PureComponent {
     let editorsPicksCards = [];
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
-      cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache.DiscoveryStream ? external_React_default().createElement(PlaceholderDSCard, {
+      cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache.App ? external_React_default().createElement(PlaceholderDSCard, {
         key: `dscard-${index}`
       }) : external_React_default().createElement(DSCard, {
         key: `dscard-${rec.id}`,
@@ -7394,9 +7394,6 @@ const INITIAL_STATE = {
     locale: "",
     isForStartupCache: {
       App: false,
-      TopSites: false,
-      DiscoveryStream: false,
-      Weather: false,
       Wallpaper: false,
     },
     customizeMenuVisible: false,
@@ -7558,24 +7555,14 @@ function App(prevState = INITIAL_STATE.App, action) {
       
       return {
         ...prevState,
-        isForStartupCache: { ...prevState.isForStartupCache, TopSites: false },
+        isForStartupCache: { ...prevState.isForStartupCache, App: false },
       };
     case actionTypes.DISCOVERY_STREAM_SPOCS_UPDATE:
       
       
       return {
         ...prevState,
-        isForStartupCache: {
-          ...prevState.isForStartupCache,
-          DiscoveryStream: false,
-        },
-      };
-    case actionTypes.WEATHER_UPDATE:
-      
-      
-      return {
-        ...prevState,
-        isForStartupCache: { ...prevState.isForStartupCache, Weather: false },
+        isForStartupCache: { ...prevState.isForStartupCache, App: false },
       };
     case actionTypes.WALLPAPERS_CUSTOM_SET:
       
@@ -9540,7 +9527,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       let topSiteLink;
       
       
-      if (!link || props.App.isForStartupCache.TopSites && isSponsored(link) || topSites[i]?.isAddButton) {
+      if (!link || props.App.isForStartupCache.App && isSponsored(link) || topSites[i]?.isAddButton) {
         if (link) {
           topSiteLink = external_React_default().createElement(TopSitePlaceholder, TopSite_extends({}, slotProps, commonProps, {
             isAddButton: topSites[i] && topSites[i].isAddButton,
@@ -13622,7 +13609,7 @@ class _Weather extends (external_React_default()).PureComponent {
     if (!isWeatherEnabled) {
       return false;
     }
-    if (this.props.App.isForStartupCache.Weather || !this.props.Weather.initialized) {
+    if (!this.props.Weather.initialized) {
       return external_React_default().createElement(WeatherPlaceholder, null);
     }
     const {
@@ -13719,7 +13706,6 @@ class _Weather extends (external_React_default()).PureComponent {
   }
 }
 const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  App: state.App,
   Weather: state.Weather,
   Prefs: state.Prefs,
   IntersectionObserver: globalThis.IntersectionObserver,
@@ -15238,7 +15224,6 @@ function renderWithoutState() {
   }), document.getElementById("root"));
 }
 function renderCache(initialState) {
-  initialState.App.isForStartupCache.App = false;
   const store = initStore(reducers, initialState);
   new DetectUserSessionStart(store).sendEventOrAddListener();
   doRequestWhenReady().then(() => {
