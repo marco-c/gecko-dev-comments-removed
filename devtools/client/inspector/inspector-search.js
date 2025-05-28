@@ -202,6 +202,11 @@ class SelectorAutocompleter extends EventEmitter {
     ID: "id",
     TAG: "tag",
     ATTRIBUTE: "attribute",
+    
+    
+    PSEUDO_CLASS: "pseudo",
+    
+    PSEUDO_ELEMENT: "pseudo-element",
   };
 
   
@@ -263,6 +268,10 @@ class SelectorAutocompleter extends EventEmitter {
             this.#state = this.States.ID;
           } else if (lastChar === "[") {
             this.#state = this.States.ATTRIBUTE;
+          } else if (lastChar === ":") {
+            this.#state = this.States.PSEUDO_CLASS;
+          } else if (lastChar === ")") {
+            this.#state = null;
           } else {
             this.#state = this.States.TAG;
           }
@@ -278,6 +287,10 @@ class SelectorAutocompleter extends EventEmitter {
               this.#state = this.States.ID;
             } else if (lastChar === "[") {
               this.#state = this.States.ATTRIBUTE;
+            } else if (lastChar === ":") {
+              this.#state = this.States.PSEUDO_CLASS;
+            } else if (lastChar === ")") {
+              this.#state = null;
             } else {
               this.#state = this.States.CLASS;
             }
@@ -294,6 +307,10 @@ class SelectorAutocompleter extends EventEmitter {
               this.#state = this.States.CLASS;
             } else if (lastChar === "[") {
               this.#state = this.States.ATTRIBUTE;
+            } else if (lastChar === ":") {
+              this.#state = this.States.PSEUDO_CLASS;
+            } else if (lastChar === ")") {
+              this.#state = null;
             } else {
               this.#state = this.States.ID;
             }
@@ -309,9 +326,32 @@ class SelectorAutocompleter extends EventEmitter {
               this.#state = this.States.CLASS;
             } else if (lastChar === "#") {
               this.#state = this.States.ID;
+            } else if (lastChar === ":") {
+              this.#state = this.States.PSEUDO_CLASS;
+            } else if (lastChar === ")") {
+              this.#state = null;
             } else {
               this.#state = this.States.ATTRIBUTE;
             }
+          }
+          break;
+
+        case this.States.PSEUDO_CLASS:
+          if (lastChar === ":" && secondLastChar === ":") {
+            
+            
+            this.#state = this.States.PSEUDO_ELEMENT;
+            return this.#state;
+          }
+
+          if (lastChar === "(") {
+            this.#state = null;
+          } else if (lastChar === ".") {
+            this.#state = this.States.CLASS;
+          } else if (lastChar === "#") {
+            this.#state = this.States.ID;
+          } else {
+            this.#state = this.States.PSEUDO_CLASS;
           }
           break;
       }
@@ -417,7 +457,9 @@ class SelectorAutocompleter extends EventEmitter {
     const items = [];
 
     for (let [value, state] of suggestions) {
-      if (query.match(/[\s>+~]$/)) {
+      if (popupState === this.States.PSEUDO_CLASS) {
+        value = query.substring(0, query.lastIndexOf(":")) + value;
+      } else if (query.match(/[\s>+~]$/)) {
         
         value = query + value;
       } else if (query.match(/[\s>+~][\.#a-zA-Z][^\s>+~\.#\[]*$/)) {
@@ -487,12 +529,17 @@ class SelectorAutocompleter extends EventEmitter {
     const originalQuery = this.searchBox.value;
 
     const state = this.state;
-    let firstPart = "";
+    let completing = "";
 
-    if (query.endsWith("*") || state === this.States.ATTRIBUTE) {
+    if (
       
       
+      query.endsWith("*") ||
       
+      state === this.States.ATTRIBUTE ||
+      
+      state === this.States.PSEUDO_ELEMENT
+    ) {
       this.hidePopup();
       this.emitForTests("processing-done", { query: originalQuery });
       return;
@@ -507,16 +554,20 @@ class SelectorAutocompleter extends EventEmitter {
       
       
       const matches = query.match(/[\s>+~]?(?<tag>[a-zA-Z0-9_-]*)$/);
-      firstPart = matches.groups.tag;
-      query = query.slice(0, query.length - firstPart.length);
+      completing = matches.groups.tag;
+      query = query.slice(0, query.length - completing.length);
     } else if (state === this.States.CLASS) {
       
-      firstPart = query.match(/\.([^\.]*)$/)[1];
-      query = query.slice(0, query.length - firstPart.length - 1);
+      completing = query.match(/\.([^\.]*)$/)[1];
+      query = query.slice(0, query.length - completing.length - 1);
     } else if (state === this.States.ID) {
       
-      firstPart = query.match(/#([^#]*)$/)[1];
-      query = query.slice(0, query.length - firstPart.length - 1);
+      completing = query.match(/#([^#]*)$/)[1];
+      query = query.slice(0, query.length - completing.length - 1);
+    } else if (state === this.States.PSEUDO_CLASS) {
+      
+      completing = query.substring(query.lastIndexOf(":") + 1);
+      query = "";
     }
     
     
@@ -527,19 +578,25 @@ class SelectorAutocompleter extends EventEmitter {
     let suggestions =
       await this.inspector.commands.inspectorCommand.getSuggestionsForQuery(
         query,
-        firstPart,
+        completing,
         state
       );
 
     if (state === this.States.CLASS) {
-      firstPart = "." + firstPart;
+      completing = "." + completing;
     } else if (state === this.States.ID) {
-      firstPart = "#" + firstPart;
+      completing = "#" + completing;
+    } else if (state === this.States.PSEUDO_CLASS) {
+      completing = ":" + completing;
+      
+      suggestions = suggestions.filter(
+        suggestion => !suggestion[0].startsWith("::")
+      );
     }
 
     
     
-    if (suggestions.length === 1 && suggestions[0][0] === firstPart) {
+    if (suggestions.length === 1 && suggestions[0][0] === completing) {
       suggestions = [];
     }
 
