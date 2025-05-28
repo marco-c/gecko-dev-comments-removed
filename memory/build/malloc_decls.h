@@ -163,7 +163,7 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
 #    ifdef __cplusplus
-MALLOC_DECL(moz_may_purge_now, purge_result_t, bool, uint32_t,
+MALLOC_DECL(moz_may_purge_now, may_purge_now_result_t, bool, uint32_t,
             const mozilla::Maybe<std::function<bool()>>&)
 #    endif
 

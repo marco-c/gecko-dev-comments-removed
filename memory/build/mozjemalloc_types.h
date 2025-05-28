@@ -221,7 +221,7 @@ static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
 }
 
 
-enum purge_result_t {
+enum may_purge_now_result_t {
   
   Done,
 

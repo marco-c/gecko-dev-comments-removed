@@ -955,7 +955,7 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
   auto result =
       moz_may_purge_now( true, reuseGracePeriod, Nothing());
   switch (result) {
-    case purge_result_t::Done:
+    case may_purge_now_result_t::Done:
       
       
       
@@ -970,7 +970,7 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
         CancelIdleMemoryCleanupTimerAndRunner();
       }
       break;
-    case purge_result_t::WantsLater:
+    case may_purge_now_result_t::WantsLater:
       if (!sIdleMemoryCleanupWantsLaterScheduled) {
         PROFILER_MARKER_TEXT(
             ProfilerString8View::WrapNullTerminatedString(name), OTHER, {},
@@ -980,7 +980,7 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
       
       ScheduleWantsLaterTimer(wantsLaterDelay);
       break;
-    case purge_result_t::NeedsMore:
+    case may_purge_now_result_t::NeedsMore:
       
       
       if (!sIdleMemoryCleanupRunner) {
@@ -1015,28 +1015,28 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
   uint32_t reuseGracePeriod =
       StaticPrefs::memory_lazypurge_reuse_grace_period();
 
-  purge_result_t result;
+  may_purge_now_result_t result;
   do {
     result = moz_may_purge_now(
          false, reuseGracePeriod, Some([aDeadline] {
           return aDeadline.IsNull() || TimeStamp::Now() <= aDeadline;
         }));
-  } while ((result == purge_result_t::NeedsMore) &&
+  } while ((result == may_purge_now_result_t::NeedsMore) &&
            (aDeadline.IsNull() || TimeStamp::Now() <= aDeadline));
 
   switch (result) {
-    case purge_result_t::Done:
+    case may_purge_now_result_t::Done:
       PROFILER_MARKER_TEXT("RunIdleMemoryCleanup", OTHER, {},
                            "Done (Cancel timer and runner)"_ns);
       CancelIdleMemoryCleanupTimerAndRunner();
       break;
-    case purge_result_t::WantsLater:
+    case may_purge_now_result_t::WantsLater:
       PROFILER_MARKER_TEXT(
           "RunIdleMemoryCleanup", OTHER, {},
           "WantsLater (First schedule of low priority timer)"_ns);
       ScheduleWantsLaterTimer(aWantsLaterDelay);
       break;
-    case purge_result_t::NeedsMore:
+    case may_purge_now_result_t::NeedsMore:
       PROFILER_MARKER_TEXT("RunIdleMemoryCleanup", OTHER, {},
                            "NeedsMore (wait for next idle slice)."_ns);
       break;
