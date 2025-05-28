@@ -3,7 +3,7 @@
 
 
 const { Interactions } = ChromeUtils.importESModule(
-  "resource:///modules/Interactions.sys.mjs"
+  "moz-src:///browser/components/places/Interactions.sys.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {

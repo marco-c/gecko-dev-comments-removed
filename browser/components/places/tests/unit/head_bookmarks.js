@@ -17,7 +17,7 @@ if (commonFile) {
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
+  PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
 });
 
 
