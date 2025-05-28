@@ -3169,11 +3169,6 @@ pref("devtools.debugger.hide-ignored-sources", false);
 
 
 
-pref("devtools.debugger.features.codemirror-next", true);
-
-
-
-
 pref("devtools.popup.disable_autohide", false);
 
 
