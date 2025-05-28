@@ -74,6 +74,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                              public nsIReflowCallback,
                              public nsIStatefulFrame {
  public:
+  using CSSPoint = mozilla::CSSPoint;
   using Element = dom::Element;
   using ScrollAnchorContainer = layout::ScrollAnchorContainer;
   using SnapTargetSet = nsTHashSet<RefPtr<nsIContent>>;
@@ -433,7 +434,7 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
+  void ScrollToCSSPixels(const CSSPoint& aScrollPosition,
                          ScrollMode aMode = ScrollMode::Instant);
 
   
@@ -452,6 +453,13 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
   CSSIntPoint GetRoundedScrollPositionCSSPixels();
+
+  
+
+
+  CSSPoint GetScrollPositionCSSPixels() const {
+    return CSSPoint::FromAppUnits(GetScrollPosition());
+  }
 
   
 
@@ -479,7 +487,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                 ScrollMomentum aMomentum = NOT_MOMENTUM,
                 ScrollSnapFlags aSnapFlags = ScrollSnapFlags::Disabled);
 
-  void ScrollByCSSPixels(const CSSIntPoint& aDelta,
+  void ScrollByCSSPixels(const CSSPoint& aDelta,
                          ScrollMode aMode = ScrollMode::Instant) {
     return ScrollByCSSPixelsInternal(aDelta, aMode);
   }
@@ -855,7 +863,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                                             StyleScrollbarWidth);
 
   void ScrollByCSSPixelsInternal(
-      const CSSIntPoint& aDelta, ScrollMode aMode = ScrollMode::Instant,
+      const CSSPoint& aDelta, ScrollMode aMode = ScrollMode::Instant,
       
       
       
@@ -1311,10 +1319,6 @@ class ScrollContainerFrame : public nsContainerFrame,
     }
     ScheduleScrollAnimations();
     mMayScheduleScrollAnimations = false;
-  }
-
-  CSSPoint GetScrollPositionCSSPixels() const {
-    return CSSPoint::FromAppUnits(GetScrollPosition());
   }
 
   static void RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure);
