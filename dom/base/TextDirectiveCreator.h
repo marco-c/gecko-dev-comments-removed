@@ -112,6 +112,36 @@ class TextDirectiveCreator {
 
   virtual void CollectContextTermWordBoundaryDistances() = 0;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual Result<Ok, ErrorResult> FindAllMatchingCandidates() = 0;
+
+  
+
+
+
+
+
+
+
+
+  Result<nsTArray<RefPtr<AbstractRange>>, ErrorResult> FindAllMatchingRanges(
+      const nsString& aSearchQuery, const RangeBoundary& aSearchStart,
+      const RangeBoundary& aSearchEnd);
+
   nsString mPrefixContent;
   nsString mPrefixFoldCaseContent;
   nsTArray<uint32_t> mPrefixWordBeginDistances;
@@ -134,6 +164,8 @@ class TextDirectiveCreator {
 
 
   TimeoutWatchdog mWatchdog;
+
+  nsContentUtils::NodeIndexCache mNodeIndexCache;
 };
 
 
@@ -148,11 +180,22 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
 
   void CollectContextTermWordBoundaryDistances() override;
 
+  Result<Ok, ErrorResult> FindAllMatchingCandidates() override;
+
+  void FindStartMatchCommonSubstringLengths(
+      const nsTArray<RefPtr<AbstractRange>>& aMatchRanges);
+
+  void FindEndMatchCommonSubstringLengths(
+      const nsTArray<RefPtr<AbstractRange>>& aMatchRanges);
+
   nsString mEndContent;
   nsString mEndFoldCaseContent;
 
   nsTArray<uint32_t> mStartWordEndDistances;
   nsTArray<uint32_t> mEndWordBeginDistances;
+
+  nsTArray<std::tuple<uint32_t, uint32_t>> mStartMatchCommonSubstringLengths;
+  nsTArray<std::tuple<uint32_t, uint32_t>> mEndMatchCommonSubstringLengths;
 };
 
 
@@ -166,6 +209,13 @@ class ExactMatchTextDirectiveCreator : public TextDirectiveCreator {
   Result<Ok, ErrorResult> CollectContextTerms() override;
 
   void CollectContextTermWordBoundaryDistances() override;
+
+  Result<Ok, ErrorResult> FindAllMatchingCandidates() override;
+
+  void FindCommonSubstringLengths(
+      const nsTArray<RefPtr<AbstractRange>>& aMatchRanges);
+
+  nsTArray<std::tuple<uint32_t, uint32_t>> mCommonSubstringLengths;
 };
 }  
 #endif
