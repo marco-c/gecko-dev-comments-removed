@@ -2,9 +2,24 @@
 
 
 
+
 'use strict';
 
 promise_test(async () => {
   assert_true(!!Summarizer);
   assert_equals(typeof Summarizer.create, 'function');
 }, 'Summarizer.create() is defined');
+
+promise_test(async t => {
+  
+  await promise_rejects_dom(t, 'NotAllowedError', Summarizer.create());
+
+  
+  await createSummarizer();
+
+  
+  assert_equals(await Summarizer.availability(), 'available');
+
+  
+  await Summarizer.create();
+}, 'Summarizer.create() requires user activation when availability is "downloadable."');

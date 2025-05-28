@@ -2,16 +2,19 @@
 
 
 
+
 'use strict';
 
 promise_test(async (t) => {
   const iframe = document.body.appendChild(document.createElement('iframe'));
+  await test_driver.bless('Rewriter create()', null, iframe.contentWindow);
   iframe.contentWindow.Rewriter.create();
   iframe.remove();
 }, 'Detaching iframe during Rewriter.create() should not leak memory');
 
 promise_test(async (t) => {
   const iframe = document.body.appendChild(document.createElement('iframe'));
+  await test_driver.bless('Rewriter create()', null, iframe.contentWindow);
   const iframeWindow = iframe.contentWindow;
   const iframeDOMException = iframeWindow.DOMException;
   const iframeRewriter = iframeWindow.Rewriter;
@@ -23,6 +26,7 @@ promise_test(async (t) => {
 
 promise_test(async (t) => {
   const iframe = document.body.appendChild(document.createElement('iframe'));
+  await test_driver.bless('Rewriter create()', null, iframe.contentWindow);
   const iframeDOMException = iframe.contentWindow.DOMException;
   const rewriter = await iframe.contentWindow.Rewriter.create();
   iframe.remove();
@@ -33,6 +37,7 @@ promise_test(async (t) => {
 
 promise_test(async (t) => {
   const iframe = document.body.appendChild(document.createElement('iframe'));
+  await test_driver.bless('Rewriter create()', null, iframe.contentWindow);
   const iframeWindow = iframe.contentWindow;
   const iframeDOMException = iframeWindow.DOMException;
   const rewriter = await iframeWindow.Rewriter.create();
@@ -44,6 +49,7 @@ promise_test(async (t) => {
 
 promise_test(async (t) => {
   const iframe = document.body.appendChild(document.createElement('iframe'));
+  await test_driver.bless('Rewriter create()', null, iframe.contentWindow);
   const rewriter = await iframe.contentWindow.Rewriter.create();
   rewriter.rewrite('hello');
   iframe.remove();

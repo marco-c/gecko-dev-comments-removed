@@ -2,10 +2,11 @@
 
 
 
+
 'use strict';
 
 promise_test(async () => {
-  const summarizer = await Summarizer.create();
+  const summarizer = await createSummarizer();
   const result = await summarizer.measureInputUsage(kTestPrompt);
   assert_equals(typeof result, 'number');
   assert_greater_than(result, 0);
