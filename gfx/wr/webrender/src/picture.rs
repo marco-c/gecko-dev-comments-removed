@@ -2617,6 +2617,7 @@ impl TileCacheInstance {
         surface_kind: CompositorSurfaceKind,
         pic_coverage_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
+        force: bool,
     ) -> Result<CompositorSurfaceKind, SurfacePromotionFailure> {
         use crate::picture::SurfacePromotionFailure::*;
 
@@ -2643,7 +2644,14 @@ impl TileCacheInstance {
                     
                     
                     if !self.backdrop.opaque_rect.contains_box(&pic_coverage_rect) {
-                        return Err(UnderlayAlphaBackdrop);
+                        let result = Err(UnderlayAlphaBackdrop);
+                        
+                        if !force {
+                            return result;
+                        }
+
+                        
+                        self.report_promotion_failure(result, pic_coverage_rect, true);
                     }
 
                     
@@ -2655,7 +2663,14 @@ impl TileCacheInstance {
                 
                 
                 if self.overlay_region.intersects(&pic_coverage_rect) {
-                    return Err(UnderlayIntersectsOverlay);
+                    let result = Err(UnderlayIntersectsOverlay);
+                    
+                    if !force {
+                        return result;
+                    }
+
+                    
+                    self.report_promotion_failure(result, pic_coverage_rect, true);
                 }
 
                 
@@ -2683,7 +2698,14 @@ impl TileCacheInstance {
             &frame_context.spatial_tree);
         let transform = mapper.get_transform();
         if !transform.is_2d_scale_translation() {
-            return Err(ComplexTransform);
+            let result = Err(ComplexTransform);
+            
+            if !force {
+                return result;
+            }
+
+            
+            self.report_promotion_failure(result, pic_coverage_rect, true);
         }
 
         if self.slice_flags.contains(SliceFlags::IS_ATOMIC) {
@@ -3099,18 +3121,18 @@ impl TileCacheInstance {
         self.current_surface_traversal_depth -= 1;
     }
 
-    fn maybe_report_promotion_failure(&self,
-                                  result: Result<CompositorSurfaceKind, SurfacePromotionFailure>,
-                                  rect: PictureRect,
-                                  reported: &mut bool) {
-        if !self.debug_flags.contains(DebugFlags::SURFACE_PROMOTION_LOGGING) || result.is_ok() || *reported {
+    fn report_promotion_failure(&self,
+                                result: Result<CompositorSurfaceKind, SurfacePromotionFailure>,
+                                rect: PictureRect,
+                                ignored: bool) {
+        if !self.debug_flags.contains(DebugFlags::SURFACE_PROMOTION_LOGGING) || result.is_ok() {
             return;
         }
 
         
         
-        warn!("Surface promotion of prim at {:?} failed with: {}.", rect, result.unwrap_err());
-        *reported = true;
+        let outcome = if ignored { "failure ignored" } else { "failed" };
+        warn!("Surface promotion of prim at {:?} {outcome} with: {}.", rect, result.unwrap_err());
     }
 
     
@@ -3270,8 +3292,6 @@ impl TileCacheInstance {
         
         
         
-        let mut promotion_result: Result<CompositorSurfaceKind, SurfacePromotionFailure> = Ok(CompositorSurfaceKind::Blit);
-        let mut promotion_failure_reported = false;
         match prim_instance.kind {
             PrimitiveInstanceKind::Picture { pic_index,.. } => {
                 
@@ -3334,6 +3354,7 @@ impl TileCacheInstance {
                     is_opaque = image_properties.descriptor.is_opaque();
                 }
 
+                let mut promotion_result: Result<CompositorSurfaceKind, SurfacePromotionFailure> = Ok(CompositorSurfaceKind::Blit);
                 if image_key.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
                     
                     
@@ -3346,7 +3367,8 @@ impl TileCacheInstance {
                                                           sub_slice_index,
                                                           CompositorSurfaceKind::Overlay,
                                                           pic_coverage_rect,
-                                                          frame_context);
+                                                          frame_context,
+                                                          false);
                     }
 
                     
@@ -3390,6 +3412,7 @@ impl TileCacheInstance {
                     assert!(kind == CompositorSurfaceKind::Blit, "Image prims should either be overlays or blits.");
                 } else {
                     
+                    self.report_promotion_failure(promotion_result, pic_coverage_rect, false);
                     *compositor_surface_kind = CompositorSurfaceKind::Blit;
                 }
 
@@ -3405,6 +3428,7 @@ impl TileCacheInstance {
             PrimitiveInstanceKind::YuvImage { data_handle, ref mut compositor_surface_kind, .. } => {
                 let prim_data = &data_stores.yuv_image[data_handle];
 
+                let mut promotion_result: Result<CompositorSurfaceKind, SurfacePromotionFailure> = Ok(CompositorSurfaceKind::Blit);
                 if prim_data.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
                     
                     
@@ -3414,6 +3438,10 @@ impl TileCacheInstance {
                     if is_root_tile_cache {
                         self.yuv_images_remaining -= 1;
                     }
+
+                    
+                    
+                    let force = prim_data.kind.color_depth.bit_depth() > 8;
 
                     let clip_on_top = prim_clip_chain.needs_mask;
                     let prefer_underlay = clip_on_top || !cfg!(target_os = "macos");
@@ -3426,7 +3454,6 @@ impl TileCacheInstance {
                     for kind in promotion_attempts {
                         
                         
-                        promotion_failure_reported = false;
                         promotion_result = self.can_promote_to_surface(
                                                     prim_clip_chain,
                                                     prim_spatial_node_index,
@@ -3434,7 +3461,8 @@ impl TileCacheInstance {
                                                     sub_slice_index,
                                                     kind,
                                                     pic_coverage_rect,
-                                                    frame_context);
+                                                    frame_context,
+                                                    force);
                         if promotion_result.is_ok() {
                             break;
                         }
@@ -3450,9 +3478,7 @@ impl TileCacheInstance {
                                 break;
                             }
                         }
-
-                        self.maybe_report_promotion_failure(promotion_result, pic_coverage_rect, &mut promotion_failure_reported);
-                    }
+                   }
 
                     
                     
@@ -3508,6 +3534,7 @@ impl TileCacheInstance {
                     profile.inc(profiler::COMPOSITOR_SURFACE_UNDERLAYS);
                 } else {
                     
+                    self.report_promotion_failure(promotion_result, pic_coverage_rect, false);
                     *compositor_surface_kind = CompositorSurfaceKind::Blit;
                     if prim_data.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
                         profile.inc(profiler::COMPOSITOR_SURFACE_BLITS);
@@ -3625,8 +3652,6 @@ impl TileCacheInstance {
                 
             }
         };
-
-        self.maybe_report_promotion_failure(promotion_result, pic_coverage_rect, &mut promotion_failure_reported);
 
         
         
