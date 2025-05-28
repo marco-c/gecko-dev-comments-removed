@@ -295,9 +295,9 @@ const uint64_t LAST_ENTRY = CURRENT;
 
 
 
-const uint64_t kRemoteCalculatedStates =
-    states::FOCUSED | states::INVISIBLE | states::OFFSCREEN | states::ENABLED |
-    states::SENSITIVE | states::COLLAPSED | states::OPAQUE1;
+const uint64_t kRemoteCalculatedStates = states::FOCUSED | states::INVISIBLE |
+                                         states::OFFSCREEN | states::SENSITIVE |
+                                         states::OPAQUE1;
 
 }  
 }  
