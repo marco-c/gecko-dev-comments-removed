@@ -228,6 +228,9 @@ class PausedDebuggerOverlay {
     
     
     this.env.window.document.setSuppressedEventListener(this);
+    
+    
+    this.env.window.document.documentElement?.getBoundingClientRect();
     return true;
   }
 

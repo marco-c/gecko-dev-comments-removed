@@ -89,8 +89,7 @@ class EventLoop {
     
     
     if (xpcInspector.eventLoopNestLevel > 0) {
-      const { resolved } = xpcInspector.lastNestRequestor;
-      if (resolved) {
+      if (xpcInspector.lastNestRequestor.resolved) {
         xpcInspector.exitNestedEventLoop();
       }
     }
@@ -198,29 +197,40 @@ class EventLoop {
 
 
   preEnter() {
-    const docShells = [];
+    const preEnterData = [];
     
     for (const window of this.getAllWindowDebuggees()) {
-      const { windowUtils } = window;
+      const { windowUtils, document } = window;
+      const wasPaused = !!document?.pausedByDevTools;
+      if (document) {
+        document.pausedByDevTools = true;
+      }
       windowUtils.suppressEventHandling(true);
       windowUtils.suspendTimeouts();
-      docShells.push(window.docShell);
+      preEnterData.push({
+        docShell: window.docShell,
+        wasPaused,
+      });
     }
-    return docShells;
+    return preEnterData;
   }
 
   
 
 
-  postExit(pausedDocShells) {
+  postExit(preEnterData) {
     
-    for (const docShell of pausedDocShells) {
+    for (const { docShell, wasPaused } of preEnterData) {
       
       
       if (docShell.isBeingDestroyed()) {
         continue;
       }
-      const { windowUtils } = docShell.domWindow;
+      const window = docShell.domWindow;
+      const { windowUtils, document } = window;
+      if (document) {
+        document.pausedByDevTools = wasPaused;
+      }
       windowUtils.resumeTimeouts();
       windowUtils.suppressEventHandling(false);
     }

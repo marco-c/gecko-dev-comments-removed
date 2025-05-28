@@ -3609,17 +3609,17 @@ class Document : public nsINode,
   void SetStyleSheetChangeEventsEnabled(bool aValue) {
     mStyleSheetChangeEventsEnabled = aValue;
   }
-
   bool StyleSheetChangeEventsEnabled() const {
     return mStyleSheetChangeEventsEnabled;
   }
-
   void SetDevToolsAnonymousAndShadowEventsEnabled(bool aValue) {
     mDevToolsAnonymousAndShadowEventsEnabled = aValue;
   }
   bool DevToolsAnonymousAndShadowEventsEnabled() const {
     return mDevToolsAnonymousAndShadowEventsEnabled;
   }
+  void SetPausedByDevTools(bool aValue) { mPausedByDevTools = aValue; }
+  bool PausedByDevTools() const { return mPausedByDevTools; }
 
   already_AddRefed<Promise> BlockParsing(Promise& aPromise,
                                          const BlockParsingOptions& aOptions,
@@ -4888,6 +4888,10 @@ class Document : public nsINode,
   
   
   bool mDevToolsAnonymousAndShadowEventsEnabled : 1;
+
+  
+  
+  bool mPausedByDevTools : 1;
 
   
   bool mIsSrcdocDocument : 1;
