@@ -4767,14 +4767,29 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   
 
-#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
+#  if defined(MOZ_X11)
   
   
   
   
-  const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
-  if (!useXI2 || (*useXI2 == '0')) gdk_disable_multidevice();
-#  endif
+  int32_t useXI2 = 0;
+  if (const char* useXI2Env = PR_GetEnv("MOZ_USE_XINPUT2")) {
+    useXI2 = (*useXI2Env != '0');
+  } else {
+    
+    if (const char* currentDesktop = PR_GetEnv("XDG_CURRENT_DESKTOP")) {
+      useXI2 |= (nsDependentCString(currentDesktop) == "gamescope"_ns);
+    }
+#    ifdef NIGHTLY_BUILD
+    
+    
+    useXI2 |= !gtk_check_version(3, 24, 49);
+#    endif
+  }
+  if (!useXI2) {
+    gdk_disable_multidevice();
+  }
+#  endif 
 
   
   
