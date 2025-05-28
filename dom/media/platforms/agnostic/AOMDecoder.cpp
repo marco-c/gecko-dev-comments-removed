@@ -565,13 +565,13 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
       op.mLevel = br.ReadBits(5);    
       op.mTier = op.mLevel > 7 ? br.ReadBits(1) : 0;
       if (decoder_model_info_present_flag) {
-        if (br.ReadBit()) {
+        if (br.ReadBit()) {  
           
           
           uint8_t n = buffer_delay_length_minus_1 + 1;
-          br.ReadBits(n); 
-          br.ReadBits(n); 
-          br.ReadBit();   
+          br.ReadBits(n);  
+          br.ReadBits(n);  
+          br.ReadBit();    
           
         }
       }
@@ -587,8 +587,10 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
   uint8_t frame_width_bits_minus_1 = br.ReadBits(4);
   uint8_t frame_height_bits_minus_1 = br.ReadBits(4);
   uint32_t max_frame_width_minus_1 = br.ReadBits(frame_width_bits_minus_1 + 1);
-  uint32_t max_frame_height_minus_1 = br.ReadBits(frame_height_bits_minus_1 + 1) ;
-  tempInfo.mImage = gfx::IntSize(max_frame_width_minus_1 + 1, max_frame_height_minus_1 + 1);
+  uint32_t max_frame_height_minus_1 =
+      br.ReadBits(frame_height_bits_minus_1 + 1);
+  tempInfo.mImage =
+      gfx::IntSize(max_frame_width_minus_1 + 1, max_frame_height_minus_1 + 1);
 
   if (!reduced_still_picture_header) {
     if (br.ReadBit()) {  
@@ -618,7 +620,7 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
     br.ReadBit();  
     br.ReadBit();  
 
-    const bool enable_order_hint  = br.ReadBit();
+    const bool enable_order_hint = br.ReadBit();
     if (enable_order_hint) {
       br.ReadBit();  
       br.ReadBit();  
