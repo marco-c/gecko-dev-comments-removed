@@ -210,9 +210,10 @@ async function cookie_test(func, description) {
 
   
   async function deleteAllCookies() {
-    (await cookieStore.getAll()).forEach(({name, value}) => {
-      cookieStore.delete(name);
-    });
+    await Promise.all((await cookieStore.getAll()).map(async ({name, value}) => {
+      await cookieStore.delete(name);
+      await cookieStore.delete({name: name, partitioned: true});
+    }));
   }
 
   return promise_test(async t => {
