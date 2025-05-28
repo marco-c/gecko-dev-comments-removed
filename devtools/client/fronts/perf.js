@@ -13,9 +13,6 @@ const {
   registerFront,
 } = require("resource://devtools/shared/protocol.js");
 const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
-const {
-  copyAsyncStreamToArrayBuffer,
-} = require("resource://devtools/shared/transport/stream-utils.js");
 
 class PerfFront extends FrontClassWithSpec(perfSpec) {
   constructor(client, targetFront, parentFront) {
@@ -112,24 +109,18 @@ class PerfFront extends FrontClassWithSpec(perfSpec) {
       );
     }
 
-    try {
-      if (!profileResult.length) {
-        throw new Error(
-          "The profile result is an empty buffer, this is unexpected."
-        );
-      }
-
-      
-      
-      
-      const buffer = new ArrayBuffer(profileResult.length);
-      await copyAsyncStreamToArrayBuffer(profileResult.stream, buffer);
-
-      return buffer;
-    } finally {
-      
-      profileResult.done();
+    if (!profileResult.length) {
+      throw new Error(
+        "The profile result is an empty buffer, this is unexpected."
+      );
     }
+
+    
+    
+    
+    const buffer = new ArrayBuffer(profileResult.length);
+    await profileResult.copyToBuffer(buffer);
+    return buffer;
   }
 }
 

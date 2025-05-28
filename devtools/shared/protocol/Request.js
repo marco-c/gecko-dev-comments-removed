@@ -102,7 +102,14 @@ Request.prototype = {
       
       
       
-      return [{ length: packet.length, copyTo: packet.copyTo }];
+      
+      return [
+        {
+          length: packet.length,
+          copyTo: packet.copyTo,
+          copyToBuffer: packet.copyToBuffer,
+        },
+      ];
     }
 
     const fnArgs = [];

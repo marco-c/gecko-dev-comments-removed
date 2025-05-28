@@ -202,6 +202,16 @@ DevToolsClient.prototype = {
 
 
 
+
+
+
+
+
+
+
+
+
+
   request(packet) {
     if (!this.mainRoot) {
       throw Error("Have not yet received a hello packet from the server.");
@@ -260,6 +270,29 @@ DevToolsClient.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -517,6 +550,16 @@ DevToolsClient.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
 
 
 

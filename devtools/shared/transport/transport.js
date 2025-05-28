@@ -81,6 +81,16 @@ const PACKET_HEADER_MAX = 200;
 
 
 
+
+
+
+
+
+
+
+
+
+
 function DebuggerTransport(input, output) {
   this._input = input;
   this._scriptableInput = new ScriptableInputStream(input);
@@ -120,6 +130,18 @@ DebuggerTransport.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -427,6 +427,16 @@ DevToolsServerConnection.prototype = {
 
 
 
+
+
+
+
+
+
+
+
+
+
   onBulkPacket(packet) {
     const { actor: actorKey, type } = packet;
 
