@@ -2431,6 +2431,9 @@ pub struct StyleBuilder<'a> {
     pub effective_zoom: computed::Zoom,
 
     
+    pub effective_zoom_for_inheritance: computed::Zoom,
+
+    
     pub flags: Cell<ComputedValueFlags>,
 
     
@@ -2469,6 +2472,7 @@ impl<'a> StyleBuilder<'a> {
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: inherited_style.writing_mode,
             effective_zoom: inherited_style.effective_zoom,
+            effective_zoom_for_inheritance: computed::Zoom::ONE,
             color_scheme: inherited_style.get_inherited_ui().color_scheme_bits(),
             flags: Cell::new(flags),
             visited_style: None,
@@ -2509,6 +2513,7 @@ impl<'a> StyleBuilder<'a> {
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: style_to_derive_from.writing_mode,
             effective_zoom: style_to_derive_from.effective_zoom,
+            effective_zoom_for_inheritance: Self::zoom_for_inheritance(style_to_derive_from.get_box().clone_zoom(), inherited_style),
             color_scheme: style_to_derive_from.get_inherited_ui().color_scheme_bits(),
             flags: Cell::new(style_to_derive_from.flags),
             visited_style: None,
@@ -2795,21 +2800,22 @@ impl<'a> StyleBuilder<'a> {
     }
 
     
-    pub fn resolved_specified_zoom(&self) -> computed::Zoom {
-        let zoom = self.specified_zoom();
-        if zoom.is_document() {
-            
-            
-            
-            self.inherited_effective_zoom().inverted().unwrap_or(computed::Zoom::ONE)
-        } else {
-            zoom
-        }
+    
+    pub fn recompute_effective_zooms(&mut self) {
+        let specified = self.specified_zoom();
+        self.effective_zoom = self.inherited_style.effective_zoom.compute_effective(specified);
+        self.effective_zoom_for_inheritance = Self::zoom_for_inheritance(specified, self.inherited_style);
     }
 
-    
-    pub fn inherited_effective_zoom(&self) -> computed::Zoom {
-        self.inherited_style.effective_zoom
+    fn zoom_for_inheritance(specified: computed::Zoom, inherited_style: &ComputedValues) -> computed::Zoom {
+        if specified.is_document() {
+            
+            
+            
+            inherited_style.effective_zoom.inverted().unwrap_or(computed::Zoom::ONE)
+        } else {
+            specified
+        }
     }
 
     
@@ -2843,7 +2849,7 @@ impl<'a> StyleBuilder<'a> {
         let lh = device.calc_line_height(&font, writing_mode, None);
         if line_height_base == LineHeightBase::InheritedStyle {
             
-            computed::NonNegativeLength::new(self.resolved_specified_zoom().zoom(lh.px()))
+            computed::NonNegativeLength::new(self.effective_zoom_for_inheritance.zoom(lh.px()))
         } else {
             lh
         }

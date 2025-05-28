@@ -107,7 +107,7 @@ impl FontBaseSize {
             Self::InheritedStyle => {
                 
                 
-                let zoom = style.resolved_specified_zoom();
+                let zoom = style.effective_zoom_for_inheritance;
                 style.get_parent_font().clone_font_size().zoom(zoom)
             },
         }

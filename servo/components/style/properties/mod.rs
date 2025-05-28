@@ -555,6 +555,12 @@ impl LonghandId {
     }
 
     
+    #[inline]
+    pub fn zoom_dependent(self) -> bool {
+        LonghandIdSet::zoom_dependent().contains(self)
+    }
+
+    
     
     #[inline]
     pub fn ignored_when_document_colors_disabled(self) -> bool {
