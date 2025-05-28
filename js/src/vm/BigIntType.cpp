@@ -854,8 +854,10 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   const unsigned n = divisor->digitLength();
   const unsigned m = dividend->digitLength() - n;
 
+  RootedTuple<BigInt*, BigInt*, BigInt*, BigInt*> roots(cx);
+
   
-  RootedBigInt q(cx);
+  RootedField<BigInt*, 0> q(roots);
   if (quotient) {
     q = createUninitialized(cx, m + 1, isNegative);
     if (!q) {
@@ -865,7 +867,8 @@ bool BigInt::absoluteDivWithBigIntDivisor(
 
   
   
-  RootedBigInt qhatv(cx, createUninitialized(cx, n + 1, isNegative));
+  RootedField<BigInt*, 1> qhatv(roots,
+                                createUninitialized(cx, n + 1, isNegative));
   if (!qhatv) {
     return false;
   }
@@ -878,7 +881,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   Digit lastDigit = divisor->digit(n - 1);
   unsigned shift = DigitLeadingZeroes(lastDigit);
 
-  RootedBigInt shiftedDivisor(cx);
+  RootedField<BigInt*, 2> shiftedDivisor(roots);
   if (shift > 0) {
     shiftedDivisor = absoluteLeftShiftAlwaysCopy(cx, divisor, shift,
                                                  LeftShiftMode::SameSizeResult);
@@ -891,9 +894,9 @@ bool BigInt::absoluteDivWithBigIntDivisor(
 
   
   
-  RootedBigInt u(cx,
-                 absoluteLeftShiftAlwaysCopy(cx, dividend, shift,
-                                             LeftShiftMode::AlwaysAddOneDigit));
+  RootedField<BigInt*, 3> u(
+      roots, absoluteLeftShiftAlwaysCopy(cx, dividend, shift,
+                                         LeftShiftMode::AlwaysAddOneDigit));
   if (!u) {
     return false;
   }
