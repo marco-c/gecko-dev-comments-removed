@@ -1556,14 +1556,18 @@ pub trait LayerCompositor {
     fn begin_frame(
         &mut self,
         input: &CompositorInputConfig,
-    );
+    ) -> bool;
 
     
     
     fn bind_layer(&mut self, index: usize);
 
     
-    fn present_layer(&mut self, index: usize);
+    fn present_layer(
+        &mut self,
+        index: usize,
+        dirty_rects: &[DeviceIntRect],
+    );
 
     fn add_surface(
         &mut self,

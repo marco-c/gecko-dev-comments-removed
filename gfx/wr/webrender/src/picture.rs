@@ -1264,15 +1264,11 @@ impl Tile {
         
         
         let (supports_dirty_rects, supports_simple_prims) = match state.composite_state.compositor_kind {
-            CompositorKind::Draw { .. } => {
+            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
                 (frame_context.config.gpu_supports_render_target_partial_update, true)
             }
             CompositorKind::Native { capabilities, .. } => {
                 (capabilities.max_update_rects > 0, false)
-            }
-            CompositorKind::Layer { .. } => {
-                
-                (false, true)
             }
         };
 
