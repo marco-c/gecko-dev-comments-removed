@@ -30,7 +30,8 @@ class Document;
 
 
 
-class TextDirectiveCreator final {
+
+class TextDirectiveCreator {
  public:
   
 
@@ -44,13 +45,39 @@ class TextDirectiveCreator final {
 
 
   static Result<nsCString, ErrorResult> CreateTextDirectiveFromRange(
-      Document& aDocument, nsRange* aInputRange);
+      Document& aDocument, AbstractRange* aInputRange);
 
   virtual ~TextDirectiveCreator() = default;
 
  protected:
   TextDirectiveCreator(Document& aDocument, AbstractRange* aRange);
 
+  
+
+
+
+
+  static Result<RefPtr<AbstractRange>, ErrorResult>
+  ExtendRangeToBlockBoundaries(AbstractRange* aRange);
+
+  
+
+
+
+
+
+
+
+
+
+  static Result<bool, ErrorResult> MustUseRangeBasedMatching(
+      AbstractRange* aRange);
+
+  
+
+
+  static Result<UniquePtr<TextDirectiveCreator>, ErrorResult> CreateInstance(
+      Document& aDocument, AbstractRange* aRange);
 
   Document& mDocument;
   RefPtr<AbstractRange> mRange;
@@ -63,6 +90,26 @@ class TextDirectiveCreator final {
 
 
   TimeoutWatchdog mWatchdog;
+};
+
+
+
+
+
+class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
+ private:
+  using TextDirectiveCreator::TextDirectiveCreator;
+
+};
+
+
+
+
+
+class ExactMatchTextDirectiveCreator : public TextDirectiveCreator {
+ private:
+  using TextDirectiveCreator::TextDirectiveCreator;
+
 };
 }  
 #endif
