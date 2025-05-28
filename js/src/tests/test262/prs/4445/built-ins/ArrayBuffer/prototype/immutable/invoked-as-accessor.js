@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  ArrayBuffer.prototype.immutable;
+});
+
+reportCompare(0, 0);

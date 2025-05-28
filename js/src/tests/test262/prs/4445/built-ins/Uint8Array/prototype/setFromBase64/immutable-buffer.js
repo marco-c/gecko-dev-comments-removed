@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(3);
+var target = new Uint8Array(buffer.transferToImmutable());
+assert.throws(TypeError, function() {
+  target.setFromBase64('Zg==');
+});
+
+reportCompare(0, 0);
