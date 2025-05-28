@@ -297,12 +297,7 @@ add_task(
           "Expect addonStartup.json.lz4 file to be removed"
         );
       },
-      
-      
-      
-      
-      
-      expectSystemUpdateVersion: false,
+      expectSystemUpdateVersion: true,
     });
   }
 );
