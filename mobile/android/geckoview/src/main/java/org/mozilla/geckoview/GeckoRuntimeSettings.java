@@ -743,6 +743,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<Boolean>("security.tls.enable_kyber");
    final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
       new PrefWithoutDefault<Boolean>("network.http.http3.enable_kyber");
+   final Pref<Boolean> mDohAutoselectEnabled =
+      new Pref<Boolean>("network.android_doh.autoselect_enabled", false);
    final Pref<Boolean> mSameDocumentNavigationOverridesLoadType =
       new Pref<Boolean>("docshell.shistory.sameDocumentNavigationOverridesLoadType", true);
    final Pref<String> mSameDocumentNavigationOverridesLoadTypeForceDisable =
@@ -1615,6 +1617,35 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setInputAutoZoomEnabled(final boolean flag) {
     mInputAutoZoom.commit(flag);
     return this;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setDohAutoselectEnabled(final boolean enabled) {
+    mDohAutoselectEnabled.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getDohAutoselectEnabled() {
+    return mDohAutoselectEnabled.get();
   }
 
   
