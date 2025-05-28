@@ -750,6 +750,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<String> mSameDocumentNavigationOverridesLoadTypeForceDisable =
       new Pref<String>(
           "docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable", "");
+   final Pref<String> mBannedPorts =
+      new Pref<String>("network.security.ports.banned", "");
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
    boolean mForceEnableAccessibility;
@@ -2126,6 +2128,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     final Boolean tlsEnabled = mPostQuantumKeyExchangeTLSEnabled.get();
     final Boolean h3Enabled = mPostQuantumKeyExchangeHttp3Enabled.get();
     return (tlsEnabled != null && tlsEnabled) && (h3Enabled != null && h3Enabled);
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setBannedPorts(final @NonNull String portList) {
+    mBannedPorts.commit(portList);
+    return this;
+  }
+
+  
+
+
+
+
+  public @NonNull String getBannedPorts() {
+    return mBannedPorts.get();
   }
 
   
