@@ -381,11 +381,7 @@ pref("network.ohttp.relayURL", "https://mozilla-ohttp.fastly-edge.com/");
 
 
 
-#ifdef NIGHTLY_BUILD
-  pref("page_load.progressbar_completion", 2);
-#else
-  pref("page_load.progressbar_completion", 0);
-#endif
+pref("page_load.progressbar_completion", 2);
 
 
 pref("pdfjs.handleOctetStream", true);
