@@ -138,13 +138,13 @@ ins.exports.f();
 function checkPassiveElemSegment(mangle, err) {
     let bin = moduleWithSections(
         [v2vSigSection, declSection([0]), 
-         tableSection(1),                 
+         defaultTableSection(1),          
          { name: elemId,                  
            body: (function () {
                let body = [];
                body.push(1);           
                body.push(0x1 | 0x4);   
-               body.push(mangle == "type" ? BadType : AnyFuncCode); 
+               body.push(mangle == "type" ? BadType : FuncRefCode); 
                body.push(1);           
                body.push(mangle == "ref.func" ? BadType : RefFuncCode); 
                body.push(0);           
@@ -273,7 +273,7 @@ function testGlobalRefFuncIndex(index) {
         [v2vSigSection,
           globalSection([
            {
-             valType: AnyFuncCode,
+             valType: FuncRefCode,
              flags: 0,
              initExpr: [RefFuncCode, ...varU32(index), EndCode],
            }
