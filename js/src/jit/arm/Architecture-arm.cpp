@@ -420,17 +420,13 @@ FloatRegisterSet VFPRegister::ReduceSetForPush(const FloatRegisterSet& s) {
 
   LiveFloatRegisterSet mod;
   for (FloatRegisterIterator iter(s); iter.more(); ++iter) {
-    if ((*iter).isSingle()) {
+    FloatRegister reg = *iter;
+    if (reg.isSingle() && s.hasRegisterIndex(reg.doubleOverlay())) {
       
-      mod.addUnchecked(*iter);
-    } else if ((*iter).id() < 16) {
       
-      mod.addUnchecked((*iter).singleOverlay(0));
-      mod.addUnchecked((*iter).singleOverlay(1));
-    } else {
-      
-      mod.addUnchecked(*iter);
+      continue;
     }
+    mod.addUnchecked(*iter);
   }
   return mod.set();
 }
