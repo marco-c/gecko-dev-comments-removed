@@ -124,6 +124,8 @@ add_setup(async function () {
       ["browser.urlbar.scotchBonnet.enableOverride", false],
       ["browser.toolbars.keyboard_navigation", true],
       ["accessibility.tabfocus", 7],
+      
+      ["extensions.pocket.enabled", true],
     ],
   });
   resetToolbarWithoutDevEditionButtons();

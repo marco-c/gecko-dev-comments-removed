@@ -330,6 +330,13 @@ add_task(async function testDownloadsButtonPress() {
 });
 
 
+add_setup(async function setPref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.pocket.enabled", true]],
+  });
+});
+
+
 
 
 
