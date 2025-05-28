@@ -94,3 +94,26 @@ add_task(async function test_corruptdb() {
   await db.closeConnection();
   await db.removeDatabaseFiles();
 });
+
+add_task(async function test_healthydb() {
+  let db = new PlacesSemanticHistoryDatabase({
+    embeddingSize: 4,
+    fileName: "places_semantic.sqlite",
+  });
+  await db.getConnection();
+  await db.closeConnection();
+  
+  
+  let creationTime = (await IOUtils.stat(db.databaseFilePath)).creationTime;
+  db = new PlacesSemanticHistoryDatabase({
+    embeddingSize: 4,
+    fileName: "places_semantic.sqlite",
+  });
+  await db.getConnection();
+  await db.closeConnection();
+  Assert.equal(
+    creationTime,
+    (await IOUtils.stat(db.databaseFilePath)).creationTime,
+    "Database creation time should not change."
+  );
+});
