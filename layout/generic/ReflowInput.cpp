@@ -257,6 +257,9 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
       nscoord icbLimit = icbSize.ISize(mWritingMode);
 
       SetAvailableISize(std::min(icbLimit, std::min(scLimit, cbLimit)));
+
+      
+      mFrame->PresShell()->AddOrthogonalFlow(mFrame);
     }
   }
 
