@@ -50,8 +50,9 @@ class TouchSimulator {
 
 
 
-  constructor(simulatorTarget) {
-    this.simulatorTarget = simulatorTarget;
+  constructor(windowTarget) {
+    this.windowTarget = windowTarget;
+    this.simulatorTarget = windowTarget.chromeEventHandler;
     this._currentPickerMap = new Map();
   }
 
