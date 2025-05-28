@@ -52,30 +52,41 @@ add_task(async function test_updatePing() {
   let archiveChecker = new TelemetryArchiveTesting.Checker();
   await archiveChecker.promiseInit();
 
-  
-  
-  
-  Cc["@mozilla.org/browser/clh;1"]
-    .getService(Ci.nsIBrowserHandler)
-    .getFirstWindowArgs();
-
-  
-  
   let updatePing;
-  await BrowserTestUtils.waitForCondition(
-    async function () {
-      
-      
-      updatePing = await archiveChecker.promiseFindPing("update", [
-        [["payload", "reason"], "success"],
-        [["payload", "previousBuildId"], TEST_BUILDID],
-        [["payload", "previousVersion"], TEST_VERSION],
-      ]);
-      return !!updatePing;
+  let gleanPrevChannel;
+  await GleanPings.update.testSubmission(
+    reason => {
+      Assert.equal("success", reason);
+      Assert.equal(TEST_BUILDID, Glean.update.previousBuildId.testGetValue());
+      Assert.equal(TEST_VERSION, Glean.update.previousVersion.testGetValue());
+      gleanPrevChannel = Glean.update.previousChannel.testGetValue();
     },
-    "Make sure the ping is generated before trying to validate it.",
-    500,
-    100
+    async () => {
+      
+      
+      
+      Cc["@mozilla.org/browser/clh;1"]
+        .getService(Ci.nsIBrowserHandler)
+        .getFirstWindowArgs();
+
+      
+      
+      await BrowserTestUtils.waitForCondition(
+        async function () {
+          
+          
+          updatePing = await archiveChecker.promiseFindPing("update", [
+            [["payload", "reason"], "success"],
+            [["payload", "previousBuildId"], TEST_BUILDID],
+            [["payload", "previousVersion"], TEST_VERSION],
+          ]);
+          return !!updatePing;
+        },
+        "Make sure the ping is generated before trying to validate it.",
+        500,
+        100
+      );
+    }
   );
 
   ok(updatePing, "The 'update' ping must be correctly sent.");
@@ -94,6 +105,7 @@ add_task(async function test_updatePing() {
       "string",
       "'previousChannel' must be a string, if available."
     );
+    Assert.equal(channelField, gleanPrevChannel);
   }
 
   

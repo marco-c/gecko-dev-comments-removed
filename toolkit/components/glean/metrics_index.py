@@ -220,6 +220,7 @@ firefox_desktop_pings = [
     "toolkit/components/reportbrokensite/pings.yaml",
     "toolkit/components/telemetry/pings.yaml",
     "toolkit/modules/pings.yaml",
+    "toolkit/mozapps/update/shared_pings.yaml",
 ]
 
 
@@ -227,6 +228,7 @@ firefox_desktop_pings = [
 background_update_pings = [
     "toolkit/components/crashes/pings.yaml",
     "toolkit/mozapps/update/pings.yaml",
+    "toolkit/mozapps/update/shared_pings.yaml",
 ]
 
 
