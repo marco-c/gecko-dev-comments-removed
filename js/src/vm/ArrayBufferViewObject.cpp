@@ -39,6 +39,10 @@ void ArrayBufferViewObject::trace(JSTracer* trc, JSObject* obj) {
                    bufferObj)) {
       buffer =
           &gc::MaybeForwardedObjectAs<ResizableArrayBufferObject>(bufferObj);
+    } else if (gc::MaybeForwardedObjectIs<ImmutableArrayBufferObject>(
+                   bufferObj)) {
+      buffer =
+          &gc::MaybeForwardedObjectAs<ImmutableArrayBufferObject>(bufferObj);
     }
     if (buffer) {
       size_t offset = view->dataPointerOffset();
@@ -299,13 +303,16 @@ size_t ArrayBufferViewObject::dataPointerOffset() const {
   
   MOZ_ASSERT(
       gc::MaybeForwardedObjectIs<FixedLengthArrayBufferObject>(bufferObj) ||
-      gc::MaybeForwardedObjectIs<ResizableArrayBufferObject>(bufferObj));
+      gc::MaybeForwardedObjectIs<ResizableArrayBufferObject>(bufferObj) ||
+      gc::MaybeForwardedObjectIs<ImmutableArrayBufferObject>(bufferObj));
 
   
   static_assert(
       std::is_base_of_v<ArrayBufferObject, FixedLengthArrayBufferObject>);
   static_assert(
       std::is_base_of_v<ArrayBufferObject, ResizableArrayBufferObject>);
+  static_assert(
+      std::is_base_of_v<ArrayBufferObject, ImmutableArrayBufferObject>);
 
   
   const auto* buffer = static_cast<const ArrayBufferObject*>(bufferObj);

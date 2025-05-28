@@ -121,6 +121,15 @@ uint64_t WasmReservedBytes();
 
 
 
+
+
+
+
+
+
+
+
+
 class ArrayBufferObjectMaybeShared;
 
 wasm::AddressType WasmArrayBufferAddressType(
@@ -164,6 +173,8 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
 
 class FixedLengthArrayBufferObject;
 class ResizableArrayBufferObject;
+class ImmutableArrayBufferObject;
+
 
 
 
@@ -294,8 +305,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
                                    AutoSetNewObjectMetadata&,
                                    JS::Handle<JSObject*> proto);
 
-  template <FillContents FillType>
-  static std::tuple<ArrayBufferObject*, uint8_t*> createBufferAndData(
+  template <class ArrayBufferType, FillContents FillType>
+  static std::tuple<ArrayBufferType*, uint8_t*> createBufferAndData(
       JSContext* cx, size_t nbytes, AutoSetNewObjectMetadata& metadata,
       JS::Handle<JSObject*> proto = nullptr);
 
@@ -308,6 +319,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
     friend class ArrayBufferObject;
     friend class ResizableArrayBufferObject;
+    friend class ImmutableArrayBufferObject;
 
     BufferContents(uint8_t* data, BufferKind kind,
                    JS::BufferContentsFreeFunc freeFunc = nullptr,
@@ -444,28 +456,32 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static ArrayBufferObject* createForContents(JSContext* cx, size_t nbytes,
                                               BufferContents contents);
 
-  static ArrayBufferObject* copy(JSContext* cx, size_t newByteLength,
-                                 JS::Handle<ArrayBufferObject*> source);
+ protected:
+  template <class ArrayBufferType>
+  static ArrayBufferType* copy(JSContext* cx, size_t newByteLength,
+                               JS::Handle<ArrayBufferObject*> source);
 
-  static ArrayBufferObject* copyAndDetach(
-      JSContext* cx, size_t newByteLength,
-      JS::Handle<ArrayBufferObject*> source);
+  template <class ArrayBufferType>
+  static ArrayBufferType* copyAndDetach(JSContext* cx, size_t newByteLength,
+                                        JS::Handle<ArrayBufferObject*> source);
 
  private:
-  static ArrayBufferObject* copyAndDetachSteal(
+  template <class ArrayBufferType>
+  static ArrayBufferType* copyAndDetachSteal(
       JSContext* cx, JS::Handle<ArrayBufferObject*> source);
 
-  static ArrayBufferObject* copyAndDetachRealloc(
+  template <class ArrayBufferType>
+  static ArrayBufferType* copyAndDetachRealloc(
       JSContext* cx, size_t newByteLength,
       JS::Handle<ArrayBufferObject*> source);
 
  public:
-  static ArrayBufferObject* createZeroed(JSContext* cx, size_t nbytes,
-                                         HandleObject proto = nullptr);
+  static FixedLengthArrayBufferObject* createZeroed(
+      JSContext* cx, size_t nbytes, HandleObject proto = nullptr);
 
   
   
-  static ArrayBufferObject* createEmpty(JSContext* cx);
+  static FixedLengthArrayBufferObject* createEmpty(JSContext* cx);
 
   
   
@@ -685,6 +701,20 @@ class FixedLengthArrayBufferObject : public ArrayBufferObject {
       (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
 
   static const JSClass class_;
+
+  static FixedLengthArrayBufferObject* copy(
+      JSContext* cx, size_t newByteLength,
+      JS::Handle<ArrayBufferObject*> source) {
+    return ArrayBufferObject::copy<FixedLengthArrayBufferObject>(
+        cx, newByteLength, source);
+  }
+
+  static FixedLengthArrayBufferObject* copyAndDetach(
+      JSContext* cx, size_t newByteLength,
+      JS::Handle<ArrayBufferObject*> source) {
+    return ArrayBufferObject::copyAndDetach<FixedLengthArrayBufferObject>(
+        cx, newByteLength, source);
+  }
 };
 
 
@@ -764,6 +794,62 @@ class ResizableArrayBufferObject : public ArrayBufferObject {
   static ResizableArrayBufferObject* copyAndDetachSteal(
       JSContext* cx, size_t newByteLength,
       JS::Handle<ResizableArrayBufferObject*> source);
+};
+
+
+
+
+
+
+
+
+
+
+class ImmutableArrayBufferObject : public ArrayBufferObject {
+  friend class ArrayBufferObject;
+
+  static ImmutableArrayBufferObject* createEmpty(JSContext* cx);
+
+ public:
+  static ImmutableArrayBufferObject* createZeroed(
+      JSContext* cx, size_t byteLength, Handle<JSObject*> proto = nullptr);
+
+ private:
+  uint8_t* inlineDataPointer() const;
+
+  bool hasInlineData() const { return dataPointer() == inlineDataPointer(); }
+
+  void initialize(size_t byteLength, BufferContents contents) {
+    MOZ_ASSERT(contents.isAligned(byteLength));
+    setByteLength(byteLength);
+    setFlags(IMMUTABLE);
+    setFirstView(nullptr);
+    setDataPointer(contents);
+  }
+
+ public:
+  
+  static const uint8_t RESERVED_SLOTS = ArrayBufferObject::RESERVED_SLOTS;
+
+  
+  static constexpr size_t MaxInlineBytes =
+      (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
+
+  static const JSClass class_;
+
+  static ImmutableArrayBufferObject* copy(
+      JSContext* cx, size_t newByteLength,
+      JS::Handle<ArrayBufferObject*> source) {
+    return ArrayBufferObject::copy<ImmutableArrayBufferObject>(
+        cx, newByteLength, source);
+  }
+
+  static ImmutableArrayBufferObject* copyAndDetach(
+      JSContext* cx, size_t newByteLength,
+      JS::Handle<ArrayBufferObject*> source) {
+    return ArrayBufferObject::copyAndDetach<ImmutableArrayBufferObject>(
+        cx, newByteLength, source);
+  }
 };
 
 size_t ArrayBufferObject::maxByteLength() const {
@@ -979,7 +1065,8 @@ class WasmArrayRawBuffer {
 template <>
 inline bool JSObject::is<js::ArrayBufferObject>() const {
   return is<js::FixedLengthArrayBufferObject>() ||
-         is<js::ResizableArrayBufferObject>();
+         is<js::ResizableArrayBufferObject>() ||
+         is<js::ImmutableArrayBufferObject>();
 }
 
 template <>
