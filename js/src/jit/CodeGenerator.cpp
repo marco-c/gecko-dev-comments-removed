@@ -9729,7 +9729,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   
   
   
-  bool reloadRegs = true;
+  bool reloadInstance = true;
+  bool reloadPinnedRegs = true;
   bool switchRealm = true;
 
   const wasm::CallSiteDesc& desc = callBase->desc();
@@ -9747,7 +9748,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       }
       MOZ_ASSERT(!isReturnCall);
       retOffset = masm.call(desc, callee.funcIndex());
-      reloadRegs = false;
+      reloadInstance = false;
+      reloadPinnedRegs = false;
       switchRealm = false;
       break;
     case wasm::CalleeDesc::Import:
@@ -9810,19 +9812,29 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       
       
       
-      reloadRegs = false;
+      reloadInstance = false;
+      reloadPinnedRegs = false;
       switchRealm = false;
       break;
     }
     case wasm::CalleeDesc::Builtin:
       retOffset = masm.call(desc, callee.builtin());
-      reloadRegs = false;
+      
+      
+      
+      reloadInstance = false;
+      reloadPinnedRegs = true;
       switchRealm = false;
       break;
     case wasm::CalleeDesc::BuiltinInstanceMethod:
       retOffset = masm.wasmCallBuiltinInstanceMethod(
           desc, callBase->instanceArg(), callee.builtin(),
           callBase->builtinMethodFailureMode());
+      
+      
+      
+      reloadInstance = false;
+      reloadPinnedRegs = true;
       switchRealm = false;
       break;
     case wasm::CalleeDesc::FuncRef:
@@ -9838,7 +9850,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       
       
       masm.wasmCallRef(desc, callee, &retOffset, &secondRetOffset);
-      reloadRegs = false;
+      reloadInstance = false;
+      reloadPinnedRegs = false;
       switchRealm = false;
       break;
   }
@@ -9864,16 +9877,18 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
                                                  framePushedAtStackMapBase);
   }
 
-  if (reloadRegs) {
+  if (reloadInstance) {
     masm.loadPtr(
         Address(masm.getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
         InstanceReg);
-    masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
     if (switchRealm) {
       masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
     }
   } else {
     MOZ_ASSERT(!switchRealm);
+  }
+  if (reloadPinnedRegs) {
+    masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
   }
 
   switch (callee.which()) {

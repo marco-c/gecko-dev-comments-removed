@@ -1614,28 +1614,24 @@ bool BaseCompiler::insertDebugCollapseFrame() {
 
 
 
-void BaseCompiler::beginCall(
-    FunctionCall& call, UseABI useABI,
-    RestoreRegisterStateAndRealm restoreRegisterStateAndRealm) {
-  MOZ_ASSERT_IF(
-      useABI == UseABI::Builtin,
-      restoreRegisterStateAndRealm == RestoreRegisterStateAndRealm::False);
+void BaseCompiler::beginCall(FunctionCall& call, UseABI useABI,
+                             RestoreState restoreState) {
+  
+  
+  
+  MOZ_ASSERT_IF(useABI == UseABI::Builtin,
+                restoreState == RestoreState::None ||
+                    restoreState == RestoreState::PinnedRegs);
+  
+  MOZ_ASSERT_IF(useABI == UseABI::Wasm, restoreState == RestoreState::None ||
+                                            restoreState == RestoreState::All);
 
-  call.restoreRegisterStateAndRealm =
-      restoreRegisterStateAndRealm == RestoreRegisterStateAndRealm::True;
-  call.usesSystemAbi = useABI == UseABI::System;
+  call.useABI = useABI;
+  call.restoreState = restoreState;
 
-  if (call.usesSystemAbi) {
-    
-#if defined(JS_CODEGEN_ARM)
-    call.hardFP = ARMFlags::UseHardFpABI();
-    call.abi.setUseHardFp(call.hardFP);
-#endif
-  } else {
 #if defined(JS_CODEGEN_ARM)
     MOZ_ASSERT(call.hardFP, "All private ABIs pass FP arguments in registers");
 #endif
-  }
 
   
   
@@ -1651,19 +1647,12 @@ void BaseCompiler::endCall(FunctionCall& call, size_t stackSpace) {
   MOZ_ASSERT(stackMapGenerator_.framePushedExcludingOutboundCallArgs.isSome());
   stackMapGenerator_.framePushedExcludingOutboundCallArgs.reset();
 
-  if (call.restoreRegisterStateAndRealm) {
-    
+  if (call.restoreState == RestoreState::All) {
     fr.loadInstancePtr(InstanceReg);
     masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
     masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
-  } else if (call.usesSystemAbi) {
-    
-    
-#ifndef JS_CODEGEN_X86
-    
-    fr.loadInstancePtr(InstanceReg);
+  } else if (call.restoreState == RestoreState::PinnedRegs) {
     masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
-#endif
   }
 }
 
@@ -2096,7 +2085,7 @@ bool BaseCompiler::pushCallResults(const FunctionCall& call, ResultType type,
   
   
   
-  MOZ_ASSERT(!call.usesSystemAbi || call.hardFP);
+  MOZ_ASSERT(call.useABI == UseABI::Wasm || call.hardFP);
 #endif
   return pushResults(type, fr.stackResultsBase(loc.bytes()));
 }
@@ -5431,8 +5420,7 @@ bool BaseCompiler::emitCall() {
 
   FunctionCall baselineCall{};
   beginCall(baselineCall, UseABI::Wasm,
-            import ? RestoreRegisterStateAndRealm::True
-                   : RestoreRegisterStateAndRealm::False);
+            import ? RestoreState::All : RestoreState::None);
 
   if (!emitCallArgs(funcType.args(), NormalCallResults(results), &baselineCall,
                     CalleeOnStack::False)) {
@@ -5484,8 +5472,7 @@ bool BaseCompiler::emitReturnCall() {
 
   FunctionCall baselineCall{};
   beginCall(baselineCall, UseABI::Wasm,
-            import ? RestoreRegisterStateAndRealm::True
-                   : RestoreRegisterStateAndRealm::False);
+            import ? RestoreState::All : RestoreState::None);
 
   if (!emitCallArgs(funcType.args(), TailCallResults(funcType), &baselineCall,
                     CalleeOnStack::False)) {
@@ -5548,7 +5535,7 @@ bool BaseCompiler::emitCallIndirect() {
   FunctionCall baselineCall{};
   
   
-  beginCall(baselineCall, UseABI::Wasm, RestoreRegisterStateAndRealm::False);
+  beginCall(baselineCall, UseABI::Wasm, RestoreState::None);
 
   if (!emitCallArgs(funcType.args(), NormalCallResults(results), &baselineCall,
                     CalleeOnStack::True)) {
@@ -5610,7 +5597,7 @@ bool BaseCompiler::emitReturnCallIndirect() {
   FunctionCall baselineCall{};
   
   
-  beginCall(baselineCall, UseABI::Wasm, RestoreRegisterStateAndRealm::False);
+  beginCall(baselineCall, UseABI::Wasm, RestoreState::None);
 
   if (!emitCallArgs(funcType.args(), TailCallResults(funcType), &baselineCall,
                     CalleeOnStack::True)) {
@@ -5675,7 +5662,7 @@ bool BaseCompiler::emitCallRef() {
   FunctionCall baselineCall{};
   
   
-  beginCall(baselineCall, UseABI::Wasm, RestoreRegisterStateAndRealm::False);
+  beginCall(baselineCall, UseABI::Wasm, RestoreState::None);
 
   if (!emitCallArgs(funcType.args(), NormalCallResults(results), &baselineCall,
                     CalleeOnStack::True)) {
@@ -5733,7 +5720,7 @@ bool BaseCompiler::emitReturnCallRef() {
   FunctionCall baselineCall{};
   
   
-  beginCall(baselineCall, UseABI::Wasm, RestoreRegisterStateAndRealm::False);
+  beginCall(baselineCall, UseABI::Wasm, RestoreState::None);
 
   if (!emitCallArgs(funcType.args(), TailCallResults(funcType), &baselineCall,
                     CalleeOnStack::True)) {
@@ -5792,7 +5779,7 @@ bool BaseCompiler::emitUnaryMathBuiltinCall(SymbolicAddress callee,
   size_t stackSpace = stackConsumed(numArgs);
 
   FunctionCall baselineCall{};
-  beginCall(baselineCall, UseABI::Builtin, RestoreRegisterStateAndRealm::False);
+  beginCall(baselineCall, UseABI::Builtin, RestoreState::None);
 
   if (!emitCallArgs(signature, NoCallResults(), &baselineCall,
                     CalleeOnStack::False)) {
@@ -6543,7 +6530,7 @@ bool BaseCompiler::emitInstanceCall(const SymbolicAddressSignature& builtin) {
   size_t stackSpace = stackConsumed(numNonInstanceArgs);
 
   FunctionCall baselineCall{};
-  beginCall(baselineCall, UseABI::System, RestoreRegisterStateAndRealm::True);
+  beginCall(baselineCall, UseABI::Builtin, RestoreState::PinnedRegs);
 
   ABIArg instanceArg = reservePointerArgument(&baselineCall);
 
