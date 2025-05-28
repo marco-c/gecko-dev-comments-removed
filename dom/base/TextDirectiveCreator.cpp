@@ -588,7 +588,7 @@ TextDirectiveCreator::ExtendSubstringLengthsToWordBoundaries(
   
   
   
-  for (const auto [first, second] : aExactSubstringLengths) {
+  for (const auto& [first, second] : aExactSubstringLengths) {
     firstSet.Insert(getNextWordBoundaryPosition(aFirstWordPositions, first));
     secondSet.Insert(getNextWordBoundaryPosition(aSecondWordPositions, second));
   }
