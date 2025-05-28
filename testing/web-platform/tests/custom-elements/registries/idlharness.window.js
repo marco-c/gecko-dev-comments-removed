@@ -1,9 +1,8 @@
 
 
 
-
 idl_test(
-  ["scoped-custom-elements-registry.tentative"],
+  ["scoped-custom-elements-registry"],
   ["html", "dom"],
   (idl_array) => {
     let element = document.createElement("div");
