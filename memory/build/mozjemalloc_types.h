@@ -82,12 +82,17 @@ typedef struct arena_params_s {
 
   uint32_t mFlags;
 
+  
+  
+  const char* mLabel;
+
 #ifdef __cplusplus
   arena_params_s()
       : mMaxDirty(0),
         mMaxDirtyIncreaseOverride(0),
         mMaxDirtyDecreaseOverride(0),
-        mFlags(0) {}
+        mFlags(0),
+        mLabel(nullptr) {}
 #endif
 } arena_params_t;
 
