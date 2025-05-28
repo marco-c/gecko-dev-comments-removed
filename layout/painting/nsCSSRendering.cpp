@@ -2512,9 +2512,6 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
   
   
   
-  
-  
-  
   bool isCanvasFrame = aParams.frame->IsCanvasFrame();
   const bool paintMask = aParams.paintFlags & PAINTBG_MASK_IMAGE;
 

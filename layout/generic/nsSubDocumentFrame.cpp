@@ -489,7 +489,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   nsDisplayList childItems(aBuilder);
 
-  {
+  if (subdocRootFrame) {
     DisplayListClipState::AutoSaveRestore nestedClipState(aBuilder);
     if (needsOwnLayer) {
       
@@ -499,42 +499,32 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       nestedClipState.Clear();
     }
 
-    
-    
-    
-    nsIFrame* frame = subdocRootFrame ? subdocRootFrame : this;
-    nsDisplayListBuilder::AutoBuildingDisplayList building(aBuilder, frame,
-                                                           visible, dirty);
+    nsDisplayListBuilder::AutoBuildingDisplayList building(
+        aBuilder, subdocRootFrame, visible, dirty);
+    if (aBuilder->BuildCompositorHitTestInfo()) {
+      bool hasDocumentLevelListenersForApzAwareEvents =
+          gfxPlatform::AsyncPanZoomEnabled() &&
+          nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell);
 
-    if (subdocRootFrame) {
-      if (aBuilder->BuildCompositorHitTestInfo()) {
-        bool hasDocumentLevelListenersForApzAwareEvents =
-            gfxPlatform::AsyncPanZoomEnabled() &&
-            nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(
-                presShell);
+      aBuilder->SetAncestorHasApzAwareEventHandler(
+          hasDocumentLevelListenersForApzAwareEvents);
+    }
+    subdocRootFrame->BuildDisplayListForStackingContext(aBuilder, &childItems);
+    if (!aBuilder->IsForEventDelivery()) {
+      
+      
+      
+      
+      nsRect bounds =
+          GetContentRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
+      bounds = bounds.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
 
-        aBuilder->SetAncestorHasApzAwareEventHandler(
-            hasDocumentLevelListenersForApzAwareEvents);
-      }
-
-      subdocRootFrame->BuildDisplayListForStackingContext(aBuilder,
-                                                          &childItems);
-      if (!aBuilder->IsForEventDelivery()) {
-        
-        
-        
-        
-        nsRect bounds =
-            GetContentRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
-        bounds = bounds.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
-
-        
-        
-        
-        
-        presShell->AddCanvasBackgroundColorItem(aBuilder, &childItems, frame,
-                                                bounds, NS_RGBA(0, 0, 0, 0));
-      }
+      
+      
+      
+      
+      presShell->AddCanvasBackgroundColorItem(
+          aBuilder, &childItems, subdocRootFrame, bounds, NS_RGBA(0, 0, 0, 0));
     }
   }
 

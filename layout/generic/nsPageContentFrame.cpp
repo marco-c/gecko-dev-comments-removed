@@ -378,16 +378,6 @@ void nsPageContentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         BuildDisplayListForExtraPage(aBuilder, pageFrame, pageCF, &content);
       }
     }
-
-    
-    
-    
-    
-    
-    const nsRect backgroundRect(aBuilder->ToReferenceFrame(this), GetSize());
-    constexpr nscolor kBackstop = NS_RGB(255, 255, 255);
-    PresShell()->AddCanvasBackgroundColorItem(aBuilder, &content, this,
-                                              backgroundRect, kBackstop);
   }
 
   content.AppendNewToTop<nsDisplayTransform>(
