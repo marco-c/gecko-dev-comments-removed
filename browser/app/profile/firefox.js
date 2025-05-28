@@ -3155,6 +3155,9 @@ pref("devtools.aboutdebugging.collapsibilities.temporaryExtension", false);
 #endif
 
 
+pref("devtools.aboutdebugging.showReduxActionsInConsole", false);
+
+
 pref("devtools.debugger.features.map-await-expression", true);
 
 

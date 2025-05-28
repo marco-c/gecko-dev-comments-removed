@@ -114,6 +114,9 @@ const PREFERENCES = {
   
   SHOW_HIDDEN_ADDONS: "devtools.aboutdebugging.showHiddenAddons",
   
+  
+  SHOW_REDUX_ACTIONS: "devtools.aboutdebugging.showReduxActionsInConsole",
+  
   TEMPORARY_EXTENSION_PATH: "devtools.aboutdebugging.tmpExtDirPath",
   
   XPINSTALL_ENABLED: "xpinstall.enabled",
