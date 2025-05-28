@@ -1925,6 +1925,8 @@ var gUnifiedExtensions = {
       
       (!this.button.hidden && this._buttonBarHasMouse) ||
       
+      (!this.buttonIgnoresAttention && this.button.hasAttribute("attention")) ||
+      
       
       
       CustomizationHandler.isCustomizing();
@@ -2004,6 +2006,9 @@ var gUnifiedExtensions = {
       msgId = "unified-extensions-button-blocklisted";
     }
     this.button.ownerDocument.l10n.setAttributes(this.button, msgId);
+    if (!this.buttonAlwaysVisible && !this.buttonIgnoresAttention) {
+      this.updateButtonVisibility();
+    }
   },
 
   getPopupAnchorID(aBrowser, aWindow) {
@@ -2856,6 +2861,26 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true,
   () => {
     if (gUnifiedExtensions._initialized) {
+      gUnifiedExtensions.updateButtonVisibility();
+    }
+  }
+);
+
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  gUnifiedExtensions,
+  "buttonIgnoresAttention",
+  "extensions.unifiedExtensions.button.ignore_attention",
+  false,
+  () => {
+    if (
+      gUnifiedExtensions._initialized &&
+      gUnifiedExtensions.buttonAlwaysVisible
+    ) {
       gUnifiedExtensions.updateButtonVisibility();
     }
   }

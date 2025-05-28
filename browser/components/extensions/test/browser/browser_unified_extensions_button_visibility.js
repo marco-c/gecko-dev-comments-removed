@@ -164,6 +164,13 @@ add_task(async function test_menu_items_on_hidden_button() {
   hideButtonWithPref();
 
   
+  
+  
+  
+  
+  
+  
+  
   gUnifiedExtensions.button.hidden = false;
   const contextMenu = await openChromeContextMenu(
     "toolbar-context-menu",
