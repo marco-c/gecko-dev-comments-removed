@@ -12,6 +12,7 @@
 #include "js/Prefs.h"
 #include "threading/ExclusiveData.h"
 #include "vm/MutexIDs.h"
+#include "wasm/WasmConstants.h"
 
 namespace js {
 namespace wasm {
@@ -213,6 +214,10 @@ class InliningHeuristics {
   static constexpr uint32_t MIN_LEVEL = 1;
   static constexpr uint32_t MAX_LEVEL = 9;
 
+  static constexpr uint32_t LARGE_FUNCTION_THRESH_1 = 400000;
+  static constexpr uint32_t LARGE_FUNCTION_THRESH_2 = 800000;
+  static constexpr uint32_t LARGE_FUNCTION_THRESH_3 = 1200000;
+
  public:
   
   
@@ -253,11 +258,22 @@ class InliningHeuristics {
   
   
   
+  
+  
+  
+  
   enum class CallKind { Direct, CallRef };
   static bool isSmallEnoughToInline(CallKind callKind, uint32_t inliningDepth,
-                                    uint32_t bodyLength) {
+                                    uint32_t bodyLength,
+                                    uint32_t rootFunctionBodyLength,
+                                    bool* largeFunctionBackoff) {
+    *largeFunctionBackoff = false;
+
     
     MOZ_RELEASE_ASSERT(inliningDepth <= 10);  
+    MOZ_ASSERT(rootFunctionBodyLength > 0 &&
+               rootFunctionBodyLength <= wasm::MaxFunctionBytes);
+
     
     if ((callKind == CallKind::Direct && !rawDirectAllowed()) ||
         (callKind == CallKind::CallRef && !rawCallRefAllowed())) {
@@ -277,6 +293,24 @@ class InliningHeuristics {
                                             160,  
                                             200, 240, 280, 320};
     uint32_t level = rawLevel();
+
+    
+    
+    
+    if (rootFunctionBodyLength > LARGE_FUNCTION_THRESH_1 && level > MIN_LEVEL) {
+      level--;
+      *largeFunctionBackoff = true;
+    }
+    if (rootFunctionBodyLength > LARGE_FUNCTION_THRESH_2 && level > MIN_LEVEL) {
+      level--;
+      *largeFunctionBackoff = true;
+    }
+    if (rootFunctionBodyLength > LARGE_FUNCTION_THRESH_3 && level > MIN_LEVEL) {
+      level--;
+      *largeFunctionBackoff = true;
+    }
+
+    
     MOZ_RELEASE_ASSERT(level >= MIN_LEVEL && level <= MAX_LEVEL);
     int32_t allowedSize = baseSize[level - MIN_LEVEL];
     allowedSize -= int32_t(40 * inliningDepth);
