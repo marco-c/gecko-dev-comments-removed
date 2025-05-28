@@ -121,8 +121,8 @@ add_task(async function test_credit_cards() {
     let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
       "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
     );
-    loginCrypto = new ChromeWindowsLoginCrypto("Edge");
-    profilePathSegments = ["Microsoft", "Edge", "User Data", "Default"];
+    loginCrypto = new ChromeWindowsLoginCrypto("Chrome Beta");
+    profilePathSegments = ["Google", "Chrome Beta", "User Data", "Default"];
   } else {
     throw new Error("Not implemented");
   }
@@ -174,7 +174,7 @@ add_task(async function test_credit_cards() {
 
   
   
-  let migratorKey = AppConstants.platform == "win" ? "chromium-edge" : "chrome";
+  let migratorKey = AppConstants.platform == "win" ? "chrome-beta" : "chrome";
   let migrator = await MigrationUtils.getMigrator(migratorKey);
 
   if (AppConstants.platform == "macosx") {
