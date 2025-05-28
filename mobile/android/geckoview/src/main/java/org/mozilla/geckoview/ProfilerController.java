@@ -65,7 +65,7 @@ public class ProfilerController {
 
 
 
-  public boolean isProfilerActive() {
+  public static boolean isProfilerActive() {
     return GeckoJavaSampler.isProfilerActive();
   }
 
@@ -79,7 +79,7 @@ public class ProfilerController {
 
 
 
-  public @Nullable Double getProfilerTime() {
+  public static @Nullable Double getProfilerTime() {
     return GeckoJavaSampler.tryToGetProfilerTime();
   }
 
@@ -92,7 +92,7 @@ public class ProfilerController {
 
 
 
-  public void addMarker(
+  public static void addMarker(
       @NonNull final String aMarkerName,
       @Nullable final Double aStartTime,
       @Nullable final Double aEndTime,
@@ -110,7 +110,7 @@ public class ProfilerController {
 
 
 
-  public void addMarker(
+  public static void addMarker(
       @NonNull final String aMarkerName,
       @Nullable final Double aStartTime,
       @Nullable final String aText) {
@@ -126,7 +126,8 @@ public class ProfilerController {
 
 
 
-  public void addMarker(@NonNull final String aMarkerName, @Nullable final Double aStartTime) {
+  public static void addMarker(
+      @NonNull final String aMarkerName, @Nullable final Double aStartTime) {
     addMarker(aMarkerName, aStartTime, null, null);
   }
 
@@ -139,7 +140,7 @@ public class ProfilerController {
 
 
 
-  public void addMarker(@NonNull final String aMarkerName, @Nullable final String aText) {
+  public static void addMarker(@NonNull final String aMarkerName, @Nullable final String aText) {
     addMarker(aMarkerName, null, null, aText);
   }
 
@@ -151,7 +152,7 @@ public class ProfilerController {
 
 
 
-  public void addMarker(@NonNull final String aMarkerName) {
+  public static void addMarker(@NonNull final String aMarkerName) {
     addMarker(aMarkerName, null, null, null);
   }
 
@@ -165,7 +166,7 @@ public class ProfilerController {
 
 
 
-  public void startProfiler(
+  public static void startProfiler(
       @NonNull final String[] aFilters, @NonNull final String[] aFeaturesArr) {
     GeckoJavaSampler.startProfiler(aFilters, aFeaturesArr);
   }
@@ -176,7 +177,7 @@ public class ProfilerController {
 
 
 
-  public @NonNull GeckoResult<byte[]> stopProfiler() {
+  public static @NonNull GeckoResult<byte[]> stopProfiler() {
     return GeckoJavaSampler.stopProfiler();
   }
 }
