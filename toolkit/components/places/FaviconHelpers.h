@@ -19,6 +19,7 @@ class nsIPrincipal;
 
 #include "Database.h"
 #include "mozilla/storage.h"
+#include "mozilla/ipc/IPCCore.h"
 
 #define ICON_STATUS_UNKNOWN 0
 #define ICON_STATUS_CHANGED 1 << 0
@@ -161,6 +162,7 @@ class AsyncSetIconForPage final : public Runnable {
 
 using FaviconPromise =
     mozilla::MozPromise<nsCOMPtr<nsIFavicon>, nsresult, true>;
+using BoolPromise = mozilla::MozPromise<bool, nsresult, true>;
 
 
 
@@ -181,9 +183,9 @@ class AsyncGetFaviconForPageRunnable final : public Runnable {
 
 
 
-  AsyncGetFaviconForPageRunnable(const nsCOMPtr<nsIURI>& aPageURI,
-                                 uint16_t aPreferredWidth,
-                                 FaviconPromise::Private* aPromise);
+  AsyncGetFaviconForPageRunnable(
+      const nsCOMPtr<nsIURI>& aPageURI, uint16_t aPreferredWidth,
+      const RefPtr<FaviconPromise::Private>& aPromise);
 
  private:
   nsCOMPtr<nsIURI> mPageURI;
@@ -221,7 +223,7 @@ class NotifyIconObservers final : public Runnable {
 
 
 
-class AsyncCopyFavicons final : public Runnable {
+class AsyncTryCopyFaviconsRunnable final : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
 
@@ -237,13 +239,16 @@ class AsyncCopyFavicons final : public Runnable {
 
 
 
-  AsyncCopyFavicons(PageData& aFromPage, PageData& aToPage,
-                    nsIFaviconDataCallback* aCallback);
+  AsyncTryCopyFaviconsRunnable(const nsCOMPtr<nsIURI>& aFromPageURI,
+                               const nsCOMPtr<nsIURI>& aToPageURI,
+                               const bool aCanAddToHistoryForToPage,
+                               const RefPtr<BoolPromise::Private>& aPromise);
 
  private:
-  PageData mFromPage;
-  PageData mToPage;
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
+  nsCOMPtr<nsIURI> mFromPageURI;
+  nsCOMPtr<nsIURI> mToPageURI;
+  bool mCanAddToHistoryForToPage;
+  nsMainThreadPtrHandle<BoolPromise::Private> mPromise;
 };
 
 }  
