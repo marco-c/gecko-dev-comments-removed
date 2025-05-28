@@ -35,6 +35,7 @@ enum CancelAnimationFlags : uint32_t {
   ScrollSnap = 0x2,          
   TriggeredExternally = 0x4, 
 
+  ExcludeAutoscroll = 0x16   
 };
 
 inline CancelAnimationFlags operator|(CancelAnimationFlags a,

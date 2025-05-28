@@ -543,3 +543,22 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
   PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
 }
+
+TEST_F(APZCPanningTester, HoldGesture_DuringAutoscrollAnimation) {
+  
+  
+  tm->SetCurrentMousePosition(ScreenPoint(5, 5));
+
+  
+  apzc->StartAutoscroll(ScreenPoint(5, 5));
+  apzc->AssertStateIsAutoscroll();
+
+  
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_MAYSTART, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  apzc->AssertStateIsAutoscroll();
+}
