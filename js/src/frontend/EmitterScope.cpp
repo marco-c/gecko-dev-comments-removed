@@ -341,18 +341,6 @@ bool EmitterScope::prepareForDisposableScopeBody(BytecodeEmitter* bce) {
     if (!usingEmitter_->prepareForDisposableScopeBody(blockKind_)) {
       return false;
     }
-
-    if (blockKind_ == BlockKind::Switch) {
-      
-      
-      
-      
-      
-      
-      if (!bce->emit1(JSOp::Dup)) {
-        return false;
-      }
-    }
   }
   return true;
 }
@@ -366,30 +354,6 @@ bool EmitterScope::prepareForDisposableAssignment(UsingHint hint) {
   return usingEmitter_->prepareForAssignment(hint);
 }
 
-bool EmitterScope::emitSwitchBlockEndForDisposableScopeBodyEnd(
-    BytecodeEmitter* bce) {
-  MOZ_ASSERT(hasDisposables());
-
-  if (blockKind_ == BlockKind::Switch) {
-    
-    if (!bce->emit1(JSOp::Pop)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool EmitterScope::emitDisposableScopeBodyEndForNonLocalJump(
-    BytecodeEmitter* bce) {
-  if (hasDisposables()) {
-    if (!emitSwitchBlockEndForDisposableScopeBodyEnd(bce)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool EmitterScope::emitDisposableScopeBodyEnd(BytecodeEmitter* bce) {
   
   
@@ -397,10 +361,6 @@ bool EmitterScope::emitDisposableScopeBodyEnd(BytecodeEmitter* bce) {
   
   if (hasDisposables() && (blockKind_ != BlockKind::ForOf)) {
     if (!usingEmitter_->emitEnd()) {
-      return false;
-    }
-
-    if (!emitSwitchBlockEndForDisposableScopeBodyEnd(bce)) {
       return false;
     }
   }
@@ -1034,11 +994,7 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
     case ScopeKind::ClassBody:
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-      if (nonLocal) {
-        if (!emitDisposableScopeBodyEndForNonLocalJump(bce)) {
-          return false;
-        }
-      } else {
+      if (!nonLocal) {
         if (!emitDisposableScopeBodyEnd(bce)) {
           return false;
         }
