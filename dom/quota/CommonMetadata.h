@@ -62,6 +62,20 @@ struct OriginMetadata : public PrincipalMetadata {
                  PersistenceType aPersistenceType)
       : PrincipalMetadata(std::move(aPrincipalMetadata)),
         mPersistenceType(aPersistenceType) {}
+
+  
+  
+  
+  
+  nsCString GetCompositeKey() const {
+    nsCString result;
+
+    result.AppendInt(mPersistenceType);
+    result.Append("*");
+    result.Append(mOrigin);
+
+    return result;
+  }
 };
 
 struct FullOriginMetadata : OriginMetadata {
