@@ -57,10 +57,6 @@ typedef struct {
 #include "arm/mdct_arm.h"
 #endif
 
-
-
-#define IMDCT_HEADROOM 2
-
 int clt_mdct_init(mdct_lookup *l,int N, int maxshift, int arch);
 void clt_mdct_clear(mdct_lookup *l, int arch);
 
