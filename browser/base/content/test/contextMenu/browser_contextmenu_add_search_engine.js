@@ -6,21 +6,21 @@
 let contextMenu;
 
 const example_base =
-  
-  "http://example.com/browser/browser/base/content/test/contextMenu/";
-const MAIN_URL = example_base + "subtst_contextmenu_keyword.html";
+  "https://example.com/browser/browser/base/content/test/contextMenu/";
+const chrome_base =
+  "chrome://mochitests/content/browser/browser/base/content/test/contextMenu/";
+
+const HTTP_URL = example_base + "subtst_contextmenu_add_search_engine.html";
+const CHROME_URL = chrome_base + "subtst_contextmenu_add_search_engine.html";
 
 add_task(async function test_setup() {
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, MAIN_URL);
-
-  const chrome_base =
-    "chrome://mochitests/content/browser/browser/base/content/test/contextMenu/";
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, HTTP_URL);
   const contextmenu_common = chrome_base + "contextmenu_common.js";
   
   Services.scriptloader.loadSubScript(contextmenu_common, this);
 
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2.engineAliasRefresh", false]],
+    set: [["browser.urlbar.update2.engineAliasRefresh", true]],
   });
 });
 
@@ -161,7 +161,71 @@ add_task(async function test_text_input_spellcheck_searchform() {
       null,
       "---",
       null,
-      "context-keywordfield",
+      "context-add-engine",
+      null,
+      "---",
+      null,
+      "spell-check-enabled",
+      true,
+      "spell-dictionaries",
+      true,
+      [
+        "spell-check-dictionary-en-US",
+        true,
+        "---",
+        null,
+        "spell-add-dictionaries",
+        true,
+      ],
+      null,
+    ],
+    {
+      waitForSpellCheck: true,
+      async preCheckContextMenuFn() {
+        await SpecialPowers.spawn(
+          gBrowser.selectedBrowser,
+          [],
+          async function () {
+            let doc = content.document;
+            let input = doc.getElementById("search_text");
+            input.setAttribute("spellcheck", "true");
+            input.clientTop; 
+          }
+        );
+      },
+    }
+  );
+});
+
+
+add_task(async function test_searchform_non_http() {
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    gBrowser,
+    false,
+    CHROME_URL
+  );
+  BrowserTestUtils.startLoadingURIString(gBrowser, CHROME_URL);
+  await browserLoadedPromise;
+
+  await test_contextmenu(
+    "#search_text",
+    [
+      "context-undo",
+      false,
+      "context-redo",
+      false,
+      "---",
+      null,
+      "context-cut",
+      null, 
+      
+      "context-copy",
+      null,
+      "context-paste",
+      null, 
+      "context-delete",
+      null,
+      "context-selectall",
       null,
       "---",
       null,
