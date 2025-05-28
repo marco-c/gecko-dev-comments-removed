@@ -71,7 +71,7 @@ async function setupOverrideBuiltinsApp3() {
     {
       addon_id: "system2@tests.mozilla.org",
       addon_version: "1.0",
-      res_url: `resource://app3-builtin-system2/`,
+      res_url: `resource://app3-builtin-system3/`,
     },
     {
       addon_id: "system5@tests.mozilla.org",
@@ -91,7 +91,6 @@ async function check_installed(conditions) {
   for (let i = 0; i < conditions.length; i++) {
     let condition = conditions[i];
     let id = "system" + (i + 1) + "@tests.mozilla.org";
-    info(`check_installed: verifying addon ${id}`);
     let addon = await promiseAddonByID(id);
 
     if (!("isUpgrade" in condition) || !("version" in condition)) {
@@ -106,25 +105,20 @@ async function check_installed(conditions) {
 
     if (version) {
       
-      Assert.notEqual(addon, null, "add-on should be installed");
-      Assert.equal(addon.version, version, "addon.version");
-      Assert.ok(addon.isActive, "addon.isActive");
-      Assert.ok(!addon.foreignInstall, "!addon.foreignInstall");
-      Assert.ok(addon.hidden, "addon.hidden");
-      Assert.ok(addon.isSystem, "addon.isSystem");
-      Assert.ok(
-        !hasFlag(addon.permissions, AddonManager.PERM_CAN_UPGRADE),
-        "should not have PERM_CAN_UPGRADE"
-      );
+      Assert.notEqual(addon, null);
+      Assert.equal(addon.version, version);
+      Assert.ok(addon.isActive);
+      Assert.ok(!addon.foreignInstall);
+      Assert.ok(addon.hidden);
+      Assert.ok(addon.isSystem);
+      Assert.ok(!hasFlag(addon.permissions, AddonManager.PERM_CAN_UPGRADE));
       if (isUpgrade) {
         Assert.ok(
-          hasFlag(addon.permissions, AddonManager.PERM_API_CAN_UNINSTALL),
-          "system-signed update should have PERM_API_CAN_UNINSTALL"
+          hasFlag(addon.permissions, AddonManager.PERM_API_CAN_UNINSTALL)
         );
       } else {
         Assert.ok(
-          !hasFlag(addon.permissions, AddonManager.PERM_API_CAN_UNINSTALL),
-          "auto-installed built-in add-ons update should not have PERM_API_CAN_UNINSTALL"
+          !hasFlag(addon.permissions, AddonManager.PERM_API_CAN_UNINSTALL)
         );
       }
 
@@ -137,21 +131,14 @@ async function check_installed(conditions) {
         Assert.ok(file.exists());
         Assert.ok(file.isFile());
         Assert.equal(getAddonFile(addon).path, file.path);
-        Assert.equal(
-          addon.signedState,
-          AddonManager.SIGNEDSTATE_SYSTEM,
-          "should be system-signed"
-        );
+        Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
       }
     } else if (isUpgrade) {
       
-      Assert.equal(addon, null, "add-on should not be installed");
+      Assert.equal(addon, null);
     } else {
       
-      Assert.ok(
-        !addon || !addon.isActive,
-        "add-on should disabled or not installed"
-      );
+      Assert.ok(!addon || !addon.isActive);
     }
   }
 }
@@ -344,7 +331,7 @@ async function test_skips_additional() {
 }
 
 
-async function test_no_hide_location_on_missing_addon() {
+async function test_revert() {
   manuallyUninstall(updatesDir, "system2@tests.mozilla.org");
 
   await setupOverrideBuiltinsApp1();
@@ -355,7 +342,7 @@ async function test_no_hide_location_on_missing_addon() {
   let conditions = [
     { isUpgrade: false, version: "1.0" },
     { isUpgrade: false, version: "1.0" },
-    { isUpgrade: true, version: "2.0" },
+    { isUpgrade: false, version: null },
   ];
 
   await check_installed(conditions);
@@ -401,13 +388,8 @@ async function test_corrupt_pref() {
 }
 
 
-
 async function test_bad_profile_cert() {
-  AddonTestUtils.usePrivilegedSignatures = id => {
-    return id === "system1@tests.mozilla.org" ? false : "system";
-  };
-
-  let file = await getSystemAddonXPI(1, "2.0");
+  let file = await getSystemAddonXPI(1, "1.0");
   file.copyTo(updatesDir, "system1@tests.mozilla.org.xpi");
 
   
@@ -419,61 +401,31 @@ async function test_bad_profile_cert() {
         version: "2.0",
       },
       "system2@tests.mozilla.org": {
-        version: "2.0",
+        version: "1.0",
       },
       "system3@tests.mozilla.org": {
-        version: "2.0",
+        version: "1.0",
       },
     },
   };
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, JSON.stringify(addonSet));
 
   await setupOverrideBuiltinsApp1();
+  await promiseStartupManager();
 
-  const { messages } = await AddonTestUtils.promiseConsoleOutput(async () => {
-    await promiseStartupManager();
-  });
-
-  
   let conditions = [
     { isUpgrade: false, version: "1.0" },
-    { isUpgrade: true, version: "2.0" },
-    { isUpgrade: true, version: "2.0" },
+    { isUpgrade: false, version: "1.0" },
+    { isUpgrade: false, version: null },
   ];
 
   await check_installed(conditions);
 
-  
-  
-  const expectedMessage = /system1@tests.mozilla.org is not correctly signed/;
-  AddonTestUtils.checkMessages(messages, {
-    expected: [{ message: expectedMessage }],
-  });
-
-  
-  
-  
-  verifySystemAddonSetPref({
-    "system1@tests.mozilla.org": {
-      version: "2.0",
-    },
-    "system2@tests.mozilla.org": {
-      version: "2.0",
-    },
-    "system3@tests.mozilla.org": {
-      version: "2.0",
-    },
-  });
-
   await promiseShutdownManager();
-
-  AddonTestUtils.usePrivilegedSignatures = () => "system";
 }
 
 
-
-
-async function test_system_signature_is_not_required_for_builtins() {
+async function test_bad_app_cert() {
   gAppInfo.version = "3";
 
   AddonTestUtils.usePrivilegedSignatures = id => {
@@ -484,21 +436,8 @@ async function test_system_signature_is_not_required_for_builtins() {
   await promiseStartupManager();
 
   
-  
-  
-  
-  
-  verifySystemAddonSetPref({
-    "system1@tests.mozilla.org": {
-      version: "2.0",
-    },
-    "system2@tests.mozilla.org": {
-      version: "2.0",
-    },
-    "system3@tests.mozilla.org": {
-      version: "2.0",
-    },
-  });
+  let addonSet = Services.prefs.getCharPref(PREF_SYSTEM_ADDON_SET);
+  Assert.equal(addonSet, `{"schema":1,"addons":{}}`);
 
   
   let addon = await promiseAddonByID("system1@tests.mozilla.org");
@@ -507,26 +446,11 @@ async function test_system_signature_is_not_required_for_builtins() {
 
   let conditions = [
     { isUpgrade: false, version: "1.0" },
-    { isUpgrade: true, version: "2.0" },
-    { isUpgrade: true, version: "2.0" },
+    { isUpgrade: false, version: null },
+    { isUpgrade: false, version: "1.0" },
   ];
 
   await check_installed(conditions);
-
-  
-  
-  
-  verifySystemAddonSetPref({
-    "system1@tests.mozilla.org": {
-      version: "2.0",
-    },
-    "system2@tests.mozilla.org": {
-      version: "2.0",
-    },
-    "system3@tests.mozilla.org": {
-      version: "2.0",
-    },
-  });
 
   await promiseShutdownManager();
 
@@ -587,11 +511,11 @@ add_task(async function run_system_reset_scenarios() {
     safe_mode_disabled,
     normal_mode_enabled,
     test_skips_additional,
-    test_no_hide_location_on_missing_addon,
+    test_revert,
     test_reuse,
     test_corrupt_pref,
     test_bad_profile_cert,
-    test_system_signature_is_not_required_for_builtins,
+    test_bad_app_cert,
     test_updated_bad_update_set,
   ];
   for (const test_fn of test_scenarios) {
