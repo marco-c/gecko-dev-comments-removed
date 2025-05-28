@@ -16,10 +16,12 @@
 const { readFileSync, rmSync } = require("fs");
 const chalk = require("chalk");
 const path = require("path");
+const prettier = require("prettier");
 const StyleDictionary = require("style-dictionary");
 const config = require("../tokens-config.js");
 
 const TEST_BUILD_PATH = "tests/build/css/";
+const PROJECT_ROOT = path.resolve(__dirname, "../../../../../");
 
 function buildFilesWithTestConfig() {
   
@@ -27,6 +29,8 @@ function buildFilesWithTestConfig() {
   let testConfig = Object.assign({}, config);
   testConfig.source = [path.join(__dirname, "../design-tokens.json")];
   testConfig.platforms.css.buildPath = TEST_BUILD_PATH;
+  testConfig.platforms.storybook.buildPath = TEST_BUILD_PATH;
+  testConfig.platforms.figma.buildPath = TEST_BUILD_PATH;
 
   
   
@@ -61,7 +65,7 @@ const FILE_PATHS = {
 
 const tests = {
   
-  buildCSS() {
+  async buildCSS() {
     logStart("build CSS");
 
     let errors = [];
@@ -78,13 +82,20 @@ const tests = {
       errors.push("CSS build did not run successfully");
     }
 
+    let prettierConfig = require(path.resolve(PROJECT_ROOT, ".prettierrc.js"));
+
     
     
     
     for (let [fileName, { testPath }] of Object.entries(FILE_PATHS)) {
       let builtCSS = readFileSync(testPath, "utf8");
+      let formattedCSS = await prettier.format(builtCSS, {
+        ...prettierConfig,
+        parser: "css",
+        printWidth: 160,
+      });
 
-      if (builtCSS !== currentCSS[fileName]) {
+      if (formattedCSS !== currentCSS[fileName]) {
         errors.push(`${fileName} is out of date`);
       }
 
