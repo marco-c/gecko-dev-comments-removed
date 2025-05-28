@@ -22,7 +22,7 @@
 
 
 template <typename T>
-class MOZ_GSL_OWNER nsTLiteralString : public mozilla::detail::nsTStringRepr<T> {
+class nsTLiteralString : public mozilla::detail::nsTStringRepr<T> {
  public:
   typedef nsTLiteralString<T> self_type;
 
