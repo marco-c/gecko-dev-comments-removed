@@ -1891,6 +1891,13 @@ static bool TypedArray_set(JSContext* cx, const CallArgs& args) {
       cx, &args.thisv().toObject().as<TypedArrayObject>());
 
   
+  if (target->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
+    return false;
+  }
+
+  
   double targetOffset = 0;
   if (args.length() > 1) {
     
@@ -1968,6 +1975,13 @@ static bool TypedArray_copyWithin(JSContext* cx, const CallArgs& args) {
   auto arrayLength = tarray->length();
   if (!arrayLength) {
     ReportOutOfBounds(cx, tarray);
+    return false;
+  }
+
+  
+  if (tarray->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
     return false;
   }
 
@@ -2958,6 +2972,15 @@ static bool TypedArray_fill(JSContext* cx, const CallArgs& args) {
     ReportOutOfBounds(cx, tarray);
     return false;
   }
+
+  
+  if (tarray->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
+    return false;
+  }
+
+  
   size_t len = *arrayLength;
 
   
@@ -3069,6 +3092,15 @@ static bool TypedArray_reverse(JSContext* cx, const CallArgs& args) {
     ReportOutOfBounds(cx, tarray);
     return false;
   }
+
+  
+  if (tarray->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
+    return false;
+  }
+
+  
   size_t len = *arrayLength;
 
   
@@ -4050,6 +4082,13 @@ static bool uint8array_setFromBase64(JSContext* cx, const CallArgs& args) {
       cx, &args.thisv().toObject().as<TypedArrayObject>());
 
   
+  if (tarray->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
+    return false;
+  }
+
+  
   if (!args.get(0).isString()) {
     return ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK,
                             args.get(0), nullptr, "not a string");
@@ -4142,6 +4181,13 @@ static bool uint8array_setFromBase64(JSContext* cx, unsigned argc, Value* vp) {
 static bool uint8array_setFromHex(JSContext* cx, const CallArgs& args) {
   Rooted<TypedArrayObject*> tarray(
       cx, &args.thisv().toObject().as<TypedArrayObject>());
+
+  
+  if (tarray->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
+    return false;
+  }
 
   
   if (!args.get(0).isString()) {
@@ -5646,6 +5692,13 @@ static MOZ_ALWAYS_INLINE bool TypedArraySortPrologue(JSContext* cx,
   auto arrayLength = tarrayUnwrapped->length();
   if (!arrayLength) {
     ReportOutOfBounds(cx, tarrayUnwrapped);
+    return false;
+  }
+
+  
+  if (tarrayUnwrapped->is<ImmutableTypedArrayObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_IMMUTABLE);
     return false;
   }
 
