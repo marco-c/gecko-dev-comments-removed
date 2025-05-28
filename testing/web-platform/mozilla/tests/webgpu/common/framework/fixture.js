@@ -347,7 +347,21 @@ export class Fixture {
   }
 
   
+
+
+
+
+
+
+
+
   expect(cond, msg) {
+    if (typeof cond === 'function') {
+      if (msg === undefined) {
+        msg = cond.toString();
+      }
+      cond = cond();
+    }
     if (cond) {
       const m = msg ? ': ' + msg : '';
       this.rec.debug(new Error('expect OK' + m));
