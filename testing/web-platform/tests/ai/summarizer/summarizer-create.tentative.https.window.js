@@ -22,4 +22,4 @@ promise_test(async t => {
 
   
   await Summarizer.create();
-}, 'Summarizer.create() requires user activation when availability is "downloadable."');
+}, 'Summarizer.create() requires user activation when availability is "downloadable"');

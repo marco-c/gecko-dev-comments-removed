@@ -1,0 +1,24 @@
+
+
+
+
+
+'use strict';
+
+promise_test(async () => {
+  assert_true(!!Writer);
+}, 'Writer must be defined.');
+
+promise_test(async t => {
+  
+  await promise_rejects_dom(t, 'NotAllowedError', Writer.create());
+
+  
+  await createWriter();
+
+  
+  assert_equals(await Writer.availability(), 'available');
+
+  
+  await Writer.create();
+}, 'Writer.create() requires user activation when availability is "downloadable"');
