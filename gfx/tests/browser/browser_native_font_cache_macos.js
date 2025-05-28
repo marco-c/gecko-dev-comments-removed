@@ -40,7 +40,7 @@ add_task(async () => {
       
       let copiedText = await new Promise(resolve => {
         const REPORT_TIMEOUT_MS = 15 * 1e3;
-        const EXPECTED_START_WITH = "Main Process";
+        const EXPECTED_START_WITH = "Total resident memory (approximate)";
         let mostRecentTextOnClipboard = "";
 
         SimpleTest.waitForClipboard(
