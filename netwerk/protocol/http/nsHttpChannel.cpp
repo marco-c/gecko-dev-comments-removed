@@ -8055,6 +8055,24 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     mTransaction->GetNetworkAddresses(mSelfAddr, mPeerAddr, isTrr,
                                       mEffectiveTRRMode, mTRRSkipReason,
                                       echConfigUsed);
+    
+    if (!mProxyInfo) {
+      
+      
+      nsILoadInfo::IPAddressSpace docAddressSpace =
+          mPeerAddr.GetIpAddressSpace();
+      ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
+      mLoadInfo->SetIpAddressSpace(docAddressSpace);
+      if (type == ExtContentPolicy::TYPE_DOCUMENT ||
+          type == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+        RefPtr<mozilla::dom::BrowsingContext> bc;
+        mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+        if (bc) {
+          bc->SetCurrentIPAddressSpace(docAddressSpace);
+        }
+      }
+    }
+
     StoreResolvedByTRR(isTrr);
     StoreEchConfigUsed(echConfigUsed);
   }
