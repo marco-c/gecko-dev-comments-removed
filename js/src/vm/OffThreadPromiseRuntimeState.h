@@ -124,11 +124,6 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   
   
   
-  bool registered_;
-
-  
-  
-  
   
   bool cancellable_;
 
@@ -263,6 +258,19 @@ class OffThreadPromiseRuntimeState {
   
   
   HelperThreadLockData<size_t> numRegistered_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  HelperThreadLockData<size_t> numDelayed_;
 
   
   

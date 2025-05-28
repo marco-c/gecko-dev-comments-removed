@@ -943,7 +943,7 @@ FutexWaiterListHead::~FutexWaiterListHead() {
       
       
       
-      MOZ_ASSERT(removedWaiter->timeoutTask()->cleared(lock));
+      MOZ_ASSERT(!removedWaiter->timeoutTask()->cleared(lock));
       continue;
     }
     

@@ -563,7 +563,15 @@ extern JS_PUBLIC_API JSObject* GetWaitForAllPromise(
 
 
 class JS_PUBLIC_API Dispatchable {
+ protected:
+  
+  
+  
+  bool registered_ = false;
+
  public:
+  bool registered() const { return registered_; }
+
   
   
   
