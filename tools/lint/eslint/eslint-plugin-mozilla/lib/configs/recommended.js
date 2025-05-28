@@ -5,6 +5,7 @@
 "use strict";
 
 const js = require("@eslint/js");
+const { allFileExtensions } = require("../helpers.js");
 
 
 
@@ -345,6 +346,7 @@ const legacyConfig = {
 
 const flatConfig = [
   {
+    files: [`**/*.{${allFileExtensions.join(",")}}`],
     languageOptions: {
       
       

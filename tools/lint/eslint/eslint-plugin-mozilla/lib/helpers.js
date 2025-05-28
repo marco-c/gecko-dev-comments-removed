@@ -20,6 +20,31 @@ var directoryManifests = new Map();
 let xpidlData;
 
 module.exports = {
+  
+
+
+
+
+
+
+  allFileExtensions: ["mjs", "js", "json", "jsx", "html", "sjs", "xhtml"],
+
+  
+
+
+
+
+
+  turnOff(items) {
+    
+    let result = {};
+
+    for (let key of Object.keys(items)) {
+      result[key] = "off";
+    }
+    return result;
+  },
+
   get servicesData() {
     return require("./services.json");
   },
