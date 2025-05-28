@@ -1,16 +1,16 @@
 
-#[cfg(any(not(feature = "unstable"), feature = "rust_1_57"))]
+#[cfg(not(feature = "unstable"))]
 use super::FallibleBox;
 use super::TryClone;
 use crate::TryReserveError;
 
-#[cfg(any(not(feature = "unstable"), feature = "rust_1_57"))]
+#[cfg(not(feature = "unstable"))]
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 
 
 #[cfg_attr(
-    any(not(feature = "unstable"), feature = "rust_1_57"),
+    not(feature = "unstable"),
     deprecated(
         since = "0.3.1",
         note = "⚠️️️this function is not completely fallible, it can panic !, see [issue](https://github.com/vcombey/fallible_collections/issues/13). help wanted"
@@ -27,13 +27,13 @@ pub trait FallibleArc<T> {
 #[allow(deprecated)]
 impl<T> FallibleArc<T> for Arc<T> {
     fn try_new(t: T) -> Result<Self, TryReserveError> {
-        #[cfg(any(not(feature = "unstable"), feature = "rust_1_57"))]
+        #[cfg(not(feature = "unstable"))]
         {
             
             let b = <Box<T> as FallibleBox<T>>::try_new(t)?;
             Ok(Arc::from(b))
         }
-        #[cfg(all(feature = "unstable", not(feature = "rust_1_57")))]
+        #[cfg(feature = "unstable")]
         {
             use alloc::alloc::Layout;
             use alloc::collections::TryReserveErrorKind;
