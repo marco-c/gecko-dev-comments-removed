@@ -651,8 +651,30 @@ void KeymapWrapper::SetModifierMask(xkb_keymap* aKeymap,
                                     ModifierIndex aModifierIndex,
                                     const char* aModifierName) {
   xkb_mod_index_t index = xkb_keymap_mod_get_index(aKeymap, aModifierName);
-  if (index != XKB_MOD_INVALID) {
-    mModifierMasks[aModifierIndex] = (1 << index);
+  if (index == XKB_MOD_INVALID) {
+    return;
+  }
+  struct xkb_state* xkb_state = xkb_state_new(aKeymap);
+  if (!xkb_state) {
+    return;
+  }
+  xkb_mod_mask_t mask = 1u << index;
+  xkb_state_update_mask(xkb_state, mask, 0, 0, 0, 0, 0);
+  xkb_mod_mask_t res =
+      xkb_state_serialize_mods(xkb_state, XKB_STATE_MODS_EFFECTIVE);
+  xkb_state_unref(xkb_state);
+  if (res == mask) {
+    
+    
+    
+    
+    mModifierMasks[aModifierIndex] = res;
+  } else {
+    
+    
+    
+    
+    mModifierMasks[aModifierIndex] = res & ~(mask);
   }
 }
 
@@ -660,14 +682,17 @@ void KeymapWrapper::SetModifierMasks(xkb_keymap* aKeymap) {
   KeymapWrapper* keymapWrapper = GetInstance();
 
   
-  keymapWrapper->SetModifierMask(aKeymap, INDEX_NUM_LOCK, XKB_MOD_NAME_NUM);
+  
   keymapWrapper->SetModifierMask(aKeymap, INDEX_ALT, XKB_MOD_NAME_ALT);
-  keymapWrapper->SetModifierMask(aKeymap, INDEX_META, "Meta");
-  keymapWrapper->SetModifierMask(aKeymap, INDEX_HYPER, "Hyper");
-
-  keymapWrapper->SetModifierMask(aKeymap, INDEX_SCROLL_LOCK, "ScrollLock");
-  keymapWrapper->SetModifierMask(aKeymap, INDEX_LEVEL3, "Level3");
-  keymapWrapper->SetModifierMask(aKeymap, INDEX_LEVEL5, "Level5");
+  keymapWrapper->SetModifierMask(aKeymap, INDEX_NUM_LOCK, XKB_MOD_NAME_NUM);
+  
+  keymapWrapper->SetModifierMask(aKeymap, INDEX_LEVEL3, XKB_VMOD_NAME_LEVEL3);
+  keymapWrapper->SetModifierMask(aKeymap, INDEX_LEVEL5, XKB_VMOD_NAME_LEVEL5);
+  keymapWrapper->SetModifierMask(aKeymap, INDEX_SCROLL_LOCK,
+                                 XKB_VMOD_NAME_SCROLL);
+  
+  keymapWrapper->mModifierMasks[INDEX_HYPER] = GDK_HYPER_MASK;
+  keymapWrapper->mModifierMasks[INDEX_META] = GDK_META_MASK;
 
   keymapWrapper->SetKeymap(aKeymap);
 
@@ -2658,7 +2683,8 @@ void KeymapWrapper::WillDispatchKeyboardEventInternal(
   guint baseState = aGdkKeyEvent->state &
                     ~(GetGdkModifierMask(SHIFT) | GetGdkModifierMask(CTRL) |
                       GetGdkModifierMask(ALT) | GetGdkModifierMask(META) |
-                      GetGdkModifierMask(SUPER) | GetGdkModifierMask(HYPER));
+                      GetGdkModifierMask(SUPER) | GetGdkModifierMask(HYPER) |
+                      GDK_META_MASK | GDK_SUPER_MASK | GDK_HYPER_MASK);
 
   
   
