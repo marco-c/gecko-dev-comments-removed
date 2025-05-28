@@ -208,6 +208,9 @@ add_task(async function test_cache_worker() {
   
   state.App.isForStartupCache = {
     App: true,
+    TopSites: true,
+    DiscoveryStream: true,
+    Weather: true,
     Wallpaper: true,
   };
 
