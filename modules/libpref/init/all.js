@@ -540,10 +540,6 @@ pref("toolkit.scrollbox.clickToScroll.scrollDelay", 150);
 
 pref("toolkit.shopping.ohttpConfigURL", "https://prod.ohttp-gateway.prod.webservices.mozgcp.net/ohttp-configs");
 pref("toolkit.shopping.ohttpRelayURL", "https://mozilla-ohttp.fastly-edge.com/");
-pref("toolkit.shopping.environment", "prod");
-
-
-pref("toolkit.shopping.experience2023.defr", false);
 
 
 pref("toolkit.sqlitejsm.loglevel", "Error");
