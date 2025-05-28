@@ -73,10 +73,6 @@ pref("general.useragent.compatMode.firefox", false);
 
 pref("general.config.obscure_value", 13); 
 
-#ifndef MOZ_BUILD_APP_IS_BROWSER
-pref("general.warnOnAboutConfig", true);
-#endif
-
 
 
 pref("general.autoscroll.prevent_to_start.shiftKey", true); 
