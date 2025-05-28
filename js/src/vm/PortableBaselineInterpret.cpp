@@ -1,16 +1,16 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * JavaScript "portable baseline interpreter": an interpreter that is
+ * capable of running ICs, but without any native code.
+ *
+ * See the [SMDOC] in vm/PortableBaselineInterpret.h for a high-level
+ * overview.
+ */
 
 #include "vm/PortableBaselineInterpret.h"
 
@@ -53,7 +53,7 @@
 #include "vm/Opcodes.h"
 #include "vm/PlainObject.h"
 #include "vm/Shape.h"
-#include "vm/TypeofEqOperand.h"  
+#include "vm/TypeofEqOperand.h"  // TypeofEqOperand
 #include "vm/WrapperObject.h"
 
 #include "debugger/DebugAPI-inl.h"
@@ -69,12 +69,12 @@ namespace pbl {
 
 using namespace js::jit;
 
+/*
+ * Debugging: enable `TRACE_INTERP` for an extremely detailed dump of
+ * what PBL is doing at every opcode step.
+ */
 
-
-
-
-
-
+// #define TRACE_INTERP
 
 #ifdef TRACE_INTERP
 #  define TRACE_PRINTF(...) \
@@ -90,42 +90,42 @@ using namespace js::jit;
 
 #define PBL_HYBRID_ICS_DEFAULT true
 
-
-
-
+// Whether we are using the "hybrid" strategy for ICs (see the [SMDOC]
+// in PortableBaselineInterpret.h for more). This is currently a
+// constant, but may become configurable in the future.
 static const bool kHybridICsInterp = PBL_HYBRID_ICS_DEFAULT;
 
-
-
+// Whether to compile interpreter dispatch loops using computed gotos
+// or direct switches.
 #if !defined(__wasi__) && !defined(TRACE_INTERP)
 #  define ENABLE_COMPUTED_GOTO_DISPATCH
 #endif
 
-
+// Whether to compile in interrupt checks in the main interpreter loop.
 #ifndef __wasi__
-
-
+// On WASI, with a single thread, there is no possibility for an
+// interrupt to come asynchronously.
 #  define ENABLE_INTERRUPT_CHECKS
 #endif
 
-
+// Whether to compile in coverage counting in the main interpreter loop.
 #ifndef __wasi__
 #  define ENABLE_COVERAGE
 #endif
 
+/*
+ * -----------------------------------------------
+ * Stack handling
+ * -----------------------------------------------
+ */
 
-
-
-
-
-
-
+// Large enough for an exit frame.
 static const size_t kStackMargin = 1024;
 
-
-
-
-
+/*
+ * A 64-bit value on the auxiliary stack. May either be a raw uint64_t
+ * or a `Value` (JS NaN-boxed value).
+ */
 struct StackVal {
   uint64_t value;
 
@@ -136,14 +136,14 @@ struct StackVal {
   Value asValue() const { return Value::fromRawBits(value); }
 };
 
-
-
-
-
-
-
-
-
+/*
+ * A native-pointer-sized value on the auxiliary stack. This is
+ * separate from the above because we support running on 32-bit
+ * systems as well! May either be a `void*` (or cast to a
+ * `CalleeToken`, which is a typedef for a `void*`), or a `uint32_t`,
+ * which always fits in a native pointer width on our supported
+ * platforms. (See static_assert below.)
+ */
 struct StackValNative {
   static_assert(sizeof(uintptr_t) >= sizeof(uint32_t),
                 "Must be at least a 32-bit system to use PBL.");
@@ -159,8 +159,8 @@ struct StackValNative {
   }
 };
 
-
-
+// Assert that the stack alignment is no more than the size of a
+// StackValNative -- we rely on this when setting up call frames.
 static_assert(JitStackAlignment <= sizeof(StackValNative));
 
 #define PUSH(val) *--sp = (val)
@@ -176,9 +176,9 @@ static_assert(JitStackAlignment <= sizeof(StackValNative));
 #define POPNNATIVE(n) \
   sp = reinterpret_cast<StackVal*>(reinterpret_cast<StackValNative*>(sp) + (n))
 
-
-
-
+/*
+ * Helper class to manage the auxiliary stack and push/pop frames.
+ */
 struct Stack {
   StackVal* fp;
   StackVal* base;
@@ -281,7 +281,7 @@ struct Stack {
 
     PUSHNATIVE(StackValNative(
         MakeFrameDescriptorForJitCall(FrameType::BaselineJS, 0)));
-    PUSHNATIVE(StackValNative(nullptr));  
+    PUSHNATIVE(StackValNative(nullptr));  // fake return address.
     PUSHNATIVE(StackValNative(prevFP));
     StackVal* exitFP = sp;
     fp = exitFP;
@@ -311,25 +311,25 @@ struct Stack {
   }
 };
 
-
-
-
-
-
+/*
+ * -----------------------------------------------
+ * Interpreter state
+ * -----------------------------------------------
+ */
 
 struct ICRegs {
   static const int kMaxICVals = 16;
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Values can be split across two OR'd halves: unboxed bits and
+  // tags.  We mostly rely on the CacheIRWriter/Reader typed OperandId
+  // system to ensure "type safety" in CacheIR w.r.t. unboxing: the
+  // existence of an ObjOperandId implies that the value is unboxed,
+  // so `icVals` contains a pointer (reinterpret-casted to a
+  // `uint64_t`) and `icTags` contains the tag bits. An operator that
+  // requires a tagged Value can OR the two together (this corresponds
+  // to `useValueRegister` rather than `useRegister` in the native
+  // baseline compiler).
   uint64_t icVals[kMaxICVals];
-  uint64_t icTags[kMaxICVals];  
+  uint64_t icTags[kMaxICVals];  // Shifted tags.
   int extraArgs;
 };
 
@@ -372,13 +372,13 @@ struct State {
         scope0(cx) {}
 };
 
-
-
-
-
-
-
-
+/*
+ * -----------------------------------------------
+ * RAII helpers for pushing exit frames.
+ *
+ * (See [SMDOC] in PortableBaselineInterpret.h for more.)
+ * -----------------------------------------------
+ */
 
 class VMFrameManager {
   JSContext* cx;
@@ -388,17 +388,17 @@ class VMFrameManager {
  public:
   VMFrameManager(JSContext*& cx_, BaselineFrame* frame_)
       : cx(cx_), frame(frame_) {
-    
-    
-    
+    // Once the manager exists, we need to create an exit frame to
+    // have access to the cx (unless the caller promises it is not
+    // calling into the rest of the runtime).
     cx_ = nullptr;
   }
 
   void switchToFrame(BaselineFrame* frame) { this->frame = frame; }
 
-  
-  
-  
+  // Provides the JSContext, but *only* if no calls into the rest of
+  // the runtime (that may invoke a GC or stack walk) occur. Avoids
+  // the overhead of pushing an exit frame.
   JSContext* cxForLocalUseOnly() const { return cx; }
 };
 
@@ -455,16 +455,16 @@ class VMFrame {
   SYNCSP();                    \
   PUSH_EXIT_FRAME_OR_RET(PBIResult::Error, sp)
 
+/*
+ * -----------------------------------------------
+ * IC Interpreter
+ * -----------------------------------------------
+ */
 
-
-
-
-
-
-
-
-
-
+// Bundled state for passing to ICs, in order to reduce the number of
+// arguments and hence make the call more ABI-efficient. (On some
+// platforms, e.g. Wasm on Wasmtime on x86-64, we have as few as four
+// register arguments available before args go through the stack.)
 struct ICCtx {
   BaselineFrame* frame;
   VMFrameManager frameMgr;
@@ -490,7 +490,7 @@ struct ICCtx {
 
 #define IC_ERROR_SENTINEL() (JS::MagicValue(JS_GENERIC_MAGIC).asRawBits())
 
-
+// Universal signature for an IC stub function.
 typedef uint64_t (*ICStubFunc)(uint64_t arg0, uint64_t arg1, ICStub* stub,
                                ICCtx& ctx);
 
@@ -517,8 +517,8 @@ static double DoubleMinMax(bool isMax, double first, double second) {
   if (std::isnan(first) || std::isnan(second)) {
     return JS::GenericNaN();
   } else if (first == 0 && second == 0) {
-    
-    
+    // -0 and 0 compare as equal, but we have to distinguish
+    // them here: min(-0, 0) = -0, max(-0, 0) = 0.
     bool firstPos = !std::signbit(first);
     bool secondPos = !std::signbit(second);
     bool sign = isMax ? (firstPos || secondPos) : (firstPos && secondPos);
@@ -529,7 +529,7 @@ static double DoubleMinMax(bool isMax, double first, double second) {
   }
 }
 
-
+// Interpreter for CacheIR.
 uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
                         ICCtx& ctx) {
   {
@@ -544,7 +544,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     cacheop = cacheIRReader.readOp(); \
     goto* addresses[long(cacheop)];
 
-#else  
+#else  // ENABLE_COMPUTED_GOTO_DISPATCH
 
 #  define CACHEOP_CASE(name) \
     case CacheOp::name:      \
@@ -557,7 +557,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     cacheop = cacheIRReader.readOp(); \
     goto dispatch;
 
-#endif  
+#endif  // !ENABLE_COMPUTED_GOTO_DISPATCH
 
 #define READ_REG(index) ctx.icregs.icVals[(index)]
 #define READ_VALUE_REG(index) \
@@ -840,10 +840,10 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     DECLARE_CACHEOP_CASE(CallBoundScriptedFunction);
     DECLARE_CACHEOP_CASE(CallScriptedGetterResult);
 
-    
-    
-    
-    
+    // Define the computed-goto table regardless of dispatch strategy so
+    // we don't get unused-label errors. (We need some of the labels
+    // even without this for the predict-next mechanism, so we can't
+    // conditionally elide labels either.)
     static const void* const addresses[long(CacheOp::NumOpcodes)] = {
 #define OP(name, ...) &&cacheop_##name,
         CACHE_IR_OPS(OP)
@@ -856,12 +856,12 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 
 #define FAIL_IC() goto next_ic;
 
-
-
-
-
-
-
+// We set a fixed bound on the number of icVals which is smaller than what IC
+// generators may use. As a result we can't evaluate an IC if it defines too
+// many values. Note that we don't need to check this when reading from icVals
+// because we should have bailed out before the earlier write which defined the
+// same value. Similarly, we don't need to check writes to locations which we've
+// just read from.
 #define BOUNDSCHECK(resultId) \
   if (resultId.id() >= ICRegs::kMaxICVals) FAIL_IC();
 
@@ -1014,9 +1014,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         if (!v.isInt32()) {
           FAIL_IC();
         }
-        
-        
-        
+        // N.B.: we don't need to unbox because the low 32 bits are
+        // already the int32 itself, and we are careful when using
+        // `Int32Operand`s to only use those bits.
 
         PREDICT_NEXT(GuardToInt32);
         DISPATCH_CACHEOP();
@@ -1066,7 +1066,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         IntPtrOperandId resultId = cacheIRReader.intPtrOperandId();
         BOUNDSCHECK(resultId);
         int32_t input = int32_t(READ_REG(inputId.id()));
-        
+        // Note that this must sign-extend to pointer width:
         WRITE_REG(resultId.id(), intptr_t(input), OBJECT);
         DISPATCH_CACHEOP();
       }
@@ -1081,8 +1081,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           DISPATCH_CACHEOP();
         } else if (input.isDouble()) {
           double doubleVal = input.toDouble();
-          
-          
+          // Accept any double that fits in an int64_t but truncate the top 32
+          // bits.
           if (doubleVal >= double(INT64_MIN) &&
               doubleVal <= double(INT64_MAX)) {
             WRITE_REG(resultId.id(), int64_t(doubleVal), INT32);
@@ -1190,6 +1190,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           case GuardClassKind::Array:
           case GuardClassKind::PlainObject:
           case GuardClassKind::FixedLengthArrayBuffer:
+          case GuardClassKind::ImmutableArrayBuffer:
           case GuardClassKind::ResizableArrayBuffer:
           case GuardClassKind::FixedLengthSharedArrayBuffer:
           case GuardClassKind::GrowableSharedArrayBuffer:
@@ -1390,7 +1391,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         ObjOperandId funId = cacheIRReader.objOperandId();
         uint32_t expectedOffset = cacheIRReader.stubOffset();
         uint32_t nargsAndFlagsOffset = cacheIRReader.stubOffset();
-        (void)nargsAndFlagsOffset;  
+        (void)nargsAndFlagsOffset;  // Unused.
         uintptr_t expected = stubInfo->getStubRawWord(cstub, expectedOffset);
         if (expected != READ_REG(funId.id())) {
           FAIL_IC();
@@ -1421,7 +1422,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         uint32_t expectedOffset = cacheIRReader.stubOffset();
         uintptr_t expected = stubInfo->getStubRawWord(cstub, expectedOffset);
         if (expected != READ_REG(strId.id())) {
-          
+          // TODO: BaselineCacheIRCompiler also checks for equal strings
           FAIL_IC();
         }
         DISPATCH_CACHEOP();
@@ -1481,7 +1482,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         BOUNDSCHECK(resultId);
         JSString* str = reinterpret_cast<JSString*>(READ_REG(strId.id()));
         int32_t result;
-        
+        // Use indexed value as fast path if possible.
         if (str->hasIndexValue()) {
           uint32_t index = str->getIndexValue();
           MOZ_ASSERT(index <= INT32_MAX);
@@ -1502,7 +1503,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         BOUNDSCHECK(resultId);
         JSString* str = reinterpret_cast<JSString*>(READ_REG(strId.id()));
         Value result;
-        
+        // Use indexed value as fast path if possible.
         if (str->hasIndexValue()) {
           uint32_t index = str->getIndexValue();
           MOZ_ASSERT(index <= INT32_MAX);
@@ -1563,8 +1564,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         NativeObject* nobj =
             reinterpret_cast<NativeObject*>(READ_REG(objId.id()));
         HeapSlot* slots = nobj->getSlotsUnchecked();
-        
-        
+        // Note that unlike similar opcodes, GuardDynamicSlotIsSpecificObject
+        // takes a slot index rather than a byte offset.
         Value actual = slots[slot];
         if (actual != ObjectValue(*expected)) {
           FAIL_IC();
@@ -1579,8 +1580,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         uint32_t slot = stubInfo->getStubRawInt32(cstub, slotOffset);
         NativeObject* nobj = &obj->as<NativeObject>();
         HeapSlot* slots = nobj->getSlotsUnchecked();
-        
-        
+        // Note that unlike similar opcodes, GuardDynamicSlotIsNotObject takes a
+        // slot index rather than a byte offset.
         Value actual = slots[slot];
         if (actual.isObject()) {
           FAIL_IC();
@@ -1645,8 +1646,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         uint32_t slot = stubInfo->getStubRawInt32(cstub, slotOffset);
         NativeObject* nobj = &obj->as<NativeObject>();
         HeapSlot* slots = nobj->getSlotsUnchecked();
-        
-        
+        // Note that unlike similar opcodes, LoadDynamicSlot takes a slot index
+        // rather than a byte offset.
         Value actual = slots[slot];
         WRITE_VALUE_REG(resultId.id(), actual);
         DISPATCH_CACHEOP();
@@ -1967,10 +1968,10 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         int32_t numNewSlots =
             stubInfo->getStubRawInt32(cstub, numNewSlotsOffset);
         NativeObject* nobj = &obj->as<NativeObject>();
-        
-        
-        
-        
+        // We have to (re)allocate dynamic slots. Do this first, as it's the
+        // only fallible operation here. Note that growSlotsPure is fallible but
+        // does not GC. Otherwise this is the same as AddAndStoreDynamicSlot
+        // above.
         if (!NativeObject::growSlotsPure(ctx.frameMgr.cxForLocalUseOnly(), nobj,
                                          numNewSlots)) {
           FAIL_IC();
@@ -2029,10 +2030,10 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           }
           nobj->setDenseInitializedLength(initLength + 1);
 
-          
-          
-          
-          
+          // Baseline always updates the length field by directly accessing its
+          // offset in ObjectElements. If the object is not an ArrayObject then
+          // this field is never read, so it's okay to skip the update here in
+          // that case.
           if (nobj->is<ArrayObject>()) {
             ArrayObject* aobj = &nobj->as<ArrayObject>();
             uint32_t len = aobj->length();
@@ -2141,9 +2142,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
               MOZ_CRASH("Unsupported TypedArray type");
           }
 
-          
-          
-          
+          // SetTypedArrayElement doesn't do anything that can actually GC or
+          // need a new context when the value can only be Int32, Double, or
+          // BigInt, as the above switch statement enforces.
           FakeRooted<TypedArrayObject*> obj0(nullptr,
                                              &obj->as<TypedArrayObject>());
           FakeRooted<Value> value0(nullptr, v);
@@ -2250,24 +2251,24 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           }
         }
 
-        
+        // For now, fail any different-realm cases.
         if (!flags.isSameRealm()) {
           TRACE_PRINTF("failing: not same realm\n");
           FAIL_IC();
         }
-        
+        // And support only "standard" arg formats.
         if (flags.getArgFormat() != CallFlags::Standard) {
           TRACE_PRINTF("failing: not standard arg format\n");
           FAIL_IC();
         }
 
-        
+        // Fail constructing on a non-constructor callee.
         if (flags.isConstructing() && !callee->isConstructor()) {
           TRACE_PRINTF("failing: constructing a non-constructor\n");
           FAIL_IC();
         }
 
-        
+        // Handle arg-underflow (but only for scripted targets).
         uint32_t undefArgs = (!isNative && (argc < callee->nargs()))
                                  ? (callee->nargs() - argc)
                                  : 0;
@@ -2284,15 +2285,15 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             return IC_ERROR_SENTINEL();
           }
 
-          
-          
+          // Create `this` if we are constructing and this is a
+          // scripted function.
           Value thisVal;
-          
-          
-          
-          
-          
-          
+          // Force JIT scripts to stick around, so we don't have to
+          // fail the IC after GC'ing. This is critical, because
+          // `stub` is not rooted (we don't have a BaselineStub frame
+          // in PBL, only an exit frame directly below a baseline
+          // function frame), so we cannot fall back to the next stub
+          // once we pass this point.
           AutoKeepJitScripts keepJitScripts(cx);
           if (flags.isConstructing() && !isNative) {
             if (flags.needsUninitializedThis()) {
@@ -2307,28 +2308,28 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
                 return IC_ERROR_SENTINEL();
               }
               thisVal = result;
-              
+              // `callee` may have moved.
               callee = &calleeObj->as<JSFunction>();
             }
           }
-          
-          
+          // This will not be an Exit frame but a BaselineStub frame, so
+          // replace the ExitFrameType with the ICStub pointer.
           POPNNATIVE(1);
           PUSHNATIVE(StackValNative(cstub));
 
-          
-          
-          
-          
-          
-          
-          
-          
-          
+          // `origArgs` is (in index order, i.e. increasing address order)
+          // - normal, scripted: arg[argc-1] ... arg[0] thisv
+          // - ctor, scripted: newTarget arg[argc-1] ... arg[0] thisv
+          // - normal, native: arg[argc-1] ... arg[0] thisv callee
+          // - ctor, native: newTarget arg[argc-1] ... arg[0] thisv callee
+          //
+          // and we need to push them in reverse order -- from sp
+          // upward (in increasing address order) -- with args filled
+          // in with `undefined` if fewer than the number of formals.
 
-          
-          
-          
+          // Push args: newTarget if constructing, extra undef's added
+          // if underflow, then original args, and `callee` if
+          // native. Replace `this` if constructing.
           if (flags.isConstructing()) {
             PUSH(origArgs[0]);
             origArgs++;
@@ -2349,10 +2350,10 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             PUSHNATIVE(
                 StackValNative(MakeFrameDescriptor(FrameType::BaselineStub)));
 
-            
-            
+            // We *also* need an exit frame (the native baseline
+            // execution would invoke a trampoline here).
             StackVal* trampolinePrevFP = ctx.stack.fp;
-            PUSHNATIVE(StackValNative(nullptr));  
+            PUSHNATIVE(StackValNative(nullptr));  // fake return address.
             PUSHNATIVE(StackValNative(ctx.stack.fp));
             ctx.stack.fp = sp;
             PUSHNATIVE(StackValNative(
@@ -2391,7 +2392,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             Value ret;
             result = PortableBaselineInterpret<false, kHybridICsInterp>(
                 cx, ctx.state, ctx.stack, sp,
-                 nullptr, &ret, pc, isd, nullptr, nullptr,
+                /* envChain = */ nullptr, &ret, pc, isd, nullptr, nullptr,
                 nullptr, PBIResult::Ok);
             if (result != PBIResult::Ok) {
               ctx.error = result;
@@ -2435,7 +2436,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           FAIL_IC();
         }
 
-        
+        // For now, fail any arg-underflow case.
         if (callee->nargs() != isSetter ? 1 : 0) {
           TRACE_PRINTF(
               "failing: getter/setter does not have exactly 0/1 arg (has %d "
@@ -2453,25 +2454,25 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             return IC_ERROR_SENTINEL();
           }
 
-          
-          
+          // This will not be an Exit frame but a BaselineStub frame, so
+          // replace the ExitFrameType with the ICStub pointer.
           POPNNATIVE(1);
           PUSHNATIVE(StackValNative(cstub));
 
           if (isSetter) {
-            
+            // Push arg: value.
             PUSH(StackVal(rhs));
           }
           TRACE_PRINTF("pushing receiver: %" PRIx64 "\n", receiver.asRawBits());
-          
+          // Push thisv: receiver.
           PUSH(StackVal(receiver));
 
           TRACE_PRINTF("pushing callee: %p\n", callee);
           PUSHNATIVE(StackValNative(
-              CalleeToToken(callee,  false)));
+              CalleeToToken(callee, /* isConstructing = */ false)));
 
           PUSHNATIVE(StackValNative(MakeFrameDescriptorForJitCall(
-              FrameType::BaselineStub,  isSetter ? 1 : 0)));
+              FrameType::BaselineStub, /* argc = */ isSetter ? 1 : 0)));
 
           JSScript* script = callee->nonLazyScript();
           jsbytecode* pc = script->code();
@@ -2479,7 +2480,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           PBIResult result;
           Value ret;
           result = PortableBaselineInterpret<false, kHybridICsInterp>(
-              cx, ctx.state, ctx.stack, sp,  nullptr, &ret, pc,
+              cx, ctx.state, ctx.stack, sp, /* envChain = */ nullptr, &ret, pc,
               isd, nullptr, nullptr, nullptr, PBIResult::Ok);
           if (result != PBIResult::Ok) {
             ctx.error = result;
@@ -2510,7 +2511,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           FAIL_IC();
         }
 
-        
+        // For now, fail any constructing or different-realm cases.
         if (flags.isConstructing()) {
           TRACE_PRINTF("failing: constructing\n");
           FAIL_IC();
@@ -2519,7 +2520,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           TRACE_PRINTF("failing: not same realm\n");
           FAIL_IC();
         }
-        
+        // And support only "standard" arg formats.
         if (flags.getArgFormat() != CallFlags::Standard) {
           TRACE_PRINTF("failing: not standard arg format\n");
           FAIL_IC();
@@ -2527,7 +2528,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 
         uint32_t totalArgs = numBoundArgs + argc;
 
-        
+        // For now, fail any arg-underflow case.
         if (totalArgs < callee->nargs()) {
           TRACE_PRINTF("failing: too few args\n");
           FAIL_IC();
@@ -2544,25 +2545,25 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             return IC_ERROR_SENTINEL();
           }
 
-          
-          
+          // This will not be an Exit frame but a BaselineStub frame, so
+          // replace the ExitFrameType with the ICStub pointer.
           POPNNATIVE(1);
           PUSHNATIVE(StackValNative(cstub));
 
-          
+          // Push args.
           for (uint32_t i = 0; i < argc; i++) {
             PUSH(origArgs[i]);
           }
-          
+          // Push bound args.
           for (uint32_t i = 0; i < numBoundArgs; i++) {
             PUSH(StackVal(boundFunc->getBoundArg(numBoundArgs - 1 - i)));
           }
-          
+          // Push bound `this`.
           PUSH(StackVal(boundFunc->getBoundThis()));
 
           TRACE_PRINTF("pushing callee: %p\n", callee);
           PUSHNATIVE(StackValNative(
-              CalleeToToken(callee,  false)));
+              CalleeToToken(callee, /* isConstructing = */ false)));
 
           PUSHNATIVE(StackValNative(MakeFrameDescriptorForJitCall(
               FrameType::BaselineStub, totalArgs)));
@@ -2573,7 +2574,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           PBIResult result;
           Value ret;
           result = PortableBaselineInterpret<false, kHybridICsInterp>(
-              cx, ctx.state, ctx.stack, sp,  nullptr, &ret, pc,
+              cx, ctx.state, ctx.stack, sp, /* envChain = */ nullptr, &ret, pc,
               isd, nullptr, nullptr, nullptr, PBIResult::Ok);
           if (result != PBIResult::Ok) {
             ctx.error = result;
@@ -2588,8 +2589,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 
       CACHEOP_CASE(MetaScriptedThisShape) {
         uint32_t thisShapeOffset = cacheIRReader.stubOffset();
-        
-        
+        // This op is only metadata for the Warp Transpiler and should be
+        // ignored.
         (void)thisShapeOffset;
         PREDICT_NEXT(CallScriptedFunction);
         DISPATCH_CACHEOP();
@@ -2600,7 +2601,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         ObjOperandId objId = cacheIRReader.objOperandId();
         uint32_t offsetOffset = cacheIRReader.stubOffset();
         if (cacheop == CacheOp::LoadFixedSlotTypedResult) {
-          
+          // Type is unused here.
           (void)cacheIRReader.valueType();
         }
         uintptr_t offset = stubInfo->getStubRawInt32(cstub, offsetOffset);
@@ -2715,12 +2716,12 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         ObjectElements* elems = nobj->getElementsHeader();
         int32_t index = int32_t(READ_REG(indexId.id()));
         if (index < 0 || uint32_t(index) >= nobj->getDenseInitializedLength()) {
-          
+          // OK -- not in the dense index range.
         } else {
           HeapSlot* slot = &elems->elements()[index];
           Value val = slot->get();
           if (!val.isMagic()) {
-            
+            // Not a magic value -- not the hole, so guard fails.
             FAIL_IC();
           }
         }
@@ -2874,12 +2875,12 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         if (index < 0 || size_t(index) >= str->length()) {
           if (handleOOB) {
             if (cacheop == CacheOp::LoadStringCharResult) {
-              
+              // Return an empty string.
               retValue =
                   StringValue(ctx.frameMgr.cxForLocalUseOnly()->names().empty_)
                       .asRawBits();
             } else {
-              
+              // Return `undefined`.
               retValue = UndefinedValue().asRawBits();
             }
           } else {
@@ -2887,9 +2888,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           }
         } else {
           char16_t c;
-          
-          
-          MOZ_ALWAYS_TRUE(str->getChar( nullptr, index, &c));
+          // Guaranteed to always work because this CacheIR op is
+          // always preceded by LinearizeForCharAccess.
+          MOZ_ALWAYS_TRUE(str->getChar(/* cx = */ nullptr, index, &c));
           StaticStrings& sstr =
               ctx.frameMgr.cxForLocalUseOnly()->staticStrings();
           if (sstr.hasUnit(c)) {
@@ -2918,16 +2919,16 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         Value result;
         if (index < 0 || size_t(index) >= str->length()) {
           if (handleOOB) {
-            
+            // Return NaN.
             result = JS::NaNValue();
           } else {
             FAIL_IC();
           }
         } else {
           char16_t c;
-          
-          
-          MOZ_ALWAYS_TRUE(str->getChar( nullptr, index, &c));
+          // Guaranteed to always work because this CacheIR op is
+          // always preceded by LinearizeForCharAccess.
+          MOZ_ALWAYS_TRUE(str->getChar(/* cx = */ nullptr, index, &c));
           result = Int32Value(c);
         }
         retValue = result.asRawBits();
@@ -2945,16 +2946,16 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         Value result;
         if (index < 0 || size_t(index) >= str->length()) {
           if (handleOOB) {
-            
+            // Return undefined.
             result = UndefinedValue();
           } else {
             FAIL_IC();
           }
         } else {
           char32_t c;
-          
-          
-          MOZ_ALWAYS_TRUE(str->getCodePoint( nullptr, index, &c));
+          // Guaranteed to be always work because this CacheIR op is
+          // always preceded by LinearizeForCharAccess.
+          MOZ_ALWAYS_TRUE(str->getCodePoint(/* cx = */ nullptr, index, &c));
           result = Int32Value(c);
         }
         retValue = result.asRawBits();
@@ -3132,10 +3133,10 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     DISPATCH_CACHEOP();                                    \
   }
 
-      
+      // clang-format off
   INT32_OP(Add, +, {});
   INT32_OP(Sub, -, {});
-      
+      // clang-format on
       INT32_OP(Mul, *, {
         if (rhs * lhs == 0 && ((rhs < 0) ^ (lhs < 0))) {
           FAIL_IC();
@@ -3160,11 +3161,11 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           FAIL_IC();
         }
       });
-      
+      // clang-format off
   INT32_OP(BitOr, |, {});
   INT32_OP(BitXor, ^, {});
   INT32_OP(BitAnd, &, {});
-      
+      // clang-format on
 
       CACHEOP_CASE(Int32PowResult) {
         Int32OperandId lhsId = cacheIRReader.int32OperandId();
@@ -3271,7 +3272,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       CACHEOP_CASE(LoadDoubleTruthyResult) {
         NumberOperandId inputId = cacheIRReader.numberOperandId();
         double input = READ_VALUE_REG(inputId.id()).toNumber();
-        
+        // NaN is falsy, not truthy.
         retValue = BooleanValue(input != 0.0 && !std::isnan(input)).asRawBits();
         PREDICT_RETURN();
         DISPATCH_CACHEOP();
@@ -3349,8 +3350,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
               reinterpret_cast<JSString*>(READ_REG(rhsId.id())));
           bool result;
           if (lhs == rhs) {
-            
-            
+            // If operands point to the same instance, the strings are trivially
+            // equal.
             result = op == JSOp::Eq || op == JSOp::StrictEq || op == JSOp::Le ||
                      op == JSOp::Ge;
           } else {
@@ -3402,14 +3403,14 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
                 break;
               case JSOp::Le:
                 if (!StringsCompare<ComparisonKind::GreaterThanOrEqual>(
-                        cx,  rhs, lhs, &result)) {
+                        cx, /* N.B. swapped order */ rhs, lhs, &result)) {
                   ctx.error = PBIResult::Error;
                   return IC_ERROR_SENTINEL();
                 }
                 break;
               case JSOp::Gt:
                 if (!StringsCompare<ComparisonKind::LessThan>(
-                        cx,  rhs, lhs, &result)) {
+                        cx, /* N.B. swapped order */ rhs, lhs, &result)) {
                   ctx.error = PBIResult::Error;
                   return IC_ERROR_SENTINEL();
                 }
@@ -3583,7 +3584,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         ObjOperandId objId = cacheIRReader.objOperandId();
         uint32_t idOffset = cacheIRReader.stubOffset();
         uint32_t slotOffset = cacheIRReader.stubOffset();
-        
+        // Debug-only assertion; we can ignore.
         (void)objId;
         (void)idOffset;
         (void)slotOffset;
@@ -3858,9 +3859,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       CACHEOP_CASE(Int32MinMaxArrayResult) {
         ObjOperandId arrayId = cacheIRReader.objOperandId();
         bool isMax = cacheIRReader.readBool();
-        
-        
-        
+        // ICs that use this opcode depend on implicit unboxing due to
+        // type-overload on ObjOperandId when a value is loaded
+        // directly from an argument slot. We explicitly unbox here.
         NativeObject* nobj = reinterpret_cast<NativeObject*>(
             &READ_VALUE_REG(arrayId.id()).toObject());
         uint32_t len = nobj->getDenseInitializedLength();
@@ -3891,9 +3892,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       CACHEOP_CASE(NumberMinMaxArrayResult) {
         ObjOperandId arrayId = cacheIRReader.objOperandId();
         bool isMax = cacheIRReader.readBool();
-        
-        
-        
+        // ICs that use this opcode depend on implicit unboxing due to
+        // type-overload on ObjOperandId when a value is loaded
+        // directly from an argument slot. We explicitly unbox here.
         NativeObject* nobj = reinterpret_cast<NativeObject*>(
             &READ_VALUE_REG(arrayId.id()).toObject());
         uint32_t len = nobj->getDenseInitializedLength();
@@ -3986,14 +3987,14 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         IntPtrOperandId resultId = cacheIRReader.intPtrOperandId();
         BOUNDSCHECK(resultId);
         double input = READ_VALUE_REG(inputId.id()).toNumber();
-        
-        
+        // For simplicity, support only uint32 range for now. This
+        // covers 32-bit and 64-bit systems.
         if (input < 0.0 || input >= (uint64_t(1) << 32)) {
           FAIL_IC();
         }
         uintptr_t result = static_cast<uintptr_t>(input);
-        
-        
+        // Convert back and compare to detect rounded fractional
+        // parts.
         if (static_cast<double>(result) != input) {
           FAIL_IC();
         }
@@ -5423,11 +5424,11 @@ static MOZ_NEVER_INLINE uint64_t CallNextIC(uint64_t arg0, uint64_t arg1,
   return result;
 }
 
-
-
-
-
-
+/*
+ * -----------------------------------------------
+ * IC callsite logic, and fallback stubs
+ * -----------------------------------------------
+ */
 
 #define DEFINE_IC(kind, arity, fallback_body)                   \
   static uint64_t MOZ_NEVER_INLINE IC##kind##Fallback(          \
@@ -5486,11 +5487,11 @@ DEFINE_IC(GetName, 1, {
 DEFINE_IC(Call, 1, {
   uint32_t argc = uint32_t(arg0);
   uint32_t totalArgs =
-      argc + ctx.icregs.extraArgs;  
+      argc + ctx.icregs.extraArgs;  // this, callee, (constructing?), func args
   Value* args = reinterpret_cast<Value*>(&sp[0]);
   TRACE_PRINTF("Call fallback: argc %d totalArgs %d args %p\n", argc, totalArgs,
                args);
-  
+  // Reverse values on the stack.
   std::reverse(args, args + totalArgs);
   {
     PUSH_FALLBACK_IC_FRAME();
@@ -5506,11 +5507,11 @@ DEFINE_IC_ALIAS(CallConstructing, Call);
 DEFINE_IC(SpreadCall, 1, {
   uint32_t argc = uint32_t(arg0);
   uint32_t totalArgs =
-      argc + ctx.icregs.extraArgs;  
+      argc + ctx.icregs.extraArgs;  // this, callee, (constructing?), func args
   Value* args = reinterpret_cast<Value*>(&sp[0]);
   TRACE_PRINTF("Call fallback: argc %d totalArgs %d args %p\n", argc, totalArgs,
                args);
-  
+  // Reverse values on the stack.
   std::reverse(args, args + totalArgs);
   {
     PUSH_FALLBACK_IC_FRAME();
@@ -5631,9 +5632,9 @@ DEFINE_IC(GetElem, 2, {
 });
 
 DEFINE_IC(GetElemSuper, 3, {
-  IC_LOAD_VAL(value0, 0);  
-  IC_LOAD_VAL(value1, 1);  
-  IC_LOAD_VAL(value2, 2);  
+  IC_LOAD_VAL(value0, 0);  // receiver
+  IC_LOAD_VAL(value1, 1);  // obj (lhs)
+  IC_LOAD_VAL(value2, 2);  // key (rhs)
   PUSH_FALLBACK_IC_FRAME();
   if (!DoGetElemSuperFallback(cx, ctx.frame, fallback, value1, value2, value0,
                               &ctx.state.res)) {
@@ -5766,11 +5767,11 @@ uint8_t* GetICInterpreter() {
   return reinterpret_cast<uint8_t*>(&ICInterpretOps);
 }
 
-
-
-
-
-
+/*
+ * -----------------------------------------------
+ * Main JSOp interpreter
+ * -----------------------------------------------
+ */
 
 static EnvironmentObject& getEnvironmentFromCoordinate(
     BaselineFrame* frame, EnvironmentCoordinate ec) {
@@ -5921,7 +5922,7 @@ PBIResult PortableBaselineInterpret(
     goto error;                \
   } while (0)
 
-  
+  // Update local state when we switch to a new script with a new PC.
 #define RESET_PC(new_pc, new_script)                                \
   pc = new_pc;                                                      \
   entryPC = new_script->code();                                     \
@@ -5946,14 +5947,14 @@ PBIResult PortableBaselineInterpret(
   jsbytecode* entryPC = restartEntryPC;
 
   if (!IsRestart) {
-    PUSHNATIVE(StackValNative(nullptr));  
+    PUSHNATIVE(StackValNative(nullptr));  // Fake return address.
     frame = stack.pushFrame(sp, cx_, envChain);
-    MOZ_ASSERT(frame);  
+    MOZ_ASSERT(frame);  // safety: stack margin.
     sp = reinterpret_cast<StackVal*>(frame);
-    
-    
+    // Save the entry frame so that when unwinding, we know when to
+    // return from this C++ frame.
     entryFrame = sp;
-    
+    // Save the entry PC so that we can compute offsets locally.
     entryPC = pc;
   }
 
@@ -5984,9 +5985,9 @@ PBIResult PortableBaselineInterpret(
     }
   }
 
-  
-  
-  
+  // Check max stack depth once, so we don't need to check it
+  // otherwise below for ordinary stack-manipulation opcodes (just for
+  // exit frames).
   if (!ctx.stack.check(sp, sizeof(StackVal) * frame->script()->nslots())) {
     PUSH_EXIT_FRAME();
     ReportOverRecursed(ctx.frameMgr.cxForLocalUseOnly());
@@ -6000,8 +6001,8 @@ PBIResult PortableBaselineInterpret(
   }
   ret->setUndefined();
 
-  
-  
+  // Check if we are being debugged, and set a flag in the frame if so. This
+  // flag must be set before calling InitFunctionEnvironmentObjects.
   if (frame->script()->isDebuggee()) {
     TRACE_PRINTF("Script is debuggee\n");
     frame->setIsDebuggee();
@@ -6020,7 +6021,7 @@ PBIResult PortableBaselineInterpret(
     }
   }
 
-  
+  // The debug prologue can't run until the function environment is set up.
   if (frame->script()->isDebuggee()) {
     PUSH_EXIT_FRAME();
     if (!DebugPrologue(cx, frame)) {
@@ -6076,9 +6077,9 @@ PBIResult PortableBaselineInterpret(
 #ifdef ENABLE_COMPUTED_GOTO_DISPATCH
     goto* addresses[*pc];
 #else
-    (void)addresses;  
-                      
-                      
+    (void)addresses;  // Avoid unused-local error. We keep the table
+                      // itself to avoid warnings (see note in IC
+                      // interpreter above).
     switch (JSOp(*pc))
 #endif
     {
@@ -6187,7 +6188,7 @@ PBIResult PortableBaselineInterpret(
 
       CASE(Pos) {
         if (VIRTSP(0).asValue().isNumber()) {
-          
+          // Nothing!
           NEXT_IC();
           END_OP(Pos);
         } else {
@@ -6684,8 +6685,8 @@ PBIResult PortableBaselineInterpret(
           Value v0 = VIRTSP(0).asValue();
           Value v1 = VIRTSP(1).asValue();
           if (v0.isInt32() && v1.isInt32()) {
-            
-            
+            // Unsigned to avoid undefined behavior on left-shift overflow
+            // (see comment in BitLshOperation in Interpreter.cpp).
             uint32_t lhs = uint32_t(v1.toInt32());
             uint32_t rhs = uint32_t(v0.toInt32());
             VIRTPOP();
@@ -7072,9 +7073,9 @@ PBIResult PortableBaselineInterpret(
       CASE(DynamicImport) {
         {
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // options
           ReservedRooted<Value> value1(&state.value1,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // specifier
           JSObject* promise;
           {
             PUSH_EXIT_FRAME();
@@ -7199,10 +7200,10 @@ PBIResult PortableBaselineInterpret(
         {
           ReservedRooted<JSObject*> obj1(
               &state.obj1,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // val
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTSP(0).asValue().toObject());  
+              &VIRTSP(0).asValue().toObject());  // obj; leave on stack
           ReservedRooted<PropertyName*> name0(&state.name0,
                                               frame->script()->getName(pc));
           {
@@ -7227,12 +7228,12 @@ PBIResult PortableBaselineInterpret(
         {
           ReservedRooted<JSObject*> obj1(
               &state.obj1,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // val
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // idval
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTSP(0).asValue().toObject());  
+              &VIRTSP(0).asValue().toObject());  // obj; leave on stack
           {
             PUSH_EXIT_FRAME();
             if (!InitElemGetterSetterOperation(cx, pc, obj0, value0, obj1)) {
@@ -7290,9 +7291,9 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(GetElemSuper) {
-        
-        
-        
+        // N.B.: second and third args are out of order! See the saga at
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1709328; this is
+        // an echo of that issue.
         IC_POP_ARG(1);
         IC_POP_ARG(2);
         IC_POP_ARG(0);
@@ -7413,22 +7414,22 @@ PBIResult PortableBaselineInterpret(
 
       CASE(SetPropSuper)
       CASE(StrictSetPropSuper) {
-        
+        // stack signature: receiver, lval, rval => rval
         static_assert(JSOpLength_SetPropSuper == JSOpLength_StrictSetPropSuper);
         bool strict = JSOp(*pc) == JSOp::StrictSetPropSuper;
         {
           ReservedRooted<Value> value2(&state.value2,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // rval
           ReservedRooted<Value> value1(&state.value1,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // lval
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // recevier
           ReservedRooted<PropertyName*> name0(&state.name0,
                                               frame->script()->getName(pc));
           {
             PUSH_EXIT_FRAME();
-            
-            
+            // SetPropertySuper(cx, lval, receiver, name, rval, strict)
+            // (N.B.: lval and receiver are transposed!)
             if (!SetPropertySuper(cx, value1, value0, name0, value2, strict)) {
               GOTO_ERROR();
             }
@@ -7440,27 +7441,27 @@ PBIResult PortableBaselineInterpret(
 
       CASE(SetElemSuper)
       CASE(StrictSetElemSuper) {
-        
+        // stack signature: receiver, key, lval, rval => rval
         static_assert(JSOpLength_SetElemSuper == JSOpLength_StrictSetElemSuper);
         bool strict = JSOp(*pc) == JSOp::StrictSetElemSuper;
         {
           ReservedRooted<Value> value3(&state.value3,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // rval
           ReservedRooted<Value> value2(&state.value2,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // lval
           ReservedRooted<Value> value1(&state.value1,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // index
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // receiver
           {
             PUSH_EXIT_FRAME();
-            
-            
+            // SetElementSuper(cx, lval, receiver, index, rval, strict)
+            // (N.B.: lval, receiver and index are rotated!)
             if (!SetElementSuper(cx, value2, value0, value1, value3, strict)) {
               GOTO_ERROR();
             }
           }
-          VIRTPUSH(StackVal(value3));  
+          VIRTPUSH(StackVal(value3));  // value
         }
         END_OP(SetElemSuper);
       }
@@ -7474,21 +7475,21 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(MoreIter) {
-        
+        // iter => iter, name
         Value v = IteratorMore(&VIRTSP(0).asValue().toObject());
         VIRTPUSH(StackVal(v));
         END_OP(MoreIter);
       }
 
       CASE(IsNoIter) {
-        
+        // iter => iter, bool
         bool result = VIRTSP(0).asValue().isMagic(JS_NO_ITER_VALUE);
         VIRTPUSH(StackVal(BooleanValue(result)));
         END_OP(IsNoIter);
       }
 
       CASE(EndIter) {
-        
+        // iter, interval =>
         VIRTPOP();
         CloseIterator(&VIRTPOP().asValue().toObject());
         END_OP(EndIter);
@@ -7507,7 +7508,7 @@ PBIResult PortableBaselineInterpret(
           PUSH_EXIT_FRAME();
           MOZ_ALWAYS_FALSE(
               js::ThrowCheckIsObject(cx, js::CheckIsObjectKind(GET_UINT8(pc))));
-          
+          /* abandon frame; error handler will re-establish sp */
           GOTO_ERROR();
         }
         END_OP(CheckIsObj);
@@ -7519,7 +7520,7 @@ PBIResult PortableBaselineInterpret(
           if (value0.isNullOrUndefined()) {
             PUSH_EXIT_FRAME();
             MOZ_ALWAYS_FALSE(ThrowObjectCoercible(cx, value0));
-            
+            /* abandon frame; error handler will re-establish sp */
             GOTO_ERROR();
           }
         }
@@ -7527,13 +7528,13 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(ToAsyncIter) {
-        
+        // iter, next => asynciter
         {
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // next
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // iter
           JSObject* result;
           {
             PUSH_EXIT_FRAME();
@@ -7548,7 +7549,7 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(MutateProto) {
-        
+        // obj, protoVal => obj
         {
           ReservedRooted<Value> value0(&state.value0, VIRTPOP().asValue());
           ReservedRooted<JSObject*> obj0(&state.obj0,
@@ -7587,7 +7588,7 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(InitElemArray) {
-        
+        // array, val => array
         {
           ReservedRooted<Value> value0(&state.value0, VIRTPOP().asValue());
           ReservedRooted<JSObject*> obj0(&state.obj0,
@@ -7647,10 +7648,10 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(SetFunName) {
-        
+        // fun, name => fun
         {
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // name
           ReservedRooted<JSFunction*> fun0(
               &state.fun0, &VIRTSP(0).asValue().toObject().as<JSFunction>());
           FunctionPrefixKind prefixKind = FunctionPrefixKind(GET_UINT8(pc));
@@ -7665,10 +7666,10 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(InitHomeObject) {
-        
+        // fun, homeObject => fun
         {
           ReservedRooted<JSObject*> obj0(
-              &state.obj0, &VIRTPOP().asValue().toObject());  
+              &state.obj0, &VIRTPOP().asValue().toObject());  // homeObject
           ReservedRooted<JSFunction*> fun0(
               &state.fun0, &VIRTSP(0).asValue().toObject().as<JSFunction>());
           MOZ_ASSERT(fun0->allowSuperProperty());
@@ -7693,11 +7694,11 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(FunWithProto) {
-        
+        // proto => obj
         {
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // proto
           ReservedRooted<JSObject*> obj1(&state.obj1,
                                          frame->environmentChain());
           ReservedRooted<JSFunction*> fun0(&state.fun0,
@@ -7748,24 +7749,24 @@ PBIResult PortableBaselineInterpret(
         uint32_t argc = GET_ARGC(pc);
         do {
           {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            // CallArgsFromSp would be called with
+            // - numValues = argc + 2 + constructing
+            // - stackSlots = argc + constructing
+            // - sp = vp + numValues
+            // CallArgs::create then gets
+            // - argc_ = stackSlots - constructing = argc
+            // - argv_ = sp - stackSlots = vp + 2
+            // our arguments are in reverse order compared to what CallArgs
+            // expects so we should subtract any array subscripts from (sp +
+            // stackSlots - 1)
             StackVal* firstArg = sp + argc + constructing - 1;
 
-            
-            
-            
-            
-            
-            
+            // callee is argv_[-2] -> sp + argc + constructing + 1
+            // this is   argv_[-1] -> sp + argc + constructing
+            // newTarget is argv_[argc_] -> sp + constructing - 1
+            // but this/newTarget are only used when constructing is 1 so we can
+            // simplify this is   argv_[-1] -> sp + argc + 1 newTarget is
+            // argv_[argc_] -> sp
 
             HandleValue callee = Stack::handle(firstArg + 2);
             if (!callee.isObject() || !callee.toObject().is<JSFunction>()) {
@@ -7808,10 +7809,10 @@ PBIResult PortableBaselineInterpret(
               break;
             }
 
-            
-            
+            // Fast-path: function, interpreted, has JitScript, same realm, no
+            // argument underflow.
 
-            
+            // Include newTarget in the args if it exists; exclude callee
             uint32_t totalArgs = argc + 1 + constructing;
             StackVal* origArgs = sp;
 
@@ -7832,8 +7833,8 @@ PBIResult PortableBaselineInterpret(
                                                &newTarget.toObject());
 
                 PUSH_EXIT_FRAME();
-                
-                
+                // CreateThis might discard the JitScript but we're counting on
+                // it continuing to exist while we evaluate the fastpath.
                 AutoKeepJitScripts keepJitScript(cx);
                 if (!CreateThis(cx, func, obj0, GenericObject, thisv)) {
                   GOTO_ERROR();
@@ -7843,70 +7844,70 @@ PBIResult PortableBaselineInterpret(
               }
             }
 
-            
-            
+            // 0. Save current PC and interpreter IC pointer in
+            // current frame, so we can retrieve them later.
             frame->interpreterPC() = pc;
             frame->interpreterICEntry() = icEntry;
 
-            
-            
-            
+            // 1. Push a baseline stub frame. Don't use the frame manager
+            // -- we don't want the frame to be auto-freed when we leave
+            // this scope, and we don't want to shadow `sp`.
             StackVal* exitFP = ctx.stack.pushExitFrame(sp, frame);
-            MOZ_ASSERT(exitFP);  
+            MOZ_ASSERT(exitFP);  // safety: stack margin.
             sp = exitFP;
             TRACE_PRINTF("exit frame at %p\n", exitFP);
 
-            
-            
+            // 2. Modify exit code to nullptr (this is where ICStubReg is
+            // normally saved; the tracing code can skip if null).
             PUSHNATIVE(StackValNative(nullptr));
 
-            
-            
-            
+            // 3. Push args in proper order (they are reversed in our
+            // downward-growth stack compared to what the calling
+            // convention expects).
             for (uint32_t i = 0; i < totalArgs; i++) {
               VIRTPUSH(origArgs[i]);
             }
 
-            
-            
+            // 4. Push inter-frame content: callee token, descriptor for
+            // above.
             PUSHNATIVE(StackValNative(CalleeToToken(func, constructing)));
             PUSHNATIVE(StackValNative(
                 MakeFrameDescriptorForJitCall(FrameType::BaselineStub, argc)));
 
-            
+            // 5. Push fake return address, set script, push baseline frame.
             PUSHNATIVE(StackValNative(nullptr));
             BaselineFrame* newFrame =
                 ctx.stack.pushFrame(sp, ctx.frameMgr.cxForLocalUseOnly(),
-                                     func->environment());
-            MOZ_ASSERT(newFrame);  
+                                    /* envChain = */ func->environment());
+            MOZ_ASSERT(newFrame);  // safety: stack margin.
             TRACE_PRINTF("callee frame at %p\n", newFrame);
             frame = newFrame;
             ctx.frameMgr.switchToFrame(frame);
             ctx.frame = frame;
-            
+            // 6. Set up PC and SP for callee.
             sp = reinterpret_cast<StackVal*>(frame);
             RESET_PC(calleeScript->code(), calleeScript);
-            
+            // 7. Check callee stack space for max stack depth.
             if (!stack.check(sp, sizeof(StackVal) * calleeScript->nslots())) {
               PUSH_EXIT_FRAME();
               ReportOverRecursed(ctx.frameMgr.cxForLocalUseOnly());
               GOTO_ERROR();
             }
-            
-            
+            // 8. Push local slots, and set return value to `undefined` by
+            // default.
             uint32_t nfixed = calleeScript->nfixed();
             for (uint32_t i = 0; i < nfixed; i++) {
               VIRTPUSH(StackVal(UndefinedValue()));
             }
             ret->setUndefined();
-            
+            // 9. Initialize environment objects.
             if (func->needsFunctionEnvironmentObjects()) {
               PUSH_EXIT_FRAME();
               if (!js::InitFunctionEnvironmentObjects(cx, frame)) {
                 GOTO_ERROR();
               }
             }
-            
+            // 10. Set debug flag, if appropriate.
             if (frame->script()->isDebuggee()) {
               TRACE_PRINTF("Script is debuggee\n");
               frame->setIsDebuggee();
@@ -7916,7 +7917,7 @@ PBIResult PortableBaselineInterpret(
                 GOTO_ERROR();
               }
             }
-            
+            // 11. Check for interrupts.
 #ifdef ENABLE_INTERRUPT_CHECKS
             if (ctx.frameMgr.cxForLocalUseOnly()->hasAnyPendingInterrupt()) {
               PUSH_EXIT_FRAME();
@@ -7925,7 +7926,7 @@ PBIResult PortableBaselineInterpret(
               }
             }
 #endif
-            
+            // 12. Initialize coverage tables, if needed.
             if (!frame->script()->hasScriptCounts()) {
               if (ctx.frameMgr.cxForLocalUseOnly()
                       ->realm()
@@ -7939,11 +7940,11 @@ PBIResult PortableBaselineInterpret(
             COUNT_COVERAGE_MAIN();
           }
 
-          
+          // Everything is switched to callee context now -- dispatch!
           DISPATCH();
         } while (0);
 
-        
+        // Slow path: use the IC!
         ic_arg0 = argc;
         ctx.icregs.extraArgs = 2 + constructing;
         INVOKE_IC(Call, false);
@@ -8060,7 +8061,7 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(InitialYield) {
-        
+        // gen => rval, gen, resumeKind
         ReservedRooted<JSObject*> obj0(&state.obj0,
                                        &VIRTSP(0).asValue().toObject());
         uint32_t frameSize = ctx.stack.frameSize(sp, frame);
@@ -8076,7 +8077,7 @@ PBIResult PortableBaselineInterpret(
 
       CASE(Await)
       CASE(Yield) {
-        
+        // rval1, gen => rval2, gen, resumeKind
         ReservedRooted<JSObject*> obj0(&state.obj0,
                                        &VIRTPOP().asValue().toObject());
         uint32_t frameSize = ctx.stack.frameSize(sp, frame);
@@ -8091,7 +8092,7 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(FinalYieldRval) {
-        
+        // gen =>
         ReservedRooted<JSObject*> obj0(&state.obj0,
                                        &VIRTPOP().asValue().toObject());
         {
@@ -8110,14 +8111,14 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(AsyncAwait) {
-        
+        // value, gen => promise
         JSObject* promise;
         {
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // gen
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // value
           PUSH_EXIT_FRAME();
           promise = AsyncFunctionAwait(
               cx, obj0.as<AsyncFunctionGeneratorObject>(), value0);
@@ -8130,14 +8131,14 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(AsyncResolve) {
-        
+        // value, gen => promise
         JSObject* promise;
         {
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // gen
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // value
           PUSH_EXIT_FRAME();
           promise = AsyncFunctionResolve(
               cx, obj0.as<AsyncFunctionGeneratorObject>(), value0);
@@ -8150,16 +8151,16 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(AsyncReject) {
-        
+        // reason, gen => promise
         JSObject* promise;
         {
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // gen
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // stack
           ReservedRooted<Value> value1(&state.value1,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // reason
           PUSH_EXIT_FRAME();
           promise = AsyncFunctionReject(
               cx, obj0.as<AsyncFunctionGeneratorObject>(), value1, value0);
@@ -8172,7 +8173,7 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(CanSkipAwait) {
-        
+        // value => value, can_skip
         bool result = false;
         {
           ReservedRooted<Value> value0(&state.value0, VIRTSP(0).asValue());
@@ -8186,11 +8187,11 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(MaybeExtractAwaitValue) {
-        
+        // value, can_skip => value_or_resolved, can_skip
         {
           Value can_skip = VIRTPOP().asValue();
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTPOP().asValue());  
+                                       VIRTPOP().asValue());  // value
           if (can_skip.toBoolean()) {
             PUSH_EXIT_FRAME();
             if (!ExtractAwaitValue(cx, value0, &value0)) {
@@ -8210,15 +8211,15 @@ PBIResult PortableBaselineInterpret(
       }
 
       CASE(CheckResumeKind) {
-        
+        // rval, gen, resumeKind => rval
         {
           GeneratorResumeKind resumeKind =
               IntToResumeKind(VIRTPOP().asValue().toInt32());
           ReservedRooted<JSObject*> obj0(
               &state.obj0,
-              &VIRTPOP().asValue().toObject());  
+              &VIRTPOP().asValue().toObject());  // gen
           ReservedRooted<Value> value0(&state.value0,
-                                       VIRTSP(0).asValue());  
+                                       VIRTSP(0).asValue());  // rval
           if (resumeKind != GeneratorResumeKind::Next) {
             PUSH_EXIT_FRAME();
             MOZ_ALWAYS_FALSE(GeneratorThrowOrReturn(
@@ -8377,8 +8378,8 @@ PBIResult PortableBaselineInterpret(
         uint32_t argc = frame->numActualArgs();
         sp = ctx.stack.popFrame();
 
-        
-        
+        // If FP is higher than the entry frame now, return; otherwise,
+        // do an inline state update.
         if (stack.fp > entryFrame) {
           *ret = frame->returnValue();
           TRACE_PRINTF("ret = %" PRIx64 "\n", ret->asRawBits());
@@ -8388,12 +8389,12 @@ PBIResult PortableBaselineInterpret(
           Value ret = frame->returnValue();
           TRACE_PRINTF("ret = %" PRIx64 "\n", ret.asRawBits());
 
-          
+          // Pop exit frame as well.
           sp = ctx.stack.popFrame();
-          
+          // Pop fake return address and descriptor.
           POPNNATIVE(2);
 
-          
+          // Set PC, frame, and current script.
           frame = reinterpret_cast<BaselineFrame*>(
               reinterpret_cast<uintptr_t>(stack.fp) - BaselineFrame::Size());
           TRACE_PRINTF(" sp -> %p, fp -> %p, frame -> %p\n", sp, ctx.stack.fp,
@@ -8402,29 +8403,29 @@ PBIResult PortableBaselineInterpret(
           ctx.frame = frame;
           RESET_PC(frame->interpreterPC(), frame->script());
 
-          
-          
+          // Adjust caller's stack to complete the call op that PC still points
+          // to in that frame (pop args, push return value).
           JSOp op = JSOp(*pc);
           bool constructing = (op == JSOp::New || op == JSOp::NewContent ||
                                op == JSOp::SuperCall);
-          
-          
+          // Fix-up return value; EnterJit would do this if we hadn't bypassed
+          // it.
           if (constructing && ret.isPrimitive()) {
             ret = sp[argc + constructing].asValue();
             TRACE_PRINTF("updated ret = %" PRIx64 "\n", ret.asRawBits());
           }
-          
-          
-          
+          // Pop args -- this is 1 more than how many are pushed in the
+          // `totalArgs` count during the call fastpath because it includes
+          // the callee.
           VIRTPOPN(argc + 2 + constructing);
-          
+          // Push return value.
           VIRTPUSH(StackVal(ret));
 
           if (!ok) {
             GOTO_ERROR();
           }
 
-          
+          // Advance past call instruction, and advance past IC.
           NEXT_IC();
           ADVANCE(JSOpLength_Call);
 
@@ -8434,8 +8435,8 @@ PBIResult PortableBaselineInterpret(
 
       CASE(CheckReturn) {
         Value thisval = VIRTPOP().asValue();
-        
-        
+        // inlined version of frame->checkReturn(thisval, result)
+        // (js/src/vm/Stack.cpp).
         HandleValue retVal = frame->returnValue();
         if (retVal.isObject()) {
           VIRTPUSH(StackVal(retVal));
@@ -9095,8 +9096,8 @@ PBIResult PortableBaselineInterpret(
   }
 
 restart:
-  
-  
+  // This is a `goto` target so that we exit any on-stack exit frames
+  // before restarting, to match previous behavior.
   return PortableBaselineInterpret<true, HybridICs>(
       ctx.frameMgr.cxForLocalUseOnly(), ctx.state, ctx.stack, sp, envChain, ret,
       pc, isd, entryPC, frame, entryFrame, restartCode);
@@ -9253,11 +9254,11 @@ debug:;
 #endif
 }
 
-
-
-
-
-
+/*
+ * -----------------------------------------------
+ * Entry point
+ * -----------------------------------------------
+ */
 
 bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
                                 size_t numFormals, size_t numActuals,
@@ -9269,35 +9270,35 @@ bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
 
   TRACE_PRINTF("Trampoline: calleeToken %p env %p\n", calleeToken, envChain);
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Expected stack frame:
+  // - argN
+  // - ...
+  // - arg1
+  // - this
+  // - calleeToken
+  // - descriptor
+  // - "return address" (nullptr for top frame)
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // `argc` is the number of args *including* `this` (`N + 1`
+  // above). `numFormals` is the minimum `N`; if less, we need to push
+  // `UndefinedValue`s above. We need to pass an argc (including
+  // `this`) accoundint for the extra undefs in the descriptor's argc.
+  //
+  // If constructing, there is an additional `newTarget` at the end.
+  //
+  // Note that `callee`, which is in the stack signature for a `Call`
+  // JSOp, does *not* appear in this count: it is separately passed in
+  // the `calleeToken`.
 
   bool constructing = CalleeTokenIsConstructing(calleeToken);
   size_t numCalleeActuals = std::max(numActuals, numFormals);
   size_t numUndefs = numCalleeActuals - numActuals;
 
-  
-  
-  
-  
-  
+  // N.B.: we already checked the stack in
+  // PortableBaselineInterpreterStackCheck; we don't do it here
+  // because we can't push an exit frame if we don't have an entry
+  // frame, and we need a full activation to produce the backtrace
+  // from ReportOverRecursed.
 
   if (constructing) {
     PUSH(StackVal(argv[argc]));
@@ -9390,5 +9391,5 @@ bool PortablebaselineInterpreterStackCheck(JSContext* cx, RunState& state,
   return (top - base) >= needed;
 }
 
-}  
-}  
+}  // namespace pbl
+}  // namespace js
