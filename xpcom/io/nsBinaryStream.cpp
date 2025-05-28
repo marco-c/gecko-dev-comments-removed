@@ -38,6 +38,7 @@
 #include "nsIX509Cert.h"  
 
 #include "js/ArrayBuffer.h"  
+#include "js/ArrayBufferMaybeShared.h"  
 #include "js/GCAPI.h"        
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
@@ -815,6 +816,10 @@ nsBinaryInputStream::ReadArrayBuffer(uint64_t aLength,
 
   size_t bufferLength = JS::GetArrayBufferByteLength(buffer);
   if (bufferLength < aLength) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (JS::IsImmutableArrayBufferMaybeShared(buffer)) {
     return NS_ERROR_FAILURE;
   }
 

@@ -288,6 +288,13 @@ JS_PUBLIC_API bool IsResizableArrayBufferView(JSObject* obj);
 
 
 
+JS_PUBLIC_API bool IsImmutableArrayBufferView(JSObject* obj);
+
+
+
+
+
+
 
 
 
@@ -367,6 +374,7 @@ class JS_PUBLIC_API ArrayBufferOrView {
 
   bool isDetached() const;
   bool isResizable() const;
+  bool isImmutable() const;
 
   void exposeToActiveJS() const {
     if (obj) {
@@ -441,6 +449,7 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
 
   bool isDetached() const;
   bool isResizable() const;
+  bool isImmutable() const;
 
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);

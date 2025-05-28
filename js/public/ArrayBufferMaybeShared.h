@@ -104,6 +104,13 @@ extern JS_PUBLIC_API bool IsLargeArrayBufferMaybeShared(JSObject* obj);
 
 extern JS_PUBLIC_API bool IsResizableArrayBufferMaybeShared(JSObject* obj);
 
+
+
+
+
+
+extern JS_PUBLIC_API bool IsImmutableArrayBufferMaybeShared(JSObject* obj);
+
 }  
 
 #endif 

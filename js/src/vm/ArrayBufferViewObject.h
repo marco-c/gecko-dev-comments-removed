@@ -184,6 +184,8 @@ class ArrayBufferViewObject : public NativeObject {
 
   bool hasResizableBuffer() const;
 
+  bool hasImmutableBuffer() const;
+
  private:
   bool hasDetachedBufferOrIsOutOfBounds() const {
     
