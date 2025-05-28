@@ -698,35 +698,6 @@ void Accessible::ApplyImplicitState(uint64_t& aState) const {
   if (Opacity() == 1.0f && !(aState & states::INVISIBLE)) {
     aState |= states::OPAQUE1;
   }
-
-  const uint32_t kExpandCollapseStates = states::COLLAPSED | states::EXPANDED;
-  if ((aState & kExpandCollapseStates) == kExpandCollapseStates) {
-    
-    
-    
-    
-    
-    aState &= ~states::COLLAPSED;
-  }
-
-  if (!(aState & states::UNAVAILABLE)) {
-    aState |= states::ENABLED | states::SENSITIVE;
-  }
-
-  if (aState & kExpandCollapseStates) {
-    aState |= states::EXPANDABLE;
-  }
-
-  if (aState & states::FOCUSABLE && !(aState & states::UNAVAILABLE)) {
-    
-    for (auto ancestor = Parent(); ancestor && !ancestor->IsDoc();
-         ancestor = ancestor->Parent()) {
-      if (ancestor->State() & states::UNAVAILABLE) {
-        aState |= states::UNAVAILABLE;
-        break;
-      }
-    }
-  }
 }
 
 bool Accessible::NameIsEmpty() const {

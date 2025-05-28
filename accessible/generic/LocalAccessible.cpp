@@ -1602,14 +1602,26 @@ void LocalAccessible::ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
   }
 }
 
-uint64_t LocalAccessible::ExplicitState() const {
+uint64_t LocalAccessible::State() {
   if (IsDefunct()) return states::DEFUNCT;
 
   uint64_t state = NativeState();
   
   ApplyARIAState(&state);
 
+  const uint32_t kExpandCollapseStates = states::COLLAPSED | states::EXPANDED;
+  if ((state & kExpandCollapseStates) == kExpandCollapseStates) {
+    
+    
+    
+    
+    
+    state &= ~states::COLLAPSED;
+  }
+
   if (!(state & states::UNAVAILABLE)) {
+    state |= states::ENABLED | states::SENSITIVE;
+
     
     
     
@@ -1618,11 +1630,9 @@ uint64_t LocalAccessible::ExplicitState() const {
     if (widget && widget->CurrentItem() == this) state |= states::ACTIVE;
   }
 
-  return state;
-}
-
-uint64_t LocalAccessible::State() {
-  uint64_t state = ExplicitState();
+  if ((state & states::COLLAPSED) || (state & states::EXPANDED)) {
+    state |= states::EXPANDABLE;
+  }
 
   ApplyImplicitState(state);
   return state;
@@ -1665,7 +1675,18 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
     }
   }
 
-  if (!(*aState & states::FOCUSABLE)) {
+  if (*aState & states::FOCUSABLE) {
+    
+    const LocalAccessible* ancestor = this;
+    while ((ancestor = ancestor->LocalParent()) && !ancestor->IsDoc()) {
+      dom::Element* el = ancestor->Elm();
+      if (el && nsAccUtils::ARIAAttrValueIs(el, nsGkAtoms::aria_disabled,
+                                            nsGkAtoms::_true, eCaseMatters)) {
+        *aState |= states::UNAVAILABLE;
+        break;
+      }
+    }
+  } else {
     
     
     
@@ -3917,7 +3938,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (IsInitialPush(CacheDomain::State)) {
       
       
-      uint64_t state = ExplicitState();
+      uint64_t state = State();
       
       state &= ~kRemoteCalculatedStates;
       fields->SetAttribute(CacheKey::State, state);
