@@ -1232,6 +1232,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
             fe.funcIndex());
 
   
+  
+  
   masm.moveToStackPtr(FramePointer);
   masm.setFramePushed(0);
 

@@ -1142,7 +1142,13 @@ static int32_t CoerceInPlace_JitEntry(int funcIndex, Instance* instance,
 static BigInt* AllocateBigIntTenuredNoGC() {
   JSContext* cx = TlsContext.get();  
 
-  return cx->newCell<BigInt, NoGC>(gc::Heap::Tenured);
+  BigInt* bi = cx->newCell<BigInt, NoGC>(gc::Heap::Tenured);
+  if (!bi) {
+    
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  return bi;
 }
 
 static int64_t DivI64(uint32_t x_hi, uint32_t x_lo, uint32_t y_hi,
