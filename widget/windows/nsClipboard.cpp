@@ -710,17 +710,23 @@ HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
 
 template <typename CharType>
 static nsresult GetCharDataFromGlobalData(STGMEDIUM& aStm, CharType** aData,
-                                   uint32_t* aLen) {
+                                          uint32_t* aByteLen) {
   uint32_t nBytes = 0;
   MOZ_TRY(nsClipboard::GetGlobalData(aStm.hGlobal,
                                      reinterpret_cast<void**>(aData), &nBytes));
   auto nChars = nBytes / sizeof(CharType);
   if (nChars < 1) {
-    *aLen = 0;
+    *aByteLen = 0;
     return NS_OK;
   }
-  bool hasNullTerminator = (*aData)[nChars - 1] == CharType(0);
-  *aLen = hasNullTerminator ? nBytes - sizeof(CharType) : nBytes;
+
+  
+  
+  CharType* afterLastChar = *aData + nChars;
+  auto it = std::find_if(
+      std::reverse_iterator(afterLastChar), std::reverse_iterator(*aData),
+      [](CharType ch) { return ch != CharType(0) && ch != CharType(0x0a); });
+  *aByteLen = std::distance(*aData, it.base()) * sizeof(CharType);
   return NS_OK;
 }
 
