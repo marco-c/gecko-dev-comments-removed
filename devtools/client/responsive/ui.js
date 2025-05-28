@@ -241,7 +241,7 @@ class ResponsiveUI {
           
           this.rdmFrame.classList.toggle(
             "accomodate-ua",
-            entry.contentBoxSize[0].inlineSize < 520
+            entry.contentBoxSize[0].inlineSize <= 800
           );
         }
       }
