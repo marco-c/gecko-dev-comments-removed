@@ -80,6 +80,7 @@ function GetIterator(obj, isAsync, method) {
 
 
 
+
 function GetIteratorFlattenable(obj, rejectStrings) {
   assert(typeof rejectStrings === "boolean", "rejectStrings is a boolean");
 
@@ -110,6 +111,7 @@ function GetIteratorFlattenable(obj, rejectStrings) {
   
   return iterator;
 }
+
 
 
 
@@ -160,6 +162,7 @@ function IteratorFrom(O) {
 
 
 
+
 function WrapForValidIteratorNext() {
   
   var O = this;
@@ -178,6 +181,7 @@ function WrapForValidIteratorNext() {
   
   return callContentFunction(nextMethod, iterator);
 }
+
 
 
 
@@ -244,6 +248,7 @@ function IteratorDispose() {
 
 
 
+
 function IteratorHelperNext() {
   
   var O = this;
@@ -257,6 +262,7 @@ function IteratorHelperNext() {
   var generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
   return callFunction(GeneratorNext, generator, undefined);
 }
+
 
 
 
@@ -282,7 +288,6 @@ function IteratorHelperReturn() {
   var generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
   return callFunction(GeneratorReturn, generator, undefined);
 }
-
 
 
 
