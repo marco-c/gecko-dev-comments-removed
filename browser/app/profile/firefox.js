@@ -1585,7 +1585,10 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   
   
   
-  pref("security.sandbox.content.level", 4);
+  
+  
+  
+  pref("security.sandbox.content.level", 5);
   
   
   

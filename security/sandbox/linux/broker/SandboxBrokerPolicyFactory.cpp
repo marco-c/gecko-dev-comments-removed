@@ -441,8 +441,8 @@ static void AddLLVMProfilePathDirectory(SandboxBroker::Policy* aPolicy) {
 #endif  
 
 void SandboxBrokerPolicyFactory::InitContentPolicy() {
-  const bool headless =
-      StaticPrefs::security_sandbox_content_headless_AtStartup();
+  const int level = GetEffectiveContentSandboxLevel();
+  const bool headless = level >= 5;
 
   
   
@@ -744,7 +744,6 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     }
   }
 
-  const int level = GetEffectiveContentSandboxLevel();
   bool allowPulse = false;
   bool allowAlsa = false;
   if (level < 4) {

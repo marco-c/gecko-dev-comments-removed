@@ -188,7 +188,7 @@ static bool ContentNeedsSysVIPC() {
   }
 #endif
 
-  if (!StaticPrefs::security_sandbox_content_headless_AtStartup()) {
+  if (GetEffectiveContentSandboxLevel() < 5) {
     
     if (PR_GetEnv("VGL_ISACTIVE") != nullptr) {
       return true;
@@ -324,7 +324,9 @@ bool SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
       flags |= CLONE_NEWIPC;
     }
 
-    if (StaticPrefs::security_sandbox_content_headless_AtStartup()) {
+    
+    
+    if (GetEffectiveContentSandboxLevel() >= 5) {
       aOptions->env_map["MOZ_HEADLESS"] = "1";
     }
   }
@@ -364,9 +366,8 @@ bool SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
         
         
         static const bool canCloneNet =
-            StaticPrefs::security_sandbox_content_headless_AtStartup() ||
-            (IsGraphicsOkWithoutNetwork() &&
-             !PR_GetEnv("RENDERDOC_CAPTUREOPTS"));
+            level >= 5 || (IsGraphicsOkWithoutNetwork() &&
+                           !PR_GetEnv("RENDERDOC_CAPTUREOPTS"));
 
         if (canCloneNet) {
           flags |= CLONE_NEWNET;

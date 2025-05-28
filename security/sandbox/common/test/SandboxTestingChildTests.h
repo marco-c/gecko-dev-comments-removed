@@ -6,7 +6,6 @@
 
 #include "SandboxTestingChild.h"
 
-#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "nsXULAppAPI.h"
 
@@ -418,10 +417,10 @@ void RunTestsContent(SandboxTestingChild* child) {
   
   
   
-  const int errorForX =
-      StaticPrefs::security_sandbox_content_headless_AtStartup() ? EACCES
-                                                                 : ECONNREFUSED;
-  child->ErrnoValueTest("connect_abstract_permit"_ns, errorForX, [&] {
+  
+  
+  
+  child->ErrnoValueTest("connect_abstract_permit"_ns, EACCES, [&] {
     int sockfd;
     struct sockaddr_un addr;
     
