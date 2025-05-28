@@ -121,6 +121,7 @@ class nsPresContext;
 class nsTextFragment;
 class nsView;
 class nsWrapperCache;
+enum class WindowMediatorFilter : uint8_t;
 
 struct JSContext;
 struct nsPoint;
@@ -2296,6 +2297,11 @@ class nsContentUtils {
   
   
   static already_AddRefed<nsPIDOMWindowOuter> GetMostRecentNonPBWindow();
+
+  
+  
+  static already_AddRefed<nsPIDOMWindowOuter> GetMostRecentWindowBy(
+      WindowMediatorFilter aFilter);
 
   
 

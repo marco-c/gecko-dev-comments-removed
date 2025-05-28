@@ -23,6 +23,7 @@
 #include "nsIBrowser.h"
 #include "nsIWebProgress.h"
 #include "nsIWebProgressListener.h"
+#include "nsIWindowMediator.h"
 #include "nsIWindowWatcher.h"
 #include "nsIXPConnect.h"
 #include "nsNetUtil.h"
@@ -214,8 +215,14 @@ void OpenWindow(const ClientOpenWindowArgsParsed& aArgsValidated,
   
 
   
+  WindowMediatorFilter filter = WindowMediatorFilter::SkipClosed;
+  if (aArgsValidated.principal->GetIsInPrivateBrowsing()) {
+    filter |= WindowMediatorFilter::SkipNonPrivateBrowsing;
+  } else {
+    filter |= WindowMediatorFilter::SkipPrivateBrowsing;
+  }
   nsCOMPtr<nsPIDOMWindowOuter> browserWindow =
-      nsContentUtils::GetMostRecentNonPBWindow();
+      nsContentUtils::GetMostRecentWindowBy(filter);
   if (!browserWindow) {
     
     
