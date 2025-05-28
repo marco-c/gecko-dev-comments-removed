@@ -145,7 +145,33 @@ struct DeadKeyEntry {
   }
 };
 
-using DeadKeyTable = nsTArray<DeadKeyEntry>;
+class DeadKeyTable {
+  friend class KeyboardLayout;
+
+  uint16_t mEntries;
+  
+  
+  DeadKeyEntry mTable[1];
+
+  void Init(const DeadKeyEntry* aDeadKeyArray, uint32_t aEntries) {
+    mEntries = aEntries;
+    memcpy(mTable, aDeadKeyArray, aEntries * sizeof(DeadKeyEntry));
+  }
+
+  static uint32_t SizeInBytes(uint32_t aEntries) {
+    return offsetof(DeadKeyTable, mTable) + aEntries * sizeof(DeadKeyEntry);
+  }
+
+ public:
+  uint32_t Entries() const { return mEntries; }
+
+  bool IsEqual(const DeadKeyEntry* aDeadKeyArray, uint32_t aEntries) const {
+    return (mEntries == aEntries &&
+            !memcmp(mTable, aDeadKeyArray, aEntries * sizeof(DeadKeyEntry)));
+  }
+
+  char16_t GetCompositeChar(char16_t aBaseChar) const;
+};
 
 class VirtualKey {
  public:
@@ -292,27 +318,12 @@ class VirtualKey {
   void SetNormalChars(ShiftState aShiftState, const char16_t* aChars,
                       uint32_t aNumOfChars);
   void SetDeadChar(ShiftState aShiftState, char16_t aDeadChar);
-  const DeadKeyTable* MatchingDeadKeyTable(DeadKeyTable& aDeadKeyTable) const;
-
-  static char16_t GetCompositeChar(const DeadKeyTable* aDeadKeyTable,
-                                   char16_t aBaseChar) {
-    
-    
-    for (const auto entry : *aDeadKeyTable) {
-      if (entry.BaseChar == aBaseChar) {
-        return entry.CompositeChar;
-      }
-      if (entry.BaseChar > aBaseChar) {
-        break;
-      }
-    }
-    return 0;
-  }
-
+  const DeadKeyTable* MatchingDeadKeyTable(const DeadKeyEntry* aDeadKeyArray,
+                                           uint32_t aEntries) const;
   inline char16_t GetCompositeChar(ShiftState aShiftState,
                                    char16_t aBaseChar) const {
-    return VirtualKey::GetCompositeChar(
-        mShiftStates[ToShiftStateIndex(aShiftState)].DeadKey.Table, aBaseChar);
+    return mShiftStates[ToShiftStateIndex(aShiftState)]
+        .DeadKey.Table->GetCompositeChar(aBaseChar);
   }
 
   char16_t GetCompositeChar(const ModifierKeyState& aModKeyState,
@@ -964,10 +975,15 @@ class KeyboardLayout {
   static KeyboardLayout* sInstance;
   static StaticRefPtr<nsIUserIdleServiceInternal> sIdleService;
 
+  struct DeadKeyTableListEntry {
+    DeadKeyTableListEntry* next;
+    uint8_t data[1];
+  };
+
   HKL mKeyboardLayout = nullptr;
 
   VirtualKey mVirtualKeys[NS_NUM_OF_KEYS] = {};
-  nsTArray<DeadKeyTable*> mDeadKeyTableList;
+  DeadKeyTableListEntry* mDeadKeyTableListHead = nullptr;
   
   
   
@@ -982,20 +998,22 @@ class KeyboardLayout {
   bool mHasAltGr = false;
 
   static inline int32_t GetKeyIndex(uint8_t aVirtualKey);
-  static void AddDeadKeyEntry(char16_t aBaseChar, char16_t aCompositeChar,
-                              DeadKeyTable& aDeadKeyTable);
+  static bool AddDeadKeyEntry(char16_t aBaseChar, char16_t aCompositeChar,
+                              nsTArray<DeadKeyEntry>& aDeadKeyArray);
   bool EnsureDeadKeyActive(bool aIsActive, uint8_t aDeadKey,
                            const PBYTE aDeadKeyKbdState);
-  void GetDeadKeyCombinations(uint8_t aDeadKey, const PBYTE aDeadKeyKbdState,
-                              uint16_t aShiftStatesWithBaseChars,
-                              DeadKeyTable& aDeadKeyTable);
+  uint32_t GetDeadKeyCombinations(uint8_t aDeadKey,
+                                  const PBYTE aDeadKeyKbdState,
+                                  uint16_t aShiftStatesWithBaseChars,
+                                  nsTArray<DeadKeyEntry>& aDeadKeyArray);
   
 
 
   void ActivateDeadKeyState(const NativeKey& aNativeKey);
   void DeactivateDeadKeyState();
 
-  const DeadKeyTable* AddDeadKeyTable(DeadKeyTable& aDeadKeyTable);
+  const DeadKeyTable* AddDeadKeyTable(const DeadKeyEntry* aDeadKeyArray,
+                                      uint32_t aEntries);
   void ReleaseDeadKeyTables();
 
   
