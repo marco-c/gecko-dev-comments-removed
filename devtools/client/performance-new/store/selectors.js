@@ -18,7 +18,6 @@
 
 
 
-
 const getRecordingState = state => state.recordingState;
 
 

@@ -19,7 +19,6 @@
 
 
 
-
 const {
   gDevTools,
 } = require("resource://devtools/client/framework/devtools.js");
@@ -126,26 +125,6 @@ async function openProfilerTab({ profilerViewMode, defaultPanel }) {
 
 
 
-
-function sharedLibrariesFromProfile(profile) {
-  
-
-
-
-  function getLibsRecursive(processProfile) {
-    return processProfile.libs.concat(
-      ...processProfile.processes.map(getLibsRecursive)
-    );
-  }
-
-  return getLibsRecursive(profile);
-}
-
-
-
-
-
-
 function restartBrowserWithEnvironmentVariable(env) {
   for (const [envName, envValue] of Object.entries(env)) {
     Services.env.set(envName, envValue);
@@ -227,7 +206,6 @@ async function openScriptInDebugger(tabId, scriptUrl, line, columnOneBased) {
 
 module.exports = {
   openProfilerTab,
-  sharedLibrariesFromProfile,
   restartBrowserWithEnvironmentVariable,
   openFilePickerForObjdir,
   openScriptInDebugger,

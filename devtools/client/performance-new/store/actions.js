@@ -183,9 +183,10 @@ exports.startRecording = perfFront => {
 exports.getProfileAndStopProfiler = perfFront => {
   return async ({ dispatch }) => {
     dispatch({ type: "REQUESTING_PROFILE" });
-    const profile = await perfFront.getProfileAndStopProfiler();
+    const profileAndAdditionalInformation =
+      await perfFront.getProfileAndStopProfiler();
     dispatch({ type: "OBTAINED_PROFILE" });
-    return profile;
+    return profileAndAdditionalInformation;
   };
 };
 

@@ -8,6 +8,7 @@ const {
   Option,
   RetVal,
   generateActorSpec,
+  BULK_RESPONSE,
 } = require("resource://devtools/shared/protocol.js");
 
 const perfDescription = {
@@ -48,9 +49,29 @@ const perfDescription = {
     
 
 
+
     getProfileAndStopProfiler: {
       request: {},
       response: RetVal("nullable:json"),
+    },
+
+    startCaptureAndStopProfiler: {
+      request: {},
+      response: { value: RetVal("number") },
+    },
+
+    getPreviouslyCapturedProfileDataBulk: {
+      request: {
+        handle: Arg(0, "number"),
+      },
+      response: BULK_RESPONSE,
+    },
+
+    getPreviouslyRetrievedAdditionalInformation: {
+      request: {
+        handle: Arg(0, "number"),
+      },
+      response: { value: RetVal("nullable:json") },
     },
 
     stopProfilerAndDiscardProfile: {

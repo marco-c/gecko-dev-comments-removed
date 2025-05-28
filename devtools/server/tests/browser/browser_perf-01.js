@@ -10,6 +10,27 @@
 
 requestLongerTimeout(2);
 
+async function decompressGzip(buffer) {
+  if (buffer.resizable) {
+    
+    buffer = buffer.transferToFixedLength();
+  }
+  const decompressionStream = new DecompressionStream("gzip");
+  const decoderStream = new TextDecoderStream();
+  const decodedStream = decompressionStream.readable.pipeThrough(decoderStream);
+  const writer = decompressionStream.writable.getWriter();
+  writer.write(buffer);
+  const writePromise = writer.close();
+
+  let result = "";
+  for await (const chunk of decodedStream) {
+    result += chunk;
+  }
+
+  await writePromise;
+  return JSON.parse(result);
+}
+
 
 
 
@@ -32,10 +53,16 @@ add_task(async function () {
 
   
   const profilerStopped1 = once(front, "profiler-stopped");
-  const profile = await front.getProfileAndStopProfiler();
+  const { profile: gzippedProfile, additionalInformation } =
+    await front.getProfileAndStopProfiler();
   await profilerStopped1;
   is(await front.isActive(), false, "The profiler was stopped.");
+  const profile = await decompressGzip(gzippedProfile);
   ok("threads" in profile, "The actor was used to record a profile.");
+  ok(
+    additionalInformation.sharedLibraries,
+    "We retrieved some shared libraries as well."
+  );
 
   
   await front.startProfiler();

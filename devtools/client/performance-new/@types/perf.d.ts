@@ -58,9 +58,26 @@ export interface Commands {
 
 
 
+
+
+export interface ProfileAndAdditionalInformation {
+  profile: ArrayBuffer | MinimallyTypedGeckoProfile;
+  additionalInformation?: MockedExports.ProfileGenerationAdditionalInformation;
+}
+
+
+
+
 export interface PerfFront {
   startProfiler: (options: RecordingSettings) => Promise<boolean>;
-  getProfileAndStopProfiler: () => Promise<any>;
+  getProfileAndStopProfiler: () => Promise<ProfileAndAdditionalInformation>;
+
+  
+
+
+
+  
+  
   stopProfilerAndDiscardProfile: () => Promise<void>;
   getSymbolTable: (
     path: string,
@@ -176,6 +193,8 @@ export interface Library {
 
 
 
+
+
 export interface MinimallyTypedGeckoProfile {
   libs: Library[];
   processes: MinimallyTypedGeckoProfile[];
@@ -191,31 +210,19 @@ export interface SymbolicationService {
   querySymbolicationApi: (path: string, requestJson: string) => Promise<string>;
 }
 
-export type ReceiveProfile = (
-  geckoProfile: MinimallyTypedGeckoProfile,
-  profilerViewMode: ProfilerViewMode | undefined,
-  getSymbolTableCallback: GetSymbolTableCallback
+
+
+
+
+export type OnProfileReceived = (
+  profileAndAdditionalInformation: ProfileAndAdditionalInformation
 ) => void;
 
 
 
 
 
-export type OnProfileReceived = (profile: MinimallyTypedGeckoProfile) => void;
-
-
-
-
-
 export type GetActiveBrowserID = () => number;
-
-
-
-
-interface GeckoProfilerFrameScriptInterface {
-  getProfile: () => Promise<MinimallyTypedGeckoProfile>;
-  getSymbolTable: GetSymbolTableCallback;
-}
 
 export interface RecordingSettings {
   presetName: string;
@@ -595,6 +602,9 @@ type StatusQueryResponse = {
   version: number;
 };
 type EnableMenuButtonResponse = void;
+
+
+
 type GetProfileResponse = ArrayBuffer | MinimallyTypedGeckoProfile;
 type GetExternalMarkersResponse = Array<object>;
 type GetExternalPowerTracksResponse = Array<object>;
@@ -639,6 +649,8 @@ export type ProfilerBrowserInfo = {
 export type ProfileCaptureResult =
   | {
       type: "SUCCESS";
+      
+
       profile: MinimallyTypedGeckoProfile | ArrayBuffer;
     }
   | {
@@ -735,4 +747,23 @@ export interface FileHandle {
   readBytesInto: (dest: Uint8Array, offset: number) => void;
   
   drop: () => void;
+}
+
+
+
+export interface BulkSending {
+  stream: nsIAsyncOutputStream;
+  done: (err: void | Error) => void;
+  copyFrom: (inputStream: nsIInputStream) => Promise<void>;
+}
+
+
+
+export interface BulkReceiving {
+  actor: string;
+  type: string;
+  length: number;
+  stream: nsIAsyncInputStream;
+  done: (err: void | Error) => void;
+  copyTo: (inputStream: nsIAsyncOutputStream) => Promise<void>;
 }

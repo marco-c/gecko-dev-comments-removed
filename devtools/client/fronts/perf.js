@@ -4,11 +4,18 @@
 
 "use strict";
 
+
+
+
+
 const {
   FrontClassWithSpec,
   registerFront,
 } = require("resource://devtools/shared/protocol.js");
 const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
+const {
+  copyAsyncStreamToArrayBuffer,
+} = require("resource://devtools/shared/transport/stream-utils.js");
 
 class PerfFront extends FrontClassWithSpec(perfSpec) {
   constructor(client, targetFront, parentFront) {
@@ -16,6 +23,113 @@ class PerfFront extends FrontClassWithSpec(perfSpec) {
 
     
     this.formAttributeName = "perfActor";
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getProfileAndStopProfiler() {
+    
+    
+    const { useBulkTransferForPerformanceProfile } = this.conn.mainRoot.traits;
+    if (useBulkTransferForPerformanceProfile) {
+      const handle = await this.startCaptureAndStopProfiler();
+
+      
+      const profilePromise = this.getPreviouslyCapturedProfileDataBulk(handle);
+      const additionalInformationPromise =
+        this.getPreviouslyRetrievedAdditionalInformation(handle);
+
+      
+      const [profileResult, additionalInformationResult] =
+        await Promise.allSettled([
+          profilePromise,
+          additionalInformationPromise,
+        ]);
+
+      if (profileResult.status === "rejected") {
+        throw profileResult.reason;
+      }
+
+      if (additionalInformationResult.status === "rejected") {
+        throw additionalInformationResult.reason;
+      }
+
+      return {
+        profile: profileResult.value,
+        additionalInformation: additionalInformationResult.value,
+      };
+    }
+
+    
+
+
+
+
+
+    function sharedLibrariesFromProfile(processProfile) {
+      return processProfile.libs.concat(
+        ...processProfile.processes.map(sharedLibrariesFromProfile)
+      );
+    }
+
+    const profileAsJson = await super.getProfileAndStopProfiler();
+    return {
+      profile: profileAsJson,
+      additionalInformation: {
+        sharedLibraries: sharedLibrariesFromProfile(profileAsJson),
+      },
+    };
+  }
+
+  
+
+
+
+  async getPreviouslyCapturedProfileDataBulk(handle) {
+    
+
+
+    const profileResult = await super.getPreviouslyCapturedProfileDataBulk(
+      handle
+    );
+
+    if (!profileResult) {
+      throw new Error(
+        "this.conn.request returns null or undefined, this is unexpected."
+      );
+    }
+
+    try {
+      if (!profileResult.length) {
+        throw new Error(
+          "The profile result is an empty buffer, this is unexpected."
+        );
+      }
+
+      
+      
+      
+      const buffer = new ArrayBuffer(profileResult.length);
+      await copyAsyncStreamToArrayBuffer(profileResult.stream, buffer);
+
+      return buffer;
+    } finally {
+      
+      profileResult.done();
+    }
   }
 }
 

@@ -15,7 +15,6 @@
 
 
 
-
 "use strict";
 
 {
@@ -67,7 +66,6 @@ const reducers = require("resource://devtools/client/performance-new/store/reduc
 const actions = require("resource://devtools/client/performance-new/store/actions.js");
 const {
   openProfilerTab,
-  sharedLibrariesFromProfile,
 } = require("resource://devtools/client/performance-new/shared/browser.js");
 const { createLocalSymbolicationService } = ChromeUtils.importESModule(
   "resource://devtools/client/performance-new/shared/symbolication.sys.mjs"
@@ -135,10 +133,15 @@ async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
   
 
 
-  const onProfileReceived = async profile => {
+  const onProfileReceived = async ({ profile, additionalInformation }) => {
     const objdirs = selectors.getObjdirs(store.getState());
     const profilerViewMode = getProfilerViewModeForCurrentPreset(pageContext);
-    const sharedLibraries = sharedLibrariesFromProfile(profile);
+    const sharedLibraries = additionalInformation?.sharedLibraries ?? [];
+    if (!sharedLibraries.length) {
+      console.error(
+        `[devtools perf] No shared libraries information have been retrieved from the profiled target, this is unexpected.`
+      );
+    }
     const symbolicationService = createLocalSymbolicationService(
       sharedLibraries,
       objdirs,

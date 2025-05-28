@@ -1,10 +1,18 @@
 
 
 
+
 "use strict";
+
+
+
+
 
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
+const {
+  copyArrayBufferToAsyncStream,
+} = require("resource://devtools/shared/transport/stream-utils.js");
 
 ChromeUtils.defineESModuleGetters(
   this,
@@ -22,6 +30,28 @@ const IS_SUPPORTED_PLATFORM = "nsIProfiler" in Ci;
 
 
 exports.PerfActor = class PerfActor extends Actor {
+  
+
+
+
+
+  #captureHandleCounter = 0;
+
+  
+
+
+
+
+  #previouslyRetrievedProfileDataPromise = null;
+
+  
+
+
+
+
+
+  #previouslyRetrievedAdditionalInformationPromise = null;
+
   constructor(conn) {
     super(conn, perfSpec);
 
@@ -102,38 +132,103 @@ exports.PerfActor = class PerfActor extends Actor {
     return [Array.from(addr), Array.from(index), Array.from(buffer)];
   }
 
+  
+
+
+
+
   async getProfileAndStopProfiler() {
+    throw new Error(
+      "Unexpected getProfileAndStopProfiler function called in Firefox v140+. Most likely you're using an older version of Firefox to debug this application. Please use at least Firefox v140."
+    );
+  }
+
+  async startCaptureAndStopProfiler() {
     if (!IS_SUPPORTED_PLATFORM) {
-      return null;
+      throw new Error("Profiling is not supported on this platform.");
     }
 
-    
-    
-    Services.profiler.Pause();
+    const capturePromise =
+      RecordingUtils.getProfileDataAsGzippedArrayBufferThenStop();
 
-    let profile;
-    try {
-      
-      profile = await Services.profiler.getProfileDataAsync();
+    this.#previouslyRetrievedProfileDataPromise = capturePromise.then(
+      ({ profileCaptureResult }) => {
+        if (profileCaptureResult.type === "ERROR") {
+          throw profileCaptureResult.error;
+        }
 
-      if (Object.keys(profile).length === 0) {
-        console.error(
-          "An empty object was received from getProfileDataAsync.getProfileDataAsync(), " +
-            "meaning that a profile could not successfully be serialized and captured."
-        );
-        profile = null;
+        return profileCaptureResult.profile;
       }
-    } catch (e) {
+    );
+
+    this.#previouslyRetrievedAdditionalInformationPromise = capturePromise.then(
+      ({ additionalInformation }) => additionalInformation
+    );
+
+    return ++this.#captureHandleCounter;
+  }
+
+  
+
+
+
+
+  async getPreviouslyCapturedProfileDataBulk(handle, startBulkSend) {
+    if (handle < this.#captureHandleCounter) {
       
-      profile = null;
-      console.error(`There was an error fetching a profile`, e);
+      console.error(
+        `[devtools perf actor] In getPreviouslyCapturedProfileDataBulk, the requested handle ${handle} is smaller than the current counter ${this.#captureHandleCounter}.`
+      );
+      throw new Error(`The requested data was not found.`);
     }
 
-    
-    Services.profiler.StopProfiler();
+    if (this.#previouslyRetrievedProfileDataPromise === null) {
+      // No capture operation has been started, write a message and throw an error.
+      console.error(
+        `[devtools perf actor] In getPreviouslyCapturedProfileDataBulk, there's no data to be returned.`
+      );
+      throw new Error(`The requested data was not found.`);
+    }
 
+    // Note that this promise might be rejected if there was an error. That's OK
     
-    return profile;
+    const profile = await this.#previouslyRetrievedProfileDataPromise;
+    this.#previouslyRetrievedProfileDataPromise = null;
+
+    const bulk = await startBulkSend(profile.byteLength);
+    try {
+      await copyArrayBufferToAsyncStream(profile, bulk.stream);
+    } finally {
+      bulk.done();
+    }
+  }
+
+  
+
+
+
+  async getPreviouslyRetrievedAdditionalInformation(handle) {
+    if (handle < this.#captureHandleCounter) {
+      
+      console.error(
+        `[devtools perf actor] In getPreviouslyRetrievedAdditionalInformation, the requested handle ${handle} is smaller than the current counter ${this.#captureHandleCounter}.`
+      );
+      throw new Error(`The requested data was not found.`);
+    }
+
+    if (this.#previouslyRetrievedAdditionalInformationPromise === null) {
+      // No capture operation has been started, write a message and throw an error.
+      console.error(
+        `[devtools perf actor] In getPreviouslyRetrievedAdditionalInformation, there's no data to be returned.`
+      );
+      throw new Error(`The requested data was not found.`);
+    }
+
+    try {
+      return this.#previouslyRetrievedAdditionalInformationPromise;
+    } finally {
+      this.#previouslyRetrievedAdditionalInformationPromise = null;
+    }
   }
 
   isActive() {
@@ -147,13 +242,13 @@ exports.PerfActor = class PerfActor extends Actor {
     return IS_SUPPORTED_PLATFORM;
   }
 
-  
-
-
-
+  /**
+   * Watch for events that happen within the browser. These can affect the
+   * current availability and state of the Gecko Profiler.
+   */
   _observe(subject, topic, _data) {
-    
-    
+    // Note! If emitting new events make sure and update the list of bridged
+    // events in the perf actor.
     switch (topic) {
       case "profiler-started": {
         const param = subject.QueryInterface(Ci.nsIProfilerStartParams);
@@ -173,10 +268,10 @@ exports.PerfActor = class PerfActor extends Actor {
     }
   }
 
-  
-
-
-
+  /**
+   * Lists the supported features of the profiler for the current browser.
+   * @returns {string[]}
+   */
   getSupportedFeatures() {
     if (!IS_SUPPORTED_PLATFORM) {
       return [];

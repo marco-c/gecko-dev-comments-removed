@@ -502,3 +502,12 @@ declare type nsIPrefBranch = MockedExports.nsIPrefBranch;
 interface Function {
   isInstance(obj: any): boolean;
 }
+
+
+
+
+declare interface nsIInputStream {}
+declare interface nsIAsyncInputStream extends nsIInputStream {}
+declare interface nsIBinaryInputStream extends nsIInputStream {}
+declare interface nsIOutputStream {}
+declare interface nsIAsyncOutputStream extends nsIOutputStream {}
