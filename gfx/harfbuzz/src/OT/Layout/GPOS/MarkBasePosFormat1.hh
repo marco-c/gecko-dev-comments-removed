@@ -119,7 +119,7 @@ struct MarkBasePosFormat1_2
     
 
 
-    hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
+    auto &skippy_iter = c->iter_input;
     skippy_iter.set_lookup_props (LookupFlag::IgnoreMarks);
 
     if (c->last_base_until > buffer->idx)
