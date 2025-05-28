@@ -7,7 +7,7 @@
 use {
     crate::std::{env, mem::size_of},
     anyhow::Context,
-    memtest::{MemtestKind, MemtestOutcome, MemtestRunner, MemtestRunnerArgs},
+    memtest::{Outcome, Runner, RunnerArgs, TestKind},
     rand::{seq::SliceRandom, thread_rng},
     serde_json,
 };
@@ -30,7 +30,7 @@ pub fn main() {
     };
     let mut memory = allocate_memory(mem_usize_count);
 
-    let memtest_report_list = MemtestRunner::from_test_kinds(&memtest_runner_args, memtest_kinds)
+    let memtest_report_list = Runner::from_test_kinds(&memtest_runner_args, memtest_kinds)
         .run(&mut memory)
         .expect("failed to run memtest-runner");
 
@@ -38,7 +38,7 @@ pub fn main() {
         .expect("memtest report list failed to serialize");
     output_json["memtest_failed"] = memtest_report_list
         .iter()
-        .any(|report| matches!(report.outcome, Ok(MemtestOutcome::Fail(_))))
+        .any(|report| matches!(report.outcome, Ok(Outcome::Fail(_))))
         .into();
 
     println!("{}", output_json.to_string());
@@ -47,7 +47,7 @@ pub fn main() {
 
 
 
-fn parse_args() -> anyhow::Result<(usize, MemtestRunnerArgs, Vec<MemtestKind>)> {
+fn parse_args() -> anyhow::Result<(usize, RunnerArgs, Vec<TestKind>)> {
     const KIB: usize = 1024;
     const MIB: usize = 1024 * KIB;
 
@@ -70,15 +70,15 @@ fn parse_args() -> anyhow::Result<(usize, MemtestRunnerArgs, Vec<MemtestKind>)> 
 }
 
 
-fn get_memtest_kinds() -> anyhow::Result<Vec<MemtestKind>> {
+fn get_memtest_kinds() -> anyhow::Result<Vec<TestKind>> {
     let env_string = env::var(ekey!("MEMTEST_KINDS")).unwrap_or_default();
 
     let specified = env_string
         .split_whitespace()
         .map(|s| s.parse().context("failed to parse memtest kinds"))
-        .collect::<anyhow::Result<Vec<MemtestKind>>>()?;
+        .collect::<anyhow::Result<Vec<TestKind>>>()?;
 
-    let mut remaining: Vec<_> = MemtestKind::ALL
+    let mut remaining: Vec<_> = TestKind::ALL
         .iter()
         .filter(|k| !specified.contains(k))
         .cloned()
@@ -92,8 +92,8 @@ fn get_memtest_kinds() -> anyhow::Result<Vec<MemtestKind>> {
     
     let block_move_idx = kinds
         .iter()
-        .position(|k| matches!(k, MemtestKind::BlockMove))
-        .expect("BlockMove should exist in MemtestKind::ALL");
+        .position(|k| matches!(k, TestKind::BlockMove))
+        .expect("BlockMove should exist in TestKind::ALL");
     if block_move_idx != 0 {
         kinds.remove(block_move_idx);
     }
@@ -119,7 +119,7 @@ pub mod child {
         time::Duration,
     };
     use anyhow::Context;
-    use memtest::MemtestRunnerArgs;
+    use memtest::RunnerArgs;
 
     
     pub struct Memtest {
@@ -171,7 +171,7 @@ pub mod child {
 
     fn spawn_memtest() -> anyhow::Result<Child> {
         let memsize_mb = 1024;
-        let memtest_runner_args = MemtestRunnerArgs {
+        let memtest_runner_args = RunnerArgs {
             timeout: Duration::from_secs(3),
             mem_lock_mode: memtest::MemLockMode::Resizable,
             allow_working_set_resize: true,

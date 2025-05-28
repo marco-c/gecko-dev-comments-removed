@@ -2,22 +2,22 @@ use {
     crate::prelude::*,
     rand::random,
     serde::{Deserialize, Deserializer, Serialize, Serializer},
-    std::{error::Error, fmt},
+    std::{error, fmt},
 };
 
 
 
-pub type MemtestResult<O> = Result<MemtestOutcome, MemtestError<<O as TestObserver>::Error>>;
+pub type TestResult<O> = Result<Outcome, Error<<O as TestObserver>::Error>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[must_use]
-pub enum MemtestOutcome {
+pub enum Outcome {
     Pass,
-    Fail(MemtestFailure),
+    Fail(Failure),
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum MemtestFailure {
+pub enum Failure {
     
     UnexpectedValue {
         address: usize,
@@ -35,49 +35,49 @@ pub enum MemtestFailure {
 }
 
 pub trait TestObserver {
-    type Error: Error;
+    type Error: error::Error;
     fn init(&mut self, expected_iter: u64);
     fn check(&mut self) -> Result<(), Self::Error>;
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum MemtestError<E> {
+pub enum Error<E> {
     Observer(E),
     #[serde(
-        serialize_with = "serialize_memtest_error_other",
-        deserialize_with = "deserialize_memtest_error_other"
+        serialize_with = "serialize_error_other",
+        deserialize_with = "deserialize_error_other"
     )]
     Other(anyhow::Error),
 }
 
-macro_rules! memtest_kinds {{
+macro_rules! test_kinds {{
     $($variant: ident),* $(,)?
 } => {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-    pub enum MemtestKind {
+    pub enum TestKind {
         $($variant,)*
     }
 
-    impl MemtestKind {
+    impl TestKind {
         pub const ALL: &'static [Self] = &[
             $(Self::$variant),*
         ];
     }
 
-    impl std::str::FromStr for MemtestKind {
-        type Err = ParseMemtestKindError;
+    impl std::str::FromStr for TestKind {
+        type Err = ParseTestKindError;
         fn from_str(s: &str) -> Result<Self, Self::Err> {
             match s {
             $(
                 stringify!($variant) => Ok(Self::$variant),
             )*
-                _ => Err(ParseMemtestKindError),
+                _ => Err(ParseTestKindError),
             }
         }
     }
 }}
 
-memtest_kinds! {
+test_kinds! {
     OwnAddressBasic,
     OwnAddressRepeat,
     RandomVal,
@@ -101,277 +101,953 @@ memtest_kinds! {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ParseMemtestKindError;
+pub struct ParseTestKindError;
 
-impl MemtestKind {
-    pub fn run<O: TestObserver>(&self, memory: &mut [usize], observer: O) -> MemtestResult<O> {
-        let test = match self {
-            Self::OwnAddressBasic => test_own_address_basic,
-            Self::OwnAddressRepeat => test_own_address_repeat,
-            Self::RandomVal => test_random_val,
-            Self::Xor => test_xor,
-            Self::Sub => test_sub,
-            Self::Mul => test_mul,
-            Self::Div => test_div,
-            Self::Or => test_or,
-            Self::And => test_and,
-            Self::SeqInc => test_seq_inc,
-            Self::SolidBits => test_solid_bits,
-            Self::Checkerboard => test_checkerboard,
-            Self::BlockSeq => test_block_seq,
-            Self::MovInvFixedBlock => test_mov_inv_fixed_block,
-            Self::MovInvFixedBit => test_mov_inv_fixed_bit,
-            Self::MovInvFixedRandom => test_mov_inv_fixed_random,
-            Self::MovInvWalk => test_mov_inv_walk,
-            Self::BlockMove => test_block_move,
-            Self::MovInvRandom => test_mov_inv_random,
-            Self::Modulo20 => test_modulo_20,
+impl TestKind {
+    pub fn run<O: TestObserver>(&self, memory: &mut [usize], observer: O) -> TestResult<O> {
+        use two_region::{
+            run_two_region_test_algorithm, And, BlockSeq, Checkerboard, Div, Mul, Or, RandomVal,
+            SeqInc, SolidBits, Sub, Xor,
         };
-        test(memory, observer)
+
+        match self {
+            Self::OwnAddressBasic => {
+                run_test_algorithm(OwnAddressBasic::default(), memory, observer)
+            }
+            Self::OwnAddressRepeat => {
+                run_test_algorithm(OwnAddressRepeat::default(), memory, observer)
+            }
+            Self::RandomVal => {
+                run_two_region_test_algorithm(RandomVal::default(), memory, observer)
+            }
+            Self::Xor => run_two_region_test_algorithm(Xor::default(), memory, observer),
+            Self::Sub => run_two_region_test_algorithm(Sub::default(), memory, observer),
+            Self::Mul => run_two_region_test_algorithm(Mul::default(), memory, observer),
+            Self::Div => run_two_region_test_algorithm(Div::default(), memory, observer),
+            Self::Or => run_two_region_test_algorithm(Or::default(), memory, observer),
+            Self::And => run_two_region_test_algorithm(And::default(), memory, observer),
+            Self::SeqInc => run_two_region_test_algorithm(SeqInc::default(), memory, observer),
+            Self::SolidBits => {
+                run_two_region_test_algorithm(SolidBits::default(), memory, observer)
+            }
+            Self::Checkerboard => {
+                run_two_region_test_algorithm(Checkerboard::default(), memory, observer)
+            }
+            Self::BlockSeq => run_two_region_test_algorithm(BlockSeq::default(), memory, observer),
+            Self::MovInvFixedBlock => {
+                run_test_algorithm(mov_inv::FixedBlock::default(), memory, observer)
+            }
+            Self::MovInvFixedBit => {
+                run_test_algorithm(mov_inv::FixedBit::default(), memory, observer)
+            }
+            Self::MovInvFixedRandom => {
+                run_test_algorithm(mov_inv::FixedRandom::default(), memory, observer)
+            }
+            Self::MovInvWalk => run_test_algorithm(mov_inv::Walk::default(), memory, observer),
+            Self::BlockMove => run_block_move(memory, observer),
+            Self::MovInvRandom => run_test_algorithm(mov_inv::Random::default(), memory, observer),
+            Self::Modulo20 => run_modulo_20(memory, observer),
+        }
+    }
+}
+
+
+#[derive(Debug, Default)]
+enum PassDirection {
+    #[default]
+    Forward,
+    Reverse,
+}
+
+type PassFn<T> = fn(&mut T, direction: &mut PassDirection) -> IterFn<T>;
+type IterFn<T> = fn(&mut T, &mut usize) -> Result<(), Failure>;
+
+trait TestAlgorithm: fmt::Debug {
+    
+    fn num_runs(&self) -> u64 {
+        1
+    }
+    
+    fn start_run(&mut self, _run_idx: u64) {}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn passes(&self) -> Vec<PassFn<Self>>;
+}
+
+#[tracing::instrument(skip(memory, observer))]
+fn run_test_algorithm<T: TestAlgorithm, O: TestObserver>(
+    mut test: T,
+    memory: &mut [usize],
+    mut observer: O,
+) -> TestResult<O> {
+    let expected_iter = u64::try_from(memory.len())
+        .ok()
+        .and_then(|count| count.checked_mul(test.num_runs()))
+        .and_then(|count| count.checked_mul(u64::try_from(test.passes().len()).ok()?))
+        .context("Total number of iterations overflowed")?;
+    observer.init(expected_iter);
+
+    for i in 0..test.num_runs() {
+        test.start_run(i);
+        for pass_fn in test.passes() {
+            let mut direction = PassDirection::default();
+            let iter_fn = pass_fn(&mut test, &mut direction);
+
+            let mem_iter: Box<dyn Iterator<Item = &mut usize>> = match direction {
+                PassDirection::Forward => Box::new(memory.iter_mut()),
+                PassDirection::Reverse => Box::new(memory.iter_mut().rev()),
+            };
+
+            for mem_ref in mem_iter {
+                observer.check().map_err(Error::Observer)?;
+                if let Err(f) = iter_fn(&mut test, mem_ref) {
+                    return Ok(Outcome::Fail(f));
+                }
+            }
+        }
+    }
+    Ok(Outcome::Pass)
+}
+
+fn check_expected_value(address: usize, expected: usize, actual: usize) -> Result<(), Failure> {
+    if actual != expected {
+        info!("Test failed at 0x{address:x}");
+        Err(Failure::UnexpectedValue {
+            address,
+            expected,
+            actual,
+        })
+    } else {
+        Ok(())
     }
 }
 
 
 
-#[tracing::instrument(skip_all)]
-pub fn test_own_address_basic<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(2))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
+#[derive(Debug, Default)]
+struct OwnAddressBasic {}
 
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        write_volatile_safe(mem_ref, address_from_ref(mem_ref));
+impl TestAlgorithm for OwnAddressBasic {
+    fn passes(&self) -> Vec<PassFn<Self>> {
+        vec![Self::pass_0, Self::pass_1]
     }
+}
 
-    for mem_ref in memory.iter() {
-        observer.check().map_err(MemtestError::Observer)?;
-        let address = address_from_ref(mem_ref);
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != address {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected: address,
-                actual,
-            }));
+impl OwnAddressBasic {
+    fn pass_0(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+        |_state, mem_ref| {
+            write_volatile_safe(mem_ref, address_from_ref(mem_ref));
+            Ok(())
         }
     }
 
-    Ok(MemtestOutcome::Pass)
+    fn pass_1(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+        |_state, mem_ref| {
+            check_expected_value(
+                address_from_ref(mem_ref),
+                address_from_ref(mem_ref),
+                read_volatile_safe(mem_ref),
+            )
+        }
+    }
 }
 
 
 
 
-#[tracing::instrument(skip_all)]
-pub fn test_own_address_repeat<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    const NUM_RUNS: u64 = 16;
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(2 * NUM_RUNS))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
+#[derive(Debug, Default)]
+struct OwnAddressRepeat {
+    complement: bool,
+    run_idx: u64,
+}
 
-    let val_to_write = |address: usize, i, j| {
-        if (i + j) % 2 == 0 {
-            address
+impl TestAlgorithm for OwnAddressRepeat {
+    fn num_runs(&self) -> u64 {
+        16
+    }
+    fn start_run(&mut self, run_idx: u64) {
+        self.run_idx = run_idx;
+    }
+    fn passes(&self) -> Vec<PassFn<Self>> {
+        vec![Self::pass_0, Self::pass_1]
+    }
+}
+
+impl OwnAddressRepeat {
+    fn pass_0(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+        self.init_complement();
+
+        |state, mem_ref| {
+            write_volatile_safe(mem_ref, state.val_to_write(mem_ref));
+
+            state.complement = !state.complement;
+            Ok(())
+        }
+    }
+
+    fn pass_1(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+        self.init_complement();
+
+        |state, mem_ref| {
+            check_expected_value(
+                address_from_ref(mem_ref),
+                state.val_to_write(mem_ref),
+                read_volatile_safe(mem_ref),
+            )?;
+
+            state.complement = !state.complement;
+            Ok(())
+        }
+    }
+
+    fn init_complement(&mut self) {
+        self.complement = self.run_idx % 2 != 0;
+    }
+
+    fn val_to_write(&self, mem_ref: &usize) -> usize {
+        if self.complement {
+            !address_from_ref(mem_ref)
         } else {
-            !(address)
+            address_from_ref(mem_ref)
         }
+    }
+}
+
+mod two_region {
+    use {
+        super::{
+            address_from_ref, mem_reset, read_volatile_safe, split_slice_in_half,
+            usize_filled_from_byte, write_volatile_safe, Error, Failure, Outcome, TestObserver,
+            TestResult,
+        },
+        crate::prelude::*,
+        rand::random,
+        std::fmt,
     };
 
-    for i in 0..usize::try_from(NUM_RUNS).unwrap() {
-        for (j, mem_ref) in memory.iter_mut().enumerate() {
-            observer.check().map_err(MemtestError::Observer)?;
-            let val = val_to_write(address_from_ref(mem_ref), i, j);
-            write_volatile_safe(mem_ref, val);
+    type TwoRegionWriteFn<T> = fn(&mut T, &mut usize, &mut usize);
+
+    
+    
+    
+    trait TwoRegionTestAlgorithm: fmt::Debug + Default {
+        
+        fn num_runs(&self) -> u64 {
+            1
+        }
+        
+        fn start_run(&mut self, _run_idx: u64) {}
+
+        
+        
+        fn reset_before_run(&self) -> bool;
+
+        
+        
+        fn write_fn(&self) -> TwoRegionWriteFn<Self>;
+    }
+
+    #[tracing::instrument(skip(memory, observer))]
+    pub(super) fn run_two_region_test_algorithm<T: TwoRegionTestAlgorithm, O: TestObserver>(
+        mut test: T,
+        memory: &mut [usize],
+        mut observer: O,
+    ) -> TestResult<O> {
+        if test.reset_before_run() {
+            mem_reset(memory);
+        }
+        let (first_half, second_half) = split_slice_in_half(memory)?;
+        let expected_iter = u64::try_from(first_half.len())
+            .ok()
+            .and_then(|count| count.checked_mul(2))
+            .and_then(|count| count.checked_mul(test.num_runs()))
+            .context("Total number of iterations overflowed")?;
+        observer.init(expected_iter);
+
+        for i in 0..test.num_runs() {
+            test.start_run(i);
+
+            let write_fn = test.write_fn();
+            for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
+                observer.check().map_err(Error::Observer)?;
+                write_fn(&mut test, first_ref, second_ref);
+            }
+
+            for (first_ref, second_ref) in first_half.iter().zip(second_half.iter()) {
+                observer.check().map_err(Error::Observer)?;
+                if let Err(f) = check_matching_values(
+                    address_from_ref(first_ref),
+                    read_volatile_safe(first_ref),
+                    address_from_ref(second_ref),
+                    read_volatile_safe(second_ref),
+                ) {
+                    return Ok(Outcome::Fail(f));
+                }
+            }
         }
 
-        for (j, mem_ref) in memory.iter().enumerate() {
-            observer.check().map_err(MemtestError::Observer)?;
-            let address = address_from_ref(mem_ref);
-            let expected = val_to_write(address, i, j);
-            let actual = read_volatile_safe(mem_ref);
+        Ok(Outcome::Pass)
+    }
 
-            if actual != expected {
-                info!("Test failed at 0x{address:x}");
-                return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                    address,
-                    expected,
-                    actual,
-                }));
+    fn check_matching_values(
+        address1: usize,
+        value1: usize,
+        address2: usize,
+        value2: usize,
+    ) -> Result<(), Failure> {
+        if value1 != value2 {
+            info!("Test failed at 0x{address1:x} compared to 0x{address2:x}");
+            Err(Failure::MismatchedValues {
+                address1,
+                value1,
+                address2,
+                value2,
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct RandomVal {}
+    impl TwoRegionTestAlgorithm for RandomVal {
+        fn reset_before_run(&self) -> bool {
+            false
+        }
+
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            |_state, first_ref, second_ref| {
+                let val = random();
+                write_volatile_safe(first_ref, val);
+                write_volatile_safe(second_ref, val);
             }
         }
     }
 
-    Ok(MemtestOutcome::Pass)
-}
+    macro_rules! two_region_write_fn_with_transform_fn {
+        ($transform_fn:expr) => {
+            |_state, first_ref, second_ref| {
+                let mixing_val: usize = random();
 
+                let val = read_volatile_safe(first_ref);
+                let new_val = $transform_fn(val, mixing_val);
+                write_volatile_safe(first_ref, new_val);
 
-
-#[tracing::instrument(skip_all)]
-pub fn test_random_val<O: TestObserver>(memory: &mut [usize], mut observer: O) -> MemtestResult<O> {
-    let (first_half, second_half) = split_slice_in_half(memory)?;
-    let expected_iter =
-        u64::try_from(first_half.len() * 2).context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
-        observer.check().map_err(MemtestError::Observer)?;
-        let val = random();
-        write_volatile_safe(first_ref, val);
-        write_volatile_safe(second_ref, val);
+                let val = read_volatile_safe(second_ref);
+                let new_val = $transform_fn(val, mixing_val);
+                write_volatile_safe(second_ref, new_val);
+            }
+        };
     }
 
-    compare_regions(first_half, second_half, &mut observer)
-}
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_xor<O: TestObserver>(memory: &mut [usize], observer: O) -> MemtestResult<O> {
-    test_two_regions(memory, observer, std::ops::BitXor::bitxor)
-}
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_sub<O: TestObserver>(memory: &mut [usize], observer: O) -> MemtestResult<O> {
-    test_two_regions(memory, observer, usize::wrapping_sub)
-}
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_mul<O: TestObserver>(memory: &mut [usize], observer: O) -> MemtestResult<O> {
-    test_two_regions(memory, observer, usize::wrapping_mul)
-}
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_div<O: TestObserver>(memory: &mut [usize], observer: O) -> MemtestResult<O> {
-    test_two_regions(memory, observer, |n, d| n.wrapping_div(usize::max(d, 1)))
-}
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_or<O: TestObserver>(memory: &mut [usize], observer: O) -> MemtestResult<O> {
-    test_two_regions(memory, observer, std::ops::BitOr::bitor)
-}
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_and<O: TestObserver>(memory: &mut [usize], observer: O) -> MemtestResult<O> {
-    test_two_regions(memory, observer, std::ops::BitAnd::bitand)
-}
-
-
-
-
-
-
-fn test_two_regions<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-    transform_fn: fn(usize, usize) -> usize,
-) -> MemtestResult<O> {
-    mem_reset(memory);
-    let (first_half, second_half) = split_slice_in_half(memory)?;
-    let expected_iter =
-        u64::try_from(first_half.len() * 2).context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
-        observer.check().map_err(MemtestError::Observer)?;
-
-        let mixing_val = random();
-
-        let val = read_volatile_safe(first_ref);
-        let new_val = transform_fn(val, mixing_val);
-        write_volatile_safe(first_ref, new_val);
-
-        let val = read_volatile_safe(second_ref);
-        let new_val = transform_fn(val, mixing_val);
-        write_volatile_safe(second_ref, new_val);
-    }
-
-    compare_regions(first_half, second_half, &mut observer)
-}
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_seq_inc<O: TestObserver>(memory: &mut [usize], mut observer: O) -> MemtestResult<O> {
-    let (first_half, second_half) = split_slice_in_half(memory)?;
-    let expected_iter =
-        u64::try_from(first_half.len() * 2).context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    let mut val: usize = random();
-    for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
-        observer.check().map_err(MemtestError::Observer)?;
-        val = val.wrapping_add(1);
-        write_volatile_safe(first_ref, val);
-        write_volatile_safe(second_ref, val);
-    }
-
-    compare_regions(first_half, second_half, &mut observer)
-}
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_solid_bits<O: TestObserver>(memory: &mut [usize], mut observer: O) -> MemtestResult<O> {
-    const NUM_RUNS: u64 = 64;
-    let (first_half, second_half) = split_slice_in_half(memory)?;
-    let expected_iter = u64::try_from(first_half.len() * 2)
-        .ok()
-        .and_then(|count| count.checked_mul(NUM_RUNS))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    let mut solid_bits = !0;
-    for _ in 0..NUM_RUNS {
-        solid_bits = !solid_bits;
-        let mut val = solid_bits;
-
-        for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
-            observer.check().map_err(MemtestError::Observer)?;
-            val = !val;
-            write_volatile_safe(first_ref, val);
-            write_volatile_safe(second_ref, val);
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct Xor {}
+    impl TwoRegionTestAlgorithm for Xor {
+        fn reset_before_run(&self) -> bool {
+            true
         }
-
-        if let MemtestOutcome::Fail(f) = compare_regions(first_half, second_half, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            two_region_write_fn_with_transform_fn!(std::ops::BitXor::bitxor)
         }
     }
-    Ok(MemtestOutcome::Pass)
+
+    
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct Sub {}
+    impl TwoRegionTestAlgorithm for Sub {
+        fn reset_before_run(&self) -> bool {
+            true
+        }
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            two_region_write_fn_with_transform_fn!(usize::wrapping_sub)
+        }
+    }
+
+    
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct Mul {}
+    impl TwoRegionTestAlgorithm for Mul {
+        fn reset_before_run(&self) -> bool {
+            true
+        }
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            two_region_write_fn_with_transform_fn!(usize::wrapping_mul)
+        }
+    }
+
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct Div {}
+    impl TwoRegionTestAlgorithm for Div {
+        fn reset_before_run(&self) -> bool {
+            true
+        }
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            two_region_write_fn_with_transform_fn!(
+                |n: usize, d: usize| n.wrapping_div(usize::max(d, 1))
+            )
+        }
+    }
+
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct Or {}
+    impl TwoRegionTestAlgorithm for Or {
+        fn reset_before_run(&self) -> bool {
+            true
+        }
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            two_region_write_fn_with_transform_fn!(std::ops::BitOr::bitor)
+        }
+    }
+
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct And {}
+    impl TwoRegionTestAlgorithm for And {
+        fn reset_before_run(&self) -> bool {
+            true
+        }
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            two_region_write_fn_with_transform_fn!(std::ops::BitAnd::bitand)
+        }
+    }
+
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct SeqInc {
+        val: usize,
+    }
+    impl TwoRegionTestAlgorithm for SeqInc {
+        fn reset_before_run(&self) -> bool {
+            false
+        }
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            |state, first_ref, second_ref| {
+                state.val = state.val.wrapping_add(1);
+                write_volatile_safe(first_ref, state.val);
+                write_volatile_safe(second_ref, state.val);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    #[derive(Debug)]
+    pub(super) struct SolidBits {
+        solid_bits: usize,
+        val: usize,
+    }
+
+    impl Default for SolidBits {
+        fn default() -> Self {
+            SolidBits {
+                solid_bits: !0,
+                val: usize::default(),
+            }
+        }
+    }
+
+    impl TwoRegionTestAlgorithm for SolidBits {
+        fn num_runs(&self) -> u64 {
+            64
+        }
+
+        fn start_run(&mut self, _run_idx: u64) {
+            self.solid_bits = !self.solid_bits;
+            self.val = self.solid_bits;
+        }
+
+        fn reset_before_run(&self) -> bool {
+            false
+        }
+
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            |state, first_ref, second_ref| {
+                state.val = !state.val;
+                write_volatile_safe(first_ref, state.val);
+                write_volatile_safe(second_ref, state.val);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[derive(Debug)]
+    pub(super) struct Checkerboard {
+        checker_board: usize,
+        val: usize,
+    }
+
+    impl Default for Checkerboard {
+        fn default() -> Self {
+            Checkerboard {
+                checker_board: usize_filled_from_byte(0xaa),
+                val: usize::default(),
+            }
+        }
+    }
+
+    impl TwoRegionTestAlgorithm for Checkerboard {
+        fn num_runs(&self) -> u64 {
+            64
+        }
+
+        fn start_run(&mut self, _run_idx: u64) {
+            self.checker_board = !self.checker_board;
+            self.val = self.checker_board;
+        }
+
+        fn reset_before_run(&self) -> bool {
+            false
+        }
+
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            |state, first_ref, second_ref| {
+                state.val = !state.val;
+                write_volatile_safe(first_ref, state.val);
+                write_volatile_safe(second_ref, state.val);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    #[derive(Debug, Default)]
+    pub(super) struct BlockSeq {
+        val: usize,
+    }
+
+    impl TwoRegionTestAlgorithm for BlockSeq {
+        fn num_runs(&self) -> u64 {
+            256
+        }
+
+        fn start_run(&mut self, run_idx: u64) {
+            self.val = usize_filled_from_byte(run_idx.try_into().unwrap());
+        }
+
+        fn reset_before_run(&self) -> bool {
+            false
+        }
+
+        fn write_fn(&self) -> TwoRegionWriteFn<Self> {
+            |state, first_ref, second_ref| {
+                write_volatile_safe(first_ref, state.val);
+                write_volatile_safe(second_ref, state.val);
+            }
+        }
+    }
 }
+
+mod mov_inv {
+    use {
+        super::{
+            address_from_ref, check_expected_value, read_volatile_safe, usize_filled_from_byte,
+            write_volatile_safe, IterFn, PassDirection, PassFn, TestAlgorithm,
+        },
+        rand::{random, rngs::SmallRng, Rng, SeedableRng},
+        std::{
+            fmt,
+            time::{SystemTime, UNIX_EPOCH},
+        },
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) trait MovInvAlgorithm: fmt::Debug + Default {
+        fn num_runs(&self) -> u64;
+
+        fn start_run(&mut self, _run_idx: u64);
+
+        fn start_pass(&mut self, _pass_idx: u64) {}
+
+        fn generate_pattern(&mut self) -> usize;
+
+        fn backtrack_pattern(&mut self) -> usize;
+
+        fn passes(&self) -> Vec<PassFn<Self>> {
+            vec![Self::pass_0, Self::pass_1, Self::pass_2]
+        }
+
+        fn pass_0(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+            self.start_pass(0);
+            |state, mem_ref| {
+                let pattern = state.generate_pattern();
+                write_volatile_safe(mem_ref, pattern);
+                Ok(())
+            }
+        }
+
+        fn pass_1(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+            self.start_pass(1);
+
+            |state, mem_ref| {
+                let pattern = state.generate_pattern();
+                check_expected_value(
+                    address_from_ref(mem_ref),
+                    pattern,
+                    read_volatile_safe(mem_ref),
+                )?;
+
+                write_volatile_safe(mem_ref, !pattern);
+                Ok(())
+            }
+        }
+
+        fn pass_2(&mut self, direction: &mut PassDirection) -> IterFn<Self> {
+            *direction = PassDirection::Reverse;
+
+            self.start_pass(2);
+
+            |state, mem_ref| {
+                let pattern = !state.backtrack_pattern();
+                check_expected_value(
+                    address_from_ref(mem_ref),
+                    pattern,
+                    read_volatile_safe(mem_ref),
+                )?;
+
+                write_volatile_safe(mem_ref, !pattern);
+                Ok(())
+            }
+        }
+    }
+
+    impl<T: MovInvAlgorithm> TestAlgorithm for T {
+        fn num_runs(&self) -> u64 {
+            T::num_runs(self)
+        }
+        fn start_run(&mut self, run_idx: u64) {
+            T::start_run(self, run_idx)
+        }
+        fn passes(&self) -> Vec<PassFn<Self>> {
+            T::passes(self)
+        }
+    }
+
+    #[derive(Debug, Default)]
+    pub(super) struct FixedBlock {
+        run_idx: u64,
+    }
+
+    
+    impl MovInvAlgorithm for FixedBlock {
+        fn num_runs(&self) -> u64 {
+            2
+        }
+
+        fn start_run(&mut self, run_idx: u64) {
+            self.run_idx = run_idx;
+        }
+
+        fn generate_pattern(&mut self) -> usize {
+            self.pattern()
+        }
+
+        fn backtrack_pattern(&mut self) -> usize {
+            self.pattern()
+        }
+    }
+
+    impl FixedBlock {
+        fn pattern(&mut self) -> usize {
+            if self.run_idx == 0 {
+                0
+            } else {
+                !0
+            }
+        }
+    }
+
+    
+    
+    
+    #[derive(Debug)]
+    pub(super) struct FixedBit {
+        run_idx: u64,
+        pattern: usize,
+    }
+
+    impl Default for FixedBit {
+        fn default() -> Self {
+            FixedBit {
+                run_idx: u64::default(),
+                pattern: usize_filled_from_byte(0x01),
+            }
+        }
+    }
+
+    impl MovInvAlgorithm for FixedBit {
+        fn num_runs(&self) -> u64 {
+            16
+        }
+
+        fn start_run(&mut self, run_idx: u64) {
+            self.run_idx = run_idx;
+            if run_idx % 2 == 0 {
+                self.pattern = self.pattern.rotate_right(1);
+            }
+        }
+
+        fn generate_pattern(&mut self) -> usize {
+            self.pattern()
+        }
+
+        fn backtrack_pattern(&mut self) -> usize {
+            self.pattern()
+        }
+    }
+
+    impl FixedBit {
+        fn pattern(&mut self) -> usize {
+            if self.run_idx % 2 == 0 {
+                self.pattern
+            } else {
+                !self.pattern
+            }
+        }
+    }
+
+    
+    #[derive(Debug)]
+    pub(super) struct FixedRandom {
+        run_idx: u64,
+        pattern: usize,
+    }
+
+    impl Default for FixedRandom {
+        fn default() -> Self {
+            FixedRandom {
+                run_idx: u64::default(),
+                pattern: random(),
+            }
+        }
+    }
+
+    impl MovInvAlgorithm for FixedRandom {
+        fn num_runs(&self) -> u64 {
+            2
+        }
+
+        fn start_run(&mut self, run_idx: u64) {
+            self.run_idx = run_idx;
+        }
+
+        fn generate_pattern(&mut self) -> usize {
+            self.pattern()
+        }
+
+        fn backtrack_pattern(&mut self) -> usize {
+            self.pattern()
+        }
+    }
+
+    impl FixedRandom {
+        fn pattern(&mut self) -> usize {
+            if self.run_idx % 2 == 0 {
+                self.pattern
+            } else {
+                !self.pattern
+            }
+        }
+    }
+
+    #[derive(Debug, Default)]
+    pub(super) struct Walk {
+        run_idx: u64,
+        starting_pattern: usize,
+        pattern: usize,
+    }
+
+    
+    
+    
+    
+    
+    impl MovInvAlgorithm for Walk {
+        fn num_runs(&self) -> u64 {
+            u64::from(usize::BITS) * 2
+        }
+
+        fn start_run(&mut self, run_idx: u64) {
+            self.run_idx = run_idx;
+            self.starting_pattern = 1 << (run_idx / 2);
+        }
+
+        fn start_pass(&mut self, pass_idx: u64) {
+            
+            if pass_idx == 0 || pass_idx == 1 {
+                self.pattern = self.starting_pattern;
+            }
+        }
+
+        fn generate_pattern(&mut self) -> usize {
+            let pattern = if self.run_idx % 2 == 0 {
+                self.pattern
+            } else {
+                !self.pattern
+            };
+            self.pattern = self.pattern.rotate_left(1);
+            pattern
+        }
+
+        fn backtrack_pattern(&mut self) -> usize {
+            self.pattern = self.pattern.rotate_right(1);
+            if self.run_idx % 2 == 0 {
+                self.pattern
+            } else {
+                !self.pattern
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[derive(Debug)]
+    pub(super) struct Random {
+        seed: u64,
+        rng: SmallRng,
+    }
+
+    impl Default for Random {
+        fn default() -> Self {
+            let seed = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64;
+            Random {
+                seed,
+                rng: SmallRng::seed_from_u64(seed),
+            }
+        }
+    }
+
+    impl TestAlgorithm for Random {
+        fn passes(&self) -> Vec<PassFn<Self>> {
+            vec![Self::pass_0, Self::pass_1, Self::pass_2]
+        }
+    }
+
+    impl Random {
+        fn pass_0(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+            self.reset_rng();
+
+            |state, mem_ref| {
+                let pattern = state.rng.gen();
+                write_volatile_safe(mem_ref, pattern);
+
+                Ok(())
+            }
+        }
+
+        fn pass_1(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+            self.reset_rng();
+
+            |state, mem_ref| {
+                let pattern = state.rng.gen();
+                check_expected_value(
+                    address_from_ref(mem_ref),
+                    pattern,
+                    read_volatile_safe(mem_ref),
+                )?;
+
+                write_volatile_safe(mem_ref, !pattern);
+                Ok(())
+            }
+        }
+
+        fn pass_2(&mut self, _direction: &mut PassDirection) -> IterFn<Self> {
+            self.reset_rng();
+
+            |state, mem_ref| {
+                let pattern = !state.rng.gen::<usize>();
+                check_expected_value(
+                    address_from_ref(mem_ref),
+                    pattern,
+                    read_volatile_safe(mem_ref),
+                )?;
+
+                write_volatile_safe(mem_ref, !pattern);
+                Ok(())
+            }
+        }
+
+        fn reset_rng(&mut self) {
+            self.rng = SmallRng::seed_from_u64(self.seed);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -379,320 +1055,7 @@ pub fn test_solid_bits<O: TestObserver>(memory: &mut [usize], mut observer: O) -
 
 
 #[tracing::instrument(skip_all)]
-pub fn test_checkerboard<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    const NUM_RUNS: u64 = 64;
-    let (first_half, second_half) = split_slice_in_half(memory)?;
-    let expected_iter = u64::try_from(first_half.len() * 2)
-        .ok()
-        .and_then(|count| count.checked_mul(NUM_RUNS))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    let mut checker_board = usize_filled_from_byte(0xaa);
-
-    for _ in 0..NUM_RUNS {
-        checker_board = !checker_board;
-        let mut val = checker_board;
-
-        for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
-            observer.check().map_err(MemtestError::Observer)?;
-            val = !val;
-            write_volatile_safe(first_ref, val);
-            write_volatile_safe(second_ref, val);
-        }
-
-        if let MemtestOutcome::Fail(f) = compare_regions(first_half, second_half, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
-        }
-    }
-    Ok(MemtestOutcome::Pass)
-}
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_block_seq<O: TestObserver>(memory: &mut [usize], mut observer: O) -> MemtestResult<O> {
-    const NUM_RUNS: u64 = 256;
-    let (first_half, second_half) = split_slice_in_half(memory)?;
-    let expected_iter = u64::try_from(first_half.len() * 2)
-        .ok()
-        .and_then(|count| count.checked_mul(NUM_RUNS))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    for i in 0..=(u8::try_from(NUM_RUNS - 1).unwrap()) {
-        let val = usize_filled_from_byte(i);
-
-        for (first_ref, second_ref) in first_half.iter_mut().zip(second_half.iter_mut()) {
-            observer.check().map_err(MemtestError::Observer)?;
-            write_volatile_safe(first_ref, val);
-            write_volatile_safe(second_ref, val);
-        }
-
-        if let MemtestOutcome::Fail(f) = compare_regions(first_half, second_half, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
-        }
-    }
-    Ok(MemtestOutcome::Pass)
-}
-
-
-const MOV_INV_ITERATIONS: u64 = 3;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_mov_inv_fixed_block<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(MOV_INV_ITERATIONS * 2))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    if let MemtestOutcome::Fail(f) = mov_inv_fixed_pattern(memory, 0, &mut observer)? {
-        return Ok(MemtestOutcome::Fail(f));
-    }
-    mov_inv_fixed_pattern(memory, !0, &mut observer)
-}
-
-
-
-
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_mov_inv_fixed_bit<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    const NUM_RUNS: u64 = 8;
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(MOV_INV_ITERATIONS * 2 * NUM_RUNS))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    let mut pattern = usize_filled_from_byte(0x10);
-    for _ in 0..NUM_RUNS {
-        if let MemtestOutcome::Fail(f) = mov_inv_fixed_pattern(memory, pattern, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
-        }
-        if let MemtestOutcome::Fail(f) = mov_inv_fixed_pattern(memory, !pattern, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
-        }
-        pattern = pattern.rotate_right(1);
-    }
-    Ok(MemtestOutcome::Pass)
-}
-
-
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_mov_inv_fixed_random<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(MOV_INV_ITERATIONS * 2))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    let pattern = random();
-    if let MemtestOutcome::Fail(f) = mov_inv_fixed_pattern(memory, pattern, &mut observer)? {
-        return Ok(MemtestOutcome::Fail(f));
-    }
-    mov_inv_fixed_pattern(memory, !pattern, &mut observer)
-}
-
-fn mov_inv_fixed_pattern<O: TestObserver>(
-    memory: &mut [usize],
-    pattern: usize,
-    observer: &mut O,
-) -> MemtestResult<O> {
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        write_volatile_safe(mem_ref, pattern);
-    }
-
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        let address = address_from_ref(mem_ref);
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != pattern {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected: pattern,
-                actual,
-            }));
-        }
-
-        write_volatile_safe(mem_ref, !pattern);
-    }
-
-    for mem_ref in memory.iter_mut().rev() {
-        observer.check().map_err(MemtestError::Observer)?;
-        let address = address_from_ref(mem_ref);
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != !pattern {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected: !pattern,
-                actual,
-            }));
-        }
-
-        write_volatile_safe(mem_ref, pattern);
-    }
-
-    Ok(MemtestOutcome::Pass)
-}
-
-
-
-
-
-
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_mov_inv_walk<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    const NUM_RUNS: u32 = usize::BITS;
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(MOV_INV_ITERATIONS * 2 * u64::from(NUM_RUNS)))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    for i in 0..NUM_RUNS {
-        let pattern = 1 << i;
-        if let MemtestOutcome::Fail(f) = mov_inv_walking_pattern(memory, pattern, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
-        }
-        if let MemtestOutcome::Fail(f) = mov_inv_walking_pattern(memory, !pattern, &mut observer)? {
-            return Ok(MemtestOutcome::Fail(f));
-        }
-    }
-    Ok(MemtestOutcome::Pass)
-}
-
-fn mov_inv_walking_pattern<O: TestObserver>(
-    memory: &mut [usize],
-    starting_pattern: usize,
-    observer: &mut O,
-) -> MemtestResult<O> {
-    let mut pattern = starting_pattern;
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        write_volatile_safe(mem_ref, pattern);
-        pattern = pattern.rotate_left(1);
-    }
-
-    pattern = starting_pattern;
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        let address = address_from_ref(mem_ref);
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != pattern {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected: pattern,
-                actual,
-            }));
-        }
-
-        write_volatile_safe(mem_ref, !pattern);
-        pattern = pattern.rotate_left(1);
-    }
-
-    pattern = !pattern;
-    for mem_ref in memory.iter_mut().rev() {
-        observer.check().map_err(MemtestError::Observer)?;
-        pattern = pattern.rotate_right(1);
-        let address = address_from_ref(mem_ref);
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != pattern {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected: pattern,
-                actual,
-            }));
-        }
-
-        write_volatile_safe(mem_ref, !pattern);
-    }
-    Ok(MemtestOutcome::Pass)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[tracing::instrument(skip_all)]
-pub fn test_block_move<O: TestObserver>(memory: &mut [usize], mut observer: O) -> MemtestResult<O> {
+pub fn run_block_move<O: TestObserver>(memory: &mut [usize], mut observer: O) -> TestResult<O> {
     const CHUNK_SIZE: usize = 16;
     const OFFSET: usize = 8;
     if memory.len() < CHUNK_SIZE {
@@ -714,7 +1077,7 @@ pub fn test_block_move<O: TestObserver>(memory: &mut [usize], mut observer: O) -
     let mut pattern = 1;
     for chunk in memory.chunks_exact_mut(CHUNK_SIZE) {
         for (i, mem_ref) in chunk.iter_mut().enumerate() {
-            observer.check().map_err(MemtestError::Observer)?;
+            observer.check().map_err(Error::Observer)?;
 
             let val = val_to_write(pattern, i);
             write_volatile_safe(mem_ref, val);
@@ -747,24 +1110,21 @@ pub fn test_block_move<O: TestObserver>(memory: &mut [usize], mut observer: O) -
             let expected = val_to_write(pattern, i);
 
             for mem_ref in [mem_ref1, mem_ref2] {
-                observer.check().map_err(MemtestError::Observer)?;
+                observer.check().map_err(Error::Observer)?;
 
-                let address = address_from_ref(mem_ref);
-                let actual = read_volatile_safe(mem_ref);
-                if actual != expected {
-                    info!("Test failed at 0x{address:x}");
-                    return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                        address,
-                        expected,
-                        actual,
-                    }));
+                if let Err(f) = check_expected_value(
+                    address_from_ref(mem_ref),
+                    expected,
+                    read_volatile_safe(mem_ref),
+                ) {
+                    return Ok(Outcome::Fail(f));
                 }
             }
         }
         pattern = pattern.rotate_left(1);
     }
 
-    Ok(MemtestOutcome::Pass)
+    Ok(Outcome::Pass)
 }
 
 
@@ -787,83 +1147,10 @@ fn volatile_copy_slice<T: Copy>(dst: &mut [T], src: &[T]) {
 
 
 
-#[tracing::instrument(skip_all)]
-pub fn test_mov_inv_random<O: TestObserver>(
-    memory: &mut [usize],
-    mut observer: O,
-) -> MemtestResult<O> {
-    use {
-        rand::{rngs::SmallRng, Rng, SeedableRng},
-        std::time::{SystemTime, UNIX_EPOCH},
-    };
-    let expected_iter = u64::try_from(memory.len())
-        .ok()
-        .and_then(|count| count.checked_mul(MOV_INV_ITERATIONS))
-        .context("Total number of iterations overflowed")?;
-    observer.init(expected_iter);
-
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64;
-
-    let mut rng = SmallRng::seed_from_u64(seed);
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        write_volatile_safe(mem_ref, rng.gen());
-    }
-
-    let mut rng = SmallRng::seed_from_u64(seed);
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        let address = address_from_ref(mem_ref);
-        let expected = rng.gen();
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != expected {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected,
-                actual,
-            }));
-        }
-
-        write_volatile_safe(mem_ref, !expected);
-    }
-
-    let mut rng = SmallRng::seed_from_u64(seed);
-    for mem_ref in memory.iter_mut() {
-        observer.check().map_err(MemtestError::Observer)?;
-        let address = address_from_ref(mem_ref);
-        let expected = !rng.gen::<usize>();
-        let actual = read_volatile_safe(mem_ref);
-
-        if actual != expected {
-            info!("Test failed at 0x{address:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                address,
-                expected,
-                actual,
-            }));
-        }
-
-        write_volatile_safe(mem_ref, !expected);
-    }
-
-    Ok(MemtestOutcome::Pass)
-}
-
-
-
-
-
-
-
 
 
 #[tracing::instrument(skip_all)]
-pub fn test_modulo_20<O: TestObserver>(memory: &mut [usize], mut observer: O) -> MemtestResult<O> {
+pub fn run_modulo_20<O: TestObserver>(memory: &mut [usize], mut observer: O) -> TestResult<O> {
     const STEP: usize = 20;
     (memory.len() > STEP)
         .then_some(())
@@ -877,7 +1164,7 @@ pub fn test_modulo_20<O: TestObserver>(memory: &mut [usize], mut observer: O) ->
     let pattern = random();
     for offset in 0..STEP {
         for mem_ref in memory.iter_mut().skip(offset).step_by(STEP) {
-            observer.check().map_err(MemtestError::Observer)?;
+            observer.check().map_err(Error::Observer)?;
             write_volatile_safe(mem_ref, pattern);
         }
 
@@ -886,29 +1173,25 @@ pub fn test_modulo_20<O: TestObserver>(memory: &mut [usize], mut observer: O) ->
                 if i % STEP == offset {
                     continue;
                 }
-                observer.check().map_err(MemtestError::Observer)?;
+                observer.check().map_err(Error::Observer)?;
                 write_volatile_safe(mem_ref, !pattern);
             }
         }
 
         for mem_ref in memory.iter().skip(offset).step_by(STEP) {
-            observer.check().map_err(MemtestError::Observer)?;
-            let address = address_from_ref(mem_ref);
-            let expected = pattern;
-            let actual = read_volatile_safe(mem_ref);
+            observer.check().map_err(Error::Observer)?;
 
-            if actual != expected {
-                info!("Test failed at 0x{address:x}");
-                return Ok(MemtestOutcome::Fail(MemtestFailure::UnexpectedValue {
-                    address,
-                    expected,
-                    actual,
-                }));
+            if let Err(f) = check_expected_value(
+                address_from_ref(mem_ref),
+                pattern,
+                read_volatile_safe(mem_ref),
+            ) {
+                return Ok(Outcome::Fail(f));
             }
         }
     }
 
-    Ok(MemtestOutcome::Pass)
+    Ok(Outcome::Pass)
 }
 
 fn read_volatile_safe<T: Copy>(src: &T) -> T {
@@ -944,33 +1227,7 @@ fn usize_filled_from_byte(byte: u8) -> usize {
     val
 }
 
-fn compare_regions<O: TestObserver>(
-    region1: &mut [usize],
-    region2: &mut [usize],
-    observer: &mut O,
-) -> MemtestResult<O> {
-    for (ref1, ref2) in region1.iter().zip(region2.iter()) {
-        observer.check().map_err(MemtestError::Observer)?;
-
-        let address1 = address_from_ref(ref1);
-        let address2 = address_from_ref(ref2);
-        let val1 = read_volatile_safe(ref1);
-        let val2 = read_volatile_safe(ref2);
-
-        if val1 != val2 {
-            info!("Test failed at 0x{address1:x} compared to 0x{address2:x}");
-            return Ok(MemtestOutcome::Fail(MemtestFailure::MismatchedValues {
-                address1,
-                value1: val1,
-                address2,
-                value2: val2,
-            }));
-        }
-    }
-    Ok(MemtestOutcome::Pass)
-}
-
-impl fmt::Debug for MemtestFailure {
+impl fmt::Debug for Failure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::UnexpectedValue {
@@ -999,49 +1256,49 @@ impl fmt::Debug for MemtestFailure {
     }
 }
 
-impl fmt::Display for ParseMemtestKindError {
+impl fmt::Display for ParseTestKindError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl Error for ParseMemtestKindError {}
+impl error::Error for ParseTestKindError {}
 
-impl fmt::Display for MemtestOutcome {
+impl fmt::Display for Outcome {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Outcome: {:?}", self)
     }
 }
 
-impl<E: fmt::Debug> fmt::Display for MemtestError<E> {
+impl<E: fmt::Debug> fmt::Display for Error<E> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Error: {:?}", self)
     }
 }
 
-impl<E: Error + 'static> Error for MemtestError<E> {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
+impl<E: error::Error + 'static> error::Error for Error<E> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
-            MemtestError::Observer(err) => Some(err),
-            MemtestError::Other(err) => Some(err.as_ref()),
+            Error::Observer(err) => Some(err),
+            Error::Other(err) => Some(err.as_ref()),
         }
     }
 }
 
-impl<E> From<anyhow::Error> for MemtestError<E> {
-    fn from(err: anyhow::Error) -> MemtestError<E> {
-        MemtestError::Other(err)
+impl<E> From<anyhow::Error> for Error<E> {
+    fn from(err: anyhow::Error) -> Error<E> {
+        Error::Other(err)
     }
 }
 
-fn serialize_memtest_error_other<S>(error: &anyhow::Error, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_error_other<S>(error: &anyhow::Error, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
     serializer.serialize_str(&format!("{:?}", error))
 }
 
-fn deserialize_memtest_error_other<'de, D>(deserializer: D) -> Result<anyhow::Error, D::Error>
+fn deserialize_error_other<'de, D>(deserializer: D) -> Result<anyhow::Error, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -1052,7 +1309,7 @@ where
 #[cfg(test)]
 mod test {
     use {
-        super::{MemtestKind, MemtestOutcome, TestObserver},
+        super::{Outcome, TestKind, TestObserver},
         std::convert::Infallible,
     };
 
@@ -1098,14 +1355,12 @@ mod test {
     #[test]
     fn test_memtest_expected_iter() {
         let mut memory = vec![0; 512];
-        for test_kind in MemtestKind::ALL {
+        for test_kind in TestKind::ALL {
             let mut counter = IterationCounter::new();
             assert!(
-                matches!(
-                    test_kind.run(&mut memory, &mut counter),
-                    Ok(MemtestOutcome::Pass),
-                ),
-                "Memtest should pass"
+                matches!(test_kind.run(&mut memory, &mut counter), Ok(Outcome::Pass),),
+                "{:?} should pass",
+                test_kind
             );
             counter.assert_count();
         }

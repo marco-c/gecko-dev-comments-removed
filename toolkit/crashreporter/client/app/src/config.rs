@@ -493,7 +493,7 @@ impl Config {
         }
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", any(not(mock), test)))]
     fn get_data_dir_root(&self, vendor: &str) -> anyhow::Result<PathBuf> {
         
         #[allow(deprecated)]
