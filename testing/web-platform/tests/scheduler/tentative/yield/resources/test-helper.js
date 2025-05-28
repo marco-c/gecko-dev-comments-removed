@@ -39,8 +39,10 @@ function runFocusChangeTest(t, crossOrigin) {
       assert_equals(e.data.status, 'done');
       
       
-      const expectedToRun = !crossOrigin;
-      assert_equals(expectedToRun, e.data.didRun);
+      
+      assert_false(
+          e.data.didRun,
+          'Did not expect the continuation to use inherited signals');
       if (count == 1) {
         test_driver.send_keys(document.body, "\ue004");
       } else {
