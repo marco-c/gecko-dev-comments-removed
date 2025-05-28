@@ -556,7 +556,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = WinUtils::MicaPopupsEnabled();
       break;
     case IntID::AlertNotificationOrigin:
-      aResult = NS_ALERT_TOP;
+      aResult = 0;
       if (intl::LocaleService::GetInstance()->IsAppLocaleRTL()) {
         
         aResult |= NS_ALERT_LEFT;
