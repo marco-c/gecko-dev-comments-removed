@@ -4832,7 +4832,7 @@ void MacroAssembler::wasmCheckUnsafeCallWithABIPost() {
   assumeUnreachable("callWithABI: callee did not use AutoUnsafeCallWithABI");
   bind(&ok);
 }
-#endif 
+#endif  
 
 void MacroAssembler::passABIArg(const MoveOperand& from, ABIType type) {
   MOZ_ASSERT(inCall_);
