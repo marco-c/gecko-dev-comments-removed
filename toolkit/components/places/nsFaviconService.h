@@ -100,24 +100,6 @@ class nsFaviconService final : public nsIFaviconService {
 
 
 
-
-
-
-
-
-
-
-
-  RefPtr<mozilla::places::BoolPromise> AsyncTryCopyFavicons(
-      nsCOMPtr<nsIURI> aFromPageURI, nsCOMPtr<nsIURI> aToPageURI,
-      uint32_t aFaviconLoadType);
-
-  
-
-
-
-
-
   void ClearImageCache(nsIURI* aImageURI);
 
   static mozilla::Atomic<int64_t> sLastInsertedIconId;
