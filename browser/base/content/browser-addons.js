@@ -1826,6 +1826,7 @@ var gUnifiedExtensions = {
   _initialized: false,
   
   _buttonShownBeforeButtonOpen: null,
+  _buttonBarHasMouse: false,
 
   
   
@@ -1844,10 +1845,13 @@ var gUnifiedExtensions = {
 
     
     this._button = document.getElementById("unified-extensions-button");
+    this._navbar = document.getElementById("nav-bar");
     this.updateButtonVisibility();
     this._buttonAttrObs = new MutationObserver(() => this.onButtonOpenChange());
     this._buttonAttrObs.observe(this._button, { attributeFilter: ["open"] });
     this._button.addEventListener("PopupNotificationsBeforeAnchor", this);
+    this._navbar.addEventListener("mouseenter", this);
+    this._navbar.addEventListener("mouseleave", this);
 
     gBrowser.addTabsProgressListener(this);
     window.addEventListener("TabSelect", () => this.updateAttention());
@@ -1909,8 +1913,6 @@ var gUnifiedExtensions = {
   },
 
   updateButtonVisibility() {
-    const navbar = document.getElementById("nav-bar");
-
     
     let shouldShowButton =
       this.buttonAlwaysVisible ||
@@ -1921,14 +1923,18 @@ var gUnifiedExtensions = {
       
       
       
+      (!this.button.hidden && this._buttonBarHasMouse) ||
+      
+      
+      
       CustomizationHandler.isCustomizing();
 
     if (shouldShowButton) {
       this._button.hidden = false;
-      navbar.setAttribute("unifiedextensionsbuttonshown", true);
+      this._navbar.setAttribute("unifiedextensionsbuttonshown", true);
     } else {
       this._button.hidden = true;
-      navbar.removeAttribute("unifiedextensionsbuttonshown");
+      this._navbar.removeAttribute("unifiedextensionsbuttonshown");
     }
   },
 
@@ -2088,6 +2094,15 @@ var gUnifiedExtensions = {
 
       case "PopupNotificationsBeforeAnchor":
         this.ensureButtonShownBeforeAttachingPanel(PopupNotifications.panel);
+        break;
+
+      case "mouseenter":
+        this._buttonBarHasMouse = true;
+        break;
+
+      case "mouseleave":
+        this._buttonBarHasMouse = false;
+        this.updateButtonVisibility();
         break;
 
       case "customizationstarting":
