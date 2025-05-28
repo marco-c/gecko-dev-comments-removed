@@ -517,7 +517,7 @@ template <TextScanDirection direction>
     
     wordBoundaryDistances.Reverse();
   }
-  return wordBoundaryDistances;
+  return std::move(wordBoundaryDistances);
 }
 
 template <TextScanDirection direction>
