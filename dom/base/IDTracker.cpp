@@ -80,20 +80,6 @@ void IDTracker::ResetToURIWithFragmentID(Element& aFrom, nsIURI* aURI,
     return;
   }
 
-  if (aFrom.IsInNativeAnonymousSubtree()) {
-    
-    
-    
-    
-    Element* anonRoot = doc->GetAnonRootIfInAnonymousContentContainer(&aFrom);
-    if (anonRoot) {
-      mElement = nsContentUtils::MatchElementId(anonRoot, ref);
-      
-      
-      return;
-    }
-  }
-
   bool isEqualExceptRef;
   rv = aURI->EqualsExceptRef(doc->GetDocumentURI(), &isEqualExceptRef);
   RefPtr<nsAtom> refAtom = NS_Atomize(ref);

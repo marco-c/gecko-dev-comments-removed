@@ -1310,13 +1310,6 @@ class Document : public nsINode,
   already_AddRefed<AnonymousContent> InsertAnonymousContent(bool aForce,
                                                             ErrorResult&);
   void RemoveAnonymousContent(AnonymousContent&);
-  
-
-
-
-
-
-  Element* GetAnonRootIfInAnonymousContentContainer(nsINode* aNode) const;
   nsTArray<RefPtr<AnonymousContent>>& GetAnonymousContents() {
     return mAnonymousContents;
   }
