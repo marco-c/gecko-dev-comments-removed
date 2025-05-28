@@ -62,9 +62,22 @@ add_task(async function test_dark_toolbar_dark_text() {
   );
 
   
+  await testTheme("Dark frame is honored", kDark, kSystem, {
+    theme: {
+      colors: {
+        frame: "#000000",
+        tab_background_text: "#000000",
+      },
+    },
+  });
+
+  
   
   await testTheme("Dark frame is ignored", kLight, kSystem, {
     theme: {
+      images: {
+        theme_frame: "image1.png",
+      },
       colors: {
         frame: "#000000",
         tab_background_text: "#000000",
