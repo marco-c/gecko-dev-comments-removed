@@ -15,6 +15,7 @@
 #include "TimeUnits.h"
 #include <aom/aom_image.h>
 #include <aom/aomdx.h>
+#include <stdint.h>
 #include "gfx2DGlue.h"
 #include "gfxUtils.h"
 #include "mozilla/PodOperations.h"
@@ -512,15 +513,15 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
   
   
   tempInfo.mProfile = br.ReadBits(3);
-  const bool stillPicture = br.ReadBit();
-  const bool reducedStillPicture = br.ReadBit();
-  if (!stillPicture && reducedStillPicture) {
+  const bool still_picture = br.ReadBit();
+  const bool reduced_still_picture_header = br.ReadBit();
+  if (!still_picture && reduced_still_picture_header) {
     return MediaResult(
         NS_ERROR_DOM_MEDIA_DECODE_ERR,
         "reduced_still_picture is true while still_picture is false");
   }
 
-  if (reducedStillPicture) {
+  if (reduced_still_picture_header) {
     OperatingPoint op;
     op.mLayers = 0;
     op.mLevel = br.ReadBits(5);  
@@ -528,9 +529,9 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
     tempInfo.mOperatingPoints.SetCapacity(1);
     tempInfo.mOperatingPoints.AppendElement(op);
   } else {
-    bool decoderModelInfoPresent;
-    uint8_t operatingPointCountMinusOne;
-
+    bool decoder_model_info_present_flag;
+    uint8_t operating_points_cnt_minus_1;
+    uint8_t buffer_delay_length_minus_1;
     if (br.ReadBit()) {  
       
       
@@ -541,47 +542,55 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
       }
       
 
-      decoderModelInfoPresent = br.ReadBit();
-      if (decoderModelInfoPresent) {
+      decoder_model_info_present_flag = br.ReadBit();
+      if (decoder_model_info_present_flag) {
         
         
-        br.ReadBits(5);   
+        buffer_delay_length_minus_1 = br.ReadBits(5);
         br.ReadBits(32);  
         br.ReadBits(5);   
         br.ReadBits(5);   
         
       }
     } else {
-      decoderModelInfoPresent = false;
+      decoder_model_info_present_flag = false;
     }
 
-    bool initialDisplayDelayPresent = br.ReadBit();
-    operatingPointCountMinusOne = br.ReadBits(5);
-    tempInfo.mOperatingPoints.SetCapacity(operatingPointCountMinusOne + 1);
-    for (uint8_t i = 0; i <= operatingPointCountMinusOne; i++) {
+    bool initial_display_delay_present_flag = br.ReadBit();
+    operating_points_cnt_minus_1 = br.ReadBits(5);
+    tempInfo.mOperatingPoints.SetCapacity(operating_points_cnt_minus_1 + 1);
+    for (uint8_t i = 0; i <= operating_points_cnt_minus_1; i++) {
       OperatingPoint op;
       op.mLayers = br.ReadBits(12);  
       op.mLevel = br.ReadBits(5);    
       op.mTier = op.mLevel > 7 ? br.ReadBits(1) : 0;
-      if (decoderModelInfoPresent) {
-        br.ReadBit();  
+      if (decoder_model_info_present_flag) {
+        if (br.ReadBit()) {
+          
+          
+          uint8_t n = buffer_delay_length_minus_1 + 1;
+          br.ReadBits(n); 
+          br.ReadBits(n); 
+          br.ReadBit();   
+          
+        }
       }
-      if (initialDisplayDelayPresent) {
+      if (initial_display_delay_present_flag) {
         if (br.ReadBit()) {  
-          br.ReadBits(4);
+          br.ReadBits(4);    
         }
       }
       tempInfo.mOperatingPoints.AppendElement(op);
     }
   }
 
-  uint8_t frameWidthBits = br.ReadBits(4) + 1;
-  uint8_t frameHeightBits = br.ReadBits(4) + 1;
-  uint32_t maxWidth = br.ReadBits(frameWidthBits) + 1;
-  uint32_t maxHeight = br.ReadBits(frameHeightBits) + 1;
-  tempInfo.mImage = gfx::IntSize(maxWidth, maxHeight);
+  uint8_t frame_width_bits_minus_1 = br.ReadBits(4);
+  uint8_t frame_height_bits_minus_1 = br.ReadBits(4);
+  uint32_t max_frame_width_minus_1 = br.ReadBits(frame_width_bits_minus_1 + 1);
+  uint32_t max_frame_height_minus_1 = br.ReadBits(frame_height_bits_minus_1 + 1) ;
+  tempInfo.mImage = gfx::IntSize(max_frame_width_minus_1 + 1, max_frame_height_minus_1 + 1);
 
-  if (!reducedStillPicture) {
+  if (!reduced_still_picture_header) {
     if (br.ReadBit()) {  
       br.ReadBits(4);    
       br.ReadBits(3);    
@@ -592,7 +601,7 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
   br.ReadBit();  
   br.ReadBit();  
 
-  if (reducedStillPicture) {
+  if (reduced_still_picture_header) {
     
     
     
@@ -609,28 +618,25 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
     br.ReadBit();  
     br.ReadBit();  
 
-    const bool enableOrderHint = br.ReadBit();
-
-    if (enableOrderHint) {
+    const bool enable_order_hint  = br.ReadBit();
+    if (enable_order_hint) {
       br.ReadBit();  
       br.ReadBit();  
     }
 
-    uint8_t forceScreenContentTools;
-
-    if (br.ReadBit()) {             
-      forceScreenContentTools = 2;  
+    uint8_t seq_choose_screen_content_tools = br.ReadBit();
+    if (seq_choose_screen_content_tools) {
+      seq_choose_screen_content_tools = 2;  
     } else {
-      forceScreenContentTools = br.ReadBits(1);
+      seq_choose_screen_content_tools = br.ReadBits(1);
     }
-
-    if (forceScreenContentTools > 0) {
+    if (seq_choose_screen_content_tools > 0) {
       if (!br.ReadBit()) {  
         br.ReadBit();       
       }
     }
 
-    if (enableOrderHint) {
+    if (enable_order_hint) {
       br.ReadBits(3);  
     }
   }
