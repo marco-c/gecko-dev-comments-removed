@@ -4,7 +4,7 @@
 <script src="/resources/testharnessreport.js"></script>
 <div id="log"></div>
 
-
+<!-- test elments. Each has an expected innerHTML and outerHTML in an array in the <script>-->
 <div id="test" style="display:none">
 <span></span>
 <span><a></a></span>
@@ -32,11 +32,11 @@
 <span><noembed><&></noembed></span>
 <span><noframes><&></noframes></span>
 <span><noscript><&></noscript></span>
-<span></span>
+<span><!--data--></span>
 <span><a><b><c></c></b><d>e</d><f><g>h</g></f></a></span>
 <span b=c></span>
 </div>
-
+<!-- TODO: template element -->
 <script>
 
 var test_data = document.getElementById("test").children;
@@ -48,9 +48,9 @@ var expected = [
 ["<a b=\"&amp;\"></a>", "<span><a b=\"&amp;\"></a></span>"],
 ["<a b=\"&nbsp;\"></a>", "<span><a b=\"&nbsp;\"></a></span>"],
 ["<a b=\"&quot;\"></a>", "<span><a b=\"&quot;\"></a></span>"],
-["<a b=\"<\"></a>", "<span><a b=\"<\"></a></span>"],
-["<a b=\">\"></a>", "<span><a b=\">\"></a></span>"],
-["<a href=\"javascript:&quot;<>&quot;\"></a>", "<span><a href=\"javascript:&quot;<>&quot;\"></a></span>"],
+["<a b=\"&lt;\"></a>", "<span><a b=\"&lt;\"></a></span>"],
+["<a b=\"&gt;\"></a>", "<span><a b=\"&gt;\"></a></span>"],
+["<a href=\"javascript:&quot;&lt;&gt;&quot;\"></a>", "<span><a href=\"javascript:&quot;&lt;&gt;&quot;\"></a></span>"],
 ["<svg xlink:href=\"a\"></svg>", "<span><svg xlink:href=\"a\"></svg></span>"],
 ["<svg xmlns:svg=\"test\"></svg>", "<span><svg xmlns:svg=\"test\"></svg></span>"],
 ["a", "<span>a</span>"],
