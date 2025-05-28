@@ -115,7 +115,7 @@ function startServer(cert) {
 
 
 const clientAuthDialogService = {
-  chooseCertificate(hostname, certArray, loadContext, callback) {
+  chooseCertificate(hostname, certArray, loadContext, caNames, callback) {
     callback.certificateChosen(certArray[0], false);
   },
   QueryInterface: ChromeUtils.generateQI(["nsIClientAuthDialogService"]),
