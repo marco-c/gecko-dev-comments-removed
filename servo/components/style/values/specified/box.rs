@@ -1552,12 +1552,6 @@ pub enum Appearance {
     Statusbar,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Tab,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Tabpanels,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Toolbarbutton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
