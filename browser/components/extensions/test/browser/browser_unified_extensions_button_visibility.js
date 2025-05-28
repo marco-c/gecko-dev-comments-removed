@@ -22,6 +22,14 @@ function resetButtonVisibilityToDefault() {
   Services.prefs.clearUserPref(PREF_ALWAYS_VISIBLE);
 }
 
+function assertTelemetryValueMatchesAlwaysVisiblePref() {
+  is(
+    Glean.extensionsButton.prefersHiddenButton.testGetValue(),
+    !Services.prefs.getBoolPref(PREF_ALWAYS_VISIBLE),
+    "extensions_button.prefers_hidden_button is inverse of pref value"
+  );
+}
+
 async function checkAndDismissPostHideNotification(win) {
   
   
@@ -51,14 +59,23 @@ registerCleanupFunction(resetButtonVisibilityToDefault);
 
 add_task(async function test_default_button_visibility() {
   assertExtensionsButtonVisible();
+  
+  
+  is(
+    Glean.extensionsButton.prefersHiddenButton.testGetValue(),
+    false,
+    "extensions_button.prefers_hidden_button is false by default"
+  );
 });
 
 add_task(async function test_hide_button_before_new_window() {
   hideButtonWithPref();
+  assertTelemetryValueMatchesAlwaysVisiblePref();
   const win = await BrowserTestUtils.openNewBrowserWindow();
   assertExtensionsButtonHidden(win);
 
   showButtonWithPref();
+  assertTelemetryValueMatchesAlwaysVisiblePref();
   assertExtensionsButtonVisible(win);
 
   await BrowserTestUtils.closeWindow(win);
@@ -67,10 +84,12 @@ add_task(async function test_hide_button_before_new_window() {
 
 add_task(async function test_show_button_before_new_window() {
   showButtonWithPref();
+  assertTelemetryValueMatchesAlwaysVisiblePref();
   const win = await BrowserTestUtils.openNewBrowserWindow();
   assertExtensionsButtonVisible(win);
 
   hideButtonWithPref();
+  assertTelemetryValueMatchesAlwaysVisiblePref();
   assertExtensionsButtonHidden(win);
 
   await BrowserTestUtils.closeWindow(win);
