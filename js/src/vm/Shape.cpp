@@ -565,47 +565,82 @@ bool NativeObject::changeProperty(JSContext* cx, Handle<NativeObject*> obj,
 
   const JSClass* clasp = obj->shape()->getObjectClass();
 
-  if (map->isShared()) {
+  bool isLast = propMap == map && propIndex == mapLength - 1;
+  bool nonLastCustomProperty = oldProp.isCustomDataProperty() && !isLast;
+  if (map->isShared() && !nonLastCustomProperty) {
     
     
     
-    if (propMap == map && propIndex == mapLength - 1) {
-      MOZ_ASSERT(obj->getLastProperty().key() == id);
+    
+    MOZ_ASSERT_IF(isLast, obj->getLastProperty().key() == id);
 
-      Rooted<SharedPropMap*> sharedMap(cx, map->asShared());
-      SharedPropMap::getPrevious(&sharedMap, &mapLength);
+    
+    Rooted<SharedPropMap*> resultMap(cx, propMap->asShared());
+    uint32_t resultMapLength = propIndex + 1;
+    SharedPropMap::getPrevious(&resultMap, &resultMapLength);
 
-      if (MOZ_LIKELY(oldProp.hasSlot())) {
-        *slotOut = oldProp.slot();
-        if (!SharedPropMap::addPropertyWithKnownSlot(cx, clasp, &sharedMap,
-                                                     &mapLength, id, flags,
-                                                     *slotOut, &objectFlags)) {
-          return false;
-        }
-      } else {
-        if (!SharedPropMap::addProperty(cx, clasp, &sharedMap, &mapLength, id,
-                                        flags, &objectFlags, slotOut)) {
-          return false;
-        }
-      }
-
-      SharedShape* newShape = SharedShape::getPropMapShape(
-          cx, obj->shape()->base(), obj->shape()->numFixedSlots(), sharedMap,
-          mapLength, objectFlags);
-      if (!newShape) {
+    
+    if (MOZ_LIKELY(oldProp.hasSlot())) {
+      *slotOut = oldProp.slot();
+      if (!SharedPropMap::addPropertyWithKnownSlot(cx, clasp, &resultMap,
+                                                   &resultMapLength, id, flags,
+                                                   *slotOut, &objectFlags)) {
         return false;
       }
-
-      if (MOZ_LIKELY(oldProp.hasSlot())) {
-        MOZ_ASSERT(obj->sharedShape()->slotSpan() == newShape->slotSpan());
-        obj->setShape(newShape);
-        return true;
+    } else {
+      if (!SharedPropMap::addProperty(cx, clasp, &resultMap, &resultMapLength,
+                                      id, flags, &objectFlags, slotOut)) {
+        return false;
       }
-      return obj->setShapeAndAddNewSlot(cx, newShape, *slotOut);
     }
 
     
+    if (!isLast) {
+      Rooted<PropertyKey> key(cx);
+
+      SharedPropMapAndIndex startAfter(propMap->asShared(), propIndex);
+      SharedPropMapAndIndex end(map->asShared(), mapLength - 1);
+      for (SharedPropMapIter iter(cx, startAfter, end); !iter.done();
+           iter.next()) {
+        key = iter.key();
+        PropertyInfo prop = iter.prop();
+        PropertyFlags flags = prop.flags();
+        if (prop.isCustomDataProperty()) {
+          if (!SharedPropMap::addCustomDataProperty(cx, clasp, &resultMap,
+                                                    &resultMapLength, key,
+                                                    flags, &objectFlags)) {
+            return false;
+          }
+        } else {
+          if (!SharedPropMap::addPropertyWithKnownSlot(
+                  cx, clasp, &resultMap, &resultMapLength, key, flags,
+                  prop.slot(), &objectFlags)) {
+            return false;
+          }
+        }
+      }
+    }
+    MOZ_ASSERT(resultMapLength == mapLength);
+
+    SharedShape* newShape = SharedShape::getPropMapShape(
+        cx, obj->shape()->base(), obj->shape()->numFixedSlots(), resultMap,
+        resultMapLength, objectFlags);
+    if (!newShape) {
+      return false;
+    }
+
+    if (MOZ_LIKELY(oldProp.hasSlot())) {
+      MOZ_ASSERT(obj->sharedShape()->slotSpan() == newShape->slotSpan());
+      obj->setShape(newShape);
+      return true;
+    }
+    return obj->setShapeAndAddNewSlot(cx, newShape, *slotOut);
+  }
+
+  if (map->isShared()) {
     
+    
+    MOZ_ASSERT(nonLastCustomProperty);
     if (!NativeObject::toDictionaryMode(cx, obj)) {
       return false;
     }
