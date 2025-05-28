@@ -64,6 +64,7 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
     case ePointerCancel:
     case ePointerDown:
     case ePointerUp:
+    case eContextMenu:
     case ePointerClick:
       break;
     default:
@@ -76,6 +77,7 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
     uint32_t pointerId = aEvent->AsPointerEvent()->pointerId;
 
     mPendingPointerDowns.InsertOrUpdate(pointerId, aEventTiming);
+    mContextMenuTriggered = false;
     
     
     return Nothing();
@@ -161,7 +163,7 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
   
 
   MOZ_ASSERT(eventType == ePointerCancel || eventType == ePointerUp ||
-                 eventType == ePointerClick,
+                 eventType == ePointerClick || eventType == eContextMenu,
              "Unexpected event type");
   const auto* mouseEvent = aEvent->AsMouseEvent();
   
@@ -190,17 +192,33 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
   }
 
   
-  MOZ_RELEASE_ASSERT(eventType == ePointerUp || eventType == ePointerCancel);
+  MOZ_RELEASE_ASSERT(eventType == ePointerUp || eventType == ePointerCancel ||
+                     eventType == eContextMenu);
 
   
   auto entry = mPendingPointerDowns.MaybeGet(pointerId);
   
   if (!entry) {
+    
+    
+    
+    if (eventType == eContextMenu) {
+      return Some(mCurrentInteractionValue);
+    }
+
+    
+    
+    
+    
+    if (eventType == ePointerUp && mContextMenuTriggered) {
+      mContextMenuTriggered = false;
+      return Some(mCurrentInteractionValue);
+    }
     return Some(0);
   }
 
   
-  if (eventType == ePointerUp) {
+  if (eventType == ePointerUp || eventType == eContextMenu) {
     
     uint64_t interactionId = IncreaseInteractionValueAndCount();
 
@@ -217,6 +235,10 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
 
   
   mPendingPointerDowns.Remove(pointerId);
+
+  if (eventType == eContextMenu) {
+    mContextMenuTriggered = true;
+  }
 
   
   if (eventType == ePointerCancel) {
