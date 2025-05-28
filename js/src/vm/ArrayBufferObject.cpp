@@ -332,10 +332,16 @@ static const JSPropertySpec arraybuffer_properties[] = {
 
 static const JSFunctionSpec arraybuffer_proto_functions[] = {
     JS_FN("slice", ArrayBufferObject::slice, 2, 0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("sliceToImmutable", ArrayBufferObject::sliceToImmutable, 2, 0),
+#endif
     JS_FN("resize", ArrayBufferObject::resize, 1, 0),
     JS_FN("transfer", ArrayBufferObject::transfer, 0, 0),
     JS_FN("transferToFixedLength", ArrayBufferObject::transferToFixedLength, 0,
           0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("transferToImmutable", ArrayBufferObject::transferToImmutable, 0, 0),
+#endif
     JS_FS_END,
 };
 
@@ -344,6 +350,9 @@ static const JSPropertySpec arraybuffer_proto_properties[] = {
     JS_PSG("maxByteLength", ArrayBufferObject::maxByteLengthGetter, 0),
     JS_PSG("resizable", ArrayBufferObject::resizableGetter, 0),
     JS_PSG("detached", ArrayBufferObject::detachedGetter, 0),
+#ifdef NIGHTLY_BUILD
+    JS_PSG("immutable", ArrayBufferObject::immutableGetter, 0),
+#endif
     JS_STRING_SYM_PS(toStringTag, "ArrayBuffer", JSPROP_READONLY),
     JS_PS_END,
 };
@@ -441,7 +450,7 @@ bool ArrayBufferObject::byteLengthGetter(JSContext* cx, unsigned argc,
   return CallNonGenericMethod<IsArrayBuffer, byteLengthGetterImpl>(cx, args);
 }
 
-enum class PreserveResizability : bool { No, Yes };
+enum class PreserveResizability { No, Yes, Immutable };
 
 
 
@@ -483,14 +492,6 @@ static ArrayBufferObject* ArrayBufferCopyAndDetach(
   }
 
   
-  mozilla::Maybe<size_t> maxByteLength;
-  if (preserveResizability == PreserveResizability::Yes &&
-      arrayBuffer->isResizable()) {
-    auto* resizableBuffer = &arrayBuffer->as<ResizableArrayBufferObject>();
-    maxByteLength = mozilla::Some(resizableBuffer->maxByteLength());
-  }
-
-  
   if (arrayBuffer->hasDefinedDetachKey()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_WASM_NO_TRANSFER);
@@ -505,15 +506,27 @@ static ArrayBufferObject* ArrayBufferCopyAndDetach(
     return nullptr;
   }
 
-  if (maxByteLength) {
-    if (size_t(newByteLength) > *maxByteLength) {
+#ifdef NIGHTLY_BUILD
+  
+  if (preserveResizability == PreserveResizability::Immutable) {
+    return ImmutableArrayBufferObject::copyAndDetach(cx, size_t(newByteLength),
+                                                     arrayBuffer);
+  }
+#endif
+
+  
+  if (preserveResizability == PreserveResizability::Yes &&
+      arrayBuffer->isResizable()) {
+    Rooted<ResizableArrayBufferObject*> resizableBuffer(
+        cx, &arrayBuffer->as<ResizableArrayBufferObject>());
+
+    size_t maxByteLength = resizableBuffer->maxByteLength();
+    if (size_t(newByteLength) > maxByteLength) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
       return nullptr;
     }
 
-    Rooted<ResizableArrayBufferObject*> resizableBuffer(
-        cx, &arrayBuffer->as<ResizableArrayBufferObject>());
     return ResizableArrayBufferObject::copyAndDetach(cx, size_t(newByteLength),
                                                      resizableBuffer);
   }
@@ -608,6 +621,35 @@ bool ArrayBufferObject::detachedGetter(JSContext* cx, unsigned argc,
   return CallNonGenericMethod<IsArrayBuffer, detachedGetterImpl>(cx, args);
 }
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+bool ArrayBufferObject::immutableGetterImpl(JSContext* cx,
+                                            const CallArgs& args) {
+  MOZ_ASSERT(IsArrayBuffer(args.thisv()));
+
+  
+  auto* buffer = &args.thisv().toObject().as<ArrayBufferObject>();
+  args.rval().setBoolean(buffer->isImmutable());
+  return true;
+}
+
+
+
+
+
+
+bool ArrayBufferObject::immutableGetter(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsArrayBuffer, immutableGetterImpl>(cx, args);
+}
+#endif
+
 
 
 
@@ -672,6 +714,41 @@ bool ArrayBufferObject::transferToFixedLength(JSContext* cx, unsigned argc,
   return CallNonGenericMethod<IsArrayBuffer, transferToFixedLengthImpl>(cx,
                                                                         args);
 }
+
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+bool ArrayBufferObject::transferToImmutableImpl(JSContext* cx,
+                                                const CallArgs& args) {
+  MOZ_ASSERT(IsArrayBuffer(args.thisv()));
+
+  
+  Rooted<ArrayBufferObject*> buffer(
+      cx, &args.thisv().toObject().as<ArrayBufferObject>());
+  auto* newBuffer = ArrayBufferCopyAndDetach(cx, buffer, args.get(0),
+                                             PreserveResizability::Immutable);
+  if (!newBuffer) {
+    return false;
+  }
+
+  args.rval().setObject(*newBuffer);
+  return true;
+}
+
+
+
+
+
+
+bool ArrayBufferObject::transferToImmutable(JSContext* cx, unsigned argc,
+                                            Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsArrayBuffer, transferToImmutableImpl>(cx, args);
+}
+#endif
 
 
 
@@ -943,6 +1020,92 @@ bool ArrayBufferObject::slice(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsArrayBuffer, sliceImpl>(cx, args);
 }
+
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+bool ArrayBufferObject::sliceToImmutableImpl(JSContext* cx,
+                                             const CallArgs& args) {
+  MOZ_ASSERT(IsArrayBuffer(args.thisv()));
+
+  Rooted<ArrayBufferObject*> obj(
+      cx, &args.thisv().toObject().as<ArrayBufferObject>());
+
+  
+  if (obj->isDetached()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+    return false;
+  }
+
+  
+  size_t len = obj->byteLength();
+
+  
+  size_t first = 0;
+  if (args.hasDefined(0)) {
+    if (!ToIntegerIndex(cx, args[0], len, &first)) {
+      return false;
+    }
+  }
+
+  
+  size_t final_ = len;
+  if (args.hasDefined(1)) {
+    if (!ToIntegerIndex(cx, args[1], len, &final_)) {
+      return false;
+    }
+  }
+
+  
+  size_t newLen = final_ >= first ? final_ - first : 0;
+  MOZ_ASSERT(newLen <= ArrayBufferObject::ByteLengthLimit);
+
+  
+  if (obj->isDetached()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+    return false;
+  }
+
+  
+  
+  
+  size_t currentLen = obj->byteLength();
+
+  
+  if (currentLen < final_) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_COPY_RANGE);
+    return false;
+  }
+
+  
+  auto* newBuffer = ImmutableArrayBufferObject::slice(cx, newLen, obj, first);
+  if (!newBuffer) {
+    return false;
+  }
+
+  
+  args.rval().setObject(*newBuffer);
+  return true;
+}
+
+
+
+
+
+
+bool ArrayBufferObject::sliceToImmutable(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsArrayBuffer, sliceToImmutableImpl>(cx, args);
+}
+#endif
 
 
 
@@ -2547,6 +2710,29 @@ ResizableArrayBufferObject::copyAndDetachSteal(
     size_t nbytes = sourceByteLength - newByteLength;
     memset(newBuffer->dataPointer() + newByteLength, 0, nbytes);
   }
+
+  return newBuffer;
+}
+
+ ImmutableArrayBufferObject* ImmutableArrayBufferObject::slice(
+    JSContext* cx, size_t newByteLength, JS::Handle<ArrayBufferObject*> source,
+    size_t sourceByteOffset) {
+  MOZ_ASSERT(newByteLength <= ArrayBufferObject::ByteLengthLimit,
+             "caller must validate the byte count it passes");
+  MOZ_ASSERT(!source->isDetached());
+  MOZ_ASSERT(source->byteLength() >= sourceByteOffset);
+  MOZ_ASSERT(source->byteLength() >= sourceByteOffset + newByteLength);
+
+  AutoSetNewObjectMetadata metadata(cx);
+  auto [newBuffer, toFill] = createBufferAndData<ImmutableArrayBufferObject,
+                                                 FillContents::Uninitialized>(
+      cx, newByteLength, metadata);
+  if (!newBuffer) {
+    return nullptr;
+  }
+
+  std::uninitialized_copy_n(source->dataPointer() + sourceByteOffset,
+                            newByteLength, toFill);
 
   return newBuffer;
 }
