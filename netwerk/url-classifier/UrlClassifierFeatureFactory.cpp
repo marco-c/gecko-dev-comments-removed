@@ -7,7 +7,6 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 
 
-#include "UrlClassifierFeatureAntiFraudAnnotation.h"
 #include "UrlClassifierFeatureCryptominingAnnotation.h"
 #include "UrlClassifierFeatureCryptominingProtection.h"
 #include "UrlClassifierFeatureConsentManagerAnnotation.h"
@@ -38,7 +37,6 @@ void UrlClassifierFeatureFactory::Shutdown() {
   UrlClassifierFeatureCryptominingAnnotation::MaybeShutdown();
   UrlClassifierFeatureCryptominingProtection::MaybeShutdown();
   UrlClassifierFeatureConsentManagerAnnotation::MaybeShutdown();
-  UrlClassifierFeatureAntiFraudAnnotation::MaybeShutdown();
   UrlClassifierFeatureEmailTrackingDataCollection::MaybeShutdown();
   UrlClassifierFeatureEmailTrackingProtection::MaybeShutdown();
   UrlClassifierFeatureFingerprintingAnnotation::MaybeShutdown();
@@ -78,14 +76,6 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   
   
   feature = UrlClassifierFeatureConsentManagerAnnotation::MaybeCreate(aChannel);
-  if (feature) {
-    aFeatures.AppendElement(feature);
-  }
-
-  
-  
-  
-  feature = UrlClassifierFeatureAntiFraudAnnotation::MaybeCreate(aChannel);
   if (feature) {
     aFeatures.AppendElement(feature);
   }
@@ -159,12 +149,6 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 
   nsCOMPtr<nsIUrlClassifierFeature> feature;
-
-  
-  feature = UrlClassifierFeatureAntiFraudAnnotation::GetIfNameMatches(aName);
-  if (feature) {
-    return feature.forget();
-  }
 
   
   feature = UrlClassifierFeatureCryptominingAnnotation::GetIfNameMatches(aName);
@@ -255,12 +239,6 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
   }
 
   nsAutoCString name;
-
-  
-  name.Assign(UrlClassifierFeatureAntiFraudAnnotation::Name());
-  if (!name.IsEmpty()) {
-    aArray.AppendElement(name);
-  }
 
   
   name.Assign(UrlClassifierFeatureCryptominingAnnotation::Name());
