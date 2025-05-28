@@ -221,7 +221,12 @@ interface nsIAccessibleEvent : nsISupports
   
 
 
-  const unsigned long EVENT_LAST_ENTRY = 0x002a;
+  const unsigned long EVENT_ERRORMESSAGE_CHANGED = 0x002a;
+
+  
+
+
+  const unsigned long EVENT_LAST_ENTRY = 0x002b;
 
   
 

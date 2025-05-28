@@ -551,6 +551,7 @@ static const char kEventTypeNames[][40] = {
     "live region removed",       
     "inner reorder",             
     "live region changed",       
+    "errormessage changed",      
 };
 
 #endif

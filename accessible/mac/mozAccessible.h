@@ -93,6 +93,8 @@ enum CheckedState {
                             inContainer:(mozilla::a11y::Accessible*)container
                                      at:(int32_t)start;
 
+- (void)maybePostValidationErrorChanged;
+
 
 - (id)childAt:(uint32_t)i;
 
@@ -187,6 +189,9 @@ enum CheckedState {
 
 
 - (NSString*)moxInvalid;
+
+
+- (NSString*)moxErrorMessageElements;
 
 
 - (NSNumber*)moxFocused;

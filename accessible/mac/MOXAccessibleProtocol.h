@@ -110,6 +110,9 @@
 - (NSNumber* _Nullable)moxEnabled;
 
 
+- (NSArray* _Nullable)moxErrorMessageElements;
+
+
 - (NSNumber* _Nullable)moxFocused;
 
 
