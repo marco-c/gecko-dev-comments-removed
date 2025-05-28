@@ -993,7 +993,20 @@ bool CheckHeapTracer::cellIsValid(Cell* cell) {
   }
 
   MOZ_ASSERT(gcType == GCType::VerifyPostBarriers);
-  return !runtime()->gc.nursery().inCollectedRegion(cell);
+
+  
+  if (runtime()->gc.nursery().inCollectedRegion(cell)) {
+    return false;
+  }
+
+  
+  if (cell->is<JSString>() && cell->as<JSString>()->isLinear()) {
+    if (cell->as<JSString>()->asLinear().hasCharsInCollectedNurseryRegion()) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void CheckHeapTracer::check(AutoHeapSession& session) {
@@ -1192,6 +1205,28 @@ void GCRuntime::verifyPostBarriers(AutoHeapSession& session) {
   
   CheckHeapTracer tracer(rt, CheckHeapTracer::GCType::VerifyPostBarriers);
   tracer.check(session);
+}
+
+void GCRuntime::checkHeapBeforeMinorGC(AutoHeapSession& session) {
+  
+  
+  
+  
+  
+
+  for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
+    for (ArenaIter aiter(zone, gc::AllocKind::STRING); !aiter.done();
+         aiter.next()) {
+      for (ArenaCellIterUnderGC cell(aiter.get()); !cell.done(); cell.next()) {
+        if (cell->is<JSString>() && cell->as<JSString>()->isDependent()) {
+          JSDependentString* str = &cell->as<JSString>()->asDependent();
+          if (str->isTenured() && str->base()->isTenured()) {
+            MOZ_RELEASE_ASSERT(!str->hasCharsInCollectedNurseryRegion());
+          }
+        }
+      }
+    }
+  }
 }
 #endif
 

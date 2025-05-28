@@ -128,3 +128,7 @@ checkGCsWithZeal(24, 0,  100, {major: 0,  minor: 0,  slice: 0});
 
 
 checkGCsWithZeal(25, 10, 100, {major: 5,  minor: 5,  slice: 10});
+
+
+
+checkGCsWithZeal(26, 0,  100, {major: 0,  minor: 0,  slice: 0});

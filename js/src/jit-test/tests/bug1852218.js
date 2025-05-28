@@ -1,6 +1,13 @@
 
 
 
+
+
+
+if (this.unsetgczeal) {
+    unsetgczeal("GenerationalGC");
+}
+
 function makeIonCompiledScript(n) {
   let src = "";
   for (var i = 0; i < n; i++) {
