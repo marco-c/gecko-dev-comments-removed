@@ -101,6 +101,8 @@ add_task(async function test_delay_hide_button_while_mouse_is_on_toolbar() {
   
   const win = await BrowserTestUtils.openNewBrowserWindow();
 
+  resetExtensionsButtonTelemetry();
+
   const navbar = win.document.getElementById("nav-bar");
   navbar.dispatchEvent(new win.CustomEvent("mouseenter"));
 
@@ -119,6 +121,10 @@ add_task(async function test_delay_hide_button_while_mouse_is_on_toolbar() {
 
   info("Extensions button should hide after the mouse goes off the toolbar");
   assertExtensionsButtonHidden(win);
+
+  
+  
+  assertExtensionsButtonTelemetry({});
 
   await BrowserTestUtils.closeWindow(win);
   resetButtonVisibilityToDefault();
@@ -300,10 +306,15 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
     set: [["extensions.unifiedExtensions.button.customizable", true]],
   });
   Services.fog.testResetFOG();
+  resetExtensionsButtonTelemetry();
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
 
   await openCustomizationUI(win);
+  assertExtensionsButtonVisible();
+  
+  
+  assertExtensionsButtonTelemetry({});
   {
     info("Toggle checkbox via context menu, from on to off");
     const contextMenu = await openChromeContextMenu(
@@ -325,6 +336,11 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
 
     await checkAndDismissPostHideNotification(win);
   }
+
+  
+  
+  
+  assertExtensionsButtonTelemetry({});
 
   Assert.deepEqual(
     Glean.extensionsButton.toggleVisibility.testGetValue().map(e => e.extra),
@@ -362,6 +378,7 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
   await openCustomizationUI(win);
   info("The button should be visible upon entering customization");
   assertExtensionsButtonVisible(win);
+  assertExtensionsButtonTelemetry({ customize: 1 });
   {
     info("Toggle checkbox via context menu, from off to on");
     const contextMenu = await openChromeContextMenu(
@@ -396,6 +413,10 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
 
   await closeCustomizationUI(win);
   await BrowserTestUtils.closeWindow(win);
+
+  
+  
+  assertExtensionsButtonTelemetry({ customize: 1 });
 
   resetButtonVisibilityToDefault();
   await SpecialPowers.popPrefEnv();
