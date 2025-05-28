@@ -182,11 +182,11 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       MOZ_ASSERT(matchRange->GetStartContainer()->IsText());
       
-      auto nextBlockBoundary = TextDirectiveUtil::FindNextBlockBoundary(
-          matchRange->StartRef(), TextScanDirection::Right);
-      if (MOZ_LIKELY(nextBlockBoundary.isOk())) {
-        matchRange->SetEnd(nextBlockBoundary.unwrap().AsRaw(), IgnoreErrors());
-      }
+      auto nextBlockBoundary =
+          TextDirectiveUtil::FindNextBlockBoundary<TextScanDirection::Right>(
+              matchRange->StartRef());
+
+      matchRange->SetEnd(nextBlockBoundary.AsRaw(), IgnoreErrors());
 
       
       
@@ -317,11 +317,10 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       }
       
       TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(*suffixRange);
-      auto nextBlockBoundary = TextDirectiveUtil::FindNextBlockBoundary(
-          suffixRange->StartRef(), TextScanDirection::Right);
-      if (MOZ_LIKELY(nextBlockBoundary.isOk())) {
-        suffixRange->SetEnd(nextBlockBoundary.unwrap().AsRaw(), IgnoreErrors());
-      }
+      auto nextBlockBoundary =
+          TextDirectiveUtil::FindNextBlockBoundary<TextScanDirection::Right>(
+              suffixRange->StartRef());
+      suffixRange->SetEnd(nextBlockBoundary.AsRaw(), IgnoreErrors());
 
       
       
