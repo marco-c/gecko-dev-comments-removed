@@ -997,6 +997,23 @@ struct IMENotification final {
       return *this;
     }
 
+    [[nodiscard]] uint32_t ComputeNewOffset(uint32_t aOldOffset) const {
+      
+      
+      
+      if (mStartOffset >= aOldOffset) {
+        return aOldOffset;
+      }
+      
+      
+      if (mRemovedEndOffset <= aOldOffset) {
+        return aOldOffset + Difference();
+      }
+      
+      
+      return mAddedEndOffset;
+    }
+
 #ifdef DEBUG
     void Test();
 #endif  

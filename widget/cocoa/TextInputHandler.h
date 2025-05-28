@@ -18,6 +18,7 @@
 #include "nsTArray.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "WritingModes.h"
 
@@ -1112,12 +1113,22 @@ class IMEInputHandler : public TextInputHandlerBase {
 
  private:
   
-  NSString* mIMECompositionString;
+  NSString* mIMECompositionString = nullptr;
   
-  uint32_t mIMECompositionStart;
+  
+  Maybe<uint32_t> mIMECompositionStartBeforeStart;
+  
+  
+  
+  Maybe<uint32_t> mIMECompositionStartInContent;
 
   NSRange mMarkedRange;
   NSRange mSelectedRange;
+
+  
+  
+  
+  Maybe<NSRange> mSelectedRangeOverride;
 
   NSRange mRangeForWritingMode;  
   mozilla::WritingMode mWritingMode;
