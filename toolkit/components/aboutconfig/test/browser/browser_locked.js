@@ -21,6 +21,22 @@ add_task(async function test_locked() {
   Services.prefs.lockPref(PREF_STRING_NO_DEFAULT);
 
   await AboutConfigTest.withNewTab(async function () {
+    let click = (target, opts) =>
+      EventUtils.synthesizeMouseAtCenter(target, opts, this.window);
+    let doubleClick = target => {
+      
+      
+      
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+      
+      click(target, { clickCount: 1 });
+      click(target, { clickCount: 2 });
+      AccessibilityUtils.resetEnv();
+    };
     
     let lockedPref = this.getRow(PREF_STRING_DEFAULT_NOTEMPTY);
     Assert.ok(lockedPref.hasClass("locked"));
@@ -34,6 +50,11 @@ add_task(async function test_locked() {
     Assert.equal(lockedPref.value, "true");
     Assert.ok(lockedPref.editColumnButton.classList.contains("button-toggle"));
     Assert.ok(lockedPref.editColumnButton.disabled);
+
+    doubleClick(lockedPref.valueCell);
+    Assert.equal(lockedPref.value, "true");
+    Services.prefs.unlockPref(PREF_BOOLEAN_DEFAULT_TRUE);
+    Assert.equal(lockedPref.value, "true");
 
     
     lockedPref = this.getRow(PREF_STRING_NO_DEFAULT);
