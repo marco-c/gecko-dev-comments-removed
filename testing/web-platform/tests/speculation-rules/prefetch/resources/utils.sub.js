@@ -260,6 +260,13 @@ function assert_intercept_non_prefetch(interceptedRequest, expectedUrl) {
   }
 }
 
+function assert_served_by_navigation_preload(requestHeaders) {
+  assert_equals(
+    requestHeaders['service-worker-navigation-preload'],
+    'true',
+    'Service-Worker-Navigation-Preload');
+}
+
 
 
 function addNoVarySearchHeaderUsingQueryParam(url, value){
