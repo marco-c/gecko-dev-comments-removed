@@ -290,17 +290,17 @@ class FloatingPoint {
   
   
   
-  explicit FloatingPoint(const RawType& x) { u_.value_ = x; }
+  explicit FloatingPoint(RawType x) { memcpy(&bits_, &x, sizeof(x)); }
 
   
 
   
   
   
-  static RawType ReinterpretBits(const Bits bits) {
-    FloatingPoint fp(0);
-    fp.u_.bits_ = bits;
-    return fp.u_.value_;
+  static RawType ReinterpretBits(Bits bits) {
+    RawType fp;
+    memcpy(&fp, &bits, sizeof(fp));
+    return fp;
   }
 
   
@@ -309,16 +309,16 @@ class FloatingPoint {
   
 
   
-  const Bits& bits() const { return u_.bits_; }
+  const Bits& bits() const { return bits_; }
 
   
-  Bits exponent_bits() const { return kExponentBitMask & u_.bits_; }
+  Bits exponent_bits() const { return kExponentBitMask & bits_; }
 
   
-  Bits fraction_bits() const { return kFractionBitMask & u_.bits_; }
+  Bits fraction_bits() const { return kFractionBitMask & bits_; }
 
   
-  Bits sign_bit() const { return kSignBitMask & u_.bits_; }
+  Bits sign_bit() const { return kSignBitMask & bits_; }
 
   
   bool is_nan() const {
@@ -338,17 +338,11 @@ class FloatingPoint {
     
     if (is_nan() || rhs.is_nan()) return false;
 
-    return DistanceBetweenSignAndMagnitudeNumbers(u_.bits_, rhs.u_.bits_) <=
-           kMaxUlps;
+    return DistanceBetweenSignAndMagnitudeNumbers(bits_, rhs.bits_) <= kMaxUlps;
   }
 
  private:
   
-  union FloatingPointUnion {
-    RawType value_;  
-    Bits bits_;      
-  };
-
   
   
   
@@ -363,8 +357,7 @@ class FloatingPoint {
   
   
   
-  
-  static Bits SignAndMagnitudeToBiased(const Bits& sam) {
+  static Bits SignAndMagnitudeToBiased(Bits sam) {
     if (kSignBitMask & sam) {
       
       return ~sam + 1;
@@ -376,14 +369,13 @@ class FloatingPoint {
 
   
   
-  static Bits DistanceBetweenSignAndMagnitudeNumbers(const Bits& sam1,
-                                                     const Bits& sam2) {
+  static Bits DistanceBetweenSignAndMagnitudeNumbers(Bits sam1, Bits sam2) {
     const Bits biased1 = SignAndMagnitudeToBiased(sam1);
     const Bits biased2 = SignAndMagnitudeToBiased(sam2);
     return (biased1 >= biased2) ? (biased1 - biased2) : (biased2 - biased1);
   }
 
-  FloatingPointUnion u_;
+  Bits bits_;  
 };
 
 

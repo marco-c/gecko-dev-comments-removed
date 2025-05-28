@@ -249,19 +249,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if defined(_MSVC_LANG)
 #define GTEST_INTERNAL_CPLUSPLUS_LANG _MSVC_LANG
 #elif defined(__cplusplus)
@@ -282,10 +269,14 @@
 
 
 
-#if GTEST_INTERNAL_CPLUSPLUS_LANG >= 202002L && \
-    (!defined(__has_include) || GTEST_INTERNAL_HAS_INCLUDE(<version>))
+
+
+
+
+#if GTEST_INTERNAL_CPLUSPLUS_LANG >= 202002L || \
+    GTEST_INTERNAL_HAS_INCLUDE(<version>)
 #include <version>  
-#elif (!defined(__has_include) || GTEST_INTERNAL_HAS_INCLUDE(<ciso646>))
+#else
 #include <ciso646>  
 #endif
 
@@ -2331,73 +2322,6 @@ const char* StringFromGTestEnv(const char* flag, const char* default_val);
 }  
 }  
 
-#ifdef GTEST_HAS_ABSL
-
-
-#define GTEST_INTERNAL_HAS_ANY 1
-#include "absl/types/any.h"
-namespace testing {
-namespace internal {
-using Any = ::absl::any;
-}  
-}  
-#else
-#if defined(__cpp_lib_any) || (GTEST_INTERNAL_HAS_INCLUDE(<any>) &&        \
-                               GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L && \
-                               (!defined(_MSC_VER) || GTEST_HAS_RTTI))
-
-
-#define GTEST_INTERNAL_HAS_ANY 1
-#include <any>
-namespace testing {
-namespace internal {
-using Any = ::std::any;
-}  
-}  
-
-
-#endif  
-#endif  
-
-#ifndef GTEST_INTERNAL_HAS_ANY
-#define GTEST_INTERNAL_HAS_ANY 0
-#endif
-
-#ifdef GTEST_HAS_ABSL
-
-
-#define GTEST_INTERNAL_HAS_OPTIONAL 1
-#include "absl/types/optional.h"
-namespace testing {
-namespace internal {
-template <typename T>
-using Optional = ::absl::optional<T>;
-inline ::absl::nullopt_t Nullopt() { return ::absl::nullopt; }
-}  
-}  
-#else
-#if defined(__cpp_lib_optional) || (GTEST_INTERNAL_HAS_INCLUDE(<optional>) && \
-                                    GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L)
-
-
-#define GTEST_INTERNAL_HAS_OPTIONAL 1
-#include <optional>
-namespace testing {
-namespace internal {
-template <typename T>
-using Optional = ::std::optional<T>;
-inline ::std::nullopt_t Nullopt() { return ::std::nullopt; }
-}  
-}  
-
-
-#endif  
-#endif  
-
-#ifndef GTEST_INTERNAL_HAS_OPTIONAL
-#define GTEST_INTERNAL_HAS_OPTIONAL 0
-#endif
-
 #if defined(__cpp_lib_span) || (GTEST_INTERNAL_HAS_INCLUDE(<span>) && \
                                 GTEST_INTERNAL_CPLUSPLUS_LANG >= 202002L)
 #define GTEST_INTERNAL_HAS_STD_SPAN 1
@@ -2437,38 +2361,6 @@ using StringView = ::std::string_view;
 
 #ifndef GTEST_INTERNAL_HAS_STRING_VIEW
 #define GTEST_INTERNAL_HAS_STRING_VIEW 0
-#endif
-
-#ifdef GTEST_HAS_ABSL
-
-
-#define GTEST_INTERNAL_HAS_VARIANT 1
-#include "absl/types/variant.h"
-namespace testing {
-namespace internal {
-template <typename... T>
-using Variant = ::absl::variant<T...>;
-}  
-}  
-#else
-#if defined(__cpp_lib_variant) || (GTEST_INTERNAL_HAS_INCLUDE(<variant>) && \
-                                   GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L)
-
-
-#define GTEST_INTERNAL_HAS_VARIANT 1
-#include <variant>
-namespace testing {
-namespace internal {
-template <typename... T>
-using Variant = ::std::variant<T...>;
-}  
-}  
-
-#endif  
-#endif  
-
-#ifndef GTEST_INTERNAL_HAS_VARIANT
-#define GTEST_INTERNAL_HAS_VARIANT 0
 #endif
 
 #if (defined(__cpp_lib_three_way_comparison) || \
