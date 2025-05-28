@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+STYLE_SHEET(ContentEditable, "resource://gre/res/contenteditable.css", true)
+STYLE_SHEET(CounterStyles, "resource://gre-resources/counterstyles.css", true)
+STYLE_SHEET(Forms, "resource://gre-resources/forms.css", true)
+STYLE_SHEET(HTML, "resource://gre-resources/html.css", true)
+STYLE_SHEET(MathML, "resource://gre-resources/mathml.css", true)
+STYLE_SHEET(NoFrames, "resource://gre-resources/noframes.css", true)
+STYLE_SHEET(Quirk, "resource://gre-resources/quirk.css", true)
+STYLE_SHEET(Scrollbars, "resource://gre-resources/scrollbars.css", true)
+STYLE_SHEET(SVG, "resource://gre/res/svg.css", true)
+STYLE_SHEET(UA, "resource://gre-resources/ua.css", true)
+STYLE_SHEET(XUL, "chrome://global/content/xul.css", false)

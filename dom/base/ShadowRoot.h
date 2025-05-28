@@ -29,7 +29,6 @@ class EventChainPreVisitor;
 class ServoStyleRuleMap;
 
 enum class StyleRuleChangeKind : uint32_t;
-enum class BuiltInStyleSheet : uint8_t;
 
 namespace css {
 class Rule;
@@ -98,9 +97,6 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   void ImportRuleLoaded(StyleSheet&);
   void SheetCloned(StyleSheet&);
   void StyleSheetApplicableStateChanged(StyleSheet&);
-
-  
-  void AppendBuiltInStyleSheet(BuiltInStyleSheet);
 
   
 

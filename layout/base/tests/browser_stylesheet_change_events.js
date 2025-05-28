@@ -41,7 +41,7 @@ async function testApplicableStateChangeEvent(testRoot) {
     
     
     return (
-      e.stylesheet?.href === "resource://gre-resources/accessiblecaret.css"
+      e.stylesheet?.href === "resource://content-accessible/accessiblecaret.css"
     );
   }
 

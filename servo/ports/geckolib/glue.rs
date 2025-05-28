@@ -8911,6 +8911,7 @@ pub unsafe extern "C" fn Servo_SharedMemoryBuilder_AddStylesheet(
 ) -> *const LockedCssRules {
     
     
+    debug_assert_eq!(contents.origin, Origin::UserAgent);
     debug_assert_eq!(contents.quirks_mode, QuirksMode::NoQuirks);
     debug_assert!(contents.source_map_url.read().is_none());
     debug_assert!(contents.source_url.read().is_none());
