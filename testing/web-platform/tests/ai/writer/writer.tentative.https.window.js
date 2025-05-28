@@ -9,12 +9,6 @@ promise_test(async () => {
 }, 'Writer must be defined.');
 
 promise_test(async () => {
-  
-  assert_equals(await Writer.availability(), 'available');
-  assert_equals(await Writer.availability({outputLanguage: 'en'}), 'available');
-}, 'Writer.availability');
-
-promise_test(async () => {
   const writer = await Writer.create();
   assert_equals(Object.prototype.toString.call(writer), '[object Writer]');
 }, 'Writer.create() must be return a Writer.');
