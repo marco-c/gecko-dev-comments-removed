@@ -23,6 +23,7 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorScrollUpdate.h"  
 #include "mozilla/layers/IAPZCTreeManager.h"        
+#include "mozilla/layers/PWebRenderBridgeParent.h"
 #include "mozilla/layers/ScrollbarData.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/KeyboardMap.h"      
@@ -490,6 +491,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   static void FlushApzRepaints(LayersId aLayersId);
+
+  void EndWheelTransaction(
+      PWebRenderBridgeParent::EndWheelTransactionResolver&& aResolver);
 
   
 

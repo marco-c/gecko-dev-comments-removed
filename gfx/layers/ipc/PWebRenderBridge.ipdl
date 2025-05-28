@@ -125,6 +125,8 @@ parent:
   
   sync GetFrameUniformity() returns (FrameUniformityData data);
 
+  
+  async EndWheelTransaction() returns (bool unused);
 
   async Shutdown();
   sync ShutdownSync();

@@ -54,6 +54,11 @@ class APZThreadUtils {
   
 
 
+  static already_AddRefed<nsISerialEventTarget> GetControllerThread();
+
+  
+
+
   static bool IsControllerThread();
 
   
