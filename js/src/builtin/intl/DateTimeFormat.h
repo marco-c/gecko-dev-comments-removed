@@ -247,6 +247,51 @@ class DateTimeFormatObject : public NativeObject {
     JS::Handle<JSString*> defaults,
     JS::Handle<JS::Value> toLocaleStringTimeZone = JS::UndefinedHandleValue);
 
+namespace intl {
+
+enum class DateTimeFormatKind {
+  
+
+
+  All,
+
+  
+
+
+  Date,
+
+  
+
+
+  Time,
+};
+
+
+
+
+[[nodiscard]] extern DateTimeFormatObject* CreateDateTimeFormat(
+    JSContext* cx, JS::Handle<JS::Value> locales, JS::Handle<JS::Value> options,
+    DateTimeFormatKind kind);
+
+
+
+
+
+[[nodiscard]] extern DateTimeFormatObject* GetOrCreateDateTimeFormat(
+    JSContext* cx, JS::Handle<JS::Value> locales, JS::Handle<JS::Value> options,
+    DateTimeFormatKind kind);
+
+
+
+
+
+
+[[nodiscard]] extern bool FormatDateTime(
+    JSContext* cx, JS::Handle<DateTimeFormatObject*> dateTimeFormat,
+    double millis, JS::MutableHandle<JS::Value> result);
+
+}  
+
 }  
 
 #endif 

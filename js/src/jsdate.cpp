@@ -34,6 +34,10 @@
 #include "jsnum.h"
 #include "jstypes.h"
 
+#if JS_HAS_INTL_API
+#  include "builtin/intl/DateTimeFormat.h"
+#  include "builtin/intl/GlobalIntlData.h"
+#endif
 #ifdef JS_HAS_INTL_API
 #  include "builtin/temporal/Instant.h"
 #endif
@@ -4128,7 +4132,27 @@ static bool FormatDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
   return true;
 }
 
-#if !JS_HAS_INTL_API
+#if JS_HAS_INTL_API
+static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
+                                 intl::DateTimeFormatKind kind,
+                                 HandleValue locales, HandleValue options,
+                                 MutableHandleValue rval) {
+  double utcTime = unwrapped->UTCTime().toDouble();
+  MOZ_ASSERT(IsTimeValue(utcTime));
+
+  if (!std::isfinite(utcTime)) {
+    rval.setString(cx->names().Invalid_Date_);
+    return true;
+  }
+
+  Rooted<DateTimeFormatObject*> dateTimeFormat(
+      cx, intl::GetOrCreateDateTimeFormat(cx, locales, options, kind));
+  if (!dateTimeFormat) {
+    return false;
+  }
+  return intl::FormatDateTime(cx, dateTimeFormat, utcTime, rval);
+}
+#else
 static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
                                  const char* format, MutableHandleValue rval) {
   DateTimeInfo::ForceUTC forceUTC = unwrapped->forceUTC();
@@ -4186,6 +4210,11 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
   rval.setString(str);
   return true;
 }
+#endif
+
+
+
+
 
 
 
@@ -4202,6 +4231,10 @@ static bool date_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+#if JS_HAS_INTL_API
+  return ToLocaleFormatHelper(cx, unwrapped, intl::DateTimeFormatKind::All,
+                              args.get(0), args.get(1), args.rval());
+#else
   
 
 
@@ -4215,7 +4248,12 @@ static bool date_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
       ;
 
   return ToLocaleFormatHelper(cx, unwrapped, format, args.rval());
+#endif
 }
+
+
+
+
 
 
 
@@ -4233,6 +4271,10 @@ static bool date_toLocaleDateString(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+#if JS_HAS_INTL_API
+  return ToLocaleFormatHelper(cx, unwrapped, intl::DateTimeFormatKind::Date,
+                              args.get(0), args.get(1), args.rval());
+#else
   
 
 
@@ -4246,7 +4288,12 @@ static bool date_toLocaleDateString(JSContext* cx, unsigned argc, Value* vp) {
       ;
 
   return ToLocaleFormatHelper(cx, unwrapped, format, args.rval());
+#endif
 }
+
+
+
+
 
 
 
@@ -4264,9 +4311,13 @@ static bool date_toLocaleTimeString(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+#if JS_HAS_INTL_API
+  return ToLocaleFormatHelper(cx, unwrapped, intl::DateTimeFormatKind::Time,
+                              args.get(0), args.get(1), args.rval());
+#else
   return ToLocaleFormatHelper(cx, unwrapped, "%X", args.rval());
+#endif
 }
-#endif 
 
 
 
@@ -4501,14 +4552,10 @@ static const JSFunctionSpec date_methods[] = {
     JS_FN("toUTCString", date_toUTCString, 0, 0),
 #if JS_HAS_INTL_API
     JS_FN("toTemporalInstant", date_toTemporalInstant, 0, 0),
-    JS_SELF_HOSTED_FN("toLocaleString", "Date_toLocaleString", 0, 0),
-    JS_SELF_HOSTED_FN("toLocaleDateString", "Date_toLocaleDateString", 0, 0),
-    JS_SELF_HOSTED_FN("toLocaleTimeString", "Date_toLocaleTimeString", 0, 0),
-#else
+#endif
     JS_FN("toLocaleString", date_toLocaleString, 0, 0),
     JS_FN("toLocaleDateString", date_toLocaleDateString, 0, 0),
     JS_FN("toLocaleTimeString", date_toLocaleTimeString, 0, 0),
-#endif
     JS_FN("toDateString", date_toDateString, 0, 0),
     JS_FN("toTimeString", date_toTimeString, 0, 0),
     JS_FN("toISOString", date_toISOString, 0, 0),

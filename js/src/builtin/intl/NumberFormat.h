@@ -122,6 +122,39 @@ class NumberFormatObject : public NativeObject {
                                                          Value* vp);
 #endif
 
+namespace intl {
+
+
+
+
+[[nodiscard]] extern NumberFormatObject* CreateNumberFormat(
+    JSContext* cx, JS::Handle<JS::Value> locales,
+    JS::Handle<JS::Value> options);
+
+
+
+
+
+[[nodiscard]] extern NumberFormatObject* GetOrCreateNumberFormat(
+    JSContext* cx, JS::Handle<JS::Value> locales,
+    JS::Handle<JS::Value> options);
+
+
+
+
+
+[[nodiscard]] extern JSString* FormatNumber(
+    JSContext* cx, Handle<NumberFormatObject*> numberFormat, double x);
+
+
+
+
+
+[[nodiscard]] extern JSString* FormatBigInt(
+    JSContext* cx, Handle<NumberFormatObject*> numberFormat, Handle<BigInt*> x);
+
+}  
+
 }  
 
 #endif 

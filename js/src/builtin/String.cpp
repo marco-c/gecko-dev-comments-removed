@@ -29,8 +29,10 @@
 
 #include "builtin/Array.h"
 #if JS_HAS_INTL_API
+#  include "builtin/intl/Collator.h"
 #  include "builtin/intl/CommonFunctions.h"
 #  include "builtin/intl/FormatBuffer.h"
+#  include "builtin/intl/GlobalIntlData.h"
 #endif
 #include "builtin/RegExp.h"
 #include "gc/GC.h"
@@ -1456,13 +1458,12 @@ static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
-#if JS_HAS_INTL_API
 
 
 
 
 
-#else
+
 
 
 
@@ -1471,17 +1472,34 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
                                         "localeCompare");
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   RootedString str(
       cx, ToStringForStringFunction(cx, "localeCompare", args.thisv()));
   if (!str) {
     return false;
   }
 
+  
   RootedString thatStr(cx, ToString<CanGC>(cx, args.get(0)));
   if (!thatStr) {
     return false;
   }
 
+#if JS_HAS_INTL_API
+  HandleValue locales = args.get(1);
+  HandleValue options = args.get(2);
+
+  
+  Rooted<CollatorObject*> collator(
+      cx, intl::GetOrCreateCollator(cx, locales, options));
+  if (!collator) {
+    return false;
+  }
+
+  
+  return intl::CompareStrings(cx, collator, str, thatStr, args.rval());
+#else
+  
   if (cx->runtime()->localeCallbacks &&
       cx->runtime()->localeCallbacks->localeCompare) {
     RootedValue result(cx);
@@ -1501,9 +1519,8 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
 
   args.rval().setInt32(result);
   return true;
-}
-
 #endif  
+}
 
 #if JS_HAS_INTL_API
 
@@ -3875,12 +3892,11 @@ static const JSFunctionSpec string_methods[] = {
 #if JS_HAS_INTL_API
     JS_SELF_HOSTED_FN("toLocaleLowerCase", "String_toLocaleLowerCase", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleUpperCase", "String_toLocaleUpperCase", 0, 0),
-    JS_SELF_HOSTED_FN("localeCompare", "String_localeCompare", 1, 0),
 #else
     JS_FN("toLocaleLowerCase", str_toLocaleLowerCase, 0, 0),
     JS_FN("toLocaleUpperCase", str_toLocaleUpperCase, 0, 0),
-    JS_FN("localeCompare", str_localeCompare, 1, 0),
 #endif
+    JS_FN("localeCompare", str_localeCompare, 1, 0),
     JS_SELF_HOSTED_FN("repeat", "String_repeat", 1, 0),
 #if JS_HAS_INTL_API
     JS_FN("normalize", str_normalize, 0, 0),

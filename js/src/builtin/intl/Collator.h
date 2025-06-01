@@ -105,6 +105,31 @@ class CollatorObject : public NativeObject {
 [[nodiscard]] extern bool intl_isIgnorePunctuation(JSContext* cx, unsigned argc,
                                                    JS::Value* vp);
 
+namespace intl {
+
+
+
+
+[[nodiscard]] extern CollatorObject* CreateCollator(
+    JSContext* cx, JS::Handle<JS::Value> locales,
+    JS::Handle<JS::Value> options);
+
+
+
+
+
+[[nodiscard]] extern CollatorObject* GetOrCreateCollator(
+    JSContext* cx, JS::Handle<JS::Value> locales,
+    JS::Handle<JS::Value> options);
+
+[[nodiscard]] extern bool CompareStrings(JSContext* cx,
+                                         JS::Handle<CollatorObject*> collator,
+                                         JS::Handle<JSString*> str1,
+                                         JS::Handle<JSString*> str2,
+                                         JS::MutableHandle<JS::Value> result);
+
+}  
+
 }  
 
 #endif 
