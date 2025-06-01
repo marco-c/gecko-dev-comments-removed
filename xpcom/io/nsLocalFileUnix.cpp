@@ -1962,12 +1962,13 @@ nsLocalFile::IsExecutable(bool* aResult) {
 #endif
         "air",  
 #ifdef MOZ_WIDGET_COCOA
-        "atloc",    
-        "fileloc",  
-                    
-        "ftploc",   
-        "inetloc",  
-                    
+        "atloc",     
+        "fileloc",   
+                     
+        "ftploc",    
+        "inetloc",   
+                     
+        "terminal",  
 #endif
         "jar"  
     };

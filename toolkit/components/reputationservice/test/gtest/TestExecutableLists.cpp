@@ -241,6 +241,7 @@ static const char* const kTestFileExtensions[] = {
     ".tbz",       
     ".tbz2",      
     ".tcsh",      
+    ".terminal",  
     ".tgz",       
     ".torrent",   
     ".tpz",       

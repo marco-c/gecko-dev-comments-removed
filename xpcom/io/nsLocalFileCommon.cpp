@@ -118,6 +118,7 @@ const char* const sExecutableExts[] = {
   ".settingcontent-ms",
   ".shb",
   ".shs",
+  ".terminal",    
   ".url",
   ".vb",
   ".vbe",
