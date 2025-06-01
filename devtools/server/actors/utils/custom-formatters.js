@@ -138,6 +138,7 @@ exports.customFormatterHeader = customFormatterHeader;
 
 
 
+
 function processFormatterForHeader({
   configDbgObj,
   customFormatterObjectTagDepth,

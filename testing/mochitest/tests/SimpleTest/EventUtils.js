@@ -4214,6 +4214,7 @@ async function synthesizePlainDragAndCancel(
 
 
 
+
 async function synthesizeMockDragAndDrop(aParams) {
   const {
     srcElement,
