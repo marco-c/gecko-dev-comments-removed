@@ -244,11 +244,7 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   
   
   virtual void EvictOutOfRangeWindowDocumentViewers(int32_t aIndex);
-
- public:
   void EvictDocumentViewerForEntry(nsISHEntry* aEntry);
-
- private:
   static void GloballyEvictDocumentViewers();
   static void GloballyEvictAllDocumentViewers();
 

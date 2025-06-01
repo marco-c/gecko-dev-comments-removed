@@ -3,15 +3,6 @@
 
 "use strict"
 
-const sameOrigin =
-  'https://{{host}}:{{ports[https][0]}}';
-const subdomainOrigin =
-  'https://{{hosts[][www2]}}:{{ports[https][0]}}';
-const crossSiteOrigin =
-  'https://{{hosts[alt][]}}:{{ports[https][0]}}';
-const subomdainCrossSiteOrigin =
-  'https://{{hosts[alt][www2]}}:{{ports[https][0]}}';
-
 
 
 
@@ -139,49 +130,3 @@ function testCacheClear(test, params, assert) {
         openTestPageHelper(test, null, testUrls, 0, assert, resolve)
     });
 }
-
-
-
-
-
-
-
-
-
-
-function runBfCacheClearTest(params, description) {
-  runBfcacheTest(
-    {
-      targetOrigin: sameOrigin,
-      scripts: ["/clear-site-data/support/clear-cache-helper.sub.js"],
-      funcBeforeBackNavigation: async (getUrlParams, mode) => {
-
-        const cacheHelper = self.crypto.randomUUID();
-        const testUrl = getUrl(cacheHelper, getUrlParams);
-
-        let clearingPromise;
-        if (mode === "window") {
-          clearingPromise = new Promise(resolve => {
-            window.addEventListener("message", resolve, {once: true});
-            window.open(testUrl);
-          });
-        } else if (mode === "iframe") {
-          clearingPromise = new Promise(resolve => {
-            const iframe = document.createElement("iframe");
-            iframe.src = testUrl;
-            document.body.appendChild(iframe);
-            iframe.onload = resolve;
-          });
-        } else {
-          throw new Error("Unsupported mode");
-        }
-
-        await clearingPromise;
-      },
-      argsBeforeBackNavigation: [params.getUrlParams, params.mode],
-      ...params,
-    },
-    description
-  );
-}
-
