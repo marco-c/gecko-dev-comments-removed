@@ -6591,9 +6591,36 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
       return false;
     }
 
-    if (nextTok == TokenKind::Of || !TokenKindIsPossibleIdentifier(nextTok)) {
+    if (!TokenKindIsPossibleIdentifier(nextTok)) {
       anyChars.ungetToken();  
                               
+    } else if (nextTok == TokenKind::Of) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      tokenStream.consumeKnownToken(nextTok);
+      TokenKind nextTokAssign;
+      if (!tokenStream.peekToken(&nextTokAssign, TokenStream::SlashIsRegExp)) {
+        return false;
+      }
+      if (nextTokAssign == TokenKind::Assign) {
+        parsingLexicalDeclaration = true;
+        anyChars.ungetToken();  
+      } else {
+        anyChars.ungetToken();  
+        anyChars.ungetToken();  
+      }
     } else {
       parsingLexicalDeclaration = true;
     }
