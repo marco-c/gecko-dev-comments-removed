@@ -1137,6 +1137,17 @@ public final class GeckoRuntime implements Parcelable {
 
 
   @AnyThread
+  public void notifyTelemetryPrefChanged(final boolean isEnabled) {
+    GeckoAppShell.notifyObservers(
+        "mobile-telemetry-pref-changed", isEnabled ? "enabled" : "disabled");
+  }
+
+  
+
+
+
+
+  @AnyThread
   public void appendAppNotesToCrashReport(@NonNull final String notes) {
     final String notesWithNewLine = notes + "\n";
     if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
