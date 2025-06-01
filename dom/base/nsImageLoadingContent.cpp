@@ -1276,7 +1276,8 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
   return domPromise.forget();
 }
 
-CSSIntSize nsImageLoadingContent::NaturalSize() {
+CSSIntSize nsImageLoadingContent::NaturalSize(
+    DoDensityCorrection aDensityCorrection) {
   if (!mCurrentRequest) {
     return {};
   }
@@ -1321,14 +1322,16 @@ CSSIntSize nsImageLoadingContent::NaturalSize() {
   }
 
   ImageResolution resolution = image->GetResolution();
-  
-  
-  
-  if (auto* image = HTMLImageElement::FromNode(AsContent())) {
-    if (auto* sel = image->GetResponsiveImageSelector()) {
-      float density = sel->GetSelectedImageDensity();
-      MOZ_ASSERT(density >= 0.0);
-      resolution.ScaleBy(density);
+  if (aDensityCorrection == DoDensityCorrection::Yes) {
+    
+    
+    
+    if (auto* image = HTMLImageElement::FromNode(AsContent())) {
+      if (auto* sel = image->GetResponsiveImageSelector()) {
+        float density = sel->GetSelectedImageDensity();
+        MOZ_ASSERT(density >= 0.0);
+        resolution.ScaleBy(density);
+      }
     }
   }
 

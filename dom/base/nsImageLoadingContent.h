@@ -243,7 +243,12 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  mozilla::CSSIntSize NaturalSize();
+
+
+
+  enum class DoDensityCorrection : bool { No, Yes };
+  mozilla::CSSIntSize NaturalSize(
+      DoDensityCorrection = DoDensityCorrection::Yes);
 
   
 
