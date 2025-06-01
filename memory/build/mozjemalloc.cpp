@@ -268,7 +268,7 @@ static Atomic<bool, MemoryOrdering::Relaxed> malloc_initialized;
 #endif
 
 
-static StaticMutex gInitLock MOZ_UNANNOTATED = {STATIC_MUTEX_INIT};
+StaticMutex gInitLock MOZ_UNANNOTATED = {STATIC_MUTEX_INIT};
 
 
 
