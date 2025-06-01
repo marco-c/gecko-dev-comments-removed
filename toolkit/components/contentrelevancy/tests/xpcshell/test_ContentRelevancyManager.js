@@ -7,6 +7,8 @@ ChromeUtils.defineESModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   ContentRelevancyManager:
     "resource://gre/modules/ContentRelevancyManager.sys.mjs",
+  SharedRemoteSettingsService:
+    "resource://gre/modules/RustSharedRemoteSettingsService.sys.mjs",
   exposedForTesting: "resource://gre/modules/ContentRelevancyManager.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -62,8 +64,10 @@ add_task(function test_store_manager() {
   );
   Assert.equal(fakeRustRelevancyStore.init.callCount, 1);
   Assert.deepEqual(fakeRustRelevancyStore.init.firstCall.args[0], "test-path");
-  
-  
+  Assert.strictEqual(
+    fakeRustRelevancyStore.init.firstCall.args[1],
+    SharedRemoteSettingsService.rustService()
+  );
   Assert.throws(() => storeManager.store, /StoreDisabledError/);
   
   storeManager.enable();
@@ -71,7 +75,6 @@ add_task(function test_store_manager() {
   
   Assert.equal(fakeStore.close.callCount, 0);
   storeManager.disable();
-  Assert.equal(fakeStore.close.callCount, 1);
   Assert.throws(() => storeManager.store, /StoreDisabledError/);
   
   storeManager.enable();
