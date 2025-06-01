@@ -347,12 +347,15 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     const auto bSize = pos->BSize(wm, positionProperty);
+    const auto anchorPosResolutionParams =
+        AnchorPosResolutionParams::UseCBFrameSize(f, positionProperty);
     if ((nsStylePosition::BSizeDependsOnContainer(bSize) &&
          !(bSize->IsAuto() &&
-           pos->GetAnchorResolvedInset(LogicalSide::BEnd, wm, positionProperty)
+           pos->GetAnchorResolvedInset(LogicalSide::BEnd, wm,
+                                       anchorPosResolutionParams)
                ->IsAuto() &&
            !pos->GetAnchorResolvedInset(LogicalSide::BStart, wm,
-                                        positionProperty)
+                                        anchorPosResolutionParams)
                 ->IsAuto())) ||
         nsStylePosition::MinBSizeDependsOnContainer(
             pos->MinBSize(wm, positionProperty)) ||
@@ -379,8 +382,10 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   
   
   if (aCBWidthChanged) {
+    const auto anchorResolutionParams =
+        AnchorPosResolutionParams::UseCBFrameSize(f, positionProperty);
     if (!IsFixedOffset(
-            pos->GetAnchorResolvedInset(eSideLeft, positionProperty))) {
+            pos->GetAnchorResolvedInset(eSideLeft, anchorResolutionParams))) {
       return true;
     }
     
@@ -392,18 +397,22 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     if ((wm.GetInlineDir() == WritingMode::InlineDir::RTL ||
          wm.GetBlockDir() == WritingMode::BlockDir::RL) &&
-        !pos->GetAnchorResolvedInset(eSideRight, positionProperty)->IsAuto()) {
+        !pos->GetAnchorResolvedInset(eSideRight, anchorResolutionParams)
+             ->IsAuto()) {
       return true;
     }
   }
   if (aCBHeightChanged) {
+    const auto anchorResolutionParams =
+        AnchorPosResolutionParams::UseCBFrameSize(f, positionProperty);
     if (!IsFixedOffset(
-            pos->GetAnchorResolvedInset(eSideTop, positionProperty))) {
+            pos->GetAnchorResolvedInset(eSideTop, anchorResolutionParams))) {
       return true;
     }
     
     if (wm.GetInlineDir() == WritingMode::InlineDir::BTT &&
-        !pos->GetAnchorResolvedInset(eSideBottom, positionProperty)->IsAuto()) {
+        !pos->GetAnchorResolvedInset(eSideBottom, anchorResolutionParams)
+             ->IsAuto()) {
       return true;
     }
   }
@@ -949,23 +958,25 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     const auto* stylePos = aKidFrame->StylePosition();
     auto positionProperty = aKidFrame->StyleDisplay()->mPosition;
+    const auto anchorPosResolutionParams =
+        AnchorPosResolutionParams::UseCBFrameSize(aKidFrame, positionProperty);
     const bool iInsetAuto =
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
-                                     positionProperty)
+                                     anchorPosResolutionParams)
             ->IsAuto() ||
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::IEnd, outerWM,
-                                     positionProperty)
+                                     anchorPosResolutionParams)
             ->IsAuto();
     const bool bInsetAuto =
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::BStart, outerWM,
-                                     positionProperty)
+                                     anchorPosResolutionParams)
             ->IsAuto() ||
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::BEnd, outerWM,
-                                     positionProperty)
+                                     anchorPosResolutionParams)
             ->IsAuto();
     const LogicalSize logicalCBSizeOuterWM(outerWM, aContainingBlock.Size());
     const LogicalSize kidMarginBox{
