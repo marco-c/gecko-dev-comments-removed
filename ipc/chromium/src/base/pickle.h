@@ -217,6 +217,8 @@ class Pickle {
   struct Header {
     uint32_t payload_size;  
   };
+  static_assert(std::has_unique_object_representations_v<Header>,
+                "Header must not contain padding bytes");
 
   
   

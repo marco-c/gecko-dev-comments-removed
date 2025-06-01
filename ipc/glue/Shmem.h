@@ -68,7 +68,7 @@ class Shmem final {
   friend class IToplevelProtocol;
 
  public:
-  using id_t = int32_t;
+  using id_t = int64_t;
   
   class Segment final : public SharedMemoryMapping {
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Segment);
@@ -89,8 +89,8 @@ class Shmem final {
     
     
     
-    std::tuple<UniquePtr<IPC::Message>, Shmem> Build(id_t aId, bool aUnsafe,
-                                                     int32_t aRoutingId);
+    std::tuple<UniquePtr<IPC::Message>, Shmem> Build(
+        id_t aId, bool aUnsafe, IPC::Message::routeid_t aRoutingId);
 
    private:
     size_t mSize;
@@ -169,7 +169,7 @@ class Shmem final {
   
   
   
-  UniquePtr<IPC::Message> MkDestroyedMessage(int32_t routingId);
+  UniquePtr<IPC::Message> MkDestroyedMessage(IPC::Message::routeid_t routingId);
 
   
   
