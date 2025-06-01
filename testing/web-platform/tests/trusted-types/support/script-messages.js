@@ -8,6 +8,13 @@ function create_html_script_with_trusted_source_text(source_text) {
   return script;
 }
 
+function create_html_script_with_untrusted_source_text(source_text) {
+  let script = document.createElement("script");
+  
+  script.appendChild(document.createTextNode(source_text));
+  return script;
+}
+
 function create_svg_script_with_trusted_source_text(source_text) {
   
   
@@ -19,6 +26,13 @@ function create_svg_script_with_trusted_source_text(source_text) {
   assert_true(!!script, `<script type="unknown">${source_text}</script> not found!`);
   script.remove();
   script.removeAttribute("type");
+  return script;
+}
+
+function create_svg_script_with_untrusted_source_text(source_text) {
+  let script = document.createElementNS(NSURI_SVG, "script")
+  
+  script.appendChild(document.createTextNode(source_text));
   return script;
 }
 
@@ -52,8 +66,21 @@ function script_messages_for(fn) {
     }
 
     
-    let script = create_html_script_with_trusted_source_text(`window.log_message("DONE")`);
-    document.body.appendChild(script);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    requestAnimationFrame(_ => requestAnimationFrame(_ => {
+      let script = create_html_script_with_trusted_source_text(`window.log_message("DONE")`);
+      script.setAttribute("nonce", "script-messages");
+      document.body.appendChild(script);
+    }));
   });
 }
 
@@ -66,4 +93,12 @@ async function script_message_for(fn) {
 async function no_script_message_for(fn) {
   let messages = await script_messages_for(fn);
   assert_equals(messages.length, 0, `Number of messages (${messages})`);
+}
+
+async function base64_hash_for_inline_script(source_text, algorithm) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(source_text);
+  const hashBuffer = await window.crypto.subtle.digest(algorithm, data);
+  const base64Array = (new Uint8Array(hashBuffer)).toBase64();
+  return base64Array.toString();
 }
