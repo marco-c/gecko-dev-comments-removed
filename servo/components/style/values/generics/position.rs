@@ -14,7 +14,7 @@ use style_traits::ToCss;
 use crate::logical_geometry::PhysicalSide;
 use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::box_::PositionProperty;
-use crate::values::generics::length::{AnchorResolutionResult, GenericAnchorSizeFunction};
+use crate::values::generics::length::GenericAnchorSizeFunction;
 use crate::values::generics::ratio::Ratio;
 use crate::values::generics::Optional;
 use crate::values::DashedIdent;
@@ -389,21 +389,12 @@ where
 
 impl<Percentage, LengthPercentage> GenericAnchorFunction<Percentage, LengthPercentage> {
     
-    pub fn resolve<'a>(
-        &'a self,
+    pub fn valid_for(
+        &self,
         side: PhysicalSide,
         position_property: PositionProperty,
-    ) -> AnchorResolutionResult<'a, LengthPercentage> {
-        if !position_property.is_absolutely_positioned() {
-            return AnchorResolutionResult::new_anchor_invalid(self.fallback.as_ref());
-        }
-
-        if !self.side.valid_for(side) {
-            return AnchorResolutionResult::new_anchor_invalid(self.fallback.as_ref());
-        }
-
-        
-        AnchorResolutionResult::new_anchor_invalid(self.fallback.as_ref())
+    ) -> bool {
+        position_property.is_absolutely_positioned() && self.side.valid_for(side)
     }
 }
 
