@@ -1785,11 +1785,13 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
     
     saveInterpreterPCReg();
 
-    using Fn = uint8_t* (*)(BaselineFrame*);
-    masm.setupUnalignedABICall(R0.scratchReg());
-    masm.loadBaselineFramePtr(FramePointer, R0.scratchReg());
-    masm.passABIArg(R0.scratchReg());
-    masm.callWithABI<Fn, BaselineScript::OSREntryForFrame>();
+    prepareVMCall();
+    masm.PushBaselineFramePtr(FramePointer, R0.scratchReg());
+
+    using Fn = bool (*)(JSContext*, BaselineFrame*, uint8_t**);
+    if (!callVMNonOp<Fn, BaselineScript::OSREntryForFrame>()) {
+      return false;
+    }
 
     
     
@@ -1839,7 +1841,7 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
     prepareVMCall();
 
     using Fn2 = bool (*)(JSContext*);
-    if (!callVM<Fn2, DispatchOffThreadBaselineBatch>()) {
+    if (!callVMNonOp<Fn2, DispatchOffThreadBaselineBatch>()) {
       return false;
     }
     masm.bind(&done);
