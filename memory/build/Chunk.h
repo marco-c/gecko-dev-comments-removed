@@ -7,31 +7,6 @@
 
 #include "rb.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef XP_DARWIN
-#  define MALLOC_DOUBLE_PURGE
-#endif
-
-#ifdef XP_WIN
-#  define MALLOC_DECOMMIT
-#endif
-
 #include "mozilla/DoublyLinkedList.h"
 
 
