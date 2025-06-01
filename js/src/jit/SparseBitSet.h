@@ -197,6 +197,6 @@ template <typename T, typename Owner>
 struct CanLifoAlloc<js::jit::SparseBitSet<T, Owner>> : Owner::IsStackAllocated {
 };
 
-}
+}  
 
 #endif 
