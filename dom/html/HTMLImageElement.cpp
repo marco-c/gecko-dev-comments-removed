@@ -38,6 +38,8 @@
 #include "imgINotificationObserver.h"
 #include "imgRequestProxy.h"
 
+#include "mozilla/CycleCollectedJSContext.h"
+
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
@@ -73,6 +75,48 @@ static bool IsPreviousSibling(const nsINode* aSubject, const nsINode* aNode) {
 #endif
 
 namespace mozilla::dom {
+
+
+
+
+class ImageLoadTask final : public MicroTaskRunnable {
+ public:
+  ImageLoadTask(HTMLImageElement* aElement, bool aAlwaysLoad,
+                bool aUseUrgentStartForChannel)
+      : mElement(aElement),
+        mDocument(aElement->OwnerDoc()),
+        mAlwaysLoad(aAlwaysLoad),
+        mUseUrgentStartForChannel(aUseUrgentStartForChannel) {
+    mDocument->BlockOnload();
+  }
+
+  void Run(AutoSlowOperation& aAso) override {
+    if (mElement->mPendingImageLoadTask == this) {
+      JSCallingLocation::AutoFallback fallback(&mCallingLocation);
+      mElement->ClearImageLoadTask();
+      mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
+      mElement->LoadSelectedImage(mAlwaysLoad);
+    }
+    mDocument->UnblockOnload(false);
+  }
+
+  bool Suppressed() override {
+    nsIGlobalObject* global = mElement->GetOwnerGlobal();
+    return global && global->IsInSyncOperation();
+  }
+
+  bool AlwaysLoad() const { return mAlwaysLoad; }
+
+ private:
+  ~ImageLoadTask() = default;
+  const RefPtr<HTMLImageElement> mElement;
+  const RefPtr<Document> mDocument;
+  const JSCallingLocation mCallingLocation{JSCallingLocation::Get()};
+  const bool mAlwaysLoad;
+  
+  
+  const bool mUseUrgentStartForChannel;
+};
 
 HTMLImageElement::HTMLImageElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
@@ -686,6 +730,11 @@ void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
   mForm = nullptr;
 }
 
+void HTMLImageElement::ClearImageLoadTask() {
+  mPendingImageLoadTask = nullptr;
+  mHasPendingLoadTask = false;
+}
+
 
 void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
     bool aAlwaysLoad, bool aNotify, const HTMLSourceElement* aSkippedSource) {
@@ -702,9 +751,72 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
   
   UpdateResponsiveSource(aSkippedSource);
 
-  nsImageLoadingContent::QueueImageTask(mSrcURI, mSrcTriggeringPrincipal,
-                                        HaveSrcsetOrInPicture(), aAlwaysLoad,
-                                        aNotify);
+  
+  
+  
+  
+  
+  if (!LoadingEnabled() || !ShouldLoadImage()) {
+    return;
+  }
+
+  
+  
+  const bool alwaysLoad = aAlwaysLoad || (mPendingImageLoadTask &&
+                                          mPendingImageLoadTask->AlwaysLoad());
+
+  
+  const bool shouldLoadSync = [&] {
+    if (HaveSrcsetOrInPicture()) {
+      return false;
+    }
+    if (!mSrcURI) {
+      
+      
+      
+      return !!mCurrentRequest;
+    }
+    return nsContentUtils::IsImageAvailable(
+        this, mSrcURI, mSrcTriggeringPrincipal, GetCORSMode());
+  }();
+
+  if (shouldLoadSync) {
+    if (!nsContentUtils::IsSafeToRunScript()) {
+      
+      
+      
+      nsContentUtils::AddScriptRunner(
+          NewRunnableMethod<bool, bool, HTMLSourceElement*>(
+              "HTMLImageElement::UpdateSourceSyncAndQueueImageTask", this,
+              &HTMLImageElement::UpdateSourceSyncAndQueueImageTask, aAlwaysLoad,
+               true, nullptr));
+      return;
+    }
+
+    if (mLazyLoading && mSrcURI) {
+      StopLazyLoading(StartLoad::No);
+    }
+    ClearImageLoadTask();
+    LoadSelectedImage(alwaysLoad);
+    return;
+  }
+
+  if (mLazyLoading) {
+    
+    
+    
+    
+    return;
+  }
+
+  RefPtr task = new ImageLoadTask(this, alwaysLoad, mUseUrgentStartForChannel);
+  mPendingImageLoadTask = task;
+  mHasPendingLoadTask = true;
+  
+  UpdateImageState(aNotify);
+  
+  
+  CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
 }
 
 bool HTMLImageElement::HaveSrcsetOrInPicture() const {
@@ -722,18 +834,13 @@ bool HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource) {
          equal;
 }
 
-void HTMLImageElement::LoadSelectedImage(bool aAlwaysLoad,
-                                         bool aStopLazyLoading) {
+void HTMLImageElement::LoadSelectedImage(bool aAlwaysLoad) {
   
   
   
   MOZ_ASSERT(!UpdateResponsiveSource(),
              "The image source should be the same because we update the "
              "responsive source synchronously");
-
-  if (aStopLazyLoading) {
-    StopLazyLoading(StartLoad::No);
-  }
 
   
   double currentDensity = mResponsiveSelector
@@ -1109,6 +1216,10 @@ void HTMLImageElement::DestroyContent() {
 
 void HTMLImageElement::MediaFeatureValuesChanged() {
   UpdateSourceSyncAndQueueImageTask(false,  true);
+}
+
+bool HTMLImageElement::ShouldLoadImage() const {
+  return OwnerDoc()->ShouldLoadImages();
 }
 
 void HTMLImageElement::SetLazyLoading() {
