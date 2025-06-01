@@ -61,6 +61,9 @@ class WaylandSurface final {
 
   
   void SetFrameCallbackState(bool aEnabled);
+  void SetFrameCallbackStateHandlerLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      const std::function<void(bool)>& aFrameCallbackStateHandler);
 
   
   
@@ -375,6 +378,8 @@ class WaylandSurface final {
   };
 
   bool mFrameCallbackEnabled = true;
+  std::function<void(bool)> mFrameCallbackStateHandler = nullptr;
+
   
   FrameCallback mFrameCallbackHandler;
 
