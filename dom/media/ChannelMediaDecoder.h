@@ -99,27 +99,29 @@ class ChannelMediaDecoder
   void Resume() override;
 
  private:
+  
+  
   struct MediaStatistics {
     
-    double mPlaybackRate;
+    double mPlaybackByteRate;
     
     
-    double mDownloadRate;
+    double mDownloadByteRate;
     
     int64_t mTotalBytes;
     
     
-    int64_t mDownloadPosition;
+    int64_t mDownloadBytePosition;
     
     int64_t mPlaybackByteOffset;
     
     
     
-    bool mDownloadRateReliable;
+    bool mDownloadByteRateReliable;
     
     
     
-    bool mPlaybackRateReliable;
+    bool mPlaybackByteRateReliable;
 
     bool CanPlayThrough() const;
     nsCString ToString() const;
@@ -155,14 +157,6 @@ class ChannelMediaDecoder
   static PlaybackRateInfo UpdateResourceOfPlaybackByteRate(
       const MediaChannelStatistics& aStats, BaseMediaResource* aResource,
       const media::TimeUnit& aDuration);
-
-  
-  
-  
-  
-  static MediaStatistics GetStatistics(const PlaybackRateInfo& aInfo,
-                                       BaseMediaResource* aRes,
-                                       int64_t aPlaybackPosition);
 
   bool ShouldThrottleDownload(const MediaStatistics& aStats);
 
