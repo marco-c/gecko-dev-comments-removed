@@ -29,6 +29,7 @@
 #include "mozilla/net/SSLTokensCache.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/psm/IPCClientCertsChild.h"
+#include "mozilla/psm/mozilla_abridged_certs_generated.h"
 #include "mozilla/psm/PIPCClientCertsChild.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
@@ -1347,6 +1348,51 @@ void GatherCertificateCompressionTelemetry(SECStatus rv,
   mozilla::glean::cert_compression::failures.Get(decoder).Add(0);
 }
 
+SECStatus abridgedCertificatePass1Decode(const SECItem* input,
+                                         unsigned char* output,
+                                         size_t outputLen, size_t* usedLen) {
+  if (!input || !input->data || input->len == 0 || !output || outputLen == 0) {
+    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+    return SECFailure;
+  }
+  if (NS_FAILED(mozilla::psm::abridged_certs::decompress(
+          input->data, input->len, output, outputLen, usedLen))) {
+    PR_SetError(SEC_ERROR_BAD_DATA, 0);
+    return SECFailure;
+  }
+  return SECSuccess;
+}
+
+SECStatus abridgedCertificateDecode(const SECItem* input, unsigned char* output,
+                                    size_t outputLen, size_t* usedLen) {
+  if (!input || !input->data || input->len == 0 || !output || outputLen == 0) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error,
+            ("AbridgedCerts: Invalid arguments passed to "
+             "abridgedCertificateDecode"));
+    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+    return SECFailure;
+  }
+  
+  UniqueSECItem tempBuffer(::SECITEM_AllocItem(nullptr, nullptr, outputLen));
+  if (!tempBuffer) {
+    PR_SetError(SEC_ERROR_NO_MEMORY, 0);
+    return SECFailure;
+  }
+  size_t tempUsed;
+  SECStatus rv = brotliCertificateDecode(input, tempBuffer->data,
+                                         (size_t)tempBuffer->len, &tempUsed);
+  if (rv != SECSuccess) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error,
+            ("AbridgedCerts: Brotli Decoder failed"));
+    
+    return rv;
+  }
+  tempBuffer->len = tempUsed;
+  
+  return abridgedCertificatePass1Decode(tempBuffer.get(), output, outputLen,
+                                        usedLen);
+}
+
 SECStatus zlibCertificateDecode(const SECItem* input, unsigned char* output,
                                 size_t outputLen, size_t* usedLen) {
   SECStatus rv = SECFailure;
@@ -1601,6 +1647,9 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     SSLCertificateCompressionAlgorithm zstdAlg = {3, "zstd", nullptr,
                                                   zstdCertificateDecode};
 
+    SSLCertificateCompressionAlgorithm abridgedAlg = {
+        0xab00, "abridged-00", nullptr, abridgedCertificateDecode};
+
     if (StaticPrefs::security_tls_enable_certificate_compression_zlib() &&
         SSL_SetCertificateCompressionAlgorithm(fd, zlibAlg) != SECSuccess) {
       return NS_ERROR_FAILURE;
@@ -1613,6 +1662,12 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
 
     if (StaticPrefs::security_tls_enable_certificate_compression_zstd() &&
         SSL_SetCertificateCompressionAlgorithm(fd, zstdAlg) != SECSuccess) {
+      return NS_ERROR_FAILURE;
+    }
+
+    if (StaticPrefs::security_tls_enable_certificate_compression_abridged() &&
+        mozilla::psm::abridged_certs::certs_are_available() &&
+        SSL_SetCertificateCompressionAlgorithm(fd, abridgedAlg) != SECSuccess) {
       return NS_ERROR_FAILURE;
     }
   }
@@ -1882,22 +1937,19 @@ void DoFindObjects(FindObjectsCallback cb, void* ctx) {
         cb(kIPCClientCertsObjectTypeECKey, object.get_ECKey().params().Length(),
            object.get_ECKey().params().Elements(),
            object.get_ECKey().cert().Length(),
-           object.get_ECKey().cert().Elements(), object.get_ECKey().slotType(),
-           ctx);
+           object.get_ECKey().cert().Elements(), ctx);
         break;
       case IPCClientCertObject::TRSAKey:
         cb(kIPCClientCertsObjectTypeRSAKey,
            object.get_RSAKey().modulus().Length(),
            object.get_RSAKey().modulus().Elements(),
            object.get_RSAKey().cert().Length(),
-           object.get_RSAKey().cert().Elements(),
-           object.get_RSAKey().slotType(), ctx);
+           object.get_RSAKey().cert().Elements(), ctx);
         break;
       case IPCClientCertObject::TCertificate:
         cb(kIPCClientCertsObjectTypeCert,
            object.get_Certificate().der().Length(),
-           object.get_Certificate().der().Elements(), 0, nullptr,
-           object.get_Certificate().slotType(), ctx);
+           object.get_Certificate().der().Elements(), 0, nullptr, ctx);
         break;
       default:
         MOZ_ASSERT_UNREACHABLE("unhandled IPCClientCertObject type");
@@ -1960,11 +2012,11 @@ void AndroidDoFindObjects(FindObjectsCallback cb, void* ctx) {
         clientAuthCertificate->GetKeyParameters();
     cb(kIPCClientCertsObjectTypeCert, der->Length(),
        reinterpret_cast<uint8_t*>(der->GetElements().Elements()), 0, nullptr,
-       kIPCClientCertsSlotTypeModern, ctx);
+       ctx);
     cb(clientAuthCertificate->GetType(), keyParameters->Length(),
        reinterpret_cast<uint8_t*>(keyParameters->GetElements().Elements()),
        der->Length(), reinterpret_cast<uint8_t*>(der->GetElements().Elements()),
-       kIPCClientCertsSlotTypeModern, ctx);
+       ctx);
     jni::ObjectArray::LocalRef issuersBytes =
         clientAuthCertificate->GetIssuersBytes();
     if (issuersBytes) {
@@ -1972,7 +2024,7 @@ void AndroidDoFindObjects(FindObjectsCallback cb, void* ctx) {
         jni::ByteArray::LocalRef issuer = issuersBytes->GetElement(i);
         cb(kIPCClientCertsObjectTypeCert, issuer->Length(),
            reinterpret_cast<uint8_t*>(issuer->GetElements().Elements()), 0,
-           nullptr, kIPCClientCertsSlotTypeModern, ctx);
+           nullptr, ctx);
       }
     }
   }

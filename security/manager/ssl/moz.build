@@ -4,6 +4,8 @@
 
 
 
+DIRS += ["abridged_certs"]
+
 TEST_DIRS += ["tests"]
 
 XPIDL_SOURCES += [

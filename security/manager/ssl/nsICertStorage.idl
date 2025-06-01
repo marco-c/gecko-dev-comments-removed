@@ -199,6 +199,13 @@ interface nsICertStorage : nsISupports {
 
 
 
+  void TestHelperAddCert(in ACString cert, in ACString subject, in short trust);
+
+  
+
+
+
+
 
 
 
@@ -206,10 +213,6 @@ interface nsICertStorage : nsISupports {
   [must_use]
   void removeCertsByHashes(in Array<ACString> hashes,
                            in nsICertStorageCallback callback);
-
-
-  
-  void TestHelperAddCert(in ACString cert, in ACString subject, in short trust);
 
   
 
