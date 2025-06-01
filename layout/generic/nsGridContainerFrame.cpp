@@ -3302,6 +3302,15 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
 
 
 
+  void InvalidateTrackSizesForAxis(LogicalAxis aAxis);
+
+  
+
+
+
+
+
+
 
 
   LogicalSize PercentageBasisFor(LogicalAxis aAxis,
@@ -4307,6 +4316,14 @@ void nsGridContainerFrame::GridReflowInput::CalculateTrackSizesForAxis(
 
   
   tracks.mCanResolveLineRangeSize = true;
+}
+
+void nsGridContainerFrame::GridReflowInput::InvalidateTrackSizesForAxis(
+    LogicalAxis aAxis) {
+  for (auto& item : mGridItems) {
+    item.ResetTrackSizingBits(aAxis);
+  }
+  TracksFor(aAxis).mCanResolveLineRangeSize = false;
 }
 
 
@@ -9199,10 +9216,7 @@ nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
   result = aGridRI.mReflowInput->ApplyMinMaxBSize(result);
 
   
-  for (auto& item : aGridRI.mGridItems) {
-    item.ResetTrackSizingBits(LogicalAxis::Block);
-  }
-  aGridRI.mRows.mCanResolveLineRangeSize = false;
+  aGridRI.InvalidateTrackSizesForAxis(LogicalAxis::Block);
 
   return result;
 }
@@ -10057,10 +10071,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
                                       SizingConstraint::NoConstraint);
 
     
-    for (auto& item : gridRI.mGridItems) {
-      item.ResetTrackSizingBits(LogicalAxis::Inline);
-    }
-    gridRI.mCols.mCanResolveLineRangeSize = false;
+    gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Inline);
 
     
     
