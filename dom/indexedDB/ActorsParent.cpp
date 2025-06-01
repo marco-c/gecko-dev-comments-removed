@@ -1466,7 +1466,25 @@ class ConnectionPool final {
                  bool aIsWriteTransaction,
                  TransactionDatabaseOperationBase* aTransactionOp);
 
-  void Dispatch(uint64_t aTransactionId, nsIRunnable* aRunnable);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void StartOp(uint64_t aTransactionId, nsIRunnable* aRunnable);
 
   void Finish(uint64_t aTransactionId, FinishCallback* aCallback);
 
@@ -7947,11 +7965,11 @@ uint64_t ConnectionPool::Start(
   return transactionId;
 }
 
-void ConnectionPool::Dispatch(uint64_t aTransactionId, nsIRunnable* aRunnable) {
+void ConnectionPool::StartOp(uint64_t aTransactionId, nsIRunnable* aRunnable) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aRunnable);
 
-  AUTO_PROFILER_LABEL("ConnectionPool::Dispatch", DOM);
+  AUTO_PROFILER_LABEL("ConnectionPool::StartOp", DOM);
 
   auto* const transactionInfo = mTransactions.Get(aTransactionId);
   MOZ_ASSERT(transactionInfo);
@@ -7987,7 +8005,7 @@ void ConnectionPool::Finish(uint64_t aTransactionId,
   RefPtr<FinishCallbackWrapper> wrapper =
       new FinishCallbackWrapper(this, aTransactionId, aCallback);
 
-  Dispatch(aTransactionId, wrapper);
+  StartOp(aTransactionId, wrapper);
 
 #ifdef DEBUG
   transactionInfo->mFinished.Flip();
@@ -17185,7 +17203,7 @@ void TransactionDatabaseOperationBase::SendToConnectionPool() {
   
   mInternalState = InternalState::DatabaseWork;
 
-  gConnectionPool->Dispatch((*mTransaction)->TransactionId(), this);
+  gConnectionPool->StartOp((*mTransaction)->TransactionId(), this);
 
   (*mTransaction)->NoteActiveRequest();
 }
