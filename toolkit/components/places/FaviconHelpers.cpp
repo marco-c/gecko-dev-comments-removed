@@ -654,13 +654,9 @@ NS_IMPL_ISUPPORTS(Favicon, nsIFavicon)
 
 
 
-AsyncAssociateIconToPage::AsyncAssociateIconToPage(
-    const IconData& aIcon, const PageData& aPage,
-    const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback)
-    : Runnable("places::AsyncAssociateIconToPage"),
-      mCallback(aCallback),
-      mIcon(aIcon),
-      mPage(aPage) {
+AsyncAssociateIconToPage::AsyncAssociateIconToPage(const IconData& aIcon,
+                                                   const PageData& aPage)
+    : Runnable("places::AsyncAssociateIconToPage"), mIcon(aIcon), mPage(aPage) {
   
 }
 
@@ -799,8 +795,7 @@ AsyncAssociateIconToPage::Run() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIRunnable> event =
-      new NotifyIconObservers(mIcon, mPage, mCallback);
+  nsCOMPtr<nsIRunnable> event = new NotifyIconObservers(mIcon, mPage);
   rv = NS_DispatchToMainThread(event);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -813,10 +808,8 @@ AsyncAssociateIconToPage::Run() {
     bookmarkedPage.spec = mPage.bookmarkedSpec;
     RefPtr<Database> DB = Database::GetDatabase();
     if (DB && NS_SUCCEEDED(FetchPageInfo(DB, bookmarkedPage))) {
-      
-      nsMainThreadPtrHandle<nsIFaviconDataCallback> nullCallback;
       RefPtr<AsyncAssociateIconToPage> event =
-          new AsyncAssociateIconToPage(mIcon, bookmarkedPage, nullCallback);
+          new AsyncAssociateIconToPage(mIcon, bookmarkedPage);
       Unused << event->Run();
     }
   }
@@ -863,8 +856,7 @@ AsyncSetIconForPage::Run() {
   rv = FetchPageInfo(DB, mPage);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> nullCallback;
-  AsyncAssociateIconToPage event(mIcon, mPage, nullCallback);
+  AsyncAssociateIconToPage event(mIcon, mPage);
   return (rv = event.Run());
 }
 
@@ -959,9 +951,8 @@ NS_IMETHODIMP AsyncTryCopyFaviconsRunnable::Run() {
       return;
     }
 
-    nsMainThreadPtrHandle<nsIFaviconDataCallback> nullCallback;
     nsCOMPtr<nsIRunnable> event =
-        new NotifyIconObservers(fromIconData, toPageData, nullCallback);
+        new NotifyIconObservers(fromIconData, toPageData);
     NS_DispatchToMainThread(event);
   });
 
@@ -1039,13 +1030,9 @@ NS_IMETHODIMP AsyncTryCopyFaviconsRunnable::Run() {
 
 
 
-NotifyIconObservers::NotifyIconObservers(
-    const IconData& aIcon, const PageData& aPage,
-    const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback)
-    : Runnable("places::NotifyIconObservers"),
-      mCallback(aCallback),
-      mIcon(aIcon),
-      mPage(aPage) {}
+NotifyIconObservers::NotifyIconObservers(const IconData& aIcon,
+                                         const PageData& aPage)
+    : Runnable("places::NotifyIconObservers"), mIcon(aIcon), mPage(aPage) {}
 
 
 
@@ -1092,18 +1079,7 @@ NotifyIconObservers::Run() {
     }
   }
 
-  if (!mCallback) {
-    return NS_OK;
-  }
-
-  if (mIcon.payloads.Length() > 0) {
-    IconPayload& payload = mIcon.payloads[0];
-    return mCallback->OnComplete(iconURI, payload.data.Length(),
-                                 TO_INTBUFFER(payload.data), payload.mimeType,
-                                 payload.width);
-  }
-  return mCallback->OnComplete(iconURI, 0, TO_INTBUFFER(EmptyCString()), ""_ns,
-                               0);
+  return NS_OK;
 }
 
 }  

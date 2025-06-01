@@ -121,14 +121,9 @@ class AsyncAssociateIconToPage final : public Runnable {
 
 
 
-
-
-  AsyncAssociateIconToPage(
-      const IconData& aIcon, const PageData& aPage,
-      const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
+  AsyncAssociateIconToPage(const IconData& aIcon, const PageData& aPage);
 
  private:
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
 };
@@ -208,14 +203,9 @@ class NotifyIconObservers final : public Runnable {
 
 
 
-
-
-  NotifyIconObservers(
-      const IconData& aIcon, const PageData& aPage,
-      const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
+  NotifyIconObservers(const IconData& aIcon, const PageData& aPage);
 
  private:
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
 };
