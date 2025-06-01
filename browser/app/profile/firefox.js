@@ -2033,6 +2033,11 @@ pref("nimbus.validation.enabled", true);
 
 
 
+pref("nimbus.profilesdatastoreservice.enabled", true);
+
+
+
+
 
 #if defined(MOZ_ARTIFACT_BUILDS)
   pref("nimbus.telemetry.targetingContextEnabled", false);
