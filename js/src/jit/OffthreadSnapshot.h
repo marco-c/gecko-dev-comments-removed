@@ -17,7 +17,8 @@ template <typename T>
 class OffthreadGCPtr {
   
   
-  const T ptr_;
+  
+  T ptr_;
 
  public:
   explicit OffthreadGCPtr(const T& ptr) : ptr_(ptr) {
@@ -28,6 +29,14 @@ class OffthreadGCPtr {
 
   operator T() const { return ptr_; }
   T operator->() const { return ptr_; }
+
+  void init(T& ptr) {
+    MOZ_ASSERT(JS::GCPolicy<T>::isTenured(ptr),
+               "OffthreadSnapshot pointers must be tenured");
+    MOZ_ASSERT(ptr_ == JS::SafelyInitialized<T>::create(),
+               "init can only be called on empty OffthreadGCPtr");
+    ptr_ = ptr;
+  }
 
  private:
   OffthreadGCPtr() = delete;
