@@ -3839,6 +3839,18 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
             EventStateManager::SetActiveManager(
                 aVisitor.mPresContext->EventStateManager(), this);
           }
+
+          if (keyEvent->mKeyCode == NS_VK_ESCAPE && keyEvent->IsTrusted() &&
+              !keyEvent->DefaultPrevented() && !keyEvent->mIsComposing &&
+              mType == FormControlType::InputSearch &&
+              StaticPrefs::dom_forms_search_esc() && !IsDisabledOrReadOnly() &&
+              !IsValueEmpty()) {
+            
+            
+            
+            SetUserInput(EmptyString(), *NodePrincipal());
+            aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+          }
           break;
         }
 
