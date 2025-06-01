@@ -1,3 +1,5 @@
+
+
 let testModule = `(module
   (type $arrayMutI16 (array (mut i16)))
 

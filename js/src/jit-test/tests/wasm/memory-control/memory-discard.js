@@ -46,10 +46,12 @@ function testAll(func) {
     func(false, true, 'i32');
     func(true, false, 'i32');
     func(true, true, 'i32');
-    func(false, false, 'i64');
-    func(false, true, 'i64');
-    func(true, false, 'i64');
-    func(true, true, 'i64');
+    if (wasmMemory64Enabled()) {
+        func(false, false, 'i64');
+        func(false, true, 'i64');
+        func(true, false, 'i64');
+        func(true, true, 'i64');
+    }
 }
 
 testAll(function testHappyPath(discardViaJS, shared, memType) {
@@ -180,23 +182,25 @@ testAll(function testOOB3(discardViaJS, shared) {
     checkWholeAlphabet(exp, true);
 })();
 
-(function testOverflow() {
-    
-    
+if (wasmMemory64Enabled()) {
+    (function testOverflow() {
+        
+        
 
-    
-    const [exp, discard] = initModule(65536 * 3, `18_446_744_073_709_420_544`, false, false, 'i64');
+        
+        const [exp, discard] = initModule(65536 * 3, `18_446_744_073_709_420_544`, false, false, 'i64');
 
-    
-    exp.init();
-    checkWholeAlphabet(exp, true);
+        
+        exp.init();
+        checkWholeAlphabet(exp, true);
 
-    
-    assertErrorMessage(() => discard(), WebAssembly.RuntimeError, /out of bounds/);
+        
+        assertErrorMessage(() => discard(), WebAssembly.RuntimeError, /out of bounds/);
 
-    
-    checkWholeAlphabet(exp, true);
-})();
+        
+        checkWholeAlphabet(exp, true);
+    })();
+}
 
 testAll(function testMisalignedStart(discardViaJS, shared) {
     

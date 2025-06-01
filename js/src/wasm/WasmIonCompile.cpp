@@ -2692,7 +2692,7 @@ class FunctionCompiler {
 
       
       
-      uint32_t inlineeBodySize = codeTailMeta()->funcDefRange(funcIndex).size();
+      uint32_t inlineeBodySize = codeTailMeta()->funcDefRange(funcIndex).size;
       uint32_t rootFunctionBodySize = rootCompiler_.func().bytecodeSize();
       bool largeFunctionBackoff;
       bool smallEnough = InliningHeuristics::isSmallEnoughToInline(
@@ -6525,7 +6525,7 @@ bool FunctionCompiler::emitInlineCall(const FuncType& funcType,
 
   CompileInfo* compileInfo = rootCompiler().startInlineCall(
       this->funcIndex(), bytecodeOffset(), funcIndex, locals.length(),
-      funcRange.size(), callKind);
+      funcRange.size, callKind);
   if (!compileInfo) {
     return false;
   }
@@ -9418,8 +9418,14 @@ bool FunctionCompiler::emitBodyExprs() {
       case uint16_t(Op::Rethrow):
         CHECK(emitRethrow());
       case uint16_t(Op::ThrowRef):
+        if (!codeMeta().exnrefEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
         CHECK(emitThrowRef());
       case uint16_t(Op::TryTable):
+        if (!codeMeta().exnrefEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
         CHECK(emitTryTable());
       case uint16_t(Op::Br):
         CHECK(emitBr());
