@@ -61,8 +61,7 @@ add_task(async function testGetFromChildNewEnrollment() {
         enabled: true,
         testInt: 123,
       },
-    }),
-    "test"
+    })
   );
 
   
@@ -144,8 +143,7 @@ add_task(async function testGetFromChildExistingEnrollment() {
         enabled: false,
         testInt: 456,
       },
-    }),
-    "test"
+    })
   );
 
   

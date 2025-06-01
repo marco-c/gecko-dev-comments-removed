@@ -1,5 +1,9 @@
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const FEATURE_ID = "testfeature1";
 
 const TEST_PREF_BRANCH = "testfeature1.";

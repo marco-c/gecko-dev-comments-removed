@@ -50,8 +50,3 @@ user_pref("preferences.force-disable.check.once.policy", true);
 user_pref("app.update.disabledForTesting", true);
 
 user_pref("javascript.options.asyncstack_capture_debuggee_only", false);
-
-
-
-
-user_pref("nimbus.profilesdatastoreservice.enabled", false);
