@@ -207,6 +207,10 @@ interface nsICertStorage : nsISupports {
   void removeCertsByHashes(in Array<ACString> hashes,
                            in nsICertStorageCallback callback);
 
+
+  
+  void TestHelperAddCert(in ACString cert, in ACString subject, in short trust);
+
   
 
 
@@ -219,6 +223,23 @@ interface nsICertStorage : nsISupports {
 
   [must_use]
   Array<Array<octet> > findCertsBySubject(in Array<octet> subject);
+
+  
+
+
+
+
+  [must_use]
+  boolean hasAllCertsByHash(in Array<Array<octet> > hashes);
+
+  
+
+
+
+
+
+  [must_use]
+  Array<octet> findCertByHash(in Array<octet> cert_hash);
 
   
 
