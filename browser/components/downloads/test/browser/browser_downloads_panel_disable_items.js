@@ -169,6 +169,13 @@ add_task(async function test_downloads_panel_new_download_mouse() {
   let newTab = await newTabPromise;
 
   
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    focusableRule: false,
+    mustBeEnabled: false,
+  });
   let firstDownload = downloadsListBox.querySelector("richlistitem");
   EventUtils.synthesizeMouseAtCenter(firstDownload, {}, window);
   for (let i = 0; i < 5; i++) {
@@ -187,6 +194,8 @@ add_task(async function test_downloads_panel_new_download_mouse() {
     { attributeFilter: ["disabled"] },
     () => !downloadsListBox.hasAttribute("disabled")
   );
+  AccessibilityUtils.resetEnv();
+
   Assert.greater(
     Date.now(),
     clickTime + 750,
