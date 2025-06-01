@@ -655,12 +655,12 @@ void JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
     
     
     if (InCollectedNurseryRegion(root)) {
-      return; 
+      return;  
     }
 
     
     if (PtrIsWithinRange(chars, root->range<CharT>(nogc))) {
-      return; 
+      return;  
     }
 
     
