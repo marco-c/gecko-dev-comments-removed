@@ -3774,6 +3774,8 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
       ignoreMimeExtPairs[] = {
           {"video/3gpp"_ns, "mp4"_ns},   
           {"audio/x-wav"_ns, "mp2"_ns},  
+          {"audio/mp4"_ns, "mp4"_ns},    
+          {"video/mp4"_ns, "m4a"_ns},    
       };
 
   nsAutoCString fileExtLowerCase(aFileExt);
