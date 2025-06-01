@@ -117,7 +117,7 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
 
-  void SetPriority(int32_t aPriority) { mPriority = aPriority; }
+  void SetPriority(int32_t aPriority);
 
   
 
@@ -128,9 +128,7 @@ class Highlight final : public nsISupports, public nsWrapperCache {
   
 
 
-  void SetType(HighlightType aHighlightType) {
-    mHighlightType = aHighlightType;
-  }
+  void SetType(HighlightType aHighlightType);
 
   
 
@@ -171,6 +169,8 @@ class Highlight final : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT bool Delete(AbstractRange& aRange, ErrorResult& aRv);
 
  private:
+  void Repaint();
+
   RefPtr<nsPIDOMWindowInner> mWindow;
 
   

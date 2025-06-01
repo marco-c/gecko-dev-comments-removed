@@ -100,6 +100,31 @@ already_AddRefed<Selection> Highlight::CreateHighlightSelection(
   return selection.forget();
 }
 
+void Highlight::Repaint() {
+  for (const RefPtr<HighlightRegistry>& registry :
+       mHighlightRegistries.Keys()) {
+    
+    
+    registry->RepaintHighlightSelection(*this);
+  }
+}
+
+void Highlight::SetPriority(int32_t aPriority) {
+  if (mPriority == aPriority) {
+    return;
+  }
+  mPriority = aPriority;
+  Repaint();
+}
+
+void Highlight::SetType(HighlightType aHighlightType) {
+  if (mHighlightType == aHighlightType) {
+    return;
+  }
+  mHighlightType = aHighlightType;
+  Repaint();
+}
+
 void Highlight::Add(AbstractRange& aRange, ErrorResult& aRv) {
   
   
