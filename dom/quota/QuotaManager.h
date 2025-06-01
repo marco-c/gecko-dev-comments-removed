@@ -918,7 +918,10 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
-  void RegisterClientDirectoryLockHandle(const OriginMetadata& aOriginMetadata);
+
+  template <typename UpdateCallback>
+  void RegisterClientDirectoryLockHandle(const OriginMetadata& aOriginMetadata,
+                                         UpdateCallback&& aUpdateCallback);
 
   
 
@@ -931,8 +934,10 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
+
+  template <typename UpdateCallback>
   void UnregisterClientDirectoryLockHandle(
-      const OriginMetadata& aOriginMetadata);
+      const OriginMetadata& aOriginMetadata, UpdateCallback&& aUpdateCallback);
 
   
 

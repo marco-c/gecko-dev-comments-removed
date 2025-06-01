@@ -5635,7 +5635,15 @@ QuotaManager::OpenClientDirectoryImpl(
             auto clientDirectoryLockHandle =
                 ClientDirectoryLockHandle(std::move(clientDirectoryLock));
 
-            self->RegisterClientDirectoryLockHandle(aClientMetadata);
+            self->RegisterClientDirectoryLockHandle(
+                aClientMetadata, [&self = *self, &aClientMetadata]() {
+                  if (aClientMetadata.mPersistenceType !=
+                      PERSISTENCE_TYPE_PERSISTENT) {
+                    if (!IsShuttingDown()) {
+                      self.UpdateOriginAccessTime(aClientMetadata);
+                    }
+                  }
+                });
 
             clientDirectoryLockHandle.SetRegistered(true);
 
@@ -8095,8 +8103,9 @@ int64_t QuotaManager::GenerateDirectoryLockId() {
   return directorylockId;
 }
 
+template <typename UpdateCallback>
 void QuotaManager::RegisterClientDirectoryLockHandle(
-    const OriginMetadata& aOriginMetadata) {
+    const OriginMetadata& aOriginMetadata, UpdateCallback&& aUpdateCallback) {
   AssertIsOnOwningThread();
 
   auto backgroundThreadData = mBackgroundThreadAccessible.Access();
@@ -8112,19 +8121,13 @@ void QuotaManager::RegisterClientDirectoryLockHandle(
       (openClientDirectoryInfo.ClientDirectoryLockHandleCount() == 1);
 
   if (firstHandle) {
-    
-    
-    
-    if (aOriginMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
-      if (!IsShuttingDown()) {
-        UpdateOriginAccessTime(aOriginMetadata);
-      }
-    }
+    std::forward<UpdateCallback>(aUpdateCallback)();
   }
 }
 
+template <typename UpdateCallback>
 void QuotaManager::UnregisterClientDirectoryLockHandle(
-    const OriginMetadata& aOriginMetadata) {
+    const OriginMetadata& aOriginMetadata, UpdateCallback&& aUpdateCallback) {
   AssertIsOnOwningThread();
 
   auto backgroundThreadData = mBackgroundThreadAccessible.Access();
@@ -8149,13 +8152,7 @@ void QuotaManager::UnregisterClientDirectoryLockHandle(
       openClientDirectoryInfo.ClientDirectoryLockHandleCount() == 0;
 
   if (lastHandle) {
-    
-    
-    if (aOriginMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
-      if (!IsShuttingDown()) {
-        UpdateOriginAccessTime(aOriginMetadata);
-      }
-    }
+    std::forward<UpdateCallback>(aUpdateCallback)();
 
     entry.Remove();
   }
@@ -8170,7 +8167,16 @@ void QuotaManager::ClientDirectoryLockHandleDestroy(
     return;
   }
 
-  UnregisterClientDirectoryLockHandle(aHandle->OriginMetadata());
+  const OriginMetadata originMetadata = aHandle->OriginMetadata();
+
+  UnregisterClientDirectoryLockHandle(
+      originMetadata, [&self = *this, &originMetadata]() {
+        if (originMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
+          if (!QuotaManager::IsShuttingDown()) {
+            self.UpdateOriginAccessTime(originMetadata);
+          }
+        }
+      });
 
   aHandle.SetRegistered(false);
 }
