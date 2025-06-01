@@ -3908,6 +3908,7 @@ nsresult nsDocShell::ReloadNavigable(
     nsPIDOMWindowInner* windowInner = windowOuter->GetCurrentInnerWindow();
     MOZ_DIAGNOSTIC_ASSERT(windowInner);
     RefPtr navigation = windowInner->Navigation();
+    MOZ_DIAGNOSTIC_ASSERT(navigation);
 
     
     
@@ -3927,8 +3928,7 @@ nsresult nsDocShell::ReloadNavigable(
     
     
     RefPtr destinationURL = mActiveEntry ? mActiveEntry->GetURI() : nullptr;
-    if (navigation &&
-        !navigation->FirePushReplaceReloadNavigateEvent(
+    if (!navigation->FirePushReplaceReloadNavigateEvent(
             aCx, NavigationType::Reload, destinationURL,
              false, Some(aUserInvolvement),
              nullptr,  nullptr,

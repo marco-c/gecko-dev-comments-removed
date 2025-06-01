@@ -62,44 +62,6 @@ struct NavigationAPIMethodTracker final : public nsISupports {
     mozilla::HoldJSObjects(this);
   }
 
-  
-  void CleanUp() { Navigation::CleanUp(this); }
-
-  
-  void NotifyAboutCommittedToEntry(NavigationHistoryEntry* aNHE) {
-    
-    mCommittedToEntry = aNHE;
-    if (mSerializedState) {
-      
-      aNHE->SetState(
-          static_cast<nsStructuredCloneContainer*>(mSerializedState.get()));
-      
-      
-      mSerializedState = nullptr;
-    }
-    mCommittedPromise->MaybeResolve(aNHE);
-  }
-
-  
-  void ResolveFinishedPromise() {
-    
-    MOZ_DIAGNOSTIC_ASSERT(mCommittedToEntry);
-    
-    mFinishedPromise->MaybeResolve(mCommittedToEntry);
-    
-    CleanUp();
-  }
-
-  
-  void RejectFinishedPromise(JS::Handle<JS::Value> aException) {
-    
-    mCommittedPromise->MaybeReject(aException);
-    
-    mFinishedPromise->MaybeReject(aException);
-    
-    CleanUp();
-  }
-
   RefPtr<Navigation> mNavigationObject;
   Maybe<nsID> mKey;
   JS::Heap<JS::Value> mInfo;
@@ -297,10 +259,6 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   }
 
   
-  if (mOngoingAPIMethodTracker) {
-    RefPtr<NavigationHistoryEntry> currentEntry = GetCurrentEntry();
-    mOngoingAPIMethodTracker->NotifyAboutCommittedToEntry(currentEntry);
-  }
 
   
   {
@@ -757,14 +715,10 @@ bool Navigation::InnerFireNavigateEvent(
                         aNavigationType != NavigationType::Traverse);
 
   
-  bool traverseCanBeCanceled =
+  init.mCancelable =
       navigable->IsTop() && aDestination->SameDocument() &&
       (aUserInvolvement != UserNavigationInvolvement::BrowserUI ||
        HasHistoryActionActivation(ToMaybeRef(GetOwnerWindow())));
-
-  
-  init.mCancelable =
-      aNavigationType != NavigationType::Traverse || traverseCanBeCanceled;
 
   
   init.mNavigationType = aNavigationType;
@@ -776,9 +730,7 @@ bool Navigation::InnerFireNavigateEvent(
   init.mDownloadRequest = aDownloadRequestFilename;
 
   
-  if (apiMethodTracker) {
-    init.mInfo = apiMethodTracker->mInfo;
-  }
+  
 
   
   init.mHasUAVisualTransition =
@@ -952,7 +904,7 @@ bool Navigation::InnerFireNavigateEvent(
 
               
               if (apiMethodTracker) {
-                apiMethodTracker->ResolveFinishedPromise();
+                apiMethodTracker->mFinishedPromise->MaybeResolveWithUndefined();
               }
 
               
@@ -1015,7 +967,7 @@ bool Navigation::InnerFireNavigateEvent(
 
   
   if (apiMethodTracker) {
-    apiMethodTracker->CleanUp();
+    CleanUp(apiMethodTracker);
   }
 
   
@@ -1123,7 +1075,7 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
 
   
   if (mOngoingAPIMethodTracker) {
-    mOngoingAPIMethodTracker->RejectFinishedPromise(error);
+    mOngoingAPIMethodTracker->mFinishedPromise->MaybeReject(error);
   }
 
   
