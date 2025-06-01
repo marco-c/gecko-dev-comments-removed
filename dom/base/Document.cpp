@@ -4272,13 +4272,6 @@ void Document::SetDocumentURI(nsIURI* aURI) {
   }
 
   
-  mBaseDomain.Truncate();
-  ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
-  if (thirdPartyUtil) {
-    Unused << thirdPartyUtil->GetBaseDomain(mDocumentURI, mBaseDomain);
-  }
-
-  
   if (WindowGlobalChild* wgc = GetWindowGlobalChild()) {
     wgc->SetDocumentURI(mDocumentURI);
   }
