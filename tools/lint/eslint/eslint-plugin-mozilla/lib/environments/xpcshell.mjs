@@ -1,17 +1,17 @@
-
-
-
-
-
-
-
+/**
+ * @fileoverview Defines the environment for xpcshell test files.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 "use strict";
 
 var { getScriptGlobals } = require("./utils");
 
 const extraGlobals = [
-  
+  // Defined in XPCShellImpl.cpp
   "print",
   "readline",
   "load",
@@ -28,7 +28,7 @@ const extraGlobals = [
   "simulateNoScriptActivity",
   "registerXPCTestComponents",
 
-  
+  // Assert.sys.mjs globals.
   "setReporter",
   "report",
   "ok",
@@ -44,7 +44,7 @@ const extraGlobals = [
   "greaterOrEqual",
   "less",
   "lessOrEqual",
-  
+  // TestingFunctions.cpp globals
   "allocationMarker",
   "byteSize",
   "saveStack",

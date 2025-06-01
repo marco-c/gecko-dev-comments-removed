@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
+/**
+ * @fileoverview Defines the environment for privileges JS files.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 "use strict";
 
 module.exports = {
   globals: {
-    
+    // WebAssembly is available everywhere but is not a webIDL definition.
     WebAssembly: false,
-    
-    
-    
+    // This list of items is currently obtained manually from the list of
+    // mozilla::dom::constructor::id::ID enumerations in an object directory
+    // generated dom/bindings/RegisterBindings.cpp
     APZHitResultFlags: false,
     AbortController: false,
     AbortSignal: false,
@@ -807,8 +807,8 @@ module.exports = {
     XULScrollElement: false,
     XULTextElement: false,
     console: false,
-    
-    
+    // These are hard-coded and available in privileged scopes.
+    // See SystemGlobal::Resolve.
     fetch: false,
     crypto: false,
     indexedDB: false,

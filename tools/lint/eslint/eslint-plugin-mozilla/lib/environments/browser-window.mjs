@@ -1,27 +1,27 @@
-
-
-
-
-
-
-
-
+/**
+ * @fileoverview Defines the environment when in the browser.xhtml window.
+ *               Imports many globals from various files.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 "use strict";
 
-
-
-
+// -----------------------------------------------------------------------------
+// Rule Definition
+// -----------------------------------------------------------------------------
 
 var fs = require("fs");
 var helpers = require("../helpers");
 var { getScriptGlobals } = require("./utils");
 
+// When updating EXTRA_SCRIPTS or MAPPINGS, be sure to also update the
+// 'support-files' config in `tools/lint/eslint.yml`.
 
-
-
-
-
+// These are scripts not loaded from browser-main.js or global-scripts.js
+// but via other includes.
 const EXTRA_SCRIPTS = [
   "browser/components/downloads/content/downloads.js",
   "browser/components/downloads/content/indicator.js",
@@ -30,20 +30,20 @@ const EXTRA_SCRIPTS = [
 ];
 
 const extraDefinitions = [
-  
-  
-  
+  // Via Components.utils, defineModuleGetter, defineLazyModuleGetters or
+  // defineLazyScriptGetter (and map to
+  // single) variable.
   { name: "XPCOMUtils", writable: false },
   { name: "Task", writable: false },
   { name: "windowGlobalChild", writable: false },
-  
-  
-  
-  
+  // structuredClone is a new global that would be defined for the `browser`
+  // environment in ESLint, but only Firefox has implemented it currently and so
+  // it isn't in ESLint's globals yet.
+  // https://developer.mozilla.org/docs/Web/API/structuredClone
   { name: "structuredClone", writable: false },
 ];
 
-
+// Some files in global-scripts.inc need mapping to specific locations.
 const MAPPINGS = {
   "browserPlacesViews.js":
     "browser/components/places/content/browserPlacesViews.js",
@@ -65,7 +65,7 @@ function getGlobalScriptIncludes(scriptPath) {
   try {
     fileData = fs.readFileSync(scriptPath, { encoding: "utf8" });
   } catch (ex) {
-    
+    // The file isn't present, so this isn't an m-c repository.
     return null;
   }
 

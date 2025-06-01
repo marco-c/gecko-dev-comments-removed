@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/**
+ * @fileoverview A collection of helper functions.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 "use strict";
 
 const parser = require("espree");
@@ -20,23 +20,23 @@ var directoryManifests = new Map();
 let xpidlData;
 
 module.exports = {
-  
-
-
-
-
-
-
+  /**
+   * The list of file extensions that we support when linting. This should be
+   * kept in sync with the list in tools/lint/eslint.yml.
+   *
+   * TypeScript (ts) is not listed here, as we currently only format that with
+   * Prettier.
+   */
   allFileExtensions: ["mjs", "js", "json", "jsx", "html", "sjs", "xhtml"],
 
-  
-
-
-
-
-
+  /**
+   * Can be used to change a group of rules or globals, so that all the items
+   * are turned off.
+   *
+   * @param {{[key: string]: string}} items
+   */
   turnOff(items) {
-    
+    /** @type {{[key: string]: string}} */
     let result = {};
 
     for (let key of Object.keys(items)) {
@@ -49,13 +49,13 @@ module.exports = {
     return require("./services.json");
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Obtains xpidl data from the object directory specified in the
+   * environment.
+   *
+   * @returns {Map<string, object>}
+   *   A map of interface names to the interface details.
+   */
   get xpidlData() {
     let xpidlDir;
 
@@ -81,7 +81,7 @@ module.exports = {
       return xpidlData;
     }
     let files = fs.readdirSync(`${xpidlDir}`);
-    
+    // `Makefile` is an expected file in the directory.
     if (files.length <= 1) {
       throw new Error("Missing xpidl data files, maybe you need to build?");
     }
@@ -98,35 +98,35 @@ module.exports = {
     return xpidlData;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the abstract syntax tree (AST) of the JavaScript source code contained
+   * in sourceText. This matches the results for an eslint parser, see
+   * https://eslint.org/docs/developer-guide/working-with-custom-parsers.
+   *
+   * @param  {String} sourceText
+   *         Text containing valid JavaScript.
+   * @param  {Object} astOptions
+   *         Extra configuration to pass to the espree parser, these will override
+   *         the configuration from getPermissiveConfig().
+   * @param  {Object} configOptions
+   *         Extra options for getPermissiveConfig().
+   *
+   * @return {Object}
+   *         Returns an object containing `ast`, `scopeManager` and
+   *         `visitorKeys`
+   */
   parseCode(sourceText, astOptions = {}, configOptions = {}) {
-    
-    
+    // Use a permissive config file to allow parsing of anything that Espree
+    // can parse.
     let config = { ...this.getPermissiveConfig(configOptions), ...astOptions };
 
     let parseResult = parser.parse(sourceText, config);
 
     let visitorKeys = parseResult.visitorKeys || defaultVisitorKeys;
 
-    
-    
-    
+    // eslint-scope doesn't support "latest" as a version, so we pass a really
+    // big number to ensure this always reads as the latest.
+    // xref https://github.com/eslint/eslint-scope/issues/74
     config.ecmaVersion =
       config.ecmaVersion == "latest" ? 1e8 : config.ecmaVersion;
 
@@ -137,15 +137,15 @@ module.exports = {
     };
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * A simplistic conversion of some AST nodes to a standard string form.
+   *
+   * @param  {Object} node
+   *         The AST node to convert.
+   *
+   * @return {String}
+   *         The JS source for the node.
+   */
   getASTSource(node, context) {
     switch (node.type) {
       case "MemberExpression":
@@ -198,19 +198,19 @@ module.exports = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * This walks an AST in a manner similar to ESLint passing node events to the
+   * listener. The listener is expected to be a simple function
+   * which accepts node type, node and parents arguments.
+   *
+   * @param  {Object} ast
+   *         The AST to walk.
+   * @param  {Array} visitorKeys
+   *         The visitor keys to use for the AST.
+   * @param  {Function} listener
+   *         A callback function to call for the nodes. Passed three arguments,
+   *         event type, node and an array of parent nodes for the current node.
+   */
   walkAST(ast, visitorKeys, listener) {
     let parents = [];
 
@@ -235,19 +235,19 @@ module.exports = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add a variable to the current scope.
+   * HACK: This relies on eslint internals so it could break at any time.
+   *
+   * @param {String} name
+   *        The variable name to add to the scope.
+   * @param {ASTScope} scope
+   *        The scope to add to.
+   * @param {boolean} writable
+   *        Whether the global can be overwritten.
+   * @param {Object} [node]
+   *        The AST node that defined the globals.
+   */
   addVarToScope(name, scope, writable, node) {
     scope.__defineGeneric(name, scope.set, scope.variables, null, null);
 
@@ -263,52 +263,52 @@ module.exports = {
       variable.identifiers.push(node);
     }
 
-    
+    // Walk to the global scope which holds all undeclared variables.
     while (scope.type != "global") {
       scope = scope.upper;
     }
 
-    
+    // "through" contains all references with no found definition.
     scope.through = scope.through.filter(function (reference) {
       if (reference.identifier.name != name) {
         return true;
       }
 
-      
-      
+      // Links the variable and the reference.
+      // And this reference is removed from `Scope#through`.
       reference.resolved = variable;
       variable.references.push(reference);
       return false;
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds a set of globals to a scope.
+   *
+   * @param {Array} globalVars
+   *        An array of global variable names.
+   * @param {ASTScope} scope
+   *        The scope.
+   * @param {Object} [node]
+   *        The AST node that defined the globals.
+   */
   addGlobals(globalVars, scope, node) {
     globalVars.forEach(v =>
       this.addVarToScope(v.name, scope, v.writable, v.explicit && node)
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * To allow espree to parse almost any JavaScript we need as many features as
+   * possible turned on. This method returns that config.
+   *
+   * @param {Object} options
+   *        {
+   *          useBabel: {boolean} whether to set babelOptions.
+   *        }
+   * @return {Object}
+   *         Espree compatible permissive config.
+   */
   getPermissiveConfig() {
     return {
       range: true,
@@ -320,25 +320,25 @@ module.exports = {
     };
   },
 
-  
-
-
-
-
-
+  /**
+   * Returns the ECMA version as the latest. It is generally assumed that we will
+   * always use the latest version in the configuration.
+   *
+   * @return {string} The ECMA version to use.
+   */
   getECMAVersion() {
     return "latest";
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Check whether it's inside top-level script.
+   *
+   * @param {Array} ancestors
+   *        The parents of the current node.
+   *
+   * @return {Boolean}
+   *         True or false
+   */
   getIsTopLevelScript(ancestors) {
     for (let parent of ancestors) {
       switch (parent.type) {
@@ -368,15 +368,15 @@ module.exports = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Check whether `this` expression points the global this.
+   *
+   * @param {Array} ancestors
+   *        The parents of the current node.
+   *
+   * @return {Boolean}
+   *         True or false
+   */
   getIsGlobalThis(ancestors) {
     for (let parent of ancestors) {
       switch (parent.type) {
@@ -390,19 +390,19 @@ module.exports = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Check whether the node is evaluated at top-level script unconditionally.
+   *
+   * @param {Array} ancestors
+   *        The parents of the current node.
+   *
+   * @return {Boolean}
+   *         True or false
+   */
   getIsTopLevelAndUnconditionallyExecuted(ancestors) {
     for (let parent of ancestors) {
       switch (parent.type) {
-        
+        // Control flow
         case "IfStatement":
         case "SwitchStatement":
         case "TryStatement":
@@ -413,14 +413,14 @@ module.exports = {
         case "ForOfStatement":
           return false;
 
-        
+        // Function
         case "FunctionDeclaration":
         case "FunctionExpression":
         case "ArrowFunctionExpression":
         case "ClassBody":
           return false;
 
-        
+        // Branch
         case "LogicalExpression":
         case "ConditionalExpression":
         case "ChainExpression":
@@ -428,7 +428,7 @@ module.exports = {
 
         case "AssignmentExpression":
           switch (parent.operator) {
-            
+            // Branch
             case "||=":
             case "&&=":
             case "??=":
@@ -436,7 +436,7 @@ module.exports = {
           }
           break;
 
-        
+        // Implicit branch (default value)
         case "ObjectPattern":
         case "ArrayPattern":
           return false;
@@ -445,32 +445,32 @@ module.exports = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Check whether we might be in a test head file.
+   *
+   * @param  {RuleContext} scope
+   *         You should pass this from within a rule
+   *         e.g. helpers.getIsHeadFile(context)
+   *
+   * @return {Boolean}
+   *         True or false
+   */
   getIsHeadFile(scope) {
     var pathAndFilename = this.cleanUpPath(scope.getFilename());
 
     return /.*[\\/]head(_.+)?\.js$/.test(pathAndFilename);
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the head files for a potential test file
+   *
+   * @param  {RuleContext} scope
+   *         You should pass this from within a rule
+   *         e.g. helpers.getIsHeadFile(context)
+   *
+   * @return {String[]}
+   *         Paths to head files to load for the test
+   */
   getTestHeadFiles(scope) {
     if (!this.getIsTest(scope)) {
       return [];
@@ -490,15 +490,15 @@ module.exports = {
     return names;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Gets all the test manifest data for a directory
+   *
+   * @param  {String} dir
+   *         The directory
+   *
+   * @return {Array}
+   *         An array of objects with file and manifest properties
+   */
   getManifestsForDirectory(dir) {
     if (directoryManifests.has(dir)) {
       return directoryManifests.get(dir);
@@ -509,7 +509,7 @@ module.exports = {
     try {
       names = fs.readdirSync(dir);
     } catch (err) {
-      
+      // Ignore directory not found, it might be faked by a test
       if (err.code !== "ENOENT") {
         throw err;
       }
@@ -552,16 +552,16 @@ module.exports = {
     return manifests;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the manifest file a test is listed in
+   *
+   * @param  {RuleContext} scope
+   *         You should pass this from within a rule
+   *         e.g. helpers.getIsHeadFile(context)
+   *
+   * @return {String}
+   *         The path to the test manifest file
+   */
   getTestManifest(scope) {
     let filepath = this.cleanUpPath(scope.getFilename());
 
@@ -577,18 +577,18 @@ module.exports = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Check whether we are in a test of some kind.
+   *
+   * @param  {RuleContext} scope
+   *         You should pass this from within a rule
+   *         e.g. helpers.getIsTest(context)
+   *
+   * @return {Boolean}
+   *         True or false
+   */
   getIsTest(scope) {
-    
+    // Regardless of the manifest name being in a manifest means we're a test.
     let manifest = this.getTestManifest(scope);
     if (manifest) {
       return true;
@@ -597,25 +597,25 @@ module.exports = {
     return !!this.getTestType(scope);
   },
 
-  
-
-
+  /*
+   * Check if this is an .sjs file.
+   */
   getIsSjs(scope) {
     let filepath = this.cleanUpPath(scope.getFilename());
 
     return path.extname(filepath) == ".sjs";
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the type of test or null if this isn't a test.
+   *
+   * @param  {RuleContext} scope
+   *         You should pass this from within a rule
+   *         e.g. helpers.getIsHeadFile(context)
+   *
+   * @return {String or null}
+   *         Test type: xpcshell, browser, chrome, mochitest
+   */
   getTestType(scope) {
     let testTypes = ["browser", "xpcshell", "chrome", "mochitest", "a11y"];
     let manifest = this.getTestManifest(scope);
@@ -643,11 +643,11 @@ module.exports = {
         }
       }
 
-      
+      // It likely is a test, we're just not sure what kind.
       return "unknown";
     }
 
-    
+    // Likely not a test
     return null;
   },
 
@@ -657,14 +657,14 @@ module.exports = {
     return filename.includes("worker");
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Gets the root directory of the repository by walking up directories from
+   * this file until the top-level mozilla-central package.json file is found.
+   * If this fails, the same procedure will be attempted from the current
+   * working dir.
+   *
+   * @return {String} The absolute path of the repository directory
+   */
   get rootDir() {
     if (!gRootDir) {
       function searchUpForPackage(dirName) {
@@ -677,7 +677,7 @@ module.exports = {
               return dirName;
             }
           }
-          
+          // Move up a level
           dirName = parsed.dir;
           parsed = path.parse(dirName);
         }
@@ -689,9 +689,9 @@ module.exports = {
         possibleRoot = searchUpForPackage(path.resolve());
       }
       if (!possibleRoot) {
-        
-        
-        
+        // We've couldn't find a root from the module or CWD, so lets just go
+        // for the CWD. We really don't want to throw if possible, as that
+        // tends to give confusing results when used with ESLint.
         possibleRoot = process.cwd();
       }
 
@@ -701,42 +701,42 @@ module.exports = {
     return gRootDir;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * ESLint may be executed from various places: from mach, at the root of the
+   * repository, or from a directory in the repository when, for instance,
+   * executed by a text editor's plugin.
+   * The value returned by context.getFileName() varies because of this.
+   * This helper function makes sure to return an absolute file path for the
+   * current context, by looking at process.cwd().
+   * @param {Context} context
+   * @return {String} The absolute path
+   */
   getAbsoluteFilePath(context) {
     var fileName = this.cleanUpPath(context.getFilename());
     var cwd = process.cwd();
 
     if (path.isAbsolute(fileName)) {
-      
-      
-      
+      // Case 2: executed from the repo's root with mach:
+      //   fileName: /path/to/mozilla/repo/a/b/c/d.js
+      //   cwd: /path/to/mozilla/repo
       return fileName;
     } else if (path.basename(fileName) == fileName) {
-      
-      
+      // Case 1b: executed from a nested directory, fileName is the base name
+      // without any path info (happens in Atom with linter-eslint)
       return path.join(cwd, fileName);
     }
-    
-    
-    
+    // Case 1: executed form in a nested directory, e.g. from a text editor:
+    //   fileName: a/b/c/d.js
+    //   cwd: /path/to/mozilla/repo/a/b/c
     var dirName = path.dirname(fileName);
     return cwd.slice(0, cwd.length - dirName.length) + fileName;
   },
 
-  
-
-
-
-
+  /**
+   * When ESLint is run from SublimeText, paths retrieved from
+   * context.getFileName contain leading and trailing double-quote characters.
+   * These characters need to be removed.
+   */
   cleanUpPath(pathName) {
     return pathName.replace(/^"/, "").replace(/"$/, "");
   },
@@ -778,9 +778,9 @@ module.exports = {
     return JSON.parse(output);
   },
 
-  
-
-
+  /**
+   * Extract the path of require (and require-like) helpers used in DevTools.
+   */
   getDevToolsRequirePath(node) {
     if (
       node.callee.type == "Identifier" &&
@@ -801,15 +801,15 @@ module.exports = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns property name from MemberExpression. Also accepts Identifier for consistency.
+   * @param {import("estree").MemberExpression | import("estree").Identifier} node
+   * @returns {string | null}
+   *
+   * @example `foo` gives "foo"
+   * @example `foo.bar` gives "bar"
+   * @example `foo.bar.baz` gives "baz"
+   */
   maybeGetMemberPropertyName(node) {
     if (node.type === "MemberExpression") {
       return node.property.name;
