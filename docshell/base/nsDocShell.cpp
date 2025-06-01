@@ -489,23 +489,13 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
     return nullptr;
   }
 
-  uint32_t notifyMask =
-      nsIWebProgress::NOTIFY_STATE_ALL | nsIWebProgress::NOTIFY_LOCATION |
-      nsIWebProgress::NOTIFY_SECURITY | nsIWebProgress::NOTIFY_STATUS;
-
   
   
   
   
-  if (aBrowsingContext->IsTop()) {
-    notifyMask |= nsIWebProgress::NOTIFY_PROGRESS;
-  }
-
-  
-  
-  
-  
-  rv = ds->AddProgressListener(ds, notifyMask);
+  rv = ds->AddProgressListener(ds, nsIWebProgress::NOTIFY_STATE_DOCUMENT |
+                                       nsIWebProgress::NOTIFY_STATE_NETWORK |
+                                       nsIWebProgress::NOTIFY_LOCATION);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }
@@ -543,6 +533,10 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
 
   
   ds->SetLoadGroupDefaultLoadFlags(aBrowsingContext->GetDefaultLoadFlags());
+
+  if (XRE_IsParentProcess()) {
+    aBrowsingContext->Canonical()->MaybeAddAsProgressListener(ds);
+  }
 
   return ds.forget();
 }
@@ -5648,42 +5642,12 @@ nsDocShell::OnProgressChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
                              int32_t aCurSelfProgress, int32_t aMaxSelfProgress,
                              int32_t aCurTotalProgress,
                              int32_t aMaxTotalProgress) {
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(
-      mBrowsingContext->IsTop(),
-      "notification excluded in AddProgressListener(...) for non-toplevel BCs");
-
-  if (nsCOMPtr<nsIWebProgressListener> listener = BCWebProgressListener()) {
-    listener->OnProgressChange(aProgress, aRequest, aCurSelfProgress,
-                               aMaxSelfProgress, aCurTotalProgress,
-                               aMaxTotalProgress);
-  }
-
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
                           uint32_t aStateFlags, nsresult aStatus) {
-  
-  
-  
-  
-  
-  
-  if (aProgress == this) {
-    if (nsCOMPtr<nsIWebProgressListener> listener = BCWebProgressListener()) {
-      listener->OnStateChange(aProgress, aRequest, aStateFlags, aStatus);
-    }
-  }
-
   if ((~aStateFlags & (STATE_START | STATE_IS_NETWORK)) == 0) {
     
     nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
@@ -5745,20 +5709,6 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
 NS_IMETHODIMP
 nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
                              nsIURI* aURI, uint32_t aFlags) {
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aProgress == this) {
-    if (nsCOMPtr<nsIWebProgressListener> listener = BCWebProgressListener()) {
-      listener->OnLocationChange(aProgress, aRequest, aURI, aFlags);
-    }
-  }
-
   
   
   
@@ -5843,36 +5793,14 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
 NS_IMETHODIMP
 nsDocShell::OnStatusChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
                            nsresult aStatus, const char16_t* aMessage) {
-  
-  
-  
-  
-  
-  
-  if (aWebProgress == this) {
-    if (nsCOMPtr<nsIWebProgressListener> listener = BCWebProgressListener()) {
-      listener->OnStatusChange(aWebProgress, aRequest, aStatus, aMessage);
-    }
-  }
-
+  MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShell::OnSecurityChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
                              uint32_t aState) {
-  
-  
-  
-  
-  
-  
-  if (aWebProgress == this) {
-    if (nsCOMPtr<nsIWebProgressListener> listener = BCWebProgressListener()) {
-      listener->OnSecurityChange(aWebProgress, aRequest, aState);
-    }
-  }
-
+  MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
 }
 
@@ -5881,14 +5809,6 @@ nsDocShell::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
                                    nsIRequest* aRequest, uint32_t aEvent) {
   MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
-}
-
-already_AddRefed<nsIWebProgressListener> nsDocShell::BCWebProgressListener() {
-  if (XRE_IsParentProcess()) {
-    return do_AddRef(mBrowsingContext->Canonical()->GetWebProgress());
-  }
-  nsCOMPtr<nsIWebProgressListener> bc = do_QueryReferent(mBrowserChild);
-  return bc.forget();
 }
 
 already_AddRefed<nsIURIFixupInfo> nsDocShell::KeywordToURI(

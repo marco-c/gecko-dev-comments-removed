@@ -302,6 +302,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   void UpdateSecurityState();
 
+  void MaybeAddAsProgressListener(nsIWebProgress* aWebProgress);
+
   
   
   
