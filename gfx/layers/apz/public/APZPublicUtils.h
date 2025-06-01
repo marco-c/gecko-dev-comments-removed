@@ -59,8 +59,7 @@ const ScreenMargin CalculatePendingDisplayPort(
 
 
 
-
-gfx::IntSize GetDisplayportAlignmentMultiplier(const ScreenSize& aBaseSize);
+gfx::Size GetDisplayportAlignmentMultiplier(const ScreenSize& aBaseSize);
 
 
 
