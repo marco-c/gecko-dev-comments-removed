@@ -361,21 +361,13 @@ class AsyncPanZoomController {
   
 
 
-  static gfx::Size GetDisplayportAlignmentMultiplier(
+  static gfx::IntSize GetDisplayportAlignmentMultiplier(
       const ScreenSize& aBaseSize);
 
   enum class ZoomInProgress {
     No,
     Yes,
   };
-
-  
-
-
-  static CSSSize CalculateDisplayPortSize(
-      const CSSSize& aCompositionSize, const CSSPoint& aVelocity,
-      AsyncPanZoomController::ZoomInProgress aZoomInProgress,
-      const CSSToScreenScale2D& aDpPerCSS);
 
   
 
