@@ -1602,26 +1602,14 @@ void LocalAccessible::ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
   }
 }
 
-uint64_t LocalAccessible::State() {
+uint64_t LocalAccessible::ExplicitState() const {
   if (IsDefunct()) return states::DEFUNCT;
 
   uint64_t state = NativeState();
   
   ApplyARIAState(&state);
 
-  const uint32_t kExpandCollapseStates = states::COLLAPSED | states::EXPANDED;
-  if ((state & kExpandCollapseStates) == kExpandCollapseStates) {
-    
-    
-    
-    
-    
-    state &= ~states::COLLAPSED;
-  }
-
   if (!(state & states::UNAVAILABLE)) {
-    state |= states::ENABLED | states::SENSITIVE;
-
     
     
     
@@ -1630,9 +1618,11 @@ uint64_t LocalAccessible::State() {
     if (widget && widget->CurrentItem() == this) state |= states::ACTIVE;
   }
 
-  if ((state & states::COLLAPSED) || (state & states::EXPANDED)) {
-    state |= states::EXPANDABLE;
-  }
+  return state;
+}
+
+uint64_t LocalAccessible::State() {
+  uint64_t state = ExplicitState();
 
   ApplyImplicitState(state);
   return state;
@@ -1675,18 +1665,7 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
     }
   }
 
-  if (*aState & states::FOCUSABLE) {
-    
-    const LocalAccessible* ancestor = this;
-    while ((ancestor = ancestor->LocalParent()) && !ancestor->IsDoc()) {
-      dom::Element* el = ancestor->Elm();
-      if (el && nsAccUtils::ARIAAttrValueIs(el, nsGkAtoms::aria_disabled,
-                                            nsGkAtoms::_true, eCaseMatters)) {
-        *aState |= states::UNAVAILABLE;
-        break;
-      }
-    }
-  } else {
+  if (!(*aState & states::FOCUSABLE)) {
     
     
     
@@ -2090,10 +2069,10 @@ void LocalAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
       return;
 
     case eOpenCloseAction:
-      if (State() & states::COLLAPSED) {
-        aName.AssignLiteral("open");
-      } else {
+      if (State() & states::EXPANDED) {
         aName.AssignLiteral("close");
+      } else {
+        aName.AssignLiteral("open");
       }
       return;
 
@@ -2110,10 +2089,10 @@ void LocalAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
       return;
 
     case eExpandAction:
-      if (State() & states::COLLAPSED) {
-        aName.AssignLiteral("expand");
-      } else {
+      if (State() & states::EXPANDED) {
         aName.AssignLiteral("collapse");
+      } else {
+        aName.AssignLiteral("expand");
       }
       return;
   }
@@ -3938,7 +3917,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (IsInitialPush(CacheDomain::State)) {
       
       
-      uint64_t state = State();
+      uint64_t state = ExplicitState();
       
       state &= ~kRemoteCalculatedStates;
       fields->SetAttribute(CacheKey::State, state);
