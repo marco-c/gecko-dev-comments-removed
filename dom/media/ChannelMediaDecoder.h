@@ -99,6 +99,32 @@ class ChannelMediaDecoder
   void Resume() override;
 
  private:
+  struct MediaStatistics {
+    
+    double mPlaybackRate;
+    
+    
+    double mDownloadRate;
+    
+    int64_t mTotalBytes;
+    
+    
+    int64_t mDownloadPosition;
+    
+    int64_t mPlaybackPosition;
+    
+    
+    
+    bool mDownloadRateReliable;
+    
+    
+    
+    bool mPlaybackRateReliable;
+
+    bool CanPlayThrough() const;
+    nsCString ToString() const;
+  };
+
   void DownloadProgressed();
 
   
