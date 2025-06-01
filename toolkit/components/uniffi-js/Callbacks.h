@@ -9,6 +9,7 @@
 
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/UniFFIScaffolding.h"
 #include "mozilla/uniffi/FfiValue.h"
 #include "mozilla/uniffi/Rust.h"
@@ -47,26 +48,23 @@ void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError);
 
 
 
-class UniffiCallbackMethodHandlerBase {
- protected:
-  
-  const char* mUniffiInterfaceName;
-  FfiValueInt<uint64_t> mUniffiHandle;
 
+
+
+
+class AsyncCallbackMethodHandlerBase {
+ public:
+  AsyncCallbackMethodHandlerBase(const char* aUniffiMethodName,
+                                 uint64_t aUniffiHandle)
+      : mUniffiMethodName(aUniffiMethodName), mUniffiHandle(aUniffiHandle) {}
+
+  
+  
   
   MOZ_CAN_RUN_SCRIPT
-  virtual void MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler,
-                        ErrorResult& aError) = 0;
-
- public:
-  UniffiCallbackMethodHandlerBase(const char* aInterfaceName,
-                                  uint64_t aUniffiHandle)
-      : mUniffiInterfaceName(aInterfaceName),
-        mUniffiHandle(FfiValueInt<uint64_t>::FromRust(aUniffiHandle)) {}
-
-  virtual ~UniffiCallbackMethodHandlerBase() = default;
-
-  
+  virtual already_AddRefed<dom::Promise> MakeCall(
+      JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler,
+      ErrorResult& aError) = 0;
 
   
   
@@ -76,19 +74,63 @@ class UniffiCallbackMethodHandlerBase {
   
   
   
-  static void FireAndForget(
-      UniquePtr<UniffiCallbackMethodHandlerBase> aHandler,
+  virtual void HandleReturn(
+      const RootedDictionary<UniFFIScaffoldingCallResult>& aReturnValue,
+      ErrorResult& aError) {}
+
+  virtual ~AsyncCallbackMethodHandlerBase() = default;
+
+  
+
+  
+  static void ScheduleAsyncCall(
+      UniquePtr<AsyncCallbackMethodHandlerBase> aHandler,
       StaticRefPtr<dom::UniFFICallbackHandler>* aJsHandler);
+
+ protected:
+  
+  const char* mUniffiMethodName;
+  FfiValueInt<uint64_t> mUniffiHandle;
+
+ private:
+  
+  
+  
+  
+  class PromiseHandler final : public dom::PromiseNativeHandler {
+   public:
+    NS_DECL_ISUPPORTS
+
+    PromiseHandler(UniquePtr<AsyncCallbackMethodHandlerBase> aHandler)
+        : mHandler(std::move(aHandler)) {}
+
+    MOZ_CAN_RUN_SCRIPT
+    virtual void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                                  ErrorResult& aRv) override;
+    MOZ_CAN_RUN_SCRIPT
+    virtual void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                                  ErrorResult& aRv) override;
+
+   private:
+    UniquePtr<AsyncCallbackMethodHandlerBase> mHandler;
+
+    ~PromiseHandler() = default;
+  };
 };
 
+NS_IMPL_ISUPPORTS0(AsyncCallbackMethodHandlerBase::PromiseHandler);
 
 
-class UniffiCallbackFreeHandler : public UniffiCallbackMethodHandlerBase {
+
+class CallbackFreeHandler : public AsyncCallbackMethodHandlerBase {
  public:
-  UniffiCallbackFreeHandler(const char* aInterfaceName, uint64_t aObjectHandle)
-      : UniffiCallbackMethodHandlerBase(aInterfaceName, aObjectHandle) {}
-  void MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler,
-                ErrorResult& aError) override;
+  CallbackFreeHandler(const char* aUniffiMethodName, uint64_t aUniffiHandle)
+      : AsyncCallbackMethodHandlerBase(aUniffiMethodName, aUniffiHandle) {}
+
+  MOZ_CAN_RUN_SCRIPT
+  already_AddRefed<dom::Promise> MakeCall(
+      JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler,
+      ErrorResult& aError) override;
 };
 
 }  
