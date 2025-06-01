@@ -15,11 +15,11 @@ import os
 import re
 import time
 
-import attr
 from mozbuild.util import memoize
 from taskcluster.utils import fromNow
 from taskgraph import MAX_DEPENDENCIES
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.transforms.task import payload_builder, payload_builders
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.schema import (
@@ -283,29 +283,6 @@ def get_default_priority(graph_config, project):
     return evaluate_keyed_by(
         graph_config["task-priority"], "Graph Config", {"project": project}
     )
-
-
-
-payload_builders = {}
-
-
-@attr.s(frozen=True)
-class PayloadBuilder:
-    schema = attr.ib(type=Schema)
-    builder = attr.ib()
-
-
-def payload_builder(name, schema):
-    schema = Schema({Required("implementation"): name, Optional("os"): str}).extend(
-        schema
-    )
-
-    def wrap(func):
-        assert name not in payload_builders, f"duplicate payload builder name {name}"
-        payload_builders[name] = PayloadBuilder(schema, func)
-        return func
-
-    return wrap
 
 
 
@@ -1700,29 +1677,6 @@ def build_landoscript_payload(config, task, task_def):
     scopes.add(f"project:releng:lando:repo:{worker['lando-repo']}")
     scopes.update([f"project:releng:lando:action:{action}" for action in actions])
     task_def["scopes"] = sorted(scopes)
-
-
-@payload_builder(
-    "invalid",
-    schema={
-        
-        
-        Extra: object,
-    },
-)
-def build_invalid_payload(config, task, task_def):
-    task_def["payload"] = "invalid task - should never be created"
-
-
-@payload_builder(
-    "always-optimized",
-    schema={
-        Extra: object,
-    },
-)
-@payload_builder("succeed", schema={})
-def build_dummy_payload(config, task, task_def):
-    task_def["payload"] = {}
 
 
 transforms = TransformSequence()
