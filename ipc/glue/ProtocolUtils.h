@@ -124,7 +124,9 @@ struct EndpointProcInfo {
 
 
 
-using ActorId = IPC::Message::routeid_t;
+struct ActorHandle {
+  int mId;
+};
 
 enum class LinkStatus : uint8_t {
   
@@ -192,10 +194,10 @@ class IProtocol : public HasResultCodes {
   const IToplevelProtocol* ToplevelProtocol() const { return mToplevel; }
 
   
-  IProtocol* Lookup(ActorId aId);
+  IProtocol* Lookup(int32_t aId);
 
   Shmem CreateSharedMemory(size_t aSize, bool aUnsafe);
-  Shmem::Segment* LookupSharedMemory(ActorId aId);
+  Shmem::Segment* LookupSharedMemory(int32_t aId);
   bool IsTrackingSharedMemory(const Shmem::Segment* aSegment);
   bool DestroySharedMemory(Shmem& aShmem);
 
@@ -211,7 +213,7 @@ class IProtocol : public HasResultCodes {
   ProtocolId GetProtocolId() const { return mProtocolId; }
   const char* GetProtocolName() const { return ProtocolIdToName(mProtocolId); }
 
-  ActorId Id() const { return mId; }
+  int32_t Id() const { return mId; }
   IRefCountedProtocol* Manager() const { return mManager; }
 
   uint32_t AllManagedActorsCount() const;
@@ -230,7 +232,11 @@ class IProtocol : public HasResultCodes {
   }
 
   
-  virtual void DeallocManagee(ProtocolId, IProtocol*) = 0;
+  virtual void DeallocManagee(int32_t, IProtocol*) = 0;
+
+  Maybe<IProtocol*> ReadActor(IPC::MessageReader* aReader, bool aNullable,
+                              const char* aActorDescription,
+                              int32_t aProtocolTypeId);
 
   virtual Result OnMessageReceived(const Message& aMessage) = 0;
   virtual Result OnMessageReceived(const Message& aMessage,
@@ -249,7 +255,6 @@ class IProtocol : public HasResultCodes {
   friend class ActorLifecycleProxy;
   friend class IPDLResolverInner;
   friend class UntypedManagedEndpoint;
-  friend struct IPC::ParamTraits<IProtocol*>;
 
   
   
@@ -264,11 +269,10 @@ class IProtocol : public HasResultCodes {
   
   
   bool SetManagerAndRegister(IRefCountedProtocol* aManager,
-                             ActorId aId = kNullActorId);
+                             int32_t aId = kNullActorId);
 
   
-  bool ChannelSend(UniquePtr<IPC::Message> aMsg,
-                   IPC::Message::seqno_t* aSeqno = nullptr);
+  bool ChannelSend(UniquePtr<IPC::Message> aMsg, int32_t* aSeqno = nullptr);
   bool ChannelSend(UniquePtr<IPC::Message> aMsg,
                    UniquePtr<IPC::Message>* aReply);
 
@@ -307,7 +311,8 @@ class IProtocol : public HasResultCodes {
   
   virtual void ActorDealloc() = 0;
 
-  static const ActorId kNullActorId = 0;
+  static const int32_t kNullActorId = 0;
+  static const int32_t kFreedActorId = 1;
 
  private:
 #ifdef DEBUG
@@ -322,7 +327,7 @@ class IProtocol : public HasResultCodes {
   
   IProtocol* PeekManagedActor() const;
 
-  ActorId mId;
+  int32_t mId;
   const ProtocolId mProtocolId;
   const Side mSide;
   LinkStatus mLinkStatus;
@@ -439,10 +444,10 @@ class IToplevelProtocol : public IRefCountedProtocol {
 
  public:
   
-  IProtocol* Lookup(Shmem::id_t aId);
+  IProtocol* Lookup(int32_t aId);
 
   Shmem CreateSharedMemory(size_t aSize, bool aUnsafe);
-  Shmem::Segment* LookupSharedMemory(Shmem::id_t aId);
+  Shmem::Segment* LookupSharedMemory(int32_t aId);
   bool IsTrackingSharedMemory(const Shmem::Segment* aSegment);
   bool DestroySharedMemory(Shmem& aShmem);
 
@@ -541,17 +546,17 @@ class IToplevelProtocol : public IRefCountedProtocol {
   GeckoChildID OtherChildIDMaybeInvalid() const { return mOtherChildID; }
 
  private:
-  int64_t NextId();
+  int32_t NextId();
 
   template <class T>
-  using IDMap = nsTHashMap<int64_t, T>;
+  using IDMap = nsTHashMap<nsUint32HashKey, T>;
 
   base::ProcessId mOtherPid;
   GeckoChildID mOtherChildID;
 
   
   
-  int64_t mLastLocalId;
+  int32_t mLastLocalId;
   IDMap<RefPtr<ActorLifecycleProxy>> mActorMap;
   IDMap<RefPtr<Shmem::Segment>> mShmemMap;
 
@@ -756,17 +761,16 @@ class IPDLAsyncReturnsCallbacks : public HasResultCodes {
   
   using Callback =
       mozilla::MoveOnlyFunction<Result(IPC::MessageReader* IProtocol)>;
-  using seqno_t = IPC::Message::seqno_t;
   using msgid_t = IPC::Message::msgid_t;
 
-  void AddCallback(seqno_t aSeqno, msgid_t aType, Callback aResolve,
+  void AddCallback(int32_t aSeqno, msgid_t aType, Callback aResolve,
                    RejectCallback aReject);
   Result GotReply(IProtocol* aActor, const IPC::Message& aMessage);
   void RejectPendingResponses(ResponseRejectReason aReason);
 
  private:
   struct EntryKey {
-    seqno_t mSeqno;
+    int32_t mSeqno;
     msgid_t mType;
 
     bool operator==(const EntryKey& aOther) const;

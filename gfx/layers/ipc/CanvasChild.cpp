@@ -765,7 +765,7 @@ already_AddRefed<gfx::SourceSurface> CanvasChild::SnapshotExternalCanvas(
       RecordedResolveExternalSnapshot(syncId, gfx::ReferencePtr(surface)));
 
   uint32_t managerId = static_cast<gfx::CanvasManagerChild*>(Manager())->Id();
-  ActorId canvasId = aActor->Id();
+  int32_t canvasId = aActor->Id();
 
   
   SendSnapshotExternalCanvas(syncId, managerId, canvasId);
