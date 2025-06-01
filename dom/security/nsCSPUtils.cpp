@@ -149,26 +149,20 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
     return;
   }
 
-  
-  bool reportOnly = false;
-
   if (nsIURI* uri = aDoc.GetDocumentURI(); CSP_IsBrowserXHTML(uri)) {
     
     if (!StaticPrefs::security_browser_xhtml_csp_enabled()) {
       return;
-    }
-
-    
-    if (StaticPrefs::security_browser_xhtml_csp_report_only()) {
-      reportOnly = true;
     }
   }
 
   
   
   
-  nsresult rv = csp->AppendPolicy(policyStr, reportOnly,
-                                  true);  
+  nsresult rv = csp->AppendPolicy(
+      policyStr,
+      false,  
+      true);  
   NS_ENSURE_SUCCESS_VOID(rv);
   if (nsPIDOMWindowInner* inner = aDoc.GetInnerWindow()) {
     inner->SetCsp(csp);
