@@ -17,6 +17,7 @@
 #include "js/ContextOptions.h"        
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
+#include "js/friend/StackLimits.h"    
 #include "js/Modules.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/SourceText.h"
@@ -1060,6 +1061,20 @@ void ModuleLoadRequest::ChildLoadComplete(bool aSuccess) {
     return;
   }
 
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mLoader->GetGlobalObject())) {
+    return;
+  }
+
+  js::AutoCheckRecursionLimit recursion(jsapi.cx());
+  if (!recursion.check(jsapi.cx())) {
+    
+    
+    mRootModule->SetReady();
+    mRootModule->LoadFinished();
+    return;
+  }
+
   if (!aSuccess) {
     parent->ModuleErrored();
   } else if (parent->mAwaitingImports == 0) {
@@ -1230,6 +1245,16 @@ bool ModuleLoaderBase::HasDynamicImport(
 
 JS::Value ModuleLoaderBase::FindFirstParseError(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest);
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobalObject)) {
+    return JS::UndefinedValue();
+  }
+
+  js::AutoCheckRecursionLimit recursion(jsapi.cx());
+  if (!recursion.check(jsapi.cx())) {
+    return JS::UndefinedValue();
+  }
 
   ModuleScript* moduleScript = aRequest->mModuleScript;
   MOZ_ASSERT(moduleScript);
