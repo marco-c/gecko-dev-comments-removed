@@ -3,6 +3,15 @@
 
 "use strict";
 
+const PREF_POCKET = "extensions.pocket.enabled";
+
+add_setup(async () => {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.pocket.enabled", true]],
+  });
+});
+
 async function checkPocket(shouldBeEnabled) {
   return BrowserTestUtils.waitForCondition(() => {
     return (
