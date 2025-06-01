@@ -7,7 +7,12 @@
 #ifndef Utils_h
 #define Utils_h
 
+#include <cstring>
 #include <type_traits>
+
+#ifdef XP_WIN
+#  include <io.h>  
+#endif
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/TemplateLib.h"
@@ -111,5 +116,34 @@ class Fraction {
   size_t mNumerator;
   size_t mDenominator;
 };
+
+
+#define ALIGNMENT_ADDR2OFFSET(a, alignment) \
+  ((size_t)((uintptr_t)(a) & ((alignment) - 1)))
+
+
+#define ALIGNMENT_CEILING(s, alignment) \
+  (((s) + ((alignment) - 1)) & (~((alignment) - 1)))
+
+static inline const char* _getprogname(void) { return "<jemalloc>"; }
+
+#ifdef XP_WIN
+#  define STDERR_FILENO 2
+#else
+#  define _write write
+#endif
+inline void _malloc_message(const char* p) {
+  
+  
+  if (_write(STDERR_FILENO, p, (unsigned int)strlen(p)) < 0) {
+    return;
+  }
+}
+
+template <typename... Args>
+static void _malloc_message(const char* p, Args... args) {
+  _malloc_message(p);
+  _malloc_message(args...);
+}
 
 #endif
