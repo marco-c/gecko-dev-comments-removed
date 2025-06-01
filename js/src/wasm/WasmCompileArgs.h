@@ -115,7 +115,6 @@ struct FeatureOptions {
   bool isBuiltinModule;
 
   
-  
   bool jsStringBuiltins;
   
   
