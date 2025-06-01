@@ -45,8 +45,8 @@ async function clear_state() {
 add_task(async function test_load_from_dump_when_offline() {
   
   
-  const before = await client.get({ syncIfEmpty: false });
-  equal(before.length, 0, "collection empty when offline");
+  const beforeTimestamp = await client.db.getLastModified();
+  equal(beforeTimestamp, null, "collection empty when offline");
 
   
   const after = await client.get();
@@ -57,8 +57,8 @@ add_task(clear_state);
 
 add_task(async function test_optional_skip_dump_after_empty_import() {
   
-  const before = await client.get({ syncIfEmpty: false });
-  equal(before.length, 0, "collection empty after clearing");
+  const beforeTimestamp = await client.db.getLastModified();
+  equal(beforeTimestamp, null, "collection empty after clearing");
 
   
   

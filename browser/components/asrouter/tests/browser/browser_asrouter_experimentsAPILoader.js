@@ -133,12 +133,14 @@ const getCFRExperiment = async () => {
 };
 
 const client = RemoteSettings("nimbus-desktop-experiments");
+const secureClient = RemoteSettings("nimbus-secure-experiments");
 
 
 
 async function setup(experiment) {
   
   await client.db.importChanges({}, Date.now(), [experiment], { clear: true });
+  await secureClient.db.importChanges({}, Date.now(), [], { clear: true });
   await SpecialPowers.pushPrefEnv({
     set: [
       ["app.shield.optoutstudies.enabled", true],
@@ -153,6 +155,7 @@ async function setup(experiment) {
 
 async function cleanup() {
   await client.db.clear();
+  await secureClient.db.clear();
   await SpecialPowers.popPrefEnv();
   
   await ASRouter._updateMessageProviders();
