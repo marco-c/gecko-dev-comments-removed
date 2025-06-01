@@ -17,6 +17,8 @@
 
 
 let $0 = instantiate(`(module
+  (import "spectest" "print_i32_f32" (func $$print_i32_f32 (param i32 f32)))
+
   ;; Auxiliary definitions
   (func $$const-i32 (result i32) (i32.const 0x132))
   (func $$const-i64 (result i64) (i64.const 0x164))
@@ -90,6 +92,20 @@ let $0 = instantiate(`(module
       (then (i32.const 99))
       (else (return_call $$even (i64.sub (local.get 0) (i64.const 1))))
     )
+  )
+
+  ;; Functions with multiple parameters / multiple results
+  (func (export "tailprint_i32_f32") (param i32 f32)
+    (return_call $$print_i32_f32 (local.get 0) (local.get 1))
+  )
+
+  (func $$swizzle (param f64 i64) (result i32 f32)
+    (i32.wrap_i64 (local.get 1))
+    (f32.demote_f64 (local.get 0))
+  )
+
+  (func (export "type-f64-i64-to-i32-f32") (param f64 i64) (result i32 f32)
+    (return_call $$swizzle (local.get 0) (local.get 1))
   )
 )`);
 
@@ -185,6 +201,15 @@ assert_return(() => invoke($0, `odd`, [1000000n]), [value("i32", 99)]);
 
 
 assert_return(() => invoke($0, `odd`, [999999n]), [value("i32", 44)]);
+
+
+assert_return(() => invoke($0, `tailprint_i32_f32`, [5, value("f32", 91)]), []);
+
+
+assert_return(
+  () => invoke($0, `type-f64-i64-to-i32-f32`, [value("f64", 4.2), 99n]),
+  [value("i32", 99), value("f32", 4.2)],
+);
 
 
 assert_invalid(

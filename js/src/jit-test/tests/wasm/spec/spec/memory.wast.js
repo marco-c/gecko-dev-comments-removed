@@ -31,6 +31,9 @@ let $3 = instantiate(`(module (memory 0 1))`);
 let $4 = instantiate(`(module (memory 1 256))`);
 
 
+let _anon_7 = module(`(module (memory 65536))`);
+
+
 let $5 = instantiate(`(module (memory 0 65536))`);
 
 
@@ -103,58 +106,22 @@ assert_invalid(
 );
 
 
-assert_invalid(
-  () => instantiate(`(module (memory 65537))`),
-  `memory size must be at most 65536 pages (4GiB)`,
-);
+assert_invalid(() => instantiate(`(module (memory 65537))`), `memory size`);
 
 
-assert_invalid(
-  () => instantiate(`(module (memory 2147483648))`),
-  `memory size must be at most 65536 pages (4GiB)`,
-);
+assert_invalid(() => instantiate(`(module (memory 2147483648))`), `memory size`);
 
 
-assert_invalid(
-  () => instantiate(`(module (memory 4294967295))`),
-  `memory size must be at most 65536 pages (4GiB)`,
-);
+assert_invalid(() => instantiate(`(module (memory 4294967295))`), `memory size`);
 
 
-assert_invalid(
-  () => instantiate(`(module (memory 0 65537))`),
-  `memory size must be at most 65536 pages (4GiB)`,
-);
+assert_invalid(() => instantiate(`(module (memory 0 65537))`), `memory size`);
 
 
-assert_invalid(
-  () => instantiate(`(module (memory 0 2147483648))`),
-  `memory size must be at most 65536 pages (4GiB)`,
-);
+assert_invalid(() => instantiate(`(module (memory 0 2147483648))`), `memory size`);
 
 
-assert_invalid(
-  () => instantiate(`(module (memory 0 4294967295))`),
-  `memory size must be at most 65536 pages (4GiB)`,
-);
-
-
-assert_malformed(
-  () => instantiate(`(memory 0x1_0000_0000) `),
-  `i32 constant out of range`,
-);
-
-
-assert_malformed(
-  () => instantiate(`(memory 0x1_0000_0000 0x1_0000_0000) `),
-  `i32 constant out of range`,
-);
-
-
-assert_malformed(
-  () => instantiate(`(memory 0 0x1_0000_0000) `),
-  `i32 constant out of range`,
-);
+assert_invalid(() => instantiate(`(module (memory 0 4294967295))`), `memory size`);
 
 
 let $9 = instantiate(`(module

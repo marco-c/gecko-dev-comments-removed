@@ -17,6 +17,8 @@
 
 
 let $0 = instantiate(`(module
+  (import "spectest" "print_i32_f32" (func $$print_i32_f32 (param i32 f32)))
+
   ;; Auxiliary definitions
   (type $$proc (func))
   (type $$out-i32 (func (result i32)))
@@ -55,6 +57,19 @@ let $0 = instantiate(`(module
   (func $$over-i64-duplicate (type $$over-i64-duplicate) (local.get 0))
   (func $$over-f32-duplicate (type $$over-f32-duplicate) (local.get 0))
   (func $$over-f64-duplicate (type $$over-f64-duplicate) (local.get 0))
+
+  (func $$tailprint_i32_f32 (export "tailprint_i32_f32") (param i32 f32)
+    (return_call $$print_i32_f32 (local.get 0) (local.get 1))
+  )
+
+  (func $$swizzle (param f64 i64) (result i32 f32)
+    (i32.wrap_i64 (local.get 1))
+    (f32.demote_f64 (local.get 0))
+  )
+
+  (func $$type-f64-i64-to-i32-f32 (export "type-f64-i64-to-i32-f32") (param f64 i64) (result i32 f32)
+    (return_call $$swizzle (local.get 0) (local.get 1))
+  )
 
   (table funcref
     (elem
@@ -224,6 +239,17 @@ let $0 = instantiate(`(module
       )
     )
   )
+
+  ;; Multiple parameters / multiple results
+  (table $$tab4 funcref (elem $$tailprint_i32_f32 $$type-f64-i64-to-i32-f32))
+
+  (func (export "call_tailprint") (param i32 f32)
+    (return_call_indirect $$tab4 (param i32 f32) (local.get 0) (local.get 1) (i32.const 0))
+  )
+
+  (func (export "call_mpmr") (param f64 i64) (result i32 f32)
+    (return_call_indirect $$tab4 (param f64 i64) (result i32 f32) (local.get 0) (local.get 1) (i32.const 1))
+  )
 )`);
 
 
@@ -284,7 +310,7 @@ assert_trap(() => invoke($0, `dispatch`, [0, 2n]), `indirect call type mismatch`
 assert_trap(() => invoke($0, `dispatch`, [15, 2n]), `indirect call type mismatch`);
 
 
-assert_trap(() => invoke($0, `dispatch`, [20, 2n]), `undefined element`);
+assert_trap(() => invoke($0, `dispatch`, [22, 2n]), `undefined element`);
 
 
 assert_trap(() => invoke($0, `dispatch`, [-1, 2n]), `undefined element`);
@@ -366,6 +392,15 @@ assert_return(() => invoke($0, `odd`, [200002]), [value("i32", 99)]);
 
 
 assert_return(() => invoke($0, `odd`, [300003]), [value("i32", 44)]);
+
+
+assert_return(() => invoke($0, `call_tailprint`, [5, value("f32", 91)]), []);
+
+
+assert_return(
+  () => invoke($0, `call_mpmr`, [value("f64", 4.2), 99n]),
+  [value("i32", 99), value("f32", 4.2)],
+);
 
 
 assert_malformed(
@@ -575,6 +610,16 @@ assert_invalid(
       local.get 0
       return_call_indirect $$table (type $$ty)
     )
+  )`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+  (type (func))
+  (table 10 externref)
+  (func $$return-call-indirect (return_call_indirect (type 0) (i32.const 0)))
   )`),
   `type mismatch`,
 );

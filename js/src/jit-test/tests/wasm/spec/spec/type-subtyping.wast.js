@@ -972,8 +972,116 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
+    (type $$a (sub (array (ref none))))
+    (type $$b (sub $$a (array (ref any))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (array (mut (ref any)))))
+    (type $$b (sub $$a (array (mut (ref none)))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (array (mut (ref any)))))
+    (type $$b (sub $$a (array (ref any))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (array (ref any))))
+    (type $$b (sub $$a (array (mut (ref any)))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (struct (field (ref none)))))
+    (type $$b (sub $$a (struct (field (ref any)))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (struct (field (mut (ref any))))))
+    (type $$b (sub $$a (struct (field (mut (ref none))))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (struct (field (mut (ref any))))))
+    (type $$b (sub $$a (struct (field (ref any)))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$a (sub (struct (field (ref any)))))
+    (type $$b (sub $$a (struct (field (mut (ref any))))))
+  )`),
+  `sub type 1 does not match super type`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
     (type $$f0 (sub (func)))
     (type $$f1 (sub $$f0 (func (param i32))))
   )`),
   `sub type`,
 );
+
+
+let $44 = instantiate(`(module
+  (type $$t1 (sub (func (result f32))))
+  (type $$t2 (sub $$t1 (func (result f32))))
+  (type $$t3 (sub final $$t2 (func (result f32))))
+  (rec
+    (type $$t4 (func (result f32)))
+    (type $$t5 (sub (func (result f32))))
+    (type $$t6 (sub $$t5 (func (result f32))))
+  )
+  (func (export "f1") (type $$t1) (f32.const 0))
+  (func (export "f2") (type $$t2) (f32.const 0))
+  (func (export "f3") (type $$t3) (f32.const 0))
+  (func (export "f4") (type $$t4) (f32.const 0))
+  (func (export "f5") (type $$t5) (f32.const 0))
+  (func (export "f6") (type $$t6) (f32.const 0))
+)`);
+
+
+assert_return(() => invoke($44, `f1`, []), [value("f32", 0)]);
+
+
+assert_return(() => invoke($44, `f2`, []), [value("f32", 0)]);
+
+
+assert_return(() => invoke($44, `f3`, []), [value("f32", 0)]);
+
+
+assert_return(() => invoke($44, `f4`, []), [value("f32", 0)]);
+
+
+assert_return(() => invoke($44, `f5`, []), [value("f32", 0)]);
+
+
+assert_return(() => invoke($44, `f6`, []), [value("f32", 0)]);

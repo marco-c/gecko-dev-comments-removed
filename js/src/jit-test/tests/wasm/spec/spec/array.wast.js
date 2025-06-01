@@ -193,6 +193,10 @@ let $4 = instantiate(`(module
     (array.new_data $$vec $$d (i32.const 1) (i32.const 3))
   )
 
+  (func $$new-overflow (export "new-overflow") (result (ref $$vec))
+    (array.new_data $$vec $$d (i32.const 0x8000_0000) (i32.const 0x8000_0000))
+  )
+
   (func $$get_u (param $$i i32) (param $$v (ref $$vec)) (result i32)
     (array.get_u $$vec (local.get $$v) (local.get $$i))
   )
@@ -224,6 +228,10 @@ let $4 = instantiate(`(module
   (func (export "len") (result i32)
     (call $$len (call $$new))
   )
+
+  (func (export "drop_segs")
+    (data.drop $$d)
+  )
 )`);
 
 
@@ -245,6 +253,9 @@ assert_return(() => invoke($4, `set_get`, [1, 7]), [value("i32", 7)]);
 assert_return(() => invoke($4, `len`, []), [value("i32", 3)]);
 
 
+assert_trap(() => invoke($4, `new-overflow`, []), `out of bounds memory access`);
+
+
 assert_trap(() => invoke($4, `get_u`, [10]), `out of bounds array access`);
 
 
@@ -252,6 +263,15 @@ assert_trap(() => invoke($4, `get_s`, [10]), `out of bounds array access`);
 
 
 assert_trap(() => invoke($4, `set_get`, [10, 7]), `out of bounds array access`);
+
+
+assert_return(() => invoke($4, `drop_segs`, []), []);
+
+
+assert_trap(() => invoke($4, `new`, []), `out of bounds memory access`);
+
+
+assert_trap(() => invoke($4, `new-overflow`, []), `out of bounds memory access`);
 
 
 let $5 = instantiate(`(module
@@ -268,6 +288,10 @@ let $5 = instantiate(`(module
 
   (func $$new (export "new") (result (ref $$vec))
     (array.new_elem $$vec $$e (i32.const 0) (i32.const 2))
+  )
+
+  (func $$new-overflow (export "new-overflow") (result (ref $$vec))
+    (array.new_elem $$vec $$e (i32.const 0x8000_0000) (i32.const 0x8000_0000))
   )
 
   (func $$sub1 (result (ref $$nvec))
@@ -301,6 +325,10 @@ let $5 = instantiate(`(module
   (func (export "len") (result i32)
     (call $$len (call $$new))
   )
+
+  (func (export "drop_segs")
+    (elem.drop $$e)
+  )
 )`);
 
 
@@ -322,10 +350,22 @@ assert_return(() => invoke($5, `set_get`, [0, 1, 1]), [value("i32", 2)]);
 assert_return(() => invoke($5, `len`, []), [value("i32", 2)]);
 
 
+assert_trap(() => invoke($5, `new-overflow`, []), `out of bounds table access`);
+
+
 assert_trap(() => invoke($5, `get`, [10, 0]), `out of bounds array access`);
 
 
 assert_trap(() => invoke($5, `set_get`, [10, 0, 0]), `out of bounds array access`);
+
+
+assert_return(() => invoke($5, `drop_segs`, []), []);
+
+
+assert_trap(() => invoke($5, `new`, []), `out of bounds table access`);
+
+
+assert_trap(() => invoke($5, `new-overflow`, []), `out of bounds table access`);
 
 
 assert_invalid(

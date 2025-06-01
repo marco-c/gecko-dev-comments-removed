@@ -21,6 +21,9 @@ let $0 = instantiate(`(module
   (type $$st (struct))
   (type $$at (array i8))
 
+  (global externref (extern.convert_any (ref.null any)))
+  (global anyref (any.convert_extern (ref.null extern)))
+
   (table 10 anyref)
 
   (elem declare func $$f)
