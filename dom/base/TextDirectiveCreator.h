@@ -57,8 +57,8 @@ class TextDirectiveCreator {
 
 
 
-  static Result<RefPtr<AbstractRange>, ErrorResult>
-  ExtendRangeToBlockBoundaries(AbstractRange* aRange);
+  static Result<RefPtr<AbstractRange>, ErrorResult> ExtendRangeToWordBoundaries(
+      AbstractRange* aRange);
 
   
 
