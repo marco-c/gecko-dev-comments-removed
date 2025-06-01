@@ -45,8 +45,6 @@ namespace mozilla::dom::quota {
 
 
 
-
-
 class OpenClientDirectoryInfo {
  public:
   explicit OpenClientDirectoryInfo(const OriginMetadata& aOriginMetadata);

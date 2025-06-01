@@ -29,6 +29,7 @@
 #include "mozilla/dom/quota/HashKeys.h"
 #include "mozilla/dom/quota/InitializationTypes.h"
 #include "mozilla/dom/quota/NotifyUtils.h"
+#include "mozilla/dom/quota/OpenClientDirectoryInfo.h"
 #include "mozilla/dom/quota/OriginOperationCallbacks.h"
 #include "mozilla/dom/quota/PersistenceType.h"
 #include "nsCOMPtr.h"
@@ -95,6 +96,7 @@ class QuotaManager final : public BackgroundThreadObject {
   friend class ClearDataOp;
   friend class ClearRequestBase;
   friend class ClearStorageOp;
+  friend class ClientDirectoryLockHandle;
   friend class DirectoryLockImpl;
   friend class FinalizeOriginEvictionOp;
   friend class GroupInfo;
@@ -118,8 +120,6 @@ class QuotaManager final : public BackgroundThreadObject {
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   using PrincipalInfo = mozilla::ipc::PrincipalInfo;
-  using DirectoryLockTable =
-      nsClassHashtable<nsCStringHashKey, nsTArray<NotNull<DirectoryLockImpl*>>>;
 
   class Observer;
 
@@ -860,9 +860,7 @@ class QuotaManager final : public BackgroundThreadObject {
     }
   }
 
-  DirectoryLockTable& GetDirectoryLockTable(PersistenceType aPersistenceType);
-
-  void ClearDirectoryLockTables();
+  void ClearOpenClientDirectoryInfos();
 
   void AddTemporaryOrigin(const FullOriginMetadata& aFullOriginMetadata);
 
@@ -911,6 +909,42 @@ class QuotaManager final : public BackgroundThreadObject {
       const nsACString& aStorageOrigin);
 
   int64_t GenerateDirectoryLockId();
+
+  
+
+
+
+
+
+
+
+  void RegisterClientDirectoryLockHandle(const OriginMetadata& aOriginMetadata);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void UnregisterClientDirectoryLockHandle(
+      const OriginMetadata& aOriginMetadata);
+
+  
+
+
+
+
+
+
+
+
+
+  void ClientDirectoryLockHandleDestroy(ClientDirectoryLockHandle& aHandle);
 
   bool ShutdownStarted() const;
 
@@ -1003,14 +1037,14 @@ class QuotaManager final : public BackgroundThreadObject {
       mDirectoryLockIdTable;
 
   
-  DirectoryLockTable mTemporaryDirectoryLockTable;
-  DirectoryLockTable mDefaultDirectoryLockTable;
-  DirectoryLockTable mPrivateDirectoryLockTable;
-
-  
   struct BackgroundThreadAccessible {
     PrincipalMetadataArray mUninitializedGroups;
     nsTHashSet<nsCString> mInitializedGroups;
+
+    
+    nsTHashMap<nsCStringHashKey, OpenClientDirectoryInfo>
+        mOpenClientDirectoryInfos;
+
     
     uint64_t mSaveOriginAccessTimeCount = 0;
   };

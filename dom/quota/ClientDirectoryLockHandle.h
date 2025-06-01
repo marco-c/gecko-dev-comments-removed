@@ -84,6 +84,10 @@ class ClientDirectoryLockHandle final {
 
   ClientDirectoryLock* operator->() const;
 
+  bool IsRegistered() const;
+
+  void SetRegistered(bool aRegistered);
+
   
 
 
@@ -105,7 +109,12 @@ class ClientDirectoryLockHandle final {
  private:
   NS_DECL_OWNINGTHREAD
 
+  
+  
+  
   RefPtr<ClientDirectoryLock> mClientDirectoryLock;
+
+  bool mRegistered = false;
 };
 
 }  

@@ -1393,7 +1393,10 @@ RefPtr<BoolPromise> ShutdownStorageOp::OpenDirectory() {
   
   
   
-  mQuotaManager->ClearDirectoryLockTables();
+  
+  
+  
+  mQuotaManager->ClearOpenClientDirectoryInfos();
 
   mDirectoryLock = mQuotaManager->CreateDirectoryLockInternal(
       PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
@@ -2641,7 +2644,10 @@ RefPtr<BoolPromise> ClearStorageOp::OpenDirectory() {
   
   
   
-  mQuotaManager->ClearDirectoryLockTables();
+  
+  
+  
+  mQuotaManager->ClearOpenClientDirectoryInfos();
 
   return OpenStorageDirectory(
       PersistenceScope::CreateFromNull(), OriginScope::FromNull(),

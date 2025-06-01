@@ -199,11 +199,6 @@ class DirectoryLockImpl {
   
   bool ShouldUpdateLockIdTable() const { return mShouldUpdateLockIdTable; }
 
-  bool ShouldUpdateLockTable() {
-    return !mInternal &&
-           mPersistenceScope.GetValue() != PERSISTENCE_TYPE_PERSISTENT;
-  }
-
   bool Overlaps(const DirectoryLockImpl& aLock) const;
 
   

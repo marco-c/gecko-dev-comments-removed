@@ -450,13 +450,11 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Simple) {
   const auto saveOriginAccessTimeCountInternalAfter =
       SaveOriginAccessTimeCountInternal();
 
-  
-  
   ASSERT_EQ(saveOriginAccessTimeCountAfter - saveOriginAccessTimeCountBefore,
-            1u);
+            2u);
   ASSERT_EQ(saveOriginAccessTimeCountInternalAfter -
                 saveOriginAccessTimeCountInternalBefore,
-            1u);
+            2u);
 
   ASSERT_NO_FATAL_FAILURE(AssertStorageInitialized());
 
@@ -699,17 +697,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Ongoing_OriginDirectoryExists) {
                      const auto saveOriginAccessTimeCountNow =
                          quotaManager->SaveOriginAccessTimeCount();
 
-                     const auto saveOriginAccessTimeCountDelta =
-                         saveOriginAccessTimeCountNow -
-                         saveOriginAccessTimeCountBefore;
-
                      
                      
                      
-                     
-                     
-                     EXPECT_TRUE(saveOriginAccessTimeCountDelta == 0u ||
-                                 saveOriginAccessTimeCountDelta == 1u);
+                     EXPECT_EQ(saveOriginAccessTimeCountNow -
+                                   saveOriginAccessTimeCountBefore,
+                               0u);
 
                      directoryLockHandle = std::move(aValue.ResolveValue());
 
@@ -729,9 +722,11 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Ongoing_OriginDirectoryExists) {
                      const auto saveOriginAccessTimeCountInternalNow =
                          quotaManager->SaveOriginAccessTimeCountInternal();
 
+                     
+                     
                      EXPECT_EQ(saveOriginAccessTimeCountInternalNow -
                                    saveOriginAccessTimeCountInternalBefore,
-                               1u);
+                               0u);
 
                      return BoolPromise::CreateAndResolve(true, __func__);
                    }));
@@ -752,17 +747,12 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Ongoing_OriginDirectoryExists) {
                      const auto saveOriginAccessTimeCountNow =
                          quotaManager->SaveOriginAccessTimeCount();
 
-                     const auto saveOriginAccessTimeCountDelta =
-                         saveOriginAccessTimeCountNow -
-                         saveOriginAccessTimeCountBefore;
-
                      
                      
                      
-                     
-                     
-                     EXPECT_TRUE(saveOriginAccessTimeCountDelta == 0u ||
-                                 saveOriginAccessTimeCountDelta == 1u);
+                     EXPECT_EQ(saveOriginAccessTimeCountNow -
+                                   saveOriginAccessTimeCountBefore,
+                               0u);
 
                      directoryLockHandle2 = std::move(aValue.ResolveValue());
 
@@ -782,9 +772,15 @@ TEST_F(TestQuotaManager, OpenClientDirectory_Ongoing_OriginDirectoryExists) {
                      const auto saveOriginAccessTimeCountInternalNow =
                          quotaManager->SaveOriginAccessTimeCountInternal();
 
-                     EXPECT_EQ(saveOriginAccessTimeCountInternalNow -
-                                   saveOriginAccessTimeCountInternalBefore,
-                               1u);
+                     const auto saveOriginAccessTimeCountInternalDelta =
+                         saveOriginAccessTimeCountInternalNow -
+                         saveOriginAccessTimeCountInternalBefore;
+
+                     
+                     
+                     
+                     EXPECT_TRUE(saveOriginAccessTimeCountInternalDelta == 0u ||
+                                 saveOriginAccessTimeCountInternalDelta == 1u);
 
                      return BoolPromise::CreateAndResolve(true, __func__);
                    }));
