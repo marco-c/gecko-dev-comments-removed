@@ -165,6 +165,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/XorShift128PlusRNG.h"
 #include "mozilla/fallible.h"
+#include "BaseAlloc.h"
 #include "Chunk.h"
 #include "Constants.h"
 #include "Globals.h"
@@ -246,8 +247,6 @@ MOZ_CONSTINIT static RefPtr<MallocProfilerCallbacks> sCallbacks;
 #if defined(MALLOC_DECOMMIT) && defined(MALLOC_DOUBLE_PURGE)
 #  error MALLOC_DECOMMIT and MALLOC_DOUBLE_PURGE are mutually exclusive.
 #endif
-
-static void* base_alloc(size_t aSize);
 
 
 #if defined(_MSC_VER) && !defined(__clang__)
@@ -1474,7 +1473,7 @@ static uint64_t huge_operations MOZ_GUARDED_BY(huge_mtx);
 
 
 
-static Mutex base_mtx;
+Mutex base_mtx;
 
 
 
@@ -1484,8 +1483,8 @@ static void* base_next_addr MOZ_GUARDED_BY(base_mtx);
 static void* base_next_decommitted MOZ_GUARDED_BY(base_mtx);
 
 static void* base_past_addr MOZ_GUARDED_BY(base_mtx);
-static size_t base_mapped MOZ_GUARDED_BY(base_mtx);
-static size_t base_committed MOZ_GUARDED_BY(base_mtx);
+size_t base_mapped MOZ_GUARDED_BY(base_mtx);
+size_t base_committed MOZ_GUARDED_BY(base_mtx);
 
 
 
@@ -1769,7 +1768,7 @@ static inline void pages_decommit(void* aAddr, size_t aSize) {
 }
 
 
-static void base_init() MOZ_REQUIRES(gInitLock) {
+void base_init() MOZ_REQUIRES(gInitLock) {
   base_mtx.Init();
   MOZ_PUSH_IGNORE_THREAD_SAFETY
   base_mapped = 0;
@@ -1802,7 +1801,7 @@ static bool base_pages_alloc(size_t minsize) MOZ_REQUIRES(base_mtx) {
   return false;
 }
 
-static void* base_alloc(size_t aSize) {
+void* base_alloc(size_t aSize) {
   void* ret;
   size_t csize;
 
@@ -1837,43 +1836,13 @@ static void* base_alloc(size_t aSize) {
   return ret;
 }
 
-static void* base_calloc(size_t aNumber, size_t aSize) {
+void* base_calloc(size_t aNumber, size_t aSize) {
   void* ret = base_alloc(aNumber * aSize);
   if (ret) {
     memset(ret, 0, aNumber * aSize);
   }
   return ret;
 }
-
-
-template <typename T>
-struct TypedBaseAlloc {
-  static T* sFirstFree;
-
-  static size_t size_of() { return sizeof(T); }
-
-  static T* alloc() {
-    T* ret;
-
-    base_mtx.Lock();
-    if (sFirstFree) {
-      ret = sFirstFree;
-      sFirstFree = *(T**)ret;
-      base_mtx.Unlock();
-    } else {
-      base_mtx.Unlock();
-      ret = (T*)base_alloc(size_of());
-    }
-
-    return ret;
-  }
-
-  static void dealloc(T* aNode) {
-    MutexAutoLock lock(base_mtx);
-    *(T**)aNode = sFirstFree;
-    sFirstFree = aNode;
-  }
-};
 
 using ExtentAlloc = TypedBaseAlloc<extent_node_t>;
 
@@ -1888,11 +1857,6 @@ size_t TypedBaseAlloc<arena_t>::size_of() {
   
   return sizeof(arena_t) + (sizeof(arena_bin_t) * NUM_SMALL_CLASSES);
 }
-
-template <typename T>
-struct BaseAllocFreePolicy {
-  void operator()(T* aPtr) { TypedBaseAlloc<T>::dealloc(aPtr); }
-};
 
 using UniqueBaseNode =
     UniquePtr<extent_node_t, BaseAllocFreePolicy<extent_node_t>>;
