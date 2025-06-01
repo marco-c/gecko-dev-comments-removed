@@ -696,6 +696,8 @@ enum ReactionRecordSlots {
   
   
   
+  
+  
   ReactionRecordSlot_Promise = 0,
 
   
@@ -741,7 +743,9 @@ enum ReactionRecordSlots {
   
   
   
-  ReactionRecordSlot_GeneratorOrPromiseToResolve,
+  
+  
+  ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
 
   ReactionRecordSlots,
 };
@@ -769,6 +773,7 @@ class PromiseReactionRecord : public NativeObject {
   
   
   
+  
   static constexpr uint32_t REACTION_FLAG_DEFAULT_RESOLVING_HANDLER = 0x4;
 
   
@@ -792,6 +797,12 @@ class PromiseReactionRecord : public NativeObject {
   
   
   static constexpr uint32_t REACTION_FLAG_IGNORE_UNHANDLED_REJECTION = 0x40;
+
+  
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR = 0x80;
 
   template <typename KnownF, typename UnknownF>
   static void forEachReactionFlag(uint32_t flags, KnownF known,
@@ -864,8 +875,9 @@ class PromiseReactionRecord : public NativeObject {
 
   void setIsDefaultResolvingHandler(PromiseObject* promiseToResolve) {
     setFlagOnInitialState(REACTION_FLAG_DEFAULT_RESOLVING_HANDLER);
-    setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
-                 ObjectValue(*promiseToResolve));
+    setFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+        ObjectValue(*promiseToResolve));
   }
   bool isDefaultResolvingHandler() const {
     int32_t flags = this->flags();
@@ -873,15 +885,16 @@ class PromiseReactionRecord : public NativeObject {
   }
   PromiseObject* defaultResolvingPromise() {
     MOZ_ASSERT(isDefaultResolvingHandler());
-    const Value& promiseToResolve =
-        getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
+    const Value& promiseToResolve = getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
     return &promiseToResolve.toObject().as<PromiseObject>();
   }
 
   void setIsAsyncFunction(AsyncFunctionGeneratorObject* genObj) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FUNCTION);
-    setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
-                 ObjectValue(*genObj));
+    setFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+        ObjectValue(*genObj));
   }
   bool isAsyncFunction() const {
     int32_t flags = this->flags();
@@ -889,15 +902,16 @@ class PromiseReactionRecord : public NativeObject {
   }
   AsyncFunctionGeneratorObject* asyncFunctionGenerator() {
     MOZ_ASSERT(isAsyncFunction());
-    const Value& generator =
-        getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
+    const Value& generator = getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
     return &generator.toObject().as<AsyncFunctionGeneratorObject>();
   }
 
   void setIsAsyncGenerator(AsyncGeneratorObject* generator) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_GENERATOR);
-    setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
-                 ObjectValue(*generator));
+    setFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+        ObjectValue(*generator));
   }
   bool isAsyncGenerator() const {
     int32_t flags = this->flags();
@@ -905,9 +919,26 @@ class PromiseReactionRecord : public NativeObject {
   }
   AsyncGeneratorObject* asyncGenerator() {
     MOZ_ASSERT(isAsyncGenerator());
-    const Value& generator =
-        getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
+    const Value& generator = getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
     return &generator.toObject().as<AsyncGeneratorObject>();
+  }
+
+  void setIsAsyncFromSyncIterator(AsyncFromSyncIteratorObject* iterator) {
+    setFlagOnInitialState(REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR);
+    setFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+        ObjectValue(*iterator));
+  }
+  bool isAsyncFromSyncIterator() const {
+    int32_t flags = this->flags();
+    return flags & REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR;
+  }
+  AsyncFromSyncIteratorObject* asyncFromSyncIterator() {
+    MOZ_ASSERT(isAsyncFromSyncIterator());
+    const Value& iterator = getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
+    return &iterator.toObject().as<AsyncFromSyncIteratorObject>();
   }
 
   void setIsDebuggerDummy() {
@@ -2341,7 +2372,21 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
       handlerResult = JS::UndefinedValue();
     }
 #endif
-    else {
+    else if (handlerNum == PromiseHandler::AsyncFromSyncIteratorClose) {
+      MOZ_ASSERT(reaction->isAsyncFromSyncIterator());
+
+      
+      
+      
+      
+      
+      
+      Rooted<JSObject*> iter(cx, reaction->asyncFromSyncIterator()->iterator());
+      MOZ_ALWAYS_TRUE(CloseIterOperation(cx, iter, CompletionKind::Throw));
+
+      resolutionMode = RejectMode;
+      handlerResult = argument;
+    } else {
       
 
       MOZ_ASSERT(handlerNum ==
@@ -2351,6 +2396,11 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
 
       bool done =
           handlerNum == PromiseHandler::AsyncFromSyncIteratorValueUnwrapDone;
+
+      
+      
+      
+      
       
       PlainObject* resultObj = CreateIterResultObject(cx, argument, done);
       if (!resultObj) {
@@ -5816,6 +5866,7 @@ template <typename T>
 
 
 
+
 bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
                                      CompletionKind completionKind) {
   
@@ -5836,6 +5887,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   Rooted<AsyncFromSyncIteratorObject*> asyncIter(
       cx, &thisVal.toObject().as<AsyncFromSyncIteratorObject>());
 
+  
   
   
   
@@ -5895,7 +5947,28 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     if (func.isNullOrUndefined()) {
       
       
-      if (!RejectPromiseInternal(cx, resultPromise, args.get(0))) {
+      
+      
+      
+      
+      
+      if (!CloseIterOperation(cx, iter, CompletionKind::Normal)) {
+        return AbruptRejectPromise(cx, args, resultPromise, nullptr);
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      Rooted<Value> noThrowMethodError(cx);
+      if (!GetTypeError(cx, JSMSG_ITERATOR_NO_THROW, &noThrowMethodError)) {
+        return AbruptRejectPromise(cx, args, resultPromise, nullptr);
+      }
+      if (!RejectPromiseInternal(cx, resultPromise, noThrowMethodError)) {
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
       }
 
@@ -5982,6 +6055,20 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  bool closeOnRejection = completionKind != CompletionKind::Return;
 
   
   
@@ -6014,7 +6101,6 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   PromiseHandler onFulfilled =
       done ? PromiseHandler::AsyncFromSyncIteratorValueUnwrapDone
            : PromiseHandler::AsyncFromSyncIteratorValueUnwrapNotDone;
-  PromiseHandler onRejected = PromiseHandler::Thrower;
 
   
   
@@ -6023,9 +6109,49 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
-  auto extra = [](Handle<PromiseReactionRecord*> reaction) {};
+  
+  
+  
+  
+  
+  
+  PromiseHandler onRejected = done || !closeOnRejection
+                                  ? PromiseHandler::Thrower
+                                  : PromiseHandler::AsyncFromSyncIteratorClose;
+
+  
+  
+  
+  
+  
+  
+  
+  auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
+    if (onRejected == PromiseHandler::AsyncFromSyncIteratorClose) {
+      reaction->setIsAsyncFromSyncIterator(asyncIter);
+    }
+  };
   if (!InternalAwait(cx, value, resultPromise, onFulfilled, onRejected,
                      extra)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (cx->isExceptionPending() && !done && closeOnRejection) {
+      (void)IteratorCloseForException(cx, iter);
+    }
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
@@ -6877,21 +7003,24 @@ void PromiseReactionRecord::dumpOwnFields(js::JSONPrinter& json) const {
 
   if (isDefaultResolvingHandler()) {
     js::GenericPrinter& out = json.beginStringProperty("promiseToResolve");
-    getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve)
+    getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator)
         .dumpStringContent(out);
     json.endStringProperty();
   }
 
   if (isAsyncFunction()) {
     js::GenericPrinter& out = json.beginStringProperty("generator");
-    getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve)
+    getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator)
         .dumpStringContent(out);
     json.endStringProperty();
   }
 
   if (isAsyncGenerator()) {
     js::GenericPrinter& out = json.beginStringProperty("generator");
-    getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve)
+    getFixedSlot(
+        ReactionRecordSlot_GeneratorOrPromiseToResolveOrAsyncFromSyncIterator)
         .dumpStringContent(out);
     json.endStringProperty();
   }
