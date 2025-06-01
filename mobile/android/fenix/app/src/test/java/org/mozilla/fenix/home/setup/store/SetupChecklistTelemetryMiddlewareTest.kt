@@ -21,9 +21,9 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
-import org.mozilla.fenix.helpers.FenixRobolectricTestRunner
+import org.robolectric.RobolectricTestRunner
 
-@RunWith(FenixRobolectricTestRunner::class)
+@RunWith(RobolectricTestRunner::class)
 class SetupChecklistTelemetryMiddlewareTest {
     @get:Rule
     val gleanTestRule = GleanTestRule(testContext)
@@ -130,7 +130,8 @@ class SetupChecklistTelemetryMiddlewareTest {
     }
 
     /**
-     * Invokes the [ChecklistItem] clicked action of [type] for the given [SetupChecklistMiddleware].
+     * Invokes the [ChecklistItem] clicked action of [type] for the given
+     * [SetupChecklistPreferencesMiddleware].
      */
     private fun checklistItemClickedAction(
         middleware: SetupChecklistTelemetryMiddleware,
