@@ -1560,7 +1560,11 @@ pub trait LayerCompositor {
 
     
     
-    fn bind_layer(&mut self, index: usize);
+    fn bind_layer(
+        &mut self,
+        index: usize,
+        dirty_rects: &[DeviceIntRect],
+    );
 
     
     fn present_layer(
