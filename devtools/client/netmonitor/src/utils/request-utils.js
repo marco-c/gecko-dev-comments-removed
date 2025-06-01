@@ -736,11 +736,12 @@ function parseJSON(payloadUnclean) {
   if (
     !error &&
     (typeof json !== "object" ||
+      json === null ||
       
       
       
       
-      json.type === lazy.JSON_NUMBER)
+      json?.type === lazy.JSON_NUMBER)
   ) {
     return {};
   }
