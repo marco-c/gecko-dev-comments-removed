@@ -414,12 +414,12 @@ class BytecodeSource {
   }
   BytecodeSpan getSpan(const BytecodeRange& range) const {
     
-    if (range.end() <= codeOffset()) {
+    if (range.end <= codeOffset()) {
       return range.toSpan(env_);
     }
 
     
-    if (range.end() <= tailOffset()) {
+    if (range.end <= tailOffset()) {
       
       MOZ_RELEASE_ASSERT(range.start >= codeOffset());
       return range.relativeTo(codeRange()).toSpan(code_);

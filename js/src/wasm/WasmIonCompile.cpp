@@ -2692,7 +2692,7 @@ class FunctionCompiler {
 
       
       
-      uint32_t inlineeBodySize = codeTailMeta()->funcDefRange(funcIndex).size;
+      uint32_t inlineeBodySize = codeTailMeta()->funcDefRange(funcIndex).size();
       uint32_t rootFunctionBodySize = rootCompiler_.func().bytecodeSize();
       bool largeFunctionBackoff;
       bool smallEnough = InliningHeuristics::isSmallEnoughToInline(
@@ -6525,7 +6525,7 @@ bool FunctionCompiler::emitInlineCall(const FuncType& funcType,
 
   CompileInfo* compileInfo = rootCompiler().startInlineCall(
       this->funcIndex(), bytecodeOffset(), funcIndex, locals.length(),
-      funcRange.size, callKind);
+      funcRange.size(), callKind);
   if (!compileInfo) {
     return false;
   }
