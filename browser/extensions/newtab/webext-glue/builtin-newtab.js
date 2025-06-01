@@ -48,45 +48,51 @@ this.builtin_newtab = class extends ExtensionAPI {
       return;
     }
 
-    const { rootURI } = this.extension;
+    try {
+      const { rootURI } = this.extension;
 
-    resProto.setSubstitutionWithFlags(
-      ResourceSubstitution,
-      rootURI,
-      Ci.nsISubstitutingProtocolHandler.ALLOW_CONTENT_ACCESS
-    );
-
-    let aomStartup = Cc[
-      "@mozilla.org/addons/addon-manager-startup;1"
-    ].getService(Ci.amIAddonManagerStartup);
-    const manifestURI = Services.io.newURI(
-      "manifest.json",
-      null,
-      this.extension.rootURI
-    );
-    this.#chromeHandle = aomStartup.registerChrome(manifestURI, [
-      ["content", "newtab", "data/content", "contentaccessible=yes"],
-    ]);
-
-    let redirector = Cc[
-      "@mozilla.org/network/protocol/about;1?what=newtab"
-    ].getService(Ci.nsIAboutModule).wrappedJSObject;
-
-    if (this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/")) {
-      
-      
-      const newtabFileSource = new L10nFileSource(
-        "newtab",
-        "app",
-        SUPPORTED_LOCALES,
-        `resource://newtab/locales/{locale}/`
+      resProto.setSubstitutionWithFlags(
+        ResourceSubstitution,
+        rootURI,
+        Ci.nsISubstitutingProtocolHandler.ALLOW_CONTENT_ACCESS
       );
-      L10nRegistry.getInstance().registerSources([newtabFileSource]);
 
-      
-      this.registerMetricsFromJson();
+      let aomStartup = Cc[
+        "@mozilla.org/addons/addon-manager-startup;1"
+      ].getService(Ci.amIAddonManagerStartup);
+      const manifestURI = Services.io.newURI(
+        "manifest.json",
+        null,
+        this.extension.rootURI
+      );
+      this.#chromeHandle = aomStartup.registerChrome(manifestURI, [
+        ["content", "newtab", "data/content", "contentaccessible=yes"],
+      ]);
+
+      let redirector = Cc[
+        "@mozilla.org/network/protocol/about;1?what=newtab"
+      ].getService(Ci.nsIAboutModule).wrappedJSObject;
+
+      if (this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/")) {
+        
+        
+        const newtabFileSource = new L10nFileSource(
+          "newtab",
+          "app",
+          SUPPORTED_LOCALES,
+          `resource://newtab/locales/{locale}/`
+        );
+        L10nRegistry.getInstance().registerSources([newtabFileSource]);
+
+        
+        this.registerMetricsFromJson();
+      }
+      redirector.notifyBuiltInAddonInitialized();
+      Glean.newtab.addonReadySuccess.set(true);
+    } catch(e) {
+      Glean.newtab.addonReadySuccess.set(false);
+      throw e;
     }
-    redirector.builtInAddonInitialized();
   }
 
   onShutdown() {
