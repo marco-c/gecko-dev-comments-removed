@@ -4,6 +4,14 @@
 
 
 
+const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () => {
+  return ChromeUtils.importESModule(
+    "resource://gre/modules/FxAccounts.sys.mjs"
+  ).getFxAccountsSingleton();
+});
+
 Preferences.addAll([
   { id: "services.sync.engine.addons", type: "bool" },
   { id: "services.sync.engine.bookmarks", type: "bool" },
@@ -17,6 +25,7 @@ Preferences.addAll([
 
 let gSyncChooseWhatToSync = {
   init() {
+    this._setupEventListeners();
     this._adjustForPrefs();
     let options = window.arguments[0];
     if (options.disconnectFun) {
@@ -55,6 +64,52 @@ let gSyncChooseWhatToSync = {
         elt.hidden = true;
       }
     }
+  },
+  _setupEventListeners() {
+    document.addEventListener("dialogaccept", () => {
+      
+      let settings = this._getSyncEngineEnablementChanges();
+      lazy.fxAccounts.telemetry.recordSaveSyncSettings(settings).catch(err => {
+        console.error("Failed to record save sync settings event", err);
+      });
+    });
+  },
+  _getSyncEngineEnablementChanges() {
+    let engines = [
+      "addons",
+      "bookmarks",
+      "history",
+      "tabs",
+      "prefs",
+      "passwords",
+      "addresses",
+      "creditcards",
+    ];
+    let settings = {
+      enabledEngines: [],
+      disabledEngines: [],
+    };
+
+    for (let engine of engines) {
+      let enabledPref = "services.sync.engine." + engine;
+      let checkboxId = "syncEngine" + engine[0].toUpperCase() + engine.slice(1);
+      let checkboxValue = document.getElementById(checkboxId).checked;
+
+      
+      
+      
+      
+      
+      
+      if (Services.prefs.getBoolPref(enabledPref, false) !== checkboxValue) {
+        if (checkboxValue === true) {
+          settings.enabledEngines.push(engine);
+        } else if (checkboxValue === false) {
+          settings.disabledEngines.push(engine);
+        }
+      }
+    }
+    return settings;
   },
 };
 

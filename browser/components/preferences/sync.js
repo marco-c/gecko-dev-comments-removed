@@ -314,12 +314,6 @@ var gSyncPane = {
           if (event.detail.button == "accept") {
             
             
-            fxAccounts.telemetry.recordSaveSyncSettings().catch(err => {
-              console.error("Failed to record save sync settings event", err);
-            });
-
-            
-            
             if (!isSyncConfigured) {
               fxAccounts.telemetry
                 .recordConnection(["sync"], "ui")
