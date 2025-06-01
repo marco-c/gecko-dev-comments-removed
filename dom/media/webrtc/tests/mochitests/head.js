@@ -457,23 +457,17 @@ function setupEnvironment() {
 }
 
 
-async function matchPlatformH264CodecPrefs() {
+function checkPlatformH264CodecPrefs() {
   
-  const hardware =
+  const platform =
     SpecialPowers.getIntPref("media.webrtc.encoder_creation_strategy") == 1 &&
     (navigator.userAgent.includes("Android") ||
       navigator.userAgent.includes("Mac OS X"));
-
-  await pushPrefs(
-    ["media.webrtc.encoder_creation_strategy", hardware ? 1 : 0],
-    ["media.navigator.mediadatadecoder_h264_enabled", hardware]
-  );
-
-  const software = !navigator.userAgent.includes("Android");
+  const webrtc = !navigator.userAgent.includes("Android");
   return {
-    hardware,
-    software,
-    any: hardware || software,
+    platform,
+    webrtc,
+    any: platform || webrtc,
   };
 }
 
