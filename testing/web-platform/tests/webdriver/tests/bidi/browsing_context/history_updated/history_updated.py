@@ -72,6 +72,11 @@ async def test_history_url_update(
           history_updated_events
       )
 
+      
+      
+      assert "navigation" not in history_updated_events[0]
+      assert "timestamp" not in history_updated_events[0]
+
       assert len(fragment_navigated_events) == 0
     finally:
        remove_fragment_navigated_listener()
@@ -204,6 +209,15 @@ async def test_history_document_open(
       
       recursive_compare(
           [{
+          
+          
+          
+              'context': browsing_context_created_events[0]['context'],
+              'url': target_url
+          },{
+          
+          
+          
               'context': browsing_context_created_events[0]['context'],
               'url': target_url
           }],
