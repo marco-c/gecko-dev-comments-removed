@@ -16,11 +16,9 @@ namespace js {
 using JSONParseNode = JSString;
 
 class ParseRecordObject : public NativeObject {
-  enum { ParseNodeSlot, ValueSlot, KeySlot, EntriesSlot, SlotCount };
+  enum { ParseNodeSlot, ValueSlot, KeySlot, SlotCount };
 
  public:
-  using EntryMap = JSObject;
-
   static const JSClass class_;
 
   static ParseRecordObject* create(JSContext* cx, const Value& val);
@@ -51,10 +49,8 @@ class ParseRecordObject : public NativeObject {
 
   
   
-  
-  void getEntries(JSContext* cx, MutableHandle<EntryMap*> entries);
-
-  void setEntries(JSContext* cx, Handle<EntryMap*> entries);
+  bool addEntries(JSContext* cx, Handle<JS::PropertyKey> key,
+                  Handle<ParseRecordObject*> parseRecord);
 };
 
 }  
