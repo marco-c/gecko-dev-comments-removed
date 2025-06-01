@@ -97,6 +97,7 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
     
     mPendingKeyDowns.InsertOrUpdate(code, aEventTiming);
     uint64_t interactionId = IncreaseInteractionValueAndCount();
+    mLastKeydownInteractionValue = Some(interactionId);
     return Some(interactionId);
   }
 
@@ -122,7 +123,6 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
 
     
     mPendingKeyDowns.Remove(code);
-    mLastKeydownInteractionValue = Some(interactionId);
 
     
     return Some(interactionId);
