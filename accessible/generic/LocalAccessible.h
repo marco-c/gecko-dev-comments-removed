@@ -765,8 +765,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   void NativeDescription(nsString& aDescription) const;
 
-  uint64_t ExplicitState() const;
-
   
 
 
