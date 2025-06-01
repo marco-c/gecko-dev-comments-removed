@@ -4515,32 +4515,15 @@ void AsyncPanZoomController::ScaleWithFocus(float aScale,
 }
 
 
-gfx::IntSize AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
+gfx::Size AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
     const ScreenSize& aBaseSize) {
-  gfx::IntSize multiplier(1, 1);
-  float baseWidth = aBaseSize.width;
-  while (baseWidth > 500) {
-    baseWidth /= 2;
-    multiplier.width *= 2;
-    if (multiplier.width >= 8) {
-      break;
-    }
-  }
-  float baseHeight = aBaseSize.height;
-  while (baseHeight > 500) {
-    baseHeight /= 2;
-    multiplier.height *= 2;
-    if (multiplier.height >= 8) {
-      break;
-    }
-  }
-  return multiplier;
+  return gfx::Size(
+      std::min(std::max(double(aBaseSize.width) / 250.0, 1.0), 8.0),
+      std::min(std::max(double(aBaseSize.height) / 250.0, 1.0), 8.0));
 }
 
 
-
-
-static CSSSize CalculateDisplayPortSize(
+CSSSize AsyncPanZoomController::CalculateDisplayPortSize(
     const CSSSize& aCompositionSize, const CSSPoint& aVelocity,
     AsyncPanZoomController::ZoomInProgress aZoomInProgress,
     const CSSToScreenScale2D& aDpPerCSS) {
@@ -4590,7 +4573,7 @@ static CSSSize CalculateDisplayPortSize(
   
   
   
-  gfx::IntSize alignmentMultipler =
+  gfx::Size alignmentMultipler =
       AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
           aCompositionSize * aDpPerCSS);
   if (xMultiplier > 1) {

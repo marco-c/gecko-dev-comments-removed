@@ -269,7 +269,7 @@ static nsRect GetDisplayPortFromMarginsData(
     
     
     
-    IntSize multiplier =
+    gfx::Size multiplier =
         layers::apz::GetDisplayportAlignmentMultiplier(screenRect.Size());
     alignment = ScreenSize(128 * multiplier.width, 128 * multiplier.height);
   }
