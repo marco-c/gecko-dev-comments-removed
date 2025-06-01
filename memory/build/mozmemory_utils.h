@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozjemalloc_stall_h
-#define mozjemalloc_stall_h
+#ifndef mozjemalloc_utils_h
+#define mozjemalloc_utils_h
 
 #include <optional>
 #include <type_traits>
@@ -13,9 +13,6 @@
 #if defined(MOZ_MEMORY) && defined(XP_WIN)
 #  include "mozmemory_wrap.h"
 #endif
-
-
-
 
 namespace mozilla {
 
