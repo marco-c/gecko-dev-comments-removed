@@ -325,16 +325,6 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
     return nullptr;
   }
 
-  
-  
-  
-  
-  if (VPXDecoder::IsVPX(aParams.VideoConfig().mMimeType) &&
-      !SupportsMimeType(aParams.VideoConfig().mMimeType)
-           .contains(DecodeSupport::HardwareDecode)) {
-    return nullptr;
-  }
-
   nsString drmStubId;
   if (mProxy) {
     drmStubId = mProxy->GetMediaDrmStubId();
