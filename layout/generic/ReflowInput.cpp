@@ -2667,7 +2667,8 @@ void ReflowInput::CalculateBlockSideMargins() {
 
   nscoord availISizeCBWM = AvailableSize(cbWM).ISize(cbWM);
   nscoord computedISizeCBWM = ComputedSize(cbWM).ISize(cbWM);
-  if (computedISizeCBWM == NS_UNCONSTRAINEDSIZE) {
+  if (availISizeCBWM == NS_UNCONSTRAINEDSIZE ||
+      computedISizeCBWM == NS_UNCONSTRAINEDSIZE) {
     
     
     
