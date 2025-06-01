@@ -18,7 +18,11 @@
 namespace js {
 namespace jit {
 
-class SimpleAllocator : protected RegisterAllocator {
+class MOZ_STACK_CLASS SimpleAllocator : protected RegisterAllocator {
+ public:
+  using IsStackAllocated = std::true_type;
+
+ private:
   
   class VirtualRegister {
     
@@ -238,7 +242,8 @@ class SimpleAllocator : protected RegisterAllocator {
   
   
   
-  using VirtualRegBitSet = SparseBitSet<BackgroundSystemAllocPolicy>;
+  using VirtualRegBitSet =
+      SparseBitSet<BackgroundSystemAllocPolicy, SimpleAllocator>;
   Vector<VirtualRegBitSet, 0, JitAllocPolicy> liveGCIn_;
 
   

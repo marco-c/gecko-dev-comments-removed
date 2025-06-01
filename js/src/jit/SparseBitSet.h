@@ -36,7 +36,7 @@ namespace js::jit {
 
 
 
-template <typename AllocPolicy>
+template <typename AllocPolicy, typename Owner>
 class SparseBitSet {
   
   
@@ -125,8 +125,8 @@ class SparseBitSet {
 
 
 
-template <typename AllocPolicy>
-class SparseBitSet<AllocPolicy>::Iterator {
+template <typename AllocPolicy, typename Owner>
+class SparseBitSet<AllocPolicy, Owner>::Iterator {
 #ifdef DEBUG
   SparseBitSet& bitSet_;
 #endif
@@ -193,8 +193,9 @@ namespace js {
 
 
 
-template <typename T>
-struct CanLifoAlloc<js::jit::SparseBitSet<T>> : std::true_type {};
+template <typename T, typename Owner>
+struct CanLifoAlloc<js::jit::SparseBitSet<T, Owner>> : Owner::IsStackAllocated {
+};
 
 }
 
