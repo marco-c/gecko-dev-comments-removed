@@ -178,8 +178,10 @@ DH_NewKey(DHParams *params, DHPrivateKey **privKey)
     SECITEM_TO_MPINT(key->privateValue, &xa);
     
     CHECK_MPI_OK(mp_mod(&xa, &p, &xa));
-    
+
+#ifndef UNSAFE_FUZZER_MODE
     CHECK_MPI_OK(mp_exptmod(&g, &xa, &p, &Ya));
+#endif
     MPINT_TO_SECITEM(&Ya, &key->publicValue, key->arena);
     *privKey = key;
 cleanup:
