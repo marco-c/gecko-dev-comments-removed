@@ -8,7 +8,7 @@
 
 
 use crate::values::computed::{Integer, LengthPercentage, NonNegativeNumber, Percentage};
-use crate::values::generics::position::GenericAnchorFunction;
+use crate::values::generics::position::{GenericAnchorSide, GenericAnchorFunction};
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
@@ -34,6 +34,9 @@ pub type HorizontalPosition = LengthPercentage;
 
 
 pub type VerticalPosition = LengthPercentage;
+
+
+pub type AnchorSide = GenericAnchorSide<Percentage>;
 
 
 pub type AnchorFunction = GenericAnchorFunction<Percentage, LengthPercentage>;
