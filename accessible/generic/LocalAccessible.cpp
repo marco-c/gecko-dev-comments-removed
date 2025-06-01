@@ -1618,14 +1618,6 @@ uint64_t LocalAccessible::ExplicitState() const {
     if (widget && widget->CurrentItem() == this) state |= states::ACTIVE;
   }
 
-  if (state & (states::COLLAPSED | states::EXPANDED)) {
-    
-    
-    
-    
-    state |= states::EXPANDABLE;
-  }
-
   return state;
 }
 
@@ -2077,10 +2069,10 @@ void LocalAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
       return;
 
     case eOpenCloseAction:
-      if (State() & states::COLLAPSED) {
-        aName.AssignLiteral("open");
-      } else {
+      if (State() & states::EXPANDED) {
         aName.AssignLiteral("close");
+      } else {
+        aName.AssignLiteral("open");
       }
       return;
 
@@ -2097,10 +2089,10 @@ void LocalAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
       return;
 
     case eExpandAction:
-      if (State() & states::COLLAPSED) {
-        aName.AssignLiteral("expand");
-      } else {
+      if (State() & states::EXPANDED) {
         aName.AssignLiteral("collapse");
+      } else {
+        aName.AssignLiteral("expand");
       }
       return;
   }

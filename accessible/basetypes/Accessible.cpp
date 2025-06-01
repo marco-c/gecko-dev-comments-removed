@@ -699,16 +699,6 @@ void Accessible::ApplyImplicitState(uint64_t& aState) const {
     aState |= states::OPAQUE1;
   }
 
-  const uint32_t kExpandCollapseStates = states::COLLAPSED | states::EXPANDED;
-  if ((aState & kExpandCollapseStates) == kExpandCollapseStates) {
-    
-    
-    
-    
-    
-    aState &= ~states::COLLAPSED;
-  }
-
   if (aState & states::EXPANDABLE && !(aState & states::EXPANDED)) {
     aState |= states::COLLAPSED;
   }
