@@ -727,10 +727,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("javascript.options.use_fdlibm_for_sin_cos_tan", false);
    final Pref<Integer> mUserCharacteristicPingCurrentVersion =
       new Pref<>("toolkit.telemetry.user_characteristics_ping.current_version", 0);
-   final PrefWithoutDefault<Boolean> mBaselineFingerprintingProtection =
-      new PrefWithoutDefault<>("privacy.baselineFingerprintingProtection");
-   final PrefWithoutDefault<String> mBaselineFingerprintingProtectionOverrides =
-      new PrefWithoutDefault<>("privacy.baselineFingerprintingProtection.overrides");
    PrefWithoutDefault<Boolean> mDisableShip =
       new PrefWithoutDefault<Boolean>("fission.disableSessionHistoryInParent");
    final Pref<Boolean> mFetchPriorityEnabled =
@@ -926,8 +922,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
-
   public @NonNull GeckoRuntimeSettings setFingerprintingProtectionOverrides(
       @NonNull final String overrides) {
     mFingerprintingProtectionOverrides.commit(overrides);
@@ -980,50 +974,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getFdlibmMathEnabled() {
     return mFdlibmMathEnabled.get();
-  }
-
-  
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setBaselineFingerprintingProtection(final boolean enabled) {
-    mBaselineFingerprintingProtection.commit(enabled);
-    return this;
-  }
-
-  
-
-
-
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setBaselineFingerprintingProtectionOverrides(
-      @NonNull final String overrides) {
-    mBaselineFingerprintingProtectionOverrides.commit(overrides);
-    return this;
-  }
-
-  
-
-
-
-
-  public @Nullable Boolean getBaselineFingerprintingProtection() {
-    return mBaselineFingerprintingProtection.get();
-  }
-
-  
-
-
-
-
-  public @Nullable String getBaselineFingerprintingProtectionOverrides() {
-    return mBaselineFingerprintingProtectionOverrides.get();
   }
 
   
