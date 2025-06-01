@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_SparseBitSet_h
 #define jit_SparseBitSet_h
@@ -14,38 +14,39 @@
 #include <stdint.h>
 
 #include "ds/InlineTable.h"
+#include "ds/LifoAlloc.h"
 
 namespace js::jit {
 
-// jit::SparseBitSet is very similar to jit::BitSet, but optimized for sets that
-// can be very large but are often very sparse.
-//
-// It uses an InlineMap mapping from word-index to 32-bit words storing bits.
-//
-// For example, consider the following bitmap of 192 bits:
-//
-//   0xff001100 0x00001000  0x00000000 0x00000000 0x00000000 0x11110000
-//   0^         1^          2^         3^         4^         5^
-//
-// Words 2-4 don't have any bits set, so a SparseBitSet only stores the other
-// words:
-//
-//   0 => 0xff001100
-//   1 => 0x00001000
-//   5 => 0x11110000
-//
-// SparseBitSet ensures words in the map are never 0.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename AllocPolicy>
 class SparseBitSet {
-  // Note: use uint32_t (instead of uintptr_t or uint64_t) to not waste space in
-  // InlineMap's array of inline entries. It uses a struct for each key/value
-  // pair.
+  
+  
+  
   using WordType = uint32_t;
   static constexpr size_t BitsPerWord = 8 * sizeof(WordType);
 
-  // Note: 8 inline entries is sufficient for the majority of bit sets.
-  // Compiling a large PhotoShop Wasm module with Ion, 94.5% of SparseBitSets
-  // had <= 8 map entries. For OpenOffice this was more than 98.5%.
+  
+  
+  
   static constexpr size_t NumEntries = 8;
   using Map = InlineMap<uint32_t, WordType, NumEntries, DefaultHasher<uint32_t>,
                         AllocPolicy>;
@@ -79,8 +80,8 @@ class SparseBitSet {
       if (value != 0) {
         p->value() = value;
       } else {
-        // The iterator and empty() method rely on the map not containing
-        // entries without any bits set.
+        
+        
         map_.remove(p);
       }
     }
@@ -116,14 +117,14 @@ class SparseBitSet {
   }
 };
 
-// Iterates over the set bits in a SparseBitSet. For example:
-//
-//   using Set = SparseBitSet<AllocPolicy>;
-//   Set set;
-//   ...
-//   for (Set::Iterator iter(set); iter; ++iter) {
-//     MOZ_ASSERT(set.contains(*iter));
-//   }
+
+
+
+
+
+
+
+
 template <typename AllocPolicy>
 class SparseBitSet<AllocPolicy>::Iterator {
 #ifdef DEBUG
@@ -131,8 +132,8 @@ class SparseBitSet<AllocPolicy>::Iterator {
 #endif
   SparseBitSet::Range range_;
   WordType currentWord_ = 0;
-  // Index of a 1-bit in the SparseBitSet. This is the value returned by
-  // |*iter|.
+  
+  
   size_t index_ = 0;
 
   bool done() const { return range_.empty(); }
@@ -173,7 +174,7 @@ class SparseBitSet<AllocPolicy>::Iterator {
     if (currentWord_ == 0) {
       range_.popFront();
       if (range_.empty()) {
-        // Done iterating.
+        
         return;
       }
       index_ = range_.front().key() * BitsPerWord;
@@ -185,6 +186,16 @@ class SparseBitSet<AllocPolicy>::Iterator {
   }
 };
 
-}  // namespace js::jit
+}  
 
-#endif /* jit_SparseBitSet_h */
+namespace js {
+
+
+
+
+template <typename T>
+struct CanLifoAlloc<js::jit::SparseBitSet<T>> : std::true_type {};
+
+}
+
+#endif 
