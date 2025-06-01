@@ -115,36 +115,6 @@ const configurations = [
 
 
 
-function cloneLegacySection(section) {
-  let config = structuredClone(section);
-
-  
-  delete config.name;
-
-  if (config.overrides) {
-    for (let overridesSection of config.overrides) {
-      
-      delete overridesSection.name;
-      
-      if (overridesSection.ignores) {
-        overridesSection.excludedFiles = overridesSection.ignores;
-        delete overridesSection.ignores;
-      }
-    }
-  }
-
-  return config;
-}
-
-
-
-
-
-
-
-
-
-
 function cloneFlatSection(section) {
   let config = structuredClone(section);
 
@@ -209,14 +179,12 @@ for (let configName of configurations) {
   let config = require(`./configs/${configName}`);
 
   if (configName == "recommended") {
-    plugin.configs[configName] = cloneLegacySection(config.getConfig("legacy"));
-    plugin.configs[`flat/${configName}`] = config
-      .getConfig("flat")
-      .map(section => cloneFlatSection(section));
+    plugin.configs[`flat/${configName}`] = config.map(section =>
+      cloneFlatSection(section)
+    );
     continue;
   }
 
-  plugin.configs[configName] = cloneLegacySection(config);
   plugin.configs[`flat/${configName}`] = cloneFlatSection(config);
 }
 

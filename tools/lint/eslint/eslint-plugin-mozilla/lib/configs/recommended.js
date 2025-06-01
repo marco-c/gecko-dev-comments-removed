@@ -327,26 +327,9 @@ const extraRules = [
   },
 ];
 
-const legacyConfig = {
-  extends: ["eslint:recommended"],
-
-  overrides: structuredClone(extraRules),
-
-  parserOptions: {
-    
-    
-    ecmaVersion: "latest",
-  },
-
+module.exports = [
   
-  plugins: ["no-unsanitized"],
-
-  rules: coreRules.rules,
-};
-
-
-
-const flatConfig = [
+  
   {
     files: [`**/*.{${allFileExtensions.join(",")}}`],
     languageOptions: {
@@ -362,12 +345,3 @@ const flatConfig = [
   },
   ...structuredClone(extraRules),
 ];
-
-module.exports = {
-  getConfig(configType) {
-    if (configType == "flat") {
-      return flatConfig;
-    }
-    return legacyConfig;
-  },
-};
