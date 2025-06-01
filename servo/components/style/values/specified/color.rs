@@ -215,10 +215,6 @@ pub enum SystemColor {
     
     Selecteditemtext,
     
-    MozButtonhoverface,
-    
-    MozButtonhovertext,
-    
     MozMenuhover,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
@@ -234,15 +230,29 @@ pub enum SystemColor {
 
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    MozButtonactivetext,
-
+    MozButtonhoverface,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozButtonhovertext,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozButtonhoverborder,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozButtonactiveface,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozButtonactivetext,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozButtonactiveborder,
 
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozButtondisabledface,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozButtondisabledborder,
 
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
