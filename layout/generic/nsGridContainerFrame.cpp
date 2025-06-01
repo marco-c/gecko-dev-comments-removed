@@ -2975,6 +2975,13 @@ struct nsGridContainerFrame::Tracks {
                            WritingMode aWM, nscoord aContentBoxSize,
                            bool aIsSubgridded);
 
+  
+
+
+
+  nscoord TotalTrackSizeWithoutAlignment(
+      const nsGridContainerFrame* aGridContainerFrame) const;
+
   nscoord GridLineEdge(uint32_t aLine, GridLineSide aSide) const {
     if (MOZ_UNLIKELY(mSizes.IsEmpty())) {
       
@@ -7569,6 +7576,21 @@ void nsGridContainerFrame::Tracks::AlignJustifyContent(
   MOZ_ASSERT(!roundingError, "we didn't distribute all rounding error?");
 }
 
+nscoord nsGridContainerFrame::Tracks::TotalTrackSizeWithoutAlignment(
+    const nsGridContainerFrame* aGridContainerFrame) const {
+  if (aGridContainerFrame->IsSubgrid(mAxis)) {
+    
+    
+    
+    return GridLineEdge(mSizes.Length(), GridLineSide::BeforeGridGap);
+  }
+
+  
+  
+  
+  return SumOfGridTracksAndGaps();
+}
+
 void nsGridContainerFrame::LineRange::ToPositionAndLength(
     const nsTArray<TrackSize>& aTrackSizes, nscoord* aPos,
     nscoord* aLength) const {
@@ -9201,17 +9223,8 @@ nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
                                      NS_UNCONSTRAINEDSIZE,
                                      SizingConstraint::NoConstraint);
 
-  nscoord result;
-  if (!IsRowSubgrid()) {
-    
-    
-    
-    result = aGridRI.mRows.SumOfGridTracksAndGaps();
-  } else {
-    result = aGridRI.mRows.GridLineEdge(aGridRI.mRows.mSizes.Length(),
-                                        GridLineSide::BeforeGridGap);
-  }
-  result = aGridRI.mReflowInput->ApplyMinMaxBSize(result);
+  const nscoord result = aGridRI.mReflowInput->ApplyMinMaxBSize(
+      aGridRI.mRows.TotalTrackSizeWithoutAlignment(this));
 
   
   aGridRI.InvalidateTrackSizesForAxis(LogicalAxis::Block);
@@ -9248,16 +9261,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicContentBSize(
     return aBSizeForResolvingRowSizes;
   }
 
-  
-  if (!IsRowSubgrid()) {
-    
-    
-    
-    return aGridRI.mRows.SumOfGridTracksAndGaps();
-  }
-
-  const uint32_t numRows = aGridRI.mRows.mSizes.Length();
-  return aGridRI.mRows.GridLineEdge(numRows, GridLineSide::BeforeGridGap);
+  return aGridRI.mRows.TotalTrackSizeWithoutAlignment(this);
 }
 
 void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
@@ -10079,11 +10083,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
                                       NS_UNCONSTRAINEDSIZE, constraint);
   }
 
-  if (MOZ_LIKELY(!IsSubgrid())) {
-    return gridRI.mCols.SumOfGridTracksAndGaps();
-  }
-  return gridRI.mCols.GridLineEdge(gridRI.mCols.mSizes.Length(),
-                                   GridLineSide::BeforeGridGap);
+  return gridRI.mCols.TotalTrackSizeWithoutAlignment(this);
 }
 
 nscoord nsGridContainerFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
