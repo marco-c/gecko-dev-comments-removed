@@ -1,17 +1,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(dead_code, unused_imports)]
+#![cfg_attr(nightly, feature(never_type))]
+#![allow(dead_code)] 
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
 
 #[cfg(not(feature = "std"))]
-use alloc::{boxed::Box, format, vec, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 
 use derive_more::DerefMut;
 
 #[derive(DerefMut)]
 #[deref_mut(forward)]
 struct MyBoxedInt(Box<i32>);
+
 
 impl ::core::ops::Deref for MyBoxedInt {
     type Target = <Box<i32> as ::core::ops::Deref>::Target;
@@ -26,6 +28,7 @@ struct NumRef<'a> {
     #[deref_mut(forward)]
     num: &'a mut i32,
 }
+
 
 impl<'a> ::core::ops::Deref for NumRef<'a> {
     type Target = <&'a mut i32 as ::core::ops::Deref>::Target;
@@ -84,6 +87,8 @@ struct CoolVec {
     #[deref_mut]
     vec: Vec<i32>,
 }
+
+
 impl ::core::ops::Deref for CoolVec {
     type Target = Vec<i32>;
     #[inline]
@@ -94,6 +99,7 @@ impl ::core::ops::Deref for CoolVec {
 
 #[derive(DerefMut)]
 struct GenericVec<T>(Vec<T>);
+
 
 impl<T> ::core::ops::Deref for GenericVec<T> {
     type Target = Vec<T>;
@@ -112,6 +118,7 @@ fn deref_mut_generic() {
 #[derive(DerefMut)]
 struct GenericBox<T>(#[deref_mut(forward)] Box<T>);
 
+
 impl<T> ::core::ops::Deref for GenericBox<T>
 where
     Box<T>: ::core::ops::Deref,
@@ -128,4 +135,35 @@ fn deref_mut_generic_forward() {
     let mut boxed = GenericBox(Box::new(1i32));
     *boxed = 3;
     assert_eq!(*boxed, 3i32);
+}
+
+#[cfg(nightly)]
+mod never {
+    use super::*;
+
+    #[derive(DerefMut)]
+    struct Tuple(!);
+
+    
+    impl ::core::ops::Deref for Tuple {
+        type Target = !;
+        #[inline]
+        fn deref(&self) -> &Self::Target {
+            self.0
+        }
+    }
+
+    #[derive(DerefMut)]
+    struct Struct {
+        field: !,
+    }
+
+    
+    impl ::core::ops::Deref for Struct {
+        type Target = !;
+        #[inline]
+        fn deref(&self) -> &Self::Target {
+            self.field
+        }
+    }
 }

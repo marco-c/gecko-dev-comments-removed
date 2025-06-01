@@ -2,12 +2,12 @@
 
 
 
-use std::{convert::identity, iter};
+use std::iter;
 
 use unicode_xid::UnicodeXID as XID;
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct FormatString<'a> {
     pub(crate) formats: Vec<Format<'a>>,
 }
@@ -22,29 +22,71 @@ pub(crate) struct Format<'a> {
 }
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct FormatSpec<'a> {
+    
+    pub(crate) align: Option<(Option<Fill>, Align)>,
+
+    
+    pub(crate) sign: Option<Sign>,
+
+    
+    pub(crate) alternate: Option<Alternate>,
+
+    
+    pub(crate) zero_padding: Option<ZeroPadding>,
+
+    
     pub(crate) width: Option<Width<'a>>,
+
+    
     pub(crate) precision: Option<Precision<'a>>,
+
+    
+    
+    
     pub(crate) ty: Type,
 }
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Argument<'a> {
     Integer(usize),
     Identifier(&'a str),
 }
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum Align {
+    Left,
+    Center,
+    Right,
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum Sign {
+    Plus,
+    Minus,
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct Alternate;
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct ZeroPadding;
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Precision<'a> {
     Count(Count<'a>),
     Star,
 }
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Count<'a> {
     Integer(usize),
     Parameter(Parameter<'a>),
@@ -53,7 +95,7 @@ pub(crate) enum Count<'a> {
 
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Type {
     Display,
     Debug,
@@ -72,18 +114,37 @@ impl Type {
     
     pub(crate) fn trait_name(&self) -> &'static str {
         match self {
-            Type::Display => "Display",
-            Type::Debug | Type::LowerDebug | Type::UpperDebug => "Debug",
-            Type::Octal => "Octal",
-            Type::LowerHex => "LowerHex",
-            Type::UpperHex => "UpperHex",
-            Type::Pointer => "Pointer",
-            Type::Binary => "Binary",
-            Type::LowerExp => "LowerExp",
-            Type::UpperExp => "UpperExp",
+            Self::Display => "Display",
+            Self::Debug | Self::LowerDebug | Self::UpperDebug => "Debug",
+            Self::Octal => "Octal",
+            Self::LowerHex => "LowerHex",
+            Self::UpperHex => "UpperHex",
+            Self::Pointer => "Pointer",
+            Self::Binary => "Binary",
+            Self::LowerExp => "LowerExp",
+            Self::UpperExp => "UpperExp",
+        }
+    }
+
+    
+    pub(crate) fn is_trivial(&self) -> bool {
+        match self {
+            Self::Display
+            | Self::Debug
+            | Self::Octal
+            | Self::LowerHex
+            | Self::UpperHex
+            | Self::Pointer
+            | Self::Binary
+            | Self::LowerExp
+            | Self::UpperExp => true,
+            Self::LowerDebug | Self::UpperDebug => false,
         }
     }
 }
+
+
+type Fill = char;
 
 
 type Width<'a> = Count<'a>;
@@ -188,7 +249,7 @@ fn maybe_format(input: &str) -> Option<(LeftToParse<'_>, MaybeFormat<'_>)> {
 
 
 
-fn format(input: &str) -> Option<(LeftToParse<'_>, Format<'_>)> {
+pub(crate) fn format(input: &str) -> Option<(LeftToParse<'_>, Format<'_>)> {
     let input = char('{')(input)?;
 
     let (input, arg) = optional_result(argument)(input);
@@ -244,22 +305,24 @@ fn argument(input: &str) -> Option<(LeftToParse<'_>, Argument)> {
 
 
 fn format_spec(input: &str) -> Option<(LeftToParse<'_>, FormatSpec<'_>)> {
-    let input = unwrap_or_else(
-        alt(&mut [
-            &mut try_seq(&mut [&mut any_char, &mut one_of("<^>")]),
-            &mut one_of("<^>"),
-        ]),
-        identity,
-    )(input);
+    let (input, align) = optional_result(alt(&mut [
+        &mut and_then(take_any_char, |(i, fill)| {
+            map(align, |(i, align)| (i, (Some(fill), align)))(i)
+        }),
+        &mut map(align, |(i, align)| (i, (None, align))),
+    ]))(input);
 
-    let input = seq(&mut [
-        &mut optional(one_of("+-")),
-        &mut optional(char('#')),
-        &mut optional(try_seq(&mut [
+    let (input, sign) = optional_result(sign)(input);
+
+    let (input, alternate) = optional_result(map(char('#'), |i| (i, Alternate)))(input);
+
+    let (input, zero_padding) = optional_result(map(
+        try_seq(&mut [
             &mut char('0'),
             &mut lookahead(check_char(|c| !matches!(c, '$'))),
-        ])),
-    ])(input);
+        ]),
+        |i| (i, ZeroPadding),
+    ))(input);
 
     let (input, width) = optional_result(count)(input);
 
@@ -274,11 +337,59 @@ fn format_spec(input: &str) -> Option<(LeftToParse<'_>, FormatSpec<'_>)> {
     Some((
         input,
         FormatSpec {
+            align,
+            sign,
+            alternate,
+            zero_padding,
             width,
             precision,
             ty,
         },
     ))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn align(input: &str) -> Option<(LeftToParse<'_>, Align)> {
+    alt(&mut [
+        &mut map(char('<'), |i| (i, Align::Left)),
+        &mut map(char('^'), |i| (i, Align::Center)),
+        &mut map(char('>'), |i| (i, Align::Right)),
+    ])(input)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn sign(input: &str) -> Option<(LeftToParse<'_>, Sign)> {
+    alt(&mut [
+        &mut map(char('+'), |i| (i, Sign::Plus)),
+        &mut map(char('-'), |i| (i, Sign::Minus)),
+    ])(input)
 }
 
 
@@ -411,7 +522,7 @@ fn identifier(input: &str) -> Option<(LeftToParse<'_>, Identifier<'_>)> {
             ),
             &mut and_then(char('_'), take_while1(check_char(XID::is_xid_continue))),
         ]),
-        |(i, _)| (i, &input[..(input.as_bytes().len() - i.as_bytes().len())]),
+        |(i, _)| (i, &input[..(input.len() - i.len())]),
     )(input)
 }
 
@@ -430,13 +541,6 @@ fn integer(input: &str) -> Option<(LeftToParse<'_>, usize)> {
 
 fn text(input: &str) -> Option<(LeftToParse<'_>, &str)> {
     take_until1(any_char, one_of("{}"))(input)
-}
-
-type Parser<'p> = &'p mut dyn FnMut(&str) -> &str;
-
-
-fn seq<'p>(parsers: &'p mut [Parser<'p>]) -> impl FnMut(&str) -> LeftToParse<'_> + 'p {
-    move |input| parsers.iter_mut().fold(input, |i, p| (**p)(i))
 }
 
 type FallibleParser<'p> = &'p mut dyn FnMut(&str) -> Option<&str>;
@@ -475,14 +579,6 @@ fn map_or_else<'i, I: 'i, O: 'i>(
 }
 
 
-fn unwrap_or_else<'i, O: 'i>(
-    mut parser: impl FnMut(&'i str) -> Option<O>,
-    mut f: impl FnMut(&'i str) -> O,
-) -> impl FnMut(&'i str) -> O {
-    move |input| parser(input).unwrap_or_else(|| f(input))
-}
-
-
 
 fn and_then<'i, I: 'i, O: 'i>(
     mut parser: impl FnMut(&'i str) -> Option<I>,
@@ -497,14 +593,6 @@ fn lookahead(
     mut parser: impl FnMut(&str) -> Option<&str>,
 ) -> impl FnMut(&str) -> Option<LeftToParse<'_>> {
     move |input| map(&mut parser, |_| input)(input)
-}
-
-
-
-fn optional(
-    mut parser: impl FnMut(&str) -> Option<&str>,
-) -> impl FnMut(&str) -> LeftToParse<'_> {
-    move |input: &str| parser(input).unwrap_or(input)
 }
 
 
@@ -526,10 +614,7 @@ fn take_while0(
         while let Some(step) = parser(cur) {
             cur = step;
         }
-        (
-            cur,
-            &input[..(input.as_bytes().len() - cur.as_bytes().len())],
-        )
+        (cur, &input[..(input.len() - cur.len())])
     }
 }
 
@@ -543,10 +628,7 @@ fn take_while1(
         while let Some(step) = parser(cur) {
             cur = step;
         }
-        Some((
-            cur,
-            &input[..(input.as_bytes().len() - cur.as_bytes().len())],
-        ))
+        Some((cur, &input[..(input.len() - cur.len())]))
     }
 }
 
@@ -574,16 +656,13 @@ fn take_until1(
             cur = b;
         }
 
-        Some((
-            cur,
-            &input[..(input.as_bytes().len() - cur.as_bytes().len())],
-        ))
+        Some((cur, &input[..(input.len() - cur.len())]))
     }
 }
 
 
 fn str(s: &str) -> impl FnMut(&str) -> Option<LeftToParse<'_>> + '_ {
-    move |input| input.starts_with(s).then(|| &input[s.as_bytes().len()..])
+    move |input| input.starts_with(s).then(|| &input[s.len()..])
 }
 
 
@@ -617,6 +696,13 @@ fn one_of(chars: &str) -> impl FnMut(&str) -> Option<LeftToParse<'_>> + '_ {
 
 fn any_char(input: &str) -> Option<LeftToParse<'_>> {
     input.chars().next().map(|c| &input[c.len_utf8()..])
+}
+
+
+
+
+fn take_any_char(input: &str) -> Option<(LeftToParse<'_>, char)> {
+    input.chars().next().map(|c| (&input[c.len_utf8()..], c))
 }
 
 #[cfg(test)]
@@ -685,6 +771,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -698,6 +788,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((None, Align::Center)),
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -711,6 +805,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('-'), Align::Left)),
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -724,6 +822,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some(' '), Align::Left)),
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -737,6 +839,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('^'), Align::Left)),
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -750,6 +856,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: Some(Sign::Plus),
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -763,6 +873,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('^'), Align::Left)),
+                        sign: Some(Sign::Minus),
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -776,6 +890,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: Some(Alternate),
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -789,6 +907,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: Some(Sign::Plus),
+                        alternate: Some(Alternate),
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -802,6 +924,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('-'), Align::Left)),
+                        sign: None,
+                        alternate: Some(Alternate),
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -815,6 +941,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('^'), Align::Left)),
+                        sign: Some(Sign::Minus),
+                        alternate: Some(Alternate),
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -828,6 +958,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: Some(ZeroPadding),
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -841,6 +975,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: Some(Alternate),
+                        zero_padding: Some(ZeroPadding),
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -854,6 +992,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: Some(Sign::Minus),
+                        alternate: None,
+                        zero_padding: Some(ZeroPadding),
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -867,6 +1009,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('^'), Align::Left)),
+                        sign: None,
+                        alternate: None,
+                        zero_padding: Some(ZeroPadding),
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -880,6 +1026,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('^'), Align::Left)),
+                        sign: Some(Sign::Plus),
+                        alternate: Some(Alternate),
+                        zero_padding: Some(ZeroPadding),
                         width: None,
                         precision: None,
                         ty: Type::Display,
@@ -893,6 +1043,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: Some(Count::Integer(1)),
                         precision: None,
                         ty: Type::Display,
@@ -906,6 +1060,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: Some(Count::Parameter(Argument::Integer(1))),
                         precision: None,
                         ty: Type::Display,
@@ -919,6 +1077,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: Some(Count::Parameter(Argument::Identifier("par"))),
                         precision: None,
                         ty: Type::Display,
@@ -932,6 +1094,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some('-'), Align::Center)),
+                        sign: Some(Sign::Minus),
+                        alternate: Some(Alternate),
+                        zero_padding: Some(ZeroPadding),
                         width: Some(Count::Parameter(Argument::Identifier("Минск"))),
                         precision: None,
                         ty: Type::Display,
@@ -945,6 +1111,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: Some(Precision::Star),
                         ty: Type::Display,
@@ -958,6 +1128,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: Some(Precision::Count(Count::Integer(0))),
                         ty: Type::Display,
@@ -971,6 +1145,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: Some(Precision::Count(Count::Parameter(
                             Argument::Integer(0),
@@ -986,6 +1164,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: Some(Precision::Count(Count::Parameter(
                             Argument::Identifier("par"),
@@ -1001,6 +1183,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some(' '), Align::Right)),
+                        sign: Some(Sign::Plus),
+                        alternate: Some(Alternate),
+                        zero_padding: None,
                         width: Some(Count::Parameter(Argument::Integer(2))),
                         precision: Some(Precision::Count(Count::Parameter(
                             Argument::Identifier("par"),
@@ -1016,6 +1202,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::LowerDebug,
@@ -1029,6 +1219,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: None,
+                        sign: None,
+                        alternate: None,
+                        zero_padding: None,
                         width: None,
                         precision: None,
                         ty: Type::UpperExp,
@@ -1042,6 +1236,10 @@ mod tests {
                 formats: vec![Format {
                     arg: None,
                     spec: Some(FormatSpec {
+                        align: Some((Some(' '), Align::Right)),
+                        sign: Some(Sign::Plus),
+                        alternate: Some(Alternate),
+                        zero_padding: None,
                         width: Some(Count::Parameter(Argument::Identifier("par"))),
                         precision: Some(Precision::Count(Count::Parameter(
                             Argument::Identifier("par"),
@@ -1062,6 +1260,10 @@ mod tests {
                     Format {
                         arg: Some(Argument::Integer(0)),
                         spec: Some(FormatSpec {
+                            align: None,
+                            sign: None,
+                            alternate: Some(Alternate),
+                            zero_padding: None,
                             width: None,
                             precision: None,
                             ty: Type::Debug,
@@ -1070,6 +1272,10 @@ mod tests {
                     Format {
                         arg: Some(Argument::Identifier("par")),
                         spec: Some(FormatSpec {
+                            align: Some((Some('-'), Align::Center)),
+                            sign: None,
+                            alternate: None,
+                            zero_padding: None,
                             width: Some(Count::Parameter(Argument::Identifier("par"))),
                             precision: Some(Precision::Count(Count::Parameter(
                                 Argument::Identifier("a"),

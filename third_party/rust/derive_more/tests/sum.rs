@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(dead_code)] 
 
 use derive_more::Sum;
 
@@ -19,6 +20,7 @@ struct Point2D {
     x: i32,
     y: i32,
 }
+
 
 impl ::core::ops::Add for Point2D {
     type Output = Point2D;

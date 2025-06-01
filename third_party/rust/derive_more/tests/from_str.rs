@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(dead_code)]
+#![allow(dead_code)] 
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -15,6 +15,12 @@ struct MyInt(i32);
 #[derive(FromStr)]
 struct Point1D {
     x: i32,
+}
+
+
+#[derive(FromStr)]
+enum EnumWithErr {
+    Err,
 }
 
 #[derive(Debug, FromStr, PartialEq, Eq)]

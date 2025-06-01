@@ -31,6 +31,7 @@
 
 
 
+
 #![cfg_attr(
     all(
         feature = "add",
@@ -41,15 +42,23 @@
     doc = include_str!("../README.md")
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(all(not(feature = "std"), feature = "error"), feature(error_in_core))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(any(not(docsrs), ci), deny(rustdoc::all))]
 #![forbid(non_ascii_idents, unsafe_code)]
 #![warn(clippy::nonstandard_macro_braces)]
 
 
+
+
+#[doc(hidden)]
+pub use core;
+
+
 #[doc(hidden)]
 pub mod __private {
+    #[cfg(feature = "as_ref")]
+    pub use crate::r#as::{Conv, ExtractRef};
+
     #[cfg(feature = "debug")]
     pub use crate::fmt::{debug_tuple, DebugTuple};
 
@@ -58,8 +67,19 @@ pub mod __private {
 }
 
 
+
+#[cfg(feature = "add")]
+mod add;
+#[cfg(feature = "add")]
+pub use crate::add::{BinaryError, WrongVariantError};
+
 #[cfg(any(feature = "add", feature = "not"))]
-pub mod ops;
+mod ops;
+#[cfg(any(feature = "add", feature = "not"))]
+pub use crate::ops::UnitError;
+
+#[cfg(feature = "as_ref")]
+mod r#as;
 
 #[cfg(feature = "debug")]
 mod fmt;
@@ -73,8 +93,11 @@ mod r#str;
 #[doc(inline)]
 pub use crate::r#str::FromStrError;
 
-#[cfg(feature = "try_into")]
+#[cfg(any(feature = "try_into", feature = "try_from"))]
 mod convert;
+#[cfg(feature = "try_from")]
+#[doc(inline)]
+pub use crate::convert::TryFromReprError;
 #[cfg(feature = "try_into")]
 #[doc(inline)]
 pub use crate::convert::TryIntoError;
@@ -83,197 +106,335 @@ pub use crate::convert::TryIntoError;
 mod try_unwrap;
 #[cfg(feature = "try_unwrap")]
 #[doc(inline)]
-pub use self::try_unwrap::TryUnwrapError;
+pub use crate::try_unwrap::TryUnwrapError;
+
+
+
+#[allow(unused_imports)]
+#[doc(inline)]
+pub use derive_more_impl::*;
 
 
 
 
+pub mod derive {
+    
+    
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use derive_more_impl::*;
+}
 
 
 
 
+pub mod with_trait {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    macro_rules! re_export_traits((
+        $feature:literal, $new_module_name:ident, $module:path $(, $traits:ident)* $(,)?) => {
+            #[cfg(all(feature = $feature, any(not(docsrs), ci)))]
+            mod $new_module_name {
+                #[doc(hidden)]
+                pub use $module::{$($traits),*};
+            }
 
-
-
-macro_rules! re_export_traits((
-    $feature:literal, $new_module_name:ident, $module:path $(, $traits:ident)* $(,)?) => {
-        #[cfg(feature = $feature)]
-        mod $new_module_name {
-            pub use $module::{$($traits),*};
+            #[cfg(all(feature = $feature, any(not(docsrs), ci)))]
+            #[doc(hidden)]
+            pub use crate::with_trait::all_traits_and_derives::$new_module_name::*;
         }
+    );
 
-        #[cfg(feature = $feature)]
-        #[doc(hidden)]
-        pub use crate::$new_module_name::*;
+    mod all_traits_and_derives {
+        re_export_traits!(
+            "add",
+            add_traits,
+            core::ops,
+            Add,
+            BitAnd,
+            BitOr,
+            BitXor,
+            Sub,
+        );
+        re_export_traits!(
+            "add_assign",
+            add_assign_traits,
+            core::ops,
+            AddAssign,
+            BitAndAssign,
+            BitOrAssign,
+            BitXorAssign,
+            SubAssign,
+        );
+        re_export_traits!("as_ref", as_ref_traits, core::convert, AsMut, AsRef);
+        re_export_traits!("debug", debug_traits, core::fmt, Debug);
+        re_export_traits!("deref", deref_traits, core::ops, Deref);
+        re_export_traits!("deref_mut", deref_mut_traits, core::ops, DerefMut);
+        re_export_traits!(
+            "display",
+            display_traits,
+            core::fmt,
+            Binary,
+            Display,
+            LowerExp,
+            LowerHex,
+            Octal,
+            Pointer,
+            UpperExp,
+            UpperHex,
+        );
 
+        #[cfg(not(feature = "std"))]
+        re_export_traits!("error", error_traits, core::error, Error);
+        #[cfg(feature = "std")]
+        re_export_traits!("error", error_traits, std::error, Error);
+
+        re_export_traits!("from", from_traits, core::convert, From);
+
+        re_export_traits!("from_str", from_str_traits, core::str, FromStr);
+
+        re_export_traits!("index", index_traits, core::ops, Index);
+
+        re_export_traits!("index_mut", index_mut_traits, core::ops, IndexMut);
+
+        re_export_traits!("into", into_traits, core::convert, Into);
+
+        re_export_traits!(
+            "into_iterator",
+            into_iterator_traits,
+            core::iter,
+            IntoIterator,
+        );
+
+        re_export_traits!("mul", mul_traits, core::ops, Div, Mul, Rem, Shl, Shr);
+
+        #[cfg(feature = "mul_assign")]
+        re_export_traits!(
+            "mul_assign",
+            mul_assign_traits,
+            core::ops,
+            DivAssign,
+            MulAssign,
+            RemAssign,
+            ShlAssign,
+            ShrAssign,
+        );
+
+        re_export_traits!("not", not_traits, core::ops, Neg, Not);
+
+        re_export_traits!("sum", sum_traits, core::iter, Product, Sum);
+
+        re_export_traits!("try_from", try_from_traits, core::convert, TryFrom);
+
+        re_export_traits!("try_into", try_into_traits, core::convert, TryInto);
+
+        
+        
+        #[cfg(feature = "add")]
+        pub use derive_more_impl::{Add, BitAnd, BitOr, BitXor, Sub};
+
+        #[cfg(feature = "add_assign")]
+        pub use derive_more_impl::{
+            AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, SubAssign,
+        };
+
+        #[cfg(feature = "as_ref")]
+        pub use derive_more_impl::{AsMut, AsRef};
+
+        #[cfg(feature = "constructor")]
+        pub use derive_more_impl::Constructor;
+
+        #[cfg(feature = "debug")]
+        pub use derive_more_impl::Debug;
+
+        #[cfg(feature = "deref")]
+        pub use derive_more_impl::Deref;
+
+        #[cfg(feature = "deref_mut")]
+        pub use derive_more_impl::DerefMut;
+
+        #[cfg(feature = "display")]
+        pub use derive_more_impl::{
+            Binary, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp, UpperHex,
+        };
+
+        #[cfg(feature = "error")]
+        pub use derive_more_impl::Error;
+
+        #[cfg(feature = "from")]
+        pub use derive_more_impl::From;
+
+        #[cfg(feature = "from_str")]
+        pub use derive_more_impl::FromStr;
+
+        #[cfg(feature = "index")]
+        pub use derive_more_impl::Index;
+
+        #[cfg(feature = "index_mut")]
+        pub use derive_more_impl::IndexMut;
+
+        #[cfg(feature = "into")]
+        pub use derive_more_impl::Into;
+
+        #[cfg(feature = "into_iterator")]
+        pub use derive_more_impl::IntoIterator;
+
+        #[cfg(feature = "is_variant")]
+        pub use derive_more_impl::IsVariant;
+
+        #[cfg(feature = "mul")]
+        pub use derive_more_impl::{Div, Mul, Rem, Shl, Shr};
+
+        #[cfg(feature = "mul_assign")]
+        pub use derive_more_impl::{
+            DivAssign, MulAssign, RemAssign, ShlAssign, ShrAssign,
+        };
+
+        #[cfg(feature = "not")]
+        pub use derive_more_impl::{Neg, Not};
+
+        #[cfg(feature = "sum")]
+        pub use derive_more_impl::{Product, Sum};
+
+        #[cfg(feature = "try_from")]
+        pub use derive_more_impl::TryFrom;
+
+        #[cfg(feature = "try_into")]
+        pub use derive_more_impl::TryInto;
+
+        #[cfg(feature = "try_unwrap")]
+        pub use derive_more_impl::TryUnwrap;
+
+        #[cfg(feature = "unwrap")]
+        pub use derive_more_impl::Unwrap;
     }
-);
 
-re_export_traits!(
-    "add",
-    add_traits,
-    core::ops,
-    Add,
-    BitAnd,
-    BitOr,
-    BitXor,
-    Sub,
-);
-re_export_traits!(
-    "add_assign",
-    add_assign_traits,
-    core::ops,
-    AddAssign,
-    BitAndAssign,
-    BitOrAssign,
-    BitXorAssign,
-    SubAssign,
-);
-re_export_traits!("as_mut", as_mut_traits, core::convert, AsMut);
-re_export_traits!("as_ref", as_ref_traits, core::convert, AsRef);
-re_export_traits!("debug", debug_traits, core::fmt, Debug);
-re_export_traits!("deref", deref_traits, core::ops, Deref);
-re_export_traits!("deref_mut", deref_mut_traits, core::ops, DerefMut);
-re_export_traits!(
-    "display",
-    display_traits,
-    core::fmt,
-    Binary,
-    Display,
-    LowerExp,
-    LowerHex,
-    Octal,
-    Pointer,
-    UpperExp,
-    UpperHex,
-);
+    
+    
+    
+    
+    
+    #[cfg(feature = "add")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{Add, BitAnd, BitOr, BitXor, Sub};
 
-#[cfg(not(feature = "std"))]
-re_export_traits!("error", error_traits, core::error, Error);
-#[cfg(feature = "std")]
-re_export_traits!("error", error_traits, std::error, Error);
+    #[cfg(feature = "add_assign")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{
+        AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, SubAssign,
+    };
 
-re_export_traits!("from", from_traits, core::convert, From);
+    #[cfg(feature = "as_ref")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{AsMut, AsRef};
 
-re_export_traits!("from_str", from_str_traits, core::str, FromStr);
+    #[cfg(feature = "constructor")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Constructor;
 
-re_export_traits!("index", index_traits, core::ops, Index);
+    #[cfg(feature = "debug")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Debug;
 
-re_export_traits!("index_mut", index_mut_traits, core::ops, IndexMut);
+    #[cfg(feature = "deref")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Deref;
 
-re_export_traits!("into", into_traits, core::convert, Into);
+    #[cfg(feature = "deref_mut")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::DerefMut;
 
-re_export_traits!(
-    "into_iterator",
-    into_iterator_traits,
-    core::iter,
-    IntoIterator,
-);
+    #[cfg(feature = "display")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{
+        Binary, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp, UpperHex,
+    };
 
-re_export_traits!("mul", mul_traits, core::ops, Div, Mul, Rem, Shl, Shr);
+    #[cfg(feature = "error")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Error;
 
-#[cfg(feature = "mul_assign")]
-re_export_traits!(
-    "mul_assign",
-    mul_assign_traits,
-    core::ops,
-    DivAssign,
-    MulAssign,
-    RemAssign,
-    ShlAssign,
-    ShrAssign,
-);
+    #[cfg(feature = "from")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::From;
 
-re_export_traits!("not", not_traits, core::ops, Neg, Not);
+    #[cfg(feature = "from_str")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::FromStr;
 
-re_export_traits!("sum", sum_traits, core::iter, Product, Sum);
+    #[cfg(feature = "index")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Index;
 
-re_export_traits!("try_into", try_into_traits, core::convert, TryInto);
+    #[cfg(feature = "index_mut")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::IndexMut;
 
+    #[cfg(feature = "into")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Into;
 
+    #[cfg(feature = "into_iterator")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::IntoIterator;
 
-#[cfg(feature = "add")]
-pub use derive_more_impl::{Add, BitAnd, BitOr, BitXor, Sub};
+    #[cfg(feature = "is_variant")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::IsVariant;
 
-#[cfg(feature = "add_assign")]
-pub use derive_more_impl::{
-    AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, SubAssign,
-};
+    #[cfg(feature = "mul")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{Div, Mul, Rem, Shl, Shr};
 
-#[cfg(feature = "as_mut")]
-pub use derive_more_impl::AsMut;
+    #[cfg(feature = "mul_assign")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{
+        DivAssign, MulAssign, RemAssign, ShlAssign, ShrAssign,
+    };
 
-#[cfg(feature = "as_ref")]
-pub use derive_more_impl::AsRef;
+    #[cfg(feature = "not")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{Neg, Not};
 
-#[cfg(feature = "constructor")]
-pub use derive_more_impl::Constructor;
+    #[cfg(feature = "sum")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::{Product, Sum};
 
-#[cfg(feature = "debug")]
-pub use derive_more_impl::Debug;
+    #[cfg(feature = "try_from")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::TryFrom;
 
-#[cfg(feature = "deref")]
-pub use derive_more_impl::Deref;
+    #[cfg(feature = "try_into")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::TryInto;
 
-#[cfg(feature = "deref_mut")]
-pub use derive_more_impl::DerefMut;
+    #[cfg(feature = "try_unwrap")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::TryUnwrap;
 
-#[cfg(feature = "display")]
-pub use derive_more_impl::{
-    Binary, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp, UpperHex,
-};
+    #[cfg(feature = "unwrap")]
+    #[doc(hidden)]
+    pub use all_traits_and_derives::Unwrap;
 
-#[cfg(feature = "error")]
-pub use derive_more_impl::Error;
-
-#[cfg(feature = "from")]
-pub use derive_more_impl::From;
-
-#[cfg(feature = "from_str")]
-pub use derive_more_impl::FromStr;
-
-#[cfg(feature = "index")]
-pub use derive_more_impl::Index;
-
-#[cfg(feature = "index_mut")]
-pub use derive_more_impl::IndexMut;
-
-#[cfg(feature = "into")]
-pub use derive_more_impl::Into;
-
-#[cfg(feature = "into_iterator")]
-pub use derive_more_impl::IntoIterator;
-
-#[cfg(feature = "is_variant")]
-pub use derive_more_impl::IsVariant;
-
-#[cfg(feature = "mul")]
-pub use derive_more_impl::{Div, Mul, Rem, Shl, Shr};
-
-#[cfg(feature = "mul_assign")]
-pub use derive_more_impl::{DivAssign, MulAssign, RemAssign, ShlAssign, ShrAssign};
-
-#[cfg(feature = "not")]
-pub use derive_more_impl::{Neg, Not};
-
-#[cfg(feature = "sum")]
-pub use derive_more_impl::{Product, Sum};
-
-#[cfg(feature = "try_into")]
-pub use derive_more_impl::TryInto;
-
-#[cfg(feature = "try_unwrap")]
-pub use derive_more_impl::TryUnwrap;
-
-#[cfg(feature = "unwrap")]
-pub use derive_more_impl::Unwrap;
+    
+    
+    #[allow(unused_imports)]
+    pub use derive_more_impl::*;
+}
 
 
 #[cfg(not(any(
     feature = "full",
     feature = "add",
     feature = "add_assign",
-    feature = "as_mut",
     feature = "as_ref",
     feature = "constructor",
     feature = "debug",
@@ -292,10 +453,11 @@ pub use derive_more_impl::Unwrap;
     feature = "mul_assign",
     feature = "not",
     feature = "sum",
+    feature = "try_from",
     feature = "try_into",
     feature = "try_unwrap",
     feature = "unwrap",
 )))]
 compile_error!(
-    "at least one derive feature must be enabled (or the \"full\" one enabling all the derives)"
+    "at least one derive feature must be enabled (or the \"full\" feature enabling all the derives)"
 );

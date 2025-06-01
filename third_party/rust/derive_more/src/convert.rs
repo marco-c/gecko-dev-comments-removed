@@ -1,47 +1,97 @@
 
 
-use core::fmt;
+#[cfg(feature = "try_from")]
+pub use self::try_from::TryFromReprError;
+#[cfg(feature = "try_into")]
+pub use self::try_into::TryIntoError;
 
+#[cfg(feature = "try_from")]
+mod try_from {
+    use core::fmt;
 
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct TryIntoError<T> {
     
     
     
     
-    pub input: T,
-    variant_names: &'static str,
-    output_type: &'static str,
-}
+    #[derive(Clone, Copy, Debug)]
+    pub struct TryFromReprError<T> {
+        
+        
+        
+        
+        pub input: T,
+    }
 
-impl<T> TryIntoError<T> {
-    #[doc(hidden)]
-    #[must_use]
-    #[inline]
-    pub const fn new(
-        input: T,
-        variant_names: &'static str,
-        output_type: &'static str,
-    ) -> Self {
-        Self {
-            input,
-            variant_names,
-            output_type,
+    impl<T> TryFromReprError<T> {
+        #[doc(hidden)]
+        #[must_use]
+        #[inline]
+        pub const fn new(input: T) -> Self {
+            Self { input }
         }
     }
-}
 
-impl<T> fmt::Display for TryIntoError<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Only {} can be converted to {}",
-            self.variant_names, self.output_type,
-        )
+    
+    impl<T: fmt::Debug> fmt::Display for TryFromReprError<T> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(
+                f,
+                "`{:?}` does not correspond to a unit variant",
+                self.input
+            )
+        }
     }
+
+    #[cfg(feature = "std")]
+    
+    impl<T: fmt::Debug> std::error::Error for TryFromReprError<T> {}
 }
 
-#[cfg(feature = "std")]
-impl<T: fmt::Debug> std::error::Error for TryIntoError<T> {}
+#[cfg(feature = "try_into")]
+mod try_into {
+    use core::fmt;
+
+    
+    
+    
+    #[derive(Clone, Copy, Debug)]
+    pub struct TryIntoError<T> {
+        
+        
+        
+        
+        pub input: T,
+        variant_names: &'static str,
+        output_type: &'static str,
+    }
+
+    impl<T> TryIntoError<T> {
+        #[doc(hidden)]
+        #[must_use]
+        #[inline]
+        pub const fn new(
+            input: T,
+            variant_names: &'static str,
+            output_type: &'static str,
+        ) -> Self {
+            Self {
+                input,
+                variant_names,
+                output_type,
+            }
+        }
+    }
+
+    impl<T> fmt::Display for TryIntoError<T> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(
+                f,
+                "Only {} can be converted to {}",
+                self.variant_names, self.output_type,
+            )
+        }
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: fmt::Debug> std::error::Error for TryIntoError<T> {}
+}
