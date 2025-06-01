@@ -1310,6 +1310,10 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
 
 
 static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
+  if (!module->hasCyclicModuleFields()) {
+    return true;
+  }
+
   
   ModuleStatus status = module->status();
   if (status == ModuleStatus::Linking || status == ModuleStatus::Evaluating) {
