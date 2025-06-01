@@ -1202,9 +1202,6 @@ class WindowBase {
   }
 
   
-  
-  
-  
 
 
 
@@ -1256,7 +1253,6 @@ class WindowBase {
   getTabAtIndex(_index) {
     throw new Error("Not implemented");
   }
-  
 }
 
 Object.assign(WindowBase, { WINDOW_ID_NONE, WINDOW_ID_CURRENT });
@@ -1372,9 +1368,6 @@ class TabTrackerBase extends EventEmitter {
   }
 
   
-  
-  
-  
 
 
 
@@ -1416,8 +1409,7 @@ class TabTrackerBase extends EventEmitter {
 
 
 
-  
-  getBrowserData() {
+  getBrowserData(_browser) {
     throw new Error("Not implemented");
   }
 
@@ -1513,9 +1505,6 @@ class WindowTrackerBase extends EventEmitter {
   }
 
   
-  
-  
-  
 
 
 
@@ -1524,7 +1513,6 @@ class WindowTrackerBase extends EventEmitter {
 
 
 
-  
   *browserWindows(includeIncomplete = false) {
     
     
@@ -2082,9 +2070,6 @@ class TabManagerBase {
   }
 
   
-  
-  
-  
 
 
 
@@ -2245,9 +2230,6 @@ class WindowManagerBase {
   }
 
   
-  
-  
-  
 
 
 
@@ -2333,7 +2315,6 @@ class WindowManagerBase {
   wrapWindow(_window) {
     throw new Error("Not implemented");
   }
-  
 }
 
 function getUserContextIdForCookieStoreId(

@@ -3,8 +3,6 @@
 
 
 
-
-
 if (typeof Mozilla == "undefined") {
   var Mozilla = {};
 }
