@@ -1290,9 +1290,6 @@ bool TryPreserveWrapper(JS::Handle<JSObject*> obj) {
     return true;
   }
 
-  
-  
-
   const JSClass* clasp = JS::GetClass(obj);
   const DOMJSClass* domClass = GetDOMClass(clasp);
 
@@ -1300,17 +1297,23 @@ bool TryPreserveWrapper(JS::Handle<JSObject*> obj) {
   MOZ_RELEASE_ASSERT(clasp->isNativeObject(),
                      "Should not call addProperty for proxies.");
 
-  JSAddPropertyOp addProperty = clasp->getAddProperty();
-  if (!addProperty) {
+  if (!clasp->preservesWrapper()) {
     return true;
   }
 
-  
-  MOZ_RELEASE_ASSERT(domClass->mParticipant);
+  WrapperCacheGetter getter = domClass->mWrapperCacheGetter;
+  MOZ_RELEASE_ASSERT(getter);
 
-  JS::Rooted<jsid> dummyId(RootingCx());
-  JS::Rooted<JS::Value> dummyValue(RootingCx());
-  return addProperty(nullptr, obj, dummyId, dummyValue);
+  nsWrapperCache* cache = getter(obj);
+  
+  
+  
+  if (cache && cache->GetWrapperPreserveColor()) {
+    cache->PreserveWrapper(
+        cache, reinterpret_cast<nsScriptObjectTracer*>(domClass->mParticipant));
+  }
+
+  return true;
 }
 
 bool HasReleasedWrapper(JS::Handle<JSObject*> obj) {
@@ -2440,6 +2443,7 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
   
   
   
+  static_assert(DOM_OBJECT_SLOT == JS_OBJECT_WRAPPER_SLOT);
   JS::SetReservedSlot(newobj, DOM_OBJECT_SLOT,
                       JS::GetReservedSlot(aObj, DOM_OBJECT_SLOT));
   JS::SetReservedSlot(aObj, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
