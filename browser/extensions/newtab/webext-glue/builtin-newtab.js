@@ -74,10 +74,6 @@ this.builtin_newtab = class extends ExtensionAPI {
       ].getService(Ci.nsIAboutModule).wrappedJSObject;
 
       if (this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/")) {
-        console.log(
-          `Launching New Tab XPI version ${this.extension.version} ` +
-          `on application version ${AppConstants.MOZ_APP_VERSION_DISPLAY}`
-        );
         
         
         const newtabFileSource = new L10nFileSource(
