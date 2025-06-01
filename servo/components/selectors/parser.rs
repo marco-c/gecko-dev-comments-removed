@@ -3438,7 +3438,7 @@ where
 
 
 
-fn is_css2_pseudo_element(name: &str) -> bool {
+pub fn is_css2_pseudo_element(name: &str) -> bool {
     
     match_ignore_ascii_case! { name,
         "before" | "after" | "first-line" | "first-letter" => true,
