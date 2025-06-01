@@ -1,10 +1,10 @@
-
-
-
-
-
-
-
+/**
+ * @fileoverview A collection of rules that help enforce JavaScript coding
+ * standard and avoid common errors in the Mozilla project.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 "use strict";
 
@@ -17,7 +17,7 @@ const { name, version } = require(path.join(__dirname, "..", "package.json"));
 const plugin = {
   meta: { name, version },
   configs: {
-    
+    // Filled in below.
   },
   environments: {
     "browser-window": require("./environments/browser-window.js"),
@@ -106,21 +106,21 @@ const configurations = [
   "xpcshell-test",
 ];
 
-
-
-
-
-
-
-
-
-
+/**
+ * Clones a flat configuration section, adjusting fields so that ESLint won't
+ * fail.
+ *
+ * @param {object} section
+ *   The section to clone.
+ * @returns {object}
+ *   The cloned section.
+ */
 function cloneFlatSection(section) {
   let config = structuredClone(section);
 
-  
-  
-  
+  // We assume all parts of the flat config need the plugins defined. In
+  // practice, they only need to be defined where they are used, but for
+  // now this is simpler.
   config.plugins = {
     mozilla: plugin,
     "no-unsanitized": require("eslint-plugin-no-unsanitized"),
@@ -137,7 +137,7 @@ function cloneFlatSection(section) {
     delete config.globals;
   }
 
-  
+  // Handle changing the location of the sourceType.
   if (config.parserOptions?.sourceType) {
     config.languageOptions.sourceType = config.parserOptions.sourceType;
   }
@@ -148,7 +148,7 @@ function cloneFlatSection(section) {
   }
   delete config.parserOptions;
 
-  
+  // Convert any environments into a list of globals.
   for (let [key, value] of Object.entries(config.env ?? {})) {
     if (!value) {
       throw new Error(

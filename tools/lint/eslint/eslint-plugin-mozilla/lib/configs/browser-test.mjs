@@ -1,4 +1,4 @@
-
+// Parent config file for all browser-chrome files.
 "use strict";
 
 module.exports = {
@@ -8,9 +8,9 @@ module.exports = {
     "mozilla/simpletest": true,
   },
 
-  
+  // All globals made available in the test environment.
   globals: {
-    
+    // `$` is defined in SimpleTest.js
     $: false,
     Assert: false,
     BrowserTestUtils: false,
