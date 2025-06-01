@@ -1987,6 +1987,7 @@ bool Gecko_GetAnchorPosOffset(
       case StyleAnchorSideKeyword::SelfEnd:
         return LogicalEdge::End;
     }
+    return LogicalEdge::Start;
   }();
 
   
