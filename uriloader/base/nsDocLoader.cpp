@@ -1449,6 +1449,9 @@ void nsDocLoader::DoFireOnStateChange(nsIWebProgress* const aProgress,
   
   
   
+  
+  
+  
   if (mIsLoadingDocument &&
       (aStateFlags & nsIWebProgressListener::STATE_IS_NETWORK) &&
       (this != aProgress)) {

@@ -1151,6 +1151,8 @@ class nsDocShell final : public nsDocLoader,
 
   void SetCurrentURIInternal(nsIURI* aURI);
 
+  already_AddRefed<nsIWebProgressListener> BCWebProgressListener();
+
   
   nsString mTitle;
   nsCString mOriginalUriString;
