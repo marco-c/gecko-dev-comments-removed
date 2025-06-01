@@ -197,37 +197,6 @@
 
 namespace js {
 
-
-
-
-
-
-template <typename T, typename = void>
-struct CanLifoAlloc : std::false_type {};
-
-
-template <typename T>
-struct CanLifoAlloc<T*> : std::true_type {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-using lifo_alloc_pointer = typename std::enable_if<
-    js::CanLifoAlloc<typename std::remove_pointer<T>::type>::value ||
-        std::is_trivially_destructible_v<typename std::remove_pointer<T>::type>,
-    T>::type;
-
 namespace detail {
 
 template <typename T, typename D>
@@ -881,8 +850,7 @@ class LifoAlloc {
   }
 
   template <typename T, typename... Args>
-  MOZ_ALWAYS_INLINE auto newWithSize(size_t n, Args&&... args)
-      -> js::lifo_alloc_pointer<T*> {
+  MOZ_ALWAYS_INLINE T* newWithSize(size_t n, Args&&... args) {
     MOZ_ASSERT(n >= sizeof(T), "must request enough space to store a T");
     static_assert(alignof(T) <= detail::LIFO_ALLOC_ALIGN,
                   "LifoAlloc must provide enough alignment to store T");

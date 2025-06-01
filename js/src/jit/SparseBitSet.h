@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #include "ds/InlineTable.h"
-#include "ds/LifoAlloc.h"
 
 namespace js::jit {
 
@@ -36,7 +35,7 @@ namespace js::jit {
 
 
 
-template <typename AllocPolicy, typename Owner>
+template <typename AllocPolicy>
 class SparseBitSet {
   
   
@@ -125,8 +124,8 @@ class SparseBitSet {
 
 
 
-template <typename AllocPolicy, typename Owner>
-class SparseBitSet<AllocPolicy, Owner>::Iterator {
+template <typename AllocPolicy>
+class SparseBitSet<AllocPolicy>::Iterator {
 #ifdef DEBUG
   SparseBitSet& bitSet_;
 #endif
@@ -184,17 +183,6 @@ class SparseBitSet<AllocPolicy, Owner>::Iterator {
     }
     skipZeroBits();
   }
-};
-
-}  
-
-namespace js {
-
-
-
-
-template <typename T, typename Owner>
-struct CanLifoAlloc<js::jit::SparseBitSet<T, Owner>> : Owner::IsStackAllocated {
 };
 
 }  

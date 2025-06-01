@@ -179,16 +179,6 @@ using UsePositionIterator = InlineForwardListIterator<UsePosition>;
 class LiveBundle;
 class VirtualRegister;
 
-} 
-
-
-
-
-template <>
-struct CanLifoAlloc<js::jit::VirtualRegister> : std::true_type {};
-
-namespace jit {
-
 class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
  public:
   struct Range {
@@ -674,11 +664,7 @@ class VirtualRegister {
 using SplitPositionVector =
     js::Vector<CodePosition, 4, BackgroundSystemAllocPolicy>;
 
-class MOZ_STACK_CLASS BacktrackingAllocator : protected RegisterAllocator {
- public:
-  using IsStackAllocated = std::true_type;
-
- private:
+class BacktrackingAllocator : protected RegisterAllocator {
   friend class JSONSpewer;
 
   
@@ -686,10 +672,7 @@ class MOZ_STACK_CLASS BacktrackingAllocator : protected RegisterAllocator {
   Vector<CodePosition, 12, SystemAllocPolicy> entryPositions;
   Vector<CodePosition, 12, SystemAllocPolicy> exitPositions;
 
-  
-  
-  using VirtualRegBitSet =
-      SparseBitSet<BackgroundSystemAllocPolicy, BacktrackingAllocator>;
+  using VirtualRegBitSet = SparseBitSet<BackgroundSystemAllocPolicy>;
   Vector<VirtualRegBitSet, 0, JitAllocPolicy> liveIn;
   Vector<VirtualRegister, 0, JitAllocPolicy> vregs;
 
