@@ -16,7 +16,7 @@ import {
 '../framework/params_builder.js';
 import { globalTestConfig } from '../framework/test_config.js';
 
-import { TestCaseRecorder } from '../internal/logging/test_case_recorder.js';
+
 import { extractPublicParams, mergeParams } from '../internal/params_utils.js';
 import { compareQueries, Ordering } from '../internal/query/compare.js';
 import {
@@ -616,45 +616,10 @@ class RunCaseSpecific {
 
           for (const subParams of this.subcases) {
             
-            
-            
-            const subcasePrefix = 'subcase: ' + stringifyPublicParams(subParams);
-            const subRec = new Proxy(rec, {
-              get: (target, k) => {
-                const prop = rec[k] ?? TestCaseRecorder.prototype[k];
-                if (typeof prop === 'function') {
-                  testHeartbeatCallback();
-                  return function (...args) {
-                    void allPreviousSubcasesFinalizedPromise.then(() => {
-                      
-                      for (const arg of args) {
-                        if (arg instanceof Error) {
-                          try {
-                            arg.message = subcasePrefix + '\n' + arg.message;
-                          } catch {
-                            
-                            let stack = subcasePrefix;
-                            if (arg.stack) stack += '\n' + arg.stack;
-                            try {
-                              arg.stack = stack;
-                            } catch {
-
-                              
-                            }}
-                        }
-                      }
-
-
-                      const rv = prop.apply(target, args);
-                      
-                      
-                      assert(rv === undefined);
-                    });
-                  };
-                }
-                return prop;
-              }
-            });
+            const subRec = rec.makeDeferredSubRecorder(
+              `(in subcase: ${stringifyPublicParams(subParams)}) `,
+              allPreviousSubcasesFinalizedPromise
+            );
 
             const params = mergeParams(this.params, subParams);
             const subcaseQuery = new TestQuerySingleCase(
@@ -684,13 +649,13 @@ class RunCaseSpecific {
               getExpectedStatus(subcaseQuery)
             ).
             then(() => {
-              subRec.info(new Error('OK'));
+              subRec.info(new Error('subcase ran'));
             }).
             catch((ex) => {
               if (ex instanceof SkipTestCase) {
                 
                 ex.message = 'subcase skipped: ' + ex.message;
-                subRec.info(ex);
+                subRec.info(new Error('subcase skipped'));
                 ++skipCount;
               } else {
                 
