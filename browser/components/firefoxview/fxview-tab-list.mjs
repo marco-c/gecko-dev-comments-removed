@@ -234,15 +234,19 @@ export class FxviewTabListBase extends MozLitElement {
       // In Bug 1866845, these manual updates to the sublists should be removed
       // and scrollIntoView() should also be iterated on so that we aren't constantly
       // moving the focused item to the center of the viewport
-      for (const sublist of Array.from(this.rootVirtualListEl.children)) {
-        await sublist.requestUpdate();
-        await sublist.updateComplete;
-      }
+      await this.requestVirtualListUpdate();
       row.scrollIntoView({ block: "center" });
       row.focus();
     } else if (index >= 0 && index < this.rowEls?.length) {
       this.rowEls[index].focus();
       this.activeIndex = index;
+    }
+  }
+
+  async requestVirtualListUpdate() {
+    for (const sublist of this.rootVirtualListEl.children) {
+      await sublist.requestUpdate();
+      await sublist.updateComplete;
     }
   }
 
@@ -400,6 +404,7 @@ export class FxviewTabRowBase extends MozLitElement {
     title: { type: String },
     timeMsPref: { type: Number },
     url: { type: String },
+    uri: { type: String },
     searchQuery: { type: String },
   };
 
@@ -421,6 +426,11 @@ export class FxviewTabRowBase extends MozLitElement {
       focusItem = this.renderRoot.getElementById("fxview-tab-row-main");
     }
     return focusItem;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.uri = this.url;
   }
 
   focus() {
