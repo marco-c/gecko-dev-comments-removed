@@ -58,6 +58,7 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
   
   switch (eventType) {
     case eKeyDown:
+    case eKeyPress:
     case eKeyUp:
     case eCompositionStart:
     case eEditorInput:
@@ -99,6 +100,13 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
     uint64_t interactionId = IncreaseInteractionValueAndCount();
     mLastKeydownInteractionValue = Some(interactionId);
     return Some(interactionId);
+  }
+
+  
+  
+  if (eventType == eKeyPress) {
+    
+    return Some(mCurrentInteractionValue);
   }
 
   
