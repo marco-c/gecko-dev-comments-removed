@@ -122,15 +122,13 @@ class ChannelMediaDecoder
     uint32_t mRate;  
     bool mReliable;  
   };
-  
-  static PlaybackRateInfo ComputePlaybackRate(
-      const MediaChannelStatistics& aStats, BaseMediaResource* aResource,
-      const media::TimeUnit& aDuration);
 
   
   
-  static void UpdatePlaybackRate(const PlaybackRateInfo& aInfo,
-                                 BaseMediaResource* aResource);
+  
+  static PlaybackRateInfo UpdateResourceOfPlaybackByteRate(
+      const MediaChannelStatistics& aStats, BaseMediaResource* aResource,
+      const media::TimeUnit& aDuration);
 
   
   
