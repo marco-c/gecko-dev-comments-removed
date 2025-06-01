@@ -1347,10 +1347,28 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
 
   CSSIntSize size;
   nsCOMPtr<imgIContainer> image;
-  if (mCurrentRequest) {
+  if (StaticPrefs::image_natural_size_fallback_enabled()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    size = NaturalSize(DoDensityCorrection::No);
+  } else if (mCurrentRequest) {
     mCurrentRequest->GetImage(getter_AddRefs(image));
   }
 
+  
+  
+  
+  
+  
   const nsAttrValue* value;
   if ((value = element->GetParsedAttr(nsGkAtoms::width)) &&
       value->Type() == nsAttrValue::eInteger) {
