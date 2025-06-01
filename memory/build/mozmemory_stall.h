@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozjemalloc_utils_h
-#define mozjemalloc_utils_h
+#ifndef mozjemalloc_stall_h
+#define mozjemalloc_stall_h
 
 #include <optional>
 #include <type_traits>
@@ -45,8 +45,8 @@ struct StallSpecs {
   
   
   template <typename DelayFunc, typename OpFunc>
-  auto StallAndRetry(DelayFunc&& aDelayFunc, OpFunc&& aOperation) const
-      -> decltype(aOperation()) {
+  auto StallAndRetry(DelayFunc&& aDelayFunc,
+                     OpFunc&& aOperation) const -> decltype(aOperation()) {
     {
       
       using detail::is_std_optional;
