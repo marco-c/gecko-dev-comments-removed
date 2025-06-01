@@ -58,19 +58,17 @@ testFancyZeroOffset('i32.const 0 ' + (
 }
 
 
-if (wasmMemory64Enabled()) {
-    let val = 1899148184679; 
-    let expr = `(i64.const ${val})\n`;
-    while (val != 1) {
-        if (val % 2 == 0) {
-            expr += `(i64.sub (i64.const ${val / 2}))\n`; 
-            val /= 2;
-        } else {
-            expr += `(i64.mul (i64.const 3))\n`;
-            expr += `(i64.add (i64.const 1))\n`;
-            val = val * 3 + 1;
-        }
+let val = 1899148184679; 
+let expr = `(i64.const ${val})\n`;
+while (val != 1) {
+    if (val % 2 == 0) {
+        expr += `(i64.sub (i64.const ${val / 2}))\n`; 
+        val /= 2;
+    } else {
+        expr += `(i64.mul (i64.const 3))\n`;
+        expr += `(i64.add (i64.const 1))\n`;
+        val = val * 3 + 1;
     }
-    expr += `(i64.sub (i64.const 1))\n`;
-    testFancyZeroOffset(expr, 'i64');
 }
+expr += `(i64.sub (i64.const 1))\n`;
+testFancyZeroOffset(expr, 'i64');
