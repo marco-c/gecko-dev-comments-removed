@@ -366,7 +366,7 @@ class WaylandSurface final {
   
   
   wl_callback* mReadyToDrawFrameCallback = nullptr;
-  std::vector<std::function<void(void)>> mReadToDrawCallbacks;
+  std::vector<std::function<void(void)>> mReadyToDrawCallbacks;
 
   
   wl_callback* mFrameCallback = nullptr;
