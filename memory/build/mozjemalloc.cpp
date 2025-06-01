@@ -232,7 +232,6 @@ using namespace mozilla;
 #endif
 
 #ifdef XP_WIN
-#  define STDERR_FILENO 2
 
 
 static char mozillaMallocOptionsBuf[64];
@@ -2020,23 +2019,6 @@ static inline bool malloc_init() {
   return true;
 }
 
-static void _malloc_message(const char* p) {
-#if !defined(XP_WIN)
-#  define _write write
-#endif
-  
-  
-  if (_write(STDERR_FILENO, p, (unsigned int)strlen(p)) < 0) {
-    return;
-  }
-}
-
-template <typename... Args>
-static void _malloc_message(const char* p, Args... args) {
-  _malloc_message(p);
-  _malloc_message(args...);
-}
-
 #ifdef ANDROID
 
 extern "C" MOZ_EXPORT int pthread_atfork(void (*)(void), void (*)(void),
@@ -2055,8 +2037,6 @@ static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {
 static inline size_t GetChunkOffsetForPtr(const void* aPtr) {
   return (size_t)(uintptr_t(aPtr) & kChunkSizeMask);
 }
-
-static inline const char* _getprogname(void) { return "<jemalloc>"; }
 
 static inline void MaybePoison(void* aPtr, size_t aSize) {
   size_t size;
@@ -2621,14 +2601,6 @@ bool AddressRadixTree<Bits>::Set(void* aAddr, void* aValue) {
 
 
 
-
-
-#define ALIGNMENT_ADDR2OFFSET(a, alignment) \
-  ((size_t)((uintptr_t)(a) & ((alignment) - 1)))
-
-
-#define ALIGNMENT_CEILING(s, alignment) \
-  (((s) + ((alignment) - 1)) & (~((alignment) - 1)))
 
 static void* pages_trim(void* addr, size_t alloc_size, size_t leadsize,
                         size_t size) {
