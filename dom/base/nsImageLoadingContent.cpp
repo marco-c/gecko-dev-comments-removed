@@ -54,6 +54,7 @@
 #include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/PageLoadEventUtils.h"
 #include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/ResponsiveImageSelector.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/intl/Locale.h"
@@ -1273,6 +1274,66 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
             domPromise->MaybeResolve(std::move(imageTexts));
           });
   return domPromise.forget();
+}
+
+CSSIntSize nsImageLoadingContent::NaturalSize() {
+  if (!mCurrentRequest) {
+    return {};
+  }
+
+  nsCOMPtr<imgIContainer> image;
+  mCurrentRequest->GetImage(getter_AddRefs(image));
+  if (!image) {
+    return {};
+  }
+
+  mozilla::image::ImageIntrinsicSize intrinsicSize;
+  nsresult rv = image->GetIntrinsicSize(&intrinsicSize);
+  if (NS_FAILED(rv)) {
+    return {};
+  }
+
+  CSSIntSize size;  
+  if (!StaticPrefs::image_natural_size_fallback_enabled()) {
+    size.width = intrinsicSize.mWidth.valueOr(0);
+    size.height = intrinsicSize.mHeight.valueOr(0);
+  } else {
+    
+    
+    
+    
+    
+    
+    size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
+    size.height =
+        intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
+    AspectRatio ratio = image->GetIntrinsicRatio();
+    if (ratio) {
+      if (!intrinsicSize.mHeight) {
+        
+        
+        size.height = ratio.Inverted().ApplyTo(size.width);
+      } else if (!intrinsicSize.mWidth) {
+        
+        size.width = ratio.ApplyTo(size.height);
+      }
+    }
+  }
+
+  ImageResolution resolution = image->GetResolution();
+  
+  
+  
+  if (auto* image = HTMLImageElement::FromNode(AsContent())) {
+    if (auto* sel = image->GetResponsiveImageSelector()) {
+      float density = sel->GetSelectedImageDensity();
+      MOZ_ASSERT(density >= 0.0);
+      resolution.ScaleBy(density);
+    }
+  }
+
+  resolution.ApplyTo(size.width, size.height);
+  return size;
 }
 
 CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
