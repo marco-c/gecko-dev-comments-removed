@@ -168,6 +168,7 @@
 #include "BaseAlloc.h"
 #include "Chunk.h"
 #include "Constants.h"
+#include "Extent.h"
 #include "Globals.h"
 #include "Mutex.h"
 #include "PHC.h"
@@ -286,74 +287,6 @@ struct arena_stats_t {
 
   
   uint64_t operations;
-};
-
-
-
-
-
-struct extent_node_t {
-  union {
-    
-    RedBlackTreeNode<extent_node_t> mLinkBySize;
-    
-    
-    arena_id_t mArenaId;
-  };
-
-  
-  RedBlackTreeNode<extent_node_t> mLinkByAddr;
-
-  
-  void* mAddr;
-
-  
-  size_t mSize;
-
-  union {
-    
-    ChunkType mChunkType;
-
-    
-    arena_t* mArena;
-  };
-};
-
-struct ExtentTreeSzTrait {
-  static RedBlackTreeNode<extent_node_t>& GetTreeNode(extent_node_t* aThis) {
-    return aThis->mLinkBySize;
-  }
-
-  static inline Order Compare(extent_node_t* aNode, extent_node_t* aOther) {
-    Order ret = CompareInt(aNode->mSize, aOther->mSize);
-    return (ret != Order::eEqual) ? ret
-                                  : CompareAddr(aNode->mAddr, aOther->mAddr);
-  }
-};
-
-struct ExtentTreeTrait {
-  static RedBlackTreeNode<extent_node_t>& GetTreeNode(extent_node_t* aThis) {
-    return aThis->mLinkByAddr;
-  }
-
-  static inline Order Compare(extent_node_t* aNode, extent_node_t* aOther) {
-    return CompareAddr(aNode->mAddr, aOther->mAddr);
-  }
-};
-
-struct ExtentTreeBoundsTrait : public ExtentTreeTrait {
-  static inline Order Compare(extent_node_t* aKey, extent_node_t* aNode) {
-    uintptr_t key_addr = reinterpret_cast<uintptr_t>(aKey->mAddr);
-    uintptr_t node_addr = reinterpret_cast<uintptr_t>(aNode->mAddr);
-    size_t node_size = aNode->mSize;
-
-    
-    if (node_addr <= key_addr && key_addr < node_addr + node_size) {
-      return Order::eEqual;
-    }
-
-    return CompareAddr(aKey->mAddr, aNode->mAddr);
-  }
 };
 
 
@@ -1844,11 +1777,6 @@ void* base_calloc(size_t aNumber, size_t aSize) {
   return ret;
 }
 
-using ExtentAlloc = TypedBaseAlloc<extent_node_t>;
-
-template <>
-extent_node_t* ExtentAlloc::sFirstFree = nullptr;
-
 template <>
 arena_t* TypedBaseAlloc<arena_t>::sFirstFree = nullptr;
 
@@ -1857,9 +1785,6 @@ size_t TypedBaseAlloc<arena_t>::size_of() {
   
   return sizeof(arena_t) + (sizeof(arena_bin_t) * NUM_SMALL_CLASSES);
 }
-
-using UniqueBaseNode =
-    UniquePtr<extent_node_t, BaseAllocFreePolicy<extent_node_t>>;
 
 
 
