@@ -5,6 +5,8 @@ const cspDirectives = [
   "trusted-types",
   
   "script-src",
+  
+  "script-src-elem",
 ];
 
 
