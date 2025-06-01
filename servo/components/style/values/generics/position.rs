@@ -358,7 +358,7 @@ pub struct GenericAnchorFunction<Percentage, LengthPercentage> {
     pub target_element: DashedIdent,
     
     
-    pub side: AnchorSide<Percentage>,
+    pub side: GenericAnchorSide<Percentage>,
     
     pub fallback: Optional<LengthPercentage>,
 }
@@ -492,14 +492,14 @@ impl AnchorSideKeyword {
     Deserialize,
 )]
 #[repr(C)]
-pub enum AnchorSide<P> {
+pub enum GenericAnchorSide<P> {
     
     Keyword(AnchorSideKeyword),
     
     Percentage(P),
 }
 
-impl<P> AnchorSide<P> {
+impl<P> GenericAnchorSide<P> {
     
     pub fn valid_for(&self, side: PhysicalSide) -> bool {
         match self {
