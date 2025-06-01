@@ -68,6 +68,31 @@ function tByteSize(str) {
 
 
 
+function s_ifDependent(str, depSize, clonedSize) {
+  
+  depSize = s(...depSize);
+  clonedSize = s(...clonedSize);
+
+  if (this.stringRepresentation) {
+    if (JSON.parse(stringRepresentation(str)).flags.includes("DEPENDENT_BIT")) {
+      return depSize;
+    } else {
+      return clonedSize;
+    }
+  } else {
+    
+    const size = byteSize(str);
+    if (size == depSize) {
+      return depSize;
+    } else {
+      return clonedSize;
+    }
+  }
+}
+
+
+
+
 
 
 
@@ -90,6 +115,7 @@ const FA = m32 ? 32 : 32;
 const NA = m32 ? 24 : 32; 
 const TN = m32 ? 16 : 24; 
 const FN = m32 ? 32 : 32; 
+const LN = m32 ? 16 : 24; 
 const XN = m32 ? 16 : 24; 
 const RN = m32 ? 16 : 24; 
 const DN = m32 ? 16 : 24; 
@@ -237,9 +263,10 @@ function tenure(s) {
   minorgc();
   return s;
 }
-assertEq(byteSize(tenure(rope8.substr(1000, 2000))),                    s(DN, DN));
-assertEq(byteSize(matches8[0]),                                         s(DN, DN));
-assertEq(byteSize(matches8[1]),                                         s(DN, DN));
+var sub = tenure(rope8.substr(1000, 2000));
+assertEq(byteSize(sub),                                                 s_ifDependent(sub, [DN, DN], [LN+2048, LN+2048]));
+assertEq(byteSize(matches8[0]),                                         s_ifDependent(matches8[0], [DN, DN], [LN+48, LN+48]));
+assertEq(byteSize(matches8[1]),                                         s_ifDependent(matches8[0], [DN, DN], [LN+48, LN+48]));
 
 
 

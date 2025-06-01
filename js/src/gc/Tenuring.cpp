@@ -634,16 +634,39 @@ void JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
   MOZ_ASSERT(!InCollectedNurseryRegion(str), "str should have been promoted");
   MOZ_ASSERT(str->isDependent());
   JSLinearString* root = str->asDependent().rootBaseDuringMinorGC();
-  if (InCollectedNurseryRegion(root)) {
-    
-    return;
-  }
-
-  
   JS::AutoCheckCannotGC nogc;
   const CharT* chars = str->chars<CharT>(nogc);
-  if (PtrIsWithinRange(chars, root->range<CharT>(nogc))) {
-    return;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool baseKnownLiveYet = IsForwarded(root);
+  bool cloneToSaveSpace =
+      !baseKnownLiveYet &&
+      JSDependentString::smallComparedToBase(str->length(), root->length());
+
+  if (!cloneToSaveSpace) {
+    
+    
+    
+    if (InCollectedNurseryRegion(root)) {
+      return; 
+    }
+
+    
+    if (PtrIsWithinRange(chars, root->range<CharT>(nogc))) {
+      return; 
+    }
+
+    
+    
+    
+    
   }
 
   
@@ -1200,7 +1223,7 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
     MOZ_ASSERT(!promotedBase->isDependent());
 
     dst->asDependent().setBase(&promotedBase->asLinear());
-    if (InCollectedNurseryRegion(base)) {
+    if (base != promotedBase) {
       dst->asDependent().updateToPromotedBase(base);
     }
 

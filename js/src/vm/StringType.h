@@ -1327,6 +1327,19 @@ class JSDependentString : public JSLinearString {
 
   inline void updateToPromotedBase(JSLinearString* base);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool smallComparedToBase(size_t sharedChars, size_t baseChars) {
+    return sharedChars <= (baseChars >> 4);
+  }
+
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;
 #endif
