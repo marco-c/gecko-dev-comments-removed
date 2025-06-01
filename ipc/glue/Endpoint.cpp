@@ -84,7 +84,7 @@ bool UntypedManagedEndpoint::BindCommon(IProtocol* aActor,
     return false;
   }
 
-  int32_t id = mInner->mId;
+  ActorId id = mInner->mId;
   mInner.reset();
 
   
