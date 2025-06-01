@@ -111,7 +111,7 @@ class ChannelMediaDecoder
     
     int64_t mDownloadPosition;
     
-    int64_t mPlaybackPosition;
+    int64_t mPlaybackByteOffset;
     
     
     
@@ -174,8 +174,7 @@ class ChannelMediaDecoder
   
   
   
-  
-  int64_t mPlaybackPosition = 0;
+  int64_t mPlaybackByteOffset = 0;
 
   bool mCanPlayThrough = false;
 
