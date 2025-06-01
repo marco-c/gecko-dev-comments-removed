@@ -76,7 +76,7 @@ void WaylandVsyncSource::Init() {
   
   
   
-  mWaylandSurface->AddFrameCallbackLocked(
+  mWaylandSurface->SetFrameCallbackLocked(
       surfaceLock,
       [this, self = RefPtr{this}](wl_callback* aCallback,
                                   uint32_t aTime) -> void {
