@@ -831,18 +831,18 @@ function makeExpectedResult({
       isSponsored: true,
       dynamicType: "fakespot",
       icon: null,
-      suggestionObject: new Suggestion.Fakespot(
+      suggestionObject: new Suggestion.Fakespot({
         fakespotGrade,
-        "", 
+        productId: "", 
         rating,
         title,
         totalReviews,
-        originalUrl, 
-        null, 
-        null, 
-        0.2, 
-        null 
-      ),
+        url: originalUrl, 
+        icon: null, 
+        iconMimeType: null, 
+        score: 0.2, 
+        matchInfo: null, 
+      }),
     },
   };
 }
