@@ -131,16 +131,6 @@ class DateTimeFormatObject : public NativeObject {
 
 
 
-[[nodiscard]] extern bool intl_CreateDateTimeFormat(JSContext* cx,
-                                                    unsigned argc,
-                                                    JS::Value* vp);
-
-
-
-
-
-
-
 
 
 [[nodiscard]] extern bool intl_availableCalendars(JSContext* cx, unsigned argc,

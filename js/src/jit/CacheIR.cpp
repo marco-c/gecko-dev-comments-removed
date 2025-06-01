@@ -10804,33 +10804,22 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime(
-    InlinableNative native) {
+AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime() {
   
   if (!thisval_.isObject() || !thisval_.toObject().is<DateObject>()) {
     return AttachDecision::NoAction;
   }
 
-  if (native == InlinableNative::DateGetTime) {
-    
-    if (args_.length() != 0) {
-      return AttachDecision::NoAction;
-    }
-  } else {
-    MOZ_ASSERT(args_.length() == 1 && args_[0].isInt32());
+  
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
   }
 
   
   Int32OperandId argcId = initializeInputOperand();
 
-  ObjOperandId calleeId;
-  if (native == InlinableNative::DateGetTime) {
-    
-    calleeId = emitNativeCalleeGuard(argcId);
-  } else {
-    
-    MOZ_ASSERT(native == InlinableNative::IntrinsicThisTimeValue);
-  }
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10842,8 +10831,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime(
 
   writer.returnFromIC();
 
-  trackAttached(native == InlinableNative::DateGetTime ? "DateGetTime"
-                                                       : "ThisTimeValue");
+  trackAttached("DateGetTime");
   return AttachDecision::Attach;
 }
 
@@ -12627,8 +12615,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
 
     
     case InlinableNative::DateGetTime:
-    case InlinableNative::IntrinsicThisTimeValue:
-      return tryAttachDateGetTime(native);
+      return tryAttachDateGetTime();
     case InlinableNative::DateGetFullYear:
       return tryAttachDateGet(DateComponent::FullYear);
     case InlinableNative::DateGetMonth:

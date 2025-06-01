@@ -104,8 +104,9 @@ const ClassSpec CollatorObject::classSpec_ = {
 
 
 
-static bool Collator(JSContext* cx, const CallArgs& args) {
+static bool Collator(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSConstructorProfilerEntry pseudoFrame(cx, "Intl.Collator");
+  CallArgs args = CallArgsFromVp(argc, vp);
 
   
 
@@ -132,19 +133,6 @@ static bool Collator(JSContext* cx, const CallArgs& args) {
 
   args.rval().setObject(*collator);
   return true;
-}
-
-static bool Collator(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return Collator(cx, args);
-}
-
-bool js::intl_Collator(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 2);
-  MOZ_ASSERT(!args.isConstructing());
-
-  return Collator(cx, args);
 }
 
 CollatorObject* js::intl::CreateCollator(JSContext* cx, Handle<Value> locales,
