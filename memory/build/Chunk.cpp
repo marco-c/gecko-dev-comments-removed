@@ -94,6 +94,7 @@ StallSpecs GetAllocatorStallSpecs() {
 
 
 
+
 void* MozVirtualAlloc(void* lpAddress, size_t dwSize, uint32_t flAllocationType,
                       uint32_t flProtect) {
   using namespace MozAllocRetries;
