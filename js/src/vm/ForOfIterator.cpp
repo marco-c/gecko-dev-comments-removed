@@ -142,11 +142,10 @@ bool ForOfIterator::next(MutableHandleValue vp, bool* done) {
   return GetProperty(cx_, resultObj, resultObj, cx_->names().value, vp);
 }
 
-
-
 void ForOfIterator::closeThrow() {
   MOZ_ASSERT(iterator);
 
+  
   RootedValue completionException(cx_);
   Rooted<SavedFrame*> completionExceptionStack(cx_);
   if (cx_->isExceptionPending()) {
@@ -158,39 +157,10 @@ void ForOfIterator::closeThrow() {
   }
 
   
+  MOZ_ALWAYS_TRUE(CloseIterOperation(cx_, iterator, CompletionKind::Throw));
 
   
-  RootedValue returnVal(cx_);
-  if (!GetProperty(cx_, iterator, iterator, cx_->names().return_, &returnVal)) {
-    return;
-  }
-
-  
-  if (returnVal.isUndefined()) {
-    cx_->setPendingException(completionException, completionExceptionStack);
-    return;
-  }
-
-  
-  if (!returnVal.isObject()) {
-    JS_ReportErrorNumberASCII(cx_, GetErrorMessage, nullptr,
-                              JSMSG_RETURN_NOT_CALLABLE);
-    return;
-  }
-  RootedObject returnObj(cx_, &returnVal.toObject());
-  if (!returnObj->isCallable()) {
-    JS_ReportErrorNumberASCII(cx_, GetErrorMessage, nullptr,
-                              JSMSG_RETURN_NOT_CALLABLE);
-    return;
-  }
-
-  
-  RootedValue innerResultValue(cx_);
-  if (!js::Call(cx_, returnVal, iterator, &innerResultValue)) {
-    if (cx_->isExceptionPending()) {
-      cx_->clearPendingException();
-    }
-  }
+  MOZ_ASSERT(!cx_->isExceptionPending());
 
   
   cx_->setPendingException(completionException, completionExceptionStack);
