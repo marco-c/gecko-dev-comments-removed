@@ -536,6 +536,21 @@ struct PrivateCapabilities {
     
     
     shader_integer_dot_product: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    shader_int8: bool,
 }
 
 bitflags::bitflags!(

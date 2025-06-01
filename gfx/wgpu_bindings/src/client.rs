@@ -1237,6 +1237,14 @@ pub unsafe extern "C" fn wgpu_command_encoder_copy_buffer_to_buffer(
     size: wgt::BufferAddress,
     bb: &mut ByteBuf,
 ) {
+    
+    
+    
+    
+    
+    
+    
+    let size = (size != wgt::BufferAddress::MAX).then_some(size);
     let action = CommandEncoderAction::CopyBufferToBuffer {
         src,
         src_offset,

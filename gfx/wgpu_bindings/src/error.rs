@@ -163,7 +163,7 @@ mod foreign {
         },
         resource::{
             BufferAccessError, CreateBufferError, CreateQuerySetError, CreateSamplerError,
-            CreateTextureError, CreateTextureViewError, DestroyError,
+            CreateTextureError, CreateTextureViewError,
         },
     };
     use wgt::RequestAdapterError;
@@ -641,12 +641,6 @@ mod foreign {
             
             
             
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for DestroyError {
-        fn error_type(&self) -> ErrorBufferType {
             ErrorBufferType::Validation
         }
     }

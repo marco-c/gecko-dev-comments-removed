@@ -255,12 +255,36 @@ pub use block::Block;
 
 
 
+
+
+
+
+
+
+
+
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub struct EarlyDepthTest {
-    pub conservative: Option<ConservativeDepth>,
+pub enum EarlyDepthTest {
+    
+    
+    
+    
+    Force,
+
+    
+    
+    
+    
+    Allow {
+        
+        
+        
+        
+        conservative: ConservativeDepth,
+    },
 }
 
 
@@ -1279,6 +1303,20 @@ pub enum GatherMode {
     ShuffleUp(Handle<Expression>),
     
     ShuffleXor(Handle<Expression>),
+    
+    QuadBroadcast(Handle<Expression>),
+    
+    QuadSwap(Direction),
+}
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum Direction {
+    X = 0,
+    Y = 1,
+    Diagonal = 2,
 }
 
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
