@@ -78,6 +78,8 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
     extra_args = lintargs.get("extra_args") or []
     result = {"results": [], "fixed": 0}
 
+    
+    
     if not lintargs.get("formatonly", False):
         exclude_args = []
         for path in config.get("exclude", []):
