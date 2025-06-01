@@ -811,8 +811,6 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
                    ComputedLogicalBorderPadding(wm).BStartEnd(wm));
   }
 
-  const auto anchorResolutionParams =
-      AnchorPosResolutionParams::UseCBFrameSize(mFrame, positionProperty);
   bool dependsOnCBBSize =
       (nsStylePosition::BSizeDependsOnContainer(bSize) &&
        
@@ -820,12 +818,10 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
       nsStylePosition::MinBSizeDependsOnContainer(minBSize) ||
       nsStylePosition::MaxBSizeDependsOnContainer(maxBSize) ||
       mStylePosition
-          ->GetAnchorResolvedInset(LogicalSide::BStart, wm,
-                                   anchorResolutionParams)
+          ->GetAnchorResolvedInset(LogicalSide::BStart, wm, positionProperty)
           ->HasPercent() ||
       !mStylePosition
-           ->GetAnchorResolvedInset(LogicalSide::BEnd, wm,
-                                    anchorResolutionParams)
+           ->GetAnchorResolvedInset(LogicalSide::BEnd, wm, positionProperty)
            ->IsAuto() ||
       
       
@@ -950,12 +946,10 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
   
   
   
-  const auto anchorResolutionParams =
-      AnchorPosResolutionParams::UseCBFrameSize(aFrame, positionProperty);
   const auto inlineStart = position->GetAnchorResolvedInset(
-      LogicalSide::IStart, aWM, anchorResolutionParams);
+      LogicalSide::IStart, aWM, positionProperty);
   const auto inlineEnd = position->GetAnchorResolvedInset(
-      LogicalSide::IEnd, aWM, anchorResolutionParams);
+      LogicalSide::IEnd, aWM, positionProperty);
   bool inlineStartIsAuto = inlineStart->IsAuto();
   bool inlineEndIsAuto = inlineEnd->IsAuto();
 
@@ -996,9 +990,9 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
   
   
   const auto blockStart = position->GetAnchorResolvedInset(
-      LogicalSide::BStart, aWM, anchorResolutionParams);
-  const auto blockEnd = position->GetAnchorResolvedInset(
-      LogicalSide::BEnd, aWM, anchorResolutionParams);
+      LogicalSide::BStart, aWM, positionProperty);
+  const auto blockEnd = position->GetAnchorResolvedInset(LogicalSide::BEnd, aWM,
+                                                         positionProperty);
   bool blockStartIsAuto = blockStart->IsAuto();
   bool blockEndIsAuto = blockEnd->IsAuto();
 
@@ -1670,17 +1664,14 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   NS_ASSERTION(mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Why are we here?");
 
-  const auto anchorResolutionParams =
-      AnchorPosResolutionParams::ExplicitCBFrameSize(
-          mFrame, &aCBSize, StylePositionProperty::Absolute);
   const auto iStartOffset = mStylePosition->GetAnchorResolvedInset(
-      LogicalSide::IStart, cbwm, anchorResolutionParams);
+      LogicalSide::IStart, cbwm, StylePositionProperty::Absolute);
   const auto iEndOffset = mStylePosition->GetAnchorResolvedInset(
-      LogicalSide::IEnd, cbwm, anchorResolutionParams);
+      LogicalSide::IEnd, cbwm, StylePositionProperty::Absolute);
   const auto bStartOffset = mStylePosition->GetAnchorResolvedInset(
-      LogicalSide::BStart, cbwm, anchorResolutionParams);
+      LogicalSide::BStart, cbwm, StylePositionProperty::Absolute);
   const auto bEndOffset = mStylePosition->GetAnchorResolvedInset(
-      LogicalSide::BEnd, cbwm, anchorResolutionParams);
+      LogicalSide::BEnd, cbwm, StylePositionProperty::Absolute);
   bool iStartIsAuto = iStartOffset->IsAuto();
   bool iEndIsAuto = iEndOffset->IsAuto();
   bool bStartIsAuto = bStartOffset->IsAuto();
