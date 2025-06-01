@@ -140,15 +140,6 @@ void NativeLayerRootWayland::Init() {
         }
       });
 
-  mSurface->SetFrameCallbackStateHandlerLocked(
-      lock, [this, self = RefPtr{this}](bool aState) -> void {
-        LOGVERBOSE("FrameCallbackStateHandlerLocked");
-        MutexAutoLock lock(mMutex);
-        for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
-          layer->SetFrameCallbackState(aState);
-        }
-      });
-
   
   
   
@@ -764,7 +755,7 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   
   
   
-  mSurface->SetFrameCallbackLocked(
+  mSurface->AddPersistentFrameCallbackLocked(
       surfaceLock,
       [this, self = RefPtr{this}](wl_callback* aCallback,
                                   uint32_t aTime) -> void {
@@ -779,12 +770,6 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
 
   mNeedsMainThreadUpdate = MainThreadUpdate::Map;
   return true;
-}
-
-void NativeLayerWayland::SetFrameCallbackState(bool aState) {
-  MutexAutoLock lock(mMutex);
-  LOGVERBOSE("NativeLayerWayland::SetFrameCallbackState() %d", aState);
-  mSurface->SetFrameCallbackState(aState);
 }
 
 void NativeLayerWayland::MainThreadMap() {

@@ -42,28 +42,29 @@ class WaylandSurface final {
   void SetLoggingWidget(void* aWidget) { mLoggingWidget = aWidget; }
 #endif
 
-  void ReadyToDrawFrameCallbackHandler(struct wl_callback* aCallback);
+  void InitialFrameCallbackHandler(struct wl_callback* aCallback);
   void AddOrFireReadyToDrawCallback(const std::function<void(void)>& aDrawCB);
   void ClearReadyToDrawCallbacks();
 
   void FrameCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
                             bool aRoutedFromChildSurface);
+  
+  void AddOneTimeFrameCallbackLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler);
 
   
   
   
   
   
-  void SetFrameCallbackLocked(
+  void AddPersistentFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
       bool aEmulateFrameCallback = false);
 
   
   void SetFrameCallbackState(bool aEnabled);
-  void SetFrameCallbackStateHandlerLocked(
-      const WaylandSurfaceLock& aProofOfLock,
-      const std::function<void(bool)>& aFrameCallbackStateHandler);
 
   
   
@@ -365,23 +366,21 @@ class WaylandSurface final {
   
   
   wl_callback* mReadyToDrawFrameCallback = nullptr;
-  std::vector<std::function<void(void)>> mReadyToDrawCallbacks;
+  std::vector<std::function<void(void)>> mReadToDrawCallbacks;
 
   
   wl_callback* mFrameCallback = nullptr;
 
   struct FrameCallback {
-    std::function<void(wl_callback*, uint32_t)> mCb = nullptr;
+    std::function<void(wl_callback*, uint32_t)> mCb;
     bool mEmulated = false;
-
-    operator bool() const { return !!mCb; }
   };
 
   bool mFrameCallbackEnabled = true;
-  std::function<void(bool)> mFrameCallbackStateHandler = nullptr;
-
   
-  FrameCallback mFrameCallbackHandler;
+  std::vector<FrameCallback> mPersistentFrameCallbackHandlers;
+  
+  std::vector<FrameCallback> mOneTimeFrameCallbackHandlers;
 
   
   mozilla::Mutex mMutex{"WaylandSurface"};
