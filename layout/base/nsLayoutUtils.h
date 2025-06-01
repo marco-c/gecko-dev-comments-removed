@@ -1011,8 +1011,8 @@ class nsLayoutUtils {
 
 
 
-  static nsRect GetRectRelativeToFrame(mozilla::dom::Element* aElement,
-                                       nsIFrame* aFrame);
+  static nsRect GetRectRelativeToFrame(const mozilla::dom::Element* aElement,
+                                       const nsIFrame* aFrame);
 
   
 
