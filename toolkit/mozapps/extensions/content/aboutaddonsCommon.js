@@ -11,7 +11,6 @@
 
 
 
-
 const { AddonSettings } = ChromeUtils.importESModule(
   "resource://gre/modules/addons/AddonSettings.sys.mjs"
 );
