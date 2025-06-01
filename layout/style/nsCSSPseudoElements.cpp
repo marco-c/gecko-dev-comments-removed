@@ -38,41 +38,82 @@ nsAtom* nsCSSPseudoElements::GetPseudoAtom(Type aType) {
   return nsGkAtoms::GetAtomByIndex(index);
 }
 
+static bool IsFunctionalPseudo(PseudoStyleType aType) {
+  return aType == PseudoStyleType::highlight ||
+         PseudoStyle::IsNamedViewTransitionPseudoElement(aType);
+}
+
 
 Maybe<PseudoStyleRequest> nsCSSPseudoElements::ParsePseudoElement(
     const nsAString& aPseudoElement, CSSEnabledState aEnabledState) {
-  PseudoStyleRequest result;
-
-  
   if (DOMStringIsNull(aPseudoElement) || aPseudoElement.IsEmpty()) {
-    return Some(result);
+    return Some(PseudoStyleRequest());
   }
 
-  
-  if (!Servo_ParsePseudoElement(&aPseudoElement, &result)) {
+  if (aPseudoElement.First() != char16_t(':')) {
     return Nothing();
   }
 
   
-  
-  
-  
-  
-  
-  if (!PseudoStyle::IsPseudoElement(result.mType) ||
-      !IsEnabled(result.mType, aEnabledState)) {
-    return Nothing();
+  const char16_t* start = aPseudoElement.BeginReading();
+  const char16_t* end = aPseudoElement.EndReading();
+  NS_ASSERTION(start != end, "aPseudoElement is not empty!");
+  ++start;
+  bool haveTwoColons = true;
+  if (start == end || *start != char16_t(':')) {
+    --start;
+    haveTwoColons = false;
   }
 
   
   
-  
-  if (PseudoStyle::IsNamedViewTransitionPseudoElement(result.mType) &&
-      result.mIdentifier == nsGkAtoms::_asterisk) {
+  const int32_t parameterPosition = aPseudoElement.FindChar('(');
+  const bool hasParameter = parameterPosition != kNotFound;
+  if (hasParameter) {
+    end = start + parameterPosition - 1;
+  }
+  RefPtr<nsAtom> pseudo = NS_Atomize(Substring(start, end));
+  MOZ_ASSERT(pseudo);
+
+  Maybe<uint32_t> index = nsStaticAtomUtils::Lookup(pseudo, GetAtomBase(),
+                                                    kAtomCount_PseudoElements);
+  if (index.isNothing()) {
     return Nothing();
   }
+  auto type = static_cast<Type>(*index);
+  RefPtr<nsAtom> functionalPseudoParameter;
+  if (hasParameter) {
+    if (!IsFunctionalPseudo(type)) {
+      return Nothing();
+    }
+    functionalPseudoParameter =
+        [&aPseudoElement, parameterPosition]() -> already_AddRefed<nsAtom> {
+      const char16_t* start = aPseudoElement.BeginReading();
+      const char16_t* end = aPseudoElement.EndReading();
+      start += parameterPosition + 1;
+      --end;
+      if (*end != ')') {
+        return nullptr;
+      }
+      return NS_Atomize(Substring(start, end));
+    }();
 
-  return Some(result);
+    
+    
+    if (PseudoStyle::IsNamedViewTransitionPseudoElement(type) &&
+        functionalPseudoParameter == nsGkAtoms::_asterisk) {
+      return Nothing();
+    }
+  }
+
+  if (!haveTwoColons &&
+      !PseudoElementHasFlags(type, CSS_PSEUDO_ELEMENT_IS_CSS2)) {
+    return Nothing();
+  }
+  if (IsEnabled(type, aEnabledState)) {
+    return Some(PseudoStyleRequest{type, functionalPseudoParameter});
+  }
+  return Nothing();
 }
 
 
