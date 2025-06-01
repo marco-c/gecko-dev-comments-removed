@@ -48,17 +48,13 @@ class WaylandSurface final {
 
   void FrameCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
                             bool aRoutedFromChildSurface);
-  
-  void AddOneTimeFrameCallbackLocked(
-      const WaylandSurfaceLock& aProofOfLock,
-      const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler);
 
   
   
   
   
   
-  void AddPersistentFrameCallbackLocked(
+  void AddFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
       bool aEmulateFrameCallback = false);
@@ -378,9 +374,7 @@ class WaylandSurface final {
 
   bool mFrameCallbackEnabled = true;
   
-  std::vector<FrameCallback> mPersistentFrameCallbackHandlers;
-  
-  std::vector<FrameCallback> mOneTimeFrameCallbackHandlers;
+  std::vector<FrameCallback> mFrameCallbackHandlers;
 
   
   mozilla::Mutex mMutex{"WaylandSurface"};
