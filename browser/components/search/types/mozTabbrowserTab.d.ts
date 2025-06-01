@@ -1,0 +1,6 @@
+
+
+declare class MozTabbrowserTab {
+  
+  linkedBrowser: XULBrowserElement;
+}
