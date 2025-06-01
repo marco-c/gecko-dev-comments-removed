@@ -61,30 +61,30 @@
 
 
 #ifdef XP_WIN
-static const size_t kMinTinyClass = sizeof(void*) * 2;
+static constexpr size_t kMinTinyClass = sizeof(void*) * 2;
 #else
-static const size_t kMinTinyClass = sizeof(void*);
+static constexpr size_t kMinTinyClass = sizeof(void*);
 #endif
 
 
-static const size_t kMaxTinyClass = 8;
+static constexpr size_t kMaxTinyClass = 8;
 
 
 
 
 
-static const size_t kMinQuantumClass = kMaxTinyClass * 2;
-static const size_t kMinQuantumWideClass = 512;
-static const size_t kMinSubPageClass = 4_KiB;
+static constexpr size_t kMinQuantumClass = kMaxTinyClass * 2;
+static constexpr size_t kMinQuantumWideClass = 512;
+static constexpr size_t kMinSubPageClass = 4_KiB;
 
 
-static const size_t kQuantum = 16;
-static const size_t kQuantumMask = kQuantum - 1;
-static const size_t kQuantumWide = 256;
-static const size_t kQuantumWideMask = kQuantumWide - 1;
+static constexpr size_t kQuantum = 16;
+static constexpr size_t kQuantumMask = kQuantum - 1;
+static constexpr size_t kQuantumWide = 256;
+static constexpr size_t kQuantumWideMask = kQuantumWide - 1;
 
-static const size_t kMaxQuantumClass = kMinQuantumWideClass - kQuantum;
-static const size_t kMaxQuantumWideClass = kMinSubPageClass - kQuantumWide;
+static constexpr size_t kMaxQuantumClass = kMinQuantumWideClass - kQuantum;
+static constexpr size_t kMaxQuantumWideClass = kMinSubPageClass - kQuantumWide;
 
 
 static_assert(mozilla::IsPowerOfTwo(kQuantum),
@@ -102,20 +102,20 @@ static_assert(mozilla::IsPowerOfTwo(kMinSubPageClass),
               "kMinSubPageClass is not a power of two");
 
 
-static const size_t kNumTinyClasses =
+static constexpr size_t kNumTinyClasses =
     LOG2(kMaxTinyClass) - LOG2(kMinTinyClass) + 1;
 
 
 
-static const size_t kNumQuantumClasses =
+static constexpr size_t kNumQuantumClasses =
     (kMaxQuantumClass + kQuantum - kMinQuantumClass) / kQuantum;
-static const size_t kNumQuantumWideClasses =
+static constexpr size_t kNumQuantumWideClasses =
     (kMaxQuantumWideClass + kQuantumWide - kMinQuantumWideClass) / kQuantumWide;
 
 
 
-static const size_t kChunkSize = 1_MiB;
-static const size_t kChunkSizeMask = kChunkSize - 1;
+static constexpr size_t kChunkSize = 1_MiB;
+static constexpr size_t kChunkSizeMask = kChunkSize - 1;
 
 
 
@@ -130,6 +130,6 @@ constexpr size_t kCacheLineSize =
 
 
 
-static const size_t gRecycleLimit = 128_MiB;
+static constexpr size_t gRecycleLimit = 128_MiB;
 
 #endif 

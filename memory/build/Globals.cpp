@@ -4,6 +4,10 @@
 
 #include "Globals.h"
 
+#ifdef XP_WIN
+#  include <processenv.h>
+#endif
+
 
 
 
@@ -31,5 +35,35 @@ void DefineGlobals() {
 #  undef GLOBAL
 }
 #endif
+
+#ifdef XP_WIN
+
+
+static char mozillaMallocOptionsBuf[64];
+
+#  define getenv xgetenv
+static char* getenv(const char* name) {
+  if (GetEnvironmentVariableA(name, mozillaMallocOptionsBuf,
+                              sizeof(mozillaMallocOptionsBuf)) > 0) {
+    return mozillaMallocOptionsBuf;
+  }
+
+  return nullptr;
+}
+#endif
+
+
+
+
+size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
+
+#ifdef MALLOC_RUNTIME_CONFIG
+bool opt_junk = OPT_JUNK_DEFAULT;
+bool opt_zero = OPT_ZERO_DEFAULT;
+PoisonType opt_poison = OPT_POISON_DEFAULT;
+size_t opt_poison_size = OPT_POISON_SIZE_DEFAULT;
+#endif
+
+bool opt_randomize_small = true;
 
 }  
