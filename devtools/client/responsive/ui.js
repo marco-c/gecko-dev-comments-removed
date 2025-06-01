@@ -102,6 +102,8 @@ class ResponsiveUI {
     this.initialized = promise;
     this.resolveInited = resolve;
 
+    this.dynamicToolbar = null;
+    this.dynamicToolbarMaxHeight = 0;
     EventEmitter.decorate(this);
   }
 
@@ -175,6 +177,13 @@ class ResponsiveUI {
     rdmFrame.classList.add("rdm-toolbar");
 
     
+    this.dynamicToolbar = doc.createElement("div");
+    this.dynamicToolbar.classList.add("rdm-dynamic-toolbar", "dynamic-toolbar");
+    this.dynamicToolbar.style.visibility = "hidden";
+    this.dynamicToolbar.style.height = "40px";
+    this.dynamicToolbarMaxHeight = this.dynamicToolbar.style.height;
+
+    
     const resizeHandle = doc.createElement("div");
     resizeHandle.classList.add(
       "rdm-viewport-resize-handle",
@@ -202,9 +211,12 @@ class ResponsiveUI {
     
     this.browserContainerEl.prepend(rdmFrame);
 
-    this.browserStackEl.append(resizeHandle);
-    this.browserStackEl.append(resizeHandleX);
-    this.browserStackEl.append(resizeHandleY);
+    this.browserStackEl.append(
+      this.dynamicToolbar,
+      resizeHandle,
+      resizeHandleX,
+      resizeHandleY
+    );
 
     
     message.wait(rdmFrame.contentWindow, "script-init").then(async () => {
@@ -311,6 +323,7 @@ class ResponsiveUI {
     this.resizeHandle.remove();
     this.resizeHandleX.remove();
     this.resizeHandleY.remove();
+    this.dynamicToolbar.remove();
 
     this.browserContainerEl.classList.remove("responsive-mode");
     this.browserStackEl.style.removeProperty("--rdm-width");
@@ -363,6 +376,7 @@ class ResponsiveUI {
     this.resizeHandle = null;
     this.resizeHandleX = null;
     this.resizeHandleY = null;
+    this.dynamicToolbar = null;
     this.resizeToolbarObserver = null;
 
     
