@@ -147,8 +147,7 @@ static void LogBlockedRequest(nsIRequest* aRequest, const char* aProperty,
   
   
   if (!innerWindowID) {
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
-    if (httpChannel) {
+    if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest)) {
       Unused << httpChannel->GetTopLevelContentWindowId(&innerWindowID);
     }
   }
