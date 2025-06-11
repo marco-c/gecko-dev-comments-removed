@@ -53,6 +53,8 @@ inline JS::Compartment* GetCompartmentForRealm(Realm* realm) {
 
 extern JS_PUBLIC_API Realm* GetObjectRealmOrNull(JSObject* obj);
 
+extern JS_PUBLIC_API bool HasRealmInitializedGlobal(Realm* realm);
+
 
 
 
