@@ -13,14 +13,14 @@
 
 #include "rtc_base/ssl_certificate.h"
 
-namespace rtc {
+namespace webrtc {
 
-class TestCertificateVerifier : public SSLCertificateVerifier {
+class TestCertificateVerifier : public rtc::SSLCertificateVerifier {
  public:
   TestCertificateVerifier() = default;
   ~TestCertificateVerifier() override = default;
 
-  bool Verify(const SSLCertificate& certificate) override {
+  bool Verify(const rtc::SSLCertificate& certificate) override {
     call_count_++;
     return verify_certificate_;
   }
@@ -29,6 +29,12 @@ class TestCertificateVerifier : public SSLCertificateVerifier {
   bool verify_certificate_ = true;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::TestCertificateVerifier;
 }  
 
 #endif  
