@@ -170,11 +170,8 @@ def support_caches(
     if use_caches is None:
         
         
-        use_caches = (
-            config.graph_config.get("taskgraph", {})
-            .get("run", {})
-            .get("use-caches", ["checkout"])
-        )
+        taskgraph_config = config.graph_config.get("taskgraph") or {}
+        use_caches = taskgraph_config.get("run", {}).get("use-caches", ["checkout"])
 
     for name, cache_cfg in CACHES.items():
         if not should_use_cache(name, use_caches, run["checkout"]):
