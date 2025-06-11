@@ -60,9 +60,54 @@ add_task(async function address_field_refilled_after_cleared_by_site() {
         await refillPromise;
       }
     );
-  });
 
-  ok(true, "Element was re-filled");
+    ok(true, "Element was re-filled");
+
+    
+    
+    
+    await SpecialPowers.spawn(
+      browser,
+      [TEST_ADDRESS_1.organization],
+      organization => {
+        content.document.getElementById("organization").addEventListener(
+          "input",
+          event => {
+            event.target.value = organization;
+          },
+          { once: true }
+        );
+        content.document.getElementById("postal-code").addEventListener(
+          "input",
+          event => {
+            event.target.value = "91111";
+          },
+          { once: true }
+        );
+      }
+    );
+
+    await openPopupOn(browser, selectorToTriggerAutocompletion);
+    await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+    await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
+
+    await waitForAutofill(browser, selectorToTriggerAutocompletion, "");
+
+    
+    await new Promise(resolve => {
+      setTimeout(resolve, FormAutofill.refillOnSiteClearingFields);
+    });
+
+    let [org, postalCode] = await SpecialPowers.spawn(browser, [], async () => {
+      return [
+        content.document.getElementById("organization").value,
+        content.document.getElementById("postal-code").value,
+      ];
+    });
+
+    is(org, "", "organization cleared");
+    is(postalCode, "91111", "postal code not cleared");
+  });
 });
 
 
