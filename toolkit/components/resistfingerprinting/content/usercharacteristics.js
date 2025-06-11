@@ -1028,7 +1028,7 @@ function getCanvasSources() {
 
 const LocalFiraSans = new FontFace(
   "LocalFiraSans",
-  "url('chrome://pocket/content/panels/fonts/FiraSans-Regular.woff') format('woff')"
+  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')"
 );
 
 if (document.readyState === "loading") {

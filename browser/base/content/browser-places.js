@@ -51,7 +51,6 @@ var StarUI = {
   
   _autoCloseTimerEnabled: true,
   
-  
   _autoCloseTimeout: 3500,
   _removeBookmarksOnPopupHidden: false,
 
