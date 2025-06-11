@@ -274,7 +274,7 @@ class HTTPCustomRequestPanel extends Component {
     for (const { name, value, checked } of urlQueryParams) {
       
       if (checked && name) {
-        searchParams.set(name, value);
+        searchParams.append(name, value);
       }
     }
 
