@@ -1,12 +1,12 @@
-
-
-
-
-
-
-
-
-
+/*
+ *  Copyright 2018 The WebRTC Project Authors. All rights reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #include "rtc_base/sanitizer.h"
 
@@ -19,12 +19,12 @@
 #include <sanitizer/msan_interface.h>
 #endif
 
-namespace rtc {
+namespace webrtc {
 namespace {
 
+// Test sanitizer_impl::IsTriviallyCopyable (at compile time).
 
-
-
+// Trivially copyable.
 
 struct TrTrTr {
   TrTrTr(const TrTrTr&) = default;
@@ -40,7 +40,7 @@ struct TrDeTr {
 };
 static_assert(sanitizer_impl::IsTriviallyCopyable<TrDeTr>(), "");
 
-
+// Non trivially copyable.
 
 struct TrTrNt {
   TrTrNt(const TrTrNt&) = default;
@@ -112,7 +112,7 @@ struct NtDeNt {
 };
 static_assert(!sanitizer_impl::IsTriviallyCopyable<NtDeNt>(), "");
 
-
+// Trivially copyable types.
 
 struct Foo {
   uint32_t field1;
@@ -124,8 +124,8 @@ struct Bar {
   Foo foo;
 };
 
-
-
+// Run the callback, and expect a crash if it *doesn't* make an uninitialized
+// memory read. If MSan isn't on, just run the callback.
 template <typename F>
 void MsanExpectUninitializedRead(F&& f) {
 #if RTC_HAS_MSAN
@@ -135,18 +135,18 @@ void MsanExpectUninitializedRead(F&& f) {
 #endif
 }
 
-}  
+}  // namespace
 
 TEST(SanitizerTest, MsanUninitialized) {
   Bar bar = MsanUninitialized<Bar>({});
-  
+  // Check that a read after initialization is OK.
   bar.ID = 1;
   EXPECT_EQ(1u, bar.ID);
   RTC_LOG(LS_INFO) << "read after init passed";
-  
+  // Check that other fields are uninitialized and equal to zero.
   MsanExpectUninitializedRead([&] { EXPECT_EQ(0u, bar.foo.field1); });
   MsanExpectUninitializedRead([&] { EXPECT_EQ(0u, bar.foo.field2); });
   RTC_LOG(LS_INFO) << "read with no init passed";
 }
 
-}  
+}  // namespace webrtc
