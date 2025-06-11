@@ -40,7 +40,10 @@ impl IPCServer {
     ) -> Result<IPCServerState, IPCError> {
         let events = wait_for_events(&mut self.listener, &mut self.connectors)?;
 
-        for event in events {
+        
+        
+        
+        for event in events.into_iter().rev() {
             match event {
                 IPCEvent::Connect(connector) => {
                     self.connectors.push(connector);
