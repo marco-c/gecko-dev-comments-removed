@@ -108,9 +108,6 @@
 @interface mozMenuItemAccessible : mozSelectableChildAccessible
 
 
-- (NSString*)moxLabel;
-
-
 - (BOOL)moxIgnoreWithParent:(mozAccessible*)parent;
 
 
