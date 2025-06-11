@@ -189,6 +189,7 @@ struct LoadInfoArgs
   bool                        allowDeprecatedSystemRequests;
   bool                        isInDevToolsContext;
   bool                        parserCreatedScript;
+  RequestMode?                requestMode;
   bool                        isFromProcessingFrameAttributes;
   bool                        isMediaRequest;
   bool                        isMediaInitialRequest;
@@ -265,6 +266,8 @@ struct ParentLoadInfoForwarderArgs
   
   
   bool parserCreatedScript;
+
+  RequestMode? requestMode;
 
   
   uint32_t triggeringSandboxFlags;
