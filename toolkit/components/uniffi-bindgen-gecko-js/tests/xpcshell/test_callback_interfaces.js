@@ -1,35 +1,104 @@
 
 
 
-const { invokeTestCallbackInterfaceMethod } = ChromeUtils.importESModule(
+const {
+  invokeTestCallbackInterfaceNoop,
+  invokeTestCallbackInterfaceSetValue,
+  UniffiSkipJsTypeCheck,
+  UnitTestObjs,
+} = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/tests/generated/RustUniffiBindingsTests.sys.mjs"
 );
 
 
 
 
-add_task(async function testFireAndForgetCallbackInterfaces() {
-  
-
-
-  class Callback {
-    constructor(value) {
-      this.value = value;
-      this.getValueCount = 0;
-    }
-
-    getValue() {
-      this.getValueCount += 1;
-      return this.value;
-    }
+class Callback {
+  constructor(value) {
+    this.value = value;
   }
 
+  noop() {}
+
+  getValue() {
+    return this.value;
+  }
+
+  setValue(value) {
+    this.value = value;
+  }
+}
+
+add_task(async () => {
   const cbi = new Callback(42);
-  Assert.equal(cbi.getValueCount, 0);
-  invokeTestCallbackInterfaceMethod(cbi);
+  
+  invokeTestCallbackInterfaceNoop(cbi);
   do_test_pending();
-  await do_timeout(100, () => {
-    Assert.equal(cbi.getValueCount, 1);
+  do_timeout(100, do_test_finished);
+});
+
+add_task(async () => {
+  const cbi = new Callback(42);
+  
+  invokeTestCallbackInterfaceSetValue(cbi, 43);
+  do_test_pending();
+  do_timeout(100, async () => {
+    Assert.equal(await cbi.getValue(), 43);
+    do_test_finished();
+  });
+});
+
+
+
+
+
+
+add_task(async function testCleanupAfterFailedLower() {
+  const cbi = new Callback(42);
+  Assert.equal(
+    UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface.hasRegisteredCallbacks(),
+    false
+  );
+  
+  
+  
+  
+  const invalidU32Value = 2 ** 48;
+  invokeTestCallbackInterfaceSetValue(cbi, invalidU32Value)
+    
+    .catch(() => null);
+  Assert.equal(
+    UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface.hasRegisteredCallbacks(),
+    false
+  );
+});
+
+
+
+add_task(async function testCleanupAfterFailedCppLower() {
+  const cbi = new Callback(42);
+  Assert.equal(
+    UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface.hasRegisteredCallbacks(),
+    false
+  );
+  
+  
+  
+  
+  const invalidU32Value = 2 ** 48;
+  invokeTestCallbackInterfaceSetValue(
+    cbi,
+    new UniffiSkipJsTypeCheck(invalidU32Value)
+  )
+    
+    .catch(() => null);
+  
+  do_test_pending();
+  do_timeout(100, () => {
+    Assert.equal(
+      UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface.hasRegisteredCallbacks(),
+      false
+    );
     do_test_finished();
   });
 });

@@ -2,12 +2,51 @@
 
 
 
+use crate::errors::TestError;
+
 #[uniffi::export(callback_interface)]
 pub trait TestCallbackInterface {
+    
+    fn noop(&self);
+    
     fn get_value(&self) -> u32;
+    
+    fn set_value(&self, value: u32);
+    
+    
+    
+    
+    fn throw_if_equal(
+        &self,
+        numbers: CallbackInterfaceNumbers,
+    ) -> Result<CallbackInterfaceNumbers, TestError>;
+}
+
+#[derive(uniffi::Record)]
+pub struct CallbackInterfaceNumbers {
+    a: u32,
+    b: u32,
 }
 
 #[uniffi::export]
-fn invoke_test_callback_interface_method(cbi: Box<dyn TestCallbackInterface>) -> u32 {
+fn invoke_test_callback_interface_noop(cbi: Box<dyn TestCallbackInterface>) {
+    cbi.noop()
+}
+
+#[uniffi::export]
+fn invoke_test_callback_interface_get_value(cbi: Box<dyn TestCallbackInterface>) -> u32 {
     cbi.get_value()
+}
+
+#[uniffi::export]
+fn invoke_test_callback_interface_set_value(cbi: Box<dyn TestCallbackInterface>, value: u32) {
+    cbi.set_value(value)
+}
+
+#[uniffi::export]
+fn invoke_test_callback_interface_throw_if_equal(
+    cbi: Box<dyn TestCallbackInterface>,
+    numbers: CallbackInterfaceNumbers,
+) -> Result<CallbackInterfaceNumbers, TestError> {
+    cbi.throw_if_equal(numbers)
 }

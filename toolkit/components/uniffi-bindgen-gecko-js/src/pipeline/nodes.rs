@@ -75,6 +75,11 @@ pub struct CppCallbackInterface {
     pub id: u64,
     pub name: String,
     
+    
+    
+    
+    pub ffi_value_class: String,
+    
     pub handler_var: String,
     
     pub vtable_var: String,
