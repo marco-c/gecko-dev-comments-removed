@@ -593,14 +593,6 @@ impl Transaction {
     pub fn is_low_priority(&self) -> bool {
         self.low_priority
     }
-
-    
-    
-    
-    
-    pub fn render_offscreen(&mut self, pipeline_id: PipelineId) {
-        self.scene_ops.push(SceneMsg::RenderOffscreen(pipeline_id));
-    }
 }
 
 
@@ -827,11 +819,6 @@ pub enum SceneMsg {
         pipeline_id: PipelineId,
     },
     
-    
-    
-    
-    RenderOffscreen(PipelineId),
-    
     SetDocumentView {
         
         device_rect: DeviceIntRect,
@@ -874,7 +861,6 @@ impl fmt::Debug for SceneMsg {
             SceneMsg::SetDocumentView { .. } => "SceneMsg::SetDocumentView",
             SceneMsg::SetRootPipeline(..) => "SceneMsg::SetRootPipeline",
             SceneMsg::SetQualitySettings { .. } => "SceneMsg::SetQualitySettings",
-            SceneMsg::RenderOffscreen(..) => "SceneMsg::BuildOffscreen",
         })
     }
 }

@@ -480,10 +480,9 @@ impl YamlFrameReader {
         send_transaction: bool,
         yaml: &Yaml
     ) {
-        let offscreen = yaml["offscreen"].as_bool().unwrap_or(false);
         
         
-        let present = !offscreen && yaml["present"].as_bool().unwrap_or(send_transaction);
+        let present = yaml["present"].as_bool().unwrap_or(send_transaction);
 
         
         self.user_clip_id_map.clear();
@@ -506,7 +505,6 @@ impl YamlFrameReader {
             payload,
             present,
             send_transaction,
-            render_offscreen: offscreen,
         });
 
         assert_eq!(self.spatial_id_stack.len(), 1);

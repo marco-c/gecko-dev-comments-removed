@@ -188,7 +188,7 @@ class MOZ_RAII AutoDisplayItemCacheSuppressor {
  public:
   explicit AutoDisplayItemCacheSuppressor(DisplayItemCache* aCache)
       : mCache(aCache) {
-    mWasSuppressed = !mCache || mCache->SetSuppressed(true);
+    mWasSuppressed = mCache->SetSuppressed(true);
   }
 
   
@@ -197,11 +197,7 @@ class MOZ_RAII AutoDisplayItemCacheSuppressor {
   
   
   
-  ~AutoDisplayItemCacheSuppressor() {
-    if (mCache) {
-      mCache->SetSuppressed(mWasSuppressed);
-    }
-  }
+  ~AutoDisplayItemCacheSuppressor() { mCache->SetSuppressed(mWasSuppressed); }
 
  private:
   DisplayItemCache* mCache;
