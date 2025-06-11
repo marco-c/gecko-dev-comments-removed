@@ -18,7 +18,7 @@ let gCUITestUtils = new CustomizableUITestUtils(window);
 
 const PERMISSIONS_PAGE =
   "https://example.com/browser/browser/base/content/test/permissions/permissions.html";
-const afterUrlBarButton = "fxa-toolbar-menu-button";
+const afterUrlBarButton = "save-to-pocket-button";
 const sidebarRevampEnabled = Services.prefs.getBoolPref(
   "sidebar.revamp",
   false
@@ -347,13 +347,14 @@ add_task(async function testArrowsToolbarbuttons() {
   AddOldMenuSideButtons();
   await BrowserTestUtils.withNewTab("about:blank", async function () {
     startFromUrlBar();
-    await expectFocusAfterKey("Tab", "library-button");
+    await expectFocusAfterKey("Tab", afterUrlBarButton);
     EventUtils.synthesizeKey("KEY_ArrowLeft");
     is(
       document.activeElement.id,
-      "library-button",
+      afterUrlBarButton,
       "ArrowLeft at end of button group does nothing"
     );
+    await expectFocusAfterKey("ArrowRight", "library-button");
     if (!sidebarRevampEnabled) {
       await expectFocusAfterKey("ArrowRight", "sidebar-button");
     }
@@ -452,7 +453,8 @@ add_task(async function testArrowsOverflowButton() {
       CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
     );
     startFromUrlBar();
-    await expectFocusAfterKey("Tab", "library-button");
+    await expectFocusAfterKey("Tab", afterUrlBarButton);
+    await expectFocusAfterKey("ArrowRight", "library-button");
     if (!sidebarRevampEnabled) {
       await expectFocusAfterKey("ArrowRight", "sidebar-button");
     }
@@ -501,12 +503,17 @@ add_task(async function testArrowsRtl() {
   AddOldMenuSideButtons();
   await BrowserTestUtils.enableRtlLocale();
   startFromUrlBar(window);
-  await expectFocusAfterKey("Tab", "library-button");
+  await expectFocusAfterKey("Tab", afterUrlBarButton);
   EventUtils.synthesizeKey("KEY_ArrowRight", {});
+  is(
+    document.activeElement.id,
+    afterUrlBarButton,
+    "ArrowRight at end of button group does nothing"
+  );
+  await expectFocusAfterKey("ArrowLeft", "library-button");
   if (!sidebarRevampEnabled) {
     await expectFocusAfterKey("ArrowLeft", "sidebar-button");
   }
-  await expectFocusAfterKey("ArrowLeft", "unified-extensions-button");
   await BrowserTestUtils.disableRtlLocale();
   RemoveOldMenuSideButtons();
 });
@@ -551,7 +558,8 @@ add_task(async function testPanelCloseRestoresFocus() {
     
     
     startFromUrlBar();
-    await expectFocusAfterKey("Tab", "library-button");
+    await expectFocusAfterKey("Tab", afterUrlBarButton);
+    await expectFocusAfterKey("ArrowRight", "library-button");
     let view = document.getElementById("appMenu-libraryView");
     let shown = BrowserTestUtils.waitForEvent(view, "ViewShown");
     EventUtils.synthesizeKey(" ");
@@ -614,6 +622,15 @@ add_task(async function testCharacterNavigation() {
     EventUtils.synthesizeKey("KEY_Escape");
     if (!sidebarRevampEnabled) {
       
+      await expectFocusAfterKey("s", "save-to-pocket-button");
+      
+      await expectFocusAfterKey("i", "sidebar-button");
+    }
+    
+    EventUtils.synthesizeKey("KEY_Escape");
+    if (!sidebarRevampEnabled) {
+      await expectFocusAfterKey("s", "save-to-pocket-button");
+      
       await expectFocusAfterKey("s", "sidebar-button");
     }
   });
@@ -650,7 +667,9 @@ add_task(async function testTabStopsAfterSearchBarAdded() {
   await withNewBlankTab(async function () {
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "searchbar", true);
-    await expectFocusAfterKey("Tab", "library-button");
+    await expectFocusAfterKey("Tab", afterUrlBarButton);
+    await expectFocusAfterKey("ArrowRight", "library-button");
+    await expectFocusAfterKey("ArrowLeft", afterUrlBarButton);
     await expectFocusAfterKey("Shift+Tab", "searchbar", true);
     await expectFocusAfterKey("Shift+Tab", gURLBar.inputField);
   });
