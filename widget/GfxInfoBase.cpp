@@ -356,6 +356,13 @@ static bool BlocklistEntryToDriverInfo(const nsACString& aBlocklistEntry,
       aDriverInfo->mOperatingSystem = BlocklistOSToOperatingSystem(dataValue);
     } else if (key.EqualsLiteral("osversion")) {
       aDriverInfo->mOperatingSystemVersion = strtoul(value.get(), nullptr, 10);
+    } else if (key.EqualsLiteral("osVersionEx")) {
+      aDriverInfo->mOperatingSystemVersionEx.Parse(value);
+    } else if (key.EqualsLiteral("osVersionExMax")) {
+      aDriverInfo->mOperatingSystemVersionExMax.Parse(value);
+    } else if (key.EqualsLiteral("osVersionExComparator")) {
+      aDriverInfo->mOperatingSystemVersionExComparisonOp =
+          BlocklistComparatorToComparisonOp(dataValue);
     } else if (key.EqualsLiteral("windowProtocol")) {
       aDriverInfo->mWindowProtocol = dataValue;
     } else if (key.EqualsLiteral("vendor")) {
@@ -584,8 +591,7 @@ inline bool MatchingAllowStatus(int32_t aStatus) {
 
 
 inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
-                                     OperatingSystem aSystemOS,
-                                     uint32_t aSystemOSBuild) {
+                                     OperatingSystem aSystemOS) {
   MOZ_ASSERT(aSystemOS != OperatingSystem::Windows &&
              aSystemOS != OperatingSystem::OSX);
 
@@ -598,24 +604,6 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
   if (aBlockedOS == OperatingSystem::Windows) {
     
     return true;
-  }
-
-  constexpr uint32_t kMinWin10BuildNumber = 18362;
-  if (aBlockedOS == OperatingSystem::RecentWindows10 &&
-      aSystemOS == OperatingSystem::Windows10) {
-    
-    
-    
-    
-    return aSystemOSBuild >= kMinWin10BuildNumber;
-  }
-
-  if (aBlockedOS == OperatingSystem::NotRecentWindows10) {
-    if (aSystemOS == OperatingSystem::Windows10) {
-      return aSystemOSBuild < kMinWin10BuildNumber;
-    } else {
-      return true;
-    }
   }
 #endif
 
@@ -687,7 +675,8 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
     return 0;
   }
 
-  uint32_t osBuild = OperatingSystemBuild();
+  uint32_t osVersion = OperatingSystemVersion();
+  GfxVersionEx osVersionEx = OperatingSystemVersionEx();
 
   
   nsAutoString adapterVendorID[2];
@@ -741,12 +730,18 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
 
     
     
-    if (!MatchingOperatingSystems(info[i]->mOperatingSystem, os, osBuild)) {
+    if (!MatchingOperatingSystems(info[i]->mOperatingSystem, os)) {
       continue;
     }
 
     if (info[i]->mOperatingSystemVersion &&
-        info[i]->mOperatingSystemVersion != OperatingSystemVersion()) {
+        info[i]->mOperatingSystemVersion != osVersion) {
+      continue;
+    }
+
+    if (!osVersionEx.Compare(info[i]->mOperatingSystemVersionEx,
+                             info[i]->mOperatingSystemVersionExMax,
+                             info[i]->mOperatingSystemVersionExComparisonOp)) {
       continue;
     }
 
