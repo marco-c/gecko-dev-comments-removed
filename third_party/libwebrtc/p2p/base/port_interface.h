@@ -78,7 +78,7 @@ class PortInterface {
 
   
   virtual cricket::Connection* GetConnection(
-      const rtc::SocketAddress& remote_addr) = 0;
+      const SocketAddress& remote_addr) = 0;
 
   
   enum CandidateOrigin { ORIGIN_THIS_PORT, ORIGIN_OTHER_PORT, ORIGIN_MESSAGE };
@@ -99,7 +99,7 @@ class PortInterface {
   
   virtual int SendTo(const void* data,
                      size_t size,
-                     const rtc::SocketAddress& addr,
+                     const SocketAddress& addr,
                      const rtc::PacketOptions& options,
                      bool payload) = 0;
 
@@ -107,7 +107,7 @@ class PortInterface {
   
   
   sigslot::signal6<PortInterface*,
-                   const rtc::SocketAddress&,
+                   const SocketAddress&,
                    ProtocolType,
                    cricket::IceMessage*,
                    const std::string&,
@@ -117,7 +117,7 @@ class PortInterface {
   
   
   virtual void SendBindingErrorResponse(cricket::StunMessage* message,
-                                        const rtc::SocketAddress& addr,
+                                        const SocketAddress& addr,
                                         int error_code,
                                         absl::string_view reason) = 0;
 
@@ -134,9 +134,8 @@ class PortInterface {
   
   
   virtual void EnablePortPackets() = 0;
-  sigslot::
-      signal4<PortInterface*, const char*, size_t, const rtc::SocketAddress&>
-          SignalReadPacket;
+  sigslot::signal4<PortInterface*, const char*, size_t, const SocketAddress&>
+      SignalReadPacket;
 
   
   sigslot::signal1<const rtc::SentPacket&> SignalSentPacket;
@@ -184,7 +183,7 @@ class PortInterface {
   
   virtual bool GetStunMessage(const char* data,
                               size_t size,
-                              const rtc::SocketAddress& addr,
+                              const SocketAddress& addr,
                               std::unique_ptr<cricket::IceMessage>* out_msg,
                               std::string* out_username) = 0;
 
@@ -196,7 +195,7 @@ class PortInterface {
   virtual std::string CreateStunUsername(
       absl::string_view remote_username) const = 0;
 
-  virtual bool MaybeIceRoleConflict(const rtc::SocketAddress& addr,
+  virtual bool MaybeIceRoleConflict(const SocketAddress& addr,
                                     cricket::IceMessage* stun_msg,
                                     absl::string_view remote_ufrag) = 0;
 

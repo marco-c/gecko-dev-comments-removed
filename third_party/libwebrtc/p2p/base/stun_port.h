@@ -110,7 +110,7 @@ class RTC_EXPORT UDPPort : public Port {
 
   ~UDPPort() override;
 
-  rtc::SocketAddress GetLocalAddress() const {
+  webrtc::SocketAddress GetLocalAddress() const {
     return socket_->GetLocalAddress();
   }
 
@@ -160,7 +160,7 @@ class RTC_EXPORT UDPPort : public Port {
 
   int SendTo(const void* data,
              size_t size,
-             const rtc::SocketAddress& addr,
+             const webrtc::SocketAddress& addr,
              const rtc::PacketOptions& options,
              bool payload) override;
 
@@ -169,7 +169,7 @@ class RTC_EXPORT UDPPort : public Port {
   rtc::DiffServCodePoint StunDscpValue() const override;
 
   void OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
-                           const rtc::SocketAddress& address);
+                           const webrtc::SocketAddress& address);
 
   void PostAddAddress(bool is_final) override;
 
@@ -190,7 +190,7 @@ class RTC_EXPORT UDPPort : public Port {
   
   
   
-  bool MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const;
+  bool MaybeSetDefaultLocalAddress(webrtc::SocketAddress* addr) const;
 
  private:
   
@@ -200,17 +200,17 @@ class RTC_EXPORT UDPPort : public Port {
    public:
     explicit AddressResolver(
         rtc::PacketSocketFactory* factory,
-        std::function<void(const rtc::SocketAddress&, int)> done_callback);
+        std::function<void(const webrtc::SocketAddress&, int)> done_callback);
 
-    void Resolve(const rtc::SocketAddress& address,
+    void Resolve(const webrtc::SocketAddress& address,
                  int family,
                  const webrtc::FieldTrialsView& field_trials);
-    bool GetResolvedAddress(const rtc::SocketAddress& input,
+    bool GetResolvedAddress(const webrtc::SocketAddress& input,
                             int family,
-                            rtc::SocketAddress* output) const;
+                            webrtc::SocketAddress* output) const;
 
    private:
-    typedef std::map<rtc::SocketAddress,
+    typedef std::map<webrtc::SocketAddress,
                      std::unique_ptr<webrtc::AsyncDnsResolverInterface>>
         ResolverMap;
 
@@ -218,28 +218,28 @@ class RTC_EXPORT UDPPort : public Port {
     
     
     
-    std::function<void(const rtc::SocketAddress&, int)> done_;
+    std::function<void(const webrtc::SocketAddress&, int)> done_;
     
     
     ResolverMap resolvers_;
   };
 
   
-  void ResolveStunAddress(const rtc::SocketAddress& stun_addr);
-  void OnResolveResult(const rtc::SocketAddress& input, int error);
+  void ResolveStunAddress(const webrtc::SocketAddress& stun_addr);
+  void OnResolveResult(const webrtc::SocketAddress& input, int error);
 
   
   
   
-  void SendStunBindingRequest(const rtc::SocketAddress& stun_addr);
+  void SendStunBindingRequest(const webrtc::SocketAddress& stun_addr);
 
   
   void OnStunBindingRequestSucceeded(
       int rtt_ms,
-      const rtc::SocketAddress& stun_server_addr,
-      const rtc::SocketAddress& stun_reflected_addr);
+      const webrtc::SocketAddress& stun_server_addr,
+      const webrtc::SocketAddress& stun_reflected_addr);
   void OnStunBindingOrResolveRequestFailed(
-      const rtc::SocketAddress& stun_server_addr,
+      const webrtc::SocketAddress& stun_server_addr,
       int error_code,
       absl::string_view reason);
 
@@ -250,7 +250,7 @@ class RTC_EXPORT UDPPort : public Port {
   
   void MaybeSetPortCompleteOrError();
 
-  bool HasStunCandidateWithAddress(const rtc::SocketAddress& addr) const;
+  bool HasStunCandidateWithAddress(const webrtc::SocketAddress& addr) const;
 
   
   

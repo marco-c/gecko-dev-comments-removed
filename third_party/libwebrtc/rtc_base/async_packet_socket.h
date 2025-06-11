@@ -96,16 +96,16 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
 
   
   
-  virtual SocketAddress GetLocalAddress() const = 0;
+  virtual webrtc::SocketAddress GetLocalAddress() const = 0;
 
   
-  virtual SocketAddress GetRemoteAddress() const = 0;
+  virtual webrtc::SocketAddress GetRemoteAddress() const = 0;
 
   
   virtual int Send(const void* pv, size_t cb, const PacketOptions& options) = 0;
   virtual int SendTo(const void* pv,
                      size_t cb,
-                     const SocketAddress& addr,
+                     const webrtc::SocketAddress& addr,
                      const PacketOptions& options) = 0;
 
   
@@ -143,7 +143,8 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   
   
-  sigslot::signal2<AsyncPacketSocket*, const SocketAddress&> SignalAddressReady;
+  sigslot::signal2<AsyncPacketSocket*, const webrtc::SocketAddress&>
+      SignalAddressReady;
 
   
   
@@ -188,7 +189,7 @@ class RTC_EXPORT AsyncListenSocket : public sigslot::has_slots<> {
 
   
   
-  virtual SocketAddress GetLocalAddress() const = 0;
+  virtual webrtc::SocketAddress GetLocalAddress() const = 0;
 
   sigslot::signal2<AsyncListenSocket*, AsyncPacketSocket*> SignalNewConnection;
 };

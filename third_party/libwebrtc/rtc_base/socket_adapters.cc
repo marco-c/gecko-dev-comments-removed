@@ -172,7 +172,7 @@ ArrayView<const uint8_t> AsyncSSLSocket::SslServerHello() {
 AsyncSSLSocket::AsyncSSLSocket(Socket* socket)
     : BufferedReadAdapter(socket, 1024) {}
 
-int AsyncSSLSocket::Connect(const SocketAddress& addr) {
+int AsyncSSLSocket::Connect(const webrtc::SocketAddress& addr) {
   
   
   BufferInput(true);

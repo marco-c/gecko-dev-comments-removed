@@ -2531,14 +2531,10 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
       signaling_trip_delay_ms * required_signaling_trips +
       allowed_internal_delay_ms;
 
-  static const rtc::SocketAddress turn_server_1_internal_address{"88.88.88.0",
-                                                                 3478};
-  static const rtc::SocketAddress turn_server_1_external_address{"88.88.88.1",
-                                                                 0};
-  static const rtc::SocketAddress turn_server_2_internal_address{"99.99.99.0",
-                                                                 3478};
-  static const rtc::SocketAddress turn_server_2_external_address{"99.99.99.1",
-                                                                 0};
+  static const SocketAddress turn_server_1_internal_address{"88.88.88.0", 3478};
+  static const SocketAddress turn_server_1_external_address{"88.88.88.1", 0};
+  static const SocketAddress turn_server_2_internal_address{"99.99.99.0", 3478};
+  static const SocketAddress turn_server_2_external_address{"99.99.99.1", 0};
   cricket::TestTurnServer* turn_server_1 = CreateTurnServer(
       turn_server_1_internal_address, turn_server_1_external_address);
 
@@ -2680,14 +2676,10 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
 
 
 TEST_P(PeerConnectionIntegrationTest, TurnCustomizerUsedForTurnConnections) {
-  static const rtc::SocketAddress turn_server_1_internal_address{"88.88.88.0",
-                                                                 3478};
-  static const rtc::SocketAddress turn_server_1_external_address{"88.88.88.1",
-                                                                 0};
-  static const rtc::SocketAddress turn_server_2_internal_address{"99.99.99.0",
-                                                                 3478};
-  static const rtc::SocketAddress turn_server_2_external_address{"99.99.99.1",
-                                                                 0};
+  static const SocketAddress turn_server_1_internal_address{"88.88.88.0", 3478};
+  static const SocketAddress turn_server_1_external_address{"88.88.88.1", 0};
+  static const SocketAddress turn_server_2_internal_address{"99.99.99.0", 3478};
+  static const SocketAddress turn_server_2_external_address{"99.99.99.1", 0};
   CreateTurnServer(turn_server_1_internal_address,
                    turn_server_1_external_address);
   CreateTurnServer(turn_server_2_internal_address,
@@ -2734,9 +2726,8 @@ TEST_P(PeerConnectionIntegrationTest, TurnCustomizerUsedForTurnConnections) {
 
 
 TEST_P(PeerConnectionIntegrationTest, TCPUsedForTurnConnections) {
-  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
-                                                               3478};
-  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+  static const SocketAddress turn_server_internal_address{"88.88.88.0", 3478};
+  static const SocketAddress turn_server_external_address{"88.88.88.1", 0};
 
   
   CreateTurnServer(turn_server_internal_address, turn_server_external_address,
@@ -2784,9 +2775,8 @@ TEST_P(PeerConnectionIntegrationTest, TCPUsedForTurnConnections) {
 
 TEST_P(PeerConnectionIntegrationTest,
        SSLCertificateVerifierUsedForTurnConnections) {
-  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
-                                                               3478};
-  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+  static const SocketAddress turn_server_internal_address{"88.88.88.0", 3478};
+  static const SocketAddress turn_server_external_address{"88.88.88.1", 0};
 
   
   
@@ -3395,9 +3385,8 @@ TEST_P(PeerConnectionIntegrationTest,
 }
 
 TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
-  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
-                                                               3478};
-  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+  static const SocketAddress turn_server_internal_address{"88.88.88.0", 3478};
+  static const SocketAddress turn_server_external_address{"88.88.88.1", 0};
 
   CreateTurnServer(turn_server_internal_address, turn_server_external_address);
 
@@ -3486,9 +3475,8 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
 }
 
 TEST_P(PeerConnectionIntegrationTest, OnIceCandidateError) {
-  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
-                                                               3478};
-  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+  static const SocketAddress turn_server_internal_address{"88.88.88.0", 3478};
+  static const SocketAddress turn_server_external_address{"88.88.88.1", 0};
 
   CreateTurnServer(turn_server_internal_address, turn_server_external_address);
 

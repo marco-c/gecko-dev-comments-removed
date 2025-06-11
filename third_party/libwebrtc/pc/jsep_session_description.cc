@@ -67,13 +67,12 @@ void UpdateConnectionAddress(
     }
     current_preference = preference;
     current_family = family;
-    const rtc::SocketAddress& candidate_addr =
-        jsep_candidate->candidate().address();
+    const SocketAddress& candidate_addr = jsep_candidate->candidate().address();
     port = candidate_addr.port();
     ip = candidate_addr.ipaddr().ToString();
     hostname = candidate_addr.hostname();
   }
-  rtc::SocketAddress connection_addr(ip, port);
+  SocketAddress connection_addr(ip, port);
   if (IPIsUnspec(connection_addr.ipaddr()) && !hostname.empty()) {
     
     
@@ -91,7 +90,7 @@ void UpdateConnectionAddress(
     
     
     
-    connection_addr = rtc::SocketAddress(kDummyAddress, kDummyPort);
+    connection_addr = SocketAddress(kDummyAddress, kDummyPort);
   }
   media_desc->set_connection_address(connection_addr);
 }

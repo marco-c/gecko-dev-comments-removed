@@ -190,10 +190,10 @@ class MediaContentDescription {
   
   
   
-  void set_connection_address(const rtc::SocketAddress& address) {
+  void set_connection_address(const webrtc::SocketAddress& address) {
     connection_address_ = address;
   }
-  const rtc::SocketAddress& connection_address() const {
+  const webrtc::SocketAddress& connection_address() const {
     return connection_address_;
   }
 
@@ -274,7 +274,7 @@ class MediaContentDescription {
   bool conference_mode_ = false;
   webrtc::RtpTransceiverDirection direction_ =
       webrtc::RtpTransceiverDirection::kSendRecv;
-  rtc::SocketAddress connection_address_;
+  webrtc::SocketAddress connection_address_;
   ExtmapAllowMixed extmap_allow_mixed_enum_ = kMedia;
 
   SimulcastDescription simulcast_;

@@ -25,9 +25,10 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
   
   
   
-  static AsyncStunTCPSocket* Create(rtc::Socket* socket,
-                                    const rtc::SocketAddress& bind_address,
-                                    const rtc::SocketAddress& remote_address);
+  static AsyncStunTCPSocket* Create(
+      rtc::Socket* socket,
+      const webrtc::SocketAddress& bind_address,
+      const webrtc::SocketAddress& remote_address);
 
   explicit AsyncStunTCPSocket(rtc::Socket* socket);
 

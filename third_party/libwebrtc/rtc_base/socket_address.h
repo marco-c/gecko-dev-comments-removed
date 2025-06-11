@@ -22,7 +22,7 @@
 struct sockaddr_in;
 struct sockaddr_storage;
 
-namespace rtc {
+namespace webrtc {
 
 
 class RTC_EXPORT SocketAddress {
@@ -42,7 +42,7 @@ class RTC_EXPORT SocketAddress {
 
   
   
-  SocketAddress(const webrtc::IPAddress& ip, int port);
+  SocketAddress(const IPAddress& ip, int port);
 
   
   SocketAddress(const SocketAddress& addr);
@@ -64,7 +64,7 @@ class RTC_EXPORT SocketAddress {
   void SetIP(uint32_t ip_as_host_order_integer);
 
   
-  void SetIP(const webrtc::IPAddress& ip);
+  void SetIP(const IPAddress& ip);
 
   
   
@@ -77,7 +77,7 @@ class RTC_EXPORT SocketAddress {
 
   
   
-  void SetResolvedIP(const webrtc::IPAddress& ip);
+  void SetResolvedIP(const IPAddress& ip);
 
   
   
@@ -90,7 +90,7 @@ class RTC_EXPORT SocketAddress {
   
   uint32_t ip() const;
 
-  const webrtc::IPAddress& ipaddr() const;
+  const IPAddress& ipaddr() const;
 
   int family() const { return ip_.family(); }
 
@@ -184,7 +184,7 @@ class RTC_EXPORT SocketAddress {
 
  private:
   std::string hostname_;
-  webrtc::IPAddress ip_;
+  IPAddress ip_;
   uint16_t port_;
   int scope_id_;
   bool literal_;  
@@ -194,6 +194,14 @@ RTC_EXPORT bool SocketAddressFromSockAddrStorage(const sockaddr_storage& saddr,
                                                  SocketAddress* out);
 SocketAddress EmptySocketAddressWithFamily(int family);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::EmptySocketAddressWithFamily;
+using ::webrtc::SocketAddress;
+using ::webrtc::SocketAddressFromSockAddrStorage;
 }  
 
 #endif  

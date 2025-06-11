@@ -120,7 +120,7 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
   
   
   
-  bool Start(const std::vector<rtc::SocketAddress>& servers,
+  bool Start(const std::vector<webrtc::SocketAddress>& servers,
              bool shared_socket_mode,
              int stun_ta_interval_ms,
              int requests_per_ip,
@@ -129,7 +129,7 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
 
   
   
-  bool Prepare(const std::vector<rtc::SocketAddress>& servers,
+  bool Prepare(const std::vector<webrtc::SocketAddress>& servers,
                bool shared_socket_mode,
                int stun_ta_interval_ms,
                int requests_per_ip,
@@ -169,11 +169,11 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
     AsyncCallback callback_;
   };
 
-  bool ResolveServerName(const rtc::SocketAddress& addr);
+  bool ResolveServerName(const webrtc::SocketAddress& addr);
   void OnServerResolved(const webrtc::AsyncDnsResolverResult& resolver);
 
   void OnSocketReady(rtc::AsyncPacketSocket* socket,
-                     const rtc::SocketAddress& addr);
+                     const webrtc::SocketAddress& addr);
 
   void CreateSockets();
 
@@ -220,14 +220,14 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
   int timeout_ms_;
 
   
-  std::vector<rtc::SocketAddress> servers_;
+  std::vector<webrtc::SocketAddress> servers_;
 
   
   rtc::PacketSocketFactory* socket_factory_;
   rtc::Thread* thread_;
 
   
-  std::vector<rtc::SocketAddress> all_servers_addrs_;
+  std::vector<webrtc::SocketAddress> all_servers_addrs_;
 
   
   std::vector<Requester*> requesters_;

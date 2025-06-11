@@ -89,7 +89,7 @@ class RTC_EXPORT Socket {
     ReceiveBuffer(Buffer& payload) : payload(payload) {}
 
     std::optional<webrtc::Timestamp> arrival_time;
-    SocketAddress source_address;
+    webrtc::SocketAddress source_address;
     EcnMarking ecn = EcnMarking::kNotEct;
     Buffer& payload;
   };
@@ -100,22 +100,24 @@ class RTC_EXPORT Socket {
 
   
   
-  virtual SocketAddress GetLocalAddress() const = 0;
+  virtual webrtc::SocketAddress GetLocalAddress() const = 0;
 
   
   
-  virtual SocketAddress GetRemoteAddress() const = 0;
+  virtual webrtc::SocketAddress GetRemoteAddress() const = 0;
 
-  virtual int Bind(const SocketAddress& addr) = 0;
-  virtual int Connect(const SocketAddress& addr) = 0;
+  virtual int Bind(const webrtc::SocketAddress& addr) = 0;
+  virtual int Connect(const webrtc::SocketAddress& addr) = 0;
   virtual int Send(const void* pv, size_t cb) = 0;
-  virtual int SendTo(const void* pv, size_t cb, const SocketAddress& addr) = 0;
+  virtual int SendTo(const void* pv,
+                     size_t cb,
+                     const webrtc::SocketAddress& addr) = 0;
   
   virtual int Recv(void* pv, size_t cb, int64_t* timestamp) = 0;
   
   virtual int RecvFrom(void* ,
                        size_t ,
-                       SocketAddress* ,
+                       webrtc::SocketAddress* ,
                        int64_t* ) {
     
     RTC_CHECK_NOTREACHED();
@@ -125,7 +127,7 @@ class RTC_EXPORT Socket {
   
   virtual int RecvFrom(ReceiveBuffer& buffer);
   virtual int Listen(int backlog) = 0;
-  virtual Socket* Accept(SocketAddress* paddr) = 0;
+  virtual Socket* Accept(webrtc::SocketAddress* paddr) = 0;
   virtual int Close() = 0;
   virtual int GetError() const = 0;
   virtual void SetError(int error) = 0;

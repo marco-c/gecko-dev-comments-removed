@@ -124,10 +124,10 @@ const char* ProtoToString(webrtc::ProtocolType proto);
 std::optional<webrtc::ProtocolType> StringToProto(absl::string_view proto_name);
 
 struct ProtocolAddress {
-  rtc::SocketAddress address;
+  webrtc::SocketAddress address;
   webrtc::ProtocolType proto;
 
-  ProtocolAddress(const rtc::SocketAddress& a, webrtc::ProtocolType p)
+  ProtocolAddress(const webrtc::SocketAddress& a, webrtc::ProtocolType p)
       : address(a), proto(p) {}
 
   bool operator==(const ProtocolAddress& o) const {
@@ -164,7 +164,7 @@ struct CandidatePairChangeEvent {
   int64_t estimated_disconnected_time_ms;
 };
 
-typedef std::set<rtc::SocketAddress> ServerAddresses;
+typedef std::set<webrtc::SocketAddress> ServerAddresses;
 
 
 
@@ -283,11 +283,11 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   void SendPortDestroyed(Port* port);
   
   
-  typedef std::map<rtc::SocketAddress, Connection*> AddressMap;
+  typedef std::map<webrtc::SocketAddress, Connection*> AddressMap;
   const AddressMap& connections() { return connections_; }
 
   
-  Connection* GetConnection(const rtc::SocketAddress& remote_addr) override;
+  Connection* GetConnection(const webrtc::SocketAddress& remote_addr) override;
 
   
   
@@ -312,16 +312,16 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   
   
   virtual bool CanHandleIncomingPacketsFrom(
-      const rtc::SocketAddress& remote_addr) const;
+      const webrtc::SocketAddress& remote_addr) const;
 
   
   void SendBindingErrorResponse(StunMessage* message,
-                                const rtc::SocketAddress& addr,
+                                const webrtc::SocketAddress& addr,
                                 int error_code,
                                 absl::string_view reason) override;
   void SendUnknownAttributesErrorResponse(
       StunMessage* message,
-      const rtc::SocketAddress& addr,
+      const webrtc::SocketAddress& addr,
       const std::vector<uint16_t>& unknown_types);
 
   void EnablePortPackets() override;
@@ -345,7 +345,7 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   std::string CreateStunUsername(
       absl::string_view remote_username) const override;
 
-  bool MaybeIceRoleConflict(const rtc::SocketAddress& addr,
+  bool MaybeIceRoleConflict(const webrtc::SocketAddress& addr,
                             IceMessage* stun_msg,
                             absl::string_view remote_ufrag) override;
 
@@ -371,9 +371,9 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
 
   rtc::WeakPtr<Port> NewWeakPtr() { return weak_factory_.GetWeakPtr(); }
 
-  void AddAddress(const rtc::SocketAddress& address,
-                  const rtc::SocketAddress& base_address,
-                  const rtc::SocketAddress& related_address,
+  void AddAddress(const webrtc::SocketAddress& address,
+                  const webrtc::SocketAddress& base_address,
+                  const webrtc::SocketAddress& related_address,
                   absl::string_view protocol,
                   absl::string_view relay_protocol,
                   absl::string_view tcptype,
@@ -404,7 +404,7 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
       "proto)")]] void
   OnReadPacket(const char* data,
                size_t size,
-               const rtc::SocketAddress& addr,
+               const webrtc::SocketAddress& addr,
                webrtc::ProtocolType proto) {
     OnReadPacket(rtc::ReceivedPacket::CreateFromLegacy(
                      data, size,  -1, addr),
@@ -418,12 +418,12 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   
   bool GetStunMessage(const char* data,
                       size_t size,
-                      const rtc::SocketAddress& addr,
+                      const webrtc::SocketAddress& addr,
                       std::unique_ptr<IceMessage>* out_msg,
                       std::string* out_username) override;
 
   
-  bool IsCompatibleAddress(const rtc::SocketAddress& addr);
+  bool IsCompatibleAddress(const webrtc::SocketAddress& addr);
 
   
   rtc::DiffServCodePoint StunDscpValue() const override;

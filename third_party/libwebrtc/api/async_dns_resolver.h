@@ -45,8 +45,7 @@ class AsyncDnsResolverResult {
   
   
   
-  virtual bool GetResolvedAddress(int family,
-                                  rtc::SocketAddress* addr) const = 0;
+  virtual bool GetResolvedAddress(int family, SocketAddress* addr) const = 0;
   
   virtual int GetError() const = 0;
 };
@@ -61,10 +60,10 @@ class RTC_EXPORT AsyncDnsResolverInterface {
   virtual ~AsyncDnsResolverInterface() = default;
 
   
-  virtual void Start(const rtc::SocketAddress& addr,
+  virtual void Start(const SocketAddress& addr,
                      absl::AnyInvocable<void()> callback) = 0;
   
-  virtual void Start(const rtc::SocketAddress& addr,
+  virtual void Start(const SocketAddress& addr,
                      int family,
                      absl::AnyInvocable<void()> callback) = 0;
   virtual const AsyncDnsResolverResult& result() const = 0;
@@ -81,14 +80,14 @@ class AsyncDnsResolverFactoryInterface {
   
   
   virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAndResolve(
-      const rtc::SocketAddress& addr,
+      const SocketAddress& addr,
       absl::AnyInvocable<void()> callback) = 0;
   
   
   
   
   virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAndResolve(
-      const rtc::SocketAddress& addr,
+      const SocketAddress& addr,
       int family,
       absl::AnyInvocable<void()> callback) = 0;
   

@@ -88,7 +88,7 @@ class TCPPort : public Port {
   
   int SendTo(const void* data,
              size_t size,
-             const rtc::SocketAddress& addr,
+             const webrtc::SocketAddress& addr,
              const rtc::PacketOptions& options,
              bool payload) override;
 
@@ -98,13 +98,13 @@ class TCPPort : public Port {
 
  private:
   struct Incoming {
-    rtc::SocketAddress addr;
+    webrtc::SocketAddress addr;
     rtc::AsyncPacketSocket* socket;
   };
 
   void TryCreateServerSocket();
 
-  rtc::AsyncPacketSocket* GetIncoming(const rtc::SocketAddress& addr,
+  rtc::AsyncPacketSocket* GetIncoming(const webrtc::SocketAddress& addr,
                                       bool remove = false);
 
   

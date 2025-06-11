@@ -302,7 +302,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
 
 struct RTC_EXPORT PortConfiguration {
   
-  rtc::SocketAddress stun_address;
+  webrtc::SocketAddress stun_address;
   ServerAddresses stun_servers;
   std::string username;
   std::string password;

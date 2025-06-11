@@ -981,7 +981,7 @@ void P2PTransportChannel::OnCandidatesAllocationDone(
 
 
 void P2PTransportChannel::OnUnknownAddress(webrtc::PortInterface* port,
-                                           const rtc::SocketAddress& address,
+                                           const webrtc::SocketAddress& address,
                                            webrtc::ProtocolType proto,
                                            IceMessage* stun_msg,
                                            const std::string& remote_username,
@@ -1293,7 +1293,7 @@ void P2PTransportChannel::AddRemoteCandidateWithResult(
     return;
   }
 
-  rtc::SocketAddress resolved_address;
+  webrtc::SocketAddress resolved_address;
   
   
   

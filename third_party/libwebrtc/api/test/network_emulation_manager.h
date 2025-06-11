@@ -115,7 +115,7 @@ class EmulatedTURNServerInterface {
 
   
   
-  virtual rtc::SocketAddress GetClientEndpointAddress() const = 0;
+  virtual SocketAddress GetClientEndpointAddress() const = 0;
 
   
   
