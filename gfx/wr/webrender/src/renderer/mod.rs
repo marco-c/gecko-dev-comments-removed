@@ -3541,6 +3541,7 @@ impl Renderer {
         let cap = composite_state.tiles.len();
         let mut segment_builder = SegmentBuilder::new();
         let mut tile_index_to_layer_index = vec![None; composite_state.tiles.len()];
+        let mut use_external_composite = false;
 
         
 
@@ -3649,6 +3650,7 @@ impl Renderer {
                         )
                     }
                     CompositorSurfaceUsage::External { .. } => {
+                        use_external_composite = true;
                         let rect = composite_state.get_device_rect(
                             &tile.local_rect,
                             tile.transform_index
@@ -3741,11 +3743,56 @@ impl Renderer {
             full_render = compositor.begin_frame(&input);
         }
 
-        let partial_present_mode = if full_render {
+        
+        let mut partial_present_mode = if full_render {
             None
         } else {
             partial_present_mode
         };
+
+        
+        if let Some(ref _compositor) = self.compositor_config.layer_compositor() {
+            if partial_present_mode.is_some() && use_external_composite {
+                let mut combined_dirty_rect = DeviceRect::zero();
+                let fb_rect = DeviceRect::from_size(frame_device_size.to_f32());
+
+                
+                
+                for (idx, tile) in composite_state.tiles.iter().enumerate() {
+                    if tile.kind == TileKind::Clear {
+                        continue;
+                    }
+
+                    let layer = &mut input_layers[tile_index_to_layer_index[idx].unwrap()];
+                    
+                    match layer.usage {
+                        CompositorSurfaceUsage::Content | CompositorSurfaceUsage::DebugOverlay => {}
+                        CompositorSurfaceUsage::External { .. } => {
+                            continue;
+                        }
+                    }
+
+                    let dirty_rect = composite_state.get_device_rect(
+                        &tile.local_dirty_rect,
+                        tile.transform_index,
+                    );
+
+                    
+                    
+                    
+                    
+                    if let Some(dirty_rect) = dirty_rect.intersection(&fb_rect) {
+                        combined_dirty_rect = combined_dirty_rect.union(&dirty_rect);
+                    }
+                }
+
+                let combined_dirty_rect = combined_dirty_rect.round();
+                
+                partial_present_mode = Some(PartialPresentMode::Single {
+                    dirty_rect: combined_dirty_rect,
+                });
+            }
+        }
 
         
         assert_eq!(swapchain_layers.len(), input_layers.len());
@@ -3782,7 +3829,6 @@ impl Renderer {
                 continue;
             }
 
-            
             
             
             let layer = &mut swapchain_layers[tile_index_to_layer_index[idx].unwrap()];
