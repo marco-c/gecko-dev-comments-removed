@@ -215,7 +215,7 @@ struct EmulatedNetworkStats {
 
   
   
-  std::vector<rtc::IPAddress> local_addresses;
+  std::vector<IPAddress> local_addresses;
 
   
   EmulatedNetworkOutgoingStats overall_outgoing_stats;
@@ -224,10 +224,9 @@ struct EmulatedNetworkStats {
   
   EmulatedNetworkIncomingStats overall_incoming_stats;
 
-  std::map<rtc::IPAddress, EmulatedNetworkOutgoingStats>
+  std::map<IPAddress, EmulatedNetworkOutgoingStats>
       outgoing_stats_per_destination;
-  std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
-      incoming_stats_per_source;
+  std::map<IPAddress, EmulatedNetworkIncomingStats> incoming_stats_per_source;
 
   
   
@@ -291,7 +290,7 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   
   
   virtual void UnbindDefaultReceiver() = 0;
-  virtual rtc::IPAddress GetPeerLocalAddress() const = 0;
+  virtual IPAddress GetPeerLocalAddress() const = 0;
 
  private:
   

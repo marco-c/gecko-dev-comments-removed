@@ -74,7 +74,7 @@ struct EmulatedEndpointConfig {
   IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
   
   
-  std::optional<rtc::IPAddress> ip;
+  std::optional<IPAddress> ip;
   
   
   bool start_as_enabled = true;

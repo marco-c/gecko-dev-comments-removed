@@ -232,7 +232,8 @@ int PhysicalSocket::Bind(const SocketAddress& bind_addr) {
       
       
       
-      copied_bind_addr.SetIP(GetAnyIP(copied_bind_addr.ipaddr().family()));
+      copied_bind_addr.SetIP(
+          webrtc::GetAnyIP(copied_bind_addr.ipaddr().family()));
     } else if (result == NetworkBindingResult::NOT_IMPLEMENTED) {
       RTC_LOG(LS_INFO) << "Can't bind socket to network because "
                           "network binding is not implemented for this OS.";

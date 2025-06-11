@@ -13,7 +13,7 @@
 #include "absl/strings/string_view.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 static const unsigned int kIPv4AddrSize = 4;
 static const unsigned int kIPv6AddrSize = 16;

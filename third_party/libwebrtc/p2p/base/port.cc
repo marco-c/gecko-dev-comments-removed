@@ -554,14 +554,14 @@ bool Port::GetStunMessage(const char* data,
 
 bool Port::IsCompatibleAddress(const rtc::SocketAddress& addr) {
   
-  rtc::IPAddress ip = network_->GetBestIP();
+  webrtc::IPAddress ip = network_->GetBestIP();
   
   if (addr.family() != ip.family()) {
     return false;
   }
   
   if (ip.family() == AF_INET6 &&
-      (IPIsLinkLocal(ip) != IPIsLinkLocal(addr.ipaddr()))) {
+      (webrtc::IPIsLinkLocal(ip) != webrtc::IPIsLinkLocal(addr.ipaddr()))) {
     return false;
   }
   return true;

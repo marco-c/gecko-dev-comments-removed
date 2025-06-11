@@ -157,7 +157,7 @@ uint32_t Candidate::GetPriority(uint32_t type_preference,
   
   
   
-  int addr_pref = IPAddressPrecedence(address_.ipaddr());
+  int addr_pref = webrtc::IPAddressPrecedence(address_.ipaddr());
   int local_preference =
       ((network_adapter_preference << 8) | addr_pref) + relay_preference;
 
@@ -200,12 +200,12 @@ Candidate Candidate::ToSanitizedCopy(bool use_hostname_address,
                                      bool filter_ufrag) const {
   Candidate copy(*this);
   if (use_hostname_address) {
-    rtc::IPAddress ip;
+    webrtc::IPAddress ip;
     if (address().hostname().empty()) {
       
       rtc::SocketAddress redacted_addr("redacted-ip.invalid", address().port());
       copy.set_address(redacted_addr);
-    } else if (IPFromString(address().hostname(), &ip)) {
+    } else if (webrtc::IPFromString(address().hostname(), &ip)) {
       
       rtc::SocketAddress redacted_addr("redacted-literal.invalid",
                                        address().port());

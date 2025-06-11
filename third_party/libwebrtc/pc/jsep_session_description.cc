@@ -74,7 +74,7 @@ void UpdateConnectionAddress(
     hostname = candidate_addr.hostname();
   }
   rtc::SocketAddress connection_addr(ip, port);
-  if (rtc::IPIsUnspec(connection_addr.ipaddr()) && !hostname.empty()) {
+  if (IPIsUnspec(connection_addr.ipaddr()) && !hostname.empty()) {
     
     
     
