@@ -450,12 +450,6 @@ class JujutsuRepository(Repository):
 
             print(f"Detected jj version `{jj_version}`, which is sufficiently modern.")
 
-            jj_dir = topsrcdir / ".jj"
-            if not jj_dir.exists():
-                print("Initializing a git colocated jj repository...")
-                subprocess.run([self._tool, "git", "init", "--colocate"])
-                pass
-
             
             
 
