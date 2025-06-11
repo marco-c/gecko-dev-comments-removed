@@ -1046,10 +1046,6 @@ class SystemResourceMonitor:
         def format_percent(value):
             return str(round(value, 1)) + "%"
 
-        samples = firstThread["samples"]
-        samples["stack"].append(0)
-        samples["time"].append(0)
-
         cpu_string_index = get_string_index("CPU Use")
         memory_string_index = get_string_index("Memory")
         io_string_index = get_string_index("IO")
@@ -1058,10 +1054,6 @@ class SystemResourceMonitor:
             
             if m.end - m.start < self.poll_interval / 10:
                 continue
-
-            
-            samples["stack"].append(0)
-            samples["time"].append(round((m.end - start_time) * 1000))
 
             
             markerData = {
@@ -1121,7 +1113,6 @@ class SystemResourceMonitor:
                 "write_bytes": m.io.write_bytes,
             }
             add_marker(io_string_index, m.start, m.end, markerData)
-        samples["length"] = len(samples["stack"])
 
         
         
