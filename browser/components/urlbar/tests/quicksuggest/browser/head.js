@@ -650,5 +650,5 @@ function expectedPingContextId() {
   
   return Services.prefs
     .getCharPref("browser.contextual-services.contextId")
-    .replace(/\{|\}/g, "");
+    .substring(1, 37);
 }
