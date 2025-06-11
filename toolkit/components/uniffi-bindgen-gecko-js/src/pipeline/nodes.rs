@@ -463,6 +463,7 @@ pub struct TypeNode {
     
     
     pub class_name: Option<String>,
+    pub jsdoc_name: String,
     pub canonical_name: String,
     pub ffi_converter: String,
     pub is_used_as_error: bool,
