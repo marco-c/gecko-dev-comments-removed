@@ -775,9 +775,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     if "speedometer" in try_name:
                         return True
                 if "safari" and "benchmark" in try_name:
-                    
-                    if "jetstream3" in try_name and "safari-tp" not in try_name:
-                        return False
                     if "jetstream2" in try_name and "safari" in try_name:
                         return False
                     return True
