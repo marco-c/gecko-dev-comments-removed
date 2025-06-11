@@ -38,7 +38,15 @@ def is_release_promotion_available(parameters):
             "behavior": {
                 "type": "string",
                 "description": "The type of release promotion to perform.",
-                "enum": sorted(graph_config["merge-automation"]["behaviors"].keys()),
+                
+                "enum": [
+                    "bump-main",
+                    "bump-esr140",
+                    "early-to-late-beta",
+                    "main-to-beta",
+                    "beta-to-release",
+                    "release-to-esr",
+                ],
                 "default": "REPLACE ME",
             },
             "from-repo": {
