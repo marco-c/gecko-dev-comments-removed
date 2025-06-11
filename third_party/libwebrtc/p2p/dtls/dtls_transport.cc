@@ -882,7 +882,9 @@ void DtlsTransport::MaybeStartDtls() {
     }
     RTC_LOG(LS_INFO) << ToString()
                      << ": DtlsTransport: Started DTLS handshake active="
-                     << IsDtlsActive();
+                     << IsDtlsActive() << " role="
+                     << (*dtls_role_ == rtc::SSL_SERVER ? "server" : "client");
+
     set_dtls_state(webrtc::DtlsTransportState::kConnecting);
     
     
