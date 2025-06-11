@@ -1738,14 +1738,12 @@ class nsLayoutUtils {
   }
 
   
-  static gfxFloat GetMaybeSnappedBaselineY(nsIFrame* aFrame,
-                                           gfxContext* aContext, nscoord aY,
-                                           nscoord aAscent);
+  static gfxFloat GetSnappedBaselineY(nsIFrame* aFrame, gfxContext* aContext,
+                                      nscoord aY, nscoord aAscent);
   
   
-  static gfxFloat GetMaybeSnappedBaselineX(nsIFrame* aFrame,
-                                           gfxContext* aContext, nscoord aX,
-                                           nscoord aAscent);
+  static gfxFloat GetSnappedBaselineX(nsIFrame* aFrame, gfxContext* aContext,
+                                      nscoord aX, nscoord aAscent);
 
   static nscoord AppUnitWidthOfString(char16_t aC, nsFontMetrics& aFontMetrics,
                                       DrawTarget* aDrawTarget) {

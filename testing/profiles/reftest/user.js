@@ -108,5 +108,3 @@ user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
 user_pref("layout.css.prefers-color-scheme.content-override", 1);
 
 user_pref("app.update.disabledForTesting", true);
-
-user_pref("layout.disable-pixel-alignment", true);
