@@ -92,7 +92,9 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   
-  RtpTransceiver(cricket::MediaType media_type, ConnectionContext* context);
+  RtpTransceiver(cricket::MediaType media_type,
+                 ConnectionContext* context,
+                 cricket::CodecLookupHelper* codec_lookup_helper);
   
   
   
@@ -103,6 +105,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
       rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
           receiver,
       ConnectionContext* context,
+      cricket::CodecLookupHelper* codec_lookup_helper,
       std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToNegotiate,
       std::function<void()> on_negotiation_needed);
   ~RtpTransceiver() override;
@@ -301,13 +304,18 @@ class RtpTransceiver : public RtpTransceiverInterface {
   void OnNegotiationUpdate(SdpType sdp_type,
                            const cricket::MediaContentDescription* content);
 
-  cricket::CodecVendor* codec_vendor() { return &codec_vendor_; }
-
  private:
   cricket::MediaEngineInterface* media_engine() const {
     return context_->media_engine();
   }
   ConnectionContext* context() const { return context_; }
+  cricket::CodecVendor& codec_vendor() {
+    if (mid_) {
+      return *codec_lookup_helper_->CodecVendor(*mid_);
+    } else {
+      return *codec_lookup_helper_->CodecVendor("");
+    }
+  }
   void OnFirstPacketReceived();
   void OnFirstPacketSent();
   void StopSendingAndReceiving();
@@ -349,6 +357,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   std::unique_ptr<cricket::ChannelInterface> channel_ = nullptr;
   ConnectionContext* const context_;
+  cricket::CodecLookupHelper* const codec_lookup_helper_;
   std::vector<RtpCodecCapability> codec_preferences_;
   std::vector<RtpCodecCapability> sendrecv_codec_preferences_;
   std::vector<RtpCodecCapability> sendonly_codec_preferences_;
@@ -360,7 +369,6 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   cricket::RtpHeaderExtensions negotiated_header_extensions_
       RTC_GUARDED_BY(thread_);
-  cricket::CodecVendor codec_vendor_;
 
   const std::function<void()> on_negotiation_needed_;
 };
