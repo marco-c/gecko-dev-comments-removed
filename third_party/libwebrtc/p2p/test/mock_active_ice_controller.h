@@ -17,7 +17,7 @@
 #include "p2p/base/active_ice_controller_interface.h"
 #include "test/gmock.h"
 
-namespace cricket {
+namespace webrtc {
 
 class MockActiveIceController : public cricket::ActiveIceControllerInterface {
  public:
@@ -84,6 +84,13 @@ class MockActiveIceControllerFactory
   MOCK_METHOD(void, RecordActiveIceControllerCreated, ());
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::MockActiveIceController;
+using ::webrtc::MockActiveIceControllerFactory;
 }  
 
 #endif  

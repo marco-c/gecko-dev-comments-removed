@@ -23,7 +23,7 @@
 
 
 
-namespace cricket {
+namespace webrtc {
 
 class TurnServerConnectionTest : public ::testing::Test {
  public:
@@ -52,11 +52,9 @@ class TurnServerConnectionTest : public ::testing::Test {
 
 TEST_F(TurnServerConnectionTest, ComparisonOperators) {
   std::unique_ptr<rtc::AsyncPacketSocket> socket1(
-      socket_factory_.CreateUdpSocket(webrtc::SocketAddress("1.1.1.1", 1), 0,
-                                      0));
+      socket_factory_.CreateUdpSocket(SocketAddress("1.1.1.1", 1), 0, 0));
   std::unique_ptr<rtc::AsyncPacketSocket> socket2(
-      socket_factory_.CreateUdpSocket(webrtc::SocketAddress("2.2.2.2", 2), 0,
-                                      0));
+      socket_factory_.CreateUdpSocket(SocketAddress("2.2.2.2", 2), 0, 0));
   TurnServerConnection connection1(socket2->GetLocalAddress(), PROTO_UDP,
                                    socket1.get());
   TurnServerConnection connection2(socket2->GetLocalAddress(), PROTO_UDP,

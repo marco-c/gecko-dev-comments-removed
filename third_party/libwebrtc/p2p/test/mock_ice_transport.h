@@ -18,10 +18,10 @@
 #include "p2p/base/ice_transport_internal.h"
 #include "test/gmock.h"
 
-namespace cricket {
+namespace webrtc {
 
 
-class MockIceTransport : public IceTransportInternal {
+class MockIceTransport : public cricket::IceTransportInternal {
  public:
   MockIceTransport() {
     SignalReadyToSend(this);
@@ -43,34 +43,42 @@ class MockIceTransport : public IceTransportInternal {
               (cricket::IceTransportStats * ice_transport_stats),
               (override));
 
-  IceTransportState GetState() const override {
-    return IceTransportState::STATE_INIT;
+  cricket::IceTransportState GetState() const override {
+    return cricket::IceTransportState::STATE_INIT;
   }
-  webrtc::IceTransportState GetIceTransportState() const override {
-    return webrtc::IceTransportState::kNew;
+  IceTransportState GetIceTransportState() const override {
+    return IceTransportState::kNew;
   }
 
   const std::string& transport_name() const override { return transport_name_; }
   int component() const override { return 0; }
-  void SetIceRole(IceRole ) override {}
+  void SetIceRole(cricket::IceRole ) override {}
   
   
-  void SetIceParameters(const IceParameters& ) override {}
-  void SetRemoteIceParameters(const IceParameters& ) override {}
-  void SetRemoteIceMode(IceMode ) override {}
-  void SetIceConfig(const IceConfig& config) override { ice_config_ = config; }
-  const IceConfig& config() const override { return ice_config_; }
+  void SetIceParameters(
+      const cricket::IceParameters& ) override {}
+  void SetRemoteIceParameters(
+      const cricket::IceParameters& ) override {}
+  void SetRemoteIceMode(cricket::IceMode ) override {}
+  void SetIceConfig(const cricket::IceConfig& config) override {
+    ice_config_ = config;
+  }
+  const cricket::IceConfig& config() const override { return ice_config_; }
   std::optional<int> GetRttEstimate() override { return std::nullopt; }
-  const Connection* selected_connection() const override { return nullptr; }
-  std::optional<const CandidatePair> GetSelectedCandidatePair() const override {
+  const cricket::Connection* selected_connection() const override {
+    return nullptr;
+  }
+  std::optional<const cricket::CandidatePair> GetSelectedCandidatePair()
+      const override {
     return std::nullopt;
   }
   void MaybeStartGathering() override {}
-  void AddRemoteCandidate(const Candidate& ) override {}
-  void RemoveRemoteCandidate(const Candidate& ) override {}
+  void AddRemoteCandidate(const cricket::Candidate& ) override {}
+  void RemoveRemoteCandidate(
+      const cricket::Candidate& ) override {}
   void RemoveAllRemoteCandidates() override {}
-  IceGatheringState gathering_state() const override {
-    return IceGatheringState::kIceGatheringComplete;
+  cricket::IceGatheringState gathering_state() const override {
+    return cricket::IceGatheringState::kIceGatheringComplete;
   }
 
   bool receiving() const override { return true; }
@@ -78,9 +86,15 @@ class MockIceTransport : public IceTransportInternal {
 
  private:
   std::string transport_name_;
-  IceConfig ice_config_;
+  cricket::IceConfig ice_config_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::MockIceTransport;
 }  
 
 #endif  

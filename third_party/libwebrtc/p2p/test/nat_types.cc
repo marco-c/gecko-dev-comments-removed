@@ -12,7 +12,7 @@
 
 #include "rtc_base/checks.h"
 
-namespace rtc {
+namespace webrtc {
 
 class SymmetricNAT : public NAT {
  public:

@@ -17,22 +17,23 @@
 #include "api/test/mock_async_dns_resolver.h"
 #include "p2p/base/basic_packet_socket_factory.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
-class MockDnsResolvingPacketSocketFactory : public BasicPacketSocketFactory {
+class MockDnsResolvingPacketSocketFactory
+    : public rtc::BasicPacketSocketFactory {
  public:
-  using Expectations = std::function<void(webrtc::MockAsyncDnsResolver*,
-                                          webrtc::MockAsyncDnsResolverResult*)>;
+  using Expectations =
+      std::function<void(MockAsyncDnsResolver*, MockAsyncDnsResolverResult*)>;
 
-  explicit MockDnsResolvingPacketSocketFactory(SocketFactory* socket_factory)
-      : BasicPacketSocketFactory(socket_factory) {}
+  explicit MockDnsResolvingPacketSocketFactory(
+      rtc::SocketFactory* socket_factory)
+      : rtc::BasicPacketSocketFactory(socket_factory) {}
 
-  std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAsyncDnsResolver()
-      override {
-    std::unique_ptr<webrtc::MockAsyncDnsResolver> resolver =
-        std::make_unique<webrtc::MockAsyncDnsResolver>();
+  std::unique_ptr<AsyncDnsResolverInterface> CreateAsyncDnsResolver() override {
+    std::unique_ptr<MockAsyncDnsResolver> resolver =
+        std::make_unique<MockAsyncDnsResolver>();
     if (expectations_) {
       expectations_(resolver.get(), &resolver_result_);
     }
@@ -44,10 +45,16 @@ class MockDnsResolvingPacketSocketFactory : public BasicPacketSocketFactory {
   }
 
  private:
-  webrtc::MockAsyncDnsResolverResult resolver_result_;
+  MockAsyncDnsResolverResult resolver_result_;
   Expectations expectations_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::MockDnsResolvingPacketSocketFactory;
 }  
 
 #endif  

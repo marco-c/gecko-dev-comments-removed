@@ -40,7 +40,7 @@ namespace test {
 
 
 class EmulatedTURNServer : public EmulatedTURNServerInterface,
-                           public cricket::TurnAuthInterface,
+                           public TurnAuthInterface,
                            public webrtc::EmulatedNetworkReceiverInterface {
  public:
   
@@ -88,7 +88,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
   IceServerConfig ice_config_;
   EmulatedEndpoint* const client_;
   EmulatedEndpoint* const peer_;
-  std::unique_ptr<cricket::TurnServer> turn_server_ RTC_GUARDED_BY(&thread_);
+  std::unique_ptr<TurnServer> turn_server_ RTC_GUARDED_BY(&thread_);
   class AsyncPacketSocketWrapper;
   std::map<SocketAddress, AsyncPacketSocketWrapper*> sockets_
       RTC_GUARDED_BY(&thread_);

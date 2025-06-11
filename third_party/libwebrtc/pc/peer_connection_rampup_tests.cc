@@ -252,13 +252,13 @@ class PeerConnectionRampUpTest : public ::testing::Test {
                         const std::string& common_name = "test turn server") {
     rtc::Thread* thread = network_thread();
     rtc::SocketFactory* factory = &firewall_socket_server_;
-    std::unique_ptr<cricket::TestTurnServer> turn_server;
+    std::unique_ptr<TestTurnServer> turn_server;
     SendTask(network_thread(), [&] {
       static const SocketAddress turn_server_internal_address{
           kTurnInternalAddress, kTurnInternalPort};
       static const SocketAddress turn_server_external_address{
           kTurnExternalAddress, kTurnExternalPort};
-      turn_server = std::make_unique<cricket::TestTurnServer>(
+      turn_server = std::make_unique<TestTurnServer>(
           thread, factory, turn_server_internal_address,
           turn_server_external_address, type, true ,
           common_name);
@@ -328,7 +328,7 @@ class PeerConnectionRampUpTest : public ::testing::Test {
   Clock* const clock_;
   
   
-  std::vector<std::unique_ptr<cricket::TestTurnServer>> turn_servers_;
+  std::vector<std::unique_ptr<TestTurnServer>> turn_servers_;
   
   
   

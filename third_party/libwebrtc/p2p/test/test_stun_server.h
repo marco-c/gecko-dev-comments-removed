@@ -20,21 +20,20 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 class TestStunServer : StunServer {
  public:
   using StunServerPtr =
-      std::unique_ptr<TestStunServer, std::function<void(TestStunServer*)>>;
+      std::unique_ptr<TestStunServer,
+                      std::function<void(webrtc::TestStunServer*)>>;
   static StunServerPtr Create(rtc::SocketServer* ss,
-                              const webrtc::SocketAddress& addr,
+                              const SocketAddress& addr,
                               rtc::Thread& network_thread);
 
   
-  void set_fake_stun_addr(const webrtc::SocketAddress& addr) {
-    fake_stun_addr_ = addr;
-  }
+  void set_fake_stun_addr(const SocketAddress& addr) { fake_stun_addr_ = addr; }
 
  private:
   static void DeleteOnNetworkThread(TestStunServer* server);
@@ -42,14 +41,20 @@ class TestStunServer : StunServer {
   TestStunServer(rtc::AsyncUDPSocket* socket, rtc::Thread& network_thread)
       : StunServer(socket), network_thread_(network_thread) {}
 
-  void OnBindingRequest(StunMessage* msg,
-                        const webrtc::SocketAddress& remote_addr) override;
+  void OnBindingRequest(cricket::StunMessage* msg,
+                        const SocketAddress& remote_addr) override;
 
  private:
-  webrtc::SocketAddress fake_stun_addr_;
+  SocketAddress fake_stun_addr_;
   rtc::Thread& network_thread_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::TestStunServer;
 }  
 
 #endif  
