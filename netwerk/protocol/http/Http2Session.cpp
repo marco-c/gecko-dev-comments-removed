@@ -1210,7 +1210,7 @@ bool Http2Session::VerifyStream(Http2StreamBase* aStream,
   
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-#ifndef DEBUG
+#ifndef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   return true;
 #else   
