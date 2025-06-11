@@ -739,7 +739,8 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   
-  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName) const;
+  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName,
+                               const nsIFrame* aPositionedFrame) const;
   void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
 
