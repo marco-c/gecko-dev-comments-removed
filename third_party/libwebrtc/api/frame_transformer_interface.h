@@ -57,7 +57,9 @@ class TransformableFrameInterface {
 
   
   
-  virtual std::optional<Timestamp> GetCaptureTimeIdentifier() const {
+  [[deprecated(
+      "Use GetPresentationTimestamp instead")]] virtual std::optional<Timestamp>
+  GetCaptureTimeIdentifier() const {
     return std::nullopt;
   }
 
