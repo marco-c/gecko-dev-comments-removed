@@ -2433,83 +2433,84 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
       i = aState->mItemBuffer.Length();
       continue;
     }
-    if (same3DContext || item->GetClip().MayIntersect(r)) {
-      AutoTArray<nsIFrame*, 16> outFrames;
-      item->HitTest(aBuilder, aRect, aState, &outFrames);
 
-      
-      
-      
-      nsTArray<nsIFrame*>* writeFrames = aOutFrames;
-      if (item->GetType() == DisplayItemType::TYPE_TRANSFORM &&
-          static_cast<nsDisplayTransform*>(item)->IsLeafOf3DContext()) {
-        if (outFrames.Length()) {
-          nsDisplayTransform* transform =
-              static_cast<nsDisplayTransform*>(item);
-          nsPoint point = aRect.TopLeft();
-          
-          if (aRect.width != 1 || aRect.height != 1) {
-            point = aRect.Center();
-          }
-          temp.AppendElement(
-              FramesWithDepth(transform->GetHitDepthAtPoint(aBuilder, point)));
-          writeFrames = &temp[temp.Length() - 1].mFrames;
+    if (!same3DContext && !item->GetClip().MayIntersect(r)) {
+      continue;
+    }
+
+    AutoTArray<nsIFrame*, 16> outFrames;
+    item->HitTest(aBuilder, aRect, aState, &outFrames);
+
+    
+    
+    
+    nsTArray<nsIFrame*>* writeFrames = aOutFrames;
+    if (item->GetType() == DisplayItemType::TYPE_TRANSFORM &&
+        static_cast<nsDisplayTransform*>(item)->IsLeafOf3DContext()) {
+      if (outFrames.Length()) {
+        nsDisplayTransform* transform = static_cast<nsDisplayTransform*>(item);
+        nsPoint point = aRect.TopLeft();
+        
+        if (aRect.width != 1 || aRect.height != 1) {
+          point = aRect.Center();
         }
-      } else {
-        
-        
-        
-        FlushFramesArray(temp, aOutFrames);
+        temp.AppendElement(
+            FramesWithDepth(transform->GetHitDepthAtPoint(aBuilder, point)));
+        writeFrames = &temp[temp.Length() - 1].mFrames;
       }
+    } else {
+      
+      
+      
+      FlushFramesArray(temp, aOutFrames);
+    }
 
-      for (uint32_t j = 0; j < outFrames.Length(); j++) {
-        nsIFrame* f = outFrames.ElementAt(j);
-        
-        
-        
-        
-        if (aBuilder->HitTestIsForVisibility() ||
-            IsFrameReceivingPointerEvents(f)) {
-          writeFrames->AppendElement(f);
-        }
+    for (uint32_t j = 0; j < outFrames.Length(); j++) {
+      nsIFrame* f = outFrames.ElementAt(j);
+      
+      
+      
+      
+      if (aBuilder->HitTestIsForVisibility() ||
+          IsFrameReceivingPointerEvents(f)) {
+        writeFrames->AppendElement(f);
       }
+    }
 
-      if (aBuilder->HitTestIsForVisibility()) {
-        aState->mHitOccludingItem = [&] {
-          if (aState->mHitOccludingItem) {
-            
-            return true;
-          }
-          if (aState->mCurrentOpacity == 1.0f &&
-              item->GetOpaqueRegion(aBuilder, &snap).Contains(aRect)) {
-            
-            
-            return true;
-          }
-          float threshold = aBuilder->VisibilityThreshold();
-          if (threshold == 1.0f) {
-            return false;
-          }
-          float itemOpacity = [&] {
-            switch (item->GetType()) {
-              case DisplayItemType::TYPE_OPACITY:
-                return static_cast<nsDisplayOpacity*>(item)->GetOpacity();
-              case DisplayItemType::TYPE_BACKGROUND_COLOR:
-                return static_cast<nsDisplayBackgroundColor*>(item)
-                    ->GetOpacity();
-              default:
-                
-                return 0.0f;
-            }
-          }();
-          return itemOpacity * aState->mCurrentOpacity >= threshold;
-        }();
-
+    if (aBuilder->HitTestIsForVisibility()) {
+      aState->mHitOccludingItem = [&] {
         if (aState->mHitOccludingItem) {
           
-          aState->mItemBuffer.TruncateLength(itemBufferStart);
-          break;
+          return true;
         }
+        if (aState->mCurrentOpacity == 1.0f &&
+            item->GetOpaqueRegion(aBuilder, &snap).Contains(aRect)) {
+          
+          
+          return true;
+        }
+        float threshold = aBuilder->VisibilityThreshold();
+        if (threshold == 1.0f) {
+          return false;
+        }
+        float itemOpacity = [&] {
+          switch (item->GetType()) {
+            case DisplayItemType::TYPE_OPACITY:
+              return static_cast<nsDisplayOpacity*>(item)->GetOpacity();
+            case DisplayItemType::TYPE_BACKGROUND_COLOR:
+              return static_cast<nsDisplayBackgroundColor*>(item)->GetOpacity();
+            default:
+              
+              return 0.0f;
+          }
+        }();
+        return itemOpacity * aState->mCurrentOpacity >= threshold;
+      }();
+
+      if (aState->mHitOccludingItem) {
+        
+        aState->mItemBuffer.TruncateLength(itemBufferStart);
+        break;
       }
     }
   }
