@@ -856,6 +856,9 @@
 
       let tabOffset = clientPos(tab) - clientPos(this);
 
+      let movingTabs = tab.multiselected ? gBrowser.selectedTabs : [tab];
+      let movingTabsSet = new Set(movingTabs);
+
       tab._dragData = {
         offsetX: this.verticalMode
           ? event.screenX - window.screenX
@@ -869,7 +872,8 @@
             : this.arrowScrollbox.scrollPosition,
         screenX: event.screenX,
         screenY: event.screenY,
-        movingTabs: tab.multiselected ? gBrowser.selectedTabs : [tab],
+        movingTabs,
+        movingTabsSet,
         fromTabList,
         tabGroupCreationColor: gBrowser.tabGroupMenu.nextUnusedColor,
         expandGroupOnDrop,
@@ -1181,13 +1185,13 @@
                 dropIndex++;
               }
             }
-          } else if (dropBefore) {
+          } else if (dropElement && dropBefore) {
             gBrowser.moveTabsBefore(
               movingTabs,
               dropElement,
               dropMetricsContext
             );
-          } else {
+          } else if (dropElement && dropBefore != undefined) {
             gBrowser.moveTabsAfter(movingTabs, dropElement, dropMetricsContext);
           }
           this.#expandGroupOnDrop(draggedTab);
@@ -1244,7 +1248,7 @@
               color: draggedTab._dragData.tabGroupCreationColor,
               telemetryUserCreateSource: "drag",
             });
-          } else if (dropIndex !== undefined || dropElement) {
+          } else {
             moveTabs();
           }
         }
@@ -2285,6 +2289,7 @@
       let draggedTab = event.dataTransfer.mozGetDataAt(TAB_DROP_TYPE, 0);
       let dragData = draggedTab._dragData;
       let movingTabs = dragData.movingTabs;
+      let movingTabsSet = dragData.movingTabsSet;
 
       dragData.animLastScreenPos ??= this.verticalMode
         ? dragData.screenY
@@ -2360,7 +2365,7 @@
 
       dragData.translatePos = translate;
 
-      tabs = tabs.filter(t => !movingTabs.includes(t) || t == draggedTab);
+      tabs = tabs.filter(t => !movingTabsSet.has(t) || t == draggedTab);
 
       
 
@@ -2511,12 +2516,58 @@
       };
 
       let dropElement = getOverlappedElement();
-      if (!dropElement) {
-        dropElement = this.ariaFocusableItems[oldDropElementIndex];
+
+      let newDropElementIndex;
+      if (dropElement) {
+        newDropElementIndex = dropElement.elementIndex;
+      } else {
+        
+        
+        
+        
+        
+        
+        newDropElementIndex = oldDropElementIndex;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let lastPossibleDropElement = this.#rtlMode
+          ? tabs.find(t => t != draggedTab)
+          : tabs.findLast(t => t != draggedTab);
+        let maxElementIndexForDropElement =
+          lastPossibleDropElement?.elementIndex;
+        if (Number.isInteger(maxElementIndexForDropElement)) {
+          let index = Math.min(
+            oldDropElementIndex,
+            maxElementIndexForDropElement
+          );
+          dropElement = this.ariaFocusableItems.at(index);
+        }
       }
-      let newDropElementIndex = dropElement
-        ? dropElement.elementIndex
-        : oldDropElementIndex;
+
       let moveOverThreshold;
       let overlapPercent;
       let shouldCreateGroupOnDrop;
@@ -2590,7 +2641,6 @@
         
         
         shouldCreateGroupOnDrop =
-          dropElement != draggedTab &&
           isTab(dropElement) &&
           !dropElement?.group &&
           overlapPercent > dragOverGroupingThreshold;
@@ -2613,10 +2663,13 @@
           let dropElementGroup = dropElement?.group;
           let colorCode = dropElementGroup?.color;
 
+          let lastUnmovingTabInGroup = dropElementGroup?.tabs.findLast(
+            t => !movingTabsSet.has(t)
+          );
           if (
             isTab(dropElement) &&
             dropElementGroup &&
-            dropElement == dropElementGroup.tabs.at(-1) &&
+            dropElement == lastUnmovingTabInGroup &&
             !dropBefore &&
             overlapPercent < dragOverGroupingThreshold
           ) {
