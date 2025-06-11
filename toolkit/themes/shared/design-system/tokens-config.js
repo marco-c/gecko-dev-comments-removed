@@ -155,7 +155,12 @@ function formatTokens({ mediaQuery, surface, args }) {
   dictionary.allTokens.forEach(token => {
     let originalVal = getOriginalTokenValue(token, prop, surface);
     if (originalVal != undefined) {
-      let formattedToken = transformTokenValue(token, originalVal, dictionary);
+      let formattedToken = transformToken(
+        token,
+        originalVal,
+        dictionary,
+        surface
+      );
       tokens.push(formattedToken);
     }
   });
@@ -229,14 +234,18 @@ function getOriginalTokenValue(token, prop, surface) {
 
 
 
-function transformTokenValue(token, originalVal, dictionary) {
+
+
+
+function transformToken(token, originalVal, dictionary, surface) {
   let value = originalVal;
   if (dictionary.usesReference(value)) {
     dictionary.getReferences(value).forEach(ref => {
       value = value.replace(`{${ref.path.join(".")}}`, `var(--${ref.name})`);
     });
   }
-  return { ...token, value };
+  let surfaceComment = token.original?.value[surface]?.comment;
+  return { ...token, value, comment: surfaceComment ?? token.comment };
 }
 
 
