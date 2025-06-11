@@ -11,11 +11,13 @@
 #ifndef API_CRYPTO_FRAME_DECRYPTOR_INTERFACE_H_
 #define API_CRYPTO_FRAME_DECRYPTOR_INTERFACE_H_
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "api/array_view.h"
 #include "api/media_types.h"
-#include "rtc_base/ref_count.h"
+#include "api/ref_count.h"
 
 namespace webrtc {
 
@@ -58,7 +60,7 @@ class FrameDecryptorInterface : public RefCountInterface {
   
   
   
-  virtual Result Decrypt(cricket::MediaType media_type,
+  virtual Result Decrypt(webrtc::MediaType media_type,
                          const std::vector<uint32_t>& csrcs,
                          rtc::ArrayView<const uint8_t> additional_data,
                          rtc::ArrayView<const uint8_t> encrypted_frame,
@@ -67,7 +69,7 @@ class FrameDecryptorInterface : public RefCountInterface {
   
   
   
-  virtual size_t GetMaxPlaintextByteSize(cricket::MediaType media_type,
+  virtual size_t GetMaxPlaintextByteSize(webrtc::MediaType media_type,
                                          size_t encrypted_frame_size) = 0;
 };
 

@@ -384,7 +384,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-  FindAvailableTransceiverToReceive(cricket::MediaType media_type) const;
+  FindAvailableTransceiverToReceive(webrtc::MediaType media_type) const;
 
   
   
@@ -430,12 +430,12 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   RTCError HandleLegacyOfferOptions(
       const PeerConnectionInterface::RTCOfferAnswerOptions& options);
   void RemoveRecvDirectionFromReceivingTransceiversOfType(
-      cricket::MediaType media_type) RTC_RUN_ON(signaling_thread());
-  void AddUpToOneReceivingTransceiverOfType(cricket::MediaType media_type);
+      webrtc::MediaType media_type) RTC_RUN_ON(signaling_thread());
+  void AddUpToOneReceivingTransceiverOfType(webrtc::MediaType media_type);
 
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-  GetReceivingTransceiversOfType(cricket::MediaType media_type)
+  GetReceivingTransceiversOfType(webrtc::MediaType media_type)
       RTC_RUN_ON(signaling_thread());
 
   
@@ -458,14 +458,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  void RemoveSenders(cricket::MediaType media_type);
+  void RemoveSenders(webrtc::MediaType media_type);
 
   
   
   
   
   void UpdateLocalSenders(const std::vector<cricket::StreamParams>& streams,
-                          cricket::MediaType media_type);
+                          webrtc::MediaType media_type);
 
   
   
@@ -476,7 +476,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   void UpdateRemoteSendersList(
       const std::vector<cricket::StreamParams>& streams,
       bool default_track_needed,
-      cricket::MediaType media_type,
+      webrtc::MediaType media_type,
       StreamCollection* new_streams);
 
   

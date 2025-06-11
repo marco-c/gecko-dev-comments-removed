@@ -132,9 +132,9 @@ class PeerConnectionWrapper {
   
   
   rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
-      cricket::MediaType media_type);
+      webrtc::MediaType media_type);
   rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
-      cricket::MediaType media_type,
+      webrtc::MediaType media_type,
       const RtpTransceiverInit& init);
   rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
       rtc::scoped_refptr<MediaStreamTrackInterface> track);

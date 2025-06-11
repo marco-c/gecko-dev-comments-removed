@@ -865,11 +865,10 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  
   virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(cricket::MediaType media_type) = 0;
+  AddTransceiver(webrtc::MediaType media_type) = 0;
   virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(cricket::MediaType media_type,
+  AddTransceiver(webrtc::MediaType media_type,
                  const RtpTransceiverInit& init) = 0;
 
   
@@ -1542,13 +1541,15 @@ class RTC_EXPORT PeerConnectionFactoryInterface
 
   
   
+  
   virtual RtpCapabilities GetRtpSenderCapabilities(
-      cricket::MediaType kind) const = 0;
+      webrtc::MediaType kind) const = 0;
 
   
   
+  
   virtual RtpCapabilities GetRtpReceiverCapabilities(
-      cricket::MediaType kind) const = 0;
+      webrtc::MediaType kind) const = 0;
 
   virtual rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
       const std::string& stream_id) = 0;

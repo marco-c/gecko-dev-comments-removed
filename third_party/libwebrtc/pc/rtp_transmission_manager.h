@@ -97,7 +97,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
-  CreateSender(cricket::MediaType media_type,
+  CreateSender(webrtc::MediaType media_type,
                const std::string& id,
                rtc::scoped_refptr<MediaStreamTrackInterface> track,
                const std::vector<std::string>& stream_ids,
@@ -105,7 +105,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-  CreateReceiver(cricket::MediaType media_type, const std::string& receiver_id);
+  CreateReceiver(webrtc::MediaType media_type, const std::string& receiver_id);
 
   
   
@@ -155,14 +155,14 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   void OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
                            MediaStreamInterface* stream,
-                           cricket::MediaType media_type);
+                           webrtc::MediaType media_type);
 
   
   
   
   void OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
                              MediaStreamInterface* stream,
-                             cricket::MediaType media_type);
+                             webrtc::MediaType media_type);
 
   
   
@@ -170,7 +170,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   
   void OnLocalSenderAdded(const RtpSenderInfo& sender_info,
-                          cricket::MediaType media_type);
+                          webrtc::MediaType media_type);
 
   
   
@@ -178,12 +178,11 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   
   void OnLocalSenderRemoved(const RtpSenderInfo& sender_info,
-                            cricket::MediaType media_type);
+                            webrtc::MediaType media_type);
 
   std::vector<RtpSenderInfo>* GetRemoteSenderInfos(
-      cricket::MediaType media_type);
-  std::vector<RtpSenderInfo>* GetLocalSenderInfos(
-      cricket::MediaType media_type);
+      webrtc::MediaType media_type);
+  std::vector<RtpSenderInfo>* GetLocalSenderInfos(webrtc::MediaType media_type);
   const RtpSenderInfo* FindSenderInfo(const std::vector<RtpSenderInfo>& infos,
                                       const std::string& stream_id,
                                       const std::string& sender_id) const;

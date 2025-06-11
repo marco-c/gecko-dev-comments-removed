@@ -119,7 +119,7 @@ class PeerConnectionSdpMethods {
   
   
   virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(cricket::MediaType media_type,
+  AddTransceiver(webrtc::MediaType media_type,
                  rtc::scoped_refptr<MediaStreamTrackInterface> track,
                  const RtpTransceiverInit& init,
                  bool fire_callback = true) = 0;

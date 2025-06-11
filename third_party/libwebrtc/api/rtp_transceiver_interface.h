@@ -63,7 +63,7 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
  public:
   
   
-  virtual cricket::MediaType media_type() const = 0;
+  virtual webrtc::MediaType media_type() const = 0;
 
   
   

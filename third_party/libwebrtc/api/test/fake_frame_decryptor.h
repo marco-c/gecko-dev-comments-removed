@@ -34,13 +34,13 @@ class FakeFrameDecryptor : public FrameDecryptorInterface {
                               uint8_t expected_postfix_byte = 255);
   
   
-  Result Decrypt(cricket::MediaType media_type,
+  Result Decrypt(webrtc::MediaType media_type,
                  const std::vector<uint32_t>& csrcs,
                  rtc::ArrayView<const uint8_t> additional_data,
                  rtc::ArrayView<const uint8_t> encrypted_frame,
                  rtc::ArrayView<uint8_t> frame) override;
   
-  size_t GetMaxPlaintextByteSize(cricket::MediaType media_type,
+  size_t GetMaxPlaintextByteSize(webrtc::MediaType media_type,
                                  size_t encrypted_frame_size) override;
   
   void SetFakeKey(uint8_t fake_key);
