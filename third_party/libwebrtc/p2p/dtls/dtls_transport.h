@@ -229,7 +229,9 @@ class DtlsTransport : public DtlsTransportInternal {
     return sb.Release();
   }
 
+  
   bool IsDtlsPiggybackSupportedByPeer();
+  bool WasDtlsCompletedByPiggybacking();
 
  private:
   void ConnectToIceTransport();
@@ -286,10 +288,12 @@ class DtlsTransport : public DtlsTransportInternal {
   webrtc::RtcEventLog* const event_log_;
 
   
-  bool dtls_in_stun_ = false;  
-  DtlsStunPiggybackController dtls_stun_piggyback_controller_;
+  
+  
+  bool dtls_in_stun_ = false;
 
-  bool IsDtlsPiggybackHandshaking();
+  
+  DtlsStunPiggybackController dtls_stun_piggyback_controller_;
 
   absl::AnyInvocable<void(rtc::PacketTransportInternal*,
                           const rtc::ReceivedPacket&)>
