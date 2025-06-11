@@ -382,7 +382,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   video_coding::PacketBuffer packet_buffer_
       RTC_GUARDED_BY(packet_sequence_checker_);
   
-  
   std::unique_ptr<H26xPacketBuffer> h26x_packet_buffer_
       RTC_GUARDED_BY(packet_sequence_checker_);
   UniqueTimestampCounter frame_counter_

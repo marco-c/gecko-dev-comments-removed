@@ -1394,8 +1394,7 @@ void RtpVideoStreamReceiver2::StartReceive() {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   
   
-  if (env_.field_trials().IsEnabled("WebRTC-Video-H26xPacketBuffer") &&
-      !h26x_packet_buffer_) {
+  if (!h26x_packet_buffer_) {
     h26x_packet_buffer_ =
         std::make_unique<H26xPacketBuffer>(!sps_pps_idr_is_h264_keyframe_);
   }
