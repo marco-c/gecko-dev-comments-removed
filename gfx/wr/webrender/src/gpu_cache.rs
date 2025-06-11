@@ -920,11 +920,18 @@ impl GpuCache {
     
     
     pub fn get_address(&self, id: &GpuCacheHandle) -> GpuCacheAddress {
-        let location = id.location.expect("handle not requested or allocated!");
+        self.try_get_address(id).expect("handle not requested or allocated!")
+    }
+
+    
+    
+    
+    pub fn try_get_address(&self, id: &GpuCacheHandle) -> Option<GpuCacheAddress> {
+        let Some(location) = id.location else { return None; };
         let block = &self.texture.blocks[location.block_index.get()];
         debug_assert_eq!(block.epoch, location.epoch);
         debug_assert_eq!(block.last_access_time, self.now.frame_id());
-        block.address
+        Some(block.address)
     }
 }
 
