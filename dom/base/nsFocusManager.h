@@ -994,11 +994,6 @@ class nsFocusManager final : public nsIFocusManager,
   RefPtr<mozilla::dom::Element> mFocusedElement;
 
   
-  
-  
-  RefPtr<mozilla::dom::Element> mFirstBlurEvent;
-
-  
   nsCOMPtr<nsPIDOMWindowOuter> mWindowBeingLowered;
 
   
