@@ -41,6 +41,10 @@ public class SurfaceEglRenderer extends EglRenderer implements SurfaceHolder.Cal
     super(name);
   }
 
+  public SurfaceEglRenderer(String name, VideoFrameDrawer videoFrameDrawer) {
+    super(name, videoFrameDrawer);
+  }
+
   
 
 
