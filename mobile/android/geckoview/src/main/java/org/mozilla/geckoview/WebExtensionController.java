@@ -260,38 +260,11 @@ public class WebExtensionController {
 
 
 
-
-
     @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-install-prompt-request", version = 143)
     default GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
         @NonNull final WebExtension extension,
         @NonNull final String[] permissions,
         @NonNull final String[] origins) {
-      return null;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Nullable
-    default GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
-        @NonNull final WebExtension extension,
-        @NonNull final String[] permissions,
-        @NonNull final String[] origins,
-        @NonNull final String[] dataCollectionPermissions) {
       return null;
     }
 
@@ -1203,26 +1176,12 @@ public class WebExtensionController {
       return;
     }
 
-    
-    
-    
-    GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
+    final GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
         mPromptDelegate.onInstallPromptRequest(
             extension, message.getStringArray("permissions"), message.getStringArray("origins"));
-
-    if (promptResponse == null) {
-      promptResponse =
-          mPromptDelegate.onInstallPromptRequest(
-              extension,
-              message.getStringArray("permissions"),
-              message.getStringArray("origins"),
-              message.getStringArray("dataCollectionPermissions"));
-    }
-
     if (promptResponse == null) {
       return;
     }
-
     callback.resolveTo(
         promptResponse.map(
             userResponse -> {
