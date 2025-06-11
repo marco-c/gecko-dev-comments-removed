@@ -2161,8 +2161,6 @@ static bool GetNonexistentProperty(
     IsNameLookup nameLookup,
     typename MaybeRooted<Value, allowGC>::MutableHandleType vp) {
   if constexpr (allowGC == AllowGC::CanGC) {
-    vp.setUndefined();
-
     
     if (nameLookup) {
       ReportIsNotDefined(cx, id);
@@ -2170,6 +2168,7 @@ static bool GetNonexistentProperty(
     }
 
     
+    vp.setUndefined();
     return true;
   } else {
     return false;
