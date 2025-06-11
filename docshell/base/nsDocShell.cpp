@@ -190,6 +190,7 @@
 
 #include "nsArray.h"
 #include "nsArrayUtils.h"
+#include "nsBrowserStatusFilter.h"
 #include "nsCExternalHandlerService.h"
 #include "nsContentDLF.h"
 #include "nsContentPolicyUtils.h"  
@@ -563,7 +564,8 @@ void nsDocShell::DestroyChildren() {
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(nsDocShell, nsDocLoader,
                                             mScriptGlobal, mInitialClientSource,
                                             mBrowsingContext,
-                                            mChromeEventHandler)
+                                            mChromeEventHandler,
+                                            mBCWebProgressStatusFilter)
 
 NS_IMPL_ADDREF_INHERITED(nsDocShell, nsDocLoader)
 NS_IMPL_RELEASE_INHERITED(nsDocShell, nsDocLoader)
@@ -4541,6 +4543,8 @@ nsDocShell::Destroy() {
 
   mChromeEventHandler = nullptr;
 
+  mBCWebProgressStatusFilter = nullptr;
+
   
   
   CancelRefreshURITimers();
@@ -5890,11 +5894,36 @@ nsDocShell::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
 }
 
 already_AddRefed<nsIWebProgressListener> nsDocShell::BCWebProgressListener() {
-  if (XRE_IsParentProcess()) {
-    return do_AddRef(mBrowsingContext->Canonical()->GetWebProgress());
+  
+  
+  if (XRE_IsParentProcess() && mBrowsingContext->Canonical()->IsReplaced()) {
+    return nullptr;
   }
-  nsCOMPtr<nsIWebProgressListener> bc = do_QueryReferent(mBrowserChild);
-  return bc.forget();
+
+  
+  
+  
+  if (!mBCWebProgressStatusFilter && !mIsBeingDestroyed) {
+    nsCOMPtr<nsIWebProgressListener> innerListener;
+    if (XRE_IsParentProcess()) {
+      innerListener = mBrowsingContext->Canonical()->GetWebProgress();
+    } else {
+      innerListener = do_QueryReferent(mBrowserChild);
+    }
+    if (innerListener) {
+      
+      
+      
+      
+      
+      mBCWebProgressStatusFilter =
+          new nsBrowserStatusFilter( true);
+      mBCWebProgressStatusFilter->AddProgressListener(
+          innerListener, nsIWebProgress::NOTIFY_ALL);
+    }
+  }
+
+  return do_AddRef(mBCWebProgressStatusFilter);
 }
 
 already_AddRefed<nsIURIFixupInfo> nsDocShell::KeywordToURI(

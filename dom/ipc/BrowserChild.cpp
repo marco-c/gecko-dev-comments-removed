@@ -3899,15 +3899,10 @@ NS_IMETHODIMP BrowserChild::OnProgressChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
-  WebProgressData webProgressData;
-  RequestData requestData;
-
-  MOZ_TRY(PrepareProgressListenerData(aWebProgress, aRequest, webProgressData,
-                                      requestData));
-
-  Unused << SendOnProgressChange(webProgressData, requestData, aCurSelfProgress,
-                                 aMaxSelfProgress, aCurTotalProgress,
-                                 aMaxTotalProgress);
+  
+  
+  
+  Unused << SendOnProgressChange(aCurTotalProgress, aMaxTotalProgress);
 
   return NS_OK;
 }
@@ -4012,14 +4007,10 @@ NS_IMETHODIMP BrowserChild::OnStatusChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
-  WebProgressData webProgressData;
-  RequestData requestData;
-
-  MOZ_TRY(PrepareProgressListenerData(aWebProgress, aRequest, webProgressData,
-                                      requestData));
-
-  Unused << SendOnStatusChange(webProgressData, requestData, aStatus,
-                               nsDependentString(aMessage));
+  
+  
+  
+  Unused << SendOnStatusChange(nsDependentString(aMessage));
 
   return NS_OK;
 }
