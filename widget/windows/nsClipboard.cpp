@@ -708,6 +708,7 @@ HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
 
 
 
+
 template <typename CharType>
 static nsresult GetCharDataFromGlobalData(STGMEDIUM& aStm, CharType** aData,
                                           uint32_t* aByteLen) {
@@ -715,23 +716,19 @@ static nsresult GetCharDataFromGlobalData(STGMEDIUM& aStm, CharType** aData,
   MOZ_TRY(nsClipboard::GetGlobalData(aStm.hGlobal,
                                      reinterpret_cast<void**>(aData), &nBytes));
   auto nChars = nBytes / sizeof(CharType);
-  if (nChars < 1) {
-    *aByteLen = 0;
-    return NS_OK;
-  }
 
-  const CharType* data = *aData;
-  if (nChars > 1 && data[nChars - 2] == CharType(0x00) &&
-      data[nChars - 1] == CharType(0x0a)) {
-    
-    
+  
+  
+  if (nChars > 1 && (*aData)[nChars - 2] == CharType(0) &&
+      (*aData)[nChars - 1] == CharType(0xa)) {
     nChars -= 2;
-  } else if (data[nChars - 1] == CharType(0)) {
-    
-    nChars -= 1;
   }
-  *aByteLen = nChars * sizeof(CharType);
-
+  
+  CharType* afterLastChar = *aData + nChars;
+  auto it = std::find_if(std::reverse_iterator(afterLastChar),
+                         std::reverse_iterator(*aData),
+                         [](CharType ch) { return ch != CharType(0); });
+  *aByteLen = std::distance(*aData, it.base()) * sizeof(CharType);
   return NS_OK;
 }
 
