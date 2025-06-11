@@ -19,7 +19,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 class Base64 {
  public:
@@ -122,6 +122,12 @@ class Base64 {
                                       size_t* data_used);
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::Base64;
 }  
 
 #endif 

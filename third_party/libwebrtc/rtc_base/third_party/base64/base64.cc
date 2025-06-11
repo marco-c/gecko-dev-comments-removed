@@ -23,7 +23,7 @@
 
 using std::vector;
 
-namespace rtc {
+namespace webrtc {
 
 static const char kPad = '=';
 static const unsigned char pd = 0xFD;  
