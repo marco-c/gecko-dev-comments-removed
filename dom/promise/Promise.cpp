@@ -264,15 +264,16 @@ NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(WaitForAllResults, (), (mResult))
 
 void Promise::WaitForAll(nsIGlobalObject* aGlobal,
                          const Span<RefPtr<Promise>>& aPromises,
-                         SuccessSteps aSuccessSteps,
-                         FailureSteps aFailureSteps) {
+                         SuccessSteps aSuccessSteps, FailureSteps aFailureSteps,
+                         nsISupports* aCycleCollectedArg) {
   
 
   
   const auto& rejectionHandlerSteps =
       [aFailureSteps](JSContext* aCx, JS::Handle<JS::Value> aArg,
                       ErrorResult& aRv,
-                      const RefPtr<WaitForAllResults>& aResult) {
+                      const RefPtr<WaitForAllResults>& aResult,
+                      const nsCOMPtr<nsISupports>& aCycleCollectedArg) {
         
         if (aResult->mRejected) {
           return nullptr;
@@ -304,13 +305,15 @@ void Promise::WaitForAll(nsIGlobalObject* aGlobal,
   
   
   RefPtr result = MakeAndAddRef<WaitForAllResults>(total);
+  nsCOMPtr arg = aCycleCollectedArg;
   
   for (const auto& promise : aPromises) {
     
     const auto& fulfillmentHandlerSteps =
         [aSuccessSteps, promiseIndex = index](
             JSContext* aCx, JS::Handle<JS::Value> aArg, ErrorResult& aRv,
-            const RefPtr<WaitForAllResults>& aResult)
+            const RefPtr<WaitForAllResults>& aResult,
+            const nsCOMPtr<nsISupports>& aCycleCollectedArg)
         -> already_AddRefed<Promise> {
       
       aResult->mResult[promiseIndex].set(aArg.get());
@@ -325,7 +328,7 @@ void Promise::WaitForAll(nsIGlobalObject* aGlobal,
     };
     
     (void)promise->ThenCatchWithCycleCollectedArgs(
-        fulfillmentHandlerSteps, rejectionHandlerSteps, result);
+        fulfillmentHandlerSteps, rejectionHandlerSteps, result, arg);
 
     
     index++;

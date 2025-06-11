@@ -265,11 +265,15 @@ class Promise : public SupportsWeakPtr, public JSHolderBase {
   using SuccessSteps =
       const std::function<void(const Span<JS::Heap<JS::Value>>&)>&;
   using FailureSteps = const std::function<void(JS::Handle<JS::Value>)>&;
+  
+  
+  
+  
   MOZ_CAN_RUN_SCRIPT
   static void WaitForAll(nsIGlobalObject* aGlobal,
                          const Span<RefPtr<Promise>>& aPromises,
-                         SuccessSteps aSuccessSteps,
-                         FailureSteps aFailureSteps);
+                         SuccessSteps aSuccessSteps, FailureSteps aFailureSteps,
+                         nsISupports* aCycleCollectedArg = nullptr);
 
   template <typename Callback, typename... Args>
   using IsHandlerCallback =

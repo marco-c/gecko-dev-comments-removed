@@ -700,6 +700,33 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
   return rv.StealNSResult();
 }
 
+struct NavigationWaitForAllScope final : public nsISupports,
+                                         public SupportsWeakPtr {
+  NavigationWaitForAllScope(Navigation* aNavigation,
+                            NavigationAPIMethodTracker* aApiMethodTracker,
+                            NavigateEvent* aEvent)
+      : mNavigation(aNavigation),
+        mAPIMethodTracker(aApiMethodTracker),
+        mEvent(aEvent) {}
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
+  RefPtr<Navigation> mNavigation;
+  RefPtr<NavigationAPIMethodTracker> mAPIMethodTracker;
+  RefPtr<NavigateEvent> mEvent;
+
+ private:
+  ~NavigationWaitForAllScope() {}
+};
+
+NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(NavigationWaitForAllScope, mNavigation,
+                                  mAPIMethodTracker, mEvent)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationWaitForAllScope)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
+
 
 bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
@@ -921,11 +948,25 @@ bool Navigation::InnerFireNavigateEvent(
 
     
     nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
+    
+    
+    
+    
+    
+    RefPtr scope =
+        MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker, event);
     Promise::WaitForAll(
         globalObject, promiseList,
-        [self = RefPtr(this), event,
-         apiMethodTracker](const Span<JS::Heap<JS::Value>>&)
+        [weakScope = WeakPtr(scope)](const Span<JS::Heap<JS::Value>>&)
             MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              if (!weakScope) {
+                return;
+              }
+
+              RefPtr event = weakScope->mEvent;
+              RefPtr self = weakScope->mNavigation;
+              RefPtr apiMethodTracker = weakScope->mAPIMethodTracker;
               
               
               if (RefPtr document = event->GetDocument();
@@ -963,9 +1004,17 @@ bool Navigation::InnerFireNavigateEvent(
               
               self->mTransition = nullptr;
             },
-        [self = RefPtr(this), event,
-         apiMethodTracker](JS::Handle<JS::Value> aRejectionReason)
+        [weakScope = WeakPtr(scope)](JS::Handle<JS::Value> aRejectionReason)
             MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              if (!weakScope) {
+                return;
+              }
+
+              RefPtr event = weakScope->mEvent;
+              RefPtr self = weakScope->mNavigation;
+              RefPtr apiMethodTracker = weakScope->mAPIMethodTracker;
+
               
               
               if (RefPtr document = event->GetDocument();
@@ -1010,7 +1059,8 @@ bool Navigation::InnerFireNavigateEvent(
 
               
               self->mTransition = nullptr;
-            });
+            },
+        scope);
   }
 
   
