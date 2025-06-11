@@ -629,19 +629,6 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      FirefoxHome: {
-        Pocket: false,
-        Locked: true,
-      },
-    },
-    lockedPrefs: {
-      "browser.newtabpage.activity-stream.feeds.system.topstories": false,
-    },
-  },
-
-  
-  {
-    policies: {
       OfferToSaveLoginsDefault: false,
     },
     unlockedPrefs: {
