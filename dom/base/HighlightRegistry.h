@@ -109,8 +109,9 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void Set(const nsAString& aKey, Highlight& aValue,
-                              ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT HighlightRegistry* Set(const nsAString& aKey,
+                                            Highlight& aValue,
+                                            ErrorResult& aRv);
 
   
 

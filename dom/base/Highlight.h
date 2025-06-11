@@ -144,7 +144,7 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void Add(AbstractRange& aRange, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT Highlight* Add(AbstractRange& aRange, ErrorResult& aRv);
 
   
 
