@@ -166,11 +166,7 @@ async function testSteps() {
       is(keys.length, viewDataArray.length, "Correct number of keys");
 
       for (let i = 0; i < keys.length; i++) {
-        if (test.preprocessing) {
-          todo(keys[i] === viewDataArray[i].key, "Correct key");
-        } else {
-          is(keys[i], viewDataArray[i].key, "Correct key");
-        }
+        is(keys[i], viewDataArray[i].key, "Correct key");
       }
     }
 
