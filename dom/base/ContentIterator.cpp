@@ -1275,12 +1275,11 @@ void ContentSubtreeIterator::Next() {
       MOZ_ASSERT(root);
       nextNode = root->GetFirstChild();
     } else if (auto* slot = HTMLSlotElement::FromNode(nextNode);
-               slot && IterAllowCrossShadowBoundary()) {
+               slot && IterAllowCrossShadowBoundary() &&
+               !slot->AssignedNodes().IsEmpty()) {
       
       
-      if (!NS_WARN_IF(slot->AssignedNodes().IsEmpty())) {
-        nextNode = slot->AssignedNodes()[0];
-      }
+      nextNode = slot->AssignedNodes()[0];
     } else {
       if (root) {
         
