@@ -10,6 +10,8 @@ import android.os.Parcelable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.core.os.ParcelCompat;
+import java.util.Arrays;
 import java.util.Objects;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -113,6 +115,8 @@ public class WebNotification implements Parcelable {
 
   public final @NonNull int[] vibrate;
 
+  public final @NonNull WebNotificationAction[] actions;
+
   @WrapForJNI
    WebNotification(
       @Nullable final String title,
@@ -126,7 +130,8 @@ public class WebNotification implements Parcelable {
       @NonNull final String source,
       final boolean silent,
       final boolean privateBrowsing,
-      @NonNull final int[] vibrate) {
+      @NonNull final int[] vibrate,
+      @NonNull final Object[] actions) {
     this.tag = tag;
     this.mCookie = cookie;
     this.title = title;
@@ -139,6 +144,7 @@ public class WebNotification implements Parcelable {
     this.silent = silent;
     this.vibrate = vibrate;
     this.privateBrowsing = privateBrowsing;
+    this.actions = Arrays.copyOf(actions, actions.length, WebNotificationAction[].class);
   }
 
   
@@ -149,7 +155,20 @@ public class WebNotification implements Parcelable {
   @UiThread
   public void click() {
     ThreadUtils.assertOnUiThread();
-    GeckoAppShell.onNotificationClick(tag, mCookie);
+    GeckoAppShell.onNotificationClick(tag, null);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void click(final @NonNull String action) {
+    ThreadUtils.assertOnUiThread();
+    GeckoAppShell.onNotificationClick(tag, action);
   }
 
   
@@ -159,11 +178,11 @@ public class WebNotification implements Parcelable {
   @UiThread
   public void dismiss() {
     ThreadUtils.assertOnUiThread();
-    GeckoAppShell.onNotificationClose(tag, mCookie);
+    GeckoAppShell.onNotificationClose(tag);
   }
 
   
-  private static final int VERSION = 1;
+  private static final int VERSION = 2;
 
   
   private static final int IMAGE_URL_LENGTH_MAX = 150;
@@ -192,9 +211,14 @@ public class WebNotification implements Parcelable {
     dest.writeInt(silent ? 1 : 0);
     dest.writeInt(privateBrowsing ? 1 : 0);
     dest.writeIntArray(vibrate);
+    dest.writeParcelableArray(actions, 0);
   }
 
   private WebNotification(final Parcel in) {
+    final int version = in.readInt();
+    if (version != 1 && version != 2) {
+      throw new ParcelFormatException("Mismatched version: " + version + " expected: " + VERSION);
+    }
     title = in.readString();
     tag = Objects.requireNonNull(in.readString());
     mCookie = in.readString();
@@ -207,17 +231,26 @@ public class WebNotification implements Parcelable {
     silent = in.readInt() == 1;
     privateBrowsing = in.readInt() == 1;
     vibrate = Objects.requireNonNull(in.createIntArray());
+
+    
+    
+    
+    if (version == 1) {
+      actions = new WebNotificationAction[0];
+      return;
+    }
+
+    final Parcelable[] actionParcels =
+        Objects.requireNonNull(
+            ParcelCompat.readParcelableArrayTyped(
+                in, WebNotificationAction.class.getClassLoader(), WebNotificationAction.class));
+    actions = Arrays.copyOf(actionParcels, actionParcels.length, WebNotificationAction[].class);
   }
 
   public static final Creator<WebNotification> CREATOR =
       new Creator<>() {
         @Override
         public WebNotification createFromParcel(final Parcel in) {
-          final int version = in.readInt();
-          if (version != VERSION) {
-            throw new ParcelFormatException(
-                "Mismatched version: " + version + " expected: " + VERSION);
-          }
           return new WebNotification(in);
         }
 
