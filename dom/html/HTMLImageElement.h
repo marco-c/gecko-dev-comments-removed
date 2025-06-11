@@ -17,11 +17,14 @@ namespace mozilla {
 class EventChainPreVisitor;
 namespace dom {
 
+class ImageLoadTask;
+
 class ResponsiveImageSelector;
 class HTMLImageElement final : public nsGenericHTMLElement,
                                public nsImageLoadingContent {
   friend class HTMLSourceElement;
   friend class HTMLPictureElement;
+  friend class ImageLoadTask;
 
  public:
   explicit HTMLImageElement(
@@ -267,6 +270,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
       const HTMLSourceElement* aSkippedSource = nullptr);
 
   
+  void ClearImageLoadTask();
+
+  
   
   bool HaveSrcsetOrInPicture() const;
 
@@ -275,7 +281,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   
   
-  void LoadSelectedImage(bool aAlwaysLoad, bool aStopLazyLoading) override;
+  void LoadSelectedImage(bool aAlwaysLoad);
 
   
   static bool SupportedPictureSourceType(const nsAString& aType);
@@ -378,6 +384,8 @@ class HTMLImageElement final : public nsGenericHTMLElement,
                             nsIPrincipal* aMaybeScriptedPrincipal,
                             bool aNotify);
 
+  bool ShouldLoadImage() const;
+
   
   void SetLazyLoading();
 
@@ -391,6 +399,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   void SetResponsiveSelector(RefPtr<ResponsiveImageSelector>&& aSource);
   void SetDensity(double aDensity);
 
+  RefPtr<ImageLoadTask> mPendingImageLoadTask;
   nsCOMPtr<nsIURI> mSrcURI;
   nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mSrcsetTriggeringPrincipal;
