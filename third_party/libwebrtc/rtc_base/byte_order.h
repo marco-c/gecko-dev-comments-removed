@@ -98,7 +98,7 @@
 #error "Missing byte order functions for this arch."
 #endif  
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -209,6 +209,32 @@ inline uint64_t NetworkToHost64(uint64_t n) {
   return be64toh(n);
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::Get8;
+using ::webrtc::GetBE16;
+using ::webrtc::GetBE32;
+using ::webrtc::GetBE64;
+using ::webrtc::GetLE16;
+using ::webrtc::GetLE32;
+using ::webrtc::GetLE64;
+using ::webrtc::HostToNetwork16;
+using ::webrtc::HostToNetwork32;
+using ::webrtc::HostToNetwork64;
+using ::webrtc::IsHostBigEndian;
+using ::webrtc::NetworkToHost16;
+using ::webrtc::NetworkToHost32;
+using ::webrtc::NetworkToHost64;
+using ::webrtc::Set8;
+using ::webrtc::SetBE16;
+using ::webrtc::SetBE32;
+using ::webrtc::SetBE64;
+using ::webrtc::SetLE16;
+using ::webrtc::SetLE32;
+using ::webrtc::SetLE64;
 }  
 
 #endif  

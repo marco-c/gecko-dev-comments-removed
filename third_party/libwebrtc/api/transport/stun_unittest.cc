@@ -1194,15 +1194,15 @@ TEST_F(StunTest, ValidateMessageIntegrity) {
   
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrityForTesting(
       reinterpret_cast<const char*>(kStunMessageWithZeroLength),
-      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithZeroLength[2]),
+      kStunHeaderSize + webrtc::GetBE16(&kStunMessageWithZeroLength[2]),
       kRfc5769SampleMsgPassword));
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrityForTesting(
       reinterpret_cast<const char*>(kStunMessageWithExcessLength),
-      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithExcessLength[2]),
+      kStunHeaderSize + webrtc::GetBE16(&kStunMessageWithExcessLength[2]),
       kRfc5769SampleMsgPassword));
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrityForTesting(
       reinterpret_cast<const char*>(kStunMessageWithSmallLength),
-      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithSmallLength[2]),
+      kStunHeaderSize + webrtc::GetBE16(&kStunMessageWithSmallLength[2]),
       kRfc5769SampleMsgPassword));
 
   
@@ -1285,15 +1285,15 @@ TEST_F(StunTest, ValidateMessageIntegrity32) {
   
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32ForTesting(
       reinterpret_cast<const char*>(kStunMessageWithZeroLength),
-      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithZeroLength[2]),
+      kStunHeaderSize + webrtc::GetBE16(&kStunMessageWithZeroLength[2]),
       kRfc5769SampleMsgPassword));
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32ForTesting(
       reinterpret_cast<const char*>(kStunMessageWithExcessLength),
-      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithExcessLength[2]),
+      kStunHeaderSize + webrtc::GetBE16(&kStunMessageWithExcessLength[2]),
       kRfc5769SampleMsgPassword));
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32ForTesting(
       reinterpret_cast<const char*>(kStunMessageWithSmallLength),
-      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithSmallLength[2]),
+      kStunHeaderSize + webrtc::GetBE16(&kStunMessageWithSmallLength[2]),
       kRfc5769SampleMsgPassword));
 
   
