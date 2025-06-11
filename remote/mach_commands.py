@@ -151,8 +151,9 @@ def vendor_puppeteer(command_context, repository, commitish, install):
             exit_on_fail=False,
         )
 
+        
         run_npm(
-            "install",
+            "ci",
             cwd=os.path.join(command_context.topsrcdir, puppeteer_dir),
             env=env,
         )
