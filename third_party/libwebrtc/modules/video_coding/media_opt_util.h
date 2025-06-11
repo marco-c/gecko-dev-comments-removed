@@ -45,10 +45,6 @@ enum FilterPacketLossMode {
 
 constexpr int64_t kLowRttNackMs = 20;
 
-
-
-constexpr int kMaxRttDelayThreshold = 500;
-
 struct VCMProtectionParameters {
   VCMProtectionParameters();
 
