@@ -3,9 +3,9 @@
 
 
 
-import json
 import logging
 
+from taskgraph.util import json
 from taskgraph.util.parameterization import resolve_task_references
 from taskgraph.util.taskcluster import get_task_definition
 

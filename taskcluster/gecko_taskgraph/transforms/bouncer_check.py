@@ -2,11 +2,11 @@
 
 
 
-import json
 import logging
 from shlex import quote as shell_quote
 
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util import json
 from taskgraph.util.schema import resolve_keyed_by
 
 from gecko_taskgraph.util.attributes import release_level

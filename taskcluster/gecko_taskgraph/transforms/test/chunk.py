@@ -2,10 +2,9 @@
 
 
 
-import json
-
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util import json
 from taskgraph.util.attributes import keymatch
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.treeherder import join_symbol, split_symbol
