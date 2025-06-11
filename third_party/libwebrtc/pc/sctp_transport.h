@@ -63,7 +63,7 @@ class SctpTransport : public SctpTransportInterface,
   void Clear();
   
   
-  void Start(int local_port, int remote_port, int max_message_size);
+  void Start(const SctpOptions& options);
 
   
   

@@ -412,9 +412,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void StartSctpTransport(int local_port,
-                          int remote_port,
-                          int max_message_size) override;
+  void StartSctpTransport(const SctpOptions& options) override;
 
   
   

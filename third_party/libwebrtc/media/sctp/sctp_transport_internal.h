@@ -14,24 +14,21 @@
 
 
 
-#include <memory>
-#include <string>
-#include <vector>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <optional>
 
 #include "api/priority.h"
 #include "api/rtc_error.h"
+#include "api/sctp_transport_interface.h"
 #include "api/transport/data_channel_transport_interface.h"
-#include "media/base/media_channel.h"
-#include "p2p/base/packet_transport_internal.h"
 #include "p2p/dtls/dtls_transport_internal.h"
 #include "rtc_base/copy_on_write_buffer.h"
-#include "rtc_base/thread.h"
 
 namespace cricket {
 
 
-
-constexpr int kSctpSendBufferSize = 256 * 1024;
 
 
 
@@ -91,20 +88,20 @@ class SctpTransportInternal {
   
   
   
+  virtual bool Start(const webrtc::SctpOptions& options) = 0;
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
+  [[deprecated("Call with SctpOptions")]]
   virtual bool Start(int local_sctp_port,
                      int remote_sctp_port,
-                     int max_message_size) = 0;
+                     int max_message_size) {
+    return Start({
+        .local_port = local_sctp_port,
+        .remote_port = remote_sctp_port,
+        .max_message_size = max_message_size,
+    });
+  }
 
   
   

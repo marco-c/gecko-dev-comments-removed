@@ -88,6 +88,26 @@ class SctpTransportInterface : public webrtc::RefCountInterface {
   virtual void UnregisterObserver() = 0;
 };
 
+
+constexpr int kSctpSendBufferSize = 256 * 1024;
+
+
+struct SctpOptions {
+  
+  
+  
+  
+  
+  
+  int local_port = -1;
+  int remote_port = -1;
+
+  
+  
+  
+  int max_message_size = kSctpSendBufferSize;
+};
+
 }  
 
 #endif  
