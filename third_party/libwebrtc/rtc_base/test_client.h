@@ -21,7 +21,7 @@
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/synchronization/mutex.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -32,9 +32,9 @@ class TestClient : public sigslot::has_slots<> {
     Packet(const rtc::ReceivedPacket& received_packet);
     Packet(const Packet& p);
 
-    SocketAddress addr;
+    rtc::SocketAddress addr;
     Buffer buf;
-    std::optional<webrtc::Timestamp> packet_time;
+    std::optional<Timestamp> packet_time;
   };
 
   
@@ -42,33 +42,35 @@ class TestClient : public sigslot::has_slots<> {
 
   
   
-  explicit TestClient(std::unique_ptr<AsyncPacketSocket> socket);
+  explicit TestClient(std::unique_ptr<rtc::AsyncPacketSocket> socket);
   
   
   
-  TestClient(std::unique_ptr<AsyncPacketSocket> socket,
-             ThreadProcessingFakeClock* fake_clock);
+  TestClient(std::unique_ptr<rtc::AsyncPacketSocket> socket,
+             rtc::ThreadProcessingFakeClock* fake_clock);
   ~TestClient() override;
 
   TestClient(const TestClient&) = delete;
   TestClient& operator=(const TestClient&) = delete;
 
-  SocketAddress address() const { return socket_->GetLocalAddress(); }
-  SocketAddress remote_address() const { return socket_->GetRemoteAddress(); }
+  rtc::SocketAddress address() const { return socket_->GetLocalAddress(); }
+  rtc::SocketAddress remote_address() const {
+    return socket_->GetRemoteAddress();
+  }
 
   
-  bool CheckConnState(AsyncPacketSocket::State state);
+  bool CheckConnState(rtc::AsyncPacketSocket::State state);
 
   
   bool CheckConnected() {
-    return CheckConnState(AsyncPacketSocket::STATE_CONNECTED);
+    return CheckConnState(rtc::AsyncPacketSocket::STATE_CONNECTED);
   }
 
   
   int Send(const char* buf, size_t size);
 
   
-  int SendTo(const char* buf, size_t size, const SocketAddress& dest);
+  int SendTo(const char* buf, size_t size, const rtc::SocketAddress& dest);
 
   
   
@@ -76,13 +78,13 @@ class TestClient : public sigslot::has_slots<> {
 
   
   
-  bool CheckNextPacket(const char* buf, size_t len, SocketAddress* addr);
+  bool CheckNextPacket(const char* buf, size_t len, rtc::SocketAddress* addr);
 
   
   bool CheckNoPacket();
 
   int GetError();
-  int SetOption(Socket::Option opt, int value);
+  int SetOption(rtc::Socket::Option opt, int value);
 
   bool ready_to_send() const { return ready_to_send_count() > 0; }
 
@@ -93,22 +95,28 @@ class TestClient : public sigslot::has_slots<> {
   
   static const int kNoPacketTimeoutMs = 1000;
   
-  Socket::ConnState GetState();
+  rtc::Socket::ConnState GetState();
 
-  void OnPacket(AsyncPacketSocket* socket,
+  void OnPacket(rtc::AsyncPacketSocket* socket,
                 const rtc::ReceivedPacket& received_packet);
-  void OnReadyToSend(AsyncPacketSocket* socket);
-  bool CheckTimestamp(std::optional<webrtc::Timestamp> packet_timestamp);
+  void OnReadyToSend(rtc::AsyncPacketSocket* socket);
+  bool CheckTimestamp(std::optional<Timestamp> packet_timestamp);
   void AdvanceTime(int ms);
 
-  ThreadProcessingFakeClock* fake_clock_ = nullptr;
-  webrtc::Mutex mutex_;
-  std::unique_ptr<AsyncPacketSocket> socket_;
+  rtc::ThreadProcessingFakeClock* fake_clock_ = nullptr;
+  Mutex mutex_;
+  std::unique_ptr<rtc::AsyncPacketSocket> socket_;
   std::vector<std::unique_ptr<Packet>> packets_;
   int ready_to_send_count_ = 0;
-  std::optional<webrtc::Timestamp> prev_packet_timestamp_;
+  std::optional<Timestamp> prev_packet_timestamp_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::TestClient;
 }  
 
 #endif  
