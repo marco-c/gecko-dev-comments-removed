@@ -104,7 +104,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   bool writable() const;
   bool receiving() const;
 
-  const PortInterface* port() const {
+  const webrtc::PortInterface* port() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     return port_.get();
   }
@@ -328,8 +328,8 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   void SendResponseMessage(const StunMessage& response);
 
   
-  PortInterface* PortForTest() { return port_.get(); }
-  const PortInterface* PortForTest() const { return port_.get(); }
+  webrtc::PortInterface* PortForTest() { return port_.get(); }
+  const webrtc::PortInterface* PortForTest() const { return port_.get(); }
 
   std::unique_ptr<IceMessage> BuildPingRequestForTest() {
     RTC_DCHECK_RUN_ON(network_thread_);
@@ -372,7 +372,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   class ConnectionRequest;
 
   
-  Connection(rtc::WeakPtr<PortInterface> port,
+  Connection(rtc::WeakPtr<webrtc::PortInterface> port,
              size_t index,
              const Candidate& candidate);
 
@@ -403,7 +403,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   void set_connected(bool value);
 
   
-  PortInterface* port() { return port_.get(); }
+  webrtc::PortInterface* port() { return port_.get(); }
 
   
   
@@ -412,7 +412,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   webrtc::TaskQueueBase* const network_thread_;
   const uint32_t id_;
-  rtc::WeakPtr<PortInterface> port_;
+  rtc::WeakPtr<webrtc::PortInterface> port_;
   Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
   Candidate remote_candidate_;
 
@@ -527,7 +527,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
 class ProxyConnection : public Connection {
  public:
-  ProxyConnection(rtc::WeakPtr<PortInterface> port,
+  ProxyConnection(rtc::WeakPtr<webrtc::PortInterface> port,
                   size_t index,
                   const Candidate& remote_candidate);
 

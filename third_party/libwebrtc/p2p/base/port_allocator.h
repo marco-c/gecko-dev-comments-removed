@@ -160,18 +160,18 @@ struct RTC_EXPORT RelayServerConfig {
   RelayServerConfig(const rtc::SocketAddress& address,
                     absl::string_view username,
                     absl::string_view password,
-                    ProtocolType proto);
+                    webrtc::ProtocolType proto);
   RelayServerConfig(absl::string_view address,
                     int port,
                     absl::string_view username,
                     absl::string_view password,
-                    ProtocolType proto);
+                    webrtc::ProtocolType proto);
   
   RelayServerConfig(absl::string_view address,
                     int port,
                     absl::string_view username,
                     absl::string_view password,
-                    ProtocolType proto,
+                    webrtc::ProtocolType proto,
                     bool secure);
   RelayServerConfig(const RelayServerConfig&);
   ~RelayServerConfig();
@@ -259,19 +259,21 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   
   
   
-  virtual std::vector<PortInterface*> ReadyPorts() const = 0;
+  virtual std::vector<webrtc::PortInterface*> ReadyPorts() const = 0;
   virtual std::vector<Candidate> ReadyCandidates() const = 0;
   virtual bool CandidatesAllocationDone() const = 0;
   
   
   virtual void PruneAllPorts() {}
 
-  sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
+  sigslot::signal2<PortAllocatorSession*, webrtc::PortInterface*>
+      SignalPortReady;
   
   
   
   
-  sigslot::signal2<PortAllocatorSession*, const std::vector<PortInterface*>&>
+  sigslot::signal2<PortAllocatorSession*,
+                   const std::vector<webrtc::PortInterface*>&>
       SignalPortsPruned;
   sigslot::signal2<PortAllocatorSession*, const std::vector<Candidate>&>
       SignalCandidatesReady;

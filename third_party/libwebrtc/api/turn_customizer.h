@@ -14,10 +14,7 @@
 #include <stdlib.h>
 
 #include "api/transport/stun.h"
-
-namespace cricket {
-class PortInterface;
-}  
+#include "p2p/base/port_interface.h"
 
 namespace webrtc {
 
@@ -26,14 +23,14 @@ class TurnCustomizer {
   
   
   virtual void MaybeModifyOutgoingStunMessage(
-      cricket::PortInterface* port,
+      PortInterface* port,
       cricket::StunMessage* message) = 0;
 
   
   
   
   
-  virtual bool AllowChannelData(cricket::PortInterface* port,
+  virtual bool AllowChannelData(PortInterface* port,
                                 const void* data,
                                 size_t size,
                                 bool payload) = 0;

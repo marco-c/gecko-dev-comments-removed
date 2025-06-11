@@ -51,9 +51,9 @@ const int TURN_SERVER_PORT = 3478;
 
 class TurnServerConnection {
  public:
-  TurnServerConnection() : proto_(PROTO_UDP), socket_(NULL) {}
+  TurnServerConnection() : proto_(webrtc::PROTO_UDP), socket_(NULL) {}
   TurnServerConnection(const rtc::SocketAddress& src,
-                       ProtocolType proto,
+                       webrtc::ProtocolType proto,
                        rtc::AsyncPacketSocket* socket);
   const rtc::SocketAddress& src() const { return src_; }
   rtc::AsyncPacketSocket* socket() { return socket_; }
@@ -64,7 +64,7 @@ class TurnServerConnection {
  private:
   rtc::SocketAddress src_;
   rtc::SocketAddress dst_;
-  cricket::ProtocolType proto_;
+  webrtc::ProtocolType proto_;
   rtc::AsyncPacketSocket* socket_;
 };
 
@@ -246,13 +246,14 @@ class TurnServer : public sigslot::has_slots<> {
   }
 
   
-  void AddInternalSocket(rtc::AsyncPacketSocket* socket, ProtocolType proto);
+  void AddInternalSocket(rtc::AsyncPacketSocket* socket,
+                         webrtc::ProtocolType proto);
   
   
   
   void AddInternalServerSocket(
       rtc::Socket* socket,
-      ProtocolType proto,
+      webrtc::ProtocolType proto,
       std::unique_ptr<rtc::SSLAdapterFactory> ssl_adapter_factory = nullptr);
   
   void SetExternalSocketFactory(rtc::PacketSocketFactory* factory,
@@ -329,9 +330,10 @@ class TurnServer : public sigslot::has_slots<> {
   void DestroyInternalSocket(rtc::AsyncPacketSocket* socket)
       RTC_RUN_ON(thread_);
 
-  typedef std::map<rtc::AsyncPacketSocket*, ProtocolType> InternalSocketMap;
+  typedef std::map<rtc::AsyncPacketSocket*, webrtc::ProtocolType>
+      InternalSocketMap;
   struct ServerSocketInfo {
-    ProtocolType proto;
+    webrtc::ProtocolType proto;
     
     std::unique_ptr<rtc::SSLAdapterFactory> ssl_adapter_factory;
   };

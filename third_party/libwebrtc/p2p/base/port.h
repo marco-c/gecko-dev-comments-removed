@@ -120,14 +120,14 @@ class CandidateStats {
 
 typedef std::vector<CandidateStats> CandidateStatsList;
 
-const char* ProtoToString(ProtocolType proto);
-std::optional<ProtocolType> StringToProto(absl::string_view proto_name);
+const char* ProtoToString(webrtc::ProtocolType proto);
+std::optional<webrtc::ProtocolType> StringToProto(absl::string_view proto_name);
 
 struct ProtocolAddress {
   rtc::SocketAddress address;
-  ProtocolType proto;
+  webrtc::ProtocolType proto;
 
-  ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p)
+  ProtocolAddress(const rtc::SocketAddress& a, webrtc::ProtocolType p)
       : address(a), proto(p) {}
 
   bool operator==(const ProtocolAddress& o) const {
@@ -169,7 +169,8 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 
 
 
-class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
+class RTC_EXPORT Port : public webrtc::PortInterface,
+                        public sigslot::has_slots<> {
  public:
   
   
@@ -278,7 +279,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   sigslot::signal1<Port*> SignalPortError;
 
   void SubscribePortDestroyed(
-      std::function<void(PortInterface*)> callback) override;
+      std::function<void(webrtc::PortInterface*)> callback) override;
   void SendPortDestroyed(Port* port);
   
   
@@ -395,7 +396,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  void OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType proto);
+  void OnReadPacket(const rtc::ReceivedPacket& packet,
+                    webrtc::ProtocolType proto);
 
   [[deprecated(
       "Use OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType "
@@ -403,7 +405,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   OnReadPacket(const char* data,
                size_t size,
                const rtc::SocketAddress& addr,
-               ProtocolType proto) {
+               webrtc::ProtocolType proto) {
     OnReadPacket(rtc::ReceivedPacket::CreateFromLegacy(
                      data, size,  -1, addr),
                  proto);
@@ -508,7 +510,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   MdnsNameRegistrationStatus mdns_name_registration_status_ =
       MdnsNameRegistrationStatus::kNotStarted;
 
-  webrtc::CallbackList<PortInterface*> port_destroyed_callback_list_;
+  webrtc::CallbackList<webrtc::PortInterface*> port_destroyed_callback_list_;
 
   
   rtc::WeakPtrFactory<Port> weak_factory_;
