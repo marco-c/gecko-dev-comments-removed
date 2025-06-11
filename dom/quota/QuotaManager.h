@@ -938,6 +938,25 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
+
+
+  template <typename Callback>
+  auto WithOpenClientDirectoryInfo(const OriginMetadata& aOriginMetadata,
+                                   Callback&& aCallback)
+      -> std::invoke_result_t<Callback, OpenClientDirectoryInfo&>;
+
+  
+
+
+
+
+
+
+
+
+
+
+
   template <typename UpdateCallback>
   void UnregisterClientDirectoryLockHandle(
       const OriginMetadata& aOriginMetadata, UpdateCallback&& aUpdateCallback);
