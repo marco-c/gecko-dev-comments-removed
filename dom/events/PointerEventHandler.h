@@ -349,6 +349,12 @@ class PointerEventHandler final {
   
   static void MaybeCacheSpoofedPointerID(uint16_t aInputSource,
                                          uint32_t aPointerId);
+
+  
+
+
+  static void SetPointerCapturingElementAtLastPointerUp(
+      nsWeakPtr&& aPointerCapturingElement);
 };
 
 }  

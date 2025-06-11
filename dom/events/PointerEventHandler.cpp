@@ -45,7 +45,8 @@ static nsTHashMap<nsUint32HashKey, BrowserParent*>*
 
 
 
-MOZ_RUNINIT nsWeakPtr sPointerCapturingElementAtLastPointerUpEvent;
+static StaticRefPtr<nsIWeakReference>
+    sPointerCapturingElementAtLastPointerUpEvent;
 
 
 void PointerEventHandler::InitializeStatics() {
@@ -668,6 +669,13 @@ void PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp() {
 }
 
 
+void PointerEventHandler::SetPointerCapturingElementAtLastPointerUp(
+    nsWeakPtr&& aPointerCapturingElement) {
+  sPointerCapturingElementAtLastPointerUpEvent =
+      aPointerCapturingElement.forget();
+}
+
+
 void PointerEventHandler::ReleaseIfCaptureByDescendant(nsIContent* aContent) {
   MOZ_ASSERT(aContent);
   
@@ -1040,8 +1048,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
   
   if (!aShell->IsDestroying() && pointerMessage == ePointerUp &&
       pointerCapturingElementWeak) {
-    sPointerCapturingElementAtLastPointerUpEvent =
-        std::move(pointerCapturingElementWeak);
+    SetPointerCapturingElementAtLastPointerUp(
+        std::move(pointerCapturingElementWeak));
   }
 }
 
