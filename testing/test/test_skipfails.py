@@ -251,7 +251,9 @@ def test_task_to_skip_if():
         }
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'win' && os_version == '11.26100' && processor == 'x86' && debug"
@@ -288,7 +290,9 @@ def test_task_to_skip_if():
         }
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug && swgl"
@@ -325,7 +329,9 @@ def test_task_to_skip_if():
         }
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'mac' && os_version == '10.15' && processor == 'aarch64' && debug && swgl"
@@ -362,7 +368,9 @@ def test_task_to_skip_if():
         }
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && debug && swgl"
@@ -392,7 +400,9 @@ def test_task_to_skip_if():
         "test-manifest": {"linux": {"18.04": {"x86": {"opt": {"no_variant": {}}}}}}
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86'"
 
     sf = Skipfails()
@@ -418,7 +428,9 @@ def test_task_to_skip_if():
         "test-manifest": {"linux": {"18.04": {"x86": {"opt": {"xorigin": {}}}}}}
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86'"
 
     
@@ -447,7 +459,9 @@ def test_task_to_skip_if():
         }
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt && !xorigin"
@@ -475,7 +489,9 @@ def test_task_to_skip_if():
     sf.tasks[task_id] = task_details
     sf.platform_permutations = {}
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt"
     )
@@ -501,7 +517,9 @@ def test_task_to_skip_if():
     sf.tasks[task_id] = task_details
     sf.platform_permutations = {}
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt && xorigin"
@@ -540,7 +558,9 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt && xorigin"
@@ -565,7 +585,9 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86' && opt"
     )
@@ -589,7 +611,9 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86'"
 
     
@@ -625,7 +649,9 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'linux' && os_version == '18.04' && processor == 'x86' && debug && xorigin"
@@ -650,7 +676,9 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert (
         skip_if
         == "os == 'linux' && os_version == '18.04' && processor == 'x86' && debug"
@@ -675,8 +703,152 @@ def test_task_to_skip_if():
     }
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path")
+    skip_if = sf.task_to_skip_if(
+        "test-manifest", task_id, Kind.TOML, "test-path", False
+    )
     assert skip_if == "os == 'linux' && os_version == '18.04' && processor == 'x86'"
+
+
+def test_task_to_skip_if_high_freq():
+    """Test task_to_skip_if with high freq flag"""
+
+    
+    sf = Skipfails()
+    task_id = "UP-t3xrGSDWvUNjFGIt_aQ"
+    task_details = {
+        "expires": "2024-01-09T16:05:56.825Z",
+        "extra": {
+            "suite": "mochitest-plain",
+            "test-setting": {
+                "build": {"type": "debug"},
+                "platform": {
+                    "arch": "64",
+                    "os": {"name": "linux", "version": "2204"},
+                },
+                "runtime": {},
+            },
+        },
+    }
+    sf.tasks[task_id] = task_details
+    sf.platform_permutations = {
+        "test-manifest": {
+            "linux": {
+                "22.04": {
+                    "x86_64": {"debug": {"no_variant": {}}, "opt": {"no_variant": {}}}
+                }
+            }
+        }
+    }
+    for i in range(0, 6):
+        skip_if = sf.task_to_skip_if(
+            "test-manifest", task_id, Kind.TOML, "test-path", True
+        )
+        assert skip_if is None
+    
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path", True)
+    assert (
+        skip_if
+        == "os == 'linux' && os_version == '22.04' && processor == 'x86_64' && debug"
+    )
+
+    
+    task_id = "caDMGUmnT7muCqNWj6w3nQ"
+    task_details = {
+        "expires": "2024-01-09T16:05:56.825Z",
+        "extra": {
+            "suite": "mochitest-plain",
+            "test-setting": {
+                "build": {"type": "opt"},
+                "platform": {
+                    "arch": "64",
+                    "os": {"name": "linux", "version": "2204"},
+                },
+                "runtime": {},
+            },
+        },
+    }
+    sf.tasks[task_id] = task_details
+    for i in range(0, 6):
+        skip_if = sf.task_to_skip_if(
+            "test-manifest", task_id, Kind.TOML, "test-path", True
+        )
+        assert skip_if is None
+    
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path", True)
+    assert skip_if == "os == 'linux' && os_version == '22.04' && processor == 'x86_64'"
+
+    
+    sf = Skipfails()
+    task_id = "UP-t3xrGSDWvUNjFGIt_aQ"
+    task_details = {
+        "expires": "2024-01-09T16:05:56.825Z",
+        "extra": {
+            "suite": "mochitest-plain",
+            "test-setting": {
+                "build": {"type": "debug"},
+                "platform": {
+                    "arch": "64",
+                    "os": {"name": "linux", "version": "2204"},
+                },
+                "runtime": {"webrender-sw": "swgl"},
+            },
+        },
+    }
+    sf.tasks[task_id] = task_details
+    sf.platform_permutations = {
+        "test-manifest": {
+            "linux": {
+                "22.04": {
+                    "x86_64": {
+                        "debug": {"no_variant": {}, "swgl": {}},
+                        "opt": {"no_variant": {}},
+                    }
+                }
+            }
+        }
+    }
+    for i in range(0, 6):
+        skip_if = sf.task_to_skip_if(
+            "test-manifest", task_id, Kind.TOML, "test-path", True
+        )
+        assert skip_if is None
+    
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path", True)
+    assert (
+        skip_if
+        == "os == 'linux' && os_version == '22.04' && processor == 'x86_64' && debug && swgl"
+    )
+
+    
+    task_id = "caDMGUmnT7muCqNWj6w3nQ"
+    task_details = {
+        "expires": "2024-01-09T16:05:56.825Z",
+        "extra": {
+            "suite": "mochitest-plain",
+            "test-setting": {
+                "build": {"type": "debug"},
+                "platform": {
+                    "arch": "64",
+                    "os": {"name": "linux", "version": "2204"},
+                },
+                "runtime": {},
+            },
+        },
+    }
+    sf.tasks[task_id] = task_details
+    for i in range(0, 2):
+        skip_if = sf.task_to_skip_if(
+            "test-manifest", task_id, Kind.TOML, "test-path", True
+        )
+        assert (
+            skip_if
+            == "os == 'linux' && os_version == '22.04' && processor == 'x86_64' && debug && swgl"
+        )
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.TOML, "test-path", True)
+    assert (
+        skip_if
+        == "os == 'linux' && os_version == '22.04' && processor == 'x86_64' && debug"
+    )
 
 
 def test_task_to_skip_if_wpt():
@@ -713,7 +885,7 @@ def test_task_to_skip_if_wpt():
         }
     }
     
-    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.WPT, "test-path")
+    skip_if = sf.task_to_skip_if("test-manifest", task_id, Kind.WPT, "test-path", False)
     assert (
         skip_if
         == 'os == "linux" and os_version == "18.04" and processor == "x86" and opt'
@@ -745,7 +917,7 @@ def test_task_to_skip_if_reftest():
     sf = Skipfails(implicit_vars=True)
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path")
+    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path", False)
     assert skip_if == "gtkWidget&&optimized&&!is64Bit"
 
 
@@ -768,7 +940,7 @@ def test_task_to_skip_if_reftest2():
     sf = Skipfails(implicit_vars=True)
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path")
+    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path", False)
     assert skip_if == "gtkWidget&&ThreadSanitizer&&swgl"
 
 
@@ -794,7 +966,7 @@ def test_task_to_skip_if_reftest3():
     sf = Skipfails(implicit_vars=False)
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path")
+    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path", False)
     assert skip_if == "winWidget&&isDebugBuild&&fission&&!is64Bit&&!swgl&&!nogpu"
 
 
@@ -817,7 +989,7 @@ def test_task_to_skip_if_reftest4():
     sf = Skipfails(implicit_vars=False)
     sf.tasks[task_id] = task_details
     
-    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path")
+    skip_if = sf.task_to_skip_if("", task_id, Kind.LIST, "test-path", False)
     assert skip_if == "gtkWidget&&ThreadSanitizer&&fission&&!swgl&&!nogpu"
 
 
@@ -1368,6 +1540,10 @@ def test_reftest_skip_failure_win_32(capsys):
         manifest,
         kind,
         path,
+        task_id,
+        None,
+        None,
+        False,
         anyjs,
         differences,
         pixels,
@@ -1375,7 +1551,6 @@ def test_reftest_skip_failure_win_32(capsys):
         status,
         label,
         classification,
-        task_id,
         try_url,
         revision,
         repo,
@@ -1437,6 +1612,10 @@ def test_reftest_skip_failure_reorder(capsys):
         manifest,
         kind,
         path,
+        task_id,
+        None,
+        None,
+        False,
         anyjs,
         differences,
         pixels,
@@ -1444,7 +1623,6 @@ def test_reftest_skip_failure_reorder(capsys):
         status,
         label,
         classification,
-        task_id,
         try_url,
         revision,
         repo,
