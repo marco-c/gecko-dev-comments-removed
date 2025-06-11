@@ -49,8 +49,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   
   
 
-  void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
-                         modifier) override;
+  void ModifyEncoder(
+      FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) override;
 
   
   
@@ -300,7 +300,7 @@ void AudioCodingModuleImpl::Reset() {
 }
 
 void AudioCodingModuleImpl::ModifyEncoder(
-    rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
+    FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
   MutexLock lock(&acm_mutex_);
   modifier(&encoder_stack_);
 }

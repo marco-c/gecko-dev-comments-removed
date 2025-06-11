@@ -72,8 +72,8 @@ class ChannelSendInterface {
                           const SdpAudioFormat& encoder_format,
                           std::unique_ptr<AudioEncoder> encoder) = 0;
   virtual void ModifyEncoder(
-      rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
-  virtual void CallEncoder(rtc::FunctionView<void(AudioEncoder*)> modifier) = 0;
+      FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
+  virtual void CallEncoder(FunctionView<void(AudioEncoder*)> modifier) = 0;
 
   
   virtual void SetRTCP_CNAME(absl::string_view c_name) = 0;

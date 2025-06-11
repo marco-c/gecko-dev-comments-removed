@@ -28,8 +28,7 @@ namespace webrtc {
 
 
 
-bool GetWindowList(XAtomCache* cache,
-                   rtc::FunctionView<bool(::Window)> on_window);
+bool GetWindowList(XAtomCache* cache, FunctionView<bool(::Window)> on_window);
 
 
 

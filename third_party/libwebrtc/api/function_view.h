@@ -37,7 +37,7 @@
 
 
 
-namespace rtc {
+namespace webrtc {
 
 template <typename T>
 class FunctionView;  
@@ -126,6 +126,12 @@ class FunctionView<RetT(ArgT...)> final {
   RetT (*call_)(VoidUnion, ArgT...);
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::FunctionView;
 }  
 
 #endif  

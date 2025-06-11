@@ -91,8 +91,8 @@ class RtpPacketHistory {
   
   std::unique_ptr<RtpPacketToSend> GetPacketAndMarkAsPending(
       uint16_t sequence_number,
-      rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(
-          const RtpPacketToSend&)> encapsulate);
+      FunctionView<std::unique_ptr<RtpPacketToSend>(const RtpPacketToSend&)>
+          encapsulate);
 
   
   
@@ -113,8 +113,8 @@ class RtpPacketHistory {
   
   
   std::unique_ptr<RtpPacketToSend> GetPayloadPaddingPacket(
-      rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(
-          const RtpPacketToSend&)> encapsulate);
+      FunctionView<std::unique_ptr<RtpPacketToSend>(const RtpPacketToSend&)>
+          encapsulate);
 
   
   void CullAcknowledgedPackets(rtc::ArrayView<const uint16_t> sequence_numbers);

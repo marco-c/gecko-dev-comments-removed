@@ -55,7 +55,7 @@ class FullScreenWindowDetector
   
   void UpdateWindowListIfNeeded(
       DesktopCapturer::SourceId original_source_id,
-      rtc::FunctionView<bool(DesktopCapturer::SourceList*)> get_sources);
+      FunctionView<bool(DesktopCapturer::SourceList*)> get_sources);
 
   static rtc::scoped_refptr<FullScreenWindowDetector>
   CreateFullScreenWindowDetector();

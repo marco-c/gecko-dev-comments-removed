@@ -54,7 +54,7 @@ class RtcpPacket {
   
   
   using PacketReadyCallback =
-      rtc::FunctionView<void(rtc::ArrayView<const uint8_t> packet)>;
+      FunctionView<void(rtc::ArrayView<const uint8_t> packet)>;
 
   virtual ~RtcpPacket() = default;
 

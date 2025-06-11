@@ -30,7 +30,7 @@ constexpr int kFramesPerSecond = 100;
 
 
 
-float RunEstimator(rtc::FunctionView<float()> sample_generator,
+float RunEstimator(FunctionView<float()> sample_generator,
                    NoiseLevelEstimator& estimator,
                    int sample_rate_hz) {
   const int samples_per_channel =

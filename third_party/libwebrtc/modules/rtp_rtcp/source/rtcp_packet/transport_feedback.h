@@ -72,8 +72,8 @@ class TransportFeedback : public Rtpfb {
   
   
   void ForAllPackets(
-      rtc::FunctionView<void(uint16_t sequence_number,
-                             TimeDelta delta_since_base)> handler) const;
+      FunctionView<void(uint16_t sequence_number, TimeDelta delta_since_base)>
+          handler) const;
 
   uint16_t GetBaseSequence() const;
 

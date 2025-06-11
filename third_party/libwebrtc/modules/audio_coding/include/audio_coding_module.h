@@ -69,7 +69,7 @@ class AudioCodingModule {
   
   
   virtual void ModifyEncoder(
-      rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
+      FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
 
   
   void SetEncoder(std::unique_ptr<AudioEncoder> new_encoder) {

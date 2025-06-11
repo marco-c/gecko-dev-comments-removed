@@ -23,8 +23,7 @@
 
 namespace webrtc {
 
-inline void SendTask(TaskQueueBase* task_queue,
-                     rtc::FunctionView<void()> task) {
+inline void SendTask(TaskQueueBase* task_queue, FunctionView<void()> task) {
   if (task_queue->IsCurrent()) {
     task();
     return;
@@ -73,9 +72,7 @@ class TaskQueueForTest {
 
   
   
-  void SendTask(rtc::FunctionView<void()> task) {
-    ::webrtc::SendTask(Get(), task);
-  }
+  void SendTask(FunctionView<void()> task) { ::webrtc::SendTask(Get(), task); }
 
   
   
