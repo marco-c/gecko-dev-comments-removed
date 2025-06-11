@@ -77,6 +77,7 @@ AutoTArray<LogicalPixelSize, 1> ResizeObserver::CalculateBoxSize(
     return {LogicalPixelSize()};
   }
 
+  const auto zoom = frame->Style()->EffectiveZoom();
   if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
@@ -97,6 +98,8 @@ AutoTArray<LogicalPixelSize, 1> ResizeObserver::CalculateBoxSize(
                        frame->PresContext()->CSSToDevPixelScale());
       return {LogicalPixelSize(wm, gfx::Size(snappedSize.ToUnknownSize()))};
     }
+    size.width = zoom.Unzoom(size.width);
+    size.height = zoom.Unzoom(size.height);
     return {LogicalPixelSize(wm, size)};
   }
 
@@ -110,10 +113,11 @@ AutoTArray<LogicalPixelSize, 1> ResizeObserver::CalculateBoxSize(
     return {LogicalPixelSize()};
   }
 
-  auto GetFrameSize = [aBox](nsIFrame* aFrame) {
+  auto GetFrameSize = [aBox, zoom](nsIFrame* aFrame) {
     switch (aBox) {
       case ResizeObserverBoxOptions::Border_box:
-        return CSSPixel::FromAppUnits(aFrame->GetSize()).ToUnknownSize();
+        return CSSPixel::FromAppUnits(zoom.Unzoom(aFrame->GetSize()))
+            .ToUnknownSize();
       case ResizeObserverBoxOptions::Device_pixel_content_box: {
         
         
@@ -148,7 +152,8 @@ AutoTArray<LogicalPixelSize, 1> ResizeObserver::CalculateBoxSize(
       default:
         break;
     }
-    return CSSPixel::FromAppUnits(GetContentRectSize(*aFrame)).ToUnknownSize();
+    return CSSPixel::FromAppUnits(zoom.Unzoom(GetContentRectSize(*aFrame)))
+        .ToUnknownSize();
   };
   if (!StaticPrefs::dom_resize_observer_support_fragments() &&
       !aForceFragmentHandling) {
@@ -457,20 +462,26 @@ void ResizeObserverEntry::SetContentRectAndSize(
   nsIFrame* frame = mTarget->GetPrimaryFrame();
 
   
-  nsMargin padding = frame ? frame->GetUsedPadding() : nsMargin();
-  
-  
-  gfx::Size sizeForRect;
-  MOZ_DIAGNOSTIC_ASSERT(!aSize.IsEmpty());
-  if (!aSize.IsEmpty()) {
-    const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
-    sizeForRect = aSize[0].PhysicalSize(wm);
-  }
-  nsRect rect(nsPoint(padding.left, padding.top),
-              CSSPixel::ToAppUnits(CSSSize::FromUnknownSize(sizeForRect)));
-  RefPtr<DOMRect> contentRect = new DOMRect(mOwner);
-  contentRect->SetLayoutRect(rect);
-  mContentRect = std::move(contentRect);
+  mContentRect = [&] {
+    nsMargin padding = frame ? frame->GetUsedPadding() : nsMargin();
+    const auto zoom = frame ? frame->Style()->EffectiveZoom() : StyleZoom::ONE;
+    
+    
+    
+    const nsPoint origin = zoom.Unzoom(nsPoint(padding.left, padding.top));
+
+    gfx::Size sizeForRect;
+    MOZ_DIAGNOSTIC_ASSERT(!aSize.IsEmpty());
+    if (!aSize.IsEmpty()) {
+      const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
+      sizeForRect = aSize[0].PhysicalSize(wm);
+    }
+    nsRect rect(origin,
+                CSSPixel::ToAppUnits(CSSSize::FromUnknownSize(sizeForRect)));
+    RefPtr<DOMRect> contentRect = new DOMRect(mOwner);
+    contentRect->SetLayoutRect(rect);
+    return contentRect.forget();
+  }();
 
   
   mContentBoxSize.Clear();
