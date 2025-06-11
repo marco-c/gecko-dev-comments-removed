@@ -4,9 +4,10 @@
 
 
 
-#include "jsapi/DefaultCodecPreferences.h"
-#include "jsapi/PeerConnectionCtx.h"
+#include "DefaultCodecPreferences.h"
+#include "gmp/GMPUtils.h"
 #include "libwebrtcglue/VideoConduit.h"
+#include "mozilla/StaticPrefs_media.h"
 
 namespace mozilla {
 
@@ -20,26 +21,26 @@ bool DefaultCodecPreferences::H264EnabledStatic() {
 }
 
 bool DefaultCodecPreferences::SoftwareH264EnabledStatic() {
-  
-  
-  
 #ifdef MOZ_WIDGET_ANDROID
   
   
-  MOZ_ASSERT(!PeerConnectionCtx::isActive() ||
-                 !PeerConnectionCtx::GetInstance()->gmpHasH264(),
+  MOZ_ASSERT(!HaveGMPFor("encode-video"_ns, {"h264"_ns}),
              "GMP plugin not allowed on Android");
   return true;
 #else
-  return PeerConnectionCtx::isActive()
-             ? PeerConnectionCtx::GetInstance()->gmpHasH264()
-             : true;
+  return HaveGMPFor("encode-video"_ns, {"h264"_ns}) &&
+         HaveGMPFor("decode-video"_ns, {"h264"_ns});
 #endif
 }
 
 bool DefaultCodecPreferences::HardwareH264EnabledStatic() {
   return WebrtcVideoConduit::HasH264Hardware() &&
          Preferences::GetBool("media.webrtc.hw.h264.enabled", false);
+}
+
+bool DefaultCodecPreferences::H264PacketizationModeZeroSupportedStatic() {
+  
+  return HaveGMPFor("encode-video"_ns, {"h264"_ns});
 }
 
 }  
