@@ -1240,6 +1240,12 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
                    sBinDir, u"\\*"_ns);
 
+  if (aSandboxLevel >= 2) {
+    
+    AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
+                     sLocalAppDataDir, u"\\Microsoft\\Windows\\Fonts\\*"_ns);
+  }
+
   
   if (sProfileDir) {
     
