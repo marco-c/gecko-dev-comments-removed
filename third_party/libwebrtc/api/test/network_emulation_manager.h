@@ -76,7 +76,7 @@ struct EmulatedEndpointConfig {
   
   bool start_as_enabled = true;
   
-  rtc::AdapterType type = rtc::AdapterType::ADAPTER_TYPE_UNKNOWN;
+  AdapterType type = AdapterType::ADAPTER_TYPE_UNKNOWN;
   
   
   

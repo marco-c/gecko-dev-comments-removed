@@ -46,12 +46,12 @@ namespace webrtc {
 
 
 
-const char* IceCandidateTypeToStatsType(const cricket::Candidate& candidate);
+const char* IceCandidateTypeToStatsType(const Candidate& candidate);
 
 
 
 
-const char* AdapterTypeToStatsType(rtc::AdapterType type);
+const char* AdapterTypeToStatsType(AdapterType type);
 
 
 typedef std::map<std::string, StatsReport*> TrackIdMap;

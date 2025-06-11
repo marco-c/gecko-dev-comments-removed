@@ -83,7 +83,7 @@ class PortInterface {
   
   enum CandidateOrigin { ORIGIN_THIS_PORT, ORIGIN_OTHER_PORT, ORIGIN_MESSAGE };
   virtual cricket::Connection* CreateConnection(
-      const cricket::Candidate& remote_candidate,
+      const Candidate& remote_candidate,
       CandidateOrigin origin) = 0;
 
   
@@ -93,7 +93,7 @@ class PortInterface {
 
   virtual ProtocolType GetProtocol() const = 0;
 
-  virtual const std::vector<cricket::Candidate>& Candidates() const = 0;
+  virtual const std::vector<Candidate>& Candidates() const = 0;
 
   
   
@@ -167,7 +167,7 @@ class PortInterface {
   virtual const std::string& content_name() const = 0;
 
   
-  virtual void AddPrflxCandidate(const cricket::Candidate& local) = 0;
+  virtual void AddPrflxCandidate(const Candidate& local) = 0;
 
  protected:
   PortInterface();

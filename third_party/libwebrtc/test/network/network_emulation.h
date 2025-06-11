@@ -270,7 +270,7 @@ class EmulatedEndpointImpl : public EmulatedEndpoint {
     
     IPAddress ip;
     EmulatedNetworkStatsGatheringMode stats_gathering_mode;
-    rtc::AdapterType type;
+    AdapterType type;
     
     
     

@@ -81,9 +81,9 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
-  const Candidate& local_candidate() const override;
+  const webrtc::Candidate& local_candidate() const override;
   
-  const Candidate& remote_candidate() const override;
+  const webrtc::Candidate& remote_candidate() const override;
 
   
   virtual const rtc::Network* network() const;
@@ -284,7 +284,8 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   
   
-  void MaybeUpdatePeerReflexiveCandidate(const Candidate& new_candidate);
+  void MaybeUpdatePeerReflexiveCandidate(
+      const webrtc::Candidate& new_candidate);
 
   
   
@@ -374,7 +375,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   Connection(rtc::WeakPtr<webrtc::PortInterface> port,
              size_t index,
-             const Candidate& candidate);
+             const webrtc::Candidate& candidate);
 
   
   void OnSendStunPacket(const void* data, size_t size, StunRequest* req);
@@ -413,8 +414,8 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   webrtc::TaskQueueBase* const network_thread_;
   const uint32_t id_;
   rtc::WeakPtr<webrtc::PortInterface> port_;
-  Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
-  Candidate remote_candidate_;
+  webrtc::Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
+  webrtc::Candidate remote_candidate_;
 
   ConnectionInfo stats_;
   rtc::RateTracker recv_rate_tracker_;
@@ -529,7 +530,7 @@ class ProxyConnection : public Connection {
  public:
   ProxyConnection(rtc::WeakPtr<webrtc::PortInterface> port,
                   size_t index,
-                  const Candidate& remote_candidate);
+                  const webrtc::Candidate& remote_candidate);
 
   int Send(const void* data,
            size_t size,

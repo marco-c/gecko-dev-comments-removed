@@ -55,7 +55,7 @@ namespace cricket {
 
 class StreamInterfaceChannel : public rtc::StreamInterface {
  public:
-  explicit StreamInterfaceChannel(IceTransportInternal* ice_transport);
+  explicit StreamInterfaceChannel(webrtc::IceTransportInternal* ice_transport);
 
   void SetDtlsStunPiggybackController(
       DtlsStunPiggybackController* dtls_stun_piggyback_controller);
@@ -77,7 +77,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
                           int& error) override;
 
  private:
-  IceTransportInternal* const ice_transport_;  
+  webrtc::IceTransportInternal* const ice_transport_;  
   DtlsStunPiggybackController* dtls_stun_piggyback_controller_ =
       nullptr;  
   rtc::StreamState state_ RTC_GUARDED_BY(callback_sequence_);
@@ -123,7 +123,7 @@ class DtlsTransport : public DtlsTransportInternal {
   
   
   DtlsTransport(
-      IceTransportInternal* ice_transport,
+      webrtc::IceTransportInternal* ice_transport,
       const webrtc::CryptoOptions& crypto_options,
       webrtc::RtcEventLog* event_log,
       webrtc::SSLProtocolVersion max_version = webrtc::SSL_PROTOCOL_DTLS_12);
@@ -204,7 +204,7 @@ class DtlsTransport : public DtlsTransportInternal {
   bool ExportSrtpKeyingMaterial(
       rtc::ZeroOnFreeBuffer<uint8_t>& keying_material) override;
 
-  IceTransportInternal* ice_transport() override;
+  webrtc::IceTransportInternal* ice_transport() override;
 
   
   
@@ -266,7 +266,7 @@ class DtlsTransport : public DtlsTransportInternal {
   const int component_;
   webrtc::DtlsTransportState dtls_state_ = webrtc::DtlsTransportState::kNew;
   
-  IceTransportInternal* const ice_transport_;
+  webrtc::IceTransportInternal* const ice_transport_;
   std::unique_ptr<webrtc::SSLStreamAdapter> dtls_;  
   StreamInterfaceChannel*
       downward_;  

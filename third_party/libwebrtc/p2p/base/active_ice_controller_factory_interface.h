@@ -17,23 +17,30 @@
 #include "p2p/base/ice_agent_interface.h"
 #include "p2p/base/ice_controller_factory_interface.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
 
 struct ActiveIceControllerFactoryArgs {
   IceControllerFactoryArgs legacy_args;
-  IceAgentInterface* ice_agent;
+  cricket::IceAgentInterface* ice_agent;
 };
 
 class ActiveIceControllerFactoryInterface {
  public:
   virtual ~ActiveIceControllerFactoryInterface() = default;
-  virtual std::unique_ptr<ActiveIceControllerInterface> Create(
+  virtual std::unique_ptr<cricket::ActiveIceControllerInterface> Create(
       const ActiveIceControllerFactoryArgs&) = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::ActiveIceControllerFactoryArgs;
+using ::webrtc::ActiveIceControllerFactoryInterface;
 }  
 
 #endif  

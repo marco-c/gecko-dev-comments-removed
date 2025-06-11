@@ -96,7 +96,7 @@ class IceControllerInterface {
   virtual ~IceControllerInterface() = default;
 
   
-  virtual void SetIceConfig(const IceConfig& config) = 0;
+  virtual void SetIceConfig(const webrtc::IceConfig& config) = 0;
   virtual void SetSelectedConnection(const Connection* selected_connection) = 0;
   virtual void AddConnection(const Connection* connection) = 0;
   virtual void OnConnectionDestroyed(const Connection* connection) = 0;
@@ -124,7 +124,7 @@ class IceControllerInterface {
 
   
   virtual bool GetUseCandidateAttr(const Connection* conn,
-                                   NominationMode mode,
+                                   webrtc::NominationMode mode,
                                    IceMode remote_ice_mode) const = 0;
 
   

@@ -949,7 +949,7 @@ TEST_P(DataChannelIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
 
 static void MakeSpecCompliantSctpOffer(
     std::unique_ptr<SessionDescriptionInterface>& desc) {
-  cricket::SctpDataContentDescription* dcd_offer =
+  SctpDataContentDescription* dcd_offer =
       GetFirstSctpDataContentDescription(desc->description());
   
   ASSERT_TRUE(dcd_offer);

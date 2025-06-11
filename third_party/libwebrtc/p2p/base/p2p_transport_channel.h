@@ -84,10 +84,11 @@ bool IceCredentialsChanged(absl::string_view old_ufrag,
                            absl::string_view new_pwd);
 
 
-class RemoteCandidate : public Candidate {
+class RemoteCandidate : public webrtc::Candidate {
  public:
-  RemoteCandidate(const Candidate& c, webrtc::PortInterface* origin_port)
-      : Candidate(c), origin_port_(origin_port) {}
+  RemoteCandidate(const webrtc::Candidate& c,
+                  webrtc::PortInterface* origin_port)
+      : webrtc::Candidate(c), origin_port_(origin_port) {}
 
   webrtc::PortInterface* origin_port() { return origin_port_; }
 
@@ -97,7 +98,7 @@ class RemoteCandidate : public Candidate {
 
 
 
-class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
+class RTC_EXPORT P2PTransportChannel : public webrtc::IceTransportInternal,
                                        public IceAgentInterface {
  public:
   static std::unique_ptr<P2PTransportChannel> Create(
@@ -109,7 +110,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   P2PTransportChannel(absl::string_view transport_name,
                       int component,
-                      PortAllocator* allocator,
+                      webrtc::PortAllocator* allocator,
                       const webrtc::FieldTrialsView* field_trials = nullptr);
 
   ~P2PTransportChannel() override;
@@ -134,18 +135,18 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   void Connect() {}
   void MaybeStartGathering() override;
-  IceGatheringState gathering_state() const override;
-  void ResolveHostnameCandidate(const Candidate& candidate);
-  void AddRemoteCandidate(const Candidate& candidate) override;
-  void RemoveRemoteCandidate(const Candidate& candidate) override;
+  webrtc::IceGatheringState gathering_state() const override;
+  void ResolveHostnameCandidate(const webrtc::Candidate& candidate);
+  void AddRemoteCandidate(const webrtc::Candidate& candidate) override;
+  void RemoveRemoteCandidate(const webrtc::Candidate& candidate) override;
   void RemoveAllRemoteCandidates() override;
   
   
   
   
   
-  void SetIceConfig(const IceConfig& config) override;
-  const IceConfig& config() const override;
+  void SetIceConfig(const webrtc::IceConfig& config) override;
+  const webrtc::IceConfig& config() const override;
 
   
   int SendPacket(const char* data,
@@ -155,7 +156,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   int SetOption(webrtc::Socket::Option opt, int value) override;
   bool GetOption(webrtc::Socket::Option opt, int* value) override;
   int GetError() override;
-  bool GetStats(IceTransportStats* ice_transport_stats) override;
+  bool GetStats(webrtc::IceTransportStats* ice_transport_stats) override;
   std::optional<int> GetRttEstimate() override;
   const Connection* selected_connection() const override;
   std::optional<const CandidatePair> GetSelectedCandidatePair() const override;
@@ -219,7 +220,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void RemoveConnectionForTest(Connection* connection);
 
   
-  PortAllocatorSession* allocator_session() const {
+  webrtc::PortAllocatorSession* allocator_session() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     if (allocator_sessions_.empty()) {
       return nullptr;
@@ -260,7 +261,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   P2PTransportChannel(
       absl::string_view transport_name,
       int component,
-      PortAllocator* allocator,
+      webrtc::PortAllocator* allocator,
       
       webrtc::AsyncDnsResolverFactoryInterface* async_dns_resolver_factory,
       
@@ -268,8 +269,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>
           owned_dns_resolver_factory,
       webrtc::RtcEventLog* event_log,
-      IceControllerFactoryInterface* ice_controller_factory,
-      ActiveIceControllerFactoryInterface* active_ice_controller_factory,
+      webrtc::IceControllerFactoryInterface* ice_controller_factory,
+      webrtc::ActiveIceControllerFactoryInterface*
+          active_ice_controller_factory,
       const webrtc::FieldTrialsView* field_trials);
 
   bool IsGettingPorts() {
@@ -297,31 +299,33 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   IceTransportState ComputeState() const;
   webrtc::IceTransportState ComputeIceTransportState() const;
 
-  bool CreateConnections(const Candidate& remote_candidate,
+  bool CreateConnections(const webrtc::Candidate& remote_candidate,
                          webrtc::PortInterface* origin_port);
   bool CreateConnection(webrtc::PortInterface* port,
-                        const Candidate& remote_candidate,
+                        const webrtc::Candidate& remote_candidate,
                         webrtc::PortInterface* origin_port);
   bool FindConnection(const Connection* connection) const;
 
-  uint32_t GetRemoteCandidateGeneration(const Candidate& candidate);
-  bool IsDuplicateRemoteCandidate(const Candidate& candidate);
-  void RememberRemoteCandidate(const Candidate& remote_candidate,
+  uint32_t GetRemoteCandidateGeneration(const webrtc::Candidate& candidate);
+  bool IsDuplicateRemoteCandidate(const webrtc::Candidate& candidate);
+  void RememberRemoteCandidate(const webrtc::Candidate& remote_candidate,
                                webrtc::PortInterface* origin_port);
   void PingConnection(Connection* conn);
-  void AddAllocatorSession(std::unique_ptr<PortAllocatorSession> session);
+  void AddAllocatorSession(
+      std::unique_ptr<webrtc::PortAllocatorSession> session);
   void AddConnection(Connection* connection);
 
-  void OnPortReady(PortAllocatorSession* session, webrtc::PortInterface* port);
-  void OnPortsPruned(PortAllocatorSession* session,
+  void OnPortReady(webrtc::PortAllocatorSession* session,
+                   webrtc::PortInterface* port);
+  void OnPortsPruned(webrtc::PortAllocatorSession* session,
                      const std::vector<webrtc::PortInterface*>& ports);
-  void OnCandidatesReady(PortAllocatorSession* session,
-                         const std::vector<Candidate>& candidates);
-  void OnCandidateError(PortAllocatorSession* session,
+  void OnCandidatesReady(webrtc::PortAllocatorSession* session,
+                         const std::vector<webrtc::Candidate>& candidates);
+  void OnCandidateError(webrtc::PortAllocatorSession* session,
                         const IceCandidateErrorEvent& event);
-  void OnCandidatesRemoved(PortAllocatorSession* session,
-                           const std::vector<Candidate>& candidates);
-  void OnCandidatesAllocationDone(PortAllocatorSession* session);
+  void OnCandidatesRemoved(webrtc::PortAllocatorSession* session,
+                           const std::vector<webrtc::Candidate>& candidates);
+  void OnCandidatesAllocationDone(webrtc::PortAllocatorSession* session);
   void OnUnknownAddress(webrtc::PortInterface* port,
                         const webrtc::SocketAddress& addr,
                         webrtc::ProtocolType proto,
@@ -378,7 +382,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   bool IsPortPruned(const webrtc::PortInterface* port) const;
 
   
-  bool IsRemoteCandidatePruned(const Candidate& cand) const;
+  bool IsRemoteCandidatePruned(const webrtc::Candidate& cand) const;
 
   
   void SetWritable(bool writable);
@@ -387,12 +391,12 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   
   
-  Candidate SanitizeLocalCandidate(const Candidate& c) const;
+  webrtc::Candidate SanitizeLocalCandidate(const webrtc::Candidate& c) const;
   
   
   
   
-  Candidate SanitizeRemoteCandidate(const Candidate& c) const;
+  webrtc::Candidate SanitizeRemoteCandidate(const webrtc::Candidate& c) const;
 
   
   
@@ -411,7 +415,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   std::string transport_name_ RTC_GUARDED_BY(network_thread_);
   int component_ RTC_GUARDED_BY(network_thread_);
-  PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
+  webrtc::PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
   webrtc::AsyncDnsResolverFactoryInterface* const async_dns_resolver_factory_
       RTC_GUARDED_BY(network_thread_);
   const std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>
@@ -419,7 +423,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   rtc::Thread* const network_thread_;
   bool incoming_only_ RTC_GUARDED_BY(network_thread_);
   int error_ RTC_GUARDED_BY(network_thread_);
-  std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_
+  std::vector<std::unique_ptr<webrtc::PortAllocatorSession>> allocator_sessions_
       RTC_GUARDED_BY(network_thread_);
   
   
@@ -445,7 +449,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       RTC_GUARDED_BY(network_thread_);
   IceMode remote_ice_mode_ RTC_GUARDED_BY(network_thread_);
   IceRole ice_role_ RTC_GUARDED_BY(network_thread_);
-  IceGatheringState gathering_state_ RTC_GUARDED_BY(network_thread_);
+  webrtc::IceGatheringState gathering_state_ RTC_GUARDED_BY(network_thread_);
   std::unique_ptr<webrtc::BasicRegatheringController> regathering_controller_
       RTC_GUARDED_BY(network_thread_);
   int64_t last_ping_sent_ms_ RTC_GUARDED_BY(network_thread_) = 0;
@@ -456,7 +460,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       IceTransportState::STATE_INIT;
   webrtc::IceTransportState standardized_state_
       RTC_GUARDED_BY(network_thread_) = webrtc::IceTransportState::kNew;
-  IceConfig config_ RTC_GUARDED_BY(network_thread_);
+  webrtc::IceConfig config_ RTC_GUARDED_BY(network_thread_);
   int last_sent_packet_id_ RTC_GUARDED_BY(network_thread_) =
       -1;  
   
@@ -476,21 +480,22 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   struct CandidateAndResolver final {
     CandidateAndResolver(
-        const Candidate& candidate,
+        const webrtc::Candidate& candidate,
         std::unique_ptr<webrtc::AsyncDnsResolverInterface>&& resolver);
     ~CandidateAndResolver();
     
     CandidateAndResolver(CandidateAndResolver&&) = default;
     CandidateAndResolver& operator=(CandidateAndResolver&&) = default;
 
-    Candidate candidate_;
+    webrtc::Candidate candidate_;
     std::unique_ptr<webrtc::AsyncDnsResolverInterface> resolver_;
   };
   std::vector<CandidateAndResolver> resolvers_ RTC_GUARDED_BY(network_thread_);
-  void FinishAddingRemoteCandidate(const Candidate& new_remote_candidate);
+  void FinishAddingRemoteCandidate(
+      const webrtc::Candidate& new_remote_candidate);
   void OnCandidateResolved(webrtc::AsyncDnsResolverInterface* resolver);
   void AddRemoteCandidateWithResult(
-      Candidate candidate,
+      webrtc::Candidate candidate,
       const webrtc::AsyncDnsResolverResult& result);
 
   std::unique_ptr<StunAttribute> GoogDeltaReceived(

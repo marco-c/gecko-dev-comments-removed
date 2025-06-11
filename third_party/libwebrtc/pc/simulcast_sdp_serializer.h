@@ -48,13 +48,13 @@ class SimulcastSdpSerializer {
   
   
   std::string SerializeRidDescription(
-      const cricket::MediaContentDescription& media_desc,
+      const MediaContentDescription& media_desc,
       const cricket::RidDescription& rid_description) const;
 
   
   
   RTCErrorOr<cricket::RidDescription> DeserializeRidDescription(
-      const cricket::MediaContentDescription& media_desc,
+      const MediaContentDescription& media_desc,
       absl::string_view string) const;
 };
 

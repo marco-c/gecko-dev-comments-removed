@@ -45,25 +45,23 @@ class BundleManager {
  public:
   explicit BundleManager(PeerConnectionInterface::BundlePolicy bundle_policy)
       : bundle_policy_(bundle_policy) {}
-  const std::vector<std::unique_ptr<cricket::ContentGroup>>& bundle_groups()
-      const {
+  const std::vector<std::unique_ptr<ContentGroup>>& bundle_groups() const {
     RTC_DCHECK_RUN_ON(&sequence_checker_);
     return bundle_groups_;
   }
   
-  const cricket::ContentGroup* LookupGroupByMid(const std::string& mid) const;
-  cricket::ContentGroup* LookupGroupByMid(const std::string& mid);
+  const ContentGroup* LookupGroupByMid(const std::string& mid) const;
+  ContentGroup* LookupGroupByMid(const std::string& mid);
   
   
   bool IsFirstMidInGroup(const std::string& mid) const;
   
   
-  void Update(const cricket::SessionDescription* description, SdpType type);
+  void Update(const SessionDescription* description, SdpType type);
   
-  void DeleteMid(const cricket::ContentGroup* bundle_group,
-                 const std::string& mid);
+  void DeleteMid(const ContentGroup* bundle_group, const std::string& mid);
   
-  void DeleteGroup(const cricket::ContentGroup* bundle_group);
+  void DeleteGroup(const ContentGroup* bundle_group);
   
   void Rollback();
   
@@ -76,12 +74,11 @@ class BundleManager {
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       SequenceChecker::kDetached};
   PeerConnectionInterface::BundlePolicy bundle_policy_;
-  std::vector<std::unique_ptr<cricket::ContentGroup>> bundle_groups_
+  std::vector<std::unique_ptr<ContentGroup>> bundle_groups_
       RTC_GUARDED_BY(sequence_checker_);
-  std::vector<std::unique_ptr<cricket::ContentGroup>> stable_bundle_groups_
+  std::vector<std::unique_ptr<ContentGroup>> stable_bundle_groups_
       RTC_GUARDED_BY(sequence_checker_);
-  std::map<std::string, cricket::ContentGroup*>
-      established_bundle_groups_by_mid_;
+  std::map<std::string, ContentGroup*> established_bundle_groups_by_mid_;
 };
 
 

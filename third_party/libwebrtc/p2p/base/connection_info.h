@@ -60,8 +60,10 @@ struct ConnectionInfo {
   size_t packets_received;     
   size_t recv_ping_requests;   
   size_t recv_ping_responses;  
-  Candidate local_candidate;   
-  Candidate remote_candidate;  
+  webrtc::Candidate
+      local_candidate;  
+  webrtc::Candidate
+      remote_candidate;        
   void* key;                   
   
   IceCandidatePairState state;

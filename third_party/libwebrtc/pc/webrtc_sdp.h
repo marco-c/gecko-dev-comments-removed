@@ -31,10 +31,6 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace cricket {
-class Candidate;
-}  
-
 namespace webrtc {
 class IceCandidateInterface;
 class JsepIceCandidate;
@@ -54,8 +50,7 @@ std::string SdpSerializeCandidate(const IceCandidateInterface& candidate);
 
 
 
-RTC_EXPORT std::string SdpSerializeCandidate(
-    const cricket::Candidate& candidate);
+RTC_EXPORT std::string SdpSerializeCandidate(const Candidate& candidate);
 
 
 
@@ -87,7 +82,7 @@ RTC_EXPORT bool SdpDeserializeCandidate(absl::string_view message,
 
 RTC_EXPORT bool SdpDeserializeCandidate(absl::string_view transport_name,
                                         absl::string_view message,
-                                        cricket::Candidate* candidate,
+                                        Candidate* candidate,
                                         SdpParseError* error);
 
 
@@ -97,7 +92,7 @@ RTC_EXPORT bool SdpDeserializeCandidate(absl::string_view transport_name,
 
 
 RTC_EXPORT bool ParseCandidate(absl::string_view message,
-                               cricket::Candidate* candidate,
+                               Candidate* candidate,
                                SdpParseError* error,
                                bool is_raw);
 

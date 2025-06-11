@@ -233,7 +233,7 @@ class JsepTransport {
   
   webrtc::RTCError RecordPayloadTypes(bool local,
                                       webrtc::SdpType type,
-                                      const ContentInfo& content);
+                                      const webrtc::ContentInfo& content);
 
   const webrtc::PayloadTypeRecorder& remote_payload_types() const {
     return remote_payload_types_;
@@ -251,7 +251,9 @@ class JsepTransport {
   }
 
  private:
-  bool SetRtcpMux(bool enable, webrtc::SdpType type, ContentSource source);
+  bool SetRtcpMux(bool enable,
+                  webrtc::SdpType type,
+                  webrtc::ContentSource source);
 
   void ActivateRtcpMux() RTC_RUN_ON(network_thread_);
 
@@ -274,7 +276,7 @@ class JsepTransport {
 
   
   void SetRemoteIceParameters(const IceParameters& ice_parameters,
-                              IceTransportInternal* ice);
+                              webrtc::IceTransportInternal* ice);
 
   
   static webrtc::RTCError SetNegotiatedDtlsParameters(

@@ -50,14 +50,14 @@ class BasicRegatheringController : public sigslot::has_slots<> {
 
   BasicRegatheringController() = delete;
   BasicRegatheringController(const Config& config,
-                             cricket::IceTransportInternal* ice_transport,
+                             IceTransportInternal* ice_transport,
                              rtc::Thread* thread);
   ~BasicRegatheringController() override;
   
   
   
   void Start();
-  void set_allocator_session(cricket::PortAllocatorSession* allocator_session) {
+  void set_allocator_session(PortAllocatorSession* allocator_session) {
     allocator_session_ = allocator_session;
   }
   
@@ -71,7 +71,7 @@ class BasicRegatheringController : public sigslot::has_slots<> {
   
   
   
-  void OnIceTransportStateChanged(cricket::IceTransportInternal*) {}
+  void OnIceTransportStateChanged(IceTransportInternal*) {}
   void OnIceTransportWritableState(rtc::PacketTransportInternal*) {}
   void OnIceTransportReceivingState(rtc::PacketTransportInternal*) {}
   void OnIceTransportNetworkRouteChanged(std::optional<rtc::NetworkRoute>) {}
@@ -87,8 +87,8 @@ class BasicRegatheringController : public sigslot::has_slots<> {
   
   std::unique_ptr<ScopedTaskSafety> pending_regathering_;
   Config config_;
-  cricket::IceTransportInternal* ice_transport_;
-  cricket::PortAllocatorSession* allocator_session_ = nullptr;
+  IceTransportInternal* ice_transport_;
+  PortAllocatorSession* allocator_session_ = nullptr;
   rtc::Thread* const thread_;
 };
 

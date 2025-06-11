@@ -13,11 +13,8 @@
 
 #include "api/ice_transport_interface.h"
 #include "api/scoped_refptr.h"
+#include "p2p/base/port_allocator.h"
 #include "rtc_base/system/rtc_export.h"
-
-namespace cricket {
-class PortAllocator;  
-}  
 
 namespace webrtc {
 
@@ -29,7 +26,7 @@ namespace webrtc {
 
 
 RTC_EXPORT rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
-    cricket::PortAllocator* port_allocator);
+    PortAllocator* port_allocator);
 
 
 

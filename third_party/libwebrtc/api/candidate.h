@@ -23,11 +23,9 @@
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
+
 enum class IceCandidateType : int { kHost, kSrflx, kPrflx, kRelay };
 RTC_EXPORT absl::string_view IceCandidateTypeToString(IceCandidateType);
-}  
-
-namespace cricket {
 
 
 
@@ -50,11 +48,11 @@ class RTC_EXPORT Candidate {
   Candidate();
   Candidate(int component,
             absl::string_view protocol,
-            const webrtc::SocketAddress& address,
+            const SocketAddress& address,
             uint32_t priority,
             absl::string_view username,
             absl::string_view password,
-            webrtc::IceCandidateType type,
+            IceCandidateType type,
             uint32_t generation,
             absl::string_view foundation,
             uint16_t network_id = 0,
@@ -87,8 +85,8 @@ class RTC_EXPORT Candidate {
     Assign(relay_protocol_, protocol);
   }
 
-  const webrtc::SocketAddress& address() const { return address_; }
-  void set_address(const webrtc::SocketAddress& address) { address_ = address; }
+  const SocketAddress& address() const { return address_; }
+  void set_address(const SocketAddress& address) { address_ = address; }
 
   uint32_t priority() const { return priority_; }
   void set_priority(const uint32_t priority) { priority_ = priority; }
@@ -100,7 +98,7 @@ class RTC_EXPORT Candidate {
   const std::string& password() const { return password_; }
   void set_password(absl::string_view password) { Assign(password_, password); }
 
-  webrtc::IceCandidateType type() const { return type_; }
+  IceCandidateType type() const { return type_; }
 
   
   
@@ -110,7 +108,7 @@ class RTC_EXPORT Candidate {
   
   
   
-  void set_type(webrtc::IceCandidateType type) { type_ = type; }
+  void set_type(IceCandidateType type) { type_ = type; }
 
   
   
@@ -143,15 +141,15 @@ class RTC_EXPORT Candidate {
     Assign(network_name_, network_name);
   }
 
-  rtc::AdapterType network_type() const { return network_type_; }
-  void set_network_type(rtc::AdapterType network_type) {
+  AdapterType network_type() const { return network_type_; }
+  void set_network_type(AdapterType network_type) {
     network_type_ = network_type;
   }
 
-  rtc::AdapterType underlying_type_for_vpn() const {
+  AdapterType underlying_type_for_vpn() const {
     return underlying_type_for_vpn_;
   }
-  void set_underlying_type_for_vpn(rtc::AdapterType network_type) {
+  void set_underlying_type_for_vpn(AdapterType network_type) {
     underlying_type_for_vpn_ = network_type;
   }
 
@@ -163,7 +161,7 @@ class RTC_EXPORT Candidate {
   
   
   void set_network_cost(uint16_t network_cost) {
-    RTC_DCHECK_LE(network_cost, rtc::kNetworkCostMax);
+    RTC_DCHECK_LE(network_cost, webrtc::kNetworkCostMax);
     network_cost_ = network_cost;
   }
   uint16_t network_cost() const { return network_cost_; }
@@ -185,10 +183,8 @@ class RTC_EXPORT Candidate {
     Assign(foundation_, foundation);
   }
 
-  const webrtc::SocketAddress& related_address() const {
-    return related_address_;
-  }
-  void set_related_address(const webrtc::SocketAddress& related_address) {
+  const SocketAddress& related_address() const { return related_address_; }
+  void set_related_address(const SocketAddress& related_address) {
     related_address_ = related_address;
   }
   const std::string& tcptype() const { return tcptype_; }
@@ -251,7 +247,7 @@ class RTC_EXPORT Candidate {
   
   
   
-  void ComputeFoundation(const webrtc::SocketAddress& base_address,
+  void ComputeFoundation(const SocketAddress& base_address,
                          uint64_t tie_breaker);
 
   
@@ -272,17 +268,17 @@ class RTC_EXPORT Candidate {
   int component_;
   std::string protocol_;
   std::string relay_protocol_;
-  webrtc::SocketAddress address_;
+  SocketAddress address_;
   uint32_t priority_;
   std::string username_;
   std::string password_;
-  webrtc::IceCandidateType type_ = webrtc::IceCandidateType::kHost;
+  IceCandidateType type_ = IceCandidateType::kHost;
   std::string network_name_;
-  rtc::AdapterType network_type_;
-  rtc::AdapterType underlying_type_for_vpn_;
+  AdapterType network_type_;
+  AdapterType underlying_type_for_vpn_;
   uint32_t generation_;
   std::string foundation_;
-  webrtc::SocketAddress related_address_;
+  SocketAddress related_address_;
   std::string tcptype_;
   std::string transport_name_;
   uint16_t network_id_;
@@ -290,6 +286,17 @@ class RTC_EXPORT Candidate {
   std::string url_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::Candidate;
+using ::webrtc::kMaxTurnServers;
+using ::webrtc::LOCAL_PORT_TYPE;
+using ::webrtc::PRFLX_PORT_TYPE;
+using ::webrtc::RELAY_PORT_TYPE;
+using ::webrtc::STUN_PORT_TYPE;
 }  
 
 #endif  

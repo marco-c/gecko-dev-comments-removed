@@ -24,7 +24,7 @@ namespace webrtc {
 
 class IceTransportWithPointer : public IceTransportInterface {
  public:
-  explicit IceTransportWithPointer(cricket::IceTransportInternal* internal)
+  explicit IceTransportWithPointer(IceTransportInternal* internal)
       : creator_thread_(rtc::Thread::Current()), internal_(internal) {
     RTC_DCHECK(internal_);
   }
@@ -33,7 +33,7 @@ class IceTransportWithPointer : public IceTransportInterface {
   IceTransportWithPointer(const IceTransportWithPointer&) = delete;
   IceTransportWithPointer& operator=(const IceTransportWithPointer&) = delete;
 
-  cricket::IceTransportInternal* internal() override;
+  IceTransportInternal* internal() override;
   
   
   
@@ -44,7 +44,7 @@ class IceTransportWithPointer : public IceTransportInterface {
 
  private:
   const rtc::Thread* creator_thread_;
-  cricket::IceTransportInternal* internal_ RTC_GUARDED_BY(creator_thread_);
+  IceTransportInternal* internal_ RTC_GUARDED_BY(creator_thread_);
 };
 
 }  

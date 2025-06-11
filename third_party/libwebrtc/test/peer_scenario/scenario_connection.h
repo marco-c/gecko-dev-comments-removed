@@ -34,9 +34,8 @@ class ScenarioIceConnection {
     
     virtual void OnPacketReceived(rtc::CopyOnWriteBuffer packet) = 0;
     
-    virtual void OnIceCandidates(
-        const std::string& mid,
-        const std::vector<cricket::Candidate>& candidates) = 0;
+    virtual void OnIceCandidates(const std::string& mid,
+                                 const std::vector<Candidate>& candidates) = 0;
 
    protected:
     ~IceConnectionObserver() = default;

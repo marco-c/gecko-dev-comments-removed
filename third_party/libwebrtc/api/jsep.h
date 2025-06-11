@@ -27,16 +27,14 @@
 #include <string>
 #include <vector>
 
+#include "api/candidate.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace cricket {
-class Candidate;
-class SessionDescription;
-}  
-
 namespace webrtc {
+
+class SessionDescription;
 
 struct SdpParseError {
  public:
@@ -62,7 +60,7 @@ class RTC_EXPORT IceCandidateInterface {
   
   virtual int sdp_mline_index() const = 0;
   
-  virtual const cricket::Candidate& candidate() const = 0;
+  virtual const Candidate& candidate() const = 0;
   
   
   
@@ -83,7 +81,7 @@ RTC_EXPORT IceCandidateInterface* CreateIceCandidate(const std::string& sdp_mid,
 RTC_EXPORT std::unique_ptr<IceCandidateInterface> CreateIceCandidate(
     const std::string& sdp_mid,
     int sdp_mline_index,
-    const cricket::Candidate& candidate);
+    const Candidate& candidate);
 
 
 
@@ -144,8 +142,8 @@ class RTC_EXPORT SessionDescriptionInterface {
   }
 
   
-  virtual cricket::SessionDescription* description() = 0;
-  virtual const cricket::SessionDescription* description() const = 0;
+  virtual SessionDescription* description() = 0;
+  virtual const SessionDescription* description() const = 0;
 
   
   
@@ -174,8 +172,7 @@ class RTC_EXPORT SessionDescriptionInterface {
   
   
   
-  virtual size_t RemoveCandidates(
-      const std::vector<cricket::Candidate>& candidates);
+  virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
 
   
   virtual size_t number_of_mediasections() const = 0;
@@ -231,7 +228,7 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     SdpType type,
     const std::string& session_id,
     const std::string& session_version,
-    std::unique_ptr<cricket::SessionDescription> description);
+    std::unique_ptr<SessionDescription> description);
 
 
 class RTC_EXPORT CreateSessionDescriptionObserver

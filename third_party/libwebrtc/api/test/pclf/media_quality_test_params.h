@@ -125,7 +125,7 @@ struct Params {
   
   
   
-  uint32_t port_allocator_flags = cricket::PORTALLOCATOR_DISABLE_TCP;
+  uint32_t port_allocator_flags = PORTALLOCATOR_DISABLE_TCP;
   
   
   std::optional<std::string> rtc_event_log_path;

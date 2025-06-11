@@ -258,9 +258,7 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
     return ssl_max_version_;
   }
 
-  cricket::IceTransportInternal* ice_transport() override {
-    return ice_transport_;
-  }
+  IceTransportInternal* ice_transport() override { return ice_transport_; }
 
   
   

@@ -302,7 +302,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   void OnNegotiationUpdate(SdpType sdp_type,
-                           const cricket::MediaContentDescription* content);
+                           const MediaContentDescription* content);
 
  private:
   cricket::MediaEngineInterface* media_engine() const {

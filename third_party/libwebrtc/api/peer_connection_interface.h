@@ -455,7 +455,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    int max_ipv6_networks = cricket::kDefaultMaxIPv6Networks;
+    int max_ipv6_networks = kDefaultMaxIPv6Networks;
 
     
     
@@ -621,7 +621,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    std::optional<rtc::AdapterType> network_preference;
+    std::optional<AdapterType> network_preference;
 
     
     
@@ -1139,7 +1139,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual bool RemoveIceCandidates(
-      const std::vector<cricket::Candidate>& candidates) = 0;
+      const std::vector<Candidate>& candidates) = 0;
 
   
   
@@ -1323,7 +1323,7 @@ class PeerConnectionObserver {
   
   
   virtual void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& ) {}
+      const std::vector<Candidate>& ) {}
 
   
   virtual void OnIceConnectionReceivingChange(bool ) {}
@@ -1397,7 +1397,7 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   
   
   
-  std::unique_ptr<cricket::PortAllocator> allocator;
+  std::unique_ptr<PortAllocator> allocator;
   
   std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>
       async_dns_resolver_factory;

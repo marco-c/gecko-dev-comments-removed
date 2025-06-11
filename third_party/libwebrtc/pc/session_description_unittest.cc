@@ -11,7 +11,7 @@
 
 #include "test/gtest.h"
 
-namespace cricket {
+namespace webrtc {
 
 TEST(MediaContentDescriptionTest, ExtmapAllowMixedDefaultValue) {
   VideoContentDescription video_desc;

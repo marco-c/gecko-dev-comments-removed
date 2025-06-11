@@ -44,9 +44,29 @@
 
 namespace cricket {
 
+
+enum class IceTransportState {
+  STATE_INIT,
+  STATE_CONNECTING,  
+  STATE_COMPLETED,
+  STATE_FAILED
+};
+
+enum IceConnectionState {
+  kIceConnectionConnecting = 0,
+  kIceConnectionFailed,
+  kIceConnectionConnected,  
+                            
+  kIceConnectionCompleted,
+};
+
+}  
+
+namespace webrtc {
+
 struct IceTransportStats {
-  CandidateStatsList candidate_stats_list;
-  ConnectionInfos connection_infos;
+  cricket::CandidateStatsList candidate_stats_list;
+  cricket::ConnectionInfos connection_infos;
   
   
   
@@ -61,20 +81,12 @@ struct IceTransportStats {
   uint64_t packets_sent = 0;
   uint64_t packets_received = 0;
 
-  IceRole ice_role = ICEROLE_UNKNOWN;
+  cricket::IceRole ice_role = cricket::ICEROLE_UNKNOWN;
   std::string ice_local_username_fragment;
-  webrtc::IceTransportState ice_state = webrtc::IceTransportState::kNew;
+  IceTransportState ice_state = IceTransportState::kNew;
 };
 
 typedef std::vector<Candidate> Candidates;
-
-enum IceConnectionState {
-  kIceConnectionConnecting = 0,
-  kIceConnectionFailed,
-  kIceConnectionConnected,  
-                            
-  kIceConnectionCompleted,
-};
 
 
 
@@ -105,12 +117,12 @@ enum class NominationMode {
 
 
 
-webrtc::RTCError VerifyCandidate(const Candidate& cand);
+RTCError VerifyCandidate(const Candidate& cand);
 
 
 
 
-webrtc::RTCError VerifyCandidates(const Candidates& candidates);
+RTCError VerifyCandidates(const Candidates& candidates);
 
 
 
@@ -198,9 +210,9 @@ struct RTC_EXPORT IceConfig {
   
   std::optional<int> stun_keepalive_interval;
 
-  std::optional<rtc::AdapterType> network_preference;
+  std::optional<AdapterType> network_preference;
 
-  webrtc::VpnPreference vpn_preference = webrtc::VpnPreference::kDefault;
+  VpnPreference vpn_preference = VpnPreference::kDefault;
 
   
   bool dtls_handshake_in_stun = false;
@@ -217,12 +229,11 @@ struct RTC_EXPORT IceConfig {
   
   
   
-  explicit IceConfig(
-      const webrtc::PeerConnectionInterface::RTCConfiguration& config);
+  explicit IceConfig(const PeerConnectionInterface::RTCConfiguration& config);
   ~IceConfig();
 
   
-  webrtc::RTCError IsValid() const;
+  RTCError IsValid() const;
 
   
   
@@ -243,15 +254,6 @@ struct RTC_EXPORT IceConfig {
 
 
 
-enum class IceTransportState {
-  STATE_INIT,
-  STATE_CONNECTING,  
-  STATE_COMPLETED,
-  STATE_FAILED
-};
-
-
-
 
 
 
@@ -263,14 +265,14 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
   
   
-  virtual IceTransportState GetState() const = 0;
-  virtual webrtc::IceTransportState GetIceTransportState() const = 0;
+  virtual cricket::IceTransportState GetState() const = 0;
+  virtual IceTransportState GetIceTransportState() const = 0;
 
   virtual int component() const = 0;
 
-  virtual IceRole GetIceRole() const = 0;
+  virtual cricket::IceRole GetIceRole() const = 0;
 
-  virtual void SetIceRole(IceRole role) = 0;
+  virtual void SetIceRole(cricket::IceRole role) = 0;
 
   
   
@@ -287,11 +289,12 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
   
   
-  virtual void SetIceParameters(const IceParameters& ice_params) = 0;
+  virtual void SetIceParameters(const cricket::IceParameters& ice_params) = 0;
 
-  virtual void SetRemoteIceParameters(const IceParameters& ice_params) = 0;
+  virtual void SetRemoteIceParameters(
+      const cricket::IceParameters& ice_params) = 0;
 
-  virtual void SetRemoteIceMode(IceMode mode) = 0;
+  virtual void SetRemoteIceMode(cricket::IceMode mode) = 0;
 
   virtual void SetIceConfig(const IceConfig& config) = 0;
   
@@ -319,21 +322,21 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   virtual std::optional<int> GetRttEstimate() = 0;
 
   
-  virtual const Connection* selected_connection() const = 0;
+  virtual const cricket::Connection* selected_connection() const = 0;
 
   
   
-  virtual std::optional<const CandidatePair> GetSelectedCandidatePair()
+  virtual std::optional<const cricket::CandidatePair> GetSelectedCandidatePair()
       const = 0;
 
-  virtual std::optional<std::reference_wrapper<StunDictionaryWriter>>
+  virtual std::optional<std::reference_wrapper<cricket::StunDictionaryWriter>>
   GetDictionaryWriter() {
     return std::nullopt;
   }
 
   void AddGatheringStateCallback(
       const void* removal_tag,
-      absl::AnyInvocable<void(IceTransportInternal*)> callback);
+      absl::AnyInvocable<void(webrtc::IceTransportInternal*)> callback);
   void RemoveGatheringStateCallback(const void* removal_tag);
 
   
@@ -341,14 +344,15 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
       SignalCandidateGathered;
 
   void SetCandidateErrorCallback(
-      absl::AnyInvocable<void(IceTransportInternal*,
-                              const IceCandidateErrorEvent&)> callback) {
+      absl::AnyInvocable<void(webrtc::IceTransportInternal*,
+                              const cricket::IceCandidateErrorEvent&)>
+          callback) {
     RTC_DCHECK(!candidate_error_callback_);
     candidate_error_callback_ = std::move(callback);
   }
 
   void SetCandidatesRemovedCallback(
-      absl::AnyInvocable<void(IceTransportInternal*, const Candidates&)>
+      absl::AnyInvocable<void(webrtc::IceTransportInternal*, const Candidates&)>
           callback) {
     RTC_DCHECK(!candidates_removed_callback_);
     candidates_removed_callback_ = std::move(callback);
@@ -407,36 +411,54 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
     dictionary_writer_synced_callback_list_.RemoveReceivers(tag);
   }
 
-  virtual const webrtc::FieldTrialsView* field_trials() const {
-    return nullptr;
-  }
+  virtual const FieldTrialsView* field_trials() const { return nullptr; }
 
   virtual void ResetDtlsStunPiggybackCallbacks() {}
   virtual void SetDtlsStunPiggybackCallbacks(
-      DtlsStunPiggybackCallbacks&& callbacks) {}
+      cricket::DtlsStunPiggybackCallbacks&& callbacks) {}
 
  protected:
   void SendGatheringStateEvent() { gathering_state_callback_list_.Send(this); }
 
-  webrtc::CallbackList<IceTransportInternal*,
-                       const StunDictionaryView&,
-                       rtc::ArrayView<uint16_t>>
+  CallbackList<IceTransportInternal*,
+               const cricket::StunDictionaryView&,
+               rtc::ArrayView<uint16_t>>
       dictionary_view_updated_callback_list_;
-  webrtc::CallbackList<IceTransportInternal*, const StunDictionaryWriter&>
+  CallbackList<IceTransportInternal*, const cricket::StunDictionaryWriter&>
       dictionary_writer_synced_callback_list_;
 
-  webrtc::CallbackList<IceTransportInternal*> gathering_state_callback_list_;
+  CallbackList<IceTransportInternal*> gathering_state_callback_list_;
 
-  absl::AnyInvocable<void(IceTransportInternal*, const IceCandidateErrorEvent&)>
+  absl::AnyInvocable<void(webrtc::IceTransportInternal*,
+                          const cricket::IceCandidateErrorEvent&)>
       candidate_error_callback_;
 
-  absl::AnyInvocable<void(IceTransportInternal*, const Candidates&)>
+  absl::AnyInvocable<void(webrtc::IceTransportInternal*, const Candidates&)>
       candidates_removed_callback_;
 
   absl::AnyInvocable<void(const cricket::CandidatePairChangeEvent&)>
       candidate_pair_change_callback_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::Candidates;
+using ::webrtc::ContinualGatheringPolicy;
+using ::webrtc::GATHER_CONTINUALLY;
+using ::webrtc::GATHER_ONCE;
+using ::webrtc::IceConfig;
+using ::webrtc::IceGatheringState;
+using ::webrtc::IceTransportInternal;
+using ::webrtc::IceTransportStats;
+using ::webrtc::kIceGatheringComplete;
+using ::webrtc::kIceGatheringGathering;
+using ::webrtc::kIceGatheringNew;
+using ::webrtc::NominationMode;
+using ::webrtc::VerifyCandidate;
+using ::webrtc::VerifyCandidates;
 }  
 
 #endif  

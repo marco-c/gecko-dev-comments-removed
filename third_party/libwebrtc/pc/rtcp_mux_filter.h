@@ -37,17 +37,17 @@ class RtcpMuxFilter {
   void SetActive();
 
   
-  bool SetOffer(bool offer_enable, ContentSource src);
+  bool SetOffer(bool offer_enable, webrtc::ContentSource src);
 
   
-  bool SetProvisionalAnswer(bool answer_enable, ContentSource src);
+  bool SetProvisionalAnswer(bool answer_enable, webrtc::ContentSource src);
 
   
-  bool SetAnswer(bool answer_enable, ContentSource src);
+  bool SetAnswer(bool answer_enable, webrtc::ContentSource src);
 
  private:
-  bool ExpectOffer(bool offer_enable, ContentSource source);
-  bool ExpectAnswer(ContentSource source);
+  bool ExpectOffer(bool offer_enable, webrtc::ContentSource source);
+  bool ExpectAnswer(webrtc::ContentSource source);
   enum State {
     
     ST_INIT,

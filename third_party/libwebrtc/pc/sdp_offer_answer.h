@@ -150,11 +150,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   bool AddIceCandidate(const IceCandidateInterface* candidate);
   void AddIceCandidate(std::unique_ptr<IceCandidateInterface> candidate,
                        std::function<void(RTCError)> callback);
-  bool RemoveIceCandidates(const std::vector<cricket::Candidate>& candidates);
+  bool RemoveIceCandidates(const std::vector<Candidate>& candidates);
   
   void AddLocalIceCandidate(const JsepIceCandidate* candidate);
-  void RemoveLocalIceCandidates(
-      const std::vector<cricket::Candidate>& candidates);
+  void RemoveLocalIceCandidates(const std::vector<Candidate>& candidates);
   bool ShouldFireNegotiationNeededEvent(uint32_t event_id);
 
   bool AddStream(MediaStreamInterface* local_stream);
@@ -241,8 +240,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   RTCError ApplyLocalDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
   void ApplyRemoteDescription(
       std::unique_ptr<RemoteDescriptionOperation> operation);
 
@@ -257,10 +255,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   void PlanBUpdateSendersAndReceivers(
-      const cricket::ContentInfo* audio_content,
-      const cricket::AudioContentDescription* audio_desc,
-      const cricket::ContentInfo* video_content,
-      const cricket::VideoContentDescription* video_desc);
+      const ContentInfo* audio_content,
+      const AudioContentDescription* audio_desc,
+      const ContentInfo* video_content,
+      const VideoContentDescription* video_desc);
 
   
   
@@ -287,10 +285,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   RTCError UpdateSessionState(
       SdpType type,
-      cricket::ContentSource source,
-      const cricket::SessionDescription* description,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+      ContentSource source,
+      const SessionDescription* description,
+      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   bool IsUnifiedPlan() const RTC_RUN_ON(signaling_thread());
 
@@ -325,36 +322,35 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   RTCError ValidateSessionDescription(
       const SessionDescriptionInterface* sdesc,
-      cricket::ContentSource source,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid) RTC_RUN_ON(signaling_thread());
+      ContentSource source,
+      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid)
+      RTC_RUN_ON(signaling_thread());
 
   
   
   RTCError UpdateTransceiversAndDataChannels(
-      cricket::ContentSource source,
+      ContentSource source,
       const SessionDescriptionInterface& new_session,
       const SessionDescriptionInterface* old_local_description,
       const SessionDescriptionInterface* old_remote_description,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   
   RTCErrorOr<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-  AssociateTransceiver(cricket::ContentSource source,
+  AssociateTransceiver(ContentSource source,
                        SdpType type,
                        size_t mline_index,
-                       const cricket::ContentInfo& content,
-                       const cricket::ContentInfo* old_local_content,
-                       const cricket::ContentInfo* old_remote_content)
+                       const ContentInfo& content,
+                       const ContentInfo* old_local_content,
+                       const ContentInfo* old_remote_content)
       RTC_RUN_ON(signaling_thread());
 
   
   
   
   
-  const cricket::ContentInfo* FindMediaSectionForTransceiver(
+  const ContentInfo* FindMediaSectionForTransceiver(
       const RtpTransceiver* transceiver,
       const SessionDescriptionInterface* sdesc) const;
 
@@ -363,14 +359,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   RTCError UpdateTransceiverChannel(
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
-      const cricket::ContentInfo& content,
-      const cricket::ContentGroup* bundle_group) RTC_RUN_ON(signaling_thread());
+      const ContentInfo& content,
+      const ContentGroup* bundle_group) RTC_RUN_ON(signaling_thread());
 
   
   
-  RTCError UpdateDataChannelTransport(cricket::ContentSource source,
-                                      const cricket::ContentInfo& content,
-                                      const cricket::ContentGroup* bundle_group)
+  RTCError UpdateDataChannelTransport(ContentSource source,
+                                      const ContentInfo& content,
+                                      const ContentGroup* bundle_group)
       RTC_RUN_ON(signaling_thread());
   
   
@@ -383,7 +379,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  void FillInMissingRemoteMids(cricket::SessionDescription* remote_description);
+  void FillInMissingRemoteMids(SessionDescription* remote_description);
 
   
   
@@ -490,17 +486,15 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   RTCError PushdownMediaDescription(
       SdpType type,
-      cricket::ContentSource source,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+      ContentSource source,
+      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
-  RTCError PushdownTransportDescription(cricket::ContentSource source,
-                                        SdpType type);
+  RTCError PushdownTransportDescription(ContentSource source, SdpType type);
   
   void RemoveStoppedTransceivers();
   
   
-  void RemoveUnusedChannels(const cricket::SessionDescription* desc);
+  void RemoveUnusedChannels(const SessionDescription* desc);
 
   
   
@@ -522,7 +516,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
                                  const SessionDescriptionInterface* remote_desc,
                                  bool* valid);
 
-  RTCErrorOr<const cricket::ContentInfo*> FindContentInfo(
+  RTCErrorOr<const ContentInfo*> FindContentInfo(
       const SessionDescriptionInterface* description,
       const IceCandidateInterface* candidate) RTC_RUN_ON(signaling_thread());
 
@@ -533,7 +527,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  RTCError CreateChannels(const cricket::SessionDescription& desc);
+  RTCError CreateChannels(const SessionDescription& desc);
 
   
   
@@ -559,9 +553,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   bool UpdatePayloadTypeDemuxingState(
-      cricket::ContentSource source,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+      ContentSource source,
+      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   
   void SetSessionError(SessionError error, const std::string& error_desc);
@@ -579,8 +572,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   const TransceiverList* transceivers() const;
   DataChannelController* data_channel_controller();
   const DataChannelController* data_channel_controller() const;
-  cricket::PortAllocator* port_allocator();
-  const cricket::PortAllocator* port_allocator() const;
+  PortAllocator* port_allocator();
+  const PortAllocator* port_allocator() const;
   RtpTransmissionManager* rtp_manager();
   const RtpTransmissionManager* rtp_manager() const;
   JsepTransportController* transport_controller_s()

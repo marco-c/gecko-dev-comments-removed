@@ -341,7 +341,7 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
     p1 = SetLocalDescription(remote_pc_wrapper, answer.get());
     
     
-    cricket::MediaContentDescription* mcd_answer =
+    MediaContentDescription* mcd_answer =
         answer->description()->contents()[0].media_description();
     mcd_answer->mutable_streams().clear();
     std::vector<cricket::SimulcastLayer> simulcast_layers =

@@ -74,10 +74,10 @@ class NetworkMonitorInterface {
  public:
   struct InterfaceInfo {
     
-    AdapterType adapter_type;
+    webrtc::AdapterType adapter_type;
 
     
-    AdapterType underlying_type_for_vpn = ADAPTER_TYPE_UNKNOWN;
+    webrtc::AdapterType underlying_type_for_vpn = webrtc::ADAPTER_TYPE_UNKNOWN;
 
     
     NetworkPreference network_preference = NetworkPreference::NEUTRAL;
