@@ -335,7 +335,7 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
   
   
   
-  std::optional<uint32_t> simulcast_index;
+  std::optional<uint32_t> encoding_index;
   std::optional<uint64_t> retransmitted_packets_sent;
   std::optional<uint64_t> header_bytes_sent;
   std::optional<uint64_t> retransmitted_bytes_sent;
