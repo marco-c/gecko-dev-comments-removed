@@ -470,9 +470,9 @@ void TCPSocket::ActivateTLS() {
     return;
   }
 
-  
-  
-  auto CallActivateTLS = [this]() mutable { ActivateTLSHelper(); };
+  auto CallActivateTLS = [sock = RefPtr{this}]() mutable {
+    sock->ActivateTLSHelper();
+  };
   mozilla::SyncRunnable::DispatchToThread(
       socketThread,
       NS_NewRunnableFunction("TCPSocket::UpgradeToSecure->ActivateTLSHelper",
