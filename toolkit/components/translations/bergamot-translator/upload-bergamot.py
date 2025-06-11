@@ -40,7 +40,7 @@ import yaml
 
 
 
-REMOTE_SETTINGS_VERSION = "3.0"
+REMOTE_SETTINGS_VERSION = "2.0"
 
 COLLECTION_NAME = "translations-wasm"
 DEV_SERVER = "https://remote-settings-dev.allizom.org/v1"
