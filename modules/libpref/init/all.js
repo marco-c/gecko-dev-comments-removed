@@ -3895,7 +3895,7 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("remote.retry-on-abort", true);
 
   
-  pref("remote.experimental-parent-navigation.enabled", false);
+  pref("remote.parent-navigation.enabled", false);
 #endif
 
 
