@@ -313,6 +313,12 @@ interface nsILoadInfo : nsISupports
   
 
 
+
+  void setTriggeringPrincipalForTesting(in nsIPrincipal aPrincipal);
+
+  
+
+
   [noscript, notxpcom, nostdcall, binaryname(TriggeringPrincipal)]
   nsIPrincipal binaryTriggeringPrincipal();
 
