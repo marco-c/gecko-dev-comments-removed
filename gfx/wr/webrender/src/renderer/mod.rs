@@ -3546,6 +3546,23 @@ impl Renderer {
         
 
         
+        if self.debug_overlay_state.is_enabled {
+            
+
+            input_layers.push(CompositorInputLayer {
+                usage: CompositorSurfaceUsage::DebugOverlay,
+                is_opaque: false,
+                offset: DeviceIntPoint::zero(),
+                clip_rect: device_size.into(),
+            });
+
+            swapchain_layers.push(SwapChainLayer {
+                clear_tiles: Vec::new(),
+                occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
+            });
+        }
+
+        
         
         for (idx, tile) in composite_state.tiles.iter().enumerate() {
             let device_tile_box = composite_state.get_device_rect(
@@ -3627,9 +3644,11 @@ impl Renderer {
                                 }
                             }
                         }
-
+                        (CompositorSurfaceUsage::DebugOverlay, _) => {
+                            Some(usage)
+                        }
                         
-                        (CompositorSurfaceUsage::DebugOverlay, _) | (_, CompositorSurfaceUsage::DebugOverlay) => {
+                        (_, CompositorSurfaceUsage::DebugOverlay) => {
                             unreachable!();
                         }
                     }
@@ -3717,19 +3736,8 @@ impl Renderer {
 
         
         if self.debug_overlay_state.is_enabled {
-            self.debug_overlay_state.layer_index = input_layers.len();
-
-            input_layers.push(CompositorInputLayer {
-                usage: CompositorSurfaceUsage::DebugOverlay,
-                is_opaque: false,
-                offset: DeviceIntPoint::zero(),
-                clip_rect: device_size.into(),
-            });
-
-            swapchain_layers.push(SwapChainLayer {
-                clear_tiles: Vec::new(),
-                occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
-            });
+            assert!(!input_layers.is_empty());
+            self.debug_overlay_state.layer_index = input_layers.len() - 1;
         }
 
         let mut full_render = false;
