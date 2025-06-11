@@ -136,7 +136,7 @@ class JsepTrack {
       mVideoPreferredCodec = rhs.mVideoPreferredCodec;
       mUniqueReceivePayloadTypes = rhs.mUniqueReceivePayloadTypes;
       mReceivePayloadTypes = rhs.mReceivePayloadTypes;
-      mDuplicateReceivePayloadTypes = rhs.mDuplicateReceivePayloadTypes;
+      mOtherReceivePayloadTypes = rhs.mOtherReceivePayloadTypes;
 
       mPrototypeCodecs.clear();
       for (const auto& codec : rhs.mPrototypeCodecs) {
@@ -265,8 +265,8 @@ class JsepTrack {
     return mUniqueReceivePayloadTypes;
   }
 
-  const std::vector<uint8_t>& GetDuplicateReceivePayloadTypes() const {
-    return mDuplicateReceivePayloadTypes;
+  const std::vector<uint8_t>& GetOtherReceivePayloadTypes() const {
+    return mOtherReceivePayloadTypes;
   }
 
  private:
@@ -342,7 +342,7 @@ class JsepTrack {
   std::vector<uint8_t> mUniqueReceivePayloadTypes;
   std::vector<uint16_t> mReceivePayloadTypes;
   
-  std::vector<uint8_t> mDuplicateReceivePayloadTypes;
+  std::vector<uint8_t> mOtherReceivePayloadTypes;
 };
 
 }  
