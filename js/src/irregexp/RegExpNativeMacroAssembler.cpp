@@ -1152,10 +1152,12 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
 
 #ifdef DEBUG
   
+  
   js::jit::Label enoughRegisters;
+   masm_.branchPtr(Assembler::Equal, extraTemp, ImmWord(1), &enoughRegisters);
   masm_.branchPtr(Assembler::GreaterThanOrEqual, extraTemp,
                   ImmWord(num_capture_registers_ / 2), &enoughRegisters);
-  masm_.assumeUnreachable("Not enough output pairs for RegExp");
+ masm_.assumeUnreachable("Not enough output pairs for RegExp");
   masm_.bind(&enoughRegisters);
 #endif
 
@@ -1251,14 +1253,34 @@ void SMRegExpMacroAssembler::successHandler() {
   Register inputStartReg = extraTemp;
   masm_.loadPtr(inputStart(), inputStartReg);
 
-  for (int i = 0; i < num_capture_registers_; i++) {
-    masm_.loadPtr(register_location(i), temp0_);
+  auto copyRegister = [&](int reg) {
+    masm_.loadPtr(register_location(reg), temp0_);
     masm_.subPtr(inputStartReg, temp0_);
     if (mode_ == UC16) {
       masm_.rshiftPtrArithmetic(Imm32(1), temp0_);
     }
-    masm_.store32(temp0_, Address(matchesReg, i * sizeof(int32_t)));
+    masm_.store32(temp0_, Address(matchesReg, reg * sizeof(int32_t)));
+  };
+
+  
+  MOZ_ASSERT(num_capture_registers_ >= 2);
+  copyRegister(0);
+  copyRegister(1);
+
+  if (num_capture_registers_ > 2) {
+    
+    
+    
+    js::jit::Label earlyExitForTest;
+    masm_.branch32(Assembler::Equal, numMatches(), Imm32(1), &earlyExitForTest);
+
+    for (int i = 2; i < num_capture_registers_; i++) {
+      copyRegister(i);
+    }
+
+    masm_.bind(&earlyExitForTest);
   }
+
 
   masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Success)), temp0_);
   

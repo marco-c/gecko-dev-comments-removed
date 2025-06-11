@@ -2233,7 +2233,7 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
                                     Register temp1, Register temp2,
                                     Register temp3,
                                     gc::Heap initialStringHeap, Label* notFound,
-                                    Label* failure) {
+                                    Label* failure, JitZone::StubKind kind) {
   JitSpew(JitSpew_Codegen, "# Emitting PrepareAndExecuteRegExp");
 
   using irregexp::InputOutputData;
@@ -2390,12 +2390,20 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   masm.bind(&notAtom);
 
   
-  masm.load32(Address(regexpReg, RegExpShared::offsetOfPairCount()), temp2);
-  masm.branch32(Assembler::Above, temp2, Imm32(RegExpObject::MaxPairCount),
-                failure);
-
   
-  masm.store32(temp2, pairCountAddress);
+  
+  
+  bool skipMatchPairs = kind == JitZone::StubKind::RegExpSearcher ||
+      kind == JitZone::StubKind::RegExpExecTest;
+  if (!skipMatchPairs) {
+    
+    masm.load32(Address(regexpReg, RegExpShared::offsetOfPairCount()), temp2);
+    masm.branch32(Assembler::Above, temp2, Imm32(RegExpObject::MaxPairCount),
+                  failure);
+
+    
+    masm.store32(temp2, pairCountAddress);
+  }
 
   
   
@@ -2794,7 +2802,10 @@ void CreateDependentString::generateFallback(MacroAssembler& masm) {
 
 static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
                                               gc::Heap initialStringHeap,
-                                              bool isExecMatch) {
+                                              JitZone::StubKind kind) {
+  bool isExecMatch = kind == JitZone::StubKind::RegExpExecMatch;
+  MOZ_ASSERT_IF(!isExecMatch, kind == JitZone::StubKind::RegExpMatcher);
+
   if (isExecMatch) {
     JitSpew(JitSpew_Codegen, "# Emitting RegExpExecMatch stub");
   } else {
@@ -2851,7 +2862,8 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
 
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
-                               temp3, initialStringHeap, &notFound, &oolEntry)) {
+                               temp3, initialStringHeap, &notFound, &oolEntry,
+                               kind)) {
     return nullptr;
   }
 
@@ -3133,12 +3145,12 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
 
 JitCode* JitZone::generateRegExpMatcherStub(JSContext* cx) {
   return GenerateRegExpMatchStubShared(cx, initialStringHeap,
-                                        false);
+                                       JitZone::StubKind::RegExpMatcher);
 }
 
 JitCode* JitZone::generateRegExpExecMatchStub(JSContext* cx) {
   return GenerateRegExpMatchStubShared(cx, initialStringHeap,
-                                        true);
+                                       JitZone::StubKind::RegExpExecMatch);
 }
 
 void CodeGenerator::visitRegExpMatcher(LRegExpMatcher* lir) {
@@ -3293,7 +3305,8 @@ JitCode* JitZone::generateRegExpSearcherStub(JSContext* cx) {
 
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
-                               temp3, initialStringHeap, &notFound, &oolEntry)) {
+                               temp3, initialStringHeap, &notFound, &oolEntry,
+                               JitZone::StubKind::RegExpSearcher)) {
     return nullptr;
   }
 
@@ -3436,7 +3449,8 @@ JitCode* JitZone::generateRegExpExecTestStub(JSContext* cx) {
 
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
-                               temp3, initialStringHeap, &notFound, &oolEntry)) {
+                               temp3, initialStringHeap, &notFound, &oolEntry,
+                               JitZone::StubKind::RegExpExecTest)) {
     return nullptr;
   }
 
