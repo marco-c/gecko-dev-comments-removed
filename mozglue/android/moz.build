@@ -39,9 +39,6 @@ LOCAL_INCLUDES += [
 
 DEFINES["XPCOM_GLUE"] = True
 
-
-OS_LIBS += ["android"]
-
 USE_LIBS += [
     "xpcomglue",
 ]
