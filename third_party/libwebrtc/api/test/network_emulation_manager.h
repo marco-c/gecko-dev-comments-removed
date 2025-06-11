@@ -23,7 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/field_trials_view.h"
-#include "api/packet_socket_factory.h"
 #include "api/test/network_emulation/cross_traffic.h"
 #include "api/test/network_emulation/network_emulation_interfaces.h"
 #include "api/test/simulated_network.h"
@@ -134,24 +133,6 @@ class EmulatedNetworkManagerInterface {
   
   
   virtual absl::Nonnull<rtc::Thread*> network_thread() = 0;
-
-  
-  
-  
-  
-  
-  [[deprecated("bugs.webrtc.org/42232556")]]  
-  virtual absl::Nonnull<rtc::NetworkManager*>
-  network_manager() = 0;
-
-  
-  
-  
-  
-  
-  [[deprecated("bugs.webrtc.org/42232556")]]  
-  virtual absl::Nonnull<rtc::PacketSocketFactory*>
-  packet_socket_factory() = 0;
 
   
   virtual absl::Nonnull<rtc::SocketFactory*> socket_factory() = 0;
