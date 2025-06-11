@@ -40,14 +40,14 @@ bool DeclarationKindIsParameter(DeclarationKind kind);
 
 
 
-class ParseContext : public Nestable<ParseContext> {
+class MOZ_STACK_CLASS ParseContext : public Nestable<ParseContext> {
  public:
   
   
   
   
   
-  class Statement : public Nestable<Statement> {
+  class MOZ_STACK_CLASS Statement : public Nestable<Statement> {
     StatementKind kind_;
 
    public:
@@ -92,7 +92,7 @@ class ParseContext : public Nestable<ParseContext> {
   
   
   
-  class Scope : public Nestable<Scope> {
+  class MOZ_STACK_CLASS Scope : public Nestable<Scope> {
     
     
     

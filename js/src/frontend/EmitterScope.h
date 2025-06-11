@@ -7,6 +7,7 @@
 #ifndef frontend_EmitterScope_h
 #define frontend_EmitterScope_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
 #include <stdint.h>
@@ -33,7 +34,7 @@ class ModuleSharedContext;
 class TaggedParserAtomIndex;
 
 
-class EmitterScope : public Nestable<EmitterScope> {
+class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
   
   
   

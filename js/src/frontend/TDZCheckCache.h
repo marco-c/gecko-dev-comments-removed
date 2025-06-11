@@ -38,7 +38,7 @@ using CheckTDZMap = RecyclableNameMap<MaybeCheckTDZ>;
 
 
 
-class TDZCheckCache : public Nestable<TDZCheckCache> {
+class MOZ_STACK_CLASS TDZCheckCache : public Nestable<TDZCheckCache> {
   PooledMapPtr<CheckTDZMap> cache_;
 
   [[nodiscard]] bool ensureCache(BytecodeEmitter* bce);
