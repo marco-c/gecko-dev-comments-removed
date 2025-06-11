@@ -41,7 +41,7 @@ bool FramerateController::ShouldDropFrame(int64_t in_timestamp_ns) {
 
   
   
-  int64_t frame_interval_ns = rtc::kNumNanosecsPerSec / max_framerate_;
+  int64_t frame_interval_ns = kNumNanosecsPerSec / max_framerate_;
   if (frame_interval_ns <= 0) {
     
     return false;
@@ -79,7 +79,7 @@ void FramerateController::KeepFrame(int64_t in_timestamp_ns) {
     if (max_framerate_ < kMinFramerate)
       return;
 
-    int64_t frame_interval_ns = rtc::kNumNanosecsPerSec / max_framerate_;
+    int64_t frame_interval_ns = kNumNanosecsPerSec / max_framerate_;
     if (next_frame_timestamp_ns_)
       *next_frame_timestamp_ns_ += frame_interval_ns;
   }

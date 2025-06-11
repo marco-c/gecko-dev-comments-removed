@@ -1003,7 +1003,7 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
   }
 
   {
-    int64_t cur_time = rtc::TimeMillis();
+    int64_t cur_time = TimeMillis();
     size_t network_size = socket->PurgeNetworkPackets(cur_time);
 
     
@@ -1054,7 +1054,7 @@ void VirtualSocketServer::SendTcp(VirtualSocket* socket) {
     return;
   }
 
-  int64_t cur_time = rtc::TimeMillis();
+  int64_t cur_time = TimeMillis();
   socket->PurgeNetworkPackets(cur_time);
 
   while (true) {

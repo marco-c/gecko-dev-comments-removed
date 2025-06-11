@@ -34,7 +34,7 @@ void WorkingFunction(int64_t* counter) {
   *counter = 0;
   int64_t stop_cpu_time =
       rtc::GetThreadCpuTimeNanos() +
-      kProcessingTimeMillisecs * rtc::kNumNanosecsPerMillisec;
+      kProcessingTimeMillisecs * webrtc::kNumNanosecsPerMillisec;
   while (rtc::GetThreadCpuTimeNanos() < stop_cpu_time) {
     (*counter)++;
   }
@@ -78,13 +78,13 @@ TEST(CpuTimeTest, MAYBE_TEST(TwoThreads)) {
   
   EXPECT_LE(thread_duration_nanos,
             (kProcessingTimeMillisecs - kAllowedErrorMillisecs) *
-                kNumNanosecsPerMillisec);
+                webrtc::kNumNanosecsPerMillisec);
   
   
   EXPECT_GE(process_duration_nanos,
             kWorkingThreads *
                 (kProcessingTimeMillisecs - kAllowedErrorMillisecs) *
-                kNumNanosecsPerMillisec);
+                webrtc::kNumNanosecsPerMillisec);
 }
 
 TEST(CpuTimeTest, MAYBE_TEST(Sleeping)) {
@@ -96,7 +96,7 @@ TEST(CpuTimeTest, MAYBE_TEST(Sleeping)) {
   
   EXPECT_LE(process_duration_nanos,
             (kProcessingTimeMillisecs - kAllowedErrorMillisecs) *
-                kNumNanosecsPerMillisec);
+                webrtc::kNumNanosecsPerMillisec);
 }
 
 }  

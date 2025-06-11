@@ -47,21 +47,19 @@ class RTCCertificateTest : public ::testing::Test {
   
   
 
-  uint64_t NowSeconds() const {
-    return rtc::TimeNanos() / rtc::kNumNanosecsPerSec;
-  }
+  uint64_t NowSeconds() const { return TimeNanos() / kNumNanosecsPerSec; }
 
   uint64_t ExpiresSeconds(const scoped_refptr<RTCCertificate>& cert) const {
     uint64_t exp_ms = cert->Expires();
-    uint64_t exp_s = exp_ms / rtc::kNumMillisecsPerSec;
+    uint64_t exp_s = exp_ms / kNumMillisecsPerSec;
     
-    RTC_CHECK_EQ(exp_s * rtc::kNumMillisecsPerSec, exp_ms);
+    RTC_CHECK_EQ(exp_s * kNumMillisecsPerSec, exp_ms);
     return exp_s;
   }
 
   bool HasExpiredSeconds(const scoped_refptr<RTCCertificate>& cert,
                          uint64_t now_s) const {
-    return cert->HasExpired(now_s * rtc::kNumMillisecsPerSec);
+    return cert->HasExpired(now_s * kNumMillisecsPerSec);
   }
 
   

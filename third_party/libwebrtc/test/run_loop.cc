@@ -40,7 +40,7 @@ void RunLoop::Flush() {
   
   
   
-  int cms = rtc::GetClockForTesting() ? 0 : 1000;
+  int cms = GetClockForTesting() ? 0 : 1000;
   worker_thread_.ProcessMessages(cms);
 }
 

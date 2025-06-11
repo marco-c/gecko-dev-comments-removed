@@ -30,13 +30,13 @@ static const char kTimerQueueName[] = "AudioDeviceBufferTimer";
 
 static const size_t kTimerIntervalInSeconds = 10;
 static const size_t kTimerIntervalInMilliseconds =
-    kTimerIntervalInSeconds * rtc::kNumMillisecsPerSec;
+    kTimerIntervalInSeconds * kNumMillisecsPerSec;
 
 
 
 static const size_t kMinValidCallTimeTimeInSeconds = 10;
 static const size_t kMinValidCallTimeTimeInMilliseconds =
-    kMinValidCallTimeTimeInSeconds * rtc::kNumMillisecsPerSec;
+    kMinValidCallTimeTimeInSeconds * kNumMillisecsPerSec;
 #ifdef AUDIO_DEVICE_PLAYS_SINUS_TONE
 static const double k2Pi = 6.28318530717959;
 #endif
@@ -119,7 +119,7 @@ void AudioDeviceBuffer::StartPlayout() {
   if (!recording_) {
     StartPeriodicLogging();
   }
-  const int64_t now_time = rtc::TimeMillis();
+  const int64_t now_time = TimeMillis();
   
   play_start_time_ = now_time;
   playing_ = true;
@@ -139,7 +139,7 @@ void AudioDeviceBuffer::StartRecording() {
     StartPeriodicLogging();
   }
   
-  rec_start_time_ = rtc::TimeMillis();
+  rec_start_time_ = TimeMillis();
   recording_ = true;
   
   
@@ -158,8 +158,7 @@ void AudioDeviceBuffer::StopPlayout() {
   if (!recording_) {
     StopPeriodicLogging();
   }
-  RTC_LOG(LS_INFO) << "total playout time: "
-                   << rtc::TimeSince(play_start_time_);
+  RTC_LOG(LS_INFO) << "total playout time: " << TimeSince(play_start_time_);
 }
 
 void AudioDeviceBuffer::StopRecording() {
@@ -183,7 +182,7 @@ void AudioDeviceBuffer::StopRecording() {
   
   
   
-  const size_t time_since_start = rtc::TimeSince(rec_start_time_);
+  const size_t time_since_start = TimeSince(rec_start_time_);
   if (time_since_start > kMinValidCallTimeTimeInMilliseconds) {
     const int only_zeros = static_cast<int>(only_silence_recorded_);
     RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.RecordedOnlyZeros", only_zeros);
@@ -263,14 +262,14 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(
   }
 
   if (capture_timestamp_ns) {
-    int64_t align_offsync_estimation_time = rtc::TimeMicros();
+    int64_t align_offsync_estimation_time = TimeMicros();
     if (align_offsync_estimation_time - TimestampAligner::kMinFrameIntervalUs >
         align_offsync_estimation_time_) {
       align_offsync_estimation_time_ = align_offsync_estimation_time;
       capture_timestamp_ns_ =
-          rtc::kNumNanosecsPerMicrosec *
+          kNumNanosecsPerMicrosec *
           timestamp_aligner_.TranslateTimestamp(
-              *capture_timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+              *capture_timestamp_ns / kNumNanosecsPerMicrosec,
               align_offsync_estimation_time);
     } else {
       
@@ -280,9 +279,9 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(
       
       
       capture_timestamp_ns_ =
-          rtc::kNumNanosecsPerMicrosec *
+          kNumNanosecsPerMicrosec *
           timestamp_aligner_.TranslateTimestamp(*capture_timestamp_ns /
-                                                rtc::kNumNanosecsPerMicrosec);
+                                                kNumNanosecsPerMicrosec);
     }
   }
   
@@ -407,7 +406,7 @@ void AudioDeviceBuffer::StopPeriodicLogging() {
 
 void AudioDeviceBuffer::LogStats(LogState state) {
   RTC_DCHECK_RUN_ON(task_queue_.get());
-  int64_t now_time = rtc::TimeMillis();
+  int64_t now_time = TimeMillis();
 
   if (state == AudioDeviceBuffer::LOG_START) {
     
@@ -428,7 +427,7 @@ void AudioDeviceBuffer::LogStats(LogState state) {
   }
 
   int64_t next_callback_time = now_time + kTimerIntervalInMilliseconds;
-  int64_t time_since_last = rtc::TimeDiff(now_time, last_timer_task_time_);
+  int64_t time_since_last = TimeDiff(now_time, last_timer_task_time_);
   last_timer_task_time_ = now_time;
 
   Stats stats;
@@ -503,7 +502,7 @@ void AudioDeviceBuffer::LogStats(LogState state) {
   }
   last_stats_ = stats;
 
-  int64_t time_to_wait_ms = next_callback_time - rtc::TimeMillis();
+  int64_t time_to_wait_ms = next_callback_time - TimeMillis();
   RTC_DCHECK_GT(time_to_wait_ms, 0) << "Invalid timer interval";
 
   

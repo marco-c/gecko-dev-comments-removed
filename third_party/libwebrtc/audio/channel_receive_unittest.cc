@@ -79,7 +79,7 @@ class ChannelReceiveTest : public Test {
 
   uint32_t RtpNow() {
     
-    return rtc::TimeMillis() * 1000 / kSampleRateHz;
+    return TimeMillis() * 1000 / kSampleRateHz;
   }
 
   RtpPacketReceived CreateRtpPacket() {

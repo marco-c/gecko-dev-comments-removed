@@ -1430,8 +1430,7 @@ void Call::DeliverRtpPacket(
     
     
     packet_time_us = receive_time_calculator_->ReconcileReceiveTimes(
-        packet_time_us, rtc::TimeUTCMicros(),
-        env_.clock().TimeInMicroseconds());
+        packet_time_us, TimeUTCMicros(), env_.clock().TimeInMicroseconds());
     packet.set_arrival_time(Timestamp::Micros(packet_time_us));
   }
 

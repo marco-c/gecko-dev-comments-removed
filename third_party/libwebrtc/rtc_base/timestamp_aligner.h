@@ -43,7 +43,7 @@ class RTC_EXPORT TimestampAligner {
   
   
   
-  static constexpr int64_t kMinFrameIntervalUs = rtc::kNumMicrosecsPerMillisec;
+  static constexpr int64_t kMinFrameIntervalUs = kNumMicrosecsPerMillisec;
 
   
   

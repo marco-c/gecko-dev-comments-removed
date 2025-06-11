@@ -60,13 +60,13 @@ void TestScreenDrawerLock(
       
       
       
-      const int64_t current_ms = rtc::TimeMillis();
+      const int64_t current_ms = TimeMillis();
       
       
       
       
-      while (rtc::TimeMillis() - current_ms < kLockDurationMs) {
-        SleepMs(kLockDurationMs - (rtc::TimeMillis() - current_ms));
+      while (TimeMillis() - current_ms < kLockDurationMs) {
+        SleepMs(kLockDurationMs - (TimeMillis() - current_ms));
       }
     }
 
@@ -87,13 +87,13 @@ void TestScreenDrawerLock(
     SleepMs(1);
   }
 
-  const int64_t start_ms = rtc::TimeMillis();
+  const int64_t start_ms = TimeMillis();
   ready.store(true);
   
   
-  ASSERT_GT(kLockDurationMs, rtc::TimeMillis() - start_ms);
+  ASSERT_GT(kLockDurationMs, TimeMillis() - start_ms);
   ctor();
-  ASSERT_LE(kLockDurationMs, rtc::TimeMillis() - start_ms);
+  ASSERT_LE(kLockDurationMs, TimeMillis() - start_ms);
 }
 
 }  
@@ -118,7 +118,7 @@ TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
   }
 
   DesktopRect rect = drawer->DrawableRegion();
-  Random random(rtc::TimeMicros());
+  Random random(TimeMicros());
   for (int i = 0; i < 100; i++) {
     
     int left = random.Rand(rect.left(), rect.right() - 2);

@@ -67,7 +67,7 @@ class StunBindingRequest : public StunRequest {
     }
 
     
-    if (WithinLifetime(rtc::TimeMillis())) {
+    if (WithinLifetime(webrtc::TimeMillis())) {
       port_->request_manager_.SendDelayed(
           new StunBindingRequest(port_, server_addr_, start_time_),
           port_->stun_keepalive_delay());
@@ -90,9 +90,9 @@ class StunBindingRequest : public StunRequest {
         attr ? attr->reason()
              : "STUN binding response with no error code attribute.");
 
-    int64_t now = rtc::TimeMillis();
+    int64_t now = webrtc::TimeMillis();
     if (WithinLifetime(now) &&
-        rtc::TimeDiff(now, start_time_) < RETRY_TIMEOUT) {
+        webrtc::TimeDiff(now, start_time_) < RETRY_TIMEOUT) {
       port_->request_manager_.SendDelayed(
           new StunBindingRequest(port_, server_addr_, start_time_),
           port_->stun_keepalive_delay());
@@ -112,7 +112,7 @@ class StunBindingRequest : public StunRequest {
   
   bool WithinLifetime(int64_t now) const {
     int lifetime = port_->stun_keepalive_lifetime();
-    return lifetime < 0 || rtc::TimeDiff(now, start_time_) <= lifetime;
+    return lifetime < 0 || webrtc::TimeDiff(now, start_time_) <= lifetime;
   }
 
   UDPPort* port_;
@@ -465,7 +465,7 @@ void UDPPort::SendStunBindingRequest(const webrtc::SocketAddress& stun_addr) {
     
     if (IsCompatibleAddress(stun_addr)) {
       request_manager_.Send(
-          new StunBindingRequest(this, stun_addr, rtc::TimeMillis()));
+          new StunBindingRequest(this, stun_addr, webrtc::TimeMillis()));
     } else {
       
       

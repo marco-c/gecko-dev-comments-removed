@@ -20,7 +20,7 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 class RandomGenerator {
@@ -83,6 +83,23 @@ uint32_t CreateRandomNonZeroId();
 
 double CreateRandomDouble();
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CreateRandomData;
+using ::webrtc::CreateRandomDouble;
+using ::webrtc::CreateRandomId;
+using ::webrtc::CreateRandomId64;
+using ::webrtc::CreateRandomNonZeroId;
+using ::webrtc::CreateRandomString;
+using ::webrtc::CreateRandomUuid;
+using ::webrtc::InitRandom;
+using ::webrtc::RandomGenerator;
+using ::webrtc::SetDefaultRandomGenerator;
+using ::webrtc::SetRandomGenerator;
+using ::webrtc::SetRandomTestMode;
 }  
 
 #endif  

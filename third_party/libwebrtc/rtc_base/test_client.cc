@@ -51,8 +51,8 @@ TestClient::~TestClient() {}
 
 bool TestClient::CheckConnState(AsyncPacketSocket::State state) {
   
-  int64_t end = rtc::TimeAfter(kTimeoutMs);
-  while (socket_->GetState() != state && rtc::TimeUntil(end) > 0) {
+  int64_t end = TimeAfter(kTimeoutMs);
+  while (socket_->GetState() != state && TimeUntil(end) > 0) {
     AdvanceTime(1);
   }
   return (socket_->GetState() == state);
@@ -82,8 +82,8 @@ std::unique_ptr<TestClient::Packet> TestClient::NextPacket(int timeout_ms) {
   
   
 
-  int64_t end = rtc::TimeAfter(timeout_ms);
-  while (rtc::TimeUntil(end) > 0) {
+  int64_t end = TimeAfter(timeout_ms);
+  while (TimeUntil(end) > 0) {
     {
       MutexLock lock(&mutex_);
       if (!packets_.empty()) {
@@ -137,7 +137,7 @@ void TestClient::AdvanceTime(int ms) {
   
   
   if (fake_clock_) {
-    for (int64_t start = rtc::TimeMillis(); rtc::TimeMillis() < start + ms;) {
+    for (int64_t start = TimeMillis(); TimeMillis() < start + ms;) {
       fake_clock_->AdvanceTime(webrtc::TimeDelta::Millis(1));
     };
   } else {

@@ -68,11 +68,11 @@ class PseudoTcpTestBase : public ::testing::Test,
         loss_(0) {
     
     
-    rtc::SetRandomTestMode(true);
+    webrtc::SetRandomTestMode(true);
   }
   ~PseudoTcpTestBase() {
     
-    rtc::SetRandomTestMode(false);
+    webrtc::SetRandomTestMode(false);
   }
   
   
@@ -165,7 +165,7 @@ class PseudoTcpTestBase : public ::testing::Test,
       return WR_SUCCESS;
     }
     
-    if (rtc::CreateRandomId() % 100 < static_cast<uint32_t>(loss_)) {
+    if (webrtc::CreateRandomId() % 100 < static_cast<uint32_t>(loss_)) {
       RTC_LOG(LS_VERBOSE) << "Randomly dropping packet, size=" << len;
       return WR_SUCCESS;
     }
@@ -248,7 +248,7 @@ class PseudoTcpTest : public PseudoTcpTestBase {
     
     recv_stream_.ReserveSize(size);
     
-    start = rtc::Time32();
+    start = webrtc::Time32();
     EXPECT_EQ(0, Connect());
     EXPECT_THAT(webrtc::WaitUntil(
                     [&] { return have_connected_; }, IsTrue(),
@@ -260,7 +260,7 @@ class PseudoTcpTest : public PseudoTcpTestBase {
                     [&] { return have_disconnected_; }, IsTrue(),
                     {.timeout = webrtc::TimeDelta::Millis(kTransferTimeoutMs)}),
                 webrtc::IsRtcOk());
-    elapsed = rtc::Time32() - start;
+    elapsed = webrtc::Time32() - start;
     recv_stream_.GetSize(&received);
     
     
@@ -377,7 +377,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
     
     recv_stream_.ReserveSize(size);
     
-    start = rtc::Time32();
+    start = webrtc::Time32();
     EXPECT_EQ(0, Connect());
     EXPECT_THAT(webrtc::WaitUntil(
                     [&] { return have_connected_; }, IsTrue(),
@@ -389,7 +389,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
                     [&] { return have_disconnected_; }, IsTrue(),
                     {.timeout = webrtc::TimeDelta::Millis(kTransferTimeoutMs)}),
                 webrtc::IsRtcOk());
-    elapsed = rtc::TimeSince(start);
+    elapsed = webrtc::TimeSince(start);
     RTC_LOG(LS_INFO) << "Performed " << iterations << " pings in " << elapsed
                      << " ms";
   }

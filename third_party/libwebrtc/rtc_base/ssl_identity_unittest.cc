@@ -506,11 +506,11 @@ class SSLIdentityExpirationTest : public ::testing::Test {
  public:
   SSLIdentityExpirationTest() {
     
-    rtc::SetRandomTestMode(true);
+    webrtc::SetRandomTestMode(true);
   }
   ~SSLIdentityExpirationTest() override {
     
-    rtc::SetRandomTestMode(false);
+    webrtc::SetRandomTestMode(false);
   }
 
   void TestASN1TimeToSec() {
@@ -580,7 +580,7 @@ class SSLIdentityExpirationTest : public ::testing::Test {
     for (const auto& entry : data) {
       size_t length = strlen(entry.string);
       memcpy(buf, entry.string, length);    
-      buf[length] = rtc::CreateRandomId();  
+      buf[length] = webrtc::CreateRandomId();  
       int64_t res = rtc::ASN1TimeToSec(buf, length, entry.long_format);
       RTC_LOG(LS_VERBOSE) << entry.string;
       ASSERT_EQ(entry.want, res);
@@ -589,7 +589,7 @@ class SSLIdentityExpirationTest : public ::testing::Test {
     for (const auto& entry : data) {
       size_t length = strlen(entry.string);
       memcpy(buf, entry.string, length);    
-      buf[length] = rtc::CreateRandomId();  
+      buf[length] = webrtc::CreateRandomId();  
       int64_t res = rtc::ASN1TimeToSec(buf, length - 1, entry.long_format);
       RTC_LOG(LS_VERBOSE) << entry.string;
       ASSERT_EQ(-1, res);
@@ -604,7 +604,7 @@ class SSLIdentityExpirationTest : public ::testing::Test {
       
       time_t time_before_generation = time(nullptr);
       time_t lifetime =
-          rtc::CreateRandomId() % (0x80000000 - time_before_generation);
+          webrtc::CreateRandomId() % (0x80000000 - time_before_generation);
       rtc::KeyParams key_params = rtc::KeyParams::ECDSA(rtc::EC_NIST_P256);
       auto identity =
           rtc::SSLIdentity::Create("", key_params, lifetime);

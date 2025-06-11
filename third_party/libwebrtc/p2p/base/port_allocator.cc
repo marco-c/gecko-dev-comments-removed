@@ -111,7 +111,7 @@ PortAllocator::PortAllocator()
       step_delay_(kDefaultStepDelay),
       allow_tcp_listen_(true),
       candidate_filter_(CF_ALL),
-      tiebreaker_(rtc::CreateRandomId64()) {
+      tiebreaker_(CreateRandomId64()) {
   
   thread_checker_.Detach();
 }

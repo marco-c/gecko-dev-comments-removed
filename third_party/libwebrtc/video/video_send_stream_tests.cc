@@ -2815,7 +2815,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       
       
       
-      const int64_t start_time = rtc::TimeMillis();
+      const int64_t start_time = TimeMillis();
       do {
         MutexLock lock(&mutex_);
 
@@ -2827,7 +2827,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       } while (bitrate_changed_event_.Wait(
           std::max(TimeDelta::Millis(1),
                    test::VideoTestConstants::kDefaultTimeout -
-                       TimeDelta::Millis(rtc::TimeMillis() - start_time))));
+                       TimeDelta::Millis(TimeMillis() - start_time))));
       MutexLock lock(&mutex_);
       EXPECT_NEAR(target_bitrate_, expected_bitrate, abs_error)
           << "Timed out while waiting encoder rate to be set.";

@@ -562,7 +562,7 @@ LegacyStatsCollector::~LegacyStatsCollector() {
 
 
 double LegacyStatsCollector::GetTimeNow() {
-  return static_cast<double>(rtc::TimeUTCMillis());
+  return static_cast<double>(TimeUTCMillis());
 }
 
 
@@ -671,7 +671,7 @@ void LegacyStatsCollector::UpdateStats(
   
   
   const int64_t kMinGatherStatsPeriodMs = 50;
-  int64_t cache_now_ms = rtc::TimeMillis();
+  int64_t cache_now_ms = TimeMillis();
   if (cache_timestamp_ms_ != 0 &&
       cache_timestamp_ms_ + kMinGatherStatsPeriodMs > cache_now_ms) {
     return;

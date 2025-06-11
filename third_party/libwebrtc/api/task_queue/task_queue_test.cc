@@ -110,7 +110,7 @@ TEST_P(TaskQueueTest, PostDelayed) {
   auto queue =
       CreateTaskQueue(factory, "PostDelayed", TaskQueueFactory::Priority::HIGH);
 
-  int64_t start = rtc::TimeMillis();
+  int64_t start = TimeMillis();
   queue->PostDelayedTask(
       [&event, &queue] {
         EXPECT_TRUE(queue->IsCurrent());
@@ -118,7 +118,7 @@ TEST_P(TaskQueueTest, PostDelayed) {
       },
       TimeDelta::Millis(100));
   EXPECT_TRUE(event.Wait(TimeDelta::Seconds(1)));
-  int64_t end = rtc::TimeMillis();
+  int64_t end = TimeMillis();
   
   
   
