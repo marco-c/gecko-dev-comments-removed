@@ -111,9 +111,19 @@ add_task(async function testFilterFeatures() {
   }
 
   
-  const searchInput = doc.getElementById("searchInput");
-  searchInput.value = "";
-  searchInput.doCommand();
+  {
+    const searchInput = doc.getElementById("searchInput");
+    let searchCompletedPromise = BrowserTestUtils.waitForEvent(
+      gBrowser.contentWindow,
+      "PreferencesSearchCompleted",
+      evt => evt.detail == ""
+    );
+    searchInput.select();
+    EventUtils.synthesizeKey("VK_BACK_SPACE");
+    await searchCompletedPromise;
+  }
+
+  info(`Resetted the search`);
 
   
   EventUtils.synthesizeMouseAtCenter(
@@ -183,7 +193,7 @@ function checkVisibility(element, expected, desc) {
 
 function enterSearch(doc, query) {
   let searchInput = doc.getElementById("searchInput");
-  searchInput.focus();
+  searchInput.select();
 
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
     gBrowser.contentWindow,

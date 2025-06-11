@@ -57,9 +57,10 @@ var gSearchResultsPane = {
 
     if (!this.searchInput.hidden) {
       this.searchInput.addEventListener("input", this);
-      this.searchInput.addEventListener("command", this);
       window.addEventListener("DOMContentLoaded", () => {
-        this.searchInput.focus();
+        this.searchInput.updateComplete.then(() => {
+          this.searchInput.focus();
+        });
         
         window.requestIdleCallback(() => this.initializeCategories());
       });
