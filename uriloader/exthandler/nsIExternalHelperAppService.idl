@@ -107,11 +107,6 @@ interface nsPIExternalAppLauncher : nsISupports
 
 
   void deleteTemporaryPrivateFileWhenPossible(in nsIFile aTemporaryFile);
-  
-
-
-
-  void deletePrivateFileWhenPossible(in nsIFile aPrivateFile);
 };
 
 

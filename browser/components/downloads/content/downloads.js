@@ -40,7 +40,6 @@ ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
 const { Integration } = ChromeUtils.importESModule(
@@ -711,18 +710,6 @@ var DownloadsPanel = {
         if (!this._openedManually) {
           this._delayPopupItems();
         }
-
-        let isPrivate =
-          window && PrivateBrowsingUtils.isContentWindowPrivate(window);
-
-        if (
-          
-          isPrivate &&
-          Services.prefs.getBoolPref("browser.download.enableDeletePrivate") &&
-          !Services.prefs.getBoolPref("browser.download.deletePrivate.chosen")
-        ) {
-          PrivateDownloadsSubview.openWhenReady();
-        }
       }, console.error);
     }, 0);
   },
@@ -1356,11 +1343,7 @@ var DownloadsViewController = {
   
 
   supportsCommand(aCommand) {
-    if (
-      aCommand === "downloadsCmd_clearList" ||
-      aCommand === "downloadsCmd_deletePrivate" ||
-      aCommand === "downloadsCmd_dismissDeletePrivate"
-    ) {
+    if (aCommand === "downloadsCmd_clearList") {
       return true;
     }
     
@@ -1396,22 +1379,16 @@ var DownloadsViewController = {
 
   isCommandEnabled(aCommand) {
     
-    switch (aCommand) {
-      case "downloadsCmd_clearList": {
-        return DownloadsCommon.getData(window).canRemoveFinished;
-      }
-      case "downloadsCmd_deletePrivate":
-      case "downloadsCmd_dismissDeletePrivate":
-        return true;
-      default: {
-        
-        let element = DownloadsView.richListBox.selectedItem;
-        return (
-          element &&
-          DownloadsView.itemForElement(element).isCommandEnabled(aCommand)
-        );
-      }
+    if (aCommand == "downloadsCmd_clearList") {
+      return DownloadsCommon.getData(window).canRemoveFinished;
     }
+
+    
+    let element = DownloadsView.richListBox.selectedItem;
+    return (
+      element &&
+      DownloadsView.itemForElement(element).isCommandEnabled(aCommand)
+    );
   },
 
   doCommand(aCommand) {
@@ -1449,14 +1426,6 @@ var DownloadsViewController = {
 
   downloadsCmd_clearList() {
     DownloadsCommon.getData(window).removeFinished();
-  },
-
-  downloadsCmd_deletePrivate() {
-    PrivateDownloadsSubview.choose(true );
-  },
-
-  downloadsCmd_dismissDeletePrivate() {
-    PrivateDownloadsSubview.choose(false );
   },
 };
 
@@ -1811,67 +1780,4 @@ XPCOMUtils.defineConstant(
   this,
   "DownloadsBlockedSubview",
   DownloadsBlockedSubview
-);
-
-
-
-
-var PrivateDownloadsSubview = {
-  
-
-
-
-
-
-  openWhenReady() {
-    DownloadsView.subViewOpen = true;
-    DownloadsViewController.updateCommands();
-
-    this.mainView.addEventListener("ViewShown", this, { once: true });
-    this.mainView.toggleAttribute("showing-private-browsing-choice", true);
-  },
-
-  handleEvent(event) {
-    
-
-    
-    if (event.type == "ViewShown") {
-      this.panelMultiView.showSubView(this.subview);
-    }
-  },
-
-  
-
-
-
-
-
-
-  choose(deletePrivate) {
-    if (deletePrivate) {
-      Services.prefs.setBoolPref("browser.download.deletePrivate", true);
-    }
-    Services.prefs.setBoolPref("browser.download.deletePrivate.chosen", true);
-    DownloadsView.subViewOpen = false;
-    this.mainView.toggleAttribute("showing-private-browsing-choice", false);
-    this.panelMultiView.goBack();
-  },
-};
-
-ChromeUtils.defineLazyGetter(PrivateDownloadsSubview, "panelMultiView", () =>
-  document.getElementById("downloadsPanel-multiView")
-);
-
-ChromeUtils.defineLazyGetter(PrivateDownloadsSubview, "mainView", () =>
-  document.getElementById("downloadsPanel-mainView")
-);
-
-ChromeUtils.defineLazyGetter(PrivateDownloadsSubview, "subview", () =>
-  document.getElementById("downloadsPanel-privateBrowsing")
-);
-
-XPCOMUtils.defineConstant(
-  this,
-  "PrivateDownloadsSubview",
-  PrivateDownloadsSubview
 );
