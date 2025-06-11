@@ -1859,10 +1859,6 @@ bool BytecodeEmitter::emitCallIncDec(UnaryNode* incDec) {
     
     return false;
   }
-  if (!emit1(JSOp::ToNumeric)) {
-    
-    return false;
-  }
 
   
   
