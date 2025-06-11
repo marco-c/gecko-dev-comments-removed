@@ -2424,6 +2424,7 @@ void HTMLMediaElement::ShutdownDecoder() {
 
 void HTMLMediaElement::AbortExistingLoads() {
   MOZ_ASSERT(NS_IsMainThread());
+  LOG(LogLevel::Debug, ("%p Abort existing loads", this));
   
   mLoadWaitStatus = NOT_WAITING;
 
@@ -3186,10 +3187,13 @@ void HTMLMediaElement::UpdatePreloadAction() {
   }
 
   if (nextAction == HTMLMediaElement::PRELOAD_NONE && mIsDoingExplicitLoad) {
+    LOG(LogLevel::Debug,
+        ("%p Force to preload metadata when explicit loading a preload none element", this));
     nextAction = HTMLMediaElement::PRELOAD_METADATA;
   }
 
   mPreloadAction = nextAction;
+  LOG(LogLevel::Debug,("%p Preload action=%d", this, nextAction));
 
   if (nextAction == HTMLMediaElement::PRELOAD_ENOUGH) {
     if (mSuspendedForPreloadNone) {
@@ -3205,7 +3209,17 @@ void HTMLMediaElement::UpdatePreloadAction() {
 
   } else if (nextAction == HTMLMediaElement::PRELOAD_METADATA) {
     
-    mAllowSuspendAfterFirstFrame = true;
+    
+    
+    
+    
+    
+    if (!HasAttr(nsGkAtoms::preload) && mIsDoingExplicitLoad) {
+      mAllowSuspendAfterFirstFrame = false;
+    } else {
+      
+      mAllowSuspendAfterFirstFrame = true;
+    }
     if (mSuspendedForPreloadNone) {
       
       
@@ -5702,12 +5716,31 @@ void HTMLMediaElement::FirstFrameLoaded() {
 
   ChangeDelayLoadStatus(false);
 
-  if (mDecoder && mAllowSuspendAfterFirstFrame && mPaused &&
-      !HasAttr(nsGkAtoms::autoplay) &&
-      mPreloadAction == HTMLMediaElement::PRELOAD_METADATA) {
+  if (ShouldSuspendDownloadAfterFirstFrameLoaded()) {
+    LOG(LogLevel::Debug, ("%p Suspend decoder after first frame loaded", this));
     mSuspendedAfterFirstFrame = true;
     mDecoder->Suspend();
   }
+}
+
+bool HTMLMediaElement::ShouldSuspendDownloadAfterFirstFrameLoaded() const {
+  if (!mDecoder) {
+    return false;
+  }
+
+  
+  
+  if (HasAttr(nsGkAtoms::autoplay)) {
+    return false;
+  }
+
+  
+  if (!mPaused) {
+    return false;
+  }
+
+  return mPreloadAction == HTMLMediaElement::PRELOAD_METADATA &&
+         mAllowSuspendAfterFirstFrame;
 }
 
 void HTMLMediaElement::NetworkError(const MediaResult& aError) {

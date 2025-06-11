@@ -1832,6 +1832,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   uint32_t GetPreloadDefault() const;
   uint32_t GetPreloadDefaultAuto() const;
 
+  bool ShouldSuspendDownloadAfterFirstFrameLoaded() const;
+
   
 
 
