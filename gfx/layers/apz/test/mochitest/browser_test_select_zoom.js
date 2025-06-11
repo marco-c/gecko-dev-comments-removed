@@ -13,6 +13,7 @@ Services.scriptloader.loadSubScript(
 add_task(async function setup_pref() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["test.wait300msAfterTabSwitch", true],
       
       
       

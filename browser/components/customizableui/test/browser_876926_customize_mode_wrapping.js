@@ -4,6 +4,12 @@
 
 "use strict";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 const kXULWidgetId = "a-test-button"; 
 const kAPIWidgetId = "save-page-button";
 const kPanel = CustomizableUI.AREA_FIXED_OVERFLOW_PANEL;

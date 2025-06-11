@@ -4,6 +4,12 @@
 
 var content = "line 1\nline 2\nline 3";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 add_task(async function () {
   
   let tab = await openDocument("data:text/html," + encodeURIComponent(content));

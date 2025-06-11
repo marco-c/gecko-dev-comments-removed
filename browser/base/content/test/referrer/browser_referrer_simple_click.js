@@ -22,6 +22,13 @@ function startSimpleClickTestCase(aTestNumber) {
 }
 
 function test() {
-  requestLongerTimeout(10); 
-  startReferrerTest(startSimpleClickTestCase);
+  waitForExplicitFinish();
+
+  SpecialPowers.pushPrefEnv(
+    { set: [["test.wait300msAfterTabSwitch", true]] },
+    function () {
+      requestLongerTimeout(10); 
+      startReferrerTest(startSimpleClickTestCase);
+    }
+  );
 }

@@ -120,6 +120,7 @@ const BOOKMARKS_COUNT = 100;
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["test.wait300msAfterTabSwitch", true],
       
       ["browser.urlbar.scotchBonnet.enableOverride", false],
       ["browser.toolbars.keyboard_navigation", true],

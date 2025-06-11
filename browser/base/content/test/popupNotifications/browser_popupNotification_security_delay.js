@@ -40,7 +40,10 @@ add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["security.notification_enable_delay", TEST_SECURITY_DELAY]],
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+      ["security.notification_enable_delay", TEST_SECURITY_DELAY],
+    ],
   });
 });
 

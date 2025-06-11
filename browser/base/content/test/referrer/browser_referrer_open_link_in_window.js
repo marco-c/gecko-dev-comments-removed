@@ -23,6 +23,13 @@ function startNewWindowTestCase(aTestNumber) {
 }
 
 function test() {
-  requestLongerTimeout(10); 
-  startReferrerTest(startNewWindowTestCase);
+  waitForExplicitFinish();
+
+  SpecialPowers.pushPrefEnv(
+    { set: [["test.wait300msAfterTabSwitch", true]] },
+    function () {
+      requestLongerTimeout(10); 
+      startReferrerTest(startNewWindowTestCase);
+    }
+  );
 }

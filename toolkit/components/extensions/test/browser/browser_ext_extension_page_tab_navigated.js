@@ -69,6 +69,12 @@ async function triggerWebRequestListener(webPageURL) {
 
 
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 add_task(async function test_extension_page_sameprocess_navigation() {
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
