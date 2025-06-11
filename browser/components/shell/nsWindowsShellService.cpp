@@ -696,7 +696,7 @@ nsWindowsShellService::SetDesktopBackground(dom::Element* aElement,
   
   
   nsTArray<nsCString> resIds = {
-      "browser/browser/setDesktopBackground.ftl"_ns,
+      "browser/setDesktopBackground.ftl"_ns,
   };
   RefPtr<Localization> l10n = Localization::Create(resIds, true);
   nsAutoCString fileLeafNameUtf8;
