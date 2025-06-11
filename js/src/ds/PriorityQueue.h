@@ -76,6 +76,10 @@ class PriorityQueue {
     return true;
   }
 
+  
+  
+  [[nodiscard]] bool reserveOne() { return heap.reserve(heap.length() + 1); }
+
   void infallibleInsert(T&& v) {
     heap.infallibleAppend(std::move(v));
     siftUp(heap.length() - 1);
