@@ -3517,7 +3517,7 @@ const DSSource = ({
   refinedCardsLayout
 }) => {
   
-  const faviconSize = refinedCardsLayout ? 24 : 16;
+  const faviconSize = refinedCardsLayout ? 20 : 16;
 
   
   if (newSponsoredLabel) {
