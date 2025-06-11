@@ -14,7 +14,7 @@
 
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 TEST(Crc32Test, TestBasic) {
   EXPECT_EQ(0U, ComputeCrc32(""));

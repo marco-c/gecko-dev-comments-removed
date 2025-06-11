@@ -18,7 +18,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -32,6 +32,13 @@ inline uint32_t ComputeCrc32(absl::string_view str) {
   return ComputeCrc32(str.data(), str.size());
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::ComputeCrc32;
+using ::webrtc::UpdateCrc32;
 }  
 
 #endif  

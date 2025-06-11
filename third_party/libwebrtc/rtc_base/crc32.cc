@@ -12,7 +12,7 @@
 
 #include "rtc_base/arraysize.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
