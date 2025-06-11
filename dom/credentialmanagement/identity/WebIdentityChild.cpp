@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#include "mozilla/dom/WebIdentityChild.h"
+#include "mozilla/dom/WebIdentityHandler.h"
+
+namespace mozilla::dom {
+
+void WebIdentityChild::ActorDestroy(ActorDestroyReason why) {
+  if (mHandler) {
+    mHandler->ActorDestroyed();
+    mHandler = nullptr;
+  }
+}
+
+void WebIdentityChild::SetHandler(WebIdentityHandler* aHandler) {
+  mHandler = aHandler;
+}
+
+}  
