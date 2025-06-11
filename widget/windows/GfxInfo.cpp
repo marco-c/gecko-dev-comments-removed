@@ -1913,6 +1913,16 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         V(0, 0, 0, 0), "FEATURE_FAILURE_BUG_1923697");
 
     
+
+    APPEND_TO_DRIVER_BLOCKLIST_REFRESH_RATE(
+        OperatingSystem::Windows10, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_WEBRENDER_DCOMP, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+        RefreshRateStatus::Mixed,
+         DRIVER_COMPARISON_IGNORED, 0, 0,
+         DRIVER_GREATER_THAN, 60, 0,
+        "NVIDIA_REFRESH_RATE_MIXED", "Monitor refresh rate too high/mixed");
+
+    
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::IntelAll,
         nsIGfxInfo::FEATURE_WEBRENDER_SCISSORED_CACHE_CLEARS,
