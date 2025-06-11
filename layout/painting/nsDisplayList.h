@@ -1435,6 +1435,8 @@ class nsDisplayListBuilder {
     
     
     
+    
+    
     bool mContainingBlockInViewTransitionCapture;
 
     static nsRect ComputeVisibleRectForFrame(nsDisplayListBuilder* aBuilder,
