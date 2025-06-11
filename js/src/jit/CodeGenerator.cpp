@@ -2153,15 +2153,16 @@ void CodeGenerator::visitRegExp(LRegExp* lir) {
 
 
 
-static constexpr int32_t RegExpPairsVectorStartOffset(
-    int32_t inputOutputDataStartOffset) {
-  return inputOutputDataStartOffset + int32_t(InputOutputDataSize) +
-         int32_t(sizeof(MatchPairs));
-}
 
-static Address RegExpPairCountAddress(MacroAssembler& masm,
-                                      int32_t inputOutputDataStartOffset) {
-  return Address(FramePointer, inputOutputDataStartOffset +
+
+
+static constexpr size_t RegExpInputOutputDataOffset = 2 * sizeof(void*);
+
+static constexpr size_t RegExpPairsVectorStartOffset =
+    RegExpInputOutputDataOffset + InputOutputDataSize + sizeof(MatchPairs);
+
+static Address RegExpPairCountAddress() {
+  return Address(FramePointer, RegExpInputOutputDataOffset +
                                    int32_t(InputOutputDataSize) +
                                    MatchPairs::offsetOfPairCount());
 }
@@ -2227,14 +2228,10 @@ static void UpdateRegExpStatics(MacroAssembler& masm, Register regexp,
 
 
 
-
-
-
 static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
                                     Register input, Register lastIndex,
                                     Register temp1, Register temp2,
                                     Register temp3,
-                                    int32_t inputOutputDataStartOffset,
                                     gc::Heap initialStringHeap, Label* notFound,
                                     Label* failure) {
   JitSpew(JitSpew_Codegen, "# Emitting PrepareAndExecuteRegExp");
@@ -2276,7 +2273,17 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
 
 
 
-  int32_t ioOffset = inputOutputDataStartOffset;
+
+
+
+
+
+
+
+
+
+
+  int32_t ioOffset = RegExpInputOutputDataOffset;
   int32_t matchPairsOffset = ioOffset + int32_t(sizeof(InputOutputData));
   int32_t pairsArrayOffset = matchPairsOffset + int32_t(sizeof(MatchPairs));
 
@@ -2438,7 +2445,7 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
 
   
   masm.computeEffectiveAddress(
-      Address(FramePointer, inputOutputDataStartOffset), temp2);
+      Address(FramePointer, ioOffset), temp2);
   masm.PushRegsInMask(volatileRegs);
   masm.setupUnalignedABICall(temp3);
   masm.passABIArg(temp2);
@@ -2842,14 +2849,9 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
     masm.loadRegExpLastIndex(regexp, input, lastIndex, &notFoundZeroLastIndex);
   }
 
-  
-  
-  int32_t inputOutputDataStartOffset = 2 * sizeof(void*);
-
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
-                               temp3, inputOutputDataStartOffset,
-                               initialStringHeap, &notFound, &oolEntry)) {
+                               temp3, initialStringHeap, &notFound, &oolEntry)) {
     return nullptr;
   }
 
@@ -2868,8 +2870,7 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
                     Address(shared, RegExpShared::offsetOfFlags()),
                     Imm32(int32_t(JS::RegExpFlag::HasIndices)), &oolEntry);
 
-  Address pairCountAddress =
-      RegExpPairCountAddress(masm, inputOutputDataStartOffset);
+  Address pairCountAddress = RegExpPairCountAddress();
 
   
   Register object = temp1;
@@ -2928,46 +2929,11 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
     masm.bind(&allocated);
   }
 
-  
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
   static_assert(sizeof(MatchPair) == 2 * sizeof(int32_t),
                 "MatchPair consists of two int32 values representing the start"
                 "and the end offset of the match");
 
-  int32_t pairsVectorStartOffset =
-      RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
+  int32_t pairsVectorStartOffset = RegExpPairsVectorStartOffset;
 
   
   Register matchIndex = temp2;
@@ -3325,53 +3291,13 @@ JitCode* JitZone::generateRegExpSearcherStub(JSContext* cx) {
                Address(temp1, JSContext::offsetOfRegExpSearcherLastLimit()));
 #endif
 
-  
-  
-  int32_t inputOutputDataStartOffset = 2 * sizeof(void*);
-
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
-                               temp3, inputOutputDataStartOffset,
-                               initialStringHeap, &notFound, &oolEntry)) {
+                               temp3, initialStringHeap, &notFound, &oolEntry)) {
     return nullptr;
   }
 
-  
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-  int32_t pairsVectorStartOffset =
-      RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
+  int32_t pairsVectorStartOffset = RegExpPairsVectorStartOffset;
   Address matchPairStart(FramePointer,
                          pairsVectorStartOffset + MatchPair::offsetOfStart());
   Address matchPairLimit(FramePointer,
@@ -3508,14 +3434,9 @@ JitCode* JitZone::generateRegExpExecTestStub(JSContext* cx) {
   Label notFoundZeroLastIndex;
   masm.loadRegExpLastIndex(regexp, input, lastIndex, &notFoundZeroLastIndex);
 
-  
-  
-  constexpr int32_t inputOutputDataStartOffset = 2 * sizeof(void*);
-
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
-                               temp3, inputOutputDataStartOffset,
-                               initialStringHeap, &notFound, &oolEntry)) {
+                               temp3, initialStringHeap, &notFound, &oolEntry)) {
     return nullptr;
   }
 
@@ -3524,8 +3445,7 @@ JitCode* JitZone::generateRegExpExecTestStub(JSContext* cx) {
   
 
   Label done;
-  int32_t pairsVectorStartOffset =
-      RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
+  int32_t pairsVectorStartOffset = RegExpPairsVectorStartOffset;
   Address matchPairLimit(FramePointer,
                          pairsVectorStartOffset + MatchPair::offsetOfLimit());
 
