@@ -9,7 +9,6 @@ This script manages Desktop repacks for nightly builds.
 
 import glob
 import os
-import shlex
 import sys
 
 
@@ -88,10 +87,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin, VCSMixin, BaseScript):
 
         self.bootstrap_env = None
         self.upload_env = None
-        self.upload_urls = {}
-        self.pushdate = None
-        
-        self.upload_files = {}
 
     
     def query_bootstrap_env(self):
@@ -127,15 +122,7 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin, VCSMixin, BaseScript):
             return self.upload_env
         config = self.config
 
-        upload_env = self.query_env(partial_env=config.get("upload_env"))
-        
-        
-
-        if "upload_env_extra" in config:
-            for extra in config["upload_env_extra"]:
-                upload_env[extra] = config["upload_env_extra"][extra]
-
-        self.upload_env = upload_env
+        self.upload_env = self.query_env(partial_env=config.get("upload_env"))
         return self.upload_env
 
     def query_l10n_env(self):
@@ -336,34 +323,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin, VCSMixin, BaseScript):
             self.log("Converted uploads for %s to simple names" % locale)
         return ret
 
-    def set_upload_files(self, locale):
-        
-        
-        
-        env = self.query_l10n_env()
-        target = [
-            "echo-variable-UPLOAD_FILES",
-            "echo-variable-CHECKSUM_FILES",
-            "AB_CD=%s" % locale,
-        ]
-        dirs = self.query_abs_dirs()
-        cwd = dirs["abs_locales_dir"]
-        
-        
-        output = self._get_output_from_make(
-            target=target, cwd=cwd, env=env, ignore_errors=True
-        )
-        self.info('UPLOAD_FILES is "%s"' % output)
-        files = shlex.split(output)
-        if not files:
-            self.error("failed to get upload file list for locale %s" % locale)
-            return FAILURE
-
-        self.upload_files[locale] = [
-            os.path.abspath(os.path.join(cwd, f)) for f in files
-        ]
-        return SUCCESS
-
     def make_installers(self, locale):
         """wrapper for make installers-(locale)"""
         env = self.query_l10n_env()
@@ -388,12 +347,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin, VCSMixin, BaseScript):
         
         if self.make_upload(locale):
             self.error("make upload for locale %s failed!" % (locale))
-            return FAILURE
-
-        
-        
-        if self.set_upload_files(locale):
-            self.error("failed to get list of files to upload for locale %s" % locale)
             return FAILURE
 
         return SUCCESS
