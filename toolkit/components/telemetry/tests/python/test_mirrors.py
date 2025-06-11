@@ -54,7 +54,6 @@ WEAKER_EVENT_COMPATIBILITY_PROBES = [
 
 UNMIRRORED_EVENT_ALLOWLIST = [
     "intl.ui.browserLanguage#action",
-    "messaging_experiments#reach",
     "pwmgr#mgmt_interaction",
     "pwmgr#open_management",
 ]
