@@ -14606,7 +14606,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       colorMode: "",
       fixedNavStyle: {},
       wallpaperTheme: "",
-      showDownloadHighlight: this.shouldShowOMCHighlight("DownloadMobilePromoHighlight")
+      showDownloadHighlightOverride: null
     };
   }
   setFirstVisibleTimestamp() {
@@ -14939,10 +14939,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     return messageData?.content?.messageType === componentId;
   }
   toggleDownloadHighlight() {
-    this.setState(prevState => ({
-      showDownloadHighlight: !prevState.showDownloadHighlight
-    }), () => {
-      if (this.state.showDownloadHighlight) {
+    this.setState(prevState => {
+      const override = !(prevState.showDownloadHighlightOverride ?? this.shouldShowOMCHighlight("DownloadMobilePromoHighlight"));
+      if (override) {
         
         this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
           event: "FEATURE_HIGHLIGHT_OPEN",
@@ -14950,11 +14949,14 @@ class BaseContent extends (external_React_default()).PureComponent {
           value: "FEATURE_DOWNLOAD_MOBILE_PROMO"
         }));
       }
+      return {
+        showDownloadHighlightOverride: override
+      };
     });
   }
   handleDismissDownloadHighlight() {
     this.setState({
-      showDownloadHighlight: false
+      showDownloadHighlightOverride: false
     });
   }
   getRGBColors(input) {
@@ -15086,6 +15088,10 @@ class BaseContent extends (external_React_default()).PureComponent {
         __webpack_require__.g.document?.body.classList.remove("lightWallpaper");
       }
     }
+
+    
+    
+    const shouldShowDownloadHighlight = this.state.showDownloadHighlightOverride ?? this.shouldShowOMCHighlight("DownloadMobilePromoHighlight");
     return external_React_default().createElement("div", {
       className: featureClassName
     }, external_React_default().createElement("menu", {
@@ -15116,10 +15122,10 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null))), external_React_default().createElement("div", {
       className: `mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`
     }, mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(DownloadModalToggle, {
-      isActive: this.state.showDownloadHighlight,
+      isActive: shouldShowDownloadHighlight,
       onClick: this.toggleDownloadHighlight
-    }), this.state.showDownloadHighlight && external_React_default().createElement(MessageWrapper, {
-      hiddenOverride: this.state.showDownloadHighlight,
+    }), shouldShowDownloadHighlight && external_React_default().createElement(MessageWrapper, {
+      hiddenOverride: shouldShowDownloadHighlight,
       onDismiss: this.handleDismissDownloadHighlight,
       dispatch: this.props.dispatch
     }, external_React_default().createElement(DownloadMobilePromoHighlight
