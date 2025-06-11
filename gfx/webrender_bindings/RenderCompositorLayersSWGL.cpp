@@ -142,7 +142,9 @@ void RenderCompositorLayersSWGL::CompositorEndFrame() {
       RefPtr<TexturedEffect> texturedEffect =
           new EffectRGB(it->second->GetTextureSource(),
                          true, frameSurface.mFilter);
-      if (surface->mIsOpaque) {
+      
+      
+      if (surface->mIsOpaque && !clipEffect) {
         texturedEffect->mPremultipliedCopy = true;
       }
 

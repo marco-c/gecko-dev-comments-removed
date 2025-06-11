@@ -282,10 +282,10 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OpenMode)
 
 
 
-enum class MaskType : uint8_t {
-  MaskNone = 0,  
-  Mask,          
-  NumMaskTypes
+enum class ClipType : uint8_t {
+  ClipNone = 0,  
+  RoundedRect,
+  NumClipTypes
 };
 
 }  
