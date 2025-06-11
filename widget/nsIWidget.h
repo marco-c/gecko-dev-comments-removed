@@ -31,7 +31,7 @@
 #include "nsColor.h"
 #include "nsDebug.h"
 #include "nsID.h"
-#include "nsIObserver.h"
+#include "nsIDOMWindowUtils.h"
 #include "nsISupports.h"
 #include "nsITheme.h"
 #include "nsITimer.h"
@@ -275,48 +275,48 @@ struct SizeConstraints {
   mozilla::DesktopToLayoutDeviceScale mScale;
 };
 
-struct AutoObserverNotifier {
-  AutoObserverNotifier(nsIObserver* aObserver, const char* aTopic)
-      : mObserver(aObserver), mTopic(aTopic) {}
+class MOZ_RAII AutoSynthesizedEventCallbackNotifier final {
+ public:
+  explicit AutoSynthesizedEventCallbackNotifier(
+      nsISynthesizedEventCallback* aCallback)
+      : mCallback(aCallback) {}
 
-  void SkipNotification() { mObserver = nullptr; }
+  void SkipNotification() { mCallback = nullptr; }
 
-  uint64_t SaveObserver() {
-    if (!mObserver) {
-      return 0;
+  Maybe<uint64_t> SaveCallback() {
+    if (!mCallback) {
+      return Nothing();
     }
-    uint64_t observerId = ++sObserverId;
-    sSavedObservers.InsertOrUpdate(observerId, mObserver);
+    uint64_t callbackId = ++sCallbackId;
+    sSavedCallbacks.InsertOrUpdate(callbackId, mCallback);
     SkipNotification();
-    return observerId;
+    return Some(callbackId);
   }
 
-  ~AutoObserverNotifier() {
-    if (mObserver) {
-      mObserver->Observe(nullptr, mTopic, nullptr);
+  ~AutoSynthesizedEventCallbackNotifier() {
+    if (mCallback) {
+      mCallback->OnCompleteDispatch();
     }
   }
 
-  static void NotifySavedObserver(const uint64_t& aObserverId,
-                                  const char* aTopic) {
-    nsCOMPtr<nsIObserver> observer = sSavedObservers.Get(aObserverId);
-    if (!observer) {
-      MOZ_ASSERT(aObserverId == 0,
-                 "We should always find a saved observer for nonzero IDs");
+  static void NotifySavedCallback(const uint64_t& aCallbackId) {
+    MOZ_ASSERT(aCallbackId > 0, "Callback ID must be non-zero");
+
+    auto entry = sSavedCallbacks.Extract(aCallbackId);
+    if (!entry) {
+      MOZ_ASSERT_UNREACHABLE("We should always find a saved callback");
       return;
     }
 
-    sSavedObservers.Remove(aObserverId);
-    observer->Observe(nullptr, aTopic, nullptr);
+    entry.value()->OnCompleteDispatch();
   }
 
  private:
-  nsCOMPtr<nsIObserver> mObserver;
-  const char* mTopic;
+  nsCOMPtr<nsISynthesizedEventCallback> mCallback;
 
- private:
-  static uint64_t sObserverId;
-  static nsTHashMap<uint64_t, nsCOMPtr<nsIObserver>> sSavedObservers;
+  static uint64_t sCallbackId;
+  static nsTHashMap<uint64_t, nsCOMPtr<nsISynthesizedEventCallback>>
+      sSavedCallbacks;
 };
 
 }  
@@ -1455,7 +1455,8 @@ class nsIWidget : public nsISupports {
   virtual nsresult SynthesizeNativeKeyEvent(
       int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
       uint32_t aModifierFlags, const nsAString& aCharacters,
-      const nsAString& aUnmodifiedCharacters, nsIObserver* aObserver) = 0;
+      const nsAString& aUnmodifiedCharacters,
+      nsISynthesizedEventCallback* aCallback) = 0;
 
   
 
@@ -1484,7 +1485,7 @@ class nsIWidget : public nsISupports {
   virtual nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
       mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
-      nsIObserver* aObserver) = 0;
+      nsISynthesizedEventCallback* aCallback) = 0;
 
   
 
@@ -1493,8 +1494,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
-                                             nsIObserver* aObserver) = 0;
+  virtual nsresult SynthesizeNativeMouseMove(
+      LayoutDeviceIntPoint aPoint, nsISynthesizedEventCallback* aCallback) = 0;
 
   
 
@@ -1522,7 +1523,7 @@ class nsIWidget : public nsISupports {
   virtual nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
       double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
-      uint32_t aAdditionalFlags, nsIObserver* aObserver) = 0;
+      uint32_t aAdditionalFlags, nsISynthesizedEventCallback* aCallback) = 0;
 
   
 
@@ -1568,12 +1569,10 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
-                                              TouchPointerState aPointerState,
-                                              LayoutDeviceIntPoint aPoint,
-                                              double aPointerPressure,
-                                              uint32_t aPointerOrientation,
-                                              nsIObserver* aObserver) = 0;
+  virtual nsresult SynthesizeNativeTouchPoint(
+      uint32_t aPointerId, TouchPointerState aPointerState,
+      LayoutDeviceIntPoint aPoint, double aPointerPressure,
+      uint32_t aPointerOrientation, nsISynthesizedEventCallback* aCallback) = 0;
   
 
 
@@ -1589,17 +1588,15 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsresult SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
-                                            bool aLongTap,
-                                            nsIObserver* aObserver);
+  virtual nsresult SynthesizeNativeTouchTap(
+      LayoutDeviceIntPoint aPoint, bool aLongTap,
+      nsISynthesizedEventCallback* aCallback);
 
-  virtual nsresult SynthesizeNativePenInput(uint32_t aPointerId,
-                                            TouchPointerState aPointerState,
-                                            LayoutDeviceIntPoint aPoint,
-                                            double aPressure,
-                                            uint32_t aRotation, int32_t aTiltX,
-                                            int32_t aTiltY, int32_t aButton,
-                                            nsIObserver* aObserver) = 0;
+  virtual nsresult SynthesizeNativePenInput(
+      uint32_t aPointerId, TouchPointerState aPointerState,
+      LayoutDeviceIntPoint aPoint, double aPressure, uint32_t aRotation,
+      int32_t aTiltX, int32_t aTiltY, int32_t aButton,
+      nsISynthesizedEventCallback* aCallback) = 0;
 
   
 
@@ -1611,11 +1608,10 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual nsresult SynthesizeNativeTouchpadPan(TouchpadGesturePhase aEventPhase,
-                                               LayoutDeviceIntPoint aPoint,
-                                               double aDeltaX, double aDeltaY,
-                                               int32_t aModifierFlags,
-                                               nsIObserver* aObserver) = 0;
+  virtual nsresult SynthesizeNativeTouchpadPan(
+      TouchpadGesturePhase aEventPhase, LayoutDeviceIntPoint aPoint,
+      double aDeltaX, double aDeltaY, int32_t aModifierFlags,
+      nsISynthesizedEventCallback* aCallback) = 0;
 
   virtual void StartAsyncScrollbarDrag(
       const AsyncDragMetrics& aDragMetrics) = 0;
@@ -1682,17 +1678,18 @@ class nsIWidget : public nsISupports {
   class LongTapInfo {
    public:
     LongTapInfo(int32_t aPointerId, LayoutDeviceIntPoint& aPoint,
-                mozilla::TimeDuration aDuration, nsIObserver* aObserver)
+                mozilla::TimeDuration aDuration,
+                nsISynthesizedEventCallback* aCallback)
         : mPointerId(aPointerId),
           mPosition(aPoint),
           mDuration(aDuration),
-          mObserver(aObserver),
+          mCallback(aCallback),
           mStamp(mozilla::TimeStamp::Now()) {}
 
     int32_t mPointerId;
     LayoutDeviceIntPoint mPosition;
     mozilla::TimeDuration mDuration;
-    nsCOMPtr<nsIObserver> mObserver;
+    nsCOMPtr<nsISynthesizedEventCallback> mCallback;
     mozilla::TimeStamp mStamp;
   };
 
