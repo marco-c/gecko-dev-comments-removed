@@ -37,6 +37,7 @@
 #include "test/peer_scenario/peer_scenario_client.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
+#include "api/test/network_emulation/network_config_schedule.pb.h"
 #include "api/test/network_emulation/schedulable_network_node_builder.h"
 #endif
 
