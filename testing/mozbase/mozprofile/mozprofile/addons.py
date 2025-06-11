@@ -14,7 +14,6 @@ from xml.dom import minidom
 
 import mozfile
 from mozlog.unstructured import getLogger
-from six import string_types
 
 _SALT = binascii.hexlify(os.urandom(32))
 _TEMPORARY_ADDON_SUFFIX = "@temporary-addon"
@@ -198,7 +197,7 @@ class AddonManager:
             return
 
         
-        if isinstance(addons, string_types):
+        if isinstance(addons, str):
             addons = [addons]
         for addon in set(addons):
             self._install_addon(addon, **kwargs)
@@ -336,7 +335,7 @@ class AddonManager:
                 raise AddonFormatError(str(e)).with_traceback(sys.exc_info()[2])
 
         
-        if isinstance(details["unpack"], string_types):
+        if isinstance(details["unpack"], str):
             details["unpack"] = details["unpack"].lower() == "true"
 
         

@@ -8,18 +8,11 @@ import threading
 import time
 import unittest
 from unittest import mock
+from urllib.parse import unquote
 
 import mozunit
 import requests
-import six
 from mozgeckoprofiler import view_gecko_profile
-
-if six.PY2:
-    
-    from urllib import unquote
-else:
-    
-    from urllib.parse import unquote
 
 
 def access_profiler_link(file_url, response):

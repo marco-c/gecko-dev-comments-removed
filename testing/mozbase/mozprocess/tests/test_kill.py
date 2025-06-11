@@ -2,7 +2,6 @@
 
 import os
 import signal
-import sys
 import time
 import unittest
 
@@ -48,18 +47,9 @@ class ProcTestKill(proctest.ProcTest):
         """Process is started, we use a deep process tree, we let it spawn
         for a bit, we kill it"""
 
-        myenv = None
-        
-        
-        
-        if sys.platform == "darwin" and sys.version_info[0] > 2:
-            myenv = os.environ.copy()
-            myenv["PYTHONPATH"] = ":".join(sys.path)
-
         p = processhandler.ProcessHandler(
             [self.python, self.proclaunch, "process_normal_deep.ini"],
             cwd=here,
-            env=myenv,
         )
         p.run()
         
@@ -83,18 +73,9 @@ class ProcTestKill(proctest.ProcTest):
         """Process is started, we use a broad process tree, we let it spawn
         for a bit, we kill it"""
 
-        myenv = None
-        
-        
-        
-        if sys.platform == "darwin" and sys.version_info[0] > 2:
-            myenv = os.environ.copy()
-            myenv["PYTHONPATH"] = ":".join(sys.path)
-
         p = processhandler.ProcessHandler(
             [self.python, self.proclaunch, "process_normal_broad.ini"],
             cwd=here,
-            env=myenv,
         )
         p.run()
         

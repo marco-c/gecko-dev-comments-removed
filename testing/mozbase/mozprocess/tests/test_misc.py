@@ -1,7 +1,6 @@
 
 
 import os
-import sys
 
 import mozunit
 import proctest
@@ -23,18 +22,9 @@ class ProcTestMisc(proctest.ProcTest):
             self.assertEqual(p.proc.poll(), None)
             p.kill()
 
-        myenv = None
-        
-        
-        
-        if sys.platform == "darwin" and sys.version_info[0] > 2:
-            myenv = os.environ.copy()
-            myenv["PYTHONPATH"] = ":".join(sys.path)
-
         p = processhandler.ProcessHandler(
             [self.python, self.proclaunch, "process_waittimeout.ini"],
             cwd=here,
-            env=myenv,
             onTimeout=(timeout_handler,),
             kill_on_timeout=False,
         )

@@ -4,7 +4,6 @@
 import json
 import re
 
-import six
 from mozlog import get_proxy_logger
 
 LOG = get_proxy_logger("profiler")
@@ -17,17 +16,7 @@ gLibNameRE = re.compile(r"[0-9a-zA-Z_+\-\.]*$")
 
 MAX_FORWARDED_REQUESTS = 3
 
-if six.PY2:
-    
-    from urllib2 import Request, urlopen
-else:
-    
-    from urllib.request import Request, urlopen
-
-    
-    
-    
-    basestring = str
+from urllib.request import Request, urlopen
 
 
 class ModuleV3:
@@ -37,11 +26,11 @@ class ModuleV3:
 
 
 def getModuleV3(libName, breakpadId):
-    if not isinstance(libName, basestring) or not gLibNameRE.match(libName):
+    if not isinstance(libName, str) or not gLibNameRE.match(libName):
         LOG.debug("Bad library name: " + str(libName))
         return None
 
-    if not isinstance(breakpadId, basestring):
+    if not isinstance(breakpadId, str):
         LOG.debug("Bad breakpad id: " + str(breakpadId))
         return None
 

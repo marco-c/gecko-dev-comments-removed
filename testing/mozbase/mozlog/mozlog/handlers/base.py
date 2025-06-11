@@ -2,12 +2,8 @@
 
 
 
-
-import codecs
 import locale
 from threading import Lock
-
-import six
 
 from mozlog.handlers.messagehandler import MessageHandler
 from mozlog.structuredlog import log_levels
@@ -54,15 +50,6 @@ class StreamHandler(BaseHandler):
     def __init__(self, stream, formatter):
         BaseHandler.__init__(self, formatter)
         assert stream is not None
-        if six.PY2:
-            
-            
-            
-            
-            
-            
-            if isinstance(stream, codecs.StreamWriter):
-                stream = stream.stream
 
         self.formatter = formatter
         self.stream = stream
@@ -75,50 +62,40 @@ class StreamHandler(BaseHandler):
         if not formatted:
             return
         with self._lock:
-            if six.PY3:
-                import io
+            import io
 
-                import mozfile
+            import mozfile
 
-                source_enc = "utf-8"
-                target_enc = "utf-8"
-                if isinstance(self.stream, io.BytesIO):
-                    target_enc = None
-                    if hasattr(self.stream, "encoding"):
-                        target_enc = self.stream.encoding
-                if target_enc is None:
-                    target_enc = locale.getpreferredencoding()
+            source_enc = "utf-8"
+            target_enc = "utf-8"
+            if isinstance(self.stream, io.BytesIO):
+                target_enc = None
+                if hasattr(self.stream, "encoding"):
+                    target_enc = self.stream.encoding
+            if target_enc is None:
+                target_enc = locale.getpreferredencoding()
 
-                if isinstance(self.stream, io.StringIO) and isinstance(
-                    formatted, bytes
-                ):
-                    formatted = formatted.decode(source_enc, "replace")
-                elif (
-                    isinstance(self.stream, io.BytesIO)
-                    or isinstance(self.stream, mozfile.NamedTemporaryFile)
-                ) and isinstance(formatted, str):
-                    formatted = formatted.encode(target_enc, "replace")
-                elif isinstance(formatted, str):
-                    
-                    
-                    
-                    formatted_bin = formatted.encode(target_enc, "replace")
-                    formatted = formatted_bin.decode(target_enc, "ignore")
-
+            if isinstance(self.stream, io.StringIO) and isinstance(formatted, bytes):
+                formatted = formatted.decode(source_enc, "replace")
+            elif (
+                isinstance(self.stream, io.BytesIO)
+                or isinstance(self.stream, mozfile.NamedTemporaryFile)
+            ) and isinstance(formatted, str):
+                formatted = formatted.encode(target_enc, "replace")
+            elif isinstance(formatted, str):
                 
                 
                 
-                
-                try:
-                    self.stream.write(formatted)
-                except UnicodeEncodeError:
-                    return
-            else:
-                if isinstance(formatted, str):
-                    self.stream.write(formatted.encode("utf-8", "replace"))
-                elif isinstance(formatted, str):
-                    self.stream.write(formatted)
-                else:
-                    assert False, "Got output from the formatter of an unexpected type"
+                formatted_bin = formatted.encode(target_enc, "replace")
+                formatted = formatted_bin.decode(target_enc, "ignore")
+
+            
+            
+            
+            
+            try:
+                self.stream.write(formatted)
+            except UnicodeEncodeError:
+                return
 
             self.stream.flush()
