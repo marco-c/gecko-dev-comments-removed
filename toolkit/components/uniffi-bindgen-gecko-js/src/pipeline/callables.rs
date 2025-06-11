@@ -3,33 +3,224 @@
 
 
 use super::*;
+use crate::ConcrrencyMode;
+
+use anyhow::{anyhow, bail, Result};
 
 pub fn pass(module: &mut Module) -> Result<()> {
     let async_wrappers = module.config.async_wrappers.clone();
-    module.visit_mut(|callable: &mut Callable| {
-        if callable.async_data.is_some() {
-            callable.is_js_async = true;
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsync".to_string();
-            return;
-        }
+    let module_name = module.name.clone();
+    let crate_name = module.crate_name.clone();
 
-        let name = &callable.name;
-        let spec = match &callable.kind {
-            CallableKind::Function => name.clone(),
-            CallableKind::Method { interface_name, .. }
-            | CallableKind::VTableMethod {
-                trait_name: interface_name,
+    
+    let mut unconfigured_callables = Vec::new();
+
+    
+    module.try_visit_mut(|func: &mut Function| {
+        handle_callable(
+            &mut func.callable,
+            &async_wrappers,
+            &mut unconfigured_callables,
+            &module_name,
+        )
+    })?;
+
+    
+    
+    
+    let mut interface_results = Vec::new();
+    module.visit_mut(|int: &mut Interface| {
+        if int.vtable.is_none() {
+            
+            for constructor in &mut int.constructors {
+                let result = handle_callable(
+                    &mut constructor.callable,
+                    &async_wrappers,
+                    &mut unconfigured_callables,
+                    &module_name,
+                );
+                if let Err(e) = result {
+                    interface_results.push(Err(e));
+                }
             }
-            | CallableKind::Constructor { interface_name, .. } => {
-                format!("{interface_name}.{name}")
+            for method in &mut int.methods {
+                let result = handle_callable(
+                    &mut method.callable,
+                    &async_wrappers,
+                    &mut unconfigured_callables,
+                    &module_name,
+                );
+                if let Err(e) = result {
+                    interface_results.push(Err(e));
+                }
             }
-        };
-        if async_wrappers.enable && !async_wrappers.main_thread.contains(&spec) {
-            callable.is_js_async = true;
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
         } else {
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
+            
+            for method in &mut int.methods {
+                let result = handle_vtable_callable(
+                    &mut method.callable,
+                    &async_wrappers,
+                    &mut unconfigured_callables,
+                    &module_name,
+                    &int.name,
+                );
+                if let Err(e) = result {
+                    interface_results.push(Err(e));
+                }
+            }
         }
     });
+
+    
+    for result in interface_results {
+        result?;
+    }
+
+    
+    if !unconfigured_callables.is_empty() {
+        let mut message = format!(
+            "Found {} callables in module '{}' without explicit async/sync configuration in config.toml:\n",
+            unconfigured_callables.len(),
+            module_name
+        );
+
+        for (spec, info) in &unconfigured_callables {
+            message.push_str(&format!("  - {}: {}\n", spec, info));
+        }
+
+        message.push_str(
+            "\nPlease add these callables to the `toolkit/components/uniffi-bindgen-gecko-js/config.toml` file with explicit configuration:\n",
+        );
+        message.push_str(&format!("[{}.async_wrappers]\n", crate_name));
+
+        for (spec, _) in &unconfigured_callables {
+            message.push_str(&format!("\"{}\" = \"AsyncWrapped\"  # or \"Sync\"\n", spec));
+        }
+
+        
+        return Err(anyhow!(message));
+    }
+
+    Ok(())
+}
+fn handle_callable(
+    callable: &mut Callable,
+    async_wrappers: &indexmap::IndexMap<String, ConcrrencyMode>,
+    unconfigured_callables: &mut Vec<(String, String)>,
+    module_name: &str,
+) -> Result<()> {
+    let name = &callable.name;
+    let spec = match &callable.kind {
+        CallableKind::Function => name.clone(),
+        CallableKind::Method { interface_name, .. }
+        | CallableKind::Constructor { interface_name, .. } => {
+            format!("{interface_name}.{name}")
+        }
+        CallableKind::VTableMethod { trait_name } => {
+            bail!("Callback Interface Methods should be handled by handle_vtable_callable: {trait_name}.{name}")
+        }
+    };
+
+    if callable.async_data.is_some() {
+        callable.is_js_async = true;
+        callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsync".to_string();
+
+        
+        if async_wrappers.contains_key(&spec) {
+            bail!(
+                "Method '{}' has async_data and should not have an entry in async_wrappers config",
+                spec
+            );
+        }
+
+        return Ok(());
+    }
+
+    
+    match async_wrappers.get(&spec) {
+        Some(ConcrrencyMode::Sync) => {
+            callable.is_js_async = false;
+            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
+        }
+        Some(ConcrrencyMode::AsyncWrapped) => {
+            callable.is_js_async = true;
+            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
+        }
+        None => {
+            
+            let source_info = match &callable.kind {
+                CallableKind::Function => {
+                    format!("Function '{}' in module '{}'", name, module_name)
+                }
+                CallableKind::Method { interface_name, .. } => format!(
+                    "Method '{}.{}' in module '{}'",
+                    interface_name, name, module_name
+                ),
+                CallableKind::Constructor { interface_name, .. } => format!(
+                    "Constructor '{}.{}' in module '{}'",
+                    interface_name, name, module_name
+                ),
+                CallableKind::VTableMethod { trait_name } => format!(
+                    "VTable method '{}.{}' in module '{}'",
+                    trait_name, name, module_name
+                ),
+            };
+
+            unconfigured_callables.push((spec.clone(), source_info));
+
+            
+            callable.is_js_async = true;
+            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_vtable_callable(
+    callable: &mut Callable,
+    async_wrappers: &indexmap::IndexMap<String, ConcrrencyMode>,
+    unconfigured_callables: &mut Vec<(String, String)>,
+    module_name: &str,
+    interface_name: &str,
+) -> Result<()> {
+    
+    let name = &callable.name;
+    let spec = format!("{}.{}", interface_name, name);
+
+    
+    if callable.async_data.is_some() {
+        
+        if async_wrappers.contains_key(&spec) {
+            bail!("VTable method '{}' has async_data and should not have an entry in async_wrappers config", spec);
+        }
+        callable.is_js_async = true;
+        callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsync".to_string();
+        return Ok(());
+    }
+
+    
+    match async_wrappers.get(&spec) {
+        Some(ConcrrencyMode::Sync) => {
+            callable.is_js_async = false;
+            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
+        }
+        Some(ConcrrencyMode::AsyncWrapped) => {
+            
+            return Err(anyhow!(
+                "VTable method '{}' cannot be AsyncWrapped as foreign-implemented trait interfaces don't support async wrapping",
+                spec
+            ));
+        }
+        None => {
+            
+            let source_info = format!(
+                "VTable method '{}.{}' in module '{}'",
+                interface_name, name, module_name
+            );
+            unconfigured_callables.push((spec, source_info));
+        }
+    }
+
     Ok(())
 }

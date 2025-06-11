@@ -6,10 +6,9 @@
 
 
 
-
-use std::{collections::HashMap, sync::Arc};
 use crate::callback_interfaces::CallbackInterfaceNumbers;
 use crate::errors::TestError;
+use std::{collections::HashMap, sync::Arc};
 
 #[uniffi::export]
 async fn async_roundtrip_u8(v: u8) -> u8 {
@@ -122,12 +121,17 @@ async fn invoke_test_async_callback_interface_noop(cbi: Box<dyn TestAsyncCallbac
 }
 
 #[uniffi::export]
-async fn invoke_test_async_callback_interface_get_value(cbi: Box<dyn TestAsyncCallbackInterface>) -> u32 {
+async fn invoke_test_async_callback_interface_get_value(
+    cbi: Box<dyn TestAsyncCallbackInterface>,
+) -> u32 {
     cbi.get_value().await
 }
 
 #[uniffi::export]
-async fn invoke_test_async_callback_interface_set_value(cbi: Box<dyn TestAsyncCallbackInterface>, value: u32) {
+async fn invoke_test_async_callback_interface_set_value(
+    cbi: Box<dyn TestAsyncCallbackInterface>,
+    value: u32,
+) {
     cbi.set_value(value).await
 }
 
