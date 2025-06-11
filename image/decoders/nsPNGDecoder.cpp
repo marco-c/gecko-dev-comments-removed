@@ -129,12 +129,14 @@ nsPNGDecoder::~nsPNGDecoder() {
 }
 
 nsPNGDecoder::TransparencyType nsPNGDecoder::GetTransparencyType(
-    const OrientedIntRect& aFrameRect) {
+    const UnorientedIntRect& aFrameRect) {
   
   if (HasAlphaChannel()) {
     return TransparencyType::eAlpha;
   }
-  if (!aFrameRect.IsEqualEdges(FullFrame())) {
+  if (!aFrameRect.IsEqualEdges(
+          UnorientedIntRect(IntPointTyped<mozilla::UnorientedPixel>(0, 0),
+                            GetOrientation().ToUnoriented(Size())))) {
     MOZ_ASSERT(HasAnimation());
     return TransparencyType::eFrameRect;
   }
@@ -230,9 +232,13 @@ nsresult nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo) {
   }
 
   qcms_transform* pipeTransform = mUsePipeTransform ? mTransform : nullptr;
+  
+  
+  
   Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
-      this, Size(), OutputSize(), aFrameInfo.mFrameRect, inFormat, mFormat,
-      animParams, pipeTransform, pipeFlags);
+      this, Size(), OutputSize(),
+      OrientedIntRect::FromUnknownRect(aFrameInfo.mFrameRect.ToUnknownRect()),
+      inFormat, mFormat, animParams, pipeTransform, pipeFlags);
 
   if (!pipe) {
     mPipe = SurfacePipe();
@@ -555,7 +561,7 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
                &interlace_type, &compression_type, &filter_type);
 
-  const OrientedIntRect frameRect(0, 0, width, height);
+  const UnorientedIntRect frameRect(0, 0, width, height);
 
   
   decoder->PostSize(frameRect.Width(), frameRect.Height());
@@ -953,7 +959,7 @@ void nsPNGDecoder::frame_info_callback(png_structp png_ptr,
 
   
   
-  const OrientedIntRect frameRect(
+  const UnorientedIntRect frameRect(
       png_get_next_frame_x_offset(png_ptr, decoder->mInfo),
       png_get_next_frame_y_offset(png_ptr, decoder->mInfo),
       png_get_next_frame_width(png_ptr, decoder->mInfo),
