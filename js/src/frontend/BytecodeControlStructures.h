@@ -8,6 +8,7 @@
 #define frontend_BytecodeControlStructures_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
 #include <stdint.h>  
@@ -25,6 +26,9 @@ namespace frontend {
 
 struct BytecodeEmitter;
 class EmitterScope;
+
+
+
 
 class NestableControl : public Nestable<NestableControl> {
   StatementKind kind_;
@@ -53,7 +57,7 @@ class NestableControl : public Nestable<NestableControl> {
   }
 };
 
-class BreakableControl : public NestableControl {
+class MOZ_STACK_CLASS BreakableControl : public NestableControl {
  public:
   
   JumpList breaks;
@@ -68,7 +72,7 @@ inline bool NestableControl::is<BreakableControl>() const {
          kind_ == StatementKind::Label;
 }
 
-class LabelControl : public BreakableControl {
+class MOZ_STACK_CLASS LabelControl : public BreakableControl {
   TaggedParserAtomIndex label_;
 
   
@@ -149,6 +153,9 @@ class TryFinallyContinuation {
   NestableControl* target_;
   NonLocalExitKind kind_;
 };
+
+
+
 
 class TryFinallyControl : public NestableControl {
   bool emittingSubroutine_ = false;
