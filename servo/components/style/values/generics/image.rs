@@ -25,6 +25,7 @@ use style_traits::{CssWriter, ToCss};
 pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     
     None,
+
     
     Url(ImageUrl),
 
@@ -36,6 +37,12 @@ pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     #[cfg(feature = "gecko")]
     #[css(function = "-moz-element")]
     Element(Atom),
+
+    
+    
+    
+    #[css(function, skip)]
+    MozSymbolicIcon(Atom),
 
     
     
@@ -425,6 +432,11 @@ where
             Image::Element(ref selector) => {
                 dest.write_str("-moz-element(#")?;
                 serialize_atom_identifier(selector, dest)?;
+                dest.write_char(')')
+            },
+            Image::MozSymbolicIcon(ref id) => {
+                dest.write_str("-moz-symbolic-icon(")?;
+                serialize_atom_identifier(id, dest)?;
                 dest.write_char(')')
             },
             Image::ImageSet(ref is) => is.to_css(dest),
