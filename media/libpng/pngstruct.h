@@ -10,11 +10,9 @@
 
 
 
-
-
-
-
-
+#ifndef PNGPRIV_H
+#  error This file must not be included by applications; please include <png.h>
+#endif
 
 #ifndef PNGSTRUCT_H
 #define PNGSTRUCT_H

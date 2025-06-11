@@ -274,7 +274,7 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.47"
+#define PNG_LIBPNG_VER_STRING "1.6.48"
 #define PNG_HEADER_VERSION_STRING " libpng version " PNG_LIBPNG_VER_STRING "\n"
 
 
@@ -285,7 +285,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 47
+#define PNG_LIBPNG_VER_RELEASE 48
 
 
 
@@ -316,7 +316,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10647 /* 1.6.47 */
+#define PNG_LIBPNG_VER 10648 /* 1.6.48 */
 
 
 
@@ -441,7 +441,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_47;
+typedef char* png_libpng_version_1_6_48;
 
 
 
@@ -1589,7 +1589,7 @@ PNG_EXPORT(226, void, png_set_text_compression_method, (png_structrp png_ptr,
 
 #ifdef PNG_STDIO_SUPPORTED
 
-PNG_EXPORT(74, void, png_init_io, (png_structrp png_ptr, png_FILE_p fp));
+PNG_EXPORT(74, void, png_init_io, (png_structrp png_ptr, FILE *fp));
 #endif
 
 
@@ -3107,7 +3107,7 @@ PNG_EXPORT(234, int, png_image_begin_read_from_file, (png_imagep image,
 
 
 PNG_EXPORT(235, int, png_image_begin_read_from_stdio, (png_imagep image,
-   FILE* file));
+   FILE *file));
    
 #endif 
 

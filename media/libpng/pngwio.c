@@ -54,7 +54,7 @@ png_default_write_data(png_structp png_ptr, png_bytep data, size_t length)
    if (png_ptr == NULL)
       return;
 
-   check = fwrite(data, 1, length, (png_FILE_p)(png_ptr->io_ptr));
+   check = fwrite(data, 1, length, (FILE *)png_ptr->io_ptr);
 
    if (check != length)
       png_error(png_ptr, "Write Error");
@@ -77,12 +77,12 @@ png_flush(png_structrp png_ptr)
 void PNGCBAPI
 png_default_flush(png_structp png_ptr)
 {
-   png_FILE_p io_ptr;
+   FILE *io_ptr;
 
    if (png_ptr == NULL)
       return;
 
-   io_ptr = png_voidcast(png_FILE_p, (png_ptr->io_ptr));
+   io_ptr = png_voidcast(FILE *, png_ptr->io_ptr);
    fflush(io_ptr);
 }
 #  endif

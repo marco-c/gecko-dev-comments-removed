@@ -48,7 +48,7 @@ static int png_have_msa(png_structp png_ptr);
 #include PNG_MIPS_MSA_FILE
 
 #else  
-#  error "PNG_MIPS_MSA_FILE undefined: no support for run-time MIPS MSA checks"
+#  error PNG_MIPS_MSA_FILE undefined: no support for run-time MIPS MSA checks
 #endif 
 #endif 
 
@@ -66,12 +66,12 @@ static int png_have_mmi();
 #include PNG_MIPS_MMI_FILE
 
 #else  
-#  error "PNG_MIPS_MMI_FILE undefined: no support for run-time MIPS MMI checks"
+#  error PNG_MIPS_MMI_FILE undefined: no support for run-time MIPS MMI checks
 #endif 
 #endif 
 
 #ifndef PNG_ALIGNED_MEMORY_SUPPORTED
-#  error "ALIGNED_MEMORY is required; set: -DPNG_ALIGNED_MEMORY_SUPPORTED"
+#  error ALIGNED_MEMORY is required; please define PNG_ALIGNED_MEMORY_SUPPORTED
 #endif
 
 

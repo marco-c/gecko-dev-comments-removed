@@ -56,7 +56,7 @@ png_default_read_data(png_structp png_ptr, png_bytep data, size_t length)
    
 
 
-   check = fread(data, 1, length, png_voidcast(png_FILE_p, png_ptr->io_ptr));
+   check = fread(data, 1, length, png_voidcast(FILE *, png_ptr->io_ptr));
 
    if (check != length)
       png_error(png_ptr, "Read Error");

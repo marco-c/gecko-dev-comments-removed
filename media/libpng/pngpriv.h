@@ -19,8 +19,20 @@
 
 
 
+
+
+
+
+
 #ifndef PNGPRIV_H
-#define PNGPRIV_H
+#  define PNGPRIV_H
+#else
+#  error Duplicate inclusion of pngpriv.h; please check the libpng source files
+#endif
+
+#if defined(PNG_H) || defined(PNGCONF_H) || defined(PNGLCONF_H)
+#  error This file must not be included by applications; please include <png.h>
+#endif
 
 
 
@@ -57,7 +69,6 @@
 
 #if defined(HAVE_CONFIG_H) && !defined(PNG_NO_CONFIG_H)
 #  include <config.h>
-
    
 #  define PNG_RESTRICT restrict
 #endif
@@ -67,9 +78,7 @@
 
 
 
-#ifndef PNGLCONF_H
-#  include "pnglibconf.h"
-#endif
+#include "pnglibconf.h"
 
 
 #if defined(PNG_PREFIX) && !defined(PNGPREFIX_H)
@@ -1005,10 +1014,8 @@
 
 
 #if PNG_ZLIB_VERNUM != 0 && PNG_ZLIB_VERNUM != ZLIB_VERNUM
-#  error ZLIB_VERNUM != PNG_ZLIB_VERNUM \
-      "-I (include path) error: see the notes in pngpriv.h"
+#  error The include path of <zlib.h> is incorrect
    
-
 
 
 
@@ -2218,5 +2225,4 @@ PNG_INTERNAL_FUNCTION(int,
 }
 #endif
 
-#endif 
 #endif 
