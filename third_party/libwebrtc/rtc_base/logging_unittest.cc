@@ -22,7 +22,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 
@@ -221,12 +221,12 @@ TEST(LogTest, MultipleStreams) {
 class LogThread {
  public:
   void Start() {
-    thread_ = PlatformThread::SpawnJoinable(
+    thread_ = rtc::PlatformThread::SpawnJoinable(
         [] { RTC_LOG(LS_VERBOSE) << "RTC_LOG"; }, "LogThread");
   }
 
  private:
-  PlatformThread thread_;
+  rtc::PlatformThread thread_;
 };
 
 
@@ -315,7 +315,9 @@ TEST(LogTest, Perf) {
   LogMessage::AddLogToStream(&stream, LS_VERBOSE);
 
   const std::string message(80, 'X');
-  { LogMessageForTesting sanity_check_msg(__FILE__, __LINE__, LS_VERBOSE); }
+  {
+    LogMessageForTesting sanity_check_msg(__FILE__, __LINE__, LS_VERBOSE);
+  }
 
   
   const size_t logging_overhead = str.size();
@@ -324,16 +326,16 @@ TEST(LogTest, Perf) {
   str.reserve(120000);
   static const int kRepetitions = 1000;
 
-  int64_t start = TimeMillis(), finish;
+  int64_t start = rtc::TimeMillis(), finish;
   for (int i = 0; i < kRepetitions; ++i) {
     LogMessageForTesting(__FILE__, __LINE__, LS_VERBOSE).stream() << message;
   }
-  finish = TimeMillis();
+  finish = rtc::TimeMillis();
 
   LogMessage::RemoveLogToStream(&stream);
 
   EXPECT_EQ(str.size(), (message.size() + logging_overhead) * kRepetitions);
-  RTC_LOG(LS_INFO) << "Total log time: " << TimeDiff(finish, start)
+  RTC_LOG(LS_INFO) << "Total log time: " << rtc::TimeDiff(finish, start)
                    << " ms "
                       " total bytes logged: "
                    << str.size();
