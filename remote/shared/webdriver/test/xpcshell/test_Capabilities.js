@@ -340,6 +340,12 @@ add_task(function test_Proxy_fromJSON() {
 
   
   Assert.throws(
+    () => Proxy.fromJSON({ proxyType: "manual", socksVersion: 4 }),
+    /InvalidArgumentError/
+  );
+
+  
+  Assert.throws(
     () => Proxy.fromJSON({ proxyType: "manual", ftpProxy: "foo:21" }),
     /InvalidArgumentError/
   );
