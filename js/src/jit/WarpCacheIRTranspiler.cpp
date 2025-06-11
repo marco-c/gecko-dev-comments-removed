@@ -297,6 +297,8 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   WrappedFunction* maybeWrappedFunction(MDefinition* callee, CallKind kind,
                                         uint16_t nargs, FunctionFlags flags);
   WrappedFunction* maybeCallTarget(MDefinition* callee, CallKind kind);
+  WrappedFunction* maybeGetterSetterTarget(MDefinition* callee, CallKind kind,
+                                           uint16_t nargs, FunctionFlags flags);
 
   bool maybeCreateThis(MDefinition* callee, CallFlags flags, CallKind kind);
 
@@ -587,6 +589,17 @@ bool WarpCacheIRTranspiler::emitGuardIsNotDOMProxy(ObjOperandId objId) {
 
   setOperand(objId, ins);
   return true;
+}
+
+bool WarpCacheIRTranspiler::emitLoadGetterSetterFunction(ValOperandId getterSetterId,
+                                                         bool isGetter,
+                                                         ObjOperandId resultId) {
+  MDefinition* getterSetter = getOperand(getterSetterId);
+
+  auto* ins = MLoadGetterSetterFunction::New(alloc(), getterSetter, isGetter);
+  add(ins);
+
+  return defineOperand(resultId, ins);
 }
 
 bool WarpCacheIRTranspiler::emitGuardHasGetterSetter(
@@ -5903,6 +5916,34 @@ WrappedFunction* WarpCacheIRTranspiler::maybeCallTarget(MDefinition* callee,
   return nullptr;
 }
 
+WrappedFunction* WarpCacheIRTranspiler::maybeGetterSetterTarget(
+    MDefinition* callee, CallKind kind, uint16_t nargs, FunctionFlags flags) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (callee->isGuardFunctionScript()) {
+    MOZ_ASSERT(kind == CallKind::Scripted);
+    auto* guard = callee->toGuardFunctionScript();
+    WrappedFunction* wrappedTarget = new (alloc()) WrappedFunction(
+         nullptr, guard->nargs(), guard->flags());
+    MOZ_ASSERT(wrappedTarget->hasJitEntry());
+    return wrappedTarget;
+  }
+  return maybeWrappedFunction(callee, kind, nargs, flags);
+}
+
 
 
 bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
@@ -6641,7 +6682,7 @@ bool WarpCacheIRTranspiler::emitCallGetterResult(CallKind kind,
   uint16_t nargs = nargsAndFlags >> 16;
   FunctionFlags flags = FunctionFlags(uint16_t(nargsAndFlags));
   WrappedFunction* wrappedTarget =
-      maybeWrappedFunction(getter, kind, nargs, flags);
+      maybeGetterSetterTarget(getter, kind, nargs, flags);
 
   bool ignoresRval = loc_.resultIsPopped();
   CallInfo callInfo(alloc(),  false, ignoresRval);
@@ -6712,7 +6753,7 @@ bool WarpCacheIRTranspiler::emitCallSetter(CallKind kind,
   uint16_t nargs = nargsAndFlags >> 16;
   FunctionFlags flags = FunctionFlags(uint16_t(nargsAndFlags));
   WrappedFunction* wrappedTarget =
-      maybeWrappedFunction(setter, kind, nargs, flags);
+      maybeGetterSetterTarget(setter, kind, nargs, flags);
 
   CallInfo callInfo(alloc(),  false,
                      true);
