@@ -286,7 +286,7 @@ async function runTests() {
     
     
     info("Opening and closing context native context menu");
-    let contextMenu = gURLBar.querySelector(".textbox-contextmenu");
+    let contextMenu = gURLBar.querySelector("menupopup");
     let popupshown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(gURLBar.querySelector("moz-input-box"), {
       type: "contextmenu",
