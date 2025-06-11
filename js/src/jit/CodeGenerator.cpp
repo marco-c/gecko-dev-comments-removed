@@ -3504,23 +3504,13 @@ JitCode* JitZone::generateRegExpExecTestStub(JSContext* cx) {
   Address flagsSlot(regexp, RegExpObject::offsetOfFlags());
   Address lastIndexSlot(regexp, RegExpObject::offsetOfLastIndex());
 
-  masm.reserveStack(RegExpReservedStack);
-
   
   Label notFoundZeroLastIndex;
   masm.loadRegExpLastIndex(regexp, input, lastIndex, &notFoundZeroLastIndex);
 
   
   
-  
-  
-  constexpr int32_t inputOutputDataStartOffset = -int32_t(RegExpReservedStack);
-
-  
-  
-  
-  
-  static_assert(inputOutputDataStartOffset >= -256);
+  constexpr int32_t inputOutputDataStartOffset = 2 * sizeof(void*);
 
   Label notFound, oolEntry;
   if (!PrepareAndExecuteRegExp(masm, regexp, input, lastIndex, temp1, temp2,
@@ -3564,7 +3554,6 @@ JitCode* JitZone::generateRegExpExecTestStub(JSContext* cx) {
   masm.move32(Imm32(RegExpExecTestResultFailed), result);
 
   masm.bind(&done);
-  masm.freeStack(RegExpReservedStack);
   masm.pop(FramePointer);
   masm.ret();
 
@@ -3589,6 +3578,8 @@ void CodeGenerator::visitRegExpExecTest(LRegExpExecTest* lir) {
 
   static_assert(RegExpExecTestRegExpReg != ReturnReg);
   static_assert(RegExpExecTestStringReg != ReturnReg);
+
+  masm.reserveStack(RegExpReservedStack);
 
   auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
     Register input = ToRegister(lir->string());
@@ -3615,6 +3606,8 @@ void CodeGenerator::visitRegExpExecTest(LRegExpExecTest* lir) {
                 ool->entry());
 
   masm.bind(ool->rejoin());
+
+  masm.freeStack(RegExpReservedStack);
 }
 
 void CodeGenerator::visitRegExpHasCaptureGroups(LRegExpHasCaptureGroups* ins) {
