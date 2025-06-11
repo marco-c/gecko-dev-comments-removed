@@ -366,6 +366,8 @@ struct sqlite3_api_routines {
   
   void *(*get_clientdata)(sqlite3*,const char*);
   int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
+  
+  int (*setlk_timeout)(sqlite3*,int,int);
 };
 
 
@@ -699,6 +701,8 @@ typedef int (*sqlite3_loadext_entry)(
 
 #define sqlite3_get_clientdata         sqlite3_api->get_clientdata
 #define sqlite3_set_clientdata         sqlite3_api->set_clientdata
+
+#define sqlite3_setlk_timeout          sqlite3_api->setlk_timeout
 #endif 
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

@@ -146,9 +146,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.49.2"
-#define SQLITE_VERSION_NUMBER 3049002
-#define SQLITE_SOURCE_ID      "2025-05-07 10:39:52 17144570b0d96ae63cd6f3edca39e27ebd74925252bbaf6723bcb2f6b4861fb1"
+#define SQLITE_VERSION        "3.50.1"
+#define SQLITE_VERSION_NUMBER 3050001
+#define SQLITE_SOURCE_ID      "2025-06-06 14:52:32 b77dc5e0f596d2140d9ac682b2893ff65d3a4140aa86067a3efebe29dc914c95"
 
 
 
@@ -1217,6 +1217,12 @@ struct sqlite3_io_methods {
 
 
 
+
+
+
+
+
+
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_FCNTL_GET_LOCKPROXYFILE       2
 #define SQLITE_FCNTL_SET_LOCKPROXYFILE       3
@@ -1259,6 +1265,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CKSM_FILE              41
 #define SQLITE_FCNTL_RESET_CACHE            42
 #define SQLITE_FCNTL_NULL_IO                43
+#define SQLITE_FCNTL_BLOCK_ON_CONNECT       44
 
 
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -2176,6 +2183,9 @@ struct sqlite3_mem_methods {
 
 
 
+
+
+
 #define SQLITE_CONFIG_SINGLETHREAD         1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD          2  /* nil */
 #define SQLITE_CONFIG_SERIALIZED           3  /* nil */
@@ -2206,6 +2216,25 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
 #define SQLITE_CONFIG_MEMDB_MAXSIZE       29  /* sqlite3_int64 */
 #define SQLITE_CONFIG_ROWID_IN_VIEW       30  /* int* */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2992,6 +3021,44 @@ SQLITE_API int sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
 
 
 SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API int sqlite3_setlk_timeout(sqlite3*, int ms, int flags);
+
+
+
+
+#define SQLITE_SETLK_BLOCK_ON_CONNECT 0x01
 
 
 
@@ -6989,6 +7056,8 @@ SQLITE_API int sqlite3_autovacuum_pages(
   void*,
   void(*)(void*)
 );
+
+
 
 
 
@@ -11490,6 +11559,7 @@ SQLITE_API void sqlite3session_table_filter(
 
 
 
+
 SQLITE_API int sqlite3session_changeset(
   sqlite3_session *pSession,      
   int *pnChangeset,               
@@ -11511,6 +11581,7 @@ SQLITE_API int sqlite3session_changeset(
 
 
 SQLITE_API sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession);
+
 
 
 
@@ -12010,19 +12081,6 @@ SQLITE_API int sqlite3changeset_concat(
   int *pnOut,                     
   void **ppOut                    
 );
-
-
-
-
-
-SQLITE_API int sqlite3changeset_upgrade(
-  sqlite3 *db,
-  const char *zDb,
-  int nIn, const void *pIn,       
-  int *pnOut, void **ppOut        
-);
-
-
 
 
 
