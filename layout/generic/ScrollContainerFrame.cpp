@@ -3683,8 +3683,7 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
       rootStyleFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION)) {
     SerializeList();
     rootResultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
-        aBuilder, this, &rootResultList, aBuilder->CurrentActiveScrolledRoot(),
-         true);
+        aBuilder, this, &rootResultList, nullptr,  true);
   }
 
   
@@ -4056,23 +4055,26 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
         aBuilder);
 
-    if (mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow()) {
-      
-      
-      
-      
-      
-      if (IsFirstScrollableFrameSequenceNumber().isSome() &&
-          *IsFirstScrollableFrameSequenceNumber() !=
-              nsDisplayListBuilder::GetPaintSequenceNumber()) {
-        SetIsFirstScrollableFrameSequenceNumber(Nothing());
+    if (aBuilder->IsInViewTransitionCapture() || capturedByViewTransition) {
+      asrSetter.SetCurrentActiveScrolledRoot(nullptr);
+    } else {
+      if (mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow()) {
+        
+        
+        
+        
+        
+        if (IsFirstScrollableFrameSequenceNumber().isSome() &&
+            *IsFirstScrollableFrameSequenceNumber() !=
+                nsDisplayListBuilder::GetPaintSequenceNumber()) {
+          SetIsFirstScrollableFrameSequenceNumber(Nothing());
+        }
+        asrSetter.EnterScrollFrame(this);
       }
-      asrSetter.EnterScrollFrame(this);
-    }
-
-    if (couldBuildLayer && mScrolledFrame->GetContent()) {
-      asrSetter.SetCurrentScrollParentId(
-          nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent()));
+      if (couldBuildLayer && mScrolledFrame->GetContent()) {
+        asrSetter.SetCurrentScrollParentId(
+            nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent()));
+      }
     }
 
     if (mWillBuildScrollableLayer && aBuilder->BuildCompositorHitTestInfo()) {
@@ -4151,6 +4153,9 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           aBuilder, this, visibleRectForChildren, dirtyRectForChildren);
       nsDisplayListBuilder::AutoEnterViewTransitionCapture
           inViewTransitionCaptureSetter(aBuilder, capturedByViewTransition);
+      if (capturedByViewTransition) {
+        scrolledRectClipState.Clear();
+      }
 
       BuildDisplayListForChild(aBuilder, mScrolledFrame, set);
 

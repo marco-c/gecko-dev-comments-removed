@@ -3359,12 +3359,18 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
-  bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
-  SVGUtils::MaskUsage maskUsage = SVGUtils::DetermineMaskUsage(this, false);
-  bool usingMask = maskUsage.UsingMaskOrClipPath();
-  bool usingSVGEffects = usingFilter || usingMask;
+  
+  
+  const bool capturedByViewTransition =
+      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
+      !style.IsRootElementStyle();
 
-  nsRect visibleRectOutsideSVGEffects = visibleRect;
+  const bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
+  const SVGUtils::MaskUsage maskUsage = SVGUtils::DetermineMaskUsage(this, false);
+  const bool usingMask = maskUsage.UsingMaskOrClipPath();
+  const bool usingSVGEffects = usingFilter || usingMask;
+
+  const nsRect visibleRectOutsideSVGEffects = visibleRect;
   nsDisplayList hoistedScrollInfoItemsStorage(aBuilder);
   if (usingSVGEffects) {
     dirtyRect =
@@ -3374,19 +3380,13 @@ void nsIFrame::BuildDisplayListForStackingContext(
     aBuilder->EnterSVGEffectsContents(this, &hoistedScrollInfoItemsStorage);
   }
 
-  bool useStickyPosition = disp->mPosition == StylePositionProperty::Sticky;
+  const bool useStickyPosition = disp->mPosition == StylePositionProperty::Sticky;
 
-  bool useFixedPosition =
+  const bool useFixedPosition =
       disp->mPosition == StylePositionProperty::Fixed &&
       aBuilder->IsPaintingToWindow() && !IsMenuPopupFrame() &&
       (DisplayPortUtils::IsFixedPosFrameInDisplayPort(this) ||
        BuilderHasScrolledClip(aBuilder));
-
-  
-  
-  const bool capturedByViewTransition =
-      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
-      !style.IsRootElementStyle();
 
   nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
       aBuilder, this, visibleRect, dirtyRect, isTransformed);
@@ -3404,7 +3404,16 @@ void nsIFrame::BuildDisplayListForStackingContext(
     Perspective,
     Transform,
     Filter,
+    ViewTransitionCapture,
   };
+
+  nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(aBuilder);
+  if (capturedByViewTransition || aBuilder->IsInViewTransitionCapture()) {
+    
+    
+    
+    asrSetter.SetCurrentActiveScrolledRoot(nullptr);
+  }
 
   nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
 
@@ -3438,6 +3447,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   ContainerItemType clipCapturedBy = ContainerItemType::None;
   if (useFixedPosition) {
     clipCapturedBy = ContainerItemType::FixedPosition;
+  } else if (capturedByViewTransition) {
+    clipCapturedBy = ContainerItemType::ViewTransitionCapture;
   } else if (isTransformed) {
     const DisplayItemClipChain* currentClip =
         aBuilder->ClipState().GetCurrentCombinedClipChain(aBuilder);
@@ -3672,63 +3683,59 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-  if (capturedByViewTransition) {
-    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
-        aBuilder, this, &resultList, containerItemASR,  false);
-    createdContainer = true;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isTransformed && !capturedByViewTransition) {
+    if (extend3DContext) {
+      
+      
+      nsDisplayList nonparticipants(aBuilder);
+      nsDisplayList participants(aBuilder);
+      int index = 1;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (isTransformed && extend3DContext) {
-    
-    
-    nsDisplayList nonparticipants(aBuilder);
-    nsDisplayList participants(aBuilder);
-    int index = 1;
+      nsDisplayItem* separator = nullptr;
 
-    nsDisplayItem* separator = nullptr;
+      
+      for (nsDisplayItem* item : resultList.TakeItems()) {
+        if (ItemParticipatesIn3DContext(this, item) &&
+            !item->GetClip().HasClip()) {
+          
+          WrapSeparatorTransform(aBuilder, this, &nonparticipants, &participants,
+                                 index++, &separator);
 
-    
-    for (nsDisplayItem* item : resultList.TakeItems()) {
-      if (ItemParticipatesIn3DContext(this, item) &&
-          !item->GetClip().HasClip()) {
-        
-        WrapSeparatorTransform(aBuilder, this, &nonparticipants, &participants,
-                               index++, &separator);
-
-        participants.AppendToTop(item);
-      } else {
-        
-        
-        
-        
-        
-        
-        
-        nonparticipants.AppendToTop(item);
+          participants.AppendToTop(item);
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          nonparticipants.AppendToTop(item);
+        }
       }
+      WrapSeparatorTransform(aBuilder, this, &nonparticipants, &participants,
+                             index++, &separator);
+
+      if (separator) {
+        createdContainer = true;
+      }
+
+      resultList.AppendToTop(&participants);
     }
-    WrapSeparatorTransform(aBuilder, this, &nonparticipants, &participants,
-                           index++, &separator);
 
-    if (separator) {
-      createdContainer = true;
-    }
-
-    resultList.AppendToTop(&participants);
-  }
-
-  if (isTransformed) {
     transformedCssClip.Restore();
     if (clipCapturedBy == ContainerItemType::Transform) {
       
@@ -3790,18 +3797,17 @@ void nsIFrame::BuildDisplayListForStackingContext(
         createdContainer = true;
       }
     }
-  }
-
-  if (clipCapturedBy ==
-      ContainerItemType::OwnLayerForTransformWithRoundedClip) {
-    clipState.Restore();
-    resultList.AppendNewToTopWithIndex<nsDisplayOwnLayer>(
-        aBuilder, this,
-         nsDisplayOwnLayer::OwnLayerForTransformWithRoundedClip,
-        &resultList, aBuilder->CurrentActiveScrolledRoot(),
-        nsDisplayOwnLayerFlags::None, ScrollbarData{},
-         false, false);
-    createdContainer = true;
+    if (clipCapturedBy ==
+        ContainerItemType::OwnLayerForTransformWithRoundedClip) {
+      clipState.Restore();
+      resultList.AppendNewToTopWithIndex<nsDisplayOwnLayer>(
+          aBuilder, this,
+           nsDisplayOwnLayer::OwnLayerForTransformWithRoundedClip,
+          &resultList, aBuilder->CurrentActiveScrolledRoot(),
+          nsDisplayOwnLayerFlags::None, ScrollbarData{},
+           false, false);
+      createdContainer = true;
+    }
   }
 
   
@@ -3876,6 +3882,17 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                                   effects->mMixBlendMode,
                                                   containerItemASR, false);
     createdContainer = true;
+  }
+
+  if (capturedByViewTransition) {
+    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+        aBuilder, this, &resultList, nullptr,  false);
+    createdContainer = true;
+    
+    
+    if (clipCapturedBy == ContainerItemType::ViewTransitionCapture) {
+      clipState.Restore();
+    }
   }
 
   if (aBuilder->IsReusingStackingContextItems()) {
