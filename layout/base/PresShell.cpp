@@ -7002,6 +7002,59 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     return;
   }
 
+  const auto StoreMouseLocation = [&](const WidgetMouseEvent& aMouseEvent) {
+    if (aMouseEvent.mMessage == eMouseMove && aMouseEvent.IsSynthesized()) {
+      return false;
+    }
+    mMouseLocation = GetEventLocation(aMouseEvent);
+    mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
+    
+    if (aEvent->mClass != eDragEventClass) {
+      mMouseLocationInputSource = aMouseEvent.mInputSource;
+      mMouseLocationPointerId = aMouseEvent.pointerId;
+      mMouseLocationWasSetBySynthesizedMouseEventForTests =
+          aMouseEvent.mFlags.mIsSynthesizedForTests;
+    }
+#ifdef DEBUG
+    if (MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Info)) {
+      static uint32_t sFrequentMessageCount = 0;
+      const bool isFrequestMessage =
+          aEvent->mMessage == eMouseMove || aEvent->mMessage == eDragOver;
+      if (!isFrequestMessage ||
+          MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Verbose) ||
+          !(sFrequentMessageCount % 50)) {
+        MOZ_LOG(gLogMouseLocation,
+                isFrequestMessage ? LogLevel::Debug : LogLevel::Info,
+                ("[ps=%p]got %s for %p at {%d, %d}\n", this,
+                 ToChar(aEvent->mMessage), aEvent->mWidget.get(),
+                 mMouseLocation.x, mMouseLocation.y));
+      }
+      if (isFrequestMessage) {
+        sFrequentMessageCount++;
+      } else {
+        
+        
+        sFrequentMessageCount = 0;
+      }
+    }
+#endif
+    return true;
+  };
+
+  const auto ClearMouseLocation = [&]() {
+    mMouseLocation = nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+    mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
+    mMouseLocationInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
+    mMouseLocationPointerId = 0;
+    mMouseLocationWasSetBySynthesizedMouseEventForTests =
+        aEvent->mFlags.mIsSynthesizedForTests;
+#ifdef DEBUG
+    MOZ_LOG(gLogMouseLocation, LogLevel::Info,
+            ("[ps=%p]got %s for %p, mouse location is cleared\n", this,
+             ToChar(aEvent->mMessage), aEvent->mWidget.get()));
+#endif
+  };
+
   switch (aEvent->mMessage) {
     case eMouseMove:
     case eMouseEnterIntoWidget:
@@ -7011,44 +7064,9 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     case eDragStart:
     case eDragOver:
     case eDrop: {
-      WidgetMouseEvent* const mouseEvent = aEvent->AsMouseEvent();
-      if (mouseEvent->mMessage == eMouseMove && mouseEvent->IsSynthesized()) {
-        break;
-      }
-      mMouseLocation = GetEventLocation(*mouseEvent);
-      mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
-      
-      if (aEvent->mClass != eDragEventClass) {
-        mMouseLocationInputSource = mouseEvent->mInputSource;
-        mMouseLocationPointerId = mouseEvent->pointerId;
-        mMouseLocationWasSetBySynthesizedMouseEventForTests =
-            mouseEvent->mFlags.mIsSynthesizedForTests;
-      }
-#ifdef DEBUG
-      if (MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Info)) {
-        static uint32_t sFrequentMessageCount = 0;
-        const bool isFrequestMessage =
-            aEvent->mMessage == eMouseMove || aEvent->mMessage == eDragOver;
-        if (!isFrequestMessage ||
-            MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Verbose) ||
-            !(sFrequentMessageCount % 50)) {
-          MOZ_LOG(gLogMouseLocation,
-                  isFrequestMessage ? LogLevel::Debug : LogLevel::Info,
-                  ("[ps=%p]got %s for %p at {%d, %d}\n", this,
-                   ToChar(aEvent->mMessage), aEvent->mWidget.get(),
-                   mMouseLocation.x, mMouseLocation.y));
-        }
-        if (isFrequestMessage) {
-          sFrequentMessageCount++;
-        } else {
-          
-          
-          sFrequentMessageCount = 0;
-        }
-      }
-#endif
-      if (aEvent->mMessage == eMouseEnterIntoWidget ||
-          aEvent->mClass == eDragEventClass) {
+      if (StoreMouseLocation(*aEvent->AsMouseEvent()) &&
+          (aEvent->mMessage == eMouseEnterIntoWidget ||
+           aEvent->mClass == eDragEventClass)) {
         SynthesizeMouseMove(false);
       }
       break;
@@ -7058,7 +7076,8 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
         
         break;
       }
-      [[fallthrough]];
+      ClearMouseLocation();
+      break;
     case eMouseExitFromWidget: {
       
       
@@ -7066,17 +7085,7 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       
       
       
-      mMouseLocation = nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-      mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
-      mMouseLocationInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
-      mMouseLocationPointerId = 0;
-      mMouseLocationWasSetBySynthesizedMouseEventForTests =
-          aEvent->mFlags.mIsSynthesizedForTests;
-#ifdef DEBUG
-      MOZ_LOG(gLogMouseLocation, LogLevel::Info,
-              ("[ps=%p]got %s for %p, mouse location is cleared\n", this,
-               ToChar(aEvent->mMessage), aEvent->mWidget.get()));
-#endif
+      ClearMouseLocation();
       break;
     }
     case ePointerMove:
@@ -7092,6 +7101,31 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       
       mLastOverWindowPointerLocation =
           GetEventLocation(*aEvent->AsMouseEvent());
+      
+      
+      
+      if (aEvent->mMessage != ePointerUp) {
+        break;
+      }
+      [[fallthrough]];
+    }
+    case ePointerCancel: {
+      
+      
+      
+      
+      
+      
+      
+      if (mMouseLocation ==
+              nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE) ||
+          mMouseLocationInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        break;
+      }
+      WidgetPointerEvent* const pointerEvent = aEvent->AsPointerEvent();
+      if (pointerEvent->mInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        ClearMouseLocation();
+      }
       break;
     }
     default:
