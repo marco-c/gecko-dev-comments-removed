@@ -293,8 +293,9 @@ class GlobalObject : public NativeObject {
     MOZ_ASSERT(proto);
     
     
-    MOZ_ASSERT(!hasBuiltinProto(kind));
-    data().builtinProtos[kind].init(proto);
+    
+    
+    data().builtinProtos[kind].set(proto);
   }
 
   void setBuiltinProto(ProtoKind kind, JSObject* proto) {
