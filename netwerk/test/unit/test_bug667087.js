@@ -9,7 +9,7 @@ add_task(async () => {
 
   
   
-  Services.cookies.add(
+  const cv = Services.cookies.add(
     "a",
     "/",
     "foo",
@@ -22,6 +22,7 @@ add_task(async () => {
     Ci.nsICookie.SAMESITE_NONE,
     Ci.nsICookie.SCHEME_HTTP
   );
+  Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
   Assert.equal(Services.cookies.countCookiesFromHost("a"), 1);
 
   CookieXPCShellUtils.createServer({ hosts: ["a"] });

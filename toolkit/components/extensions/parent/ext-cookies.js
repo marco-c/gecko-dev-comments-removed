@@ -733,6 +733,8 @@ this.cookies = class extends ExtensionAPIPersistent {
             isPartitioned
           );
 
+          
+
           return self.cookies.get(details);
         },
 
