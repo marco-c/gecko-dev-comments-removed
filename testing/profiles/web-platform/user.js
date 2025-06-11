@@ -102,3 +102,11 @@ user_pref("geo.provider.network.url", "https://web-platform.test:8444/_mozilla/g
 
 
 user_pref("geo.prompt.open_system_prefs", false);
+
+
+user_pref("font.name.serif.x-western", "DejaVu Serif");
+user_pref("font.name.sans-serif.x-western", "DejaVu Sans");
+user_pref("font.name.monospace.x-western", "DejaVu Sans Mono");
+user_pref("font.name.serif.x-unicode", "DejaVu Serif");
+user_pref("font.name.sans-serif.x-unicode", "DejaVu Sans");
+user_pref("font.name.monospace.x-unicode", "DejaVu Sans Mono");
