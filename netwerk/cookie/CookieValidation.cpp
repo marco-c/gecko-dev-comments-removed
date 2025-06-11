@@ -113,14 +113,6 @@ void CookieValidation::ValidateInternal() {
   }
 
   
-  
-  if (StaticPrefs::network_cookie_CHIPS_enabled() &&
-      mCookieData.isPartitioned() && !mCookieData.isSecure()) {
-    mResult = eRejectedPartitionedRequiresSecure;
-    return;
-  }
-
-  
   if (!mCookieData.isSession()) {
     int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
     int64_t currentTimeInSec = PR_Now() / PR_USEC_PER_SEC;
@@ -210,6 +202,15 @@ void CookieValidation::ValidateInContextInternal(
 
   if (sameSite != nsICookie::SAMESITE_NONE && aIsForeignAndNotAddon) {
     mResult = eRejectedForNonSameSiteness;
+    return;
+  }
+
+  
+  
+  
+  if (StaticPrefs::network_cookie_CHIPS_enabled() &&
+      mCookieData.isPartitioned() && !mCookieData.isSecure()) {
+    mResult = eRejectedPartitionedRequiresSecure;
     return;
   }
 }
