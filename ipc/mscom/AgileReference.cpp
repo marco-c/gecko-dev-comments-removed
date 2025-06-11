@@ -10,22 +10,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/mscom/Utils.h"
 
-#if defined(__MINGW32__)
-
-
-
-
-
-#  include "mozilla/DynamicallyLinkedFunctionPtr.h"
-
-static const mozilla::StaticDynamicallyLinkedFunctionPtr<
-    decltype(&::RoGetAgileReference)>
-    pRoGetAgileReference(L"ole32.dll", "RoGetAgileReference");
-
-#  define RoGetAgileReference pRoGetAgileReference
-
-#endif  
-
 namespace mozilla::mscom::detail {
 
 HRESULT AgileReference_CreateImpl(RefPtr<IAgileReference>& aRefPtr, REFIID riid,
