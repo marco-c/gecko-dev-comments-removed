@@ -1560,12 +1560,12 @@ LayersId GPUProcessManager::AllocateLayerTreeId() {
 
 
 wr::PipelineId GetTemporaryWebRenderPipelineId(wr::PipelineId aMainPipeline) {
-    
-    
-    MOZ_ASSERT(aMainPipeline.mHandle % 2 == 0);
-    auto id = aMainPipeline;
-    id.mHandle += 1;
-    return id;
+  
+  
+  MOZ_ASSERT(aMainPipeline.mHandle % 2 == 0);
+  auto id = aMainPipeline;
+  id.mHandle += 1;
+  return id;
 }
 
 uint32_t GPUProcessManager::AllocateNamespace() {
