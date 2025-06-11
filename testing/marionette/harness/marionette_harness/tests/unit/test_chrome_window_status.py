@@ -8,7 +8,7 @@ import sys
 
 sys.path.append(os.path.dirname(__file__))
 
-from test_window_status_content import TestNoSuchWindowContent
+from test_window_status import TestNoSuchWindowContent
 
 
 class TestNoSuchWindowChrome(TestNoSuchWindowContent):
