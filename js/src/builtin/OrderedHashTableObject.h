@@ -450,6 +450,14 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     obj->setReservedSlotPrivateUnbarriered(Slots::HashCodeScramblerSlot, hcs);
   }
 
+  static constexpr uint32_t hashShiftToNumHashBuckets(uint32_t hashShift) {
+    return 1 << (js::kHashNumberBits - hashShift);
+  }
+  static constexpr uint32_t numHashBucketsToDataCapacity(
+      uint32_t numHashBuckets) {
+    return uint32_t(numHashBuckets * FillFactor);
+  }
+
   
   static constexpr uint32_t InitialBucketsLog2 = 1;
   static constexpr uint32_t InitialBuckets = 1 << InitialBucketsLog2;
@@ -469,6 +477,13 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
   
   
   static constexpr double MinDataFill = 0.25;
+
+  
+  static constexpr uint32_t MinHashShift = 8;
+  static constexpr uint32_t MaxHashBuckets =
+      hashShiftToNumHashBuckets(MinHashShift);  
+  static constexpr uint32_t MaxDataCapacity =
+      numHashBucketsToDataCapacity(MaxHashBuckets);  
 
   template <typename F>
   void forEachIterator(F&& f) {
@@ -507,6 +522,9 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
       std::tuple<Data*, Data**, HashCodeScrambler*, size_t>;
   AllocationResult allocateBuffer(JSContext* cx, uint32_t dataCapacity,
                                   uint32_t buckets) {
+    MOZ_ASSERT(dataCapacity <= MaxDataCapacity);
+    MOZ_ASSERT(buckets <= MaxHashBuckets);
+
     size_t numBytes = 0;
     if (MOZ_UNLIKELY(!calcAllocSize(dataCapacity, buckets, &numBytes))) {
       ReportAllocationOverflow(cx);
@@ -1064,7 +1082,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
   
   uint32_t hashBuckets() const {
-    return 1 << (js::kHashNumberBits - getHashShift());
+    return hashShiftToNumHashBuckets(getHashShift());
   }
 
   void destroyData(Data* data, uint32_t length) {
@@ -1196,22 +1214,13 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
       return true;
     }
 
-    
-    constexpr size_t maxCapacityLog2 =
-        mozilla::tl::FloorLog2<size_t(INT32_MAX / FillFactor)>::value;
-    static_assert(maxCapacityLog2 < kHashNumberBits);
-
-    
-    
-    
-    if (MOZ_UNLIKELY(newHashShift < (js::kHashNumberBits - maxCapacityLog2))) {
+    if (MOZ_UNLIKELY(newHashShift < MinHashShift)) {
       ReportAllocationOverflow(cx);
       return false;
     }
 
-    uint32_t newHashBuckets = uint32_t(1)
-                              << (js::kHashNumberBits - newHashShift);
-    uint32_t newCapacity = uint32_t(newHashBuckets * FillFactor);
+    uint32_t newHashBuckets = hashShiftToNumHashBuckets(newHashShift);
+    uint32_t newCapacity = numHashBucketsToDataCapacity(newHashBuckets);
 
     auto [newData, newHashTable, newHcs, numBytes] =
         allocateBuffer(cx, newCapacity, newHashBuckets);
