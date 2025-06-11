@@ -240,7 +240,7 @@ class nsImageRenderer {
   ImgDrawResult DrawShapeImage(nsPresContext* aPresContext,
                                gfxContext& aRenderingContext);
 
-  bool IsRasterImage() const;
+  bool IsRasterImage();
 
   
   already_AddRefed<imgIContainer> GetImage();

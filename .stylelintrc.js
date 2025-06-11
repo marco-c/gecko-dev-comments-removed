@@ -52,7 +52,6 @@ module.exports = {
         ignoreFunctions: [
           "light-dark" ,
           "add" ,
-          "-moz-symbolic-icon" ,
         ],
       },
     ],
