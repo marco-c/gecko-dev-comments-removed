@@ -265,7 +265,8 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
   
   
   
-  bool hasOptions = args.get(messageArg + 1).isObject();
+  bool hasOptions =
+      args.get(messageArg + 1).isObject() && exnType != JSEXN_SUPPRESSEDERR;
 
   Rooted<mozilla::Maybe<Value>> cause(cx, mozilla::Nothing());
   if (hasOptions) {
