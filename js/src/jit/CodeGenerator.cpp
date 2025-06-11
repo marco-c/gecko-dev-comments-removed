@@ -2231,9 +2231,9 @@ static void UpdateRegExpStatics(MacroAssembler& masm, Register regexp,
 static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
                                     Register input, Register lastIndex,
                                     Register temp1, Register temp2,
-                                    Register temp3,
-                                    gc::Heap initialStringHeap, Label* notFound,
-                                    Label* failure, JitZone::StubKind kind) {
+                                    Register temp3, gc::Heap initialStringHeap,
+                                    Label* notFound, Label* failure,
+                                    JitZone::StubKind kind) {
   JitSpew(JitSpew_Codegen, "# Emitting PrepareAndExecuteRegExp");
 
   using irregexp::InputOutputData;
@@ -2394,7 +2394,7 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   
   
   bool skipMatchPairs = kind == JitZone::StubKind::RegExpSearcher ||
-      kind == JitZone::StubKind::RegExpExecTest;
+                        kind == JitZone::StubKind::RegExpExecTest;
   if (!skipMatchPairs) {
     
     masm.load32(Address(regexpReg, RegExpShared::offsetOfPairCount()), temp2);
@@ -2452,8 +2452,7 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   masm.storePtr(lastIndex, startIndexAddress);
 
   
-  masm.computeEffectiveAddress(
-      Address(FramePointer, ioOffset), temp2);
+  masm.computeEffectiveAddress(Address(FramePointer, ioOffset), temp2);
   masm.PushRegsInMask(volatileRegs);
   masm.setupUnalignedABICall(temp3);
   masm.passABIArg(temp2);
