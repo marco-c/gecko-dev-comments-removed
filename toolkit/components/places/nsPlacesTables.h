@@ -190,13 +190,14 @@
 
 
 
-#define CREATE_MOZ_OPENPAGES_TEMP              \
-  nsLiteralCString(                            \
-      "CREATE TEMP TABLE moz_openpages_temp (" \
-      "  url TEXT"                             \
-      ", userContextId INTEGER"                \
-      ", open_count INTEGER"                   \
-      ", PRIMARY KEY (url, userContextId)"     \
+#define CREATE_MOZ_OPENPAGES_TEMP                   \
+  nsLiteralCString(                                 \
+      "CREATE TEMP TABLE moz_openpages_temp ("      \
+      "  url TEXT"                                  \
+      ", userContextId INTEGER"                     \
+      ", groupId TEXT"                              \
+      ", open_count INTEGER"                        \
+      ", PRIMARY KEY (url, userContextId, groupId)" \
       ")")
 
 
