@@ -1377,7 +1377,14 @@ template JSString* js::ConcatStrings<NoGC>(JSContext* cx, JSString* const& left,
                                            gc::Heap heap);
 
 bool JSLinearString::hasCharsInCollectedNurseryRegion() const {
-  auto& nursery = runtimeFromAnyThread()->gc.nursery();
+  if (isPermanentAtom()) {
+    
+    
+    
+    MOZ_ASSERT(isTenured());
+    return false;
+  }
+  auto& nursery = runtimeFromMainThread()->gc.nursery();
   if (isInline()) {
     return nursery.inCollectedRegion(this);
   }
