@@ -108,7 +108,7 @@ WgcCaptureSession::WgcCaptureSession(intptr_t source_id,
       item_(std::move(item)),
       size_(size),
       source_id_(source_id) {
-  RTC_CHECK(source_id);
+  is_window_source_ = ::IsWindow(reinterpret_cast<HWND>(source_id_));
 }
 
 WgcCaptureSession::~WgcCaptureSession() {
@@ -469,13 +469,18 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   DesktopFrame* current_frame = queue_.current_frame();
   DesktopFrame* previous_frame = queue_.previous_frame();
 
-  
-  
-  
   HMONITOR monitor;
-  if (!GetHmonitorFromDeviceIndex(source_id_, &monitor)) {
+  if (is_window_source_) {
+    
+    
+    
     monitor = MonitorFromWindow(reinterpret_cast<HWND>(source_id_),
                                 MONITOR_DEFAULTTONEAREST);
+  } else {
+    if (!GetHmonitorFromDeviceIndex(source_id_, &monitor)) {
+      RTC_LOG(LS_ERROR) << "Failed to get HMONITOR from device index.";
+      return E_FAIL;
+    }
   }
 
   

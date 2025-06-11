@@ -31,6 +31,9 @@ namespace webrtc {
 class WgcCaptureSession final {
  public:
   
+  
+  
+  
   WgcCaptureSession(
       intptr_t source_id,
       Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device,
@@ -151,6 +154,10 @@ class WgcCaptureSession final {
 
   
   intptr_t source_id_;
+
+  
+  
+  bool is_window_source_;
 
   SequenceChecker sequence_checker_;
 };
