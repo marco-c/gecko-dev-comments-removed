@@ -362,7 +362,6 @@ class alignas(uintptr_t) JitScript final
   struct Flags {
     
     bool hadIonOSR : 1;
-    bool ranBytecodeAnalysis : 1;
   };
   Flags flags_ = {};  
 
@@ -402,9 +401,6 @@ class alignas(uintptr_t) JitScript final
 
   void setHadIonOSR() { flags_.hadIonOSR = true; }
   bool hadIonOSR() const { return flags_.hadIonOSR; }
-
-  void setRanBytecodeAnalysis() { flags_.ranBytecodeAnalysis = true; }
-  bool ranBytecodeAnalysis() const { return flags_.ranBytecodeAnalysis; }
 
   uint32_t numICEntries() const { return icScript_.numICEntries(); }
 
