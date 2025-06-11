@@ -15,7 +15,6 @@ var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
 
 
 var gExceptionPaths = [
-  "resource://app/defaults/settings/blocklists/",
   "resource://app/defaults/settings/security-state/",
   "resource://app/defaults/settings/main/",
   "resource://app/defaults/preferences/",
