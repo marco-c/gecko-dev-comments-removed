@@ -755,7 +755,7 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   
   
   
-  mSurface->AddFrameCallbackLocked(
+  mSurface->SetFrameCallbackLocked(
       surfaceLock,
       [this, self = RefPtr{this}](wl_callback* aCallback,
                                   uint32_t aTime) -> void {
