@@ -239,12 +239,6 @@ fn filter_map_chunks_recurse<T: Clone>(
     Ok(this_step_paths)
 }
 
-
-
-pub fn split_keyword(keyword: &str) -> (&str, &str) {
-    keyword.split_once(' ').unwrap_or((keyword, ""))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1606,11 +1600,5 @@ mod tests {
             ],
         );
         Ok(())
-    }
-
-    #[test]
-    fn test_split_keyword() {
-        assert_eq!(split_keyword("foo"), ("foo", ""));
-        assert_eq!(split_keyword("foo bar baz"), ("foo", "bar baz"));
     }
 }
