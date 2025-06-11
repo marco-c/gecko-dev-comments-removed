@@ -1438,8 +1438,7 @@ PlacesController.prototype = {
     } else if (documentUrl.includes("sidebar")) {
       
       let searchBox = document.getElementById("search-box");
-      searchBox.value = "";
-      searchBox.doCommand();
+      searchBox.clear();
 
       
       this._view.selectItems([aBookmarkGuid], true);

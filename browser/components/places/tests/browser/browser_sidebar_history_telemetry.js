@@ -209,17 +209,14 @@ add_task(async function test_search_and_filter() {
 
     
     let searchBox = tree.ownerDocument.getElementById("search-box");
-    searchBox.value = "sidebar.mozilla";
-    searchBox.doCommand();
+    await setSearch(searchBox, "sidebar.mozilla");
     info("Tree was searched with sting sidebar.mozilla");
 
-    searchBox.value = "";
-    searchBox.doCommand();
+    await setSearch(searchBox, "");
     info("Search was reset");
 
     
-    searchBox.value = "sidebar.mozilla";
-    searchBox.doCommand();
+    await setSearch(searchBox, "sidebar.mozilla");
     info("Second search was performed");
 
     
@@ -259,8 +256,7 @@ add_task(async function test_search_and_filter() {
 
     
     let searchBox = tree.ownerDocument.getElementById("search-box");
-    searchBox.value = "sidebar.mozilla";
-    searchBox.doCommand();
+    await setSearch(searchBox, "sidebar.mozilla");
 
     
     tree.selectNode(tree.view.nodeForTreeIndex(firstNodeIndex));
