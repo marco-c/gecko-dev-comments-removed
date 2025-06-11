@@ -269,10 +269,7 @@ void RenderCompositorNative::CompositorEndFrame() {
   }
   mDrawnPixelCount = 0;
 
-#if !defined(XP_DARWIN)
-  
   DoFlush();
-#endif
 
   mNativeLayerRoot->SetLayers(mAddedLayers);
   mNativeLayerRoot->CommitToScreen();
