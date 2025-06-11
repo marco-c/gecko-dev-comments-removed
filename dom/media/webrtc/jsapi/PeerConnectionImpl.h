@@ -756,8 +756,6 @@ class PeerConnectionImpl final
   
   static std::map<uint64_t, PeerConnectionAutoTimer> sCallDurationTimers;
 
-  bool mHaveConfiguredCodecs;
-
   bool mTrickle;
 
   bool mPrivateWindow;
