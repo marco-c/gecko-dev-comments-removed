@@ -1,6 +1,5 @@
 
 
-
 var client;
 var window_count = 0;
 var expected_window_count = 9;

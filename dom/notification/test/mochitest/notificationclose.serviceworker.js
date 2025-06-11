@@ -1,8 +1,6 @@
 
 
 
-
-
 onnotificationclose = function (e) {
   e.waitUntil(
     (async function () {
@@ -11,13 +9,13 @@ onnotificationclose = function (e) {
         windowOpened = false;
       });
 
-      self.clients.matchAll().then(function (clients) {
-        if (clients.length === 0) {
+      self.clients.matchAll().then(function (matchedClients) {
+        if (matchedClients.length === 0) {
           dump("*** CLIENTS LIST EMPTY! Test will timeout! ***\n");
           return;
         }
 
-        clients.forEach(function (client) {
+        matchedClients.forEach(function (client) {
           client.postMessage({
             result:
               e.notification.data &&

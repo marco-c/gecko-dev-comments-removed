@@ -1,24 +1,21 @@
 
 
 
-
-
-
 onnotificationclick = function (e) {
   const {
     notification: { data, actions },
     action,
   } = e;
 
-  self.clients.matchAll().then(function (clients) {
-    if (clients.length === 0) {
+  self.clients.matchAll().then(function (matchedClients) {
+    if (matchedClients.length === 0) {
       dump(
         "********************* CLIENTS LIST EMPTY! Test will timeout! ***********************\n"
       );
       return;
     }
 
-    clients.forEach(function (client) {
+    matchedClients.forEach(function (client) {
       client.postMessage({
         notification: { data, actions },
         action,

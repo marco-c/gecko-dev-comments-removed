@@ -92,7 +92,7 @@ add_task(async function test() {
 
     
     const swr = await content.navigator.serviceWorker.register(
-      "file_userContextId_openWindow.js"
+      "file_userContextId_openWindow.serviceworker.js"
     );
 
     
