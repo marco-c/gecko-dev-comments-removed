@@ -87,8 +87,6 @@ class IdentityCredentialStorageService final
   
   
   nsresult LoadMemoryTableFromDisk();
-  nsresult LoadLightweightMemoryTableFromDisk();
-  nsresult LoadHeavyweightMemoryTableFromDisk();
 
   
   
@@ -121,14 +119,6 @@ class IdentityCredentialStorageService final
                                  nsIPrincipal* aIDPPrincipal);
 
   static nsresult ClearData(mozIStorageConnection* aDatabaseConnection);
-
-  static nsresult UpsertLightweightData(
-      mozIStorageConnection* aDatabaseConnection,
-      const dom::IPCIdentityCredential& aData);
-
-  static nsresult DeleteLightweightData(
-      mozIStorageConnection* aDatabaseConnection,
-      const dom::IPCIdentityCredential& aData);
 
   static nsresult DeleteDataFromOriginAttributesPattern(
       mozIStorageConnection* aDatabaseConnection,
