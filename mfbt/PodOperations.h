@@ -96,6 +96,19 @@ static MOZ_ALWAYS_INLINE void PodCopy(T* aDst, const T* aSrc, size_t aNElem) {
   MOZ_ASSERT(aDst + aNElem <= aSrc || aSrc + aNElem <= aDst,
              "destination and source must not overlap");
 
+
+
+
+
+#if defined(XP_LINUX)
+  if (aNElem < 128) {
+    for (const T* srcend = aSrc + aNElem; aSrc < srcend; aSrc++, aDst++) {
+      *aDst = *aSrc;
+    }
+    return;
+  }
+#endif
+
   memcpy(aDst, aSrc, aNElem * sizeof(T));
 }
 
