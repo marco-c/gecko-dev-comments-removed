@@ -66,11 +66,11 @@ inline unsigned CountArgSlots(JSScript* script, bool hasFun,
 
 class CompileInfo {
  public:
-  CompileInfo(CompileRuntime* runtime, JSScript* script, JSFunction* fun,
+  CompileInfo(CompileRuntime* runtime, JSScript* script,
               jsbytecode* osrPc, bool scriptNeedsArgsObj,
               InlineScriptTree* inlineScriptTree)
       : script_(script),
-        fun_(fun),
+        fun_(script->function()),
         osrPc_(osrPc),
         scriptNeedsArgsObj_(scriptNeedsArgsObj),
         hadEagerTruncationBailout_(script->hadEagerTruncationBailout()),
@@ -89,18 +89,9 @@ class CompileInfo {
             runtime->hasSeenArrayExceedsInt32LengthFuseIntact()) {
     MOZ_ASSERT_IF(osrPc, JSOp(*osrPc) == JSOp::LoopHead);
 
-    
-    
-    
-    
-    if (fun_) {
-      fun_ = fun_->baseScript()->function();
-      MOZ_ASSERT(fun_->isTenured());
-    }
-
     nimplicit_ = StartArgSlot(script) 
-                 + (fun ? 1 : 0);     
-    nargs_ = fun ? fun->nargs() : 0;
+                 + (fun_ ? 1 : 0);    
+    nargs_ = fun_ ? fun_->nargs() : 0;
     nlocals_ = script->nfixed();
 
     
@@ -134,7 +125,7 @@ class CompileInfo {
     
     needsBodyEnvironmentObject_ = script->needsBodyEnvironment();
     funNeedsSomeEnvironmentObject_ =
-        fun ? fun->needsSomeEnvironmentObject() : false;
+        fun_ ? fun_->needsSomeEnvironmentObject() : false;
   }
 
   explicit CompileInfo(unsigned nlocals)
