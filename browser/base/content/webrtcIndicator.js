@@ -148,13 +148,14 @@ const WebRTCIndicator = {
     let sharingScreen = showScreenSharingIndicator.startsWith("Screen");
     this.updateWindowAttr("sharingscreen", sharingScreen);
 
-    
-    
+    let sharingTab = showScreenSharingIndicator.startsWith("Browser");
 
     
     
     let sharingWindow = showScreenSharingIndicator.startsWith("Window");
     this.updateWindowAttr("sharingwindow", sharingWindow);
+
+    let sharingBrowserWindow = false;
 
     if (sharingWindow) {
       
@@ -163,20 +164,15 @@ const WebRTCIndicator = {
         false ,
         false ,
         false ,
+        false ,
         true 
       );
-      let hasBrowserWindow = activeStreams.some(stream => {
-        return stream.devices.some(device => device.scary);
-      });
-
-      this.updateWindowAttr("sharingbrowserwindow", hasBrowserWindow);
-      this.sharingBrowserWindow = hasBrowserWindow;
-    } else {
-      this.updateWindowAttr("sharingbrowserwindow");
-      this.sharingBrowserWindow = false;
+      sharingBrowserWindow = activeStreams.some(({ devices }) =>
+        devices.some(({ scary }) => scary)
+      );
     }
+    this.updateWindowAttr("sharingtab", sharingTab || sharingBrowserWindow);
 
-    
     
     
     
@@ -193,7 +189,8 @@ const WebRTCIndicator = {
     let labelledBy;
     if (sharingScreen) {
       labelledBy = "screen-share-info";
-    } else if (this.sharingBrowserWindow) {
+    } else if (sharingBrowserWindow || sharingTab) {
+      
       labelledBy = "browser-window-share-info";
     } else if (sharingWindow) {
       labelledBy = "window-share-info";
@@ -251,6 +248,7 @@ const WebRTCIndicator = {
 
   centerOnLatestBrowser() {
     let activeStreams = webrtcUI.getActiveStreams(
+      true ,
       true ,
       true ,
       true ,
@@ -406,6 +404,7 @@ const WebRTCIndicator = {
         this.showGlobalMuteToggles ,
         this.showGlobalMuteToggles ,
         true ,
+        true ,
         true 
       );
       webrtcUI.stopSharingStreams(
@@ -436,6 +435,7 @@ const WebRTCIndicator = {
         let activeStreams = webrtcUI.getActiveStreams(
           false ,
           false ,
+          true ,
           true ,
           true 
         );
