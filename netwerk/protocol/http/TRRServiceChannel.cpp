@@ -925,7 +925,9 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
     
     
     
-    mResponseHead = mTransaction->TakeResponseHeadAndConnInfo(nullptr);
+    RefPtr<nsHttpConnectionInfo> connInfo;
+    mResponseHead =
+        mTransaction->TakeResponseHeadAndConnInfo(getter_AddRefs(connInfo));
     if (mResponseHead) {
       uint32_t httpStatus = mResponseHead->Status();
       if (mTransaction->ProxyConnectFailed()) {
@@ -940,9 +942,7 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
       }
 
       if ((httpStatus < 500) && (httpStatus != 421) && (httpStatus != 407)) {
-        RefPtr<nsHttpConnectionInfo> connectionInfo =
-            mTransaction->GetConnInfo();
-        ProcessAltService(connectionInfo);
+        ProcessAltService(connInfo);
       }
 
       if (httpStatus == 300 || httpStatus == 301 || httpStatus == 302 ||
