@@ -244,12 +244,6 @@ var AboutConfig = {
   },
 
   
-  clearFilterInput: function AC_clearFilterInput() {
-    this.filterInput.value = "";
-    this.bufferFilterInput();
-  },
-
-  
   bufferFilterInput: function AC_bufferFilterInput() {
     if (this._filterChangeTimer) {
       clearTimeout(this._filterChangeTimer);
