@@ -172,12 +172,6 @@ TEST_F(SctpDataChannelTest, VerifyConfigurationGetters) {
   EXPECT_EQ(channel_->priority(), PriorityValue(Priority::kLow));
   EXPECT_EQ(channel_->maxPacketLifeTime(), init_.maxRetransmitTime);
   EXPECT_EQ(channel_->maxRetransmitsOpt(), init_.maxRetransmits);
-  
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  EXPECT_EQ(channel_->maxRetransmitTime(), static_cast<uint16_t>(-1));
-  EXPECT_EQ(channel_->maxRetransmits(), static_cast<uint16_t>(-1));
-#pragma clang diagnostic pop
 
   
   EXPECT_EQ(channel_->id(), init_.id);
