@@ -516,7 +516,14 @@ class H264 {
       const mozilla::MediaByteBuffer* aExtraData);
 
   enum class FrameType {
-    I_FRAME,
+    
+    
+    
+    
+    
+    
+    I_FRAME_IDR,
+    I_FRAME_OTHER,
     OTHER,
     INVALID,
   };
