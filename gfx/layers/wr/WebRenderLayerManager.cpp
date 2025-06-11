@@ -32,7 +32,7 @@
 namespace mozilla {
 
 namespace gfx {
-    wr::PipelineId GetTemporaryWebRenderPipelineId(wr::PipelineId aMainPipeline);
+wr::PipelineId GetTemporaryWebRenderPipelineId(wr::PipelineId aMainPipeline);
 }
 
 using namespace gfx;
@@ -352,7 +352,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     wr::PipelineId mainId = WrBridge()->GetPipeline();
     wr::PipelineId tmpPipeline = gfx::GetTemporaryWebRenderPipelineId(mainId);
     offscreenBuilder = MakeUnique<wr::DisplayListBuilder>(
-      tmpPipeline, WrBridge()->GetWebRenderBackend());
+        tmpPipeline, WrBridge()->GetWebRenderBackend());
     diplayListBuilder = offscreenBuilder.get();
     itemCache = nullptr;
   }
@@ -395,8 +395,8 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     aBackground->AddWebRenderCommands(*diplayListBuilder);
     if (dumpEnabled) {
       printf_stderr("(no display list; background only)\n");
-      builderDumpIndex =
-          diplayListBuilder->Dump( 1, Some(builderDumpIndex), Nothing());
+      builderDumpIndex = diplayListBuilder->Dump(
+           1, Some(builderDumpIndex), Nothing());
     }
   }
 
@@ -443,10 +443,10 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   }
 
   if (!aRenderOffscreen) {
-      
-      
-      
-      mStateManager.DiscardImagesInTransaction(resourceUpdates);
+    
+    
+    
+    mStateManager.DiscardImagesInTransaction(resourceUpdates);
   }
 
   WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
