@@ -140,8 +140,10 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   
   
   struct timeval timeout;
-  timeout.tv_sec = StaticPrefs::network_dns_native_https_timeout_mac();
-  timeout.tv_usec = 0;
+  timeout.tv_sec =
+      StaticPrefs::network_dns_native_https_timeout_mac_msec() / 1000;
+  timeout.tv_usec =
+      (StaticPrefs::network_dns_native_https_timeout_mac_msec() % 1000) * 1000;
 
   int result = select(fd + 1, &readfds, NULL, NULL, &timeout);
   if (result > 0 && FD_ISSET(fd, &readfds)) {
