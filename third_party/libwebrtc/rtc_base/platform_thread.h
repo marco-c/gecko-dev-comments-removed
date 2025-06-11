@@ -76,7 +76,7 @@ class PlatformThread final {
   
   
   
-  virtual ~PlatformThread();
+  ~PlatformThread();
 
   
   
