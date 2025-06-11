@@ -81,16 +81,24 @@ struct VMFunctionData;
 
 
 
+
+
+
+
 class FrameDescriptor {
  public:
   static const uint32_t TypeBits = 4;
   static const uint32_t TypeMask = (1 << TypeBits) - 1;
   static const uint32_t HasCachedSavedFrame = 1 << TypeBits;
-  static const uint32_t NumActualArgsShift = TypeBits + 1;
+  static const uint32_t HasInlinedICScript = 1 << (TypeBits + 1);
+  static const uint32_t NumActualArgsShift = TypeBits + 2;
 
   explicit FrameDescriptor(FrameType type) : raw_(uint32_t(type)) {}
-  FrameDescriptor(FrameType type, uint32_t argc)
+  FrameDescriptor(FrameType type, uint32_t argc, bool hasInlined = false)
       : raw_(argc << NumActualArgsShift | uint32_t(type)) {
+    if (hasInlined) {
+      setHasInlinedICScript();
+    }
     MOZ_ASSERT(numActualArgs() == argc, "argc must fit in descriptor");
   }
 
@@ -105,6 +113,9 @@ class FrameDescriptor {
   bool hasCachedSavedFrame() const { return raw_ & HasCachedSavedFrame; }
   void setHasCachedSavedFrame() { raw_ |= HasCachedSavedFrame; }
   void clearHasCachedSavedFrame() { raw_ &= ~HasCachedSavedFrame; }
+
+  bool hasInlinedICScript() const { return raw_ & HasInlinedICScript; }
+  void setHasInlinedICScript() { raw_ |= HasInlinedICScript; }
 
   uint32_t value() const {
     MOZ_ASSERT(raw_ == uint32_t(raw_));
@@ -736,10 +747,18 @@ class BaselineStubFrameLayout : public CommonFrameLayout {
   
   
   
-
+  
+  
+  
+  
+  
+  
+  
+  
  public:
   static constexpr size_t ICStubOffset = sizeof(void*);
   static constexpr int ICStubOffsetFromFP = -int(ICStubOffset);
+  static constexpr int InlinedICScriptOffsetFromFP = 2 * -int(sizeof(void*));
   static constexpr size_t LocallyTracedValueOffset = 2 * sizeof(void*);
 
   static inline size_t Size() { return sizeof(BaselineStubFrameLayout); }
