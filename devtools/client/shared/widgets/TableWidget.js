@@ -278,6 +278,43 @@ TableWidget.prototype = {
   
 
 
+
+
+
+
+  syncRowHeight(uniqueRowIndex) {
+    const cellsInRow = [
+      ...this.tbody.querySelectorAll(
+        `div:not([hidden=""]) label.table-widget-cell[data-id="${uniqueRowIndex}"]`
+      ),
+    ];
+
+    if (cellsInRow.length === 0) {
+      return;
+    }
+
+    
+    const cellHeights = cellsInRow.map(cell => cell.clientHeight);
+
+    
+    const maxHeight = Math.max(...cellHeights);
+
+    
+    const hasMismatch = cellHeights.some(height => height !== maxHeight);
+    if (!hasMismatch) {
+      return;
+    }
+
+    for (const cell of cellsInRow) {
+      if (cell.style.height !== `${maxHeight}px`) {
+        cell.style.height = `${maxHeight}px`;
+      }
+    }
+  },
+
+  
+
+
   onChange(data) {
     const changedField = data.change.field;
     const colName = changedField.parentNode.id;
@@ -305,6 +342,7 @@ TableWidget.prototype = {
     this.editBookmark =
       colName === uniqueId ? change.newValue : items[uniqueId];
     this.emit(EVENTS.CELL_EDIT, change);
+    this.syncRowHeight(change.items.uniqueKey);
   },
 
   onEditorDestroyed() {
@@ -920,6 +958,7 @@ TableWidget.prototype = {
     }
 
     this.emit(EVENTS.ROW_EDIT, item[this.uniqueId]);
+    this.syncRowHeight(item[this.uniqueId]);
   },
 
   
@@ -1610,6 +1649,27 @@ Column.prototype = {
 
     if (event.button == 0 && target == this.header) {
       this.table.sortBy(this.id);
+
+      
+      const cellHeights = [
+        ...this.table.tbody.querySelectorAll(
+          `.table-widget-column#${this.id} .table-widget-cell`
+        ),
+      ].map(cell => cell.clientHeight);
+
+      
+      cellHeights.sort((a, b) => a - b);
+
+      
+      for (let i = 1; i < cellHeights.length; i++) {
+        if (cellHeights[i] !== cellHeights[i - 1]) {
+          
+          for (const rowId in this.items) {
+            this.table.syncRowHeight(rowId);
+          }
+          return; 
+        }
+      }
     }
   },
 
