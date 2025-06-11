@@ -9,6 +9,7 @@
 #include "nsWeakReference.h"
 #include "nsIRequest.h"
 #include "nsITRRSkipReason.h"
+#include "nsILoadInfo.h"
 
 #ifdef Status
 
@@ -181,6 +182,10 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual bool IsHttp2Websocket() { return false; }
   virtual void SetTRRInfo(nsIRequest::TRRMode aMode,
                           TRRSkippedReason aSkipReason) {};
+  virtual bool AllowedToConnectToIpAddressSpace(
+      nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) {
+    return true;
+  };
 
   
   

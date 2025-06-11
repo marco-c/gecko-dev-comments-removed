@@ -562,6 +562,23 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   mTransaction = trans;
 
   
+  
+  
+  
+  nsHttpTransaction* httpTrans = mTransaction->QueryHttpTransaction();
+
+  if (httpTrans && httpTrans->Connection()) {
+    NetAddr peerAddr;
+    httpTrans->Connection()->GetPeerAddr(&peerAddr);
+    if (!httpTrans->AllowedToConnectToIpAddressSpace(
+            peerAddr.GetIpAddressSpace())) {
+      mSocketOutCondition = NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
+      CloseTransaction(mTransaction, mSocketOutCondition);
+      return mSocketOutCondition;
+    }
+  }
+
+  
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   trans->GetSecurityCallbacks(getter_AddRefs(callbacks));
   SetSecurityCallbacks(callbacks);
@@ -637,6 +654,21 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
   
   
   
+  nsHttpTransaction* httpTrans = httpTransaction->QueryHttpTransaction();
+  if (httpTrans) {
+    
+    
+    NetAddr peerAddr;
+
+    if (NS_SUCCEEDED(GetPeerAddr(&peerAddr)) &&
+        !httpTrans->AllowedToConnectToIpAddressSpace(
+            peerAddr.GetIpAddressSpace())) {
+      mSocketOutCondition = NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
+      CloseTransaction(httpTransaction, mSocketOutCondition);
+      httpTransaction->Close(mSocketOutCondition);
+      return mSocketOutCondition;
+    }
+  }
 
   nsHttpConnectionInfo* transCI = httpTransaction->ConnectionInfo();
 

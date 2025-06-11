@@ -513,6 +513,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   bool EligibleForThrottling() const;
 
+  bool AllowedToConnectToIpAddressSpace(
+      nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) override;
+
  private:
   bool mSubmittedRatePacing{false};
   bool mPassedRatePacing{false};
