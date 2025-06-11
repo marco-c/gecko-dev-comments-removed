@@ -65,6 +65,9 @@ class TMimeType final {
   
   void GetEssence(nsTSubstring<char_type>& aOutput) const;
 
+  
+  void GetSubtype(nsTSubstring<char_type>& aOutput) const;
+
   bool IsBase64() const { return mIsBase64; }
 
   
