@@ -229,8 +229,16 @@ class RTC_EXPORT Candidate {
   
   
   
+  
+  
+  [[deprecated("Use variant with filter_ufrag")]] Candidate ToSanitizedCopy(
+      bool use_hostname_address,
+      bool filter_related_address) const {
+    return ToSanitizedCopy(use_hostname_address, filter_related_address, false);
+  }
   Candidate ToSanitizedCopy(bool use_hostname_address,
-                            bool filter_related_address) const;
+                            bool filter_related_address,
+                            bool filter_ufrag) const;
 
   
   

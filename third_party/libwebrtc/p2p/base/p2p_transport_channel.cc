@@ -22,7 +22,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -504,7 +503,7 @@ void P2PTransportChannel::SetRemoteIceParameters(
   RTC_LOG(LS_INFO) << "Received remote ICE parameters: ufrag="
                    << ice_params.ufrag << ", renomination "
                    << (ice_params.renomination ? "enabled" : "disabled");
-  IceParameters* current_ice = remote_ice();
+  const IceParameters* current_ice = remote_ice();
   if (!current_ice || *current_ice != ice_params) {
     
     
@@ -1144,7 +1143,7 @@ void P2PTransportChannel::OnRoleConflict(PortInterface* ) {
 
 const IceParameters* P2PTransportChannel::FindRemoteIceFromUfrag(
     absl::string_view ufrag,
-    uint32_t* generation) {
+    uint32_t* generation) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   const auto& params = remote_ice_parameters_;
   auto it = std::find_if(
@@ -2282,8 +2281,14 @@ Candidate P2PTransportChannel::SanitizeRemoteCandidate(
   
   
   use_hostname_address |= c.is_prflx();
+  
+  
+  uint32_t remote_generation = 0;
+  bool filter_ufrag =
+      c.is_prflx() &&
+      FindRemoteIceFromUfrag(c.username(), &remote_generation) == nullptr;
   return c.ToSanitizedCopy(use_hostname_address,
-                           false );
+                           false , filter_ufrag);
 }
 
 void P2PTransportChannel::LogCandidatePairConfig(
