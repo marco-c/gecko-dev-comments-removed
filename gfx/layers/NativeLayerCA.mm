@@ -1140,6 +1140,21 @@ Maybe<gfx::IntRect> NativeLayerCA::ClipRect() {
   return mClipRect;
 }
 
+void NativeLayerCA::SetRoundedClipRect(const Maybe<gfx::RoundedRect>& aClip) {
+  MutexAutoLock lock(mMutex);
+
+  if (aClip != mRoundedClipRect) {
+    mRoundedClipRect = aClip;
+    ForAllRepresentations(
+        [&](Representation& r) { r.mMutatedRoundedClipRect = true; });
+  }
+}
+
+Maybe<gfx::RoundedRect> NativeLayerCA::RoundedClipRect() {
+  MutexAutoLock lock(mMutex);
+  return mRoundedClipRect;
+}
+
 void NativeLayerCA::DumpLayer(std::ostream& aOutputStream) {
   MutexAutoLock lock(mMutex);
 
@@ -1279,6 +1294,7 @@ NativeLayerCA::Representation::Representation()
       mMutatedTransform(true),
       mMutatedDisplayRect(true),
       mMutatedClipRect(true),
+      mMutatedRoundedClipRect(true),
       mMutatedBackingScale(true),
       mMutatedSize(true),
       mMutatedSurfaceIsFlipped(true),
@@ -1291,6 +1307,7 @@ NativeLayerCA::Representation::~Representation() {
   [mContentCALayer release];
   [mOpaquenessTintLayer release];
   [mWrappingCALayer release];
+  [mRoundedClipCALayer release];
 }
 
 void NativeLayerCA::InvalidateRegionThroughoutSwapchain(
@@ -1422,9 +1439,9 @@ bool NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation,
 
   return GetRepresentation(aRepresentation)
       .ApplyChanges(aUpdate, size, mIsOpaque, mPosition, mTransform,
-                    displayRect, mClipRect, mBackingScale, surfaceIsFlipped,
-                    mSamplingFilter, mSpecializeVideo, surface, mColor, mIsDRM,
-                    IsVideo(lock));
+                    displayRect, mClipRect, mRoundedClipRect, mBackingScale,
+                    surfaceIsFlipped, mSamplingFilter, mSpecializeVideo,
+                    surface, mColor, mIsDRM, IsVideo(lock));
 }
 
 CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
@@ -1627,10 +1644,10 @@ bool NativeLayerCA::Representation::ApplyChanges(
     NativeLayerCA::UpdateType aUpdate, const IntSize& aSize, bool aIsOpaque,
     const IntPoint& aPosition, const Matrix4x4& aTransform,
     const IntRect& aDisplayRect, const Maybe<IntRect>& aClipRect,
-    float aBackingScale, bool aSurfaceIsFlipped,
-    gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
-    CFTypeRefPtr<IOSurfaceRef> aFrontSurface, CFTypeRefPtr<CGColorRef> aColor,
-    bool aIsDRM, bool aIsVideo) {
+    const Maybe<gfx::RoundedRect>& aRoundedClip, float aBackingScale,
+    bool aSurfaceIsFlipped, gfx::SamplingFilter aSamplingFilter,
+    bool aSpecializeVideo, CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
+    CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM, bool aIsVideo) {
   
   if (aUpdate == UpdateType::OnlyVideo) {
     
@@ -1681,6 +1698,8 @@ bool NativeLayerCA::Representation::ApplyChanges(
     mOpaquenessTintLayer = nil;
     [mWrappingCALayer release];
     mWrappingCALayer = nil;
+    [mRoundedClipCALayer release];
+    mRoundedClipCALayer = nil;
   }
 
   bool layerNeedsInitialization = false;
@@ -1693,10 +1712,20 @@ bool NativeLayerCA::Representation::ApplyChanges(
     mWrappingCALayer.contentsGravity = kCAGravityTopLeft;
     mWrappingCALayer.edgeAntialiasingMask = 0;
 
+    mRoundedClipCALayer = [[CALayer layer] retain];
+    mRoundedClipCALayer.position = CGPointZero;
+    mRoundedClipCALayer.bounds = CGRectZero;
+    mRoundedClipCALayer.anchorPoint = CGPointZero;
+    mRoundedClipCALayer.contentsGravity = kCAGravityTopLeft;
+    mRoundedClipCALayer.edgeAntialiasingMask = 0;
+    mRoundedClipCALayer.masksToBounds = NO;
+
+    [mWrappingCALayer addSublayer:mRoundedClipCALayer];
+
     if (aColor) {
       
       
-      mWrappingCALayer.backgroundColor = aColor.get();
+      mRoundedClipCALayer.backgroundColor = aColor.get();
     } else {
       if (aSpecializeVideo) {
 #ifdef NIGHTLY_BUILD
@@ -1743,7 +1772,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
         [mContentCALayer setContentsOpaque:aIsOpaque];
       }
 
-      [mWrappingCALayer addSublayer:mContentCALayer];
+      [mRoundedClipCALayer addSublayer:mContentCALayer];
     }
   }
 
@@ -1765,7 +1794,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
       mOpaquenessTintLayer.backgroundColor =
           CGColorCreateGenericRGB(1, 0, 0, 0.5);
     }
-    [mWrappingCALayer addSublayer:mOpaquenessTintLayer];
+    [mRoundedClipCALayer addSublayer:mOpaquenessTintLayer];
   } else if (!shouldTintOpaqueness && mOpaquenessTintLayer) {
     [mOpaquenessTintLayer removeFromSuperlayer];
     [mOpaquenessTintLayer release];
@@ -1795,8 +1824,8 @@ bool NativeLayerCA::Representation::ApplyChanges(
   }
 
   if (mMutatedBackingScale || mMutatedPosition || mMutatedDisplayRect ||
-      mMutatedClipRect || mMutatedTransform || mMutatedSurfaceIsFlipped ||
-      mMutatedSize || layerNeedsInitialization) {
+      mMutatedClipRect || mMutatedRoundedClipRect || mMutatedTransform ||
+      mMutatedSurfaceIsFlipped || mMutatedSize || layerNeedsInitialization) {
     Maybe<CGRect> scaledClipRect = CalculateClipGeometry(
         aSize, aPosition, aTransform, aDisplayRect, aClipRect, aBackingScale);
 
@@ -1812,11 +1841,81 @@ bool NativeLayerCA::Representation::ApplyChanges(
         CGRectMake(0, 0, useClipRect.size.width, useClipRect.size.height);
     mWrappingCALayer.masksToBounds = scaledClipRect.isSome();
 
+    
+    
+    
+    CGRect rrClipRect =
+        CGRectMake(0, 0, useClipRect.size.width, useClipRect.size.height);
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    mRoundedClipCALayer.cornerRadius = 0.0f;
+    mRoundedClipCALayer.masksToBounds = NO;
+    mRoundedClipCALayer.maskedCorners = 0;
+
+    if (aRoundedClip.isSome()) {
+      
+      
+      
+      CACornerMask maskedCorners = 0;
+      auto effectiveRadius = 0.0f;
+      if (aRoundedClip->corners.radii[0].width > 0.0) {
+        maskedCorners |= kCALayerMinXMinYCorner;
+        effectiveRadius =
+            std::max(effectiveRadius, aRoundedClip->corners.radii[0].width);
+      }
+      if (aRoundedClip->corners.radii[1].width > 0.0) {
+        maskedCorners |= kCALayerMaxXMinYCorner;
+        effectiveRadius =
+            std::max(effectiveRadius, aRoundedClip->corners.radii[1].width);
+      }
+      if (aRoundedClip->corners.radii[2].width > 0.0) {
+        maskedCorners |= kCALayerMaxXMaxYCorner;
+        effectiveRadius =
+            std::max(effectiveRadius, aRoundedClip->corners.radii[2].width);
+      }
+      if (aRoundedClip->corners.radii[3].width > 0.0) {
+        maskedCorners |= kCALayerMinXMaxYCorner;
+        effectiveRadius =
+            std::max(effectiveRadius, aRoundedClip->corners.radii[3].width);
+      }
+
+      
+      if (maskedCorners != 0) {
+        rrClipRect.origin.x = aRoundedClip->rect.x / aBackingScale;
+        rrClipRect.origin.y = aRoundedClip->rect.y / aBackingScale;
+        rrClipRect.size.width = aRoundedClip->rect.width / aBackingScale;
+        rrClipRect.size.height = aRoundedClip->rect.height / aBackingScale;
+
+        
+        rrClipRect.origin.x -= useClipRect.origin.x;
+        rrClipRect.origin.y -= useClipRect.origin.y;
+
+        mRoundedClipCALayer.cornerRadius = effectiveRadius / aBackingScale;
+        mRoundedClipCALayer.masksToBounds = YES;
+        mRoundedClipCALayer.maskedCorners = maskedCorners;
+      }
+    }
+
+    
+    mRoundedClipCALayer.position = rrClipRect.origin;
+    mRoundedClipCALayer.bounds =
+        CGRectMake(0, 0, rrClipRect.size.width, rrClipRect.size.height);
+
     if (mContentCALayer) {
       Matrix4x4 transform = aTransform;
       transform.PreTranslate(aPosition.x, aPosition.y, 0);
-      transform.PostTranslate((-useClipRect.origin.x * aBackingScale),
-                              (-useClipRect.origin.y * aBackingScale), 0);
+      transform.PostTranslate(
+          ((-useClipRect.origin.x - rrClipRect.origin.x) * aBackingScale),
+          ((-useClipRect.origin.y - rrClipRect.origin.y) * aBackingScale), 0);
 
       if (aSurfaceIsFlipped) {
         transform.PreTranslate(0, aSize.height, 0).PreScale(1, -1, 1);
@@ -1903,6 +2002,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
   mMutatedSurfaceIsFlipped = false;
   mMutatedDisplayRect = false;
   mMutatedClipRect = false;
+  mMutatedRoundedClipRect = false;
   mMutatedFrontSurface = false;
   mMutatedSamplingFilter = false;
   mMutatedSpecializeVideo = false;
@@ -1920,8 +2020,8 @@ NativeLayerCA::UpdateType NativeLayerCA::Representation::HasUpdate(
   
   
   if (mMutatedPosition || mMutatedTransform || mMutatedDisplayRect ||
-      mMutatedClipRect || mMutatedBackingScale || mMutatedSize ||
-      mMutatedSurfaceIsFlipped || mMutatedSamplingFilter ||
+      mMutatedClipRect || mMutatedRoundedClipRect || mMutatedBackingScale ||
+      mMutatedSize || mMutatedSurfaceIsFlipped || mMutatedSamplingFilter ||
       mMutatedSpecializeVideo || mMutatedIsDRM) {
     return UpdateType::All;
   }
