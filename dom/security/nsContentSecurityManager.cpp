@@ -868,6 +868,41 @@ nsSecurityFlags nsContentSecurityManager::ComputeSecurityFlags(
 }
 
 
+nsSecurityFlags nsContentSecurityManager::ComputeSecurityMode(
+    nsSecurityFlags aSecurityFlags) {
+  return aSecurityFlags &
+         (nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT |
+          nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED |
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT |
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL |
+          nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT);
+}
+
+
+mozilla::dom::RequestMode nsContentSecurityManager::SecurityModeToRequestMode(
+    uint32_t aSecurityMode) {
+  if (aSecurityMode ==
+          nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT ||
+      aSecurityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED) {
+    return mozilla::dom::RequestMode::Same_origin;
+  }
+
+  if (aSecurityMode == nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
+    return mozilla::dom::RequestMode::Cors;
+  }
+
+  
+  
+  MOZ_ASSERT(aSecurityMode ==
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT ||
+                 aSecurityMode ==
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+             "unhandled security mode");
+
+  return mozilla::dom::RequestMode::No_cors;
+}
+
+
 nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
