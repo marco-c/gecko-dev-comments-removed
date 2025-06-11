@@ -461,8 +461,8 @@ void OutstandingData::NackAll() {
     }
   }
 
-  for (UnwrappedTSN tsn : tsns_to_nack) {
-    NackItem(tsn, true,
+  for (UnwrappedTSN tsn_to_nack : tsns_to_nack) {
+    NackItem(tsn_to_nack, true,
              false);
   }
 
