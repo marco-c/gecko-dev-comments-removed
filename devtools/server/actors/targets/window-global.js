@@ -678,15 +678,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     
     
-    
-    
-    
-    
-    
-    const originalBrowsingContext = this
-      .devtoolsSpawnedBrowsingContextForWebExtension
-      ? this.devtoolsSpawnedBrowsingContextForWebExtension
-      : this.originalDocShell.browsingContext;
+    const originalBrowsingContext = this.originalDocShell.browsingContext;
 
     
     

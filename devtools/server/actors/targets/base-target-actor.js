@@ -127,10 +127,6 @@ class BaseTargetActor extends Actor {
       return;
     }
 
-    if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
-      this.overrideResourceBrowsingContextForWebExtension(resources);
-    }
-
     const shouldEmitSynchronously =
       resourceType == NETWORK_EVENT_STACKTRACE ||
       (resourceType == DOCUMENT_EVENT &&
@@ -184,23 +180,6 @@ class BaseTargetActor extends Actor {
       this.#throttledResources[updateType] = [];
       this.emit(`resources-${updateType}-array`, resources);
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-  overrideResourceBrowsingContextForWebExtension(resources) {
-    const browsingContextID =
-      this.devtoolsSpawnedBrowsingContextForWebExtension.id;
-    resources.forEach(
-      resource => (resource.browsingContextID = browsingContextID)
-    );
   }
 
   
