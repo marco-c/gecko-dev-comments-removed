@@ -8,13 +8,19 @@
 #define ds_Nestable_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 
 namespace js {
 
 
+
+
+
+
+
+
+
 template <typename Concrete>
-class MOZ_STACK_CLASS Nestable {
+class Nestable {
   Concrete** stack_;
   Concrete* enclosing_;
 
