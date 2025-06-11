@@ -134,8 +134,8 @@ class RTC_LOCKABLE SequenceChecker
 
 
 #define RTC_DCHECK_RUN_ON(x)                                               \
+  []() RTC_ASSERT_EXCLUSIVE_LOCK(x) {}();                                  \
   RTC_DCHECK((x)->IsCurrent())                                             \
-      << webrtc::webrtc_sequence_checker_internal::ExpectationToString(x); \
-  []() RTC_ASSERT_EXCLUSIVE_LOCK(x) {}()
+      << webrtc::webrtc_sequence_checker_internal::ExpectationToString(x);
 
 #endif  
