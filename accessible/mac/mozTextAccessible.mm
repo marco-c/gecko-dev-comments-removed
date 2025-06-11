@@ -50,6 +50,10 @@ inline NSString* ToNSString(id aValue) {
 
 @implementation mozTextAccessible
 
+- (NSString*)moxTitle {
+  return @"";
+}
+
 - (id)moxValue {
   
   
@@ -342,16 +346,8 @@ inline NSString* ToNSString(id aValue) {
 }
 
 - (NSString*)moxValue {
-  MOZ_ASSERT(mGeckoAccessible);
-
-  nsAutoString name;
-  mGeckoAccessible->Name(name);
-
-  if (nsCoreUtils::IsWhitespaceString(name)) {
-    return nil;
-  }
-
-  return nsCocoaUtils::ToNSString(name);
+  NSString* val = [super moxTitle];
+  return [val length] ? val : nil;
 }
 
 - (NSString*)moxTitle {

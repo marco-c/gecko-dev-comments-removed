@@ -147,9 +147,6 @@ bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
               
               fireNameChange = true;
               break;
-            case eNameFromRelations:
-              fireNameChange = true;
-              break;
             default:
               MOZ_ASSERT_UNREACHABLE("All name flags not covered!");
           }
