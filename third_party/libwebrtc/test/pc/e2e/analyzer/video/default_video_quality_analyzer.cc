@@ -218,8 +218,8 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
     }
     state->SetLastCapturedFrameTime(captured_time);
     
-    auto it = captured_frames_in_flight_.find(frame_id);
-    if (it != captured_frames_in_flight_.end()) {
+    auto captured_frame_it = captured_frames_in_flight_.find(frame_id);
+    if (captured_frame_it != captured_frames_in_flight_.end()) {
       
       
       
@@ -245,11 +245,11 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
             InternalStatsKey(stream_index, peer_index, i),
             std::nullopt,
             std::nullopt, FrameComparisonType::kDroppedFrame,
-            it->second.GetStatsForPeer(i));
+            captured_frame_it->second.GetStatsForPeer(i));
       }
 
-      frames_storage_.Remove(it->second.id());
-      captured_frames_in_flight_.erase(it);
+      frames_storage_.Remove(captured_frame_it->second.id());
+      captured_frames_in_flight_.erase(captured_frame_it);
     }
     captured_frames_in_flight_.emplace(
         frame_id, FrameInFlight(stream_index, frame_id, captured_time,
