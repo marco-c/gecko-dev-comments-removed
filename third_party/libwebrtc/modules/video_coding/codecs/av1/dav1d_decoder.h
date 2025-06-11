@@ -12,11 +12,16 @@
 
 #include <memory>
 
+#include "api/environment/environment.h"
 #include "api/video_codecs/video_decoder.h"
 
 namespace webrtc {
 
+
+
 std::unique_ptr<VideoDecoder> CreateDav1dDecoder();
+
+std::unique_ptr<VideoDecoder> CreateDav1dDecoder(const Environment& env);
 
 }  
 
