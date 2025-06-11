@@ -1214,11 +1214,7 @@ pref("network.http.network-changed.timeout", 5);
 
 
 
-#ifdef ANDROID
-  pref("network.http.speculative-parallel-limit", 6);
-#else
-  pref("network.http.speculative-parallel-limit", 20);
-#endif
+pref("network.http.speculative-parallel-limit", 20);
 
 
 
