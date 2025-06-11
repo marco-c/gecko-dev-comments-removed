@@ -420,6 +420,7 @@ void BaselineCompilerHandler::maybeDisableIon() {
   if (analysis_.isInliningDisabled()) {
     script()->setUninlineable();
   }
+  script()->jitScript()->setRanBytecodeAnalysis();
 }
 
 
@@ -1358,9 +1359,21 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   masm.storePtr(scratch1, frame.addressOfInterpreterScript());
 
   
+  Label inlined, haveICScript;
+  masm.branchTest32(Assembler::NonZero, frame.addressOfDescriptor(),
+                    Imm32(FrameDescriptor::HasInlinedICScript), &inlined);
   masm.loadJitScript(scratch1, scratch2);
   masm.computeEffectiveAddress(Address(scratch2, JitScript::offsetOfICScript()),
                                scratch2);
+  masm.jump(&haveICScript);
+  masm.bind(&inlined);
+  masm.loadPtr(Address(FramePointer, 0), scratch2);
+  masm.loadPtr(
+      Address(scratch2, BaselineStubFrameLayout::InlinedICScriptOffsetFromFP),
+      scratch2);
+  masm.bind(&haveICScript);
+
+  
   masm.storePtr(scratch2, frame.addressOfICScript());
   masm.computeEffectiveAddress(Address(scratch2, ICScript::offsetOfICEntries()),
                                scratch2);
@@ -1736,6 +1749,11 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
+  
+  if (!JitOptions.baselineJit) {
+    return true;
+  }
+
   Register scriptReg = R2.scratchReg();
   Register countReg = R0.scratchReg();
 
