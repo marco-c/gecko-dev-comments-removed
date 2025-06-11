@@ -54,7 +54,7 @@ def _get_upstream_deps_per_gradle_project(gradle_root, existing_build_config):
         
         
         if line.startswith("Project"):
-            current_project_name = line.split(":", 1)[1].strip("'")
+            current_project_name = line.split(":")[1].strip("'")
 
         
         local_dep_match = _LOCAL_DEPENDENCY_PATTERN.search(line)
