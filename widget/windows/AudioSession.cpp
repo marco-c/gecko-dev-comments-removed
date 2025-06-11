@@ -13,6 +13,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIStringBundle.h"
 
@@ -24,12 +25,26 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/mscom/AgileReference.h"
+#include "mozilla/Logging.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/WindowsVersion.h"
 
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#endif
+
 namespace mozilla {
 namespace widget {
+
+static mozilla::LazyLogModule sAudioSessionLog("AudioSession");
+#define LOGD(...)                                                      \
+  MOZ_LOG(mozilla::widget::sAudioSessionLog, mozilla::LogLevel::Debug, \
+          (__VA_ARGS__))
+
+
+
+
 
 
 
@@ -38,95 +53,197 @@ namespace widget {
 
 class AudioSession final : public IAudioSessionEvents {
  public:
-  AudioSession();
+  static void Create(nsString&& aDisplayName, nsString&& aIconPath,
+                     nsID&& aSessionGroupingParameter) {
+    MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+    LOGD("Gecko will create the AudioSession object.");
+    if (AppShutdown::IsShutdownImpending()) {
+      
+      
+      LOGD("Did not create AudioSession.  Shutting down.");
+      return;
+    }
 
-  static AudioSession* GetSingleton();
+    StaticMutexAutoLock lock(sMutex);
+    
+    MOZ_ASSERT(!sService);
+    NS_ENSURE_TRUE_VOID(!sService);
+    sService = new AudioSession(std::move(aDisplayName), std::move(aIconPath),
+                                std::move(aSessionGroupingParameter));
+    LOGD("Created AudioSession.");
+  }
+
+  static void MaybeRestart() {
+    MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+    if (AppShutdown::IsShutdownImpending()) {
+      LOGD("Did not restart AudioSession.  Shutting down.");
+      return;
+    }
+
+    LOGD("Gecko will restart the AudioSession object.");
+    StaticMutexAutoLock lock(sMutex);
+    
+    
+    
+    MOZ_ASSERT(sService);
+    NS_ENSURE_TRUE_VOID(sService);
+    sService->Start();
+    LOGD("Restarted AudioSession.");
+  }
+
+  static void Destroy() {
+    MOZ_ASSERT(NS_IsMainThread() && AppShutdown::IsShutdownImpending());
+    StaticMutexAutoLock lock(sMutex);
+    LOGD("Gecko will release the AudioSession object | sService: %p",
+         sService.get());
+    NS_ENSURE_TRUE_VOID(sService);
+    sService->Stop(false );
+    sService = nullptr;
+    LOGD("Released AudioSession object.");
+  }
 
   
-  STDMETHODIMP_(ULONG) AddRef();
-  STDMETHODIMP QueryInterface(REFIID, void**);
-  STDMETHODIMP_(ULONG) Release();
+  STDMETHODIMP_(ULONG) AddRef() override;
+  STDMETHODIMP QueryInterface(REFIID, void**) override;
+  STDMETHODIMP_(ULONG) Release() override;
 
   
+  STDMETHODIMP OnSessionDisconnected(
+      AudioSessionDisconnectReason aReason) override {
+    MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+    LOGD("%s | aReason: %d | Attempting to recreate.", __FUNCTION__, aReason);
+    StaticMutexAutoLock lock(sMutex);
+    Stop(true );
+    return S_OK;
+  }
+
   STDMETHODIMP OnChannelVolumeChanged(DWORD aChannelCount,
                                       float aChannelVolumeArray[],
-                                      DWORD aChangedChannel, LPCGUID aContext);
-  STDMETHODIMP OnDisplayNameChanged(LPCWSTR aDisplayName, LPCGUID aContext);
-  STDMETHODIMP OnGroupingParamChanged(LPCGUID aGroupingParam, LPCGUID aContext);
-  STDMETHODIMP OnIconPathChanged(LPCWSTR aIconPath, LPCGUID aContext);
-  STDMETHODIMP OnSessionDisconnected(AudioSessionDisconnectReason aReason);
+                                      DWORD aChangedChannel,
+                                      LPCGUID aContext) override {
+    return S_OK;
+  }
+  STDMETHODIMP OnDisplayNameChanged(LPCWSTR aDisplayName,
+                                    LPCGUID aContext) override {
+    return S_OK;
+  }
+  STDMETHODIMP OnGroupingParamChanged(LPCGUID aGroupingParam,
+                                      LPCGUID aContext) override {
+    return S_OK;
+  }
+  STDMETHODIMP OnIconPathChanged(LPCWSTR aIconPath, LPCGUID aContext) override {
+    return S_OK;
+  }
   STDMETHODIMP OnSimpleVolumeChanged(float aVolume, BOOL aMute,
-                                     LPCGUID aContext);
-  STDMETHODIMP OnStateChanged(AudioSessionState aState);
-
-  void Start();
-  void Stop(bool shouldRestart = false);
-
-  nsresult GetSessionData(nsID& aID, nsString& aSessionName,
-                          nsString& aIconPath);
-  nsresult SetSessionData(const nsID& aID, const nsString& aSessionName,
-                          const nsString& aIconPath);
+                                     LPCGUID aContext) override {
+    return S_OK;
+  }
+  STDMETHODIMP OnStateChanged(AudioSessionState aState) override {
+    return S_OK;
+  }
 
  private:
-  ~AudioSession() = default;
+  AudioSession(nsString&& aDisplayName, nsString&& aIconPath,
+               nsID&& aSessionGroupingParameter) MOZ_REQUIRES(sMutex)
+      : mDisplayName(aDisplayName),
+        mIconPath(aIconPath),
+        mSessionGroupingParameter(aSessionGroupingParameter) {
+    Start();
+  }
+  ~AudioSession() {
+    
+    MOZ_ASSERT(!mAudioSessionControl);
+    LOGD("AudioSession object was destroyed.");
+  }
 
-  void StopInternal(const MutexAutoLock& aProofOfLock,
-                    bool shouldRestart = false);
+  void Start() MOZ_REQUIRES(sMutex);
+  void Stop(bool shouldRestart) MOZ_REQUIRES(sMutex);
 
- protected:
-  RefPtr<IAudioSessionControl> mAudioSessionControl;
-  nsString mDisplayName;
-  nsString mIconPath;
-  nsID mSessionGroupingParameter;
-  
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  static StaticMutex sMutex;
+
+  RefPtr<IAudioSessionControl> mAudioSessionControl MOZ_GUARDED_BY(sMutex);
+  nsString mDisplayName MOZ_GUARDED_BY(sMutex);
+  nsString mIconPath MOZ_GUARDED_BY(sMutex);
+  nsID mSessionGroupingParameter MOZ_GUARDED_BY(sMutex);
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
+
+  
+  
+  static StaticRefPtr<AudioSession> sService MOZ_GUARDED_BY(sMutex);
 };
 
-StaticRefPtr<AudioSession> sService;
+ StaticMutex AudioSession::sMutex;
+ StaticRefPtr<AudioSession> AudioSession::sService;
 
-void StartAudioSession() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!sService);
+void CreateAudioSession() {
+  MOZ_ASSERT(XRE_IsParentProcess());
 
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    LOGD("In BackgroundTasks mode.  CreateAudioSession was not run.");
     return;
   }
+#endif
 
-  sService = new AudioSession();
-
+  LOGD("CreateAudioSession");
   
   
-  ClearOnShutdown(&sService, ShutdownPhase::XPCOMShutdownFinal);
+  
+  
+  
+  
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("DelayStartAudioSession", []() {
+        nsCOMPtr<nsIStringBundleService> bundleService =
+            do_GetService(NS_STRINGBUNDLE_CONTRACTID);
+        MOZ_ASSERT(bundleService);
 
-  NS_DispatchBackgroundTask(
-      NS_NewCancelableRunnableFunction("StartAudioSession", []() -> void {
-        MOZ_ASSERT(AudioSession::GetSingleton(),
-                   "AudioSession should outlive background threads");
-        AudioSession::GetSingleton()->Start();
+        nsCOMPtr<nsIStringBundle> bundle;
+        bundleService->CreateBundle("chrome://branding/locale/brand.properties",
+                                    getter_AddRefs(bundle));
+        MOZ_ASSERT(bundle);
+
+        nsString displayName;
+        bundle->GetStringFromName("brandFullName", displayName);
+
+        nsString iconPath;
+        wchar_t* buffer;
+        iconPath.GetMutableData(&buffer, MAX_PATH);
+        ::GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+
+        nsID sessionGroupingParameter;
+        [[maybe_unused]] nsresult rv =
+            nsID::GenerateUUIDInPlace(sessionGroupingParameter);
+        MOZ_ASSERT(rv == NS_OK);
+
+        
+        NS_DispatchBackgroundTask(NS_NewCancelableRunnableFunction(
+            "CreateAudioSession", [displayName = std::move(displayName),
+                                   iconPath = std::move(iconPath),
+                                   sessionGroupingParameter = std::move(
+                                       sessionGroupingParameter)]() mutable {
+              AudioSession::Create(std::move(displayName), std::move(iconPath),
+                                   std::move(sessionGroupingParameter));
+            }));
       }));
 }
 
-void StopAudioSession() {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (sService) {
-    NS_DispatchBackgroundTask(
-        NS_NewRunnableFunction("StopAudioSession", []() -> void {
-          MOZ_ASSERT(AudioSession::GetSingleton(),
-                     "AudioSession should outlive background threads");
-          AudioSession::GetSingleton()->Stop();
-        }));
+void DestroyAudioSession() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    LOGD("In BackgroundTasks mode.  DestroyAudioSession was not run.");
+    return;
   }
-}
+#endif
 
-AudioSession* AudioSession::GetSingleton() {
-  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
-  return sService;
+  LOGD("DestroyAudioSession");
+  MOZ_ASSERT(AppShutdown::IsShutdownImpending());
+  AudioSession::Destroy();
 }
-
 
 NS_IMPL_ADDREF(AudioSession)
 NS_IMPL_RELEASE(AudioSession)
@@ -143,36 +260,6 @@ AudioSession::QueryInterface(REFIID iid, void** ppv) {
   return E_NOINTERFACE;
 }
 
-AudioSession::AudioSession() : mMutex("AudioSessionControl") {
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MOZ_ASSERT(XRE_IsParentProcess(),
-             "Should only get here in a chrome process!");
-
-  nsCOMPtr<nsIStringBundleService> bundleService =
-      do_GetService(NS_STRINGBUNDLE_CONTRACTID);
-  MOZ_ASSERT(bundleService);
-
-  nsCOMPtr<nsIStringBundle> bundle;
-  bundleService->CreateBundle("chrome://branding/locale/brand.properties",
-                              getter_AddRefs(bundle));
-  MOZ_ASSERT(bundle);
-  bundle->GetStringFromName("brandFullName", mDisplayName);
-
-  wchar_t* buffer;
-  mIconPath.GetMutableData(&buffer, MAX_PATH);
-  ::GetModuleFileNameW(nullptr, buffer, MAX_PATH);
-
-  [[maybe_unused]] nsresult rv =
-      nsID::GenerateUUIDInPlace(mSessionGroupingParameter);
-  MOZ_ASSERT(rv == NS_OK);
-}
-
-
-
-
 void AudioSession::Start() {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
 
@@ -180,12 +267,18 @@ void AudioSession::Start() {
   const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
   const IID IID_IAudioSessionManager = __uuidof(IAudioSessionManager);
 
-  MutexAutoLock lock(mMutex);
   MOZ_ASSERT(!mAudioSessionControl);
   MOZ_ASSERT(!mDisplayName.IsEmpty() || !mIconPath.IsEmpty(),
              "Should never happen ...");
 
-  auto scopeExit = MakeScopeExit([&] { StopInternal(lock); });
+  LOGD("Starting AudioSession.");
+
+  
+  
+  auto scopeExit = MakeScopeExit([&]() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    LOGD("Failed to properly start AudioSession.  Stopping.");
+    Stop(false );
+  });
 
   RefPtr<IMMDeviceEnumerator> enumerator;
   HRESULT hr =
@@ -238,117 +331,52 @@ void AudioSession::Start() {
     return;
   }
 
+  LOGD("AudioSession started.");
   scopeExit.release();
 }
 
-void AudioSession::Stop(bool shouldRestart) {
-  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
-
-  MutexAutoLock lock(mMutex);
-  StopInternal(lock, shouldRestart);
-}
-
-void AudioSession::StopInternal(const MutexAutoLock& aProofOfLock,
-                                bool shouldRestart) {
+void AudioSession::Stop(bool aShouldRestart) {
+  
+  
+  
+  
+  MOZ_ASSERT(mscom::IsCurrentThreadMTA() ||
+             (!aShouldRestart && NS_IsMainThread()));
   if (!mAudioSessionControl) {
     return;
   }
 
+  LOGD("AudioSession stopping");
+
   
   mAudioSessionControl->UnregisterAudioSessionNotification(this);
 
+  if (!aShouldRestart) {
+    
+    
+    mAudioSessionControl = nullptr;
+    return;
+  }
+
+  LOGD("Attempting to restart AudioSession.");
+
   
   
   
   
   
   
+  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
   mscom::AgileReference agileAsc(mAudioSessionControl);
   mAudioSessionControl = nullptr;
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "FreeAudioSession",
-      [agileAsc = std::move(agileAsc), shouldRestart]() mutable {
+      "FreeIAudioSessionControl", [agileAsc = std::move(agileAsc)]() mutable {
         
         
         agileAsc = nullptr;
-        if (shouldRestart &&
-            !AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-          NS_DispatchBackgroundTask(
-              NS_NewCancelableRunnableFunction("RestartAudioSession", [] {
-                AudioSession* as = AudioSession::GetSingleton();
-                MOZ_ASSERT(as);
-                as->Start();
-              }));
-        }
+        NS_DispatchBackgroundTask(NS_NewCancelableRunnableFunction(
+            "RestartAudioSession", [] { AudioSession::MaybeRestart(); }));
       }));
-}
-
-void CopynsID(nsID& lhs, const nsID& rhs) {
-  lhs.m0 = rhs.m0;
-  lhs.m1 = rhs.m1;
-  lhs.m2 = rhs.m2;
-  for (int i = 0; i < 8; i++) {
-    lhs.m3[i] = rhs.m3[i];
-  }
-}
-
-nsresult AudioSession::GetSessionData(nsID& aID, nsString& aSessionName,
-                                      nsString& aIconPath) {
-  CopynsID(aID, mSessionGroupingParameter);
-  aSessionName = mDisplayName;
-  aIconPath = mIconPath;
-
-  return NS_OK;
-}
-
-nsresult AudioSession::SetSessionData(const nsID& aID,
-                                      const nsString& aSessionName,
-                                      const nsString& aIconPath) {
-  MOZ_ASSERT(!XRE_IsParentProcess(),
-             "Should never get here in a chrome process!");
-  CopynsID(mSessionGroupingParameter, aID);
-  mDisplayName = aSessionName;
-  mIconPath = aIconPath;
-  return NS_OK;
-}
-
-STDMETHODIMP
-AudioSession::OnChannelVolumeChanged(DWORD aChannelCount,
-                                     float aChannelVolumeArray[],
-                                     DWORD aChangedChannel, LPCGUID aContext) {
-  return S_OK;  
-}
-
-STDMETHODIMP
-AudioSession::OnDisplayNameChanged(LPCWSTR aDisplayName, LPCGUID aContext) {
-  return S_OK;  
-}
-
-STDMETHODIMP
-AudioSession::OnGroupingParamChanged(LPCGUID aGroupingParam, LPCGUID aContext) {
-  return S_OK;  
-}
-
-STDMETHODIMP
-AudioSession::OnIconPathChanged(LPCWSTR aIconPath, LPCGUID aContext) {
-  return S_OK;  
-}
-
-STDMETHODIMP
-AudioSession::OnSessionDisconnected(AudioSessionDisconnectReason aReason) {
-  Stop(true );
-  return S_OK;
-}
-
-STDMETHODIMP
-AudioSession::OnSimpleVolumeChanged(float aVolume, BOOL aMute,
-                                    LPCGUID aContext) {
-  return S_OK;  
-}
-
-STDMETHODIMP
-AudioSession::OnStateChanged(AudioSessionState aState) {
-  return S_OK;  
 }
 
 }  
