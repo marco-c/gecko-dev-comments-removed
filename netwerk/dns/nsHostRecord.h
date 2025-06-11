@@ -187,8 +187,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   bool onQueue() { return LoadNative() && isInList(); }
 
-  mozilla::TimeStamp mLastUpdate = mozilla::TimeStamp::NowLoRes();
-
   
   mozilla::TimeStamp mValidStart;
 
@@ -305,7 +303,6 @@ class AddrHostRecord final : public nsHostRecord {
   nsITRRSkipReason::value TrrSkipReason() const { return mTRRSkippedReason; }
 
   nsresult GetTtl(uint32_t* aResult);
-  nsresult GetLastUpdate(mozilla::TimeStamp* aLastUpdate);
 
  private:
   friend class nsHostResolver;
