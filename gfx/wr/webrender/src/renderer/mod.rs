@@ -3751,6 +3751,11 @@ impl Renderer {
         };
 
         
+        assert_eq!(swapchain_layers.len(), input_layers.len());
+        input_layers.reverse();
+        swapchain_layers.reverse();
+
+        
         if let Some(ref _compositor) = self.compositor_config.layer_compositor() {
             if partial_present_mode.is_some() && use_external_composite {
                 let mut combined_dirty_rect = DeviceRect::zero();
@@ -3768,6 +3773,14 @@ impl Renderer {
                     match layer.usage {
                         CompositorSurfaceUsage::Content | CompositorSurfaceUsage::DebugOverlay => {}
                         CompositorSurfaceUsage::External { .. } => {
+                            match tile.surface {
+                                CompositeTileSurface::ExternalSurface { .. } => {}
+                                CompositeTileSurface::Texture { .. }  |
+                                CompositeTileSurface::Color { .. } |
+                                CompositeTileSurface::Clear => {
+                                    unreachable!();
+                                },
+                            }
                             continue;
                         }
                     }
@@ -3793,11 +3806,6 @@ impl Renderer {
                 });
             }
         }
-
-        
-        assert_eq!(swapchain_layers.len(), input_layers.len());
-        input_layers.reverse();
-        swapchain_layers.reverse();
 
         
 
