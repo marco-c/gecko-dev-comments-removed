@@ -47,7 +47,6 @@ class MaybeCloseWindowHelper;
 
 
 
-
 class nsExternalHelperAppService : public nsIExternalHelperAppService,
                                    public nsPIExternalAppLauncher,
                                    public nsIExternalProtocolService,
@@ -204,6 +203,12 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
   void ExpungeTemporaryPrivateFiles();
 
+  
+
+
+
+  void ExpungePrivateFiles();
+
   bool GetFileNameFromChannel(nsIChannel* aChannel, nsAString& aFileName,
                               nsIURI** aURI);
 
@@ -247,6 +252,10 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
   nsCOMArray<nsIFile> mTemporaryPrivateFilesList;
+  
+
+
+  nsCOMArray<nsIFile> mPrivateFilesList;
 
  private:
   nsresult DoContentContentProcessHelper(
