@@ -470,8 +470,10 @@ void TCPSocket::ActivateTLS() {
     return;
   }
 
-  auto CallActivateTLS = [sock = RefPtr{this}]() mutable {
-    sock->ActivateTLSHelper();
+  
+  
+  auto CallActivateTLS = [&self = *this]() mutable {
+    self.ActivateTLSHelper();
   };
   mozilla::SyncRunnable::DispatchToThread(
       socketThread,
