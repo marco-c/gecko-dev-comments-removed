@@ -440,6 +440,21 @@ var gPrivacyPane = {
 
 
 
+  _showCustomBlockList() {
+    let prefValue = Services.prefs.getBoolPref(
+      "browser.contentblocking.customBlockList.preferences.ui.enabled"
+    );
+    if (!prefValue) {
+      document.getElementById("changeBlockListLink").style.display = "none";
+    } else {
+      setEventListener("changeBlockListLink", "click", this.showBlockLists);
+    }
+  },
+
+  
+
+
+
   _initTrackingProtectionExtensionControl() {
     setEventListener(
       "contentBlockingDisableTrackingProtectionExtension",
@@ -922,6 +937,7 @@ var gPrivacyPane = {
     
     this.initContentBlocking();
 
+    this._showCustomBlockList();
     this.trackingProtectionReadPrefs();
     this.fingerprintingProtectionReadPrefs();
     this.networkCookieBehaviorReadPrefs();
@@ -2324,6 +2340,15 @@ var gPrivacyPane = {
       "chrome://browser/content/preferences/dialogs/permissions.xhtml",
       undefined,
       params
+    );
+  },
+
+  
+
+
+  showBlockLists() {
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/blocklists.xhtml"
     );
   },
 
