@@ -47,7 +47,7 @@ class BitWriter final {
 
  private:
   std::string buffer_;
-  rtc::BitBufferWriter bit_writer_;
+  BitBufferWriter bit_writer_;
   
   
   

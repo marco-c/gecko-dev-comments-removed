@@ -47,7 +47,7 @@ void GenerateFakeSps(uint16_t width,
                      uint32_t log2_max_pic_order_cnt_lsb_minus4,
                      rtc::Buffer* out_buffer) {
   uint8_t rbsp[kSpsBufferMaxSize] = {0};
-  rtc::BitBufferWriter writer(rbsp, kSpsBufferMaxSize);
+  BitBufferWriter writer(rbsp, kSpsBufferMaxSize);
   
   writer.WriteUInt8(0);
   

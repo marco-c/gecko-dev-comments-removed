@@ -195,7 +195,7 @@ static const webrtc::ColorSpace kColorSpaceBt709LimitedRange(
 
 void GenerateFakeSps(const VuiHeader& vui, rtc::Buffer* out_buffer) {
   uint8_t rbsp[kSpsBufferMaxSize] = {0};
-  rtc::BitBufferWriter writer(rbsp, kSpsBufferMaxSize);
+  BitBufferWriter writer(rbsp, kSpsBufferMaxSize);
   
   writer.WriteUInt8(0);
   

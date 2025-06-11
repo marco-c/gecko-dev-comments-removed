@@ -54,7 +54,7 @@ enum SpsValidEvent {
     }                                                                  \
   } while (0)
 
-uint8_t CopyUInt8(BitstreamReader& source, rtc::BitBufferWriter& destination) {
+uint8_t CopyUInt8(BitstreamReader& source, BitBufferWriter& destination) {
   uint8_t tmp = source.Read<uint8_t>();
   if (!destination.WriteUInt8(tmp)) {
     source.Invalidate();
@@ -62,8 +62,7 @@ uint8_t CopyUInt8(BitstreamReader& source, rtc::BitBufferWriter& destination) {
   return tmp;
 }
 
-uint32_t CopyExpGolomb(BitstreamReader& source,
-                       rtc::BitBufferWriter& destination) {
+uint32_t CopyExpGolomb(BitstreamReader& source, BitBufferWriter& destination) {
   uint32_t tmp = source.ReadExponentialGolomb();
   if (!destination.WriteExponentialGolomb(tmp)) {
     source.Invalidate();
@@ -73,7 +72,7 @@ uint32_t CopyExpGolomb(BitstreamReader& source,
 
 uint32_t CopyBits(int bits,
                   BitstreamReader& source,
-                  rtc::BitBufferWriter& destination) {
+                  BitBufferWriter& destination) {
   RTC_DCHECK_GT(bits, 0);
   RTC_DCHECK_LE(bits, 32);
   uint64_t tmp = source.ReadBits(bits);
@@ -85,24 +84,22 @@ uint32_t CopyBits(int bits,
 
 bool CopyAndRewriteVui(const SpsParser::SpsState& sps,
                        BitstreamReader& source,
-                       rtc::BitBufferWriter& destination,
+                       BitBufferWriter& destination,
                        const webrtc::ColorSpace* color_space,
                        SpsVuiRewriter::ParseResult& out_vui_rewritten);
 
-void CopyHrdParameters(BitstreamReader& source,
-                       rtc::BitBufferWriter& destination);
-bool AddBitstreamRestriction(rtc::BitBufferWriter* destination,
+void CopyHrdParameters(BitstreamReader& source, BitBufferWriter& destination);
+bool AddBitstreamRestriction(BitBufferWriter* destination,
                              uint32_t max_num_ref_frames);
 bool IsDefaultColorSpace(const ColorSpace& color_space);
-bool AddVideoSignalTypeInfo(rtc::BitBufferWriter& destination,
+bool AddVideoSignalTypeInfo(BitBufferWriter& destination,
                             const ColorSpace& color_space);
 bool CopyOrRewriteVideoSignalTypeInfo(
     BitstreamReader& source,
-    rtc::BitBufferWriter& destination,
+    BitBufferWriter& destination,
     const ColorSpace* color_space,
     SpsVuiRewriter::ParseResult& out_vui_rewritten);
-bool CopyRemainingBits(BitstreamReader& source,
-                       rtc::BitBufferWriter& destination);
+bool CopyRemainingBits(BitstreamReader& source, BitBufferWriter& destination);
 }  
 
 void SpsVuiRewriter::UpdateStats(ParseResult result, Direction direction) {
@@ -153,7 +150,7 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
   
   
   rtc::Buffer out_buffer(buffer.size() + kMaxVuiSpsIncrease);
-  rtc::BitBufferWriter sps_writer(out_buffer.data(), out_buffer.size());
+  BitBufferWriter sps_writer(out_buffer.data(), out_buffer.size());
 
   
   RTC_DCHECK(source_buffer.Ok());
@@ -283,7 +280,7 @@ rtc::Buffer SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
 namespace {
 bool CopyAndRewriteVui(const SpsParser::SpsState& sps,
                        BitstreamReader& source,
-                       rtc::BitBufferWriter& destination,
+                       BitBufferWriter& destination,
                        const webrtc::ColorSpace* color_space,
                        SpsVuiRewriter::ParseResult& out_vui_rewritten) {
   out_vui_rewritten = SpsVuiRewriter::ParseResult::kVuiOk;
@@ -416,8 +413,7 @@ bool CopyAndRewriteVui(const SpsParser::SpsState& sps,
 }
 
 
-void CopyHrdParameters(BitstreamReader& source,
-                       rtc::BitBufferWriter& destination) {
+void CopyHrdParameters(BitstreamReader& source, BitBufferWriter& destination) {
   
   uint32_t cbp_cnt_minus1 = CopyExpGolomb(source, destination);
   
@@ -441,7 +437,7 @@ void CopyHrdParameters(BitstreamReader& source,
 
 
 
-bool AddBitstreamRestriction(rtc::BitBufferWriter* destination,
+bool AddBitstreamRestriction(BitBufferWriter* destination,
                              uint32_t max_num_ref_frames) {
   
   
@@ -473,7 +469,7 @@ bool IsDefaultColorSpace(const ColorSpace& color_space) {
          color_space.matrix() == ColorSpace::MatrixID::kUnspecified;
 }
 
-bool AddVideoSignalTypeInfo(rtc::BitBufferWriter& destination,
+bool AddVideoSignalTypeInfo(BitBufferWriter& destination,
                             const ColorSpace& color_space) {
   
   RETURN_FALSE_ON_FAIL(destination.WriteBits(5, 3));  
@@ -496,7 +492,7 @@ bool AddVideoSignalTypeInfo(rtc::BitBufferWriter& destination,
 
 bool CopyOrRewriteVideoSignalTypeInfo(
     BitstreamReader& source,
-    rtc::BitBufferWriter& destination,
+    BitBufferWriter& destination,
     const ColorSpace* color_space,
     SpsVuiRewriter::ParseResult& out_vui_rewritten) {
   
@@ -589,8 +585,7 @@ bool CopyOrRewriteVideoSignalTypeInfo(
   return true;
 }
 
-bool CopyRemainingBits(BitstreamReader& source,
-                       rtc::BitBufferWriter& destination) {
+bool CopyRemainingBits(BitstreamReader& source, BitBufferWriter& destination) {
   
   if (source.RemainingBitCount() > 0 && source.RemainingBitCount() % 8 != 0) {
     size_t misaligned_bits = source.RemainingBitCount() % 8;

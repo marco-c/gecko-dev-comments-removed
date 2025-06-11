@@ -48,7 +48,7 @@ uint8_t WritePartialByte(uint8_t source,
 
 }  
 
-namespace rtc {
+namespace webrtc {
 
 BitBufferWriter::BitBufferWriter(uint8_t* bytes, size_t byte_count)
     : writable_bytes_(bytes),

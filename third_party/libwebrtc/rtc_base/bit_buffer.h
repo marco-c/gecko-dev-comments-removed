@@ -17,7 +17,7 @@
 #include "absl/strings/string_view.h"
 #include "api/units/data_size.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -25,8 +25,7 @@ namespace rtc {
 
 class BitBufferWriter {
  public:
-  static constexpr webrtc::DataSize kMaxLeb128Length =
-      webrtc::DataSize::Bytes(10);
+  static constexpr DataSize kMaxLeb128Length = webrtc::DataSize::Bytes(10);
 
   
   BitBufferWriter(uint8_t* bytes, size_t byte_count);
@@ -95,6 +94,12 @@ class BitBufferWriter {
   size_t bit_offset_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::BitBufferWriter;
 }  
 
 #endif  
