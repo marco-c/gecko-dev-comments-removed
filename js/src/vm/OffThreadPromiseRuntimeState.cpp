@@ -100,8 +100,12 @@ bool OffThreadPromiseTask::InitCancellable(
 }
 
 void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state) {
-  MOZ_ASSERT(registered_);
   AutoLockHelperThreadState lock;
+  unregister(state, lock);
+}
+void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state,
+                                      const AutoLockHelperThreadState& lock) {
+  MOZ_ASSERT(registered_);
   if (cancellable_) {
     cancellable_ = false;
     state.cancellable().remove(this);
@@ -152,12 +156,17 @@ void OffThreadPromiseTask::transferToRuntime() {
 }
 
 
-void OffThreadPromiseTask::DestroyUndispatchedTask(OffThreadPromiseTask* task) {
+void OffThreadPromiseTask::DestroyUndispatchedTask(
+    OffThreadPromiseTask* task, OffThreadPromiseRuntimeState& state,
+    const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(task->runtime_));
   MOZ_ASSERT(task->registered_);
   MOZ_ASSERT(task->cancellable_);
   
   task->prepareForCancel();
+  
+  
+  task->unregister(state, lock);
   js_delete(task);
 }
 
@@ -439,11 +448,7 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
     MOZ_ASSERT(task->cancellable_);
     iter.remove();
 
-    
-    {
-      AutoUnlockHelperThreadState unlock(lock);
-      OffThreadPromiseTask::DestroyUndispatchedTask(task);
-    }
+    OffThreadPromiseTask::DestroyUndispatchedTask(task, *this, lock);
   }
   MOZ_ASSERT(cancellable().empty());
 
