@@ -1935,10 +1935,8 @@ void HTMLInputElement::SetValueAsDate(JSContext* aCx,
 
 void HTMLInputElement::SetValueAsNumber(double aValueAsNumber,
                                         ErrorResult& aRv) {
-  
-  
   if (std::isinf(aValueAsNumber)) {
-    aRv.Throw(NS_ERROR_INVALID_ARG);
+    aRv.ThrowTypeError("Value being assigned is infinite.");
     return;
   }
 
