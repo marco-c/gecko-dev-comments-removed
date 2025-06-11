@@ -265,8 +265,13 @@ interface nsISHEntry : nsISupports
 
 
 
+    [infallible] boolean isTransient();
 
-    [infallible] attribute boolean persist;
+    
+
+
+
+    void setTransient();
 
     
 

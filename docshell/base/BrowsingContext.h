@@ -876,8 +876,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void SessionHistoryCommit(const LoadingSessionHistoryInfo& aInfo,
                             uint32_t aLoadType, nsIURI* aCurrentURI,
                             SessionHistoryInfo* aPreviousActiveEntry,
-                            bool aPersist, bool aCloneEntryChildren,
-                            bool aChannelExpired, uint32_t aCacheKey,
+                            bool aCloneEntryChildren, bool aChannelExpired,
+                            uint32_t aCacheKey,
                             nsIPrincipal* aPartitionedPrincipal);
 
   
@@ -888,8 +888,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
+  
+  
   void SetActiveSessionHistoryEntry(const Maybe<nsPoint>& aPreviousScrollPos,
                                     SessionHistoryInfo* aInfo,
+                                    SessionHistoryInfo* aPreviousActiveEntry,
                                     uint32_t aLoadType,
                                     uint32_t aUpdatedCacheKey,
                                     bool aUpdateLength = true);
@@ -1017,6 +1020,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                                        bool aHasPostData);
 
  private:
+  bool AddSHEntryWouldIncreaseLength(SessionHistoryInfo* aCurrentEntry) const;
+
   
   
   
