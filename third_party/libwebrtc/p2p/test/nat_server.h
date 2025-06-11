@@ -29,9 +29,9 @@ namespace rtc {
 
 struct RouteCmp {
   explicit RouteCmp(NAT* nat);
-  size_t operator()(const SocketAddressPair& r) const;
-  bool operator()(const SocketAddressPair& r1,
-                  const SocketAddressPair& r2) const;
+  size_t operator()(const webrtc::SocketAddressPair& r) const;
+  bool operator()(const webrtc::SocketAddressPair& r1,
+                  const webrtc::SocketAddressPair& r2) const;
 
   bool symmetric;
 };
@@ -92,23 +92,24 @@ class NATServer {
 
   
   struct TransEntry {
-    TransEntry(const SocketAddressPair& r, AsyncUDPSocket* s, NAT* nat);
+    TransEntry(const webrtc::SocketAddressPair& r, AsyncUDPSocket* s, NAT* nat);
     ~TransEntry();
 
     void AllowlistInsert(const SocketAddress& addr);
     bool AllowlistContains(const SocketAddress& ext_addr);
 
-    SocketAddressPair route;
+    webrtc::SocketAddressPair route;
     AsyncUDPSocket* socket;
     AddressSet* allowlist;
     webrtc::Mutex mutex_;
   };
 
-  typedef std::map<SocketAddressPair, TransEntry*, RouteCmp> InternalMap;
+  typedef std::map<webrtc::SocketAddressPair, TransEntry*, RouteCmp>
+      InternalMap;
   typedef std::map<SocketAddress, TransEntry*> ExternalMap;
 
   
-  void Translate(const SocketAddressPair& route);
+  void Translate(const webrtc::SocketAddressPair& route);
 
   
   bool ShouldFilterOut(TransEntry* entry, const SocketAddress& ext_addr);

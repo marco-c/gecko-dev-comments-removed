@@ -15,7 +15,7 @@
 
 #include "rtc_base/socket_address.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -23,10 +23,11 @@ namespace rtc {
 class SocketAddressPair {
  public:
   SocketAddressPair() {}
-  SocketAddressPair(const SocketAddress& srs, const SocketAddress& dest);
+  SocketAddressPair(const rtc::SocketAddress& srs,
+                    const rtc::SocketAddress& dest);
 
-  const SocketAddress& source() const { return src_; }
-  const SocketAddress& destination() const { return dest_; }
+  const rtc::SocketAddress& source() const { return src_; }
+  const rtc::SocketAddress& destination() const { return dest_; }
 
   bool operator==(const SocketAddressPair& r) const;
   bool operator<(const SocketAddressPair& r) const;
@@ -34,10 +35,16 @@ class SocketAddressPair {
   size_t Hash() const;
 
  private:
-  SocketAddress src_;
-  SocketAddress dest_;
+  rtc::SocketAddress src_;
+  rtc::SocketAddress dest_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::SocketAddressPair;
 }  
 
 #endif  
