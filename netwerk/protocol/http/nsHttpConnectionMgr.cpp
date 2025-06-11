@@ -1034,6 +1034,10 @@ bool nsHttpConnectionMgr::DispatchPendingQ(
             ("  removing pending transaction based on "
              "TryDispatchTransaction returning hard error %" PRIx32 "\n",
              static_cast<uint32_t>(rv)));
+        if (rv == NS_ERROR_HTTP2_FALLBACK_TO_HTTP1) {
+          pendingTransInfo->Transaction()->Close(
+              NS_ERROR_HTTP2_FALLBACK_TO_HTTP1);
+        }
       }
       if (pendingQ.RemoveElement(pendingTransInfo)) {
         
@@ -1407,56 +1411,10 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
       (!nsHttpHandler::IsHttp3Enabled() || (caps & NS_HTTP_DISALLOW_HTTP3)));
   if (conn) {
     LOG(("TryingDispatchTransaction: an active h2 connection exists"));
-    ExtendedCONNECTSupport extendedConnect = conn->GetExtendedCONNECTSupport();
     if (trans->IsWebsocketUpgrade() || trans->IsForWebTransport()) {
       RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
       if (connTCP) {
-        LOG(("TryingDispatchTransaction: extended CONNECT"));
-        if (extendedConnect == ExtendedCONNECTSupport::NO_SUPPORT) {
-          LOG((
-              "TryingDispatchTransaction: no support for extended CONNECT over "
-              "Http2"));
-          
-          
-          
-          trans->DisableSpdy();
-          caps &= NS_HTTP_DISALLOW_SPDY;
-          trans->MakeSticky();
-        } else if (extendedConnect == ExtendedCONNECTSupport::SUPPORTED) {
-          LOG(("TryingDispatchTransaction: extended CONNECT supported"));
-
-          
-          
-          RefPtr<nsHttpConnection> connToTunnel;
-          nsresult rv = connTCP->CreateTunnelStream(
-              trans, getter_AddRefs(connToTunnel), true);
-          if (rv == NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED) {
-            LOG(
-                ("TryingDispatchTransaction: WebTransport session limit "
-                 "exceeded"));
-            return rv;
-          }
-          ent->InsertIntoExtendedCONNECTConns(connToTunnel);
-          trans->SetConnection(nullptr);
-          connToTunnel
-              ->SetInSpdyTunnel();  
-          if (trans->IsWebsocketUpgrade()) {
-            trans->SetIsHttp2Websocket(true);
-          }
-          rv = DispatchTransaction(ent, trans, connToTunnel);
-          
-          
-          trans->MakeSticky();
-          trans->SetResettingForTunnelConn(false);
-          return rv;
-        } else {
-          
-          
-          LOG(
-              ("TryingDispatchTransaction: unsure if extended CONNECT "
-               "supported"));
-          return NS_ERROR_NOT_AVAILABLE;
-        }
+        return TryDispatchExtendedCONNECTransaction(ent, trans, connTCP);
       }
     } else {
       if ((caps & NS_HTTP_ALLOW_KEEPALIVE) ||
@@ -1635,6 +1593,72 @@ nsresult nsHttpConnectionMgr::TryDispatchTransactionOnIdleConn(
     return NS_OK;
   }
 
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+nsresult nsHttpConnectionMgr::TryDispatchExtendedCONNECTransaction(
+    ConnectionEntry* aEnt, nsHttpTransaction* aTrans, nsHttpConnection* aConn) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(aTrans->IsWebsocketUpgrade() || aTrans->IsForWebTransport());
+  MOZ_ASSERT(aConn);
+
+  ExtendedCONNECTSupport extendedConnect = aConn->GetExtendedCONNECTSupport();
+  LOG(("TryingDispatchTransaction: extended CONNECT"));
+  if (extendedConnect == ExtendedCONNECTSupport::NO_SUPPORT) {
+    LOG(
+        ("TryingDispatchTransaction: no support for extended CONNECT over "
+         "HTTP/2"));
+    
+    
+    
+    aTrans->DisableSpdy();
+
+    
+    if (aTrans->IsForWebTransport()) {
+      return NS_ERROR_CONNECTION_REFUSED;
+    }
+
+    
+    
+    
+    
+    aTrans->MakeSticky();
+    aTrans->MakeRestartable();
+
+    return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
+  } else if (extendedConnect == ExtendedCONNECTSupport::SUPPORTED) {
+    LOG(("TryingDispatchTransaction: extended CONNECT supported"));
+
+    
+    
+    RefPtr<nsHttpConnection> connToTunnel;
+    nsresult rv =
+        aConn->CreateTunnelStream(aTrans, getter_AddRefs(connToTunnel), true);
+    if (rv == NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED) {
+      LOG(
+          ("TryingDispatchTransaction: WebTransport session limit "
+           "exceeded"));
+      return rv;
+    }
+    aEnt->InsertIntoExtendedCONNECTConns(connToTunnel);
+    aTrans->SetConnection(nullptr);
+    connToTunnel->SetInSpdyTunnel();  
+    if (aTrans->IsWebsocketUpgrade()) {
+      aTrans->SetIsHttp2Websocket(true);
+    }
+    rv = DispatchTransaction(aEnt, aTrans, connToTunnel);
+    
+    
+    aTrans->MakeSticky();
+    aTrans->SetResettingForTunnelConn(false);
+    return rv;
+  }
+
+  
+  
+  LOG(
+      ("TryingDispatchTransaction: unsure if extended CONNECT "
+       "supported"));
   return NS_ERROR_NOT_AVAILABLE;
 }
 
