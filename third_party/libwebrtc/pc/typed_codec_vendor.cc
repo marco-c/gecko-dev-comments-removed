@@ -100,20 +100,29 @@ TypedCodecVendor::TypedCodecVendor(MediaEngineInterface* media_engine,
                                    bool is_sender,
                                    bool rtx_enabled,
                                    const webrtc::FieldTrialsView& trials) {
-  
-  
   if (trials.IsEnabled("WebRTC-PayloadTypesInTransport")) {
-    
     
     if (type == MEDIA_TYPE_AUDIO) {
       if (is_sender) {
-        codecs_ = CodecList::CreateFromTrustedData(CollectAudioCodecs(
-            media_engine->voice().encoder_factory()->GetSupportedEncoders()));
+        if (media_engine->voice().encoder_factory()) {
+          codecs_ = CodecList::CreateFromTrustedData(CollectAudioCodecs(
+              media_engine->voice().encoder_factory()->GetSupportedEncoders()));
+        } else {
+          RTC_LOG(LS_WARNING)
+              << "No voice encoder factory. Should only happen in test.";
+        }
       } else {
-        codecs_ = CodecList::CreateFromTrustedData(CollectAudioCodecs(
-            media_engine->voice().decoder_factory()->GetSupportedDecoders()));
+        if (media_engine->voice().decoder_factory()) {
+          codecs_ = CodecList::CreateFromTrustedData(CollectAudioCodecs(
+              media_engine->voice().decoder_factory()->GetSupportedDecoders()));
+        } else {
+          RTC_LOG(LS_WARNING)
+              << "No voice decoder factory. Should only happen in test.";
+        }
       }
     } else {
+      
+      
       if (is_sender) {
         codecs_ = CodecList::CreateFromTrustedData(
             media_engine->video().LegacySendCodecs(rtx_enabled));

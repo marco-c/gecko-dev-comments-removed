@@ -63,6 +63,15 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
         
         
         
+        if (codec.id == Codec::kIdNotSet) {
+          
+          if (apt_it != codec.params.end()) {
+            RTC_LOG(LS_WARNING) << "Surprising condition: RTX codec without "
+                                << "PT has an apt parameter";
+          }
+          
+          break;
+        }
         if (apt_it == codec.params.end()) {
           RTC_LOG(LS_WARNING) << "Surprising condition: RTX codec without"
                               << " apt parameter: " << codec;
@@ -70,6 +79,8 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
         }
         int associated_pt;
         if (!(rtc::FromString(apt_it->second, &associated_pt))) {
+          RTC_LOG(LS_ERROR) << "Non-numeric argument to rtx apt: " << codec
+                            << " apt=" << apt_it->second;
           LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                                "Non-numeric argument to rtx apt parameter");
         }
