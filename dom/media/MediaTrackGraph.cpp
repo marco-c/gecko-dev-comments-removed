@@ -4349,7 +4349,19 @@ void MediaTrackGraphImpl::SetNewNativeInput() {
 NS_IMETHODIMP
 MediaTrackGraphImpl::OnDispatchedEvent() {
   MonitorAutoLock lock(mMonitor);
-  EnsureNextIteration();
+  GraphDriver* driver = CurrentDriver();
+  if (!driver) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return NS_OK;
+  }
+  driver->EnsureNextIteration();
   return NS_OK;
 }
 
