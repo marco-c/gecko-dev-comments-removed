@@ -2379,7 +2379,7 @@ class nsDisplayItem {
     }
 
     
-    bool mInPreserves3D = false;
+    bool mGatheringPreserves3DLeaves = false;
     
     
     
