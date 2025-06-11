@@ -96,437 +96,388 @@ add_setup(async function () {
 add_task(async function testContextMenuSaveImage() {
   let uuidGenerator = Services.uuid;
 
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-        ],
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.dynamic_firstparty.use_site", partitionPerSite]],
+    });
+
+    
+    let token = uuidGenerator.generateUUID().toString();
+    const testImageURL = `${TEST_IMAGE_URL}?token=${token}`;
+
+    info(`Open a new tab for testing "Save image as" in context menu.`);
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      TEST_TOP_PAGE
+    );
+
+    info(`Insert the testing image into the tab.`);
+    await SpecialPowers.spawn(tab.linkedBrowser, [testImageURL], async url => {
+      let img = content.document.createElement("img");
+      let loaded = new content.Promise(resolve => {
+        img.onload = resolve;
       });
+      content.document.body.appendChild(img);
+      img.setAttribute("id", "image1");
+      img.src = url;
+      await loaded;
+    });
 
-      
-      let token = uuidGenerator.generateUUID().toString();
-      const testImageURL = `${TEST_IMAGE_URL}?token=${token}`;
+    info("Open the context menu.");
+    let popupShownPromise = BrowserTestUtils.waitForEvent(
+      document,
+      "popupshown"
+    );
 
-      info(`Open a new tab for testing "Save image as" in context menu.`);
-      let tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        TEST_TOP_PAGE
-      );
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#image1",
+      {
+        type: "contextmenu",
+        button: 2,
+      },
+      tab.linkedBrowser
+    );
 
-      info(`Insert the testing image into the tab.`);
-      await SpecialPowers.spawn(
-        tab.linkedBrowser,
-        [testImageURL],
-        async url => {
-          let img = content.document.createElement("img");
-          let loaded = new content.Promise(resolve => {
-            img.onload = resolve;
-          });
-          content.document.body.appendChild(img);
-          img.setAttribute("id", "image1");
-          img.src = url;
-          await loaded;
-        }
-      );
+    await popupShownPromise;
 
-      info("Open the context menu.");
-      let popupShownPromise = BrowserTestUtils.waitForEvent(
-        document,
-        "popupshown"
-      );
+    let partitionKey = partitionPerSite ? "(http,example.net)" : "example.net";
 
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        "#image1",
-        {
-          type: "contextmenu",
-          button: 2,
-        },
-        tab.linkedBrowser
-      );
+    let transferCompletePromise = createPromiseForTransferComplete();
+    let observerPromise = createPromiseForObservingChannel(
+      testImageURL,
+      partitionKey
+    );
 
-      await popupShownPromise;
+    let saveElement = document.getElementById("context-saveimage");
+    info("Triggering the save process.");
+    saveElement.doCommand();
 
-      let partitionKey = partitionPerSite
-        ? "(http,example.net)"
-        : "example.net";
+    info("Waiting for the channel.");
+    await observerPromise;
 
-      let transferCompletePromise = createPromiseForTransferComplete();
-      let observerPromise = createPromiseForObservingChannel(
-        testImageURL,
-        partitionKey
-      );
+    info("Wait until the save is finished.");
+    await transferCompletePromise;
 
-      let saveElement = document.getElementById("context-saveimage");
-      info("Triggering the save process.");
-      saveElement.doCommand();
+    info("Close the context menu.");
+    let contextMenu = document.getElementById("contentAreaContextMenu");
+    let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+      contextMenu,
+      "popuphidden"
+    );
+    contextMenu.hidePopup();
+    await popupHiddenPromise;
 
-      info("Waiting for the channel.");
-      await observerPromise;
+    
+    
+    let res = await fetch(`${TEST_IMAGE_URL}?token=${token}&result`);
+    let res_text = await res.text();
+    is(res_text, "1", "The image should be loaded only once.");
 
-      info("Wait until the save is finished.");
-      await transferCompletePromise;
-
-      info("Close the context menu.");
-      let contextMenu = document.getElementById("contentAreaContextMenu");
-      let popupHiddenPromise = BrowserTestUtils.waitForEvent(
-        contextMenu,
-        "popuphidden"
-      );
-      contextMenu.hidePopup();
-      await popupHiddenPromise;
-
-      
-      
-      let res = await fetch(`${TEST_IMAGE_URL}?token=${token}&result`);
-      let res_text = await res.text();
-      is(res_text, "1", "The image should be loaded only once.");
-
-      BrowserTestUtils.removeTab(tab);
-    }
+    BrowserTestUtils.removeTab(tab);
   }
 });
 
 add_task(async function testContextMenuSaveVideo() {
   let uuidGenerator = Services.uuid;
 
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-        ],
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.dynamic_firstparty.use_site", partitionPerSite]],
+    });
+
+    
+    let token = uuidGenerator.generateUUID().toString();
+    const testVideoURL = `${TEST_VIDEO_URL}?token=${token}`;
+
+    info(`Open a new tab for testing "Save Video as" in context menu.`);
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      TEST_TOP_PAGE
+    );
+
+    info(`Insert the testing video into the tab.`);
+    await SpecialPowers.spawn(tab.linkedBrowser, [testVideoURL], async url => {
+      let video = content.document.createElement("video");
+      let loaded = new content.Promise(resolve => {
+        video.onloadeddata = resolve;
       });
+      content.document.body.appendChild(video);
+      video.setAttribute("id", "video1");
+      video.src = url;
+      await loaded;
+    });
 
-      
-      let token = uuidGenerator.generateUUID().toString();
-      const testVideoURL = `${TEST_VIDEO_URL}?token=${token}`;
+    info("Open the context menu.");
+    let popupShownPromise = BrowserTestUtils.waitForEvent(
+      document,
+      "popupshown"
+    );
 
-      info(`Open a new tab for testing "Save Video as" in context menu.`);
-      let tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        TEST_TOP_PAGE
-      );
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#video1",
+      {
+        type: "contextmenu",
+        button: 2,
+      },
+      tab.linkedBrowser
+    );
 
-      info(`Insert the testing video into the tab.`);
-      await SpecialPowers.spawn(
-        tab.linkedBrowser,
-        [testVideoURL],
-        async url => {
-          let video = content.document.createElement("video");
-          let loaded = new content.Promise(resolve => {
-            video.onloadeddata = resolve;
-          });
-          content.document.body.appendChild(video);
-          video.setAttribute("id", "video1");
-          video.src = url;
-          await loaded;
-        }
-      );
+    await popupShownPromise;
 
-      info("Open the context menu.");
-      let popupShownPromise = BrowserTestUtils.waitForEvent(
-        document,
-        "popupshown"
-      );
+    let partitionKey = partitionPerSite ? "(http,example.net)" : "example.net";
 
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        "#video1",
-        {
-          type: "contextmenu",
-          button: 2,
-        },
-        tab.linkedBrowser
-      );
+    
+    let transferCompletePromise = createPromiseForTransferComplete(
+      "file_saveAsVideo.webm"
+    );
+    let observerPromise = createPromiseForObservingChannel(
+      testVideoURL,
+      partitionKey
+    );
 
-      await popupShownPromise;
+    let saveElement = document.getElementById("context-savevideo");
+    info("Triggering the save process.");
+    saveElement.doCommand();
 
-      let partitionKey = partitionPerSite
-        ? "(http,example.net)"
-        : "example.net";
+    info("Waiting for the channel.");
+    await observerPromise;
 
-      
-      let transferCompletePromise = createPromiseForTransferComplete(
-        "file_saveAsVideo.webm"
-      );
-      let observerPromise = createPromiseForObservingChannel(
-        testVideoURL,
-        partitionKey
-      );
+    info("Wait until the save is finished.");
+    await transferCompletePromise;
 
-      let saveElement = document.getElementById("context-savevideo");
-      info("Triggering the save process.");
-      saveElement.doCommand();
+    info("Close the context menu.");
+    let contextMenu = document.getElementById("contentAreaContextMenu");
+    let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+      contextMenu,
+      "popuphidden"
+    );
+    contextMenu.hidePopup();
+    await popupHiddenPromise;
 
-      info("Waiting for the channel.");
-      await observerPromise;
+    
+    
+    let res = await fetch(`${TEST_VIDEO_URL}?token=${token}&result`);
+    let res_text = await res.text();
+    is(res_text, "1", "The video should be loaded only once.");
 
-      info("Wait until the save is finished.");
-      await transferCompletePromise;
-
-      info("Close the context menu.");
-      let contextMenu = document.getElementById("contentAreaContextMenu");
-      let popupHiddenPromise = BrowserTestUtils.waitForEvent(
-        contextMenu,
-        "popuphidden"
-      );
-      contextMenu.hidePopup();
-      await popupHiddenPromise;
-
-      
-      
-      let res = await fetch(`${TEST_VIDEO_URL}?token=${token}&result`);
-      let res_text = await res.text();
-      is(res_text, "1", "The video should be loaded only once.");
-
-      BrowserTestUtils.removeTab(tab);
-    }
+    BrowserTestUtils.removeTab(tab);
   }
 });
 
 add_task(async function testSavePageInOfflineMode() {
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-        ],
-      });
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.dynamic_firstparty.use_site", partitionPerSite]],
+    });
 
-      let partitionKey = partitionPerSite
-        ? "(http,example.net)"
-        : "example.net";
+    let partitionKey = partitionPerSite ? "(http,example.net)" : "example.net";
 
-      info(`Open a new tab which loads an image`);
-      let tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        TEST_IMAGE_URL
+    info(`Open a new tab which loads an image`);
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      TEST_IMAGE_URL
+    );
+
+    info("Toggle on the offline mode");
+    BrowserOffline.toggleOfflineStatus();
+
+    info("Open file menu and trigger 'Save Page As'");
+    let menubar = document.getElementById("main-menubar");
+    let filePopup = document.getElementById("menu_FilePopup");
+
+    
+    
+    
+    if (Services.appinfo.OS !== "Darwin") {
+      let menubarActive = BrowserTestUtils.waitForEvent(
+        menubar,
+        "DOMMenuBarActive"
       );
+      EventUtils.synthesizeKey("KEY_F10");
+      await menubarActive;
 
-      info("Toggle on the offline mode");
-      BrowserOffline.toggleOfflineStatus();
-
-      info("Open file menu and trigger 'Save Page As'");
-      let menubar = document.getElementById("main-menubar");
-      let filePopup = document.getElementById("menu_FilePopup");
-
-      
-      
-      
-      if (Services.appinfo.OS !== "Darwin") {
-        let menubarActive = BrowserTestUtils.waitForEvent(
-          menubar,
-          "DOMMenuBarActive"
-        );
-        EventUtils.synthesizeKey("KEY_F10");
-        await menubarActive;
-
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          filePopup,
-          "popupshown"
-        );
-        
-        if (Services.appinfo.OS === "WINNT") {
-          EventUtils.synthesizeKey("KEY_ArrowDown");
-        }
-        await popupShownPromise;
-      }
-
-      let transferCompletePromise = createPromiseForTransferComplete();
-      let observerPromise = createPromiseForObservingChannel(
-        TEST_IMAGE_URL,
-        partitionKey
+      let popupShownPromise = BrowserTestUtils.waitForEvent(
+        filePopup,
+        "popupshown"
       );
-
-      info("Triggering the save process.");
-      let fileSavePageAsElement = document.getElementById("menu_savePage");
-      fileSavePageAsElement.doCommand();
-
-      info("Waiting for the channel.");
-      await observerPromise;
-
-      info("Wait until the save is finished.");
-      await transferCompletePromise;
-
       
-      if (Services.appinfo.OS !== "Darwin") {
-        let popupHiddenPromise = BrowserTestUtils.waitForEvent(
-          filePopup,
-          "popuphidden"
-        );
-        filePopup.hidePopup();
-        await popupHiddenPromise;
+      if (Services.appinfo.OS === "WINNT") {
+        EventUtils.synthesizeKey("KEY_ArrowDown");
       }
-
-      info("Toggle off the offline mode");
-      BrowserOffline.toggleOfflineStatus();
-
-      
-      BrowserTestUtils.removeTab(tab);
-
-      
-      await fetch(`${TEST_IMAGE_URL}?result`);
-      await new Promise(resolve => {
-        Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-          resolve()
-        );
-      });
+      await popupShownPromise;
     }
+
+    let transferCompletePromise = createPromiseForTransferComplete();
+    let observerPromise = createPromiseForObservingChannel(
+      TEST_IMAGE_URL,
+      partitionKey
+    );
+
+    info("Triggering the save process.");
+    let fileSavePageAsElement = document.getElementById("menu_savePage");
+    fileSavePageAsElement.doCommand();
+
+    info("Waiting for the channel.");
+    await observerPromise;
+
+    info("Wait until the save is finished.");
+    await transferCompletePromise;
+
+    
+    if (Services.appinfo.OS !== "Darwin") {
+      let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+        filePopup,
+        "popuphidden"
+      );
+      filePopup.hidePopup();
+      await popupHiddenPromise;
+    }
+
+    info("Toggle off the offline mode");
+    BrowserOffline.toggleOfflineStatus();
+
+    
+    BrowserTestUtils.removeTab(tab);
+
+    
+    await fetch(`${TEST_IMAGE_URL}?result`);
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
   }
 });
 
 add_task(async function testPageInfoMediaSaveAs() {
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-        ],
-      });
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.dynamic_firstparty.use_site", partitionPerSite]],
+    });
 
-      let partitionKey = partitionPerSite
-        ? "(http,example.net)"
-        : "example.net";
+    let partitionKey = partitionPerSite ? "(http,example.net)" : "example.net";
 
-      info(
-        `Open a new tab for testing "Save AS" in the media panel of the page info.`
-      );
-      let tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        TEST_PAGEINFO_URL
-      );
+    info(
+      `Open a new tab for testing "Save AS" in the media panel of the page info.`
+    );
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      TEST_PAGEINFO_URL
+    );
 
-      info("Open the media panel of the pageinfo.");
-      let pageInfo = BrowserCommands.pageInfo(
-        gBrowser.selectedBrowser.currentURI.spec,
-        "mediaTab"
-      );
+    info("Open the media panel of the pageinfo.");
+    let pageInfo = BrowserCommands.pageInfo(
+      gBrowser.selectedBrowser.currentURI.spec,
+      "mediaTab"
+    );
 
-      await BrowserTestUtils.waitForEvent(pageInfo, "page-info-init");
+    await BrowserTestUtils.waitForEvent(pageInfo, "page-info-init");
 
-      let imageTree = pageInfo.document.getElementById("imagetree");
-      let imageRowsNum = imageTree.view.rowCount;
+    let imageTree = pageInfo.document.getElementById("imagetree");
+    let imageRowsNum = imageTree.view.rowCount;
 
-      is(imageRowsNum, 2, "There should be two media items here.");
+    is(imageRowsNum, 2, "There should be two media items here.");
 
-      for (let i = 0; i < imageRowsNum; i++) {
-        imageTree.view.selection.select(i);
-        imageTree.ensureRowIsVisible(i);
-        imageTree.focus();
-
-        
-        let preview = pageInfo.document.getElementById("thepreviewimage");
-        let mediaType = pageInfo.gImageView.data[i][1]; 
-        if (mediaType == "Image") {
-          await BrowserTestUtils.waitForEvent(preview, "load");
-        } else if (mediaType == "Video") {
-          await BrowserTestUtils.waitForEvent(preview, "canplaythrough");
-        }
-
-        let url = pageInfo.gImageView.data[i][0]; 
-        info(`Start to save the media item with URL: ${url}`);
-
-        let transferCompletePromise = createPromiseForTransferComplete();
-
-        
-        let observerPromise = createPromiseForObservingChannel(
-          url,
-          partitionKey
-        );
-
-        info("Triggering the save process.");
-        let saveElement = pageInfo.document.getElementById("imagesaveasbutton");
-        saveElement.doCommand();
-
-        info("Waiting for the channel.");
-        await observerPromise;
-
-        info("Wait until the save is finished.");
-        await transferCompletePromise;
-      }
-
-      pageInfo.close();
-      BrowserTestUtils.removeTab(tab);
-    }
-  }
-});
-
-add_task(async function testPageInfoMediaMultipleSelectedSaveAs() {
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-        ],
-      });
-
-      let partitionKey = partitionPerSite
-        ? "(http,example.net)"
-        : "example.net";
-
-      info(
-        `Open a new tab for testing "Save AS" in the media panel of the page info.`
-      );
-      let tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        TEST_PAGEINFO_URL
-      );
-
-      info("Open the media panel of the pageinfo.");
-      let pageInfo = BrowserCommands.pageInfo(
-        gBrowser.selectedBrowser.currentURI.spec,
-        "mediaTab"
-      );
-
-      await BrowserTestUtils.waitForEvent(pageInfo, "page-info-init");
-
-      
-      
-      let preview = pageInfo.document.getElementById("thepreviewimage");
-      await BrowserTestUtils.waitForCondition(() => {
-        return preview.complete;
-      });
-
-      let imageTree = pageInfo.document.getElementById("imagetree");
-      let imageRowsNum = imageTree.view.rowCount;
-
-      is(imageRowsNum, 2, "There should be two media items here.");
-
-      imageTree.view.selection.selectAll();
+    for (let i = 0; i < imageRowsNum; i++) {
+      imageTree.view.selection.select(i);
+      imageTree.ensureRowIsVisible(i);
       imageTree.focus();
 
-      let url = pageInfo.gImageView.data[0][0]; 
+      
+      let preview = pageInfo.document.getElementById("thepreviewimage");
+      let mediaType = pageInfo.gImageView.data[i][1]; 
+      if (mediaType == "Image") {
+        await BrowserTestUtils.waitForEvent(preview, "load");
+      } else if (mediaType == "Video") {
+        await BrowserTestUtils.waitForEvent(preview, "canplaythrough");
+      }
+
+      let url = pageInfo.gImageView.data[i][0]; 
       info(`Start to save the media item with URL: ${url}`);
 
       let transferCompletePromise = createPromiseForTransferComplete();
-      let observerPromises = [];
 
       
-      for (let i = 0; i < imageRowsNum; ++i) {
-        let observerPromise = createPromiseForObservingChannel(
-          url,
-          partitionKey
-        );
-        observerPromises.push(observerPromise);
-      }
+      let observerPromise = createPromiseForObservingChannel(url, partitionKey);
 
       info("Triggering the save process.");
       let saveElement = pageInfo.document.getElementById("imagesaveasbutton");
       saveElement.doCommand();
 
-      info("Waiting for the all channels.");
-      await Promise.all(observerPromises);
+      info("Waiting for the channel.");
+      await observerPromise;
 
       info("Wait until the save is finished.");
       await transferCompletePromise;
-
-      pageInfo.close();
-      BrowserTestUtils.removeTab(tab);
     }
+
+    pageInfo.close();
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(async function testPageInfoMediaMultipleSelectedSaveAs() {
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.dynamic_firstparty.use_site", partitionPerSite]],
+    });
+
+    let partitionKey = partitionPerSite ? "(http,example.net)" : "example.net";
+
+    info(
+      `Open a new tab for testing "Save AS" in the media panel of the page info.`
+    );
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      TEST_PAGEINFO_URL
+    );
+
+    info("Open the media panel of the pageinfo.");
+    let pageInfo = BrowserCommands.pageInfo(
+      gBrowser.selectedBrowser.currentURI.spec,
+      "mediaTab"
+    );
+
+    await BrowserTestUtils.waitForEvent(pageInfo, "page-info-init");
+
+    
+    
+    let preview = pageInfo.document.getElementById("thepreviewimage");
+    await BrowserTestUtils.waitForCondition(() => {
+      return preview.complete;
+    });
+
+    let imageTree = pageInfo.document.getElementById("imagetree");
+    let imageRowsNum = imageTree.view.rowCount;
+
+    is(imageRowsNum, 2, "There should be two media items here.");
+
+    imageTree.view.selection.selectAll();
+    imageTree.focus();
+
+    let url = pageInfo.gImageView.data[0][0]; 
+    info(`Start to save the media item with URL: ${url}`);
+
+    let transferCompletePromise = createPromiseForTransferComplete();
+    let observerPromises = [];
+
+    
+    for (let i = 0; i < imageRowsNum; ++i) {
+      let observerPromise = createPromiseForObservingChannel(url, partitionKey);
+      observerPromises.push(observerPromise);
+    }
+
+    info("Triggering the save process.");
+    let saveElement = pageInfo.document.getElementById("imagesaveasbutton");
+    saveElement.doCommand();
+
+    info("Waiting for the all channels.");
+    await Promise.all(observerPromises);
+
+    info("Wait until the save is finished.");
+    await transferCompletePromise;
+
+    pageInfo.close();
+    BrowserTestUtils.removeTab(tab);
   }
 });

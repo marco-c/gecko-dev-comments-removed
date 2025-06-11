@@ -25,7 +25,7 @@ var secureSubEmptyURL =
 var unsecureNoCertSubEmptyURL =
   "http://nocert.example.com/browser/toolkit/components/antitracking/test/browser/empty.html";
 
-function cleanupHSTS(aPartitionEnabled, aUseSite) {
+function cleanupHSTS(aUseSite) {
   
   let sss = Cc["@mozilla.org/ssservice;1"].getService(
     Ci.nsISiteSecurityService
@@ -34,12 +34,10 @@ function cleanupHSTS(aPartitionEnabled, aUseSite) {
   for (let origin of ["example.com", "example.org"]) {
     let originAttributes = {};
 
-    if (aPartitionEnabled) {
-      if (aUseSite) {
-        originAttributes = { partitionKey: `(http,${origin})` };
-      } else {
-        originAttributes = { partitionKey: origin };
-      }
+    if (aUseSite) {
+      originAttributes = { partitionKey: `(http,${origin})` };
+    } else {
+      originAttributes = { partitionKey: origin };
     }
 
     sss.resetState(NetUtil.newURI("http://example.com/"), originAttributes);
@@ -69,183 +67,161 @@ function waitFor(host, type) {
 }
 
 add_task(async function () {
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-          ["security.mixed_content.upgrade_display_content", false],
-        ],
-      });
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["privacy.dynamic_firstparty.use_site", partitionPerSite],
+        ["security.mixed_content.upgrade_display_content", false],
+      ],
+    });
 
-      let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
+    let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
 
-      
-      await promiseTabLoadEvent(tab, secureURL, secureURL);
+    
+    await promiseTabLoadEvent(tab, secureURL, secureURL);
 
-      
-      await promiseTabLoadEvent(tab, unsecureURL, secureURL);
-      ok(true, "unsecure -> secure, first-party works!");
+    
+    await promiseTabLoadEvent(tab, unsecureURL, secureURL);
+    ok(true, "unsecure -> secure, first-party works!");
 
-      
-      await promiseTabLoadEvent(tab, unsecureEmptyURL, unsecureEmptyURL);
+    
+    await promiseTabLoadEvent(tab, unsecureEmptyURL, unsecureEmptyURL);
 
-      let finalURL = waitFor(
-        "example.com",
-        Ci.nsIContentPolicy.TYPE_INTERNAL_IFRAME
-      );
+    let finalURL = waitFor(
+      "example.com",
+      Ci.nsIContentPolicy.TYPE_INTERNAL_IFRAME
+    );
 
-      await SpecialPowers.spawn(tab.linkedBrowser, [unsecureURL], async url => {
-        let ifr = content.document.createElement("iframe");
-        content.document.body.appendChild(ifr);
-        ifr.src = url;
-      });
+    await SpecialPowers.spawn(tab.linkedBrowser, [unsecureURL], async url => {
+      let ifr = content.document.createElement("iframe");
+      content.document.body.appendChild(ifr);
+      ifr.src = url;
+    });
 
-      if (networkIsolation) {
-        is(await finalURL, unsecureURL, "HSTS doesn't work for 3rd parties");
-      } else {
-        is(await finalURL, secureURL, "HSTS works for 3rd parties");
-      }
+    is(await finalURL, unsecureURL, "HSTS doesn't work for 3rd parties");
 
-      gBrowser.removeCurrentTab();
-      cleanupHSTS(networkIsolation, partitionPerSite);
-    }
+    gBrowser.removeCurrentTab();
+    cleanupHSTS(partitionPerSite);
   }
 });
 
 add_task(async function test_subresource() {
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-          ["security.mixed_content.upgrade_display_content", false],
-        ],
-      });
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["privacy.dynamic_firstparty.use_site", partitionPerSite],
+        ["security.mixed_content.upgrade_display_content", false],
+      ],
+    });
 
-      let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
+    let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
 
-      
-      await promiseTabLoadEvent(tab, secureEmptyURL, secureEmptyURL);
+    
+    await promiseTabLoadEvent(tab, secureEmptyURL, secureEmptyURL);
 
-      let loadPromise = waitFor(
-        "example.com",
-        Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
-      );
+    let loadPromise = waitFor(
+      "example.com",
+      Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
+    );
 
-      
-      
-      await SpecialPowers.spawn(
-        tab.linkedBrowser,
-        [secureImgURL],
-        async url => {
-          let ifr = content.document.createElement("img");
-          content.document.body.appendChild(ifr);
-          ifr.src = url;
-        }
-      );
+    
+    
+    await SpecialPowers.spawn(tab.linkedBrowser, [secureImgURL], async url => {
+      let ifr = content.document.createElement("img");
+      content.document.body.appendChild(ifr);
+      ifr.src = url;
+    });
 
-      
-      await loadPromise;
+    
+    await loadPromise;
 
-      
-      await promiseTabLoadEvent(tab, secureEmptyURL, secureEmptyURL);
+    
+    await promiseTabLoadEvent(tab, secureEmptyURL, secureEmptyURL);
 
-      let finalURL = waitFor(
-        "example.com",
-        Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
-      );
+    let finalURL = waitFor(
+      "example.com",
+      Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
+    );
 
-      
-      await SpecialPowers.spawn(
-        tab.linkedBrowser,
-        [unsecureImgURL],
-        async url => {
-          let ifr = content.document.createElement("img");
-          content.document.body.appendChild(ifr);
-          ifr.src = url;
-        }
-      );
+    
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [unsecureImgURL],
+      async url => {
+        let ifr = content.document.createElement("img");
+        content.document.body.appendChild(ifr);
+        ifr.src = url;
+      }
+    );
 
-      is(await finalURL, unsecureImgURL, "HSTS isn't set for 3rd parties");
+    is(await finalURL, unsecureImgURL, "HSTS isn't set for 3rd parties");
 
-      
-      await promiseTabLoadEvent(
-        tab,
-        secureAnotherEmptyURL,
-        secureAnotherEmptyURL
-      );
+    
+    await promiseTabLoadEvent(
+      tab,
+      secureAnotherEmptyURL,
+      secureAnotherEmptyURL
+    );
 
-      finalURL = waitFor(
-        "example.com",
-        Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
-      );
+    finalURL = waitFor("example.com", Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE);
 
-      
-      await SpecialPowers.spawn(
-        tab.linkedBrowser,
-        [unsecureImgURL],
-        async url => {
-          let ifr = content.document.createElement("img");
-          content.document.body.appendChild(ifr);
-          ifr.src = url;
-        }
-      );
+    
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [unsecureImgURL],
+      async url => {
+        let ifr = content.document.createElement("img");
+        content.document.body.appendChild(ifr);
+        ifr.src = url;
+      }
+    );
 
-      is(await finalURL, unsecureImgURL, "HSTS isn't set for 3rd parties");
+    is(await finalURL, unsecureImgURL, "HSTS isn't set for 3rd parties");
 
-      gBrowser.removeCurrentTab();
-      cleanupHSTS(networkIsolation, partitionPerSite);
-    }
+    gBrowser.removeCurrentTab();
+    cleanupHSTS(partitionPerSite);
   }
 });
 
 add_task(async function test_includeSubDomains() {
-  for (let networkIsolation of [true, false]) {
-    for (let partitionPerSite of [true, false]) {
-      await SpecialPowers.pushPrefEnv({
-        set: [
-          ["privacy.partition.network_state", networkIsolation],
-          ["privacy.dynamic_firstparty.use_site", partitionPerSite],
-          ["security.mixed_content.upgrade_display_content", false],
-        ],
-      });
+  for (let partitionPerSite of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["privacy.dynamic_firstparty.use_site", partitionPerSite],
+        ["security.mixed_content.upgrade_display_content", false],
+      ],
+    });
 
-      let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
+    let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
 
-      
-      await promiseTabLoadEvent(tab, secureIncludeSubURL, secureIncludeSubURL);
+    
+    await promiseTabLoadEvent(tab, secureIncludeSubURL, secureIncludeSubURL);
 
-      
-      await promiseTabLoadEvent(tab, unsecureSubEmptyURL, secureSubEmptyURL);
+    
+    await promiseTabLoadEvent(tab, unsecureSubEmptyURL, secureSubEmptyURL);
 
-      
-      let certErrorLoaded = BrowserTestUtils.waitForErrorPage(
-        tab.linkedBrowser
+    
+    let certErrorLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
+    BrowserTestUtils.startLoadingURIString(
+      tab.linkedBrowser,
+      unsecureNoCertSubEmptyURL
+    );
+    await certErrorLoaded;
+
+    
+    await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+      let searchParams = new content.URLSearchParams(
+        content.document.documentURI
       );
-      BrowserTestUtils.startLoadingURIString(
-        tab.linkedBrowser,
-        unsecureNoCertSubEmptyURL
+
+      is(
+        searchParams.get("s"),
+        "badStsCert",
+        "The cert error page has 'badStsCert' set"
       );
-      await certErrorLoaded;
+    });
 
-      
-      await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-        let searchParams = new content.URLSearchParams(
-          content.document.documentURI
-        );
-
-        is(
-          searchParams.get("s"),
-          "badStsCert",
-          "The cert error page has 'badStsCert' set"
-        );
-      });
-
-      gBrowser.removeCurrentTab();
-      cleanupHSTS(networkIsolation, partitionPerSite);
-    }
+    gBrowser.removeCurrentTab();
+    cleanupHSTS(partitionPerSite);
   }
 });

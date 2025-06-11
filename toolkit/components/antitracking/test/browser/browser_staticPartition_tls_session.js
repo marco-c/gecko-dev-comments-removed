@@ -71,7 +71,6 @@ add_task(async () => {
     set: [
       ["browser.cache.disk.enable", false],
       ["browser.cache.memory.enable", false],
-      ["privacy.partition.network_state", true],
       
       
       ["privacy.partition.network_state.connection_with_proxy", true],

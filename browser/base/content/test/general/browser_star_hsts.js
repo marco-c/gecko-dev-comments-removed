@@ -18,9 +18,7 @@ add_task(async function test_star_redirect() {
     sss.resetState(
       
       NetUtil.newURI("http://example.com/"),
-      Services.prefs.getBoolPref("privacy.partition.network_state")
-        ? { partitionKey: "(http,example.com)" }
-        : {}
+      { partitionKey: "(http,example.com)" }
     );
     await PlacesUtils.bookmarks.eraseEverything();
     gBrowser.removeCurrentTab();

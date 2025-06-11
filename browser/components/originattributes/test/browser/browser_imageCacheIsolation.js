@@ -54,10 +54,6 @@ function fileHandler(metadata, response) {
 }
 
 async function doBefore() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.partition.network_state", false]],
-  });
-
   
   info("XXX resetting gHits");
   gHits = 0;
@@ -77,13 +73,17 @@ function doTest() {
 }
 
 
-function doCheck(shouldIsolate) {
+function doCheck(shouldIsolate, a, b, mode) {
   
   
   
   
   
-  info(`XXX check: gHits == ${gHits}, shouldIsolate == ${shouldIsolate}`);
+  info(`XXX check (${mode}: gHits == ${gHits}, shouldIsolate == ${shouldIsolate}`);
+  if (mode == TEST_MODE_NO_ISOLATION) {
+    todo(false, "This test depended on no network partitioning");
+    return true;
+  }
   return shouldIsolate
     ? gHits == NUM_ISOLATION_LOADS
     : gHits == NUM_CACHED_LOADS;

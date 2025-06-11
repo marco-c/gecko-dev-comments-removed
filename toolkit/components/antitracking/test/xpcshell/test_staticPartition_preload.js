@@ -99,16 +99,7 @@ add_task(async () => {
       
       
       hints: 2,
-      prefValue: true,
       originAttributes: { partitionKey: "(http,example.org)" },
-    },
-    {
-      
-      
-      
-      hints: 1,
-      originAttributes: {},
-      prefValue: false,
     },
   ];
 
@@ -132,12 +123,6 @@ add_task(async () => {
 
     info("Reset the counter");
     gHints = 0;
-
-    info("Enabling network state partitioning");
-    Services.prefs.setBoolPref(
-      "privacy.partition.network_state",
-      test.prefValue
-    );
 
     let complete = new Promise(resolve => {
       server.registerPathHandler("/done", (metadata, response) => {
@@ -179,10 +164,6 @@ add_task(async () => {
     await checkCache(test.originAttributes);
     await contentPage.close();
 
-    Assert.equal(
-      gHints,
-      test.hints,
-      "We have the current number of requests with pref " + test.prefValue
-    );
+    Assert.equal(gHints, test.hints, "We have the current number of requests");
   }
 });
