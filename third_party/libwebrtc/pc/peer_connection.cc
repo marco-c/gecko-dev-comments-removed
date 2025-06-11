@@ -1084,7 +1084,8 @@ PeerConnection::AddTransceiver(
   std::vector<cricket::Codec> codecs;
   
   
-  cricket::CodecVendor codec_vendor(context_->media_engine(), false);
+  cricket::CodecVendor codec_vendor(context_->media_engine(), false,
+                                    context_->env().field_trials());
   if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     codecs = codec_vendor.video_send_codecs().codecs();
   } else {

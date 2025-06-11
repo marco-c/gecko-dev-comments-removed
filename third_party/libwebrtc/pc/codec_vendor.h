@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "api/field_trials_view.h"
 #include "api/rtc_error.h"
 #include "api/rtp_transceiver_direction.h"
 #include "call/payload_type.h"
@@ -21,30 +22,9 @@
 #include "media/base/media_engine.h"
 #include "pc/media_options.h"
 #include "pc/session_description.h"
+#include "pc/typed_codec_vendor.h"
 
 namespace cricket {
-
-
-
-
-class TypedCodecVendor {
- public:
-  
-  
-  TypedCodecVendor() {}
-  TypedCodecVendor(MediaEngineInterface* media_engine,
-                   MediaType type,
-                   bool is_sender,
-                   bool rtx_enabled);
-  const CodecList& codecs() const { return codecs_; }
-  void set_codecs(const CodecList& codecs) { codecs_ = codecs; }
-  
-  TypedCodecVendor(const TypedCodecVendor& from) = default;
-  TypedCodecVendor& operator=(const TypedCodecVendor& from) = default;
-
- private:
-  CodecList codecs_;
-};
 
 
 
@@ -61,7 +41,9 @@ class TypedCodecVendor {
 
 class CodecVendor {
  public:
-  CodecVendor(MediaEngineInterface* media_engine, bool rtx_enabled);
+  CodecVendor(MediaEngineInterface* media_engine,
+              bool rtx_enabled,
+              const webrtc::FieldTrialsView& trials);
 
  public:
   webrtc::RTCError GetCodecsForOffer(
