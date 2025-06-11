@@ -17,6 +17,11 @@
 #include "nsPKCS11Slot.h"
 #include "nsServiceManagerUtils.h"
 
+#if defined(XP_MACOSX)
+#  include "nsMacUtilsImpl.h"
+#  include "nsIFile.h"
+#endif  
+
 namespace mozilla {
 namespace psm {
 
@@ -72,6 +77,56 @@ PKCS11ModuleDB::DeleteModule(const nsAString& aModuleName) {
   return NS_OK;
 }
 
+#if defined(XP_MACOSX)
+
+nsresult ModulePathToFilename(const nsCString& aModulePath,
+                              nsCString& aFilename) {
+  nsCOMPtr<nsIFile> file;
+  nsresult rv =
+      NS_NewLocalFile(NS_ConvertUTF8toUTF16(aModulePath), getter_AddRefs(file));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString filename;
+  rv = file->GetLeafName(filename);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aFilename = NS_ConvertUTF16toUTF8(filename);
+  return NS_OK;
+}
+
+
+
+void CollectThirdPartyModuleSignatureType(const nsCString& aModulePath) {
+  using mozilla::glean::pkcs11::third_party_module_signature_type;
+  using mozilla::glean::pkcs11::ThirdPartyModuleSignatureTypeExtra;
+  using nsMacUtilsImpl::CodeSignatureTypeToString;
+
+  nsMacUtilsImpl::CodeSignatureType signatureType =
+      nsMacUtilsImpl::GetSignatureType(aModulePath);
+
+  nsCString filename;
+  nsresult rv = ModulePathToFilename(aModulePath, filename);
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  nsCString signatureTypeStr(CodeSignatureTypeToString(signatureType));
+  third_party_module_signature_type.Record(
+      Some(ThirdPartyModuleSignatureTypeExtra{
+          Some(filename),
+          Some(signatureTypeStr),
+      }));
+}
+
+
+
+void CollectThirdPartyModuleFilename(const nsCString& aModulePath) {
+  using mozilla::glean::pkcs11::third_party_module_profile_entries;
+  nsCString filename;
+  nsresult rv = ModulePathToFilename(aModulePath, filename);
+  NS_ENSURE_SUCCESS_VOID(rv);
+  third_party_module_profile_entries.Add(filename);
+}
+#endif  
+
 
 NS_IMETHODIMP
 PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
@@ -119,6 +174,10 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
     return NS_ERROR_FAILURE;
   }
   certVerifier->ClearTrustCache();
+
+#if defined(XP_MACOSX)
+  CollectThirdPartyModuleSignatureType(fullPath);
+#endif  
 
   CollectThirdPartyPKCS11ModuleTelemetry();
 
@@ -206,7 +265,7 @@ const nsLiteralCString kBuiltInModuleNames[] = {
     kIPCClientCertsModuleName,
 };
 
-void CollectThirdPartyPKCS11ModuleTelemetry() {
+void CollectThirdPartyPKCS11ModuleTelemetry(bool aIsInitialization) {
   size_t thirdPartyModulesLoaded = 0;
   AutoSECMODListReadLock lock;
   for (SECMODModuleList* list = SECMOD_GetDefaultModuleList(); list;
@@ -220,6 +279,26 @@ void CollectThirdPartyPKCS11ModuleTelemetry() {
     }
     if (isThirdParty) {
       thirdPartyModulesLoaded++;
+#if defined(XP_MACOSX)
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aIsInitialization) {
+        nsCString modulePath(list->module->dllName);
+        NS_DispatchToMainThreadQueue(
+            NS_NewRunnableFunction("CollectThirdPartyModuleFilenameIdle",
+                                   [modulePath]() {
+                                     CollectThirdPartyModuleFilename(
+                                         modulePath);
+                                   }),
+            EventQueuePriority::Idle);
+      }
+#endif  
     }
   }
   mozilla::glean::pkcs11::third_party_modules_loaded.Set(

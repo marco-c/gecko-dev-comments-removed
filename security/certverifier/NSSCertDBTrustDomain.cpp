@@ -1702,7 +1702,7 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
     }
   }
 
-  CollectThirdPartyPKCS11ModuleTelemetry();
+  CollectThirdPartyPKCS11ModuleTelemetry(true);
 
   return SECSuccess;
 }

@@ -50,6 +50,25 @@ nsresult GetArchitecturesForBinary(const char* aPath, uint32_t* aArchMask);
 int PreTranslateXUL();
 int PreTranslateBinary(nsCString aBinaryPath);
 #endif
+
+enum class CodeSignatureType {
+  UnexpectedError,
+  Unsigned,
+  AdHoc,
+  DeveloperID,
+  AppStore,
+  AppleSystem,
+  Development,
+  Other
+};
+
+
+
+nsCString CodeSignatureTypeToString(CodeSignatureType aType);
+
+
+CodeSignatureType GetSignatureType(const nsCString& aPath);
+
 }  
 
 #endif 
