@@ -109,6 +109,18 @@ class DtlsIceIntegrationTest
         client_dtls_stun_piggyback_(std::get<0>(GetParam())),
         server_dtls_stun_piggyback_(std::get<1>(GetParam())) {
     
+    
+    cricket::IceConfig client_config;
+    client_config.continual_gathering_policy = GATHER_CONTINUALLY;
+    client_config.dtls_handshake_in_stun = client_dtls_stun_piggyback_;
+    client_ice_->SetIceConfig(client_config);
+
+    cricket::IceConfig server_config;
+    server_config.dtls_handshake_in_stun = server_dtls_stun_piggyback_;
+    server_config.continual_gathering_policy = GATHER_CONTINUALLY;
+    server_ice_->SetIceConfig(server_config);
+
+    
     client_ice_->SetIceParameters(client_ice_parameters_);
     client_ice_->SetRemoteIceParameters(server_ice_parameters_);
     client_ice_->SetIceRole(ICEROLE_CONTROLLING);
@@ -141,6 +153,18 @@ class DtlsIceIntegrationTest
 
   ~DtlsIceIntegrationTest() = default;
 
+  static int CountWritableConnections(IceTransportInternal* ice) {
+    IceTransportStats stats;
+    ice->GetStats(&stats);
+    int count = 0;
+    for (const auto& con : stats.connection_infos) {
+      if (con.writable) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   rtc::FakeNetworkManager network_manager_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> socket_factory_;
@@ -165,14 +189,6 @@ class DtlsIceIntegrationTest
 };
 
 TEST_P(DtlsIceIntegrationTest, SmokeTest) {
-  cricket::IceConfig client_config;
-  client_config.dtls_handshake_in_stun = client_dtls_stun_piggyback_;
-  client_ice_->SetIceConfig(client_config);
-
-  cricket::IceConfig server_config;
-  server_config.dtls_handshake_in_stun = server_dtls_stun_piggyback_;
-  server_ice_->SetIceConfig(server_config);
-
   client_ice_->MaybeStartGathering();
   server_ice_->MaybeStartGathering();
 
@@ -188,6 +204,18 @@ TEST_P(DtlsIceIntegrationTest, SmokeTest) {
             client_dtls_stun_piggyback_ && server_dtls_stun_piggyback_);
   EXPECT_EQ(server_dtls_.IsDtlsPiggybackSupportedByPeer(),
             client_dtls_stun_piggyback_ && server_dtls_stun_piggyback_);
+
+  
+  network_manager_.AddInterface(rtc::SocketAddress("192.168.2.1", 0));
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] {
+                    return CountWritableConnections(client_ice_.get()) > 1 &&
+                           CountWritableConnections(server_ice_.get()) > 1;
+                  },
+                  IsTrue(),
+                  {.timeout = webrtc::TimeDelta::Millis(kDefaultTimeout),
+                   .clock = &fake_clock_}),
+              webrtc::IsRtcOk());
 }
 
 
@@ -197,12 +225,14 @@ TEST_P(DtlsIceIntegrationTest, SmokeTest) {
 INSTANTIATE_TEST_SUITE_P(
     DtlsStunPiggybackingIntegrationTest,
     DtlsIceIntegrationTest,
-    ::testing::Values(
-        std::make_tuple(false, false, rtc::SSL_PROTOCOL_DTLS_12),
-        std::make_tuple(true, false, rtc::SSL_PROTOCOL_DTLS_12),
-        std::make_tuple(false, true, rtc::SSL_PROTOCOL_DTLS_12),
-        std::make_tuple(true, true, rtc::SSL_PROTOCOL_DTLS_12),
-        
-        std::make_tuple(true, true, rtc::SSL_PROTOCOL_DTLS_13)));
+    ::testing::Values(std::make_tuple(false, false, rtc::SSL_PROTOCOL_DTLS_12),
+                      std::make_tuple(true, false, rtc::SSL_PROTOCOL_DTLS_12),
+                      std::make_tuple(false, true, rtc::SSL_PROTOCOL_DTLS_12),
+                      std::make_tuple(true, true, rtc::SSL_PROTOCOL_DTLS_12),
+
+                      std::make_tuple(false, false, rtc::SSL_PROTOCOL_DTLS_13),
+                      std::make_tuple(true, false, rtc::SSL_PROTOCOL_DTLS_13),
+                      std::make_tuple(false, true, rtc::SSL_PROTOCOL_DTLS_13),
+                      std::make_tuple(true, true, rtc::SSL_PROTOCOL_DTLS_13)));
 
 }  

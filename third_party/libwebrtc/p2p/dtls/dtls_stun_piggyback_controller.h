@@ -38,6 +38,11 @@ class DtlsStunPiggybackController {
           dtls_data_callback);
   ~DtlsStunPiggybackController();
 
+  
+  
+  void SetEnabled(bool enabled);
+  bool enabled() const;
+
   enum class State {
     
     
@@ -79,6 +84,7 @@ class DtlsStunPiggybackController {
                              const StunByteStringAttribute* ack);
 
  private:
+  bool enabled_ RTC_GUARDED_BY(sequence_checker_) = false;
   State state_ RTC_GUARDED_BY(sequence_checker_) = State::TENTATIVE;
   rtc::Buffer pending_packet_ RTC_GUARDED_BY(sequence_checker_);
   absl::AnyInvocable<void(rtc::ArrayView<const uint8_t>)> dtls_data_callback_;
