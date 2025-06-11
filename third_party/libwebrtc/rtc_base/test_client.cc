@@ -137,8 +137,8 @@ void TestClient::AdvanceTime(int ms) {
   
   
   if (fake_clock_) {
-    for (int64_t start = rtc ::TimeMillis(); rtc ::TimeMillis() < start + ms;) {
-      fake_clock_->AdvanceTime(webrtc ::TimeDelta ::Millis(1));
+    for (int64_t start = rtc::TimeMillis(); rtc::TimeMillis() < start + ms;) {
+      fake_clock_->AdvanceTime(webrtc::TimeDelta::Millis(1));
     };
   } else {
     rtc::Thread::Current()->ProcessMessages(1);
