@@ -194,6 +194,7 @@ enum SdpMungingType {
   kMid = 25,
   kPayloadTypes = 26,
   kSsrcs = 27,
+  kIceOptionsRenomination = 28,
   
   kRtpHeaderExtensionRemoved = 40,
   kRtpHeaderExtensionAdded = 41,
