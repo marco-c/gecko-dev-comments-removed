@@ -483,16 +483,16 @@ pub extern "C" fn wgpu_client_serialize_device_descriptor(
     let label = wgpu_string(desc.label);
     let required_features =
         wgt::Features::from_internal_flags(wgt::FeaturesWGPU::empty(), desc.required_features);
-    let trace = std::env::var("WGPU_TRACE")
-        .ok()
-        .map(|p| wgt::Trace::Directory(p.into()))
-        .unwrap_or(wgt::Trace::Off);
     let desc = wgt::DeviceDescriptor {
         label,
         required_features,
         required_limits: desc.required_limits.clone(),
         memory_hints: wgt::MemoryHints::MemoryUsage,
-        trace,
+        
+        
+        
+        
+        trace: wgt::Trace::Off,
     };
     *bb = make_byte_buf(&desc);
 }
