@@ -25,6 +25,7 @@ namespace mozilla {
 
 class CharIterator;
 class DisplaySVGText;
+class SVGContextPaint;
 class SVGTextFrame;
 class TextFrameIterator;
 class TextNodeCorrespondenceRecorder;
@@ -364,7 +365,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
       mFrame->GetContent()->AddMutationObserver(this);
       SetEnabledCallbacks(kCharacterDataChanged | kAttributeChanged |
                           kContentAppended | kContentInserted |
-                          kContentRemoved);
+                          kContentWillBeRemoved);
     }
 
     
@@ -520,7 +521,9 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  bool ShouldRenderAsPath(nsTextFrame* aFrame, bool& aShouldPaintSVGGlyphs);
+
+  bool ShouldRenderAsPath(nsTextFrame* aFrame, SVGContextPaint* aContextPaint,
+                          bool& aShouldPaintSVGGlyphs);
 
   
   already_AddRefed<Path> GetTextPath(nsIFrame* aTextPathFrame);
