@@ -71,6 +71,12 @@ class JSWindowActorChild {
   }
 }
 
+class NewTabContentPing {
+  recordEvent() {}
+  scheduleSubmission() {}
+  uninit() {}
+}
+
 
 
 
@@ -671,6 +677,7 @@ const TEST_GLOBAL = {
   Utils: {
     SERVER_URL: "bogus://foo",
   },
+  NewTabContentPing,
 };
 overrider.set(TEST_GLOBAL);
 
