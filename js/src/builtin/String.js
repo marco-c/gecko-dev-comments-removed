@@ -553,6 +553,11 @@ function String_split(separator, limit) {
 
 
 
+
+
+
+
+
 function String_substring(start, end) {
   
   if (IsNullOrUndefined(this)) {
@@ -590,6 +595,11 @@ function String_substring(start, end) {
   return SubstringKernel(str, from | 0, (to - from) | 0);
 }
 SetIsInlinableLargeFunction(String_substring);
+
+
+
+
+
 
 
 
@@ -674,6 +684,11 @@ function String_concat(arg1) {
   
   return result;
 }
+
+
+
+
+
 
 
 
