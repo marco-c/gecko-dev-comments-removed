@@ -57,6 +57,7 @@ Preferences.addAll([
 
   
   { id: "browser.download.useDownloadDir", type: "bool", inverted: true },
+  { id: "browser.download.deletePrivate", type: "bool" },
   { id: "browser.download.always_ask_before_handling_new_types", type: "bool" },
   { id: "browser.download.folderList", type: "int" },
   { id: "browser.download.dir", type: "file" },
@@ -739,6 +740,11 @@ var gMainPane = {
       "command",
       gMainPane.onMigrationButtonCommand
     );
+    setEventListener(
+      "deletePrivate",
+      "command",
+      gMainPane.onDeletePrivateChanged
+    );
 
     document
       .getElementById("migrationWizardDialog")
@@ -1031,6 +1037,11 @@ var gMainPane = {
       document.getElementById("browserContainersCheckbox"),
       () => this.readBrowserContainersCheckbox()
     );
+
+    if (!Services.prefs.getBoolPref("browser.download.enableDeletePrivate")) {
+      let deletePrivateCheckbox = document.getElementById("deletePrivate");
+      deletePrivateCheckbox.hidden = true;
+    }
 
     this.setInitialized();
   },
@@ -2453,6 +2464,10 @@ var gMainPane = {
     });
   },
 
+  onDeletePrivateChanged() {
+    Services.prefs.setBoolPref("browser.download.deletePrivate.chosen", true);
+  },
+
   
 
 
@@ -3661,6 +3676,11 @@ var gMainPane = {
   
 
   
+
+
+
+
+
 
 
 
