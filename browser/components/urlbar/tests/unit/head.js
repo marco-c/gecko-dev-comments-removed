@@ -1056,6 +1056,7 @@ async function check_results({
   
   
   let conditionalPayloadProperties = {
+    frecency: { optional: true },
     lastVisit: { optional: true },
     
     
