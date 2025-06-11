@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+namespace webrtc {
+
 
 
 
@@ -23,5 +25,7 @@ struct CorruptionDetectionFilterSettings {
   int luma_error_threshold = 0;
   int chroma_error_threshold = 0;
 };
+
+}  
 
 #endif  
