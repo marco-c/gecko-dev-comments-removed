@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "AppleEncoderModule.h"
 
@@ -28,12 +28,11 @@ bool AppleEncoderModule::Supports(const EncoderConfig& aConfig) const {
   if (!CanLikelyEncode(aConfig)) {
     return false;
   }
-  // Only two temporal layers supported, and only from 11.3 and more recent
+  
   if (aConfig.mScalabilityMode == ScalabilityMode::L1T3 ||
       (aConfig.mScalabilityMode != ScalabilityMode::None && !OSSupportsSVC())) {
     return false;
   }
-  // Only hardware encoder are supported for now.
   return aConfig.mCodec == CodecType::H264;
 }
 
@@ -46,4 +45,4 @@ already_AddRefed<MediaDataEncoder> AppleEncoderModule::CreateVideoEncoder(
 #undef LOGE
 #undef LOGD
 
-}  // namespace mozilla
+}  
