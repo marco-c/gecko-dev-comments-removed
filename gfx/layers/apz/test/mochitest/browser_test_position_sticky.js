@@ -137,7 +137,7 @@ add_task(async () => {
   await dragFinisher();
 
   const disablePixelAlignment = SpecialPowers.getBoolPref(
-    "layout.scroll.disable-pixel-alignment"
+    "layout.disable-pixel-alignment"
   );
   
   
