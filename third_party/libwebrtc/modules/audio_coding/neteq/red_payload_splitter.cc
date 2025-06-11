@@ -114,8 +114,8 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
       PacketList new_packets;  
       for (size_t i = 0; i != new_headers.size(); ++i) {
         const auto& new_header = new_headers[i];
-        size_t payload_length = new_header.payload_length;
-        if (payload_ptr + payload_length >
+        size_t block_length = new_header.payload_length;
+        if (payload_ptr + block_length >
             red_packet.payload.data() + red_packet.payload.size()) {
           
           
@@ -131,9 +131,9 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
         new_packet.sequence_number = red_packet.sequence_number;
         new_packet.priority.red_level =
             dchecked_cast<int>((new_headers.size() - 1) - i);
-        new_packet.payload.SetData(payload_ptr, payload_length);
+        new_packet.payload.SetData(payload_ptr, block_length);
         new_packets.push_front(std::move(new_packet));
-        payload_ptr += payload_length;
+        payload_ptr += block_length;
       }
       
       

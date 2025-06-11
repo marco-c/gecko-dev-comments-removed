@@ -164,7 +164,7 @@ struct StreamParams {
 
   
   
-  void GetPrimarySsrcs(std::vector<uint32_t>* ssrcs) const;
+  void GetPrimarySsrcs(std::vector<uint32_t>* primary_ssrcs) const;
 
   
   
