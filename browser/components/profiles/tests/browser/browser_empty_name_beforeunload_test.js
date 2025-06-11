@@ -4,6 +4,10 @@
 "use strict";
 
 add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+
   await initGroupDatabase();
 
   

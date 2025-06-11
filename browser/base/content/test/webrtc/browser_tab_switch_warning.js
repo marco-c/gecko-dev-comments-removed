@@ -190,7 +190,10 @@ async function ensureWarning(tab) {
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["privacy.webrtc.sharedTabWarning", true]],
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+      ["privacy.webrtc.sharedTabWarning", true],
+    ],
   });
 
   
