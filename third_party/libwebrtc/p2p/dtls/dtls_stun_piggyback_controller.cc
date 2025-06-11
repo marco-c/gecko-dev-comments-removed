@@ -112,6 +112,8 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     const StunByteStringAttribute* ack) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
+  data_recv_count_ += (data != nullptr);
+
   
   
   if (state_ == State::OFF || state_ == State::COMPLETE) {

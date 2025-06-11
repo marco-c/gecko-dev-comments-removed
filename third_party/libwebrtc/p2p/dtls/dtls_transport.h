@@ -231,6 +231,13 @@ class DtlsTransport : public DtlsTransportInternal {
   }
 
   
+  
+  int GetRetransmissionCount() const;
+
+  
+  int GetStunDataCount() const;
+
+  
   bool IsDtlsPiggybackSupportedByPeer();
   bool WasDtlsCompletedByPiggybacking();
 

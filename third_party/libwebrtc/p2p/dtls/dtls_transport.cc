@@ -53,6 +53,34 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 
+namespace webrtc {
+
+template <typename Sink>
+void AbslStringify(Sink& sink, webrtc::DtlsTransportState state) {
+  switch (state) {
+    case webrtc::DtlsTransportState::kNew:
+      sink.Append("kNew");
+      break;
+    case webrtc::DtlsTransportState::kConnecting:
+      sink.Append("kConnecting");
+      break;
+    case webrtc::DtlsTransportState::kConnected:
+      sink.Append("kConnected");
+      break;
+    case webrtc::DtlsTransportState::kClosed:
+      sink.Append("kClosed");
+      break;
+    case webrtc::DtlsTransportState::kFailed:
+      sink.Append("kFailed");
+      break;
+    case webrtc::DtlsTransportState::kNumValues:
+      sink.Append("kNumValues");
+      break;
+  }
+}
+
+}  
+
 namespace cricket {
 
 
@@ -619,10 +647,16 @@ void DtlsTransport::ConnectToIceTransport() {
 void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(transport == ice_transport_);
-  RTC_LOG(LS_VERBOSE) << ToString()
-                      << ": ice_transport writable state changed to "
-                      << ice_transport_->writable();
+  RTC_LOG(LS_INFO) << ToString() << ": ice_transport writable state changed to "
+                   << ice_transport_->writable()
+                   << " dtls_state: " << dtls_state();
 
+  if (!ice_has_been_writable_) {
+    
+    
+    RTC_DCHECK(ice_transport_->writable());
+  }
+  bool first_ice_writable = !ice_has_been_writable_;
   ice_has_been_writable_ = true;
 
   if (!dtls_active_) {
@@ -638,10 +672,15 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
       break;
     case webrtc::DtlsTransportState::kConnected:
       
+      if (dtls_in_stun_ && dtls_ && first_ice_writable) {
+        
+        
+        ConfigureHandshakeTimeout();
+        PeriodicRetransmitDtlsPacketUntilDtlsConnected();
+      }
       set_writable(ice_transport_->writable());
       break;
     case webrtc::DtlsTransportState::kConnecting:
-      
       if (dtls_in_stun_ && dtls_) {
         
         
@@ -1051,6 +1090,20 @@ void DtlsTransport::PeriodicRetransmitDtlsPacketUntilDtlsConnected() {
   RTC_LOG(LS_INFO) << ToString()
                    << ": Scheduled retransmit of DTLS packet, delay_ms: "
                    << delay_ms;
+}
+
+int DtlsTransport::GetRetransmissionCount() const {
+  if (!dtls_) {
+    return 0;
+  }
+  return dtls_->GetRetransmissionCount();
+}
+
+int DtlsTransport::GetStunDataCount() const {
+  if (!dtls_in_stun_) {
+    return 0;
+  }
+  return dtls_stun_piggyback_controller_.GetCountOfReceivedData();
 }
 
 }  
