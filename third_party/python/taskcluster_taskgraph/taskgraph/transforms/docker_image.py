@@ -2,8 +2,6 @@
 
 
 
-
-import json
 import logging
 import os
 import re
@@ -12,6 +10,7 @@ from voluptuous import Optional, Required
 
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util import json
 from taskgraph.util.docker import create_context_tar, generate_context_hash
 from taskgraph.util.schema import Schema
 

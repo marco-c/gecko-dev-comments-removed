@@ -3,7 +3,6 @@
 
 
 
-import json
 import logging
 import os
 import sys
@@ -11,6 +10,7 @@ from concurrent import futures
 
 from slugid import nice as slugid
 
+from taskgraph.util import json
 from taskgraph.util.parameterization import resolve_timestamps
 from taskgraph.util.taskcluster import CONCURRENCY, get_session
 from taskgraph.util.time import current_json_time
@@ -116,8 +116,7 @@ def create_task(session, task_id, label, task_def):
             [task_id, task_def],
             sys.stdout,
             sort_keys=True,
-            indent=4,
-            separators=(",", ": "),
+            indent=2,
         )
         
         print("")
