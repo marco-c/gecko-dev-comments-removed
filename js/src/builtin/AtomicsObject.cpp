@@ -952,11 +952,11 @@ FutexWaiterListHead::~FutexWaiterListHead() {
         RemoveAsyncWaiter(iter->toWaiter()->asAsync(), lock);
     iter = iter->next();
 
-    if (removedWaiter->hasTimeout()) {
+    if (removedWaiter->hasTimeout() &&
+        !removedWaiter->timeoutTask()->cleared(lock)) {
       
       
       
-      MOZ_ASSERT(removedWaiter->timeoutTask()->cleared(lock));
       continue;
     }
     
@@ -1045,6 +1045,7 @@ void WaitAsyncTimeoutTask::transferToRuntime() {
 void AsyncFutexWaiter::maybeClearTimeout(AutoLockFutexAPI& lock) {
   if (timeoutTask_) {
     timeoutTask_->clear(lock);
+    timeoutTask_ = nullptr;
   }
 }
 
