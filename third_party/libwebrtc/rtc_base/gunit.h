@@ -18,34 +18,34 @@
 #include "test/gtest.h"
 
 
-#define WAIT(ex, timeout)                                       \
-  for (int64_t start = rtc::SystemTimeMillis();                 \
-       !(ex) && rtc::SystemTimeMillis() < start + (timeout);) { \
-    rtc::Thread::Current()->ProcessMessages(0);                 \
-    rtc::Thread::Current()->SleepMs(1);                         \
+#define WAIT(ex, timeout)                                            \
+  for (int64_t wait_start = rtc::SystemTimeMillis();                 \
+       !(ex) && rtc::SystemTimeMillis() < wait_start + (timeout);) { \
+    rtc::Thread::Current()->ProcessMessages(0);                      \
+    rtc::Thread::Current()->SleepMs(1);                              \
   }
 
 
 
 
-#define WAIT_(ex, timeout, res)                                   \
-  do {                                                            \
-    int64_t start = rtc::SystemTimeMillis();                      \
-    res = (ex) && true;                                           \
-    while (!res && rtc::SystemTimeMillis() < start + (timeout)) { \
-      rtc::Thread::Current()->ProcessMessages(0);                 \
-      rtc::Thread::Current()->SleepMs(1);                         \
-      res = (ex) && true;                                         \
-    }                                                             \
+#define WAIT_(ex, timeout, res)                                        \
+  do {                                                                 \
+    int64_t wait_start = rtc::SystemTimeMillis();                      \
+    res = (ex) && true;                                                \
+    while (!res && rtc::SystemTimeMillis() < wait_start + (timeout)) { \
+      rtc::Thread::Current()->ProcessMessages(0);                      \
+      rtc::Thread::Current()->SleepMs(1);                              \
+      res = (ex) && true;                                              \
+    }                                                                  \
   } while (0)
 
 
 
 
-#define SIMULATED_WAIT(ex, timeout, clock)                \
-  for (int64_t start = rtc::TimeMillis();                 \
-       !(ex) && rtc::TimeMillis() < start + (timeout);) { \
-    (clock).AdvanceTime(webrtc::TimeDelta::Millis(1));    \
+#define SIMULATED_WAIT(ex, timeout, clock)                     \
+  for (int64_t wait_start = rtc::TimeMillis();                 \
+       !(ex) && rtc::TimeMillis() < wait_start + (timeout);) { \
+    (clock).AdvanceTime(webrtc::TimeDelta::Millis(1));         \
   }
 
 #endif  

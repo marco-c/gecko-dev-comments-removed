@@ -48,18 +48,18 @@ void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
                       << "\nWhile trying to create: " << file_name;
     const uint8_t* data_y = buffer->DataY();
     int stride = buffer->StrideY();
-    for (int i = 0; i < video->height(); ++i) {
-      fwrite(data_y + i * stride, 1, stride, output_file);
+    for (int j = 0; j < video->height(); ++j) {
+      fwrite(data_y + j * stride, 1, stride, output_file);
     }
     const uint8_t* data_u = buffer->DataU();
     stride = buffer->StrideU();
-    for (int i = 0; i < buffer->ChromaHeight(); ++i) {
-      fwrite(data_u + i * stride, 1, stride, output_file);
+    for (int j = 0; j < buffer->ChromaHeight(); ++j) {
+      fwrite(data_u + j * stride, 1, stride, output_file);
     }
     const uint8_t* data_v = buffer->DataV();
     stride = buffer->StrideV();
-    for (int i = 0; i < buffer->ChromaHeight(); ++i) {
-      fwrite(data_v + i * stride, 1, stride, output_file);
+    for (int j = 0; j < buffer->ChromaHeight(); ++j) {
+      fwrite(data_v + j * stride, 1, stride, output_file);
     }
   }
   if (ferror(output_file) != 0) {
