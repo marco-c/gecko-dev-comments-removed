@@ -878,10 +878,23 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
 
   bool frame_boundary = true;
   for (auto& packet : result.packets) {
-    
-    
-    RTC_DCHECK_EQ(frame_boundary, packet->is_first_packet_in_frame());
     int64_t unwrapped_rtp_seq_num = packet->sequence_number;
+
+    
+    
+    
+    
+    
+    if (unwrapped_rtp_seq_num <= last_decoded_unwrapped_seq_num_) {
+      continue;
+    }
+
+    
+    
+    if (frame_boundary != packet->is_first_packet_in_frame()) {
+      continue;
+    }
+
     RTC_DCHECK_GT(packet_infos_.count(unwrapped_rtp_seq_num), 0);
     RtpPacketInfo& packet_info = packet_infos_[unwrapped_rtp_seq_num];
     if (packet->is_first_packet_in_frame()) {
@@ -1370,9 +1383,10 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
   }
 
   if (seq_num != -1) {
-    int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
-    packet_infos_.erase(packet_infos_.begin(),
-                        packet_infos_.upper_bound(unwrapped_rtp_seq_num));
+    last_decoded_unwrapped_seq_num_ = rtp_seq_num_unwrapper_.Unwrap(seq_num);
+    packet_infos_.erase(
+        packet_infos_.begin(),
+        packet_infos_.upper_bound(*last_decoded_unwrapped_seq_num_));
     uint32_t num_packets_cleared = packet_buffer_.ClearTo(seq_num);
     if (num_packets_cleared > 0) {
       TRACE_EVENT2("webrtc",
