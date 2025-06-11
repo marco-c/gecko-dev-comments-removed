@@ -2254,7 +2254,7 @@ void P2PTransportChannel::SetWritable(bool writable) {
     
     
     
-    SendPeriodicPingUntilDtlsConnected();
+    PeriodicRetransmitDtlsPacketUntilDtlsConnected();
   }
 }
 
@@ -2262,9 +2262,9 @@ void P2PTransportChannel::SetWritable(bool writable) {
 
 
 
-void P2PTransportChannel::SendPeriodicPingUntilDtlsConnected() {
+void P2PTransportChannel::PeriodicRetransmitDtlsPacketUntilDtlsConnected() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (pending_ping_until_dtls_connected_ == true) {
+  if (pending_periodic_retransmit_dtls_packet_ == true) {
     
     
     
@@ -2273,16 +2273,17 @@ void P2PTransportChannel::SendPeriodicPingUntilDtlsConnected() {
   }
   if (writable_ && config_.dtls_handshake_in_stun &&
       !dtls_stun_piggyback_callbacks_.empty()) {
-    auto has_data_to_send =
-        dtls_stun_piggyback_callbacks_.send_data(STUN_BINDING_REQUEST);
-    if (!has_data_to_send.first && !has_data_to_send.second) {
+    auto data_to_send =
+        dtls_stun_piggyback_callbacks_.send_data(STUN_BINDING_INDICATION);
+    if (!data_to_send.first) {
       
       return;
     }
     
     RTC_DCHECK(selected_connection_ != nullptr);
-    SendPingRequestInternal(selected_connection_);
-    RTC_LOG(LS_INFO) << ToString() << ": Sending extra ping for DTLS";
+    rtc::PacketOptions packet_options;
+    SendPacket(data_to_send.first->data(), data_to_send.first->size(),
+               packet_options,  0);
   }
 
   const auto rtt_ms = GetRttEstimate().value_or(100);
@@ -2291,16 +2292,19 @@ void P2PTransportChannel::SendPeriodicPingUntilDtlsConnected() {
                std::min(kMaxDtlsHandshakeTimeoutMs, 2 * rtt_ms));
 
   
-  pending_ping_until_dtls_connected_ = true;
+  pending_periodic_retransmit_dtls_packet_ = true;
   network_thread_->PostDelayedHighPrecisionTask(
       webrtc::SafeTask(safety_flag_.flag(),
                        [this] {
                          RTC_DCHECK_RUN_ON(network_thread_);
                          
-                         pending_ping_until_dtls_connected_ = false;
-                         SendPeriodicPingUntilDtlsConnected();
+                         pending_periodic_retransmit_dtls_packet_ = false;
+                         PeriodicRetransmitDtlsPacketUntilDtlsConnected();
                        }),
       TimeDelta::Millis(delay_ms));
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Scheduled retransmit of DTLS packet, delay_ms: "
+                   << delay_ms;
 }
 
 void P2PTransportChannel::SetReceiving(bool receiving) {

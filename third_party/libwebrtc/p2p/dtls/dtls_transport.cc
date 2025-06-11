@@ -105,15 +105,10 @@ rtc::StreamResult StreamInterfaceChannel::Write(
 
   
   
-  if (dtls_stun_piggyback_controller_ &&
-      dtls_stun_piggyback_controller_->MaybeConsumePacket(data)) {
-    written = data.size();
-    return webrtc::SR_SUCCESS;
+  if (dtls_stun_piggyback_controller_) {
+    dtls_stun_piggyback_controller_->CapturePacket(data);
   }
 
-  
-  
-  
   rtc::PacketOptions packet_options;
   ice_transport_->SendPacket(reinterpret_cast<const char*>(data.data()),
                              data.size(), packet_options);
@@ -167,12 +162,6 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
             piggybacked_dtls_callback_(
                 this, rtc::ReceivedPacket(piggybacked_dtls_packet,
                                           webrtc::SocketAddress()));
-          },
-          [this]() {
-            if (!dtls_) {
-              return;
-            }
-            DisablePiggybackingAndRestart();
           }) {
   RTC_DCHECK(ice_transport_);
   ConnectToIceTransport();
@@ -386,17 +375,15 @@ bool DtlsTransport::ExportSrtpKeyingMaterial(
   return dtls_ ? dtls_->ExportSrtpKeyingMaterial(keying_material) : false;
 }
 
-bool DtlsTransport::SetupDtls(bool disable_piggybacking) {
+bool DtlsTransport::SetupDtls() {
   RTC_DCHECK(dtls_role_);
-  
-  const bool enable_piggybacking =
-      ice_transport_->config().dtls_handshake_in_stun && !disable_piggybacking;
 
+  dtls_in_stun_ = ice_transport_->config().dtls_handshake_in_stun;
   {
     auto downward = std::make_unique<StreamInterfaceChannel>(ice_transport_);
     StreamInterfaceChannel* downward_ptr = downward.get();
 
-    if (enable_piggybacking) {
+    if (dtls_in_stun_) {
       downward_ptr->SetDtlsStunPiggybackController(
           &dtls_stun_piggyback_controller_);
     }
@@ -410,11 +397,6 @@ bool DtlsTransport::SetupDtls(bool disable_piggybacking) {
     }
     downward_ = downward_ptr;
   }
-
-  if (!enable_piggybacking) {
-    ice_transport_->ResetDtlsStunPiggybackCallbacks();
-  }
-  dtls_stun_piggyback_controller_.SetEnabled(enable_piggybacking);
 
   dtls_->SetIdentity(local_certificate_->identity()->Clone());
   dtls_->SetMaxProtocolVersion(ssl_max_version_);
@@ -440,7 +422,8 @@ bool DtlsTransport::SetupDtls(bool disable_piggybacking) {
     RTC_LOG(LS_INFO) << ToString() << ": Not using DTLS-SRTP.";
   }
 
-  RTC_LOG(LS_INFO) << ToString() << ": DTLS setup complete.";
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": DTLS setup complete, dtls_in_stun: " << dtls_in_stun_;
 
   
   
@@ -577,13 +560,20 @@ void DtlsTransport::ConnectToIceTransport() {
       this, &DtlsTransport::OnNetworkRouteChanged);
   ice_transport_->SetDtlsStunPiggybackCallbacks(DtlsStunPiggybackCallbacks(
       [&](auto stun_message_type) {
-        auto data = dtls_stun_piggyback_controller_.GetDataToPiggyback(
-            stun_message_type);
-        auto ack = dtls_stun_piggyback_controller_.GetAckToPiggyback(
-            stun_message_type);
+        std::optional<absl::string_view> data;
+        std::optional<absl::string_view> ack;
+        if (dtls_in_stun_) {
+          data = dtls_stun_piggyback_controller_.GetDataToPiggyback(
+              stun_message_type);
+          ack = dtls_stun_piggyback_controller_.GetAckToPiggyback(
+              stun_message_type);
+        }
         return std::make_pair(data, ack);
       },
       [&](auto data, auto ack) {
+        if (!dtls_in_stun_) {
+          return;
+        }
         dtls_stun_piggyback_controller_.ReportDataPiggybacked(data, ack);
       }));
   SetPiggybackDtlsDataCallback([this](rtc::PacketTransportInternal* transport,
@@ -635,7 +625,7 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
       break;
     case webrtc::DtlsTransportState::kConnecting:
       
-      if (dtls_stun_piggyback_controller_.enabled() && dtls_) {
+      if (dtls_in_stun_ && dtls_) {
         
         
         
@@ -658,21 +648,6 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
       RTC_DCHECK_NOTREACHED();
       break;
   }
-}
-
-void DtlsTransport::DisablePiggybackingAndRestart() {
-  dtls_.reset(nullptr);
-  set_dtls_state(webrtc::DtlsTransportState::kNew);
-  set_writable(false);
-
-  if (!SetupDtls( true)) {
-    RTC_LOG(LS_ERROR)
-        << "Failed to setup DTLS again after attempted piggybacking.";
-    set_dtls_state(webrtc::DtlsTransportState::kFailed);
-    return;
-  }
-  
-  return;
 }
 
 void DtlsTransport::OnReceivingState(rtc::PacketTransportInternal* transport) {
@@ -864,8 +839,7 @@ void DtlsTransport::MaybeStartDtls() {
   RTC_DCHECK(ice_transport_);
   
   
-  if (dtls_ && (ice_transport_->writable() ||
-                dtls_stun_piggyback_controller_.enabled())) {
+  if (dtls_ && (ice_transport_->writable() || dtls_in_stun_)) {
     ConfigureHandshakeTimeout();
 
     if (dtls_->StartSSL()) {
@@ -884,7 +858,6 @@ void DtlsTransport::MaybeStartDtls() {
                      << ": DtlsTransport: Started DTLS handshake active="
                      << IsDtlsActive() << " role="
                      << (*dtls_role_ == rtc::SSL_SERVER ? "server" : "client");
-
     set_dtls_state(webrtc::DtlsTransportState::kConnecting);
     
     
@@ -958,7 +931,6 @@ void DtlsTransport::OnDtlsHandshakeError(webrtc::SSLHandshakeError error) {
 
 void DtlsTransport::ConfigureHandshakeTimeout() {
   RTC_DCHECK(dtls_);
-  bool uses_dtls_in_stun = dtls_stun_piggyback_controller_.enabled();
   std::optional<int> rtt_ms = ice_transport_->GetRttEstimate();
   if (rtt_ms) {
     
@@ -970,7 +942,7 @@ void DtlsTransport::ConfigureHandshakeTimeout() {
                      << initial_timeout_ms << "ms based on ICE RTT " << *rtt_ms;
 
     dtls_->SetInitialRetransmissionTimeout(initial_timeout_ms);
-  } else if (uses_dtls_in_stun) {
+  } else if (dtls_in_stun_) {
     
     
     
@@ -994,17 +966,17 @@ void DtlsTransport::SetPiggybackDtlsDataCallback(
 bool DtlsTransport::IsDtlsPiggybackSupportedByPeer() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(ice_transport_);
-  return dtls_stun_piggyback_controller_.state() !=
-         DtlsStunPiggybackController::State::OFF;
+  return dtls_in_stun_ && (dtls_stun_piggyback_controller_.state() !=
+                           DtlsStunPiggybackController::State::OFF);
 }
 
 bool DtlsTransport::IsDtlsPiggybackHandshaking() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(ice_transport_);
-  return dtls_stun_piggyback_controller_.state() ==
-             DtlsStunPiggybackController::State::TENTATIVE ||
-         dtls_stun_piggyback_controller_.state() ==
-             DtlsStunPiggybackController::State::CONFIRMED;
+  return dtls_in_stun_ && (dtls_stun_piggyback_controller_.state() ==
+                               DtlsStunPiggybackController::State::TENTATIVE ||
+                           dtls_stun_piggyback_controller_.state() ==
+                               DtlsStunPiggybackController::State::CONFIRMED);
 }
 
 }  
