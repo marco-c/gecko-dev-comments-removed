@@ -254,6 +254,12 @@ class LoopbackTransport : public MediaTransportHandler {
   std::atomic<int> rtcp_packets_received_{0};
 };
 
+struct MediaPipelineTestOptions {
+  bool is_rtcp_mux = true;
+  unsigned int ms_until_filter_update = 500;
+  unsigned int ms_of_traffic_after_answer = 10000;
+};
+
 class TestAgent {
  public:
   explicit TestAgent(const RefPtr<WebrtcEnvironmentWrapper>& aEnvWrapper,
@@ -276,7 +282,8 @@ class TestAgent {
     LoopbackTransport::InitAndConnect(*client->transport_, *server->transport_);
   }
 
-  virtual void CreatePipeline(const std::string& aTransportId) = 0;
+  virtual void CreatePipeline(const std::string& aTransportId,
+                              const MediaPipelineTestOptions& aOptions) = 0;
 
   void SetState_s(const std::string& aTransportId,
                   TransportLayer::State aState) {
@@ -366,7 +373,8 @@ class TestAgentSend : public TestAgent {
     audio_track_ = new FakeAudioTrack();
   }
 
-  virtual void CreatePipeline(const std::string& aTransportId) {
+  virtual void CreatePipeline(const std::string& aTransportId,
+                              const MediaPipelineTestOptions& aOptions) {
     std::string test_pc;
 
     RefPtr<MediaPipelineTransmit> audio_pipeline =
@@ -397,7 +405,8 @@ class TestAgentReceive : public TestAgent {
     });
   }
 
-  virtual void CreatePipeline(const std::string& aTransportId) {
+  virtual void CreatePipeline(const std::string& aTransportId,
+                              const MediaPipelineTestOptions& aOptions) {
     std::string test_pc;
 
     auto audio_pipeline = MakeRefPtr<MediaPipelineReceiveAudio>(
@@ -451,10 +460,11 @@ webrtc::AudioState::Config CreateAudioStateConfig(
 
 class MediaPipelineTest : public ::testing::Test {
  public:
-  MediaPipelineTest()
+  explicit MediaPipelineTest(MediaPipelineTestOptions options = {})
       : main_task_queue_(
             WrapUnique<TaskQueueWrapper<DeletionPolicy::NonBlocking>>(
                 new MainAsCurrent())),
+        options_(options),
         env_wrapper_(WebrtcEnvironmentWrapper::Create(
             mozilla::dom::RTCStatsTimestampMaker::Create())),
         shared_state_(MakeAndAddRef<SharedWebrtcState>(
@@ -484,24 +494,22 @@ class MediaPipelineTest : public ::testing::Test {
   }
 
   
-  void TestAudioSend(bool aIsRtcpMux,
+  void TestAudioSend(MediaPipelineTestOptions options,
                      UniquePtr<MediaPipelineFilter>&& initialFilter = nullptr,
-                     UniquePtr<MediaPipelineFilter>&& refinedFilter = nullptr,
-                     unsigned int ms_until_filter_update = 500,
-                     unsigned int ms_of_traffic_after_answer = 10000) {
+                     UniquePtr<MediaPipelineFilter>&& refinedFilter = nullptr) {
     bool bundle = !!(initialFilter);
     
     
-    ASSERT_FALSE(!aIsRtcpMux && bundle);
+    ASSERT_FALSE(!options.is_rtcp_mux && bundle);
 
     p2_.SetBundleFilter(std::move(initialFilter));
 
     
     InitTransports();
 
-    std::string transportId = aIsRtcpMux ? "mux" : "non-mux";
-    p1_.CreatePipeline(transportId);
-    p2_.CreatePipeline(transportId);
+    std::string transportId = options.is_rtcp_mux ? "mux" : "non-mux";
+    p1_.CreatePipeline(transportId, options);
+    p2_.CreatePipeline(transportId, options);
 
     
     
@@ -525,7 +533,7 @@ class MediaPipelineTest : public ::testing::Test {
     });
 
     if (bundle) {
-      WaitFor(TimeDuration::FromMilliseconds(ms_until_filter_update));
+      WaitFor(TimeDuration::FromMilliseconds(options.ms_until_filter_update));
 
       
       
@@ -541,7 +549,7 @@ class MediaPipelineTest : public ::testing::Test {
     }
 
     
-    WaitFor(TimeDuration::FromMilliseconds(ms_of_traffic_after_answer));
+    WaitFor(TimeDuration::FromMilliseconds(options.ms_of_traffic_after_answer));
 
     p1_.Stop();
     p2_.Stop();
@@ -567,18 +575,17 @@ class MediaPipelineTest : public ::testing::Test {
   }
 
   void TestAudioReceiverBundle(
-      bool bundle_accepted, UniquePtr<MediaPipelineFilter>&& initialFilter,
+      UniquePtr<MediaPipelineFilter>&& initialFilter,
       UniquePtr<MediaPipelineFilter>&& refinedFilter = nullptr,
-      unsigned int ms_until_answer = 500,
-      unsigned int ms_of_traffic_after_answer = 10000) {
-    TestAudioSend(true, std::move(initialFilter), std::move(refinedFilter),
-                  ms_until_answer, ms_of_traffic_after_answer);
+      MediaPipelineTestOptions options = {}) {
+    TestAudioSend(options, std::move(initialFilter), std::move(refinedFilter));
   }
 
  protected:
   
   
   UniquePtr<TaskQueueWrapper<DeletionPolicy::NonBlocking>> main_task_queue_;
+  const MediaPipelineTestOptions options_;
   const RefPtr<WebrtcEnvironmentWrapper> env_wrapper_;
   const RefPtr<SharedWebrtcState> shared_state_;
   TestAgentSend p1_;
@@ -698,9 +705,13 @@ TEST_F(MediaPipelineFilterTest, TestRemoteSDPNoSSRCs) {
   ASSERT_FALSE(Filter(filter, 555, 110));
 }
 
-TEST_F(MediaPipelineTest, TestAudioSendNoMux) { TestAudioSend(false); }
+TEST_F(MediaPipelineTest, TestAudioSendNoMux) {
+  TestAudioSend({.is_rtcp_mux = false});
+}
 
-TEST_F(MediaPipelineTest, TestAudioSendMux) { TestAudioSend(true); }
+TEST_F(MediaPipelineTest, TestAudioSendMux) {
+  TestAudioSend({.is_rtcp_mux = true});
+}
 
 TEST_F(MediaPipelineTest, TestAudioSendBundle) {
   auto filter = MakeUnique<MediaPipelineFilter>();
@@ -709,10 +720,11 @@ TEST_F(MediaPipelineTest, TestAudioSendBundle) {
   
   
   TestAudioReceiverBundle(
-      true, std::move(filter),
+      std::move(filter),
       
       
-      nullptr, 10000, 10000);
+      nullptr,
+      {.ms_until_filter_update = 10000, .ms_of_traffic_after_answer = 10000});
 
   
   ASSERT_GT(p1_.GetAudioRtpCountSent(), p2_.GetAudioRtpCountReceived());
@@ -723,8 +735,7 @@ TEST_F(MediaPipelineTest, TestAudioSendBundle) {
 TEST_F(MediaPipelineTest, TestAudioSendEmptyBundleFilter) {
   auto filter = MakeUnique<MediaPipelineFilter>();
   auto bad_answer_filter = MakeUnique<MediaPipelineFilter>();
-  TestAudioReceiverBundle(true, std::move(filter),
-                          std::move(bad_answer_filter));
+  TestAudioReceiverBundle(std::move(filter), std::move(bad_answer_filter));
   
   ASSERT_EQ(0, p2_.GetAudioRtpCountReceived());
 }
