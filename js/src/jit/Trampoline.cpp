@@ -49,7 +49,7 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
 #ifdef DEBUG
     masm.loadPtr(Address(framePtr, CommonFrameLayout::offsetOfDescriptor()),
                  scratch);
-    masm.and32(Imm32(FrameDescriptor::TypeMask), scratch);
+    masm.and32(Imm32(FRAMETYPE_MASK), scratch);
 
     Label checkOk;
     for (FrameType type : types) {
@@ -146,7 +146,7 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   
   masm.loadPtr(Address(fpScratch, JitFrameLayout::offsetOfDescriptor()),
                scratch);
-  masm.and32(Imm32(FrameDescriptor::TypeMask), scratch);
+  masm.and32(Imm32(FRAMETYPE_MASK), scratch);
 
   
   Label handle_BaselineOrIonJS;

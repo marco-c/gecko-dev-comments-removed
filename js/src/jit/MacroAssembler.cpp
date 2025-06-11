@@ -3871,7 +3871,7 @@ void MacroAssembler::generateBailoutTail(Register scratch,
             FramePointer);
 
     
-    push(FrameDescriptor(FrameType::BaselineJS));
+    pushFrameDescriptor(FrameType::BaselineJS);
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
     push(FramePointer);
     
@@ -3927,42 +3927,25 @@ void MacroAssembler::loadJitCodeRaw(Register func, Register dest) {
   loadPtr(Address(dest, BaseScript::offsetOfJitCodeRaw()), dest);
 }
 
-void MacroAssembler::loadJitCodeRawNoIon(Register func, Register dest,
-                                         Register scratch) {
+void MacroAssembler::loadBaselineJitCodeRaw(Register func, Register dest,
+                                            Label* failure) {
   
-  
-  
-  
-
-  Label useJitCodeRaw, done;
   loadPrivate(Address(func, JSFunction::offsetOfJitInfoOrScript()), dest);
-  branchIfScriptHasNoJitScript(dest, &useJitCodeRaw);
-  loadJitScript(dest, scratch);
+  if (failure) {
+    branchIfScriptHasNoJitScript(dest, failure);
+  }
+  loadJitScript(dest, dest);
 
   
-  
-  branchPtr(Assembler::BelowOrEqual,
-            Address(scratch, JitScript::offsetOfIonScript()),
-            ImmPtr(IonCompilingScriptPtr), &useJitCodeRaw);
-  loadPtr(Address(scratch, JitScript::offsetOfBaselineScript()), scratch);
-
-#ifdef DEBUG
-  
-  Label hasBaselineScript;
-  branchPtr(Assembler::Above, scratch, ImmPtr(BaselineCompilingScriptPtr),
-            &hasBaselineScript);
-  assumeUnreachable("JitScript has IonScript without BaselineScript");
-  bind(&hasBaselineScript);
-#endif
-
-  loadPtr(Address(scratch, BaselineScript::offsetOfMethod()), scratch);
-  loadPtr(Address(scratch, JitCode::offsetOfCode()), dest);
-  jump(&done);
+  loadPtr(Address(dest, JitScript::offsetOfBaselineScript()), dest);
+  if (failure) {
+    static_assert(DisabledScript < CompilingScript);
+    branchPtr(Assembler::BelowOrEqual, dest, ImmWord(CompilingScript), failure);
+  }
 
   
-  bind(&useJitCodeRaw);
-  loadPtr(Address(dest, BaseScript::offsetOfJitCodeRaw()), dest);
-  bind(&done);
+  loadPtr(Address(dest, BaselineScript::offsetOfMethod()), dest);
+  loadPtr(Address(dest, JitCode::offsetOfCode()), dest);
 }
 
 void MacroAssembler::loadBaselineFramePtr(Register framePtr, Register dest) {
@@ -3970,6 +3953,10 @@ void MacroAssembler::loadBaselineFramePtr(Register framePtr, Register dest) {
     movePtr(framePtr, dest);
   }
   subPtr(Imm32(BaselineFrame::Size()), dest);
+}
+
+void MacroAssembler::storeICScriptInJSContext(Register icScript) {
+  storePtr(icScript, AbsoluteAddress(runtime()->addressOfInlinedICScript()));
 }
 
 void MacroAssembler::handleFailure() {
