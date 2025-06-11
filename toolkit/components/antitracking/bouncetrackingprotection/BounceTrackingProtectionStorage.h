@@ -20,7 +20,6 @@
 
 class nsIPrincipal;
 class mozIStorageConnection;
-
 namespace mozilla {
 
 class BounceTrackingStateGlobal;
@@ -143,12 +142,6 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   void DecrementPendingWrites();
 
   
-  [[nodiscard]] static nsresult UpsertData(
-      mozIStorageConnection* aDatabaseConnection,
-      const OriginAttributes& aOriginAttributes, const nsACString& aSiteHost,
-      EntryType aEntryType, PRTime aTimeStamp);
-
-  
   [[nodiscard]] static nsresult DeleteData(
       mozIStorageConnection* aDatabaseConnection,
       Maybe<OriginAttributes> aOriginAttributes, const nsACString& aSiteHost);
@@ -181,6 +174,15 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
 
   
   
+  using PendingUpdate = ImportEntry;
+
+  
+  [[nodiscard]] static nsresult UpsertDataBulk(
+      mozIStorageConnection* aDatabaseConnection,
+      const nsTArray<PendingUpdate>& aUpdates);
+
+  
+  
   
   Monitor mMonitor;
 
@@ -188,6 +190,11 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   FlippedOnce<false> mErrored MOZ_GUARDED_BY(mMonitor);
   FlippedOnce<false> mShuttingDown MOZ_GUARDED_BY(mMonitor);
   uint32_t mPendingWrites MOZ_GUARDED_BY(mMonitor);
+
+  
+  
+  
+  nsTArray<PendingUpdate> mPendingUpdates;
 
   
   
@@ -206,6 +213,12 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   [[nodiscard]] nsresult UpdateDBEntry(
       const OriginAttributes& aOriginAttributes, const nsACString& aSiteHost,
       EntryType aEntryType, PRTime aTimeStamp);
+
+  
+  [[nodiscard]] nsresult MaybeFlushPendingUpdates();
+
+  
+  [[nodiscard]] nsresult FlushPendingUpdates();
 
   
   
