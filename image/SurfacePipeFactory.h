@@ -88,6 +88,7 @@ class SurfacePipeFactory {
 
 
 
+
   static Maybe<SurfacePipe> CreateSurfacePipe(
       Decoder* aDecoder, const OrientedIntSize& aInputSize,
       const OrientedIntSize& aOutputSize, const OrientedIntRect& aFrameRect,
@@ -107,51 +108,12 @@ class SurfacePipeFactory {
     const bool premultiplyAlpha =
         bool(aFlags & SurfacePipeFlags::PREMULTIPLY_ALPHA);
 
-    MOZ_ASSERT(aInFormat == gfx::SurfaceFormat::R8G8B8 ||
-               aInFormat == gfx::SurfaceFormat::R8G8B8A8 ||
-               aInFormat == gfx::SurfaceFormat::R8G8B8X8 ||
-               aInFormat == gfx::SurfaceFormat::OS_RGBA ||
-               aInFormat == gfx::SurfaceFormat::OS_RGBX);
-
-    MOZ_ASSERT(aOutFormat == gfx::SurfaceFormat::OS_RGBA ||
-               aOutFormat == gfx::SurfaceFormat::OS_RGBX);
-
     MOZ_ASSERT(aDecoder->GetOrientation().IsIdentity());
 
-    const bool inFormatRgb = aInFormat == gfx::SurfaceFormat::R8G8B8;
-
-    const bool inFormatOpaque = aInFormat == gfx::SurfaceFormat::OS_RGBX ||
-                                aInFormat == gfx::SurfaceFormat::R8G8B8X8 ||
-                                inFormatRgb;
-    const bool outFormatOpaque = aOutFormat == gfx::SurfaceFormat::OS_RGBX;
-
-    const bool inFormatOrder = aInFormat == gfx::SurfaceFormat::R8G8B8A8 ||
-                               aInFormat == gfx::SurfaceFormat::R8G8B8X8;
-    const bool outFormatOrder = aOutFormat == gfx::SurfaceFormat::R8G8B8A8 ||
-                                aOutFormat == gfx::SurfaceFormat::R8G8B8X8;
-
-    
-    
-    
-    
-    bool unpackOrMaskSwizzle =
-        inFormatRgb ||
-        (!inFormatOpaque && outFormatOpaque && inFormatOrder == outFormatOrder);
-
-    
-    
-    
-    bool swapOrAlphaSwizzle =
-        (!inFormatRgb && inFormatOrder != outFormatOrder) || premultiplyAlpha;
-
-    if (unpackOrMaskSwizzle && swapOrAlphaSwizzle) {
-      MOZ_ASSERT_UNREACHABLE("Early and late swizzles not supported");
-      return Nothing();
-    }
-
-    if (!unpackOrMaskSwizzle && !swapOrAlphaSwizzle &&
-        aInFormat != aOutFormat) {
-      MOZ_ASSERT_UNREACHABLE("Need to swizzle, but not configured to");
+    bool unpackOrMaskSwizzle;
+    bool swapOrAlphaSwizzle;
+    if (!GetSwizzleConfigInfo(aInFormat, aOutFormat, premultiplyAlpha,
+                              unpackOrMaskSwizzle, swapOrAlphaSwizzle)) {
       return Nothing();
     }
 
@@ -602,11 +564,12 @@ class SurfacePipeFactory {
 
 
 
+
   static Maybe<SurfacePipe> CreateReorientSurfacePipe(
       Decoder* aDecoder, const OrientedIntSize& aInputSize,
-      const OrientedIntSize& aOutputSize, gfx::SurfaceFormat aFormat,
-      qcms_transform* aTransform, const Orientation& aOrientation,
-      SurfacePipeFlags aFlags) {
+      const OrientedIntSize& aOutputSize, gfx::SurfaceFormat aInFormat,
+      gfx::SurfaceFormat aOutFormat, qcms_transform* aTransform,
+      const Orientation& aOrientation, SurfacePipeFlags aFlags) {
     MOZ_ASSERT(aFlags == SurfacePipeFlags() ||
                aFlags == SurfacePipeFlags::PREMULTIPLY_ALPHA);
 
@@ -615,6 +578,13 @@ class SurfacePipeFactory {
     const bool premultiplyAlpha =
         bool(aFlags & SurfacePipeFlags::PREMULTIPLY_ALPHA);
 
+    bool unpackOrMaskSwizzle;
+    bool swapOrAlphaSwizzle;
+    if (!GetSwizzleConfigInfo(aInFormat, aOutFormat, premultiplyAlpha,
+                              unpackOrMaskSwizzle, swapOrAlphaSwizzle)) {
+      return Nothing();
+    }
+
     
     
     
@@ -622,55 +592,52 @@ class SurfacePipeFactory {
     
     
     DownscalingConfig downscalingConfig{
-        aOrientation.ToUnoriented(aInputSize).ToUnknownSize(), aFormat};
+        aOrientation.ToUnoriented(aInputSize).ToUnknownSize(), aOutFormat};
     ColorManagementConfig colorManagementConfig{aTransform};
-    SurfaceConfig surfaceConfig{aDecoder, aOutputSize.ToUnknownSize(), aFormat,
+    SurfaceConfig surfaceConfig{aDecoder, aOutputSize.ToUnknownSize(),
+                                aOutFormat,
                                  false,
                                  Nothing()};
-    SwizzleConfig premultiplyConfig{aFormat, aFormat, premultiplyAlpha};
-    ReorientSurfaceConfig reorientSurfaceConfig{aDecoder, aOutputSize, aFormat,
-                                                aOrientation};
+    SwizzleConfig swizzleConfig{aInFormat, aOutFormat, premultiplyAlpha};
+    ReorientSurfaceConfig reorientSurfaceConfig{aDecoder, aOutputSize,
+                                                aOutFormat, aOrientation};
 
     Maybe<SurfacePipe> pipe;
 
-    if (premultiplyAlpha) {
-      if (aOrientation.IsIdentity()) {
+    if (aOrientation.IsIdentity()) {
+      if (unpackOrMaskSwizzle) {
         if (colorManagement) {
           if (downscale) {
-            pipe = MakePipe(colorManagementConfig, premultiplyConfig,
-                            downscalingConfig, surfaceConfig);
+            pipe = MakePipe(swizzleConfig, downscalingConfig,
+                            colorManagementConfig, surfaceConfig);
           } else {  
-            pipe = MakePipe(colorManagementConfig, premultiplyConfig,
-                            surfaceConfig);
+            pipe =
+                MakePipe(swizzleConfig, colorManagementConfig, surfaceConfig);
           }
         } else {  
           if (downscale) {
-            pipe =
-                MakePipe(premultiplyConfig, downscalingConfig, surfaceConfig);
+            pipe = MakePipe(swizzleConfig, downscalingConfig, surfaceConfig);
           } else {  
-            pipe = MakePipe(premultiplyConfig, surfaceConfig);
+            pipe = MakePipe(swizzleConfig, surfaceConfig);
+          }
+        }
+      } else if (swapOrAlphaSwizzle) {
+        if (colorManagement) {
+          if (downscale) {
+            pipe = MakePipe(colorManagementConfig, swizzleConfig,
+                            downscalingConfig, surfaceConfig);
+          } else {  
+            pipe =
+                MakePipe(colorManagementConfig, swizzleConfig, surfaceConfig);
+          }
+        } else {  
+          if (downscale) {
+            pipe = MakePipe(swizzleConfig, downscalingConfig, surfaceConfig);
+          } else {  
+            pipe = MakePipe(swizzleConfig, surfaceConfig);
           }
         }
       } else {  
-        if (colorManagement) {
-          if (downscale) {
-            pipe = MakePipe(colorManagementConfig, premultiplyConfig,
-                            downscalingConfig, reorientSurfaceConfig);
-          } else {  
-            pipe = MakePipe(colorManagementConfig, premultiplyConfig,
-                            reorientSurfaceConfig);
-          }
-        } else {  
-          if (downscale) {
-            pipe = MakePipe(premultiplyConfig, downscalingConfig,
-                            reorientSurfaceConfig);
-          } else {  
-            pipe = MakePipe(premultiplyConfig, reorientSurfaceConfig);
-          }
-        }
-      }
-    } else {  
-      if (aOrientation.IsIdentity()) {
         if (colorManagement) {
           if (downscale) {
             pipe = MakePipe(downscalingConfig, colorManagementConfig,
@@ -683,6 +650,42 @@ class SurfacePipeFactory {
             pipe = MakePipe(downscalingConfig, surfaceConfig);
           } else {  
             pipe = MakePipe(surfaceConfig);
+          }
+        }
+      }
+    } else {  
+      if (unpackOrMaskSwizzle) {
+        if (colorManagement) {
+          if (downscale) {
+            pipe = MakePipe(swizzleConfig, downscalingConfig,
+                            colorManagementConfig, reorientSurfaceConfig);
+          } else {  
+            pipe = MakePipe(swizzleConfig, colorManagementConfig,
+                            reorientSurfaceConfig);
+          }
+        } else {  
+          if (downscale) {
+            pipe = MakePipe(swizzleConfig, downscalingConfig,
+                            reorientSurfaceConfig);
+          } else {  
+            pipe = MakePipe(swizzleConfig, reorientSurfaceConfig);
+          }
+        }
+      } else if (swapOrAlphaSwizzle) {
+        if (colorManagement) {
+          if (downscale) {
+            pipe = MakePipe(colorManagementConfig, swizzleConfig,
+                            downscalingConfig, reorientSurfaceConfig);
+          } else {  
+            pipe = MakePipe(colorManagementConfig, swizzleConfig,
+                            reorientSurfaceConfig);
+          }
+        } else {  
+          if (downscale) {
+            pipe = MakePipe(swizzleConfig, downscalingConfig,
+                            reorientSurfaceConfig);
+          } else {  
+            pipe = MakePipe(swizzleConfig, reorientSurfaceConfig);
           }
         }
       } else {  
@@ -707,6 +710,59 @@ class SurfacePipeFactory {
   }
 
  private:
+  static bool GetSwizzleConfigInfo(const gfx::SurfaceFormat aInFormat,
+                                   const gfx::SurfaceFormat aOutFormat,
+                                   const bool aPremultiplyAlpha,
+                                   bool& aOutUnpackOrMaskSwizzle,
+                                   bool& aOutSwapOrAlphaSwizzle) {
+    MOZ_ASSERT(aInFormat == gfx::SurfaceFormat::R8G8B8 ||
+               aInFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+               aInFormat == gfx::SurfaceFormat::R8G8B8X8 ||
+               aInFormat == gfx::SurfaceFormat::OS_RGBA ||
+               aInFormat == gfx::SurfaceFormat::OS_RGBX);
+
+    MOZ_ASSERT(aOutFormat == gfx::SurfaceFormat::OS_RGBA ||
+               aOutFormat == gfx::SurfaceFormat::OS_RGBX);
+
+    const bool inFormatRgb = aInFormat == gfx::SurfaceFormat::R8G8B8;
+
+    const bool inFormatOpaque = aInFormat == gfx::SurfaceFormat::OS_RGBX ||
+                                aInFormat == gfx::SurfaceFormat::R8G8B8X8 ||
+                                inFormatRgb;
+    const bool outFormatOpaque = aOutFormat == gfx::SurfaceFormat::OS_RGBX;
+
+    const bool inFormatOrder = aInFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+                               aInFormat == gfx::SurfaceFormat::R8G8B8X8;
+    const bool outFormatOrder = aOutFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+                                aOutFormat == gfx::SurfaceFormat::R8G8B8X8;
+
+    
+    
+    
+    
+    aOutUnpackOrMaskSwizzle =
+        inFormatRgb ||
+        (!inFormatOpaque && outFormatOpaque && inFormatOrder == outFormatOrder);
+
+    
+    
+    
+    aOutSwapOrAlphaSwizzle =
+        (!inFormatRgb && inFormatOrder != outFormatOrder) || aPremultiplyAlpha;
+
+    if (aOutUnpackOrMaskSwizzle && aOutSwapOrAlphaSwizzle) {
+      MOZ_ASSERT_UNREACHABLE("Early and late swizzles not supported");
+      return false;
+    }
+
+    if (!aOutUnpackOrMaskSwizzle && !aOutSwapOrAlphaSwizzle &&
+        aInFormat != aOutFormat) {
+      MOZ_ASSERT_UNREACHABLE("Need to swizzle, but not configured to");
+      return false;
+    }
+    return true;
+  }
+
   template <typename... Configs>
   static Maybe<SurfacePipe> MakePipe(const Configs&... aConfigs) {
     auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
