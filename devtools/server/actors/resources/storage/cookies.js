@@ -265,9 +265,11 @@ class CookiesStorageActor extends BaseStorageActor {
         return COOKIE_SAMESITE.LAX;
       case cookie.SAMESITE_STRICT:
         return COOKIE_SAMESITE.STRICT;
+      case cookie.SAMESITE_NONE:
+        return COOKIE_SAMESITE.NONE;
     }
     
-    return COOKIE_SAMESITE.NONE;
+    return "";
   }
 
   
@@ -414,7 +416,7 @@ class CookiesStorageActor extends BaseStorageActor {
     
     const domain = principal.asciiHost ? principal.host : principal.baseDomain;
 
-    Services.cookies.add(
+    const cv = Services.cookies.add(
       domain,
       "/",
       guid, 
@@ -429,6 +431,11 @@ class CookiesStorageActor extends BaseStorageActor {
         ? Ci.nsICookie.SCHEME_HTTPS
         : Ci.nsICookie.SCHEME_HTTP
     );
+
+    if (cv.result != Ci.nsICookieValidation.eOK) {
+      
+      console.error(`Failed to add a cookie: ${cv.errorString}`);
+    }
   }
 
   
@@ -489,6 +496,7 @@ class CookiesStorageActor extends BaseStorageActor {
           isSession: nsiCookie.isSession,
           expires: nsiCookie.expires,
           originAttributes: nsiCookie.originAttributes,
+          sameSite: nsiCookie.sameSite,
           schemeMap: nsiCookie.schemeMap,
           isPartitioned: nsiCookie.isPartitioned,
         };
@@ -544,7 +552,7 @@ class CookiesStorageActor extends BaseStorageActor {
     cookie.isSession = !cookie.expires;
 
     
-    Services.cookies.add(
+    const cv = Services.cookies.add(
       cookie.host,
       cookie.path,
       cookie.name,
@@ -558,6 +566,11 @@ class CookiesStorageActor extends BaseStorageActor {
       cookie.schemeMap,
       cookie.isPartitioned
     );
+
+    if (cv.result != Ci.nsICookieValidation.eOK) {
+      
+      console.error(`Failed to add a cookie: ${cv.errorString}`);
+    }
   }
 
   _removeCookies(host, opts = {}) {
