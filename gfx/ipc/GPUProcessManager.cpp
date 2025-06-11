@@ -20,7 +20,6 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/RemoteDecoderManagerChild.h"
 #include "mozilla/RemoteDecoderManagerParent.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUChild.h"
@@ -778,7 +777,7 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
 
 void GPUProcessManager::RecordDeviceReset(DeviceResetReason aReason) {
   if (aReason != DeviceResetReason::FORCED_RESET) {
-    Telemetry::Accumulate(Telemetry::DEVICE_RESET_REASON, uint32_t(aReason));
+    glean::gfx::device_reset_reason.AccumulateSingleSample(uint32_t(aReason));
   }
 
   CrashReporter::RecordAnnotationU32(
@@ -1537,16 +1536,36 @@ LayersId GPUProcessManager::AllocateLayerTreeId() {
   
   
   MOZ_ASSERT(NS_IsMainThread());
-  ++mResourceId;
-  if (mResourceId == UINT32_MAX) {
+  
+  
+  
+  
+  
+  
+  
+  
+  mResourceId += 2;
+  if (mResourceId >= UINT32_MAX - 1) {
     
     mIdNamespace = AllocateNamespace();
-    mResourceId = 1;
+    mResourceId = 2;
   }
 
   uint64_t layerTreeId = mIdNamespace;
   layerTreeId = (layerTreeId << 32) | mResourceId;
   return LayersId{layerTreeId};
+}
+
+
+
+
+wr::PipelineId GetTemporaryWebRenderPipelineId(wr::PipelineId aMainPipeline) {
+    
+    
+    MOZ_ASSERT(aMainPipeline.mHandle % 2 == 0);
+    auto id = aMainPipeline;
+    id.mHandle += 1;
+    return id;
 }
 
 uint32_t GPUProcessManager::AllocateNamespace() {
