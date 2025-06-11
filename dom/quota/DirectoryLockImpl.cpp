@@ -68,8 +68,16 @@ bool DirectoryLockImpl::MustWait() const {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!mRegistered);
 
-  for (const DirectoryLockImpl* const existingLock :
-       mQuotaManager->mDirectoryLocks) {
+  
+  
+  
+  
+  
+  const auto& existingLocks = mExclusive
+                                  ? mQuotaManager->mDirectoryLocks
+                                  : mQuotaManager->mExclusiveDirectoryLocks;
+
+  for (const DirectoryLockImpl* const existingLock : existingLocks) {
     if (MustWaitFor(*existingLock)) {
       return true;
     }
@@ -268,6 +276,9 @@ bool DirectoryLockImpl::MustWaitFor(const DirectoryLockImpl& aLock) const {
   AssertIsOnOwningThread();
 
   
+  
+  
+  
   if (!aLock.mExclusive && !mExclusive) {
     return false;
   }
@@ -313,8 +324,16 @@ nsTArray<T> DirectoryLockImpl::LocksMustWaitForInternal() const {
   nsTArray<T> locks;
 
   
-  for (DirectoryLockImpl* const existingLock :
-       Reversed(mQuotaManager->mDirectoryLocks)) {
+  
+  
+  
+  
+  const auto& existingLocks = mExclusive
+                                  ? mQuotaManager->mDirectoryLocks
+                                  : mQuotaManager->mExclusiveDirectoryLocks;
+
+  
+  for (DirectoryLockImpl* const existingLock : Reversed(existingLocks)) {
     if (MustWaitFor(*existingLock)) {
       if constexpr (std::is_same_v<T, NotNull<DirectoryLockImpl*>>) {
         locks.AppendElement(WrapNotNull(existingLock));
