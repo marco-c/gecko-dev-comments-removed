@@ -5,9 +5,9 @@
 
 #include "CookieParser.h"
 #include "CookieLogging.h"
+#include "CookieValidation.h"
 
 #include "mozilla/CheckedInt.h"
-#include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/Cookie.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -21,14 +21,7 @@
 constexpr char ATTRIBUTE_PATH[] = "path";
 constexpr uint64_t ATTRIBUTE_MAX_LENGTH = 1024;
 
-constexpr auto CONSOLE_CHIPS_CATEGORY = "cookiesCHIPS"_ns;
-constexpr auto CONSOLE_OVERSIZE_CATEGORY = "cookiesOversize"_ns;
-constexpr auto CONSOLE_REJECTION_CATEGORY = "cookiesRejection"_ns;
-constexpr auto CONSOLE_SAMESITE_CATEGORY = "cookieSameSite"_ns;
 constexpr auto CONSOLE_INVALID_ATTRIBUTE_CATEGORY = "cookieInvalidAttribute"_ns;
-constexpr auto SAMESITE_MDN_URL =
-    "https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Set-Cookie#"
-    u"samesitesamesite-value"_ns;
 
 namespace mozilla {
 namespace net {
@@ -42,6 +35,10 @@ CookieParser::CookieParser(nsIConsoleReportCollector* aCRC, nsIURI* aHostURI)
 
 CookieParser::~CookieParser() {
   MOZ_COUNT_DTOR(CookieParser);
+
+  if (mValidation) {
+    mValidation->ReportErrorsAndWarnings(mCRC, mHostURI);
+  }
 
 #define COOKIE_LOGGING_WITH_NAME(category, x)                 \
   CookieLogging::LogMessageToConsole(                         \
@@ -57,75 +54,9 @@ CookieParser::~CookieParser() {
                                "CookieRejectedInvalidCharAttributes"_ns);
       break;
 
-    case RejectedNoneRequiresSecure:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_SAMESITE_CATEGORY,
-                               "CookieRejectedNonRequiresSecure2"_ns);
-      break;
-
-    case RejectedPartitionedRequiresSecure:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedPartitionedRequiresSecure"_ns);
-      break;
-
-    case RejectedEmptyNameAndValue:
-      CookieLogging::LogMessageToConsole(
-          mCRC, mHostURI, nsIScriptError::warningFlag,
-          CONSOLE_REJECTION_CATEGORY, "CookieRejectedEmptyNameAndValue"_ns,
-          nsTArray<nsString>());
-
-      break;
-
-    case RejectedNameValueOversize: {
-      AutoTArray<nsString, 2> params = {
-          NS_ConvertUTF8toUTF16(mCookieData.name())};
-
-      nsString size;
-      size.AppendInt(kMaxBytesPerCookie);
-      params.AppendElement(size);
-
-      CookieLogging::LogMessageToConsole(
-          mCRC, mHostURI, nsIScriptError::warningFlag,
-          CONSOLE_OVERSIZE_CATEGORY, "CookieOversize"_ns, params);
-      break;
-    }
-
-    case RejectedInvalidCharName:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedInvalidCharName"_ns);
-      break;
-
-    case RejectedInvalidDomain:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedInvalidDomain"_ns);
-      break;
-
-    case RejectedInvalidPrefix:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedInvalidPrefix"_ns);
-      break;
-    case RejectedInvalidPath:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedInvalidPath"_ns);
-      break;
-
-    case RejectedInvalidCharValue:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedInvalidCharValue"_ns);
-      break;
-
     case RejectedHttpOnlyButFromScript:
       COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
                                "CookieRejectedHttpOnlyButFromScript"_ns);
-      break;
-
-    case RejectedSecureButNonHttps:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
-                               "CookieRejectedSecureButNonHttps"_ns);
-      break;
-
-    case RejectedForNonSameSiteness:
-      COOKIE_LOGGING_WITH_NAME(CONSOLE_SAMESITE_CATEGORY,
-                               "CookieRejectedForNonSameSiteness"_ns);
       break;
 
     case RejectedForeignNoPartitionedError:
@@ -146,7 +77,8 @@ CookieParser::~CookieParser() {
 
 #undef COOKIE_LOGGING_WITH_NAME
 
-  if (mRejection != NoRejection || !mContainsCookie) {
+  if (mRejection != NoRejection || !mValidation ||
+      mValidation->Result() != nsICookieValidation::eOK) {
     return;
   }
 
@@ -183,29 +115,6 @@ CookieParser::~CookieParser() {
         mCRC, mHostURI, nsIScriptError::infoFlag,
         CONSOLE_INVALID_ATTRIBUTE_CATEGORY, "CookieInvalidMaxAgeAttribute"_ns,
         AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(mCookieData.name())});
-  }
-
-  if (mWarnings.mSameSiteNoneRequiresSecureForBeta) {
-    CookieLogging::LogMessageToConsole(
-        mCRC, mHostURI, nsIScriptError::warningFlag, CONSOLE_SAMESITE_CATEGORY,
-        "CookieRejectedNonRequiresSecureForBeta3"_ns,
-        AutoTArray<nsString, 2>{NS_ConvertUTF8toUTF16(mCookieData.name()),
-                                SAMESITE_MDN_URL});
-  }
-
-  if (mWarnings.mSameSiteLaxForced) {
-    CookieLogging::LogMessageToConsole(
-        mCRC, mHostURI, nsIScriptError::infoFlag, CONSOLE_SAMESITE_CATEGORY,
-        "CookieLaxForced2"_ns,
-        AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(mCookieData.name())});
-  }
-
-  if (mWarnings.mSameSiteLaxForcedForBeta) {
-    CookieLogging::LogMessageToConsole(
-        mCRC, mHostURI, nsIScriptError::warningFlag, CONSOLE_SAMESITE_CATEGORY,
-        "CookieLaxForcedForBeta2"_ns,
-        AutoTArray<nsString, 2>{NS_ConvertUTF8toUTF16(mCookieData.name()),
-                                SAMESITE_MDN_URL});
   }
 
   if (mWarnings.mForeignNoPartitionedWarning) {
@@ -493,43 +402,6 @@ void CookieParser::ParseAttributes(nsCString& aCookieHeader,
   }
 
   
-  aCookieHeader.Assign(Substring(cookieStart, cookieEnd));
-
-  
-  
-  if (!mCookieData.isSecure() &&
-      mCookieData.sameSite() == nsICookie::SAMESITE_NONE) {
-    if (StaticPrefs::network_cookie_sameSite_noneRequiresSecure()) {
-      RejectCookie(RejectedNoneRequiresSecure);
-      return;
-    }
-
-    
-    mWarnings.mSameSiteNoneRequiresSecureForBeta = true;
-  }
-
-  
-  
-  if (StaticPrefs::network_cookie_CHIPS_enabled() &&
-      mCookieData.isPartitioned() && !mCookieData.isSecure()) {
-    RejectCookie(RejectedPartitionedRequiresSecure);
-    return;
-  }
-
-  if (mCookieData.sameSite() == nsICookie::SAMESITE_UNSET) {
-    bool laxByDefault =
-        StaticPrefs::network_cookie_sameSite_laxByDefault() &&
-        !nsContentUtils::IsURIInPrefList(
-            mHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
-    if (laxByDefault) {
-      mWarnings.mSameSiteLaxForced = true;
-    } else if (StaticPrefs::
-                   network_cookie_sameSite_laxByDefaultWarningsForBeta()) {
-      mWarnings.mSameSiteLaxForcedForBeta = true;
-    }
-  }
-
-  
   aAcceptedByParser = true;
 }
 
@@ -567,73 +439,14 @@ nsAutoCString GetPathFromURI(nsIURI* aHostURI) {
 }  
 
 
-bool CookieParser::CheckPath(CookieStruct& aCookieData, nsIURI* aHostURI,
-                             CookieParser* aParser) {
+void CookieParser::FixPath(CookieStruct& aCookieData, nsIURI* aHostURI) {
   
   if (aCookieData.path().IsEmpty() || aCookieData.path().First() != '/') {
     nsAutoCString path = GetPathFromURI(aHostURI);
-    if (CheckAttributeSize(aCookieData.path(), ATTRIBUTE_PATH, path, aParser)) {
+    if (CheckAttributeSize(aCookieData.path(), ATTRIBUTE_PATH, path)) {
       aCookieData.path() = path;
     }
   }
-
-  MOZ_ASSERT(CookieCommons::CheckPathSize(aCookieData));
-
-  return !aCookieData.path().Contains('\t');
-}
-
-
-bool CookieParser::HasSecurePrefix(const nsACString& aString) {
-  return StringBeginsWith(aString, "__Secure-"_ns,
-                          nsCaseInsensitiveCStringComparator);
-}
-
-
-bool CookieParser::HasHostPrefix(const nsACString& aString) {
-  return StringBeginsWith(aString, "__Host-"_ns,
-                          nsCaseInsensitiveCStringComparator);
-}
-
-
-
-
-
-
-
-
-
-
-
-bool CookieParser::CheckPrefixes(CookieStruct& aCookieData,
-                                 bool aSecureRequest) {
-  bool hasSecurePrefix = HasSecurePrefix(aCookieData.name());
-  bool hasHostPrefix = HasHostPrefix(aCookieData.name());
-
-  if (!hasSecurePrefix && !hasHostPrefix) {
-    
-    return true;
-  }
-
-  if (!aSecureRequest || !aCookieData.isSecure()) {
-    
-    
-    return false;
-  }
-
-  if (hasHostPrefix) {
-    
-    
-    
-    
-    
-    
-    if (aCookieData.host()[0] == '.' ||
-        !aCookieData.path().EqualsLiteral("/")) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 bool CookieParser::ParseMaxAgeAttribute(const nsACString& aMaxage,
@@ -757,23 +570,9 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
 }
 
 
-
-static inline bool IsSubdomainOf(const nsACString& a, const nsACString& b) {
-  if (a == b) {
-    return true;
-  }
-  if (a.Length() > b.Length()) {
-    return a[a.Length() - b.Length() - 1] == '.' && StringEndsWith(a, b);
-  }
-  return false;
-}
-
-
-
-
-bool CookieParser::CheckDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
-                               const nsACString& aBaseDomain,
-                               bool aRequireHostMatch) {
+void CookieParser::FixDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
+                             const nsACString& aBaseDomain,
+                             bool aRequireHostMatch) {
   
   
   
@@ -784,46 +583,52 @@ bool CookieParser::CheckDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
   nsContentUtils::GetHostOrIPv6WithBrackets(aHostURI, hostFromURI);
 
   
-  if (!aCookieData.host().IsEmpty()) {
-    
-    if (aCookieData.host().Length() > 1 && aCookieData.host().First() == '.') {
-      aCookieData.host().Cut(0, 1);
-    }
+  if (aCookieData.host().IsEmpty()) {
+    aCookieData.host() = hostFromURI;
+    return;
+  }
 
-    
-    ToLowerCase(aCookieData.host());
+  nsCString cookieHost = aCookieData.host();
 
-    
-    
-    
-    
-    
-    if (aRequireHostMatch) {
-      return hostFromURI.Equals(aCookieData.host());
-    }
-
-    
-    
-    if (IsSubdomainOf(aCookieData.host(), aBaseDomain) &&
-        IsSubdomainOf(hostFromURI, aCookieData.host())) {
-      
-      aCookieData.host().InsertLiteral(".", 0);
-      return true;
-    }
-
-    
-
-
-
-
-
-
-    return false;
+  
+  if (cookieHost.Length() > 1 && cookieHost.First() == '.') {
+    cookieHost.Cut(0, 1);
   }
 
   
-  aCookieData.host() = hostFromURI;
-  return true;
+  ToLowerCase(cookieHost);
+
+  if (aRequireHostMatch) {
+    
+    
+    
+    
+    
+    if (hostFromURI.Equals(cookieHost)) {
+      aCookieData.host() = cookieHost;
+    }
+
+    
+    
+    return;
+  }
+
+  
+  
+  if (CookieCommons::IsSubdomainOf(cookieHost, aBaseDomain) &&
+      CookieCommons::IsSubdomainOf(hostFromURI, cookieHost)) {
+    
+    cookieHost.InsertLiteral(".", 0);
+    aCookieData.host() = cookieHost;
+  }
+
+  
+
+
+
+
+
+
 }
 
 static void RecordPartitionedTelemetry(const CookieStruct& aCookieData,
@@ -842,97 +647,13 @@ static void RecordPartitionedTelemetry(const CookieStruct& aCookieData,
 }
 
 
-CookieParser::Rejection CookieParser::CheckCookieStruct(
-    CookieStruct& aCookieStruct, nsIURI* aHostURI,
-    const nsCString& aCookieString, const nsACString& aBaseDomain,
-    bool aRequireHostMatch, bool aFromHttp, CookieParser* aParser) {
-  
-  if (aCookieStruct.name().IsEmpty() && aCookieStruct.value().IsEmpty()) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "cookie name and value are empty");
-
-    return RejectedEmptyNameAndValue;
-  }
-
-  
-  if (!CookieCommons::CheckNameAndValueSize(aCookieStruct)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "cookie too big (> 4kb)");
-    return RejectedNameValueOversize;
-  }
-
-  if (!CookieCommons::CheckName(aCookieStruct)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "invalid name character");
-    return RejectedInvalidCharName;
-  }
-
-  
-  if (!CheckDomain(aCookieStruct, aHostURI, aBaseDomain, aRequireHostMatch)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "failed the domain tests");
-    return RejectedInvalidDomain;
-  }
-
-  if (!CheckPath(aCookieStruct, aHostURI, aParser)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "failed the path tests");
-    return RejectedInvalidPath;
-  }
-
-  
-  
-  if (aCookieStruct.name().IsEmpty() &&
-      (HasSecurePrefix(aCookieStruct.value()) ||
-       HasHostPrefix(aCookieStruct.value()))) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "failed hidden prefix tests");
-    return RejectedInvalidPrefix;
-  }
-
-  bool potentiallyTrustworthy =
-      nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
-
-  
-  if (!CheckPrefixes(aCookieStruct, potentiallyTrustworthy)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "failed the prefix tests");
-    return RejectedInvalidPrefix;
-  }
-
-  if (!CookieCommons::CheckValue(aCookieStruct)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "invalid value character");
-    return RejectedInvalidCharValue;
-  }
-
-  
-  if (!aFromHttp && aCookieStruct.isHttpOnly()) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "cookie is httponly; coming from script");
-    return RejectedHttpOnlyButFromScript;
-  }
-
-  
-  
-  
-  if (aCookieStruct.isSecure() && !potentiallyTrustworthy) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                      "non-https cookie can't set secure flag");
-    return RejectedSecureButNonHttps;
-  }
-
-  return NoRejection;
-}
-
-
 
 void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
                          CookieStatus aStatus, nsCString& aCookieHeader,
                          const nsACString& aDateHeader, bool aFromHttp,
                          bool aIsForeignAndNotAddon, bool aPartitionedOnly,
                          bool aIsInPrivateBrowsing, bool aOn3pcbException) {
-  MOZ_ASSERT(!mContainsCookie);
+  MOZ_ASSERT(!mValidation);
 
   
   mCookieData.expiry() = INT64_MAX;
@@ -965,38 +686,8 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     mCookieData.isSession() = true;
   }
 
-  
-  
-  if (XRE_IsParentProcess() || !aFromHttp) {
-    RecordPartitionedTelemetry(mCookieData, aIsForeignAndNotAddon);
-  }
-
-  auto result =
-      CheckCookieStruct(mCookieData, mHostURI, mCookieString, aBaseDomain,
-                        aRequireHostMatch, aFromHttp, this);
-  if (result != NoRejection) {
-    RejectCookie(result);
-    return;
-  }
-
-  
-  
-  bool laxByDefault =
-      StaticPrefs::network_cookie_sameSite_laxByDefault() &&
-      !nsContentUtils::IsURIInPrefList(
-          mHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
-  uint32_t sameSite = mCookieData.sameSite();
-  if (sameSite == nsICookie::SAMESITE_UNSET) {
-    sameSite =
-        laxByDefault ? nsICookie::SAMESITE_LAX : nsICookie::SAMESITE_NONE;
-  }
-
-  if (sameSite != nsICookie::SAMESITE_NONE && aIsForeignAndNotAddon) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "failed the samesite tests");
-    RejectCookie(RejectedForNonSameSiteness);
-    return;
-  }
+  FixDomain(mCookieData, mHostURI, aBaseDomain, aRequireHostMatch);
+  FixPath(mCookieData, mHostURI);
 
   
   
@@ -1021,8 +712,6 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
         (aIsInPrivateBrowsing &&
          StaticPrefs::
              network_cookie_cookieBehavior_optInPartitioning_pbmode())) {
-      COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                        "foreign cookies must be partitioned");
       RejectCookie(RejectedForeignNoPartitionedError);
       return;
     }
@@ -1030,7 +719,20 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     mWarnings.mForeignNoPartitionedWarning = true;
   }
 
-  mContainsCookie = true;
+  mValidation = CookieValidation::ValidateInContext(
+      mCookieData, mHostURI, aBaseDomain, aRequireHostMatch, aFromHttp,
+      aIsForeignAndNotAddon, aPartitionedOnly, aIsInPrivateBrowsing);
+  MOZ_ASSERT(mValidation);
+
+  if (mValidation->Result() != nsICookieValidation::eOK) {
+    return;
+  }
+
+  
+  
+  if (XRE_IsParentProcess() || !aFromHttp) {
+    RecordPartitionedTelemetry(mCookieData, aIsForeignAndNotAddon);
+  }
 }
 
 void CookieParser::RejectCookie(Rejection aRejection) {
