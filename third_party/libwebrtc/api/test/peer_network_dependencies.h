@@ -11,8 +11,11 @@
 #ifndef API_TEST_PEER_NETWORK_DEPENDENCIES_H_
 #define API_TEST_PEER_NETWORK_DEPENDENCIES_H_
 
-#include "api/packet_socket_factory.h"
+#include <memory>
+
+#include "absl/base/nullability.h"
 #include "rtc_base/network.h"
+#include "rtc_base/socket_factory.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -20,10 +23,14 @@ namespace webrtc_pc_e2e {
 
 
 
-struct PeerNetworkDependencies {
-  rtc::Thread* network_thread;
-  rtc::NetworkManager* network_manager;
-  rtc::PacketSocketFactory* packet_socket_factory;
+class PeerNetworkDependencies {
+ public:
+  virtual ~PeerNetworkDependencies() = default;
+
+  virtual absl::Nonnull<rtc::Thread*> network_thread() = 0;
+  virtual absl::Nonnull<rtc::SocketFactory*> socket_factory() = 0;
+  virtual absl::Nonnull<std::unique_ptr<rtc::NetworkManager>>
+  ReleaseNetworkManager() = 0;
 };
 
 }  
