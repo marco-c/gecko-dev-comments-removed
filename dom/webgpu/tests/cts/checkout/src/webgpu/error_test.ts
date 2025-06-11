@@ -110,6 +110,8 @@ export class ErrorTest extends Fixture {
       const promise: Promise<GPUUncapturedErrorEvent> = new Promise(resolve => {
         const eventListener = (event: GPUUncapturedErrorEvent) => {
           
+          event.preventDefault();
+          
           
           if (useOnuncapturederror) {
             this.device.onuncapturederror = null;

@@ -110,6 +110,8 @@ export class ErrorTest extends Fixture {
       const promise = new Promise((resolve) => {
         const eventListener = (event) => {
           
+          event.preventDefault();
+          
           
           if (useOnuncapturederror) {
             this.device.onuncapturederror = null;

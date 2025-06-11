@@ -907,6 +907,7 @@ export const kFeatureNameInfo: {
   'dual-source-blending':               {},
   'subgroups':                          {},
   'core-features-and-limits':           {},
+  'texture-formats-tier1':              {},
 };
 
 export const kFeatureNames = keysOf(kFeatureNameInfo);
