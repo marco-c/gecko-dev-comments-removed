@@ -740,6 +740,8 @@ class MDefinition : public MNode {
                 sizeof(MIRTypeEnumSet::serializedType) * CHAR_BIT);
 
   
+  
+  
   wasm::MaybeRefType wasmRefType() const { return wasmRefType_; }
 
   
