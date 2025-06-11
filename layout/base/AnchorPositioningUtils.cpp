@@ -6,6 +6,7 @@
 
 #include "AnchorPositioningUtils.h"
 
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
@@ -35,6 +36,34 @@ bool IsFullyStyleableTreeAbidingOrNotPseudoElement(const nsIFrame* aFrame) {
   return pseudoElementType == PseudoStyleType::before ||
          pseudoElementType == PseudoStyleType::after ||
          pseudoElementType == PseudoStyleType::marker;
+}
+
+[[maybe_unused]] size_t GetTopLayerIndex(const nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame);
+
+  const nsIContent* frameContent = aFrame->GetContent();
+
+  if (!frameContent) {
+    return 0;
+  }
+
+  
+  
+  
+  
+  const nsTArray<dom::Element*>& topLayers =
+      frameContent->OwnerDoc()->GetTopLayer();
+
+  for (size_t index = 0; index < topLayers.Length(); ++index) {
+    const auto& topLayer = topLayers.ElementAt(index);
+    if (nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
+             frameContent,
+             topLayer)) {
+      return 1 + index;
+    }
+  }
+
+  return 0;
 }
 
 bool IsAnchorLaidOutStrictlyBeforeElement(
