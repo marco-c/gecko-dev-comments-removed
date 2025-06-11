@@ -120,10 +120,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   uint16_t GetNextFrameId() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  void AddExistingFramesInFlightForStreamToComparator(size_t stream_index,
-                                                      StreamState& stream_state,
-                                                      size_t peer_index)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  void AddExistingFramesInFlightForStreamToComparator(
+      size_t stream_index,
+      AnalyzerStreamState& stream_state,
+      size_t peer_index) RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
@@ -133,7 +133,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   int ProcessNotSeenFramesBeforeRendered(size_t peer_index,
                                          uint16_t rendered_frame_id,
                                          const InternalStatsKey& stats_key,
-                                         StreamState& state)
+                                         AnalyzerStreamState& state)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
@@ -194,7 +194,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::map<InternalStatsKey, FrameCounters> stream_frame_counters_
       RTC_GUARDED_BY(mutex_);
   
-  std::unordered_map<size_t, StreamState> stream_states_ RTC_GUARDED_BY(mutex_);
+  std::unordered_map<size_t, AnalyzerStreamState> stream_states_
+      RTC_GUARDED_BY(mutex_);
   
   std::unordered_map<size_t, size_t> stream_to_sender_ RTC_GUARDED_BY(mutex_);
 

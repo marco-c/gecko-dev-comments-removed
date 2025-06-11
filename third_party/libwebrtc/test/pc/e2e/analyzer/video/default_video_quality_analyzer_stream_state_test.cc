@@ -20,9 +20,9 @@ namespace webrtc {
 namespace {
 
 TEST(StreamStateTest, PopFrontAndFrontIndependentForEachPeer) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
+  AnalyzerStreamState state(0,
+                            std::set<size_t>{1, 2},
+                            Timestamp::Seconds(1), Clock::GetRealTimeClock());
   state.PushBack(1);
   state.PushBack(2);
 
@@ -37,9 +37,9 @@ TEST(StreamStateTest, PopFrontAndFrontIndependentForEachPeer) {
 }
 
 TEST(StreamStateTest, IsEmpty) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
+  AnalyzerStreamState state(0,
+                            std::set<size_t>{1, 2},
+                            Timestamp::Seconds(1), Clock::GetRealTimeClock());
   state.PushBack(1);
 
   EXPECT_FALSE(state.IsEmpty(1));
@@ -50,9 +50,9 @@ TEST(StreamStateTest, IsEmpty) {
 }
 
 TEST(StreamStateTest, PopFrontForOnlyOnePeerDontChangeAliveFramesCount) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
+  AnalyzerStreamState state(0,
+                            std::set<size_t>{1, 2},
+                            Timestamp::Seconds(1), Clock::GetRealTimeClock());
   state.PushBack(1);
   state.PushBack(2);
 
@@ -65,9 +65,9 @@ TEST(StreamStateTest, PopFrontForOnlyOnePeerDontChangeAliveFramesCount) {
 }
 
 TEST(StreamStateTest, PopFrontForAllPeersReducesAliveFramesCount) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
+  AnalyzerStreamState state(0,
+                            std::set<size_t>{1, 2},
+                            Timestamp::Seconds(1), Clock::GetRealTimeClock());
   state.PushBack(1);
   state.PushBack(2);
 
@@ -80,9 +80,9 @@ TEST(StreamStateTest, PopFrontForAllPeersReducesAliveFramesCount) {
 }
 
 TEST(StreamStateTest, RemovePeerForLastExpectedReceiverUpdatesAliveFrames) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
+  AnalyzerStreamState state(0,
+                            std::set<size_t>{1, 2},
+                            Timestamp::Seconds(1), Clock::GetRealTimeClock());
   state.PushBack(1);
   state.PushBack(2);
 

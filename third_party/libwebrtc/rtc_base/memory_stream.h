@@ -19,18 +19,18 @@ namespace rtc {
 
 
 
-class MemoryStream final : public StreamInterface {
+class MemoryStream final : public webrtc::StreamInterface {
  public:
   MemoryStream();
   ~MemoryStream() override;
 
-  StreamState GetState() const override;
-  StreamResult Read(rtc::ArrayView<uint8_t> buffer,
-                    size_t& bytes_read,
-                    int& error) override;
-  StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
-                     size_t& bytes_written,
-                     int& error) override;
+  webrtc::StreamState GetState() const override;
+  webrtc::StreamResult Read(rtc::ArrayView<uint8_t> buffer,
+                            size_t& bytes_read,
+                            int& error) override;
+  webrtc::StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
+                             size_t& bytes_written,
+                             int& error) override;
   void Close() override;
   bool GetSize(size_t* size) const;
   bool ReserveSize(size_t size);
@@ -45,7 +45,7 @@ class MemoryStream final : public StreamInterface {
   void SetData(const void* data, size_t length);
 
  private:
-  StreamResult DoReserve(size_t size, int* error);
+  webrtc::StreamResult DoReserve(size_t size, int* error);
 
   
   char* buffer_ = nullptr;

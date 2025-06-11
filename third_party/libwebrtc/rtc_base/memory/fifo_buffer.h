@@ -26,7 +26,7 @@ namespace rtc {
 
 
 
-class FifoBuffer final : public StreamInterface {
+class FifoBuffer final : public webrtc::StreamInterface {
  public:
   
   explicit FifoBuffer(size_t length);
@@ -41,13 +41,13 @@ class FifoBuffer final : public StreamInterface {
   bool GetBuffered(size_t* data_len) const;
 
   
-  StreamState GetState() const override;
-  StreamResult Read(rtc::ArrayView<uint8_t> buffer,
-                    size_t& bytes_read,
-                    int& error) override;
-  StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
-                     size_t& bytes_written,
-                     int& error) override;
+  webrtc::StreamState GetState() const override;
+  webrtc::StreamResult Read(rtc::ArrayView<uint8_t> buffer,
+                            size_t& bytes_read,
+                            int& error) override;
+  webrtc::StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
+                             size_t& bytes_written,
+                             int& error) override;
   void Close() override;
 
   
@@ -93,20 +93,22 @@ class FifoBuffer final : public StreamInterface {
 
   
   
-  StreamResult ReadLocked(void* buffer, size_t bytes, size_t* bytes_read)
+  webrtc::StreamResult ReadLocked(void* buffer,
+                                  size_t bytes,
+                                  size_t* bytes_read)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(callback_sequence_);
 
   
   
-  StreamResult WriteLocked(const void* buffer,
-                           size_t bytes,
-                           size_t* bytes_written)
+  webrtc::StreamResult WriteLocked(const void* buffer,
+                                   size_t bytes,
+                                   size_t* bytes_written)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(callback_sequence_);
 
   webrtc::ScopedTaskSafety task_safety_;
 
   
-  StreamState state_ RTC_GUARDED_BY(callback_sequence_);
+  webrtc::StreamState state_ RTC_GUARDED_BY(callback_sequence_);
   
   std::unique_ptr<char[]> buffer_ RTC_GUARDED_BY(callback_sequence_);
   

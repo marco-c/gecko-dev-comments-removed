@@ -117,13 +117,13 @@ enum { SSE_MSG_TRUNC = 0xff0001 };
 
 enum class SSLHandshakeError { UNKNOWN, INCOMPATIBLE_CIPHERSUITE, MAX_VALUE };
 
-class SSLStreamAdapter : public StreamInterface {
+class SSLStreamAdapter : public webrtc::StreamInterface {
  public:
   
   
   
   static std::unique_ptr<SSLStreamAdapter> Create(
-      std::unique_ptr<StreamInterface> stream,
+      std::unique_ptr<webrtc::StreamInterface> stream,
       absl::AnyInvocable<void(SSLHandshakeError)> handshake_error = nullptr,
       const webrtc::FieldTrialsView* field_trials = nullptr);
 
