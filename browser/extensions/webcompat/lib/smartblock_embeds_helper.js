@@ -220,6 +220,10 @@ const embedHelperLib = (() => {
       for (let { addedNodes, target, type } of mutations) {
         const nodes = type === "attributes" ? [target] : addedNodes;
         for (const node of nodes) {
+          if (node.nodeType !== Node.ELEMENT_NODE) {
+            
+            continue;
+          }
           if (node.matches(embedSelector)) {
             
             createShimPlaceholders([node], SHIM_INFO);
