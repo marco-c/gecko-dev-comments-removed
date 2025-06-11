@@ -51,7 +51,12 @@ enum ENameValueFlag {
   
 
 
-  eNameFromTooltip
+  eNameFromTooltip,
+
+  
+
+
+  eNameFromRelations,
 };
 
 
