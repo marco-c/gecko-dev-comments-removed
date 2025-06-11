@@ -29,9 +29,12 @@ const gNonEligibleElementIds = [
 
 
 
-add_task(async function setupTestingPref() {
+add_setup(async function setupTestingPref() {
   await SpecialPowers.pushPrefEnv({
-    set: [["media.mediacontrol.testingevents.enabled", true]],
+    set: [
+      ["media.mediacontrol.testingevents.enabled", true],
+      ["test.wait300msAfterTabSwitch", true],
+    ],
   });
 });
 
