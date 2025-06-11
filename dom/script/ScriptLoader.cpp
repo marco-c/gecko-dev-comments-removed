@@ -2643,6 +2643,12 @@ void ScriptLoader::CalculateBytecodeCacheFlag(ScriptLoadRequest* aRequest) {
     return;
   }
 
+  if (aRequest->IsModuleRequest() &&
+      aRequest->AsModuleRequest()->mModuleType != JS::ModuleType::JavaScript) {
+    aRequest->MarkSkippedBytecodeEncoding();
+    return;
+  }
+
   
   
   
