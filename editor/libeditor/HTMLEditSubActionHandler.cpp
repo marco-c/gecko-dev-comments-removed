@@ -4,6 +4,7 @@
 
 
 
+#include "EditorBase.h"
 #include "HTMLEditor.h"
 #include "HTMLEditorInlines.h"
 #include "HTMLEditorNestedClasses.h"
@@ -1271,45 +1272,86 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       return EditActionResult::HandledResult();
     }
 
-    const auto compositionEndPoint =
-        GetLastIMESelectionEndPoint<EditorDOMPoint>();
-    Result<InsertTextResult, nsresult> replaceTextResult =
-        WhiteSpaceVisibilityKeeper::InsertOrUpdateCompositionString(
-            *this, aInsertionString,
-            compositionEndPoint.IsSet()
-                ? EditorDOMRange(pointToInsert, compositionEndPoint)
-                : EditorDOMRange(pointToInsert),
-            aPurpose);
-    if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
-      NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
-      return replaceTextResult.propagateErr();
+    EditorDOMPoint endOfInsertedText;
+    {
+      AutoTrackDOMPoint trackPointToInsert(RangeUpdaterRef(), &pointToInsert);
+      const auto compositionEndPoint =
+          GetLastIMESelectionEndPoint<EditorDOMPoint>();
+      Result<InsertTextResult, nsresult> replaceTextResult =
+          WhiteSpaceVisibilityKeeper::InsertOrUpdateCompositionString(
+              *this, aInsertionString,
+              compositionEndPoint.IsSet()
+                  ? EditorDOMRange(pointToInsert, compositionEndPoint)
+                  : EditorDOMRange(pointToInsert),
+              aPurpose);
+      if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
+        NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
+        return replaceTextResult.propagateErr();
+      }
+      InsertTextResult unwrappedReplaceTextResult = replaceTextResult.unwrap();
+      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+          unwrappedReplaceTextResult.EndOfInsertedTextRef());
+      if (NS_FAILED(rv)) {
+        NS_WARNING(
+            "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
+        return Err(rv);
+      }
+      endOfInsertedText = unwrappedReplaceTextResult.EndOfInsertedTextRef();
+      if (InsertingTextForCommittingComposition(aPurpose)) {
+        
+        
+        
+        
+        
+        nsresult rv = unwrappedReplaceTextResult.SuggestCaretPointTo(
+            *this, {SuggestCaret::OnlyIfHasSuggestion,
+                    SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                    SuggestCaret::AndIgnoreTrivialError});
+        if (NS_FAILED(rv)) {
+          NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
+          return Err(rv);
+        }
+        NS_WARNING_ASSERTION(
+            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+            "CaretPoint::SuggestCaretPoint() failed, but ignored");
+      } else {
+        
+        
+        unwrappedReplaceTextResult.IgnoreCaretPointSuggestion();
+      }
     }
-    InsertTextResult unwrappedReplacedTextResult = replaceTextResult.unwrap();
-    nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-        unwrappedReplacedTextResult.EndOfInsertedTextRef());
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-      return Err(rv);
-    }
-    
-    
-    unwrappedReplacedTextResult.IgnoreCaretPointSuggestion();
 
-    const auto newCompositionStartPoint =
-        GetFirstIMESelectionStartPoint<EditorDOMPoint>();
-    const auto newCompositionEndPoint =
-        GetLastIMESelectionEndPoint<EditorDOMPoint>();
-    if (NS_WARN_IF(!newCompositionStartPoint.IsSet()) ||
-        NS_WARN_IF(!newCompositionEndPoint.IsSet())) {
-      
-      return EditActionResult::HandledResult();
-    }
-    rv = TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
-        newCompositionStartPoint.ToRawRangeBoundary(),
-        newCompositionEndPoint.ToRawRangeBoundary());
-    if (NS_FAILED(rv)) {
-      NS_WARNING("nsRange::SetStartAndEnd() failed");
-      return Err(rv);
+    if (!InsertingTextForCommittingComposition(aPurpose)) {
+      const auto newCompositionStartPoint =
+          GetFirstIMESelectionStartPoint<EditorDOMPoint>();
+      const auto newCompositionEndPoint =
+          GetLastIMESelectionEndPoint<EditorDOMPoint>();
+      if (NS_WARN_IF(!newCompositionStartPoint.IsSet()) ||
+          NS_WARN_IF(!newCompositionEndPoint.IsSet())) {
+        
+        return EditActionResult::HandledResult();
+      }
+      nsresult rv =
+          TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
+              newCompositionStartPoint.ToRawRangeBoundary(),
+              newCompositionEndPoint.ToRawRangeBoundary());
+      if (NS_FAILED(rv)) {
+        NS_WARNING("nsRange::SetStartAndEnd() failed");
+        return Err(rv);
+      }
+    } else {
+      if (NS_WARN_IF(!endOfInsertedText.IsSetAndValidInComposedDoc()) ||
+          NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+        return EditActionResult::HandledResult();
+      }
+      nsresult rv =
+          TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
+              pointToInsert.ToRawRangeBoundary(),
+              endOfInsertedText.ToRawRangeBoundary());
+      if (NS_FAILED(rv)) {
+        NS_WARNING("nsRange::SetStartAndEnd() failed");
+        return Err(rv);
+      }
     }
     return EditActionResult::HandledResult();
   }

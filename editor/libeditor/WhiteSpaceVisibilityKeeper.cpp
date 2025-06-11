@@ -3025,8 +3025,7 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
   }
   
   
-  if (aPurpose != InsertTextFor::CompositionEnd &&
-      aPurpose != InsertTextFor::CompositionStartAndEnd) {
+  if (!EditorBase::InsertingTextForCommittingComposition(aPurpose)) {
     return insertOrReplaceTextResultOrError;
   }
   InsertTextResult insertOrReplaceTextResult =
