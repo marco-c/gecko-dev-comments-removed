@@ -7,7 +7,6 @@
 #ifndef frontend_TryEmitter_h
 #define frontend_TryEmitter_h
 
-#include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
 #include <stdint.h>  
@@ -15,6 +14,7 @@
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/BytecodeOffset.h"             
 #include "frontend/JumpList.h"                   
+#include "js/UniquePtr.h"                        
 
 namespace js {
 namespace frontend {
@@ -55,7 +55,7 @@ struct BytecodeEmitter;
 
 
 
-class MOZ_STACK_CLASS TryEmitter {
+class TryEmitter {
  public:
   enum class Kind { TryCatch, TryCatchFinally, TryFinally };
 
@@ -142,7 +142,7 @@ class MOZ_STACK_CLASS TryEmitter {
   
   
   
-  mozilla::Maybe<TryFinallyControl> controlInfo_;
+  js::UniquePtr<TryFinallyControl> controlInfo_;
 
   
   int depth_;
