@@ -453,16 +453,25 @@ class JujutsuRepository(Repository):
             
             
 
+            updated_author = False
+
             
             username_key = "user.name"
-            username = self._git.get_config_key_value(username_key)
-            if username and self.config_key_list_value_missing(username_key):
-                self.set_config_key_value(username_key, username)
+            git_username = self._git.get_config_key_value(username_key)
+            jj_username_missing = self.config_key_list_value_missing(username_key)
+            if git_username and jj_username_missing:
+                self.set_config_key_value(username_key, git_username)
+                updated_author = True
 
             email_key = "user.email"
-            email = self._git.get_config_key_value(email_key)
-            if email and self.config_key_list_value_missing(email_key):
-                self.set_config_key_value(email_key, email)
+            git_email = self._git.get_config_key_value(email_key)
+            jj_email_missing = self.config_key_list_value_missing(email_key)
+            if git_email and jj_email_missing:
+                self.set_config_key_value(email_key, git_email)
+                updated_author = True
+
+            if updated_author:
+                self._run("describe", "--reset-author", "--no-edit")
 
             jj_revset_immutable_heads_key = 'revset-aliases."immutable_heads()"'
             if self.config_key_list_value_missing(jj_revset_immutable_heads_key):
