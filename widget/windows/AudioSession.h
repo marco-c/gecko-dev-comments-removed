@@ -10,10 +10,11 @@ namespace mozilla {
 namespace widget {
 
 
-void StartAudioSession();
+void CreateAudioSession();
 
 
-void StopAudioSession();
+
+void DestroyAudioSession();
 
 }  
 }  
