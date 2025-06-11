@@ -486,7 +486,10 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
   
 
 
-  int disable_ref_frame_mvs;
+
+
+
+  int ref_frame_mvs_lvl;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 
@@ -831,6 +834,11 @@ typedef struct PARTITION_SPEED_FEATURES {
 
   
   int disable_8x8_part_based_on_qidx;
+
+  
+  
+  
+  int split_partition_penalty_level;
 } PARTITION_SPEED_FEATURES;
 
 typedef struct MV_SPEED_FEATURES {
@@ -1178,6 +1186,11 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   int skip_arf_compound;
+
+  
+  
+  
+  int bias_warp_mode_rd_scale_pct;
 } INTER_MODE_SPEED_FEATURES;
 
 typedef struct INTERP_FILTER_SPEED_FEATURES {

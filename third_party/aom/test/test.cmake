@@ -228,6 +228,7 @@ if(NOT BUILD_SHARED_LIBS)
               "${AOM_ROOT}/test/pickrst_test.cc"
               "${AOM_ROOT}/test/reconinter_test.cc"
               "${AOM_ROOT}/test/sad_test.cc"
+              "${AOM_ROOT}/test/screen_content_detection_mode_2_test.cc"
               "${AOM_ROOT}/test/subtract_test.cc"
               "${AOM_ROOT}/test/sum_squares_test.cc"
               "${AOM_ROOT}/test/sse_sum_test.cc"
@@ -501,7 +502,13 @@ function(setup_aom_test_targets)
     endif()
   endif()
 
-  target_link_libraries(test_libaom ${AOM_LIB_LINK_TYPE} aom aom_gtest)
+  if(CONFIG_LIBYUV)
+    # link test_libaom with yuv
+    target_link_libraries(test_libaom ${AOM_LIB_LINK_TYPE} aom aom_gtest yuv)
+  else()
+    # do not link test_libaom with yuv
+    target_link_libraries(test_libaom ${AOM_LIB_LINK_TYPE} aom aom_gtest)
+  endif()
 
   if(CONFIG_WEBM_IO)
     target_sources(test_libaom PRIVATE $<TARGET_OBJECTS:webm>)

@@ -110,6 +110,14 @@ enum MultilayerViewType {
   
 };
 
+struct FrameLocalMetadata {
+  long frame_idx;
+  
+  AlphaInformation alpha;
+  
+  DepthInformation depth;
+};
+
 struct LayerMetadata {
   LayerType layer_type;  
   bool luma_plane_only_flag;
@@ -121,9 +129,12 @@ struct LayerMetadata {
   std::pair<ColorProperties, bool> layer_color_description;
 
   
-  AlphaInformation global_alpha_info;
+  AlphaInformation alpha;
   
-  DepthInformation global_depth_info;
+  DepthInformation depth;
+
+  
+  std::vector<FrameLocalMetadata> local_metadata;
 };
 
 struct MultilayerMetadata {

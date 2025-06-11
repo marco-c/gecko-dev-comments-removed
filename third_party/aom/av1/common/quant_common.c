@@ -318,8 +318,6 @@ void av1_qm_init(CommonQuantParams *quant_params, int num_planes) {
 
 
 
-
-
 #if CONFIG_QUANT_MATRIX || CONFIG_AV1_DECODER
 static const qm_val_t iwt_matrix_ref[NUM_QM_LEVELS - 1][2][QM_TOTAL_SIZE] = {
   {

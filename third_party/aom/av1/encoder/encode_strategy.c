@@ -237,8 +237,9 @@ static void adjust_frame_rate(AV1_COMP *cpi, int64_t ts_start, int64_t ts_end) {
 
   
 
-  if (cpi->ppi->use_svc && cpi->ppi->rtc_ref.set_ref_frame_config &&
-      cpi->svc.number_spatial_layers > 1) {
+  if (is_one_pass_rt_params(cpi) ||
+      (cpi->ppi->use_svc && cpi->ppi->rtc_ref.set_ref_frame_config &&
+       cpi->svc.number_spatial_layers > 1)) {
     
     
     

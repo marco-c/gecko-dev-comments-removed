@@ -314,6 +314,10 @@ enum aome_enc_control_id {
   
 
 
+
+
+
+
   AOME_SET_NUMBER_SPATIAL_LAYERS = 27,
 
   
@@ -1137,6 +1141,10 @@ enum aome_enc_control_id {
 
 
 
+
+
+
+
   AV1E_SET_DELTAQ_MODE = 107,
 
   
@@ -1584,6 +1592,15 @@ enum aome_enc_control_id {
   AV1E_SET_ENABLE_LOW_COMPLEXITY_DECODE = 170,
 
   
+
+
+
+
+
+
+  AV1E_SET_SCREEN_CONTENT_DETECTION_MODE = 171,
+
+  
   
   
 };
@@ -1622,13 +1639,15 @@ typedef enum aom_scaling_mode_1d {
 
 typedef struct aom_roi_map {
   
-  unsigned char *roi_map;
-  unsigned int rows;              
-  unsigned int cols;              
-  int delta_q[AOM_MAX_SEGMENTS];  
-  int delta_lf[AOM_MAX_SEGMENTS]; 
+  uint8_t enabled;
   
-  unsigned int static_threshold[AOM_MAX_SEGMENTS];
+  unsigned char *roi_map;
+  unsigned int rows;               
+  unsigned int cols;               
+  int delta_q[AOM_MAX_SEGMENTS];   
+  int delta_lf[AOM_MAX_SEGMENTS];  
+  int skip[AOM_MAX_SEGMENTS];      
+  int ref_frame[AOM_MAX_SEGMENTS]; 
 } aom_roi_map_t;
 
 
@@ -1664,10 +1683,19 @@ typedef enum {
 
 
 typedef enum {
+  
+  AOM_SCREEN_DETECTION_STANDARD = 1,
+  
+  AOM_SCREEN_DETECTION_ANTIALIASING_AWARE = 2
+} aom_screen_detection_mode;
+
+
+typedef enum {
   AOM_TIMING_UNSPECIFIED,
   AOM_TIMING_EQUAL,
   AOM_TIMING_DEC_MODEL
 } aom_timing_info_type_t;
+
 
 
 
@@ -1703,6 +1731,12 @@ typedef enum {
 
 
   AOM_TUNE_IQ = 10,
+
+
+#define AOM_HAVE_TUNE_SSIMULACRA2 1
+  
+
+  AOM_TUNE_SSIMULACRA2 = 11,
 } aom_tune_metric;
 
 
@@ -1739,8 +1773,20 @@ typedef struct aom_svc_layer_id {
 
 
 typedef struct aom_svc_params {
-  int number_spatial_layers;                 
-  int number_temporal_layers;                
+  
+
+
+
+
+
+  int number_spatial_layers;
+  
+
+
+
+
+
+  int number_temporal_layers;
   int max_quantizers[AOM_MAX_LAYERS];        
   int min_quantizers[AOM_MAX_LAYERS];        
   int scaling_factor_num[AOM_MAX_SS_LAYERS]; 
@@ -2286,6 +2332,10 @@ AOM_CTRL_USE_TYPE(AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR, int)
 
 AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_LOW_COMPLEXITY_DECODE, unsigned int)
 #define AOM_CTRL_AV1E_SET_ENABLE_LOW_COMPLEXITY_DECODE
+
+AOM_CTRL_USE_TYPE(AV1E_SET_SCREEN_CONTENT_DETECTION_MODE,
+                  int) 
+#define AOM_CTRL_SET_SCREEN_CONTENT_DETECTION_MODE
 
 
 
