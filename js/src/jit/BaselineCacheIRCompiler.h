@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_BaselineCacheIRCompiler_h
 #define jit_BaselineCacheIRCompiler_h
@@ -49,16 +49,16 @@ ICAttachResult AttachBaselineCacheIRStub(JSContext* cx,
                                          ICFallbackStub* stub,
                                          const char* name);
 
-
+// BaselineCacheIRCompiler compiles CacheIR to BaselineIC native code.
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   bool makesGCCalls_;
   uint8_t localTracingSlots_ = 0;
   Register baselineFrameReg_ = FramePointer;
 
-  
-  
-  
-  
+  // This register points to the baseline frame of the caller. It should only
+  // be used before we enter a stub frame. This is normally the frame pointer
+  // register, but with --enable-ic-frame-pointers we have to allocate a
+  // separate register.
   inline Register baselineFrameReg() {
     MOZ_ASSERT(!enteredStubFrame_);
     return baselineFrameReg_;
@@ -118,11 +118,11 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   void emitAtomizeString(Register str, Register temp, Label* failure);
 
   bool emitCallScriptedGetterShared(ValOperandId receiverId,
-                                    ObjOperandId calleeId, bool sameRealm,
+                                    uint32_t getterOffset, bool sameRealm,
                                     uint32_t nargsAndFlagsOffset,
                                     mozilla::Maybe<uint32_t> icScriptOffset);
   bool emitCallScriptedSetterShared(ObjOperandId receiverId,
-                                    ObjOperandId calleeId, ValOperandId rhsId,
+                                    uint32_t setterOffset, ValOperandId rhsId,
                                     bool sameRealm,
                                     uint32_t nargsAndFlagsOffset,
                                     mozilla::Maybe<uint32_t> icScriptOffset);
@@ -160,8 +160,8 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   CACHE_IR_COMPILER_UNSHARED_GENERATED
 };
 
-
-
+// Special object used for storing a list of shapes to guard against. These are
+// only used in the fields of CacheIR stubs and do not escape.
 class ShapeListObject : public ListObject {
  public:
   static const JSClass class_;
@@ -173,7 +173,7 @@ class ShapeListObject : public ListObject {
   bool traceWeak(JSTracer* trc);
 };
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_BaselineCacheIRCompiler_h */
