@@ -106,7 +106,7 @@ add_task(async () => {
     
     service.currentProfile.storeID = "7126354jdf";
 
-    await service.asyncFlushGroupProfile();
+    await service.asyncFlushCurrentProfile();
 
     profileData = readProfilesIni();
     Assert.equal(profileData.profiles.length, 3, "Should have three profiles.");
@@ -133,7 +133,7 @@ add_task(async () => {
     
     service.currentProfile.rootDir = newProfileDir;
 
-    await service.asyncFlushGroupProfile();
+    await service.asyncFlushCurrentProfile();
 
     profileData = readProfilesIni();
     Assert.equal(profileData.profiles.length, 3, "Should have three profiles.");
@@ -171,7 +171,7 @@ add_task(async () => {
       },
     });
 
-    await service.asyncFlushGroupProfile();
+    await service.asyncFlushCurrentProfile();
 
     profileData = readProfilesIni();
     Assert.equal(profileData.profiles.length, 1, "Should have one profile.");

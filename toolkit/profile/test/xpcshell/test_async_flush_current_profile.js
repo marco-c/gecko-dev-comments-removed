@@ -68,17 +68,13 @@ add_task(
     
     
     let asyncRewriteDefault = async () => {
-      await service.asyncFlushGroupProfile();
-      Assert.ok(
-        !service.groupProfile,
-        "Async flush succeeds if group profile is null"
-      );
+      await service.asyncFlushCurrentProfile();
       let profileData = readProfilesIni();
 
       Assert.equal(
         profileData.profiles[0].path,
         defaultProfile.leafName,
-        "AsyncFlushGroupProfile should have updated the path to the path of the current managed profile"
+        "AsyncFlushCurrentProfile should have updated the path to the path of the current managed profile"
       );
     };
     await asyncRewriteDefault();

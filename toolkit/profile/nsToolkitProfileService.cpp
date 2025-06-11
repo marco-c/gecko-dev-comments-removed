@@ -362,13 +362,6 @@ nsToolkitProfile::SetStoreID(const nsACString& aStoreID) {
     rv = nsToolkitProfileService::gService->mProfileDB.SetString(
         mSection.get(), "ShowSelector", mShowProfileSelector ? "1" : "0");
     NS_ENSURE_SUCCESS(rv, rv);
-
-    if (nsToolkitProfileService::gService->mCurrent == this) {
-      rv = prefs->SetCharPref(STORE_ID_PREF, aStoreID);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsToolkitProfileService::gService->mGroupProfile = this;
-    }
   } else {
     
     nsToolkitProfileService::gService->mProfileDB.DeleteString(mSection.get(),
@@ -381,13 +374,6 @@ nsToolkitProfile::SetStoreID(const nsACString& aStoreID) {
     
     nsToolkitProfileService::gService->mProfileDB.DeleteString(mSection.get(),
                                                                "ShowSelector");
-
-    if (nsToolkitProfileService::gService->mCurrent == this) {
-      rv = prefs->ClearUserPref(STORE_ID_PREF);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsToolkitProfileService::gService->mGroupProfile = nullptr;
-    }
   }
   mStoreID = aStoreID;
 
@@ -674,6 +660,24 @@ nsToolkitProfileService::~nsToolkitProfileService() {
   mProfiles.clear();
 }
 
+void nsToolkitProfileService::UpdateCurrentProfile() {
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  NS_ENSURE_TRUE_VOID(prefs);
+
+  nsCString storeID;
+  nsresult rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
+  bool hasStoreIdPref = NS_SUCCEEDED(rv) && !storeID.IsEmpty();
+
+  if (!mCurrent && hasStoreIdPref) {
+    mCurrent = GetProfileByStoreID(storeID);
+    return;
+  }
+
+  if (mCurrent && !hasStoreIdPref && !mCurrent->mStoreID.IsVoid()) {
+    prefs->SetCharPref(STORE_ID_PREF, mCurrent->mStoreID);
+  }
+}
+
 void nsToolkitProfileService::CompleteStartup() {
   if (!mStartupProfileSelected) {
     return;
@@ -683,48 +687,23 @@ void nsToolkitProfileService::CompleteStartup() {
   glean::startup::profile_database_version.Set(mStartupFileVersion);
   glean::startup::profile_count.Set(static_cast<uint32_t>(mProfiles.length()));
 
-  nsresult rv;
-  bool needsFlush = false;
-
-  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  nsCString storeID;
-  rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
-
-  if (NS_SUCCEEDED(rv) && !storeID.IsEmpty()) {
-    
-    if (!mCurrent) {
-      
-      
-      mGroupProfile = GetProfileByStoreID(storeID);
-    }
-  } else if (mCurrent && !mCurrent->mStoreID.IsVoid()) {
-    
-    mGroupProfile = mCurrent;
-    rv = prefs->SetCharPref(STORE_ID_PREF, mCurrent->mStoreID);
-    NS_ENSURE_SUCCESS_VOID(rv);
-  }
-
   if (mMaybeLockProfile) {
     nsCOMPtr<nsIToolkitShellService> shell =
         do_GetService(NS_TOOLKITSHELLSERVICE_CONTRACTID);
     if (shell) {
       bool isDefaultApp;
-      rv = shell->IsDefaultApplication(&isDefaultApp);
+      nsresult rv = shell->IsDefaultApplication(&isDefaultApp);
       if (NS_SUCCEEDED(rv) && isDefaultApp) {
         mProfileDB.SetString(mInstallSection.get(), "Locked", "1");
 
-        needsFlush = true;
+        
+        
+        
+        
+        
+        NS_ENSURE_SUCCESS_VOID(Flush());
       }
     }
-  }
-
-  if (needsFlush) {
-    
-    
-    
-    
-    
-    NS_ENSURE_SUCCESS_VOID(Flush());
   }
 }
 
@@ -1252,7 +1231,7 @@ nsToolkitProfileService::GetProfiles(nsISimpleEnumerator** aResult) {
 
 NS_IMETHODIMP
 nsToolkitProfileService::ProfileEnumerator::HasMoreElements(bool* aResult) {
-  *aResult = mCurrent ? true : false;
+  *aResult = static_cast<bool>(mCurrent);
   return NS_OK;
 }
 
@@ -1269,12 +1248,6 @@ nsToolkitProfileService::ProfileEnumerator::GetNext(nsISupports** aResult) {
 NS_IMETHODIMP
 nsToolkitProfileService::GetCurrentProfile(nsIToolkitProfile** aResult) {
   NS_IF_ADDREF(*aResult = mCurrent);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfileService::GetGroupProfile(nsIToolkitProfile** aResult) {
-  NS_IF_ADDREF(*aResult = mGroupProfile);
   return NS_OK;
 }
 
@@ -1448,6 +1421,7 @@ nsToolkitProfileService::SelectStartupProfile(
   
   
   if (NS_SUCCEEDED(rv)) {
+    UpdateCurrentProfile();
     CompleteStartup();
   }
 
@@ -2330,7 +2304,7 @@ nsToolkitProfileService::GetProfileCount(uint32_t* aResult) {
 
 nsresult WriteProfileInfo(nsIFile* profilesDBFile, nsIFile* installDBFile,
                           const nsCString& installSection,
-                          const GroupProfileData* profileInfo) {
+                          const CurrentProfileData* profileInfo) {
   nsINIParser profilesIni;
   nsresult rv = profilesIni.Init(profilesDBFile);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2437,19 +2411,12 @@ nsISerialEventTarget* nsToolkitProfileService::AsyncQueue() {
 }
 
 NS_IMETHODIMP
-nsToolkitProfileService::AsyncFlushGroupProfile(JSContext* aCx,
-                                                dom::Promise** aPromise) {
+nsToolkitProfileService::AsyncFlushCurrentProfile(JSContext* aCx,
+                                                  dom::Promise** aPromise) {
 #ifndef MOZ_HAS_REMOTE
   return NS_ERROR_FAILURE;
 #else
-  
-  
-  RefPtr<nsToolkitProfile> profile = mGroupProfile;
-  if (!profile) {
-    profile = mCurrent;
-  }
-
-  if (!profile) {
+  if (!mCurrent) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
@@ -2466,12 +2433,12 @@ nsToolkitProfileService::AsyncFlushGroupProfile(JSContext* aCx,
     return result.StealNSResult();
   }
 
-  UniquePtr<GroupProfileData> profileData = MakeUnique<GroupProfileData>();
-  profileData->mStoreID = profile->mStoreID;
-  profileData->mShowSelector = profile->mShowProfileSelector;
+  UniquePtr<CurrentProfileData> profileData = MakeUnique<CurrentProfileData>();
+  profileData->mStoreID = mCurrent->mStoreID;
+  profileData->mShowSelector = mCurrent->mShowProfileSelector;
 
   bool isRelative;
-  GetProfileDescriptor(profile, profileData->mPath, &isRelative);
+  GetProfileDescriptor(mCurrent, profileData->mPath, &isRelative);
 
   nsCOMPtr<nsIRemoteService> rs = GetRemoteService();
   RefPtr<nsRemoteService> remoteService =
@@ -2506,7 +2473,7 @@ nsToolkitProfileService::AsyncFlushGroupProfile(JSContext* aCx,
   
   nsMainThreadPtrHandle<dom::Promise> promiseHolder(
       new nsMainThreadPtrHolder<dom::Promise>(
-          "nsToolkitProfileService::AsyncFlushGroupProfile", promise));
+          "nsToolkitProfileService::AsyncFlushCurrentProfile", promise));
 
   p->Then(GetCurrentSerialEventTarget(), __func__,
           [requestHolder, promiseHolder](
@@ -2580,7 +2547,7 @@ nsToolkitProfileService::AsyncFlush(JSContext* aCx, dom::Promise** aPromise) {
   
   nsMainThreadPtrHandle<dom::Promise> promiseHolder(
       new nsMainThreadPtrHolder<dom::Promise>(
-          "nsToolkitProfileService::AsyncFlushGroupProfile", promise));
+          "nsToolkitProfileService::AsyncFlush", promise));
 
   p->Then(GetCurrentSerialEventTarget(), __func__,
           [requestHolder, promiseHolder](

@@ -5608,6 +5608,10 @@ nsresult XREMain::XRE_mainRun() {
 
     
     
+    mProfileSvc->UpdateCurrentProfile();
+
+    
+    
     if (!initializedJSContext) {
       xpc::InitializeJSContext();
     }
