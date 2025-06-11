@@ -21,6 +21,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -242,8 +243,8 @@ std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
   auto supported_formats =
       GetDefaultSupportedFormats(factory, is_decoder_factory, trials);
 
-  
   webrtc::PayloadTypePicker pt_mapper;
+  std::unordered_set<int> used_payload_types;
   std::vector<Codec> output_codecs;
   for (const auto& supported_format : supported_formats) {
     webrtc::RTCErrorOr<Codec> result =
@@ -251,6 +252,13 @@ std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
     if (!result.ok()) {
       
       
+      continue;
+    }
+    bool inserted = used_payload_types.insert(result.value().id).second;
+    if (!inserted) {
+      RTC_LOG(LS_WARNING) << "Factory produced duplicate codecs, ignoring "
+                          << result.value() << " produced from "
+                          << supported_format;
       continue;
     }
     output_codecs.push_back(result.value());
