@@ -5,18 +5,13 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/OpenClientDirectoryInfo.h"
-#include "QuotaManagerTestHelpers.h"
 
 namespace mozilla::dom::quota::test {
 
 TEST(DOM_Quota_OpenClientDirectoryInfo, BasicUsage)
 {
-  auto originMetadata =
-      GetOriginMetadata(""_ns, "mozilla.org"_ns, "http://www.mozilla.org"_ns);
-
-  OpenClientDirectoryInfo openClientDirectoryInfo(originMetadata);
+  OpenClientDirectoryInfo openClientDirectoryInfo;
 
   EXPECT_EQ(openClientDirectoryInfo.ClientDirectoryLockHandleCount(), 0u);
 

@@ -57,8 +57,7 @@ class QuotaManagerDependencyFixture : public testing::Test {
       const OriginMetadata& aOriginMetadata);
 
   
-  static void SaveOriginAccessTime(const OriginMetadata& aOriginMetadata,
-                                   int64_t aTimestamp);
+  static void SaveOriginAccessTime(const OriginMetadata& aOriginMetadata);
 
   static void GetOriginUsage(const OriginMetadata& aOriginMetadata,
                              UsageInfo* aResult);

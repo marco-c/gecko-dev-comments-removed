@@ -9,10 +9,11 @@
 
 #include <cstdint>
 
-#include "mozilla/dom/quota/CommonMetadata.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla::dom::quota {
+
+class UniversalDirectoryLock;
 
 
 
@@ -47,13 +48,18 @@ namespace mozilla::dom::quota {
 
 class OpenClientDirectoryInfo {
  public:
-  explicit OpenClientDirectoryInfo(const OriginMetadata& aOriginMetadata);
+  OpenClientDirectoryInfo();
 
   ~OpenClientDirectoryInfo();
 
   void AssertIsOnOwningThread() const;
 
-  const OriginMetadata& OriginMetadataRef() const;
+  void SetLastAccessDirectoryLock(
+      RefPtr<UniversalDirectoryLock> aLastAccessDirectoryLock);
+
+  bool HasLastAccessDirectoryLock() const;
+
+  RefPtr<UniversalDirectoryLock> ForgetLastAccessDirectoryLock();
 
   uint64_t ClientDirectoryLockHandleCount() const;
 
@@ -64,9 +70,7 @@ class OpenClientDirectoryInfo {
  private:
   NS_DECL_OWNINGTHREAD
 
-  
-  
-  OriginMetadata mOriginMetadata;
+  RefPtr<UniversalDirectoryLock> mLastAccessDirectoryLock;
 
   
   
