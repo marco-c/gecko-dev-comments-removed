@@ -44,12 +44,6 @@
 
 namespace cricket {
 
-
-
-
-constexpr int kMinDtlsHandshakeTimeoutMs = 50;
-constexpr int kMaxDtlsHandshakeTimeoutMs = 3000;
-
 struct IceTransportStats {
   CandidateStatsList candidate_stats_list;
   ConnectionInfos connection_infos;

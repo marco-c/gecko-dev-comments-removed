@@ -52,17 +52,21 @@
 namespace cricket {
 
 
-static const size_t kMinRtpPacketLen = 12;
+constexpr size_t kMinRtpPacketLen = 12;
 
 
 
 
 
 
-static const size_t kMaxPendingPackets = 2;
+constexpr size_t kMaxPendingPackets = 2;
 
 
-static const int kDisabledHandshakeTimeoutMs = 3600 * 1000 * 24;
+
+constexpr int kMinDtlsHandshakeTimeoutMs = 50;
+constexpr int kMaxDtlsHandshakeTimeoutMs = 3000;
+
+constexpr int kDisabledHandshakeTimeoutMs = 3600 * 1000 * 24;
 
 static bool IsRtpPacket(rtc::ArrayView<const uint8_t> payload) {
   const uint8_t* u = payload.data();
@@ -637,6 +641,7 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
         
         
         ConfigureHandshakeTimeout();
+        PeriodicRetransmitDtlsPacketUntilDtlsConnected();
       }
       break;
     case webrtc::DtlsTransportState::kFailed:
@@ -936,18 +941,20 @@ void DtlsTransport::OnDtlsHandshakeError(webrtc::SSLHandshakeError error) {
   SendDtlsHandshakeError(error);
 }
 
+int ComputeRetransmissionTimeout(int rtt_ms) {
+  return std::max(kMinDtlsHandshakeTimeoutMs,
+                  std::min(kMaxDtlsHandshakeTimeoutMs, 2 * (rtt_ms)));
+}
+
 void DtlsTransport::ConfigureHandshakeTimeout() {
   RTC_DCHECK(dtls_);
   std::optional<int> rtt_ms = ice_transport_->GetRttEstimate();
   if (rtt_ms) {
     
     
-    int initial_timeout_ms =
-        std::max(kMinDtlsHandshakeTimeoutMs,
-                 std::min(kMaxDtlsHandshakeTimeoutMs, 2 * (*rtt_ms)));
+    int initial_timeout_ms = ComputeRetransmissionTimeout(*rtt_ms);
     RTC_LOG(LS_INFO) << ToString() << ": configuring DTLS handshake timeout "
                      << initial_timeout_ms << "ms based on ICE RTT " << *rtt_ms;
-
     dtls_->SetInitialRetransmissionTimeout(initial_timeout_ms);
   } else if (dtls_in_stun_) {
     
@@ -984,6 +991,50 @@ bool DtlsTransport::WasDtlsCompletedByPiggybacking() {
                                DtlsStunPiggybackController::State::COMPLETE ||
                            dtls_stun_piggyback_controller_.state() ==
                                DtlsStunPiggybackController::State::PENDING);
+}
+
+
+
+
+
+void DtlsTransport::PeriodicRetransmitDtlsPacketUntilDtlsConnected() {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  if (pending_periodic_retransmit_dtls_packet_ == true) {
+    
+    
+    
+    
+    return;
+  }
+  if (ice_transport_->writable() && dtls_in_stun_) {
+    auto data_to_send = dtls_stun_piggyback_controller_.GetDataToPiggyback(
+        STUN_BINDING_INDICATION);
+    if (!data_to_send) {
+      
+      return;
+    }
+    rtc::PacketOptions packet_options;
+    ice_transport_->SendPacket(data_to_send->data(), data_to_send->size(),
+                               packet_options,  0);
+  }
+
+  const auto rtt_ms = ice_transport_->GetRttEstimate().value_or(100);
+  const int delay_ms = ComputeRetransmissionTimeout(rtt_ms);
+
+  
+  pending_periodic_retransmit_dtls_packet_ = true;
+  rtc::Thread::Current()->PostDelayedHighPrecisionTask(
+      webrtc::SafeTask(safety_flag_.flag(),
+                       [this] {
+                         RTC_DCHECK_RUN_ON(&thread_checker_);
+                         
+                         pending_periodic_retransmit_dtls_packet_ = false;
+                         PeriodicRetransmitDtlsPacketUntilDtlsConnected();
+                       }),
+      webrtc::TimeDelta::Millis(delay_ms));
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Scheduled retransmit of DTLS packet, delay_ms: "
+                   << delay_ms;
 }
 
 }  
