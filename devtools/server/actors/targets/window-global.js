@@ -273,6 +273,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
 
+
   constructor(
     conn,
     {
@@ -371,6 +372,16 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       configurable: true,
       writable: true,
     });
+
+    
+    
+    if (this.followWindowGlobalLifeCycle) {
+      Object.defineProperty(this, "innerWindowId", {
+        value: this.innerWindowId,
+        configurable: false,
+        writable: false,
+      });
+    }
 
     
     this._originalWindow = this.window;
@@ -485,9 +496,13 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   get window() {
-    return this.docShell && !this.docShell.isBeingDestroyed()
-      ? this.docShell.domWindow
-      : null;
+    try {
+      return this.docShell?.domWindow;
+    } catch (e) {
+      
+      
+      return null;
+    }
   }
 
   get targetGlobal() {
@@ -532,6 +547,9 @@ class WindowGlobalTargetActor extends BaseTargetActor {
         windows.push(docShell.domWindow);
       } catch (e) {
         
+        
+        
+        
       }
     }
     return windows;
@@ -545,7 +563,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   get originalDocShell() {
-    if (!this._originalWindow) {
+    if (!this._originalWindow || Cu.isDeadWrapper(this._originalWindow)) {
       return this.docShell;
     }
 
@@ -647,6 +665,19 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     
     
+    if (this.destroying || !this.originalDocShell) {
+      return {
+        actor: this.actorID,
+        innerWindowId: this.innerWindowId,
+        isTopLevelTarget: this.isTopLevelTarget,
+      };
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -692,6 +723,9 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       ignoreSubFrames: this.ignoreSubFrames,
       isPopup,
       isPrivate: this.isPrivate,
+      title: this.title,
+      url: this.url,
+      outerWindowID: this.outerWindowID,
 
       
       isFallbackExtensionDocument: this.#isFallbackExtensionDocument,
@@ -717,19 +751,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
         navigation: true,
       },
     };
-
-    
-    
-    if (!this.docShell.isBeingDestroyed()) {
-      response.title = this.title;
-      response.url = this.url;
-      response.outerWindowID = this.outerWindowID;
-    }
-
-    
-    if (this.destroying) {
-      return response;
-    }
 
     const actors = this._createExtraActors();
     Object.assign(response, actors);
@@ -785,11 +806,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     
     
+    
     if (
       this.browsingContext?.watchedByDevTools &&
       !this.browsingContext.parent &&
-      
-      
       !this.browsingContext.isDiscarded
     ) {
       this.browsingContext.watchedByDevTools = false;
@@ -879,15 +899,22 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     }
 
     
-    Services.obs.addObserver(this, "webnavigation-create");
-    Services.obs.addObserver(this, "webnavigation-destroy");
-    this._docShellsObserved = true;
+    
+    
+    
+    if (!this.ignoreSubFrames) {
+      Services.obs.addObserver(this, "webnavigation-create");
+      Services.obs.addObserver(this, "webnavigation-destroy");
+      this._docShellsObserved = true;
+    }
 
     
     this._progressListener.watch(this.docShell);
 
     
-    this._updateChildDocShells();
+    if (!this.ignoreSubFrames) {
+      this._updateChildDocShells();
+    }
   }
 
   _unwatchDocshells() {
@@ -1429,7 +1456,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   _restoreTargetConfiguration() {
-    if (this._restoreFocus && this.browsingContext?.isActive) {
+    if (this._restoreFocus && this.browsingContext?.isActive && this.window) {
       try {
         this.window.focus();
       } catch (e) {
@@ -1445,7 +1472,8 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     
     
-    if (this.window) {
+    
+    if (!this.docShell.isBeingDestroyed() && this.window) {
       
       
       this._willNavigate({
@@ -1888,6 +1916,10 @@ class DebuggerProgressListener {
     
     if (
       this._watchedDocShells.has(window) &&
+      
+      
+      !Cu.isRemoteProxy(window) &&
+      window.docShell &&
       !window.docShell.chromeEventHandler
     ) {
       

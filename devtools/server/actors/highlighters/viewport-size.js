@@ -145,6 +145,11 @@ class ViewportSizeHighlighter {
   }
 
   show() {
+    
+    if (this._destroyed) {
+      return false;
+    }
+
     const { pageListenerTarget } = this.env;
     pageListenerTarget.addEventListener("resize", this._onPageResize);
     if (this.isFadingViewportHighlighter) {
