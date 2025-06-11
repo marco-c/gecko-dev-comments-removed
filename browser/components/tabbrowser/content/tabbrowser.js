@@ -4678,7 +4678,6 @@
       }
 
       let isVisibleTab = aTab.visible;
-      let isLastTab = isVisibleTab && this.visibleTabs.length == 1;
       
       
       
@@ -4719,7 +4718,7 @@
       if (
         !animate  ||
         gReduceMotion ||
-        isLastTab ||
+        this.#isLastTabInWindow(aTab) ||
         aTab.pinned ||
         !isVisibleTab ||
         this.tabContainer.verticalMode ||
@@ -4762,6 +4761,23 @@
         aTab,
         this
       );
+    }
+
+    
+
+
+
+
+
+
+
+    #isLastTabInWindow(tab) {
+      for (const otherTab of this.tabs) {
+        if (otherTab != tab && otherTab.isOpen && !otherTab.hidden) {
+          return false;
+        }
+      }
+      return true;
     }
 
     _hasBeforeUnload(aTab) {
@@ -4843,11 +4859,7 @@
 
       var closeWindow = false;
       var newTab = false;
-      if (
-        aTab.visible &&
-        this.visibleTabs.length == 1 &&
-        !this.tabsInCollapsedTabGroups.length
-      ) {
+      if (this.#isLastTabInWindow(aTab)) {
         closeWindow =
           closeWindowWithLastTab != null
             ? closeWindowWithLastTab
