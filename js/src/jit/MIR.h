@@ -573,18 +573,6 @@ class MDefinition : public MNode {
     setBlockAndKind(block, Kind::Definition);
   }
 
-  void setWasmRefType(wasm::MaybeRefType refType) {
-    
-    MOZ_ASSERT(!(wasmRefType_.isSome() && refType.isNothing()));
-    
-    
-    MOZ_ASSERT_IF(
-        wasmRefType_.isSome(),
-        wasm::RefType::isSubTypeOf(refType.value(), wasmRefType_.value()));
-
-    wasmRefType_ = refType;
-  }
-
   static HashNumber addU32ToHash(HashNumber hash, uint32_t data) {
     return data + (hash << 6) + (hash << 16) - hash;
   }
@@ -757,8 +745,13 @@ class MDefinition : public MNode {
   
   
   
+  void setWasmRefType(wasm::MaybeRefType refType) { wasmRefType_ = refType; }
+
+  
+  
+  
   void initWasmRefType(wasm::MaybeRefType refType) {
-    MOZ_RELEASE_ASSERT(!wasmRefType_);
+    MOZ_ASSERT(!wasmRefType_);
     setWasmRefType(refType);
   }
 
@@ -767,13 +760,6 @@ class MDefinition : public MNode {
   
   
   virtual wasm::MaybeRefType computeWasmRefType() const { return wasmRefType_; }
-
-  
-  
-  
-  
-  
-  bool updateWasmRefType();
 
   
   bool typeIsOneOf(MIRTypeEnumSet types) const {
