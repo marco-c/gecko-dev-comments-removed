@@ -412,7 +412,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void StartSctpTransport(const SctpOptions& options) override;
+  RTCError StartSctpTransport(const SctpOptions& options) override;
 
   
   
