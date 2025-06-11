@@ -69,10 +69,6 @@ class IdentityCredential final : public Credential {
 
   
   
-  
-  explicit IdentityCredential(nsPIDOMWindowInner* aParent);
-  
-  
   explicit IdentityCredential(nsPIDOMWindowInner* aParent,
                               const IPCIdentityCredential& aOther);
 
@@ -89,10 +85,6 @@ class IdentityCredential final : public Credential {
   
   IPCIdentityCredential MakeIPCIdentityCredential() const;
 
-  static already_AddRefed<IdentityCredential> Constructor(
-      const GlobalObject& aGlobal, const IdentityCredentialInit& aInit,
-      ErrorResult& aRv);
-
   static already_AddRefed<Promise> Disconnect(
       const GlobalObject& aGlobal,
       const IdentityCredentialDisconnectOptions& aOptions, ErrorResult& aRv);
@@ -104,9 +96,6 @@ class IdentityCredential final : public Credential {
   
   void GetToken(nsAString& aToken) const;
   void SetToken(const nsAString& aToken);
-
-  
-  void GetOrigin(nsACString& aOrigin, ErrorResult& aError) const;
 
   static nsresult ShowCredentialChooser(
       const RefPtr<CanonicalBrowsingContext>& aContext,
@@ -137,26 +126,6 @@ class IdentityCredential final : public Credential {
       const Sequence<IdentityProviderRequestOptions>& aProviders,
       const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
 
-  static RefPtr<GenericPromise> AllowedToCollectCredential(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions,
-      IPCIdentityCredential aCredential);
-
-  static RefPtr<GetIPCIdentityCredentialsPromise>
-  CollectFromCredentialStoreInMainProcess(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions);
-
-  static RefPtr<GenericPromise> Store(nsPIDOMWindowInner* aParent,
-                                      const IdentityCredential* aCredential,
-                                      bool aSameOriginWithAncestors);
-
-  static RefPtr<GenericPromise> StoreInMainProcess(
-      nsIPrincipal* aPrincipal, const IPCIdentityCredential& aCredential);
-
-  static RefPtr<GetIdentityCredentialPromise> Create(
-      nsPIDOMWindowInner* aParent, const CredentialCreationOptions& aOptions,
-      bool aSameOriginWithAncestors);
 
   
   
@@ -178,11 +147,6 @@ class IdentityCredential final : public Credential {
       const IdentityCredentialRequestOptions& aOptions,
       const CredentialMediationRequirement& aMediationRequirement);
 
-  static RefPtr<GetIPCIdentityCredentialPromise>
-  DiscoverLightweightFromExternalSourceInMainProcess(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions);
-
   
   
   
@@ -200,7 +164,7 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetIPCIdentityCredentialPromise>
-  CreateHeavyweightCredentialDuringDiscovery(
+  CreateCredentialDuringDiscovery(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
       const IdentityProviderRequestOptions& aProvider,
       const IdentityProviderAPIConfig& aManifest,
@@ -369,17 +333,8 @@ class IdentityCredential final : public Credential {
   static void CloseUserInterface(BrowsingContext* aBrowsingContext);
 
  private:
-  nsAutoString mToken;  
-  nsCOMPtr<nsIPrincipal> mIdentityProvider;
-  Maybe<IdentityCredentialInit> mCreationOptions;
-
-  
-  
-  enum RequestType { INVALID, LIGHTWEIGHT, HEAVYWEIGHT, NONE };
-  static RequestType DetermineRequestDiscoveryType(
-      const IdentityCredentialRequestOptions& aOptions);
+  nsAutoString mToken;
 };
-
 }  
 
 #endif  
