@@ -32,6 +32,9 @@ pub struct DisplayList {
     pub present: bool,
     
     pub send_transaction: bool,
+    
+    
+    pub render_offscreen: bool,
 }
 
 
@@ -574,6 +577,10 @@ impl Wrench {
                 Epoch(*frame_number),
                 (display_list.pipeline, display_list.payload),
             );
+
+            if display_list.render_offscreen {
+                txn.render_offscreen(display_list.pipeline);
+            }
 
             if display_list.send_transaction {
                 for (id, offsets) in scroll_offsets {
