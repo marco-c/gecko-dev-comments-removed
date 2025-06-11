@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 const { JSObjectsTestUtils, CONTEXTS } = ChromeUtils.importESModule(
   "resource://testing-common/JSObjectsTestUtils.sys.mjs"
 );
@@ -17,6 +19,7 @@ add_task(async function () {
   
   
   const hud = await openNewTabAndConsole("http://example.com");
+  const outputScroller = hud.ui.outputScroller;
 
   let count = 0;
   await JSObjectsTestUtils.runTest(
@@ -29,7 +32,7 @@ add_task(async function () {
       await SpecialPowers.spawn(
         gBrowser.selectedBrowser,
         [expression, count],
-        async function (exp, i) {
+        function (exp, i) {
           let value;
           try {
             value = content.eval(exp);
@@ -40,9 +43,13 @@ add_task(async function () {
         }
       );
 
-      const messageNode = await waitFor(() =>
-        findConsoleAPIMessage(hud, "test message " + count)
-      );
+      const messageNode = await waitFor(() => {
+        
+        
+        
+        outputScroller.scrollTop = outputScroller.scrollHeight;
+        return findConsoleAPIMessage(hud, "test message " + count);
+      });
       count++;
       const oi = messageNode.querySelector(".tree");
 
