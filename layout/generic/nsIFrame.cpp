@@ -3407,15 +3407,17 @@ void nsIFrame::BuildDisplayListForStackingContext(
     ViewTransitionCapture,
   };
 
+  
+  nsDisplayListBuilder::AutoEnterViewTransitionCapture
+      inViewTransitionCaptureSetter(aBuilder, capturedByViewTransition);
+  nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
   nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(aBuilder);
-  if (capturedByViewTransition || aBuilder->IsInViewTransitionCapture()) {
+  if (aBuilder->IsInViewTransitionCapture()) {
     
     
     
     asrSetter.SetCurrentActiveScrolledRoot(nullptr);
   }
-
-  nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
 
   auto cssClip = GetClipPropClipRect(disp, effects, GetSize());
   auto ApplyClipProp = [&](DisplayListClipState::AutoSaveRestore& aClipState) {
@@ -3445,10 +3447,10 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   ContainerItemType clipCapturedBy = ContainerItemType::None;
-  if (useFixedPosition) {
-    clipCapturedBy = ContainerItemType::FixedPosition;
-  } else if (capturedByViewTransition) {
+  if (capturedByViewTransition) {
     clipCapturedBy = ContainerItemType::ViewTransitionCapture;
+  } else if (useFixedPosition) {
+    clipCapturedBy = ContainerItemType::FixedPosition;
   } else if (isTransformed) {
     const DisplayItemClipChain* currentClip =
         aBuilder->ClipState().GetCurrentCombinedClipChain(aBuilder);
@@ -3501,8 +3503,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                                           usingFilter);
     nsDisplayListBuilder::AutoInEventsOnly inEventsSetter(
         aBuilder, opacityItemForEventsOnly);
-    nsDisplayListBuilder::AutoEnterViewTransitionCapture
-        inViewTransitionCaptureSetter(aBuilder, capturedByViewTransition);
 
     
     
@@ -3811,7 +3811,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-  if (useFixedPosition) {
+  if (useFixedPosition && !capturedByViewTransition) {
     if (clipCapturedBy == ContainerItemType::FixedPosition) {
       clipState.Restore();
     }
@@ -3828,7 +3828,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     resultList.AppendNewToTop<nsDisplayFixedPosition>(
         aBuilder, this, &resultList, fixedASR, containerItemASR);
     createdContainer = true;
-  } else if (useStickyPosition) {
+  } else if (useStickyPosition && !capturedByViewTransition) {
     
     
     

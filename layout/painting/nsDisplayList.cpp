@@ -441,7 +441,10 @@ void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
   
   
   const ActiveScrolledRoot* finiteBoundsASR =
-      ActiveScrolledRoot::PickDescendant(mContentClipASR, aActiveScrolledRoot);
+      mBuilder->IsInViewTransitionCapture()
+          ? aActiveScrolledRoot
+          : ActiveScrolledRoot::PickDescendant(mContentClipASR,
+                                               aActiveScrolledRoot);
 
   
   
