@@ -212,6 +212,7 @@ struct CORSCacheEntry : public LinkedListElement<CORSCacheEntry>,
   nsCString mKey;  
   const TimeStamp mCreationTime{TimeStamp::NowLoRes()};
   bool mDoomed{false};
+  bool mIsProxyUsed{false};
 
   nsTArray<nsPreflightCache::TokenTime> mMethods;
   nsTArray<nsPreflightCache::TokenTime> mHeaders;
@@ -338,6 +339,11 @@ void CORSCacheEntry::PurgeExpired(TimeStamp now) {
 }
 
 bool CORSCacheEntry::CheckDNSCache() {
+  
+  if (mIsProxyUsed) {
+    return true;
+  }
+
   nsCOMPtr<nsIDNSService> dns;
   dns = mozilla::components::DNS::Service();
   if (!dns) {
@@ -1411,6 +1417,12 @@ void nsCORSPreflightListener::AddResultToCache(nsIRequest* aRequest) {
       uri, mReferrerPrincipal, mWithCredentials, attrs, true);
   if (!entry) {
     return;
+  }
+
+  nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal(
+      do_QueryInterface(aRequest));
+  if (httpChannelInternal) {
+    Unused << httpChannelInternal->GetIsProxyUsed(&entry->mIsProxyUsed);
   }
 
   
