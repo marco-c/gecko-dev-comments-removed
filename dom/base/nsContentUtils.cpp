@@ -189,6 +189,7 @@
 #include "mozilla/dom/MessageBroadcaster.h"
 #include "mozilla/dom/MessageListenerManager.h"
 #include "mozilla/dom/MessagePort.h"
+#include "mozilla/dom/MimeType.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/NodeBinding.h"
@@ -8630,6 +8631,7 @@ bool nsContentUtils::IsJavascriptMIMEType(const nsACString& aMIMEType) {
   return false;
 }
 
+
 bool nsContentUtils::IsJsonMimeType(const nsAString& aMimeType) {
   
   static constexpr std::string_view jsonTypes[] = {"application/json",
@@ -8641,7 +8643,15 @@ bool nsContentUtils::IsJsonMimeType(const nsAString& aMimeType) {
     }
   }
 
-  return StringEndsWith(aMimeType, u"+json"_ns);
+  
+  RefPtr<MimeType> parsed = MimeType::Parse(aMimeType);
+  if (!parsed) {
+    return false;
+  }
+
+  nsAutoString subtype;
+  parsed->GetSubtype(subtype);
+  return StringEndsWith(subtype, u"+json"_ns);
 }
 
 bool nsContentUtils::PrefetchPreloadEnabled(nsIDocShell* aDocShell) {
