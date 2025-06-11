@@ -188,10 +188,12 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
     
     if (frame->StyleDisplay()->mTopLayer == StyleTopLayer::None) {
       MOZ_ASSERT(!aBuilder->IsForPainting() ||
+                 !elem->State().HasState(dom::ElementState::FULLSCREEN) ||
                  !ShouldInTopLayerForFullscreen(elem));
       continue;
     }
-    MOZ_ASSERT(ShouldInTopLayerForFullscreen(elem));
+    MOZ_ASSERT_IF(elem->State().HasState(dom::ElementState::FULLSCREEN),
+                  ShouldInTopLayerForFullscreen(elem));
     
     
     
