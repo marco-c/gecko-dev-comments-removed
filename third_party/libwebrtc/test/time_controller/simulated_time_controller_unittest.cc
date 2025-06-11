@@ -134,7 +134,7 @@ TEST(SimulatedTimeControllerTest, ThreadYeildsOnSynchronousCall) {
   
   main_thread->PostTask([&] { task_has_run = true; });
   SendTask(t2.get(), [] {
-    rtc::Event yield_event;
+    Event yield_event;
     
     
 

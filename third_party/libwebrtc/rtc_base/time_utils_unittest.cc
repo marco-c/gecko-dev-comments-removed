@@ -214,7 +214,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   worker->Start();
 
   
-  Event message_handler_dispatched;
+  webrtc::Event message_handler_dispatched;
   worker->PostDelayedTask(
       [&message_handler_dispatched] { message_handler_dispatched.Set(); },
       TimeDelta::Seconds(60));

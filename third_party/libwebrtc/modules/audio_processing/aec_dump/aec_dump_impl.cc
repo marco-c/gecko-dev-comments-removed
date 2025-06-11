@@ -67,11 +67,11 @@ AecDumpImpl::AecDumpImpl(FileWrapper debug_file,
 
 AecDumpImpl::~AecDumpImpl() {
   
-  rtc::Event thread_sync_event;
+  Event thread_sync_event;
   worker_queue_->PostTask([&thread_sync_event] { thread_sync_event.Set(); });
   
   
-  thread_sync_event.Wait(rtc::Event::kForever);
+  thread_sync_event.Wait(Event::kForever);
 }
 
 void AecDumpImpl::WriteInitMessage(const ProcessingConfig& api_format,

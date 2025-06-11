@@ -1362,7 +1362,7 @@ void RTCStatsCollector::MergeNetworkReport_s() {
   
   
   
-  network_report_event_.Wait(rtc::Event::kForever);
+  network_report_event_.Wait(Event::kForever);
   if (!network_report_) {
     
     

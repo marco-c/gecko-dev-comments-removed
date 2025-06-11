@@ -34,7 +34,7 @@ namespace webrtc {
 
 class SocketServer : public SocketFactory {
  public:
-  static constexpr TimeDelta kForever = rtc::Event::kForever;
+  static constexpr TimeDelta kForever = Event::kForever;
 
   static std::unique_ptr<SocketServer> CreateDefault();
   

@@ -133,9 +133,9 @@ TEST(PendingTaskSafetyFlagTest, PendingTaskDropped) {
   ASSERT_TRUE(owner);
   
   
-  rtc::Event blocker;
+  Event blocker;
   tq1.PostTask([&blocker, &owner]() {
-    blocker.Wait(rtc::Event::kForever);
+    blocker.Wait(Event::kForever);
     owner.reset();
   });
 

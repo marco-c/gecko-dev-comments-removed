@@ -29,10 +29,10 @@ inline void SendTask(TaskQueueBase* task_queue, FunctionView<void()> task) {
     return;
   }
 
-  rtc::Event event;
+  Event event;
   absl::Cleanup cleanup = [&event] { event.Set(); };
   task_queue->PostTask([task, cleanup = std::move(cleanup)] { task(); });
-  RTC_CHECK(event.Wait(rtc::Event::kForever,
+  RTC_CHECK(event.Wait(Event::kForever,
                        TimeDelta::Seconds(10)));
 }
 

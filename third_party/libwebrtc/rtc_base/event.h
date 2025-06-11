@@ -23,7 +23,7 @@
 
 #include "rtc_base/synchronization/yield_policy.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -56,10 +56,8 @@ namespace rtc {
 class Event {
  public:
   
-  static constexpr webrtc::TimeDelta kForever =
-      webrtc::TimeDelta::PlusInfinity();
-  static constexpr webrtc::TimeDelta kDefaultWarnDuration =
-      webrtc::TimeDelta::Seconds(3);
+  static constexpr TimeDelta kForever = TimeDelta::PlusInfinity();
+  static constexpr TimeDelta kDefaultWarnDuration = TimeDelta::Seconds(3);
 
   Event();
   Event(bool manual_reset, bool initially_signaled);
@@ -80,10 +78,10 @@ class Event {
   
   
   
-  bool Wait(webrtc::TimeDelta give_up_after, webrtc::TimeDelta warn_after);
+  bool Wait(TimeDelta give_up_after, TimeDelta warn_after);
 
   
-  bool Wait(webrtc::TimeDelta give_up_after) {
+  bool Wait(TimeDelta give_up_after) {
     return Wait(give_up_after, give_up_after.IsPlusInfinity()
                                    ? kDefaultWarnDuration
                                    : kForever);
@@ -134,6 +132,14 @@ class ScopedDisallowWait {
 };
 #endif
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::Event;
+using ::webrtc::ScopedAllowBaseSyncPrimitives;
+using ::webrtc::ScopedAllowBaseSyncPrimitivesForTesting;
 }  
 
 #endif  

@@ -305,8 +305,8 @@ class CaptureProcessor {
  public:
   CaptureProcessor(int max_frame_size,
                    RandomGenerator* rand_gen,
-                   rtc::Event* render_call_event,
-                   rtc::Event* capture_call_event,
+                   Event* render_call_event,
+                   Event* capture_call_event,
                    FrameCounters* shared_counters_state,
                    const TestConfig* test_config,
                    AudioProcessing* apm);
@@ -322,8 +322,8 @@ class CaptureProcessor {
   void ApplyRuntimeSettingScheme();
 
   RandomGenerator* const rand_gen_ = nullptr;
-  rtc::Event* const render_call_event_ = nullptr;
-  rtc::Event* const capture_call_event_ = nullptr;
+  Event* const render_call_event_ = nullptr;
+  Event* const capture_call_event_ = nullptr;
   FrameCounters* const frame_counters_ = nullptr;
   const TestConfig* const test_config_ = nullptr;
   AudioProcessing* const apm_ = nullptr;
@@ -349,8 +349,8 @@ class RenderProcessor {
  public:
   RenderProcessor(int max_frame_size,
                   RandomGenerator* rand_gen,
-                  rtc::Event* render_call_event,
-                  rtc::Event* capture_call_event,
+                  Event* render_call_event,
+                  Event* capture_call_event,
                   FrameCounters* shared_counters_state,
                   const TestConfig* test_config,
                   AudioProcessing* apm);
@@ -366,8 +366,8 @@ class RenderProcessor {
   void ApplyRuntimeSettingScheme();
 
   RandomGenerator* const rand_gen_ = nullptr;
-  rtc::Event* const render_call_event_ = nullptr;
-  rtc::Event* const capture_call_event_ = nullptr;
+  Event* const render_call_event_ = nullptr;
+  Event* const capture_call_event_ = nullptr;
   FrameCounters* const frame_counters_ = nullptr;
   const TestConfig* const test_config_ = nullptr;
   AudioProcessing* const apm_ = nullptr;
@@ -420,9 +420,9 @@ class AudioProcessingImplLockTest
   }
 
   
-  rtc::Event test_complete_;
-  rtc::Event render_call_event_;
-  rtc::Event capture_call_event_;
+  Event test_complete_;
+  Event render_call_event_;
+  Event capture_call_event_;
 
   
   mutable RandomGenerator rand_gen_;
@@ -557,8 +557,8 @@ void StatsProcessor::Process() {
 
 CaptureProcessor::CaptureProcessor(int max_frame_size,
                                    RandomGenerator* rand_gen,
-                                   rtc::Event* render_call_event,
-                                   rtc::Event* capture_call_event,
+                                   Event* render_call_event,
+                                   Event* capture_call_event,
                                    FrameCounters* shared_counters_state,
                                    const TestConfig* test_config,
                                    AudioProcessing* apm)
@@ -578,7 +578,7 @@ void CaptureProcessor::Process() {
   
   
   if (frame_counters_->CaptureMinusRenderCounters() > kMaxCallDifference) {
-    render_call_event_->Wait(rtc::Event::kForever);
+    render_call_event_->Wait(Event::kForever);
   }
 
   
@@ -783,8 +783,8 @@ void CaptureProcessor::ApplyRuntimeSettingScheme() {
 
 RenderProcessor::RenderProcessor(int max_frame_size,
                                  RandomGenerator* rand_gen,
-                                 rtc::Event* render_call_event,
-                                 rtc::Event* capture_call_event,
+                                 Event* render_call_event,
+                                 Event* capture_call_event,
                                  FrameCounters* shared_counters_state,
                                  const TestConfig* test_config,
                                  AudioProcessing* apm)
@@ -802,7 +802,7 @@ void RenderProcessor::Process() {
   
   
   if (first_render_call_) {
-    capture_call_event_->Wait(rtc::Event::kForever);
+    capture_call_event_->Wait(Event::kForever);
     first_render_call_ = false;
   }
 
@@ -812,7 +812,7 @@ void RenderProcessor::Process() {
   
   
   if (frame_counters_->RenderMinusCaptureCounters() > kMaxCallDifference) {
-    capture_call_event_->Wait(rtc::Event::kForever);
+    capture_call_event_->Wait(Event::kForever);
   }
 
   

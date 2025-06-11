@@ -608,13 +608,13 @@ void ChannelSend::StopSend() {
 
   
   
-  rtc::Event flush;
+  Event flush;
   encoder_queue_->PostTask([this, &flush]() {
     RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
     audio_coding_->Reset();
     flush.Set();
   });
-  flush.Wait(rtc::Event::kForever);
+  flush.Wait(Event::kForever);
 
   
   

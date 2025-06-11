@@ -509,7 +509,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   }
 
   
-  rtc::Event test_complete_;
+  Event test_complete_;
 
   
   Random rand_gen_;

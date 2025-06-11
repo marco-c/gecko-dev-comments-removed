@@ -119,7 +119,7 @@ TEST_F(AudioEgressTest, SendingStatusAfterStartAndStop) {
 
 TEST_F(AudioEgressTest, ProcessAudioWithMute) {
   constexpr int kExpected = 10;
-  rtc::Event event;
+  Event event;
   int rtp_count = 0;
   RtpPacketReceived rtp;
   auto rtp_sent = [&](rtc::ArrayView<const uint8_t> packet, Unused) {
@@ -157,7 +157,7 @@ TEST_F(AudioEgressTest, ProcessAudioWithMute) {
 
 TEST_F(AudioEgressTest, ProcessAudioWithSineWave) {
   constexpr int kExpected = 10;
-  rtc::Event event;
+  Event event;
   int rtp_count = 0;
   RtpPacketReceived rtp;
   auto rtp_sent = [&](rtc::ArrayView<const uint8_t> packet, Unused) {
@@ -193,7 +193,7 @@ TEST_F(AudioEgressTest, ProcessAudioWithSineWave) {
 
 TEST_F(AudioEgressTest, SkipAudioEncodingAfterStopSend) {
   constexpr int kExpected = 10;
-  rtc::Event event;
+  Event event;
   int rtp_count = 0;
   auto rtp_sent = [&](rtc::ArrayView<const uint8_t> , Unused) {
     if (++rtp_count == kExpected) {
@@ -257,7 +257,7 @@ TEST_F(AudioEgressTest, SendDTMF) {
   
   egress_->SendTelephoneEvent(kEvent, kDurationMs);
 
-  rtc::Event event;
+  Event event;
   int dtmf_count = 0;
   auto is_dtmf = [&](RtpPacketReceived& rtp) {
     return (rtp.PayloadType() == kPayloadType &&
@@ -294,7 +294,7 @@ TEST_F(AudioEgressTest, TestAudioInputLevelAndEnergyDuration) {
   
   
   constexpr int kExpected = 6;
-  rtc::Event event;
+  Event event;
   int rtp_count = 0;
   auto rtp_sent = [&](rtc::ArrayView<const uint8_t> , Unused) {
     if (++rtp_count == kExpected) {

@@ -25,7 +25,7 @@ bool NullSocketServer::Wait(TimeDelta max_wait_duration,
   
   
   
-  event_.Wait(max_wait_duration, rtc::Event::kForever);
+  event_.Wait(max_wait_duration, Event::kForever);
   return true;
 }
 

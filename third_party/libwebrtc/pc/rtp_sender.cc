@@ -372,7 +372,7 @@ RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
   
   
   
-  std::unique_ptr<rtc::Event> done_event = std::make_unique<rtc::Event>();
+  std::unique_ptr<Event> done_event = std::make_unique<Event>();
   SetParametersInternal(
       parameters,
       [done = done_event.get(), &result](RTCError error) {
@@ -380,7 +380,7 @@ RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
         done->Set();
       },
       true);
-  done_event->Wait(rtc::Event::kForever);
+  done_event->Wait(Event::kForever);
   last_transaction_id_.reset();
   return result;
 }

@@ -158,7 +158,7 @@ TEST_P(SimulatedRealTimeControllerConformanceTest,
   
   
   ExecutionOrderKeeper execution_order;
-  rtc::Event event;
+  Event event;
   task_queue->PostTask([&]() { execution_order.Executed(1); });
   task_queue->PostTask([&]() {
     execution_order.Executed(2);

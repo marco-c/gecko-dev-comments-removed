@@ -147,9 +147,9 @@ void RtcEventLogImpl::StopLogging() {
   
   
   
-  rtc::Event output_stopped;
+  Event output_stopped;
   StopLogging([&output_stopped]() { output_stopped.Set(); });
-  output_stopped.Wait(rtc::Event::kForever);
+  output_stopped.Wait(Event::kForever);
 
   RTC_DLOG(LS_INFO) << "WebRTC event log successfully stopped.";
 }

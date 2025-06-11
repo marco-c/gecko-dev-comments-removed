@@ -277,7 +277,7 @@ class RTCStatsCollector : public RefCountInterface {
   
   
   
-  rtc::Event network_report_event_;
+  Event network_report_event_;
 
   
   
