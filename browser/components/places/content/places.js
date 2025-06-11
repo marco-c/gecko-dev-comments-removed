@@ -321,10 +321,6 @@ var PlacesOrganizer = {
           case "OrganizerCommand:CloseWindow":
             window.close();
             break;
-          
-          case "searchFilter":
-            PlacesSearchBox.search(event.target.value);
-            break;
         }
         break;
       case "AppCommand":
@@ -1046,6 +1042,9 @@ var PlacesSearchBox = {
 
 
   init() {
+    this.searchFilter.addEventListener("MozInputSearch:search", e => {
+      this.search(e.target.value);
+    });
     this.updatePlaceholder();
   },
 
