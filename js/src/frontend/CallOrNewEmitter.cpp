@@ -265,11 +265,10 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
       
       return false;
     }
-    if (!bce_->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-    if (!bce_->emit1(JSOp::StrictEq)) {
+
+    ConstantCompareOperand operand(
+        ConstantCompareOperand::EncodedType::Undefined);
+    if (!bce_->emitUint16Operand(JSOp::StrictConstantEq, operand.rawValue())) {
       
       return false;
     }
