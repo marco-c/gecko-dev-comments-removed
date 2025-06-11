@@ -1,28 +1,34 @@
-use coremidi_sys::{
-    ItemCount, MIDIEndpointDispose, MIDIGetDestination, MIDIGetNumberOfDestinations,
-};
-
 use std::ops::Deref;
 
-use crate::{callback::BoxedCallback, object::Object, packets::PacketList};
+use coremidi_sys::{
+    ItemCount, MIDIEndpointDispose, MIDIEndpointRef, MIDIGetDestination,
+    MIDIGetNumberOfDestinations,
+};
 
-use super::Endpoint;
-
-
-
-
-
-
+use crate::endpoints::endpoint::Endpoint;
+use crate::Object;
 
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct Destination {
     pub(crate) endpoint: Endpoint,
 }
 
 impl Destination {
+    pub(crate) fn new(endpoint_ref: MIDIEndpointRef) -> Self {
+        Self {
+            endpoint: Endpoint::new(endpoint_ref),
+        }
+    }
+
     
     
     
@@ -30,12 +36,26 @@ impl Destination {
         let endpoint_ref = unsafe { MIDIGetDestination(index as ItemCount) };
         match endpoint_ref {
             0 => None,
-            _ => Some(Destination {
-                endpoint: Endpoint {
-                    object: Object(endpoint_ref),
-                },
-            }),
+            _ => Some(Self::new(endpoint_ref)),
         }
+    }
+}
+
+impl Clone for Destination {
+    fn clone(&self) -> Self {
+        Self::new(self.endpoint.object.0)
+    }
+}
+
+impl AsRef<Object> for Destination {
+    fn as_ref(&self) -> &Object {
+        &self.endpoint.object
+    }
+}
+
+impl AsRef<Endpoint> for Destination {
+    fn as_ref(&self) -> &Endpoint {
+        &self.endpoint
     }
 }
 
@@ -114,20 +134,31 @@ impl Iterator for DestinationsIterator {
 
 
 
-#[derive(Debug)]
+
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct VirtualDestination {
-    
     pub(crate) endpoint: Endpoint,
-    pub(crate) callback: BoxedCallback<PacketList>,
 }
 
-impl VirtualDestination {}
+impl VirtualDestination {
+    pub(crate) fn new(endpoint_ref: MIDIEndpointRef) -> Self {
+        Self {
+            endpoint: Endpoint::new(endpoint_ref),
+        }
+    }
+}
 
 impl Deref for VirtualDestination {
     type Target = Endpoint;
 
     fn deref(&self) -> &Endpoint {
         &self.endpoint
+    }
+}
+
+impl From<Object> for VirtualDestination {
+    fn from(object: Object) -> Self {
+        Self::new(object.0)
     }
 }
 

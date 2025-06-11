@@ -1,25 +1,51 @@
-extern crate coremidi;
-
-use coremidi::{Client, PacketList, Properties, PropertyGetter, PropertySetter};
+use coremidi::{Client, EventList, Properties, Protocol};
 
 fn main() {
     let client = Client::new("Example Client").unwrap();
 
-    let callback = |packet_list: &PacketList| {
-        println!("{}", packet_list);
+    let callback = |event_list: &EventList| {
+        println!("{:?}", event_list);
     };
 
     
     let destination = client
-        .virtual_destination("Example Destination", callback)
+        .virtual_destination_with_protocol("Example Destination", Protocol::Midi20, callback)
         .unwrap();
 
-    println!("Created Virtual Destination...");
+    
+    
+
+    println!("Created Virtual Destination:");
+    println!("  Display Name: {}", destination.display_name().unwrap());
 
     
-    let name: String = Properties::name().value_from(&destination).unwrap();
-    println!("With Name: {}", name);
+
+    println!(
+        "  Protocol ID: {}",
+        destination
+            .get_property::<i32>(&Properties::protocol_id())
+            .unwrap()
+    );
+
+    destination
+        .set_property(&Properties::private(), true)
+        .unwrap();
+    println!(
+        "  Private: {}",
+        destination
+            .get_property::<bool>(&Properties::private())
+            .unwrap()
+    );
 
     
-    Properties::private().set_value(&destination, true).unwrap();
+
+    destination
+        .set_property_string("my-own-string-property", "my-value")
+        .unwrap();
+    println!(
+        "  My own string property: {}",
+        destination
+            .get_property_string("my-own-string-property")
+            .unwrap()
+    )
 }

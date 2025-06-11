@@ -1,15 +1,13 @@
 #![deny(missing_docs)]
 
-use ::errors::*;
-use ::backend::{
-    MidiInputPort as MidiInputPortImpl,
-    MidiInput as MidiInputImpl, 
-    MidiInputConnection as MidiInputConnectionImpl,
-    MidiOutputPort as MidiOutputPortImpl,
-    MidiOutput as MidiOutputImpl,
-    MidiOutputConnection as MidiOutputConnectionImpl
+use backend::{
+    MidiInput as MidiInputImpl, MidiInputConnection as MidiInputConnectionImpl,
+    MidiInputPort as MidiInputPortImpl, MidiOutput as MidiOutputImpl,
+    MidiOutputConnection as MidiOutputConnectionImpl, MidiOutputPort as MidiOutputPortImpl,
 };
-use ::Ignore;
+use errors::*;
+
+use crate::{backend, errors, Ignore, InitError};
 
 
 pub trait MidiIO {
@@ -20,10 +18,10 @@ pub trait MidiIO {
     
     
     fn ports(&self) -> Vec<Self::Port>;
-    
+
     
     fn port_count(&self) -> usize;
-    
+
     
     
     
@@ -40,7 +38,15 @@ pub trait MidiIO {
 
 #[derive(Clone, PartialEq)]
 pub struct MidiInputPort {
-    pub(crate) imp: MidiInputPortImpl
+    pub(crate) imp: MidiInputPortImpl,
+}
+
+impl MidiInputPort {
+    
+    
+    pub fn id(&self) -> String {
+        self.imp.id()
+    }
 }
 
 
@@ -50,19 +56,19 @@ pub type MidiInputPorts = Vec<MidiInputPort>;
 
 pub struct MidiInput {
     
-    imp: MidiInputImpl
+    imp: MidiInputImpl,
 }
 
 impl MidiInput {
     
     pub fn new(client_name: &str) -> Result<Self, InitError> {
-        MidiInputImpl::new(client_name).map(|imp| MidiInput { imp: imp })
+        MidiInputImpl::new(client_name).map(|imp| MidiInput { imp })
     }
-    
+
     
     
     pub fn ignore(&mut self, flags: Ignore) {
-       self.imp.ignore(flags);
+        self.imp.ignore(flags);
     }
 
     
@@ -72,12 +78,12 @@ impl MidiInput {
     pub fn ports(&self) -> MidiInputPorts {
         self.imp.ports_internal()
     }
-    
+
     
     pub fn port_count(&self) -> usize {
         self.imp.port_count()
     }
-    
+
     
     
     
@@ -85,7 +91,12 @@ impl MidiInput {
     pub fn port_name(&self, port: &MidiInputPort) -> Result<String, PortInfoError> {
         self.imp.port_name(&port.imp)
     }
+
     
+    pub fn find_port_by_id(&self, id: String) -> Option<MidiInputPort> {
+        self.ports().into_iter().find(|port| port.id() == id)
+    }
+
     
     
     
@@ -107,15 +118,26 @@ impl MidiInput {
     
     
     pub fn connect<F, T: Send>(
-        self, port: &MidiInputPort, port_name: &str, callback: F, data: T
+        self,
+        port: &MidiInputPort,
+        port_name: &str,
+        callback: F,
+        data: T,
     ) -> Result<MidiInputConnection<T>, ConnectError<MidiInput>>
-        where F: FnMut(u64, &[u8], &mut T) + Send + 'static {
+    where
+        F: FnMut(u64, &[u8], &mut T) + Send + 'static,
+    {
         match self.imp.connect(&port.imp, port_name, callback, data) {
-            Ok(imp) => Ok(MidiInputConnection { imp: imp }),
+            Ok(imp) => Ok(MidiInputConnection { imp }),
             Err(imp) => {
                 let kind = imp.kind();
-                Err(ConnectError::new(kind, MidiInput { imp: imp.into_inner() }))
-            } 
+                Err(ConnectError::new(
+                    kind,
+                    MidiInput {
+                        imp: imp.into_inner(),
+                    },
+                ))
+            }
         }
     }
 }
@@ -137,24 +159,34 @@ impl MidiIO for MidiInput {
 }
 
 #[cfg(unix)]
-impl<T: Send> ::os::unix::VirtualInput<T> for MidiInput {
+impl<T: Send> crate::os::unix::VirtualInput<T> for MidiInput {
     fn create_virtual<F>(
-        self, port_name: &str, callback: F, data: T
+        self,
+        port_name: &str,
+        callback: F,
+        data: T,
     ) -> Result<MidiInputConnection<T>, ConnectError<Self>>
-    where F: FnMut(u64, &[u8], &mut T) + Send + 'static {
+    where
+        F: FnMut(u64, &[u8], &mut T) + Send + 'static,
+    {
         match self.imp.create_virtual(port_name, callback, data) {
-            Ok(imp) => Ok(MidiInputConnection { imp: imp }),
+            Ok(imp) => Ok(MidiInputConnection { imp }),
             Err(imp) => {
                 let kind = imp.kind();
-                Err(ConnectError::new(kind, MidiInput { imp: imp.into_inner() }))
-            } 
+                Err(ConnectError::new(
+                    kind,
+                    MidiInput {
+                        imp: imp.into_inner(),
+                    },
+                ))
+            }
         }
     }
 }
 
 
 pub struct MidiInputConnection<T: 'static> {
-    imp: MidiInputConnectionImpl<T>
+    imp: MidiInputConnectionImpl<T>,
 }
 
 impl<T> MidiInputConnection<T> {
@@ -164,7 +196,7 @@ impl<T> MidiInputConnection<T> {
     
     pub fn close(self) -> (MidiInput, T) {
         let (imp, data) = self.imp.close();
-        (MidiInput { imp: imp }, data)
+        (MidiInput { imp }, data)
     }
 }
 
@@ -177,7 +209,15 @@ impl<T> MidiInputConnection<T> {
 
 #[derive(Clone, PartialEq)]
 pub struct MidiOutputPort {
-    pub(crate) imp: MidiOutputPortImpl
+    pub(crate) imp: MidiOutputPortImpl,
+}
+
+impl MidiOutputPort {
+    
+    
+    pub fn id(&self) -> String {
+        self.imp.id()
+    }
 }
 
 
@@ -186,13 +226,13 @@ pub type MidiOutputPorts = Vec<MidiOutputPort>;
 
 
 pub struct MidiOutput {
-    imp: MidiOutputImpl
+    imp: MidiOutputImpl,
 }
 
 impl MidiOutput {
     
     pub fn new(client_name: &str) -> Result<Self, InitError> {
-        MidiOutputImpl::new(client_name).map(|imp| MidiOutput { imp: imp })
+        MidiOutputImpl::new(client_name).map(|imp| MidiOutput { imp })
     }
 
     
@@ -202,12 +242,12 @@ impl MidiOutput {
     pub fn ports(&self) -> MidiOutputPorts {
         self.imp.ports_internal()
     }
-    
+
     
     pub fn port_count(&self) -> usize {
         self.imp.port_count()
     }
-    
+
     
     
     
@@ -215,6 +255,12 @@ impl MidiOutput {
     pub fn port_name(&self, port: &MidiOutputPort) -> Result<String, PortInfoError> {
         self.imp.port_name(&port.imp)
     }
+
+    
+    pub fn find_port_by_id(&self, id: String) -> Option<MidiOutputPort> {
+        self.ports().into_iter().find(|port| port.id() == id)
+    }
+
     
     
     
@@ -224,14 +270,22 @@ impl MidiOutput {
     
     
     
-    
-    pub fn connect(self, port: &MidiOutputPort, port_name: &str) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
+    pub fn connect(
+        self,
+        port: &MidiOutputPort,
+        port_name: &str,
+    ) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
         match self.imp.connect(&port.imp, port_name) {
-            Ok(imp) => Ok(MidiOutputConnection { imp: imp }),
+            Ok(imp) => Ok(MidiOutputConnection { imp }),
             Err(imp) => {
                 let kind = imp.kind();
-                Err(ConnectError::new(kind, MidiOutput { imp: imp.into_inner() }))
-            } 
+                Err(ConnectError::new(
+                    kind,
+                    MidiOutput {
+                        imp: imp.into_inner(),
+                    },
+                ))
+            }
         }
     }
 }
@@ -253,30 +307,40 @@ impl MidiIO for MidiOutput {
 }
 
 #[cfg(unix)]
-impl ::os::unix::VirtualOutput for MidiOutput {
-    fn create_virtual(self, port_name: &str) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
+impl crate::os::unix::VirtualOutput for MidiOutput {
+    fn create_virtual(
+        self,
+        port_name: &str,
+    ) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
         match self.imp.create_virtual(port_name) {
-            Ok(imp) => Ok(MidiOutputConnection { imp: imp }),
+            Ok(imp) => Ok(MidiOutputConnection { imp }),
             Err(imp) => {
                 let kind = imp.kind();
-                Err(ConnectError::new(kind, MidiOutput { imp: imp.into_inner() }))
-            } 
+                Err(ConnectError::new(
+                    kind,
+                    MidiOutput {
+                        imp: imp.into_inner(),
+                    },
+                ))
+            }
         }
     }
 }
 
 
 pub struct MidiOutputConnection {
-   imp: MidiOutputConnectionImpl
+    imp: MidiOutputConnectionImpl,
 }
 
 impl MidiOutputConnection {
     
     
     pub fn close(self) -> MidiOutput {
-        MidiOutput { imp: self.imp.close() }
+        MidiOutput {
+            imp: self.imp.close(),
+        }
     }
-    
+
     
     
     pub fn send(&mut self, message: &[u8]) -> Result<(), SendError> {
@@ -294,7 +358,8 @@ mod tests {
         fn is_send<T: Send>() {}
         is_send::<MidiInput>();
         is_send::<MidiOutput>();
-        #[cfg(not(target_arch = "wasm32"))] {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
             
             
             

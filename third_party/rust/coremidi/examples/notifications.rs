@@ -1,13 +1,9 @@
-extern crate core_foundation;
-extern crate coremidi;
-
+use core_foundation::runloop::CFRunLoop;
 use coremidi::{Client, Notification};
-
-use core_foundation::runloop::{kCFRunLoopDefaultMode, CFRunLoopRunInMode};
 
 fn main() {
     println!("Logging MIDI Client Notifications");
-    println!("Will Quit Automatically After 10 Seconds");
+    println!("Will Quit Automatically After 60 Seconds");
     println!();
 
     let _client = Client::new_with_notifications("example-client", print_notification).unwrap();
@@ -23,9 +19,10 @@ fn main() {
     
     
     
-    unsafe { CFRunLoopRunInMode(kCFRunLoopDefaultMode, 10.0, 0) };
+    println!("=== Press Ctrl-C to stop ===");
+    CFRunLoop::run_current();
 }
 
 fn print_notification(notification: &Notification) {
-    println!("Received Notification: {:?} \r", notification);
+    println!("{:?}", notification);
 }

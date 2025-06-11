@@ -1,27 +1,34 @@
-use ::ConnectError;
-use ::{MidiInputConnection, MidiOutputConnection};
+use crate::{ConnectError, MidiInputConnection, MidiOutputConnection};
 
 
 
 
 
-pub trait VirtualInput<T: Send> where Self: Sized {
+pub trait VirtualInput<T: Send>
+where
+    Self: Sized,
+{
     
     
     
     fn create_virtual<F>(
-        self, port_name: &str, callback: F, data: T
+        self,
+        port_name: &str,
+        callback: F,
+        data: T,
     ) -> Result<MidiInputConnection<T>, ConnectError<Self>>
-    where F: FnMut(u64, &[u8], &mut T) + Send + 'static;
+    where
+        F: FnMut(u64, &[u8], &mut T) + Send + 'static;
 }
 
 
 
-pub trait VirtualOutput where Self: Sized {
+pub trait VirtualOutput
+where
+    Self: Sized,
+{
     
     
     
-    fn create_virtual(
-        self, port_name: &str
-    ) -> Result<MidiOutputConnection, ConnectError<Self>>;
+    fn create_virtual(self, port_name: &str) -> Result<MidiOutputConnection, ConnectError<Self>>;
 }

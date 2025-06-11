@@ -17,12 +17,20 @@ include!("generated.rs");
 pub unsafe fn MIDIPacketNext(pkt: *const MIDIPacket) -> *const MIDIPacket {
     
     
+    
     let ptr = ptr::addr_of!((*pkt).data) as *const u8;
-    let offset = (*pkt).length as isize;
+    let ptr_length = ptr::addr_of!((*pkt).length) as *const u16;
     if cfg!(any(target_arch = "arm", target_arch = "aarch64")) {
         
+        
+        
+        let offset = ptr_length.read() as isize;
         ((ptr.offset(offset + 3) as usize) & !(3usize)) as *const MIDIPacket
     } else {
+        
+        
+        
+        let offset = ptr_length.read_unaligned() as isize;
         ptr.offset(offset) as *const MIDIPacket
     }
 }
@@ -31,14 +39,10 @@ pub unsafe fn MIDIPacketNext(pkt: *const MIDIPacket) -> *const MIDIPacket {
 pub unsafe fn MIDIEventPacketNext(pkt: *const MIDIEventPacket) -> *const MIDIEventPacket {
     
     
+    
     let ptr = ptr::addr_of!((*pkt).words) as *const u8;
     let offset = (((*pkt).wordCount as usize) * mem::size_of::<u32>()) as isize;
-    if cfg!(any(target_arch = "arm", target_arch = "aarch64")) {
-        
-        ((ptr.offset(offset + 3) as usize) & !(3usize)) as *const MIDIEventPacket
-    } else {
-        ptr.offset(offset) as *const MIDIEventPacket
-    }
+    ptr.offset(offset) as *const MIDIEventPacket
 }
 
 #[allow(dead_code)]
@@ -96,7 +100,8 @@ mod tests {
             );
 
             let second_packet = MIDIPacketNext(first_packet);
-            let len = (*second_packet).length as usize;
+            let ptr_length = ptr::addr_of!((*second_packet).length) as *const u16;
+            let len = ptr_length.read_unaligned() as usize;
             assert_eq!(
                 &(*second_packet).data[0..len],
                 &[0x90, 0x41, 0x7f]

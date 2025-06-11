@@ -1,24 +1,57 @@
+use block::RcBlock;
 use core_foundation::{
     base::{OSStatus, TCFType},
     string::CFString,
 };
+use std::cell::RefCell;
+use std::{mem::MaybeUninit, ops::Deref, os::raw::c_void, ptr};
 
 use coremidi_sys::{
-    MIDIClientCreate, MIDIClientDispose, MIDIDestinationCreate, MIDIInputPortCreate,
-    MIDINotification, MIDIOutputPortCreate, MIDIPacketList, MIDISourceCreate,
+    MIDIClientCreate, MIDIClientCreateWithBlock, MIDIClientDispose, MIDIDestinationCreateWithBlock,
+    MIDIDestinationCreateWithProtocol, MIDIEventList, MIDIInputPortCreateWithBlock,
+    MIDIInputPortCreateWithProtocol, MIDINotification, MIDINotifyBlock, MIDIOutputPortCreate,
+    MIDIPacketList, MIDIReadBlock, MIDIReceiveBlock, MIDISourceCreate,
 };
 
-use std::{mem::MaybeUninit, ops::Deref, os::raw::c_void, panic::catch_unwind, ptr};
-
+use crate::ports::InputPortWithContext;
 use crate::{
-    callback::BoxedCallback,
-    endpoints::{destinations::VirtualDestination, sources::VirtualSource, Endpoint},
+    endpoints::{destinations::VirtualDestination, sources::VirtualSource},
     notifications::Notification,
     object::Object,
     packets::PacketList,
-    ports::{InputPort, OutputPort, Port},
-    result_from_status,
+    ports::{InputPort, OutputPort},
+    result_from_status, EventList, Protocol,
 };
+
+pub enum NotifyCallback {
+    ByReference(RefCell<Box<dyn FnMut(&Notification) + Send + 'static>>),
+    ByOwnership(RefCell<Box<dyn FnMut(Notification) + Send + 'static>>),
+}
+
+impl NotifyCallback {
+    pub fn by_reference<F>(callback: F) -> Self
+    where
+        F: FnMut(&Notification) + Send + 'static,
+    {
+        Self::ByReference(RefCell::new(Box::new(callback)))
+    }
+
+    pub fn by_ownership<F>(callback: F) -> Self
+    where
+        F: FnMut(Notification) + Send + 'static,
+    {
+        Self::ByOwnership(RefCell::new(Box::new(callback)))
+    }
+}
+
+impl<F> From<F> for NotifyCallback
+where
+    F: FnMut(&Notification) + Send + 'static,
+{
+    fn from(callback: F) -> Self {
+        Self::by_reference(callback)
+    }
+}
 
 
 
@@ -31,9 +64,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Client {
-    
     object: Object,
-    callback: BoxedCallback<Notification>,
 }
 
 impl Client {
@@ -46,26 +77,25 @@ impl Client {
     
     
     
+    
     pub fn new_with_notifications<F>(name: &str, callback: F) -> Result<Client, OSStatus>
     where
-        F: FnMut(&Notification) + Send + 'static,
+        F: Into<NotifyCallback>,
     {
         let client_name = CFString::new(name);
         let mut client_ref = MaybeUninit::uninit();
-        let mut boxed_callback = BoxedCallback::new(callback);
+        let notify_block = Self::notify_block(callback.into());
         let status = unsafe {
-            MIDIClientCreate(
+            MIDIClientCreateWithBlock(
                 client_name.as_concrete_TypeRef(),
-                Some(Self::notify_proc as extern "C" fn(_, _)),
-                boxed_callback.raw_ptr(),
                 client_ref.as_mut_ptr(),
+                notify_block.deref() as *const _ as MIDINotifyBlock,
             )
         };
         result_from_status(status, || {
             let client_ref = unsafe { client_ref.assume_init() };
             Client {
                 object: Object(client_ref),
-                callback: boxed_callback,
             }
         })
     }
@@ -88,7 +118,6 @@ impl Client {
             let client_ref = unsafe { client_ref.assume_init() };
             Client {
                 object: Object(client_ref),
-                callback: BoxedCallback::null(),
             }
         })
     }
@@ -108,14 +137,12 @@ impl Client {
         };
         result_from_status(status, || {
             let port_ref = unsafe { port_ref.assume_init() };
-            OutputPort {
-                port: Port {
-                    object: Object(port_ref),
-                },
-            }
+            OutputPort::new(port_ref)
         })
     }
 
+    
+    
     
     
     
@@ -125,24 +152,49 @@ impl Client {
     {
         let port_name = CFString::new(name);
         let mut port_ref = MaybeUninit::uninit();
-        let mut box_callback = BoxedCallback::new(callback);
+        let read_block = Self::read_block(callback);
         let status = unsafe {
-            MIDIInputPortCreate(
+            MIDIInputPortCreateWithBlock(
                 self.object.0,
                 port_name.as_concrete_TypeRef(),
-                Some(Self::read_proc as extern "C" fn(_, _, _)),
-                box_callback.raw_ptr(),
                 port_ref.as_mut_ptr(),
+                read_block.deref() as *const _ as MIDIReadBlock,
             )
         };
         result_from_status(status, || {
             let port_ref = unsafe { port_ref.assume_init() };
-            InputPort {
-                port: Port {
-                    object: Object(port_ref),
-                },
-                callback: box_callback,
-            }
+            InputPort::new(port_ref)
+        })
+    }
+
+    
+    
+    
+    
+    pub fn input_port_with_protocol<T, F>(
+        &self,
+        name: &str,
+        protocol: Protocol,
+        callback: F,
+    ) -> Result<InputPortWithContext<T>, OSStatus>
+    where
+        F: FnMut(&EventList, &mut T) + Send + 'static,
+    {
+        let port_name = CFString::new(name);
+        let mut port_ref = MaybeUninit::uninit();
+        let receive_block = Self::receive_block::<T, _>(callback);
+        let status = unsafe {
+            MIDIInputPortCreateWithProtocol(
+                self.object.0,
+                port_name.as_concrete_TypeRef(),
+                protocol.into(),
+                port_ref.as_mut_ptr(),
+                receive_block.deref() as *const _ as MIDIReceiveBlock,
+            )
+        };
+        result_from_status(status, || {
+            let port_ref = unsafe { port_ref.assume_init() };
+            InputPortWithContext::<T>::new(port_ref)
         })
     }
 
@@ -160,15 +212,13 @@ impl Client {
             )
         };
         result_from_status(status, || {
-            let virtual_source = unsafe { virtual_source.assume_init() };
-            VirtualSource {
-                endpoint: Endpoint {
-                    object: Object(virtual_source),
-                },
-            }
+            let endpoint_ref = unsafe { virtual_source.assume_init() };
+            VirtualSource::new(endpoint_ref)
         })
     }
 
+    
+    
     
     
     
@@ -182,44 +232,93 @@ impl Client {
     {
         let virtual_destination_name = CFString::new(name);
         let mut virtual_destination = MaybeUninit::uninit();
-        let mut boxed_callback = BoxedCallback::new(callback);
+        let read_block = Self::read_block(callback);
         let status = unsafe {
-            MIDIDestinationCreate(
+            MIDIDestinationCreateWithBlock(
                 self.object.0,
                 virtual_destination_name.as_concrete_TypeRef(),
-                Some(Self::read_proc as extern "C" fn(_, _, _)),
-                boxed_callback.raw_ptr(),
                 virtual_destination.as_mut_ptr(),
+                read_block.deref() as *const _ as MIDIReadBlock,
             )
         };
         result_from_status(status, || {
-            let virtual_destination = unsafe { virtual_destination.assume_init() };
-            VirtualDestination {
-                endpoint: Endpoint {
-                    object: Object(virtual_destination),
-                },
-                callback: boxed_callback,
-            }
+            let endpoint_ref = unsafe { virtual_destination.assume_init() };
+            VirtualDestination::new(endpoint_ref)
         })
     }
 
-    extern "C" fn notify_proc(notification_ptr: *const MIDINotification, ref_con: *mut c_void) {
-        let _ = catch_unwind(|| unsafe {
-            if let Ok(notification) = Notification::from(&*notification_ptr) {
-                BoxedCallback::call_from_raw_ptr(ref_con, &notification)
-            }
-        });
+    
+    
+    
+    
+    pub fn virtual_destination_with_protocol<F>(
+        &self,
+        name: &str,
+        protocol: Protocol,
+        mut callback: F,
+    ) -> Result<VirtualDestination, OSStatus>
+    where
+        F: FnMut(&EventList) + Send + 'static,
+    {
+        let virtual_destination_name = CFString::new(name);
+        let mut virtual_destination = MaybeUninit::uninit();
+        let receive_block =
+            Self::receive_block::<(), _>(move |event_list, _| (callback)(event_list));
+        let status = unsafe {
+            MIDIDestinationCreateWithProtocol(
+                self.object.0,
+                virtual_destination_name.as_concrete_TypeRef(),
+                protocol.into(),
+                virtual_destination.as_mut_ptr(),
+                receive_block.deref() as *const _ as MIDIReceiveBlock,
+            )
+        };
+        result_from_status(status, || {
+            let endpoint_ref = unsafe { virtual_destination.assume_init() };
+            VirtualDestination::new(endpoint_ref)
+        })
     }
 
-    extern "C" fn read_proc(
-        pktlist: *const MIDIPacketList,
-        read_proc_ref_con: *mut c_void,
-        _src_conn_ref_con: *mut c_void,
-    ) {
-        let _ = catch_unwind(|| unsafe {
-            let packet_list = &*(pktlist as *const PacketList);
-            BoxedCallback::call_from_raw_ptr(read_proc_ref_con, packet_list);
+    fn notify_block(callback: NotifyCallback) -> RcBlock<(*const MIDINotification,), ()> {
+        let notify_block = block::ConcreteBlock::new(move |message: *const MIDINotification| {
+            let message = unsafe { &*message };
+            if let Ok(notification) = Notification::try_from(message) {
+                match &callback {
+                    NotifyCallback::ByReference(f) => (f.borrow_mut())(&notification),
+                    NotifyCallback::ByOwnership(f) => (f.borrow_mut())(notification),
+                }
+            }
         });
+        notify_block.copy()
+    }
+
+    fn read_block<F>(callback: F) -> RcBlock<(*const MIDIPacketList, *mut c_void), ()>
+    where
+        F: FnMut(&PacketList) + Send + 'static,
+    {
+        let callback = RefCell::new(callback);
+        let read_block = block::ConcreteBlock::new(
+            move |pktlist: *const MIDIPacketList, _src_conn_ref_con: *mut c_void| {
+                let packet_list = unsafe { &*(pktlist as *const PacketList) };
+                (callback.borrow_mut())(packet_list);
+            },
+        );
+        read_block.copy()
+    }
+
+    fn receive_block<T, F>(callback: F) -> RcBlock<(*const MIDIEventList, *mut c_void), ()>
+    where
+        F: FnMut(&EventList, &mut T) + Send + 'static,
+    {
+        let callback = RefCell::new(callback);
+        let receive_block = block::ConcreteBlock::new(
+            move |evtlist: *const MIDIEventList, src_conn_ref_con: *mut c_void| {
+                let event_list = unsafe { &*(evtlist as *const EventList) };
+                let context = unsafe { &mut *(src_conn_ref_con as *mut T) };
+                (callback.borrow_mut())(event_list, context);
+            },
+        );
+        receive_block.copy()
     }
 }
 

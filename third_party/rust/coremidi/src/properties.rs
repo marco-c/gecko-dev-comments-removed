@@ -1,11 +1,28 @@
-use std::mem::MaybeUninit;
-
 use core_foundation::{
     base::{CFGetRetainCount, CFIndex, CFTypeRef, OSStatus, TCFType},
     string::{CFString, CFStringRef},
 };
+use std::mem::MaybeUninit;
 
-use coremidi_sys::*;
+use coremidi_sys::{
+    kMIDIPropertyAdvanceScheduleTimeMuSec, kMIDIPropertyCanRoute, kMIDIPropertyConnectionUniqueID,
+    kMIDIPropertyDeviceID, kMIDIPropertyDisplayName, kMIDIPropertyDriverDeviceEditorApp,
+    kMIDIPropertyDriverOwner, kMIDIPropertyDriverVersion, kMIDIPropertyIsBroadcast,
+    kMIDIPropertyIsDrumMachine, kMIDIPropertyIsEffectUnit, kMIDIPropertyIsEmbeddedEntity,
+    kMIDIPropertyIsMixer, kMIDIPropertyIsSampler, kMIDIPropertyManufacturer,
+    kMIDIPropertyMaxReceiveChannels, kMIDIPropertyMaxSysExSpeed, kMIDIPropertyMaxTransmitChannels,
+    kMIDIPropertyModel, kMIDIPropertyName, kMIDIPropertyOffline, kMIDIPropertyPanDisruptsStereo,
+    kMIDIPropertyPrivate, kMIDIPropertyProtocolID, kMIDIPropertyReceiveChannels,
+    kMIDIPropertyReceivesBankSelectLSB, kMIDIPropertyReceivesBankSelectMSB,
+    kMIDIPropertyReceivesClock, kMIDIPropertyReceivesMTC, kMIDIPropertyReceivesNotes,
+    kMIDIPropertyReceivesProgramChanges, kMIDIPropertySingleRealtimeEntity,
+    kMIDIPropertySupportsGeneralMIDI, kMIDIPropertySupportsMMC, kMIDIPropertySupportsShowControl,
+    kMIDIPropertyTransmitChannels, kMIDIPropertyTransmitsBankSelectLSB,
+    kMIDIPropertyTransmitsBankSelectMSB, kMIDIPropertyTransmitsClock, kMIDIPropertyTransmitsMTC,
+    kMIDIPropertyTransmitsNotes, kMIDIPropertyTransmitsProgramChanges, kMIDIPropertyUniqueID,
+    MIDIObjectGetIntegerProperty, MIDIObjectGetStringProperty, MIDIObjectSetIntegerProperty,
+    MIDIObjectSetStringProperty, SInt32,
+};
 
 use crate::{object::Object, result_from_status, unit_result_from_status};
 
@@ -318,16 +335,6 @@ impl Properties {
     }
 
     
-    pub fn transmits_bank_select_msb() -> BooleanProperty {
-        BooleanProperty::from_constant_string_ref(unsafe { kMIDIPropertyTransmitsBankSelectMSB })
-    }
-
-    
-    pub fn transmits_bank_select_lsb() -> BooleanProperty {
-        BooleanProperty::from_constant_string_ref(unsafe { kMIDIPropertyTransmitsBankSelectLSB })
-    }
-
-    
     pub fn transmits_clock() -> BooleanProperty {
         BooleanProperty::from_constant_string_ref(unsafe { kMIDIPropertyTransmitsClock })
     }
@@ -345,6 +352,16 @@ impl Properties {
     
     pub fn transmits_program_changes() -> BooleanProperty {
         BooleanProperty::from_constant_string_ref(unsafe { kMIDIPropertyTransmitsProgramChanges })
+    }
+
+    
+    pub fn transmits_bank_select_msb() -> BooleanProperty {
+        BooleanProperty::from_constant_string_ref(unsafe { kMIDIPropertyTransmitsBankSelectMSB })
+    }
+
+    
+    pub fn transmits_bank_select_lsb() -> BooleanProperty {
+        BooleanProperty::from_constant_string_ref(unsafe { kMIDIPropertyTransmitsBankSelectLSB })
     }
 
     
@@ -396,19 +413,26 @@ impl Properties {
     pub fn display_name() -> StringProperty {
         StringProperty::from_constant_string_ref(unsafe { kMIDIPropertyDisplayName })
     }
+
+    
+    pub fn protocol_id() -> IntegerProperty {
+        IntegerProperty::from_constant_string_ref(unsafe { kMIDIPropertyProtocolID })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::{endpoints::destinations::VirtualDestination, Client};
+    use crate::{endpoints::destinations::VirtualDestination, Client, Protocol};
 
     const NAME_ORIG: &str = "A";
 
     fn setup() -> (Client, VirtualDestination) {
         let client = Client::new("Test Client").unwrap();
-        let dest = client.virtual_destination(NAME_ORIG, |_| ()).unwrap();
+        let dest = client
+            .virtual_destination_with_protocol(NAME_ORIG, Protocol::Midi10, |_| ())
+            .unwrap();
         (client, dest)
     }
 
@@ -502,7 +526,7 @@ mod tests {
             property.set_value(&dest, true).unwrap();
             let value: bool = property.value_from(&dest).unwrap();
 
-            assert_eq!(value, true);
+            assert!(value);
         }
     }
 }
