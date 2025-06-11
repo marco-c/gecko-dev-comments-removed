@@ -10456,11 +10456,7 @@ void nsHttpChannel::SetDoNotTrack() {
 
 
 
-  nsCOMPtr<nsILoadContext> loadContext;
-  NS_QueryNotificationCallbacks(this, loadContext);
-
-  if ((loadContext && loadContext->UseTrackingProtection()) ||
-      StaticPrefs::privacy_donottrackheader_enabled()) {
+  if (StaticPrefs::privacy_donottrackheader_enabled()) {
     DebugOnly<nsresult> rv =
         mRequestHead.SetHeader(nsHttp::DoNotTrack, "1"_ns, false);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
