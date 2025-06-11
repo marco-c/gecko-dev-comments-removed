@@ -851,7 +851,7 @@ void GfxInfo::V4L2ProbeDevice(nsCString& dev) {
   }
 }
 
-const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
+const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
   if (!sDriverInfo->Length()) {
     
     
@@ -1240,7 +1240,7 @@ bool GfxInfo::DoesDriverVendorMatch(const nsAString& aBlocklistVendor,
 
 nsresult GfxInfo::GetFeatureStatusImpl(
     int32_t aFeature, int32_t* aStatus, nsAString& aSuggestedDriverVersion,
-    const nsTArray<RefPtr<GfxDriverInfo>>& aDriverInfo, nsACString& aFailureId,
+    const nsTArray<GfxDriverInfo>& aDriverInfo, nsACString& aFailureId,
     OperatingSystem* aOS )
 
 {
@@ -1551,16 +1551,6 @@ NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString& aDriverVersion) {
 
 NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion) {
   
-  return NS_OK;
-}
-
-NS_IMETHODIMP GfxInfo::SpoofOSVersionEx(uint32_t aMajor, uint32_t aMinor,
-                                        uint32_t aBuild, uint32_t aRevision) {
-  
-  
-#  ifdef DEBUG
-  mOSVersionEx = GfxVersionEx(aMajor, aMinor, aBuild, aRevision);
-#  endif
   return NS_OK;
 }
 
