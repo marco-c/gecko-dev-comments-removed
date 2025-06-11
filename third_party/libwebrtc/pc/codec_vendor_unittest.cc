@@ -36,7 +36,7 @@ Codec CreateRedAudioCodec(absl::string_view encoding_id) {
 
 const Codec kAudioCodecs1[] = {CreateAudioCodec(111, "opus", 48000, 2),
                                CreateRedAudioCodec("111"),
-                               CreateAudioCodec(102, "iLBC", 8000, 1),
+                               CreateAudioCodec(102, "G722", 16000, 1),
                                CreateAudioCodec(0, "PCMU", 8000, 1),
                                CreateAudioCodec(8, "PCMA", 8000, 1),
                                CreateAudioCodec(107, "CN", 48000, 1)};
@@ -44,11 +44,11 @@ const Codec kAudioCodecs1[] = {CreateAudioCodec(111, "opus", 48000, 2),
 const Codec kAudioCodecs2[] = {
     CreateAudioCodec(126, "foo", 16000, 1),
     CreateAudioCodec(0, "PCMU", 8000, 1),
-    CreateAudioCodec(127, "iLBC", 8000, 1),
+    CreateAudioCodec(127, "G722", 16000, 1),
 };
 
 const Codec kAudioCodecsAnswer[] = {
-    CreateAudioCodec(102, "iLBC", 8000, 1),
+    CreateAudioCodec(102, "G722", 16000, 1),
     CreateAudioCodec(0, "PCMU", 8000, 1),
 };
 
@@ -65,9 +65,9 @@ TEST(CodecVendorTest, TestSetAudioCodecs) {
   const std::vector<Codec> sendrecv_codecs = MAKE_VECTOR(kAudioCodecsAnswer);
   CodecList no_codecs;
 
-  RTC_CHECK_EQ(send_codecs[2].name, "iLBC")
+  RTC_CHECK_EQ(send_codecs[2].name, "G722")
       << "Please don't change shared test data!";
-  RTC_CHECK_EQ(recv_codecs[2].name, "iLBC")
+  RTC_CHECK_EQ(recv_codecs[2].name, "G722")
       << "Please don't change shared test data!";
   
   
@@ -75,7 +75,7 @@ TEST(CodecVendorTest, TestSetAudioCodecs) {
 
   
   
-  recv_codecs[2].name = "ilbc";
+  recv_codecs[1].name = "pcmu";
 
   
   codec_vendor.set_audio_codecs(CodecList::CreateFromTrustedData(send_codecs),

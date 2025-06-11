@@ -80,7 +80,6 @@ class AudioEncoder {
     kPcmA = 3,
     kPcmU = 4,
     kG722 = 5,
-    kIlbc = 6,
 
     
     

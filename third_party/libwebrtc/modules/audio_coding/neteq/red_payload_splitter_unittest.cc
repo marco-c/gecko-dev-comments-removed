@@ -304,7 +304,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   decoder_database.RegisterPayload(1, SdpAudioFormat("pcmu", 8000, 1));
   decoder_database.RegisterPayload(2,
                                    SdpAudioFormat("telephone-event", 8000, 1));
-  decoder_database.RegisterPayload(3, SdpAudioFormat("ilbc", 8000, 1));
+  decoder_database.RegisterPayload(1, SdpAudioFormat("pcma", 8000, 1));
 
   RedPayloadSplitter splitter;
   splitter.CheckRedPayloads(&packet_list, decoder_database);
