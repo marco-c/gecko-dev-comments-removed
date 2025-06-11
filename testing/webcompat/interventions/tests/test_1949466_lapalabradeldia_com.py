@@ -29,12 +29,8 @@ async def letters_sometimes_vanish(client):
     
     
     
-    client.execute_script(
-        """
-       const s = document.createElement("style");
-       s.textContent = "#board .react-card-flip * { border:0 !important; animation-duration:0.5s !important; }";
-       document.head.appendChild(s);
-    """
+    client.add_stylesheet(
+        "#board .react-card-flip * { border:0 !important; animation-duration:0.5s !important; }"
     )
 
     
