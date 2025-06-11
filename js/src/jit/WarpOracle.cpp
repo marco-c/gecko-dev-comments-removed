@@ -1020,14 +1020,7 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
   }
 
   RootedFunction targetFunction(cx_, inlineData->target);
-  if (!TrialInliner::canInline(cx_, targetFunction, script_, loc)) {
-    return false;
-  }
-
-  
-  
-  
-  if (!targetFunction->nonLazyScript()->hasBaselineScript()) {
+  if (!TrialInliner::canInline(targetFunction, script_, loc)) {
     return false;
   }
 
