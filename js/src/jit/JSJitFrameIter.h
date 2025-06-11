@@ -250,14 +250,6 @@ class JSJitFrameIter {
   
   
   inline uint32_t baselineFrameNumValueSlots() const;
-
-  
-  
-#ifdef DEBUG
-  bool verifyReturnAddressUsingNativeToBytecodeMap();
-#else
-  bool verifyReturnAddressUsingNativeToBytecodeMap() { return true; }
-#endif
 };
 
 class JitcodeGlobalTable;

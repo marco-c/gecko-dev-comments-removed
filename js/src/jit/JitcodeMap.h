@@ -196,11 +196,6 @@ class JitcodeGlobalEntry : public JitCodeRange {
   
   
   
-  
-  
-  [[nodiscard]] bool callStackAtAddr(JSRuntime* rt, void* ptr,
-                                     BytecodeLocationVector& results,
-                                     uint32_t* depth) const;
   uint32_t callStackAtAddr(JSRuntime* rt, void* ptr, const char** results,
                            uint32_t maxResults) const;
 };
@@ -267,9 +262,6 @@ class IonEntry : public JitcodeGlobalEntry {
 
   void* canonicalNativeAddrFor(void* ptr) const;
 
-  [[nodiscard]] bool callStackAtAddr(void* ptr, BytecodeLocationVector& results,
-                                     uint32_t* depth) const;
-
   uint32_t callStackAtAddr(void* ptr, const char** results,
                            uint32_t maxResults) const;
 
@@ -295,10 +287,6 @@ class IonICEntry : public JitcodeGlobalEntry {
   void* rejoinAddr() const { return rejoinAddr_; }
 
   void* canonicalNativeAddrFor(void* ptr) const;
-
-  [[nodiscard]] bool callStackAtAddr(JSRuntime* rt, void* ptr,
-                                     BytecodeLocationVector& results,
-                                     uint32_t* depth) const;
 
   uint32_t callStackAtAddr(JSRuntime* rt, void* ptr, const char** results,
                            uint32_t maxResults) const;
@@ -329,9 +317,6 @@ class BaselineEntry : public JitcodeGlobalEntry {
   const char* str() const { return str_.get(); }
 
   void* canonicalNativeAddrFor(void* ptr) const;
-
-  [[nodiscard]] bool callStackAtAddr(void* ptr, BytecodeLocationVector& results,
-                                     uint32_t* depth) const;
 
   uint32_t callStackAtAddr(void* ptr, const char** results,
                            uint32_t maxResults) const;
@@ -376,9 +361,6 @@ class BaselineInterpreterEntry : public JitcodeGlobalEntry {
 
   void* canonicalNativeAddrFor(void* ptr) const;
 
-  [[nodiscard]] bool callStackAtAddr(void* ptr, BytecodeLocationVector& results,
-                                     uint32_t* depth) const;
-
   uint32_t callStackAtAddr(void* ptr, const char** results,
                            uint32_t maxResults) const;
 
@@ -395,12 +377,6 @@ class DummyEntry : public JitcodeGlobalEntry {
 
   void* canonicalNativeAddrFor(JSRuntime* rt, void* ptr) const {
     return nullptr;
-  }
-
-  [[nodiscard]] bool callStackAtAddr(JSRuntime* rt, void* ptr,
-                                     BytecodeLocationVector& results,
-                                     uint32_t* depth) const {
-    return true;
   }
 
   uint32_t callStackAtAddr(JSRuntime* rt, void* ptr, const char** results,
