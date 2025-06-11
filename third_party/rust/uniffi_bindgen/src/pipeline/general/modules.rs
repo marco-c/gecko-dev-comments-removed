@@ -1,0 +1,13 @@
+
+
+
+
+use super::*;
+
+pub fn pass(module: &mut Module) -> Result<()> {
+    module.string_type_node = TypeNode {
+        ty: Type::String,
+        ..TypeNode::default()
+    };
+    Ok(())
+}

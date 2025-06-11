@@ -4,7 +4,7 @@
 
 use std::{any::Any, fmt, hash::Hash};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use indexmap::{IndexMap, IndexSet};
 
 use super::Value;
@@ -107,6 +107,32 @@ pub trait Node: fmt::Debug + Any {
         Self: Sized,
     {
         (self as &mut dyn Node).try_visit_descendents_recurse_mut(&mut visitor)
+    }
+
+    
+    fn has_descendant<T: Node>(&self, mut matcher: impl FnMut(&T) -> bool) -> bool
+    where
+        Self: Sized,
+    {
+        self.try_visit(|node: &T| {
+            if matcher(node) {
+                
+                
+                
+                bail!("");
+            } else {
+                Ok(())
+            }
+        })
+        .is_err()
+    }
+
+    
+    fn has_descendant_with_type<T: Node>(&self) -> bool
+    where
+        Self: Sized,
+    {
+        self.has_descendant(|_: &T| true)
     }
 
     

@@ -23,6 +23,16 @@ pub fn pass(module: &mut Module) -> Result<()> {
         }
         Ok(())
     })?;
+    
+    
+    
+    
+    module.visit(|en: &Enum| {
+        if matches!(en.shape, EnumShape::Error { .. }) {
+            used_as_error.insert(en.name.clone());
+        }
+    });
+
     module.visit_mut(|type_node: &mut TypeNode| {
         if let Some(name) = type_node.ty.name() {
             type_node.is_used_as_error = used_as_error.contains(name);

@@ -191,9 +191,17 @@ pub enum Radix {
 #[derive(Debug, Clone, Node)]
 pub struct Record {
     pub name: String,
+    pub fields_kind: FieldsKind,
     pub fields: Vec<Field>,
     pub docstring: Option<String>,
     pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, Node)]
+pub enum FieldsKind {
+    Unit,
+    Named,
+    Unnamed,
 }
 
 #[derive(Debug, Clone, Node)]
@@ -217,7 +225,14 @@ pub struct Enum {
     pub is_flat: bool,
     pub shape: EnumShape,
     pub variants: Vec<Variant>,
-    pub discr_type: Option<TypeNode>,
+    
+    #[node(from(discr_type))]
+    pub meta_discr_type: Option<TypeNode>,
+    
+    
+    
+    
+    pub discr_type: TypeNode,
     pub docstring: Option<String>,
     pub self_type: TypeNode,
 }
@@ -225,7 +240,14 @@ pub struct Enum {
 #[derive(Debug, Clone, Node)]
 pub struct Variant {
     pub name: String,
-    pub discr: Option<LiteralNode>,
+    
+    #[node(from(discr))]
+    pub meta_discr: Option<LiteralNode>,
+    
+    
+    
+    pub discr: LiteralNode,
+    pub fields_kind: FieldsKind,
     pub fields: Vec<Field>,
     pub docstring: Option<String>,
 }
@@ -258,13 +280,14 @@ pub struct CallbackInterface {
 pub struct VTable {
     
     
-    pub struct_type: FfiType,
+    pub struct_type: FfiTypeNode,
     
     pub interface_name: String,
     
     
     
     pub init_fn: RustFfiFunctionName,
+    pub free_fn_type: FfiFunctionTypeName,
     pub methods: Vec<VTableMethod>,
 }
 
@@ -273,7 +296,7 @@ pub struct VTable {
 pub struct VTableMethod {
     pub callable: Callable,
     
-    pub ffi_type: FfiType,
+    pub ffi_type: FfiTypeNode,
 }
 
 #[derive(Debug, Clone, Node)]
@@ -325,6 +348,7 @@ pub struct ExternalType {
     pub self_type: TypeNode,
 }
 
+
 #[derive(Debug, Clone, Node)]
 pub struct TypeNode {
     #[node(wraps)]
@@ -337,7 +361,15 @@ pub struct TypeNode {
     
     pub canonical_name: String,
     pub is_used_as_error: bool,
-    pub ffi_type: FfiType,
+    pub ffi_type: FfiTypeNode,
+}
+
+
+
+
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+pub struct FfiTypeNode {
+    pub ty: FfiType,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Node)]
@@ -465,7 +497,7 @@ pub struct FfiFunctionType {
 
 #[derive(Debug, Clone, Node)]
 pub struct FfiReturnType {
-    pub ty: Option<FfiType>,
+    pub ty: Option<FfiTypeNode>,
 }
 
 #[derive(Debug, Clone, Node)]
@@ -477,13 +509,13 @@ pub struct FfiStruct {
 #[derive(Debug, Clone, Node)]
 pub struct FfiField {
     pub name: String,
-    pub ty: FfiType,
+    pub ty: FfiTypeNode,
 }
 
 #[derive(Debug, Clone, Node)]
 pub struct FfiArgument {
     pub name: String,
-    pub ty: FfiType,
+    pub ty: FfiTypeNode,
 }
 
 #[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
@@ -588,11 +620,17 @@ impl From<FfiStruct> for FfiDefinition {
     }
 }
 
+impl From<FfiType> for FfiTypeNode {
+    fn from(ty: FfiType) -> Self {
+        Self { ty }
+    }
+}
+
 impl FfiArgument {
     pub fn new(name: impl Into<String>, ty: FfiType) -> Self {
         Self {
             name: name.into(),
-            ty,
+            ty: FfiTypeNode { ty },
         }
     }
 }
@@ -601,7 +639,7 @@ impl FfiField {
     pub fn new(name: impl Into<String>, ty: FfiType) -> Self {
         Self {
             name: name.into(),
-            ty,
+            ty: FfiTypeNode { ty },
         }
     }
 }
@@ -609,10 +647,6 @@ impl FfiField {
 impl Callable {
     pub fn is_async(&self) -> bool {
         self.async_data.is_some()
-    }
-
-    pub fn ffi_return_type(&self) -> Option<&FfiType> {
-        self.return_type.ty.as_ref().map(|ty| &ty.ffi_type)
     }
 }
 
