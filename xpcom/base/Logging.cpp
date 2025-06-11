@@ -879,8 +879,6 @@ void LogModule::SetCaptureStacks(bool aCaptureStacks) {
   sLogModuleManager->SetCaptureStacks(aCaptureStacks);
 }
 
-void LogModule::DisableModules() { sLogModuleManager->DisableModules(); }
-
 
 
 

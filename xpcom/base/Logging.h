@@ -88,11 +88,6 @@ class LogModule {
   
 
 
-  static void DisableModules();
-
-  
-
-
   bool ShouldLog(LogLevel aLevel) const { return mLevel >= aLevel; }
 
   

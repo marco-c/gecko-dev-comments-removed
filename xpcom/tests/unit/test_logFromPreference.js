@@ -1,11 +1,12 @@
 
 
 
-const kModulesPref = "logging.config.modules";
+const kPrefName = "logging.prof";
+const kPrefValue = 5;
 add_task(async () => {
-  Services.prefs.setStringPref(kModulesPref, "prof:5");
+  Services.prefs.setIntPref(kPrefName, kPrefValue);
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(kModulesPref);
+    Services.prefs.clearUserPref(kPrefName);
   });
 
   const entries = 10000;
