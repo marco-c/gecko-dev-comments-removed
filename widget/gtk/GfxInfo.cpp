@@ -1554,6 +1554,16 @@ NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion) {
   return NS_OK;
 }
 
+NS_IMETHODIMP GfxInfo::SpoofOSVersionEx(uint32_t aMajor, uint32_t aMinor,
+                                        uint32_t aBuild, uint32_t aRevision) {
+  
+  
+#  ifdef DEBUG
+  mOSVersionEx = GfxVersionEx(aMajor, aMinor, aBuild, aRevision);
+#  endif
+  return NS_OK;
+}
+
 #endif
 
 }  
