@@ -74,8 +74,7 @@ class nsContentSecurityUtils {
       const mozilla::dom::Element& aElement);
 
   
-  static long ClassifyDownload(nsIChannel* aChannel,
-                               const nsAutoCString& aMimeTypeGuess);
+  static long ClassifyDownload(nsIChannel* aChannel);
 
   
   static FilenameTypeAndDetails FilenameToFilenameType(
