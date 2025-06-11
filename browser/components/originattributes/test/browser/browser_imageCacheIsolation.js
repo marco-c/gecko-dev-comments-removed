@@ -79,7 +79,9 @@ function doCheck(shouldIsolate, a, b, mode) {
   
   
   
-  info(`XXX check (${mode}: gHits == ${gHits}, shouldIsolate == ${shouldIsolate}`);
+  info(
+    `XXX check (${mode}: gHits == ${gHits}, shouldIsolate == ${shouldIsolate}`
+  );
   if (mode == TEST_MODE_NO_ISOLATION) {
     todo(false, "This test depended on no network partitioning");
     return true;
