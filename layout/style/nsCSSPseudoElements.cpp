@@ -64,15 +64,6 @@ Maybe<PseudoStyleRequest> nsCSSPseudoElements::ParsePseudoElement(
       !IsEnabled(result.mType, aEnabledState)) {
     return Nothing();
   }
-
-  
-  
-  
-  if (PseudoStyle::IsNamedViewTransitionPseudoElement(result.mType) &&
-      result.mIdentifier == nsGkAtoms::_asterisk) {
-    return Nothing();
-  }
-
   return Some(result);
 }
 

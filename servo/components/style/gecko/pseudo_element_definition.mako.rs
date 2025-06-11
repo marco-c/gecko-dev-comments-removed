@@ -15,8 +15,7 @@ pub enum PseudoElement {
         % elif pseudo.pseudo_ident == "highlight":
         ${pseudo.capitalized_pseudo()}(AtomIdent),
         % elif pseudo.is_named_view_transition_pseudo():
-        
-        ${pseudo.capitalized_pseudo()}(AtomIdent),
+        ${pseudo.capitalized_pseudo()}(PtNameAndClassSelector),
         % else:
         ${pseudo.capitalized_pseudo()},
         % endif
@@ -142,9 +141,9 @@ impl PseudoElement {
                     Some(${pseudo_element_variant(pseudo)})
                 },
             % elif pseudo.is_named_view_transition_pseudo():
-                PseudoStyleType::${pseudo.pseudo_ident} => {
-                    functional_pseudo_parameter.map(PseudoElement::${pseudo.capitalized_pseudo()})
-                },
+                PseudoStyleType::${pseudo.pseudo_ident} => functional_pseudo_parameter.map(|p| {
+                    PseudoElement::${pseudo.capitalized_pseudo()}(PtNameAndClassSelector::from_name(p))
+                }),
             % endif
             % endfor
             PseudoStyleType::highlight => {
@@ -166,8 +165,10 @@ impl PseudoElement {
             % for pseudo in PSEUDOS:
             % if pseudo.is_tree_pseudo_element():
                 PseudoElement::${pseudo.capitalized_pseudo()}(..) => (PseudoStyleType::XULTree, None),
-            % elif pseudo.pseudo_ident == "highlight" or pseudo.is_named_view_transition_pseudo():
+            % elif pseudo.pseudo_ident == "highlight":
                 PseudoElement::${pseudo.capitalized_pseudo()}(ref value) => (PseudoStyleType::${pseudo.pseudo_ident}, Some(value)),
+            % elif pseudo.is_named_view_transition_pseudo():
+                PseudoElement::${pseudo.capitalized_pseudo()}(ref value) => (PseudoStyleType::${pseudo.pseudo_ident}, Some(value.name())),
             % else:
                 PseudoElement::${pseudo.capitalized_pseudo()} => (PseudoStyleType::${pseudo.pseudo_ident}, None),
             % endif
@@ -280,7 +281,12 @@ impl PseudoElement {
                 
                 
                 
-                if selector_name.0 == atom!("*") {
+                
+                if !selector_name.classes().is_empty() {
+                    return false;
+                }
+
+                if selector_name.name().0 == atom!("*") {
                     return true;
                 }
                 
@@ -298,15 +304,9 @@ impl ToCss for PseudoElement {
         match *self {
             % for pseudo in (p for p in PSEUDOS if p.pseudo_ident != "highlight"):
             %if pseudo.is_named_view_transition_pseudo():
-                PseudoElement::${pseudo.capitalized_pseudo()}(ref name) => {
+                PseudoElement::${pseudo.capitalized_pseudo()}(ref name_and_class) => {
                     dest.write_str("${pseudo.value}(")?;
-                    if name.0 == atom!("*") {
-                        
-                        
-                        dest.write_char('*')?;
-                    } else {
-                        serialize_atom_identifier(name, dest)?;
-                    }
+                    name_and_class.to_css(dest)?;
                     dest.write_char(')')?;
                 }
             %else:
