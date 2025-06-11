@@ -8182,11 +8182,15 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringSplitString() {
 AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
     StringChar kind) {
   
-  if (args_.length() != 1) {
+  if (args_.length() > 1) {
     return AttachDecision::NoAction;
   }
 
-  auto attach = CanAttachStringChar(thisval_, args_[0], kind);
+  
+  
+  auto indexArg = args_.length() > 0 ? args_[0] : Int32Value(0);
+
+  auto attach = CanAttachStringChar(thisval_, indexArg, kind);
   if (attach == AttachStringChar::No) {
     return AttachDecision::NoAction;
   }
@@ -8205,9 +8209,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
   StringOperandId strId = writer.guardToString(thisValId);
 
   
-  ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg0);
-  Int32OperandId int32IndexId =
-      EmitGuardToInt32Index(writer, args_[0], indexId);
+  Int32OperandId int32IndexId;
+  if (args_.length() > 0) {
+    ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg0);
+    int32IndexId = EmitGuardToInt32Index(writer, args_[0], indexId);
+  } else {
+    int32IndexId = writer.loadInt32Constant(0);
+  }
 
   
   if (kind == StringChar::At) {

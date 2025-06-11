@@ -78,3 +78,17 @@ function testBothChildren() {
 for (var i = 0; i < 2; ++i) {
   testBothChildren();
 }
+
+
+
+function testLeftChildAbsentIndex() {
+  for (var i = 0; i < 200; ++i) {
+    var {rope} = makeRope();
+
+    var ch = rope.at();
+    assertEq(ch, "@");
+  }
+}
+for (var i = 0; i < 2; ++i) {
+  testLeftChildAbsentIndex();
+}
