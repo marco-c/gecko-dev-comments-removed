@@ -2131,6 +2131,28 @@ void CodeGenerator::visitRegExp(LRegExp* lir) {
   masm.bind(ool->rejoin());
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static constexpr int32_t RegExpPairsVectorStartOffset(
     int32_t inputOutputDataStartOffset) {
   return inputOutputDataStartOffset + int32_t(InputOutputDataSize) +
