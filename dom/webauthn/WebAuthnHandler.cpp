@@ -959,9 +959,14 @@ void WebAuthnHandler::ResolveTransaction(
       break;
   }
 
-  mTransaction.ref().mPromise->MaybeResolve(aCredential);
+  
+  
+  
+  RefPtr<Promise> promise = mTransaction.ref().mPromise;
   mTransaction.reset();
   Unfollow();
+
+  promise->MaybeResolve(aCredential);
 }
 
 template <typename T>
@@ -977,9 +982,14 @@ void WebAuthnHandler::RejectTransaction(const T& aReason) {
       break;
   }
 
-  mTransaction.ref().mPromise->MaybeReject(aReason);
+  
+  
+  
+  RefPtr<Promise> promise = mTransaction.ref().mPromise;
   mTransaction.reset();
   Unfollow();
+
+  promise->MaybeReject(aReason);
 }
 
 }  
