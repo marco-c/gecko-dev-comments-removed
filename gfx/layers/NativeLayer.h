@@ -158,11 +158,6 @@ class NativeLayer {
 
   
   
-  virtual void SetRoundedClipRect(const Maybe<gfx::RoundedRect>& aClip) = 0;
-  virtual Maybe<gfx::RoundedRect> RoundedClipRect() = 0;
-
-  
-  
   
   
   
