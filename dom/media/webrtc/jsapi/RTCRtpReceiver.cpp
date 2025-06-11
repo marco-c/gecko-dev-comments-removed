@@ -904,7 +904,8 @@ void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
     mParameters.mCodecs.Construct();
     if (details.GetEncodingCount()) {
       for (const auto& jsepCodec : details.GetEncoding(0).GetCodecs()) {
-        if (!jsepCodec->DirectionSupported(sdp::kRecv)) {
+        if (!jsepCodec->mEnabled ||
+            !jsepCodec->DirectionSupported(sdp::kRecv)) {
           
           continue;
         }
