@@ -2492,6 +2492,20 @@
       return true;
     }
 
+    async prepareDiscardBrowser(aTab) {
+      let browser = aTab.linkedBrowser;
+      
+      
+      
+      
+      if (aTab.closing || this._windowIsClosing || !browser.isRemoteBrowser) {
+        return;
+      }
+
+      
+      await this.TabStateFlusher.flush(browser);
+    }
+
     discardBrowser(aTab, aForceDiscard) {
       "use strict";
       let browser = aTab.linkedBrowser;
@@ -5192,6 +5206,8 @@
       let memoryUsageBeforeUnload = await getTotalMemoryUsage();
       let timeBeforeUnload = performance.now();
       let numberOfTabsUnloaded = 0;
+      await Promise.all(tabs.map(tab => this.prepareDiscardBrowser(tab)));
+
       for (let tab of tabs) {
         numberOfTabsUnloaded += this.discardBrowser(tab, true) ? 1 : 0;
       }
