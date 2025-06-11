@@ -166,7 +166,7 @@ class ProxiedConnection {
   
   
   
-  constexpr static const double sFailureTimeout = CLOCKS_PER_SEC / 2;
+  constexpr static const double sFailureTimeout = CLOCKS_PER_SEC;
   clock_t mFailureTime = 0;
 };
 
