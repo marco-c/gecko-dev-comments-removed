@@ -48,6 +48,8 @@ pub struct FfiValueArgument {
     
     pub field_name: String,
     pub ffi_value_class: String,
+    
+    pub receiver: bool,
     pub ty: FfiTypeNode,
 }
 
@@ -67,6 +69,12 @@ pub struct PointerType {
     pub ffi_value_class: String,
     pub ffi_func_clone: RustFfiFunctionName,
     pub ffi_func_free: RustFfiFunctionName,
+    pub trait_interface_info: Option<PointerTypeTraitInterfaceInfo>,
+}
+
+#[derive(Debug, Clone, Node)]
+pub struct PointerTypeTraitInterfaceInfo {
+    pub free_fn: String,
 }
 
 
@@ -78,13 +86,17 @@ pub struct CppCallbackInterface {
     
     
     
-    pub ffi_value_class: String,
+    
+    
+    
+    pub ffi_value_class: Option<String>,
     
     pub handler_var: String,
     
     pub vtable_var: String,
     
     pub init_fn: RustFfiFunctionName,
+    
     
     pub free_fn: String,
     pub vtable_struct_type: FfiTypeNode,
@@ -374,9 +386,6 @@ pub struct Interface {
 #[derive(Debug, Clone, Node, AsRef)]
 pub struct CallbackInterface {
     pub name: String,
-    pub id: u64,
-    
-    pub js_handler_var: String,
     pub vtable: VTable,
     pub docstring: Option<String>,
     pub js_docstring: String,
@@ -387,11 +396,13 @@ pub struct CallbackInterface {
 #[derive(Debug, Clone, Node)]
 pub struct VTable {
     
+    pub interface_name: String,
     
+    pub callback_interface: bool,
+    pub callback_interface_id: u64,
+    
+    pub js_handler_var: String,
     pub struct_type: FfiTypeNode,
-    
-    
-    
     pub init_fn: RustFfiFunctionName,
     pub methods: Vec<VTableMethod>,
 }

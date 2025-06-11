@@ -14,6 +14,8 @@ const static mozilla::uniffi::UniFFIPointerType {{ pointer_type.name }} {
   {{ pointer_type.ffi_func_free.0 }},
 };
 
+{%- match pointer_type.trait_interface_info %}
+{%- when None %}
 class {{ pointer_type.ffi_value_class }} {
  private:
   void* mValue = nullptr;
@@ -26,7 +28,7 @@ class {{ pointer_type.ffi_value_class }} {
   {{ pointer_type.ffi_value_class }}(const {{ pointer_type.ffi_value_class }}&) = delete;
   {{ pointer_type.ffi_value_class }}& operator=(const {{ pointer_type.ffi_value_class }}&) = delete;
 
-    {{ pointer_type.ffi_value_class }}& operator=({{ pointer_type.ffi_value_class }}&& aOther) {
+  {{ pointer_type.ffi_value_class }}& operator=({{ pointer_type.ffi_value_class }}&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = nullptr;
@@ -46,6 +48,13 @@ class {{ pointer_type.ffi_value_class }} {
     }
     FreeHandle();
     mValue = value.ClonePtr();
+  }
+
+  
+  
+  void LowerReciever(const dom::OwningUniFFIScaffoldingValue& aValue,
+             ErrorResult& aError) {
+    Lower(aValue, aError);
   }
 
   void Lift(JSContext* aContext, dom::OwningUniFFIScaffoldingValue* aDest,
@@ -81,6 +90,122 @@ class {{ pointer_type.ffi_value_class }} {
     FreeHandle();
   }
 };
+{%- when Some(trait_interface_info) %}
+
+extern "C" void {{ trait_interface_info.free_fn }}(uint64_t uniffiHandle);
+
+
+
+class {{ pointer_type.ffi_value_class }} {
+ private:
+  
+  
+  
+  bool mLoweredCallbackInterface = false;
+  
+  
+  
+  
+  void* mValue = nullptr;
+
+ public:
+  {{ pointer_type.ffi_value_class }}() = default;
+  explicit {{ pointer_type.ffi_value_class }}(void* aValue) : mValue(aValue) {}
+
+  
+  {{ pointer_type.ffi_value_class }}(const {{ pointer_type.ffi_value_class }}&) = delete;
+  {{ pointer_type.ffi_value_class }}& operator=(const {{ pointer_type.ffi_value_class }}&) = delete;
+
+  {{ pointer_type.ffi_value_class }}& operator=({{ pointer_type.ffi_value_class }}&& aOther) {
+    FreeHandle();
+    mValue = aOther.mValue;
+    mLoweredCallbackInterface = aOther.mLoweredCallbackInterface;
+    aOther.mValue = nullptr;
+    aOther.mLoweredCallbackInterface = false;
+    return *this;
+  }
+
+  
+  void Lower(const dom::OwningUniFFIScaffoldingValue& aValue,
+             ErrorResult& aError) {
+    if (!aValue.IsDouble()) {
+      aError.ThrowTypeError("Bad argument type"_ns);
+      return;
+    }
+    double floatValue = aValue.GetAsDouble();
+    uint64_t intValue = static_cast<uint64_t>(floatValue);
+    if (intValue != floatValue) {
+      aError.ThrowTypeError("Not an integer"_ns);
+      return;
+    }
+    FreeHandle();
+    mValue = reinterpret_cast<void *>(intValue);
+    mLoweredCallbackInterface = true;
+  }
+
+  
+  void LowerReciever(const dom::OwningUniFFIScaffoldingValue& aValue,
+             ErrorResult& aError) {
+    if (!aValue.IsUniFFIPointer()) {
+      aError.ThrowTypeError("Expected UniFFI pointer argument"_ns);
+      return;
+    }
+    dom::UniFFIPointer& value = aValue.GetAsUniFFIPointer();
+    if (!value.IsSamePtrType(&{{ pointer_type.name }})) {
+      aError.ThrowTypeError("Incorrect UniFFI pointer type"_ns);
+      return;
+    }
+    FreeHandle();
+    mValue = value.ClonePtr();
+    mLoweredCallbackInterface = false;
+  }
+
+  
+  void Lift(JSContext* aContext, dom::OwningUniFFIScaffoldingValue* aDest,
+            ErrorResult& aError) {
+    aDest->SetAsUniFFIPointer() =
+        dom::UniFFIPointer::Create(mValue, &{{ pointer_type.name }});
+    mValue = nullptr;
+    mLoweredCallbackInterface = false;
+  }
+
+  void* IntoRust() {
+    auto temp = mValue;
+    mValue = nullptr;
+    mLoweredCallbackInterface = false;
+    return temp;
+  }
+
+  static {{ pointer_type.ffi_value_class }} FromRust(void* aValue) {
+    return {{ pointer_type.ffi_value_class }}(aValue);
+  }
+
+  void FreeHandle() {
+    
+    
+    if (mLoweredCallbackInterface && reinterpret_cast<uintptr_t>(mValue) != 0) {
+                                     printf("FREEING CB %p\n", mValue);
+        {{ trait_interface_info.free_fn }}(reinterpret_cast<uintptr_t>(mValue));
+        mValue = reinterpret_cast<void *>(0);
+    } else if (!mLoweredCallbackInterface && mValue != nullptr) {
+                                     printf("FREEING interface %p\n", mValue);
+      RustCallStatus callStatus{};
+      ({{ pointer_type.ffi_func_free.0 }})(mValue, &callStatus);
+      
+      
+    }
+    mValue = nullptr;
+    mLoweredCallbackInterface = false;
+  }
+
+  ~{{ pointer_type.ffi_value_class }}() {
+    
+    
+    
+    FreeHandle();
+  }
+};
+{%- endmatch %}
 
 {%- endfor %}
 {{ preprocessor_condition_end }}

@@ -9,14 +9,15 @@
 {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in callback_interfaces.iter() %}
 {{ preprocessor_condition }}
 
-{% for cbi in callback_interfaces %}
+{%- for cbi in callback_interfaces %}
+{%- if let Some(ffi_value_class) = cbi.ffi_value_class %}
 
 
 extern "C" void {{ cbi.free_fn }}(uint64_t uniffiHandle);
 
 
 
-class {{ cbi.ffi_value_class }} {
+class {{ ffi_value_class }} {
  private:
   
   
@@ -24,8 +25,8 @@ class {{ cbi.ffi_value_class }} {
   uint64_t mValue = 0;
 
  public:
-  {{ cbi.ffi_value_class }}() = default;
-  explicit {{ cbi.ffi_value_class }}(uint64_t aValue) : mValue(aValue) {}
+  {{ ffi_value_class }}() = default;
+  explicit {{ ffi_value_class }}(uint64_t aValue) : mValue(aValue) {}
 
   void Lower(const dom::OwningUniFFIScaffoldingValue& aValue,
              ErrorResult& aError) {
@@ -59,7 +60,7 @@ class {{ cbi.ffi_value_class }} {
     return handle;
   }
 
-  static {{ cbi.ffi_value_class }} FromRust(uint64_t aValue) { return {{ cbi.ffi_value_class }}(aValue); };
+  static {{ ffi_value_class }} FromRust(uint64_t aValue) { return {{ ffi_value_class }}(aValue); };
 
   void ReleaseHandleIfSet() {
     
@@ -71,11 +72,12 @@ class {{ cbi.ffi_value_class }} {
     }
   }
 
-  ~{{ cbi.ffi_value_class }}() {
+  ~{{ ffi_value_class }}() {
     ReleaseHandleIfSet();
   }
 };
 
+{%- endif %}
 {%- endfor %}
 {{ preprocessor_condition_end }}
 {%- endfor %}
