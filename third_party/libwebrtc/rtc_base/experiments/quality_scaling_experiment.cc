@@ -16,10 +16,14 @@
 #include "absl/strings/match.h"
 #include "api/field_trials_view.h"
 #include "api/transport/field_trial_based_config.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace {
+
+
+
 constexpr char kFieldTrial[] = "WebRTC-Video-QualityScaling";
 constexpr int kMinQp = 1;
 constexpr int kMaxVp8Qp = 127;
@@ -28,6 +32,13 @@ constexpr int kMaxH264Qp = 51;
 constexpr int kMaxGenericQp = 255;
 
 #if !defined(WEBRTC_IOS)
+
+
+
+
+
+
+
 constexpr char kDefaultQualityScalingSetttings[] =
     "Enabled-29,95,149,205,24,37,26,36,0.9995,0.9999,1";
 #endif
@@ -42,14 +53,42 @@ std::optional<VideoEncoder::QpThresholds> GetThresholds(int low,
   return std::optional<VideoEncoder::QpThresholds>(
       VideoEncoder::QpThresholds(low, high));
 }
+
+
+
+
+
+
+
+
+struct WebRTCH265QualityScaling {
+  static constexpr char kFieldTrialName[] = "WebRTC-H265-QualityScaling";
+
+  WebRTCH265QualityScaling(const FieldTrialsView& field_trials)
+      : low_qp("low_qp"), high_qp("high_qp") {
+    ParseFieldTrial({&low_qp, &high_qp}, field_trials.Lookup(kFieldTrialName));
+  }
+
+  bool IsEnabled() const { return low_qp && high_qp; }
+  VideoEncoder::QpThresholds ToQpThresholds() const {
+    RTC_DCHECK(IsEnabled());
+    return VideoEncoder::QpThresholds(*low_qp, *high_qp);
+  }
+
+  FieldTrialOptional<int> low_qp;
+  FieldTrialOptional<int> high_qp;
+};
 }  
 
 bool QualityScalingExperiment::Enabled(const FieldTrialsView& field_trials) {
+  WebRTCH265QualityScaling h265_quality_scaling(field_trials);
+  return
 #if defined(WEBRTC_IOS)
-  return absl::StartsWith(field_trials.Lookup(kFieldTrial), "Enabled");
+      absl::StartsWith(field_trials.Lookup(kFieldTrial), "Enabled") ||
 #else
-  return !absl::StartsWith(field_trials.Lookup(kFieldTrial), "Disabled");
+      !absl::StartsWith(field_trials.Lookup(kFieldTrial), "Disabled") ||
 #endif
+      h265_quality_scaling.IsEnabled();
 }
 
 std::optional<QualityScalingExperiment::Settings>
@@ -75,6 +114,12 @@ QualityScalingExperiment::ParseSettings(const FieldTrialsView& field_trials) {
 std::optional<VideoEncoder::QpThresholds>
 QualityScalingExperiment::GetQpThresholds(VideoCodecType codec_type,
                                           const FieldTrialsView& field_trials) {
+  if (codec_type == kVideoCodecH265) {
+    WebRTCH265QualityScaling h265_quality_scaling(field_trials);
+    if (h265_quality_scaling.IsEnabled()) {
+      return h265_quality_scaling.ToQpThresholds();
+    }
+  }
   const auto settings = ParseSettings(field_trials);
   if (!settings)
     return std::nullopt;
