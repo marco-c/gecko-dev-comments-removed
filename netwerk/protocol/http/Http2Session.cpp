@@ -1332,20 +1332,9 @@ void Http2Session::CleanupStream(Http2StreamBase* aStream, nsresult aResult,
 
   CloseStream(aStream, aResult);
 
-  
-  
-  uint32_t id = aStream->StreamID();
-  if (id > 0) {
-    mStreamIDHash.Remove(id);
-  }
-
   RemoveStreamFromQueues(aStream);
+  RemoveStreamFromTables(aStream);
 
-  
-  
-  
-  nsAHttpTransaction* trans = aStream->Transaction();
-  mStreamTransactionHash.Remove(trans);
   mTunnelStreams.RemoveElement(aStream);
 
   if (mShouldGoAway && !mStreamTransactionHash.Count()) Close(NS_OK);
@@ -1368,6 +1357,17 @@ void Http2Session::RemoveStreamFromQueues(Http2StreamBase* aStream) {
   RemoveStreamFromQueue(aStream, mQueuedStreams);
   RemoveStreamFromQueue(aStream, mPushesReadyForRead);
   RemoveStreamFromQueue(aStream, mSlowConsumersReadyForRead);
+}
+
+void Http2Session::RemoveStreamFromTables(Http2StreamBase* aStream) {
+  
+  if (aStream->HasRegisteredID()) {
+    mStreamIDHash.Remove(aStream->StreamID());
+  }
+  
+  
+  
+  mStreamTransactionHash.Remove(aStream->Transaction());
 }
 
 void Http2Session::CloseStream(Http2StreamBase* aStream, nsresult aResult,
@@ -1965,10 +1965,7 @@ nsresult Http2Session::RecvGoAway(Http2Session* self) {
       stream->DisableSpdy();
     }
     self->CloseStream(stream, NS_ERROR_NET_RESET);
-    if (stream->HasRegisteredID()) {
-      self->mStreamIDHash.Remove(stream->StreamID());
-    }
-    self->mStreamTransactionHash.Remove(stream->Transaction());
+    self->RemoveStreamFromTables(stream);
   }
 
   
@@ -1981,7 +1978,7 @@ nsresult Http2Session::RecvGoAway(Http2Session* self) {
       stream->DisableSpdy();
     }
     self->CloseStream(stream, NS_ERROR_NET_RESET, false);
-    self->mStreamTransactionHash.Remove(stream->Transaction());
+    self->RemoveStreamFromTables(stream);
   }
   self->mQueuedStreams.Clear();
 
