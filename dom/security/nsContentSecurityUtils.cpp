@@ -621,7 +621,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       
       
       
-      "resource://devtools/client/performance-new/shared/symbolication.sys.mjs"_ns,
+      "resource://devtools/shared/performance-new/symbolication.sys.mjs"_ns,
 
       
       "debugger"_ns,
