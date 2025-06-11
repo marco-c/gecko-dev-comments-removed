@@ -21,12 +21,13 @@
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/system/rtc_export.h"
-
 namespace rtc {
-
 class SSLCertChain;
 class SSLCertificate;
 class SSLIdentity;
+}  
+
+namespace webrtc {
 
 
 
@@ -52,11 +53,11 @@ class RTCCertificatePEM {
 
 
 class RTC_EXPORT RTCCertificate final
-    : public RefCountedNonVirtual<RTCCertificate> {
+    : public rtc::RefCountedNonVirtual<RTCCertificate> {
  public:
   
   static scoped_refptr<RTCCertificate> Create(
-      std::unique_ptr<SSLIdentity> identity);
+      std::unique_ptr<rtc::SSLIdentity> identity);
 
   
   uint64_t Expires() const;
@@ -64,14 +65,14 @@ class RTC_EXPORT RTCCertificate final
   
   bool HasExpired(uint64_t now) const;
 
-  const SSLCertificate& GetSSLCertificate() const;
-  const SSLCertChain& GetSSLCertificateChain() const;
+  const rtc::SSLCertificate& GetSSLCertificate() const;
+  const rtc::SSLCertChain& GetSSLCertificateChain() const;
 
   
   
   
   
-  SSLIdentity* identity() const { return identity_.get(); }
+  rtc::SSLIdentity* identity() const { return identity_.get(); }
 
   
   RTCCertificatePEM ToPEM() const;
@@ -81,7 +82,7 @@ class RTC_EXPORT RTCCertificate final
   bool operator!=(const RTCCertificate& certificate) const;
 
  protected:
-  explicit RTCCertificate(SSLIdentity* identity);
+  explicit RTCCertificate(rtc::SSLIdentity* identity);
 
   friend class RefCountedNonVirtual<RTCCertificate>;
   ~RTCCertificate();
@@ -89,9 +90,16 @@ class RTC_EXPORT RTCCertificate final
  private:
   
   
-  const std::unique_ptr<SSLIdentity> identity_;
+  const std::unique_ptr<rtc::SSLIdentity> identity_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::RTCCertificate;
+using ::webrtc::RTCCertificatePEM;
 }  
 
 #endif  

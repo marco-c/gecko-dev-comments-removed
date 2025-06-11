@@ -22,7 +22,7 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -30,7 +30,8 @@ class RTCCertificateGeneratorInterface {
  public:
   
   
-  using Callback = absl::AnyInvocable<void(scoped_refptr<RTCCertificate>) &&>;
+  using Callback =
+      absl::AnyInvocable<void(scoped_refptr<webrtc::RTCCertificate>) &&>;
 
   virtual ~RTCCertificateGeneratorInterface() = default;
 
@@ -40,7 +41,7 @@ class RTCCertificateGeneratorInterface {
   
   
   virtual void GenerateCertificateAsync(
-      const KeyParams& key_params,
+      const rtc::KeyParams& key_params,
       const std::optional<uint64_t>& expires_ms,
       Callback callback) = 0;
 };
@@ -58,10 +59,11 @@ class RTC_EXPORT RTCCertificateGenerator
   
   
   static scoped_refptr<RTCCertificate> GenerateCertificate(
-      const KeyParams& key_params,
+      const rtc::KeyParams& key_params,
       const std::optional<uint64_t>& expires_ms);
 
-  RTCCertificateGenerator(Thread* signaling_thread, Thread* worker_thread);
+  RTCCertificateGenerator(rtc::Thread* signaling_thread,
+                          rtc::Thread* worker_thread);
   ~RTCCertificateGenerator() override {}
 
   
@@ -69,15 +71,22 @@ class RTC_EXPORT RTCCertificateGenerator
   
   
   
-  void GenerateCertificateAsync(const KeyParams& key_params,
+  void GenerateCertificateAsync(const rtc::KeyParams& key_params,
                                 const std::optional<uint64_t>& expires_ms,
                                 Callback callback) override;
 
  private:
-  Thread* const signaling_thread_;
-  Thread* const worker_thread_;
+  rtc::Thread* const signaling_thread_;
+  rtc::Thread* const worker_thread_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::RTCCertificateGenerator;
+using ::webrtc::RTCCertificateGeneratorInterface;
 }  
 
 #endif  

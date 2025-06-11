@@ -721,7 +721,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
 
     
     
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
+    std::unique_ptr<RTCCertificateGeneratorInterface> cert_generator;
 
     
     fake_certificate_generator_ = new FakeRTCCertificateGenerator();

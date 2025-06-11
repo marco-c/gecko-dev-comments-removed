@@ -80,11 +80,11 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   virtual uint16_t GetSslPeerSignatureAlgorithm() const = 0;
 
   
-  virtual rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate()
+  virtual rtc::scoped_refptr<webrtc::RTCCertificate> GetLocalCertificate()
       const = 0;
 
   virtual bool SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) = 0;
+      const rtc::scoped_refptr<webrtc::RTCCertificate>& certificate) = 0;
 
   
   virtual std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const = 0;

@@ -149,8 +149,9 @@ class DtlsTransport : public DtlsTransportInternal {
   
   
   bool SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
-  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
+      const rtc::scoped_refptr<webrtc::RTCCertificate>& certificate) override;
+  rtc::scoped_refptr<webrtc::RTCCertificate> GetLocalCertificate()
+      const override;
 
   
   
@@ -269,7 +270,7 @@ class DtlsTransport : public DtlsTransportInternal {
       downward_;  
   const std::vector<int> srtp_ciphers_;  
   bool dtls_active_ = false;
-  rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
+  rtc::scoped_refptr<webrtc::RTCCertificate> local_certificate_;
   std::optional<webrtc::SSLRole> dtls_role_;
   const webrtc::SSLProtocolVersion ssl_max_version_;
   rtc::Buffer remote_fingerprint_value_;

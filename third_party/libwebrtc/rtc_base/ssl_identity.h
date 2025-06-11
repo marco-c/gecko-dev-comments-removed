@@ -58,11 +58,11 @@ class RTC_EXPORT KeyParams {
   explicit KeyParams(KeyType key_type = KT_DEFAULT);
 
   
-  static KeyParams RSA(int mod_size = kRsaDefaultModSize,
-                       int pub_exp = kRsaDefaultExponent);
+  static KeyParams RSA(int mod_size = rtc::kRsaDefaultModSize,
+                       int pub_exp = rtc::kRsaDefaultExponent);
 
   
-  static KeyParams ECDSA(ECCurve curve = EC_NIST_P256);
+  static KeyParams ECDSA(ECCurve curve = rtc::EC_NIST_P256);
 
   
   

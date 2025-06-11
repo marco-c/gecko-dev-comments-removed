@@ -227,8 +227,8 @@ class JsepTransportController : public PayloadTypeSuggester,
   
   
   bool SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
-  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate(
+      const rtc::scoped_refptr<RTCCertificate>& certificate);
+  rtc::scoped_refptr<RTCCertificate> GetLocalCertificate(
       const std::string& mid) const;
   
   
@@ -517,7 +517,7 @@ class JsepTransportController : public PayloadTypeSuggester,
 
   cricket::IceConfig ice_config_;
   cricket::IceRole ice_role_ = cricket::ICEROLE_CONTROLLING;
-  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
+  rtc::scoped_refptr<RTCCertificate> certificate_;
 
   BundleManager bundles_;
   
