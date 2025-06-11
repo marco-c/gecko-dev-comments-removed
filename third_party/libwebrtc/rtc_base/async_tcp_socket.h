@@ -22,7 +22,7 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -42,11 +42,11 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   
   virtual size_t ProcessInput(rtc::ArrayView<const uint8_t> data) = 0;
 
-  webrtc::SocketAddress GetLocalAddress() const override;
-  webrtc::SocketAddress GetRemoteAddress() const override;
+  SocketAddress GetLocalAddress() const override;
+  SocketAddress GetRemoteAddress() const override;
   int SendTo(const void* pv,
              size_t cb,
-             const webrtc::SocketAddress& addr,
+             const SocketAddress& addr,
              const rtc::PacketOptions& options) override;
   int Close() override;
 
@@ -61,8 +61,8 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   
   
   static Socket* ConnectSocket(Socket* socket,
-                               const webrtc::SocketAddress& bind_address,
-                               const webrtc::SocketAddress& remote_address);
+                               const SocketAddress& bind_address,
+                               const SocketAddress& remote_address);
   int FlushOutBuffer();
   
   void AppendToOutBuffer(const void* pv, size_t cb);
@@ -91,8 +91,8 @@ class AsyncTCPSocket : public AsyncTCPSocketBase {
   
   
   static AsyncTCPSocket* Create(Socket* socket,
-                                const webrtc::SocketAddress& bind_address,
-                                const webrtc::SocketAddress& remote_address);
+                                const SocketAddress& bind_address,
+                                const SocketAddress& remote_address);
   explicit AsyncTCPSocket(Socket* socket);
   ~AsyncTCPSocket() override {}
 
@@ -110,9 +110,9 @@ class AsyncTcpListenSocket : public AsyncListenSocket {
   explicit AsyncTcpListenSocket(std::unique_ptr<Socket> socket);
 
   State GetState() const override;
-  webrtc::SocketAddress GetLocalAddress() const override;
+  SocketAddress GetLocalAddress() const override;
 
-  virtual void HandleIncomingConnection(rtc::Socket* socket);
+  virtual void HandleIncomingConnection(Socket* socket);
 
  private:
   
@@ -121,6 +121,14 @@ class AsyncTcpListenSocket : public AsyncListenSocket {
   std::unique_ptr<Socket> socket_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AsyncTcpListenSocket;
+using ::webrtc::AsyncTCPSocket;
+using ::webrtc::AsyncTCPSocketBase;
 }  
 
 #endif  

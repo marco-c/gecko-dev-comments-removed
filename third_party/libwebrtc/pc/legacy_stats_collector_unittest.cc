@@ -868,7 +868,7 @@ TEST(StatsCollectionTest, DetachAndMerge) {
 
 
 TEST(StatsCollectionTest, DetachAndMergeThreaded) {
-  rtc::Thread new_thread(std::make_unique<rtc::NullSocketServer>());
+  rtc::Thread new_thread(std::make_unique<NullSocketServer>());
   new_thread.Start();
 
   StatsReport::Id id(

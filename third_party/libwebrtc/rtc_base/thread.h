@@ -169,14 +169,14 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
-  explicit Thread(SocketServer* ss);
-  explicit Thread(std::unique_ptr<SocketServer> ss);
+  explicit Thread(webrtc::SocketServer* ss);
+  explicit Thread(std::unique_ptr<webrtc::SocketServer> ss);
 
   
   
   
-  Thread(SocketServer* ss, bool do_init);
-  Thread(std::unique_ptr<SocketServer> ss, bool do_init);
+  Thread(webrtc::SocketServer* ss, bool do_init);
+  Thread(std::unique_ptr<webrtc::SocketServer> ss, bool do_init);
 
   
   
@@ -246,7 +246,7 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   uint32_t GetCouldBeBlockingCallCount() const;
 #endif
 
-  SocketServer* socketserver();
+  webrtc::SocketServer* socketserver();
 
   
   
@@ -501,9 +501,9 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   std::atomic<int> stop_;
 
   
-  SocketServer* const ss_;
+  webrtc::SocketServer* const ss_;
   
-  std::unique_ptr<SocketServer> own_ss_;
+  std::unique_ptr<webrtc::SocketServer> own_ss_;
 
   std::string name_;
 
@@ -557,7 +557,7 @@ class AutoThread : public Thread {
 
 class AutoSocketServerThread : public Thread {
  public:
-  explicit AutoSocketServerThread(SocketServer* ss);
+  explicit AutoSocketServerThread(webrtc::SocketServer* ss);
   ~AutoSocketServerThread() override;
 
   AutoSocketServerThread(const AutoSocketServerThread&) = delete;

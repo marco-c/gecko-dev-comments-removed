@@ -48,7 +48,7 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   
   
   BasicPortAllocator(rtc::NetworkManager* network_manager,
-                     rtc::PacketSocketFactory* socket_factory,
+                     webrtc::PacketSocketFactory* socket_factory,
                      webrtc::TurnCustomizer* customizer = nullptr,
                      RelayPortFactoryInterface* relay_port_factory = nullptr,
                      const webrtc::FieldTrialsView* field_trials = nullptr);
@@ -69,7 +69,7 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
 
   
   
-  rtc::PacketSocketFactory* socket_factory() {
+  webrtc::PacketSocketFactory* socket_factory() {
     CheckRunOnValidThreadIfInitialized();
     return socket_factory_;
   }
@@ -102,7 +102,7 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
       field_trials_;
   rtc::NetworkManager* network_manager_;
   
-  rtc::PacketSocketFactory* const socket_factory_;
+  webrtc::PacketSocketFactory* const socket_factory_;
   int network_ignore_mask_ = rtc::kDefaultNetworkIgnoreMask;
 
   
@@ -135,7 +135,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
 
   virtual BasicPortAllocator* allocator();
   rtc::Thread* network_thread() { return network_thread_; }
-  rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
+  webrtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
   
   
@@ -280,7 +280,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
 
   BasicPortAllocator* allocator_;
   rtc::Thread* network_thread_;
-  rtc::PacketSocketFactory* socket_factory_;
+  webrtc::PacketSocketFactory* socket_factory_;
   bool allocation_started_;
   bool network_manager_started_;
   bool allocation_sequences_created_;
@@ -393,7 +393,7 @@ class AllocationSequence {
   void CreateStunPorts();
   void CreateRelayPorts();
 
-  void OnReadPacket(rtc::AsyncPacketSocket* socket,
+  void OnReadPacket(webrtc::AsyncPacketSocket* socket,
                     const rtc::ReceivedPacket& packet);
 
   void OnPortDestroyed(webrtc::PortInterface* port);
@@ -407,7 +407,7 @@ class AllocationSequence {
   State state_;
   uint32_t flags_;
   ProtocolList protocols_;
-  std::unique_ptr<rtc::AsyncPacketSocket> udp_socket_;
+  std::unique_ptr<webrtc::AsyncPacketSocket> udp_socket_;
   
   UDPPort* udp_port_;
   std::vector<Port*> relay_ports_;

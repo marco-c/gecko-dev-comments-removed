@@ -27,7 +27,7 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/synchronization/mutex.h"
 
-namespace rtc {
+namespace webrtc {
 
 class VirtualSocketPacket;
 class VirtualSocketServer;
@@ -39,23 +39,21 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
   VirtualSocket(VirtualSocketServer* server, int family, int type);
   ~VirtualSocket() override;
 
-  webrtc::SocketAddress GetLocalAddress() const override;
-  webrtc::SocketAddress GetRemoteAddress() const override;
+  SocketAddress GetLocalAddress() const override;
+  SocketAddress GetRemoteAddress() const override;
 
-  int Bind(const webrtc::SocketAddress& addr) override;
-  int Connect(const webrtc::SocketAddress& addr) override;
+  int Bind(const SocketAddress& addr) override;
+  int Connect(const SocketAddress& addr) override;
   int Close() override;
   int Send(const void* pv, size_t cb) override;
-  int SendTo(const void* pv,
-             size_t cb,
-             const webrtc::SocketAddress& addr) override;
+  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
   int Recv(void* pv, size_t cb, int64_t* timestamp) override;
   int RecvFrom(void* pv,
                size_t cb,
-               webrtc::SocketAddress* paddr,
+               SocketAddress* paddr,
                int64_t* timestamp) override;
   int Listen(int backlog) override;
-  VirtualSocket* Accept(webrtc::SocketAddress* paddr) override;
+  VirtualSocket* Accept(SocketAddress* paddr) override;
 
   int GetError() const override;
   void SetError(int error) override;
@@ -68,7 +66,7 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
   const char* send_buffer_data() const { return send_buffer_.data(); }
 
   
-  void SetLocalAddress(const webrtc::SocketAddress& addr);
+  void SetLocalAddress(const SocketAddress& addr);
 
   bool was_any() { return was_any_; }
   void set_was_any(bool was_any) { was_any_ = was_any; }
@@ -88,11 +86,9 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
   
   size_t PurgeNetworkPackets(int64_t cur_time);
 
-  void PostPacket(webrtc::TimeDelta delay,
-                  std::unique_ptr<VirtualSocketPacket> packet);
-  void PostConnect(webrtc::TimeDelta delay,
-                   const webrtc::SocketAddress& remote_addr);
-  void PostDisconnect(webrtc::TimeDelta delay);
+  void PostPacket(TimeDelta delay, std::unique_ptr<VirtualSocketPacket> packet);
+  void PostConnect(TimeDelta delay, const SocketAddress& remote_addr);
+  void PostDisconnect(TimeDelta delay);
 
  private:
   
@@ -111,32 +107,31 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
     
     
     
-    int RecvFrom(void* buffer, size_t size, webrtc::SocketAddress& addr);
+    int RecvFrom(void* buffer, size_t size, SocketAddress& addr);
 
     void Listen();
 
     struct AcceptResult {
       int error = 0;
       std::unique_ptr<VirtualSocket> socket;
-      webrtc::SocketAddress remote_addr;
+      SocketAddress remote_addr;
     };
     AcceptResult Accept();
 
     bool AddPacket(std::unique_ptr<VirtualSocketPacket> packet);
-    void PostConnect(webrtc::TimeDelta delay,
-                     const webrtc::SocketAddress& remote_addr);
+    void PostConnect(TimeDelta delay, const SocketAddress& remote_addr);
 
    private:
     enum class Signal { kNone, kReadEvent, kConnectEvent };
     
     
-    using PostedConnects = std::list<webrtc::SocketAddress>;
+    using PostedConnects = std::list<SocketAddress>;
 
     void PostSignalReadEvent() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
     void MaybeSignalReadEvent();
     Signal Connect(PostedConnects::iterator remote_addr_it);
 
-    webrtc::Mutex mutex_;
+    Mutex mutex_;
     VirtualSocket& socket_;
     bool alive_ RTC_GUARDED_BY(mutex_) = true;
     
@@ -157,7 +152,7 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
         RTC_GUARDED_BY(mutex_);
 
     
-    std::optional<std::deque<webrtc::SocketAddress>> listen_queue_
+    std::optional<std::deque<SocketAddress>> listen_queue_
         RTC_GUARDED_BY(mutex_);
   };
 
@@ -170,9 +165,9 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
   typedef std::vector<char> SendBuffer;
   typedef std::map<Option, int> OptionsMap;
 
-  int InitiateConnect(const webrtc::SocketAddress& addr, bool use_delay);
-  void CompleteConnect(const webrtc::SocketAddress& addr);
-  int SendUdp(const void* pv, size_t cb, const webrtc::SocketAddress& addr);
+  int InitiateConnect(const SocketAddress& addr, bool use_delay);
+  void CompleteConnect(const SocketAddress& addr);
+  int SendUdp(const void* pv, size_t cb, const SocketAddress& addr);
   int SendTcp(const void* pv, size_t cb);
 
   void OnSocketServerReadyToSend();
@@ -181,8 +176,8 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
   const int type_;
   ConnState state_;
   int error_;
-  webrtc::SocketAddress local_addr_;
-  webrtc::SocketAddress remote_addr_;
+  SocketAddress local_addr_;
+  SocketAddress remote_addr_;
 
   const scoped_refptr<SafetyBlock> safety_ =
       make_ref_counted<SafetyBlock>(this);
@@ -226,7 +221,7 @@ class VirtualSocketServer : public SocketServer {
   
   
   
-  explicit VirtualSocketServer(webrtc::ThreadProcessingFakeClock* fake_clock);
+  explicit VirtualSocketServer(ThreadProcessingFakeClock* fake_clock);
   ~VirtualSocketServer() override;
 
   VirtualSocketServer(const VirtualSocketServer&) = delete;
@@ -236,8 +231,8 @@ class VirtualSocketServer : public SocketServer {
   
   
   
-  webrtc::IPAddress GetDefaultSourceAddress(int family);
-  void SetDefaultSourceAddress(const webrtc::IPAddress& from_addr);
+  IPAddress GetDefaultSourceAddress(int family);
+  void SetDefaultSourceAddress(const IPAddress& from_addr);
 
   
   
@@ -289,11 +284,11 @@ class VirtualSocketServer : public SocketServer {
   VirtualSocket* CreateSocket(int family, int type) override;
 
   
-  void SetMessageQueue(Thread* queue) override;
-  bool Wait(webrtc::TimeDelta max_wait_duration, bool process_io) override;
+  void SetMessageQueue(rtc::Thread* queue) override;
+  bool Wait(TimeDelta max_wait_duration, bool process_io) override;
   void WakeUp() override;
 
-  void SetDelayOnAddress(const webrtc::SocketAddress& address, int delay_ms) {
+  void SetDelayOnAddress(const SocketAddress& address, int delay_ms) {
     delay_by_ip_[address.ipaddr()] = delay_ms;
   }
 
@@ -304,8 +299,8 @@ class VirtualSocketServer : public SocketServer {
   
   
   
-  void SetAlternativeLocalAddress(const webrtc::IPAddress& address,
-                                  const webrtc::IPAddress& alternative);
+  void SetAlternativeLocalAddress(const IPAddress& address,
+                                  const IPAddress& alternative);
 
   typedef std::pair<double, double> Point;
   typedef std::vector<Point> Function;
@@ -324,8 +319,8 @@ class VirtualSocketServer : public SocketServer {
 
   
   
-  bool CloseTcpConnections(const webrtc::SocketAddress& addr_local,
-                           const webrtc::SocketAddress& addr_remote);
+  bool CloseTcpConnections(const SocketAddress& addr_local,
+                           const SocketAddress& addr_remote);
 
   
   
@@ -333,45 +328,44 @@ class VirtualSocketServer : public SocketServer {
 
   
   
-  webrtc::SocketAddress AssignBindAddress(
-      const webrtc::SocketAddress& app_addr);
+  SocketAddress AssignBindAddress(const SocketAddress& app_addr);
 
   
-  int Bind(VirtualSocket* socket, const webrtc::SocketAddress& addr);
+  int Bind(VirtualSocket* socket, const SocketAddress& addr);
 
-  int Unbind(const webrtc::SocketAddress& addr, VirtualSocket* socket);
+  int Unbind(const SocketAddress& addr, VirtualSocket* socket);
 
   
-  void AddConnection(const webrtc::SocketAddress& client,
-                     const webrtc::SocketAddress& server,
+  void AddConnection(const SocketAddress& client,
+                     const SocketAddress& server,
                      VirtualSocket* socket);
 
   
   int Connect(VirtualSocket* socket,
-              const webrtc::SocketAddress& remote_addr,
+              const SocketAddress& remote_addr,
               bool use_delay);
 
   
   bool Disconnect(VirtualSocket* socket);
 
   
-  bool Disconnect(const webrtc::SocketAddress& addr);
+  bool Disconnect(const SocketAddress& addr);
 
   
-  bool Disconnect(const webrtc::SocketAddress& local_addr,
-                  const webrtc::SocketAddress& remote_addr);
+  bool Disconnect(const SocketAddress& local_addr,
+                  const SocketAddress& remote_addr);
 
   
   int SendUdp(VirtualSocket* socket,
               const char* data,
               size_t data_size,
-              const webrtc::SocketAddress& remote_addr);
+              const SocketAddress& remote_addr);
 
   
   void SendTcp(VirtualSocket* socket) RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  void SendTcp(const webrtc::SocketAddress& addr) RTC_LOCKS_EXCLUDED(mutex_);
+  void SendTcp(const SocketAddress& addr) RTC_LOCKS_EXCLUDED(mutex_);
 
   
   uint32_t SendDelay(uint32_t size) RTC_LOCKS_EXCLUDED(mutex_);
@@ -381,21 +375,21 @@ class VirtualSocketServer : public SocketServer {
 
  protected:
   
-  webrtc::IPAddress GetNextIP(int family);
+  IPAddress GetNextIP(int family);
 
   
-  VirtualSocket* LookupBinding(const webrtc::SocketAddress& addr);
+  VirtualSocket* LookupBinding(const SocketAddress& addr);
 
  private:
   friend VirtualSocket;
   uint16_t GetNextPort();
 
   
-  VirtualSocket* LookupConnection(const webrtc::SocketAddress& client,
-                                  const webrtc::SocketAddress& server);
+  VirtualSocket* LookupConnection(const SocketAddress& client,
+                                  const SocketAddress& server);
 
-  void RemoveConnection(const webrtc::SocketAddress& client,
-                        const webrtc::SocketAddress& server);
+  void RemoveConnection(const SocketAddress& client,
+                        const SocketAddress& server);
 
   
   void AddPacketToNetwork(VirtualSocket* socket,
@@ -438,16 +432,16 @@ class VirtualSocketServer : public SocketServer {
   
   static bool CanInteractWith(VirtualSocket* local, VirtualSocket* remote);
 
-  typedef std::map<webrtc::SocketAddress, VirtualSocket*> AddressMap;
-  typedef std::map<webrtc::SocketAddressPair, VirtualSocket*> ConnectionMap;
+  typedef std::map<SocketAddress, VirtualSocket*> AddressMap;
+  typedef std::map<SocketAddressPair, VirtualSocket*> ConnectionMap;
 
   
   
-  webrtc::ThreadProcessingFakeClock* fake_clock_ = nullptr;
+  ThreadProcessingFakeClock* fake_clock_ = nullptr;
 
   
-  Event wakeup_;
-  Thread* msg_queue_;
+  rtc::Event wakeup_;
+  rtc::Thread* msg_queue_;
   bool stop_on_idle_;
   in_addr next_ipv4_;
   in6_addr next_ipv6_;
@@ -455,10 +449,10 @@ class VirtualSocketServer : public SocketServer {
   AddressMap* bindings_;
   ConnectionMap* connections_;
 
-  webrtc::IPAddress default_source_address_v4_;
-  webrtc::IPAddress default_source_address_v6_;
+  IPAddress default_source_address_v4_;
+  IPAddress default_source_address_v6_;
 
-  mutable webrtc::Mutex mutex_;
+  mutable Mutex mutex_;
 
   uint32_t bandwidth_ RTC_GUARDED_BY(mutex_);
   uint32_t network_capacity_ RTC_GUARDED_BY(mutex_);
@@ -471,8 +465,8 @@ class VirtualSocketServer : public SocketServer {
   
   uint32_t sent_packets_ RTC_GUARDED_BY(mutex_) = 0;
 
-  std::map<webrtc::IPAddress, int> delay_by_ip_;
-  std::map<webrtc::IPAddress, webrtc::IPAddress> alternative_address_mapping_;
+  std::map<IPAddress, int> delay_by_ip_;
+  std::map<IPAddress, IPAddress> alternative_address_mapping_;
   std::unique_ptr<Function> delay_dist_;
 
   double drop_prob_ RTC_GUARDED_BY(mutex_);
@@ -485,5 +479,11 @@ class VirtualSocketServer : public SocketServer {
 };
 
 }  
+
+
+
+namespace rtc {
+using ::webrtc::VirtualSocketServer;
+}
 
 #endif  

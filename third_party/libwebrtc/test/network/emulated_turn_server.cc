@@ -39,7 +39,7 @@ static const char kTestRealm[] = "example.org";
 static const char kTestSoftware[] = "TestTurnServer";
 
 
-class PacketSocketFactoryWrapper : public rtc::PacketSocketFactory {
+class PacketSocketFactoryWrapper : public webrtc::PacketSocketFactory {
  public:
   explicit PacketSocketFactoryWrapper(
       webrtc::test::EmulatedTURNServer* turn_server)
@@ -48,23 +48,24 @@ class PacketSocketFactoryWrapper : public rtc::PacketSocketFactory {
 
   
   
-  rtc::AsyncPacketSocket* CreateUdpSocket(const webrtc::SocketAddress& address,
-                                          uint16_t min_port,
-                                          uint16_t max_port) override {
+  webrtc::AsyncPacketSocket* CreateUdpSocket(
+      const webrtc::SocketAddress& address,
+      uint16_t min_port,
+      uint16_t max_port) override {
     return turn_server_->CreatePeerSocket();
   }
 
-  rtc::AsyncListenSocket* CreateServerTcpSocket(
+  webrtc::AsyncListenSocket* CreateServerTcpSocket(
       const webrtc::SocketAddress& local_address,
       uint16_t min_port,
       uint16_t max_port,
       int opts) override {
     return nullptr;
   }
-  rtc::AsyncPacketSocket* CreateClientTcpSocket(
+  webrtc::AsyncPacketSocket* CreateClientTcpSocket(
       const webrtc::SocketAddress& local_address,
       const webrtc::SocketAddress& remote_address,
-      const rtc::PacketSocketTcpOptions& tcp_options) override {
+      const webrtc::PacketSocketTcpOptions& tcp_options) override {
     return nullptr;
   }
   std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAsyncDnsResolver()
@@ -84,8 +85,7 @@ namespace test {
 
 
 
-class EmulatedTURNServer::AsyncPacketSocketWrapper
-    : public rtc::AsyncPacketSocket {
+class EmulatedTURNServer::AsyncPacketSocketWrapper : public AsyncPacketSocket {
  public:
   AsyncPacketSocketWrapper(webrtc::test::EmulatedTURNServer* turn_server,
                            webrtc::EmulatedEndpoint* endpoint,
@@ -114,14 +114,14 @@ class EmulatedTURNServer::AsyncPacketSocketWrapper
   }
   int Close() override { return 0; }
   void NotifyPacketReceived(const rtc::ReceivedPacket& packet) {
-    rtc::AsyncPacketSocket::NotifyPacketReceived(packet);
+    AsyncPacketSocket::NotifyPacketReceived(packet);
   }
 
-  rtc::AsyncPacketSocket::State GetState() const override {
-    return rtc::AsyncPacketSocket::STATE_BOUND;
+  AsyncPacketSocket::State GetState() const override {
+    return AsyncPacketSocket::STATE_BOUND;
   }
-  int GetOption(rtc::Socket::Option opt, int* value) override { return 0; }
-  int SetOption(rtc::Socket::Option opt, int value) override { return 0; }
+  int GetOption(Socket::Option opt, int* value) override { return 0; }
+  int SetOption(Socket::Option opt, int value) override { return 0; }
   int GetError() const override { return 0; }
   void SetError(int error) override {}
 
@@ -174,7 +174,7 @@ EmulatedTURNServer::~EmulatedTURNServer() {
   });
 }
 
-rtc::AsyncPacketSocket* EmulatedTURNServer::Wrap(EmulatedEndpoint* endpoint) {
+AsyncPacketSocket* EmulatedTURNServer::Wrap(EmulatedEndpoint* endpoint) {
   RTC_DCHECK_RUN_ON(thread_.get());
   auto port = endpoint->BindReceiver(0, this).value();
   auto socket = new AsyncPacketSocketWrapper(this, endpoint, port);

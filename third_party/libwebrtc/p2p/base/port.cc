@@ -685,7 +685,7 @@ std::string Port::CreateStunUsername(absl::string_view remote_username) const {
   return std::string(remote_username) + ":" + username_fragment();
 }
 
-bool Port::HandleIncomingPacket(rtc::AsyncPacketSocket* ,
+bool Port::HandleIncomingPacket(webrtc::AsyncPacketSocket* ,
                                 const rtc::ReceivedPacket& ) {
   RTC_DCHECK_NOTREACHED();
   return false;

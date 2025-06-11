@@ -72,9 +72,10 @@ void UpdateAbsSendTimeExtensionValue(uint8_t* extension_data,
 
 
 
-void UpdateRtpAuthTag(uint8_t* rtp,
-                      size_t length,
-                      const rtc::PacketTimeUpdateParams& packet_time_params) {
+void UpdateRtpAuthTag(
+    uint8_t* rtp,
+    size_t length,
+    const webrtc::PacketTimeUpdateParams& packet_time_params) {
   
   if (packet_time_params.srtp_auth_key.empty()) {
     return;
@@ -352,10 +353,11 @@ bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
   return found;
 }
 
-bool ApplyPacketOptions(uint8_t* data,
-                        size_t length,
-                        const rtc::PacketTimeUpdateParams& packet_time_params,
-                        uint64_t time_us) {
+bool ApplyPacketOptions(
+    uint8_t* data,
+    size_t length,
+    const webrtc::PacketTimeUpdateParams& packet_time_params,
+    uint64_t time_us) {
   RTC_DCHECK(data);
   RTC_DCHECK(length);
 

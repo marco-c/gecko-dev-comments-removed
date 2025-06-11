@@ -20,7 +20,7 @@
 #include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
-namespace rtc {
+namespace webrtc {
 
 class AsyncSocketAdapter : public Socket, public sigslot::has_slots<> {
  public:
@@ -28,21 +28,19 @@ class AsyncSocketAdapter : public Socket, public sigslot::has_slots<> {
   
   explicit AsyncSocketAdapter(Socket* socket);
 
-  webrtc::SocketAddress GetLocalAddress() const override;
-  webrtc::SocketAddress GetRemoteAddress() const override;
-  int Bind(const webrtc::SocketAddress& addr) override;
-  int Connect(const webrtc::SocketAddress& addr) override;
+  SocketAddress GetLocalAddress() const override;
+  SocketAddress GetRemoteAddress() const override;
+  int Bind(const SocketAddress& addr) override;
+  int Connect(const SocketAddress& addr) override;
   int Send(const void* pv, size_t cb) override;
-  int SendTo(const void* pv,
-             size_t cb,
-             const webrtc::SocketAddress& addr) override;
+  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
   int Recv(void* pv, size_t cb, int64_t* timestamp) override;
   int RecvFrom(void* pv,
                size_t cb,
-               webrtc::SocketAddress* paddr,
+               SocketAddress* paddr,
                int64_t* timestamp) override;
   int Listen(int backlog) override;
-  Socket* Accept(webrtc::SocketAddress* paddr) override;
+  Socket* Accept(SocketAddress* paddr) override;
   int Close() override;
   int GetError() const override;
   void SetError(int error) override;
@@ -62,6 +60,12 @@ class AsyncSocketAdapter : public Socket, public sigslot::has_slots<> {
   const std::unique_ptr<Socket> socket_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AsyncSocketAdapter;
 }  
 
 #endif  

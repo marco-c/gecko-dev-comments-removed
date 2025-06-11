@@ -23,30 +23,29 @@
 #include "test/gtest.h"
 #include "test/wait_until.h"
 
-namespace rtc {
+namespace webrtc {
 
 TEST(NullSocketServerTest, WaitAndSet) {
-  AutoThread main_thread;
+  rtc::AutoThread main_thread;
   NullSocketServer ss;
-  auto thread = Thread::Create();
+  auto thread = rtc::Thread::Create();
   EXPECT_TRUE(thread->Start());
   thread->PostTask([&ss] { ss.WakeUp(); });
   
   const bool process_io = true;
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return ss.Wait(SocketServer::kForever, process_io); },
-          ::testing::IsTrue(), {.timeout = webrtc::TimeDelta::Millis(5'000)}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return ss.Wait(SocketServer::kForever, process_io); },
+                  ::testing::IsTrue(), {.timeout = TimeDelta::Millis(5'000)}),
+              webrtc::IsRtcOk());
 }
 
 TEST(NullSocketServerTest, TestWait) {
   NullSocketServer ss;
-  int64_t start = TimeMillis();
-  ss.Wait(webrtc::TimeDelta::Millis(200), true);
+  int64_t start = rtc::TimeMillis();
+  ss.Wait(TimeDelta::Millis(200), true);
   
   
-  EXPECT_GE(TimeSince(start), 180);
+  EXPECT_GE(rtc::TimeSince(start), 180);
 }
 
 }  

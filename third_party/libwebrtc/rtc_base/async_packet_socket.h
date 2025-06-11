@@ -31,7 +31,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -46,6 +46,10 @@ struct PacketTimeUpdateParams {
   int srtp_auth_tag_len = -1;          
   int64_t srtp_packet_index = -1;  
 };
+
+}  
+
+namespace rtc {
 
 
 
@@ -65,7 +69,7 @@ struct RTC_EXPORT PacketOptions {
   
   
   int64_t packet_id = -1;
-  PacketTimeUpdateParams packet_time_params;
+  webrtc::PacketTimeUpdateParams packet_time_params;
   
   PacketInfo info_signaled_after_sent;
   
@@ -75,6 +79,9 @@ struct RTC_EXPORT PacketOptions {
   
   bool last_packet_in_batch = false;
 };
+}  
+
+namespace webrtc {
 
 
 
@@ -96,17 +103,19 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
 
   
   
-  virtual webrtc::SocketAddress GetLocalAddress() const = 0;
+  virtual SocketAddress GetLocalAddress() const = 0;
 
   
-  virtual webrtc::SocketAddress GetRemoteAddress() const = 0;
+  virtual SocketAddress GetRemoteAddress() const = 0;
 
   
-  virtual int Send(const void* pv, size_t cb, const PacketOptions& options) = 0;
+  virtual int Send(const void* pv,
+                   size_t cb,
+                   const rtc::PacketOptions& options) = 0;
   virtual int SendTo(const void* pv,
                      size_t cb,
-                     const webrtc::SocketAddress& addr,
-                     const PacketOptions& options) = 0;
+                     const SocketAddress& addr,
+                     const rtc::PacketOptions& options) = 0;
 
   
   virtual int Close() = 0;
@@ -126,16 +135,17 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   void SubscribeCloseEvent(
       const void* removal_tag,
-      std::function<void(AsyncPacketSocket*, int)> callback);
+      std::function<void(webrtc::AsyncPacketSocket*, int)> callback);
   void UnsubscribeCloseEvent(const void* removal_tag);
 
   void RegisterReceivedPacketCallback(
-      absl::AnyInvocable<void(AsyncPacketSocket*, const rtc::ReceivedPacket&)>
+      absl::AnyInvocable<void(webrtc::AsyncPacketSocket*,
+                              const rtc::ReceivedPacket&)>
           received_packet_callback);
   void DeregisterReceivedPacketCallback();
 
   
-  sigslot::signal2<AsyncPacketSocket*, const SentPacket&> SignalSentPacket;
+  sigslot::signal2<AsyncPacketSocket*, const rtc::SentPacket&> SignalSentPacket;
 
   
   sigslot::signal1<AsyncPacketSocket*> SignalReadyToSend;
@@ -143,8 +153,7 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   
   
-  sigslot::signal2<AsyncPacketSocket*, const webrtc::SocketAddress&>
-      SignalAddressReady;
+  sigslot::signal2<AsyncPacketSocket*, const SocketAddress&> SignalAddressReady;
 
   
   
@@ -166,13 +175,14 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
 
   void NotifyPacketReceived(const rtc::ReceivedPacket& packet);
 
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker network_checker_{
-      webrtc::SequenceChecker::kDetached};
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker network_checker_{
+      SequenceChecker::kDetached};
 
  private:
-  webrtc::CallbackList<AsyncPacketSocket*, int> on_close_
+  CallbackList<AsyncPacketSocket*, int> on_close_
       RTC_GUARDED_BY(&network_checker_);
-  absl::AnyInvocable<void(AsyncPacketSocket*, const rtc::ReceivedPacket&)>
+  absl::AnyInvocable<void(webrtc::AsyncPacketSocket*,
+                          const rtc::ReceivedPacket&)>
       received_packet_callback_ RTC_GUARDED_BY(&network_checker_);
 };
 
@@ -189,7 +199,7 @@ class RTC_EXPORT AsyncListenSocket : public sigslot::has_slots<> {
 
   
   
-  virtual webrtc::SocketAddress GetLocalAddress() const = 0;
+  virtual SocketAddress GetLocalAddress() const = 0;
 
   sigslot::signal2<AsyncListenSocket*, AsyncPacketSocket*> SignalNewConnection;
 };
@@ -198,6 +208,15 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
                                        const AsyncPacketSocket& socket_from,
                                        rtc::PacketInfo* info);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AsyncListenSocket;
+using ::webrtc::AsyncPacketSocket;
+using ::webrtc::CopySocketInformationToPacketInfo;
+using ::webrtc::PacketTimeUpdateParams;
 }  
 
 #endif

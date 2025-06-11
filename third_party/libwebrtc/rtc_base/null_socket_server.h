@@ -16,22 +16,28 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 class RTC_EXPORT NullSocketServer : public SocketServer {
  public:
   NullSocketServer();
   ~NullSocketServer() override;
 
-  bool Wait(webrtc::TimeDelta max_wait_duration, bool process_io) override;
+  bool Wait(TimeDelta max_wait_duration, bool process_io) override;
   void WakeUp() override;
 
   Socket* CreateSocket(int family, int type) override;
 
  private:
-  Event event_;
+  rtc::Event event_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::NullSocketServer;
 }  
 
 #endif  

@@ -20,9 +20,9 @@
 #include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
-static const webrtc::SocketAddress kAddr("22.22.22.22", 0);
+static const SocketAddress kAddr("22.22.22.22", 0);
 
 TEST(AsyncUDPSocketTest, SetSocketOptionIfEctChange) {
   VirtualSocketServer socket_server;

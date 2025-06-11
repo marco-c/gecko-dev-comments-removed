@@ -48,7 +48,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   
   
-  explicit OpenSSLAdapter(Socket* socket,
+  explicit OpenSSLAdapter(webrtc::Socket* socket,
                           OpenSSLSessionCache* ssl_session_cache = nullptr,
                           SSLCertificateVerifier* ssl_cert_verifier = nullptr);
   ~OpenSSLAdapter() override;
@@ -83,10 +83,10 @@ class OpenSSLAdapter final : public SSLAdapter {
   static SSL_CTX* CreateContext(webrtc::SSLMode mode, bool enable_cache);
 
  protected:
-  void OnConnectEvent(Socket* socket) override;
-  void OnReadEvent(Socket* socket) override;
-  void OnWriteEvent(Socket* socket) override;
-  void OnCloseEvent(Socket* socket, int err) override;
+  void OnConnectEvent(webrtc::Socket* socket) override;
+  void OnReadEvent(webrtc::Socket* socket) override;
+  void OnWriteEvent(webrtc::Socket* socket) override;
+  void OnCloseEvent(webrtc::Socket* socket, int err) override;
 
  private:
   class EarlyExitCatcher {
@@ -208,7 +208,7 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   
   
-  OpenSSLAdapter* CreateAdapter(Socket* socket) override;
+  OpenSSLAdapter* CreateAdapter(webrtc::Socket* socket) override;
 
  private:
   

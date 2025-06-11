@@ -186,7 +186,7 @@ TEST(RtpUtilsTest, UpdateAbsSendTimeExtensionInTurnSendIndication) {
 
 
 TEST(RtpUtilsTest, ApplyPacketOptionsWithDefaultValues) {
-  rtc::PacketTimeUpdateParams packet_time_params;
+  webrtc::PacketTimeUpdateParams packet_time_params;
   std::vector<uint8_t> rtp_packet(
       kRtpMsgWithOneByteAbsSendTimeExtension,
       kRtpMsgWithOneByteAbsSendTimeExtension +
@@ -207,7 +207,7 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithDefaultValues) {
 
 
 TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParams) {
-  rtc::PacketTimeUpdateParams packet_time_params;
+  webrtc::PacketTimeUpdateParams packet_time_params;
   packet_time_params.srtp_auth_key.assign(kTestKey,
                                           kTestKey + sizeof(kTestKey));
   packet_time_params.srtp_auth_tag_len = 4;
@@ -264,7 +264,7 @@ TEST(RtpUtilsTest, UpdateTwoByteAbsSendTimeExtensionInRtpPacket) {
 
 
 TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParamsAndAbsSendTime) {
-  rtc::PacketTimeUpdateParams packet_time_params;
+  webrtc::PacketTimeUpdateParams packet_time_params;
   packet_time_params.srtp_auth_key.assign(kTestKey,
                                           kTestKey + sizeof(kTestKey));
   packet_time_params.srtp_auth_tag_len = 4;

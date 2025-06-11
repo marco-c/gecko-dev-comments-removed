@@ -28,14 +28,13 @@ const int STUN_SERVER_PORT = 3478;
 class StunServer {
  public:
   
-  explicit StunServer(rtc::AsyncUDPSocket* socket);
+  explicit StunServer(AsyncUDPSocket* socket);
   
   virtual ~StunServer();
 
  protected:
   
-  void OnPacket(rtc::AsyncPacketSocket* socket,
-                const rtc::ReceivedPacket& packet);
+  void OnPacket(AsyncPacketSocket* socket, const rtc::ReceivedPacket& packet);
 
   
   virtual void OnBindingRequest(cricket::StunMessage* msg,
@@ -61,7 +60,7 @@ class StunServer {
 
  private:
   SequenceChecker sequence_checker_;
-  std::unique_ptr<rtc::AsyncUDPSocket> socket_;
+  std::unique_ptr<AsyncUDPSocket> socket_;
 };
 
 }  

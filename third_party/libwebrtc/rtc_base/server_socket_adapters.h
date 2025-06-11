@@ -13,17 +13,16 @@
 
 #include "rtc_base/socket_adapters.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 class AsyncProxyServerSocket : public BufferedReadAdapter {
  public:
   AsyncProxyServerSocket(Socket* socket, size_t buffer_size);
   ~AsyncProxyServerSocket() override;
-  sigslot::signal2<AsyncProxyServerSocket*, const webrtc::SocketAddress&>
+  sigslot::signal2<AsyncProxyServerSocket*, const SocketAddress&>
       SignalConnectRequest;
-  virtual void SendConnectResult(int err,
-                                 const webrtc::SocketAddress& addr) = 0;
+  virtual void SendConnectResult(int err, const SocketAddress& addr) = 0;
 };
 
 
@@ -39,6 +38,13 @@ class AsyncSSLServerSocket : public BufferedReadAdapter {
   void ProcessInput(char* data, size_t* len) override;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AsyncProxyServerSocket;
+using ::webrtc::AsyncSSLServerSocket;
 }  
 
 #endif  

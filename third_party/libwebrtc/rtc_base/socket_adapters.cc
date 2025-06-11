@@ -25,7 +25,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/zero_memory.h"
 
-namespace rtc {
+namespace webrtc {
 
 BufferedReadAdapter::BufferedReadAdapter(Socket* socket, size_t size)
     : AsyncSocketAdapter(socket),
@@ -137,7 +137,7 @@ static const uint8_t kSslClientHello[] = {
 };
 
 
-ArrayView<const uint8_t> AsyncSSLSocket::SslClientHello() {
+rtc::ArrayView<const uint8_t> AsyncSSLSocket::SslClientHello() {
   
   
   return {kSslClientHello, sizeof(kSslClientHello)};
@@ -165,14 +165,14 @@ static const uint8_t kSslServerHello[] = {
 };
 
 
-ArrayView<const uint8_t> AsyncSSLSocket::SslServerHello() {
+rtc::ArrayView<const uint8_t> AsyncSSLSocket::SslServerHello() {
   return {kSslServerHello, sizeof(kSslServerHello)};
 }
 
 AsyncSSLSocket::AsyncSSLSocket(Socket* socket)
     : BufferedReadAdapter(socket, 1024) {}
 
-int AsyncSSLSocket::Connect(const webrtc::SocketAddress& addr) {
+int AsyncSSLSocket::Connect(const SocketAddress& addr) {
   
   
   BufferInput(true);

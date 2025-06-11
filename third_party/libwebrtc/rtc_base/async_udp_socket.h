@@ -26,7 +26,7 @@
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -36,22 +36,22 @@ class AsyncUDPSocket : public AsyncPacketSocket {
   
   
   static AsyncUDPSocket* Create(Socket* socket,
-                                const webrtc::SocketAddress& bind_address);
+                                const SocketAddress& bind_address);
   
   
   static AsyncUDPSocket* Create(SocketFactory* factory,
-                                const webrtc::SocketAddress& bind_address);
+                                const SocketAddress& bind_address);
   explicit AsyncUDPSocket(Socket* socket);
   ~AsyncUDPSocket() = default;
 
-  webrtc::SocketAddress GetLocalAddress() const override;
-  webrtc::SocketAddress GetRemoteAddress() const override;
+  SocketAddress GetLocalAddress() const override;
+  SocketAddress GetRemoteAddress() const override;
   int Send(const void* pv,
            size_t cb,
            const rtc::PacketOptions& options) override;
   int SendTo(const void* pv,
              size_t cb,
-             const webrtc::SocketAddress& addr,
+             const SocketAddress& addr,
              const rtc::PacketOptions& options) override;
   int Close() override;
 
@@ -67,14 +67,20 @@ class AsyncUDPSocket : public AsyncPacketSocket {
   
   void OnWriteEvent(Socket* socket);
 
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
   std::unique_ptr<Socket> socket_;
   bool has_set_ect1_options_ = false;
-  rtc::Buffer buffer_ RTC_GUARDED_BY(sequence_checker_);
-  std::optional<webrtc::TimeDelta> socket_time_offset_
+  Buffer buffer_ RTC_GUARDED_BY(sequence_checker_);
+  std::optional<TimeDelta> socket_time_offset_
       RTC_GUARDED_BY(sequence_checker_);
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AsyncUDPSocket;
 }  
 
 #endif  

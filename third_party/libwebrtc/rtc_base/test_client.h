@@ -42,11 +42,11 @@ class TestClient : public sigslot::has_slots<> {
 
   
   
-  explicit TestClient(std::unique_ptr<rtc::AsyncPacketSocket> socket);
+  explicit TestClient(std::unique_ptr<AsyncPacketSocket> socket);
   
   
   
-  TestClient(std::unique_ptr<rtc::AsyncPacketSocket> socket,
+  TestClient(std::unique_ptr<AsyncPacketSocket> socket,
              ThreadProcessingFakeClock* fake_clock);
   ~TestClient() override;
 
@@ -57,11 +57,11 @@ class TestClient : public sigslot::has_slots<> {
   SocketAddress remote_address() const { return socket_->GetRemoteAddress(); }
 
   
-  bool CheckConnState(rtc::AsyncPacketSocket::State state);
+  bool CheckConnState(AsyncPacketSocket::State state);
 
   
   bool CheckConnected() {
-    return CheckConnState(rtc::AsyncPacketSocket::STATE_CONNECTED);
+    return CheckConnState(AsyncPacketSocket::STATE_CONNECTED);
   }
 
   
@@ -82,7 +82,7 @@ class TestClient : public sigslot::has_slots<> {
   bool CheckNoPacket();
 
   int GetError();
-  int SetOption(rtc::Socket::Option opt, int value);
+  int SetOption(Socket::Option opt, int value);
 
   bool ready_to_send() const { return ready_to_send_count() > 0; }
 
@@ -93,17 +93,17 @@ class TestClient : public sigslot::has_slots<> {
   
   static const int kNoPacketTimeoutMs = 1000;
   
-  rtc::Socket::ConnState GetState();
+  Socket::ConnState GetState();
 
-  void OnPacket(rtc::AsyncPacketSocket* socket,
+  void OnPacket(AsyncPacketSocket* socket,
                 const rtc::ReceivedPacket& received_packet);
-  void OnReadyToSend(rtc::AsyncPacketSocket* socket);
+  void OnReadyToSend(AsyncPacketSocket* socket);
   bool CheckTimestamp(std::optional<Timestamp> packet_timestamp);
   void AdvanceTime(int ms);
 
   ThreadProcessingFakeClock* fake_clock_ = nullptr;
   Mutex mutex_;
-  std::unique_ptr<rtc::AsyncPacketSocket> socket_;
+  std::unique_ptr<AsyncPacketSocket> socket_;
   std::vector<std::unique_ptr<Packet>> packets_;
   int ready_to_send_count_ = 0;
   std::optional<Timestamp> prev_packet_timestamp_;

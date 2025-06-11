@@ -52,7 +52,7 @@ class SSLAdapterFactory {
   virtual void SetIgnoreBadCert(bool ignore) = 0;
 
   
-  virtual SSLAdapter* CreateAdapter(Socket* socket) = 0;
+  virtual SSLAdapter* CreateAdapter(webrtc::Socket* socket) = 0;
 
   static std::unique_ptr<SSLAdapterFactory> Create();
 };
@@ -62,9 +62,10 @@ class SSLAdapterFactory {
 
 
 
-class SSLAdapter : public AsyncSocketAdapter {
+class SSLAdapter : public webrtc::AsyncSocketAdapter {
  public:
-  explicit SSLAdapter(Socket* socket) : AsyncSocketAdapter(socket) {}
+  explicit SSLAdapter(webrtc::Socket* socket)
+      : webrtc::AsyncSocketAdapter(socket) {}
 
   
   
@@ -102,12 +103,14 @@ class SSLAdapter : public AsyncSocketAdapter {
   
   
   
-  static SSLAdapter* Create(Socket* socket);
+  static SSLAdapter* Create(webrtc::Socket* socket);
 
  private:
   
   int Listen(int backlog) override { RTC_CHECK(false); }
-  Socket* Accept(webrtc::SocketAddress* paddr) override { RTC_CHECK(false); }
+  webrtc::Socket* Accept(webrtc::SocketAddress* paddr) override {
+    RTC_CHECK(false);
+  }
 };
 
 

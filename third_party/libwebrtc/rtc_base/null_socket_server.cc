@@ -15,17 +15,17 @@
 #include "rtc_base/event.h"
 #include "rtc_base/socket_server.h"
 
-namespace rtc {
+namespace webrtc {
 
 NullSocketServer::NullSocketServer() = default;
 NullSocketServer::~NullSocketServer() {}
 
-bool NullSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
+bool NullSocketServer::Wait(TimeDelta max_wait_duration,
                             bool ) {
   
   
   
-  event_.Wait(max_wait_duration, Event::kForever);
+  event_.Wait(max_wait_duration, rtc::Event::kForever);
   return true;
 }
 
@@ -33,7 +33,7 @@ void NullSocketServer::WakeUp() {
   event_.Set();
 }
 
-rtc::Socket* NullSocketServer::CreateSocket(int , int ) {
+Socket* NullSocketServer::CreateSocket(int , int ) {
   RTC_DCHECK_NOTREACHED();
   return nullptr;
 }

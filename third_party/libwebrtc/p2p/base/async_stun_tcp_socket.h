@@ -18,19 +18,18 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 
-namespace cricket {
+namespace webrtc {
 
-class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
+class AsyncStunTCPSocket : public AsyncTCPSocketBase {
  public:
   
   
   
-  static AsyncStunTCPSocket* Create(
-      rtc::Socket* socket,
-      const webrtc::SocketAddress& bind_address,
-      const webrtc::SocketAddress& remote_address);
+  static AsyncStunTCPSocket* Create(Socket* socket,
+                                    const SocketAddress& bind_address,
+                                    const SocketAddress& remote_address);
 
-  explicit AsyncStunTCPSocket(rtc::Socket* socket);
+  explicit AsyncStunTCPSocket(Socket* socket);
 
   AsyncStunTCPSocket(const AsyncStunTCPSocket&) = delete;
   AsyncStunTCPSocket& operator=(const AsyncStunTCPSocket&) = delete;
@@ -47,6 +46,12 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
   size_t GetExpectedLength(const void* data, size_t len, int* pad_bytes);
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::AsyncStunTCPSocket;
 }  
 
 #endif  

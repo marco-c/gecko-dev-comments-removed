@@ -56,11 +56,11 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
 
   
   
-  virtual int SetOption(rtc::Socket::Option opt, int value) = 0;
+  virtual int SetOption(webrtc::Socket::Option opt, int value) = 0;
 
   
   
-  virtual bool GetOption(rtc::Socket::Option opt, int* value);
+  virtual bool GetOption(webrtc::Socket::Option opt, int* value);
 
   
   virtual int GetError() = 0;

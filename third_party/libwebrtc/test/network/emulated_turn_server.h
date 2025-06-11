@@ -70,7 +70,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
         std::string(username), std::string(realm), std::string(username), key);
   }
 
-  rtc::AsyncPacketSocket* CreatePeerSocket() { return Wrap(peer_); }
+  AsyncPacketSocket* CreatePeerSocket() { return Wrap(peer_); }
 
   
   
@@ -95,7 +95,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
 
   
   
-  rtc::AsyncPacketSocket* Wrap(EmulatedEndpoint* endpoint);
+  AsyncPacketSocket* Wrap(EmulatedEndpoint* endpoint);
 };
 
 }  

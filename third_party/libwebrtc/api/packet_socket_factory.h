@@ -20,11 +20,12 @@
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
-
 namespace rtc {
-
 class SSLCertificateVerifier;
 class AsyncResolverInterface;
+}  
+
+namespace webrtc {
 
 struct PacketSocketTcpOptions {
   PacketSocketTcpOptions() = default;
@@ -36,7 +37,7 @@ struct PacketSocketTcpOptions {
   
   
   
-  SSLCertificateVerifier* tls_cert_verifier = nullptr;
+  rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr;
 };
 
 class RTC_EXPORT PacketSocketFactory {
@@ -56,22 +57,21 @@ class RTC_EXPORT PacketSocketFactory {
   PacketSocketFactory() = default;
   virtual ~PacketSocketFactory() = default;
 
-  virtual AsyncPacketSocket* CreateUdpSocket(
-      const webrtc::SocketAddress& address,
-      uint16_t min_port,
-      uint16_t max_port) = 0;
+  virtual AsyncPacketSocket* CreateUdpSocket(const SocketAddress& address,
+                                             uint16_t min_port,
+                                             uint16_t max_port) = 0;
   virtual AsyncListenSocket* CreateServerTcpSocket(
-      const webrtc::SocketAddress& local_address,
+      const SocketAddress& local_address,
       uint16_t min_port,
       uint16_t max_port,
       int opts) = 0;
 
   virtual AsyncPacketSocket* CreateClientTcpSocket(
-      const webrtc::SocketAddress& local_address,
-      const webrtc::SocketAddress& remote_address,
+      const SocketAddress& local_address,
+      const SocketAddress& remote_address,
       const PacketSocketTcpOptions& tcp_options) = 0;
 
-  virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface>
+  virtual std::unique_ptr<AsyncDnsResolverInterface>
   CreateAsyncDnsResolver() = 0;
 
  private:
@@ -79,6 +79,13 @@ class RTC_EXPORT PacketSocketFactory {
   PacketSocketFactory& operator=(const PacketSocketFactory&) = delete;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::PacketSocketFactory;
+using ::webrtc::PacketSocketTcpOptions;
 }  
 
 #endif  

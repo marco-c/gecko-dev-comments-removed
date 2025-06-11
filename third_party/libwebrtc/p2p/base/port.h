@@ -176,7 +176,7 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   
   struct PortParametersRef {
     webrtc::TaskQueueBase* network_thread;
-    rtc::PacketSocketFactory* socket_factory;
+    webrtc::PacketSocketFactory* socket_factory;
     const rtc::Network* network;
     absl::string_view ice_username_fragment;
     absl::string_view ice_password;
@@ -226,7 +226,9 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   webrtc::TaskQueueBase* thread() override { return thread_; }
 
   
-  rtc::PacketSocketFactory* socket_factory() const override { return factory_; }
+  webrtc::PacketSocketFactory* socket_factory() const override {
+    return factory_;
+  }
 
   
   const std::string& content_name() const override { return content_name_; }
@@ -306,7 +308,7 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   
   
   
-  virtual bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
+  virtual bool HandleIncomingPacket(webrtc::AsyncPacketSocket* socket,
                                     const rtc::ReceivedPacket& packet);
 
   
@@ -353,7 +355,7 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   
   
   
-  virtual void OnSentPacket(rtc::AsyncPacketSocket* socket,
+  virtual void OnSentPacket(webrtc::AsyncPacketSocket* socket,
                             const rtc::SentPacket& sent_packet) = 0;
 
   
@@ -469,7 +471,7 @@ class RTC_EXPORT Port : public webrtc::PortInterface,
   void OnNetworkTypeChanged(const rtc::Network* network);
 
   webrtc::TaskQueueBase* const thread_;
-  rtc::PacketSocketFactory* const factory_;
+  webrtc::PacketSocketFactory* const factory_;
   webrtc::AlwaysValidPointer<const webrtc::FieldTrialsView,
                              webrtc::FieldTrialBasedConfig>
       field_trials_;

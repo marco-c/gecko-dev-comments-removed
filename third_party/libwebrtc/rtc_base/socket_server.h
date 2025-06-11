@@ -16,14 +16,16 @@
 #include "api/units/time_delta.h"
 #include "rtc_base/event.h"
 #include "rtc_base/socket_factory.h"
-
 namespace rtc {
-
 class Thread;
-
-
-
 class NetworkBinderInterface;
+}  
+
+namespace webrtc {
+
+
+
+
 
 
 
@@ -32,36 +34,44 @@ class NetworkBinderInterface;
 
 class SocketServer : public SocketFactory {
  public:
-  static constexpr webrtc::TimeDelta kForever = rtc::Event::kForever;
+  static constexpr TimeDelta kForever = rtc::Event::kForever;
 
   static std::unique_ptr<SocketServer> CreateDefault();
   
   
   
   
-  virtual void SetMessageQueue(Thread* ) {}
+  virtual void SetMessageQueue(rtc::Thread* ) {}
 
   
   
   
   
   
-  virtual bool Wait(webrtc::TimeDelta max_wait_duration, bool process_io) = 0;
+  virtual bool Wait(TimeDelta max_wait_duration, bool process_io) = 0;
 
   
   virtual void WakeUp() = 0;
 
   
   
-  void set_network_binder(NetworkBinderInterface* binder) {
+  void set_network_binder(rtc::NetworkBinderInterface* binder) {
     network_binder_ = binder;
   }
-  NetworkBinderInterface* network_binder() const { return network_binder_; }
+  rtc::NetworkBinderInterface* network_binder() const {
+    return network_binder_;
+  }
 
  private:
-  NetworkBinderInterface* network_binder_ = nullptr;
+  rtc::NetworkBinderInterface* network_binder_ = nullptr;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::SocketServer;
 }  
 
 #endif  

@@ -33,7 +33,7 @@ class FakeNetworkSocketServer : public rtc::SocketServer {
   ~FakeNetworkSocketServer() override;
 
   
-  rtc::Socket* CreateSocket(int family, int type) override;
+  Socket* CreateSocket(int family, int type) override;
 
   
   

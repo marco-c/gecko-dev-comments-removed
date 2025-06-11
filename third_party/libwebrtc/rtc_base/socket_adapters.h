@@ -16,12 +16,13 @@
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "rtc_base/async_socket.h"
-
 namespace rtc {
-
 struct HttpAuthContext;
 class ByteBufferReader;
 class ByteBufferWriter;
+}  
+
+namespace webrtc {
 
 
 
@@ -61,21 +62,28 @@ class BufferedReadAdapter : public AsyncSocketAdapter {
 
 class AsyncSSLSocket : public BufferedReadAdapter {
  public:
-  static ArrayView<const uint8_t> SslClientHello();
-  static ArrayView<const uint8_t> SslServerHello();
+  static rtc::ArrayView<const uint8_t> SslClientHello();
+  static rtc::ArrayView<const uint8_t> SslServerHello();
 
   explicit AsyncSSLSocket(Socket* socket);
 
   AsyncSSLSocket(const AsyncSSLSocket&) = delete;
   AsyncSSLSocket& operator=(const AsyncSSLSocket&) = delete;
 
-  int Connect(const webrtc::SocketAddress& addr) override;
+  int Connect(const SocketAddress& addr) override;
 
  protected:
   void OnConnectEvent(Socket* socket) override;
   void ProcessInput(char* data, size_t* len) override;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AsyncSSLSocket;
+using ::webrtc::BufferedReadAdapter;
 }  
 
 #endif  
