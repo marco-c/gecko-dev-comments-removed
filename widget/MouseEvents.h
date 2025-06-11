@@ -762,6 +762,13 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
   
   bool mDeltaValuesHorizontalizedForDefaultHandler;
 
+  
+
+
+
+
+  Maybe<uint64_t> mCallbackId;
+
   void AssignWheelEventData(const WidgetWheelEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
 
@@ -785,6 +792,8 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
         aEvent.mAllowToOverrideSystemScrollSpeed;
     mDeltaValuesHorizontalizedForDefaultHandler =
         aEvent.mDeltaValuesHorizontalizedForDefaultHandler;
+    
+    
   }
 
   

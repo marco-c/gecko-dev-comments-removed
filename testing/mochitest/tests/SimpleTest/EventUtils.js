@@ -1062,7 +1062,15 @@ function synthesizeTouchAtCenter(aTarget, aEvent = {}, aWindow = window) {
 
 
 
-function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
+
+
+function synthesizeWheelAtPoint(
+  aLeft,
+  aTop,
+  aEvent,
+  aWindow = window,
+  aCallback = null
+) {
   var utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
     return;
@@ -1141,9 +1149,12 @@ function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow = window) {
     modifiers,
     lineOrPageDeltaX,
     lineOrPageDeltaY,
-    options
+    options,
+    aCallback
   );
 }
+
+
 
 
 
@@ -1162,14 +1173,16 @@ function synthesizeWheel(
   aOffsetX,
   aOffsetY,
   aEvent,
-  aWindow = window
+  aWindow = window,
+  aCallback = null
 ) {
   var rect = aTarget.getBoundingClientRect();
   synthesizeWheelAtPoint(
     rect.left + aOffsetX,
     rect.top + aOffsetY,
     aEvent,
-    aWindow
+    aWindow,
+    aCallback
   );
 }
 
