@@ -2335,9 +2335,9 @@ void ScrollContainerFrame::ScrollToInternal(
       ScrollOperationParams{aMode, aOrigin, aSnapFlags, aTriggeredByScript});
 }
 
-void ScrollContainerFrame::ScrollToCSSPixels(const CSSPoint& aScrollPosition,
+void ScrollContainerFrame::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
                                              ScrollMode aMode) {
-  CSSPoint currentCSSPixels = GetScrollPositionCSSPixels();
+  CSSIntPoint currentCSSPixels = GetRoundedScrollPositionCSSPixels();
   
   
   
@@ -2350,7 +2350,7 @@ void ScrollContainerFrame::ScrollToCSSPixels(const CSSPoint& aScrollPosition,
   if (mCurrentAPZScrollAnimationType ==
           APZScrollAnimationType::TriggeredByUserInput &&
       !isScrollAnimating) {
-    CSSPoint delta = aScrollPosition - currentCSSPixels;
+    CSSIntPoint delta = aScrollPosition - currentCSSPixels;
     
     
     ScrollByCSSPixelsInternal(delta, aMode,
@@ -4977,7 +4977,7 @@ void ScrollContainerFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
 }
 
 void ScrollContainerFrame::ScrollByCSSPixelsInternal(
-    const CSSPoint& aDelta, ScrollMode aMode, ScrollSnapFlags aSnapFlags) {
+    const CSSIntPoint& aDelta, ScrollMode aMode, ScrollSnapFlags aSnapFlags) {
   nsPoint current = GetScrollPosition();
   
   
