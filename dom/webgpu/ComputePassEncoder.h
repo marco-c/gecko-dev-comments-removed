@@ -47,6 +47,7 @@ class ComputePassEncoder final : public ObjectBase,
       mPass;
   
   nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
+  nsTArray<RefPtr<const Buffer>> mUsedBuffers;
   nsTArray<RefPtr<const ComputePipeline>> mUsedPipelines;
 
   
