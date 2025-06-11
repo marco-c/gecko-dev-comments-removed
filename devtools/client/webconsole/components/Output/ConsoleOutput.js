@@ -194,6 +194,7 @@ class ConsoleOutput extends Component {
     
     this.shouldScrollBottom =
       
+      
       (!this.props.initialized &&
         nextProps.initialized &&
         this.scrolledToBottom) ||
@@ -202,7 +203,15 @@ class ConsoleOutput extends Component {
       isNewMessageEvaluationResult ||
       
       
-      (this.scrolledToBottom && visibleMessagesDelta > 0 && !isOpeningGroup());
+      
+      (this.scrolledToBottom &&
+        (visibleMessagesDelta > 0 ||
+          (visibleMessagesDelta === 0 &&
+            
+            
+            this.props.networkMessagesUpdate !==
+              nextProps.networkMessagesUpdate)) &&
+        !isOpeningGroup());
   }
 
   componentDidUpdate(prevProps) {
