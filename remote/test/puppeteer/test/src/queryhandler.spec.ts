@@ -3,7 +3,7 @@
 
 
 
-import assert from 'assert';
+import assert from 'node:assert';
 
 import expect from 'expect';
 import {Puppeteer} from 'puppeteer-core';

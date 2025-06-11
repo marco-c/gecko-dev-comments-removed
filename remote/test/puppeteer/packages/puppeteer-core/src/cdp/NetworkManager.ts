@@ -674,7 +674,7 @@ export class NetworkManager extends EventEmitter<NetworkManagerEvents> {
       return;
     }
 
-    this.#maybeReassignOOPIFRequestClient(client, request);
+    this.#adoptCdpSessionIfNeeded(client, request);
 
     
     
@@ -711,7 +711,7 @@ export class NetworkManager extends EventEmitter<NetworkManagerEvents> {
     if (!request) {
       return;
     }
-    this.#maybeReassignOOPIFRequestClient(client, request);
+    this.#adoptCdpSessionIfNeeded(client, request);
     request._failureText = event.errorText;
     const response = request.response();
     if (response) {
@@ -721,16 +721,14 @@ export class NetworkManager extends EventEmitter<NetworkManagerEvents> {
     this.emit(NetworkManagerEvent.RequestFailed, request);
   }
 
-  #maybeReassignOOPIFRequestClient(
-    client: CDPSession,
-    request: CdpHTTPRequest,
-  ): void {
+  #adoptCdpSessionIfNeeded(client: CDPSession, request: CdpHTTPRequest): void {
     
     
     
     
     
-    if (client !== request.client && request.isNavigationRequest()) {
+    
+    if (client !== request.client) {
       request.client = client;
     }
   }

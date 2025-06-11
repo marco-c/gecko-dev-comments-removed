@@ -4,8 +4,6 @@
 
 
 
-import type {Protocol} from 'devtools-protocol';
-
 import type {ElementHandle} from '../api/ElementHandle.js';
 import {assert} from '../util/assert.js';
 
@@ -39,12 +37,9 @@ export class FileChooser {
   
 
 
-  constructor(
-    element: ElementHandle<HTMLInputElement>,
-    event: Protocol.Page.FileChooserOpenedEvent,
-  ) {
+  constructor(element: ElementHandle<HTMLInputElement>, multiple: boolean) {
     this.#element = element;
-    this.#multiple = event.mode !== 'selectSingle';
+    this.#multiple = multiple;
   }
 
   

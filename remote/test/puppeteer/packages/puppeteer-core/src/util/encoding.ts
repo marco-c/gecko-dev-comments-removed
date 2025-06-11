@@ -12,10 +12,14 @@ export function stringToTypedArray(
   base64Encoded = false,
 ): Uint8Array {
   if (base64Encoded) {
-    const binaryString = atob(string);
     
-    return Uint8Array.from(binaryString, m => {
-      return m.codePointAt(0);
+    
+    
+    if (typeof Buffer === 'function') {
+      return Buffer.from(string, 'base64');
+    }
+    return Uint8Array.from(atob(string), m => {
+      return m.codePointAt(0)!;
     });
   }
   return new TextEncoder().encode(string);

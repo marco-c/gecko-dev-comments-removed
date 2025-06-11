@@ -96,7 +96,19 @@ export abstract class CDPSession extends EventEmitter<CDPSessionEvents> {
     super();
   }
 
+  
+
+
+
+
   abstract connection(): Connection | undefined;
+
+  
+
+
+
+
+  abstract get detached(): boolean;
 
   
 

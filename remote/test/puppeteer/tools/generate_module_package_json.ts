@@ -4,8 +4,8 @@
 
 
 
-import {mkdirSync, writeFileSync} from 'fs';
-import {dirname} from 'path';
+import {mkdirSync, writeFileSync} from 'node:fs';
+import {dirname} from 'node:path';
 
 
 

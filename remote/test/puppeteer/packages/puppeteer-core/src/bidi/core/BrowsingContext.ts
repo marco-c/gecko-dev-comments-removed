@@ -77,6 +77,12 @@ export type GetCookiesOptions = Omit<
 
 
 
+export type SetGeoLocationOverrideOptions =
+  Bidi.Emulation.SetGeolocationOverrideParameters;
+
+
+
+
 export class BrowsingContext extends EventEmitter<{
   
   closed: {
@@ -93,6 +99,8 @@ export class BrowsingContext extends EventEmitter<{
     
     navigation: Navigation;
   };
+  
+  filedialogopened: Bidi.Input.FileDialogInfo;
   
   request: {
     
@@ -180,6 +188,12 @@ export class BrowsingContext extends EventEmitter<{
     const sessionEmitter = this.#disposables.use(
       new EventEmitter(this.#session),
     );
+    sessionEmitter.on('input.fileDialogOpened', info => {
+      if (this.id !== info.context) {
+        return;
+      }
+      this.emit('filedialogopened', info);
+    });
     sessionEmitter.on('browsingContext.contextCreated', info => {
       if (info.parent !== this.id) {
         return;
@@ -545,6 +559,25 @@ export class BrowsingContext extends EventEmitter<{
   })
   async removePreloadScript(script: string): Promise<void> {
     await this.userContext.browser.removePreloadScript(script);
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async setGeolocationOverride(
+    options: SetGeoLocationOverrideOptions,
+  ): Promise<void> {
+    if (!('coordinates' in options)) {
+      throw new Error('Missing coordinates');
+    }
+    await this.userContext.browser.session.send(
+      'emulation.setGeolocationOverride',
+      {
+        coordinates: options.coordinates,
+        contexts: [this.id],
+      },
+    );
   }
 
   @throwIfDisposed<BrowsingContext>(context => {

@@ -266,6 +266,22 @@ export const throwIfDetached = throwIfDisposed<Frame>(frame => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export abstract class Frame extends EventEmitter<FrameEvents> {
   
 

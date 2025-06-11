@@ -112,7 +112,6 @@ function customBDDInterface(suite: Mocha.Suite) {
       };
 
       
-      
       context['describe'] = describe;
 
       function it(title: string, fn: Mocha.TestFunction, itOnly = false) {
@@ -122,7 +121,6 @@ function customBDDInterface(suite: Mocha.Suite) {
         test.parent = suite;
 
         const describeOnly = Boolean(
-          
           
           suite.parent?._onlySuites.find(child => {
             return child === suite;
@@ -180,7 +178,6 @@ function customBDDInterface(suite: Mocha.Suite) {
       it.deflake = wrapDeflake(it);
       it.deflakeOnly = wrapDeflake(it.only);
 
-      
       
       context.it = it;
     },

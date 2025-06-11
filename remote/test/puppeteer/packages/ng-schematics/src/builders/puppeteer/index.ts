@@ -3,8 +3,8 @@
 
 
 
-import {spawn} from 'child_process';
-import {normalize, join} from 'path';
+import {spawn} from 'node:child_process';
+import {normalize, join} from 'node:path';
 
 import {
   createBuilder,

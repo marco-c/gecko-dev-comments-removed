@@ -4,9 +4,9 @@
 
 
 
-import {mkdtemp, rm} from 'fs/promises';
-import {tmpdir} from 'os';
-import {join} from 'path';
+import {mkdtemp, rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 
 import expect from 'expect';
 

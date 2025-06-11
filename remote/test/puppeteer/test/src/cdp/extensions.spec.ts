@@ -4,7 +4,7 @@
 
 
 
-import path from 'path';
+import path from 'node:path';
 
 import expect from 'expect';
 
@@ -21,10 +21,8 @@ const extensionPath = path.join(
 describe('extensions', function () {
   const state = setupSeparateTestBrowserHooks(
     {
-      args: [
-        `--disable-extensions-except=${extensionPath}`,
-        `--load-extension=${extensionPath}`,
-      ],
+      enableExtensions: true,
+      args: [`--load-extension=${extensionPath}`],
     },
     {createContext: false},
   );
@@ -42,12 +40,25 @@ describe('extensions', function () {
     const serviceWorkerTarget = await browser.waitForTarget(target => {
       return target.type() === 'service_worker';
     });
-    const worker = await serviceWorkerTarget.worker();
-    expect(
-      await worker!.evaluate(() => {
-        
-        return globalThis.MAGIC;
-      }),
-    ).toBe(42);
+    const worker = await serviceWorkerTarget.worker()!;
+
+    let result = '';
+    
+    
+    
+    
+    for (let i = 0; i < 5; i++) {
+      try {
+        result = await worker!.evaluate(() => {
+          
+          return globalThis.MAGIC;
+        });
+        break;
+      } catch {}
+      await new Promise(resolve => {
+        return setTimeout(resolve, 200);
+      });
+    }
+    expect(result).toBe(42);
   });
 });

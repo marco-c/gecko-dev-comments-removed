@@ -60,13 +60,7 @@ export class DisposableStack {
 
 
   dispose(): void {
-    if (this.#disposed) {
-      return;
-    }
-    this.#disposed = true;
-    for (const resource of this.#stack.reverse()) {
-      resource[disposeSymbol]();
-    }
+    this[disposeSymbol]();
   }
 
   
@@ -76,8 +70,9 @@ export class DisposableStack {
 
 
 
+
   use<T extends Disposable | null | undefined>(value: T): T {
-    if (value) {
+    if (value && typeof value[disposeSymbol] === 'function') {
       this.#stack.push(value);
     }
     return value;
@@ -101,6 +96,7 @@ export class DisposableStack {
   }
 
   
+
 
 
   defer(onDispose: () => void): void {
@@ -143,17 +139,48 @@ export class DisposableStack {
 
 
 
+
   move(): DisposableStack {
     if (this.#disposed) {
-      throw new ReferenceError('a disposed stack can not use anything new'); 
+      throw new ReferenceError('A disposed stack can not use anything new');
     }
-    const stack = new DisposableStack(); 
+    const stack = new DisposableStack();
     stack.#stack = this.#stack;
+    this.#stack = [];
     this.#disposed = true;
     return stack;
   }
 
-  [disposeSymbol] = this.dispose;
+  
+
+
+  [disposeSymbol](): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    const errors: unknown[] = [];
+    for (const resource of this.#stack.reverse()) {
+      try {
+        resource[disposeSymbol]();
+      } catch (e) {
+        errors.push(e);
+      }
+    }
+    if (errors.length === 1) {
+      throw errors[0];
+    } else if (errors.length > 1) {
+      let suppressed = null;
+      for (const error of errors.reverse()) {
+        if (suppressed === null) {
+          suppressed = error;
+        } else {
+          suppressed = new SuppressedError(error, suppressed);
+        }
+      }
+      throw suppressed;
+    }
+  }
 
   readonly [Symbol.toStringTag] = 'DisposableStack';
 }
@@ -176,13 +203,7 @@ export class AsyncDisposableStack {
 
 
   async dispose(): Promise<void> {
-    if (this.#disposed) {
-      return;
-    }
-    this.#disposed = true;
-    for (const resource of this.#stack.reverse()) {
-      await resource[asyncDisposeSymbol]();
-    }
+    await this[asyncDisposeSymbol]();
   }
 
   
@@ -192,10 +213,23 @@ export class AsyncDisposableStack {
 
 
 
-  use<T extends AsyncDisposable | null | undefined>(value: T): T {
+
+  use<T extends AsyncDisposable | Disposable | null | undefined>(value: T): T {
     if (value) {
-      this.#stack.push(value);
+      const asyncDispose = (value as AsyncDisposable)[asyncDisposeSymbol];
+      const dispose = (value as Disposable)[disposeSymbol];
+
+      if (typeof asyncDispose === 'function') {
+        this.#stack.push(value as AsyncDisposable);
+      } else if (typeof dispose === 'function') {
+        this.#stack.push({
+          [asyncDisposeSymbol]: async () => {
+            (value as Disposable)[disposeSymbol]();
+          },
+        });
+      }
     }
+
     return value;
   }
 
@@ -217,6 +251,7 @@ export class AsyncDisposableStack {
   }
 
   
+
 
 
   defer(onDispose: () => Promise<void>): void {
@@ -259,17 +294,85 @@ export class AsyncDisposableStack {
 
 
 
+
   move(): AsyncDisposableStack {
     if (this.#disposed) {
-      throw new ReferenceError('a disposed stack can not use anything new'); 
+      throw new ReferenceError('A disposed stack can not use anything new');
     }
-    const stack = new AsyncDisposableStack(); 
+    const stack = new AsyncDisposableStack();
     stack.#stack = this.#stack;
+    this.#stack = [];
     this.#disposed = true;
     return stack;
   }
 
-  [asyncDisposeSymbol] = this.dispose;
+  
+
+
+  async [asyncDisposeSymbol](): Promise<void> {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    const errors: unknown[] = [];
+    for (const resource of this.#stack.reverse()) {
+      try {
+        await resource[asyncDisposeSymbol]();
+      } catch (e) {
+        errors.push(e);
+      }
+    }
+    if (errors.length === 1) {
+      throw errors[0];
+    } else if (errors.length > 1) {
+      let suppressed = null;
+      for (const error of errors.reverse()) {
+        if (suppressed === null) {
+          suppressed = error;
+        } else {
+          suppressed = new SuppressedError(error, suppressed);
+        }
+      }
+      throw suppressed;
+    }
+  }
 
   readonly [Symbol.toStringTag] = 'AsyncDisposableStack';
+}
+
+
+
+
+
+
+
+export class SuppressedError extends Error {
+  #error: unknown;
+  #suppressed: unknown;
+
+  constructor(
+    error: unknown,
+    suppressed: unknown,
+    message = 'An error was suppressed during disposal',
+  ) {
+    super(message);
+    this.name = 'SuppressedError';
+    this.#error = error;
+    this.#suppressed = suppressed;
+  }
+
+  
+
+
+  get error(): unknown {
+    return this.#error;
+  }
+
+  
+
+
+
+  get suppressed(): unknown {
+    return this.#suppressed;
+  }
 }

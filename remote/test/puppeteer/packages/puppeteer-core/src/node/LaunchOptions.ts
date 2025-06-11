@@ -24,6 +24,7 @@ export interface LaunchOptions extends ConnectOptions {
   
 
 
+
   channel?: ChromeReleaseChannel;
   
 
@@ -42,6 +43,12 @@ export interface LaunchOptions extends ConnectOptions {
 
 
   ignoreDefaultArgs?: boolean | string[];
+  
+
+
+
+
+  enableExtensions?: boolean | string[];
   
 
 

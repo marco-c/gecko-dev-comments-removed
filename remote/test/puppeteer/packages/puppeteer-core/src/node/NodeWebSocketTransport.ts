@@ -20,7 +20,6 @@ export class NodeWebSocketTransport implements ConnectionTransport {
       const ws = new NodeWebSocket(url, [], {
         followRedirects: true,
         perMessageDeflate: false,
-        
         allowSynchronousEvents: false,
         maxPayload: 256 * 1024 * 1024, 
         headers: {

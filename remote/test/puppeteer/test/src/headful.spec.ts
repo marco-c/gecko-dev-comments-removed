@@ -4,9 +4,9 @@
 
 
 
-import {mkdtemp} from 'fs/promises';
-import os from 'os';
-import path from 'path';
+import {mkdtemp} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 import expect from 'expect';
 import type {LaunchOptions} from 'puppeteer-core/internal/node/LaunchOptions.js';

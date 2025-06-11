@@ -3,7 +3,7 @@
 
 
 
-import os from 'os';
+import os from 'node:os';
 
 import expect from 'expect';
 import {MouseButton} from 'puppeteer-core/internal/api/Input.js';

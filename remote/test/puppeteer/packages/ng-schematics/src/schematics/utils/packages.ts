@@ -4,7 +4,7 @@
 
 
 
-import {get} from 'https';
+import {get} from 'node:https';
 
 import type {Tree} from '@angular-devkit/schematics';
 

@@ -4,10 +4,10 @@
 
 
 
-import fs from 'fs';
-import {rename, unlink, mkdtemp} from 'fs/promises';
-import os from 'os';
-import path from 'path';
+import fs from 'node:fs';
+import {rename, unlink, mkdtemp} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 import {Browser as SupportedBrowsers, createProfile} from '@puppeteer/browsers';
 
@@ -32,10 +32,6 @@ export class FirefoxLauncher extends BrowserLauncher {
   ): Record<string, unknown> {
     return {
       ...extraPrefsFirefox,
-      
-      'remote.active-protocols': 1,
-      
-      
       
       
       

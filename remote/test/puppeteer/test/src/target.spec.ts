@@ -4,7 +4,7 @@
 
 
 
-import type {ServerResponse} from 'http';
+import type {ServerResponse} from 'node:http';
 
 import expect from 'expect';
 import {type Target, TimeoutError} from 'puppeteer';

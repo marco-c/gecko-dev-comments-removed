@@ -3,9 +3,9 @@
 
 
 
-import https from 'https';
+import https from 'node:https';
+import {join} from 'node:path';
 import {before, after} from 'node:test';
-import {join} from 'path';
 
 import type {JsonObject} from '@angular-devkit/core';
 import {

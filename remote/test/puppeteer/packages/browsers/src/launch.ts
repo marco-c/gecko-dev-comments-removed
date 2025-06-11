@@ -4,16 +4,17 @@
 
 
 
-import childProcess from 'child_process';
-import {accessSync} from 'fs';
-import os from 'os';
-import readline from 'readline';
+import childProcess from 'node:child_process';
+import {accessSync} from 'node:fs';
+import os from 'node:os';
+import readline from 'node:readline';
 
 import {
   type Browser,
   type BrowserPlatform,
   resolveSystemExecutablePath,
   type ChromeReleaseChannel,
+  executablePathByBrowser,
 } from './browser-data/browser-data.js';
 import {Cache} from './Cache.js';
 import {debug} from './debug.js';
@@ -28,7 +29,10 @@ export interface ComputeExecutablePathOptions {
   
 
 
-  cacheDir: string;
+
+
+
+  cacheDir: string | null;
   
 
 
@@ -52,6 +56,19 @@ export interface ComputeExecutablePathOptions {
 export function computeExecutablePath(
   options: ComputeExecutablePathOptions,
 ): string {
+  if (options.cacheDir === null) {
+    options.platform ??= detectBrowserPlatform();
+    if (options.platform === undefined) {
+      throw new Error(
+        `No platform specified. Couldn't auto-detect browser platform.`,
+      );
+    }
+    return executablePathByBrowser[options.browser](
+      options.platform,
+      options.buildId,
+    );
+  }
+
   return new Cache(options.cacheDir).computeExecutablePath(options);
 }
 
@@ -74,6 +91,11 @@ export interface SystemOptions {
 
   channel: ChromeReleaseChannel;
 }
+
+
+
+
+
 
 
 
@@ -471,11 +493,10 @@ export class Process {
         timeout > 0 ? setTimeout(onTimeout, timeout) : undefined;
 
       const cleanup = (): void => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
+        clearTimeout(timeoutId);
         rl.off('line', onLine);
         rl.off('close', onClose);
+        rl.close();
         this.#browserProcess.off('exit', onClose);
         this.#browserProcess.off('error', onClose);
       };

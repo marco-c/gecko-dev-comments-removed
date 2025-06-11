@@ -331,8 +331,8 @@ export abstract class ElementHandle<
   
 
 
-  override dispose(): Promise<void> {
-    return this.handle.dispose();
+  override async dispose(): Promise<void> {
+    await Promise.all([this.handle.dispose(), this.isolatedHandle?.dispose()]);
   }
 
   
@@ -1573,8 +1573,10 @@ export abstract class ElementHandle<
 
 
 export interface AutofillData {
+  
+
+
   creditCard: {
-    
     number: string;
     name: string;
     expiryMonth: string;

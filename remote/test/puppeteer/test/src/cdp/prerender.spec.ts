@@ -4,7 +4,7 @@
 
 
 
-import {statSync} from 'fs';
+import {statSync} from 'node:fs';
 
 import expect from 'expect';
 

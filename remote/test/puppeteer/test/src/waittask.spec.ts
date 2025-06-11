@@ -435,7 +435,7 @@ describe('waittask specs', function () {
 
     
     
-    it.skip('should work when node is added in a shadow root', async () => {
+    it('should work when node is added in a shadow root', async () => {
       const {page, server} = await getTestState();
 
       await page.goto(server.EMPTY_PAGE);

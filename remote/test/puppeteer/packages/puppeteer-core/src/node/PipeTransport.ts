@@ -47,7 +47,7 @@ export class PipeTransport implements ConnectionTransport {
       
       
       new EventEmitter(
-        pipeRead as unknown as EventEmitter<Record<string, any>>,
+        pipeWrite as unknown as EventEmitter<Record<string, any>>,
       ),
     );
     pipeWriteEmitter.on('error', debugError);

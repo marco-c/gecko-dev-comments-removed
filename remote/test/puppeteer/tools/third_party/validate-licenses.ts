@@ -59,8 +59,7 @@ const allowedLicenses = [
   'CC0-1.0',
   '0BSD',
 
-  
-  '(AFL-2.1 OR BSD-2-Clause)',
+  'AFL-2.1',
 ];
 
 
@@ -85,9 +84,10 @@ const ignoredPackages = [
 
 function _passesSpdx(licenses: string[], accepted: string[]) {
   try {
-    return spdxSatisfies(licenses.join(' AND '), accepted.join(' OR '));
-  } catch {
-    return false;
+    return spdxSatisfies(licenses.join(' AND '), accepted);
+  } catch (error) {
+    console.error('error while checking licenses:', error);
+    process.exit(1);
   }
 }
 
@@ -133,7 +133,7 @@ function main(): Promise<number> {
 
           
           if (badLicensePackages.length > 0) {
-            console.error('Invalid package licences found:');
+            console.error('Invalid package licenses found:');
             badLicensePackages.forEach(pkg => {
               console.error(`${pkg.id}: ${JSON.stringify(pkg.licenses)}`);
             });

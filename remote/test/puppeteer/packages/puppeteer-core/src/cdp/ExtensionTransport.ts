@@ -160,7 +160,6 @@ export class ExtensionTransport implements ConnectionTransport {
     }
     chrome.debugger
       .sendCommand(
-        
         {tabId: this.#tabId, sessionId: parsed.sessionId},
         parsed.method,
         parsed.params,

@@ -56,7 +56,7 @@ export interface CookiePartitionKey {
 
 
 
-export interface Cookie {
+export interface Cookie extends CookieData {
   
 
 
@@ -270,6 +270,7 @@ export interface DeleteCookiesRequest {
 
   path?: string;
   
+
 
 
 
