@@ -172,6 +172,21 @@ async function handleInitializationMessage({ data }) {
         bergamot,
         translationModelPayloads
       );
+
+      
+      
+      
+      
+      
+      
+      
+      
+      bergamotWasmArrayBuffer.transfer();
+      for (const { languageModelFiles } of translationModelPayloads) {
+        for (const file of Object.values(languageModelFiles)) {
+          file.buffer.transfer();
+        }
+      }
     }
 
     ChromeUtils.addProfilerMarker(
