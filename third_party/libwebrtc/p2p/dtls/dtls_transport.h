@@ -283,8 +283,6 @@ class DtlsTransport : public DtlsTransportInternal {
   bool receiving_ = false;
   bool writable_ = false;
 
-  bool was_ever_connected_ = false;
-
   webrtc::RtcEventLog* const event_log_;
 
   

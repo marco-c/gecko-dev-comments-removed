@@ -37,6 +37,7 @@
 #include "api/ice_transport_interface.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
+#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/enums.h"
 #include "api/transport/stun.h"
 #include "api/units/time_delta.h"
@@ -2245,15 +2246,58 @@ void P2PTransportChannel::SetWritable(bool writable) {
   }
   SignalWritableState(this);
 
-  if (writable_ && selected_connection_ &&
-      !dtls_stun_piggyback_callbacks_.empty()) {
+  if (config_.dtls_handshake_in_stun) {
     
     
     
     
-    
-    SendPingRequestInternal(selected_connection_);
+    SendPeriodicPingUntilDtlsConnected();
   }
+}
+
+
+
+
+
+void P2PTransportChannel::SendPeriodicPingUntilDtlsConnected() {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  if (pending_ping_until_dtls_connected_ == true) {
+    
+    
+    
+    
+    return;
+  }
+  if (writable_ && config_.dtls_handshake_in_stun &&
+      !dtls_stun_piggyback_callbacks_.empty()) {
+    auto has_data_to_send =
+        dtls_stun_piggyback_callbacks_.send_data(STUN_BINDING_REQUEST);
+    if (!has_data_to_send.first && !has_data_to_send.second) {
+      
+      return;
+    }
+    
+    RTC_DCHECK(selected_connection_ != nullptr);
+    SendPingRequestInternal(selected_connection_);
+    RTC_LOG(LS_INFO) << ToString() << ": Sending extra ping for DTLS";
+  }
+
+  const auto rtt_ms = GetRttEstimate().value_or(100);
+  const int delay_ms =
+      std::max(kMinDtlsHandshakeTimeoutMs,
+               std::min(kMaxDtlsHandshakeTimeoutMs, 2 * rtt_ms));
+
+  
+  pending_ping_until_dtls_connected_ = true;
+  network_thread_->PostDelayedHighPrecisionTask(
+      webrtc::SafeTask(safety_flag_.flag(),
+                       [this] {
+                         RTC_DCHECK_RUN_ON(network_thread_);
+                         
+                         pending_ping_until_dtls_connected_ = false;
+                         SendPeriodicPingUntilDtlsConnected();
+                       }),
+      TimeDelta::Millis(delay_ms));
 }
 
 void P2PTransportChannel::SetReceiving(bool receiving) {
