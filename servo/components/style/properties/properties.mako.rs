@@ -1072,17 +1072,16 @@ impl LonghandId {
     
     #[inline(always)]
     pub fn flags(self) -> PropertyFlags {
-        
-        
-        const FLAGS: [u16; ${len(data.longhands)}] = [
+        const FLAGS: [PropertyFlags; ${len(data.longhands)}] = [
             % for property in data.longhands:
+                PropertyFlags::empty()
                 % for flag in property.flags + restriction_flags(property):
-                    PropertyFlags::${flag}.bits() |
+                    .union(PropertyFlags::${flag})
                 % endfor
-                0,
+                ,
             % endfor
         ];
-        PropertyFlags::from_bits_retain(FLAGS[self as usize])
+        FLAGS[self as usize]
     }
 }
 
