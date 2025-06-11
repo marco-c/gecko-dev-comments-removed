@@ -605,32 +605,12 @@ RefPtr<DtlsIdentity> PeerConnectionImpl::Identity() const {
   return mCertificate->CreateDtlsIdentity();
 }
 
-class CompareCodecPriority {
- public:
-  void SetPreferredCodec(const nsCString& preferredCodec) {
-    mPreferredCodec = preferredCodec;
-  }
-
+struct CompareCodecPriority {
   bool operator()(const UniquePtr<JsepCodecDescription>& lhs,
                   const UniquePtr<JsepCodecDescription>& rhs) const {
     
-    if (!mPreferredCodec.IsEmpty()) {
-      const bool lhsMatches = mPreferredCodec.EqualsIgnoreCase(lhs->mName) ||
-                              mPreferredCodec.EqualsIgnoreCase(lhs->mDefaultPt);
-      const bool rhsMatches = mPreferredCodec.EqualsIgnoreCase(rhs->mName) ||
-                              mPreferredCodec.EqualsIgnoreCase(rhs->mDefaultPt);
-      
-      if (lhsMatches && !rhsMatches) {
-        return true;
-      }
-    }
-    
-    return (lhs->mStronglyPreferred && !rhs->mStronglyPreferred);
+    return lhs->mStronglyPreferred && !rhs->mStronglyPreferred;
   }
-
- private:
-  
-  nsCString mPreferredCodec;
 };
 
 void RecordCodecTelemetry() {
@@ -660,9 +640,6 @@ nsresult PeerConnectionImpl::SortJsepSessionCodecs() {
 
   
   CompareCodecPriority comparator;
-  if (StaticPrefs::media_webrtc_codec_video_av1_experimental_preferred()) {
-    comparator.SetPreferredCodec(nsCString("av1"));
-  }
   
   mJsepSession->SortCodecs(comparator);
   return NS_OK;
@@ -2065,9 +2042,6 @@ void PeerConnectionImpl::GetDefaultVideoCodecs(
       JsepVideoCodecDescription::CreateDefaultRed(prefs));
 
   CompareCodecPriority comparator;
-  if (StaticPrefs::media_webrtc_codec_video_av1_experimental_preferred()) {
-    comparator.SetPreferredCodec(nsCString("av1"));
-  }
   std::stable_sort(aSupportedCodecs.begin(), aSupportedCodecs.end(),
                    comparator);
 }
