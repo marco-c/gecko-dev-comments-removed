@@ -351,8 +351,15 @@ void ForwardErrorCorrection::InsertMediaPacket(
   RTC_DCHECK_EQ(received_packet.ssrc, protected_media_ssrc_);
 
   
-  for (const auto& recovered_packet : *recovered_packets) {
+  auto insert_pos = recovered_packets->begin();
+  for (auto it = recovered_packets->rbegin(), end = recovered_packets->rend();
+       it != end; ++it) {
+    const auto& recovered_packet = *it;
     RTC_DCHECK_EQ(recovered_packet->ssrc, received_packet.ssrc);
+    if (SortablePacket::LessThan()(recovered_packet, &received_packet)) {
+      insert_pos = it.base();
+      break;
+    }
     if (recovered_packet->seq_num == received_packet.seq_num) {
       
       return;
@@ -367,11 +374,8 @@ void ForwardErrorCorrection::InsertMediaPacket(
   recovered_packet->ssrc = received_packet.ssrc;
   recovered_packet->seq_num = received_packet.seq_num;
   recovered_packet->pkt = received_packet.pkt;
-  
-  
   RecoveredPacket* recovered_packet_ptr = recovered_packet.get();
-  recovered_packets->push_back(std::move(recovered_packet));
-  recovered_packets->sort(SortablePacket::LessThan());
+  recovered_packets->insert(insert_pos, std::move(recovered_packet));
   UpdateCoveringFecPackets(*recovered_packet_ptr);
 }
 
@@ -395,8 +399,16 @@ void ForwardErrorCorrection::InsertFecPacket(
   RTC_DCHECK_EQ(received_packet.ssrc, ssrc_);
 
   
-  for (const auto& existing_fec_packet : received_fec_packets_) {
+  auto insert_pos = received_fec_packets_.begin();
+  for (auto it = received_fec_packets_.rbegin(),
+            end = received_fec_packets_.rend();
+       it != end; ++it) {
+    const auto& existing_fec_packet = *it;
     RTC_DCHECK_EQ(existing_fec_packet->ssrc, received_packet.ssrc);
+    if (SortablePacket::LessThan()(existing_fec_packet, &received_packet)) {
+      insert_pos = it.base();
+      break;
+    }
     if (existing_fec_packet->seq_num == received_packet.seq_num) {
       
       return;
@@ -456,10 +468,7 @@ void ForwardErrorCorrection::InsertFecPacket(
     RTC_LOG(LS_WARNING) << "Received FEC packet has an all-zero packet mask.";
   } else {
     AssignRecoveredPackets(recovered_packets, fec_packet.get());
-    
-    
-    received_fec_packets_.push_back(std::move(fec_packet));
-    received_fec_packets_.sort(SortablePacket::LessThan());
+    received_fec_packets_.insert(insert_pos, std::move(fec_packet));
     const size_t max_fec_packets = fec_header_reader_->MaxFecPackets();
     if (received_fec_packets_.size() > max_fec_packets) {
       received_fec_packets_.pop_front();
@@ -690,11 +699,16 @@ size_t ForwardErrorCorrection::AttemptRecovery(
       auto* recovered_packet_ptr = recovered_packet.get();
       
       
-      
-      
-      
-      recovered_packets->push_back(std::move(recovered_packet));
-      recovered_packets->sort(SortablePacket::LessThan());
+      auto insert_pos = recovered_packets->begin();
+      for (auto it = recovered_packets->rbegin(),
+                end = recovered_packets->rend();
+           it != end; ++it) {
+        if (!SortablePacket::LessThan()(recovered_packet, *it)) {
+          insert_pos = it.base();
+          break;
+        }
+      }
+      recovered_packets->insert(insert_pos, std::move(recovered_packet));
       UpdateCoveringFecPackets(*recovered_packet_ptr);
       DiscardOldRecoveredPackets(recovered_packets);
       fec_packet_it = received_fec_packets_.erase(fec_packet_it);
@@ -709,7 +723,7 @@ size_t ForwardErrorCorrection::AttemptRecovery(
       
       fec_packet_it = received_fec_packets_.erase(fec_packet_it);
     } else {
-      fec_packet_it++;
+      ++fec_packet_it;
     }
   }
 
