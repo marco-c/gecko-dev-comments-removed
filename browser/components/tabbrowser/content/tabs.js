@@ -1652,6 +1652,17 @@
     
 
 
+    get nonHiddenTabs() {
+      if (!this.#nonHiddenTabs) {
+        this.#nonHiddenTabs = this.openTabs.filter(tab => !tab.hidden);
+      }
+      return this.#nonHiddenTabs;
+    }
+    #nonHiddenTabs;
+
+    
+
+
     get visibleTabs() {
       if (!this.#visibleTabs) {
         this.#visibleTabs = this.openTabs.filter(tab => tab.visible);
@@ -1728,6 +1739,7 @@
 
     _invalidateCachedVisibleTabs() {
       this.#openTabs = null;
+      this.#nonHiddenTabs = null;
       this.#visibleTabs = null;
       
       

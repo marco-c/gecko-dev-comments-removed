@@ -409,6 +409,13 @@
     
 
 
+    get nonHiddenTabs() {
+      return this.tabContainer.nonHiddenTabs;
+    }
+
+    
+
+
     get visibleTabs() {
       return this.tabContainer.visibleTabs;
     }
@@ -3140,7 +3147,23 @@
 
       let oldSelectedTab = selectTab && group.ownerGlobal.gBrowser.selectedTab;
       let newTabs = [];
+
+      
+      
+      
+      let noOtherTabsInWindow = group.ownerGlobal.gBrowser.nonHiddenTabs.every(
+        t => t.group == group
+      );
+
       for (let tab of group.tabs) {
+        if (noOtherTabsInWindow) {
+          group.dispatchEvent(
+            new CustomEvent("TabUngrouped", {
+              bubbles: true,
+              detail: tab,
+            })
+          );
+        }
         let adoptedTab = this.adoptTab(tab, {
           elementIndex,
           tabIndex,
