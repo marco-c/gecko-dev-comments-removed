@@ -52,7 +52,7 @@ AddTraceEventPtr g_add_trace_event_ptr = nullptr;
 #if defined(RTC_USE_PERFETTO)
 void RegisterPerfettoTrackEvents() {
   if (perfetto::Tracing::IsInitialized()) {
-    webrtc::TrackEvent::Register();
+    TrackEvent::Register();
   }
 }
 #else
@@ -89,11 +89,9 @@ void EventTracer::AddTraceEvent(char phase,
 }
 #endif
 
-}  
-
 #if defined(RTC_USE_PERFETTO)
 
-namespace rtc::tracing {
+namespace tracing {
 void SetupInternalTracer(bool enable_all_categories) {}
 bool StartInternalCapture(absl::string_view filename) {
   return false;
@@ -109,7 +107,6 @@ void ShutdownInternalTracer() {}
 static const size_t kEventLoggerArgsStrBufferInitialSize = 256;
 static const size_t kTraceArgBufferLength = 32;
 
-namespace rtc {
 namespace tracing {
 namespace {
 
@@ -147,7 +144,7 @@ class EventLogger final {
         arg.value.as_string = str_copy;
       }
     }
-    webrtc::MutexLock lock(&mutex_);
+    MutexLock lock(&mutex_);
     trace_events_.push_back(
         {name, category_enabled, phase, args, timestamp, 1, thread_id});
   }
@@ -156,15 +153,14 @@ class EventLogger final {
   
   void Log() {
     RTC_DCHECK(output_file_);
-    static constexpr webrtc::TimeDelta kLoggingInterval =
-        webrtc::TimeDelta::Millis(100);
+    static constexpr TimeDelta kLoggingInterval = TimeDelta::Millis(100);
     fprintf(output_file_, "{ \"traceEvents\": [\n");
     bool has_logged_event = false;
     while (true) {
       bool shutting_down = shutdown_event_.Wait(kLoggingInterval);
       std::vector<TraceEvent> events;
       {
-        webrtc::MutexLock lock(&mutex_);
+        MutexLock lock(&mutex_);
         trace_events_.swap(events);
       }
       std::string args_str;
@@ -224,7 +220,7 @@ class EventLogger final {
     output_file_ = file;
     output_file_owned_ = owned;
     {
-      webrtc::MutexLock lock(&mutex_);
+      MutexLock lock(&mutex_);
       
       
       
@@ -237,8 +233,8 @@ class EventLogger final {
     RTC_CHECK(g_event_logging_active.compare_exchange_strong(zero, 1));
 
     
-    logging_thread_ =
-        PlatformThread::SpawnJoinable([this] { Log(); }, "EventTracingThread");
+    logging_thread_ = rtc::PlatformThread::SpawnJoinable([this] { Log(); },
+                                                         "EventTracingThread");
     TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Start",
                          TRACE_EVENT_SCOPE_GLOBAL);
   }
@@ -349,11 +345,11 @@ class EventLogger final {
     return output;
   }
 
-  webrtc::Mutex mutex_;
+  Mutex mutex_;
   std::vector<TraceEvent> trace_events_ RTC_GUARDED_BY(mutex_);
   rtc::PlatformThread logging_thread_;
   rtc::Event shutdown_event_;
-  webrtc::SequenceChecker thread_checker_;
+  SequenceChecker thread_checker_;
   FILE* output_file_ = nullptr;
   bool output_file_owned_ = false;
 };
@@ -400,9 +396,9 @@ void SetupInternalTracer(bool enable_all_categories) {
   EventLogger* null_logger = nullptr;
   RTC_CHECK(
       g_event_logger.compare_exchange_strong(null_logger, new EventLogger()));
-  webrtc::SetupEventTracer(enable_all_categories ? InternalEnableAllCategories
-                                                 : InternalGetCategoryEnabled,
-                           InternalAddTraceEvent);
+  SetupEventTracer(enable_all_categories ? InternalEnableAllCategories
+                                         : InternalGetCategoryEnabled,
+                   InternalAddTraceEvent);
 }
 
 void StartInternalCaptureToFile(FILE* file) {
@@ -440,10 +436,11 @@ void ShutdownInternalTracer() {
   RTC_DCHECK(old_logger);
   RTC_CHECK(g_event_logger.compare_exchange_strong(old_logger, nullptr));
   delete old_logger;
-  webrtc::SetupEventTracer(nullptr, nullptr);
+  SetupEventTracer(nullptr, nullptr);
 }
 
 }  
-}  
 
 #endif  
+
+}  

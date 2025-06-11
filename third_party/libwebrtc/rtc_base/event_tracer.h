@@ -72,9 +72,7 @@ class EventTracer {
 };
 #endif
 
-}  
-
-namespace rtc::tracing {
+namespace tracing {
 
 
 RTC_EXPORT void SetupInternalTracer(bool enable_all_categories = true);
@@ -83,6 +81,18 @@ RTC_EXPORT void StartInternalCaptureToFile(FILE* file);
 RTC_EXPORT void StopInternalCapture();
 
 RTC_EXPORT void ShutdownInternalTracer();
+}  
+
+}  
+
+
+
+namespace rtc::tracing {
+using ::webrtc::tracing::SetupInternalTracer;
+using ::webrtc::tracing::ShutdownInternalTracer;
+using ::webrtc::tracing::StartInternalCapture;
+using ::webrtc::tracing::StartInternalCaptureToFile;
+using ::webrtc::tracing::StopInternalCapture;
 }  
 
 #endif  
