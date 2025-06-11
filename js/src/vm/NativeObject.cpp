@@ -2293,7 +2293,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
     
     
     if (proto->getOpsGetProperty()) {
-      RootedObject protoRoot(cx, proto);
+      typename MaybeRooted<JSObject*, allowGC>::RootType protoRoot(cx, proto);
       return GeneralizedGetProperty<allowGC>(cx, protoRoot, id, receiver,
                                              nameLookup, vp);
     }
