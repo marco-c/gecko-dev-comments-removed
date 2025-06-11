@@ -1711,3 +1711,6 @@ void ReferrerInfo::RecordTelemetry(nsIHttpChannel* aChannel) {
 }
 
 }  
+
+#undef LOG
+#undef LOG_ENABLED
