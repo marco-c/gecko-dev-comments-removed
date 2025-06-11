@@ -100,17 +100,6 @@ bool Device::IsLost() const {
 
 bool Device::IsBridgeAlive() const { return mBridge && mBridge->CanSend(); }
 
-
-
-
-void Device::GenerateValidationError(const nsCString& aMessage) {
-  if (!IsBridgeAlive()) {
-    return;  
-  }
-  mBridge->SendGenerateError(Some(mId), dom::GPUErrorFilter::Validation,
-                             aMessage);
-}
-
 void Device::TrackBuffer(Buffer* aBuffer) { mTrackedBuffers.Insert(aBuffer); }
 
 void Device::UntrackBuffer(Buffer* aBuffer) { mTrackedBuffers.Remove(aBuffer); }
