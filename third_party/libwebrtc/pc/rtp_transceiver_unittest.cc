@@ -14,16 +14,33 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "api/environment/environment_factory.h"
+#include "api/jsep.h"
+#include "api/make_ref_counted.h"
+#include "api/media_types.h"
 #include "api/peer_connection_interface.h"
+#include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
+#include "api/rtp_transceiver_direction.h"
+#include "api/scoped_refptr.h"
 #include "api/test/rtc_error_matchers.h"
+#include "api/video_codecs/scalability_mode.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "media/base/codec.h"
 #include "media/base/codec_comparators.h"
 #include "media/base/fake_media_engine.h"
+#include "pc/connection_context.h"
 #include "pc/rtp_parameters_conversion.h"
+#include "pc/rtp_receiver.h"
+#include "pc/rtp_receiver_proxy.h"
+#include "pc/rtp_sender.h"
+#include "pc/rtp_sender_proxy.h"
+#include "pc/session_description.h"
 #include "pc/test/enable_fake_media.h"
 #include "pc/test/mock_channel_interface.h"
 #include "pc/test/mock_rtp_receiver_internal.h"
@@ -223,6 +240,15 @@ class RtpTransceiverFilteredCodecPreferencesTest
 
   
   
+  
+  void RecreateTransceiver() {
+    transceiver_ =
+        CreateTransceiver(MockSender(cricket::MediaType::MEDIA_TYPE_VIDEO),
+                          MockReceiver(cricket::MediaType::MEDIA_TYPE_VIDEO));
+  }
+
+  
+  
   H264CodecCapabilities ConfigureH264CodecCapabilities() {
     cricket::Codec cricket_sendrecv_codec = cricket::CreateVideoCodec(
         SdpVideoFormat("H264",
@@ -264,6 +290,9 @@ class RtpTransceiverFilteredCodecPreferencesTest
         capabilities.cricket_sendrecv_codec, capabilities.recvonly_codec));
     EXPECT_FALSE(IsSameRtpCodecIgnoringLevel(
         capabilities.cricket_sendonly_codec, capabilities.recvonly_codec));
+    
+    
+    RecreateTransceiver();
     return capabilities;
   }
 
@@ -300,6 +329,9 @@ class RtpTransceiverFilteredCodecPreferencesTest
                        {ScalabilityMode::kL1T1}));
     media_engine()->SetVideoSendCodecs({cricket_sendonly_codec});
     media_engine()->SetVideoRecvCodecs({cricket_recvonly_codec});
+    
+    
+    RecreateTransceiver();
     return {
         .cricket_sendonly_codec = cricket_sendonly_codec,
         .sendonly_codec = ToRtpCodecCapability(cricket_sendonly_codec),
@@ -446,6 +478,9 @@ TEST_F(RtpTransceiverFilteredCodecPreferencesTest,
   
   media_engine()->SetVideoSendCodecs({baseline_3_1});
   media_engine()->SetVideoRecvCodecs({baseline_5_2, high_3_1});
+  
+  
+  RecreateTransceiver();
 
   
   

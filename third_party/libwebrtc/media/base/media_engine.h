@@ -31,7 +31,6 @@
 #include "media/base/media_channel.h"
 #include "media/base/media_config.h"
 #include "media/base/stream_params.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
@@ -122,8 +121,15 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   
-  virtual const std::vector<Codec>& send_codecs() const = 0;
-  virtual const std::vector<Codec>& recv_codecs() const = 0;
+  
+  [[deprecated]] inline const std::vector<Codec>& send_codecs() const {
+    return LegacySendCodecs();
+  }
+  [[deprecated]] inline const std::vector<Codec>& recv_codecs() const {
+    return LegacyRecvCodecs();
+  }
+  virtual const std::vector<Codec>& LegacySendCodecs() const = 0;
+  virtual const std::vector<Codec>& LegacyRecvCodecs() const = 0;
 
   
   
@@ -164,18 +170,23 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   
-  virtual std::vector<Codec> send_codecs() const = 0;
-  virtual std::vector<Codec> recv_codecs() const = 0;
   
-  
-  
-  virtual std::vector<Codec> send_codecs(bool include_rtx) const {
-    RTC_DCHECK(include_rtx);
-    return send_codecs();
+  [[deprecated]] inline std::vector<Codec> send_codecs() const {
+    return LegacySendCodecs();
   }
-  virtual std::vector<Codec> recv_codecs(bool include_rtx) const {
-    RTC_DCHECK(include_rtx);
-    return recv_codecs();
+  [[deprecated]] inline std::vector<Codec> recv_codecs() const {
+    return LegacyRecvCodecs();
+  }
+  virtual std::vector<Codec> LegacySendCodecs() const = 0;
+  virtual std::vector<Codec> LegacyRecvCodecs() const = 0;
+  
+  [[deprecated]] inline std::vector<Codec> send_codecs(bool include_rtx) const {
+    return LegacySendCodecs(include_rtx);
+  }
+  virtual std::vector<Codec> LegacySendCodecs(bool include_rtx) const = 0;
+  virtual std::vector<Codec> LegacyRecvCodecs(bool include_rtx) const = 0;
+  [[deprecated]] inline std::vector<Codec> recv_codecs(bool include_rtx) const {
+    return LegacyRecvCodecs(include_rtx);
   }
 };
 
