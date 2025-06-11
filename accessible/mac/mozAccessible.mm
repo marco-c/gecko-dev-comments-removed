@@ -26,6 +26,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "OuterDocAccessible.h"
 #include "nsChildView.h"
+#include "TextLeafRange.h"
 #include "xpcAccessibleMacInterface.h"
 
 #include "nsRect.h"
@@ -684,12 +685,39 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 - (id)moxTitleUIElement {
   MOZ_ASSERT(mGeckoAccessible);
 
-  NSArray* relations = [self getRelationsByType:RelationType::LABELLED_BY];
-  if ([relations count] == 1) {
-    return [relations firstObject];
+  nsAutoString unused;
+  if (mGeckoAccessible->Name(unused) != eNameFromRelations) {
+    return nil;
   }
 
-  return nil;
+  Relation rel = mGeckoAccessible->RelationByType(RelationType::LABELLED_BY);
+  Accessible* label = rel.Next();
+  if (!label || rel.Next()) {
+    
+    return nil;
+  }
+
+  if (label->IsAncestorOf(mGeckoAccessible)) {
+    
+    
+    
+    
+    
+    return nil;
+  }
+
+  if (RefPtr<nsAtom>(label->DisplayStyle()) == nsGkAtoms::block) {
+    TextLeafPoint endPoint =
+        TextLeafPoint(label, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT)
+            .FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
+    if (endPoint.IsSpace()) {
+      
+      
+      return nil;
+    }
+  }
+
+  return GetNativeFromGeckoAccessible(label);
 }
 
 - (NSString*)moxDOMIdentifier {
