@@ -528,9 +528,10 @@ class nsGridContainerFrame final : public nsContainerFrame,
   
   
   nscoord ComputeBSizeForResolvingRowSizes(
-      GridReflowInput& aGridRI, const Grid& aGrid, nscoord aComputedBSize,
+      GridReflowInput& aGridRI, nscoord aComputedBSize,
       const Maybe<nscoord>& aContainIntrinsicBSize) const;
 
+  
   
   
   

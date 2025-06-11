@@ -9187,7 +9187,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
 }
 
 nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
-    GridReflowInput& aGridRI, const Grid& aGrid, nscoord aComputedBSize,
+    GridReflowInput& aGridRI, nscoord aComputedBSize,
     const Maybe<nscoord>& aContainIntrinsicBSize) const {
   if (aComputedBSize != NS_UNCONSTRAINEDSIZE) {
     
@@ -9203,33 +9203,7 @@ nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
     return aGridRI.mReflowInput->ApplyMinMaxBSize(*aContainIntrinsicBSize);
   }
 
-  if (!StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
-    
-    
-    return NS_UNCONSTRAINEDSIZE;
-  }
-
-  if (IsMasonry(LogicalAxis::Block)) {
-    
-    
-    return NS_UNCONSTRAINEDSIZE;
-  }
-
-  
-  
-  
-  
-  aGridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, aGrid,
-                                     NS_UNCONSTRAINEDSIZE,
-                                     SizingConstraint::NoConstraint);
-
-  const nscoord result = aGridRI.mReflowInput->ApplyMinMaxBSize(
-      aGridRI.mRows.TotalTrackSizeWithoutAlignment(this));
-
-  
-  aGridRI.InvalidateTrackSizesForAxis(LogicalAxis::Block);
-
-  return result;
+  return NS_UNCONSTRAINEDSIZE;
 }
 
 nscoord nsGridContainerFrame::ComputeIntrinsicContentBSize(
@@ -9345,23 +9319,48 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     }
 
     
+    
     gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid, computedISize,
                                       SizingConstraint::NoConstraint);
 
-    const nscoord bSizeForResolvingRowSizes = ComputeBSizeForResolvingRowSizes(
-        gridRI, grid, computedBSize, containIntrinsicBSize);
+    nscoord bSizeForResolvingRowSizes = ComputeBSizeForResolvingRowSizes(
+        gridRI, computedBSize, containIntrinsicBSize);
 
+    
+    
+    
+    
+    
+    
     
     gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
                                       bSizeForResolvingRowSizes,
                                       SizingConstraint::NoConstraint);
 
-    NS_ASSERTION(
-        !StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() ||
-            IsMasonry(LogicalAxis::Block) ||
-            bSizeForResolvingRowSizes != NS_UNCONSTRAINEDSIZE,
-        "The block-size for resolving the row sizes should be definite in "
-        "non-masonry layout!");
+    if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
+      
+      
+      
+      
+      if (bSizeForResolvingRowSizes == NS_UNCONSTRAINEDSIZE &&
+          !IsMasonry(LogicalAxis::Block)) {
+        bSizeForResolvingRowSizes = gridRI.mReflowInput->ApplyMinMaxBSize(
+            gridRI.mRows.TotalTrackSizeWithoutAlignment(this));
+
+        NS_ASSERTION(bSizeForResolvingRowSizes != NS_UNCONSTRAINEDSIZE,
+                     "The block-size for re-resolving the row sizes should be "
+                     "definite in non-masonry layout!");
+
+        
+        gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Block);
+
+        
+        
+        gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
+                                          bSizeForResolvingRowSizes,
+                                          SizingConstraint::NoConstraint);
+      }
+    }
 
     if (computedBSize == NS_UNCONSTRAINEDSIZE ||
         aReflowInput.ShouldApplyAutomaticMinimumOnBlockAxis()) {
