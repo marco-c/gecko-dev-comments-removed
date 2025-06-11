@@ -1,0 +1,11 @@
+"use strict";
+
+ChromeUtils.defineESModuleGetters(this, {
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
+});
+
+
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
