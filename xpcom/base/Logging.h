@@ -308,7 +308,4 @@ void log_print(const LogModule* aModule, LogLevel aLevel, TimeStamp* aStart,
 
 #undef MOZ_LOGGING_ENABLED
 
-
-inline const char* GetBoolName(bool aBool) { return aBool ? "true" : "false"; }
-
 #endif  
