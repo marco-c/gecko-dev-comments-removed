@@ -269,6 +269,8 @@ typedef vpx_image_t *(*vpx_codec_get_preview_frame_fn_t)(
 typedef vpx_codec_err_t (*vpx_codec_enc_mr_get_mem_loc_fn_t)(
     const vpx_codec_enc_cfg_t *cfg, void **mem_loc);
 
+typedef void (*vpx_codec_enc_mr_free_mem_loc_fn_t)(void *mem_loc);
+
 
 
 
@@ -318,6 +320,8 @@ struct vpx_codec_iface {
         get_preview; 
     vpx_codec_enc_mr_get_mem_loc_fn_t
         mr_get_mem_loc; 
+    vpx_codec_enc_mr_free_mem_loc_fn_t
+        mr_free_mem_loc; 
   } enc;
 };
 

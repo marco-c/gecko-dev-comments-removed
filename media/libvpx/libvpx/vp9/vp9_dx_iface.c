@@ -737,6 +737,7 @@ CODEC_INTERFACE(vpx_codec_vp9_dx) = {
       NULL,  
       NULL,  
       NULL,  
+      NULL,  
       NULL   
   }
 };
