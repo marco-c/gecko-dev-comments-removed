@@ -9,7 +9,7 @@ use anyhow::{Context, Result};
 use askama::Template;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use uniffi_bindgen::pipeline::initial;
 use uniffi_pipeline::PrintOptions;
@@ -85,6 +85,8 @@ struct PipelineArgs {
 pub struct Config {
     #[serde(default)]
     async_wrappers: AsyncWrappersConfig,
+    #[serde(default)]
+    custom_types: IndexMap<String, CustomTypeConfig>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Node)]
@@ -96,6 +98,21 @@ struct AsyncWrappersConfig {
     
     #[serde(default)]
     main_thread: IndexSet<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Node)]
+struct CustomTypeConfig {
+    
+    #[serde(default)]
+    type_name: Option<String>,
+    
+    #[serde(default)]
+    imports: Vec<String>,
+    
+    
+    lift: String,
+    
+    lower: String,
 }
 
 fn render(out_path: &Utf8Path, template: impl Template) -> Result<()> {
