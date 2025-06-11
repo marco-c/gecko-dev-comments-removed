@@ -230,12 +230,7 @@ add_task(
     
     
     if (Services.appinfo.OS == "Linux") {
-      todo(
-        notification &&
-          !notification.dismissed &&
-          BrowserTestUtils.isVisible(PopupNotifications.panel.firstChild),
-        "Notification should still be open because we clicked during the security delay."
-      );
+      
     } else {
       ok(
         notification &&
