@@ -7,13 +7,7 @@
 #ifndef MOZILLA_IDENTITYCREDENTIALREQUESTMANAGER_H_
 #define MOZILLA_IDENTITYCREDENTIALREQUESTMANAGER_H_
 
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/PrincipalHashKey.h"
-#include "mozilla/dom/IdentityCredential.h"
-#include "mozilla/dom/IdentityCredentialBinding.h"
-#include "mozilla/dom/IPCIdentityCredential.h"
-#include "nsIPrincipal.h"
-#include "nsTHashMap.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 
@@ -22,23 +16,6 @@ class IdentityCredentialRequestManager final : nsISupports {
   NS_DECL_ISUPPORTS
 
   static IdentityCredentialRequestManager* GetInstance();
-
-  
-  
-  
-  nsresult StorePendingRequest(
-      const nsCOMPtr<nsIPrincipal>& aRPPrincipal,
-      const dom::IdentityCredentialRequestOptions& aRequest,
-      const RefPtr<
-          dom::IdentityCredential::GetIPCIdentityCredentialPromise::Private>&
-          aPromise,
-      const RefPtr<dom::CanonicalBrowsingContext>& aBrowsingContext);
-
-  
-  
-  
-  void NotifyOfStoredCredential(const nsCOMPtr<nsIPrincipal>& aIDPPrincipal,
-                                const dom::IPCIdentityCredential& aCredential);
 
   IdentityCredentialRequestManager(IdentityCredentialRequestManager& other) =
       delete;
@@ -49,26 +26,6 @@ class IdentityCredentialRequestManager final : nsISupports {
   IdentityCredentialRequestManager() {};
   ~IdentityCredentialRequestManager() = default;
 
-  struct PendingRequestEntry {
-    nsCOMPtr<nsIPrincipal> mRPPrincipal;
-    dom::IdentityCredentialRequestOptions mRequestOptions;
-    RefPtr<dom::IdentityCredential::GetIPCIdentityCredentialPromise::Private>
-        mPromise;
-    RefPtr<dom::CanonicalBrowsingContext> mBrowsingContext;
-
-    PendingRequestEntry(
-        nsIPrincipal* aRPPrincipal,
-        const dom::IdentityCredentialRequestOptions& aRequestOptions,
-        const RefPtr<
-            dom::IdentityCredential::GetIPCIdentityCredentialPromise::Private>&
-            aPromise,
-        const RefPtr<dom::CanonicalBrowsingContext>& aBrowsingContext)
-        : mRPPrincipal(aRPPrincipal),
-          mRequestOptions(aRequestOptions),
-          mPromise(aPromise),
-          mBrowsingContext(aBrowsingContext) {}
-  };
-  nsTHashMap<PrincipalHashKey, nsTArray<PendingRequestEntry>> mPendingRequests;
 };
 
 }  
