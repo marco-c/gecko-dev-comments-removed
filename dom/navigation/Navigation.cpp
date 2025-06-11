@@ -715,10 +715,14 @@ bool Navigation::InnerFireNavigateEvent(
                         aNavigationType != NavigationType::Traverse);
 
   
-  init.mCancelable =
+  bool traverseCanBeCanceled =
       navigable->IsTop() && aDestination->SameDocument() &&
       (aUserInvolvement != UserNavigationInvolvement::BrowserUI ||
        HasHistoryActionActivation(ToMaybeRef(GetOwnerWindow())));
+
+  
+  init.mCancelable =
+      aNavigationType != NavigationType::Traverse || traverseCanBeCanceled;
 
   
   init.mNavigationType = aNavigationType;
