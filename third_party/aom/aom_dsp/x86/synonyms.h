@@ -48,11 +48,22 @@ static inline __m128i xx_loadu_128(const void *a) {
 
 
 
+#if !defined(__clang__) && __GNUC_MAJOR__ < 9
+static inline __m128i xx_loadu_2x64(const void *hi, const void *lo) {
+  __m64 hi_, lo_;
+  memcpy(&hi_, hi, sizeof(hi_));
+  memcpy(&lo_, lo, sizeof(lo_));
+  return _mm_set_epi64(hi_, lo_);
+}
+#else
+
+
 
 static inline __m128i xx_loadu_2x64(const void *hi, const void *lo) {
   return _mm_unpacklo_epi64(_mm_loadl_epi64((const __m128i *)lo),
                             _mm_loadl_epi64((const __m128i *)hi));
 }
+#endif
 
 static inline void xx_storel_32(void *const a, const __m128i v) {
   const int val = _mm_cvtsi128_si32(v);
