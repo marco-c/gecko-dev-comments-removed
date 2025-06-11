@@ -309,7 +309,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   void ParseAndHandleEncapsulatingHeader(const RtpPacketReceived& packet)
       RTC_RUN_ON(packet_sequence_checker_);
-  void NotifyReceiverOfEmptyPacket(uint16_t seq_num, bool is_h26x)
+  void NotifyReceiverOfEmptyPacket(uint16_t seq_num,
+                                   std::optional<VideoCodecType> codec)
       RTC_RUN_ON(packet_sequence_checker_);
   bool IsRedEnabled() const;
   void InsertSpsPpsIntoTracker(uint8_t payload_type)
@@ -329,7 +330,9 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                           FrameInstrumentationData>& frame_instrumentation_data,
       int spatial_idx);
 
-  bool IsH26xPayloadType(uint8_t payload_type) const
+  std::optional<VideoCodecType> GetCodecFromPayloadType(
+      uint8_t payload_type) const RTC_RUN_ON(packet_sequence_checker_);
+  bool UseH26xPacketBuffer(std::optional<VideoCodecType> codec) const
       RTC_RUN_ON(packet_sequence_checker_);
 
   const Environment env_;
@@ -381,6 +384,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   VideoStreamBufferControllerStatsObserver* const vcm_receive_statistics_;
   video_coding::PacketBuffer packet_buffer_
       RTC_GUARDED_BY(packet_sequence_checker_);
+  
+  
   
   std::unique_ptr<H26xPacketBuffer> h26x_packet_buffer_
       RTC_GUARDED_BY(packet_sequence_checker_);
