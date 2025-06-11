@@ -12,11 +12,13 @@
 #define API_VOIP_VOIP_ENGINE_FACTORY_H_
 
 #include <memory>
+#include <optional>
 
 #include "api/audio/audio_device.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/environment/environment.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/voip/voip_engine.h"
@@ -53,6 +55,7 @@ struct VoipEngineConfig {
   
   
   
+  
   std::unique_ptr<TaskQueueFactory> task_queue_factory;
 
   
@@ -60,6 +63,13 @@ struct VoipEngineConfig {
   
   
   scoped_refptr<AudioDeviceModule> audio_device_module;
+
+  
+  
+  
+  
+  
+  std::optional<Environment> env;
 
   
   
