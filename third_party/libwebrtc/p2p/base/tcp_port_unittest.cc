@@ -132,7 +132,7 @@ class TCPPortTest : public ::testing::Test, public sigslot::has_slots<> {
   
   std::list<rtc::Network> networks_;
   std::unique_ptr<webrtc::VirtualSocketServer> ss_;
-  rtc::AutoSocketServerThread main_;
+  webrtc::AutoSocketServerThread main_;
   webrtc::BasicPacketSocketFactory socket_factory_;
   std::string username_;
   std::string password_;
@@ -422,7 +422,7 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
                         {.timeout = webrtc::TimeDelta::Millis(kTimeout)}),
       webrtc::IsRtcOk());
   
-  rtc::Thread::Current()->ProcessMessages(100);
+  webrtc::Thread::Current()->ProcessMessages(100);
 
   
   

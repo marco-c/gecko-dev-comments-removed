@@ -436,7 +436,7 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
 
   
   
-  rtc::RaceChecker incoming_frame_race_checker_;
+  RaceChecker incoming_frame_race_checker_;
 
   
   

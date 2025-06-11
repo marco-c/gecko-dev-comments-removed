@@ -286,7 +286,7 @@ class ChannelSend : public ChannelSendInterface,
   
   
   
-  rtc::RaceChecker audio_thread_race_checker_;
+  RaceChecker audio_thread_race_checker_;
 
   mutable Mutex volume_settings_mutex_;
 

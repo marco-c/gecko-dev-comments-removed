@@ -16,12 +16,12 @@
 #include "api/units/time_delta.h"
 #include "rtc_base/event.h"
 #include "rtc_base/socket_factory.h"
-namespace rtc {
-class Thread;
-class NetworkBinderInterface;
-}  
 
 namespace webrtc {
+
+class NetworkBinderInterface;
+class Thread;
+class ThreadManager;
 
 
 
@@ -41,7 +41,7 @@ class SocketServer : public SocketFactory {
   
   
   
-  virtual void SetMessageQueue(rtc::Thread* ) {}
+  virtual void SetMessageQueue(Thread* ) {}
 
   
   
@@ -55,15 +55,13 @@ class SocketServer : public SocketFactory {
 
   
   
-  void set_network_binder(rtc::NetworkBinderInterface* binder) {
+  void set_network_binder(NetworkBinderInterface* binder) {
     network_binder_ = binder;
   }
-  rtc::NetworkBinderInterface* network_binder() const {
-    return network_binder_;
-  }
+  NetworkBinderInterface* network_binder() const { return network_binder_; }
 
  private:
-  rtc::NetworkBinderInterface* network_binder_ = nullptr;
+  NetworkBinderInterface* network_binder_ = nullptr;
 };
 
 }  

@@ -146,10 +146,6 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 
-namespace rtc {
-class Thread;  
-}  
-
 namespace webrtc {
 
 
@@ -1238,7 +1234,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual rtc::Thread* signaling_thread() const = 0;
+  virtual Thread* signaling_thread() const = 0;
 
   
   
@@ -1435,9 +1431,9 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   ~PeerConnectionFactoryDependencies();
 
   
-  rtc::Thread* network_thread = nullptr;
-  rtc::Thread* worker_thread = nullptr;
-  rtc::Thread* signaling_thread = nullptr;
+  Thread* network_thread = nullptr;
+  Thread* worker_thread = nullptr;
+  Thread* signaling_thread = nullptr;
   SocketFactory* socket_factory = nullptr;
   
   

@@ -245,7 +245,7 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
   std::atomic<int> cached_recording_delay_ms_ = 0;
 
   
-  rtc::Thread* thread_;
+  Thread* thread_;
 
   
   

@@ -226,7 +226,7 @@ const RTCOutboundRtpStreamStats* FindOutboundRtpByRid(
 class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
  public:
   PeerConnectionEncodingsIntegrationTest()
-      : background_thread_(std::make_unique<rtc::Thread>(&pss_)) {
+      : background_thread_(std::make_unique<Thread>(&pss_)) {
     RTC_CHECK(background_thread_->Start());
   }
 
@@ -428,7 +428,7 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
   }
 
   PhysicalSocketServer pss_;
-  std::unique_ptr<rtc::Thread> background_thread_;
+  std::unique_ptr<Thread> background_thread_;
 };
 
 TEST_F(PeerConnectionEncodingsIntegrationTest,
@@ -1166,7 +1166,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
   remote_pc_wrapper->WaitForConnection();
 
   
-  rtc::Thread::Current()->SleepMs(1000);
+  Thread::Current()->SleepMs(1000);
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -1205,7 +1205,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
   remote_pc_wrapper->WaitForConnection();
 
   
-  rtc::Thread::Current()->SleepMs(1000);
+  Thread::Current()->SleepMs(1000);
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -1254,7 +1254,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest, VP9_TargetBitrate_LegacyL1T3) {
   
   
   
-  rtc::Thread::Current()->SleepMs(1000);
+  Thread::Current()->SleepMs(1000);
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -1307,7 +1307,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest, VP9_TargetBitrate_StandardL1T3) {
   
   
   
-  rtc::Thread::Current()->SleepMs(1000);
+  Thread::Current()->SleepMs(1000);
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -2452,7 +2452,7 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, AllLayersInactive) {
   remote_pc_wrapper->WaitForConnection();
 
   
-  rtc::Thread::Current()->SleepMs(1000);
+  Thread::Current()->SleepMs(1000);
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRtpStreamStats>();

@@ -2232,7 +2232,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   
   
   
-  rtc::Thread::Current()->ProcessMessages(5000);
+  Thread::Current()->ProcessMessages(5000);
 
   EXPECT_TRUE(encoder.WaitForStartBitrate());
   EXPECT_EQ(GetVideoEncoderConfig()->max_bitrate_bps / 1000,
@@ -2246,7 +2246,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   
   
   
-  rtc::Thread::Current()->ProcessMessages(5000);
+  Thread::Current()->ProcessMessages(5000);
 
   
   

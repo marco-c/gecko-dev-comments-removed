@@ -22,8 +22,8 @@ namespace webrtc {
 
 
 rtc::scoped_refptr<VideoTrackSourceInterface> RTC_EXPORT
-CreateVideoTrackSourceProxy(rtc::Thread* signaling_thread,
-                            rtc::Thread* worker_thread,
+CreateVideoTrackSourceProxy(Thread* signaling_thread,
+                            Thread* worker_thread,
                             VideoTrackSourceInterface* source);
 
 }  

@@ -21,7 +21,7 @@
 
 #include "MicroGeckoProfiler.h"
 
-namespace rtc {
+namespace webrtc {
 namespace {
 
 #if defined(WEBRTC_WIN)

@@ -226,15 +226,15 @@ int PhysicalSocket::Bind(const SocketAddress& bind_addr) {
   
   
   if (ss_->network_binder() && !bind_addr.IsAnyIP()) {
-    rtc::NetworkBindingResult result =
+    NetworkBindingResult result =
         ss_->network_binder()->BindSocketToNetwork(s_, bind_addr.ipaddr());
-    if (result == rtc::NetworkBindingResult::SUCCESS) {
+    if (result == NetworkBindingResult::SUCCESS) {
       
       
       
       copied_bind_addr.SetIP(
           webrtc::GetAnyIP(copied_bind_addr.ipaddr().family()));
-    } else if (result == rtc::NetworkBindingResult::NOT_IMPLEMENTED) {
+    } else if (result == NetworkBindingResult::NOT_IMPLEMENTED) {
       RTC_LOG(LS_INFO) << "Can't bind socket to network because "
                           "network binding is not implemented for this OS.";
     } else {

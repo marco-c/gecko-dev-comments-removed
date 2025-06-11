@@ -64,7 +64,7 @@ TEST(AsyncDnsResolver, ResolveAfterDeleteDoesNotReturn) {
   bool done = false;
   resolver->Start(address, [&done] { done = true; });
   resolver.reset();                    
-  rtc::Thread::Current()->SleepMs(1);  
+  Thread::Current()->SleepMs(1);       
   EXPECT_FALSE(done);                  
 }
 

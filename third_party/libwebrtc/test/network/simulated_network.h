@@ -115,7 +115,7 @@ class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
 
   
   
-  rtc::RaceChecker process_checker_;
+  RaceChecker process_checker_;
   
   
   

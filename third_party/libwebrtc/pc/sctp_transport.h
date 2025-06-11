@@ -92,7 +92,7 @@ class SctpTransport : public SctpTransportInterface,
 
   
   
-  rtc::Thread* const owner_thread_;
+  Thread* const owner_thread_;
   SctpTransportInformation info_ RTC_GUARDED_BY(owner_thread_);
   std::unique_ptr<cricket::SctpTransportInternal> internal_sctp_transport_
       RTC_GUARDED_BY(owner_thread_);

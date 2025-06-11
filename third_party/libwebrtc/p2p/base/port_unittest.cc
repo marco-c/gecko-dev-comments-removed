@@ -447,7 +447,7 @@ class PortTest : public ::testing::Test, public sigslot::has_slots<> {
     
     
     
-    rtc::Thread::Current()->ProcessMessages(0);
+    webrtc::Thread::Current()->ProcessMessages(0);
   }
 
  protected:
@@ -947,7 +947,7 @@ class PortTest : public ::testing::Test, public sigslot::has_slots<> {
   
   std::list<rtc::Network> networks_;
   std::unique_ptr<webrtc::VirtualSocketServer> ss_;
-  rtc::AutoSocketServerThread main_;
+  webrtc::AutoSocketServerThread main_;
   webrtc::BasicPacketSocketFactory socket_factory_;
   std::unique_ptr<webrtc::NATServer> nat_server1_;
   std::unique_ptr<webrtc::NATServer> nat_server2_;
@@ -1490,12 +1490,12 @@ TEST_F(PortTest, TestConnectionDead) {
   ASSERT_NE(conn, nullptr);
   
   conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  webrtc::Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(ch1.conn() != nullptr);
   
   conn->UpdateState(before_created + MIN_CONNECTION_LIFETIME - 1);
   conn->Prune();
-  rtc::Thread::Current()->ProcessMessages(0);
+  webrtc::Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(ch1.conn() != nullptr);
   
   conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
@@ -1515,7 +1515,7 @@ TEST_F(PortTest, TestConnectionDead) {
   
   conn->UpdateState(before_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT -
                     1);
-  rtc::Thread::Current()->ProcessMessages(100);
+  webrtc::Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
   conn->UpdateState(after_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
   EXPECT_THAT(webrtc::WaitUntil(
@@ -1555,7 +1555,7 @@ TEST_F(PortTest, TestConnectionDeadWithDeadConnectionTimeout) {
   int64_t after_last_receiving = webrtc::TimeMillis();
   
   conn->UpdateState(before_last_receiving + 90000 - 1);
-  rtc::Thread::Current()->ProcessMessages(100);
+  webrtc::Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
   conn->UpdateState(after_last_receiving + 90000 + 1);
   EXPECT_THAT(webrtc::WaitUntil(
@@ -1604,7 +1604,7 @@ TEST_F(PortTest, TestConnectionDeadOutstandingPing) {
 
   
   conn->UpdateState(send_ping_timestamp + DEAD_CONNECTION_RECEIVE_TIMEOUT - 1);
-  rtc::Thread::Current()->ProcessMessages(100);
+  webrtc::Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
   conn->UpdateState(send_ping_timestamp + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
   EXPECT_THAT(webrtc::WaitUntil(
@@ -2826,7 +2826,7 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
   int64_t last_ping_received1 = lconn->last_ping_received();
 
   
-  rtc::Thread::Current()->ProcessMessages(100);
+  webrtc::Thread::Current()->ProcessMessages(100);
   
   lconn->OnReadPacket(rtc::ReceivedPacket::CreateFromLegacy(
       buf->Data(), buf->Length(), -1));
@@ -2985,7 +2985,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
   
   SocketAddress kTurnUdpIntAddr2("99.99.98.4", webrtc::STUN_SERVER_PORT);
   SocketAddress kTurnUdpExtAddr2("99.99.98.5", 0);
-  webrtc::TestTurnServer turn_server2(rtc::Thread::Current(), vss(),
+  webrtc::TestTurnServer turn_server2(webrtc::Thread::Current(), vss(),
                                       kTurnUdpIntAddr2, kTurnUdpExtAddr2);
   auto turnport3 =
       CreateTurnPort(kLocalAddr1, nat_socket_factory1(), webrtc::PROTO_UDP,
@@ -3000,7 +3000,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
 
   
   
-  webrtc::TestTurnServer turn_server3(rtc::Thread::Current(), vss(),
+  webrtc::TestTurnServer turn_server3(webrtc::Thread::Current(), vss(),
                                       kTurnTcpIntAddr, kTurnUdpExtAddr,
                                       webrtc::PROTO_TCP);
   auto turnport4 = CreateTurnPort(kLocalAddr1, nat_socket_factory1(),
@@ -4134,7 +4134,7 @@ TEST_F(PortTest, TestAddConnectionWithSameAddress) {
   EXPECT_EQ(2u, conn_in_use->remote_candidate().generation());
 
   
-  rtc::Thread::Current()->ProcessMessages(300);
+  webrtc::Thread::Current()->ProcessMessages(300);
   EXPECT_TRUE(port->GetConnection(address) != nullptr);
 }
 

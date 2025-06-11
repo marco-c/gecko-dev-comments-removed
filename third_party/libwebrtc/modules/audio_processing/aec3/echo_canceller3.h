@@ -182,8 +182,8 @@ class EchoCanceller3 : public EchoControl {
   void AnalyzeCapture(const AudioBuffer& capture);
 
   const Environment env_;
-  rtc::RaceChecker capture_race_checker_;
-  rtc::RaceChecker render_race_checker_;
+  RaceChecker capture_race_checker_;
+  RaceChecker render_race_checker_;
 
   
   std::unique_ptr<RenderWriter> render_writer_

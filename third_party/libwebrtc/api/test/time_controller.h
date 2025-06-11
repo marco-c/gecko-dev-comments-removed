@@ -43,13 +43,13 @@ class TimeController {
   
   
   
-  virtual std::unique_ptr<rtc::Thread> CreateThread(
+  virtual std::unique_ptr<Thread> CreateThread(
       const std::string& name,
       std::unique_ptr<SocketServer> socket_server = nullptr) = 0;
 
   
   
-  virtual rtc::Thread* GetMainThread() = 0;
+  virtual Thread* GetMainThread() = 0;
   
   
   virtual void AdvanceTime(TimeDelta duration) = 0;

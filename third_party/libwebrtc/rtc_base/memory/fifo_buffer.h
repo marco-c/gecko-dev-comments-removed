@@ -31,7 +31,7 @@ class FifoBuffer final : public webrtc::StreamInterface {
   
   explicit FifoBuffer(size_t length);
   
-  FifoBuffer(size_t length, Thread* owner);
+  FifoBuffer(size_t length, webrtc::Thread* owner);
   ~FifoBuffer() override;
 
   FifoBuffer(const FifoBuffer&) = delete;
@@ -118,7 +118,7 @@ class FifoBuffer final : public webrtc::StreamInterface {
   
   size_t read_position_ RTC_GUARDED_BY(callback_sequence_);
   
-  Thread* const owner_;
+  webrtc::Thread* const owner_;
 };
 
 }  

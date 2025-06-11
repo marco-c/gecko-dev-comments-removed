@@ -81,7 +81,7 @@ class SimulatedRealTimeControllerConformanceTest
 TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostOrderTest) {
   std::unique_ptr<TimeController> time_controller =
       CreateTimeController(GetParam());
-  std::unique_ptr<rtc::Thread> thread = time_controller->CreateThread("thread");
+  std::unique_ptr<Thread> thread = time_controller->CreateThread("thread");
 
   
   
@@ -98,7 +98,7 @@ TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostOrderTest) {
 TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostDelayedOrderTest) {
   std::unique_ptr<TimeController> time_controller =
       CreateTimeController(GetParam());
-  std::unique_ptr<rtc::Thread> thread = time_controller->CreateThread("thread");
+  std::unique_ptr<Thread> thread = time_controller->CreateThread("thread");
 
   ExecutionOrderKeeper execution_order;
   thread->PostDelayedTask([&]() { execution_order.Executed(2); },
@@ -114,7 +114,7 @@ TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostDelayedOrderTest) {
 TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostInvokeOrderTest) {
   std::unique_ptr<TimeController> time_controller =
       CreateTimeController(GetParam());
-  std::unique_ptr<rtc::Thread> thread = time_controller->CreateThread("thread");
+  std::unique_ptr<Thread> thread = time_controller->CreateThread("thread");
 
   
   
@@ -132,7 +132,7 @@ TEST_P(SimulatedRealTimeControllerConformanceTest,
        ThreadPostInvokeFromThreadOrderTest) {
   std::unique_ptr<TimeController> time_controller =
       CreateTimeController(GetParam());
-  std::unique_ptr<rtc::Thread> thread = time_controller->CreateThread("thread");
+  std::unique_ptr<Thread> thread = time_controller->CreateThread("thread");
 
   
   

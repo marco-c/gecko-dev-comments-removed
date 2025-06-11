@@ -46,13 +46,13 @@ class VideoRtpReceiver : public RtpReceiverInternal {
  public:
   
   
-  VideoRtpReceiver(rtc::Thread* worker_thread,
+  VideoRtpReceiver(Thread* worker_thread,
                    std::string receiver_id,
                    std::vector<std::string> streams_ids);
   
   
   VideoRtpReceiver(
-      rtc::Thread* worker_thread,
+      Thread* worker_thread,
       const std::string& receiver_id,
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams);
 
@@ -146,7 +146,7 @@ class VideoRtpReceiver : public RtpReceiverInternal {
   } source_callback_{this};
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker signaling_thread_checker_;
-  rtc::Thread* const worker_thread_;
+  Thread* const worker_thread_;
 
   const std::string id_;
   cricket::VideoMediaReceiveChannelInterface* media_channel_

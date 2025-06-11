@@ -35,12 +35,12 @@ void ThreadProcessingFakeClock::SetTime(Timestamp time) {
   clock_.SetTime(time);
   
   
-  rtc::ThreadManager::ProcessAllMessageQueuesForTesting();
+  ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
 void ThreadProcessingFakeClock::AdvanceTime(TimeDelta delta) {
   clock_.AdvanceTime(delta);
-  rtc::ThreadManager::ProcessAllMessageQueuesForTesting();
+  ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
 ScopedBaseFakeClock::ScopedBaseFakeClock() {

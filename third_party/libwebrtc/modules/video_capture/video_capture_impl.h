@@ -94,7 +94,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
   SequenceChecker api_checker_;
   
   
-  rtc::RaceChecker capture_checker_;
+  RaceChecker capture_checker_;
   
   char* _deviceUniqueId RTC_GUARDED_BY(api_checker_);
 

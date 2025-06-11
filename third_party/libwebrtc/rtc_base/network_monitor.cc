@@ -12,7 +12,7 @@
 
 #include "rtc_base/checks.h"
 
-namespace rtc {
+namespace webrtc {
 
 const char* NetworkPreferenceToString(NetworkPreference preference) {
   switch (preference) {

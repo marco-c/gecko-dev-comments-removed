@@ -76,8 +76,8 @@ void TestScreenDrawerLock(
     const FunctionView<std::unique_ptr<ScreenDrawerLock>()> ctor_;
   } task(&created, ready, ctor);
 
-  auto lock_thread = rtc::PlatformThread::SpawnJoinable(
-      [&task] { task.RunTask(); }, "lock_thread");
+  auto lock_thread =
+      PlatformThread::SpawnJoinable([&task] { task.RunTask(); }, "lock_thread");
 
   
   

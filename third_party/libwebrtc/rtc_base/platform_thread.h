@@ -24,7 +24,7 @@
 
 #include "rtc_base/deprecated/recursive_critical_section.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 class PlatformUIThread;
@@ -123,6 +123,14 @@ class PlatformThread final {
   friend PlatformUIThread;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::PlatformThread;
+using ::webrtc::ThreadAttributes;
+using ::webrtc::ThreadPriority;
 }  
 
 #endif  

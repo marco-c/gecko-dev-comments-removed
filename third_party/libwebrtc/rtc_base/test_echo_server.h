@@ -33,7 +33,7 @@ namespace webrtc {
 
 class TestEchoServer : public sigslot::has_slots<> {
  public:
-  TestEchoServer(rtc::Thread* thread, const SocketAddress& addr);
+  TestEchoServer(Thread* thread, const SocketAddress& addr);
   ~TestEchoServer() override;
 
   TestEchoServer(const TestEchoServer&) = delete;
@@ -65,7 +65,7 @@ class TestEchoServer : public sigslot::has_slots<> {
     client_sockets_.erase(it);
     
     
-    rtc::Thread::Current()->PostTask([socket = absl::WrapUnique(socket)] {});
+    Thread::Current()->PostTask([socket = absl::WrapUnique(socket)] {});
   }
 
   typedef std::list<AsyncTCPSocket*> ClientList;

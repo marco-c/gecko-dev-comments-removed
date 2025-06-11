@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_NETWORK_MONITOR_FACTORY_H_
 #define RTC_BASE_NETWORK_MONITOR_FACTORY_H_
 
+#include "rtc_base/network_monitor.h"
 namespace webrtc {
 class FieldTrialsView;
 }  
@@ -19,7 +20,6 @@ namespace rtc {
 
 
 
-class NetworkMonitorInterface;
 
 
 
@@ -28,7 +28,7 @@ class NetworkMonitorInterface;
 
 class NetworkMonitorFactory {
  public:
-  virtual NetworkMonitorInterface* CreateNetworkMonitor(
+  virtual webrtc::NetworkMonitorInterface* CreateNetworkMonitor(
       const webrtc::FieldTrialsView& field_trials) = 0;
 
   virtual ~NetworkMonitorFactory();

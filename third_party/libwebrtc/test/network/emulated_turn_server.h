@@ -47,7 +47,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
   
   
   EmulatedTURNServer(const EmulatedTURNServerConfig& config,
-                     std::unique_ptr<rtc::Thread> thread,
+                     std::unique_ptr<Thread> thread,
                      EmulatedEndpoint* client,
                      EmulatedEndpoint* peer);
   ~EmulatedTURNServer() override;
@@ -83,7 +83,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
   void Stop();
 
  private:
-  std::unique_ptr<rtc::Thread> thread_;
+  std::unique_ptr<Thread> thread_;
   SocketAddress client_address_;
   IceServerConfig ice_config_;
   EmulatedEndpoint* const client_;

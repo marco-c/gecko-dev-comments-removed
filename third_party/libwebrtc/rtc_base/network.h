@@ -34,6 +34,7 @@
 #include "rtc_base/socket_factory.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 
 #if defined(WEBRTC_POSIX)
@@ -47,8 +48,6 @@ extern const char kPublicIPv6Host[];
 
 class IfAddrsConverter;
 class Network;
-class NetworkMonitorInterface;
-class Thread;
 
 
 const int kDefaultNetworkIgnoreMask = webrtc::ADAPTER_TYPE_LOOPBACK;
@@ -375,8 +374,10 @@ class RTC_EXPORT Network {
 
   
   
-  NetworkPreference network_preference() const { return network_preference_; }
-  void set_network_preference(NetworkPreference val) {
+  webrtc::NetworkPreference network_preference() const {
+    return network_preference_;
+  }
+  void set_network_preference(webrtc::NetworkPreference val) {
     if (network_preference_ == val) {
       return;
     }
@@ -406,7 +407,8 @@ class RTC_EXPORT Network {
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;
-  NetworkPreference network_preference_ = NetworkPreference::NEUTRAL;
+  webrtc::NetworkPreference network_preference_ =
+      webrtc::NetworkPreference::NEUTRAL;
 
   friend class NetworkManager;
 };
@@ -484,7 +486,7 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
 
 class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
-                                       public NetworkBinderInterface,
+                                       public webrtc::NetworkBinderInterface,
                                        public sigslot::has_slots<> {
  public:
   
@@ -526,7 +528,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   
   
   
-  NetworkBindingResult BindSocketToNetwork(
+  webrtc::NetworkBindingResult BindSocketToNetwork(
       int socket_fd,
       const webrtc::IPAddress& address) override;
 
@@ -538,7 +540,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
                       bool include_ignored,
                       std::vector<std::unique_ptr<Network>>* networks) const
       RTC_RUN_ON(thread_);
-  NetworkMonitorInterface::InterfaceInfo GetInterfaceInfo(
+  webrtc::NetworkMonitorInterface::InterfaceInfo GetInterfaceInfo(
       struct ifaddrs* cursor) const RTC_RUN_ON(thread_);
 #endif  
 
@@ -572,7 +574,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   
   void UpdateNetworksOnce() RTC_RUN_ON(thread_);
 
-  Thread* thread_ = nullptr;
+  webrtc::Thread* thread_ = nullptr;
   bool sent_first_update_ = true;
   int start_count_ = 0;
 
@@ -582,7 +584,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   std::vector<std::string> network_ignore_list_;
   NetworkMonitorFactory* const network_monitor_factory_;
   webrtc::SocketFactory* const socket_factory_;
-  std::unique_ptr<NetworkMonitorInterface> network_monitor_
+  std::unique_ptr<webrtc::NetworkMonitorInterface> network_monitor_
       RTC_GUARDED_BY(thread_);
   bool allow_mac_based_ipv6_ RTC_GUARDED_BY(thread_) = false;
   bool bind_using_ifname_ RTC_GUARDED_BY(thread_) = false;

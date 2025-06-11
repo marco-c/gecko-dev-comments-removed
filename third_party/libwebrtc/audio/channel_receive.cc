@@ -253,7 +253,7 @@ class ChannelReceive : public ChannelReceiveInterface,
   
   
   
-  rtc::RaceChecker audio_thread_race_checker_;
+  RaceChecker audio_thread_race_checker_;
   Mutex callback_mutex_;
   Mutex volume_settings_mutex_;
   mutable Mutex call_stats_mutex_;

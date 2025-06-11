@@ -23,7 +23,7 @@ namespace webrtc {
 
 TEST(TimeTest, TimeInMs) {
   int64_t ts_earlier = TimeMillis();
-  rtc::Thread::SleepMs(100);
+  Thread::SleepMs(100);
   int64_t ts_now = TimeMillis();
   
   EXPECT_GE(ts_now, ts_earlier + 80);
@@ -209,7 +209,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   ThreadProcessingFakeClock clock;
   SetClockForTesting(&clock);
 
-  std::unique_ptr<rtc::Thread> worker(rtc::Thread::CreateWithSocketServer());
+  std::unique_ptr<Thread> worker(Thread::CreateWithSocketServer());
   worker->Start();
 
   
@@ -221,7 +221,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   
   
   
-  rtc::Thread::Current()->SleepMs(1000);
+  Thread::Current()->SleepMs(1000);
 
   
   

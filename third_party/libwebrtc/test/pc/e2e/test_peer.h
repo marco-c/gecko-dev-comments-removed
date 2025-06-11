@@ -167,7 +167,7 @@ class TestPeer final : public StatsProvider {
            Params params,
            ConfigurableParams configurable_params,
            std::vector<PeerConfigurer::VideoSource> video_sources,
-           std::unique_ptr<rtc::Thread> worker_thread);
+           std::unique_ptr<Thread> worker_thread);
 
  private:
   const Params params_;
@@ -183,7 +183,7 @@ class TestPeer final : public StatsProvider {
   
   
   
-  std::unique_ptr<rtc::Thread> worker_thread_;
+  std::unique_ptr<Thread> worker_thread_;
   std::unique_ptr<PeerConnectionWrapper> wrapper_;
   std::vector<PeerConfigurer::VideoSource> video_sources_;
 

@@ -538,7 +538,7 @@ rtc::scoped_refptr<StreamCollection> CreateStreamCollection(
       
       rtc::scoped_refptr<VideoTrackInterface> video_track(VideoTrack::Create(
           kVideoTracks[i * tracks_per_stream + j],
-          FakeVideoTrackSource::Create(), rtc::Thread::Current()));
+          FakeVideoTrackSource::Create(), Thread::Current()));
       stream->AddTrack(video_track);
     }
 
@@ -615,9 +615,9 @@ class PeerConnectionFactoryForTest : public PeerConnectionFactory {
   static rtc::scoped_refptr<PeerConnectionFactoryForTest>
   CreatePeerConnectionFactoryForTest() {
     PeerConnectionFactoryDependencies dependencies;
-    dependencies.worker_thread = rtc::Thread::Current();
-    dependencies.network_thread = rtc::Thread::Current();
-    dependencies.signaling_thread = rtc::Thread::Current();
+    dependencies.worker_thread = Thread::Current();
+    dependencies.network_thread = Thread::Current();
+    dependencies.signaling_thread = Thread::Current();
     dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
     dependencies.trials = std::make_unique<FieldTrialBasedConfig>();
     
@@ -653,7 +653,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
     pc_factory_ = CreatePeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
+        Thread::Current(), Thread::Current(), Thread::Current(),
         rtc::scoped_refptr<AudioDeviceModule>(fake_audio_capture_module_),
         CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
         std::make_unique<VideoEncoderFactoryTemplate<
@@ -713,7 +713,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     }
     std::unique_ptr<cricket::FakePortAllocator> port_allocator(
         new cricket::FakePortAllocator(
-            rtc::Thread::Current(),
+            Thread::Current(),
             std::make_unique<BasicPacketSocketFactory>(vss_.get()),
             field_trials_.get()));
     port_allocator_ = port_allocator.get();
@@ -1147,7 +1147,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
   void AddVideoTrack(const std::string& track_id,
                      MediaStreamInterface* stream) {
     rtc::scoped_refptr<VideoTrackInterface> video_track(VideoTrack::Create(
-        track_id, FakeVideoTrackSource::Create(), rtc::Thread::Current()));
+        track_id, FakeVideoTrackSource::Create(), Thread::Current()));
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 
@@ -1260,7 +1260,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
 
   std::unique_ptr<FieldTrials> field_trials_ = FieldTrials::CreateNoGlobal("");
   std::unique_ptr<VirtualSocketServer> vss_;
-  rtc::AutoSocketServerThread main_;
+  AutoSocketServerThread main_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   cricket::FakePortAllocator* port_allocator_ = nullptr;
   FakeRTCCertificateGenerator* fake_certificate_generator_ = nullptr;
@@ -1365,9 +1365,8 @@ TEST_P(PeerConnectionInterfaceTest,
   std::unique_ptr<PacketSocketFactory> packet_socket_factory(
       new BasicPacketSocketFactory(socket_server()));
   std::unique_ptr<cricket::FakePortAllocator> port_allocator(
-      new cricket::FakePortAllocator(rtc::Thread::Current(),
-                                     packet_socket_factory.get(),
-                                     field_trials_.get()));
+      new cricket::FakePortAllocator(
+          Thread::Current(), packet_socket_factory.get(), field_trials_.get()));
   cricket::FakePortAllocator* raw_port_allocator = port_allocator.get();
 
   
@@ -1385,9 +1384,8 @@ TEST_P(PeerConnectionInterfaceTest,
   
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory(
       CreatePeerConnectionFactory(
-          rtc::Thread::Current(), rtc::Thread::Current(),
-          rtc::Thread::Current(), fake_audio_capture_module_,
-          CreateBuiltinAudioEncoderFactory(),
+          Thread::Current(), Thread::Current(), Thread::Current(),
+          fake_audio_capture_module_, CreateBuiltinAudioEncoderFactory(),
           CreateBuiltinAudioDecoderFactory(),
           std::make_unique<VideoEncoderFactoryTemplate<
               LibvpxVp8EncoderTemplateAdapter, LibvpxVp9EncoderTemplateAdapter,
