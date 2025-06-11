@@ -124,6 +124,11 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   
   
   
+  bool registered_;
+
+  
+  
+  
   
   bool cancellable_;
 
@@ -131,9 +136,6 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   OffThreadPromiseTask(const OffThreadPromiseTask&) = delete;
 
   void unregister(OffThreadPromiseRuntimeState& state);
-  
-  void unregister(OffThreadPromiseRuntimeState& state,
-                  const AutoLockHelperThreadState& lock);
 
  protected:
   OffThreadPromiseTask(JSContext* cx, JS::Handle<PromiseObject*> promise);
@@ -160,9 +162,7 @@ class OffThreadPromiseTask : public JS::Dispatchable {
 
  public:
   ~OffThreadPromiseTask() override;
-  static void DestroyUndispatchedTask(OffThreadPromiseTask* task,
-                                      OffThreadPromiseRuntimeState& state,
-                                      const AutoLockHelperThreadState& lock);
+  static void DestroyUndispatchedTask(OffThreadPromiseTask* task);
 
   JSRuntime* runtime() { return runtime_; }
 
@@ -263,19 +263,6 @@ class OffThreadPromiseRuntimeState {
   
   
   HelperThreadLockData<size_t> numRegistered_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  HelperThreadLockData<size_t> numDelayed_;
 
   
   
