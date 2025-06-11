@@ -10,12 +10,16 @@
 
 #include "nsIChannel.h"
 #include "nsIURI.h"
-#include "nsIIconURI.h"
 #include "nsCOMPtr.h"
 
-namespace mozilla::ipc {
+namespace mozilla {
+namespace ipc {
 class ByteBuf;
 }
+namespace gfx {
+class DataSourceSurface;
+}
+}  
 
 
 
@@ -27,7 +31,7 @@ class nsIconChannel final : public nsIChannel {
   NS_FORWARD_NSIREQUEST(mRealChannel->)
   NS_FORWARD_NSICHANNEL(mRealChannel->)
 
-  nsIconChannel() {}
+  nsIconChannel() = default;
 
   static void Shutdown();
 
@@ -39,15 +43,14 @@ class nsIconChannel final : public nsIChannel {
   
   
   static nsresult GetIcon(nsIURI* aURI, mozilla::ipc::ByteBuf* aDataOut);
+  static already_AddRefed<mozilla::gfx::DataSourceSurface> GetSymbolicIcon(
+      const nsCString& aName, int aIconSize, int aScale, nscolor aFgColor);
 
  private:
-  ~nsIconChannel() {}
+  ~nsIconChannel() = default;
   
   
   nsCOMPtr<nsIChannel> mRealChannel;
-
-  static nsresult GetIconWithGIO(nsIMozIconURI* aIconURI,
-                                 mozilla::ipc::ByteBuf* aDataOut);
 };
 
 #endif  
