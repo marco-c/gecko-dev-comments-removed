@@ -120,8 +120,10 @@ class DEPRECATED_RtpSenderEgress {
   bool force_part_of_allocation_ RTC_GUARDED_BY(lock_);
   uint32_t timestamp_offset_ RTC_GUARDED_BY(lock_);
 
+  
   StreamDataCounters rtp_stats_ RTC_GUARDED_BY(lock_);
   StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(lock_);
+
   
   std::vector<BitrateTracker> send_rates_ RTC_GUARDED_BY(lock_);
 
