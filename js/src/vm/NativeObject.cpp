@@ -2155,68 +2155,65 @@ enum IsNameLookup { NotNameLookup = false, NameLookup = true };
 
 
 
-static bool GetNonexistentProperty(JSContext* cx, HandleId id,
-                                   IsNameLookup nameLookup,
-                                   MutableHandleValue vp) {
-  vp.setUndefined();
+template <AllowGC allowGC>
+static bool GetNonexistentProperty(
+    JSContext* cx, typename MaybeRooted<jsid, allowGC>::HandleType id,
+    IsNameLookup nameLookup,
+    typename MaybeRooted<Value, allowGC>::MutableHandleType vp) {
+  if constexpr (allowGC == AllowGC::CanGC) {
+    vp.setUndefined();
 
-  
-  if (nameLookup) {
-    ReportIsNotDefined(cx, id);
-    return false;
-  }
-
-  
-  return true;
-}
-
-
-
-bool GetNonexistentProperty(JSContext* cx, const jsid& id,
-                            IsNameLookup nameLookup,
-                            FakeMutableHandle<Value> vp) {
-  return false;
-}
-
-static inline bool GeneralizedGetProperty(JSContext* cx, HandleObject obj,
-                                          HandleId id, HandleValue receiver,
-                                          IsNameLookup nameLookup,
-                                          MutableHandleValue vp) {
-  MOZ_ASSERT(obj->getOpsGetProperty());
-
-  AutoCheckRecursionLimit recursion(cx);
-  if (!recursion.check(cx)) {
-    return false;
-  }
-  if (nameLookup) {
     
-    
-    
-    
-    
-    
-    
-    
-
-    bool found;
-    if (!HasProperty(cx, obj, id, &found)) {
-      return false;
-    }
-    if (!found) {
+    if (nameLookup) {
       ReportIsNotDefined(cx, id);
       return false;
     }
-  }
 
-  return GetProperty(cx, obj, receiver, id, vp);
+    
+    return true;
+  } else {
+    return false;
+  }
 }
 
-static inline bool GeneralizedGetProperty(JSContext* cx, JSObject* obj, jsid id,
-                                          const Value& receiver,
-                                          IsNameLookup nameLookup,
-                                          FakeMutableHandle<Value> vp) {
+template <AllowGC allowGC>
+static inline bool GeneralizedGetProperty(
+    JSContext* cx, typename MaybeRooted<JSObject*, allowGC>::HandleType obj,
+    typename MaybeRooted<jsid, allowGC>::HandleType id,
+    typename MaybeRooted<Value, allowGC>::HandleType receiver,
+    IsNameLookup nameLookup,
+    typename MaybeRooted<Value, allowGC>::MutableHandleType vp) {
   MOZ_ASSERT(obj->getOpsGetProperty());
-  return false;
+
+  if constexpr (allowGC == AllowGC::CanGC) {
+    AutoCheckRecursionLimit recursion(cx);
+    if (!recursion.check(cx)) {
+      return false;
+    }
+    if (nameLookup) {
+      
+      
+      
+      
+      
+      
+      
+      
+
+      bool found;
+      if (!HasProperty(cx, obj, id, &found)) {
+        return false;
+      }
+      if (!found) {
+        ReportIsNotDefined(cx, id);
+        return false;
+      }
+    }
+
+    return GetProperty(cx, obj, receiver, id, vp);
+  } else {
+    return false;
+  }
 }
 
 bool js::GetSparseElementHelper(JSContext* cx, Handle<NativeObject*> obj,
@@ -2291,7 +2288,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
     
     
     if (!proto || prop.shouldIgnoreProtoChain()) {
-      return GetNonexistentProperty(cx, id, nameLookup, vp);
+      return GetNonexistentProperty<allowGC>(cx, id, nameLookup, vp);
     }
 
     
@@ -2300,8 +2297,8 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
     
     if (proto->getOpsGetProperty()) {
       RootedObject protoRoot(cx, proto);
-      return GeneralizedGetProperty(cx, protoRoot, id, receiver, nameLookup,
-                                    vp);
+      return GeneralizedGetProperty<allowGC>(cx, protoRoot, id, receiver,
+                                             nameLookup, vp);
     }
 
     pobj = &proto->as<NativeObject>();
@@ -2357,7 +2354,7 @@ bool js::GetNameBoundInEnvironment(JSContext* cx, HandleObject envArg,
   RootedObject env(cx, MaybeUnwrapWithEnvironment(envArg));
   RootedValue receiver(cx, ObjectValue(*env));
   if (env->getOpsGetProperty()) {
-    return GeneralizedGetProperty(cx, env, id, receiver, NameLookup, vp);
+    return GeneralizedGetProperty<CanGC>(cx, env, id, receiver, NameLookup, vp);
   }
   return NativeGetPropertyInline<CanGC>(cx, env.as<NativeObject>(), receiver,
                                         id, NameLookup, vp);
