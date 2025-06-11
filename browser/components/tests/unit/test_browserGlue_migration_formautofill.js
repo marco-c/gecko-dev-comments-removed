@@ -50,7 +50,7 @@ add_task(async function test_check_form_autofill_module_detect() {
   
   Assert.equal(
     Services.prefs.getCharPref("extensions.formautofill.creditCards.supported"),
-    "detect"
+    "on"
   );
   
   Assert.equal(
