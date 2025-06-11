@@ -90,7 +90,7 @@ void RtpPacketizerGeneric::BuildHeader(const RTPVideoHeader& rtp_video_header) {
   if (rtp_video_header.frame_type == VideoFrameType::kVideoFrameKey) {
     header_[0] |= RtpFormatVideoGeneric::kKeyFrameBit;
   }
-  if (const auto* generic_header = absl::get_if<RTPVideoHeaderLegacyGeneric>(
+  if (const auto* generic_header = std::get_if<RTPVideoHeaderLegacyGeneric>(
           &rtp_video_header.video_type_header)) {
     
     

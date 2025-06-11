@@ -15,10 +15,10 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "api/array_view.h"
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
@@ -100,8 +100,8 @@ class CallbackDeferrer : public DcSctpSocketCallbacks {
   };
   
   
-  using CallbackData = absl::
-      variant<absl::monostate, DcSctpMessage, Error, StreamReset, StreamID>;
+  using CallbackData =
+      std::variant<std::monostate, DcSctpMessage, Error, StreamReset, StreamID>;
   using Callback = void (*)(CallbackData, DcSctpSocketCallbacks&);
 
   void Prepare();
