@@ -33,7 +33,9 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
 
     
     if (!dbg.isInitialized) {
-      dbg.initialize("resource://devtools/server/startup/worker.js");
+      dbg.initialize(
+        "resource://devtools/server/startup/shared-worker-initializer.js"
+      );
 
       
       
