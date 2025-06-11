@@ -110,7 +110,13 @@ class TextDirectiveCreator {
 
 
 
-  virtual void CollectContextTermWordBoundaryDistances() = 0;
+
+
+
+
+
+
+  virtual bool CollectContextTermWordBoundaryDistances() = 0;
 
   
 
@@ -229,7 +235,7 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
 
   Result<Ok, ErrorResult> CollectContextTerms() override;
 
-  void CollectContextTermWordBoundaryDistances() override;
+  bool CollectContextTermWordBoundaryDistances() override;
 
   Result<Ok, ErrorResult> FindAllMatchingCandidates() override;
 
@@ -261,7 +267,7 @@ class ExactMatchTextDirectiveCreator : public TextDirectiveCreator {
 
   Result<Ok, ErrorResult> CollectContextTerms() override;
 
-  void CollectContextTermWordBoundaryDistances() override;
+  bool CollectContextTermWordBoundaryDistances() override;
 
   Result<Ok, ErrorResult> FindAllMatchingCandidates() override;
 
