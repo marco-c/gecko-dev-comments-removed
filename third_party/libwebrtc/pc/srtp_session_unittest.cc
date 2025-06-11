@@ -53,7 +53,8 @@ class SrtpSessionTest : public ::testing::Test {
   }
   void TestProtectRtp(int crypto_suite) {
     EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_));
-    EXPECT_EQ(rtp_packet_.size(), rtp_len_ + rtp_auth_tag_len(crypto_suite));
+    EXPECT_EQ(rtp_packet_.size(),
+              rtp_len_ + webrtc::rtp_auth_tag_len(crypto_suite));
     
     EXPECT_NE(0, std::memcmp(kPcmuFrame, rtp_packet_.data(), rtp_len_));
     rtp_len_ = rtp_packet_.size();
@@ -61,7 +62,7 @@ class SrtpSessionTest : public ::testing::Test {
   void TestProtectRtcp(int crypto_suite) {
     EXPECT_TRUE(s1_.ProtectRtcp(rtcp_packet_));
     EXPECT_EQ(rtcp_packet_.size(),
-              rtcp_len_ + 4 + rtcp_auth_tag_len(crypto_suite));
+              rtcp_len_ + 4 + webrtc::rtcp_auth_tag_len(crypto_suite));
     
     EXPECT_NE(0, std::memcmp(kRtcpReport, rtcp_packet_.data(), rtcp_len_));
     rtcp_len_ = rtcp_packet_.size();
@@ -89,40 +90,41 @@ class SrtpSessionTest : public ::testing::Test {
 
 
 TEST_F(SrtpSessionTest, TestGoodSetup) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
 }
 
 
 TEST_F(SrtpSessionTest, TestBadSetup) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
-  EXPECT_FALSE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey2,
+  EXPECT_FALSE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey2,
                            kEncryptedHeaderExtensionIds));
-  EXPECT_FALSE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey2,
+  EXPECT_FALSE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey2,
                               kEncryptedHeaderExtensionIds));
 }
 
 
 TEST_F(SrtpSessionTest, TestKeysTooShort) {
-  EXPECT_FALSE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80,
-                           rtc::ZeroOnFreeBuffer<uint8_t>(kTestKey1.data(), 1),
-                           kEncryptedHeaderExtensionIds));
   EXPECT_FALSE(
-      s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80,
-                     rtc::ZeroOnFreeBuffer<uint8_t>(kTestKey1.data(), 1),
-                     kEncryptedHeaderExtensionIds));
+      s1_.SetSend(webrtc::kSrtpAes128CmSha1_80,
+                  rtc::ZeroOnFreeBuffer<uint8_t>(webrtc::kTestKey1.data(), 1),
+                  kEncryptedHeaderExtensionIds));
+  EXPECT_FALSE(s2_.SetReceive(
+      webrtc::kSrtpAes128CmSha1_80,
+      rtc::ZeroOnFreeBuffer<uint8_t>(webrtc::kTestKey1.data(), 1),
+      kEncryptedHeaderExtensionIds));
 }
 
 
 TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_80) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   TestProtectRtp(webrtc::kSrtpAes128CmSha1_80);
   TestProtectRtcp(webrtc::kSrtpAes128CmSha1_80);
@@ -132,9 +134,9 @@ TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_80) {
 
 
 TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_32, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_32, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_32, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_32, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   TestProtectRtp(webrtc::kSrtpAes128CmSha1_32);
   TestProtectRtcp(webrtc::kSrtpAes128CmSha1_32);
@@ -143,7 +145,7 @@ TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
 }
 
 TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_32, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_32, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
   int64_t index;
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, &index));
@@ -154,9 +156,9 @@ TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
 
 
 TEST_F(SrtpSessionTest, TestTamperReject) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   TestProtectRtp(webrtc::kSrtpAes128CmSha1_80);
   rtp_packet_.MutableData<uint8_t>()[0] = 0x12;
@@ -175,9 +177,9 @@ TEST_F(SrtpSessionTest, TestTamperReject) {
 
 
 TEST_F(SrtpSessionTest, TestUnencryptReject) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   EXPECT_FALSE(s2_.UnprotectRtp(rtp_packet_));
   EXPECT_METRIC_THAT(
@@ -191,7 +193,7 @@ TEST_F(SrtpSessionTest, TestUnencryptReject) {
 
 
 TEST_F(SrtpSessionTest, TestBuffersTooSmall) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
   
   rtc::CopyOnWriteBuffer rtp_packet(rtp_packet_.data(), rtp_packet_.size(),
@@ -209,9 +211,9 @@ TEST_F(SrtpSessionTest, TestReplay) {
   static const uint16_t seqnum_small = 10;
   static const uint16_t replay_window = 1024;
 
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
 
   
@@ -258,9 +260,9 @@ TEST_F(SrtpSessionTest, TestReplay) {
 }
 
 TEST_F(SrtpSessionTest, RemoveSsrc) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_));
@@ -292,9 +294,9 @@ TEST_F(SrtpSessionTest, ProtectUnprotectWrapAroundRocMismatch) {
   
   
   
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   
   
@@ -349,9 +351,9 @@ TEST_F(SrtpSessionTest, ProtectUnprotectWrapAroundRocMismatch) {
 }
 
 TEST_F(SrtpSessionTest, ProtectGetPacketIndex) {
-  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s1_.SetSend(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                           kEncryptedHeaderExtensionIds));
-  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, kTestKey1,
+  EXPECT_TRUE(s2_.SetReceive(webrtc::kSrtpAes128CmSha1_80, webrtc::kTestKey1,
                              kEncryptedHeaderExtensionIds));
   
   

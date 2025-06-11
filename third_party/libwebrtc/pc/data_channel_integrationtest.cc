@@ -99,7 +99,7 @@ class DataChannelIntegrationTest
 
 
 
-class FakeClockForTest : public rtc::ScopedFakeClock {
+class FakeClockForTest : public ScopedFakeClock {
  protected:
   FakeClockForTest() {
     

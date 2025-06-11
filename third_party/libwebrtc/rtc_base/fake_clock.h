@@ -19,13 +19,13 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
 
 
-class FakeClock : public ClockInterface {
+class FakeClock : public rtc::ClockInterface {
  public:
   FakeClock() = default;
   FakeClock(const FakeClock&) = delete;
@@ -38,20 +38,20 @@ class FakeClock : public ClockInterface {
   
 
   
-  void SetTime(webrtc::Timestamp new_time);
+  void SetTime(Timestamp new_time);
 
-  void AdvanceTime(webrtc::TimeDelta delta);
+  void AdvanceTime(TimeDelta delta);
 
  private:
-  mutable webrtc::Mutex lock_;
+  mutable Mutex lock_;
   int64_t time_ns_ RTC_GUARDED_BY(lock_) = 0;
 };
 
-class ThreadProcessingFakeClock : public ClockInterface {
+class ThreadProcessingFakeClock : public rtc::ClockInterface {
  public:
   int64_t TimeNanos() const override { return clock_.TimeNanos(); }
-  void SetTime(webrtc::Timestamp time);
-  void AdvanceTime(webrtc::TimeDelta delta);
+  void SetTime(Timestamp time);
+  void AdvanceTime(TimeDelta delta);
 
  private:
   FakeClock clock_;
@@ -65,7 +65,7 @@ class ScopedBaseFakeClock : public FakeClock {
   ~ScopedBaseFakeClock() override;
 
  private:
-  ClockInterface* prev_clock_;
+  rtc::ClockInterface* prev_clock_;
 };
 
 
@@ -75,9 +75,18 @@ class ScopedFakeClock : public ThreadProcessingFakeClock {
   ~ScopedFakeClock() override;
 
  private:
-  ClockInterface* prev_clock_;
+  rtc::ClockInterface* prev_clock_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::FakeClock;
+using ::webrtc::ScopedBaseFakeClock;
+using ::webrtc::ScopedFakeClock;
+using ::webrtc::ThreadProcessingFakeClock;
 }  
 
 #endif  

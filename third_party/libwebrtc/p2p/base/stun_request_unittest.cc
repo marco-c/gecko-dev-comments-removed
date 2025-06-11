@@ -151,7 +151,7 @@ TEST_F(StunRequestTest, TestUnexpected) {
 
 
 TEST_F(StunRequestTest, TestBackoff) {
-  rtc::ScopedFakeClock fake_clock;
+  webrtc::ScopedFakeClock fake_clock;
   auto* request = new StunRequestThunker(manager_, this);
   std::unique_ptr<StunMessage> res =
       request->CreateResponseMessage(STUN_BINDING_RESPONSE);
@@ -179,7 +179,7 @@ TEST_F(StunRequestTest, TestBackoff) {
 
 
 TEST_F(StunRequestTest, TestTimeout) {
-  rtc::ScopedFakeClock fake_clock;
+  webrtc::ScopedFakeClock fake_clock;
   auto* request = new StunRequestThunker(manager_, this);
   std::unique_ptr<StunMessage> res =
       request->CreateResponseMessage(STUN_BINDING_RESPONSE);

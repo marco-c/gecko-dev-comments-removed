@@ -22,7 +22,7 @@ namespace webrtc {
 class VideoFrame;
 }
 
-namespace cricket {
+namespace webrtc {
 
 
 #define I420_SIZE(w, h) (w * h + (((w + 1) / 2) * ((h + 1) / 2)) * 2)
@@ -33,7 +33,7 @@ template <class T>
 inline std::vector<T> MakeVector(const T a[], size_t s) {
   return std::vector<T>(a, a + s);
 }
-#define MAKE_VECTOR(a) cricket::MakeVector(a, arraysize(a))
+#define MAKE_VECTOR(a) webrtc::MakeVector(a, arraysize(a))
 
 
 cricket::StreamParams CreateSimStreamParams(const std::string& cname,
@@ -51,6 +51,15 @@ cricket::StreamParams CreatePrimaryWithFecFrStreamParams(
     uint32_t primary_ssrc,
     uint32_t flexfec_ssrc);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::CreatePrimaryWithFecFrStreamParams;
+using ::webrtc::CreateSimStreamParams;
+using ::webrtc::CreateSimWithRtxStreamParams;
+using ::webrtc::MakeVector;
 }  
 
 #endif  

@@ -24,7 +24,7 @@
 #include "pc/rtp_transport_internal.h"
 #include "test/gmock.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -32,26 +32,29 @@ namespace cricket {
 class MockChannelInterface : public cricket::ChannelInterface {
  public:
   MOCK_METHOD(cricket::MediaType, media_type, (), (const, override));
-  MOCK_METHOD(VideoChannel*, AsVideoChannel, (), (override));
-  MOCK_METHOD(VoiceChannel*, AsVoiceChannel, (), (override));
-  MOCK_METHOD(MediaSendChannelInterface*, media_send_channel, (), (override));
-  MOCK_METHOD(VoiceMediaSendChannelInterface*,
+  MOCK_METHOD(cricket::VideoChannel*, AsVideoChannel, (), (override));
+  MOCK_METHOD(cricket::VoiceChannel*, AsVoiceChannel, (), (override));
+  MOCK_METHOD(cricket::MediaSendChannelInterface*,
+              media_send_channel,
+              (),
+              (override));
+  MOCK_METHOD(cricket::VoiceMediaSendChannelInterface*,
               voice_media_send_channel,
               (),
               (override));
-  MOCK_METHOD(VideoMediaSendChannelInterface*,
+  MOCK_METHOD(cricket::VideoMediaSendChannelInterface*,
               video_media_send_channel,
               (),
               (override));
-  MOCK_METHOD(MediaReceiveChannelInterface*,
+  MOCK_METHOD(cricket::MediaReceiveChannelInterface*,
               media_receive_channel,
               (),
               (override));
-  MOCK_METHOD(VoiceMediaReceiveChannelInterface*,
+  MOCK_METHOD(cricket::VoiceMediaReceiveChannelInterface*,
               voice_media_receive_channel,
               (),
               (override));
-  MOCK_METHOD(VideoMediaReceiveChannelInterface*,
+  MOCK_METHOD(cricket::VideoMediaReceiveChannelInterface*,
               video_media_receive_channel,
               (),
               (override));
@@ -68,31 +71,30 @@ class MockChannelInterface : public cricket::ChannelInterface {
               (override));
   MOCK_METHOD(bool,
               SetLocalContent,
-              (const cricket::MediaContentDescription*,
-               webrtc::SdpType,
-               std::string&),
+              (const cricket::MediaContentDescription*, SdpType, std::string&),
               (override));
   MOCK_METHOD(bool,
               SetRemoteContent,
-              (const cricket::MediaContentDescription*,
-               webrtc::SdpType,
-               std::string&),
+              (const cricket::MediaContentDescription*, SdpType, std::string&),
               (override));
   MOCK_METHOD(bool, SetPayloadTypeDemuxingEnabled, (bool), (override));
-  MOCK_METHOD(const std::vector<StreamParams>&,
+  MOCK_METHOD(const std::vector<cricket::StreamParams>&,
               local_streams,
               (),
               (const, override));
-  MOCK_METHOD(const std::vector<StreamParams>&,
+  MOCK_METHOD(const std::vector<cricket::StreamParams>&,
               remote_streams,
               (),
               (const, override));
-  MOCK_METHOD(bool,
-              SetRtpTransport,
-              (webrtc::RtpTransportInternal*),
-              (override));
+  MOCK_METHOD(bool, SetRtpTransport, (RtpTransportInternal*), (override));
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::MockChannelInterface;
 }  
 
 #endif  

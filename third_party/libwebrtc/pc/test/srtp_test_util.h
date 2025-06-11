@@ -17,7 +17,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/ssl_stream_adapter.h"
 
-namespace rtc {
+namespace webrtc {
 
 static const rtc::ZeroOnFreeBuffer<uint8_t> kTestKey1{
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234", 30};
@@ -51,6 +51,15 @@ static int rtcp_auth_tag_len(int crypto_suite) {
   }
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::kTestKey1;
+using ::webrtc::kTestKey2;
+using ::webrtc::rtcp_auth_tag_len;
+using ::webrtc::rtp_auth_tag_len;
 }  
 
 #endif  

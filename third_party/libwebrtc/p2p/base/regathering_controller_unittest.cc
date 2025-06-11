@@ -125,7 +125,7 @@ class RegatheringControllerTest : public ::testing::Test,
 
 TEST_F(RegatheringControllerTest,
        IceRegatheringDoesNotOccurIfSessionNotCleared) {
-  rtc::ScopedFakeClock clock;
+  ScopedFakeClock clock;
   InitializeAndGatherOnce();  
 
   BasicRegatheringController::Config config;
@@ -139,7 +139,7 @@ TEST_F(RegatheringControllerTest,
 }
 
 TEST_F(RegatheringControllerTest, IceRegatheringRepeatsAsScheduled) {
-  rtc::ScopedFakeClock clock;
+  ScopedFakeClock clock;
   InitializeAndGatherOnceWithSessionCleared();
 
   BasicRegatheringController::Config config;
@@ -165,7 +165,7 @@ TEST_F(RegatheringControllerTest, IceRegatheringRepeatsAsScheduled) {
 
 TEST_F(RegatheringControllerTest,
        ScheduleOfIceRegatheringOnFailedNetworksCanBeReplaced) {
-  rtc::ScopedFakeClock clock;
+  ScopedFakeClock clock;
   InitializeAndGatherOnceWithSessionCleared();
 
   BasicRegatheringController::Config config;

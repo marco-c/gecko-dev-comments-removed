@@ -945,7 +945,7 @@ class TurnPortTest : public ::testing::Test,
   }
 
   webrtc::test::ScopedKeyValueConfig field_trials_;
-  rtc::ScopedFakeClock fake_clock_;
+  webrtc::ScopedFakeClock fake_clock_;
   
   
   

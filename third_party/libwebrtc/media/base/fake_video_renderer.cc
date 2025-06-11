@@ -10,9 +10,9 @@
 
 #include "media/base/fake_video_renderer.h"
 
-namespace cricket {
+namespace webrtc {
 namespace {
-bool CheckFrameColorYuv(const webrtc::VideoFrame& frame) {
+bool CheckFrameColorYuv(const VideoFrame& frame) {
   
   
   
@@ -28,7 +28,7 @@ bool CheckFrameColorYuv(const webrtc::VideoFrame& frame) {
   if (!frame.video_frame_buffer()) {
     return false;
   }
-  rtc::scoped_refptr<const webrtc::I420BufferInterface> i420_buffer =
+  scoped_refptr<const I420BufferInterface> i420_buffer =
       frame.video_frame_buffer()->ToI420();
   
   int y_width = frame.width();
@@ -74,8 +74,8 @@ bool CheckFrameColorYuv(const webrtc::VideoFrame& frame) {
 
 FakeVideoRenderer::FakeVideoRenderer() = default;
 
-void FakeVideoRenderer::OnFrame(const webrtc::VideoFrame& frame) {
-  webrtc::MutexLock lock(&mutex_);
+void FakeVideoRenderer::OnFrame(const VideoFrame& frame) {
+  MutexLock lock(&mutex_);
   black_frame_ = CheckFrameColorYuv(frame);
   ++num_rendered_frames_;
   width_ = frame.width();

@@ -226,7 +226,7 @@ class VirtualSocketServer : public SocketServer {
   
   
   
-  explicit VirtualSocketServer(ThreadProcessingFakeClock* fake_clock);
+  explicit VirtualSocketServer(webrtc::ThreadProcessingFakeClock* fake_clock);
   ~VirtualSocketServer() override;
 
   VirtualSocketServer(const VirtualSocketServer&) = delete;
@@ -443,7 +443,7 @@ class VirtualSocketServer : public SocketServer {
 
   
   
-  ThreadProcessingFakeClock* fake_clock_ = nullptr;
+  webrtc::ThreadProcessingFakeClock* fake_clock_ = nullptr;
 
   
   Event wakeup_;

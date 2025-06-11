@@ -458,7 +458,7 @@ TEST_F(SendStatisticsProxyTest,
   
   
   
-  rtc::ScopedFakeClock fake_global_clock;
+  ScopedFakeClock fake_global_clock;
   fake_global_clock.SetTime(
       Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
 
@@ -489,7 +489,7 @@ TEST_F(SendStatisticsProxyTest,
 TEST_F(SendStatisticsProxyTest, EncodeFrameRateInSubStream) {
   const int kInterframeDelayMs = 100;
   const auto ssrc = config_.rtp.ssrcs[0];
-  rtc::ScopedFakeClock fake_global_clock;
+  ScopedFakeClock fake_global_clock;
   fake_global_clock.SetTime(
       Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
 
@@ -513,7 +513,7 @@ TEST_F(SendStatisticsProxyTest, EncodeFrameRateInSubStream) {
 
 TEST_F(SendStatisticsProxyTest, EncodeFrameRateInSubStreamsVp8Simulcast) {
   const int kInterframeDelayMs = 100;
-  rtc::ScopedFakeClock fake_global_clock;
+  ScopedFakeClock fake_global_clock;
   fake_global_clock.SetTime(
       Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
   EncodedImage encoded_image;
@@ -574,7 +574,7 @@ TEST_F(SendStatisticsProxyTest, EncodeFrameRateInSubStreamsVp8Simulcast) {
 
 TEST_F(SendStatisticsProxyTest, EncodeFrameRateInSubStreamsVp9Svc) {
   const int kInterframeDelayMs = 100;
-  rtc::ScopedFakeClock fake_global_clock;
+  ScopedFakeClock fake_global_clock;
   fake_global_clock.SetTime(
       Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
   EncodedImage encoded_image;

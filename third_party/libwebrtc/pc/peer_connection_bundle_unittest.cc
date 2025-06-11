@@ -86,7 +86,7 @@ using ::testing::Values;
 
 
 
-class FakeNetworkManagerWithNoAnyNetwork : public rtc::FakeNetworkManager {
+class FakeNetworkManagerWithNoAnyNetwork : public FakeNetworkManager {
  public:
   std::vector<const rtc::Network*> GetAnyAddressNetworks() override {
     
@@ -180,12 +180,12 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return false;
   }
 
-  rtc::FakeNetworkManager* network() { return network_; }
+  FakeNetworkManager* network() { return network_; }
 
-  void set_network(rtc::FakeNetworkManager* network) { network_ = network; }
+  void set_network(FakeNetworkManager* network) { network_ = network; }
 
  private:
-  rtc::FakeNetworkManager* network_;
+  FakeNetworkManager* network_;
 };
 
 class PeerConnectionBundleBaseTest : public ::testing::Test {

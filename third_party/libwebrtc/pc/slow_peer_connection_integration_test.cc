@@ -62,7 +62,7 @@ class PeerConnectionIntegrationTest
 
 
 
-class FakeClockForTest : public rtc::ScopedFakeClock {
+class FakeClockForTest : public ScopedFakeClock {
  protected:
   FakeClockForTest() {
     
