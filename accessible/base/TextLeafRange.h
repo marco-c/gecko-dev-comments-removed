@@ -331,7 +331,11 @@ class TextLeafRange final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool SetSelection(int32_t aSelectionNum) const;
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool SetSelection(int32_t aSelectionNum,
+                                       bool aSetFocus = true) const;
 
   MOZ_CAN_RUN_SCRIPT void ScrollIntoView(uint32_t aScrollType) const;
 

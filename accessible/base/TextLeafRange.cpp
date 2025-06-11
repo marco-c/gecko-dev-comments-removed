@@ -2215,7 +2215,7 @@ TextLeafPoint TextLeafRange::TextLeafPointAtScreenPoint(int32_t aX,
   return point;
 }
 
-bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
+bool TextLeafRange::SetSelection(int32_t aSelectionNum, bool aSetFocus) const {
   if (!mStart || !mEnd || mStart.mAcc->IsLocal() != mEnd.mAcc->IsLocal()) {
     return false;
   }
@@ -2228,7 +2228,7 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
 
     Unused << doc->SendSetTextSelection(mStart.mAcc->ID(), mStart.mOffset,
                                         mEnd.mAcc->ID(), mEnd.mOffset,
-                                        aSelectionNum);
+                                        aSelectionNum, aSetFocus);
     return true;
   }
 
@@ -2278,7 +2278,7 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
   
   
   
-  if (isFocusable) {
+  if (aSetFocus && isFocusable) {
     hyp->TakeFocus();
   }
 
@@ -2325,7 +2325,7 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
                          ScrollAxis(), ScrollAxis(),
                          ScrollFlags::ScrollOverflowHidden);
 
-  if (mStart == mEnd && !isFocusable) {
+  if (aSetFocus && mStart == mEnd && !isFocusable) {
     
     
     if (nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager()) {
