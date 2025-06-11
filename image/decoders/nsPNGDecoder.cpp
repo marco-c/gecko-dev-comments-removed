@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "EXIF.h"
 #include "gfxColor.h"
 #include "gfxPlatform.h"
 #include "imgFrame.h"
@@ -130,6 +131,9 @@ nsPNGDecoder::~nsPNGDecoder() {
 
 nsPNGDecoder::TransparencyType nsPNGDecoder::GetTransparencyType(
     const UnorientedIntRect& aFrameRect) {
+  MOZ_ASSERT(GetOrientation().IsIdentity() || !HasAnimation(),
+             "can't be oriented and have animation");
+
   
   if (HasAlphaChannel()) {
     return TransparencyType::eAlpha;
@@ -185,7 +189,8 @@ nsresult nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo) {
 
   Maybe<AnimationParams> animParams;
 #ifdef PNG_APNG_SUPPORTED
-  if (!IsFirstFrameDecode() && png_get_valid(mPNG, mInfo, PNG_INFO_acTL)) {
+  const bool isAnimated = png_get_valid(mPNG, mInfo, PNG_INFO_acTL);
+  if (!IsFirstFrameDecode() && isAnimated) {
     mAnimInfo = AnimFrameInfo(mPNG, mInfo);
 
     if (mAnimInfo.mDispose == DisposalMethod::CLEAR) {
@@ -201,15 +206,44 @@ nsresult nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo) {
   }
 #endif
 
-  
-  
-  SurfacePipeFlags pipeFlags = aFrameInfo.mIsInterlaced
-                                   ? SurfacePipeFlags::ADAM7_INTERPOLATE
-                                   : SurfacePipeFlags();
+  MOZ_ASSERT(GetOrientation().IsIdentity() || !animParams.isSome(),
+             "can't be oriented and have animation");
+  MOZ_ASSERT(GetOrientation().IsIdentity() || !aFrameInfo.mIsInterlaced,
+             "can't be oriented and be doing interlacing");
 
-  if (mNumFrames == 0) {
-    
-    pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
+  const bool wantToReorient = !GetOrientation().IsIdentity();
+
+#ifdef DEBUG
+  const bool isFullFrame = aFrameInfo.mFrameRect.IsEqualEdges(
+      UnorientedIntRect(IntPointTyped<mozilla::UnorientedPixel>(0, 0),
+                        GetOrientation().ToUnoriented(Size())));
+#  ifdef PNG_APNG_SUPPORTED
+  MOZ_ASSERT(isAnimated || isFullFrame,
+             "can only have partial frames if animated");
+#  endif
+  MOZ_ASSERT(!wantToReorient || isFullFrame,
+             "can only have partial frames if not re-orienting");
+#endif
+
+  SurfacePipeFlags pipeFlags = SurfacePipeFlags();
+
+  
+  
+  
+  
+  
+  if (!wantToReorient) {
+    if (mNumFrames == 0) {
+      
+      pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
+    }
+
+    if (aFrameInfo.mIsInterlaced) {
+      
+      
+      
+      pipeFlags |= SurfacePipeFlags::ADAM7_INTERPOLATE;
+    }
   }
 
   SurfaceFormat inFormat;
@@ -232,13 +266,19 @@ nsresult nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo) {
   }
 
   qcms_transform* pipeTransform = mUsePipeTransform ? mTransform : nullptr;
-  
-  
-  
-  Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
-      this, Size(), OutputSize(),
-      OrientedIntRect::FromUnknownRect(aFrameInfo.mFrameRect.ToUnknownRect()),
-      inFormat, mFormat, animParams, pipeTransform, pipeFlags);
+  Maybe<SurfacePipe> pipe;
+  if (!wantToReorient) {
+    
+    
+    pipe = SurfacePipeFactory::CreateSurfacePipe(
+        this, Size(), OutputSize(),
+        OrientedIntRect::FromUnknownRect(aFrameInfo.mFrameRect.ToUnknownRect()),
+        inFormat, mFormat, animParams, pipeTransform, pipeFlags);
+  } else {
+    pipe = SurfacePipeFactory::CreateReorientSurfacePipe(
+        this, Size(), OutputSize(), inFormat, mFormat, pipeTransform,
+        GetOrientation(), pipeFlags);
+  }
 
   if (!pipe) {
     mPipe = SurfacePipe();
@@ -281,7 +321,6 @@ nsresult nsPNGDecoder::InitInternal() {
   static png_byte color_chunks[] = {99,  72, 82, 77, '\0',     
                                     105, 67, 67, 80, '\0'};    
   static png_byte unused_chunks[] = {98,  75, 71, 68,  '\0',   
-                                     101, 88, 73, 102, '\0',   
                                      104, 73, 83, 84,  '\0',   
                                      105, 84, 88, 116, '\0',   
                                      111, 70, 70, 115, '\0',   
@@ -561,10 +600,29 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
                &interlace_type, &compression_type, &filter_type);
 
-  const UnorientedIntRect frameRect(0, 0, width, height);
+#ifdef PNG_APNG_SUPPORTED
+  const bool isAnimated = png_get_valid(png_ptr, info_ptr, PNG_INFO_acTL);
+#endif
 
   
-  decoder->PostSize(frameRect.Width(), frameRect.Height());
+  png_uint_32 num_exif_bytes = 0;
+  png_bytep exifdata = nullptr;
+  if (
+#ifdef PNG_APNG_SUPPORTED
+      !isAnimated &&
+#endif
+      png_get_eXIf_1(png_ptr, info_ptr, &num_exif_bytes, &exifdata) &&
+      num_exif_bytes > 0 && exifdata) {
+
+    EXIFData exif = EXIFParser::Parse( false, exifdata,
+                                      static_cast<uint32_t>(num_exif_bytes),
+                                      gfx::IntSize(width, height));
+    decoder->PostSize(width, height, exif.orientation, exif.resolution);
+  } else {
+    decoder->PostSize(width, height);
+  }
+
+  const UnorientedIntRect frameRect(0, 0, width, height);
 
   if (width > SurfaceCache::MaximumCapacity() / (bit_depth > 8 ? 16 : 8)) {
     
@@ -623,7 +681,9 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   }
 
   
-  const bool isInterlaced = interlace_type == PNG_INTERLACE_ADAM7;
+  
+  const bool isInterlaced = (interlace_type == PNG_INTERLACE_ADAM7) &&
+                            decoder->GetOrientation().IsIdentity();
   if (isInterlaced) {
     png_set_interlace_handling(png_ptr);
   }
@@ -642,7 +702,6 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   }
 
 #ifdef PNG_APNG_SUPPORTED
-  bool isAnimated = png_get_valid(png_ptr, info_ptr, PNG_INFO_acTL);
   if (isAnimated) {
     int32_t rawTimeout = GetNextFrameDelay(png_ptr, info_ptr);
     decoder->PostIsAnimated(FrameTimeout::FromRawMilliseconds(rawTimeout));
@@ -748,7 +807,7 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
     }
   }
 
-  if (interlace_type == PNG_INTERLACE_ADAM7) {
+  if (isInterlaced) {
     if (frameRect.Height() <
         INT32_MAX / (frameRect.Width() * int32_t(channels))) {
       const size_t bufferSize =
