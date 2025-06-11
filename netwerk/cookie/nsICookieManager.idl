@@ -19,7 +19,8 @@ class CookieStruct;
 %}
 
 [ptr] native OriginAttributesPtr(mozilla::OriginAttributes);
-native CheckStructFunctionRef(const std::function< bool(mozilla::net::CookieStruct&) > &);
+
+interface nsICookieValidation;
 
 
 
@@ -145,6 +146,11 @@ interface nsICookieManager : nsISupports
            in nsICookie_schemeType aSchemeMap,
            [optional] in boolean aIsPartitioned);
 
+  
+
+
+
+
   [notxpcom]
   nsresult addNative(in nsIURI aCookieURI,
                      in AUTF8String aHost,
@@ -161,7 +167,7 @@ interface nsICookieManager : nsISupports
                      in boolean     aIsPartitioned,
                      in boolean     aFromHttp,
                      in nsIDPtr     aOperationID,
-                     in CheckStructFunctionRef aCheckValid);
+                     out nsICookieValidation aValidation);
 
   
 

@@ -27,4 +27,7 @@ interface nsICookieValidation : nsISupports
   };
 
   readonly attribute nsICookieValidation_ValidationError result;
+
+  
+  readonly attribute AString errorString;
 };
