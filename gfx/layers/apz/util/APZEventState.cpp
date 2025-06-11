@@ -56,8 +56,7 @@ APZEventState::APZEventState(nsIWidget* aWidget,
       mActiveElementManager(new ActiveElementManager()),
       mContentReceivedInputBlockCallback(std::move(aCallback)),
       mPendingTouchPreventedBlockId(0),
-      mEndTouchState(apz::SingleTapState::NotClick),
-      mLastTouchIdentifier(0) {
+      mEndTouchState(apz::SingleTapState::NotClick) {
   nsresult rv;
   mWidget = do_GetWeakReference(aWidget, &rv);
   MOZ_ASSERT(NS_SUCCEEDED(rv),
@@ -90,8 +89,8 @@ void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
   if (localWidget) {
     widget::nsAutoRollup rollup(touchRollup);
     APZCCallbackHelper::FireSingleTapEvent(
-        aPoint * aScale, aModifiers, aClickCount, mPrecedingPointerDownState,
-        localWidget);
+        aPoint * aScale, mLastTouchIdentifier, aModifiers, aClickCount,
+        mPrecedingPointerDownState, localWidget, mLastTouchSynthesizedForTests);
   }
 
   mActiveElementManager->ProcessSingleTap();
@@ -99,8 +98,9 @@ void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
 
 PreventDefaultResult APZEventState::FireContextmenuEvents(
     PresShell* aPresShell, const CSSPoint& aPoint,
-    const CSSToLayoutDeviceScale& aScale, Modifiers aModifiers,
-    const nsCOMPtr<nsIWidget>& aWidget) {
+    const CSSToLayoutDeviceScale& aScale, uint32_t aPointerId,
+    Modifiers aModifiers, const nsCOMPtr<nsIWidget>& aWidget,
+    SynthesizeForTests aSynthesizeForTests) {
   
   EventRetargetSuppression suppression;
 
@@ -112,12 +112,13 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
   
   
   APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-      eMouseMove, aPoint * aScale, aModifiers, 0 ,
-      mPrecedingPointerDownState, aWidget);
+      eMouseMove, aPoint * aScale, aPointerId, aModifiers, 0 ,
+      mPrecedingPointerDownState, aWidget, aSynthesizeForTests);
 
   PreventDefaultResult preventDefaultResult =
       APZCCallbackHelper::DispatchSynthesizedContextmenuEvent(
-          aPoint * aScale, aModifiers, aWidget);
+          aPoint * aScale, aPointerId, aModifiers, aWidget,
+          aSynthesizeForTests);
 
   APZES_LOG("Contextmenu event %s\n", ToString(preventDefaultResult).c_str());
   if (preventDefaultResult != PreventDefaultResult::No) {
@@ -128,8 +129,9 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
   } else {
     
     nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-        eMouseLongTap, aPoint * aScale, aModifiers,
-         1, mPrecedingPointerDownState, aWidget);
+        eMouseLongTap, aPoint * aScale, aPointerId, aModifiers,
+         1, mPrecedingPointerDownState, aWidget,
+        aSynthesizeForTests);
     APZES_LOG("eMouseLongTap event %s\n", ToString(status).c_str());
 #endif
   }
@@ -171,11 +173,13 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
   
   
   APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-      eMouseLongTap, aPoint * aScale, aModifiers,  1,
-      mPrecedingPointerDownState, widget);
+      eMouseLongTap, aPoint * aScale, mLastTouchIdentifier, aModifiers,
+       1, mPrecedingPointerDownState, widget,
+      mLastTouchSynthesizedForTests);
 #else
   PreventDefaultResult preventDefaultResult =
-      FireContextmenuEvents(aPresShell, aPoint, aScale, aModifiers, widget);
+      FireContextmenuEvents(aPresShell, aPoint, aScale, mLastTouchIdentifier,
+                            aModifiers, widget, mLastTouchSynthesizedForTests);
 #endif
 
   const bool contextmenuOpen =
@@ -207,6 +211,8 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
     
     
     WidgetTouchEvent cancelTouchEvent(true, eTouchCancel, widget.get());
+    cancelTouchEvent.mFlags.mIsSynthesizedForTests =
+        static_cast<bool>(mLastTouchSynthesizedForTests);
     cancelTouchEvent.mModifiers = aModifiers;
     auto ldPoint = LayoutDeviceIntPoint::Round(aPoint * aScale);
     cancelTouchEvent.mTouches.AppendElement(new mozilla::dom::Touch(
@@ -222,7 +228,8 @@ void APZEventState::ProcessLongTapUp(PresShell* aPresShell,
 #ifdef XP_WIN
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (widget) {
-    FireContextmenuEvents(aPresShell, aPoint, aScale, aModifiers, widget);
+    FireContextmenuEvents(aPresShell, aPoint, aScale, mLastTouchIdentifier,
+                          aModifiers, widget, mLastTouchSynthesizedForTests);
   }
 #endif
 }
@@ -236,6 +243,8 @@ void APZEventState::ProcessTouchEvent(
     mActiveElementManager->SetTargetElement(
         aEvent.mTouches[0]->GetOriginalTarget());
     mLastTouchIdentifier = aEvent.mTouches[0]->Identifier();
+    mLastTouchSynthesizedForTests =
+        static_cast<SynthesizeForTests>(aEvent.mFlags.mIsSynthesizedForTests);
   }
   if (aEvent.mMessage == eTouchStart) {
     
@@ -368,6 +377,8 @@ void APZEventState::ProcessTouchEvent(
       aApzResponse == nsEventStatus_eConsumeDoDefault &&
       MainThreadAgreesEventsAreConsumableByAPZ()) {
     WidgetTouchEvent cancelEvent(aEvent);
+    cancelEvent.mFlags.mIsSynthesizedForTests =
+        aEvent.mFlags.mIsSynthesizedForTests;
     cancelEvent.mMessage = eTouchPointerCancel;
     cancelEvent.mFlags.mCancelable = false;  
     for (uint32_t i = 0; i < cancelEvent.mTouches.Length(); ++i) {

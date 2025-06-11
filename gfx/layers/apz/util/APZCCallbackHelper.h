@@ -39,6 +39,8 @@ namespace apz {
 enum class PrecedingPointerDown : bool;
 }
 
+enum class SynthesizeForTests : bool { No, Yes };
+
 
 class DisplayportSetListener : public ManagedPostRefreshObserver {
  public:
@@ -116,28 +118,29 @@ class APZCCallbackHelper {
 
   
 
-  MOZ_CAN_RUN_SCRIPT
-  static nsEventStatus DispatchSynthesizedMouseEvent(
+  MOZ_CAN_RUN_SCRIPT static nsEventStatus DispatchSynthesizedMouseEvent(
       EventMessage aMsg, const LayoutDevicePoint& aRefPoint,
+      uint32_t aPointerId, Modifiers aModifiers, int32_t aClickCount,
+      PrecedingPointerDown aPrecedingPointerDownState, nsIWidget* aWidget,
+      SynthesizeForTests aSynthesizeForTests);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT static PreventDefaultResult
+  DispatchSynthesizedContextmenuEvent(const LayoutDevicePoint& aRefPoint,
+                                      uint32_t aPointerId, Modifiers aModifiers,
+                                      nsIWidget* aWidget,
+                                      SynthesizeForTests aSynthesizeForTests);
+
+  
+
+  MOZ_CAN_RUN_SCRIPT static void FireSingleTapEvent(
+      const LayoutDevicePoint& aPoint, uint32_t aPointerId,
       Modifiers aModifiers, int32_t aClickCount,
-      PrecedingPointerDown aPrecedingPointerDownState, nsIWidget* aWidget);
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  static PreventDefaultResult DispatchSynthesizedContextmenuEvent(
-      const LayoutDevicePoint& aRefPoint, Modifiers aModifiers,
-      nsIWidget* aWidget);
-
-  
-
-  MOZ_CAN_RUN_SCRIPT
-  static void FireSingleTapEvent(
-      const LayoutDevicePoint& aPoint, Modifiers aModifiers,
-      int32_t aClickCount, PrecedingPointerDown aPrecedingPointerDownState,
-      nsIWidget* aWidget);
+      PrecedingPointerDown aPrecedingPointerDownState, nsIWidget* aWidget,
+      SynthesizeForTests aSynthesizeForTests);
 
   
 
