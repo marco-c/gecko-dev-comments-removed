@@ -504,5 +504,10 @@ class JujutsuRepository(Repository):
                         jj_watchman_snapshot_key, jj_watchman_snapshot_value
                     )
 
-        print("Checking if watchman is enabled...")
-        subprocess.run([self._tool, "debug", "watchman", "status"])
+                print("Checking if watchman is enabled...")
+                subprocess.run([self._tool, "debug", "watchman", "status"])
+            else:
+                print(
+                    "Watchman could not be found on the PATH. It is recommended to "
+                    "install watchman to improve performance for jj operations"
+                )
