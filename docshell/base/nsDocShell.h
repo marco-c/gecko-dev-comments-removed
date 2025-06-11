@@ -1147,7 +1147,13 @@ class nsDocShell final : public nsDocLoader,
 
  private:
   MOZ_CAN_RUN_SCRIPT
-  void InformNavigationAPIAboutAbortingNavigation(JSContext* aCx);
+  void InformNavigationAPIAboutAbortingNavigation();
+
+  enum class OngoingNavigation : uint8_t { NavigationID, Traversal };
+
+  MOZ_CAN_RUN_SCRIPT
+  void SetOngoingNavigation(
+      const mozilla::Maybe<OngoingNavigation>& aOngoingNavigation);
 
   void SetCurrentURIInternal(nsIURI* aURI);
 
@@ -1219,6 +1225,12 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsCOMPtr<nsISHEntry> mLSHE;
+
+  
+  
+  
+  
+  mozilla::Maybe<OngoingNavigation> mOngoingNavigation;
 
   
   mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;

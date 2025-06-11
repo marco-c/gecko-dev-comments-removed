@@ -4196,8 +4196,14 @@ nsresult nsDocShell::ReloadDocument(nsDocShell* aDocShell, Document* aDocument,
   return aDocShell->InternalLoad(loadState);
 }
 
-NS_IMETHODIMP
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 nsDocShell::Stop(uint32_t aStopFlags) {
+  RefPtr kungFuDeathGrip = this;
+  if (RefPtr<Document> doc = GetDocument(); doc && !doc->ShouldIgnoreOpens()) {
+    SetOngoingNavigation(Nothing());
+  }
+
   
   mRestorePresentationEvent.Revoke();
 
@@ -9582,6 +9588,12 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
+  
+  
+  SetOngoingNavigation(isJavaScript ? Nothing()
+                                    : Some(OngoingNavigation::NavigationID));
+
+  
   if (RefPtr<Document> document = GetDocument();
       document &&
       aLoadState->UserNavigationInvolvement() !=
@@ -14163,7 +14175,7 @@ nsPIDOMWindowInner* nsDocShell::GetActiveWindow() {
 }
 
 
-void nsDocShell::InformNavigationAPIAboutAbortingNavigation(JSContext* aCx) {
+void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
   
   
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
@@ -14185,6 +14197,41 @@ void nsDocShell::InformNavigationAPIAboutAbortingNavigation(JSContext* aCx) {
     return;
   }
 
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(navigation->GetOwnerGlobal())) {
+    return;
+  }
+
   
-  navigation->AbortOngoingNavigation(aCx);
+  navigation->AbortOngoingNavigation(jsapi.cx());
+}
+
+
+void nsDocShell::SetOngoingNavigation(
+    const Maybe<OngoingNavigation>& aOngoingNavigation) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (aOngoingNavigation == mOngoingNavigation &&
+      aOngoingNavigation != Some(OngoingNavigation::NavigationID)) {
+    return;
+  }
+
+  
+  InformNavigationAPIAboutAbortingNavigation();
+
+  
+  mOngoingNavigation = aOngoingNavigation;
 }
