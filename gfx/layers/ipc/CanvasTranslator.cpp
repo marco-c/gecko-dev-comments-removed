@@ -399,7 +399,8 @@ already_AddRefed<gfx::DataSourceSurface> CanvasTranslator::WaitForSurface(
     return nullptr;
   }
   ReferencePtr idRef(aId);
-  if (!HasSourceSurface(idRef)) {
+  auto* surf = LookupExportSurface(idRef);
+  if (!surf) {
     if (!HasPendingEvent()) {
       return nullptr;
     }
@@ -413,12 +414,13 @@ already_AddRefed<gfx::DataSourceSurface> CanvasTranslator::WaitForSurface(
     mFlushCheckpoint = 0;
     
     
-    if (!HasSourceSurface(idRef)) {
+    surf = LookupExportSurface(idRef);
+    if (!surf) {
       return nullptr;
     }
   }
   
-  return LookupSourceSurface(idRef)->GetDataSurface();
+  return surf->GetDataSurface();
 }
 
 void CanvasTranslator::RecycleBuffer() {

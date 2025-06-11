@@ -724,7 +724,7 @@ class SourceSurface : public SupportsThreadSafeWeakPtr<SourceSurface> {
   }
 
   
-  virtual bool GetSurfaceDescriptor(layers::SurfaceDescriptor& aDesc) const {
+  virtual bool GetSurfaceDescriptor(layers::SurfaceDescriptor& aDesc) {
     return false;
   }
 
