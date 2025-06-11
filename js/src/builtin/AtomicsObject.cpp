@@ -943,7 +943,7 @@ FutexWaiterListHead::~FutexWaiterListHead() {
   AutoLockFutexAPI lock;
 
   FutexWaiterListNode* iter = next();
-  while (iter != this) {
+  while (iter && iter != this) {
     
     
     
