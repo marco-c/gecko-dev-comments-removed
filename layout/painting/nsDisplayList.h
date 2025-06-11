@@ -1392,14 +1392,16 @@ class nsDisplayListBuilder {
         const DisplayItemClipChain* aCombinedClipChain,
         const ActiveScrolledRoot* aContainingBlockActiveScrolledRoot,
         const ViewID& aScrollParentId, const nsRect& aVisibleRect,
-        const nsRect& aDirtyRect)
+        const nsRect& aDirtyRect, bool aContainingBlockInViewTransitionCapture)
         : mContainingBlockClipChain(aContainingBlockClipChain),
           mCombinedClipChain(aCombinedClipChain),
           mContainingBlockActiveScrolledRoot(
               aContainingBlockActiveScrolledRoot),
           mVisibleRect(aVisibleRect),
           mDirtyRect(aDirtyRect),
-          mScrollParentId(aScrollParentId) {}
+          mScrollParentId(aScrollParentId),
+          mContainingBlockInViewTransitionCapture(
+              aContainingBlockInViewTransitionCapture) {}
     const DisplayItemClipChain* mContainingBlockClipChain;
     const DisplayItemClipChain*
         mCombinedClipChain;  
@@ -1413,6 +1415,27 @@ class nsDisplayListBuilder {
     nsRect mVisibleRect;
     nsRect mDirtyRect;
     ViewID mScrollParentId;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mContainingBlockInViewTransitionCapture;
 
     static nsRect ComputeVisibleRectForFrame(nsDisplayListBuilder* aBuilder,
                                              nsIFrame* aFrame,
