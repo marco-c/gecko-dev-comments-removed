@@ -56,10 +56,10 @@ class OpenSSLAdapter final : public SSLAdapter {
   void SetIgnoreBadCert(bool ignore) override;
   void SetAlpnProtocols(const std::vector<std::string>& protos) override;
   void SetEllipticCurves(const std::vector<std::string>& curves) override;
-  [[deprecated]] void SetMode(SSLMode mode) override;
+  [[deprecated]] void SetMode(webrtc::SSLMode mode) override;
   void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) override;
   void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
-  void SetRole(SSLRole role) override;
+  void SetRole(webrtc::SSLRole role) override;
   int StartSSL(absl::string_view hostname) override;
   int Send(const void* pv, size_t cb) override;
   int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
@@ -78,7 +78,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   
   
-  static SSL_CTX* CreateContext(SSLMode mode, bool enable_cache);
+  static SSL_CTX* CreateContext(webrtc::SSLMode mode, bool enable_cache);
 
  protected:
   void OnConnectEvent(Socket* socket) override;
@@ -150,7 +150,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   std::unique_ptr<OpenSSLIdentity> identity_;
 #endif
   
-  SSLRole role_;
+  webrtc::SSLRole role_;
   bool ssl_read_needs_write_;
   bool ssl_write_needs_read_;
   
@@ -163,7 +163,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   std::string ssl_host_name_;
   
-  SSLMode ssl_mode_;
+  webrtc::SSLMode ssl_mode_;
   
   bool ignore_bad_cert_;
   
@@ -187,7 +187,7 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   
   
-  void SetMode(SSLMode mode) override;
+  void SetMode(webrtc::SSLMode mode) override;
 
   
   
@@ -197,7 +197,7 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
 
   
-  void SetRole(SSLRole role) override;
+  void SetRole(webrtc::SSLRole role) override;
 
   
   
@@ -210,8 +210,8 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
 
  private:
   
-  SSLMode ssl_mode_ = SSL_MODE_TLS;
-  SSLRole ssl_role_ = SSL_CLIENT;
+  webrtc::SSLMode ssl_mode_ = webrtc::SSL_MODE_TLS;
+  webrtc::SSLRole ssl_role_ = webrtc::SSL_CLIENT;
   bool ignore_bad_cert_ = false;
 
   std::unique_ptr<SSLIdentity> identity_;

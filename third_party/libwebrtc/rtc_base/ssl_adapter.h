@@ -35,7 +35,7 @@ class SSLAdapterFactory {
   virtual ~SSLAdapterFactory() {}
 
   
-  virtual void SetMode(SSLMode mode) = 0;
+  virtual void SetMode(webrtc::SSLMode mode) = 0;
 
   
   virtual void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) = 0;
@@ -45,7 +45,7 @@ class SSLAdapterFactory {
   virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
 
   
-  virtual void SetRole(SSLRole role) = 0;
+  virtual void SetRole(webrtc::SSLRole role) = 0;
 
   
   
@@ -76,7 +76,7 @@ class SSLAdapter : public AsyncSocketAdapter {
   virtual void SetEllipticCurves(const std::vector<std::string>& curves) = 0;
 
   [[deprecated("Only TLS is supported by the adapter")]] virtual void SetMode(
-      SSLMode mode) = 0;
+      webrtc::SSLMode mode) = 0;
   
   virtual void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) = 0;
 
@@ -85,7 +85,7 @@ class SSLAdapter : public AsyncSocketAdapter {
   virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
 
   
-  virtual void SetRole(SSLRole role) = 0;
+  virtual void SetRole(webrtc::SSLRole role) = 0;
 
   
   

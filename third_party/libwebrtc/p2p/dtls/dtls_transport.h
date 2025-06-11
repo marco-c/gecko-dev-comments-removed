@@ -126,7 +126,7 @@ class DtlsTransport : public DtlsTransportInternal {
       IceTransportInternal* ice_transport,
       const webrtc::CryptoOptions& crypto_options,
       webrtc::RtcEventLog* event_log,
-      rtc::SSLProtocolVersion max_version = rtc::SSL_PROTOCOL_DTLS_12);
+      webrtc::SSLProtocolVersion max_version = webrtc::SSL_PROTOCOL_DTLS_12);
 
   ~DtlsTransport() override;
 
@@ -164,7 +164,7 @@ class DtlsTransport : public DtlsTransportInternal {
       absl::string_view digest_alg,
       const uint8_t* digest,
       size_t digest_len,
-      std::optional<rtc::SSLRole> role) override;
+      std::optional<webrtc::SSLRole> role) override;
 
   
   int SendPacket(const char* data,
@@ -185,8 +185,8 @@ class DtlsTransport : public DtlsTransportInternal {
   
   uint16_t GetSslPeerSignatureAlgorithm() const override;
 
-  bool GetDtlsRole(rtc::SSLRole* role) const override;
-  bool SetDtlsRole(rtc::SSLRole role) override;
+  bool GetDtlsRole(webrtc::SSLRole* role) const override;
+  bool SetDtlsRole(webrtc::SSLRole role) override;
 
   
   bool GetSslCipherSuite(int* cipher) const override;
@@ -246,7 +246,7 @@ class DtlsTransport : public DtlsTransportInternal {
   bool SetupDtls(bool disable_piggybacking = false);
   void MaybeStartDtls();
   bool HandleDtlsPacket(rtc::ArrayView<const uint8_t> payload);
-  void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
+  void OnDtlsHandshakeError(webrtc::SSLHandshakeError error);
   void ConfigureHandshakeTimeout();
   void DisablePiggybackingAndRestart();
 
@@ -264,14 +264,14 @@ class DtlsTransport : public DtlsTransportInternal {
   webrtc::DtlsTransportState dtls_state_ = webrtc::DtlsTransportState::kNew;
   
   IceTransportInternal* const ice_transport_;
-  std::unique_ptr<rtc::SSLStreamAdapter> dtls_;  
+  std::unique_ptr<webrtc::SSLStreamAdapter> dtls_;  
   StreamInterfaceChannel*
       downward_;  
   const std::vector<int> srtp_ciphers_;  
   bool dtls_active_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
-  std::optional<rtc::SSLRole> dtls_role_;
-  const rtc::SSLProtocolVersion ssl_max_version_;
+  std::optional<webrtc::SSLRole> dtls_role_;
+  const webrtc::SSLProtocolVersion ssl_max_version_;
   rtc::Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 

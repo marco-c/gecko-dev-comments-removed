@@ -78,7 +78,7 @@ struct InternalDataChannelInit : public DataChannelInit {
   
   
   
-  std::optional<rtc::SSLRole> fallback_ssl_role;
+  std::optional<SSLRole> fallback_ssl_role;
 };
 
 
@@ -89,7 +89,7 @@ class SctpSidAllocator {
   
   
   
-  std::optional<StreamId> AllocateSid(rtc::SSLRole role);
+  std::optional<StreamId> AllocateSid(SSLRole role);
 
   
   bool ReserveSid(StreamId sid);

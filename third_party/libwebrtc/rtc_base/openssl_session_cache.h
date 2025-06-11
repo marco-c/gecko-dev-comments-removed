@@ -34,7 +34,7 @@ class OpenSSLSessionCache final {
   
   
   
-  OpenSSLSessionCache(SSLMode ssl_mode, SSL_CTX* ssl_ctx);
+  OpenSSLSessionCache(webrtc::SSLMode ssl_mode, SSL_CTX* ssl_ctx);
   
   ~OpenSSLSessionCache();
 
@@ -50,12 +50,12 @@ class OpenSSLSessionCache final {
   SSL_CTX* GetSSLContext() const;
   
   
-  SSLMode GetSSLMode() const;
+  webrtc::SSLMode GetSSLMode() const;
 
  private:
   
   
-  const SSLMode ssl_mode_;
+  const webrtc::SSLMode ssl_mode_;
   
   
   

@@ -45,8 +45,7 @@ class SdpStateProvider {
   
   
   virtual bool IceRestartPending(const std::string& content_name) const = 0;
-  virtual std::optional<rtc::SSLRole> GetDtlsRole(
-      const std::string& mid) const = 0;
+  virtual std::optional<SSLRole> GetDtlsRole(const std::string& mid) const = 0;
 };
 
 }  

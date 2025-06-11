@@ -155,7 +155,7 @@ class TestMainImpl : public TestMain {
 
     
     rtc::InitializeSSL();
-    rtc::SSLStreamAdapter::EnableTimeCallbackForTesting();
+    SSLStreamAdapter::EnableTimeCallbackForTesting();
 
     return 0;
   }

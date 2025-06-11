@@ -561,7 +561,7 @@ bool SrtpSession::DoSetKey(int type,
   
   
   if (type == ssrc_any_outbound && IsExternalAuthEnabled() &&
-      !rtc::IsGcmCryptoSuite(crypto_suite)) {
+      !webrtc::IsGcmCryptoSuite(crypto_suite)) {
     policy.rtp.auth_type = EXTERNAL_HMAC_SHA1;
   }
   if (!extension_ids.empty()) {

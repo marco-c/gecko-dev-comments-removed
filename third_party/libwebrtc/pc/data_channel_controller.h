@@ -90,7 +90,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>>
   InternalCreateDataChannelWithProxy(const std::string& label,
                                      const InternalDataChannelInit& config);
-  void AllocateSctpSids(rtc::SSLRole role);
+  void AllocateSctpSids(SSLRole role);
 
   
   
@@ -131,7 +131,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   
   RTCError ReserveOrAllocateSid(std::optional<StreamId>& sid,
-                                std::optional<rtc::SSLRole> fallback_ssl_role)
+                                std::optional<SSLRole> fallback_ssl_role)
       RTC_RUN_ON(network_thread());
 
   
