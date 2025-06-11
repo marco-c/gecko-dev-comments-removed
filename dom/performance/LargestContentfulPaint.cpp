@@ -369,7 +369,8 @@ void LargestContentfulPaint::UpdateSize(
   
   
   IntersectionInput input = DOMIntersectionObserver::ComputeInput(
-      *frame->PresContext()->Document(), rootFrame->GetContent(), nullptr);
+      *frame->PresContext()->Document(), rootFrame->GetContent(), nullptr,
+      nullptr);
   const IntersectionOutput output =
       DOMIntersectionObserver::Intersect(input, *aContainingBlock);
 

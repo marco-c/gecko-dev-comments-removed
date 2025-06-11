@@ -12966,7 +12966,7 @@ PresShell::ProximityToViewportResult PresShell::DetermineProximityToViewport() {
   auto rootMargin = StyleRect<LengthPercentage>::WithAllSides(margin);
 
   auto input = DOMIntersectionObserver::ComputeInput(
-      *mDocument,  nullptr, &rootMargin);
+      *mDocument,  nullptr, &rootMargin, nullptr);
 
   for (nsIFrame* frame : mContentVisibilityAutoFrames) {
     auto* element = frame->GetContent()->AsElement();
