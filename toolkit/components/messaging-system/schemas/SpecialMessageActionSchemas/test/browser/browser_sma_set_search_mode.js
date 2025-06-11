@@ -1,22 +1,37 @@
 
 
 
+
+
+
+
+
 "use strict";
 
+ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
+  const { UrlbarTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/UrlbarTestUtils.sys.mjs"
+  );
+  UrlbarTestUtils.init(this);
+  return UrlbarTestUtils;
+});
+
 add_task(async function test_SET_SEARCH_MODE() {
-  const action = {
+  let searchMode = {
+    engineName: "Bing",
+    isGeneralPurposeEngine: true,
+    source: 3,
+    isPreview: false,
+    entry: "other",
+  };
+
+  let action = {
     type: "SET_SEARCH_MODE",
-    data: {
-      engineName: "Perplexity",
-      isGeneralPurposeEngine: true,
-      source: 3,
-      isPreview: false,
-      entry: "other",
-    },
+    data: searchMode,
     dismiss: true,
   };
-  await SMATestUtils.validateAction(action);
 
-  
-  
+  await SMATestUtils.executeAndValidateAction(action);
+  await UrlbarTestUtils.assertSearchMode(window, searchMode);
+  await UrlbarTestUtils.exitSearchMode(window);
 });
