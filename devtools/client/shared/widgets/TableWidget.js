@@ -315,7 +315,7 @@ TableWidget.prototype = {
   
 
 
-  onChange(data) {
+  async onChange(data) {
     const changedField = data.change.field;
     const colName = changedField.parentNode.id;
     const column = this.columns.get(colName);
@@ -341,7 +341,17 @@ TableWidget.prototype = {
     
     this.editBookmark =
       colName === uniqueId ? change.newValue : items[uniqueId];
-    this.emit(EVENTS.CELL_EDIT, change);
+
+    
+    const abortController = new this.window.AbortController();
+    await this.emitAsync(EVENTS.CELL_EDIT, change, abortController);
+
+    
+    if (abortController.signal.aborted) {
+      changedField.value = data.change.oldValue;
+      return;
+    }
+
     this.syncRowHeight(change.items.uniqueKey);
   },
 

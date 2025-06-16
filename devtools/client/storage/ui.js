@@ -569,14 +569,32 @@ class StorageUI {
     }
   }
 
-  editItem(data) {
+  async editItem(data, cellEditAbortController) {
     const selectedItem = this.tree.selectedItem;
     if (!selectedItem) {
       return;
     }
     const front = this.getCurrentFront();
 
-    front.editItem(data);
+    const result = await front.editItem(data);
+    
+    if (front.typeName === "cookies" && result?.errorString) {
+      const notificationBox = this._toolbox.getNotificationBox();
+      const message = await this._panelDoc.l10n.formatValue(
+        "storage-cookie-edit-error",
+        { errorString: result.errorString }
+      );
+
+      notificationBox.appendNotification(
+        message,
+        "storage-cookie-edit-error",
+        null,
+        notificationBox.PRIORITY_WARNING_LOW
+      );
+
+      
+      cellEditAbortController.abort();
+    }
   }
 
   
@@ -1594,7 +1612,7 @@ class StorageUI {
   
 
 
-  onAddItem() {
+  async onAddItem() {
     const selectedItem = this.tree.selectedItem;
     if (!selectedItem) {
       return;
@@ -1606,7 +1624,25 @@ class StorageUI {
     
     this.table.scrollIntoViewOnUpdate = true;
     this.table.editBookmark = createGUID();
-    front.addItem(this.table.editBookmark, host);
+    const result = await front.addItem(this.table.editBookmark, host);
+
+    
+    
+    
+    if (front.typeName === "cookies" && result?.errorString) {
+      const notificationBox = this._toolbox.getNotificationBox();
+      const message = await this._panelDoc.l10n.formatValue(
+        "storage-cookie-create-error",
+        { errorString: result.errorString }
+      );
+
+      notificationBox.appendNotification(
+        message,
+        "storage-cookie-create-error",
+        null,
+        notificationBox.PRIORITY_WARNING_LOW
+      );
+    }
   }
 
   

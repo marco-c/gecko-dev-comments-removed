@@ -601,20 +601,28 @@ function getRowValues(id, includeHidden = false) {
 
 
 
+function getRowItem(id) {
+  const doc = gPanelWindow.document;
+  const table = gUI.table;
+  return doc.querySelector(
+    `.table-widget-column#${table.uniqueId} .table-widget-cell[value='${id}']`
+  );
+}
+
+
+
+
+
+
+
+
 
 
 
 
 function getRowCells(id, includeHidden = false) {
-  const doc = gPanelWindow.document;
   const table = gUI.table;
-  const item = doc.querySelector(
-    ".table-widget-column#" +
-      table.uniqueId +
-      " .table-widget-cell[value='" +
-      id +
-      "']"
-  );
+  const item = getRowItem(id);
 
   if (!item) {
     ok(

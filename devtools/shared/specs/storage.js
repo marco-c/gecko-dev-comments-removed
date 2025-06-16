@@ -71,6 +71,11 @@ types.addDictType("cookiestoreobject", {
 });
 
 
+types.addDictType("cookieoperationresult", {
+  errorString: "nullable:string",
+});
+
+
 const editRemoveMethods = {
   getFields: {
     request: {},
@@ -106,7 +111,13 @@ createStorageSpec({
           guid: Arg(0, "string"),
           host: Arg(1, "nullable:string"),
         },
-        response: {},
+        response: RetVal("cookieoperationresult"),
+      },
+    },
+    {
+      editItem: {
+        request: editRemoveMethods.editItem.request,
+        response: RetVal("cookieoperationresult"),
       },
     },
     {

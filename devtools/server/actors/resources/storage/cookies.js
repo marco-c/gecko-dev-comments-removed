@@ -378,14 +378,24 @@ class CookiesStorageActor extends BaseStorageActor {
 
 
 
+
   async editItem(data) {
-    this.editCookie(data);
+    const potentialErrorMessage = this.editCookie(data);
+    return { errorString: potentialErrorMessage };
   }
+
+  
+
+
+
+
+
 
   async addItem(guid, host) {
     const window = this.storageActor.getWindowFromHost(host);
     const principal = window.document.effectiveStoragePrincipal;
-    this.addCookie(guid, principal);
+    const potentialErrorMessage = this.addCookie(guid, principal);
+    return { errorString: potentialErrorMessage };
   }
 
   async removeItem(host, uniqueKey) {
@@ -402,6 +412,14 @@ class CookiesStorageActor extends BaseStorageActor {
   async removeAllSessionCookies(host, domain) {
     this._removeCookies(host, { domain, session: true });
   }
+
+  
+
+
+
+
+
+
 
   addCookie(guid, principal) {
     
@@ -433,12 +451,15 @@ class CookiesStorageActor extends BaseStorageActor {
     );
 
     if (cv.result != Ci.nsICookieValidation.eOK) {
-      
-      console.error(`Failed to add a cookie: ${cv.errorString}`);
+      return cv.errorString;
     }
+
+    return null;
   }
 
   
+
+
 
 
 
@@ -505,7 +526,7 @@ class CookiesStorageActor extends BaseStorageActor {
     }
 
     if (!cookie) {
-      return;
+      return null;
     }
 
     
@@ -515,6 +536,8 @@ class CookiesStorageActor extends BaseStorageActor {
 
       cookie.expires = tenSecondsFromNow;
     }
+
+    let origCookieRemoved = false;
 
     switch (field) {
       case "isSecure":
@@ -541,6 +564,7 @@ class CookiesStorageActor extends BaseStorageActor {
           origPath,
           cookie.originAttributes
         );
+        origCookieRemoved = true;
         break;
     }
 
@@ -568,9 +592,28 @@ class CookiesStorageActor extends BaseStorageActor {
     );
 
     if (cv.result != Ci.nsICookieValidation.eOK) {
-      
-      console.error(`Failed to add a cookie: ${cv.errorString}`);
+      if (origCookieRemoved) {
+        
+        Services.cookies.add(
+          origHost,
+          origPath,
+          origName,
+          cookie.value,
+          cookie.isSecure,
+          cookie.isHttpOnly,
+          cookie.isSession,
+          cookie.isSession ? MAX_COOKIE_EXPIRY : cookie.expires,
+          cookie.originAttributes,
+          cookie.sameSite,
+          cookie.schemeMap,
+          cookie.isPartitioned
+        );
+      }
+
+      return cv.errorString;
     }
+
+    return null;
   }
 
   _removeCookies(host, opts = {}) {
