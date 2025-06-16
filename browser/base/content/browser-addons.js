@@ -2768,8 +2768,8 @@ var gUnifiedExtensions = {
     let newPosition = shouldPinToToolbar ? undefined : 0;
 
     CustomizableUI.addWidgetToArea(widgetId, newArea, newPosition);
-
-    this.updateAttention();
+    
+    
   },
 
   async moveWidget(menu, direction) {
@@ -2806,6 +2806,10 @@ var gUnifiedExtensions = {
   },
 
   onWidgetAdded(aWidgetId, aArea) {
+    if (CustomizableUI.isWebExtensionWidget(aWidgetId)) {
+      this.updateAttention();
+    }
+
     
     
     
@@ -2818,6 +2822,12 @@ var gUnifiedExtensions = {
       CustomizableUI.getAreaType(aArea) !== CustomizableUI.TYPE_TOOLBAR;
 
     this._updateWidgetClassName(aWidgetId, inPanel);
+  },
+
+  onWidgetMoved(aWidgetId) {
+    if (CustomizableUI.isWebExtensionWidget(aWidgetId)) {
+      this.updateAttention();
+    }
   },
 
   onWidgetOverflow(aNode) {
