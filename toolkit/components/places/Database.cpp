@@ -1342,6 +1342,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 81) {
+        rv = MigrateV81Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -2198,15 +2205,22 @@ nsresult Database::MigrateV79Up() {
 
 nsresult Database::MigrateV80Up() {
   
-  nsresult rv = mMainConn->ExecuteSimpleSQL(
-      "DROP INDEX IF EXISTS idx_newtab_impression_timestamp"_ns);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = mMainConn->ExecuteSimpleSQL(
-      "DROP INDEX IF EXISTS idx_newtab_click_timestamp"_ns);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_STORY_CLICK_TIMESTAMP);
+  nsresult rv =
+      mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_STORY_CLICK_TIMESTAMP);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_IMPRESSION_TIMESTAMP);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+nsresult Database::MigrateV81Up() {
+  
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(
+      "DROP INDEX IF EXISTS moz_newtab_story_click_idx_newtab_click_timestamp"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(
+      "DROP INDEX IF EXISTS moz_newtab_story_click_idx_newtab_impression_timestamp"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
