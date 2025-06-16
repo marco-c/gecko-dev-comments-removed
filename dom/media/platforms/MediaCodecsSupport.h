@@ -108,6 +108,10 @@ class MCSInfo final {
  public:
   
   
+  static MediaCodecsSupported GetSupportFromFactory(bool aForceRefresh = false);
+
+  
+  
   
   
   

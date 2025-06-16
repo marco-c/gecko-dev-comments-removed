@@ -11,6 +11,9 @@
 #include "MediaData.h"
 #include "mozilla/Logging.h"
 
+using mozilla::media::EncodeSupport;
+using mozilla::media::EncodeSupportSet;
+
 namespace mozilla {
 
 #define WMF_ENC_LOG(arg, ...)                         \
@@ -30,22 +33,24 @@ GUID CodecToSubtype(CodecType aCodec) {
   }
 }
 
-bool CanCreateWMFEncoder(CodecType aCodec) {
-  bool canCreate = false;
+EncodeSupportSet CanCreateWMFEncoder(CodecType aCodec) {
+  EncodeSupportSet supports;
   mscom::EnsureMTA([&]() {
     if (!wmf::MediaFoundationInitializer::HasInitialized()) {
       return;
     }
     
-    auto enc = MakeRefPtr<MFTEncoder>(false );
-    canCreate = SUCCEEDED(enc->Create(CodecToSubtype(aCodec)));
-    if (!canCreate) {
-      
-      enc = MakeRefPtr<MFTEncoder>(true );
-      canCreate = SUCCEEDED(enc->Create(CodecToSubtype(aCodec)));
+    auto hwEnc = MakeRefPtr<MFTEncoder>(false );
+    if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec)))) {
+      supports += EncodeSupport::HardwareEncode;
+    }
+    
+    auto swEnc = MakeRefPtr<MFTEncoder>(true );
+    if (SUCCEEDED(swEnc->Create(CodecToSubtype(aCodec)))) {
+      supports += EncodeSupport::SoftwareEncode;
     }
   });
-  return canCreate;
+  return supports;
 }
 
 static already_AddRefed<MediaByteBuffer> ParseH264Parameters(

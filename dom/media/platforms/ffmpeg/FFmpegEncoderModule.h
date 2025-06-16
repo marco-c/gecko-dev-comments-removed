@@ -12,17 +12,22 @@
 
 namespace mozilla {
 
+extern LazyLogModule sPEMLog;
+
 template <int V>
 class FFmpegEncoderModule final : public PlatformEncoderModule {
  public:
   virtual ~FFmpegEncoderModule() = default;
+
+  static void Init(FFmpegLibWrapper* aLib);
+
   static already_AddRefed<PlatformEncoderModule> Create(
       FFmpegLibWrapper* aLib) {
     RefPtr<PlatformEncoderModule> pem = new FFmpegEncoderModule(aLib);
     return pem.forget();
   }
-  bool Supports(const EncoderConfig& aConfig) const override;
-  bool SupportsCodec(CodecType aCodec) const override;
+  media::EncodeSupportSet Supports(const EncoderConfig& aConfig) const override;
+  media::EncodeSupportSet SupportsCodec(CodecType aCodec) const override;
 
   const char* GetName() const override { return "FFmpeg Encoder Module"; }
 
@@ -42,6 +47,7 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
  private:
   
   const FFmpegLibWrapper* mLib;  
+  MOZ_RUNINIT static inline nsTArray<uint32_t> sSupportedHWCodecs;
 };
 
 }  
