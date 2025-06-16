@@ -2968,17 +2968,6 @@ bool nsGenericHTMLFormControlElementWithState::ParseAttribute(
       aResult.ParseAtom(aValue);
       return true;
     }
-
-    if (StaticPrefs::dom_element_commandfor_enabled()) {
-      if (aAttribute == nsGkAtoms::invokeaction) {
-        aResult.ParseAtom(aValue);
-        return true;
-      }
-      if (aAttribute == nsGkAtoms::invoketarget) {
-        aResult.ParseAtom(aValue);
-        return true;
-      }
-    }
   }
 
   return nsGenericHTMLFormControlElement::ParseAttribute(

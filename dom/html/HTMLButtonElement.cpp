@@ -141,6 +141,17 @@ bool HTMLButtonElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (aAttribute == nsGkAtoms::formenctype) {
       return aResult.ParseEnumValue(aValue, kFormEnctypeTable, false);
     }
+
+    if (StaticPrefs::dom_element_commandfor_enabled()) {
+      if (aAttribute == nsGkAtoms::command) {
+        aResult.ParseAtom(aValue);
+        return true;
+      }
+      if (aAttribute == nsGkAtoms::commandfor) {
+        aResult.ParseAtom(aValue);
+        return true;
+      }
+    }
   }
 
   return nsGenericHTMLFormControlElementWithState::ParseAttribute(
@@ -276,10 +287,10 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
       
       
     }
-    if (!GetInvokeTargetElement()) {
+    if (!GetCommandForElement()) {
       HandlePopoverTargetAction();
     } else {
-      HandleInvokeTargetAction();
+      HandleCommandForAction();
     }
   }
 
@@ -428,18 +439,18 @@ void HTMLButtonElement::UpdateValidityElementStates(bool aNotify) {
   }
 }
 
-void HTMLButtonElement::HandleInvokeTargetAction() {
-  RefPtr<Element> invokee = GetInvokeTargetElement();
+void HTMLButtonElement::HandleCommandForAction() {
+  RefPtr<Element> invokee = GetCommandForElement();
 
   if (!invokee) {
     return;
   }
 
   
-  const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::invokeaction);
+  const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::command);
 
   nsAtom* actionRaw = attr ? attr->GetAtomValue() : nsGkAtoms::_empty;
-  Command action = GetInvokeAction(actionRaw);
+  Command action = GetCommand(actionRaw);
 
   
   
@@ -471,14 +482,14 @@ void HTMLButtonElement::HandleInvokeTargetAction() {
   invokee->HandleCommandInternal(this, action, IgnoreErrors());
 }
 
-void HTMLButtonElement::GetInvokeAction(nsAString& aValue) const {
-  const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::invokeaction);
+void HTMLButtonElement::GetCommand(nsAString& aValue) const {
+  const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::command);
   if (attr) {
     attr->GetAtomValue()->ToString(aValue);
   }
 }
 
-Element::Command HTMLButtonElement::GetInvokeAction(nsAtom* aAtom) const {
+Element::Command HTMLButtonElement::GetCommand(nsAtom* aAtom) const {
   if (aAtom == nsGkAtoms::_empty) {
     return Command::Auto;
   }
@@ -509,15 +520,15 @@ Element::Command HTMLButtonElement::GetInvokeAction(nsAtom* aAtom) const {
   return Command::Invalid;
 }
 
-Element* HTMLButtonElement::GetInvokeTargetElement() const {
+Element* HTMLButtonElement::GetCommandForElement() const {
   if (StaticPrefs::dom_element_commandfor_enabled()) {
-    return GetAttrAssociatedElement(nsGkAtoms::invoketarget);
+    return GetAttrAssociatedElement(nsGkAtoms::commandfor);
   }
   return nullptr;
 }
 
-void HTMLButtonElement::SetInvokeTargetElement(Element* aElement) {
-  ExplicitlySetAttrElement(nsGkAtoms::invoketarget, aElement);
+void HTMLButtonElement::SetCommandForElement(Element* aElement) {
+  ExplicitlySetAttrElement(nsGkAtoms::commandfor, aElement);
 }
 
 JSObject* HTMLButtonElement::WrapNode(JSContext* aCx,
