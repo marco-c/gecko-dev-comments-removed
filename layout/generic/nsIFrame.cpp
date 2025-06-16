@@ -5875,14 +5875,12 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
 
 
 
-
-
 static bool UseFrameEdge(nsIFrame* aFrame) {
   if (aFrame->IsFlexOrGridContainer() || aFrame->IsTableFrame()) {
     return true;
   }
-  const nsImageFrame* image = do_QueryFrame(aFrame);
-  if ((image || aFrame->IsHTMLCanvasFrame()) &&
+  
+  if (aFrame->IsReplaced() && !aFrame->IsTextFrame() &&
       !aFrame->GetContent()->IsEditable()) {
     
     
