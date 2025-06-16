@@ -1469,7 +1469,6 @@ class ContentParent final : public PContentParent,
   GeckoChildProcessHost* mSubprocess;
   const TimeStamp mLaunchTS;  
   TimeStamp mLaunchYieldTS;   
-  TimeStamp mActivateTS;
 
   bool mIsAPreallocBlocker;  
 
