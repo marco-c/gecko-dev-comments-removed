@@ -19,10 +19,14 @@ namespace JS {
 struct JSTimers {
   mozilla::TimeDuration executionTime;       
   mozilla::TimeDuration delazificationTime;  
+  mozilla::TimeDuration xdrEncodingTime;     
+  mozilla::TimeDuration gcTime;              
+  mozilla::TimeDuration
+      protectTime;  
+  mozilla::TimeDuration
+      baselineCompileTime;  
 };
 
-extern JS_PUBLIC_API void SetMeasuringExecutionTimeEnabled(JSContext* cx,
-                                                           bool value);
 extern JS_PUBLIC_API JSTimers GetJSTimers(JSContext* cx);
 
 }  

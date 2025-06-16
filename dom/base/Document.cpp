@@ -37,7 +37,6 @@
 #include "imgLoader.h"
 #include "imgRequestProxy.h"
 #include "js/Value.h"
-#include "js/TelemetryTimers.h"
 #include "jsapi.h"
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
@@ -2043,6 +2042,10 @@ void Document::LoadEventFired() {
   glean::perf::PageLoadExtra pageLoadEventData;
 
   
+  
+  AccumulateJSTelemetry(pageLoadEventData);
+
+  
   AccumulatePageLoadTelemetry(pageLoadEventData);
 
   
@@ -2130,24 +2133,6 @@ void Document::RecordPageLoadEventTelemetry(
   }
 
   aEventTelemetryData.loadType = mozilla::Some(loadTypeStr);
-
-  
-  if (GetScopeObject() && GetScopeObject()->GetGlobalJSObject()) {
-    AutoJSContext cx;
-    JSObject* globalObject = GetScopeObject()->GetGlobalJSObject();
-    JSAutoRealm ar(cx, globalObject);
-    JS::JSTimers timers = JS::GetJSTimers(cx);
-
-    if (!timers.executionTime.IsZero()) {
-      aEventTelemetryData.jsExecTime = mozilla::Some(
-          static_cast<uint32_t>(timers.executionTime.ToMilliseconds()));
-    }
-
-    if (!timers.delazificationTime.IsZero()) {
-      aEventTelemetryData.delazifyTime = mozilla::Some(
-          static_cast<uint32_t>(timers.delazificationTime.ToMilliseconds()));
-    }
-  }
 
   
   if (ContentChild* cc = ContentChild::GetSingleton()) {
@@ -2417,6 +2402,60 @@ void Document::AccumulatePageLoadTelemetry(
 #endif
 
   aEventTelemetryDataOut.features = mozilla::Some(mPageloadEventFeatures);
+}
+
+void Document::AccumulateJSTelemetry(
+    glean::perf::PageLoadExtra& aEventTelemetryDataOut) {
+  if (!IsTopLevelContentDocument() || !ShouldIncludeInTelemetry()) {
+    return;
+  }
+
+  if (!GetScopeObject() || !GetScopeObject()->GetGlobalJSObject()) {
+    return;
+  }
+
+  AutoJSContext cx;
+  JSObject* globalObject = GetScopeObject()->GetGlobalJSObject();
+  JSAutoRealm ar(cx, globalObject);
+  JS::JSTimers timers = JS::GetJSTimers(cx);
+
+  if (!timers.executionTime.IsZero()) {
+    glean::javascript_pageload::execution_time.AccumulateRawDuration(
+        timers.executionTime);
+    aEventTelemetryDataOut.jsExecTime = mozilla::Some(
+        static_cast<uint32_t>(timers.executionTime.ToMilliseconds()));
+  }
+
+  if (!timers.delazificationTime.IsZero()) {
+    glean::javascript_pageload::delazification_time.AccumulateRawDuration(
+        timers.delazificationTime);
+  }
+
+  if (!timers.xdrEncodingTime.IsZero()) {
+    glean::javascript_pageload::xdr_encode_time.AccumulateRawDuration(
+        timers.xdrEncodingTime);
+  }
+
+  if (!timers.baselineCompileTime.IsZero()) {
+    glean::javascript_pageload::baseline_compile_time.AccumulateRawDuration(
+        timers.baselineCompileTime);
+  }
+
+  if (!timers.gcTime.IsZero()) {
+    glean::javascript_pageload::gc_time.AccumulateRawDuration(timers.gcTime);
+  }
+
+  if (!timers.protectTime.IsZero()) {
+    glean::javascript_pageload::protect_time.AccumulateRawDuration(
+        timers.protectTime);
+    
+    
+    
+    
+    glean::glam_experiment::protect_time.AccumulateRawDuration(
+        timers.protectTime);
+    
+  }
 }
 
 Document::~Document() {
@@ -20044,23 +20083,8 @@ void Document::SetIsInitialDocument(bool aIsInitialDocument) {
 
 void Document::AddToplevelLoadingDocument(Document* aDoc) {
   MOZ_ASSERT(aDoc && aDoc->IsTopLevelContentDocument());
-
-  if (!XRE_IsContentProcess()) {
-    return;
-  }
-
   
-  if (aDoc->GetScopeObject()) {
-    JSObject* globalObject = aDoc->GetScopeObject()->GetGlobalJSObject();
-    if (globalObject) {
-      AutoJSContext cx;
-      JSAutoRealm ar(cx, globalObject);
-      JS::SetMeasuringExecutionTimeEnabled(cx, true);
-    }
-  }
-
-  
-  if (aDoc->IsInBackgroundWindow()) {
+  if (aDoc->IsInBackgroundWindow() || !XRE_IsContentProcess()) {
     return;
   }
 
@@ -20091,16 +20115,6 @@ void Document::RemoveToplevelLoadingDocument(Document* aDoc) {
       if (idleScheduler) {
         idleScheduler->SendPrioritizedOperationDone();
       }
-    }
-  }
-
-  
-  if (aDoc->GetScopeObject()) {
-    JSObject* globalObject = aDoc->GetScopeObject()->GetGlobalJSObject();
-    if (globalObject) {
-      AutoJSContext cx;
-      JSAutoRealm ar(cx, globalObject);
-      JS::SetMeasuringExecutionTimeEnabled(cx, false);
     }
   }
 }

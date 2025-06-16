@@ -175,7 +175,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   
   
-  js::ContextData<bool> measuringExecutionTimeEnabled_;
+  js::ContextData<bool> measuringExecutionTime_;
 
   
   
@@ -186,11 +186,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   void setRuntime(JSRuntime* rt);
 
-  bool measuringExecutionTimeEnabled() const {
-    return measuringExecutionTimeEnabled_;
-  }
-  void setMeasuringExecutionTimeEnabled(bool value) {
-    measuringExecutionTimeEnabled_ = value;
+  bool isMeasuringExecutionTime() const { return measuringExecutionTime_; }
+  void setIsMeasuringExecutionTime(bool value) {
+    measuringExecutionTime_ = value;
   }
 
   
