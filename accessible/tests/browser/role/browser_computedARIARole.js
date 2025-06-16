@@ -19,6 +19,7 @@ addAccessibleTask(
 </div>
 <div id="ariaSearchbox" role="searchbox">ARIA searchbox</div>
 <div id="ariaUnknown" role="unknown">unknown ARIA role</div>
+<div id="ariaFallbackUpperCase" role="REGION GROUP">unlabelled region with fallback to group, upper case</div>
 <button id="htmlButton">HTML button</button>
 <button id="toggleButton" aria-pressed="true">toggle button</button>
 <main id="htmlMain">HTML main</main>
@@ -61,6 +62,12 @@ addAccessibleTask(
     testComputedARIARole("ariaRowgroup", "rowgroup");
     testComputedARIARole("ariaSearchbox", "searchbox");
     testComputedARIARole("ariaUnknown", "generic");
+    
+    
+    
+    
+    
+    testComputedARIARole("ariaFallbackUpperCase", "group");
     testComputedARIARole("htmlButton", "button");
     
     
