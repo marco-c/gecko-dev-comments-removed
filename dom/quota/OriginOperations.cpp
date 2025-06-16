@@ -1334,7 +1334,6 @@ nsresult SaveOriginAccessTimeOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   auto originStateMetadata = maybeOriginStateMetadata.extract();
 
   originStateMetadata.mLastAccessTime = PR_Now();
-  originStateMetadata.mAccessed = true;
 
   QM_TRY_INSPECT(const auto& file,
                  aQuotaManager.GetOriginDirectory(mOriginMetadata));
@@ -3513,45 +3512,48 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   if (created) {
     
 
-    const auto [timestamp, accessed] = [&aQuotaManager, &originMetadata]() {
-      
-      if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
-        if (aQuotaManager.IsTemporaryOriginInitializedInternal(
-                originMetadata)) {
-          
-          
-          
-          
+    
+    
+    int64_t timestamp;
 
-          return aQuotaManager.WithOriginInfo(
-              originMetadata, [](const auto& originInfo) {
-                const int64_t timestamp = originInfo->LockedAccessTime();
-                const bool accessed = originInfo->LockedAccessed();
+    
+    if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
+      if (aQuotaManager.IsTemporaryOriginInitializedInternal(originMetadata)) {
+        
+        
+        
+        
 
-                originInfo->LockedDirectoryCreated();
+        timestamp = aQuotaManager.WithOriginInfo(
+            originMetadata, [](const auto& originInfo) {
+              const int64_t timestamp = originInfo->LockedAccessTime();
 
-                return std::make_pair(timestamp, accessed);
-              });
-        }
+              originInfo->LockedDirectoryCreated();
+
+              return timestamp;
+            });
+      } else {
+        timestamp = PR_Now();
       }
 
-      return std::make_pair( PR_Now(),  false);
-    }();
+      FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
+          originMetadata,
+          OriginStateMetadata{timestamp,  true}};
 
-    FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
-        originMetadata,
-        OriginStateMetadata{timestamp, accessed,  true}};
-
-    if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
       
       
       
       
       aQuotaManager.AddTemporaryOrigin(fullOriginMetadata);
+    } else {
+      timestamp = PR_Now();
     }
 
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
-        *directory, fullOriginMetadata)));
+        *directory,
+        FullOriginMetadata{
+            originMetadata,
+            OriginStateMetadata{timestamp,  true}})));
 
     
     
@@ -3568,20 +3570,24 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         
         
 
+        FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
+            originMetadata,
+            OriginStateMetadata{timestamp,  true}};
+
         aQuotaManager.InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
                                           0);
       }
     }
   } else {
-    QM_TRY_UNWRAP(
-        OriginStateMetadata originStateMetadata,
+    QM_TRY_INSPECT(
+        const bool& persisted,
         ([&aQuotaManager, &originMetadata,
-          &directory]() -> mozilla::Result<OriginStateMetadata, nsresult> {
-          Maybe<OriginStateMetadata> maybeOriginStateMetadata =
-              aQuotaManager.GetOriginStateMetadata(originMetadata);
+          &directory]() -> mozilla::Result<bool, nsresult> {
+          Nullable<bool> persisted =
+              aQuotaManager.OriginPersisted(originMetadata);
 
-          if (maybeOriginStateMetadata) {
-            return maybeOriginStateMetadata.extract();
+          if (!persisted.IsNull()) {
+            return persisted.Value();
           }
 
           
@@ -3590,26 +3596,20 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
               const auto& metadata,
               aQuotaManager.LoadFullOriginMetadataWithRestore(directory));
 
-          return metadata;
+          return metadata.mPersisted;
         }()));
 
-    if (!originStateMetadata.mPersisted) {
+    if (!persisted) {
       
       
-
-      originStateMetadata.mLastAccessTime = PR_Now();
-      originStateMetadata.mPersisted = true;
-
-      QM_TRY(MOZ_TO_RESULT(
-          SaveDirectoryMetadataHeader(*directory, originStateMetadata)));
+      QM_TRY(MOZ_TO_RESULT(SaveDirectoryMetadataHeader(
+          *directory, OriginStateMetadata{ PR_Now(),
+                                           true})));
 
       
       
       if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
         aQuotaManager.PersistOrigin(originMetadata);
-
-        
-        
       }
     }
   }

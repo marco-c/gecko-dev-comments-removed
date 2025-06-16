@@ -7,7 +7,6 @@
 #include "DirectoryMetadata.h"
 
 #include "mozilla/Result.h"
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
@@ -17,18 +16,6 @@
 #include "nsIBinaryOutputStream.h"
 
 namespace mozilla::dom::quota {
-
-
-
-enum class DirectoryMetadataFlags : uint32_t {
-  None        = 0,
-  Initialized = 1 << 0,
-  Accessed    = 1 << 1,
-};
-
-
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DirectoryMetadataFlags)
 
 Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
     nsIBinaryInputStream& aStream) {
@@ -42,18 +29,11 @@ Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
   QM_TRY_UNWRAP(originStateMetadata.mPersisted,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, ReadBoolean));
 
-  QM_TRY_INSPECT(const uint32_t& rawFlags,
+  QM_TRY_INSPECT(const bool& reservedData1,
                  MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read32));
-
-  auto flags = static_cast<DirectoryMetadataFlags>(rawFlags);
-
-  
-  
-  
-  
-  originStateMetadata.mAccessed =
-      rawFlags == 0 || (flags & DirectoryMetadataFlags::Accessed) !=
-                           DirectoryMetadataFlags::None;
+  if (reservedData1 != 0) {
+    QM_TRY(MOZ_TO_RESULT(false));
+  }
 
   
   QM_TRY_INSPECT(const bool& reservedData2,
@@ -73,16 +53,7 @@ nsresult WriteDirectoryMetadataHeader(
   QM_TRY(MOZ_TO_RESULT(aStream.WriteBoolean(aOriginStateMetadata.mPersisted)));
 
   
-  
-  
-  auto flags =
-      DirectoryMetadataFlags::Initialized |
-      (aOriginStateMetadata.mAccessed ? DirectoryMetadataFlags::Accessed
-                                      : DirectoryMetadataFlags::None);
-
-  auto rawFlags = static_cast<uint32_t>(flags);
-
-  QM_TRY(MOZ_TO_RESULT(aStream.Write32(rawFlags)));
+  QM_TRY(MOZ_TO_RESULT(aStream.Write32(0)));
 
   
   QM_TRY(MOZ_TO_RESULT(aStream.Write32(0)));

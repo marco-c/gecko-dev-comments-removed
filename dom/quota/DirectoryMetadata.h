@@ -75,16 +75,6 @@ struct OriginStateMetadata;
 
 
 
-
-
-
-
-
-
-
-
-
-
 Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
     nsIBinaryInputStream& aStream);
 
