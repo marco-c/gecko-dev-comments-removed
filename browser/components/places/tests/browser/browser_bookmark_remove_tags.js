@@ -9,6 +9,10 @@ const TEST_TAG = "tag";
 
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+
   let toolbar = document.getElementById("PersonalToolbar");
   let wasCollapsed = toolbar.collapsed;
 

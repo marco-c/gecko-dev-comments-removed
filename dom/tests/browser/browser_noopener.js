@@ -135,6 +135,12 @@ async function doAllTests() {
 
 requestLongerTimeout(30);
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 add_task(async function newtab_sameproc() {
   await SpecialPowers.pushPrefEnv({
     set: [

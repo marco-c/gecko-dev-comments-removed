@@ -40,7 +40,10 @@ add_setup(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:mozilla");
   
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.pocket.enabled", true]],
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+      ["extensions.pocket.enabled", true],
+    ],
   });
 });
 

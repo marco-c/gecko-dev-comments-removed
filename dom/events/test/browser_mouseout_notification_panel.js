@@ -91,6 +91,7 @@ add_setup(async function init() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["test.wait300msAfterTabSwitch", true],
       ["test.events.async.enabled", true],
       
       
