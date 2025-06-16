@@ -891,6 +891,22 @@ already_AddRefed<SourceSurface> RemoteMediaManagerChild::Readback(
   return source.forget();
 }
 
+already_AddRefed<Image> RemoteMediaManagerChild::TransferToImage(
+    const SurfaceDescriptorGPUVideo& aSD, const IntSize& aSize,
+    const ColorDepth& aColorDepth, YUVColorSpace aYUVColorSpace,
+    ColorSpace2 aColorPrimaries, TransferFunction aTransferFunction,
+    ColorRange aColorRange) {
+  
+  
+  
+  SurfaceDescriptorGPUVideo sd(aSD);
+  sd.get_SurfaceDescriptorRemoteDecoder().source() =
+      Some(GetVideoBridgeSourceFromRemoteMediaIn(mLocation));
+  return MakeAndAddRef<GPUVideoImage>(this, sd, aSize, aColorDepth,
+                                      aYUVColorSpace, aColorPrimaries,
+                                      aTransferFunction, aColorRange);
+}
+
 void RemoteMediaManagerChild::DeallocateSurfaceDescriptor(
     const SurfaceDescriptorGPUVideo& aSD) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
