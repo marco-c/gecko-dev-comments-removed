@@ -81,7 +81,7 @@
 #include "mozilla/dom/ToggleEvent.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/InputEvent.h"
-#include "mozilla/dom/InvokeEvent.h"
+#include "mozilla/dom/CommandEvent.h"
 #include "mozilla/ErrorResult.h"
 #include "nsHTMLDocument.h"
 #include "nsGlobalWindowInner.h"
@@ -3098,12 +3098,12 @@ void nsGenericHTMLFormControlElementWithState::HandleInvokeTargetAction() {
   
   
   
-  InvokeEventInit init;
-  actionRaw->ToString(init.mAction);
-  init.mInvoker = this;
+  CommandEventInit init;
+  actionRaw->ToString(init.mCommand);
+  init.mSource = this;
   init.mCancelable = true;
   init.mComposed = true;
-  RefPtr<Event> event = InvokeEvent::Constructor(this, u"invoke"_ns, init);
+  RefPtr<Event> event = CommandEvent::Constructor(this, u"command"_ns, init);
   event->SetTrusted(true);
   event->SetTarget(invokee);
 
