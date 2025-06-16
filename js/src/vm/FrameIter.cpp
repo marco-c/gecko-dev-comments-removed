@@ -828,7 +828,7 @@ bool FrameIter::matchCallee(JSContext* cx, JS::Handle<JSFunction*> fun) const {
   
   
   
-  Rooted<JSFunction*> currentCallee(cx, calleeTemplate());
+  JSFunction* currentCallee = calleeTemplate();
 
   if (currentCallee->nargs() != fun->nargs()) {
     return false;

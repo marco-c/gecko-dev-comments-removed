@@ -1525,7 +1525,7 @@ static bool ProxyCreate(JSContext* cx, CallArgs& args, const char* callerName) {
   }
 
   
-  Rooted<ProxyObject*> proxy(cx, &proxy_->as<ProxyObject>());
+  ProxyObject* proxy = &proxy_->as<ProxyObject>();
   proxy->setReservedSlot(ScriptedProxyHandler::HANDLER_EXTRA,
                          ObjectValue(*handler));
 
