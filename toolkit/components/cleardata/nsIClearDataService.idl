@@ -201,6 +201,14 @@ interface nsIClearDataService : nsISupports
   
 
 
+
+
+
+  const uint32_t CLEAR_BFCACHE = 1 << 1;
+
+  
+
+
   const uint32_t CLEAR_IMAGE_CACHE = 1 << 2;
 
   
@@ -366,7 +374,7 @@ interface nsIClearDataService : nsISupports
 
 
   const uint32_t CLEAR_ALL_CACHES = CLEAR_NETWORK_CACHE | CLEAR_IMAGE_CACHE |
-    CLEAR_JS_CACHE | CLEAR_CSS_CACHE | CLEAR_PREFLIGHT_CACHE | CLEAR_HSTS;
+    CLEAR_JS_CACHE | CLEAR_CSS_CACHE | CLEAR_PREFLIGHT_CACHE | CLEAR_HSTS | CLEAR_BFCACHE;
 
   
 
