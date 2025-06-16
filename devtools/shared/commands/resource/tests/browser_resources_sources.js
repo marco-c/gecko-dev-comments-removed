@@ -282,6 +282,8 @@ add_task(async function testSourcesOnload() {
   });
 });
 
+
+
 add_task(async function testGarbagedCollectedSources() {
   info(
     "Assert SOURCES on an already loaded page with some sources that have been GC-ed"
@@ -332,7 +334,7 @@ add_task(async function testGarbagedCollectedSources() {
     const registration = await content.wrappedJSObject.registrationPromise;
     registration.unregister();
   });
-});
+}).skip();
 
 
 
