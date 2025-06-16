@@ -178,19 +178,11 @@ add_task(async function test() {
 
   
   
-  await testDownload(
-    TEST_URL,
-    `(http,localhost,${server.identity.primaryPort})`,
-    false
-  );
+  await testDownload(TEST_URL, `(http,localhost)`, false);
   remove(TEST_FILE);
 
   
-  await testDownload(
-    TEST_URL,
-    `(http,localhost,${server.identity.primaryPort})`,
-    true
-  );
+  await testDownload(TEST_URL, `(http,localhost)`, true);
   remove(TEST_FILE);
 
   await extension.unload();
