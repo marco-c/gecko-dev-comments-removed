@@ -179,25 +179,25 @@ host_fetches = {
     "darwin": {
         "ffmpeg": {
             "type": "static-url",
-            "url": "https://github.com/mozilla/perf-automation/releases/download/FFMPEG-v4.4.1/ffmpeg-macos.zip",  
+            "url": "https://github.com/mozilla/perf-automation/releases/download/FFMPEG-v7.1/ffmpeg-7.1.zip",  
             
-            "path": "ffmpeg-macos",
+            "path": "ffmpeg-7.1",
         },
     },
     "linux64": {
         "ffmpeg": {
             "type": "static-url",
-            "url": "https://github.com/mozilla/perf-automation/releases/download/FFMPEG-v4.4.1/ffmpeg-4.4.1-i686-static.tar.xz",  
+            "url": "https://github.com/mozilla/perf-automation/releases/download/FFMPEG-v7.1/ffmpeg-master-latest-linux64-gpl-shared.tar.xz",  
             
-            "path": "ffmpeg-4.4.1-i686-static",
+            "path": "ffmpeg-master-latest-linux64-gpl-shared",
         },
     },
     "win64": {
         "ffmpeg": {
             "type": "static-url",
-            "url": "https://github.com/mozilla/perf-automation/releases/download/FFMPEG-v4.4.1/ffmpeg-4.4.1-full_build.zip",  
+            "url": "https://github.com/mozilla/perf-automation/releases/download/FFMPEG-v7.1/ffmpeg-n7.1-latest-win64-gpl-shared-7.1.zip",  
             
-            "path": "ffmpeg-4.4.1-full_build",
+            "path": "ffmpeg-n7.1-latest-win64-gpl-shared-7.1",
         },
     },
 }
