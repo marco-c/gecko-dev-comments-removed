@@ -1,0 +1,28 @@
+
+
+
+
+#ifndef BASE_FUNCTIONAL_IDENTITY_H_
+#define BASE_FUNCTIONAL_IDENTITY_H_
+
+#include <utility>
+
+namespace base {
+
+
+
+
+
+
+struct identity {
+  template <typename T>
+  constexpr T&& operator()(T&& t) const noexcept {
+    return std::forward<T>(t);
+  }
+
+  using is_transparent = void;
+};
+
+}  
+
+#endif  
