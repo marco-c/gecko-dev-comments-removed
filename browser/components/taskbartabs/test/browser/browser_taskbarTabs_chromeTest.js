@@ -2,6 +2,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+});
+
 
 
 function checkWindowChrome(win) {
@@ -100,12 +104,33 @@ async function checkHamburgerMenu(win) {
   );
 }
 
-
-add_task(async function testOpenWindowChrome() {
-  const win = await openTaskbarTabWindow();
+add_task(async function testWindowChrome() {
+  let win = await openTaskbarTabWindow();
 
   checkWindowChrome(win);
   await checkHamburgerMenu(win);
+  await BrowserTestUtils.closeWindow(win);
 
+  
+  
+  let cmdLine = Cu.createCommandLine(
+    ["-taskbar-tab", "about:blank"],
+    null,
+    Ci.nsICommandLine.STATE_INITIAL_LAUNCH
+  );
+
+  let newWinPromise = BrowserTestUtils.waitForNewWindow({
+    url: "about:blank",
+  });
+
+  let cmdLineHandler = Cc["@mozilla.org/browser/taskbar-tabs-clh;1"].getService(
+    Ci.nsICommandLineHandler
+  );
+  cmdLineHandler.handle(cmdLine);
+
+  win = await newWinPromise;
+
+  checkWindowChrome(win);
+  await checkHamburgerMenu(win);
   await BrowserTestUtils.closeWindow(win);
 });
