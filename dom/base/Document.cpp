@@ -37,6 +37,7 @@
 #include "imgLoader.h"
 #include "imgRequestProxy.h"
 #include "js/Value.h"
+#include "js/TelemetryTimers.h"
 #include "jsapi.h"
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
@@ -20043,8 +20044,23 @@ void Document::SetIsInitialDocument(bool aIsInitialDocument) {
 
 void Document::AddToplevelLoadingDocument(Document* aDoc) {
   MOZ_ASSERT(aDoc && aDoc->IsTopLevelContentDocument());
+
+  if (!XRE_IsContentProcess()) {
+    return;
+  }
+
   
-  if (aDoc->IsInBackgroundWindow() || !XRE_IsContentProcess()) {
+  if (aDoc->GetScopeObject()) {
+    JSObject* globalObject = aDoc->GetScopeObject()->GetGlobalJSObject();
+    if (globalObject) {
+      AutoJSContext cx;
+      JSAutoRealm ar(cx, globalObject);
+      JS::SetMeasuringExecutionTimeEnabled(cx, true);
+    }
+  }
+
+  
+  if (aDoc->IsInBackgroundWindow()) {
     return;
   }
 
@@ -20075,6 +20091,16 @@ void Document::RemoveToplevelLoadingDocument(Document* aDoc) {
       if (idleScheduler) {
         idleScheduler->SendPrioritizedOperationDone();
       }
+    }
+  }
+
+  
+  if (aDoc->GetScopeObject()) {
+    JSObject* globalObject = aDoc->GetScopeObject()->GetGlobalJSObject();
+    if (globalObject) {
+      AutoJSContext cx;
+      JSAutoRealm ar(cx, globalObject);
+      JS::SetMeasuringExecutionTimeEnabled(cx, false);
     }
   }
 }
