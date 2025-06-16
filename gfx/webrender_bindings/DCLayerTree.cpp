@@ -547,8 +547,13 @@ bool DCLayerTree::UseNativeCompositor() const {
 }
 
 bool DCLayerTree::UseLayerCompositor() const {
+
+#ifdef NIGHTLY_BUILD
   return UseNativeCompositor() &&
          StaticPrefs::gfx_webrender_layer_compositor_AtStartup();
+#else
+  return false;
+#endif
 }
 
 void DCLayerTree::DisableNativeCompositor() {
@@ -644,7 +649,7 @@ void DCLayerTree::CompositorEndFrame() {
     if (!same) {
       
       const auto visual = surface->GetRootVisual();
-      mRootVisual->AddVisual(visual, false, nullptr);
+      mRootVisual->AddVisual(visual, true, nullptr);
     }
   }
 
