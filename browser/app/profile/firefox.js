@@ -731,6 +731,21 @@ pref("browser.urlbar.suggest.fakespot", true);
 pref("browser.urlbar.addons.minKeywordLength", 0);
 
 
+pref("browser.urlbar.amp.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.amp", true);
+
+
+
+pref("browser.urlbar.wikipedia.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.wikipedia", true);
+
+
 pref("browser.urlbar.update2.engineAliasRefresh", true);
 
 pref("browser.altClickSave", false);
