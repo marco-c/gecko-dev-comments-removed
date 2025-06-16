@@ -511,24 +511,21 @@ class MediaFormatReader final
         
         return false;
       }
-      if (mError.ref() ==
-          NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR) {
+      if (mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_RDD_OR_GPU_ERR) {
         
         
         return mNumOfConsecutiveRDDOrGPUCrashes >
                    mMaxConsecutiveRDDOrGPUCrashes ||
                StaticPrefs::media_playback_warnings_as_errors();
       }
-      if (mError.ref() ==
-          NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR) {
+      if (mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_UTILITY_ERR) {
         bool tooManyConsecutiveCrashes =
             mNumOfConsecutiveUtilityCrashes > mMaxConsecutiveUtilityCrashes;
         
         return tooManyConsecutiveCrashes ||
                StaticPrefs::media_playback_warnings_as_errors();
       }
-      if (mError.ref() ==
-          NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_MF_CDM_ERR) {
+      if (mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_MF_CDM_ERR) {
         return false;
       }
       

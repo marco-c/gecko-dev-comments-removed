@@ -2572,11 +2572,11 @@ void MediaFormatReader::Update(TrackType aTrack) {
         firstFrameDecodingFailedWithHardware;
     
     if ((decoder.mError.ref() ==
-             NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR &&
+             NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_RDD_OR_GPU_ERR &&
          decoder.mNumOfConsecutiveRDDOrGPUCrashes++ <
              decoder.mMaxConsecutiveRDDOrGPUCrashes) ||
         (decoder.mError.ref() ==
-             NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR &&
+             NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_UTILITY_ERR &&
          decoder.mNumOfConsecutiveUtilityCrashes++ <
              decoder.mMaxConsecutiveUtilityCrashes)) {
       needsNewDecoder = true;
@@ -2584,8 +2584,7 @@ void MediaFormatReader::Update(TrackType aTrack) {
     
     
     
-    if (decoder.mError.ref() ==
-        NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_MF_CDM_ERR) {
+    if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_MF_CDM_ERR) {
       LOG("Error: notify MF CDM crash and shutdown %s decoder",
           TrackTypeToStr(aTrack));
       ShutdownDecoder(aTrack);
@@ -2605,7 +2604,7 @@ void MediaFormatReader::Update(TrackType aTrack) {
     }
     
     if (decoder.mError.ref() ==
-        NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR) {
+        NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_RDD_OR_GPU_ERR) {
       LOG("Error: %s remote decoder crashed, disable HW acceleration",
           TrackTypeToStr(aTrack));
       decoder.mHardwareDecodingDisabled = true;
@@ -2614,9 +2613,8 @@ void MediaFormatReader::Update(TrackType aTrack) {
     
     
     if (decoder.mError.ref() ==
-            NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR ||
-        decoder.mError.ref() ==
-            NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR) {
+            NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_RDD_OR_GPU_ERR ||
+        decoder.mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_UTILITY_ERR) {
       decoder.mError = Some(MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
                                         RESULT_DETAIL("Unable to decode")));
     }
