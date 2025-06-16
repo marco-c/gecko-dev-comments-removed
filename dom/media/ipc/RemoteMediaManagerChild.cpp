@@ -179,7 +179,8 @@ void RemoteMediaManagerChild::Shutdown() {
   }
 }
 
-void RemoteMediaManagerChild::RunWhenGPUProcessRecreated(
+ void RemoteMediaManagerChild::RunWhenGPUProcessRecreated(
+    const RemoteMediaManagerChild* aDyingManager,
     already_AddRefed<Runnable> aTask) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
@@ -190,7 +191,7 @@ void RemoteMediaManagerChild::RunWhenGPUProcessRecreated(
 
   
   auto* manager = GetSingleton(RemoteMediaIn::GpuProcess);
-  if (manager && manager != this && manager->CanSend()) {
+  if (manager && manager != aDyingManager && manager->CanSend()) {
     RefPtr<Runnable> task = aTask;
     task->Run();
   } else {
@@ -904,6 +905,46 @@ void RemoteMediaManagerChild::DeallocateSurfaceDescriptor(
           ref->SendDeallocateSurfaceDescriptorGPUVideo(sd);
         }
       })));
+}
+
+ void RemoteMediaManagerChild::HandleRejectionError(
+    const RemoteMediaManagerChild* aDyingManager, RemoteMediaIn aLocation,
+    const ipc::ResponseRejectReason& aReason,
+    std::function<void(const MediaResult&)>&& aCallback) {
+  
+  
+  
+  
+
+  if (aLocation == RemoteMediaIn::GpuProcess) {
+    
+    
+    
+    
+    
+    RunWhenGPUProcessRecreated(
+        aDyingManager,
+        NS_NewRunnableFunction(
+            "RemoteMediaManagerChild::HandleRejectionError",
+            [callback = std::move(aCallback)]() {
+              MediaResult error(
+                  NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR,
+                  __func__);
+              callback(error);
+            }));
+    return;
+  }
+
+  nsresult err = NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR;
+  if (aLocation == RemoteMediaIn::RddProcess) {
+    err = NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR;
+  } else if (aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM) {
+    err = NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_MF_CDM_ERR;
+  }
+  
+  
+  
+  aCallback(MediaResult(err, __func__));
 }
 
 void RemoteMediaManagerChild::HandleFatalError(const char* aMsg) {

@@ -23,47 +23,6 @@ RemoteDecoderChild::RemoteDecoderChild(RemoteMediaIn aLocation)
 
 RemoteDecoderChild::~RemoteDecoderChild() = default;
 
-void RemoteDecoderChild::HandleRejectionError(
-    const ipc::ResponseRejectReason& aReason,
-    std::function<void(const MediaResult&)>&& aCallback) {
-  
-  
-  
-  
-  
-
-  
-  if (mLocation == RemoteMediaIn::GpuProcess) {
-    
-    
-    
-    
-    
-    RefPtr<RemoteDecoderChild> self = this;
-    GetManager()->RunWhenGPUProcessRecreated(NS_NewRunnableFunction(
-        "RemoteDecoderChild::HandleRejectionError",
-        [self, callback = std::move(aCallback)]() {
-          MediaResult error(
-              NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR,
-              __func__);
-          callback(error);
-        }));
-    return;
-  }
-
-  nsresult err = NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR;
-  if (mLocation == RemoteMediaIn::GpuProcess ||
-      mLocation == RemoteMediaIn::RddProcess) {
-    err = NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR;
-  } else if (mLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM) {
-    err = NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_MF_CDM_ERR;
-  }
-  
-  
-  
-  aCallback(MediaResult(err, __func__));
-}
-
 
 void RemoteDecoderChild::ActorDestroy(ActorDestroyReason aWhy) {
   mRemoteDecoderCrashed = (aWhy == AbnormalShutdown);
@@ -123,8 +82,9 @@ RefPtr<MediaDataDecoder::InitPromise> RemoteDecoderChild::Init() {
           },
           [self](const mozilla::ipc::ResponseRejectReason& aReason) {
             self->mInitPromiseRequest.Complete();
-            self->HandleRejectionError(
-                aReason, [self](const MediaResult& aError) {
+            RemoteMediaManagerChild::HandleRejectionError(
+                self->GetManager(), self->mLocation, aReason,
+                [self](const MediaResult& aError) {
                   self->mInitPromise.RejectIfExists(aError, __func__);
                 });
           })
@@ -166,8 +126,9 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDecoderChild::Decode(
         ReleaseAllBuffers();
 
         if (aValue.IsReject()) {
-          HandleRejectionError(
-              aValue.RejectValue(), [self](const MediaResult& aError) {
+          RemoteMediaManagerChild::HandleRejectionError(
+              self->GetManager(), self->mLocation, aValue.RejectValue(),
+              [self](const MediaResult& aError) {
                 self->mDecodePromise.RejectIfExists(aError, __func__);
               });
           return;
@@ -211,9 +172,11 @@ RefPtr<MediaDataDecoder::FlushPromise> RemoteDecoderChild::Flush() {
         }
       },
       [self](const mozilla::ipc::ResponseRejectReason& aReason) {
-        self->HandleRejectionError(aReason, [self](const MediaResult& aError) {
-          self->mFlushPromise.RejectIfExists(aError, __func__);
-        });
+        RemoteMediaManagerChild::HandleRejectionError(
+            self->GetManager(), self->mLocation, aReason,
+            [self](const MediaResult& aError) {
+              self->mFlushPromise.RejectIfExists(aError, __func__);
+            });
       });
   return mFlushPromise.Ensure(__func__);
 }
@@ -244,9 +207,11 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDecoderChild::Drain() {
         mDecodedData = MediaDataDecoder::DecodedData();
       },
       [self](const mozilla::ipc::ResponseRejectReason& aReason) {
-        self->HandleRejectionError(aReason, [self](const MediaResult& aError) {
-          self->mDrainPromise.RejectIfExists(aError, __func__);
-        });
+        RemoteMediaManagerChild::HandleRejectionError(
+            self->GetManager(), self->mLocation, aReason,
+            [self](const MediaResult& aError) {
+              self->mDrainPromise.RejectIfExists(aError, __func__);
+            });
       });
   return mDrainPromise.Ensure(__func__);
 }

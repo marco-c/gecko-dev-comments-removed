@@ -6,6 +6,8 @@
 #ifndef include_dom_media_ipc_RemoteMediaManagerChild_h
 #define include_dom_media_ipc_RemoteMediaManagerChild_h
 
+#include <functional>
+
 #include "GPUVideoImage.h"
 #include "PDMFactory.h"
 #include "ipc/EnumSerializer.h"
@@ -96,8 +98,18 @@ class RemoteMediaManagerChild final
   
   
   
+  static void HandleRejectionError(
+      const RemoteMediaManagerChild* aDyingManager, RemoteMediaIn aLocation,
+      const mozilla::ipc::ResponseRejectReason& aReason,
+      std::function<void(const MediaResult&)>&& aCallback);
+
   
-  void RunWhenGPUProcessRecreated(already_AddRefed<Runnable> aTask);
+  
+  
+  
+  static void RunWhenGPUProcessRecreated(
+      const RemoteMediaManagerChild* aDyingManager,
+      already_AddRefed<Runnable> aTask);
 
   RemoteMediaIn Location() const { return mLocation; }
 
