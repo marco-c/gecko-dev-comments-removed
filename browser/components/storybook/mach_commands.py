@@ -88,7 +88,9 @@ def delete_storybook_node_modules():
 def start_browser(command_context):
     
     time.sleep(5)
-    subprocess.run(run_mach(command_context, "storybook", subcommand="launch"))
+    subprocess.run(
+        run_mach(command_context, "storybook", subcommand="launch"), check=False
+    )
 
 
 def build_storybook_manifest(command_context):
