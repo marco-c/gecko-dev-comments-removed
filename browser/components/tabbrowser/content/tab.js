@@ -110,8 +110,16 @@
       };
     }
 
+    #lastGroup;
     connectedCallback() {
+      this.#updateOnTabGrouped();
+      this.#lastGroup = this.group;
+
       this.initialize();
+    }
+
+    disconnectedCallback() {
+      this.#updateOnTabUngrouped();
     }
 
     initialize() {
@@ -717,6 +725,45 @@
 
     on_underflow(event) {
       event.currentTarget.removeAttribute("textoverflow");
+    }
+
+    #updateOnTabGrouped() {
+      if (this.group && this.#lastGroup != this.group) {
+        
+        
+        
+        
+        this.group.dispatchEvent(
+          new CustomEvent("TabGrouped", {
+            bubbles: true,
+            detail: this,
+          })
+        );
+        this.setAttribute("aria-level", 2);
+      }
+    }
+
+    #updateOnTabUngrouped() {
+      if (this.#lastGroup && this.#lastGroup != this.group) {
+        
+        
+        
+        
+        this.#lastGroup.dispatchEvent(
+          new CustomEvent("TabUngrouped", {
+            bubbles: true,
+            detail: this,
+          })
+        );
+        
+        
+        this.setAttribute("aria-level", this.group ? 2 : 1);
+        
+        
+        
+        this.removeAttribute("aria-posinset");
+        this.removeAttribute("aria-setsize");
+      }
     }
   }
 
