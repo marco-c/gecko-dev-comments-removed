@@ -8,7 +8,7 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "vm/JSContext.h"   
+#include "vm/JSContext.h"  
 
 using namespace js;
 
