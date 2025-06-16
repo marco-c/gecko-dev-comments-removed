@@ -26,12 +26,11 @@ struct JS_PUBLIC_API JSContext;
 
 namespace js {
 
-extern bool ConstantStrictEqual(JSContext* cx, JS::Handle<JS::Value> val,
-                                uint16_t operand, bool* equal);
+extern bool ConstantStrictEqual(const JS::Value& val, uint16_t operand);
 
 
-extern bool StrictlyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
-                          JS::Handle<JS::Value> rval, bool* equal);
+extern bool StrictlyEqual(JSContext* cx, const JS::Value& lval,
+                          const JS::Value& rval, bool* equal);
 
 
 extern bool LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
@@ -41,15 +40,15 @@ extern bool LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
 
 
 
-extern bool SameValue(JSContext* cx, JS::Handle<JS::Value> v1,
-                      JS::Handle<JS::Value> v2, bool* same);
+extern bool SameValue(JSContext* cx, const JS::Value& v1, const JS::Value& v2,
+                      bool* same);
 
 
 
 
 
-extern bool SameValueZero(JSContext* cx, JS::Handle<JS::Value> v1,
-                          JS::Handle<JS::Value> v2, bool* same);
+extern bool SameValueZero(JSContext* cx, const JS::Value& v1,
+                          const JS::Value& v2, bool* same);
 
 
 
