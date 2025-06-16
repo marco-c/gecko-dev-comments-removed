@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.mozilla.gecko.EventDispatcher;
@@ -34,16 +35,59 @@ public class GeckoPreferenceController {
 
 
 
+
   @AnyThread
   public static @NonNull GeckoResult<GeckoPreference<?>> getGeckoPref(
       @NonNull final String prefName) {
     final GeckoBundle bundle = new GeckoBundle(1);
-    bundle.putString("pref", prefName);
+    bundle.putStringArray("prefs", List.of(prefName));
     return EventDispatcher.getInstance()
         .queryBundle(GET_PREF, bundle)
         .map(
-            GeckoPreference::fromBundle,
+            result -> {
+              if (result == null) {
+                throw new Exception("Received a null preference message.");
+              }
+              final GeckoBundle[] prefsBundle = result.getBundleArray("prefs");
+              if (prefsBundle != null && prefsBundle.length == 1) {
+                final var deserialized = GeckoPreference.fromBundle(prefsBundle[0]);
+                if (deserialized == null) {
+                  throw new Exception("Could not deserialize the preference.");
+                }
+                return deserialized;
+              }
+              throw new Exception("Could not deserialize the preference.");
+            },
             exception -> new Exception("Could not retrieve the preference."));
+  }
+
+  
+
+
+
+
+
+
+
+  @AnyThread
+  public static @NonNull GeckoResult<List<GeckoPreference<?>>> getGeckoPrefs(
+      @NonNull final List<String> prefNames) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putStringArray("prefs", prefNames);
+    return EventDispatcher.getInstance()
+        .queryBundle(GET_PREF, bundle)
+        .map(
+            result -> {
+              if (result == null) {
+                throw new Exception("Received a null preference message.");
+              }
+              final var deserialized = GeckoPreference.fromBundleArray(result);
+              if (deserialized == null) {
+                throw new Exception("Could not deserialize the preference.");
+              }
+              return deserialized;
+            },
+            exception -> new Exception("Could not retrieve the preferences."));
   }
 
   
@@ -376,6 +420,42 @@ public class GeckoPreferenceController {
           .append(Objects.toString(userValue, "null"))
           .append("}");
       return builder.toString();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    
+    static @Nullable List<GeckoPreference<?>> fromBundleArray(@Nullable final GeckoBundle bundle) {
+      if (bundle != null) {
+        try {
+          final GeckoBundle[] prefsBundle = bundle.getBundleArray("prefs");
+          if (prefsBundle != null) {
+            final List<GeckoPreference<?>> list = new ArrayList<>(prefsBundle.length);
+            for (final var prefBundle : prefsBundle) {
+              final GeckoPreference<?> pref = GeckoPreference.fromBundle(prefBundle);
+              if (pref == null) {
+                Log.w(LOGTAG, "An issue occurred when deserializing one of the GeckoPreferences.");
+                return null;
+              }
+              list.add(pref);
+            }
+            return list;
+          }
+        } catch (final Exception e) {
+          Log.w(LOGTAG, "An issue occurred when deserializing a map of GeckoPreferences: " + e);
+          return null;
+        }
+      }
+      Log.w(LOGTAG, "The bundle was null when deserializing a map of GeckoPreferences.");
+      return null;
     }
 
     
