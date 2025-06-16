@@ -338,17 +338,6 @@ def get_scheme(
 
         
         
-        skip_sysconfig_abiflag_bug = (
-            sys.version_info < (3, 8)
-            and not WINDOWS
-            and k in ("headers", "platlib", "purelib")
-            and tuple(_fix_abiflags(old_v.parts)) == new_v.parts
-        )
-        if skip_sysconfig_abiflag_bug:
-            continue
-
-        
-        
         skip_msys2_mingw_bug = (
             WINDOWS and k in ("platlib", "purelib") and _looks_like_msys2_mingw_scheme()
         )

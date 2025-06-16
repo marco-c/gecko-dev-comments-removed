@@ -2,6 +2,7 @@ import os
 import platform
 import socket
 import ssl
+import sys
 import typing
 
 import _ssl  
@@ -49,7 +50,7 @@ def extract_from_ssl() -> None:
     try:
         import pip._vendor.urllib3.util.ssl_ as urllib3_ssl
 
-        urllib3_ssl.SSLContext = _original_SSLContext
+        urllib3_ssl.SSLContext = _original_SSLContext  
     except ImportError:
         pass
 
@@ -168,19 +169,19 @@ class SSLContext(_truststore_SSLContext_super_class):
     def cert_store_stats(self) -> dict[str, int]:
         raise NotImplementedError()
 
+    def set_default_verify_paths(self) -> None:
+        self._ctx.set_default_verify_paths()
+
     @typing.overload
     def get_ca_certs(
         self, binary_form: typing.Literal[False] = ...
-    ) -> list[typing.Any]:
-        ...
+    ) -> list[typing.Any]: ...
 
     @typing.overload
-    def get_ca_certs(self, binary_form: typing.Literal[True] = ...) -> list[bytes]:
-        ...
+    def get_ca_certs(self, binary_form: typing.Literal[True] = ...) -> list[bytes]: ...
 
     @typing.overload
-    def get_ca_certs(self, binary_form: bool = ...) -> typing.Any:
-        ...
+    def get_ca_certs(self, binary_form: bool = ...) -> typing.Any: ...
 
     def get_ca_certs(self, binary_form: bool = False) -> list[typing.Any] | list[bytes]:
         raise NotImplementedError()
@@ -276,6 +277,25 @@ class SSLContext(_truststore_SSLContext_super_class):
         )
 
 
+
+
+
+if sys.version_info >= (3, 13):
+
+    def _get_unverified_chain_bytes(sslobj: ssl.SSLObject) -> list[bytes]:
+        unverified_chain = sslobj.get_unverified_chain() or ()  
+        return [
+            cert if isinstance(cert, bytes) else cert.public_bytes(_ssl.ENCODING_DER)
+            for cert in unverified_chain
+        ]
+
+else:
+
+    def _get_unverified_chain_bytes(sslobj: ssl.SSLObject) -> list[bytes]:
+        unverified_chain = sslobj.get_unverified_chain() or ()  
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in unverified_chain]
+
+
 def _verify_peercerts(
     sock_or_sslobj: ssl.SSLSocket | ssl.SSLObject, server_hostname: str | None
 ) -> None:
@@ -290,13 +310,7 @@ def _verify_peercerts(
     except AttributeError:
         pass
 
-    
-    
-    
-    unverified_chain: typing.Sequence[_ssl.Certificate] = (
-        sslobj.get_unverified_chain() or ()  
-    )
-    cert_bytes = [cert.public_bytes(_ssl.ENCODING_DER) for cert in unverified_chain]
+    cert_bytes = _get_unverified_chain_bytes(sslobj)
     _verify_peercerts_impl(
         sock_or_sslobj.context, cert_bytes, server_hostname=server_hostname
     )

@@ -77,7 +77,7 @@ class CacheControlAdapter(HTTPAdapter):
 
         return resp
 
-    def build_response(
+    def build_response(  
         self,
         request: PreparedRequest,
         response: HTTPResponse,
@@ -132,7 +132,7 @@ class CacheControlAdapter(HTTPAdapter):
                     ),
                 )
                 if response.chunked:
-                    super_update_chunk_length = response._update_chunk_length  
+                    super_update_chunk_length = response._update_chunk_length
 
                     def _update_chunk_length(self: HTTPResponse) -> None:
                         super_update_chunk_length()
@@ -143,7 +143,7 @@ class CacheControlAdapter(HTTPAdapter):
                         _update_chunk_length, response
                     )
 
-        resp: Response = super().build_response(request, response)  
+        resp: Response = super().build_response(request, response)
 
         
         if request.method in self.invalidating_methods and resp.ok:

@@ -159,7 +159,7 @@ class LazyZipOverHTTP:
                 try:
                     
                     
-                    ZipFile(self)  
+                    ZipFile(self)
                 except BadZipFile:
                     pass
                 else:

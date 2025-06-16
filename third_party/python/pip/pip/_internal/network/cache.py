@@ -76,6 +76,18 @@ class SafeFileCache(SeparateBodyBaseCache):
 
             with adjacent_tmp_file(path) as f:
                 f.write(data)
+                
+                
+                mode = (
+                    os.stat(self.directory).st_mode
+                    & 0o666  
+                    | 0o600  
+                )
+                
+                if os.chmod in os.supports_fd:
+                    os.chmod(f.fileno(), mode)
+                elif os.chmod in os.supports_follow_symlinks:
+                    os.chmod(f.name, mode, follow_symlinks=False)
 
             replace(f.name, path)
 

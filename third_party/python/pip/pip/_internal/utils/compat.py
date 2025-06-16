@@ -1,9 +1,11 @@
 """Stuff that differs in different Python versions and platform
 distributions."""
 
+import importlib.resources
 import logging
 import os
 import sys
+from typing import IO
 
 __all__ = ["get_path_uid", "stdlib_pkgs", "WINDOWS"]
 
@@ -49,6 +51,20 @@ def get_path_uid(path: str) -> int:
             
             raise OSError(f"{path} is a symlink; Will not return uid for symlinks")
     return file_uid
+
+
+
+
+if sys.version_info < (3, 11):
+    open_text_resource = importlib.resources.open_text
+else:
+
+    def open_text_resource(
+        package: str, resource: str, encoding: str = "utf-8", errors: str = "strict"
+    ) -> IO[str]:
+        return (importlib.resources.files(package) / resource).open(
+            "r", encoding=encoding, errors=errors
+        )
 
 
 

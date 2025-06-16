@@ -1,15 +1,11 @@
 import hashlib
-from typing import TYPE_CHECKING, BinaryIO, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, BinaryIO, Dict, Iterable, List, NoReturn, Optional
 
 from pip._internal.exceptions import HashMismatch, HashMissing, InstallationError
 from pip._internal.utils.misc import read_chunks
 
 if TYPE_CHECKING:
     from hashlib import _Hash
-
-    
-    
-    from typing import NoReturn
 
 
 
@@ -37,7 +33,7 @@ class Hashes:
         if hashes is not None:
             for alg, keys in hashes.items():
                 
-                allowed[alg] = sorted(keys)
+                allowed[alg] = [k.lower() for k in sorted(keys)]
         self._allowed = allowed
 
     def __and__(self, other: "Hashes") -> "Hashes":

@@ -1,21 +1,23 @@
 """Android."""
+
 from __future__ import annotations
 
 import os
 import re
 import sys
 from functools import lru_cache
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from .api import PlatformDirsABC
 
 
 class Android(PlatformDirsABC):
     """
-    Follows the guidance `from here <https://android.stackexchange.com/a/216132>`_. Makes use of the
-    `appname <platformdirs.api.PlatformDirsABC.appname>`,
-    `version <platformdirs.api.PlatformDirsABC.version>`,
-    `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
+    Follows the guidance `from here <https://android.stackexchange.com/a/216132>`_.
+
+    Makes use of the `appname <platformdirs.api.PlatformDirsABC.appname>`, `version
+    <platformdirs.api.PlatformDirsABC.version>`, `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
+
     """
 
     @property
@@ -43,7 +45,7 @@ class Android(PlatformDirsABC):
 
     @property
     def user_cache_dir(self) -> str:
-        """:return: cache directory tied to the user, e.g. e.g. ``/data/user/<userid>/<packagename>/cache/<AppName>``"""
+        """:return: cache directory tied to the user, e.g.,``/data/user/<userid>/<packagename>/cache/<AppName>``"""
         return self._append_app_name_and_version(cast(str, _android_folder()), "cache")
 
     @property
@@ -93,6 +95,11 @@ class Android(PlatformDirsABC):
         return _android_music_folder()
 
     @property
+    def user_desktop_dir(self) -> str:
+        """:return: desktop directory tied to the user e.g. ``/storage/emulated/0/Desktop``"""
+        return "/storage/emulated/0/Desktop"
+
+    @property
     def user_runtime_dir(self) -> str:
         """
         :return: runtime directory tied to the user, same as `user_cache_dir` if not opinionated else ``tmp`` in it,
@@ -103,19 +110,51 @@ class Android(PlatformDirsABC):
             path = os.path.join(path, "tmp")  
         return path
 
+    @property
+    def site_runtime_dir(self) -> str:
+        """:return: runtime directory shared by users, same as `user_runtime_dir`"""
+        return self.user_runtime_dir
+
 
 @lru_cache(maxsize=1)
-def _android_folder() -> str | None:
+def _android_folder() -> str | None:  
     """:return: base folder for the Android OS or None if it cannot be found"""
-    try:
-        
-        from jnius import autoclass
+    result: str | None = None
+    
+    
+    if not TYPE_CHECKING:
+        try:
+            
+            from android import mActivity  
 
-        context = autoclass("android.content.Context")
-        result: str | None = context.getFilesDir().getParentFile().getAbsolutePath()
-    except Exception:  
+            context = cast("android.content.Context", mActivity.getApplicationContext())  
+            result = context.getFilesDir().getParentFile().getAbsolutePath()
+        except Exception:  
+            result = None
+    if result is None:
+        try:
+            
+            
+            from jnius import autoclass  
+
+            context = autoclass("android.content.Context")
+            result = context.getFilesDir().getParentFile().getAbsolutePath()
+        except Exception:  
+            result = None
+    if result is None:
+        
         
         pattern = re.compile(r"/data/(data|user/\d+)/(.+)/files")
+        for path in sys.path:
+            if pattern.match(path):
+                result = path.split("/files")[0]
+                break
+        else:
+            result = None
+    if result is None:
+        
+        
+        pattern = re.compile(r"/mnt/expand/[a-fA-F0-9-]{36}/(data|user/\d+)/(.+)/files")
         for path in sys.path:
             if pattern.match(path):
                 result = path.split("/files")[0]
@@ -130,7 +169,7 @@ def _android_documents_folder() -> str:
     """:return: documents folder for the Android OS"""
     
     try:
-        from jnius import autoclass
+        from jnius import autoclass  
 
         context = autoclass("android.content.Context")
         environment = autoclass("android.os.Environment")
@@ -146,7 +185,7 @@ def _android_downloads_folder() -> str:
     """:return: downloads folder for the Android OS"""
     
     try:
-        from jnius import autoclass
+        from jnius import autoclass  
 
         context = autoclass("android.content.Context")
         environment = autoclass("android.os.Environment")
@@ -162,7 +201,7 @@ def _android_pictures_folder() -> str:
     """:return: pictures folder for the Android OS"""
     
     try:
-        from jnius import autoclass
+        from jnius import autoclass  
 
         context = autoclass("android.content.Context")
         environment = autoclass("android.os.Environment")
@@ -178,7 +217,7 @@ def _android_videos_folder() -> str:
     """:return: videos folder for the Android OS"""
     
     try:
-        from jnius import autoclass
+        from jnius import autoclass  
 
         context = autoclass("android.content.Context")
         environment = autoclass("android.os.Environment")
@@ -194,7 +233,7 @@ def _android_music_folder() -> str:
     """:return: music folder for the Android OS"""
     
     try:
-        from jnius import autoclass
+        from jnius import autoclass  
 
         context = autoclass("android.content.Context")
         environment = autoclass("android.os.Environment")

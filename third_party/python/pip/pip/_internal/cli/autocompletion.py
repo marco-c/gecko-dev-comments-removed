@@ -17,6 +17,10 @@ def autocomplete() -> None:
     
     if "PIP_AUTO_COMPLETE" not in os.environ:
         return
+    
+    
+    if not os.environ.get("COMP_WORDS") or not os.environ.get("COMP_CWORD"):
+        return
     cwords = os.environ["COMP_WORDS"].split()[1:]
     cword = int(os.environ["COMP_CWORD"])
     try:

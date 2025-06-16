@@ -63,7 +63,7 @@ def validate(config: dict, filepath: StrPath) -> bool:
 def apply_configuration(
     dist: Distribution,
     filepath: StrPath,
-    ignore_option_errors=False,
+    ignore_option_errors: bool = False,
 ) -> Distribution:
     """Apply the configuration from a ``pyproject.toml`` file into an existing
     distribution object.
@@ -74,8 +74,8 @@ def apply_configuration(
 
 def read_configuration(
     filepath: StrPath,
-    expand=True,
-    ignore_option_errors=False,
+    expand: bool = True,
+    ignore_option_errors: bool = False,
     dist: Distribution | None = None,
 ) -> dict[str, Any]:
     """Read given configuration file and returns options from it as a dict.
@@ -129,6 +129,9 @@ def read_configuration(
     
     asdict["tool"] = tool_table
     tool_table["setuptools"] = setuptools_table
+
+    if "ext-modules" in setuptools_table:
+        _ExperimentalConfiguration.emit(subject="[tool.setuptools.ext-modules]")
 
     with _ignore_errors(ignore_option_errors):
         

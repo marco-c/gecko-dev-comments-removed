@@ -1,7 +1,7 @@
 import itertools
 import os
 
-from .compat import py39
+from .compat import py312
 
 from distutils import log
 
@@ -25,7 +25,8 @@ class Installer:
             list(lines)
             return
 
-        with open(filename, 'wt', encoding=py39.LOCALE_ENCODING) as f:
+        with open(filename, 'wt', encoding=py312.PTH_ENCODING) as f:
+            
             
             f.writelines(lines)
 

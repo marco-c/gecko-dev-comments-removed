@@ -3,6 +3,8 @@ from typing import Optional
 from pip._internal.models.format_control import FormatControl
 
 
+
+
 class SelectionPreferences:
     """
     Encapsulates the candidate selection preferences for downloading

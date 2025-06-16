@@ -4,7 +4,7 @@ import collections
 import functools
 import logging
 
-from ._collections import RecentlyUsedContainer
+from ._collections import HTTPHeaderDict, RecentlyUsedContainer
 from .connectionpool import HTTPConnectionPool, HTTPSConnectionPool, port_by_scheme
 from .exceptions import (
     LocationValueError,
@@ -382,9 +382,12 @@ class PoolManager(RequestMethods):
         
         redirect_location = urljoin(url, redirect_location)
 
-        
         if response.status == 303:
+            
             method = "GET"
+            
+            kw["body"] = None
+            kw["headers"] = HTTPHeaderDict(kw["headers"])._prepare_for_method_change()
 
         retries = kw.get("retries")
         if not isinstance(retries, Retry):

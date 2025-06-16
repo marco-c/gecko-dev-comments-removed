@@ -30,7 +30,6 @@ try:
     )
 
 except (AttributeError, ImportError, ValueError):
-
     
     def get_windows_console_features() -> WindowsConsoleFeatures:
         features = WindowsConsoleFeatures()

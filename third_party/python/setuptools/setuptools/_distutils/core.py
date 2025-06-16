@@ -11,7 +11,6 @@ import sys
 import tokenize
 
 from .cmd import Command
-from .config import PyPIRCCommand
 from .debug import DEBUG
 
 
@@ -24,7 +23,7 @@ from .errors import (
 )
 from .extension import Extension
 
-__all__ = ['Distribution', 'Command', 'PyPIRCCommand', 'Extension', 'setup']
+__all__ = ['Distribution', 'Command', 'Extension', 'setup']
 
 
 

@@ -9,7 +9,7 @@ an import statement.
 import sys
 
 
-PYTHON_REQUIRES = (3, 7)
+PYTHON_REQUIRES = (3, 8)
 
 
 def version_str(version):  

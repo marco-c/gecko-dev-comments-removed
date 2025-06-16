@@ -12,6 +12,8 @@ from typing import Iterable, Iterator
 
 from more_itertools import unique_everseen
 
+from setuptools._path import StrPath
+
 from ..dist import Distribution
 from ..warnings import SetuptoolsDeprecationWarning
 
@@ -48,14 +50,14 @@ class build_py(orig.build_py):
             del self.__dict__['data_files']
         self.__updated_files = []
 
-    def copy_file(
+    def copy_file(  
         self,
-        infile,
-        outfile,
-        preserve_mode=True,
-        preserve_times=True,
-        link=None,
-        level=1,
+        infile: StrPath,
+        outfile: StrPath,
+        preserve_mode: bool = True,
+        preserve_times: bool = True,
+        link: str | None = None,
+        level: object = 1,
     ):
         
         if link:
@@ -141,7 +143,7 @@ class build_py(orig.build_py):
         )
         return self.exclude_data_files(package, src_dir, files)
 
-    def get_outputs(self, include_bytecode=True) -> list[str]:
+    def get_outputs(self, include_bytecode: bool = True) -> list[str]:  
         """See :class:`setuptools.commands.build.SubCommand`"""
         if self.editable_mode:
             return list(self.get_output_mapping().keys())

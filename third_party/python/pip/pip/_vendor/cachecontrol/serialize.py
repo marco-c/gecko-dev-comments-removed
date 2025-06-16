@@ -38,7 +38,7 @@ class Serializer:
         data = {
             "response": {
                 "body": body,  
-                "headers": {str(k): str(v) for k, v in response.headers.items()},  
+                "headers": {str(k): str(v) for k, v in response.headers.items()},
                 "status": response.status,
                 "version": response.version,
                 "reason": str(response.reason),
@@ -74,28 +74,11 @@ class Serializer:
 
         
         
-        try:
-            ver, data = data.split(b",", 1)
-        except ValueError:
-            ver = b"cc=0"
-
-        
-        
-        if ver[:3] != b"cc=":
-            data = ver + data
-            ver = b"cc=0"
-
-        
-        verstr = ver.split(b"=", 1)[-1].decode("ascii")
-
-        
-        try:
-            return getattr(self, f"_loads_v{verstr}")(request, data, body_file)  
-
-        except AttributeError:
-            
-            
+        if not data.startswith(f"cc={self.serde_version},".encode()):
             return None
+
+        data = data[5:]
+        return self._loads_v4(request, data, body_file)
 
     def prepare_response(
         self,
@@ -148,49 +131,6 @@ class Serializer:
         cached["response"].pop("strict", None)
 
         return HTTPResponse(body=body, preload_content=False, **cached["response"])
-
-    def _loads_v0(
-        self,
-        request: PreparedRequest,
-        data: bytes,
-        body_file: IO[bytes] | None = None,
-    ) -> None:
-        
-        
-        
-        return None
-
-    def _loads_v1(
-        self,
-        request: PreparedRequest,
-        data: bytes,
-        body_file: IO[bytes] | None = None,
-    ) -> HTTPResponse | None:
-        
-        
-        return None
-
-    def _loads_v2(
-        self,
-        request: PreparedRequest,
-        data: bytes,
-        body_file: IO[bytes] | None = None,
-    ) -> HTTPResponse | None:
-        
-        
-        
-        return None
-
-    def _loads_v3(
-        self,
-        request: PreparedRequest,
-        data: bytes,
-        body_file: IO[bytes] | None = None,
-    ) -> None:
-        
-        
-        
-        return None
 
     def _loads_v4(
         self,

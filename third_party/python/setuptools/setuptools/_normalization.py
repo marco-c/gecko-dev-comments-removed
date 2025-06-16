@@ -134,7 +134,13 @@ def filename_component_broken(value: str) -> str:
 def safer_name(value: str) -> str:
     """Like ``safe_name`` but can be used as filename component for wheel"""
     
-    return filename_component(safe_name(value))
+    return (
+        
+        re.sub(r"[-_.]+", "-", safe_name(value))
+        .lower()
+        
+        .replace("-", "_")
+    )
 
 
 def safer_best_effort_version(value: str) -> str:

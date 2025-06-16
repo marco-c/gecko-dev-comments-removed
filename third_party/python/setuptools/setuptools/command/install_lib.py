@@ -95,10 +95,11 @@ class install_lib(orig.install_lib):
         self,
         infile: StrPath,
         outfile: str,
-        preserve_mode=True,
-        preserve_times=True,
-        preserve_symlinks=False,
-        level=1,
+        
+        preserve_mode: bool = True,  
+        preserve_times: bool = True,  
+        preserve_symlinks: bool = False,  
+        level: object = 1,
     ) -> list[str]:
         assert preserve_mode and preserve_times and not preserve_symlinks
         exclude = self.get_exclusions()

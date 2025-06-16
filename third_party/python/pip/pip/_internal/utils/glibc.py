@@ -40,7 +40,20 @@ def glibc_version_string_ctypes() -> Optional[str]:
     
     
     
-    process_namespace = ctypes.CDLL(None)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    try:
+        process_namespace = ctypes.CDLL(None)
+    except OSError:
+        return None
+
     try:
         gnu_get_libc_version = process_namespace.gnu_get_libc_version
     except AttributeError:
@@ -50,7 +63,7 @@ def glibc_version_string_ctypes() -> Optional[str]:
 
     
     gnu_get_libc_version.restype = ctypes.c_char_p
-    version_str = gnu_get_libc_version()
+    version_str: str = gnu_get_libc_version()
     
     if not isinstance(version_str, str):
         version_str = version_str.decode("ascii")

@@ -1,8 +1,18 @@
-from ._distutils._modified import (
-    newer,
-    newer_group,
-    newer_pairwise,
-    newer_pairwise_group,
-)
+try:
+    
+    from distutils._modified import (
+        newer,
+        newer_group,
+        newer_pairwise,
+        newer_pairwise_group,
+    )
+except ImportError:
+    
+    from ._distutils._modified import (
+        newer,
+        newer_group,
+        newer_pairwise,
+        newer_pairwise_group,
+    )
 
 __all__ = ['newer', 'newer_pairwise', 'newer_group', 'newer_pairwise_group']
