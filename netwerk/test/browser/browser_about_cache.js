@@ -92,7 +92,11 @@ add_task(async function () {
       ];
       is(links.length, 2, "Should have 2 links to entries for " + kTestPage);
       
-      links[1].click();
+      let partitioned = Array.from(links).filter(e =>
+        e.href.includes("https%2Cexample.com")
+      );
+      is(partitioned.length, 1, "Should have 1 partitioned entry");
+      partitioned[0].click();
     }
   );
   await entryLoaded;
