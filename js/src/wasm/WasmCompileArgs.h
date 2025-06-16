@@ -105,8 +105,7 @@ struct FeatureOptions {
       : disableOptimizingCompiler(false),
         isBuiltinModule(false),
         jsStringBuiltins(false),
-        jsStringConstants(false),
-        requireExnref(false) {}
+        jsStringConstants(false) {}
 
   
   
@@ -122,9 +121,6 @@ struct FeatureOptions {
   
   bool jsStringConstants;
   SharedChars jsStringConstantsNamespace;
-
-  
-  bool requireExnref;
 
   
   [[nodiscard]] bool init(JSContext* cx, HandleValue val);
