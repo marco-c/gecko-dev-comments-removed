@@ -1638,7 +1638,7 @@ bool js::SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
       cx, callee->getExtendedSlot(uint8_t(SyncDisposalClosureSlots::Method)));
 
   
-  JS::Rooted<JS::Value> O(cx, args.thisv());
+  JS::Handle<JS::Value> O = args.thisv();
 
   
   

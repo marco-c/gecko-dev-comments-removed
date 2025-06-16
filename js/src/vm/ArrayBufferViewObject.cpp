@@ -1,15 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "vm/ArrayBufferViewObject.h"
 
 #include "builtin/DataViewObject.h"
 #include "gc/Nursery.h"
 #include "js/ErrorReport.h"
-#include "js/experimental/TypedData.h"  // JS_GetArrayBufferView{Data,Buffer,Length,ByteOffset}, JS_GetObjectAsArrayBufferView, JS_IsArrayBufferViewObject
+#include "js/experimental/TypedData.h"  
 #include "js/SharedArrayBuffer.h"
 #include "vm/Compartment.h"
 #include "vm/JSContext.h"
@@ -21,14 +21,14 @@
 
 using namespace js;
 
-// This method is used to trace TypedArrayObjects and DataViewObjects. It
-// updates the object's data pointer if it points to inline data in an object
-// that was moved.
-/* static */
+
+
+
+
 void ArrayBufferViewObject::trace(JSTracer* trc, JSObject* obj) {
   ArrayBufferViewObject* view = &obj->as<ArrayBufferViewObject>();
 
-  // Update view's data pointer if it moved.
+  
   if (view->hasBuffer()) {
     JSObject* bufferObj = &view->bufferValue().toObject();
     ArrayBufferObject* buffer = nullptr;
@@ -48,9 +48,9 @@ void ArrayBufferViewObject::trace(JSTracer* trc, JSObject* obj) {
       size_t offset = view->dataPointerOffset();
       MOZ_ASSERT_IF(!buffer->dataPointer(), offset == 0);
 
-      // The data may or may not be inline with the buffer. The buffer can only
-      // move during a compacting GC, in which case its objectMoved hook has
-      // already updated the buffer's data pointer.
+      
+      
+      
       view->notifyBufferMoved(
           static_cast<uint8_t*>(view->dataPointerEither_()) - offset,
           buffer->dataPointer());
@@ -95,11 +95,11 @@ void ArrayBufferViewObject::notifyBufferMoved(uint8_t* srcBufStart,
   }
 }
 
-/* static */
+
 bool ArrayBufferViewObject::ensureNonInline(
     JSContext* cx, Handle<ArrayBufferViewObject*> view) {
   MOZ_ASSERT(!view->isSharedMemory());
-  // Create an ArrayBuffer for the data if it was in the view.
+  
   ArrayBufferObjectMaybeShared* buffer = ensureBufferObject(cx, view);
   if (!buffer) {
     return false;
@@ -109,12 +109,11 @@ bool ArrayBufferViewObject::ensureNonInline(
   return ArrayBufferObject::ensureNonInline(cx, unsharedBuffer);
 }
 
-/* static */
+
 ArrayBufferObjectMaybeShared* ArrayBufferViewObject::ensureBufferObject(
     JSContext* cx, Handle<ArrayBufferViewObject*> thisObject) {
   if (thisObject->is<TypedArrayObject>()) {
-    Rooted<TypedArrayObject*> typedArray(cx,
-                                         &thisObject->as<TypedArrayObject>());
+    auto typedArray = HandleObject(thisObject).as<TypedArrayObject>();
     if (!TypedArrayObject::ensureHasBuffer(cx, typedArray)) {
       return nullptr;
     }
@@ -140,9 +139,9 @@ bool ArrayBufferViewObject::init(JSContext* cx,
   MOZ_ASSERT_IF(is<TypedArrayObject>(),
                 length <= TypedArrayObject::ByteLengthLimit / bytesPerElement);
 
-  // The isSharedMemory property is invariant.  Self-hosting code that
-  // sets BUFFER_SLOT or the private slot (if it does) must maintain it by
-  // always setting those to reference shared memory.
+  
+  
+  
   if (buffer && buffer->is<SharedArrayBufferObject>()) {
     setIsSharedMemory();
   }
@@ -160,8 +159,8 @@ bool ArrayBufferViewObject::init(JSContext* cx,
     SharedMem<uint8_t*> ptr = buffer->dataPointerEither();
     initDataPointer(ptr + byteOffset);
 
-    // Only ArrayBuffers used for inline typed objects can have
-    // nursery-allocated data and we shouldn't see such buffers here.
+    
+    
     MOZ_ASSERT_IF(buffer->byteLength() > 0, !cx->nursery().isInside(ptr));
   } else {
     MOZ_ASSERT(is<FixedLengthTypedArrayObject>());
@@ -183,16 +182,16 @@ bool ArrayBufferViewObject::init(JSContext* cx,
     size_t viewByteLength = length * bytesPerElement;
     size_t viewByteOffset = byteOffset;
     size_t bufferByteLength = buffer->byteLength();
-    // Unwraps are safe: both are for the pointer value.
+    
     MOZ_ASSERT_IF(buffer->is<ArrayBufferObject>(),
-                  buffer->dataPointerEither().unwrap(/*safe*/) <=
-                      dataPointerEither().unwrap(/*safe*/));
+                  buffer->dataPointerEither().unwrap() <=
+                      dataPointerEither().unwrap());
     MOZ_ASSERT(bufferByteLength - viewByteOffset >= viewByteLength);
     MOZ_ASSERT(viewByteOffset <= bufferByteLength);
   }
 #endif
 
-  // ArrayBufferObjects track their views to support detaching.
+  
   if (buffer && buffer->is<ArrayBufferObject>()) {
     if (!buffer->as<ArrayBufferObject>().addView(cx, this)) {
       return false;
@@ -217,7 +216,7 @@ bool ArrayBufferViewObject::initResizable(JSContext* cx,
     return false;
   }
 
-  // Compute the actual byteLength and byteOffset for non-shared buffers.
+  
   if (!isSharedMemory()) {
     computeResizableLengthAndByteOffset(bytesPerElement);
   }
@@ -236,7 +235,7 @@ void ArrayBufferViewObject::computeResizableLengthAndByteOffset(
   size_t byteOffsetStart = initialByteOffset();
   size_t bufferByteLength = bufferUnshared()->byteLength();
 
-  // Out-of-bounds if the byteOffset exceeds the buffer length.
+  
   if (byteOffsetStart > bufferByteLength) {
     setFixedSlot(LENGTH_SLOT, PrivateValue(size_t(0)));
     setFixedSlot(BYTEOFFSET_SLOT, PrivateValue(size_t(0)));
@@ -249,7 +248,7 @@ void ArrayBufferViewObject::computeResizableLengthAndByteOffset(
   } else {
     length = initialLength();
 
-    // Out-of-bounds if the byteOffset end index exceeds the buffer length.
+    
     size_t byteOffsetEnd = byteOffsetStart + length * bytesPerElement;
     if (byteOffsetEnd > bufferByteLength) {
       setFixedSlot(LENGTH_SLOT, PrivateValue(size_t(0)));
@@ -286,27 +285,27 @@ bool ArrayBufferViewObject::hasImmutableBuffer() const {
 }
 
 size_t ArrayBufferViewObject::dataPointerOffset() const {
-  // Views without a buffer have a zero offset.
+  
   if (!hasBuffer()) {
     MOZ_ASSERT(byteOffsetSlotValue() == 0);
     return 0;
   }
 
-  // Views on shared buffers store the offset in |byteOffset|.
+  
   if (isSharedMemory()) {
     return byteOffsetSlotValue();
   }
 
-  // Can be called during tracing, so the buffer is possibly forwarded.
+  
   const auto* bufferObj = gc::MaybeForwarded(&bufferValue().toObject());
 
-  // Three distinct classes are used for non-shared buffers.
+  
   MOZ_ASSERT(
       gc::MaybeForwardedObjectIs<FixedLengthArrayBufferObject>(bufferObj) ||
       gc::MaybeForwardedObjectIs<ResizableArrayBufferObject>(bufferObj) ||
       gc::MaybeForwardedObjectIs<ImmutableArrayBufferObject>(bufferObj));
 
-  // Ensure these three classes can be casted to ArrayBufferObject.
+  
   static_assert(
       std::is_base_of_v<ArrayBufferObject, FixedLengthArrayBufferObject>);
   static_assert(
@@ -314,24 +313,24 @@ size_t ArrayBufferViewObject::dataPointerOffset() const {
   static_assert(
       std::is_base_of_v<ArrayBufferObject, ImmutableArrayBufferObject>);
 
-  // Manual cast necessary because the buffer is possibly forwarded.
+  
   const auto* buffer = static_cast<const ArrayBufferObject*>(bufferObj);
 
-  // Views on resizable buffers store the offset in |initialByteOffset|.
+  
   if (buffer->isResizable() && !buffer->isDetached()) {
     return initialByteOffsetValue();
   }
 
-  // Callers expect that this method returns zero for detached buffers.
+  
   MOZ_ASSERT_IF(buffer->isDetached(), byteOffsetSlotValue() == 0);
 
-  // Views on fixed-length buffers store the offset in |byteOffset|.
+  
   return byteOffsetSlotValue();
 }
 
 mozilla::Maybe<size_t> ArrayBufferViewObject::byteOffset() const {
-  // |byteOffset| is set to zero for detached or out-of-bounds views, so a
-  // non-zero value indicates the view is in-bounds.
+  
+  
   size_t byteOffset = byteOffsetSlotValue();
   if (byteOffset > 0) {
     MOZ_ASSERT(!hasDetachedBuffer());
@@ -345,8 +344,8 @@ mozilla::Maybe<size_t> ArrayBufferViewObject::byteOffset() const {
 }
 
 mozilla::Maybe<size_t> ArrayBufferViewObject::length() const {
-  // |length| is set to zero for detached or out-of-bounds views, so a non-zero
-  // value indicates the view is in-bounds.
+  
+  
   size_t length = lengthSlotValue();
   if (MOZ_LIKELY(length > 0)) {
     MOZ_ASSERT(!hasDetachedBuffer());
@@ -364,9 +363,9 @@ mozilla::Maybe<size_t> ArrayBufferViewObject::length() const {
     auto* buffer = bufferShared();
     MOZ_ASSERT(buffer, "shared memory doesn't use inline data");
 
-    // Views backed by a growable SharedArrayBuffer can never get out-of-bounds,
-    // but we have to dynamically compute the length when the auto-length flag
-    // is set.
+    
+    
+    
     if (buffer->isGrowable() && isAutoLength()) {
       size_t bufferByteLength = buffer->byteLength();
       size_t byteOffset = byteOffsetSlotValue();
@@ -408,7 +407,7 @@ void ArrayBufferViewObject::dumpOwnStringContent(
 }
 #endif
 
-/* JS Public API */
+
 
 JS_PUBLIC_API bool JS_IsArrayBufferViewObject(JSObject* obj) {
   return obj->canUnwrapAs<ArrayBufferViewObject>();
@@ -428,7 +427,7 @@ JS_PUBLIC_API void* JS_GetArrayBufferViewData(JSObject* obj,
 
   *isSharedMemory = view->isSharedMemory();
   return view->dataPointerEither().unwrap(
-      /*safe - caller sees isSharedMemory flag*/);
+      );
 }
 
 JS_PUBLIC_API uint8_t* JS_GetArrayBufferViewFixedData(JSObject* obj,
@@ -439,19 +438,19 @@ JS_PUBLIC_API uint8_t* JS_GetArrayBufferViewFixedData(JSObject* obj,
     return nullptr;
   }
 
-  // Disallow shared memory until it is needed.
+  
   if (view->isSharedMemory()) {
     return nullptr;
   }
 
-  // TypedArrays (but not DataViews) can have inline data, in which case we
-  // need to copy into the given buffer.
+  
+  
   if (view->is<FixedLengthTypedArrayObject>()) {
     auto* ta = &view->as<FixedLengthTypedArrayObject>();
     if (ta->hasInlineElements()) {
       size_t bytes = ta->byteLength();
       if (bytes > bufSize) {
-        return nullptr;  // Does not fit.
+        return nullptr;  
       }
       memcpy(buffer, view->dataPointerUnshared(), bytes);
       return buffer;
@@ -542,7 +541,7 @@ JS_PUBLIC_API mozilla::Span<uint8_t> JS::ArrayBufferView::getData(
   ArrayBufferViewObject& view = obj->as<ArrayBufferViewObject>();
   *isSharedMemory = view.isSharedMemory();
   return {static_cast<uint8_t*>(view.dataPointerEither().unwrap(
-              /*safe - caller sees isShared flag*/)),
+              )),
           byteLength};
 }
 
@@ -586,7 +585,7 @@ JS_PUBLIC_API bool JS::IsLargeArrayBufferView(JSObject* obj) {
                    : obj->as<TypedArrayObject>().byteLength().valueOr(0);
   return len > ArrayBufferObject::ByteLengthLimitForSmallBuffer;
 #else
-  // Large ArrayBuffers are not supported on 32-bit.
+  
   static_assert(ArrayBufferObject::ByteLengthLimit ==
                 ArrayBufferObject::ByteLengthLimitForSmallBuffer);
   return false;
@@ -629,7 +628,7 @@ JS_PUBLIC_API bool JS::PinArrayBufferOrViewLength(JSObject* obj, bool pin) {
 JS_PUBLIC_API bool JS::EnsureNonInlineArrayBufferOrView(JSContext* cx,
                                                         JSObject* obj) {
   if (obj->is<SharedArrayBufferObject>()) {
-    // Always locked and out of line.
+    
     return true;
   }
 
@@ -642,7 +641,7 @@ JS_PUBLIC_API bool JS::EnsureNonInlineArrayBufferOrView(JSContext* cx,
   auto* view = obj->maybeUnwrapIf<ArrayBufferViewObject>();
   if (view) {
     if (view->isSharedMemory()) {
-      // Always locked and out of line.
+      
       return true;
     }
     Rooted<ArrayBufferViewObject*> rootedView(cx, view);

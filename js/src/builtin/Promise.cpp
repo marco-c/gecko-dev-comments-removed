@@ -5106,7 +5106,7 @@ static bool Promise_static_try(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  RootedValue cVal(cx, args.thisv());
+  HandleValue cVal = args.thisv();
 
   
   if (!cVal.isObject()) {
@@ -5184,7 +5184,7 @@ static bool Promise_static_withResolvers(JSContext* cx, unsigned argc,
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  RootedValue cVal(cx, args.thisv());
+  HandleValue cVal = args.thisv();
 
   
   if (!cVal.isObject()) {
