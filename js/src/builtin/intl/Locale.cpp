@@ -1304,6 +1304,57 @@ static bool Locale_region(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsLocale, Locale_region>(cx, args);
 }
 
+
+static bool Locale_variants(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsLocale(args.thisv()));
+
+  
+  auto* locale = &args.thisv().toObject().as<LocaleObject>();
+  JSLinearString* baseName = locale->baseName()->ensureLinear(cx);
+  if (!baseName) {
+    return false;
+  }
+
+  auto parts = BaseNameParts(baseName);
+
+  
+  
+  auto precedingSubtag = parts.region   ? *parts.region
+                         : parts.script ? *parts.script
+                                        : parts.language;
+
+  
+  size_t index = precedingSubtag.index + precedingSubtag.length;
+
+  
+  size_t length = baseName->length() - index;
+
+  
+  if (length == 0) {
+    args.rval().setUndefined();
+    return true;
+  }
+  MOZ_ASSERT(baseName->latin1OrTwoByteChar(index) == '-',
+             "missing '-' separator after precedingSubtag");
+  MOZ_ASSERT(length >= 4 + 1,
+             "variant subtag is at least four characters long");
+
+  JSString* str = NewDependentString(cx, baseName, index + 1, length - 1);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
+}
+
+
+static bool Locale_variants(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsLocale, Locale_variants>(cx, args);
+}
+
 static bool Locale_toSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setString(cx->names().Locale);
@@ -1329,6 +1380,7 @@ static const JSPropertySpec locale_properties[] = {
     JS_PSG("language", Locale_language, 0),
     JS_PSG("script", Locale_script, 0),
     JS_PSG("region", Locale_region, 0),
+    JS_PSG("variants", Locale_variants, 0),
     JS_STRING_SYM_PS(toStringTag, "Intl.Locale", JSPROP_READONLY),
     JS_PS_END,
 };
