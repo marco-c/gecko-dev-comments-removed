@@ -356,6 +356,13 @@
     <!-- Browser menu label for the Delete browsing data on quit feature.
         %1$s is the name of the app (for example "Firefox"). -->
     <string name="browser_menu_delete_browsing_data_on_quit">Quit %1$s</string>
+    <!-- Content description for a banner within the menu which prompt the user to make this app their default browser.
+%1$s is the name of the app (for example "Firefox"). -->
+    <string name="browser_menu_default_banner_title">Make %1$s your default</string>
+    <!-- Label text within the set as default banner  -->
+    <string name="browser_menu_default_banner_subtitle">Takes seconds. Change anytime.</string>
+    <!-- Content description for the button that dismisses the set as default banner in the menu -->
+    <string name="browser_menu_default_banner_dismiss">Dismiss</string>
 
     <!-- Menu "contextual feature recommendation" (CFR) -->
     <!-- Text for the title in the contextual feature recommendation popup promoting the menu feature. -->
@@ -1386,6 +1393,12 @@
     <!-- Content description for the toolbar back button while searching the downloads -->
     <string name="download_close_search_description">Back and close search</string>
     <!-- Content description for the search bar clear text button on the downloads screen -->
+    <!-- Content description for pause action button on the downloads screen -->
+    <string name="download_pause_action">Pause</string>
+    <!-- Content description for resume action button on the downloads screen -->
+    <string name="download_resume_action">Resume</string>
+    <!-- Content description for retry download action button on the downloads screen -->
+    <string name="download_retry_action">Retry</string>
     <string name="download_clear_search_description">Clear</string>
     <!-- Text for the button to share the download URL -->
     <string name="download_share_url">Share URL</string>
