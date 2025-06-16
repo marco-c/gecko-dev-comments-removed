@@ -649,7 +649,13 @@ void DCLayerTree::CompositorEndFrame() {
     if (!same) {
       
       const auto visual = surface->GetRootVisual();
-      mRootVisual->AddVisual(visual, true, nullptr);
+      if (UseLayerCompositor()) {
+        
+        mRootVisual->AddVisual(visual, true, nullptr);
+      } else {
+        
+        mRootVisual->AddVisual(visual, false, nullptr);
+      }
     }
   }
 
