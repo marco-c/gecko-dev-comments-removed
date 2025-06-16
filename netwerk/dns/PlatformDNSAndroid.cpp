@@ -18,7 +18,6 @@
 #include <netinet/in.h>
 #include <resolv.h>
 #include <poll.h>
-#include <dlfcn.h>
 #include <android/multinetwork.h>
 
 namespace mozilla::net {
@@ -52,18 +51,11 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
 
   if (!sLibLoading.exchange(true)) {
     
-    void* handle = dlopen("libandroid.so", RTLD_LAZY | RTLD_LOCAL);
-    if (!handle) {
-      LOG("Error loading libandroid_net %s", dlerror());
-      return NS_ERROR_UNKNOWN_HOST;
-    }
-
-    auto x = dlsym(handle, "android_res_nquery");
-    if (!x) {
+    if (__builtin_available(android 29, *)) {
+      sAndroidResNQuery = android_res_nquery;  
+    } else {
       LOG("No android_res_nquery symbol");
     }
-
-    sAndroidResNQuery = (android_res_nquery_ptr)x;
   }
 
   if (!sAndroidResNQuery) {
