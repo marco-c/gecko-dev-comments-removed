@@ -507,7 +507,7 @@ var gBrowserInit = {
       }
 
       
-      RestoreLastSessionObserver.init();
+      gRestoreLastSessionObserver.init();
 
       SidebarController.startDelayedLoad();
 

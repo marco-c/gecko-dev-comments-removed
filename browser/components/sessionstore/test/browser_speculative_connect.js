@@ -31,7 +31,7 @@ add_task(async function speculative_connect_restore_on_demand() {
   await BrowserTestUtils.closeWindow(win);
 
   
-  let newWin = undoCloseWindow(0);
+  let newWin = SessionWindowUI.undoCloseWindow(0);
   
   await promiseWindowRestored(newWin);
 
@@ -101,7 +101,7 @@ add_task(async function speculative_connect_restore_automatically() {
   await BrowserTestUtils.closeWindow(win);
 
   
-  let newWin = undoCloseWindow(0);
+  let newWin = SessionWindowUI.undoCloseWindow(0);
   
   await promiseWindowRestored(newWin);
 

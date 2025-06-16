@@ -75,6 +75,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
   SharingUtils: "resource:///modules/SharingUtils.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
@@ -512,6 +513,13 @@ ChromeUtils.defineLazyGetter(this, "Win7Features", () => {
     };
   }
   return null;
+});
+
+ChromeUtils.defineLazyGetter(this, "gRestoreLastSessionObserver", () => {
+  let { RestoreLastSessionObserver } = ChromeUtils.importESModule(
+    "resource:///modules/sessionstore/SessionWindowUI.sys.mjs"
+  );
+  return new RestoreLastSessionObserver(window);
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -4394,132 +4402,6 @@ var MailIntegration = {
 
 
 
-function restoreLastClosedTabOrWindowOrSession() {
-  let lastActionTaken = SessionStore.popLastClosedAction();
-
-  if (lastActionTaken) {
-    switch (lastActionTaken.type) {
-      case SessionStore.LAST_ACTION_CLOSED_TAB: {
-        undoCloseTab();
-        break;
-      }
-      case SessionStore.LAST_ACTION_CLOSED_WINDOW: {
-        undoCloseWindow();
-        break;
-      }
-    }
-  } else {
-    let closedTabCount = SessionStore.getLastClosedTabCount(window);
-    if (SessionStore.canRestoreLastSession) {
-      SessionStore.restoreLastSession();
-    } else if (closedTabCount) {
-      
-      undoCloseTab();
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function undoCloseTab(aIndex, sourceWindowSSId) {
-  
-  let targetWindow = window;
-  
-  let sourceWindow;
-  if (sourceWindowSSId) {
-    sourceWindow = SessionStore.getWindowById(sourceWindowSSId);
-    if (!sourceWindow) {
-      throw new Error(
-        "sourceWindowSSId argument to undoCloseTab didn't resolve to a window"
-      );
-    }
-  } else {
-    sourceWindow = window;
-  }
-
-  
-  let blankTabToRemove = null;
-  if (
-    targetWindow.gBrowser.visibleTabs.length == 1 &&
-    targetWindow.gBrowser.selectedTab.isEmpty
-  ) {
-    blankTabToRemove = targetWindow.gBrowser.selectedTab;
-  }
-
-  let tabsRemoved = false;
-  let tab = null;
-  const lastClosedTabGroupId =
-    SessionStore.getLastClosedTabGroupId(sourceWindow);
-  if (aIndex === undefined && lastClosedTabGroupId) {
-    let group;
-    if (SessionStore.getSavedTabGroup(lastClosedTabGroupId)) {
-      group = SessionStore.openSavedTabGroup(
-        lastClosedTabGroupId,
-        targetWindow,
-        {
-          source: "recent",
-        }
-      );
-    } else {
-      group = SessionStore.undoCloseTabGroup(
-        window,
-        lastClosedTabGroupId,
-        targetWindow
-      );
-    }
-    tabsRemoved = true;
-    tab = group.tabs.at(-1);
-  } else {
-    
-    
-    let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
-    
-    let tabsToRemove =
-      aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
-    for (let index of tabsToRemove) {
-      if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
-        tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
-        tabsRemoved = true;
-      }
-    }
-  }
-
-  if (tabsRemoved && blankTabToRemove) {
-    targetWindow.gBrowser.removeTab(blankTabToRemove);
-  }
-
-  return tab;
-}
-
-
-
-
-
-
-
-function undoCloseWindow(aIndex) {
-  let window = null;
-  if (SessionStore.getClosedWindowCount() > (aIndex || 0)) {
-    window = SessionStore.undoCloseWindow(aIndex || 0);
-  }
-
-  return window;
-}
-
-
-
-
-
-
 
 
 
@@ -4824,41 +4706,6 @@ function switchToTabHavingURI(
 
   return false;
 }
-
-var RestoreLastSessionObserver = {
-  init() {
-    if (
-      SessionStore.canRestoreLastSession &&
-      !PrivateBrowsingUtils.isWindowPrivate(window)
-    ) {
-      Services.obs.addObserver(this, "sessionstore-last-session-cleared", true);
-      Services.obs.addObserver(
-        this,
-        "sessionstore-last-session-re-enable",
-        true
-      );
-      goSetCommandEnabled("Browser:RestoreLastSession", true);
-    } else if (SessionStore.willAutoRestore) {
-      document.getElementById("Browser:RestoreLastSession").hidden = true;
-    }
-  },
-
-  observe(aSubject, aTopic) {
-    switch (aTopic) {
-      case "sessionstore-last-session-cleared":
-        goSetCommandEnabled("Browser:RestoreLastSession", false);
-        break;
-      case "sessionstore-last-session-re-enable":
-        goSetCommandEnabled("Browser:RestoreLastSession", true);
-        break;
-    }
-  },
-
-  QueryInterface: ChromeUtils.generateQI([
-    "nsIObserver",
-    "nsISupportsWeakReference",
-  ]),
-};
 
 
 function safeModeRestart() {
