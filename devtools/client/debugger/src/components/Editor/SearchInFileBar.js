@@ -13,6 +13,7 @@ import {
   getIsCurrentThreadPaused,
   getSelectedSourceTextContent,
   getSearchOptions,
+  getSelectedFrame,
 } from "../../selectors/index";
 
 import { searchKeys } from "../../constants";
@@ -59,6 +60,7 @@ class SearchInFileBar extends Component {
       searchInFileEnabled: PropTypes.bool.isRequired,
       selectedSourceTextContent: PropTypes.object,
       selectedSource: PropTypes.object.isRequired,
+      selectedFrame: PropTypes.object.isRequired,
       setActiveSearch: PropTypes.func.isRequired,
       querySearchWorker: PropTypes.func.isRequired,
       selectLocation: PropTypes.func.isRequired,
@@ -83,8 +85,9 @@ class SearchInFileBar extends Component {
       query &&
       this.props.selectedSource &&
       this.props.searchInFileEnabled &&
+      nextProps.selectedFrame &&
       
-      this.props.selectedSource.id !== nextProps.selectedSource.id
+      nextProps.selectedFrame.location.source.id !== nextProps.selectedSource.id
     ) {
       
       
@@ -397,6 +400,7 @@ const mapStateToProps = state => {
     selectedSource: getSelectedSource(state),
     isPaused: getIsCurrentThreadPaused(state),
     selectedSourceTextContent: getSelectedSourceTextContent(state),
+    selectedFrame: getSelectedFrame(state),
     modifiers: getSearchOptions(state, "file-search"),
   };
 };
