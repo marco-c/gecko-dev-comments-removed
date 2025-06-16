@@ -164,7 +164,17 @@ add_task(async function test_pin_browser_action_default_area_tabstrip() {
 
 
 add_task(async function test_pin_browser_action_tabstrip_vertical_tabs() {
-  await SpecialPowers.pushPrefEnv({ set: [["sidebar.verticalTabs", true]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.verticalTabs", true],
+      
+      
+      
+      
+      
+      ["sidebar.revamp", true],
+    ],
+  });
   await testAddonPostInstall({
     extensionData: {
       manifest: {
@@ -181,7 +191,7 @@ add_task(async function test_pin_browser_action_tabstrip_vertical_tabs() {
     },
   });
   await SpecialPowers.popPrefEnv();
-}).skip(); 
+});
 
 add_task(async function test_private_browsing_no_checkbox_without_perm() {
   const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
