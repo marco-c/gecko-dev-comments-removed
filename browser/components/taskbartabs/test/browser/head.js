@@ -2,45 +2,41 @@
 
 
 
-"use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  TaskbarTabsRegistry:
-    "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
-  TaskbarTabsWindowManager:
-    "resource:///modules/taskbartabs/TaskbarTabsWindowManager.sys.mjs",
-});
 
-add_setup(async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["network.dns.localDomains", "www.test.com"]],
+
+
+
+
+
+
+
+
+async function openTaskbarTabWindow(tab = null) {
+  let extraOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+    Ci.nsIWritablePropertyBag2
+  );
+  extraOptions.setPropertyAsBool("taskbartab", true);
+
+  let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+
+  args.appendElement(tab);
+  args.appendElement(extraOptions);
+  args.appendElement(null);
+
+  
+  let win = Services.ww.openWindow(
+    null,
+    AppConstants.BROWSER_CHROME_URL,
+    "_blank",
+    "chrome,dialog=no,titlebar,close,toolbar,location,personalbar=no,status,menubar=no,resizable,minimizable,scrollbars",
+    args
+  );
+
+  await new Promise(resolve => {
+    win.addEventListener("load", resolve, { once: true });
   });
-});
+  await win.delayedStartupPromise;
 
-
-
-
-
-
-
-
-
-
-async function openTaskbarTabWindow(aTab = null) {
-  const url = Services.io.newURI("https://www.test.com");
-  const userContextId = 0;
-
-  const registry = new TaskbarTabsRegistry();
-  const taskbarTab = registry.findOrCreateTaskbarTab(url, userContextId);
-  const windowManager = new TaskbarTabsWindowManager();
-
-  const windowPromise = BrowserTestUtils.waitForNewWindow();
-
-  if (aTab) {
-    windowManager.replaceTabWithWindow(taskbarTab, aTab);
-  } else {
-    windowManager.openWindow(taskbarTab);
-  }
-
-  return await windowPromise;
+  return win;
 }
