@@ -148,9 +148,8 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
     if (mConfig.mBitrateMode == BitrateMode::Constant) {
       mLib->av_opt_set(mCodecContext->priv_data, "vbr", "off", 0);
     }
-    if (mConfig.mCodecSpecific.isSome()) {
-      MOZ_ASSERT(mConfig.mCodecSpecific->is<OpusSpecific>());
-      const OpusSpecific& specific = mConfig.mCodecSpecific->as<OpusSpecific>();
+    if (mConfig.mCodecSpecific.is<OpusSpecific>()) {
+      const OpusSpecific& specific = mConfig.mCodecSpecific.as<OpusSpecific>();
       
       mCodecContext->compression_level = specific.mComplexity;
       FFMPEG_LOG("Opus complexity set to %d", specific.mComplexity);
@@ -199,6 +198,8 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
       }
       
       
+    } else {
+      MOZ_ASSERT(mConfig.mCodecSpecific.is<void_t>());
     }
   }
   
