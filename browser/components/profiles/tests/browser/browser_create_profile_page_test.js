@@ -171,7 +171,7 @@ add_task(async function test_new_profile_avatar() {
   let expectedAvatar = "briefcase";
   
   
-  await profile.setAvatar("flower");
+  profile.avatar = "flower";
   await SelectableProfileService.updateProfile(profile);
 
   await BrowserTestUtils.withNewTab(
