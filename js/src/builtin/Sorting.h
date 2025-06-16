@@ -42,7 +42,7 @@ enum class ArraySortKind {
 
 
 
-class ArraySortData {
+class alignas(8) ArraySortData {
  public:
   enum class ComparatorKind : uint8_t {
     Unoptimized,
@@ -104,7 +104,7 @@ class ArraySortData {
   
 #if !defined(JS_64BIT) && !defined(DEBUG)
  protected:  
-  size_t padding;
+  uint32_t padding[2];
 #endif
 
  private:
@@ -176,4 +176,4 @@ ArraySortResult CallComparatorSlow(ArraySortData* d, const Value& x,
 
 }  
 
-#endif 
+#endif
