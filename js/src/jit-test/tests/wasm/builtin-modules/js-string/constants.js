@@ -1,5 +1,3 @@
-
-
 function wasmEvalWithConstants(text, namespace) {
   return wasmEvalText(text, {}, { importedStringConstants: namespace }).exports;
 }
