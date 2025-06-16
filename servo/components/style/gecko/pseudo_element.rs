@@ -72,6 +72,11 @@ impl PtNameAndClassSelector {
     }
 
     
+    pub fn name_and_classes(&self) -> &thin_vec::ThinVec<Atom> {
+        &self.0
+    }
+
+    
     
     
     
@@ -343,16 +348,20 @@ impl PseudoElement {
     
     pub fn specificity_count(&self) -> u32 {
         match *self {
-            Self::ViewTransitionGroup(ref name) |
-            Self::ViewTransitionImagePair(ref name) |
-            Self::ViewTransitionOld(ref name) |
-            Self::ViewTransitionNew(ref name) => {
+            Self::ViewTransitionGroup(ref name_and_class) |
+            Self::ViewTransitionImagePair(ref name_and_class) |
+            Self::ViewTransitionOld(ref name_and_class) |
+            Self::ViewTransitionNew(ref name_and_class) => {
                 
                 
                 
                 
                 
-                (name.name() != &atom!("*")) as u32
+                
+                
+                
+                (name_and_class.name() != &atom!("*") || !name_and_class.classes().is_empty())
+                    as u32
             },
             _ => 1,
         }
@@ -486,6 +495,47 @@ impl PseudoElement {
                 })
             },
             t => return Err(input.new_unexpected_token_error(t)),
+        }
+    }
+
+    
+    pub fn matches_named_view_transition_pseudo_element(
+        &self,
+        selector: &Self,
+        element: &super::wrapper::GeckoElement,
+    ) -> bool {
+        use crate::gecko_bindings::bindings;
+
+        match (self, selector) {
+            (
+                &Self::ViewTransitionGroup(ref name),
+                &Self::ViewTransitionGroup(ref s_name_class),
+            ) |
+            (
+                &Self::ViewTransitionImagePair(ref name),
+                &Self::ViewTransitionImagePair(ref s_name_class),
+            ) |
+            (&Self::ViewTransitionOld(ref name), &Self::ViewTransitionOld(ref s_name_class)) |
+            (&Self::ViewTransitionNew(ref name), &Self::ViewTransitionNew(ref s_name_class)) => {
+                
+                
+                
+                let s_name = s_name_class.name();
+                if s_name != name.name() && s_name != &atom!("*") {
+                    return false;
+                }
+
+                
+                
+                s_name_class.classes().is_empty() ||
+                    unsafe {
+                        bindings::Gecko_MatchViewTransitionClass(
+                            element.0,
+                            s_name_class.name_and_classes(),
+                        )
+                    }
+            },
+            _ => false,
         }
     }
 }

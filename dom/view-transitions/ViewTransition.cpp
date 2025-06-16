@@ -235,8 +235,10 @@ struct ViewTransition::CapturedElement {
 
   CapturedElement() = default;
 
-  CapturedElement(nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize)
-      : mOldState(aFrame, aSnapshotContainingBlockSize) {}
+  CapturedElement(nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize,
+                  StyleViewTransitionClass&& aClassList)
+      : mOldState(aFrame, aSnapshotContainingBlockSize),
+        mClassList(std::move(aClassList)) {}
 
   
   nsTArray<Keyframe> mGroupKeyframes;
@@ -248,6 +250,14 @@ struct ViewTransition::CapturedElement {
   RefPtr<StyleLockedDeclarationBlock> mOldRule;
   
   RefPtr<StyleLockedDeclarationBlock> mNewRule;
+
+  
+  
+  StyleViewTransitionClass mClassList;
+
+  void CaptureClassList(StyleViewTransitionClass&& aClassList) {
+    mClassList = std::move(aClassList);
+  }
 
   ~CapturedElement() {
     if (wr::AsImageKey(mNewSnapshotKey) != kNoKey) {
@@ -689,6 +699,39 @@ bool ViewTransition::GetGroupKeyframes(
   MOZ_ASSERT(aResult.Length() == 2);
   aResult[0].mTimingFunction = Some(aTimingFunction);
   aResult[1].mTimingFunction = Some(aTimingFunction);
+  return true;
+}
+
+
+
+bool ViewTransition::MatchClassList(
+    nsAtom* aTransitionName,
+    const nsTArray<StyleAtom>& aPtNameAndClassSelector) const {
+  MOZ_ASSERT(aPtNameAndClassSelector.Length() > 1);
+
+  const auto* el = mNamedElements.Get(aTransitionName);
+  MOZ_ASSERT(el);
+  const auto& classList = el->mClassList._0.AsSpan();
+  auto hasClass = [&classList](nsAtom* aClass) {
+    
+    for (const auto& ident : classList) {
+      if (ident.AsAtom() == aClass) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  
+  
+  
+  
+  
+  for (const auto& atom : Span(aPtNameAndClassSelector).From(1)) {
+    if (!hasClass(atom.AsAtom())) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -1137,16 +1180,20 @@ static void ForEachFrame(Document* aDoc, const Callback& aCb) {
 }
 
 
+
+
+
+
 static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
   auto* name = aFrame->StyleUIReset()->mViewTransitionName._0.AsAtom();
   if (name->IsEmpty()) {
     return nullptr;
   }
-  
-  
-  
-  
   return name;
+}
+static StyleViewTransitionClass DocumentScopedClassListFor(
+    const nsIFrame* aFrame) {
+  return aFrame->StyleUIReset()->mViewTransitionClass;
 }
 
 
@@ -1210,8 +1257,11 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   for (auto& [f, name] : captureElements) {
     MOZ_ASSERT(f);
     MOZ_ASSERT(f->GetContent()->IsElement());
+    
+    
     auto capture =
-        MakeUnique<CapturedElement>(f, mInitialSnapshotContainingBlockSize);
+        MakeUnique<CapturedElement>(f, mInitialSnapshotContainingBlockSize,
+                                    DocumentScopedClassListFor(f));
     mNamedElements.InsertOrUpdate(name, std::move(capture));
     mNames.AppendElement(name);
   }
@@ -1275,6 +1325,11 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     
     capturedElement->mNewSnapshotSize =
         CapturedSize(aFrame, mInitialSnapshotContainingBlockSize);
+    
+    
+    
+    
+    capturedElement->CaptureClassList(DocumentScopedClassListFor(aFrame));
     SetCaptured(aFrame, true);
     return true;
   });
