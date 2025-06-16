@@ -675,6 +675,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   uint64_t GetGroupLimit() const;
 
+  Maybe<OriginStateMetadata> GetOriginStateMetadata(
+      const OriginMetadata& aOriginMetadata);
+
   std::pair<uint64_t, uint64_t> GetUsageAndLimitForEstimate(
       const OriginMetadata& aOriginMetadata);
 
@@ -831,10 +834,9 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult InitializeRepository(PersistenceType aPersistenceType,
                                 OriginFunc&& aOriginFunc);
 
-  nsresult InitializeOrigin(PersistenceType aPersistenceType,
-                            const OriginMetadata& aOriginMetadata,
-                            int64_t aAccessTime, bool aPersisted,
-                            nsIFile* aDirectory, bool aForGroup = false);
+  nsresult InitializeOrigin(nsIFile* aDirectory,
+                            const FullOriginMetadata& aFullOriginMetadata,
+                            bool aForGroup = false);
 
   using OriginInfosFlatTraversable =
       nsTArray<NotNull<RefPtr<const OriginInfo>>>;
