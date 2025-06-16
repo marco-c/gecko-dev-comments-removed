@@ -2000,7 +2000,7 @@ var SidebarController = {
     ) {
       
       
-      this._state.updateVisibility(undefined, false);
+      this._state.launcherExpanded = false;
     }
   },
 
