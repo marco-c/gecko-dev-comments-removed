@@ -2681,11 +2681,22 @@ void Simulator::decodeTypeRegister(SimInstruction* instr) {
           break;
         case rs_s:
           float f, ft_value, fs_value;
-          uint32_t cc, fcsr_cc;
+          uint32_t cc, fcsr_cc, cc_value;
+          bool do_movf;
           int64_t i64;
           fs_value = getFpuRegisterFloat(fs_reg);
           ft_value = getFpuRegisterFloat(ft_reg);
-          cc = instr->fcccValue();
+
+          
+          
+          switch (instr->functionFieldRaw()) {
+            case ff_movf_fmt:
+              cc = instr->fbccValue();
+              break;
+            default:
+              cc = instr->fcccValue();
+              break;
+          }
           fcsr_cc = GetFCSRConditionBit(cc);
           switch (instr->functionFieldRaw()) {
             case ff_add_fmt:
@@ -2839,7 +2850,9 @@ void Simulator::decodeTypeRegister(SimInstruction* instr) {
               MOZ_CRASH();
               break;
             case ff_movf_fmt:
-              if (testFCSRBit(fcsr_cc)) {
+              cc_value = testFCSRBit(fcsr_cc);
+              do_movf = (instr->fbtrueValue()) ? cc_value : !cc_value;
+              if (do_movf) {
                 setFpuRegisterFloat(fd_reg, getFpuRegisterFloat(fs_reg));
               }
               break;
@@ -2861,7 +2874,17 @@ void Simulator::decodeTypeRegister(SimInstruction* instr) {
           double dt_value, ds_value;
           ds_value = getFpuRegisterDouble(fs_reg);
           dt_value = getFpuRegisterDouble(ft_reg);
-          cc = instr->fcccValue();
+
+          
+          
+          switch (instr->functionFieldRaw()) {
+            case ff_movf_fmt:
+              cc = instr->fbccValue();
+              break;
+            default:
+              cc = instr->fcccValue();
+              break;
+          }
           fcsr_cc = GetFCSRConditionBit(cc);
           switch (instr->functionFieldRaw()) {
             case ff_add_fmt:
@@ -3025,11 +3048,9 @@ void Simulator::decodeTypeRegister(SimInstruction* instr) {
               }
               break;
             case ff_movf_fmt:
-              
-              
-              cc = instr->fbccValue();
-              fcsr_cc = GetFCSRConditionBit(cc);
-              if (testFCSRBit(fcsr_cc)) {
+              cc_value = testFCSRBit(fcsr_cc);
+              do_movf = (instr->fbtrueValue()) ? cc_value : !cc_value;
+              if (do_movf) {
                 setFpuRegisterDouble(fd_reg, getFpuRegisterDouble(fs_reg));
               }
               break;
