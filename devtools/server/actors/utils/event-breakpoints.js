@@ -163,8 +163,8 @@ const AVAILABLE_BREAKPOINTS = [
       
       generalEvent(
         "control",
-        "command",
-        global => global && "CommandEvent" in global
+        "invoke",
+        global => global && "InvokeEvent" in global
       ),
       generalEvent("control", "reset"),
       generalEvent("control", "resize"),
