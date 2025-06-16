@@ -39,7 +39,7 @@ namespace js {
 
 
 
-static inline bool IsUninitializedLexical(const Value& val) {
+static inline bool IsUninitializedLexical(Value val) {
   
   return val.isMagic() && val.whyMagic() == JS_UNINITIALIZED_LEXICAL;
 }
