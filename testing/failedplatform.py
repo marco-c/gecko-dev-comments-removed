@@ -3,7 +3,7 @@
 
 
 from functools import reduce
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 
 class FailedPlatform:
@@ -23,26 +23,26 @@ class FailedPlatform:
         
         
         oop_permutations: Optional[
-            Dict[
+            dict[
                 str,  
-                Dict[str, Dict[str, int]],  
+                dict[str, dict[str, int]],  
             ]
         ],
         high_freq: bool = False,
     ) -> None:
         
-        self.failures: Dict[str, Dict[str, int]] = {}
+        self.failures: dict[str, dict[str, int]] = {}
         self.oop_permutations = oop_permutations
         self.high_freq = high_freq
 
-    def get_possible_build_types(self) -> List[str]:
+    def get_possible_build_types(self) -> list[str]:
         return (
             list(self.oop_permutations.keys())
             if self.oop_permutations is not None
             else []
         )
 
-    def get_possible_test_variants(self, build_type: str) -> List[str]:
+    def get_possible_test_variants(self, build_type: str) -> list[str]:
         permutations = (
             self.oop_permutations.get(build_type, {})
             if self.oop_permutations is not None
@@ -209,7 +209,7 @@ class FailedPlatform:
 
         return return_str
 
-    def get_test_variant_with_most_failures(self, build_type: str) -> Tuple[str, int]:
+    def get_test_variant_with_most_failures(self, build_type: str) -> tuple[str, int]:
         most_failures = 0
         most_variant = ""
         for variant, failures in self.failures[build_type].items():
