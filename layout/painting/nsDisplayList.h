@@ -2380,6 +2380,12 @@ class nsDisplayItem {
 
     
     bool mGatheringPreserves3DLeaves = false;
+
+    
+    
+    
+    bool mTransformHasBackfaceVisible = false;
+
     
     
     
@@ -2409,6 +2415,16 @@ class nsDisplayItem {
 
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                        HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) {}
+
+  
+
+
+
+
+  bool ShouldIgnoreForBackfaceHidden(HitTestState* aState) {
+    return aState->mTransformHasBackfaceVisible &&
+           In3DContextAndBackfaceIsHidden();
+  }
 
   virtual nsIFrame* StyleFrame() const { return mFrame; }
 
@@ -6638,6 +6654,10 @@ class nsDisplayText final : public nsPaintedDisplayItem {
 
   void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) final {
+    if (ShouldIgnoreForBackfaceHidden(aState)) {
+      return;
+    }
+
     if (nsRect(ToReferenceFrame(), mFrame->GetSize()).Intersects(aRect)) {
       aOutFrames->AppendElement(mFrame);
     }
