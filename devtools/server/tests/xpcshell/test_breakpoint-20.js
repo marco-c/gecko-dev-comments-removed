@@ -47,7 +47,7 @@ const testBreakpoint = async function (threadFront) {
   
 
   const bpPause1 = await executeOnNextTickAndWaitForPause(
-    gDebuggee.functions[0],
+    () => gDebuggee.eval("functions[0]()"),
     threadFront
   );
   equal(
@@ -70,7 +70,7 @@ const testBreakpoint = async function (threadFront) {
   
 
   const bpPause2 = await executeOnNextTickAndWaitForPause(
-    gDebuggee.functions[1],
+    () => gDebuggee.eval("functions[1]()"),
     threadFront
   );
   equal(

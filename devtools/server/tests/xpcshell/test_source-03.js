@@ -13,9 +13,9 @@ add_task(
       
       
       server.allowNewThreadGlobals();
-      const debuggee1 = Cu.Sandbox(systemPrincipal);
+      const debuggee1 = Cu.Sandbox("http://example.com");
       debuggee1.__name = "debuggee2.js";
-      const debuggee2 = Cu.Sandbox(systemPrincipal);
+      const debuggee2 = Cu.Sandbox("http://example.com");
       debuggee2.__name = "debuggee2.js";
       server.disallowNewThreadGlobals();
 

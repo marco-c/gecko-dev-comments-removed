@@ -11,12 +11,16 @@
 
 
 add_task(
-  threadFrontTest(async args => {
-    await testSetWatchpoint(args);
-    await testGetWatchpoint(args);
-    await testRemoveWatchpoint(args);
-    await testRemoveWatchpoints(args);
-  })
+  threadFrontTest(
+    async args => {
+      await testSetWatchpoint(args);
+      await testGetWatchpoint(args);
+      await testRemoveWatchpoint(args);
+      await testRemoveWatchpoints(args);
+    },
+    
+    { principal: systemPrincipal }
+  )
 );
 
 async function testSetWatchpoint({ commands, threadFront, debuggee }) {
