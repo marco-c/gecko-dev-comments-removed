@@ -197,6 +197,7 @@ metrics_yamls = sorted(
 
 gecko_pings = [
     "dom/pings.yaml",
+    "services/sync/pings.yaml",
     "toolkit/components/antitracking/bouncetrackingprotection/pings.yaml",
     "toolkit/components/backgroundhangmonitor/pings.yaml",
     "toolkit/components/captchadetection/pings.yaml",
