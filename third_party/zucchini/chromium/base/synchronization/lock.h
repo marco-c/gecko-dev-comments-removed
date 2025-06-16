@@ -22,7 +22,7 @@ namespace base {
 
 class LOCKABLE BASE_EXPORT Lock {
  public:
-#if !DCHECK_IS_ON()
+#if defined(MOZ_ZUCCHINI) || !DCHECK_IS_ON()
   
   Lock() : lock_() {}
 
