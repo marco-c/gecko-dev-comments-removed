@@ -353,10 +353,9 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
   *out_imageSize = dataSurface->GetSize();
 
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    gfxUtils::GetImageBufferWithRandomNoise(dataSurface,
-                                             true,
-                                            GetCookieJarSettings(),
-                                            PrincipalOrNull(), &*out_format);
+    gfxUtils::GetImageBufferWithRandomNoise(
+        dataSurface,
+         true, GetCookieJarSettings(), &*out_format);
   }
 
   return gfxUtils::GetImageBuffer(dataSurface,  true,
@@ -375,9 +374,9 @@ NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
   RefPtr<gfx::DataSourceSurface> dataSurface = snapshot->GetDataSurface();
 
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    return gfxUtils::GetInputStreamWithRandomNoise(
+    gfxUtils::GetInputStreamWithRandomNoise(
         dataSurface,  true, aMimeType,
-        aEncoderOptions, GetCookieJarSettings(), PrincipalOrNull(), aStream);
+        aEncoderOptions, GetCookieJarSettings(), aStream);
   }
 
   return gfxUtils::GetInputStream(dataSurface,  true,
