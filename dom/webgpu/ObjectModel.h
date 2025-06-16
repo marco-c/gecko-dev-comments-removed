@@ -55,6 +55,10 @@ class ObjectBase : public nsWrapperCache {
   virtual ~ObjectBase() = default;
 
   
+  
+  
+  
+  
   bool mValid = true;
 
  public:
