@@ -89,7 +89,7 @@ GeckoTextMarker GeckoTextMarker::MarkerFromIndex(Accessible* aRoot,
   
   for (TextLeafRange segment : range) {
     if (segment.Start().mAcc->IsMenuPopup() &&
-        (segment.Start().mAcc->State() & states::COLLAPSED)) {
+        (segment.Start().mAcc->State() & states::INVISIBLE)) {
       
       
       continue;
@@ -400,7 +400,7 @@ NSString* GeckoTextMarkerRange::Text() const {
   for (TextLeafRange segment : range) {
     TextLeafPoint start = segment.Start();
     if (start.mAcc->IsMenuPopup() &&
-        (start.mAcc->State() & states::COLLAPSED)) {
+        (start.mAcc->State() & states::INVISIBLE)) {
       
       
       continue;
@@ -474,7 +474,7 @@ NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
       attributesNext = stop;
     }
     if (start.mAcc->IsMenuPopup() &&
-        (start.mAcc->State() & states::COLLAPSED)) {
+        (start.mAcc->State() & states::INVISIBLE)) {
       
       
       start = attributesNext;
