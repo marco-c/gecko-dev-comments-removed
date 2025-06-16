@@ -149,13 +149,15 @@ static opus_val32 silk_resampler_down2_hp(
         out32_hp  = ADD32( out32_hp, X );
         S[ 2 ] = ADD32( -in32, X );
 
-        hp_ener += out32_hp*(opus_val64)out32_hp;
+        
+        hp_ener += SHR64(out32_hp*(opus_val64)out32_hp, 8);
         
         out[ k ] = HALF32(out32);
     }
 #ifdef FIXED_POINT
     
-    hp_ener = hp_ener >> (2*SIG_SHIFT + 8);
+    hp_ener = hp_ener >> (2*SIG_SHIFT);
+    if (hp_ener > 2147483647) hp_ener = 2147483647;
 #endif
     return (opus_val32)hp_ener;
 }
