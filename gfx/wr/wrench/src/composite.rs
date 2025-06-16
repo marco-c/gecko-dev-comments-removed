@@ -123,7 +123,7 @@ impl LayerCompositor for WrCompositor {
     fn begin_frame(
         &mut self,
         input: &CompositorInputConfig,
-    ) {
+    ) -> bool {
         unsafe {
             
             wrc_begin_frame(self.compositor);
@@ -144,7 +144,7 @@ impl LayerCompositor for WrCompositor {
         assert_eq!(self.layers.len(), input.layers.len());
 
         for (input, layer) in input.layers.iter().zip(self.layers.iter_mut()) {
-            let input_size = input.rect.size();
+            let input_size = input.clip_rect.size();
 
             
 
@@ -215,15 +215,17 @@ impl LayerCompositor for WrCompositor {
             unsafe {
                 wrc_set_layer_position(
                     layer.layer_id,
-                    input.rect.min.x as f32,
-                    input.rect.min.y as f32,
+                    input.offset.x as f32,
+                    input.offset.y as f32,
                 );
             }
         }
+
+        true
     }
 
     
-    fn bind_layer(&mut self, index: usize) {
+    fn bind_layer(&mut self, index: usize, _dirty_rects: &[crate::DeviceIntRect]) {
         
         let layer = &self.layers[index];
 
@@ -239,7 +241,7 @@ impl LayerCompositor for WrCompositor {
     }
 
     
-    fn present_layer(&mut self, index: usize) {
+    fn present_layer(&mut self, index: usize, _dirty_rects: &[crate::DeviceIntRect]) {
         let layer = &self.layers[index];
 
         unsafe {
@@ -266,6 +268,13 @@ impl LayerCompositor for WrCompositor {
         unsafe {
             
             wrc_end_frame(self.compositor);
+        }
+    }
+
+    fn get_window_properties(&self) -> webrender::WindowProperties {
+        webrender::WindowProperties {
+            is_opaque: true,
+            enable_screenshot: false,
         }
     }
 }
