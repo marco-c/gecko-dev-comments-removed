@@ -132,7 +132,7 @@ impl ReportCrash {
             extra: &self.extra,
             ping_dir: self.config.ping_dir.as_deref(),
             minidump_hash,
-            pingsender_path: self.config.installation_program_path("pingsender").as_ref(),
+            pingsender_path: crate::config::installation_program_path("pingsender").as_ref(),
         }
         .send()
     }
@@ -597,23 +597,14 @@ impl ReportCrash {
             url,
         };
 
-        let report_response = report
-            .send()
-            .map(Some)
-            .unwrap_or_else(|e| {
-                log::error!("failed to initialize report transmission: {e}");
-                None
-            })
-            .and_then(|sender| {
-                
-                
-                
-                
-                sender.finish().map(Some).unwrap_or_else(|e| {
-                    log::error!("failed to send report: {e}");
-                    None
-                })
-            });
+        
+        
+        
+        
+        let report_response = report.send().map(Some).unwrap_or_else(|e| {
+            log::error!("failed to send report: {e:#}");
+            None
+        });
 
         let report_received = report_response.is_some();
         let crash_id = report_response.and_then(|response| {
