@@ -3550,7 +3550,10 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
     }
 
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
-        *directory, timestamp,  true, originMetadata)));
+        *directory,
+        FullOriginMetadata{
+            originMetadata,
+            OriginStateMetadata{timestamp,  true}})));
 
     
     

@@ -3416,15 +3416,17 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
           return std::make_pair(timestamp, persisted);
         });
 
-    
-    
-    
-    
-    AddTemporaryOrigin(FullOriginMetadata{
-        aOriginMetadata, OriginStateMetadata{timestamp, persisted}});
+    FullOriginMetadata fullOriginMetadata{
+        aOriginMetadata, OriginStateMetadata{timestamp, persisted}};
 
-    QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                  persisted, aOriginMetadata)));
+    
+    
+    
+    
+    AddTemporaryOrigin(fullOriginMetadata);
+
+    QM_TRY(MOZ_TO_RESULT(
+        CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
   }
 
   return std::move(directory);
@@ -3438,8 +3440,7 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryOriginDirectoryCreated(
 
 
 nsresult QuotaManager::CreateDirectoryMetadata2(
-    nsIFile& aDirectory, int64_t aTimestamp, bool aPersisted,
-    const OriginMetadata& aOriginMetadata) {
+    nsIFile& aDirectory, const FullOriginMetadata& aFullOriginMetadata) {
   AssertIsOnIOThread();
 
   QM_TRY(ArtificialFailure(
@@ -3455,27 +3456,28 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
                  GetBinaryOutputStream(*file, FileFlag::Truncate));
   MOZ_ASSERT(stream);
 
-  QM_TRY(MOZ_TO_RESULT(WriteDirectoryMetadataHeader(
-      *stream, OriginStateMetadata{aTimestamp, aPersisted})));
+  QM_TRY(MOZ_TO_RESULT(
+      WriteDirectoryMetadataHeader(*stream, aFullOriginMetadata)));
 
   
   
   
-  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(aOriginMetadata.mSuffix.get())));
+  QM_TRY(
+      MOZ_TO_RESULT(stream->WriteStringZ(aFullOriginMetadata.mSuffix.get())));
 
   
   
   
-  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(aOriginMetadata.mGroup.get())));
+  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(aFullOriginMetadata.mGroup.get())));
 
   QM_TRY(MOZ_TO_RESULT(
-      stream->WriteStringZ(aOriginMetadata.mStorageOrigin.get())));
+      stream->WriteStringZ(aFullOriginMetadata.mStorageOrigin.get())));
 
   
   
   
   
-  QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aOriginMetadata.mIsPrivate)));
+  QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aFullOriginMetadata.mIsPrivate)));
 
   QM_TRY(MOZ_TO_RESULT(stream->Flush()));
 
@@ -3599,9 +3601,8 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
   if (groupUpdated || lastAccessTimeUpdated) {
     
     
-    QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(
-        *aDirectory, fullOriginMetadata.mLastAccessTime,
-        fullOriginMetadata.mPersisted, fullOriginMetadata)));
+    QM_TRY(MOZ_TO_RESULT(
+        CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
   }
 
   return fullOriginMetadata;
@@ -6090,9 +6091,11 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
             const int64_t timestamp = PR_Now();
 
             
-            QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                           true,
-                                                          aOriginMetadata)));
+            QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(
+                *directory,
+                FullOriginMetadata{
+                    aOriginMetadata,
+                    OriginStateMetadata{timestamp,  true}})));
 
             return timestamp;
           }
@@ -6288,9 +6291,11 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
       AddTemporaryOrigin(fullOriginMetadata);
 
       
-      QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                     false,
-                                                    aOriginMetadata)));
+      QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(
+          *directory,
+          FullOriginMetadata{
+              aOriginMetadata,
+              OriginStateMetadata{timestamp,  false}})));
 
       
       InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
@@ -9499,8 +9504,10 @@ nsresult RestoreDirectoryMetadata2Helper::ProcessOriginDirectory(
 
   
   QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
-      *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-       false, aOriginProps.mOriginMetadata)));
+      *aOriginProps.mDirectory,
+      FullOriginMetadata{aOriginProps.mOriginMetadata,
+                         OriginStateMetadata{aOriginProps.mTimestamp,
+                                              false}})));
 
   return NS_OK;
 }
