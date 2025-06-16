@@ -2307,6 +2307,57 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
+
+enum class TrackSizingStep {
+  NotFlex,  
+  Flex,     
+};
+
+
+
+enum class TrackSizingPhase {
+  IntrinsicMinimums,
+  ContentBasedMinimums,
+  MaxContentMinimums,
+  IntrinsicMaximums,
+  MaxContentMaximums,
+};
+
+
+
+enum class GridIntrinsicSizeType {
+  MinSize,
+  MinContentContribution,
+  MaxContentContribution
+};
+
+
+namespace mozilla {
+template <>
+struct MaxContiguousEnumValue<GridIntrinsicSizeType> {
+  static constexpr GridIntrinsicSizeType value =
+      GridIntrinsicSizeType::MaxContentContribution;
+};
+}  
+
+
+static GridIntrinsicSizeType SizeTypeForPhase(TrackSizingPhase aPhase) {
+  switch (aPhase) {
+    case TrackSizingPhase::IntrinsicMinimums:
+      return GridIntrinsicSizeType::MinSize;
+    case TrackSizingPhase::ContentBasedMinimums:
+    case TrackSizingPhase::IntrinsicMaximums:
+      return GridIntrinsicSizeType::MinContentContribution;
+    case TrackSizingPhase::MaxContentMinimums:
+    case TrackSizingPhase::MaxContentMaximums:
+      return GridIntrinsicSizeType::MaxContentContribution;
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected phase");
+}
+
+
+
+
 struct nsGridContainerFrame::Tracks {
   explicit Tracks(LogicalAxis aAxis)
       : mContentBoxSize(NS_UNCONSTRAINEDSIZE),
@@ -2402,25 +2453,6 @@ struct nsGridContainerFrame::Tracks {
 
   void AlignBaselineSubtree(const GridItemInfo& aGridItem) const;
 
-  
-  
-  
-  
-  enum class TrackSizingStep {
-    NotFlex,  
-    Flex,     
-  };
-
-  
-  
-  enum class TrackSizingPhase {
-    IntrinsicMinimums,
-    ContentBasedMinimums,
-    MaxContentMinimums,
-    IntrinsicMaximums,
-    MaxContentMaximums,
-  };
-
   static TrackSize::StateBits SelectorForPhase(TrackSizingPhase aPhase,
                                                SizingConstraint aConstraint) {
     switch (aPhase) {
@@ -2450,9 +2482,7 @@ struct nsGridContainerFrame::Tracks {
     uint32_t mSpan;
     TrackSize::StateBits mState;
     LineRange mLineRange;
-    nscoord mMinSize;
-    nscoord mMinContentContribution;
-    nscoord mMaxContentContribution;
+    mozilla::EnumeratedArray<GridIntrinsicSizeType, nscoord> mSizes;
     nsIFrame* mFrame;
 
     static bool IsSpanLessThan(const SpanningItemData& a,
@@ -2461,27 +2491,19 @@ struct nsGridContainerFrame::Tracks {
     }
 
     nscoord SizeContributionForPhase(TrackSizingPhase aPhase) const {
-      switch (aPhase) {
-        case TrackSizingPhase::IntrinsicMinimums:
-          return mMinSize;
-        case TrackSizingPhase::ContentBasedMinimums:
-        case TrackSizingPhase::IntrinsicMaximums:
-          return mMinContentContribution;
-        case TrackSizingPhase::MaxContentMinimums:
-        case TrackSizingPhase::MaxContentMaximums:
-          return mMaxContentContribution;
-      }
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected phase");
+      return mSizes[SizeTypeForPhase(aPhase)];
     }
 
 #ifdef DEBUG
     void Dump() const {
       printf(
           "SpanningItemData { mSpan: %d, mState: %d, mLineRange: (%d, %d), "
-          "mMinSize: %d, mMinContentContribution: %d, mMaxContentContribution: "
-          "%d, mFrame: %p\n",
-          mSpan, mState, mLineRange.mStart, mLineRange.mEnd, mMinSize,
-          mMinContentContribution, mMaxContentContribution, mFrame);
+          "mSizes: {MinSize: %d, MinContentContribution: %d, "
+          "MaxContentContribution: %d}, mFrame: %p\n",
+          mSpan, mState, mLineRange.mStart, mLineRange.mEnd,
+          mSizes[GridIntrinsicSizeType::MinSize],
+          mSizes[GridIntrinsicSizeType::MinContentContribution],
+          mSizes[GridIntrinsicSizeType::MaxContentContribution], mFrame);
     }
 #endif
   };
@@ -5996,9 +6018,7 @@ struct CachedIntrinsicSizes {
                        const GridReflowInput& aGridRI, const LogicalAxis aAxis)
       : mPercentageBasis(aGridRI.PercentageBasisFor(aAxis, aGridItem)) {}
 
-  Maybe<nscoord> mMinSize;
-  Maybe<nscoord> mMinContentContribution;
-  Maybe<nscoord> mMaxContentContribution;
+  mozilla::EnumeratedArray<GridIntrinsicSizeType, Maybe<nscoord>> mSizes;
 
   
   const LogicalSize mPercentageBasis;
@@ -6016,13 +6036,14 @@ static nscoord MinContentContribution(const GridItemInfo& aGridItem,
                                       const GridReflowInput& aGridRI,
                                       LogicalAxis aAxis,
                                       CachedIntrinsicSizes* aCache) {
-  if (aCache->mMinContentContribution.isSome()) {
-    return aCache->mMinContentContribution.value();
+  if (const Maybe<nscoord> minContent =
+          aCache->mSizes[GridIntrinsicSizeType::MinContentContribution]) {
+    return *minContent;
   }
   nscoord s =
       ContentContribution(aGridItem, aGridRI, aAxis, aCache->mPercentageBasis,
                           IntrinsicISizeType::MinISize, aCache->mMinSizeClamp);
-  aCache->mMinContentContribution.emplace(s);
+  aCache->mSizes[GridIntrinsicSizeType::MinContentContribution].emplace(s);
   return s;
 }
 
@@ -6030,13 +6051,14 @@ static nscoord MaxContentContribution(const GridItemInfo& aGridItem,
                                       const GridReflowInput& aGridRI,
                                       LogicalAxis aAxis,
                                       CachedIntrinsicSizes* aCache) {
-  if (aCache->mMaxContentContribution.isSome()) {
-    return aCache->mMaxContentContribution.value();
+  if (const Maybe<nscoord> maxContent =
+          aCache->mSizes[GridIntrinsicSizeType::MaxContentContribution]) {
+    return *maxContent;
   }
   nscoord s =
       ContentContribution(aGridItem, aGridRI, aAxis, aCache->mPercentageBasis,
                           IntrinsicISizeType::PrefISize, aCache->mMinSizeClamp);
-  aCache->mMaxContentContribution.emplace(s);
+  aCache->mSizes[GridIntrinsicSizeType::MaxContentContribution].emplace(s);
   return s;
 }
 
@@ -6046,8 +6068,9 @@ static nscoord MinContribution(const GridItemInfo& aGridItem,
                                const GridReflowInput& aGridRI,
                                LogicalAxis aAxis,
                                CachedIntrinsicSizes* aCache) {
-  if (aCache->mMinSize.isSome()) {
-    return aCache->mMinSize.value();
+  if (const Maybe<nscoord> minSize =
+          aCache->mSizes[GridIntrinsicSizeType::MinSize]) {
+    return *minSize;
   }
   const WritingMode gridWM = aGridRI.mWM;
   nsIFrame* child = aGridItem.mFrame;
@@ -6066,7 +6089,7 @@ static nscoord MinContribution(const GridItemInfo& aGridItem,
   if (!styleSize->BehavesLikeInitialValue(axisInItemWM) &&
       !styleSize->HasPercent()) {
     nscoord s = MinContentContribution(aGridItem, aGridRI, aAxis, aCache);
-    aCache->mMinSize.emplace(s);
+    aCache->mSizes[GridIntrinsicSizeType::MinSize].emplace(s);
     return s;
   }
 
@@ -6115,7 +6138,7 @@ static nscoord MinContribution(const GridItemInfo& aGridItem,
                             nsLayoutUtils::MIN_INTRINSIC_ISIZE));
     }
   }
-  aCache->mMinSize.emplace(sz);
+  aCache->mSizes[GridIntrinsicSizeType::MinSize].emplace(sz);
   return sz;
 }
 
@@ -7019,8 +7042,11 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         }
 
         items->AppendElement(
-            SpanningItemData({span, state, lineRange, minSize, minContent,
-                              maxContent, gridItem.mFrame}));
+            SpanningItemData({span,
+                              state,
+                              lineRange,
+                              {minSize, minContent, maxContent},
+                              gridItem.mFrame}));
       }
     }
 
