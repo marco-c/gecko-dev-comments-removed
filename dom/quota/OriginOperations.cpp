@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "DirectoryMetadata.h"
 #include "ErrorList.h"
 #include "FileUtils.h"
 #include "GroupInfo.h"
@@ -1327,7 +1328,12 @@ nsresult SaveOriginAccessTimeOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
       OkIf(aQuotaManager.IsTemporaryOriginInitializedInternal(mOriginMetadata)),
       NS_ERROR_NOT_INITIALIZED);
 
-  int64_t timestamp = PR_Now();
+  auto maybeOriginStateMetadata =
+      aQuotaManager.GetOriginStateMetadata(mOriginMetadata);
+
+  auto originStateMetadata = maybeOriginStateMetadata.extract();
+
+  originStateMetadata.mLastAccessTime = PR_Now();
 
   QM_TRY_INSPECT(const auto& file,
                  aQuotaManager.GetOriginDirectory(mOriginMetadata));
@@ -1338,22 +1344,16 @@ nsresult SaveOriginAccessTimeOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   QM_TRY_INSPECT(const bool& exists, MOZ_TO_RESULT_INVOKE_MEMBER(file, Exists));
 
   if (exists) {
-    QM_TRY(MOZ_TO_RESULT(file->Append(nsLiteralString(METADATA_V2_FILE_NAME))));
-
-    QM_TRY_INSPECT(const auto& stream,
-                   GetBinaryOutputStream(*file, FileFlag::Update));
-    MOZ_ASSERT(stream);
-
-    QM_TRY(MOZ_TO_RESULT(stream->Write64(timestamp)));
-
-    QM_TRY(MOZ_TO_RESULT(stream->Close()));
+    QM_TRY(
+        MOZ_TO_RESULT(SaveDirectoryMetadataHeader(*file, originStateMetadata)));
 
     mSaved = true;
 
     aQuotaManager.IncreaseSaveOriginAccessTimeCountInternal();
   }
 
-  aQuotaManager.UpdateOriginAccessTime(mOriginMetadata, timestamp);
+  aQuotaManager.UpdateOriginAccessTime(mOriginMetadata,
+                                       originStateMetadata.mLastAccessTime);
 
   return NS_OK;
 }
@@ -3536,8 +3536,9 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         timestamp = PR_Now();
       }
 
-      FullOriginMetadata fullOriginMetadata =
-          FullOriginMetadata{originMetadata,  true, timestamp};
+      FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
+          originMetadata,
+          OriginStateMetadata{timestamp,  true}};
 
       
       
@@ -3567,7 +3568,8 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         
 
         FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
-            originMetadata,  true, timestamp};
+            originMetadata,
+            OriginStateMetadata{timestamp,  true}};
 
         aQuotaManager.InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
                                           0);
@@ -3595,22 +3597,11 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         }()));
 
     if (!persisted) {
-      QM_TRY_INSPECT(const auto& file,
-                     CloneFileAndAppend(
-                         *directory, nsLiteralString(METADATA_V2_FILE_NAME)));
-
-      QM_TRY_INSPECT(const auto& stream,
-                     GetBinaryOutputStream(*file, FileFlag::Update));
-
-      MOZ_ASSERT(stream);
-
       
-      QM_TRY(MOZ_TO_RESULT(stream->Write64(PR_Now())));
-
       
-      QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(true)));
-
-      QM_TRY(MOZ_TO_RESULT(stream->Close()));
+      QM_TRY(MOZ_TO_RESULT(SaveDirectoryMetadataHeader(
+          *directory, OriginStateMetadata{ PR_Now(),
+                                           true})));
 
       
       

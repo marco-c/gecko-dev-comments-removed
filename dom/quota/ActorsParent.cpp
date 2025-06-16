@@ -9,6 +9,7 @@
 
 #include "CanonicalQuotaObject.h"
 #include "ClientUsageArray.h"
+#include "DirectoryMetadata.h"
 #include "Flatten.h"
 #include "FirstInitializationAttemptsImpl.h"
 #include "GroupInfo.h"
@@ -3421,8 +3422,8 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
     
     
     
-    AddTemporaryOrigin(
-        FullOriginMetadata{aOriginMetadata, persisted, timestamp});
+    AddTemporaryOrigin(FullOriginMetadata{
+        aOriginMetadata, OriginStateMetadata{timestamp, persisted}});
 
     QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
                                                   persisted, aOriginMetadata)));
@@ -3456,15 +3457,8 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
                  GetBinaryOutputStream(*file, FileFlag::Truncate));
   MOZ_ASSERT(stream);
 
-  QM_TRY(MOZ_TO_RESULT(stream->Write64(aTimestamp)));
-
-  QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aPersisted)));
-
-  
-  QM_TRY(MOZ_TO_RESULT(stream->Write32(0)));
-
-  
-  QM_TRY(MOZ_TO_RESULT(stream->Write32(0)));
+  QM_TRY(MOZ_TO_RESULT(WriteDirectoryMetadataHeader(
+      *stream, OriginStateMetadata{aTimestamp, aPersisted})));
 
   
   
@@ -3524,22 +3518,10 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
 
   FullOriginMetadata fullOriginMetadata;
 
-  QM_TRY_UNWRAP(fullOriginMetadata.mLastAccessTime,
-                MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read64));
+  QM_TRY_INSPECT(const OriginStateMetadata& originStateMetadata,
+                 ReadDirectoryMetadataHeader(*binaryStream));
 
-  QM_TRY_UNWRAP(fullOriginMetadata.mPersisted,
-                MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, ReadBoolean));
-
-  QM_TRY_INSPECT(const bool& reservedData1,
-                 MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read32));
-  if (reservedData1 != 0) {
-    QM_TRY(MOZ_TO_RESULT(false));
-  }
-
-  
-  QM_TRY_INSPECT(const bool& reservedData2,
-                 MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read32));
-  Unused << reservedData2;
+  static_cast<OriginStateMetadata&>(fullOriginMetadata) = originStateMetadata;
 
   fullOriginMetadata.mPersistenceType = aPersistenceType;
 
@@ -4158,7 +4140,8 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
     QM_TRY(OkIf(usage.isValid()), NS_ERROR_FAILURE);
 
     InitQuotaForOrigin(
-        FullOriginMetadata{aOriginMetadata, aPersisted, aAccessTime},
+        FullOriginMetadata{aOriginMetadata,
+                           OriginStateMetadata{aAccessTime, aPersisted}},
         clientUsages, usage.value());
   }
 
@@ -6290,10 +6273,12 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     if (!aCreateIfNonExistent) {
       const int64_t timestamp = PR_Now();
 
-      InitQuotaForOrigin(FullOriginMetadata{aOriginMetadata,
-                                             false, timestamp},
-                         ClientUsageArray(),  0,
-                          false);
+      InitQuotaForOrigin(
+          FullOriginMetadata{
+              aOriginMetadata,
+              OriginStateMetadata{timestamp,  false}},
+          ClientUsageArray(),  0,
+           false);
 
       return std::pair(std::move(directory), false);
     }
@@ -6303,9 +6288,9 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     if (created) {
       const int64_t timestamp = PR_Now();
 
-      FullOriginMetadata fullOriginMetadata =
-          FullOriginMetadata{aOriginMetadata,
-                              false, timestamp};
+      FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
+          aOriginMetadata,
+          OriginStateMetadata{timestamp,  false}};
 
       
       
@@ -7228,6 +7213,23 @@ uint64_t QuotaManager::GetGroupLimit() const {
   
   return std::min<uint64_t>(mTemporaryStorageLimit,
                             std::max<uint64_t>(x, 10 MB));
+}
+
+Maybe<OriginStateMetadata> QuotaManager::GetOriginStateMetadata(
+    const OriginMetadata& aOriginMetadata) {
+  AssertIsOnIOThread();
+  MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
+  MOZ_DIAGNOSTIC_ASSERT(mTemporaryStorageInitializedInternal);
+
+  MutexAutoLock lock(mQuotaMutex);
+
+  RefPtr<OriginInfo> originInfo =
+      LockedGetOriginInfo(aOriginMetadata.mPersistenceType, aOriginMetadata);
+  if (originInfo) {
+    return Some(originInfo->LockedFlattenToOriginStateMetadata());
+  }
+
+  return Nothing();
 }
 
 std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(

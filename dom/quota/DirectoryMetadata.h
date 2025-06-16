@@ -1,0 +1,93 @@
+
+
+
+
+
+
+#ifndef DOM_QUOTA_DIRECTORYMETADATA_H_
+#define DOM_QUOTA_DIRECTORYMETADATA_H_
+
+#include <cstdint>
+
+enum class nsresult : uint32_t;
+
+class nsIBinaryInputStream;
+class nsIBinaryOutputStream;
+class nsIFile;
+
+namespace mozilla {
+
+template <typename V, typename E>
+class Result;
+
+}
+
+namespace mozilla::dom::quota {
+
+struct OriginStateMetadata;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
+    nsIBinaryInputStream& aStream);
+
+nsresult WriteDirectoryMetadataHeader(
+    nsIBinaryOutputStream& aStream,
+    const OriginStateMetadata& aOriginStateMetadata);
+
+Result<OriginStateMetadata, nsresult> LoadDirectoryMetadataHeader(
+    nsIFile& aDirectory);
+
+nsresult SaveDirectoryMetadataHeader(
+    nsIFile& aDirectory, const OriginStateMetadata& aOriginStateMetadata);
+
+}  
+
+#endif  
