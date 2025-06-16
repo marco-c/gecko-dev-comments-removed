@@ -39,9 +39,6 @@
 
 #include "gfxCrashReporterUtils.h"
 
-#include "gfxGDIFontList.h"
-#include "gfxGDIFont.h"
-
 #include "mozilla/layers/CanvasChild.h"
 #include "mozilla/layers/CompositorThread.h"
 
@@ -568,38 +565,7 @@ mozilla::gfx::BackendType gfxWindowsPlatform::GetPreferredCanvasBackend() {
 }
 
 bool gfxWindowsPlatform::CreatePlatformFontList() {
-  if (DWriteEnabled()) {
-    if (gfxPlatformFontList::Initialize(new gfxDWriteFontList)) {
-      return true;
-    }
-
-    
-    
-    
-    DisableD2D(FeatureStatus::Failed, "Failed to initialize fonts",
-               "FEATURE_FAILURE_FONT_FAIL"_ns);
-  }
-
-  
-  gfxPlatform::HasVariationFontSupport();
-  
-  
-  sHasVariationFontSupport = false;
-
-  return gfxPlatformFontList::Initialize(new gfxGDIFontList);
-}
-
-
-
-
-
-
-
-void gfxWindowsPlatform::DisableD2D(FeatureStatus aStatus, const char* aMessage,
-                                    const nsACString& aFailureId) {
-  gfxConfig::SetFailed(Feature::DIRECT2D, aStatus, aMessage, aFailureId);
-  Factory::SetDirect3D11Device(nullptr);
-  UpdateBackendPrefs();
+  return gfxPlatformFontList::Initialize(new gfxDWriteFontList);
 }
 
 already_AddRefed<gfxASurface> gfxWindowsPlatform::CreateOffscreenSurface(
