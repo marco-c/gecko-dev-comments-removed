@@ -9,7 +9,7 @@
 
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Credential.h"
-#include "mozilla/dom/PWebIdentity.h"
+#include "mozilla/dom/IPCIdentityCredential.h"
 #include "nsICredentialChosenCallback.h"
 #include "mozilla/IdentityCredentialStorageService.h"
 #include "mozilla/MozPromise.h"
@@ -25,13 +25,54 @@ class IdentityCredential final : public Credential {
   friend class mozilla::IdentityCredentialStorageService;
   friend class WindowGlobalChild;
 
+ public:
+  
+  
+  
+  
+  
+  typedef MozPromise<RefPtr<IdentityCredential>, nsresult, true>
+      GetIdentityCredentialPromise;
+  typedef MozPromise<nsTArray<RefPtr<IdentityCredential>>, nsresult, true>
+      GetIdentityCredentialsPromise;
+  typedef MozPromise<IPCIdentityCredential, nsresult, true>
+      GetIPCIdentityCredentialPromise;
+  typedef MozPromise<CopyableTArray<IPCIdentityCredential>, nsresult, true>
+      GetIPCIdentityCredentialsPromise;
+  typedef MozPromise<IdentityProviderRequestOptions, nsresult, true>
+      GetIdentityProviderRequestOptionsPromise;
+  typedef MozPromise<bool, nsresult, true> ValidationPromise;
+  typedef MozPromise<Maybe<IdentityProviderWellKnown>, nsresult, true>
+      GetRootManifestPromise;
+  typedef MozPromise<IdentityProviderAPIConfig, nsresult, true>
+      GetManifestPromise;
+  typedef std::tuple<IdentityProviderRequestOptions, IdentityProviderAPIConfig>
+      IdentityProviderRequestOptionsWithManifest;
+  typedef MozPromise<IdentityProviderRequestOptionsWithManifest, nsresult, true>
+      GetIdentityProviderRequestOptionsWithManifestPromise;
+  typedef MozPromise<
+      std::tuple<IdentityProviderAPIConfig, IdentityProviderAccountList>,
+      nsresult, true>
+      GetAccountListPromise;
+  typedef MozPromise<std::tuple<IdentityProviderToken, IdentityProviderAccount>,
+                     nsresult, true>
+      GetTokenPromise;
+  typedef MozPromise<
+      std::tuple<IdentityProviderAPIConfig, IdentityProviderAccount>, nsresult,
+      true>
+      GetAccountPromise;
+  typedef MozPromise<IdentityProviderClientMetadata, nsresult, true>
+      GetMetadataPromise;
+
  protected:
   ~IdentityCredential() override;
 
- public:
+  
+  
   explicit IdentityCredential(nsPIDOMWindowInner* aParent,
                               const IPCIdentityCredential& aOther);
 
+ public:
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
@@ -47,9 +88,249 @@ class IdentityCredential final : public Credential {
   static already_AddRefed<Promise> Disconnect(
       const GlobalObject& aGlobal,
       const IdentityCredentialDisconnectOptions& aOptions, ErrorResult& aRv);
+
+  static RefPtr<MozPromise<bool, nsresult, true>> DisconnectInMainProcess(
+      nsIPrincipal* aDocumentPrincipal,
+      const IdentityCredentialDisconnectOptions& aOptions);
+
   
   void GetToken(nsAString& aToken) const;
   void SetToken(const nsAString& aToken);
+
+  static nsresult ShowCredentialChooser(
+      const RefPtr<CanonicalBrowsingContext>& aContext,
+      const nsTArray<IPCIdentityCredential>& aCredentials,
+      const RefPtr<nsICredentialChosenCallback>& aCallback);
+
+  static void GetCredential(nsPIDOMWindowInner* aParent,
+                            const CredentialRequestOptions& aOptions,
+                            bool aSameOriginWithAncestors,
+                            const RefPtr<Promise>& aPromise);
+
+  static RefPtr<GetIPCIdentityCredentialPromise> GetCredentialInMainProcess(
+      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
+      IdentityCredentialRequestOptions&& aOptions,
+      const CredentialMediationRequirement& aMediationRequirement,
+      bool aHasUserActivation);
+
+  static nsresult CanSilentlyCollect(nsIPrincipal* aPrincipal,
+                                     nsIPrincipal* aIDPPrincipal,
+                                     bool* aResult);
+
+  static Maybe<IdentityProviderAccount> FindAccountToReauthenticate(
+      const IdentityProviderRequestOptions& aProvider,
+      nsIPrincipal* aRPPrincipal,
+      const IdentityProviderAccountList& aAccountList);
+
+  static Maybe<IdentityProviderRequestOptionsWithManifest> SkipAccountChooser(
+      const Sequence<IdentityProviderRequestOptions>& aProviders,
+      const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetIPCIdentityCredentialPromise>
+  DiscoverFromExternalSourceInMainProcess(
+      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
+      const IdentityCredentialRequestOptions& aOptions,
+      const CredentialMediationRequirement& aMediationRequirement);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetIPCIdentityCredentialPromise>
+  CreateCredentialDuringDiscovery(
+      nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
+      const IdentityProviderRequestOptions& aProvider,
+      const IdentityProviderAPIConfig& aManifest,
+      const CredentialMediationRequirement& aMediationRequirement);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetRootManifestPromise> FetchRootManifest(
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetManifestPromise> FetchManifest(
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetAccountListPromise> FetchAccountList(
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetTokenPromise> FetchToken(
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
+      const IdentityProviderAPIConfig& aManifest,
+      const IdentityProviderAccount& aAccount);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetMetadataPromise> FetchMetadata(
+      nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetIdentityProviderRequestOptionsWithManifestPromise>
+  PromptUserToSelectProvider(
+      BrowsingContext* aBrowsingContext,
+      const Sequence<IdentityProviderRequestOptions>& aProviders,
+      const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetAccountPromise> PromptUserToSelectAccount(
+      BrowsingContext* aBrowsingContext,
+      const IdentityProviderAccountList& aAccounts,
+      const IdentityProviderRequestOptions& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetAccountPromise> PromptUserWithPolicy(
+      BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
+      const IdentityProviderAccount& aAccount,
+      const IdentityProviderAPIConfig& aManifest,
+      const IdentityProviderRequestOptions& aProvider);
+
+  
+  
+  
+  
+  
+  
+  
+  static void CloseUserInterface(BrowsingContext* aBrowsingContext);
 
  private:
   nsAutoString mToken;

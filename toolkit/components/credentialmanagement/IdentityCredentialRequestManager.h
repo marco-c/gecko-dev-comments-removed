@@ -25,6 +25,7 @@ class IdentityCredentialRequestManager final : nsISupports {
   static StaticRefPtr<IdentityCredentialRequestManager> sSingleton;
   IdentityCredentialRequestManager() {};
   ~IdentityCredentialRequestManager() = default;
+
 };
 
 }  

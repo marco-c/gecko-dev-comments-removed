@@ -515,6 +515,7 @@ nsresult IdentityCredentialStorageService::DisconnectData(
 }
 
 
+
 nsresult IdentityCredentialStorageService::ClearData(
     mozIStorageConnection* aDatabaseConnection) {
   NS_ENSURE_ARG_POINTER(aDatabaseConnection);

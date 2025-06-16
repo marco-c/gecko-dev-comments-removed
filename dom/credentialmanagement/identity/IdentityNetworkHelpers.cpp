@@ -35,12 +35,14 @@ IdentityNetworkHelpers::FetchWellKnownHelper(
         IdentityProviderWellKnown value;
         bool success = value.Init(aCx, aValue);
         if (!success) {
+          JS_ClearPendingException(aCx);
           result->Reject(NS_ERROR_INVALID_ARG, __func__);
           return;
         }
         result->Resolve(value, __func__);
       },
       [result](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult&) {
+
         result->Reject(Promise::TryExtractNSResultFromRejectionValue(aValue),
                        __func__);
       });
@@ -80,6 +82,7 @@ IdentityNetworkHelpers::FetchConfigHelper(
         IdentityProviderAPIConfig value;
         bool success = value.Init(aCx, aValue);
         if (!success) {
+          JS_ClearPendingException(aCx);
           result->Reject(NS_ERROR_INVALID_ARG, __func__);
           return;
         }
