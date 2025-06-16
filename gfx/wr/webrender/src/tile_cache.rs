@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use api::{BorderRadius, ClipId, ClipMode, ColorF, DebugFlags, PrimitiveFlags, QualitySettings, RasterSpace};
 use api::units::*;
@@ -16,19 +16,19 @@ use crate::spatial_tree::{SpatialNodeIndex, SceneSpatialTree};
 use crate::util::VecHelper;
 use std::mem;
 
-/*
- Types and functionality related to picture caching. In future, we'll
- move more and more of the existing functionality out of picture.rs
- and into here.
- */
 
-// If the page would create too many slices (an arbitrary definition where
-// it's assumed the GPU memory + compositing overhead would be too high)
-// then create a single picture cache for the remaining content. This at
-// least means that we can cache small content changes efficiently when
-// scrolling isn't occurring. Scrolling regions will be handled reasonably
-// efficiently by the dirty rect tracking (since it's likely that if the
-// page has so many slices there isn't a single major scroll region).
+
+
+
+
+
+
+
+
+
+
+
+
 const MAX_CACHE_SLICES: usize = 12;
 
 struct SliceDescriptor {
@@ -54,13 +54,13 @@ impl SliceKind {
 }
 
 struct PrimarySlice {
-    /// Whether this slice is atomic or has secondary slice(s)
+    
     kind: SliceKind,
-    /// Optional background color of this slice
+    
     background_color: Option<ColorF>,
-    /// Optional root clip for the iframe
+    
     iframe_clip: Option<ClipId>,
-    /// Information about how to draw and composite this slice
+    
     slice_flags: SliceFlags,
 }
 
@@ -110,25 +110,25 @@ impl PrimarySlice {
     }
 }
 
-/// Used during scene building to construct the list of pending tile caches.
+
 pub struct TileCacheBuilder {
-    /// List of tile caches that have been created so far (last in the list is currently active).
+    
     primary_slices: Vec<PrimarySlice>,
-    /// Cache the previous scroll root search for a spatial node, since they are often the same.
+    
     prev_scroll_root_cache: (SpatialNodeIndex, SpatialNodeIndex),
-    /// Handle to the root reference frame
+    
     root_spatial_node_index: SpatialNodeIndex,
-    /// Debug flags to provide to our TileCacheInstances.
+    
     debug_flags: DebugFlags,
 }
 
-/// The output of a tile cache builder, containing all details needed to construct the
-/// tile cache(s) for the next scene, and retain tiles from the previous frame when sent
-/// send to the frame builder.
+
+
+
 pub struct TileCacheConfig {
-    /// Mapping of slice id to the parameters needed to construct this tile cache.
+    
     pub tile_caches: FastHashMap<SliceId, TileCacheParams>,
-    /// Number of picture cache slices that were created (for profiler)
+    
     pub picture_cache_slice_count: usize,
 }
 
@@ -142,7 +142,7 @@ impl TileCacheConfig {
 }
 
 impl TileCacheBuilder {
-    /// Construct a new tile cache builder.
+    
     pub fn new(
         root_spatial_node_index: SpatialNodeIndex,
         background_color: Option<ColorF>,
@@ -163,7 +163,7 @@ impl TileCacheBuilder {
             .merge();
     }
 
-    /// Returns true if the current slice has no primitives added yet
+    
     pub fn is_current_slice_empty(&self) -> bool {
         match self.primary_slices.last() {
             Some(slice) => {
@@ -182,7 +182,7 @@ impl TileCacheBuilder {
         }
     }
 
-    /// Set a barrier that forces a new tile cache next time a prim is added.
+    
     pub fn add_tile_cache_barrier(
         &mut self,
         slice_flags: SliceFlags,
@@ -197,7 +197,7 @@ impl TileCacheBuilder {
         self.primary_slices.push(new_slice);
     }
 
-    /// Create a new tile cache for an existing prim_list
+    
     fn build_tile_cache(
         &mut self,
         prim_list: PrimitiveList,
@@ -207,18 +207,18 @@ impl TileCacheBuilder {
             return None;
         }
 
-        // Iterate the clusters and determine which is the most commonly occurring
-        // scroll root. This is a reasonable heuristic to decide which spatial node
-        // should be considered the scroll root of this tile cache, in order to
-        // minimize the invalidations that occur due to scrolling. It's often the
-        // case that a blend container will have only a single scroll root.
+        
+        
+        
+        
+        
         let mut scroll_root_occurrences = FastHashMap::default();
 
         for cluster in &prim_list.clusters {
-            // If we encounter a cluster which has an unknown spatial node,
-            // we don't include that in the set of spatial nodes that we
-            // are trying to find scroll roots for. Later on, in finalize_picture,
-            // the cluster spatial node will be updated to the selected scroll root.
+            
+            
+            
+            
             if cluster.spatial_node_index == SpatialNodeIndex::UNKNOWN {
                 continue;
             }
@@ -233,12 +233,12 @@ impl TileCacheBuilder {
             *scroll_root_occurrences.entry(scroll_root).or_insert(0) += 1;
         }
 
-        // We can't just select the most commonly occurring scroll root in this
-        // primitive list. If that is a nested scroll root, there may be
-        // primitives in the list that are outside that scroll root, which
-        // can cause panics when calculating relative transforms. To ensure
-        // this doesn't happen, only retain scroll root candidates that are
-        // also ancestors of every other scroll root candidate.
+        
+        
+        
+        
+        
+        
         let scroll_roots: Vec<SpatialNodeIndex> = scroll_root_occurrences
             .keys()
             .cloned()
@@ -254,7 +254,7 @@ impl TileCacheBuilder {
             })
         });
 
-        // Select the scroll root by finding the most commonly occurring one
+        
         let scroll_root = scroll_root_occurrences
             .iter()
             .max_by_key(|entry | entry.1)
@@ -267,7 +267,7 @@ impl TileCacheBuilder {
         })
     }
 
-    /// Add a primitive, either to the current tile cache, or a new one, depending on various conditions.
+    
     pub fn add_prim(
         &mut self,
         prim_instance: PrimitiveInstance,
@@ -296,13 +296,13 @@ impl TileCacheBuilder {
             SliceKind::Default { ref mut secondary_slices } => {
                 assert_ne!(spatial_node_index, SpatialNodeIndex::UNKNOWN);
 
-                // Check if we want to create a new slice based on the current / next scroll root
+                
                 let scroll_root = find_scroll_root(
                     spatial_node_index,
                     &mut self.prev_scroll_root_cache,
                     spatial_tree,
-                    // Allow sticky frames as scroll roots, unless our quality settings prefer
-                    // subpixel AA over performance.
+                    
+                    
                     !quality_settings.force_subpixel_aa_where_possible,
                 );
 
@@ -315,26 +315,26 @@ impl TileCacheBuilder {
                 if let Some(current_scroll_root) = current_scroll_root {
                     want_new_tile_cache |= match (current_scroll_root, scroll_root) {
                         (_, _) if current_scroll_root == self.root_spatial_node_index && scroll_root == self.root_spatial_node_index => {
-                            // Both current slice and this cluster are fixed position, no need to cut
+                            
                             false
                         }
                         (_, _) if current_scroll_root == self.root_spatial_node_index => {
-                            // A real scroll root is being established, so create a cache slice
+                            
                             true
                         }
                         (_, _) if scroll_root == self.root_spatial_node_index => {
-                            // If quality settings force subpixel AA over performance, skip creating
-                            // a slice for the fixed position element(s) here.
+                            
+                            
                             if quality_settings.force_subpixel_aa_where_possible {
                                 false
                             } else {
-                                // A fixed position slice is encountered within a scroll root. Only create
-                                // a slice in this case if all the clips referenced by this cluster are also
-                                // fixed position. There's no real point in creating slices for these cases,
-                                // since we'll have to rasterize them as the scrolling clip moves anyway. It
-                                // also allows us to retain subpixel AA in these cases. For these types of
-                                // slices, the intra-slice dirty rect handling typically works quite well
-                                // (a common case is parallax scrolling effects).
+                                
+                                
+                                
+                                
+                                
+                                
+                                
                                 let mut create_slice = true;
 
                                 let leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
@@ -364,7 +364,7 @@ impl TileCacheBuilder {
                             }
                         }
                         (curr_scroll_root, scroll_root) => {
-                            // Two scrolling roots - only need a new slice if they differ
+                            
                             curr_scroll_root != scroll_root
                         }
                     };
@@ -393,7 +393,7 @@ impl TileCacheBuilder {
         }
     }
 
-    /// Consume this object and build the list of tile cache primitives
+    
     pub fn build(
         mut self,
         config: &FrameBuilderConfig,
@@ -407,9 +407,9 @@ impl TileCacheBuilder {
         let mut tile_cache_pictures = Vec::new();
         let primary_slices = std::mem::replace(&mut self.primary_slices, Vec::new());
 
-        // TODO: At the moment, culling, clipping and invalidation are always
-        // done in the root coordinate space. The plan is to move to doing it
-        // (always or mostly) in raster space.
+        
+        
+        
         let visibility_node = spatial_tree.root_reference_frame_index();
 
         for mut primary_slice in primary_slices {
@@ -471,7 +471,7 @@ impl TileCacheBuilder {
     }
 }
 
-/// Find the scroll root for a given spatial node
+
 fn find_scroll_root(
     spatial_node_index: SpatialNodeIndex,
     prev_scroll_root_cache: &mut (SpatialNodeIndex, SpatialNodeIndex),
@@ -488,8 +488,8 @@ fn find_scroll_root(
     scroll_root
 }
 
-/// Given a PrimitiveList and scroll root, construct a tile cache primitive instance
-/// that wraps the primitive list.
+
+
 fn create_tile_cache(
     debug_flags: DebugFlags,
     slice_flags: SliceFlags,
@@ -507,27 +507,27 @@ fn create_tile_cache(
     interners: &Interners,
     spatial_tree: &SceneSpatialTree,
 ) {
-    // Accumulate any clip instances from the iframe_clip into the shared clips
-    // that will be applied by this tile cache during compositing.
+    
+    
     let mut additional_clips = Vec::new();
 
     if let Some(clip_id) = iframe_clip {
         additional_clips.push(clip_id);
     }
 
-    // Find the best shared clip node that we can apply while compositing tiles,
-    // rather than applying to each item individually.
+    
+    
 
-    // Step 1: Walk the primitive list, and find the LCA of the clip-tree that
-    //         matches all primitives. This gives us our "best-case" shared
-    //         clip node that moves as many clips as possible to compositing.
+    
+    
+    
     let mut shared_clip_node_id = None;
 
     for cluster in &prim_list.clusters {
         for prim_instance in &prim_instances[cluster.prim_range()] {
             let leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
 
-            // TODO(gw): Need to cache last clip-node id here?
+            
             shared_clip_node_id = match shared_clip_node_id {
                 Some(current) => {
                     Some(clip_tree_builder.find_lowest_common_ancestor(current, leaf.node_id))
@@ -539,24 +539,24 @@ fn create_tile_cache(
         }
     }
 
-    // Step 2: Now we need to walk up the shared clip node hierarchy, and remove clips
-    //         that we can't handle during compositing, such as:
-    //         (a) Non axis-aligned clips
-    //         (b) Box-shadow or image-mask clips
-    //         (c) Rounded rect clips.
-    //
-    //         A follow up patch to this series will relax the condition on (c) to
-    //         allow tile caches to apply a single rounded-rect clip during compositing.
+    
+    
+    
+    
+    
+    
+    
+    
     let mut shared_clip_node_id = shared_clip_node_id.unwrap_or(ClipNodeId::NONE);
     let mut current_node_id = shared_clip_node_id;
     let mut rounded_rect_count = 0;
 
-    // Walk up the hierarchy to the root of the clip-tree
+    
     while current_node_id != ClipNodeId::NONE {
         let node = clip_tree_builder.get_node(current_node_id);
         let clip_node_data = &interners.clip[node.handle];
 
-        // Check if this clip is in the root coord system (i.e. is axis-aligned with tile-cache)
+        
         let is_rcs = spatial_tree.is_root_coord_system(clip_node_data.key.spatial_node_index);
 
         let node_valid = if is_rcs {
@@ -565,45 +565,44 @@ fn create_tile_cache(
                 ClipItemKeyKind::ImageMask(..) |
                 ClipItemKeyKind::Rectangle(_, ClipMode::ClipOut) |
                 ClipItemKeyKind::RoundedRectangle(_, _, ClipMode::ClipOut) => {
-                    // Has a box-shadow / image-mask, we can't handle this as a shared clip
+                    
                     false
                 }
                 ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) => {
-                    // The shader and CoreAnimation rely on certain constraints such
-                    // as uniform radii to be able to apply the clip during compositing.
+                    
+                    
                     if BorderRadius::from(radius).can_use_fast_path_in(&rect.into()) {
                         rounded_rect_count += 1;
 
-                        // TODO(gw): Enable this once also supported by native and swgl compositors
-                        false
+                        true
                     } else {
                         false
                     }
                 }
                 ClipItemKeyKind::Rectangle(_, ClipMode::Clip) => {
-                    // We can apply multiple (via combining) axis-aligned rectangle
-                    // clips to the shared compositing clip.
+                    
+                    
                     true
                 }
             }
         } else {
-            // Has a complex transform, we can't handle this as a shared clip
+            
             false
         };
 
         if node_valid {
-            // This node was found to be one we can apply during compositing.
+            
             if rounded_rect_count > 1 {
-                // However, we plan to only support one rounded-rect clip. If
-                // we have found > 1 rounded rect, drop children from the shared
-                // clip, and continue looking up the chain.
+                
+                
+                
                 shared_clip_node_id = current_node_id;
                 rounded_rect_count = 1;
             }
         } else {
-            // Node was invalid, due to transform / clip type. Drop this clip
-            // and reset the rounded rect count to 0, since we drop children
-            // from here too.
+            
+            
+            
             shared_clip_node_id = node.parent;
             rounded_rect_count = 0;
         }
@@ -616,12 +615,12 @@ fn create_tile_cache(
         &additional_clips,
     ));
 
-    // Build a clip-chain for the tile cache, that contains any of the shared clips
-    // we will apply when drawing the tiles. In all cases provided by Gecko, these
-    // are rectangle clips with a scale/offset transform only, and get handled as
-    // a simple local clip rect in the vertex shader. However, this should in theory
-    // also work with any complex clips, such as rounded rects and image masks, by
-    // producing a clip mask that is applied to the picture cache tiles.
+    
+    
+    
+    
+    
+    
 
     let slice = tile_cache_pictures.len();
 
@@ -633,8 +632,8 @@ fn create_tile_cache(
 
     let slice_id = SliceId::new(slice);
 
-    // Store some information about the picture cache slice. This is used when we swap the
-    // new scene into the frame builder to either reuse existing slices, or create new ones.
+    
+    
     tile_caches.insert(slice_id, TileCacheParams {
         debug_flags,
         slice,
@@ -663,7 +662,7 @@ fn create_tile_cache(
     tile_cache_pictures.push(PictureIndex(pic_index));
 }
 
-/// Debug information about a set of picture cache slices, exposed via RenderResults
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -678,8 +677,8 @@ impl PictureCacheDebugInfo {
         }
     }
 
-    /// Convenience method to retrieve a given slice. Deliberately panics
-    /// if the slice isn't present.
+    
+    
     pub fn slice(&self, slice: usize) -> &SliceDebugInfo {
         &self.slices[&slice]
     }
@@ -691,7 +690,7 @@ impl Default for PictureCacheDebugInfo {
     }
 }
 
-/// Debug information about a set of picture cache tiles, exposed via RenderResults
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -706,14 +705,14 @@ impl SliceDebugInfo {
         }
     }
 
-    /// Convenience method to retrieve a given tile. Deliberately panics
-    /// if the tile isn't present.
+    
+    
     pub fn tile(&self, x: i32, y: i32) -> &TileDebugInfo {
         &self.tiles[&TileOffset::new(x, y)]
     }
 }
 
-/// Debug information about a tile that was dirty and was rasterized
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -722,18 +721,18 @@ pub struct DirtyTileDebugInfo {
     pub local_dirty_rect: PictureRect,
 }
 
-/// Debug information about the state of a tile
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TileDebugInfo {
-    /// Tile was occluded by a tile in front of it
+    
     Occluded,
-    /// Tile was culled (not visible in current display port)
+    
     Culled,
-    /// Tile was valid (no rasterization was done) and visible
+    
     Valid,
-    /// Tile was dirty, and was updated
+    
     Dirty(DirtyTileDebugInfo),
 }
 
