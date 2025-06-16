@@ -3066,7 +3066,7 @@ Scope* JSScript::innermostScope(const jsbytecode* pc) const {
 }
 
 void js::SetFrameArgumentsObject(JSContext* cx, AbstractFramePtr frame,
-                                 HandleScript script, JSObject* argsobj) {
+                                 JSObject* argsobj) {
   
 
 
@@ -3074,7 +3074,9 @@ void js::SetFrameArgumentsObject(JSContext* cx, AbstractFramePtr frame,
 
 
 
-  Rooted<BindingIter> bi(cx, BindingIter(script));
+  JSScript* script = frame.script();
+
+  BindingIter bi(script);
   while (bi && bi.name() != cx->names().arguments) {
     bi++;
   }
