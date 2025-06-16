@@ -17374,7 +17374,7 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
       
       return EffectsInfo::FullyHidden();
     }
-    if (MOZ_UNLIKELY(NS_WARN_IF(!subDocFrame))) {
+    if (MOZ_UNLIKELY(!subDocFrame)) {
       
       
       return EffectsInfo::FullyHidden();
