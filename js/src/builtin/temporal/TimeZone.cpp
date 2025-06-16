@@ -540,6 +540,30 @@ static bool GetNamedTimeZoneOffsetNanoseconds(
 
 
 
+
+static bool EqualTimeZoneOffset(JSContext* cx,
+                                mozilla::intl::TimeZone* timeZone,
+                                int64_t utcMilliseconds1,
+                                int64_t utcMilliseconds2, bool* result) {
+  auto offset1 = timeZone->GetOffsetMs(utcMilliseconds1);
+  if (offset1.isErr()) {
+    intl::ReportInternalError(cx, offset1.unwrapErr());
+    return false;
+  }
+
+  auto offset2 = timeZone->GetOffsetMs(utcMilliseconds2);
+  if (offset2.isErr()) {
+    intl::ReportInternalError(cx, offset2.unwrapErr());
+    return false;
+  }
+
+  *result = offset1.unwrap() == offset2.unwrap();
+  return true;
+}
+
+
+
+
 bool js::temporal::GetNamedTimeZoneNextTransition(
     JSContext* cx, Handle<TimeZoneValue> timeZone,
     const EpochNanoseconds& epochNanoseconds,
@@ -559,26 +583,50 @@ bool js::temporal::GetNamedTimeZoneNextTransition(
     return false;
   }
 
-  auto next = tz->GetNextTransition(millis);
-  if (next.isErr()) {
-    intl::ReportInternalError(cx, next.unwrapErr());
-    return false;
-  }
+  
+  
+  
+  
+  
+  
+  while (true) {
+    auto next = tz->GetNextTransition(millis);
+    if (next.isErr()) {
+      intl::ReportInternalError(cx, next.unwrapErr());
+      return false;
+    }
 
-  auto transition = next.unwrap();
-  if (!transition) {
-    *result = mozilla::Nothing();
+    
+    auto transition = next.unwrap();
+    if (!transition) {
+      *result = mozilla::Nothing();
+      return true;
+    }
+
+    
+    
+    bool equalOffset;
+    if (!EqualTimeZoneOffset(cx, tz, millis, *transition, &equalOffset)) {
+      return false;
+    }
+
+    
+    
+    if (equalOffset) {
+      millis = *transition;
+      continue;
+    }
+
+    
+    auto transitionInstant = EpochNanoseconds::fromMilliseconds(*transition);
+    if (!IsValidEpochNanoseconds(transitionInstant)) {
+      *result = mozilla::Nothing();
+      return true;
+    }
+
+    *result = mozilla::Some(transitionInstant);
     return true;
   }
-
-  auto transitionInstant = EpochNanoseconds::fromMilliseconds(*transition);
-  if (!IsValidEpochNanoseconds(transitionInstant)) {
-    *result = mozilla::Nothing();
-    return true;
-  }
-
-  *result = mozilla::Some(transitionInstant);
-  return true;
 }
 
 
@@ -609,10 +657,47 @@ bool js::temporal::GetNamedTimeZonePreviousTransition(
     return false;
   }
 
+  
   auto transition = previous.unwrap();
   if (!transition) {
     *result = mozilla::Nothing();
     return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  while (true) {
+    
+    auto beforePrevious = tz->GetPreviousTransition(*transition);
+    if (beforePrevious.isErr()) {
+      intl::ReportInternalError(cx, beforePrevious.unwrapErr());
+      return false;
+    }
+
+    
+    auto beforePreviousTransition = beforePrevious.unwrap();
+    if (!beforePreviousTransition) {
+      break;
+    }
+
+    
+    bool equalOffset;
+    if (!EqualTimeZoneOffset(cx, tz, *transition, *beforePreviousTransition,
+                             &equalOffset)) {
+      return false;
+    }
+
+    
+    if (!equalOffset) {
+      break;
+    }
+
+    
+    transition = beforePreviousTransition;
   }
 
   auto transitionInstant = EpochNanoseconds::fromMilliseconds(*transition);
