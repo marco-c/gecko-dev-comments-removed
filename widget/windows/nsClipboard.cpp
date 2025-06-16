@@ -578,7 +578,6 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(
 }
 
 
-
 nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void** aData,
                                     uint32_t* aLen) {
   MOZ_CLIPBOARD_LOG("%s", __FUNCTION__);
@@ -704,37 +703,6 @@ HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
 
 
 
-
-
-
-
-
-template <typename CharType>
-static nsresult GetCharDataFromGlobalData(STGMEDIUM& aStm, CharType** aData,
-                                          uint32_t* aByteLen) {
-  uint32_t nBytes = 0;
-  MOZ_TRY(nsClipboard::GetGlobalData(aStm.hGlobal,
-                                     reinterpret_cast<void**>(aData), &nBytes));
-  auto nChars = nBytes / sizeof(CharType);
-
-  
-  
-  if (nChars > 1 && (*aData)[nChars - 2] == CharType(0) &&
-      (*aData)[nChars - 1] == CharType(0xa)) {
-    nChars -= 2;
-  }
-  
-  CharType* afterLastChar = *aData + nChars;
-  auto it = std::find_if(std::reverse_iterator(afterLastChar),
-                         std::reverse_iterator(*aData),
-                         [](CharType ch) { return ch != CharType(0); });
-  *aByteLen = std::distance(*aData, it.base()) * sizeof(CharType);
-  return NS_OK;
-}
-
-
-
-
 nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
                                                 UINT aIndex, UINT aFormat,
                                                 const char* aMIMEImageFormat,
@@ -796,13 +764,31 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
   
   switch (fe.cfFormat) {
     case CF_TEXT: {
-      return GetCharDataFromGlobalData(stm, reinterpret_cast<char**>(aData),
-                                       aLen);
+      
+      
+      
+      
+      
+      
+      
+      uint32_t allocLen = 0;
+      MOZ_TRY(GetGlobalData(stm.hGlobal, aData, &allocLen));
+      *aLen = strlen(reinterpret_cast<char*>(*aData));
+      return NS_OK;
     }
 
     case CF_UNICODETEXT: {
-      return GetCharDataFromGlobalData(stm, reinterpret_cast<char16_t**>(aData),
-                                       aLen);
+      
+      
+      
+      
+      
+      
+      
+      uint32_t allocLen = 0;
+      MOZ_TRY(GetGlobalData(stm.hGlobal, aData, &allocLen));
+      *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 2;
+      return NS_OK;
     }
 
     case CF_DIBV5: {
