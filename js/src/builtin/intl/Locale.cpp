@@ -355,9 +355,33 @@ static bool ApplyOptionsToTag(JSContext* cx, mozilla::intl::Locale& tag,
   }
 
   
+  if (!GetStringOption(cx, options, cx->names().variants, &option)) {
+    return false;
+  }
 
   
-  if (language.Present() || script.Present() || region.Present()) {
+  mozilla::intl::Locale::VariantsVector variants;
+  if (option) {
+    bool ok;
+    if (!intl::ParseStandaloneVariantTag(option, variants, &ok)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    if (!ok) {
+      if (UniqueChars str = QuoteString(cx, option, '"')) {
+        JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                  JSMSG_INVALID_OPTION_VALUE, "variants",
+                                  str.get());
+      }
+      return false;
+    }
+  }
+
+  
+  if (language.Present() || script.Present() || region.Present() ||
+      !variants.empty()) {
+    
+
     
     if (language.Present()) {
       tag.SetLanguage(language);
@@ -374,6 +398,12 @@ static bool ApplyOptionsToTag(JSContext* cx, mozilla::intl::Locale& tag,
     }
 
     
+    if (!variants.empty()) {
+      tag.SetVariants(std::move(variants));
+    }
+
+    
+    
     
     
     auto result = tag.CanonicalizeBaseName();
@@ -389,6 +419,7 @@ static bool ApplyOptionsToTag(JSContext* cx, mozilla::intl::Locale& tag,
     }
   }
 
+  
   return true;
 }
 
@@ -562,6 +593,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
                                  JSUseCounter::LEGACY_LANG_SUBTAG);
   }
 
+  
   if (auto result = tag.CanonicalizeBaseName(); result.isErr()) {
     if (result.unwrapErr() ==
         mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
@@ -731,7 +763,6 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  
   
   if (auto result = tag.CanonicalizeExtensions(); result.isErr()) {
     if (result.unwrapErr() ==

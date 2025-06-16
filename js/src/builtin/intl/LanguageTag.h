@@ -57,6 +57,15 @@ namespace intl {
 
 
 
+[[nodiscard]] bool ParseStandaloneVariantTag(
+    JS::Handle<JSLinearString*> str,
+    mozilla::intl::Locale::VariantsVector& result, bool* success);
+
+
+
+
+
+
 JS::Result<JSString*> ParseStandaloneISO639LanguageTag(
     JSContext* cx, JS::Handle<JSLinearString*> str);
 
