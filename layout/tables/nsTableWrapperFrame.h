@@ -168,6 +168,11 @@ class nsTableWrapperFrame : public nsContainerFrame {
     return HasCaption() ? mFrames.FirstChild()->GetNextSibling() : nullptr;
   }
 
+  
+  nsTableFrame* InnerTableFrame() const {
+    return static_cast<nsTableFrame*>(mFrames.FirstChild());
+  }
+
  protected:
   nsTableWrapperFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                       ClassID aID = kClassID);
@@ -233,10 +238,6 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
   
   void UpdateOverflowAreas(ReflowOutput& aMet);
-
-  nsTableFrame* InnerTableFrame() const {
-    return static_cast<nsTableFrame*>(mFrames.FirstChild());
-  }
 
   
 

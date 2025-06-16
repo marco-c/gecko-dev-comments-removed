@@ -1980,8 +1980,8 @@ static bool IsTablePseudo(nsIFrame* aFrame) {
           aFrame->GetParent()->Style()->GetPseudoType() ==
               PseudoStyleType::tableCell) ||
          (pseudoType == PseudoStyleType::tableWrapper &&
-          aFrame->PrincipalChildList()
-              .FirstChild()
+          static_cast<nsTableWrapperFrame*>(aFrame)
+              ->InnerTableFrame()
               ->Style()
               ->IsPseudoOrAnonBox());
 }
@@ -7177,7 +7177,8 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     
     
     if (!captionPrevSibling || captionPrevSibling->GetParent() != outerTable) {
-      captionPrevSibling = outerTable->PrincipalChildList().FirstChild();
+      captionPrevSibling =
+          static_cast<nsTableWrapperFrame*>(outerTable)->InnerTableFrame();
     }
 
     captionList.ApplySetParent(outerTable);
@@ -7319,15 +7320,13 @@ static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
   }
   if (aFrame->IsTableCaption()) {
     MOZ_ASSERT(aParent->IsTableWrapperFrame());
-    auto* table = aParent->PrincipalChildList().FirstChild();
+    auto* table = static_cast<nsTableWrapperFrame*>(aParent)->InnerTableFrame();
     MOZ_ASSERT(table);
-    MOZ_ASSERT(table->IsTableFrame());
     return IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame,
                                            table) &&
            
            
-           AllChildListsAreEffectivelyEmpty(
-               aParent->PrincipalChildList().FirstChild());
+           AllChildListsAreEffectivelyEmpty(table);
   }
   MOZ_ASSERT(!aFrame->IsTableColGroupFrame());
   return IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame);
@@ -7887,8 +7886,9 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingOuterTableFrame(
   
   nsFrameList newChildFrames;
 
-  if (nsIFrame* childFrame = aFrame->PrincipalChildList().FirstChild()) {
-    MOZ_ASSERT(childFrame->IsTableFrame());
+  MOZ_ASSERT(aFrame->IsTableWrapperFrame());
+  if (nsTableFrame* childFrame =
+          static_cast<nsTableWrapperFrame*>(aFrame)->InnerTableFrame()) {
     nsIFrame* continuingTableFrame =
         CreateContinuingFrame(childFrame, newFrame);
     newChildFrames.AppendFrame(nullptr, continuingTableFrame);
