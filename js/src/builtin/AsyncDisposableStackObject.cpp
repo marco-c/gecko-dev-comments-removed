@@ -140,8 +140,8 @@ using namespace js;
  bool AsyncDisposableStackObject::disposed_impl(
     JSContext* cx, const JS::CallArgs& args) {
   
-  JS::Rooted<AsyncDisposableStackObject*> disposableStack(
-      cx, &args.thisv().toObject().as<AsyncDisposableStackObject>());
+  auto* disposableStack =
+      &args.thisv().toObject().as<AsyncDisposableStackObject>();
 
   
   

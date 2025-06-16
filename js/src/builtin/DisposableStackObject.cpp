@@ -313,8 +313,7 @@ using namespace js;
  bool DisposableStackObject::disposed_impl(
     JSContext* cx, const JS::CallArgs& args) {
   
-  JS::Rooted<DisposableStackObject*> disposableStack(
-      cx, &args.thisv().toObject().as<DisposableStackObject>());
+  auto* disposableStack = &args.thisv().toObject().as<DisposableStackObject>();
 
   
   

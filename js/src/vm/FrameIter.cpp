@@ -19,7 +19,6 @@
 #include "js/ColumnNumber.h"  
 #include "js/GCAPI.h"              
 #include "js/Principals.h"         
-#include "js/RootingAPI.h"         
 #include "vm/Activation.h"         
 #include "vm/EnvironmentObject.h"  
 #include "vm/JitActivation.h"      
@@ -43,7 +42,6 @@ class ArgumentsObject;
 }  
 
 using JS::Realm;
-using JS::Rooted;
 using JS::Value;
 
 using js::AbstractFramePtr;
