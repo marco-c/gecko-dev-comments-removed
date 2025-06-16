@@ -11191,7 +11191,9 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
   
   
   if (aFrame->IsTableCaption()) {
-    nsIFrame* innerTable = parent->PrincipalChildList().FirstChild();
+    MOZ_ASSERT(parent->IsTableWrapperFrame());
+    nsTableFrame* innerTable =
+        static_cast<const nsTableWrapperFrame*>(parent)->InnerTableFrame();
     if (!innerTable->Style()->IsAnonBox()) {
       return innerTable;
     }
@@ -11202,8 +11204,10 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
   
   auto pseudo = aFrame->Style()->GetPseudoType();
   if (pseudo == PseudoStyleType::tableWrapper) {
-    pseudo =
-        aFrame->PrincipalChildList().FirstChild()->Style()->GetPseudoType();
+    MOZ_ASSERT(aFrame->IsTableWrapperFrame());
+    nsTableFrame* innerTable =
+        static_cast<const nsTableWrapperFrame*>(aFrame)->InnerTableFrame();
+    pseudo = innerTable->Style()->GetPseudoType();
   }
 
   
