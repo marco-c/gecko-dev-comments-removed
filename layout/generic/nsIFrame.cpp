@@ -5882,7 +5882,8 @@ static bool UseFrameEdge(nsIFrame* aFrame) {
     return true;
   }
   const nsImageFrame* image = do_QueryFrame(aFrame);
-  if (image && !aFrame->GetContent()->IsEditable()) {
+  if ((image || aFrame->IsHTMLCanvasFrame()) &&
+      !aFrame->GetContent()->IsEditable()) {
     
     
     return true;
