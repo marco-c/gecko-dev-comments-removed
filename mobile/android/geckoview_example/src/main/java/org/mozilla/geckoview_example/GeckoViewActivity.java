@@ -152,7 +152,8 @@ class WebExtensionManager
     return GeckoResult.fromValue(
         new org.mozilla.geckoview.WebExtension.PermissionPromptResponse(
             true, 
-            true 
+            true, 
+            false 
             ));
   }
 

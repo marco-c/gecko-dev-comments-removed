@@ -3015,16 +3015,37 @@ public class WebExtension {
     @Nullable public final Boolean isPrivateModeGranted;
 
     
+    @Nullable public final Boolean isTechnicalAndInteractionDataGranted;
+
+    
+
+
+
+
+
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-permission-prompt-response", version = 143)
+    public PermissionPromptResponse(
+        final @Nullable Boolean isPermissionsGranted,
+        final @Nullable Boolean isPrivateModeGranted) {
+      this(isPermissionsGranted, isPrivateModeGranted, false);
+    }
+
+    
+
+
 
 
 
 
 
     public PermissionPromptResponse(
-        final @Nullable Boolean isPermissionsGranted,
-        final @Nullable Boolean isPrivateModeGranted) {
+        final Boolean isPermissionsGranted,
+        final Boolean isPrivateModeGranted,
+        final Boolean isTechnicalAndInteractionDataGranted) {
       this.isPermissionsGranted = isPermissionsGranted;
       this.isPrivateModeGranted = isPrivateModeGranted;
+      this.isTechnicalAndInteractionDataGranted = isTechnicalAndInteractionDataGranted;
     }
   }
 }

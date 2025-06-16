@@ -2671,6 +2671,7 @@ class NavigationDelegateTest : BaseSessionTest() {
                     WebExtension.PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }

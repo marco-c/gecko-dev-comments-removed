@@ -614,9 +614,27 @@ class WebExtensionTest : BaseSessionTest() {
             ),
         )
 
+        sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
+            @AssertCalled
+            override fun onInstallPromptRequest(
+                extension: WebExtension,
+                permissions: Array<String>,
+                origins: Array<String>,
+                dataCollectionPermissions: Array<String>,
+            ): GeckoResult<PermissionPromptResponse>? {
+                return GeckoResult.fromValue(
+                    PermissionPromptResponse(
+                        true, 
+                        false, 
+                        false, 
+                    ),
+                )
+            }
+        })
+
         val extension = sessionRule.waitForResult(
-            controller.ensureBuiltIn(
-                "resource://android/assets/web_extensions/data-collection/",
+            controller.install(
+                "resource://android/assets/web_extensions/data-collection-unsigned.xpi",
                 "data-collection@test.mozilla.org",
             ),
         )
@@ -785,6 +803,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         true, 
+                        false, 
                     ),
                 )
             }
@@ -898,6 +917,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -972,6 +992,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -1051,6 +1072,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         true, 
+                        false, 
                     ),
                 )
             }
@@ -1110,6 +1132,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -1200,6 +1223,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -1281,6 +1305,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -1341,6 +1366,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -1408,6 +1434,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -1513,6 +1540,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -1581,6 +1609,7 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
+                        false, 
                         false, 
                         false, 
                     ),
@@ -2199,6 +2228,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -2283,6 +2313,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -2302,6 +2333,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -3226,6 +3258,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -3293,6 +3326,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -3339,6 +3373,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -3393,6 +3428,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -3473,6 +3509,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -3535,6 +3572,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -3616,6 +3654,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -3663,6 +3702,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -3730,6 +3770,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -3896,6 +3937,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -3980,6 +4022,7 @@ class WebExtensionTest : BaseSessionTest() {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
                         true, 
+                        false, 
                         false, 
                     ),
                 )
@@ -4284,6 +4327,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -4426,6 +4470,7 @@ class WebExtensionTest : BaseSessionTest() {
                     PermissionPromptResponse(
                         true, 
                         false, 
+                        false, 
                     ),
                 )
             }
@@ -4454,5 +4499,59 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("about:crashextensions")
 
         sessionRule.waitForResult(controller.uninstall(borderify))
+    }
+
+    @Test
+    fun installWebExtensionWithTechnicalAndInteractionData() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "xpinstall.signatures.required" to false,
+                "extensions.dataCollectionPermissions.enabled" to true,
+            ),
+        )
+
+        sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
+            @AssertCalled
+            override fun onInstallPromptRequest(
+                extension: WebExtension,
+                permissions: Array<String>,
+                origins: Array<String>,
+                dataCollectionPermissions: Array<String>,
+            ): GeckoResult<PermissionPromptResponse>? {
+                return GeckoResult.fromValue(
+                    
+                    
+                    PermissionPromptResponse(
+                        true, 
+                        false, 
+                        true, 
+                    ),
+                )
+            }
+        })
+
+        val extension = sessionRule.waitForResult(
+            controller.install(
+                "resource://android/assets/web_extensions/data-collection-unsigned.xpi",
+                "data-collection@test.mozilla.org",
+            ),
+        )
+        assertEquals("data-collection@test.mozilla.org", extension.id)
+
+        var optionalDataCollectionPermissions = extension.metaData.optionalDataCollectionPermissions
+        assertArrayEquals(
+            "optionalDataCollectionPermissions has the expected permissions",
+            arrayOf("technicalAndInteraction", "locationInfo"),
+            optionalDataCollectionPermissions,
+        )
+
+        var grantedOptionalDataCollectionPermissions = extension.metaData.grantedOptionalDataCollectionPermissions
+        assertArrayEquals(
+            "grantedOptionalDataCollectionPermissions has the expected permissions",
+            arrayOf("technicalAndInteraction"),
+            grantedOptionalDataCollectionPermissions,
+        )
+
+        sessionRule.waitForResult(controller.uninstall(extension))
     }
 }
