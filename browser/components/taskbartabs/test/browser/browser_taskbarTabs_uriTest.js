@@ -6,8 +6,7 @@ ChromeUtils.defineESModuleGetters(this, {
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
-const URL =
-  "https://example.com/browser/browser/components/taskbartabs/test/browser/dummy_page.html";
+const URL = "https://example.com/";
 
 
 
