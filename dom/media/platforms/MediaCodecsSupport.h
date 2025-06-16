@@ -44,8 +44,6 @@ using MediaCodecSet = EnumSet<MediaCodec, uint64_t>;
 
 #define SW_DECODE(codec) codec##SoftwareDecode
 #define HW_DECODE(codec) codec##HardwareDecode
-#define SW_ENCODE(codec) codec##SoftwareEncode
-#define HW_ENCODE(codec) codec##HardwareEncode
 
 
 
@@ -58,17 +56,13 @@ using MediaCodecSet = EnumSet<MediaCodec, uint64_t>;
 
 
 enum class MediaCodecsSupport : int {
-#define X(name)                                                       \
-  SW_DECODE(name), HW_DECODE(name), SW_ENCODE(name), HW_ENCODE(name), \
-      LACK_HW_EXTENSION(name),
+#define X(name) SW_DECODE(name), HW_DECODE(name), LACK_HW_EXTENSION(name),
   CODEC_LIST
 #undef X
       SENTINEL
 };
 #undef SW_DECODE
 #undef HW_DECODE
-#undef SW_ENCODE
-#undef HW_ENCODE
 #undef CODEC_LIST  // end of macros!
 
 
@@ -83,14 +77,6 @@ enum class DecodeSupport : int {
 using DecodeSupportSet = EnumSet<DecodeSupport, uint64_t>;
 
 
-enum class EncodeSupport : int {
-  SoftwareEncode,
-  HardwareEncode,
-  UnsureDueToLackOfExtension,
-};
-using EncodeSupportSet = EnumSet<EncodeSupport, uint64_t>;
-
-
 
 struct CodecDefinition {
   MediaCodec codec = MediaCodec::SENTINEL;
@@ -98,18 +84,12 @@ struct CodecDefinition {
   const char* mimeTypeString = "Undefined MIME type string";
   MediaCodecsSupport swDecodeSupport = MediaCodecsSupport::SENTINEL;
   MediaCodecsSupport hwDecodeSupport = MediaCodecsSupport::SENTINEL;
-  MediaCodecsSupport swEncodeSupport = MediaCodecsSupport::SENTINEL;
-  MediaCodecsSupport hwEncodeSupport = MediaCodecsSupport::SENTINEL;
   MediaCodecsSupport lackOfHWExtenstion = MediaCodecsSupport::SENTINEL;
 };
 
 
 class MCSInfo final {
  public:
-  
-  
-  static MediaCodecsSupported GetSupportFromFactory(bool aForceRefresh = false);
-
   
   
   
@@ -148,8 +128,6 @@ class MCSInfo final {
   
   static DecodeSupportSet GetDecodeSupportSet(
       const MediaCodec& aCodec, const MediaCodecsSupported& aSupported);
-  static EncodeSupportSet GetEncodeSupportSet(
-      const MediaCodec& aCodec, const MediaCodecsSupported& aSupported);
 
   
   
@@ -164,8 +142,6 @@ class MCSInfo final {
   
   static MediaCodecsSupported GetDecodeMediaCodecsSupported(
       const MediaCodec& aCodec, const DecodeSupportSet& aSupportSet);
-  static MediaCodecsSupported GetEncodeMediaCodecsSupported(
-      const MediaCodec& aCodec, const EncodeSupportSet& aSupportSet);
 
   
   
@@ -207,19 +183,11 @@ class MCSInfo final {
   
   static MediaCodecsSupport GetMediaCodecsSupportEnum(
       const MediaCodec& aCodec, const DecodeSupport& aSupport);
-  static MediaCodecsSupport GetMediaCodecsSupportEnum(
-      const MediaCodec& aCodec, const EncodeSupport& aSupport);
 
   
   static bool SupportsSoftwareDecode(
       const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
   static bool SupportsHardwareDecode(
-      const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
-
-  
-  static bool SupportsSoftwareEncode(
-      const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
-  static bool SupportsHardwareEncode(
       const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
 
   MCSInfo(MCSInfo const&) = delete;

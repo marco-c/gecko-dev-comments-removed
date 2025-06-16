@@ -8,7 +8,6 @@
 #  define PlatformEncoderModule_h_
 
 #  include "MP4Decoder.h"
-#  include "MediaCodecsSupport.h"
 #  include "MediaResult.h"
 #  include "VPXDecoder.h"
 #  include "mozilla/Maybe.h"
@@ -44,9 +43,8 @@ class PlatformEncoderModule {
                                            true>;
 
   
-  virtual media::EncodeSupportSet Supports(
-      const EncoderConfig& aConfig) const = 0;
-  virtual media::EncodeSupportSet SupportsCodec(CodecType aCodecType) const = 0;
+  virtual bool Supports(const EncoderConfig& aConfig) const = 0;
+  virtual bool SupportsCodec(CodecType aCodecType) const = 0;
 
   
   virtual const char* GetName() const = 0;

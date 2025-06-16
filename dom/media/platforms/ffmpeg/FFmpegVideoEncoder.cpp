@@ -310,19 +310,6 @@ bool FFmpegVideoEncoder<LIBAV_VER>::SvcEnabled() const {
 }
 
 MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoder() {
-  MediaResult result(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
-  if (mConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
-    result = InitEncoderInternal( true);
-  }
-  
-  
-  if (NS_FAILED(result.Code())) {
-    result = InitEncoderInternal( false);
-  }
-  return result;
-}
-
-MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 
   ForceEnablingFFmpegDebugLogs();
@@ -330,7 +317,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   FFMPEGV_LOG("FFmpegVideoEncoder::InitEncoder");
 
   
-  auto r = AllocateCodecContext(aHardware);
+  auto r = AllocateCodecContext(mLib, mCodecID);
   if (r.isErr()) {
     return r.inspectErr();
   }
