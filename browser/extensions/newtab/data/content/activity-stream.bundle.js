@@ -5085,9 +5085,17 @@ function TrendingSearches() {
         title: result.suggestion,
         setRef: item => resultRef.current[index] = item,
         tabIndex: index === 0 ? 0 : -1
-      }, React.createElement("span", {
+      }, result.icon ? React.createElement("div", {
+        className: "trending-icon-wrapper"
+      }, React.createElement("img", {
+        src: result.icon,
+        alt: "",
+        className: "trending-icon"
+      }), React.createElement("div", {
+        className: "trending-info-wrapper"
+      }, result.lowerCaseSuggestion, React.createElement("small", null, result.description))) : React.createElement(React.Fragment, null, React.createElement("span", {
         className: "trending-searches-icon icon icon-arrow-trending"
-      }), result.lowerCaseSuggestion));
+      }), result.lowerCaseSuggestion)));
     })));
   }
 }
