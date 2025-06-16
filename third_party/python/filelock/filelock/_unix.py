@@ -26,7 +26,9 @@ if sys.platform == "win32":
 else:  
     try:
         import fcntl
-    except ImportError:
+
+        _ = (fcntl.flock, fcntl.LOCK_EX, fcntl.LOCK_NB, fcntl.LOCK_UN)
+    except (ImportError, AttributeError):
         pass
     else:
         has_fcntl = True
@@ -56,7 +58,7 @@ else:
             
             
             
-            fd = cast(int, self._context.lock_file_fd)
+            fd = cast("int", self._context.lock_file_fd)
             self._context.lock_file_fd = None
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)

@@ -106,7 +106,7 @@ class FileLockMeta(ABCMeta):
                     if passed_param != set_param
                 }
                 if not non_matching_params:
-                    return cast(BaseFileLock, instance)
+                    return cast("BaseFileLock", instance)
 
                 
                 msg = "Singleton lock instances cannot be initialized with differing arguments"
@@ -136,7 +136,7 @@ class FileLockMeta(ABCMeta):
         if is_singleton:
             cls._instances[str(lock_file)] = instance  
 
-        return cast(BaseFileLock, instance)
+        return cast("BaseFileLock", instance)
 
 
 class BaseFileLock(contextlib.ContextDecorator, metaclass=FileLockMeta):

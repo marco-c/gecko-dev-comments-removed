@@ -10,5 +10,6 @@ USE_EXTENSIONS = not NO_EXTENSIONS and not PYPY
 if USE_EXTENSIONS:
     try:
         from . import _multidict  
-    except ImportError:
+    except ImportError:  
+        
         USE_EXTENSIONS = False
