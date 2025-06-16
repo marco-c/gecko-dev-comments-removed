@@ -4,7 +4,7 @@
 
 "use strict";
 
-add_task(setup);
+add_setup(setup);
 
 add_task(async function testCleanFlow() {
   
