@@ -2700,12 +2700,9 @@ impl TileCacheInstance {
         if !transform.is_2d_scale_translation() {
             let result = Err(ComplexTransform);
             
-            if !force {
-                return result;
-            }
-
+				    
             
-            self.report_promotion_failure(result, pic_coverage_rect, true);
+            return result;
         }
 
         if self.slice_flags.contains(SliceFlags::IS_ATOMIC) {
