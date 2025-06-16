@@ -3,11 +3,11 @@
 
 
 
-#ifndef include_dom_media_ipc_RemoteDecoderManagerParent_h
-#define include_dom_media_ipc_RemoteDecoderManagerParent_h
+#ifndef include_dom_media_ipc_RemoteMediaManagerParent_h
+#define include_dom_media_ipc_RemoteMediaManagerParent_h
 
 #include "GPUVideoImage.h"
-#include "mozilla/PRemoteDecoderManagerParent.h"
+#include "mozilla/PRemoteMediaManagerParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/VideoBridgeChild.h"
 
@@ -17,17 +17,15 @@ class PDMFactory;
 class PMFCDMParent;
 class PMFMediaEngineParent;
 
-class RemoteDecoderManagerParent final
-    : public PRemoteDecoderManagerParent,
-      public layers::IGPUVideoSurfaceManager {
-  friend class PRemoteDecoderManagerParent;
+class RemoteMediaManagerParent final : public PRemoteMediaManagerParent,
+                                       public layers::IGPUVideoSurfaceManager {
+  friend class PRemoteMediaManagerParent;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderManagerParent, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteMediaManagerParent, override)
 
-  static bool CreateForContent(
-      Endpoint<PRemoteDecoderManagerParent>&& aEndpoint,
-      dom::ContentParentId aContentId);
+  static bool CreateForContent(Endpoint<PRemoteMediaManagerParent>&& aEndpoint,
+                               dom::ContentParentId aContentId);
 
   static bool CreateVideoBridgeToOtherProcess(
       Endpoint<layers::PVideoBridgeChild>&& aEndpoint);
@@ -82,11 +80,11 @@ class RemoteDecoderManagerParent final
   void ActorDestroy(mozilla::ipc::IProtocol::ActorDestroyReason) override;
 
  private:
-  RemoteDecoderManagerParent(nsISerialEventTarget* aThread,
-                             dom::ContentParentId aContentId);
-  ~RemoteDecoderManagerParent();
+  RemoteMediaManagerParent(nsISerialEventTarget* aThread,
+                           dom::ContentParentId aContentId);
+  ~RemoteMediaManagerParent();
 
-  void Open(Endpoint<PRemoteDecoderManagerParent>&& aEndpoint);
+  void Open(Endpoint<PRemoteMediaManagerParent>&& aEndpoint);
 
   std::map<uint64_t, RefPtr<layers::Image>> mImageMap;
   std::map<uint64_t, RefPtr<layers::TextureClient>> mTextureMap;

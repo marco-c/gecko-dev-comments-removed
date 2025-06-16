@@ -9,7 +9,7 @@
 #include "GPUVideoImage.h"
 #include "mozilla/PRemoteDecoderChild.h"
 #include "mozilla/RemoteDecodeUtils.h"
-#include "mozilla/RemoteDecoderManagerChild.h"
+#include "mozilla/RemoteMediaManagerChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
 
@@ -183,8 +183,8 @@ RemoteImageHolder::~RemoteImageHolder() {
   }
 
   if (!aResult->IsEmpty()) {
-    aResult->mManager = RemoteDecoderManagerChild::GetSingleton(
-        GetRemoteDecodeInFromVideoBridgeSource(aResult->mSource));
+    aResult->mManager = RemoteMediaManagerChild::GetSingleton(
+        GetRemoteMediaInFromVideoBridgeSource(aResult->mSource));
   }
   return true;
 }

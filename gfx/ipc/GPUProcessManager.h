@@ -26,7 +26,7 @@ enum class DeviceResetReason;
 
 namespace mozilla {
 class MemoryReportingProcess;
-class PRemoteDecoderManagerChild;
+class PRemoteMediaManagerChild;
 namespace layers {
 class IAPZCTreeManager;
 class CompositorOptions;
@@ -110,7 +110,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutCompositor,
       mozilla::ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
       mozilla::ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
-      mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>* aOutVideoManager,
+      mozilla::ipc::Endpoint<PRemoteMediaManagerChild>* aOutVideoManager,
       dom::ContentParentId aChildId, nsTArray<uint32_t>* aNamespaces);
 
   
@@ -239,10 +239,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       mozilla::ipc::EndpointProcInfo aOtherProcess,
       dom::ContentParentId aChildId,
       mozilla::ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
-  void CreateContentRemoteDecoderManager(
+  void CreateContentRemoteMediaManager(
       mozilla::ipc::EndpointProcInfo aOtherProcess,
       dom::ContentParentId aChildId,
-      mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>* aOutEndPoint);
+      mozilla::ipc::Endpoint<PRemoteMediaManagerChild>* aOutEndPoint);
 
   
   

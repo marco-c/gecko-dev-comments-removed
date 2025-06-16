@@ -3,14 +3,14 @@
 
 
 
-#ifndef include_dom_media_ipc_RemoteDecoderManagerChild_h
-#define include_dom_media_ipc_RemoteDecoderManagerChild_h
+#ifndef include_dom_media_ipc_RemoteMediaManagerChild_h
+#define include_dom_media_ipc_RemoteMediaManagerChild_h
 
 #include "GPUVideoImage.h"
 #include "PDMFactory.h"
 #include "ipc/EnumSerializer.h"
 #include "mozilla/EnumTypeTraits.h"
-#include "mozilla/PRemoteDecoderManagerChild.h"
+#include "mozilla/PRemoteMediaManagerChild.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 
@@ -20,7 +20,7 @@ class PMFCDMChild;
 class PMFMediaEngineChild;
 class RemoteDecoderChild;
 
-enum class RemoteDecodeIn {
+enum class RemoteMediaIn {
   Unspecified,
   RddProcess,
   GpuProcess,
@@ -38,37 +38,37 @@ enum class TrackSupport {
 };
 using TrackSupportSet = EnumSet<TrackSupport, uint8_t>;
 
-class RemoteDecoderManagerChild final
-    : public PRemoteDecoderManagerChild,
+class RemoteMediaManagerChild final
+    : public PRemoteMediaManagerChild,
       public mozilla::ipc::IShmemAllocator,
       public mozilla::layers::IGPUVideoSurfaceManager {
-  friend class PRemoteDecoderManagerChild;
+  friend class PRemoteMediaManagerChild;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderManagerChild, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteMediaManagerChild, override)
 
   
-  static RemoteDecoderManagerChild* GetSingleton(RemoteDecodeIn aLocation);
+  static RemoteMediaManagerChild* GetSingleton(RemoteMediaIn aLocation);
 
   static void Init();
-  static void SetSupported(RemoteDecodeIn aLocation,
+  static void SetSupported(RemoteMediaIn aLocation,
                            const media::MediaCodecsSupported& aSupported);
 
   
-  static bool Supports(RemoteDecodeIn aLocation,
+  static bool Supports(RemoteMediaIn aLocation,
                        const SupportDecoderParams& aParams,
                        DecoderDoctorDiagnostics* aDiagnostics);
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateAudioDecoder(
-      const CreateDecoderParams& aParams, RemoteDecodeIn aLocation);
+      const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
-      const CreateDecoderParams& aParams, RemoteDecodeIn aLocation);
+      const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
 
   
   static nsISerialEventTarget* GetManagerThread();
 
   
   
-  static TrackSupportSet GetTrackSupport(RemoteDecodeIn aLocation);
+  static TrackSupportSet GetTrackSupport(RemoteMediaIn aLocation);
 
   
   
@@ -78,10 +78,10 @@ class RemoteDecoderManagerChild final
       const SurfaceDescriptorGPUVideo& aSD) override;
 
   bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override {
-    return PRemoteDecoderManagerChild::AllocShmem(aSize, aShmem);
+    return PRemoteMediaManagerChild::AllocShmem(aSize, aShmem);
   }
   bool AllocUnsafeShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override {
-    return PRemoteDecoderManagerChild::AllocUnsafeShmem(aSize, aShmem);
+    return PRemoteMediaManagerChild::AllocUnsafeShmem(aSize, aShmem);
   }
 
   
@@ -90,7 +90,7 @@ class RemoteDecoderManagerChild final
 
   
   static void InitForGPUProcess(
-      Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
+      Endpoint<PRemoteMediaManagerChild>&& aVideoManager);
   static void Shutdown();
 
   
@@ -99,12 +99,12 @@ class RemoteDecoderManagerChild final
   
   void RunWhenGPUProcessRecreated(already_AddRefed<Runnable> aTask);
 
-  RemoteDecodeIn Location() const { return mLocation; }
+  RemoteMediaIn Location() const { return mLocation; }
 
   
   
   static RefPtr<GenericNonExclusivePromise> LaunchUtilityProcessIfNeeded(
-      RemoteDecodeIn aLocation);
+      RemoteMediaIn aLocation);
 
  protected:
   void HandleFatalError(const char* aMsg) override;
@@ -124,30 +124,29 @@ class RemoteDecoderManagerChild final
   bool DeallocPMFCDMChild(PMFCDMChild* actor);
 
  private:
-  explicit RemoteDecoderManagerChild(RemoteDecodeIn aLocation);
-  ~RemoteDecoderManagerChild() = default;
+  explicit RemoteMediaManagerChild(RemoteMediaIn aLocation);
+  ~RemoteMediaManagerChild() = default;
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> Construct(
-      RefPtr<RemoteDecoderChild>&& aChild, RemoteDecodeIn aLocation);
+      RefPtr<RemoteDecoderChild>&& aChild, RemoteMediaIn aLocation);
 
-  static void OpenRemoteDecoderManagerChildForProcess(
-      Endpoint<PRemoteDecoderManagerChild>&& aEndpoint,
-      RemoteDecodeIn aLocation);
+  static void OpenRemoteMediaManagerChildForProcess(
+      Endpoint<PRemoteMediaManagerChild>&& aEndpoint, RemoteMediaIn aLocation);
 
   
   static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
 
   
-  const RemoteDecodeIn mLocation;
+  const RemoteMediaIn mLocation;
 };
 
 }  
 
 namespace IPC {
 template <>
-struct ParamTraits<mozilla::RemoteDecodeIn>
-    : public ContiguousEnumSerializer<mozilla::RemoteDecodeIn,
-                                      mozilla::RemoteDecodeIn::Unspecified,
-                                      mozilla::RemoteDecodeIn::SENTINEL> {};
+struct ParamTraits<mozilla::RemoteMediaIn>
+    : public ContiguousEnumSerializer<mozilla::RemoteMediaIn,
+                                      mozilla::RemoteMediaIn::Unspecified,
+                                      mozilla::RemoteMediaIn::SENTINEL> {};
 }  
 
 #endif  
