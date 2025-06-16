@@ -51,22 +51,22 @@ pub enum Target {
 
 
 #[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
-pub struct PtNameAndClassSelector(thin_vec::ThinVec<AtomIdent>);
+pub struct PtNameAndClassSelector(thin_vec::ThinVec<Atom>);
 
 impl PtNameAndClassSelector {
     
-    pub fn from_name(name: AtomIdent) -> Self {
+    pub fn from_name(name: Atom) -> Self {
         Self(thin_vec![name])
     }
 
     
-    pub fn name(&self) -> &AtomIdent {
+    pub fn name(&self) -> &Atom {
         debug_assert!(!self.0.is_empty());
         self.0.first().expect("Shouldn't be empty")
     }
 
     
-    pub fn classes(&self) -> &[AtomIdent] {
+    pub fn classes(&self) -> &[Atom] {
         debug_assert!(!self.0.is_empty());
         &self.0[1..]
     }
@@ -88,12 +88,12 @@ impl PtNameAndClassSelector {
         
         let parse_pt_name = |input: &mut Parser<'i, '_>| {
             
-            if matches!(target, Target::Selector)
-                && input.try_parse(|i| i.expect_delim('*')).is_ok()
+            if matches!(target, Target::Selector) &&
+                input.try_parse(|i| i.expect_delim('*')).is_ok()
             {
-                Ok(AtomIdent::new(atom!("*")))
+                Ok(atom!("*"))
             } else {
-                CustomIdent::parse(input, &[]).map(|c| AtomIdent::new(c.0))
+                CustomIdent::parse(input, &[]).map(|c| c.0)
             }
         };
         let name = input.try_parse(parse_pt_name);
@@ -117,7 +117,7 @@ impl PtNameAndClassSelector {
             if let Ok(token) = input.try_parse(|i| i.expect_whitespace()) {
                 return Err(input.new_unexpected_token_error(Token::WhiteSpace(token)));
             }
-            CustomIdent::parse(input, &[]).map(|c| AtomIdent::new(c.0))
+            CustomIdent::parse(input, &[]).map(|c| c.0)
         };
         
         if name.is_err() {
@@ -136,7 +136,7 @@ impl PtNameAndClassSelector {
 
         
         
-        let mut result = thin_vec![name.unwrap_or(AtomIdent::new(atom!("*")))];
+        let mut result = thin_vec![name.unwrap_or(atom!("*"))];
         result.append(&mut classes);
 
         Ok(Self(result))
@@ -149,16 +149,16 @@ impl ToCss for PtNameAndClassSelector {
         W: fmt::Write,
     {
         let name = self.name();
-        if name.0 == atom!("*") {
+        if name == &atom!("*") {
             
             dest.write_char('*')?;
         } else {
-            serialize_atom_identifier(&name.0, dest)?;
+            serialize_atom_identifier(name, dest)?;
         }
 
         for class in self.classes() {
             dest.write_char('.')?;
-            serialize_atom_identifier(&class.0, dest)?;
+            serialize_atom_identifier(class, dest)?;
         }
 
         Ok(())
@@ -352,7 +352,7 @@ impl PseudoElement {
                 
                 
                 
-                (name.name().0 != atom!("*")) as u32
+                (name.name() != &atom!("*")) as u32
             },
             _ => 1,
         }
