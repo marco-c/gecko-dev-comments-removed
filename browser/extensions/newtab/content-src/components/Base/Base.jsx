@@ -619,7 +619,6 @@ export class BaseContent extends React.PureComponent {
     const { showTopicSelection } = DiscoveryStream;
     const mayShowTopicSelection =
       showTopicSelection && prefs["discoverystream.topicSelection.enabled"];
-
     const { pocketConfig } = prefs;
 
     const isDiscoveryStream =
@@ -651,6 +650,7 @@ export class BaseContent extends React.PureComponent {
       showRecentSavesEnabled: prefs.showRecentSaves,
       topSitesRowsCount: prefs.topSitesRows,
       weatherEnabled: prefs.showWeather,
+      trendingSearchEnabled: prefs["trendingSearch.enabled"],
     };
 
     const pocketRegion = prefs["feeds.system.topstories"];
@@ -660,6 +660,11 @@ export class BaseContent extends React.PureComponent {
     const mayHaveWeather = prefs["system.showWeather"];
     const { mayHaveSponsoredTopSites } = prefs;
     const supportUrl = prefs["support.url"];
+
+    // Trending Searches experiment pref check
+    const mayHaveTrendingSearch =
+      prefs["system.trendingSearch.enabled"] &&
+      prefs["trendingSearch.defaultSearchEngine"].toLowerCase() === "google";
 
     // Mobile Download Promo Pref Checks
     const mobileDownloadPromoEnabled = prefs["mobileDownloadModal.enabled"];
@@ -769,6 +774,7 @@ export class BaseContent extends React.PureComponent {
             mayHaveSponsoredStories={mayHaveSponsoredStories}
             mayHaveInferredPersonalization={mayHaveInferredPersonalization}
             mayHaveWeather={mayHaveWeather}
+            mayHaveTrendingSearch={mayHaveTrendingSearch}
             spocMessageVariant={spocMessageVariant}
             showing={customizeMenuVisible}
           />
