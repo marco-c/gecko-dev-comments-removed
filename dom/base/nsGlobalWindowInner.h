@@ -429,9 +429,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   static bool DeviceSensorsEnabled(JSContext*, JSObject*);
 
-  
-  static bool IsGleanNeeded(JSContext*, JSObject*);
-
   bool DoResolve(
       JSContext* aCx, JS::Handle<JSObject*> aObj, JS::Handle<jsid> aId,
       JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc);
