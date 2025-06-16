@@ -293,54 +293,52 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame,
 static CGFloat kMaxFocusRingWidth =
     0;  
 
+enum class CocoaSize { Mini = 0, Small, Regular };
+static constexpr size_t kControlSizeCount = 3;
 
-enum {
-  leopardOSorlater = 0,  
-  yosemiteOSorlater = 1  
-};
+template <typename T>
+using PerSizeArray = EnumeratedArray<CocoaSize, T, kControlSizeCount>;
 
-enum { miniControlSize, smallControlSize, regularControlSize };
-
-enum { leftMargin, topMargin, rightMargin, bottomMargin };
-
-static size_t EnumSizeForCocoaSize(NSControlSize cocoaControlSize) {
-  if (cocoaControlSize == NSControlSizeMini)
-    return miniControlSize;
-  else if (cocoaControlSize == NSControlSizeSmall)
-    return smallControlSize;
-  else
-    return regularControlSize;
+static CocoaSize EnumSizeForCocoaSize(NSControlSize cocoaControlSize) {
+  switch (cocoaControlSize) {
+    case NSControlSizeMini:
+      return CocoaSize::Mini;
+    case NSControlSizeSmall:
+      return CocoaSize::Small;
+    default:
+      return CocoaSize::Regular;
+  }
 }
 
-static NSControlSize CocoaSizeForEnum(int32_t enumControlSize) {
-  if (enumControlSize == miniControlSize)
-    return NSControlSizeMini;
-  else if (enumControlSize == smallControlSize)
-    return NSControlSizeSmall;
-  else
-    return NSControlSizeRegular;
+static NSControlSize ControlSizeForEnum(CocoaSize enumControlSize) {
+  switch (enumControlSize) {
+    case CocoaSize::Mini:
+      return NSControlSizeMini;
+    case CocoaSize::Small:
+      return NSControlSizeSmall;
+    case CocoaSize::Regular:
+      return NSControlSizeRegular;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown enum");
+  return NSControlSizeRegular;
 }
 
 static NSString* CUIControlSizeForCocoaSize(NSControlSize aControlSize) {
-  if (aControlSize == NSControlSizeRegular)
-    return @"regular";
-  else if (aControlSize == NSControlSizeSmall)
-    return @"small";
-  else
-    return @"mini";
+  if (aControlSize == NSControlSizeRegular) return @"regular";
+  if (aControlSize == NSControlSizeSmall) return @"small";
+  return @"mini";
 }
 
-static void InflateControlRect(NSRect* rect, NSControlSize cocoaControlSize,
-                               const float marginSet[][3][4]) {
-  if (!marginSet) return;
+using CellMarginArray = PerSizeArray<IntMargin>;
 
-  static int osIndex = yosemiteOSorlater;
-  size_t controlSize = EnumSizeForCocoaSize(cocoaControlSize);
-  const float* buttonMargins = marginSet[osIndex][controlSize];
-  rect->origin.x -= buttonMargins[leftMargin];
-  rect->origin.y -= buttonMargins[bottomMargin];
-  rect->size.width += buttonMargins[leftMargin] + buttonMargins[rightMargin];
-  rect->size.height += buttonMargins[bottomMargin] + buttonMargins[topMargin];
+static void InflateControlRect(NSRect* rect, NSControlSize cocoaControlSize,
+                               const CellMarginArray& marginSet) {
+  auto controlSize = EnumSizeForCocoaSize(cocoaControlSize);
+  const IntMargin& buttonMargins = marginSet[controlSize];
+  rect->origin.x -= buttonMargins.left;
+  rect->origin.y -= buttonMargins.bottom;
+  rect->size.width += buttonMargins.LeftRight();
+  rect->size.height += buttonMargins.TopBottom();
 }
 
 static NSWindow* NativeWindowForFrame(nsIFrame* aFrame,
@@ -360,7 +358,7 @@ static NSSize WindowButtonsSize(nsIFrame* aFrame) {
   NSWindow* window = NativeWindowForFrame(aFrame);
   if (!window) {
     
-    return NSMakeSize(54, 16);
+    return NSSize{54, 16};
   }
 
   NSRect buttonBox = NSZeroRect;
@@ -394,12 +392,6 @@ static BOOL FrameIsInActiveWindow(nsIFrame* aFrame) {
     return [win isKeyWindow];
   }
   return [win isMainWindow] && ![win attachedSheet];
-}
-
-
-
-static BOOL IsActiveToolbarControl(nsIFrame* aFrame) {
-  return NativeWindowForFrame(aFrame).isMainWindow;
 }
 
 NS_IMPL_ISUPPORTS_INHERITED(nsNativeThemeCocoa, nsNativeTheme, nsITheme)
@@ -544,14 +536,11 @@ static int GetBackingScaleFactorForRendering(CGContextRef cgContext) {
 
 
 
-
-
-
 static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext,
                                 const HIRect& destRect,
                                 NSControlSize controlSize, NSSize naturalSize,
                                 NSSize minimumSize,
-                                const float marginSet[][3][4], NSView* view,
+                                const CellMarginArray& marginSet, NSView* view,
                                 BOOL mirrorHorizontal) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
@@ -679,17 +668,14 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext,
 struct CellRenderSettings {
   
   
-  NSSize naturalSizes[3];
+  PerSizeArray<NSSize> naturalSizes;
 
   
   
-  NSSize minimumSizes[3];
+  PerSizeArray<NSSize> minimumSizes;
 
   
-  
-  
-  
-  float margins[2][3][4];
+  PerSizeArray<IntMargin> margins;
 };
 
 
@@ -701,38 +687,40 @@ struct CellRenderSettings {
 
 
 
-static NSControlSize FindControlSize(CGFloat size, const CGFloat* sizes,
+static NSControlSize FindControlSize(CGFloat size,
+                                     const PerSizeArray<CGFloat>& sizes,
                                      CGFloat tolerance) {
-  for (uint32_t i = miniControlSize; i <= regularControlSize; ++i) {
-    if (sizes[i] == 0) {
+  for (size_t i = 0; i < kControlSizeCount; ++i) {
+    if (sizes[CocoaSize(i)] == 0) {
       continue;
     }
 
     CGFloat next = 0;
     
-    for (uint32_t j = i + 1; j <= regularControlSize; ++j) {
-      if (sizes[j] != 0) {
-        next = sizes[j];
+    for (size_t j = i + 1; j < kControlSizeCount; ++j) {
+      if (sizes[CocoaSize(j)] != 0) {
+        next = sizes[CocoaSize(j)];
         break;
       }
     }
 
     
     if (next == 0) {
-      return CocoaSizeForEnum(i);
+      return ControlSizeForEnum(CocoaSize(i));
     }
 
-    if (size <= sizes[i] + tolerance && size < next) {
-      return CocoaSizeForEnum(i);
+    if (size <= sizes[CocoaSize(i)] + tolerance && size < next) {
+      return ControlSizeForEnum(CocoaSize(i));
     }
   }
 
   
   
   
-  NS_ASSERTION(sizes[0] == 0 && sizes[1] == 0 && sizes[2] == 0,
-               "We found no control! We shouldn't be there!");
-  return CocoaSizeForEnum(regularControlSize);
+  NS_ASSERTION(
+      std::all_of(sizes.begin(), sizes.end(), [](CGFloat s) { return s == 0; }),
+      "We found no control! We shouldn't be there!");
+  return ControlSizeForEnum(CocoaSize::Regular);
 }
 
 
@@ -755,32 +743,31 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext,
 
   const float rectWidth = destRect.size.width,
               rectHeight = destRect.size.height;
-  const NSSize* sizes = settings.naturalSizes;
+  const PerSizeArray<NSSize>& sizes = settings.naturalSizes;
   const NSSize miniSize = sizes[EnumSizeForCocoaSize(NSControlSizeMini)];
   const NSSize smallSize = sizes[EnumSizeForCocoaSize(NSControlSizeSmall)];
   const NSSize regularSize = sizes[EnumSizeForCocoaSize(NSControlSizeRegular)];
 
   HIRect drawRect = destRect;
 
-  CGFloat controlWidths[3] = {miniSize.width, smallSize.width,
-                              regularSize.width};
+  PerSizeArray<CGFloat> controlWidths{miniSize.width, smallSize.width,
+                                      regularSize.width};
   NSControlSize controlSizeX =
       FindControlSize(rectWidth, controlWidths, snapTolerance);
-  CGFloat controlHeights[3] = {miniSize.height, smallSize.height,
-                               regularSize.height};
+  PerSizeArray<CGFloat> controlHeights{miniSize.height, smallSize.height,
+                                       regularSize.height};
   NSControlSize controlSizeY =
       FindControlSize(rectHeight, controlHeights, snapTolerance);
 
   NSControlSize controlSize = NSControlSizeRegular;
-  size_t sizeIndex = 0;
+  CocoaSize sizeIndex = CocoaSize::Mini;
 
   
   const NSControlSize smallerControlSize =
       EnumSizeForCocoaSize(controlSizeX) < EnumSizeForCocoaSize(controlSizeY)
           ? controlSizeX
           : controlSizeY;
-  const size_t smallerControlSizeIndex =
-      EnumSizeForCocoaSize(smallerControlSize);
+  const auto smallerControlSizeIndex = EnumSizeForCocoaSize(smallerControlSize);
   const NSSize size = sizes[smallerControlSizeIndex];
   float diffWidth = size.width ? rectWidth - size.width : 0.0f;
   float diffHeight = size.height ? rectHeight - size.height : 0.0f;
@@ -789,8 +776,6 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext,
     
     controlSize = smallerControlSize;
     sizeIndex = smallerControlSizeIndex;
-    MOZ_ASSERT(sizeIndex < std::size(settings.naturalSizes));
-
     
     if (sizes[sizeIndex].width) {
       drawRect.origin.x +=
@@ -814,7 +799,6 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext,
 
   [cell setControlSize:controlSize];
 
-  MOZ_ASSERT(sizeIndex < std::size(settings.minimumSizes));
   const NSSize minimumSize = settings.minimumSizes[sizeIndex];
   DrawCellWithScaling(cell, cgContext, drawRect, controlSize, sizes[sizeIndex],
                       minimumSize, settings.margins, view, mirrorHorizontal);
@@ -897,45 +881,32 @@ static void ApplyControlParamsToNSCell(
 
 
 
-MOZ_RUNINIT static const CellRenderSettings radioSettings = {
+constexpr static CellRenderSettings radioSettings = {
     {
-        NSMakeSize(11, 11),  
-        NSMakeSize(13, 13),  
-        NSMakeSize(16, 16)   
+        NSSize{11, 11},  
+        NSSize{13, 13},  
+        NSSize{16, 16}   
     },
-    {NSZeroSize, NSZeroSize, NSZeroSize},
-    {{
-         
-         {0, 0, 0, 0},  
-         {0, 1, 1, 1},  
-         {0, 0, 0, 0}   
-     },
-     {
-         
-         {0, 0, 0, 0},  
-         {1, 1, 1, 2},  
-         {0, 0, 0, 0}   
-     }}};
+    {NSSize{}, NSSize{}, NSSize{}},
+    {
+        IntMargin{0, 0, 0, 0},  
+        IntMargin{1, 1, 1, 2},  
+        IntMargin{0, 0, 0, 0},  
+    },
+};
 
-MOZ_RUNINIT static const CellRenderSettings checkboxSettings = {
+constexpr static CellRenderSettings checkboxSettings = {
     {
-        NSMakeSize(11, 11),  
-        NSMakeSize(13, 13),  
-        NSMakeSize(16, 16)   
+        NSSize{11, 11},  
+        NSSize{13, 13},  
+        NSSize{16, 16}   
     },
-    {NSZeroSize, NSZeroSize, NSZeroSize},
-    {{
-         
-         {0, 1, 0, 0},  
-         {0, 1, 0, 1},  
-         {0, 1, 0, 1}   
-     },
-     {
-         
-         {0, 1, 0, 0},  
-         {0, 1, 0, 1},  
-         {0, 1, 0, 1}   
-     }}};
+    {NSSize{}, NSSize{}, NSSize{}},
+    {
+        IntMargin{0, 1, 0, 0},  
+        IntMargin{0, 1, 0, 1},  
+        IntMargin{0, 1, 0, 1}   
+    }};
 
 static NSControlStateValue CellStateForCheckboxOrRadioState(
     nsNativeThemeCocoa::CheckboxOrRadioState aState) {
@@ -980,47 +951,33 @@ void nsNativeThemeCocoa::DrawCheckboxOrRadio(
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-MOZ_RUNINIT static const CellRenderSettings searchFieldSettings = {
+constexpr static CellRenderSettings searchFieldSettings = {
     {
-        NSMakeSize(0, 16),  
-        NSMakeSize(0, 19),  
-        NSMakeSize(0, 22)   
+        NSSize{0, 16},  
+        NSSize{0, 19},  
+        NSSize{0, 22}   
     },
     {
-        NSMakeSize(32, 0),  
-        NSMakeSize(38, 0),  
-        NSMakeSize(44, 0)   
+        NSSize{32, 0},  
+        NSSize{38, 0},  
+        NSSize{44, 0}   
     },
-    {{
-         
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0}   
-     },
-     {
-         
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0}   
-     }}};
+    {
+        IntMargin{0, 0, 0, 0},  
+        IntMargin{0, 0, 0, 0},  
+        IntMargin{0, 0, 0, 0}   
+    }};
 
 static bool IsToolbarStyleContainer(nsIFrame* aFrame) {
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return false;
   }
-
   if (content->IsAnyOfXULElements(nsGkAtoms::toolbar, nsGkAtoms::toolbox,
                                   nsGkAtoms::statusbar)) {
     return true;
   }
-
-  switch (aFrame->StyleDisplay()->EffectiveAppearance()) {
-    case StyleAppearance::Statusbar:
-      return true;
-    default:
-      return false;
-  }
+  return false;
 }
 
 static bool IsInsideToolbar(nsIFrame* aFrame) {
@@ -1115,32 +1072,25 @@ nsNativeThemeCocoa::ControlParams nsNativeThemeCocoa::ComputeControlParams(
   return params;
 }
 
-MOZ_RUNINIT static const NSSize kHelpButtonSize = NSMakeSize(20, 20);
-MOZ_RUNINIT static const NSSize kDisclosureButtonSize = NSMakeSize(21, 21);
+constexpr static NSSize kHelpButtonSize = NSSize{20, 20};
+constexpr static NSSize kDisclosureButtonSize = NSSize{21, 21};
 
-MOZ_RUNINIT static const CellRenderSettings pushButtonSettings = {
+constexpr static CellRenderSettings pushButtonSettings = {
     {
-        NSMakeSize(0, 16),  
-        NSMakeSize(0, 19),  
-        NSMakeSize(0, 22)   
+        NSSize{0, 16},  
+        NSSize{0, 19},  
+        NSSize{0, 22}   
     },
     {
-        NSMakeSize(18, 0),  
-        NSMakeSize(26, 0),  
-        NSMakeSize(30, 0)   
+        NSSize{18, 0},  
+        NSSize{26, 0},  
+        NSSize{30, 0}   
     },
-    {{
-         
-         {0, 0, 0, 0},  
-         {4, 0, 4, 1},  
-         {5, 0, 5, 2}   
-     },
-     {
-         
-         {0, 0, 0, 0},  
-         {4, 0, 4, 1},  
-         {5, 0, 5, 2}   
-     }}};
+    {
+        IntMargin{0, 0, 0, 0},  
+        IntMargin{4, 0, 4, 1},  
+        IntMargin{5, 0, 5, 2}   
+    }};
 
 
 
@@ -1180,7 +1130,7 @@ void nsNativeThemeCocoa::DrawSquareBezelPushButton(
     mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
   }
   DrawCellWithScaling(mPushButtonCell, cgContext, inBoxRect,
-                      NSControlSizeRegular, NSZeroSize, NSMakeSize(14, 0), NULL,
+                      NSControlSizeRegular, NSSize{}, NSSize{14, 0}, {},
                       mCellDrawView, aControlParams.rtl);
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -1197,7 +1147,7 @@ void nsNativeThemeCocoa::DrawHelpButton(CGContextRef cgContext,
     mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
   }
   DrawCellWithScaling(mHelpButtonCell, cgContext, inBoxRect,
-                      NSControlSizeRegular, NSZeroSize, kHelpButtonSize, NULL,
+                      NSControlSizeRegular, NSSize{}, kHelpButtonSize, {},
                       mCellDrawView,
                       false);  
 
@@ -1217,8 +1167,8 @@ void nsNativeThemeCocoa::DrawDisclosureButton(CGContextRef cgContext,
     mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
   }
   DrawCellWithScaling(mDisclosureButtonCell, cgContext, inBoxRect,
-                      NSControlSizeRegular, NSZeroSize, kDisclosureButtonSize,
-                      NULL, mCellDrawView,
+                      NSControlSizeRegular, NSSize{}, kDisclosureButtonSize, {},
+                      mCellDrawView,
                       false);  
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -1373,53 +1323,40 @@ void nsNativeThemeCocoa::DrawButton(CGContextRef cgContext,
   }
 }
 
-MOZ_RUNINIT static const CellRenderSettings dropdownSettings = {
+constexpr static CellRenderSettings dropdownSettings = {
     {
-        NSMakeSize(0, 16),  
-        NSMakeSize(0, 19),  
-        NSMakeSize(0, 22)   
+        NSSize{0, 16},  
+        NSSize{0, 19},  
+        NSSize{0, 22}   
     },
     {
-        NSMakeSize(18, 0),  
-        NSMakeSize(38, 0),  
-        NSMakeSize(44, 0)   
+        NSSize{18, 0},  
+        NSSize{38, 0},  
+        NSSize{44, 0}   
     },
-    {{
-         
-         {1, 1, 2, 1},  
-         {3, 0, 3, 1},  
-         {3, 0, 3, 0}   
-     },
-     {
-         
-         {1, 1, 2, 1},  
-         {3, 0, 3, 1},  
-         {3, 0, 3, 0}   
-     }}};
+    {
+        IntMargin{1, 1, 2, 1},  
+        IntMargin{3, 0, 3, 1},  
+        IntMargin{3, 0, 3, 0}   
+    },
+};
 
-MOZ_RUNINIT static const CellRenderSettings editableMenulistSettings = {
+constexpr static CellRenderSettings editableMenulistSettings = {
     {
-        NSMakeSize(0, 15),  
-        NSMakeSize(0, 18),  
-        NSMakeSize(0, 21)   
+        NSSize{0, 15},  
+        NSSize{0, 18},  
+        NSSize{0, 21}   
     },
     {
-        NSMakeSize(18, 0),  
-        NSMakeSize(38, 0),  
-        NSMakeSize(44, 0)   
+        NSSize{18, 0},  
+        NSSize{38, 0},  
+        NSSize{44, 0}   
     },
-    {{
-         
-         {0, 0, 2, 2},  
-         {0, 0, 3, 2},  
-         {0, 1, 3, 3}   
-     },
-     {
-         
-         {0, 0, 2, 2},  
-         {0, 0, 3, 2},  
-         {0, 1, 3, 3}   
-     }}};
+    {
+        IntMargin{0, 0, 2, 2},  
+        IntMargin{0, 0, 3, 2},  
+        IntMargin{0, 1, 3, 3}   
+    }};
 
 void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext,
                                       const HIRect& inBoxRect,
@@ -1451,79 +1388,57 @@ void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext,
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-MOZ_RUNINIT static const CellRenderSettings progressSettings[2][2] = {
+constexpr static CellRenderSettings progressSettings[2][2] = {
     
     {
      {{
-          NSZeroSize,         
-          NSMakeSize(10, 0),  
-          NSMakeSize(16, 0)   
+          NSSize{},       
+          NSSize{10, 0},  
+          NSSize{16, 0}   
       },
-      {NSZeroSize, NSZeroSize, NSZeroSize},
-      {{
-          
-          {0, 0, 0, 0},  
-          {1, 1, 1, 1},  
-          {1, 1, 1, 1}   
+      {NSSize{}, NSSize{}, NSSize{}},
+      {
+          IntMargin{0, 0, 0, 0},  
+          IntMargin{0, 0, 0, 0},  
+          IntMargin{0, 0, 0, 0}   
+      }},
+     
+     {{
+          NSSize{},       
+          NSSize{10, 0},  
+          NSSize{16, 0}   
+      },
+      {NSSize{}, NSSize{}, NSSize{}},
+      {
+          IntMargin{0, 0, 0, 0},  
+          IntMargin{1, 1, 1, 1},  
+          IntMargin{1, 0, 1, 0}   
       }}},
-     
-     {{
-          NSZeroSize,         
-          NSMakeSize(10, 0),  
-          NSMakeSize(16, 0)   
-      },
-      {NSZeroSize, NSZeroSize, NSZeroSize},
-      {{
-           
-           {0, 0, 0, 0},  
-           {1, 1, 1, 1},  
-           {1, 0, 1, 0}   
-       },
-       {
-           
-           {0, 0, 0, 0},  
-           {1, 1, 1, 1},  
-           {1, 0, 1, 0}   
-       }}}},
     
     {
      {{
-          NSZeroSize,         
-          NSMakeSize(0, 10),  
-          NSMakeSize(0, 16)   
+          NSSize{},       
+          NSSize{0, 10},  
+          NSSize{0, 16}   
       },
-      {NSZeroSize, NSZeroSize, NSZeroSize},
-      {{
-           
-           {0, 0, 0, 0},  
-           {1, 1, 1, 1},  
-           {1, 1, 1, 1}   
-       },
-       {
-           
-           {0, 0, 0, 0},  
-           {1, 1, 1, 1},  
-           {1, 1, 1, 1}   
-       }}},
+      {NSSize{}, NSSize{}, NSSize{}},
+      {
+          IntMargin{0, 0, 0, 0},  
+          IntMargin{1, 1, 1, 1},  
+          IntMargin{1, 1, 1, 1}   
+      }},
      
      {{
-          NSZeroSize,         
-          NSMakeSize(0, 10),  
-          NSMakeSize(0, 16)   
+          NSSize{},       
+          NSSize{0, 10},  
+          NSSize{0, 16}   
       },
-      {NSZeroSize, NSZeroSize, NSZeroSize},
-      {{
-           
-           {0, 0, 0, 0},  
-           {1, 1, 1, 1},  
-           {0, 1, 0, 1}   
-       },
-       {
-           
-           {0, 0, 0, 0},  
-           {1, 1, 1, 1},  
-           {0, 1, 0, 1}   
-       }}}}};
+      {NSSize{}, NSSize{}, NSSize{}},
+      {
+          IntMargin{0, 0, 0, 0},  
+          IntMargin{1, 1, 1, 1},  
+          IntMargin{0, 1, 0, 1}   
+      }}}};
 
 nsNativeThemeCocoa::ProgressParams nsNativeThemeCocoa::ComputeProgressParams(
     nsIFrame* aFrame, ElementState aEventState, bool aIsHorizontal) {
@@ -1564,25 +1479,19 @@ void nsNativeThemeCocoa::DrawProgress(CGContextRef cgContext,
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-MOZ_RUNINIT static const CellRenderSettings meterSetting = {
+constexpr static CellRenderSettings meterSetting = {
     {
-        NSMakeSize(0, 16),  
-        NSMakeSize(0, 16),  
-        NSMakeSize(0, 16)   
+        NSSize{0, 16},  
+        NSSize{0, 16},  
+        NSSize{0, 16}   
     },
-    {NSZeroSize, NSZeroSize, NSZeroSize},
-    {{
-         
-         {1, 1, 1, 1},  
-         {1, 1, 1, 1},  
-         {1, 1, 1, 1}   
-     },
-     {
-         
-         {1, 1, 1, 1},  
-         {1, 1, 1, 1},  
-         {1, 1, 1, 1}   
-     }}};
+    {NSSize{}, NSSize{}, NSSize{}},
+    {
+        IntMargin{1, 1, 1, 1},  
+        IntMargin{1, 1, 1, 1},  
+        IntMargin{1, 1, 1, 1}   
+    },
+};
 
 nsNativeThemeCocoa::MeterParams nsNativeThemeCocoa::ComputeMeterParams(
     nsIFrame* aFrame) {
@@ -1776,22 +1685,25 @@ static CGRect SeparatorAdjustedRect(CGRect aRect,
 
 static NSString* ToolbarButtonPosition(BOOL aIsFirst, BOOL aIsLast) {
   if (aIsFirst) {
-    if (aIsLast) return @"kCUISegmentPositionOnly";
+    if (aIsLast) {
+      return @"kCUISegmentPositionOnly";
+    }
     return @"kCUISegmentPositionFirst";
   }
-  if (aIsLast) return @"kCUISegmentPositionLast";
+  if (aIsLast) {
+    return @"kCUISegmentPositionLast";
+  }
   return @"kCUISegmentPositionMiddle";
 }
 
 struct SegmentedControlRenderSettings {
-  const CGFloat* heights;
+  const PerSizeArray<CGFloat> heights;
   const NSString* widgetName;
 };
 
-static const CGFloat toolbarButtonHeights[3] = {15, 18, 22};
-
-static const SegmentedControlRenderSettings toolbarButtonRenderSettings = {
-    toolbarButtonHeights, @"kCUIWidgetButtonSegmentedSCurve"};
+static constexpr const SegmentedControlRenderSettings
+    toolbarButtonRenderSettings{PerSizeArray<CGFloat>{15.0, 18.0, 22.0},
+                                @"kCUIWidgetButtonSegmentedSCurve"};
 
 nsNativeThemeCocoa::SegmentParams nsNativeThemeCocoa::ComputeSegmentParams(
     nsIFrame* aFrame, ElementState aEventState, SegmentType aSegmentType) {
@@ -1851,39 +1763,6 @@ void nsNativeThemeCocoa::DrawSegment(CGContextRef cgContext,
   };
 
   RenderWithCoreUI(drawRect, cgContext, dict);
-}
-
-void nsNativeThemeCocoa::DrawStatusBar(CGContextRef cgContext,
-                                       const HIRect& inBoxRect, bool aIsMain) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  if (inBoxRect.size.height < 2.0f) return;
-
-  CGContextSaveGState(cgContext);
-  CGContextClipToRect(cgContext, inBoxRect);
-
-  
-  
-  
-  CGRect drawRect = inBoxRect;
-  const int extendUpwards = 40;
-  drawRect.origin.y -= extendUpwards;
-  drawRect.size.height += extendUpwards;
-  RenderWithCoreUI(
-      drawRect, cgContext,
-      [NSDictionary dictionaryWithObjectsAndKeys:
-                        @"kCUIWidgetWindowFrame", @"widget", @"regularwin",
-                        @"windowtype", (aIsMain ? @"normal" : @"inactive"),
-                        @"state",
-                        [NSNumber numberWithInt:inBoxRect.size.height],
-                        @"kCUIWindowFrameBottomBarHeightKey",
-                        [NSNumber numberWithBool:YES],
-                        @"kCUIWindowFrameDrawBottomBarSeparatorKey",
-                        [NSNumber numberWithBool:YES], @"is.flipped", nil]);
-
-  CGContextRestoreGState(cgContext);
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsNativeThemeCocoa::DrawMultilineTextField(CGContextRef cgContext,
@@ -2024,16 +1903,10 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
       return Some(WidgetInfo::Segment(params));
     }
 
-    case StyleAppearance::Separator:
-      return Some(WidgetInfo::Separator());
-
     case StyleAppearance::MozSidebar:
     case StyleAppearance::MozWindowTitlebar: {
       return Nothing();
     }
-
-    case StyleAppearance::Statusbar:
-      return Some(WidgetInfo::StatusBar(IsActiveToolbarControl(aFrame)));
 
     case StyleAppearance::Menulist: {
       ControlParams controlParams = ComputeControlParams(aFrame, elementState);
@@ -2220,16 +2093,6 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo,
           DrawSegment(cgContext, macRect, params);
           break;
         }
-        case Widget::eSeparator: {
-          HIThemeSeparatorDrawInfo sdi = {0, kThemeStateActive};
-          HIThemeDrawSeparator(&macRect, &sdi, cgContext, HITHEME_ORIENTATION);
-          break;
-        }
-        case Widget::eStatusBar: {
-          bool isMain = aWidgetInfo.Params<bool>();
-          DrawStatusBar(cgContext, macRect, isMain);
-          break;
-        }
         case Widget::eGroupBox: {
           HIThemeGroupBoxDrawInfo gdi = {0, kThemeStateActive,
                                          kHIThemeGroupBoxKindPrimary};
@@ -2321,8 +2184,6 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
     case StyleAppearance::MozMacDisclosureButtonOpen:
     case StyleAppearance::MozMacDisclosureButtonClosed:
     case StyleAppearance::Toolbarbutton:
-    case StyleAppearance::Separator:
-    case StyleAppearance::Statusbar:
     case StyleAppearance::Menulist:
     case StyleAppearance::MozMenulistArrowButton:
     case StyleAppearance::Textfield:
@@ -2421,10 +2282,6 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(
       result.SizeTo(frameOutset, frameOutset, frameOutset, frameOutset);
       break;
     }
-
-    case StyleAppearance::Statusbar:
-      result.SizeTo(1, 0, 0, 0);
-      break;
 
     default:
       break;
@@ -2547,8 +2404,8 @@ LayoutDeviceIntSize nsNativeThemeCocoa::GetMinimumWidgetSize(
   LayoutDeviceIntSize result;
   switch (aAppearance) {
     case StyleAppearance::Button: {
-      result.SizeTo(pushButtonSettings.minimumSizes[miniControlSize].width,
-                    pushButtonSettings.naturalSizes[miniControlSize].height);
+      result.SizeTo(pushButtonSettings.minimumSizes[CocoaSize::Mini].width,
+                    pushButtonSettings.naturalSizes[CocoaSize::Mini].height);
       break;
     }
 
@@ -2564,7 +2421,7 @@ LayoutDeviceIntSize nsNativeThemeCocoa::GetMinimumWidgetSize(
     }
 
     case StyleAppearance::Toolbarbutton: {
-      result.SizeTo(0, toolbarButtonHeights[miniControlSize]);
+      result.SizeTo(0, toolbarButtonRenderSettings.heights[CocoaSize::Mini]);
       break;
     }
 
@@ -2600,11 +2457,6 @@ LayoutDeviceIntSize nsNativeThemeCocoa::GetMinimumWidgetSize(
       break;
     }
 
-    case StyleAppearance::Separator: {
-      result.SizeTo(1, 1);
-      break;
-    }
-
     case StyleAppearance::RangeThumb: {
       SInt32 width = 0;
       SInt32 height = 0;
@@ -2637,7 +2489,6 @@ bool nsNativeThemeCocoa::WidgetAttributeChangeRequiresRepaint(
   switch (aAppearance) {
     case StyleAppearance::MozWindowTitlebar:
     case StyleAppearance::MozSidebar:
-    case StyleAppearance::Statusbar:
     case StyleAppearance::Tooltip:
     case StyleAppearance::Menupopup:
     case StyleAppearance::Progresschunk:
@@ -2687,7 +2538,6 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::MozMacWindow:
     case StyleAppearance::Button:
     case StyleAppearance::Toolbarbutton:
-    case StyleAppearance::Statusbar:
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:
     case StyleAppearance::Textfield:
@@ -2697,7 +2547,6 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::Progresschunk:
     case StyleAppearance::Meter:
     case StyleAppearance::Meterchunk:
-    case StyleAppearance::Separator:
     case StyleAppearance::Range:
       return !IsWidgetStyled(aPresContext, aFrame, aAppearance);
 
@@ -2756,7 +2605,6 @@ bool nsNativeThemeCocoa::WidgetAppearanceDependsOnWindowFocus(
   switch (aAppearance) {
     case StyleAppearance::Menupopup:
     case StyleAppearance::Tooltip:
-    case StyleAppearance::Separator:
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:
     case StyleAppearance::Textfield:
@@ -2793,10 +2641,6 @@ nsITheme::Transparency nsNativeThemeCocoa::GetWidgetTransparency(
     case StyleAppearance::Tooltip:
       return eTransparent;
     case StyleAppearance::MozMacWindow:
-      
-      
-      return eOpaque;
-    case StyleAppearance::Statusbar:
       
       
       return eOpaque;

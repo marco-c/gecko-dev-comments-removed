@@ -1540,16 +1540,10 @@ pub enum Appearance {
     Scrollcorner,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Separator,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     SpinnerUpbutton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     SpinnerDownbutton,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Statusbar,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Toolbarbutton,
