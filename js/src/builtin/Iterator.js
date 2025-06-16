@@ -285,12 +285,53 @@ function IteratorHelperReturn() {
   
 
   
+  
+  
   var generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
-  return callFunction(GeneratorReturn, generator, undefined);
+  var resumeIndex = UnsafeGetReservedSlot(generator, GENERATOR_RESUME_INDEX_SLOT);
+  assert(
+    resumeIndex === undefined ||
+      resumeIndex === null ||
+      typeof resumeIndex === "number",
+    "unexpected resumeIndex value"
+  );
+
+  
+  
+  var isSuspendedStart = resumeIndex === GENERATOR_RESUME_INDEX_INITIAL_YIELD;
+  assert(
+    !isSuspendedStart || IsSuspendedGenerator(generator),
+    "unexpected 'suspended-start' state for non-suspended generator"
+  );
+
+  
+  
+  
+  
+  
+  var result = callFunction(GeneratorReturn, generator, undefined);
+
+  
+  
+  
+  
+  if (isSuspendedStart) {
+    var underlyingIterator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT);
+    assert(
+      underlyingIterator === undefined || IsObject(underlyingIterator),
+      "underlyingIterator is undefined or an object"
+    );
+
+    
+    
+    
+    if (IsObject(underlyingIterator)) {
+      IteratorClose(underlyingIterator);
+    }
+  }
+
+  return result;
 }
-
-
-
 
 
 
@@ -341,9 +382,11 @@ function IteratorMap(mapper) {
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-
-  
-  callFunction(GeneratorNext, generator);
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+    iterator
+  );
 
   
   return result;
@@ -358,21 +401,6 @@ function IteratorMap(mapper) {
 
 
 function* IteratorMapGenerator(iterator, nextMethod, mapper) {
-  var isReturnCompletion = true;
-  try {
-    
-    
-    yield;
-
-    
-    isReturnCompletion = false;
-  } finally {
-    
-    if (isReturnCompletion) {
-      IteratorClose(iterator);
-    }
-  }
-
   
   var counter = 0;
 
@@ -429,9 +457,11 @@ function IteratorFilter(predicate) {
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-
-  
-  callFunction(GeneratorNext, generator);
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+    iterator
+  );
 
   
   return result;
@@ -446,21 +476,6 @@ function IteratorFilter(predicate) {
 
 
 function* IteratorFilterGenerator(iterator, nextMethod, predicate) {
-  var isReturnCompletion = true;
-  try {
-    
-    
-    yield;
-
-    
-    isReturnCompletion = false;
-  } finally {
-    
-    if (isReturnCompletion) {
-      IteratorClose(iterator);
-    }
-  }
-
   
   var counter = 0;
 
@@ -532,9 +547,11 @@ function IteratorTake(limit) {
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-
-  
-  callFunction(GeneratorNext, generator);
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+    iterator
+  );
 
   
   return result;
@@ -549,21 +566,6 @@ function IteratorTake(limit) {
 
 
 function* IteratorTakeGenerator(iterator, nextMethod, remaining) {
-  var isReturnCompletion = true;
-  try {
-    
-    
-    yield;
-
-    
-    isReturnCompletion = false;
-  } finally {
-    
-    if (isReturnCompletion) {
-      IteratorClose(iterator);
-    }
-  }
-
   
 
   
@@ -635,9 +637,11 @@ function IteratorDrop(limit) {
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-
-  
-  callFunction(GeneratorNext, generator);
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+    iterator
+  );
 
   
   return result;
@@ -652,21 +656,6 @@ function IteratorDrop(limit) {
 
 
 function* IteratorDropGenerator(iterator, nextMethod, remaining) {
-  var isReturnCompletion = true;
-  try {
-    
-    
-    yield;
-
-    
-    isReturnCompletion = false;
-  } finally {
-    
-    if (isReturnCompletion) {
-      IteratorClose(iterator);
-    }
-  }
-
   
 
   
@@ -718,9 +707,11 @@ function IteratorFlatMap(mapper) {
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-
-  
-  callFunction(GeneratorNext, generator);
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+    iterator
+  );
 
   
   return result;
@@ -735,21 +726,6 @@ function IteratorFlatMap(mapper) {
 
 
 function* IteratorFlatMapGenerator(iterator, nextMethod, mapper) {
-  var isReturnCompletion = true;
-  try {
-    
-    
-    yield;
-
-    
-    isReturnCompletion = false;
-  } finally {
-    
-    if (isReturnCompletion) {
-      IteratorClose(iterator);
-    }
-  }
-
   
   var counter = 0;
 
@@ -1082,6 +1058,8 @@ function IteratorConcat() {
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
+  
+  
 
   
   return result;

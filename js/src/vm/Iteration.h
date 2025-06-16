@@ -798,12 +798,23 @@ class IteratorHelperObject : public NativeObject {
     
     GeneratorSlot,
 
+    
+    
+    
+    
+    UnderlyingIteratorSlot,
+
     SlotCount,
   };
 
   static_assert(GeneratorSlot == ITERATOR_HELPER_GENERATOR_SLOT,
                 "GeneratorSlot must match self-hosting define for generator "
                 "object slot.");
+
+  static_assert(UnderlyingIteratorSlot ==
+                    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+                "UnderlyingIteratorSlot must match self-hosting define for "
+                "underlying iterator slot.");
 };
 
 IteratorHelperObject* NewIteratorHelper(JSContext* cx);
