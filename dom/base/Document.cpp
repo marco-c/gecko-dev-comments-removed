@@ -18494,6 +18494,12 @@ already_AddRefed<ViewTransition> Document::StartViewTransition(
   
   mActiveViewTransition = transition;
 
+  
+  
+  if (auto* root = this->GetRootElement()) {
+    root->AddStates(ElementState::ACTIVE_VIEW_TRANSITION);
+  }
+
   EnsureViewTransitionOperationsHappen();
 
   
