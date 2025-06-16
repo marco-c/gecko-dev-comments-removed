@@ -290,7 +290,15 @@ def create_nss_release_archive():
         nsprrel = next(nspr_version_file).strip()
 
     nspr_tar = "nspr-" + nsprrel + ".tar.gz"
-    nsprtar_with_path = stagedir + "/v" + nsprrel + "/src/" + nspr_tar
+    nspr_dir = stagedir + "/v" + nsprrel + "/src/"
+    nsprtar_with_path = nspr_dir + nspr_tar
+
+    nspr_releases_url = "https://ftp.mozilla.org/pub/nspr/releases"
+    if (not os.path.exists(nsprtar_with_path)):
+        os.makedirs(nspr_dir,exist_ok=True)
+        check_call_noisy(['wget', f"{nspr_releases_url}/v{nsprrel}/src/nspr-{nsprrel}.tar.gz",
+                          f'--output-document={nsprtar_with_path}'])
+
     if (not os.path.exists(nsprtar_with_path)):
         exit_with_failure("cannot find nspr archive at expected location " + nsprtar_with_path)
 
@@ -303,20 +311,41 @@ def create_nss_release_archive():
     check_call_noisy(["mkdir", "-p", nss_stagedir])
     check_call_noisy(["hg", "archive", "-r", nssreltag, "--prefix=nss-" + nssrel + "/nss",
                       stagedir + "/" + nssreltag + "/src/" + nss_tar, "-X", ".hgtags"])
-    check_call_noisy(["tar", "-xz", "-C", nss_stagedir, "-f", nsprtar_with_path])
+    check_call_noisy(["gtar", "-xz", "-C", nss_stagedir, "-f", nsprtar_with_path])
     print("changing to directory " + nss_stagedir)
     os.chdir(nss_stagedir)
-    check_call_noisy(["tar", "-xz", "-f", nss_tar])
+    check_call_noisy(["gtar", "-xz", "-f", nss_tar])
     check_call_noisy(["mv", "-i", "nspr-" + nsprrel + "/nspr", "nss-" + nssrel + "/"])
     check_call_noisy(["rmdir", "nspr-" + nsprrel])
 
     nss_nspr_tar = "nss-" + nssrel + "-with-nspr-" + nsprrel + ".tar.gz"
 
-    check_call_noisy(["tar", "-cz", "--remove-files", "-f", nss_nspr_tar, "nss-" + nssrel])
+    check_call_noisy(["gtar", "-cz", "--remove-files", "-f", nss_nspr_tar, "nss-" + nssrel])
     check_call("sha1sum " + nss_tar + " " + nss_nspr_tar + " > SHA1SUMS", shell=True)
     check_call("sha256sum " + nss_tar + " " + nss_nspr_tar + " > SHA256SUMS", shell=True)
     print("created directory " + nss_stagedir + " with files:")
     check_call_noisy(["ls", "-l"])
+
+    if 'y' not in input('Upload release tarball?[yN]'):
+        print("Release tarballs have NOT been uploaded")
+        exit(0)
+    os.chdir("../..")
+    gcp_proj="moz-fx-productdelivery-pr-38b5"
+    check_call_noisy(["gcloud", "auth", "login"])
+    check_call_noisy(
+        [
+            "gcloud",
+            "--project",
+            gcp_proj,
+            f"--impersonate-service-account=nss-team-prod@{gcp_proj}.iam.gserviceaccount.com",
+            "storage",
+            "cp",
+            "--recursive",
+            "--no-clobber",
+            nssreltag,
+            f"gs://{gcp_proj}-productdelivery/pub/security/nss/releases/",
+        ]
+    )
 
 
 o = OptionParser(usage="client.py [options] " + " | ".join([
