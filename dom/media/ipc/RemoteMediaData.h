@@ -138,6 +138,21 @@ class RemoteArrayOfByteBuffer {
     mIsValid = true;
   }
 
+  template <typename Type>
+  RemoteArrayOfByteBuffer(const AlignedBuffer<Type>& aBuffer,
+                          std::function<ShmemBuffer(size_t)>& aAllocator) {
+    
+    size_t bufferSize = aBuffer.Size();
+    if (bufferSize) {
+      if (!AllocateShmem(bufferSize, aAllocator)) {
+        return;
+      }
+      Write(0, aBuffer.Data(), bufferSize);
+      mOffsets.AppendElement(OffsetEntry{0, bufferSize});
+    }
+    mIsValid = true;
+  }
+
   RemoteArrayOfByteBuffer(const nsTArray<RefPtr<MediaByteBuffer>>& aArray,
                           std::function<ShmemBuffer(size_t)>& aAllocator);
   RemoteArrayOfByteBuffer& operator=(RemoteArrayOfByteBuffer&& aOther) noexcept;
@@ -262,6 +277,8 @@ class ArrayOfRemoteAudioData final {
  public:
   
   bool Fill(const nsTArray<RefPtr<AudioData>>& aData,
+            std::function<ShmemBuffer(size_t)>&& aAllocator);
+  bool Fill(const AudioData* aData,
             std::function<ShmemBuffer(size_t)>&& aAllocator);
 
   
