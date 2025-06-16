@@ -539,8 +539,8 @@ void nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI,
   }
 
   
-  nsAutoCString uri;
-  nsresult rv = aURI->GetSpec(uri);
+  nsAutoCString prePath;
+  nsresult rv = aURI->GetPrePath(prePath);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -551,10 +551,10 @@ void nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI,
   
   
   
-  int32_t ampIndex = uri.FindChar('&', 0);
+  int32_t ampIndex = path.FindChar('&', 0);
   bool replaceQuery = false;
   if (ampIndex != -1) {
-    int32_t qmIndex = uri.FindChar('?', 0);
+    int32_t qmIndex = path.FindChar('?', 0);
     if (qmIndex == -1 || qmIndex > ampIndex) {
       replaceQuery = true;
     }
@@ -570,19 +570,21 @@ void nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI,
     return;
   }
 
-  nsAutoString utf16OldURI = NS_ConvertUTF8toUTF16(uri);
+  NS_ConvertUTF8toUTF16 utf16OldURI(prePath);
+  AppendUTF8toUTF16(path, utf16OldURI);
   
   
   if (replaceQuery) {
     
-    uri.ReplaceChar('?', '&');
+    path.ReplaceChar('?', '&');
     
-    uri.SetCharAt('?', ampIndex);
+    path.SetCharAt('?', ampIndex);
   }
   
   
-  uri.ReplaceSubstring("/v/"_ns, "/embed/"_ns);
-  nsAutoString utf16URI = NS_ConvertUTF8toUTF16(uri);
+  path.ReplaceSubstring("/v/"_ns, "/embed/"_ns);
+  NS_ConvertUTF8toUTF16 utf16URI(prePath);
+  AppendUTF8toUTF16(path, utf16URI);
   rv = nsContentUtils::NewURIWithDocumentCharset(aRewrittenURI, utf16URI, doc,
                                                  aBaseURI);
   if (NS_FAILED(rv)) {
