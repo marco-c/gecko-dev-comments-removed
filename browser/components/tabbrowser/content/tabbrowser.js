@@ -6091,7 +6091,8 @@
     #moveTabNextTo(element, targetElement, moveBefore = false, metricsContext) {
       if (this.isTabGroupLabel(targetElement)) {
         targetElement = targetElement.group;
-        if (!moveBefore) {
+        if (!moveBefore && !targetElement.collapsed) {
+          
           targetElement = targetElement.tabs[0];
           moveBefore = true;
         }
@@ -6108,7 +6109,21 @@
         targetElement = this.tabs[this.pinnedTabCount - 1];
         moveBefore = false;
       } else if (!element.pinned && targetElement && targetElement.pinned) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         targetElement = this.tabs[this.pinnedTabCount];
+        if (targetElement.group) {
+          targetElement = targetElement.group;
+        }
         moveBefore = true;
       }
 

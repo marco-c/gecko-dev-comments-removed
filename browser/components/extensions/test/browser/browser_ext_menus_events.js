@@ -541,6 +541,15 @@ add_task(async function test_show_hide_tab() {
 
 
 add_task(async function test_show_hide_tab_via_tab_panel() {
+  
+
+
+
+
+  function tabOf(row) {
+    return row._tab;
+  }
+
   gTabsPanel.init();
   const allTabsView = document.getElementById("allTabsMenu-allTabsView");
 
@@ -557,7 +566,7 @@ add_task(async function test_show_hide_tab_via_tab_panel() {
       
       let index = Array.prototype.findIndex.call(
         gTabsPanel.allTabsViewTabs.children,
-        toolbaritem => toolbaritem.tab === contextTab
+        toolbaritem => tabOf(toolbaritem) === contextTab
       );
       Assert.notStrictEqual(
         index,
