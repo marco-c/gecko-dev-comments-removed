@@ -864,6 +864,9 @@ class EventCollector {
       
       
       
+      
+      
+      
       const ChromeDebugger = require("ChromeDebugger");
       dbg = new ChromeDebugger();
     }

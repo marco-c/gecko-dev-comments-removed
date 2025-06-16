@@ -5,14 +5,18 @@
 
 
 
-
-const { DevToolsLoader } = ChromeUtils.importESModule(
-  "resource://devtools/shared/loader/Loader.sys.mjs"
+const {
+  useDistinctSystemPrincipalLoader,
+  releaseDistinctSystemPrincipalLoader,
+} = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs",
+  { global: "shared" }
 );
-const loader = new DevToolsLoader({
-  invisibleToDebugger: true,
-  freshCompartment: true,
-});
+
+const requester = {};
+const loader = useDistinctSystemPrincipalLoader(requester);
+registerCleanupFunction(() => releaseDistinctSystemPrincipalLoader(requester));
+
 const { allocationTracker } = loader.require(
   "chrome://mochitests/content/browser/devtools/shared/test-helpers/allocation-tracker"
 );

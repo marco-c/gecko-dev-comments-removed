@@ -169,9 +169,6 @@ exports.CommandsFactory = {
     
     
     
-    
-    
-    
     const customLoader = new DevToolsLoader({
       freshCompartment: true,
     });

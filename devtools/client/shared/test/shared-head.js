@@ -27,7 +27,6 @@ const DEBUG_ALLOCATIONS = Services.env.get("DEBUG_DEVTOOLS_ALLOCATIONS");
 if (DEBUG_ALLOCATIONS) {
   
   
-  
   const {
     useDistinctSystemPrincipalLoader,
     releaseDistinctSystemPrincipalLoader,
@@ -74,7 +73,6 @@ const DEBUG_STEP = Services.env.get("DEBUG_STEP");
 if (DEBUG_STEP) {
   
   
-  
   const {
     useDistinctSystemPrincipalLoader,
     releaseDistinctSystemPrincipalLoader,
@@ -97,7 +95,6 @@ if (DEBUG_STEP) {
 
 const DEBUG_TRACE_LINE = Services.env.get("DEBUG_TRACE_LINE");
 if (DEBUG_TRACE_LINE) {
-  
   
   
   const {
