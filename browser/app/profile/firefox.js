@@ -574,6 +574,10 @@ pref("browser.urlbar.quicksuggest.mlEnabled", false);
 
 
 
+pref("browser.urlbar.quicksuggest.mlInitDelaySeconds", 0);
+
+
+
 pref("browser.urlbar.quicksuggest.settingsUi", 0);
 
 
@@ -2684,6 +2688,16 @@ pref("screenshots.browser.component.last-saved-method", "download");
 pref("screenshots.browser.component.preventContentEvents", true);
 
 
+
+
+
+
+
+
+pref("browser.screenshots.folderList", 1);
+pref("browser.screenshots.dir", "");
+
+
 pref("doh-rollout.clearModeOnShutdown", false);
 
 
@@ -3269,6 +3283,7 @@ pref("cookiebanners.ui.desktop.cfrVariant", 0);
 
 #ifdef NIGHTLY_BUILD
   pref("dom.security.credentialmanagement.identity.enabled", true);
+  pref("dom.security.credentialmanagement.identity.heavyweight.enabled", true);
 #endif
 
 pref("ui.new-webcompat-reporter.enabled", true);
