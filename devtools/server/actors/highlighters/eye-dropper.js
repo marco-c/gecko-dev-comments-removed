@@ -18,6 +18,7 @@ const {
   getCurrentZoom,
   getFrameOffsets,
 } = require("resource://devtools/shared/layout/utils.js");
+const { debounce } = require("resource://devtools/shared/debounce.js");
 
 loader.lazyGetter(this, "clipboardHelper", () =>
   Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
@@ -47,6 +48,7 @@ const CLOSE_DELAY = 750;
 
 class EyeDropper {
   #pageEventListenersAbortController;
+  #debouncedUpdateScreenshot;
   constructor(highlighterEnv) {
     EventEmitter.decorate(this);
 
@@ -60,6 +62,12 @@ class EyeDropper {
     
     this.format = Services.prefs.getCharPref(FORMAT_PREF);
     this.eyeDropperZoomLevel = Services.prefs.getIntPref(ZOOM_LEVEL_PREF);
+
+    this.#debouncedUpdateScreenshot = debounce(
+      this.updateScreenshot.bind(this),
+      200,
+      this
+    );
   }
 
   ID_CLASS_PREFIX = "eye-dropper-";
@@ -151,9 +159,7 @@ class EyeDropper {
 
     
     
-    
-    
-    this.prepareImageCapture(options.screenshot);
+    this.updateScreenshot(options.screenshot);
 
     
     const { pageListenerTarget } = this.highlighterEnv;
@@ -167,9 +173,7 @@ class EyeDropper {
     pageListenerTarget.addEventListener("keydown", this, { signal });
     pageListenerTarget.addEventListener("DOMMouseScroll", this, { signal });
     pageListenerTarget.addEventListener("FullZoomChange", this, { signal });
-
-    
-    this.getElement("root").removeAttribute("hidden");
+    pageListenerTarget.addEventListener("resize", this, { signal });
 
     
     this.ctx = this.getElement("canvas").getCanvasContext();
@@ -239,11 +243,15 @@ class EyeDropper {
 
 
 
-  async prepareImageCapture(screenshot) {
+  async updateScreenshot(screenshot) {
+    const rootElement = this.getElement("root");
+
     let imageSource;
     if (screenshot) {
       imageSource = this.#dataURItoBlob(screenshot);
     } else {
+      
+      rootElement.setAttribute("hidden", "true");
       imageSource = getWindowAsImageData(this.win);
     }
 
@@ -258,7 +266,10 @@ class EyeDropper {
 
     
     
-    this.getElement("root").setAttribute("drawn", "true");
+    rootElement.setAttribute("drawn", "true");
+
+    
+    rootElement.removeAttribute("hidden");
   }
 
   
@@ -410,6 +421,10 @@ class EyeDropper {
       case "FullZoomChange":
         this.hide();
         this.show();
+        break;
+      case "resize":
+        this.getElement("root").removeAttribute("drawn");
+        this.#debouncedUpdateScreenshot();
         break;
     }
   }
