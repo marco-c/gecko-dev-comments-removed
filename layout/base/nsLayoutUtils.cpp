@@ -937,9 +937,10 @@ nsIFrame* nsLayoutUtils::GetPageFrame(nsIFrame* aFrame) {
 
 nsIFrame* nsLayoutUtils::GetStyleFrame(nsIFrame* aPrimaryFrame) {
   MOZ_ASSERT(aPrimaryFrame);
-  if (const nsTableWrapperFrame* const table = do_QueryFrame(aPrimaryFrame)) {
+  if (aPrimaryFrame->IsTableWrapperFrame()) {
+    nsIFrame* inner = aPrimaryFrame->PrincipalChildList().FirstChild();
     
-    return table->InnerTableFrame();
+    return inner;
   }
 
   return aPrimaryFrame;
@@ -990,8 +991,8 @@ bool nsLayoutUtils::IsPrimaryStyleFrame(const nsIFrame* aFrame) {
   }
 
   const nsIFrame* parent = aFrame->GetParent();
-  if (const nsTableWrapperFrame* const tableWrapper = do_QueryFrame(parent)) {
-    return tableWrapper->InnerTableFrame() == aFrame;
+  if (parent && parent->IsTableWrapperFrame()) {
+    return parent->PrincipalChildList().FirstChild() == aFrame;
   }
 
   return aFrame->IsPrimaryFrame();

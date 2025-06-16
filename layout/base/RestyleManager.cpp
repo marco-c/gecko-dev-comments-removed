@@ -51,7 +51,6 @@
 #include "nsRefreshDriver.h"
 #include "nsStyleChangeList.h"
 #include "nsStyleUtil.h"
-#include "nsTableWrapperFrame.h"
 #include "nsTransitionManager.h"
 #include "StickyScrollContainer.h"
 #include "ActiveLayerTracker.h"
@@ -2200,8 +2199,10 @@ static const nsIFrame* ExpectedOwnerForChild(const nsIFrame* aFrame) {
   
   
   while (parent && (IsAnonBox(parent) || parent->IsLineFrame())) {
-    if (const nsTableWrapperFrame* wrapperFrame = do_QueryFrame(parent)) {
-      const nsTableFrame* tableFrame = wrapperFrame->InnerTableFrame();
+    auto pseudo = parent->Style()->GetPseudoType();
+    if (pseudo == PseudoStyleType::tableWrapper) {
+      const nsIFrame* tableFrame = parent->PrincipalChildList().FirstChild();
+      MOZ_ASSERT(tableFrame->IsTableFrame());
       
       parent = IsAnonBox(tableFrame) ? parent->GetParent() : tableFrame;
     } else {
@@ -2407,12 +2408,11 @@ nsIFrame* ServoRestyleState::TableAwareParentFor(const nsIFrame* aChild) {
   nsIFrame* parent = aChild->GetParent();
   
   if (parent->Style()->GetPseudoType() == PseudoStyleType::cellContent) {
-    return parent->GetParent();
-  }
-  if (const nsTableWrapperFrame* wrapper = do_QueryFrame(parent)) {
+    parent = parent->GetParent();
+  } else if (parent->IsTableWrapperFrame()) {
     
     MOZ_ASSERT(aChild->StyleDisplay()->mDisplay == StyleDisplay::TableCaption);
-    return wrapper->InnerTableFrame();
+    parent = parent->PrincipalChildList().FirstChild();
   }
   return parent;
 }
