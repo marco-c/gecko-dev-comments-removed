@@ -136,8 +136,12 @@ exports.menuitems = [
 
       
       
-      if (ResponsiveUIManager.isActiveForTab(target.localTab)) {
-        const ui = ResponsiveUIManager.getResponsiveUIForTab(target.localTab);
+      if (
+        ResponsiveUIManager.isActiveForTab(commands.descriptorFront.localTab)
+      ) {
+        const ui = ResponsiveUIManager.getResponsiveUIForTab(
+          commands.descriptorFront.localTab
+        );
         await ui.responsiveFront.setElementPickerState(
           true,
           PICKER_TYPES.EYEDROPPER
