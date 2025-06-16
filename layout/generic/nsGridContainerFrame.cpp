@@ -2360,6 +2360,8 @@ static GridIntrinsicSizeType SizeTypeForPhase(TrackSizingPhase aPhase) {
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected phase");
 }
 
+struct CachedIntrinsicSizes;
+
 
 
 
@@ -2526,6 +2528,25 @@ struct nsGridContainerFrame::Tracks {
       bool aIsGridIntrinsicSizing, const TrackSizingFunctions& aFunctions,
       const FitContentClamper& aFitContentClamper = nullptr,
       bool aNeedInfinitelyGrowableFlag = false);
+
+  
+  
+  
+  
+  Maybe<nscoord> ComputeMinSizeClamp(const TrackSizingFunctions& aFunctions,
+                                     nscoord aPercentageBasis,
+                                     const LineRange& aLineRange) const {
+    return ComputeMinSizeClamp(aFunctions, aPercentageBasis, aLineRange,
+                               StateBitsForRange(aLineRange));
+  }
+
+  
+  
+  Maybe<nscoord> ComputeMinSizeClamp(const TrackSizingFunctions& aFunctions,
+                                     nscoord aPercentageBasis,
+                                     const LineRange& aLineRange,
+                                     const TrackSize::StateBits aState) const;
+
   
 
 
@@ -6248,6 +6269,21 @@ static void AddSubgridContribution(TrackSize& aSize,
   }
 }
 
+Maybe<nscoord> nsGridContainerFrame::Tracks::ComputeMinSizeClamp(
+    const TrackSizingFunctions& aFunctions, nscoord aPercentageBasis,
+    const LineRange& aLineRange, const TrackSize::StateBits aState) const {
+  if (!TrackSize::IsDefiniteMaxSizing(aState)) {
+    return Nothing();
+  }
+  nscoord minSizeClamp = 0;
+  for (auto i : aLineRange.Range()) {
+    minSizeClamp +=
+        aFunctions.MaxSizingFor(i).AsBreadth().Resolve(aPercentageBasis);
+  }
+  minSizeClamp += mGridGap * (aLineRange.Extent() - 1);
+  return Some(minSizeClamp);
+}
+
 void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     GridReflowInput& aGridRI, const TrackSizingFunctions& aFunctions,
     nscoord aPercentageBasis, SizingConstraint aConstraint,
@@ -6262,10 +6298,9 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     
     if (aGridItem.ShouldApplyAutoMinSize(aGridRI.mWM, mAxis)) {
       
-      if (TrackSize::IsDefiniteMaxSizing(sz.mState)) {
-        cache.mMinSizeClamp = aFunctions.MaxSizingFor(aRange.mStart)
-                                  .AsBreadth()
-                                  .Resolve(aPercentageBasis);
+      if (const Maybe<nscoord> minSizeClamp =
+              ComputeMinSizeClamp(aFunctions, aPercentageBasis, aRange)) {
+        cache.mMinSizeClamp = *minSizeClamp;
         aGridItem.mState[mAxis] |= ItemState::eClampMarginBoxMinSize;
       }
       baseSizeType.emplace((aConstraint == SizingConstraint::MaxContent)
@@ -7058,16 +7093,12 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         CachedIntrinsicSizes cache{gridItem, aGridRI, mAxis};
 
         
-        if (TrackSize::IsDefiniteMaxSizing(state) &&
-            (gridItem.mState[mAxis] & ItemState::eContentBasedAutoMinSize)) {
-          nscoord minSizeClamp = 0;
-          for (auto i : lineRange.Range()) {
-            minSizeClamp += aFunctions.MaxSizingFor(i).AsBreadth().Resolve(
-                aPercentageBasis);
+        if (gridItem.mState[mAxis] & ItemState::eContentBasedAutoMinSize) {
+          if (const Maybe<nscoord> minSizeClamp = ComputeMinSizeClamp(
+                  aFunctions, aPercentageBasis, lineRange, state)) {
+            cache.mMinSizeClamp = *minSizeClamp;
+            gridItem.mState[mAxis] |= ItemState::eClampMarginBoxMinSize;
           }
-          minSizeClamp += mGridGap * (span - 1);
-          cache.mMinSizeClamp = minSizeClamp;
-          gridItem.mState[mAxis] |= ItemState::eClampMarginBoxMinSize;
         }
 
         
