@@ -101,7 +101,43 @@
 
     #observeTabChanges() {
       if (!this.#tabChangeObserver) {
-        this.#tabChangeObserver = new window.MutationObserver(() => {
+        this.#tabChangeObserver = new window.MutationObserver(mutationList => {
+          for (let mutation of mutationList) {
+            
+            
+            
+            
+            
+            mutation.addedNodes.forEach(node => {
+              if (node.tagName === "tab") {
+                this.dispatchEvent(
+                  new CustomEvent("TabGrouped", {
+                    bubbles: true,
+                    detail: node,
+                  })
+                );
+                node.setAttribute("aria-level", 2);
+              }
+            });
+            mutation.removedNodes.forEach(node => {
+              if (node.tagName === "tab") {
+                this.dispatchEvent(
+                  new CustomEvent("TabUngrouped", {
+                    bubbles: true,
+                    detail: node,
+                  })
+                );
+                
+                
+                node.setAttribute("aria-level", node.group ? 2 : 1);
+                
+                
+                
+                node.removeAttribute("aria-posinset");
+                node.removeAttribute("aria-setsize");
+              }
+            });
+          }
           if (!this.tabs.length) {
             this.dispatchEvent(
               new CustomEvent("TabGroupRemoved", { bubbles: true })
