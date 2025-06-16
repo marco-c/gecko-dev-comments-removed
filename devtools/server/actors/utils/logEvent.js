@@ -17,6 +17,12 @@ const {
   TYPES,
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
+loader.lazyRequireGetter(
+  this,
+  ["isValidSavedFrame"],
+  "devtools/server/actors/frame",
+  true
+);
 
 
 function getThrownMessage(completion) {
@@ -33,15 +39,54 @@ function getThrownMessage(completion) {
 }
 module.exports.getThrownMessage = getThrownMessage;
 
-function evalAndLogEvent({ threadActor, frame, level, expression, bindings }) {
+function evalAndLogEvent({
+  threadActor,
+  frame,
+  level,
+  expression,
+  bindings,
+  showStacktrace,
+}) {
   const frameLocation = threadActor.sourcesManager.getFrameLocation(frame);
   const { sourceActor, line } = frameLocation;
   const displayName = formatDisplayName(frame);
+  const stacktrace = showStacktrace ? [] : undefined;
+
+  if (showStacktrace) {
+    let currentFrame = frame;
+    while (currentFrame) {
+      if (currentFrame.script) {
+        stacktrace.push({
+          filename: currentFrame.script.url,
+          functionName: currentFrame.script.displayName,
+          lineNumber: currentFrame.script.startLine,
+          columnNumber: currentFrame.script.startColumn,
+          sourceId: currentFrame.script.source.id,
+        });
+      } else {
+        stacktrace.push({
+          filename: "unknown",
+          functionName: currentFrame.displayName || "anonymous",
+          lineNumber: 0,
+          columnNumber: 0,
+          sourceId: "",
+        });
+      }
+      const olderSavedFrame =
+        currentFrame.olderSavedFrame &&
+        isValidSavedFrame(threadActor, currentFrame.olderSavedFrame)
+          ? currentFrame.olderSavedFrame
+          : null;
+      currentFrame = currentFrame.older || olderSavedFrame;
+    }
+  }
 
   
   if (isWorker) {
     threadActor.targetActor._consoleActor.evaluateJS({
-      text: `console.log(...${expression})`,
+      text: showStacktrace
+        ? `console.trace(...${expression})`
+        : `console.log(...${expression})`,
       bindings: { displayName, ...bindings },
       url: sourceActor.url,
       lineNumber: line,
@@ -84,7 +129,7 @@ function evalAndLogEvent({ threadActor, frame, level, expression, bindings }) {
 
   ChromeUtils.addProfilerMarker("Debugger log point", undefined, value);
 
-  emitConsoleMessage(threadActor, frameLocation, value, level);
+  emitConsoleMessage(threadActor, frameLocation, value, level, stacktrace);
 
   return undefined;
 }
@@ -115,7 +160,13 @@ function logEvent({ threadActor, frame }) {
   return undefined;
 }
 
-function emitConsoleMessage(threadActor, frameLocation, args, level) {
+function emitConsoleMessage(
+  threadActor,
+  frameLocation,
+  args,
+  level,
+  stacktrace
+) {
   const targetActor = threadActor.targetActor;
   const { sourceActor, line, column } = frameLocation;
 
@@ -127,7 +178,6 @@ function emitConsoleMessage(threadActor, frameLocation, args, level) {
     
     
     columnNumber: column + 1,
-
     arguments: args,
     level,
     timeStamp: ChromeUtils.dateNow(),
@@ -137,6 +187,7 @@ function emitConsoleMessage(threadActor, frameLocation, args, level) {
     
     
     sourceId: sourceActor.internalSourceId,
+    stacktrace,
   };
 
   

@@ -2,8 +2,14 @@
 
 
 
-import { PureComponent } from "devtools/client/shared/vendor/react";
-import { div } from "devtools/client/shared/vendor/react-dom-factories";
+import React, { PureComponent } from "devtools/client/shared/vendor/react";
+import {
+  div,
+  input,
+  button,
+  form,
+  label,
+} from "devtools/client/shared/vendor/react-dom-factories";
 import ReactDOM from "devtools/client/shared/vendor/react-dom";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import { connect } from "devtools/client/shared/vendor/react-redux";
@@ -31,6 +37,7 @@ export class ConditionalPanel extends PureComponent {
     super();
     this.cbPanel = null;
     this.breakpointPanelEditor = null;
+    this.formRef = React.createRef();
   }
 
   static get propTypes() {
@@ -63,17 +70,47 @@ export class ConditionalPanel extends PureComponent {
     }
   }
 
+  onFormSubmit = e => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    const formData = new FormData(this.formRef.current);
+    const showStacktrace = formData.get("showStacktrace") === "on";
+
+    if (
+      !this.breakpointPanelEditor ||
+      this.breakpointPanelEditor.isDestroyed()
+    ) {
+      return;
+    }
+    const expression = this.breakpointPanelEditor.getText(null);
+    this.saveAndClose(expression, showStacktrace);
+  };
+
+  onPanelBlur = e => {
+    
+    
+    if (
+      e.relatedTarget &&
+      e.relatedTarget.closest(".conditional-breakpoint-panel-container")
+    ) {
+      return;
+    }
+    this.props.closeConditionalPanel();
+  };
+
   
 
 
 
 
 
-  saveAndClose = (expression = null) => {
+
+  saveAndClose = (expression = null, showStacktrace = false) => {
     if (typeof expression === "string") {
       const trimmedExpression = expression.trim();
       if (trimmedExpression) {
-        this.setBreakpoint(trimmedExpression);
+        this.setBreakpoint(trimmedExpression, showStacktrace);
       } else if (this.props.breakpoint) {
         
         
@@ -91,7 +128,8 @@ export class ConditionalPanel extends PureComponent {
 
   onKey = e => {
     if (e.key === "Enter" && !e.shiftKey) {
-      this.saveAndClose(this.input?.value);
+      e.preventDefault();
+      this.formRef.current.requestSubmit();
     } else if (e.key === "Escape") {
       this.props.closeConditionalPanel();
     }
@@ -103,13 +141,22 @@ export class ConditionalPanel extends PureComponent {
 
 
   onBlur = e => {
+    let explicitOriginalTarget = e?.explicitOriginalTarget;
+    
+    
+    if (explicitOriginalTarget && !Element.isInstance(explicitOriginalTarget)) {
+      explicitOriginalTarget = explicitOriginalTarget.parentElement;
+    }
+
     if (
       
       
       
       !e ||
-      (e?.relatedTarget &&
-        e.relatedTarget.closest(".conditional-breakpoint-panel"))
+      (explicitOriginalTarget &&
+        explicitOriginalTarget.closest(
+          ".conditional-breakpoint-panel-container"
+        ))
     ) {
       return;
     }
@@ -117,7 +164,7 @@ export class ConditionalPanel extends PureComponent {
     this.props.closeConditionalPanel();
   };
 
-  setBreakpoint(value) {
+  setBreakpoint(value, showStacktrace) {
     const { log, breakpoint } = this.props;
     
     
@@ -130,6 +177,7 @@ export class ConditionalPanel extends PureComponent {
     return this.props.setBreakpointOptions(location, {
       ...options,
       [type]: value,
+      showStacktrace,
     });
   }
 
@@ -152,6 +200,7 @@ export class ConditionalPanel extends PureComponent {
 
   showConditionalPanel(prevProps) {
     const { location, log, editor, breakpoint, selectedSource } = this.props;
+
     if (!selectedSource || !location) {
       this.removeBreakpointPanelEditor();
       return;
@@ -178,7 +227,7 @@ export class ConditionalPanel extends PureComponent {
         const onEnterKeyMapConfig = {
           preventDefault: true,
           stopPropagation: true,
-          run: () => this.saveAndClose(breakpointPanelEditor.getText(null)),
+          run: () => this.formRef.current.requestSubmit(),
         };
 
         const breakpointPanelEditor = createEditor({
@@ -231,6 +280,15 @@ export class ConditionalPanel extends PureComponent {
     const { editor } = this.props;
     editor.removeLineContentMarker(markerTypes.CONDITIONAL_BP_MARKER);
     this.removeBreakpointPanelEditor();
+  }
+
+  componentDidMount() {
+    if (this.formRef && this.formRef.current) {
+      const checkbox = this.formRef.current.querySelector("#showStacktrace");
+      if (checkbox) {
+        checkbox.checked = this.props.breakpoint?.options?.showStacktrace;
+      }
+    }
   }
 
   renderToWidget(props) {
@@ -290,33 +348,97 @@ export class ConditionalPanel extends PureComponent {
 
   renderConditionalPanel(props, editor) {
     const { log } = props;
-
     const panel = document.createElement("div");
+    const isWindows = Services.appinfo.OS.startsWith("WINNT");
+
+    const isCreating = !this.props.breakpoint;
+
+    const saveButton = button(
+      {
+        type: "submit",
+        id: "save-logpoint",
+        className: "devtools-button conditional-breakpoint-panel-save-button",
+      },
+      L10N.getStr(
+        isCreating
+          ? "editor.conditionalPanel.create"
+          : "editor.conditionalPanel.update"
+      )
+    );
+
+    const cancelButton = button(
+      {
+        type: "button",
+        className: "devtools-button conditional-breakpoint-panel-cancel-button",
+        onClick: () => this.props.closeConditionalPanel(),
+      },
+      L10N.getStr("editor.conditionalPanel.cancel")
+    );
+
     
     
     const reactElPanel = div(
-      { className: "conditional-breakpoint-panel-container" },
-      div(
+      {
+        className: "conditional-breakpoint-panel-container",
+        onBlur: this.onPanelBlur,
+        tabIndex: -1,
+      },
+      form(
         {
           className: classnames("conditional-breakpoint-panel", {
             "log-point": log,
           }),
-          onClick: () => this.keepFocusOnInput(),
-          ref: node => (this.panelNode = node),
+          onSubmit: this.onFormSubmit,
+          ref: this.formRef,
         },
         div(
           {
-            className: "prompt",
+            className: "input-container",
           },
-          "»"
+          div(
+            {
+              className: "prompt",
+            },
+            "»"
+          ),
+          div({
+            className: "inline-codemirror-container",
+            ref: el => this.setupAndAppendInlineEditor(el, editor),
+          })
         ),
-        div({
-          className: "inline-codemirror-container",
-          ref: el => this.setupAndAppendInlineEditor(el, editor),
-        })
+        div(
+          {
+            className: "conditional-breakpoint-panel-controls",
+          },
+          log
+            ? label(
+                {
+                  className: "conditional-breakpoint-panel-checkbox-label",
+                  htmlFor: "showStacktrace",
+                },
+                input({
+                  type: "checkbox",
+                  id: "showStacktrace",
+                  name: "showStacktrace",
+                  defaultChecked:
+                    this.props.breakpoint?.options?.showStacktrace,
+                  "aria-label": L10N.getStr(
+                    "editor.conditionalPanel.logPoint.showStacktrace"
+                  ),
+                }),
+                L10N.getStr("editor.conditionalPanel.logPoint.showStacktrace")
+              )
+            : null,
+          div(
+            {
+              className: "conditional-breakpoint-panel-buttons",
+            },
+            isWindows ? saveButton : cancelButton,
+            isWindows ? cancelButton : saveButton
+          )
+        )
       )
     );
-
     ReactDOM.render(reactElPanel, panel);
     return panel;
   }

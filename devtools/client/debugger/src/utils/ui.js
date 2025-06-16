@@ -38,11 +38,16 @@ export function resizeBreakpointGutter(editor) {
 
 
 
-export function resizeToggleButton(newSize) {
-  const toggleButton = document.querySelector(
-    ".source-header .toggle-button.start"
+
+
+export function updateEditorSizeCssVariables(cmEditorEl) {
+  document.documentElement.style.setProperty(
+    "--cm-gutter-width",
+    `${cmEditorEl.querySelector(".cm-gutters").clientWidth}px`
   );
-  if (toggleButton) {
-    toggleButton.style.width = `${newSize}px`;
-  }
+  document.documentElement.style.setProperty(
+    "--cm-editor-scroller-width",
+    
+    `${cmEditorEl.querySelector(".cm-scroller").clientWidth}px`
+  );
 }

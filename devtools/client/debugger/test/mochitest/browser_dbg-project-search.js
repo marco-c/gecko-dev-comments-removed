@@ -25,7 +25,7 @@ add_task(async function testProjectSearchCloseOnNavigation() {
 
   await doProjectSearch(dbg, "function", 2);
 
-  is(getExpandedResultsCount(dbg), 5);
+  is(getExpandedResultsCount(dbg), 6);
 
   is(dbg.selectors.getActiveSearch(), "project");
 
@@ -44,7 +44,7 @@ add_task(async function testProjectSearchCloseOnNavigation() {
   
   is(dbg.selectors.getActiveSearch(), "project");
   
-  is(getExpandedResultsCount(dbg), 5);
+  is(getExpandedResultsCount(dbg), 6);
 
   ok(
     refreshButton.classList.contains("highlight"),
