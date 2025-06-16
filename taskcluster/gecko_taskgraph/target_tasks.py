@@ -700,9 +700,8 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     return False
                 if "jetstream2" in try_name:
                     return True
-                
                 if "jetstream3" in try_name:
-                    return False
+                    return True
                 
                 
                 if "tp6m" in try_name:
@@ -822,9 +821,8 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     return False
                 if "jetstream2" in try_name:
                     return True
-                
                 if "jetstream3" in try_name:
-                    return False
+                    return True
                 if "fenix" in try_name:
                     return False
                 if "speedometer" in try_name:
