@@ -818,7 +818,7 @@ void PDMFactory::SetCDMProxy(CDMProxy* aProxy) {
   mEMEPDM = MakeRefPtr<EMEDecoderModule>(aProxy, m);
 }
 
-StaticMutex sSupportedMutex;
+StaticMutex PDMFactory::sSupportedMutex;
 
 
 media::MediaCodecsSupported PDMFactory::Supported(bool aForceRefresh) {
