@@ -780,6 +780,12 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   nsRect rootBounds = aInput.mRootRect;
   if (isSimilarOrigin) {
     rootBounds.Inflate(aInput.mRootMargin);
+
+    
+    if (aInput.mIsImplicitRoot) {
+      rootBounds.Inflate(
+          ResolveMargin(aInput.mScrollMargin, aInput.mRootRect.Size()));
+    }
   }
 
   
