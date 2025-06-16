@@ -1156,7 +1156,6 @@ class Element : public FragmentOrElement {
     return FindAttributeDependence(aAttribute, aMaps, N);
   }
 
-
   
   enum class Command : uint8_t {
     Invalid,
