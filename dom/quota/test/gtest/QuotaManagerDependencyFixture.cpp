@@ -6,6 +6,7 @@
 
 #include "QuotaManagerDependencyFixture.h"
 
+#include "DirectoryMetadata.h"
 #include "mozIStorageService.h"
 #include "mozStorageCID.h"
 #include "mozilla/BasePrincipal.h"
@@ -411,6 +412,55 @@ void QuotaManagerDependencyFixture::ProcessPendingNormalOriginOperations() {
 
     quotaManager->ProcessPendingNormalOriginOperations();
   });
+}
+
+
+Maybe<OriginStateMetadata>
+QuotaManagerDependencyFixture::GetOriginStateMetadata(
+    const OriginMetadata& aOriginMetadata) {
+  const auto result =
+      PerformOnIOThread([aOriginMetadata]() -> Maybe<OriginStateMetadata> {
+        QuotaManager* quotaManager = QuotaManager::Get();
+        MOZ_RELEASE_ASSERT(quotaManager);
+
+        return quotaManager->GetOriginStateMetadata(aOriginMetadata);
+      });
+
+  return result;
+}
+
+
+Maybe<OriginStateMetadata>
+QuotaManagerDependencyFixture::LoadDirectoryMetadataHeader(
+    const OriginMetadata& aOriginMetadata) {
+  auto result =
+      PerformOnIOThread([aOriginMetadata]() -> Maybe<OriginStateMetadata> {
+        QuotaManager* quotaManager = QuotaManager::Get();
+        MOZ_RELEASE_ASSERT(quotaManager);
+
+        auto directoryRes = quotaManager->GetOriginDirectory(aOriginMetadata);
+        MOZ_RELEASE_ASSERT(directoryRes.isOk());
+
+        auto directory = directoryRes.unwrap();
+
+        bool exists;
+        nsresult rv = directory->Exists(&exists);
+        MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+
+        if (!exists) {
+          return Nothing();
+        }
+
+        auto originStateMetadataRes =
+            quota::LoadDirectoryMetadataHeader(*directory);
+        MOZ_RELEASE_ASSERT(originStateMetadataRes.isOk());
+
+        auto originStateMetadata = originStateMetadataRes.unwrap();
+
+        return Some(originStateMetadata);
+      });
+
+  return result;
 }
 
 

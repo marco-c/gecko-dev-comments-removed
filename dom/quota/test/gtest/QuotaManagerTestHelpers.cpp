@@ -38,7 +38,8 @@ FullOriginMetadata GetFullOriginMetadata(const nsCString& aOriginSuffix,
                                          const nsCString& aGroupNoSuffix,
                                          const nsCString& aOriginNoSuffix) {
   return {GetOriginMetadata(aOriginSuffix, aGroupNoSuffix, aOriginNoSuffix),
-           false,  0};
+          OriginStateMetadata{ 0,  false,
+                               false}};
 }
 
 }  
