@@ -2,6 +2,12 @@
 
 
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 add_task(async function () {
   var pagetitle = "Page Title for Bug 503832";
   var pageurl =

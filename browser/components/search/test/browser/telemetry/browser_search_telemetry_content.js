@@ -5,6 +5,10 @@ const SCALAR_CONTEXT_MENU = BASE_PROBE_NAME + "contextmenu";
 const SCALAR_ABOUT_NEWTAB = BASE_PROBE_NAME + "about_newtab";
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+
   
   
   

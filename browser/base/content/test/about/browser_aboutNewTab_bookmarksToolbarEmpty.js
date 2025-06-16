@@ -34,7 +34,10 @@ async function emptyToolbarMessageVisible(visible, win = window) {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     
-    set: [["browser.newtab.preload", false]],
+    set: [
+      ["browser.newtab.preload", false],
+      ["test.wait300msAfterTabSwitch", true],
+    ],
   });
   
   

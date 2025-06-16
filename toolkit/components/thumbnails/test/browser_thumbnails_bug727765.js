@@ -13,6 +13,12 @@ function isRedThumbnailFuzz(r, g, b, expectedR, expectedB, expectedG, aFuzz) {
   );
 }
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 
 add_task(async function thumbnails_bg_bug727765() {
   

@@ -34,6 +34,12 @@ async function waitForWarningState(aWarningElement, aExpectedState) {
   );
 }
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
 
 add_task(async function show_pointerlock_warning_escape() {
   let urls = [TEST_URL, FRAME_TEST_URL];
