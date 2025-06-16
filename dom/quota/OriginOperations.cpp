@@ -770,9 +770,11 @@ class ClearOriginOp final : public ClearRequestBase {
 };
 
 class ClearClientOp final
-    : public OpenStorageDirectoryHelper<ResolvableNormalOriginOp<bool>> {
+    : public OpenStorageDirectoryHelper<
+          ResolvableNormalOriginOp<ClientMetadataArray, true>> {
   const PrincipalInfo mPrincipalInfo;
   PrincipalMetadata mPrincipalMetadata;
+  ClientMetadataArray mClientMetadataArray;
   const PersistenceScope mPersistenceScope;
   const Client::Type mClientType;
 
@@ -793,7 +795,7 @@ class ClearClientOp final
 
   nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
 
-  bool UnwrapResolveValue() override;
+  ClientMetadataArray UnwrapResolveValue() override;
 
   void CloseDirectory() override;
 };
@@ -872,9 +874,11 @@ class ShutdownOriginOp final
   void CloseDirectory() override;
 };
 
-class ShutdownClientOp final : public ResolvableNormalOriginOp<bool> {
+class ShutdownClientOp final
+    : public ResolvableNormalOriginOp<ClientMetadataArray, true> {
   const PrincipalInfo mPrincipalInfo;
   PrincipalMetadata mPrincipalMetadata;
+  ClientMetadataArray mClientMetadataArray;
   RefPtr<UniversalDirectoryLock> mDirectoryLock;
   const PersistenceScope mPersistenceScope;
   const Client::Type mClientType;
@@ -892,9 +896,11 @@ class ShutdownClientOp final : public ResolvableNormalOriginOp<bool> {
 
   RefPtr<BoolPromise> OpenDirectory() override;
 
+  void CollectOriginMetadata(const ClientMetadata& aClientMetadata);
+
   nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
 
-  bool UnwrapResolveValue() override;
+  ClientMetadataArray UnwrapResolveValue() override;
 
   void CloseDirectory() override;
 };
@@ -1179,7 +1185,7 @@ RefPtr<ResolvableNormalOriginOp<OriginMetadataArray, true>> CreateClearOriginOp(
                                    aPrincipalInfo);
 }
 
-RefPtr<ResolvableNormalOriginOp<bool>> CreateClearClientOp(
+RefPtr<ResolvableNormalOriginOp<ClientMetadataArray, true>> CreateClearClientOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
     Maybe<PersistenceType> aPersistenceType,
     const PrincipalInfo& aPrincipalInfo, Client::Type aClientType) {
@@ -1210,10 +1216,11 @@ CreateShutdownOriginOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
                                       aPersistenceType, aPrincipalInfo);
 }
 
-RefPtr<ResolvableNormalOriginOp<bool>> CreateShutdownClientOp(
-    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-    Maybe<PersistenceType> aPersistenceType,
-    const PrincipalInfo& aPrincipalInfo, Client::Type aClientType) {
+RefPtr<ResolvableNormalOriginOp<ClientMetadataArray, true>>
+CreateShutdownClientOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
+                       Maybe<PersistenceType> aPersistenceType,
+                       const PrincipalInfo& aPrincipalInfo,
+                       Client::Type aClientType) {
   return MakeRefPtr<ShutdownClientOp>(
       std::move(aQuotaManager), aPersistenceType, aPrincipalInfo, aClientType);
 }
@@ -1334,6 +1341,7 @@ nsresult SaveOriginAccessTimeOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   auto originStateMetadata = maybeOriginStateMetadata.extract();
 
   originStateMetadata.mLastAccessTime = PR_Now();
+  originStateMetadata.mAccessed = true;
 
   QM_TRY_INSPECT(const auto& file,
                  aQuotaManager.GetOriginDirectory(mOriginMetadata));
@@ -3070,6 +3078,8 @@ void ClearClientOp::DeleteFiles(const ClientMetadata& aClientMetadata) {
 
   QM_TRY(MOZ_TO_RESULT(directory->Remove(true)), QM_VOID);
 
+  mClientMetadataArray.AppendElement(aClientMetadata);
+
   const bool initialized =
       aClientMetadata.mPersistenceType == PERSISTENCE_TYPE_PERSISTENT
           ? mQuotaManager->IsPersistentOriginInitializedInternal(
@@ -3111,10 +3121,10 @@ nsresult ClearClientOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   return NS_OK;
 }
 
-bool ClearClientOp::UnwrapResolveValue() {
+ClientMetadataArray ClearClientOp::UnwrapResolveValue() {
   AssertIsOnOwningThread();
 
-  return true;
+  return std::move(mClientMetadataArray);
 }
 
 void ClearClientOp::CloseDirectory() {
@@ -3367,22 +3377,51 @@ RefPtr<BoolPromise> ShutdownClientOp::OpenDirectory() {
   return mDirectoryLock->Acquire();
 }
 
+void ShutdownClientOp::CollectOriginMetadata(
+    const ClientMetadata& aClientMetadata) {
+  AssertIsOnIOThread();
+
+  QM_TRY_INSPECT(const auto& directory,
+                 mQuotaManager->GetOriginDirectory(aClientMetadata), QM_VOID);
+
+  QM_TRY(MOZ_TO_RESULT(directory->Append(
+             Client::TypeToString(aClientMetadata.mClientType))),
+         QM_VOID);
+
+  QM_TRY_INSPECT(const bool& exists,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(directory, Exists), QM_VOID);
+  if (!exists) {
+    return;
+  }
+
+  mClientMetadataArray.AppendElement(aClientMetadata);
+}
+
 nsresult ShutdownClientOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   AssertIsOnIOThread();
 
   AUTO_PROFILER_LABEL("ShutdownClientOp::DoDirectoryWork", OTHER);
 
-  
-  
-  
+  if (mPersistenceScope.IsNull()) {
+    for (const PersistenceType type : kAllPersistenceTypes) {
+      CollectOriginMetadata(ClientMetadata(
+          OriginMetadata(mPrincipalMetadata, type), mClientType));
+    }
+  } else {
+    MOZ_ASSERT(mPersistenceScope.IsValue());
+
+    CollectOriginMetadata(ClientMetadata(
+        OriginMetadata(mPrincipalMetadata, mPersistenceScope.GetValue()),
+        mClientType));
+  }
 
   return NS_OK;
 }
 
-bool ShutdownClientOp::UnwrapResolveValue() {
+ClientMetadataArray ShutdownClientOp::UnwrapResolveValue() {
   AssertIsOnOwningThread();
 
-  return true;
+  return std::move(mClientMetadataArray);
 }
 
 void ShutdownClientOp::CloseDirectory() {
@@ -3512,48 +3551,45 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   if (created) {
     
 
-    
-    
-    int64_t timestamp;
+    const auto [timestamp, accessed] = [&aQuotaManager, &originMetadata]() {
+      
+      if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
+        if (aQuotaManager.IsTemporaryOriginInitializedInternal(
+                originMetadata)) {
+          
+          
+          
+          
 
-    
-    if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
-      if (aQuotaManager.IsTemporaryOriginInitializedInternal(originMetadata)) {
-        
-        
-        
-        
+          return aQuotaManager.WithOriginInfo(
+              originMetadata, [](const auto& originInfo) {
+                const int64_t timestamp = originInfo->LockedAccessTime();
+                const bool accessed = originInfo->LockedAccessed();
 
-        timestamp = aQuotaManager.WithOriginInfo(
-            originMetadata, [](const auto& originInfo) {
-              const int64_t timestamp = originInfo->LockedAccessTime();
+                originInfo->LockedDirectoryCreated();
 
-              originInfo->LockedDirectoryCreated();
-
-              return timestamp;
-            });
-      } else {
-        timestamp = PR_Now();
+                return std::make_pair(timestamp, accessed);
+              });
+        }
       }
 
-      FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
-          originMetadata,
-          OriginStateMetadata{timestamp,  true}};
+      return std::make_pair( PR_Now(),  false);
+    }();
 
+    FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
+        originMetadata,
+        OriginStateMetadata{timestamp, accessed,  true}};
+
+    if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
       
       
       
       
       aQuotaManager.AddTemporaryOrigin(fullOriginMetadata);
-    } else {
-      timestamp = PR_Now();
     }
 
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
-        *directory,
-        FullOriginMetadata{
-            originMetadata,
-            OriginStateMetadata{timestamp,  true}})));
+        *directory, fullOriginMetadata)));
 
     
     
@@ -3570,24 +3606,20 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         
         
 
-        FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
-            originMetadata,
-            OriginStateMetadata{timestamp,  true}};
-
         aQuotaManager.InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
                                           0);
       }
     }
   } else {
-    QM_TRY_INSPECT(
-        const bool& persisted,
+    QM_TRY_UNWRAP(
+        OriginStateMetadata originStateMetadata,
         ([&aQuotaManager, &originMetadata,
-          &directory]() -> mozilla::Result<bool, nsresult> {
-          Nullable<bool> persisted =
-              aQuotaManager.OriginPersisted(originMetadata);
+          &directory]() -> mozilla::Result<OriginStateMetadata, nsresult> {
+          Maybe<OriginStateMetadata> maybeOriginStateMetadata =
+              aQuotaManager.GetOriginStateMetadata(originMetadata);
 
-          if (!persisted.IsNull()) {
-            return persisted.Value();
+          if (maybeOriginStateMetadata) {
+            return maybeOriginStateMetadata.extract();
           }
 
           
@@ -3596,20 +3628,26 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
               const auto& metadata,
               aQuotaManager.LoadFullOriginMetadataWithRestore(directory));
 
-          return metadata.mPersisted;
+          return metadata;
         }()));
 
-    if (!persisted) {
+    if (!originStateMetadata.mPersisted) {
       
       
-      QM_TRY(MOZ_TO_RESULT(SaveDirectoryMetadataHeader(
-          *directory, OriginStateMetadata{ PR_Now(),
-                                           true})));
+
+      originStateMetadata.mLastAccessTime = PR_Now();
+      originStateMetadata.mPersisted = true;
+
+      QM_TRY(MOZ_TO_RESULT(
+          SaveDirectoryMetadataHeader(*directory, originStateMetadata)));
 
       
       
       if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
         aQuotaManager.PersistOrigin(originMetadata);
+
+        
+        
       }
     }
   }
