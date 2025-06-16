@@ -2,6 +2,7 @@
 
 
 
+import itertools
 from typing import Final, Set
 
 from multidict import istr
@@ -106,3 +107,15 @@ WWW_AUTHENTICATE: Final[istr] = istr("WWW-Authenticate")
 X_FORWARDED_FOR: Final[istr] = istr("X-Forwarded-For")
 X_FORWARDED_HOST: Final[istr] = istr("X-Forwarded-Host")
 X_FORWARDED_PROTO: Final[istr] = istr("X-Forwarded-Proto")
+
+
+
+METH_HEAD_ALL: Final = frozenset(
+    map("".join, itertools.product(*zip(METH_HEAD.upper(), METH_HEAD.lower())))
+)
+METH_CONNECT_ALL: Final = frozenset(
+    map("".join, itertools.product(*zip(METH_CONNECT.upper(), METH_CONNECT.lower())))
+)
+HOST_ALL: Final = frozenset(
+    map("".join, itertools.product(*zip(HOST.upper(), HOST.lower())))
+)

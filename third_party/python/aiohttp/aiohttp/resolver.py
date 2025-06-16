@@ -1,7 +1,7 @@
 import asyncio
 import socket
-import sys
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+import weakref
+from typing import Any, Dict, Final, List, Optional, Tuple, Type, Union
 
 from .abc import AbstractResolver, ResolveResult
 
@@ -19,7 +19,9 @@ except ImportError:
 
 _NUMERIC_SOCKET_FLAGS = socket.AI_NUMERICHOST | socket.AI_NUMERICSERV
 _NAME_SOCKET_FLAGS = socket.NI_NUMERICHOST | socket.NI_NUMERICSERV
-_SUPPORTS_SCOPE_ID = sys.version_info >= (3, 9, 0)
+_AI_ADDRCONFIG = socket.AI_ADDRCONFIG
+if hasattr(socket, "AI_MASK"):
+    _AI_ADDRCONFIG &= socket.AI_MASK
 
 
 class ThreadedResolver(AbstractResolver):
@@ -40,7 +42,7 @@ class ThreadedResolver(AbstractResolver):
             port,
             type=socket.SOCK_STREAM,
             family=family,
-            flags=socket.AI_ADDRCONFIG,
+            flags=_AI_ADDRCONFIG,
         )
 
         hosts: List[ResolveResult] = []
@@ -50,7 +52,7 @@ class ThreadedResolver(AbstractResolver):
                     
                     
                     continue
-                if address[3] and _SUPPORTS_SCOPE_ID:
+                if address[3]:
                     
                     
                     
@@ -87,12 +89,22 @@ class AsyncResolver(AbstractResolver):
         self,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         if aiodns is None:
             raise RuntimeError("Resolver requires aiodns library")
 
-        self._resolver = aiodns.DNSResolver(*args, **kwargs)
+        self._loop = loop or asyncio.get_running_loop()
+        self._manager: Optional[_DNSResolverManager] = None
+        
+        
+        
+        if args or kwargs:
+            self._resolver = aiodns.DNSResolver(*args, **kwargs)
+            return
+        
+        self._manager = _DNSResolverManager()
+        self._resolver = self._manager.get_resolver(self, self._loop)
 
         if not hasattr(self._resolver, "gethostbyname"):
             
@@ -107,7 +119,7 @@ class AsyncResolver(AbstractResolver):
                 port=port,
                 type=socket.SOCK_STREAM,
                 family=family,
-                flags=socket.AI_ADDRCONFIG,
+                flags=_AI_ADDRCONFIG,
             )
         except aiodns.error.DNSError as exc:
             msg = exc.args[1] if len(exc.args) >= 1 else "DNS lookup failed"
@@ -117,7 +129,7 @@ class AsyncResolver(AbstractResolver):
             address: Union[Tuple[bytes, int], Tuple[bytes, int, int, int]] = node.addr
             family = node.family
             if family == socket.AF_INET6:
-                if len(address) > 3 and address[3] and _SUPPORTS_SCOPE_ID:
+                if len(address) > 3 and address[3]:
                     
                     
                     
@@ -152,10 +164,7 @@ class AsyncResolver(AbstractResolver):
     async def _resolve_with_query(
         self, host: str, port: int = 0, family: int = socket.AF_INET
     ) -> List[Dict[str, Any]]:
-        if family == socket.AF_INET6:
-            qtype = "AAAA"
-        else:
-            qtype = "A"
+        qtype: Final = "AAAA" if family == socket.AF_INET6 else "A"
 
         try:
             resp = await self._resolver.query(host, qtype)
@@ -182,7 +191,83 @@ class AsyncResolver(AbstractResolver):
         return hosts
 
     async def close(self) -> None:
-        self._resolver.cancel()
+        if self._manager:
+            
+            self._manager.release_resolver(self, self._loop)
+            self._manager = None  
+            self._resolver = None  
+            return
+        
+        if self._resolver is not None:
+            self._resolver.cancel()
+        self._resolver = None  
+
+
+class _DNSResolverManager:
+    """Manager for aiodns.DNSResolver objects.
+
+    This class manages shared aiodns.DNSResolver instances
+    with no custom arguments across different event loops.
+    """
+
+    _instance: Optional["_DNSResolverManager"] = None
+
+    def __new__(cls) -> "_DNSResolverManager":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._init()
+        return cls._instance
+
+    def _init(self) -> None:
+        
+        self._loop_data: weakref.WeakKeyDictionary[
+            asyncio.AbstractEventLoop,
+            tuple["aiodns.DNSResolver", weakref.WeakSet["AsyncResolver"]],
+        ] = weakref.WeakKeyDictionary()
+
+    def get_resolver(
+        self, client: "AsyncResolver", loop: asyncio.AbstractEventLoop
+    ) -> "aiodns.DNSResolver":
+        """Get or create the shared aiodns.DNSResolver instance for a specific event loop.
+
+        Args:
+            client: The AsyncResolver instance requesting the resolver.
+                   This is required to track resolver usage.
+            loop: The event loop to use for the resolver.
+        """
+        
+        if loop not in self._loop_data:
+            resolver = aiodns.DNSResolver(loop=loop)
+            client_set: weakref.WeakSet["AsyncResolver"] = weakref.WeakSet()
+            self._loop_data[loop] = (resolver, client_set)
+        else:
+            
+            resolver, client_set = self._loop_data[loop]
+
+        
+        client_set.add(client)
+        return resolver
+
+    def release_resolver(
+        self, client: "AsyncResolver", loop: asyncio.AbstractEventLoop
+    ) -> None:
+        """Release the resolver for an AsyncResolver client when it's closed.
+
+        Args:
+            client: The AsyncResolver instance to release.
+            loop: The event loop the resolver was using.
+        """
+        
+        current_loop_data = self._loop_data.get(loop)
+        if current_loop_data is None:
+            return
+        resolver, client_set = current_loop_data
+        client_set.discard(client)
+        
+        if not client_set:
+            if resolver is not None:
+                resolver.cancel()
+            del self._loop_data[loop]
 
 
 _DefaultType = Type[Union[AsyncResolver, ThreadedResolver]]

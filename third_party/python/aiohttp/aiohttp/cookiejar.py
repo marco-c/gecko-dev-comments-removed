@@ -9,7 +9,9 @@ import pathlib
 import pickle
 import re
 import time
+import warnings
 from collections import defaultdict
+from collections.abc import Mapping
 from http.cookies import BaseCookie, Morsel, SimpleCookie
 from typing import (
     DefaultDict,
@@ -17,16 +19,15 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 from yarl import URL
 
+from ._cookie_helpers import preserve_morsel_with_coded_value
 from .abc import AbstractCookieJar, ClearCookiePredicate
 from .helpers import is_ip_address
 from .typedefs import LooseCookies, PathLike, StrOrURL
@@ -44,6 +45,7 @@ _FORMAT_DOMAIN_REVERSED = "{1}.{0}".format
 
 
 _MIN_SCHEDULED_COOKIE_EXPIRATION = 100
+_SIMPLE_COOKIE = SimpleCookie()
 
 
 class CookieJar(AbstractCookieJar):
@@ -59,7 +61,7 @@ class CookieJar(AbstractCookieJar):
     DATE_DAY_OF_MONTH_RE = re.compile(r"(\d{1,2})")
 
     DATE_MONTH_RE = re.compile(
-        "(jan)|(feb)|(mar)|(apr)|(may)|(jun)|(jul)|" "(aug)|(sep)|(oct)|(nov)|(dec)",
+        "(jan)|(feb)|(mar)|(apr)|(may)|(jun)|(jul)|(aug)|(sep)|(oct)|(nov)|(dec)",
         re.I,
     )
 
@@ -115,6 +117,10 @@ class CookieJar(AbstractCookieJar):
         self._treat_as_secure_origin = treat_as_secure_origin
         self._expire_heap: List[Tuple[float, Tuple[str, str, str]]] = []
         self._expirations: Dict[Tuple[str, str, str], float] = {}
+
+    @property
+    def quote_cookie(self) -> bool:
+        return self._quote_cookie
 
     def save(self, file_path: PathLike) -> None:
         file_path = pathlib.Path(file_path)
@@ -299,9 +305,10 @@ class CookieJar(AbstractCookieJar):
 
     def filter_cookies(self, request_url: URL = URL()) -> "BaseCookie[str]":
         """Returns this jar's cookies filtered by their attributes."""
-        filtered: Union[SimpleCookie, "BaseCookie[str]"] = (
-            SimpleCookie() if self._quote_cookie else BaseCookie()
-        )
+        
+        
+        
+        filtered: BaseCookie[str] = BaseCookie()
         if not self._cookies:
             
             return filtered
@@ -309,7 +316,14 @@ class CookieJar(AbstractCookieJar):
         if not self._cookies:
             
             return filtered
-        request_url = URL(request_url)
+        if type(request_url) is not URL:
+            warnings.warn(
+                "filter_cookies expects yarl.URL instances only,"
+                f"and will stop working in 4.x, got {type(request_url)}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            request_url = URL(request_url)
         hostname = request_url.raw_host or ""
 
         is_not_secure = request_url.scheme not in ("https", "wss")
@@ -320,8 +334,17 @@ class CookieJar(AbstractCookieJar):
             is_not_secure = request_origin not in self._treat_as_secure_origin
 
         
-        for c in self._cookies[("", "")].values():
-            filtered[c.key] = c.value
+        key = ("", "")
+        for c in self._cookies[key].values():
+            
+            if c.key in self._morsel_cache[key]:
+                filtered[c.key] = self._morsel_cache[key][c.key]
+                continue
+
+            
+            mrsl_val = self._build_morsel(c)
+            self._morsel_cache[key][c.key] = mrsl_val
+            filtered[c.key] = mrsl_val
 
         if is_ip_address(hostname):
             if not self._unsafe:
@@ -341,6 +364,8 @@ class CookieJar(AbstractCookieJar):
         path_len = len(request_url.path)
         
         for p in pairs:
+            if p not in self._cookies:
+                continue
             for name, cookie in self._cookies[p].items():
                 domain = cookie["domain"]
 
@@ -360,13 +385,27 @@ class CookieJar(AbstractCookieJar):
                     continue
 
                 
-                
-                mrsl_val = cast("Morsel[str]", cookie.get(cookie.key, Morsel()))
-                mrsl_val.set(cookie.key, cookie.value, cookie.coded_value)
+                mrsl_val = self._build_morsel(cookie)
                 self._morsel_cache[p][name] = mrsl_val
                 filtered[name] = mrsl_val
 
         return filtered
+
+    def _build_morsel(self, cookie: Morsel[str]) -> Morsel[str]:
+        """Build a morsel for sending, respecting quote_cookie setting."""
+        if self._quote_cookie and cookie.coded_value and cookie.coded_value[0] == '"':
+            return preserve_morsel_with_coded_value(cookie)
+        morsel: Morsel[str] = Morsel()
+        if self._quote_cookie:
+            value, coded_value = _SIMPLE_COOKIE.value_encode(cookie.value)
+        else:
+            coded_value = value = cookie.value
+        
+        
+        
+        
+        morsel.__setstate__({"key": cookie.key, "value": value, "coded_value": coded_value})  
+        return morsel
 
     @staticmethod
     def _is_domain_match(domain: str, hostname: str) -> bool:
@@ -465,6 +504,10 @@ class DummyCookieJar(AbstractCookieJar):
 
     def __len__(self) -> int:
         return 0
+
+    @property
+    def quote_cookie(self) -> bool:
+        return True
 
     def clear(self, predicate: Optional[ClearCookiePredicate] = None) -> None:
         pass

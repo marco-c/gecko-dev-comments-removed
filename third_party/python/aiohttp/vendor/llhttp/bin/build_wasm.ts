@@ -13,7 +13,6 @@ if (!platform && process.argv[2]) {
 if (process.argv[2] === '--prebuild') {
   const cmd = `docker build --platform=${platform.toString().trim()} -t llhttp_wasm_builder .`;
 
-  
   console.log(`> ${cmd}\n\n`);
   execSync(cmd, { stdio: 'inherit' });
 
@@ -33,7 +32,7 @@ if (process.argv[2] === '--setup') {
 }
 
 if (process.argv[2] === '--docker') {
-  let cmd = `docker run --rm -it --platform=${platform.toString().trim()}`;
+  let cmd = `docker run --rm --platform=${platform.toString().trim()}`;
   
   
   
@@ -43,7 +42,6 @@ if (process.argv[2] === '--docker') {
   }
   cmd += ` --mount type=bind,source=${WASM_SRC}/build,target=/home/node/llhttp/build llhttp_wasm_builder npm run wasm`;
 
-  
   console.log(`> ${cmd}\n\n`);
   execSync(cmd, { cwd: WASM_SRC, stdio: 'inherit' });
   process.exit(0);

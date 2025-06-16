@@ -24,6 +24,7 @@ struct llhttp_settings_s {
   llhttp_cb      on_message_begin;
 
   
+  llhttp_data_cb on_protocol;
   llhttp_data_cb on_url;
   llhttp_data_cb on_status;
   llhttp_data_cb on_method;
@@ -49,6 +50,7 @@ struct llhttp_settings_s {
 
   
   llhttp_cb      on_message_complete;
+  llhttp_cb      on_protocol_complete;
   llhttp_cb      on_url_complete;
   llhttp_cb      on_status_complete;
   llhttp_cb      on_method_complete;
