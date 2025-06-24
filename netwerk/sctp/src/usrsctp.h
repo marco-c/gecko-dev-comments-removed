@@ -569,6 +569,9 @@ struct sctp_event_subscribe {
 #define SCTP_SS_VALUE                   0x00001204
 
 
+#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
+
+
 
 
 #define SCTP_STATUS                     0x00000100
