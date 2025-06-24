@@ -10,12 +10,6 @@
 const PAGE_URL =
     'https://example.com/browser/dom/media/test/browser/file_media.html';
 
-
-
-
-
-const reportsColorDepthFromVideoData = AppConstants.platform == 'macosx';
-
 add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {
   const originalTab = gBrowser.selectedTab;
   const mediaTab = await openMediaTab(PAGE_URL);
@@ -25,7 +19,7 @@ add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {
     mediaTab,
     shouldAccumulateTime: true,
     shouldAccumulateInvisibleTime: false,
-    shouldAccumulateHDRTime: reportsColorDepthFromVideoData,
+    shouldAccumulateHDRTime: true,
   });
   await pauseMedia(mediaTab);
 
@@ -35,7 +29,7 @@ add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {
     mediaTab,
     shouldAccumulateTime: true,
     shouldAccumulateInvisibleTime: true,
-    shouldAccumulateHDRTime: reportsColorDepthFromVideoData,
+    shouldAccumulateHDRTime: true,
   });
   await pauseMedia(mediaTab);
 
@@ -126,33 +120,8 @@ function startMedia({
         }
 
         const videoHDR = content.document.getElementById('videoHDR');
-
-        
-        
-        
-        
-        let didDecode = true;
-        const playPromise = videoHDR.play().then(() => true, () => false);
-        
-        const tooSlowPromise = new Promise(resolve => setTimeout(() => {
-                                             info('videoHDR timed out.');
-                                             didDecode = false;
-                                             resolve(false);
-                                           }, 1000));
-        
-
-        let didPlay =
-            await Promise.race([playPromise, tooSlowPromise]).catch(err => {
-              info('videoHDR failed to decode with error: ' + err.message);
-              didDecode = false;
-              return false;
-            });
-
-        if (!didDecode) {
-          return;
-        }
-
-        ok(didPlay, 'videoHDR started playing');
+        ok(videoHDR.play().then(() => true, () => false),
+           'videoHDR started playing');
         const videoHDRChrome = SpecialPowers.wrap(videoHDR);
         if (accumulateHDRTime) {
           await content.assertValueConstantlyIncreases(
