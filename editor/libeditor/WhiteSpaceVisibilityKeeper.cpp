@@ -36,13 +36,6 @@ using namespace dom;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
-template nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
-    HTMLEditor& aHTMLEditor, const EditorDOMPoint& aScanStartPoint,
-    const Element& aEditingHost);
-template nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
-    HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aScanStartPoint,
-    const Element& aEditingHost);
-
 Result<EditorDOMPoint, nsresult>
 WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
     HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToSplit,
@@ -70,37 +63,19 @@ WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
   }
 
   
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToSplit);
-
-    nsresult rv = WhiteSpaceVisibilityKeeper::
-        MakeSureToKeepVisibleWhiteSpacesVisibleAfterSplit(aHTMLEditor,
-                                                          pointToSplit);
-    if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
-      return Err(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::"
-          "MakeSureToKeepVisibleWhiteSpacesVisibleAfterSplit() failed");
-      return Err(rv);
-    }
-  } else {
-    
-    
-    
-    Result<EditorDOMPoint, nsresult> pointToSplitOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
-            aHTMLEditor, pointToSplit,
-            {NormalizeOption::StopIfFollowingWhiteSpacesStartsWithNBSP,
-             NormalizeOption::StopIfPrecedingWhiteSpacesEndsWithNBP});
-    if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
-      return pointToSplitOrError.propagateErr();
-    }
-    pointToSplit = pointToSplitOrError.unwrap();
+  
+  
+  Result<EditorDOMPoint, nsresult> pointToSplitOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+          aHTMLEditor, pointToSplit,
+          {NormalizeOption::StopIfFollowingWhiteSpacesStartsWithNBSP,
+           NormalizeOption::StopIfPrecedingWhiteSpacesEndsWithNBP});
+  if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
+    return pointToSplitOrError.propagateErr();
   }
+  pointToSplit = pointToSplitOrError.unwrap();
 
   if (NS_WARN_IF(!pointToSplit.IsInContentNode()) ||
       NS_WARN_IF(
@@ -129,138 +104,54 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
 
   OwningNonNull<Element> rightBlockElement = aRightBlockElement;
   EditorDOMPoint afterRightBlockChild = aAtRightBlockChild.NextPoint();
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    
-    
-    
-    
-
-    {
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
-              aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement));
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-            "failed");
-        return caretPointOrError.propagateErr();
-      }
-      
-      
-      caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-    }
-
-    
-    if (aHTMLEditor.MayHaveMutationEventListeners()) {
-      EditorDOMPoint leftBlockContainingPointInRightBlockElement;
-      if (aHTMLEditor.MayHaveMutationEventListeners() &&
-          MOZ_UNLIKELY(!EditorUtils::IsDescendantOf(
-              aLeftBlockElement, aRightBlockElement,
-              &leftBlockContainingPointInRightBlockElement))) {
-        NS_WARNING(
-            "Deleting invisible whitespace at end of left block element caused "
-            "moving the left block element outside the right block element");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-
-      if (MOZ_UNLIKELY(leftBlockContainingPointInRightBlockElement !=
-                       aAtRightBlockChild)) {
-        NS_WARNING(
-            "Deleting invisible whitespace at end of left block element caused "
-            "changing the left block element in the right block element");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-
-      if (MOZ_UNLIKELY(!EditorUtils::IsEditableContent(aRightBlockElement,
-                                                       EditorType::HTML))) {
-        NS_WARNING(
-            "Deleting invisible whitespace at end of left block element caused "
-            "making the right block element non-editable");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-
-      if (MOZ_UNLIKELY(!EditorUtils::IsEditableContent(aLeftBlockElement,
-                                                       EditorType::HTML))) {
-        NS_WARNING(
-            "Deleting invisible whitespace at end of left block element caused "
-            "making the left block element non-editable");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-
-    {
-      
-      AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(),
-                                &afterRightBlockChild);
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
-              aHTMLEditor, afterRightBlockChild);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-            "failed");
-        return caretPointOrError.propagateErr();
-      }
-      
-      
-      caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-    }
-  } else {
-    MOZ_ASSERT(
-        StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-    {
-      AutoTrackDOMPoint trackAfterRightBlockChild(aHTMLEditor.RangeUpdaterRef(),
-                                                  &afterRightBlockChild);
-      
-      
-      nsresult rv =
-          WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
-              aHTMLEditor, afterRightBlockChild);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
-            "failed");
-        return Err(rv);
-      }
-      
-      
-      rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
-          aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement));
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore() "
-            "failed");
-        return Err(rv);
-      }
-      trackAfterRightBlockChild.FlushAndStopTracking();
-      if (NS_WARN_IF(afterRightBlockChild.GetContainer() !=
-                     &aRightBlockElement)) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-    
+  {
     AutoTrackDOMPoint trackAfterRightBlockChild(aHTMLEditor.RangeUpdaterRef(),
                                                 &afterRightBlockChild);
-    Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
-            aHTMLEditor, afterRightBlockChild,
-            {NormalizeOption::StopIfFollowingWhiteSpacesStartsWithNBSP});
-    if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+    
+    
+    nsresult rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
+        aHTMLEditor, afterRightBlockChild);
+    if (NS_FAILED(rv)) {
       NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
-      return atFirstVisibleThingOrError.propagateErr();
+          "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
+          "failed");
+      return Err(rv);
     }
-    Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
-            aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement), {});
-    if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
+    
+    
+    rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
+        aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement));
+    if (NS_FAILED(rv)) {
       NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
-      return afterLastVisibleThingOrError.propagateErr();
+          "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore() "
+          "failed");
+      return Err(rv);
     }
+    trackAfterRightBlockChild.FlushAndStopTracking();
+    if (NS_WARN_IF(afterRightBlockChild.GetContainer() !=
+                   &aRightBlockElement)) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+  }
+  
+  AutoTrackDOMPoint trackAfterRightBlockChild(aHTMLEditor.RangeUpdaterRef(),
+                                              &afterRightBlockChild);
+  Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
+          aHTMLEditor, afterRightBlockChild,
+          {NormalizeOption::StopIfFollowingWhiteSpacesStartsWithNBSP});
+  if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
+    return atFirstVisibleThingOrError.propagateErr();
+  }
+  Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
+          aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement), {});
+  if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
+    return afterLastVisibleThingOrError.propagateErr();
   }
 
   
@@ -276,9 +167,6 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
   }
 
   auto atStartOfRightText = [&]() MOZ_NEVER_INLINE_DEBUG -> EditorDOMPoint {
-    if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-      return EditorDOMPoint();  
-    }
     const WSRunScanner scanner(
         Scan::All, EditorRawDOMPoint(&aRightBlockElement, 0u),
         BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -449,150 +337,54 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
   OwningNonNull<Element> originalLeftBlockElement = aLeftBlockElement;
   OwningNonNull<Element> leftBlockElement = aLeftBlockElement;
   EditorDOMPoint atLeftBlockChild(aAtLeftBlockChild);
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    
-    
-    
-    
-    
-
-    {
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
-              aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0));
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-            "failed");
-        return caretPointOrError.propagateErr();
-      }
-      
-      
-      caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-    }
-
-    
-    if (aHTMLEditor.MayHaveMutationEventListeners()) {
-      EditorDOMPoint rightBlockContainingPointInLeftBlockElement;
-      if (aHTMLEditor.MayHaveMutationEventListeners() &&
-          MOZ_UNLIKELY(!EditorUtils::IsDescendantOf(
-              aRightBlockElement, aLeftBlockElement,
-              &rightBlockContainingPointInLeftBlockElement))) {
-        NS_WARNING(
-            "Deleting invisible whitespace at start of right block element "
-            "caused moving the right block element outside the left block "
-            "element");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-
-      if (MOZ_UNLIKELY(rightBlockContainingPointInLeftBlockElement !=
-                       aAtLeftBlockChild)) {
-        NS_WARNING(
-            "Deleting invisible whitespace at start of right block element "
-            "caused changing the right block element position in the left "
-            "block element");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-
-      if (MOZ_UNLIKELY(!EditorUtils::IsEditableContent(aLeftBlockElement,
-                                                       EditorType::HTML))) {
-        NS_WARNING(
-            "Deleting invisible whitespace at start of right block element "
-            "caused making the left block element non-editable");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-
-      if (MOZ_UNLIKELY(!EditorUtils::IsEditableContent(aRightBlockElement,
-                                                       EditorType::HTML))) {
-        NS_WARNING(
-            "Deleting invisible whitespace at start of right block element "
-            "caused making the right block element non-editable");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-
-    {
-      
-      
-      AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(),
-                                &atLeftBlockChild);
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
-              aHTMLEditor, EditorDOMPoint(atLeftBlockChild.GetContainer(),
-                                          atLeftBlockChild.Offset()));
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-            "failed");
-        return caretPointOrError.propagateErr();
-      }
-      
-      
-      caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-    }
-    if (MOZ_UNLIKELY(!atLeftBlockChild.IsSetAndValid())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-          "caused unexpected DOM tree");
-      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-    }
-  } else {
-    MOZ_ASSERT(
-        StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-    
-    {
-      AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(),
-                                &atLeftBlockChild);
-      nsresult rv =
-          WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
-              aHTMLEditor, EditorDOMPoint(&aRightBlockElement));
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore() "
-            "failed");
-        return Err(rv);
-      }
-      
-      rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
-          aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u));
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
-            "failed");
-        return Err(rv);
-      }
-      tracker.FlushAndStopTracking();
-      if (NS_WARN_IF(
-              !atLeftBlockChild.IsInContentNodeAndValidInComposedDoc())) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-    
+  
+  {
     AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &atLeftBlockChild);
-    Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
-            aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u),
-            {NormalizeOption::StopIfPrecedingWhiteSpacesEndsWithNBP});
-    if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
+    nsresult rv =
+        WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
+            aHTMLEditor, EditorDOMPoint(&aRightBlockElement));
+    if (NS_FAILED(rv)) {
       NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
-      return afterLastVisibleThingOrError.propagateErr();
+          "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore() "
+          "failed");
+      return Err(rv);
     }
-    Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
-            aHTMLEditor, atLeftBlockChild, {});
-    if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+    
+    rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
+        aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u));
+    if (NS_FAILED(rv)) {
       NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
-      return atFirstVisibleThingOrError.propagateErr();
+          "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
+          "failed");
+      return Err(rv);
     }
     tracker.FlushAndStopTracking();
     if (NS_WARN_IF(!atLeftBlockChild.IsInContentNodeAndValidInComposedDoc())) {
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
+  }
+  
+  AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &atLeftBlockChild);
+  Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
+          aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u),
+          {NormalizeOption::StopIfPrecedingWhiteSpacesEndsWithNBP});
+  if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
+    return afterLastVisibleThingOrError.propagateErr();
+  }
+  Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
+          aHTMLEditor, atLeftBlockChild, {});
+  if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
+    return atFirstVisibleThingOrError.propagateErr();
+  }
+  tracker.FlushAndStopTracking();
+  if (NS_WARN_IF(!atLeftBlockChild.IsInContentNodeAndValidInComposedDoc())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   
@@ -606,9 +398,6 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
   }
 
   auto atStartOfRightText = [&]() MOZ_NEVER_INLINE_DEBUG -> EditorDOMPoint {
-    if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-      return EditorDOMPoint();  
-    }
     const WSRunScanner scanner(
         Scan::All, EditorRawDOMPoint(&aRightBlockElement, 0u),
         BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -880,76 +669,44 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
   MOZ_ASSERT(
       !EditorUtils::IsDescendantOf(aRightBlockElement, aLeftBlockElement));
 
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    
-    
-
-    
-    Result<CaretPoint, nsresult> caretPointOrError =
-        WhiteSpaceVisibilityKeeper::
-            MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
-                aHTMLEditor,
-                EditorDOMRange(EditorDOMPoint::AtEndOf(aLeftBlockElement),
-                               EditorDOMPoint(&aRightBlockElement, 0)),
-                aEditingHost);
-    if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::"
-          "MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange() "
-          "failed");
-      return caretPointOrError.propagateErr();
-    }
-    
-    
-    caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-  } else {
-    MOZ_ASSERT(
-        StaticPrefs::editor_white_space_normalization_blink_compatible());
-    
-    nsresult rv =
-        WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
-            aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement));
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore() "
-          "failed");
-      return Err(rv);
-    }
-    
-    
-    rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
-        aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u));
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
-          "failed");
-      return Err(rv);
-    }
-    
-    Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
-            aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u),
-            {NormalizeOption::StopIfFollowingWhiteSpacesStartsWithNBSP});
-    if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
-      return atFirstVisibleThingOrError.propagateErr();
-    }
-    Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
-            aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement), {});
-    if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() failed");
-      return afterLastVisibleThingOrError.propagateErr();
-    }
+  
+  nsresult rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
+      aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement));
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore() "
+        "failed");
+    return Err(rv);
+  }
+  
+  
+  rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
+      aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u));
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
+        "failed");
+    return Err(rv);
+  }
+  
+  Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
+          aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0u),
+          {NormalizeOption::StopIfFollowingWhiteSpacesStartsWithNBSP});
+  if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
+    return atFirstVisibleThingOrError.propagateErr();
+  }
+  Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
+          aHTMLEditor, EditorDOMPoint::AtEndOf(aLeftBlockElement), {});
+  if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() failed");
+    return afterLastVisibleThingOrError.propagateErr();
   }
   auto atStartOfRightText = [&]() MOZ_NEVER_INLINE_DEBUG -> EditorDOMPoint {
-    if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-      return EditorDOMPoint();  
-    }
     const WSRunScanner scanner(
         Scan::All, EditorRawDOMPoint(&aRightBlockElement, 0u),
         BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -1127,7 +884,6 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
 Result<EditorDOMPoint, nsresult>
 WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAt(
     HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPoint) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(!aPoint.IsEndOfContainer());
 
@@ -1161,7 +917,6 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
   MOZ_ASSERT_IF(aPoint.IsInTextNode(), !aPoint.IsMiddleOfContainer());
   MOZ_ASSERT(
       !aOptions.contains(NormalizeOption::HandleOnlyFollowingWhiteSpaces));
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
 
   const RefPtr<Element> colsetBlockElement =
       aPoint.IsInContentNode() ? HTMLEditUtils::GetInclusiveAncestorElement(
@@ -1280,7 +1035,6 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
   MOZ_ASSERT_IF(aPoint.IsInTextNode(), !aPoint.IsMiddleOfContainer());
   MOZ_ASSERT(
       !aOptions.contains(NormalizeOption::HandleOnlyPrecedingWhiteSpaces));
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
 
   const RefPtr<Element> colsetBlockElement =
       aPoint.IsInContentNode() ? HTMLEditUtils::GetInclusiveAncestorElement(
@@ -1392,7 +1146,6 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitTextNodeAt(
     HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPointToSplit,
     NormalizeOptions aOptions) {
   MOZ_ASSERT(aPointToSplit.IsSetAndValid());
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
 
   if (EditorUtils::IsWhiteSpacePreformatted(
           *aPointToSplit.ContainerAs<Text>())) {
@@ -1487,7 +1240,6 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
     HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToSplit,
     NormalizeOptions aOptions) {
   MOZ_ASSERT(aPointToSplit.IsSet());
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
 
   
   
@@ -1670,7 +1422,6 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
 Result<EditorDOMRange, nsresult>
 WhiteSpaceVisibilityKeeper::NormalizeSurroundingWhiteSpacesToJoin(
     HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(!aRangeToDelete.Collapsed());
 
   
@@ -1823,7 +1574,6 @@ Result<EditorDOMRange, nsresult>
 WhiteSpaceVisibilityKeeper::NormalizeSurroundingWhiteSpacesToDeleteCharacters(
     HTMLEditor& aHTMLEditor, Text& aTextNode, uint32_t aOffset,
     uint32_t aLength) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(aOffset <= aTextNode.TextDataLength());
   MOZ_ASSERT(aOffset + aLength <= aTextNode.TextDataLength());
 
@@ -1911,225 +1661,20 @@ WhiteSpaceVisibilityKeeper::InsertLineBreak(
 
   EditorDOMPoint pointToInsert(aPointToInsert);
   
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    
-
-    const TextFragmentData textFragmentDataAtInsertionPoint(
-        Scan::EditableNodes, aPointToInsert,
-        BlockInlineCheck::UseComputedDisplayStyle);
-    if (NS_WARN_IF(!textFragmentDataAtInsertionPoint.IsInitialized())) {
-      return Err(NS_ERROR_FAILURE);
-    }
-    EditorDOMRange invisibleLeadingWhiteSpaceRangeOfNewLine =
-        textFragmentDataAtInsertionPoint
-            .GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(aPointToInsert);
-    EditorDOMRange invisibleTrailingWhiteSpaceRangeOfCurrentLine =
-        textFragmentDataAtInsertionPoint
-            .GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
-                aPointToInsert);
-    const Maybe<const VisibleWhiteSpacesData> visibleWhiteSpaces =
-        !invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned() ||
-                !invisibleTrailingWhiteSpaceRangeOfCurrentLine.IsPositioned()
-            ? Some(textFragmentDataAtInsertionPoint.VisibleWhiteSpacesDataRef())
-            : Nothing();
-    const PointPosition pointPositionWithVisibleWhiteSpaces =
-        visibleWhiteSpaces.isSome() && visibleWhiteSpaces.ref().IsInitialized()
-            ? visibleWhiteSpaces.ref().ComparePoint(aPointToInsert)
-            : PointPosition::NotInSameDOMTree;
-
-    EditorDOMPoint atNBSPReplaceableWithSP;
-    if (!invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned() &&
-        (pointPositionWithVisibleWhiteSpaces ==
-             PointPosition::MiddleOfFragment ||
-         pointPositionWithVisibleWhiteSpaces == PointPosition::EndOfFragment)) {
-      atNBSPReplaceableWithSP =
-          textFragmentDataAtInsertionPoint
-              .GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
-                  pointToInsert)
-              .To<EditorDOMPoint>();
-    }
-
-    {
-      if (invisibleTrailingWhiteSpaceRangeOfCurrentLine.IsPositioned()) {
-        if (!invisibleTrailingWhiteSpaceRangeOfCurrentLine.Collapsed()) {
-          
-          MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeOfCurrentLine.StartRef() ==
-                     pointToInsert);
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          AutoTrackDOMPoint trackEndOfLineNBSP(aHTMLEditor.RangeUpdaterRef(),
-                                               &atNBSPReplaceableWithSP);
-          AutoTrackDOMRange trackLeadingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleLeadingWhiteSpaceRangeOfNewLine);
-          Result<CaretPoint, nsresult> caretPointOrError =
-              aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-                  invisibleTrailingWhiteSpaceRangeOfCurrentLine.StartRef(),
-                  invisibleTrailingWhiteSpaceRangeOfCurrentLine.EndRef(),
-                  HTMLEditor::TreatEmptyTextNodes::
-                      KeepIfContainerOfRangeBoundaries);
-          if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-            return caretPointOrError.propagateErr();
-          }
-          trackLeadingWhiteSpaceRange.FlushAndStopTracking();
-          nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
-              aHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
-                            SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                            SuggestCaret::AndIgnoreTrivialError});
-          if (NS_FAILED(rv)) {
-            NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-            return Err(rv);
-          }
-          NS_WARNING_ASSERTION(
-              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-              "CaretPoint::SuggestCaretPointTo() failed, but ignored");
-          
-          
-          invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
-        }
-      }
-      
-      
-      else if (pointPositionWithVisibleWhiteSpaces ==
-                   PointPosition::StartOfFragment ||
-               pointPositionWithVisibleWhiteSpaces ==
-                   PointPosition::MiddleOfFragment) {
-        const auto atNextCharOfInsertionPoint =
-            textFragmentDataAtInsertionPoint
-                .GetInclusiveNextCharPoint<EditorDOMPointInText>(
-                    pointToInsert, IgnoreNonEditableNodes::Yes);
-        if (atNextCharOfInsertionPoint.IsSet() &&
-            !atNextCharOfInsertionPoint.IsEndOfContainer() &&
-            atNextCharOfInsertionPoint.IsCharCollapsibleASCIISpace()) {
-          const auto atPreviousCharOfNextCharOfInsertionPoint =
-              textFragmentDataAtInsertionPoint
-                  .GetPreviousCharPoint<EditorDOMPointInText>(
-                      atNextCharOfInsertionPoint, IgnoreNonEditableNodes::Yes);
-          if (!atPreviousCharOfNextCharOfInsertionPoint.IsSet() ||
-              atPreviousCharOfNextCharOfInsertionPoint.IsEndOfContainer() ||
-              !atPreviousCharOfNextCharOfInsertionPoint.IsCharASCIISpace()) {
-            AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                                 &pointToInsert);
-            AutoTrackDOMPoint trackEndOfLineNBSP(aHTMLEditor.RangeUpdaterRef(),
-                                                 &atNBSPReplaceableWithSP);
-            AutoTrackDOMRange trackLeadingWhiteSpaceRange(
-                aHTMLEditor.RangeUpdaterRef(),
-                &invisibleLeadingWhiteSpaceRangeOfNewLine);
-            
-            const auto endOfCollapsibleASCIIWhiteSpaces =
-                textFragmentDataAtInsertionPoint
-                    .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointInText>(
-                        atNextCharOfInsertionPoint, nsIEditor::eNone,
-                        
-                        
-                        IgnoreNonEditableNodes::Yes);
-            nsresult rv =
-                WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes(
-                    aHTMLEditor,
-                    EditorDOMRangeInTexts(atNextCharOfInsertionPoint,
-                                          endOfCollapsibleASCIIWhiteSpaces),
-                    nsDependentSubstring(&HTMLEditUtils::kNBSP, 1));
-            if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-              NS_WARNING(
-                  "WhiteSpaceVisibilityKeeper::"
-                  "ReplaceTextAndRemoveEmptyTextNodes() failed");
-              return Err(rv);
-            }
-            trackLeadingWhiteSpaceRange.FlushAndStopTracking();
-            
-            
-            invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
-          }
-        }
-      }
-
-      if (invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned()) {
-        if (!invisibleLeadingWhiteSpaceRangeOfNewLine.Collapsed()) {
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          
-          MOZ_ASSERT(invisibleLeadingWhiteSpaceRangeOfNewLine.EndRef() ==
-                     pointToInsert);
-          Result<CaretPoint, nsresult> caretPointOrError =
-              aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-                  invisibleLeadingWhiteSpaceRangeOfNewLine.StartRef(),
-                  invisibleLeadingWhiteSpaceRangeOfNewLine.EndRef(),
-                  HTMLEditor::TreatEmptyTextNodes::
-                      KeepIfContainerOfRangeBoundaries);
-          if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-            return caretPointOrError.propagateErr();
-          }
-          nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
-              aHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
-                            SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                            SuggestCaret::AndIgnoreTrivialError});
-          if (NS_FAILED(rv)) {
-            NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-            return Err(rv);
-          }
-          NS_WARNING_ASSERTION(
-              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-              "CaretPoint::SuggestCaretPointTo() failed, but ignored");
-          
-          
-          atNBSPReplaceableWithSP.Clear();
-          invisibleLeadingWhiteSpaceRangeOfNewLine.Clear();
-          invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
-        }
-      }
-      
-      
-      else if (atNBSPReplaceableWithSP.IsInTextNode()) {
-        const EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
-            atNBSPReplaceableWithSP.AsInText();
-        if (!atNBSPReplacedWithASCIIWhiteSpace.IsEndOfContainer() &&
-            atNBSPReplacedWithASCIIWhiteSpace.IsCharNBSP()) {
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          Result<InsertTextResult, nsresult> replaceTextResult =
-              aHTMLEditor.ReplaceTextWithTransaction(
-                  MOZ_KnownLive(
-                      *atNBSPReplacedWithASCIIWhiteSpace.ContainerAs<Text>()),
-                  atNBSPReplacedWithASCIIWhiteSpace.Offset(), 1, u" "_ns);
-          if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::ReplaceTextWithTransaction() failed failed");
-            return replaceTextResult.propagateErr();
-          }
-          
-          
-          replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
-          
-          
-          atNBSPReplaceableWithSP.Clear();
-          invisibleLeadingWhiteSpaceRangeOfNewLine.Clear();
-          invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
-        }
-      }
-    }
-  } else {
-    
-    
-    Result<EditorDOMPoint, nsresult>
-        normalizeSurroundingWhiteSpacesResultOrError =
-            WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
-                aHTMLEditor, aPointToInsert,
-                {NormalizeOption::StopIfPrecedingWhiteSpacesEndsWithNBP});
-    if (MOZ_UNLIKELY(normalizeSurroundingWhiteSpacesResultOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
-      return normalizeSurroundingWhiteSpacesResultOrError.propagateErr();
-    }
-    pointToInsert = normalizeSurroundingWhiteSpacesResultOrError.unwrap();
-    if (NS_WARN_IF(!pointToInsert.IsSet())) {
-      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-    }
+  
+  Result<EditorDOMPoint, nsresult>
+      normalizeSurroundingWhiteSpacesResultOrError =
+          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+              aHTMLEditor, aPointToInsert,
+              {NormalizeOption::StopIfPrecedingWhiteSpacesEndsWithNBP});
+  if (MOZ_UNLIKELY(normalizeSurroundingWhiteSpacesResultOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
+    return normalizeSurroundingWhiteSpacesResultOrError.propagateErr();
+  }
+  pointToInsert = normalizeSurroundingWhiteSpacesResultOrError.unwrap();
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
@@ -2143,7 +1688,6 @@ WhiteSpaceVisibilityKeeper::InsertLineBreak(
 
 nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
     HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(aPoint.IsInContentNode());
 
   const RefPtr<Element> colsetBlockElement =
@@ -2225,7 +1769,6 @@ nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
 
 nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
     HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(aPoint.IsInContentNode());
 
   const RefPtr<Element> colsetBlockElement =
@@ -2513,395 +2056,6 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
     return InsertTextResult();
   }
 
-  
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    
-
-    
-    
-    
-    
-
-    const TextFragmentData textFragmentDataAtStart(
-        Scan::EditableNodes, aRangeToBeReplaced.StartRef(),
-        BlockInlineCheck::UseComputedDisplayStyle);
-    if (MOZ_UNLIKELY(NS_WARN_IF(!textFragmentDataAtStart.IsInitialized()))) {
-      return Err(NS_ERROR_FAILURE);
-    }
-    const bool isInsertionPointEqualsOrIsBeforeStartOfText =
-        aRangeToBeReplaced.StartRef().EqualsOrIsBefore(
-            textFragmentDataAtStart.StartRef());
-    TextFragmentData textFragmentDataAtEnd =
-        aRangeToBeReplaced.Collapsed()
-            ? textFragmentDataAtStart
-            : TextFragmentData(Scan::EditableNodes, aRangeToBeReplaced.EndRef(),
-                               BlockInlineCheck::UseComputedDisplayStyle);
-    if (MOZ_UNLIKELY(NS_WARN_IF(!textFragmentDataAtEnd.IsInitialized()))) {
-      return Err(NS_ERROR_FAILURE);
-    }
-    const bool isInsertionPointEqualsOrAfterEndOfText =
-        textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(
-            aRangeToBeReplaced.EndRef());
-
-    EditorDOMRange invisibleLeadingWhiteSpaceRangeAtStart =
-        textFragmentDataAtStart
-            .GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
-                aRangeToBeReplaced.StartRef());
-    const bool isInvisibleLeadingWhiteSpaceRangeAtStartPositioned =
-        invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned();
-    EditorDOMRange invisibleTrailingWhiteSpaceRangeAtEnd =
-        textFragmentDataAtEnd
-            .GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
-                aRangeToBeReplaced.EndRef());
-    const bool isInvisibleTrailingWhiteSpaceRangeAtEndPositioned =
-        invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned();
-    const Maybe<const VisibleWhiteSpacesData> visibleWhiteSpacesAtStart =
-        !isInvisibleLeadingWhiteSpaceRangeAtStartPositioned
-            ? Some(textFragmentDataAtStart.VisibleWhiteSpacesDataRef())
-            : Nothing();
-    const PointPosition pointPositionWithVisibleWhiteSpacesAtStart =
-        visibleWhiteSpacesAtStart.isSome() &&
-                visibleWhiteSpacesAtStart.ref().IsInitialized()
-            ? visibleWhiteSpacesAtStart.ref().ComparePoint(
-                  aRangeToBeReplaced.StartRef())
-            : PointPosition::NotInSameDOMTree;
-    const Maybe<const VisibleWhiteSpacesData> visibleWhiteSpacesAtEnd =
-        !isInvisibleTrailingWhiteSpaceRangeAtEndPositioned
-            ? Some(textFragmentDataAtEnd.VisibleWhiteSpacesDataRef())
-            : Nothing();
-    const PointPosition pointPositionWithVisibleWhiteSpacesAtEnd =
-        visibleWhiteSpacesAtEnd.isSome() &&
-                visibleWhiteSpacesAtEnd.ref().IsInitialized()
-            ? visibleWhiteSpacesAtEnd.ref().ComparePoint(
-                  aRangeToBeReplaced.EndRef())
-            : PointPosition::NotInSameDOMTree;
-
-    EditorDOMPoint pointToPutCaret;
-    EditorDOMPoint pointToInsert(aRangeToBeReplaced.StartRef());
-    EditorDOMPoint atNBSPReplaceableWithSP;
-    if (!invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned() &&
-        (pointPositionWithVisibleWhiteSpacesAtStart ==
-             PointPosition::MiddleOfFragment ||
-         pointPositionWithVisibleWhiteSpacesAtStart ==
-             PointPosition::EndOfFragment)) {
-      atNBSPReplaceableWithSP =
-          textFragmentDataAtStart
-              .GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
-                  pointToInsert)
-              .To<EditorDOMPoint>();
-    }
-    nsAutoString theString(aStringToInsert);
-    {
-      if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
-        if (!invisibleTrailingWhiteSpaceRangeAtEnd.Collapsed()) {
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          AutoTrackDOMPoint trackPrecedingNBSP(aHTMLEditor.RangeUpdaterRef(),
-                                               &atNBSPReplaceableWithSP);
-          AutoTrackDOMRange trackInvisibleLeadingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleLeadingWhiteSpaceRangeAtStart);
-          AutoTrackDOMRange trackInvisibleTrailingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleTrailingWhiteSpaceRangeAtEnd);
-          
-          MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeAtEnd.StartRef() ==
-                     pointToInsert);
-          Result<CaretPoint, nsresult> caretPointOrError =
-              aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-                  invisibleTrailingWhiteSpaceRangeAtEnd.StartRef(),
-                  invisibleTrailingWhiteSpaceRangeAtEnd.EndRef(),
-                  HTMLEditor::TreatEmptyTextNodes::
-                      KeepIfContainerOfRangeBoundaries);
-          if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-            return caretPointOrError.propagateErr();
-          }
-          trackInvisibleTrailingWhiteSpaceRange.FlushAndStopTracking();
-          trackInvisibleLeadingWhiteSpaceRange.FlushAndStopTracking();
-          caretPointOrError.unwrap().MoveCaretPointTo(
-              pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-        }
-      }
-      
-      
-      
-      
-      
-      
-      else if (pointPositionWithVisibleWhiteSpacesAtEnd ==
-                   PointPosition::StartOfFragment ||
-               pointPositionWithVisibleWhiteSpacesAtEnd ==
-                   PointPosition::MiddleOfFragment) {
-        EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
-            textFragmentDataAtEnd
-                .GetInclusiveNextNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
-                    aRangeToBeReplaced.EndRef());
-        if (atNBSPReplacedWithASCIIWhiteSpace.IsSet()) {
-          AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                                 &pointToPutCaret);
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          AutoTrackDOMPoint trackPrecedingNBSP(aHTMLEditor.RangeUpdaterRef(),
-                                               &atNBSPReplaceableWithSP);
-          AutoTrackDOMRange trackInvisibleLeadingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleLeadingWhiteSpaceRangeAtStart);
-          AutoTrackDOMRange trackInvisibleTrailingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleTrailingWhiteSpaceRangeAtEnd);
-          Result<InsertTextResult, nsresult> replaceTextResult =
-              aHTMLEditor.ReplaceTextWithTransaction(
-                  MOZ_KnownLive(
-                      *atNBSPReplacedWithASCIIWhiteSpace.ContainerAs<Text>()),
-                  atNBSPReplacedWithASCIIWhiteSpace.Offset(), 1, u" "_ns);
-          if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
-            NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-            return replaceTextResult.propagateErr();
-          }
-          
-          
-          replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
-        }
-      }
-
-      if (invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()) {
-        if (!invisibleLeadingWhiteSpaceRangeAtStart.Collapsed()) {
-          AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                                 &pointToPutCaret);
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          AutoTrackDOMRange trackInvisibleTrailingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleTrailingWhiteSpaceRangeAtEnd);
-          
-          MOZ_ASSERT(invisibleLeadingWhiteSpaceRangeAtStart.EndRef() ==
-                     pointToInsert);
-          Result<CaretPoint, nsresult> caretPointOrError =
-              aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-                  invisibleLeadingWhiteSpaceRangeAtStart.StartRef(),
-                  invisibleLeadingWhiteSpaceRangeAtStart.EndRef(),
-                  HTMLEditor::TreatEmptyTextNodes::
-                      KeepIfContainerOfRangeBoundaries);
-          if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-            return caretPointOrError.propagateErr();
-          }
-          trackPointToPutCaret.FlushAndStopTracking();
-          trackInvisibleTrailingWhiteSpaceRange.FlushAndStopTracking();
-          caretPointOrError.unwrap().MoveCaretPointTo(
-              pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-          
-          
-          atNBSPReplaceableWithSP.Clear();
-          invisibleLeadingWhiteSpaceRangeAtStart.Clear();
-        }
-      }
-      
-      
-      
-      
-      
-      
-      
-      else if (atNBSPReplaceableWithSP.IsInTextNode()) {
-        EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
-            atNBSPReplaceableWithSP.AsInText();
-        if (!atNBSPReplacedWithASCIIWhiteSpace.IsEndOfContainer() &&
-            atNBSPReplacedWithASCIIWhiteSpace.IsCharNBSP()) {
-          AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                                 &pointToPutCaret);
-          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToInsert);
-          AutoTrackDOMRange trackInvisibleTrailingWhiteSpaceRange(
-              aHTMLEditor.RangeUpdaterRef(),
-              &invisibleTrailingWhiteSpaceRangeAtEnd);
-          Result<InsertTextResult, nsresult> replaceTextResult =
-              aHTMLEditor.ReplaceTextWithTransaction(
-                  MOZ_KnownLive(
-                      *atNBSPReplacedWithASCIIWhiteSpace.ContainerAs<Text>()),
-                  atNBSPReplacedWithASCIIWhiteSpace.Offset(), 1, u" "_ns);
-          if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::ReplaceTextWithTransaction() failed failed");
-            return replaceTextResult.propagateErr();
-          }
-          
-          
-          replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
-          
-          
-          atNBSPReplaceableWithSP.Clear();
-          invisibleLeadingWhiteSpaceRangeAtStart.Clear();
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(!theString.IsEmpty());
-    if (NS_WARN_IF(!pointToInsert.IsInContentNode()) ||
-        !EditorUtils::IsWhiteSpacePreformatted(
-            *pointToInsert.ContainerAs<nsIContent>())) {
-      const bool isNewLineCollapsible =
-          !pointToInsert.IsInContentNode() ||
-          !EditorUtils::IsNewLinePreformatted(
-              *pointToInsert.ContainerAs<nsIContent>());
-      auto IsCollapsibleChar = [&isNewLineCollapsible](char16_t aChar) -> bool {
-        return nsCRT::IsAsciiSpace(aChar) &&
-               (isNewLineCollapsible || aChar != HTMLEditUtils::kNewLine);
-      };
-      if (IsCollapsibleChar(theString[0])) {
-        
-        
-        if (isInvisibleLeadingWhiteSpaceRangeAtStartPositioned) {
-          theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
-        }
-        
-        
-        else if (pointPositionWithVisibleWhiteSpacesAtStart ==
-                     PointPosition::MiddleOfFragment ||
-                 pointPositionWithVisibleWhiteSpacesAtStart ==
-                     PointPosition::EndOfFragment) {
-          const auto atPreviousChar =
-              textFragmentDataAtStart
-                  .GetPreviousCharPoint<EditorRawDOMPointInText>(
-                      pointToInsert, IgnoreNonEditableNodes::Yes);
-          if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
-              atPreviousChar.IsCharASCIISpace()) {
-            theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
-          }
-        }
-        
-        
-        
-        else if ((textFragmentDataAtStart.StartsFromHardLineBreak() ||
-                  textFragmentDataAtStart
-                      .StartsFromInlineEditingHostBoundary()) &&
-                 isInsertionPointEqualsOrIsBeforeStartOfText) {
-          theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
-        }
-      }
-
-      
-      const uint32_t lastCharIndex = theString.Length() - 1;
-      if (IsCollapsibleChar(theString[lastCharIndex])) {
-        
-        
-        if (isInvisibleTrailingWhiteSpaceRangeAtEndPositioned) {
-          theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
-        }
-        
-        
-        
-        if (pointPositionWithVisibleWhiteSpacesAtEnd ==
-                PointPosition::StartOfFragment ||
-            pointPositionWithVisibleWhiteSpacesAtEnd ==
-                PointPosition::MiddleOfFragment) {
-          const auto atNextChar =
-              textFragmentDataAtEnd
-                  .GetInclusiveNextCharPoint<EditorRawDOMPointInText>(
-                      pointToInsert, IgnoreNonEditableNodes::Yes);
-          if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
-              atNextChar.IsCharASCIISpace()) {
-            theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
-          }
-        }
-        
-        
-        
-        else if ((textFragmentDataAtEnd.EndsByBlockBoundary() ||
-                  textFragmentDataAtEnd.EndsByInlineEditingHostBoundary()) &&
-                 isInsertionPointEqualsOrAfterEndOfText) {
-          theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
-        }
-      }
-
-      
-      
-      
-      
-      enum class PreviousChar {
-        NonCollapsibleChar,
-        CollapsibleChar,
-        PreformattedNewLine,
-      };
-      PreviousChar previousChar = PreviousChar::NonCollapsibleChar;
-      for (uint32_t i = 0; i <= lastCharIndex; i++) {
-        if (IsCollapsibleChar(theString[i])) {
-          
-          
-          
-          if (previousChar == PreviousChar::CollapsibleChar) {
-            MOZ_ASSERT(i > 0);
-            theString.SetCharAt(HTMLEditUtils::kNBSP, i - 1);
-            
-            continue;
-          }
-
-          
-          
-          
-          
-          if (previousChar == PreviousChar::PreformattedNewLine) {
-            MOZ_ASSERT(i > 0);
-            theString.SetCharAt(HTMLEditUtils::kNBSP, i);
-            previousChar = PreviousChar::NonCollapsibleChar;
-            continue;
-          }
-
-          previousChar = PreviousChar::CollapsibleChar;
-          continue;
-        }
-
-        if (theString[i] != HTMLEditUtils::kNewLine) {
-          previousChar = PreviousChar::NonCollapsibleChar;
-          continue;
-        }
-
-        
-        
-        
-        
-        MOZ_ASSERT(!isNewLineCollapsible);
-        if (previousChar == PreviousChar::CollapsibleChar) {
-          MOZ_ASSERT(i > 0);
-          theString.SetCharAt(HTMLEditUtils::kNBSP, i - 1);
-        }
-        previousChar = PreviousChar::PreformattedNewLine;
-      }
-    }
-
-    
-    
-    
-    
-    
-    AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                           &pointToPutCaret);
-    Result<InsertTextResult, nsresult> insertTextResult =
-        aHTMLEditor.InsertTextWithTransaction(theString, pointToInsert,
-                                              aInsertTextTo);
-    if (MOZ_UNLIKELY(insertTextResult.isErr())) {
-      NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
-      return insertTextResult.propagateErr();
-    }
-    trackPointToPutCaret.FlushAndStopTracking();
-    if (insertTextResult.inspect().HasCaretPointSuggestion()) {
-      return insertTextResult;
-    }
-    return InsertTextResult(insertTextResult.unwrap(),
-                            std::move(pointToPutCaret));
-  }
-
   if (NS_WARN_IF(!aRangeToBeReplaced.StartRef().IsInContentNode())) {
     return Err(NS_ERROR_FAILURE);  
   }
@@ -3090,7 +2244,6 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
 nsresult WhiteSpaceVisibilityKeeper::
     NormalizeVisibleWhiteSpacesWithoutDeletingInvisibleWhiteSpaces(
         HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPoint) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(!aPoint.IsEndOfContainer());
 
@@ -3176,245 +2329,6 @@ nsresult WhiteSpaceVisibilityKeeper::
 
 
 Result<CaretPoint, nsresult>
-WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
-    HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint,
-    const Element& aEditingHost) {
-  MOZ_ASSERT(!StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-  const TextFragmentData textFragmentDataAtDeletion(
-      Scan::EditableNodes, aPoint, BlockInlineCheck::UseComputedDisplayStyle);
-  if (NS_WARN_IF(!textFragmentDataAtDeletion.IsInitialized())) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  const auto atPreviousCharOfStart =
-      textFragmentDataAtDeletion.GetPreviousCharPoint<EditorDOMPointInText>(
-          aPoint, IgnoreNonEditableNodes::Yes);
-  if (!atPreviousCharOfStart.IsSet() ||
-      atPreviousCharOfStart.IsEndOfContainer()) {
-    return CaretPoint(EditorDOMPoint());
-  }
-
-  
-  
-  
-  if (atPreviousCharOfStart.IsCharCollapsibleASCIISpace() ||
-      atPreviousCharOfStart
-          .IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
-    auto startToDelete =
-        textFragmentDataAtDeletion
-            .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPoint>(
-                atPreviousCharOfStart, nsIEditor::ePrevious,
-                
-                
-                IgnoreNonEditableNodes::Yes);
-    auto endToDelete = textFragmentDataAtDeletion
-                           .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPoint>(
-                               atPreviousCharOfStart, nsIEditor::ePrevious,
-                               
-                               
-                               IgnoreNonEditableNodes::Yes);
-    EditorDOMPoint pointToPutCaret;
-    {
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints(
-              aHTMLEditor, &startToDelete, &endToDelete, aEditingHost);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints() "
-            "failed");
-        return caretPointOrError;
-      }
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-
-    {
-      AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                             &pointToPutCaret);
-      Result<CaretPoint, nsresult> caretPointOrError =
-          aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-              startToDelete, endToDelete,
-              HTMLEditor::TreatEmptyTextNodes::
-                  KeepIfContainerOfRangeBoundaries);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-        return caretPointOrError;
-      }
-      trackPointToPutCaret.FlushAndStopTracking();
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-
-  if (atPreviousCharOfStart.IsCharCollapsibleNBSP()) {
-    auto startToDelete = atPreviousCharOfStart.To<EditorDOMPoint>();
-    auto endToDelete = startToDelete.NextPoint<EditorDOMPoint>();
-    EditorDOMPoint pointToPutCaret;
-    {
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints(
-              aHTMLEditor, &startToDelete, &endToDelete, aEditingHost);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints() "
-            "failed");
-        return caretPointOrError;
-      }
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-
-    {
-      AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                             &pointToPutCaret);
-      Result<CaretPoint, nsresult> caretPointOrError =
-          aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-              startToDelete, endToDelete,
-              HTMLEditor::TreatEmptyTextNodes::
-                  KeepIfContainerOfRangeBoundaries);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-        return caretPointOrError;
-      }
-      trackPointToPutCaret.FlushAndStopTracking();
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-
-  Result<CaretPoint, nsresult> caretPointOrError =
-      aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-          atPreviousCharOfStart, atPreviousCharOfStart.NextPoint(),
-          HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
-  NS_WARNING_ASSERTION(
-      caretPointOrError.isOk(),
-      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-  return caretPointOrError;
-}
-
-
-Result<CaretPoint, nsresult>
-WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
-    HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint,
-    const Element& aEditingHost) {
-  MOZ_ASSERT(!StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-  const TextFragmentData textFragmentDataAtDeletion(
-      Scan::EditableNodes, aPoint, BlockInlineCheck::UseComputedDisplayStyle);
-  if (NS_WARN_IF(!textFragmentDataAtDeletion.IsInitialized())) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  const auto atNextCharOfStart =
-      textFragmentDataAtDeletion
-          .GetInclusiveNextCharPoint<EditorDOMPointInText>(
-              aPoint, IgnoreNonEditableNodes::Yes);
-  if (!atNextCharOfStart.IsSet() || atNextCharOfStart.IsEndOfContainer()) {
-    return CaretPoint(EditorDOMPoint());
-  }
-
-  
-  
-  
-  if (atNextCharOfStart.IsCharCollapsibleASCIISpace() ||
-      atNextCharOfStart.IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
-    auto startToDelete =
-        textFragmentDataAtDeletion
-            .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPoint>(
-                atNextCharOfStart, nsIEditor::eNext,
-                IgnoreNonEditableNodes::Yes);
-    auto endToDelete = textFragmentDataAtDeletion
-                           .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPoint>(
-                               atNextCharOfStart, nsIEditor::eNext,
-                               IgnoreNonEditableNodes::Yes);
-    EditorDOMPoint pointToPutCaret;
-    {
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints(
-              aHTMLEditor, &startToDelete, &endToDelete, aEditingHost);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints() "
-            "failed");
-        return caretPointOrError;
-      }
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-
-    {
-      AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                             &pointToPutCaret);
-      Result<CaretPoint, nsresult> caretPointOrError =
-          aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-              startToDelete, endToDelete,
-              HTMLEditor::TreatEmptyTextNodes::
-                  KeepIfContainerOfRangeBoundaries);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-        return caretPointOrError;
-      }
-      trackPointToPutCaret.FlushAndStopTracking();
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-
-  if (atNextCharOfStart.IsCharCollapsibleNBSP()) {
-    auto startToDelete = atNextCharOfStart.To<EditorDOMPoint>();
-    auto endToDelete = startToDelete.NextPoint<EditorDOMPoint>();
-    EditorDOMPoint pointToPutCaret;
-    {
-      Result<CaretPoint, nsresult> caretPointOrError =
-          WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints(
-              aHTMLEditor, &startToDelete, &endToDelete, aEditingHost);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::PrepareToDeleteRangeAndTrackPoints() "
-            "failed");
-        return caretPointOrError;
-      }
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-
-    {
-      AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                             &pointToPutCaret);
-      Result<CaretPoint, nsresult> caretPointOrError =
-          aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-              startToDelete, endToDelete,
-              HTMLEditor::TreatEmptyTextNodes::
-                  KeepIfContainerOfRangeBoundaries);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-        return caretPointOrError;
-      }
-      trackPointToPutCaret.FlushAndStopTracking();
-      caretPointOrError.unwrap().MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    }
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-
-  Result<CaretPoint, nsresult> caretPointOrError =
-      aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-          atNextCharOfStart, atNextCharOfStart.NextPoint(),
-          HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
-  NS_WARNING_ASSERTION(
-      caretPointOrError.isOk(),
-      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-  return caretPointOrError;
-}
-
-
-Result<CaretPoint, nsresult>
 WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
     HTMLEditor& aHTMLEditor, nsIContent& aContentToDelete,
     const EditorDOMPoint& aCaretPoint, const Element& aEditingHost) {
@@ -3428,186 +2342,159 @@ WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
     return Err(NS_ERROR_FAILURE);
   }
   EditorDOMPoint pointToPutCaret(aCaretPoint);
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                           &pointToPutCaret);
-    Result<CaretPoint, nsresult> caretPointOrError =
-        WhiteSpaceVisibilityKeeper::
-            MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
-                aHTMLEditor, EditorDOMRange(atContent, atContent.NextPoint()),
-                aEditingHost);
-    if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::"
-          "MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange() "
-          "failed");
-      return caretPointOrError;
-    }
-    trackPointToPutCaret.FlushAndStopTracking();
-    caretPointOrError.unwrap().MoveCaretPointTo(
-        pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-  } else {
-    MOZ_ASSERT(
-        StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-    
-    
-    
-    if (HTMLEditUtils::IsBlockElement(
-            aContentToDelete,
-            BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-      AutoTrackDOMPoint trackAtContent(aHTMLEditor.RangeUpdaterRef(),
-                                       &atContent);
-      {
-        AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToPutCaret);
-        nsresult rv =
-            WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
-                aHTMLEditor, EditorDOMPoint(aContentToDelete.AsElement()));
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore()"
-              " failed");
-          return Err(rv);
-        }
-        if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
-        rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
-            aHTMLEditor, EditorDOMPoint::After(*aContentToDelete.AsElement()));
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
-              "failed");
-          return Err(rv);
-        }
-        if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
-      }
-      if (pointToPutCaret.IsInContentNode()) {
-        
-        
-        
-        
-        
-        
-        if (pointToPutCaret.IsBefore(EditorRawDOMPoint(&aContentToDelete))) {
-          WSScanResult nextThingOfCaretPoint =
-              WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  Scan::All, pointToPutCaret,
-                  BlockInlineCheck::UseComputedDisplayOutsideStyle);
-          if (nextThingOfCaretPoint.ReachedBRElement() ||
-              nextThingOfCaretPoint.ReachedPreformattedLineBreak()) {
-            nextThingOfCaretPoint =
-                WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                    Scan::All,
-                    nextThingOfCaretPoint
-                        .PointAfterReachedContent<EditorRawDOMPoint>(),
-                    BlockInlineCheck::UseComputedDisplayOutsideStyle);
-          }
-          if (nextThingOfCaretPoint.ReachedBlockBoundary()) {
-            const EditorDOMPoint atBlockBoundary =
-                nextThingOfCaretPoint.ReachedCurrentBlockBoundary()
-                    ? EditorDOMPoint::AtEndOf(
-                          *nextThingOfCaretPoint.ElementPtr())
-                    : EditorDOMPoint(nextThingOfCaretPoint.ElementPtr());
-            Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
-                WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
-                    aHTMLEditor, atBlockBoundary, {});
-            if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
-              NS_WARNING(
-                  "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() "
-                  "failed");
-              return afterLastVisibleThingOrError.propagateErr();
-            }
-            if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
-              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-            }
-          }
-        }
-        
-        
-        
-        
-        
-        
-        else if (EditorRawDOMPoint::After(aContentToDelete)
-                     .EqualsOrIsBefore(pointToPutCaret)) {
-          const WSScanResult previousThingOfCaretPoint =
-              WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-                  Scan::All, pointToPutCaret,
-                  BlockInlineCheck::UseComputedDisplayOutsideStyle);
-          if (previousThingOfCaretPoint.ReachedBlockBoundary()) {
-            const EditorDOMPoint atBlockBoundary =
-                previousThingOfCaretPoint.ReachedCurrentBlockBoundary()
-                    ? EditorDOMPoint(previousThingOfCaretPoint.ElementPtr(), 0u)
-                    : EditorDOMPoint(previousThingOfCaretPoint.ElementPtr());
-            Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
-                WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
-                    aHTMLEditor, atBlockBoundary, {});
-            if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
-              NS_WARNING(
-                  "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() "
-                  "failed");
-              return atFirstVisibleThingOrError.propagateErr();
-            }
-            if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
-              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-            }
-          }
-        }
-      }
-      trackAtContent.FlushAndStopTracking();
-      if (NS_WARN_IF(!atContent.IsInContentNodeAndValidInComposedDoc())) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-    
-    
-    
-    
-    else {
-      const WSScanResult nextThing =
-          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              Scan::All, EditorRawDOMPoint::After(aContentToDelete),
-              BlockInlineCheck::UseComputedDisplayOutsideStyle);
-      if (nextThing.ReachedLineBoundary()) {
-        AutoTrackDOMPoint trackAtContent(aHTMLEditor.RangeUpdaterRef(),
-                                         &atContent);
-        Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
-            WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
-                aHTMLEditor, atContent, {});
-        if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
-          NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() "
-              "failed");
-          return afterLastVisibleThingOrError.propagateErr();
-        }
-        trackAtContent.FlushAndStopTracking();
-        if (NS_WARN_IF(!atContent.IsInContentNodeAndValidInComposedDoc())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
-      }
-    }
-
-    
-    
+  
+  
+  
+  if (HTMLEditUtils::IsBlockElement(
+          aContentToDelete, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+    AutoTrackDOMPoint trackAtContent(aHTMLEditor.RangeUpdaterRef(), &atContent);
     {
+      AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
+                                             &pointToPutCaret);
+      nsresult rv =
+          WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
+              aHTMLEditor, EditorDOMPoint(aContentToDelete.AsElement()));
+      if (NS_FAILED(rv)) {
+        NS_WARNING(
+            "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore()"
+            " failed");
+        return Err(rv);
+      }
+      if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+      rv = WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
+          aHTMLEditor, EditorDOMPoint::After(*aContentToDelete.AsElement()));
+      if (NS_FAILED(rv)) {
+        NS_WARNING(
+            "WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter() "
+            "failed");
+        return Err(rv);
+      }
+      if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+    }
+    if (pointToPutCaret.IsInContentNode()) {
+      
+      
+      
+      
+      
+      
+      if (pointToPutCaret.IsBefore(EditorRawDOMPoint(&aContentToDelete))) {
+        WSScanResult nextThingOfCaretPoint =
+            WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+                Scan::All, pointToPutCaret,
+                BlockInlineCheck::UseComputedDisplayOutsideStyle);
+        if (nextThingOfCaretPoint.ReachedBRElement() ||
+            nextThingOfCaretPoint.ReachedPreformattedLineBreak()) {
+          nextThingOfCaretPoint =
+              WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+                  Scan::All,
+                  nextThingOfCaretPoint
+                      .PointAfterReachedContent<EditorRawDOMPoint>(),
+                  BlockInlineCheck::UseComputedDisplayOutsideStyle);
+        }
+        if (nextThingOfCaretPoint.ReachedBlockBoundary()) {
+          const EditorDOMPoint atBlockBoundary =
+              nextThingOfCaretPoint.ReachedCurrentBlockBoundary()
+                  ? EditorDOMPoint::AtEndOf(*nextThingOfCaretPoint.ElementPtr())
+                  : EditorDOMPoint(nextThingOfCaretPoint.ElementPtr());
+          Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
+              WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
+                  aHTMLEditor, atBlockBoundary, {});
+          if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
+            NS_WARNING(
+                "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() "
+                "failed");
+            return afterLastVisibleThingOrError.propagateErr();
+          }
+          if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+          }
+        }
+      }
+      
+      
+      
+      
+      
+      
+      else if (EditorRawDOMPoint::After(aContentToDelete)
+                   .EqualsOrIsBefore(pointToPutCaret)) {
+        const WSScanResult previousThingOfCaretPoint =
+            WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+                Scan::All, pointToPutCaret,
+                BlockInlineCheck::UseComputedDisplayOutsideStyle);
+        if (previousThingOfCaretPoint.ReachedBlockBoundary()) {
+          const EditorDOMPoint atBlockBoundary =
+              previousThingOfCaretPoint.ReachedCurrentBlockBoundary()
+                  ? EditorDOMPoint(previousThingOfCaretPoint.ElementPtr(), 0u)
+                  : EditorDOMPoint(previousThingOfCaretPoint.ElementPtr());
+          Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
+              WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
+                  aHTMLEditor, atBlockBoundary, {});
+          if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+            NS_WARNING(
+                "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() "
+                "failed");
+            return atFirstVisibleThingOrError.propagateErr();
+          }
+          if (NS_WARN_IF(!aContentToDelete.IsInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+          }
+        }
+      }
+    }
+    trackAtContent.FlushAndStopTracking();
+    if (NS_WARN_IF(!atContent.IsInContentNodeAndValidInComposedDoc())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+  }
+  
+  
+  
+  
+  else {
+    const WSScanResult nextThing =
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+            Scan::All, EditorRawDOMPoint::After(aContentToDelete),
+            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+    if (nextThing.ReachedLineBoundary()) {
       AutoTrackDOMPoint trackAtContent(aHTMLEditor.RangeUpdaterRef(),
                                        &atContent);
-      Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
-          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
-              aHTMLEditor, atContent.NextPoint(), {});
-      if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+      Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
+          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(aHTMLEditor,
+                                                                 atContent, {});
+      if (MOZ_UNLIKELY(afterLastVisibleThingOrError.isErr())) {
         NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() failed");
-        return atFirstVisibleThingOrError.propagateErr();
+            "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() "
+            "failed");
+        return afterLastVisibleThingOrError.propagateErr();
       }
       trackAtContent.FlushAndStopTracking();
       if (NS_WARN_IF(!atContent.IsInContentNodeAndValidInComposedDoc())) {
         return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
+    }
+  }
+
+  
+  
+  {
+    AutoTrackDOMPoint trackAtContent(aHTMLEditor.RangeUpdaterRef(), &atContent);
+    Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
+        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
+            aHTMLEditor, atContent.NextPoint(), {});
+    if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() failed");
+      return atFirstVisibleThingOrError.propagateErr();
+    }
+    trackAtContent.FlushAndStopTracking();
+    if (NS_WARN_IF(!atContent.IsInContentNodeAndValidInComposedDoc())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
   }
 
@@ -3639,23 +2526,6 @@ WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
     return CaretPoint(std::move(pointToPutCaret));
   }
 
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    nsresult rv = aHTMLEditor.JoinNearestEditableNodesWithTransaction(
-        *previousEditableSibling,
-        MOZ_KnownLive(*aCaretPoint.ContainerAs<Text>()), &pointToPutCaret);
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "HTMLEditor::JoinNearestEditableNodesWithTransaction() failed");
-      return Err(rv);
-    }
-    if (!pointToPutCaret.IsSet()) {
-      NS_WARNING(
-          "HTMLEditor::JoinNearestEditableNodesWithTransaction() didn't return "
-          "right node position");
-      return Err(NS_ERROR_FAILURE);
-    }
-    return CaretPoint(std::move(pointToPutCaret));
-  }
   Result<JoinNodesResult, nsresult> joinTextNodesResultOrError =
       aHTMLEditor.JoinTextNodesWithNormalizeWhiteSpaces(
           MOZ_KnownLive(*previousEditableSibling->AsText()),
@@ -3666,324 +2536,6 @@ WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
   }
   return CaretPoint(
       joinTextNodesResultOrError.unwrap().AtJoinedPoint<EditorDOMPoint>());
-}
-
-
-Result<CaretPoint, nsresult> WhiteSpaceVisibilityKeeper::
-    MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
-        HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
-        const Element& aEditingHost) {
-  MOZ_ASSERT(!StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-  if (NS_WARN_IF(!aRangeToDelete.IsPositionedAndValid()) ||
-      NS_WARN_IF(!aRangeToDelete.IsInContentNodes())) {
-    return Err(NS_ERROR_INVALID_ARG);
-  }
-
-  EditorDOMRange rangeToDelete(aRangeToDelete);
-  bool mayBecomeUnexpectedDOMTree = aHTMLEditor.MayHaveMutationEventListeners(
-      NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED |
-      NS_EVENT_BITS_MUTATION_NODEREMOVED |
-      NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT |
-      NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED);
-
-  TextFragmentData textFragmentDataAtStart(
-      Scan::EditableNodes, rangeToDelete.StartRef(),
-      BlockInlineCheck::UseComputedDisplayStyle);
-  if (NS_WARN_IF(!textFragmentDataAtStart.IsInitialized())) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  TextFragmentData textFragmentDataAtEnd(
-      Scan::EditableNodes, rangeToDelete.EndRef(),
-      BlockInlineCheck::UseComputedDisplayStyle);
-  if (NS_WARN_IF(!textFragmentDataAtEnd.IsInitialized())) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  ReplaceRangeData replaceRangeDataAtEnd =
-      textFragmentDataAtEnd.GetReplaceRangeDataAtEndOfDeletionRange(
-          textFragmentDataAtStart);
-  EditorDOMPoint pointToPutCaret;
-  if (replaceRangeDataAtEnd.IsSet() && !replaceRangeDataAtEnd.Collapsed()) {
-    MOZ_ASSERT(rangeToDelete.EndRef().EqualsOrIsBefore(
-        replaceRangeDataAtEnd.EndRef()));
-    
-    
-    MOZ_ASSERT_IF(rangeToDelete.EndRef().IsInTextNode() &&
-                      !rangeToDelete.EndRef().IsEndOfContainer(),
-                  replaceRangeDataAtEnd.StartRef().EqualsOrIsBefore(
-                      rangeToDelete.EndRef()));
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(rangeToDelete.EndRef().IsInTextNode() &&
-                      rangeToDelete.EndRef().IsEndOfContainer(),
-                  replaceRangeDataAtEnd.StartRef().EqualsOrIsBefore(
-                      rangeToDelete.EndRef()) ||
-                      replaceRangeDataAtEnd.StartRef().IsStartOfContainer());
-    MOZ_ASSERT(rangeToDelete.StartRef().EqualsOrIsBefore(
-        replaceRangeDataAtEnd.StartRef()));
-    if (!replaceRangeDataAtEnd.HasReplaceString()) {
-      EditorDOMPoint startToDelete(aRangeToDelete.StartRef());
-      EditorDOMPoint endToDelete(replaceRangeDataAtEnd.StartRef());
-      {
-        AutoEditorDOMPointChildInvalidator lockOffsetOfStart(startToDelete);
-        AutoEditorDOMPointChildInvalidator lockOffsetOfEnd(endToDelete);
-        AutoTrackDOMPoint trackStartToDelete(aHTMLEditor.RangeUpdaterRef(),
-                                             &startToDelete);
-        AutoTrackDOMPoint trackEndToDelete(aHTMLEditor.RangeUpdaterRef(),
-                                           &endToDelete);
-        Result<CaretPoint, nsresult> caretPointOrError =
-            aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-                replaceRangeDataAtEnd.StartRef(),
-                replaceRangeDataAtEnd.EndRef(),
-                HTMLEditor::TreatEmptyTextNodes::
-                    KeepIfContainerOfRangeBoundaries);
-        if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-          NS_WARNING(
-              "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-          return caretPointOrError;
-        }
-        caretPointOrError.unwrap().MoveCaretPointTo(
-            pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-      }
-      if (mayBecomeUnexpectedDOMTree &&
-          (NS_WARN_IF(!startToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!endToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!startToDelete.EqualsOrIsBefore(endToDelete)))) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-      MOZ_ASSERT(startToDelete.EqualsOrIsBefore(endToDelete));
-      rangeToDelete.SetStartAndEnd(startToDelete, endToDelete);
-    } else {
-      MOZ_ASSERT(replaceRangeDataAtEnd.RangeRef().IsInTextNodes());
-      EditorDOMPoint startToDelete(aRangeToDelete.StartRef());
-      EditorDOMPoint endToDelete(replaceRangeDataAtEnd.StartRef());
-      {
-        AutoTrackDOMPoint trackStartToDelete(aHTMLEditor.RangeUpdaterRef(),
-                                             &startToDelete);
-        AutoTrackDOMPoint trackEndToDelete(aHTMLEditor.RangeUpdaterRef(),
-                                           &endToDelete);
-        AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                               &pointToPutCaret);
-        
-        
-        nsresult rv =
-            WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes(
-                aHTMLEditor, replaceRangeDataAtEnd.RangeRef().AsInTexts(),
-                replaceRangeDataAtEnd.ReplaceStringRef());
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::"
-              "MakeSureToKeepVisibleStateOfWhiteSpacesAtEndOfDeletingRange() "
-              "failed");
-          return Err(rv);
-        }
-      }
-      if (mayBecomeUnexpectedDOMTree &&
-          (NS_WARN_IF(!startToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!endToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!startToDelete.EqualsOrIsBefore(endToDelete)))) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-      MOZ_ASSERT(startToDelete.EqualsOrIsBefore(endToDelete));
-      rangeToDelete.SetStartAndEnd(startToDelete, endToDelete);
-    }
-
-    if (mayBecomeUnexpectedDOMTree) {
-      
-      
-      if (&aEditingHost != aHTMLEditor.ComputeEditingHost()) {
-        NS_WARNING("Active editing host was changed");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-      if (!rangeToDelete.IsInContentNodes()) {
-        NS_WARNING("The modified range was not in content");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-      
-      
-      
-      textFragmentDataAtStart =
-          TextFragmentData(Scan::EditableNodes, rangeToDelete.StartRef(),
-                           BlockInlineCheck::UseComputedDisplayStyle);
-      textFragmentDataAtEnd =
-          TextFragmentData(Scan::EditableNodes, rangeToDelete.EndRef(),
-                           BlockInlineCheck::UseComputedDisplayStyle);
-    }
-  }
-  ReplaceRangeData replaceRangeDataAtStart =
-      textFragmentDataAtStart.GetReplaceRangeDataAtStartOfDeletionRange(
-          textFragmentDataAtEnd);
-  if (!replaceRangeDataAtStart.IsSet() || replaceRangeDataAtStart.Collapsed()) {
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-  if (!replaceRangeDataAtStart.HasReplaceString()) {
-    AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                           &pointToPutCaret);
-    Result<CaretPoint, nsresult> caretPointOrError =
-        aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-            replaceRangeDataAtStart.StartRef(),
-            replaceRangeDataAtStart.EndRef(),
-            HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
-    
-    
-    if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-      NS_WARNING("HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-      return caretPointOrError.propagateErr();
-    }
-    trackPointToPutCaret.FlushAndStopTracking();
-    caretPointOrError.unwrap().MoveCaretPointTo(
-        pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-
-  MOZ_ASSERT(replaceRangeDataAtStart.RangeRef().IsInTextNodes());
-  {
-    AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                           &pointToPutCaret);
-    
-    
-    nsresult rv =
-        WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes(
-            aHTMLEditor, replaceRangeDataAtStart.RangeRef().AsInTexts(),
-            replaceRangeDataAtStart.ReplaceStringRef());
-    
-    
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::"
-          "MakeSureToKeepVisibleStateOfWhiteSpacesAtStartOfDeletingRange() "
-          "failed");
-      return Err(rv);
-    }
-  }
-  return CaretPoint(std::move(pointToPutCaret));
-}
-
-
-nsresult
-WhiteSpaceVisibilityKeeper::MakeSureToKeepVisibleWhiteSpacesVisibleAfterSplit(
-    HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToSplit) {
-  MOZ_ASSERT(!StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-  const TextFragmentData textFragmentDataAtSplitPoint(
-      Scan::EditableNodes, aPointToSplit,
-      BlockInlineCheck::UseComputedDisplayStyle);
-  if (NS_WARN_IF(!textFragmentDataAtSplitPoint.IsInitialized())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  const VisibleWhiteSpacesData& visibleWhiteSpaces =
-      textFragmentDataAtSplitPoint.VisibleWhiteSpacesDataRef();
-  if (!visibleWhiteSpaces.IsInitialized()) {
-    return NS_OK;  
-  }
-
-  PointPosition pointPositionWithVisibleWhiteSpaces =
-      visibleWhiteSpaces.ComparePoint(aPointToSplit);
-
-  
-  
-  
-
-  
-  
-  EditorDOMPoint pointToSplit(aPointToSplit);
-  if (pointPositionWithVisibleWhiteSpaces == PointPosition::StartOfFragment ||
-      pointPositionWithVisibleWhiteSpaces == PointPosition::MiddleOfFragment) {
-    auto atNextCharOfStart =
-        textFragmentDataAtSplitPoint
-            .GetInclusiveNextCharPoint<EditorDOMPointInText>(
-                pointToSplit, IgnoreNonEditableNodes::Yes);
-    if (atNextCharOfStart.IsSet() && !atNextCharOfStart.IsEndOfContainer() &&
-        atNextCharOfStart.IsCharCollapsibleASCIISpace()) {
-      
-      
-      AutoEditorDOMPointChildInvalidator forgetChild(pointToSplit);
-      AutoTrackDOMPoint trackSplitPoint(aHTMLEditor.RangeUpdaterRef(),
-                                        &pointToSplit);
-      if (atNextCharOfStart.IsStartOfContainer() ||
-          atNextCharOfStart.IsPreviousCharASCIISpace()) {
-        atNextCharOfStart =
-            textFragmentDataAtSplitPoint
-                .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointInText>(
-                    atNextCharOfStart, nsIEditor::eNone,
-                    
-                    
-                    IgnoreNonEditableNodes::Yes);
-      }
-      const auto endOfCollapsibleASCIIWhiteSpaces =
-          textFragmentDataAtSplitPoint
-              .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointInText>(
-                  atNextCharOfStart, nsIEditor::eNone,
-                  
-                  
-                  IgnoreNonEditableNodes::Yes);
-      nsresult rv =
-          WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes(
-              aHTMLEditor,
-              EditorDOMRangeInTexts(atNextCharOfStart,
-                                    endOfCollapsibleASCIIWhiteSpaces),
-              nsDependentSubstring(&HTMLEditUtils::kNBSP, 1));
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes() "
-            "failed");
-        return rv;
-      }
-    }
-  }
-
-  
-  
-  
-  if (pointPositionWithVisibleWhiteSpaces == PointPosition::MiddleOfFragment ||
-      pointPositionWithVisibleWhiteSpaces == PointPosition::EndOfFragment) {
-    auto atPreviousCharOfStart =
-        textFragmentDataAtSplitPoint.GetPreviousCharPoint<EditorDOMPointInText>(
-            pointToSplit, IgnoreNonEditableNodes::Yes);
-    if (atPreviousCharOfStart.IsSet() &&
-        !atPreviousCharOfStart.IsEndOfContainer() &&
-        atPreviousCharOfStart.IsCharCollapsibleASCIISpace()) {
-      if (atPreviousCharOfStart.IsStartOfContainer() ||
-          atPreviousCharOfStart.IsPreviousCharASCIISpace()) {
-        atPreviousCharOfStart =
-            textFragmentDataAtSplitPoint
-                .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointInText>(
-                    atPreviousCharOfStart, nsIEditor::eNone,
-                    
-                    
-                    IgnoreNonEditableNodes::Yes);
-      }
-      const auto endOfCollapsibleASCIIWhiteSpaces =
-          textFragmentDataAtSplitPoint
-              .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointInText>(
-                  atPreviousCharOfStart, nsIEditor::eNone,
-                  
-                  
-                  IgnoreNonEditableNodes::Yes);
-      nsresult rv =
-          WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes(
-              aHTMLEditor,
-              EditorDOMRangeInTexts(atPreviousCharOfStart,
-                                    endOfCollapsibleASCIIWhiteSpaces),
-              nsDependentSubstring(&HTMLEditUtils::kNBSP, 1));
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes() "
-            "failed");
-        return rv;
-      }
-    }
-  }
-  return NS_OK;
 }
 
 
@@ -4027,366 +2579,6 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceTextAndRemoveEmptyTextNodes(
           HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
   if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
     NS_WARNING("HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-    return caretPointOrError.unwrapErr();
-  }
-  
-  
-  caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-  return NS_OK;
-}
-
-
-template <typename EditorDOMPointType>
-nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
-    HTMLEditor& aHTMLEditor, const EditorDOMPointType& aPoint,
-    const Element& aEditingHost) {
-  MOZ_ASSERT(!StaticPrefs::editor_white_space_normalization_blink_compatible());
-  MOZ_ASSERT(aPoint.IsInContentNode());
-  MOZ_ASSERT(EditorUtils::IsEditableContent(
-      *aPoint.template ContainerAs<nsIContent>(), EditorType::HTML));
-  const TextFragmentData textFragmentData(
-      Scan::EditableNodes, aPoint, BlockInlineCheck::UseComputedDisplayStyle);
-  if (NS_WARN_IF(!textFragmentData.IsInitialized())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  if (!textFragmentData.FoundNoBreakingWhiteSpaces()) {
-    
-    return NS_OK;
-  }
-  const VisibleWhiteSpacesData& visibleWhiteSpaces =
-      textFragmentData.VisibleWhiteSpacesDataRef();
-  if (!visibleWhiteSpaces.IsInitialized()) {
-    return NS_OK;
-  }
-
-  
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    const EditorDOMPoint& atEndOfVisibleWhiteSpaces =
-        visibleWhiteSpaces.EndRef();
-    auto atPreviousCharOfEndOfVisibleWhiteSpaces =
-        textFragmentData.GetPreviousCharPoint<EditorDOMPointInText>(
-            atEndOfVisibleWhiteSpaces, IgnoreNonEditableNodes::Yes);
-    if (!atPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() ||
-        atPreviousCharOfEndOfVisibleWhiteSpaces.IsEndOfContainer() ||
-        
-        
-        !atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharCollapsibleNBSP()) {
-      return NS_OK;
-    }
-
-    
-    
-    auto atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces =
-        textFragmentData.GetPreviousCharPoint<EditorDOMPointInText>(
-            atPreviousCharOfEndOfVisibleWhiteSpaces,
-            IgnoreNonEditableNodes::Yes);
-    bool isPreviousCharCollapsibleASCIIWhiteSpace =
-        atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-        !atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-             .IsEndOfContainer() &&
-        atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-            .IsCharCollapsibleASCIISpace();
-    const bool maybeNBSPFollowsVisibleContent =
-        (atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-         !isPreviousCharCollapsibleASCIIWhiteSpace) ||
-        (!atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-         (visibleWhiteSpaces.StartsFromNonCollapsibleCharacters() ||
-          visibleWhiteSpaces.StartsFromSpecialContent()));
-    bool followedByVisibleContent =
-        visibleWhiteSpaces.EndsByNonCollapsibleCharacters() ||
-        visibleWhiteSpaces.EndsBySpecialContent();
-    bool followedByBRElement = visibleWhiteSpaces.EndsByBRElement();
-    bool followedByPreformattedLineBreak =
-        visibleWhiteSpaces.EndsByPreformattedLineBreak();
-
-    
-    
-    
-    if (maybeNBSPFollowsVisibleContent ||
-        isPreviousCharCollapsibleASCIIWhiteSpace) {
-      
-      
-      if ((visibleWhiteSpaces.EndsByBlockBoundary() ||
-           visibleWhiteSpaces.EndsByInlineEditingHostBoundary()) &&
-          aPoint.IsInContentNode()) {
-        bool insertBRElement = HTMLEditUtils::IsBlockElement(
-            *aPoint.template ContainerAs<nsIContent>(),
-            BlockInlineCheck::UseComputedDisplayStyle);
-        if (!insertBRElement) {
-          NS_ASSERTION(
-              EditorUtils::IsEditableContent(
-                  *aPoint.template ContainerAs<nsIContent>(), EditorType::HTML),
-              "Given content is not editable");
-          NS_ASSERTION(aPoint.template ContainerAs<nsIContent>()
-                           ->GetAsElementOrParentElement(),
-                       "Given content is not an element and an orphan node");
-          const Element* editableBlockElement =
-              EditorUtils::IsEditableContent(
-                  *aPoint.template ContainerAs<nsIContent>(), EditorType::HTML)
-                  ? HTMLEditUtils::GetInclusiveAncestorElement(
-                        *aPoint.template ContainerAs<nsIContent>(),
-                        HTMLEditUtils::ClosestEditableBlockElement,
-                        BlockInlineCheck::UseComputedDisplayStyle)
-                  : nullptr;
-          insertBRElement = !!editableBlockElement;
-        }
-        if (insertBRElement) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-
-          if (NS_WARN_IF(!atEndOfVisibleWhiteSpaces.IsInContentNode())) {
-            return Err(NS_ERROR_FAILURE);
-          }
-          const Maybe<LineBreakType> lineBreakType =
-              aHTMLEditor.GetPreferredLineBreakType(
-                  *atEndOfVisibleWhiteSpaces.ContainerAs<nsIContent>(),
-                  aEditingHost);
-          if (NS_WARN_IF(lineBreakType.isNothing())) {
-            return Err(NS_ERROR_FAILURE);
-          }
-          Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
-              aHTMLEditor.InsertLineBreak(WithTransaction::Yes, *lineBreakType,
-                                          atEndOfVisibleWhiteSpaces);
-          if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
-            NS_WARNING(nsPrintfCString("HTMLEditor::InsertLineBreak("
-                                       "WithTransaction::Yes, %s) failed",
-                                       ToString(*lineBreakType).c_str())
-                           .get());
-            return insertBRElementResultOrError.propagateErr();
-          }
-          CreateLineBreakResult insertBRElementResult =
-              insertBRElementResultOrError.unwrap();
-          MOZ_ASSERT(insertBRElementResult.Handled());
-          
-          
-          insertBRElementResult.IgnoreCaretPointSuggestion();
-
-          atPreviousCharOfEndOfVisibleWhiteSpaces =
-              textFragmentData.GetPreviousCharPoint<EditorDOMPointInText>(
-                  atEndOfVisibleWhiteSpaces, IgnoreNonEditableNodes::Yes);
-          if (NS_WARN_IF(!atPreviousCharOfEndOfVisibleWhiteSpaces.IsSet())) {
-            return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-          }
-          atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces =
-              textFragmentData.GetPreviousCharPoint<EditorDOMPointInText>(
-                  atPreviousCharOfEndOfVisibleWhiteSpaces,
-                  IgnoreNonEditableNodes::Yes);
-          isPreviousCharCollapsibleASCIIWhiteSpace =
-              atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-              !atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-                   .IsEndOfContainer() &&
-              atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-                  .IsCharCollapsibleASCIISpace();
-          followedByBRElement = true;
-          followedByVisibleContent = followedByPreformattedLineBreak = false;
-        }
-      }
-
-      
-      
-      
-      
-      if (EditorUtils::IsWhiteSpacePreformatted(
-              *atPreviousCharOfEndOfVisibleWhiteSpaces.ContainerAs<Text>())) {
-        return NS_OK;
-      }
-
-      
-      
-      
-      
-      
-      if (maybeNBSPFollowsVisibleContent &&
-          (followedByVisibleContent || followedByBRElement) &&
-          !visibleWhiteSpaces.StartsFromPreformattedLineBreak()) {
-        MOZ_ASSERT(!followedByPreformattedLineBreak);
-        Result<InsertTextResult, nsresult> replaceTextResult =
-            aHTMLEditor.ReplaceTextWithTransaction(
-                MOZ_KnownLive(*atPreviousCharOfEndOfVisibleWhiteSpaces
-                                   .ContainerAs<Text>()),
-                atPreviousCharOfEndOfVisibleWhiteSpaces.Offset(), 1, u" "_ns);
-        if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
-          NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-          return replaceTextResult.propagateErr();
-        }
-        
-        
-        replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
-        return NS_OK;
-      }
-    }
-    
-    
-    
-    
-    
-    
-    
-    if (maybeNBSPFollowsVisibleContent ||
-        !isPreviousCharCollapsibleASCIIWhiteSpace ||
-        !(followedByVisibleContent || followedByBRElement) ||
-        EditorUtils::IsWhiteSpacePreformatted(
-            *atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-                 .ContainerAs<Text>())) {
-      return NS_OK;
-    }
-
-    
-    
-    MOZ_ASSERT(!atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-                    .IsEndOfContainer());
-    const auto atFirstASCIIWhiteSpace =
-        textFragmentData
-            .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointInText>(
-                atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces,
-                nsIEditor::eNone,
-                
-                
-                IgnoreNonEditableNodes::Yes);
-    uint32_t numberOfASCIIWhiteSpacesInStartNode =
-        atFirstASCIIWhiteSpace.ContainerAs<Text>() ==
-                atPreviousCharOfEndOfVisibleWhiteSpaces.ContainerAs<Text>()
-            ? atPreviousCharOfEndOfVisibleWhiteSpaces.Offset() -
-                  atFirstASCIIWhiteSpace.Offset()
-            : atFirstASCIIWhiteSpace.ContainerAs<Text>()->Length() -
-                  atFirstASCIIWhiteSpace.Offset();
-    
-    uint32_t replaceLengthInStartNode =
-        numberOfASCIIWhiteSpacesInStartNode +
-        (atFirstASCIIWhiteSpace.ContainerAs<Text>() ==
-                 atPreviousCharOfEndOfVisibleWhiteSpaces.ContainerAs<Text>()
-             ? 1
-             : 0);
-    Result<InsertTextResult, nsresult> replaceTextResult =
-        aHTMLEditor.ReplaceTextWithTransaction(
-            MOZ_KnownLive(*atFirstASCIIWhiteSpace.ContainerAs<Text>()),
-            atFirstASCIIWhiteSpace.Offset(), replaceLengthInStartNode,
-            textFragmentData.StartsFromPreformattedLineBreak() &&
-                    textFragmentData.EndsByPreformattedLineBreak()
-                ? u"\x00A0\x00A0"_ns
-                : (textFragmentData.EndsByPreformattedLineBreak()
-                       ? u" \x00A0"_ns
-                       : u"\x00A0 "_ns));
-    if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
-      NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-      return replaceTextResult.propagateErr();
-    }
-    
-    
-    replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
-
-    if (atFirstASCIIWhiteSpace.GetContainer() ==
-        atPreviousCharOfEndOfVisibleWhiteSpaces.GetContainer()) {
-      return NS_OK;
-    }
-
-    
-    
-    
-    Result<CaretPoint, nsresult> caretPointOrError =
-        aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-            EditorDOMPointInText::AtEndOf(
-                *atFirstASCIIWhiteSpace.ContainerAs<Text>()),
-            atPreviousCharOfEndOfVisibleWhiteSpaces.NextPoint(),
-            HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
-    if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-      NS_WARNING("HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-      return caretPointOrError.propagateErr();
-    }
-    
-    
-    caretPointOrError.unwrap().IgnoreCaretPointSuggestion();
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  const EditorDOMPoint& atEndOfVisibleWhiteSpaces = visibleWhiteSpaces.EndRef();
-  const auto atPreviousCharOfEndOfVisibleWhiteSpaces =
-      textFragmentData.GetPreviousCharPoint<EditorDOMPointInText>(
-          atEndOfVisibleWhiteSpaces, IgnoreNonEditableNodes::Yes);
-  if (!atPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() ||
-      atPreviousCharOfEndOfVisibleWhiteSpaces.IsEndOfContainer() ||
-      !atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharCollapsibleNBSP() ||
-      
-      
-      
-      visibleWhiteSpaces.EndsByPreformattedLineBreak()) {
-    return NS_OK;
-  }
-
-  
-  EditorDOMPointInText startToDelete, endToDelete;
-
-  const auto atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces =
-      textFragmentData.GetPreviousCharPoint<EditorDOMPointInText>(
-          atPreviousCharOfEndOfVisibleWhiteSpaces, IgnoreNonEditableNodes::Yes);
-  
-  
-  if (atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharNBSP() &&
-      atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-      atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-          .IsCharCollapsibleASCIISpace()) {
-    startToDelete =
-        textFragmentData
-            .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointInText>(
-                atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces,
-                nsIEditor::eNone,
-                
-                
-                IgnoreNonEditableNodes::Yes);
-    endToDelete = atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces;
-  }
-  
-  
-  else {
-    startToDelete = endToDelete =
-        atPreviousCharOfEndOfVisibleWhiteSpaces.NextPoint();
-  }
-
-  Result<CaretPoint, nsresult> caretPointOrError =
-      aHTMLEditor.DeleteTextAndNormalizeSurroundingWhiteSpaces(
-          startToDelete, endToDelete,
-          HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries,
-          HTMLEditor::DeleteDirection::Forward, aEditingHost);
-  if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-    NS_WARNING(
-        "HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpace() failed");
     return caretPointOrError.unwrapErr();
   }
   

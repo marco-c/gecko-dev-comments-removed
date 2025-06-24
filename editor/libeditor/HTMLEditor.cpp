@@ -2261,21 +2261,19 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     NS_WARNING("HTMLEditUtils::GetBetterInsertionPointFor() failed");
     return NS_ERROR_FAILURE;
   }
-  if (StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    Result<EditorDOMPoint, nsresult> pointToInsertOrError =
-        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
-            *this, pointToInsert,
-            {WhiteSpaceVisibilityKeeper::NormalizeOption::
-                 StopIfFollowingWhiteSpacesStartsWithNBSP});
-    if (MOZ_UNLIKELY(pointToInsertOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
-      return pointToInsertOrError.propagateErr();
-    }
-    pointToInsert = pointToInsertOrError.unwrap();
-    if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
-      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-    }
+  Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+      WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+          *this, pointToInsert,
+          {WhiteSpaceVisibilityKeeper::NormalizeOption::
+               StopIfFollowingWhiteSpacesStartsWithNBSP});
+  if (MOZ_UNLIKELY(pointToInsertOrError.isErr())) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
+    return pointToInsertOrError.propagateErr();
+  }
+  pointToInsert = pointToInsertOrError.unwrap();
+  if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   if (aOptions.contains(InsertElementOption::SplitAncestorInlineElements)) {
@@ -4457,8 +4455,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
             !CanInsertLineBreak(*aPointToInsert.ContainerAs<nsIContent>()))) {
       return Err(NS_ERROR_FAILURE);
     }
-    if (!canNormalizeWhiteSpaces ||
-        !StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+    if (!canNormalizeWhiteSpaces) {
       return aPointToInsert;
     }
     Result<EditorDOMPoint, nsresult> pointToInsertOrError =
@@ -4482,8 +4479,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
   }
 
   Result<EditorDOMPoint, nsresult> pointToInsertOrError =
-      canNormalizeWhiteSpaces &&
-              StaticPrefs::editor_white_space_normalization_blink_compatible()
+      canNormalizeWhiteSpaces
           ? WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
                 *this, aPointToInsert,
                 {WhiteSpaceVisibilityKeeper::NormalizeOption::
@@ -5438,16 +5434,10 @@ nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange& aRange) {
       continue;
     }
     Result<JoinNodesResult, nsresult> joinNodesResultOrError =
-        StaticPrefs::editor_white_space_normalization_blink_compatible()
-            ? JoinTextNodesWithNormalizeWhiteSpaces(
-                  MOZ_KnownLive(leftTextNode), MOZ_KnownLive(rightTextNode))
-            : JoinNodesWithTransaction(MOZ_KnownLive(leftTextNode),
-                                       MOZ_KnownLive(rightTextNode));
+        JoinTextNodesWithNormalizeWhiteSpaces(MOZ_KnownLive(leftTextNode),
+                                              MOZ_KnownLive(rightTextNode));
     if (MOZ_UNLIKELY(joinNodesResultOrError.isErr())) {
-      NS_WARNING(
-          StaticPrefs::editor_white_space_normalization_blink_compatible()
-              ? "HTMLEditor::JoinTextNodesWithNormalizeWhiteSpaces() failed"
-              : "HTMLEditor::JoinNodesWithTransaction() failed");
+      NS_WARNING("HTMLEditor::JoinTextNodesWithNormalizeWhiteSpaces() failed");
       return joinNodesResultOrError.unwrapErr();
     }
   }
@@ -7913,110 +7903,6 @@ nsresult HTMLEditor::OnModifyDocument(const DocumentModifiedEvent& aRunner) {
   
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-    
-    
-    AutoHideSelectionChanges hideSelectionChangesCausedByTheHacks(
-        SelectionRef());
-    
-    
-    
-    
-    
-    
-    IgnoredErrorResult error;
-    AutoEditSubActionNotifier topLevelEditSubAction(
-        *this, EditSubAction::eMaintainWhiteSpaceVisibility, eNone, error);
-    NS_WARNING_ASSERTION(!error.Failed(),
-                         "Failed to set the toplevel edit sub-action to "
-                         "maintain white-space visibility, but ignored");
-
-    
-    
-    
-    
-    
-    
-    if (mLastCollapsibleWhiteSpaceAppendedTextNode &&
-        MOZ_LIKELY(
-            mLastCollapsibleWhiteSpaceAppendedTextNode->IsInComposedDoc() &&
-            mLastCollapsibleWhiteSpaceAppendedTextNode->IsEditable() &&
-            mLastCollapsibleWhiteSpaceAppendedTextNode->TextDataLength())) {
-      const auto atLastChar = EditorRawDOMPointInText::AtEndOf(
-          *mLastCollapsibleWhiteSpaceAppendedTextNode);
-      if (MOZ_LIKELY(atLastChar.IsPreviousCharCollapsibleASCIISpace())) {
-        if (const RefPtr<Element> editingHost = ComputeEditingHostInternal(
-                mLastCollapsibleWhiteSpaceAppendedTextNode,
-                LimitInBodyElement::No)) {
-          Result<CreateLineBreakResult, nsresult> insertPaddingBRResultOrError =
-              InsertPaddingBRElementIfNeeded(atLastChar.To<EditorDOMPoint>(),
-                                             eNoStrip, *editingHost);
-          if (MOZ_UNLIKELY(insertPaddingBRResultOrError.isErr())) {
-            if (insertPaddingBRResultOrError.inspectErr() ==
-                NS_ERROR_EDITOR_DESTROYED) {
-              NS_WARNING(
-                  "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::"
-                  "eNoStrip) destroyed the editor");
-              return insertPaddingBRResultOrError.unwrapErr();
-            }
-            NS_WARNING(
-                "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::"
-                "eNoStrip) failed, but ignored");
-          } else {
-            
-            
-            insertPaddingBRResultOrError.unwrap().IgnoreCaretPointSuggestion();
-          }
-        }
-      }
-    }
-
-    
-    
-    
-    
-    if (!aRunner.NewInvisibleWhiteSpacesRef().IsEmpty()) {
-      AutoSelectionRestorer restoreSelection(this);
-      bool doRestoreSelection = false;
-      for (const EditorDOMPointInText& atCollapsibleWhiteSpace :
-           aRunner.NewInvisibleWhiteSpacesRef()) {
-        if (!atCollapsibleWhiteSpace.IsInComposedDoc() ||
-            !atCollapsibleWhiteSpace.IsAtLastContent() ||
-            !HTMLEditUtils::IsSimplyEditableNode(
-                *atCollapsibleWhiteSpace.ContainerAs<Text>()) ||
-            !atCollapsibleWhiteSpace.IsCharCollapsibleASCIISpace()) {
-          continue;
-        }
-        const Element* const editingHost =
-            atCollapsibleWhiteSpace.ContainerAs<Text>()->GetEditingHost();
-        if (MOZ_UNLIKELY(!editingHost)) {
-          continue;
-        }
-        const WSScanResult nextThing =
-            WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                WSRunScanner::Scan::EditableNodes,
-                atCollapsibleWhiteSpace.AfterContainer<EditorRawDOMPoint>(),
-                BlockInlineCheck::UseComputedDisplayStyle);
-        if (!nextThing.ReachedBlockBoundary()) {
-          continue;
-        }
-        Result<InsertTextResult, nsresult> replaceToNBSPResultOrError =
-            ReplaceTextWithTransaction(
-                MOZ_KnownLive(*atCollapsibleWhiteSpace.ContainerAs<Text>()),
-                atCollapsibleWhiteSpace.Offset(), 1u, u"\xA0"_ns);
-        if (MOZ_UNLIKELY(replaceToNBSPResultOrError.isErr())) {
-          NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-          continue;
-        }
-        doRestoreSelection = true;
-        replaceToNBSPResultOrError.unwrap().IgnoreCaretPointSuggestion();
-      }
-      if (!doRestoreSelection) {
-        restoreSelection.Abort();
-      }
-    }
-  }
-
   
   
   nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
@@ -8037,51 +7923,6 @@ nsresult HTMLEditor::OnModifyDocument(const DocumentModifiedEvent& aRunner) {
       "EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() failed");
 
   return rv;
-}
-
-
-
-
-
-void HTMLEditor::DocumentModifiedEvent::MaybeAppendNewInvisibleWhiteSpace(
-    const nsIContent* aContentWillBeRemoved) {
-  
-  
-  
-  
-  
-  
-  if (StaticPrefs::editor_white_space_normalization_blink_compatible() ||
-      !aContentWillBeRemoved || !aContentWillBeRemoved->IsInComposedDoc() ||
-      !HTMLEditUtils::IsSimplyEditableNode(*aContentWillBeRemoved) ||
-      !aContentWillBeRemoved->IsHTMLElement(nsGkAtoms::br)) {
-    return;
-  }
-  const WSScanResult nextThing =
-      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes,
-          EditorRawDOMPoint::After(*aContentWillBeRemoved),
-          BlockInlineCheck::UseComputedDisplayStyle);
-  if (!nextThing.ReachedBlockBoundary()) {
-    return;
-  }
-  const WSScanResult previousThing =
-      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes,
-          EditorRawDOMPoint(aContentWillBeRemoved),
-          BlockInlineCheck::UseComputedDisplayOutsideStyle);
-  if (!previousThing.ContentIsText() || !previousThing.IsContentEditable()) {
-    return;
-  }
-  const auto atCollapsibleWhiteSpace =
-      previousThing.PointAtReachedContent<EditorRawDOMPoint>();
-  MOZ_ASSERT(atCollapsibleWhiteSpace.IsAtLastContent());
-  if (!atCollapsibleWhiteSpace.IsCharCollapsibleASCIISpace()) {
-    return;
-  }
-  mNewInvisibleWhiteSpaces.AppendElement(
-      EditorDOMPointInText(atCollapsibleWhiteSpace.ContainerAs<Text>(),
-                           atCollapsibleWhiteSpace.Offset()));
 }
 
 }  

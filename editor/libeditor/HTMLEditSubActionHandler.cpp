@@ -560,117 +560,6 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
 
     
     
-    const bool needToNormalizeWhiteSpaces = [&]() {
-      switch (GetTopLevelEditSubAction()) {
-        case EditSubAction::eDeleteSelectedContent:
-          if (TopLevelEditSubActionDataRef().mDidNormalizeWhitespaces) {
-            return false;
-          }
-          [[fallthrough]];
-        case EditSubAction::eInsertText:
-        case EditSubAction::eInsertTextComingFromIME:
-        case EditSubAction::eInsertLineBreak:
-        case EditSubAction::eInsertParagraphSeparator:
-        case EditSubAction::ePasteHTMLContent:
-        case EditSubAction::eInsertHTMLSource:
-          return !StaticPrefs::
-              editor_white_space_normalization_blink_compatible();
-        default:
-          return false;
-      }
-    }();
-    if (needToNormalizeWhiteSpaces) {
-      
-      
-      
-      
-      
-      AutoSelectionRestorer restoreSelection(this);
-      
-      
-      
-      
-      
-      
-      
-      auto pointToAdjust = GetLastIMESelectionEndPoint<EditorDOMPoint>();
-      if (!pointToAdjust.IsInContentNode()) {
-        
-        pointToAdjust = GetFirstSelectionStartPoint<EditorDOMPoint>();
-        if (NS_WARN_IF(!pointToAdjust.IsInContentNode())) {
-          return NS_ERROR_FAILURE;
-        }
-      }
-      if (const RefPtr<Element> editingHost =
-              ComputeEditingHost(LimitInBodyElement::No)) {
-        if (EditorUtils::IsEditableContent(
-                *pointToAdjust.ContainerAs<nsIContent>(), EditorType::HTML)) {
-          AutoTrackDOMPoint trackPointToAdjust(RangeUpdaterRef(),
-                                               &pointToAdjust);
-          nsresult rv =
-              WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
-                  *this, pointToAdjust, *editingHost);
-          if (NS_FAILED(rv)) {
-            NS_WARNING(
-                "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
-                "failed");
-            return rv;
-          }
-        }
-
-        
-        
-        
-        
-        if (NS_WARN_IF(!TopLevelEditSubActionDataRef()
-                            .mSelectedRange->IsPositioned())) {
-          return NS_ERROR_FAILURE;
-        }
-
-        EditorDOMPoint atStart =
-            TopLevelEditSubActionDataRef().mSelectedRange->StartPoint();
-        if (atStart != pointToAdjust && atStart.IsInContentNode() &&
-            EditorUtils::IsEditableContent(*atStart.ContainerAs<nsIContent>(),
-                                           EditorType::HTML)) {
-          AutoTrackDOMPoint trackPointToAdjust(RangeUpdaterRef(),
-                                               &pointToAdjust);
-          AutoTrackDOMPoint trackStartPoint(RangeUpdaterRef(), &atStart);
-          nsresult rv =
-              WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
-                  *this, atStart, *editingHost);
-          if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rv),
-              "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
-              "failed, but ignored");
-        }
-        
-        
-        EditorDOMPoint atEnd =
-            TopLevelEditSubActionDataRef().mSelectedRange->EndPoint();
-        if (!TopLevelEditSubActionDataRef().mSelectedRange->Collapsed() &&
-            atEnd != pointToAdjust && atEnd != atStart &&
-            atEnd.IsInContentNode() &&
-            EditorUtils::IsEditableContent(*atEnd.ContainerAs<nsIContent>(),
-                                           EditorType::HTML)) {
-          nsresult rv =
-              WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
-                  *this, atEnd, *editingHost);
-          if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rv),
-              "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
-              "failed, but ignored");
-        }
-      }
-    }
-
-    
-    
     
     
     if (!TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks &&
@@ -1227,8 +1116,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       }
       const EditorDOMPoint& endOfInsertedText =
           insertEmptyTextResult.EndOfInsertedTextRef();
-      if (StaticPrefs::editor_white_space_normalization_blink_compatible() &&
-          endOfInsertedText.IsInTextNode() &&
+      if (endOfInsertedText.IsInTextNode() &&
           !endOfInsertedText.IsStartOfContainer()) {
         nsresult rv = WhiteSpaceVisibilityKeeper::
             NormalizeVisibleWhiteSpacesWithoutDeletingInvisibleWhiteSpaces(
@@ -2802,24 +2690,22 @@ Result<CaretPoint, nsresult> HTMLEditor::HandleInsertParagraphInMailCiteElement(
       return Err(NS_ERROR_FAILURE);
     }
 
-    if (StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-      Result<EditorDOMPoint, nsresult> pointToSplitOrError =
-          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
-              *this, pointToSplit,
-              {WhiteSpaceVisibilityKeeper::NormalizeOption::
-                   StopIfPrecedingWhiteSpacesEndsWithNBP,
-               WhiteSpaceVisibilityKeeper::NormalizeOption::
-                   StopIfFollowingWhiteSpacesStartsWithNBSP});
-      if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() "
-            "failed");
-        return pointToSplitOrError.propagateErr();
-      }
-      pointToSplit = pointToSplitOrError.unwrap();
-      if (NS_WARN_IF(!pointToSplit.IsInContentNode())) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
+    Result<EditorDOMPoint, nsresult> pointToSplitOrError =
+        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+            *this, pointToSplit,
+            {WhiteSpaceVisibilityKeeper::NormalizeOption::
+                 StopIfPrecedingWhiteSpacesEndsWithNBP,
+             WhiteSpaceVisibilityKeeper::NormalizeOption::
+                 StopIfFollowingWhiteSpacesStartsWithNBSP});
+    if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() "
+          "failed");
+      return pointToSplitOrError.propagateErr();
+    }
+    pointToSplit = pointToSplitOrError.unwrap();
+    if (NS_WARN_IF(!pointToSplit.IsInContentNode())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 
     Result<SplitNodeResult, nsresult> splitResult =
@@ -3600,7 +3486,6 @@ HTMLEditor::ReplaceWhiteSpacesData
 HTMLEditor::GetSurroundingNormalizedStringToDelete(const Text& aTextNode,
                                                    uint32_t aOffset,
                                                    uint32_t aLength) const {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
   MOZ_ASSERT(aOffset <= aTextNode.TextDataLength());
   MOZ_ASSERT(aOffset + aLength <= aTextNode.TextDataLength());
 
@@ -4164,8 +4049,6 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
 Result<JoinNodesResult, nsresult>
 HTMLEditor::JoinTextNodesWithNormalizeWhiteSpaces(Text& aLeftText,
                                                   Text& aRightText) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
-
   if (EditorUtils::IsWhiteSpacePreformatted(aLeftText)) {
     Result<JoinNodesResult, nsresult> joinResultOrError =
         JoinNodesWithTransaction(aLeftText, aRightText);
@@ -13291,13 +13174,9 @@ Result<EditActionResult, nsresult> HTMLEditor::AddZIndexAsSubAction(
 nsresult HTMLEditor::OnDocumentModified(
     const nsIContent* aContentWillBeRemoved ) {
   if (mPendingDocumentModifiedRunner) {
-    mPendingDocumentModifiedRunner->MaybeAppendNewInvisibleWhiteSpace(
-        aContentWillBeRemoved);
     return NS_OK;  
   }
   mPendingDocumentModifiedRunner = new DocumentModifiedEvent(*this);
-  mPendingDocumentModifiedRunner->MaybeAppendNewInvisibleWhiteSpace(
-      aContentWillBeRemoved);
   nsContentUtils::AddScriptRunner(do_AddRef(mPendingDocumentModifiedRunner));
   
   
