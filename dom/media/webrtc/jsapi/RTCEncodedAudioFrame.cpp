@@ -47,22 +47,15 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
       mOwner(aOwner) {
   mMetadata.mSynchronizationSource.Construct(mFrame->GetSsrc());
   mMetadata.mPayloadType.Construct(mFrame->GetPayloadType());
-  
-  
-  
-  
-  if (mFrame->GetDirection() ==
-      webrtc::TransformableFrameInterface::Direction::kReceiver) {
-    const auto& audioFrame(
-        static_cast<webrtc::TransformableAudioFrameInterface&>(*mFrame));
-    mMetadata.mContributingSources.Construct();
-    for (const auto csrc : audioFrame.GetContributingSources()) {
-      Unused << mMetadata.mContributingSources.Value().AppendElement(csrc,
-                                                                     fallible);
-    }
-    if (const auto optionalSeqNum = audioFrame.SequenceNumber()) {
-      mMetadata.mSequenceNumber.Construct(*optionalSeqNum);
-    }
+  const auto& audioFrame(
+      static_cast<webrtc::TransformableAudioFrameInterface&>(*mFrame));
+  mMetadata.mContributingSources.Construct();
+  for (const auto csrc : audioFrame.GetContributingSources()) {
+    Unused << mMetadata.mContributingSources.Value().AppendElement(csrc,
+                                                                   fallible);
+  }
+  if (const auto optionalSeqNum = audioFrame.SequenceNumber()) {
+    mMetadata.mSequenceNumber.Construct(*optionalSeqNum);
   }
 
   
