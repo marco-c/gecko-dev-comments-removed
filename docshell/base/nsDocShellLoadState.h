@@ -12,7 +12,6 @@
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
 
-#include "nsIClassifiedChannel.h"
 #include "nsILoadInfo.h"
 
 
@@ -127,10 +126,6 @@ class nsDocShellLoadState final {
   bool TriggeringStorageAccess() const;
 
   void SetTriggeringStorageAccess(bool aTriggeringStorageAccess);
-
-  mozilla::net::ClassificationFlags TriggeringClassificationFlags() const;
-  void SetTriggeringClassificationFlags(
-      mozilla::net::ClassificationFlags aFlags);
 
   nsIContentSecurityPolicy* Csp() const;
 
@@ -488,10 +483,6 @@ class nsDocShellLoadState final {
   
   uint64_t mTriggeringWindowId;
   bool mTriggeringStorageAccess;
-
-  
-  
-  mozilla::net::ClassificationFlags mTriggeringClassificationFlags;
 
   
   

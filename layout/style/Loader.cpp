@@ -42,7 +42,6 @@
 #include "nsContentPolicyUtils.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
-#include "nsIClassifiedChannel.h"
 #include "nsIClassOfService.h"
 #include "nsIScriptError.h"
 #include "nsMimeTypes.h"
@@ -1070,7 +1069,6 @@ nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
                                       nsIChannel** aOutChannel) {
   nsCOMPtr<nsILoadGroup> loadGroup;
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  net::ClassificationFlags triggeringClassificationFlags;
   if (aUseLoadGroup == UseLoadGroup::Yes && mDocument) {
     loadGroup = mDocument->GetDocumentLoadGroup();
     
@@ -1081,11 +1079,6 @@ nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
     }
 
     cookieJarSettings = mDocument->CookieJarSettings();
-
-    
-    
-    
-    triggeringClassificationFlags = mDocument->GetScriptTrackingFlags();
   }
 
   nsSecurityFlags securityFlags =
@@ -1128,17 +1121,9 @@ nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
     }
   }
 
-  MOZ_TRY(NS_NewChannel(aOutChannel, aLoadData.mURI, triggeringPrincipal,
-                        securityFlags, contentPolicyType, cookieJarSettings,
-                         nullptr, loadGroup));
-
-  nsCOMPtr<nsILoadInfo> loadInfo = (*aOutChannel)->LoadInfo();
-  loadInfo->SetTriggeringFirstPartyClassificationFlags(
-      triggeringClassificationFlags.firstPartyFlags);
-  loadInfo->SetTriggeringThirdPartyClassificationFlags(
-      triggeringClassificationFlags.thirdPartyFlags);
-
-  return NS_OK;
+  return NS_NewChannel(aOutChannel, aLoadData.mURI, triggeringPrincipal,
+                       securityFlags, contentPolicyType, cookieJarSettings,
+                        nullptr, loadGroup);
 }
 
 nsresult Loader::LoadSheetSyncInternal(SheetLoadData& aLoadData,

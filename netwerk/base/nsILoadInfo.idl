@@ -460,24 +460,6 @@ interface nsILoadInfo : nsISupports
   
 
 
-
-
-
-
-  [infallible] attribute unsigned long triggeringFirstPartyClassificationFlags;
-
-  
-
-
-
-
-
-
-  [infallible] attribute unsigned long triggeringThirdPartyClassificationFlags;
-
-  
-
-
   [infallible] readonly attribute unsigned long securityMode;
 
   

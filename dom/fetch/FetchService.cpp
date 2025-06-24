@@ -265,7 +265,7 @@ RefPtr<FetchServicePromises> FetchService::FetchInstance::Fetch() {
       
       
       
-      net::ClassificationFlags({0, 0})  
+      false  
   );
 
   if (mArgsType == FetchArgsType::WorkerFetch) {
