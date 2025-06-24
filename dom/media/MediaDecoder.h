@@ -488,7 +488,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
     DurationChanged();
   }
 
-  virtual void OnPlaybackEvent(const MediaPlaybackEvent& aEvent);
+  virtual void OnPlaybackEvent(MediaPlaybackEvent&& aEvent);
 
   
   

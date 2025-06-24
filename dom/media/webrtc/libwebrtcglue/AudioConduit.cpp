@@ -121,9 +121,6 @@ RefPtr<GenericPromise> WebrtcAudioConduit::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   mControl.mOnDtmfEventListener.DisconnectIfExists();
-  mReceiverRtpEventListener.DisconnectIfExists();
-  mReceiverRtcpEventListener.DisconnectIfExists();
-  mSenderRtcpEventListener.DisconnectIfExists();
 
   return InvokeAsync(
       mCallThread, "WebrtcAudioConduit::Shutdown (main thread)",
@@ -505,6 +502,23 @@ void WebrtcAudioConduit::SetTransportActive(bool aActive) {
 
   
   mTransportActive = aActive;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aActive) {
+    MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [self = RefPtr<WebrtcAudioConduit>(this),
+         recvRtpListener = std::move(mReceiverRtpEventListener)]() mutable {
+          recvRtpListener.DisconnectIfExists();
+        })));
+  }
 }
 
 
@@ -650,15 +664,6 @@ void WebrtcAudioConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
               self.get(), packet.Ssrc(), packet.SequenceNumber());
           return false;
         });
-  }
-}
-
-void WebrtcAudioConduit::OnRtcpReceived(rtc::CopyOnWriteBuffer&& aPacket) {
-  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-
-  if (mCall->Call()) {
-    mCall->Call()->Receiver()->DeliverRtcpPacket(
-        std::forward<rtc::CopyOnWriteBuffer>(aPacket));
   }
 }
 
