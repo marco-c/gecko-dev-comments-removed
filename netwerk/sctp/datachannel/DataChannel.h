@@ -462,10 +462,6 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   uint16_t mRemotePort = 0;
 
   nsCOMPtr<nsIThread> mInternalIOThread = nullptr;
-  
-  
-  bool mDeferSend = false;
-  std::vector<std::unique_ptr<MediaPacket>> mDeferredSend;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool mShutdown;
