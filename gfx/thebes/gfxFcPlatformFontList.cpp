@@ -2348,6 +2348,12 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
     cacheKey.Append(':');
   }
 
+  
+  
+  
+  cacheKey.AppendInt(int(aGeneric));
+  cacheKey.Append(':');
+
   cacheKey.Append(familyName);
   auto vis =
       aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;

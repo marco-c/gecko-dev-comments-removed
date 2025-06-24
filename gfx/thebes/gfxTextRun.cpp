@@ -1856,18 +1856,8 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
       mUserFontSet(aUserFontSet),
       mTextPerf(aTextPerf),
       mPageLang(gfxPlatformFontList::GetFontPrefLangFor(aLanguage)),
-      mExplicitLanguage(aExplicitLanguage) {
-  switch (aVariantEmoji) {
-    case StyleFontVariantEmoji::Normal:
-    case StyleFontVariantEmoji::Unicode:
-      break;
-    case StyleFontVariantEmoji::Text:
-      mEmojiPresentation = FontPresentation::TextExplicit;
-      break;
-    case StyleFontVariantEmoji::Emoji:
-      mEmojiPresentation = FontPresentation::EmojiExplicit;
-      break;
-  }
+      mExplicitLanguage(aExplicitLanguage),
+      mFontVariantEmoji(aVariantEmoji) {
   
   
 }
@@ -3209,7 +3199,11 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   if (EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
       emojiPresentation != TextOnly) {
     
-    presentation = mEmojiPresentation;
+    if (mFontVariantEmoji == StyleFontVariantEmoji::Emoji) {
+      presentation = FontPresentation::EmojiExplicit;
+    } else if (mFontVariantEmoji == StyleFontVariantEmoji::Text) {
+      presentation = FontPresentation::TextExplicit;
+    }
     
     
     if (presentation == FontPresentation::Any) {
@@ -3225,8 +3219,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     
     
-    if (aNextCh == kVariationSelector16 ||
-        (aNextCh >= kEmojiSkinToneFirst && aNextCh <= kEmojiSkinToneLast) ||
+    if (aNextCh == kVariationSelector16 || IsEmojiSkinToneModifier(aNextCh) ||
         gfxFontUtils::IsEmojiFlagAndTag(aCh, aNextCh)) {
       
       
@@ -3306,7 +3299,13 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
     
-    if (presentation == FontPresentation::Any) {
+    
+    if (presentation == FontPresentation::Any ||
+        (!IsExplicitPresentation(presentation) &&
+         t.kind == FontMatchType::Kind::kFontGroup &&
+         t.generic == StyleGenericFontFamily::None &&
+         mFontVariantEmoji == StyleFontVariantEmoji::Normal &&
+         !gfxFontUtils::IsRegionalIndicator(aCh))) {
       *aMatchType = t;
       return true;
     }
@@ -3445,21 +3444,6 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
         }
       }
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  if (candidateFont &&
-      candidateMatchType.generic == StyleGenericFontFamily::None &&
-      presentation != FontPresentation::EmojiExplicit &&
-      presentation != FontPresentation::TextExplicit &&
-      !gfxFontUtils::IsRegionalIndicator(aCh)) {
-    *aMatchType = candidateMatchType;
-    return candidateFont.forget();
   }
 
   if (fontListLength == 0) {
@@ -3612,19 +3596,26 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
     
     
     if ((font = GetFontAt(0, ch)) != nullptr && font->HasCharacter(ch) &&
-        
-        
-        
-        ((sizeof(T) == sizeof(uint8_t) &&
-          (mEmojiPresentation != FontPresentation::EmojiExplicit ||
-           GetEmojiPresentation(ch) == TextOnly)) ||
-         
-         (sizeof(T) == sizeof(char16_t) &&
-          (!IsClusterExtender(ch) && ch != NARROW_NO_BREAK_SPACE &&
-           !gfxFontUtils::IsJoinControl(ch) &&
-           !gfxFontUtils::IsJoinCauser(prevCh) &&
-           !gfxFontUtils::IsVarSelector(ch) &&
-           GetEmojiPresentation(ch) == TextOnly)))) {
+        (
+            
+            
+            
+            
+            (sizeof(T) == sizeof(uint8_t) &&
+             (mFontVariantEmoji == StyleFontVariantEmoji::Normal ||
+              GetEmojiPresentation(ch) == TextOnly)) ||
+            
+            (sizeof(T) == sizeof(char16_t) &&
+             (!IsClusterExtender(ch) && ch != NARROW_NO_BREAK_SPACE &&
+              !gfxFontUtils::IsJoinControl(ch) &&
+              !gfxFontUtils::IsJoinCauser(prevCh) &&
+              !gfxFontUtils::IsVarSelector(ch) &&
+              (GetEmojiPresentation(ch) == TextOnly ||
+               (!(IsEmojiPresentationSelector(nextCh) ||
+                  IsEmojiSkinToneModifier(nextCh) ||
+                  gfxFontUtils::IsEmojiFlagAndTag(ch, nextCh)) &&
+                mFontVariantEmoji == StyleFontVariantEmoji::Normal &&
+                mFonts[0].Generic() == StyleGenericFontFamily::None)))))) {
       matchType = {FontMatchType::Kind::kFontGroup, mFonts[0].Generic()};
     } else {
       font =

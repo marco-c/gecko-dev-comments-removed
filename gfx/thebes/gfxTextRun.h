@@ -1399,7 +1399,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   bool mResolvedFonts = false;  
 
-  FontPresentation mEmojiPresentation = FontPresentation::Any;
+  StyleFontVariantEmoji mFontVariantEmoji = StyleFontVariantEmoji::Normal;
 
   
   mozilla::StyleGenericFontFamily mFallbackGeneric =

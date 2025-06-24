@@ -123,6 +123,11 @@ inline bool PrefersColor(FontPresentation aPresentation) {
   return aPresentation >= FontPresentation::EmojiDefault;
 }
 
+inline bool IsExplicitPresentation(FontPresentation aPresentation) {
+  return aPresentation == FontPresentation::TextExplicit ||
+         aPresentation == FontPresentation::EmojiExplicit;
+}
+
 
 const uint32_t kMaxLenPrefLangList = 32;
 
