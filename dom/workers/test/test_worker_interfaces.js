@@ -459,10 +459,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TransformStream", insecureContext: true },
   
-  {
-    name: "TransformStreamDefaultController",
-    insecureContext: true,
-  },
+  { name: "TransformStreamDefaultController", insecureContext: true },
   
   { name: "XMLHttpRequest", insecureContext: true },
   
