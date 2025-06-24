@@ -113,6 +113,8 @@ class GlobalDMABufFormats final {
 
   GlobalDMABufFormats();
 
+  bool SupportsHDRComposition() { return !!mFormatP010 && !!mFormatNV12; }
+
  private:
   void LoadFormatModifiers();
   void SetModifiersToGfxVars();
