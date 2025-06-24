@@ -5,6 +5,12 @@
 
 
 
+add_setup(function () {
+  return SpecialPowers.pushPrefEnv({
+    set: [["security.allow_eval_with_system_principal", true]],
+  });
+});
+
 add_task(async function test_deserializeSharedIdInvalidTypes() {
   await runTestInContent(() => {
     for (const invalidType of [false, 42, {}, []]) {
