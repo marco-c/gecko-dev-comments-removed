@@ -10,6 +10,10 @@
 
 
 add_task(async function runRTPTestAnimation() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.allow_eval_with_system_principal", true]],
+  });
+
   let runTests = async function (data) {
     function waitForCondition(aCond, aCallback, aErrorMsg) {
       var tries = 0;

@@ -58,6 +58,7 @@ add_setup(async function () {
       ["privacy.trackingprotection.annotate_channels", true],
       
       ["network.cookie.sameSite.laxByDefault", false],
+      ["security.allow_eval_with_system_principal", true],
     ],
   });
   registerCleanupFunction(cleanup);

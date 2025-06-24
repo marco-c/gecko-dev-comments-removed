@@ -1,11 +1,11 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
-
-
+/**
+ * Tests for the sub-dialog infrastructure, not for actual sub-dialog functionality.
+ */
 
 const gDialogURL = getRootDirectory(gTestPath) + "subdialog.xhtml";
 const gDialogURL2 = getRootDirectory(gTestPath) + "subdialog2.xhtml";
@@ -33,8 +33,8 @@ function open_subdialog_and_test_generic_start_state(
         win.addEventListener(
           "DOMFrameContentLoaded",
           function frameContentLoaded(ev) {
-            
-            
+            // We can get events for loads in other frames, so we have to filter
+            // those out.
             if (ev.target != subdialog._frame) {
               return;
             }
@@ -53,7 +53,7 @@ function open_subdialog_and_test_generic_start_state(
       });
       let result;
       if (args.domcontentloadedFnStr) {
-        
+        // eslint-disable-next-line no-eval
         result = eval(args.domcontentloadedFnStr);
       }
 
@@ -72,17 +72,17 @@ function open_subdialog_and_test_generic_start_state(
         0,
         "Should be at least one injected stylesheet."
       );
-      
-      
-      
+      // We can't test that the injected stylesheets come later if those are
+      // the only ones. If this test fails it indicates the test needs to be
+      // changed somehow.
       Assert.greater(
         foundStyleSheetURLs.length,
         expectedStyleSheetURLs.length,
         "Should see at least all one additional stylesheet from the document."
       );
 
-      
-      
+      // The expected stylesheets should be at the end of the list of loaded
+      // stylesheets.
       foundStyleSheetURLs = foundStyleSheetURLs.slice(
         foundStyleSheetURLs.length - expectedStyleSheetURLs.length
       );
@@ -215,11 +215,19 @@ async function close_subdialog_and_test_generic_end_state(
 
 let tab;
 
-add_task(async function test_initialize() {
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.allow_eval_with_system_principal", true]],
+  });
+
   tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:preferences"
   );
+
+  registerCleanupFunction(() => {
+    gBrowser.removeTab(tab);
+  });
 });
 
 add_task(
@@ -260,7 +268,7 @@ add_task(
       );
     });
 
-    
+    // Accept the dialog
     await close_subdialog_and_test_generic_end_state(
       tab.linkedBrowser,
       function () {
@@ -404,14 +412,14 @@ add_task(async function click_close_button_on_dialog() {
 add_task(async function background_click_should_close_dialog() {
   await open_subdialog_and_test_generic_start_state(tab.linkedBrowser);
 
-  
-  
+  // Clicking on an inactive part of dialog itself should not close the dialog.
+  // Click the dialog title bar here to make sure nothing happens.
   info("clicking the dialog title bar");
-  
-  
-  
-  
-  
+  // We intentionally turn off this a11y check, because the following click
+  // is purposefully targeting a non-interactive element to confirm the opened
+  // dialog won't be dismissed. It is not meant to be interactive and is not
+  // expected to be accessible, therefore this rule check shall be ignored by
+  // a11y_checks suite.
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   BrowserTestUtils.synthesizeMouseAtCenter(
     ".dialogTitle",
@@ -420,15 +428,15 @@ add_task(async function background_click_should_close_dialog() {
   );
   AccessibilityUtils.resetEnv();
 
-  
-  
-  
-  
+  // Close the dialog by clicking on the overlay background. Simulate a click
+  // at point (2,2) instead of (0,0) so we are sure we're clicking on the
+  // overlay background instead of some boundary condition that a real user
+  // would never click.
   info("clicking the overlay background");
-  
-  
-  
-  
+  // We intentionally turn off this a11y check, because the following click
+  // is purposefully targeting a non-interactive element to dismiss the opened
+  // dialog with a mouse which can be done by assistive technology and keyboard
+  // by pressing `Esc` key, this rule check shall be ignored by a11y_checks.
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   await close_subdialog_and_test_generic_end_state(
     tab.linkedBrowser,
@@ -666,7 +674,3 @@ add_task(
     );
   }
 );
-
-add_task(async function test_shutdown() {
-  gBrowser.removeTab(tab);
-});
