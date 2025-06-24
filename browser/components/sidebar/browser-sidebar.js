@@ -2080,11 +2080,14 @@ var SidebarController = {
       case "popuphidden":
         if (e.composedTarget.id !== "tab-preview-panel") {
           if (this._openPopupsCount < 2) {
+            let isHovered;
+            MousePosTracker._callListener({
+              onMouseEnter: () => (isHovered = true),
+              onMouseLeave: () => (isHovered = false),
+              getMouseTargetRect: () => this.getMouseTargetRect(),
+            });
             
-            if (
-              this._state.launcherExpanded &&
-              !this.sidebarContainer.matches(":hover")
-            ) {
+            if (this._state.launcherExpanded && !isHovered) {
               if (this._animationEnabled && !window.gReduceMotion) {
                 this._animateSidebarMain();
               }
