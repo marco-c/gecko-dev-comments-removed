@@ -1655,8 +1655,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
         
         
         
-        if (mDefaultAppearance == mozilla::StyleAppearance::Searchfield ||
-            mDefaultAppearance == mozilla::StyleAppearance::NumberInput ||
+        if (mDefaultAppearance == mozilla::StyleAppearance::NumberInput ||
             mDefaultAppearance == mozilla::StyleAppearance::PasswordInput) {
           return mAppearance;
         }
