@@ -20,8 +20,21 @@ pub enum Type<P: TyPosition = Everywhere> {
     Primitive(PrimitiveType),
     Opaque(OpaquePath<Optional, P::OpaqueOwnership>),
     Struct(P::StructPath),
+    ImplTrait(P::TraitPath),
     Enum(EnumPath),
     Slice(Slice),
+    Callback(P::CallbackInstantiation), 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DiplomatOption(Box<Type<P>>),
 }
 
 
@@ -76,7 +89,9 @@ pub struct Borrow {
     pub mutability: Mutability,
 }
 
-impl Type {
+
+
+impl<P: TyPosition<StructPath = StructPath>> Type<P> {
     
     
     
@@ -87,8 +102,9 @@ impl Type {
                 let inner = field.ty.field_leaf_lifetime_counts(tcx);
                 (acc.0 + inner.0, acc.1 + inner.1)
             }),
-            Type::Opaque(_) | Type::Slice(_) => (1, 1),
+            Type::Opaque(_) | Type::Slice(_) | Type::Callback(_) | Type::ImplTrait(_) => (1, 1),
             Type::Primitive(_) | Type::Enum(_) => (0, 0),
+            Type::DiplomatOption(ty) => ty.field_leaf_lifetime_counts(tcx),
         }
     }
 }
@@ -112,6 +128,8 @@ impl<P: TyPosition> Type<P> {
                     .map(|lt| std::slice::from_ref(lt).iter().copied())
                     .unwrap_or([].iter().copied()),
             ),
+            Type::DiplomatOption(ty) => ty.lifetimes(),
+            
             _ => Either::Left([].iter().copied()),
         }
     }
@@ -125,6 +143,23 @@ impl<P: TyPosition> Type<P> {
             _ => return None,
         })
     }
+
+    
+    pub fn unwrap_option(&self) -> &Type<P> {
+        match self {
+            Self::DiplomatOption(ref o) => o,
+            _ => self,
+        }
+    }
+
+    
+    pub fn is_option(&self) -> bool {
+        match self {
+            Self::DiplomatOption(..) => true,
+            Self::Opaque(ref o) if o.is_optional() => true,
+            _ => false,
+        }
+    }
 }
 
 impl SelfType {
@@ -132,10 +167,13 @@ impl SelfType {
     
     
     pub fn is_immutably_borrowed(&self) -> bool {
-        match self {
-            SelfType::Opaque(opaque_path) => opaque_path.owner.mutability == Mutability::Immutable,
-            _ => false,
-        }
+        matches!(self, SelfType::Opaque(opaque_path) if opaque_path.owner.mutability == Mutability::Immutable)
+    }
+    
+    
+    
+    pub fn is_consuming(&self) -> bool {
+        matches!(self, SelfType::Enum(_) | SelfType::Struct(_))
     }
 }
 

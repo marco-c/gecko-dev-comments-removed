@@ -2,24 +2,27 @@
 
 
 
+use crate::Writeable;
 use core::cmp::Ordering;
 use core::fmt;
 
-pub(crate) struct WriteComparator<'a> {
-    string: &'a [u8],
+struct WriteComparator<'a> {
+    code_units: &'a [u8],
     result: Ordering,
 }
 
 
-impl<'a> fmt::Write for WriteComparator<'a> {
+impl fmt::Write for WriteComparator<'_> {
     #[inline]
     fn write_str(&mut self, other: &str) -> fmt::Result {
         if self.result != Ordering::Equal {
             return Ok(());
         }
-        let cmp_len = core::cmp::min(other.len(), self.string.len());
-        let (this, remainder) = self.string.split_at(cmp_len);
-        self.string = remainder;
+        let (this, remainder) = self
+            .code_units
+            .split_at_checked(other.len())
+            .unwrap_or((self.code_units, &[]));
+        self.code_units = remainder;
         self.result = this.cmp(other.as_bytes());
         Ok(())
     }
@@ -27,22 +30,76 @@ impl<'a> fmt::Write for WriteComparator<'a> {
 
 impl<'a> WriteComparator<'a> {
     #[inline]
-    pub fn new(string: &'a (impl AsRef<[u8]> + ?Sized)) -> Self {
+    fn new(code_units: &'a [u8]) -> Self {
         Self {
-            string: string.as_ref(),
+            code_units,
             result: Ordering::Equal,
         }
     }
 
     #[inline]
-    pub fn finish(self) -> Ordering {
-        if matches!(self.result, Ordering::Equal) && !self.string.is_empty() {
+    fn finish(self) -> Ordering {
+        if matches!(self.result, Ordering::Equal) && !self.code_units.is_empty() {
             
             Ordering::Greater
         } else {
             self.result
         }
     }
+}
+
+
+
+
+pub fn cmp_utf8(writeable: &impl Writeable, other: &[u8]) -> Ordering {
+    let mut wc = WriteComparator::new(other);
+    let _ = writeable.write_to(&mut wc);
+    wc.finish().reverse()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn cmp_str(writeable: &impl Writeable, other: &str) -> Ordering {
+    cmp_utf8(writeable, other.as_bytes())
 }
 
 #[cfg(test)]
@@ -58,7 +115,7 @@ mod tests {
     fn test_write_char() {
         for a in data::KEBAB_CASE_STRINGS {
             for b in data::KEBAB_CASE_STRINGS {
-                let mut wc = WriteComparator::new(a);
+                let mut wc = WriteComparator::new(a.as_bytes());
                 for ch in b.chars() {
                     wc.write_char(ch).unwrap();
                 }
@@ -71,7 +128,7 @@ mod tests {
     fn test_write_str() {
         for a in data::KEBAB_CASE_STRINGS {
             for b in data::KEBAB_CASE_STRINGS {
-                let mut wc = WriteComparator::new(a);
+                let mut wc = WriteComparator::new(a.as_bytes());
                 wc.write_str(b).unwrap();
                 assert_eq!(a.cmp(b), wc.finish(), "{a} <=> {b}");
             }
@@ -82,7 +139,7 @@ mod tests {
     fn test_mixed() {
         for a in data::KEBAB_CASE_STRINGS {
             for b in data::KEBAB_CASE_STRINGS {
-                let mut wc = WriteComparator::new(a);
+                let mut wc = WriteComparator::new(a.as_bytes());
                 let mut first = true;
                 for substr in b.split('-') {
                     if first {

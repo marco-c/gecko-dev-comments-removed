@@ -100,7 +100,11 @@
 
 
 
-#![cfg_attr(not(any(test, feature = "std")), no_std)]
+
+
+
+
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -110,6 +114,7 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
@@ -118,53 +123,60 @@
 extern crate alloc;
 
 mod complex;
-mod error;
 mod indices;
 mod iterator_helpers;
 mod rule_segmenter;
 
+
 mod grapheme;
+
 mod line;
+
 mod sentence;
+
 mod word;
 
 pub mod provider;
 
 
-pub use crate::grapheme::GraphemeClusterBreakIterator;
 pub use crate::grapheme::GraphemeClusterSegmenter;
-pub use crate::line::LineBreakIterator;
+pub use crate::grapheme::GraphemeClusterSegmenterBorrowed;
 pub use crate::line::LineSegmenter;
-pub use crate::sentence::SentenceBreakIterator;
+pub use crate::line::LineSegmenterBorrowed;
 pub use crate::sentence::SentenceSegmenter;
-pub use crate::word::WordBreakIterator;
+pub use crate::sentence::SentenceSegmenterBorrowed;
 pub use crate::word::WordSegmenter;
+pub use crate::word::WordSegmenterBorrowed;
 
 
-pub use crate::line::LineBreakOptions;
-pub use crate::line::LineBreakStrictness;
-pub use crate::line::LineBreakWordOption;
-pub use crate::word::WordType;
+pub mod options {
+    pub use crate::line::LineBreakOptions;
+    pub use crate::line::LineBreakStrictness;
+    pub use crate::line::LineBreakWordOption;
+    pub use crate::sentence::SentenceBreakInvariantOptions;
+    pub use crate::sentence::SentenceBreakOptions;
+    pub use crate::word::WordBreakInvariantOptions;
+    pub use crate::word::WordBreakOptions;
+    pub use crate::word::WordType;
+}
 
 
-pub use crate::grapheme::GraphemeClusterBreakIteratorLatin1;
-pub use crate::grapheme::GraphemeClusterBreakIteratorPotentiallyIllFormedUtf8;
-pub use crate::grapheme::GraphemeClusterBreakIteratorUtf16;
-pub use crate::grapheme::GraphemeClusterBreakIteratorUtf8;
-pub use crate::line::LineBreakIteratorLatin1;
-pub use crate::line::LineBreakIteratorPotentiallyIllFormedUtf8;
-pub use crate::line::LineBreakIteratorUtf16;
-pub use crate::line::LineBreakIteratorUtf8;
-pub use crate::sentence::SentenceBreakIteratorLatin1;
-pub use crate::sentence::SentenceBreakIteratorPotentiallyIllFormedUtf8;
-pub use crate::sentence::SentenceBreakIteratorUtf16;
-pub use crate::sentence::SentenceBreakIteratorUtf8;
-pub use crate::word::WordBreakIteratorLatin1;
-pub use crate::word::WordBreakIteratorPotentiallyIllFormedUtf8;
-pub use crate::word::WordBreakIteratorUtf16;
-pub use crate::word::WordBreakIteratorUtf8;
+pub mod scaffold {
+    pub use crate::line::LineBreakType;
+    pub use crate::rule_segmenter::{Latin1, PotentiallyIllFormedUtf8, RuleBreakType, Utf16, Utf8};
+    pub use crate::word::WordBreakType;
+}
 
-pub use error::SegmenterError;
 
-#[doc(no_inline)]
-pub use SegmenterError as Error;
+pub mod iterators {
+    pub use crate::grapheme::GraphemeClusterBreakIterator;
+    pub use crate::line::LineBreakIterator;
+    pub use crate::sentence::SentenceBreakIterator;
+    pub use crate::word::{WordBreakIterator, WordBreakIteratorWithWordType};
+}
+
+pub(crate) mod private {
+    
+    
+    pub trait Sealed {}
+}

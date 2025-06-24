@@ -3,9 +3,10 @@
 
 
 use super::*;
-use alloc::boxed::Box;
 use core::cmp::Ordering;
 use core::ops::Range;
+
+
 
 
 
@@ -54,8 +55,8 @@ where
 
     
     
-    pub fn parse_byte_slice(bytes: &[u8]) -> Result<&Self, ZeroVecError> {
-        T::ULE::parse_byte_slice(bytes).map(Self::from_ule_slice)
+    pub fn parse_bytes(bytes: &[u8]) -> Result<&Self, UleError> {
+        T::ULE::parse_bytes_to_slice(bytes).map(Self::from_ule_slice)
     }
 
     
@@ -86,10 +87,11 @@ where
 
     
     #[inline]
-    pub fn from_boxed_slice(slice: Box<[T::ULE]>) -> Box<Self> {
+    #[cfg(feature = "alloc")]
+    pub fn from_boxed_slice(slice: alloc::boxed::Box<[T::ULE]>) -> alloc::boxed::Box<Self> {
         
         
-        unsafe { Box::from_raw(Box::into_raw(slice) as *mut Self) }
+        unsafe { alloc::boxed::Box::from_raw(alloc::boxed::Box::into_raw(slice) as *mut Self) }
     }
 
     
@@ -111,7 +113,7 @@ where
     
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        T::ULE::as_byte_slice(self.as_ule_slice())
+        T::ULE::slice_as_bytes(self.as_ule_slice())
     }
 
     
@@ -143,7 +145,6 @@ where
         self.as_ule_slice().len()
     }
 
-    
     
     
     
@@ -302,8 +303,8 @@ where
     
     
     #[inline]
-    pub fn try_as_converted<P: AsULE>(&self) -> Result<&ZeroSlice<P>, ZeroVecError> {
-        let new_slice = P::ULE::parse_byte_slice(self.as_bytes())?;
+    pub fn try_as_converted<P: AsULE>(&self) -> Result<&ZeroSlice<P>, UleError> {
+        let new_slice = P::ULE::parse_bytes_to_slice(self.as_bytes())?;
         Ok(ZeroSlice::from_ule_slice(new_slice))
     }
 
@@ -362,8 +363,8 @@ where
     
     
     #[inline]
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = T> + ExactSizeIterator<Item = T> + '_ {
-        self.as_ule_slice().iter().copied().map(T::from_unaligned)
+    pub fn iter<'a>(&'a self) -> ZeroSliceIter<'a, T> {
+        ZeroSliceIter(self.as_ule_slice().iter())
     }
 
     
@@ -397,6 +398,29 @@ where
             ));
         }
         None
+    }
+}
+
+
+#[derive(Debug)]
+pub struct ZeroSliceIter<'a, T: AsULE>(core::slice::Iter<'a, T::ULE>);
+
+impl<'a, T: AsULE> Iterator for ZeroSliceIter<'a, T> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        self.0.next().copied().map(T::from_unaligned)
+    }
+}
+
+impl<'a, T: AsULE> ExactSizeIterator for ZeroSliceIter<'a, T> {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl<'a, T: AsULE> DoubleEndedIterator for ZeroSliceIter<'a, T> {
+    fn next_back(&mut self) -> Option<T> {
+        self.0.next_back().copied().map(T::from_unaligned)
     }
 }
 
@@ -470,13 +494,13 @@ where
 
 unsafe impl<T: AsULE + 'static> VarULE for ZeroSlice<T> {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
-        T::ULE::validate_byte_slice(bytes)
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
+        T::ULE::validate_bytes(bytes)
     }
 
     #[inline]
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self {
-        Self::from_ule_slice(T::ULE::from_byte_slice_unchecked(bytes))
+    unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
+        Self::from_ule_slice(T::ULE::slice_from_bytes_unchecked(bytes))
     }
 }
 
@@ -543,7 +567,8 @@ impl<T: AsULE + Ord> Ord for ZeroSlice<T> {
     }
 }
 
-impl<T: AsULE> AsRef<ZeroSlice<T>> for Vec<T::ULE> {
+#[cfg(feature = "alloc")]
+impl<T: AsULE> AsRef<ZeroSlice<T>> for alloc::vec::Vec<T::ULE> {
     fn as_ref(&self) -> &ZeroSlice<T> {
         ZeroSlice::<T>::from_ule_slice(self)
     }

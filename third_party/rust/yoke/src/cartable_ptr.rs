@@ -30,9 +30,17 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 use stable_deref_trait::StableDeref;
 
+
+
+
+
+
+
 #[inline]
 fn sentinel_for<T>() -> NonNull<T> {
     static SENTINEL: &u8 = &0x1a; 
+
+    
     unsafe { NonNull::new_unchecked(SENTINEL as *const u8 as *mut T) }
 }
 
@@ -46,6 +54,8 @@ mod private {
 }
 
 use private::Sealed;
+
+
 
 
 
@@ -109,7 +119,6 @@ impl<'a, T> Sealed for &'a T {}
 
 
 
-
 unsafe impl<'a, T> CartablePointerLike for &'a T {
     type Raw = T;
 
@@ -136,13 +145,12 @@ unsafe impl<'a, T> CloneableCartablePointerLike for &'a T {
 #[cfg(feature = "alloc")]
 impl<T> Sealed for Box<T> {}
 
-
-
-
-
-
-
 #[cfg(feature = "alloc")]
+
+
+
+
+
 unsafe impl<T> CartablePointerLike for Box<T> {
     type Raw = T;
 
@@ -153,7 +161,10 @@ unsafe impl<T> CartablePointerLike for Box<T> {
     }
     #[inline]
     unsafe fn drop_raw(pointer: NonNull<T>) {
-        let _box = Box::from_raw(pointer.as_ptr());
+        
+        
+        
+        let _box = unsafe { Box::from_raw(pointer.as_ptr()) };
 
         
         #[cfg(test)]
@@ -164,12 +175,11 @@ unsafe impl<T> CartablePointerLike for Box<T> {
 #[cfg(feature = "alloc")]
 impl<T> Sealed for Rc<T> {}
 
-
-
-
-
-
 #[cfg(feature = "alloc")]
+
+
+
+
 unsafe impl<T> CartablePointerLike for Rc<T> {
     type Raw = T;
 
@@ -178,9 +188,13 @@ unsafe impl<T> CartablePointerLike for Rc<T> {
         
         unsafe { NonNull::new_unchecked(Rc::into_raw(self) as *mut T) }
     }
+
     #[inline]
     unsafe fn drop_raw(pointer: NonNull<T>) {
-        let _rc = Rc::from_raw(pointer.as_ptr());
+        
+        
+        
+        let _rc = unsafe { Rc::from_raw(pointer.as_ptr()) };
 
         
         #[cfg(test)]
@@ -190,10 +204,10 @@ unsafe impl<T> CartablePointerLike for Rc<T> {
     }
 }
 
-
-
-
 #[cfg(feature = "alloc")]
+
+
+
 unsafe impl<T> CloneableCartablePointerLike for Rc<T> {
     #[inline]
     unsafe fn addref_raw(pointer: NonNull<T>) {
@@ -201,19 +215,20 @@ unsafe impl<T> CloneableCartablePointerLike for Rc<T> {
         
         
         
-        Rc::increment_strong_count(pointer.as_ptr());
+        unsafe {
+            Rc::increment_strong_count(pointer.as_ptr());
+        }
     }
 }
 
 #[cfg(feature = "alloc")]
 impl<T> Sealed for Arc<T> {}
 
-
-
-
-
-
 #[cfg(feature = "alloc")]
+
+
+
+
 unsafe impl<T> CartablePointerLike for Arc<T> {
     type Raw = T;
 
@@ -224,7 +239,10 @@ unsafe impl<T> CartablePointerLike for Arc<T> {
     }
     #[inline]
     unsafe fn drop_raw(pointer: NonNull<T>) {
-        let _arc = Arc::from_raw(pointer.as_ptr());
+        
+        
+        
+        let _arc = unsafe { Arc::from_raw(pointer.as_ptr()) };
 
         
         #[cfg(test)]
@@ -234,10 +252,10 @@ unsafe impl<T> CartablePointerLike for Arc<T> {
     }
 }
 
-
-
-
 #[cfg(feature = "alloc")]
+
+
+
 unsafe impl<T> CloneableCartablePointerLike for Arc<T> {
     #[inline]
     unsafe fn addref_raw(pointer: NonNull<T>) {
@@ -245,7 +263,9 @@ unsafe impl<T> CloneableCartablePointerLike for Arc<T> {
         
         
         
-        Arc::increment_strong_count(pointer.as_ptr());
+        unsafe {
+            Arc::increment_strong_count(pointer.as_ptr());
+        }
     }
 }
 
@@ -286,8 +306,10 @@ where
     
     #[inline]
     pub(crate) fn from_cartable(cartable: C) -> Self {
+        let inner = cartable.into_raw();
+        debug_assert_ne!(inner, sentinel_for::<C::Raw>());
         Self {
-            inner: cartable.into_raw(),
+            inner,
             _cartable: PhantomData,
         }
     }

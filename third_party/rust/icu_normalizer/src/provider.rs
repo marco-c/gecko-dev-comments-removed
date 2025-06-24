@@ -32,31 +32,83 @@ use zerovec::ZeroVec;
 pub struct Baked;
 
 #[cfg(feature = "compiled_data")]
+#[allow(unused_imports)]
 const _: () = {
+    use icu_normalizer_data::*;
     pub mod icu {
         pub use crate as normalizer;
         pub use icu_collections as collections;
     }
-    icu_normalizer_data::make_provider!(Baked);
-    icu_normalizer_data::impl_normalizer_comp_v1!(Baked);
-    icu_normalizer_data::impl_normalizer_decomp_v1!(Baked);
-    icu_normalizer_data::impl_normalizer_nfd_v1!(Baked);
-    icu_normalizer_data::impl_normalizer_nfdex_v1!(Baked);
-    icu_normalizer_data::impl_normalizer_nfkd_v1!(Baked);
-    icu_normalizer_data::impl_normalizer_nfkdex_v1!(Baked);
-    icu_normalizer_data::impl_normalizer_uts46d_v1!(Baked);
+    make_provider!(Baked);
+    impl_normalizer_nfc_v1!(Baked);
+    impl_normalizer_nfd_data_v1!(Baked);
+    impl_normalizer_nfd_supplement_v1!(Baked);
+    impl_normalizer_nfd_tables_v1!(Baked);
+    impl_normalizer_nfkd_data_v1!(Baked);
+    impl_normalizer_nfkd_tables_v1!(Baked);
+    impl_normalizer_uts46_data_v1!(Baked);
 };
+
+icu_provider::data_marker!(
+    /// Marker for data for canonical decomposition.
+    NormalizerNfdDataV1,
+    "normalizer/nfd/data/v1",
+    DecompositionData<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
+    /// Marker for additional data for canonical decomposition.
+    NormalizerNfdTablesV1,
+    "normalizer/nfd/tables/v1",
+    DecompositionTables<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
+    /// Marker for data for compatibility decomposition.
+    NormalizerNfkdDataV1,
+    "normalizer/nfkd/data/v1",
+    DecompositionData<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
+    /// Marker for additional data for compatibility decomposition.
+    NormalizerNfkdTablesV1,
+    "normalizer/nfkd/tables/v1",
+    DecompositionTables<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
+    /// Marker for data for UTS-46 decomposition.
+    NormalizerUts46DataV1,
+    "normalizer/uts46/data/v1",
+    DecompositionData<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
+    /// Marker for data for composition.
+    NormalizerNfcV1,
+    "normalizer/nfc/v1",
+    CanonicalCompositions<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
+    /// Marker for additional data for non-recusrsive composition.
+    NormalizerNfdSupplementV1,
+    "normalizer/nfd/supplement/v1",
+    NonRecursiveDecompositionSupplement<'static>,
+    is_singleton = true
+);
 
 #[cfg(feature = "datagen")]
 
-pub const KEYS: &[DataKey] = &[
-    CanonicalCompositionsV1Marker::KEY,
-    CanonicalDecompositionDataV1Marker::KEY,
-    CanonicalDecompositionTablesV1Marker::KEY,
-    CompatibilityDecompositionSupplementV1Marker::KEY,
-    CompatibilityDecompositionTablesV1Marker::KEY,
-    NonRecursiveDecompositionSupplementV1Marker::KEY,
-    Uts46DecompositionSupplementV1Marker::KEY,
+pub const MARKERS: &[DataMarkerInfo] = &[
+    NormalizerNfcV1::INFO,
+    NormalizerNfdDataV1::INFO,
+    NormalizerNfdTablesV1::INFO,
+    NormalizerNfkdDataV1::INFO,
+    NormalizerNfkdTablesV1::INFO,
+    NormalizerNfdSupplementV1::INFO,
+    NormalizerUts46DataV1::INFO,
 ];
 
 
@@ -66,72 +118,24 @@ pub const KEYS: &[DataKey] = &[
 
 
 
-#[icu_provider::data_struct(marker(
-    CanonicalDecompositionDataV1Marker,
-    "normalizer/nfd@1",
-    singleton
-))]
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake), databake(path = icu_normalizer::provider))]
+#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_normalizer::provider))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct DecompositionDataV1<'data> {
+pub struct DecompositionData<'data> {
     
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub trie: CodePointTrie<'data, u32>,
-}
-
-
-
-
-
-
-
-
-
-#[icu_provider::data_struct(
-    marker(
-        CompatibilityDecompositionSupplementV1Marker,
-        "normalizer/nfkd@1",
-        singleton
-    ),
-    marker(Uts46DecompositionSupplementV1Marker, "normalizer/uts46d@1", singleton)
-)]
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake), databake(path = icu_normalizer::provider))]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct DecompositionSupplementV1<'data> {
-    
-    
-    
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    pub trie: CodePointTrie<'data, u32>,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub flags: u8,
     
     
     
     pub passthrough_cap: u16,
 }
 
-impl DecompositionSupplementV1<'_> {
-    const HALF_WIDTH_VOICING_MARK_MASK: u8 = 1;
-
-    
-    
-    pub fn half_width_voicing_marks_become_non_starters(&self) -> bool {
-        (self.flags & DecompositionSupplementV1::HALF_WIDTH_VOICING_MARK_MASK) != 0
-    }
-}
+icu_provider::data_struct!(
+    DecompositionData<'_>,
+    #[cfg(feature = "datagen")]
+);
 
 
 
@@ -141,18 +145,11 @@ impl DecompositionSupplementV1<'_> {
 
 
 
-#[icu_provider::data_struct(
-    marker(CanonicalDecompositionTablesV1Marker, "normalizer/nfdex@1", singleton),
-    marker(
-        CompatibilityDecompositionTablesV1Marker,
-        "normalizer/nfkdex@1",
-        singleton
-    )
-)]
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake), databake(path = icu_normalizer::provider))]
+#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_normalizer::provider))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct DecompositionTablesV1<'data> {
+pub struct DecompositionTables<'data> {
     
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub scalars16: ZeroVec<'data, u16>,
@@ -162,6 +159,10 @@ pub struct DecompositionTablesV1<'data> {
     pub scalars24: ZeroVec<'data, char>,
 }
 
+icu_provider::data_struct!(
+    DecompositionTables<'_>,
+    #[cfg(feature = "datagen")]
+);
 
 
 
@@ -169,11 +170,12 @@ pub struct DecompositionTablesV1<'data> {
 
 
 
-#[icu_provider::data_struct(marker(CanonicalCompositionsV1Marker, "normalizer/comp@1", singleton))]
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake), databake(path = icu_normalizer::provider))]
+
+#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_normalizer::provider))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct CanonicalCompositionsV1<'data> {
+pub struct CanonicalCompositions<'data> {
     
     
     
@@ -181,6 +183,10 @@ pub struct CanonicalCompositionsV1<'data> {
     pub canonical_compositions: Char16Trie<'data>,
 }
 
+icu_provider::data_struct!(
+    CanonicalCompositions<'_>,
+    #[cfg(feature = "datagen")]
+);
 
 
 
@@ -189,15 +195,12 @@ pub struct CanonicalCompositionsV1<'data> {
 
 
 
-#[icu_provider::data_struct(marker(
-    NonRecursiveDecompositionSupplementV1Marker,
-    "normalizer/decomp@1",
-    singleton
-))]
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake), databake(path = icu_normalizer::provider))]
+
+#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_normalizer::provider))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct NonRecursiveDecompositionSupplementV1<'data> {
+pub struct NonRecursiveDecompositionSupplement<'data> {
     
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub trie: CodePointTrie<'data, u32>,
@@ -206,3 +209,8 @@ pub struct NonRecursiveDecompositionSupplementV1<'data> {
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub scalars24: ZeroVec<'data, char>,
 }
+
+icu_provider::data_struct!(
+    NonRecursiveDecompositionSupplement<'_>,
+    #[cfg(feature = "datagen")]
+);

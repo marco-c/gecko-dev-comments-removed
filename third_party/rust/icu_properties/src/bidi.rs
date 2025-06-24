@@ -2,138 +2,152 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use crate::maps::CodePointMapDataBorrowed;
-use crate::props::BidiClass;
-use unicode_bidi::data_source::BidiDataSource;
-use unicode_bidi::BidiClass as DataSourceBidiClass;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Debug)]
-pub struct BidiClassAdapter<'a> {
-    data: CodePointMapDataBorrowed<'a, BidiClass>,
+use crate::{props::EnumeratedProperty, provider::PropertyEnumBidiMirroringGlyphV1};
+use icu_collections::codepointtrie::TrieValue;
+use zerovec::ule::{AsULE, RawBytesULE};
+
+
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Default)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_properties::props))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[allow(clippy::exhaustive_structs)] 
+pub struct BidiMirroringGlyph {
+    
+    pub mirroring_glyph: Option<char>,
+    
+    pub mirrored: bool,
+    
+    pub paired_bracket_type: BidiPairedBracketType,
 }
 
-impl<'a> BidiClassAdapter<'a> {
-    
-    pub const fn new(data: CodePointMapDataBorrowed<'a, BidiClass>) -> BidiClassAdapter<'a> {
-        BidiClassAdapter { data }
+impl EnumeratedProperty for BidiMirroringGlyph {
+    type DataMarker = PropertyEnumBidiMirroringGlyphV1;
+    #[cfg(feature = "compiled_data")]
+    const SINGLETON: &'static crate::provider::PropertyCodePointMap<'static, Self> =
+        crate::provider::Baked::SINGLETON_PROPERTY_ENUM_BIDI_MIRRORING_GLYPH_V1;
+    const NAME: &'static [u8] = b"Bidi_Mirroring_Glyph";
+    const SHORT_NAME: &'static [u8] = b"Bidi_Mirroring_Glyph";
+}
+
+impl crate::private::Sealed for BidiMirroringGlyph {}
+
+impl AsULE for BidiMirroringGlyph {
+    type ULE = zerovec::ule::RawBytesULE<3>;
+
+    fn to_unaligned(self) -> Self::ULE {
+        let [a, b, c, _] = TrieValue::to_u32(self).to_le_bytes();
+        RawBytesULE([a, b, c])
+    }
+    fn from_unaligned(unaligned: Self::ULE) -> Self {
+        let [a, b, c] = unaligned.0;
+        TrieValue::try_from_u32(u32::from_le_bytes([a, b, c, 0])).unwrap_or_default()
     }
 }
 
-impl<'a> BidiDataSource for BidiClassAdapter<'a> {
+
+
+
+
+
+
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_properties::props))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[non_exhaustive]
+pub enum BidiPairedBracketType {
     
+    Open,
     
+    Close,
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn bidi_class(&self, c: char) -> DataSourceBidiClass {
-        let bidi_class = self.data.get(c);
-        match bidi_class {
-            BidiClass::LeftToRight => DataSourceBidiClass::L,
-            BidiClass::RightToLeft => DataSourceBidiClass::R,
-            BidiClass::EuropeanNumber => DataSourceBidiClass::EN,
-            BidiClass::EuropeanSeparator => DataSourceBidiClass::ES,
-            BidiClass::EuropeanTerminator => DataSourceBidiClass::ET,
-            BidiClass::ArabicNumber => DataSourceBidiClass::AN,
-            BidiClass::CommonSeparator => DataSourceBidiClass::CS,
-            BidiClass::ParagraphSeparator => DataSourceBidiClass::B,
-            BidiClass::SegmentSeparator => DataSourceBidiClass::S,
-            BidiClass::WhiteSpace => DataSourceBidiClass::WS,
-            BidiClass::OtherNeutral => DataSourceBidiClass::ON,
-            BidiClass::LeftToRightEmbedding => DataSourceBidiClass::LRE,
-            BidiClass::LeftToRightOverride => DataSourceBidiClass::LRO,
-            BidiClass::ArabicLetter => DataSourceBidiClass::AL,
-            BidiClass::RightToLeftEmbedding => DataSourceBidiClass::RLE,
-            BidiClass::RightToLeftOverride => DataSourceBidiClass::RLO,
-            BidiClass::PopDirectionalFormat => DataSourceBidiClass::PDF,
-            BidiClass::NonspacingMark => DataSourceBidiClass::NSM,
-            BidiClass::BoundaryNeutral => DataSourceBidiClass::BN,
-            BidiClass::FirstStrongIsolate => DataSourceBidiClass::FSI,
-            BidiClass::LeftToRightIsolate => DataSourceBidiClass::LRI,
-            BidiClass::RightToLeftIsolate => DataSourceBidiClass::RLI,
-            BidiClass::PopDirectionalIsolate => DataSourceBidiClass::PDI,
-            _ =>
+    #[default]
+    None,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "unicode_bidi")]
+impl unicode_bidi::data_source::BidiDataSource
+    for crate::CodePointMapDataBorrowed<'_, crate::props::BidiClass>
+{
+    fn bidi_class(&self, c: char) -> unicode_bidi::BidiClass {
+        use crate::props::BidiClass;
+        match self.get(c) {
+            BidiClass::LeftToRight => unicode_bidi::BidiClass::L,
+            BidiClass::RightToLeft => unicode_bidi::BidiClass::R,
+            BidiClass::EuropeanNumber => unicode_bidi::BidiClass::EN,
+            BidiClass::EuropeanSeparator => unicode_bidi::BidiClass::ES,
+            BidiClass::EuropeanTerminator => unicode_bidi::BidiClass::ET,
+            BidiClass::ArabicNumber => unicode_bidi::BidiClass::AN,
+            BidiClass::CommonSeparator => unicode_bidi::BidiClass::CS,
+            BidiClass::ParagraphSeparator => unicode_bidi::BidiClass::B,
+            BidiClass::SegmentSeparator => unicode_bidi::BidiClass::S,
+            BidiClass::WhiteSpace => unicode_bidi::BidiClass::WS,
+            BidiClass::OtherNeutral => unicode_bidi::BidiClass::ON,
+            BidiClass::LeftToRightEmbedding => unicode_bidi::BidiClass::LRE,
+            BidiClass::LeftToRightOverride => unicode_bidi::BidiClass::LRO,
+            BidiClass::ArabicLetter => unicode_bidi::BidiClass::AL,
+            BidiClass::RightToLeftEmbedding => unicode_bidi::BidiClass::RLE,
+            BidiClass::RightToLeftOverride => unicode_bidi::BidiClass::RLO,
+            BidiClass::PopDirectionalFormat => unicode_bidi::BidiClass::PDF,
+            BidiClass::NonspacingMark => unicode_bidi::BidiClass::NSM,
+            BidiClass::BoundaryNeutral => unicode_bidi::BidiClass::BN,
+            BidiClass::FirstStrongIsolate => unicode_bidi::BidiClass::FSI,
+            BidiClass::LeftToRightIsolate => unicode_bidi::BidiClass::LRI,
+            BidiClass::RightToLeftIsolate => unicode_bidi::BidiClass::RLI,
+            BidiClass::PopDirectionalIsolate => unicode_bidi::BidiClass::PDI,
             
-            {
-                DataSourceBidiClass::ON
-            }
+            _ => unicode_bidi::BidiClass::ON,
         }
     }
 }

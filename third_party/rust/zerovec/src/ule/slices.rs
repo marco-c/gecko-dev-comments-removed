@@ -3,7 +3,6 @@
 
 
 use crate::ule::*;
-use core::str;
 
 
 
@@ -14,9 +13,9 @@ use core::str;
 
 unsafe impl<T: ULE, const N: usize> ULE for [T; N] {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         
-        T::validate_byte_slice(bytes)
+        T::validate_bytes(bytes)
     }
 }
 
@@ -44,20 +43,20 @@ unsafe impl<T: EqULE, const N: usize> EqULE for [T; N] {}
 
 unsafe impl VarULE for str {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
-        str::from_utf8(bytes).map_err(|_| ZeroVecError::parse::<Self>())?;
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
+        core::str::from_utf8(bytes).map_err(|_| UleError::parse::<Self>())?;
         Ok(())
     }
 
     #[inline]
-    fn parse_byte_slice(bytes: &[u8]) -> Result<&Self, ZeroVecError> {
-        str::from_utf8(bytes).map_err(|_| ZeroVecError::parse::<Self>())
+    fn parse_bytes(bytes: &[u8]) -> Result<&Self, UleError> {
+        core::str::from_utf8(bytes).map_err(|_| UleError::parse::<Self>())
     }
     
     
     #[inline]
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self {
-        str::from_utf8_unchecked(bytes)
+    unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
+        core::str::from_utf8_unchecked(bytes)
     }
 }
 
@@ -92,12 +91,12 @@ where
     T: ULE,
 {
     #[inline]
-    fn validate_byte_slice(slice: &[u8]) -> Result<(), ZeroVecError> {
-        T::validate_byte_slice(slice)
+    fn validate_bytes(slice: &[u8]) -> Result<(), UleError> {
+        T::validate_bytes(slice)
     }
 
     #[inline]
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self {
-        T::from_byte_slice_unchecked(bytes)
+    unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
+        T::slice_from_bytes_unchecked(bytes)
     }
 }

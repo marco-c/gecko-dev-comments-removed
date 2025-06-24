@@ -2,11 +2,10 @@
 
 
 
-use super::components::VarZeroVecComponents;
+use super::components::{VarZeroSliceIter, VarZeroVecComponents};
+use super::vec::VarZeroVecInner;
 use super::*;
 use crate::ule::*;
-use alloc::boxed::Box;
-use alloc::vec::Vec;
 use core::cmp::{Ord, Ordering, PartialOrd};
 use core::fmt;
 use core::marker::PhantomData;
@@ -142,14 +141,10 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     
-    
-    
     pub fn len(&self) -> usize {
         self.as_components().len()
     }
 
-    
-    
     
     
     
@@ -182,14 +177,10 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     
-    
-    
-    pub fn iter<'b>(&'b self) -> impl Iterator<Item = &'b T> {
+    pub fn iter<'b>(&'b self) -> VarZeroSliceIter<'b, T, F> {
         self.as_components().iter()
     }
 
-    
-    
     
     
     
@@ -233,20 +224,16 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     
-    
-    
     pub unsafe fn get_unchecked(&self, idx: usize) -> &T {
         self.as_components().get_unchecked(idx)
     }
 
     
-    pub fn to_vec(&self) -> Vec<Box<T>> {
+    #[cfg(feature = "alloc")]
+    pub fn to_vec(&self) -> alloc::vec::Vec<alloc::boxed::Box<T>> {
         self.as_components().to_vec()
     }
 
-    
-    
-    
     
     
     
@@ -273,29 +260,14 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     pub const fn as_varzerovec<'a>(&'a self) -> VarZeroVec<'a, T, F> {
-        VarZeroVec::Borrowed(self)
+        VarZeroVec(VarZeroVecInner::Borrowed(self))
     }
 
     
     
     
-    pub fn parse_byte_slice<'a>(slice: &'a [u8]) -> Result<&'a Self, ZeroVecError> {
-        <Self as VarULE>::parse_byte_slice(slice)
-    }
-
-    
-    
-    
-    
-    pub(crate) unsafe fn from_byte_slice_unchecked_mut(bytes: &mut [u8]) -> &mut Self {
-        
-        mem::transmute(bytes)
-    }
-
-    pub(crate) unsafe fn get_bytes_at_mut(&mut self, idx: usize) -> &mut [u8] {
-        let range = self.as_components().get_range(idx);
-        #[allow(clippy::indexing_slicing)] 
-        &mut self.entire_slice[range]
+    pub fn parse_bytes<'a>(slice: &'a [u8]) -> Result<&'a Self, UleError> {
+        <Self as VarULE>::parse_bytes(slice)
     }
 }
 
@@ -306,8 +278,6 @@ where
     T: Ord,
     F: VarZeroVecFormat,
 {
-    
-    
     
     
     
@@ -361,9 +331,6 @@ where
     
     
     
-    
-    
-    
     #[inline]
     pub fn binary_search_in_range(
         &self,
@@ -380,9 +347,6 @@ where
     T: ?Sized,
     F: VarZeroVecFormat,
 {
-    
-    
-    
     
     
     
@@ -456,9 +420,6 @@ where
     
     
     
-    
-    
-    
     pub fn binary_search_in_range_by(
         &self,
         predicate: impl FnMut(&T) -> Ordering,
@@ -479,17 +440,18 @@ where
 
 
 unsafe impl<T: VarULE + ?Sized + 'static, F: VarZeroVecFormat> VarULE for VarZeroSlice<T, F> {
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
-        let _: VarZeroVecComponents<T, F> = VarZeroVecComponents::parse_byte_slice(bytes)?;
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
+        let _: VarZeroVecComponents<T, F> =
+            VarZeroVecComponents::parse_bytes(bytes).map_err(|_| UleError::parse::<Self>())?;
         Ok(())
     }
 
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self {
+    unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
         
         mem::transmute(bytes)
     }
 
-    fn as_byte_slice(&self) -> &[u8] {
+    fn as_bytes(&self) -> &[u8] {
         &self.entire_slice
     }
 }

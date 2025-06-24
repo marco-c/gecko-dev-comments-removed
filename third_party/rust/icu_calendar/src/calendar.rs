@@ -2,8 +2,11 @@
 
 
 
-use crate::any_calendar::AnyCalendarKind;
-use crate::{types, CalendarError, Date, DateDuration, DateDurationUnit, Iso};
+use calendrical_calculations::rata_die::RataDie;
+
+use crate::cal::iso::IsoDateInner;
+use crate::error::DateError;
+use crate::{types, DateDuration, DateDurationUnit};
 use core::fmt;
 
 
@@ -16,25 +19,41 @@ use core::fmt;
 
 
 
-pub trait Calendar {
+
+
+
+
+
+pub trait Calendar: crate::cal::scaffold::UnstableSealed {
     
-    type DateInner: PartialEq + Eq + Clone + fmt::Debug;
+    type DateInner: Eq + Copy + fmt::Debug;
     
-    fn date_from_codes(
+    type Year: fmt::Debug + Into<types::YearInfo>;
+
+    
+    
+    
+    #[allow(clippy::wrong_self_convention)]
+    fn from_codes(
         &self,
-        era: types::Era,
+        era: Option<&str>,
         year: i32,
         month_code: types::MonthCode,
         day: u8,
-    ) -> Result<Self::DateInner, CalendarError>;
-    
-    fn date_from_iso(&self, iso: Date<Iso>) -> Self::DateInner;
-    
-    fn date_to_iso(&self, date: &Self::DateInner) -> Date<Iso>;
-    
-    
+    ) -> Result<Self::DateInner, DateError>;
 
     
+    #[allow(clippy::wrong_self_convention)]
+    fn from_iso(&self, iso: IsoDateInner) -> Self::DateInner;
+    
+    fn to_iso(&self, date: &Self::DateInner) -> IsoDateInner;
+
+    
+    #[allow(clippy::wrong_self_convention)]
+    fn from_rata_die(&self, rd: RataDie) -> Self::DateInner;
+    
+    fn to_rata_die(&self, date: &Self::DateInner) -> RataDie;
+
     
     
     fn months_in_year(&self, date: &Self::DateInner) -> u8;
@@ -45,15 +64,22 @@ pub trait Calendar {
     
     fn days_in_month(&self, date: &Self::DateInner) -> u8;
     
-    fn day_of_week(&self, date: &Self::DateInner) -> types::IsoWeekday {
-        self.date_to_iso(date).day_of_week()
-    }
+    fn is_in_leap_year(&self, date: &Self::DateInner) -> bool;
+
     
+    fn year_info(&self, date: &Self::DateInner) -> Self::Year;
+    
+    fn extended_year(&self, date: &Self::DateInner) -> i32;
+    
+    fn month(&self, date: &Self::DateInner) -> types::MonthInfo;
+    
+    fn day_of_month(&self, date: &Self::DateInner) -> types::DayOfMonth;
+    
+    fn day_of_year(&self, date: &Self::DateInner) -> types::DayOfYear;
 
     #[doc(hidden)] 
     
     fn offset_date(&self, date: &mut Self::DateInner, offset: DateDuration<Self>);
-
     #[doc(hidden)] 
     
     
@@ -69,27 +95,11 @@ pub trait Calendar {
     ) -> DateDuration<Self>;
 
     
+    
+    
+    
+    fn calendar_algorithm(&self) -> Option<crate::preferences::CalendarAlgorithm>;
+
+    
     fn debug_name(&self) -> &'static str;
-    
-
-    
-    fn year(&self, date: &Self::DateInner) -> types::FormattableYear;
-
-    
-    fn is_in_leap_year(&self, date: &Self::DateInner) -> bool;
-
-    
-    fn month(&self, date: &Self::DateInner) -> types::FormattableMonth;
-
-    
-    fn day_of_month(&self, date: &Self::DateInner) -> types::DayOfMonth;
-
-    
-    fn day_of_year_info(&self, date: &Self::DateInner) -> types::DayOfYearInfo;
-
-    
-    
-    fn any_calendar_kind(&self) -> Option<AnyCalendarKind> {
-        None
-    }
 }

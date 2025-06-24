@@ -13,7 +13,7 @@ impl Aligned4 {
     
     
     #[inline]
-    pub const fn from_bytes<const N: usize>(src: &[u8; N]) -> Self {
+    pub const fn from_utf8<const N: usize>(src: &[u8; N]) -> Self {
         let mut bytes = [0; 4];
         let mut i = 0;
         
@@ -27,7 +27,7 @@ impl Aligned4 {
 
     #[inline]
     pub const fn from_ascii_bytes<const N: usize>(src: &[AsciiByte; N]) -> Self {
-        Self::from_bytes::<N>(unsafe { core::mem::transmute::<&[AsciiByte; N], &[u8; N]>(src) })
+        Self::from_utf8::<N>(unsafe { core::mem::transmute::<&[AsciiByte; N], &[u8; N]>(src) })
     }
 
     #[inline]
@@ -170,7 +170,7 @@ impl Aligned8 {
     
     
     #[inline]
-    pub const fn from_bytes<const N: usize>(src: &[u8; N]) -> Self {
+    pub const fn from_utf8<const N: usize>(src: &[u8; N]) -> Self {
         let mut bytes = [0; 8];
         let mut i = 0;
         
@@ -184,7 +184,7 @@ impl Aligned8 {
 
     #[inline]
     pub const fn from_ascii_bytes<const N: usize>(src: &[AsciiByte; N]) -> Self {
-        Self::from_bytes::<N>(unsafe { core::mem::transmute::<&[AsciiByte; N], &[u8; N]>(src) })
+        Self::from_utf8::<N>(unsafe { core::mem::transmute::<&[AsciiByte; N], &[u8; N]>(src) })
     }
 
     #[inline]

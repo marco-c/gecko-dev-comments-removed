@@ -12,15 +12,19 @@
 
 
 use crate::char_from_u16;
-use crate::error::NormalizerError;
+use crate::char_from_u32;
 use crate::in_inclusive_range;
-use crate::provider::CanonicalCompositionsV1Marker;
-use crate::provider::CanonicalDecompositionDataV1Marker;
-use crate::provider::CanonicalDecompositionTablesV1Marker;
-use crate::provider::NonRecursiveDecompositionSupplementV1Marker;
+use crate::provider::CanonicalCompositions;
+use crate::provider::DecompositionData;
+use crate::provider::DecompositionTables;
+use crate::provider::NonRecursiveDecompositionSupplement;
+use crate::provider::NormalizerNfcV1;
+use crate::provider::NormalizerNfdDataV1;
+use crate::provider::NormalizerNfdSupplementV1;
+use crate::provider::NormalizerNfdTablesV1;
 use crate::trie_value_has_ccc;
-use crate::trie_value_indicates_special_non_starter_decomposition;
-use crate::BACKWARD_COMBINING_STARTER_MARKER;
+use crate::CanonicalCombiningClass;
+use crate::BACKWARD_COMBINING_MARKER;
 use crate::FDFA_MARKER;
 use crate::HANGUL_L_BASE;
 use crate::HANGUL_N_COUNT;
@@ -29,11 +33,9 @@ use crate::HANGUL_S_COUNT;
 use crate::HANGUL_T_BASE;
 use crate::HANGUL_T_COUNT;
 use crate::HANGUL_V_BASE;
+use crate::HIGH_ZEROS_MASK;
+use crate::LOW_ZEROS_MASK;
 use crate::NON_ROUND_TRIP_MARKER;
-use crate::SPECIAL_NON_STARTER_DECOMPOSITION_MARKER_U16;
-
-
-use icu_properties::CanonicalCombiningClass;
 use icu_provider::prelude::*;
 
 
@@ -42,19 +44,43 @@ use icu_provider::prelude::*;
 
 
 
-#[derive(Debug)]
-pub struct CanonicalComposition {
-    canonical_compositions: DataPayload<CanonicalCompositionsV1Marker>,
+#[derive(Debug, Copy, Clone)]
+pub struct CanonicalCompositionBorrowed<'a> {
+    canonical_compositions: &'a CanonicalCompositions<'a>,
 }
 
 #[cfg(feature = "compiled_data")]
-impl Default for CanonicalComposition {
+impl Default for CanonicalCompositionBorrowed<'static> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl CanonicalComposition {
+impl CanonicalCompositionBorrowed<'static> {
+    
+    
+    
+    
+    pub const fn static_to_owned(self) -> CanonicalComposition {
+        CanonicalComposition {
+            canonical_compositions: DataPayload::from_static_ref(self.canonical_compositions),
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub const fn new() -> Self {
+        Self {
+            canonical_compositions: crate::provider::Baked::SINGLETON_NORMALIZER_NFC_V1,
+        }
+    }
+}
+
+impl CanonicalCompositionBorrowed<'_> {
     
     
     
@@ -73,15 +99,39 @@ impl CanonicalComposition {
     
     
     #[inline(always)]
-    pub fn compose(&self, starter: char, second: char) -> Option<char> {
+    pub fn compose(self, starter: char, second: char) -> Option<char> {
         crate::compose(
-            self.canonical_compositions
-                .get()
-                .canonical_compositions
-                .iter(),
+            self.canonical_compositions.canonical_compositions.iter(),
             starter,
             second,
         )
+    }
+}
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct CanonicalComposition {
+    canonical_compositions: DataPayload<NormalizerNfcV1>,
+}
+
+#[cfg(feature = "compiled_data")]
+impl Default for CanonicalComposition {
+    fn default() -> Self {
+        Self::new().static_to_owned()
+    }
+}
+
+impl CanonicalComposition {
+    
+    pub fn as_borrowed(&self) -> CanonicalCompositionBorrowed<'_> {
+        CanonicalCompositionBorrowed {
+            canonical_compositions: self.canonical_compositions.get(),
+        }
     }
 
     
@@ -90,32 +140,27 @@ impl CanonicalComposition {
     
     
     #[cfg(feature = "compiled_data")]
-    pub const fn new() -> Self {
-        Self {
-            canonical_compositions: DataPayload::from_static_ref(
-                crate::provider::Baked::SINGLETON_NORMALIZER_COMP_V1,
-            ),
-        }
+    #[allow(clippy::new_ret_no_self)]
+    pub const fn new() -> CanonicalCompositionBorrowed<'static> {
+        CanonicalCompositionBorrowed::new()
     }
 
-    icu_provider::gen_any_buffer_data_constructors!(locale: skip, options: skip, error: NormalizerError,
-        #[cfg(skip)]
+    icu_provider::gen_buffer_data_constructors!(() -> error: DataError,
         functions: [
-            new,
-            try_new_with_any_provider,
+            new: skip,
             try_new_with_buffer_provider,
             try_new_unstable,
             Self,
         ]
     );
 
-    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
-    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, NormalizerError>
+    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new)]
+    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, DataError>
     where
-        D: DataProvider<CanonicalCompositionsV1Marker> + ?Sized,
+        D: DataProvider<NormalizerNfcV1> + ?Sized,
     {
-        let canonical_compositions: DataPayload<CanonicalCompositionsV1Marker> =
-            provider.load(Default::default())?.take_payload()?;
+        let canonical_compositions: DataPayload<NormalizerNfcV1> =
+            provider.load(Default::default())?.payload;
         Ok(CanonicalComposition {
             canonical_compositions,
         })
@@ -141,20 +186,59 @@ pub enum Decomposed {
 
 
 #[derive(Debug)]
-pub struct CanonicalDecomposition {
-    decompositions: DataPayload<CanonicalDecompositionDataV1Marker>,
-    tables: DataPayload<CanonicalDecompositionTablesV1Marker>,
-    non_recursive: DataPayload<NonRecursiveDecompositionSupplementV1Marker>,
+pub struct CanonicalDecompositionBorrowed<'a> {
+    decompositions: &'a DecompositionData<'a>,
+    tables: &'a DecompositionTables<'a>,
+    non_recursive: &'a NonRecursiveDecompositionSupplement<'a>,
 }
 
 #[cfg(feature = "compiled_data")]
-impl Default for CanonicalDecomposition {
+impl Default for CanonicalDecompositionBorrowed<'static> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl CanonicalDecomposition {
+impl CanonicalDecompositionBorrowed<'static> {
+    
+    
+    
+    
+    pub const fn static_to_owned(self) -> CanonicalDecomposition {
+        CanonicalDecomposition {
+            decompositions: DataPayload::from_static_ref(self.decompositions),
+            tables: DataPayload::from_static_ref(self.tables),
+            non_recursive: DataPayload::from_static_ref(self.non_recursive),
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub const fn new() -> Self {
+        const _: () = assert!(
+            crate::provider::Baked::SINGLETON_NORMALIZER_NFD_TABLES_V1
+                .scalars16
+                .const_len()
+                + crate::provider::Baked::SINGLETON_NORMALIZER_NFD_TABLES_V1
+                    .scalars24
+                    .const_len()
+                <= 0xFFF,
+            "future extension"
+        );
+
+        Self {
+            decompositions: crate::provider::Baked::SINGLETON_NORMALIZER_NFD_DATA_V1,
+            tables: crate::provider::Baked::SINGLETON_NORMALIZER_NFD_TABLES_V1,
+            non_recursive: crate::provider::Baked::SINGLETON_NORMALIZER_NFD_SUPPLEMENT_V1,
+        }
+    }
+}
+
+impl CanonicalDecompositionBorrowed<'_> {
     
     
     
@@ -177,19 +261,27 @@ impl CanonicalDecomposition {
         if lvt >= HANGUL_S_COUNT {
             return self.decompose_non_hangul(c);
         }
+        
         let t = lvt % HANGUL_T_COUNT;
+        
         if t == 0 {
             let l = lvt / HANGUL_N_COUNT;
+            
             let v = (lvt % HANGUL_N_COUNT) / HANGUL_T_COUNT;
             
             return Decomposed::Expansion(
+                
+                
                 unsafe { char::from_u32_unchecked(HANGUL_L_BASE + l) },
                 unsafe { char::from_u32_unchecked(HANGUL_V_BASE + v) },
             );
         }
         let lv = lvt - t;
         
+        
         Decomposed::Expansion(
+            
+            
             unsafe { char::from_u32_unchecked(HANGUL_S_BASE + lv) },
             unsafe { char::from_u32_unchecked(HANGUL_T_BASE + t) },
         )
@@ -199,31 +291,31 @@ impl CanonicalDecomposition {
     
     #[inline(always)]
     fn decompose_non_hangul(&self, c: char) -> Decomposed {
-        let decomposition = self.decompositions.get().trie.get(c);
-        if decomposition <= BACKWARD_COMBINING_STARTER_MARKER {
+        let decomposition = self.decompositions.trie.get(c);
+        
+        
+        if (decomposition & !(BACKWARD_COMBINING_MARKER | NON_ROUND_TRIP_MARKER)) == 0 {
             return Decomposed::Default;
         }
         
         #[allow(clippy::never_loop)]
         loop {
-            let trail_or_complex = (decomposition >> 16) as u16;
-            let lead = decomposition as u16;
-            if lead > NON_ROUND_TRIP_MARKER && trail_or_complex != 0 {
+            let high_zeros = (decomposition & HIGH_ZEROS_MASK) == 0;
+            let low_zeros = (decomposition & LOW_ZEROS_MASK) == 0;
+            if !high_zeros && !low_zeros {
                 
                 if in_inclusive_range(c, '\u{1F71}', '\u{1FFB}') {
                     
                     
                     break;
                 }
-                return Decomposed::Expansion(char_from_u16(lead), char_from_u16(trail_or_complex));
+                let starter = char_from_u32(decomposition & 0x7FFF);
+                let combining = char_from_u32((decomposition >> 15) & 0x7FFF);
+                return Decomposed::Expansion(starter, combining);
             }
-            if lead > NON_ROUND_TRIP_MARKER {
+            if high_zeros {
                 
-                debug_assert_ne!(
-                    lead, FDFA_MARKER,
-                    "How come we got the U+FDFA NFKD marker here?"
-                );
-                if lead == SPECIAL_NON_STARTER_DECOMPOSITION_MARKER_U16 {
+                if trie_value_has_ccc(decomposition) {
                     
                     if !in_inclusive_range(c, '\u{0340}', '\u{0F81}') {
                         return Decomposed::Default;
@@ -260,35 +352,24 @@ impl CanonicalDecomposition {
                         _ => Decomposed::Default,
                     };
                 }
-                return Decomposed::Singleton(char_from_u16(lead));
+                let singleton = decomposition as u16;
+                debug_assert_ne!(
+                    singleton, FDFA_MARKER,
+                    "How come we got the U+FDFA NFKD marker here?"
+                );
+                return Decomposed::Singleton(char_from_u16(singleton));
             }
-            
-            
-            
             if c == '\u{212B}' {
                 
                 return Decomposed::Singleton('\u{00C5}');
             }
             
+            let offset = (((decomposition & !(0b11 << 30)) >> 16) as usize) - 1;
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let offset = usize::from(trail_or_complex & 0xFFF);
-            let tables = self.tables.get();
+            let len_bits = decomposition & 0b1111;
+            let tables = self.tables;
             if offset < tables.scalars16.len() {
-                if usize::from(trail_or_complex >> 13) != 0 {
+                if len_bits != 0 {
                     
                     break;
                 }
@@ -302,24 +383,14 @@ impl CanonicalDecomposition {
                 debug_assert!(false);
                 return Decomposed::Default;
             }
-            let len = usize::from(trail_or_complex >> 13) + 1;
+            let len = len_bits + 1;
             if len > 2 {
                 break;
             }
             let offset24 = offset - tables.scalars16.len();
             if let Some(first_c) = tables.scalars24.get(offset24) {
                 if len == 1 {
-                    if c != first_c {
-                        return Decomposed::Singleton(first_c);
-                    } else {
-                        
-                        
-                        
-                        
-                        
-                        
-                        return Decomposed::Default;
-                    }
+                    return Decomposed::Singleton(first_c);
                 }
                 if let Some(second_c) = tables.scalars24.get(offset24 + 1) {
                     return Decomposed::Expansion(first_c, second_c);
@@ -329,7 +400,7 @@ impl CanonicalDecomposition {
             debug_assert!(false);
             return Decomposed::Default;
         }
-        let non_recursive = self.non_recursive.get();
+        let non_recursive = self.non_recursive;
         let non_recursive_decomposition = non_recursive.trie.get(c);
         if non_recursive_decomposition == 0 {
             
@@ -358,6 +429,37 @@ impl CanonicalDecomposition {
         debug_assert!(false);
         Decomposed::Default
     }
+}
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct CanonicalDecomposition {
+    decompositions: DataPayload<NormalizerNfdDataV1>,
+    tables: DataPayload<NormalizerNfdTablesV1>,
+    non_recursive: DataPayload<NormalizerNfdSupplementV1>,
+}
+
+#[cfg(feature = "compiled_data")]
+impl Default for CanonicalDecomposition {
+    fn default() -> Self {
+        Self::new().static_to_owned()
+    }
+}
+
+impl CanonicalDecomposition {
+    
+    pub fn as_borrowed(&self) -> CanonicalDecompositionBorrowed<'_> {
+        CanonicalDecompositionBorrowed {
+            decompositions: self.decompositions.get(),
+            tables: self.tables.get(),
+            non_recursive: self.non_recursive.get(),
+        }
+    }
 
     
     
@@ -365,54 +467,31 @@ impl CanonicalDecomposition {
     
     
     #[cfg(feature = "compiled_data")]
-    pub const fn new() -> Self {
-        const _: () = assert!(
-            crate::provider::Baked::SINGLETON_NORMALIZER_NFDEX_V1
-                .scalars16
-                .const_len()
-                + crate::provider::Baked::SINGLETON_NORMALIZER_NFDEX_V1
-                    .scalars24
-                    .const_len()
-                <= 0xFFF,
-            "NormalizerError::FutureExtension"
-        );
-
-        Self {
-            decompositions: DataPayload::from_static_ref(
-                crate::provider::Baked::SINGLETON_NORMALIZER_NFD_V1,
-            ),
-            tables: DataPayload::from_static_ref(
-                crate::provider::Baked::SINGLETON_NORMALIZER_NFDEX_V1,
-            ),
-            non_recursive: DataPayload::from_static_ref(
-                crate::provider::Baked::SINGLETON_NORMALIZER_DECOMP_V1,
-            ),
-        }
+    #[allow(clippy::new_ret_no_self)]
+    pub const fn new() -> CanonicalDecompositionBorrowed<'static> {
+        CanonicalDecompositionBorrowed::new()
     }
 
-    icu_provider::gen_any_buffer_data_constructors!(locale: skip, options: skip, error: NormalizerError,
-        #[cfg(skip)]
+    icu_provider::gen_buffer_data_constructors!(() -> error: DataError,
         functions: [
-            new,
-            try_new_with_any_provider,
+            new: skip,
             try_new_with_buffer_provider,
             try_new_unstable,
             Self,
         ]
     );
 
-    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
-    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, NormalizerError>
+    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new)]
+    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, DataError>
     where
-        D: DataProvider<CanonicalDecompositionDataV1Marker>
-            + DataProvider<CanonicalDecompositionTablesV1Marker>
-            + DataProvider<NonRecursiveDecompositionSupplementV1Marker>
+        D: DataProvider<NormalizerNfdDataV1>
+            + DataProvider<NormalizerNfdTablesV1>
+            + DataProvider<NormalizerNfdSupplementV1>
             + ?Sized,
     {
-        let decompositions: DataPayload<CanonicalDecompositionDataV1Marker> =
-            provider.load(Default::default())?.take_payload()?;
-        let tables: DataPayload<CanonicalDecompositionTablesV1Marker> =
-            provider.load(Default::default())?.take_payload()?;
+        let decompositions: DataPayload<NormalizerNfdDataV1> =
+            provider.load(Default::default())?.payload;
+        let tables: DataPayload<NormalizerNfdTablesV1> = provider.load(Default::default())?.payload;
 
         if tables.get().scalars16.len() + tables.get().scalars24.len() > 0xFFF {
             
@@ -421,11 +500,11 @@ impl CanonicalDecomposition {
             
             
             
-            return Err(NormalizerError::FutureExtension);
+            return Err(DataError::custom("future extension"));
         }
 
-        let non_recursive: DataPayload<NonRecursiveDecompositionSupplementV1Marker> =
-            provider.load(Default::default())?.take_payload()?;
+        let non_recursive: DataPayload<NormalizerNfdSupplementV1> =
+            provider.load(Default::default())?.payload;
 
         Ok(CanonicalDecomposition {
             decompositions,
@@ -448,39 +527,26 @@ impl CanonicalDecomposition {
 
 
 #[derive(Debug)]
-pub struct CanonicalCombiningClassMap {
+pub struct CanonicalCombiningClassMapBorrowed<'a> {
     
-    decompositions: DataPayload<CanonicalDecompositionDataV1Marker>,
+    decompositions: &'a DecompositionData<'a>,
 }
 
 #[cfg(feature = "compiled_data")]
-impl Default for CanonicalCombiningClassMap {
+impl Default for CanonicalCombiningClassMapBorrowed<'static> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl CanonicalCombiningClassMap {
-    
-    #[inline(always)]
-    pub fn get(&self, c: char) -> CanonicalCombiningClass {
-        self.get32(u32::from(c))
-    }
-
+impl CanonicalCombiningClassMapBorrowed<'static> {
     
     
     
-    pub fn get32(&self, c: u32) -> CanonicalCombiningClass {
-        let trie_value = self.decompositions.get().trie.get32(c);
-        if trie_value_has_ccc(trie_value) {
-            CanonicalCombiningClass(trie_value as u8)
-        } else if trie_value_indicates_special_non_starter_decomposition(trie_value) {
-            match c {
-                0x0340 | 0x0341 | 0x0343 | 0x0344 => CanonicalCombiningClass::Above,
-                _ => CanonicalCombiningClass::NotReordered,
-            }
-        } else {
-            CanonicalCombiningClass::NotReordered
+    
+    pub const fn static_to_owned(self) -> CanonicalCombiningClassMap {
+        CanonicalCombiningClassMap {
+            decompositions: DataPayload::from_static_ref(self.decompositions),
         }
     }
 
@@ -491,30 +557,107 @@ impl CanonicalCombiningClassMap {
     
     #[cfg(feature = "compiled_data")]
     pub const fn new() -> Self {
-        CanonicalCombiningClassMap {
-            decompositions: DataPayload::from_static_ref(
-                crate::provider::Baked::SINGLETON_NORMALIZER_NFD_V1,
-            ),
+        CanonicalCombiningClassMapBorrowed {
+            decompositions: crate::provider::Baked::SINGLETON_NORMALIZER_NFD_DATA_V1,
+        }
+    }
+}
+
+impl CanonicalCombiningClassMapBorrowed<'_> {
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn get_u8(&self, c: char) -> u8 {
+        self.get32_u8(u32::from(c))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn get32_u8(&self, c: u32) -> u8 {
+        let trie_value = self.decompositions.trie.get32(c);
+        if trie_value_has_ccc(trie_value) {
+            trie_value as u8
+        } else {
+            ccc!(NotReordered, 0).to_icu4c_value()
         }
     }
 
-    icu_provider::gen_any_buffer_data_constructors!(locale: skip, options: skip, error: NormalizerError,
-        #[cfg(skip)]
+    
+    
+    
+    #[inline(always)]
+    #[cfg(feature = "icu_properties")]
+    pub fn get(&self, c: char) -> CanonicalCombiningClass {
+        CanonicalCombiningClass::from_icu4c_value(self.get_u8(c))
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "icu_properties")]
+    pub fn get32(&self, c: u32) -> CanonicalCombiningClass {
+        CanonicalCombiningClass::from_icu4c_value(self.get32_u8(c))
+    }
+}
+
+
+#[derive(Debug)]
+pub struct CanonicalCombiningClassMap {
+    
+    decompositions: DataPayload<NormalizerNfdDataV1>,
+}
+
+#[cfg(feature = "compiled_data")]
+impl Default for CanonicalCombiningClassMap {
+    fn default() -> Self {
+        Self::new().static_to_owned()
+    }
+}
+
+impl CanonicalCombiningClassMap {
+    
+    pub fn as_borrowed(&self) -> CanonicalCombiningClassMapBorrowed<'_> {
+        CanonicalCombiningClassMapBorrowed {
+            decompositions: self.decompositions.get(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    #[allow(clippy::new_ret_no_self)]
+    pub const fn new() -> CanonicalCombiningClassMapBorrowed<'static> {
+        CanonicalCombiningClassMapBorrowed::new()
+    }
+
+    icu_provider::gen_buffer_data_constructors!(() -> error: DataError,
         functions: [
-            new,
-            try_new_with_any_provider,
+            new: skip,
             try_new_with_buffer_provider,
             try_new_unstable,
             Self,
     ]);
 
-    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
-    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, NormalizerError>
+    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new)]
+    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, DataError>
     where
-        D: DataProvider<CanonicalDecompositionDataV1Marker> + ?Sized,
+        D: DataProvider<NormalizerNfdDataV1> + ?Sized,
     {
-        let decompositions: DataPayload<CanonicalDecompositionDataV1Marker> =
-            provider.load(Default::default())?.take_payload()?;
+        let decompositions: DataPayload<NormalizerNfdDataV1> =
+            provider.load(Default::default())?.payload;
         Ok(CanonicalCombiningClassMap { decompositions })
     }
 }

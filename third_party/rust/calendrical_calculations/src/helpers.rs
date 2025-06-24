@@ -282,7 +282,7 @@ fn test_invert_angular() {
 }
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, displaydoc::Display)]
 #[allow(clippy::exhaustive_enums)] 
 pub enum I32CastError {
     
@@ -290,6 +290,8 @@ pub enum I32CastError {
     
     AboveMax,
 }
+
+impl core::error::Error for I32CastError {}
 
 impl I32CastError {
     pub(crate) const fn saturate(self) -> i32 {
@@ -314,7 +316,7 @@ pub const fn i64_to_i32(input: i64) -> Result<i32, I32CastError> {
 
 
 #[inline]
-pub fn i64_to_saturated_i32(input: i64) -> i32 {
+pub(crate) fn i64_to_saturated_i32(input: i64) -> i32 {
     i64_to_i32(input).unwrap_or_else(|i| i.saturate())
 }
 

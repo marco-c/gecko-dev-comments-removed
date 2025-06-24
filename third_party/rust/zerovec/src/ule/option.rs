@@ -73,10 +73,10 @@ impl<U: Copy + core::fmt::Debug> core::fmt::Debug for OptionULE<U> {
 
 
 unsafe impl<U: ULE> ULE for OptionULE<U> {
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         let size = mem::size_of::<Self>();
         if bytes.len() % size != 0 {
-            return Err(ZeroVecError::length::<Self>(bytes.len()));
+            return Err(UleError::length::<Self>(bytes.len()));
         }
         for chunk in bytes.chunks(size) {
             #[allow(clippy::indexing_slicing)] 
@@ -85,11 +85,11 @@ unsafe impl<U: ULE> ULE for OptionULE<U> {
                 
                 0 => {
                     if !chunk[1..].iter().all(|x| *x == 0) {
-                        return Err(ZeroVecError::parse::<Self>());
+                        return Err(UleError::parse::<Self>());
                     }
                 }
-                1 => U::validate_byte_slice(&chunk[1..])?,
-                _ => return Err(ZeroVecError::parse::<Self>()),
+                1 => U::validate_bytes(&chunk[1..])?,
+                _ => return Err(UleError::parse::<Self>()),
             }
         }
         Ok(())
@@ -150,7 +150,7 @@ impl<U: VarULE + ?Sized> OptionVarULE<U> {
         if self.1 {
             unsafe {
                 
-                Some(U::from_byte_slice_unchecked(&self.2))
+                Some(U::from_bytes_unchecked(&self.2))
             }
         } else {
             None
@@ -175,9 +175,9 @@ impl<U: VarULE + ?Sized + core::fmt::Debug> core::fmt::Debug for OptionVarULE<U>
 
 unsafe impl<U: VarULE + ?Sized> VarULE for OptionVarULE<U> {
     #[inline]
-    fn validate_byte_slice(slice: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(slice: &[u8]) -> Result<(), UleError> {
         if slice.is_empty() {
-            return Err(ZeroVecError::length::<Self>(slice.len()));
+            return Err(UleError::length::<Self>(slice.len()));
         }
         #[allow(clippy::indexing_slicing)] 
         match slice[0] {
@@ -185,18 +185,18 @@ unsafe impl<U: VarULE + ?Sized> VarULE for OptionVarULE<U> {
             
             0 => {
                 if slice.len() != 1 {
-                    Err(ZeroVecError::length::<Self>(slice.len()))
+                    Err(UleError::length::<Self>(slice.len()))
                 } else {
                     Ok(())
                 }
             }
-            1 => U::validate_byte_slice(&slice[1..]),
-            _ => Err(ZeroVecError::parse::<Self>()),
+            1 => U::validate_bytes(&slice[1..]),
+            _ => Err(UleError::parse::<Self>()),
         }
     }
 
     #[inline]
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self {
+    unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
         let entire_struct_as_slice: *const [u8] =
             ::core::ptr::slice_from_raw_parts(bytes.as_ptr(), bytes.len() - 1);
         &*(entire_struct_as_slice as *const Self)

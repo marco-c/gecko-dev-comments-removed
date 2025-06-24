@@ -159,7 +159,7 @@ pub(super) struct MatrixBorrowedMut<'a, const D: usize> {
     pub(super) dims: [usize; D],
 }
 
-impl<'a, const D: usize> MatrixBorrowedMut<'a, D> {
+impl<const D: usize> MatrixBorrowedMut<'_, D> {
     pub(super) fn as_borrowed(&self) -> MatrixBorrowed<D> {
         MatrixBorrowed {
             data: self.data,
@@ -258,7 +258,7 @@ impl<'a, const D: usize> MatrixBorrowedMut<'a, D> {
     }
 }
 
-impl<'a> MatrixBorrowed<'a, 1> {
+impl MatrixBorrowed<'_, 1> {
     #[allow(dead_code)] 
     pub(super) fn dot_1d(&self, other: MatrixZero<1>) -> f32 {
         debug_assert_eq!(self.dims, other.dims);
@@ -266,7 +266,7 @@ impl<'a> MatrixBorrowed<'a, 1> {
     }
 }
 
-impl<'a> MatrixBorrowedMut<'a, 1> {
+impl MatrixBorrowedMut<'_, 1> {
     
     
     
@@ -301,7 +301,7 @@ impl<'a> MatrixBorrowedMut<'a, 1> {
     }
 }
 
-impl<'a> MatrixBorrowedMut<'a, 2> {
+impl MatrixBorrowedMut<'_, 2> {
     
     
     

@@ -99,12 +99,13 @@ where
     
     pub fn iter1(
         &self,
-    ) -> impl Iterator<
+    ) -> impl DoubleEndedIterator<
         Item = (
             &'l <K1 as ZeroMapKV<'a>>::GetType,
             &'l <V as ZeroMapKV<'a>>::GetType,
         ),
-    > + '_ {
+    > + ExactSizeIterator
+           + '_ {
         let range = self.get_range();
         #[allow(clippy::unwrap_used)] 
         range.map(move |idx| {
@@ -118,12 +119,12 @@ where
     
     pub fn into_iter1(
         self,
-    ) -> impl Iterator<
+    ) -> impl DoubleEndedIterator<
         Item = (
             &'l <K1 as ZeroMapKV<'a>>::GetType,
             &'l <V as ZeroMapKV<'a>>::GetType,
         ),
-    > {
+    > + ExactSizeIterator {
         let range = self.get_range();
         #[allow(clippy::unwrap_used)] 
         range.map(move |idx| {
@@ -185,12 +186,47 @@ where
     
     
     
-    
-    
-    
     pub fn iter1_copied(
         &self,
-    ) -> impl Iterator<Item = (&'l <K1 as ZeroMapKV<'a>>::GetType, V)> + '_ {
+    ) -> impl DoubleEndedIterator<Item = (&'l <K1 as ZeroMapKV<'a>>::GetType, V)> + ExactSizeIterator + '_
+    {
+        let range = self.get_range();
+        #[allow(clippy::unwrap_used)] 
+        range.map(move |idx| {
+            (
+                self.keys1.zvl_get(idx).unwrap(),
+                self.get1_copied_at(idx).unwrap(),
+            )
+        })
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_iter1_copied(
+        self,
+    ) -> impl DoubleEndedIterator<Item = (&'l <K1 as ZeroMapKV<'a>>::GetType, V)> + ExactSizeIterator
+    {
         let range = self.get_range();
         #[allow(clippy::unwrap_used)] 
         range.map(move |idx| {

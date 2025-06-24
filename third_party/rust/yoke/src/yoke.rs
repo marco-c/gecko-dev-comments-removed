@@ -7,7 +7,6 @@ use crate::either::EitherCart;
 #[cfg(feature = "alloc")]
 use crate::erased::{ErasedArcCart, ErasedBoxCart, ErasedRcCart};
 use crate::kinda_sorta_dangling::KindaSortaDangling;
-use crate::trait_hack::YokeTraitHack;
 use crate::Yokeable;
 use core::marker::PhantomData;
 use core::ops::Deref;
@@ -80,6 +79,10 @@ pub struct Yoke<Y: for<'a> Yokeable<'a>, C> {
     
     
     yokeable: KindaSortaDangling<Y>,
+    
+    
+    
+    
     
     
     
@@ -199,7 +202,12 @@ where
     {
         let deserialized = f(cart.deref());
         Self {
-            yokeable: KindaSortaDangling::new(unsafe { Y::make(deserialized) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { Y::make(deserialized) },
+            ),
             cart,
         }
     }
@@ -212,10 +220,16 @@ where
     pub fn try_attach_to_cart<E, F>(cart: C, f: F) -> Result<Self, E>
     where
         F: for<'de> FnOnce(&'de <C as Deref>::Target) -> Result<<Y as Yokeable<'de>>::Output, E>,
+        <C as Deref>::Target: 'static,
     {
         let deserialized = f(cart.deref())?;
         Ok(Self {
-            yokeable: KindaSortaDangling::new(unsafe { Y::make(deserialized) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { Y::make(deserialized) },
+            ),
             cart,
         })
     }
@@ -367,6 +381,9 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     #[inline]
     pub unsafe fn replace_cart<C2>(self, f: impl FnOnce(C) -> C2) -> Yoke<Y, C2> {
         Yoke {
+            
+            
+            
             yokeable: self.yokeable,
             cart: f(self.cart),
         }
@@ -465,10 +482,9 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     #[inline]
     pub fn wrap_cart_in_option(self) -> Yoke<Y, Option<C>> {
-        unsafe {
-            
-            self.replace_cart(Some)
-        }
+        
+        
+        unsafe { self.replace_cart(Some) }
     }
 }
 
@@ -496,6 +512,8 @@ impl<Y: for<'a> Yokeable<'a>> Yoke<Y, ()> {
     
     pub fn new_always_owned(yokeable: Y) -> Self {
         Self {
+            
+            
             yokeable: KindaSortaDangling::new(yokeable),
             cart: (),
         }
@@ -507,6 +525,8 @@ impl<Y: for<'a> Yokeable<'a>> Yoke<Y, ()> {
     
     
     pub fn into_yokeable(self) -> Y {
+        
+        
         self.yokeable.into_inner()
     }
 }
@@ -540,6 +560,7 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, Option<C>> {
     
     pub const fn new_owned(yokeable: Y) -> Self {
         Self {
+            
             yokeable: KindaSortaDangling::new(yokeable),
             cart: None,
         }
@@ -611,10 +632,13 @@ impl<Y: for<'a> Yokeable<'a>, C: CartablePointerLike> Yoke<Y, Option<C>> {
     pub fn convert_cart_into_option_pointer(self) -> Yoke<Y, CartableOptionPointer<C>> {
         match self.cart {
             Some(cart) => Yoke {
+                
+                
                 yokeable: self.yokeable,
                 cart: CartableOptionPointer::from_cartable(cart),
             },
             None => Yoke {
+                
                 yokeable: self.yokeable,
                 cart: CartableOptionPointer::none(),
             },
@@ -655,11 +679,17 @@ impl<Y: for<'a> Yokeable<'a>, C: CartablePointerLike> Yoke<Y, CartableOptionPoin
 pub unsafe trait CloneableCart: Clone {}
 
 #[cfg(feature = "alloc")]
+
 unsafe impl<T: ?Sized> CloneableCart for Rc<T> {}
 #[cfg(feature = "alloc")]
+
 unsafe impl<T: ?Sized> CloneableCart for Arc<T> {}
+
 unsafe impl<T: CloneableCart> CloneableCart for Option<T> {}
+
+
 unsafe impl<'a, T: ?Sized> CloneableCart for &'a T {}
+
 unsafe impl CloneableCart for () {}
 
 
@@ -673,14 +703,17 @@ unsafe impl CloneableCart for () {}
 
 impl<Y: for<'a> Yokeable<'a>, C: CloneableCart> Clone for Yoke<Y, C>
 where
-    for<'a> YokeTraitHack<<Y as Yokeable<'a>>::Output>: Clone,
+    for<'a> <Y as Yokeable<'a>>::Output: Clone,
 {
     fn clone(&self) -> Self {
-        let this: &Y::Output = self.get();
         
-        let this_hack = YokeTraitHack(this).into_ref();
+        let this = self.get().clone();
         Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { Y::make(this_hack.clone().0) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                unsafe { Y::make(this) },
+            ),
             cart: self.cart.clone(),
         }
     }
@@ -795,7 +828,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     {
         let p = f(self.yokeable.into_inner().transform_owned(), PhantomData);
         Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart,
         }
     }
@@ -816,7 +854,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     {
         let p = f(self.get(), PhantomData);
         Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart.clone(),
         }
     }
@@ -892,7 +935,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     {
         let p = f(self.yokeable.into_inner().transform_owned(), PhantomData)?;
         Ok(Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart,
         })
     }
@@ -913,7 +961,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     {
         let p = f(self.get(), PhantomData)?;
         Ok(Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart.clone(),
         })
     }
@@ -940,7 +993,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
             PhantomData,
         );
         Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart,
         }
     }
@@ -965,7 +1023,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     {
         let p = f(self.get(), capture, PhantomData);
         Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart.clone(),
         }
     }
@@ -994,7 +1057,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
             PhantomData,
         )?;
         Ok(Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart,
         })
     }
@@ -1020,7 +1088,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     {
         let p = f(self.get(), capture, PhantomData)?;
         Ok(Yoke {
-            yokeable: KindaSortaDangling::new(unsafe { P::make(p) }),
+            yokeable: KindaSortaDangling::new(
+                
+                
+                
+                unsafe { P::make(p) },
+            ),
             cart: self.cart.clone(),
         })
     }
@@ -1064,11 +1137,8 @@ impl<Y: for<'a> Yokeable<'a>, C: 'static + Sized> Yoke<Y, Rc<C>> {
     
     
     pub fn erase_rc_cart(self) -> Yoke<Y, ErasedRcCart> {
-        unsafe {
-            
-            
-            self.replace_cart(|c| c as ErasedRcCart)
-        }
+        
+        unsafe { self.replace_cart(|c| c as ErasedRcCart) }
     }
 }
 
@@ -1110,11 +1180,8 @@ impl<Y: for<'a> Yokeable<'a>, C: 'static + Sized + Send + Sync> Yoke<Y, Arc<C>> 
     
     
     pub fn erase_arc_cart(self) -> Yoke<Y, ErasedArcCart> {
-        unsafe {
-            
-            
-            self.replace_cart(|c| c as ErasedArcCart)
-        }
+        
+        unsafe { self.replace_cart(|c| c as ErasedArcCart) }
     }
 }
 
@@ -1156,11 +1223,8 @@ impl<Y: for<'a> Yokeable<'a>, C: 'static + Sized> Yoke<Y, Box<C>> {
     
     
     pub fn erase_box_cart(self) -> Yoke<Y, ErasedBoxCart> {
-        unsafe {
-            
-            
-            self.replace_cart(|c| c as ErasedBoxCart)
-        }
+        
+        unsafe { self.replace_cart(|c| c as ErasedBoxCart) }
     }
 }
 
@@ -1172,10 +1236,8 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     #[inline]
     pub fn wrap_cart_in_box(self) -> Yoke<Y, Box<C>> {
-        unsafe {
-            
-            self.replace_cart(Box::new)
-        }
+        
+        unsafe { self.replace_cart(Box::new) }
     }
     
     
@@ -1184,10 +1246,8 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     #[inline]
     pub fn wrap_cart_in_rc(self) -> Yoke<Y, Rc<C>> {
-        unsafe {
-            
-            self.replace_cart(Rc::new)
-        }
+        
+        unsafe { self.replace_cart(Rc::new) }
     }
     
     
@@ -1196,10 +1256,8 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     #[inline]
     pub fn wrap_cart_in_arc(self) -> Yoke<Y, Arc<C>> {
-        unsafe {
-            
-            self.replace_cart(Arc::new)
-        }
+        
+        unsafe { self.replace_cart(Arc::new) }
     }
 }
 
@@ -1212,10 +1270,8 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     #[inline]
     pub fn wrap_cart_in_either_a<B>(self) -> Yoke<Y, EitherCart<C, B>> {
-        unsafe {
-            
-            self.replace_cart(EitherCart::A)
-        }
+        
+        unsafe { self.replace_cart(EitherCart::A) }
     }
     
     
@@ -1225,12 +1281,12 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     #[inline]
     pub fn wrap_cart_in_either_b<A>(self) -> Yoke<Y, EitherCart<A, C>> {
-        unsafe {
-            
-            self.replace_cart(EitherCart::B)
-        }
+        
+        unsafe { self.replace_cart(EitherCart::B) }
     }
 }
+
+
 
 
 

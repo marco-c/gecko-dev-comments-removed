@@ -3,7 +3,9 @@
 
 
 
-icu_benchmark_macros::static_setup!();
+
+#![no_main] 
+icu_benchmark_macros::instrument!();
 
 use std::fmt;
 use writeable::*;
@@ -45,8 +47,6 @@ impl<V: Writeable> fmt::Display for WriteableMessage<V> {
 }
 
 fn main() {
-    icu_benchmark_macros::main_setup!();
-
     let (string, parts) =
         writeable::_internal::writeable_to_parts_for_test(&WriteableMessage("world"));
 

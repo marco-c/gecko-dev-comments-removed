@@ -9,11 +9,12 @@
 
 
 
-use crate::codepointinvlist::{
-    CodePointInversionList, CodePointInversionListBuilder, CodePointInversionListError,
-    CodePointInversionListULE,
-};
+#[cfg(feature = "alloc")]
+use crate::codepointinvlist::CodePointInversionListBuilder;
+use crate::codepointinvlist::{CodePointInversionList, CodePointInversionListULE};
+#[cfg(feature = "alloc")]
 use alloc::string::{String, ToString};
+#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 use displaydoc::Display;
 use yoke::Yokeable;
@@ -23,10 +24,12 @@ use zerovec::{VarZeroSlice, VarZeroVec};
 
 
 
+
 #[zerovec::make_varule(CodePointInversionListAndStringListULE)]
 #[zerovec::skip_derive(Ord)]
 #[zerovec::derive(Debug)]
 #[derive(Debug, Eq, PartialEq, Clone, Yokeable, ZeroFrom)]
+#[cfg_attr(not(feature = "alloc"), zerovec::skip_derive(ZeroMapKV, ToOwned))]
 
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", zerovec::derive(Serialize, Deserialize, Debug))]
@@ -55,13 +58,20 @@ impl databake::Bake for CodePointInversionListAndStringList<'_> {
     }
 }
 
+#[cfg(feature = "databake")]
+impl databake::BakeSize for CodePointInversionListAndStringList<'_> {
+    fn borrows_size(&self) -> usize {
+        self.cp_inv_list.borrows_size() + self.str_list.borrows_size()
+    }
+}
+
 impl<'data> CodePointInversionListAndStringList<'data> {
     
     
     pub fn try_from(
         cp_inv_list: CodePointInversionList<'data>,
         str_list: VarZeroVec<'data, str>,
-    ) -> Result<Self, CodePointInversionListAndStringListError> {
+    ) -> Result<Self, InvalidStringList> {
         
         
         
@@ -72,32 +82,29 @@ impl<'data> CodePointInversionListAndStringList<'data> {
             let mut it = str_list.iter();
             if let Some(mut x) = it.next() {
                 if x.len() == 1 {
-                    return Err(
-                        CodePointInversionListAndStringListError::InvalidStringLength(
-                            x.to_string(),
-                        ),
-                    );
+                    return Err(InvalidStringList::InvalidStringLength(
+                        #[cfg(feature = "alloc")]
+                        x.to_string(),
+                    ));
                 }
                 for y in it {
                     if x.len() == 1 {
-                        return Err(
-                            CodePointInversionListAndStringListError::InvalidStringLength(
-                                x.to_string(),
-                            ),
-                        );
+                        return Err(InvalidStringList::InvalidStringLength(
+                            #[cfg(feature = "alloc")]
+                            x.to_string(),
+                        ));
                     } else if x == y {
-                        return Err(
-                            CodePointInversionListAndStringListError::StringListNotUnique(
-                                x.to_string(),
-                            ),
-                        );
+                        return Err(InvalidStringList::StringListNotUnique(
+                            #[cfg(feature = "alloc")]
+                            x.to_string(),
+                        ));
                     } else if x > y {
-                        return Err(
-                            CodePointInversionListAndStringListError::StringListNotSorted(
-                                x.to_string(),
-                                y.to_string(),
-                            ),
-                        );
+                        return Err(InvalidStringList::StringListNotSorted(
+                            #[cfg(feature = "alloc")]
+                            x.to_string(),
+                            #[cfg(feature = "alloc")]
+                            y.to_string(),
+                        ));
                     }
 
                     
@@ -112,7 +119,7 @@ impl<'data> CodePointInversionListAndStringList<'data> {
         })
     }
 
-    #[doc(hidden)]
+    #[doc(hidden)] 
     pub const fn from_parts_unchecked(
         cp_inv_list: CodePointInversionList<'data>,
         str_list: VarZeroVec<'data, str>,
@@ -156,11 +163,11 @@ impl<'data> CodePointInversionListAndStringList<'data> {
     
     
     
-    pub fn contains(&self, s: &str) -> bool {
+    pub fn contains_str(&self, s: &str) -> bool {
         let mut chars = s.chars();
         if let Some(first_char) = chars.next() {
             if chars.next().is_none() {
-                return self.contains_char(first_char);
+                return self.contains(first_char);
             }
         }
         self.str_list.binary_search(s).is_ok()
@@ -208,7 +215,7 @@ impl<'data> CodePointInversionListAndStringList<'data> {
     
     
     
-    pub fn contains_char(&self, ch: char) -> bool {
+    pub fn contains(&self, ch: char) -> bool {
         self.contains32(ch as u32)
     }
 
@@ -223,6 +230,7 @@ impl<'data> CodePointInversionListAndStringList<'data> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a> FromIterator<&'a str> for CodePointInversionListAndStringList<'_> {
     fn from_iter<I>(it: I) -> Self
     where
@@ -257,26 +265,24 @@ impl<'a> FromIterator<&'a str> for CodePointInversionListAndStringList<'_> {
 }
 
 
-
-
 #[derive(Display, Debug)]
-pub enum CodePointInversionListAndStringListError {
+pub enum InvalidStringList {
     
-    #[displaydoc("Invalid code point inversion list: {0:?}")]
-    InvalidCodePointInversionList(CodePointInversionListError),
+    #[cfg_attr(feature = "alloc", displaydoc("Invalid string length for string: {0}"))]
+    InvalidStringLength(#[cfg(feature = "alloc")] String),
     
-    #[displaydoc("Invalid string length for string: {0}")]
-    InvalidStringLength(String),
+    #[cfg_attr(feature = "alloc", displaydoc("String list has duplicate: {0}"))]
+    StringListNotUnique(#[cfg(feature = "alloc")] String),
     
-    #[displaydoc("String list has duplicate: {0}")]
-    StringListNotUnique(String),
-    
-    #[displaydoc("Strings in string list not in sorted order: ({0}, {1})")]
-    StringListNotSorted(String, String),
+    #[cfg_attr(
+        feature = "alloc",
+        displaydoc("Strings in string list not in sorted order: ({0}, {1})")
+    )]
+    StringListNotSorted(
+        #[cfg(feature = "alloc")] String,
+        #[cfg(feature = "alloc")] String,
+    ),
 }
-
-#[doc(no_inline)]
-pub use CodePointInversionListAndStringListError as Error;
 
 #[cfg(test)]
 mod tests {
@@ -285,8 +291,7 @@ mod tests {
     #[test]
     fn test_size_has_strings() {
         let cp_slice = &[0, 1, 0x7F, 0x80, 0xFFFF, 0x1_0000, 0x10_FFFF, 0x11_0000];
-        let cp_list =
-            CodePointInversionList::try_clone_from_inversion_list_slice(cp_slice).unwrap();
+        let cp_list = CodePointInversionList::try_from_u32_inversion_list_slice(cp_slice).unwrap();
         let str_slice = &["ascii_max", "bmp_max", "unicode_max", "zero"];
         let str_list = VarZeroVec::<str>::from(str_slice);
 
@@ -299,8 +304,7 @@ mod tests {
     #[test]
     fn test_empty_string_allowed() {
         let cp_slice = &[0, 1, 0x7F, 0x80, 0xFFFF, 0x1_0000, 0x10_FFFF, 0x11_0000];
-        let cp_list =
-            CodePointInversionList::try_clone_from_inversion_list_slice(cp_slice).unwrap();
+        let cp_list = CodePointInversionList::try_from_u32_inversion_list_slice(cp_slice).unwrap();
         let str_slice = &["", "ascii_max", "bmp_max", "unicode_max", "zero"];
         let str_list = VarZeroVec::<str>::from(str_slice);
 
@@ -313,8 +317,7 @@ mod tests {
     #[test]
     fn test_invalid_string() {
         let cp_slice = &[0, 1];
-        let cp_list =
-            CodePointInversionList::try_clone_from_inversion_list_slice(cp_slice).unwrap();
+        let cp_list = CodePointInversionList::try_from_u32_inversion_list_slice(cp_slice).unwrap();
         let str_slice = &["a"];
         let str_list = VarZeroVec::<str>::from(str_slice);
 
@@ -322,15 +325,14 @@ mod tests {
 
         assert!(matches!(
             cpilsl,
-            Err(CodePointInversionListAndStringListError::InvalidStringLength(_))
+            Err(InvalidStringList::InvalidStringLength(_))
         ));
     }
 
     #[test]
     fn test_invalid_string_list_has_duplicate() {
         let cp_slice = &[0, 1];
-        let cp_list =
-            CodePointInversionList::try_clone_from_inversion_list_slice(cp_slice).unwrap();
+        let cp_list = CodePointInversionList::try_from_u32_inversion_list_slice(cp_slice).unwrap();
         let str_slice = &["abc", "abc"];
         let str_list = VarZeroVec::<str>::from(str_slice);
 
@@ -338,15 +340,14 @@ mod tests {
 
         assert!(matches!(
             cpilsl,
-            Err(CodePointInversionListAndStringListError::StringListNotUnique(_))
+            Err(InvalidStringList::StringListNotUnique(_))
         ));
     }
 
     #[test]
     fn test_invalid_string_list_not_sorted() {
         let cp_slice = &[0, 1];
-        let cp_list =
-            CodePointInversionList::try_clone_from_inversion_list_slice(cp_slice).unwrap();
+        let cp_list = CodePointInversionList::try_from_u32_inversion_list_slice(cp_slice).unwrap();
         let str_slice = &["xyz", "abc"];
         let str_list = VarZeroVec::<str>::from(str_slice);
 
@@ -354,7 +355,7 @@ mod tests {
 
         assert!(matches!(
             cpilsl,
-            Err(CodePointInversionListAndStringListError::StringListNotSorted(_, _))
+            Err(InvalidStringList::StringListNotSorted(_, _))
         ));
     }
 
@@ -369,14 +370,14 @@ mod tests {
         assert_eq!(cpilsl_1, cpilsl_2);
 
         assert!(cpilsl_1.has_strings());
-        assert!(cpilsl_1.contains("abc"));
-        assert!(cpilsl_1.contains("xyz"));
-        assert!(!cpilsl_1.contains("def"));
+        assert!(cpilsl_1.contains_str("abc"));
+        assert!(cpilsl_1.contains_str("xyz"));
+        assert!(!cpilsl_1.contains_str("def"));
 
         assert_eq!(1, cpilsl_1.cp_inv_list.size());
-        assert!(cpilsl_1.contains_char('a'));
-        assert!(!cpilsl_1.contains_char('0'));
-        assert!(!cpilsl_1.contains_char('q'));
+        assert!(cpilsl_1.contains('a'));
+        assert!(!cpilsl_1.contains('0'));
+        assert!(!cpilsl_1.contains('q'));
 
         assert_eq!(3, cpilsl_1.size());
     }

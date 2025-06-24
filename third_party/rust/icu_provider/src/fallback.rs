@@ -7,8 +7,6 @@
 
 
 
-use icu_locid::extensions::unicode::Key;
-
 
 
 
@@ -23,32 +21,24 @@ pub enum LocaleFallbackPriority {
     
     
     
+    Script,
+    
+    
+    
     Region,
-    
-    
-    
-    Collation,
 }
 
 impl LocaleFallbackPriority {
     
-    pub const fn const_default() -> Self {
+    pub const fn default() -> Self {
         Self::Language
     }
 }
 
 impl Default for LocaleFallbackPriority {
     fn default() -> Self {
-        Self::const_default()
+        Self::default()
     }
-}
-
-
-#[derive(Debug, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
-#[non_exhaustive]
-pub enum LocaleFallbackSupplement {
-    
-    Collation,
 }
 
 
@@ -115,88 +105,19 @@ pub struct LocaleFallbackConfig {
     
     
     pub priority: LocaleFallbackPriority,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub extension_key: Option<Key>,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fallback_supplement: Option<LocaleFallbackSupplement>,
 }
 
 impl LocaleFallbackConfig {
     
-    pub const fn const_default() -> Self {
+    pub const fn default() -> Self {
         Self {
-            priority: LocaleFallbackPriority::const_default(),
-            extension_key: None,
-            fallback_supplement: None,
+            priority: LocaleFallbackPriority::default(),
         }
     }
 }
 
 impl Default for LocaleFallbackConfig {
     fn default() -> Self {
-        Self::const_default()
+        Self::default()
     }
 }

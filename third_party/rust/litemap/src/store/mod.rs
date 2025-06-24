@@ -116,23 +116,18 @@ pub trait StoreMut<K, V>: Store<K, V> {
 
     
     fn lm_clear(&mut self);
+}
+
+pub trait StoreBulkMut<K, V>: StoreMut<K, V> {
+    
+    fn lm_retain<F>(&mut self, predicate: F)
+    where
+        F: FnMut(&K, &V) -> bool;
 
     
-    fn lm_retain<F>(&mut self, mut predicate: F)
+    fn lm_extend<I>(&mut self, other: I)
     where
-        F: FnMut(&K, &V) -> bool,
-    {
-        let mut i = 0;
-        while i < self.lm_len() {
-            #[allow(clippy::unwrap_used)] 
-            let (k, v) = self.lm_get(i).unwrap();
-            if predicate(k, v) {
-                i += 1;
-            } else {
-                self.lm_remove(i);
-            }
-        }
-    }
+        I: IntoIterator<Item = (K, V)>;
 }
 
 

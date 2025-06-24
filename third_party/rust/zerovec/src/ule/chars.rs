@@ -52,6 +52,17 @@ impl CharULE {
         Self([u0, u1, u2])
     }
 
+    
+    
+    
+    
+    #[inline]
+    pub fn to_char(self) -> char {
+        let [b0, b1, b2] = self.0;
+        
+        unsafe { char::from_u32_unchecked(u32::from_le_bytes([b0, b1, b2, 0])) }
+    }
+
     impl_ule_from_array!(char, CharULE, Self([0; 3]));
 }
 
@@ -66,9 +77,9 @@ impl CharULE {
 
 unsafe impl ULE for CharULE {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         if bytes.len() % 3 != 0 {
-            return Err(ZeroVecError::length::<Self>(bytes.len()));
+            return Err(UleError::length::<Self>(bytes.len()));
         }
         
         for chunk in bytes.chunks_exact(3) {
@@ -76,7 +87,7 @@ unsafe impl ULE for CharULE {
             #[allow(clippy::indexing_slicing)]
             
             let u = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], 0]);
-            char::try_from(u).map_err(|_| ZeroVecError::parse::<Self>())?;
+            char::try_from(u).map_err(|_| UleError::parse::<Self>())?;
         }
         Ok(())
     }
@@ -92,15 +103,7 @@ impl AsULE for char {
 
     #[inline]
     fn from_unaligned(unaligned: Self::ULE) -> Self {
-        
-        unsafe {
-            Self::from_u32_unchecked(u32::from_le_bytes([
-                unaligned.0[0],
-                unaligned.0[1],
-                unaligned.0[2],
-                0,
-            ]))
-        }
+        unaligned.to_char()
     }
 }
 
@@ -125,7 +128,7 @@ mod test {
         const CHARS: [char; 2] = ['a', '🙃'];
         const CHARS_ULE: [CharULE; 2] = CharULE::from_array(CHARS);
         assert_eq!(
-            CharULE::as_byte_slice(&CHARS_ULE),
+            CharULE::slice_as_bytes(&CHARS_ULE),
             &[0x61, 0x00, 0x00, 0x43, 0xF6, 0x01]
         );
     }
@@ -134,7 +137,7 @@ mod test {
     fn test_from_array_zst() {
         const CHARS: [char; 0] = [];
         const CHARS_ULE: [CharULE; 0] = CharULE::from_array(CHARS);
-        let bytes = CharULE::as_byte_slice(&CHARS_ULE);
+        let bytes = CharULE::slice_as_bytes(&CHARS_ULE);
         let empty: &[u8] = &[];
         assert_eq!(bytes, empty);
     }
@@ -144,10 +147,10 @@ mod test {
         
         let chars = ['w', 'ω', '文', '𑄃', '🙃'];
         let char_ules: Vec<CharULE> = chars.iter().copied().map(char::to_unaligned).collect();
-        let char_bytes: &[u8] = CharULE::as_byte_slice(&char_ules);
+        let char_bytes: &[u8] = CharULE::slice_as_bytes(&char_ules);
 
         
-        let parsed_ules: &[CharULE] = CharULE::parse_byte_slice(char_bytes).unwrap();
+        let parsed_ules: &[CharULE] = CharULE::parse_bytes_to_slice(char_bytes).unwrap();
         assert_eq!(char_ules, parsed_ules);
         let parsed_chars: Vec<char> = parsed_ules
             .iter()
@@ -172,8 +175,8 @@ mod test {
             .copied()
             .map(<u32 as AsULE>::to_unaligned)
             .collect();
-        let u32_bytes: &[u8] = RawBytesULE::<4>::as_byte_slice(&u32_ules);
-        let parsed_ules_result = CharULE::parse_byte_slice(u32_bytes);
+        let u32_bytes: &[u8] = RawBytesULE::<4>::slice_as_bytes(&u32_ules);
+        let parsed_ules_result = CharULE::parse_bytes_to_slice(u32_bytes);
         assert!(parsed_ules_result.is_err());
 
         
@@ -183,8 +186,8 @@ mod test {
             .copied()
             .map(<u32 as AsULE>::to_unaligned)
             .collect();
-        let u32_bytes: &[u8] = RawBytesULE::<4>::as_byte_slice(&u32_ules);
-        let parsed_ules_result = CharULE::parse_byte_slice(u32_bytes);
+        let u32_bytes: &[u8] = RawBytesULE::<4>::slice_as_bytes(&u32_ules);
+        let parsed_ules_result = CharULE::parse_bytes_to_slice(u32_bytes);
         assert!(parsed_ules_result.is_err());
     }
 }

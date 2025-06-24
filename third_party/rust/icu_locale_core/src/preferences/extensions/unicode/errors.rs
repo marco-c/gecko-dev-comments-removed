@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, displaydoc::Display)]
+pub enum PreferencesParseError {
+    
+    InvalidKeywordValue,
+}
+
+impl core::error::Error for PreferencesParseError {}

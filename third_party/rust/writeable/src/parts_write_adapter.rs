@@ -4,6 +4,7 @@
 
 use crate::*;
 
+
 #[derive(Debug)]
 #[allow(clippy::exhaustive_structs)] 
 pub struct CoreWriteAsPartsWrite<W: fmt::Write + ?Sized>(pub W);
@@ -30,5 +31,85 @@ impl<W: fmt::Write + ?Sized> PartsWrite for CoreWriteAsPartsWrite<W> {
         mut f: impl FnMut(&mut Self::SubPartsWrite) -> fmt::Result,
     ) -> fmt::Result {
         f(self)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+#[allow(clippy::exhaustive_structs)] 
+pub struct WithPart<T: ?Sized> {
+    pub part: Part,
+    pub writeable: T,
+}
+
+impl<T: Writeable + ?Sized> Writeable for WithPart<T> {
+    #[inline]
+    fn write_to<W: fmt::Write + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+        self.writeable.write_to(sink)
+    }
+
+    #[inline]
+    fn write_to_parts<W: PartsWrite + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+        sink.with_part(self.part, |w| self.writeable.write_to_parts(w))
+    }
+
+    #[inline]
+    fn writeable_length_hint(&self) -> LengthHint {
+        self.writeable.writeable_length_hint()
+    }
+
+    #[inline]
+    fn write_to_string(&self) -> Cow<str> {
+        self.writeable.write_to_string()
+    }
+}
+
+impl<T: Writeable + ?Sized> fmt::Display for WithPart<T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Writeable::write_to(&self, f)
     }
 }

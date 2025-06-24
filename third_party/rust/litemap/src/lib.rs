@@ -31,7 +31,21 @@
 
 
 
-#![cfg_attr(not(test), no_std)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -41,6 +55,7 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
@@ -49,6 +64,7 @@
 #[cfg(doc)]
 extern crate std;
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
 #[cfg(feature = "databake")]
@@ -64,4 +80,4 @@ pub mod store;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
-pub use map::LiteMap;
+pub use map::{Entry, LiteMap, OccupiedEntry, VacantEntry};

@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::ops::ControlFlow;
 
 use super::docs::Docs;
@@ -17,7 +17,7 @@ pub struct Method {
     pub docs: Docs,
 
     
-    pub full_path_name: Ident,
+    pub abi_name: Ident,
 
     
     pub self_param: Option<SelfParam>,
@@ -95,7 +95,7 @@ impl Method {
         Method {
             name: Ident::from(method_ident),
             docs: Docs::from_attrs(&m.attrs),
-            full_path_name: Ident::from(&extern_ident),
+            abi_name: Ident::from(&extern_ident),
             self_param,
             params: all_params,
             return_type: return_ty,
@@ -173,7 +173,7 @@ impl Method {
                             ControlFlow::Continue(())
                         })
                         .is_break()
-                        .then(|| (param, lt_kind))
+                        .then_some((param, lt_kind))
                 })
                 .collect();
 
@@ -191,25 +191,26 @@ impl Method {
     
     
     
-    pub fn is_writeable_out(&self) -> bool {
+    pub fn is_write_out(&self) -> bool {
         let return_compatible = self
             .return_type
             .as_ref()
             .map(|return_type| match return_type {
                 TypeName::Unit => true,
-                TypeName::Result(ok, _, _) => {
+                TypeName::Result(ok, _, _) | TypeName::Option(ok, _) => {
                     matches!(ok.as_ref(), TypeName::Unit)
                 }
+
                 _ => false,
             })
             .unwrap_or(true);
 
-        return_compatible && self.params.last().map(Param::is_writeable).unwrap_or(false)
+        return_compatible && self.params.last().map(Param::is_write).unwrap_or(false)
     }
 
     
-    pub fn has_writeable_param(&self) -> bool {
-        self.params.iter().any(|p| p.is_writeable())
+    pub fn has_write_param(&self) -> bool {
+        self.params.iter().any(|p| p.is_write())
     }
 
     
@@ -228,6 +229,9 @@ pub struct SelfParam {
     
     
     pub path_type: PathType,
+
+    
+    pub attrs: Attrs,
 }
 
 impl SelfParam {
@@ -246,6 +250,39 @@ impl SelfParam {
                 .as_ref()
                 .map(|(_, lt)| (lt.into(), Mutability::from_syn(&rec.mutability))),
             path_type,
+            attrs: Attrs::from_attrs(&rec.attrs),
+        }
+    }
+}
+
+
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Debug, Deserialize)]
+#[non_exhaustive]
+pub struct TraitSelfParam {
+    
+    pub reference: Option<(Lifetime, Mutability)>,
+
+    
+    
+    pub path_trait: PathType,
+}
+
+impl TraitSelfParam {
+    pub fn to_typename(&self) -> TypeName {
+        let typ = TypeName::ImplTrait(self.path_trait.clone());
+        if let Some((ref lifetime, ref mutability)) = self.reference {
+            return TypeName::Reference(lifetime.clone(), *mutability, Box::new(typ));
+        }
+        typ
+    }
+
+    pub fn from_syn(rec: &syn::Receiver, path_trait: PathType) -> Self {
+        TraitSelfParam {
+            reference: rec
+                .reference
+                .as_ref()
+                .map(|(_, lt)| (lt.into(), Mutability::from_syn(&rec.mutability))),
+            path_trait,
         }
     }
 }
@@ -259,13 +296,16 @@ pub struct Param {
 
     
     pub ty: TypeName,
+
+    
+    pub attrs: Attrs,
 }
 
 impl Param {
     
-    pub fn is_writeable(&self) -> bool {
+    pub fn is_write(&self) -> bool {
         match self.ty {
-            TypeName::Reference(_, Mutability::Mutable, ref w) => **w == TypeName::Writeable,
+            TypeName::Reference(_, Mutability::Mutable, ref w) => **w == TypeName::Write,
             _ => false,
         }
     }
@@ -276,9 +316,12 @@ impl Param {
             _ => panic!("Unexpected param type"),
         };
 
+        let attrs = Attrs::from_attrs(&t.attrs);
+
         Param {
             name: (&ident.ident).into(),
             ty: TypeName::from_syn(&t.ty, Some(self_path_type)),
+            attrs,
         }
     }
 }

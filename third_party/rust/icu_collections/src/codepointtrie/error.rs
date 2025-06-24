@@ -7,8 +7,6 @@
 use displaydoc::Display;
 
 
-
-
 #[derive(Copy, Clone, Display, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
@@ -22,3 +20,5 @@ pub enum Error {
     #[displaydoc("CodePointTrie must be constructed from data vector with at least one element")]
     EmptyDataVector,
 }
+
+impl core::error::Error for Error {}

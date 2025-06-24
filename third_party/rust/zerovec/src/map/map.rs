@@ -3,8 +3,8 @@
 
 
 use super::*;
-use crate::ule::{AsULE, EncodeAsVarULE, VarULE};
-use crate::{VarZeroVec, ZeroSlice, ZeroVec, ZeroVecError};
+use crate::ule::{AsULE, EncodeAsVarULE, UleError, VarULE};
+use crate::{VarZeroVec, ZeroSlice, ZeroVec};
 use alloc::borrow::Borrow;
 use alloc::boxed::Box;
 use core::cmp::Ordering;
@@ -323,9 +323,8 @@ where
 
 impl<'a, K, V> ZeroMap<'a, K, V>
 where
-    K: ZeroMapKV<'a, Container = ZeroVec<'a, K>> + ?Sized,
+    K: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, K>>,
     V: ZeroMapKV<'a> + ?Sized,
-    K: AsULE,
 {
     
     
@@ -335,7 +334,7 @@ where
     
     pub fn cast_zv_k_unchecked<P>(self) -> ZeroMap<'a, P, V>
     where
-        P: AsULE<ULE = K::ULE> + ZeroMapKV<'a, Container = ZeroVec<'a, P>> + ?Sized,
+        P: AsULE<ULE = K::ULE> + ZeroMapKV<'a, Container = ZeroVec<'a, P>>,
     {
         ZeroMap {
             keys: self.keys.cast(),
@@ -353,9 +352,9 @@ where
     
     
     
-    pub fn try_convert_zv_k_unchecked<P>(self) -> Result<ZeroMap<'a, P, V>, ZeroVecError>
+    pub fn try_convert_zv_k_unchecked<P>(self) -> Result<ZeroMap<'a, P, V>, UleError>
     where
-        P: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, P>> + ?Sized,
+        P: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, P>>,
     {
         Ok(ZeroMap {
             keys: self.keys.try_into_converted()?,
@@ -367,8 +366,7 @@ where
 impl<'a, K, V> ZeroMap<'a, K, V>
 where
     K: ZeroMapKV<'a> + ?Sized,
-    V: ZeroMapKV<'a, Container = ZeroVec<'a, V>> + ?Sized,
-    V: AsULE,
+    V: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, V>>,
 {
     
     
@@ -378,7 +376,7 @@ where
     
     pub fn cast_zv_v_unchecked<P>(self) -> ZeroMap<'a, K, P>
     where
-        P: AsULE<ULE = V::ULE> + ZeroMapKV<'a, Container = ZeroVec<'a, P>> + ?Sized,
+        P: AsULE<ULE = V::ULE> + ZeroMapKV<'a, Container = ZeroVec<'a, P>>,
     {
         ZeroMap {
             keys: self.keys,
@@ -396,9 +394,9 @@ where
     
     
     
-    pub fn try_convert_zv_v_unchecked<P>(self) -> Result<ZeroMap<'a, K, P>, ZeroVecError>
+    pub fn try_convert_zv_v_unchecked<P>(self) -> Result<ZeroMap<'a, K, P>, UleError>
     where
-        P: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, P>> + ?Sized,
+        P: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, P>>,
     {
         Ok(ZeroMap {
             keys: self.keys,
@@ -468,8 +466,7 @@ where
 impl<'a, K, V> ZeroMap<'a, K, V>
 where
     K: ZeroMapKV<'a> + ?Sized + Ord,
-    V: ZeroMapKV<'a> + ?Sized,
-    V: Copy,
+    V: Copy + ZeroMapKV<'a>,
 {
     
     
@@ -523,8 +520,7 @@ where
 impl<'a, K, V> ZeroMap<'a, K, V>
 where
     K: ZeroMapKV<'a> + ?Sized,
-    V: ZeroMapKV<'a, Container = ZeroVec<'a, V>> + ?Sized,
-    V: AsULE + Copy,
+    V: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, V>>,
 {
     
     
@@ -544,10 +540,8 @@ where
 
 impl<'a, K, V> ZeroMap<'a, K, V>
 where
-    K: ZeroMapKV<'a, Container = ZeroVec<'a, K>> + ?Sized,
-    V: ZeroMapKV<'a, Container = ZeroVec<'a, V>> + ?Sized,
-    K: AsULE + Copy,
-    V: AsULE + Copy,
+    K: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, K>>,
+    V: AsULE + ZeroMapKV<'a, Container = ZeroVec<'a, V>>,
 {
     
     

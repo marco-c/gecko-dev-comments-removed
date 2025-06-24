@@ -194,7 +194,7 @@
 
 
 
-#![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -204,6 +204,7 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
@@ -211,13 +212,15 @@
 
 #![allow(clippy::needless_lifetimes)]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
-mod error;
-mod flexzerovec;
+mod cow;
 #[cfg(feature = "hashmap")]
 pub mod hashmap;
+#[cfg(feature = "alloc")]
 mod map;
+#[cfg(feature = "alloc")]
 mod map2d;
 #[cfg(test)]
 pub mod samples;
@@ -227,31 +230,34 @@ mod zerovec;
 
 
 pub mod ule;
-
 #[cfg(feature = "yoke")]
 mod yoke_impls;
 mod zerofrom_impls;
 
-pub use crate::error::ZeroVecError;
+pub use crate::cow::VarZeroCow;
 #[cfg(feature = "hashmap")]
 pub use crate::hashmap::ZeroHashMap;
+#[cfg(feature = "alloc")]
 pub use crate::map::map::ZeroMap;
+#[cfg(feature = "alloc")]
 pub use crate::map2d::map::ZeroMap2d;
 pub use crate::varzerovec::{slice::VarZeroSlice, vec::VarZeroVec};
 pub use crate::zerovec::{ZeroSlice, ZeroVec};
 
-pub(crate) use flexzerovec::chunk_to_usize;
-
-#[doc(hidden)]
+#[doc(hidden)] 
 pub mod __zerovec_internal_reexport {
     pub use zerofrom::ZeroFrom;
 
+    #[cfg(feature = "alloc")]
+    pub use alloc::borrow;
+    #[cfg(feature = "alloc")]
     pub use alloc::boxed;
 
     #[cfg(feature = "serde")]
     pub use serde;
 }
 
+#[cfg(feature = "alloc")]
 pub mod maps {
     
     
@@ -292,12 +298,19 @@ pub mod vecs {
     #[doc(no_inline)]
     pub use crate::zerovec::{ZeroSlice, ZeroVec};
 
+    pub use crate::zerovec::ZeroSliceIter;
+
     #[doc(no_inline)]
     pub use crate::varzerovec::{VarZeroSlice, VarZeroVec};
 
-    pub use crate::varzerovec::{Index16, Index32, VarZeroVecFormat, VarZeroVecOwned};
+    #[cfg(feature = "alloc")]
+    pub use crate::varzerovec::VarZeroVecOwned;
+    pub use crate::varzerovec::{Index16, Index32, Index8, VarZeroSliceIter, VarZeroVecFormat};
 
-    pub use crate::flexzerovec::{FlexZeroSlice, FlexZeroVec, FlexZeroVecOwned};
+    pub type VarZeroVec16<'a, T> = VarZeroVec<'a, T, Index16>;
+    pub type VarZeroVec32<'a, T> = VarZeroVec<'a, T, Index32>;
+    pub type VarZeroSlice16<T> = VarZeroSlice<T, Index16>;
+    pub type VarZeroSlice32<T> = VarZeroSlice<T, Index32>;
 }
 
 
@@ -516,10 +529,17 @@ pub use zerovec_derive::make_ule;
 
 
 
+
+
+
+
+
 #[cfg(feature = "derive")]
 pub use zerovec_derive::make_varule;
 
 #[cfg(test)]
+
+#[cfg(target_pointer_width = "64")]
 mod tests {
     use super::*;
     use core::mem::size_of;
@@ -547,12 +567,10 @@ mod tests {
         check_size_of!(56 | 48, ZeroMap<str, u32>);
         check_size_of!(64 | 48, ZeroMap<str, str>);
         check_size_of!(120 | 96, ZeroMap2d<str, str, str>);
-        check_size_of!(32 | 24, vecs::FlexZeroVec);
 
         check_size_of!(24, Option<ZeroVec<u8>>);
         check_size_of!(32 | 24, Option<VarZeroVec<str>>);
         check_size_of!(64 | 56 | 48, Option<ZeroMap<str, str>>);
         check_size_of!(120 | 104 | 96, Option<ZeroMap2d<str, str, str>>);
-        check_size_of!(32 | 24, Option<vecs::FlexZeroVec>);
     }
 }

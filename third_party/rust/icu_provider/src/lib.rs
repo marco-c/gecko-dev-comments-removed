@@ -78,44 +78,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![cfg_attr(
     not(test),
@@ -126,182 +88,141 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
 #![warn(missing_docs)]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
-mod data_provider;
-mod error;
-#[doc(hidden)]
-pub mod fallback;
-mod key;
-mod request;
-mod response;
-
-pub mod any;
+#[cfg(feature = "baked")]
+pub mod baked;
 pub mod buf;
 pub mod constructors;
-#[cfg(feature = "datagen")]
-pub mod datagen;
 pub mod dynutil;
+#[cfg(feature = "export")]
+pub mod export;
+#[cfg(feature = "alloc")]
 pub mod hello_world;
-pub mod marker;
-#[cfg(feature = "serde")]
-pub mod serde;
 
 
-pub use crate::data_provider::BoundDataProvider;
-pub use crate::data_provider::DataProvider;
-pub use crate::data_provider::DataProviderWithKey;
-pub use crate::data_provider::DynamicDataProvider;
-pub use crate::error::DataError;
-pub use crate::error::DataErrorKind;
-pub use crate::key::DataKey;
-pub use crate::key::DataKeyHash;
-pub use crate::key::DataKeyMetadata;
-pub use crate::key::DataKeyPath;
-#[cfg(feature = "experimental")]
-pub use crate::request::AuxiliaryKeys;
-pub use crate::request::DataLocale;
-pub use crate::request::DataRequest;
-pub use crate::request::DataRequestMetadata;
-pub use crate::response::Cart;
-pub use crate::response::DataPayload;
-pub use crate::response::DataPayloadOr;
-pub use crate::response::DataResponse;
-pub use crate::response::DataResponseMetadata;
-#[cfg(feature = "macros")]
-pub use icu_provider_macros::data_struct;
+#[cfg(all(feature = "serde", feature = "alloc"))]
+#[doc(hidden)]
+pub mod serde_borrow_de_utils;
 
+mod data_provider;
+pub use data_provider::{
+    BoundDataProvider, DataProvider, DataProviderWithMarker, DryDataProvider, DynamicDataProvider,
+    DynamicDryDataProvider,
+};
+#[cfg(feature = "alloc")]
+pub use data_provider::{IterableDataProvider, IterableDynamicDataProvider};
 
-pub use crate::any::AnyMarker;
-pub use crate::any::AnyPayload;
-pub use crate::any::AnyProvider;
-pub use crate::any::AnyResponse;
-pub use crate::any::AsDowncastingAnyProvider;
-pub use crate::any::AsDynamicDataProviderAnyMarkerWrap;
-pub use crate::any::MaybeSendSync;
-pub use crate::buf::BufferMarker;
-pub use crate::buf::BufferProvider;
-pub use crate::marker::DataMarker;
-pub use crate::marker::KeyedDataMarker;
-pub use crate::marker::NeverMarker;
-#[cfg(feature = "serde")]
-pub use crate::serde::AsDeserializingBufferProvider;
+mod error;
+pub use error::{DataError, DataErrorKind, ResultDataError};
+
+mod request;
+pub use request::{DataLocale, DataMarkerAttributes, DataRequest, DataRequestMetadata, *};
+
+mod response;
+#[doc(hidden)] 
+pub use response::DataPayloadOr;
+pub use response::{Cart, DataPayload, DataResponse, DataResponseMetadata};
+
+#[path = "marker.rs"]
+mod marker_full;
+
+pub use marker_full::{DataMarker, DataMarkerInfo, DynamicDataMarker};
+pub mod marker {
+    
+
+    #[doc(inline)]
+    pub use super::marker_full::impl_data_provider_never_marker;
+    pub use super::marker_full::{
+        DataMarkerExt, DataMarkerId, DataMarkerIdHash, ErasedMarker, NeverMarker,
+    };
+}
+
+mod varule_traits;
+pub mod ule {
+    
+    
+    
+    
+
+    pub use super::varule_traits::MaybeAsVarULE;
+    #[cfg(feature = "export")]
+    pub use super::varule_traits::MaybeEncodeAsVarULE;
+}
 
 
 pub mod prelude {
     #[doc(no_inline)]
-    pub use crate::data_key;
-    #[doc(no_inline)]
-    pub use crate::AnyMarker;
-    #[doc(no_inline)]
-    pub use crate::AnyPayload;
-    #[doc(no_inline)]
-    pub use crate::AnyProvider;
-    #[doc(no_inline)]
-    pub use crate::AnyResponse;
-    #[doc(no_inline)]
     #[cfg(feature = "serde")]
-    pub use crate::AsDeserializingBufferProvider;
+    pub use crate::buf::AsDeserializingBufferProvider;
     #[doc(no_inline)]
-    pub use crate::AsDowncastingAnyProvider;
+    pub use crate::buf::{BufferMarker, BufferProvider};
     #[doc(no_inline)]
-    pub use crate::AsDynamicDataProviderAnyMarkerWrap;
+    pub use crate::{
+        data_marker, data_struct, marker::DataMarkerExt, request::AttributeParseError,
+        request::DataIdentifierBorrowed, BoundDataProvider, DataError, DataErrorKind, DataLocale,
+        DataMarker, DataMarkerAttributes, DataMarkerInfo, DataPayload, DataProvider, DataRequest,
+        DataRequestMetadata, DataResponse, DataResponseMetadata, DryDataProvider,
+        DynamicDataMarker, DynamicDataProvider, DynamicDryDataProvider, ResultDataError,
+    };
+    #[cfg(feature = "alloc")]
     #[doc(no_inline)]
-    #[cfg(feature = "experimental")]
-    pub use crate::AuxiliaryKeys;
-    #[doc(no_inline)]
-    pub use crate::BoundDataProvider;
-    #[doc(no_inline)]
-    pub use crate::BufferMarker;
-    #[doc(no_inline)]
-    pub use crate::BufferProvider;
-    #[doc(no_inline)]
-    pub use crate::DataError;
-    #[doc(no_inline)]
-    pub use crate::DataErrorKind;
-    #[doc(no_inline)]
-    pub use crate::DataKey;
-    #[doc(no_inline)]
-    pub use crate::DataKeyHash;
-    #[doc(no_inline)]
-    pub use crate::DataLocale;
-    #[doc(no_inline)]
-    pub use crate::DataMarker;
-    #[doc(no_inline)]
-    pub use crate::DataPayload;
-    #[doc(no_inline)]
-    pub use crate::DataProvider;
-    #[doc(no_inline)]
-    pub use crate::DataRequest;
-    #[doc(no_inline)]
-    pub use crate::DataRequestMetadata;
-    #[doc(no_inline)]
-    pub use crate::DataResponse;
-    #[doc(no_inline)]
-    pub use crate::DataResponseMetadata;
-    #[doc(no_inline)]
-    pub use crate::DynamicDataProvider;
-    #[doc(no_inline)]
-    pub use crate::KeyedDataMarker;
+    pub use crate::{
+        request::DataIdentifierCow, IterableDataProvider, IterableDynamicDataProvider,
+    };
 
-    #[doc(hidden)]
+    #[doc(no_inline)]
+    pub use icu_locale_core;
+    #[doc(no_inline)]
     pub use yoke;
-    #[doc(hidden)]
+    #[doc(no_inline)]
     pub use zerofrom;
 }
 
+#[doc(hidden)] 
+pub mod fallback;
 
-#[doc(hidden)]
-pub use fallback::LocaleFallbackPriority as FallbackPriority;
-#[doc(hidden)]
-pub use fallback::LocaleFallbackSupplement as FallbackSupplement;
-#[doc(hidden)]
-pub use yoke;
-#[doc(hidden)]
-pub use zerofrom;
+#[doc(hidden)] 
+#[cfg(feature = "logging")]
+pub use log;
 
+#[doc(hidden)] 
+#[cfg(all(not(feature = "logging"), debug_assertions, not(target_os = "none")))]
+pub mod log {
+    extern crate std;
+    pub use std::eprintln as error;
+    pub use std::eprintln as warn;
+    pub use std::eprintln as info;
+    pub use std::eprintln as debug;
+    pub use std::eprintln as trace;
+}
 
-#[doc(hidden)]
-pub mod _internal {
-    pub use super::fallback::{LocaleFallbackPriority, LocaleFallbackSupplement};
-    pub use icu_locid as locid;
-
-    #[cfg(feature = "logging")]
-    pub use log;
-
-    #[cfg(all(not(feature = "logging"), debug_assertions, feature = "std"))]
-    pub mod log {
-        pub use std::eprintln as error;
-        pub use std::eprintln as warn;
-        pub use std::eprintln as info;
-        pub use std::eprintln as debug;
-        pub use std::eprintln as trace;
+#[cfg(all(
+    not(feature = "logging"),
+    any(not(debug_assertions), target_os = "none")
+))]
+#[doc(hidden)] 
+pub mod log {
+    #[macro_export]
+    macro_rules! _internal_noop_log {
+        ($($t:expr),*) => {};
     }
-
-    #[cfg(all(
-        not(feature = "logging"),
-        any(not(debug_assertions), not(feature = "std"))
-    ))]
-    pub mod log {
-        #[macro_export]
-        macro_rules! _internal_noop_log {
-            ($($t:expr),*) => {};
-        }
-        pub use crate::_internal_noop_log as error;
-        pub use crate::_internal_noop_log as warn;
-        pub use crate::_internal_noop_log as info;
-        pub use crate::_internal_noop_log as debug;
-        pub use crate::_internal_noop_log as trace;
-    }
+    pub use crate::_internal_noop_log as error;
+    pub use crate::_internal_noop_log as warn;
+    pub use crate::_internal_noop_log as info;
+    pub use crate::_internal_noop_log as debug;
+    pub use crate::_internal_noop_log as trace;
 }
 
 #[test]
 fn test_logging() {
     
-    crate::_internal::log::info!("Hello World");
+    crate::log::info!("Hello World");
 }

@@ -127,12 +127,12 @@ where
     }
 
     
-    pub fn len(&self) -> usize {
+    pub fn len(self) -> usize {
         self.values.zvl_len()
     }
 
     
-    pub fn is_empty(&self) -> bool {
+    pub fn is_empty(self) -> bool {
         self.values.zvl_len() == 0
     }
 }
@@ -160,7 +160,7 @@ where
     
     
     
-    pub fn get(&self, key: &K) -> Option<&'a V::GetType> {
+    pub fn get(self, key: &K) -> Option<&'a V::GetType> {
         let index = self.keys.zvl_binary_search(key).ok()?;
         self.values.zvl_get(index)
     }
@@ -181,7 +181,7 @@ where
     
     
     
-    pub fn get_by(&self, predicate: impl FnMut(&K) -> Ordering) -> Option<&'a V::GetType> {
+    pub fn get_by(self, predicate: impl FnMut(&K) -> Ordering) -> Option<&'a V::GetType> {
         let index = self.keys.zvl_binary_search_by(predicate).ok()?;
         self.values.zvl_get(index)
     }
@@ -198,7 +198,7 @@ where
     
     
     
-    pub fn contains_key(&self, key: &K) -> bool {
+    pub fn contains_key(self, key: &K) -> bool {
         self.keys.zvl_binary_search(key).is_ok()
     }
 }
@@ -209,27 +209,25 @@ where
     V: ZeroMapKV<'a> + ?Sized,
 {
     
-    pub fn iter<'b>(
-        &'b self,
+    pub fn iter(
+        self,
     ) -> impl Iterator<
         Item = (
             &'a <K as ZeroMapKV<'a>>::GetType,
             &'a <V as ZeroMapKV<'a>>::GetType,
         ),
-    > + 'b {
+    > {
         self.iter_keys().zip(self.iter_values())
     }
 
     
-    pub fn iter_keys<'b>(&'b self) -> impl Iterator<Item = &'a <K as ZeroMapKV<'a>>::GetType> + 'b {
+    pub fn iter_keys(self) -> impl Iterator<Item = &'a <K as ZeroMapKV<'a>>::GetType> {
         #[allow(clippy::unwrap_used)] 
         (0..self.keys.zvl_len()).map(move |idx| self.keys.zvl_get(idx).unwrap())
     }
 
     
-    pub fn iter_values<'b>(
-        &'b self,
-    ) -> impl Iterator<Item = &'a <V as ZeroMapKV<'a>>::GetType> + 'b {
+    pub fn iter_values(self) -> impl Iterator<Item = &'a <V as ZeroMapKV<'a>>::GetType> {
         #[allow(clippy::unwrap_used)] 
         (0..self.values.zvl_len()).map(move |idx| self.values.zvl_get(idx).unwrap())
     }
@@ -241,22 +239,22 @@ where
     V: ZeroMapKV<'a, Slice = ZeroSlice<V>> + AsULE + Copy + 'static,
 {
     
-    pub fn get_copied(&self, key: &K) -> Option<V> {
+    pub fn get_copied(self, key: &K) -> Option<V> {
         let index = self.keys.zvl_binary_search(key).ok()?;
         self.values.get(index)
     }
 
     
-    pub fn get_copied_by(&self, predicate: impl FnMut(&K) -> Ordering) -> Option<V> {
+    pub fn get_copied_by(self, predicate: impl FnMut(&K) -> Ordering) -> Option<V> {
         let index = self.keys.zvl_binary_search_by(predicate).ok()?;
         self.values.get(index)
     }
 
     
     
-    pub fn iter_copied_values<'b>(
-        &'b self,
-    ) -> impl Iterator<Item = (&'b <K as ZeroMapKV<'a>>::GetType, V)> {
+    pub fn iter_copied_values(
+        self,
+    ) -> impl Iterator<Item = (&'a <K as ZeroMapKV<'a>>::GetType, V)> {
         (0..self.keys.zvl_len()).map(move |idx| {
             (
                 #[allow(clippy::unwrap_used)] 
@@ -276,16 +274,14 @@ where
     
     
     #[allow(clippy::needless_lifetimes)] 
-    pub fn iter_copied<'b: 'a>(&'b self) -> impl Iterator<Item = (K, V)> + 'b {
-        let keys = &self.keys;
-        let values = &self.values;
+    pub fn iter_copied(self) -> impl Iterator<Item = (K, V)> + 'a {
         let len = self.keys.zvl_len();
         (0..len).map(move |idx| {
             (
                 #[allow(clippy::unwrap_used)] 
-                ZeroSlice::get(keys, idx).unwrap(),
+                ZeroSlice::get(self.keys, idx).unwrap(),
                 #[allow(clippy::unwrap_used)] 
-                ZeroSlice::get(values, idx).unwrap(),
+                ZeroSlice::get(self.values, idx).unwrap(),
             )
         })
     }

@@ -73,28 +73,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -104,66 +83,58 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
 #![warn(missing_docs)]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
 
 mod date;
-mod datetime;
 
-pub mod any_calendar;
-pub mod buddhist;
+
+mod any_calendar;
+pub mod cal;
+pub mod provider;
+pub mod types;
+pub mod week;
+
 mod calendar;
 mod calendar_arithmetic;
-pub mod chinese;
-mod chinese_based;
-pub mod coptic;
-pub mod dangi;
 mod duration;
 mod error;
-pub mod ethiopian;
-pub mod gregorian;
-pub mod hebrew;
-pub mod indian;
-pub mod islamic;
-pub mod iso;
-pub mod japanese;
-pub mod julian;
-pub mod persian;
-pub mod provider;
-pub mod roc;
-#[cfg(test)]
-mod tests;
-pub mod types;
-mod week_of;
+#[cfg(feature = "ixdtf")]
+mod ixdtf;
 
-pub mod week {
-    
-    use crate::week_of;
-    pub use week_of::RelativeUnit;
-    pub use week_of::WeekCalculator;
-    pub use week_of::WeekOf;
-    #[doc(hidden)]
-    pub use week_of::MIN_UNIT_DAYS;
-}
 
-#[doc(no_inline)]
-pub use any_calendar::{AnyCalendar, AnyCalendarKind};
+pub use any_calendar::IntoAnyCalendar;
 pub use calendar::Calendar;
 pub use date::{AsCalendar, Date, Ref};
-pub use datetime::DateTime;
-#[doc(hidden)]
+#[doc(hidden)] 
 pub use duration::{DateDuration, DateDurationUnit};
-pub use error::CalendarError;
-#[doc(no_inline)]
-pub use gregorian::Gregorian;
-#[doc(no_inline)]
-pub use iso::Iso;
-pub use types::Time;
+pub use error::{DateError, RangeError};
+#[cfg(feature = "ixdtf")]
+pub use ixdtf::ParseError;
+
 
 #[doc(no_inline)]
-pub use CalendarError as Error;
+pub use cal::{AnyCalendar, AnyCalendarKind, Gregorian, Iso};
+
+
+pub mod preferences {
+    pub use crate::any_calendar::CalendarPreferences;
+    #[doc(inline)]
+    
+    #[doc = "\n"] 
+    pub use icu_locale_core::preferences::extensions::unicode::keywords::CalendarAlgorithm;
+    #[doc(inline)]
+    
+    #[doc = "\n"] 
+    pub use icu_locale_core::preferences::extensions::unicode::keywords::HijriCalendarAlgorithm;
+}
+
+#[cfg(test)]
+mod tests;

@@ -23,7 +23,7 @@ impl<const N: usize> RawBytesULE<N> {
     }
 
     #[inline]
-    pub fn from_byte_slice_unchecked_mut(bytes: &mut [u8]) -> &mut [Self] {
+    pub fn from_bytes_unchecked_mut(bytes: &mut [u8]) -> &mut [Self] {
         let data = bytes.as_mut_ptr();
         let len = bytes.len() / N;
         
@@ -42,12 +42,12 @@ impl<const N: usize> RawBytesULE<N> {
 
 unsafe impl<const N: usize> ULE for RawBytesULE<N> {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         if bytes.len() % N == 0 {
             
             Ok(())
         } else {
-            Err(ZeroVecError::length::<Self>(bytes.len()))
+            Err(UleError::length::<Self>(bytes.len()))
         }
     }
 }
@@ -90,17 +90,17 @@ macro_rules! impl_const_constructors {
             /// parsing checks.
             ///
             /// This cannot be generic over T because of current limitations in `const`, but if
-            /// this method is needed in a non-const context, check out [`ZeroSlice::parse_byte_slice()`]
+            /// this method is needed in a non-const context, check out [`ZeroSlice::parse_bytes()`]
             /// instead.
             ///
             /// See [`ZeroSlice::cast()`] for an example.
-            pub const fn try_from_bytes(bytes: &[u8]) -> Result<&Self, ZeroVecError> {
+            pub const fn try_from_bytes(bytes: &[u8]) -> Result<&Self, UleError> {
                 let len = bytes.len();
                 #[allow(clippy::modulo_one)]
                 if len % $size == 0 {
                     Ok(unsafe { Self::from_bytes_unchecked(bytes) })
                 } else {
-                    Err(ZeroVecError::InvalidLength {
+                    Err(UleError::InvalidLength {
                         ty: concat!("<const construct: ", $size, ">"),
                         len,
                     })
@@ -188,7 +188,7 @@ impl_const_constructors!(bool, 1);
 
 unsafe impl ULE for u8 {
     #[inline]
-    fn validate_byte_slice(_bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(_bytes: &[u8]) -> Result<(), UleError> {
         Ok(())
     }
 }
@@ -217,10 +217,10 @@ unsafe impl EqULE for u8 {}
 
 unsafe impl ULE for NonZeroU8 {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         bytes.iter().try_for_each(|b| {
             if *b == 0x00 {
-                Err(ZeroVecError::parse::<Self>())
+                Err(UleError::parse::<Self>())
             } else {
                 Ok(())
             }
@@ -255,7 +255,7 @@ impl NicheBytes<1> for NonZeroU8 {
 
 unsafe impl ULE for i8 {
     #[inline]
-    fn validate_byte_slice(_bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(_bytes: &[u8]) -> Result<(), UleError> {
         Ok(())
     }
 }
@@ -338,12 +338,12 @@ unsafe impl EqULE for f64 {}
 
 unsafe impl ULE for bool {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         for byte in bytes {
             
             
             if *byte > 1 {
-                return Err(ZeroVecError::parse::<Self>());
+                return Err(UleError::parse::<Self>());
             }
         }
         Ok(())
@@ -364,3 +364,36 @@ impl AsULE for bool {
 
 
 unsafe impl EqULE for bool {}
+
+
+
+
+
+
+
+
+unsafe impl ULE for () {
+    #[inline]
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
+        if bytes.is_empty() {
+            Ok(())
+        } else {
+            Err(UleError::length::<Self>(bytes.len()))
+        }
+    }
+}
+
+impl AsULE for () {
+    type ULE = Self;
+    #[inline]
+    fn to_unaligned(self) -> Self::ULE {
+        self
+    }
+    #[inline]
+    fn from_unaligned(unaligned: Self::ULE) -> Self {
+        unaligned
+    }
+}
+
+
+unsafe impl EqULE for () {}

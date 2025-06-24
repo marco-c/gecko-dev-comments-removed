@@ -5,16 +5,12 @@
 use core::marker::PhantomData;
 use yoke::Yokeable;
 
-use crate::error::DataError;
-use crate::key::DataKey;
-use crate::marker::{DataMarker, KeyedDataMarker};
-use crate::request::DataRequest;
-use crate::response::DataResponse;
+use crate::prelude::*;
 
 
 pub trait DataProvider<M>
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
 {
     
     
@@ -23,9 +19,9 @@ where
     fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError>;
 }
 
-impl<'a, M, P> DataProvider<M> for &'a P
+impl<M, P> DataProvider<M> for &P
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
     P: DataProvider<M> + ?Sized,
 {
     #[inline]
@@ -34,9 +30,10 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<M, P> DataProvider<M> for alloc::boxed::Box<P>
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
     P: DataProvider<M> + ?Sized,
 {
     #[inline]
@@ -45,9 +42,10 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<M, P> DataProvider<M> for alloc::rc::Rc<P>
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
     P: DataProvider<M> + ?Sized,
 {
     #[inline]
@@ -57,9 +55,10 @@ where
 }
 
 #[cfg(target_has_atomic = "ptr")]
+#[cfg(feature = "alloc")]
 impl<M, P> DataProvider<M> for alloc::sync::Arc<P>
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
     P: DataProvider<M> + ?Sized,
 {
     #[inline]
@@ -70,67 +69,264 @@ where
 
 
 
+pub trait DryDataProvider<M: DataMarker>: DataProvider<M> {
+    
+    
+    
+    
+    
+    
+    
+    fn dry_load(&self, req: DataRequest) -> Result<DataResponseMetadata, DataError>;
+}
+
+impl<M, P> DryDataProvider<M> for &P
+where
+    M: DataMarker,
+    P: DryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load(&self, req: DataRequest) -> Result<DataResponseMetadata, DataError> {
+        (*self).dry_load(req)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M, P> DryDataProvider<M> for alloc::boxed::Box<P>
+where
+    M: DataMarker,
+    P: DryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load(&self, req: DataRequest) -> Result<DataResponseMetadata, DataError> {
+        (**self).dry_load(req)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M, P> DryDataProvider<M> for alloc::rc::Rc<P>
+where
+    M: DataMarker,
+    P: DryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load(&self, req: DataRequest) -> Result<DataResponseMetadata, DataError> {
+        (**self).dry_load(req)
+    }
+}
+
+#[cfg(target_has_atomic = "ptr")]
+#[cfg(feature = "alloc")]
+impl<M, P> DryDataProvider<M> for alloc::sync::Arc<P>
+where
+    M: DataMarker,
+    P: DryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load(&self, req: DataRequest) -> Result<DataResponseMetadata, DataError> {
+        (**self).dry_load(req)
+    }
+}
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub trait IterableDataProvider<M: DataMarker>: DataProvider<M> {
+    
+    fn iter_ids(&self) -> Result<alloc::collections::BTreeSet<DataIdentifierCow>, DataError>;
+}
 
 
 
 
 pub trait DynamicDataProvider<M>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
 {
     
     
     
     
-    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError>;
+    fn load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponse<M>, DataError>;
 }
 
-impl<'a, M, P> DynamicDataProvider<M> for &'a P
+impl<M, P> DynamicDataProvider<M> for &P
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: DynamicDataProvider<M> + ?Sized,
 {
     #[inline]
-    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
-        (*self).load_data(key, req)
+    fn load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponse<M>, DataError> {
+        (*self).load_data(marker, req)
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<M, P> DynamicDataProvider<M> for alloc::boxed::Box<P>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: DynamicDataProvider<M> + ?Sized,
 {
     #[inline]
-    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
-        (**self).load_data(key, req)
+    fn load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponse<M>, DataError> {
+        (**self).load_data(marker, req)
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<M, P> DynamicDataProvider<M> for alloc::rc::Rc<P>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: DynamicDataProvider<M> + ?Sized,
 {
     #[inline]
-    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
-        (**self).load_data(key, req)
+    fn load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponse<M>, DataError> {
+        (**self).load_data(marker, req)
     }
 }
 
 #[cfg(target_has_atomic = "ptr")]
+#[cfg(feature = "alloc")]
 impl<M, P> DynamicDataProvider<M> for alloc::sync::Arc<P>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: DynamicDataProvider<M> + ?Sized,
 {
     #[inline]
-    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
-        (**self).load_data(key, req)
+    fn load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponse<M>, DataError> {
+        (**self).load_data(marker, req)
     }
 }
 
 
+
+pub trait DynamicDryDataProvider<M: DynamicDataMarker>: DynamicDataProvider<M> {
+    
+    
+    
+    
+    
+    
+    
+    fn dry_load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponseMetadata, DataError>;
+}
+
+impl<M, P> DynamicDryDataProvider<M> for &P
+where
+    M: DynamicDataMarker,
+    P: DynamicDryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponseMetadata, DataError> {
+        (*self).dry_load_data(marker, req)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M, P> DynamicDryDataProvider<M> for alloc::boxed::Box<P>
+where
+    M: DynamicDataMarker,
+    P: DynamicDryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponseMetadata, DataError> {
+        (**self).dry_load_data(marker, req)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M, P> DynamicDryDataProvider<M> for alloc::rc::Rc<P>
+where
+    M: DynamicDataMarker,
+    P: DynamicDryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponseMetadata, DataError> {
+        (**self).dry_load_data(marker, req)
+    }
+}
+
+#[cfg(target_has_atomic = "ptr")]
+#[cfg(feature = "alloc")]
+impl<M, P> DynamicDryDataProvider<M> for alloc::sync::Arc<P>
+where
+    M: DynamicDataMarker,
+    P: DynamicDryDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn dry_load_data(
+        &self,
+        marker: DataMarkerInfo,
+        req: DataRequest,
+    ) -> Result<DataResponseMetadata, DataError> {
+        (**self).dry_load_data(marker, req)
+    }
+}
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub trait IterableDynamicDataProvider<M: DynamicDataMarker>: DynamicDataProvider<M> {
+    
+    fn iter_ids_for_marker(
+        &self,
+        marker: DataMarkerInfo,
+    ) -> Result<alloc::collections::BTreeSet<DataIdentifierCow>, DataError>;
+}
+
+#[cfg(feature = "alloc")]
+impl<M, P> IterableDynamicDataProvider<M> for alloc::boxed::Box<P>
+where
+    M: DynamicDataMarker,
+    P: IterableDynamicDataProvider<M> + ?Sized,
+{
+    fn iter_ids_for_marker(
+        &self,
+        marker: DataMarkerInfo,
+    ) -> Result<alloc::collections::BTreeSet<DataIdentifierCow>, DataError> {
+        (**self).iter_ids_for_marker(marker)
+    }
+}
 
 
 
@@ -142,7 +338,7 @@ where
 
 pub trait BoundDataProvider<M>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
 {
     
     
@@ -150,12 +346,12 @@ where
     
     fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M>, DataError>;
     
-    fn bound_key(&self) -> DataKey;
+    fn bound_marker(&self) -> DataMarkerInfo;
 }
 
-impl<'a, M, P> BoundDataProvider<M> for &'a P
+impl<M, P> BoundDataProvider<M> for &P
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: BoundDataProvider<M> + ?Sized,
 {
     #[inline]
@@ -163,14 +359,15 @@ where
         (*self).load_bound(req)
     }
     #[inline]
-    fn bound_key(&self) -> DataKey {
-        (*self).bound_key()
+    fn bound_marker(&self) -> DataMarkerInfo {
+        (*self).bound_marker()
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<M, P> BoundDataProvider<M> for alloc::boxed::Box<P>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: BoundDataProvider<M> + ?Sized,
 {
     #[inline]
@@ -178,14 +375,15 @@ where
         (**self).load_bound(req)
     }
     #[inline]
-    fn bound_key(&self) -> DataKey {
-        (**self).bound_key()
+    fn bound_marker(&self) -> DataMarkerInfo {
+        (**self).bound_marker()
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<M, P> BoundDataProvider<M> for alloc::rc::Rc<P>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: BoundDataProvider<M> + ?Sized,
 {
     #[inline]
@@ -193,15 +391,16 @@ where
         (**self).load_bound(req)
     }
     #[inline]
-    fn bound_key(&self) -> DataKey {
-        (**self).bound_key()
+    fn bound_marker(&self) -> DataMarkerInfo {
+        (**self).bound_marker()
     }
 }
 
 #[cfg(target_has_atomic = "ptr")]
+#[cfg(feature = "alloc")]
 impl<M, P> BoundDataProvider<M> for alloc::sync::Arc<P>
 where
-    M: DataMarker,
+    M: DynamicDataMarker,
     P: BoundDataProvider<M> + ?Sized,
 {
     #[inline]
@@ -209,8 +408,8 @@ where
         (**self).load_bound(req)
     }
     #[inline]
-    fn bound_key(&self) -> DataKey {
-        (**self).bound_key()
+    fn bound_marker(&self) -> DataMarkerInfo {
+        (**self).bound_marker()
     }
 }
 
@@ -218,14 +417,14 @@ where
 
 
 #[derive(Debug)]
-pub struct DataProviderWithKey<M, P> {
+pub struct DataProviderWithMarker<M, P> {
     inner: P,
     _marker: PhantomData<M>,
 }
 
-impl<M, P> DataProviderWithKey<M, P>
+impl<M, P> DataProviderWithMarker<M, P>
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
     P: DataProvider<M>,
 {
     
@@ -237,10 +436,10 @@ where
     }
 }
 
-impl<M, M0, Y, P> BoundDataProvider<M0> for DataProviderWithKey<M, P>
+impl<M, M0, Y, P> BoundDataProvider<M0> for DataProviderWithMarker<M, P>
 where
-    M: KeyedDataMarker<Yokeable = Y>,
-    M0: DataMarker<Yokeable = Y>,
+    M: DataMarker<DataStruct = Y>,
+    M0: DynamicDataMarker<DataStruct = Y>,
     Y: for<'a> Yokeable<'a>,
     P: DataProvider<M>,
 {
@@ -249,8 +448,8 @@ where
         self.inner.load(req).map(DataResponse::cast)
     }
     #[inline]
-    fn bound_key(&self) -> DataKey {
-        M::KEY
+    fn bound_marker(&self) -> DataMarkerInfo {
+        M::INFO
     }
 }
 
@@ -259,7 +458,6 @@ mod test {
 
     use super::*;
     use crate::hello_world::*;
-    use crate::prelude::*;
     use alloc::borrow::Cow;
     use alloc::string::String;
     use core::fmt::Debug;
@@ -269,32 +467,17 @@ mod test {
     
 
     
-    const HELLO_ALT_KEY: DataKey = crate::data_key!("core/helloalt@1");
-
-    
-    #[derive(
-        Serialize, Deserialize, Debug, Clone, Default, PartialEq, yoke::Yokeable, zerofrom::ZeroFrom,
-    )]
-    struct HelloAlt {
-        #[zerofrom(clone)]
+    #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, yoke::Yokeable)]
+    pub struct HelloAlt {
         message: String,
     }
 
-    
-    struct HelloAltMarker {}
-
-    impl DataMarker for HelloAltMarker {
-        type Yokeable = HelloAlt;
-    }
-
-    impl KeyedDataMarker for HelloAltMarker {
-        const KEY: DataKey = HELLO_ALT_KEY;
-    }
+    data_marker!(HelloAltMarkerV1, HelloAlt);
 
     #[derive(Deserialize, Debug, Clone, Default, PartialEq)]
     struct HelloCombined<'data> {
         #[serde(borrow)]
-        pub hello_v1: HelloWorldV1<'data>,
+        pub hello_v1: HelloWorld<'data>,
         pub hello_alt: HelloAlt,
     }
 
@@ -302,20 +485,18 @@ mod test {
     
     #[derive(Debug)]
     struct DataWarehouse {
-        hello_v1: HelloWorldV1<'static>,
+        hello_v1: HelloWorld<'static>,
         hello_alt: HelloAlt,
     }
 
-    impl DataProvider<HelloWorldV1Marker> for DataWarehouse {
-        fn load(&self, _: DataRequest) -> Result<DataResponse<HelloWorldV1Marker>, DataError> {
+    impl DataProvider<HelloWorldV1> for DataWarehouse {
+        fn load(&self, _: DataRequest) -> Result<DataResponse<HelloWorldV1>, DataError> {
             Ok(DataResponse {
                 metadata: DataResponseMetadata::default(),
-                payload: Some(DataPayload::from_owned(self.hello_v1.clone())),
+                payload: DataPayload::from_owned(self.hello_v1.clone()),
             })
         }
     }
-
-    crate::impl_dynamic_data_provider!(DataWarehouse, [HelloWorldV1Marker,], AnyMarker);
 
     
     #[derive(Debug)]
@@ -329,33 +510,27 @@ mod test {
         }
     }
 
-    impl DataProvider<HelloWorldV1Marker> for DataProvider2 {
-        fn load(&self, _: DataRequest) -> Result<DataResponse<HelloWorldV1Marker>, DataError> {
+    impl DataProvider<HelloWorldV1> for DataProvider2 {
+        fn load(&self, _: DataRequest) -> Result<DataResponse<HelloWorldV1>, DataError> {
             Ok(DataResponse {
                 metadata: DataResponseMetadata::default(),
-                payload: Some(DataPayload::from_owned(self.data.hello_v1.clone())),
+                payload: DataPayload::from_owned(self.data.hello_v1.clone()),
             })
         }
     }
 
-    impl DataProvider<HelloAltMarker> for DataProvider2 {
-        fn load(&self, _: DataRequest) -> Result<DataResponse<HelloAltMarker>, DataError> {
+    impl DataProvider<HelloAltMarkerV1> for DataProvider2 {
+        fn load(&self, _: DataRequest) -> Result<DataResponse<HelloAltMarkerV1>, DataError> {
             Ok(DataResponse {
                 metadata: DataResponseMetadata::default(),
-                payload: Some(DataPayload::from_owned(self.data.hello_alt.clone())),
+                payload: DataPayload::from_owned(self.data.hello_alt.clone()),
             })
         }
     }
-
-    crate::impl_dynamic_data_provider!(
-        DataProvider2,
-        [HelloWorldV1Marker, HelloAltMarker,],
-        AnyMarker
-    );
 
     const DATA: &str = r#"{
         "hello_v1": {
-            "message": "Hello V1"
+            "message": "Hello "
         },
         "hello_alt": {
             "message": "Hello Alt"
@@ -370,16 +545,16 @@ mod test {
         }
     }
 
-    fn get_payload_v1<P: DataProvider<HelloWorldV1Marker> + ?Sized>(
+    fn get_payload_v1<P: DataProvider<HelloWorldV1> + ?Sized>(
         provider: &P,
-    ) -> Result<DataPayload<HelloWorldV1Marker>, DataError> {
-        provider.load(Default::default())?.take_payload()
+    ) -> Result<DataPayload<HelloWorldV1>, DataError> {
+        provider.load(Default::default()).map(|r| r.payload)
     }
 
-    fn get_payload_alt<P: DataProvider<HelloAltMarker> + ?Sized>(
+    fn get_payload_alt<P: DataProvider<HelloAltMarkerV1> + ?Sized>(
         provider: &P,
-    ) -> Result<DataPayload<HelloAltMarker>, DataError> {
-        provider.load(Default::default())?.take_payload()
+    ) -> Result<DataPayload<HelloAltMarkerV1>, DataError> {
+        provider.load(Default::default()).map(|r| r.payload)
     }
 
     #[test]
@@ -388,19 +563,7 @@ mod test {
         let hello_data = get_payload_v1(&warehouse).unwrap();
         assert!(matches!(
             hello_data.get(),
-            HelloWorldV1 {
-                message: Cow::Borrowed(_),
-            }
-        ));
-    }
-
-    #[test]
-    fn test_warehouse_owned_dyn_erased() {
-        let warehouse = get_warehouse(DATA);
-        let hello_data = get_payload_v1(&warehouse.as_any_provider().as_downcasting()).unwrap();
-        assert!(matches!(
-            hello_data.get(),
-            HelloWorldV1 {
+            HelloWorld {
                 message: Cow::Borrowed(_),
             }
         ));
@@ -409,26 +572,12 @@ mod test {
     #[test]
     fn test_warehouse_owned_dyn_generic() {
         let warehouse = get_warehouse(DATA);
-        let hello_data =
-            get_payload_v1(&warehouse as &dyn DataProvider<HelloWorldV1Marker>).unwrap();
+        let hello_data = get_payload_v1(&warehouse as &dyn DataProvider<HelloWorldV1>).unwrap();
         assert!(matches!(
             hello_data.get(),
-            HelloWorldV1 {
+            HelloWorld {
                 message: Cow::Borrowed(_),
             }
-        ));
-    }
-
-    #[test]
-    fn test_warehouse_owned_dyn_erased_alt() {
-        let warehouse = get_warehouse(DATA);
-        let response = get_payload_alt(&warehouse.as_any_provider().as_downcasting());
-        assert!(matches!(
-            response,
-            Err(DataError {
-                kind: DataErrorKind::MissingDataKey,
-                ..
-            })
         ));
     }
 
@@ -439,42 +588,20 @@ mod test {
         let hello_data = get_payload_v1(&provider).unwrap();
         assert!(matches!(
             hello_data.get(),
-            HelloWorldV1 {
+            HelloWorld {
                 message: Cow::Borrowed(_),
             }
         ));
-    }
-
-    #[test]
-    fn test_provider2_dyn_erased() {
-        let warehouse = get_warehouse(DATA);
-        let provider = DataProvider2::from(warehouse);
-        let hello_data = get_payload_v1(&provider.as_any_provider().as_downcasting()).unwrap();
-        assert!(matches!(
-            hello_data.get(),
-            HelloWorldV1 {
-                message: Cow::Borrowed(_),
-            }
-        ));
-    }
-
-    #[test]
-    fn test_provider2_dyn_erased_alt() {
-        let warehouse = get_warehouse(DATA);
-        let provider = DataProvider2::from(warehouse);
-        let hello_data = get_payload_alt(&provider.as_any_provider().as_downcasting()).unwrap();
-        assert!(matches!(hello_data.get(), HelloAlt { .. }));
     }
 
     #[test]
     fn test_provider2_dyn_generic() {
         let warehouse = get_warehouse(DATA);
         let provider = DataProvider2::from(warehouse);
-        let hello_data =
-            get_payload_v1(&provider as &dyn DataProvider<HelloWorldV1Marker>).unwrap();
+        let hello_data = get_payload_v1(&provider as &dyn DataProvider<HelloWorldV1>).unwrap();
         assert!(matches!(
             hello_data.get(),
-            HelloWorldV1 {
+            HelloWorld {
                 message: Cow::Borrowed(_),
             }
         ));
@@ -484,39 +611,16 @@ mod test {
     fn test_provider2_dyn_generic_alt() {
         let warehouse = get_warehouse(DATA);
         let provider = DataProvider2::from(warehouse);
-        let hello_data = get_payload_alt(&provider as &dyn DataProvider<HelloAltMarker>).unwrap();
+        let hello_data = get_payload_alt(&provider as &dyn DataProvider<HelloAltMarkerV1>).unwrap();
         assert!(matches!(hello_data.get(), HelloAlt { .. }));
-    }
-
-    #[test]
-    fn test_mismatched_types() {
-        let warehouse = get_warehouse(DATA);
-        let provider = DataProvider2::from(warehouse);
-        
-        let response: Result<DataResponse<HelloWorldV1Marker>, DataError> = AnyProvider::load_any(
-            &provider.as_any_provider(),
-            HELLO_ALT_KEY,
-            Default::default(),
-        )
-        .unwrap()
-        .downcast();
-        assert!(matches!(
-            response,
-            Err(DataError {
-                kind: DataErrorKind::MismatchedType(_),
-                ..
-            })
-        ));
     }
 
     fn check_v1_v2<P>(d: &P)
     where
-        P: DataProvider<HelloWorldV1Marker> + DataProvider<HelloAltMarker> + ?Sized,
+        P: DataProvider<HelloWorldV1> + DataProvider<HelloAltMarkerV1> + ?Sized,
     {
-        let v1: DataPayload<HelloWorldV1Marker> =
-            d.load(Default::default()).unwrap().take_payload().unwrap();
-        let v2: DataPayload<HelloAltMarker> =
-            d.load(Default::default()).unwrap().take_payload().unwrap();
+        let v1: DataPayload<HelloWorldV1> = d.load(Default::default()).unwrap().payload;
+        let v2: DataPayload<HelloAltMarkerV1> = d.load(Default::default()).unwrap().payload;
         if v1.get().message == v2.get().message {
             panic!()
         }
@@ -527,12 +631,5 @@ mod test {
         let warehouse = get_warehouse(DATA);
         let provider = DataProvider2::from(warehouse);
         check_v1_v2(&provider);
-    }
-
-    #[test]
-    fn test_v1_v2_dyn_erased() {
-        let warehouse = get_warehouse(DATA);
-        let provider = DataProvider2::from(warehouse);
-        check_v1_v2(&provider.as_any_provider().as_downcasting());
     }
 }

@@ -83,7 +83,7 @@ pub fn derive_impl(
     let last_field_validator = if let Some(custom_varule_validator) = custom_varule_validator {
         custom_varule_validator
     } else {
-        quote!(<#unsized_field as zerovec::ule::VarULE>::validate_byte_slice(last_field_bytes)?;)
+        quote!(<#unsized_field as zerovec::ule::VarULE>::validate_bytes(last_field_bytes)?;)
     };
 
     
@@ -101,24 +101,23 @@ pub fn derive_impl(
         const #ule_size: usize = 0 #(+ #sizes)*;
         unsafe impl zerovec::ule::VarULE for #name {
             #[inline]
-            fn validate_byte_slice(bytes: &[u8]) -> Result<(), zerovec::ZeroVecError> {
-
-                if bytes.len() < #ule_size {
-                    return Err(zerovec::ZeroVecError::parse::<Self>());
-                }
-                #validators
+            fn validate_bytes(bytes: &[u8]) -> Result<(), zerovec::ule::UleError> {
                 debug_assert_eq!(#remaining_offset, #ule_size);
-                #[allow(clippy::indexing_slicing)] // TODO explain
-                let last_field_bytes = &bytes[#remaining_offset..];
+
+                let Some(last_field_bytes) = bytes.get(#remaining_offset..) else {
+                    return Err(zerovec::ule::UleError::parse::<Self>());
+                };
+                #validators
                 #last_field_validator
                 Ok(())
             }
             #[inline]
-            unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self {
+            unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
                 // just the unsized part
-                #[allow(clippy::indexing_slicing)] // TODO explain
-                let unsized_bytes = &bytes[#ule_size..];
-                let unsized_ref = <#unsized_field as zerovec::ule::VarULE>::from_byte_slice_unchecked(unsized_bytes);
+                // Safety: The invariants of this function allow us to assume bytes is valid, and
+                // having at least #ule_size bytes is a validity constraint for the ULE type.
+                let unsized_bytes = bytes.get_unchecked(#ule_size..);
+                let unsized_ref = <#unsized_field as zerovec::ule::VarULE>::from_bytes_unchecked(unsized_bytes);
                 // We should use the pointer metadata APIs here when they are stable: https://github.com/rust-lang/rust/issues/81513
                 // For now we rely on all DST metadata being a usize to extract it via a fake slice pointer
                 let (_ptr, metadata): (usize, usize) = ::core::mem::transmute(unsized_ref);

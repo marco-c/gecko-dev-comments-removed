@@ -6,14 +6,22 @@ use super::*;
 use alloc::boxed::Box;
 use icu_provider::prelude::*;
 
-use icu_locid::LanguageIdentifier;
+impl<D> FilterDataProvider<D, fn(DataIdentifierBorrowed) -> bool> {
+    
+    
+    
+    pub fn new(provider: D, filter_name: &'static str) -> Self {
+        Self {
+            inner: provider,
+            predicate: |_| true,
+            filter_name,
+        }
+    }
+}
 
-type RequestFilterDataProviderOutput<'a, D> =
-    RequestFilterDataProvider<D, Box<dyn Fn(DataRequest) -> bool + Sync + 'a>>;
-
-impl<D, F> RequestFilterDataProvider<D, F>
+impl<D, F> FilterDataProvider<D, F>
 where
-    F: Fn(DataRequest) -> bool + Sync,
+    F: Fn(DataIdentifierBorrowed) -> bool + Sync,
 {
     
     
@@ -69,146 +77,22 @@ where
     
     
     
-    pub fn filter_by_langid<'a>(
+    #[allow(clippy::type_complexity)]
+    pub fn with_filter<'a>(
         self,
-        predicate: impl Fn(&LanguageIdentifier) -> bool + Sync + 'a,
-    ) -> RequestFilterDataProviderOutput<'a, D>
+        predicate: impl Fn(DataIdentifierBorrowed) -> bool + Sync + 'a,
+    ) -> FilterDataProvider<D, Box<dyn Fn(DataIdentifierBorrowed) -> bool + Sync + 'a>>
     where
         F: 'a,
     {
         let old_predicate = self.predicate;
-        RequestFilterDataProvider {
+        FilterDataProvider {
             inner: self.inner,
-            predicate: Box::new(move |request| -> bool {
-                if !(old_predicate)(request) {
+            predicate: Box::new(move |id| -> bool {
+                if !(old_predicate)(id) {
                     return false;
                 }
-                predicate(&request.locale.get_langid())
-            }),
-            filter_name: self.filter_name,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn filter_by_langid_allowlist_strict<'a>(
-        self,
-        allowlist: &'a [LanguageIdentifier],
-    ) -> RequestFilterDataProviderOutput<'a, D>
-    where
-        F: 'a,
-    {
-        let old_predicate = self.predicate;
-        RequestFilterDataProvider {
-            inner: self.inner,
-            predicate: Box::new(move |request| -> bool {
-                if !(old_predicate)(request) {
-                    return false;
-                }
-                request.locale.is_langid_und() || allowlist.contains(&request.locale.get_langid())
-            }),
-            filter_name: self.filter_name,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn require_langid<'a>(self) -> RequestFilterDataProviderOutput<'a, D>
-    where
-        F: 'a,
-    {
-        let old_predicate = self.predicate;
-        RequestFilterDataProvider {
-            inner: self.inner,
-            predicate: Box::new(move |request| -> bool {
-                if !(old_predicate)(request) {
-                    return false;
-                }
-                !request.locale.is_langid_und()
+                predicate(id)
             }),
             filter_name: self.filter_name,
         }

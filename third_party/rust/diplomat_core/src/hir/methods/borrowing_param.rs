@@ -81,7 +81,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::hir::{self, Method, StructDef, TyPosition, TypeContext};
+use crate::hir::{self, Method, StructDef, StructPath, TyPosition, TypeContext};
 
 use crate::hir::lifetimes::{Lifetime, LifetimeEnv, MaybeStatic};
 use crate::hir::ty_position::StructPathLike;
@@ -118,7 +118,9 @@ pub enum LifetimeEdgeKind<'tcx> {
     
     
     
-    StructLifetime(&'tcx LifetimeEnv, Lifetime),
+    
+    
+    StructLifetime(&'tcx LifetimeEnv, Lifetime, bool),
 }
 
 #[non_exhaustive]
@@ -133,8 +135,45 @@ pub struct BorrowedLifetimeInfo<'tcx> {
 }
 
 impl<'tcx> BorrowingParamVisitor<'tcx> {
-    pub(crate) fn new(method: &'tcx Method, tcx: &'tcx TypeContext) -> Self {
-        let used_method_lifetimes = method.output.used_method_lifetimes();
+    pub(crate) fn new(
+        method: &'tcx Method,
+        tcx: &'tcx TypeContext,
+        force_include_slices: bool,
+    ) -> Self {
+        let mut used_method_lifetimes = method.output.used_method_lifetimes();
+
+        
+        
+        
+        
+        
+        
+        
+        if force_include_slices {
+            if let Some(s) = &method.param_self {
+                if let hir::SelfType::Struct(s) = &s.ty {
+                    let st = s.resolve(tcx);
+                    for f in &st.fields {
+                        BorrowingParamVisitor::add_slices_to_used_lifetimes(
+                            &mut used_method_lifetimes,
+                            method,
+                            tcx,
+                            &f.ty,
+                        );
+                    }
+                }
+            }
+
+            for p in &method.params {
+                BorrowingParamVisitor::add_slices_to_used_lifetimes(
+                    &mut used_method_lifetimes,
+                    method,
+                    tcx,
+                    &p.ty,
+                );
+            }
+        }
+
         let borrow_map = used_method_lifetimes
             .iter()
             .map(|lt| {
@@ -158,6 +197,33 @@ impl<'tcx> BorrowingParamVisitor<'tcx> {
     }
 
     
+    
+    
+    fn add_slices_to_used_lifetimes<P: TyPosition<StructPath = StructPath>>(
+        set: &mut BTreeSet<Lifetime>,
+        method: &'tcx Method,
+        tcx: &'tcx TypeContext,
+        ty: &hir::Type<P>,
+    ) {
+        match ty {
+            hir::Type::Struct(s) => {
+                let st = s.resolve(tcx);
+                for f in &st.fields {
+                    BorrowingParamVisitor::add_slices_to_used_lifetimes(set, method, tcx, &f.ty);
+                }
+            }
+            hir::Type::Slice(s) => {
+                if let Some(MaybeStatic::NonStatic(lt)) = s.lifetime() {
+                    if method.lifetime_env.get_bounds(*lt).is_some() {
+                        set.insert(*lt);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    
     pub fn used_method_lifetimes(&self) -> &BTreeSet<Lifetime> {
         &self.used_method_lifetimes
     }
@@ -173,7 +239,11 @@ impl<'tcx> BorrowingParamVisitor<'tcx> {
     
     
     
-    pub fn visit_param(&mut self, ty: &hir::Type, param_name: &str) -> ParamBorrowInfo<'tcx> {
+    pub fn visit_param<P: TyPosition<StructPath = StructPath>>(
+        &mut self,
+        ty: &hir::Type<P>,
+        param_name: &str,
+    ) -> ParamBorrowInfo<'tcx> {
         let mut is_borrowed = false;
         if self.used_method_lifetimes.is_empty() {
             if let hir::Type::Slice(..) = *ty {
@@ -205,7 +275,11 @@ impl<'tcx> BorrowingParamVisitor<'tcx> {
                         if method_lifetime_info.all_longer_lifetimes.contains(&use_lt) {
                             let edge = LifetimeEdge {
                                 param_name: param_name.into(),
-                                kind: LifetimeEdgeKind::StructLifetime(link.def_env(), def_lt),
+                                kind: LifetimeEdgeKind::StructLifetime(
+                                    link.def_env(),
+                                    def_lt,
+                                    ty.is_option(),
+                                ),
                             };
                             method_lifetime_info.incoming_edges.push(edge);
 

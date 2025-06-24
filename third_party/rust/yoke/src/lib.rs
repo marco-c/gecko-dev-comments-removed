@@ -25,7 +25,7 @@
 
 
 
-#![cfg_attr(all(not(test), not(doc)), no_std)]
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -35,6 +35,7 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
@@ -51,7 +52,6 @@ pub mod either;
 pub mod erased;
 mod kinda_sorta_dangling;
 mod macro_impls;
-pub mod trait_hack;
 mod yoke;
 mod yokeable;
 #[cfg(feature = "zerofrom")]

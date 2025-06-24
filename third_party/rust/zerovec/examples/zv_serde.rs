@@ -6,8 +6,7 @@
 
 
 #![no_main] 
-
-icu_benchmark_macros::static_setup!();
+icu_benchmark_macros::instrument!();
 
 use zerovec::ZeroVec;
 
@@ -36,16 +35,11 @@ fn serialize() {
     println!("ZeroVec bytes: {:#x?}", data.nums.as_bytes());
 }
 
-#[no_mangle]
-fn main(_argc: isize, _argv: *const *const u8) -> isize {
-    icu_benchmark_macros::main_setup!();
-
+fn main() {
     
     
 
     let data: DataStruct = postcard::from_bytes(&POSTCARD_BYTES).expect("Valid bytes");
     let result = data.nums.iter().sum::<u16>();
     assert_eq!(8141, result);
-
-    0
 }

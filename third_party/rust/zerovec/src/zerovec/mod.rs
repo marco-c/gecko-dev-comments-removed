@@ -11,18 +11,21 @@ mod serde;
 mod slice;
 
 pub use slice::ZeroSlice;
+pub use slice::ZeroSliceIter;
 
 use crate::ule::*;
+#[cfg(feature = "alloc")]
 use alloc::borrow::Cow;
+#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 use core::cmp::{Ord, Ordering, PartialOrd};
 use core::fmt;
+#[cfg(feature = "alloc")]
 use core::iter::FromIterator;
 use core::marker::PhantomData;
-use core::mem;
 use core::num::NonZeroUsize;
 use core::ops::Deref;
-use core::ptr::{self, NonNull};
+use core::ptr::NonNull;
 
 
 
@@ -94,8 +97,8 @@ where
 
     
     
-    #[allow(clippy::type_complexity)] 
-    marker: PhantomData<(Vec<T::ULE>, &'a [T::ULE])>,
+    marker1: PhantomData<T::ULE>,
+    marker2: PhantomData<&'a T::ULE>,
 }
 
 
@@ -109,8 +112,7 @@ impl<'a, T: AsULE> Deref for ZeroVec<'a, T> {
     type Target = ZeroSlice<T>;
     #[inline]
     fn deref(&self) -> &Self::Target {
-        let slice: &[T::ULE] = self.vector.as_slice();
-        ZeroSlice::from_ule_slice(slice)
+        self.as_slice()
     }
 }
 
@@ -128,6 +130,7 @@ struct EyepatchHackVector<U> {
     
     
     buf: NonNull<[U]>,
+    #[cfg(feature = "alloc")]
     
     capacity: usize,
 }
@@ -153,6 +156,7 @@ impl<U> EyepatchHackVector<U> {
     
     
     
+    #[cfg(feature = "alloc")]
     unsafe fn get_vec(&self) -> Vec<U> {
         debug_assert!(self.capacity != 0);
         let slice: &[U] = self.as_slice();
@@ -163,6 +167,7 @@ impl<U> EyepatchHackVector<U> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<U> Drop for EyepatchHackVector<U> {
     #[inline]
     fn drop(&mut self) {
@@ -177,23 +182,25 @@ impl<U> Drop for EyepatchHackVector<U> {
 
 impl<'a, T: AsULE> Clone for ZeroVec<'a, T> {
     fn clone(&self) -> Self {
+        #[cfg(feature = "alloc")]
         if self.is_owned() {
-            ZeroVec::new_owned(self.as_ule_slice().into())
-        } else {
-            Self {
-                vector: EyepatchHackVector {
-                    buf: self.vector.buf,
-                    capacity: 0,
-                },
-                marker: PhantomData,
-            }
+            return ZeroVec::new_owned(self.as_ule_slice().into());
+        }
+        Self {
+            vector: EyepatchHackVector {
+                buf: self.vector.buf,
+                #[cfg(feature = "alloc")]
+                capacity: 0,
+            },
+            marker1: PhantomData,
+            marker2: PhantomData,
         }
     }
 }
 
 impl<'a, T: AsULE> AsRef<ZeroSlice<T>> for ZeroVec<'a, T> {
     fn as_ref(&self) -> &ZeroSlice<T> {
-        self.deref()
+        self.as_slice()
     }
 }
 
@@ -202,15 +209,24 @@ where
     T: AsULE + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ZeroVec({:?})", self.to_vec())
+        write!(f, "ZeroVec([")?;
+        let mut first = true;
+        for el in self.iter() {
+            if !first {
+                write!(f, ", ")?;
+            }
+            write!(f, "{el:?}")?;
+            first = false;
+        }
+        write!(f, "])")
     }
 }
 
-impl<T> Eq for ZeroVec<'_, T> where T: AsULE + Eq + ?Sized {}
+impl<T> Eq for ZeroVec<'_, T> where T: AsULE + Eq {}
 
 impl<'a, 'b, T> PartialEq<ZeroVec<'b, T>> for ZeroVec<'a, T>
 where
-    T: AsULE + PartialEq + ?Sized,
+    T: AsULE + PartialEq,
 {
     #[inline]
     fn eq(&self, other: &ZeroVec<'b, T>) -> bool {
@@ -221,7 +237,7 @@ where
 
 impl<T> PartialEq<&[T]> for ZeroVec<'_, T>
 where
-    T: AsULE + PartialEq + ?Sized,
+    T: AsULE + PartialEq,
 {
     #[inline]
     fn eq(&self, other: &&[T]) -> bool {
@@ -231,7 +247,7 @@ where
 
 impl<T, const N: usize> PartialEq<[T; N]> for ZeroVec<'_, T>
 where
-    T: AsULE + PartialEq + ?Sized,
+    T: AsULE + PartialEq,
 {
     #[inline]
     fn eq(&self, other: &[T; N]) -> bool {
@@ -270,16 +286,14 @@ impl<'a, T: AsULE> From<&'a [T::ULE]> for ZeroVec<'a, T> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a, T: AsULE> From<Vec<T::ULE>> for ZeroVec<'a, T> {
     fn from(other: Vec<T::ULE>) -> Self {
         ZeroVec::new_owned(other)
     }
 }
 
-impl<'a, T> ZeroVec<'a, T>
-where
-    T: AsULE + ?Sized,
-{
+impl<'a, T: AsULE> ZeroVec<'a, T> {
     
     
     
@@ -306,24 +320,23 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn new_owned(vec: Vec<T::ULE>) -> Self {
         
         
         
         let capacity = vec.capacity();
         let len = vec.len();
-        let ptr = mem::ManuallyDrop::new(vec).as_mut_ptr();
+        let ptr = core::mem::ManuallyDrop::new(vec).as_mut_ptr();
         
-        let slice = ptr::slice_from_raw_parts_mut(ptr, len);
+        
+        
+        let ptr = unsafe { NonNull::new_unchecked(ptr) };
+        let buf = NonNull::slice_from_raw_parts(ptr, len);
         Self {
-            vector: EyepatchHackVector {
-                
-                
-                
-                buf: unsafe { NonNull::new_unchecked(slice) },
-                capacity,
-            },
-            marker: PhantomData,
+            vector: EyepatchHackVector { buf, capacity },
+            marker1: PhantomData,
+            marker2: PhantomData,
         }
     }
 
@@ -337,13 +350,16 @@ where
         Self {
             vector: EyepatchHackVector {
                 buf: slice,
+                #[cfg(feature = "alloc")]
                 capacity: 0,
             },
-            marker: PhantomData,
+            marker1: PhantomData,
+            marker2: PhantomData,
         }
     }
 
     
+    #[cfg(feature = "alloc")]
     pub fn with_capacity(capacity: usize) -> Self {
         Self::new_owned(Vec::with_capacity(capacity))
     }
@@ -372,8 +388,8 @@ where
     
     
     
-    pub fn parse_byte_slice(bytes: &'a [u8]) -> Result<Self, ZeroVecError> {
-        let slice: &'a [T::ULE] = T::ULE::parse_byte_slice(bytes)?;
+    pub fn parse_bytes(bytes: &'a [u8]) -> Result<Self, UleError> {
+        let slice: &'a [T::ULE] = T::ULE::parse_bytes_to_slice(bytes)?;
         Ok(Self::new_borrowed(slice))
     }
 
@@ -422,17 +438,29 @@ where
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn into_bytes(self) -> ZeroVec<'a, u8> {
+        use alloc::borrow::Cow;
         match self.into_cow() {
             Cow::Borrowed(slice) => {
-                let bytes: &'a [u8] = T::ULE::as_byte_slice(slice);
+                let bytes: &'a [u8] = T::ULE::slice_as_bytes(slice);
                 ZeroVec::new_borrowed(bytes)
             }
             Cow::Owned(vec) => {
-                let bytes = Vec::from(T::ULE::as_byte_slice(&vec));
+                let bytes = Vec::from(T::ULE::slice_as_bytes(&vec));
                 ZeroVec::new_owned(bytes)
             }
         }
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub const fn as_slice(&self) -> &ZeroSlice<T> {
+        let slice: &[T::ULE] = self.vector.as_slice();
+        ZeroSlice::from_ule_slice(slice)
     }
 
     
@@ -456,6 +484,7 @@ where
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn cast<P>(self) -> ZeroVec<'a, P>
     where
         P: AsULE<ULE = T::ULE>,
@@ -532,24 +561,25 @@ where
     
     
     
-    pub fn try_into_converted<P: AsULE>(self) -> Result<ZeroVec<'a, P>, ZeroVecError> {
+    #[cfg(feature = "alloc")]
+    pub fn try_into_converted<P: AsULE>(self) -> Result<ZeroVec<'a, P>, UleError> {
         assert_eq!(
             core::mem::size_of::<<T as AsULE>::ULE>(),
             core::mem::size_of::<<P as AsULE>::ULE>()
         );
         match self.into_cow() {
             Cow::Borrowed(old_slice) => {
-                let bytes: &'a [u8] = T::ULE::as_byte_slice(old_slice);
-                let new_slice = P::ULE::parse_byte_slice(bytes)?;
+                let bytes: &'a [u8] = T::ULE::slice_as_bytes(old_slice);
+                let new_slice = P::ULE::parse_bytes_to_slice(bytes)?;
                 Ok(ZeroVec::new_borrowed(new_slice))
             }
             Cow::Owned(old_vec) => {
-                let bytes: &[u8] = T::ULE::as_byte_slice(&old_vec);
-                P::ULE::validate_byte_slice(bytes)?;
+                let bytes: &[u8] = T::ULE::slice_as_bytes(&old_vec);
+                P::ULE::validate_bytes(bytes)?;
                 
                 let (ptr, len, cap) = {
                     
-                    let mut v = mem::ManuallyDrop::new(old_vec);
+                    let mut v = core::mem::ManuallyDrop::new(old_vec);
                     
                     (v.as_mut_ptr(), v.len(), v.capacity())
                 };
@@ -570,9 +600,15 @@ where
     
     #[inline]
     pub fn is_owned(&self) -> bool {
-        self.vector.capacity != 0
+        #[cfg(feature = "alloc")]
+        return self.vector.capacity != 0;
+        #[cfg(not(feature = "alloc"))]
+        return false;
     }
 
+    
+    
+    
     
     
     #[inline]
@@ -612,7 +648,10 @@ where
     
     #[inline]
     pub fn owned_capacity(&self) -> Option<NonZeroUsize> {
-        NonZeroUsize::try_from(self.vector.capacity).ok()
+        #[cfg(feature = "alloc")]
+        return NonZeroUsize::try_from(self.vector.capacity).ok();
+        #[cfg(not(feature = "alloc"))]
+        return None;
     }
 }
 
@@ -648,14 +687,15 @@ impl<'a> ZeroVec<'a, u8> {
     
     
     
-    pub fn try_into_parsed<T: AsULE>(self) -> Result<ZeroVec<'a, T>, ZeroVecError> {
+    #[cfg(feature = "alloc")]
+    pub fn try_into_parsed<T: AsULE>(self) -> Result<ZeroVec<'a, T>, UleError> {
         match self.into_cow() {
             Cow::Borrowed(bytes) => {
-                let slice: &'a [T::ULE] = T::ULE::parse_byte_slice(bytes)?;
+                let slice: &'a [T::ULE] = T::ULE::parse_bytes_to_slice(bytes)?;
                 Ok(ZeroVec::new_borrowed(slice))
             }
             Cow::Owned(vec) => {
-                let slice = Vec::from(T::ULE::parse_byte_slice(&vec)?);
+                let slice = Vec::from(T::ULE::parse_bytes_to_slice(&vec)?);
                 Ok(ZeroVec::new_owned(slice))
             }
         }
@@ -685,6 +725,7 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn alloc_from_slice(other: &[T]) -> Self {
         Self::new_owned(other.iter().copied().map(T::to_unaligned).collect())
     }
@@ -702,6 +743,7 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn to_vec(&self) -> Vec<T> {
         self.iter().collect()
     }
@@ -755,6 +797,7 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn from_slice_or_alloc(slice: &'a [T]) -> Self {
         Self::try_from_slice(slice).unwrap_or_else(|| Self::alloc_from_slice(slice))
     }
@@ -785,6 +828,7 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn for_each_mut(&mut self, mut f: impl FnMut(&mut T)) {
         self.to_mut_slice().iter_mut().for_each(|item| {
             let mut aligned = T::from_unaligned(*item);
@@ -814,6 +858,7 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn try_for_each_mut<E>(
         &mut self,
         mut f: impl FnMut(&mut T) -> Result<(), E>,
@@ -841,13 +886,12 @@ where
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn into_owned(self) -> ZeroVec<'static, T> {
+        use alloc::borrow::Cow;
         match self.into_cow() {
             Cow::Owned(vec) => ZeroVec::new_owned(vec),
-            Cow::Borrowed(b) => {
-                let vec: Vec<T::ULE> = b.into();
-                ZeroVec::new_owned(vec)
-            }
+            Cow::Borrowed(b) => ZeroVec::new_owned(b.into()),
         }
     }
 
@@ -869,10 +913,12 @@ where
     
     
     
-    pub fn with_mut<R>(&mut self, f: impl FnOnce(&mut Vec<T::ULE>) -> R) -> R {
+    #[cfg(feature = "alloc")]
+    pub fn with_mut<R>(&mut self, f: impl FnOnce(&mut alloc::vec::Vec<T::ULE>) -> R) -> R {
+        use alloc::borrow::Cow;
         
         
-        let this = mem::take(self);
+        let this = core::mem::take(self);
         let mut vec = match this.into_cow() {
             Cow::Owned(v) => v,
             Cow::Borrowed(s) => s.into(),
@@ -900,6 +946,7 @@ where
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn to_mut_slice(&mut self) -> &mut [T::ULE] {
         if !self.is_owned() {
             
@@ -938,6 +985,7 @@ where
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn take_first(&mut self) -> Option<T> {
         match core::mem::take(self).into_cow() {
             Cow::Owned(mut vec) => {
@@ -982,6 +1030,7 @@ where
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn take_last(&mut self) -> Option<T> {
         match core::mem::take(self).into_cow() {
             Cow::Owned(mut vec) => {
@@ -1002,8 +1051,9 @@ where
     
     
     #[inline]
+    #[cfg(feature = "alloc")]
     pub fn into_cow(self) -> Cow<'a, [T::ULE]> {
-        let this = mem::ManuallyDrop::new(self);
+        let this = core::mem::ManuallyDrop::new(self);
         if this.is_owned() {
             let vec = unsafe {
                 
@@ -1020,6 +1070,7 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<T: AsULE> FromIterator<T> for ZeroVec<'_, T> {
     
     fn from_iter<I>(iter: I) -> Self
@@ -1067,24 +1118,14 @@ impl<T: AsULE> FromIterator<T> for ZeroVec<'_, T> {
 
 
 
-
-
-
-
-
-
 #[macro_export]
 macro_rules! zeroslice {
-    () => (
+    () => {
         $crate::ZeroSlice::new_empty()
-    );
-    ($aligned:ty; $convert:expr; [$($x:expr),+ $(,)?]) => (
-        $crate::ZeroSlice::<$aligned>::from_ule_slice(
-            {const X: &[<$aligned as $crate::ule::AsULE>::ULE] = &[
-                $($convert($x)),*
-            ]; X}
-        )
-    );
+    };
+    ($aligned:ty; $convert:expr; [$($x:expr),+ $(,)?]) => {
+        $crate::ZeroSlice::<$aligned>::from_ule_slice(const { &[$($convert($x)),*] })
+    };
 }
 
 
@@ -1127,7 +1168,7 @@ mod tests {
             assert_eq!(zerovec.get(2), Some(TEST_SLICE[2]));
         }
         {
-            let zerovec = ZeroVec::<u32>::parse_byte_slice(TEST_BUFFER_LE).unwrap();
+            let zerovec = ZeroVec::<u32>::parse_bytes(TEST_BUFFER_LE).unwrap();
             assert_eq!(zerovec.get(0), Some(TEST_SLICE[0]));
             assert_eq!(zerovec.get(1), Some(TEST_SLICE[1]));
             assert_eq!(zerovec.get(2), Some(TEST_SLICE[2]));
@@ -1142,7 +1183,7 @@ mod tests {
             assert_eq!(Err(3), zerovec.binary_search(&0x0c0d0c));
         }
         {
-            let zerovec = ZeroVec::<u32>::parse_byte_slice(TEST_BUFFER_LE).unwrap();
+            let zerovec = ZeroVec::<u32>::parse_bytes(TEST_BUFFER_LE).unwrap();
             assert_eq!(Ok(3), zerovec.binary_search(&0x0e0d0c));
             assert_eq!(Err(3), zerovec.binary_search(&0x0c0d0c));
         }
@@ -1152,57 +1193,53 @@ mod tests {
     fn test_odd_alignment() {
         assert_eq!(
             Some(0x020100),
-            ZeroVec::<u32>::parse_byte_slice(TEST_BUFFER_LE)
-                .unwrap()
-                .get(0)
+            ZeroVec::<u32>::parse_bytes(TEST_BUFFER_LE).unwrap().get(0)
         );
         assert_eq!(
             Some(0x04000201),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[1..77])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[1..77])
                 .unwrap()
                 .get(0)
         );
         assert_eq!(
             Some(0x05040002),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[2..78])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[2..78])
                 .unwrap()
                 .get(0)
         );
         assert_eq!(
             Some(0x06050400),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[3..79])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[3..79])
                 .unwrap()
                 .get(0)
         );
         assert_eq!(
             Some(0x060504),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[4..])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[4..])
                 .unwrap()
                 .get(0)
         );
         assert_eq!(
             Some(0x4e4d4c00),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[75..79])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[75..79])
                 .unwrap()
                 .get(0)
         );
         assert_eq!(
             Some(0x4e4d4c00),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[3..79])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[3..79])
                 .unwrap()
                 .get(18)
         );
         assert_eq!(
             Some(0x4e4d4c),
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[76..])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[76..])
                 .unwrap()
                 .get(0)
         );
         assert_eq!(
             Some(0x4e4d4c),
-            ZeroVec::<u32>::parse_byte_slice(TEST_BUFFER_LE)
-                .unwrap()
-                .get(19)
+            ZeroVec::<u32>::parse_bytes(TEST_BUFFER_LE).unwrap().get(19)
         );
         
         
@@ -1213,13 +1250,11 @@ mod tests {
         
         assert_eq!(
             None,
-            ZeroVec::<u32>::parse_byte_slice(TEST_BUFFER_LE)
-                .unwrap()
-                .get(20)
+            ZeroVec::<u32>::parse_bytes(TEST_BUFFER_LE).unwrap().get(20)
         );
         assert_eq!(
             None,
-            ZeroVec::<u32>::parse_byte_slice(&TEST_BUFFER_LE[3..79])
+            ZeroVec::<u32>::parse_bytes(&TEST_BUFFER_LE[3..79])
                 .unwrap()
                 .get(19)
         );
