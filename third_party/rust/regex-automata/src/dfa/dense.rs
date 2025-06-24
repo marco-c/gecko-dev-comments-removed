@@ -9,7 +9,7 @@
 
 #[cfg(feature = "dfa-build")]
 use core::cmp;
-use core::{fmt, iter, mem::size_of, slice};
+use core::{convert::TryFrom, fmt, iter, mem::size_of, slice};
 
 #[cfg(feature = "dfa-build")]
 use alloc::{
@@ -30,7 +30,7 @@ use crate::{
 use crate::{
     dfa::{
         accel::Accels,
-        automaton::{fmt_state_indicator, Automaton, StartError},
+        automaton::{fmt_state_indicator, Automaton},
         special::Special,
         start::StartKind,
         DEAD,
@@ -40,8 +40,8 @@ use crate::{
         int::{Pointer, Usize},
         prefilter::Prefilter,
         primitives::{PatternID, StateID},
-        search::Anchored,
-        start::{self, Start, StartByteMap},
+        search::{Anchored, Input, MatchError},
+        start::{Start, StartByteMap},
         wire::{self, DeserializeError, Endian, SerializeError},
     },
 };
@@ -54,7 +54,6 @@ const LABEL: &str = "rust-regex-automata-dfa-dense";
 
 
 const VERSION: u32 = 2;
-
 
 
 
@@ -100,6 +99,7 @@ impl Config {
         Config::default()
     }
 
+    
     
     
     
@@ -1235,7 +1235,6 @@ impl Builder {
             
             
             
-            
             if !quitset.is_empty() {
                 set.add_set(&quitset);
             }
@@ -2340,30 +2339,12 @@ impl<'a> DFA<&'a [u32]> {
         
         
         let (dfa, nread) = unsafe { DFA::from_bytes_unchecked(slice)? };
-        dfa.tt.validate(&dfa)?;
-        dfa.st.validate(&dfa)?;
+        dfa.tt.validate(&dfa.special)?;
+        dfa.st.validate(&dfa.tt)?;
         dfa.ms.validate(&dfa)?;
         dfa.accels.validate()?;
         
         
-        for state in dfa.states() {
-            
-            
-            if dfa.is_accel_state(state.id()) {
-                let index = dfa.accelerator_index(state.id());
-                if index >= dfa.accels.len() {
-                    return Err(DeserializeError::generic(
-                        "found DFA state with invalid accelerator index",
-                    ));
-                }
-                let needles = dfa.accels.needles(index);
-                if !(1 <= needles.len() && needles.len() <= 3) {
-                    return Err(DeserializeError::generic(
-                        "accelerator needles has invalid length",
-                    ));
-                }
-            }
-        }
         Ok((dfa, nread))
     }
 
@@ -2904,33 +2885,31 @@ impl OwnedDFA {
     fn set_universal_starts(&mut self) {
         assert_eq!(6, Start::len(), "expected 6 start configurations");
 
-        let start_id = |dfa: &mut OwnedDFA,
-                        anchored: Anchored,
-                        start: Start| {
+        let start_id = |dfa: &mut OwnedDFA, inp: &Input<'_>, start: Start| {
             
             
-            dfa.st.start(anchored, start).expect("valid Input configuration")
+            dfa.st.start(inp, start).expect("valid Input configuration")
         };
         if self.start_kind().has_unanchored() {
-            let anchor = Anchored::No;
-            let sid = start_id(self, anchor, Start::NonWordByte);
-            if sid == start_id(self, anchor, Start::WordByte)
-                && sid == start_id(self, anchor, Start::Text)
-                && sid == start_id(self, anchor, Start::LineLF)
-                && sid == start_id(self, anchor, Start::LineCR)
-                && sid == start_id(self, anchor, Start::CustomLineTerminator)
+            let inp = Input::new("").anchored(Anchored::No);
+            let sid = start_id(self, &inp, Start::NonWordByte);
+            if sid == start_id(self, &inp, Start::WordByte)
+                && sid == start_id(self, &inp, Start::Text)
+                && sid == start_id(self, &inp, Start::LineLF)
+                && sid == start_id(self, &inp, Start::LineCR)
+                && sid == start_id(self, &inp, Start::CustomLineTerminator)
             {
                 self.st.universal_start_unanchored = Some(sid);
             }
         }
         if self.start_kind().has_anchored() {
-            let anchor = Anchored::Yes;
-            let sid = start_id(self, anchor, Start::NonWordByte);
-            if sid == start_id(self, anchor, Start::WordByte)
-                && sid == start_id(self, anchor, Start::Text)
-                && sid == start_id(self, anchor, Start::LineLF)
-                && sid == start_id(self, anchor, Start::LineCR)
-                && sid == start_id(self, anchor, Start::CustomLineTerminator)
+            let inp = Input::new("").anchored(Anchored::Yes);
+            let sid = start_id(self, &inp, Start::NonWordByte);
+            if sid == start_id(self, &inp, Start::WordByte)
+                && sid == start_id(self, &inp, Start::Text)
+                && sid == start_id(self, &inp, Start::LineLF)
+                && sid == start_id(self, &inp, Start::LineCR)
+                && sid == start_id(self, &inp, Start::CustomLineTerminator)
             {
                 self.st.universal_start_anchored = Some(sid);
             }
@@ -3237,21 +3216,35 @@ unsafe impl<T: AsRef<[u32]>> Automaton for DFA<T> {
     }
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn start_state(
+    fn start_state_forward(
         &self,
-        config: &start::Config,
-    ) -> Result<StateID, StartError> {
-        let anchored = config.get_anchored();
-        let start = match config.get_look_behind() {
-            None => Start::Text,
-            Some(byte) => {
-                if !self.quitset.is_empty() && self.quitset.contains(byte) {
-                    return Err(StartError::quit(byte));
-                }
-                self.st.start_map.get(byte)
+        input: &Input<'_>,
+    ) -> Result<StateID, MatchError> {
+        if !self.quitset.is_empty() && input.start() > 0 {
+            let offset = input.start() - 1;
+            let byte = input.haystack()[offset];
+            if self.quitset.contains(byte) {
+                return Err(MatchError::quit(byte, offset));
             }
-        };
-        self.st.start(anchored, start)
+        }
+        let start = self.st.start_map.fwd(&input);
+        self.st.start(input, start)
+    }
+
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    fn start_state_reverse(
+        &self,
+        input: &Input<'_>,
+    ) -> Result<StateID, MatchError> {
+        if !self.quitset.is_empty() && input.end() < input.haystack().len() {
+            let offset = input.end();
+            let byte = input.haystack()[offset];
+            if self.quitset.contains(byte) {
+                return Err(MatchError::quit(byte, offset));
+            }
+        }
+        let start = self.st.start_map.rev(&input);
+        self.st.start(input, start)
     }
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
@@ -3593,8 +3586,7 @@ impl<T: AsRef<[u32]>> TransitionTable<T> {
     
     
     
-    fn validate(&self, dfa: &DFA<T>) -> Result<(), DeserializeError> {
-        let sp = &dfa.special;
+    fn validate(&self, sp: &Special) -> Result<(), DeserializeError> {
         for state in self.states() {
             
             
@@ -3610,13 +3602,6 @@ impl<T: AsRef<[u32]>> TransitionTable<T> {
                     return Err(DeserializeError::generic(
                         "found dense state tagged as special but \
                          wasn't actually special",
-                    ));
-                }
-                if sp.is_match_state(state.id())
-                    && dfa.match_len(state.id()) == 0
-                {
-                    return Err(DeserializeError::generic(
-                        "found match state with zero pattern IDs",
                     ));
                 }
             }
@@ -4135,8 +4120,10 @@ impl<T: AsRef<[u32]>> StartTable<T> {
     
     
     
-    fn validate(&self, dfa: &DFA<T>) -> Result<(), DeserializeError> {
-        let tt = &dfa.tt;
+    fn validate(
+        &self,
+        tt: &TransitionTable<T>,
+    ) -> Result<(), DeserializeError> {
         if !self.universal_start_unanchored.map_or(true, |s| tt.is_valid(s)) {
             return Err(DeserializeError::generic(
                 "found invalid universal unanchored starting state ID",
@@ -4193,27 +4180,28 @@ impl<T: AsRef<[u32]>> StartTable<T> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     fn start(
         &self,
-        anchored: Anchored,
+        input: &Input<'_>,
         start: Start,
-    ) -> Result<StateID, StartError> {
+    ) -> Result<StateID, MatchError> {
         let start_index = start.as_usize();
-        let index = match anchored {
+        let mode = input.get_anchored();
+        let index = match mode {
             Anchored::No => {
                 if !self.kind.has_unanchored() {
-                    return Err(StartError::unsupported_anchored(anchored));
+                    return Err(MatchError::unsupported_anchored(mode));
                 }
                 start_index
             }
             Anchored::Yes => {
                 if !self.kind.has_anchored() {
-                    return Err(StartError::unsupported_anchored(anchored));
+                    return Err(MatchError::unsupported_anchored(mode));
                 }
                 self.stride + start_index
             }
             Anchored::Pattern(pid) => {
                 let len = match self.pattern_len {
                     None => {
-                        return Err(StartError::unsupported_anchored(anchored))
+                        return Err(MatchError::unsupported_anchored(mode))
                     }
                     Some(len) => len,
                 };
@@ -4958,74 +4946,6 @@ pub struct BuildError {
     kind: BuildErrorKind,
 }
 
-#[cfg(feature = "dfa-build")]
-impl BuildError {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn is_size_limit_exceeded(&self) -> bool {
-        use self::BuildErrorKind::*;
-
-        match self.kind {
-            NFA(_) | Unsupported(_) => false,
-            TooManyStates
-            | TooManyStartStates
-            | TooManyMatchPatternIDs
-            | DFAExceededSizeLimit { .. }
-            | DeterminizeExceededSizeLimit { .. } => true,
-        }
-    }
-}
-
 
 
 
@@ -5166,8 +5086,6 @@ impl core::fmt::Display for BuildError {
 
 #[cfg(all(test, feature = "syntax", feature = "dfa-build"))]
 mod tests {
-    use crate::{Input, MatchError};
-
     use super::*;
 
     #[test]

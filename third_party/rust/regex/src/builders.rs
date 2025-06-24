@@ -686,7 +686,6 @@ pub(crate) mod string {
         
         
         
-        
         pub fn size_limit(&mut self, bytes: usize) -> &mut RegexBuilder {
             self.builder.size_limit(bytes);
             self
@@ -1221,7 +1220,6 @@ pub(crate) mod string {
             self
         }
 
-        
         
         
         
@@ -1865,7 +1863,6 @@ pub(crate) mod bytes {
         
         
         
-        
         pub fn size_limit(&mut self, bytes: usize) -> &mut RegexBuilder {
             self.builder.size_limit(bytes);
             self
@@ -2405,7 +2402,6 @@ pub(crate) mod bytes {
             self
         }
 
-        
         
         
         

@@ -133,7 +133,7 @@
 
 
 pub use self::{
-    error::{BuildError, CacheError, StartError},
+    error::{BuildError, CacheError},
     id::LazyStateID,
 };
 

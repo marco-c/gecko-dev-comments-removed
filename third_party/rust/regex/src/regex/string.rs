@@ -735,9 +735,6 @@ impl Regex {
     
     
     
-    
-    
-    
     #[inline]
     pub fn replace<'h, R: Replacer>(
         &self,
@@ -831,13 +828,6 @@ impl Regex {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn replace_all<'h, R: Replacer>(
         &self,
@@ -847,13 +837,6 @@ impl Regex {
         self.replacen(haystack, 0, rep)
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1634,11 +1617,6 @@ impl<'h> From<Match<'h>> for core::ops::Range<usize> {
 
 
 
-
-
-
-
-
 pub struct Captures<'h> {
     haystack: &'h str,
     caps: captures::Captures,
@@ -2029,9 +2007,6 @@ impl<'h, 'n> core::ops::Index<&'n str> for Captures<'h> {
             .unwrap_or_else(|| panic!("no group named '{}'", name))
     }
 }
-
-
-
 
 
 

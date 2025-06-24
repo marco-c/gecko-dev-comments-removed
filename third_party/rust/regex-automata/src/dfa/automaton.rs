@@ -7,7 +7,6 @@ use crate::{
         prefilter::Prefilter,
         primitives::{PatternID, StateID},
         search::{Anchored, HalfMatch, Input, MatchError},
-        start,
     },
 };
 
@@ -249,54 +248,18 @@ pub unsafe trait Automaton {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn start_state(
-        &self,
-        config: &start::Config,
-    ) -> Result<StateID, StartError>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn start_state_forward(
         &self,
         input: &Input<'_>,
-    ) -> Result<StateID, MatchError> {
-        let config = start::Config::from_input_forward(input);
-        self.start_state(&config).map_err(|err| match err {
-            StartError::Quit { byte } => {
-                let offset = input
-                    .start()
-                    .checked_sub(1)
-                    .expect("no quit in start without look-behind");
-                MatchError::quit(byte, offset)
-            }
-            StartError::UnsupportedAnchored { mode } => {
-                MatchError::unsupported_anchored(mode)
-            }
-        })
-    }
+    ) -> Result<StateID, MatchError>;
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -315,18 +278,7 @@ pub unsafe trait Automaton {
     fn start_state_reverse(
         &self,
         input: &Input<'_>,
-    ) -> Result<StateID, MatchError> {
-        let config = start::Config::from_input_reverse(input);
-        self.start_state(&config).map_err(|err| match err {
-            StartError::Quit { byte } => {
-                let offset = input.end();
-                MatchError::quit(byte, offset)
-            }
-            StartError::UnsupportedAnchored { mode } => {
-                MatchError::unsupported_anchored(mode)
-            }
-        })
-    }
+    ) -> Result<StateID, MatchError>;
 
     
     
@@ -1847,14 +1799,6 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
     }
 
     #[inline]
-    fn start_state(
-        &self,
-        config: &start::Config,
-    ) -> Result<StateID, StartError> {
-        (**self).start_state(config)
-    }
-
-    #[inline]
     fn start_state_forward(
         &self,
         input: &Input<'_>,
@@ -2068,90 +2012,6 @@ impl OverlappingState {
     
     pub fn get_match(&self) -> Option<HalfMatch> {
         self.mat
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[non_exhaustive]
-#[derive(Clone, Debug)]
-pub enum StartError {
-    
-    
-    Quit {
-        
-        byte: u8,
-    },
-    
-    
-    UnsupportedAnchored {
-        
-        mode: Anchored,
-    },
-}
-
-impl StartError {
-    pub(crate) fn quit(byte: u8) -> StartError {
-        StartError::Quit { byte }
-    }
-
-    pub(crate) fn unsupported_anchored(mode: Anchored) -> StartError {
-        StartError::UnsupportedAnchored { mode }
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for StartError {}
-
-impl core::fmt::Display for StartError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match *self {
-            StartError::Quit { byte } => write!(
-                f,
-                "error computing start state because the look-behind byte \
-                 {:?} triggered a quit state",
-                crate::util::escape::DebugByte(byte),
-            ),
-            StartError::UnsupportedAnchored { mode: Anchored::Yes } => {
-                write!(
-                    f,
-                    "error computing start state because \
-                     anchored searches are not supported or enabled"
-                )
-            }
-            StartError::UnsupportedAnchored { mode: Anchored::No } => {
-                write!(
-                    f,
-                    "error computing start state because \
-                     unanchored searches are not supported or enabled"
-                )
-            }
-            StartError::UnsupportedAnchored {
-                mode: Anchored::Pattern(pid),
-            } => {
-                write!(
-                    f,
-                    "error computing start state because \
-                     anchored searches for a specific pattern ({}) \
-                     are not supported or enabled",
-                    pid.as_usize(),
-                )
-            }
-        }
     }
 }
 

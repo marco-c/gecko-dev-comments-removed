@@ -41,10 +41,6 @@
 
 
 
-
-
-#![allow(dead_code)]
-
 pub(crate) trait U8 {
     fn as_usize(self) -> usize;
 }
@@ -240,6 +236,16 @@ pub(crate) trait Pointer {
 }
 
 impl<T> Pointer for *const T {
+    fn as_usize(self) -> usize {
+        self as usize
+    }
+}
+
+pub(crate) trait PointerMut {
+    fn as_usize(self) -> usize;
+}
+
+impl<T> PointerMut for *mut T {
     fn as_usize(self) -> usize {
         self as usize
     }
