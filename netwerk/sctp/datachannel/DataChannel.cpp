@@ -963,18 +963,11 @@ void DataChannelConnection::CompleteConnect() {
 void DataChannelConnection::ProcessQueuedOpens() {
   std::set<RefPtr<DataChannel>> temp(std::move(mPending));
   for (auto channel : temp) {
-    if (channel->mHasFinishedOpen) {
-      DC_DEBUG(("Processing queued open for %p (%u)", channel.get(),
-                channel->mStream));
-      channel->mHasFinishedOpen = false;
-      
-      
-      channel = OpenFinish(channel.forget());  
-    } else {
-      NS_ASSERTION(false,
-                   "How did a DataChannel get queued without the "
-                   "mHasFinishedOpen flag?");
-    }
+    DC_DEBUG(("Processing queued open for %p (%u)", channel.get(),
+              channel->mStream));
+    
+    
+    channel = OpenFinish(channel.forget());  
   }
 }
 
@@ -2467,8 +2460,6 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
       }
     }
     DC_DEBUG(("Queuing channel %p (%u) to finish open", channel.get(), stream));
-    
-    channel->mHasFinishedOpen = true;
     mPending.insert(channel);
     return channel.forget();
   }
