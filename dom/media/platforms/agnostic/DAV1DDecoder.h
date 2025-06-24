@@ -13,6 +13,9 @@
 #  include "nsRefPtrHashtable.h"
 
 namespace mozilla {
+namespace layers {
+class BufferRecycleBin;
+}
 
 DDLoggedTypeDeclNameAndBase(DAV1DDecoder, MediaDataDecoder);
 
@@ -64,6 +67,10 @@ class DAV1DDecoder final : public MediaDataDecoder,
   
   
   MediaRawDataHashtable mDecodingBuffers;
+
+  
+  const bool m8bpcOutput;
+  RefPtr<layers::BufferRecycleBin> m8bpcRecycleBin;
 };
 
 }  
