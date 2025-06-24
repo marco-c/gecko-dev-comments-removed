@@ -87,11 +87,38 @@ window.assertCommittedFulfillsFinishedRejectsDOM = async (t, result, expectedEnt
   assert_equals(committedValue, expectedEntry);
 };
 
+
+
+
+
+window.waitForAllLenient = (iterable) => {
+  const { promise: all, resolve, reject } = Promise.withResolvers();
+  let remaining = 0;
+  let results = [];
+  for (const promise of iterable) {
+    let index = remaining++;
+    promise.then(v => {
+      results[index] = v;
+      --remaining;
+      if (!remaining) {
+        resolve(results);
+      }
+      return v;
+    }, v => reject(v));
+  }
+
+  if (!remaining) {
+    resolve(results);
+  }
+
+  return all;
+}
+
 window.assertBothRejectExactly = async (t, result, expectedRejection, w = window) => {
   assertReturnValue(result, w);
 
   let committedReason, finishedReason;
-  await Promise.all([
+  await waitForAllLenient([
     result.committed.then(
       t.unreached_func("committed must not fulfill"),
       t.step_func(r => { committedReason = r; })
@@ -111,7 +138,7 @@ window.assertBothRejectDOM = async (t, result, expectedDOMExceptionCode, w = win
 
   
   let committedReason, finishedReason;
-  await Promise.all([
+  await waitForAllLenient([
     result.committed.then(
       t.unreached_func("committed must not fulfill"),
       t.step_func(r => { committedReason = r; })
