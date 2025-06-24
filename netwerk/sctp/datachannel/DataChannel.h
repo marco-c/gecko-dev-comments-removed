@@ -155,7 +155,9 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   friend class DataChannel;
   friend class DataChannelOnMessageAvailable;
   friend class DataChannelConnectRunnable;
+  friend class DataChannelConnectionUsrsctp;
 
+ protected:
   virtual ~DataChannelConnection();
 
  public:
@@ -200,19 +202,32 @@ class DataChannelConnection : public net::NeckoTargetHolder {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DataChannelConnection)
 
-  void Destroy();  
   
-  void DestroyOnSTS();
-  virtual bool RaiseStreamLimitTo(uint16_t aNewLimit);
+  virtual bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams,
+                    const Maybe<uint64_t>& aMaxMessageSize) = 0;
   
-  virtual void ResetStreams(nsTArray<uint16_t>& aStreams);
-
-  int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg);
+  virtual void OnTransportReady() = 0;
+  
+  
+  virtual void OnStreamOpen(uint16_t stream) = 0;
+  
+  virtual bool RaiseStreamLimitTo(uint16_t aNewLimit) = 0;
+  
+  
+  
+  virtual int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg) = 0;
+  
+  virtual void OnSctpPacketReceived(const MediaPacket& packet) = 0;
+  
+  virtual void ResetStreams(nsTArray<uint16_t>& aStreams) = 0;
+  
+  virtual void Destroy();
 
   void SetMaxMessageSize(bool aMaxMessageSizeSet, uint64_t aMaxMessageSize);
   uint64_t GetMaxMessageSize();
   void HandleDataMessage(IncomingMsg&& aMsg);
   void HandleDCEPMessage(IncomingMsg&& aMsg);
+  void ProcessQueuedOpens();
   void OnStreamsReset(std::vector<uint16_t>&& aStreams);
 
   void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
@@ -223,7 +238,6 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                           const uint16_t aRemotePort);
   void TransportStateChange(const std::string& aTransportId,
                             TransportLayer::State aState);
-  void CompleteConnect();
   void SetSignals(const std::string& aTransportId);
 
   [[nodiscard]] already_AddRefed<DataChannel> Open(
@@ -251,19 +265,8 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   
   int SendBlob(uint16_t stream, nsIInputStream* aBlob);
 
-  
-  
-  
-  int ReceiveCallback(struct socket* sock, void* data, size_t datalen,
-                      struct sctp_rcvinfo rcv, int flags);
-
   void ReadBlob(already_AddRefed<DataChannelConnection> aThis, uint16_t aStream,
                 nsIInputStream* aBlob);
-
-  void SendDeferredMessages();
-
-  int SctpDtlsOutput(void* addr, void* buffer, size_t length, uint8_t tos,
-                     uint8_t set_df);
 
   bool InShutdown() const {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -273,7 +276,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
 #endif
   }
 
- private:
+ protected:
   class Channels {
    public:
     using ChannelArray = AutoTArray<RefPtr<DataChannel>, 16>;
@@ -311,8 +314,6 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                         MediaTransportHandler* aHandler);
 
   int SendDataMessage(uint16_t aStream, nsACString&& aMsg, bool aIsBinary);
-  bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams,
-            const Maybe<uint64_t>& aMaxMessageSize);
 
   DataChannelConnectionState GetState() const {
     MOZ_ASSERT(mSTS->IsOnCurrentThread());
@@ -320,68 +321,30 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   }
 
   void SetState(DataChannelConnectionState aState);
-  static int OnThresholdEvent(struct socket* sock, uint32_t sb_free,
-                              void* ulp_info);
 
   static void DTLSConnectThread(void* data);
   void SendPacket(std::unique_ptr<MediaPacket>&& packet);
-  void SctpDtlsInput(const std::string& aTransportId,
-                     const MediaPacket& packet);
+  void OnPacketReceived(const std::string& aTransportId,
+                        const MediaPacket& packet);
   already_AddRefed<DataChannel> FindChannelByStream(uint16_t stream);
   uint16_t FindFreeStream() const;
-  uint32_t UpdateCurrentStreamIndex();
-  uint32_t GetCurrentStreamIndex();
   int SendControlMessage(DataChannel& aChannel, const uint8_t* data,
                          uint32_t len);
   int SendOpenAckMessage(DataChannel& aChannel);
   int SendOpenRequestMessage(DataChannel& aChannel);
-  bool SendBufferedMessages(nsTArray<OutgoingMsg>& buffer, size_t* aWritten);
-  int SendMsgInternal(OutgoingMsg& msg, size_t* aWritten);
-  int SendMsgInternalOrBuffer(nsTArray<OutgoingMsg>& buffer, OutgoingMsg&& msg,
-                              bool* buffered, size_t* aWritten);
-  int SendDataMsgInternalOrBuffer(DataChannel& channel, const uint8_t* data,
-                                  size_t len, uint32_t ppid);
-  int SendDataMsg(DataChannel& channel, const uint8_t* data, size_t len,
-                  uint32_t ppidPartial, uint32_t ppidFinal);
 
-  void DeliverQueuedData(uint16_t stream);
   void OpenFinish(RefPtr<DataChannel> aChannel);
 
-  void ProcessQueuedOpens();
   void ClearResets();
   void MarkStreamForReset(DataChannel& aChannel);
+  void HandleUnknownMessage(uint32_t ppid, uint32_t length, uint16_t stream);
   void HandleOpenRequestMessage(
       const struct rtcweb_datachannel_open_request* req, uint32_t length,
       uint16_t stream);
   void HandleOpenAckMessage(const struct rtcweb_datachannel_ack* ack,
                             uint32_t length, uint16_t stream);
-  void HandleUnknownMessage(uint32_t ppid, uint32_t length, uint16_t stream);
-  uint8_t BufferMessage(nsACString& recvBuffer, const void* data,
-                        uint32_t length, uint32_t ppid, int flags);
-  void HandleDataMessage(const void* data, size_t length, uint32_t ppid,
-                         uint16_t stream, int flags);
-  void HandleDCEPMessage(const void* buffer, size_t length, uint32_t ppid,
-                         uint16_t stream, int flags);
-  void HandleMessage(const void* buffer, size_t length, uint32_t ppid,
-                     uint16_t stream, int flags);
-  void HandleAssociationChangeEvent(const struct sctp_assoc_change* sac);
-  void HandlePeerAddressChangeEvent(const struct sctp_paddr_change* spc);
-  void HandleRemoteErrorEvent(const struct sctp_remote_error* sre);
-  void HandleShutdownEvent(const struct sctp_shutdown_event* sse);
-  void HandleAdaptationIndication(const struct sctp_adaptation_event* sai);
-  void HandlePartialDeliveryEvent(const struct sctp_pdapi_event* spde);
-  void HandleSendFailedEvent(const struct sctp_send_failed_event* ssfe);
-  void HandleStreamResetEvent(const struct sctp_stream_reset_event* strrst);
-  void HandleStreamChangeEvent(const struct sctp_stream_change_event* strchg);
-  void HandleNotification(const union sctp_notification* notif, size_t n);
   bool ReassembleMessageChunk(IncomingMsg& aReassembled, const void* buffer,
                               size_t length, uint32_t ppid, uint16_t stream);
-  void HandleMessageChunk(const void* buffer, size_t length, uint32_t ppid,
-                          uint16_t messageId, uint16_t stream, int flags);
-  void HandleDataMessageChunk(const void* data, size_t length, uint32_t ppid,
-                              uint16_t stream, uint16_t messageId, int flags);
-  void HandleDCEPMessageChunk(const void* buffer, size_t length, uint32_t ppid,
-                              uint16_t stream, int flags);
 
   
   
@@ -423,9 +386,6 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   Channels mChannels;
 
   
-  struct socket* mSocket = nullptr;
-
-  
   uintptr_t mId = 0;
 
   
@@ -440,9 +400,78 @@ class DataChannelConnection : public net::NeckoTargetHolder {
 #endif
 };
 
+class DataChannelConnectionUsrsctp : public DataChannelConnection {
+  virtual ~DataChannelConnectionUsrsctp();
+
+ public:
+  DataChannelConnectionUsrsctp(DataConnectionListener* aListener,
+                               nsISerialEventTarget* aTarget,
+                               MediaTransportHandler* aHandler);
+  void Destroy() override;
+  bool RaiseStreamLimitTo(uint16_t aNewLimit) override;
+  void OnTransportReady() override;
+  bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams,
+            const Maybe<uint64_t>& aMaxMessageSize) override;
+  int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg) override;
+  void OnSctpPacketReceived(const MediaPacket& packet) override;
+  void ResetStreams(nsTArray<uint16_t>& aStreams) override;
+  void OnStreamOpen(uint16_t stream) override;
+
+  
+  
+  
+  int ReceiveCallback(struct socket* sock, void* data, size_t datalen,
+                      struct sctp_rcvinfo rcv, int flags);
+  int SendSctpPacket(const uint8_t* buffer, size_t length);
+
+ private:
+  void HandleAssociationChangeEvent(const struct sctp_assoc_change* sac);
+  void HandlePeerAddressChangeEvent(const struct sctp_paddr_change* spc);
+  void HandleRemoteErrorEvent(const struct sctp_remote_error* sre);
+  void HandleShutdownEvent(const struct sctp_shutdown_event* sse);
+  void HandleAdaptationIndication(const struct sctp_adaptation_event* sai);
+  void HandlePartialDeliveryEvent(const struct sctp_pdapi_event* spde);
+  void HandleSendFailedEvent(const struct sctp_send_failed_event* ssfe);
+  void HandleStreamResetEvent(const struct sctp_stream_reset_event* strrst);
+  void HandleStreamChangeEvent(const struct sctp_stream_change_event* strchg);
+  void HandleNotification(const union sctp_notification* notif, size_t n);
+  int SendMsgInternal(OutgoingMsg& msg, size_t* aWritten);
+  bool SendBufferedMessages(nsTArray<OutgoingMsg>& buffer, size_t* aWritten);
+  void SendDeferredMessages();
+  static int OnThresholdEvent(struct socket* sock, uint32_t sb_free,
+                              void* ulp_info);
+  int SendMsgInternalOrBuffer(nsTArray<OutgoingMsg>& buffer, OutgoingMsg&& msg,
+                              bool* aBuffered, size_t* aWritten);
+  uint32_t UpdateCurrentStreamIndex();
+  uint32_t GetCurrentStreamIndex();
+  
+  void DestroyOnSTS();
+  void HandleMessageChunk(const void* buffer, size_t length, uint32_t ppid,
+                          uint16_t messageId, uint16_t stream, int flags);
+  void HandleDataMessageChunk(const void* data, size_t length, uint32_t ppid,
+                              uint16_t stream, uint16_t messageId, int flags);
+  void HandleDCEPMessageChunk(const void* buffer, size_t length, uint32_t ppid,
+                              uint16_t stream, int flags);
+
+  
+  bool mSendInterleaved = false;
+  
+  uint32_t mCurrentStream = 0;
+  PendingType mPendingType = PendingType::None;
+  
+  nsTArray<OutgoingMsg> mBufferedControl;
+  
+  nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData;
+  
+  
+  struct socket* mSocket = nullptr;
+  bool mSctpConfigured = false;
+};
+
 class DataChannel {
   friend class DataChannelOnMessageAvailable;
   friend class DataChannelConnection;
+  friend class DataChannelConnectionUsrsctp;
 
  public:
   struct TrafficCounters {
@@ -634,6 +663,42 @@ class DataChannelOnMessageAvailable : public Runnable {
   RefPtr<DataChannel> mChannel;
   RefPtr<DataChannelConnection> mConnection;
   nsCString mData;
+};
+
+static constexpr const char* ToString(DataChannelConnectionState state) {
+  switch (state) {
+    case DataChannelConnectionState::Connecting:
+      return "CONNECTING";
+    case DataChannelConnectionState::Open:
+      return "OPEN";
+    case DataChannelConnectionState::Closed:
+      return "CLOSED";
+  }
+  return "";
+};
+
+static constexpr const char* ToString(DataChannelConnection::PendingType type) {
+  switch (type) {
+    case DataChannelConnection::PendingType::None:
+      return "NONE";
+    case DataChannelConnection::PendingType::Dcep:
+      return "DCEP";
+    case DataChannelConnection::PendingType::Data:
+      return "DATA";
+  }
+  return "";
+};
+
+static constexpr const char* ToString(DataChannelReliabilityPolicy type) {
+  switch (type) {
+    case DataChannelReliabilityPolicy::Reliable:
+      return "RELIABLE";
+    case DataChannelReliabilityPolicy::LimitedRetransmissions:
+      return "LIMITED_RETRANSMISSIONS";
+    case DataChannelReliabilityPolicy::LimitedLifetime:
+      return "LIMITED_LIFETIME";
+  }
+  return "";
 };
 
 }  
