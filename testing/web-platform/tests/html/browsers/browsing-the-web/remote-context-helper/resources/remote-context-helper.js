@@ -232,82 +232,6 @@
 
 
 
-  class RemoteContextHelper {
-    
-
-
-
-    constructor(config) {
-      this.config = RemoteContextConfig.ensure(config);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    async createContext({
-      executorCreator,
-      extraConfig,
-      isWorker = false,
-    }) {
-      const config =
-          this.config.merged(RemoteContextConfig.ensure(extraConfig));
-
-      
-      const uuid = token();
-      const url = await config.createExecutorUrl(uuid, isWorker);
-
-      if (executorCreator) {
-        if (config.urlType == 'blank') {
-          await executorCreator(undefined, await fetchText(url));
-        } else {
-          await executorCreator(url, undefined);
-        }
-      }
-
-      return new RemoteContextWrapper(new RemoteContext(uuid), this, url);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    addWindow(extraConfig, options) {
-      return this.createContext({
-        executorCreator: windowExecutorCreator(options),
-        extraConfig,
-      });
-    }
-  }
-  
-  self.RemoteContextHelper = RemoteContextHelper;
-
-  
-
-
-
-
 
 
   function addHeaders(url, headers) {
@@ -736,4 +660,87 @@
       }
     }
   }
+
+
+  
+
+
+
+
+  class RemoteContextHelper {
+    
+
+
+
+    static RemoteContextWrapper = RemoteContextWrapper;
+
+    
+
+
+
+    constructor(config) {
+      this.config = RemoteContextConfig.ensure(config);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    async createContext({
+      executorCreator,
+      extraConfig,
+      isWorker = false,
+    }) {
+      const config =
+        this.config.merged(RemoteContextConfig.ensure(extraConfig));
+
+      
+      const uuid = token();
+      const url = await config.createExecutorUrl(uuid, isWorker);
+
+      if (executorCreator) {
+        if (config.urlType == 'blank') {
+          await executorCreator(undefined, await fetchText(url));
+        } else {
+          await executorCreator(url, undefined);
+        }
+      }
+
+      return new this.constructor.RemoteContextWrapper(new RemoteContext(uuid), this, url);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    addWindow(extraConfig, options) {
+      return this.createContext({
+        executorCreator: windowExecutorCreator(options),
+        extraConfig,
+      });
+    }
+  }
+  
+  self.RemoteContextHelper = RemoteContextHelper;
 }

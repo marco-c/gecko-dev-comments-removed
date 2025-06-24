@@ -1,4 +1,4 @@
-window.assertSpeculationRulesIsSupported = () => {
+globalThis.assertSpeculationRulesIsSupported = () => {
   assert_implements(
       'supports' in HTMLScriptElement,
       'HTMLScriptElement.supports must be supported');
@@ -6,3 +6,49 @@ window.assertSpeculationRulesIsSupported = () => {
       HTMLScriptElement.supports('speculationrules'),
       '<script type="speculationrules"> must be supported');
 };
+
+
+
+
+if (globalThis.RemoteContextHelper) {
+  class PreloadingRemoteContextWrapper extends RemoteContextHelper.RemoteContextWrapper {
+    
+
+
+
+
+
+
+
+
+
+
+    addPreload(preloadType, { extrasInSpeculationRule = {}, ...extraConfig } = {}) {
+      const referrerRemoteContext = this;
+
+      return this.helper.createContext({
+        executorCreator(url) {
+          return referrerRemoteContext.executeScript((url, preloadType, extrasInSpeculationRule) => {
+            const script = document.createElement("script");
+            script.type = "speculationrules";
+            script.textContent = JSON.stringify({
+              [preloadType]: [
+                {
+                  source: "list",
+                  urls: [url],
+                  ...extrasInSpeculationRule
+                }
+              ]
+            });
+            document.head.append(script);
+          }, [url, preloadType, extrasInSpeculationRule]);
+        },
+        extraConfig
+      });
+    }
+  }
+
+  globalThis.PreloadingRemoteContextHelper = class extends RemoteContextHelper {
+    static RemoteContextWrapper = PreloadingRemoteContextWrapper;
+  };
+}

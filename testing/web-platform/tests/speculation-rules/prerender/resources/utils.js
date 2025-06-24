@@ -379,6 +379,9 @@ function test_prerender_defer(fn, label) {
 
 
 
+if (globalThis.PreloadingRemoteContextHelper) {
+  class PrerenderingRemoteContextWrapper extends PreloadingRemoteContextHelper.RemoteContextWrapper {
+    
 
 
 
@@ -393,25 +396,36 @@ function test_prerender_defer(fn, label) {
 
 
 
-function addPrerenderRC(referrerRemoteContext, extraConfig) {
-  return referrerRemoteContext.helper.createContext({
-    executorCreator(url) {
-      return referrerRemoteContext.executeScript(url => {
-        const script = document.createElement("script");
-        script.type = "speculationrules";
-        script.textContent = JSON.stringify({
-          prerender: [
-            {
-              source: "list",
-              urls: [url]
-            }
-          ]
+
+
+
+    async navigateExpectingPrerenderingActivation(destinationRC, navigateFn) {
+      
+      
+      await destinationRC.executeScript(() => {
+        window.activatedPromise = new Promise(resolve => {
+          document.addEventListener("prerenderingchange", () => resolve("activated"), { once: true });
         });
-        document.head.append(script);
-      }, [url]);
-    }, extraConfig
-  });
-}
+      });
+
+      if (navigateFn === undefined) {
+        await this.navigateTo(destinationRC.url);
+      } else {
+        await this.navigate(navigateFn, [destinationRC.url]);
+      }
+
+      
+      
+      
+      
+      assert_equals(
+        await destinationRC.executeScript(() => window.activatedPromise),
+        "activated",
+        "The prerendered page must be activated; instead a normal navigation happened."
+      );
+    }
+
+    
 
 
 
@@ -421,52 +435,21 @@ function addPrerenderRC(referrerRemoteContext, extraConfig) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function activatePrerenderRC(referrerRC, prerenderedRC, navigateFn) {
-  
-  await prerenderedRC.executeScript(() => {
-    window.activatedPromise = new Promise(resolve => {
-      document.addEventListener("prerenderingchange", () => resolve("activated"));
-    });
-  });
-
-  if (navigateFn === undefined) {
-    referrerRC.navigateTo(prerenderedRC.url);
-  } else {
-    referrerRC.navigate(navigateFn, [prerenderedRC.url]);
+    addPrerender(options) {
+      return this.addPreload("prerender", options);
+    }
   }
 
-  
-  
-  
-  
-  assert_equals(
-    await prerenderedRC.executeScript(() => window.activatedPromise),
-    "activated",
-    "The prerendered page must be activated; instead a normal navigation happened."
-  );
+  globalThis.PrerenderingRemoteContextHelper = class extends PreloadingRemoteContextHelper {
+    static RemoteContextWrapper = PrerenderingRemoteContextWrapper;
+  };
 }
 
 async function getActivationStart(prerenderedRC) {
   return await prerenderedRC.executeScript(() => {
     const entry = performance.getEntriesByType("navigation")[0];
     return entry.activationStart;
-  });;
+  });
 }
 
 
