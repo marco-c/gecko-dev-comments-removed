@@ -96,8 +96,6 @@ class VideoFrameContainer {
     return mIntrinsicSize;
   }
 
-  bool SupportsOnly8BitImage() const { return mSupportsOnly8BitImage; }
-
  protected:
   void SetCurrentFramesLocked(
       const gfx::IntSize& aIntrinsicSize,
@@ -145,9 +143,6 @@ class VideoFrameContainer {
       MOZ_GUARDED_BY(mMutex);
 
   const RefPtr<AbstractThread> mMainThread;
-
-  
-  const bool mSupportsOnly8BitImage;
 };
 
 }  

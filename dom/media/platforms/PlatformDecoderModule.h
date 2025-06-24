@@ -69,10 +69,6 @@ MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING(
                                  
      KeepOriginalPts,  
                        
-     Output8BitPerChannel,  
-                            
-                            
-                            
 
      SENTINEL  
      ));
