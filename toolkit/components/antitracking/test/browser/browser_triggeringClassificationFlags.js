@@ -364,3 +364,48 @@ add_task(async function test_first_party_flags_in_about_blank_iframe() {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+
+add_task(async function test_embedded_tracking_script() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
+
+  for (const testCase of TEST_CASES) {
+    
+    
+    if (testCase.name === "Font") {
+      continue;
+    }
+
+    let obsPromise = observeAndCheck(
+      testCase.url,
+      0,
+      Ci.nsIClassifiedChannel.CLASSIFIED_TRACKING
+    );
+
+    
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [
+        TEST_3RD_PARTY_DOMAIN_HTTP +
+          TEST_PATH +
+          "triggerLoads.sjs?type=" +
+          testCase.name +
+          "&url=" +
+          testCase.url,
+      ],
+      async src => {
+        let script = content.document.createElement("script");
+        script.src = src;
+        content.document.body.appendChild(script);
+      }
+    );
+
+    await obsPromise;
+  }
+
+  BrowserTestUtils.removeTab(tab);
+});
