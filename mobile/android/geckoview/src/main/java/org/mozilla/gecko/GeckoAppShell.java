@@ -335,6 +335,7 @@ public class GeckoAppShell {
   private static synchronized boolean enableLocationUpdates(final boolean enable) {
     locationListeningRequested = enable;
     final boolean canListen = updateLocationListeners();
+    
     if (!canListen && locationListeningRequested) {
       
       locationListeningRequested = false;
@@ -352,11 +353,10 @@ public class GeckoAppShell {
     }
 
     if (!shouldListen) {
-      
-      if (locationListeningRequested) {
-        return false;
+      if (!locationListeningRequested) {
+        
+        lm.removeUpdates(sAndroidListeners);
       }
-      lm.removeUpdates(sAndroidListeners);
       return true;
     }
 

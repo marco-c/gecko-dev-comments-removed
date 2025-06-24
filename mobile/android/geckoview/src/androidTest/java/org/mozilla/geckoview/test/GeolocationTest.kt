@@ -28,6 +28,7 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.MockLocationProvider
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -287,5 +288,45 @@ class GeolocationTest : BaseSessionTest() {
 
         assertThat("onResume count matches.", actualResumeCount, equalTo(2))
         assertThat("onPause count matches.", actualPauseCount, equalTo(1))
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @TimeoutMillis(6000) 
+    @Test
+    fun startGeolocationOnBackground() {
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+        setEnableLocationPermissions()
+
+        mockGpsProvider.setMockLocation(1.1, 2.2)
+        mockGpsProvider.setDoContinuallyPost(true)
+        mockGpsProvider.postLocation()
+
+        
+        val handled = GeckoResult<Void>()
+        var result = false
+        Handler(Looper.getMainLooper()).postDelayed({
+            val promise = mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    window.navigator.geolocation.watchPosition(
+                        position => resolve(true),
+                        error => resolve(false))
+                })
+                """,
+            )
+            sessionRule.requestActivityToForeground(context)
+            result = promise.value as Boolean
+            handled.complete(null)
+        }, 1500)
+
+        
+        sessionRule.simulatePressHome(context)
+
+        sessionRule.waitForResult(handled)
+
+        mockGpsProvider.stopPostingLocation()
+
+        assertThat("watch position successful", result, equalTo(true))
     }
 }
