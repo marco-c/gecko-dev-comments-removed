@@ -201,6 +201,10 @@ class DataChannelRegistry {
     
     usrsctp_sysctl_set_sctp_asconf_enable(0);
     usrsctp_sysctl_set_sctp_auth_enable(0);
+
+    
+    usrsctp_sysctl_set_sctp_max_chunks_on_queue(
+        std::numeric_limits<uint32_t>::max());
   }
 
   void DeinitUsrSctp() {
