@@ -794,6 +794,7 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
     mLocalPort = aLocalPort;
     mRemotePort = aRemotePort;
     mAllocateEven = Some(aClient);
+    nsTArray<RefPtr<DataChannel>> hasStreamId;
     
     while (auto channel = mChannels.Get(INVALID_STREAM)) {
       mChannels.Remove(channel);
@@ -804,6 +805,7 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
         DC_DEBUG(("%s %p: Inserting auto-selected id %u", __func__, this,
                   static_cast<unsigned>(id)));
         mStreamIds.InsertElementSorted(id);
+        hasStreamId.AppendElement(channel);
       } else {
         
         
@@ -815,7 +817,15 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
       }
     }
 
-    SetState(DataChannelConnectionState::Connecting);
+    mSTS->Dispatch(NS_NewRunnableFunction(
+        __func__, [this, self = RefPtr<DataChannelConnection>(this),
+                   hasStreamId = std::move(hasStreamId)]() {
+          MutexAutoLock lock(mLock);
+          SetState(DataChannelConnectionState::Connecting);
+          for (auto channel : hasStreamId) {
+            OpenFinish(channel);
+          }
+        }));
   }
 
   
@@ -961,13 +971,13 @@ void DataChannelConnection::CompleteConnect() {
 
 
 void DataChannelConnection::ProcessQueuedOpens() {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
+  mLock.AssertCurrentThreadOwns();
   std::set<RefPtr<DataChannel>> temp(std::move(mPending));
   for (auto channel : temp) {
     DC_DEBUG(("Processing queued open for %p (%u)", channel.get(),
               channel->mStream));
-    
-    
-    channel = OpenFinish(channel.forget());  
+    OpenFinish(channel);  
   }
 }
 
@@ -1148,6 +1158,7 @@ bool DataChannelConnection::RaiseStreamLimitTo(uint16_t aNewLimit) {
 int DataChannelConnection::SendControlMessage(DataChannel& aChannel,
                                               const uint8_t* data,
                                               uint32_t len) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
   
   
 #if (UINT32_MAX > SIZE_MAX)
@@ -1312,6 +1323,7 @@ bool DataChannelConnection::SendDeferredMessages() {
 
 bool DataChannelConnection::SendBufferedMessages(nsTArray<OutgoingMsg>& buffer,
                                                  size_t* aWritten) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
   mLock.AssertCurrentThreadOwns();
   do {
     
@@ -2365,7 +2377,7 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
     DataChannelListener* aListener, nsISupports* aContext,
     bool aExternalNegotiated, uint16_t aStream) {
   ASSERT_WEBRTC(NS_IsMainThread());
-  MutexAutoLock lock(mLock);  
+  MutexAutoLock lock(mLock);
   if (!aExternalNegotiated) {
     if (mAllocateEven.isSome()) {
       aStream = FindFreeStream();
@@ -2392,10 +2404,13 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
 
   if (aStream != INVALID_STREAM) {
     if (mStreamIds.ContainsSorted(aStream)) {
-      
       DC_ERROR(("external negotiation of already-open channel %u", aStream));
+      
+      
+      
       return nullptr;
     }
+
     DC_DEBUG(("%s %p: Inserting externally-negotiated id %u", __func__, this,
               static_cast<unsigned>(aStream)));
     mStreamIds.InsertElementSorted(aStream);
@@ -2406,18 +2421,23 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
       prValue, inOrder, aExternalNegotiated, aListener, aContext));
   mChannels.Insert(channel);
 
-  return OpenFinish(channel.forget());
+  if (aStream != INVALID_STREAM) {
+    mSTS->Dispatch(NS_NewRunnableFunction(
+        "DataChannel::OpenFinish",
+        [this, self = RefPtr<DataChannelConnection>(this), channel]() mutable {
+          MutexAutoLock lock(mLock);
+          OpenFinish(channel);
+        }));
+  }
+
+  return channel.forget();
 }
 
 
-already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
-    already_AddRefed<DataChannel>&& aChannel) {
-  RefPtr<DataChannel> channel(aChannel);  
-  
-  
-  const uint16_t stream = channel->mStream;
-
+void DataChannelConnection::OpenFinish(RefPtr<DataChannel> aChannel) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
   mLock.AssertCurrentThreadOwns();
+  const uint16_t stream = aChannel->mStream;
 
   
   
@@ -2449,57 +2469,46 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
       MOZ_ASSERT(stream != INVALID_STREAM);
       
       
-      
       uint16_t num_desired = std::min(16 * (stream / 16 + 1), MAX_NUM_STREAMS);
       DC_DEBUG(("Attempting to raise stream limit %u -> %u", mNegotiatedIdLimit,
                 num_desired));
       if (!RaiseStreamLimitTo(num_desired)) {
         NS_ERROR("Failed to request more streams");
-        FinishClose_s(channel);
-        return nullptr;
+        FinishClose_s(aChannel);
+        return;
       }
     }
-    DC_DEBUG(("Queuing channel %p (%u) to finish open", channel.get(), stream));
-    mPending.insert(channel);
-    return channel.forget();
+    DC_DEBUG(
+        ("Queuing channel %p (%u) to finish open", aChannel.get(), stream));
+    mPending.insert(aChannel);
+    return;
   }
 
   MOZ_ASSERT(stream != INVALID_STREAM);
   MOZ_ASSERT(stream < mNegotiatedIdLimit);
 
-#ifdef TEST_QUEUED_DATA
-  
-  channel->AnnounceOpen();
-  SendDataMsgInternalOrBuffer(channel, "Help me!", 8,
-                              DATA_CHANNEL_PPID_DOMSTRING);
-#endif
-
-  if (!channel->mNegotiated) {
-    if (!channel->mOrdered) {
+  if (!aChannel->mNegotiated) {
+    if (!aChannel->mOrdered) {
       
-      channel->mWaitingForAck = true;
+      aChannel->mWaitingForAck = true;
     }
 
-    const int error = SendOpenRequestMessage(*channel);
+    const int error = SendOpenRequestMessage(*aChannel);
     if (error) {
       DC_ERROR(("SendOpenRequest failed, error = %d", error));
-      
-      
-      mChannels.Remove(channel);
-      
-      FinishClose_s(channel);
-      return nullptr;
+      FinishClose_s(aChannel);
+      return;
     }
   }
 
   
   
-  channel->AnnounceOpen();
-  return channel.forget();
+  aChannel->AnnounceOpen();
 }
 
 
 int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
   mLock.AssertCurrentThreadOwns();
   struct sctp_sendv_spa info = {};
   
@@ -2585,6 +2594,7 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
 int DataChannelConnection::SendMsgInternalOrBuffer(
     nsTArray<OutgoingMsg>& buffer, OutgoingMsg&& msg, bool* buffered,
     size_t* aWritten) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
   NS_WARNING_ASSERTION(msg.GetLength() > 0, "Length is 0?!");
 
   int error = 0;
@@ -2848,6 +2858,7 @@ int DataChannelConnection::SendDataMessage(uint16_t aStream, nsACString&& aMsg,
 
 int DataChannelConnection::SendMessage(DataChannel& aChannel,
                                        OutgoingMsg&& aMsg) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
   
   
   aChannel.mConnection->mLock.AssertCurrentThreadOwns();
