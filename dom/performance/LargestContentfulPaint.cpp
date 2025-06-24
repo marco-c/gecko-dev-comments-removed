@@ -429,13 +429,9 @@ void LargestContentfulPaint::UpdateSize(
     LOG("  boundingClientArea = %f", boundingClientArea);
 
     
-    double scaleFactor = boundingClientArea / naturalArea;
-    LOG("  scaleFactor = %f", scaleFactor);
-
-    
-    if (scaleFactor > 1) {
-      LOG("  area before sacled doown %f", area);
-      area = area / scaleFactor;
+    if (boundingClientArea > naturalArea) {
+      LOG("  area before scaled down %f", area);
+      area *= (naturalArea / boundingClientArea);
     }
   }
 
