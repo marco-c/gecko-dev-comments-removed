@@ -500,10 +500,6 @@ static MOZ_ALWAYS_INLINE double CanonicalizeNaN(double d) {
 
 
 
-
-
-
-
 class Value {
  private:
   uint64_t asBits_;
