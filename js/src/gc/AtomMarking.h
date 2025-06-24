@@ -57,7 +57,12 @@ class AtomMarkingRuntime {
 
   
   
-  void markAtomsUsedByUncollectedZones(GCRuntime* gc);
+  UniquePtr<DenseBitmap> getOrMarkAtomsUsedByUncollectedZones(GCRuntime* gc);
+
+  
+  
+  void markAtomsUsedByUncollectedZones(GCRuntime* gc,
+                                       UniquePtr<DenseBitmap> markedUnion);
 
  private:
   

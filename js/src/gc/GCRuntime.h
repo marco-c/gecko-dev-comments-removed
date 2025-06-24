@@ -694,6 +694,8 @@ class GCRuntime {
   static void* refillFreeList(JS::Zone* zone, AllocKind thingKind);
   void attemptLastDitchGC();
 
+  bool isSymbolReferencedByUncollectedZone(JS::Symbol* sym);
+
   
 #ifdef DEBUG
   const GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>& getTestMarkQueue()
@@ -1076,6 +1078,7 @@ class GCRuntime {
 
   
   AtomMarkingRuntime atomMarking;
+  MainThreadOrGCTaskData<UniquePtr<DenseBitmap>> atomsUsedByUncollectedZones;
 
   
 
