@@ -204,12 +204,8 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
 
 
 
-  if (aAppearance == StyleAppearance::Progresschunk ||
-      aAppearance == StyleAppearance::ProgressBar) {
-    nsProgressFrame* progressFrame = do_QueryFrame(
-        aAppearance == StyleAppearance::Progresschunk ? aFrame->GetParent()
-                                                      : aFrame);
-    if (progressFrame) {
+  if (aAppearance == StyleAppearance::ProgressBar) {
+    if (nsProgressFrame* progressFrame = do_QueryFrame(aFrame)) {
       return !progressFrame->ShouldUseNativeStyle();
     }
   }
@@ -218,12 +214,8 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
 
 
 
-  if (aAppearance == StyleAppearance::Meterchunk ||
-      aAppearance == StyleAppearance::Meter) {
-    nsMeterFrame* meterFrame = do_QueryFrame(
-        aAppearance == StyleAppearance::Meterchunk ? aFrame->GetParent()
-                                                   : aFrame);
-    if (meterFrame) {
+  if (aAppearance == StyleAppearance::Meter) {
+    if (nsMeterFrame* meterFrame = do_QueryFrame(aFrame)) {
       return !meterFrame->ShouldUseNativeStyle();
     }
   }
@@ -233,12 +225,8 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
 
 
 
-  if (aAppearance == StyleAppearance::Range ||
-      aAppearance == StyleAppearance::RangeThumb) {
-    nsRangeFrame* rangeFrame = do_QueryFrame(
-        aAppearance == StyleAppearance::RangeThumb ? aFrame->GetParent()
-                                                   : aFrame);
-    if (rangeFrame) {
+  if (aAppearance == StyleAppearance::Range) {
+    if (nsRangeFrame* rangeFrame = do_QueryFrame(aFrame)) {
       return !rangeFrame->ShouldUseNativeStyle();
     }
   }
@@ -572,11 +560,8 @@ bool nsNativeTheme::IsWidgetAlwaysNonNative(nsIFrame* aFrame,
          aAppearance == StyleAppearance::SpinnerDownbutton ||
          aAppearance == StyleAppearance::Toolbarbutton ||
          aAppearance == StyleAppearance::ProgressBar ||
-         aAppearance == StyleAppearance::Progresschunk ||
          aAppearance == StyleAppearance::Meter ||
-         aAppearance == StyleAppearance::Meterchunk ||
          aAppearance == StyleAppearance::Range ||
-         aAppearance == StyleAppearance::RangeThumb ||
          aAppearance == StyleAppearance::Listbox ||
          (aFrame && aFrame->StyleUI()->mMozTheme == StyleMozTheme::NonNative);
 }

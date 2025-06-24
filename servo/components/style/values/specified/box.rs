@@ -1496,9 +1496,6 @@ pub enum Appearance {
     Menupopup,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Meterchunk,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozMenulistArrowButton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
@@ -1508,12 +1505,7 @@ pub enum Appearance {
     PasswordInput,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Progresschunk,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Range,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    RangeThumb,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     ScrollbarHorizontal,

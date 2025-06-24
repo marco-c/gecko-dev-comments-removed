@@ -50,6 +50,9 @@ class nsMeterFrame final : public nsContainerFrame,
 
   bool ShouldUseNativeStyle() const;
 
+  void BuildDisplayList(nsDisplayListBuilder*,
+                        const nsDisplayListSet&) override;
+
  protected:
   
   void ReflowBarFrame(nsIFrame* aBarFrame, nsPresContext* aPresContext,

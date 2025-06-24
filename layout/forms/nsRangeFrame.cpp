@@ -135,15 +135,6 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (IsThemed(disp)) {
     DisplayBorderBackgroundOutline(aBuilder, aLists);
     
-    
-    
-    
-    
-    
-    if (nsIFrame* thumb = mThumbDiv->GetPrimaryFrame()) {
-      nsDisplayListSet set(aLists, aLists.Content());
-      BuildDisplayListForChild(aBuilder, thumb, set, DisplayChildFlag::Inline);
-    }
   } else {
     BuildDisplayListForInline(aBuilder, aLists);
   }
@@ -335,19 +326,10 @@ Decimal nsRangeFrame::GetValueAtEventPoint(WidgetGUIEvent* aEvent) {
     
     rangeRect = GetRectRelativeToSelf();
     
-    nsPresContext* pc = PresContext();
-    LayoutDeviceIntSize size = pc->Theme()->GetMinimumWidgetSize(
-        pc, this, StyleAppearance::RangeThumb);
-    thumbSize =
-        LayoutDeviceIntSize::ToAppUnits(size, pc->AppUnitsPerDevPixel());
-    
-    
-    
-    
-    
-    MOZ_ASSERT((IsHorizontal() && thumbSize.width > 0) ||
-                   (!IsHorizontal() && thumbSize.height > 0),
-               "The thumb is expected to take up some slider space");
+    nscoord min = CSSPixel::ToAppUnits(
+        PresContext()->Theme()->GetMinimumRangeThumbSize());
+    MOZ_ASSERT(min, "The thumb is expected to take up some slider space");
+    thumbSize = nsSize(min, min);
   } else {
     rangeRect = GetContentRectRelativeToSelf();
     nsIFrame* thumbFrame = mThumbDiv->GetPrimaryFrame();
@@ -614,14 +596,10 @@ nsresult nsRangeFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 nscoord nsRangeFrame::AutoCrossSize() {
-  nscoord minCrossSize(0);
-  if (IsThemed()) {
-    nsPresContext* pc = PresContext();
-    LayoutDeviceIntSize size = pc->Theme()->GetMinimumWidgetSize(
-        pc, this, StyleAppearance::RangeThumb);
-    minCrossSize =
-        pc->DevPixelsToAppUnits(IsHorizontal() ? size.height : size.width);
-  }
+  nscoord minCrossSize =
+      IsThemed() ? CSSPixel::ToAppUnits(
+                       PresContext()->Theme()->GetMinimumRangeThumbSize())
+                 : 0;
   return std::max(minCrossSize,
                   NSToCoordRound(OneEmInAppUnits() * CROSS_AXIS_EM_SIZE));
 }

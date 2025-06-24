@@ -165,6 +165,11 @@ class nsITheme : public nsISupports {
   }
 
   
+  virtual mozilla::CSSCoord GetMinimumRangeThumbSize() {
+    return mozilla::CSSCoord(20.0f);
+  }
+
+  
 
 
   virtual mozilla::LayoutDeviceIntSize GetMinimumWidgetSize(

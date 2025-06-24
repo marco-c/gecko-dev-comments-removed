@@ -76,6 +76,17 @@ NS_QUERYFRAME_HEAD(nsMeterFrame)
   NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
+void nsMeterFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                    const nsDisplayListSet& aLists) {
+  if (IsThemed()) {
+    DisplayBorderBackgroundOutline(aBuilder, aLists);
+  } else {
+    
+    
+    nsContainerFrame::BuildDisplayList(aBuilder, aLists);
+  }
+}
+
 void nsMeterFrame::Reflow(nsPresContext* aPresContext,
                           ReflowOutput& aDesiredSize,
                           const ReflowInput& aReflowInput,
@@ -189,15 +200,6 @@ nscoord nsMeterFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 }
 
 bool nsMeterFrame::ShouldUseNativeStyle() const {
-  nsIFrame* barFrame = mBarDiv->GetPrimaryFrame();
-
-  
-  
-  
-  
   return StyleDisplay()->EffectiveAppearance() == StyleAppearance::Meter &&
-         !Style()->HasAuthorSpecifiedBorderOrBackground() && barFrame &&
-         barFrame->StyleDisplay()->EffectiveAppearance() ==
-             StyleAppearance::Meterchunk &&
-         !barFrame->Style()->HasAuthorSpecifiedBorderOrBackground();
+         !Style()->HasAuthorSpecifiedBorderOrBackground();
 }
