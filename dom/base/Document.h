@@ -71,6 +71,7 @@
 #include "nsHashKeys.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
+#include "nsIClassifiedChannel.h"
 #include "nsID.h"
 #include "nsIDocumentViewer.h"
 #include "nsIInterfaceRequestor.h"
@@ -3888,10 +3889,16 @@ class Document : public nsINode,
   
   
   
-  void NoteScriptTrackingStatus(const nsACString& aURL, bool isTracking);
+  void NoteScriptTrackingStatus(const nsACString& aURL,
+                                net::ClassificationFlags& aFlags);
   
   
   bool IsScriptTracking(JSContext* aCx) const;
+
+  
+  
+  
+  net::ClassificationFlags GetScriptTrackingFlags() const;
 
   
   void AddResizeObserver(ResizeObserver& aObserver) {
@@ -5302,7 +5309,7 @@ class Document : public nsINode,
   
   
   
-  nsTHashSet<nsCString> mTrackingScripts;
+  nsTHashMap<nsCStringHashKey, net::ClassificationFlags> mTrackingScripts;
 
   
   

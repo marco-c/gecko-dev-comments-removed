@@ -4488,9 +4488,10 @@ nsresult Document::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const {
 }
 
 void Document::NoteScriptTrackingStatus(const nsACString& aURL,
-                                        bool aIsTracking) {
-  if (aIsTracking) {
-    mTrackingScripts.Insert(aURL);
+                                        net::ClassificationFlags& aFlags) {
+  
+  if (aFlags.firstPartyFlags || aFlags.thirdPartyFlags) {
+    mTrackingScripts.InsertOrUpdate(aURL, aFlags);
   }
   
   
@@ -4503,7 +4504,27 @@ bool Document::IsScriptTracking(JSContext* aCx) const {
   if (!JS::DescribeScriptedCaller(&filename, aCx)) {
     return false;
   }
-  return mTrackingScripts.Contains(nsDependentCString(filename.get()));
+
+  auto entry = mTrackingScripts.Lookup(nsDependentCString(filename.get()));
+  if (!entry) {
+    return false;
+  }
+
+  return net::UrlClassifierCommon::IsTrackingClassificationFlag(
+      entry.Data().thirdPartyFlags, IsInPrivateBrowsing());
+}
+
+net::ClassificationFlags Document::GetScriptTrackingFlags() const {
+  if (auto loc = JSCallingLocation::Get()) {
+    if (auto entry = mTrackingScripts.Lookup(loc.FileName())) {
+      return entry.Data();
+    }
+  }
+
+  
+  
+
+  return mClassificationFlags;
 }
 
 void Document::GetContentType(nsAString& aContentType) {
