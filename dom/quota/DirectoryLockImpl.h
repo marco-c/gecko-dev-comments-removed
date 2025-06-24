@@ -15,6 +15,7 @@
 #include "nsTArray.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
@@ -257,6 +258,22 @@ class MOZ_RAII DirectoryLockImpl::PrepareInfo {
 
   const nsTArray<NotNull<DirectoryLockImpl*>>& BlockedOnRef() const {
     return mBlockedOn;
+  }
+
+  
+
+
+
+
+
+
+
+
+  bool IsBlockedBy(const EnumSet<DirectoryLockCategory>& aCategories) const {
+    return std::any_of(mBlockedOn.cbegin(), mBlockedOn.cend(),
+                       [&aCategories](const auto& lock) {
+                         return aCategories.contains(lock->Category());
+                       });
   }
 
  private:

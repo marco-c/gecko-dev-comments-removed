@@ -1341,29 +1341,6 @@ bool IsOriginUnaccessed(const FullOriginMetadata& aFullOriginMetadata,
          StaticPrefs::dom_quotaManager_unaccessedForLongTimeThresholdSec();
 }
 
-bool IsDirectoryLockBlockedBy(
-    const DirectoryLockImpl::PrepareInfo& aPrepareInfo,
-    const EnumSet<DirectoryLockCategory>& aCategories) {
-  const auto& locks = aPrepareInfo.BlockedOnRef();
-  return std::any_of(locks.cbegin(), locks.cend(),
-                     [&aCategories](const auto& lock) {
-                       return aCategories.contains(lock->Category());
-                     });
-}
-
-bool IsDirectoryLockBlockedByUninitStorageOperation(
-    const DirectoryLockImpl::PrepareInfo& aPrepareInfo) {
-  return IsDirectoryLockBlockedBy(aPrepareInfo,
-                                  DirectoryLockCategory::UninitStorage);
-}
-
-bool IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation(
-    const DirectoryLockImpl::PrepareInfo& aPrepareInfo) {
-  return IsDirectoryLockBlockedBy(aPrepareInfo,
-                                  {DirectoryLockCategory::UninitStorage,
-                                   DirectoryLockCategory::UninitOrigins});
-}
-
 }  
 
 
@@ -5190,7 +5167,7 @@ RefPtr<BoolPromise> QuotaManager::InitializeStorage() {
   
   
   if (mStorageInitialized &&
-      !IsDirectoryLockBlockedByUninitStorageOperation(prepareInfo)) {
+      !prepareInfo.IsBlockedBy(kUninitStorageOnlyCategory)) {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
@@ -5378,7 +5355,7 @@ RefPtr<UniversalDirectoryLockPromise> QuotaManager::OpenStorageDirectory(
   RefPtr<UniversalDirectoryLock> storageDirectoryLock =
       CreateDirectoryLockForInitialization(
           *this, PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-          mStorageInitialized, IsDirectoryLockBlockedByUninitStorageOperation,
+          mStorageInitialized, MakeBlockedByChecker(kUninitStorageOnlyCategory),
           MakeBackInserter(promises));
 
   RefPtr<UniversalDirectoryLock> persistentStorageDirectoryLock;
@@ -5390,7 +5367,7 @@ RefPtr<UniversalDirectoryLockPromise> QuotaManager::OpenStorageDirectory(
       persistentStorageDirectoryLock = CreateDirectoryLockForInitialization(
           *this, PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
           OriginScope::FromNull(), mPersistentStorageInitialized,
-          IsDirectoryLockBlockedByUninitStorageOperation,
+          MakeBlockedByChecker(kUninitStorageOnlyCategory),
           MakeBackInserter(promises));
     }
 
@@ -5406,7 +5383,7 @@ RefPtr<UniversalDirectoryLockPromise> QuotaManager::OpenStorageDirectory(
           PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                           PERSISTENCE_TYPE_DEFAULT),
           OriginScope::FromNull(), mTemporaryStorageInitialized,
-          IsDirectoryLockBlockedByUninitStorageOperation,
+          MakeBlockedByChecker(kUninitStorageOnlyCategory),
           MakeBackInserter(promises));
     }
   }
@@ -5500,7 +5477,7 @@ QuotaManager::OpenClientDirectoryImpl(
   RefPtr<UniversalDirectoryLock> storageDirectoryLock =
       CreateDirectoryLockForInitialization(
           *this, PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
-          mStorageInitialized, IsDirectoryLockBlockedByUninitStorageOperation,
+          mStorageInitialized, MakeBlockedByChecker(kUninitStorageOnlyCategory),
           MakeBackInserter(promises));
 
   RefPtr<UniversalDirectoryLock> temporaryStorageDirectoryLock;
@@ -5513,7 +5490,7 @@ QuotaManager::OpenClientDirectoryImpl(
         PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                         PERSISTENCE_TYPE_DEFAULT),
         OriginScope::FromNull(), mTemporaryStorageInitialized,
-        IsDirectoryLockBlockedByUninitStorageOperation,
+        MakeBlockedByChecker(kUninitStorageOnlyCategory),
         MakeBackInserter(promises));
 
     const bool groupInitialized = IsTemporaryGroupInitialized(aClientMetadata);
@@ -5523,7 +5500,7 @@ QuotaManager::OpenClientDirectoryImpl(
         PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                         PERSISTENCE_TYPE_DEFAULT),
         OriginScope::FromGroup(aClientMetadata.mGroup), groupInitialized,
-        IsDirectoryLockBlockedByUninitStorageOperation,
+        MakeBlockedByChecker(kUninitStorageOnlyCategory),
         MakeBackInserter(promises));
   }
 
@@ -5538,7 +5515,7 @@ QuotaManager::OpenClientDirectoryImpl(
     originDirectoryLock = CreateDirectoryLockForInitialization(
         *this, PersistenceScope::CreateFromValue(persistenceType),
         OriginScope::FromOrigin(aClientMetadata), originInitialized,
-        IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation,
+        MakeBlockedByChecker(kUninitOriginsAndBroaderCategories),
         MakeBackInserter(promises));
   }
 
@@ -5730,7 +5707,7 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentStorage() {
   
   
   if (mPersistentStorageInitialized &&
-      !IsDirectoryLockBlockedByUninitStorageOperation(prepareInfo)) {
+      !prepareInfo.IsBlockedBy(kUninitStorageOnlyCategory)) {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
@@ -5844,7 +5821,7 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryGroup(
   
   
   if (IsTemporaryGroupInitialized(aPrincipalMetadata) &&
-      !IsDirectoryLockBlockedByUninitStorageOperation(prepareInfo)) {
+      !prepareInfo.IsBlockedBy(kUninitStorageOnlyCategory)) {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
@@ -6004,8 +5981,7 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentOrigin(
   
   
   if (IsPersistentOriginInitialized(aOriginMetadata) &&
-      !IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation(
-          prepareInfo)) {
+      !prepareInfo.IsBlockedBy(kUninitOriginsAndBroaderCategories)) {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
@@ -6181,8 +6157,7 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryOrigin(
   
   
   if (IsTemporaryOriginInitialized(aOriginMetadata) &&
-      !IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation(
-          prepareInfo)) {
+      !prepareInfo.IsBlockedBy(kUninitOriginsAndBroaderCategories)) {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
@@ -6550,7 +6525,7 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryStorage() {
   
   
   if (mTemporaryStorageInitialized &&
-      !IsDirectoryLockBlockedByUninitStorageOperation(prepareInfo)) {
+      !prepareInfo.IsBlockedBy(kUninitStorageOnlyCategory)) {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
