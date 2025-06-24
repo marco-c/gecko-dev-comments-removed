@@ -777,7 +777,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void BeginShowingPopup(
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool BeginShowingPopup(
       const PendingPopup& aPendingPopup, bool aIsContextMenu,
       bool aSelectFirstItem);
 
@@ -867,6 +870,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   nsMenuChainItem* FindPopup(Element* aPopup) const;
+
+  
+  void DismissQueueableShownPopups();
 
   
   nsCOMPtr<mozilla::dom::EventTarget> mKeyListener;
