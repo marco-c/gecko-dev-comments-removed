@@ -489,8 +489,8 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   
   RefPtr docShell = nsDocShell::Cast(document->GetDocShell());
   MOZ_ASSERT(docShell);
-  docShell->ReloadNavigable(aCx, nsIWebNavigation::LOAD_FLAGS_NONE,
-                            serializedState);
+  docShell->ReloadNavigable(Some(WrapNotNullUnchecked(aCx)),
+                            nsIWebNavigation::LOAD_FLAGS_NONE, serializedState);
 
   
   

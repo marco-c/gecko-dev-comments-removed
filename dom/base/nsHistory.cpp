@@ -139,7 +139,7 @@ void nsHistory::GetState(JSContext* aCx, JS::MutableHandle<JS::Value> aResult,
 
 void nsHistory::Go(JSContext* aCx, int32_t aDelta, CallerType aCallerType,
                    ErrorResult& aRv) {
-  DeltaTraverse(Some(aCx), aDelta, aCallerType, aRv);
+  DeltaTraverse(Some(WrapNotNull(aCx)), aDelta, aCallerType, aRv);
 }
 
 
@@ -214,8 +214,9 @@ already_AddRefed<ChildSHistory> nsHistory::GetSessionHistory() const {
 }
 
 
-void nsHistory::DeltaTraverse(mozilla::Maybe<JSContext*> aCx, int32_t aDelta,
-                              CallerType aCallerType, ErrorResult& aRv) {
+void nsHistory::DeltaTraverse(mozilla::Maybe<NotNull<JSContext*>> aCx,
+                              int32_t aDelta, CallerType aCallerType,
+                              ErrorResult& aRv) {
   LOG(("nsHistory::Go(%d)", aDelta));
   
   
@@ -236,8 +237,8 @@ void nsHistory::DeltaTraverse(mozilla::Maybe<JSContext*> aCx, int32_t aDelta,
     MOZ_DIAGNOSTIC_ASSERT(aCx);
     RefPtr<nsDocShell> docShell = nsDocShell::Cast(win->GetDocShell());
 
-    nsresult rv =
-        docShell->ReloadNavigable(*aCx, nsIWebNavigation::LOAD_FLAGS_NONE);
+    nsresult rv = docShell->ReloadNavigable(WrapNotNull(aCx),
+                                            nsIWebNavigation::LOAD_FLAGS_NONE);
     if (NS_FAILED(rv)) {
       aRv.Throw(rv);
     }

@@ -515,8 +515,8 @@ void Location::SetSearch(const nsACString& aSearch,
   SetURI(uri, aSubjectPrincipal, aRv);
 }
 
-void Location::Reload(bool aForceget, nsIPrincipal& aSubjectPrincipal,
-                      ErrorResult& aRv) {
+void Location::Reload(JSContext* aCx, bool aForceget,
+                      nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) {
   if (!CallerSubsumes(&aSubjectPrincipal)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
@@ -549,7 +549,12 @@ void Location::Reload(bool aForceget, nsIPrincipal& aSubjectPrincipal,
                   nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY;
   }
 
-  rv = docShell->Reload(reloadFlags);
+  UserNavigationInvolvement userInvolvement =
+      callerType == CallerType::System ? UserNavigationInvolvement::BrowserUI
+                                       : UserNavigationInvolvement::None;
+
+  rv = docShell->ReloadNavigable(Some(WrapNotNull(aCx)), reloadFlags, nullptr,
+                                 userInvolvement);
   if (NS_FAILED(rv) && rv != NS_BINDING_ABORTED) {
     
     

@@ -3902,14 +3902,37 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI,
   return InternalLoad(loadState);
 }
 
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
+nsDocShell::Reload(uint32_t aReloadFlags) {
+  return ReloadNavigable(Nothing(), aReloadFlags, nullptr,
+                         UserNavigationInvolvement::BrowserUI);
+}
+
 
 
 
 
 nsresult nsDocShell::ReloadNavigable(
-    JSContext* aCx, uint32_t aReloadFlags,
+    mozilla::Maybe<NotNull<JSContext*>> aCx, uint32_t aReloadFlags,
     nsIStructuredCloneContainer* aNavigationAPIState,
     UserNavigationInvolvement aUserInvolvement) {
+  if (!IsNavigationAllowed()) {
+    return NS_OK;  
+  }
+
+  NS_ASSERTION(((aReloadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0),
+               "Reload command not updated to use load flags!");
+  NS_ASSERTION((aReloadFlags & EXTRA_LOAD_FLAGS) == 0,
+               "Don't pass these flags to Reload");
+
+  uint32_t loadType = MAKE_LOAD_TYPE(LOAD_RELOAD_NORMAL, aReloadFlags);
+  NS_ENSURE_TRUE(IsValidLoadType(loadType), NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(
+      aUserInvolvement == UserNavigationInvolvement::BrowserUI || aCx,
+      NS_ERROR_INVALID_ARG);
+
+  RefPtr<nsDocShell> docShell(this);
+
   
   if (aUserInvolvement != UserNavigationInvolvement::BrowserUI) {
     
@@ -3939,7 +3962,7 @@ nsresult nsDocShell::ReloadNavigable(
     RefPtr destinationURL = mActiveEntry ? mActiveEntry->GetURI() : nullptr;
     if (navigation &&
         !navigation->FirePushReplaceReloadNavigateEvent(
-            aCx, NavigationType::Reload, destinationURL,
+            *aCx, NavigationType::Reload, destinationURL,
              false, Some(aUserInvolvement),
              nullptr,  nullptr,
             destinationNavigationAPIState,
@@ -3947,29 +3970,8 @@ nsresult nsDocShell::ReloadNavigable(
       return NS_OK;
     }
   }
-  
-  
-  
-  
-  
-  
-  
-  return Reload(aReloadFlags);
-}
 
-NS_IMETHODIMP
-nsDocShell::Reload(uint32_t aReloadFlags) {
-  if (!IsNavigationAllowed()) {
-    return NS_OK;  
-  }
-
-  NS_ASSERTION(((aReloadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0),
-               "Reload command not updated to use load flags!");
-  NS_ASSERTION((aReloadFlags & EXTRA_LOAD_FLAGS) == 0,
-               "Don't pass these flags to Reload");
-
-  uint32_t loadType = MAKE_LOAD_TYPE(LOAD_RELOAD_NORMAL, aReloadFlags);
-  NS_ENSURE_TRUE(IsValidLoadType(loadType), NS_ERROR_INVALID_ARG);
+  
 
   
   
@@ -3979,7 +3981,6 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
     bool forceReload = IsForceReloadType(loadType);
     if (!XRE_IsParentProcess()) {
       ++mPendingReloadCount;
-      RefPtr<nsDocShell> docShell(this);
       nsCOMPtr<nsIDocumentViewer> viewer(mDocumentViewer);
       NS_ENSURE_STATE(viewer);
 
