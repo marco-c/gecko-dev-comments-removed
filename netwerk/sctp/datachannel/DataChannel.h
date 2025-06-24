@@ -420,6 +420,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   bool mMaxMessageSizeSet = false;
   
   uint64_t mMaxMessageSize = 0;
+  nsTArray<uint16_t> mStreamIds;
   
   
   
