@@ -222,6 +222,7 @@ void TaskQueue::MaybeResolveShutdown() {
     
     mTrackerEntry = nullptr;
     mTarget = nullptr;
+    mObserver = nullptr;
   }
 }
 
@@ -235,8 +236,15 @@ bool TaskQueue::IsCurrentThreadIn() const {
   return in;
 }
 
+void TaskQueue::SetObserver(Observer* aObserver) {
+  MonitorAutoLock mon(mQueueMonitor);
+  MOZ_ASSERT_IF(aObserver, !mObserver);
+  mObserver = std::move(aObserver);
+}
+
 nsresult TaskQueue::Runner::Run() {
   TaskStruct event;
+  RefPtr<Observer> observer;
   {
     MonitorAutoLock mon(mQueue->mQueueMonitor);
     MOZ_ASSERT(mQueue->mIsRunning);
@@ -247,6 +255,7 @@ nsresult TaskQueue::Runner::Run() {
       return NS_OK;
     }
     event = mQueue->mTasks.Pop();
+    observer = mQueue->mObserver;
   }
   MOZ_ASSERT(event.event);
 
@@ -256,7 +265,7 @@ nsresult TaskQueue::Runner::Run() {
   
   
   {
-    AutoTaskGuard g(mQueue);
+    AutoTaskGuard g(mQueue, observer);
     {
       LogRunnable::Run log(event.event);
 
