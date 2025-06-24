@@ -1426,10 +1426,6 @@ void DataChannelConnection::HandleOpenRequestMessage(
       DataChannelOnMessageAvailable::EventType::OnChannelCreated, this,
       channel)));
 
-  DC_DEBUG(("%s: deferring sending ON_CHANNEL_OPEN for %p", __FUNCTION__,
-            channel.get()));
-  channel->AnnounceOpen();
-
   
   
   const auto error = SendOpenAckMessage(*channel);
@@ -2469,6 +2465,7 @@ void DataChannelConnection::OpenFinish(RefPtr<DataChannel> aChannel) {
     return;
   }
 
+  MOZ_ASSERT(state == DataChannelConnectionState::Open);
   MOZ_ASSERT(stream != INVALID_STREAM);
   MOZ_ASSERT(stream < mNegotiatedIdLimit);
 
@@ -3445,7 +3442,9 @@ nsresult DataChannelOnMessageAvailable::Run() {
       }
 
       
-      mConnection->mListener->NotifyDataChannel(mChannel.forget());
+      mConnection->mListener->NotifyDataChannel(do_AddRef(mChannel));
+      
+      mChannel->AnnounceOpen();
       break;
     case EventType::OnConnection:
       if (mConnection->mListener) {
