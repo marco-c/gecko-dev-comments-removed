@@ -699,7 +699,7 @@ constexpr static CellRenderSettings radioSettings = {
     {NSSize{}, NSSize{}, NSSize{}},
     {
         IntMargin{0, 0, 0, 0},  
-        IntMargin{1, 1, 1, 2},  
+        IntMargin{1, 1, 2, 1},  
         IntMargin{0, 0, 0, 0},  
     },
 };
@@ -712,9 +712,9 @@ constexpr static CellRenderSettings checkboxSettings = {
     },
     {NSSize{}, NSSize{}, NSSize{}},
     {
-        IntMargin{0, 1, 0, 0},  
-        IntMargin{0, 1, 0, 1},  
-        IntMargin{0, 1, 0, 1}   
+        IntMargin{1, 0, 0, 0},  
+        IntMargin{1, 0, 1, 0},  
+        IntMargin{1, 0, 1, 0}   
     }};
 
 static NSControlStateValue CellStateForCheckboxOrRadioState(
@@ -874,8 +874,8 @@ constexpr static CellRenderSettings pushButtonSettings = {
     },
     {
         IntMargin{0, 0, 0, 0},  
-        IntMargin{4, 0, 4, 1},  
-        IntMargin{5, 0, 5, 2}   
+        IntMargin{0, 4, 1, 4},  
+        IntMargin{0, 5, 2, 5}   
     }};
 
 
@@ -1121,9 +1121,9 @@ constexpr static CellRenderSettings dropdownSettings = {
         NSSize{44, 0}   
     },
     {
-        IntMargin{1, 1, 2, 1},  
-        IntMargin{3, 0, 3, 1},  
-        IntMargin{3, 0, 3, 0}   
+        IntMargin{1, 2, 1, 1},  
+        IntMargin{0, 3, 1, 3},  
+        IntMargin{0, 3, 0, 3}   
     },
 };
 
@@ -1139,9 +1139,9 @@ constexpr static CellRenderSettings editableMenulistSettings = {
         NSSize{44, 0}   
     },
     {
-        IntMargin{0, 0, 2, 2},  
-        IntMargin{0, 0, 3, 2},  
-        IntMargin{0, 1, 3, 3}   
+        IntMargin{0, 2, 2, 0},  
+        IntMargin{0, 3, 2, 0},  
+        IntMargin{1, 3, 3, 0}   
     }};
 
 void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext,
