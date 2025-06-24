@@ -201,8 +201,6 @@ function index_get_all_test_setup(storeName, callback, testDescription) {
 
 
 
-
-
 function get_all_test(
     getAllFunctionName, storeName, optionalIndexName, options,
     testDescription) {
