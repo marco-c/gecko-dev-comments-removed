@@ -86,10 +86,11 @@ class AtomMarkingRuntime {
   void markId(JSContext* cx, jsid id);
   void markAtomValue(JSContext* cx, const Value& value);
 
-#ifdef DEBUG
   
   template <typename T>
   bool atomIsMarked(Zone* zone, T* thing);
+
+#ifdef DEBUG
   bool idIsMarked(Zone* zone, jsid id);
   bool valueIsMarked(Zone* zone, const Value& value);
 #endif
