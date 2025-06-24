@@ -5,7 +5,9 @@
 #ifndef _PK11SDR_H_
 #define _PK11SDR_H_
 
+#include "pkcs11t.h"
 #include "seccomon.h"
+#include "secmodt.h"
 
 SEC_BEGIN_PROTOS
 
@@ -15,6 +17,15 @@ SEC_BEGIN_PROTOS
 
 SECStatus
 PK11SDR_Encrypt(SECItem *keyid, SECItem *data, SECItem *result, void *cx);
+
+
+
+
+
+
+
+SECStatus
+PK11SDR_EncryptWithMechanism(PK11SlotInfo *slot, SECItem *keyid, CK_MECHANISM_TYPE type, SECItem *data, SECItem *result, void *cx);
 
 
 

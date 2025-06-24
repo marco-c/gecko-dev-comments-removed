@@ -140,20 +140,31 @@ pk11sdr_Shutdown(void)
 
 
 
-
 SECStatus
 PK11SDR_Encrypt(SECItem *keyid, SECItem *data, SECItem *result, void *cx)
 {
+    return PK11SDR_EncryptWithMechanism(NULL, keyid, CKM_DES3_CBC, data, result, cx);
+}
+
+
+
+
+
+
+
+SECStatus
+PK11SDR_EncryptWithMechanism(PK11SlotInfo *slot, SECItem *keyid, CK_MECHANISM_TYPE type, SECItem *data, SECItem *result, void *cx)
+{
     SECStatus rv = SECSuccess;
-    PK11SlotInfo *slot = 0;
     PK11SymKey *key = 0;
     SECItem *params = 0;
     PK11Context *ctx = 0;
-    CK_MECHANISM_TYPE type;
     SDRResult sdrResult;
     SECItem paddedData;
     SECItem *pKeyID;
     PLArenaPool *arena = 0;
+    SECOidTag algtag;
+    PK11SlotInfo *aSlot = slot;
 
     
     paddedData.len = 0;
@@ -171,14 +182,13 @@ PK11SDR_Encrypt(SECItem *keyid, SECItem *data, SECItem *result, void *cx)
 
 
 
-    slot = PK11_GetInternalKeySlot();
     if (!slot) {
-        rv = SECFailure;
-        goto loser;
+        slot = PK11_GetInternalKeySlot();
+        if (!slot) {
+            rv = SECFailure;
+            goto loser;
+        }
     }
-
-    
-    type = CKM_DES3_CBC;
 
     
 
@@ -191,7 +201,8 @@ PK11SDR_Encrypt(SECItem *keyid, SECItem *data, SECItem *result, void *cx)
     
     pKeyID = keyid;
     if (pKeyID->len == 0) {
-        pKeyID = &keyIDItem; 
+        int keySize = PK11_GetBestKeyLength(slot, type);
+        pKeyID = &keyIDItem;
 
         
 
@@ -205,7 +216,7 @@ PK11SDR_Encrypt(SECItem *keyid, SECItem *data, SECItem *result, void *cx)
 
         
         if (!key)
-            key = PK11_GenDES3TokenKey(slot, pKeyID, cx);
+            key = PK11_TokenKeyGen(slot, type, 0, keySize, pKeyID, PR_TRUE, cx);
         if (pk11sdrLock)
             PR_Unlock(pk11sdrLock);
     } else {
@@ -245,7 +256,8 @@ PK11SDR_Encrypt(SECItem *keyid, SECItem *data, SECItem *result, void *cx)
 
     sdrResult.keyid = *pKeyID;
 
-    rv = PK11_ParamToAlgid(SEC_OID_DES_EDE3_CBC, params, arena, &sdrResult.alg);
+    algtag = SECOID_FindOIDByMechanism(type)->offset;
+    rv = PK11_ParamToAlgid(algtag, params, arena, &sdrResult.alg);
     if (rv != SECSuccess)
         goto loser;
 
@@ -264,7 +276,7 @@ loser:
         SECITEM_ZfreeItem(params, PR_TRUE);
     if (key)
         PK11_FreeSymKey(key);
-    if (slot)
+    if (slot && !aSlot)
         PK11_FreeSlot(slot);
 
     return rv;
@@ -327,6 +339,7 @@ PK11SDR_Decrypt(SECItem *data, SECItem *result, void *cx)
     SECItem *params = 0;
     SECItem possibleResult = { 0, NULL, 0 };
     PLArenaPool *arena = 0;
+    SECOidTag algtag;
 
     arena = PORT_NewArena(SEC_ASN1_DEFAULT_ARENA_SIZE);
     if (!arena) {
@@ -358,8 +371,8 @@ PK11SDR_Decrypt(SECItem *data, SECItem *result, void *cx)
         goto loser;
     }
 
-    
-    type = CKM_DES3_CBC;
+    algtag = SECOID_GetAlgorithmTag(&sdrResult.alg);
+    type = PK11_AlgtagToMechanism(algtag);
     key = PK11_FindFixedKey(slot, type, &sdrResult.keyid, cx);
     if (!key) {
         rv = SECFailure;
@@ -388,6 +401,10 @@ PK11SDR_Decrypt(SECItem *data, SECItem *result, void *cx)
 
         for (testKey = keyList; testKey;
              testKey = PK11_GetNextSymKey(testKey)) {
+            if (PK11_GetSymKeyType(testKey) != PK11_GetKeyType(type, 0)) {
+                continue;
+            }
+
             rv = pk11Decrypt(slot, arena, type, testKey, params,
                              &sdrResult.data, result);
             if (rv == SECSuccess) {
