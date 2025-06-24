@@ -26,14 +26,6 @@ function getInternalExtensionFallbackTabGroupIdMapEntries() {
   );
 }
 
-add_setup(function () {
-  
-  
-  return SpecialPowers.pushPrefEnv({
-    set: [["security.allow_eval_with_system_principal", true]],
-  });
-});
-
 async function getCurrentTabGroupId() {
   const extension = ExtensionTestUtils.loadExtension({
     async background() {
