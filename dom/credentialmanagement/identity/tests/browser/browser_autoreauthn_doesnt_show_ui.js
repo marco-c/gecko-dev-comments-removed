@@ -144,6 +144,9 @@ add_task(async function test_auto_reauthentication_doesnt_show_ui() {
   is(approvedAndLinked, "result", "Result obtained!");
 
   
+  IdentityCredentialStorageService.disconnect(rpPrincipal, idpPrincipal);
+
+  
   await BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });
