@@ -919,8 +919,8 @@ struct nsGridContainerFrame::GridItemInfo {
   
   
   
-  bool ShouldApplyAutoMinSize(WritingMode aContainerWM,
-                              LogicalAxis aContainerAxis) const {
+  bool MinContributionDependsOnAutoMinSize(WritingMode aContainerWM,
+                                           LogicalAxis aContainerAxis) const {
     MOZ_ASSERT(
         mArea.LineRangeForAxis(aContainerAxis).Extent() == 1,
         "Should not be called with grid items that span multiple tracks.");
@@ -941,6 +941,13 @@ struct nsGridContainerFrame::GridItemInfo {
     
     
     bool isAuto = size->BehavesLikeInitialValue(itemAxis);
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2333,13 +2340,15 @@ enum class TrackSizingPhase {
 
 
 enum class GridIntrinsicSizeType {
-  MinSize,
+  
+  
+  MinContribution,
   MinContentContribution,
   MaxContentContribution
 };
 
 static constexpr GridIntrinsicSizeType kAllGridIntrinsicSizeTypes[] = {
-    GridIntrinsicSizeType::MinSize,
+    GridIntrinsicSizeType::MinContribution,
     GridIntrinsicSizeType::MinContentContribution,
     GridIntrinsicSizeType::MaxContentContribution};
 
@@ -2356,7 +2365,7 @@ struct MaxContiguousEnumValue<GridIntrinsicSizeType> {
 static GridIntrinsicSizeType SizeTypeForPhase(TrackSizingPhase aPhase) {
   switch (aPhase) {
     case TrackSizingPhase::IntrinsicMinimums:
-      return GridIntrinsicSizeType::MinSize;
+      return GridIntrinsicSizeType::MinContribution;
     case TrackSizingPhase::ContentBasedMinimums:
     case TrackSizingPhase::IntrinsicMaximums:
       return GridIntrinsicSizeType::MinContentContribution;
@@ -2512,10 +2521,10 @@ struct nsGridContainerFrame::Tracks {
     void Dump() const {
       printf(
           "SpanningItemData { mSpan: %d, mState: %d, mLineRange: (%d, %d), "
-          "mSizes: {MinSize: %d, MinContentContribution: %d, "
+          "mSizes: {MinContribution: %d, MinContentContribution: %d, "
           "MaxContentContribution: %d}, mFrame: %p\n",
           mSpan, mState, mLineRange.mStart, mLineRange.mEnd,
-          mSizes[GridIntrinsicSizeType::MinSize],
+          mSizes[GridIntrinsicSizeType::MinContribution],
           mSizes[GridIntrinsicSizeType::MinContentContribution],
           mSizes[GridIntrinsicSizeType::MaxContentContribution], mFrame);
     }
@@ -6062,7 +6071,20 @@ struct CachedIntrinsicSizes {
     
     
     
-    if (aTypes.contains(GridIntrinsicSizeType::MinSize)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aTypes.contains(GridIntrinsicSizeType::MinContribution)) {
       nsIFrame* const child = aGridItem.mFrame;
       const nsStylePosition* const stylePos = child->StylePosition();
       const auto anchorResolutionParams =
@@ -6074,14 +6096,17 @@ struct CachedIntrinsicSizes {
           cbwm.IsOrthogonalTo(child->GetWritingMode())
               ? GetOrthogonalAxis(aAxis)
               : aAxis;
+      
+      
+      
       if (!styleSize->BehavesLikeInitialValue(axisInItemWM) &&
           !styleSize->HasPercent()) {
         
-        aTypes -= GridIntrinsicSizeType::MinSize;
+        aTypes -= GridIntrinsicSizeType::MinContribution;
         aTypes += GridIntrinsicSizeType::MinContentContribution;
         EnsureContributions(aTypes, aGridItem, aGridRI, aAxis);
         
-        mSizes[GridIntrinsicSizeType::MinSize] =
+        mSizes[GridIntrinsicSizeType::MinContribution] =
             mSizes[GridIntrinsicSizeType::MinContentContribution];
         return;
       }
@@ -6118,7 +6143,7 @@ struct CachedIntrinsicSizes {
         return ContentContribution(aGridItem, aGridRI, aAxis, aPercentageBasis,
                                    IntrinsicISizeType::PrefISize,
                                    aMinSizeClamp);
-      case GridIntrinsicSizeType::MinSize: {
+      case GridIntrinsicSizeType::MinContribution: {
         
         
         nsIFrame* const child = aGridItem.mFrame;
@@ -6298,42 +6323,73 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     GridReflowInput& aGridRI, const TrackSizingFunctions& aFunctions,
     nscoord aPercentageBasis, SizingConstraint aConstraint,
     const LineRange& aRange, const GridItemInfo& aGridItem) {
+  
+  
   CachedIntrinsicSizes cache{aGridItem, aGridRI, mAxis};
   TrackSize& sz = mSizes[aRange.mStart];
 
   
   
+  
   Maybe<GridIntrinsicSizeType> baseSizeType;
   if (sz.mState & TrackSize::eAutoMinSizing) {
     
-    if (aGridItem.ShouldApplyAutoMinSize(aGridRI.mWM, mAxis)) {
+    
+    
+    
+    
+    if (aGridItem.MinContributionDependsOnAutoMinSize(aGridRI.mWM, mAxis)) {
       
       if (const Maybe<nscoord> minSizeClamp =
               ComputeMinSizeClamp(aFunctions, aPercentageBasis, aRange)) {
         cache.mMinSizeClamp = *minSizeClamp;
         aGridItem.mState[mAxis] |= ItemState::eClampMarginBoxMinSize;
       }
+      
       baseSizeType.emplace((aConstraint == SizingConstraint::MaxContent)
                                ? GridIntrinsicSizeType::MaxContentContribution
                                : GridIntrinsicSizeType::MinContentContribution);
     } else {
-      baseSizeType.emplace(GridIntrinsicSizeType::MinSize);
+      
+      
+      
+      
+      
+      
+      
+      baseSizeType.emplace(GridIntrinsicSizeType::MinContribution);
     }
   } else if (sz.mState & TrackSize::eMinContentMinSizing) {
+    
+    
+    
     baseSizeType.emplace(GridIntrinsicSizeType::MinContentContribution);
   } else if (sz.mState & TrackSize::eMaxContentMinSizing) {
+    
+    
+    
     baseSizeType.emplace(GridIntrinsicSizeType::MaxContentContribution);
   }
 
   
   Maybe<nscoord> fitContentClamp;
+  
+  
+  
   Maybe<GridIntrinsicSizeType> limitType;
   if (sz.mState & TrackSize::eMinContentMaxSizing) {
+    
+    
+    
     limitType.emplace(GridIntrinsicSizeType::MinContentContribution);
   } else if (sz.mState &
              (TrackSize::eAutoMaxSizing | TrackSize::eMaxContentMaxSizing)) {
+    
+    
+    
     limitType.emplace(GridIntrinsicSizeType::MaxContentContribution);
     if (MOZ_UNLIKELY(sz.mState & TrackSize::eApplyFitContentClamping)) {
+      
       
       fitContentClamp.emplace(aFunctions.SizingFor(aRange.mStart)
                                   .AsFitContent()
@@ -6341,6 +6397,15 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
                                   .Resolve(aPercentageBasis));
     }
   }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(
+      limitType != Some(GridIntrinsicSizeType::MinContribution),
+      "We should never be using the minimum contribution as the limit size.");
 
   
   {
@@ -6353,7 +6418,6 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     cache.EnsureContributions(sizeTypesToCalculate, aGridItem, aGridRI, mAxis);
   }
 
-  
   if (baseSizeType) {
     sz.mBase = std::max(sz.mBase, *cache.mSizes[*baseSizeType]);
   }
@@ -6365,10 +6429,12 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
     }
     sz.mLimit = std::max(sz.mLimit, *cache.mSizes[*limitType]);
     if (fitContentClamp) {
+      
       sz.mLimit = std::min(sz.mLimit, *fitContentClamp);
     }
   }
 
+  
   
   sz.mLimit = std::max(sz.mLimit, sz.mBase);
 }
@@ -7118,7 +7184,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
             SelectorForPhase(TrackSizingPhase::IntrinsicMinimums, aConstraint);
 
         if (state & selector) {
-          sizeTypesToCalculate += GridIntrinsicSizeType::MinSize;
+          sizeTypesToCalculate += GridIntrinsicSizeType::MinContribution;
         }
 
         
