@@ -835,6 +835,11 @@ static void AdjustPriorityForImages(nsIChannel* aChannel,
       priority += FETCH_PRIORITY_ADJUSTMENT_FOR(images, aFetchPriority);
     }
 
+    
+    if (aLoadFlags & nsIRequest::LOAD_BACKGROUND) {
+      ++priority;
+    }
+
     supportsPriority->AdjustPriority(priority);
   }
 
