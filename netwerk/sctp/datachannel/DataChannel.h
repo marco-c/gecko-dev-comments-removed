@@ -598,9 +598,6 @@ class DataChannel {
   const bool mOrdered;
   
   
-  bool mHasFinishedOpen = false;
-  
-  
   bool mWaitingForAck = false;
   bool mIsRecvBinary;
   size_t mBufferedThreshold;
