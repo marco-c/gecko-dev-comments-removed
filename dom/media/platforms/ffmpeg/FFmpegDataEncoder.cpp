@@ -552,13 +552,4 @@ FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs() {
 }
 #endif  
 
-void FFmpegDataEncoder<LIBAV_VER>::ForceEnablingFFmpegDebugLogs() {
-#if DEBUG
-  if (!getenv("MOZ_AV_LOG_LEVEL") &&
-      MOZ_LOG_TEST(sFFmpegVideoLog, LogLevel::Debug)) {
-    mLib->av_log_set_level(AV_LOG_DEBUG);
-  }
-#endif  
-}
-
 }  

@@ -30,6 +30,8 @@ class FFVPXRuntimeLinker {
   static void GetFFTFuncs(FFmpegFFTFuncs* aOutFuncs);
 
  private:
+  static void PrefCallbackLogLevel(const char* aPref, void* aData);
+
   
   static StaticMutex sMutex;
 

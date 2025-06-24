@@ -8,13 +8,15 @@
 #define __FFmpegRuntimeLinker_h__
 
 #include "PlatformDecoderModule.h"
+#include "PlatformEncoderModule.h"
 
 namespace mozilla {
 
 class FFmpegRuntimeLinker {
  public:
   static bool Init();
-  static already_AddRefed<PlatformDecoderModule> Create();
+  static already_AddRefed<PlatformDecoderModule> CreateDecoder();
+  static already_AddRefed<PlatformEncoderModule> CreateEncoder();
   enum LinkStatus {
     LinkStatus_INIT = 0,   
     LinkStatus_SUCCEEDED,  
@@ -36,6 +38,8 @@ class FFmpegRuntimeLinker {
   static const char* LinkStatusLibraryName() { return sLinkStatusLibraryName; }
 
  private:
+  static void PrefCallbackLogLevel(const char* aPref, void* aData);
+
   static LinkStatus sLinkStatus;
   static const char* sLinkStatusLibraryName;
 };
