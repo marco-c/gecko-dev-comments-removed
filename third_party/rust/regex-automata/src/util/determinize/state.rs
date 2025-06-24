@@ -86,7 +86,7 @@
 
 
 
-use core::{convert::TryFrom, mem};
+use core::mem;
 
 use alloc::{sync::Arc, vec::Vec};
 
@@ -197,7 +197,7 @@ impl StateBuilderEmpty {
     }
 
     pub(crate) fn into_matches(mut self) -> StateBuilderMatches {
-        self.0.extend_from_slice(&[0, 0, 0, 0, 0]);
+        self.0.extend_from_slice(&[0, 0, 0, 0, 0, 0, 0, 0, 0]);
         StateBuilderMatches(self.0)
     }
 
@@ -382,6 +382,7 @@ impl StateBuilderNFA {
 
 
 
+
 struct Repr<'a>(&'a [u8]);
 
 impl<'a> Repr<'a> {
@@ -452,7 +453,7 @@ impl<'a> Repr<'a> {
     
     
     fn look_need(&self) -> LookSet {
-        LookSet::read_repr(&self.0[3..])
+        LookSet::read_repr(&self.0[5..])
     }
 
     
@@ -476,7 +477,7 @@ impl<'a> Repr<'a> {
         if !self.has_pattern_ids() {
             PatternID::ZERO
         } else {
-            let offset = 9 + index * PatternID::SIZE;
+            let offset = 13 + index * PatternID::SIZE;
             
             
             wire::read_pattern_id_unchecked(&self.0[offset..]).0
@@ -507,7 +508,7 @@ impl<'a> Repr<'a> {
             f(PatternID::ZERO);
             return;
         }
-        let mut pids = &self.0[9..self.pattern_offset_end()];
+        let mut pids = &self.0[13..self.pattern_offset_end()];
         while !pids.is_empty() {
             let pid = wire::read_u32(pids);
             pids = &pids[PatternID::SIZE..];
@@ -539,11 +540,11 @@ impl<'a> Repr<'a> {
     fn pattern_offset_end(&self) -> usize {
         let encoded = self.encoded_pattern_len();
         if encoded == 0 {
-            return 5;
+            return 9;
         }
         
         
-        encoded.checked_mul(4).unwrap().checked_add(9).unwrap()
+        encoded.checked_mul(4).unwrap().checked_add(13).unwrap()
     }
 
     
@@ -557,7 +558,7 @@ impl<'a> Repr<'a> {
         }
         
         
-        usize::try_from(wire::read_u32(&self.0[5..9])).unwrap()
+        usize::try_from(wire::read_u32(&self.0[9..13])).unwrap()
     }
 }
 
@@ -643,7 +644,7 @@ impl<'a> ReprVec<'a> {
     
     
     fn set_look_need(&mut self, mut set: impl FnMut(LookSet) -> LookSet) {
-        set(self.look_need()).write_repr(&mut self.0[3..]);
+        set(self.look_need()).write_repr(&mut self.0[5..]);
     }
 
     
@@ -703,14 +704,14 @@ impl<'a> ReprVec<'a> {
             return;
         }
         let patsize = PatternID::SIZE;
-        let pattern_bytes = self.0.len() - 9;
+        let pattern_bytes = self.0.len() - 13;
         
         
         assert_eq!(pattern_bytes % patsize, 0);
         
         
         let count32 = u32::try_from(pattern_bytes / patsize).unwrap();
-        wire::NE::write_u32(count32, &mut self.0[5..9]);
+        wire::NE::write_u32(count32, &mut self.0[9..13]);
     }
 
     

@@ -302,9 +302,9 @@ impl Utf8Sequences {
     
     
     pub fn new(start: char, end: char) -> Self {
-        let mut it = Utf8Sequences { range_stack: vec![] };
-        it.push(u32::from(start), u32::from(end));
-        it
+        let range =
+            ScalarRange { start: u32::from(start), end: u32::from(end) };
+        Utf8Sequences { range_stack: vec![range] }
     }
 
     

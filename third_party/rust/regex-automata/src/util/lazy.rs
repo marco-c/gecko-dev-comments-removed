@@ -384,11 +384,7 @@ mod lazy {
                 
                 
                 unsafe {
-                    
-                    
-                    core::ptr::drop_in_place(
-                        (*self.data.as_ptr()).as_mut_ptr(),
-                    )
+                    self.data.get_mut().assume_init_drop();
                 }
             }
         }

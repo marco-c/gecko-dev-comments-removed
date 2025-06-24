@@ -13,7 +13,7 @@ use alloc::vec::Vec;
 
 use crate::{
     hybrid::{
-        error::{BuildError, CacheError},
+        error::{BuildError, CacheError, StartError},
         id::{LazyStateID, LazyStateIDError},
         search,
     },
@@ -28,7 +28,7 @@ use crate::{
             Anchored, HalfMatch, Input, MatchError, MatchKind, PatternSet,
         },
         sparse_set::SparseSets,
-        start::{Start, StartByteMap},
+        start::{self, Start, StartByteMap},
     },
 };
 
@@ -1541,26 +1541,37 @@ impl DFA {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn start_state_forward(
+    pub fn start_state(
         &self,
         cache: &mut Cache,
-        input: &Input<'_>,
-    ) -> Result<LazyStateID, MatchError> {
-        if !self.quitset.is_empty() && input.start() > 0 {
-            let offset = input.start() - 1;
-            let byte = input.haystack()[offset];
-            if self.quitset.contains(byte) {
-                return Err(MatchError::quit(byte, offset));
+        config: &start::Config,
+    ) -> Result<LazyStateID, StartError> {
+        let lazy = LazyRef::new(self, cache);
+        let anchored = config.get_anchored();
+        let start = match config.get_look_behind() {
+            None => Start::Text,
+            Some(byte) => {
+                if !self.quitset.is_empty() && self.quitset.contains(byte) {
+                    return Err(StartError::quit(byte));
+                }
+                self.start_map.get(byte)
             }
+        };
+        let start_id = lazy.get_cached_start_id(anchored, start)?;
+        if !start_id.is_unknown() {
+            return Ok(start_id);
         }
-        let start_type = self.start_map.fwd(input);
-        let start = LazyRef::new(self, cache)
-            .get_cached_start_id(input, start_type)?;
-        if !start.is_unknown() {
-            return Ok(start);
-        }
-        Lazy::new(self, cache).cache_start_group(input, start_type)
+        Lazy::new(self, cache).cache_start_group(anchored, start)
     }
 
     
@@ -1571,6 +1582,35 @@ impl DFA {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub fn start_state_forward(
+        &self,
+        cache: &mut Cache,
+        input: &Input<'_>,
+    ) -> Result<LazyStateID, MatchError> {
+        let config = start::Config::from_input_forward(input);
+        self.start_state(cache, &config).map_err(|err| match err {
+            StartError::Cache { .. } => MatchError::gave_up(input.start()),
+            StartError::Quit { byte } => {
+                let offset = input
+                    .start()
+                    .checked_sub(1)
+                    .expect("no quit in start without look-behind");
+                MatchError::quit(byte, offset)
+            }
+            StartError::UnsupportedAnchored { mode } => {
+                MatchError::unsupported_anchored(mode)
+            }
+        })
+    }
+
     
     
     
@@ -1592,20 +1632,17 @@ impl DFA {
         cache: &mut Cache,
         input: &Input<'_>,
     ) -> Result<LazyStateID, MatchError> {
-        if !self.quitset.is_empty() && input.end() < input.haystack().len() {
-            let offset = input.end();
-            let byte = input.haystack()[offset];
-            if self.quitset.contains(byte) {
-                return Err(MatchError::quit(byte, offset));
+        let config = start::Config::from_input_reverse(input);
+        self.start_state(cache, &config).map_err(|err| match err {
+            StartError::Cache { .. } => MatchError::gave_up(input.end()),
+            StartError::Quit { byte } => {
+                let offset = input.end();
+                MatchError::quit(byte, offset)
             }
-        }
-        let start_type = self.start_map.rev(input);
-        let start = LazyRef::new(self, cache)
-            .get_cached_start_id(input, start_type)?;
-        if !start.is_unknown() {
-            return Ok(start);
-        }
-        Lazy::new(self, cache).cache_start_group(input, start_type)
+            StartError::UnsupportedAnchored { mode } => {
+                MatchError::unsupported_anchored(mode)
+            }
+        })
     }
 
     
@@ -2075,6 +2112,8 @@ impl<'i, 'c> Lazy<'i, 'c> {
     
     
     
+    
+    
     #[cold]
     #[inline(never)]
     fn cache_next_state(
@@ -2122,16 +2161,15 @@ impl<'i, 'c> Lazy<'i, 'c> {
     #[inline(never)]
     fn cache_start_group(
         &mut self,
-        input: &Input<'_>,
+        anchored: Anchored,
         start: Start,
-    ) -> Result<LazyStateID, MatchError> {
-        let mode = input.get_anchored();
-        let nfa_start_id = match mode {
+    ) -> Result<LazyStateID, StartError> {
+        let nfa_start_id = match anchored {
             Anchored::No => self.dfa.get_nfa().start_unanchored(),
             Anchored::Yes => self.dfa.get_nfa().start_anchored(),
             Anchored::Pattern(pid) => {
                 if !self.dfa.get_config().get_starts_for_each_pattern() {
-                    return Err(MatchError::unsupported_anchored(mode));
+                    return Err(StartError::unsupported_anchored(anchored));
                 }
                 match self.dfa.get_nfa().start_pattern(pid) {
                     None => return Ok(self.as_ref().dead_id()),
@@ -2142,8 +2180,8 @@ impl<'i, 'c> Lazy<'i, 'c> {
 
         let id = self
             .cache_start_one(nfa_start_id, start)
-            .map_err(|_| MatchError::gave_up(input.start()))?;
-        self.set_start_state(input, start, id);
+            .map_err(StartError::cache)?;
+        self.set_start_state(anchored, start, id);
         Ok(id)
     }
 
@@ -2574,13 +2612,13 @@ impl<'i, 'c> Lazy<'i, 'c> {
     
     fn set_start_state(
         &mut self,
-        input: &Input<'_>,
+        anchored: Anchored,
         start: Start,
         id: LazyStateID,
     ) {
         assert!(self.as_ref().is_valid(id));
         let start_index = start.as_usize();
-        let index = match input.get_anchored() {
+        let index = match anchored {
             Anchored::No => start_index,
             Anchored::Yes => Start::len() + start_index,
             Anchored::Pattern(pid) => {
@@ -2642,17 +2680,16 @@ impl<'i, 'c> LazyRef<'i, 'c> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     fn get_cached_start_id(
         &self,
-        input: &Input<'_>,
+        anchored: Anchored,
         start: Start,
-    ) -> Result<LazyStateID, MatchError> {
+    ) -> Result<LazyStateID, StartError> {
         let start_index = start.as_usize();
-        let mode = input.get_anchored();
-        let index = match mode {
+        let index = match anchored {
             Anchored::No => start_index,
             Anchored::Yes => Start::len() + start_index,
             Anchored::Pattern(pid) => {
                 if !self.dfa.get_config().get_starts_for_each_pattern() {
-                    return Err(MatchError::unsupported_anchored(mode));
+                    return Err(StartError::unsupported_anchored(anchored));
                 }
                 if pid.as_usize() >= self.dfa.pattern_len() {
                     return Ok(self.dead_id());

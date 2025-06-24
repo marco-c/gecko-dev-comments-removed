@@ -3640,8 +3640,8 @@ mod tests {
     
     
     #[test]
-    fn regression() {
-        env_logger::init();
+    fn regression_suffix_literal_count() {
+        let _ = env_logger::try_init();
 
         let re = Regex::new(r"[a-zA-Z]+ing").unwrap();
         assert_eq!(1, re.find_iter("tingling").count());

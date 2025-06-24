@@ -820,8 +820,11 @@ impl BoundedBacktracker {
         
         let capacity = 8 * self.get_config().get_visited_capacity();
         let blocks = div_ceil(capacity, Visited::BLOCK_SIZE);
-        let real_capacity = blocks * Visited::BLOCK_SIZE;
-        (real_capacity / self.nfa.states().len()) - 1
+        let real_capacity = blocks.saturating_mul(Visited::BLOCK_SIZE);
+        
+        
+        
+        (real_capacity / self.nfa.states().len()).saturating_sub(1)
     }
 }
 
@@ -1880,5 +1883,26 @@ fn div_ceil(lhs: usize, rhs: usize) -> usize {
         lhs / rhs
     } else {
         (lhs / rhs) + 1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "syntax")]
+    #[test]
+    fn max_haystack_len_overflow() {
+        let re = BoundedBacktracker::builder()
+            .configure(BoundedBacktracker::config().visited_capacity(10))
+            .build(r"[0-9A-Za-z]{100}")
+            .unwrap();
+        assert_eq!(0, re.max_haystack_len());
     }
 }

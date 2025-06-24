@@ -449,6 +449,7 @@ impl Captures {
     
     
     
+    
     #[inline]
     pub fn get_group(&self, index: usize) -> Option<Span> {
         let pid = self.pattern()?;

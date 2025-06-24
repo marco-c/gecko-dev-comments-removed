@@ -2,15 +2,193 @@
 
 
 
-
-
-
-
 use crate::util::{
     look::LookMatcher,
-    search::Input,
+    search::{Anchored, Input},
     wire::{self, DeserializeError, SerializeError},
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct Config {
+    look_behind: Option<u8>,
+    anchored: Anchored,
+}
+
+impl Config {
+    
+    
+    
+    
+    pub fn new() -> Config {
+        Config { anchored: Anchored::No, look_behind: None }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn from_input_forward(input: &Input<'_>) -> Config {
+        let look_behind = input
+            .start()
+            .checked_sub(1)
+            .and_then(|i| input.haystack().get(i).copied());
+        Config { look_behind, anchored: input.get_anchored() }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn from_input_reverse(input: &Input<'_>) -> Config {
+        let look_behind = input.haystack().get(input.end()).copied();
+        Config { look_behind, anchored: input.get_anchored() }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn look_behind(mut self, byte: Option<u8>) -> Config {
+        self.look_behind = byte;
+        self
+    }
+
+    
+    
+    
+    pub fn anchored(mut self, mode: Anchored) -> Config {
+        self.anchored = mode;
+        self
+    }
+
+    
+    pub fn get_look_behind(&self) -> Option<u8> {
+        self.look_behind
+    }
+
+    
+    pub fn get_anchored(&self) -> Anchored {
+        self.anchored
+    }
+}
 
 
 
@@ -72,29 +250,10 @@ impl StartByteMap {
     }
 
     
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub(crate) fn fwd(&self, input: &Input) -> Start {
-        match input
-            .start()
-            .checked_sub(1)
-            .and_then(|i| input.haystack().get(i))
-        {
-            None => Start::Text,
-            Some(&byte) => self.get(byte),
-        }
-    }
-
+    
     
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub(crate) fn rev(&self, input: &Input) -> Start {
-        match input.haystack().get(input.end()) {
-            None => Start::Text,
-            Some(&byte) => self.get(byte),
-        }
-    }
-
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn get(&self, byte: u8) -> Start {
+    pub(crate) fn get(&self, byte: u8) -> Start {
         self.map[usize::from(byte)]
     }
 
@@ -253,21 +412,32 @@ mod tests {
     #[test]
     fn start_fwd_done_range() {
         let smap = StartByteMap::new(&LookMatcher::default());
-        assert_eq!(Start::Text, smap.fwd(&Input::new("").range(1..0)));
+        let input = Input::new("").range(1..0);
+        let config = Config::from_input_forward(&input);
+        let start =
+            config.get_look_behind().map_or(Start::Text, |b| smap.get(b));
+        assert_eq!(Start::Text, start);
     }
 
     #[test]
     fn start_rev_done_range() {
         let smap = StartByteMap::new(&LookMatcher::default());
-        assert_eq!(Start::Text, smap.rev(&Input::new("").range(1..0)));
+        let input = Input::new("").range(1..0);
+        let config = Config::from_input_reverse(&input);
+        let start =
+            config.get_look_behind().map_or(Start::Text, |b| smap.get(b));
+        assert_eq!(Start::Text, start);
     }
 
     #[test]
     fn start_fwd() {
         let f = |haystack, start, end| {
             let smap = StartByteMap::new(&LookMatcher::default());
-            let input = &Input::new(haystack).range(start..end);
-            smap.fwd(input)
+            let input = Input::new(haystack).range(start..end);
+            let config = Config::from_input_forward(&input);
+            let start =
+                config.get_look_behind().map_or(Start::Text, |b| smap.get(b));
+            start
         };
 
         assert_eq!(Start::Text, f("", 0, 0));
@@ -287,8 +457,11 @@ mod tests {
     fn start_rev() {
         let f = |haystack, start, end| {
             let smap = StartByteMap::new(&LookMatcher::default());
-            let input = &Input::new(haystack).range(start..end);
-            smap.rev(input)
+            let input = Input::new(haystack).range(start..end);
+            let config = Config::from_input_reverse(&input);
+            let start =
+                config.get_look_behind().map_or(Start::Text, |b| smap.get(b));
+            start
         };
 
         assert_eq!(Start::Text, f("", 0, 0));

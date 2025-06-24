@@ -164,6 +164,18 @@ pub enum ErrorKind {
     RepetitionMissing,
     
     
+    
+    SpecialWordBoundaryUnclosed,
+    
+    
+    SpecialWordBoundaryUnrecognized,
+    
+    
+    
+    
+    SpecialWordOrRepetitionUnexpectedEof,
+    
+    
     UnicodeClassInvalid,
     
     
@@ -259,6 +271,29 @@ impl core::fmt::Display for ErrorKind {
             }
             RepetitionMissing => {
                 write!(f, "repetition operator missing expression")
+            }
+            SpecialWordBoundaryUnclosed => {
+                write!(
+                    f,
+                    "special word boundary assertion is either \
+                     unclosed or contains an invalid character",
+                )
+            }
+            SpecialWordBoundaryUnrecognized => {
+                write!(
+                    f,
+                    "unrecognized special word boundary assertion, \
+                     valid choices are: start, end, start-half \
+                     or end-half",
+                )
+            }
+            SpecialWordOrRepetitionUnexpectedEof => {
+                write!(
+                    f,
+                    "found either the beginning of a special word \
+                     boundary or a bounded repetition on a \\b with \
+                     an opening brace, but no closing brace",
+                )
             }
             UnicodeClassInvalid => {
                 write!(f, "invalid Unicode character class")
@@ -433,29 +468,94 @@ pub struct Comment {
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum Ast {
     
-    Empty(Span),
+    Empty(Box<Span>),
     
-    Flags(SetFlags),
+    Flags(Box<SetFlags>),
     
-    Literal(Literal),
+    Literal(Box<Literal>),
     
-    Dot(Span),
+    Dot(Box<Span>),
     
-    Assertion(Assertion),
+    Assertion(Box<Assertion>),
+    
+    ClassUnicode(Box<ClassUnicode>),
+    
+    ClassPerl(Box<ClassPerl>),
     
     
-    Class(Class),
     
-    Repetition(Repetition),
+    ClassBracketed(Box<ClassBracketed>),
     
-    Group(Group),
+    Repetition(Box<Repetition>),
     
-    Alternation(Alternation),
+    Group(Box<Group>),
     
-    Concat(Concat),
+    Alternation(Box<Alternation>),
+    
+    Concat(Box<Concat>),
 }
 
 impl Ast {
+    
+    pub fn empty(span: Span) -> Ast {
+        Ast::Empty(Box::new(span))
+    }
+
+    
+    pub fn flags(e: SetFlags) -> Ast {
+        Ast::Flags(Box::new(e))
+    }
+
+    
+    pub fn literal(e: Literal) -> Ast {
+        Ast::Literal(Box::new(e))
+    }
+
+    
+    pub fn dot(span: Span) -> Ast {
+        Ast::Dot(Box::new(span))
+    }
+
+    
+    pub fn assertion(e: Assertion) -> Ast {
+        Ast::Assertion(Box::new(e))
+    }
+
+    
+    pub fn class_unicode(e: ClassUnicode) -> Ast {
+        Ast::ClassUnicode(Box::new(e))
+    }
+
+    
+    pub fn class_perl(e: ClassPerl) -> Ast {
+        Ast::ClassPerl(Box::new(e))
+    }
+
+    
+    pub fn class_bracketed(e: ClassBracketed) -> Ast {
+        Ast::ClassBracketed(Box::new(e))
+    }
+
+    
+    pub fn repetition(e: Repetition) -> Ast {
+        Ast::Repetition(Box::new(e))
+    }
+
+    
+    pub fn group(e: Group) -> Ast {
+        Ast::Group(Box::new(e))
+    }
+
+    
+    pub fn alternation(e: Alternation) -> Ast {
+        Ast::Alternation(Box::new(e))
+    }
+
+    
+    pub fn concat(e: Concat) -> Ast {
+        Ast::Concat(Box::new(e))
+    }
+
     
     pub fn span(&self) -> &Span {
         match *self {
@@ -464,7 +564,9 @@ impl Ast {
             Ast::Literal(ref x) => &x.span,
             Ast::Dot(ref span) => span,
             Ast::Assertion(ref x) => &x.span,
-            Ast::Class(ref x) => x.span(),
+            Ast::ClassUnicode(ref x) => &x.span,
+            Ast::ClassPerl(ref x) => &x.span,
+            Ast::ClassBracketed(ref x) => &x.span,
             Ast::Repetition(ref x) => &x.span,
             Ast::Group(ref x) => &x.span,
             Ast::Alternation(ref x) => &x.span,
@@ -488,8 +590,10 @@ impl Ast {
             | Ast::Flags(_)
             | Ast::Literal(_)
             | Ast::Dot(_)
-            | Ast::Assertion(_) => false,
-            Ast::Class(_)
+            | Ast::Assertion(_)
+            | Ast::ClassUnicode(_)
+            | Ast::ClassPerl(_) => false,
+            Ast::ClassBracketed(_)
             | Ast::Repetition(_)
             | Ast::Group(_)
             | Ast::Alternation(_)
@@ -531,9 +635,9 @@ impl Alternation {
     
     pub fn into_ast(mut self) -> Ast {
         match self.asts.len() {
-            0 => Ast::Empty(self.span),
+            0 => Ast::empty(self.span),
             1 => self.asts.pop().unwrap(),
-            _ => Ast::Alternation(self),
+            _ => Ast::alternation(self),
         }
     }
 }
@@ -556,9 +660,9 @@ impl Concat {
     
     pub fn into_ast(mut self) -> Ast {
         match self.asts.len() {
-            0 => Ast::Empty(self.span),
+            0 => Ast::empty(self.span),
             1 => self.asts.pop().unwrap(),
-            _ => Ast::Concat(self),
+            _ => Ast::concat(self),
         }
     }
 }
@@ -671,31 +775,6 @@ impl HexLiteralKind {
             HexLiteralKind::X => 2,
             HexLiteralKind::UnicodeShort => 4,
             HexLiteralKind::UnicodeLong => 8,
-        }
-    }
-}
-
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
-pub enum Class {
-    
-    Unicode(ClassUnicode),
-    
-    Perl(ClassPerl),
-    
-    
-    
-    Bracketed(ClassBracketed),
-}
-
-impl Class {
-    
-    pub fn span(&self) -> &Span {
-        match *self {
-            Class::Perl(ref x) => &x.span,
-            Class::Unicode(ref x) => &x.span,
-            Class::Bracketed(ref x) => &x.span,
         }
     }
 }
@@ -1249,6 +1328,18 @@ pub enum AssertionKind {
     WordBoundary,
     
     NotWordBoundary,
+    
+    WordBoundaryStart,
+    
+    WordBoundaryEnd,
+    
+    WordBoundaryStartAngle,
+    
+    WordBoundaryEndAngle,
+    
+    WordBoundaryStartHalf,
+    
+    WordBoundaryEndHalf,
 }
 
 
@@ -1550,8 +1641,10 @@ impl Drop for Ast {
             | Ast::Literal(_)
             | Ast::Dot(_)
             | Ast::Assertion(_)
+            | Ast::ClassUnicode(_)
+            | Ast::ClassPerl(_)
             
-            | Ast::Class(_) => return,
+            | Ast::ClassBracketed(_) => return,
             Ast::Repetition(ref x) if !x.ast.has_subexprs() => return,
             Ast::Group(ref x) if !x.ast.has_subexprs() => return,
             Ast::Alternation(ref x) if x.asts.is_empty() => return,
@@ -1560,7 +1653,7 @@ impl Drop for Ast {
         }
 
         let empty_span = || Span::splat(Position::new(0, 0, 0));
-        let empty_ast = || Ast::Empty(empty_span());
+        let empty_ast = || Ast::empty(empty_span());
         let mut stack = vec![mem::replace(self, empty_ast())];
         while let Some(mut ast) = stack.pop() {
             match ast {
@@ -1569,8 +1662,11 @@ impl Drop for Ast {
                 | Ast::Literal(_)
                 | Ast::Dot(_)
                 | Ast::Assertion(_)
+                | Ast::ClassUnicode(_)
+                | Ast::ClassPerl(_)
                 
-                | Ast::Class(_) => {}
+                
+                | Ast::ClassBracketed(_) => {}
                 Ast::Repetition(ref mut x) => {
                     stack.push(mem::replace(&mut x.ast, empty_ast()));
                 }
@@ -1663,9 +1759,9 @@ mod tests {
 
         let run = || {
             let span = || Span::splat(Position::new(0, 0, 0));
-            let mut ast = Ast::Empty(span());
+            let mut ast = Ast::empty(span());
             for i in 0..200 {
-                ast = Ast::Group(Group {
+                ast = Ast::group(Group {
                     span: span(),
                     kind: GroupKind::CaptureIndex(i),
                     ast: Box::new(ast),
@@ -1693,5 +1789,21 @@ mod tests {
             .unwrap()
             .join()
             .unwrap();
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn ast_size() {
+        let max = 2 * core::mem::size_of::<usize>();
+        let size = core::mem::size_of::<Ast>();
+        assert!(
+            size <= max,
+            "Ast size of {} bytes is bigger than suggested max {}",
+            size,
+            max
+        );
     }
 }
