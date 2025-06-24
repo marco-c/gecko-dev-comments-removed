@@ -6345,7 +6345,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
   
   {
     EnumSet<GridIntrinsicSizeType> sizeTypesToCalculate;
-    for (const auto maybeType : {baseSizeType, limitType}) {
+    for (const auto& maybeType : {baseSizeType, limitType}) {
       if (maybeType) {
         sizeTypesToCalculate += *maybeType;
       }
