@@ -1113,7 +1113,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void LoadFromSourceChildren();
+  void LoadFromSourceChildren(const JSCallingLocation& aCallingLocation);
 
   
 
@@ -1124,13 +1124,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
 
 
-  void SelectResource();
+  void SelectResource(const JSCallingLocation& aCallingLocation);
 
   
 
 
 
-  void SelectResourceWrapper();
+  void SelectResourceWrapper(const JSCallingLocation& aCallingLocation);
 
   
 
@@ -1147,7 +1147,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
 
 
-  MediaResult LoadResource();
+  MediaResult LoadResource(const JSCallingLocation& aCallingLocation);
 
   
 
@@ -1215,7 +1215,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void ResumeLoad(PreloadAction aAction);
+  void ResumeLoad(PreloadAction aAction,
+                  const JSCallingLocation& aCallingLocation);
 
   
 
@@ -1224,7 +1225,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void UpdatePreloadAction();
+  void UpdatePreloadAction(const JSCallingLocation& aCallingLocation);
 
   
 
