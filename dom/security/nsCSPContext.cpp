@@ -682,15 +682,15 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
     
     
     
-    if (content.IsEmpty() && aTriggeringElement) {
-      nsCOMPtr<nsIScriptElement> element =
-          do_QueryInterface(aTriggeringElement);
-      if (element) {
-        element->GetScriptText(content);
-      }
-    }
     if (content.IsEmpty()) {
-      content = aContentOfPseudoScript;
+      if (aContentOfPseudoScript.IsVoid()) {
+        
+        nsCOMPtr<nsIScriptElement> element = do_QueryInterface(aTriggeringElement);
+        MOZ_ASSERT(element);
+        element->GetScriptText(content);
+      } else {
+        content = aContentOfPseudoScript;
+      }
     }
 
     
