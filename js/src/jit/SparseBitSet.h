@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "ds/InlineTable.h"
+#include "ds/LifoAlloc.h"
 
 namespace js::jit {
 
@@ -184,6 +185,16 @@ class SparseBitSet<AllocPolicy>::Iterator {
     skipZeroBits();
   }
 };
+
+}  
+
+namespace js {
+
+
+
+
+template <typename T>
+struct CanLifoAlloc<js::jit::SparseBitSet<T>> : std::true_type {};
 
 }  
 

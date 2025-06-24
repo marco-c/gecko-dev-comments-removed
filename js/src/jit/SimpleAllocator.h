@@ -236,6 +236,8 @@ class SimpleAllocator : protected RegisterAllocator {
   AllocatableRegisterSet fixedOutputAndTempRegs_;
 
   
+  
+  
   using VirtualRegBitSet = SparseBitSet<BackgroundSystemAllocPolicy>;
   Vector<VirtualRegBitSet, 0, JitAllocPolicy> liveGCIn_;
 
