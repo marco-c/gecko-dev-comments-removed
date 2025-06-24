@@ -300,10 +300,6 @@ void nsGIFDecoder2::EndImageFrame() {
   mGIFStruct.images_decoded++;
 
   
-  
-  mGIFStruct.delay_time = 0;
-
-  
   PostFrameStop(opacity);
 
   
@@ -311,6 +307,13 @@ void nsGIFDecoder2::EndImageFrame() {
     mColormap[mGIFStruct.tpixel] = mOldColor;
     mOldColor = 0;
   }
+
+  
+  
+  mGIFStruct.delay_time = 0;
+  mGIFStruct.is_transparent = 0;
+  mGIFStruct.tpixel = 0;
+  mGIFStruct.disposal_method = 0;
 
   mColormap = nullptr;
   mColormapSize = 0;
