@@ -143,10 +143,10 @@ int GetEffectiveContentSandboxLevel() {
     return 0;
   }
   int level = StaticPrefs::security_sandbox_content_level_DoNotUseDirectly();
-#if !defined(NIGHTLY_BUILD) && (defined(XP_WIN) || defined(XP_MACOSX))
+#if !defined(NIGHTLY_BUILD) && defined(XP_MACOSX)
   
   static const int minimumLevel = 1;
-#elif defined(NIGHTLY_BUILD) && defined(XP_WIN)
+#elif defined(XP_WIN)
   
   static const int minimumLevel = 6;
 #else
