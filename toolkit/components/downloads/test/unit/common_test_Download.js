@@ -2090,7 +2090,7 @@ add_task(async function test_blocked_applicationReputation_race() {
         
         return Promise.resolve({
           shouldBlock: true,
-          verdict: Downloads.Error.BLOCK_VERDICT_UNCOMMON,
+          verdict: Ci.nsIApplicationReputationService.VERDICT_UNCOMMON,
         });
       }
 
@@ -2099,7 +2099,7 @@ add_task(async function test_blocked_applicationReputation_race() {
       
       return Promise.resolve({
         shouldBlock: false,
-        verdict: "",
+        verdict: Ci.nsIApplicationReputationService.VERDICT_SAFE,
       });
     },
     shouldKeepBlockedData: () => Promise.resolve(true),
