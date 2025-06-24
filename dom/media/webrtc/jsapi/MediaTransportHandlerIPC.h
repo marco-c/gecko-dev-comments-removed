@@ -16,7 +16,7 @@ class MediaTransportChild;
 
 class MediaTransportHandlerIPC final : public MediaTransportHandler {
  public:
-  explicit MediaTransportHandlerIPC(nsISerialEventTarget* aCallbackThread);
+  explicit MediaTransportHandlerIPC();
   void Initialize() override;
   RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern) override;
   void ClearIceLog() override;
@@ -89,6 +89,7 @@ class MediaTransportHandlerIPC final : public MediaTransportHandler {
   
   typedef MozPromise<bool, nsCString, false> InitPromise;
   RefPtr<InitPromise> mInitPromise;
+  nsCOMPtr<nsISerialEventTarget> mThread;
 };
 
 }  

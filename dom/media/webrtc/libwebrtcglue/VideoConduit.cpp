@@ -1299,6 +1299,9 @@ RefPtr<GenericPromise> WebrtcVideoConduit::Shutdown() {
   mSendPluginReleased.DisconnectIfExists();
   mRecvPluginCreated.DisconnectIfExists();
   mRecvPluginReleased.DisconnectIfExists();
+  mReceiverRtpEventListener.DisconnectIfExists();
+  mReceiverRtcpEventListener.DisconnectIfExists();
+  mSenderRtcpEventListener.DisconnectIfExists();
 
   return InvokeAsync(
       mCallThread, __func__, [this, self = RefPtr<WebrtcVideoConduit>(this)] {
@@ -1606,6 +1609,15 @@ void WebrtcVideoConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
               self.get(), packet.Ssrc(), packet.SequenceNumber());
           return false;
         });
+  }
+}
+
+void WebrtcVideoConduit::OnRtcpReceived(rtc::CopyOnWriteBuffer&& aPacket) {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+
+  if (mCall->Call()) {
+    mCall->Call()->Receiver()->DeliverRtcpPacket(
+        std::forward<rtc::CopyOnWriteBuffer>(aPacket));
   }
 }
 
@@ -1946,23 +1958,6 @@ void WebrtcVideoConduit::SetTransportActive(bool aActive) {
 
   
   mTransportActive = aActive;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!aActive) {
-    MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
-        __func__,
-        [self = RefPtr<WebrtcVideoConduit>(this),
-         recvRtpListener = std::move(mReceiverRtpEventListener)]() mutable {
-          recvRtpListener.DisconnectIfExists();
-        })));
-  }
 }
 
 std::vector<webrtc::RtpSource> WebrtcVideoConduit::GetUpstreamRtpSources()
