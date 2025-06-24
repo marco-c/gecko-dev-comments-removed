@@ -52,8 +52,9 @@ class InlinePreviews extends Component {
       lines: Object.keys(previews).map(line => {
         
         
+        line = Number(line);
         return {
-          line: Number(line),
+          line: line + 1,
           value: previews[line],
         };
       }),

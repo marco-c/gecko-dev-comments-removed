@@ -86,27 +86,54 @@ async function getPreviews(selectedFrame, scope, thunkArgs) {
   }
 
   const allPreviews = [];
-
-  const bindingReferences = await editor.getBindingReferences(
+  
+  let allBindings = {};
+  while (scope && scope.bindings) {
+    const bindings = getScopeBindings(scope);
+    allBindings = { ...allBindings, ...bindings };
+    if (scope.type === "function") {
+      break;
+    }
+    scope = scope.parent;
+  }
+  const references = await editor.getBindingReferences(
     selectedLocation,
-    scope
+    Object.keys(allBindings)
   );
+
   validateSelectedFrame(getState(), selectedFrame);
 
-  for (const level in bindingReferences) {
-    for (const name in bindingReferences[level]) {
-      const previews = await generatePreviewsForBinding(
-        bindingReferences[level][name],
-        selectedLocation.line,
-        name,
-        client,
-        selectedFrame.thread
-      );
-      allPreviews.push(...previews);
-    }
+  for (const name in references) {
+    const previews = await generatePreviewsForBinding(
+      references[name],
+      selectedLocation.line,
+      name,
+      allBindings[name].value,
+      client,
+      selectedFrame.thread
+    );
+    allPreviews.push(...previews);
   }
+
   return allPreviews;
 }
+
+
+
+
+
+
+
+function getScopeBindings(scope) {
+  const bindings = { ...scope.bindings.variables };
+  scope.bindings.arguments.forEach(argument => {
+    Object.keys(argument).forEach(key => {
+      bindings[key] = argument[key];
+    });
+  });
+  return bindings;
+}
+
 
 
 
@@ -122,6 +149,7 @@ async function generatePreviewsForBinding(
   bindingData,
   pausedOnLine,
   name,
+  value,
   client,
   thread
 ) {
@@ -138,20 +166,16 @@ async function generatePreviewsForBinding(
   for (let i = bindingData.refs.length - 1; i >= 0; i--) {
     const ref = bindingData.refs[i];
     
-    const line = ref.start.line;
+    const line = ref.start.line - 1;
     const column = ref.start.column;
     
-    if (line >= pausedOnLine) {
-      continue;
-    }
-
-    if (bindingData.value == undefined) {
+    if (line >= pausedOnLine - 1) {
       continue;
     }
 
     const { displayName, displayValue } = await getExpressionNameAndValue(
       name,
-      bindingData.value,
+      value,
       ref,
       client,
       thread
@@ -189,6 +213,7 @@ async function generatePreviewsForBinding(
 async function getExpressionNameAndValue(name, value, ref, client, thread) {
   let displayName = name;
   let displayValue = value;
+
   
   
   let properties = null;
@@ -203,28 +228,28 @@ async function getExpressionNameAndValue(name, value, ref, client, thread) {
     );
   }
 
-  let { meta } = ref;
   
-  
-  while (meta) {
+  if (properties) {
+    let { meta } = ref;
     
-    if (!properties) {
-      displayName += `.${meta.property}`;
+    
+    while (meta) {
       
-    } else if (displayValue === value) {
-      const property = properties.find(prop => prop.name === meta.property);
-      displayValue = property?.contents.value;
-      displayName += `.${meta.property}`;
-    } else if (displayValue?.preview?.ownProperties) {
-      const { ownProperties } = displayValue.preview;
-      Object.keys(ownProperties).forEach(prop => {
-        if (prop === meta.property) {
-          displayValue = ownProperties[prop].value;
-          displayName += `.${meta.property}`;
-        }
-      });
+      if (displayValue === value) {
+        const property = properties.find(prop => prop.name === meta.property);
+        displayValue = property?.contents.value;
+        displayName += `.${meta.property}`;
+      } else if (displayValue?.preview?.ownProperties) {
+        const { ownProperties } = displayValue.preview;
+        Object.keys(ownProperties).forEach(prop => {
+          if (prop === meta.property) {
+            displayValue = ownProperties[prop].value;
+            displayName += `.${meta.property}`;
+          }
+        });
+      }
+      meta = meta.parent;
     }
-    meta = meta.parent;
   }
 
   return { displayName, displayValue };
