@@ -99,6 +99,8 @@ class ProfileChunkedBuffer;
 class ScrollContainerFrame;
 class StyleSheet;
 
+struct PointerInfo;
+
 #ifdef ACCESSIBILITY
 namespace a11y {
 class DocAccessible;
@@ -1046,8 +1048,8 @@ class PresShell final : public nsStubDocumentObserver,
     mUnderHiddenEmbedderElement = aUnderHiddenEmbedderElement;
   }
 
-  MOZ_CAN_RUN_SCRIPT
-  void DispatchSynthMouseMove(WidgetGUIEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT void DispatchSynthMouseOrPointerMove(
+      WidgetMouseEvent* aMouseOrPointerMoveEvent);
 
   
 
@@ -2087,6 +2089,9 @@ class PresShell final : public nsStubDocumentObserver,
     bool mFromScroll;
   };
   MOZ_CAN_RUN_SCRIPT void ProcessSynthMouseMoveEvent(bool aFromScroll);
+  MOZ_CAN_RUN_SCRIPT void ProcessSynthMouseOrPointerMoveEvent(
+      EventMessage aMoveMessage, uint32_t aPointerId,
+      const PointerInfo& aPointerInfo);
 
   void UpdateImageLockingState();
 
@@ -3238,6 +3243,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
+  CopyableTArray<uint32_t> mPointerIds;
+
   
   
   

@@ -1097,7 +1097,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       break;
     }
     case eMouseEnterIntoWidget:
-      PointerEventHandler::UpdateActivePointerState(mouseEvent, aTargetContent);
+      PointerEventHandler::UpdatePointerActiveState(mouseEvent, aTargetContent);
       
       
       
@@ -1152,7 +1152,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       [[fallthrough]];
     case ePointerDown:
       if (aEvent->mMessage == ePointerDown) {
-        PointerEventHandler::UpdateActivePointerState(mouseEvent,
+        PointerEventHandler::UpdatePointerActiveState(mouseEvent,
                                                       aTargetContent);
         PointerEventHandler::ImplicitlyCapturePointer(aTargetFrame, aEvent);
         
@@ -1168,7 +1168,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     case ePointerMove:
     case ePointerRawUpdate: {
       if (aEvent->mMessage == ePointerMove) {
-        PointerEventHandler::UpdateActivePointerState(mouseEvent,
+        PointerEventHandler::UpdatePointerActiveState(mouseEvent,
                                                       aTargetContent);
       }
       if (!mInTouchDrag &&
@@ -4211,7 +4211,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       
       PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
-      PointerEventHandler::UpdateActivePointerState(pointerEvent);
+      PointerEventHandler::UpdatePointerActiveState(pointerEvent);
 
       if (
           
@@ -4648,7 +4648,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       break;
 
     case eMouseExitFromWidget:
-      PointerEventHandler::UpdateActivePointerState(aEvent->AsMouseEvent());
+      PointerEventHandler::UpdatePointerActiveState(aEvent->AsMouseEvent());
       break;
 
 #ifdef XP_MACOSX

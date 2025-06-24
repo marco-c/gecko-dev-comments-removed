@@ -259,10 +259,14 @@ class WidgetMouseEventBase : public WidgetInputEvent {
     return mMessage == ePointerMove && buttonsLoseTheButton;
   }
 
+  [[nodiscard]] static bool InputSourceSupportsHover(uint16_t aInputSource);
+
   
 
 
-  [[nodiscard]] bool InputSourceSupportsHover() const;
+  [[nodiscard]] bool InputSourceSupportsHover() const {
+    return InputSourceSupportsHover(mInputSource);
+  }
 
   
 

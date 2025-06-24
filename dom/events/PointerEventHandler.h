@@ -7,6 +7,7 @@
 #ifndef mozilla_PointerEventHandler_h
 #define mozilla_PointerEventHandler_h
 
+#include "LayoutConstants.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/TouchEvents.h"
@@ -15,6 +16,8 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+
+#include "mozilla/layers/InputAPZContext.h"
 
 class nsIFrame;
 class nsIContent;
@@ -45,17 +48,27 @@ class PointerCaptureInfo final {
   bool Empty() { return !(mPendingElement || mOverrideElement); }
 };
 
+
+
+
+
 struct PointerInfo final {
+  using Document = dom::Document;
   enum class Active : bool { No, Yes };
   enum class Primary : bool { No, Yes };
   enum class FromTouchEvent : bool { No, Yes };
   enum class SynthesizeForTests : bool { No, Yes };
-  PointerInfo() = delete;
+  PointerInfo()
+      : mIsActive(false),
+        mIsPrimary(false),
+        mFromTouchEvent(false),
+        mPreventMouseEventByContent(false),
+        mIsSynthesizedForTests(false) {}
   PointerInfo(const PointerInfo&) = default;
-  PointerInfo(PointerInfo&&) = default;
   explicit PointerInfo(
       Active aActiveState, uint16_t aInputSource, Primary aPrimaryState,
-      FromTouchEvent aFromTouchEvent, dom::Document* aActiveDocument,
+      FromTouchEvent aFromTouchEvent, Document* aActiveDocument,
+      const PointerInfo* aLastPointerInfo = nullptr,
       SynthesizeForTests aIsSynthesizedForTests = SynthesizeForTests::No)
       : mActiveDocument(aActiveDocument),
         mInputSource(aInputSource),
@@ -63,23 +76,98 @@ struct PointerInfo final {
         mIsPrimary(static_cast<bool>(aPrimaryState)),
         mFromTouchEvent(static_cast<bool>(aFromTouchEvent)),
         mPreventMouseEventByContent(false),
-        mIsSynthesizedForTests(static_cast<bool>(aIsSynthesizedForTests)) {}
+        mIsSynthesizedForTests(static_cast<bool>(aIsSynthesizedForTests)) {
+    if (aLastPointerInfo) {
+      TakeOverLastState(*aLastPointerInfo);
+    }
+  }
   explicit PointerInfo(Active aActiveState,
                        const WidgetPointerEvent& aPointerEvent,
-                       dom::Document* aActiveDocument)
+                       Document* aActiveDocument,
+                       const PointerInfo* aLastPointerInfo = nullptr)
       : mActiveDocument(aActiveDocument),
         mInputSource(aPointerEvent.mInputSource),
         mIsActive(static_cast<bool>(aActiveState)),
         mIsPrimary(aPointerEvent.mIsPrimary),
         mFromTouchEvent(aPointerEvent.mFromTouchEvent),
         mPreventMouseEventByContent(false),
-        mIsSynthesizedForTests(aPointerEvent.mFlags.mIsSynthesizedForTests) {}
+        mIsSynthesizedForTests(aPointerEvent.mFlags.mIsSynthesizedForTests) {
+    if (aLastPointerInfo) {
+      TakeOverLastState(*aLastPointerInfo);
+    }
+  }
 
-  WeakPtr<dom::Document> mActiveDocument;
+  [[nodiscard]] bool InputSourceSupportsHover() const {
+    return WidgetMouseEventBase::InputSourceSupportsHover(mInputSource);
+  }
+
+  [[nodiscard]] bool HasLastState() const {
+    return mLastRefPointInRootDoc !=
+           nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  }
+
+  
+
+
+
+  void RecordLastState(const nsPoint& aRefPointInRootDoc,
+                       const WidgetMouseEvent& aMouseOrPointerEvent) {
+    MOZ_ASSERT_IF(aMouseOrPointerEvent.mMessage == eMouseMove ||
+                      aMouseOrPointerEvent.mMessage == ePointerMove,
+                  aMouseOrPointerEvent.IsReal());
+
+    mLastRefPointInRootDoc = aRefPointInRootDoc;
+    mLastTargetGuid = layers::InputAPZContext::GetTargetLayerGuid();
+    
+    
+    if (aMouseOrPointerEvent.mClass != eDragEventClass) {
+      mLastTiltX = aMouseOrPointerEvent.tiltX;
+      mLastTiltY = aMouseOrPointerEvent.tiltY;
+      mLastButtons = aMouseOrPointerEvent.mButtons;
+      mLastPressure = aMouseOrPointerEvent.mPressure;
+    }
+  }
+
+  
+
+
+  void TakeOverLastState(const PointerInfo& aPointerInfo) {
+    mLastRefPointInRootDoc = aPointerInfo.mLastRefPointInRootDoc;
+    mLastTargetGuid = aPointerInfo.mLastTargetGuid;
+    mLastTiltX = aPointerInfo.mLastTiltX;
+    mLastTiltY = aPointerInfo.mLastTiltY;
+    mLastButtons = aPointerInfo.mLastButtons;
+    mLastPressure = aPointerInfo.mLastPressure;
+  }
+
+  
+
+
+
+  void ClearLastState() {
+    mLastRefPointInRootDoc =
+        nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+    mLastTargetGuid = layers::ScrollableLayerGuid();
+    mLastTiltX = 0;
+    mLastTiltY = 0;
+    mLastButtons = 0;
+    mLastPressure = 0.0f;
+  }
+
+  
+  
+  nsPoint mLastRefPointInRootDoc =
+      nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  layers::ScrollableLayerGuid mLastTargetGuid;
+  WeakPtr<Document> mActiveDocument;
   
   
   
   uint16_t mInputSource = 0;
+  int32_t mLastTiltX = 0;
+  int32_t mLastTiltY = 0;
+  int16_t mLastButtons = 0;
+  float mLastPressure = 0.0f;
   bool mIsActive : 1;
   bool mIsPrimary : 1;
   
@@ -117,8 +205,19 @@ class PointerEventHandler final {
 
   
   
-  static void UpdateActivePointerState(WidgetMouseEvent* aEvent,
+  static void UpdatePointerActiveState(WidgetMouseEvent* aEvent,
                                        nsIContent* aTargetContent = nullptr);
+
+  
+
+
+
+
+
+
+
+  static void RecordPointerState(const nsPoint& aRefPointInRootPresShell,
+                                 const WidgetMouseEvent& aMouseEvent);
 
   
   static void RequestPointerCaptureById(uint32_t aPointerId,
