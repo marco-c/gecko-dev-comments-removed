@@ -415,10 +415,9 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   
   bool mMaxMessageSizeSet = false;
   
-  uint64_t mMaxMessageSize MOZ_GUARDED_BY(mLock) = 0;
-  
   Maybe<bool> mAllocateEven;
   
+  uint64_t mMaxMessageSize = 0;
   
   
   
