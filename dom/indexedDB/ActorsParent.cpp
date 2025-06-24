@@ -13407,10 +13407,31 @@ nsresult Maintenance::DirectoryWork() {
               
               
 
-              QM_TRY_INSPECT(const auto& metadata,
-                             quotaManager->GetOriginMetadata(originDir),
-                             
-                             Ok{});
+              QM_TRY_UNWRAP(auto metadata,
+                            quotaManager->GetOriginMetadata(originDir),
+                            
+                            Ok{});
+
+              if (!persistent &&
+                  !quotaManager->IsTemporaryOriginInitializedInternal(
+                      metadata)) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                QM_TRY_UNWRAP(
+                    metadata,
+                    quotaManager->LoadFullOriginMetadataWithRestore(originDir),
+                    Ok{});
+              }
 
               
               
