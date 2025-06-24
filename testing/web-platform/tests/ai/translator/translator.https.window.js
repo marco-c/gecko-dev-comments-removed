@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+promise_test(async t => {
+  
+  
+  await testCreateMonitorCallbackThrowsError(
+      t, createTranslator, {sourceLanguage: 'und', targetLanguage: 'und'});
+}, 'If monitor throws an error, LanguageDetector.create() rejects with that error');
