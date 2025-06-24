@@ -16,6 +16,14 @@ async function runTest({
   info(`  expectRDD: ${expectRDD}`);
   info(`  expectContent: ${expectContent}`);
 
+  
+  
+  if (!expectUtility) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["media.utility-process.enabled", expectUtility]],
+    });
+  }
+
   const platform = Services.appinfo.OS;
 
   for (let { src, expectations } of audioTestData()) {
