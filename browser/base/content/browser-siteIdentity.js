@@ -4,10 +4,6 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
-});
-
 
 
 
@@ -814,7 +810,7 @@ var gIdentityHandler = {
       !this._uriHasHost &&
       this._uri &&
       isBlankPageURL(this._uri.spec) &&
-      !ExtensionUtils.isExtensionUrl(this._uri)
+      !this._uri.schemeIs("moz-extension")
     );
   },
 
