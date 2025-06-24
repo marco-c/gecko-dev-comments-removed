@@ -99,7 +99,7 @@ class SoftNavigationTestHelper {
 
 
 
-  getPerformanceEntries(
+  static getPerformanceEntries(
       type, includeSoftNavigationObservations, minNumEntries) {
     return new Promise((resolve) => {
       const entries = [];
