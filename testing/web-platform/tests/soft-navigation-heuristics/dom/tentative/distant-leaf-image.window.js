@@ -7,20 +7,28 @@
 
 
 
-function clickHandler() {
-  const div = document.createElement("div");
-  const img = new Image();
-  img.src = "/images/lcp-256x256.png"
-  
-  
-  div.appendChild(img);
-  document.body.insertBefore(div, document.getElementById("insert-before"));
-  history.pushState({}, '', '/test');
-}
 
-const div = document.createElement('div');
-div.id = 'insert-before';
-document.body.appendChild(div);
+
+
+
+
+
+
+
+
+function clickHandler() {
+  let div = document.createElement("div");
+  const img = new Image();  
+  img.src = "/images/lcp-256x256.png"
+  div.appendChild(img);
+  for (let i = 0; i < 10; i++) {
+    const tmp = document.createElement('div');
+    tmp.appendChild(div);
+    div = tmp;
+  }
+  document.body.appendChild(div);
+  history.pushState({}, '', '/leaf-image');
+}
 
 const button = document.createElement('div');
 button.textContent = 'Click here!';
@@ -36,12 +44,12 @@ promise_test(async (t) => {
        'soft-navigation',
        false,
        1,
-       3000,
+       3000
   );
   assert_equals(entries.length, 1, 'Expected exactly one soft navigation.');
   assert_equals(
       entries[0].name.replace(/.*\//, ''),
-      'test',
-      'URL ends with \'test\'.',
+      'leaf-image',
+      'URL ends with \'leaf-image\'.',
   );
-}, 'DOM: Insert image div satisfies Soft Navigation paint criterion.');
+}, 'DOM: Distant leaf (image) satisfies Soft Navigation paint criterion.');

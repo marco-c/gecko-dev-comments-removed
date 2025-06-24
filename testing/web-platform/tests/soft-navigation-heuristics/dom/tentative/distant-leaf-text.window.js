@@ -11,6 +11,9 @@
 
 
 
+
+
+
 function clickHandler() {
   let div = document.createElement('div');
   div.textContent = 'Hello, World.';  
@@ -37,11 +40,12 @@ promise_test(async (t) => {
        'soft-navigation',
        false,
        1,
-  );
+       3000
+    );
   assert_equals(entries.length, 1, 'Expected exactly one soft navigation.');
   assert_equals(
       entries[0].name.replace(/.*\//, ''),
       'greeting',
       'URL ends with \'greeting\'.',
   );
-}, 'DOM: Distant leaf satisfies Soft Navigation paint criterion.');
+}, 'DOM: Distant leaf (text) satisfies Soft Navigation paint criterion.');
