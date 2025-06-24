@@ -482,8 +482,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   nsILoadInfo::IPAddressSpace mParentIPAddressSpace{
       nsILoadInfo::IPAddressSpace::Unknown};
-  dom::ContentPermissionRequestBase::PromptResult mLnaPermissionStatus{
-      dom::ContentPermissionRequestBase::PromptResult::Pending};
+  struct LNAPerms mLnaPermissionStatus{};
 
   
  public:
