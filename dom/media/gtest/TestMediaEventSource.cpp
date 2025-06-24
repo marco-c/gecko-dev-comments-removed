@@ -3,6 +3,7 @@
 
 
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "mozilla/SharedThreadPool.h"
@@ -12,6 +13,9 @@
 #include "VideoUtils.h"
 
 using namespace mozilla;
+using testing::InSequence;
+using testing::MockFunction;
+using testing::StrEq;
 
 
 
@@ -487,4 +491,43 @@ TEST(MediaEventSource, ResetTargetAfterDisconnect)
   
   
   EXPECT_EQ(queue.forget().take()->Release(), 0u);
+}
+
+TEST(MediaEventSource, TailDispatch)
+{
+  MockFunction<void(const char*)> checkpoint;
+  {
+    InSequence seq;
+    EXPECT_CALL(checkpoint, Call(StrEq("normal runnable")));
+    EXPECT_CALL(checkpoint, Call(StrEq("source1")));
+    EXPECT_CALL(checkpoint, Call(StrEq("tail-dispatched runnable")));
+    EXPECT_CALL(checkpoint, Call(StrEq("source2")));
+  }
+
+  MediaEventProducer<void> source1;
+  MediaEventListener listener1 = source1.Connect(
+      AbstractThread::MainThread(), [&] { checkpoint.Call("source1"); });
+  MediaEventProducer<void> source2;
+  MediaEventListener listener2 = source2.Connect(
+      AbstractThread::MainThread(), [&] { checkpoint.Call("source2"); });
+
+  AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction(__func__, [&] {
+    
+    source1.Notify();
+    
+    AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction(
+        __func__, [&] { checkpoint.Call("tail-dispatched runnable"); }));
+    
+    source2.Notify();
+    
+    
+    
+    GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+        __func__, [&] { checkpoint.Call("normal runnable"); }));
+  }));
+
+  NS_ProcessPendingEvents(nullptr);
+
+  listener1.Disconnect();
+  listener2.Disconnect();
 }
