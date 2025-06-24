@@ -2811,9 +2811,8 @@ ContentAnalysis::MultipartRequestCallback::~MultipartRequestCallback() {
 
   
   
-  MOZ_ASSERT(!mWeakContentAnalysis ||
-             !mWeakContentAnalysis->mUserActionMap.Contains(mUserActionId) ||
-             mWeakContentAnalysis->IsShutDown());
+  MOZ_ASSERT(!mWeakContentAnalysis || mWeakContentAnalysis->IsShutDown() ||
+             !mWeakContentAnalysis->mUserActionMap.Contains(mUserActionId));
 }
 
 void ContentAnalysis::MultipartRequestCallback::CancelRequests() {
