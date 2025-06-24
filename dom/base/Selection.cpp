@@ -2518,12 +2518,45 @@ already_AddRefed<StaticRange> Selection::GetComposedRange(
 }
 
 void Selection::GetComposedRanges(
+    const ShadowRootOrGetComposedRangesOptions&
+        aShadowRootOrGetComposedRangesOptions,
     const Sequence<OwningNonNull<ShadowRoot>>& aShadowRoots,
     nsTArray<RefPtr<StaticRange>>& aComposedRanges) {
   aComposedRanges.SetCapacity(mStyledRanges.mRanges.Length());
-  for (const auto& range : mStyledRanges.mRanges) {
-    aComposedRanges.AppendElement(GetComposedRange(range.mRange, aShadowRoots));
+
+  auto GetComposedRangesForAllRanges =
+      [this, &aComposedRanges](
+          const Sequence<OwningNonNull<ShadowRoot>>& aShadowRoots) {
+        for (const auto& range : this->mStyledRanges.mRanges) {
+          aComposedRanges.AppendElement(
+              GetComposedRange(range.mRange, aShadowRoots));
+        }
+      };
+
+  if (aShadowRootOrGetComposedRangesOptions.IsGetComposedRangesOptions()) {
+    
+    auto& options =
+        aShadowRootOrGetComposedRangesOptions.GetAsGetComposedRangesOptions();
+    return GetComposedRangesForAllRanges(options.mShadowRoots);
   }
+
+  Sequence<OwningNonNull<ShadowRoot>> shadowRoots(aShadowRoots);
+
+  if (aShadowRootOrGetComposedRangesOptions.IsShadowRoot()) {
+    
+    
+    
+    
+    if (!shadowRoots.AppendElement(
+            aShadowRootOrGetComposedRangesOptions.GetAsShadowRoot(),
+            fallible)) {
+      
+      return;
+    }
+  }
+
+  
+  return GetComposedRangesForAllRanges(shadowRoots);
 }
 
 void Selection::RemoveAllRangesInternal(ErrorResult& aRv,

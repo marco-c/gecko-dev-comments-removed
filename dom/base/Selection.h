@@ -50,6 +50,7 @@ struct AutoPrepareFocusRange;
 struct PrimaryFrameData;
 namespace dom {
 class DocGroup;
+class ShadowRootOrGetComposedRangesOptions;
 }  
 }  
 
@@ -507,7 +508,10 @@ class Selection final : public nsSupportsWeakReference,
 
   MOZ_CAN_RUN_SCRIPT void RemoveAllRanges(mozilla::ErrorResult& aRv);
 
+  
   void GetComposedRanges(
+      const ShadowRootOrGetComposedRangesOptions&
+          aShadowRootOrGetComposedRangesOptions,
       const Sequence<OwningNonNull<ShadowRoot>>& aShadowRoots,
       nsTArray<RefPtr<StaticRange>>& aComposedRanges);
 
