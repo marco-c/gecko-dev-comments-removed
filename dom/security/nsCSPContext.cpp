@@ -685,7 +685,8 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
     if (content.IsEmpty()) {
       if (aContentOfPseudoScript.IsVoid()) {
         
-        nsCOMPtr<nsIScriptElement> element = do_QueryInterface(aTriggeringElement);
+        nsCOMPtr<nsIScriptElement> element =
+            do_QueryInterface(aTriggeringElement);
         MOZ_ASSERT(element);
         element->GetScriptText(content);
       } else {
@@ -1021,6 +1022,8 @@ void nsCSPContext::logToConsole(const char* aName,
 void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
                           const nsAString& aEffectiveDirective,
                           nsACString& outStrippedURI) {
+  
+  
   if (aSelfURI->SchemeIs("chrome")) {
     aURI->GetSpecIgnoringRef(outStrippedURI);
     return;
@@ -1029,11 +1032,18 @@ void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
   
   
   
-  bool isWsOrWss = aURI->SchemeIs("ws") || aURI->SchemeIs("wss");
+  if (!net::SchemeIsHttpOrHttps(aURI) &&
+      !(aURI->SchemeIs("ws") || aURI->SchemeIs("wss"))) {
+    aURI->GetScheme(outStrippedURI);
+    return;
+  }
 
-  if (!net::SchemeIsHttpOrHttps(aURI) && !isWsOrWss) {
-    
-    
+  
+  
+  
+  nsCOMPtr<nsIURI> stripped;
+  if (NS_FAILED(NS_MutateURI(aURI).SetRef(""_ns).SetUserPass(""_ns).Finalize(
+          stripped))) {
     
     aURI->GetScheme(outStrippedURI);
     return;
@@ -1042,17 +1052,18 @@ void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
   
   
   
+  
   if (aEffectiveDirective.EqualsLiteral("frame-src") ||
       aEffectiveDirective.EqualsLiteral("object-src")) {
     nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-    if (NS_FAILED(ssm->CheckSameOriginURI(aSelfURI, aURI, false, false))) {
-      aURI->GetPrePath(outStrippedURI);
+    if (NS_FAILED(ssm->CheckSameOriginURI(aSelfURI, stripped, false, false))) {
+      stripped->GetPrePath(outStrippedURI);
       return;
     }
   }
 
   
-  aURI->GetSpecIgnoringRef(outStrippedURI);
+  stripped->GetSpec(outStrippedURI);
 }
 
 nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
