@@ -1049,3 +1049,32 @@ BEGIN_TEST(testRootedTuple) {
   return true;
 }
 END_TEST(testRootedTuple)
+
+BEGIN_TEST(testRootedCopying) {
+  
+  
+
+  struct NoCopy {
+    NoCopy() = default;
+    NoCopy(NoCopy&) = delete;
+    NoCopy(const NoCopy&) = delete;
+    NoCopy& operator=(const NoCopy&) = delete;
+  };
+
+  struct StructWithNoCopyArg {
+    StructWithNoCopyArg(void* a, NoCopy& nc) {}
+    void trace(JSTracer* trace) {}
+  };
+
+  
+  
+  
+  
+  void* a = nullptr;
+  NoCopy nc;
+
+  
+  JS::Rooted<StructWithNoCopyArg> rooted(cx, a, nc);
+  return true;
+}
+END_TEST(testRootedCopying)
