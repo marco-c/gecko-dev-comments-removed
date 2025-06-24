@@ -230,7 +230,7 @@ var gTests = [
             .QueryInterface(Ci.nsIArrayExtensions)
             .GetElementAt(0).wrappedJSObject;
           
-          this.contentWindow.wrappedJSObject.message(device.id);
+          content.wrappedJSObject.message(device.id);
           return true;
         }
       );
