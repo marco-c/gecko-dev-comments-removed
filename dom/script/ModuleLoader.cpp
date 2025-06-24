@@ -166,12 +166,22 @@ void ModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
     if (aRequest->GetScriptLoadContext()->mIsInline &&
         aRequest->GetScriptLoadContext()->GetParserCreated() ==
             NOT_FROM_PARSER) {
-      if (aRequest->mImports.Length() == 0) {
-        GetScriptLoader()->RunScriptWhenSafe(aRequest);
-      } else {
-        AsyncExecuteInlineModule(aRequest);
-        return;
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      AsyncExecuteInlineModule(aRequest);
+      return;
     } else if (aRequest->GetScriptLoadContext()->mIsInline &&
                aRequest->GetScriptLoadContext()->GetParserCreated() !=
                    NOT_FROM_PARSER &&
