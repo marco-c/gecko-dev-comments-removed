@@ -47,16 +47,6 @@ const knownUnshownImages = [
   },
 
   {
-    file: "chrome://browser/skin/window-controls/maximize.svg",
-    platforms: ["win"],
-    
-    
-    intermittentShown: ["win"],
-    
-    intermittentNotLoaded: ["win"],
-  },
-
-  {
     file: "chrome://global/skin/icons/highlights.svg",
     platforms: ["win", "linux", "macosx"],
     intermittentShown: ["win", "linux"],
