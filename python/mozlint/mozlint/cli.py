@@ -454,7 +454,7 @@ def run(
 
         
         ret = lint.setup(virtualenv_manager=virtualenv_manager)
-        if setup:
+        if setup or not lint.linters:
             return ret
 
         if linters_info["linters_not_found"] != []:
