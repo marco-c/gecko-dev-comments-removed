@@ -54,7 +54,7 @@ AntiTracking.runTest(
     },
   },
   null, 
-  [["network.lna.block_trackers", false]],
+  null, 
   false, 
   false, 
   expectedBlockingNotifications
