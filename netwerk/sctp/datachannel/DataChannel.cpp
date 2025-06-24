@@ -1260,9 +1260,6 @@ bool DataChannelConnection::SendDeferredMessages() {
     }
 
     
-    
-    channel->mConnection->mLock.AssertCurrentThreadOwns();
-    
     if (channel->mBufferedData.IsEmpty()) {
       i = UpdateCurrentStreamIndex();
       continue;
@@ -1554,7 +1551,7 @@ void DataChannelConnection::HandleDataMessageChunk(const void* data,
   if (it != channel->mRecvBuffers.end()) {
     IncomingMsg& msg(it->second);
     if (!ReassembleMessageChunk(msg, data, length, ppid, stream)) {
-      CloseLocked(channel);
+      FinishClose_s(channel);
       return;
     }
 
@@ -1576,7 +1573,7 @@ void DataChannelConnection::HandleDataMessageChunk(const void* data,
 
   IncomingMsg msg(ppid, stream);
   if (!ReassembleMessageChunk(msg, data, length, ppid, stream)) {
-    CloseLocked(channel);
+    FinishClose_s(channel);
     return;
   }
 
@@ -2077,30 +2074,17 @@ void DataChannelConnection::ClearResets() {
   if (!mStreamsResetting.IsEmpty()) {
     DC_DEBUG(("Clearing resets for %zu streams", mStreamsResetting.Length()));
   }
-
-  for (uint32_t i = 0; i < mStreamsResetting.Length(); ++i) {
-    RefPtr<DataChannel> channel;
-    channel = FindChannelByStream(mStreamsResetting[i]);
-    if (channel) {
-      DC_DEBUG(("Forgetting channel %u (%p) with pending reset",
-                channel->mStream, channel.get()));
-      
-      
-      mChannels.Remove(channel);
-    }
-  }
   mStreamsResetting.Clear();
 }
 
-void DataChannelConnection::ResetOutgoingStream(DataChannel& aChannel) {
-  uint32_t i;
+void DataChannelConnection::MarkStreamForReset(DataChannel& aChannel) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
 
   mLock.AssertCurrentThreadOwns();
-  DC_DEBUG(("Connection %p: Resetting outgoing stream %u", (void*)this,
+  DC_DEBUG(("%s %p: Resetting outgoing stream %u", __func__, this,
             aChannel.mStream));
-  aChannel.SetHasSentStreamReset();
   
-  for (i = 0; i < mStreamsResetting.Length(); ++i) {
+  for (size_t i = 0; i < mStreamsResetting.Length(); ++i) {
     if (mStreamsResetting[i] == aChannel.mStream) {
       return;
     }
@@ -2108,27 +2092,24 @@ void DataChannelConnection::ResetOutgoingStream(DataChannel& aChannel) {
   mStreamsResetting.AppendElement(aChannel.mStream);
 }
 
-void DataChannelConnection::SendOutgoingStreamReset() {
-  struct sctp_reset_streams* srs;
-  uint32_t i;
-  size_t len;
+void DataChannelConnection::ResetStreams(nsTArray<uint16_t>& aStreams) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
 
-  DC_DEBUG(("Connection %p: Sending outgoing stream reset for %zu streams",
-            (void*)this, mStreamsResetting.Length()));
-  mLock.AssertCurrentThreadOwns();
-  if (mStreamsResetting.IsEmpty()) {
+  DC_DEBUG(("%s %p: Sending outgoing stream reset for %zu streams", __func__,
+            this, aStreams.Length()));
+  if (aStreams.IsEmpty()) {
     DC_DEBUG(("No streams to reset"));
     return;
   }
-  len = sizeof(sctp_assoc_t) +
-        (2 + mStreamsResetting.Length()) * sizeof(uint16_t);
-  srs = static_cast<struct sctp_reset_streams*>(
+  const size_t len =
+      sizeof(sctp_reset_streams) + (aStreams.Length()) * sizeof(uint16_t);
+  struct sctp_reset_streams* srs = static_cast<struct sctp_reset_streams*>(
       moz_xmalloc(len));  
   memset(srs, 0, len);
   srs->srs_flags = SCTP_STREAM_RESET_OUTGOING;
-  srs->srs_number_streams = mStreamsResetting.Length();
-  for (i = 0; i < mStreamsResetting.Length(); ++i) {
-    srs->srs_stream_list[i] = mStreamsResetting[i];
+  srs->srs_number_streams = aStreams.Length();
+  for (size_t i = 0; i < aStreams.Length(); ++i) {
+    srs->srs_stream_list[i] = aStreams[i];
   }
   if (usrsctp_setsockopt(mSocket, IPPROTO_SCTP, SCTP_RESET_STREAMS, srs,
                          (socklen_t)len) < 0) {
@@ -2139,59 +2120,63 @@ void DataChannelConnection::SendOutgoingStreamReset() {
     
     
   } else {
-    mStreamsResetting.Clear();
+    aStreams.Clear();
   }
   free(srs);
 }
 
 void DataChannelConnection::HandleStreamResetEvent(
     const struct sctp_stream_reset_event* strrst) {
-  uint32_t n, i;
-  RefPtr<DataChannel> channel;  
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
+  mLock.AssertCurrentThreadOwns();
+  std::vector<uint16_t> streamsReset;
 
   if (!(strrst->strreset_flags & SCTP_STREAM_RESET_DENIED) &&
       !(strrst->strreset_flags & SCTP_STREAM_RESET_FAILED)) {
-    n = (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) /
+    size_t n =
+        (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) /
         sizeof(uint16_t);
-    for (i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
       if (strrst->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
-        channel = FindChannelByStream(strrst->strreset_stream_list[i]);
-        if (channel) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-
-          DC_DEBUG(("Connection %p: stream %u closed", this, channel->mStream));
-          if (mChannels.Remove(channel) && !channel->HasSentStreamReset()) {
-            
-            
-            ResetOutgoingStream(*channel);
-          }
-
-          DC_DEBUG(("Disconnected DataChannel %p from connection %p",
-                    (void*)channel.get(), (void*)channel->mConnection.get()));
-          channel->StreamClosedLocked();
-        } else {
-          DC_WARN(("Connection %p: Can't find incoming stream %d", this,
-                   strrst->strreset_stream_list[i]));
-        }
+        streamsReset.push_back(strrst->strreset_stream_list[i]);
       }
+    }
+  }
+
+  OnStreamsReset(std::move(streamsReset));
+}
+
+void DataChannelConnection::OnStreamsReset(std::vector<uint16_t>&& aStreams) {
+  mLock.AssertCurrentThreadOwns();
+  for (auto stream : aStreams) {
+    auto channel = FindChannelByStream(stream);
+    if (channel) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      DC_DEBUG(("Connection %p: stream %u closed", this, stream));
+
+      DC_DEBUG(("Disconnected DataChannel %p from connection %p",
+                (void*)channel, this));
+      FinishClose_s(channel);
+    } else {
+      DC_WARN(("Connection %p: Can't find incoming stream %u", this, stream));
     }
   }
 
   
   if (!mStreamsResetting.IsEmpty()) {
     DC_DEBUG(("Sending %zu pending resets", mStreamsResetting.Length()));
-    SendOutgoingStreamReset();
+    ResetStreams(mStreamsResetting);
   }
 }
 
@@ -2256,7 +2241,7 @@ void DataChannelConnection::HandleStreamChangeEvent(
     for (auto& channel : mChannels.GetAll()) {
       if (channel->mStream >= mNegotiatedIdLimit) {
         
-        channel->AnnounceClosed();
+        FinishClose_s(channel);
         
       }
     }
@@ -2447,8 +2432,9 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
       DC_DEBUG(("Attempting to raise stream limit %u -> %u", mNegotiatedIdLimit,
                 num_desired));
       if (!RaiseStreamLimitTo(num_desired)) {
-        
-        goto request_error_cleanup;
+        NS_ERROR("Failed to request more streams");
+        FinishClose_s(channel);
+        return nullptr;
       }
     }
     DC_DEBUG(("Queuing channel %p (%u) to finish open", channel.get(), stream));
@@ -2477,37 +2463,19 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
     const int error = SendOpenRequestMessage(*channel);
     if (error) {
       DC_ERROR(("SendOpenRequest failed, error = %d", error));
-      if (channel->mHasFinishedOpen) {
-        
-        NS_ERROR("Failed to send open request");
-        channel->AnnounceClosed();
-      }
       
       
       mChannels.Remove(channel);
       
+      FinishClose_s(channel);
       return nullptr;
-      
     }
   }
 
   
   
   channel->AnnounceOpen();
-
   return channel.forget();
-
-request_error_cleanup:
-  if (channel->mHasFinishedOpen) {
-    
-    NS_ERROR("Failed to request more streams");
-    channel->AnnounceClosed();
-    return channel.forget();
-  }
-  
-  
-  
-  return nullptr;
 }
 
 
@@ -2902,60 +2870,130 @@ void DataChannelConnection::Stop() {
       DataChannelOnMessageAvailable::EventType::OnDisconnected, this)));
 }
 
+
 void DataChannelConnection::Close(DataChannel* aChannel) {
-  MutexAutoLock lock(mLock);
-  CloseLocked(aChannel);
-}
-
-
-
-void DataChannelConnection::CloseLocked(DataChannel* aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aChannel);
-  RefPtr<DataChannel> channel(aChannel);  
+  RefPtr<DataChannel> channel(aChannel);
 
-  mLock.AssertCurrentThreadOwns();
   
-  
-  aChannel->mConnection->mLock.AssertCurrentThreadOwns();
-  DC_DEBUG(("Connection %p/Channel %p: Closing stream %u",
-            channel->mConnection.get(), channel.get(), channel->mStream));
-
-  aChannel->mBufferedData.Clear();
-  if (GetState() == DataChannelConnectionState::Closed) {
-    
-    
-    mChannels.Remove(channel);
-  }
-  mPending.erase(channel);
 
   
   
+
   
-  DataChannelState channelState = aChannel->GetReadyState();
   
+
+  
+
+  
+  
+  DataChannelState channelState = channel->GetReadyState();
   if (channelState == DataChannelState::Closed ||
       channelState == DataChannelState::Closing) {
     DC_DEBUG(("Channel already closing/closed (%s)", ToString(channelState)));
     return;
   }
 
+  
+  channel->SetReadyState(DataChannelState::Closing);
+
+  
+  GracefulClose(channel);
+}
+
+void DataChannelConnection::GracefulClose(DataChannel* aChannel) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+  
+  
+
+  Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<DataChannelConnection>(this),
+                 channel = RefPtr<DataChannel>(aChannel)]() {
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        if (channel->GetReadyState() != DataChannelState::Closing &&
+            channel->GetReadyState() != DataChannelState::Closed) {
+          channel->SetReadyState(DataChannelState::Closing);
+          
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!channel->mBufferedAmount &&
+            channel->GetReadyState() != DataChannelState::Closed) {
+          FinishClose(channel);
+        }
+      }));
+}
+
+void DataChannelConnection::FinishClose(DataChannel* aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
+  mSTS->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<DataChannelConnection>(this),
+                 channel = RefPtr<DataChannel>(aChannel)]() {
+        MutexAutoLock lock(mLock);
+        FinishClose_s(channel);
+      }));
+}
+
+void DataChannelConnection::FinishClose_s(DataChannel* aChannel) {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
+  mLock.AssertCurrentThreadOwns();
+
+  
+  
+  
+  
+  RefPtr<DataChannel> channel(aChannel);
+  aChannel->mBufferedData.Clear();
+  mChannels.Remove(aChannel);
+  mPending.erase(aChannel);
+
+  
+  
+
+  
+  
   if (channel->mStream != INVALID_STREAM) {
-    ResetOutgoingStream(*channel);
+    MarkStreamForReset(*aChannel);
     if (GetState() != DataChannelConnectionState::Closed) {
       
-      SendOutgoingStreamReset();
+      
+      
+      ResetStreams(mStreamsResetting);
     }
   }
-  aChannel->SetReadyState(DataChannelState::Closing);
-  if (GetState() == DataChannelConnectionState::Closed) {
-    
-    channel->StreamClosedLocked();
-  }
+
   
   
+  aChannel->AnnounceClosed();
 }
 
 void DataChannelConnection::CloseAll() {
+  ASSERT_WEBRTC(NS_IsMainThread());
   DC_DEBUG(("Closing all channels (connection %p)", (void*)this));
 
   
@@ -2970,17 +3008,33 @@ void DataChannelConnection::CloseAll() {
     channel->Close();
   }
 
-  
-  std::set<RefPtr<DataChannel>> temp(std::move(mPending));
-  for (const auto& channel : temp) {
-    DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
-              channel->mStream));
-    MutexAutoUnlock lock(mLock);
-    channel->Close();  
-  }
-  
-  
-  SendOutgoingStreamReset();
+  mSTS->Dispatch(NS_NewRunnableFunction(
+      "DataChannelConnection::CloseAll",
+      [this, self = RefPtr<DataChannelConnection>(this)]() {
+        MutexAutoLock lock(mLock);
+        
+        SetState(DataChannelConnectionState::Closed);
+
+        
+        
+        
+        for (auto& channel : mChannels.GetAll()) {
+          FinishClose_s(channel.get());
+        }
+
+        
+        for (const auto& channel : mPending) {
+          DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
+                    channel->mStream));
+          FinishClose_s(
+              channel.get());  
+        }
+        
+        
+        if (!mStreamsResetting.IsEmpty()) {
+          ResetStreams(mStreamsResetting);
+        }
+      }));
 }
 
 bool DataChannelConnection::Channels::IdComparator::Equals(
@@ -3092,21 +3146,6 @@ void DataChannel::Close() {
   }
 }
 
-
-void DataChannel::StreamClosedLocked() {
-  MOZ_ASSERT(mConnection);
-  if (!mConnection) {
-    return;
-  }
-  mConnection->mLock.AssertCurrentThreadOwns();
-
-  DC_DEBUG(("Destroying Data channel %u", mStream));
-  MOZ_ASSERT_IF(mStream != INVALID_STREAM,
-                !mConnection->FindChannelByStream(mStream));
-  AnnounceClosed();
-  
-}
-
 void DataChannel::ReleaseConnection() {
   ASSERT_WEBRTC(NS_IsMainThread());
   mConnection = nullptr;
@@ -3162,6 +3201,12 @@ void DataChannel::DecrementBufferedAmount(uint32_t aSize) {
           DC_DEBUG(("%s: sending NO_LONGER_BUFFERED for %s/%s: %u",
                     __FUNCTION__, mLabel.get(), mProtocol.get(), mStream));
           mListener->NotBuffered(mContext);
+          if (mReadyState == DataChannelState::Closing) {
+            if (mConnection) {
+              
+              mConnection->FinishClose(this);
+            }
+          }
         }
       }));
 }
@@ -3174,6 +3219,7 @@ void DataChannel::AnnounceOpen() {
         
         if (state != DataChannelState::Closing &&
             state != DataChannelState::Closed) {
+          
           if (!mEverOpened && mConnection && mConnection->mListener) {
             mEverOpened = true;
             mConnection->mListener->NotifyDataChannelOpen(this);
@@ -3189,24 +3235,41 @@ void DataChannel::AnnounceOpen() {
 }
 
 void DataChannel::AnnounceClosed() {
+  
+  
   mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::AnnounceClosed", [this, self = RefPtr<DataChannel>(this)] {
+        
+        
+        
         if (GetReadyState() == DataChannelState::Closed) {
           return;
         }
-        if (mEverOpened && mConnection && mConnection->mListener) {
-          mConnection->mListener->NotifyDataChannelClosed(this);
-        }
+
+        
         SetReadyState(DataChannelState::Closed);
-        MOZ_PUSH_IGNORE_THREAD_SAFETY
+
         
         
-        mBufferedData.Clear();
-        MOZ_POP_THREAD_SAFETY
+        
+        
+        
+
+        
+        
+        
+        
+
+        
         if (mListener) {
           DC_DEBUG(("%s: sending ON_CHANNEL_CLOSED for %s/%s: %u", __FUNCTION__,
                     mLabel.get(), mProtocol.get(), mStream));
           mListener->OnChannelClosed(mContext);
+        }
+
+        
+        if (mEverOpened && mConnection && mConnection->mListener) {
+          mConnection->mListener->NotifyDataChannelClosed(this);
         }
       }));
 }
