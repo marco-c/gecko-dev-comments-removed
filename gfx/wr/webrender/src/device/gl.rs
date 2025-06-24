@@ -1478,7 +1478,7 @@ impl Device {
             extensions.push(gl.get_string_i(gl::EXTENSIONS, i));
         }
 
-        let is_angle = renderer_name.contains("ANGLE");
+        let is_xclipse = renderer_name.starts_with("ANGLE (Samsung Xclipse");
 
         
         
@@ -1490,7 +1490,7 @@ impl Device {
         let supports_khr_debug =
             supports_extension(&extensions, "GL_KHR_debug")
             && !is_mali_valhall(&renderer_name)
-            && !is_angle;
+            && !is_xclipse;
         if panic_on_gl_error || cfg!(debug_assertions) {
             gl = gl::ErrorReactingGl::wrap(gl, move |gl, name, code| {
                 if supports_khr_debug {

@@ -676,11 +676,7 @@ pub fn main() {
             glutin::GlRequest::Specific(glutin::Api::OpenGl, opengl_version)
         }
         Some("default") | None => {
-            if args.is_present("angle") || cfg!(target_os = "android") {
-                
-                
-                
-                
+            if cfg!(target_os = "android") {
                 
                 
                 
