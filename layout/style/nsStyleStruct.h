@@ -742,10 +742,18 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePage {
 using AnchorResolvedInset =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleInset>;
 
+
 struct AnchorPosResolutionParams {
   
   
   const nsIFrame* mFrame;
+  
+  mozilla::StylePositionProperty mPosition;
+};
+
+
+
+struct AnchorPosOffsetResolutionParams {
   
   
   
@@ -754,25 +762,24 @@ struct AnchorPosResolutionParams {
   
   
   const mozilla::LogicalSize* mCBSize;
-  
-  mozilla::StylePositionProperty mPosition;
+  AnchorPosResolutionParams mBaseParams;
 
-  static AnchorPosResolutionParams UseCBFrameSize(
+  static AnchorPosOffsetResolutionParams UseCBFrameSize(
       const nsIFrame* aFrame, mozilla::StylePositionProperty aPosition) {
     return {aFrame, nullptr, aPosition};
   }
 
-  static AnchorPosResolutionParams ExplicitCBFrameSize(
+  static AnchorPosOffsetResolutionParams ExplicitCBFrameSize(
       const nsIFrame* aFrame, const mozilla::LogicalSize* aCBSize,
       mozilla::StylePositionProperty aPosition) {
     return {aFrame, aCBSize, aPosition};
   }
 
  private:
-  AnchorPosResolutionParams(const nsIFrame* aFrame,
-                            const mozilla::LogicalSize* aCBSize,
-                            mozilla::StylePositionProperty aPosition)
-      : mFrame{aFrame}, mCBSize{aCBSize}, mPosition{aPosition} {}
+  AnchorPosOffsetResolutionParams(const nsIFrame* aFrame,
+                                  const mozilla::LogicalSize* aCBSize,
+                                  mozilla::StylePositionProperty aPosition)
+      : mCBSize{aCBSize}, mBaseParams{aFrame, aPosition} {}
 };
 
 struct AnchorResolvedInsetHelper {
@@ -783,7 +790,7 @@ struct AnchorResolvedInsetHelper {
 
   static AnchorResolvedInset FromUnresolved(
       const mozilla::StyleInset& aValue, mozilla::Side aSide,
-      const AnchorPosResolutionParams& aParams) {
+      const AnchorPosOffsetResolutionParams& aParams) {
     if (!aValue.HasAnchorPositioningFunction()) {
       return AnchorResolvedInset::NonOwning(&aValue);
     }
@@ -797,7 +804,7 @@ struct AnchorResolvedInsetHelper {
 
   static AnchorResolvedInset ResolveAnchor(
       const mozilla::StyleInset& aValue, mozilla::StylePhysicalSide aSide,
-      const AnchorPosResolutionParams& aParams);
+      const AnchorPosOffsetResolutionParams& aParams);
 };
 
 using AnchorResolvedSize =
@@ -924,7 +931,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
     
     
     const auto anchorResolutionParams =
-        AnchorPosResolutionParams::UseCBFrameSize(
+        AnchorPosOffsetResolutionParams::UseCBFrameSize(
             nullptr, mozilla::StylePositionProperty::Absolute);
     return (GetAnchorResolvedInset(mozilla::eSideRight, anchorResolutionParams)
                 ->IsAuto() &&
@@ -1053,14 +1060,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   
   
   AnchorResolvedInset GetAnchorResolvedInset(
-      mozilla::Side aSide, const AnchorPosResolutionParams& aParams) const {
+      mozilla::Side aSide,
+      const AnchorPosOffsetResolutionParams& aParams) const {
     return AnchorResolvedInsetHelper::FromUnresolved(mOffset.Get(aSide), aSide,
                                                      aParams);
   }
 
   inline AnchorResolvedInset GetAnchorResolvedInset(
       mozilla::LogicalSide aSide, WritingMode aWM,
-      const AnchorPosResolutionParams& aParams) const;
+      const AnchorPosOffsetResolutionParams& aParams) const;
 
   AnchorResolvedSize GetWidth(mozilla::StylePositionProperty aProp) const {
     return AnchorResolvedSizeHelper::FromUnresolved(mWidth, aProp);

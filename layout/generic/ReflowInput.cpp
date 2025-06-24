@@ -812,7 +812,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
   }
 
   const auto anchorResolutionParams =
-      AnchorPosResolutionParams::UseCBFrameSize(mFrame, positionProperty);
+      AnchorPosOffsetResolutionParams::UseCBFrameSize(mFrame, positionProperty);
   bool dependsOnCBBSize =
       (nsStylePosition::BSizeDependsOnContainer(bSize) &&
        
@@ -951,7 +951,7 @@ LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
   
   
   const auto anchorResolutionParams =
-      AnchorPosResolutionParams::UseCBFrameSize(aFrame, positionProperty);
+      AnchorPosOffsetResolutionParams::UseCBFrameSize(aFrame, positionProperty);
   const auto inlineStart = position->GetAnchorResolvedInset(
       LogicalSide::IStart, aWM, anchorResolutionParams);
   const auto inlineEnd = position->GetAnchorResolvedInset(
@@ -1671,7 +1671,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
                "Why are we here?");
 
   const auto anchorResolutionParams =
-      AnchorPosResolutionParams::ExplicitCBFrameSize(
+      AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
           mFrame, &aCBSize, StylePositionProperty::Absolute);
   const auto iStartOffset = mStylePosition->GetAnchorResolvedInset(
       LogicalSide::IStart, cbwm, anchorResolutionParams);

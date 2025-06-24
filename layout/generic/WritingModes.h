@@ -2133,7 +2133,7 @@ inline bool StyleMaxSize::BehavesLikeInitialValue(LogicalAxis aAxis) const {
 
 inline AnchorResolvedInset nsStylePosition::GetAnchorResolvedInset(
     mozilla::LogicalSide aSide, WritingMode aWM,
-    const AnchorPosResolutionParams& aParams) const {
+    const AnchorPosOffsetResolutionParams& aParams) const {
   return GetAnchorResolvedInset(aWM.PhysicalSide(aSide), aParams);
 }
 
