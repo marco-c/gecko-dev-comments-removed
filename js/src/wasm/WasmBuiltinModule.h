@@ -33,6 +33,9 @@
 namespace js {
 namespace wasm {
 
+struct ImportValues;
+struct Import;
+
 struct MOZ_STACK_CLASS BuiltinModuleInstances {
   explicit BuiltinModuleInstances(JSContext* cx)
       : selfTest(cx), intGemm(cx), jsString(cx) {}
@@ -123,7 +126,8 @@ class BuiltinModuleFuncs {
 };
 
 mozilla::Maybe<BuiltinModuleId> ImportMatchesBuiltinModule(
-    mozilla::Span<const char> importName, BuiltinModuleIds enabledBuiltins);
+    mozilla::Span<const char> importName,
+    const BuiltinModuleIds& enabledBuiltins);
 bool ImportMatchesBuiltinModuleFunc(mozilla::Span<const char> importName,
                                     BuiltinModuleId module,
                                     const BuiltinModuleFunc** matchedFunc,
@@ -131,14 +135,18 @@ bool ImportMatchesBuiltinModuleFunc(mozilla::Span<const char> importName,
 
 
 
+
+
 [[nodiscard]] bool CompileBuiltinModule(
-    JSContext* cx, BuiltinModuleId module,
+    JSContext* cx, BuiltinModuleId module, const Import* moduleMemoryImport,
     MutableHandle<WasmModuleObject*> result);
 
 
 
 [[nodiscard]] bool InstantiateBuiltinModule(JSContext* cx,
                                             BuiltinModuleId module,
+                                            const Import* moduleMemoryImport,
+                                            Handle<JSObject*> importObj,
                                             MutableHandle<JSObject*> result);
 
 }  

@@ -103,6 +103,7 @@ struct BuiltinModuleIds {
 struct FeatureOptions {
   FeatureOptions()
       : disableOptimizingCompiler(false),
+        mozIntGemm(false),
         isBuiltinModule(false),
         jsStringBuiltins(false),
         jsStringConstants(false) {}
@@ -110,6 +111,9 @@ struct FeatureOptions {
   
   
   bool disableOptimizingCompiler;
+  
+  
+  bool mozIntGemm;
 
   
   bool isBuiltinModule;
