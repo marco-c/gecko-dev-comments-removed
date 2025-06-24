@@ -8,8 +8,6 @@
 
 
 
-
-
 var testStr = `
 class C extends Object {
   constructor() {
@@ -20,7 +18,10 @@ class C extends Object {
   }
 }
 new C;`
-assert.sameValue(raisesException(ReferenceError)(testStr), true);
+
+assert.throws(ReferenceError, function() {
+  eval(testStr);
+});
 
 
 reportCompare(0, 0);

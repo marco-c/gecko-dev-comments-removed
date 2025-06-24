@@ -8,11 +8,6 @@
 
 
 
-
-testJSON('{"Numbers cannot have leading zeroes": 013}', true);
-
-
-
-print("Tests complete");
+testJSONSyntaxError('{"Numbers cannot have leading zeroes": 013}');
 
 reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyPrimordialCallableProperty(Map.prototype, "getOrInsertComputed", "getOrInsertComputed", 2, {
+  value: Map.prototype.getOrInsertComputed,
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+
+reportCompare(0, 0);

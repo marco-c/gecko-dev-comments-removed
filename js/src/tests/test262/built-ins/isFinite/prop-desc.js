@@ -8,10 +8,6 @@
 
 
 
-verifyPrimordialCallableProperty(this, "isFinite", "isFinite", 1, {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyPrimordialCallableProperty(this, "isFinite", "isFinite", 1);
 
 reportCompare(0, 0);

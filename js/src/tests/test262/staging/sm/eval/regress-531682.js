@@ -29,9 +29,6 @@ function scope1() {
 }
 
 function test() {
-    printBugNumber(BUGNUMBER);
-    printStatus (summary);
-
     
     actual = eval('x', scope1());
     expect = 0;

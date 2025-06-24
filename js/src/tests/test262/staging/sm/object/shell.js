@@ -24,7 +24,7 @@ assert.deepEqual = function(actual, expected, message) {
 (function() {
 let getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 let join = arr => arr.join(', ');
-function stringFromTemplate(strings, ...subs) {
+function stringFromTemplate(strings, subs) {
   let parts = strings.map((str, i) => `${i === 0 ? '' : subs[i - 1]}${str}`);
   return parts.join('');
 }
@@ -87,7 +87,7 @@ assert.deepEqual.format = function(value, seen) {
     function acceptMappers(...mappers) {
       function toString() {
         let renderings = subs.map((sub, i) => (mappers[i] || String)(sub));
-        let rendered = stringFromTemplate(strings, ...renderings);
+        let rendered = stringFromTemplate(strings, renderings);
         if (usage.used) rendered += ` as #${usage.id}`;
         return rendered;
       }
@@ -101,7 +101,7 @@ assert.deepEqual.format = function(value, seen) {
 
   let format = assert.deepEqual.format;
   function lazyString(strings, ...subs) {
-    return { toString: () => stringFromTemplate(strings, ...subs) };
+    return { toString: () => stringFromTemplate(strings, subs) };
   }
 
   if (typeof value === 'function') {
@@ -400,72 +400,3 @@ assert.deepEqual._compare = (function () {
 
   return deepEqual;
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var cnNoObject = 'Unexpected Error!!! Parameter to this function must be an object';
-var cnNoClass = 'Unexpected Error!!! Cannot find Class property';
-var cnObjectToString = Object.prototype.toString;
-var GLOBAL = 'global';
-
-
-
-function getJSClass(obj)
-{
-  if (isObject(obj))
-    return findClass(findType(obj));
-  return cnNoObject;
-}
-
-
-function findType(obj)
-{
-  return cnObjectToString.apply(obj);
-}
-
-
-
-function findClass(sType)
-{
-  var re =  /^\[.*\s+(\w+)\s*\]$/;
-  var a = sType.match(re);
- 
-  if (a && a[1])
-    return a[1];
-  return cnNoClass;
-}
-
-
-function isObject(obj)
-{
-  return obj instanceof Object;
-}
-

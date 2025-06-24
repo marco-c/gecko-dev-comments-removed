@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var ta = new TA(1);
+  var result = ta.with(-0.5, 123);
+  assert.sameValue(result[0], 123);
+});
+
+reportCompare(0, 0);

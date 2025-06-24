@@ -9,12 +9,12 @@
 
 
 
-
 var re = /(?:(f)(o)(o)|(b)(a)(r))*/;
 var str = 'foobar';
 var actual = re.exec(str);
-var expected = makeExpectedMatch(['foobar', undefined, undefined, undefined, 'b', 'a', 'r'], 0, str);
-checkRegExpMatch(actual, expected);
 
+assert.compareArray(actual, ['foobar', undefined, undefined, undefined, 'b', 'a', 'r']);
+assert.sameValue(actual.index, 0);
+assert.sameValue(actual.input, str);
 
 reportCompare(0, 0);

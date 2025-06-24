@@ -8,12 +8,12 @@
 
 
 
-
 var re = /(z\1){3}/;
 var str = 'zzz';
 var actual = re.exec(str);
-var expected = makeExpectedMatch(['zzz', 'z'], 0, str);
-checkRegExpMatch(actual, expected);
 
+assert.compareArray(actual, ['zzz', 'z']);
+assert.sameValue(actual.index, 0);
+assert.sameValue(actual.input, str);
 
 reportCompare(0, 0);

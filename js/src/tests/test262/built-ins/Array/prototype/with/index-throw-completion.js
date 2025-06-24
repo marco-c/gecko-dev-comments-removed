@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MyError() {}
+
+var index = {
+  valueOf() {
+    throw new MyError();
+  }
+};
+
+assert.throws(MyError, function() {
+  [].with(index, null);
+});
+
+reportCompare(0, 0);

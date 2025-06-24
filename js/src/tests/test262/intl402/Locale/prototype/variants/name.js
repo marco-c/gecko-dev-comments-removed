@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const getter = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "variants").get;
+verifyProperty(getter, "name", {
+  value: "get variants",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

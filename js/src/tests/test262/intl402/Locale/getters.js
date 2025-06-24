@@ -47,14 +47,67 @@
 
 
 
-var langtag = "de-latn-de-u-ca-gregory-co-phonebk-hc-h23-kf-true-kn-false-nu-latn";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var langtag = "de-latn-de-fonipa-1996-u-ca-gregory-co-phonebk-hc-h23-kf-true-kn-false-nu-latn";
 var loc = new Intl.Locale(langtag);
 
-assert.sameValue(loc.toString(), "de-Latn-DE-u-ca-gregory-co-phonebk-hc-h23-kf-kn-false-nu-latn");
-assert.sameValue(loc.baseName, "de-Latn-DE");
+assert.sameValue(loc.toString(), "de-Latn-DE-1996-fonipa-u-ca-gregory-co-phonebk-hc-h23-kf-kn-false-nu-latn");
+assert.sameValue(loc.baseName, "de-Latn-DE-1996-fonipa");
 assert.sameValue(loc.language, "de");
 assert.sameValue(loc.script, "Latn");
 assert.sameValue(loc.region, "DE");
+assert.sameValue(loc.variants, "1996-fonipa");
 assert.sameValue(loc.calendar, "gregory");
 assert.sameValue(loc.collation, "phonebk");
 assert.sameValue(loc.hourCycle, "h23");
@@ -72,6 +125,7 @@ var loc = new Intl.Locale(langtag, {
     language: "ja",
     script: "jpan",
     region: "jp",
+    variants: "Hepburn",
     calendar: "japanese",
     collation: "search",
     hourCycle: "h24",
@@ -80,11 +134,12 @@ var loc = new Intl.Locale(langtag, {
     numberingSystem: "jpanfin",
 });
 
-assert.sameValue(loc.toString(), "ja-Jpan-JP-u-ca-japanese-co-search-hc-h24-kf-false-kn-nu-jpanfin");
-assert.sameValue(loc.baseName, "ja-Jpan-JP");
+assert.sameValue(loc.toString(), "ja-Jpan-JP-hepburn-u-ca-japanese-co-search-hc-h24-kf-false-kn-nu-jpanfin");
+assert.sameValue(loc.baseName, "ja-Jpan-JP-hepburn");
 assert.sameValue(loc.language, "ja");
 assert.sameValue(loc.script, "Jpan");
 assert.sameValue(loc.region, "JP");
+assert.sameValue(loc.variants, "hepburn");
 assert.sameValue(loc.calendar, "japanese");
 assert.sameValue(loc.collation, "search");
 assert.sameValue(loc.hourCycle, "h24");
@@ -105,11 +160,12 @@ var loc = new Intl.Locale(langtag, {
     hourCycle: "h11",
 });
 
-assert.sameValue(loc.toString(), "fr-Latn-CA-u-ca-gregory-co-standard-hc-h11-kf-kn-false-nu-latn");
-assert.sameValue(loc.baseName, "fr-Latn-CA");
+assert.sameValue(loc.toString(), "fr-Latn-CA-1996-fonipa-u-ca-gregory-co-standard-hc-h11-kf-kn-false-nu-latn");
+assert.sameValue(loc.baseName, "fr-Latn-CA-1996-fonipa");
 assert.sameValue(loc.language, "fr");
 assert.sameValue(loc.script, "Latn");
 assert.sameValue(loc.region, "CA");
+assert.sameValue(loc.variants, "1996-fonipa");
 assert.sameValue(loc.calendar, "gregory");
 assert.sameValue(loc.collation, "standard");
 assert.sameValue(loc.hourCycle, "h11");
@@ -129,6 +185,7 @@ assert.sameValue(loc.baseName, "und");
 assert.sameValue(loc.language, "und");
 assert.sameValue(loc.script, undefined);
 assert.sameValue(loc.region, undefined);
+assert.sameValue(loc.variants, undefined);
 
 var loc = new Intl.Locale("und-US-u-co-emoji");
 
@@ -137,6 +194,7 @@ assert.sameValue(loc.baseName, "und-US");
 assert.sameValue(loc.language, "und");
 assert.sameValue(loc.script, undefined);
 assert.sameValue(loc.region, "US");
+assert.sameValue(loc.variants, undefined);
 if ("collation" in loc) {
     assert.sameValue(loc.collation, "emoji");
 }

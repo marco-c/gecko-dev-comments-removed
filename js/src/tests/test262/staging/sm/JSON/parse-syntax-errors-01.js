@@ -8,16 +8,11 @@
 
 
 
-
-testJSON("{}...", true);
-testJSON('{"foo": truBBBB}', true);
-testJSON('{foo: truBBBB}', true);
-testJSON('{"foo": undefined}', true);
-testJSON('{"foo": ]', true);
-testJSON('{"foo', true);
-
-
-
-print("Tests complete");
+testJSONSyntaxError("{}...");
+testJSONSyntaxError('{"foo": truBBBB}');
+testJSONSyntaxError('{foo: truBBBB}');
+testJSONSyntaxError('{"foo": undefined}');
+testJSONSyntaxError('{"foo": ]');
+testJSONSyntaxError('{"foo');
 
 reportCompare(0, 0);

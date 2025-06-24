@@ -40,6 +40,11 @@ const invalidLanguageOptions = [
   "undefined",
 
   
+  
+  
+  "root",
+
+  
   "fr-Latn",
   "fr-FR",
   "sa-vaidika",

@@ -10,55 +10,50 @@
 
 
 
+testJSONSyntaxError('[');
+testJSONSyntaxError('[1');
+testJSONSyntaxError('[1,]');
+testJSONSyntaxError('[1,{');
+testJSONSyntaxError('[1,}');
+testJSONSyntaxError('[1,{]');
+testJSONSyntaxError('[1,}]');
+testJSONSyntaxError('[1,{"');
+testJSONSyntaxError('[1,}"');
+testJSONSyntaxError('[1,{"\\');
+testJSONSyntaxError('[1,}"\\');
+testJSONSyntaxError('[1,"');
+testJSONSyntaxError('[1,"\\');
 
-testJSON('[', true);
-testJSON('[1', true);
-testJSON('[1,]', true);
-testJSON('[1,{', true);
-testJSON('[1,}', true);
-testJSON('[1,{]', true);
-testJSON('[1,}]', true);
-testJSON('[1,{"', true);
-testJSON('[1,}"', true);
-testJSON('[1,{"\\', true);
-testJSON('[1,}"\\', true);
-testJSON('[1,"', true);
-testJSON('[1,"\\', true);
+testJSONSyntaxError('{');
+testJSONSyntaxError('{1');
+testJSONSyntaxError('{,');
+testJSONSyntaxError('{"');
+testJSONSyntaxError('{"\\');
+testJSONSyntaxError('{"\\u');
+testJSONSyntaxError('{"\\uG');
+testJSONSyntaxError('{"\\u0');
+testJSONSyntaxError('{"\\u01');
+testJSONSyntaxError('{"\\u012');
+testJSONSyntaxError('{"\\u0123');
+testJSONSyntaxError('{"\\u0123"');
+testJSONSyntaxError('{"a"');
+testJSONSyntaxError('{"a"}');
+testJSONSyntaxError('{"a":');
+testJSONSyntaxError('{"a",}');
+testJSONSyntaxError('{"a":}');
+testJSONSyntaxError('{"a":,}');
+testJSONSyntaxError('{"a":5,}');
+testJSONSyntaxError('{"a":5,[');
+testJSONSyntaxError('{"a":5,"');
+testJSONSyntaxError('{"a":5,"');
+testJSONSyntaxError('{"a":5,"\\');
+testJSONSyntaxError("a[false ]".substring(1, 7));
 
-testJSON('{', true);
-testJSON('{1', true);
-testJSON('{,', true);
-testJSON('{"', true);
-testJSON('{"\\', true);
-testJSON('{"\\u', true);
-testJSON('{"\\uG', true);
-testJSON('{"\\u0', true);
-testJSON('{"\\u01', true);
-testJSON('{"\\u012', true);
-testJSON('{"\\u0123', true);
-testJSON('{"\\u0123"', true);
-testJSON('{"a"', true);
-testJSON('{"a"}', true);
-testJSON('{"a":', true);
-testJSON('{"a",}', true);
-testJSON('{"a":}', true);
-testJSON('{"a":,}', true);
-testJSON('{"a":5,}', true);
-testJSON('{"a":5,[', true);
-testJSON('{"a":5,"', true);
-testJSON('{"a":5,"', true);
-testJSON('{"a":5,"\\', true);
-testJSON("a[false ]".substring(1, 7) , true);
+testJSONSyntaxError('this');
 
-testJSON('this', true);
-
-testJSON('[1,{}]', false);
-testJSON('{}', false);
-testJSON('{"a":5}', false);
-testJSON('{"\\u0123":5}', false);
-
-
-
-print("Tests complete");
+testJSON('[1,{}]');
+testJSON('{}');
+testJSON('{"a":5}');
+testJSON('{"\\u0123":5}');
 
 reportCompare(0, 0);

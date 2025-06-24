@@ -16,6 +16,36 @@
 
 
 
+  globalThis.completesNormally = function completesNormally(code) {
+    try {
+      eval(code);
+      return true;
+    } catch (exception) {
+      return false;
+    }
+  }
+
+  
+
+
+
+
+
+  globalThis.raisesException = function raisesException(exception) {
+    return function (code) {
+      try {
+        eval(code);
+        return false;
+      } catch (actual) {
+        return actual instanceof exception;
+      }
+    };
+  };
+
+  
+
+
+
 
 
 

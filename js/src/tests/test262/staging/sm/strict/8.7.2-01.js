@@ -12,12 +12,7 @@
 
 
 
-
-
-assert.sameValue(testLenientAndStrict('let let_declared; let_declared=1',
-                              completesNormally,
-                              completesNormally),
-         true);
-
+let let_declared;
+let_declared = 1;
 
 reportCompare(0, 0);

@@ -11,10 +11,6 @@
 
 
 
-verifyPrimordialCallableProperty(this, "parseInt", "parseInt", 2, {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyPrimordialCallableProperty(this, "parseInt", "parseInt", 2);
 
 reportCompare(0, 0);

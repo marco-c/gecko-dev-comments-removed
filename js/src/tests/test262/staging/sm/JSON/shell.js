@@ -24,7 +24,7 @@ assert.deepEqual = function(actual, expected, message) {
 (function() {
 let getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 let join = arr => arr.join(', ');
-function stringFromTemplate(strings, ...subs) {
+function stringFromTemplate(strings, subs) {
   let parts = strings.map((str, i) => `${i === 0 ? '' : subs[i - 1]}${str}`);
   return parts.join('');
 }
@@ -87,7 +87,7 @@ assert.deepEqual.format = function(value, seen) {
     function acceptMappers(...mappers) {
       function toString() {
         let renderings = subs.map((sub, i) => (mappers[i] || String)(sub));
-        let rendered = stringFromTemplate(strings, ...renderings);
+        let rendered = stringFromTemplate(strings, renderings);
         if (usage.used) rendered += ` as #${usage.id}`;
         return rendered;
       }
@@ -101,7 +101,7 @@ assert.deepEqual.format = function(value, seen) {
 
   let format = assert.deepEqual.format;
   function lazyString(strings, ...subs) {
-    return { toString: () => stringFromTemplate(strings, ...subs) };
+    return { toString: () => stringFromTemplate(strings, subs) };
   }
 
   if (typeof value === 'function') {
@@ -406,113 +406,63 @@ assert.deepEqual._compare = (function () {
 
 
 
-function testJSON(str, expectSyntaxError)
-{
+
+function testJSON(str) {
   
   
   
 
   
-  try
-  {
+  try {
     JSON.parse(str);
-    reportCompare(false, expectSyntaxError,
-                  "string <" + str + "> " +
-                  "should" + (expectSyntaxError ? "n't" : "") + " " +
-                  "have parsed as JSON");
-  }
-  catch (e)
-  {
-    if (!(e instanceof SyntaxError))
-    {
-      reportCompare(true, false,
-                    "parsing string <" + str + "> threw a non-SyntaxError " +
-                    "exception: " + e);
-    }
-    else
-    {
-      reportCompare(true, expectSyntaxError,
-                    "string <" + str + "> " +
-                    "should" + (expectSyntaxError ? "n't" : "") + " " +
-                    "have parsed as JSON, exception: " + e);
-    }
+  } catch (e) {
+    throw new Test262Error("string <" + str + "> should have parsed as JSON");
   }
 
   
-  try
-  {
+  try {
     JSON.parse(str + " ");
-    reportCompare(false, expectSyntaxError,
-                  "string <" + str + " > " +
-                  "should" + (expectSyntaxError ? "n't" : "") + " " +
-                  "have parsed as JSON");
-  }
-  catch (e)
-  {
-    if (!(e instanceof SyntaxError))
-    {
-      reportCompare(true, false,
-                    "parsing string <" + str + " > threw a non-SyntaxError " +
-                    "exception: " + e);
-    }
-    else
-    {
-      reportCompare(true, expectSyntaxError,
-                    "string <" + str + " > " +
-                    "should" + (expectSyntaxError ? "n't" : "") + " " +
-                    "have parsed as JSON, exception: " + e);
-    }
+  } catch (e) {
+    throw new Test262Error("string <" + str + " > should have parsed as JSON");
   }
 
   
-  try
-  {
+  try {
     JSON.parse(" " + str);
-    reportCompare(false, expectSyntaxError,
-                  "string < " + str + "> " +
-                  "should" + (expectSyntaxError ? "n't" : "") + " " +
-                  "have parsed as JSON");
-  }
-  catch (e)
-  {
-    if (!(e instanceof SyntaxError))
-    {
-      reportCompare(true, false,
-                    "parsing string < " + str + "> threw a non-SyntaxError " +
-                    "exception: " + e);
-    }
-    else
-    {
-      reportCompare(true, expectSyntaxError,
-                    "string < " + str + "> " +
-                    "should" + (expectSyntaxError ? "n't" : "") + " " +
-                    "have parsed as JSON, exception: " + e);
-    }
+  } catch (e) {
+    throw new Test262Error("string < " + str + "> should have parsed as JSON");
   }
 
   
-  try
-  {
+  try {
     JSON.parse(" " + str + " ");
-    reportCompare(false, expectSyntaxError,
-                  "string < " + str + " > " +
-                  "should" + (expectSyntaxError ? "n't" : "") + " " +
-                  "have parsed as JSON");
+  } catch (e) {
+    throw new Test262Error("string < " + str + " > should have parsed as JSON");
   }
-  catch (e)
-  {
-    if (!(e instanceof SyntaxError))
-    {
-      reportCompare(true, false,
-                    "parsing string < " + str + " > threw a non-SyntaxError " +
-                    "exception: " + e);
-    }
-    else
-    {
-      reportCompare(true, expectSyntaxError,
-                    "string < " + str + " > " +
-                    "should" + (expectSyntaxError ? "n't" : "") + " " +
-                    "have parsed as JSON, exception: " + e);
-    }
-  }
+}
+
+function testJSONSyntaxError(str) {
+  
+  
+  
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(str);
+  }, "string <" + str + "> shouldn't have parsed as JSON");
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(str + " ");
+  }, "string <" + str + " > shouldn't have parsed as JSON");
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(" " + str);
+  }, "string < " + str + "> shouldn't have parsed as JSON");
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(" " + str + " ");
+  }, "string < " + str + " > shouldn't have parsed as JSON");
 }

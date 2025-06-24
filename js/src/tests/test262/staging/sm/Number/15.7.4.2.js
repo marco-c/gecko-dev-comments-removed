@@ -9,18 +9,16 @@
 
 
 
+assert.throws(TypeError, function() { Number.prototype.toString.call(true); });
+assert.throws(TypeError, function() { Number.prototype.toString.call(""); });
+assert.throws(TypeError, function() { Number.prototype.toString.call({}); });
+assert.throws(TypeError, function() { Number.prototype.toString.call(null); });
+assert.throws(TypeError, function() { Number.prototype.toString.call([]); });
+assert.throws(TypeError, function() { Number.prototype.toString.call(undefined); });
+assert.throws(TypeError, function() { Number.prototype.toString.call(new Boolean(true)); });
 
-
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call(true)'), true);
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call("")'), true);
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call({})'), true);
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call(null)'), true);
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call([])'), true);
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call(undefined)'), true);
-assert.sameValue(raisesException(TypeError)('Number.prototype.toString.call(new Boolean(true))'), true);
-
-assert.sameValue(completesNormally('Number.prototype.toString.call(42)'), true);
-assert.sameValue(completesNormally('Number.prototype.toString.call(new Number(42))'), true);
+assert.sameValue(Number.prototype.toString.call(42), "42");
+assert.sameValue(Number.prototype.toString.call(new Number(42)), "42");
 
 function testAround(middle)
 {

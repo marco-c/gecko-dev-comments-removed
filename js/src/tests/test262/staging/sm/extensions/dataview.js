@@ -71,9 +71,6 @@ function test(sharedMem) {
 	return v.buffer;
     }
 
-    printBugNumber(BUGNUMBER);
-    printStatus(summary);
-
     
     buffer = bufferize(new Uint8Array([1, 2]));
     checkThrow(() => new DataView(buffer, 0, 3), RangeError);

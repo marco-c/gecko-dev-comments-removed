@@ -404,13 +404,31 @@ function isWritable(obj, name, verifyProp, value) {
 
 
 
+
+
+
+
 function verifyCallableProperty(obj, name, functionName, functionLength, desc, options) {
   var value = obj[name];
 
   assert.sameValue(typeof value, "function",
     "obj['" + String(name) + "'] descriptor should be a function");
 
-  if (!__hasOwnProperty(desc, "value")) desc.value = value;
+  
+  
+  
+  
+  if (desc === undefined) {
+    desc = {
+      writable: true,
+      enumerable: false,
+      configurable: true,
+      value: value
+    };
+  } else if (!__hasOwnProperty(desc, "value") && !__hasOwnProperty(desc, "get")) {
+    desc.value = value;
+  }
+
   verifyProperty(obj, name, desc, options);
 
   if (functionName === undefined) {

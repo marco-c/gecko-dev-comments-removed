@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var weakmap = new WeakMap();
+assert.throws(TypeError, function() {
+  Map.prototype.getOrInsertComputed.call(weakmap, 1, () => 1);
+});
+
+var map = new Map();
+assert.throws(TypeError, function() {
+  map.getOrInsertComputed.call(weakmap, 1, () => 1);
+});
+
+
+reportCompare(0, 0);
