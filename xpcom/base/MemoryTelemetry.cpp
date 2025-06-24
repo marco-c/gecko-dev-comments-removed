@@ -348,7 +348,12 @@ nsresult MemoryTelemetry::GatherReports(
   RefPtr<Runnable> runnable = NS_NewRunnableFunction(
       "MemoryTelemetry::GatherReports", [mgr, completionRunnable]() mutable {
         auto timer = glean::memory::collection_time.Measure();
+
+
+
+#if !defined(HAVE_64BIT_BUILD)
         RECORD_BYTES(vsize, Vsize);
+#endif
 #if !defined(HAVE_64BIT_BUILD) || !defined(XP_WIN)
         RECORD_BYTES(vsize_max_contiguous, VsizeMaxContiguous);
 #endif
