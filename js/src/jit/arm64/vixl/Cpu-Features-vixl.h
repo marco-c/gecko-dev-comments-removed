@@ -288,6 +288,10 @@ class CPUFeatures {
   const_iterator begin() const;
   const_iterator end() const;
 
+  
+  
+  void DisableGlobally();
+
  private:
   
   
