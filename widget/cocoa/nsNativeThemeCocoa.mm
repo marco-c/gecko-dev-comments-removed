@@ -257,8 +257,7 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame,
 
 #define HITHEME_ORIENTATION kHIThemeOrientationNormal
 
-static CGFloat kMaxFocusRingWidth =
-    0;  
+static constexpr CGFloat kMaxFocusRingWidth = 7;
 
 enum class CocoaSize { Mini = 0, Small, Regular };
 static constexpr size_t kControlSizeCount = 3;
@@ -359,8 +358,6 @@ NS_IMPL_ISUPPORTS_INHERITED(nsNativeThemeCocoa, nsNativeTheme, nsITheme)
 
 nsNativeThemeCocoa::nsNativeThemeCocoa() : ThemeCocoa(ScrollbarStyle()) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  kMaxFocusRingWidth = 7;
 
   
   
