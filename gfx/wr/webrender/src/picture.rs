@@ -2210,66 +2210,66 @@ impl TileCacheInstance {
 
             if let Some(clip_chain) = clip_chain_instance {
                 self.local_clip_rect = clip_chain.pic_coverage_rect;
+                self.compositor_clip = None;
 
-                self.compositor_clip = if clip_chain.needs_mask {
-                    let clip_instance = frame_state
-                        .clip_store
-                        .get_instance_from_range(&clip_chain.clips_range, 0);
-                    let clip_node = &frame_state.data_stores.clip[clip_instance.handle];
+                if clip_chain.needs_mask {
+                    for i in 0 .. clip_chain.clips_range.count {
+                        let clip_instance = frame_state
+                            .clip_store
+                            .get_instance_from_range(&clip_chain.clips_range, i);
+                        let clip_node = &frame_state.data_stores.clip[clip_instance.handle];
 
-                    let index = match clip_node.item.kind {
-                        ClipItemKind::RoundedRectangle { rect, radius, mode } => {
-                            assert_eq!(mode, ClipMode::Clip);
+                        match clip_node.item.kind {
+                            ClipItemKind::RoundedRectangle { rect, radius, mode } => {
+                                assert_eq!(mode, ClipMode::Clip);
 
-                            
-                            
-                            
-                            
-                            let map = ClipSpaceConversion::new(
-                                frame_context.root_spatial_node_index,
-                                clip_node.item.spatial_node_index,
-                                frame_context.root_spatial_node_index,                   
-                                frame_context.spatial_tree,
-                            );
+                                
+                                
+                                
+                                
+                                let map = ClipSpaceConversion::new(
+                                    frame_context.root_spatial_node_index,
+                                    clip_node.item.spatial_node_index,
+                                    frame_context.root_spatial_node_index,
+                                    frame_context.spatial_tree,
+                                );
 
-                            let (rect, radius) = match map {
-                                ClipSpaceConversion::Local => {
-                                    (rect.cast_unit(), radius)
-                                }
-                                ClipSpaceConversion::ScaleOffset(scale_offset) => {
-                                    (
-                                        scale_offset.map_rect(&rect),
-                                        BorderRadius {
-                                            top_left: scale_offset.map_size(&radius.top_left),
-                                            top_right: scale_offset.map_size(&radius.top_right),
-                                            bottom_left: scale_offset.map_size(&radius.bottom_left),
-                                            bottom_right: scale_offset.map_size(&radius.bottom_right),
-                                        },
-                                    )
-                                }
-                                ClipSpaceConversion::Transform(..) => {
-                                    unreachable!();                                    
-                                }
-                            };
+                                let (rect, radius) = match map {
+                                    ClipSpaceConversion::Local => {
+                                        (rect.cast_unit(), radius)
+                                    }
+                                    ClipSpaceConversion::ScaleOffset(scale_offset) => {
+                                        (
+                                            scale_offset.map_rect(&rect),
+                                            BorderRadius {
+                                                top_left: scale_offset.map_size(&radius.top_left),
+                                                top_right: scale_offset.map_size(&radius.top_right),
+                                                bottom_left: scale_offset.map_size(&radius.bottom_left),
+                                                bottom_right: scale_offset.map_size(&radius.bottom_right),
+                                            },
+                                        )
+                                    }
+                                    ClipSpaceConversion::Transform(..) => {
+                                        unreachable!();
+                                    }
+                                };
 
-                            frame_state.composite_state.register_clip(
-                                rect,
-                                radius,
-                            )
+                                self.compositor_clip = Some(frame_state.composite_state.register_clip(
+                                    rect,
+                                    radius,
+                                ));
+
+                                break;
+                            }
+                            _ => {
+                                
+                                
+                                
+                                
+                            }
                         }
-                        _ => {
-                            
-                            
-                            
-                            
-                            unreachable!();
-                        }
-                    };
-
-                    Some(index)
-                } else {
-                    None
-                };
+                    }
+                }
             }
         }
 

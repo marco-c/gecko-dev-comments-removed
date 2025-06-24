@@ -574,8 +574,7 @@ fn create_tile_cache(
                     if BorderRadius::from(radius).can_use_fast_path_in(&rect.into()) {
                         rounded_rect_count += 1;
 
-                        
-                        false
+                        true
                     } else {
                         false
                     }
