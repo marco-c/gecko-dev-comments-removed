@@ -140,10 +140,10 @@
   #\  #result, #\  #score { position: fixed; top: 10%; left: 10%; width: 4em; z-index: 1; color: yellow; font-size: 50px; background: fuchsia; border: solid 1em purple; }
  </style>
 
- 
- <link rel="stylesheet" href="empty.css">
+ <!-- part of the HTTP tests -->
+ <link rel="stylesheet" href="empty.css"><!-- text/html file (should be ignored, <h1> will go red if it isn't) -->
 
- 
+ <!-- the next five script blocks are part of one of the tests -->
  <script type="text/javascript">
   var d1 = "fail";
   var d2 = "fail";
@@ -157,12 +157,12 @@
  <script type="text/javascript" src="data:text/javascript;base64,%20ZD%20Qg%0D%0APS%20An%20Zm91cic%0D%0A%207%20"></script>
  <script type="text/javascript" src="data:text/javascript,d5%20%3D%20'five%5Cu0027s'%3B"></script>
 
- 
+ <!-- part of the JS regexp and \0 value tests test -->
  <script type="text/javascript">
   var nullInRegexpArgumentResult = 0 < /script/.test('\0script') ? "passed" : "failed";
  </script>
 
- 
+ <!-- main test body -->
  <script type="text/javascript">
   var notifications = {};
   function notify(file) {
@@ -928,7 +928,6 @@
       test('<div>');
       test('0div');
       test('di v');
-      test('di<v');
       test('-div');
       test('.div');
       return 2;
@@ -948,12 +947,10 @@
       test('<div>', null, 5);
       test('0div', null, 5);
       test('di v', null, 5);
-      test('di<v', null, 5);
       test('-div', null, 5);
       test('.div', null, 5);
       test('<div>', "http://example.com/", 5);
       test('0div', "http://example.com/", 5);
-      test('di<v', "http://example.com/", 5);
       test('-div', "http://example.com/", 5);
       test('.div', "http://example.com/", 5);
       //test(':div', null, 14);
@@ -975,7 +972,7 @@
       // check that exceptions that are thrown are DOMException objects
       var message = "";
       try {
-        document.implementation.createDocumentType('a:', '', ''); /* doesn't contain an illegal character; is malformed */
+        document.implementation.createDocumentType('a>', '', ''); /* doesn't contain an illegal character; is malformed */
         message = "failed to raise exception";
       } catch (e) {
         /*if (e.code != e.NAMESPACE_ERR)
@@ -3505,7 +3502,7 @@
    ><p id="bucket6" class="z"></p>
   </div>
   <p id="result"><span id="score">JS</span><span id="slash" class="hidden">/</span><span>?</span></p>
-  
+  <!-- The following line is used in a number of the tests. It is done using document.write() to sidestep complaints of validity. -->
   <script type="text/javascript">document.write('<map name=""><area href="" shape="rect" coords="2,2,4,4" alt="<\'>"><iframe src="empty.png">FAIL<\/iframe><iframe src="empty.txt">FAIL<\/iframe><iframe src="empty.html" id="selectors"><\/iframe><form action="" name="form"><input type=HIDDEN><\/form><table><tr><td><p><\/tbody> <\/table><\/map>');</script>
   <p id="instructions">To pass the test,<span></span> a browser must use its default settings, the animation has to be smooth, the score has to end on 100/100, and the final page has to look exactly, pixel for pixel, like <a href="reference.sub.html">this reference rendering</a>.</p>
   <p id="remove-last-child-test">Scripting must be enabled to use this test.</p>
