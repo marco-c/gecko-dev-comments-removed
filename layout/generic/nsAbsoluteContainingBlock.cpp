@@ -307,7 +307,7 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   const nsStylePadding* padding = f->StylePadding();
   const nsStyleMargin* margin = f->StyleMargin();
   WritingMode wm = f->GetWritingMode();
-  const auto positionProperty = f->StyleDisplay()->mPosition;
+  const auto anchorPosResolutionParams = AnchorPosResolutionParams::From(f);
   if (wm.IsVertical() ? aCBHeightChanged : aCBWidthChanged) {
     
     
@@ -316,11 +316,11 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     if (nsStylePosition::ISizeDependsOnContainer(
-            pos->ISize(wm, positionProperty)) ||
+            pos->ISize(wm, anchorPosResolutionParams.mPosition)) ||
         nsStylePosition::MinISizeDependsOnContainer(
-            pos->MinISize(wm, positionProperty)) ||
+            pos->MinISize(wm, anchorPosResolutionParams.mPosition)) ||
         nsStylePosition::MaxISizeDependsOnContainer(
-            pos->MaxISize(wm, positionProperty)) ||
+            pos->MaxISize(wm, anchorPosResolutionParams.mPosition)) ||
         !IsFixedPaddingSize(padding->mPadding.GetIStart(wm)) ||
         !IsFixedPaddingSize(padding->mPadding.GetIEnd(wm))) {
       return true;
@@ -329,10 +329,10 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     
-    if (!IsFixedMarginSize(
-            margin->GetMargin(LogicalSide::IStart, wm, positionProperty)) ||
-        !IsFixedMarginSize(
-            margin->GetMargin(LogicalSide::IEnd, wm, positionProperty))) {
+    if (!IsFixedMarginSize(margin->GetMargin(
+            LogicalSide::IStart, wm, anchorPosResolutionParams.mPosition)) ||
+        !IsFixedMarginSize(margin->GetMargin(
+            LogicalSide::IEnd, wm, anchorPosResolutionParams.mPosition))) {
       return true;
     }
   }
@@ -346,31 +346,32 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     
-    const auto bSize = pos->BSize(wm, positionProperty);
-    const auto anchorResolutionParams =
-        AnchorPosOffsetResolutionParams::UseCBFrameSize(f, positionProperty);
+    const auto bSize = pos->BSize(wm, anchorPosResolutionParams.mPosition);
+    const auto anchorOffsetResolutionParams =
+        AnchorPosOffsetResolutionParams::UseCBFrameSize(
+            anchorPosResolutionParams);
     if ((nsStylePosition::BSizeDependsOnContainer(bSize) &&
          !(bSize->IsAuto() &&
            pos->GetAnchorResolvedInset(LogicalSide::BEnd, wm,
-                                       anchorResolutionParams)
+                                       anchorOffsetResolutionParams)
                ->IsAuto() &&
            !pos->GetAnchorResolvedInset(LogicalSide::BStart, wm,
-                                        anchorResolutionParams)
+                                        anchorOffsetResolutionParams)
                 ->IsAuto())) ||
         nsStylePosition::MinBSizeDependsOnContainer(
-            pos->MinBSize(wm, positionProperty)) ||
+            pos->MinBSize(wm, anchorPosResolutionParams.mPosition)) ||
         nsStylePosition::MaxBSizeDependsOnContainer(
-            pos->MaxBSize(wm, positionProperty)) ||
+            pos->MaxBSize(wm, anchorPosResolutionParams.mPosition)) ||
         !IsFixedPaddingSize(padding->mPadding.GetBStart(wm)) ||
         !IsFixedPaddingSize(padding->mPadding.GetBEnd(wm))) {
       return true;
     }
 
     
-    if (!IsFixedMarginSize(
-            margin->GetMargin(LogicalSide::BStart, wm, positionProperty)) ||
-        !IsFixedMarginSize(
-            margin->GetMargin(LogicalSide::BEnd, wm, positionProperty))) {
+    if (!IsFixedMarginSize(margin->GetMargin(
+            LogicalSide::BStart, wm, anchorPosResolutionParams.mPosition)) ||
+        !IsFixedMarginSize(margin->GetMargin(
+            LogicalSide::BEnd, wm, anchorPosResolutionParams.mPosition))) {
       return true;
     }
   }
@@ -382,10 +383,11 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   
   
   if (aCBWidthChanged) {
-    const auto anchorResolutionParams =
-        AnchorPosOffsetResolutionParams::UseCBFrameSize(f, positionProperty);
-    if (!IsFixedOffset(
-            pos->GetAnchorResolvedInset(eSideLeft, anchorResolutionParams))) {
+    const auto anchorOffsetResolutionParams =
+        AnchorPosOffsetResolutionParams::UseCBFrameSize(
+            anchorPosResolutionParams);
+    if (!IsFixedOffset(pos->GetAnchorResolvedInset(
+            eSideLeft, anchorOffsetResolutionParams))) {
       return true;
     }
     
@@ -397,21 +399,22 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     if ((wm.GetInlineDir() == WritingMode::InlineDir::RTL ||
          wm.GetBlockDir() == WritingMode::BlockDir::RL) &&
-        !pos->GetAnchorResolvedInset(eSideRight, anchorResolutionParams)
+        !pos->GetAnchorResolvedInset(eSideRight, anchorOffsetResolutionParams)
              ->IsAuto()) {
       return true;
     }
   }
   if (aCBHeightChanged) {
-    const auto anchorResolutionParams =
-        AnchorPosOffsetResolutionParams::UseCBFrameSize(f, positionProperty);
-    if (!IsFixedOffset(
-            pos->GetAnchorResolvedInset(eSideTop, anchorResolutionParams))) {
+    const auto anchorOffsetResolutionParams =
+        AnchorPosOffsetResolutionParams::UseCBFrameSize(
+            anchorPosResolutionParams);
+    if (!IsFixedOffset(pos->GetAnchorResolvedInset(
+            eSideTop, anchorOffsetResolutionParams))) {
       return true;
     }
     
     if (wm.GetInlineDir() == WritingMode::InlineDir::BTT &&
-        !pos->GetAnchorResolvedInset(eSideBottom, anchorResolutionParams)
+        !pos->GetAnchorResolvedInset(eSideBottom, anchorOffsetResolutionParams)
              ->IsAuto()) {
       return true;
     }
@@ -957,10 +960,9 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     
     const auto* stylePos = aKidFrame->StylePosition();
-    auto positionProperty = aKidFrame->StyleDisplay()->mPosition;
     const auto anchorResolutionParams =
-        AnchorPosOffsetResolutionParams::UseCBFrameSize(aKidFrame,
-                                                        positionProperty);
+        AnchorPosOffsetResolutionParams::UseCBFrameSize(
+            AnchorPosResolutionParams::From(aKidFrame));
     const bool iInsetAuto =
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
