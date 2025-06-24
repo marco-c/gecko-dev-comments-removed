@@ -157,6 +157,24 @@
 
 
 
+                disable_simulation: function (params) {
+                    return window.test_driver_internal.bidi.bluetooth.disable_simulation(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -184,6 +202,63 @@
                 simulate_preconnected_peripheral: function(params) {
                     return window.test_driver_internal.bidi.bluetooth
                         .simulate_preconnected_peripheral(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_gatt_connection_response: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_gatt_connection_response(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_gatt_disconnection: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_gatt_disconnection(params);
                 },
                 
 
@@ -246,6 +321,73 @@
                             const remove_handler =
                                 window.test_driver_internal.bidi.bluetooth
                                     .request_device_prompt_updated.on(event => {
+                                    resolve(event);
+                                    remove_handler();
+                                });
+                        });
+                    },
+                },
+                
+
+
+
+                gatt_connection_attempted: {
+                    
+
+
+
+
+
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    subscribe: async function(params = {}) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .gatt_connection_attempted.subscribe(params);
+                    },
+                    
+
+
+
+
+
+
+
+
+                    on: function(callback) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .gatt_connection_attempted.on(callback);
+                    },
+                    
+
+
+
+
+
+
+                    once: function() {
+                        assertBidiIsEnabled();
+                        return new Promise(resolve => {
+                            const remove_handler =
+                                window.test_driver_internal.bidi.bluetooth
+                                    .gatt_connection_attempted.on(event => {
                                     resolve(event);
                                     remove_handler();
                                 });
@@ -1612,6 +1754,10 @@
                     throw new Error(
                         "bidi.bluetooth.simulate_adapter is not implemented by testdriver-vendor.js");
                 },
+                disable_simulation: function () {
+                    throw new Error(
+                        "bidi.bluetooth.disable_simulation is not implemented by testdriver-vendor.js");
+                },
                 simulate_preconnected_peripheral: function() {
                     throw new Error(
                         'bidi.bluetooth.simulate_preconnected_peripheral is not implemented by testdriver-vendor.js');
@@ -1624,6 +1770,16 @@
                     on() {
                         throw new Error(
                             'bidi.bluetooth.request_device_prompt_updated.on is not implemented by testdriver-vendor.js');
+                    }
+                },
+                gatt_connection_attempted: {
+                    async subscribe() {
+                        throw new Error(
+                            'bidi.bluetooth.gatt_connection_attempted.subscribe is not implemented by testdriver-vendor.js');
+                    },
+                    on() {
+                        throw new Error(
+                            'bidi.bluetooth.gatt_connection_attempted.on is not implemented by testdriver-vendor.js');
                     }
                 }
             },

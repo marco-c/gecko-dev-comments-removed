@@ -1,5 +1,8 @@
 'use strict';
 
+const DEVICE_NAME = 'LE Device';
+const DEVICE_ADDRESS = '09:09:09:09:09:09';
+
 
 
 
@@ -49,7 +52,7 @@ async function callWithTrustedClick(callback) {
 function selectFirstDeviceOnDevicePromptUpdated() {
   return test_driver.bidi.bluetooth.request_device_prompt_updated.once().then(
       (promptEvent) => {
-        assert_greater_than_equal(promptEvent.devices.length, 0);
+        assert_greater_than(promptEvent.devices.length, 0);
         return test_driver.bidi.bluetooth.handle_request_device_prompt({
           prompt: promptEvent.prompt,
           accept: true,
@@ -63,8 +66,55 @@ function selectFirstDeviceOnDevicePromptUpdated() {
 
 
 
+
+
+async function createGattConnection(device) {
+  const simulationProcessedPromise =
+      test_driver.bidi.bluetooth.gatt_connection_attempted.once().then(
+          (event) => {
+            return test_driver.bidi.bluetooth.simulate_gatt_connection_response({
+                address: event.address,
+                code: 0x0,
+            });
+          });
+  const connectPromise = device.gatt.connect();
+  await Promise.all([connectPromise, simulationProcessedPromise]);
+}
+
+
+
+
+
+
 function requestDeviceWithTrustedClick(...args) {
   return callWithTrustedClick(
       () => navigator.bluetooth.requestDevice(...args));
 }
 
+
+
+
+
+
+
+
+
+function bluetooth_test(test_function, name) {
+  return promise_test(async (t) => {
+    assert_implements(navigator.bluetooth, 'missing navigator.bluetooth');
+    await test_driver.bidi.bluetooth.simulate_adapter({
+        state: "powered-on"
+    });
+    await test_driver.bidi.bluetooth.simulate_preconnected_peripheral({
+        address: DEVICE_ADDRESS,
+        name: DEVICE_NAME,
+        manufacturerData: [],
+        knownServiceUuids: []
+    });
+    try {
+      await test_function(t);
+    } finally {
+      await test_driver.bidi.bluetooth.disable_simulation();
+    }
+  }, name);
+}
