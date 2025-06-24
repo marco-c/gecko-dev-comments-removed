@@ -11,13 +11,39 @@ releases.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from sentry_sdk._types import Event, Hint
+    
+    from sentry_sdk._types import (
+        Breadcrumb,
+        BreadcrumbHint,
+        Event,
+        EventDataCategory,
+        Hint,
+        Log,
+        MonitorConfig,
+        SamplingContext,
+    )
 else:
     from typing import Any
 
     
     
+    Breadcrumb = Any
+    BreadcrumbHint = Any
     Event = Any
+    EventDataCategory = Any
     Hint = Any
+    Log = Any
+    MonitorConfig = Any
+    SamplingContext = Any
 
-__all__ = ("Event", "Hint")
+
+__all__ = (
+    "Breadcrumb",
+    "BreadcrumbHint",
+    "Event",
+    "EventDataCategory",
+    "Hint",
+    "Log",
+    "MonitorConfig",
+    "SamplingContext",
+)

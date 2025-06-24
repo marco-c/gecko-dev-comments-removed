@@ -2,10 +2,10 @@ import io
 import json
 import mimetypes
 
-from sentry_sdk._compat import text_type, PY2
-from sentry_sdk._types import TYPE_CHECKING
 from sentry_sdk.session import Session
 from sentry_sdk.utils import json_dumps, capture_internal_exceptions
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any
@@ -21,12 +21,18 @@ if TYPE_CHECKING:
 def parse_json(data):
     
     
-    if not PY2 and isinstance(data, bytes):
+    if isinstance(data, bytes):
         data = data.decode("utf-8", "replace")
     return json.loads(data)
 
 
-class Envelope(object):
+class Envelope:
+    """
+    Represents a Sentry Envelope. The calling code is responsible for adhering to the constraints
+    documented in the Sentry docs: https://develop.sentry.dev/sdk/envelopes/#data-model. In particular,
+    each envelope may have at most one Item with type "event" or "transaction" (but not both).
+    """
+
     def __init__(
         self,
         headers=None,  
@@ -67,6 +73,18 @@ class Envelope(object):
     ):
         
         self.add_item(Item(payload=PayloadRef(json=profile), type="profile"))
+
+    def add_profile_chunk(
+        self, profile_chunk  
+    ):
+        
+        self.add_item(
+            Item(
+                payload=PayloadRef(json=profile_chunk),
+                type="profile_chunk",
+                headers={"platform": profile_chunk.get("platform", "python")},
+            )
+        )
 
     def add_checkin(
         self, checkin  
@@ -155,7 +173,7 @@ class Envelope(object):
         return "<Envelope headers=%r items=%r>" % (self.headers, self.items)
 
 
-class PayloadRef(object):
+class PayloadRef:
     def __init__(
         self,
         bytes=None,  
@@ -176,9 +194,7 @@ class PayloadRef(object):
                         self.bytes = f.read()
             elif self.json is not None:
                 self.bytes = json_dumps(self.json)
-            else:
-                self.bytes = b""
-        return self.bytes
+        return self.bytes or b""
 
     @property
     def inferred_content_type(self):
@@ -199,7 +215,7 @@ class PayloadRef(object):
         return "<Payload %r>" % (self.inferred_content_type,)
 
 
-class Item(object):
+class Item:
     def __init__(
         self,
         payload,  
@@ -215,7 +231,7 @@ class Item(object):
         self.headers = headers
         if isinstance(payload, bytes):
             payload = PayloadRef(bytes=payload)
-        elif isinstance(payload, text_type):
+        elif isinstance(payload, str):
             payload = PayloadRef(bytes=payload.encode("utf-8"))
         else:
             payload = payload
@@ -248,7 +264,7 @@ class Item(object):
     def data_category(self):
         
         ty = self.headers.get("type")
-        if ty == "session":
+        if ty == "session" or ty == "sessions":
             return "session"
         elif ty == "attachment":
             return "attachment"
@@ -256,10 +272,14 @@ class Item(object):
             return "transaction"
         elif ty == "event":
             return "error"
+        elif ty == "log":
+            return "log"
         elif ty == "client_report":
             return "internal"
         elif ty == "profile":
             return "profile"
+        elif ty == "profile_chunk":
+            return "profile_chunk"
         elif ty == "statsd":
             return "metric_bucket"
         elif ty == "check_in":

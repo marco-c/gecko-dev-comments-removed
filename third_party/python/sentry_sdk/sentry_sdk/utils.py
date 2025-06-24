@@ -11,31 +11,11 @@ import sys
 import threading
 import time
 from collections import namedtuple
-from copy import copy
+from datetime import datetime, timezone
 from decimal import Decimal
+from functools import partial, partialmethod, wraps
 from numbers import Real
-
-try:
-    
-    from urllib.parse import parse_qs
-    from urllib.parse import unquote
-    from urllib.parse import urlencode
-    from urllib.parse import urlsplit
-    from urllib.parse import urlunsplit
-except ImportError:
-    
-    from cgi import parse_qs  
-    from urllib import unquote  
-    from urllib import urlencode  
-    from urlparse import urlsplit  
-    from urlparse import urlunsplit  
-
-try:
-    
-    FileNotFoundError
-except NameError:
-    
-    FileNotFoundError = IOError
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 
 try:
     
@@ -44,38 +24,45 @@ except ImportError:
     
     BaseExceptionGroup = None  
 
-from datetime import datetime
-from functools import partial
-
-try:
-    from functools import partialmethod
-
-    _PARTIALMETHOD_AVAILABLE = True
-except ImportError:
-    _PARTIALMETHOD_AVAILABLE = False
-
 import sentry_sdk
-from sentry_sdk._compat import PY2, PY33, PY37, implements_str, text_type, urlparse
-from sentry_sdk._types import TYPE_CHECKING
-from sentry_sdk.consts import DEFAULT_MAX_VALUE_LENGTH
+from sentry_sdk._compat import PY37
+from sentry_sdk.consts import (
+    DEFAULT_ADD_FULL_STACK,
+    DEFAULT_MAX_STACK_FRAMES,
+    DEFAULT_MAX_VALUE_LENGTH,
+    EndpointType,
+)
+from sentry_sdk._types import Annotated, AnnotatedValue, SENSITIVE_DATA_SUBSTITUTE
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from types import FrameType, TracebackType
     from typing import (
         Any,
         Callable,
+        cast,
         ContextManager,
         Dict,
         Iterator,
         List,
+        NoReturn,
         Optional,
+        overload,
+        ParamSpec,
         Set,
         Tuple,
         Type,
+        TypeVar,
         Union,
     )
 
-    from sentry_sdk._types import EndpointType, Event, ExcInfo
+    from gevent.hub import Hub
+
+    from sentry_sdk._types import Event, ExcInfo
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 
 epoch = datetime(1970, 1, 1)
@@ -87,19 +74,39 @@ _installed_modules = None
 
 BASE64_ALPHABET = re.compile(r"^[a-zA-Z0-9/+=]*$")
 
-SENSITIVE_DATA_SUBSTITUTE = "[Filtered]"
+FALSY_ENV_VALUES = frozenset(("false", "f", "n", "no", "off", "0"))
+TRUTHY_ENV_VALUES = frozenset(("true", "t", "y", "yes", "on", "1"))
+
+MAX_STACK_FRAMES = 2000
+"""Maximum number of stack frames to send to Sentry.
+
+If we have more than this number of stack frames, we will stop processing
+the stacktrace to avoid getting stuck in a long-lasting loop. This value
+exceeds the default sys.getrecursionlimit() of 1000, so users will only
+be affected by this limit if they have a custom recursion limit.
+"""
+
+
+def env_to_bool(value, *, strict=False):
+    
+    """Casts an ENV variable value to boolean using the constants defined above.
+    In strict mode, it may return None if the value doesn't match any of the predefined values.
+    """
+    normalized = str(value).lower() if value is not None else None
+
+    if normalized in FALSY_ENV_VALUES:
+        return False
+
+    if normalized in TRUTHY_ENV_VALUES:
+        return True
+
+    return None if strict else bool(value)
 
 
 def json_dumps(data):
     
     """Serialize data into a compact JSON representation encoded as UTF-8."""
     return json.dumps(data, allow_nan=False, separators=(",", ":")).encode("utf-8")
-
-
-def _get_debug_hub():
-    
-    
-    pass
 
 
 def get_git_revision():
@@ -169,6 +176,8 @@ def get_sdk_name(installed_integrations):
         "quart",
         "sanic",
         "starlette",
+        "litestar",
+        "starlite",
         "chalice",
         "serverless",
         "pyramid",
@@ -188,7 +197,7 @@ def get_sdk_name(installed_integrations):
     return "sentry.python"
 
 
-class CaptureInternalException(object):
+class CaptureInternalException:
     __slots__ = ()
 
     def __enter__(self):
@@ -213,9 +222,14 @@ def capture_internal_exceptions():
 
 def capture_internal_exception(exc_info):
     
-    hub = _get_debug_hub()
-    if hub is not None:
-        hub._capture_internal_exception(exc_info)
+    """
+    Capture an exception that is likely caused by a bug in the SDK
+    itself.
+
+    These exceptions do not end up in Sentry and are just logged instead.
+    """
+    if sentry_sdk.get_client().is_active():
+        logger.error("Internal error in sentry_sdk", exc_info=exc_info)
 
 
 def to_timestamp(value):
@@ -225,7 +239,40 @@ def to_timestamp(value):
 
 def format_timestamp(value):
     
-    return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    """Formats a timestamp in RFC 3339 format.
+
+    Any datetime objects with a non-UTC timezone are converted to UTC, so that all timestamps are formatted in UTC.
+    """
+    utctime = value.astimezone(timezone.utc)
+
+    
+    
+    return utctime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+ISO_TZ_SEPARATORS = frozenset(("+", "-"))
+
+
+def datetime_from_isoformat(value):
+    
+    try:
+        result = datetime.fromisoformat(value)
+    except (AttributeError, ValueError):
+        
+        timestamp_format = (
+            "%Y-%m-%dT%H:%M:%S.%f" if "." in value else "%Y-%m-%dT%H:%M:%S"
+        )
+        if value.endswith("Z"):
+            value = value[:-1] + "+0000"
+
+        if value[-6] in ISO_TZ_SEPARATORS:
+            timestamp_format += "%z"
+            value = value[:-3] + value[-2:]
+        elif value[-5] in ISO_TZ_SEPARATORS:
+            timestamp_format += "%z"
+
+        result = datetime.strptime(value, timestamp_format)
+    return result.astimezone(timezone.utc)
 
 
 def event_hint_with_exc_info(exc_info=None):
@@ -244,8 +291,7 @@ class BadDsn(ValueError):
     """Raised on invalid DSNs."""
 
 
-@implements_str
-class Dsn(object):
+class Dsn:
     """Represents a DSN."""
 
     def __init__(self, value):
@@ -253,7 +299,7 @@ class Dsn(object):
         if isinstance(value, Dsn):
             self.__dict__ = dict(value.__dict__)
             return
-        parts = urlparse.urlsplit(text_type(value))
+        parts = urlsplit(str(value))
 
         if parts.scheme not in ("http", "https"):
             raise BadDsn("Unsupported scheme %r" % parts.scheme)
@@ -278,7 +324,7 @@ class Dsn(object):
         path = parts.path.rsplit("/", 1)
 
         try:
-            self.project_id = text_type(int(path.pop()))
+            self.project_id = str(int(path.pop()))
         except (ValueError, TypeError):
             raise BadDsn("Invalid project in DSN (%r)" % (parts.path or "")[1:])
 
@@ -318,7 +364,7 @@ class Dsn(object):
         )
 
 
-class Auth(object):
+class Auth:
     """Helper object that represents the auth info."""
 
     def __init__(
@@ -342,17 +388,8 @@ class Auth(object):
         self.version = version
         self.client = client
 
-    @property
-    def store_api_url(self):
-        
-        """Returns the API url for storing events.
-
-        Deprecated: use get_api_url instead.
-        """
-        return self.get_api_url(type="store")
-
     def get_api_url(
-        self, type="store"  
+        self, type=EndpointType.ENVELOPE  
     ):
         
         """Returns the API url for storing events."""
@@ -361,7 +398,7 @@ class Auth(object):
             self.host,
             self.path,
             self.project_id,
-            type,
+            type.value,
         )
 
     def to_header(self):
@@ -373,84 +410,6 @@ class Auth(object):
         if self.secret_key is not None:
             rv.append(("sentry_secret", self.secret_key))
         return "Sentry " + ", ".join("%s=%s" % (key, value) for key, value in rv)
-
-
-class AnnotatedValue(object):
-    """
-    Meta information for a data field in the event payload.
-    This is to tell Relay that we have tampered with the fields value.
-    See:
-    https://github.com/getsentry/relay/blob/be12cd49a0f06ea932ed9b9f93a655de5d6ad6d1/relay-general/src/types/meta.rs#L407-L423
-    """
-
-    __slots__ = ("value", "metadata")
-
-    def __init__(self, value, metadata):
-        
-        self.value = value
-        self.metadata = metadata
-
-    def __eq__(self, other):
-        
-        if not isinstance(other, AnnotatedValue):
-            return False
-
-        return self.value == other.value and self.metadata == other.metadata
-
-    @classmethod
-    def removed_because_raw_data(cls):
-        
-        """The value was removed because it could not be parsed. This is done for request body values that are not json nor a form."""
-        return AnnotatedValue(
-            value="",
-            metadata={
-                "rem": [  
-                    [
-                        "!raw",  
-                        "x",  
-                    ]
-                ]
-            },
-        )
-
-    @classmethod
-    def removed_because_over_size_limit(cls):
-        
-        """The actual value was removed because the size of the field exceeded the configured maximum size (specified with the max_request_body_size sdk option)"""
-        return AnnotatedValue(
-            value="",
-            metadata={
-                "rem": [  
-                    [
-                        "!config",  
-                        "x",  
-                    ]
-                ]
-            },
-        )
-
-    @classmethod
-    def substituted_because_contains_sensitive_data(cls):
-        
-        """The actual value was removed because it contained sensitive information."""
-        return AnnotatedValue(
-            value=SENSITIVE_DATA_SUBSTITUTE,
-            metadata={
-                "rem": [  
-                    [
-                        "!config",  
-                        "s",  
-                    ]
-                ]
-            },
-        )
-
-
-if TYPE_CHECKING:
-    from typing import TypeVar
-
-    T = TypeVar("T")
-    Annotated = Union[AnnotatedValue, T]
 
 
 def get_type_name(cls):
@@ -558,57 +517,30 @@ def get_source_context(
         loader = frame.f_globals["__loader__"]
     except Exception:
         loader = None
-    lineno = tb_lineno - 1
-    if lineno is not None and abs_path:
+
+    if tb_lineno is not None and abs_path:
+        lineno = tb_lineno - 1
         return get_lines_from_file(
             abs_path, lineno, max_value_length, loader=loader, module=module
         )
+
     return [], None, []
 
 
 def safe_str(value):
     
     try:
-        return text_type(value)
+        return str(value)
     except Exception:
         return safe_repr(value)
 
 
-if PY2:
-
-    def safe_repr(value):
-        
-        try:
-            rv = repr(value).decode("utf-8", "replace")
-
-            
-            
-            
-            
-            
-            
-            
-            
-            try:
-                
-                
-                return rv.encode("latin1").decode("unicode-escape")
-            except Exception:
-                
-                
-                return rv
-        except Exception:
-            
-            return "<broken repr>"
-
-else:
-
-    def safe_repr(value):
-        
-        try:
-            return repr(value)
-        except Exception:
-            return "<broken repr>"
+def safe_repr(value):
+    
+    try:
+        return repr(value)
+    except Exception:
+        return "<broken repr>"
 
 
 def filename_for_module(module, abs_path):
@@ -641,6 +573,7 @@ def serialize_frame(
     include_local_variables=True,
     include_source_context=True,
     max_value_length=None,
+    custom_repr=None,
 ):
     
     f_code = getattr(frame, "f_code", None)
@@ -672,7 +605,11 @@ def serialize_frame(
         )
 
     if include_local_variables:
-        rv["vars"] = copy(frame.f_locals)
+        from sentry_sdk.serializer import serialize
+
+        rv["vars"] = serialize(
+            dict(frame.f_locals), is_vars=True, custom_repr=custom_repr
+        )
 
     return rv
 
@@ -711,11 +648,21 @@ def get_errno(exc_value):
 
 def get_error_message(exc_value):
     
-    return (
+    message = (
         getattr(exc_value, "message", "")
         or getattr(exc_value, "detail", "")
         or safe_str(exc_value)
-    )
+    )  
+
+    
+    
+    
+    
+    notes = getattr(exc_value, "__notes__", None)  
+    if isinstance(notes, list) and len(notes) > 0:
+        message += "\n" + "\n".join(note for note in notes if isinstance(note, str))
+
+    return message
 
 
 def single_exception_from_error_tuple(
@@ -727,6 +674,7 @@ def single_exception_from_error_tuple(
     exception_id=None,  
     parent_id=None,  
     source=None,  
+    full_stack=None,  
 ):
     
     """
@@ -777,10 +725,12 @@ def single_exception_from_error_tuple(
         include_local_variables = True
         include_source_context = True
         max_value_length = DEFAULT_MAX_VALUE_LENGTH  
+        custom_repr = None
     else:
         include_local_variables = client_options["include_local_variables"]
         include_source_context = client_options["include_source_context"]
         max_value_length = client_options["max_value_length"]
+        custom_repr = client_options.get("custom_repr")
 
     frames = [
         serialize_frame(
@@ -789,12 +739,31 @@ def single_exception_from_error_tuple(
             include_local_variables=include_local_variables,
             include_source_context=include_source_context,
             max_value_length=max_value_length,
+            custom_repr=custom_repr,
         )
-        for tb in iter_stacks(tb)
-    ]
+        
+        
+        for tb, _ in zip(iter_stacks(tb), range(MAX_STACK_FRAMES + 1))
+    ]  
 
-    if frames:
-        exception_value["stacktrace"] = {"frames": frames}
+    if len(frames) > MAX_STACK_FRAMES:
+        
+        
+        
+        
+        
+        
+        exception_value["stacktrace"] = AnnotatedValue.removed_because_over_size_limit(
+            value=None
+        )
+
+    elif frames:
+        if not full_stack:
+            new_frames = frames
+        else:
+            new_frames = merge_stack_frames(frames, full_stack, client_options)
+
+        exception_value["stacktrace"] = {"frames": new_frames}
 
     return exception_value
 
@@ -849,6 +818,7 @@ def exceptions_from_error(
     exception_id=0,  
     parent_id=0,  
     source=None,  
+    full_stack=None,  
 ):
     
     """
@@ -868,6 +838,7 @@ def exceptions_from_error(
         exception_id=exception_id,
         parent_id=parent_id,
         source=source,
+        full_stack=full_stack,
     )
     exceptions = [parent]
 
@@ -893,6 +864,7 @@ def exceptions_from_error(
                 mechanism=mechanism,
                 exception_id=exception_id,
                 source="__cause__",
+                full_stack=full_stack,
             )
             exceptions.extend(child_exceptions)
 
@@ -914,6 +886,7 @@ def exceptions_from_error(
                 mechanism=mechanism,
                 exception_id=exception_id,
                 source="__context__",
+                full_stack=full_stack,
             )
             exceptions.extend(child_exceptions)
 
@@ -930,6 +903,7 @@ def exceptions_from_error(
                 exception_id=exception_id,
                 parent_id=parent_id,
                 source="exceptions[%s]" % idx,
+                full_stack=full_stack,
             )
             exceptions.extend(child_exceptions)
 
@@ -940,6 +914,7 @@ def exceptions_from_error_tuple(
     exc_info,  
     client_options=None,  
     mechanism=None,  
+    full_stack=None,  
 ):
     
     exc_type, exc_value, tb = exc_info
@@ -957,6 +932,7 @@ def exceptions_from_error_tuple(
             mechanism=mechanism,
             exception_id=0,
             parent_id=0,
+            full_stack=full_stack,
         )
 
     else:
@@ -964,7 +940,12 @@ def exceptions_from_error_tuple(
         for exc_type, exc_value, tb in walk_exception_chain(exc_info):
             exceptions.append(
                 single_exception_from_error_tuple(
-                    exc_type, exc_value, tb, client_options, mechanism
+                    exc_type=exc_type,
+                    exc_value=exc_value,
+                    tb=tb,
+                    client_options=client_options,
+                    mechanism=mechanism,
+                    full_stack=full_stack,
                 )
             )
 
@@ -976,7 +957,7 @@ def exceptions_from_error_tuple(
 def to_string(value):
     
     try:
-        return text_type(value)
+        return str(value)
     except UnicodeDecodeError:
         return repr(value)[1:-1]
 
@@ -991,13 +972,16 @@ def iter_event_stacktraces(event):
                 yield thread["stacktrace"]
     if "exception" in event:
         for exception in event["exception"].get("values") or ():
-            if "stacktrace" in exception:
+            if isinstance(exception, dict) and "stacktrace" in exception:
                 yield exception["stacktrace"]
 
 
 def iter_event_frames(event):
     
     for stacktrace in iter_event_stacktraces(event):
+        if isinstance(stacktrace, AnnotatedValue):
+            stacktrace = stacktrace.value or {}
+
         for frame in stacktrace.get("frames") or ():
             yield frame
 
@@ -1005,6 +989,9 @@ def iter_event_frames(event):
 def handle_in_app(event, in_app_exclude=None, in_app_include=None, project_root=None):
     
     for stacktrace in iter_event_stacktraces(event):
+        if isinstance(stacktrace, AnnotatedValue):
+            stacktrace = stacktrace.value or {}
+
         set_in_app_in_frames(
             stacktrace.get("frames"),
             in_app_exclude=in_app_exclude,
@@ -1073,7 +1060,54 @@ def exc_info_from_error(error):
     else:
         raise ValueError("Expected Exception object to report, got %s!" % type(error))
 
-    return exc_type, exc_value, tb
+    exc_info = (exc_type, exc_value, tb)
+
+    if TYPE_CHECKING:
+        
+        
+        exc_info = cast(ExcInfo, exc_info)
+
+    return exc_info
+
+
+def merge_stack_frames(frames, full_stack, client_options):
+    
+    """
+    Add the missing frames from full_stack to frames and return the merged list.
+    """
+    frame_ids = {
+        (
+            frame["abs_path"],
+            frame["context_line"],
+            frame["lineno"],
+            frame["function"],
+        )
+        for frame in frames
+    }
+
+    new_frames = [
+        stackframe
+        for stackframe in full_stack
+        if (
+            stackframe["abs_path"],
+            stackframe["context_line"],
+            stackframe["lineno"],
+            stackframe["function"],
+        )
+        not in frame_ids
+    ]
+    new_frames.extend(frames)
+
+    
+    max_stack_frames = (
+        client_options.get("max_stack_frames", DEFAULT_MAX_STACK_FRAMES)
+        if client_options
+        else None
+    )
+    if max_stack_frames is not None:
+        new_frames = new_frames[len(new_frames) - max_stack_frames :]
+
+    return new_frames
 
 
 def event_from_exception(
@@ -1084,12 +1118,21 @@ def event_from_exception(
     
     exc_info = exc_info_from_error(exc_info)
     hint = event_hint_with_exc_info(exc_info)
+
+    if client_options and client_options.get("add_full_stack", DEFAULT_ADD_FULL_STACK):
+        full_stack = current_stacktrace(
+            include_local_variables=client_options["include_local_variables"],
+            max_value_length=client_options["max_value_length"],
+        )["frames"]
+    else:
+        full_stack = None
+
     return (
         {
             "level": "error",
             "exception": {
                 "values": exceptions_from_error_tuple(
-                    exc_info, client_options, mechanism
+                    exc_info, client_options, mechanism, full_stack
                 )
             },
         },
@@ -1115,6 +1158,9 @@ def _module_in_list(name, items):
 def _is_external_source(abs_path):
     
     
+    if abs_path is None:
+        return False
+
     external_source = (
         re.search(r"[\\/](?:dist|site)-packages[\\/]", abs_path) is not None
     )
@@ -1123,7 +1169,7 @@ def _is_external_source(abs_path):
 
 def _is_in_project_root(abs_path, project_root):
     
-    if project_root is None:
+    if abs_path is None or project_root is None:
         return False
 
     
@@ -1138,28 +1184,13 @@ def _truncate_by_bytes(string, max_bytes):
     """
     Truncate a UTF-8-encodable string to the last full codepoint so that it fits in max_bytes.
     """
-    
-    
-    if isinstance(string, bytes):
-        truncated = string[: max_bytes - 3]
-    else:
-        truncated = string.encode("utf-8")[: max_bytes - 3].decode(
-            "utf-8", errors="ignore"
-        )
+    truncated = string.encode("utf-8")[: max_bytes - 3].decode("utf-8", errors="ignore")
 
     return truncated + "..."
 
 
 def _get_size_in_bytes(value):
     
-    
-    
-    if not isinstance(value, (bytes, text_type)):
-        return None
-
-    if isinstance(value, bytes):
-        return len(value)
-
     try:
         return len(value.encode("utf-8"))
     except (UnicodeEncodeError, UnicodeDecodeError):
@@ -1175,9 +1206,7 @@ def strip_string(value, max_length=None):
         max_length = DEFAULT_MAX_VALUE_LENGTH
 
     byte_size = _get_size_in_bytes(value)
-    text_size = None
-    if isinstance(value, text_type):
-        text_size = len(value)
+    text_size = len(value)
 
     if byte_size is not None and byte_size > max_length:
         
@@ -1255,8 +1284,8 @@ def _is_contextvars_broken():
     Returns whether gevent/eventlet have patched the stdlib in a way where thread locals are now more "correct" than contextvars.
     """
     try:
-        import gevent  
-        from gevent.monkey import is_object_patched  
+        import gevent
+        from gevent.monkey import is_object_patched
 
         
         version_tuple = tuple(
@@ -1282,7 +1311,7 @@ def _is_contextvars_broken():
         pass
 
     try:
-        import greenlet  
+        import greenlet
         from eventlet.patcher import is_monkey_patched  
 
         greenlet_version = parse_version(greenlet.__version__)
@@ -1303,7 +1332,7 @@ def _is_contextvars_broken():
 
 def _make_threadlocal_contextvars(local):
     
-    class ContextVar(object):
+    class ContextVar:
         
 
         def __init__(self, name, default=None):
@@ -1328,23 +1357,10 @@ def _make_threadlocal_contextvars(local):
         def reset(self, token):
             
             self._local.value = getattr(self._original_local, token)
-            del self._original_local[token]
+            
+            del self._original_local.__dict__[token]
 
     return ContextVar
-
-
-def _make_noop_copy_context():
-    
-    class NoOpContext:
-        def run(self, func, *args, **kwargs):
-            
-            return func(*args, **kwargs)
-
-    def copy_context():
-        
-        return NoOpContext()
-
-    return copy_context
 
 
 def _get_contextvars():
@@ -1364,17 +1380,17 @@ def _get_contextvars():
             
             
             try:
-                from aiocontextvars import ContextVar, copy_context
+                from aiocontextvars import ContextVar
 
-                return True, ContextVar, copy_context
+                return True, ContextVar
             except ImportError:
                 pass
         else:
             
             try:
-                from contextvars import ContextVar, copy_context
+                from contextvars import ContextVar
 
-                return True, ContextVar, copy_context
+                return True, ContextVar
             except ImportError:
                 pass
 
@@ -1382,10 +1398,10 @@ def _get_contextvars():
 
     from threading import local
 
-    return False, _make_threadlocal_contextvars(local), _make_noop_copy_context()
+    return False, _make_threadlocal_contextvars(local)
 
 
-HAS_REAL_CONTEXTVARS, ContextVar, copy_context = _get_contextvars()
+HAS_REAL_CONTEXTVARS, ContextVar = _get_contextvars()
 
 CONTEXTVARS_ERROR_MESSAGE = """
 
@@ -1414,16 +1430,18 @@ def qualname_from_function(func):
 
     prefix, suffix = "", ""
 
-    if (
-        _PARTIALMETHOD_AVAILABLE
-        and hasattr(func, "_partialmethod")
-        and isinstance(func._partialmethod, partialmethod)
-    ):
-        prefix, suffix = "partialmethod(<function ", ">)"
-        func = func._partialmethod.func
-    elif isinstance(func, partial) and hasattr(func.func, "__name__"):
+    if isinstance(func, partial) and hasattr(func.func, "__name__"):
         prefix, suffix = "partial(<function ", ">)"
         func = func.func
+    else:
+        
+        
+        partial_method = getattr(func, "_partialmethod", None) or getattr(
+            func, "__partialmethod__", None
+        )
+        if isinstance(partial_method, partialmethod):
+            prefix, suffix = "partialmethod(<function ", ">)"
+            func = partial_method.func
 
     if hasattr(func, "__qualname__"):
         func_qualname = func.__qualname__
@@ -1432,7 +1450,7 @@ def qualname_from_function(func):
 
     
     if func_qualname is not None:
-        if hasattr(func, "__module__"):
+        if hasattr(func, "__module__") and isinstance(func.__module__, str):
             func_qualname = func.__module__ + "." + func_qualname
         func_qualname = prefix + func_qualname + suffix
 
@@ -1655,16 +1673,16 @@ def match_regex_list(item, regex_list=None, substring_matching=False):
     return False
 
 
-def is_sentry_url(hub, url):
+def is_sentry_url(client, url):
     
     """
     Determines whether the given URL matches the Sentry DSN.
     """
     return (
-        hub.client is not None
-        and hub.client.transport is not None
-        and hub.client.transport.parsed_dsn is not None
-        and hub.client.transport.parsed_dsn.netloc in url
+        client is not None
+        and client.transport is not None
+        and client.transport.parsed_dsn is not None
+        and client.transport.parsed_dsn.netloc in url
     )
 
 
@@ -1675,7 +1693,7 @@ def _generate_installed_modules():
 
         yielded = set()
         for dist in metadata.distributions():
-            name = dist.metadata["Name"]
+            name = dist.metadata.get("Name", None)  
             
             
             
@@ -1720,36 +1738,102 @@ def package_version(package):
     return parse_version(version)
 
 
+def reraise(tp, value, tb=None):
+    
+    assert value is not None
+    if value.__traceback__ is not tb:
+        raise value.with_traceback(tb)
+    raise value
+
+
+def _no_op(*_a, **_k):
+    
+    """No-op function for ensure_integration_enabled."""
+    pass
+
+
+if TYPE_CHECKING:
+
+    @overload
+    def ensure_integration_enabled(
+        integration,  
+        original_function,  
+    ):
+        
+        ...
+
+    @overload
+    def ensure_integration_enabled(
+        integration,  
+    ):
+        
+        ...
+
+
+def ensure_integration_enabled(
+    integration,  
+    original_function=_no_op,  
+):
+    
+    """
+    Ensures a given integration is enabled prior to calling a Sentry-patched function.
+
+    The function takes as its parameters the integration that must be enabled and the original
+    function that the SDK is patching. The function returns a function that takes the
+    decorated (Sentry-patched) function as its parameter, and returns a function that, when
+    called, checks whether the given integration is enabled. If the integration is enabled, the
+    function calls the decorated, Sentry-patched function. If the integration is not enabled,
+    the original function is called.
+
+    The function also takes care of preserving the original function's signature and docstring.
+
+    Example usage:
+
+    ```python
+    @ensure_integration_enabled(MyIntegration, my_function)
+    def patch_my_function():
+        with sentry_sdk.start_transaction(...):
+            return my_function()
+    ```
+    """
+    if TYPE_CHECKING:
+        
+        
+        original_function = cast(Callable[P, R], original_function)
+
+    def patcher(sentry_patched_function):
+        
+        def runner(*args: "P.args", **kwargs: "P.kwargs"):
+            
+            if sentry_sdk.get_client().get_integration(integration) is None:
+                return original_function(*args, **kwargs)
+
+            return sentry_patched_function(*args, **kwargs)
+
+        if original_function is _no_op:
+            return wraps(sentry_patched_function)(runner)
+
+        return wraps(original_function)(runner)
+
+    return patcher
+
+
 if PY37:
 
     def nanosecond_time():
         
         return time.perf_counter_ns()
 
-elif PY33:
+else:
 
     def nanosecond_time():
         
         return int(time.perf_counter() * 1e9)
 
-else:
 
-    def nanosecond_time():
-        
-        return int(time.time() * 1e9)
-
-
-if PY2:
-
-    def now():
-        
-        return time.time()
-
-else:
-
-    def now():
-        
-        return time.perf_counter()
+def now():
+    
+    return time.perf_counter()
 
 
 try:
@@ -1757,11 +1841,13 @@ try:
     from gevent.monkey import is_module_patched
 except ImportError:
 
-    def get_gevent_hub():
+    
+    
+    def get_gevent_hub():  
         
         return None
 
-    def is_module_patched(*args, **kwargs):
+    def is_module_patched(mod_name):
         
         
         return False
@@ -1821,3 +1907,29 @@ def get_current_thread_meta(thread=None):
 
     
     return None, None
+
+
+def should_be_treated_as_error(ty, value):
+    
+    if ty == SystemExit and hasattr(value, "code") and value.code in (0, None):
+        
+        return False
+
+    return True
+
+
+if TYPE_CHECKING:
+    T = TypeVar("T")
+
+
+def try_convert(convert_func, value):
+    
+    """
+    Attempt to convert from an unknown type to a specific type, using the
+    given function. Return None if the conversion fails, i.e. if the function
+    raises an exception.
+    """
+    try:
+        return convert_func(value)
+    except Exception:
+        return None

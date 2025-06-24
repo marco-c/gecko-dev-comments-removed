@@ -1,28 +1,27 @@
-from __future__ import absolute_import
-
+from contextlib import contextmanager
 import json
 from copy import deepcopy
 
-from sentry_sdk.hub import Hub, _should_send_default_pii
-from sentry_sdk.utils import AnnotatedValue
-from sentry_sdk._compat import text_type, iteritems
-
-from sentry_sdk._types import TYPE_CHECKING
+import sentry_sdk
+from sentry_sdk.scope import should_send_default_pii
+from sentry_sdk.utils import AnnotatedValue, logger
 
 try:
     from django.http.request import RawPostDataException
 except ImportError:
     RawPostDataException = None
 
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import sentry_sdk
-
     from typing import Any
     from typing import Dict
+    from typing import Iterator
+    from typing import Mapping
+    from typing import MutableMapping
     from typing import Optional
     from typing import Union
-    from sentry_sdk._types import Event
+    from sentry_sdk._types import Event, HttpStatusCodeRange
 
 
 SENSITIVE_ENV_KEYS = (
@@ -40,6 +39,25 @@ SENSITIVE_HEADERS = tuple(
     x[len("HTTP_") :] for x in SENSITIVE_ENV_KEYS if x.startswith("HTTP_")
 )
 
+DEFAULT_HTTP_METHODS_TO_CAPTURE = (
+    "CONNECT",
+    "DELETE",
+    "GET",
+    
+    
+    "PATCH",
+    "POST",
+    "PUT",
+    "TRACE",
+)
+
+
+
+@contextmanager
+def nullcontext():
+    
+    yield
+
 
 def request_body_within_bounds(client, content_length):
     
@@ -54,15 +72,24 @@ def request_body_within_bounds(client, content_length):
     )
 
 
-class RequestExtractor(object):
+class RequestExtractor:
+    """
+    Base class for request extraction.
+    """
+
+    
+    
+    
+    
+
     def __init__(self, request):
         
         self.request = request
 
     def extract_into_event(self, event):
         
-        client = Hub.current.client
-        if client is None:
+        client = sentry_sdk.get_client()
+        if not client.is_active():
             return
 
         data = None  
@@ -70,7 +97,7 @@ class RequestExtractor(object):
         content_length = self.content_length()
         request_info = event.get("request", {})
 
-        if _should_send_default_pii():
+        if should_send_default_pii():
             request_info["cookies"] = dict(self.cookies())
 
         if not request_body_within_bounds(client, content_length):
@@ -122,12 +149,22 @@ class RequestExtractor(object):
 
     def parsed_body(self):
         
-        form = self.form()
-        files = self.files()
+        try:
+            form = self.form()
+        except Exception:
+            form = None
+        try:
+            files = self.files()
+        except Exception:
+            files = None
+
         if form or files:
-            data = dict(iteritems(form))
-            for key, _ in iteritems(files):
-                data[key] = AnnotatedValue.removed_because_raw_data()
+            data = {}
+            if form:
+                data = dict(form.items())
+            if files:
+                for key in files.keys():
+                    data[key] = AnnotatedValue.removed_because_raw_data()
 
             return data
 
@@ -143,11 +180,17 @@ class RequestExtractor(object):
             if not self.is_json():
                 return None
 
-            raw_data = self.raw_data()
+            try:
+                raw_data = self.raw_data()
+            except (RawPostDataException, ValueError):
+                
+                
+                raw_data = None
+
             if raw_data is None:
                 return None
 
-            if isinstance(raw_data, text_type):
+            if isinstance(raw_data, str):
                 return json.loads(raw_data)
             else:
                 return json.loads(raw_data.decode("utf-8"))
@@ -181,7 +224,7 @@ def _is_json_content_type(ct):
 
 def _filter_headers(headers):
     
-    if _should_send_default_pii():
+    if should_send_default_pii():
         return headers
 
     return {
@@ -190,5 +233,39 @@ def _filter_headers(headers):
             if k.upper().replace("-", "_") not in SENSITIVE_HEADERS
             else AnnotatedValue.removed_because_over_size_limit()
         )
-        for k, v in iteritems(headers)
+        for k, v in headers.items()
     }
+
+
+def _in_http_status_code_range(code, code_ranges):
+    
+    for target in code_ranges:
+        if isinstance(target, int):
+            if code == target:
+                return True
+            continue
+
+        try:
+            if code in target:
+                return True
+        except TypeError:
+            logger.warning(
+                "failed_request_status_codes has to be a list of integers or containers"
+            )
+
+    return False
+
+
+class HttpCodeRangeContainer:
+    """
+    Wrapper to make it possible to use list[HttpStatusCodeRange] as a Container[int].
+    Used for backwards compatibility with the old `failed_request_status_codes` option.
+    """
+
+    def __init__(self, code_ranges):
+        
+        self._code_ranges = code_ranges
+
+    def __contains__(self, item):
+        
+        return _in_http_status_code_range(item, self._code_ranges)

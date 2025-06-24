@@ -1,10 +1,10 @@
-from opentelemetry import trace  
-from opentelemetry.context import (  
+from opentelemetry import trace
+from opentelemetry.context import (
     Context,
     get_current,
     set_value,
 )
-from opentelemetry.propagators.textmap import (  
+from opentelemetry.propagators.textmap import (
     CarrierT,
     Getter,
     Setter,
@@ -12,11 +12,12 @@ from opentelemetry.propagators.textmap import (
     default_getter,
     default_setter,
 )
-from opentelemetry.trace import (  
+from opentelemetry.trace import (
     NonRecordingSpan,
     SpanContext,
     TraceFlags,
 )
+
 from sentry_sdk.integrations.opentelemetry.consts import (
     SENTRY_BAGGAGE_KEY,
     SENTRY_TRACE_KEY,
@@ -24,20 +25,19 @@ from sentry_sdk.integrations.opentelemetry.consts import (
 from sentry_sdk.integrations.opentelemetry.span_processor import (
     SentrySpanProcessor,
 )
-
 from sentry_sdk.tracing import (
     BAGGAGE_HEADER_NAME,
     SENTRY_TRACE_HEADER_NAME,
 )
 from sentry_sdk.tracing_utils import Baggage, extract_sentrytrace_data
-from sentry_sdk._types import TYPE_CHECKING
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Optional
-    from typing import Set
+    from typing import Optional, Set
 
 
-class SentryPropagator(TextMapPropagator):  
+class SentryPropagator(TextMapPropagator):
     """
     Propagates tracing headers for Sentry's tracing system in a way OTel understands.
     """
@@ -107,7 +107,9 @@ class SentryPropagator(TextMapPropagator):
         if sentry_span.containing_transaction:
             baggage = sentry_span.containing_transaction.get_baggage()
             if baggage:
-                setter.set(carrier, BAGGAGE_HEADER_NAME, baggage.serialize())
+                baggage_data = baggage.serialize()
+                if baggage_data:
+                    setter.set(carrier, BAGGAGE_HEADER_NAME, baggage_data)
 
     @property
     def fields(self):

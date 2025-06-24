@@ -1,12 +1,10 @@
-from __future__ import absolute_import
-
 import sys
 
-from sentry_sdk.hub import Hub
+import sentry_sdk
 from sentry_sdk.integrations import Integration
 from sentry_sdk.scope import add_global_event_processor
 
-from sentry_sdk._types import TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -23,7 +21,7 @@ class ArgvIntegration(Integration):
         @add_global_event_processor
         def processor(event, hint):
             
-            if Hub.current.get_integration(ArgvIntegration) is not None:
+            if sentry_sdk.get_client().get_integration(ArgvIntegration) is not None:
                 extra = event.setdefault("extra", {})
                 
                 

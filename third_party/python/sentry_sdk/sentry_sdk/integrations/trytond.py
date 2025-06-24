@@ -1,45 +1,41 @@
-import sentry_sdk.hub
-import sentry_sdk.utils
-import sentry_sdk.integrations
-import sentry_sdk.integrations.wsgi
-from sentry_sdk._types import TYPE_CHECKING
+import sentry_sdk
+from sentry_sdk.integrations import Integration
+from sentry_sdk.integrations.wsgi import SentryWsgiMiddleware
+from sentry_sdk.utils import ensure_integration_enabled, event_from_exception
 
 from trytond.exceptions import TrytonException  
 from trytond.wsgi import app  
 
-if TYPE_CHECKING:
-    from typing import Any
 
 
 
 
-
-class TrytondWSGIIntegration(sentry_sdk.integrations.Integration):
+class TrytondWSGIIntegration(Integration):
     identifier = "trytond_wsgi"
+    origin = f"auto.http.{identifier}"
 
     def __init__(self):  
         pass
 
     @staticmethod
     def setup_once():  
-        app.wsgi_app = sentry_sdk.integrations.wsgi.SentryWsgiMiddleware(app.wsgi_app)
+        app.wsgi_app = SentryWsgiMiddleware(
+            app.wsgi_app,
+            span_origin=TrytondWSGIIntegration.origin,
+        )
 
+        @ensure_integration_enabled(TrytondWSGIIntegration)
         def error_handler(e):  
-            hub = sentry_sdk.hub.Hub.current
-
-            if hub.get_integration(TrytondWSGIIntegration) is None:
-                return
-            elif isinstance(e, TrytonException):
+            if isinstance(e, TrytonException):
                 return
             else:
-                
-                client = hub.client  
-                event, hint = sentry_sdk.utils.event_from_exception(
+                client = sentry_sdk.get_client()
+                event, hint = event_from_exception(
                     e,
                     client_options=client.options,
                     mechanism={"type": "trytond", "handled": False},
                 )
-                hub.capture_event(event, hint=hint)
+                sentry_sdk.capture_event(event, hint=hint)
 
         
         

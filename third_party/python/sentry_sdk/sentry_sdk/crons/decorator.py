@@ -1,25 +1,32 @@
-from sentry_sdk._compat import PY2
-from sentry_sdk._types import TYPE_CHECKING
+from functools import wraps
+from inspect import iscoroutinefunction
+
 from sentry_sdk.crons import capture_checkin
 from sentry_sdk.crons.consts import MonitorStatus
 from sentry_sdk.utils import now
 
+from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from typing import Optional, Type
+    from collections.abc import Awaitable, Callable
     from types import TracebackType
+    from typing import (
+        Any,
+        Optional,
+        ParamSpec,
+        Type,
+        TypeVar,
+        Union,
+        cast,
+        overload,
+    )
     from sentry_sdk._types import MonitorConfig
 
-if PY2:
-    from sentry_sdk.crons._decorator_py2 import MonitorMixin
-else:
-    
-    
-    
-    
-    from sentry_sdk.crons._decorator import MonitorMixin
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 
-class monitor(MonitorMixin):  
+class monitor:  
     """
     Decorator/context manager to capture checkin events for a monitor.
 
@@ -78,3 +85,51 @@ class monitor(MonitorMixin):
             duration=duration_s,
             monitor_config=self.monitor_config,
         )
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __call__(self, fn):
+            
+            
+            
+            
+            ...
+
+        @overload
+        def __call__(self, fn):
+            
+            ...
+
+    def __call__(
+        self,
+        fn,  
+    ):
+        
+        if iscoroutinefunction(fn):
+            return self._async_wrapper(fn)
+
+        else:
+            if TYPE_CHECKING:
+                fn = cast("Callable[P, R]", fn)
+            return self._sync_wrapper(fn)
+
+    def _async_wrapper(self, fn):
+        
+        @wraps(fn)
+        async def inner(*args: "P.args", **kwargs: "P.kwargs"):
+            
+            with self:
+                return await fn(*args, **kwargs)
+
+        return inner
+
+    def _sync_wrapper(self, fn):
+        
+        @wraps(fn)
+        def inner(*args: "P.args", **kwargs: "P.kwargs"):
+            
+            with self:
+                return fn(*args, **kwargs)
+
+        return inner

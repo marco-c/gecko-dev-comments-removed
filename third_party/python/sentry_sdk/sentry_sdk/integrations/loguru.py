@@ -1,23 +1,27 @@
-from __future__ import absolute_import
-
 import enum
 
-from sentry_sdk._types import TYPE_CHECKING
+import sentry_sdk
 from sentry_sdk.integrations import Integration, DidNotEnable
 from sentry_sdk.integrations.logging import (
     BreadcrumbHandler,
     EventHandler,
     _BaseHandler,
 )
+from sentry_sdk.logger import _log_level_to_otel
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from logging import LogRecord
-    from typing import Optional, Tuple
+    from typing import Any, Optional
 
 try:
     import loguru
     from loguru import logger
     from loguru._defaults import LOGURU_FORMAT as DEFAULT_FORMAT
+
+    if TYPE_CHECKING:
+        from loguru import Message
 except ImportError:
     raise DidNotEnable("LOGURU is not installed")
 
@@ -36,13 +40,36 @@ DEFAULT_LEVEL = LoggingLevels.INFO.value
 DEFAULT_EVENT_LEVEL = LoggingLevels.ERROR.value
 
 
+SENTRY_LEVEL_FROM_LOGURU_LEVEL = {
+    "TRACE": "DEBUG",
+    "DEBUG": "DEBUG",
+    "INFO": "INFO",
+    "SUCCESS": "INFO",
+    "WARNING": "WARNING",
+    "ERROR": "ERROR",
+    "CRITICAL": "CRITICAL",
+}
 
 
-_ADDED_HANDLERS = (None, None)  
+SEVERITY_TO_OTEL_SEVERITY = {
+    LoggingLevels.CRITICAL: 21,  
+    LoggingLevels.ERROR: 17,  
+    LoggingLevels.WARNING: 13,  
+    LoggingLevels.SUCCESS: 11,  
+    LoggingLevels.INFO: 9,  
+    LoggingLevels.DEBUG: 5,  
+    LoggingLevels.TRACE: 1,  
+}
 
 
 class LoguruIntegration(Integration):
     identifier = "loguru"
+
+    level = DEFAULT_LEVEL  
+    event_level = DEFAULT_EVENT_LEVEL  
+    breadcrumb_format = DEFAULT_FORMAT
+    event_format = DEFAULT_FORMAT
+    sentry_logs_level = DEFAULT_LEVEL  
 
     def __init__(
         self,
@@ -50,52 +77,128 @@ class LoguruIntegration(Integration):
         event_level=DEFAULT_EVENT_LEVEL,
         breadcrumb_format=DEFAULT_FORMAT,
         event_format=DEFAULT_FORMAT,
+        sentry_logs_level=DEFAULT_LEVEL,
     ):
         
-        global _ADDED_HANDLERS
-        breadcrumb_handler, event_handler = _ADDED_HANDLERS
-
-        if breadcrumb_handler is not None:
-            logger.remove(breadcrumb_handler)
-            breadcrumb_handler = None
-        if event_handler is not None:
-            logger.remove(event_handler)
-            event_handler = None
-
-        if level is not None:
-            breadcrumb_handler = logger.add(
-                LoguruBreadcrumbHandler(level=level),
-                level=level,
-                format=breadcrumb_format,
-            )
-
-        if event_level is not None:
-            event_handler = logger.add(
-                LoguruEventHandler(level=event_level),
-                level=event_level,
-                format=event_format,
-            )
-
-        _ADDED_HANDLERS = (breadcrumb_handler, event_handler)
+        LoguruIntegration.level = level
+        LoguruIntegration.event_level = event_level
+        LoguruIntegration.breadcrumb_format = breadcrumb_format
+        LoguruIntegration.event_format = event_format
+        LoguruIntegration.sentry_logs_level = sentry_logs_level
 
     @staticmethod
     def setup_once():
         
-        pass  
+        if LoguruIntegration.level is not None:
+            logger.add(
+                LoguruBreadcrumbHandler(level=LoguruIntegration.level),
+                level=LoguruIntegration.level,
+                format=LoguruIntegration.breadcrumb_format,
+            )
+
+        if LoguruIntegration.event_level is not None:
+            logger.add(
+                LoguruEventHandler(level=LoguruIntegration.event_level),
+                level=LoguruIntegration.event_level,
+                format=LoguruIntegration.event_format,
+            )
+
+        if LoguruIntegration.sentry_logs_level is not None:
+            logger.add(
+                loguru_sentry_logs_handler,
+                level=LoguruIntegration.sentry_logs_level,
+            )
 
 
 class _LoguruBaseHandler(_BaseHandler):
+    def __init__(self, *args, **kwargs):
+        
+        if kwargs.get("level"):
+            kwargs["level"] = SENTRY_LEVEL_FROM_LOGURU_LEVEL.get(
+                kwargs.get("level", ""), DEFAULT_LEVEL
+            )
+
+        super().__init__(*args, **kwargs)
+
     def _logging_to_event_level(self, record):
         
         try:
-            return LoggingLevels(record.levelno).name.lower()
-        except ValueError:
+            return SENTRY_LEVEL_FROM_LOGURU_LEVEL[
+                LoggingLevels(record.levelno).name
+            ].lower()
+        except (ValueError, KeyError):
             return record.levelname.lower() if record.levelname else ""
 
 
 class LoguruEventHandler(_LoguruBaseHandler, EventHandler):
     """Modified version of :class:`sentry_sdk.integrations.logging.EventHandler` to use loguru's level names."""
 
+    pass
+
 
 class LoguruBreadcrumbHandler(_LoguruBaseHandler, BreadcrumbHandler):
     """Modified version of :class:`sentry_sdk.integrations.logging.BreadcrumbHandler` to use loguru's level names."""
+
+    pass
+
+
+def loguru_sentry_logs_handler(message):
+    
+    
+    
+    client = sentry_sdk.get_client()
+
+    if not client.is_active():
+        return
+
+    if not client.options["_experiments"].get("enable_logs", False):
+        return
+
+    record = message.record
+
+    if (
+        LoguruIntegration.sentry_logs_level is None
+        or record["level"].no < LoguruIntegration.sentry_logs_level
+    ):
+        return
+
+    otel_severity_number, otel_severity_text = _log_level_to_otel(
+        record["level"].no, SEVERITY_TO_OTEL_SEVERITY
+    )
+
+    attrs = {"sentry.origin": "auto.logger.loguru"}  
+
+    project_root = client.options["project_root"]
+    if record.get("file"):
+        if project_root is not None and record["file"].path.startswith(project_root):
+            attrs["code.file.path"] = record["file"].path[len(project_root) + 1 :]
+        else:
+            attrs["code.file.path"] = record["file"].path
+
+    if record.get("line") is not None:
+        attrs["code.line.number"] = record["line"]
+
+    if record.get("function"):
+        attrs["code.function.name"] = record["function"]
+
+    if record.get("thread"):
+        attrs["thread.name"] = record["thread"].name
+        attrs["thread.id"] = record["thread"].id
+
+    if record.get("process"):
+        attrs["process.pid"] = record["process"].id
+        attrs["process.executable.name"] = record["process"].name
+
+    if record.get("name"):
+        attrs["logger.name"] = record["name"]
+
+    client._capture_experimental_log(
+        {
+            "severity_text": otel_severity_text,
+            "severity_number": otel_severity_number,
+            "body": record["message"],
+            "attributes": attrs,
+            "time_unix_nano": int(record["time"].timestamp() * 1e9),
+            "trace_id": None,
+        }
+    )
