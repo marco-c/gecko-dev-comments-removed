@@ -172,7 +172,7 @@ impl PseudoElement {
     
     
     #[inline]
-    pub fn pseudo_type_and_argument(&self) -> (PseudoStyleType, Option< &Atom>) {
+    pub fn pseudo_type_and_argument(&self) -> (PseudoStyleType, Option<&Atom>) {
         match *self {
             % for pseudo in PSEUDOS:
             % if pseudo.is_tree_pseudo_element():
@@ -191,7 +191,7 @@ impl PseudoElement {
 
     
     #[inline]
-    pub fn tree_pseudo_args(&self) -> Option<<&[Atom]> {
+    pub fn tree_pseudo_args(&self) -> Option<&[Atom]> {
         match *self {
             % for pseudo in TREE_PSEUDOS:
             PseudoElement::${pseudo.capitalized_pseudo()}(ref args) => Some(args),

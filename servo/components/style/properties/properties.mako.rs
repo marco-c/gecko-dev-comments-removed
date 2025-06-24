@@ -414,7 +414,7 @@ impl PropertyDeclaration {
     }
 
     
-    pub(super) fn color_value(&self) -> Option<<&crate::values::specified::Color> {
+    pub(super) fn color_value(&self) -> Option<&crate::values::specified::Color> {
         ${static_longhand_id_set("COLOR_PROPERTIES", lambda p: p.predefined_type == "Color")}
         <%
             # sanity check
@@ -511,7 +511,7 @@ impl NonCustomPropertyId {
             % if engine == "gecko":
                 unsafe { structs::nsCSSProps_gPropertyEnabled[self.0 as usize] }
             % else:
-                static PREF_NAME: [Option< &str>; ${
+                static PREF_NAME: [Option<&str>; ${
                     len(data.longhands) + len(data.shorthands) + len(data.all_aliases())
                 }] = [
                     % for property in data.longhands + data.shorthands + data.all_aliases():
@@ -1031,7 +1031,7 @@ impl LonghandId {
     }
 
     
-    fn logical_mapping_data(self) -> Option<<&'static LogicalMappingData> {
+    fn logical_mapping_data(self) -> Option<&'static LogicalMappingData> {
         const LOGICAL_MAPPING_DATA: [Option<LogicalMappingData>; ${len(data.longhands)}] = [
             % for prop in data.longhands:
             % if prop.logical:
@@ -1250,7 +1250,7 @@ impl PropertyId {
     
     pub(super) fn parse_unchecked(
         property_name: &str,
-        use_counters: Option< &UseCounters>,
+        use_counters: Option<&UseCounters>,
     ) -> Result<Self, ()> {
         
         
@@ -1756,7 +1756,7 @@ pub struct ComputedValues {
 impl ComputedValues {
     
     #[cfg(feature = "servo")]
-    pub fn pseudo(&self) -> Option<<&PseudoElement> {
+    pub fn pseudo(&self) -> Option<&PseudoElement> {
         self.pseudo.as_ref()
     }
 
@@ -1777,7 +1777,7 @@ impl ComputedValues {
     }
 
     
-    pub fn visited_rules(&self) -> Option<<&StrongRuleNode> {
+    pub fn visited_rules(&self) -> Option<&StrongRuleNode> {
         self.visited_style().and_then(|s| s.rules.as_ref())
     }
 
@@ -1811,7 +1811,7 @@ impl ComputedValues {
     pub fn computed_or_resolved_value(
         &self,
         property_id: LonghandId,
-        context: Option<<&resolved::Context>,
+        context: Option<&resolved::Context>,
         dest: &mut CssStringWriter,
     ) -> fmt::Result {
         use crate::values::resolved::ToResolvedValue;
@@ -1843,7 +1843,7 @@ impl ComputedValues {
     pub fn computed_or_resolved_declaration(
         &self,
         property_id: LonghandId,
-        context: Option<<&resolved::Context>,
+        context: Option<&resolved::Context>,
     ) -> PropertyDeclaration {
         use crate::values::resolved::ToResolvedValue;
         use crate::values::computed::ToComputedValue;
@@ -1929,7 +1929,7 @@ impl ComputedValues {
 impl ComputedValues {
     
     pub fn new(
-        pseudo: Option<<&PseudoElement>,
+        pseudo: Option<&PseudoElement>,
         custom_properties: crate::custom_properties::ComputedCustomProperties,
         writing_mode: WritingMode,
         effective_zoom: computed::Zoom,
@@ -2049,7 +2049,7 @@ impl ops::DerefMut for ComputedValues {
 #[cfg(feature = "servo")]
 impl ComputedValuesInner {
     
-    pub fn visited_style(&self) -> Option<<&ComputedValues> {
+    pub fn visited_style(&self) -> Option<&ComputedValues> {
         self.visited_style.as_deref()
     }
 
@@ -2150,7 +2150,7 @@ impl ComputedValuesInner {
 
     
     #[inline]
-    pub fn logical_padding(&self) -> LogicalMargin<<&computed::LengthPercentage> {
+    pub fn logical_padding(&self) -> LogicalMargin<&computed::LengthPercentage> {
         let padding_style = self.get_padding();
         LogicalMargin::from_physical(self.writing_mode, SideOffsets2D::new(
             &padding_style.padding_top.0,
@@ -2180,7 +2180,7 @@ impl ComputedValuesInner {
 
     
     #[inline]
-    pub fn logical_margin(&self) -> LogicalMargin<<&computed::Margin> {
+    pub fn logical_margin(&self) -> LogicalMargin<&computed::Margin> {
         let margin_style = self.get_margin();
         LogicalMargin::from_physical(self.writing_mode, SideOffsets2D::new(
             &margin_style.margin_top,
@@ -2192,7 +2192,7 @@ impl ComputedValuesInner {
 
     
     #[inline]
-    pub fn logical_position(&self) -> LogicalMargin<<&computed::Inset> {
+    pub fn logical_position(&self) -> LogicalMargin<&computed::Inset> {
         
         let position_style = self.get_position();
         LogicalMargin::from_physical(self.writing_mode, SideOffsets2D::new(
@@ -2332,7 +2332,7 @@ where
 
     
     
-    pub fn get_if_mutated(&mut self) -> Option<<&mut T> {
+    pub fn get_if_mutated(&mut self) -> Option<&mut T> {
         match *self {
             StyleStructRef::Owned(ref mut v) => Some(v),
             StyleStructRef::Borrowed(..) => None,
@@ -2377,7 +2377,7 @@ pub struct StyleBuilder<'a> {
 
     
     
-    pub stylist: Option<<&'a Stylist>,
+    pub stylist: Option<&'a Stylist>,
 
     
     
@@ -2401,7 +2401,7 @@ pub struct StyleBuilder<'a> {
     pub invalid_non_custom_properties: LonghandIdSet,
 
     
-    pub pseudo: Option<<&'a PseudoElement>,
+    pub pseudo: Option<&'a PseudoElement>,
 
     
     
@@ -2442,9 +2442,9 @@ impl<'a> StyleBuilder<'a> {
     
     pub fn new(
         device: &'a Device,
-        stylist: Option<<&'a Stylist>,
-        parent_style: Option<<&'a ComputedValues>,
-        pseudo: Option<<&'a PseudoElement>,
+        stylist: Option<&'a Stylist>,
+        parent_style: Option<&'a ComputedValues>,
+        pseudo: Option<&'a PseudoElement>,
         rules: Option<StrongRuleNode>,
         is_root_element: bool,
     ) -> Self {
@@ -2487,9 +2487,9 @@ impl<'a> StyleBuilder<'a> {
     
     pub fn for_animation(
         device: &'a Device,
-        stylist: Option<<&'a Stylist>,
+        stylist: Option<&'a Stylist>,
         style_to_derive_from: &'a ComputedValues,
-        parent_style: Option<<&'a ComputedValues>,
+        parent_style: Option<&'a ComputedValues>,
     ) -> Self {
         let reset_style = device.default_computed_values();
         let inherited_style = parent_style.unwrap_or(reset_style);
@@ -2599,9 +2599,9 @@ impl<'a> StyleBuilder<'a> {
     
     pub fn for_inheritance(
         device: &'a Device,
-        stylist: Option<<&'a Stylist>,
-        parent: Option<<&'a ComputedValues>,
-        pseudo: Option<<&'a PseudoElement>,
+        stylist: Option<&'a Stylist>,
+        parent: Option<&'a ComputedValues>,
+        pseudo: Option<&'a PseudoElement>,
     ) -> Self {
         
         
@@ -2677,7 +2677,7 @@ impl<'a> StyleBuilder<'a> {
         
         
         pub fn get_${style_struct.name_lower}_if_mutated(&mut self)
-                                                         -> Option<<&mut style_structs::${style_struct.name}> {
+                                                         -> Option<&mut style_structs::${style_struct.name}> {
             self.${style_struct.ident}.get_if_mutated()
         }
 

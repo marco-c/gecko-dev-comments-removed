@@ -184,7 +184,7 @@
                 pub UnderlyingList<single_value::T>,
             );
 
-            type ResolvedList = OwnedList<<single_value::T as ToResolvedValue>::ResolvedValue>;
+            type ResolvedList = <OwnedList<single_value::T> as ToResolvedValue>::ResolvedValue;
             impl ToResolvedValue for ComputedList {
                 type ResolvedValue = ResolvedList;
 
@@ -231,7 +231,7 @@
             
             
             #[allow(unused)]
-            type AnimatedList = OwnedList<<single_value::T as ToAnimatedValue>::AnimatedValue>;
+            type AnimatedList = <OwnedList<single_value::T> as ToAnimatedValue>::AnimatedValue;
             % if is_shared_list:
             impl ToAnimatedValue for ComputedList {
                 type AnimatedValue = AnimatedList;
@@ -737,7 +737,7 @@
                 
                 % for sub_property in shorthand.sub_properties:
                     let mut ${sub_property.ident} =
-                        None::< &'a longhands::${sub_property.ident}::SpecifiedValue>;
+                        None::<&'a longhands::${sub_property.ident}::SpecifiedValue>;
                 % endfor
 
                 
