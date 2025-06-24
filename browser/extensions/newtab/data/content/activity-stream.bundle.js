@@ -4908,7 +4908,6 @@ const AdBanner = ({
 
 
 
-
 const PREF_TRENDING_VARIANT = "trendingSearch.variant";
 function TrendingSearches() {
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
@@ -4998,7 +4997,7 @@ function TrendingSearches() {
   if (!suggestions?.length) {
     return null;
   } else if (variant === "a" || variant === "c") {
-    return React.createElement("section", {
+    return external_React_default().createElement("section", {
       ref: el => {
         ref.current = [el];
       }
@@ -5006,29 +5005,29 @@ function TrendingSearches() {
       
       ,
       className: `trending-searches-pill-wrapper ${variant === "c" ? "hover-only" : ""}`
-    }, React.createElement("div", {
+    }, external_React_default().createElement("div", {
       className: "trending-searches-title-wrapper"
-    }, React.createElement("span", {
+    }, external_React_default().createElement("span", {
       className: "trending-searches-icon icon icon-arrow-trending"
-    }), React.createElement("h2", {
+    }), external_React_default().createElement("h2", {
       className: "trending-searches-title",
       "data-l10n-id": "newtab-trending-searches-trending-on-google"
-    }), React.createElement("div", {
+    }), external_React_default().createElement("div", {
       className: "close-open-trending-searches"
-    }, React.createElement("moz-button", {
+    }, external_React_default().createElement("moz-button", {
       iconsrc: `chrome://global/skin/icons/arrow-${collapsed ? "down" : "up"}.svg`,
       onClick: onArrowClick,
       className: `icon icon-arrowhead-up`,
       type: "icon ghost",
       "data-l10n-id": `newtab-trending-searches-${collapsed ? "hide" : "show"}-trending`
-    }))), !collapsed && React.createElement("ul", {
+    }))), !collapsed && external_React_default().createElement("ul", {
       className: "trending-searches-list"
     }, suggestions.map((result, index) => {
-      return React.createElement("li", {
+      return external_React_default().createElement("li", {
         key: result.suggestion,
         className: "trending-search-item",
         onKeyDown: e => handleResultKeyDown(e, index)
-      }, React.createElement(SafeAnchor, {
+      }, external_React_default().createElement(SafeAnchor, {
         url: result.searchUrl,
         onLinkClick: handleLinkOpen,
         title: result.suggestion,
@@ -5037,27 +5036,27 @@ function TrendingSearches() {
       }, result.lowerCaseSuggestion));
     })));
   } else if (variant === "b") {
-    return React.createElement("div", {
+    return external_React_default().createElement("div", {
       ref: el => {
         ref.current = [el];
       },
       className: "trending-searches-list-view"
-    }, React.createElement("div", {
+    }, external_React_default().createElement("div", {
       className: "trending-searches-list-view-header"
-    }, React.createElement("h3", {
+    }, external_React_default().createElement("h3", {
       "data-l10n-id": "newtab-trending-searches-trending-on-google"
-    }), React.createElement("div", {
+    }), external_React_default().createElement("div", {
       className: "trending-searches-context-menu-wrapper"
-    }, React.createElement("div", {
+    }, external_React_default().createElement("div", {
       className: `trending-searches-context-menu ${showContextMenu ? "context-menu-open" : ""}`
-    }, React.createElement("moz-button", {
+    }, external_React_default().createElement("moz-button", {
       type: "icon ghost",
       size: "default",
       "data-l10n-id": "newtab-menu-section-tooltip",
       iconsrc: "chrome://global/skin/icons/more.svg",
       onClick: onContextMenuClick,
       onKeyDown: onContextMenuKeyDown
-    }), showContextMenu && React.createElement(LinkMenu, {
+    }), showContextMenu && external_React_default().createElement(LinkMenu, {
       onUpdate: onUpdate,
       dispatch: dispatch,
       keyboardAccess: isKeyboardAccess,
@@ -5067,28 +5066,28 @@ function TrendingSearches() {
         url: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/trending-searches-new-tab",
         variant
       }
-    })))), React.createElement("ul", {
+    })))), external_React_default().createElement("ul", {
       className: "trending-searches-list-items"
     }, suggestions.slice(0, 6).map((result, index) => {
-      return React.createElement("li", {
+      return external_React_default().createElement("li", {
         key: result.suggestion,
         className: "trending-searches-list-item",
         onKeyDown: e => handleResultKeyDown(e, index)
-      }, React.createElement(SafeAnchor, {
+      }, external_React_default().createElement(SafeAnchor, {
         url: result.searchUrl,
         onLinkClick: handleLinkOpen,
         title: result.suggestion,
         setRef: item => resultRef.current[index] = item,
         tabIndex: index === 0 ? 0 : -1
-      }, result.icon ? React.createElement("div", {
+      }, result.icon ? external_React_default().createElement("div", {
         className: "trending-icon-wrapper"
-      }, React.createElement("img", {
+      }, external_React_default().createElement("img", {
         src: result.icon,
         alt: "",
         className: "trending-icon"
-      }), React.createElement("div", {
+      }), external_React_default().createElement("div", {
         className: "trending-info-wrapper"
-      }, result.lowerCaseSuggestion, React.createElement("small", null, result.description))) : React.createElement(React.Fragment, null, React.createElement("span", {
+      }, result.lowerCaseSuggestion, external_React_default().createElement("small", null, result.description))) : external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
         className: "trending-searches-icon icon icon-arrow-trending"
       }), result.lowerCaseSuggestion)));
     })));
@@ -5511,7 +5510,12 @@ class _CardGrid extends (external_React_default()).PureComponent {
       }
     }
     if (trendingEnabled && trendingVariant === "b") {
-      cards.splice(1, 1, external_React_default().createElement(TrendingSearches, null));
+      const firstSpocPosition = this.props.spocPositions[0]?.index;
+      
+      const format = cards[firstSpocPosition]?.props?.format;
+      const isSpoc = format === "spoc" || format === "rectangle";
+      
+      cards.splice(isSpoc ? firstSpocPosition + 1 : 2, 1, external_React_default().createElement(TrendingSearches, null));
     }
 
     
@@ -12052,7 +12056,8 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
             editorsPicksHeader: component.properties.editorsPicksHeader,
             recentSavesEnabled: this.props.DiscoveryStream.recentSavesEnabled,
             hideDescriptions: this.props.DiscoveryStream.hideDescriptions,
-            firstVisibleTimestamp: this.props.firstVisibleTimestamp
+            firstVisibleTimestamp: this.props.firstVisibleTimestamp,
+            spocPositions: component.spocs?.positions
           });
         }
       case "HorizontalRule":
