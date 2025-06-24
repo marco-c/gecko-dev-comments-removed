@@ -118,7 +118,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSNestedDeclarations,
   
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-StyleLockedDeclarationBlock* CSSNestedDeclarations::RawStyle() const {
+const StyleLockedDeclarationBlock* CSSNestedDeclarations::RawStyle() const {
   return mDecls.mDecls->Raw();
 }
 

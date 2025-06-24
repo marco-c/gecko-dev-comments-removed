@@ -900,6 +900,10 @@ class PageStyleActor extends Actor {
     
     for (let i = domRules.length - 1; i >= 0; i--) {
       const domRule = domRules[i];
+      if (domRule.declarationOrigin) {
+        
+        continue;
+      }
 
       const isSystem = SharedCssLogic.isAgentStylesheet(
         domRule.parentStyleSheet

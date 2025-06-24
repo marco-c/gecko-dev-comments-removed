@@ -182,7 +182,7 @@ void CSSStyleRule::GetCssText(nsACString& aCssText) const {
 
 
 
-StyleLockedDeclarationBlock* CSSStyleRule::RawStyle() const {
+const StyleLockedDeclarationBlock* CSSStyleRule::RawStyle() const {
   return mDecls.mDecls->Raw();
 }
 
