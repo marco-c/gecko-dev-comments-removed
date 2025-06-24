@@ -26,6 +26,9 @@ const fxaDevices = [
 ];
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
   await promiseSyncReady();
   await Services.search.init();
   
@@ -40,10 +43,7 @@ add_setup(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:mozilla");
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["extensions.pocket.enabled", true],
-    ],
+    set: [["extensions.pocket.enabled", true]],
   });
 });
 
