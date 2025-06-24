@@ -151,7 +151,7 @@ class QueuedDataMessage {
 };
 
 
-class DataChannelConnection final : public net::NeckoTargetHolder {
+class DataChannelConnection : public net::NeckoTargetHolder {
   friend class DataChannel;
   friend class DataChannelOnMessageAvailable;
   friend class DataChannelConnectRunnable;
@@ -203,6 +203,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   void Destroy();  
   
   void DestroyOnSTS();
+  virtual bool RaiseStreamLimitTo(uint16_t aNewLimit);
 
   int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg)
       MOZ_REQUIRES(mLock);
@@ -326,7 +327,6 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
                      const MediaPacket& packet);
   DataChannel* FindChannelByStream(uint16_t stream) MOZ_REQUIRES(mLock);
   uint16_t FindFreeStream() const MOZ_REQUIRES(mLock);
-  bool RequestMoreStreams(int32_t aNeeded = 16) MOZ_REQUIRES(mLock);
   uint32_t UpdateCurrentStreamIndex() MOZ_REQUIRES(mLock);
   uint32_t GetCurrentStreamIndex() MOZ_REQUIRES(mLock);
   int SendControlMessage(DataChannel& aChannel, const uint8_t* data,
@@ -426,7 +426,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   uint32_t mCurrentStream = 0;
   
   std::set<RefPtr<DataChannel>> mPending MOZ_GUARDED_BY(mLock);
-  size_t mNegotiatedIdLimit MOZ_GUARDED_BY(mLock) = 0;
+  uint16_t mNegotiatedIdLimit MOZ_GUARDED_BY(mLock) = 0;
   
   PendingType mPendingType = PendingType::None;
   
