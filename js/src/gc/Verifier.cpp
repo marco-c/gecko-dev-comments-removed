@@ -1215,10 +1215,14 @@ void GCRuntime::checkHeapBeforeMinorGC(AutoHeapSession& session) {
   
 
   for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
+    if (zone->isGCFinished()) {
+      continue;  
+    }
+
     for (ArenaIter aiter(zone, gc::AllocKind::STRING); !aiter.done();
          aiter.next()) {
       for (ArenaCellIterUnderGC cell(aiter.get()); !cell.done(); cell.next()) {
-        if (cell->is<JSString>() && cell->as<JSString>()->isDependent()) {
+        if (cell->as<JSString>()->isDependent()) {
           JSDependentString* str = &cell->as<JSString>()->asDependent();
           if (str->isTenured() && str->base()->isTenured()) {
             MOZ_RELEASE_ASSERT(!str->hasCharsInCollectedNurseryRegion());
