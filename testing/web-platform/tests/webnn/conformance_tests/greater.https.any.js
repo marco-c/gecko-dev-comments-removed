@@ -991,7 +991,8 @@ const greaterTests = [
 if (navigator.ml) {
   greaterTests.forEach((test) => {
     webnn_conformance_test(
-        buildAndExecuteGraph, getGreaterPrecisionTolerance, test);
+        buildAndExecuteGraph, getGreaterPrecisionTolerance, test,
+        true);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));

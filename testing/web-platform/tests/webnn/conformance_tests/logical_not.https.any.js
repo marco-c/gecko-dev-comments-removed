@@ -214,7 +214,8 @@ const logicalNotTests = [
 if (navigator.ml) {
   logicalNotTests.forEach((test) => {
     webnn_conformance_test(
-        buildAndExecuteGraph, getLogicalNotPrecisionTolerance, test);
+        buildAndExecuteGraph, getLogicalNotPrecisionTolerance, test,
+        true);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));
