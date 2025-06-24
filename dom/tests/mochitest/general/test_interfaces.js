@@ -1473,6 +1473,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "URL", insecureContext: true },
   
+  { name: "URLPattern", insecureContext: true },
+  
   { name: "URLSearchParams", insecureContext: true },
   
   { name: "UserActivation", insecureContext: true },
