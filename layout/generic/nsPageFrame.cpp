@@ -124,10 +124,12 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   
-  const auto positionProperty = kidReflowInput.mStyleDisplay->mPosition;
+  const auto anchorResolutionParams =
+      AnchorPosResolutionParams::From(&kidReflowInput);
   if (mPD->mPrintSettings->GetHonorPageRuleMargins()) {
     for (const auto side : mozilla::AllPhysicalSides()) {
-      if (!kidReflowInput.mStyleMargin->GetMargin(side, positionProperty)
+      if (!kidReflowInput.mStyleMargin
+               ->GetMargin(side, anchorResolutionParams.mPosition)
                ->IsAuto()) {
         
         

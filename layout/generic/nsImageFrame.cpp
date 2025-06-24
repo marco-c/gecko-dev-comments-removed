@@ -356,7 +356,8 @@ static bool DependsOnIntrinsicSize(const SizeOrMaxSize& aMinOrMaxSize) {
 
 static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
   const auto& position = *aReflowInput.mStylePosition;
-  const auto positionProperty = aReflowInput.mStyleDisplay->mPosition;
+  const auto anchorResolutionParams =
+      AnchorPosResolutionParams::From(&aReflowInput);
   WritingMode wm = aReflowInput.GetWritingMode();
   
   
@@ -367,10 +368,14 @@ static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
   
   
   
-  return !position.GetHeight(positionProperty)->ConvertsToLength() ||
-         !position.GetWidth(positionProperty)->ConvertsToLength() ||
-         DependsOnIntrinsicSize(*position.MinISize(wm, positionProperty)) ||
-         DependsOnIntrinsicSize(*position.MaxISize(wm, positionProperty)) ||
+  return !position.GetHeight(anchorResolutionParams.mPosition)
+              ->ConvertsToLength() ||
+         !position.GetWidth(anchorResolutionParams.mPosition)
+              ->ConvertsToLength() ||
+         DependsOnIntrinsicSize(
+             *position.MinISize(wm, anchorResolutionParams.mPosition)) ||
+         DependsOnIntrinsicSize(
+             *position.MaxISize(wm, anchorResolutionParams.mPosition)) ||
          aReflowInput.mFrame->IsFlexItem();
 }
 

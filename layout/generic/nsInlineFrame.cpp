@@ -89,7 +89,7 @@ bool nsInlineFrame::IsSelfEmpty() {
   const nsStyleMargin* margin = StyleMargin();
   const nsStyleBorder* border = StyleBorder();
   const nsStylePadding* padding = StylePadding();
-  const auto positionProperty = StyleDisplay()->mPosition;
+  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
   
   
   
@@ -110,7 +110,7 @@ bool nsInlineFrame::IsSelfEmpty() {
   auto HaveSide = [&](mozilla::Side aSide) -> bool {
     return border->GetComputedBorderWidth(aSide) != 0 ||
            !nsLayoutUtils::IsPaddingZero(padding->mPadding.Get(aSide)) ||
-           !IsMarginZero(*margin, positionProperty, aSide);
+           !IsMarginZero(*margin, anchorResolutionParams.mPosition, aSide);
   };
   
   

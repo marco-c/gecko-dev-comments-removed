@@ -68,25 +68,29 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   bool hasAutoMarginStart;
   bool hasAutoMarginEnd;
   const auto* styleMargin = aRI.mStyleMargin;
-  const auto positionProperty = aRI.mStyleDisplay->mPosition;
+  const auto anchorResolutionParams = AnchorPosResolutionParams::From(&aRI);
   if (aFlags & (AlignJustifyFlags::IgnoreAutoMargins |
                 AlignJustifyFlags::AligningMarginBox)) {
     
     
     hasAutoMarginStart = hasAutoMarginEnd = false;
   } else if (aAxis == LogicalAxis::Block) {
-    hasAutoMarginStart =
-        styleMargin->GetMargin(LogicalSide::BStart, wm, positionProperty)
-            ->IsAuto();
+    hasAutoMarginStart = styleMargin
+                             ->GetMargin(LogicalSide::BStart, wm,
+                                         anchorResolutionParams.mPosition)
+                             ->IsAuto();
     hasAutoMarginEnd =
-        styleMargin->GetMargin(LogicalSide::BEnd, wm, positionProperty)
+        styleMargin
+            ->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams.mPosition)
             ->IsAuto();
   } else { 
-    hasAutoMarginStart =
-        styleMargin->GetMargin(LogicalSide::IStart, wm, positionProperty)
-            ->IsAuto();
+    hasAutoMarginStart = styleMargin
+                             ->GetMargin(LogicalSide::IStart, wm,
+                                         anchorResolutionParams.mPosition)
+                             ->IsAuto();
     hasAutoMarginEnd =
-        styleMargin->GetMargin(LogicalSide::IEnd, wm, positionProperty)
+        styleMargin
+            ->GetMargin(LogicalSide::IEnd, wm, anchorResolutionParams.mPosition)
             ->IsAuto();
   }
 
