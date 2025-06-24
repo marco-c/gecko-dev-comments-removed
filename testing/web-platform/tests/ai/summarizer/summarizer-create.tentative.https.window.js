@@ -11,15 +11,5 @@ promise_test(async () => {
 }, 'Summarizer.create() is defined');
 
 promise_test(async t => {
-  
-  await promise_rejects_dom(t, 'NotAllowedError', Summarizer.create());
-
-  
-  await createSummarizer();
-
-  
-  assert_equals(await Summarizer.availability(), 'available');
-
-  
-  await Summarizer.create();
-}, 'Summarizer.create() requires user activation when availability is "downloadable"');
+  await testCreateMonitorCallbackThrowsError(t, createSummarizer);
+}, 'If monitor throws an error, Summarizer.create() rejects with that error');

@@ -10,15 +10,5 @@ promise_test(async () => {
 }, 'Writer must be defined.');
 
 promise_test(async t => {
-  
-  await promise_rejects_dom(t, 'NotAllowedError', Writer.create());
-
-  
-  await createWriter();
-
-  
-  assert_equals(await Writer.availability(), 'available');
-
-  
-  await Writer.create();
-}, 'Writer.create() requires user activation when availability is "downloadable"');
+  await testCreateMonitorCallbackThrowsError(t, createWriter);
+}, 'If monitor throws an error, Writer.create() rejects with that error');

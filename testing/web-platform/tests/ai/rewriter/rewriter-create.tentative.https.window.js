@@ -10,15 +10,5 @@ promise_test(async () => {
 }, 'Rewriter must be defined.');
 
 promise_test(async t => {
-  
-  await promise_rejects_dom(t, 'NotAllowedError', Rewriter.create());
-
-  
-  await createRewriter();
-
-  
-  assert_equals(await Rewriter.availability(), 'available');
-
-  
-  await Rewriter.create();
-}, 'Rewriter.create() requires user activation when availability is "downloadable"');
+  await testCreateMonitorCallbackThrowsError(t, createRewriter);
+}, 'If monitor throws an error, Rewriter.create() rejects with that error');
