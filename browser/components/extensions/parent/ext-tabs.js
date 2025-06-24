@@ -415,9 +415,16 @@ this.tabs = class extends ExtensionAPIPersistent {
       let listener = event => {
         
         
+        let updatedTab = event.originalTarget;
+        if (event.type == "TabGrouped" || event.type == "TabUngrouped") {
+          updatedTab = event.detail;
+        }
+
+        
+        
         if (
-          event.originalTarget.initializingTab ||
-          event.originalTarget.ownerGlobal.gBrowserInit?.isAdoptingTab()
+          updatedTab.initializingTab ||
+          updatedTab.ownerGlobal.gBrowserInit?.isAdoptingTab()
         ) {
           return;
         }
@@ -425,7 +432,6 @@ this.tabs = class extends ExtensionAPIPersistent {
           return;
         }
         let needed = [];
-        let updatedTab = event.originalTarget;
 
         if (event.type == "TabAttrModified") {
           let changed = event.detail.changed;
@@ -480,13 +486,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           needed.push("discarded");
         } else if (event.type === "TabGrouped") {
           needed.push("groupId");
-          
-          
-          updatedTab = event.detail;
         } else if (event.type === "TabUngrouped") {
-          
-          
-          updatedTab = event.detail;
           if (updatedTab.group) {
             
             
