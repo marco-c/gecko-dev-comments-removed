@@ -765,16 +765,41 @@ public class WebExtensionController {
 
 
 
+
+
+  @NonNull
+  @AnyThread
+  @Deprecated
+  @DeprecationSchedule(id = "web-extension-add-optional-permissions", version = 143)
+  public GeckoResult<WebExtension> addOptionalPermissions(
+      final @NonNull String extensionId,
+      @NonNull final String[] permissions,
+      @NonNull final String[] origins) {
+    return addOptionalPermissions(extensionId, permissions, origins, new String[0]);
+  }
+
+  
+
+
+
+
+
+
+
+
+
   @NonNull
   @AnyThread
   public GeckoResult<WebExtension> addOptionalPermissions(
       final @NonNull String extensionId,
       @NonNull final String[] permissions,
-      @NonNull final String[] origins) {
+      @NonNull final String[] origins,
+      @NonNull final String[] dataCollectionPermissions) {
     final GeckoBundle bundle = new GeckoBundle(3);
     bundle.putString("extensionId", extensionId);
     bundle.putStringArray("permissions", permissions);
     bundle.putStringArray("origins", origins);
+    bundle.putStringArray("dataCollectionPermissions", dataCollectionPermissions);
 
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:WebExtension:AddOptionalPermissions", bundle)
@@ -790,16 +815,41 @@ public class WebExtensionController {
 
 
 
+
+
+  @NonNull
+  @AnyThread
+  @Deprecated
+  @DeprecationSchedule(id = "web-extension-remove-optional-permissions", version = 143)
+  public GeckoResult<WebExtension> removeOptionalPermissions(
+      final @NonNull String extensionId,
+      @NonNull final String[] permissions,
+      @NonNull final String[] origins) {
+    return removeOptionalPermissions(extensionId, permissions, origins, new String[0]);
+  }
+
+  
+
+
+
+
+
+
+
+
+
   @NonNull
   @AnyThread
   public GeckoResult<WebExtension> removeOptionalPermissions(
       final @NonNull String extensionId,
       @NonNull final String[] permissions,
-      @NonNull final String[] origins) {
+      @NonNull final String[] origins,
+      @NonNull final String[] dataCollectionPermissions) {
     final GeckoBundle bundle = new GeckoBundle(3);
     bundle.putString("extensionId", extensionId);
     bundle.putStringArray("permissions", permissions);
     bundle.putStringArray("origins", origins);
+    bundle.putStringArray("dataCollectionPermissions", dataCollectionPermissions);
 
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:WebExtension:RemoveOptionalPermissions", bundle)
