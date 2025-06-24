@@ -29,9 +29,9 @@ add_setup(async function () {
   );
   sandbox
     .stub(ExperimentAPI.manager.store, "addEnrollment")
-    .callsFake((enrollment, recipe) => {
+    .callsFake(enrollment => {
       NimbusTestUtils.validateEnrollment(enrollment);
-      return origAddExperiment(enrollment, recipe);
+      return origAddExperiment(enrollment);
     });
 
   

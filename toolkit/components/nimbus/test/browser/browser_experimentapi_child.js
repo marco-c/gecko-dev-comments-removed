@@ -112,7 +112,7 @@ add_task(async function testGetFromChildNewEnrollment() {
 
   childUpdated = await childSharedDataChanged(browser);
   
-  ExperimentAPI.manager.unenroll("foo");
+  await ExperimentAPI.manager.unenroll("foo");
   
   Services.ppmm.sharedData.flush();
   await childUpdated.promise;
@@ -126,7 +126,6 @@ add_task(async function testGetFromChildNewEnrollment() {
   });
 
   ExperimentAPI.manager.store._deleteForTests("foo");
-  await NimbusTestUtils.flushStore();
 
   BrowserTestUtils.removeTab(tab);
 
@@ -194,9 +193,8 @@ add_task(async function testGetFromChildExistingEnrollment() {
     );
   });
 
-  ExperimentAPI.manager.unenroll("qux");
+  await ExperimentAPI.manager.unenroll("qux");
   ExperimentAPI.manager.store._deleteForTests("qux");
-  await NimbusTestUtils.flushStore();
   BrowserTestUtils.removeTab(tab);
 
   Services.ppmm.sharedData.flush();
