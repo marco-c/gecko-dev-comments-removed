@@ -1379,6 +1379,29 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     super.updateTargetConfiguration(options, calledFromDocumentCreation);
 
+    let reload = false;
+    if (typeof options.touchEventsOverride !== "undefined") {
+      const enableTouchSimulator = options.touchEventsOverride === "enabled";
+
+      
+      
+      
+      if (
+        enableTouchSimulator !== this.touchSimulator.enabled &&
+        options.reloadOnTouchSimulationToggle === true &&
+        this.isTopLevelTarget &&
+        !calledFromDocumentCreation
+      ) {
+        reload = true;
+      }
+
+      if (enableTouchSimulator) {
+        this.touchSimulator.start();
+      } else {
+        this.touchSimulator.stop();
+      }
+    }
+
     if (typeof options.customFormatters !== "undefined") {
       this.customFormatters = options.customFormatters;
     }
@@ -1394,33 +1417,9 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       
       return;
     }
-
-    let reload = false;
-    if (typeof options.touchEventsOverride !== "undefined") {
-      const enableTouchSimulator = options.touchEventsOverride === "enabled";
-
-      
-      
-      
-      if (
-        enableTouchSimulator !== this.touchSimulator.enabled &&
-        options.reloadOnTouchSimulationToggle === true &&
-        !calledFromDocumentCreation
-      ) {
-        reload = true;
-      }
-
-      if (enableTouchSimulator) {
-        this.touchSimulator.start();
-      } else {
-        this.touchSimulator.stop();
-      }
-    }
-
     if (typeof options.restoreFocus == "boolean") {
       this._restoreFocus = options.restoreFocus;
     }
-
     if (typeof options.recordAllocations == "object") {
       const actor = this._memoryActor;
       if (options.recordAllocations == null) {
