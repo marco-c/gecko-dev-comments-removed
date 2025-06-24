@@ -4309,26 +4309,15 @@ nsresult ContentAnalysis::RunAcknowledgeTask(
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
   
-  if (obsServ->HasObservers("dlp-acknowledgement-sent-raw")) {
-    std::string acknowledgementString = pbAck.SerializeAsString();
-    nsTArray<char16_t> acknowledgementArray;
-    acknowledgementArray.SetLength(acknowledgementString.size() + 1);
-    for (size_t i = 0; i < acknowledgementString.size(); ++i) {
-      
-      
-      acknowledgementArray[i] = acknowledgementString[i] + 0xFF00;
-    }
-    acknowledgementArray[acknowledgementString.size()] = 0;
-    obsServ->NotifyObservers(static_cast<nsIContentAnalysis*>(this),
-                             "dlp-acknowledgement-sent-raw",
-                             acknowledgementArray.Elements());
-  }
+  
+  bool rawMessageHasObserver =
+      obsServ->HasObservers("dlp-acknowledgement-sent-raw");
 
   
   LOGD("RunAcknowledgeTask dispatching acknowledge task");
   CallClientWithRetry<std::nullptr_t>(
       __func__,
-      [pbAck = std::move(pbAck)](
+      [pbAck = std::move(pbAck), rawMessageHasObserver](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable
           -> Result<std::nullptr_t, nsresult> {
         MOZ_ASSERT(!NS_IsMainThread());
@@ -4343,6 +4332,30 @@ nsresult ContentAnalysis::RunAcknowledgeTask(
             "RunAcknowledgeTask sent transaction acknowledgement, "
             "err=%d",
             err);
+        
+        
+        
+        if (rawMessageHasObserver) {
+          NS_DispatchToMainThread(NS_NewRunnableFunction(
+              __func__, [owner, pbAck = std::move(pbAck)]() {
+                nsCOMPtr<nsIObserverService> obsServ =
+                    mozilla::services::GetObserverService();
+                std::string acknowledgementString = pbAck.SerializeAsString();
+                nsTArray<char16_t> acknowledgementArray;
+                acknowledgementArray.SetLength(acknowledgementString.size() +
+                                               1);
+                for (size_t i = 0; i < acknowledgementString.size(); ++i) {
+                  
+                  
+                  acknowledgementArray[i] = acknowledgementString[i] + 0xFF00;
+                }
+                acknowledgementArray[acknowledgementString.size()] = 0;
+                obsServ->NotifyObservers(
+                    static_cast<nsIContentAnalysis*>(owner.get()),
+                    "dlp-acknowledgement-sent-raw",
+                    acknowledgementArray.Elements());
+              }));
+        }
         if (err != 0) {
           return Err(NS_ERROR_FAILURE);
         }
