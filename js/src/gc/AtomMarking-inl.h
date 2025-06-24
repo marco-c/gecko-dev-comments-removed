@@ -4,9 +4,6 @@
 
 
 
-#ifndef gc_AtomMarking_inl_h
-#define gc_AtomMarking_inl_h
-
 #include "gc/AtomMarking.h"
 
 #include "mozilla/Assertions.h"
@@ -43,14 +40,10 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(
   js::gc::TenuredCell* cell = &thing->asTenured();
   MOZ_ASSERT(cell->zoneFromAnyThread()->isAtomsZone());
 
+  
+  
   if (thing->isPermanentAndMayBeShared()) {
     return true;
-  }
-
-  if constexpr (std::is_same_v<T, JSAtom>) {
-    if (thing->isPinned()) {
-      return true;
-    }
   }
 
   size_t bit = GetAtomBit(cell);
@@ -78,21 +71,6 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(
   return true;
 }
 
-inline bool GCRuntime::isSymbolReferencedByUncollectedZone(JS::Symbol* sym) {
-  MOZ_ASSERT(sym->zone()->isAtomsZone());
-
-  if (!atomsUsedByUncollectedZones.ref()) {
-    return false;
-  }
-
-  MOZ_ASSERT(atomsZone()->wasGCStarted());
-
-  size_t bit = GetAtomBit(sym);
-  MOZ_ASSERT(bit / JS_BITS_PER_WORD < atomMarking.allocatedWords);
-
-  return atomsUsedByUncollectedZones.ref()->getBit(bit);
-}
-
 void AtomMarkingRuntime::markChildren(JSContext* cx, JSAtom*) {}
 
 void AtomMarkingRuntime::markChildren(JSContext* cx, JS::Symbol* symbol) {
@@ -115,5 +93,3 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomFallible(
 
 }  
 }  
-
-#endif  

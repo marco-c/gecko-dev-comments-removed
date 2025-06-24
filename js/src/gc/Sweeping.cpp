@@ -1361,13 +1361,19 @@ class ImmediateSweepWeakCacheTask : public GCParallelTask {
 };
 
 void GCRuntime::updateAtomsBitmap() {
-  atomMarking.refineZoneBitmapsForCollectedZones(this);
-
-  
-  auto& atomsToMark = atomsUsedByUncollectedZones.ref();
-  if (atomsToMark) {
-    atomMarking.markAtomsUsedByUncollectedZones(this, std::move(atomsToMark));
+  size_t collectedZones = 0;
+  size_t uncollectedZones = 0;
+  for (ZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
+    if (zone->isCollecting()) {
+      collectedZones++;
+    } else {
+      uncollectedZones++;
+    }
   }
+
+  atomMarking.refineZoneBitmapsForCollectedZones(this, collectedZones);
+
+  atomMarking.markAtomsUsedByUncollectedZones(this, uncollectedZones);
 
   
   

@@ -53,16 +53,11 @@ class AtomMarkingRuntime {
 
   
   
-  void refineZoneBitmapsForCollectedZones(GCRuntime* gc);
+  void refineZoneBitmapsForCollectedZones(GCRuntime* gc, size_t collectedZones);
 
   
   
-  UniquePtr<DenseBitmap> getOrMarkAtomsUsedByUncollectedZones(GCRuntime* gc);
-
-  
-  
-  void markAtomsUsedByUncollectedZones(GCRuntime* gc,
-                                       UniquePtr<DenseBitmap> markedUnion);
+  void markAtomsUsedByUncollectedZones(GCRuntime* gc, size_t uncollectedZones);
 
  private:
   
@@ -91,11 +86,10 @@ class AtomMarkingRuntime {
   void markId(JSContext* cx, jsid id);
   void markAtomValue(JSContext* cx, const Value& value);
 
+#ifdef DEBUG
   
   template <typename T>
   bool atomIsMarked(Zone* zone, T* thing);
-
-#ifdef DEBUG
   bool idIsMarked(Zone* zone, jsid id);
   bool valueIsMarked(Zone* zone, const Value& value);
 #endif

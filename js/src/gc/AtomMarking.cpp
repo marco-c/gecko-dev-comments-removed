@@ -105,14 +105,8 @@ void AtomMarkingRuntime::mergePendingFreeArenaIndexes(GCRuntime* gc) {
   pendingFreeArenaIndexes.ref().clear();
 }
 
-void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(GCRuntime* gc) {
-  size_t collectedZones = 0;
-  for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
-    if (zone->isCollecting()) {
-      collectedZones++;
-    }
-  }
-
+void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(
+    GCRuntime* gc, size_t collectedZones) {
   
   
   DenseBitmap marked;
@@ -197,33 +191,40 @@ static void BitwiseOrIntoChunkMarkBits(Zone* atomsZone, Bitmap& bitmap) {
   }
 }
 
-UniquePtr<DenseBitmap> AtomMarkingRuntime::getOrMarkAtomsUsedByUncollectedZones(
-    GCRuntime* gc) {
+void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(
+    GCRuntime* gc, size_t uncollectedZones) {
   MOZ_ASSERT(CurrentThreadIsPerformingGC());
 
-  UniquePtr<DenseBitmap> markedUnion = MakeUnique<DenseBitmap>();
-  if (!markedUnion || !markedUnion->ensureSpace(allocatedWords)) {
-    
+  
+  if (uncollectedZones == 0) {
+    return;
+  }
+
+  
+  
+  
+  
+
+  DenseBitmap markedUnion;
+  if (uncollectedZones == 1 || !markedUnion.ensureSpace(allocatedWords)) {
     for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
       if (!zone->isCollecting()) {
         BitwiseOrIntoChunkMarkBits(gc->atomsZone(), zone->markedAtoms());
       }
     }
-    return nullptr;
+    return;
   }
 
   for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
+    
+    
+    
     if (!zone->isCollecting()) {
-      zone->markedAtoms().bitwiseOrInto(*markedUnion);
+      zone->markedAtoms().bitwiseOrInto(markedUnion);
     }
   }
 
-  return markedUnion;
-}
-
-void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(
-    GCRuntime* gc, UniquePtr<DenseBitmap> markedUnion) {
-  BitwiseOrIntoChunkMarkBits(gc->atomsZone(), *markedUnion);
+  BitwiseOrIntoChunkMarkBits(gc->atomsZone(), markedUnion);
 }
 
 template <typename T>
@@ -262,6 +263,7 @@ void AtomMarkingRuntime::markAtomValue(JSContext* cx, const Value& value) {
                                        value.isBigInt());
 }
 
+#ifdef DEBUG
 template <typename T>
 bool AtomMarkingRuntime::atomIsMarked(Zone* zone, T* thing) {
   static_assert(std::is_same_v<T, JSAtom> || std::is_same_v<T, JS::Symbol>,
@@ -291,8 +293,6 @@ bool AtomMarkingRuntime::atomIsMarked(Zone* zone, T* thing) {
 
 template bool AtomMarkingRuntime::atomIsMarked(Zone* zone, JSAtom* thing);
 template bool AtomMarkingRuntime::atomIsMarked(Zone* zone, JS::Symbol* thing);
-
-#ifdef DEBUG
 
 template <>
 bool AtomMarkingRuntime::atomIsMarked(Zone* zone, TenuredCell* thing) {

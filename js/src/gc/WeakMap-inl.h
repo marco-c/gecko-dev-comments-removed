@@ -22,7 +22,6 @@
 #include "js/TraceKind.h"
 #include "vm/JSContext.h"
 
-#include "gc/AtomMarking-inl.h"
 #include "gc/Marking-inl.h"
 #include "gc/StableCellHasher-inl.h"
 
@@ -30,31 +29,19 @@ namespace js {
 
 namespace gc::detail {
 
-static inline bool IsObject(JSObject* obj) { return true; }
-static inline bool IsObject(BaseScript* script) { return false; }
-static inline bool IsObject(const JS::Value& value) { return value.isObject(); }
-
-static inline bool IsSymbol(JSObject* obj) { return false; }
-static inline bool IsSymbol(BaseScript* script) { return false; }
-static inline bool IsSymbol(const JS::Value& value) { return value.isSymbol(); }
-
 
 
 template <typename T>
 static CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
-  static_assert(!IsBarriered<T>::value, "Don't pass wrapper types");
-
   Cell* cell = ToMarkable(item);
   if (!cell->isTenured()) {
     return CellColor::Black;
   }
-
   const TenuredCell& t = cell->asTenured();
   if (!t.zoneFromAnyThread()->shouldMarkInZone(marker->markColor())) {
     return CellColor::Black;
   }
   MOZ_ASSERT(t.runtimeFromAnyThread() == marker->runtime());
-
   return t.color();
 }
 
@@ -65,23 +52,43 @@ static CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
 
 
 
+
+
+
+static MOZ_MAYBE_UNUSED JSObject* GetDelegateInternal(gc::Cell* key) {
+  return nullptr;
+}
+
+static MOZ_MAYBE_UNUSED JSObject* GetDelegateInternal(JSObject* key) {
+  JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
+  return (key == delegate) ? nullptr : delegate;
+}
+static MOZ_MAYBE_UNUSED JSObject* GetDelegateInternal(const Value& key) {
+  if (key.isObject()) {
+    return GetDelegateInternal(&key.toObject());
+  }
+  return nullptr;
+}
+
+
+
+
 template <typename T>
 static inline JSObject* GetDelegate(const T& key) {
-  static_assert(!IsBarriered<T>::value, "Don't pass wrapper types");
-  static_assert(!std::is_same_v<T, gc::Cell*>, "Don't pass Cell*");
+  return GetDelegateInternal(key);
+}
 
-  
-  if (!IsObject(key)) {
-    return nullptr;
-  }
+template <>
+inline JSObject* GetDelegate(gc::Cell* const&) = delete;
 
-  auto* obj = static_cast<JSObject*>(ToMarkable(key));
-  JSObject* delegate = UncheckedUnwrapWithoutExpose(obj);
-  if (delegate == obj) {
-    return nullptr;
-  }
+template <typename T>
+static inline bool IsSymbol(const T& key) {
+  return false;
+}
 
-  return delegate;
+template <>
+inline bool IsSymbol(const HeapPtr<JS::Value>& key) {
+  return key.isSymbol();
 }
 
 }  
@@ -172,26 +179,14 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor,
   }
 #endif
 
-  JSTracer* trc = marker->tracer();
-  gc::Cell* keyCell = gc::ToMarkable(key);
-  MOZ_ASSERT(keyCell);
-
-  bool keyIsSymbol = gc::detail::IsSymbol(key.get());
-  MOZ_ASSERT(keyIsSymbol == (keyCell->getTraceKind() == JS::TraceKind::Symbol));
-  if (keyIsSymbol) {
-    
-    
-    
-    auto* sym = static_cast<JS::Symbol*>(keyCell);
-    if (marker->runtime()->gc.isSymbolReferencedByUncollectedZone(sym)) {
-      TraceEdge(trc, &key, "WeakMap symbol key");
-    }
-  }
-
   bool marked = false;
   CellColor markColor = AsCellColor(marker->markColor());
-  CellColor keyColor = gc::detail::GetEffectiveColor(marker, key.get());
-  JSObject* delegate = gc::detail::GetDelegate(key.get());
+  CellColor keyColor = gc::detail::GetEffectiveColor(marker, key);
+  JSObject* delegate = gc::detail::GetDelegate(key);
+  JSTracer* trc = marker->tracer();
+
+  gc::Cell* keyCell = gc::ToMarkable(key);
+  MOZ_ASSERT(keyCell);
 
   if (delegate) {
     CellColor delegateColor = gc::detail::GetEffectiveColor(marker, delegate);
@@ -213,7 +208,7 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor,
   if (IsMarked(keyColor)) {
     if (cellValue) {
       CellColor targetColor = std::min(mapColor, keyColor);
-      CellColor valueColor = gc::detail::GetEffectiveColor(marker, value.get());
+      CellColor valueColor = gc::detail::GetEffectiveColor(marker, cellValue);
       if (valueColor < targetColor) {
         MOZ_ASSERT(markColor >= targetColor);
         if (markColor == targetColor) {
@@ -432,10 +427,11 @@ bool WeakMap<K, V>::checkMarking() const {
   bool ok = true;
   for (Range r = all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
-    MOZ_RELEASE_ASSERT(key);
     gc::Cell* value = gc::ToMarkable(r.front().value());
-    if (!gc::CheckWeakMapEntryMarking(this, key, value)) {
-      ok = false;
+    if (key && value) {
+      if (!gc::CheckWeakMapEntryMarking(this, key, value)) {
+        ok = false;
+      }
     }
   }
   return ok;
