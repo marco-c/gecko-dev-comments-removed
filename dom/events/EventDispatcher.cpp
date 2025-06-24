@@ -1009,9 +1009,6 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   Maybe<uint32_t> activationTargetItemIndex;
 
   
-  bool maybeUncancelable = IsUncancelableIfOnlyPassiveListeners(aEvent);
-
-  
   
   nsEventStatus status = aDOMEvent && aDOMEvent->DefaultPrevented()
                              ? nsEventStatus_eConsumeNoDefault
@@ -1020,6 +1017,7 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   nsCOMPtr<EventTarget> targetForPreVisitor = aEvent->mTarget;
   EventChainPreVisitor preVisitor(aPresContext, aEvent, aDOMEvent, status,
                                   isInAnon, targetForPreVisitor);
+  preVisitor.mMaybeUncancelable = IsUncancelableIfOnlyPassiveListeners(aEvent);
   targetEtci->GetEventTargetParent(preVisitor);
 
   if (preVisitor.mWantsActivationBehavior) {
@@ -1040,10 +1038,11 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
 
     clearTargets = ShouldClearTargets(aEvent);
   } else {
-    if (maybeUncancelable && preVisitor.mMayHaveListenerManager) {
+    if (preVisitor.mMaybeUncancelable && preVisitor.mMayHaveListenerManager) {
       if (EventListenerManager* const manager =
               targetEtci->CurrentTarget()->GetExistingListenerManager()) {
-        maybeUncancelable = !manager->HasNonPassiveListenersFor(aEvent);
+        preVisitor.mMaybeUncancelable =
+            !manager->HasNonPassiveListenersFor(aEvent);
       }
     }
 
@@ -1127,10 +1126,11 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
         break;
       }
 
-      if (maybeUncancelable && preVisitor.mMayHaveListenerManager) {
+      if (preVisitor.mMaybeUncancelable && preVisitor.mMayHaveListenerManager) {
         if (EventListenerManager* const manager =
                 parentEtci->CurrentTarget()->GetExistingListenerManager()) {
-          maybeUncancelable = !manager->HasNonPassiveListenersFor(aEvent);
+          preVisitor.mMaybeUncancelable =
+              !manager->HasNonPassiveListenersFor(aEvent);
         }
       }
     }
@@ -1141,7 +1141,7 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
     }
 
     if (NS_SUCCEEDED(rv)) {
-      if (maybeUncancelable) {
+      if (preVisitor.mMaybeUncancelable) {
         aEvent->mFlags.mCancelable = false;
       }
 

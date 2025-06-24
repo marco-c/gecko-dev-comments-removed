@@ -133,6 +133,7 @@ class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
         mRelatedTargetRetargetedInCurrentScope(false),
         mIgnoreBecauseOfShadowDOM(false),
         mWantsActivationBehavior(false),
+        mMaybeUncancelable(false),
         mParentTarget(nullptr),
         mEventTargetAtParent(nullptr),
         mRetargetedRelatedTarget(nullptr),
@@ -265,6 +266,14 @@ class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
 
 
   bool mWantsActivationBehavior;
+
+  
+
+
+
+
+
+  bool mMaybeUncancelable;
 
  private:
   
