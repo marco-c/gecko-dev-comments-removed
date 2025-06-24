@@ -1439,6 +1439,7 @@ void DataChannelConnection::HandleOpenRequestMessage(
         }));
     return;
   }
+  channel->mWaitingForAck = false;
   DeliverQueuedData(channel->mStream);
 }
 
@@ -1534,13 +1535,6 @@ void DataChannelConnection::HandleDataMessageChunk(const void* data,
   
   channel->mConnection->mLock.AssertCurrentThreadOwns();
 
-  
-  
-  
-  
-  
-  channel->mWaitingForAck = false;
-
   const char* type = (ppid == DATA_CHANNEL_PPID_DOMSTRING_PARTIAL ||
                       ppid == DATA_CHANNEL_PPID_DOMSTRING ||
                       ppid == DATA_CHANNEL_PPID_DOMSTRING_EMPTY)
@@ -1611,6 +1605,10 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
   
   
   channel->mConnection->mLock.AssertCurrentThreadOwns();
+
+  
+  
+  channel->mWaitingForAck = false;
 
   switch (aMsg.GetPpid()) {
     case DATA_CHANNEL_PPID_DOMSTRING:
