@@ -633,7 +633,7 @@ void SessionAccessibility::SendAnnouncementEvent(Accessible* aAccessible,
 void SessionAccessibility::PopulateNodeInfo(
     Accessible* aAccessible, mozilla::jni::Object::Param aNodeInfo) {
   nsAutoString name;
-  aAccessible->Name(name);
+  ENameValueFlag nameFlag = aAccessible->Name(name);
   nsAutoString textValue;
   aAccessible->Value(textValue);
   nsAutoString nodeID;
@@ -666,7 +666,12 @@ void SessionAccessibility::PopulateNodeInfo(
   } else {
     if (role == roles::LINK || role == roles::HEADING) {
       description.Assign(name);
-    } else {
+    } else if (role != roles::CELL || nameFlag != eNameFromSubtree) {
+      
+      
+      
+      
+      
       text.Assign(name);
     }
   }
