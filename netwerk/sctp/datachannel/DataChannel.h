@@ -202,8 +202,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
 
   void Destroy();  
   
-  void DestroyOnSTS(struct socket* aMasterSocket, struct socket* aSocket);
-  void DestroyOnSTSFinal();
+  void DestroyOnSTS();
 
   int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg)
       MOZ_REQUIRES(mLock);
@@ -441,9 +440,9 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   
   AutoTArray<uint16_t, 4> mStreamsResetting MOZ_GUARDED_BY(mLock);
   
-  struct socket* mMasterSocket = nullptr;
-  
   struct socket* mSocket = nullptr;
+  
+  bool mSctpConfigured = false;
   DataChannelConnectionState mState MOZ_GUARDED_BY(mLock) =
       DataChannelConnectionState::Closed;
 
