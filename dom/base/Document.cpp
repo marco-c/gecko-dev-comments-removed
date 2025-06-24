@@ -12484,7 +12484,11 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
     mAnimationController->OnPageHide();
   }
 
-  if (!inFrameLoaderSwap) {
+  if (inFrameLoaderSwap) {
+    if (RefPtr transition = mActiveViewTransition) {
+      transition->SkipTransition(SkipTransitionReason::PageSwap);
+    }
+  } else {
     if (aPersisted) {
       
       

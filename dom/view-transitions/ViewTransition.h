@@ -66,6 +66,7 @@ enum class SkipTransitionReason : uint8_t {
   DuplicateTransitionNameCapturingNewState,
   PseudoUpdateFailure,
   Resize,
+  PageSwap,
 };
 
 

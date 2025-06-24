@@ -17,4 +17,10 @@ UNIFIED_SOURCES += [
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
+
+
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser/browser.toml",
+]
+
 FINAL_LIBRARY = "xul"
