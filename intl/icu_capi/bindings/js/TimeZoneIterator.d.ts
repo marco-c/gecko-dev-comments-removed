@@ -1,0 +1,16 @@
+
+import type { TimeZone } from "./TimeZone"
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+export class TimeZoneIterator {
+    get ffiValue(): pointer;
+
+
+    next(): IteratorResult<TimeZone>;
+}

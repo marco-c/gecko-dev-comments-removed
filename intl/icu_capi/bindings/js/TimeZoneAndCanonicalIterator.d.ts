@@ -1,0 +1,16 @@
+
+import type { TimeZoneAndCanonical } from "./TimeZoneAndCanonical"
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+export class TimeZoneAndCanonicalIterator {
+    get ffiValue(): pointer;
+
+
+    next(): IteratorResult<TimeZoneAndCanonical>;
+}

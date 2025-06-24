@@ -2,216 +2,287 @@
 
 
 
-use icu_segmenter::LineBreakOptions;
-use icu_segmenter::LineBreakStrictness;
-use icu_segmenter::LineBreakWordOption;
-
 #[diplomat::bridge]
+#[diplomat::abi_rename = "icu4x_{0}_mv1"]
+#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
-    use crate::errors::ffi::ICU4XError;
-    use crate::provider::ffi::ICU4XDataProvider;
     use alloc::boxed::Box;
-    use core::convert::TryFrom;
-    use icu_segmenter::{
-        LineBreakIteratorLatin1, LineBreakIteratorPotentiallyIllFormedUtf8, LineBreakIteratorUtf16,
-        LineSegmenter,
-    };
+    use icu_segmenter::scaffold::{Latin1, PotentiallyIllFormedUtf8, Utf16};
+
+    #[cfg(any(feature = "compiled_data", feature = "buffer_provider"))]
+    use crate::unstable::locale_core::ffi::Locale;
+    #[cfg(feature = "buffer_provider")]
+    use crate::unstable::{errors::ffi::DataError, provider::ffi::DataProvider};
+    use diplomat_runtime::DiplomatOption;
+    #[cfg(any(feature = "compiled_data", feature = "buffer_provider"))]
+    use icu_segmenter::options::LineBreakOptions;
 
     #[diplomat::opaque]
     
     #[diplomat::rust_link(icu::segmenter::LineSegmenter, Struct)]
-    pub struct ICU4XLineSegmenter(LineSegmenter);
+    #[diplomat::rust_link(icu::segmenter::LineSegmenterBorrowed, Struct, hidden)]
+    pub struct LineSegmenter(icu_segmenter::LineSegmenter);
 
-    #[diplomat::rust_link(icu::segmenter::LineBreakStrictness, Enum)]
-    pub enum ICU4XLineBreakStrictness {
+    #[diplomat::rust_link(icu::segmenter::options::LineBreakStrictness, Enum)]
+    #[diplomat::enum_convert(icu_segmenter::options::LineBreakStrictness, needs_wildcard)]
+    pub enum LineBreakStrictness {
         Loose,
         Normal,
         Strict,
         Anywhere,
     }
 
-    #[diplomat::rust_link(icu::segmenter::LineBreakWordOption, Enum)]
-    pub enum ICU4XLineBreakWordOption {
+    #[diplomat::rust_link(icu::segmenter::options::LineBreakWordOption, Enum)]
+    #[diplomat::enum_convert(icu_segmenter::options::LineBreakWordOption, needs_wildcard)]
+    pub enum LineBreakWordOption {
         Normal,
         BreakAll,
         KeepAll,
     }
 
-    #[diplomat::rust_link(icu::segmenter::LineBreakOptions, Struct)]
-    #[diplomat::attr(dart, rename = "LineBreakOptions")]
-    pub struct ICU4XLineBreakOptionsV1 {
-        pub strictness: ICU4XLineBreakStrictness,
-        pub word_option: ICU4XLineBreakWordOption,
-        pub ja_zh: bool,
+    #[diplomat::rust_link(icu::segmenter::options::LineBreakOptions, Struct)]
+    #[diplomat::attr(supports = non_exhaustive_structs, rename = "LineBreakOptions")]
+    pub struct LineBreakOptionsV2 {
+        pub strictness: DiplomatOption<LineBreakStrictness>,
+        pub word_option: DiplomatOption<LineBreakWordOption>,
     }
 
     #[diplomat::opaque]
-    #[diplomat::rust_link(icu::segmenter::LineBreakIterator, Struct)]
-    #[diplomat::rust_link(
-        icu::segmenter::LineBreakIteratorPotentiallyIllFormedUtf8,
-        Typedef,
-        compact
-    )]
-    #[diplomat::rust_link(icu::segmenter::LineBreakIteratorUtf8, Typedef, hidden)]
-    pub struct ICU4XLineBreakIteratorUtf8<'a>(LineBreakIteratorPotentiallyIllFormedUtf8<'a, 'a>);
+    #[diplomat::rust_link(icu::segmenter::iterators::LineBreakIterator, Struct)]
+    pub struct LineBreakIteratorUtf8<'a>(
+        icu_segmenter::iterators::LineBreakIterator<'a, 'a, PotentiallyIllFormedUtf8>,
+    );
 
     #[diplomat::opaque]
-    #[diplomat::rust_link(icu::segmenter::LineBreakIterator, Struct)]
-    #[diplomat::rust_link(icu::segmenter::LineBreakIteratorUtf16, Typedef, compact)]
-    pub struct ICU4XLineBreakIteratorUtf16<'a>(LineBreakIteratorUtf16<'a, 'a>);
+    #[diplomat::rust_link(icu::segmenter::iterators::LineBreakIterator, Struct)]
+    pub struct LineBreakIteratorUtf16<'a>(
+        icu_segmenter::iterators::LineBreakIterator<'a, 'a, Utf16>,
+    );
 
     #[diplomat::opaque]
-    #[diplomat::rust_link(icu::segmenter::LineBreakIterator, Struct)]
-    #[diplomat::rust_link(icu::segmenter::LineBreakIteratorLatin1, Typedef, compact)]
-    pub struct ICU4XLineBreakIteratorLatin1<'a>(LineBreakIteratorLatin1<'a, 'a>);
+    #[diplomat::rust_link(icu::segmenter::iterators::LineBreakIterator, Struct)]
+    pub struct LineBreakIteratorLatin1<'a>(
+        icu_segmenter::iterators::LineBreakIterator<'a, 'a, Latin1>,
+    );
 
-    impl ICU4XLineSegmenter {
+    impl LineSegmenter {
         
         
         #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_auto, FnInStruct)]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "auto")]
-        pub fn create_auto(
-            provider: &ICU4XDataProvider,
-        ) -> Result<Box<ICU4XLineSegmenter>, ICU4XError> {
-            Ok(Box::new(ICU4XLineSegmenter(call_constructor!(
-                LineSegmenter::new_auto [r => Ok(r)],
-                LineSegmenter::try_new_auto_with_any_provider,
-                LineSegmenter::try_new_auto_with_buffer_provider,
-                provider
-            )?)))
+        #[diplomat::attr(auto, named_constructor = "auto")]
+        #[cfg(feature = "compiled_data")]
+        pub fn create_auto() -> Box<LineSegmenter> {
+            Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::new_auto(Default::default()).static_to_owned(),
+            ))
         }
 
         
         
         #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_lstm, FnInStruct)]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "lstm")]
-        pub fn create_lstm(
-            provider: &ICU4XDataProvider,
-        ) -> Result<Box<ICU4XLineSegmenter>, ICU4XError> {
-            Ok(Box::new(ICU4XLineSegmenter(call_constructor!(
-                LineSegmenter::new_lstm [r => Ok(r)],
-                LineSegmenter::try_new_lstm_with_any_provider,
-                LineSegmenter::try_new_lstm_with_buffer_provider,
-                provider,
-            )?)))
+        #[diplomat::attr(auto, named_constructor = "lstm")]
+        #[cfg(feature = "compiled_data")]
+        pub fn create_lstm() -> Box<LineSegmenter> {
+            Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::new_lstm(Default::default()).static_to_owned(),
+            ))
         }
 
         
         
         #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_dictionary, FnInStruct)]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "dictionary")]
-        pub fn create_dictionary(
-            provider: &ICU4XDataProvider,
-        ) -> Result<Box<ICU4XLineSegmenter>, ICU4XError> {
-            Ok(Box::new(ICU4XLineSegmenter(call_constructor!(
-                LineSegmenter::new_dictionary [r => Ok(r)],
-                LineSegmenter::try_new_dictionary_with_any_provider,
-                LineSegmenter::try_new_dictionary_with_buffer_provider,
-                provider,
-            )?)))
+        #[diplomat::attr(auto, named_constructor = "dictionary")]
+        #[cfg(feature = "compiled_data")]
+        pub fn create_dictionary() -> Box<LineSegmenter> {
+            Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::new_dictionary(Default::default()).static_to_owned(),
+            ))
         }
 
         
         
-        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_auto_with_options, FnInStruct)]
-        #[diplomat::attr(dart, rename = "auto_with_options")]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "auto_with_options_v1")]
-        pub fn create_auto_with_options_v1(
-            provider: &ICU4XDataProvider,
-            options: ICU4XLineBreakOptionsV1,
-        ) -> Result<Box<ICU4XLineSegmenter>, ICU4XError> {
-            Ok(Box::new(ICU4XLineSegmenter(call_constructor!(
-                LineSegmenter::new_auto_with_options [r => Ok(r)],
-                LineSegmenter::try_new_auto_with_options_with_any_provider,
-                LineSegmenter::try_new_auto_with_options_with_buffer_provider,
-                provider,
-                options.into(),
-            )?)))
+        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_auto, FnInStruct)]
+        #[diplomat::attr(supports = non_exhaustive_structs, rename = "auto_with_options")]
+        #[diplomat::attr(all(supports = non_exhaustive_structs, supports = named_constructors), named_constructor = "auto_with_options")]
+        #[diplomat::attr(all(not(supports = non_exhaustive_structs), supports = named_constructors), named_constructor = "auto_with_options_v2")]
+        #[cfg(feature = "compiled_data")]
+        pub fn create_auto_with_options_v2(
+            content_locale: Option<&Locale>,
+            options: LineBreakOptionsV2,
+        ) -> Box<LineSegmenter> {
+            let mut options: LineBreakOptions = options.into();
+            options.content_locale = content_locale.map(|c| &c.0.id);
+            Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::new_auto(options).static_to_owned(),
+            ))
         }
+        
+        
+        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_auto, FnInStruct)]
+        #[diplomat::attr(supports = non_exhaustive_structs, rename = "auto_with_options_and_provider")]
+        #[diplomat::attr(all(supports = non_exhaustive_structs, supports = fallible_constructors, supports = named_constructors), named_constructor = "auto_with_options_and_provider")]
+        #[diplomat::attr(all(not(supports = non_exhaustive_structs), supports = fallible_constructors, supports = named_constructors), named_constructor = "auto_with_options_v2_and_provider")]
+        #[cfg(feature = "buffer_provider")]
+        pub fn create_auto_with_options_v2_and_provider(
+            provider: &DataProvider,
+            content_locale: Option<&Locale>,
+            options: LineBreakOptionsV2,
+        ) -> Result<Box<LineSegmenter>, DataError> {
+            let mut options: LineBreakOptions = options.into();
+            options.content_locale = content_locale.map(|c| &c.0.id);
 
-        
-        
-        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_lstm_with_options, FnInStruct)]
-        #[diplomat::attr(dart, rename = "lstm_with_options")]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "lstm_with_options_v1")]
-        pub fn create_lstm_with_options_v1(
-            provider: &ICU4XDataProvider,
-            options: ICU4XLineBreakOptionsV1,
-        ) -> Result<Box<ICU4XLineSegmenter>, ICU4XError> {
-            Ok(Box::new(ICU4XLineSegmenter(call_constructor!(
-                LineSegmenter::new_lstm_with_options [r => Ok(r)],
-                LineSegmenter::try_new_lstm_with_options_with_any_provider,
-                LineSegmenter::try_new_lstm_with_options_with_buffer_provider,
-                provider,
-                options.into(),
-            )?)))
+            Ok(Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::try_new_auto_with_buffer_provider(
+                    provider.get()?,
+                    options,
+                )?,
+            )))
         }
+        
+        
+        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_lstm, FnInStruct)]
+        #[diplomat::attr(supports = non_exhaustive_structs, rename = "lstm_with_options")]
+        #[diplomat::attr(all(supports = non_exhaustive_structs, supports = named_constructors), named_constructor = "lstm_with_options")]
+        #[diplomat::attr(all(not(supports = non_exhaustive_structs), supports = named_constructors), named_constructor = "lstm_with_options_v2")]
+        #[cfg(feature = "compiled_data")]
+        pub fn create_lstm_with_options_v2(
+            content_locale: Option<&Locale>,
+            options: LineBreakOptionsV2,
+        ) -> Box<LineSegmenter> {
+            let mut options: LineBreakOptions = options.into();
+            options.content_locale = content_locale.map(|c| &c.0.id);
 
+            Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::new_lstm(options).static_to_owned(),
+            ))
+        }
         
         
+        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_lstm, FnInStruct)]
+        #[diplomat::attr(supports = non_exhaustive_structs, rename = "lstm_with_options_and_provider")]
+        #[diplomat::attr(all(supports = non_exhaustive_structs, supports = fallible_constructors, supports = named_constructors), named_constructor = "lstm_with_options_and_provider")]
+        #[diplomat::attr(all(not(supports = non_exhaustive_structs), supports = fallible_constructors, supports = named_constructors), named_constructor = "lstm_with_options_v2_and_provider")]
+        #[cfg(feature = "buffer_provider")]
+        pub fn create_lstm_with_options_v2_and_provider(
+            provider: &DataProvider,
+            content_locale: Option<&Locale>,
+            options: LineBreakOptionsV2,
+        ) -> Result<Box<LineSegmenter>, DataError> {
+            let mut options: LineBreakOptions = options.into();
+            options.content_locale = content_locale.map(|c| &c.0.id);
+
+            Ok(Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::try_new_lstm_with_buffer_provider(
+                    provider.get()?,
+                    options,
+                )?,
+            )))
+        }
+        
+        
+        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_dictionary, FnInStruct)]
+        #[diplomat::attr(supports = non_exhaustive_structs, rename = "dictionary_with_options")]
+        #[diplomat::attr(all(supports = non_exhaustive_structs, supports = named_constructors), named_constructor = "dictionary_with_options")]
+        #[diplomat::attr(all(not(supports = non_exhaustive_structs), supports = named_constructors), named_constructor = "dictionary_with_options_v2")]
+        #[cfg(feature = "compiled_data")]
+        pub fn create_dictionary_with_options_v2(
+            content_locale: Option<&Locale>,
+            options: LineBreakOptionsV2,
+        ) -> Box<LineSegmenter> {
+            let mut options: LineBreakOptions = options.into();
+            options.content_locale = content_locale.map(|c| &c.0.id);
+
+            Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::new_dictionary(options).static_to_owned(),
+            ))
+        }
+        
+        
+        #[diplomat::rust_link(icu::segmenter::LineSegmenter::new_dictionary, FnInStruct)]
+        #[diplomat::attr(supports = non_exhaustive_structs, rename = "dictionary_with_options_and_provider")]
+        #[diplomat::attr(all(supports = non_exhaustive_structs, supports = fallible_constructors, supports = named_constructors), named_constructor = "dictionary_with_options_and_provider")]
+        #[diplomat::attr(all(not(supports = non_exhaustive_structs), supports = fallible_constructors, supports = named_constructors), named_constructor = "dictionary_with_options_v2_and_provider")]
+        #[cfg(feature = "buffer_provider")]
+        pub fn create_dictionary_with_options_v2_and_provider(
+            provider: &DataProvider,
+            content_locale: Option<&Locale>,
+            options: LineBreakOptionsV2,
+        ) -> Result<Box<LineSegmenter>, DataError> {
+            let mut options: LineBreakOptions = options.into();
+            options.content_locale = content_locale.map(|c| &c.0.id);
+
+            Ok(Box::new(LineSegmenter(
+                icu_segmenter::LineSegmenter::try_new_dictionary_with_buffer_provider(
+                    provider.get()?,
+                    options,
+                )?,
+            )))
+        }
+        
+        
+        
+        
+        #[diplomat::rust_link(icu::segmenter::LineSegmenterBorrowed::segment_utf8, FnInStruct)]
         #[diplomat::rust_link(
-            icu::segmenter::LineSegmenter::new_dictionary_with_options,
-            FnInStruct
+            icu::segmenter::LineSegmenterBorrowed::segment_str,
+            FnInStruct,
+            hidden
         )]
-        #[diplomat::attr(dart, rename = "dictionary_with_options")]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "dictionary_with_options_v1")]
-        pub fn create_dictionary_with_options_v1(
-            provider: &ICU4XDataProvider,
-            options: ICU4XLineBreakOptionsV1,
-        ) -> Result<Box<ICU4XLineSegmenter>, ICU4XError> {
-            Ok(Box::new(ICU4XLineSegmenter(call_constructor!(
-                LineSegmenter::new_dictionary_with_options [r => Ok(r)],
-                LineSegmenter::try_new_dictionary_with_options_with_any_provider,
-                LineSegmenter::try_new_dictionary_with_options_with_buffer_provider,
-                provider,
-                options.into(),
-            )?)))
-        }
-
-        
-        
-        
-        
-        #[diplomat::rust_link(icu::segmenter::LineSegmenter::segment_utf8, FnInStruct)]
-        #[diplomat::rust_link(icu::segmenter::LineSegmenter::segment_str, FnInStruct, hidden)]
-        #[diplomat::attr(dart, disable)]
+        #[diplomat::attr(not(supports = utf8_strings), disable)]
+        #[diplomat::attr(*, rename = "segment")]
         pub fn segment_utf8<'a>(
             &'a self,
             input: &'a DiplomatStr,
-        ) -> Box<ICU4XLineBreakIteratorUtf8<'a>> {
-            Box::new(ICU4XLineBreakIteratorUtf8(self.0.segment_utf8(input)))
+        ) -> Box<LineBreakIteratorUtf8<'a>> {
+            Box::new(LineBreakIteratorUtf8(
+                self.0.as_borrowed().segment_utf8(input),
+            ))
         }
 
         
         
         
         
-        #[diplomat::rust_link(icu::segmenter::LineSegmenter::segment_utf16, FnInStruct)]
-        #[diplomat::attr(dart, rename = "segment")]
+        #[diplomat::rust_link(icu::segmenter::LineSegmenterBorrowed::segment_utf16, FnInStruct)]
+        #[diplomat::attr(not(supports = utf8_strings), rename = "segment")]
+        #[diplomat::attr(supports = utf8_strings, rename = "segment16")]
         pub fn segment_utf16<'a>(
             &'a self,
             input: &'a DiplomatStr16,
-        ) -> Box<ICU4XLineBreakIteratorUtf16<'a>> {
-            Box::new(ICU4XLineBreakIteratorUtf16(self.0.segment_utf16(input)))
+        ) -> Box<LineBreakIteratorUtf16<'a>> {
+            Box::new(LineBreakIteratorUtf16(
+                self.0.as_borrowed().segment_utf16(input),
+            ))
         }
 
         
-        #[diplomat::rust_link(icu::segmenter::LineSegmenter::segment_latin1, FnInStruct)]
-        #[diplomat::attr(dart, disable)]
-        pub fn segment_latin1<'a>(
-            &'a self,
-            input: &'a [u8],
-        ) -> Box<ICU4XLineBreakIteratorLatin1<'a>> {
-            Box::new(ICU4XLineBreakIteratorLatin1(self.0.segment_latin1(input)))
+        #[diplomat::rust_link(icu::segmenter::LineSegmenterBorrowed::segment_latin1, FnInStruct)]
+        #[diplomat::attr(not(supports = utf8_strings), disable)]
+        pub fn segment_latin1<'a>(&'a self, input: &'a [u8]) -> Box<LineBreakIteratorLatin1<'a>> {
+            Box::new(LineBreakIteratorLatin1(
+                self.0.as_borrowed().segment_latin1(input),
+            ))
         }
     }
 
-    impl<'a> ICU4XLineBreakIteratorUtf8<'a> {
+    impl<'a> LineBreakIteratorUtf8<'a> {
         
         
-        #[diplomat::rust_link(icu::segmenter::LineBreakIterator::next, FnInStruct)]
+        #[diplomat::rust_link(icu::segmenter::iterators::LineBreakIterator::next, FnInStruct)]
+        pub fn next(&mut self) -> i32 {
+            self.0
+                .next()
+                .and_then(|u| i32::try_from(u).ok())
+                .unwrap_or(-1)
+        }
+    }
+
+    impl<'a> LineBreakIteratorUtf16<'a> {
+        
+        
+        #[diplomat::rust_link(icu::segmenter::iterators::LineBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
-            icu::segmenter::LineBreakIterator::Item,
+            icu::segmenter::iterators::LineBreakIterator::Item,
             AssociatedTypeInStruct,
             hidden
         )]
@@ -223,29 +294,12 @@ pub mod ffi {
         }
     }
 
-    impl<'a> ICU4XLineBreakIteratorUtf16<'a> {
+    impl<'a> LineBreakIteratorLatin1<'a> {
         
         
-        #[diplomat::rust_link(icu::segmenter::LineBreakIterator::next, FnInStruct)]
+        #[diplomat::rust_link(icu::segmenter::iterators::LineBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
-            icu::segmenter::LineBreakIterator::Item,
-            AssociatedTypeInStruct,
-            hidden
-        )]
-        pub fn next(&mut self) -> i32 {
-            self.0
-                .next()
-                .and_then(|u| i32::try_from(u).ok())
-                .unwrap_or(-1)
-        }
-    }
-
-    impl<'a> ICU4XLineBreakIteratorLatin1<'a> {
-        
-        
-        #[diplomat::rust_link(icu::segmenter::LineBreakIterator::next, FnInStruct)]
-        #[diplomat::rust_link(
-            icu::segmenter::LineBreakIterator::Item,
+            icu::segmenter::iterators::LineBreakIterator::Item,
             AssociatedTypeInStruct,
             hidden
         )]
@@ -258,33 +312,11 @@ pub mod ffi {
     }
 }
 
-impl From<ffi::ICU4XLineBreakStrictness> for LineBreakStrictness {
-    fn from(other: ffi::ICU4XLineBreakStrictness) -> Self {
-        match other {
-            ffi::ICU4XLineBreakStrictness::Loose => Self::Loose,
-            ffi::ICU4XLineBreakStrictness::Normal => Self::Normal,
-            ffi::ICU4XLineBreakStrictness::Strict => Self::Strict,
-            ffi::ICU4XLineBreakStrictness::Anywhere => Self::Anywhere,
-        }
-    }
-}
-
-impl From<ffi::ICU4XLineBreakWordOption> for LineBreakWordOption {
-    fn from(other: ffi::ICU4XLineBreakWordOption) -> Self {
-        match other {
-            ffi::ICU4XLineBreakWordOption::Normal => Self::Normal,
-            ffi::ICU4XLineBreakWordOption::BreakAll => Self::BreakAll,
-            ffi::ICU4XLineBreakWordOption::KeepAll => Self::KeepAll,
-        }
-    }
-}
-
-impl From<ffi::ICU4XLineBreakOptionsV1> for LineBreakOptions {
-    fn from(other: ffi::ICU4XLineBreakOptionsV1) -> Self {
-        let mut options = LineBreakOptions::default();
-        options.strictness = other.strictness.into();
-        options.word_option = other.word_option.into();
-        options.ja_zh = other.ja_zh;
+impl From<ffi::LineBreakOptionsV2> for icu_segmenter::options::LineBreakOptions<'_> {
+    fn from(other: ffi::LineBreakOptionsV2) -> Self {
+        let mut options = icu_segmenter::options::LineBreakOptions::default();
+        options.strictness = other.strictness.into_converted_option();
+        options.word_option = other.word_option.into_converted_option();
         options
     }
 }

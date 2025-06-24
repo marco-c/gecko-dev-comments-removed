@@ -3,14 +3,16 @@
 
 
 #[diplomat::bridge]
+#[diplomat::abi_rename = "icu4x_{0}_mv1"]
+#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
     use alloc::boxed::Box;
 
     #[diplomat::opaque]
     
-    pub struct ICU4XLogger;
+    pub struct Logger;
 
-    impl ICU4XLogger {
+    impl Logger {
         
         
         
@@ -20,16 +22,5 @@ pub mod ffi {
         pub fn init_simple_logger() -> bool {
             simple_logger::init().is_ok()
         }
-
-        
-        #[cfg(target_arch = "wasm32")]
-        pub fn init_console_logger() -> bool {
-            false
-        }
     }
 }
-
-
-#[no_mangle]
-#[cfg(target_arch = "wasm32")]
-pub unsafe extern "C" fn icu4x_init() {}

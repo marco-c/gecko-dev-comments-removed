@@ -1,0 +1,26 @@
+
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+export class DecimalSign {
+
+    static fromValue(value: DecimalSign | string): DecimalSign;
+
+    get value(): string;
+
+    get ffiValue(): number;
+
+    static None : DecimalSign;
+    static Negative : DecimalSign;
+    static Positive : DecimalSign;
+
+
+    constructor(value: DecimalSign | string );
+}
