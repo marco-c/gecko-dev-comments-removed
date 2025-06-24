@@ -1824,6 +1824,20 @@ impl super::Queue {
                     _ => panic!("Unsupported uniform datatype: {:?}!", uniform.ty),
                 }
             }
+            C::SetClipDistances {
+                old_count,
+                new_count,
+            } => {
+                
+                for i in new_count..old_count {
+                    unsafe { gl.disable(glow::CLIP_DISTANCE0 + i) };
+                }
+
+                
+                for i in old_count..new_count {
+                    unsafe { gl.enable(glow::CLIP_DISTANCE0 + i) };
+                }
+            }
         }
     }
 }

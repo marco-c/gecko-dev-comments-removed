@@ -6799,6 +6799,20 @@ pub enum BindingType {
         
         vertex_return: bool,
     },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ExternalTexture,
 }
 
 impl BindingType {

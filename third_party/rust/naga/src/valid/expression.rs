@@ -123,6 +123,8 @@ pub enum ExpressionError {
     InvalidSampleLevelBiasDimension(crate::ImageDimension),
     #[error("Sample level (gradient) of {1:?} doesn't match the image dimension {0:?}")]
     InvalidSampleLevelGradientType(crate::ImageDimension, Handle<crate::Expression>),
+    #[error("Clamping sample coordinate to edge is not supported with {0}")]
+    InvalidSampleClampCoordinateToEdge(alloc::string::String),
     #[error("Unable to cast")]
     InvalidCastArgument,
     #[error("Invalid argument count for {0:?}")]
@@ -413,6 +415,7 @@ impl super::Validator {
                 offset,
                 level,
                 depth_ref,
+                clamp_to_edge,
             } => {
                 
                 let image_ty = Self::global_var_ty(module, function, image)?;
@@ -537,6 +540,52 @@ impl super::Validator {
                     match level {
                         crate::SampleLevel::Zero => {}
                         _ => return Err(ExpressionError::InvalidGatherLevel),
+                    }
+                }
+
+                
+                
+                if clamp_to_edge {
+                    if !matches!(
+                        class,
+                        crate::ImageClass::Sampled {
+                            kind: crate::ScalarKind::Float,
+                            multi: false
+                        }
+                    ) {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            alloc::format!("image class `{class:?}`"),
+                        ));
+                    }
+                    if dim != crate::ImageDimension::D2 {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            alloc::format!("image dimension `{dim:?}`"),
+                        ));
+                    }
+                    if gather.is_some() {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            "gather".into(),
+                        ));
+                    }
+                    if array_index.is_some() {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            "array index".into(),
+                        ));
+                    }
+                    if offset.is_some() {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            "offset".into(),
+                        ));
+                    }
+                    if level != crate::SampleLevel::Zero {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            "non-zero level".into(),
+                        ));
+                    }
+                    if depth_ref.is_some() {
+                        return Err(ExpressionError::InvalidSampleClampCoordinateToEdge(
+                            "depth comparison".into(),
+                        ));
                     }
                 }
 

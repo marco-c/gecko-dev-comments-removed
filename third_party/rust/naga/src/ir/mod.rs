@@ -1509,6 +1509,10 @@ pub enum Expression {
         offset: Option<Handle<Expression>>,
         level: SampleLevel,
         depth_ref: Option<Handle<Expression>>,
+        
+        
+        
+        clamp_to_edge: bool,
     },
 
     
@@ -1916,7 +1920,12 @@ pub enum Statement {
     
     
     
-    Barrier(Barrier),
+    ControlBarrier(Barrier),
+
+    
+    
+    MemoryBarrier(Barrier),
+
     
     
     

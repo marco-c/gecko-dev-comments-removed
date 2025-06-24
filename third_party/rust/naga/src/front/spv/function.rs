@@ -374,7 +374,15 @@ impl<I: Iterator<Item = u32>> super::Frontend<I> {
         );
 
         
+        
+        
+        
+        
+        
         let mut members = Vec::new();
+        self.layouter.update(module.to_ctx()).unwrap();
+        let mut next_member_offset = 0;
+        let mut struct_alignment = crate::proc::Alignment::ONE;
         let mut components = Vec::new();
         for &v_id in ep.variable_ids.iter() {
             let lvar = self.lookup_variable.lookup(v_id)?;
@@ -435,6 +443,11 @@ impl<I: Iterator<Item = u32>> super::Frontend<I> {
                                 }
                             }
 
+                            let member_alignment = self.layouter[sm.ty].alignment;
+                            next_member_offset = member_alignment.round_up(next_member_offset);
+                            sm.offset = next_member_offset;
+                            struct_alignment = struct_alignment.max(member_alignment);
+                            next_member_offset += self.layouter[sm.ty].size;
                             members.push(sm);
 
                             components.push(function.expressions.append(
@@ -454,12 +467,16 @@ impl<I: Iterator<Item = u32>> super::Frontend<I> {
                             }
                         }
 
+                        let member_alignment = self.layouter[result.ty].alignment;
+                        next_member_offset = member_alignment.round_up(next_member_offset);
                         members.push(crate::StructMember {
                             name: None,
                             ty: result.ty,
                             binding,
-                            offset: 0,
+                            offset: next_member_offset,
                         });
+                        struct_alignment = struct_alignment.max(member_alignment);
+                        next_member_offset += self.layouter[result.ty].size;
                         
                         
                         components.push(expr_handle);
@@ -545,7 +562,7 @@ impl<I: Iterator<Item = u32>> super::Frontend<I> {
                         name: None,
                         inner: crate::TypeInner::Struct {
                             members,
-                            span: 0xFFFF, 
+                            span: struct_alignment.round_up(next_member_offset),
                         },
                     },
                     span,

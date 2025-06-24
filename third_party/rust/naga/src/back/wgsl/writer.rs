@@ -5,7 +5,6 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt::Write;
-use hashbrown::HashSet;
 
 use super::Error;
 use super::ToWgslIfImplemented as _;
@@ -128,9 +127,6 @@ impl<W: Write> Writer<W> {
         self.reset(module);
 
         
-        self.write_enable_dual_source_blending_if_needed(module)?;
-
-        
         self.write_enable_declarations(module)?;
 
         
@@ -227,12 +223,9 @@ impl<W: Write> Writer<W> {
     
     
     fn write_enable_declarations(&mut self, module: &Module) -> BackendResult {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        enum WrittenDeclarations {
-            F16,
-        }
-
-        let mut written_declarations = HashSet::new();
+        let mut needs_f16 = false;
+        let mut needs_dual_source_blending = false;
+        let mut needs_clip_distances = false;
 
         
         for (_, ty) in module.types.iter() {
@@ -240,18 +233,42 @@ impl<W: Write> Writer<W> {
                 TypeInner::Scalar(scalar)
                 | TypeInner::Vector { scalar, .. }
                 | TypeInner::Matrix { scalar, .. } => {
-                    if scalar == crate::Scalar::F16
-                        && !written_declarations.contains(&WrittenDeclarations::F16)
-                    {
-                        writeln!(self.out, "enable f16;")?;
-                        written_declarations.insert(WrittenDeclarations::F16);
+                    needs_f16 |= scalar == crate::Scalar::F16;
+                }
+                TypeInner::Struct { ref members, .. } => {
+                    for binding in members.iter().filter_map(|m| m.binding.as_ref()) {
+                        match *binding {
+                            crate::Binding::Location {
+                                blend_src: Some(_), ..
+                            } => {
+                                needs_dual_source_blending = true;
+                            }
+                            crate::Binding::BuiltIn(crate::BuiltIn::ClipDistance) => {
+                                needs_clip_distances = true;
+                            }
+                            _ => {}
+                        }
                     }
                 }
                 _ => {}
             }
         }
 
-        if !written_declarations.is_empty() {
+        
+        let mut any_written = false;
+        if needs_f16 {
+            writeln!(self.out, "enable f16;")?;
+            any_written = true;
+        }
+        if needs_dual_source_blending {
+            writeln!(self.out, "enable dual_source_blending;")?;
+            any_written = true;
+        }
+        if needs_clip_distances {
+            writeln!(self.out, "enable clip_distances;")?;
+            any_written = true;
+        }
+        if any_written {
             
             writeln!(self.out)?;
         }
@@ -401,32 +418,6 @@ impl<W: Write> Writer<W> {
                 }
             };
         }
-        Ok(())
-    }
-
-    
-    fn write_enable_dual_source_blending_if_needed(&mut self, module: &Module) -> BackendResult {
-        
-        if module.types.iter().any(|(_handle, ty)| {
-            if let TypeInner::Struct { ref members, .. } = ty.inner {
-                members.iter().any(|member| {
-                    member.binding.as_ref().is_some_and(|binding| {
-                        matches!(
-                            binding,
-                            &crate::Binding::Location {
-                                blend_src: Some(_),
-                                ..
-                            }
-                        )
-                    })
-                })
-            } else {
-                false
-            }
-        }) {
-            writeln!(self.out, "enable dual_source_blending;")?;
-        }
-
         Ok(())
     }
 
@@ -830,7 +821,7 @@ impl<W: Write> Writer<W> {
             Statement::Continue => {
                 writeln!(self.out, "{level}continue;")?;
             }
-            Statement::Barrier(barrier) => {
+            Statement::ControlBarrier(barrier) | Statement::MemoryBarrier(barrier) => {
                 if barrier.contains(crate::Barrier::STORAGE) {
                     writeln!(self.out, "{level}storageBarrier();")?;
                 }
@@ -1312,6 +1303,7 @@ impl<W: Write> Writer<W> {
                 offset,
                 level,
                 depth_ref,
+                clamp_to_edge,
             } => {
                 use crate::SampleLevel as Sl;
 
@@ -1321,6 +1313,7 @@ impl<W: Write> Writer<W> {
                 };
                 let suffix_level = match level {
                     Sl::Auto => "",
+                    Sl::Zero if clamp_to_edge => "BaseClampToEdge",
                     Sl::Zero | Sl::Exact(_) => "Level",
                     Sl::Bias(_) => "Bias",
                     Sl::Gradient { .. } => "Grad",
@@ -1347,7 +1340,7 @@ impl<W: Write> Writer<W> {
                     Sl::Auto => {}
                     Sl::Zero => {
                         
-                        if depth_ref.is_none() {
+                        if depth_ref.is_none() && !clamp_to_edge {
                             write!(self.out, ", 0.0")?;
                         }
                     }
@@ -1384,6 +1377,7 @@ impl<W: Write> Writer<W> {
                 offset,
                 level: _,
                 depth_ref,
+                clamp_to_edge: _,
             } => {
                 let suffix_cmp = match depth_ref {
                     Some(_) => "Compare",

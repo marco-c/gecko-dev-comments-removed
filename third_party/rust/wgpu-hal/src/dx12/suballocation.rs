@@ -566,6 +566,14 @@ impl<'a> DeviceAllocationContext<'a> {
                 .GetResourceAllocationInfo(0, core::slice::from_ref(desc))
         };
 
+        
+        
+        
+        
+        if allocation_info.SizeInBytes == 0 {
+            return Err(crate::DeviceError::OutOfMemory);
+        }
+
         let Some(threshold) = self
             .mem_allocator
             .memory_budget_thresholds
