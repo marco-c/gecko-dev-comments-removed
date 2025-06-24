@@ -127,11 +127,11 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
       
       sActivePointersIds->InsertOrUpdate(
           aEvent->pointerId,
-          MakeUnique<PointerInfo>(
-              false, aEvent->mInputSource, true, false, nullptr,
-              
-              
-              aEvent->mFlags.mIsSynthesizedForTests != false));
+          MakeUnique<PointerInfo>(PointerInfo::Active::No, aEvent->mInputSource,
+                                  PointerInfo::Primary::Yes,
+                                  PointerInfo::FromTouchEvent::No, nullptr,
+                                  static_cast<PointerInfo::SynthesizeForTests>(
+                                      aEvent->mFlags.mIsSynthesizedForTests)));
 
       MaybeCacheSpoofedPointerID(aEvent->mInputSource, aEvent->pointerId);
       break;
@@ -148,9 +148,9 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
       sActivePointersIds->InsertOrUpdate(
           aEvent->pointerId,
           MakeUnique<PointerInfo>(
-               false, MouseEvent_Binding::MOZ_SOURCE_MOUSE,
-               true,  false,
-              nullptr,  true));
+              PointerInfo::Active::No, MouseEvent_Binding::MOZ_SOURCE_MOUSE,
+              PointerInfo::Primary::Yes, PointerInfo::FromTouchEvent::No,
+              nullptr, PointerInfo::SynthesizeForTests::Yes));
       return;
     case ePointerDown:
       sPointerCapturingElementAtLastPointerUpEvent = nullptr;
@@ -162,12 +162,8 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
         sActivePointersIds->InsertOrUpdate(
             pointerEvent->pointerId,
             MakeUnique<PointerInfo>(
-                true, pointerEvent->mInputSource, pointerEvent->mIsPrimary,
-                pointerEvent->mFromTouchEvent,
-                aTargetContent ? aTargetContent->OwnerDoc() : nullptr,
-                
-                
-                pointerEvent->mFlags.mIsSynthesizedForTests != false));
+                PointerInfo::Active::Yes, *pointerEvent,
+                aTargetContent ? aTargetContent->OwnerDoc() : nullptr));
         MaybeCacheSpoofedPointerID(pointerEvent->mInputSource,
                                    pointerEvent->pointerId);
       }
@@ -184,12 +180,8 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
             MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
           sActivePointersIds->InsertOrUpdate(
               pointerEvent->pointerId,
-              MakeUnique<PointerInfo>(
-                  false, pointerEvent->mInputSource, pointerEvent->mIsPrimary,
-                  pointerEvent->mFromTouchEvent, nullptr,
-                  
-                  
-                  pointerEvent->mFlags.mIsSynthesizedForTests != false));
+              MakeUnique<PointerInfo>(PointerInfo::Active::No, *pointerEvent,
+                                      nullptr));
         } else {
           
           
@@ -736,7 +728,7 @@ void PointerEventHandler::PostHandlePointerEventsPreventDefault(
     return;
   }
   
-  if (!pointerInfo->mActiveState) {
+  if (!pointerInfo->mIsActive) {
     return;
   }
   aMouseOrTouchEvent->PreventDefault(false);
@@ -1121,7 +1113,7 @@ bool PointerEventHandler::IsDragAndDropEnabled(WidgetMouseEvent& aEvent) {
 uint16_t PointerEventHandler::GetPointerType(uint32_t aPointerId) {
   PointerInfo* pointerInfo = nullptr;
   if (sActivePointersIds->Get(aPointerId, &pointerInfo) && pointerInfo) {
-    return pointerInfo->mPointerType;
+    return pointerInfo->mInputSource;
   }
   return MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
 }
@@ -1130,7 +1122,7 @@ uint16_t PointerEventHandler::GetPointerType(uint32_t aPointerId) {
 bool PointerEventHandler::GetPointerPrimaryState(uint32_t aPointerId) {
   PointerInfo* pointerInfo = nullptr;
   if (sActivePointersIds->Get(aPointerId, &pointerInfo) && pointerInfo) {
-    return pointerInfo->mPrimaryState;
+    return pointerInfo->mIsPrimary;
   }
   return false;
 }

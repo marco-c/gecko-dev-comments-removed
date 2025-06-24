@@ -326,8 +326,7 @@ void Element::SetPointerCapture(int32_t aPointerId, ErrorResult& aError) {
   
   
   
-  if (!pointerInfo->mActiveState ||
-      pointerInfo->mActiveDocument != OwnerDoc()) {
+  if (!pointerInfo->mIsActive || pointerInfo->mActiveDocument != OwnerDoc()) {
     return;
   }
   PointerEventHandler::RequestPointerCaptureById(aPointerId, this);
