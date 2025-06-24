@@ -19,8 +19,6 @@
 #include "nsIBrowserDOMWindow.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeOwner.h"
-#include "nsIMutableArray.h"
-#include "nsISupportsPrimitives.h"
 #include "nsIURI.h"
 #include "nsIBrowser.h"
 #include "nsIWebProgress.h"
@@ -209,53 +207,6 @@ struct ClientOpenWindowArgsParsed {
 };
 
 #ifndef MOZ_GECKOVIEW
-
-static Result<Ok, nsresult> OpenNewWindow(
-    const ClientOpenWindowArgsParsed& aArgsValidated,
-    nsOpenWindowInfo* aOpenWindowInfo) {
-  nsresult rv;
-
-  nsCOMPtr<nsISupportsPRBool> nsFalse =
-      do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID, &rv);
-  MOZ_TRY(rv);
-  MOZ_TRY(nsFalse->SetData(false));
-
-  nsCOMPtr<nsISupportsPRUint32> userContextId =
-      do_CreateInstance(NS_SUPPORTS_PRUINT32_CONTRACTID, &rv);
-  MOZ_TRY(rv);
-  MOZ_TRY(userContextId->SetData(aArgsValidated.principal->GetUserContextId()));
-
-  nsCOMPtr<nsIMutableArray> args = do_CreateInstance(NS_ARRAY_CONTRACTID);
-  
-  args->AppendElement(nullptr);                   
-  args->AppendElement(nullptr);                   
-  args->AppendElement(nullptr);                   
-  args->AppendElement(nullptr);                   
-  args->AppendElement(nsFalse);                   
-  args->AppendElement(userContextId);             
-  args->AppendElement(nullptr);                   
-  args->AppendElement(nullptr);                   
-  args->AppendElement(aArgsValidated.principal);  
-  args->AppendElement(nsFalse);                   
-  args->AppendElement(aArgsValidated.csp);        
-  args->AppendElement(aOpenWindowInfo);           
-
-  nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
-  nsCString features = "chrome,all,dialog=no"_ns;
-
-  if (aArgsValidated.principal->GetIsInPrivateBrowsing()) {
-    
-    
-    
-    features += ",private";
-  }
-
-  nsCOMPtr<mozIDOMWindowProxy> win;
-  MOZ_TRY(ww->OpenWindow(nullptr, nsDependentCString(BROWSER_CHROME_URL_QUOTED),
-                         "_blank"_ns, features, args, getter_AddRefs(win)));
-  return Ok();
-}
-
 void OpenWindow(const ClientOpenWindowArgsParsed& aArgsValidated,
                 nsOpenWindowInfo* aOpenInfo, BrowsingContext** aBC,
                 ErrorResult& aRv) {
@@ -276,11 +227,7 @@ void OpenWindow(const ClientOpenWindowArgsParsed& aArgsValidated,
     
     
     
-    auto result = OpenNewWindow(aArgsValidated, aOpenInfo);
-    if (NS_WARN_IF(result.isErr())) {
-      aRv.ThrowTypeError("Unable to open window");
-      return;
-    }
+    aRv.ThrowTypeError("Unable to open window");
     return;
   }
 
