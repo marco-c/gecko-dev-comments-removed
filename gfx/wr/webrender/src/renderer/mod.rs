@@ -3580,7 +3580,7 @@ impl Renderer {
 
         
         if self.debug_overlay_state.is_enabled {
-            
+            self.debug_overlay_state.layer_index = input_layers.len();
 
             input_layers.push(CompositorInputLayer {
                 usage: CompositorSurfaceUsage::DebugOverlay,
@@ -3731,10 +3731,7 @@ impl Renderer {
             tile_index_to_layer_index[idx] = Some(input_layers.len() - 1);
         }
 
-        
         assert_eq!(swapchain_layers.len(), input_layers.len());
-        input_layers.reverse();
-        swapchain_layers.reverse();
 
         if window_is_opaque {
             match input_layers.first_mut() {
@@ -3767,12 +3764,6 @@ impl Renderer {
             }
         }
 
-        
-        if self.debug_overlay_state.is_enabled {
-            assert!(!input_layers.is_empty());
-            self.debug_overlay_state.layer_index = input_layers.len() - 1;
-        }
-
         let mut full_render = false;
 
         
@@ -3791,10 +3782,7 @@ impl Renderer {
             partial_present_mode
         };
 
-        
         assert_eq!(swapchain_layers.len(), input_layers.len());
-        input_layers.reverse();
-        swapchain_layers.reverse();
 
         
         if let Some(ref _compositor) = self.compositor_config.layer_compositor() {
@@ -3809,7 +3797,14 @@ impl Renderer {
                         continue;
                     }
 
-                    let layer = &mut input_layers[tile_index_to_layer_index[idx].unwrap()];
+                    let layer_index = match tile_index_to_layer_index[idx] {
+                        None => {
+                            continue;
+                        }
+                        Some(layer_index) => layer_index,
+                    };
+
+                    let layer = &mut input_layers[layer_index];
                     
                     match layer.usage {
                         CompositorSurfaceUsage::Content | CompositorSurfaceUsage::DebugOverlay => {}
@@ -3878,9 +3873,18 @@ impl Renderer {
                 continue;
             }
 
+            let layer_index = match tile_index_to_layer_index[idx] {
+                None => {
+                    
+                    error!("rect {:?} should have valid layer index", rect);
+                    continue;
+                }
+                Some(layer_index) => layer_index,
+            };
+
             
             
-            let layer = &mut swapchain_layers[tile_index_to_layer_index[idx].unwrap()];
+            let layer = &mut swapchain_layers[layer_index];
 
             
             match tile.kind {
@@ -3930,10 +3934,7 @@ impl Renderer {
             }
         }
 
-        
         assert_eq!(swapchain_layers.len(), input_layers.len());
-        input_layers.reverse();
-        swapchain_layers.reverse();
 
         for (layer_index, (layer, swapchain_layer)) in input_layers.iter().zip(swapchain_layers.iter()).enumerate() {
             self.device.reset_state();
