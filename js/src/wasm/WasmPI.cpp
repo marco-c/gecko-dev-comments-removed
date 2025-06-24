@@ -752,7 +752,7 @@ bool CallOnMainStack(JSContext* cx, CallOnMainStackFn fn, void* data) {
   
 #  endif  
 
-  bool ok = res;
+  bool ok = (res & 255) != 0;  
   suspender->setActive(cx);
   cx->wasm().promiseIntegration.setActiveSuspender(suspender);
 
