@@ -288,7 +288,7 @@ impl<'a, E: TElement + 'a> Default for ToInvalidate<'a, E> {
     }
 }
 
-fn dependencies_can_collapse(a: &Dependency, b: &Dependency) -> bool {
+fn invalidation_can_collapse(a: &Dependency, b: &Dependency, invalidations_in_subtree: bool) -> bool {
     
     
     
@@ -342,7 +342,9 @@ fn dependencies_can_collapse(a: &Dependency, b: &Dependency) -> bool {
             return false;
         }
         let Some(component) = a_component else { return true };
-        if component.has_indexed_selector_in_subject() {
+        
+        
+        if !invalidations_in_subtree && component.has_indexed_selector_in_subject() {
             
             return false;
         }
@@ -368,10 +370,14 @@ where
         dependency: &'a Dependency,
         host: Option<OpaqueElement>,
     ) {
+        let in_subtree = element != self.top;
         match self
             .invalidations
             .iter_mut()
-            .find(|(_, _, d)| dependencies_can_collapse(dependency, d))
+            .find(|(e, _, d)| {
+                let both_in_subtree = in_subtree && *e != self.top;
+                invalidation_can_collapse(dependency, d, both_in_subtree)
+            })
         {
             Some((e, h, d)) => {
                 
