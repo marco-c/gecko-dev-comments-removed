@@ -53,11 +53,11 @@ class AtomMarkingRuntime {
 
   
   
-  void refineZoneBitmapsForCollectedZones(GCRuntime* gc, size_t collectedZones);
+  void refineZoneBitmapsForCollectedZones(GCRuntime* gc);
 
   
   
-  void markAtomsUsedByUncollectedZones(GCRuntime* gc, size_t uncollectedZones);
+  void markAtomsUsedByUncollectedZones(GCRuntime* gc);
 
  private:
   
