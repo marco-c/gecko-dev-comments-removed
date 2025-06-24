@@ -3871,6 +3871,11 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("marionette.port", 2828);
 
   
+  
+  pref("marionette.navigate-after-click.enabled", true);
+  pref("marionette.navigate-after-click.timeout", 50);
+
+  
   #if defined(NIGHTLY_BUILD)
     pref("remote.experimental.enabled", true);
   #else
