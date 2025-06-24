@@ -1,5 +1,9 @@
 from __future__ import absolute_import
 
+import asyncio
+import inspect
+import threading
+
 from sentry_sdk.hub import _should_send_default_pii, Hub
 from sentry_sdk.integrations import DidNotEnable, Integration
 from sentry_sdk.integrations._wsgi_common import _filter_headers
@@ -11,14 +15,14 @@ from sentry_sdk.utils import (
     event_from_exception,
 )
 
-from sentry_sdk._types import MYPY
+from sentry_sdk._functools import wraps
+from sentry_sdk._types import TYPE_CHECKING
 
-if MYPY:
+if TYPE_CHECKING:
     from typing import Any
-    from typing import Dict
     from typing import Union
 
-    from sentry_sdk._types import EventProcessor
+    from sentry_sdk._types import Event, EventProcessor
 
 try:
     import quart_auth  
@@ -43,6 +47,12 @@ try:
     )
 except ImportError:
     raise DidNotEnable("Quart is not installed")
+else:
+    
+    try:
+        from quart.scaffold import Scaffold  
+    except ImportError:
+        from flask.sansio.scaffold import Scaffold  
 
 TRANSACTION_STYLE_VALUES = ("endpoint", "url")
 
@@ -71,18 +81,64 @@ class QuartIntegration(Integration):
         got_request_exception.connect(_capture_exception)
         got_websocket_exception.connect(_capture_exception)
 
-        old_app = Quart.__call__
+        patch_asgi_app()
+        patch_scaffold_route()
 
-        async def sentry_patched_asgi_app(self, scope, receive, send):
+
+def patch_asgi_app():
+    
+    old_app = Quart.__call__
+
+    async def sentry_patched_asgi_app(self, scope, receive, send):
+        
+        if Hub.current.get_integration(QuartIntegration) is None:
+            return await old_app(self, scope, receive, send)
+
+        middleware = SentryAsgiMiddleware(lambda *a, **kw: old_app(self, *a, **kw))
+        middleware.__call__ = middleware._run_asgi3
+        return await middleware(scope, receive, send)
+
+    Quart.__call__ = sentry_patched_asgi_app
+
+
+def patch_scaffold_route():
+    
+    old_route = Scaffold.route
+
+    def _sentry_route(*args, **kwargs):
+        
+        old_decorator = old_route(*args, **kwargs)
+
+        def decorator(old_func):
             
-            if Hub.current.get_integration(QuartIntegration) is None:
-                return await old_app(self, scope, receive, send)
 
-            middleware = SentryAsgiMiddleware(lambda *a, **kw: old_app(self, *a, **kw))
-            middleware.__call__ = middleware._run_asgi3
-            return await middleware(scope, receive, send)
+            if inspect.isfunction(old_func) and not asyncio.iscoroutinefunction(
+                old_func
+            ):
 
-        Quart.__call__ = sentry_patched_asgi_app
+                @wraps(old_func)
+                def _sentry_func(*args, **kwargs):
+                    
+                    hub = Hub.current
+                    integration = hub.get_integration(QuartIntegration)
+                    if integration is None:
+                        return old_func(*args, **kwargs)
+
+                    with hub.configure_scope() as sentry_scope:
+                        if sentry_scope.profile is not None:
+                            sentry_scope.profile.active_thread_id = (
+                                threading.current_thread().ident
+                            )
+
+                        return old_func(*args, **kwargs)
+
+                return old_decorator(_sentry_func)
+
+            return old_decorator(old_func)
+
+        return decorator
+
+    Scaffold.route = _sentry_route
 
 
 def _set_transaction_name_and_source(scope, transaction_style, request):
@@ -101,7 +157,7 @@ def _set_transaction_name_and_source(scope, transaction_style, request):
         pass
 
 
-def _request_websocket_started(app, **kwargs):
+async def _request_websocket_started(app, **kwargs):
     
     hub = Hub.current
     integration = hub.get_integration(QuartIntegration)
@@ -155,7 +211,7 @@ def _make_request_event_processor(app, request, integration):
     return inner
 
 
-def _capture_exception(sender, exception, **kwargs):
+async def _capture_exception(sender, exception, **kwargs):
     
     hub = Hub.current
     if hub.get_integration(QuartIntegration) is None:

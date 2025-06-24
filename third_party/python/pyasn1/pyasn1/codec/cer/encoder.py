@@ -4,13 +4,14 @@
 
 
 
+import warnings
+
 from pyasn1 import error
 from pyasn1.codec.ber import encoder
-from pyasn1.compat.octets import str2octs, null
 from pyasn1.type import univ
 from pyasn1.type import useful
 
-__all__ = ['encode']
+__all__ = ['Encoder', 'encode']
 
 
 class BooleanEncoder(encoder.IntegerEncoder):
@@ -116,7 +117,7 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
 
         
         if len(chunks) > 1:
-            zero = str2octs('\x00')
+            zero = b'\x00'
             maxLen = max(map(len, chunks))
             paddedChunks = [
                 (x.ljust(maxLen, zero), x) for x in chunks
@@ -125,19 +126,19 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
 
             chunks = [x[1] for x in paddedChunks]
 
-        return null.join(chunks), True, True
+        return b''.join(chunks), True, True
 
 
 class SequenceOfEncoder(encoder.SequenceOfEncoder):
     def encodeValue(self, value, asn1Spec, encodeFun, **options):
 
         if options.get('ifNotEmpty', False) and not len(value):
-            return null, True, True
+            return b'', True, True
 
         chunks = self._encodeComponents(
             value, asn1Spec, encodeFun, **options)
 
-        return null.join(chunks), True, True
+        return b''.join(chunks), True, True
 
 
 class SetEncoder(encoder.SequenceEncoder):
@@ -162,7 +163,7 @@ class SetEncoder(encoder.SequenceEncoder):
 
     def encodeValue(self, value, asn1Spec, encodeFun, **options):
 
-        substrate = null
+        substrate = b''
 
         comps = []
         compsMap = {}
@@ -171,7 +172,8 @@ class SetEncoder(encoder.SequenceEncoder):
             
             inconsistency = value.isInconsistent
             if inconsistency:
-                raise inconsistency
+                raise error.PyAsn1Error(
+                    f"ASN.1 object {value.__class__.__name__} is inconsistent")
 
             namedTypes = value.componentType
 
@@ -234,8 +236,9 @@ class SequenceEncoder(encoder.SequenceEncoder):
     omitEmptyOptionals = True
 
 
-tagMap = encoder.tagMap.copy()
-tagMap.update({
+TAG_MAP = encoder.TAG_MAP.copy()
+
+TAG_MAP.update({
     univ.Boolean.tagSet: BooleanEncoder(),
     univ.Real.tagSet: RealEncoder(),
     useful.GeneralizedTime.tagSet: GeneralizedTimeEncoder(),
@@ -245,8 +248,9 @@ tagMap.update({
     univ.Sequence.typeId: SequenceEncoder()
 })
 
-typeMap = encoder.typeMap.copy()
-typeMap.update({
+TYPE_MAP = encoder.TYPE_MAP.copy()
+
+TYPE_MAP.update({
     univ.Boolean.typeId: BooleanEncoder(),
     univ.Real.typeId: RealEncoder(),
     useful.GeneralizedTime.typeId: GeneralizedTimeEncoder(),
@@ -259,10 +263,16 @@ typeMap.update({
 })
 
 
-class Encoder(encoder.Encoder):
+class SingleItemEncoder(encoder.SingleItemEncoder):
     fixedDefLengthMode = False
     fixedChunkSize = 1000
 
+    TAG_MAP = TAG_MAP
+    TYPE_MAP = TYPE_MAP
+
+
+class Encoder(encoder.Encoder):
+    SINGLE_ITEM_ENCODER = SingleItemEncoder
 
 
 
@@ -308,6 +318,14 @@ class Encoder(encoder.Encoder):
 
 
 
-encode = Encoder(tagMap, typeMap)
 
 
+encode = Encoder()
+
+
+
+def __getattr__(attr: str):
+    if newAttr := {"tagMap": "TAG_MAP", "typeMap": "TYPE_MAP"}.get(attr):
+        warnings.warn(f"{attr} is deprecated. Please use {newAttr} instead.", DeprecationWarning)
+        return globals()[newAttr]
+    raise AttributeError(attr)

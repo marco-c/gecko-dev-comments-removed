@@ -4,11 +4,13 @@
 
 
 
+import warnings
+
 from pyasn1 import error
 from pyasn1.codec.cer import encoder
 from pyasn1.type import univ
 
-__all__ = ['encode']
+__all__ = ['Encoder', 'encode']
 
 
 class SetEncoder(encoder.SetEncoder):
@@ -42,23 +44,32 @@ class SetEncoder(encoder.SetEncoder):
         else:
             return compType.tagSet
 
-tagMap = encoder.tagMap.copy()
-tagMap.update({
+
+TAG_MAP = encoder.TAG_MAP.copy()
+
+TAG_MAP.update({
     
     univ.Set.tagSet: SetEncoder()
 })
 
-typeMap = encoder.typeMap.copy()
-typeMap.update({
+TYPE_MAP = encoder.TYPE_MAP.copy()
+
+TYPE_MAP.update({
     
     univ.Set.typeId: SetEncoder()
 })
 
 
-class Encoder(encoder.Encoder):
+class SingleItemEncoder(encoder.SingleItemEncoder):
     fixedDefLengthMode = True
     fixedChunkSize = 0
 
+    TAG_MAP = TAG_MAP
+    TYPE_MAP = TYPE_MAP
+
+
+class Encoder(encoder.Encoder):
+    SINGLE_ITEM_ENCODER = SingleItemEncoder
 
 
 
@@ -104,4 +115,12 @@ class Encoder(encoder.Encoder):
 
 
 
-encode = Encoder(tagMap, typeMap)
+
+
+encode = Encoder()
+
+def __getattr__(attr: str):
+    if newAttr := {"tagMap": "TAG_MAP", "typeMap": "TYPE_MAP"}.get(attr):
+        warnings.warn(f"{attr} is deprecated. Please use {newAttr} instead.", DeprecationWarning)
+        return globals()[newAttr]
+    raise AttributeError(attr)

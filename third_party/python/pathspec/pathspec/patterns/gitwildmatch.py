@@ -1,28 +1,28 @@
-# encoding: utf-8
 """
-This module implements Git's wildmatch pattern matching which itself is
-derived from Rsync's wildmatch. Git uses wildmatch for its ".gitignore"
-files.
+This module implements Git's wildmatch pattern matching which itself is derived
+from Rsync's wildmatch. Git uses wildmatch for its ".gitignore" files.
 """
-from __future__ import unicode_literals
 
 import re
 import warnings
-try:
-	from typing import (
-		AnyStr,
-		Optional,
-		Text,
-		Tuple)
-except ImportError:
-	pass
+from typing import (
+	AnyStr,
+	Optional,  
+	Tuple)  
 
 from .. import util
-from ..compat import unicode
 from ..pattern import RegexPattern
 
-
 _BYTES_ENCODING = 'latin1'
+"""
+The encoding to use when parsing a byte string pattern.
+"""
+
+_DIR_MARK = 'ps_d'
+"""
+The regex group name for the directory marker. This is only used by
+:class:`GitIgnoreSpec`.
+"""
 
 
 class GitWildMatchPatternError(ValueError):
@@ -35,37 +35,44 @@ class GitWildMatchPatternError(ValueError):
 
 class GitWildMatchPattern(RegexPattern):
 	"""
-	The :class:`GitWildMatchPattern` class represents a compiled Git
-	wildmatch pattern.
+	The :class:`GitWildMatchPattern` class represents a compiled Git wildmatch
+	pattern.
 	"""
 
 	
 	__slots__ = ()
 
 	@classmethod
-	def pattern_to_regex(cls, pattern):
-		
+	def pattern_to_regex(
+		cls,
+		pattern: AnyStr,
+	) -> Tuple[Optional[AnyStr], Optional[bool]]:
 		"""
 		Convert the pattern into a regular expression.
 
-		*pattern* (:class:`unicode` or :class:`bytes`) is the pattern to
-		convert into a regular expression.
+		*pattern* (:class:`str` or :class:`bytes`) is the pattern to convert into a
+		regular expression.
 
-		Returns the uncompiled regular expression (:class:`unicode`, :class:`bytes`,
-		or :data:`None`), and whether matched files should be included
-		(:data:`True`), excluded (:data:`False`), or if it is a
-		null-operation (:data:`None`).
+		Returns the uncompiled regular expression (:class:`str`, :class:`bytes`, or
+		:data:`None`); and whether matched files should be included (:data:`True`),
+		excluded (:data:`False`), or if it is a null-operation (:data:`None`).
 		"""
-		if isinstance(pattern, unicode):
-			return_type = unicode
+		if isinstance(pattern, str):
+			return_type = str
 		elif isinstance(pattern, bytes):
 			return_type = bytes
 			pattern = pattern.decode(_BYTES_ENCODING)
 		else:
-			raise TypeError("pattern:{!r} is not a unicode or byte string.".format(pattern))
+			raise TypeError(f"pattern:{pattern!r} is not a unicode or byte string.")
 
 		original_pattern = pattern
-		pattern = pattern.strip()
+
+		if pattern.endswith('\\ '):
+			
+			
+			pattern = pattern.lstrip()
+		else:
+			pattern = pattern.strip()
 
 		if pattern.startswith('#'):
 			
@@ -85,17 +92,11 @@ class GitWildMatchPattern(RegexPattern):
 				
 				
 				
-				
 				include = False
 				
 				pattern = pattern[1:]
 			else:
 				include = True
-
-			if pattern.startswith('\\'):
-				
-				
-				pattern = pattern[1:]
 
 			
 			
@@ -105,8 +106,11 @@ class GitWildMatchPattern(RegexPattern):
 			pattern_segs = pattern.split('/')
 
 			
+			
+			is_dir_pattern = not pattern_segs[-1]
 
 			
+
 			
 			
 			
@@ -120,17 +124,15 @@ class GitWildMatchPattern(RegexPattern):
 				
 				
 				
-				override_regex = '^.+/.*$'
+				override_regex = f'^.+(?P<{_DIR_MARK}>/).*$'
 
 			if not pattern_segs[0]:
-				
 				
 				
 				
 				del pattern_segs[0]
 
 			elif len(pattern_segs) == 1 or (len(pattern_segs) == 2 and not pattern_segs[1]):
-				
 				
 				
 				
@@ -143,17 +145,14 @@ class GitWildMatchPattern(RegexPattern):
 				
 				
 				
-				
 				pass
 
 			if not pattern_segs:
 				
 				
-				
-				raise GitWildMatchPatternError("Invalid git pattern: %r" % (original_pattern,))
+				raise GitWildMatchPatternError(f"Invalid git pattern: {original_pattern!r}")
 
 			if not pattern_segs[-1] and len(pattern_segs) > 1:
-				
 				
 				
 				
@@ -170,16 +169,22 @@ class GitWildMatchPattern(RegexPattern):
 						if i == 0 and i == end:
 							
 							
-							output.append('.+')
+							output.append(f'[^/]+(?:/.*)?')
+
 						elif i == 0:
 							
 							
 							output.append('(?:.+/)?')
 							need_slash = False
+
 						elif i == end:
 							
 							
-							output.append('/.*')
+							if is_dir_pattern:
+								output.append(f'(?P<{_DIR_MARK}>/).*')
+							else:
+								output.append(f'/.*')
+
 						else:
 							
 							
@@ -190,7 +195,15 @@ class GitWildMatchPattern(RegexPattern):
 						
 						if need_slash:
 							output.append('/')
+
 						output.append('[^/]+')
+
+						if i == end:
+							
+							
+							
+							output.append(f'(?:(?P<{_DIR_MARK}>/).*)?')
+
 						need_slash = True
 
 					else:
@@ -198,14 +211,16 @@ class GitWildMatchPattern(RegexPattern):
 						if need_slash:
 							output.append('/')
 
-						output.append(cls._translate_segment_glob(seg))
-						if i == end and include is True:
+						try:
+							output.append(cls._translate_segment_glob(seg))
+						except ValueError as e:
+							raise GitWildMatchPatternError(f"Invalid git pattern: {original_pattern!r}") from e
+
+						if i == end:
 							
 							
 							
-							
-							
-							output.append('(?:/.*)?')
+							output.append(f'(?:(?P<{_DIR_MARK}>/).*)?')
 
 						need_slash = True
 
@@ -228,12 +243,11 @@ class GitWildMatchPattern(RegexPattern):
 		return regex, include
 
 	@staticmethod
-	def _translate_segment_glob(pattern):
-		
+	def _translate_segment_glob(pattern: str) -> str:
 		"""
-		Translates the glob pattern to a regular expression. This is used in
-		the constructor to translate a path segment glob pattern to its
-		corresponding regular expression.
+		Translates the glob pattern to a regular expression. This is used in the
+		constructor to translate a path segment glob pattern to its corresponding
+		regular expression.
 
 		*pattern* (:class:`str`) is the glob pattern.
 
@@ -276,15 +290,17 @@ class GitWildMatchPattern(RegexPattern):
 				
 				
 				
-				
 				j = i
+
 				
-				if j < end and pattern[j] == '!':
+				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
 					j += 1
+
 				
 				
 				if j < end and pattern[j] == ']':
 					j += 1
+
 				
 				while j < end and pattern[j] != ']':
 					j += 1
@@ -310,7 +326,7 @@ class GitWildMatchPattern(RegexPattern):
 						
 						
 						
-						expr += '\\^'
+						expr += '^'
 						i += 1
 
 					
@@ -332,27 +348,29 @@ class GitWildMatchPattern(RegexPattern):
 				
 				regex += re.escape(char)
 
+		if escape:
+			raise ValueError(f"Escape character found with no next character to escape: {pattern!r}")
+
 		return regex
 
 	@staticmethod
-	def escape(s):
-		
+	def escape(s: AnyStr) -> AnyStr:
 		"""
 		Escape special characters in the given string.
 
-		*s* (:class:`unicode` or :class:`bytes`) a filename or a string
-		that you want to escape, usually before adding it to a `.gitignore`
+		*s* (:class:`str` or :class:`bytes`) a filename or a string that you want to
+		escape, usually before adding it to a ".gitignore".
 
-		Returns the escaped string (:class:`unicode` or :class:`bytes`)
+		Returns the escaped string (:class:`str` or :class:`bytes`).
 		"""
-		if isinstance(s, unicode):
-			return_type = unicode
+		if isinstance(s, str):
+			return_type = str
 			string = s
 		elif isinstance(s, bytes):
 			return_type = bytes
 			string = s.decode(_BYTES_ENCODING)
 		else:
-			raise TypeError("s:{!r} is not a unicode or byte string.".format(s))
+			raise TypeError(f"s:{s!r} is not a unicode or byte string.")
 
 		
 		meta_characters = r"[]!*#?"
@@ -373,7 +391,7 @@ class GitIgnorePattern(GitWildMatchPattern):
 	This class only exists to maintain compatibility with v0.4.
 	"""
 
-	def __init__(self, *args, **kw):
+	def __init__(self, *args, **kw) -> None:
 		"""
 		Warn about deprecation.
 		"""
@@ -381,11 +399,14 @@ class GitIgnorePattern(GitWildMatchPattern):
 		super(GitIgnorePattern, self).__init__(*args, **kw)
 
 	@staticmethod
-	def _deprecated():
+	def _deprecated() -> None:
 		"""
 		Warn about deprecation.
 		"""
-		warnings.warn("GitIgnorePattern ('gitignore') is deprecated. Use GitWildMatchPattern ('gitwildmatch') instead.", DeprecationWarning, stacklevel=3)
+		warnings.warn((
+			"GitIgnorePattern ('gitignore') is deprecated. Use GitWildMatchPattern "
+			"('gitwildmatch') instead."
+		), DeprecationWarning, stacklevel=3)
 
 	@classmethod
 	def pattern_to_regex(cls, *args, **kw):

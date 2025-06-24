@@ -7,6 +7,9 @@ from sentry_sdk.api import *
 
 from sentry_sdk.consts import VERSION  
 
+from sentry_sdk.crons import monitor  
+from sentry_sdk.tracing import trace  
+
 __all__ = [  
     "Hub",
     "Scope",
@@ -31,6 +34,12 @@ __all__ = [
     "set_extra",
     "set_user",
     "set_level",
+    "set_measurement",
+    "get_current_span",
+    "get_traceparent",
+    "get_baggage",
+    "continue_trace",
+    "trace",
 ]
 
 

@@ -1,8 +1,11 @@
+from math import ldexp
+import struct
 import sys
 
 
 if sys.version_info.major < 3:
     from datetime import tzinfo, timedelta
+    from binascii import unhexlify
 
     class timezone(tzinfo):
         def __init__(self, offset):
@@ -23,8 +26,11 @@ if sys.version_info.major < 3:
     def iteritems(self):
         return self.iteritems()
 
-    def bytes_from_list(values):
-        return bytes(bytearray(values))
+    def int2bytes(i):
+        hexstr = '%x' % i
+        n = len(hexstr)
+        pad = ('', '0')[n & 1]
+        return unhexlify(pad + hexstr)
 
     byte_as_integer = ord
     timezone.utc = timezone(timedelta(0))
@@ -43,7 +49,61 @@ else:
     def iteritems(self):
         return self.items()
 
-    xrange = range  
-    long = int  
-    unicode = str  
-    bytes_from_list = bytes
+    def int2bytes(i):
+        bits = i.bit_length()
+        return i.to_bytes((bits + 7) // 8, 'big')
+
+    xrange = range
+    long = int
+    unicode = str
+
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 6:  
+    
+
+    def pack_float16(value):
+        pass
+
+    def unpack_float16(payload):
+        pass
+
+else:
+    def pack_float16(value):
+        
+        
+        try:
+            u32 = struct.pack('>f', value)
+        except OverflowError:
+            return False
+
+        u = struct.unpack('>I', u32)[0]
+        if u & 0x1FFF != 0:
+            return False
+
+        s16 = (u >> 16) & 0x8000
+        exponent = (u >> 23) & 0xff
+        mantissa = u & 0x7fffff
+
+        if 113 <= exponent <= 142:
+            s16 += ((exponent - 112) << 10) + (mantissa >> 13)
+        elif 103 <= exponent < 113:
+            if mantissa & ((1 << (126 - exponent)) - 1):
+                return False
+
+            s16 += ((mantissa + 0x800000) >> (126 - exponent))
+        else:
+            return False
+
+        return struct.pack('>BH', 0xf9, s16)
+
+    def unpack_float16(payload):
+        
+        def decode_single(single):
+            return struct.unpack("!f", struct.pack("!I", single))[0]
+
+        payload = struct.unpack('>H', payload)[0]
+        value = (payload & 0x7fff) << 13 | (payload & 0x8000) << 16
+        if payload & 0x7c00 != 0x7c00:
+            return ldexp(decode_single(value), 112)
+
+        return decode_single(value | 0x7f800000)

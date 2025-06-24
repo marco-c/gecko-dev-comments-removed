@@ -12,6 +12,7 @@ References,
 - http://jdebp.uk/Softwares/nosh/guide/TerminalCapabilities.html
 """
 
+
 import collections
 
 __all__ = (
@@ -21,8 +22,7 @@ __all__ = (
     'X11_COLORNAMES_TO_RGB',
 )
 
-CGA_COLORS = set(
-    ('black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'))
+CGA_COLORS = {'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'}
 
 
 class RGBColor(collections.namedtuple("RGBColor", ["red", "green", "blue"])):

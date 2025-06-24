@@ -9,7 +9,6 @@ import sys
 
 from pyasn1 import __version__
 from pyasn1 import error
-from pyasn1.compat.octets import octs2ints
 
 __all__ = ['Debug', 'setLogger', 'hexdump']
 
@@ -55,16 +54,6 @@ class Printer(object):
         return '<python logging>'
 
 
-if hasattr(logging, 'NullHandler'):
-    NullHandler = logging.NullHandler
-
-else:
-    
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
-
-
 class Debug(object):
     defaultPrinter = Printer()
 
@@ -75,7 +64,7 @@ class Debug(object):
             
             self._printer = Printer(
                 logger=logging.getLogger(options['loggerName']),
-                handler=NullHandler()
+                handler=logging.NullHandler()
             )
 
         elif 'printer' in options:
@@ -137,7 +126,7 @@ def registerLoggee(module, name='LOG', flags=DEBUG_NONE):
 def hexdump(octets):
     return ' '.join(
         ['%s%.2X' % (n % 16 == 0 and ('\n%.5d: ' % n) or '', x)
-         for n, x in zip(range(len(octets)), octs2ints(octets))]
+         for n, x in zip(range(len(octets)), octets)]
     )
 
 

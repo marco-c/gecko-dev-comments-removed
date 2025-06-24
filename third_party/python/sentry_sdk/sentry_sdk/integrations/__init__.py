@@ -1,28 +1,33 @@
-"""This package"""
 from __future__ import absolute_import
-
 from threading import Lock
 
 from sentry_sdk._compat import iteritems
+from sentry_sdk._types import TYPE_CHECKING
 from sentry_sdk.utils import logger
 
-from sentry_sdk._types import MYPY
 
-if MYPY:
+if TYPE_CHECKING:
     from typing import Callable
     from typing import Dict
     from typing import Iterator
     from typing import List
     from typing import Set
-    from typing import Tuple
     from typing import Type
 
 
 _installer_lock = Lock()
+
+
+_processed_integrations = set()  
+
+
 _installed_integrations = set()  
 
 
-def _generate_default_integrations_iterator(integrations, auto_enabling_integrations):
+def _generate_default_integrations_iterator(
+    integrations,  
+    auto_enabling_integrations,  
+):
     
 
     def iter_default_integrations(with_auto_enabling_integrations):
@@ -51,37 +56,41 @@ def _generate_default_integrations_iterator(integrations, auto_enabling_integrat
     return iter_default_integrations
 
 
-_AUTO_ENABLING_INTEGRATIONS = (
-    "sentry_sdk.integrations.django.DjangoIntegration",
-    "sentry_sdk.integrations.flask.FlaskIntegration",
-    "sentry_sdk.integrations.starlette.StarletteIntegration",
-    "sentry_sdk.integrations.fastapi.FastApiIntegration",
-    "sentry_sdk.integrations.bottle.BottleIntegration",
-    "sentry_sdk.integrations.falcon.FalconIntegration",
-    "sentry_sdk.integrations.sanic.SanicIntegration",
-    "sentry_sdk.integrations.celery.CeleryIntegration",
-    "sentry_sdk.integrations.rq.RqIntegration",
+_DEFAULT_INTEGRATIONS = [
+    
+    "sentry_sdk.integrations.argv.ArgvIntegration",
+    "sentry_sdk.integrations.atexit.AtexitIntegration",
+    "sentry_sdk.integrations.dedupe.DedupeIntegration",
+    "sentry_sdk.integrations.excepthook.ExcepthookIntegration",
+    "sentry_sdk.integrations.logging.LoggingIntegration",
+    "sentry_sdk.integrations.modules.ModulesIntegration",
+    "sentry_sdk.integrations.stdlib.StdlibIntegration",
+    "sentry_sdk.integrations.threading.ThreadingIntegration",
+]
+
+_AUTO_ENABLING_INTEGRATIONS = [
     "sentry_sdk.integrations.aiohttp.AioHttpIntegration",
-    "sentry_sdk.integrations.tornado.TornadoIntegration",
-    "sentry_sdk.integrations.sqlalchemy.SqlalchemyIntegration",
-    "sentry_sdk.integrations.redis.RedisIntegration",
-    "sentry_sdk.integrations.pyramid.PyramidIntegration",
     "sentry_sdk.integrations.boto3.Boto3Integration",
-)
+    "sentry_sdk.integrations.bottle.BottleIntegration",
+    "sentry_sdk.integrations.celery.CeleryIntegration",
+    "sentry_sdk.integrations.django.DjangoIntegration",
+    "sentry_sdk.integrations.falcon.FalconIntegration",
+    "sentry_sdk.integrations.fastapi.FastApiIntegration",
+    "sentry_sdk.integrations.flask.FlaskIntegration",
+    "sentry_sdk.integrations.httpx.HttpxIntegration",
+    "sentry_sdk.integrations.openai.OpenAIIntegration",
+    "sentry_sdk.integrations.pyramid.PyramidIntegration",
+    "sentry_sdk.integrations.redis.RedisIntegration",
+    "sentry_sdk.integrations.rq.RqIntegration",
+    "sentry_sdk.integrations.sanic.SanicIntegration",
+    "sentry_sdk.integrations.sqlalchemy.SqlalchemyIntegration",
+    "sentry_sdk.integrations.starlette.StarletteIntegration",
+    "sentry_sdk.integrations.tornado.TornadoIntegration",
+]
 
 
 iter_default_integrations = _generate_default_integrations_iterator(
-    integrations=(
-        
-        "sentry_sdk.integrations.logging.LoggingIntegration",
-        "sentry_sdk.integrations.stdlib.StdlibIntegration",
-        "sentry_sdk.integrations.excepthook.ExcepthookIntegration",
-        "sentry_sdk.integrations.dedupe.DedupeIntegration",
-        "sentry_sdk.integrations.atexit.AtexitIntegration",
-        "sentry_sdk.integrations.modules.ModulesIntegration",
-        "sentry_sdk.integrations.argv.ArgvIntegration",
-        "sentry_sdk.integrations.threading.ThreadingIntegration",
-    ),
+    integrations=_DEFAULT_INTEGRATIONS,
     auto_enabling_integrations=_AUTO_ENABLING_INTEGRATIONS,
 )
 
@@ -92,8 +101,10 @@ def setup_integrations(
     integrations, with_defaults=True, with_auto_enabling_integrations=False
 ):
     
-    """Given a list of integration instances this installs them all.  When
-    `with_defaults` is set to `True` then all default integrations are added
+    """
+    Given a list of integration instances, this installs them all.
+
+    When `with_defaults` is set to `True` all default integrations are added
     unless they were already provided before.
     """
     integrations = dict(
@@ -116,7 +127,7 @@ def setup_integrations(
 
     for identifier, integration in iteritems(integrations):
         with _installer_lock:
-            if identifier not in _installed_integrations:
+            if identifier not in _processed_integrations:
                 logger.debug(
                     "Setting up previously not enabled integration %s", identifier
                 )
@@ -139,8 +150,16 @@ def setup_integrations(
                     logger.debug(
                         "Did not enable default integration %s: %s", identifier, e
                     )
+                else:
+                    _installed_integrations.add(identifier)
 
-                _installed_integrations.add(identifier)
+                _processed_integrations.add(identifier)
+
+    integrations = {
+        identifier: integration
+        for identifier, integration in iteritems(integrations)
+        if identifier in _installed_integrations
+    }
 
     for identifier in integrations:
         logger.debug("Enabling integration %s", identifier)

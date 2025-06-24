@@ -90,7 +90,7 @@ class tqdm_rich(std_tqdm):
         kwargs['disable'] = bool(kwargs.get('disable', False))
         progress = kwargs.pop('progress', None)
         options = kwargs.pop('options', {}).copy()
-        super(tqdm_rich, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.disable:
             return
@@ -116,7 +116,8 @@ class tqdm_rich(std_tqdm):
     def close(self):
         if self.disable:
             return
-        super(tqdm_rich, self).close()
+        self.display()  
+        super().close()
         self._prog.__exit__(None, None, None)
 
     def clear(self, *_, **__):
@@ -137,7 +138,7 @@ class tqdm_rich(std_tqdm):
         """
         if hasattr(self, '_prog'):
             self._prog.reset(total=total)
-        super(tqdm_rich, self).reset(total=total)
+        super().reset(total=total)
 
 
 def trrange(*args, **kwargs):

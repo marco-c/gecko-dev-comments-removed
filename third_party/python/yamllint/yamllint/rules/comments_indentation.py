@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 
 
@@ -80,7 +79,6 @@ import yaml
 from yamllint.linter import LintProblem
 from yamllint.rules.common import get_line_indent
 
-
 ID = 'comments-indentation'
 TYPE = 'comment'
 
@@ -118,8 +116,7 @@ def check(conf, comment):
     
     
     
-    if prev_line_indent <= next_line_indent:
-        prev_line_indent = next_line_indent
+    prev_line_indent = max(prev_line_indent, next_line_indent)
 
     
     

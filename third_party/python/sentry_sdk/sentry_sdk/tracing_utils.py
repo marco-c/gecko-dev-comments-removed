@@ -1,25 +1,22 @@
-import re
 import contextlib
-import json
-import math
-
-from numbers import Real
-from decimal import Decimal
+import os
+import re
+import sys
 
 import sentry_sdk
-from sentry_sdk.consts import OP
-
+from sentry_sdk.consts import OP, SPANDATA
 from sentry_sdk.utils import (
     capture_internal_exceptions,
+    filename_for_module,
     Dsn,
-    logger,
-    safe_str,
-    to_base64,
+    match_regex_list,
     to_string,
-    from_base64,
+    is_sentry_url,
+    _is_external_source,
+    _module_in_list,
 )
-from sentry_sdk._compat import PY2, iteritems
-from sentry_sdk._types import MYPY
+from sentry_sdk._compat import PY2, duration_in_milliseconds, iteritems
+from sentry_sdk._types import TYPE_CHECKING
 
 if PY2:
     from collections import Mapping
@@ -28,14 +25,16 @@ else:
     from collections.abc import Mapping
     from urllib.parse import quote, unquote
 
-if MYPY:
+if TYPE_CHECKING:
     import typing
 
-    from typing import Generator
-    from typing import Optional
     from typing import Any
     from typing import Dict
+    from typing import Generator
+    from typing import Optional
     from typing import Union
+
+    from types import FrameType
 
 
 SENTRY_TRACE_REGEX = re.compile(
@@ -55,27 +54,6 @@ base64_stripped = (
     
     
     "([a-zA-Z0-9+/]{2,3})?"
-)
-
-
-tracestate_entry = "[^=]+=[^=]+"
-TRACESTATE_ENTRIES_REGEX = re.compile(
-    
-    "^({te})+"
-    
-    "(,|$)".format(te=tracestate_entry)
-)
-
-
-
-SENTRY_TRACESTATE_ENTRY_REGEX = re.compile(
-    
-    
-    "(?:^|.+,)"
-    
-    "(sentry=[^,]*)"
-    
-    "(?:,.+|$)"
 )
 
 
@@ -114,44 +92,18 @@ def has_tracing_enabled(options):
     
     """
     Returns True if either traces_sample_rate or traces_sampler is
-    defined, False otherwise.
+    defined and enable_tracing is set and not false.
     """
+    if options is None:
+        return False
 
     return bool(
-        options.get("traces_sample_rate") is not None
-        or options.get("traces_sampler") is not None
+        options.get("enable_tracing") is not False
+        and (
+            options.get("traces_sample_rate") is not None
+            or options.get("traces_sampler") is not None
+        )
     )
-
-
-def is_valid_sample_rate(rate):
-    
-    """
-    Checks the given sample rate to make sure it is valid type and value (a
-    boolean or a number between 0 and 1, inclusive).
-    """
-
-    
-    
-    
-    if not isinstance(rate, (Real, Decimal)) or math.isnan(rate):
-        logger.warning(
-            "[Tracing] Given sample rate is invalid. Sample rate must be a boolean or a number between 0 and 1. Got {rate} of type {type}.".format(
-                rate=rate, type=type(rate)
-            )
-        )
-        return False
-
-    
-    rate = float(rate)
-    if rate < 0 or rate > 1:
-        logger.warning(
-            "[Tracing] Given sample rate is invalid. Sample rate must be between 0 and 1. Got {rate}.".format(
-                rate=rate
-            )
-        )
-        return False
-
-    return True
 
 
 @contextlib.contextmanager
@@ -162,6 +114,7 @@ def record_sql_queries(
     params_list,  
     paramstyle,  
     executemany,  
+    record_cursor_repr=False,  
 ):
     
 
@@ -187,6 +140,8 @@ def record_sql_queries(
         data["db.paramstyle"] = paramstyle
     if executemany:
         data["db.executemany"] = True
+    if record_cursor_repr and cursor is not None:
+        data["db.cursor"] = cursor
 
     with capture_internal_exceptions():
         hub.add_breadcrumb(message=query, category="query", data=data)
@@ -212,6 +167,110 @@ def maybe_create_breadcrumbs_from_span(hub, span):
             message=span.description,
             data=span._data,
         )
+
+
+def add_query_source(hub, span):
+    
+    """
+    Adds OTel compatible source code information to the span
+    """
+    client = hub.client
+    if client is None:
+        return
+
+    if span.timestamp is None or span.start_timestamp is None:
+        return
+
+    should_add_query_source = client.options.get("enable_db_query_source", True)
+    if not should_add_query_source:
+        return
+
+    duration = span.timestamp - span.start_timestamp
+    threshold = client.options.get("db_query_source_threshold_ms", 0)
+    slow_query = duration_in_milliseconds(duration) > threshold
+
+    if not slow_query:
+        return
+
+    project_root = client.options["project_root"]
+    in_app_include = client.options.get("in_app_include")
+    in_app_exclude = client.options.get("in_app_exclude")
+
+    
+    frame = sys._getframe()  
+    while frame is not None:
+        try:
+            abs_path = frame.f_code.co_filename
+            if abs_path and PY2:
+                abs_path = os.path.abspath(abs_path)
+        except Exception:
+            abs_path = ""
+
+        try:
+            namespace = frame.f_globals.get("__name__")  
+        except Exception:
+            namespace = None
+
+        is_sentry_sdk_frame = namespace is not None and namespace.startswith(
+            "sentry_sdk."
+        )
+
+        should_be_included = not _is_external_source(abs_path)
+        if namespace is not None:
+            if in_app_exclude and _module_in_list(namespace, in_app_exclude):
+                should_be_included = False
+            if in_app_include and _module_in_list(namespace, in_app_include):
+                
+                
+                should_be_included = True
+
+        if (
+            abs_path.startswith(project_root)
+            and should_be_included
+            and not is_sentry_sdk_frame
+        ):
+            break
+
+        frame = frame.f_back
+    else:
+        frame = None
+
+    
+    if frame is not None:
+        try:
+            lineno = frame.f_lineno
+        except Exception:
+            lineno = None
+        if lineno is not None:
+            span.set_data(SPANDATA.CODE_LINENO, frame.f_lineno)
+
+        try:
+            namespace = frame.f_globals.get("__name__")
+        except Exception:
+            namespace = None
+        if namespace is not None:
+            span.set_data(SPANDATA.CODE_NAMESPACE, namespace)
+
+        try:
+            filepath = frame.f_code.co_filename
+        except Exception:
+            filepath = None
+        if filepath is not None:
+            if namespace is not None and not PY2:
+                in_app_path = filename_for_module(namespace, filepath)
+            elif project_root is not None and filepath.startswith(project_root):
+                in_app_path = filepath.replace(project_root, "").lstrip(os.sep)
+            else:
+                in_app_path = filepath
+            span.set_data(SPANDATA.CODE_FILEPATH, in_app_path)
+
+        try:
+            code_function = frame.f_code.co_name
+        except Exception:
+            code_function = None
+
+        if code_function is not None:
+            span.set_data(SPANDATA.CODE_FUNCTION, frame.f_code.co_name)
 
 
 def extract_sentrytrace_data(header):
@@ -246,143 +305,6 @@ def extract_sentrytrace_data(header):
     }
 
 
-def extract_tracestate_data(header):
-    
-    """
-    Extracts the sentry tracestate value and any third-party data from the given
-    tracestate header, returning a dictionary of data.
-    """
-    sentry_entry = third_party_entry = None
-    before = after = ""
-
-    if header:
-        
-        sentry_match = SENTRY_TRACESTATE_ENTRY_REGEX.search(header)
-
-        if sentry_match:
-            sentry_entry = sentry_match.group(1)
-
-            
-            
-            before, after = map(lambda s: s.strip(","), header.split(sentry_entry))
-
-            
-            
-            
-            sentry_value = sentry_entry.replace("sentry=", "")
-            if not re.search("^{b64}$".format(b64=base64_stripped), sentry_value):
-                sentry_entry = None
-        else:
-            after = header
-
-        
-        third_party_entry = (
-            ",".join(filter(TRACESTATE_ENTRIES_REGEX.search, [before, after])) or None
-        )
-
-    return {
-        "sentry_tracestate": sentry_entry,
-        "third_party_tracestate": third_party_entry,
-    }
-
-
-def compute_tracestate_value(data):
-    
-    """
-    Computes a new tracestate value using the given data.
-
-    Note: Returns just the base64-encoded data, NOT the full `sentry=...`
-    tracestate entry.
-    """
-
-    tracestate_json = json.dumps(data, default=safe_str)
-
-    
-    
-    
-    
-    
-    return (to_base64(tracestate_json) or "").rstrip("=")
-
-
-def compute_tracestate_entry(span):
-    
-    """
-    Computes a new sentry tracestate for the span. Includes the `sentry=`.
-
-    Will return `None` if there's no client and/or no DSN.
-    """
-    data = {}
-
-    hub = span.hub or sentry_sdk.Hub.current
-
-    client = hub.client
-    scope = hub.scope
-
-    if client and client.options.get("dsn"):
-        options = client.options
-        user = scope._user
-
-        data = {
-            "trace_id": span.trace_id,
-            "environment": options["environment"],
-            "release": options.get("release"),
-            "public_key": Dsn(options["dsn"]).public_key,
-        }
-
-        if user and (user.get("id") or user.get("segment")):
-            user_data = {}
-
-            if user.get("id"):
-                user_data["id"] = user["id"]
-
-            if user.get("segment"):
-                user_data["segment"] = user["segment"]
-
-            data["user"] = user_data
-
-        if span.containing_transaction:
-            data["transaction"] = span.containing_transaction.name
-
-        return "sentry=" + compute_tracestate_value(data)
-
-    return None
-
-
-def reinflate_tracestate(encoded_tracestate):
-    
-    """
-    Given a sentry tracestate value in its encoded form, translate it back into
-    a dictionary of data.
-    """
-    inflated_tracestate = None
-
-    if encoded_tracestate:
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        tracestate_json = from_base64(encoded_tracestate + "==")
-
-        try:
-            assert tracestate_json is not None
-            inflated_tracestate = json.loads(tracestate_json)
-        except Exception as err:
-            logger.warning(
-                (
-                    "Unable to attach tracestate data to envelope header: {err}"
-                    + "\nTracestate value is {encoded_tracestate}"
-                ).format(err=err, encoded_tracestate=encoded_tracestate),
-            )
-
-    return inflated_tracestate
-
-
 def _format_sql(cursor, sql):
     
 
@@ -403,39 +325,15 @@ def _format_sql(cursor, sql):
     return real_sql or to_string(sql)
 
 
-def has_tracestate_enabled(span=None):
-    
-
-    client = ((span and span.hub) or sentry_sdk.Hub.current).client
-    options = client and client.options
-
-    return bool(options and options["_experiments"].get("propagate_tracestate"))
-
-
-def has_custom_measurements_enabled():
-    
-    client = sentry_sdk.Hub.current.client
-    options = client and client.options
-    return bool(options and options["_experiments"].get("custom_measurements"))
-
-
 class Baggage(object):
+    """
+    The W3C Baggage header information (see https://www.w3.org/TR/baggage/).
+    """
+
     __slots__ = ("sentry_items", "third_party_items", "mutable")
 
     SENTRY_PREFIX = "sentry-"
     SENTRY_PREFIX_REGEX = re.compile("^sentry-")
-
-    
-    DSC_KEYS = [
-        "trace_id",
-        "public_key",
-        "sample_rate",
-        "release",
-        "environment",
-        "transaction",
-        "user_id",
-        "user_segment",
-    ]
 
     def __init__(
         self,
@@ -471,6 +369,43 @@ class Baggage(object):
                         mutable = False
                     else:
                         third_party_items += ("," if third_party_items else "") + item
+
+        return Baggage(sentry_items, third_party_items, mutable)
+
+    @classmethod
+    def from_options(cls, scope):
+        
+
+        sentry_items = {}  
+        third_party_items = ""
+        mutable = False
+
+        client = sentry_sdk.Hub.current.client
+
+        if client is None or scope._propagation_context is None:
+            return Baggage(sentry_items)
+
+        options = client.options
+        propagation_context = scope._propagation_context
+
+        if propagation_context is not None and "trace_id" in propagation_context:
+            sentry_items["trace_id"] = propagation_context["trace_id"]
+
+        if options.get("environment"):
+            sentry_items["environment"] = options["environment"]
+
+        if options.get("release"):
+            sentry_items["release"] = options["release"]
+
+        if options.get("dsn"):
+            sentry_items["public_key"] = Dsn(options["dsn"]).public_key
+
+        if options.get("traces_sample_rate"):
+            sentry_items["sample_rate"] = options["traces_sample_rate"]
+
+        user = (scope and scope._user) or {}
+        if user.get("segment"):
+            sentry_items["user_segment"] = user["segment"]
 
         return Baggage(sentry_items, third_party_items, mutable)
 
@@ -514,6 +449,9 @@ class Baggage(object):
         if transaction.sample_rate is not None:
             sentry_items["sample_rate"] = str(transaction.sample_rate)
 
+        if transaction.sampled is not None:
+            sentry_items["sampled"] = "true" if transaction.sampled else "false"
+
         
         
         
@@ -530,10 +468,8 @@ class Baggage(object):
         
         header = {}
 
-        for key in Baggage.DSC_KEYS:
-            item = self.sentry_items.get(key)
-            if item:
-                header[key] = item
+        for key, item in iteritems(self.sentry_items):
+            header[key] = item
 
         return header
 
@@ -552,8 +488,35 @@ class Baggage(object):
         return ",".join(items)
 
 
+def should_propagate_trace(hub, url):
+    
+    """
+    Returns True if url matches trace_propagation_targets configured in the given hub. Otherwise, returns False.
+    """
+    client = hub.client  
+    trace_propagation_targets = client.options["trace_propagation_targets"]
+
+    if is_sentry_url(hub, url):
+        return False
+
+    return match_regex_list(url, trace_propagation_targets, substring_matching=True)
+
+
+def normalize_incoming_data(incoming_data):
+    
+    """
+    Normalizes incoming data so the keys are all lowercase with dashes instead of underscores and stripped from known prefixes.
+    """
+    data = {}
+    for key, value in incoming_data.items():
+        if key.startswith("HTTP_"):
+            key = key[5:]
+
+        key = key.replace("_", "-").lower()
+        data[key] = value
+
+    return data
+
+
 
 from sentry_sdk.tracing import LOW_QUALITY_TRANSACTION_SOURCES
-
-if MYPY:
-    from sentry_sdk.tracing import Span, Transaction

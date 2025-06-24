@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
-from os import environ
 import sys
-from sentry_sdk.consts import OP
+from copy import deepcopy
+from datetime import timedelta
+from os import environ
 
+from sentry_sdk.api import continue_trace
+from sentry_sdk.consts import OP
 from sentry_sdk.hub import Hub, _should_send_default_pii
-from sentry_sdk.tracing import TRANSACTION_SOURCE_COMPONENT, Transaction
-from sentry_sdk._compat import reraise
+from sentry_sdk.tracing import TRANSACTION_SOURCE_COMPONENT
 from sentry_sdk.utils import (
     AnnotatedValue,
     capture_internal_exceptions,
@@ -15,10 +16,11 @@ from sentry_sdk.utils import (
 )
 from sentry_sdk.integrations import Integration
 from sentry_sdk.integrations._wsgi_common import _filter_headers
+from sentry_sdk._compat import datetime_utcnow, reraise
+from sentry_sdk._types import TYPE_CHECKING
 
-from sentry_sdk._types import MYPY
-
-if MYPY:
+if TYPE_CHECKING:
+    from datetime import datetime
     from typing import Any
     from typing import TypeVar
     from typing import Callable
@@ -79,7 +81,7 @@ def _wrap_handler(handler):
         
         
 
-        if isinstance(aws_event, list):
+        if isinstance(aws_event, list) and len(aws_event) >= 1:
             request_data = aws_event[0]
             batch_size = len(aws_event)
         else:
@@ -135,11 +137,13 @@ def _wrap_handler(handler):
                     
                     timeout_thread.start()
 
-            headers = request_data.get("headers")
+            headers = request_data.get("headers", {})
             
-            if headers is None:
+            
+            if not isinstance(headers, dict):
                 headers = {}
-            transaction = Transaction.continue_from_headers(
+
+            transaction = continue_trace(
                 headers,
                 op=OP.FUNCTION_AWS,
                 name=aws_context.function_name,
@@ -321,7 +325,7 @@ def get_lambda_bootstrap():
 
 def _make_request_event_processor(aws_event, aws_context, configured_timeout):
     
-    start_time = datetime.utcnow()
+    start_time = datetime_utcnow()
 
     def event_processor(sentry_event, hint, start_time=start_time):
         
@@ -380,7 +384,7 @@ def _make_request_event_processor(aws_event, aws_context, configured_timeout):
                 
                 request["data"] = AnnotatedValue.removed_because_raw_data()
 
-        sentry_event["request"] = request
+        sentry_event["request"] = deepcopy(request)
 
         return sentry_event
 
@@ -426,7 +430,7 @@ def _get_cloudwatch_logs_url(aws_context, start_time):
         log_group=aws_context.log_group_name,
         log_stream=aws_context.log_stream_name,
         start_time=(start_time - timedelta(seconds=1)).strftime(formatstring),
-        end_time=(datetime.utcnow() + timedelta(seconds=2)).strftime(formatstring),
+        end_time=(datetime_utcnow() + timedelta(seconds=2)).strftime(formatstring),
     )
 
     return url

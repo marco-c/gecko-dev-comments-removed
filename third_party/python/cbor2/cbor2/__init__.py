@@ -1,3 +1,3 @@
-from cbor2.decoder import load, loads, CBORDecoder, CBORDecodeError  
-from cbor2.encoder import dump, dumps, CBOREncoder, CBOREncodeError, shareable_encoder  
-from cbor2.types import CBORTag, CBORSimpleValue, undefined  
+from .decoder import load, loads, CBORDecoder, CBORDecodeError  
+from .encoder import dump, dumps, CBOREncoder, CBOREncodeError, shareable_encoder  
+from .types import CBORTag, CBORSimpleValue, undefined  

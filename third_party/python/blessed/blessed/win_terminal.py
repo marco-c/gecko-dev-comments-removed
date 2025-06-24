@@ -121,6 +121,7 @@ class Terminal(_Terminal):
             save_mode = win32.get_console_mode(filehandle)
             save_line_buffered = self._line_buffered
             win32.setcbreak(filehandle)
+            
             try:
                 self._line_buffered = False
                 yield
@@ -152,6 +153,7 @@ class Terminal(_Terminal):
             save_mode = win32.get_console_mode(filehandle)
             save_line_buffered = self._line_buffered
             win32.setraw(filehandle)
+            
             try:
                 self._line_buffered = False
                 yield

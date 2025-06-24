@@ -8,24 +8,40 @@ from sentry_sdk.tracing import SOURCE_FOR_STYLE
 from sentry_sdk.utils import (
     capture_internal_exceptions,
     event_from_exception,
+    parse_version,
 )
 
-from sentry_sdk._types import MYPY
+from sentry_sdk._types import TYPE_CHECKING
 
-if MYPY:
+if TYPE_CHECKING:
     from typing import Any
     from typing import Dict
     from typing import Optional
 
-    from sentry_sdk._types import EventProcessor
+    from sentry_sdk._types import Event, EventProcessor
+
+
+
 
 try:
     import falcon  
-    import falcon.api_helpers  
 
     from falcon import __version__ as FALCON_VERSION
 except ImportError:
     raise DidNotEnable("Falcon not installed")
+
+try:
+    import falcon.app_helpers  
+
+    falcon_helpers = falcon.app_helpers
+    falcon_app_class = falcon.App
+    FALCON3 = True
+except ImportError:
+    import falcon.api_helpers  
+
+    falcon_helpers = falcon.api_helpers
+    falcon_app_class = falcon.API
+    FALCON3 = False
 
 
 class FalconRequestExtractor(RequestExtractor):
@@ -58,16 +74,27 @@ class FalconRequestExtractor(RequestExtractor):
         else:
             return None
 
-    def json(self):
-        
-        try:
-            return self.request.media
-        except falcon.errors.HTTPBadRequest:
+    if FALCON3:
+
+        def json(self):
             
+            try:
+                return self.request.media
+            except falcon.errors.HTTPBadRequest:
+                return None
+
+    else:
+
+        def json(self):
             
-            
-            
-            return self.request._media
+            try:
+                return self.request.media
+            except falcon.errors.HTTPBadRequest:
+                
+                
+                
+                
+                return self.request._media
 
 
 class SentryFalconMiddleware(object):
@@ -105,9 +132,10 @@ class FalconIntegration(Integration):
     @staticmethod
     def setup_once():
         
-        try:
-            version = tuple(map(int, FALCON_VERSION.split(".")))
-        except (ValueError, TypeError):
+
+        version = parse_version(FALCON_VERSION)
+
+        if version is None:
             raise DidNotEnable("Unparsable Falcon version: {}".format(FALCON_VERSION))
 
         if version < (1, 4):
@@ -120,7 +148,7 @@ class FalconIntegration(Integration):
 
 def _patch_wsgi_app():
     
-    original_wsgi_app = falcon.API.__call__
+    original_wsgi_app = falcon_app_class.__call__
 
     def sentry_patched_wsgi_app(self, env, start_response):
         
@@ -135,29 +163,37 @@ def _patch_wsgi_app():
 
         return sentry_wrapped(env, start_response)
 
-    falcon.API.__call__ = sentry_patched_wsgi_app
+    falcon_app_class.__call__ = sentry_patched_wsgi_app
 
 
 def _patch_handle_exception():
     
-    original_handle_exception = falcon.API._handle_exception
+    original_handle_exception = falcon_app_class._handle_exception
 
     def sentry_patched_handle_exception(self, *args):
         
         
         
         
-        if isinstance(args[0], Exception):
-            ex = args[0]
-        else:
-            ex = args[2]
+        ex = response = None
+        with capture_internal_exceptions():
+            ex = next(argument for argument in args if isinstance(argument, Exception))
+            response = next(
+                argument for argument in args if isinstance(argument, falcon.Response)
+            )
 
         was_handled = original_handle_exception(self, *args)
+
+        if ex is None or response is None:
+            
+            
+            
+            return was_handled
 
         hub = Hub.current
         integration = hub.get_integration(FalconIntegration)
 
-        if integration is not None and _exception_leads_to_http_5xx(ex):
+        if integration is not None and _exception_leads_to_http_5xx(ex, response):
             
             client = hub.client  
 
@@ -170,27 +206,34 @@ def _patch_handle_exception():
 
         return was_handled
 
-    falcon.API._handle_exception = sentry_patched_handle_exception
+    falcon_app_class._handle_exception = sentry_patched_handle_exception
 
 
 def _patch_prepare_middleware():
     
-    original_prepare_middleware = falcon.api_helpers.prepare_middleware
+    original_prepare_middleware = falcon_helpers.prepare_middleware
 
     def sentry_patched_prepare_middleware(
-        middleware=None, independent_middleware=False
+        middleware=None, independent_middleware=False, asgi=False
     ):
         
+        if asgi:
+            
+            return original_prepare_middleware(middleware, independent_middleware, asgi)
+
         hub = Hub.current
         integration = hub.get_integration(FalconIntegration)
         if integration is not None:
             middleware = [SentryFalconMiddleware()] + (middleware or [])
+
+        
+        
         return original_prepare_middleware(middleware, independent_middleware)
 
-    falcon.api_helpers.prepare_middleware = sentry_patched_prepare_middleware
+    falcon_helpers.prepare_middleware = sentry_patched_prepare_middleware
 
 
-def _exception_leads_to_http_5xx(ex):
+def _exception_leads_to_http_5xx(ex, response):
     
     is_server_error = isinstance(ex, falcon.HTTPError) and (ex.status or "").startswith(
         "5"
@@ -198,7 +241,20 @@ def _exception_leads_to_http_5xx(ex):
     is_unhandled_error = not isinstance(
         ex, (falcon.HTTPError, falcon.http_status.HTTPStatus)
     )
-    return is_server_error or is_unhandled_error
+
+    
+    
+    
+    
+    
+    return (is_server_error or is_unhandled_error) and (
+        not FALCON3 or _has_http_5xx_status(response)
+    )
+
+
+def _has_http_5xx_status(response):
+    
+    return response.status.startswith("5")
 
 
 def _set_transaction_name_and_source(event, transaction_style, request):

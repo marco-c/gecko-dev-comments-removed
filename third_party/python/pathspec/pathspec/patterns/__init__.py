@@ -1,8 +1,11 @@
-# encoding: utf-8
 """
 The *pathspec.patterns* package contains the pattern matching
 implementations.
 """
+
+
+from . import gitwildmatch
+
 
 
 from .gitwildmatch import GitWildMatchPattern

@@ -1,15 +1,11 @@
+import os
 import sys
 import platform
 
+from typing import Union
 
-__all__ = ['install', 'NullFinder', 'Protocol']
 
-
-try:
-    from typing import Protocol
-except ImportError:  
-    
-    from typing_extensions import Protocol  
+__all__ = ['install', 'NullFinder']
 
 
 def install(cls):
@@ -53,14 +49,6 @@ class NullFinder:
     def find_spec(*args, **kwargs):
         return None
 
-    
-    
-    
-    
-    
-    
-    find_module = find_spec
-
 
 def pypy_partial(val):
     """
@@ -70,3 +58,10 @@ def pypy_partial(val):
     """
     is_pypy = platform.python_implementation() == 'PyPy'
     return val + is_pypy
+
+
+if sys.version_info >= (3, 9):
+    StrPath = Union[str, os.PathLike[str]]
+else:
+    
+    StrPath = Union[str, "os.PathLike[str]"]  

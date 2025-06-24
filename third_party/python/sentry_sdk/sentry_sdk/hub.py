@@ -1,37 +1,37 @@
 import copy
 import sys
-
-from datetime import datetime
 from contextlib import contextmanager
 
 from sentry_sdk._compat import with_metaclass
 from sentry_sdk.consts import INSTRUMENTER
 from sentry_sdk.scope import Scope
 from sentry_sdk.client import Client
-from sentry_sdk.tracing import NoOpSpan, Span, Transaction
-from sentry_sdk.session import Session
+from sentry_sdk.tracing import (
+    NoOpSpan,
+    Span,
+    Transaction,
+)
+
 from sentry_sdk.utils import (
-    exc_info_from_error,
-    event_from_exception,
     logger,
     ContextVar,
 )
 
-from sentry_sdk._types import MYPY
+from sentry_sdk._types import TYPE_CHECKING
 
-if MYPY:
-    from typing import Union
+if TYPE_CHECKING:
     from typing import Any
-    from typing import Optional
-    from typing import Tuple
-    from typing import Dict
-    from typing import List
     from typing import Callable
+    from typing import ContextManager
+    from typing import Dict
     from typing import Generator
+    from typing import List
+    from typing import Optional
+    from typing import overload
+    from typing import Tuple
     from typing import Type
     from typing import TypeVar
-    from typing import overload
-    from typing import ContextManager
+    from typing import Union
 
     from sentry_sdk.integrations import Integration
     from sentry_sdk._types import (
@@ -40,6 +40,7 @@ if MYPY:
         Breadcrumb,
         BreadcrumbHint,
         ExcInfo,
+        LogLevelStr,
     )
     from sentry_sdk.consts import ClientConstructor
 
@@ -53,24 +54,6 @@ else:
 
 
 _local = ContextVar("sentry_current_hub")
-
-
-def _update_scope(base, scope_change, scope_kwargs):
-    
-    if scope_change and scope_kwargs:
-        raise TypeError("cannot provide scope and kwargs")
-    if scope_change is not None:
-        final_scope = copy.copy(base)
-        if callable(scope_change):
-            scope_change(final_scope)
-        else:
-            final_scope.update_from_scope(scope_change)
-    elif scope_kwargs:
-        final_scope = copy.copy(base)
-        final_scope.update_from_kwargs(**scope_kwargs)
-    else:
-        final_scope = base
-    return final_scope
 
 
 def _should_send_default_pii():
@@ -124,9 +107,9 @@ def _init(*args, **kwargs):
     return rv
 
 
-from sentry_sdk._types import MYPY
+from sentry_sdk._types import TYPE_CHECKING
 
-if MYPY:
+if TYPE_CHECKING:
     
     
     
@@ -222,7 +205,7 @@ class Hub(with_metaclass(HubMeta)):
 
     
 
-    if MYPY:
+    if TYPE_CHECKING:
         current = None  
         main = None  
 
@@ -283,18 +266,9 @@ class Hub(with_metaclass(HubMeta)):
         If the return value is not `None` the hub is guaranteed to have a
         client attached.
         """
-        if isinstance(name_or_class, str):
-            integration_name = name_or_class
-        elif name_or_class.identifier is not None:
-            integration_name = name_or_class.identifier
-        else:
-            raise ValueError("Integration has no name")
-
         client = self.client
         if client is not None:
-            rv = client.integrations.get(integration_name)
-            if rv is not None:
-                return rv
+            return client.get_integration(name_or_class)
 
     @property
     def client(self):
@@ -310,7 +284,15 @@ class Hub(with_metaclass(HubMeta)):
 
     def last_event_id(self):
         
-        """Returns the last event ID."""
+        """
+        Returns the last event ID.
+
+        .. deprecated:: 1.40.5
+            This function is deprecated and will be removed in a future release. The functions `capture_event`, `capture_message`, and `capture_exception` return the event ID directly.
+        """
+        logger.warning(
+            "Deprecated: last_event_id is deprecated. This will be removed in the future. The functions `capture_event`, `capture_message`, and `capture_exception` return the event ID directly."
+        )
         return self._last_event_id
 
     def bind_client(
@@ -321,74 +303,100 @@ class Hub(with_metaclass(HubMeta)):
         top = self._stack[-1]
         self._stack[-1] = (new, top[1])
 
-    def capture_event(
-        self,
-        event,  
-        hint=None,  
-        scope=None,  
-        **scope_args  
-    ):
+    def capture_event(self, event, hint=None, scope=None, **scope_kwargs):
         
-        """Captures an event. Alias of :py:meth:`sentry_sdk.Client.capture_event`."""
-        client, top_scope = self._stack[-1]
-        scope = _update_scope(top_scope, scope, scope_args)
-        if client is not None:
-            is_transaction = event.get("type") == "transaction"
-            rv = client.capture_event(event, hint, scope)
-            if rv is not None and not is_transaction:
-                self._last_event_id = rv
-            return rv
-        return None
+        """
+        Captures an event.
 
-    def capture_message(
-        self,
-        message,  
-        level=None,  
-        scope=None,  
-        **scope_args  
-    ):
+        Alias of :py:meth:`sentry_sdk.Scope.capture_event`.
+
+        :param event: A ready-made event that can be directly sent to Sentry.
+
+        :param hint: Contains metadata about the event that can be read from `before_send`, such as the original exception object or a HTTP request object.
+
+        :param scope: An optional :py:class:`sentry_sdk.Scope` to apply to events.
+            The `scope` and `scope_kwargs` parameters are mutually exclusive.
+
+        :param scope_kwargs: Optional data to apply to event.
+            For supported `**scope_kwargs` see :py:meth:`sentry_sdk.Scope.update_from_kwargs`.
+            The `scope` and `scope_kwargs` parameters are mutually exclusive.
+        """
+        client, top_scope = self._stack[-1]
+        if client is None:
+            return None
+
+        last_event_id = top_scope.capture_event(
+            event, hint, client=client, scope=scope, **scope_kwargs
+        )
+
+        is_transaction = event.get("type") == "transaction"
+        if last_event_id is not None and not is_transaction:
+            self._last_event_id = last_event_id
+
+        return last_event_id
+
+    def capture_message(self, message, level=None, scope=None, **scope_kwargs):
         
-        """Captures a message.  The message is just a string.  If no level
-        is provided the default level is `info`.
+        """
+        Captures a message.
+
+        Alias of :py:meth:`sentry_sdk.Scope.capture_message`.
+
+        :param message: The string to send as the message to Sentry.
+
+        :param level: If no level is provided, the default level is `info`.
+
+        :param scope: An optional :py:class:`sentry_sdk.Scope` to apply to events.
+            The `scope` and `scope_kwargs` parameters are mutually exclusive.
+
+        :param scope_kwargs: Optional data to apply to event.
+            For supported `**scope_kwargs` see :py:meth:`sentry_sdk.Scope.update_from_kwargs`.
+            The `scope` and `scope_kwargs` parameters are mutually exclusive.
 
         :returns: An `event_id` if the SDK decided to send the event (see :py:meth:`sentry_sdk.Client.capture_event`).
         """
-        if self.client is None:
+        client, top_scope = self._stack[-1]
+        if client is None:
             return None
-        if level is None:
-            level = "info"
-        return self.capture_event(
-            {"message": message, "level": level}, scope=scope, **scope_args
+
+        last_event_id = top_scope.capture_message(
+            message, level=level, client=client, scope=scope, **scope_kwargs
         )
 
-    def capture_exception(
-        self,
-        error=None,  
-        scope=None,  
-        **scope_args  
-    ):
+        if last_event_id is not None:
+            self._last_event_id = last_event_id
+
+        return last_event_id
+
+    def capture_exception(self, error=None, scope=None, **scope_kwargs):
         
         """Captures an exception.
 
-        :param error: An exception to catch. If `None`, `sys.exc_info()` will be used.
+        Alias of :py:meth:`sentry_sdk.Scope.capture_exception`.
+
+        :param error: An exception to capture. If `None`, `sys.exc_info()` will be used.
+
+        :param scope: An optional :py:class:`sentry_sdk.Scope` to apply to events.
+            The `scope` and `scope_kwargs` parameters are mutually exclusive.
+
+        :param scope_kwargs: Optional data to apply to event.
+            For supported `**scope_kwargs` see :py:meth:`sentry_sdk.Scope.update_from_kwargs`.
+            The `scope` and `scope_kwargs` parameters are mutually exclusive.
 
         :returns: An `event_id` if the SDK decided to send the event (see :py:meth:`sentry_sdk.Client.capture_event`).
         """
-        client = self.client
+        client, top_scope = self._stack[-1]
         if client is None:
             return None
-        if error is not None:
-            exc_info = exc_info_from_error(error)
-        else:
-            exc_info = sys.exc_info()
 
-        event, hint = event_from_exception(exc_info, client_options=client.options)
-        try:
-            return self.capture_event(event, hint=hint, scope=scope, **scope_args)
-        except Exception:
-            self._capture_internal_exception(sys.exc_info())
+        last_event_id = top_scope.capture_exception(
+            error, client=client, scope=scope, **scope_kwargs
+        )
 
-        return None
+        if last_event_id is not None:
+            self._last_event_id = last_event_id
+
+        return last_event_id
 
     def _capture_internal_exception(
         self, exc_info  
@@ -398,16 +406,13 @@ class Hub(with_metaclass(HubMeta)):
         Capture an exception that is likely caused by a bug in the SDK
         itself.
 
+        Duplicated in :py:meth:`sentry_sdk.Client._capture_internal_exception`.
+
         These exceptions do not end up in Sentry and are just logged instead.
         """
         logger.error("Internal error in sentry_sdk", exc_info=exc_info)
 
-    def add_breadcrumb(
-        self,
-        crumb=None,  
-        hint=None,  
-        **kwargs  
-    ):
+    def add_breadcrumb(self, crumb=None, hint=None, **kwargs):
         
         """
         Adds a breadcrumb.
@@ -422,87 +427,36 @@ class Hub(with_metaclass(HubMeta)):
             logger.info("Dropped breadcrumb because no client bound")
             return
 
-        crumb = dict(crumb or ())  
-        crumb.update(kwargs)
-        if not crumb:
-            return
+        kwargs["client"] = client
 
-        hint = dict(hint or ())  
+        scope.add_breadcrumb(crumb, hint, **kwargs)
 
-        if crumb.get("timestamp") is None:
-            crumb["timestamp"] = datetime.utcnow()
-        if crumb.get("type") is None:
-            crumb["type"] = "default"
-
-        if client.options["before_breadcrumb"] is not None:
-            new_crumb = client.options["before_breadcrumb"](crumb, hint)
-        else:
-            new_crumb = crumb
-
-        if new_crumb is not None:
-            scope._breadcrumbs.append(new_crumb)
-        else:
-            logger.info("before breadcrumb dropped breadcrumb (%s)", crumb)
-
-        max_breadcrumbs = client.options["max_breadcrumbs"]  
-        while len(scope._breadcrumbs) > max_breadcrumbs:
-            scope._breadcrumbs.popleft()
-
-    def start_span(
-        self,
-        span=None,  
-        instrumenter=INSTRUMENTER.SENTRY,  
-        **kwargs  
-    ):
+    def start_span(self, span=None, instrumenter=INSTRUMENTER.SENTRY, **kwargs):
         
         """
-        Create and start timing a new span whose parent is the currently active
-        span or transaction, if any. The return value is a span instance,
+        Start a span whose parent is the currently active span or transaction, if any.
+
+        The return value is a :py:class:`sentry_sdk.tracing.Span` instance,
         typically used as a context manager to start and stop timing in a `with`
         block.
 
         Only spans contained in a transaction are sent to Sentry. Most
         integrations start a transaction at the appropriate time, for example
-        for every incoming HTTP request. Use `start_transaction` to start a new
-        transaction when one is not already in progress.
+        for every incoming HTTP request. Use
+        :py:meth:`sentry_sdk.start_transaction` to start a new transaction when
+        one is not already in progress.
+
+        For supported `**kwargs` see :py:class:`sentry_sdk.tracing.Span`.
         """
-        configuration_instrumenter = self.client and self.client.options["instrumenter"]
+        client, scope = self._stack[-1]
 
-        if instrumenter != configuration_instrumenter:
-            return NoOpSpan()
+        kwargs["hub"] = self
+        kwargs["client"] = client
 
-        
-        
-        
-        if isinstance(span, Transaction) or "transaction" in kwargs:
-            deprecation_msg = (
-                "Deprecated: use start_transaction to start transactions and "
-                "Transaction.start_child to start spans."
-            )
-            if isinstance(span, Transaction):
-                logger.warning(deprecation_msg)
-                return self.start_transaction(span)
-            if "transaction" in kwargs:
-                logger.warning(deprecation_msg)
-                name = kwargs.pop("transaction")
-                return self.start_transaction(name=name, **kwargs)
-
-        if span is not None:
-            return span
-
-        kwargs.setdefault("hub", self)
-
-        span = self.scope.span
-        if span is not None:
-            return span.start_child(**kwargs)
-
-        return Span(**kwargs)
+        return scope.start_span(span=span, instrumenter=instrumenter, **kwargs)
 
     def start_transaction(
-        self,
-        transaction=None,  
-        instrumenter=INSTRUMENTER.SENTRY,  
-        **kwargs  
+        self, transaction=None, instrumenter=INSTRUMENTER.SENTRY, **kwargs
     ):
         
         """
@@ -526,37 +480,28 @@ class Hub(with_metaclass(HubMeta)):
 
         When the transaction is finished, it will be sent to Sentry with all its
         finished child spans.
+
+        For supported `**kwargs` see :py:class:`sentry_sdk.tracing.Transaction`.
         """
-        configuration_instrumenter = self.client and self.client.options["instrumenter"]
+        client, scope = self._stack[-1]
 
-        if instrumenter != configuration_instrumenter:
-            return NoOpSpan()
+        kwargs["hub"] = self
+        kwargs["client"] = client
 
-        custom_sampling_context = kwargs.pop("custom_sampling_context", {})
+        return scope.start_transaction(
+            transaction=transaction, instrumenter=instrumenter, **kwargs
+        )
 
+    def continue_trace(self, environ_or_headers, op=None, name=None, source=None):
         
-        if transaction is None:
-            kwargs.setdefault("hub", self)
-            transaction = Transaction(**kwargs)
+        """
+        Sets the propagation context from environment or headers and returns a transaction.
+        """
+        scope = self._stack[-1][1]
 
-        
-        
-        sampling_context = {
-            "transaction_context": transaction.to_json(),
-            "parent_sampled": transaction.parent_sampled,
-        }
-        sampling_context.update(custom_sampling_context)
-        transaction._set_initial_sampling_decision(sampling_context=sampling_context)
-
-        
-        
-        if transaction.sampled:
-            max_spans = (
-                self.client and self.client.options["_experiments"].get("max_spans")
-            ) or 1000
-            transaction.init_span_recorder(maxlen=max_spans)
-
-        return transaction
+        return scope.continue_trace(
+            environ_or_headers=environ_or_headers, op=op, name=name, source=source
+        )
 
     @overload
     def push_scope(
@@ -573,7 +518,9 @@ class Hub(with_metaclass(HubMeta)):
         pass
 
     def push_scope(  
-        self, callback=None  
+        self,
+        callback=None,  
+        continue_trace=True,  
     ):
         
         """
@@ -591,7 +538,13 @@ class Hub(with_metaclass(HubMeta)):
             return None
 
         client, scope = self._stack[-1]
-        new_layer = (client, copy.copy(scope))
+
+        new_scope = copy.copy(scope)
+
+        if continue_trace:
+            new_scope.generate_propagation_context()
+
+        new_layer = (client, new_scope)
         self._stack.append(new_layer)
 
         return _ScopeManager(self)
@@ -622,7 +575,9 @@ class Hub(with_metaclass(HubMeta)):
         pass
 
     def configure_scope(  
-        self, callback=None  
+        self,
+        callback=None,  
+        continue_trace=True,  
     ):
         
 
@@ -635,6 +590,10 @@ class Hub(with_metaclass(HubMeta)):
         """
 
         client, scope = self._stack[-1]
+
+        if continue_trace:
+            scope.generate_propagation_context()
+
         if callback is not None:
             if client is not None:
                 callback(scope)
@@ -656,12 +615,9 @@ class Hub(with_metaclass(HubMeta)):
     ):
         
         """Starts a new session."""
-        self.end_session()
         client, scope = self._stack[-1]
-        scope._session = Session(
-            release=client.options["release"] if client else None,
-            environment=client.options["environment"] if client else None,
-            user=scope._user,
+        scope.start_session(
+            client=client,
             session_mode=session_mode,
         )
 
@@ -669,13 +625,7 @@ class Hub(with_metaclass(HubMeta)):
         
         """Ends the current session if there is one."""
         client, scope = self._stack[-1]
-        session = scope._session
-        self.scope._session = None
-
-        if session is not None:
-            session.close()
-            if client is not None:
-                client.capture_session(session)
+        scope.end_session(client=client)
 
     def stop_auto_session_tracking(self):
         
@@ -684,9 +634,8 @@ class Hub(with_metaclass(HubMeta)):
         This temporarily session tracking for the current scope when called.
         To resume session tracking call `resume_auto_session_tracking`.
         """
-        self.end_session()
         client, scope = self._stack[-1]
-        scope._force_auto_session_tracking = False
+        scope.stop_auto_session_tracking(client=client)
 
     def resume_auto_session_tracking(self):
         
@@ -694,8 +643,8 @@ class Hub(with_metaclass(HubMeta)):
         disabled earlier.  This requires that generally automatic session
         tracking is enabled.
         """
-        client, scope = self._stack[-1]
-        scope._force_auto_session_tracking = None
+        scope = self._stack[-1][1]
+        scope.resume_auto_session_tracking()
 
     def flush(
         self,
@@ -710,6 +659,27 @@ class Hub(with_metaclass(HubMeta)):
         if client is not None:
             return client.flush(timeout=timeout, callback=callback)
 
+    def get_traceparent(self):
+        
+        """
+        Returns the traceparent either from the active span or from the scope.
+        """
+        client, scope = self._stack[-1]
+        return scope.get_traceparent(client=client)
+
+    def get_baggage(self):
+        
+        """
+        Returns Baggage either from the active span or from the scope.
+        """
+        client, scope = self._stack[-1]
+        baggage = scope.get_baggage(client=client)
+
+        if baggage is not None:
+            return baggage.serialize()
+
+        return None
+
     def iter_trace_propagation_headers(self, span=None):
         
         """
@@ -717,31 +687,23 @@ class Hub(with_metaclass(HubMeta)):
         from the span representing the request, if available, or the current
         span on the scope if not.
         """
-        span = span or self.scope.span
-        if not span:
-            return
+        client, scope = self._stack[-1]
 
-        client = self._stack[-1][0]
-
-        propagate_traces = client and client.options["propagate_traces"]
-        if not propagate_traces:
-            return
-
-        for header in span.iter_headers():
-            yield header
+        return scope.iter_trace_propagation_headers(span=span, client=client)
 
     def trace_propagation_meta(self, span=None):
         
         """
-        Return meta tags which should be injected into the HTML template
-        to allow propagation of trace data.
+        Return meta tags which should be injected into HTML templates
+        to allow propagation of trace information.
         """
-        meta = ""
+        if span is not None:
+            logger.warning(
+                "The parameter `span` in trace_propagation_meta() is deprecated and will be removed in the future."
+            )
 
-        for name, content in self.iter_trace_propagation_headers(span):
-            meta += '<meta name="%s" content="%s">' % (name, content)
-
-        return meta
+        client, scope = self._stack[-1]
+        return scope.trace_propagation_meta(span=span, client=client)
 
 
 GLOBAL_HUB = Hub()

@@ -3,38 +3,13 @@ from __future__ import absolute_import
 from sentry_sdk.hub import Hub
 from sentry_sdk.integrations import Integration
 from sentry_sdk.scope import add_global_event_processor
+from sentry_sdk.utils import _get_installed_modules
 
-from sentry_sdk._types import MYPY
+from sentry_sdk._types import TYPE_CHECKING
 
-if MYPY:
+if TYPE_CHECKING:
     from typing import Any
-    from typing import Dict
-    from typing import Tuple
-    from typing import Iterator
-
     from sentry_sdk._types import Event
-
-
-_installed_modules = None
-
-
-def _generate_installed_modules():
-    
-    try:
-        import pkg_resources
-    except ImportError:
-        return
-
-    for info in pkg_resources.working_set:
-        yield info.key, info.version
-
-
-def _get_installed_modules():
-    
-    global _installed_modules
-    if _installed_modules is None:
-        _installed_modules = dict(_generate_installed_modules())
-    return _installed_modules
 
 
 class ModulesIntegration(Integration):

@@ -31,16 +31,22 @@
 
 
 
+import sys
+if sys.version_info < (3, 3):
+    from collections import Mapping
+else:
+    from collections.abc import Mapping
+
 
 class _dlnode(object):
+    __slots__ = ('empty', 'next', 'prev', 'key', 'value')
+
     def __init__(self):
         self.empty = True
 
 
 class lrucache(object):
-
     def __init__(self, size, callback=None):
-
         self.callback = callback
 
         
@@ -52,8 +58,6 @@ class lrucache(object):
         
         
         
-        
-
         self.head = _dlnode()
         self.head.next = self.head
         self.head.prev = self.head
@@ -62,7 +66,6 @@ class lrucache(object):
 
         
         self.size(size)
-
 
     def __len__(self):
         return len(self.table)
@@ -75,19 +78,15 @@ class lrucache(object):
 
         self.table.clear()
 
-
     def __contains__(self, key):
         return key in self.table
 
     
     def peek(self, key):
-        
         node = self.table[key]
         return node.value
 
-
     def __getitem__(self, key):
-        
         node = self.table[key]
 
         
@@ -96,22 +95,18 @@ class lrucache(object):
         self.mtf(node)
         self.head = node
 
-        
         return node.value
 
     def get(self, key, default=None):
-        """Get an item - return default (None) if not present"""
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self.table:
             return default
+        
+        return self[key]
 
     def __setitem__(self, key, value):
         
         
         if key in self.table:
-
-            
             node = self.table[key]
 
             
@@ -158,13 +153,10 @@ class lrucache(object):
         
         self.head = node
 
-
     def __delitem__(self, key):
-
         
         node = self.table[key]
         del self.table[key]
-
         node.empty = True
 
         
@@ -180,8 +172,71 @@ class lrucache(object):
         self.mtf(node)
         self.head = node.next
 
-    def __iter__(self):
+    def update(self, *args, **kwargs):
+        if len(args) > 0:
+            other = args[0]
+            if isinstance(other, Mapping):
+                for key in other:
+                    self[key] = other[key]
+            elif hasattr(other, "keys"):
+                for key in other.keys():
+                    self[key] = other[key]
+            else:
+                for key, value in other:
+                    self[key] = value
 
+        for key, value in kwargs.items():
+            self[key] = value
+
+    __defaultObj = object()
+    def pop(self, key, default=__defaultObj):
+        if key in self.table:
+            value = self.peek(key)
+            del self[key]
+            return value
+
+        if default is self.__defaultObj:
+            raise KeyError
+
+        return default
+
+    def popitem(self):
+        
+        if len(self) < 1:
+            raise KeyError
+
+        
+        node = self.head
+
+        
+        key = node.key
+        value = node.value
+
+        
+        del self.table[key]
+        node.empty = True
+
+        
+        node.key = None
+        node.value = None
+
+        
+        
+        
+        
+        
+        self.head = node.next
+
+        return key, value
+
+    def setdefault(self, key, default=None):
+        if key in self.table:
+            return self[key]
+
+        self[key] = default
+        return default
+
+    def __iter__(self):
         
         
         
@@ -189,7 +244,6 @@ class lrucache(object):
             yield node.key
 
     def items(self):
-
         
         
         
@@ -197,7 +251,6 @@ class lrucache(object):
             yield (node.key, node.value)
 
     def keys(self):
-
         
         
         
@@ -205,7 +258,6 @@ class lrucache(object):
             yield node.key
 
     def values(self):
-
         
         
         
@@ -213,7 +265,6 @@ class lrucache(object):
             yield node.value
 
     def size(self, size=None):
-
         if size is not None:
             assert size > 0
             if size > self.listSize:
@@ -254,12 +305,10 @@ class lrucache(object):
             
             node.prev = None
             node.next = None
-
             node.key = None
             node.value = None
 
         self.listSize -= n
-
 
     
     
@@ -284,7 +333,60 @@ class lrucache(object):
             yield node
             node = node.next
 
+    
+    
+    
+    
+    def __getstate__(self):
+        
+        d = self.__dict__.copy()
 
+        
+        del d['table']
+        del d['head']
+
+        
+        
+        
+        
+        
+        elements = [(node.key, node.value) for node in self.dli()]
+        return (d, elements)
+
+    def __setstate__(self, state):
+        d = state[0]
+        elements = state[1]
+
+        
+        self.__dict__.update(d)
+
+        
+        
+
+        
+        
+        
+        size = self.listSize
+
+        
+        
+        self.table = {}
+
+        self.head = _dlnode()
+        self.head.next = self.head
+        self.head.prev = self.head
+
+        self.listSize = 1
+
+        
+        self.size(size)
+
+        
+        
+        
+        
+        for key, value in reversed(elements):
+            self[key] = value
 
 
 class WriteThroughCacheManager(object):
@@ -316,12 +418,8 @@ class WriteThroughCacheManager(object):
 
     def __getitem__(self, key):
         
-        
-        
-        try:
+        if key in self.cache:
             return self.cache[key]
-        except KeyError:
-            pass
 
         
         
@@ -330,7 +428,6 @@ class WriteThroughCacheManager(object):
         return value
 
     def get(self, key, default=None):
-        """Get an item - return default (None) if not present"""
         try:
             return self[key]
         except KeyError:
@@ -345,10 +442,10 @@ class WriteThroughCacheManager(object):
         
         
         del self.store[key]
+
+        
+        
         try:
-            
-            
-            
             del self.cache[key]
         except KeyError:
             pass
@@ -364,7 +461,6 @@ class WriteThroughCacheManager(object):
 
     def items(self):
         return self.store.items()
-
 
 
 class WriteBackCacheManager(object):
@@ -390,6 +486,10 @@ class WriteBackCacheManager(object):
     def size(self, size=None):
         return self.cache.size(size)
 
+    def len(self):
+        self.sync()
+        return len(self.store)
+
     def clear(self):
         self.cache.clear()
         self.dirty.clear()
@@ -408,12 +508,8 @@ class WriteBackCacheManager(object):
 
     def __getitem__(self, key):
         
-        
-        
-        try:
+        if key in self.cache:
             return self.cache[key]
-        except KeyError:
-            pass
 
         
         
@@ -422,7 +518,6 @@ class WriteBackCacheManager(object):
         return value
 
     def get(self, key, default=None):
-        """Get an item - return default (None) if not present"""
         try:
             return self[key]
         except KeyError:
@@ -434,7 +529,6 @@ class WriteBackCacheManager(object):
         self.dirty.add(key)
 
     def __delitem__(self, key):
-
         found = False
         try:
             del self.cache[key]
@@ -452,7 +546,6 @@ class WriteBackCacheManager(object):
         if not found:  
             raise KeyError
 
-
     def __iter__(self):
         return self.keys()
 
@@ -464,11 +557,9 @@ class WriteBackCacheManager(object):
         for key in self.dirty:
             yield key
 
-
     def values(self):
         for key, value in self.items():
             yield value
-
 
     def items(self):
         for key, value in self.store.items():
@@ -478,8 +569,6 @@ class WriteBackCacheManager(object):
         for key in self.dirty:
             value = self.cache.peek(key)
             yield (key, value)
-
-
 
     def sync(self):
         
@@ -502,9 +591,9 @@ class WriteBackCacheManager(object):
 
 
 class FunctionCacheManager(object):
-    def __init__(self, func, size):
+    def __init__(self, func, size, callback=None):
         self.func = func
-        self.cache = lrucache(size)
+        self.cache = lrucache(size, callback)
 
     def size(self, size=None):
         return self.cache.size(size)
@@ -534,8 +623,8 @@ def lruwrap(store, size, writeback=False):
 import functools
 
 class lrudecorator(object):
-    def __init__(self, size):
-        self.cache = lrucache(size)
+    def __init__(self, size, callback=None):
+        self.cache = lrucache(size, callback)
 
     def __call__(self, func):
         def wrapper(*args, **kwargs):
