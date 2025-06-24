@@ -8,17 +8,9 @@
 
 
 
-use crate::config::installation_program_path;
-use crate::std::{
-    self, env,
-    fs::{File, OpenOptions},
-    io::{Read, Seek},
-    mem::ManuallyDrop,
-    path::{Path, PathBuf},
-    process::Child,
-};
+use crate::std::{fs::File, path::Path, process::Child};
 use anyhow::Context;
-use serde::Serialize;
+use std::io::Read;
 
 #[cfg(mock)]
 use crate::std::mock::{mock_key, MockKey};
@@ -44,13 +36,7 @@ pub const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PK
 
 
 
-
-
-
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "type")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RequestBuilder<'a> {
     
     MimePost { parts: Vec<MimePart<'a>> },
@@ -65,19 +51,16 @@ pub enum RequestBuilder<'a> {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MimePart<'a> {
     pub name: &'a str,
     pub content: MimePartContent<'a>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub filename: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub mime_type: Option<&'a str>,
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "type", content = "value")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MimePartContent<'a> {
     
     File(&'a Path),
@@ -86,13 +69,7 @@ pub enum MimePartContent<'a> {
 }
 
 
-pub enum Request<'a> {
-    BackgroundTaskChild {
-        child: Child,
-        file: TempRequestFile,
-        builder: RequestBuilder<'a>,
-        url: &'a str,
-    },
+pub enum Request {
     CurlChild {
         child: Child,
         stdin: Option<Box<dyn Read + Send + 'static>>,
@@ -128,58 +105,15 @@ fn now_date_header() -> Option<String> {
     }
 }
 
-impl<'a> RequestBuilder<'a> {
+impl RequestBuilder<'_> {
     
-    pub fn build(&self, url: &'a str) -> std::io::Result<Request<'a>> {
-        log::debug!("starting request to {url}: {self:?}");
-
+    pub fn build(&self, url: &str) -> std::io::Result<Request> {
         
         #[cfg(mock)]
         if let Some(r) = self.try_send_with_mock(url) {
             return r;
         }
 
-        
-        
-        
-        let background_task_err = match self.send_with_background_task(url) {
-            Ok(r) => return Ok(r),
-            Err(e) => e,
-        };
-
-        log::info!(
-            "failed to invoke background task ({background_task_err}), falling back to curl backend"
-        );
-
-        self.send_with_curl(url)
-    }
-
-    
-    fn send_with_background_task(&self, url: &'a str) -> std::io::Result<Request<'a>> {
-        let path = installation_program_path(mozbuild::config::MOZ_APP_NAME);
-        let mut cmd = crate::process::background_command(path);
-        cmd.args(["--backgroundtask", "crashreporterNetworkBackend"]);
-        cmd.arg(url);
-        cmd.arg(USER_AGENT);
-
-        let mut file = TempRequestFile::new()?;
-        serde_json::to_writer(&mut *file, self)?;
-        cmd.arg(&file.path);
-
-        cmd.stdin(std::process::Stdio::null());
-        cmd.stdout(std::process::Stdio::piped());
-        cmd.stderr(std::process::Stdio::piped());
-
-        cmd.spawn().map(move |child| Request::BackgroundTaskChild {
-            child,
-            file,
-            builder: self.clone(),
-            url,
-        })
-    }
-
-    
-    pub fn send_with_curl(&self, url: &str) -> std::io::Result<Request<'static>> {
         
         
         
@@ -211,7 +145,7 @@ impl<'a> RequestBuilder<'a> {
     }
 
     
-    fn send_with_curl_executable(&self, url: &str) -> std::io::Result<Request<'static>> {
+    fn send_with_curl_executable(&self, url: &str) -> std::io::Result<Request> {
         let mut cmd = crate::process::background_command("curl");
         let mut stdin: Option<Box<dyn Read + Send + 'static>> = None;
 
@@ -253,7 +187,7 @@ impl<'a> RequestBuilder<'a> {
     }
 
     
-    fn send_with_libcurl(&self, url: &str) -> std::io::Result<Request<'static>> {
+    fn send_with_libcurl(&self, url: &str) -> std::io::Result<Request> {
         let curl = super::libcurl::load()?;
         let mut easy = curl.easy()?;
 
@@ -300,7 +234,7 @@ impl<'a> RequestBuilder<'a> {
     }
 
     #[cfg(mock)]
-    fn try_send_with_mock(&self, url: &str) -> Option<std::io::Result<Request<'static>>> {
+    fn try_send_with_mock(&self, url: &str) -> Option<std::io::Result<Request>> {
         let result = MockHttp.try_get(|f| f(self, url))?;
         if result
             .as_ref()
@@ -312,60 +246,6 @@ impl<'a> RequestBuilder<'a> {
         } else {
             Some(result.map(|response| Request::Mock { response }))
         }
-    }
-}
-
-pub struct TempRequestFile {
-    path: PathBuf,
-    file: ManuallyDrop<File>,
-}
-
-static REQUEST_NUM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-
-impl TempRequestFile {
-    fn new() -> std::io::Result<Self> {
-        
-        let path = std::env::temp_dir().join(format!(
-            "{}{}-request{}.json",
-            env!("CARGO_PKG_NAME"),
-            std::process::id(),
-            REQUEST_NUM.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-        ));
-        if let Some(p) = path.parent() {
-            std::fs::create_dir_all(p)?;
-        }
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&path)?;
-        Ok(TempRequestFile {
-            path,
-            file: ManuallyDrop::new(file),
-        })
-    }
-}
-
-impl std::ops::Deref for TempRequestFile {
-    type Target = File;
-    fn deref(&self) -> &Self::Target {
-        &self.file
-    }
-}
-
-impl std::ops::DerefMut for TempRequestFile {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.file
-    }
-}
-
-impl Drop for TempRequestFile {
-    fn drop(&mut self) {
-        
-        
-        unsafe { ManuallyDrop::drop(&mut self.file) };
-        let _ = std::fs::remove_file(&self.path);
     }
 }
 
@@ -431,43 +311,10 @@ impl MimePart<'_> {
     }
 }
 
-impl Request<'_> {
+impl Request {
     
     pub fn send(self) -> anyhow::Result<Vec<u8>> {
         Ok(match self {
-            Self::BackgroundTaskChild {
-                child,
-                mut file,
-                builder,
-                url,
-            } => {
-                (move || {
-                    let output = child
-                        .wait_with_output()
-                        .context("failed to wait on background task process")?;
-                    anyhow::ensure!(
-                        output.status.success(),
-                        "process failed (exit status {}) with stderr: {}",
-                        output.status,
-                        String::from_utf8_lossy(&output.stderr)
-                    );
-                    file.rewind().context("failed to rewind response file")?;
-                    let mut ret = Vec::new();
-                    file.read_to_end(&mut ret)
-                        .context("failed to read response file")?;
-                    Ok(ret)
-                })()
-                .or_else(|e| {
-                    
-                    
-                    
-                    
-                    log::error!("background task error: {e:#}");
-                    log::info!("falling back to curl backend");
-
-                    builder.send_with_curl(url).context("curl error")?.send()
-                })?
-            }
             Self::CurlChild { mut child, stdin } => {
                 if let Some(mut stdin) = stdin {
                     let mut child_stdin = child

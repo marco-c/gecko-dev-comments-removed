@@ -162,8 +162,10 @@ impl Config {
         }
 
         if self.restart_command.is_none() {
-            self.restart_command =
-                Some(installation_program_path(mozbuild::config::MOZ_APP_NAME).into())
+            self.restart_command = Some(
+                self.installation_program_path(mozbuild::config::MOZ_APP_NAME)
+                    .into(),
+            )
         }
 
         
@@ -483,6 +485,23 @@ impl Config {
     }
 
     
+    
+    
+    
+    
+    
+    pub fn installation_program_path<N: AsRef<OsStr>>(&self, program: N) -> PathBuf {
+        let self_path = self_path();
+        let exe_extension = self_path.extension().unwrap_or_default();
+        let mut p = program.as_ref().to_os_string();
+        if !exe_extension.is_empty() {
+            p.push(".");
+            p.push(exe_extension);
+        }
+        installation_path().join(p)
+    }
+
+    
     fn update_log_file(&self) {
         if let (Some(log_target), Some(data_dir)) = (&self.log_target, &self.data_dir) {
             log_target.set_file(&data_dir.join("submit.log"));
@@ -620,20 +639,6 @@ pub fn installation_resource_path() -> &'static Path {
         }
     });
     &*PATH
-}
-
-
-
-
-pub fn installation_program_path<N: AsRef<OsStr>>(program: N) -> PathBuf {
-    let self_path = self_path();
-    let exe_extension = self_path.extension().unwrap_or_default();
-    let mut p = program.as_ref().to_os_string();
-    if !exe_extension.is_empty() {
-        p.push(".");
-        p.push(exe_extension);
-    }
-    installation_path().join(p)
 }
 
 
