@@ -411,7 +411,8 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   
   
   WeakPtr<DataConnectionListener> mListener;
-  bool mSendInterleaved MOZ_GUARDED_BY(mLock) = false;
+  
+  bool mSendInterleaved = false;
   
   bool mMaxMessageSizeSet = false;
   
@@ -427,11 +428,13 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   
   std::set<RefPtr<DataChannel>> mPending MOZ_GUARDED_BY(mLock);
   size_t mNegotiatedIdLimit MOZ_GUARDED_BY(mLock) = 0;
-  PendingType mPendingType MOZ_GUARDED_BY(mLock) = PendingType::None;
+  
+  PendingType mPendingType = PendingType::None;
   
   nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData MOZ_GUARDED_BY(mLock);
   
-  nsTArray<OutgoingMsg> mBufferedControl MOZ_GUARDED_BY(mLock);
+  
+  nsTArray<OutgoingMsg> mBufferedControl;
   
   Maybe<IncomingMsg> mRecvBuffer MOZ_GUARDED_BY(mLock);
 
