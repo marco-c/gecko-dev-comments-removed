@@ -435,6 +435,40 @@ if (globalThis.PreloadingRemoteContextHelper) {
 
 
 
+
+
+
+
+
+
+
+
+    async navigateExpectingNoPrerenderingActivation(destinationRC, navigateFn) {
+      if (navigateFn === undefined) {
+        await this.navigateTo(destinationRC.url);
+      } else {
+        await this.navigate(navigateFn, [destinationRC.url]);
+      }
+
+      assert_equals(
+        await destinationRC.executeScript(() => {
+          return performance.getEntriesByType("navigation")[0].activationStart;
+        }),
+        0,
+        "The prerendered page must not be activated."
+      );
+    }
+
+    
+
+
+
+
+
+
+
+
+
     addPrerender(options) {
       return this.addPreload("prerender", options);
     }
@@ -443,13 +477,6 @@ if (globalThis.PreloadingRemoteContextHelper) {
   globalThis.PrerenderingRemoteContextHelper = class extends PreloadingRemoteContextHelper {
     static RemoteContextWrapper = PrerenderingRemoteContextWrapper;
   };
-}
-
-async function getActivationStart(prerenderedRC) {
-  return await prerenderedRC.executeScript(() => {
-    const entry = performance.getEntriesByType("navigation")[0];
-    return entry.activationStart;
-  });
 }
 
 
