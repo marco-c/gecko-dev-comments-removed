@@ -164,7 +164,7 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
 
     
     
-    blink_features = ['ViewTransitionLongCallbackTimeoutForTesting']
+    blink_features = ['ViewTransitionLongCallbackTimeoutForTesting', 'NoFontAntialiasing']
 
     if kwargs["enable_mojojs"]:
         blink_features.extend(['MojoJS', 'MojoJSTest'])
