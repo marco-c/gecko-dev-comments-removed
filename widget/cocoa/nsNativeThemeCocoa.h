@@ -120,7 +120,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
     eRadio,      
     eButton,     
     eDropdown,   
-    eGroupBox,
     eTextField,           
     eProgressBar,         
     eMeter,               
@@ -140,9 +139,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
     }
     static WidgetInfo Dropdown(const DropdownParams& aParams) {
       return WidgetInfo(Widget::eDropdown, aParams);
-    }
-    static WidgetInfo GroupBox() {
-      return WidgetInfo(Widget::eGroupBox, false);
     }
     static WidgetInfo TextField(const TextFieldParams& aParams) {
       return WidgetInfo(Widget::eTextField, aParams);
