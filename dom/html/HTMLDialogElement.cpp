@@ -656,7 +656,7 @@ void HTMLDialogElement::SetDialogCloseWatcherIfNeeded() {
   
   SetCloseWatcherEnabledState();
 
-  window->EnsureCloseWatcherManager()->Add(*mCloseWatcher);
+  mCloseWatcher->AddToWindowsCloseWatcherManager();
 }
 
 
