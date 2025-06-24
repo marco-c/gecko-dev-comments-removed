@@ -18,7 +18,7 @@
 #include "unicode/timezone.h"
 #include "unicode/utypes.h"
 
-#include "ICU4XAnyCalendarKind.h"
+#include "icu4x/CalendarKind.hpp"
 
 namespace mozilla::intl::calendar {
 
@@ -28,19 +28,19 @@ namespace mozilla::intl::calendar {
 class ICU4XCalendar : public icu::Calendar {
   mutable UniqueICU4XCalendar calendar_{};
   mutable std::unique_ptr<icu::Calendar> fallback_{};
-  capi::ICU4XAnyCalendarKind kind_;
+  icu4x::capi::CalendarKind kind_;
 
  protected:
-  ICU4XCalendar(capi::ICU4XAnyCalendarKind kind, const icu::Locale& locale,
+  ICU4XCalendar(icu4x::capi::CalendarKind kind, const icu::Locale& locale,
                 UErrorCode& success);
-  ICU4XCalendar(capi::ICU4XAnyCalendarKind kind, const icu::TimeZone& timeZone,
+  ICU4XCalendar(icu4x::capi::CalendarKind kind, const icu::TimeZone& timeZone,
                 const icu::Locale& locale, UErrorCode& success);
   ICU4XCalendar(const ICU4XCalendar& other);
 
   
 
 
-  capi::ICU4XCalendar* getICU4XCalendar(UErrorCode& status) const;
+  icu4x::capi::Calendar* getICU4XCalendar(UErrorCode& status) const;
 
   
 
@@ -79,7 +79,7 @@ class ICU4XCalendar : public icu::Calendar {
   
 
 
-  static MonthCode monthCodeFrom(const capi::ICU4XDate* date,
+  static MonthCode monthCodeFrom(const icu4x::capi::Date* date,
                                  UErrorCode& status);
 
   
