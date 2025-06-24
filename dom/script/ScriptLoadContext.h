@@ -26,6 +26,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -35,6 +36,7 @@
 #include "mozilla/Vector.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIClassifiedChannel.h"
 #include "nsIScriptElement.h"
 
 class nsICacheInfoChannel;
@@ -151,10 +153,12 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   bool CompileStarted() const;
 
-  bool IsTracking() const { return mIsTracking; }
-  void SetIsTracking() {
-    MOZ_ASSERT(!mIsTracking);
-    mIsTracking = true;
+  net::ClassificationFlags& GetClassificationFlags() {
+    return mClassificationFlags;
+  }
+  void SetClassificationFlags(
+      const net::ClassificationFlags& aClassificationFlags) {
+    mClassificationFlags = aClassificationFlags;
   }
 
   void BlockOnload(Document* aDocument);
@@ -290,11 +294,11 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   bool mIsNonAsyncScriptInserted;  
                                    
   bool mIsXSLT;                    
-  bool mInCompilingList;  
-  bool mIsTracking;       
-                          
-  bool mWasCompiledOMT;   
-                          
+  bool mInCompilingList;     
+  net::ClassificationFlags   
+      mClassificationFlags;  
+  bool mWasCompiledOMT;      
+                             
 
   
   
