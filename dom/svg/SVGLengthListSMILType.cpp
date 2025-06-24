@@ -21,14 +21,14 @@ SVGLengthListSMILType SVGLengthListSMILType::sSingleton;
 
 
 
-void SVGLengthListSMILType::Init(SMILValue& aValue) const {
+void SVGLengthListSMILType::InitValue(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.IsNull(), "Unexpected value type");
 
   aValue.mU.mPtr = new SVGLengthListAndInfo();
   aValue.mType = this;
 }
 
-void SVGLengthListSMILType::Destroy(SMILValue& aValue) const {
+void SVGLengthListSMILType::DestroyValue(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.mType == this, "Unexpected SMIL value type");
   delete static_cast<SVGLengthListAndInfo*>(aValue.mU.mPtr);
   aValue.mU.mPtr = nullptr;

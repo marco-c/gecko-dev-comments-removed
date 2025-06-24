@@ -61,7 +61,7 @@ class SMILType {
 
 
 
-  virtual void Init(SMILValue& aValue) const = 0;
+  virtual void InitValue(SMILValue& aValue) const = 0;
 
   
 
@@ -69,7 +69,7 @@ class SMILType {
 
 
 
-  virtual void Destroy(SMILValue& aValue) const = 0;
+  virtual void DestroyValue(SMILValue& aValue) const = 0;
 
   
 

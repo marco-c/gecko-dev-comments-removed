@@ -20,8 +20,8 @@ class SMILNullType : public SMILType {
  protected:
   
   
-  void Init(SMILValue& aValue) const override {}
-  void Destroy(SMILValue& aValue) const override {}
+  void InitValue(SMILValue& aValue) const override {}
+  void DestroyValue(SMILValue& aValue) const override {}
   nsresult Assign(SMILValue& aDest, const SMILValue& aSrc) const override;
 
   

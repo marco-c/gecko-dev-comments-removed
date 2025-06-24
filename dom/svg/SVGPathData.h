@@ -172,6 +172,7 @@ class SVGPathDataAndInfo final : public SVGPathData {
 
 
 
+
   bool IsIdentity() const {
     if (!mElement) {
       MOZ_ASSERT(IsEmpty(), "target element propagation failure");

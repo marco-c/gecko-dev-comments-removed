@@ -160,14 +160,14 @@ static const MotionSegmentArray& ExtractMotionSegmentArray(
 
 
 
-void SVGMotionSMILType::Init(SMILValue& aValue) const {
+void SVGMotionSMILType::InitValue(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.IsNull(), "Unexpected SMIL type");
 
   aValue.mType = this;
   aValue.mU.mPtr = new MotionSegmentArray(1);
 }
 
-void SVGMotionSMILType::Destroy(SMILValue& aValue) const {
+void SVGMotionSMILType::DestroyValue(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.mType == this, "Unexpected SMIL type");
 
   MotionSegmentArray* arr = static_cast<MotionSegmentArray*>(aValue.mU.mPtr);
@@ -412,6 +412,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
 
   
   
+  
   MOZ_ALWAYS_TRUE(resultArr.AppendElement(
       MotionSegment(path, resultDist, rotateType, rotateAngle), fallible));
   return NS_OK;
@@ -450,6 +451,7 @@ SMILValue SVGMotionSMILType::ConstructSMILValue(Path* aPath, float aDist,
   SMILValue smilVal(&SVGMotionSMILType::sSingleton);
   MotionSegmentArray& arr = ExtractMotionSegmentArray(smilVal);
 
+  
   
   MOZ_ALWAYS_TRUE(arr.AppendElement(
       MotionSegment(aPath, aDist, aRotateType, aRotateAngle), fallible));
