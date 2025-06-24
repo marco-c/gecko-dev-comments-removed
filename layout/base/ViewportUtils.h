@@ -78,7 +78,6 @@ class ViewportUtils {
 
 
 
-
   static LayoutDevicePoint ToScreenRelativeVisual(const LayoutDevicePoint& aPt,
                                                   nsPresContext* aCtx);
   static LayoutDeviceRect ToScreenRelativeVisual(const LayoutDeviceRect& aRect,
