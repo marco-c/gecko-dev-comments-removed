@@ -297,6 +297,10 @@ def process_l10n_bump_info(info):
                 {
                     Required("early-to-late-beta"): {
                         Required("to-branch"): str,
+                        
+                        
+                        
+                        Required("fetch-version-from"): str,
                         Optional("replacements"): [[str]],
                     },
                 },
