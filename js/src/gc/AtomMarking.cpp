@@ -8,6 +8,7 @@
 
 #include <type_traits>
 
+#include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
 
 #include "gc/GC-inl.h"
@@ -47,33 +48,71 @@ namespace gc {
 
 
 
-void AtomMarkingRuntime::registerArena(Arena* arena, const AutoLockGC& lock) {
-  MOZ_ASSERT(arena->getThingSize() != 0);
-  MOZ_ASSERT(arena->getThingSize() % CellAlignBytes == 0);
-  MOZ_ASSERT(arena->zone()->isAtomsZone());
-
+size_t AtomMarkingRuntime::allocateIndex(GCRuntime* gc) {
   
 
   
-  if (freeArenaIndexes.ref().length()) {
-    arena->atomBitmapStart() = freeArenaIndexes.ref().popCopy();
+  if (freeArenaIndexes.ref().empty()) {
+    mergePendingFreeArenaIndexes(gc);
+  }
+
+  
+  if (!freeArenaIndexes.ref().empty()) {
+    return freeArenaIndexes.ref().popCopy();
+  }
+
+  
+  size_t index = allocatedWords;
+  allocatedWords += ArenaBitmapWords;
+  return index;
+}
+
+void AtomMarkingRuntime::freeIndex(size_t index, const AutoLockGC& lock) {
+  MOZ_ASSERT((index % ArenaBitmapWords) == 0);
+  MOZ_ASSERT(index < allocatedWords);
+
+  bool wasEmpty = pendingFreeArenaIndexes.ref().empty();
+  MOZ_ASSERT_IF(wasEmpty, !hasPendingFreeArenaIndexes);
+
+  if (!pendingFreeArenaIndexes.ref().append(index)) {
+    
+    return;
+  }
+
+  if (wasEmpty) {
+    hasPendingFreeArenaIndexes = true;
+  }
+}
+
+void AtomMarkingRuntime::mergePendingFreeArenaIndexes(GCRuntime* gc) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(gc->rt));
+  if (!hasPendingFreeArenaIndexes) {
+    return;
+  }
+
+  AutoLockGC lock(gc);
+  MOZ_ASSERT(!pendingFreeArenaIndexes.ref().empty());
+
+  hasPendingFreeArenaIndexes = false;
+
+  if (freeArenaIndexes.ref().empty()) {
+    std::swap(freeArenaIndexes.ref(), pendingFreeArenaIndexes.ref());
     return;
   }
 
   
-  arena->atomBitmapStart() = allocatedWords;
-  allocatedWords += ArenaBitmapWords;
+  (void)freeArenaIndexes.ref().appendAll(pendingFreeArenaIndexes.ref());
+  pendingFreeArenaIndexes.ref().clear();
 }
 
-void AtomMarkingRuntime::unregisterArena(Arena* arena, const AutoLockGC& lock) {
-  MOZ_ASSERT(arena->zone()->isAtomsZone());
+void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(GCRuntime* gc) {
+  size_t collectedZones = 0;
+  for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
+    if (zone->isCollecting()) {
+      collectedZones++;
+    }
+  }
 
-  
-  (void)freeArenaIndexes.ref().emplaceBack(arena->atomBitmapStart());
-}
-
-void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(
-    GCRuntime* gc, size_t collectedZones) {
   
   
   DenseBitmap marked;
@@ -158,9 +197,15 @@ static void BitwiseOrIntoChunkMarkBits(Zone* atomsZone, Bitmap& bitmap) {
   }
 }
 
-void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(
-    GCRuntime* gc, size_t uncollectedZones) {
+void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(GCRuntime* gc) {
   MOZ_ASSERT(CurrentThreadIsPerformingGC());
+
+  size_t uncollectedZones = 0;
+  for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
+    if (!zone->isCollecting()) {
+      uncollectedZones++;
+    }
+  }
 
   
   if (uncollectedZones == 0) {
