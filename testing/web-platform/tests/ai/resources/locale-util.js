@@ -42,3 +42,20 @@ function assert_is_variation(variation_language_tag, expected_language_tag) {
   const expected_locale = new Intl.Locale(expected_language_tag);
   assert_equals(variation_locale.language, expected_locale.language);
 }
+
+function assert_availability_consistent(
+    language_subtag_availability, variation_availability) {
+  if (variation_availability == 'unavailable') {
+    
+    
+    assert_equals(language_subtag_availability, 'unavailable');
+  } else {
+    
+    
+    
+    
+    assert_in_array(
+        language_subtag_availability,
+        ['downloadable', 'downloading', 'available']);
+  }
+}

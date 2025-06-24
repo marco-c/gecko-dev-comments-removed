@@ -12,23 +12,6 @@ function getAvailability(expectedInputLanguages) {
   return LanguageDetector.availability({expectedInputLanguages});
 }
 
-function assert_availability_consistent(
-    language_subtag_availability, base_availability) {
-  if (base_availability == 'unavailable') {
-    
-    
-    assert_equals(language_subtag_availability, 'unavailable');
-  } else {
-    
-    
-    
-    
-    assert_in_array(
-        language_subtag_availability,
-        ['downloadable', 'downloading', 'available']);
-  }
-}
-
 promise_test(async t => {
   for (const [languageSubtag, variations] of Object.entries(
            valid_language_tags)) {
