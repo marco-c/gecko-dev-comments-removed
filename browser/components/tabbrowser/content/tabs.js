@@ -2780,6 +2780,10 @@
         
         
         
+        
+        
+        
+        
         let lastPossibleDropElement = this.#rtlMode
           ? tabs.find(t => t != draggedTab)
           : tabs.findLast(t => t != draggedTab);
@@ -2790,7 +2794,10 @@
             oldDropElementIndex,
             maxElementIndexForDropElement
           );
-          dropElement = this.ariaFocusableItems.at(index);
+          let oldDropElementCandidate = this.ariaFocusableItems.at(index);
+          if (!movingTabsSet.has(oldDropElementCandidate)) {
+            dropElement = oldDropElementCandidate;
+          }
         }
       }
 
@@ -2892,6 +2899,7 @@
         
         
         shouldCreateGroupOnDrop =
+          !movingTabsSet.has(dropElement) &&
           isTab(dropElement) &&
           !dropElement?.group &&
           overlapPercent > dragOverGroupingThreshold;
