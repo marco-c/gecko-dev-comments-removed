@@ -156,8 +156,6 @@ class BaseTargetActor extends Actor {
     
     
     
-    
-    
     if (shouldEmitSynchronously) {
       this.emitResources();
     } else {
