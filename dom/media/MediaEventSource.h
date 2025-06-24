@@ -213,8 +213,8 @@ class NotificationPolicy<ListenerPolicy::Exclusive, Listener> {
           }));
     } else {
       batch->DispatchTask(
-          NewRunnableMethod("ListenerBatch::DispatchTask(without args)",
-                            batch, &ListenerBatch::ApplyWithNoArgs));
+          NewRunnableMethod("ListenerBatch::DispatchTask(without args)", batch,
+                            &ListenerBatch::ApplyWithNoArgs));
     }
   }
 };
@@ -288,8 +288,7 @@ class NotificationPolicy<ListenerPolicy::NonExclusive, Listener> {
   class SharedArgs : public SharedArgsBase {
    public:
     using Storage = std::tuple<std::decay_t<As>...>;
-    explicit SharedArgs(As&&... aArgs)
-        : mStorage(std::forward<As>(aArgs)...) {}
+    explicit SharedArgs(As&&... aArgs) : mStorage(std::forward<As>(aArgs)...) {}
     
     SharedArgs(const SharedArgs& aOrig) = delete;
 
