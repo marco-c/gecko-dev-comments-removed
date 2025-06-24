@@ -66,6 +66,29 @@ function check_method(receiver, method, args) {
 }
 
 
+
+
+function check_method_with_get_all_options(receiver, method) {
+  assert_throws_dom('DataError', () => {
+    receiver[method]({query: invalid_key});
+  }, 'options query key conversion with invalid key should throw DataError');
+
+  const [key, err] = throwing_key('getter');
+  assert_throws_exactly(err, () => {
+    receiver[method]({query: key});
+  }, 'options query key conversion with throwing getter should rethrow');
+
+  
+  
+  
+  if (method !== 'getAllRecords') {
+    assert_throws_exactly(err, () => {
+      receiver[method](key);
+    }, 'query key conversion with throwing getter should rethrow');
+  }
+}
+
+
 test(
     t => check_method(indexedDB, 'cmp', 2),
     'IDBFactory cmp() static with throwing/invalid keys');
@@ -176,8 +199,6 @@ test(
 ['delete',
  'get',
  'getKey',
- 'getAll',
- 'getAllKeys',
  'count',
  'openCursor',
  'openKeyCursor',
@@ -203,5 +224,35 @@ test(
     const index = store.createIndex('index', 'keyPath');
 
     check_method(index, method);
+  }, `IDBIndex ${method}() method with throwing/invalid keys`);
+});
+
+
+['getAll',
+ 'getAllKeys',
+ 'getAllRecords',
+].forEach(method => {
+  indexeddb_upgrade_only_test((t, db) => {
+    const store = db.createObjectStore('store');
+    if ('getAllRecords' in store) {
+      check_method_with_get_all_options(store, method);
+    } else if (method !== 'getAllRecords') {
+      
+      
+      check_method(store, method);
+    }
+  }, `IDBObjectStore ${method}() method with throwing/invalid keys`);
+});
+
+
+['getAllRecords'].forEach(method => {
+  indexeddb_upgrade_only_test((t, db) => {
+    const store = db.createObjectStore('store');
+    const index = store.createIndex('index', 'keyPath');
+    if ('getAllRecords' in index) {
+      check_method_with_get_all_options(index, method);
+    } else if (method !== 'getAllRecords') {
+      check_method(store, method);
+    }
   }, `IDBIndex ${method}() method with throwing/invalid keys`);
 });
