@@ -417,6 +417,21 @@ class SlimLinkedList {
   
 
 
+  template <typename F>
+  void eraseIf(F&& pred) {
+    ElementPtr element = getFirst();
+    while (element) {
+      ElementPtr next = element->getNext();
+      if (pred(element)) {
+        remove(element);
+      }
+      element = next;
+    }
+  }
+
+  
+
+
   size_t length() const { return std::distance(begin(), end()); }
 
   
