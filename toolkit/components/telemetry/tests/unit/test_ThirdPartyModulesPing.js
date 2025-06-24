@@ -9,6 +9,9 @@ const { ctypes } = ChromeUtils.importESModule(
 const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
 
 const kDllName = "modules-test.dll";
 
@@ -27,8 +30,21 @@ async function load_and_free(name) {
   await new Promise(resolve => setTimeout(resolve, 50));
 }
 
-add_task(async function setup() {
+let gFirstPing;
+add_setup(async function () {
   do_get_profile();
+
+  Services.fog.initializeFOG();
+
+  
+  
+  await GleanPings.thirdPartyModules.testBeforeNextSubmit(() => {
+    gFirstPing = {
+      blockedModules: Glean.thirdPartyModules.blockedModules.testGetValue(),
+      modules: Glean.thirdPartyModules.modules.testGetValue(),
+      processes: Glean.thirdPartyModules.processes.testGetValue(),
+    };
+  });
 
   
   
@@ -82,15 +98,18 @@ add_task(async function test_send_ping() {
     },
   ];
 
+  await TestUtils.waitForCondition(
+    () => !!gFirstPing,
+    "Waiting for Glean ping"
+  );
+
   
   
   let found;
-  while (true) {
+  await TestUtils.waitForCondition(async () => {
     found = await PingServer.promiseNextPing();
-    if (found.type == "third-party-modules") {
-      break;
-    }
-  }
+    return found.type == "third-party-modules";
+  }, "Waiting for Telemetry ping");
 
   
   Assert.ok(found, "Untrusted modules ping submitted");
@@ -99,35 +118,68 @@ add_task(async function test_send_ping() {
 
   Assert.equal(found.payload.structVersion, 1, "Version is correct");
   Assert.ok(found.payload.modules, "'modules' object exists");
+  Assert.ok(gFirstPing.modules, "`modules` set");
   Assert.ok(Array.isArray(found.payload.modules), "'modules' is an array");
+  Assert.ok(Array.isArray(gFirstPing.modules), "`modules` is an array");
   Assert.ok(found.payload.blockedModules, "'blockedModules' object exists");
+  Assert.ok(gFirstPing.blockedModules, "`blockedModules` exists");
   Assert.ok(
     Array.isArray(found.payload.blockedModules),
     "'blockedModules' is an array"
+  );
+  Assert.ok(
+    Array.isArray(gFirstPing.blockedModules),
+    "`blockedModules` is an array"
   );
   
   
   
   
   Assert.ok(found.payload.processes, "'processes' object exists");
+  Assert.ok(gFirstPing.processes, "`processes` set");
   Assert.ok(
     gCurrentPidStr in found.payload.processes,
     `Current process "${gCurrentPidStr}" is included in payload`
   );
+  const curProcInfos = gFirstPing.processes.filter(
+    process => process.processName == gCurrentPidStr
+  );
+  Assert.equal(
+    curProcInfos.length,
+    1,
+    `Current process "${gCurrentPidStr}" is included in payload`
+  );
+  const curProcInfo = curProcInfos[0];
 
   let ourProcInfo = found.payload.processes[gCurrentPidStr];
   Assert.equal(ourProcInfo.processType, "browser", "'processType' is correct");
+  Assert.equal(curProcInfo.processType, "browser", "'processType' is correct");
   Assert.ok(typeof ourProcInfo.elapsed == "number", "'elapsed' exists");
+  Assert.ok(
+    Number.isFinite(Number.parseFloat(curProcInfo.elapsed)),
+    "'elapsed' is a number (in a string)"
+  );
   Assert.equal(
     ourProcInfo.sanitizationFailures,
     0,
     "'sanitizationFailures' is 0"
   );
+  Assert.equal(
+    curProcInfo.sanitizationFailures,
+    0,
+    "'sanitizationFailures' is 0"
+  );
   Assert.equal(ourProcInfo.trustTestFailures, 0, "'trustTestFailures' is 0");
+  Assert.equal(curProcInfo.trustTestFailures, 0, "'trustTestFailures' is 0");
 
   Assert.equal(
     ourProcInfo.combinedStacks.stacks.length,
     ourProcInfo.events.length,
+    "combinedStacks.stacks.length == events.length"
+  );
+  Assert.equal(
+    curProcInfo.combinedStacks.stacks.length,
+    curProcInfo.events.length,
     "combinedStacks.stacks.length == events.length"
   );
 
@@ -165,9 +217,39 @@ add_task(async function test_send_ping() {
     }
   }
 
+  for (let event of curProcInfo.events) {
+    Assert.ok(
+      Number.isFinite(Number.parseFloat(event.processUptimeMS)),
+      "'elapsed' is a number (in a string)"
+    );
+    Assert.greater(event.processUptimeMS, 0);
+    Assert.greater(event.threadID, -1);
+    Assert.ok(event.baseAddress);
+    Assert.greater(event.moduleIndex, -1);
+    Assert.ok(!event.isDependent);
+    Assert.equal(event.loadStatus, 0, "(Loaded)");
+
+    const module = gFirstPing.modules[event.moduleIndex];
+    Assert.ok(module, "module record for this event exists");
+    Assert.ok(module.resolvedDllName, "module has a name");
+    Assert.ok(Number.isFinite(module.trustFlags), "trustFlags are present");
+
+    const expectedMod = expectedModules.find(em =>
+      em.nameMatch.test(module.resolvedDllName)
+    );
+    if (expectedMod) {
+      expectedMod.wasFoundGlean = true;
+    }
+  }
+
   for (let x of expectedModules) {
     Assert.equal(
       !x.wasFound,
+      x.expectedTrusted,
+      `Trustworthiness == expected for module: ${x.nameMatch.source}`
+    );
+    Assert.equal(
+      !x.wasFoundGlean,
       x.expectedTrusted,
       `Trustworthiness == expected for module: ${x.nameMatch.source}`
     );
