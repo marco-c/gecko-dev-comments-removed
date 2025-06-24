@@ -816,7 +816,6 @@ class _GenerateRenderMethod:
             )
             or len(self.compiler.default_filters)
         ):
-
             s = self.create_filter_callable(
                 node.escapes_code.args, "%s" % node.text, True
             )
@@ -839,13 +838,24 @@ class _GenerateRenderMethod:
                 text = node.text
             self.printer.writeline(text)
             children = node.get_children()
+
             
             
             
             
             
-            if not children or (
-                all(
+            
+            def _search_for_control_line():
+                for c in children:
+                    if isinstance(c, parsetree.Comment):
+                        continue
+                    elif isinstance(c, parsetree.ControlLine):
+                        return True
+                    return False
+
+            if (
+                not children
+                or all(
                     isinstance(c, (parsetree.Comment, parsetree.ControlLine))
                     for c in children
                 )
@@ -854,6 +864,7 @@ class _GenerateRenderMethod:
                     for c in children
                     if isinstance(c, parsetree.ControlLine)
                 )
+                or _search_for_control_line()
             ):
                 self.printer.writeline("pass")
 
@@ -1181,7 +1192,6 @@ class _Identifiers:
 
     def visitBlockTag(self, node):
         if node is not self.node and not node.is_anonymous:
-
             if isinstance(self.node, parsetree.DefTag):
                 raise exceptions.CompileException(
                     "Named block '%s' not allowed inside of def '%s'"
@@ -1251,8 +1261,13 @@ class _Identifiers:
 
 
 _FOR_LOOP = re.compile(
-    r"^for\s+((?:\(?)\s*[A-Za-z_][A-Za-z_0-9]*"
-    r"(?:\s*,\s*(?:[A-Za-z_][A-Za-z0-9_]*),??)*\s*(?:\)?))\s+in\s+(.*):"
+    r"^for\s+((?:\(?)\s*"
+    r"(?:\(?)\s*[A-Za-z_][A-Za-z_0-9]*"
+    r"(?:\s*,\s*(?:[A-Za-z_][A-Za-z_0-9]*),??)*\s*(?:\)?)"
+    r"(?:\s*,\s*(?:"
+    r"(?:\(?)\s*[A-Za-z_][A-Za-z_0-9]*"
+    r"(?:\s*,\s*(?:[A-Za-z_][A-Za-z_0-9]*),??)*\s*(?:\)?)"
+    r"),??)*\s*(?:\)?))\s+in\s+(.*):"
 )
 
 

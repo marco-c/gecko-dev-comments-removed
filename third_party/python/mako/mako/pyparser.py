@@ -64,7 +64,6 @@ class FindIdentifiers(_ast_util.NodeVisitor):
         self._add_declared(node.name)
 
     def visit_Assign(self, node):
-
         
         
         
@@ -91,6 +90,24 @@ class FindIdentifiers(_ast_util.NodeVisitor):
         self._add_declared(node.name)
         self._visit_function(node, False)
 
+    def visit_ListComp(self, node):
+        if self.in_function:
+            for comp in node.generators:
+                self.visit(comp.target)
+                self.visit(comp.iter)
+        else:
+            self.generic_visit(node)
+
+    visit_SetComp = visit_GeneratorExp = visit_ListComp
+
+    def visit_DictComp(self, node):
+        if self.in_function:
+            for comp in node.generators:
+                self.visit(comp.target)
+                self.visit(comp.iter)
+        else:
+            self.generic_visit(node)
+
     def _expand_tuples(self, args):
         for arg in args:
             if isinstance(arg, _ast.Tuple):
@@ -99,7 +116,6 @@ class FindIdentifiers(_ast_util.NodeVisitor):
                 yield arg
 
     def _visit_function(self, node, islambda):
-
         
         
         
@@ -122,7 +138,6 @@ class FindIdentifiers(_ast_util.NodeVisitor):
         self.local_ident_stack = local_ident_stack
 
     def visit_For(self, node):
-
         
 
         self.visit(node.iter)
