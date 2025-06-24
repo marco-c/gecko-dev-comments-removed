@@ -61,7 +61,7 @@ class WaylandBuffer {
   }
 
   bool IsAttached() const { return mIsAttachedToCompositor; }
-  void SetAttachedLocked(WaylandSurfaceLock& aSurfaceLock) {
+  void SetAttachedLocked(const WaylandSurfaceLock& aSurfaceLock) {
     mIsAttachedToCompositor = true;
   }
 
@@ -71,10 +71,10 @@ class WaylandBuffer {
   uintptr_t GetWlBufferID() { return mWLBufferID; }
 
   
-  wl_buffer* BorrowBuffer(WaylandSurfaceLock& aSurfaceLock);
+  wl_buffer* BorrowBuffer(const WaylandSurfaceLock& aSurfaceLock);
 
   
-  void ReturnBufferDetached(WaylandSurfaceLock& aSurfaceLock);
+  void ReturnBufferDetached(const WaylandSurfaceLock& aSurfaceLock);
 
   
   void ReturnBufferAttached(WaylandSurfaceLock& aSurfaceLock);

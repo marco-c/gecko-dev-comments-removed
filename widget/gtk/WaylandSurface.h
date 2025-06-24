@@ -60,7 +60,8 @@ class WaylandSurface final {
       bool aEmulateFrameCallback = false);
 
   
-  void SetFrameCallbackState(bool aEnabled);
+  void SetFrameCallbackStateLocked(const WaylandSurfaceLock& aProofOfLock,
+                                   bool aEnabled);
   void SetFrameCallbackStateHandlerLocked(
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(bool)>& aFrameCallbackStateHandler);
@@ -124,13 +125,13 @@ class WaylandSurface final {
 
   
   
-  bool AttachLocked(WaylandSurfaceLock& aSurfaceLock,
+  bool AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
                     RefPtr<WaylandBuffer> aWaylandBuffer);
 
   
   
   
-  void RemoveAttachedBufferLocked(WaylandSurfaceLock& aProofOfLock);
+  void RemoveAttachedBufferLocked(const WaylandSurfaceLock& aProofOfLock);
 
   
   
@@ -260,6 +261,8 @@ class WaylandSurface final {
   static void ImageDescriptionReady(
       void* aData, struct wp_image_description_v1* aImageDescription,
       uint32_t aIdentity);
+
+  void AssertCurrentThreadOwnsMutex();
 
  private:
   ~WaylandSurface();
