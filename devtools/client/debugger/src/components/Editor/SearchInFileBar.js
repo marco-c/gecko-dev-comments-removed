@@ -227,6 +227,7 @@ class SearchInFileBar extends Component {
 
 
 
+
   setSearchResults(results, matches) {
     if (!results) {
       this.setState({
@@ -267,6 +268,7 @@ class SearchInFileBar extends Component {
 
 
 
+
   setCursorLocation = (line, ch, matchContent) => {
     this.props.selectLocation(
       createLocation({
@@ -284,7 +286,7 @@ class SearchInFileBar extends Component {
 
         
         
-        scroll: false,
+        scroll: true,
       }
     );
   };

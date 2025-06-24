@@ -3544,10 +3544,29 @@ class Editor extends EventEmitter {
   }
 
   
+
+
+
+
+
   setCursorAt(line, column) {
     const cm = editors.get(this);
     if (this.config.cm6) {
-      const position = cm.state.doc.line(line + 1).from + column;
+      const { lines } = cm.state.doc;
+      if (line > lines) {
+        console.error(
+          `Trying to set the cursor on a non-existing line ${line} > ${lines}`
+        );
+        return null;
+      }
+      const lineInfo = cm.state.doc.line(line + 1);
+      if (column >= lineInfo.length) {
+        console.error(
+          `Trying to set the cursor on a non-existing column ${column} >= ${lineInfo.length}`
+        );
+        return null;
+      }
+      const position = lineInfo.from + column;
       return cm.dispatch({ selection: { anchor: position, head: position } });
     }
     return cm.setCursor({ line, ch: column });
