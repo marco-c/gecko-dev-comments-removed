@@ -1,0 +1,7 @@
+
+
+
+
+test(() => {
+  assert_in_array('soft-navigation', PerformanceObserver.supportedEntryTypes);
+}, 'Soft navigations are a supported entry type for PerformanceObserver');
