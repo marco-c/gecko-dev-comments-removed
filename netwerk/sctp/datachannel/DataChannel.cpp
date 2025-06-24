@@ -32,6 +32,8 @@
 #  include "mediapacket.h"
 #endif
 
+#include "DataChannel.h"
+#include "DataChannelDcSctp.h"
 #include "DataChannelUsrsctp.h"
 #include "DataChannelLog.h"
 #include "DataChannelProtocol.h"
@@ -131,8 +133,14 @@ Maybe<RefPtr<DataChannelConnection>> DataChannelConnection::Create(
     const Maybe<uint64_t>& aMaxMessageSize) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<DataChannelConnection> connection = new DataChannelConnectionUsrsctp(
-      aListener, aTarget, aHandler);  
+  RefPtr<DataChannelConnection> connection;
+  if (Preferences::GetBool("media.peerconnection.sctp.use_dcsctp", false)) {
+    connection = new DataChannelConnectionDcSctp(aListener, aTarget,
+                                                 aHandler);  
+  } else {
+    connection = new DataChannelConnectionUsrsctp(
+        aListener, aTarget, aHandler);  
+  }
   return connection->Init(aLocalPort, aNumStreams, aMaxMessageSize)
              ? Some(connection)
              : Nothing();
