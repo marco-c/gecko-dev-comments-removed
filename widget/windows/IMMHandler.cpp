@@ -46,8 +46,6 @@
 
 extern mozilla::LazyLogModule gIMELog;
 
-static const char* GetBoolName(bool aBool) { return aBool ? "true" : "false"; }
-
 static void HandleSeparator(nsACString& aDesc) {
   if (!aDesc.IsEmpty()) {
     aDesc.AppendLiteral(" | ");
