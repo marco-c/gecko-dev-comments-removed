@@ -141,3 +141,17 @@ interface Localization {
 interface DOMStringMap {
   [name: string]: string | undefined;
 }
+
+
+
+
+
+interface Uint8Array<TArrayBuffer extends ArrayBufferLike> {
+  setFromBase64(
+    string: string,
+    options?: { alphabet?: string; lastChunkHandling: string }
+  ): { read: number; written: number };
+  setFromHex(string: string): { read: number; written: number };
+  toBase64(options?: { alphabet?: string; omitPadding: boolean }): string;
+  toHex(): string;
+}
