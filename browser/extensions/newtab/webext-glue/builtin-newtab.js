@@ -48,6 +48,16 @@ this.builtin_newtab = class extends ExtensionAPI {
       return;
     }
 
+    const INSTALLED_AS_XPI = this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/");
+    if (Services.appinfo.inSafeMode && INSTALLED_AS_XPI) {
+      
+      
+      
+      
+      
+      return;
+    }
+
     try {
       const { rootURI } = this.extension;
 
@@ -73,7 +83,7 @@ this.builtin_newtab = class extends ExtensionAPI {
         "@mozilla.org/network/protocol/about;1?what=newtab"
       ].getService(Ci.nsIAboutModule).wrappedJSObject;
 
-      if (this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/")) {
+      if (INSTALLED_AS_XPI) {
         console.log(
           `Launching New Tab XPI version ${this.extension.version} ` +
           `on application version ${AppConstants.MOZ_APP_VERSION_DISPLAY}`
@@ -101,6 +111,16 @@ this.builtin_newtab = class extends ExtensionAPI {
 
   onShutdown() {
     if (!AppConstants.BROWSER_NEWTAB_AS_ADDON) {
+      
+      return;
+    }
+
+    const INSTALLED_AS_XPI =  this.extension.rootURI.spec.endsWith("newtab@mozilla.org.xpi!/");
+    if (Services.appinfo.inSafeMode && INSTALLED_AS_XPI) {
+      
+      
+      
+      
       
       return;
     }
