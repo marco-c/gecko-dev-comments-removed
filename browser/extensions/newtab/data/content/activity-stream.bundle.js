@@ -4056,7 +4056,10 @@ class _DSCard extends (external_React_default()).PureComponent {
       descLines = 3,
       readTime: displayReadTime
     } = DiscoveryStream;
+    const layoutsVariantAEnabled = Prefs.values["newtabLayouts.variant-a"];
+    const layoutsVariantBEnabled = Prefs.values["newtabLayouts.variant-b"];
     const sectionsEnabled = Prefs.values["discoverystream.sections.enabled"];
+    const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
     const smartCrop = Prefs.values["images.smart"];
     const faviconEnabled = Prefs.values["discoverystream.publisherFavicon.enabled"];
     
@@ -4088,7 +4091,7 @@ class _DSCard extends (external_React_default()).PureComponent {
       sizes = this.dsImageSizes;
       if (sectionsEnabled) {
         sizes = [this.getSectionImageSize("4", sectionsCardsImageSizes["4"]), this.getSectionImageSize("3", sectionsCardsImageSizes["3"]), this.getSectionImageSize("2", sectionsCardsImageSizes["2"]), this.getSectionImageSize("1", sectionsCardsImageSizes["1"])];
-      } else {
+      } else if (layoutsVariantAorB) {
         sizes = this.standardCardImageSizes;
       }
       if (isListCard) {
@@ -14599,6 +14602,8 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const Base_PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
+const PREF_THUMBS_UP_DOWN_LAYOUT_ENABLED = "discoverystream.thumbsUpDown.searchTopsitesCompact";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
 const Base_PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
 
@@ -14787,24 +14792,66 @@ class BaseContent extends (external_React_default()).PureComponent {
       return;
     }
     const logoAlwaysVisible = prefs["logowordmark.alwaysVisible"];
+    const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
+    const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
+    const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
+    const thumbsUpDownEnabled = prefs[Base_PREF_THUMBS_UP_DOWN_ENABLED];
+    
+    
+    const thumbsUpDownLayoutEnabled = prefs[PREF_THUMBS_UP_DOWN_LAYOUT_ENABLED] && thumbsUpDownEnabled;
 
     
 
     let SCROLL_THRESHOLD = 0; 
     let MAIN_OFFSET_PADDING = 0; 
 
-    const CSS_VAR_SPACE_XXLARGE = 32.04; 
-
     let layout = {
-      outerWrapperPaddingTop: 24,
-      searchWrapperPaddingTop: 16,
-      searchWrapperPaddingBottom: CSS_VAR_SPACE_XXLARGE,
+      outerWrapperPaddingTop: 30,
+      searchWrapperPaddingTop: 34,
+      searchWrapperPaddingBottom: 38,
       searchWrapperFixedScrollPaddingTop: 27,
       searchWrapperFixedScrollPaddingBottom: 27,
       searchInnerWrapperMinHeight: 52,
-      logoAndWordmarkWrapperHeight: 0,
-      logoAndWordmarkWrapperMarginBottom: 0
+      logoAndWordmarkWrapperHeight: 64,
+      logoAndWordmarkWrapperMarginBottom: 48
     };
+    const CSS_VAR_SPACE_XXLARGE = 34.2; 
+
+    
+    
+    if (thumbsUpDownLayoutEnabled || layoutsVariantAorB) {
+      
+      if (thumbsUpDownLayoutEnabled) {
+        layout.logoAndWordmarkWrapperMarginBottom = CSS_VAR_SPACE_XXLARGE;
+        if (!logoAlwaysVisible) {
+          layout.searchWrapperPaddingTop = CSS_VAR_SPACE_XXLARGE;
+          layout.searchWrapperPaddingBottom = CSS_VAR_SPACE_XXLARGE;
+        }
+      }
+
+      
+      if (layoutsVariantAEnabled) {
+        layout.outerWrapperPaddingTop = 24;
+        if (!thumbsUpDownLayoutEnabled) {
+          layout.searchWrapperPaddingTop = 0;
+          layout.searchWrapperPaddingBottom = 32;
+          layout.logoAndWordmarkWrapperMarginBottom = 32;
+        }
+      }
+
+      
+      if (layoutsVariantBEnabled) {
+        layout.outerWrapperPaddingTop = 24;
+        
+        layout.logoAndWordmarkWrapperHeight = 0;
+        layout.logoAndWordmarkWrapperMarginBottom = 0;
+        layout.searchWrapperPaddingTop = 16;
+        layout.searchWrapperPaddingBottom = CSS_VAR_SPACE_XXLARGE;
+        if (!thumbsUpDownLayoutEnabled) {
+          layout.searchWrapperPaddingBottom = 32;
+        }
+      }
+    }
 
     
     if (!logoAlwaysVisible) {
@@ -15044,7 +15091,10 @@ class BaseContent extends (external_React_default()).PureComponent {
       customizeMenuVisible
     } = App;
     const prefs = props.Prefs.values;
+    const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
+    const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
     const shortcutsRefresh = prefs["newtabShortcuts.refresh"];
+    const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
@@ -15105,8 +15155,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     weatherEnabled && mayHaveWeather && "has-weather",
     
-    prefs.showSearch ? "has-search" : "no-search",
+    prefs.showSearch ? "has-search" : "no-search", layoutsVariantAEnabled ? "layout-variant-a" : "",
     
+    layoutsVariantBEnabled ? "layout-variant-b" : "",
     
     shortcutsRefresh ? "shortcuts-refresh" : "",
     
@@ -15164,8 +15215,10 @@ class BaseContent extends (external_React_default()).PureComponent {
       hiddenOverride: shouldShowDownloadHighlight,
       onDismiss: this.handleDismissDownloadHighlight,
       dispatch: this.props.dispatch
-    }, external_React_default().createElement(DownloadMobilePromoHighlight, {
-      position: `inset-inline-start inset-block-end`,
+    }, external_React_default().createElement(DownloadMobilePromoHighlight
+    
+    , {
+      position: `${layoutsVariantBEnabled ? "inset-inline-start" : "inset-inline-end"} inset-block-end`,
       dispatch: this.props.dispatch
     })))), external_React_default().createElement("div", {
       className: outerClassName,
@@ -15178,7 +15231,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"],
       handoffEnabled: searchHandoffEnabled
-    }, props.Search)))), !prefs.showSearch && !noSectionsEnabled && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
+    }, props.Search)))), !prefs.showSearch && layoutsVariantAorB && !noSectionsEnabled && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
     }, isDiscoveryStream ? external_React_default().createElement(ErrorBoundary, {
       className: "borderless-error"
