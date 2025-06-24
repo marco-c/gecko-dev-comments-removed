@@ -1321,10 +1321,22 @@ var SidebarController = {
       
       return;
     }
-    this._pinnedTabsResizeObserver = new ResizeObserver(() => {
+    this._pinnedTabsResizeObserver = new ResizeObserver(([entry]) => {
       if (this.isPinnedTabsDragging) {
         this._state.pinnedTabsDragActive = true;
       }
+      if (
+        (entry.contentBoxSize[0].blockSize ===
+          this._state.expandedPinnedTabsHeight &&
+          this._state.launcherExpanded) ||
+        (entry.contentBoxSize[0].blockSize ===
+          this._state.collapsedPinnedTabsHeight &&
+          !this._state.launcherExpanded)
+      ) {
+        
+        return;
+      }
+      this._state.pinnedTabsHeight = entry.contentBoxSize[0].blockSize;
     });
 
     this._itemsWrapperResizeObserver = new ResizeObserver(async () => {
