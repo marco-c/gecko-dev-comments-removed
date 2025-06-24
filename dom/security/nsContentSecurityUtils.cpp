@@ -624,6 +624,9 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       "resource://devtools/shared/performance-new/symbolication.sys.mjs"_ns,
 
       
+      "resource://devtools/client/shared/vendor/source-map/lib/wasm.js"_ns,
+
+      
       "debugger"_ns,
   };
 
@@ -671,6 +674,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
+#ifndef NIGHTLY_BUILD
   DetectJsHacks();
   if (MOZ_UNLIKELY(sJSHacksPresent)) {
     MOZ_LOG(
@@ -680,6 +684,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
          (aIsSystemPrincipal ? "with System Principal" : "in parent process")));
     return true;
   }
+#endif
 
   if (XRE_IsE10sParentProcess() &&
       !StaticPrefs::extensions_webextensions_remote()) {
