@@ -1347,6 +1347,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 82) {
+        rv = MigrateV82Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -1472,6 +1477,16 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
     NS_ENSURE_SUCCESS(rv, rv);
     rv =
         mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_IMPRESSION_TIMESTAMP);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_NEWTAB_SHORTCUTS_INTERACTION);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_SHORTCUTS_TIMESTAMP);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_SHORTCUTS_PLACEID);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2222,6 +2237,27 @@ nsresult Database::MigrateV81Up() {
   rv = mMainConn->ExecuteSimpleSQL(
       "DROP INDEX IF EXISTS moz_newtab_story_click_idx_newtab_impression_timestamp"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+nsresult Database::MigrateV82Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT id FROM moz_newtab_shortcuts_interaction"_ns,
+      getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_NEWTAB_SHORTCUTS_INTERACTION);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_SHORTCUTS_TIMESTAMP);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_SHORTCUTS_PLACEID);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
   return NS_OK;
 }
 
