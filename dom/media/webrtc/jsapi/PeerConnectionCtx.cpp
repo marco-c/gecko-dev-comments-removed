@@ -501,13 +501,13 @@ void PeerConnectionCtx::AddPeerConnection(const std::string& aKey,
     
     
     
-    auto callWorkerThread =
-        WrapUnique(taskQueueFactory
-                       .CreateTaskQueueWrapper<DeletionPolicy::NonBlocking>(
-                           "CallWorker", supportTailDispatch,
-                           webrtc::TaskQueueFactory::Priority::NORMAL,
-                           MediaThreadType::WEBRTC_CALL_THREAD)
-                       .release());
+    auto callWorkerThread = WrapUnique(
+        taskQueueFactory
+            .CreateWebrtcTaskQueueWrapper<DeletionPolicy::NonBlocking>(
+                "CallWorker", supportTailDispatch,
+                webrtc::TaskQueueFactory::Priority::NORMAL,
+                MediaThreadType::WEBRTC_CALL_THREAD)
+            .release());
 
     UniquePtr<webrtc::FieldTrialsView> trials =
         WrapUnique(new MozTrialsConfig());
