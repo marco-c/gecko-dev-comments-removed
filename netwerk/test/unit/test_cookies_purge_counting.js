@@ -56,7 +56,7 @@ add_task(async function test_purge_counting() {
     false, 
     true, 
     true, 
-    futureExpiry * 1000,
+    futureExpiry,
     {}, 
     Ci.nsICookie.SAMESITE_UNSET, 
     Ci.nsICookie.SCHEME_HTTPS
