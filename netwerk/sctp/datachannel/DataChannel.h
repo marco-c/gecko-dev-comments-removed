@@ -87,16 +87,48 @@ class BufferedOutgoingMsg : public OutgoingMsg {
   const UniquePtr<struct sctp_sendv_spa> mInfoStorage;
 };
 
+class IncomingMsg {
+ public:
+  explicit IncomingMsg(uint16_t aPpid, uint16_t aStreamId)
+      : mPpid(aPpid), mStreamId(aStreamId) {}
+  IncomingMsg(IncomingMsg&& aOrig) = default;
+  IncomingMsg& operator=(IncomingMsg&& aOrig) = default;
+  IncomingMsg(const IncomingMsg&) = delete;
+  IncomingMsg& operator=(const IncomingMsg&) = delete;
+
+  void Append(const uint8_t* aData, size_t aLen) {
+    mData.Append((const char*)aData, aLen);
+  }
+
+  const nsCString& GetData() const { return mData; }
+  nsCString& GetData() { return mData; }
+  size_t GetLength() const { return mData.Length(); };
+  uint16_t GetStreamId() const { return mStreamId; }
+  uint16_t GetPpid() const { return mPpid; }
+
+ protected:
+  
+  
+  nsCString mData;
+  uint16_t mPpid;
+  uint16_t mStreamId;
+};
+
 
 
 class QueuedDataMessage {
  public:
-  QueuedDataMessage(uint16_t stream, uint32_t ppid, int flags,
-                    const uint8_t* data, uint32_t length)
-      : mStream(stream), mPpid(ppid), mFlags(flags), mData(data, length) {}
+  QueuedDataMessage(uint16_t stream, uint32_t ppid, uint16_t messageId,
+                    int flags, const uint8_t* data, uint32_t length)
+      : mStream(stream),
+        mPpid(ppid),
+        mMessageId(messageId),
+        mFlags(flags),
+        mData(data, length) {}
 
   const uint16_t mStream;
   const uint32_t mPpid;
+  const uint16_t mMessageId;
   const int mFlags;
   const nsTArray<uint8_t> mData;
 };
@@ -158,6 +190,8 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
 
   void SetMaxMessageSize(bool aMaxMessageSizeSet, uint64_t aMaxMessageSize);
   uint64_t GetMaxMessageSize();
+  void HandleDataMessage(IncomingMsg&& aMsg) MOZ_REQUIRES(mLock);
+  void HandleDCEPMessage(IncomingMsg&& aMsg) MOZ_REQUIRES(mLock);
 
   void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
                            const DOMHighResTimeStamp aTimestamp) const;
@@ -340,6 +374,14 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
       MOZ_REQUIRES(mLock);
   void HandleNotification(const union sctp_notification* notif, size_t n)
       MOZ_REQUIRES(mLock);
+  bool ReassembleMessageChunk(IncomingMsg& aReassembled, const void* buffer,
+                              size_t length, uint32_t ppid, uint16_t stream);
+  void HandleMessageChunk(const void* buffer, size_t length, uint32_t ppid,
+                          uint16_t messageId, uint16_t stream, int flags);
+  void HandleDataMessageChunk(const void* data, size_t length, uint32_t ppid,
+                              uint16_t stream, uint16_t messageId, int flags);
+  void HandleDCEPMessageChunk(const void* buffer, size_t length, uint32_t ppid,
+                              uint16_t stream, int flags);
 
   bool IsSTSThread() const {
     bool on = false;
@@ -376,6 +418,8 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   
   nsTArray<UniquePtr<BufferedOutgoingMsg>> mBufferedControl
       MOZ_GUARDED_BY(mLock);
+  
+  Maybe<IncomingMsg> mRecvBuffer MOZ_GUARDED_BY(mLock);
 
   
   AutoTArray<uint16_t, 4> mStreamsResetting MOZ_GUARDED_BY(mLock);
@@ -396,8 +440,6 @@ class DataChannelConnection final : public net::NeckoTargetHolder {
   uint16_t mRemotePort = 0;
 
   nsCOMPtr<nsIThread> mInternalIOThread = nullptr;
-  nsCString mRecvBuffer;
-
   
   
   bool mDeferSend = false;
@@ -543,20 +585,18 @@ class DataChannel {
   
   
   bool mWaitingForAck = false;
-  
-  bool mClosingTooLarge = false;
   bool mHasSentStreamReset = false;
   bool mIsRecvBinary;
   size_t mBufferedThreshold;
   
   
   size_t mBufferedAmount;
-  nsCString mRecvBuffer;
   nsTArray<UniquePtr<BufferedOutgoingMsg>> mBufferedData
       MOZ_GUARDED_BY(mConnection->mLock);
   nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
   mutable Mutex mStatsLock;
   TrafficCounters mTrafficCounters MOZ_GUARDED_BY(mStatsLock);
+  std::map<uint16_t, IncomingMsg> mRecvBuffers;
 };
 
 
@@ -572,15 +612,14 @@ class DataChannelOnMessageAvailable : public Runnable {
     OnDataBinary,
   };
 
-  DataChannelOnMessageAvailable(
-      EventType aType, DataChannelConnection* aConnection,
-      DataChannel* aChannel,
-      nsCString& aData)  
+  DataChannelOnMessageAvailable(EventType aType,
+                                DataChannelConnection* aConnection,
+                                DataChannel* aChannel, nsCString&& aData)
       : Runnable("DataChannelOnMessageAvailable"),
         mType(aType),
         mChannel(aChannel),
         mConnection(aConnection),
-        mData(aData) {}
+        mData(std::move(aData)) {}
 
   DataChannelOnMessageAvailable(EventType aType, DataChannel* aChannel)
       : Runnable("DataChannelOnMessageAvailable"),
