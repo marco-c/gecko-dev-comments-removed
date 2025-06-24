@@ -796,38 +796,39 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
 
   
   
-  bool hasCaptureTimeNtp = selected->mWebrtcCaptureTime.is<int64_t>();
-  bool hasReceiveTimeReal = selected->mWebrtcReceiveTime.isSome();
-  if (mSelectedVideoStreamTrack && (hasCaptureTimeNtp || hasReceiveTimeReal)) {
-    if (const auto* timestampMaker =
-            mSelectedVideoStreamTrack->GetTimestampMaker()) {
-      if (hasCaptureTimeNtp) {
-        aMd.mCaptureTime.Construct(
-            RTCStatsTimestamp::FromNtp(
-                *timestampMaker,
-                webrtc::Timestamp::Micros(
-                    selected->mWebrtcCaptureTime.as<int64_t>()))
-                .ToDom());
-      }
-      if (hasReceiveTimeReal) {
-        aMd.mReceiveTime.Construct(
-            RTCStatsTimestamp::FromRealtime(
-                *timestampMaker,
-                webrtc::Timestamp::Micros(*selected->mWebrtcReceiveTime))
-                .ToDom());
-      }
+  const bool hasCaptureTimeNtp = selected->mWebrtcCaptureTime.is<int64_t>();
+  const bool hasReceiveTimeReal = selected->mWebrtcReceiveTime.isSome();
+  const auto* tsMaker = mSelectedVideoStreamTrack
+                            ? mSelectedVideoStreamTrack->GetTimestampMaker()
+                            : nullptr;
+  auto* win = OwnerDoc()->GetInnerWindow();
+  auto* perf = win ? win->GetPerformance() : nullptr;
+
+  
+  
+  if (tsMaker && perf) {
+    if (hasCaptureTimeNtp) {
+      const int64_t capt64 = selected->mWebrtcCaptureTime.as<int64_t>();
+      webrtc::Timestamp captTs = webrtc::Timestamp::Millis(capt64);
+      aMd.mCaptureTime.Construct(
+          RTCStatsTimestamp::FromNtp(*tsMaker, captTs).ToDom() -
+          perf->TimeOrigin());
+    }
+
+    if (hasReceiveTimeReal) {
+      const int64_t recvUs = selected->mWebrtcReceiveTime.value();
+      webrtc::Timestamp recvTs = webrtc::Timestamp::Micros(recvUs);
+      aMd.mReceiveTime.Construct(
+          RTCStatsTimestamp::FromRealtime(*tsMaker, recvTs).ToDom() -
+          perf->TimeOrigin());
     }
   }
 
   
   
-  if (selected->mWebrtcCaptureTime.is<TimeStamp>()) {
-    if (nsPIDOMWindowInner* win = OwnerDoc()->GetInnerWindow()) {
-      if (Performance* perf = win->GetPerformance()) {
-        aMd.mCaptureTime.Construct(perf->TimeStampToDOMHighResForRendering(
-            selected->mWebrtcCaptureTime.as<TimeStamp>()));
-      }
-    }
+  if (perf && selected->mWebrtcCaptureTime.is<TimeStamp>()) {
+    aMd.mCaptureTime.Construct(perf->TimeStampToDOMHighResForRendering(
+        selected->mWebrtcCaptureTime.as<TimeStamp>()));
   }
 #endif
 
