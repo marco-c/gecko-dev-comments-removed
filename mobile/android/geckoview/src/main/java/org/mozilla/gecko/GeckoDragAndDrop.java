@@ -53,6 +53,16 @@ public class GeckoDragAndDrop {
     public void onProvideShadowMetrics(final Point outShadowSize, final Point outShadowTouchPoint) {
       if (mBitmap == null) {
         super.onProvideShadowMetrics(outShadowSize, outShadowTouchPoint);
+        if (outShadowSize.x <= 0 || outShadowSize.y <= 0) {
+          
+          
+          outShadowSize.set(1, 1);
+        }
+        if (outShadowTouchPoint.x < 0 || outShadowTouchPoint.y < 0) {
+          
+          
+          outShadowTouchPoint.set(0, 0);
+        }
         return;
       }
       outShadowSize.set(mBitmap.getWidth(), mBitmap.getHeight());
