@@ -1795,6 +1795,13 @@ class PresShell final : public nsStubDocumentObserver,
 
   nsPoint GetEventLocation(const WidgetMouseEvent& aEvent) const;
 
+  
+
+
+
+
+  static Modifiers GetCurrentModifiers() { return sCurrentModifiers; }
+
  private:
   ~PresShell();
 
@@ -2062,8 +2069,17 @@ class PresShell final : public nsStubDocumentObserver,
   };
 
   
-  
+
+
+
+
   void RecordPointerLocation(WidgetGUIEvent* aEvent);
+
+  
+
+
+  static void RecordModifiers(WidgetGUIEvent* aEvent);
+
   class nsSynthMouseMoveEvent final : public nsARefreshObserver {
    public:
     nsSynthMouseMoveEvent(PresShell* aPresShell, bool aFromScroll)
@@ -3454,6 +3470,10 @@ class PresShell final : public nsStubDocumentObserver,
   static bool sDisableNonTestMouseEvents;
 
   static bool sProcessInteractable;
+
+  
+  
+  static Modifiers sCurrentModifiers;
 };
 
 }  
