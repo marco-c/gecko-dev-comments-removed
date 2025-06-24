@@ -6,6 +6,13 @@
 
 
 
+loadScripts(
+  { name: "role.js", dir: MOCHITESTS_DIR },
+  { name: "states.js", dir: MOCHITESTS_DIR }
+);
+
+
+
 const UIA_CustomLandmarkTypeId = 80000;
 const UIA_MainLandmarkTypeId = 80002;
 
@@ -470,4 +477,44 @@ addUiaTask(
     );
   },
   { uiaEnabled: true, uiaDisabled: false }
+);
+
+
+
+
+addUiaTask(
+  `
+<button id="onscreen">onscreen</button>
+<button id="offscreen" style="position: absolute; left: -10000px;">offscreen</button>
+  `,
+  async function testIsOffscreen(browser, docAcc) {
+    await definePyVar("doc", `getDocUia()`);
+    ok(
+      !(await runPython(`findUiaByDomId(doc, "onscreen").CurrentIsOffscreen`)),
+      "onscreen has correct IsOffscreen"
+    );
+    ok(
+      await runPython(`findUiaByDomId(doc, "offscreen").CurrentIsOffscreen`),
+      "offscreen has correct IsOffscreen"
+    );
+    ok(
+      !(await runPython(`doc.CurrentIsOffscreen`)),
+      "doc has correct IsOffscreen"
+    );
+    info("Opening a new tab");
+    await BrowserTestUtils.withNewTab("", async () => {
+      
+      
+      await untilCacheOk(() => {
+        const [state] = getStates(docAcc);
+        return state & STATE_OFFSCREEN;
+      }, "doc is offscreen in cross-platform tree");
+      
+      ok(
+        await runPython(`doc.CurrentIsOffscreen`),
+        "doc has correct IsOffscreen"
+      );
+    });
+  },
+  { uiaEnabled: true, uiaDisabled: true }
 );
