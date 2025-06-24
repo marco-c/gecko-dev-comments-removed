@@ -314,7 +314,7 @@ void VideoSink::Shutdown() {
   mAudioSink->Shutdown();
 }
 
-void VideoSink::OnVideoQueuePushed(RefPtr<VideoData>&& aSample) {
+void VideoSink::OnVideoQueuePushed(const RefPtr<VideoData>& aSample) {
   AssertOwnerThread();
   
   
