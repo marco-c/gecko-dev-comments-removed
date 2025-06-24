@@ -715,6 +715,8 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
     if (ownerDoc) {
       loadState->SetTriggeringStorageAccess(ownerDoc->UsingStorageAccess());
       loadState->SetTriggeringWindowId(ownerDoc->InnerWindowID());
+      loadState->SetTriggeringClassificationFlags(
+          ownerDoc->GetScriptTrackingFlags());
     }
 
     
