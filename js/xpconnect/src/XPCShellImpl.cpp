@@ -1229,6 +1229,11 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
     
     
+    
+    profiler_lookup_async_signal_dump_directory();
+
+    
+    
     Preferences::SetBool("browser.dom.window.dump.enabled", true);
     Preferences::SetBool("devtools.console.stdout.chrome", true);
 

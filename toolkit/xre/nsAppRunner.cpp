@@ -5625,6 +5625,18 @@ nsresult XREMain::XRE_mainRun() {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    profiler_lookup_async_signal_dump_directory();
+
+    
+    
+    
     {
       mozilla::dom::AutoJSAPI jsapi;
       MOZ_ALWAYS_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
