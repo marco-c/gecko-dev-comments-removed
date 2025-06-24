@@ -89,4 +89,31 @@ class SoftNavigationTestHelper {
           observer.disconnect();
         });
   }
+
+  
+
+
+
+
+
+
+
+
+  getPerformanceEntries(
+      type, includeSoftNavigationObservations, minNumEntries) {
+    return new Promise((resolve) => {
+      const entries = [];
+      const observer = new PerformanceObserver((list) => {
+        entries.push(...list.getEntries());
+        if (entries.length >= minNumEntries) {
+          resolve(entries);
+          observer.disconnect();
+        }
+      })
+      observer.observe({
+        type: type,
+        includeSoftNavigationObservations: includeSoftNavigationObservations,
+      });
+    });
+  }
 }
