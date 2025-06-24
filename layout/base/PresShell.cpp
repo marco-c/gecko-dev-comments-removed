@@ -608,18 +608,8 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
 };
 
 bool PresShell::sDisableNonTestMouseEvents = false;
-int16_t PresShell::sMouseButtons = MouseButtonsFlag::eNoButtons;
 
 LazyLogModule PresShell::gLog("PresShell");
-
-#ifdef DEBUG
-
-
-
-
-
-LazyLogModule gLogMouseLocation("MouseLocation");
-#endif
 
 TimeStamp PresShell::EventHandler::sLastInputCreated;
 TimeStamp PresShell::EventHandler::sLastInputProcessed;
@@ -763,7 +753,6 @@ PresShell::PresShell(Document* aDocument)
 #ifdef ACCESSIBILITY
       mDocAccessible(nullptr),
 #endif  
-      mMouseLocation(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
       mLastResolutionChangeOrigin(ResolutionChangeOrigin::Apz),
       mPaintCount(0),
       mAPZFocusSequenceNumber(0),
@@ -816,7 +805,6 @@ PresShell::PresShell(Document* aDocument)
       mForceDispatchKeyPressEventsForNonPrintableKeys(false),
       mForceUseLegacyKeyCodeAndCharCodeValues(false),
       mInitializedWithKeyPressEventDispatchingBlacklist(false),
-      mMouseLocationWasSetBySynthesizedMouseEventForTests(false),
       mHasTriedFastUnsuppress(false),
       mProcessingReflowCommands(false),
       mPendingDidDoReflow(false) {
@@ -5850,15 +5838,14 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll) {
     return;
   }
 
-  if (!mPresContext->IsRoot()) {
+  if (!IsRoot()) {
     if (PresShell* rootPresShell = GetRootPresShell()) {
       rootPresShell->SynthesizeMouseMove(aFromScroll);
     }
     return;
   }
 
-  if (mMouseLocation == nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE) &&
-      !mPointerIds.IsEmpty()) {
+  if (mLastMousePointerId.isNothing() && !mPointerIds.IsEmpty()) {
     return;
   }
 
@@ -6026,7 +6013,7 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
     forgetMouseMove.release();
   }
 
-  NS_ASSERTION(mPresContext->IsRoot(), "Only a root pres shell should be here");
+  NS_ASSERTION(IsRoot(), "Only a root pres shell should be here");
 
   if (StaticPrefs::dom_event_pointer_boundary_dispatch_when_layout_change()) {
     const AutoTArray<uint32_t, 16> pointerIds(mPointerIds.Clone());
@@ -6052,18 +6039,14 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
     }
   }
 
-  if (mMouseLocation != nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE)) {
-    PointerInfo mouseInfo(
-        static_cast<PointerInfo::Active>(!!PresShell::sMouseButtons),
-        mMouseLocationInputSource, PointerInfo::Primary::Yes,
-        PointerInfo::FromTouchEvent::No, nullptr, nullptr,
-        static_cast<PointerInfo::SynthesizeForTests>(
-            mMouseLocationWasSetBySynthesizedMouseEventForTests));
-    mouseInfo.mLastRefPointInRootDoc = mMouseLocation;
-    mouseInfo.mLastTargetGuid = mMouseEventTargetGuid;
-    mouseInfo.mLastButtons = PresShell::sMouseButtons;
-    ProcessSynthMouseOrPointerMoveEvent(eMouseMove, mMouseLocationPointerId,
-                                        mouseInfo);
+  if (mLastMousePointerId.isSome()) {
+    if (const PointerInfo* const lastMouseInfo =
+            PointerEventHandler::GetLastMouseInfo(this)) {
+      if (lastMouseInfo->HasLastState()) {
+        ProcessSynthMouseOrPointerMoveEvent(eMouseMove, *mLastMousePointerId,
+                                            *lastMouseInfo);
+      }
+    }
   }
 }
 
@@ -6071,13 +6054,15 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
     EventMessage aMoveMessage, uint32_t aPointerId,
     const PointerInfo& aPointerInfo) {
   MOZ_ASSERT(aMoveMessage == eMouseMove || aMoveMessage == ePointerMove);
-  NS_ASSERTION(mPresContext->IsRoot(), "Only a root pres shell should be here");
+  NS_ASSERTION(IsRoot(), "Only a root pres shell should be here");
 
 #ifdef DEBUG
-  MOZ_LOG(gLogMouseLocation, LogLevel::Info,
-          ("[ps=%p]synthesizing %s to (%d,%d)\n", this, ToChar(aMoveMessage),
-           aPointerInfo.mLastRefPointInRootDoc.x,
-           aPointerInfo.mLastRefPointInRootDoc.y));
+  if (aMoveMessage == eMouseMove) {
+    MOZ_LOG(PointerEventHandler::MouseLocationLogRef(), LogLevel::Info,
+            ("[ps=%p]synthesizing %s to (%d,%d)\n", this, ToChar(aMoveMessage),
+             aPointerInfo.mLastRefPointInRootDoc.x,
+             aPointerInfo.mLastRefPointInRootDoc.y));
+  }
 #endif
 
   int32_t APD = mPresContext->AppUnitsPerDevPixel();
@@ -7046,18 +7031,6 @@ void PresShell::DisableNonTestMouseEvents(bool aDisable) {
   sDisableNonTestMouseEvents = aDisable;
 }
 
-bool PresShell::MouseLocationWasSetBySynthesizedMouseEventForTests() const {
-  if (!mPresContext) {
-    return false;
-  }
-  if (mPresContext->IsRoot()) {
-    return mMouseLocationWasSetBySynthesizedMouseEventForTests;
-  }
-  PresShell* rootPresShell = GetRootPresShell();
-  return rootPresShell &&
-         rootPresShell->mMouseLocationWasSetBySynthesizedMouseEventForTests;
-}
-
 nsPoint PresShell::GetEventLocation(const WidgetMouseEvent& aEvent) const {
   nsIFrame* rootFrame = GetRootFrame();
   if (rootFrame) {
@@ -7078,7 +7051,7 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     return;
   }
 
-  if (!mPresContext->IsRoot()) {
+  if (!IsRoot()) {
     PresShell* rootPresShell = GetRootPresShell();
     if (rootPresShell) {
       rootPresShell->RecordPointerLocation(aEvent);
@@ -7090,63 +7063,26 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     if (aMouseEvent.mMessage == eMouseMove && aMouseEvent.IsSynthesized()) {
       return false;
     }
-    mMouseLocation = GetEventLocation(aMouseEvent);
-    mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
-    
-    if (aEvent->mClass != eDragEventClass) {
-      mMouseLocationInputSource = aMouseEvent.mInputSource;
-      mMouseLocationPointerId = aMouseEvent.pointerId;
-      mMouseLocationWasSetBySynthesizedMouseEventForTests =
-          aMouseEvent.mFlags.mIsSynthesizedForTests;
-    }
-#ifdef DEBUG
-    if (MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Info)) {
-      static uint32_t sFrequentMessageCount = 0;
-      const bool isFrequestMessage =
-          aEvent->mMessage == eMouseMove || aEvent->mMessage == eDragOver;
-      if (!isFrequestMessage ||
-          MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Verbose) ||
-          !(sFrequentMessageCount % 50)) {
-        MOZ_LOG(gLogMouseLocation,
-                isFrequestMessage ? LogLevel::Debug : LogLevel::Info,
-                ("[ps=%p]got %s for %p at {%d, %d}\n", this,
-                 ToChar(aEvent->mMessage), aEvent->mWidget.get(),
-                 mMouseLocation.x, mMouseLocation.y));
-      }
-      if (isFrequestMessage) {
-        sFrequentMessageCount++;
-      } else {
-        
-        
-        sFrequentMessageCount = 0;
-      }
-    }
-#endif
+    PointerEventHandler::RecordMouseState(*this, aMouseEvent);
+    mLastMousePointerId = Some(aMouseEvent.pointerId);
     return true;
   };
 
-  const auto ClearMouseLocation = [&]() {
-    mMouseLocation = nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-    mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
-    mMouseLocationInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
-    mMouseLocationPointerId = 0;
-    mMouseLocationWasSetBySynthesizedMouseEventForTests =
-        aEvent->mFlags.mIsSynthesizedForTests;
-#ifdef DEBUG
-    MOZ_LOG(gLogMouseLocation, LogLevel::Info,
-            ("[ps=%p]got %s for %p, mouse location is cleared\n", this,
-             ToChar(aEvent->mMessage), aEvent->mWidget.get()));
-#endif
+  const auto ClearMouseLocation = [&](const WidgetMouseEvent& aMouseEvent) {
+    PointerEventHandler::ClearMouseState(*this, aMouseEvent);
+    mLastMousePointerId.reset();
   };
 
   const auto ClearMouseLocationIfSetByTouch =
       [&](const WidgetPointerEvent& aPointerEvent) {
-        if (mMouseLocation !=
-                nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE) &&
-            mMouseLocationInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH &&
+        const PointerInfo* lastMouseInfo =
+            PointerEventHandler::GetLastMouseInfo(this);
+        if (lastMouseInfo && lastMouseInfo->HasLastState() &&
+            lastMouseInfo->mInputSource ==
+                MouseEvent_Binding::MOZ_SOURCE_TOUCH &&
             aPointerEvent.mInputSource ==
                 MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
-          ClearMouseLocation();
+          ClearMouseLocation(aPointerEvent);
         }
       };
 
@@ -7205,7 +7141,7 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
         
         break;
       }
-      ClearMouseLocation();
+      ClearMouseLocation(mouseEvent);
       ClearPointerLocation(mouseEvent);
       break;
     }
@@ -7217,7 +7153,7 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       
       
       
-      ClearMouseLocation();
+      ClearMouseLocation(mouseEvent);
       ClearPointerLocation(mouseEvent);
       break;
     }
@@ -7391,27 +7327,31 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
   
   
   if (aGUIEvent->CameFromAnotherProcess() && XRE_IsContentProcess() &&
-      !aGUIEvent->mFlags.mIsSynthesizedForTests &&
-      MouseLocationWasSetBySynthesizedMouseEventForTests()) {
-    switch (aGUIEvent->mMessage) {
-      
-      
-      case eMouseMove:
-      
-      
-      
-      
-      case eMouseExitFromWidget:
-      
-      
-      
-      case eMouseEnterIntoWidget:
-        if (!aGUIEvent->AsMouseEvent()->IsReal()) {
-          return NS_OK;
-        }
-        break;
-      default:
-        break;
+      !aGUIEvent->mFlags.mIsSynthesizedForTests) {
+    const PointerInfo* const lastMouseInfo =
+        PointerEventHandler::GetLastMouseInfo();
+    if (lastMouseInfo && lastMouseInfo->mIsSynthesizedForTests) {
+      switch (aGUIEvent->mMessage) {
+        
+        
+        
+        case eMouseMove:
+        
+        
+        
+        
+        case eMouseExitFromWidget:
+        
+        
+        
+        case eMouseEnterIntoWidget:
+          if (!aGUIEvent->AsMouseEvent()->IsReal()) {
+            return NS_OK;
+          }
+          break;
+        default:
+          break;
+      }
     }
   }
 
@@ -7516,8 +7456,8 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
         
         
         
-        RefPtr<PresShell> rootPresShell =
-            mPresContext->IsRoot() ? this : GetRootPresShell();
+        const RefPtr<PresShell> rootPresShell =
+            IsRoot() ? this : GetRootPresShell();
         if (rootPresShell && rootPresShell->mSynthMouseMoveEvent.IsPending()) {
           RefPtr<nsSynthMouseMoveEvent> synthMouseMoveEvent =
               rootPresShell->mSynthMouseMoveEvent.get();
@@ -9826,7 +9766,7 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
           aEventStatus, eventCBPtr);
     } else {
       if (aEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
-        PresShell::sMouseButtons = aEvent->AsMouseEvent()->mButtons;
+        PointerEventHandler::RecordMouseButtons(*aEvent->AsMouseEvent());
 #ifdef DEBUG
         if (eventTarget->IsContent() && !eventTarget->IsElement()) {
           NS_WARNING(nsPrintfCString(

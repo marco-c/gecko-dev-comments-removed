@@ -259,6 +259,13 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
+  [[nodiscard]] bool IsRoot() const {
+    return mPresContext && mPresContext->IsRoot();
+  }
+
+  
+
+
 
 
 
@@ -1782,6 +1789,12 @@ class PresShell final : public nsStubDocumentObserver,
   
   void AddOrthogonalFlow(nsIFrame* aFrame) { mOrthogonalFlows.Insert(aFrame); }
 
+  
+
+
+
+  nsPoint GetEventLocation(const WidgetMouseEvent& aEvent) const;
+
  private:
   ~PresShell();
 
@@ -2049,15 +2062,8 @@ class PresShell final : public nsStubDocumentObserver,
   };
 
   
-
-
-
-  nsPoint GetEventLocation(const WidgetMouseEvent& aEvent) const;
-
-  
   
   void RecordPointerLocation(WidgetGUIEvent* aEvent);
-  inline bool MouseLocationWasSetBySynthesizedMouseEventForTests() const;
   class nsSynthMouseMoveEvent final : public nsARefreshObserver {
    public:
     nsSynthMouseMoveEvent(PresShell* aPresShell, bool aFromScroll)
@@ -3248,19 +3254,11 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
-  
-  
-  nsPoint mMouseLocation;
-  
-  
-  static int16_t sMouseButtons;
+  Maybe<uint32_t> mLastMousePointerId;
+
   
   
   nsPoint mLastOverWindowPointerLocation;
-  
-  
-  
-  layers::ScrollableLayerGuid mMouseEventTargetGuid;
 
   
   nsSize mVisualViewportSize;
@@ -3312,12 +3310,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   uint16_t mChangeNestCount;
-
-  
-  uint16_t mMouseLocationInputSource = 0;  
-
-  
-  uint32_t mMouseLocationPointerId = 0;
 
   
   
@@ -3424,10 +3416,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   bool mInitializedWithKeyPressEventDispatchingBlacklist : 1;
-
-  
-  
-  bool mMouseLocationWasSetBySynthesizedMouseEventForTests : 1;
 
   bool mHasTriedFastUnsuppress : 1;
 

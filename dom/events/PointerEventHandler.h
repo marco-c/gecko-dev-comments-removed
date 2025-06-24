@@ -10,6 +10,7 @@
 #include "LayoutConstants.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/WeakPtr.h"
 
@@ -220,6 +221,44 @@ class PointerEventHandler final {
                                  const WidgetMouseEvent& aMouseEvent);
 
   
+
+
+
+
+
+
+
+
+
+  static void RecordMouseState(PresShell& aRootPresShell,
+                               const WidgetMouseEvent& aMouseEvent);
+
+  
+
+
+  static void RecordMouseButtons(const WidgetMouseEvent& aMouseEvent) {
+    
+    
+    
+    if (sLastMouseInfo) {
+      sLastMouseInfo->mLastButtons = aMouseEvent.mButtons;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static void ClearMouseState(PresShell& aRootPresShell,
+                              const WidgetMouseEvent& aMouseEvent);
+
+  
   static void RequestPointerCaptureById(uint32_t aPointerId,
                                         dom::Element* aElement);
   static void ReleasePointerCaptureById(uint32_t aPointerId);
@@ -246,6 +285,18 @@ class PointerEventHandler final {
   
   
   static const PointerInfo* GetPointerInfo(uint32_t aPointerId);
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] static const PointerInfo* GetLastMouseInfo(
+      const PresShell* aRootPresShell = nullptr);
 
   
   
@@ -435,6 +486,11 @@ class PointerEventHandler final {
   [[nodiscard]] static bool NeedToDispatchPointerRawUpdate(
       const dom::Document* aDocument);
 
+  
+
+
+  [[nodiscard]] static LazyLogModule& MouseLocationLogRef();
+
  private:
   
   static void SetPointerCaptureById(uint32_t aPointerId,
@@ -478,6 +534,13 @@ class PointerEventHandler final {
 
   static void SetPointerCapturingElementAtLastPointerUp(
       nsWeakPtr&& aPointerCapturingElement);
+
+  
+  
+  static StaticAutoPtr<PointerInfo> sLastMouseInfo;
+
+  
+  static StaticRefPtr<nsIWeakReference> sLastMousePresShell;
 };
 
 }  
