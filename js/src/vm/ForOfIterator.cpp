@@ -5,6 +5,8 @@
 
 
 #include "js/ForOfIterator.h"
+
+#include "js/Exception.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/Interpreter.h"
 #include "vm/Iteration.h"
@@ -146,22 +148,18 @@ void ForOfIterator::closeThrow() {
   MOZ_ASSERT(iterator);
 
   
-  RootedValue completionException(cx_);
-  Rooted<SavedFrame*> completionExceptionStack(cx_);
-  if (cx_->isExceptionPending()) {
-    if (!GetAndClearExceptionAndStack(cx_, &completionException,
-                                      &completionExceptionStack)) {
-      completionException.setUndefined();
-      completionExceptionStack = nullptr;
-    }
+  
+  if (!cx_->isExceptionPending()) {
+    return;
   }
+
+  
+  
+  JS::AutoSaveExceptionState savedExc(cx_);
 
   
   MOZ_ALWAYS_TRUE(CloseIterOperation(cx_, iterator, CompletionKind::Throw));
 
   
   MOZ_ASSERT(!cx_->isExceptionPending());
-
-  
-  cx_->setPendingException(completionException, completionExceptionStack);
 }
