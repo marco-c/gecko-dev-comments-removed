@@ -407,8 +407,6 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
       
       
       ["dom.ipc.processCount.webIsolated", 1],
-      
-      ["media.utility-process.enabled", true],
     ],
   });
 
