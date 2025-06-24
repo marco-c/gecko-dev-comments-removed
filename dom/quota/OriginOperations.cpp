@@ -3578,7 +3578,9 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         ([&aQuotaManager, &originMetadata,
           &directory]() -> mozilla::Result<OriginStateMetadata, nsresult> {
           Maybe<OriginStateMetadata> maybeOriginStateMetadata =
-              aQuotaManager.GetOriginStateMetadata(originMetadata);
+              aQuotaManager.IsTemporaryStorageInitializedInternal()
+                  ? aQuotaManager.GetOriginStateMetadata(originMetadata)
+                  : Nothing();
 
           if (maybeOriginStateMetadata) {
             return maybeOriginStateMetadata.extract();
