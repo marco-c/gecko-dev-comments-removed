@@ -114,11 +114,11 @@ let ecmaGlobals = [
   { name: "SyntaxError", insecureContext: true },
   { name: "Temporal", insecureContext: true },
   { name: "TypeError", insecureContext: true },
+  { name: "URIError", insecureContext: true },
   { name: "Uint16Array", insecureContext: true },
   { name: "Uint32Array", insecureContext: true },
   { name: "Uint8Array", insecureContext: true },
   { name: "Uint8ClampedArray", insecureContext: true },
-  { name: "URIError", insecureContext: true },
   { name: "WeakMap", insecureContext: true },
   { name: "WeakRef", insecureContext: true },
   { name: "WeakSet", insecureContext: true },
@@ -168,13 +168,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioBuffer", insecureContext: true },
   
+  { name: "AudioBufferSourceNode", insecureContext: true },
+  
   { name: "AudioContext", insecureContext: true },
   
   { name: "AudioData", insecureContext: true, nightlyAndroid: true },
   
   { name: "AudioDecoder", nightlyAndroid: true },
-  
-  { name: "AudioBufferSourceNode", insecureContext: true },
   
   { name: "AudioDestinationNode", insecureContext: true },
   
@@ -218,70 +218,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ByteLengthQueuingStrategy", insecureContext: true },
   
-  "Cache",
-  
-  "CacheStorage",
-  
-  { name: "CanvasCaptureMediaStream", insecureContext: true },
-  
-  { name: "CanvasGradient", insecureContext: true },
-  
-  { name: "CanvasPattern", insecureContext: true },
-  
-  { name: "CanvasRenderingContext2D", insecureContext: true },
-  
-  { name: "CaretPosition", insecureContext: true },
-  
   { name: "CDATASection", insecureContext: true },
-  
-  { name: "ChannelMergerNode", insecureContext: true },
-  
-  { name: "ChannelSplitterNode", insecureContext: true },
-  
-  { name: "CharacterData", insecureContext: true },
-  
-  { name: "Clipboard" },
-  
-  { name: "ClipboardEvent", insecureContext: true },
-  
-  { name: "ClipboardItem" },
-  
-  { name: "CloseEvent", insecureContext: true },
-  
-  {
-    name: "CloseWatcher",
-    insecureContext: true,
-    nightly: true,
-    android: false,
-  },
-  
-  { name: "Comment", insecureContext: true },
-  
-  { name: "CompositionEvent", insecureContext: true },
-  
-  { name: "CompressionStream", insecureContext: true },
-  
-  { name: "ConstantSourceNode", insecureContext: true },
-  
-  { name: "ContentVisibilityAutoStateChangeEvent", insecureContext: true },
-  
-  { name: "ConvolverNode", insecureContext: true },
-  
-  { name: "CountQueuingStrategy", insecureContext: true },
-  
-  "CookieChangeEvent",
-  
-  "CookieStore",
-  
-  "CookieStoreManager",
-  
-  { name: "Credential" },
-  
-  { name: "CredentialsContainer" },
-  
-  { name: "Crypto", insecureContext: true },
-  
-  { name: "CryptoKey" },
   
   { name: "CSS", insecureContext: true },
   
@@ -347,39 +284,74 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSTransition", insecureContext: true },
   
+  "Cache",
+  
+  "CacheStorage",
+  
+  { name: "CanvasCaptureMediaStream", insecureContext: true },
+  
+  { name: "CanvasGradient", insecureContext: true },
+  
+  { name: "CanvasPattern", insecureContext: true },
+  
+  { name: "CanvasRenderingContext2D", insecureContext: true },
+  
+  { name: "CaretPosition", insecureContext: true },
+  
+  { name: "ChannelMergerNode", insecureContext: true },
+  
+  { name: "ChannelSplitterNode", insecureContext: true },
+  
+  { name: "CharacterData", insecureContext: true },
+  
+  { name: "Clipboard" },
+  
+  { name: "ClipboardEvent", insecureContext: true },
+  
+  { name: "ClipboardItem" },
+  
+  { name: "CloseEvent", insecureContext: true },
+  
+  {
+    name: "CloseWatcher",
+    insecureContext: true,
+    nightly: true,
+    android: false,
+  },
+  
+  { name: "Comment", insecureContext: true },
+  
+  { name: "CompositionEvent", insecureContext: true },
+  
+  { name: "CompressionStream", insecureContext: true },
+  
+  { name: "ConstantSourceNode", insecureContext: true },
+  
+  { name: "ContentVisibilityAutoStateChangeEvent", insecureContext: true },
+  
+  { name: "ConvolverNode", insecureContext: true },
+  
+  "CookieChangeEvent",
+  
+  "CookieStore",
+  
+  "CookieStoreManager",
+  
+  { name: "CountQueuingStrategy", insecureContext: true },
+  
+  { name: "Credential" },
+  
+  { name: "CredentialsContainer" },
+  
+  { name: "Crypto", insecureContext: true },
+  
+  { name: "CryptoKey" },
+  
   { name: "CustomElementRegistry", insecureContext: true },
   
   { name: "CustomEvent", insecureContext: true },
   
   { name: "CustomStateSet", insecureContext: true },
-  
-  { name: "DecompressionStream", insecureContext: true },
-  
-  { name: "DataTransfer", insecureContext: true },
-  
-  { name: "DataTransferItem", insecureContext: true },
-  
-  { name: "DataTransferItemList", insecureContext: true },
-  
-  { name: "DelayNode", insecureContext: true },
-  
-  { name: "DeviceLightEvent", insecureContext: true, disabled: true },
-  
-  { name: "DeviceMotionEvent", insecureContext: true },
-  
-  { name: "DeviceOrientationEvent", insecureContext: true },
-  
-  { name: "DeviceProximityEvent", insecureContext: true, disabled: true },
-  
-  { name: "Directory", insecureContext: true },
-  
-  { name: "Document", insecureContext: true },
-  
-  { name: "DocumentFragment", insecureContext: true },
-  
-  { name: "DocumentTimeline", insecureContext: true },
-  
-  { name: "DocumentType", insecureContext: true },
   
   { name: "DOMException", insecureContext: true },
   
@@ -408,6 +380,34 @@ let interfaceNamesInGlobalScope = [
   { name: "DOMStringMap", insecureContext: true },
   
   { name: "DOMTokenList", insecureContext: true },
+  
+  { name: "DataTransfer", insecureContext: true },
+  
+  { name: "DataTransferItem", insecureContext: true },
+  
+  { name: "DataTransferItemList", insecureContext: true },
+  
+  { name: "DecompressionStream", insecureContext: true },
+  
+  { name: "DelayNode", insecureContext: true },
+  
+  { name: "DeviceLightEvent", insecureContext: true, disabled: true },
+  
+  { name: "DeviceMotionEvent", insecureContext: true },
+  
+  { name: "DeviceOrientationEvent", insecureContext: true },
+  
+  { name: "DeviceProximityEvent", insecureContext: true, disabled: true },
+  
+  { name: "Directory", insecureContext: true },
+  
+  { name: "Document", insecureContext: true },
+  
+  { name: "DocumentFragment", insecureContext: true },
+  
+  { name: "DocumentTimeline", insecureContext: true },
+  
+  { name: "DocumentType", insecureContext: true },
   
   { name: "DragEvent", insecureContext: true },
   
@@ -457,45 +457,17 @@ let interfaceNamesInGlobalScope = [
   
   { name: "FocusEvent", insecureContext: true },
   
-  { name: "FormData", insecureContext: true },
-  
-  { name: "FormDataEvent", insecureContext: true },
-  
   { name: "FontFace", insecureContext: true },
   
   { name: "FontFaceSet", insecureContext: true },
   
   { name: "FontFaceSetLoadEvent", insecureContext: true },
   
+  { name: "FormData", insecureContext: true },
+  
+  { name: "FormDataEvent", insecureContext: true },
+  
   { name: "FragmentDirective", insecureContext: true },
-  
-  { name: "GainNode", insecureContext: true },
-  
-  { name: "Gamepad", insecureContext: true },
-  
-  { name: "GamepadAxisMoveEvent", insecureContext: true },
-  
-  { name: "GamepadButtonEvent", insecureContext: true },
-  
-  { name: "GamepadButton", insecureContext: true },
-  
-  { name: "GamepadEvent", insecureContext: true },
-  
-  { name: "GamepadHapticActuator", insecureContext: true },
-  
-  { name: "GamepadLightIndicator", insecureContext: true, disabled: true },
-  
-  { name: "GamepadPose", insecureContext: true },
-  
-  { name: "GamepadTouch", insecureContext: true, disabled: true },
-  
-  { name: "Geolocation", insecureContext: true },
-  
-  { name: "GeolocationCoordinates", insecureContext: false },
-  
-  { name: "GeolocationPosition", insecureContext: false },
-  
-  { name: "GeolocationPositionError", insecureContext: true },
   
   { name: "GPU", earlyBetaOrEarlier: true },
   
@@ -577,15 +549,33 @@ let interfaceNamesInGlobalScope = [
   
   { name: "GPUValidationError", earlyBetaOrEarlier: true },
   
-  { name: "HashChangeEvent", insecureContext: true },
+  { name: "GainNode", insecureContext: true },
   
-  { name: "Headers", insecureContext: true },
+  { name: "Gamepad", insecureContext: true },
   
-  { name: "History", insecureContext: true },
+  { name: "GamepadAxisMoveEvent", insecureContext: true },
   
-  { name: "Highlight", insecureContext: true },
+  { name: "GamepadButton", insecureContext: true },
   
-  { name: "HighlightRegistry", insecureContext: true },
+  { name: "GamepadButtonEvent", insecureContext: true },
+  
+  { name: "GamepadEvent", insecureContext: true },
+  
+  { name: "GamepadHapticActuator", insecureContext: true },
+  
+  { name: "GamepadLightIndicator", insecureContext: true, disabled: true },
+  
+  { name: "GamepadPose", insecureContext: true },
+  
+  { name: "GamepadTouch", insecureContext: true, disabled: true },
+  
+  { name: "Geolocation", insecureContext: true },
+  
+  { name: "GeolocationCoordinates", insecureContext: false },
+  
+  { name: "GeolocationPosition", insecureContext: false },
+  
+  { name: "GeolocationPositionError", insecureContext: true },
   
   { name: "HTMLAllCollection", insecureContext: true },
   
@@ -595,17 +585,19 @@ let interfaceNamesInGlobalScope = [
   
   { name: "HTMLAudioElement", insecureContext: true },
   
+  { name: "HTMLBRElement", insecureContext: true },
+  
   { name: "HTMLBaseElement", insecureContext: true },
   
   { name: "HTMLBodyElement", insecureContext: true },
-  
-  { name: "HTMLBRElement", insecureContext: true },
   
   { name: "HTMLButtonElement", insecureContext: true },
   
   { name: "HTMLCanvasElement", insecureContext: true },
   
   { name: "HTMLCollection", insecureContext: true },
+  
+  { name: "HTMLDListElement", insecureContext: true },
   
   { name: "HTMLDataElement", insecureContext: true },
   
@@ -618,8 +610,6 @@ let interfaceNamesInGlobalScope = [
   { name: "HTMLDirectoryElement", insecureContext: true },
   
   { name: "HTMLDivElement", insecureContext: true },
-  
-  { name: "HTMLDListElement", insecureContext: true },
   
   { name: "HTMLDocument", insecureContext: true },
   
@@ -639,11 +629,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "HTMLFrameSetElement", insecureContext: true },
   
+  { name: "HTMLHRElement", insecureContext: true },
+  
   { name: "HTMLHeadElement", insecureContext: true },
   
   { name: "HTMLHeadingElement", insecureContext: true },
-  
-  { name: "HTMLHRElement", insecureContext: true },
   
   { name: "HTMLHtmlElement", insecureContext: true },
   
@@ -653,11 +643,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "HTMLInputElement", insecureContext: true },
   
+  { name: "HTMLLIElement", insecureContext: true },
+  
   { name: "HTMLLabelElement", insecureContext: true },
   
   { name: "HTMLLegendElement", insecureContext: true },
-  
-  { name: "HTMLLIElement", insecureContext: true },
   
   { name: "HTMLLinkElement", insecureContext: true },
   
@@ -675,9 +665,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "HTMLModElement", insecureContext: true },
   
-  { name: "HTMLObjectElement", insecureContext: true },
-  
   { name: "HTMLOListElement", insecureContext: true },
+  
+  { name: "HTMLObjectElement", insecureContext: true },
   
   { name: "HTMLOptGroupElement", insecureContext: true },
   
@@ -691,9 +681,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "HTMLParamElement", insecureContext: true },
   
-  { name: "HTMLPreElement", insecureContext: true },
-  
   { name: "HTMLPictureElement", insecureContext: true },
+  
+  { name: "HTMLPreElement", insecureContext: true },
   
   { name: "HTMLProgressElement", insecureContext: true },
   
@@ -739,7 +729,15 @@ let interfaceNamesInGlobalScope = [
   
   { name: "HTMLVideoElement", insecureContext: true },
   
-  { name: "IdleDeadline", insecureContext: true },
+  { name: "HashChangeEvent", insecureContext: true },
+  
+  { name: "Headers", insecureContext: true },
+  
+  { name: "Highlight", insecureContext: true },
+  
+  { name: "HighlightRegistry", insecureContext: true },
+  
+  { name: "History", insecureContext: true },
   
   { name: "IDBCursor", insecureContext: true },
   
@@ -763,9 +761,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "IDBVersionChangeEvent", insecureContext: true },
   
+  { name: "IIRFilterNode", insecureContext: true },
+  
   { name: "IdentityCredential", nightly: true, desktop: true },
   
-  { name: "IIRFilterNode", insecureContext: true },
+  { name: "IdleDeadline", insecureContext: true },
   
   { name: "Image", insecureContext: true },
   
@@ -807,6 +807,22 @@ let interfaceNamesInGlobalScope = [
   
   "LockManager",
   
+  { name: "MIDIAccess", android: false },
+  
+  { name: "MIDIConnectionEvent", android: false },
+  
+  { name: "MIDIInput", android: false },
+  
+  { name: "MIDIInputMap", android: false },
+  
+  { name: "MIDIMessageEvent", android: false },
+  
+  { name: "MIDIOutput", android: false },
+  
+  { name: "MIDIOutputMap", android: false },
+  
+  { name: "MIDIPort", android: false },
+  
   { name: "MathMLElement", insecureContext: true },
   
   { name: "MediaCapabilities", insecureContext: true },
@@ -817,21 +833,21 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MediaElementAudioSourceNode", insecureContext: true },
   
+  { name: "MediaEncryptedEvent", insecureContext: true },
+  
   { name: "MediaError", insecureContext: true },
   
   { name: "MediaKeyError", insecureContext: true },
   
-  { name: "MediaEncryptedEvent", insecureContext: true },
-  
-  { name: "MediaKeys", insecureContext: true },
+  { name: "MediaKeyMessageEvent", insecureContext: true },
   
   { name: "MediaKeySession", insecureContext: true },
   
+  { name: "MediaKeyStatusMap", insecureContext: true },
+  
   { name: "MediaKeySystemAccess", insecureContext: true },
   
-  { name: "MediaKeyMessageEvent", insecureContext: true },
-  
-  { name: "MediaKeyStatusMap", insecureContext: true },
+  { name: "MediaKeys", insecureContext: true },
   
   { name: "MediaList", insecureContext: true },
   
@@ -855,13 +871,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MediaStreamAudioSourceNode", insecureContext: true },
   
-  { name: "MediaStreamTrackAudioSourceNode", insecureContext: true },
-  
   { name: "MediaStreamEvent", insecureContext: true },
   
-  { name: "MediaStreamTrackEvent", insecureContext: true },
-  
   { name: "MediaStreamTrack", insecureContext: true },
+  
+  { name: "MediaStreamTrackAudioSourceNode", insecureContext: true },
+  
+  { name: "MediaStreamTrackEvent", insecureContext: true },
   
   {
     name: "MerchantValidationEvent",
@@ -877,22 +893,6 @@ let interfaceNamesInGlobalScope = [
   { name: "MessageEvent", insecureContext: true },
   
   { name: "MessagePort", insecureContext: true },
-  
-  { name: "MIDIAccess", android: false },
-  
-  { name: "MIDIConnectionEvent", android: false },
-  
-  { name: "MIDIInputMap", android: false },
-  
-  { name: "MIDIInput", android: false },
-  
-  { name: "MIDIMessageEvent", android: false },
-  
-  { name: "MIDIOutputMap", android: false },
-  
-  { name: "MIDIOutput", android: false },
-  
-  { name: "MIDIPort", android: false },
   
   { name: "MimeType", insecureContext: true },
   
@@ -924,9 +924,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "NavigationHistoryEntry", insecureContext: true, disabled: true },
   
-  { name: "NavigationTransition", insecureContext: true, disabled: true },
-  
   "NavigationPreloadManager",
+  
+  { name: "NavigationTransition", insecureContext: true, disabled: true },
   
   { name: "Navigator", insecureContext: true },
   
@@ -1039,9 +1039,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "PeriodicWave", insecureContext: true },
   
-  { name: "Permissions", insecureContext: true },
-  
   { name: "PermissionStatus", insecureContext: true },
+  
+  { name: "Permissions", insecureContext: true },
   
   { name: "Plugin", insecureContext: true },
   
@@ -1067,43 +1067,17 @@ let interfaceNamesInGlobalScope = [
   
   "PushSubscriptionOptions",
   
-  { name: "RadioNodeList", insecureContext: true },
-  
-  { name: "Range", insecureContext: true },
-  
-  { name: "ReadableByteStreamController", insecureContext: true },
-  
-  { name: "ReadableStream", insecureContext: true },
-  
-  { name: "ReadableStreamBYOBReader", insecureContext: true },
-  
-  { name: "ReadableStreamBYOBRequest", insecureContext: true },
-  
-  { name: "ReadableStreamDefaultController", insecureContext: true },
-  
-  { name: "ReadableStreamDefaultReader", insecureContext: true },
-  
-  { name: "Request", insecureContext: true },
-  
-  { name: "ResizeObserver", insecureContext: true },
-  
-  { name: "ResizeObserverEntry", insecureContext: true },
-  
-  { name: "ResizeObserverSize", insecureContext: true },
-  
-  { name: "Response", insecureContext: true },
-  
   { name: "RTCCertificate", insecureContext: true },
+  
+  { name: "RTCDTMFSender", insecureContext: true },
+  
+  { name: "RTCDTMFToneChangeEvent", insecureContext: true },
   
   { name: "RTCDataChannel", insecureContext: true },
   
   { name: "RTCDataChannelEvent", insecureContext: true },
   
   { name: "RTCDtlsTransport", insecureContext: true },
-  
-  { name: "RTCDTMFSender", insecureContext: true },
-  
-  { name: "RTCDTMFToneChangeEvent", insecureContext: true },
   
   { name: "RTCEncodedAudioFrame", insecureContext: true },
   
@@ -1133,73 +1107,41 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCTrackEvent", insecureContext: true },
   
-  { name: "Sanitizer", disabled: true },
+  { name: "RadioNodeList", insecureContext: true },
   
-  { name: "Scheduler", insecureContext: true, nightly: true },
+  { name: "Range", insecureContext: true },
   
-  { name: "Screen", insecureContext: true },
+  { name: "ReadableByteStreamController", insecureContext: true },
   
-  { name: "ScreenOrientation", insecureContext: true },
+  { name: "ReadableStream", insecureContext: true },
   
-  { name: "ScriptProcessorNode", insecureContext: true },
+  { name: "ReadableStreamBYOBReader", insecureContext: true },
   
-  { name: "ScrollAreaEvent", insecureContext: true },
+  { name: "ReadableStreamBYOBRequest", insecureContext: true },
   
-  { name: "SecurityPolicyViolationEvent", insecureContext: true },
+  { name: "ReadableStreamDefaultController", insecureContext: true },
   
-  { name: "Selection", insecureContext: true },
+  { name: "ReadableStreamDefaultReader", insecureContext: true },
   
-  "ServiceWorker",
+  { name: "Request", insecureContext: true },
   
-  "ServiceWorkerContainer",
+  { name: "ResizeObserver", insecureContext: true },
   
-  "ServiceWorkerRegistration",
+  { name: "ResizeObserverEntry", insecureContext: true },
   
-  { name: "ScopedCredential", insecureContext: true, disabled: true },
+  { name: "ResizeObserverSize", insecureContext: true },
   
-  { name: "ScopedCredentialInfo", insecureContext: true, disabled: true },
-  
-  { name: "ShadowRoot", insecureContext: true },
-  
-  { name: "SharedWorker", insecureContext: true },
-  
-  { name: "SourceBuffer", insecureContext: true },
-  
-  { name: "SourceBufferList", insecureContext: true },
-  
-  { name: "SpeechSynthesisErrorEvent", insecureContext: true },
-  
-  { name: "SpeechSynthesisEvent", insecureContext: true },
-  
-  { name: "SpeechSynthesis", insecureContext: true },
-  
-  { name: "SpeechSynthesisUtterance", insecureContext: true },
-  
-  { name: "SpeechSynthesisVoice", insecureContext: true },
-  
-  { name: "SpecialPowers", insecureContext: true },
-  
-  { name: "StaticRange", insecureContext: true },
-  
-  { name: "StereoPannerNode", insecureContext: true },
-  
-  { name: "Storage", insecureContext: true },
-  
-  { name: "StorageEvent", insecureContext: true },
-  
-  { name: "StorageManager", fennec: false },
-  
-  { name: "StyleSheet", insecureContext: true },
-  
-  { name: "StyleSheetList", insecureContext: true },
-  
-  { name: "SubtleCrypto" },
-  
-  { name: "SubmitEvent", insecureContext: true },
+  { name: "Response", insecureContext: true },
   
   { name: "SVGAElement", insecureContext: true },
   
   { name: "SVGAngle", insecureContext: true },
+  
+  { name: "SVGAnimateElement", insecureContext: true },
+  
+  { name: "SVGAnimateMotionElement", insecureContext: true },
+  
+  { name: "SVGAnimateTransformElement", insecureContext: true },
   
   { name: "SVGAnimatedAngle", insecureContext: true },
   
@@ -1224,12 +1166,6 @@ let interfaceNamesInGlobalScope = [
   { name: "SVGAnimatedString", insecureContext: true },
   
   { name: "SVGAnimatedTransformList", insecureContext: true },
-  
-  { name: "SVGAnimateElement", insecureContext: true },
-  
-  { name: "SVGAnimateMotionElement", insecureContext: true },
-  
-  { name: "SVGAnimateTransformElement", insecureContext: true },
   
   { name: "SVGAnimationElement", insecureContext: true },
   
@@ -1315,9 +1251,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGLengthList", insecureContext: true },
   
+  { name: "SVGLineElement", insecureContext: true },
+  
   { name: "SVGLinearGradientElement", insecureContext: true },
   
-  { name: "SVGLineElement", insecureContext: true },
+  { name: "SVGMPathElement", insecureContext: true },
   
   { name: "SVGMarkerElement", insecureContext: true },
   
@@ -1326,8 +1264,6 @@ let interfaceNamesInGlobalScope = [
   { name: "SVGMatrix", insecureContext: true },
   
   { name: "SVGMetadataElement", insecureContext: true },
-  
-  { name: "SVGMPathElement", insecureContext: true },
   
   { name: "SVGNumber", insecureContext: true },
   
@@ -1353,6 +1289,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGRectElement", insecureContext: true },
   
+  { name: "SVGSVGElement", insecureContext: true },
+  
   { name: "SVGScriptElement", insecureContext: true },
   
   { name: "SVGSetElement", insecureContext: true },
@@ -1363,11 +1301,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGStyleElement", insecureContext: true },
   
-  { name: "SVGSVGElement", insecureContext: true },
-  
   { name: "SVGSwitchElement", insecureContext: true },
   
   { name: "SVGSymbolElement", insecureContext: true },
+  
+  { name: "SVGTSpanElement", insecureContext: true },
   
   { name: "SVGTextContentElement", insecureContext: true },
   
@@ -1383,13 +1321,75 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGTransformList", insecureContext: true },
   
-  { name: "SVGTSpanElement", insecureContext: true },
-  
   { name: "SVGUnitTypes", insecureContext: true },
   
   { name: "SVGUseElement", insecureContext: true },
   
   { name: "SVGViewElement", insecureContext: true },
+  
+  { name: "Sanitizer", disabled: true },
+  
+  { name: "Scheduler", insecureContext: true, nightly: true },
+  
+  { name: "ScopedCredential", insecureContext: true, disabled: true },
+  
+  { name: "ScopedCredentialInfo", insecureContext: true, disabled: true },
+  
+  { name: "Screen", insecureContext: true },
+  
+  { name: "ScreenOrientation", insecureContext: true },
+  
+  { name: "ScriptProcessorNode", insecureContext: true },
+  
+  { name: "ScrollAreaEvent", insecureContext: true },
+  
+  { name: "SecurityPolicyViolationEvent", insecureContext: true },
+  
+  { name: "Selection", insecureContext: true },
+  
+  "ServiceWorker",
+  
+  "ServiceWorkerContainer",
+  
+  "ServiceWorkerRegistration",
+  
+  { name: "ShadowRoot", insecureContext: true },
+  
+  { name: "SharedWorker", insecureContext: true },
+  
+  { name: "SourceBuffer", insecureContext: true },
+  
+  { name: "SourceBufferList", insecureContext: true },
+  
+  { name: "SpecialPowers", insecureContext: true },
+  
+  { name: "SpeechSynthesis", insecureContext: true },
+  
+  { name: "SpeechSynthesisErrorEvent", insecureContext: true },
+  
+  { name: "SpeechSynthesisEvent", insecureContext: true },
+  
+  { name: "SpeechSynthesisUtterance", insecureContext: true },
+  
+  { name: "SpeechSynthesisVoice", insecureContext: true },
+  
+  { name: "StaticRange", insecureContext: true },
+  
+  { name: "StereoPannerNode", insecureContext: true },
+  
+  { name: "Storage", insecureContext: true },
+  
+  { name: "StorageEvent", insecureContext: true },
+  
+  { name: "StorageManager", fennec: false },
+  
+  { name: "StyleSheet", insecureContext: true },
+  
+  { name: "StyleSheetList", insecureContext: true },
+  
+  { name: "SubmitEvent", insecureContext: true },
+  
+  { name: "SubtleCrypto" },
   
   { name: "TaskController", insecureContext: true, nightly: true },
   
@@ -1453,6 +1453,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "UserProximityEvent", insecureContext: true, disabled: true },
   
+  { name: "VTTCue", insecureContext: true },
+  
+  { name: "VTTRegion", insecureContext: true },
+  
   { name: "ValidityState", insecureContext: true },
   
   { name: "VideoColorSpace", insecureContext: true },
@@ -1469,17 +1473,21 @@ let interfaceNamesInGlobalScope = [
   
   { name: "VisualViewport", insecureContext: true },
   
-  { name: "VTTCue", insecureContext: true },
+  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
   
-  { name: "VTTRegion", insecureContext: true },
+  { name: "WakeLock" },
+  
+  { name: "WakeLockSentinel" },
   
   { name: "WaveShaperNode", insecureContext: true },
+  
+  { name: "WebAuthentication", insecureContext: true, disabled: true },
   
   { name: "WebAuthnAssertion", insecureContext: true, disabled: true },
   
   { name: "WebAuthnAttestation", insecureContext: true, disabled: true },
   
-  { name: "WebAuthentication", insecureContext: true, disabled: true },
+  { name: "WebGL2RenderingContext", insecureContext: true },
   
   { name: "WebGLActiveInfo", insecureContext: true },
   
@@ -1496,8 +1504,6 @@ let interfaceNamesInGlobalScope = [
   { name: "WebGLRenderbuffer", insecureContext: true },
   
   { name: "WebGLRenderingContext", insecureContext: true },
-  
-  { name: "WebGL2RenderingContext", insecureContext: true },
   
   { name: "WebGLSampler", insecureContext: true },
   
@@ -1534,8 +1540,6 @@ let interfaceNamesInGlobalScope = [
   { name: "WheelEvent", insecureContext: true },
   
   { name: "Window", insecureContext: true },
-  
-  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
   
   { name: "Worker", insecureContext: true },
   
@@ -1671,8 +1675,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onabort", insecureContext: true },
   
-  { name: "ondeviceorientationabsolute", insecureContext: true },
-  
   { name: "onafterprint", insecureContext: true },
   
   { name: "onanimationcancel", insecureContext: true },
@@ -1728,6 +1730,8 @@ let interfaceNamesInGlobalScope = [
   { name: "ondevicemotion", insecureContext: true },
   
   { name: "ondeviceorientation", insecureContext: true },
+  
+  { name: "ondeviceorientationabsolute", insecureContext: true },
   
   { name: "ondrag", insecureContext: true },
   
@@ -2026,10 +2030,6 @@ let interfaceNamesInGlobalScope = [
   { name: "updateCommands", insecureContext: true },
   
   { name: "visualViewport", insecureContext: true },
-  
-  { name: "WakeLock" },
-  
-  { name: "WakeLockSentinel" },
   
   { name: "webkitURL", insecureContext: true },
   
