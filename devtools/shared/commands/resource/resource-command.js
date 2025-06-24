@@ -13,6 +13,8 @@ function cacheKey(resourceType, resourceId) {
 }
 
 class ResourceCommand {
+  #destroyed = false;
+
   
 
 
@@ -68,6 +70,10 @@ class ResourceCommand {
       this._notifyWatchers,
       throttleDelay
     );
+  }
+
+  destroy() {
+    this.#destroyed = true;
   }
 
   get watcherFront() {
@@ -650,7 +656,16 @@ class ResourceCommand {
         }
 
         if (watcherFront) {
-          targetFront = await this._getTargetForWatcherResource(resource);
+          try {
+            targetFront = await this._getTargetForWatcherResource(resource);
+          } catch (e) {
+            if (this.#destroyed) {
+              
+              
+              return;
+            }
+            throw e;
+          }
           
           
           
@@ -814,7 +829,17 @@ class ResourceCommand {
       
       
       if (watcherFront) {
-        targetFront = await this._getTargetForWatcherResource(update);
+        try {
+          targetFront = await this._getTargetForWatcherResource(update);
+        } catch (e) {
+          if (this.#destroyed) {
+            
+            
+            return;
+          }
+          throw e;
+        }
+
         
         
         
