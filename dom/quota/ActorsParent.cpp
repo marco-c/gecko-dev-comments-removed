@@ -6349,6 +6349,22 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentClient(
       ClientStorageScope::CreateFromClient(aClientMetadata.mClientType),
        false);
 
+  auto prepareInfo = directoryLock->Prepare();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsPersistentClientInitialized(aClientMetadata) &&
+      !prepareInfo.IsBlockedBy(kUninitClientsAndBroaderCategories)) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
+
   return directoryLock->Acquire()->Then(
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr(this), aClientMetadata,
@@ -6369,6 +6385,20 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentClient(
   MOZ_ASSERT(aClientMetadata.mPersistenceType == PERSISTENCE_TYPE_PERSISTENT);
   MOZ_ASSERT(aDirectoryLock);
   MOZ_ASSERT(aDirectoryLock->Acquired());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsPersistentClientInitialized(aClientMetadata)) {
+    DropDirectoryLock(aDirectoryLock);
+
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
 
   auto initializePersistentClientOp = CreateInitializePersistentClientOp(
       WrapMovingNotNullUnchecked(this), aClientMetadata,
@@ -6431,6 +6461,22 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryClient(
       ClientStorageScope::CreateFromClient(aClientMetadata.mClientType),
        false);
 
+  auto prepareInfo = directoryLock->Prepare();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsTemporaryClientInitialized(aClientMetadata) &&
+      !prepareInfo.IsBlockedBy(kUninitClientsAndBroaderCategories)) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
+
   return directoryLock->Acquire()->Then(
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr(this), aClientMetadata, aCreateIfNonExistent,
@@ -6451,6 +6497,20 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryClient(
   MOZ_ASSERT(aClientMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
   MOZ_ASSERT(aDirectoryLock);
   MOZ_ASSERT(aDirectoryLock->Acquired());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsTemporaryClientInitialized(aClientMetadata)) {
+    DropDirectoryLock(aDirectoryLock);
+
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
 
   auto initializeTemporaryClientOp = CreateInitializeTemporaryClientOp(
       WrapMovingNotNullUnchecked(this), aClientMetadata, aCreateIfNonExistent,
