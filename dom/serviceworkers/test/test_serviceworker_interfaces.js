@@ -32,18 +32,18 @@ let wasmGlobalEntry = {
   disabled: !getJSTestingFunctions().wasmIsSupportedByHardware(),
 };
 let wasmGlobalInterfaces = [
-  { name: "Module", insecureContext: true },
-  { name: "Instance", insecureContext: true },
-  { name: "Memory", insecureContext: true },
-  { name: "Table", insecureContext: true },
-  { name: "Global", insecureContext: true },
   { name: "CompileError", insecureContext: true },
-  { name: "LinkError", insecureContext: true },
-  { name: "RuntimeError", insecureContext: true },
-  { name: "Function", insecureContext: true, nightly: true },
   { name: "Exception", insecureContext: true },
-  { name: "Tag", insecureContext: true },
+  { name: "Function", insecureContext: true, nightly: true },
+  { name: "Global", insecureContext: true },
+  { name: "Instance", insecureContext: true },
   { name: "JSTag", insecureContext: true },
+  { name: "LinkError", insecureContext: true },
+  { name: "Memory", insecureContext: true },
+  { name: "Module", insecureContext: true },
+  { name: "RuntimeError", insecureContext: true },
+  { name: "Table", insecureContext: true },
+  { name: "Tag", insecureContext: true },
   { name: "compile", insecureContext: true },
   { name: "compileStreaming", insecureContext: true },
   { name: "instantiate", insecureContext: true },
@@ -56,12 +56,12 @@ let ecmaGlobals = [
   "AggregateError",
   "Array",
   "ArrayBuffer",
-  "Atomics",
   "AsyncDisposableStack",
-  "Boolean",
+  "Atomics",
   "BigInt",
   "BigInt64Array",
   "BigUint64Array",
+  "Boolean",
   "DataView",
   "Date",
   "DisposableStack",
@@ -99,11 +99,11 @@ let ecmaGlobals = [
   "SyntaxError",
   "Temporal",
   "TypeError",
+  "URIError",
   "Uint16Array",
   "Uint32Array",
   "Uint8Array",
   "Uint8ClampedArray",
-  "URIError",
   "WeakMap",
   "WeakRef",
   "WeakSet",
@@ -154,21 +154,17 @@ let interfaceNamesInGlobalScope = [
   
   "CompressionStream",
   
-  "CountQueuingStrategy",
-  
   "CookieStore",
   
   "CookieStoreManager",
+  
+  "CountQueuingStrategy",
   
   "Crypto",
   
   "CryptoKey",
   
   "CustomEvent",
-  
-  "DecompressionStream",
-  
-  "Directory",
   
   "DOMException",
   
@@ -187,6 +183,10 @@ let interfaceNamesInGlobalScope = [
   "DOMRectReadOnly",
   
   "DOMStringList",
+  
+  "DecompressionStream",
+  
+  "Directory",
   
   "ErrorEvent",
   
@@ -348,9 +348,9 @@ let interfaceNamesInGlobalScope = [
   
   "MessagePort",
   
-  { name: "NetworkInformation", disabled: true },
-  
   "NavigationPreloadManager",
+  
+  { name: "NetworkInformation", disabled: true },
   
   "Notification",
   
@@ -378,9 +378,9 @@ let interfaceNamesInGlobalScope = [
   
   "PerformanceServerTiming",
   
-  "Permissions",
-  
   "PermissionStatus",
+  
+  "Permissions",
   
   "ProgressEvent",
   
@@ -452,19 +452,7 @@ let interfaceNamesInGlobalScope = [
   
   "URLSearchParams",
   
-  "WebSocket",
-  
-  "WebTransport",
-  
-  "WebTransportBidirectionalStream",
-  
-  "WebTransportDatagramDuplexStream",
-  
-  "WebTransportError",
-  
-  "WebTransportReceiveStream",
-  
-  "WebTransportSendStream",
+  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
   
   "WebGL2RenderingContext",
   
@@ -500,9 +488,21 @@ let interfaceNamesInGlobalScope = [
   
   "WebGLVertexArrayObject",
   
-  "WindowClient",
+  "WebSocket",
   
-  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
+  "WebTransport",
+  
+  "WebTransportBidirectionalStream",
+  
+  "WebTransportDatagramDuplexStream",
+  
+  "WebTransportError",
+  
+  "WebTransportReceiveStream",
+  
+  "WebTransportSendStream",
+  
+  "WindowClient",
   
   "WorkerGlobalScope",
   

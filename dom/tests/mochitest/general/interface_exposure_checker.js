@@ -40,6 +40,22 @@ function entryDisabled(
 function createInterfaceMap(data, interfaceGroups) {
   var interfaceMap = {};
 
+  
+  function checkSorted(interfaceGroup) {
+    
+    let getName = entry => (typeof entry === "string" ? entry : entry.name);
+
+    
+    for (let [index, entry] of interfaceGroup.slice(1).entries()) {
+      let x = getName(interfaceGroup[index]);
+      let y = getName(entry);
+      ok(
+        x <= y,
+        `The interface group is not sorted! ${y} must come before ${x}!`
+      );
+    }
+  }
+
   function addInterfaces(interfaces) {
     for (var entry of interfaces) {
       if (typeof entry === "string") {
@@ -54,6 +70,7 @@ function createInterfaceMap(data, interfaceGroups) {
   }
 
   for (let interfaceGroup of interfaceGroups) {
+    checkSorted(interfaceGroup);
     addInterfaces(interfaceGroup);
   }
 

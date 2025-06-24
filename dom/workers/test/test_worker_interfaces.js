@@ -38,18 +38,18 @@ let wasmGlobalEntry = {
   disabled: !getJSTestingFunctions().wasmIsSupportedByHardware(),
 };
 let wasmGlobalInterfaces = [
-  { name: "Module", insecureContext: true },
-  { name: "Instance", insecureContext: true },
-  { name: "Memory", insecureContext: true },
-  { name: "Table", insecureContext: true },
-  { name: "Global", insecureContext: true },
   { name: "CompileError", insecureContext: true },
-  { name: "LinkError", insecureContext: true },
-  { name: "RuntimeError", insecureContext: true },
-  { name: "Function", insecureContext: true, nightly: true },
   { name: "Exception", insecureContext: true },
-  { name: "Tag", insecureContext: true },
+  { name: "Function", insecureContext: true, nightly: true },
+  { name: "Global", insecureContext: true },
+  { name: "Instance", insecureContext: true },
   { name: "JSTag", insecureContext: true },
+  { name: "LinkError", insecureContext: true },
+  { name: "Memory", insecureContext: true },
+  { name: "Module", insecureContext: true },
+  { name: "RuntimeError", insecureContext: true },
+  { name: "Table", insecureContext: true },
+  { name: "Tag", insecureContext: true },
   { name: "compile", insecureContext: true },
   { name: "compileStreaming", insecureContext: true },
   { name: "instantiate", insecureContext: true },
@@ -109,11 +109,11 @@ let ecmaGlobals = [
   { name: "SyntaxError", insecureContext: true },
   { name: "Temporal", insecureContext: true },
   { name: "TypeError", insecureContext: true },
+  { name: "URIError", insecureContext: true },
   { name: "Uint16Array", insecureContext: true },
   { name: "Uint32Array", insecureContext: true },
   { name: "Uint8Array", insecureContext: true },
   { name: "Uint8ClampedArray", insecureContext: true },
-  { name: "URIError", insecureContext: true },
   { name: "WeakMap", insecureContext: true },
   { name: "WeakRef", insecureContext: true },
   { name: "WeakSet", insecureContext: true },
@@ -174,12 +174,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CustomEvent", insecureContext: true },
   
-  { name: "DecompressionStream", insecureContext: true },
-  
-  { name: "DedicatedWorkerGlobalScope", insecureContext: true },
-  
-  { name: "Directory", insecureContext: true },
-  
   { name: "DOMException", insecureContext: true },
   
   { name: "DOMMatrix", insecureContext: true },
@@ -197,6 +191,12 @@ let interfaceNamesInGlobalScope = [
   { name: "DOMRectReadOnly", insecureContext: true },
   
   { name: "DOMStringList", insecureContext: true },
+  
+  { name: "DecompressionStream", insecureContext: true },
+  
+  { name: "DedicatedWorkerGlobalScope", insecureContext: true },
+  
+  { name: "Directory", insecureContext: true },
   
   { name: "EncodedAudioChunk", insecureContext: true, nightlyAndroid: true },
   
@@ -392,9 +392,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "PerformanceServerTiming", insecureContext: false },
   
-  { name: "Permissions", insecureContext: true },
-  
   { name: "PermissionStatus", insecureContext: true },
+  
+  { name: "Permissions", insecureContext: true },
   
   { name: "ProgressEvent", insecureContext: true },
   
@@ -405,6 +405,14 @@ let interfaceNamesInGlobalScope = [
   "PushSubscription",
   
   "PushSubscriptionOptions",
+  
+  { name: "RTCEncodedAudioFrame", insecureContext: true },
+  
+  { name: "RTCEncodedVideoFrame", insecureContext: true },
+  
+  { name: "RTCRtpScriptTransformer", insecureContext: true },
+  
+  { name: "RTCTransformEvent", insecureContext: true },
   
   { name: "ReadableByteStreamController", insecureContext: true },
   
@@ -421,14 +429,6 @@ let interfaceNamesInGlobalScope = [
   { name: "Request", insecureContext: true },
   
   { name: "Response", insecureContext: true },
-  
-  { name: "RTCEncodedAudioFrame", insecureContext: true },
-  
-  { name: "RTCEncodedVideoFrame", insecureContext: true },
-  
-  { name: "RTCRtpScriptTransformer", insecureContext: true },
-  
-  { name: "RTCTransformEvent", insecureContext: true },
   
   { name: "Scheduler", insecureContext: true, nightly: true },
   
@@ -462,12 +462,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TransformStreamDefaultController", insecureContext: true },
   
-  { name: "XMLHttpRequest", insecureContext: true },
-  
-  { name: "XMLHttpRequestEventTarget", insecureContext: true },
-  
-  { name: "XMLHttpRequestUpload", insecureContext: true },
-  
   { name: "URL", insecureContext: true },
   
   { name: "URLSearchParams", insecureContext: true },
@@ -479,6 +473,8 @@ let interfaceNamesInGlobalScope = [
   { name: "VideoEncoder", nightlyAndroid: true },
   
   { name: "VideoFrame", insecureContext: true },
+  
+  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
   
   { name: "WebGL2RenderingContext", insecureContext: true },
   
@@ -528,8 +524,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "WebTransportSendStream", insecureContext: false },
   
-  { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
-  
   { name: "Worker", insecureContext: true },
   
   { name: "WorkerGlobalScope", insecureContext: true },
@@ -543,6 +537,12 @@ let interfaceNamesInGlobalScope = [
   { name: "WritableStreamDefaultController", insecureContext: true },
   
   { name: "WritableStreamDefaultWriter", insecureContext: true },
+  
+  { name: "XMLHttpRequest", insecureContext: true },
+  
+  { name: "XMLHttpRequestEventTarget", insecureContext: true },
+  
+  { name: "XMLHttpRequestUpload", insecureContext: true },
   
   { name: "cancelAnimationFrame", insecureContext: true },
   
