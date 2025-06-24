@@ -1318,7 +1318,7 @@ impl<W: Write> super::Writer<'_, W> {
                         crate::BinaryOperator::Modulo,
                         Some(
                             scalar @ crate::Scalar {
-                                kind: ScalarKind::Sint | ScalarKind::Uint,
+                                kind: ScalarKind::Sint | ScalarKind::Uint | ScalarKind::Float,
                                 ..
                             },
                         ),
@@ -1366,6 +1366,14 @@ impl<W: Write> super::Writer<'_, W> {
                             }
                             ScalarKind::Uint => {
                                 writeln!(self.out, "{level}return lhs % (rhs == 0u ? 1u : rhs);")?
+                            }
+                            
+                            
+                            
+                            
+                            
+                            ScalarKind::Float => {
+                                writeln!(self.out, "{level}return lhs - rhs * trunc(lhs / rhs);")?
                             }
                             _ => unreachable!(),
                         }

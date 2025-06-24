@@ -788,6 +788,8 @@ impl<'a, W: Write> Writer<'a, W> {
         
         for (handle, ty) in self.module.types.iter() {
             if let TypeInner::Struct { ref members, .. } = ty.inner {
+                let struct_name = &self.names[&NameKey::Type(handle)];
+
                 
                 
                 
@@ -795,8 +797,7 @@ impl<'a, W: Write> Writer<'a, W> {
                     .inner
                     .is_dynamically_sized(&self.module.types)
                 {
-                    let name = &self.names[&NameKey::Type(handle)];
-                    write!(self.out, "struct {name} ")?;
+                    write!(self.out, "struct {struct_name} ")?;
                     self.write_struct_body(handle, members)?;
                     writeln!(self.out, ";")?;
                 }
@@ -808,6 +809,7 @@ impl<'a, W: Write> Writer<'a, W> {
             match type_key {
                 &crate::PredeclaredType::ModfResult { size, scalar }
                 | &crate::PredeclaredType::FrexpResult { size, scalar } => {
+                    let struct_name = &self.names[&NameKey::Type(*struct_ty)];
                     let arg_type_name_owner;
                     let arg_type_name = if let Some(size) = size {
                         arg_type_name_owner = format!(
@@ -836,8 +838,6 @@ impl<'a, W: Write> Writer<'a, W> {
                             (FREXP_FUNCTION, "frexp", other_type_name)
                         };
 
-                    let struct_name = &self.names[&NameKey::Type(*struct_ty)];
-
                     writeln!(self.out)?;
                     if !self.options.version.supports_frexp_function()
                         && matches!(type_key, &crate::PredeclaredType::FrexpResult { .. })
@@ -861,7 +861,9 @@ impl<'a, W: Write> Writer<'a, W> {
                         )?;
                     }
                 }
-                &crate::PredeclaredType::AtomicCompareExchangeWeakResult { .. } => {}
+                &crate::PredeclaredType::AtomicCompareExchangeWeakResult(_) => {
+                    
+                }
             }
         }
 
@@ -1480,6 +1482,18 @@ impl<'a, W: Write> Writer<'a, W> {
                     }
                     _ => {}
                 }
+            }
+        }
+
+        for statement in func.body.iter() {
+            match *statement {
+                crate::Statement::Atomic {
+                    fun: crate::AtomicFunction::Exchange { compare: Some(cmp) },
+                    ..
+                } => {
+                    self.need_bake_expressions.insert(cmp);
+                }
+                _ => {}
             }
         }
     }
@@ -2573,33 +2587,50 @@ impl<'a, W: Write> Writer<'a, W> {
                 result,
             } => {
                 write!(self.out, "{level}")?;
-                if let Some(result) = result {
-                    let res_name = Baked(result).to_string();
-                    let res_ty = ctx.resolve_type(result, &self.module.types);
-                    self.write_value_type(res_ty)?;
-                    write!(self.out, " {res_name} = ")?;
-                    self.named_expressions.insert(result, res_name);
-                }
 
-                let fun_str = fun.to_glsl();
-                write!(self.out, "atomic{fun_str}(")?;
-                self.write_expr(pointer, ctx)?;
-                write!(self.out, ", ")?;
-                
                 match *fun {
-                    crate::AtomicFunction::Subtract => {
-                        
-                        write!(self.out, "-")?;
+                    crate::AtomicFunction::Exchange {
+                        compare: Some(compare_expr),
+                    } => {
+                        let result_handle = result.expect("CompareExchange must have a result");
+                        let res_name = Baked(result_handle).to_string();
+                        self.write_type(ctx.info[result_handle].ty.handle().unwrap())?;
+                        write!(self.out, " {res_name};")?;
+                        write!(self.out, " {res_name}.old_value = atomicCompSwap(")?;
+                        self.write_expr(pointer, ctx)?;
+                        write!(self.out, ", ")?;
+                        self.write_expr(compare_expr, ctx)?;
+                        write!(self.out, ", ")?;
+                        self.write_expr(value, ctx)?;
+                        writeln!(self.out, ");")?;
+
+                        write!(
+                            self.out,
+                            "{level}{res_name}.exchanged = ({res_name}.old_value == "
+                        )?;
+                        self.write_expr(compare_expr, ctx)?;
+                        writeln!(self.out, ");")?;
+                        self.named_expressions.insert(result_handle, res_name);
                     }
-                    crate::AtomicFunction::Exchange { compare: Some(_) } => {
-                        return Err(Error::Custom(
-                            "atomic CompareExchange is not implemented".to_string(),
-                        ));
+                    _ => {
+                        if let Some(result) = result {
+                            let res_name = Baked(result).to_string();
+                            self.write_type(ctx.info[result].ty.handle().unwrap())?;
+                            write!(self.out, " {res_name} = ")?;
+                            self.named_expressions.insert(result, res_name);
+                        }
+                        let fun_str = fun.to_glsl();
+                        write!(self.out, "atomic{fun_str}(")?;
+                        self.write_expr(pointer, ctx)?;
+                        write!(self.out, ", ")?;
+                        if let crate::AtomicFunction::Subtract = *fun {
+                            
+                            write!(self.out, "-")?;
+                        }
+                        self.write_expr(value, ctx)?;
+                        writeln!(self.out, ");")?;
                     }
-                    _ => {}
                 }
-                self.write_expr(value, ctx)?;
-                writeln!(self.out, ");")?;
             }
             
             Statement::ImageAtomic {

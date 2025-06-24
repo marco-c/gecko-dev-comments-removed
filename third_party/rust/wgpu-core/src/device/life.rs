@@ -8,7 +8,8 @@ use crate::{
         queue::{EncoderInFlight, SubmittedWorkDoneClosure, TempResource},
         DeviceError,
     },
-    resource::{Buffer, Texture, Trackable},
+    ray_tracing::BlasCompactReadyPendingClosure,
+    resource::{Blas, Buffer, Texture, Trackable},
     snatch::SnatchGuard,
     SubmissionIndex,
 };
@@ -31,6 +32,9 @@ struct ActiveSubmission {
 
     
     mapped: Vec<Arc<Buffer>>,
+
+    
+    compact_read_back: Vec<Arc<Blas>>,
 
     
     
@@ -101,6 +105,23 @@ impl ActiveSubmission {
 
         false
     }
+
+    
+    
+    
+    pub fn contains_blas(&self, blas: &Blas) -> bool {
+        for encoder in &self.encoders {
+            if encoder.trackers.blas_s.contains(blas) {
+                return true;
+            }
+
+            if encoder.pending_blas_s.contains_key(&blas.tracker_index()) {
+                return true;
+            }
+        }
+
+        false
+    }
 }
 
 #[derive(Clone, Debug, Error)]
@@ -161,6 +182,10 @@ pub(crate) struct LifetimeTracker {
 
     
     
+    ready_to_compact: Vec<Arc<Blas>>,
+
+    
+    
     
     
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
@@ -171,6 +196,7 @@ impl LifetimeTracker {
         Self {
             active: Vec::new(),
             ready_to_map: Vec::new(),
+            ready_to_compact: Vec::new(),
             work_done_closures: SmallVec::new(),
         }
     }
@@ -185,6 +211,7 @@ impl LifetimeTracker {
         self.active.push(ActiveSubmission {
             index,
             mapped: Vec::new(),
+            compact_read_back: Vec::new(),
             encoders,
             work_done_closures: SmallVec::new(),
         });
@@ -203,6 +230,19 @@ impl LifetimeTracker {
         submission
             .map_or(&mut self.ready_to_map, |a| &mut a.mapped)
             .push(buffer.clone());
+
+        maybe_submission_index
+    }
+
+    pub(crate) fn prepare_compact(&mut self, blas: &Arc<Blas>) -> Option<SubmissionIndex> {
+        
+        let submission = self.active.iter_mut().rev().find(|a| a.contains_blas(blas));
+
+        let maybe_submission_index = submission.as_ref().map(|s| s.index);
+
+        submission
+            .map_or(&mut self.ready_to_compact, |a| &mut a.compact_read_back)
+            .push(blas.clone());
 
         maybe_submission_index
     }
@@ -270,6 +310,7 @@ impl LifetimeTracker {
         let mut work_done_closures: SmallVec<_> = self.work_done_closures.drain(..).collect();
         for a in self.active.drain(..done_count) {
             self.ready_to_map.extend(a.mapped);
+            self.ready_to_compact.extend(a.compact_read_back);
             for encoder in a.encoders {
                 
                 
@@ -337,6 +378,27 @@ impl LifetimeTracker {
 
         for buffer in self.ready_to_map.drain(..) {
             match buffer.map(snatch_guard) {
+                Some(cb) => pending_callbacks.push(cb),
+                None => continue,
+            }
+        }
+        pending_callbacks
+    }
+    
+    
+    
+    
+    
+    #[must_use]
+    pub(crate) fn handle_compact_read_back(&mut self) -> Vec<BlasCompactReadyPendingClosure> {
+        if self.ready_to_compact.is_empty() {
+            return Vec::new();
+        }
+        let mut pending_callbacks: Vec<BlasCompactReadyPendingClosure> =
+            Vec::with_capacity(self.ready_to_compact.len());
+
+        for blas in self.ready_to_compact.drain(..) {
+            match blas.read_back_compact_size() {
                 Some(cb) => pending_callbacks.push(cb),
                 None => continue,
             }

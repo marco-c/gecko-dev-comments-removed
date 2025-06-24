@@ -221,7 +221,7 @@
 
 mod block;
 
-use alloc::{string::String, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -2390,6 +2390,28 @@ pub enum RayQueryIntersection {
 
 
 
+#[derive(Debug, Default, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct DocComments {
+    pub types: FastIndexMap<Handle<Type>, Vec<String>>,
+    
+    
+    
+    pub struct_members: FastIndexMap<(Handle<Type>, usize), Vec<String>>,
+    pub entry_points: FastIndexMap<usize, Vec<String>>,
+    pub functions: FastIndexMap<Handle<Function>, Vec<String>>,
+    pub constants: FastIndexMap<Handle<Constant>, Vec<String>>,
+    pub global_variables: FastIndexMap<Handle<GlobalVariable>, Vec<String>>,
+    
+    pub module: Vec<String>,
+}
+
+
+
+
+
 
 
 
@@ -2471,4 +2493,6 @@ pub struct Module {
     
     
     pub diagnostic_filter_leaf: Option<Handle<DiagnosticFilterNode>>,
+    
+    pub doc_comments: Option<Box<DocComments>>,
 }

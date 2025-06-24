@@ -275,6 +275,11 @@ pub mod api {
 }
 
 mod dynamic;
+#[cfg(feature = "validation_canary")]
+mod validation_canary;
+
+#[cfg(feature = "validation_canary")]
+pub use validation_canary::{ValidationCanary, VALIDATION_CANARY};
 
 pub(crate) use dynamic::impl_dyn_resource;
 pub use dynamic::{
@@ -298,7 +303,6 @@ use core::{
 };
 
 use bitflags::bitflags;
-use parking_lot::Mutex;
 use thiserror::Error;
 use wgt::WasmNotSendSync;
 
@@ -2373,42 +2377,6 @@ pub struct RenderPassDescriptor<'a, Q: DynQuerySet + ?Sized, T: DynTextureView +
 pub struct ComputePassDescriptor<'a, Q: DynQuerySet + ?Sized> {
     pub label: Label<'a>,
     pub timestamp_writes: Option<PassTimestampWrites<'a, Q>>,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub static VALIDATION_CANARY: ValidationCanary = ValidationCanary {
-    inner: Mutex::new(Vec::new()),
-};
-
-
-pub struct ValidationCanary {
-    inner: Mutex<Vec<String>>,
-}
-
-impl ValidationCanary {
-    #[allow(dead_code)] 
-    fn add(&self, msg: String) {
-        self.inner.lock().push(msg);
-    }
-
-    
-    
-    pub fn get_and_reset(&self) -> Vec<String> {
-        self.inner.lock().drain(..).collect()
-    }
 }
 
 #[test]

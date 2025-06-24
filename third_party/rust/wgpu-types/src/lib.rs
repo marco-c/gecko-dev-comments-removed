@@ -4974,6 +4974,36 @@ impl VertexFormat {
             Self::Float64x4 => 32,
         }
     }
+
+    
+    
+    
+    #[must_use]
+    pub const fn min_acceleration_structure_vertex_stride(&self) -> u64 {
+        match self {
+            Self::Float16x2 | Self::Snorm16x2 => 4,
+            Self::Float32x3 => 12,
+            Self::Float32x2 => 8,
+            
+            
+            
+            
+            
+            
+            Self::Float16x4 | Self::Snorm16x4 => 6,
+            _ => unreachable!(),
+        }
+    }
+
+    
+    #[must_use]
+    pub const fn acceleration_structure_stride_alignment(&self) -> u64 {
+        match self {
+            Self::Float16x4 | Self::Float16x2 | Self::Snorm16x4 | Self::Snorm16x2 => 2,
+            Self::Float32x2 | Self::Float32x3 => 4,
+            _ => unreachable!(),
+        }
+    }
 }
 
 bitflags::bitflags! {
@@ -4996,7 +5026,7 @@ bitflags::bitflags! {
         /// may have is COPY_DST.
         const MAP_READ = 1 << 0;
         /// Allow a buffer to be mapped for writing using [`Buffer::map_async`] + [`Buffer::get_mapped_range_mut`].
-        /// This does not include creating a buffer with `mapped_at_creation` set.
+        /// This does not include creating a buffer with [`BufferDescriptor::mapped_at_creation`] set.
         ///
         /// If [`Features::MAPPABLE_PRIMARY_BUFFERS`] feature isn't enabled, the only other usage a buffer
         /// may have is COPY_SRC.
@@ -6377,13 +6407,6 @@ pub struct TexelCopyBufferLayout {
 }
 
 
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `TexelCopyBufferLayout`, and will be removed in 25.0.0."
-)]
-pub type ImageDataLayout = TexelCopyBufferLayout;
-
-
 
 
 
@@ -6836,13 +6859,6 @@ pub struct TexelCopyBufferInfo<B> {
 }
 
 
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `TexelCopyBufferInfo`, and will be removed in 25.0.0."
-)]
-pub type ImageCopyBuffer<B> = TexelCopyBufferInfo<B>;
-
-
 
 
 
@@ -6884,17 +6900,10 @@ impl<T> TexelCopyTextureInfo<T> {
 }
 
 
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `TexelCopyTextureInfo`, and will be removed in 25.0.0."
-)]
-pub type ImageCopyTexture<T> = TexelCopyTextureInfo<T>;
 
 
 
-
-
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "web"))]
 #[derive(Clone, Debug)]
 pub struct CopyExternalImageSourceInfo {
     
@@ -6914,18 +6923,10 @@ pub struct CopyExternalImageSourceInfo {
 }
 
 
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `CopyExternalImageSourceInfo`, and will be removed in 25.0.0."
-)]
-#[cfg(target_arch = "wasm32")]
-pub type ImageCopyExternalImage = CopyExternalImageSourceInfo;
 
 
 
-
-
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "web"))]
 #[derive(Clone, Debug)]
 pub enum ExternalImageSource {
     
@@ -6947,7 +6948,7 @@ pub enum ExternalImageSource {
     VideoFrame(web_sys::VideoFrame),
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "web"))]
 impl ExternalImageSource {
     
     pub fn width(&self) -> u32 {
@@ -6978,7 +6979,7 @@ impl ExternalImageSource {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "web"))]
 impl core::ops::Deref for ExternalImageSource {
     type Target = js_sys::Object;
 
@@ -6998,12 +6999,14 @@ impl core::ops::Deref for ExternalImageSource {
 
 #[cfg(all(
     target_arch = "wasm32",
+    feature = "web",
     feature = "fragile-send-sync-non-atomic-wasm",
     not(target_feature = "atomics")
 ))]
 unsafe impl Send for ExternalImageSource {}
 #[cfg(all(
     target_arch = "wasm32",
+    feature = "web",
     feature = "fragile-send-sync-non-atomic-wasm",
     not(target_feature = "atomics")
 ))]
@@ -7056,13 +7059,6 @@ impl<T> CopyExternalImageDestInfo<T> {
         }
     }
 }
-
-
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `CopyExternalImageDestInfo`, and will be removed in 25.0.0."
-)]
-pub type ImageCopyTextureTagged<T> = CopyExternalImageDestInfo<T>;
 
 
 #[repr(C)]
@@ -7533,8 +7529,8 @@ bitflags::bitflags!(
         /// Allow for incremental updates (no change in size), currently this is unimplemented
         /// and will build as normal (this is fine, update vs build should be unnoticeable)
         const ALLOW_UPDATE = 1 << 0;
-        /// Allow the acceleration structure to be compacted in a copy operation, the function
-        /// to compact is not currently implemented.
+        /// Allow the acceleration structure to be compacted in a copy operation
+        /// (`Blas::prepare_for_compaction`, `CommandEncoder::compact_blas`).
         const ALLOW_COMPACTION = 1 << 1;
         /// Optimize for fast ray tracing performance, recommended if the geometry is unlikely
         /// to change (e.g. in a game: non-interactive scene geometry)
