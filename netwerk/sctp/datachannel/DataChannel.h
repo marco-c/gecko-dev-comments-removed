@@ -221,7 +221,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                           const uint16_t aRemotePort);
   void TransportStateChange(const std::string& aTransportId,
                             TransportLayer::State aState);
-  void CompleteConnect();
+  void CompleteConnect() MOZ_REQUIRES(mLock);
   void SetSignals(const std::string& aTransportId);
 
   [[nodiscard]] already_AddRefed<DataChannel> Open(
@@ -415,8 +415,6 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   
   bool mMaxMessageSizeSet = false;
   
-  Maybe<bool> mAllocateEven;
-  
   uint64_t mMaxMessageSize = 0;
   
   
@@ -452,7 +450,12 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   MediaEventListener mPacketReceivedListener;
   MediaEventListener mStateChangeListener;
   nsCOMPtr<nsIEventTarget> mSTS;
-  uint16_t mLocalPort = 0;  
+
+  
+  Maybe<bool> mAllocateEven;
+  
+  
+  uint16_t mLocalPort = 0;
   uint16_t mRemotePort = 0;
 
   nsCOMPtr<nsIThread> mInternalIOThread = nullptr;
