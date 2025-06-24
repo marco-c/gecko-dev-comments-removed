@@ -101,7 +101,7 @@ add_task(
     
     
     
-    await manager.unenroll(experiment.slug, { reason: "recipe-not-seen" });
+    manager.unenroll(experiment.slug, { reason: "recipe-not-seen" });
 
     Glean.nimbusTargetingEnvironment.targetingContextValue.set(
       "rollout-active-3"
