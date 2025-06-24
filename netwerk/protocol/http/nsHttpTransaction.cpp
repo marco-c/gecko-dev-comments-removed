@@ -490,6 +490,7 @@ void nsHttpTransaction::SetConnection(nsAHttpConnection* conn) {
 }
 
 void nsHttpTransaction::OnActivated() {
+  nsresult rv;
   MOZ_ASSERT(OnSocketThread());
 
   if (mActivated) {
@@ -516,7 +517,13 @@ void nsHttpTransaction::OnActivated() {
     
     
     
-    Unused << mRequestHead->SetHeader(nsHttp::TE, "trailers"_ns);
+    nsAutoCString teHeader;
+    rv = mRequestHead->GetHeader(nsHttp::TE, teHeader);
+    if (NS_FAILED(rv) || !teHeader.Equals("moz_no_te_trailers"_ns)) {
+      
+      
+      Unused << mRequestHead->SetHeader(nsHttp::TE, "trailers"_ns);
+    }
   }
 
   mActivated = true;

@@ -95,9 +95,20 @@ nsresult Http2Stream::GenerateHeaders(nsCString& aCompressedData,
   head->Method(method);
   head->Path(path);
 
+  bool mayAddTEHeader = true;
+  nsAutoCString teHeader;
+  rv = head->GetHeader(nsHttp::TE, teHeader);
+  if (NS_SUCCEEDED(rv) && teHeader.Equals("moz_no_te_trailers"_ns)) {
+    
+    
+    
+    
+    mayAddTEHeader = false;
+  }
+
   rv = session->Compressor()->EncodeHeaderBlock(
       mFlatHttpRequestHeaders, method, path, authorityHeader, scheme,
-      EmptyCString(), false, aCompressedData);
+      EmptyCString(), false, aCompressedData, mayAddTEHeader);
   NS_ENSURE_SUCCESS(rv, rv);
 
   int64_t clVal = session->Compressor()->GetParsedContentLength();
