@@ -31,6 +31,9 @@ struct _VADRMPRIMESurfaceDescriptor;
 typedef struct _VADRMPRIMESurfaceDescriptor VADRMPRIMESurfaceDescriptor;
 
 namespace mozilla {
+namespace layers {
+class BufferRecycleBin;
+}
 
 class ImageBufferWrapper;
 
@@ -59,7 +62,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   FFmpegVideoDecoder(FFmpegLibWrapper* aLib, const VideoInfo& aConfig,
                      KnowsCompositor* aAllocator,
                      ImageContainer* aImageContainer, bool aLowLatency,
-                     bool aDisableHardwareDecoding,
+                     bool aDisableHardwareDecoding, bool a8BitOutput,
                      Maybe<TrackingId> aTrackingId);
 
   ~FFmpegVideoDecoder();
@@ -274,6 +277,11 @@ class FFmpegVideoDecoder<LIBAV_VER>
   
   nsTHashSet<RefPtr<ImageBufferWrapper>> mAllocatedImages;
 #endif
+
+  
+  
+  Atomic<bool> m8BitOutput;
+  RefPtr<layers::BufferRecycleBin> m8BitRecycleBin;
 };
 
 #if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
