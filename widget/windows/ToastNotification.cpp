@@ -476,7 +476,7 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
 
   
   if (RefPtr<ToastNotificationHandler> oldHandler = mActiveHandlers.Get(name)) {
-    oldHandler->HandleCloseFromBrowser();
+    oldHandler->UnregisterHandler();
   }
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
@@ -497,7 +497,7 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
             ("Failed to init alert, removing '%s'",
              NS_ConvertUTF16toUTF8(name).get()));
     mActiveHandlers.Remove(name);
-    handler->HandleCloseFromBrowser();
+    handler->UnregisterHandler();
     return rv;
   }
 
@@ -765,12 +765,10 @@ ToastNotification::CloseAlert(const nsAString& aAlertName,
     
     
     handler->HideAlert();
-    handler->HandleCloseFromBrowser();
-  } else {
-    handler->UnregisterHandler();
   }
 
   mActiveHandlers.Remove(aAlertName);
+  handler->UnregisterHandler();
 
   return NS_OK;
 }
