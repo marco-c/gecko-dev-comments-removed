@@ -3139,6 +3139,8 @@ pref("devtools.responsive.userAgent", "");
 
 pref("devtools.responsive.showUserAgentInput", true);
 
+pref("devtools.responsive.dynamicToolbar.enabled", false);
+
 
 #ifdef MOZILLA_OFFICIAL
   pref("devtools.aboutdebugging.local-tab-debugging", false);
