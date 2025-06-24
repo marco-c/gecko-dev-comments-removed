@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
 use app_units::Au;
