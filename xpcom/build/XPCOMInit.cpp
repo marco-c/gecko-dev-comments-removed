@@ -481,6 +481,11 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   nsDirectoryService::gService->RegisterCategoryProviders();
 
   
+  
+  
+  profiler_lookup_async_signal_dump_directory();
+
+  
   mozilla::SharedThreadPool::InitStatics();
 
   mozilla::scache::StartupCache::GetSingleton();
