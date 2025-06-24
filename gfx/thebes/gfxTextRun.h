@@ -1368,13 +1368,13 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   RefPtr<nsAtom> mLanguage;
 
-  gfxFloat mUnderlineOffset;
-  gfxFloat mHyphenWidth;
+  gfxFloat mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
+  gfxFloat mHyphenWidth = -1.0;  
   gfxFloat mDevToCssSize;
 
   RefPtr<gfxUserFontSet> mUserFontSet;
-  uint64_t mCurrGeneration;  
-                             
+  uint64_t mCurrGeneration = 0;  
+                                 
 
   gfxTextPerfMetrics* mTextPerf;
 
@@ -1385,16 +1385,17 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   FontFamily mLastPrefFamily;
   RefPtr<gfxFont> mLastPrefFont;
-  eFontPrefLang mLastPrefLang;  
+  eFontPrefLang mLastPrefLang = eFontPrefLang_Western;  
+                                                        
   eFontPrefLang mPageLang;
   bool mLastPrefFirstFont;  
                             
 
-  bool mSkipDrawing;  
-                      
-                      
+  bool mSkipDrawing = false;  
+                              
+                              
 
-  bool mExplicitLanguage;  
+  bool mExplicitLanguage = false;  
 
   bool mResolvedFonts = false;  
 
