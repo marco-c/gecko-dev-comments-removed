@@ -24,7 +24,8 @@ class nsProgressFrame final : public nsContainerFrame,
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsProgressFrame)
 
-  explicit nsProgressFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
+  enum class Type : uint8_t { Progress, Meter };
+  nsProgressFrame(ComputedStyle*, nsPresContext*, Type);
   virtual ~nsProgressFrame();
 
   void Destroy(DestroyContext&) override;
@@ -52,12 +53,10 @@ class nsProgressFrame final : public nsContainerFrame,
   nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                          mozilla::IntrinsicISizeType aType) override;
 
-  
-
-
   bool ShouldUseNativeStyle() const;
 
  protected:
+  mozilla::LogicalSize DefaultSize() const;
   
   void ReflowChildFrame(nsIFrame* aChild, nsPresContext* aPresContext,
                         const ReflowInput& aReflowInput,
@@ -69,6 +68,9 @@ class nsProgressFrame final : public nsContainerFrame,
 
 
   nsCOMPtr<Element> mBarDiv;
+
+  
+  const Type mType;
 };
 
 #endif

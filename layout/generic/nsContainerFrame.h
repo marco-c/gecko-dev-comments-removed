@@ -852,7 +852,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
   
   
-  bool ResolvedOrientationIsVertical();
+  bool ResolvedOrientationIsVertical() const;
 
   
 
