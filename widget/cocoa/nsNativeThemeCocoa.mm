@@ -1835,125 +1835,110 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo,
 
   const Widget widget = aWidgetInfo.Widget();
 
+  AutoRestoreTransform autoRestoreTransform(&aDrawTarget);
+  gfx::Rect widgetRect = aWidgetRect;
+  gfx::Rect dirtyRect = aDirtyRect;
+
+  dirtyRect.Scale(1.0f / aScale);
+  widgetRect.Scale(1.0f / aScale);
+  aDrawTarget.SetTransform(aDrawTarget.GetTransform().PreScale(aScale, aScale));
+
   
+  CGRect macRect = CGRectMake(widgetRect.X(), widgetRect.Y(),
+                              widgetRect.Width(), widgetRect.Height());
+
+  gfxQuartzNativeDrawing nativeDrawing(aDrawTarget, dirtyRect);
+
+  CGContextRef cgContext = nativeDrawing.BeginNativeDrawing();
+  if (cgContext == nullptr) {
+    
+    
+    
+    
+    return;
+  }
+
+  
+  
+  CGContextSetBaseCTM(cgContext, CGAffineTransformMakeScale(aScale, aScale));
+
   switch (widget) {
-    case Widget::eColorFill: {
-      sRGBColor color = aWidgetInfo.Params<sRGBColor>();
-      aDrawTarget.FillRect(aWidgetRect, ColorPattern(ToDeviceColor(color)));
+    case Widget::eCheckbox: {
+      CheckboxOrRadioParams params =
+          aWidgetInfo.Params<CheckboxOrRadioParams>();
+      DrawCheckboxOrRadio(cgContext, true, macRect, params);
       break;
     }
-    default: {
-      AutoRestoreTransform autoRestoreTransform(&aDrawTarget);
-      gfx::Rect widgetRect = aWidgetRect;
-      gfx::Rect dirtyRect = aDirtyRect;
-
-      dirtyRect.Scale(1.0f / aScale);
-      widgetRect.Scale(1.0f / aScale);
-      aDrawTarget.SetTransform(
-          aDrawTarget.GetTransform().PreScale(aScale, aScale));
-
+    case Widget::eRadio: {
+      CheckboxOrRadioParams params =
+          aWidgetInfo.Params<CheckboxOrRadioParams>();
+      DrawCheckboxOrRadio(cgContext, false, macRect, params);
+      break;
+    }
+    case Widget::eButton: {
+      ButtonParams params = aWidgetInfo.Params<ButtonParams>();
+      DrawButton(cgContext, macRect, params);
+      break;
+    }
+    case Widget::eDropdown: {
+      DropdownParams params = aWidgetInfo.Params<DropdownParams>();
+      DrawDropdown(cgContext, macRect, params);
+      break;
+    }
+    case Widget::eGroupBox: {
+      HIThemeGroupBoxDrawInfo gdi = {0, kThemeStateActive,
+                                     kHIThemeGroupBoxKindPrimary};
+      HIThemeDrawGroupBox(&macRect, &gdi, cgContext, HITHEME_ORIENTATION);
+      break;
+    }
+    case Widget::eTextField: {
+      TextFieldParams params = aWidgetInfo.Params<TextFieldParams>();
+      DrawTextField(cgContext, macRect, params);
+      break;
+    }
+    case Widget::eProgressBar: {
+      ProgressParams params = aWidgetInfo.Params<ProgressParams>();
+      DrawProgress(cgContext, macRect, params);
+      break;
+    }
+    case Widget::eMeter: {
+      MeterParams params = aWidgetInfo.Params<MeterParams>();
+      DrawMeter(cgContext, macRect, params);
+      break;
+    }
+    case Widget::eScale: {
+      ScaleParams params = aWidgetInfo.Params<ScaleParams>();
+      DrawScale(cgContext, macRect, params);
+      break;
+    }
+    case Widget::eMultilineTextField: {
+      bool isFocused = aWidgetInfo.Params<bool>();
+      DrawMultilineTextField(cgContext, macRect, isFocused);
+      break;
+    }
+    case Widget::eListBox: {
       
-      CGRect macRect = CGRectMake(widgetRect.X(), widgetRect.Y(),
-                                  widgetRect.Width(), widgetRect.Height());
-
-      gfxQuartzNativeDrawing nativeDrawing(aDrawTarget, dirtyRect);
-
-      CGContextRef cgContext = nativeDrawing.BeginNativeDrawing();
-      if (cgContext == nullptr) {
-        
-        
-        
-        
-        return;
-      }
-
+      CGContextSetFillColorWithColor(
+          cgContext, [NSColor.controlBackgroundColor CGColor]);
+      CGContextFillRect(cgContext, macRect);
       
       
-      CGContextSetBaseCTM(cgContext,
-                          CGAffineTransformMakeScale(aScale, aScale));
-
-      switch (widget) {
-        case Widget::eColorFill:
-          MOZ_CRASH("already handled in outer switch");
-          break;
-        case Widget::eCheckbox: {
-          CheckboxOrRadioParams params =
-              aWidgetInfo.Params<CheckboxOrRadioParams>();
-          DrawCheckboxOrRadio(cgContext, true, macRect, params);
-          break;
-        }
-        case Widget::eRadio: {
-          CheckboxOrRadioParams params =
-              aWidgetInfo.Params<CheckboxOrRadioParams>();
-          DrawCheckboxOrRadio(cgContext, false, macRect, params);
-          break;
-        }
-        case Widget::eButton: {
-          ButtonParams params = aWidgetInfo.Params<ButtonParams>();
-          DrawButton(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eDropdown: {
-          DropdownParams params = aWidgetInfo.Params<DropdownParams>();
-          DrawDropdown(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eGroupBox: {
-          HIThemeGroupBoxDrawInfo gdi = {0, kThemeStateActive,
-                                         kHIThemeGroupBoxKindPrimary};
-          HIThemeDrawGroupBox(&macRect, &gdi, cgContext, HITHEME_ORIENTATION);
-          break;
-        }
-        case Widget::eTextField: {
-          TextFieldParams params = aWidgetInfo.Params<TextFieldParams>();
-          DrawTextField(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eProgressBar: {
-          ProgressParams params = aWidgetInfo.Params<ProgressParams>();
-          DrawProgress(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eMeter: {
-          MeterParams params = aWidgetInfo.Params<MeterParams>();
-          DrawMeter(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eScale: {
-          ScaleParams params = aWidgetInfo.Params<ScaleParams>();
-          DrawScale(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eMultilineTextField: {
-          bool isFocused = aWidgetInfo.Params<bool>();
-          DrawMultilineTextField(cgContext, macRect, isFocused);
-          break;
-        }
-        case Widget::eListBox: {
-          
-          CGContextSetFillColorWithColor(
-              cgContext, [NSColor.controlBackgroundColor CGColor]);
-          CGContextFillRect(cgContext, macRect);
-          
-          
-          
-          
-          RenderWithCoreUI(
-              macRect, cgContext, @{
-                @"widget" : @"kCUIWidgetScrollViewFrame",
-                @"kCUIIsFlippedKey" : @YES,
-                @"kCUIVariantMetal" : @NO,
-              });
-          break;
-        }
-      }
-
       
-      CGContextSetBaseCTM(cgContext, CGAffineTransformIdentity);
-
-      nativeDrawing.EndNativeDrawing();
+      
+      RenderWithCoreUI(
+          macRect, cgContext, @{
+            @"widget" : @"kCUIWidgetScrollViewFrame",
+            @"kCUIIsFlippedKey" : @YES,
+            @"kCUIVariantMetal" : @NO,
+          });
+      break;
     }
   }
+
+  
+  CGContextSetBaseCTM(cgContext, CGAffineTransformIdentity);
+
+  nativeDrawing.EndNativeDrawing();
 }
 
 bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
