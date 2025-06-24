@@ -1,185 +1,155 @@
-from __future__ import absolute_import
+from __future__ import annotations
 
+import hashlib
 import hmac
 import os
+import socket
 import sys
+import typing
 import warnings
-from binascii import hexlify, unhexlify
-from hashlib import md5, sha1, sha256
+from binascii import unhexlify
 
-from ..exceptions import (
-    InsecurePlatformWarning,
-    ProxySchemeUnsupported,
-    SNIMissingWarning,
-    SSLError,
-)
-from ..packages import six
-from .url import BRACELESS_IPV6_ADDRZ_RE, IPV4_RE
+from ..exceptions import ProxySchemeUnsupported, SSLError
+from .url import _BRACELESS_IPV6_ADDRZ_RE, _IPV4_RE
 
 SSLContext = None
 SSLTransport = None
-HAS_SNI = False
+HAS_NEVER_CHECK_COMMON_NAME = False
 IS_PYOPENSSL = False
-IS_SECURETRANSPORT = False
 ALPN_PROTOCOLS = ["http/1.1"]
 
+_TYPE_VERSION_INFO = tuple[int, int, int, str, int]
 
-HASHFUNC_MAP = {32: md5, 40: sha1, 64: sha256}
+
+HASHFUNC_MAP = {
+    length: getattr(hashlib, algorithm, None)
+    for length, algorithm in ((32, "md5"), (40, "sha1"), (64, "sha256"))
+}
 
 
-def _const_compare_digest_backport(a, b):
+def _is_bpo_43522_fixed(
+    implementation_name: str,
+    version_info: _TYPE_VERSION_INFO,
+    pypy_version_info: _TYPE_VERSION_INFO | None,
+) -> bool:
+    """Return True for CPython 3.9.3+ or 3.10+ and PyPy 7.3.8+ where
+    setting SSLContext.hostname_checks_common_name to False works.
+
+    Outside of CPython and PyPy we don't know which implementations work
+    or not so we conservatively use our hostname matching as we know that works
+    on all implementations.
+
+    https://github.com/urllib3/urllib3/issues/2192#issuecomment-821832963
+    https://foss.heptapod.net/pypy/pypy/-/issues/3539
     """
-    Compare two digests of equal length in constant time.
+    if implementation_name == "pypy":
+        
+        return pypy_version_info >= (7, 3, 8)  
+    elif implementation_name == "cpython":
+        major_minor = version_info[:2]
+        micro = version_info[2]
+        return (major_minor == (3, 9) and micro >= 3) or major_minor >= (3, 10)
+    else:  
+        return False
 
-    The digests must be of type str/bytes.
-    Returns True if the digests match, and False otherwise.
-    """
-    result = abs(len(a) - len(b))
-    for left, right in zip(bytearray(a), bytearray(b)):
-        result |= left ^ right
-    return result == 0
+
+def _is_has_never_check_common_name_reliable(
+    openssl_version: str,
+    openssl_version_number: int,
+    implementation_name: str,
+    version_info: _TYPE_VERSION_INFO,
+    pypy_version_info: _TYPE_VERSION_INFO | None,
+) -> bool:
+    
+    
+    is_openssl = openssl_version.startswith("OpenSSL ")
+    
+    
+    
+    
+    is_openssl_issue_14579_fixed = openssl_version_number >= 0x101010CF
+
+    return is_openssl and (
+        is_openssl_issue_14579_fixed
+        or _is_bpo_43522_fixed(implementation_name, version_info, pypy_version_info)
+    )
 
 
-_const_compare_digest = getattr(hmac, "compare_digest", _const_compare_digest_backport)
+if typing.TYPE_CHECKING:
+    from ssl import VerifyMode
+    from typing import TypedDict
+
+    from .ssltransport import SSLTransport as SSLTransportType
+
+    class _TYPE_PEER_CERT_RET_DICT(TypedDict, total=False):
+        subjectAltName: tuple[tuple[str, str], ...]
+        subject: tuple[tuple[tuple[str, str], ...], ...]
+        serialNumber: str
+
+
+
+_SSL_VERSION_TO_TLS_VERSION: dict[int, int] = {}
 
 try:  
     import ssl
-    from ssl import CERT_REQUIRED, wrap_socket
-except ImportError:
-    pass
-
-try:
-    from ssl import HAS_SNI  
-except ImportError:
-    pass
-
-try:
-    from .ssltransport import SSLTransport
-except ImportError:
-    pass
-
-
-try:  
-    from ssl import PROTOCOL_TLS
+    from ssl import (  
+        CERT_REQUIRED,
+        HAS_NEVER_CHECK_COMMON_NAME,
+        OP_NO_COMPRESSION,
+        OP_NO_TICKET,
+        OPENSSL_VERSION,
+        OPENSSL_VERSION_NUMBER,
+        PROTOCOL_TLS,
+        PROTOCOL_TLS_CLIENT,
+        VERIFY_X509_STRICT,
+        OP_NO_SSLv2,
+        OP_NO_SSLv3,
+        SSLContext,
+        TLSVersion,
+    )
 
     PROTOCOL_SSLv23 = PROTOCOL_TLS
-except ImportError:
-    try:
-        from ssl import PROTOCOL_SSLv23 as PROTOCOL_TLS
 
-        PROTOCOL_SSLv23 = PROTOCOL_TLS
-    except ImportError:
-        PROTOCOL_SSLv23 = PROTOCOL_TLS = 2
+    
+    VERIFY_X509_PARTIAL_CHAIN = getattr(ssl, "VERIFY_X509_PARTIAL_CHAIN", 0x80000)
 
-try:
-    from ssl import PROTOCOL_TLS_CLIENT
-except ImportError:
-    PROTOCOL_TLS_CLIENT = PROTOCOL_TLS
+    
+    
+    if HAS_NEVER_CHECK_COMMON_NAME and not _is_has_never_check_common_name_reliable(
+        OPENSSL_VERSION,
+        OPENSSL_VERSION_NUMBER,
+        sys.implementation.name,
+        sys.version_info,
+        sys.pypy_version_info if sys.implementation.name == "pypy" else None,  
+    ):  
+        HAS_NEVER_CHECK_COMMON_NAME = False
 
-
-try:
-    from ssl import OP_NO_COMPRESSION, OP_NO_SSLv2, OP_NO_SSLv3
-except ImportError:
-    OP_NO_SSLv2, OP_NO_SSLv3 = 0x1000000, 0x2000000
-    OP_NO_COMPRESSION = 0x20000
-
-
-try:  
-    from ssl import OP_NO_TICKET
-except ImportError:
-    OP_NO_TICKET = 0x4000
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DEFAULT_CIPHERS = ":".join(
-    [
-        "ECDHE+AESGCM",
-        "ECDHE+CHACHA20",
-        "DHE+AESGCM",
-        "DHE+CHACHA20",
-        "ECDH+AESGCM",
-        "DH+AESGCM",
-        "ECDH+AES",
-        "DH+AES",
-        "RSA+AESGCM",
-        "RSA+AES",
-        "!aNULL",
-        "!eNULL",
-        "!MD5",
-        "!DSS",
-    ]
-)
-
-try:
-    from ssl import SSLContext  
-except ImportError:
-
-    class SSLContext(object):  
-        def __init__(self, protocol_version):
-            self.protocol = protocol_version
-            
-            self.check_hostname = False
-            self.verify_mode = ssl.CERT_NONE
-            self.ca_certs = None
-            self.options = 0
-            self.certfile = None
-            self.keyfile = None
-            self.ciphers = None
-
-        def load_cert_chain(self, certfile, keyfile):
-            self.certfile = certfile
-            self.keyfile = keyfile
-
-        def load_verify_locations(self, cafile=None, capath=None, cadata=None):
-            self.ca_certs = cafile
-
-            if capath is not None:
-                raise SSLError("CA directories not supported in older Pythons")
-
-            if cadata is not None:
-                raise SSLError("CA data not supported in older Pythons")
-
-        def set_ciphers(self, cipher_suite):
-            self.ciphers = cipher_suite
-
-        def wrap_socket(self, socket, server_hostname=None, server_side=False):
-            warnings.warn(
-                "A true SSLContext object is not available. This prevents "
-                "urllib3 from configuring SSL appropriately and may cause "
-                "certain SSL connections to fail. You can upgrade to a newer "
-                "version of Python to solve this. For more information, see "
-                "https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html"
-                "#ssl-warnings",
-                InsecurePlatformWarning,
+    
+    
+    for attr in ("TLSv1", "TLSv1_1", "TLSv1_2"):
+        try:
+            _SSL_VERSION_TO_TLS_VERSION[getattr(ssl, f"PROTOCOL_{attr}")] = getattr(
+                TLSVersion, attr
             )
-            kwargs = {
-                "keyfile": self.keyfile,
-                "certfile": self.certfile,
-                "ca_certs": self.ca_certs,
-                "cert_reqs": self.verify_mode,
-                "ssl_version": self.protocol,
-                "server_side": server_side,
-            }
-            return wrap_socket(socket, ciphers=self.ciphers, **kwargs)
+        except AttributeError:  
+            continue
+
+    from .ssltransport import SSLTransport  
+except ImportError:
+    OP_NO_COMPRESSION = 0x20000  
+    OP_NO_TICKET = 0x4000  
+    OP_NO_SSLv2 = 0x1000000  
+    OP_NO_SSLv3 = 0x2000000  
+    PROTOCOL_SSLv23 = PROTOCOL_TLS = 2  
+    PROTOCOL_TLS_CLIENT = 16  
+    VERIFY_X509_PARTIAL_CHAIN = 0x80000
+    VERIFY_X509_STRICT = 0x20  
 
 
-def assert_fingerprint(cert, fingerprint):
+_TYPE_PEER_CERT_RET = typing.Union["_TYPE_PEER_CERT_RET_DICT", bytes, None]
+
+
+def assert_fingerprint(cert: bytes | None, fingerprint: str) -> None:
     """
     Checks if given fingerprint matches the supplied certificate.
 
@@ -189,26 +159,31 @@ def assert_fingerprint(cert, fingerprint):
         Fingerprint as string of hexdigits, can be interspersed by colons.
     """
 
+    if cert is None:
+        raise SSLError("No certificate for the peer.")
+
     fingerprint = fingerprint.replace(":", "").lower()
     digest_length = len(fingerprint)
+    if digest_length not in HASHFUNC_MAP:
+        raise SSLError(f"Fingerprint of invalid length: {fingerprint}")
     hashfunc = HASHFUNC_MAP.get(digest_length)
-    if not hashfunc:
-        raise SSLError("Fingerprint of invalid length: {0}".format(fingerprint))
+    if hashfunc is None:
+        raise SSLError(
+            f"Hash function implementation unavailable for fingerprint length: {digest_length}"
+        )
 
     
     fingerprint_bytes = unhexlify(fingerprint.encode())
 
     cert_digest = hashfunc(cert).digest()
 
-    if not _const_compare_digest(cert_digest, fingerprint_bytes):
+    if not hmac.compare_digest(cert_digest, fingerprint_bytes):
         raise SSLError(
-            'Fingerprints did not match. Expected "{0}", got "{1}".'.format(
-                fingerprint, hexlify(cert_digest)
-            )
+            f'Fingerprints did not match. Expected "{fingerprint}", got "{cert_digest.hex()}"'
         )
 
 
-def resolve_cert_reqs(candidate):
+def resolve_cert_reqs(candidate: None | int | str) -> VerifyMode:
     """
     Resolves the argument to a numeric constant, which can be passed to
     the wrap_socket function/method from the ssl module.
@@ -226,12 +201,12 @@ def resolve_cert_reqs(candidate):
         res = getattr(ssl, candidate, None)
         if res is None:
             res = getattr(ssl, "CERT_" + candidate)
-        return res
+        return res  
 
-    return candidate
+    return candidate  
 
 
-def resolve_ssl_version(candidate):
+def resolve_ssl_version(candidate: None | int | str) -> int:
     """
     like resolve_cert_reqs
     """
@@ -242,35 +217,34 @@ def resolve_ssl_version(candidate):
         res = getattr(ssl, candidate, None)
         if res is None:
             res = getattr(ssl, "PROTOCOL_" + candidate)
-        return res
+        return typing.cast(int, res)
 
     return candidate
 
 
 def create_urllib3_context(
-    ssl_version=None, cert_reqs=None, options=None, ciphers=None
-):
-    """All arguments have the same meaning as ``ssl_wrap_socket``.
-
-    By default, this function does a lot of the same work that
-    ``ssl.create_default_context`` does on Python 3.4+. It:
-
-    - Disables SSLv2, SSLv3, and compression
-    - Sets a restricted set of server ciphers
-
-    If you wish to enable SSLv3, you can do::
-
-        from urllib3.util import ssl_
-        context = ssl_.create_urllib3_context()
-        context.options &= ~ssl_.OP_NO_SSLv3
-
-    You can do the same to enable compression (substituting ``COMPRESSION``
-    for ``SSLv3`` in the last line above).
+    ssl_version: int | None = None,
+    cert_reqs: int | None = None,
+    options: int | None = None,
+    ciphers: str | None = None,
+    ssl_minimum_version: int | None = None,
+    ssl_maximum_version: int | None = None,
+    verify_flags: int | None = None,
+) -> ssl.SSLContext:
+    """Creates and configures an :class:`ssl.SSLContext` instance for use with urllib3.
 
     :param ssl_version:
         The desired protocol version to use. This will default to
         PROTOCOL_SSLv23 which will negotiate the highest protocol that both
         the server and your installation of OpenSSL support.
+
+        This parameter is deprecated instead use 'ssl_minimum_version'.
+    :param ssl_minimum_version:
+        The minimum version of TLS to be used. Use the 'ssl.TLSVersion' enum for specifying the value.
+    :param ssl_maximum_version:
+        The maximum version of TLS to be used. Use the 'ssl.TLSVersion' enum for specifying the value.
+        Not recommended to set to anything other than 'ssl.TLSVersion.MAXIMUM_SUPPORTED' which is the
+        default value.
     :param cert_reqs:
         Whether to require the certificate verification. This defaults to
         ``ssl.CERT_REQUIRED``.
@@ -278,18 +252,63 @@ def create_urllib3_context(
         Specific OpenSSL options. These default to ``ssl.OP_NO_SSLv2``,
         ``ssl.OP_NO_SSLv3``, ``ssl.OP_NO_COMPRESSION``, and ``ssl.OP_NO_TICKET``.
     :param ciphers:
-        Which cipher suites to allow the server to select.
+        Which cipher suites to allow the server to select. Defaults to either system configured
+        ciphers if OpenSSL 1.1.1+, otherwise uses a secure default set of ciphers.
+    :param verify_flags:
+        The flags for certificate verification operations. These default to
+        ``ssl.VERIFY_X509_PARTIAL_CHAIN`` and ``ssl.VERIFY_X509_STRICT`` for Python 3.13+.
     :returns:
         Constructed SSLContext object with specified options
     :rtype: SSLContext
     """
+    if SSLContext is None:
+        raise TypeError("Can't create an SSLContext object without an ssl module")
+
     
-    if not ssl_version or ssl_version == PROTOCOL_TLS:
-        ssl_version = PROTOCOL_TLS_CLIENT
+    if ssl_version not in (None, PROTOCOL_TLS, PROTOCOL_TLS_CLIENT):
+        
+        
+        if ssl_minimum_version is not None or ssl_maximum_version is not None:
+            raise ValueError(
+                "Can't specify both 'ssl_version' and either "
+                "'ssl_minimum_version' or 'ssl_maximum_version'"
+            )
 
-    context = SSLContext(ssl_version)
+        
+        else:
+            
+            ssl_minimum_version = _SSL_VERSION_TO_TLS_VERSION.get(
+                ssl_version, TLSVersion.MINIMUM_SUPPORTED
+            )
+            ssl_maximum_version = _SSL_VERSION_TO_TLS_VERSION.get(
+                ssl_version, TLSVersion.MAXIMUM_SUPPORTED
+            )
 
-    context.set_ciphers(ciphers or DEFAULT_CIPHERS)
+            
+            
+            
+            warnings.warn(
+                "'ssl_version' option is deprecated and will be "
+                "removed in urllib3 v2.6.0. Instead use 'ssl_minimum_version'",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+    
+    context = SSLContext(PROTOCOL_TLS_CLIENT)
+
+    if ssl_minimum_version is not None:
+        context.minimum_version = ssl_minimum_version
+    else:  
+        context.minimum_version = TLSVersion.TLSv1_2
+
+    if ssl_maximum_version is not None:
+        context.maximum_version = ssl_maximum_version
+
+    
+    
+    if ciphers:
+        context.set_ciphers(ciphers)
 
     
     cert_reqs = ssl.CERT_REQUIRED if cert_reqs is None else cert_reqs
@@ -311,65 +330,103 @@ def create_urllib3_context(
 
     context.options |= options
 
+    if verify_flags is None:
+        verify_flags = 0
+        
+        
+        if sys.version_info >= (3, 13):
+            verify_flags |= VERIFY_X509_PARTIAL_CHAIN
+            verify_flags |= VERIFY_X509_STRICT
+
+    context.verify_flags |= verify_flags
+
     
     
     
     
-    
-    
-    if (cert_reqs == ssl.CERT_REQUIRED or sys.version_info >= (3, 7, 4)) and getattr(
-        context, "post_handshake_auth", None
-    ) is not None:
+    if getattr(context, "post_handshake_auth", None) is not None:
         context.post_handshake_auth = True
 
-    def disable_check_hostname():
-        if (
-            getattr(context, "check_hostname", None) is not None
-        ):  
-            
-            
-            context.check_hostname = False
-
     
     
     
     
     
-    if cert_reqs == ssl.CERT_REQUIRED:
+    if cert_reqs == ssl.CERT_REQUIRED and not IS_PYOPENSSL:
         context.verify_mode = cert_reqs
-        disable_check_hostname()
+        context.check_hostname = True
     else:
-        disable_check_hostname()
+        context.check_hostname = False
         context.verify_mode = cert_reqs
 
-    
-    
-    if hasattr(context, "keylog_filename"):
-        sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
-        if sslkeylogfile:
-            context.keylog_filename = sslkeylogfile
+    try:
+        context.hostname_checks_common_name = False
+    except AttributeError:  
+        pass
+
+    sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+    if sslkeylogfile:
+        context.keylog_filename = sslkeylogfile
 
     return context
 
 
+@typing.overload
 def ssl_wrap_socket(
-    sock,
-    keyfile=None,
-    certfile=None,
-    cert_reqs=None,
-    ca_certs=None,
-    server_hostname=None,
-    ssl_version=None,
-    ciphers=None,
-    ssl_context=None,
-    ca_cert_dir=None,
-    key_password=None,
-    ca_cert_data=None,
-    tls_in_tls=False,
-):
+    sock: socket.socket,
+    keyfile: str | None = ...,
+    certfile: str | None = ...,
+    cert_reqs: int | None = ...,
+    ca_certs: str | None = ...,
+    server_hostname: str | None = ...,
+    ssl_version: int | None = ...,
+    ciphers: str | None = ...,
+    ssl_context: ssl.SSLContext | None = ...,
+    ca_cert_dir: str | None = ...,
+    key_password: str | None = ...,
+    ca_cert_data: None | str | bytes = ...,
+    tls_in_tls: typing.Literal[False] = ...,
+) -> ssl.SSLSocket: ...
+
+
+@typing.overload
+def ssl_wrap_socket(
+    sock: socket.socket,
+    keyfile: str | None = ...,
+    certfile: str | None = ...,
+    cert_reqs: int | None = ...,
+    ca_certs: str | None = ...,
+    server_hostname: str | None = ...,
+    ssl_version: int | None = ...,
+    ciphers: str | None = ...,
+    ssl_context: ssl.SSLContext | None = ...,
+    ca_cert_dir: str | None = ...,
+    key_password: str | None = ...,
+    ca_cert_data: None | str | bytes = ...,
+    tls_in_tls: bool = ...,
+) -> ssl.SSLSocket | SSLTransportType: ...
+
+
+def ssl_wrap_socket(
+    sock: socket.socket,
+    keyfile: str | None = None,
+    certfile: str | None = None,
+    cert_reqs: int | None = None,
+    ca_certs: str | None = None,
+    server_hostname: str | None = None,
+    ssl_version: int | None = None,
+    ciphers: str | None = None,
+    ssl_context: ssl.SSLContext | None = None,
+    ca_cert_dir: str | None = None,
+    key_password: str | None = None,
+    ca_cert_data: None | str | bytes = None,
+    tls_in_tls: bool = False,
+) -> ssl.SSLSocket | SSLTransportType:
     """
-    All arguments except for server_hostname, ssl_context, and ca_cert_dir have
-    the same meaning as they do when using :func:`ssl.wrap_socket`.
+    All arguments except for server_hostname, ssl_context, tls_in_tls, ca_cert_data and
+    ca_cert_dir have the same meaning as they do when using
+    :func:`ssl.create_default_context`, :meth:`ssl.SSLContext.load_cert_chain`,
+    :meth:`ssl.SSLContext.set_ciphers` and :meth:`ssl.SSLContext.wrap_socket`.
 
     :param server_hostname:
         When SNI is supported, the expected hostname of the certificate
@@ -394,14 +451,13 @@ def ssl_wrap_socket(
     if context is None:
         
         
-        
         context = create_urllib3_context(ssl_version, cert_reqs, ciphers=ciphers)
 
     if ca_certs or ca_cert_dir or ca_cert_data:
         try:
             context.load_verify_locations(ca_certs, ca_cert_dir, ca_cert_data)
-        except (IOError, OSError) as e:
-            raise SSLError(e)
+        except OSError as e:
+            raise SSLError(e) from e
 
     elif ssl_context is None and hasattr(context, "load_default_certs"):
         
@@ -419,57 +475,28 @@ def ssl_wrap_socket(
         else:
             context.load_cert_chain(certfile, keyfile, key_password)
 
-    try:
-        if hasattr(context, "set_alpn_protocols"):
-            context.set_alpn_protocols(ALPN_PROTOCOLS)
-    except NotImplementedError:  
-        pass
+    context.set_alpn_protocols(ALPN_PROTOCOLS)
 
-    
-    
-    use_sni_hostname = server_hostname and not is_ipaddress(server_hostname)
-    
-    send_sni = (use_sni_hostname and HAS_SNI) or (
-        IS_SECURETRANSPORT and server_hostname
-    )
-    
-    if not HAS_SNI and use_sni_hostname:
-        warnings.warn(
-            "An HTTPS request has been made, but the SNI (Server Name "
-            "Indication) extension to TLS is not available on this platform. "
-            "This may cause the server to present an incorrect TLS "
-            "certificate, which can cause validation failures. You can upgrade to "
-            "a newer version of Python to solve this. For more information, see "
-            "https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html"
-            "#ssl-warnings",
-            SNIMissingWarning,
-        )
-
-    if send_sni:
-        ssl_sock = _ssl_wrap_socket_impl(
-            sock, context, tls_in_tls, server_hostname=server_hostname
-        )
-    else:
-        ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls)
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
     return ssl_sock
 
 
-def is_ipaddress(hostname):
+def is_ipaddress(hostname: str | bytes) -> bool:
     """Detects whether the hostname given is an IPv4 or IPv6 address.
     Also detects IPv6 addresses with Zone IDs.
 
     :param str hostname: Hostname to examine.
     :return: True if the hostname is an IP address, False otherwise.
     """
-    if not six.PY2 and isinstance(hostname, bytes):
+    if isinstance(hostname, bytes):
         
         hostname = hostname.decode("ascii")
-    return bool(IPV4_RE.match(hostname) or BRACELESS_IPV6_ADDRZ_RE.match(hostname))
+    return bool(_IPV4_RE.match(hostname) or _BRACELESS_IPV6_ADDRZ_RE.match(hostname))
 
 
-def _is_key_file_encrypted(key_file):
+def _is_key_file_encrypted(key_file: str) -> bool:
     """Detects if a key file is encrypted or not."""
-    with open(key_file, "r") as f:
+    with open(key_file) as f:
         for line in f:
             
             if "ENCRYPTED" in line:
@@ -478,7 +505,12 @@ def _is_key_file_encrypted(key_file):
     return False
 
 
-def _ssl_wrap_socket_impl(sock, ssl_context, tls_in_tls, server_hostname=None):
+def _ssl_wrap_socket_impl(
+    sock: socket.socket,
+    ssl_context: ssl.SSLContext,
+    tls_in_tls: bool,
+    server_hostname: str | None = None,
+) -> ssl.SSLSocket | SSLTransportType:
     if tls_in_tls:
         if not SSLTransport:
             
@@ -489,7 +521,4 @@ def _ssl_wrap_socket_impl(sock, ssl_context, tls_in_tls, server_hostname=None):
         SSLTransport._validate_ssl_context_for_tls_in_tls(ssl_context)
         return SSLTransport(sock, ssl_context, server_hostname)
 
-    if server_hostname:
-        return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
-    else:
-        return ssl_context.wrap_socket(sock)
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)

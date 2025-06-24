@@ -1,18 +1,10 @@
-import errno
+from __future__ import annotations
+
 import select
-import sys
+import socket
 from functools import partial
 
-try:
-    from time import monotonic
-except ImportError:
-    from time import time as monotonic
-
-__all__ = ["NoWayToWaitForSocketError", "wait_for_read", "wait_for_write"]
-
-
-class NoWayToWaitForSocketError(Exception):
-    pass
+__all__ = ["wait_for_read", "wait_for_write"]
 
 
 
@@ -37,37 +29,13 @@ class NoWayToWaitForSocketError(Exception):
 
 
 
-if sys.version_info >= (3, 5):
-    
-    def _retry_on_intr(fn, timeout):
-        return fn(timeout)
 
-else:
-    
-    def _retry_on_intr(fn, timeout):
-        if timeout is None:
-            deadline = float("inf")
-        else:
-            deadline = monotonic() + timeout
-
-        while True:
-            try:
-                return fn(timeout)
-            
-            except (OSError, select.error) as e:
-                
-                if e.args[0] != errno.EINTR:
-                    raise
-                else:
-                    timeout = deadline - monotonic()
-                    if timeout < 0:
-                        timeout = 0
-                    if timeout == float("inf"):
-                        timeout = None
-                    continue
-
-
-def select_wait_for_socket(sock, read=False, write=False, timeout=None):
+def select_wait_for_socket(
+    sock: socket.socket,
+    read: bool = False,
+    write: bool = False,
+    timeout: float | None = None,
+) -> bool:
     if not read and not write:
         raise RuntimeError("must specify at least one of read=True, write=True")
     rcheck = []
@@ -82,11 +50,16 @@ def select_wait_for_socket(sock, read=False, write=False, timeout=None):
     
     
     fn = partial(select.select, rcheck, wcheck, wcheck)
-    rready, wready, xready = _retry_on_intr(fn, timeout)
+    rready, wready, xready = fn(timeout)
     return bool(rready or wready or xready)
 
 
-def poll_wait_for_socket(sock, read=False, write=False, timeout=None):
+def poll_wait_for_socket(
+    sock: socket.socket,
+    read: bool = False,
+    write: bool = False,
+    timeout: float | None = None,
+) -> bool:
     if not read and not write:
         raise RuntimeError("must specify at least one of read=True, write=True")
     mask = 0
@@ -98,32 +71,33 @@ def poll_wait_for_socket(sock, read=False, write=False, timeout=None):
     poll_obj.register(sock, mask)
 
     
-    def do_poll(t):
+    def do_poll(t: float | None) -> list[tuple[int, int]]:
         if t is not None:
             t *= 1000
         return poll_obj.poll(t)
 
-    return bool(_retry_on_intr(do_poll, timeout))
+    return bool(do_poll(timeout))
 
 
-def null_wait_for_socket(*args, **kwargs):
-    raise NoWayToWaitForSocketError("no select-equivalent available")
-
-
-def _have_working_poll():
+def _have_working_poll() -> bool:
     
     
     
     try:
         poll_obj = select.poll()
-        _retry_on_intr(poll_obj.poll, 0)
+        poll_obj.poll(0)
     except (AttributeError, OSError):
         return False
     else:
         return True
 
 
-def wait_for_socket(*args, **kwargs):
+def wait_for_socket(
+    sock: socket.socket,
+    read: bool = False,
+    write: bool = False,
+    timeout: float | None = None,
+) -> bool:
     
     
     
@@ -133,19 +107,17 @@ def wait_for_socket(*args, **kwargs):
         wait_for_socket = poll_wait_for_socket
     elif hasattr(select, "select"):
         wait_for_socket = select_wait_for_socket
-    else:  
-        wait_for_socket = null_wait_for_socket
-    return wait_for_socket(*args, **kwargs)
+    return wait_for_socket(sock, read, write, timeout)
 
 
-def wait_for_read(sock, timeout=None):
+def wait_for_read(sock: socket.socket, timeout: float | None = None) -> bool:
     """Waits for reading to be available on a given socket.
     Returns True if the socket is readable, or False if the timeout expired.
     """
     return wait_for_socket(sock, read=True, timeout=timeout)
 
 
-def wait_for_write(sock, timeout=None):
+def wait_for_write(sock: socket.socket, timeout: float | None = None) -> bool:
     """Waits for writing to be available on a given socket.
     Returns True if the socket is readable, or False if the timeout expired.
     """
