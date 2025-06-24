@@ -30,9 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuItemState
+import org.mozilla.fenix.components.menu.compose.SiteLoadingPreviewParameterProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 
@@ -203,14 +205,16 @@ private fun MenuHeaderPreview() {
 
 @Preview
 @Composable
-private fun MenuHeaderPrivatePreview() {
+private fun MenuHeaderPrivatePreview(
+    @PreviewParameter(SiteLoadingPreviewParameterProvider::class) isSiteLoading: Boolean,
+) {
     FirefoxTheme(theme = Theme.Private) {
         Column(
             modifier = Modifier
                 .background(color = FirefoxTheme.colors.layer3),
         ) {
             MenuNavHeader(
-                isSiteLoading = false,
+                isSiteLoading = isSiteLoading,
                 onBackButtonClick = {},
                 onForwardButtonClick = {},
                 onRefreshButtonClick = {},
