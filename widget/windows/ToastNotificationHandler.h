@@ -69,7 +69,13 @@ class ToastNotificationHandler final
   void HideAlert();
   bool IsPrivate();
 
+  
+  
   void UnregisterHandler();
+  
+  
+  
+  void HandleCloseFromBrowser();
 
   nsString ActionArgsJSONString(
       const nsString& aAction,
