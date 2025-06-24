@@ -3695,13 +3695,6 @@ template <typename T>
   
   while (true) {
     
-    
-    
-    
-    
-    
-    
-    
     RootedValue& nextValue = nextValueOrNextPromise;
     if (!iterator.next(&nextValue, done)) {
       *done = true;
@@ -3782,8 +3775,6 @@ template <typename T>
       }
     }
 
-    
-    
     
     
     
@@ -3973,6 +3964,7 @@ template <typename T>
 
 
 
+
 [[nodiscard]] static bool NewPromiseCombinatorElements(
     JSContext* cx, Handle<PromiseCapability> resultCapability,
     MutableHandle<PromiseCombinatorElements> elements) {
@@ -4070,6 +4062,11 @@ static JSFunction* NewPromiseCombinatorElementFunction(
   }
   return fn;
 }
+
+
+
+
+
 
 
 
@@ -4614,13 +4611,9 @@ static void ThrowAggregateError(JSContext* cx,
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
     bool* done) {
-  *done = false;
-
-  
   MOZ_ASSERT(C->isConstructor());
 
-  
-  
+  *done = false;
 
   
   Rooted<PromiseCombinatorElements> errors(cx);
@@ -4633,6 +4626,7 @@ static void ThrowAggregateError(JSContext* cx,
   
   
   
+  
   Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
   dataHolder = PromiseCombinatorDataHolder::New(
       cx, resultCapability.promise(), errors, resultCapability.reject());
@@ -4640,7 +4634,6 @@ static void ThrowAggregateError(JSContext* cx,
     return false;
   }
 
-  
   
   uint32_t index = 0;
 
@@ -4739,6 +4732,7 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
     RootedObject rejectFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
 
+    
     ThrowAggregateError(cx, errors, promiseObj);
 
     RootedValue reason(cx);
@@ -4747,6 +4741,7 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
       return false;
     }
 
+    
     if (!CallPromiseRejectFunction(cx, rejectFun, reason, promiseObj, stack,
                                    UnhandledRejectionBehavior::Report)) {
       return false;
