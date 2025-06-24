@@ -1236,8 +1236,7 @@ int DataChannelConnection::SendOpenRequestMessage(DataChannel& aChannel) {
 
 
 
-
-bool DataChannelConnection::SendDeferredMessages() {
+void DataChannelConnection::SendDeferredMessages() {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   RefPtr<DataChannel> channel;  
 
@@ -1246,7 +1245,7 @@ bool DataChannelConnection::SendDeferredMessages() {
   DC_DEBUG(("SendDeferredMessages called, pending type: %s",
             ToString(mPendingType)));
   if (mPendingType == PendingType::None) {
-    return false;
+    return;
   }
 
   
@@ -1256,7 +1255,7 @@ bool DataChannelConnection::SendDeferredMessages() {
   if (!mBufferedControl.IsEmpty() &&
       (mSendInterleaved || mPendingType == PendingType::Dcep)) {
     if (SendBufferedMessages(mBufferedControl, nullptr)) {
-      return true;
+      return;
     }
 
     
@@ -1303,7 +1302,6 @@ bool DataChannelConnection::SendDeferredMessages() {
     mPendingType =
         mBufferedControl.IsEmpty() ? PendingType::None : PendingType::Dcep;
   }
-  return blocked;
 }
 
 
