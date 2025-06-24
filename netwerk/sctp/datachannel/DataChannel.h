@@ -399,72 +399,63 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   void HandleDCEPMessageChunk(const void* buffer, size_t length, uint32_t ppid,
                               uint16_t stream, int flags);
 
-  bool IsSTSThread() const {
-    bool on = false;
-    if (mSTS) {
-      mSTS->IsOnCurrentThread(&on);
-    }
-    return on;
-  }
-
   mutable Mutex mLock;
+
+  
   
   
   WeakPtr<DataConnectionListener> mListener;
-  
-  bool mSendInterleaved = false;
-  
   bool mMaxMessageSizeSet = false;
-  
   uint64_t mMaxMessageSize = 0;
   nsTArray<uint16_t> mStreamIds;
+  Maybe<bool> mAllocateEven;
+  nsCOMPtr<nsIThread> mInternalIOThread = nullptr;
   
+
   
-  
-  Channels mChannels;
-  
+  bool mSendInterleaved = false;
   uint32_t mCurrentStream = 0;
-  
-  std::set<RefPtr<DataChannel>> mPending MOZ_GUARDED_BY(mLock);
-  uint16_t mNegotiatedIdLimit MOZ_GUARDED_BY(mLock) = 0;
-  
+  std::set<RefPtr<DataChannel>> mPending;
+  uint16_t mNegotiatedIdLimit = 0;
   PendingType mPendingType = PendingType::None;
   
-  nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData MOZ_GUARDED_BY(mLock);
-  
+  nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData;
   
   nsTArray<OutgoingMsg> mBufferedControl;
   
   Maybe<IncomingMsg> mRecvBuffer MOZ_GUARDED_BY(mLock);
-
-  
-  AutoTArray<uint16_t, 4> mStreamsResetting MOZ_GUARDED_BY(mLock);
-  
-  struct socket* mSocket = nullptr;
-  
   bool mSctpConfigured = false;
-  DataChannelConnectionState mState = DataChannelConnectionState::Closed;
-
   std::string mTransportId;
   bool mConnectedToTransportHandler = false;
   RefPtr<MediaTransportHandler> mTransportHandler;
   MediaEventListener mPacketReceivedListener;
   MediaEventListener mStateChangeListener;
-  nsCOMPtr<nsISerialEventTarget> mSTS;
+  
+  AutoTArray<uint16_t, 4> mStreamsResetting;
+  DataChannelConnectionState mState = DataChannelConnectionState::Closed;
+  
 
   
-  Maybe<bool> mAllocateEven;
+  
+  
+  Channels mChannels;
+
+  
+  struct socket* mSocket = nullptr;
+
+  
+  uintptr_t mId = 0;
+
   
   
   uint16_t mLocalPort = 0;
   uint16_t mRemotePort = 0;
 
-  nsCOMPtr<nsIThread> mInternalIOThread = nullptr;
+  nsCOMPtr<nsISerialEventTarget> mSTS;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  bool mShutdown;
+  bool mShutdown = false;
 #endif
-  uintptr_t mId = 0;
 };
 
 class DataChannel {
@@ -559,10 +550,12 @@ class DataChannel {
   void GetProtocol(nsAString& aProtocol) {
     CopyUTF8toUTF16(mProtocol, aProtocol);
   }
-  uint16_t GetStream() const { return mStream; }
+  uint16_t GetStream() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mStream;
+  }
 
-  void SendOrQueue(DataChannelOnMessageAvailable* aMessage)
-      MOZ_REQUIRES(mConnection->mLock);
+  void SendOrQueue(DataChannelOnMessageAvailable* aMessage);
 
   TrafficCounters GetTrafficCounters() const;
 
@@ -574,32 +567,30 @@ class DataChannel {
   
   DataChannelListener* mListener;
   nsCOMPtr<nsISupports> mContext;
-
-  RefPtr<DataChannelConnection> mConnection;
-  
   bool mEverOpened = false;
   const nsCString mLabel;
   const nsCString mProtocol;
-  
   DataChannelState mReadyState;
   uint16_t mStream;
   const DataChannelReliabilityPolicy mPrPolicy;
   const uint32_t mPrValue;
+  size_t mBufferedThreshold;
+  size_t mBufferedAmount;
+  RefPtr<DataChannelConnection> mConnection;
+  TrafficCounters mTrafficCounters;
+
   
-  const bool mNegotiated;
-  const bool mOrdered;
   
   
   bool mWaitingForAck = false;
-  bool mIsRecvBinary;
-  size_t mBufferedThreshold;
-  
-  
-  size_t mBufferedAmount;
   nsTArray<OutgoingMsg> mBufferedData;
-  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
-  TrafficCounters mTrafficCounters;
   std::map<uint16_t, IncomingMsg> mRecvBuffers;
+
+  
+  const bool mNegotiated;
+  const bool mOrdered;
+
+  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
 };
 
 
