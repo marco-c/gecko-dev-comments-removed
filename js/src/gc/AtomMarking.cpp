@@ -197,46 +197,33 @@ static void BitwiseOrIntoChunkMarkBits(Zone* atomsZone, Bitmap& bitmap) {
   }
 }
 
-void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(GCRuntime* gc) {
+UniquePtr<DenseBitmap> AtomMarkingRuntime::getOrMarkAtomsUsedByUncollectedZones(
+    GCRuntime* gc) {
   MOZ_ASSERT(CurrentThreadIsPerformingGC());
 
-  size_t uncollectedZones = 0;
-  for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
-    if (!zone->isCollecting()) {
-      uncollectedZones++;
-    }
-  }
-
-  
-  if (uncollectedZones == 0) {
-    return;
-  }
-
-  
-  
-  
-  
-
-  DenseBitmap markedUnion;
-  if (uncollectedZones == 1 || !markedUnion.ensureSpace(allocatedWords)) {
+  UniquePtr<DenseBitmap> markedUnion = MakeUnique<DenseBitmap>();
+  if (!markedUnion || !markedUnion->ensureSpace(allocatedWords)) {
+    
     for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
       if (!zone->isCollecting()) {
         BitwiseOrIntoChunkMarkBits(gc->atomsZone(), zone->markedAtoms());
       }
     }
-    return;
+    return nullptr;
   }
 
   for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
-    
-    
-    
     if (!zone->isCollecting()) {
-      zone->markedAtoms().bitwiseOrInto(markedUnion);
+      zone->markedAtoms().bitwiseOrInto(*markedUnion);
     }
   }
 
-  BitwiseOrIntoChunkMarkBits(gc->atomsZone(), markedUnion);
+  return markedUnion;
+}
+
+void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(
+    GCRuntime* gc, UniquePtr<DenseBitmap> markedUnion) {
+  BitwiseOrIntoChunkMarkBits(gc->atomsZone(), *markedUnion);
 }
 
 template <typename T>

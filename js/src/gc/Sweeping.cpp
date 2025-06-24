@@ -1364,6 +1364,12 @@ void GCRuntime::updateAtomsBitmap() {
   atomMarking.refineZoneBitmapsForCollectedZones(this);
 
   
+  auto& atomsToMark = atomsUsedByUncollectedZones.ref();
+  if (atomsToMark) {
+    atomMarking.markAtomsUsedByUncollectedZones(this, std::move(atomsToMark));
+  }
+
+  
   
   SweepingTracer trc(rt);
   rt->symbolRegistry().traceWeak(&trc);
