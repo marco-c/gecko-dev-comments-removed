@@ -11,7 +11,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MaybeDiscarded.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/glean/ContentanalysisMetrics.h"
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
@@ -35,7 +34,6 @@ class nsBaseClipboard;
 class nsIPrincipal;
 class nsIPrintSettings;
 class ContentAnalysisTest;
-class ContentAnalysisTelemetryTest;
 
 namespace mozilla::dom {
 class CanonicalBrowsingContext;
@@ -281,13 +279,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   static constexpr const char* kKnownClipboardTypes[] = {
       kTextMime, kHTMLMime, kCustomTypesMime, kFileMime};
 
-  
-  
-  bool GetCreatingClientForTest() {
-    AssertIsOnMainThread();
-    return mCreatingClient;
-  }
-
  private:
   virtual ~ContentAnalysis();
   
@@ -315,7 +306,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   template <typename T, typename U>
   RefPtr<MozPromise<T, nsresult, true>> CallClientWithRetry(
       StaticString aMethodName, U&& aClientCallFunc);
-  void RecordConnectionSettingsTelemetry(const nsString& clientSignature);
 
   nsresult RunAnalyzeRequestTask(
       const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
@@ -337,14 +327,12 @@ class ContentAnalysis final : public nsIContentAnalysis,
   static void HandleResponseFromAgent(
       content_analysis::sdk::ContentAnalysisResponse&& aResponse);
 
-  struct BasicRequestInfo final {
+  struct UserActionIdAndAutoAcknowledge final {
     nsCString mUserActionId;
-    glean::TimerId mTimerId;
-    nsCString mAnalysisTypeStr;
     bool mAutoAcknowledge;
   };
-  DataMutex<nsTHashMap<nsCString, BasicRequestInfo>>
-      mRequestTokenToBasicRequestInfoMap;
+  DataMutex<nsTHashMap<nsCString, UserActionIdAndAutoAcknowledge>>
+      mRequestTokenToUserActionIdMap;
 
   void IssueResponse(ContentAnalysisResponse* response,
                      nsCString&& aUserActionId, bool aAcknowledge,
@@ -520,7 +508,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   friend class ContentAnalysisResponse;
   friend class ::ContentAnalysisTest;
-  friend class ::ContentAnalysisTelemetryTest;
 };
 
 class ContentAnalysisResponse final : public nsIContentAnalysisResponse,

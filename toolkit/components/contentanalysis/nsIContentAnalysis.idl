@@ -509,8 +509,4 @@ interface nsIContentAnalysis : nsISupports
 
   void sendCancelToAgent(in ACString aUserActionId);
 
-  
-
-
-  void forceRecreateClientForTest();
 };
