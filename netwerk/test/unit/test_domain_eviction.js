@@ -24,7 +24,7 @@ function* do_run_test() {
   
   Services.prefs.setIntPref("network.cookie.maxPerHost", 50);
 
-  let futureExpiry = Math.floor(Date.now() / 1000 + 1000);
+  let futureExpiry = Date.now() + 1000 * 1000;
 
   
   
@@ -65,7 +65,7 @@ function* do_run_test() {
   }
 
   
-  let shortExpiry = Math.floor(Date.now() / 1000 + 2);
+  let shortExpiry = Date.now() + 1000 * 2;
   setCookies("captchart.com", 49, futureExpiry);
   let cv = Services.cookies.add(
     "captchart.com",
