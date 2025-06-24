@@ -109,10 +109,18 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
 
   virtual ots::TableAction GetTableAction(uint32_t aTag) override {
     
-    if ((!mCheckOTLTables && (aTag == TRUETYPE_TAG('G', 'D', 'E', 'F') ||
-                              aTag == TRUETYPE_TAG('G', 'P', 'O', 'S') ||
-                              aTag == TRUETYPE_TAG('G', 'S', 'U', 'B')))) {
-      return ots::TABLE_ACTION_PASSTHRU;
+    if (aTag == TRUETYPE_TAG('G', 'D', 'E', 'F') ||
+        aTag == TRUETYPE_TAG('G', 'P', 'O', 'S') ||
+        aTag == TRUETYPE_TAG('G', 'S', 'U', 'B')) {
+      switch (mCheckOTLTables) {
+        case 0:  
+          return ots::TABLE_ACTION_PASSTHRU;
+        case 1:  
+          return ots::TABLE_ACTION_SANITIZE_SOFT;
+        case 2:  
+        default:
+          return ots::TABLE_ACTION_SANITIZE;
+      }
     }
     auto isVariationTable = [](uint32_t aTag) -> bool {
       return aTag == TRUETYPE_TAG('a', 'v', 'a', 'r') ||
@@ -173,7 +181,7 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
   }
 
  private:
-  bool mCheckOTLTables;
+  uint8_t mCheckOTLTables;
   bool mCheckVariationTables;
   bool mKeepColorBitmaps;
   bool mKeepSVG;
