@@ -2,11 +2,10 @@
 
 
 
-
-
 "use strict";
 
-add_task(async function () {
+
+add_task(async function testSearchRetainsPreviousQuery() {
   const dbg = await initDebugger("doc-scripts.html", "simple1.js");
   const {
     selectors: { getActiveSearch },
@@ -35,4 +34,55 @@ add_task(async function () {
 
   
   is(findElement(dbg, "fileSearchInput").value, "con");
+});
+
+
+add_task(async function testSearchUpdatesResultsOnSourceChanges() {
+  const dbg = await initDebugger("doc-scripts.html", "simple1.js", "long.js");
+  const {
+    selectors: { getActiveSearch },
+  } = dbg;
+
+  await selectSource(dbg, "simple1.js");
+
+  
+  pressKey(dbg, "fileSearch");
+  await waitFor(() => getActiveSearch() === "file");
+  is(getActiveSearch(), "file");
+
+  
+  const searchQuery = "this";
+  type(dbg, searchQuery);
+  await waitForSearchState(dbg);
+
+  await waitUntil(
+    () => findElement(dbg, "fileSearchSummary").innerText !== "No results found"
+  );
+
+  is(
+    findElement(dbg, "fileSearchSummary").innerText,
+    "1 of 3 results",
+    `There are 3 results found for search query "${searchQuery}" in simple1.js`
+  );
+  is(
+    findElement(dbg, "fileSearchInput").value,
+    searchQuery,
+    `The search input value matches the search query "${searchQuery}"`
+  );
+
+  info("Switch to long.js");
+  await selectSource(dbg, "long.js");
+
+  await waitUntil(
+    () => findElement(dbg, "fileSearchSummary")?.innerText == "1 of 23 results"
+  );
+  ok(
+    true,
+    `There are 23 results found for search query "${searchQuery}" in long.js`
+  );
+  is(
+    findElement(dbg, "fileSearchInput").value,
+    searchQuery,
+    `The search input value still matches the search query "${searchQuery}"`
+  );
 });
