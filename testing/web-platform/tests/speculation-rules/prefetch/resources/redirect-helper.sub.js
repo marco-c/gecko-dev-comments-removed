@@ -38,7 +38,9 @@ async function prepare(t, prefetchTiming) {
     
     
     
-    prefetchInitialUrl = new URL('/common/slow-redirect.py?delay=4',
+    
+    
+    prefetchInitialUrl = new URL('/common/slow-redirect.py?delay=2.5',
                                  prefetchInitialOrigin);
     prefetchInitialUrl.searchParams.set('location', prefetchFinalUrl);
   } else {
