@@ -12,9 +12,8 @@ const COLLECTION_NAME = "fingerprinting-protection-overrides";
 
 
 
-const TARGET_DEFAULT = extractLow32Bits(
-  Services.rfp.enabledFingerprintingProtections.low
-);
+const TARGET_DEFAULT =
+  Services.rfp.enabledFingerprintingProtections.getNth32BitSet(0);
 const TARGET_PointerEvents = 1 << 2;
 const TARGET_CanvasRandomization = 1 << 9;
 const TARGET_WindowOuterSize = 1 << 26;
@@ -31,11 +30,6 @@ const TEST_ANOTHER_PAGE =
     "chrome://mochitests/content",
     "https://example.net"
   ) + "empty.html";
-
-
-function extractLow32Bits(value) {
-  return value & 0xffffffff;
-}
 
 const TEST_CASES = [
   
@@ -309,12 +303,16 @@ add_task(async function test_remote_settings() {
     for (let expect of test.expects) {
       
       try {
-        let overrides = extractLow32Bits(
-          Services.rfp.getFingerprintingOverrides(expect.domain + ",0").low
+        let overrides = Services.rfp.getFingerprintingOverrides(
+          expect.domain + ",0"
         );
 
         
-        is(overrides, expect.overrides, "The override value is correct.");
+        is(
+          overrides.getNth32BitSet(0),
+          expect.overrides,
+          "The override value is correct."
+        );
       } catch (e) {
         ok(expect.noEntry, "The override entry doesn't exist.");
       }
@@ -344,7 +342,7 @@ add_task(async function test_remote_settings_pref() {
     for (let expect of test.expects) {
       try {
         
-        Services.rfp.getFingerprintingOverrides(expect.domain + ",0").low;
+        Services.rfp.getFingerprintingOverrides(expect.domain + ",0");
         ok(
           false,
           "This line should never run as the override should not exist and the previous line would throw an exception"
@@ -381,12 +379,16 @@ add_task(async function test_pref() {
     for (let expect of test.expects) {
       try {
         
-        let overrides = extractLow32Bits(
-          Services.rfp.getFingerprintingOverrides(expect.domain + ",0").low
+        let overrides = Services.rfp.getFingerprintingOverrides(
+          expect.domain + ",0"
         );
 
         
-        is(overrides, expect.overrides, "The override value is correct.");
+        is(
+          overrides.getNth32BitSet(0),
+          expect.overrides,
+          "The override value is correct."
+        );
       } catch (e) {
         ok(expect.noEntry, "The override entry doesn't exist.");
       }
@@ -430,13 +432,11 @@ add_task(async function test_pref_override_remote_settings() {
   await promise;
 
   
-  let overrides = extractLow32Bits(
-    Services.rfp.getFingerprintingOverrides("example.org,0").low
-  );
+  let overrides = Services.rfp.getFingerprintingOverrides("example.org,0");
 
   
   is(
-    overrides,
+    overrides.getNth32BitSet(0),
     (TARGET_DEFAULT | TARGET_PointerEvents) &
       ~TARGET_Gamepad &
       ~TARGET_WindowOuterSize,
@@ -482,9 +482,9 @@ add_task(async function test_pref_override_remote_settings2() {
   await promise;
 
   
-  let overrides = extractLow32Bits(
-    Services.rfp.getFingerprintingOverrides("example.org,0").low
-  );
+  let overrides = Services.rfp
+    .getFingerprintingOverrides("example.org,0")
+    .getNth32BitSet(0);
 
   
   is(
