@@ -587,7 +587,7 @@ function generatePreviewsForTrace(state, trace) {
     const frameIndex = trace[TRACER_FIELDS_INDEXES.FRAME_INDEX];
     const frame = state.mutableFrames[frameIndex];
     
-    const line = frame.line;
+    const line = frame.line - 1;
     const column = frame.column;
 
     const preview = [];

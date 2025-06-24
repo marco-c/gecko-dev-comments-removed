@@ -32,7 +32,8 @@ add_task(async function () {
   
   
   await waitForDocumentLoadComplete(dbg);
-  const inlinePreviewEl = findElement(dbg, "inlinePreviewsOnLine", 74);
+
+  const inlinePreviewEl = findElement(dbg, "inlinePreview");
   is(inlinePreviewEl.innerText, `myVar:"foo"`, "got expected inline preview");
 
   const racePromise = Promise.any([
