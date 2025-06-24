@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XLineBreakWordOption {
+  
+
+  Normal = 'Normal',
+  
+
+  BreakAll = 'BreakAll',
+  
+
+  KeepAll = 'KeepAll',
+}

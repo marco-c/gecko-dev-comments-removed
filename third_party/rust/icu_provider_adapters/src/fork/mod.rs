@@ -36,11 +36,14 @@ mod by_error;
 
 pub mod predicates;
 
+#[macro_use]
+mod macros;
+
 pub use by_error::ForkByErrorProvider;
 pub use by_error::MultiForkByErrorProvider;
 
 use predicates::ForkByErrorPredicate;
-use predicates::MarkerNotFoundPredicate;
+use predicates::MissingDataKeyPredicate;
 
 
 
@@ -137,14 +140,17 @@ use predicates::MarkerNotFoundPredicate;
 
 
 
-pub type ForkByMarkerProvider<P0, P1> = ForkByErrorProvider<P0, P1, MarkerNotFoundPredicate>;
 
-impl<P0, P1> ForkByMarkerProvider<P0, P1> {
+
+
+pub type ForkByKeyProvider<P0, P1> = ForkByErrorProvider<P0, P1, MissingDataKeyPredicate>;
+
+impl<P0, P1> ForkByKeyProvider<P0, P1> {
     
     
     
     pub fn new(p0: P0, p1: P1) -> Self {
-        ForkByErrorProvider::new_with_predicate(p0, p1, MarkerNotFoundPredicate)
+        ForkByErrorProvider::new_with_predicate(p0, p1, MissingDataKeyPredicate)
     }
 }
 
@@ -207,13 +213,14 @@ impl<P0, P1> ForkByMarkerProvider<P0, P1> {
 
 
 
-pub type MultiForkByMarkerProvider<P> = MultiForkByErrorProvider<P, MarkerNotFoundPredicate>;
 
-impl<P> MultiForkByMarkerProvider<P> {
+pub type MultiForkByKeyProvider<P> = MultiForkByErrorProvider<P, MissingDataKeyPredicate>;
+
+impl<P> MultiForkByKeyProvider<P> {
     
     
     
     pub fn new(providers: Vec<P>) -> Self {
-        MultiForkByErrorProvider::new_with_predicate(providers, MarkerNotFoundPredicate)
+        MultiForkByErrorProvider::new_with_predicate(providers, MissingDataKeyPredicate)
     }
 }

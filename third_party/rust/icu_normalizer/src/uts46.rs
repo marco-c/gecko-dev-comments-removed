@@ -8,13 +8,13 @@
 
 
 
+use crate::CanonicalCompositionsV1Marker;
+use crate::CanonicalDecompositionDataV1Marker;
+use crate::CanonicalDecompositionTablesV1Marker;
+use crate::CompatibilityDecompositionTablesV1Marker;
 use crate::ComposingNormalizer;
-use crate::ComposingNormalizerBorrowed;
-use crate::NormalizerNfcV1;
-use crate::NormalizerNfdTablesV1;
-use crate::NormalizerNfkdTablesV1;
-use crate::NormalizerUts46DataV1;
-use icu_provider::DataError;
+use crate::NormalizerError;
+use crate::Uts46DecompositionSupplementV1Marker;
 use icu_provider::DataProvider;
 
 
@@ -30,38 +30,43 @@ use icu_provider::DataProvider;
 
 
 #[derive(Debug)]
-pub struct Uts46MapperBorrowed<'a> {
-    normalizer: ComposingNormalizerBorrowed<'a>,
+pub struct Uts46Mapper {
+    normalizer: ComposingNormalizer,
 }
 
 #[cfg(feature = "compiled_data")]
-impl Default for Uts46MapperBorrowed<'static> {
+impl Default for Uts46Mapper {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Uts46MapperBorrowed<'static> {
-    
-    
-    
-    
-    pub const fn static_to_owned(self) -> Uts46Mapper {
-        Uts46Mapper {
-            normalizer: self.normalizer.static_to_owned(),
-        }
-    }
-
+impl Uts46Mapper {
     
     #[cfg(feature = "compiled_data")]
     pub const fn new() -> Self {
-        Uts46MapperBorrowed {
-            normalizer: ComposingNormalizerBorrowed::new_uts46(),
+        Uts46Mapper {
+            normalizer: ComposingNormalizer::new_uts46(),
         }
     }
-}
 
-impl Uts46MapperBorrowed<'_> {
+    
+    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
+    pub fn try_new<D>(provider: &D) -> Result<Self, NormalizerError>
+    where
+        D: DataProvider<CanonicalDecompositionDataV1Marker>
+            + DataProvider<Uts46DecompositionSupplementV1Marker>
+            + DataProvider<CanonicalDecompositionTablesV1Marker>
+            + DataProvider<CompatibilityDecompositionTablesV1Marker>
+            
+            + DataProvider<CanonicalCompositionsV1Marker>
+            + ?Sized,
+    {
+        let normalizer = ComposingNormalizer::try_new_uts46_unstable(provider)?;
+
+        Ok(Uts46Mapper { normalizer })
+    }
+
     
     
     
@@ -127,51 +132,5 @@ impl Uts46MapperBorrowed<'_> {
     ) -> impl Iterator<Item = char> + 'delegate {
         self.normalizer
             .normalize_iter_private(iter, crate::IgnorableBehavior::ReplacementCharacter)
-    }
-}
-
-
-
-#[derive(Debug)]
-pub struct Uts46Mapper {
-    normalizer: ComposingNormalizer,
-}
-
-#[cfg(feature = "compiled_data")]
-impl Default for Uts46Mapper {
-    fn default() -> Self {
-        Self::new().static_to_owned()
-    }
-}
-
-impl Uts46Mapper {
-    
-    pub fn as_borrowed(&self) -> Uts46MapperBorrowed<'_> {
-        Uts46MapperBorrowed {
-            normalizer: self.normalizer.as_borrowed(),
-        }
-    }
-
-    
-    #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
-    pub const fn new() -> Uts46MapperBorrowed<'static> {
-        Uts46MapperBorrowed::new()
-    }
-
-    
-    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new)]
-    pub fn try_new<D>(provider: &D) -> Result<Self, DataError>
-    where
-        D: DataProvider<NormalizerUts46DataV1>
-            + DataProvider<NormalizerNfdTablesV1>
-            + DataProvider<NormalizerNfkdTablesV1>
-            
-            + DataProvider<NormalizerNfcV1>
-            + ?Sized,
-    {
-        let normalizer = ComposingNormalizer::try_new_uts46_unstable(provider)?;
-
-        Ok(Uts46Mapper { normalizer })
     }
 }

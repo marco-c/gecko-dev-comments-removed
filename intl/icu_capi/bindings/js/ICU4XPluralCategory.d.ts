@@ -1,0 +1,25 @@
+
+
+
+
+
+export enum ICU4XPluralCategory {
+  
+
+  Zero = 'Zero',
+  
+
+  One = 'One',
+  
+
+  Two = 'Two',
+  
+
+  Few = 'Few',
+  
+
+  Many = 'Many',
+  
+
+  Other = 'Other',
+}

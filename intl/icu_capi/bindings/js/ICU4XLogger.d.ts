@@ -1,0 +1,23 @@
+
+
+
+
+
+export class ICU4XLogger {
+
+  
+
+
+
+
+
+
+
+  static init_simple_logger(): boolean;
+
+  
+
+
+
+  static init_console_logger(): boolean;
+}

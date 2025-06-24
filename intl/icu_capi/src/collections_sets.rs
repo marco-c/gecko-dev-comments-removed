@@ -3,33 +3,29 @@
 
 
 #[diplomat::bridge]
-#[diplomat::abi_rename = "icu4x_{0}_mv1"]
-#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
+    use crate::properties_sets::ffi::ICU4XCodePointSetData;
     use alloc::boxed::Box;
-
-    use crate::unstable::properties_sets::ffi::CodePointSetData;
+    use core::mem;
+    use icu_collections::codepointinvlist::CodePointInversionListBuilder;
+    use icu_properties::sets::CodePointSetData;
 
     #[diplomat::opaque]
     #[diplomat::rust_link(
         icu::collections::codepointinvlist::CodePointInversionListBuilder,
         Struct
     )]
-    pub struct CodePointSetBuilder(
-        pub icu_collections::codepointinvlist::CodePointInversionListBuilder,
-    );
+    pub struct ICU4XCodePointSetBuilder(pub CodePointInversionListBuilder);
 
-    impl CodePointSetBuilder {
+    impl ICU4XCodePointSetBuilder {
         
         #[diplomat::rust_link(
             icu::collections::codepointinvlist::CodePointInversionListBuilder::new,
             FnInStruct
         )]
-        #[diplomat::attr(auto, constructor)]
+        #[diplomat::attr(supports = constructors, constructor)]
         pub fn create() -> Box<Self> {
-            Box::new(Self(
-                icu_collections::codepointinvlist::CodePointInversionListBuilder::new(),
-            ))
+            Box::new(Self(CodePointInversionListBuilder::new()))
         }
 
         
@@ -40,15 +36,15 @@ pub mod ffi {
             FnInStruct
         )]
         #[diplomat::rust_link(
-            icu::properties::CodePointSetData::from_code_point_inversion_list,
+            icu::properties::sets::CodePointSetData::from_code_point_inversion_list,
             FnInStruct,
             hidden
         )]
-        pub fn build(&mut self) -> Box<CodePointSetData> {
-            let inner = core::mem::take(&mut self.0);
+        pub fn build(&mut self) -> Box<ICU4XCodePointSetData> {
+            let inner = mem::take(&mut self.0);
             let built = inner.build();
-            let set = icu_properties::CodePointSetData::from_code_point_inversion_list(built);
-            Box::new(CodePointSetData(set))
+            let set = CodePointSetData::from_code_point_inversion_list(built);
+            Box::new(ICU4XCodePointSetData(set))
         }
 
         
@@ -67,7 +63,7 @@ pub mod ffi {
             icu::collections::codepointinvlist::CodePointInversionListBuilder::is_empty,
             FnInStruct
         )]
-        #[diplomat::attr(auto, getter)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn is_empty(&self) -> bool {
             self.0.is_empty()
         }
@@ -88,6 +84,16 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(
+            icu::collections::codepointinvlist::CodePointInversionListBuilder::add_u32,
+            FnInStruct
+        )]
+        #[diplomat::attr(*, disable)]
+        pub fn add_u32(&mut self, ch: u32) {
+            self.add_char(ch)
+        }
+
+        
+        #[diplomat::rust_link(
             icu::collections::codepointinvlist::CodePointInversionListBuilder::add_range,
             FnInStruct
         )]
@@ -97,7 +103,17 @@ pub mod ffi {
             hidden
         )]
         pub fn add_inclusive_range(&mut self, start: DiplomatChar, end: DiplomatChar) {
-            self.0.add_range32(start..=end)
+            self.0.add_range32(&(start..=end))
+        }
+
+        
+        #[diplomat::rust_link(
+            icu::collections::codepointinvlist::CodePointInversionListBuilder::add_range_u32,
+            FnInStruct
+        )]
+        #[diplomat::attr(*, disable)]
+        pub fn add_inclusive_range_u32(&mut self, start: u32, end: u32) {
+            self.add_inclusive_range(start, end)
         }
 
         
@@ -106,16 +122,16 @@ pub mod ffi {
             FnInStruct
         )]
         #[diplomat::rust_link(
-            icu::properties::CodePointSetData::as_code_point_inversion_list,
+            icu::properties::sets::CodePointSetData::as_code_point_inversion_list,
             FnInStruct,
             hidden
         )]
         #[diplomat::rust_link(
-            icu::properties::CodePointSetData::to_code_point_inversion_list,
+            icu::properties::sets::CodePointSetData::to_code_point_inversion_list,
             FnInStruct,
             hidden
         )]
-        pub fn add_set(&mut self, data: &CodePointSetData) {
+        pub fn add_set(&mut self, data: &ICU4XCodePointSetData) {
             
             
             
@@ -148,7 +164,7 @@ pub mod ffi {
             hidden
         )]
         pub fn remove_inclusive_range(&mut self, start: DiplomatChar, end: DiplomatChar) {
-            self.0.remove_range32(start..=end)
+            self.0.remove_range32(&(start..=end))
         }
 
         
@@ -156,7 +172,7 @@ pub mod ffi {
             icu::collections::codepointinvlist::CodePointInversionListBuilder::remove_set,
             FnInStruct
         )]
-        pub fn remove_set(&mut self, data: &CodePointSetData) {
+        pub fn remove_set(&mut self, data: &ICU4XCodePointSetData) {
             
             let list = data.0.to_code_point_inversion_list();
             self.0.remove_set(&list);
@@ -187,7 +203,7 @@ pub mod ffi {
             hidden
         )]
         pub fn retain_inclusive_range(&mut self, start: DiplomatChar, end: DiplomatChar) {
-            self.0.retain_range32(start..=end)
+            self.0.retain_range32(&(start..=end))
         }
 
         
@@ -195,7 +211,7 @@ pub mod ffi {
             icu::collections::codepointinvlist::CodePointInversionListBuilder::retain_set,
             FnInStruct
         )]
-        pub fn retain_set(&mut self, data: &CodePointSetData) {
+        pub fn retain_set(&mut self, data: &ICU4XCodePointSetData) {
             
             let list = data.0.to_code_point_inversion_list();
             self.0.retain_set(&list);
@@ -230,7 +246,7 @@ pub mod ffi {
             hidden
         )]
         pub fn complement_inclusive_range(&mut self, start: DiplomatChar, end: DiplomatChar) {
-            self.0.complement_range32(start..=end)
+            self.0.complement_range32(&(start..=end))
         }
 
         
@@ -240,7 +256,7 @@ pub mod ffi {
             icu::collections::codepointinvlist::CodePointInversionListBuilder::complement_set,
             FnInStruct
         )]
-        pub fn complement_set(&mut self, data: &CodePointSetData) {
+        pub fn complement_set(&mut self, data: &ICU4XCodePointSetData) {
             
             let list = data.0.to_code_point_inversion_list();
             self.0.complement_set(&list);

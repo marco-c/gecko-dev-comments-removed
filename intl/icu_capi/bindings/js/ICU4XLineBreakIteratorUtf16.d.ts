@@ -1,0 +1,18 @@
+import { i32 } from "./diplomat-runtime"
+
+
+
+
+
+
+
+export class ICU4XLineBreakIteratorUtf16 {
+
+  
+
+
+
+
+
+  next(): i32;
+}

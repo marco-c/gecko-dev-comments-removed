@@ -1,0 +1,25 @@
+
+
+
+
+
+export enum ICU4XCollatorStrength {
+  
+
+  Auto = 'Auto',
+  
+
+  Primary = 'Primary',
+  
+
+  Secondary = 'Secondary',
+  
+
+  Tertiary = 'Tertiary',
+  
+
+  Quaternary = 'Quaternary',
+  
+
+  Identical = 'Identical',
+}

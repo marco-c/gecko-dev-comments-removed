@@ -29,8 +29,7 @@ const strings = {
   "ab": ["ab"],
 
   
-  
-  
+  "a:b": ["a:b"],
   "a·b": ["a·b"],
   "a.b": ["a.b"],
   "a'b": ["a'b"],
@@ -109,8 +108,7 @@ for (let string of [
   "a", "ab",
 
   
-  
-  
+  "a:b",
   "a·b",
   "a.b",
   "a'b",

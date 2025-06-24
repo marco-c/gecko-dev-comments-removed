@@ -1,22 +1,16 @@
-
-import type { CodePointRangeIteratorResult } from "./CodePointRangeIteratorResult"
-import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
-
-
-
+import { CodePointRangeIteratorResult } from "./CodePointRangeIteratorResult";
 
 
 
 
 
 export class CodePointRangeIterator {
-    get ffiValue(): pointer;
 
-
-    
-
+  
 
 
 
-    next(): CodePointRangeIteratorResult;
+
+
+  next(): CodePointRangeIteratorResult;
 }

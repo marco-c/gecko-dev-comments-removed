@@ -2,78 +2,52 @@
 
 
 
-use super::VarZeroVecFormatError;
 use crate::ule::*;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
 use core::marker::PhantomData;
-use core::mem;
 use core::ops::Range;
 
 
+pub(super) const LENGTH_WIDTH: usize = 4;
+pub(super) const METADATA_WIDTH: usize = 0;
+pub(super) const MAX_LENGTH: usize = u32::MAX as usize;
+pub(super) const MAX_INDEX: usize = u32::MAX as usize;
 
 
 
 
 
-
-
-
-pub trait VarZeroVecFormat: 'static + Sized {
-    
-    
-    
-    #[doc(hidden)]
-    type Index: IntegerULE;
-    
-    
-    
-    #[doc(hidden)]
-    type Len: IntegerULE;
-}
 
 
 
 
 
 #[allow(clippy::missing_safety_doc)] 
-#[doc(hidden)]
-pub unsafe trait IntegerULE: ULE {
-    
+pub unsafe trait VarZeroVecFormat: 'static + Sized {
     #[doc(hidden)]
-    const TOO_LARGE_ERROR: &'static str;
-
-    
-    #[doc(hidden)]
-    const SIZE: usize;
-
-    
+    const INDEX_WIDTH: usize;
     #[doc(hidden)]
     const MAX_VALUE: u32;
-
+    
     
     
     #[doc(hidden)]
-    fn iule_to_usize(self) -> usize;
-
-    #[doc(hidden)]
-    fn iule_from_usize(x: usize) -> Option<Self>;
+    type RawBytes: ULE;
 
     
     #[doc(hidden)]
-    #[cfg(feature = "alloc")]
-    fn iule_from_bytes_unchecked_mut(bytes: &mut [u8]) -> &mut [Self];
+    fn rawbytes_to_usize(raw: Self::RawBytes) -> usize;
+    #[doc(hidden)]
+    fn usize_to_rawbytes(u: usize) -> Self::RawBytes;
+
+    #[doc(hidden)]
+    fn rawbytes_from_byte_slice_unchecked_mut(bytes: &mut [u8]) -> &mut [Self::RawBytes];
 }
-
-
-
-
-
-
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::exhaustive_structs)] 
-pub struct Index8;
-
 
 
 
@@ -91,78 +65,39 @@ pub struct Index16;
 #[allow(clippy::exhaustive_structs)] 
 pub struct Index32;
 
-impl VarZeroVecFormat for Index8 {
-    type Index = u8;
-    type Len = u8;
-}
-
-impl VarZeroVecFormat for Index16 {
-    type Index = RawBytesULE<2>;
-    type Len = RawBytesULE<2>;
-}
-
-impl VarZeroVecFormat for Index32 {
-    type Index = RawBytesULE<4>;
-    type Len = RawBytesULE<4>;
-}
-
-unsafe impl IntegerULE for u8 {
-    const TOO_LARGE_ERROR: &'static str = "Attempted to build VarZeroVec out of elements that \
-                                     cumulatively are larger than a u8 in size";
-    const SIZE: usize = mem::size_of::<Self>();
-    const MAX_VALUE: u32 = u8::MAX as u32;
-    #[inline]
-    fn iule_to_usize(self) -> usize {
-        self as usize
-    }
-    #[inline]
-    fn iule_from_usize(u: usize) -> Option<Self> {
-        u8::try_from(u).ok()
-    }
-    #[inline]
-    #[cfg(feature = "alloc")]
-    fn iule_from_bytes_unchecked_mut(bytes: &mut [u8]) -> &mut [Self] {
-        bytes
-    }
-}
-
-unsafe impl IntegerULE for RawBytesULE<2> {
-    const TOO_LARGE_ERROR: &'static str = "Attempted to build VarZeroVec out of elements that \
-                                     cumulatively are larger than a u16 in size";
-    const SIZE: usize = mem::size_of::<Self>();
+unsafe impl VarZeroVecFormat for Index16 {
+    const INDEX_WIDTH: usize = 2;
     const MAX_VALUE: u32 = u16::MAX as u32;
+    type RawBytes = RawBytesULE<2>;
     #[inline]
-    fn iule_to_usize(self) -> usize {
-        self.as_unsigned_int() as usize
+    fn rawbytes_to_usize(raw: Self::RawBytes) -> usize {
+        raw.as_unsigned_int() as usize
     }
     #[inline]
-    fn iule_from_usize(u: usize) -> Option<Self> {
-        u16::try_from(u).ok().map(u16::to_unaligned)
+    fn usize_to_rawbytes(u: usize) -> Self::RawBytes {
+        (u as u16).to_unaligned()
     }
     #[inline]
-    #[cfg(feature = "alloc")]
-    fn iule_from_bytes_unchecked_mut(bytes: &mut [u8]) -> &mut [Self] {
-        Self::from_bytes_unchecked_mut(bytes)
+    fn rawbytes_from_byte_slice_unchecked_mut(bytes: &mut [u8]) -> &mut [Self::RawBytes] {
+        Self::RawBytes::from_byte_slice_unchecked_mut(bytes)
     }
 }
 
-unsafe impl IntegerULE for RawBytesULE<4> {
-    const TOO_LARGE_ERROR: &'static str = "Attempted to build VarZeroVec out of elements that \
-                                     cumulatively are larger than a u32 in size";
-    const SIZE: usize = mem::size_of::<Self>();
+unsafe impl VarZeroVecFormat for Index32 {
+    const INDEX_WIDTH: usize = 4;
     const MAX_VALUE: u32 = u32::MAX;
+    type RawBytes = RawBytesULE<4>;
     #[inline]
-    fn iule_to_usize(self) -> usize {
-        self.as_unsigned_int() as usize
+    fn rawbytes_to_usize(raw: Self::RawBytes) -> usize {
+        raw.as_unsigned_int() as usize
     }
     #[inline]
-    fn iule_from_usize(u: usize) -> Option<Self> {
-        u32::try_from(u).ok().map(u32::to_unaligned)
+    fn usize_to_rawbytes(u: usize) -> Self::RawBytes {
+        (u as u32).to_unaligned()
     }
     #[inline]
-    #[cfg(feature = "alloc")]
-    fn iule_from_bytes_unchecked_mut(bytes: &mut [u8]) -> &mut [Self] {
-        Self::from_bytes_unchecked_mut(bytes)
+    fn rawbytes_from_byte_slice_unchecked_mut(bytes: &mut [u8]) -> &mut [Self::RawBytes] {
+        Self::RawBytes::from_byte_slice_unchecked_mut(bytes)
     }
 }
 
@@ -180,10 +115,11 @@ pub struct VarZeroVecComponents<'a, T: ?Sized, F> {
     
     len: u32,
     
-    
     indices: &'a [u8],
     
     things: &'a [u8],
+    
+    entire_slice: &'a [u8],
     marker: PhantomData<(&'a T, F)>,
 }
 
@@ -210,6 +146,7 @@ impl<'a, T: VarULE + ?Sized, F> VarZeroVecComponents<'a, T, F> {
             len: 0,
             indices: &[],
             things: &[],
+            entire_slice: &[],
             marker: PhantomData,
         }
     }
@@ -223,73 +160,43 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     
     
     
-    
-    
     #[inline]
-    pub fn parse_bytes(slice: &'a [u8]) -> Result<Self, VarZeroVecFormatError> {
+    pub fn parse_byte_slice(slice: &'a [u8]) -> Result<Self, ZeroVecError> {
         
         if slice.is_empty() {
             return Ok(VarZeroVecComponents {
                 len: 0,
                 indices: &[],
                 things: &[],
+                entire_slice: slice,
                 marker: PhantomData,
             });
         }
         let len_bytes = slice
-            .get(0..F::Len::SIZE)
-            .ok_or(VarZeroVecFormatError::Metadata)?;
-        let len_ule =
-            F::Len::parse_bytes_to_slice(len_bytes).map_err(|_| VarZeroVecFormatError::Metadata)?;
+            .get(0..LENGTH_WIDTH)
+            .ok_or(ZeroVecError::VarZeroVecFormatError)?;
+        let len_ule = RawBytesULE::<LENGTH_WIDTH>::parse_byte_slice(len_bytes)
+            .map_err(|_| ZeroVecError::VarZeroVecFormatError)?;
 
         let len = len_ule
             .first()
-            .ok_or(VarZeroVecFormatError::Metadata)?
-            .iule_to_usize();
-
-        let rest = slice
-            .get(F::Len::SIZE..)
-            .ok_or(VarZeroVecFormatError::Metadata)?;
-        let len_u32 = u32::try_from(len).map_err(|_| VarZeroVecFormatError::Metadata);
-        
-        Self::parse_bytes_with_length(len_u32?, rest)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn parse_bytes_with_length(
-        len: u32,
-        slice: &'a [u8],
-    ) -> Result<Self, VarZeroVecFormatError> {
-        let len_minus_one = len.checked_sub(1);
-        
-        let Some(len_minus_one) = len_minus_one else {
-            return Ok(VarZeroVecComponents {
-                len: 0,
-                indices: &[],
-                things: &[],
-                marker: PhantomData,
-            });
-        };
-        
-        
+            .ok_or(ZeroVecError::VarZeroVecFormatError)?
+            .as_unsigned_int();
         let indices_bytes = slice
-            .get(..F::Index::SIZE * (len_minus_one as usize))
-            .ok_or(VarZeroVecFormatError::Metadata)?;
+            .get(
+                LENGTH_WIDTH + METADATA_WIDTH
+                    ..LENGTH_WIDTH + METADATA_WIDTH + F::INDEX_WIDTH * (len as usize),
+            )
+            .ok_or(ZeroVecError::VarZeroVecFormatError)?;
         let things = slice
-            .get(F::Index::SIZE * (len_minus_one as usize)..)
-            .ok_or(VarZeroVecFormatError::Metadata)?;
+            .get(F::INDEX_WIDTH * (len as usize) + LENGTH_WIDTH + METADATA_WIDTH..)
+            .ok_or(ZeroVecError::VarZeroVecFormatError)?;
 
         let borrowed = VarZeroVecComponents {
             len,
             indices: indices_bytes,
             things,
+            entire_slice: slice,
             marker: PhantomData,
         };
 
@@ -313,51 +220,26 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
                 len: 0,
                 indices: &[],
                 things: &[],
+                entire_slice: slice,
                 marker: PhantomData,
             };
         }
-        let (len_bytes, data_bytes) = unsafe { slice.split_at_unchecked(F::Len::SIZE) };
-        
-        let len_ule = F::Len::slice_from_bytes_unchecked(len_bytes);
+        let len_bytes = slice.get_unchecked(0..LENGTH_WIDTH);
+        let len_ule = RawBytesULE::<LENGTH_WIDTH>::from_byte_slice_unchecked(len_bytes);
 
-        let len = len_ule.get_unchecked(0).iule_to_usize();
-        let len_u32 = len as u32;
-
-        
-        
-        
-        
-        Self::from_bytes_unchecked_with_length(len_u32, data_bytes)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn from_bytes_unchecked_with_length(len: u32, slice: &'a [u8]) -> Self {
-        let len_minus_one = len.checked_sub(1);
-        
-        let Some(len_minus_one) = len_minus_one else {
-            return VarZeroVecComponents {
-                len: 0,
-                indices: &[],
-                things: &[],
-                marker: PhantomData,
-            };
-        };
-        
-        
-        let indices_bytes = slice.get_unchecked(..F::Index::SIZE * (len_minus_one as usize));
-        let things = slice.get_unchecked(F::Index::SIZE * (len_minus_one as usize)..);
+        let len = len_ule.get_unchecked(0).as_unsigned_int();
+        let indices_bytes = slice.get_unchecked(
+            LENGTH_WIDTH + METADATA_WIDTH
+                ..LENGTH_WIDTH + METADATA_WIDTH + F::INDEX_WIDTH * (len as usize),
+        );
+        let things =
+            slice.get_unchecked(LENGTH_WIDTH + METADATA_WIDTH + F::INDEX_WIDTH * (len as usize)..);
 
         VarZeroVecComponents {
             len,
             indices: indices_bytes,
             things,
+            entire_slice: slice,
             marker: PhantomData,
         }
     }
@@ -371,7 +253,7 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     
     #[inline]
     pub fn is_empty(self) -> bool {
-        self.len == 0
+        self.indices.is_empty()
     }
 
     
@@ -391,7 +273,7 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     pub(crate) unsafe fn get_unchecked(self, idx: usize) -> &'a T {
         let range = self.get_things_range(idx);
         let things_slice = self.things.get_unchecked(range);
-        T::from_bytes_unchecked(things_slice)
+        T::from_byte_slice_unchecked(things_slice)
     }
 
     
@@ -399,26 +281,28 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     
     
     #[inline]
-    pub(crate) unsafe fn get_things_range(self, idx: usize) -> Range<usize> {
-        let start = if let Some(idx_minus_one) = idx.checked_sub(1) {
-            self.indices_slice()
-                .get_unchecked(idx_minus_one)
-                .iule_to_usize()
-        } else {
-            0
-        };
+    unsafe fn get_things_range(self, idx: usize) -> Range<usize> {
+        let start = F::rawbytes_to_usize(*self.indices_slice().get_unchecked(idx));
         let end = if idx + 1 == self.len() {
             self.things.len()
         } else {
-            self.indices_slice().get_unchecked(idx).iule_to_usize()
+            F::rawbytes_to_usize(*self.indices_slice().get_unchecked(idx + 1))
         };
         debug_assert!(start <= end);
         start..end
     }
 
     
-    pub(crate) unsafe fn get_indices_size(self) -> usize {
-        self.indices.len()
+    
+    
+    
+    #[inline]
+    pub(crate) unsafe fn get_range(self, idx: usize) -> Range<usize> {
+        let range = self.get_things_range(idx);
+        let offset = (self.things as *const [u8] as *const u8)
+            .offset_from(self.entire_slice as *const [u8] as *const u8)
+            as usize;
+        range.start + offset..range.end + offset
     }
 
     
@@ -433,40 +317,36 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     
     #[inline]
     #[allow(clippy::len_zero)] 
-    fn check_indices_and_things(self) -> Result<(), VarZeroVecFormatError> {
+    fn check_indices_and_things(self) -> Result<(), ZeroVecError> {
+        assert_eq!(self.len(), self.indices_slice().len());
         if self.len() == 0 {
             if self.things.len() > 0 {
-                return Err(VarZeroVecFormatError::Metadata);
+                return Err(ZeroVecError::VarZeroVecFormatError);
             } else {
                 return Ok(());
             }
         }
-        let indices_slice = self.indices_slice();
-        assert_eq!(self.len(), indices_slice.len() + 1);
         
-        let mut start = 0;
+        let mut start = F::rawbytes_to_usize(unsafe { *self.indices_slice().get_unchecked(0) });
+        if start != 0 {
+            return Err(ZeroVecError::VarZeroVecFormatError);
+        }
         for i in 0..self.len() {
-            
-            
-            
-            let end = if let Some(end) = indices_slice.get(i) {
-                end.iule_to_usize()
+            let end = if i == self.len() - 1 {
+                self.things.len()
             } else {
                 
-                
-                
-                self.things.len()
+                F::rawbytes_to_usize(unsafe { *self.indices_slice().get_unchecked(i + 1) })
             };
-
             if start > end {
-                return Err(VarZeroVecFormatError::Metadata);
+                return Err(ZeroVecError::VarZeroVecFormatError);
             }
             if end > self.things.len() {
-                return Err(VarZeroVecFormatError::Metadata);
+                return Err(ZeroVecError::VarZeroVecFormatError);
             }
             
             let bytes = unsafe { self.things.get_unchecked(start..end) };
-            T::parse_bytes(bytes).map_err(VarZeroVecFormatError::Values)?;
+            T::parse_byte_slice(bytes)?;
             start = end;
         }
         Ok(())
@@ -474,105 +354,42 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
 
     
     #[inline]
-    pub fn iter(self) -> VarZeroSliceIter<'a, T, F> {
-        VarZeroSliceIter::new(self)
+    pub fn iter(self) -> impl Iterator<Item = &'a T> {
+        self.indices_slice()
+            .iter()
+            .copied()
+            .map(F::rawbytes_to_usize)
+            .zip(
+                self.indices_slice()
+                    .iter()
+                    .copied()
+                    .map(F::rawbytes_to_usize)
+                    .skip(1)
+                    .chain([self.things.len()]),
+            )
+            .map(move |(start, end)| unsafe { self.things.get_unchecked(start..end) })
+            .map(|bytes| unsafe { T::from_byte_slice_unchecked(bytes) })
     }
 
-    #[cfg(feature = "alloc")]
-    pub fn to_vec(self) -> alloc::vec::Vec<alloc::boxed::Box<T>> {
+    pub fn to_vec(self) -> Vec<Box<T>> {
         self.iter().map(T::to_boxed).collect()
     }
 
     #[inline]
-    fn indices_slice(&self) -> &'a [F::Index] {
-        unsafe { F::Index::slice_from_bytes_unchecked(self.indices) }
+    fn indices_slice(&self) -> &'a [F::RawBytes] {
+        unsafe { F::RawBytes::from_byte_slice_unchecked(self.indices) }
     }
 
     
     #[allow(unused)] 
-    #[cfg(feature = "alloc")]
-    pub(crate) fn dump(&self) -> alloc::string::String {
+    pub(crate) fn dump(&self) -> String {
         let indices = self
             .indices_slice()
             .iter()
             .copied()
-            .map(IntegerULE::iule_to_usize)
-            .collect::<alloc::vec::Vec<_>>();
-        alloc::format!("VarZeroVecComponents {{ indices: {indices:?} }}")
-    }
-}
-
-
-#[derive(Debug)]
-pub struct VarZeroSliceIter<'a, T: ?Sized, F = Index16> {
-    components: VarZeroVecComponents<'a, T, F>,
-    index: usize,
-    
-    
-    
-    
-    start_index: usize,
-}
-
-impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSliceIter<'a, T, F> {
-    fn new(c: VarZeroVecComponents<'a, T, F>) -> Self {
-        Self {
-            components: c,
-            index: 0,
-            
-            start_index: 0,
-        }
-    }
-}
-impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> Iterator for VarZeroSliceIter<'a, T, F> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        
-        
-
-        if self.index >= self.components.len() {
-            return None;
-        }
-
-        
-        
-
-        let end = if self.index + 1 == self.components.len() {
-            
-            self.components.things.len()
-        } else {
-            
-            unsafe {
-                self.components
-                    .indices_slice()
-                    .get_unchecked(self.index)
-                    .iule_to_usize()
-            }
-        };
-        
-        
-
-        let item = unsafe {
-            
-            
-            T::from_bytes_unchecked(self.components.things.get_unchecked(self.start_index..end))
-        };
-        self.index += 1;
-        
-        self.start_index = end;
-        Some(item)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let remainder = self.components.len() - self.index;
-        (remainder, Some(remainder))
-    }
-}
-
-impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> ExactSizeIterator for VarZeroSliceIter<'a, T, F> {
-    fn len(&self) -> usize {
-        self.components.len() - self.index
+            .map(F::rawbytes_to_usize)
+            .collect::<Vec<_>>();
+        format!("VarZeroVecComponents {{ indices: {indices:?} }}")
     }
 }
 
@@ -586,7 +403,7 @@ where
     
     
     pub fn binary_search(&self, needle: &T) -> Result<usize, usize> {
-        self.binary_search_by(|probe| probe.cmp(needle))
+        self.binary_search_impl(|probe| probe.cmp(needle), self.indices_slice())
     }
 
     pub fn binary_search_in_range(
@@ -594,7 +411,8 @@ where
         needle: &T,
         range: Range<usize>,
     ) -> Option<Result<usize, usize>> {
-        self.binary_search_in_range_by(|probe| probe.cmp(needle), range)
+        let indices_slice = self.indices_slice().get(range)?;
+        Some(self.binary_search_impl(|probe| probe.cmp(needle), indices_slice))
     }
 }
 
@@ -607,80 +425,63 @@ where
     
     
     pub fn binary_search_by(&self, predicate: impl FnMut(&T) -> Ordering) -> Result<usize, usize> {
-        
-        unsafe { self.binary_search_in_range_unchecked(predicate, 0..self.len()) }
+        self.binary_search_impl(predicate, self.indices_slice())
     }
 
-    
-    
     pub fn binary_search_in_range_by(
         &self,
         predicate: impl FnMut(&T) -> Ordering,
         range: Range<usize>,
     ) -> Option<Result<usize, usize>> {
-        if range.end > self.len() {
-            return None;
-        }
-        if range.end < range.start {
-            return None;
-        }
-        
-        let range_absolute =
-            unsafe { self.binary_search_in_range_unchecked(predicate, range.clone()) };
-        
-        Some(
-            range_absolute
-                .map(|o| o - range.start)
-                .map_err(|e| e - range.start),
-        )
+        let indices_slice = self.indices_slice().get(range)?;
+        Some(self.binary_search_impl(predicate, indices_slice))
     }
 
     
-    unsafe fn binary_search_in_range_unchecked(
+    
+    fn binary_search_impl(
         &self,
         mut predicate: impl FnMut(&T) -> Ordering,
-        range: Range<usize>,
+        indices_slice: &[F::RawBytes],
     ) -> Result<usize, usize> {
         
-        let mut start = range.start;
-        let mut end = range.end;
-        let mut size;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         
         
-        while start < end {
-            size = end - start;
+        let zero_index = self.indices.as_ptr() as *const _ as usize;
+        indices_slice.binary_search_by(|probe: &_| {
             
             
+            let index = (probe as *const _ as usize - zero_index) / F::INDEX_WIDTH;
             
-            let mid = start + size / 2;
-
-            
-            let cmp = predicate(self.get_unchecked(mid));
-
-            match cmp {
-                Ordering::Less => {
-                    
-                    
-                    
-                    start = mid + 1;
-                }
-                Ordering::Greater => {
-                    
-                    
-                    
-                    end = mid;
-                }
-                Ordering::Equal => return Ok(mid),
-            }
-        }
-        Err(start)
+            let actual_probe = unsafe { self.get_unchecked(index) };
+            predicate(actual_probe)
+        })
     }
 }
 
 
-#[cfg(feature = "alloc")]
-pub fn get_serializable_bytes_non_empty<T, A, F>(elements: &[A]) -> Option<alloc::vec::Vec<u8>>
+pub fn get_serializable_bytes_non_empty<T, A, F>(elements: &[A]) -> Option<Vec<u8>>
 where
     T: VarULE + ?Sized,
     A: EncodeAsVarULE<T>,
@@ -688,69 +489,10 @@ where
 {
     debug_assert!(!elements.is_empty());
     let len = compute_serializable_len::<T, A, F>(elements)?;
-    debug_assert!(
-        len >= F::Len::SIZE as u32,
-        "Must have at least F::Len::SIZE bytes to hold the length of the vector"
-    );
-    let mut output = alloc::vec![0u8; len as usize];
+    debug_assert!(len >= LENGTH_WIDTH as u32);
+    let mut output: Vec<u8> = alloc::vec![0; len as usize];
     write_serializable_bytes::<T, A, F>(elements, &mut output);
     Some(output)
-}
-
-
-
-
-
-
-
-
-
-pub fn write_serializable_bytes_without_length<T, A, F>(elements: &[A], output: &mut [u8])
-where
-    T: VarULE + ?Sized,
-    A: EncodeAsVarULE<T>,
-    F: VarZeroVecFormat,
-{
-    assert!(elements.len() <= F::Len::MAX_VALUE as usize);
-    if elements.is_empty() {
-        return;
-    }
-
-    
-    let mut idx_offset: usize = 0;
-    
-    let first_dat_offset: usize = idx_offset + (elements.len() - 1) * F::Index::SIZE;
-    
-    let mut dat_offset: usize = first_dat_offset;
-
-    for (i, element) in elements.iter().enumerate() {
-        let element_len = element.encode_var_ule_len();
-
-        
-        if i != 0 {
-            let idx_limit = idx_offset + F::Index::SIZE;
-            #[allow(clippy::indexing_slicing)] 
-            let idx_slice = &mut output[idx_offset..idx_limit];
-            
-            let idx = dat_offset - first_dat_offset;
-            assert!(idx <= F::Index::MAX_VALUE as usize);
-            #[allow(clippy::expect_used)] 
-            let bytes_to_write = F::Index::iule_from_usize(idx).expect(F::Index::TOO_LARGE_ERROR);
-            idx_slice.copy_from_slice(ULE::slice_as_bytes(&[bytes_to_write]));
-
-            idx_offset = idx_limit;
-        }
-
-        let dat_limit = dat_offset + element_len;
-        #[allow(clippy::indexing_slicing)] 
-        let dat_slice = &mut output[dat_offset..dat_limit];
-        element.encode_var_ule_write(dat_slice);
-        debug_assert_eq!(T::validate_bytes(dat_slice), Ok(()));
-        dat_offset = dat_limit;
-    }
-
-    debug_assert_eq!(idx_offset, F::Index::SIZE * (elements.len() - 1));
-    assert_eq!(dat_offset, output.len());
 }
 
 
@@ -766,44 +508,45 @@ where
     A: EncodeAsVarULE<T>,
     F: VarZeroVecFormat,
 {
-    if elements.is_empty() {
-        return;
-    }
-    assert!(elements.len() <= F::Len::MAX_VALUE as usize);
-    #[allow(clippy::expect_used)] 
-    let num_elements_ule = F::Len::iule_from_usize(elements.len()).expect(F::Len::TOO_LARGE_ERROR);
+    assert!(elements.len() <= MAX_LENGTH);
+    let num_elements_bytes = elements.len().to_le_bytes();
     #[allow(clippy::indexing_slicing)] 
-    output[0..F::Len::SIZE].copy_from_slice(ULE::slice_as_bytes(&[num_elements_ule]));
+    output[0..LENGTH_WIDTH].copy_from_slice(&num_elements_bytes[0..LENGTH_WIDTH]);
 
-    #[allow(clippy::indexing_slicing)] 
-    write_serializable_bytes_without_length::<T, A, F>(elements, &mut output[F::Len::SIZE..]);
-}
+    
+    let mut idx_offset: usize = LENGTH_WIDTH + METADATA_WIDTH;
+    
+    let first_dat_offset: usize = idx_offset + elements.len() * F::INDEX_WIDTH;
+    
+    let mut dat_offset: usize = first_dat_offset;
 
-pub fn compute_serializable_len_without_length<T, A, F>(elements: &[A]) -> Option<u32>
-where
-    T: VarULE + ?Sized,
-    A: EncodeAsVarULE<T>,
-    F: VarZeroVecFormat,
-{
-    let elements_len = elements.len();
-    let Some(elements_len_minus_one) = elements_len.checked_sub(1) else {
+    for element in elements.iter() {
+        let element_len = element.encode_var_ule_len();
+
+        let idx_limit = idx_offset + F::INDEX_WIDTH;
+        #[allow(clippy::indexing_slicing)] 
+        let idx_slice = &mut output[idx_offset..idx_limit];
         
-        return Some(0);
-    };
-    let idx_len: u32 = u32::try_from(elements_len_minus_one)
-        .ok()?
-        .checked_mul(F::Index::SIZE as u32)?;
-    let data_len: u32 = elements
-        .iter()
-        .map(|v| u32::try_from(v.encode_var_ule_len()).ok())
-        .try_fold(0u32, |s, v| s.checked_add(v?))?;
-    let ret = idx_len.checked_add(data_len);
-    if let Some(r) = ret {
-        if r >= F::Index::MAX_VALUE {
-            return None;
-        }
+        let idx = dat_offset - first_dat_offset;
+        assert!(idx <= MAX_INDEX);
+        #[allow(clippy::indexing_slicing)] 
+        idx_slice.copy_from_slice(&idx.to_le_bytes()[..F::INDEX_WIDTH]);
+
+        let dat_limit = dat_offset + element_len;
+        #[allow(clippy::indexing_slicing)] 
+        let dat_slice = &mut output[dat_offset..dat_limit];
+        element.encode_var_ule_write(dat_slice);
+        debug_assert_eq!(T::validate_byte_slice(dat_slice), Ok(()));
+
+        idx_offset = idx_limit;
+        dat_offset = dat_limit;
     }
-    ret
+
+    debug_assert_eq!(
+        idx_offset,
+        LENGTH_WIDTH + METADATA_WIDTH + F::INDEX_WIDTH * elements.len()
+    );
+    assert_eq!(dat_offset, output.len());
 }
 
 pub fn compute_serializable_len<T, A, F>(elements: &[A]) -> Option<u32>
@@ -812,5 +555,20 @@ where
     A: EncodeAsVarULE<T>,
     F: VarZeroVecFormat,
 {
-    compute_serializable_len_without_length::<T, A, F>(elements).map(|x| x + F::Len::SIZE as u32)
+    let idx_len: u32 = u32::try_from(elements.len())
+        .ok()?
+        .checked_mul(F::INDEX_WIDTH as u32)?
+        .checked_add(LENGTH_WIDTH as u32)?
+        .checked_add(METADATA_WIDTH as u32)?;
+    let data_len: u32 = elements
+        .iter()
+        .map(|v| u32::try_from(v.encode_var_ule_len()).ok())
+        .try_fold(0u32, |s, v| s.checked_add(v?))?;
+    let ret = idx_len.checked_add(data_len);
+    if let Some(r) = ret {
+        if r >= F::MAX_VALUE {
+            return None;
+        }
+    }
+    ret
 }

@@ -2,16 +2,13 @@
 
 
 
-use icu_segmenter::{options::WordBreakInvariantOptions, WordSegmenter};
+use icu_segmenter::WordSegmenter;
 
 
 
 #[test]
 fn word_break_th() {
-    for segmenter in [
-        WordSegmenter::new_auto(WordBreakInvariantOptions::default()),
-        WordSegmenter::new_lstm(WordBreakInvariantOptions::default()),
-    ] {
+    for segmenter in [WordSegmenter::new_auto(), WordSegmenter::new_lstm()] {
         
         let s = "ภาษาไทยภาษาไทย";
         let utf16: Vec<u16> = s.encode_utf16().collect();
@@ -42,7 +39,7 @@ fn word_break_th() {
 
 #[test]
 fn word_break_my() {
-    let segmenter = WordSegmenter::new_auto(WordBreakInvariantOptions::default());
+    let segmenter = WordSegmenter::new_auto();
 
     let s = "မြန်မာစာမြန်မာစာမြန်မာစာ";
     let utf16: Vec<u16> = s.encode_utf16().collect();
@@ -56,10 +53,7 @@ fn word_break_my() {
 
 #[test]
 fn word_break_hiragana() {
-    for segmenter in [
-        WordSegmenter::new_auto(WordBreakInvariantOptions::default()),
-        WordSegmenter::new_dictionary(WordBreakInvariantOptions::default()),
-    ] {
+    for segmenter in [WordSegmenter::new_auto(), WordSegmenter::new_dictionary()] {
         let s = "うなぎうなじ";
         let iter = segmenter.segment_str(s);
         assert_eq!(
@@ -72,10 +66,7 @@ fn word_break_hiragana() {
 
 #[test]
 fn word_break_mixed_han() {
-    for segmenter in [
-        WordSegmenter::new_auto(WordBreakInvariantOptions::default()),
-        WordSegmenter::new_dictionary(WordBreakInvariantOptions::default()),
-    ] {
+    for segmenter in [WordSegmenter::new_auto(), WordSegmenter::new_dictionary()] {
         let s = "Welcome龟山岛龟山岛Welcome";
         let iter = segmenter.segment_str(s);
         assert_eq!(
@@ -95,8 +86,8 @@ fn word_line_th_wikipedia_auto() {
     let utf16: Vec<u16> = text.encode_utf16().collect();
     assert_eq!(utf16.len(), 142);
 
-    let segmenter_word_auto = WordSegmenter::new_auto(Default::default());
-    let segmenter_line_auto = LineSegmenter::new_auto(Default::default());
+    let segmenter_word_auto = WordSegmenter::new_auto();
+    let segmenter_line_auto = LineSegmenter::new_auto();
 
     let breakpoints_word_utf8 = segmenter_word_auto.segment_str(text).collect::<Vec<_>>();
     assert_eq!(

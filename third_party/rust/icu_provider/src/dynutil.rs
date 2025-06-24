@@ -7,11 +7,32 @@
 
 
 
+
+
 pub trait UpcastDataPayload<M>
 where
-    M: crate::DynamicDataMarker,
-    Self: Sized + crate::DynamicDataMarker,
+    M: crate::DataMarker,
+    Self: Sized + crate::DataMarker,
 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     fn upcast(other: crate::DataPayload<M>) -> crate::DataPayload<Self>;
 }
@@ -41,11 +62,8 @@ where
 
 
 
-
-
 #[macro_export]
-#[doc(hidden)] 
-macro_rules! __impl_casting_upcast {
+macro_rules! impl_casting_upcast {
     ($dyn_m:path, [ $($struct_m:ident),+, ]) => {
         $(
             impl $crate::dynutil::UpcastDataPayload<$struct_m> for $dyn_m {
@@ -56,8 +74,6 @@ macro_rules! __impl_casting_upcast {
         )+
     }
 }
-#[doc(inline)]
-pub use __impl_casting_upcast as impl_casting_upcast;
 
 
 
@@ -73,57 +89,135 @@ pub use __impl_casting_upcast as impl_casting_upcast;
 
 
 
-#[doc(hidden)] 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
-macro_rules! __impl_dynamic_data_provider {
+macro_rules! impl_dynamic_data_provider {
     
     ($provider:ty, $arms:tt, $one:path, $($rest:path),+) => {
-        $crate::dynutil::impl_dynamic_data_provider!(
+        $crate::impl_dynamic_data_provider!(
             $provider,
             $arms,
             $one
         );
 
-        $crate::dynutil::impl_dynamic_data_provider!(
+        $crate::impl_dynamic_data_provider!(
             $provider,
             $arms,
             $($rest),+
         );
     };
 
-    ($provider:ty, { $($ident:ident = $marker:path => $struct_m:ty),+, $(_ => $struct_d:ty,)?}, $dyn_m:ty) => {
+    ($provider:ty, { $($ident:ident = $key:path => $struct_m:ty),+, $(_ => $struct_d:ty,)?}, $dyn_m:ty) => {
         impl $crate::DynamicDataProvider<$dyn_m> for $provider
         {
             fn load_data(
                 &self,
-                marker: $crate::DataMarkerInfo,
+                key: $crate::DataKey,
                 req: $crate::DataRequest,
             ) -> Result<
                 $crate::DataResponse<$dyn_m>,
                 $crate::DataError,
             > {
-                match marker.id.hashed() {
+                match key.hashed() {
                     $(
-                        h if h == $marker.id.hashed() => {
+                        h if h == $key.hashed() => {
                             let result: $crate::DataResponse<$struct_m> =
-                                $crate::DynamicDataProvider::<$struct_m>::load_data(self, marker, req)?;
+                                $crate::DynamicDataProvider::<$struct_m>::load_data(self, key, req)?;
                             Ok($crate::DataResponse {
                                 metadata: result.metadata,
-                                payload: $crate::dynutil::UpcastDataPayload::<$struct_m>::upcast(result.payload),
+                                payload: result.payload.map(|p| {
+                                    $crate::dynutil::UpcastDataPayload::<$struct_m>::upcast(p)
+                                }),
                             })
                         }
                     )+,
                     $(
                         _ => {
                             let result: $crate::DataResponse<$struct_d> =
-                                $crate::DynamicDataProvider::<$struct_d>::load_data(self, marker, req)?;
+                                $crate::DynamicDataProvider::<$struct_d>::load_data(self, key, req)?;
                             Ok($crate::DataResponse {
                                 metadata: result.metadata,
-                                payload: $crate::dynutil::UpcastDataPayload::<$struct_d>::upcast(result.payload),
+                                payload: result.payload.map(|p| {
+                                    $crate::dynutil::UpcastDataPayload::<$struct_d>::upcast(p)
+                                }),
                             })
                         }
                     )?
-                    _ => Err($crate::DataErrorKind::MarkerNotFound.with_req(marker, req))
+                    _ => Err($crate::DataErrorKind::MissingDataKey.with_req(key, req))
                 }
             }
         }
@@ -134,51 +228,29 @@ macro_rules! __impl_dynamic_data_provider {
         {
             fn load_data(
                 &self,
-                marker: $crate::DataMarkerInfo,
+                key: $crate::DataKey,
                 req: $crate::DataRequest,
             ) -> Result<
                 $crate::DataResponse<$dyn_m>,
                 $crate::DataError,
             > {
-                match marker.id.hashed() {
+                match key.hashed() {
                     $(
                         $(#[$cfg])?
-                        h if h == <$struct_m as $crate::DataMarker>::INFO.id.hashed() => {
+                        h if h == <$struct_m>::KEY.hashed() => {
                             let result: $crate::DataResponse<$struct_m> =
                                 $crate::DataProvider::load(self, req)?;
                             Ok($crate::DataResponse {
                                 metadata: result.metadata,
-                                payload: $crate::dynutil::UpcastDataPayload::<$struct_m>::upcast(result.payload),
+                                payload: result.payload.map(|p| {
+                                    $crate::dynutil::UpcastDataPayload::<$struct_m>::upcast(p)
+                                }),
                             })
                         }
                     )+,
-                    _ => Err($crate::DataErrorKind::MarkerNotFound.with_req(marker, req))
+                    _ => Err($crate::DataErrorKind::MissingDataKey.with_req(key, req))
                 }
             }
         }
     };
 }
-#[doc(inline)]
-pub use __impl_dynamic_data_provider as impl_dynamic_data_provider;
-
-#[doc(hidden)] 
-#[macro_export]
-macro_rules! __impl_iterable_dynamic_data_provider {
-    ($provider:ty, [ $($(#[$cfg:meta])? $struct_m:ty),+, ], $dyn_m:path) => {
-        impl $crate::IterableDynamicDataProvider<$dyn_m> for $provider {
-            fn iter_ids_for_marker(&self, marker: $crate::DataMarkerInfo) -> Result<alloc::collections::BTreeSet<$crate::DataIdentifierCow>, $crate::DataError> {
-                match marker.id.hashed() {
-                    $(
-                        $(#[$cfg])?
-                        h if h == <$struct_m as $crate::DataMarker>::INFO.id.hashed() => {
-                            $crate::IterableDataProvider::<$struct_m>::iter_ids(self)
-                        }
-                    )+,
-                    _ => Err($crate::DataErrorKind::MarkerNotFound.with_marker(marker))
-                }
-            }
-        }
-    }
-}
-#[doc(inline)]
-pub use __impl_iterable_dynamic_data_provider as impl_iterable_dynamic_data_provider;

@@ -4,7 +4,9 @@
 
 #[cfg(feature = "alloc")]
 use alloc::borrow::{Cow, ToOwned};
-use core::{marker::PhantomData, mem};
+use core::mem;
+
+
 
 
 
@@ -227,19 +229,6 @@ pub unsafe trait Yokeable<'a>: 'static {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn transform_mut<F>(&'a mut self, f: F)
     where
         
@@ -247,7 +236,6 @@ pub unsafe trait Yokeable<'a>: 'static {
 }
 
 #[cfg(feature = "alloc")]
-
 unsafe impl<'a, T: 'static + ToOwned + ?Sized> Yokeable<'a> for Cow<'static, T>
 where
     <T as ToOwned>::Owned: Sized,
@@ -270,10 +258,8 @@ where
         
         debug_assert!(mem::size_of::<Cow<'a, T>>() == mem::size_of::<Self>());
         let ptr: *const Self = (&from as *const Self::Output).cast();
-        let _ = core::mem::ManuallyDrop::new(from);
-        
-        
-        unsafe { core::ptr::read(ptr) }
+        mem::forget(from);
+        core::ptr::read(ptr)
     }
     #[inline]
     fn transform_mut<F>(&'a mut self, f: F)
@@ -281,12 +267,9 @@ where
         F: 'static + for<'b> FnOnce(&'b mut Self::Output),
     {
         
-        
-        
         unsafe { f(mem::transmute::<&'a mut Self, &'a mut Self::Output>(self)) }
     }
 }
-
 
 unsafe impl<'a, T: 'static + ?Sized> Yokeable<'a> for &'static T {
     type Output = &'a T;
@@ -302,9 +285,7 @@ unsafe impl<'a, T: 'static + ?Sized> Yokeable<'a> for &'static T {
     }
     #[inline]
     unsafe fn make(from: &'a T) -> Self {
-        
-        
-        unsafe { mem::transmute(from) }
+        mem::transmute(from)
     }
     #[inline]
     fn transform_mut<F>(&'a mut self, f: F)
@@ -312,22 +293,21 @@ unsafe impl<'a, T: 'static + ?Sized> Yokeable<'a> for &'static T {
         F: 'static + for<'b> FnOnce(&'b mut Self::Output),
     {
         
-        
-        
         unsafe { f(mem::transmute::<&'a mut Self, &'a mut Self::Output>(self)) }
     }
 }
 
 #[cfg(feature = "alloc")]
-
 unsafe impl<'a, T: 'static> Yokeable<'a> for alloc::vec::Vec<T> {
     type Output = alloc::vec::Vec<T>;
     #[inline]
     fn transform(&'a self) -> &'a alloc::vec::Vec<T> {
+        
         self
     }
     #[inline]
     fn transform_owned(self) -> alloc::vec::Vec<T> {
+        
         self
     }
     #[inline]
@@ -339,31 +319,7 @@ unsafe impl<'a, T: 'static> Yokeable<'a> for alloc::vec::Vec<T> {
     where
         F: 'static + for<'b> FnOnce(&'b mut Self::Output),
     {
-        f(self)
-    }
-}
-
-
-unsafe impl<'a, T: ?Sized + 'static> Yokeable<'a> for PhantomData<T> {
-    type Output = PhantomData<T>;
-
-    fn transform(&'a self) -> &'a Self::Output {
-        self
-    }
-
-    fn transform_owned(self) -> Self::Output {
-        self
-    }
-
-    unsafe fn make(from: Self::Output) -> Self {
-        from
-    }
-
-    fn transform_mut<F>(&'a mut self, f: F)
-    where
         
-        F: 'static + for<'b> FnOnce(&'b mut Self::Output),
-    {
         f(self)
     }
 }

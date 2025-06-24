@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XCollatorCaseLevel {
+  
+
+  Auto = 'Auto',
+  
+
+  Off = 'Off',
+  
+
+  On = 'On',
+}

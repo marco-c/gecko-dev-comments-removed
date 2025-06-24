@@ -7,8 +7,8 @@ use icu_provider::prelude::*;
 
 use crate::indices::{Latin1Indices, Utf16Indices};
 use crate::iterator_helpers::derive_usize_iterator_with_type;
-use crate::provider::*;
 use crate::rule_segmenter::*;
+use crate::{provider::*, SegmenterError};
 use utf8_iter::Utf8CharIndices;
 
 
@@ -24,14 +24,35 @@ use utf8_iter::Utf8CharIndices;
 
 
 #[derive(Debug)]
-pub struct GraphemeClusterBreakIterator<'data, 's, Y: RuleBreakType>(
-    RuleBreakIterator<'data, 's, Y>,
+pub struct GraphemeClusterBreakIterator<'l, 's, Y: RuleBreakType<'l, 's> + ?Sized>(
+    RuleBreakIterator<'l, 's, Y>,
 );
 
-derive_usize_iterator_with_type!(GraphemeClusterBreakIterator, 'data);
+derive_usize_iterator_with_type!(GraphemeClusterBreakIterator);
 
 
 
+
+pub type GraphemeClusterBreakIteratorUtf8<'l, 's> =
+    GraphemeClusterBreakIterator<'l, 's, RuleBreakTypeUtf8>;
+
+
+
+
+pub type GraphemeClusterBreakIteratorPotentiallyIllFormedUtf8<'l, 's> =
+    GraphemeClusterBreakIterator<'l, 's, RuleBreakTypePotentiallyIllFormedUtf8>;
+
+
+
+
+pub type GraphemeClusterBreakIteratorLatin1<'l, 's> =
+    GraphemeClusterBreakIterator<'l, 's, RuleBreakTypeLatin1>;
+
+
+
+
+pub type GraphemeClusterBreakIteratorUtf16<'l, 's> =
+    GraphemeClusterBreakIterator<'l, 's, RuleBreakTypeUtf16>;
 
 
 
@@ -107,15 +128,14 @@ derive_usize_iterator_with_type!(GraphemeClusterBreakIterator, 'data);
 
 #[derive(Debug)]
 pub struct GraphemeClusterSegmenter {
-    payload: DataPayload<SegmenterBreakGraphemeClusterV1>,
+    payload: DataPayload<GraphemeClusterBreakDataV1Marker>,
 }
 
-
-
-
-#[derive(Clone, Debug, Copy)]
-pub struct GraphemeClusterSegmenterBorrowed<'data> {
-    data: &'data RuleBreakData<'data>,
+#[cfg(feature = "compiled_data")]
+impl Default for GraphemeClusterSegmenter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GraphemeClusterSegmenter {
@@ -125,125 +145,120 @@ impl GraphemeClusterSegmenter {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)] 
-    pub const fn new() -> GraphemeClusterSegmenterBorrowed<'static> {
-        GraphemeClusterSegmenterBorrowed {
-            data: crate::provider::Baked::SINGLETON_SEGMENTER_BREAK_GRAPHEME_CLUSTER_V1,
+    pub fn new() -> Self {
+        Self {
+            payload: DataPayload::from_static_ref(
+                crate::provider::Baked::SINGLETON_SEGMENTER_GRAPHEME_V1,
+            ),
         }
     }
 
-    icu_provider::gen_buffer_data_constructors!(() -> error: DataError,
+    icu_provider::gen_any_buffer_data_constructors!(locale: skip, options: skip, error: SegmenterError,
+        #[cfg(skip)]
         functions: [
-            new: skip,
+            new,
+            try_new_with_any_provider,
             try_new_with_buffer_provider,
             try_new_unstable,
             Self,
     ]);
 
-    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new)]
-    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, DataError>
+    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
+    pub fn try_new_unstable<D>(provider: &D) -> Result<Self, SegmenterError>
     where
-        D: DataProvider<SegmenterBreakGraphemeClusterV1> + ?Sized,
+        D: DataProvider<GraphemeClusterBreakDataV1Marker> + ?Sized,
     {
-        let payload = provider.load(Default::default())?.payload;
+        let payload = provider.load(Default::default())?.take_payload()?;
         Ok(Self { payload })
     }
 
     
-    
-    
-    pub fn as_borrowed(&self) -> GraphemeClusterSegmenterBorrowed<'_> {
-        GraphemeClusterSegmenterBorrowed {
-            data: self.payload.get(),
-        }
+    pub fn segment_str<'l, 's>(
+        &'l self,
+        input: &'s str,
+    ) -> GraphemeClusterBreakIteratorUtf8<'l, 's> {
+        GraphemeClusterSegmenter::new_and_segment_str(input, self.payload.get())
     }
-}
 
-impl<'data> GraphemeClusterSegmenterBorrowed<'data> {
     
-    pub fn segment_str<'s>(self, input: &'s str) -> GraphemeClusterBreakIterator<'data, 's, Utf8> {
+    
+    
+    pub(crate) fn new_and_segment_str<'l, 's>(
+        input: &'s str,
+        payload: &'l RuleBreakDataV1<'l>,
+    ) -> GraphemeClusterBreakIteratorUtf8<'l, 's> {
         GraphemeClusterBreakIterator(RuleBreakIterator {
             iter: input.char_indices(),
             len: input.len(),
             current_pos_data: None,
             result_cache: Vec::new(),
-            data: self.data,
+            data: payload,
             complex: None,
             boundary_property: 0,
-            locale_override: None,
-            handle_complex_language: empty_handle_complex_language,
-        })
-    }
-    
-    
-    
-    
-    
-    pub fn segment_utf8<'s>(
-        self,
-        input: &'s [u8],
-    ) -> GraphemeClusterBreakIterator<'data, 's, PotentiallyIllFormedUtf8> {
-        GraphemeClusterBreakIterator(RuleBreakIterator {
-            iter: Utf8CharIndices::new(input),
-            len: input.len(),
-            current_pos_data: None,
-            result_cache: Vec::new(),
-            data: self.data,
-            complex: None,
-            boundary_property: 0,
-            locale_override: None,
-            handle_complex_language: empty_handle_complex_language,
-        })
-    }
-    
-    
-    
-    pub fn segment_latin1<'s>(
-        self,
-        input: &'s [u8],
-    ) -> GraphemeClusterBreakIterator<'data, 's, Latin1> {
-        GraphemeClusterBreakIterator(RuleBreakIterator {
-            iter: Latin1Indices::new(input),
-            len: input.len(),
-            current_pos_data: None,
-            result_cache: Vec::new(),
-            data: self.data,
-            complex: None,
-            boundary_property: 0,
-            locale_override: None,
-            handle_complex_language: empty_handle_complex_language,
         })
     }
 
     
     
     
-    pub fn segment_utf16<'s>(
-        self,
+    
+    
+    pub fn segment_utf8<'l, 's>(
+        &'l self,
+        input: &'s [u8],
+    ) -> GraphemeClusterBreakIteratorPotentiallyIllFormedUtf8<'l, 's> {
+        GraphemeClusterBreakIterator(RuleBreakIterator {
+            iter: Utf8CharIndices::new(input),
+            len: input.len(),
+            current_pos_data: None,
+            result_cache: Vec::new(),
+            data: self.payload.get(),
+            complex: None,
+            boundary_property: 0,
+        })
+    }
+    
+    
+    
+    pub fn segment_latin1<'l, 's>(
+        &'l self,
+        input: &'s [u8],
+    ) -> GraphemeClusterBreakIteratorLatin1<'l, 's> {
+        GraphemeClusterBreakIterator(RuleBreakIterator {
+            iter: Latin1Indices::new(input),
+            len: input.len(),
+            current_pos_data: None,
+            result_cache: Vec::new(),
+            data: self.payload.get(),
+            complex: None,
+            boundary_property: 0,
+        })
+    }
+
+    
+    
+    
+    pub fn segment_utf16<'l, 's>(
+        &'l self,
         input: &'s [u16],
-    ) -> GraphemeClusterBreakIterator<'data, 's, Utf16> {
+    ) -> GraphemeClusterBreakIteratorUtf16<'l, 's> {
+        GraphemeClusterSegmenter::new_and_segment_utf16(input, self.payload.get())
+    }
+
+    
+    pub(crate) fn new_and_segment_utf16<'l, 's>(
+        input: &'s [u16],
+        payload: &'l RuleBreakDataV1<'l>,
+    ) -> GraphemeClusterBreakIteratorUtf16<'l, 's> {
         GraphemeClusterBreakIterator(RuleBreakIterator {
             iter: Utf16Indices::new(input),
             len: input.len(),
             current_pos_data: None,
             result_cache: Vec::new(),
-            data: self.data,
+            data: payload,
             complex: None,
             boundary_property: 0,
-            locale_override: None,
-            handle_complex_language: empty_handle_complex_language,
         })
-    }
-}
-impl GraphemeClusterSegmenterBorrowed<'static> {
-    
-    
-    
-    
-    pub const fn static_to_owned(self) -> GraphemeClusterSegmenter {
-        GraphemeClusterSegmenter {
-            payload: DataPayload::from_static_ref(self.data),
-        }
     }
 }
 

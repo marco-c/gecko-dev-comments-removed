@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XCollatorAlternateHandling {
+  
+
+  Auto = 'Auto',
+  
+
+  NonIgnorable = 'NonIgnorable',
+  
+
+  Shifted = 'Shifted',
+}

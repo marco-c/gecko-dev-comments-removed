@@ -62,9 +62,11 @@ use core::marker::PhantomData;
 
 
 
+
+
 #[derive(Eq, PartialEq)]
 #[allow(clippy::exhaustive_structs)] 
-#[doc(hidden)] 
+#[doc(hidden)]
 pub struct DateDuration<C: Calendar + ?Sized> {
     
     pub years: i32,
@@ -90,9 +92,11 @@ impl<C: Calendar + ?Sized> Copy for DateDuration<C> {}
 
 
 
+
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[allow(clippy::exhaustive_enums)] 
-#[doc(hidden)] 
+#[doc(hidden)]
 pub enum DateDurationUnit {
     
     Years,

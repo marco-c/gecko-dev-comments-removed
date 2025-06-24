@@ -1,0 +1,19 @@
+
+
+
+
+
+export enum ICU4XCollatorCaseFirst {
+  
+
+  Auto = 'Auto',
+  
+
+  Off = 'Off',
+  
+
+  LowerFirst = 'LowerFirst',
+  
+
+  UpperFirst = 'UpperFirst',
+}

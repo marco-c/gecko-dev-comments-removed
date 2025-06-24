@@ -11,7 +11,7 @@ use icu_provider::prelude::*;
 
 pub trait ForkByErrorPredicate {
     
-    const UNIT_ERROR: DataErrorKind = DataErrorKind::MarkerNotFound;
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingDataKey;
 
     
     
@@ -28,7 +28,11 @@ pub trait ForkByErrorPredicate {
     
     
     
-    fn test(&self, marker: DataMarkerInfo, req: Option<DataRequest>, err: DataError) -> bool;
+    
+    
+    
+    
+    fn test(&self, key: DataKey, req: Option<DataRequest>, err: DataError) -> bool;
 }
 
 
@@ -39,17 +43,17 @@ pub trait ForkByErrorPredicate {
 
 #[derive(Debug, PartialEq, Eq)]
 #[non_exhaustive] 
-pub struct MarkerNotFoundPredicate;
+pub struct MissingDataKeyPredicate;
 
-impl ForkByErrorPredicate for MarkerNotFoundPredicate {
-    const UNIT_ERROR: DataErrorKind = DataErrorKind::MarkerNotFound;
+impl ForkByErrorPredicate for MissingDataKeyPredicate {
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingDataKey;
 
     #[inline]
-    fn test(&self, _: DataMarkerInfo, _: Option<DataRequest>, err: DataError) -> bool {
+    fn test(&self, _: DataKey, _: Option<DataRequest>, err: DataError) -> bool {
         matches!(
             err,
             DataError {
-                kind: DataErrorKind::MarkerNotFound,
+                kind: DataErrorKind::MissingDataKey,
                 ..
             }
         )
@@ -121,13 +125,19 @@ impl ForkByErrorPredicate for MarkerNotFoundPredicate {
 
 #[derive(Debug, PartialEq, Eq)]
 #[allow(clippy::exhaustive_structs)] 
-pub struct IdentifierNotFoundPredicate;
+pub struct MissingLocalePredicate;
 
-impl ForkByErrorPredicate for IdentifierNotFoundPredicate {
-    const UNIT_ERROR: DataErrorKind = DataErrorKind::IdentifierNotFound;
+impl ForkByErrorPredicate for MissingLocalePredicate {
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingLocale;
 
     #[inline]
-    fn test(&self, _: DataMarkerInfo, _: Option<DataRequest>, err: DataError) -> bool {
-        Err::<(), _>(err).allow_identifier_not_found().is_ok()
+    fn test(&self, _: DataKey, _: Option<DataRequest>, err: DataError) -> bool {
+        matches!(
+            err,
+            DataError {
+                kind: DataErrorKind::MissingLocale,
+                ..
+            }
+        )
     }
 }

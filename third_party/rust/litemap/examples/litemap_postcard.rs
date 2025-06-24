@@ -6,7 +6,8 @@
 
 
 #![no_main] 
-icu_benchmark_macros::instrument!();
+
+icu_benchmark_macros::static_setup!();
 
 use litemap::LiteMap;
 
@@ -45,10 +46,15 @@ fn generate() {
     println!("{buf:?}");
 }
 
-fn main() {
+#[no_mangle]
+fn main(_argc: isize, _argv: *const *const u8) -> isize {
+    icu_benchmark_macros::main_setup!();
+
     
     
 
     let map: LiteMap<&str, &str> = postcard::from_bytes(&POSTCARD).unwrap();
     assert_eq!(map.get("tr"), Some(&"Turkish"));
+
+    0
 }

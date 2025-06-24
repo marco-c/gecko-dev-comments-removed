@@ -3,52 +3,40 @@
 
 
 #[diplomat::bridge]
-#[diplomat::abi_rename = "icu4x_{0}_mv1"]
-#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
-    use crate::unstable::measure_unit_parser::ffi::MeasureUnit;
+    use crate::{errors::ffi::ICU4XError, provider::ffi::ICU4XDataProvider};
     use alloc::boxed::Box;
-
-    #[cfg(feature = "buffer_provider")]
-    use crate::unstable::errors::ffi::DataError;
-    #[cfg(feature = "buffer_provider")]
-    use crate::unstable::provider::ffi::DataProvider;
+    use diplomat_runtime::DiplomatStr;
+    use icu_experimental::units::converter::UnitsConverter;
+    use icu_experimental::units::converter_factory::ConverterFactory;
+    use icu_experimental::units::measureunit::MeasureUnit;
+    use icu_experimental::units::measureunit::MeasureUnitParser;
 
     #[diplomat::opaque]
     
     
     
-    
     #[diplomat::rust_link(icu::experimental::units::converter_factory::ConverterFactory, Struct)]
-    pub struct UnitsConverterFactory(
-        pub icu_experimental::units::converter_factory::ConverterFactory,
-    );
+    pub struct ICU4XUnitsConverterFactory(pub ConverterFactory);
 
-    impl UnitsConverterFactory {
+    impl ICU4XUnitsConverterFactory {
         
         #[diplomat::rust_link(
             icu::experimental::units::converter_factory::ConverterFactory::new,
             FnInStruct
         )]
-        #[diplomat::attr(auto, constructor)]
-        #[cfg(feature = "compiled_data")]
-        pub fn create() -> Box<UnitsConverterFactory> {
-            Box::new(UnitsConverterFactory(
-                icu_experimental::units::converter_factory::ConverterFactory::new(),
-            ))
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
+        pub fn create(
+            provider: &ICU4XDataProvider,
+        ) -> Result<Box<ICU4XUnitsConverterFactory>, ICU4XError> {
+            Ok(Box::new(ICU4XUnitsConverterFactory(call_constructor!(
+                ConverterFactory::new [r => Ok(r)],
+                ConverterFactory::try_new_with_any_provider,
+                ConverterFactory::try_new_with_buffer_provider,
+                provider,
+            )?)))
         }
-        
-        #[diplomat::rust_link(
-            icu::experimental::units::converter_factory::ConverterFactory::new,
-            FnInStruct
-        )]
-        #[diplomat::attr(all(supports = fallible_constructors, supports = named_constructors), named_constructor = "with_provider")]
-        #[cfg(feature = "buffer_provider")]
-        pub fn create_with_provider(
-            provider: &DataProvider,
-        ) -> Result<Box<UnitsConverterFactory>, DataError> {
-            Ok(Box::new(UnitsConverterFactory(icu_experimental::units::converter_factory::ConverterFactory::try_new_with_buffer_provider(provider.get()?)?)))
-        }
+
         
         
         
@@ -58,13 +46,38 @@ pub mod ffi {
         )]
         pub fn converter(
             &self,
-            from: &MeasureUnit,
-            to: &MeasureUnit,
-        ) -> Option<Box<UnitsConverter>> {
-            self.0
-                .converter(&from.0, &to.0)
-                .map(UnitsConverter)
-                .map(Box::new)
+            from: &ICU4XMeasureUnit,
+            to: &ICU4XMeasureUnit,
+        ) -> Option<Box<ICU4XUnitsConverter>> {
+            let converter: Option<UnitsConverter<f64>> = self.0.converter(&from.0, &to.0);
+            Some(ICU4XUnitsConverter(converter?).into())
+        }
+
+        
+        #[diplomat::rust_link(
+            icu::experimental::units::converter_factory::ConverterFactory::parser,
+            FnInStruct
+        )]
+        pub fn parser<'a>(&'a self) -> Box<ICU4XMeasureUnitParser<'a>> {
+            ICU4XMeasureUnitParser(self.0.parser()).into()
+        }
+    }
+
+    #[diplomat::opaque]
+    
+    
+    #[diplomat::rust_link(icu::experimental::units::measureunit::MeasureUnitParser, Struct)]
+    pub struct ICU4XMeasureUnitParser<'a>(pub MeasureUnitParser<'a>);
+
+    impl<'a> ICU4XMeasureUnitParser<'a> {
+        
+        
+        #[diplomat::rust_link(
+            icu::experimental::units::measureunit::MeasureUnitParser::parse,
+            FnInStruct
+        )]
+        pub fn parse(&self, unit_id: &DiplomatStr) -> Result<Box<ICU4XMeasureUnit>, ICU4XError> {
+            Ok(Box::new(ICU4XMeasureUnit(self.0.try_from_bytes(unit_id)?)))
         }
     }
 
@@ -72,9 +85,17 @@ pub mod ffi {
     
     
     
+    
+    #[diplomat::rust_link(icu::experimental::units::measureunit::MeasureUnit, Struct)]
+    pub struct ICU4XMeasureUnit(pub MeasureUnit);
+
+    #[diplomat::opaque]
+    
+    
+    
     #[diplomat::rust_link(icu::experimental::units::converter::UnitsConverter, Struct)]
-    pub struct UnitsConverter(pub icu_experimental::units::converter::UnitsConverter<f64>);
-    impl UnitsConverter {
+    pub struct ICU4XUnitsConverter(pub UnitsConverter<f64>);
+    impl ICU4XUnitsConverter {
         
         
         
@@ -82,9 +103,8 @@ pub mod ffi {
             icu::experimental::units::converter::UnitsConverter::convert,
             FnInStruct
         )]
-        #[diplomat::attr(supports = method_overloading, rename = "convert")]
-        #[diplomat::attr(js, rename = "convert_number")]
-        pub fn convert_double(&self, value: f64) -> f64 {
+        #[diplomat::attr(dart, rename = "convert_double")]
+        pub fn convert_f64(&self, value: f64) -> f64 {
             self.0.convert(&value)
         }
 
@@ -94,7 +114,7 @@ pub mod ffi {
             FnInStruct
         )]
         pub fn clone(&self) -> Box<Self> {
-            Box::new(UnitsConverter(self.0.clone()))
+            Box::new(ICU4XUnitsConverter(self.0.clone()))
         }
     }
 }

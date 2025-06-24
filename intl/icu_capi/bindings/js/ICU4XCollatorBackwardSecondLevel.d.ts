@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XCollatorBackwardSecondLevel {
+  
+
+  Auto = 'Auto',
+  
+
+  Off = 'Off',
+  
+
+  On = 'On',
+}

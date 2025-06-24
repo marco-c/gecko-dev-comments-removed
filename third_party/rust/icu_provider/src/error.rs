@@ -2,8 +2,9 @@
 
 
 
-use crate::log;
-use crate::{marker::DataMarkerId, prelude::*};
+use crate::_internal::log;
+use crate::buf::BufferFormat;
+use crate::prelude::*;
 use core::fmt;
 use displaydoc::Display;
 
@@ -15,30 +16,41 @@ use displaydoc::Display;
 #[non_exhaustive]
 pub enum DataErrorKind {
     
-    #[displaydoc("Missing data for marker")]
-    MarkerNotFound,
+    #[displaydoc("Missing data for key")]
+    MissingDataKey,
 
     
-    #[displaydoc("Missing data for identifier")]
-    IdentifierNotFound,
+    #[displaydoc("Missing data for locale")]
+    MissingLocale,
 
     
-    #[displaydoc("Invalid request")]
-    InvalidRequest,
+    #[displaydoc("Request needs a locale")]
+    NeedsLocale,
 
     
-    #[displaydoc("The data for two markers is not consistent: {0:?} (were they generated in different datagen invocations?)")]
-    InconsistentData(DataMarkerInfo),
+    #[displaydoc("Request has an extraneous locale")]
+    ExtraneousLocale,
 
     
-    #[displaydoc("Downcast: expected {0}, found")]
-    Downcast(&'static str),
+    #[displaydoc("Resource blocked by filter")]
+    FilteredResource,
 
     
     
+    #[displaydoc("Mismatched types: tried to downcast with {0}, but actual type is different")]
+    MismatchedType(&'static str),
+
     
-    #[displaydoc("Deserialize")]
-    Deserialize,
+    #[displaydoc("Missing payload")]
+    MissingPayload,
+
+    
+    #[displaydoc("Invalid state")]
+    InvalidState,
+
+    
+    #[displaydoc("Parse error for data key or data locale")]
+    KeyLocaleSyntax,
 
     
     
@@ -47,9 +59,19 @@ pub enum DataErrorKind {
     Custom,
 
     
-    #[displaydoc("I/O: {0:?}")]
+    #[displaydoc("I/O error: {0:?}")]
     #[cfg(feature = "std")]
     Io(std::io::ErrorKind),
+
+    
+    #[displaydoc("Missing source data")]
+    #[cfg(feature = "datagen")]
+    MissingSourceData,
+
+    
+    
+    #[displaydoc("Unavailable buffer format: {0:?} (does icu_provider need to be compiled with an additional Cargo feature?)")]
+    UnavailableBufferFormat(BufferFormat),
 }
 
 
@@ -80,7 +102,7 @@ pub struct DataError {
     pub kind: DataErrorKind,
 
     
-    pub marker: Option<DataMarkerId>,
+    pub key: Option<DataKey>,
 
     
     pub str_context: Option<&'static str>,
@@ -95,8 +117,8 @@ impl fmt::Display for DataError {
         if self.kind != DataErrorKind::Custom {
             write!(f, ": {}", self.kind)?;
         }
-        if let Some(marker) = self.marker {
-            write!(f, " (marker: {marker:?})")?;
+        if let Some(key) = self.key {
+            write!(f, " (key: {key})")?;
         }
         if let Some(str_context) = self.str_context {
             write!(f, ": {str_context}")?;
@@ -113,7 +135,7 @@ impl DataErrorKind {
     pub const fn into_error(self) -> DataError {
         DataError {
             kind: self,
-            marker: None,
+            key: None,
             str_context: None,
             silent: false,
         }
@@ -121,8 +143,8 @@ impl DataErrorKind {
 
     
     #[inline]
-    pub const fn with_marker(self, marker: DataMarkerInfo) -> DataError {
-        self.into_error().with_marker(marker)
+    pub const fn with_key(self, key: DataKey) -> DataError {
+        self.into_error().with_key(key)
     }
 
     
@@ -139,8 +161,8 @@ impl DataErrorKind {
 
     
     #[inline]
-    pub fn with_req(self, marker: DataMarkerInfo, req: DataRequest) -> DataError {
-        self.into_error().with_req(marker, req)
+    pub fn with_req(self, key: DataKey, req: DataRequest) -> DataError {
+        self.into_error().with_req(key, req)
     }
 }
 
@@ -150,7 +172,7 @@ impl DataError {
     pub const fn custom(str_context: &'static str) -> Self {
         Self {
             kind: DataErrorKind::Custom,
-            marker: None,
+            key: None,
             str_context: Some(str_context),
             silent: false,
         }
@@ -158,10 +180,10 @@ impl DataError {
 
     
     #[inline]
-    pub const fn with_marker(self, marker: DataMarkerInfo) -> Self {
+    pub const fn with_key(self, key: DataKey) -> Self {
         Self {
             kind: self.kind,
-            marker: Some(marker.id),
+            key: Some(key),
             str_context: self.str_context,
             silent: self.silent,
         }
@@ -172,7 +194,7 @@ impl DataError {
     pub const fn with_str_context(self, context: &'static str) -> Self {
         Self {
             kind: self.kind,
-            marker: self.marker,
+            key: self.key,
             str_context: Some(context),
             silent: self.silent,
         }
@@ -191,15 +213,15 @@ impl DataError {
     
     
     
-    pub fn with_req(mut self, marker: DataMarkerInfo, req: DataRequest) -> Self {
+    pub fn with_req(mut self, key: DataKey, req: DataRequest) -> Self {
         if req.metadata.silent {
             self.silent = true;
         }
         
-        if !self.silent && self.kind != DataErrorKind::MarkerNotFound {
-            log::warn!("{self} (marker: {marker:?}, request: {})", req.id);
+        if !self.silent && self.kind != DataErrorKind::MissingDataKey {
+            log::warn!("{} (key: {}, request: {})", self, key, req);
         }
-        self.with_marker(marker)
+        self.with_key(key)
     }
 
     
@@ -207,9 +229,9 @@ impl DataError {
     
     
     #[cfg(feature = "std")]
-    pub fn with_path_context(self, _path: &std::path::Path) -> Self {
+    pub fn with_path_context<P: AsRef<std::path::Path> + ?Sized>(self, _path: &P) -> Self {
         if !self.silent {
-            log::warn!("{self} (path: {_path:?})");
+            log::warn!("{} (path: {:?})", self, _path.as_ref());
         }
         self
     }
@@ -243,39 +265,21 @@ impl DataError {
     #[inline]
     pub(crate) fn for_type<T>() -> DataError {
         DataError {
-            kind: DataErrorKind::Downcast(core::any::type_name::<T>()),
-            marker: None,
+            kind: DataErrorKind::MismatchedType(core::any::type_name::<T>()),
+            key: None,
             str_context: None,
             silent: false,
         }
     }
 }
 
-impl core::error::Error for DataError {}
+#[cfg(feature = "std")]
+impl std::error::Error for DataError {}
 
 #[cfg(feature = "std")]
 impl From<std::io::Error> for DataError {
     fn from(e: std::io::Error) -> Self {
         log::warn!("I/O error: {}", e);
         DataErrorKind::Io(e.kind()).into_error()
-    }
-}
-
-
-pub trait ResultDataError<T>: Sized {
-    
-    fn allow_identifier_not_found(self) -> Result<Option<T>, DataError>;
-}
-
-impl<T> ResultDataError<T> for Result<T, DataError> {
-    fn allow_identifier_not_found(self) -> Result<Option<T>, DataError> {
-        match self {
-            Ok(t) => Ok(Some(t)),
-            Err(DataError {
-                kind: DataErrorKind::IdentifierNotFound,
-                ..
-            }) => Ok(None),
-            Err(e) => Err(e),
-        }
     }
 }

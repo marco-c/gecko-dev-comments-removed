@@ -4,20 +4,20 @@
 
 use super::LiteMap;
 use crate::store::*;
-use alloc::vec::Vec;
 use core::fmt;
 use core::marker::PhantomData;
-use serde::{
-    de::{MapAccess, SeqAccess, Visitor},
-    ser::{SerializeMap, SerializeSeq},
-    Deserialize, Deserializer, Serialize, Serializer,
-};
+use serde::de::{MapAccess, SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 
+#[cfg(feature = "serde")]
+use serde::{ser::SerializeMap, Serialize, Serializer};
+
+#[cfg(feature = "serde")]
 impl<K, V, R> Serialize for LiteMap<K, V, R>
 where
     K: Serialize,
     V: Serialize,
-    R: Store<K, V>,
+    R: Store<K, V> + Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -27,33 +27,20 @@ where
         
         
         if serializer.is_human_readable() {
-            let k_is_num_or_string = self
-                .values
-                .lm_get(0)
-                .is_some_and(|(k, _)| super::serde_helpers::is_num_or_string(k));
-            if !k_is_num_or_string {
-                let mut seq = serializer.serialize_seq(Some(self.len()))?;
-                
-                for index in 0..self.len() {
-                    #[allow(clippy::unwrap_used)] 
-                    seq.serialize_element(&self.get_indexed(index).unwrap())?;
+            if let Some((ref k, _)) = self.values.lm_get(0) {
+                if !super::serde_helpers::is_num_or_string(k) {
+                    return self.values.serialize(serializer);
                 }
-                return seq.end();
+                
             }
-            
         }
-
-        
-        
-        
-        
-        
-        
         let mut map = serializer.serialize_map(Some(self.len()))?;
-        for index in 0..self.len() {
+        let mut i = 0;
+        while i < self.values.lm_len() {
             #[allow(clippy::unwrap_used)] 
-            let (k, v) = self.get_indexed(index).unwrap();
+            let (k, v) = self.values.lm_get(i).unwrap();
             map.serialize_entry(k, v)?;
+            i += 1;
         }
         map.end()
     }
@@ -77,7 +64,7 @@ impl<'de, K, V, R> Visitor<'de> for LiteMapVisitor<K, V, R>
 where
     K: Deserialize<'de> + Ord,
     V: Deserialize<'de>,
-    R: StoreBulkMut<K, V>,
+    R: StoreMut<K, V> + StoreFromIterable<K, V>,
 {
     type Value = LiteMap<K, V, R>;
 
@@ -89,18 +76,22 @@ where
     where
         S: SeqAccess<'de>,
     {
-        
         let mut map = LiteMap::with_capacity(access.size_hint().unwrap_or(0));
-        let mut out_of_order = Vec::new();
 
+        
+        
         while let Some((key, value)) = access.next_element()? {
+            
+            
+            
+            
+            
+            
             if let Some((key, value)) = map.try_append(key, value) {
-                out_of_order.push((key, value));
+                
+                
+                map.insert(key, value);
             }
-        }
-
-        if !out_of_order.is_empty() {
-            map.extend(out_of_order);
         }
 
         Ok(map)
@@ -111,7 +102,6 @@ where
         M: MapAccess<'de>,
     {
         let mut map = LiteMap::with_capacity(access.size_hint().unwrap_or(0));
-        let mut out_of_order = Vec::new();
 
         
         
@@ -122,14 +112,11 @@ where
             
             
             
-            
             if let Some((key, value)) = map.try_append(key, value) {
-                out_of_order.push((key, value));
+                
+                
+                map.insert(key, value);
             }
-        }
-
-        if !out_of_order.is_empty() {
-            map.extend(out_of_order);
         }
 
         Ok(map)
@@ -140,7 +127,7 @@ impl<'de, K, V, R> Deserialize<'de> for LiteMap<K, V, R>
 where
     K: Ord + Deserialize<'de>,
     V: Deserialize<'de>,
-    R: StoreBulkMut<K, V>,
+    R: StoreMut<K, V> + StoreFromIterable<K, V>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -222,24 +209,5 @@ mod test {
         let postcard = postcard::to_stdvec(&map).unwrap();
         let deserialized: LiteMap<(u32, String), String> = postcard::from_bytes(&postcard).unwrap();
         assert_eq!(map, deserialized);
-    }
-
-    
-    
-    #[test]
-    fn test_deserialize_capacity() {
-        for len in 0..50 {
-            let mut map = (0..len).map(|i| (i, i.to_string())).collect::<Vec<_>>();
-            let postcard = postcard::to_stdvec(&map).unwrap();
-            let deserialized: LiteMap<u32, String> = postcard::from_bytes(&postcard).unwrap();
-            assert_eq!(deserialized.values.capacity(), len);
-            assert_eq!(deserialized.values.len(), len);
-            
-            rand::seq::SliceRandom::shuffle(&mut map[..], &mut rand::rng());
-            let postcard = postcard::to_stdvec(&map).unwrap();
-            let deserialized: LiteMap<u32, String> = postcard::from_bytes(&postcard).unwrap();
-            assert_eq!(deserialized.values.capacity(), len);
-            assert_eq!(deserialized.values.len(), len);
-        }
     }
 }

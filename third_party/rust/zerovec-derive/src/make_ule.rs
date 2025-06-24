@@ -30,8 +30,8 @@ pub fn make_ule_impl(ule_name: Ident, mut input: DeriveInput) -> TokenStream2 {
     let name = &input.ident;
 
     let ule_stuff = match input.data {
-        Data::Struct(ref s) => make_ule_struct_impl(name, &ule_name, &input, s, &attrs),
-        Data::Enum(ref e) => make_ule_enum_impl(name, &ule_name, &input, e, &attrs),
+        Data::Struct(ref s) => make_ule_struct_impl(name, &ule_name, &input, s, attrs),
+        Data::Enum(ref e) => make_ule_enum_impl(name, &ule_name, &input, e, attrs),
         _ => {
             return Error::new(input.span(), "#[make_ule] must be applied to a struct")
                 .to_compile_error();
@@ -80,7 +80,7 @@ fn make_ule_enum_impl(
     ule_name: &Ident,
     input: &DeriveInput,
     enu: &DataEnum,
-    attrs: &ZeroVecAttrs,
+    attrs: ZeroVecAttrs,
 ) -> TokenStream2 {
     
     if !utils::ReprInfo::compute(&input.attrs).u8 {
@@ -91,15 +91,8 @@ fn make_ule_enum_impl(
         .to_compile_error();
     }
 
-    if enu.variants.is_empty() {
-        return Error::new(input.span(), "#[make_ule] cannot be applied to empty enums")
-            .to_compile_error();
-    }
-
     
-    let mut min = None;
-    
-    let mut max = None;
+    let mut next = 0;
     
     let mut not_found = HashSet::new();
 
@@ -115,31 +108,11 @@ fn make_ule_enum_impl(
 
         if let Some((_, ref discr)) = variant.discriminant {
             if let Some(n) = get_expr_int(discr) {
-                let n = match u8::try_from(n) {
-                    Ok(n) => n,
-                    Err(_) => {
-                        return Error::new(
-                            variant.span(),
-                            "#[make_ule] only supports discriminants from 0 to 255",
-                        )
-                        .to_compile_error();
+                if n >= next {
+                    for missing in next..n {
+                        not_found.insert(missing);
                     }
-                };
-                match min {
-                    Some(x) if x < n => {}
-                    _ => {
-                        min = Some(n);
-                    }
-                }
-                match max {
-                    Some(x) if x >= n => {}
-                    _ => {
-                        let old_max = max.unwrap_or(0u8);
-                        for missing in (old_max + 1)..n {
-                            not_found.insert(missing);
-                        }
-                        max = Some(n);
-                    }
+                    next = n + 1;
                 }
 
                 not_found.remove(&n);
@@ -149,7 +122,7 @@ fn make_ule_enum_impl(
                 
                 
                 
-                if n as usize != i {}
+                if n != i as u64 {}
             } else {
                 return Error::new(
                     discr.span(),
@@ -167,14 +140,14 @@ fn make_ule_enum_impl(
     }
 
     let not_found = not_found.iter().collect::<Vec<_>>();
-    let min = min.unwrap();
-    let max = max.unwrap();
 
-    if not_found.len() > min as usize {
+    if !not_found.is_empty() {
         return Error::new(input.span(), format!("#[make_ule] must be applied to enums with discriminants \
-                                                  filling the range from a minimum to a maximum; could not find {not_found:?}"))
+                                                  filling the range from 0 to a maximum; could not find {not_found:?}"))
             .to_compile_error();
     }
+
+    let max = next as u8;
 
     let maybe_ord_derives = if attrs.skip_ord {
         quote!()
@@ -206,10 +179,10 @@ fn make_ule_enum_impl(
 
         unsafe impl zerovec::ule::ULE for #ule_name {
             #[inline]
-            fn validate_bytes(bytes: &[u8]) -> Result<(), zerovec::ule::UleError> {
+            fn validate_byte_slice(bytes: &[u8]) -> Result<(), zerovec::ZeroVecError> {
                 for byte in bytes {
-                    if *byte < #min || *byte > #max {
-                        return Err(zerovec::ule::UleError::parse::<Self>())
+                    if *byte >= #max {
+                        return Err(zerovec::ZeroVecError::parse::<Self>())
                     }
                 }
                 Ok(())
@@ -264,7 +237,7 @@ fn make_ule_struct_impl(
     ule_name: &Ident,
     input: &DeriveInput,
     struc: &DataStruct,
-    attrs: &ZeroVecAttrs,
+    attrs: ZeroVecAttrs,
 ) -> TokenStream2 {
     if struc.fields.iter().next().is_none() {
         return Error::new(
@@ -351,7 +324,7 @@ fn make_ule_struct_impl(
             #[allow(clippy::derive_hash_xor_eq)]
             impl core::hash::Hash for #ule_name {
                 fn hash<H>(&self, state: &mut H) where H: core::hash::Hasher {
-                    state.write(<#ule_name as zerovec::ule::ULE>::slice_as_bytes(&[*self]));
+                    state.write(<#ule_name as zerovec::ule::ULE>::as_byte_slice(&[*self]));
                 }
             }
         )

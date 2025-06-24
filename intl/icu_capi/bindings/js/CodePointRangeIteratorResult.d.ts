@@ -1,11 +1,4 @@
-
-import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
-
-
-
-
-
-
+import { u32 } from "./diplomat-runtime"
 
 
 
@@ -14,8 +7,7 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 export class CodePointRangeIteratorResult {
-    get start(): codepoint;
-    get end(): codepoint;
-    get done(): boolean;
-
+  start: u32;
+  end: u32;
+  done: boolean;
 }

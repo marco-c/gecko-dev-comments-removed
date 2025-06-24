@@ -4,7 +4,7 @@
 
 use super::*;
 use crate::parts_write_adapter::CoreWriteAsPartsWrite;
-use core::convert::Infallible;
+use core::{cmp::Ordering, convert::Infallible};
 
 
 
@@ -206,6 +206,87 @@ pub trait TryWriteable {
             Err(e) => Err((e, Cow::Owned(output))),
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> Ordering {
+        let mut wc = cmp::WriteComparator::new(other);
+        let _ = self
+            .try_write_to(&mut wc)
+            .unwrap_or_else(|fmt::Error| Ok(()));
+        wc.finish().reverse()
+    }
 }
 
 impl<T, E> TryWriteable for Result<T, E>
@@ -254,6 +335,14 @@ where
             Err(e) => Err((e.clone(), e.write_to_string())),
         }
     }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> Ordering {
+        match self {
+            Ok(t) => t.writeable_cmp_bytes(other),
+            Err(e) => e.writeable_cmp_bytes(other),
+        }
+    }
 }
 
 
@@ -296,6 +385,11 @@ where
             Ok(s) => s,
             Err((infallible, _)) => match infallible {},
         }
+    }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+        self.0.writeable_cmp_bytes(other)
     }
 }
 
@@ -347,7 +441,13 @@ where
     fn try_write_to_string(&self) -> Result<Cow<str>, (Infallible, Cow<str>)> {
         Ok(self.0.write_to_string())
     }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+        self.0.writeable_cmp_bytes(other)
+    }
 }
+
 
 
 
@@ -409,6 +509,14 @@ macro_rules! assert_try_writeable_eq {
                 "hint upper bound {} smaller than actual length {}: {}",
                 length_hint.0, actual_str.len(), format!($($arg)*),
             );
+        }
+        let ordering = actual_writeable.writeable_cmp_bytes($expected_str.as_bytes());
+        assert_eq!(ordering, core::cmp::Ordering::Equal, $($arg)*);
+        let ordering = actual_writeable.writeable_cmp_bytes("\u{10FFFF}".as_bytes());
+        assert_eq!(ordering, core::cmp::Ordering::Less, $($arg)*);
+        if $expected_str != "" {
+            let ordering = actual_writeable.writeable_cmp_bytes("".as_bytes());
+            assert_eq!(ordering, core::cmp::Ordering::Greater, $($arg)*);
         }
         actual_parts // return for assert_try_writeable_parts_eq
     }};

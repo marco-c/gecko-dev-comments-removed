@@ -3,90 +3,73 @@
 
 
 #[diplomat::bridge]
-#[diplomat::abi_rename = "icu4x_{0}_mv1"]
-#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
     use alloc::boxed::Box;
 
-    use crate::unstable::errors::ffi::{CalendarError, Rfc9557ParseError};
+    use icu_calendar::Time;
+
+    use crate::errors::ffi::ICU4XError;
 
     #[diplomat::opaque]
     
-    #[diplomat::rust_link(icu::time::Time, Struct)]
-    pub struct Time(pub icu_time::Time);
+    #[diplomat::rust_link(icu::calendar::Time, Struct)]
+    pub struct ICU4XTime(pub Time);
 
-    impl Time {
+    impl ICU4XTime {
         
-        #[diplomat::rust_link(icu::time::Time::try_new, FnInStruct)]
-        #[diplomat::rust_link(icu::time::Time::new, FnInStruct, hidden)]
-        #[diplomat::attr(supports = fallible_constructors, constructor)]
+        #[diplomat::rust_link(icu::calendar::Time::try_new, FnInStruct)]
+        #[diplomat::rust_link(icu::calendar::Time::new, FnInStruct, hidden)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
         pub fn create(
             hour: u8,
             minute: u8,
             second: u8,
-            subsecond: u32,
-        ) -> Result<Box<Time>, CalendarError> {
+            nanosecond: u32,
+        ) -> Result<Box<ICU4XTime>, ICU4XError> {
             let hour = hour.try_into()?;
             let minute = minute.try_into()?;
             let second = second.try_into()?;
-            let subsecond = subsecond.try_into()?;
-            let time = icu_time::Time {
+            let nanosecond = nanosecond.try_into()?;
+            let time = Time {
                 hour,
                 minute,
                 second,
-                subsecond,
+                nanosecond,
             };
-            Ok(Box::new(Time(time)))
+            Ok(Box::new(ICU4XTime(time)))
         }
 
         
-        #[diplomat::rust_link(icu::time::Time::try_from_str, FnInStruct)]
-        #[diplomat::rust_link(icu::time::Time::try_from_utf8, FnInStruct, hidden)]
-        #[diplomat::rust_link(icu::time::Time::from_str, FnInStruct, hidden)]
-        #[diplomat::attr(all(supports = fallible_constructors, supports = named_constructors), named_constructor)]
-        pub fn from_string(v: &DiplomatStr) -> Result<Box<Time>, Rfc9557ParseError> {
-            Ok(Box::new(Time(icu_time::Time::try_from_utf8(v)?)))
+        #[diplomat::rust_link(icu::calendar::Time::midnight, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "midnight")]
+        pub fn create_midnight() -> Result<Box<ICU4XTime>, ICU4XError> {
+            let time = Time::midnight();
+            Ok(Box::new(ICU4XTime(time)))
         }
 
         
-        #[diplomat::rust_link(icu::time::Time::start_of_day, FnInStruct)]
-        #[diplomat::attr(all(supports = fallible_constructors, supports = named_constructors), named_constructor)]
-        pub fn start_of_day() -> Result<Box<Time>, CalendarError> {
-            let time = icu_time::Time::start_of_day();
-            Ok(Box::new(Time(time)))
-        }
-
-        
-        #[diplomat::rust_link(icu::time::Time::noon, FnInStruct)]
-        #[diplomat::attr(all(supports = fallible_constructors, supports = named_constructors), named_constructor)]
-        pub fn noon() -> Result<Box<Time>, CalendarError> {
-            let time = icu_time::Time::noon();
-            Ok(Box::new(Time(time)))
-        }
-
-        
-        #[diplomat::rust_link(icu::time::Time::hour, StructField)]
-        #[diplomat::attr(auto, getter)]
+        #[diplomat::rust_link(icu::calendar::Time::hour, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn hour(&self) -> u8 {
             self.0.hour.into()
         }
         
-        #[diplomat::rust_link(icu::time::Time::minute, StructField)]
-        #[diplomat::attr(auto, getter)]
+        #[diplomat::rust_link(icu::calendar::Time::minute, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn minute(&self) -> u8 {
             self.0.minute.into()
         }
         
-        #[diplomat::rust_link(icu::time::Time::second, StructField)]
-        #[diplomat::attr(auto, getter)]
+        #[diplomat::rust_link(icu::calendar::Time::second, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn second(&self) -> u8 {
             self.0.second.into()
         }
         
-        #[diplomat::rust_link(icu::time::Time::subsecond, StructField)]
-        #[diplomat::attr(auto, getter)]
-        pub fn subsecond(&self) -> u32 {
-            self.0.subsecond.into()
+        #[diplomat::rust_link(icu::calendar::Time::nanosecond, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
+        pub fn nanosecond(&self) -> u32 {
+            self.0.nanosecond.into()
         }
     }
 }

@@ -18,16 +18,10 @@ use core_maths::*;
 
 
 
-
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RataDie(i64);
 
 impl RataDie {
-    
-    
-    
-    
     
     pub const fn new(fixed_date: i64) -> Self {
         let result = Self(fixed_date);
@@ -38,7 +32,7 @@ impl RataDie {
 
     
     #[cfg(debug_assertions)]
-    const fn check(self) {
+    pub const fn check(&self) {
         if self.0 > i64::MAX / 256 {
             debug_assert!(
                 false,
@@ -54,7 +48,9 @@ impl RataDie {
     }
 
     
-    #[doc(hidden)] 
+    
+    
+    #[doc(hidden)]
     pub const fn big_negative() -> Self {
         Self::new(i64::MIN / 256 / 256)
     }
@@ -65,25 +61,17 @@ impl RataDie {
     }
 
     
-    pub(crate) const fn to_f64_date(self) -> f64 {
+    pub const fn to_f64_date(self) -> f64 {
         self.0 as f64
     }
 
     
-    pub const fn until(self, rhs: Self) -> i64 {
+    pub const fn const_diff(self, rhs: Self) -> i64 {
         self.0 - rhs.0
     }
 
     
-    pub const fn add(self, rhs: i64) -> Self {
-        let result = Self(self.0 + rhs);
-        #[cfg(debug_assertions)]
-        result.check();
-        result
-    }
-
-    
-    pub(crate) const fn as_moment(self) -> Moment {
+    pub const fn as_moment(&self) -> Moment {
         Moment::new(self.0 as f64)
     }
 }
@@ -103,13 +91,18 @@ impl fmt::Debug for RataDie {
 impl Add<i64> for RataDie {
     type Output = Self;
     fn add(self, rhs: i64) -> Self::Output {
-        self.add(rhs)
+        let result = Self(self.0 + rhs);
+        #[cfg(debug_assertions)]
+        result.check();
+        result
     }
 }
 
 impl AddAssign<i64> for RataDie {
     fn add_assign(&mut self, rhs: i64) {
         self.0 += rhs;
+        #[cfg(debug_assertions)]
+        self.check();
     }
 }
 
@@ -127,6 +120,8 @@ impl Sub<i64> for RataDie {
 impl SubAssign<i64> for RataDie {
     fn sub_assign(&mut self, rhs: i64) {
         self.0 -= rhs;
+        #[cfg(debug_assertions)]
+        self.check();
     }
 }
 
@@ -134,7 +129,7 @@ impl SubAssign<i64> for RataDie {
 impl Sub for RataDie {
     type Output = i64;
     fn sub(self, rhs: Self) -> Self::Output {
-        self.until(rhs)
+        self.0 - rhs.0
     }
 }
 
@@ -143,7 +138,7 @@ impl Sub for RataDie {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
-pub(crate) struct Moment(f64);
+pub struct Moment(f64);
 
 
 impl Add<f64> for Moment {
@@ -188,12 +183,12 @@ impl Moment {
     }
 
     
-    pub const fn inner(self) -> f64 {
+    pub const fn inner(&self) -> f64 {
         self.0
     }
 
     
-    pub fn as_rata_die(self) -> RataDie {
+    pub fn as_rata_die(&self) -> RataDie {
         RataDie::new(self.0.floor() as i64)
     }
 }

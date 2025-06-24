@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XCollatorNumeric {
+  
+
+  Auto = 'Auto',
+  
+
+  Off = 'Off',
+  
+
+  On = 'On',
+}
