@@ -374,6 +374,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+    public @NonNull Builder crashPullNeverShowAgain(final boolean enabled) {
+      getSettings().mRemoteSettingCrashPullNeverShowAgain.set(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
     public @NonNull Builder disableShip(final boolean value) {
       getSettings().mDisableShip.set(value);
       return this;
@@ -756,6 +768,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
           "docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable", "");
    final Pref<String> mBannedPorts =
       new Pref<String>("network.security.ports.banned", "");
+   final PrefWithoutDefault<Boolean> mRemoteSettingCrashPullNeverShowAgain =
+      new PrefWithoutDefault<Boolean>("browser.crashReports.requestedNeverShowAgain");
+
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
    boolean mForceEnableAccessibility;
@@ -1046,6 +1061,19 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setCookieBehaviorOptInPartitioningPBM(
       final boolean enabled) {
     mCookieBehaviorOptInPartitioningPBM.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setRemoteSettingCrashPullNeverShowAgain(
+      final boolean enabled) {
+    mRemoteSettingCrashPullNeverShowAgain.commit(enabled);
     return this;
   }
 
