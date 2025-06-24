@@ -148,7 +148,7 @@ add_task(async function test_edit_profile_avatar() {
 
   
   
-  profile.avatar = "flower";
+  await profile.setAvatar("flower");
   let expectedAvatar = "book";
 
   is(
