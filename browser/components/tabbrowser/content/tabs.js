@@ -2851,6 +2851,26 @@
 
         
         
+        if (
+          isTabGroupLabel(draggedTab) &&
+          dropElement?.group &&
+          !dropElement.group.collapsed
+        ) {
+          let overlappedGroup = dropElement.group;
+
+          if (isTabGroupLabel(dropElement)) {
+            dropBefore = true;
+            newDropElementIndex = dropElement.elementIndex;
+          } else {
+            dropBefore = false;
+            newDropElementIndex = overlappedGroup.tabs.at(-1).elementIndex + 1;
+          }
+
+          dropElement = overlappedGroup;
+        }
+
+        
+        
         let isOutOfBounds = isPinned
           ? dropElement.elementIndex >= numPinned
           : dropElement.elementIndex < numPinned;
