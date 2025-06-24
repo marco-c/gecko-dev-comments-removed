@@ -1975,13 +1975,11 @@ void WebrtcVideoConduit::RequestKeyFrame(FrameTransformerProxy* aProxy) {
   mCallThread->Dispatch(NS_NewRunnableFunction(
       __func__, [this, self = RefPtr<WebrtcVideoConduit>(this),
                  proxy = RefPtr<FrameTransformerProxy>(aProxy)] {
-        bool success = false;
         if (mRecvStream && mEngineReceiving) {
           
           mRecvStream->GenerateKeyFrame();
-          success = true;
         }
-        proxy->KeyFrameRequestDone(success);
+        proxy->KeyFrameRequestDone();
       }));
 }
 
