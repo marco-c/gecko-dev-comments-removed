@@ -46,7 +46,7 @@ if sys.version_info >= (3, 11):
     def contents() -> str:
         return files("certifi").joinpath("cacert.pem").read_text(encoding="ascii")
 
-elif sys.version_info >= (3, 7):
+else:
 
     from importlib.resources import path as get_path, read_text
 
@@ -78,37 +78,6 @@ elif sys.version_info >= (3, 7):
             atexit.register(exit_cacert_ctx)
 
         return _CACERT_PATH
-
-    def contents() -> str:
-        return read_text("certifi", "cacert.pem", encoding="ascii")
-
-else:
-    import os
-    import types
-    from typing import Union
-
-    Package = Union[types.ModuleType, str]
-    Resource = Union[str, "os.PathLike"]
-
-    
-    
-    
-    
-    def read_text(
-        package: Package,
-        resource: Resource,
-        encoding: str = 'utf-8',
-        errors: str = 'strict'
-    ) -> str:
-        with open(where(), encoding=encoding) as data:
-            return data.read()
-
-    
-    
-    def where() -> str:
-        f = os.path.dirname(__file__)
-
-        return os.path.join(f, "cacert.pem")
 
     def contents() -> str:
         return read_text("certifi", "cacert.pem", encoding="ascii")
