@@ -5484,7 +5484,9 @@ class Document : public nsINode,
   nsTHashSet<RefPtr<nsAtom>> mLanguagesUsed;
 
   
-  RefPtr<nsAtom> mLanguageFromCharset;
+  
+  
+  nsAtom* mLanguageFromCharset;
 
   
   
