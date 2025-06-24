@@ -1,11 +1,11 @@
 import os
 import sys
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 import mozinfo
 import mozunit
 import pytest
-from six.moves.urllib.parse import parse_qs, urlsplit
 
 
 here = os.path.abspath(os.path.dirname(__file__))
