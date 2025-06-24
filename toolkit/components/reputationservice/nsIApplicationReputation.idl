@@ -21,6 +21,8 @@ interface nsIApplicationReputationService : nsISupports {
   
 
 
+
+
   const unsigned long VERDICT_SAFE = 0;
   const unsigned long VERDICT_DANGEROUS = 1;
   const unsigned long VERDICT_UNCOMMON = 2;
