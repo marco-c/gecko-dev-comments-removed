@@ -44,7 +44,7 @@ class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
   
 
 
-  virtual bool HasScriptContent() = 0;
+  virtual bool HasExternalScriptContent() = 0;
 
   virtual bool MaybeProcessScript() override;
 };

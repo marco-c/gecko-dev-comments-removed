@@ -141,7 +141,9 @@ bool ScriptElement::MaybeProcessScript() {
     return false;
   }
 
-  if (!HasScriptContent()) {
+  bool hasScriptContent = HasExternalScriptContent() ||
+                          nsContentUtils::HasNonEmptyTextContent(cont);
+  if (!hasScriptContent) {
     
     
     
