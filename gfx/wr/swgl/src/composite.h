@@ -513,52 +513,6 @@ void BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
   }
 }
 
-typedef Texture LockedTexture;
-
-
-LockedTexture* LockTexture(GLuint texId) {
-  Texture& tex = ctx->textures[texId];
-  if (!tex.buf) {
-    assert(tex.buf != nullptr);
-    return nullptr;
-  }
-  if (__sync_fetch_and_add(&tex.locked, 1) == 0) {
-    
-    prepare_texture(tex);
-  }
-  return (LockedTexture*)&tex;
-}
-
-
-LockedTexture* LockFramebuffer(GLuint fboId) {
-  Framebuffer& fb = ctx->framebuffers[fboId];
-  
-  if (!fb.color_attachment) {
-    assert(fb.color_attachment != 0);
-    return nullptr;
-  }
-  return LockTexture(fb.color_attachment);
-}
-
-
-void LockResource(LockedTexture* resource) {
-  if (!resource) {
-    return;
-  }
-  __sync_fetch_and_add(&resource->locked, 1);
-}
-
-
-void UnlockResource(LockedTexture* resource) {
-  if (!resource) {
-    return;
-  }
-  if (__sync_fetch_and_add(&resource->locked, -1) <= 0) {
-    
-    assert(0);
-  }
-}
-
 
 void* GetResourceBuffer(LockedTexture* resource, int32_t* width,
                         int32_t* height, int32_t* stride) {

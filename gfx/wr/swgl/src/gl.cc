@@ -412,10 +412,14 @@ struct Texture {
     
     
     CLEARED = 1 << 2,
+    
+    
+    ZOMBIE = 1 << 3,
   };
   int flags = SHOULD_FREE;
   bool should_free() const { return bool(flags & SHOULD_FREE); }
   bool cleared() const { return bool(flags & CLEARED); }
+  bool zombie() const { return bool(flags & ZOMBIE); }
 
   void set_flag(int flag, bool val) {
     if (val) {
@@ -432,6 +436,7 @@ struct Texture {
     set_flag(SHOULD_FREE, val);
   }
   void set_cleared(bool val) { set_flag(CLEARED, val); }
+  void set_zombie(bool val) { set_flag(ZOMBIE, val); }
 
   
   
@@ -748,10 +753,12 @@ struct ObjectStore {
     o->on_erase();
   }
 
-  bool erase(size_t i) {
+  bool erase(size_t i, bool should_delete = true) {
     if (i < size && objects[i]) {
       on_erase(objects[i], nullptr);
-      delete objects[i];
+      if (should_delete) {
+        delete objects[i];
+      }
       objects[i] = nullptr;
       if (i < first_free) first_free = i;
       return true;
@@ -2014,6 +2021,58 @@ void TexParameteri(GLenum target, GLenum pname, GLint param) {
   SetTextureParameter(ctx->get_binding(target), pname, param);
 }
 
+typedef Texture LockedTexture;
+
+
+LockedTexture* LockTexture(GLuint texId) {
+  Texture& tex = ctx->textures[texId];
+  if (!tex.buf) {
+    assert(tex.buf != nullptr);
+    return nullptr;
+  }
+  if (__sync_fetch_and_add(&tex.locked, 1) == 0) {
+    
+    prepare_texture(tex);
+  }
+  return (LockedTexture*)&tex;
+}
+
+
+LockedTexture* LockFramebuffer(GLuint fboId) {
+  Framebuffer& fb = ctx->framebuffers[fboId];
+  
+  if (!fb.color_attachment) {
+    assert(fb.color_attachment != 0);
+    return nullptr;
+  }
+  return LockTexture(fb.color_attachment);
+}
+
+
+void LockResource(LockedTexture* resource) {
+  if (!resource) {
+    return;
+  }
+  __sync_fetch_and_add(&resource->locked, 1);
+}
+
+
+int32_t UnlockResource(LockedTexture* resource) {
+  if (!resource) {
+    return -1;
+  }
+  int32_t locked = __sync_fetch_and_add(&resource->locked, -1);
+  if (locked <= 0) {
+    
+    assert(0);
+  } else if (locked == 1 && resource->zombie()) {
+    
+    
+    delete resource;
+  }
+  return locked - 1;
+}
+
 void GenTextures(int n, GLuint* result) {
   for (int i = 0; i < n; i++) {
     Texture t;
@@ -2022,10 +2081,27 @@ void GenTextures(int n, GLuint* result) {
 }
 
 void DeleteTexture(GLuint n) {
-  if (n && ctx->textures.erase(n)) {
+  if (!n) {
+    return;
+  }
+  LockedTexture* tex = (LockedTexture*)ctx->textures.find(n);
+  if (!tex) {
+    return;
+  }
+  
+  LockResource(tex);
+  
+  
+  if (ctx->textures.erase(n, false)) {
     for (size_t i = 0; i < MAX_TEXTURE_UNITS; i++) {
       ctx->texture_units[i].unlink(n);
     }
+  }
+  
+  
+  tex->set_zombie(true);
+  if (int32_t locked = UnlockResource(tex)) {
+    debugf("DeleteTexture(%u) with %d locks\n", n, locked);
   }
 }
 
