@@ -1407,11 +1407,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TextEncoderStream", insecureContext: true },
   
-  {
-    name: "TextEvent",
-    insecureContext: true,
-    disabled: !SpecialPowers.getBoolPref("dom.events.textevent.enabled"),
-  },
+  { name: "TextEvent", insecureContext: true },
   
   { name: "TextMetrics", insecureContext: true },
   
