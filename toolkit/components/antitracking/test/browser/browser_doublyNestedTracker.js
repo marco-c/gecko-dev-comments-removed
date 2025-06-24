@@ -21,6 +21,7 @@ add_task(async function () {
       ],
       
       ["network.cookie.sameSite.laxByDefault", false],
+      ["network.lna.block_trackers", false],
     ],
   });
 
