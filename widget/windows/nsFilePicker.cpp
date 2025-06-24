@@ -738,7 +738,7 @@ nsFilePicker::CheckContentAnalysisService() {
       nsFilePicker::ContentAnalysisResponse::CreateAndReject(rv, __func__));
   
   
-  return mozilla::contentanalysis::ContentAnalysis::CheckFilesInBatchMode(
+  return mozilla::contentanalysis::ContentAnalysis::CheckUploadsInBatchMode(
       std::move(files),  true, windowGlobal,
       nsIContentAnalysisRequest::Reason::eFilePickerDialog);
 };

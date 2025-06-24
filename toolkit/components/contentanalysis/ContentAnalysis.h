@@ -157,7 +157,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
 
   
   
-  nsString mOperationDisplayString;
+  nsString mFileNameForDisplay;
 
   
   nsString mPrinterName;
@@ -258,7 +258,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
   
   
   
-  static RefPtr<FilesAllowedPromise> CheckFilesInBatchMode(
+  static RefPtr<FilesAllowedPromise> CheckUploadsInBatchMode(
       nsCOMArray<nsIFile>&& aFiles, bool aAutoAcknowledge,
       mozilla::dom::WindowGlobalParent* aWindow,
       nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI = nullptr);

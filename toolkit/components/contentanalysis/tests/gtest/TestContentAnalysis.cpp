@@ -1532,7 +1532,7 @@ TEST_F(ContentAnalysisTest,
   });
   time_t now = time(nullptr);
 
-  auto promise = ContentAnalysis::CheckFilesInBatchMode(
+  auto promise = ContentAnalysis::CheckUploadsInBatchMode(
       std::move(files), true , nullptr,
       nsIContentAnalysisRequest::Reason::eFilePickerDialog, uri);
   promise->Then(
@@ -1674,7 +1674,7 @@ TEST_F(
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   RefPtr<CancelableRunnable> timer = QueueTimeoutToMainThread(timedOut);
 
-  auto promise = ContentAnalysis::CheckFilesInBatchMode(
+  auto promise = ContentAnalysis::CheckUploadsInBatchMode(
       std::move(files), true , nullptr,
       nsIContentAnalysisRequest::Reason::eFilePickerDialog, uri);
   promise->Then(
