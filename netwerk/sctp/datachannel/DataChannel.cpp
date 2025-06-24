@@ -411,26 +411,28 @@ DataChannelConnection::~DataChannelConnection() {
 }
 
 void DataChannelConnection::Destroy() {
-  
-  
-  
-  
-  DC_DEBUG(("Destroying DataChannelConnection %p", (void*)this));
   ASSERT_WEBRTC(NS_IsMainThread());
+  DC_DEBUG(("Destroying DataChannelConnection %p", (void*)this));
   CloseAll();
-
-  MutexAutoLock lock(mLock);
-  
-  
-  ClearResets();
-
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   MOZ_DIAGNOSTIC_ASSERT(mSTS);
+#endif
+  mListener = nullptr;
+  mSTS->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<DataChannelConnection>(this)]() {
+        mPacketReceivedListener.DisconnectIfExists();
+        mStateChangeListener.DisconnectIfExists();
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        mShutdown = true;
+        DC_DEBUG(("Shutting down connection %p, id %p", this, (void*)mId));
+#endif
+      }));
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   auto self = DataChannelRegistry::Lookup(mId);
   MOZ_DIAGNOSTIC_ASSERT(self);
   MOZ_DIAGNOSTIC_ASSERT(this == self.get());
 #endif
-  mListener = nullptr;
   
   
   
@@ -454,17 +456,14 @@ void DataChannelConnection::DestroyOnSTS() {
   usrsctp_deregister_address(reinterpret_cast<void*>(mId));
   DC_DEBUG(
       ("Deregistered %p from the SCTP stack.", reinterpret_cast<void*>(mId)));
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  mShutdown = true;
-  DC_DEBUG(("Shutting down connection %p, id %p", this, (void*)mId));
-#endif
 
-  mPacketReceivedListener.DisconnectIfExists();
-  mStateChangeListener.DisconnectIfExists();
-  mTransportHandler = nullptr;
-  GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+  
+  
+  Dispatch(NS_NewRunnableFunction(
       "DataChannelConnection::Destroy",
-      [id = mId]() { DataChannelRegistry::Deregister(id); }));
+      [this, self = RefPtr<DataChannelConnection>(this)]() {
+        DataChannelRegistry::Deregister(mId);
+      }));
 }
 
 Maybe<RefPtr<DataChannelConnection>> DataChannelConnection::Create(
