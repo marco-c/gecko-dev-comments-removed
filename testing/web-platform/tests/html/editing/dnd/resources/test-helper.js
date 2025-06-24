@@ -3,21 +3,21 @@
 
 
 
-
-const mouseMoveToCenter = (element, iframe = undefined) => {
-  let clientRect = element.getBoundingClientRect();
-  let centerX = (clientRect.left + clientRect.right) / 2;
-  let centerY = (clientRect.top + clientRect.bottom) / 2;
-  if(iframe != undefined) {
-    clientRect = iframe.getBoundingClientRect();
-    centerX += clientRect.left;
-    centerY += clientRect.top;
-  }
-  return new test_driver.Actions()
-  .pointerMove(Math.ceil(centerX), Math.ceil(centerY))
-  .send();
+const getElemCenterInIframe  = (element, iframe) => {
+  const elemClientRect = element.getBoundingClientRect();
+  const frameClientRect = iframe.getBoundingClientRect();
+  const centerX = frameClientRect.left + (elemClientRect.left + elemClientRect.right) / 2;
+  const centerY = frameClientRect.top + (elemClientRect.top + elemClientRect.bottom) / 2;
+  return [centerX, centerY];
 };
 
+
+
+const movePointerToCenter = (element, iframe, actions) => {
+return (iframe == undefined) ?
+                actions.pointerMove(0, 0, {origin: element}) :
+                actions.pointerMove(...getElemCenterInIframe(element, iframe))
+}
 
 
 
@@ -35,14 +35,11 @@ function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
       }
     }));
     try {
-      await mouseMoveToCenter(dragElement);
-      await new test_driver.Actions()
-      .pointerDown()
-      .send();
-      await mouseMoveToCenter(dropElement, iframe);
-      await new test_driver.Actions()
-      .pointerUp()
-      .send();
+      var actions = new test_driver.Actions()
+        .pointerMove(0, 0, {origin: dragElement})
+        .pointerDown();
+      actions = movePointerToCenter(dropElement, iframe, actions);
+      await actions.pointerUp().send();
     } catch (e) {
       reject(e);
     }
