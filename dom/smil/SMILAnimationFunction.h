@@ -139,8 +139,9 @@ class SMILAnimationFunction {
 
 
 
-  int8_t CompareTo(const SMILAnimationFunction* aOther,
-                   nsContentUtils::NodeIndexCache& aCache) const;
+
+
+  int8_t CompareTo(const SMILAnimationFunction* aOther) const;
 
   
 
@@ -161,7 +162,7 @@ class SMILAnimationFunction {
 
 
 
-    return mIsActive || mIsFrozen;
+    return (mIsActive || mIsFrozen);
   }
 
   
@@ -247,19 +248,16 @@ class SMILAnimationFunction {
   }
 
   
-  class MOZ_STACK_CLASS Comparator final {
+  class Comparator {
    public:
     bool Equals(const SMILAnimationFunction* aElem1,
                 const SMILAnimationFunction* aElem2) const {
-      return aElem1->CompareTo(aElem2, mCache) == 0;
+      return (aElem1->CompareTo(aElem2) == 0);
     }
     bool LessThan(const SMILAnimationFunction* aElem1,
                   const SMILAnimationFunction* aElem2) const {
-      return aElem1->CompareTo(aElem2, mCache) < 0;
+      return (aElem1->CompareTo(aElem2) < 0);
     }
-
-   private:
-    mutable nsContentUtils::NodeIndexCache mCache;
   };
 
  protected:
