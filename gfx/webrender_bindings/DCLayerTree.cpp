@@ -647,7 +647,6 @@ void DCLayerTree::CompositorEndFrame() {
     
     surface->UpdateAllocatedRect();
     if (!same) {
-      
       const auto visual = surface->GetRootVisual();
       if (UseLayerCompositor()) {
         
