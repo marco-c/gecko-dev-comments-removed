@@ -203,6 +203,8 @@ parent:
 
   
   async RequestFxrOutput();
+
+  async DynamicToolbarOffsetChanged(int32_t aOffset);
 };
 
 } 

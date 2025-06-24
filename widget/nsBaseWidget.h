@@ -203,6 +203,8 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   WindowRenderer* GetWindowRenderer() override;
   bool HasWindowRenderer() const final { return !!mWindowRenderer; }
 
+  void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) override;
+
   
   
   
