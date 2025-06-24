@@ -31,13 +31,13 @@ var perfMetadata = {
 
 
 
-
 function rsObjectToEntry(rsObject) {
   let entry = Cc[
     "@mozilla.org/url-classifier/exception-list-entry;1"
   ].createInstance(Ci.nsIUrlClassifierExceptionListEntry);
 
   let {
+    category: categoryStr,
     urlPattern,
     topLevelUrlPattern = "",
     isPrivateBrowsingOnly = false,
@@ -45,7 +45,17 @@ function rsObjectToEntry(rsObject) {
     classifierFeatures = [],
   } = rsObject;
 
+  const CATEGORY_STR_TO_ENUM = {
+    "internal-pref":
+      Ci.nsIUrlClassifierExceptionListEntry.CATEGORY_INTERNAL_PREF,
+    baseline: Ci.nsIUrlClassifierExceptionListEntry.CATEGORY_BASELINE,
+    convenience: Ci.nsIUrlClassifierExceptionListEntry.CATEGORY_CONVENIENCE,
+  };
+
+  let category = CATEGORY_STR_TO_ENUM[categoryStr];
+
   entry.init(
+    category,
     urlPattern,
     topLevelUrlPattern,
     isPrivateBrowsingOnly,
@@ -73,6 +83,7 @@ function generateExceptionList() {
     for (let j = 0; j < 100; j++) {
       list.addEntry(
         rsObjectToEntry({
+          category: "baseline",
           urlPattern: `*://tracker${i}.com/*`,
           topLevelUrlPattern: `*://site${j}.com/*`,
         })

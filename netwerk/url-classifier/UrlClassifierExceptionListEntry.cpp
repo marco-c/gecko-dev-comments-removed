@@ -6,7 +6,7 @@
 
 #include "UrlClassifierExceptionListEntry.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_privacy.h"
 
 namespace mozilla::net {
 
@@ -15,10 +15,21 @@ NS_IMPL_ISUPPORTS(UrlClassifierExceptionListEntry,
 
 NS_IMETHODIMP
 UrlClassifierExceptionListEntry::Init(
+    nsIUrlClassifierExceptionListEntry::Category aCategory,
     const nsACString& aUrlPattern, const nsACString& aTopLevelUrlPattern,
     bool aIsPrivateBrowsingOnly,
     const nsTArray<nsCString>& aFilterContentBlockingCategories,
     const nsTArray<nsCString>& aClassifierFeatures) {
+  
+  NS_ENSURE_TRUE(
+      aCategory == nsIUrlClassifierExceptionListEntry::Category::
+                       CATEGORY_INTERNAL_PREF ||
+          aCategory ==
+              nsIUrlClassifierExceptionListEntry::Category::CATEGORY_BASELINE ||
+          aCategory == nsIUrlClassifierExceptionListEntry::Category::
+                           CATEGORY_CONVENIENCE,
+      NS_ERROR_INVALID_ARG);
+  mCategory = aCategory;
   mUrlPattern = aUrlPattern;
   mTopLevelUrlPattern = aTopLevelUrlPattern;
   mIsPrivateBrowsingOnly = aIsPrivateBrowsingOnly;
@@ -47,6 +58,27 @@ UrlClassifierExceptionListEntry::Matches(nsIURI* aURI, nsIURI* aTopLevelURI,
   NS_ENSURE_ARG_POINTER(aResult);
   *aResult = false;
 
+  MOZ_ASSERT(
+      mCategory == nsIUrlClassifierExceptionListEntry::Category::
+                       CATEGORY_INTERNAL_PREF ||
+      mCategory ==
+          nsIUrlClassifierExceptionListEntry::Category::CATEGORY_BASELINE ||
+      mCategory ==
+          nsIUrlClassifierExceptionListEntry::Category::CATEGORY_CONVENIENCE);
+
+  
+  
+  if ((mCategory ==
+           nsIUrlClassifierExceptionListEntry::Category::CATEGORY_BASELINE &&
+       !StaticPrefs::
+           privacy_trackingprotection_allow_list_baseline_enabled()) ||
+      (mCategory ==
+           nsIUrlClassifierExceptionListEntry::Category::CATEGORY_CONVENIENCE &&
+       !StaticPrefs::
+           privacy_trackingprotection_allow_list_convenience_enabled())) {
+    return NS_OK;
+  }
+
   
   if (!aIsPrivateBrowsing && mIsPrivateBrowsingOnly) {
     return NS_OK;
@@ -56,8 +88,6 @@ UrlClassifierExceptionListEntry::Matches(nsIURI* aURI, nsIURI* aTopLevelURI,
   
   if (!mFilterContentBlockingCategories.IsEmpty()) {
     nsCString prefValue;
-    
-    
     nsresult rv =
         Preferences::GetCString("browser.contentblocking.category", prefValue);
 
@@ -83,6 +113,13 @@ UrlClassifierExceptionListEntry::Matches(nsIURI* aURI, nsIURI* aTopLevelURI,
   }
 
   *aResult = true;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+UrlClassifierExceptionListEntry::GetCategory(
+    nsIUrlClassifierExceptionListEntry::Category* aCategory) {
+  *aCategory = mCategory;
   return NS_OK;
 }
 
