@@ -1110,7 +1110,9 @@ class AccessibleWalkerActor extends Actor {
     
     
     
-    const popup = win.isChromeWindow ? target.closest("panel") : null;
+    const popup = win.isChromeWindow
+      ? target.closest("panel, menupopup")
+      : null;
     const containerAcc = popup ? this.getRawAccessibleFor(popup) : docAcc;
     const { devicePixelRatio } = this.rootWin;
     const rawAccessible = containerAcc.getDeepestChildAtPointInProcess(
