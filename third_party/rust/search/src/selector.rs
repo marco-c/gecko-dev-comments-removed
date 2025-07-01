@@ -46,7 +46,6 @@ impl SearchEngineSelector {
     
     
     
-    
     pub fn use_remote_settings_server(
         self: Arc<Self>,
         service: &Arc<RemoteSettingsService>,

@@ -3,7 +3,7 @@
 
 
 
-use crate::{db::Sqlite3Extension, geoname::geonames_collate};
+use crate::{db::Sqlite3Extension, util::i18n_cmp};
 use rusqlite::{Connection, Transaction};
 use sql_support::{
     open_database::{self, ConnectionInitializer},
@@ -23,7 +23,7 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 41;
+pub const VERSION: u32 = 42;
 
 
 pub const SQL: &str = "
@@ -42,6 +42,14 @@ CREATE TABLE ingested_records(
 
 CREATE TABLE keywords(
     keyword TEXT NOT NULL,
+    suggestion_id INTEGER NOT NULL,
+    full_keyword_id INTEGER NULL,
+    rank INTEGER NOT NULL,
+    PRIMARY KEY (keyword, suggestion_id)
+) WITHOUT ROWID;
+
+CREATE TABLE keywords_i18n(
+    keyword TEXT NOT NULL COLLATE i18n_collate,
     suggestion_id INTEGER NOT NULL,
     full_keyword_id INTEGER NULL,
     rank INTEGER NOT NULL,
@@ -273,7 +281,12 @@ impl<'a> SuggestConnectionInitializer<'a> {
     }
 
     fn create_custom_functions(&self, conn: &Connection) -> open_database::Result<()> {
-        conn.create_collation("geonames_collate", geonames_collate)?;
+        
+        
+        
+        
+        conn.create_collation("geonames_collate", i18n_cmp)?;
+        conn.create_collation("i18n_collate", i18n_cmp)?;
         Ok(())
     }
 }
@@ -775,6 +788,26 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
                 )?;
                 Ok(())
             }
+            41 => {
+                
+                
+                
+                
+                clear_database(tx)?;
+                tx.execute_batch(
+                    r#"
+                    CREATE TABLE keywords_i18n(
+                        keyword TEXT NOT NULL COLLATE i18n_collate,
+                        suggestion_id INTEGER NOT NULL,
+                        full_keyword_id INTEGER NULL,
+                        rank INTEGER NOT NULL,
+                        PRIMARY KEY (keyword, suggestion_id)
+                    ) WITHOUT ROWID;
+                    "#,
+                )?;
+                Ok(())
+            }
+
             _ => Err(open_database::Error::IncompatibleVersion(version)),
         }
     }
@@ -782,6 +815,9 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
 
 
 pub fn clear_database(db: &Connection) -> rusqlite::Result<()> {
+    
+    
+
     db.execute_batch(
         "
         DELETE FROM meta;
@@ -800,6 +836,7 @@ pub fn clear_database(db: &Connection) -> rusqlite::Result<()> {
         "geonames",
         "geonames_metrics",
         "ingested_records",
+        "keywords_i18n",
         "keywords_metrics",
     ];
     for t in conditional_tables {

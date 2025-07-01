@@ -28,7 +28,7 @@ use crate::{
     },
     schema::{clear_database, SuggestConnectionInitializer},
     suggestion::{cook_raw_suggestion_url, FtsMatchInfo, Suggestion},
-    util::{full_keyword, split_keyword},
+    util::{full_keyword, i18n_transform, split_keyword},
     weather::WeatherCache,
     Result, SuggestionQuery,
 };
@@ -1105,7 +1105,11 @@ impl<'a> SuggestDao<'a> {
         
         
         
-        let mut keyword_insert = KeywordInsertStatement::new_with_or_ignore(self.conn)?;
+        let mut keyword_insert = KeywordInsertStatement::with_details(
+            self.conn,
+            "keywords",
+            Some(InsertConflictResolution::Ignore),
+        )?;
         let mut suggestion_insert = SuggestionInsertStatement::new(self.conn)?;
         let mut dynamic_insert = DynamicInsertStatement::new(self.conn)?;
         for suggestion in suggestions {
@@ -1196,6 +1200,11 @@ impl<'a> SuggestDao<'a> {
         self.scope.err_if_interrupted()?;
         self.conn.execute_cached(
             "DELETE FROM keywords WHERE suggestion_id IN (SELECT id from suggestions WHERE record_id = :record_id)",
+            named_params! { ":record_id": record_id.as_str() },
+        )?;
+        self.scope.err_if_interrupted()?;
+        self.conn.execute_cached(
+            "DELETE FROM keywords_i18n WHERE suggestion_id IN (SELECT id from suggestions WHERE record_id = :record_id)",
             named_params! { ":record_id": record_id.as_str() },
         )?;
         self.scope.err_if_interrupted()?;
@@ -1675,29 +1684,27 @@ pub(crate) struct KeywordInsertStatement<'conn>(rusqlite::Statement<'conn>);
 
 impl<'conn> KeywordInsertStatement<'conn> {
     pub(crate) fn new(conn: &'conn Connection) -> Result<Self> {
-        Ok(Self(conn.prepare(
-            "INSERT INTO keywords(
-                 suggestion_id,
-                 keyword,
-                 full_keyword_id,
-                 rank
-             )
-             VALUES(?, ?, ?, ?)
-             ",
-        )?))
+        Self::with_details(conn, "keywords", None)
     }
 
-    pub(crate) fn new_with_or_ignore(conn: &'conn Connection) -> Result<Self> {
-        Ok(Self(conn.prepare(
-            "INSERT OR IGNORE INTO keywords(
-                 suggestion_id,
-                 keyword,
-                 full_keyword_id,
-                 rank
-             )
-             VALUES(?, ?, ?, ?)
-             ",
-        )?))
+    pub(crate) fn with_details(
+        conn: &'conn Connection,
+        table: &str,
+        conflict_resolution: Option<InsertConflictResolution>,
+    ) -> Result<Self> {
+        Ok(Self(conn.prepare(&format!(
+            r#"
+            INSERT {} INTO {}(
+                suggestion_id,
+                keyword,
+                full_keyword_id,
+                rank
+            )
+            VALUES(?, ?, ?, ?)
+            "#,
+            conflict_resolution.as_ref().map(|r| r.as_str()).unwrap_or_default(),
+            table,
+        ))?))
     }
 
     pub(crate) fn execute(
@@ -1711,6 +1718,18 @@ impl<'conn> KeywordInsertStatement<'conn> {
             .execute((suggestion_id, keyword, full_keyword_id, rank))
             .with_context("keyword insert")?;
         Ok(())
+    }
+}
+
+pub(crate) enum InsertConflictResolution {
+    Ignore,
+}
+
+impl InsertConflictResolution {
+    fn as_str(&self) -> &str {
+        match self {
+            InsertConflictResolution::Ignore => "OR IGNORE",
+        }
     }
 }
 
@@ -1752,32 +1771,55 @@ impl<'conn> PrefixKeywordInsertStatement<'conn> {
     }
 }
 
-#[derive(Debug, Default)]
+
+
+#[derive(Debug, Default, Eq, PartialEq)]
 pub(crate) struct KeywordsMetrics {
+    
     pub(crate) max_len: usize,
+    
     pub(crate) max_word_count: usize,
 }
+
 
 
 
 
 pub(crate) struct KeywordsMetricsUpdater {
-    pub(crate) max_len: usize,
-    pub(crate) max_word_count: usize,
+    metrics: KeywordsMetrics,
 }
 
 impl KeywordsMetricsUpdater {
     pub(crate) fn new() -> Self {
         Self {
-            max_len: 0,
-            max_word_count: 0,
+            metrics: KeywordsMetrics::default(),
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn update(&mut self, keyword: &str) {
-        self.max_len = std::cmp::max(self.max_len, keyword.len());
-        self.max_word_count =
-            std::cmp::max(self.max_word_count, keyword.split_whitespace().count());
+        let transformed_kw = i18n_transform(keyword);
+        self.metrics.max_len = std::cmp::max(
+            self.metrics.max_len,
+            std::cmp::max(transformed_kw.len(), keyword.len()),
+        );
+
+        
+        
+        
+        
+        
+        self.metrics.max_word_count = std::cmp::max(
+            self.metrics.max_word_count,
+            transformed_kw.split_whitespace().count(),
+        );
     }
 
     
@@ -1805,8 +1847,8 @@ impl KeywordsMetricsUpdater {
             .execute((
                 record_id.as_str(),
                 record_type,
-                self.max_len,
-                self.max_word_count,
+                self.metrics.max_len,
+                self.metrics.max_word_count,
             ))
             .with_context("keywords metrics insert")?;
 
@@ -1844,4 +1886,309 @@ impl<'conn> AmpFtsInsertStatement<'conn> {
 
 fn provider_config_meta_key(provider: SuggestionProvider) -> String {
     format!("{}{}", PROVIDER_CONFIG_META_KEY_PREFIX, provider as u8)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{store::tests::TestStore, testing::*, SuggestIngestionConstraints};
+
+    #[test]
+    fn keywords_metrics_updater() -> anyhow::Result<()> {
+        
+        
+        
+        let tests = [
+            (
+                "abc",
+                KeywordsMetrics {
+                    max_len: 3,
+                    max_word_count: 1,
+                },
+            ),
+            (
+                "a b",
+                KeywordsMetrics {
+                    max_len: 3,
+                    max_word_count: 2,
+                },
+            ),
+            (
+                "a b c",
+                KeywordsMetrics {
+                    max_len: 5,
+                    max_word_count: 3,
+                },
+            ),
+            
+            
+            
+            
+            
+            (
+                "Qu\u{00e9}bec",
+                KeywordsMetrics {
+                    max_len: 7,
+                    max_word_count: 3,
+                },
+            ),
+            
+            
+            
+            
+            
+            (
+                "Que\u{0301}bec",
+                KeywordsMetrics {
+                    max_len: 8,
+                    max_word_count: 3,
+                },
+            ),
+            
+            
+            (
+                "Carmel-by-the-Sea",
+                KeywordsMetrics {
+                    max_len: 17,
+                    max_word_count: 4,
+                },
+            ),
+        ];
+
+        
+        let mut updater = KeywordsMetricsUpdater::new();
+        for (test_kw, expected_metrics) in &tests {
+            updater.update(test_kw);
+            assert_eq!(&updater.metrics, expected_metrics);
+        }
+
+        
+        let store = TestStore::new(MockRemoteSettingsClient::default());
+        store.write(|dao| {
+            
+            
+            let mut dummy_cache = OnceCell::new();
+            dummy_cache.set("test").expect("dummy cache set");
+            assert_ne!(dummy_cache.get(), None);
+
+            let record_type = SuggestRecordType::Wikipedia;
+            updater.finish(
+                dao.conn,
+                &SuggestRecordId::new("test-record-1".to_string()),
+                record_type,
+                &mut dummy_cache,
+            )?;
+
+            assert_eq!(dummy_cache.get(), None);
+
+            
+            
+            let read_metrics_1 = dao.get_keywords_metrics(record_type)?;
+            assert_eq!(read_metrics_1, tests.last().unwrap().1);
+
+            
+            updater.update("a very long keyword with many words");
+            let new_expected = KeywordsMetrics {
+                max_len: 35,
+                max_word_count: 7,
+            };
+            assert_eq!(updater.metrics, new_expected);
+
+            updater.finish(
+                dao.conn,
+                &SuggestRecordId::new("test-record-2".to_string()),
+                record_type,
+                &mut dummy_cache,
+            )?;
+
+            
+            let read_metrics_2 = dao.get_keywords_metrics(record_type)?;
+            assert_eq!(read_metrics_2, new_expected);
+
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    
+    
+    #[test]
+    fn keywords_i18n_delete_record() -> anyhow::Result<()> {
+        
+        
+        let kws_1 = ["aaa", "bbb", "ccc"];
+        let kws_2 = ["yyy", "zzz"];
+        let mut store = TestStore::new(
+            MockRemoteSettingsClient::default()
+                .with_record(SuggestionProvider::Weather.record(
+                    "weather-1",
+                    json!({
+                        "score": 0.24,
+                        "keywords": kws_1,
+                    }),
+                ))
+                .with_record(SuggestionProvider::Weather.record(
+                    "weather-2",
+                    json!({
+                        "score": 0.24,
+                        "keywords": kws_2,
+                    }),
+                )),
+        );
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        
+        assert_eq!(
+            store.count_rows("keywords_i18n") as usize,
+            kws_1.len() + kws_2.len()
+        );
+
+        for q in kws_1.iter().chain(kws_2.iter()) {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: None,
+                }],
+                "query: {:?}",
+                q
+            );
+        }
+
+        
+        store
+            .client_mut()
+            .delete_record(SuggestionProvider::Weather.empty_record("weather-1"));
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        
+        
+        assert_eq!(store.count_rows("keywords_i18n") as usize, kws_2.len());
+
+        for q in kws_1 {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![],
+                "query: {:?}",
+                q
+            );
+        }
+        for q in kws_2 {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: None,
+                }],
+                "query: {:?}",
+                q
+            );
+        }
+
+        Ok(())
+    }
+
+    
+    
+    
+    #[test]
+    fn keywords_i18n_update_record() -> anyhow::Result<()> {
+        
+        
+        let kws_1 = ["aaa", "bbb", "ccc"];
+        let kws_2 = ["yyy", "zzz"];
+        let mut store = TestStore::new(
+            MockRemoteSettingsClient::default()
+                .with_record(SuggestionProvider::Weather.record(
+                    "weather-1",
+                    json!({
+                        "score": 0.24,
+                        "keywords": kws_1,
+                    }),
+                ))
+                .with_record(SuggestionProvider::Weather.record(
+                    "weather-2",
+                    json!({
+                        "score": 0.24,
+                        "keywords": kws_2,
+                    }),
+                )),
+        );
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        
+        assert_eq!(
+            store.count_rows("keywords_i18n") as usize,
+            kws_1.len() + kws_2.len()
+        );
+
+        for q in kws_1.iter().chain(kws_2.iter()) {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: None,
+                }],
+                "query: {:?}",
+                q
+            );
+        }
+
+        
+        let kws_1_new = [
+            "bbb", 
+            "mmm", 
+        ];
+        store
+            .client_mut()
+            .update_record(SuggestionProvider::Weather.record(
+                "weather-1",
+                json!({
+                    "score": 0.24,
+                    "keywords": kws_1_new,
+                }),
+            ));
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        
+        assert_eq!(
+            store.count_rows("keywords_i18n") as usize,
+            kws_1_new.len() + kws_2.len()
+        );
+
+        for q in ["aaa", "ccc"] {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![],
+                "query: {:?}",
+                q
+            );
+        }
+        for q in kws_1_new.iter().chain(kws_2.iter()) {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: None,
+                }],
+                "query: {:?}",
+                q
+            );
+        }
+
+        Ok(())
+    }
 }
