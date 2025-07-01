@@ -56,7 +56,7 @@ function* do_run_test() {
   Services.prefs.setIntPref("network.cookie.purgeAge", gPurgeAge);
   Services.prefs.setIntPref("network.cookie.maxNumber", 100);
 
-  let expiry = Date.now() + 1000 * 1000;
+  let expiry = Date.now() / 1000 + 1000;
 
   
   
@@ -157,7 +157,7 @@ function* do_run_test() {
   
   
   Services.cookies.removeAll();
-  let shortExpiry = Date.now() + 1000 * gShortExpiry;
+  let shortExpiry = Math.floor(Date.now() / 1000) + gShortExpiry;
   if (!set_cookies(0, 20, shortExpiry)) {
     repeat_test();
     return;

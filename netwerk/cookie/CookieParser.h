@@ -69,7 +69,6 @@ class CookieParser final {
   void ParseAttributes(nsCString& aCookieHeader, nsACString& aExpires,
                        nsACString& aMaxage, bool& aAcceptedByParser);
 
-  
   bool GetExpiry(CookieStruct& aCookieData, const nsACString& aExpires,
                  const nsACString& aMaxage, int64_t aCurrentTime,
                  const nsACString& aDateHeader, bool aFromHttp);
