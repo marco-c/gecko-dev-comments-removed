@@ -849,21 +849,6 @@ ipc::IPCResult WebGPUParent::RecvQueueWriteBufferInline(
   return IPC_OK();
 }
 
-ipc::IPCResult WebGPUParent::RecvQueueWriteAction(
-    RawId aQueueId, RawId aDeviceId, const ipc::ByteBuf& aByteBuf,
-    ipc::MutableSharedMemoryHandle&& aShmem) {
-  
-  
-  auto mapping = aShmem.Map();
-
-  ErrorBuffer error;
-  ffi::wgpu_server_queue_write_action(
-      mContext.get(), aDeviceId, aQueueId, ToFFI(&aByteBuf),
-      mapping.DataAs<uint8_t>(), mapping.Size(), error.ToFFI());
-  ForwardError(error);
-  return IPC_OK();
-}
-
 
 
 ipc::IPCResult WebGPUParent::RecvDeviceCreateSwapChain(
@@ -1563,9 +1548,22 @@ void WebGPUParent::ActorDestroy(ActorDestroyReason aWhy) {
   mContext = nullptr;
 }
 
-ipc::IPCResult WebGPUParent::RecvMessage(const ipc::ByteBuf& aByteBuf) {
+ipc::IPCResult WebGPUParent::RecvMessage(
+    const ipc::ByteBuf& aByteBuf,
+    Maybe<ipc::MutableSharedMemoryHandle>&& aShmem) {
   ErrorBuffer error;
-  ffi::wgpu_server_message(mContext.get(), ToFFI(&aByteBuf), error.ToFFI());
+  if (aShmem.isSome()) {
+    
+    
+    auto mapping = aShmem->Map();
+    auto ptr = mapping.DataAs<uint8_t>();
+    auto size = mapping.Size();
+    ffi::wgpu_server_message(mContext.get(), ToFFI(&aByteBuf), ptr, size,
+                             error.ToFFI());
+  } else {
+    ffi::wgpu_server_message(mContext.get(), ToFFI(&aByteBuf), nullptr, 0,
+                             error.ToFFI());
+  }
   ForwardError(error);
   return IPC_OK();
 }
