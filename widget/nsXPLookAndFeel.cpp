@@ -525,6 +525,8 @@ static constexpr struct {
      widget::ThemeChangeKind::StyleAndLayout},
     
     {"widget.gtk.libadwaita-colors.enabled"_ns, widget::ThemeChangeKind::Style},
+    {"widget.gtk.theme-scrollbar-colors.enabled"_ns,
+     widget::ThemeChangeKind::Style},
     
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
