@@ -1154,11 +1154,6 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
   
-  if (!StaticPrefs::dom_security_enforceIPCBasedPrincipalVetting()) {
-    return true;
-  }
-
-  
   if (aRemoteType == NOT_REMOTE_TYPE) {
     return true;
   }
