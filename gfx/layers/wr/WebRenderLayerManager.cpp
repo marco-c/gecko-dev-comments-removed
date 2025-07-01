@@ -444,7 +444,14 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     mStateManager.mAsyncResourceUpdates.reset();
   }
 
-  if (!aRenderOffscreen) {
+  if (aRenderOffscreen) {
+    
+    
+    
+    
+    
+    mStateManager.DiscardUnusedImagesInTransaction(resourceUpdates);
+  } else {
     
     
     
