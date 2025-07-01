@@ -958,34 +958,23 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
 
     Text* textNode = Text::FromNode(nextContent);
     MOZ_ASSERT(textNode);
-    if (!textNode->TextLength()) {
+    if (!textNode->TextDataLength()) {
       continue;  
     }
     if (HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(*textNode)) {
       continue;  
     }
-    if (!textNode->TextIsOnlyWhitespace()) {
+    if (EditorUtils::IsWhiteSpacePreformatted(*textNode)) {
       return nullptr;  
     }
-    const nsTextFragment& textFragment = textNode->TextFragment();
-    const bool isWhiteSpacePreformatted =
-        EditorUtils::IsWhiteSpacePreformatted(*textNode);
-    const bool isNewLinePreformatted =
-        EditorUtils::IsNewLinePreformatted(*textNode);
-    if (!isWhiteSpacePreformatted && !isNewLinePreformatted) {
-      
-      continue;
-    }
-    for (uint32_t i = 0; i < textFragment.GetLength(); i++) {
-      if (textFragment.CharAt(i) == HTMLEditUtils::kNewLine) {
-        if (isNewLinePreformatted) {
-          return nullptr;  
-        }
-        continue;
-      }
-      if (isWhiteSpacePreformatted) {
-        return nullptr;  
-      }
+    const uint32_t nonWhiteSpaceOffset =
+        textNode->TextFragment().FindNonWhitespaceChar(
+            EditorUtils::IsNewLinePreformatted(*textNode)
+                ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
+                                    WhitespaceOption::NewLineIsSignificant}
+                : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant});
+    if (nonWhiteSpaceOffset != nsTextFragment::kNotFound) {
+      return nullptr;  
     }
     
   }

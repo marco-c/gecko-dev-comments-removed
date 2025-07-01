@@ -14,6 +14,7 @@
 #define nsTextFragment_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "nsCharTraits.h"
@@ -36,6 +37,14 @@
 
 
 class nsTextFragment final {
+ private:
+  constexpr static unsigned char kFormFeed = '\f';
+  constexpr static unsigned char kNewLine = '\n';
+  constexpr static unsigned char kCarriageReturn = '\r';
+  constexpr static unsigned char kTab = '\t';
+  constexpr static unsigned char kSpace = ' ';
+  constexpr static unsigned char kNBSP = 0xA0;
+
  public:
   static nsresult Init();
   static void Shutdown();
@@ -79,9 +88,19 @@ class nsTextFragment final {
   
 
 
+
+
+
   const char* Get1b() const {
     NS_ASSERTION(!Is2b(), "not 1b text");
     return (const char*)m1b;
+  }
+  
+
+
+  const unsigned char* GetUnsigned1b() const {
+    NS_ASSERTION(!Is2b(), "not 1b text");
+    return (const unsigned char*)m1b;
   }
 
   
@@ -317,28 +336,6 @@ class nsTextFragment final {
   
   constexpr static uint32_t kNotFound = UINT32_MAX;
 
-  [[nodiscard]] uint32_t FindChar(char aChar, uint32_t aOffset = 0) const {
-    if (aOffset >= GetLength()) {
-      return kNotFound;
-    }
-    if (Is2b()) {
-      const char16_t* end = Get2b() + GetLength();
-      for (const char16_t* ch = Get2b() + aOffset; ch != end; ch++) {
-        if (*ch == aChar) {
-          return ch - Get2b();
-        }
-      }
-      return kNotFound;
-    }
-    const char* end = Get1b() + GetLength();
-    for (const char* ch = Get1b() + aOffset; ch != end; ch++) {
-      if (*ch == aChar) {
-        return ch - Get1b();
-      }
-    }
-    return kNotFound;
-  }
-
   [[nodiscard]] uint32_t FindChar(char16_t aChar, uint32_t aOffset = 0) const {
     if (aOffset >= GetLength()) {
       return kNotFound;
@@ -355,10 +352,134 @@ class nsTextFragment final {
     if (aChar > 0xFF) {
       return kNotFound;
     }
-    const char* end = Get1b() + GetLength();
-    for (const char* ch = Get1b() + aOffset; ch != end; ch++) {
+    const unsigned char* end = GetUnsigned1b() + GetLength();
+    for (const unsigned char* ch = GetUnsigned1b() + aOffset; ch != end; ch++) {
       if (*ch == aChar) {
-        return ch - Get1b();
+        return ch - GetUnsigned1b();
+      }
+    }
+    return kNotFound;
+  }
+
+  enum class WhitespaceOption {
+    
+    NewLineIsSignificant,
+    
+    
+    
+    
+    
+    TreatNBSPAsCollapsible,
+    
+    
+    
+    
+    
+    
+    
+    FormFeedIsSignificant,
+  };
+  using WhitespaceOptions = mozilla::EnumSet<WhitespaceOption>;
+
+ private:
+  
+  
+  class MOZ_STACK_CLASS AutoWhitespaceChecker final {
+   public:
+    explicit AutoWhitespaceChecker(const WhitespaceOptions& aOptions)
+        : mNBSPIsSignificant(
+              !aOptions.contains(WhitespaceOption::TreatNBSPAsCollapsible)),
+          mFormFeedIsSignificant(
+              aOptions.contains(WhitespaceOption::FormFeedIsSignificant)),
+          mNewLineIsSignificant(
+              aOptions.contains(WhitespaceOption::NewLineIsSignificant)) {}
+
+    [[nodiscard]] bool IsNonWhitespace(char16_t aChar) const {
+      switch (aChar) {
+        case kNBSP:
+          return mNBSPIsSignificant;
+        case kFormFeed:
+          return mFormFeedIsSignificant;
+        case kNewLine:
+          return mNewLineIsSignificant;
+        case kSpace:
+        case kTab:
+        case kCarriageReturn:
+          return false;
+        default:
+          return true;
+      }
+    }
+
+   private:
+    const bool mNBSPIsSignificant;
+    const bool mFormFeedIsSignificant;
+    const bool mNewLineIsSignificant;
+  };
+
+ public:
+  
+
+
+
+
+
+
+
+  [[nodiscard]] uint32_t FindNonWhitespaceChar(
+      const WhitespaceOptions& aOptions = {}, uint32_t aOffset = 0) const {
+    if (aOffset >= GetLength()) {
+      return kNotFound;
+    }
+    const AutoWhitespaceChecker checker(aOptions);
+    if (Is2b()) {
+      const char16_t* end = Get2b() + GetLength();
+      for (const char16_t* ch = Get2b() + aOffset; ch != end; ch++) {
+        if (checker.IsNonWhitespace(*ch)) {
+          return ch - Get2b();
+        }
+      }
+      return kNotFound;
+    }
+    const unsigned char* end = GetUnsigned1b() + GetLength();
+    for (const unsigned char* ch = GetUnsigned1b() + aOffset; ch != end; ch++) {
+      if (checker.IsNonWhitespace(*ch)) {
+        return ch - GetUnsigned1b();
+      }
+    }
+    return kNotFound;
+  }
+
+  
+
+
+
+
+
+
+
+  [[nodiscard]] uint32_t RFindNonWhitespaceChar(
+      const WhitespaceOptions& aOptions = {},
+      uint32_t aOffset = UINT32_MAX) const {
+    const uint32_t length = GetLength();
+    if (!length) {
+      return kNotFound;
+    }
+    const AutoWhitespaceChecker checker(aOptions);
+    aOffset = std::min(length - 1u, aOffset);
+    if (Is2b()) {
+      const char16_t* end = Get2b() - 1;
+      for (const char16_t* ch = Get2b() + aOffset; ch != end; ch--) {
+        if (checker.IsNonWhitespace(*ch)) {
+          return ch - Get2b();
+        }
+      }
+      return kNotFound;
+    }
+    const unsigned char* end = GetUnsigned1b() - 1;
+    for (const unsigned char* ch = GetUnsigned1b() + aOffset; ch != end; ch--) {
+      if (checker.IsNonWhitespace(*ch)) {
+        return ch - GetUnsigned1b();
       }
     }
     return kNotFound;
@@ -414,6 +535,9 @@ class nsTextFragment final {
 
   union {
     mozilla::StringBuffer* m2b;
+    
+    
+    
     const char* m1b;  
   };
 
