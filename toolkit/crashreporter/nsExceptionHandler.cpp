@@ -1424,11 +1424,13 @@ static void WriteCrashEventFile(time_t crashTime, const char* crashTimeString,
                                 const XP_CHAR* minidump_id
 #endif
 ) {
+#ifdef MOZ_BACKGROUNDTASKS
   if (BackgroundTasks::IsBackgroundTaskMode()) {
     
     
     return;
   }
+#endif
 
   
   static char id_ascii[37] = {};
@@ -1567,7 +1569,11 @@ bool MinidumpCallback(
 
   SetUpMemtestEnv();
 
-  if (doReport && isSafeToDump && !BackgroundTasks::IsBackgroundTaskMode()) {
+  bool isBackgroundTaskMode = false;
+#ifdef MOZ_BACKGROUNDTASKS
+  isBackgroundTaskMode = BackgroundTasks::IsBackgroundTaskMode();
+#endif
+  if (doReport && isSafeToDump && !isBackgroundTaskMode) {
     
     
     
