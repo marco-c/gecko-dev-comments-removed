@@ -24,7 +24,7 @@
 
 
 #if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS64) || \
-    defined(JS_SIMULATOR_ARM64)
+    defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_LOONG64)
 #  define SINGLESTEP_PROFILING
 #endif
 
