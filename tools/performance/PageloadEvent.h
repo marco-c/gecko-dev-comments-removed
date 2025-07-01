@@ -18,7 +18,11 @@ struct ParamTraits;
 
 namespace mozilla::glean::perf {
 struct PageLoadExtra;
-}
+struct PageLoadDomainExtra;
+}  
+
+
+
 
 #define FOR_EACH_PAGELOAD_METRIC(_) \
   _(dnsLookupTime, uint32_t)        \
@@ -54,7 +58,10 @@ enum DocumentFeature : uint32_t { FETCH_PRIORITY_IMAGES = 1 << 0 };
 
 
 
-enum class PageloadEventType { kNormal, kNone };
+
+
+enum class PageloadEventType { kNormal, kDomain, kNone };
+
 
 extern PageloadEventType GetPageloadEventType();
 
@@ -71,9 +78,15 @@ class PageloadEventData {
   
   FOR_EACH_PAGELOAD_METRIC(DEFINE_METRIC)
 
+  
+  mozilla::Maybe<nsCString> mDomain;
+
  public:
   
   FOR_EACH_PAGELOAD_METRIC(DEFINE_SETTER)
+
+  bool MaybeSetDomain(nsCString& aDomain);
+  bool HasDomain() { return mDomain.isSome() && !mDomain.value().IsEmpty(); }
 
   bool HasLoadTime() { return loadTime.isSome(); }
 
@@ -82,6 +95,7 @@ class PageloadEventData {
   void SetDocumentFeature(DocumentFeature aFeature);
 
   mozilla::glean::perf::PageLoadExtra ToPageLoadExtra() const;
+  mozilla::glean::perf::PageLoadDomainExtra ToPageLoadDomainExtra() const;
 };
 #undef DEFINE_METRIC
 #undef ASSIGN_METRIC
