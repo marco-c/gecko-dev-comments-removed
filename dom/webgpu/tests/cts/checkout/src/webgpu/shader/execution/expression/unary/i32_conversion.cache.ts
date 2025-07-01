@@ -74,8 +74,12 @@ export const d = makeCaseCache('unary/i32_conversion', {
         return { input: f32(f), expected: i32(kValue.i32.negative.min) };
       }
 
-      if (f >= kValue.i32.positive.max) {
-        return { input: f32(f), expected: i32(kValue.i32.positive.max) };
+      const largestI32WhichIsAlsoF32 = 0x7fffff80;
+      if (f >= largestI32WhichIsAlsoF32) {
+        
+        
+
+        return { input: f32(f), expected: i32(largestI32WhichIsAlsoF32) };
       }
 
       
