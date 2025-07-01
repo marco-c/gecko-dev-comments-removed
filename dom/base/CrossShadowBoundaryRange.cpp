@@ -139,7 +139,7 @@ void CrossShadowBoundaryRange::DoSetRange(
   }
 }
 void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild,
-                                                    const BatchRemovalState*) {
+                                                    const ContentRemoveInfo&) {
   
   
   
