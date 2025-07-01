@@ -4,19 +4,20 @@
 
 
 
-#include "EncoderConfig.h"
-#if !defined(MFTEncoder_h_)
-#  define MFTEncoder_h_
+#ifndef DOM_MEDIA_PLATFORM_WMF_MFTENCODER_H
+#define DOM_MEDIA_PLATFORM_WMF_MFTENCODER_H
 
-#  include <functional>
-#  include <queue>
-#  include <deque>
-#  include "mozilla/RefPtr.h"
-#  include "mozilla/ResultVariant.h"
-#  include "nsISupportsImpl.h"
-#  include "nsDeque.h"
-#  include "nsTArray.h"
-#  include "WMF.h"
+#include <deque>
+#include <functional>
+#include <queue>
+
+#include "EncoderConfig.h"
+#include "WMF.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ResultVariant.h"
+#include "nsDeque.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 
@@ -95,10 +96,10 @@ class MFTEncoder final {
         
         UniquePtr<EventQueue>>
         mImpl;
-#  ifdef DEBUG
+#ifdef DEBUG
     bool IsOnCurrentThread();
     nsCOMPtr<nsISerialEventTarget> mThread;
-#  endif
+#endif
   };
 
   ~MFTEncoder() { Destroy(); };
@@ -147,4 +148,4 @@ class MFTEncoder final {
 
 }  
 
-#endif
+#endif  
