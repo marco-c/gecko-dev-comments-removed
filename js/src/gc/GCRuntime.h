@@ -594,13 +594,8 @@ class GCRuntime {
 #endif
 
   
-  
   ArenaChunk* getOrAllocChunk(StallAndRetry stallAndRetry,
                               AutoLockGCBgAlloc& lock);
-
-  
-  ArenaChunk* takeOrAllocChunk(StallAndRetry stallAndRetry,
-                               AutoLockGCBgAlloc& lock);
 
   void recycleChunk(ArenaChunk* chunk, const AutoLockGC& lock);
 
