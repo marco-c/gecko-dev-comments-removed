@@ -2825,28 +2825,6 @@ public class GeckoSessionTestRule implements TestRule {
     return (Boolean) webExtensionApiCall("IsFissionRunning", null);
   }
 
-  
-
-
-
-
-
-
-  public JSONArray getWebExtensionsSchemaPermissionNames(
-      final GeckoSession session, final String[] typeNames) {
-    return (JSONArray)
-        webExtensionApiCall(
-            session,
-            "GetWebExtensionSchemaPermissionNames",
-            args -> {
-              JSONArray jsonTypeNames = new JSONArray();
-              for (String str : typeNames) {
-                jsonTypeNames.put(str);
-              }
-              args.put("typeNames", jsonTypeNames);
-            });
-  }
-
   private Object webExtensionApiCall(
       final @NonNull String apiName, final @NonNull SetArgs argsSetter) {
     return webExtensionApiCall(null, apiName, argsSetter);
