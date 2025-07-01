@@ -124,12 +124,17 @@ add_task(async function testInlinePreviews() {
   ]);
 
   
+  
+  await selectSource(dbg, "inline-preview.js");
+
+  
   invokeInTab("btnClick");
   await assertInlinePreviews(
     dbg,
     [{ previews: [{ identifier: "btn:", value: "button" }], line: 53 }],
     "onBtnClick"
   );
+
   await checkInspectorIcon(dbg);
 
   await dbg.toolbox.selectTool("jsdebugger");
@@ -219,12 +224,29 @@ async function checkInspectorIcon(dbg) {
   
   const view = node.ownerDocument.defaultView;
   const { toolbox } = dbg;
-  const onNodeHighlight = toolbox.getHighlighter().waitForHighlighterShown();
 
-  EventUtils.synthesizeMouseAtCenter(node, { type: "mousemove" }, view);
+  
+  
+  let nodeHighlighted;
+  toolbox
+    .getHighlighter()
+    .waitForHighlighterShown()
+    .then(event => {
+      nodeHighlighted = event;
+    });
 
   info("Wait for node to be highlighted");
-  const { nodeFront } = await onNodeHighlight;
+  const nodeFront = await waitFor(() => {
+    
+    
+    if (nodeHighlighted) {
+      return nodeHighlighted.nodeFront;
+    }
+
+    EventUtils.synthesizeMouseAtCenter(node, { type: "mousemove" }, view);
+    return false;
+  });
+
   is(nodeFront.displayName, "button", "The correct node was highlighted");
 
   
