@@ -190,10 +190,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   void Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor);
 
-#ifdef XP_WIN
-  UINT ComputeDesiredTimerPeriod() const;
-#endif
-
 #ifdef DEBUG
   
   
