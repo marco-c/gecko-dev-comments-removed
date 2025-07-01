@@ -10,7 +10,7 @@
 #include <gtk/gtk.h>
 #include "gtkdrawing.h"
 
-GtkWidget* GetWidget(WidgetNodeType aNodeType);
+GtkWidget* GetWidget(WidgetNodeType);
 
 
 
