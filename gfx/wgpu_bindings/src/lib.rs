@@ -277,6 +277,7 @@ enum DeviceAction<'a> {
         r#type: ErrorBufferType,
     },
     PushErrorScope(u8 ),
+    PopErrorScope,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -301,6 +302,7 @@ enum TextureAction<'a> {
 enum ServerMessage<'a> {
     RequestAdapterResponse(id::AdapterId, Option<AdapterInformation<Cow<'a, str>>>),
     RequestDeviceResponse(id::DeviceId, id::QueueId, Option<String>),
+    PopErrorScopeResponse(u8 , Cow<'a, str>),
 }
 
 #[repr(C)]
