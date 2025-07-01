@@ -666,7 +666,7 @@ class TemporalParser final {
   
 
 
-  bool hasOneOf(std::initializer_list<char16_t> chars) const {
+  bool hasOneOf(std::initializer_list<char> chars) const {
     if (!reader_.hasMore(1)) {
       return false;
     }
@@ -678,7 +678,7 @@ class TemporalParser final {
 
 
 
-  bool oneOf(std::initializer_list<char16_t> chars) {
+  bool oneOf(std::initializer_list<char> chars) {
     if (!hasOneOf(chars)) {
       return false;
     }
