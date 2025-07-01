@@ -10,7 +10,6 @@
 #include "mozilla/dom/TextTrack.h"
 #include "mozilla/dom/TextTrackList.h"
 #include "mozilla/dom/TextTrackCueList.h"
-#include "mozilla/StateWatching.h"
 #include "mozilla/StaticPtr.h"
 #include "nsContentUtils.h"
 #include "nsIDOMEventListener.h"
@@ -95,7 +94,9 @@ class TextTrackManager final : public nsIDOMEventListener {
   
   RefPtr<HTMLMediaElement> mMediaElement;
 
+  void DispatchTimeMarchesOn();
   void TimeMarchesOn();
+  void DispatchUpdateCueDisplay();
 
   void NotifyShutdown() { mShutdown = true; }
 
@@ -103,15 +104,9 @@ class TextTrackManager final : public nsIDOMEventListener {
 
   void NotifyReset();
 
-  void NotifyUpdateCueDisplay();
-
   bool IsLoaded();
 
  private:
-  
-  
-  void MaybeRunTimeMarchesOn();
-
   
 
 
@@ -119,10 +114,6 @@ class TextTrackManager final : public nsIDOMEventListener {
 
   void UpdateCueDisplay();
 
-  
-  WatchManager<TextTrackManager> mWatchManager;
-  
-  Watchable<bool> mDummyWatchable{false, "TextTrackManager::mDummyWatchable"};
   
   RefPtr<TextTrackList> mTextTracks;
   
@@ -137,6 +128,9 @@ class TextTrackManager final : public nsIDOMEventListener {
   bool mHasSeeked;
   
   media::TimeUnit mLastTimeMarchesOnCalled;
+
+  bool mTimeMarchesOnDispatched;
+  bool mUpdateCueDisplayDispatched;
 
   static StaticRefPtr<nsIWebVTTParserWrapper> sParserWrapper;
 
@@ -156,6 +150,10 @@ class TextTrackManager final : public nsIDOMEventListener {
   bool TrackIsDefault(TextTrack* aTextTrack);
 
   bool IsShutdown() const;
+
+  
+  
+  void MaybeRunTimeMarchesOn();
 
   class ShutdownObserverProxy final : public nsIObserver {
     NS_DECL_ISUPPORTS
