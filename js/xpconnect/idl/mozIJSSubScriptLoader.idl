@@ -28,12 +28,10 @@ interface mozIJSSubScriptLoader : nsISupports
 
 
 
-
     [implicit_jscontext]
     jsval loadSubScript(in AString url, [optional] in jsval obj);
 
     
-
 
 
 

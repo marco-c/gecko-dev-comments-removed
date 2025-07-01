@@ -17,7 +17,6 @@ struct JSContext;
 class nsIChannel;
 class nsIHttpChannel;
 class nsIPrincipal;
-class nsIURI;
 class NS_ConvertUTF8toUTF16;
 
 namespace mozilla::dom {
@@ -36,10 +35,6 @@ class nsContentSecurityUtils {
   
   static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
                                            nsIPrincipal* aResultPrincipal);
-
-  
-  
-  static bool IsTrustedScheme(nsIURI* aURI);
 
   static bool IsEvalAllowed(JSContext* cx, bool aIsSystemPrincipal,
                             const nsAString& aScript);

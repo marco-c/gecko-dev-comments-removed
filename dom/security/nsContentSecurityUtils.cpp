@@ -117,12 +117,6 @@ bool nsContentSecurityUtils::IsConsideredSameOriginForUIR(
 }
 
 
-bool nsContentSecurityUtils::IsTrustedScheme(nsIURI* aURI) {
-  return aURI->SchemeIs("resource") || aURI->SchemeIs("chrome") ||
-         aURI->SchemeIs("moz-src");
-}
-
-
 
 
 
