@@ -221,8 +221,7 @@ void SVGUseElement::AttributeChanged(Element* aElement, int32_t aNamespaceID,
   }
 }
 
-void SVGUseElement::ContentAppended(nsIContent* aFirstNewContent,
-                                    const ContentAppendInfo&) {
+void SVGUseElement::ContentAppended(nsIContent* aFirstNewContent) {
   
   
   if (nsContentUtils::IsInSameAnonymousTree(mReferencedElementTracker.get(),
@@ -231,8 +230,7 @@ void SVGUseElement::ContentAppended(nsIContent* aFirstNewContent,
   }
 }
 
-void SVGUseElement::ContentInserted(nsIContent* aChild,
-                                    const ContentInsertInfo&) {
+void SVGUseElement::ContentInserted(nsIContent* aChild) {
   
   
   if (nsContentUtils::IsInSameAnonymousTree(mReferencedElementTracker.get(),
@@ -242,7 +240,7 @@ void SVGUseElement::ContentInserted(nsIContent* aChild,
 }
 
 void SVGUseElement::ContentWillBeRemoved(nsIContent* aChild,
-                                         const ContentRemoveInfo&) {
+                                         const BatchRemovalState*) {
   if (nsContentUtils::IsInSameAnonymousTree(mReferencedElementTracker.get(),
                                             aChild)) {
     TriggerReclone();

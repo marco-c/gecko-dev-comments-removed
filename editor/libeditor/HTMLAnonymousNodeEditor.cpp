@@ -206,7 +206,7 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
 #endif  
 
   
-  presShell->ContentAppended(newNativeAnonymousContent, {});
+  presShell->ContentAppended(newNativeAnonymousContent);
 
   return newNativeAnonymousContent;
 }
@@ -249,7 +249,7 @@ void HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
 
     
     
-    aPresShell->ContentWillBeRemoved(aContent, {});
+    aPresShell->ContentWillBeRemoved(aContent, nullptr);
   }
 
   

@@ -706,8 +706,7 @@ void nsContentList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   }
 }
 
-void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
-                                    const ContentAppendInfo&) {
+void nsContentList::ContentAppended(nsIContent* aFirstNewContent) {
   nsIContent* container = aFirstNewContent->GetParent();
   MOZ_ASSERT(container, "Can't get at the new content if no container!");
 
@@ -801,8 +800,7 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
   ASSERT_IN_SYNC;
 }
 
-void nsContentList::ContentInserted(nsIContent* aChild,
-                                    const ContentInsertInfo&) {
+void nsContentList::ContentInserted(nsIContent* aChild) {
   
   
   
@@ -817,7 +815,7 @@ void nsContentList::ContentInserted(nsIContent* aChild,
 }
 
 void nsContentList::ContentWillBeRemoved(nsIContent* aChild,
-                                         const ContentRemoveInfo&) {
+                                         const BatchRemovalState*) {
   if (mState != State::Dirty &&
       MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
@@ -1117,8 +1115,7 @@ void nsLabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   }
 }
 
-void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent,
-                                       const ContentAppendInfo&) {
+void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent) {
   nsIContent* container = aFirstNewContent->GetParent();
   
   
@@ -1130,8 +1127,7 @@ void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent,
   }
 }
 
-void nsLabelsNodeList::ContentInserted(nsIContent* aChild,
-                                       const ContentInsertInfo&) {
+void nsLabelsNodeList::ContentInserted(nsIContent* aChild) {
   
   
   
@@ -1143,7 +1139,7 @@ void nsLabelsNodeList::ContentInserted(nsIContent* aChild,
 }
 
 void nsLabelsNodeList::ContentWillBeRemoved(nsIContent* aChild,
-                                            const ContentRemoveInfo&) {
+                                            const BatchRemovalState* aState) {
   
   
   if (mState != State::Dirty &&
