@@ -487,6 +487,8 @@ namespace mozilla {
 
 using namespace net;
 
+using performance::pageload_event::PageloadEventType;
+
 namespace dom {
 
 class Document::HeaderData {
@@ -2043,14 +2045,10 @@ void Document::ConstructUbiNode(void* storage) {
 
 void Document::LoadEventFired() {
   
-  
-  glean::perf::PageLoadExtra pageLoadEventData;
+  AccumulatePageLoadTelemetry();
 
   
-  AccumulatePageLoadTelemetry(pageLoadEventData);
-
-  
-  RecordPageLoadEventTelemetry(pageLoadEventData);
+  RecordPageLoadEventTelemetry();
 
   
   
@@ -2059,11 +2057,10 @@ void Document::LoadEventFired() {
   }
 }
 
-void Document::RecordPageLoadEventTelemetry(
-    glean::perf::PageLoadExtra& aEventTelemetryData) {
+void Document::RecordPageLoadEventTelemetry() {
   
   
-  if (!aEventTelemetryData.loadTime) {
+  if (!mPageloadEventData.HasLoadTime()) {
     return;
   }
   MOZ_ASSERT(IsTopLevelContentDocument());
@@ -2075,6 +2072,13 @@ void Document::RecordPageLoadEventTelemetry(
 
   nsIDocShell* docshell = window->GetDocShell();
   if (!docshell) {
+    return;
+  }
+
+  auto pageloadEventType =
+      mozilla::performance::pageload_event::GetPageloadEventType();
+
+  if (pageloadEventType == mozilla::PageloadEventType::kNone) {
     return;
   }
 
@@ -2115,6 +2119,7 @@ void Document::RecordPageLoadEventTelemetry(
       loadTypeStr.Append("OTHER");
       break;
   }
+  mPageloadEventData.set_loadType(loadTypeStr);
 
   nsCOMPtr<nsIEffectiveTLDService> tldService =
       mozilla::components::EffectiveTLD::Service();
@@ -2128,12 +2133,10 @@ void Document::RecordPageLoadEventTelemetry(
       if (result) {
         bool sameOrigin = false;
         NodePrincipal()->IsSameOrigin(referrerURI, &sameOrigin);
-        aEventTelemetryData.sameOriginNav = mozilla::Some(sameOrigin);
+        mPageloadEventData.set_sameOriginNav(sameOrigin);
       }
     }
   }
-
-  aEventTelemetryData.loadType = mozilla::Some(loadTypeStr);
 
   
   if (GetScopeObject() && GetScopeObject()->GetGlobalJSObject()) {
@@ -2143,19 +2146,19 @@ void Document::RecordPageLoadEventTelemetry(
     JS::JSTimers timers = JS::GetJSTimers(cx);
 
     if (!timers.executionTime.IsZero()) {
-      aEventTelemetryData.jsExecTime = mozilla::Some(
+      mPageloadEventData.set_jsExecTime(
           static_cast<uint32_t>(timers.executionTime.ToMilliseconds()));
     }
 
     if (!timers.delazificationTime.IsZero()) {
-      aEventTelemetryData.delazifyTime = mozilla::Some(
+      mPageloadEventData.set_delazifyTime(
           static_cast<uint32_t>(timers.delazificationTime.ToMilliseconds()));
     }
   }
 
   
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    cc->SendRecordPageLoadEvent(aEventTelemetryData);
+    cc->SendRecordPageLoadEvent(mPageloadEventData);
   }
 }
 
@@ -2187,8 +2190,7 @@ static void AccumulatePriorityFcpGleanPref(
 }
 #endif
 
-void Document::AccumulatePageLoadTelemetry(
-    glean::perf::PageLoadExtra& aEventTelemetryDataOut) {
+void Document::AccumulatePageLoadTelemetry() {
   
   
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() ||
@@ -2219,15 +2221,14 @@ void Document::AccumulatePageLoadTelemetry(
   uint8_t redirectCount;
   timedChannel->GetRedirectCount(&redirectCount);
   if (redirectCount) {
-    aEventTelemetryDataOut.redirectCount =
-        mozilla::Some(static_cast<uint32_t>(redirectCount));
+    mPageloadEventData.set_redirectCount(static_cast<uint32_t>(redirectCount));
   }
 
   if (!redirectStart.IsNull() && !redirectEnd.IsNull()) {
     TimeDuration redirectTime = redirectEnd - redirectStart;
     if (redirectTime > zeroDuration) {
-      aEventTelemetryDataOut.redirectTime =
-          mozilla::Some(static_cast<uint32_t>(redirectTime.ToMilliseconds()));
+      mPageloadEventData.set_redirectTime(
+          static_cast<uint32_t>(redirectTime.ToMilliseconds()));
     }
   }
 
@@ -2238,8 +2239,8 @@ void Document::AccumulatePageLoadTelemetry(
   if (!dnsLookupStart.IsNull() && !dnsLookupEnd.IsNull()) {
     TimeDuration dnsLookupTime = dnsLookupEnd - dnsLookupStart;
     if (dnsLookupTime > zeroDuration) {
-      aEventTelemetryDataOut.dnsLookupTime =
-          mozilla::Some(static_cast<uint32_t>(dnsLookupTime.ToMilliseconds()));
+      mPageloadEventData.set_dnsLookupTime(
+          static_cast<uint32_t>(dnsLookupTime.ToMilliseconds()));
     }
   }
 
@@ -2267,7 +2268,7 @@ void Document::AccumulatePageLoadTelemetry(
         
         dnsKey = "(fail)"_ns;
       }
-      aEventTelemetryDataOut.trrDomain = mozilla::Some(dnsKey);
+      mPageloadEventData.set_trrDomain(dnsKey);
     }
 
     uint32_t major;
@@ -2295,7 +2296,7 @@ void Document::AccumulatePageLoadTelemetry(
         }
       }
 
-      aEventTelemetryDataOut.httpVer = mozilla::Some(major);
+      mPageloadEventData.set_httpVer(major);
     }
 
     uint32_t earlyHintType = 0;
@@ -2348,8 +2349,8 @@ void Document::AccumulatePageLoadTelemetry(
 
     TimeDuration fcpTime = firstContentfulComposite - navigationStart;
     if (fcpTime > zeroDuration) {
-      aEventTelemetryDataOut.fcpTime =
-          mozilla::Some(static_cast<uint32_t>(fcpTime.ToMilliseconds()));
+      mPageloadEventData.set_fcpTime(
+          static_cast<uint32_t>(fcpTime.ToMilliseconds()));
     }
   }
 
@@ -2357,7 +2358,7 @@ void Document::AccumulatePageLoadTelemetry(
   
   if (TimeStamp lcpTime =
           GetNavigationTiming()->GetLargestContentfulRenderTimeStamp()) {
-    aEventTelemetryDataOut.lcpTime = mozilla::Some(
+    mPageloadEventData.set_lcpTime(
         static_cast<uint32_t>((lcpTime - navigationStart).ToMilliseconds()));
   }
 
@@ -2381,14 +2382,14 @@ void Document::AccumulatePageLoadTelemetry(
 
     TimeDuration responseTime = responseStart - navigationStart;
     if (responseTime > zeroDuration) {
-      aEventTelemetryDataOut.responseTime =
-          mozilla::Some(static_cast<uint32_t>(responseTime.ToMilliseconds()));
+      mPageloadEventData.set_responseTime(
+          static_cast<uint32_t>(responseTime.ToMilliseconds()));
     }
 
     TimeDuration loadTime = loadEventStart - navigationStart;
     if (loadTime > zeroDuration) {
-      aEventTelemetryDataOut.loadTime =
-          mozilla::Some(static_cast<uint32_t>(loadTime.ToMilliseconds()));
+      mPageloadEventData.set_loadTime(
+          static_cast<uint32_t>(loadTime.ToMilliseconds()));
     }
 
     TimeStamp requestStart;
@@ -2396,7 +2397,7 @@ void Document::AccumulatePageLoadTelemetry(
     if (requestStart) {
       TimeDuration timeToRequestStart = requestStart - navigationStart;
       if (timeToRequestStart > zeroDuration) {
-        aEventTelemetryDataOut.timeToRequestStart = mozilla::Some(
+        mPageloadEventData.set_timeToRequestStart(
             static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
       }
     }
@@ -2408,7 +2409,7 @@ void Document::AccumulatePageLoadTelemetry(
     if (secureConnectStart && connectEnd) {
       TimeDuration tlsHandshakeTime = connectEnd - secureConnectStart;
       if (tlsHandshakeTime > zeroDuration) {
-        aEventTelemetryDataOut.tlsHandshakeTime = mozilla::Some(
+        mPageloadEventData.set_tlsHandshakeTime(
             static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
       }
     }
@@ -2416,11 +2417,10 @@ void Document::AccumulatePageLoadTelemetry(
 
 #ifdef ACCESSIBILITY
   if (GetAccService() != nullptr) {
-    SetPageloadEventFeature(pageload_event::FeatureBits::USING_A11Y);
+    mPageloadEventData.SetUserFeature(
+        performance::pageload_event::UserFeature::USING_A11Y);
   }
 #endif
-
-  aEventTelemetryDataOut.features = mozilla::Some(mPageloadEventFeatures);
 }
 
 Document::~Document() {

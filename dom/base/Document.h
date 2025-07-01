@@ -35,6 +35,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/PageloadEvent.h"
 #include "mozilla/PointerLockManager.h"
 #include "mozilla/PreloadService.h"
 #include "mozilla/RefPtr.h"
@@ -331,9 +332,6 @@ enum BFCacheStatus {
 };
 
 }  
-namespace glean::perf {
-struct PageLoadExtra;
-}
 }  
 
 namespace mozilla::net {
@@ -344,6 +342,8 @@ class EarlyHintConnectArgs;
 
 #define NS_IDOCUMENT_IID \
   {0xce1f7627, 0x7109, 0x4977, {0xba, 0x77, 0x49, 0x0f, 0xfd, 0xe0, 0x7a, 0xaa}}
+
+using mozilla::performance::pageload_event::PageloadEventData;
 
 namespace mozilla::dom {
 
@@ -3231,8 +3231,9 @@ class Document : public nsINode,
 
   void SetNavigationTiming(nsDOMNavigationTiming* aTiming);
 
-  inline void SetPageloadEventFeature(uint32_t aFeature) {
-    mPageloadEventFeatures |= aFeature;
+  inline void SetPageloadEventFeature(
+      performance::pageload_event::DocumentFeature aFeature) {
+    mPageloadEventData.SetDocumentFeature(aFeature);
   }
 
   nsContentList* ImageMapList();
@@ -5592,20 +5593,16 @@ class Document : public nsINode,
   nsTArray<nsString> mShadowedHTMLDocumentProperties;
 
   
-  
-  uint32_t mPageloadEventFeatures = 0;
+  PageloadEventData mPageloadEventData;
 
   
-  void RecordPageLoadEventTelemetry(
-      glean::perf::PageLoadExtra& aEventTelemetryData);
+  void RecordPageLoadEventTelemetry();
 
   
-  void AccumulateJSTelemetry(
-      glean::perf::PageLoadExtra& aEventTelemetryDataOut);
+  void AccumulateJSTelemetry();
 
   
-  void AccumulatePageLoadTelemetry(
-      glean::perf::PageLoadExtra& aEventTelemetryDataOut);
+  void AccumulatePageLoadTelemetry();
 
   
   

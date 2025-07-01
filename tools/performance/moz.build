@@ -4,11 +4,10 @@
 
 
 
-UNIFIED_SOURCES += [
-    "PerfStats.cpp",
-]
+UNIFIED_SOURCES += ["PageloadEvent.cpp", "PerfStats.cpp"]
 
 EXPORTS.mozilla += [
+    "PageloadEvent.h",
     "Perfetto.h",
     "PerfStats.h",
 ]
