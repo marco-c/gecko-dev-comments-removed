@@ -566,6 +566,13 @@ struct VariantIndex {
 
 
 
+
+
+
+
+
+
+
 template <typename... Ts>
 class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
 MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
