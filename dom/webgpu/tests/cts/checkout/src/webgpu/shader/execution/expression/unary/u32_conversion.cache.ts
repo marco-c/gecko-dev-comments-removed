@@ -65,12 +65,8 @@ export const d = makeCaseCache('unary/u32_conversion', {
         return { input: f32(f), expected: u32(0) };
       }
 
-      const largestU32WhichIsF32 = 0xffffff00;
-      if (f >= largestU32WhichIsF32) {
-        
-        
-
-        return { input: f32(f), expected: u32(largestU32WhichIsF32) };
+      if (f >= kValue.u32.max) {
+        return { input: f32(f), expected: u32(kValue.u32.max) };
       }
 
       
