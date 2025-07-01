@@ -7,6 +7,8 @@
 #ifndef __FdPrintf_h__
 #define __FdPrintf_h__
 
+#include <cstdarg>
+
 #ifdef _WIN32
 typedef void* platform_handle_t;
 #else
@@ -18,16 +20,39 @@ typedef int platform_handle_t;
 
 
 
+int VSNPrintf(char* aBuf, size_t aSize, const char* aFormat, va_list aArgs)
+#ifdef __GNUC__
+    __attribute__((format(printf, 3, 0)))
+#endif
+    ;
+
+int SNPrintf(char* aBuf, size_t aSize, const char* aFormat, ...)
+#ifdef __GNUC__
+    __attribute__((format(printf, 3, 4)))
+#endif
+    ;
 
 
 
 
 
+
+
+
+
+void VFdPrintf(platform_handle_t aFd, const char* aFormat, va_list aArgs)
+#ifdef __GNUC__
+    __attribute__((format(printf, 2, 0)))
+#endif
+    ;
 
 void FdPrintf(platform_handle_t aFd, const char* aFormat, ...)
 #ifdef __GNUC__
     __attribute__((format(printf, 2, 3)))
 #endif
     ;
+
+
+void FdPuts(platform_handle_t aFd, const char* aBuf, size_t aLen);
 
 #endif 
