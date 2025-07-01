@@ -225,7 +225,7 @@ class CookiesStorageActor extends BaseStorageActor {
       path: cookie.path || "",
 
       
-      expires: (cookie.expires || 0) * 1000,
+      expires: cookie.expires || 0,
 
       
       creationTime: cookie.creationTime / 1000,
@@ -424,9 +424,9 @@ class CookiesStorageActor extends BaseStorageActor {
   addCookie(guid, principal) {
     
     
-    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-    const time = Math.floor(Date.now() / 1000);
-    const expiry = time + ONE_DAY_IN_SECONDS;
+    const ONE_DAY_IN_MSECONDS = 60 * 60 * 24 * 1000;
+    const time = Date.now();
+    const expiry = time + ONE_DAY_IN_MSECONDS;
 
     
     
@@ -531,10 +531,10 @@ class CookiesStorageActor extends BaseStorageActor {
 
     
     const now = new Date();
-    if (!cookie.isSession && cookie.expires * 1000 <= now) {
-      const tenSecondsFromNow = (now.getTime() + 10 * 1000) / 1000;
+    if (!cookie.isSession && cookie.expires <= now) {
+      const tenMsFromNow = now.getTime() + 10 * 1000;
 
-      cookie.expires = tenSecondsFromNow;
+      cookie.expires = tenMsFromNow;
     }
 
     let origCookieRemoved = false;
@@ -547,7 +547,7 @@ class CookiesStorageActor extends BaseStorageActor {
         break;
 
       case "expires":
-        newValue = Date.parse(newValue) / 1000;
+        newValue = Date.parse(newValue);
 
         if (isNaN(newValue)) {
           newValue = MAX_COOKIE_EXPIRY;
