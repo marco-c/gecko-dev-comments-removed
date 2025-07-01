@@ -10,12 +10,9 @@
 #include "NotificationUtils.h"
 #include "mozilla/AlertNotification.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/dom/ClientOpenWindowUtils.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/Components.h"
 #include "nsComponentManagerUtils.h"
-#include "nsIAlertsService.h"
 #include "nsIServiceWorkerManager.h"
 
 namespace mozilla::dom::notification {
@@ -62,7 +59,7 @@ class NotificationObserver final : public nsIObserver {
     } else if (mScope.IsEmpty()) {
       if (topic == AlertTopic::Click) {
         
-        return OpenWindow();
+        return OpenWindowFor(mPrincipal);
       }
       
       return NS_OK;
@@ -82,6 +79,15 @@ class NotificationObserver final : public nsIObserver {
 
     MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished);
 
+    if (topic == AlertTopic::Click) {
+      nsCOMPtr<nsIAlertAction> action = do_QueryInterface(aSubject);
+      nsAutoString actionName;
+      if (action) {
+        MOZ_TRY(action->GetAction(actionName));
+      }
+      return RespondOnClick(mPrincipal, mScope, mNotification, actionName);
+    }
+
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (!swm) {
       return NS_ERROR_FAILURE;
@@ -89,21 +95,6 @@ class NotificationObserver final : public nsIObserver {
 
     nsAutoCString originSuffix;
     MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
-
-    if (topic == AlertTopic::Click) {
-      nsCOMPtr<nsIAlertAction> action = do_QueryInterface(aSubject);
-      nsAutoString actionName;
-      if (action) {
-        MOZ_TRY(action->GetAction(actionName));
-      }
-      nsresult rv = swm->SendNotificationClickEvent(originSuffix, mScope,
-                                                    mNotification, actionName);
-      if (NS_FAILED(rv)) {
-        
-        return OpenWindow();
-      }
-      return NS_OK;
-    }
 
     MOZ_ASSERT(topic == AlertTopic::Finished);
     (void)NS_WARN_IF(NS_FAILED(
@@ -136,19 +127,6 @@ class NotificationObserver final : public nsIObserver {
     }
     MOZ_ASSERT_UNREACHABLE("Unknown alert topic");
     return AlertTopic::Finished;
-  }
-
-  nsresult OpenWindow() {
-    nsAutoCString origin;
-    MOZ_TRY(mPrincipal->GetOrigin(origin));
-
-    
-    mozilla::ipc::PrincipalInfo info{};
-    MOZ_TRY(PrincipalToPrincipalInfo(mPrincipal, &info));
-
-    (void)ClientOpenWindow(
-        nullptr, ClientOpenWindowArgs(info, Nothing(), ""_ns, origin));
-    return NS_OK;
   }
 
   
@@ -295,10 +273,9 @@ nsresult NotificationParent::Show() {
 
   MOZ_TRY(alert->GetId(mId));
 
-  nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service();
   RefPtr<NotificationObserver> observer = new NotificationObserver(
       mArgs.mScope, principal, IPCNotification(mId, options), *this);
-  MOZ_TRY(alertService->ShowAlert(alert, observer));
+  MOZ_TRY(ShowAlertWithCleanup(alert, observer));
 
 #ifdef ANDROID
   
