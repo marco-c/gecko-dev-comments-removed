@@ -326,7 +326,8 @@ class WebrtcVideoConduit : public VideoSessionConduit,
     std::vector<VideoCodecConfig> mConfiguredRecvCodecs;
     Maybe<RtpRtcpConfig> mConfiguredRecvRtpRtcpConfig;
     
-    webrtc::DegradationPreference mConfiguredDegradationPreference;
+    webrtc::DegradationPreference mConfiguredDegradationPreference =
+        webrtc::DegradationPreference::DISABLED;
 
     
     RefPtr<FrameTransformerProxy> mConfiguredFrameTransformerProxySend;
