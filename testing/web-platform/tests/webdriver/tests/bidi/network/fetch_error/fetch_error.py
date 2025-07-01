@@ -4,8 +4,7 @@ import pytest
 
 from webdriver.bidi.modules.script import ContextTarget
 
-from tests.support.sync import AsyncPoll
-
+from tests.bidi import wait_for_bidi_events
 from .. import (
     assert_fetch_error_event,
     assert_response_event,
@@ -113,8 +112,7 @@ async def test_iframe_load(
         url=inline(f"<iframe src='{PAGE_INVALID_URL}'></iframe>"),
     )
 
-    wait = AsyncPoll(bidi_session, timeout=2)
-    await wait.until(lambda _: len(events) >= 1)
+    await wait_for_bidi_events(bidi_session, events, 1, timeout=2)
 
     contexts = await bidi_session.browsing_context.get_tree(root=new_tab["context"])
     frame_context = contexts[0]["children"][0]
@@ -198,9 +196,7 @@ async def test_request_method(
     
     expected_events = 2 if has_preflight else 1
 
-    wait = AsyncPoll(bidi_session, timeout=2)
-    await wait.until(lambda _: len(events) >= expected_events)
-    assert len(events) == expected_events
+    await wait_for_bidi_events(bidi_session, events, expected_events, timeout=2)
 
     
     
@@ -276,7 +272,6 @@ async def test_redirect_fetch(
 
     
     
-    wait = AsyncPoll(bidi_session, timeout=2)
     fetch_error_event = await on_fetch_error
     response_completed_event = await on_response_completed
 
@@ -322,7 +317,6 @@ async def test_redirect_navigation(
         url=redirect_url,
     ))
 
-    wait = AsyncPoll(bidi_session, timeout=2)
     fetch_error_event = await on_fetch_error
     response_completed_event = await on_response_completed
 
