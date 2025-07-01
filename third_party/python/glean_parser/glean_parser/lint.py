@@ -572,6 +572,20 @@ def lint_metrics(
 
     nits.extend(_lint_all_objects(objs, parser_config))
 
+    
+    
+    
+    
+    if getattr(objs, "duplicate", None):
+        nits.append(
+            GlinterNit(
+                "REDEFINED_CATEGORY",
+                getattr(objs, "duplicate", ""),
+                f"Category redefined {objs.duplicate}",  
+                CheckType.error,
+            )
+        )
+
     for category_name, category in sorted(list(objs.items())):
         if category_name == "pings":
             nits.extend(_lint_pings(category, parser_config, valid_tag_names))
@@ -580,6 +594,20 @@ def lint_metrics(
         if category_name == "tags":
             
             continue
+
+        
+        
+        
+        
+        if getattr(objs[category_name], "duplicate", None):
+            nits.append(
+                GlinterNit(
+                    "REDEFINED_METRIC",
+                    category_name,
+                    f"Metric redefined {getattr(objs[category_name], 'duplicate', '')}",
+                    CheckType.error,
+                )
+            )
 
         
         category_metrics = dict(
