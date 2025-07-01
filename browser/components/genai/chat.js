@@ -353,7 +353,7 @@ var browserPromise = new Promise((resolve, reject) => {
           if (newBadgePref) {
             Services.prefs.setBoolPref(badgeKey, false);
           }
-          await summarizeCurrentPage();
+          await lazy.GenAI.summarizeCurrentPage(topChromeWindow, "footer");
         });
     } catch (ex) {
       console.error("Failed to render on load", ex);
@@ -412,6 +412,12 @@ function showOnboarding(length) {
         closeSidebar();
       }
       root.remove();
+
+      
+      showOnboarding.resolve();
+      onboardingPromise = new Promise(resolve => {
+        showOnboarding.resolve = resolve;
+      });
     },
     AWGetFeatureConfig() {
       const onboarding = JSON.parse(lazy.onboardingConfig);
@@ -587,19 +593,7 @@ function showOnboarding(length) {
   });
 }
 
-async function summarizeCurrentPage() {
-  let browser = topChromeWindow.gBrowser.selectedBrowser;
-  let actor = browser.browsingContext.currentWindowContext.getActor("GenAI");
-  let articleTextContent = await actor.sendQuery("GetReadableText");
 
-  await lazy.GenAI.addAskChatItems(
-    browser,
-    { contentType: "page", selection: articleTextContent },
-    (promptObj, context) => {
-      if (promptObj.id === "summarize") {
-        lazy.GenAI.handleAskChat(promptObj, context);
-      }
-    },
-    "footer"
-  );
-}
+var onboardingPromise = new Promise(resolve => {
+  showOnboarding.resolve = resolve;
+});
