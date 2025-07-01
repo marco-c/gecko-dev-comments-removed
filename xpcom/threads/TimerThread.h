@@ -166,6 +166,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   
+  
   TimeStamp ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
 
   

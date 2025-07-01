@@ -715,9 +715,11 @@ size_t TimerThread::ComputeTimerInsertionIndex(const TimeStamp& timeout) const {
 TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
+  if (mTimers.IsEmpty()) {
+    return TimeStamp{};
+  }
+
   
-  
-  MOZ_ASSERT(!mTimers.IsEmpty());
   MOZ_ASSERT(mTimers[0].Value());
 
   
@@ -941,8 +943,7 @@ TimerThread::Run() {
       }
 
       
-      const TimeStamp wakeupTime =
-          !mTimers.IsEmpty() ? ComputeWakeupTimeFromTimers() : TimeStamp{};
+      const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
       mIntendedWakeupTime = wakeupTime;
 
       
