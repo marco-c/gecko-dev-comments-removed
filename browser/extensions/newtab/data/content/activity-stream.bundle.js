@@ -11318,7 +11318,9 @@ const PersonalizedCard = ({
   }, external_React_default().createElement("img", {
     src: wavingFox,
     alt: ""
-  }), external_React_default().createElement("h2", null, messageData.content.cardTitle), external_React_default().createElement("p", null, messageData.content.cardMessage), external_React_default().createElement("moz-button", {
+  }), external_React_default().createElement("h2", null, messageData.content.cardTitle), external_React_default().createElement("p", null, messageData.content.cardMessage), external_React_default().createElement("div", {
+    className: "personalized-card-cta-wrapper"
+  }, external_React_default().createElement("moz-button", {
     type: "primary",
     class: "personalized-card-cta",
     onClick: () => onToggleClick("open-personalization-panel")
@@ -11329,7 +11331,7 @@ const PersonalizedCard = ({
     onLinkClick: () => {
       handleClick("link-click");
     }
-  }, messageData.content.linkText)));
+  }, messageData.content.linkText))));
 };
 ;
 
