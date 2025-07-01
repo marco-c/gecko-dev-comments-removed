@@ -566,8 +566,7 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
     
     
     
-    mOriginalPointerEventTarget =
-        aShell->mPointerEventTarget = [&]() -> nsIContent* {
+    mOriginalPointerEventTarget = [&]() -> nsIContent* {
       nsIContent* const target =
           aTargetContent ? aTargetContent
                          : (aFrame ? aFrame->GetContent() : nullptr);
@@ -580,6 +579,10 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
       }
       return target->GetInclusiveFlattenedTreeAncestorElement();
     }();
+    if (mOriginalPointerEventTarget &&
+        mOriginalPointerEventTarget->IsInComposedDoc()) {
+      mPointerEventTargetTracker.emplace(*mOriginalPointerEventTarget);
+    }
   }
 
   ~AutoPointerEventTargetUpdater() {
@@ -596,7 +599,14 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
       
       
       
-      mShell->mPointerEventTarget.swap(*mOutTargetContent);
+      if (!mPointerEventTargetTracker ||
+          !mPointerEventTargetTracker->ContentWasRemoved()) {
+        mOriginalPointerEventTarget.swap(*mOutTargetContent);
+      } else {
+        nsCOMPtr<nsIContent> connectedAncestor =
+            mPointerEventTargetTracker->GetConnectedContent();
+        connectedAncestor.swap(*mOutTargetContent);
+      }
     }
   }
 
@@ -604,6 +614,7 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
   RefPtr<PresShell> mShell;
   nsCOMPtr<nsIContent> mOriginalPointerEventTarget;
   AutoWeakFrame mWeakFrame;
+  Maybe<AutoConnectedAncestorTracker> mPointerEventTargetTracker;
   nsIContent** mOutTargetContent;
   bool mFromTouch = false;
 };
@@ -4830,15 +4841,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
   mPresContext->EventStateManager()->ContentRemoved(mDocument, aChild);
 
   nsAutoCauseReflowNotifier crNotifier(this);
-
-  
-  
-  
-  
-  if (mPointerEventTarget &&
-      mPointerEventTarget->IsInclusiveDescendantOf(aChild)) {
-    mPointerEventTarget = aChild->GetParent();
-  }
 
   for (AutoConnectedAncestorTracker* tracker = mLastConnectedAncestorTracker;
        tracker; tracker = tracker->mPreviousTracker) {

@@ -3218,11 +3218,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsCOMPtr<nsITimer> mPaintSuppressionTimer;
 
-  
-  
-  
-  nsCOMPtr<nsIContent> mPointerEventTarget;
-
   nsCOMPtr<nsIContent> mLastAnchorScrolledTo;
 
   
