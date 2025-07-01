@@ -18,7 +18,6 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <algorithm>
-#include "mozilla/Span.h"
 
 
 
@@ -99,8 +98,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_WINDOW,
   
-  MOZ_GTK_HEADERBAR_WINDOW,
-  
   MOZ_GTK_HEADERBAR_FIXED,
   
   MOZ_GTK_WINDOW_CONTAINER,
@@ -111,7 +108,6 @@ enum WidgetNodeType : int {
 
   
   MOZ_GTK_WINDOW_DECORATION,
-  MOZ_GTK_WINDOW_DECORATION_SOLID,
 
   MOZ_GTK_WIDGET_NODE_COUNT
 };

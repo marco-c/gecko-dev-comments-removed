@@ -421,6 +421,51 @@ static void DumpStyleContext(GtkStyleContext* aStyle) {
 }
 #endif
 
+static gint GetBorderRadius(GtkStyleContext* aStyle) {
+  GValue value = G_VALUE_INIT;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gtk_style_context_get_property(aStyle, "border-radius", GTK_STATE_FLAG_NORMAL,
+                                 &value);
+  gint result = 0;
+  auto type = G_VALUE_TYPE(&value);
+  if (type == G_TYPE_INT) {
+    result = g_value_get_int(&value);
+  } else {
+    NS_WARNING(nsPrintfCString("Unknown value type %lu for border-radius", type)
+                   .get());
+  }
+  g_value_unset(&value);
+  return result;
+}
+
+static bool HasBackground(GtkStyleContext* aStyle) {
+  GdkRGBA gdkColor;
+  gtk_style_context_get_background_color(aStyle, GTK_STATE_FLAG_NORMAL,
+                                         &gdkColor);
+  if (gdkColor.alpha != 0.0) {
+    return true;
+  }
+
+  GValue value = G_VALUE_INIT;
+  gtk_style_context_get_property(aStyle, "background-image",
+                                 GTK_STATE_FLAG_NORMAL, &value);
+  auto cleanup = mozilla::MakeScopeExit([&] { g_value_unset(&value); });
+  return g_value_get_boxed(&value);
+}
+
 
 
 static void ApplyColorOver(const GdkRGBA& aSource, GdkRGBA* aDest) {
@@ -1687,7 +1732,6 @@ void nsLookAndFeel::Initialize() {
 
 
 
-
 enum class HeaderBarButtonType { None = 0, Close, Minimize, Maximize };
 struct HeaderBarButtonLayout {
   std::array<HeaderBarButtonType, 3> mButtons = {HeaderBarButtonType::None};
@@ -1716,7 +1760,7 @@ HeaderBarButtonLayout GetGtkHeaderBarButtonLayout() {
   const char* closeButton = strstr(decorationLayout, "close");
   const char* separator = strchr(decorationLayout, ':');
   result.mReversedPlacement =
-        closeButton && separator && closeButton < separator;
+      closeButton && separator && closeButton < separator;
 
   
   
@@ -2210,14 +2254,23 @@ void nsLookAndFeel::PerThemeData::Init() {
     g_object_unref(accelStyle);
   }
 
-  const auto effectiveTitlebarStyle = HeaderBarShouldDrawContainer()
-                                          ? MOZ_GTK_HEADERBAR_FIXED
-                                          : MOZ_GTK_HEADER_BAR;
-  style = GetStyleContext(effectiveTitlebarStyle);
+  style = GetStyleContext(MOZ_GTK_HEADER_BAR);
+  {
+    const bool headerBarHasBackground = HasBackground(style);
+    if (!headerBarHasBackground && !GetBorderRadius(style)) {
+      
+      
+      GtkStyleContext* fixedStyle = GetStyleContext(MOZ_GTK_HEADERBAR_FIXED);
+      if (HasBackground(fixedStyle) &&
+          (GetBorderRadius(fixedStyle) || !headerBarHasBackground)) {
+        style = fixedStyle;
+      }
+    }
+  }
   {
     mTitlebar = GetColorPair(style, GTK_STATE_FLAG_NORMAL);
     mTitlebarInactive = GetColorPair(style, GTK_STATE_FLAG_BACKDROP);
-    mTitlebarRadius = IsSolidCSDStyleUsed() ? 0 : GetBorderRadius(style);
+    mTitlebarRadius = GetBorderRadius(style);
     mTitlebarButtonSpacing = [&] {
       
       
