@@ -29,37 +29,21 @@ let mockAlertsService = {
   },
 };
 
-
-
-
-
-
-function concealMainWindow() {
-  info("Concealing main window.");
-  let oldWinType = document.documentElement.getAttribute("windowtype");
-  
-  if (oldWinType != "navigator:testrunner") {
-    
-    document.documentElement.setAttribute("windowtype", "navigator:testrunner");
-
-    registerCleanupFunction(() => {
-      info("Unconcealing the main window in the cleanup phase.");
-      document.documentElement.setAttribute("windowtype", oldWinType);
-    });
-  }
-}
-
 add_setup(() => {
   let mockCid = MockRegistrar.register(
     "@mozilla.org/alerts-service;1",
     mockAlertsService
   );
 
+  let controller = new AbortController();
+  let { signal } = controller;
+
   registerCleanupFunction(() => {
     MockRegistrar.unregister(mockCid);
+    controller.abort();
   });
 
-  concealMainWindow();
+  BrowserTestUtils.concealWindow(window, { signal });
 });
 
 for (let permanentPbm of [false, true]) {
