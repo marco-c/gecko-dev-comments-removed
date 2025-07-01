@@ -120,7 +120,6 @@ add_setup(async function () {
 
   
   
-  AboutNewTab.init();
   AboutNewTab.onBrowserReady();
 
   
