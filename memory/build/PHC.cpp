@@ -114,6 +114,7 @@
 #include "mozjemalloc.h"
 #include "FdPrintf.h"
 #include "Mutex.h"
+#include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -1301,7 +1302,8 @@ class PHC {
   
   static PHC_THREAD_LOCAL(Delay) tlsLastDelay;
 
-  AllocPageInfo mAllocPages[kNumAllocPages] MOZ_GUARDED_BY(mMutex);
+  
+  Array<AllocPageInfo, kNumAllocPages> mAllocPages MOZ_GUARDED_BY(mMutex);
 
  public:
   Delay GetAvgAllocDelay() MOZ_REQUIRES(mMutex) { return mAvgAllocDelay; }
