@@ -614,13 +614,6 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
     }
   }
 
-  
-  
-  
-  if (status == NS_NET_STATUS_CONNECTED_TO) {
-    SetConnectEnd(TimeStamp::Now(), true);
-  }
-
   if (!mTransportSink) return;
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
