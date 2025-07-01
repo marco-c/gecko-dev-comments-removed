@@ -156,20 +156,12 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       return media::DecodeSupportSet{};
     }
 
+    
+    
+    
+    
     const auto& trackInfo = aParams.mConfig;
     const nsACString& mimeType = trackInfo.mMimeType;
-    if (XRE_IsGPUProcess() && !IsHWDecodingSupported(mimeType)) {
-      MOZ_LOG(
-          sPDMLog, LogLevel::Debug,
-          ("FFmpeg decoder rejects requested type '%s' for hardware decoding",
-           mimeType.BeginReading()));
-      return media::DecodeSupportSet{};
-    }
-
-    
-    
-    
-    
     if (VPXDecoder::IsVPX(mimeType) && trackInfo.GetAsVideoInfo()->HasAlpha()) {
       MOZ_LOG(sPDMLog, LogLevel::Debug,
               ("FFmpeg decoder rejects requested type '%s'",
@@ -181,6 +173,9 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency)) {
       
       
+      MOZ_LOG(sPDMLog, LogLevel::Debug,
+              ("FFmpeg decoder rejects requested type '%s' due to low latency",
+               mimeType.BeginReading()));
       return media::DecodeSupportSet{};
     }
 
@@ -205,28 +200,19 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     }
     AVCodecID codecId =
         audioCodec != AV_CODEC_ID_NONE ? audioCodec : videoCodec;
-    AVCodec* codec = FFmpegDataDecoder<V>::FindAVCodec(mLib, codecId);
-    MOZ_LOG(sPDMLog, LogLevel::Debug,
-            ("FFmpeg decoder %s requested type '%s'",
-             !!codec ? "supports" : "rejects", mimeType.BeginReading()));
-    if (!codec) {
-      return media::DecodeSupportSet{};
+
+    media::DecodeSupportSet supports;
+    if (FFmpegDataDecoder<V>::FindSoftwareAVCodec(mLib, codecId)) {
+      supports += media::DecodeSupport::SoftwareDecode;
     }
-    
-    
-    
-    
-    if (!strcmp(codec->name, "libopenh264") &&
-        !StaticPrefs::media_ffmpeg_allow_openh264()) {
-      MOZ_LOG(sPDMLog, LogLevel::Debug,
-              ("FFmpeg decoder rejects as openh264 disabled by pref"));
-      return media::DecodeSupportSet{};
-    }
-    media::DecodeSupportSet support = media::DecodeSupport::SoftwareDecode;
     if (IsHWDecodingSupported(mimeType)) {
-      support += media::DecodeSupport::HardwareDecode;
+      supports += media::DecodeSupport::HardwareDecode;
     }
-    return support;
+    MOZ_LOG(
+        sPDMLog, LogLevel::Debug,
+        ("FFmpeg decoder %s requested type '%s'",
+         supports.isEmpty() ? "rejects" : "supports", mimeType.BeginReading()));
+    return supports;
   }
 
  protected:
