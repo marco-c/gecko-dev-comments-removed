@@ -61,9 +61,6 @@ user_pref("media.block-autoplay-until-in-foreground", false);
 user_pref("widget.disable-dark-scrollbar", true);
 
 
-user_pref("widget.gtk.theme-scrollbar-colors.enabled", true);
-
-
 
 user_pref("ui.scrollbarFadeDuration", 0);
 
