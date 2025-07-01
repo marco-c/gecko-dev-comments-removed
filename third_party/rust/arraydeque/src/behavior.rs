@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Behavior {}
+
+
+pub struct Saturating;
+
+impl Behavior for Saturating {}
+
+
+pub struct Wrapping;
+
+impl Behavior for Wrapping {}
