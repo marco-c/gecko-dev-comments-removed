@@ -8941,7 +8941,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
         
         bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
             jsapi.cx(), aLoadState->GetNavigationType(), newURI,
-             true,  false,
+             true,  true,
             Some(aLoadState->UserNavigationInvolvement()), sourceElement,
              nullptr,
              destinationNavigationAPIState,
