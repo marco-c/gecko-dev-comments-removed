@@ -31,7 +31,7 @@ function run_test() {
 
   var entry = zipW.getEntry(FILENAME);
 
-  Assert.notEqual(entry, null);
+  Assert.ok(entry != null);
 
   
   Assert.equal(entry.compression, ZIP_METHOD_DEFLATE);

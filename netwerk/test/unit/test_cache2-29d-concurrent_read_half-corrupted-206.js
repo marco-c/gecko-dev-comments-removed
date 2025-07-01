@@ -63,7 +63,7 @@ function contentHandler(metadata, response) {
 
 function run_test() {
   
-  Assert.greater(responseBody.length, 1024);
+  Assert.ok(responseBody.length > 1024);
 
   do_get_profile();
 

@@ -294,7 +294,6 @@ function verify_files() {
           reallyLong.length
         );
         
-        
         Assert.ok(outputData === reallyLong);
         input.close();
         resolve();

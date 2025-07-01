@@ -53,32 +53,19 @@ function run_test() {
 
   
   
-  Assert.strictEqual(
-    Cu.evalInSandbox("mainObj", contentBox),
-    contentBox.mainObj
+  Assert.ok(Cu.evalInSandbox("mainObj", contentBox) === contentBox.mainObj);
+  Assert.ok(
+    Cu.evalInSandbox("contentObj", contentBox) === contentBox.contentObj
   );
-  Assert.strictEqual(
-    Cu.evalInSandbox("contentObj", contentBox),
-    contentBox.contentObj
-  );
-  Assert.strictEqual(
-    Cu.evalInSandbox("chromeObj", contentBox),
-    contentBox.chromeObj
-  );
-  Assert.strictEqual(Cu.evalInSandbox("mainObj", chromeBox), chromeBox.mainObj);
-  Assert.strictEqual(
-    Cu.evalInSandbox("contentObj", chromeBox),
-    chromeBox.contentObj
-  );
-  Assert.strictEqual(
-    Cu.evalInSandbox("chromeObj", chromeBox),
-    chromeBox.chromeObj
-  );
+  Assert.ok(Cu.evalInSandbox("chromeObj", contentBox) === contentBox.chromeObj);
+  Assert.ok(Cu.evalInSandbox("mainObj", chromeBox) === chromeBox.mainObj);
+  Assert.ok(Cu.evalInSandbox("contentObj", chromeBox) === chromeBox.contentObj);
+  Assert.ok(Cu.evalInSandbox("chromeObj", chromeBox) === chromeBox.chromeObj);
 
   
-  Assert.strictEqual(contentBox.mainObj.name, "mainObj");
-  Assert.strictEqual(contentBox.contentObj.name, "contentObj");
-  Assert.strictEqual(contentBox.chromeObj.name, "chromeObj");
+  Assert.ok(contentBox.mainObj.name === "mainObj");
+  Assert.ok(contentBox.contentObj.name === "contentObj");
+  Assert.ok(contentBox.chromeObj.name === "chromeObj");
 
   
   Assert.equal(Cu.evalInSandbox("mainObj.name", chromeBox), "mainObj");

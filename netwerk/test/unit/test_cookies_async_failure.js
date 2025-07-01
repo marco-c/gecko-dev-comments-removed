@@ -90,7 +90,7 @@ function do_corrupt_db(file) {
   
   
   let size = file.fileSize;
-  Assert.greater(size, 320e3);
+  Assert.ok(size > 320e3);
 
   
   

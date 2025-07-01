@@ -220,7 +220,7 @@ add_task(async function run_sync_on_tab_change_test() {
     Assert.ok(tracker.modified);
     
     let nextSchedule = tracker.tabsQuickWriteTimer.delay;
-    Assert.greaterOrEqual(nextSchedule, testPrefDelay);
+    Assert.ok(nextSchedule >= testPrefDelay);
   }
 
   _("Test sync is NOT scheduled after an unsupported tab open");
@@ -234,7 +234,7 @@ add_task(async function run_sync_on_tab_change_test() {
     
     Assert.ok(tracker.modified);
     
-    Assert.lessOrEqual(scheduler.nextSync - Date.now(), testPrefDelay);
+    Assert.ok(scheduler.nextSync - Date.now() <= testPrefDelay);
   }
 
   _("Test navigating within the same tab does NOT trigger a sync");

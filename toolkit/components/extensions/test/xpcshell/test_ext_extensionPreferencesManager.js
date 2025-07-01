@@ -859,7 +859,7 @@ add_task(async function test_preference_select() {
 add_task(async function test_preference_select() {
   let prefNames = await ExtensionPreferencesManager.getManagedPrefDetails();
   
-  Assert.greater(prefNames.size, 0, "some prefs exist");
+  Assert.ok(prefNames.size > 0, "some prefs exist");
   for (let settingName in SETTINGS) {
     let setting = SETTINGS[settingName];
     for (let prefName of setting.prefNames) {

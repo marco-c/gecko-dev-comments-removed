@@ -14,7 +14,7 @@ function run_test() {
   do_timeout(1000, function wait() {
     
     var profileStr = Services.profiler.GetProfile();
-    Assert.greater(profileStr.length, 10);
+    Assert.ok(profileStr.length > 10);
 
     
     var profileObj = Services.profiler.getProfileData();
@@ -25,7 +25,7 @@ function run_test() {
     
     Assert.notEqual(profileObj.counters, null);
     Assert.notEqual(profileObj.memory, null);
-    Assert.greaterOrEqual(profileObj.threads.length, 1);
+    Assert.ok(profileObj.threads.length >= 1);
     Assert.notEqual(profileObj.threads[0].samples, null);
     
     

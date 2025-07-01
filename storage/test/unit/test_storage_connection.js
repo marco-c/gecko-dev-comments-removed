@@ -994,7 +994,7 @@ add_task(async function test_getInterface() {
     .getInterface(Ci.nsIEventTarget);
   
   
-  Assert.notEqual(target, null);
+  Assert.ok(target != null);
 
   await asyncClose(db);
   gDBConn = null;

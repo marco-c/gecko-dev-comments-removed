@@ -45,8 +45,8 @@ add_task(async function actualTest() {
   );
   let now = Date.now();
   TelemetryTimestamps.add("foo");
-  Assert.notEqual(TelemetryTimestamps.get().foo, null); 
-  Assert.greaterOrEqual(TelemetryTimestamps.get().foo, now); 
+  Assert.ok(TelemetryTimestamps.get().foo != null); 
+  Assert.ok(TelemetryTimestamps.get().foo >= now); 
 
   
   
@@ -70,9 +70,9 @@ add_task(async function actualTest() {
 
   
   let simpleMeasurements = getSimpleMeasurementsFromTelemetryController();
-  Assert.notEqual(simpleMeasurements, null); 
-  Assert.greater(simpleMeasurements.foo, 1); 
-  Assert.greater(simpleMeasurements.bar, 1); 
+  Assert.ok(simpleMeasurements != null); 
+  Assert.ok(simpleMeasurements.foo > 1); 
+  Assert.ok(simpleMeasurements.bar > 1); 
   Assert.equal(undefined, simpleMeasurements.baz); 
 
   await TelemetryController.testShutdown();

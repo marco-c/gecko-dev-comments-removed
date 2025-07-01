@@ -16,7 +16,7 @@ add_task(async function test_schema_13_db() {
   let dbConnection = Services.storage.openDatabase(do_get_cookie_file(profile));
   let version = dbConnection.schemaVersion;
   dbConnection.close();
-  Assert.greaterOrEqual(version, 13);
+  Assert.ok(version >= 13);
 
   
   await promise_close_profile();
@@ -67,7 +67,7 @@ add_task(async function test_schema_13_db() {
   
   dbConnection = Services.storage.openDatabase(do_get_cookie_file(profile));
   
-  Assert.greaterOrEqual(dbConnection.schemaVersion, 13);
+  Assert.ok(dbConnection.schemaVersion >= 13);
 
   
   let stmt = dbConnection.createStatement(

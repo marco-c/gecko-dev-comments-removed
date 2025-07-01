@@ -144,9 +144,8 @@ add_task(async function () {
 
   
   
-  Assert.greater(
-    arrowScrollbox.scrollPosition,
-    0,
+  Assert.ok(
+    arrowScrollbox.scrollPosition > 0,
     "First tab should be partially scrolled out of view."
   );
 

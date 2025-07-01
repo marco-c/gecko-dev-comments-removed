@@ -40,7 +40,7 @@ var listener = {
   },
 
   onDataAvailable(request, stream, offset, count) {
-    Assert.greaterOrEqual(Date.now() - this._lastEvent, MIN_TIME_DIFFERENCE);
+    Assert.ok(Date.now() - this._lastEvent >= MIN_TIME_DIFFERENCE);
     read_stream(stream, count);
 
     

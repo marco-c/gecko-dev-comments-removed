@@ -25,5 +25,5 @@ add_task(async function () {
   }
   
   let num = await promiseCountEntries("name-A", "value-A");
-  Assert.greater(num, 0);
+  Assert.ok(num > 0);
 });

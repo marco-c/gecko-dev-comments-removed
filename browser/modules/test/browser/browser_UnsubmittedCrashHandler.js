@@ -785,9 +785,6 @@ add_task(async function test_can_suppress_after_chances() {
     UnsubmittedCrashHandler.prefs.getCharPref("suppressUntilDate");
 
   let today = UnsubmittedCrashHandler.dateString(new Date());
-  
-  
-  
   Assert.ok(
     suppressUntilDate > today,
     "We should be suppressing until some days into the future."

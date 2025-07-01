@@ -165,11 +165,11 @@ add_task(async function test_signature() {
   
   Assert.equal(1, saver.signatureInfo.length);
   let certLists = saver.signatureInfo;
-  Assert.strictEqual(certLists.length, 1);
+  Assert.ok(certLists.length === 1);
 
   
   let certs = certLists[0];
-  Assert.strictEqual(certs.length, 3);
+  Assert.ok(certs.length === 3);
 
   const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB

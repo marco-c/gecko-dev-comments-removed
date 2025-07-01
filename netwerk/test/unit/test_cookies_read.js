@@ -67,7 +67,7 @@ add_task(async () => {
   
   let file = db.db.databaseFile;
   Assert.ok(file.exists());
-  Assert.less(file.fileSize, 1e6);
+  Assert.ok(file.fileSize < 1e6);
   db.close();
 
   

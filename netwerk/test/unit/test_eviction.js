@@ -18,7 +18,7 @@ function repeat_test() {
   
   
   
-  Assert.less(gPurgeAge, 64);
+  Assert.ok(gPurgeAge < 64);
   gPurgeAge *= 2;
   gShortExpiry *= 2;
 
@@ -186,7 +186,7 @@ function* do_run_test() {
 
 
 function set_cookies(begin, end, expiry) {
-  Assert.notEqual(begin, end);
+  Assert.ok(begin != end);
 
   let beginTime;
   for (let i = begin; i < end; ++i) {

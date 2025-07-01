@@ -148,7 +148,6 @@ function verify() {
           reallyLong.length
         );
         
-        
         Assert.ok(outputData === reallyLong);
         input.close();
         resolve();

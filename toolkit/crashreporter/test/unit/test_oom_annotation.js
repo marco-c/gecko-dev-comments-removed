@@ -61,9 +61,9 @@ add_task(async function run_test() {
         
         
         if (shouldBeGreaterThanZero) {
-          Assert.greater(Number(extra[label]), 0);
+          Assert.ok(Number(extra[label]) > 0);
         } else {
-          Assert.greaterOrEqual(Number(extra[label]), 0);
+          Assert.ok(Number(extra[label]) >= 0);
         }
       }
     }

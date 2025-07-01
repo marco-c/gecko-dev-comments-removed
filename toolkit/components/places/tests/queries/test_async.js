@@ -132,7 +132,7 @@ Test.prototype = {
     
     
     
-    Assert.strictEqual(aOldState, aExpectOldState);
+    Assert.ok(aOldState === aExpectOldState);
   },
 
   

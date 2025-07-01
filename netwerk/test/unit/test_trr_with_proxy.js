@@ -87,9 +87,8 @@ async function doTest(proxySetup, delay) {
 
   
   
-  Assert.greaterOrEqual(
-    await trrProxy.request_count(),
-    1,
+  Assert.ok(
+    (await trrProxy.request_count()) >= 1,
     `Request count should be at least 1`
   );
 

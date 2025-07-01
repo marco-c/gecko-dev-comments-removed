@@ -219,8 +219,8 @@ add_task(async function test_too_many_tabs() {
   const maxPayloadSize = Service.getMaxRecordPayloadSize();
   const maxSerializedSize = (maxPayloadSize / 4) * 3 - 1500;
   
-  Assert.greater(computeSerializedSize(a_lot_of_tabs), maxSerializedSize);
+  Assert.ok(computeSerializedSize(a_lot_of_tabs) > maxSerializedSize);
   let tabs = await engine.getTabsWithinPayloadSize();
   
-  Assert.less(computeSerializedSize(tabs), maxSerializedSize);
+  Assert.ok(computeSerializedSize(tabs) < maxSerializedSize);
 });

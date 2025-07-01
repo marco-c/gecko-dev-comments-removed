@@ -426,7 +426,7 @@ add_task(async function test_clicks_after_autofill() {
   
   
   await new Promise(resolve => setTimeout(resolve, 300));
-  Assert.less(win.gURLBar.selectionStart, win.gURLBar.value.length);
+  Assert.ok(win.gURLBar.selectionStart < win.gURLBar.value.length);
   Assert.equal(win.gURLBar.selectionStart, win.gURLBar.selectionEnd);
 
   
@@ -434,8 +434,8 @@ add_task(async function test_clicks_after_autofill() {
   
   
   await new Promise(resolve => setTimeout(resolve, 300));
-  Assert.less(win.gURLBar.selectionStart, win.gURLBar.value.length);
-  Assert.greater(win.gURLBar.selectionEnd, win.gURLBar.selectionStart);
+  Assert.ok(win.gURLBar.selectionStart < win.gURLBar.value.length);
+  Assert.ok(win.gURLBar.selectionEnd > win.gURLBar.selectionStart);
 
   await BrowserTestUtils.closeWindow(win);
 });

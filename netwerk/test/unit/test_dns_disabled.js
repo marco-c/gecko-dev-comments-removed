@@ -46,7 +46,7 @@ function do_test({ dnsDisabled, mustBlock, testDomain, expectedAnswer }) {
         {} 
       );
     } catch (e) {
-      Assert.strictEqual(mustBlock, true);
+      Assert.ok(mustBlock === true);
       resolve();
     }
   });

@@ -32,8 +32,6 @@ add_task(async function () {
           event.index == 0 || event.index == lastIndex + 1,
           "Consecutive indices"
         );
-        
-        
         Assert.ok(event.dateAdded >= now, "Found a valid dateAdded");
         Assert.ok(PlacesUtils.isValidGuid(event.guid), "guid is valid");
       }

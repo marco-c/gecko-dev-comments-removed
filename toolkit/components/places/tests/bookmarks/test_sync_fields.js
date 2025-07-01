@@ -39,9 +39,8 @@ class CounterTracker {
       if (expectedToIncrement.includes(guid)) {
         
         
-        Assert.greater(
-          newValue,
-          value,
+        Assert.ok(
+          newValue > value,
           `${desc} was expected to increment - was ${value}, now ${newValue}`
         );
         this.tracked.set(guid, { name, value: newValue });

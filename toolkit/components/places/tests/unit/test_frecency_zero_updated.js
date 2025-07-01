@@ -11,11 +11,10 @@ add_task(async function () {
     title: "A title",
   });
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
-  Assert.greater(
-    await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
+  Assert.ok(
+    (await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
       url: TEST_URI,
-    }),
-    0
+    })) > 0
   );
 
   
@@ -31,10 +30,9 @@ add_task(async function () {
 
   
   await PlacesTestUtils.addVisits({ uri: TEST_URI });
-  Assert.greater(
-    await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
+  Assert.ok(
+    (await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
       url: TEST_URI,
-    }),
-    0
+    })) > 0
   );
 });

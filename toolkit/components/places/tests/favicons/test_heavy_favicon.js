@@ -18,9 +18,8 @@ add_task(async function () {
   
   
   
-  Assert.greater(
-    icon.data.length,
-    Ci.nsIFaviconService.MAX_FAVICON_BUFFER_SIZE,
+  Assert.ok(
+    icon.data.length > Ci.nsIFaviconService.MAX_FAVICON_BUFFER_SIZE,
     "The test icon file size must be larger than Ci.nsIFaviconService.MAX_FAVICON_BUFFER_SIZE"
   );
 

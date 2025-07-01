@@ -181,7 +181,7 @@ add_task(async function test() {
 
             
             let zoom = (actualWidth - previousWidth) * subTest.expectedZoom;
-            Assert.greater(zoom, 0, subTest.message);
+            Assert.ok(zoom > 0, subTest.message);
 
             previousWidth = actualWidth;
           }

@@ -13,7 +13,7 @@ function check_enumerator(permissionTypes, expectedPermissions) {
   );
 
   for (const perm of permissions) {
-    Assert.notEqual(perm, null);
+    Assert.ok(perm != null);
 
     
     
@@ -23,11 +23,7 @@ function check_enumerator(permissionTypes, expectedPermissions) {
         perm.principal.equals(expectedPrincipal) && perm.type === expectedType
     );
 
-    Assert.notStrictEqual(
-      expectedPermission,
-      null,
-      "Found the expected permission"
-    );
+    Assert.ok(expectedPermission !== null, "Found the expected permission");
     Assert.equal(perm.capability, expectedPermission[2]);
     Assert.equal(perm.expireType, Services.perms.EXPIRE_NEVER);
   }

@@ -50,7 +50,7 @@ add_task(async function test_add_user_pref() {
       row.editColumnButton.click();
       Assert.ok(!row.hasClass("deleted"));
       Assert.ok(!row.hasClass("add"));
-      Assert.strictEqual(Preferences.get(PREF_NEW), expectedValue);
+      Assert.ok(Preferences.get(PREF_NEW) === expectedValue);
 
       
       Assert.equal(!!row.valueInput, expectedEditingMode);
@@ -93,7 +93,7 @@ add_task(async function test_delete_user_pref() {
       Assert.ok(row.element.querySelectorAll("input")[radioIndex].checked);
       row.editColumnButton.click();
       Assert.ok(!row.hasClass("deleted"));
-      Assert.strictEqual(Preferences.get(PREF_NEW), testValue);
+      Assert.ok(Preferences.get(PREF_NEW) === testValue);
 
       
       row.resetColumnButton.click();
@@ -138,10 +138,7 @@ add_task(async function test_click_type_label_multiple_forms() {
 
       
       newRow.editColumnButton.click();
-      Assert.strictEqual(
-        Preferences.get(PREF_NEW_WHILE_DELETED),
-        expectedValue
-      );
+      Assert.ok(Preferences.get(PREF_NEW_WHILE_DELETED) === expectedValue);
 
       
       newRow.resetColumnButton.click();
@@ -149,7 +146,7 @@ add_task(async function test_click_type_label_multiple_forms() {
 
     
     existingRow.editColumnButton.click();
-    Assert.strictEqual(Preferences.get(PREF_TO_DELETE), true);
+    Assert.ok(Preferences.get(PREF_TO_DELETE) === true);
   });
 });
 

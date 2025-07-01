@@ -22,13 +22,13 @@ function run_test() {
 
   dbg.addDebuggee(g);
   dbg.onDebuggerStatement = function (frame) {
-    Assert.strictEqual(frame, dbg.getNewestFrame());
+    Assert.ok(frame === dbg.getNewestFrame());
     
     
 
     executeSoon(function () {
       try {
-        Assert.strictEqual(frame, dbg.getNewestFrame());
+        Assert.ok(frame === dbg.getNewestFrame());
       } finally {
         xpcInspector.exitNestedEventLoop("test");
       }

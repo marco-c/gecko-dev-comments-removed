@@ -65,7 +65,7 @@ add_task(async function test_bookmarks() {
   );
 
   
-  Assert.greater(bs.tagsFolder, 0);
+  Assert.ok(bs.tagsFolder > 0);
 
   
   
@@ -84,7 +84,7 @@ add_task(async function test_bookmarks() {
   
   
   let beforeInsert = Date.now() * 1000;
-  Assert.greater(beforeInsert, 0);
+  Assert.ok(beforeInsert > 0);
 
   let newId = bs.insertBookmark(
     testRoot,
@@ -108,7 +108,7 @@ add_task(async function test_bookmarks() {
 
   
   let beforeSetTitle = Date.now() * 1000;
-  Assert.greaterOrEqual(beforeSetTitle, beforeInsert);
+  Assert.ok(beforeSetTitle >= beforeInsert);
 
   
   
@@ -250,7 +250,7 @@ add_task(async function test_bookmarks() {
     rootNode.containerOpen = true;
     let cc = rootNode.childCount;
     info("bookmark itemId test: CC = " + cc);
-    Assert.greater(cc, 0);
+    Assert.ok(cc > 0);
     for (let i = 0; i < cc; ++i) {
       let node = rootNode.getChild(i);
       if (
@@ -259,7 +259,7 @@ add_task(async function test_bookmarks() {
         node.type == node.RESULT_TYPE_SEPARATOR ||
         node.type == node.RESULT_TYPE_QUERY
       ) {
-        Assert.greater(node.itemId, 0);
+        Assert.ok(node.itemId > 0);
       } else {
         Assert.equal(node.itemId, -1);
       }
@@ -343,7 +343,7 @@ add_task(async function test_bookmarks() {
     Assert.equal(cc, 1);
     let node = rootNode.getChild(0);
     Assert.equal(node.title, "ZZZXXXYYY");
-    Assert.greater(node.itemId, 0);
+    Assert.ok(node.itemId > 0);
     rootNode.containerOpen = false;
   } catch (ex) {
     do_throw("bookmarks query: " + ex);
@@ -365,10 +365,10 @@ add_task(async function test_bookmarks() {
     let node = rootNode.getChild(0);
 
     Assert.equal(typeof node.dateAdded, "number");
-    Assert.greater(node.dateAdded, 0);
+    Assert.ok(node.dateAdded > 0);
 
     Assert.equal(typeof node.lastModified, "number");
-    Assert.greater(node.lastModified, 0);
+    Assert.ok(node.lastModified > 0);
 
     rootNode.containerOpen = false;
   } catch (ex) {
@@ -385,16 +385,16 @@ add_task(async function test_bookmarks() {
     let rootNode = result.root;
     rootNode.containerOpen = true;
     let cc = rootNode.childCount;
-    Assert.greater(cc, 0);
+    Assert.ok(cc > 0);
     for (let i = 0; i < cc; i++) {
       let node = rootNode.getChild(i);
 
       if (node.type == node.RESULT_TYPE_URI) {
         Assert.equal(typeof node.dateAdded, "number");
-        Assert.greater(node.dateAdded, 0);
+        Assert.ok(node.dateAdded > 0);
 
         Assert.equal(typeof node.lastModified, "number");
-        Assert.greater(node.lastModified, 0);
+        Assert.ok(node.lastModified > 0);
         break;
       }
     }
@@ -450,7 +450,7 @@ async function testSimpleFolderResult() {
   
   
   let beforeCreate = Date.now() * 1000 - 1;
-  Assert.greater(beforeCreate, 0);
+  Assert.ok(beforeCreate > 0);
 
   
   let parent = bs.createFolder(root, "test", bs.DEFAULT_INDEX);
@@ -459,7 +459,7 @@ async function testSimpleFolderResult() {
   
   
   let beforeInsert = Date.now() * 1000 - 1;
-  Assert.greater(beforeInsert, 0);
+  Assert.ok(beforeInsert > 0);
 
   
   let item = bs.insertBookmark(
@@ -491,19 +491,19 @@ async function testSimpleFolderResult() {
 
   let node = rootNode.getChild(0);
   Assert.equal(node.itemId, item);
-  Assert.greater(node.dateAdded, 0);
-  Assert.greater(node.lastModified, 0);
+  Assert.ok(node.dateAdded > 0);
+  Assert.ok(node.lastModified > 0);
   Assert.equal(node.title, "test bookmark");
   node = rootNode.getChild(1);
   Assert.equal(node.itemId, folder);
   Assert.equal(node.title, "test folder");
-  Assert.greater(node.dateAdded, 0);
-  Assert.greater(node.lastModified, 0);
+  Assert.ok(node.dateAdded > 0);
+  Assert.ok(node.lastModified > 0);
   node = rootNode.getChild(2);
   Assert.equal(node.itemId, folderLongName);
   Assert.equal(node.title, longName.substring(0, TITLE_LENGTH_MAX));
-  Assert.greater(node.dateAdded, 0);
-  Assert.greater(node.lastModified, 0);
+  Assert.ok(node.dateAdded > 0);
+  Assert.ok(node.lastModified > 0);
 
   
   bs.setItemTitle(folderLongName, longName + " updated");

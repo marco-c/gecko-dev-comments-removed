@@ -69,12 +69,12 @@ function test_accepted_languages() {
       
       
       if (acceptedLanguagesLength < 10) {
-        Assert.equal(qualityValue.length, 3);
+        Assert.ok(qualityValue.length == 3);
 
         decimalPlaces = 1;
       } else {
-        Assert.greaterOrEqual(qualityValue.length, 3);
-        Assert.lessOrEqual(qualityValue.length, 4);
+        Assert.ok(qualityValue.length >= 3);
+        Assert.ok(qualityValue.length <= 4);
 
         decimalPlaces = 2;
       }

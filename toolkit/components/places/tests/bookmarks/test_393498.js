@@ -69,7 +69,7 @@ add_task(async function test_bookmark_update_notifications() {
   });
 
   
-  Assert.strictEqual(observer.itemChangedProperty, undefined);
+  Assert.ok(observer.itemChangedProperty === undefined);
 
   
   await PlacesUtils.bookmarks.update({
