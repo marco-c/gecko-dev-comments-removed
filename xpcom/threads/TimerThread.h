@@ -180,6 +180,12 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
                                             TimeDuration minDelay,
                                             TimeDuration maxDelay) const;
 
+  
+  
+  
+  uint64_t FireDueTimers(TimeDuration aAllowedEarlyFiring)
+      MOZ_REQUIRES(mMonitor);
+
   static constexpr size_t kMaxQueuedTimersFired = 128;
   static void AccumulateAndMaybeSendTelemetry(
       uint64_t timersFiredThisWakeup, size_t& queuedTimersFiredCount,
