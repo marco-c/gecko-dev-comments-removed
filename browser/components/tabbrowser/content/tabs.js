@@ -692,6 +692,10 @@
     }
 
     startTabDrag(event, tab, { fromTabList = false } = {}) {
+      if (this.expandOnHover) {
+        
+        MousePosTracker.removeListener(document.defaultView.SidebarController);
+      }
       if (this.#isContainerVerticalPinnedGrid(tab)) {
         
         
@@ -3092,6 +3096,11 @@
 
     
     #resetTabsAfterDrop(draggedTabDocument = document) {
+      if (this.expandOnHover) {
+        
+        MousePosTracker.addListener(document.defaultView.SidebarController);
+      }
+
       let allTabs = draggedTabDocument.getElementsByClassName("tabbrowser-tab");
       for (let tab of allTabs) {
         tab.style.width = "";
