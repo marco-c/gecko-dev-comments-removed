@@ -588,7 +588,8 @@ LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
   mBrowsingContextID = parentBC->Id();
 
   
-  if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT &&
+  
+  if (!nsContentUtils::IsNonSubresourceInternalPolicyType(aContentPolicyType) &&
       aTriggeringPrincipal &&
       StaticPrefs::privacy_antitracking_isolateContentScriptResources() &&
       nsContentUtils::IsExpandedPrincipal(aTriggeringPrincipal)) {
@@ -1306,7 +1307,8 @@ already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
     nsIPrincipal* aTriggeringPrincipal, nsContentPolicyType aContentPolicyType,
     bool aIsPrivate, bool aShouldResistFingerprinting) {
   
-  if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT &&
+  
+  if (!nsContentUtils::IsNonSubresourceInternalPolicyType(aContentPolicyType) &&
       aTriggeringPrincipal &&
       StaticPrefs::privacy_antitracking_isolateContentScriptResources() &&
       nsContentUtils::IsExpandedPrincipal(aTriggeringPrincipal)) {
