@@ -1331,7 +1331,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Sanitizer", disabled: true },
   
-  { name: "Scheduler", insecureContext: true, nightly: true },
+  { name: "Scheduler", insecureContext: true },
   
   { name: "ScopedCredential", insecureContext: true, disabled: true },
   
@@ -1393,11 +1393,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SubtleCrypto" },
   
-  { name: "TaskController", insecureContext: true, nightly: true },
+  { name: "TaskController", insecureContext: true },
   
-  { name: "TaskPriorityChangeEvent", insecureContext: true, nightly: true },
+  { name: "TaskPriorityChangeEvent", insecureContext: true },
   
-  { name: "TaskSignal", insecureContext: true, nightly: true },
+  { name: "TaskSignal", insecureContext: true },
   
   { name: "Text", insecureContext: true },
   
@@ -1973,7 +1973,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "resizeTo", insecureContext: true },
   
-  { name: "scheduler", insecureContext: true, nightly: true },
+  { name: "scheduler", insecureContext: true },
   
   { name: "screen", insecureContext: true },
   
