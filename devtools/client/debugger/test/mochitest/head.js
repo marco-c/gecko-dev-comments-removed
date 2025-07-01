@@ -268,7 +268,7 @@ function getRange(start, end) {
 function assertCursorPosition(dbg, expectedLine, expectedColumn, message) {
   const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
   if (!cursorPosition) {
-    ok(false, message + " (no cursor displayed in footer)");
+    ok(false, message + " (no cursor displayed)");
   }
   
   
@@ -276,17 +276,12 @@ function assertCursorPosition(dbg, expectedLine, expectedColumn, message) {
   if (!match) {
     ok(
       false,
-      message +
-        ` (wrong cursor content in footer : '${cursorPosition.innerText}')`
+      message + ` (wrong cursor content : '${cursorPosition.innerText}')`
     );
   }
   const [_, line, column] = match;
-  is(parseInt(line, 10), expectedLine, message + " (footer line)");
-  is(parseInt(column, 10), expectedColumn, message + " (footer column)");
-  const cursor = getCMEditor(dbg).getSelectionCursor();
-  is(cursor.from.line, expectedLine, message + " (actual cursor line)");
-  
-  is(cursor.from.ch + 1, expectedColumn, message + " (actual cursor column)");
+  is(parseInt(line, 10), expectedLine, message + " (line)");
+  is(parseInt(column, 10), expectedColumn, message + " (column)");
 }
 
 async function waitForCursorPosition(dbg, expectedLine) {

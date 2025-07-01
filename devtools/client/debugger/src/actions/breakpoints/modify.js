@@ -129,9 +129,6 @@ export function addBreakpoint(
     
     
     if (!position) {
-      console.error(
-        `Unable to add breakpoint at non-breakable location "${JSON.stringify(initialLocation)}"`
-      );
       return null;
     }
 
