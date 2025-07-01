@@ -739,28 +739,33 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
   }
   
   
-  if (point.IsInTextNode()) {
+  if (point.IsInTextNode() && !point.IsContainerEmpty()) {
     if (!point.IsStartOfContainer() &&
         !point.IsPreviousCharCollapsibleASCIISpace()) {
       return EditorDOMPoint();  
     }
     if (!point.IsEndOfContainer()) {
-      if (!point.IsCharCollapsibleASCIISpace()) {
-        return EditorDOMPoint();
+      if (EditorUtils::IsWhiteSpacePreformatted(*point.ContainerAs<Text>())) {
+        return EditorDOMPoint();  
       }
-      const bool linefeedPreformatted = EditorUtils::IsNewLinePreformatted(
-          *point.template ContainerAs<Text>());
+      
+      
+      
+      
       const nsTextFragment& fragment =
           point.template ContainerAs<Text>()->TextFragment();
-      for (uint32_t i : IntegerRange(point.Offset(), fragment.GetLength())) {
-        const char16_t ch = fragment.CharAt(i);
-        if (linefeedPreformatted && ch == HTMLEditUtils::kNewLine) {
-          return EditorDOMPoint();  
-        }
-        if (!nsCRT::IsAsciiSpace(ch)) {
-          return EditorDOMPoint();  
-        }
+      const uint32_t inclusiveNextVisibleCharOffset =
+          fragment.FindNonWhitespaceChar(
+              EditorUtils::IsNewLinePreformatted(*point.ContainerAs<Text>())
+                  ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
+                                      WhitespaceOption::NewLineIsSignificant}
+                  : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
+              point.Offset());
+      if (inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound) {
+        return EditorDOMPoint();  
       }
+      
+      
     }
   }
 
