@@ -2080,6 +2080,10 @@ void Document::RecordPageLoadEventTelemetry() {
     return;
   }
 
+  if (!GetChannel()) {
+    return;
+  }
+
   auto pageloadEventType = performance::pageload_event::GetPageloadEventType();
 
   
@@ -2144,30 +2148,13 @@ void Document::RecordPageLoadEventTelemetry() {
         }
       }
     }
+  }
 
+  if (pageloadEventType == PageloadEventType::kDomain) {
     
-    
-    if (pageloadEventType == PageloadEventType::kDomain) {
-      
-      
-      nsCOMPtr<nsIURI> currentURI = GetDomainURI();
-      bool hasKnownPublicSuffix = false;
-      rv = tldService->HasKnownPublicSuffix(currentURI, &hasKnownPublicSuffix);
-      if (NS_FAILED(rv) || !hasKnownPublicSuffix) {
-        return;
-      }
-
-      
-      nsAutoCString currentBaseDomain;
-      rv = tldService->GetBaseDomain(currentURI, 0, currentBaseDomain);
-      if (NS_FAILED(rv)) {
-        return;
-      }
-
-      
-      if (!mPageloadEventData.MaybeSetDomain(currentBaseDomain)) {
-        return;
-      }
+    if (!mPageloadEventData.MaybeSetPublicRegistrableDomain(GetDocumentURI(),
+                                                            GetChannel())) {
+      return;
     }
   }
 
