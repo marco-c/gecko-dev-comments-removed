@@ -51,10 +51,12 @@ OriginMetadata GetOriginMetadata(const nsCString& aOriginSuffix,
 FullOriginMetadata GetFullOriginMetadata(const nsCString& aOriginSuffix,
                                          const nsCString& aGroupNoSuffix,
                                          const nsCString& aOriginNoSuffix) {
-  return {GetOriginMetadata(aOriginSuffix, aGroupNoSuffix, aOriginNoSuffix),
-          OriginStateMetadata{ 0,  false,
-                               false},
-          ClientUsageArray(),  0, kCurrentQuotaVersion};
+  return {
+      GetOriginMetadata(aOriginSuffix, aGroupNoSuffix, aOriginNoSuffix),
+      OriginStateMetadata{ 0,  0,
+                           false,
+                           false},
+      ClientUsageArray(),  0, kCurrentQuotaVersion};
 }
 
 }  

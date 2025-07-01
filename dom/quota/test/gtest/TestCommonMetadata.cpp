@@ -117,13 +117,15 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
   
 
   OriginStateMetadata originStateMetadata1 = OriginStateMetadata(
-       0,  false,  false);
+       0,  0,
+       false,  false);
 
   {
     
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     EXPECT_TRUE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -132,7 +134,8 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
     
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         1,  false,  false);
+         1,  0,
+         false,  false);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -141,7 +144,8 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
     
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  true,  false);
+         0,  1,
+         false,  false);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -150,7 +154,18 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
     
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  true);
+         0,  0,
+         true,  false);
+
+    EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
+  }
+
+  {
+    
+
+    OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
+         0,  0,
+         false,  true);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -177,7 +192,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
   OriginMetadata originMetadata1(principalMetadata1, PERSISTENCE_TYPE_DEFAULT);
 
   OriginStateMetadata originStateMetadata1 = OriginStateMetadata(
-       0,  false,  false);
+       0,  0,
+       false,  false);
 
   FullOriginMetadata fullOriginMetadata1(originMetadata1, originStateMetadata1,
                                          ClientUsageArray(),  0,
@@ -193,7 +209,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_DEFAULT);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -213,7 +230,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_DEFAULT);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -232,7 +250,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_TEMPORARY);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -251,7 +270,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_DEFAULT);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         1,  false,  false);
+         1,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -261,6 +281,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
   }
 
   {
+    
+
     PrincipalMetadata principalMetadata2 = GetPrincipalMetadata(
         ""_ns, "example.org"_ns, "http://www.example.org"_ns);
 
@@ -268,7 +290,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_DEFAULT);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2,
@@ -279,6 +302,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
   }
 
   {
+    
+
     PrincipalMetadata principalMetadata2 = GetPrincipalMetadata(
         ""_ns, "example.org"_ns, "http://www.example.org"_ns);
 
@@ -286,7 +311,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_DEFAULT);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -296,6 +322,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
   }
 
   {
+    
+
     PrincipalMetadata principalMetadata2 = GetPrincipalMetadata(
         ""_ns, "example.org"_ns, "http://www.example.org"_ns);
 
@@ -303,7 +331,8 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
                                    PERSISTENCE_TYPE_DEFAULT);
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
-         0,  false,  false);
+         0,  0,
+         false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),

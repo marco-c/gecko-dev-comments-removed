@@ -27,6 +27,7 @@
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/Constants.h"
+#include "mozilla/dom/quota/Date.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/OriginDirectoryLock.h"
@@ -3554,7 +3555,8 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   if (created) {
     
 
-    const auto [timestamp, accessed] = [&aQuotaManager, &originMetadata]() {
+    const auto [timestamp, maintenanceDate, accessed] = [&aQuotaManager,
+                                                         &originMetadata]() {
       
       if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
         if (aQuotaManager.IsTemporaryOriginInitializedInternal(
@@ -3567,21 +3569,29 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
           return aQuotaManager.WithOriginInfo(
               originMetadata, [](const auto& originInfo) {
                 const int64_t timestamp = originInfo->LockedAccessTime();
+                const int32_t maintenanceDate =
+                    originInfo->LockedMaintenanceDate();
                 const bool accessed = originInfo->LockedAccessed();
 
                 originInfo->LockedDirectoryCreated();
 
-                return std::make_pair(timestamp, accessed);
+                return std::make_tuple(timestamp, maintenanceDate, accessed);
               });
         }
       }
 
-      return std::make_pair( PR_Now(),  false);
+      const int64_t timestamp = PR_Now();
+
+      return std::make_tuple(
+           timestamp,
+           Date::FromTimestamp(timestamp).ToDays(),
+           false);
     }();
 
     FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
         originMetadata,
-        OriginStateMetadata{timestamp, accessed,  true},
+        OriginStateMetadata{timestamp, maintenanceDate, accessed,
+                             true},
         ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
