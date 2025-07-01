@@ -8,12 +8,14 @@
 
 #include "nsArrayUtils.h"
 #include "nsCursorManager.h"
+#include "nsIAppStartup.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsILocalFileMac.h"
 #include "GLContextCGL.h"
 #include "MacThemeGeometryType.h"
 #include "NativeMenuSupport.h"
 #include "WindowRenderer.h"
+#include "mozilla/Components.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/SwipeTracker.h"
 #include "mozilla/layers/APZInputBridge.h"
@@ -7113,9 +7115,17 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   RefPtr<nsMenuBarX> hiddenWindowMenuBar =
       nsMenuUtilsX::GetHiddenWindowMenuBar();
   if (hiddenWindowMenuBar) {
-    
-    
-    hiddenWindowMenuBar->PaintAsyncIfNeeded();
+    bool isTerminating = false;
+    nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
+    if (appStartup) {
+      appStartup->GetAttemptingQuit(&isTerminating);
+    }
+
+    if (!isTerminating) {
+      
+      
+      hiddenWindowMenuBar->PaintAsyncIfNeeded();
+    }
   }
 
   NSWindow* window = [aNotification object];
