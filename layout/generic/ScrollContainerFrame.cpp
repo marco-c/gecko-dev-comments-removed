@@ -2422,11 +2422,6 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
     mRestorePos.x = mRestorePos.y = -1;
   }
 
-  
-  if (MOZ_UNLIKELY(PresShell()->IsDocumentLoading())) {
-    PresShell()->SuppressDisplayport(false);
-  }
-
   Maybe<SnapDestination> snapDestination;
   if (!aParams.IsScrollSnapDisabled()) {
     snapDestination = GetSnapPointForDestination(ScrollUnit::DEVICE_PIXELS,
@@ -4887,11 +4882,6 @@ void ScrollContainerFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
   }
 
   if (askApzToDoTheScroll) {
-    
-    if (MOZ_UNLIKELY(PresShell()->IsDocumentLoading())) {
-      PresShell()->SuppressDisplayport(false);
-    }
-
     nsPoint delta(
         NSCoordSaturatingNonnegativeMultiply(aDelta.x, deltaMultiplier.width),
         NSCoordSaturatingNonnegativeMultiply(aDelta.y, deltaMultiplier.height));
@@ -8007,11 +7997,6 @@ bool ScrollContainerFrame::SmoothScrollVisual(
       nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll();
   if (!canDoApzSmoothScroll) {
     return false;
-  }
-
-  
-  if (MOZ_UNLIKELY(PresShell()->IsDocumentLoading())) {
-    PresShell()->SuppressDisplayport(false);
   }
 
   
