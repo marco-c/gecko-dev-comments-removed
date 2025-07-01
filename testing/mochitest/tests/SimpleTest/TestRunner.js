@@ -420,7 +420,7 @@ TestRunner._makeIframe = function (url, retry) {
     if (retry < 3) {
       window.setTimeout(function () {
         TestRunner._makeIframe(url, retry + 1);
-      }, 1000);
+      });
       return;
     }
 
@@ -987,6 +987,9 @@ TestRunner.testUnloaded = function (result, runtime) {
     { runtime }
   );
 
+  
+  
+  
   
   SpecialPowers.comparePrefsToBaseline(
     TestRunner.ignorePrefs,

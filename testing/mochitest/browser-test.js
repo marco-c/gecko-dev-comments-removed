@@ -718,6 +718,40 @@ Tester.prototype = {
     }
   },
 
+  async checkPreferencesAfterTest() {
+    
+    
+    
+    if (!gConfig.comparePrefs) {
+      
+      
+      
+      return;
+    }
+    if (!this._ignorePrefs) {
+      const ignorePrefsFile = `chrome://mochikit/content/${gConfig.ignorePrefsFile}`;
+      try {
+        const res = await fetch(ignorePrefsFile);
+        this._ignorePrefs = await res.json();
+      } catch (e) {
+        this.Assert.ok(
+          false,
+          `Failed to load ignorePrefsFile (${ignorePrefsFile}): ${e}`
+        );
+      }
+    }
+    
+    
+    const failures = await window.SpecialPowers.comparePrefsToBaseline(
+      this._ignorePrefs
+    );
+    for (let p of failures) {
+      this.structuredLogger.error(
+        `TEST-UNEXPECTED-FAIL | ${this.currentTest.path} | changed preference: ${p}`
+      );
+    }
+  },
+
   async nextTest() {
     if (this.currentTest) {
       if (this._coverageCollector) {
@@ -827,8 +861,9 @@ Tester.prototype = {
 
       await this.ensureNoNewRepeatingTimers();
 
-      
-      await new Promise(resolve => SpecialPowers.flushPrefEnv(resolve));
+      await new Promise(resolve => window.SpecialPowers.flushPrefEnv(resolve));
+
+      await this.checkPreferencesAfterTest();
 
       window.SpecialPowers.cleanupAllClipboard();
 
