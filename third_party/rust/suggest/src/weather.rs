@@ -123,19 +123,40 @@ impl SuggestDao<'_> {
         
         
         
-        let mut kw_alone = false;
+        
+        
+        let mut kws_alone_min_count: Option<usize> = None;
         let mut city_token_paths: Vec<_> = raw_token_paths
             .into_iter()
             .filter_map(|rtp| {
                 TokenPath::from_raw_token_path(rtp).and_then(|tp| match tp {
                     TokenPath::City(ctp) => Some(ctp),
-                    TokenPath::WeatherKeywordAlone => {
-                        kw_alone = true;
+                    TokenPath::WeatherKeywordsAlone(count) => {
+                        kws_alone_min_count = kws_alone_min_count
+                            .map(|min_count| std::cmp::min(min_count, count))
+                            .or(Some(count));
                         None
                     }
                 })
             })
             .collect();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if kws_alone_min_count == Some(1) {
+            return Ok(vec![Suggestion::Weather {
+                city: None,
+                score: w_cache.score,
+            }]);
+        }
 
         
         
@@ -169,11 +190,12 @@ impl SuggestDao<'_> {
         
         
         
+        
         if let Some(first_ctp) = city_token_paths.first() {
             let mut geoname_ids = HashSet::new();
             let (max_city_match_len, max_other_geoname_match_len) =
                 (first_ctp.city_match_len, first_ctp.other_geoname_match_len);
-            Ok(city_token_paths
+            return Ok(city_token_paths
                 .into_iter()
                 .take_while(|ctp| {
                     ctp.city_match_len == max_city_match_len
@@ -190,15 +212,19 @@ impl SuggestDao<'_> {
                         })
                     }
                 })
-                .collect())
-        } else if kw_alone {
-            Ok(vec![Suggestion::Weather {
+                .collect());
+        }
+
+        
+        
+        if kws_alone_min_count.is_some() {
+            return Ok(vec![Suggestion::Weather {
                 city: None,
                 score: w_cache.score,
-            }])
-        } else {
-            Ok(Vec::new())
+            }]);
         }
+
+        Ok(Vec::new())
     }
 
     fn match_weather_tokens(
@@ -280,8 +306,8 @@ impl SuggestDao<'_> {
             WHERE
                 s.provider = :provider
                 AND (
-                    CASE :prefix WHEN FALSE THEN k.keyword = :keyword
-                    ELSE (k.keyword BETWEEN :keyword AND :keyword || X'FFFF') END
+                    k.keyword = :keyword
+                    OR (:prefix AND (k.keyword BETWEEN :keyword AND :keyword || X'FFFF'))
                 )
             "#,
             named_params! {
@@ -417,7 +443,8 @@ struct WeatherKeywordMatch {
 #[allow(clippy::large_enum_variant)]
 enum TokenPath {
     City(CityTokenPath),
-    WeatherKeywordAlone,
+    
+    WeatherKeywordsAlone(usize),
 }
 
 struct CityTokenPath {
@@ -428,7 +455,7 @@ struct CityTokenPath {
 
 impl TokenPath {
     fn from_raw_token_path(rtp: Vec<Token>) -> Option<Self> {
-        let mut kw_matched = false;
+        let mut kw_match_count = 0;
         let mut any_kw_match_full = false;
         let mut city_match: Option<GeonameMatch> = None;
         let mut city_match_len = 0;
@@ -438,7 +465,7 @@ impl TokenPath {
         for t in rtp {
             match t {
                 Token::WeatherKeyword(kwm) => {
-                    kw_matched = true;
+                    kw_match_count += 1;
                     any_kw_match_full = any_kw_match_full || !kwm.is_prefix;
                 }
                 Token::Geoname {
@@ -481,7 +508,7 @@ impl TokenPath {
                 
                 
                 
-                (kw_matched && any_kw_match_full)
+                (kw_match_count > 0 && any_kw_match_full)
                     
                     
                     
@@ -492,7 +519,7 @@ impl TokenPath {
                     
                     
                     
-                    || (kw_matched && !cm.prefix && cm.match_type.is_abbreviation())
+                    || (kw_match_count > 0 && !cm.prefix && cm.match_type.is_abbreviation())
                     
                     
                     
@@ -524,9 +551,9 @@ impl TokenPath {
                     other_geoname_match_len: max_other_geoname_match_len,
                 }));
             }
-        } else if kw_matched && max_other_geoname_match_len == 0 {
+        } else if kw_match_count > 0 && max_other_geoname_match_len == 0 {
             
-            return Some(Self::WeatherKeywordAlone);
+            return Some(Self::WeatherKeywordsAlone(kw_match_count));
         }
 
         None
@@ -777,6 +804,157 @@ mod tests {
                 q
             );
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn weather_keyword_includes_city_prefix() -> anyhow::Result<()> {
+        before_each();
+
+        let kws = [
+            "weather",
+            "weather ",
+            
+            
+            "weather n",
+            "weather ne",
+            "weather new",
+            
+            "new",
+            "new ",
+            "new y",
+            "new yo",
+        ];
+
+        let mut store = geoname::tests::new_test_store();
+        store
+            .client_mut()
+            .add_record(SuggestionProvider::Weather.record(
+                "weather-1",
+                json!({
+                    "min_keyword_length": 0,
+                    "keywords": kws,
+                    "score": 0.24
+                }),
+            ));
+
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        
+        assert_eq!(
+            store.fetch_suggestions(SuggestionQuery::weather("new york")),
+            vec![Suggestion::Weather {
+                score: 0.24,
+                city: Some(geoname::tests::nyc()),
+            }],
+        );
+
+        
+        
+        
+        for q in kws {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: None,
+                }],
+                "Keyword alone query: {:?}",
+                q
+            );
+        }
+
+        
+        
+        
+        let city_matches = [
+            "weather new y",
+            "weather new yo",
+            "weather new yor",
+            "weather new york",
+        ];
+        for q in city_matches {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather(q)),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: Some(geoname::tests::nyc()),
+                }],
+                "City query: {:?}",
+                q
+            );
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn weather_keyword_same_as_city() -> anyhow::Result<()> {
+        before_each();
+
+        let mut store = geoname::tests::new_test_store();
+        store
+            .client_mut()
+            .add_record(SuggestionProvider::Weather.record(
+                "weather-1",
+                json!({
+                    "min_keyword_length": 0,
+                    "keywords": [],
+                    "score": 0.24
+                }),
+            ));
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        
+        for q in ["new york", "new york city"] {
+            assert_eq!(
+                store.fetch_suggestions(SuggestionQuery::weather("new york")),
+                vec![Suggestion::Weather {
+                    score: 0.24,
+                    city: Some(geoname::tests::nyc()),
+                }],
+                "new york query: {:?}",
+                q
+            );
+        }
+
+        store
+            .client_mut()
+            .update_record(SuggestionProvider::Weather.record(
+                "weather-1",
+                json!({
+                    "min_keyword_length": 0,
+                    "keywords": ["new york"],
+                    "score": 0.24
+                }),
+            ));
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        assert_eq!(
+            store.fetch_suggestions(SuggestionQuery::weather("new york")),
+            vec![Suggestion::Weather {
+                score: 0.24,
+                city: None,
+            }],
+        );
+
+        assert_eq!(
+            store.fetch_suggestions(SuggestionQuery::weather("new york city")),
+            vec![Suggestion::Weather {
+                score: 0.24,
+                city: Some(geoname::tests::nyc()),
+            }],
+        );
 
         Ok(())
     }
