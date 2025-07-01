@@ -350,7 +350,8 @@ CookieServiceChild::RecordDocumentCookie(Cookie* aCookie,
           
           
           
-          (cookie->Expiry() / PR_MSEC_PER_SEC) == (aCookie->Expiry()/ PR_MSEC_PER_SEC) &&
+          (cookie->Expiry() / PR_MSEC_PER_SEC) ==
+              (aCookie->Expiry() / PR_MSEC_PER_SEC) &&
 
           cookie->IsSecure() == aCookie->IsSecure() &&
           cookie->SameSite() == aCookie->SameSite() &&
