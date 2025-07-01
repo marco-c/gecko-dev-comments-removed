@@ -179,6 +179,10 @@ add_task(async function test_description_change_saved() {
     "description",
     { url: TEST_URL }
   );
+  
+  
+  
+  
   Assert.ok(
     !!descriptionInDB.length < description.length,
     "a long description should be truncated"
@@ -256,6 +260,10 @@ add_task(async function test_siteName_change_saved() {
       url: TEST_URL,
     }
   );
+  
+  
+  
+  
   Assert.ok(
     !!siteNameInDB.length < siteName.length,
     "a long siteName should be truncated"
