@@ -33,6 +33,19 @@ GUID CodecToSubtype(CodecType aCodec) {
   }
 }
 
+static bool CanUseWMFHwEncoder(CodecType aCodec) {
+  switch (aCodec) {
+    case CodecType::H264:
+      return gfx::gfxVars::UseH264HwEncode();
+    case CodecType::VP8:
+      return gfx::gfxVars::UseVP8HwEncode();
+    case CodecType::VP9:
+      return gfx::gfxVars::UseVP9HwEncode();
+    default:
+      return false;
+  }
+}
+
 EncodeSupportSet CanCreateWMFEncoder(CodecType aCodec) {
   EncodeSupportSet supports;
   mscom::EnsureMTA([&]() {
@@ -40,9 +53,11 @@ EncodeSupportSet CanCreateWMFEncoder(CodecType aCodec) {
       return;
     }
     
-    auto hwEnc = MakeRefPtr<MFTEncoder>(false );
-    if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec)))) {
-      supports += EncodeSupport::HardwareEncode;
+    if (CanUseWMFHwEncoder(aCodec)) {
+      auto hwEnc = MakeRefPtr<MFTEncoder>(false );
+      if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec)))) {
+        supports += EncodeSupport::HardwareEncode;
+      }
     }
     
     auto swEnc = MakeRefPtr<MFTEncoder>(true );
