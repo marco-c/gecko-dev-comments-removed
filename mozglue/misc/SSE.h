@@ -92,6 +92,8 @@
 
 
 
+
+
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 
 #  ifdef __MMX__
@@ -145,6 +147,14 @@
 #  ifdef __AES__
 
 #    define MOZILLA_PRESUME_AES 1
+#  endif
+#  ifdef __SHA__
+
+#    define MOZILLA_PRESUME_SHA 1
+#  endif
+#  ifdef __SHA512__
+
+#    define MOZILLA_PRESUME_SHA512 1
 #  endif
 
 #  ifdef HAVE_CPUID_H
@@ -234,6 +244,13 @@ extern bool MFBT_DATA avxvnni_enabled;
 #  if !defined(MOZILLA_PRESUME_AES)
 extern bool MFBT_DATA aes_enabled;
 #  endif
+#  if !defined(MOZILLA_PRESUME_SHA)
+extern bool MFBT_DATA sha_enabled;
+#  endif
+#  if !defined(MOZILLA_PRESUME_SHA512)
+extern bool MFBT_DATA sha512_enabled;
+#  endif
+
 extern bool MFBT_DATA has_constant_tsc;
 
 #endif
@@ -375,6 +392,26 @@ inline bool supports_aes() { return true; }
 inline bool supports_aes() { return sse_private::aes_enabled; }
 #else
 inline bool supports_aes() { return false; }
+#endif
+
+#if defined(MOZILLA_PRESUME_SHA)
+#  define MOZILLA_MAY_SUPPORT_SHA 1
+inline bool supports_sha() { return true; }
+#elif defined(MOZILLA_SSE_HAVE_CPUID_DETECTION)
+#  define MOZILLA_MAY_SUPPORT_SHA 1
+inline bool supports_sha() { return sse_private::sha_enabled; }
+#else
+inline bool supports_sha() { return false; }
+#endif
+
+#if defined(MOZILLA_PRESUME_SHA512)
+#  define MOZILLA_MAY_SUPPORT_SHA512 1
+inline bool supports_sha512() { return true; }
+#elif defined(MOZILLA_SSE_HAVE_CPUID_DETECTION)
+#  define MOZILLA_MAY_SUPPORT_SHA512 1
+inline bool supports_sha512() { return sse_private::sha512_enabled; }
+#else
+inline bool supports_sha512() { return false; }
 #endif
 
 #ifdef MOZILLA_SSE_HAVE_CPUID_DETECTION
