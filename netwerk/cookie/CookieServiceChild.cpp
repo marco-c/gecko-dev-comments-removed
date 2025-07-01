@@ -336,23 +336,7 @@ CookieServiceChild::RecordDocumentCookie(Cookie* aCookie,
         cookie->Host().Equals(aCookie->Host()) &&
         cookie->Path().Equals(aCookie->Path())) {
       if (cookie->Value().Equals(aCookie->Value()) &&
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          (cookie->Expiry() / PR_MSEC_PER_SEC) ==
-              (aCookie->Expiry() / PR_MSEC_PER_SEC) &&
-
+          cookie->Expiry() == aCookie->Expiry() &&
           cookie->IsSecure() == aCookie->IsSecure() &&
           cookie->SameSite() == aCookie->SameSite() &&
           cookie->IsSession() == aCookie->IsSession() &&

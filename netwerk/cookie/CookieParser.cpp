@@ -501,6 +501,19 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
                              const nsACString& aDateHeader, bool aFromHttp) {
   int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
 
+  int64_t serverTime = -1;
+
+  
+  if (StaticPrefs::network_cookie_useServerTime() && !aDateHeader.IsEmpty()) {
+    MOZ_ASSERT(aFromHttp);
+
+    PRTime dateHeaderTime;
+    if (PR_ParseTimeString(aDateHeader.BeginReading(), true, &dateHeaderTime) ==
+        PR_SUCCESS) {
+      serverTime = dateHeaderTime / int64_t(PR_USEC_PER_MSEC);
+    }
+  }
+
   
 
 
@@ -515,7 +528,10 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     if (maxage == INT64_MIN) {
       aCookieData.expiry() = maxage;
     } else {
-      CheckedInt<int64_t> value(aCurrentTime);
+      CheckedInt<int64_t> value(
+          serverTime != -1 && StaticPrefs::network_cookie_useServerTime()
+              ? serverTime
+              : aCurrentTime);
       value += (maxageCap ? std::min(maxage, maxageCap) : maxage) * 1000;
 
       aCookieData.expiry() = value.isValid() ? value.value() : INT64_MAX;
@@ -539,17 +555,9 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     
     
     
-    if (!aDateHeader.IsEmpty()) {
-      MOZ_ASSERT(aFromHttp);
-
-      PRTime dateHeaderTime;
-      if (PR_ParseTimeString(aDateHeader.BeginReading(), true,
-                             &dateHeaderTime) == PR_SUCCESS &&
-          StaticPrefs::network_cookie_useServerTime()) {
-        int64_t serverTime = dateHeaderTime / int64_t(PR_USEC_PER_MSEC);
-        int64_t delta = aCurrentTime - serverTime;
-        expires += delta;
-      }
+    if (serverTime != -1 && StaticPrefs::network_cookie_useServerTime()) {
+      int64_t delta = aCurrentTime - serverTime;
+      expires += delta;
     }
 
     
