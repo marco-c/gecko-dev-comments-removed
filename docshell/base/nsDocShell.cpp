@@ -3964,7 +3964,8 @@ nsresult nsDocShell::ReloadNavigable(
     if (navigation &&
         !navigation->FirePushReplaceReloadNavigateEvent(
             *aCx, NavigationType::Reload, destinationURL,
-             false, Some(aUserInvolvement),
+             false,  false,
+            Some(aUserInvolvement),
              nullptr,  nullptr,
             destinationNavigationAPIState,
              nullptr)) {
@@ -8940,7 +8941,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
         
         bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
             jsapi.cx(), aLoadState->GetNavigationType(), newURI,
-             true,
+             true,  false,
             Some(aLoadState->UserNavigationInvolvement()), sourceElement,
              nullptr,
              destinationNavigationAPIState,
@@ -9704,7 +9705,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
           
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
               jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
-               false,
+               false,  false,
               Some(aLoadState->UserNavigationInvolvement()), sourceElement,
               formData.forget(), navigationAPIStateForFiring,
                nullptr);
@@ -11696,7 +11697,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
       bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
           aCx, aReplace ? NavigationType::Replace : NavigationType::Push,
           newURI,
-           true,  Nothing(),
+           true,  true,
+           Nothing(),
            nullptr,  nullptr,
            nullptr, scContainer);
 

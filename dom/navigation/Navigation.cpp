@@ -40,6 +40,9 @@
 
 mozilla::LazyLogModule gNavigationLog("Navigation");
 
+#define LOG_FMT(format, ...) \
+  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, format, ##__VA_ARGS__);
+
 namespace mozilla::dom {
 
 struct NavigationAPIMethodTracker final : public nsISupports {
@@ -580,13 +583,22 @@ bool Navigation::FireTraverseNavigateEvent(
 
 bool Navigation::FirePushReplaceReloadNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
-    bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
-    Element* aSourceElement, already_AddRefed<FormData> aFormDataEntryList,
+    bool aIsSameDocument, bool aIsSync,
+    Maybe<UserNavigationInvolvement> aUserInvolvement, Element* aSourceElement,
+    already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState) {
   
   
   
+
+  
+  
+  if (aIsSync) {
+    while (HasOngoingNavigateEvent()) {
+      AbortOngoingNavigation(aCx);
+    }
+  }
 
   
   RefPtr<NavigationDestination> destination =
@@ -677,12 +689,26 @@ static bool HasIdenticalFragment(nsIURI* aURI, nsIURI* aOtherURI) {
   return ref.Equals(otherRef);
 }
 
+static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent) {
+  if (!MOZ_LOG_TEST(gNavigationLog, LogLevel::Debug)) {
+    return;
+  }
+
+  RefPtr<NavigationDestination> destination =
+      aOngoingEvent ? aOngoingEvent->Destination() : nullptr;
+  nsAutoString eventType;
+  aEvent->GetType(eventType);
+  LOG_FMT("Fire {} {}", NS_ConvertUTF16toUTF8(eventType),
+          destination ? destination->GetURI()->GetSpecOrDefault() : ""_ns);
+}
+
 nsresult Navigation::FireEvent(const nsAString& aName) {
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
   
   event->InitEvent(aName, false, false);
   event->SetTrusted(true);
   ErrorResult rv;
+  LogEvent(event, mOngoingNavigateEvent);
   DispatchEvent(*event, rv);
   return rv.StealNSResult();
 }
@@ -702,6 +728,8 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
                                     const ErrorEventInit& aEventInitDict) {
   RefPtr<Event> event = ErrorEvent::Constructor(this, aName, aEventInitDict);
   ErrorResult rv;
+
+  LogEvent(event, mOngoingNavigateEvent);
   DispatchEvent(*event, rv);
   return rv.StealNSResult();
 }
@@ -866,6 +894,7 @@ bool Navigation::InnerFireNavigateEvent(
   mSuppressNormalScrollRestorationDuringOngoingNavigation = false;
 
   
+  LogEvent(event, mOngoingNavigateEvent);
   if (!DispatchEvent(*event, CallerType::NonSystem, IgnoreErrors())) {
     
     if (aNavigationType == NavigationType::Traverse) {
