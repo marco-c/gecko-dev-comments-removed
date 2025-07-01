@@ -1564,9 +1564,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   });
 
   
-  WindowContext::Discard();
-
-  
   
   
   
@@ -1593,6 +1590,9 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
       }
     }
   }
+
+  
+  WindowContext::Discard();
 
   
   JSActorDidDestroy();
