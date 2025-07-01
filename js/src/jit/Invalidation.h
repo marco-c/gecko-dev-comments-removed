@@ -38,6 +38,9 @@ class IonScriptKey {
   bool operator==(const IonScriptKey& other) const {
     return script_ == other.script_ && id_ == other.id_;
   }
+  bool operator!=(const IonScriptKey& other) const {
+    return !operator==(other);
+  }
 };
 
 

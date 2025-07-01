@@ -45,24 +45,20 @@ class InvalidatingRuntimeFuse : public InvalidatingFuse {
 
 
 
-class DependentScriptSet {
+class FuseDependentIonScriptSet {
  public:
-  DependentScriptSet(JSContext* cx, InvalidatingFuse* fuse);
+  FuseDependentIonScriptSet(JSContext* cx, InvalidatingFuse* fuse);
 
   InvalidatingFuse* associatedFuse;
   bool addScriptForFuse(InvalidatingFuse* fuse,
                         const jit::IonScriptKey& ionScript);
   void invalidateForFuse(JSContext* cx, InvalidatingFuse* fuse);
 
-  void removeScript(JSScript* script) {
-    jit::RemoveFromScriptSet(weakScripts, script);
-  }
-
  private:
-  js::jit::WeakScriptCache weakScripts;
+  JS::WeakCache<js::jit::DependentIonScriptSet> ionScripts;
 };
 
-class DependentScriptGroup {
+class DependentIonScriptGroup {
   
   
   
@@ -71,19 +67,13 @@ class DependentScriptGroup {
   
   
   
-  Vector<DependentScriptSet, 1, SystemAllocPolicy> dependencies;
+  Vector<FuseDependentIonScriptSet, 1, SystemAllocPolicy> dependencies;
 
  public:
-  DependentScriptSet* getOrCreateDependentScriptSet(JSContext* cx,
-                                                    InvalidatingFuse* fuse);
-  DependentScriptSet* begin() { return dependencies.begin(); }
-  DependentScriptSet* end() { return dependencies.end(); }
-
-  void removeScript(JSScript* script) {
-    for (auto& set : dependencies) {
-      set.removeScript(script);
-    }
-  }
+  FuseDependentIonScriptSet* getOrCreateDependentScriptSet(
+      JSContext* cx, InvalidatingFuse* fuse);
+  FuseDependentIonScriptSet* begin() { return dependencies.begin(); }
+  FuseDependentIonScriptSet* end() { return dependencies.end(); }
 };
 
 }  

@@ -16,9 +16,9 @@
 #include "gc/StableCellHasher-inl.h"
 #include "vm/JSScript-inl.h"
 
-js::DependentScriptSet::DependentScriptSet(JSContext* cx,
-                                           InvalidatingFuse* fuse)
-    : associatedFuse(fuse), weakScripts(cx->runtime()) {}
+js::FuseDependentIonScriptSet::FuseDependentIonScriptSet(JSContext* cx,
+                                                         InvalidatingFuse* fuse)
+    : associatedFuse(fuse), ionScripts(cx->runtime()) {}
 
 bool js::InvalidatingRuntimeFuse::addFuseDependency(
     JSContext* cx, const jit::IonScriptKey& ionScript) {
@@ -48,47 +48,39 @@ void js::InvalidatingRuntimeFuse::popFuse(JSContext* cx) {
   }
 }
 
-void js::DependentScriptSet::invalidateForFuse(JSContext* cx,
-                                               InvalidatingFuse* fuse) {
+void js::FuseDependentIonScriptSet::invalidateForFuse(JSContext* cx,
+                                                      InvalidatingFuse* fuse) {
   if (associatedFuse != fuse) {
     return;
   }
-
-  jit::InvalidateAndClearScriptSet(cx, weakScripts, "fuse");
+  ionScripts.get().invalidateAndClear(cx, "fuse");
 }
 
-void js::jit::InvalidateAndClearScriptSet(JSContext* cx,
-                                          WeakScriptCache& scripts,
-                                          const char* reason) {
-  
-  
-  
-  WeakScriptSet localScripts = scripts.stealContents();
-  MOZ_ASSERT(scripts.empty());
-
-  for (auto r = localScripts.all(); !r.empty(); r.popFront()) {
-    JSScript* script = r.front().get();
-    
-    
-    
-    if (script->hasIonScript()) {
+void js::jit::DependentIonScriptSet::invalidateAndClear(JSContext* cx,
+                                                        const char* reason) {
+  for (const auto& ionScriptKey : ionScripts_) {
+    IonScript* ionScript = ionScriptKey.maybeIonScriptToInvalidate();
+    if (ionScript) {
+      JSScript* script = ionScriptKey.script();
       JitSpew(jit::JitSpew_IonInvalidate, "Invalidating ion script %p for %s",
-              script->ionScript(), reason);
+              ionScript, reason);
       JS_LOG(fuseInvalidation, Debug,
              "Invalidating ion script %s:%d for reason %s", script->filename(),
              script->lineno(), reason);
-      js::jit::Invalidate(cx, script);
     }
   }
+  js::jit::Invalidate(cx, ionScripts_);
+  ionScripts_.clearAndFree();
 }
 
-bool js::DependentScriptSet::addScriptForFuse(
+bool js::FuseDependentIonScriptSet::addScriptForFuse(
     InvalidatingFuse* fuse, const jit::IonScriptKey& ionScript) {
   MOZ_ASSERT(fuse == associatedFuse);
-  return jit::AddScriptToSet(weakScripts, ionScript);
+  return ionScripts.get().addToSet(ionScript);
 }
 
-js::DependentScriptSet* js::DependentScriptGroup::getOrCreateDependentScriptSet(
+js::FuseDependentIonScriptSet*
+js::DependentIonScriptGroup::getOrCreateDependentScriptSet(
     JSContext* cx, js::InvalidatingFuse* fuse) {
   for (auto& dss : dependencies) {
     if (dss.associatedFuse == fuse) {
@@ -105,22 +97,32 @@ js::DependentScriptSet* js::DependentScriptGroup::getOrCreateDependentScriptSet(
   return &dss;
 }
 
-bool js::jit::AddScriptToSet(WeakScriptCache& scripts,
-                             const IonScriptKey& ionScript) {
-  js::jit::WeakScriptSet::AddPtr p = scripts.lookupForAdd(ionScript.script());
-  if (!p) {
-    if (!scripts.add(p, ionScript.script())) {
-      return false;
-    }
+bool js::jit::DependentIonScriptSet::addToSet(const IonScriptKey& ionScript) {
+  MOZ_ASSERT(lengthAfterLastCompaction_ <= ionScripts_.length());
+
+  
+  if (!ionScripts_.empty() && ionScripts_.back() == ionScript) {
+    return true;
   }
 
   
-  return true;
-}
-
-void js::jit::RemoveFromScriptSet(WeakScriptCache& scripts, JSScript* script) {
-  js::jit::WeakScriptSet::Ptr p = scripts.lookup(script);
-  if (p) {
-    scripts.remove(p);
+  
+#ifdef DEBUG
+  size_t numToCheck = std::min<size_t>(ionScripts_.length(), 8);
+  for (size_t i = 0; i < numToCheck; i++) {
+    MOZ_ASSERT(ionScripts_[ionScripts_.length() - 1 - i] != ionScript);
   }
+#endif
+
+  
+  
+  
+  if (ionScripts_.length() / 2 > lengthAfterLastCompaction_) {
+    ionScripts_.eraseIf([](const IonScriptKey& ionScript) {
+      return ionScript.maybeIonScriptToInvalidate() == nullptr;
+    });
+    lengthAfterLastCompaction_ = ionScripts_.length();
+  }
+
+  return ionScripts_.append(ionScript);
 }

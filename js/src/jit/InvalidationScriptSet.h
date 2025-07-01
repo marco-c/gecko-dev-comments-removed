@@ -14,23 +14,31 @@
 #include "js/GCVector.h"
 #include "js/SweepingAPI.h"
 
-class JSScript;
-
 namespace js::jit {
 
-using WeakScriptSet =
-    GCHashSet<WeakHeapPtr<JSScript*>, StableCellHasher<WeakHeapPtr<JSScript*>>,
-              js::SystemAllocPolicy>;
 
 
-using WeakScriptCache = JS::WeakCache<WeakScriptSet>;
-
-void InvalidateAndClearScriptSet(JSContext* cx, WeakScriptCache& scripts,
-                                 const char* reason);
-bool AddScriptToSet(WeakScriptCache& scripts, const IonScriptKey& ionScript);
 
 
-void RemoveFromScriptSet(WeakScriptCache& scripts, JSScript* script);
+class DependentIonScriptSet {
+  IonScriptKeyVector ionScripts_;
+
+  
+  
+  size_t lengthAfterLastCompaction_ = 0;
+
+ public:
+  [[nodiscard]] bool addToSet(const IonScriptKey& ionScript);
+  void invalidateAndClear(JSContext* cx, const char* reason);
+
+  bool empty() const { return ionScripts_.empty(); }
+
+  bool traceWeak(JSTracer* trc) {
+    bool res = ionScripts_.traceWeak(trc);
+    lengthAfterLastCompaction_ = ionScripts_.length();
+    return res;
+  }
+};
 
 }  
 

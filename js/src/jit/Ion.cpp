@@ -515,9 +515,15 @@ void jit::AddPendingInvalidation(IonScriptKeyVector& invalid,
 IonScript* IonScriptKey::maybeIonScriptToInvalidate() const {
   
   
-  MOZ_ASSERT_IF(
-      script_->zone()->jitZone()->currentCompilationId(),
-      script_->zone()->jitZone()->currentCompilationId().ref() != id_);
+  MOZ_ASSERT(CurrentThreadIsMainThread() || CurrentThreadIsGCSweeping());
+
+#ifdef DEBUG
+  
+  
+  auto* jitZone = script_->zoneFromAnyThread()->jitZone();
+  MOZ_ASSERT_IF(jitZone->currentCompilationId(),
+                jitZone->currentCompilationId().ref() != id_);
+#endif
 
   if (!script_->hasIonScript() ||
       script_->ionScript()->compilationId() != id_) {
@@ -2598,18 +2604,6 @@ static void ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script,
   }
 }
 
-
-
-
-
-
-
-
-static void ClearPendingInvalidationDependencies(JSScript* script) {
-  script->realm()->zone()->fuseDependencies.removeScript(script);
-  script->realm()->realmFuses.fuseDependencies.removeScript(script);
-}
-
 void jit::Invalidate(JSContext* cx, const IonScriptKeyVector& invalid,
                      bool resetUses, bool cancelOffThread) {
   JitSpew(JitSpew_IonInvalidate, "Start invalidation.");
@@ -2631,8 +2625,6 @@ void jit::Invalidate(JSContext* cx, const IonScriptKeyVector& invalid,
     JitSpew(JitSpew_IonInvalidate, " Invalidate %s:%u:%u, IonScript %p",
             script->filename(), script->lineno(),
             script->column().oneOriginValue(), ionScript);
-
-    ClearPendingInvalidationDependencies(script);
 
     
     
