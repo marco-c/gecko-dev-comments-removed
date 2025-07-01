@@ -421,51 +421,6 @@ static void DumpStyleContext(GtkStyleContext* aStyle) {
 }
 #endif
 
-static gint GetBorderRadius(GtkStyleContext* aStyle) {
-  GValue value = G_VALUE_INIT;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  gtk_style_context_get_property(aStyle, "border-radius", GTK_STATE_FLAG_NORMAL,
-                                 &value);
-  gint result = 0;
-  auto type = G_VALUE_TYPE(&value);
-  if (type == G_TYPE_INT) {
-    result = g_value_get_int(&value);
-  } else {
-    NS_WARNING(nsPrintfCString("Unknown value type %lu for border-radius", type)
-                   .get());
-  }
-  g_value_unset(&value);
-  return result;
-}
-
-static bool HasBackground(GtkStyleContext* aStyle) {
-  GdkRGBA gdkColor;
-  gtk_style_context_get_background_color(aStyle, GTK_STATE_FLAG_NORMAL,
-                                         &gdkColor);
-  if (gdkColor.alpha != 0.0) {
-    return true;
-  }
-
-  GValue value = G_VALUE_INIT;
-  gtk_style_context_get_property(aStyle, "background-image",
-                                 GTK_STATE_FLAG_NORMAL, &value);
-  auto cleanup = mozilla::MakeScopeExit([&] { g_value_unset(&value); });
-  return g_value_get_boxed(&value);
-}
-
 
 
 static void ApplyColorOver(const GdkRGBA& aSource, GdkRGBA* aDest) {
@@ -1730,66 +1685,6 @@ void nsLookAndFeel::Initialize() {
   RecordTelemetry();
 }
 
-
-
-enum class HeaderBarButtonType { None = 0, Close, Minimize, Maximize };
-struct HeaderBarButtonLayout {
-  std::array<HeaderBarButtonType, 3> mButtons = {HeaderBarButtonType::None};
-  bool mReversedPlacement = false;
-};
-
-HeaderBarButtonLayout GetGtkHeaderBarButtonLayout() {
-  using Type = HeaderBarButtonType;
-
-  HeaderBarButtonLayout result;
-
-  gchar* decorationLayoutSetting = nullptr;
-  GtkSettings* settings = gtk_settings_get_default();
-  g_object_get(settings, "gtk-decoration-layout", &decorationLayoutSetting,
-               nullptr);
-  auto free = mozilla::MakeScopeExit([&] { g_free(decorationLayoutSetting); });
-
-  
-  const gchar* decorationLayout = "menu:minimize,maximize,close";
-  if (decorationLayoutSetting) {
-    decorationLayout = decorationLayoutSetting;
-  }
-
-  
-  
-  const char* closeButton = strstr(decorationLayout, "close");
-  const char* separator = strchr(decorationLayout, ':');
-  result.mReversedPlacement =
-      closeButton && separator && closeButton < separator;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nsDependentCSubstring layout(decorationLayout, strlen(decorationLayout));
-  size_t activeButtons = 0;
-  for (const auto& part : layout.Split(':')) {
-    for (const auto& button : part.Split(',')) {
-      if (button.EqualsLiteral("close")) {
-        result.mButtons[activeButtons++] = Type::Close;
-      } else if (button.EqualsLiteral("minimize")) {
-        result.mButtons[activeButtons++] = Type::Minimize;
-      } else if (button.EqualsLiteral("maximize")) {
-        result.mButtons[activeButtons++] = Type::Maximize;
-      }
-      if (activeButtons == result.mButtons.size()) {
-        break;
-      }
-    }
-  }
-
-  return result;
-}
-
 void nsLookAndFeel::InitializeGlobalSettings() {
   GtkSettings* settings = gtk_settings_get_default();
 
@@ -1833,35 +1728,33 @@ void nsLookAndFeel::InitializeGlobalSettings() {
 
   
   
-  {
-    auto layout = GetGtkHeaderBarButtonLayout();
-    mCSDReversedPlacement = layout.mReversedPlacement;
-    int32_t i = 0;
-    for (auto buttonType : layout.mButtons) {
-      
-      
-      
-      int32_t* pos = nullptr;
-      switch (buttonType) {
-        case HeaderBarButtonType::Minimize:
-          mCSDMinimizeButton = true;
-          pos = &mCSDMinimizeButtonPosition;
-          break;
-        case HeaderBarButtonType::Maximize:
-          mCSDMaximizeButton = true;
-          pos = &mCSDMaximizeButtonPosition;
-          break;
-        case HeaderBarButtonType::Close:
-          mCSDCloseButton = true;
-          pos = &mCSDCloseButtonPosition;
-          break;
-        case HeaderBarButtonType::None:
-          break;
-      }
+  ButtonLayout buttonLayout[TOOLBAR_BUTTONS];
 
-      if (pos) {
-        *pos = i++;
-      }
+  size_t activeButtons =
+      GetGtkHeaderBarButtonLayout(Span(buttonLayout), &mCSDReversedPlacement);
+  for (size_t i = 0; i < activeButtons; i++) {
+    
+    
+    
+    const ButtonLayout& layout = buttonLayout[i];
+    int32_t* pos = nullptr;
+    switch (layout.mType) {
+      case ButtonLayout::Type::Minimize:
+        mCSDMinimizeButton = true;
+        pos = &mCSDMinimizeButtonPosition;
+        break;
+      case ButtonLayout::Type::Maximize:
+        mCSDMaximizeButton = true;
+        pos = &mCSDMaximizeButtonPosition;
+        break;
+      case ButtonLayout::Type::Close:
+        mCSDCloseButton = true;
+        pos = &mCSDCloseButtonPosition;
+        break;
+    }
+
+    if (pos) {
+      *pos = i;
     }
   }
 
@@ -2254,30 +2147,15 @@ void nsLookAndFeel::PerThemeData::Init() {
     g_object_unref(accelStyle);
   }
 
-  style = GetStyleContext(MOZ_GTK_HEADER_BAR);
-  {
-    const bool headerBarHasBackground = HasBackground(style);
-    if (!headerBarHasBackground && !GetBorderRadius(style)) {
-      
-      
-      GtkStyleContext* fixedStyle = GetStyleContext(MOZ_GTK_HEADERBAR_FIXED);
-      if (HasBackground(fixedStyle) &&
-          (GetBorderRadius(fixedStyle) || !headerBarHasBackground)) {
-        style = fixedStyle;
-      }
-    }
-  }
+  const auto effectiveTitlebarStyle = HeaderBarShouldDrawContainer()
+                                          ? MOZ_GTK_HEADERBAR_FIXED
+                                          : MOZ_GTK_HEADER_BAR;
+  style = GetStyleContext(effectiveTitlebarStyle);
   {
     mTitlebar = GetColorPair(style, GTK_STATE_FLAG_NORMAL);
     mTitlebarInactive = GetColorPair(style, GTK_STATE_FLAG_BACKDROP);
-    mTitlebarRadius = GetBorderRadius(style);
-    mTitlebarButtonSpacing = [&] {
-      
-      
-      gint spacing = 6;
-      g_object_get(GetWidget(MOZ_GTK_HEADER_BAR), "spacing", &spacing, nullptr);
-      return spacing;
-    }();
+    mTitlebarRadius = IsSolidCSDStyleUsed() ? 0 : GetBorderRadius(style);
+    mTitlebarButtonSpacing = moz_gtk_get_titlebar_button_spacing();
   }
 
   

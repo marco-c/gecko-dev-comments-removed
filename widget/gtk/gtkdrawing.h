@@ -17,6 +17,8 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
+#include <algorithm>
+#include "mozilla/Span.h"
 
 
 
@@ -47,6 +49,17 @@ struct MozGtkSize {
     width = height;
     height = tmp;
   }
+};
+
+#define TOOLBAR_BUTTONS 3
+struct ToolbarGTKMetrics {
+  bool initialized = false;
+  gint inlineSpacing = 0;
+};
+
+struct CSDWindowDecorationSize {
+  bool initialized;
+  GtkBorder decorationSize;
 };
 
 
@@ -97,6 +110,8 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_WINDOW,
   
+  MOZ_GTK_HEADERBAR_WINDOW,
+  
   MOZ_GTK_HEADERBAR_FIXED,
   
   MOZ_GTK_WINDOW_CONTAINER,
@@ -107,8 +122,16 @@ enum WidgetNodeType : int {
 
   
   MOZ_GTK_WINDOW_DECORATION,
+  MOZ_GTK_WINDOW_DECORATION_SOLID,
 
   MOZ_GTK_WIDGET_NODE_COUNT
+};
+
+
+
+struct ButtonLayout {
+  enum class Type { Close, Minimize, Maximize };
+  Type mType;
 };
 
 
@@ -127,7 +150,9 @@ void moz_gtk_refresh();
 
 
 
-void moz_gtk_shutdown();
+
+
+gint moz_gtk_shutdown();
 
 
 
@@ -142,5 +167,22 @@ struct GtkDrawingParams {
 
 
 void moz_gtk_widget_paint(cairo_t* cr, const GtkDrawingParams* aParams);
+
+
+
+gint moz_gtk_get_titlebar_button_spacing();
+
+
+
+
+
+
+
+
+
+
+
+size_t GetGtkHeaderBarButtonLayout(mozilla::Span<ButtonLayout>,
+                                   bool* aReversedButtonsPlacement);
 
 #endif

@@ -10,7 +10,7 @@
 #include <gtk/gtk.h>
 #include "gtkdrawing.h"
 
-GtkWidget* GetWidget(WidgetNodeType);
+GtkWidget* GetWidget(WidgetNodeType aNodeType);
 
 
 
@@ -35,5 +35,8 @@ GtkStyleContext* GetStyleContext(
     GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL);
 
 void ResetWidgetCache();
+bool IsSolidCSDStyleUsed();
+gint GetBorderRadius(GtkStyleContext* aStyle);
+bool HeaderBarShouldDrawContainer();
 
 #endif  
