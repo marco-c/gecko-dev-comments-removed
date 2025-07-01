@@ -24,68 +24,74 @@ template <int V>
 class FFmpegDecoderModule : public PlatformDecoderModule {
  public:
   static void Init(FFmpegLibWrapper* aLib) {
-#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK)) && \
-    defined(MOZ_USE_HWDECODE) && !defined(MOZ_FFVPX_AUDIOONLY)
-#  ifdef XP_WIN
+#if defined(MOZ_USE_HWDECODE)
+#  if defined(XP_WIN) && !defined(MOZ_FFVPX_AUDIOONLY)
     if (!XRE_IsGPUProcess()) {
       return;
     }
-#  else
+    static nsTArray<AVCodecID> kCodecIDs({
+        AV_CODEC_ID_AV1,
+        AV_CODEC_ID_VP9,
+    });
+    for (const auto& codecId : kCodecIDs) {
+      const auto* codec =
+          FFmpegDataDecoder<V>::FindHardwareAVCodec(aLib, codecId);
+      if (!codec) {
+        MOZ_LOG(sPDMLog, LogLevel::Debug,
+                ("No codec or decoder for %s on d3d11va",
+                 AVCodecToString(codecId)));
+        continue;
+      }
+      for (int i = 0; const AVCodecHWConfig* config =
+                          aLib->avcodec_get_hw_config(codec, i);
+           ++i) {
+        if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) {
+          sSupportedHWCodecs.AppendElement(codecId);
+          MOZ_LOG(sPDMLog, LogLevel::Debug,
+                  ("Support %s on d3d11va", AVCodecToString(codecId)));
+          break;
+        }
+      }
+    }
+#  elif MOZ_WIDGET_GTK
+    
     if (!XRE_IsRDDProcess()) {
       return;
     }
-#  endif
 
-    struct CodecEntry {
-      AVCodecID mId;
-      bool mHwAllowed;
-    };
 
-    const CodecEntry kCodecIDs[] = {
-    
-    
-#  if LIBAVCODEC_VERSION_MAJOR >= 59
-        {AV_CODEC_ID_AV1, gfx::gfxVars::UseAV1HwDecode()},
-#  endif
-#  if LIBAVCODEC_VERSION_MAJOR >= 55
-        {AV_CODEC_ID_VP9, gfx::gfxVars::UseVP9HwDecode()},
-#  endif
-#  if defined(MOZ_WIDGET_GTK) && LIBAVCODEC_VERSION_MAJOR >= 54
-        {AV_CODEC_ID_VP8, gfx::gfxVars::UseVP8HwDecode()},
-#  endif
+#    define ADD_HW_CODEC(codec)                                \
+      if (gfx::gfxVars::Use##codec##HwDecode()) {              \
+        sSupportedHWCodecs.AppendElement(AV_CODEC_ID_##codec); \
+      }
 
-    
-    
-#  if defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)
-#    if LIBAVCODEC_VERSION_MAJOR >= 55
-        {AV_CODEC_ID_HEVC, gfx::gfxVars::UseHEVCHwDecode()},
+
+
+#    ifndef FFVPX_VERSION
+    ADD_HW_CODEC(H264);
+#      if LIBAVCODEC_VERSION_MAJOR >= 55
+    ADD_HW_CODEC(HEVC);
+#      endif
+#    endif  
+
+
+#    if LIBAVCODEC_VERSION_MAJOR >= 54
+    ADD_HW_CODEC(VP8);
 #    endif
-        {AV_CODEC_ID_H264, gfx::gfxVars::UseH264HwDecode()},
-#  endif
-    };
+#    if LIBAVCODEC_VERSION_MAJOR >= 55
+    ADD_HW_CODEC(VP9);
+#    endif
+#    if LIBAVCODEC_VERSION_MAJOR >= 59
+    ADD_HW_CODEC(AV1);
+#    endif
 
-    for (const auto& entry : kCodecIDs) {
-      if (!entry.mHwAllowed) {
-        MOZ_LOG(sPDMLog, LogLevel::Debug,
-                ("Hw codec disabled by gfxVars for %s",
-                 AVCodecToString(entry.mId)));
-        continue;
-      }
-
-      const auto* codec =
-          FFmpegDataDecoder<V>::FindHardwareAVCodec(aLib, entry.mId);
-      if (!codec) {
-        MOZ_LOG(sPDMLog, LogLevel::Debug,
-                ("No hw codec or decoder for %s", AVCodecToString(entry.mId)));
-        continue;
-      }
-
-      sSupportedHWCodecs.AppendElement(entry.mId);
+    for (const auto& codec : sSupportedHWCodecs) {
       MOZ_LOG(sPDMLog, LogLevel::Debug,
-              ("Support %s for hw decoding", AVCodecToString(entry.mId)));
+              ("Support %s for hw decoding", AVCodecToString(codec)));
     }
-#endif  
-        
+#    undef ADD_HW_CODEC
+#  endif  
+#endif    
   }
 
   static already_AddRefed<PlatformDecoderModule> Create(
@@ -156,12 +162,20 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       return media::DecodeSupportSet{};
     }
 
-    
-    
-    
-    
     const auto& trackInfo = aParams.mConfig;
     const nsACString& mimeType = trackInfo.mMimeType;
+    if (XRE_IsGPUProcess() && !IsHWDecodingSupported(mimeType)) {
+      MOZ_LOG(
+          sPDMLog, LogLevel::Debug,
+          ("FFmpeg decoder rejects requested type '%s' for hardware decoding",
+           mimeType.BeginReading()));
+      return media::DecodeSupportSet{};
+    }
+
+    
+    
+    
+    
     if (VPXDecoder::IsVPX(mimeType) && trackInfo.GetAsVideoInfo()->HasAlpha()) {
       MOZ_LOG(sPDMLog, LogLevel::Debug,
               ("FFmpeg decoder rejects requested type '%s'",
@@ -173,9 +187,6 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency)) {
       
       
-      MOZ_LOG(sPDMLog, LogLevel::Debug,
-              ("FFmpeg decoder rejects requested type '%s' due to low latency",
-               mimeType.BeginReading()));
       return media::DecodeSupportSet{};
     }
 
@@ -200,19 +211,28 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     }
     AVCodecID codecId =
         audioCodec != AV_CODEC_ID_NONE ? audioCodec : videoCodec;
-
-    media::DecodeSupportSet supports;
-    if (FFmpegDataDecoder<V>::FindSoftwareAVCodec(mLib, codecId)) {
-      supports += media::DecodeSupport::SoftwareDecode;
+    AVCodec* codec = FFmpegDataDecoder<V>::FindAVCodec(mLib, codecId);
+    MOZ_LOG(sPDMLog, LogLevel::Debug,
+            ("FFmpeg decoder %s requested type '%s'",
+             !!codec ? "supports" : "rejects", mimeType.BeginReading()));
+    if (!codec) {
+      return media::DecodeSupportSet{};
     }
+    
+    
+    
+    
+    if (!strcmp(codec->name, "libopenh264") &&
+        !StaticPrefs::media_ffmpeg_allow_openh264()) {
+      MOZ_LOG(sPDMLog, LogLevel::Debug,
+              ("FFmpeg decoder rejects as openh264 disabled by pref"));
+      return media::DecodeSupportSet{};
+    }
+    media::DecodeSupportSet support = media::DecodeSupport::SoftwareDecode;
     if (IsHWDecodingSupported(mimeType)) {
-      supports += media::DecodeSupport::HardwareDecode;
+      support += media::DecodeSupport::HardwareDecode;
     }
-    MOZ_LOG(
-        sPDMLog, LogLevel::Debug,
-        ("FFmpeg decoder %s requested type '%s'",
-         supports.isEmpty() ? "rejects" : "supports", mimeType.BeginReading()));
-    return supports;
+    return support;
   }
 
  protected:

@@ -392,6 +392,10 @@ void gfxWindowsPlatform::InitAcceleration() {
       gfxDWriteFont::SystemTextQualityChanged);
 
   
+  
+  UpdateCanUseHardwareVideoDecoding();
+
+  
   if (XRE_IsParentProcess() && !gfxPlatform::IsHeadless()) {
     ScreenHelperWin::RefreshScreens();
   }
@@ -404,33 +408,15 @@ void gfxWindowsPlatform::InitWebRenderConfig() {
   UpdateBackendPrefs();
 }
 
-void gfxWindowsPlatform::InitPlatformHardwareVideoConfig() {
-  FeatureState& featureDec =
-      gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_DECODING);
-  FeatureState& featureEnc =
-      gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_ENCODING);
-
+bool gfxWindowsPlatform::CanUseHardwareVideoDecoding() {
   DeviceManagerDx* dm = DeviceManagerDx::Get();
   if (!dm) {
-    featureDec.ForceDisable(FeatureStatus::Unavailable,
-                            "Requires DeviceManagerDx",
-                            "FEATURE_FAILURE_NO_DEVICE_MANAGER_DX"_ns);
-    featureEnc.ForceDisable(FeatureStatus::Unavailable,
-                            "Requires DeviceManagerDx",
-                            "FEATURE_FAILURE_NO_DEVICE_MANAGER_DX"_ns);
-  } else if (!dm->TextureSharingWorks()) {
-    featureDec.ForceDisable(FeatureStatus::Unavailable,
-                            "Requires texture sharing",
-                            "FEATURE_FAILURE_BROKEN_TEXTURE_SHARING"_ns);
-    featureEnc.ForceDisable(FeatureStatus::Unavailable,
-                            "Requires texture sharing",
-                            "FEATURE_FAILURE_BROKEN_TEXTURE_SHARING"_ns);
-  } else if (dm->IsWARP()) {
-    featureDec.ForceDisable(FeatureStatus::Unavailable, "Cannot use with WARP",
-                            "FEATURE_FAILURE_D3D11_WARP_DEVICE"_ns);
-    featureEnc.ForceDisable(FeatureStatus::Unavailable, "Cannot use with WARP",
-                            "FEATURE_FAILURE_D3D11_WARP_DEVICE"_ns);
+    return false;
   }
+  if (!dm->TextureSharingWorks()) {
+    return false;
+  }
+  return !dm->IsWARP() && gfxPlatform::CanUseHardwareVideoDecoding();
 }
 
 bool gfxWindowsPlatform::InitDWriteSupport() {
@@ -1954,11 +1940,8 @@ void gfxWindowsPlatform::ImportGPUDeviceData(
   }
 
   
-  InitPlatformHardwareVideoConfig();
-  gfxVars::SetCanUseHardwareVideoDecoding(
-      gfxConfig::IsEnabled(Feature::HARDWARE_VIDEO_DECODING));
-  gfxVars::SetCanUseHardwareVideoEncoding(
-      gfxConfig::IsEnabled(Feature::HARDWARE_VIDEO_ENCODING));
+  
+  UpdateCanUseHardwareVideoDecoding();
 
   
   
