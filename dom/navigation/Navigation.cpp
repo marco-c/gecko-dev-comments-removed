@@ -348,7 +348,7 @@ void Navigation::ScheduleEventsFromNavigation(
 }
 
 
-void Navigation::SetEarlyErrorResult(NavigationResult& aResult,
+void Navigation::SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
                                      ErrorResult&& aRv) const {
   MOZ_ASSERT(aRv.Failed());
   
@@ -363,14 +363,17 @@ void Navigation::SetEarlyErrorResult(NavigationResult& aResult,
     aRv.SuppressException();
     return;
   }
-  ErrorResult rv2;
-  aRv.CloneTo(rv2);
+  JS::Rooted<JS::Value> rootedExceptionValue(aCx);
+  MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(aRv), &rootedExceptionValue));
   aResult.mCommitted.Reset();
   aResult.mCommitted.Construct(
-      Promise::CreateRejectedWithErrorResult(global, aRv));
+      Promise::CreateRejected(global, rootedExceptionValue, IgnoreErrors()));
+  MOZ_ASSERT(aResult.mCommitted);
+
   aResult.mFinished.Reset();
   aResult.mFinished.Construct(
-      Promise::CreateRejectedWithErrorResult(global, rv2));
+      Promise::CreateRejected(global, rootedExceptionValue, IgnoreErrors()));
+  MOZ_ASSERT(aResult.mFinished);
 }
 
 
@@ -388,22 +391,24 @@ static void CreateResultFromAPIMethodTracker(
 }
 
 bool Navigation::CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(
-    const Document* aDocument, NavigationResult& aResult) const {
+    JSContext* aCx, const Document* aDocument,
+    NavigationResult& aResult) const {
   if (!aDocument || !aDocument->IsFullyActive()) {
     ErrorResult rv;
     rv.ThrowInvalidStateError("Document is not fully active");
-    SetEarlyErrorResult(aResult, std::move(rv));
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
     return false;
   }
   return true;
 }
 
 bool Navigation::CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(
-    const Document* aDocument, NavigationResult& aResult) const {
+    JSContext* aCx, const Document* aDocument,
+    NavigationResult& aResult) const {
   if (!aDocument || aDocument->ShouldIgnoreOpens()) {
     ErrorResult rv;
     rv.ThrowInvalidStateError("Document is unloading");
-    SetEarlyErrorResult(aResult, std::move(rv));
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
     return false;
   }
   return true;
@@ -431,7 +436,7 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
           Promise::Reject(global, exception, IgnoreErrors()));
       return nullptr;
     }
-    SetEarlyErrorResult(aResult, ErrorResult(rv));
+    SetEarlyErrorResult(aCx, aResult, ErrorResult(rv));
     return nullptr;
   }
   return serializedState.forget();
@@ -469,14 +474,14 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   }
   
   
-  if (!CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(document,
+  if (!CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(aCx, document,
                                                                aResult)) {
     return;
   }
 
   
   
-  if (!CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(document,
+  if (!CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(aCx, document,
                                                              aResult)) {
     return;
   }
