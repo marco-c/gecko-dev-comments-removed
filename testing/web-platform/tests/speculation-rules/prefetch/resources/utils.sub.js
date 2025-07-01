@@ -5,7 +5,14 @@
 
 const SR_PREFETCH_UTILS_URL = new URL(document.currentScript.src, document.baseURI);
 
-const PREFETCH_PROXY_BYPASS_HOST = "{{hosts[alt][]}}";
+
+
+
+
+
+
+
+const CROSS_ORIGIN_HOST_THAT_WORKS_WITH_ACIWCO = "{{hosts[alt][]}}";
 
 class PrefetchAgent extends RemoteContext {
   constructor(uuid, t) {
