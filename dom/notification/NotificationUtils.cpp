@@ -19,6 +19,8 @@
 #include "nsIPushService.h"
 #include "nsServiceManagerUtils.h"
 
+static bool gTriedStorageCleanup = false;
+
 namespace mozilla::dom::notification {
 
 using GleanLabel = glean::web_notification::ShowOriginLabel;
@@ -206,12 +208,44 @@ nsresult UnpersistNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
   return NS_ERROR_FAILURE;
 }
 
-void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
+nsresult UnpersistAllNotificationsExcept(const nsTArray<nsString>& aIds) {
   
+  if (nsCOMPtr<nsINotificationStorage> notificationStorage =
+          GetNotificationStorage(false)) {
+    return notificationStorage->DeleteAllExcept(aIds);
+  }
+  return NS_ERROR_FAILURE;
+}
+
+void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
   UnpersistNotification(aPrincipal, aId);
   if (nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service()) {
     alertService->CloseAlert(aId,  false);
   }
+}
+
+nsresult ShowAlertWithCleanup(nsIAlertNotification* aAlert,
+                              nsIObserver* aAlertListener) {
+  nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service();
+  if (!gTriedStorageCleanup ||
+      StaticPrefs::
+          dom_webnotifications_testing_force_storage_cleanup_enabled()) {
+    
+    gTriedStorageCleanup = true;
+
+    
+    
+    
+    
+    
+    nsTArray<nsString> history;
+    if (NS_SUCCEEDED(alertService->GetHistory(history))) {
+      UnpersistAllNotificationsExcept(history);
+    }
+  }
+
+  MOZ_TRY(alertService->ShowAlert(aAlert, aAlertListener));
+  return NS_OK;
 }
 
 nsresult RemovePermission(nsIPrincipal* aPrincipal) {
@@ -340,6 +374,15 @@ NS_IMETHODIMP NotificationStorageEntry::GetActions(
 
   aRetVal = std::move(actions);
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetServiceWorkerRegistrationScope(
+    nsAString& aScope) {
+  
+  
+  
+  aScope.SetIsVoid(true);
   return NS_OK;
 }
 
