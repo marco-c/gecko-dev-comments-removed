@@ -7997,6 +7997,7 @@ class MOZ_STACK_CLASS ClusterIterator {
   bool IsInlineWhitespace() const;
   bool IsNewline() const;
   bool IsPunctuation() const;
+  intl::Script ScriptCode() const;
   bool HaveWordBreakBefore() const { return mHaveWordBreak; }
 
   
@@ -8160,6 +8161,20 @@ bool ClusterIterator::IsPunctuation() const {
   NS_ASSERTION(mCharIndex >= 0, "No cluster selected");
   const char16_t ch = mFrag->CharAt(AssertedCast<uint32_t>(mCharIndex));
   return mozilla::IsPunctuationForWordSelect(ch);
+}
+
+intl::Script ClusterIterator::ScriptCode() const {
+  NS_ASSERTION(mCharIndex >= 0, "No cluster selected");
+  const char16_t ch = mFrag->CharAt(AssertedCast<uint32_t>(mCharIndex));
+  return intl::UnicodeProperties::GetScriptCode(ch);
+}
+
+static inline bool IsKorean(intl::Script aScript) {
+  
+  
+  
+  MOZ_ASSERT(aScript != intl::Script::KOREAN, "unexpected script code");
+  return aScript == intl::Script::HANGUL;
 }
 
 int32_t ClusterIterator::GetAfterInternal() const {
@@ -8343,17 +8358,22 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetWord(
     return CONTINUE_EMPTY;
   }
 
+  
+  bool is2b = TextFragment()->Is2b();
   do {
     bool isPunctuation = cIter.IsPunctuation();
     bool isInlineWhitespace = cIter.IsInlineWhitespace();
     bool isWhitespace = isInlineWhitespace || cIter.IsNewline();
     bool isWordBreakBefore = cIter.HaveWordBreakBefore();
+    
+    
+    intl::Script scriptCode = is2b ? cIter.ScriptCode() : intl::Script::COMMON;
     if (!isWhitespace || isInlineWhitespace) {
       aState->SetSawInlineCharacter();
     }
     if (aWordSelectEatSpace == isWhitespace && !aState->mSawBeforeType) {
       aState->SetSawBeforeType();
-      aState->Update(isPunctuation, isWhitespace);
+      aState->Update(isPunctuation, isWhitespace, scriptCode);
       continue;
     }
     
@@ -8374,12 +8394,18 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetWord(
         canBreak = isWordBreakBefore && aState->mSawBeforeType &&
                    (aWordSelectEatSpace != isWhitespace);
       }
+      
+      
+      if (!canBreak && is2b && aState->mLastScript != intl::Script::INVALID &&
+          IsKorean(aState->mLastScript) != IsKorean(scriptCode)) {
+        canBreak = true;
+      }
       if (canBreak) {
         *aOffset = cIter.GetBeforeOffset() - mContentOffset;
         return FOUND;
       }
     }
-    aState->Update(isPunctuation, isWhitespace);
+    aState->Update(isPunctuation, isWhitespace, scriptCode);
   } while (cIter.NextCluster());
 
   *aOffset = cIter.GetAfterOffset() - mContentOffset;

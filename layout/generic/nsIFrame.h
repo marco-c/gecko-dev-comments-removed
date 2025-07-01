@@ -78,6 +78,7 @@
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
+#include "mozilla/intl/UnicodeProperties.h"
 #include "nsDisplayItemTypes.h"
 #include "nsPresContext.h"
 #include "nsTHashSet.h"
@@ -5467,47 +5468,49 @@ class nsIFrame : public nsQueryFrame {
                 "aOptions should be changed to const reference");
 
   struct PeekWordState {
+    using Script = mozilla::intl::Script;
     
     
-    bool mAtStart;
-    
-    
-    
-    
+    bool mAtStart = true;
     
     
     
     
-    bool mSawBeforeType;
     
-    bool mSawInlineCharacter;
     
-    bool mLastCharWasPunctuation;
     
-    bool mLastCharWasWhitespace;
     
-    bool mSeenNonPunctuationSinceWhitespace;
+    bool mSawBeforeType = false;
+    
+    bool mSawInlineCharacter = false;
+    
+    bool mLastCharWasPunctuation = false;
+    
+    bool mLastCharWasWhitespace = false;
+    
+    bool mSeenNonPunctuationSinceWhitespace = false;
+    
+    
+    Script mLastScript = Script::INVALID;
     
     
     
     nsAutoString mContext;
 
-    PeekWordState()
-        : mAtStart(true),
-          mSawBeforeType(false),
-          mSawInlineCharacter(false),
-          mLastCharWasPunctuation(false),
-          mLastCharWasWhitespace(false),
-          mSeenNonPunctuationSinceWhitespace(false) {}
+    PeekWordState() {}
     void SetSawBeforeType() { mSawBeforeType = true; }
     void SetSawInlineCharacter() { mSawInlineCharacter = true; }
-    void Update(bool aAfterPunctuation, bool aAfterWhitespace) {
+    void Update(bool aAfterPunctuation, bool aAfterWhitespace,
+                Script aScript = Script::INVALID) {
       mLastCharWasPunctuation = aAfterPunctuation;
       mLastCharWasWhitespace = aAfterWhitespace;
       if (aAfterWhitespace) {
         mSeenNonPunctuationSinceWhitespace = false;
       } else if (!aAfterPunctuation) {
         mSeenNonPunctuationSinceWhitespace = true;
+      }
+      if (aScript != Script::INHERITED) {
+        mLastScript = aScript;
       }
       mAtStart = false;
     }
