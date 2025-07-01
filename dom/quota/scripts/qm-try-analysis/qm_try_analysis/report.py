@@ -2,7 +2,6 @@
 
 
 
-
 import hashlib
 import json
 import re
@@ -18,7 +17,7 @@ from qm_try_analysis import stackanalysis, utils
 from qm_try_analysis.logging import error, info, warning
 
 
-DEV = True
+DEV = False
 
 
 if DEV:
@@ -218,17 +217,33 @@ def report_qm_failures(key, stacksfile, open_modified, workdir):
             info(f'Created bug {BUGZILLA_BUG_URL + str(bug_id)} for anchor "{anchor}".')
 
         comment = generate_comment(anchors[anchor]["stacks"])
+        
+        if len(comment) >= 2**16:
+            error(f'Skipping "{anchor}" since it exceeds bugzillas comment limit.')
+            continue
+        
+        
         comment_id = post_comment(bug_id, comment)
 
         reported.append(hash_str(anchor))
         utils.updateLastRunToExecutionFile(workdir, run)
 
         if open_modified:
-            comment_seq_number = bugzilla_client.get_comment(comment_id)["comments"][
-                str(comment_id)
-            ]["count"]
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
             webbrowser.open(
-                BUGZILLA_BUG_URL + str(bug_id) + "#c" + str(comment_seq_number)
+                BUGZILLA_BUG_URL
+                + str(bug_id)
+                + f"#:~:text=Attachment%20{attachment_id}"
             )
 
 
