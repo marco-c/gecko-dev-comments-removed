@@ -100,8 +100,14 @@ wl_buffer* WaylandBuffer::BorrowBuffer(const WaylandSurfaceLock& aSurfaceLock) {
       mAttachedToSurface ? mAttachedToSurface->GetLoggingWidget() : nullptr,
       mWLBuffer);
 
-  MOZ_RELEASE_ASSERT(!mAttachedToSurface && !mIsAttachedToCompositor,
-                     "We're already attached!");
+  
+  
+  
+  
+  if (mAttachedToSurface != aSurfaceLock.GetWaylandSurface()) {
+    MOZ_RELEASE_ASSERT(!mAttachedToSurface && !mIsAttachedToCompositor,
+                       "We're already attached to different WaylandSurface!");
+  }
   MOZ_DIAGNOSTIC_ASSERT(!mBufferDeleteSyncCallback, "We're already deleted!?");
 
   if (!CreateWlBuffer()) {
