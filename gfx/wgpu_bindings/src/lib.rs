@@ -207,6 +207,7 @@ enum DeviceAction<'a> {
         message: String,
         r#type: ErrorBufferType,
     },
+    PushErrorScope(u8 ),
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
