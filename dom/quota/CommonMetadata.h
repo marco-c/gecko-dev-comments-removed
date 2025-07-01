@@ -163,6 +163,18 @@ struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
 
   
   
+  template <typename T, typename = std::enable_if_t<
+                            std::is_same<T, FullOriginMetadata>::value>>
+  bool EqualsIgnoringOriginState(const T& aOther) const {
+    return static_cast<const OriginMetadata&>(*this).Equals(
+               static_cast<const OriginMetadata&>(aOther)) &&
+           mClientUsages == aOther.mClientUsages &&
+           mOriginUsage == aOther.mOriginUsage &&
+           mQuotaVersion == aOther.mQuotaVersion;
+  }
+
+  
+  
   
   FullOriginMetadata Clone() const {
     return {static_cast<const OriginMetadata&>(*this),
