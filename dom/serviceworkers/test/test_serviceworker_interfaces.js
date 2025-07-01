@@ -450,6 +450,8 @@ let interfaceNamesInGlobalScope = [
   
   "URL",
   
+  "URLPattern",
+  
   "URLSearchParams",
   
   { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
