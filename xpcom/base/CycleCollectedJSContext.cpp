@@ -375,6 +375,13 @@ bool CycleCollectedJSContext::enqueuePromiseJob(
     if (!state.isUndefined()) {
       schedulingState = static_cast<WebTaskSchedulingState*>(state.toPrivate());
     }
+  } else {
+    
+    
+    
+    
+    global = mozilla::dom::GetIncumbentGlobal();
+    schedulingState = mozilla::dom::GetWebTaskSchedulingState();
   }
 
   JS::RootedObject jobGlobal(aCx, JS::CurrentGlobalOrNull(aCx));
