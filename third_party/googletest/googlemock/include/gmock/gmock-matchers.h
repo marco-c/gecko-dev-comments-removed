@@ -380,7 +380,12 @@ class MatcherCastImpl {
   static Matcher<T> CastImpl(const M& value,
                              std::false_type ,
                              std::true_type ) {
-    return Matcher<T>(ImplicitCast_<T>(value));
+    using NoRefT = std::remove_cv_t<std::remove_reference_t<T>>;
+    if constexpr (std::is_same_v<M, NoRefT>) {
+      return Matcher<T>(value);
+    } else {
+      return ImplicitCastEqMatcher<NoRefT, std::decay_t<const M&>>(value);
+    }
   }
 
   
@@ -391,11 +396,11 @@ class MatcherCastImpl {
   
   
   
-  
-  
   static Matcher<T> CastImpl(const M& value,
                              std::false_type ,
-                             std::false_type );
+                             std::false_type ) {
+    return Eq(value);
+  }
 };
 
 
@@ -3441,6 +3446,27 @@ auto UnpackStructImpl(const T& in, std::make_index_sequence<23>, char) {
   return std::tie(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u,
                   v, w);
 }
+template <typename T>
+auto UnpackStructImpl(const T& in, std::make_index_sequence<24>, char) {
+  const auto& [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v,
+               w, x] = in;
+  return std::tie(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u,
+                  v, w, x);
+}
+template <typename T>
+auto UnpackStructImpl(const T& in, std::make_index_sequence<25>, char) {
+  const auto& [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v,
+               w, x, y] = in;
+  return std::tie(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u,
+                  v, w, x, y);
+}
+template <typename T>
+auto UnpackStructImpl(const T& in, std::make_index_sequence<26>, char) {
+  const auto& [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v,
+               w, x, y, z] = in;
+  return std::tie(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u,
+                  v, w, x, y, z);
+}
 #endif  
 
 template <size_t I, typename T>
@@ -4481,13 +4507,6 @@ inline Matcher<T> A() {
 template <typename T>
 inline Matcher<T> An() {
   return _;
-}
-
-template <typename T, typename M>
-Matcher<T> internal::MatcherCastImpl<T, M>::CastImpl(
-    const M& value, std::false_type ,
-    std::false_type ) {
-  return Eq(value);
 }
 
 
