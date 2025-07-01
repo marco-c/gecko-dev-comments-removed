@@ -8,10 +8,14 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "nsCanvasFrame.h"
+#include "nsContainerFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsPlaceholderFrame.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
+#include "nsIFrameInlines.h"
 #include "nsINode.h"
 #include "nsTArray.h"
 
@@ -38,7 +42,7 @@ bool IsFullyStyleableTreeAbidingOrNotPseudoElement(const nsIFrame* aFrame) {
          pseudoElementType == PseudoStyleType::marker;
 }
 
-[[maybe_unused]] size_t GetTopLayerIndex(const nsIFrame* aFrame) {
+size_t GetTopLayerIndex(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
 
   const nsIContent* frameContent = aFrame->GetContent();
@@ -66,10 +70,113 @@ bool IsFullyStyleableTreeAbidingOrNotPseudoElement(const nsIFrame* aFrame) {
   return 0;
 }
 
-bool IsAnchorLaidOutStrictlyBeforeElement(
-    const nsIFrame* ,
-    const nsIFrame* ) {
-  return true;  
+bool IsInitialContainingBlock(const nsIFrame* aContainingBlock) {
+  
+  
+  return aContainingBlock == aContainingBlock->PresShell()
+                                 ->FrameConstructor()
+                                 ->GetDocElementContainingBlock();
+}
+
+bool IsContainingBlockGeneratedByElement(const nsIFrame* aContainingBlock) {
+  
+  
+  return !(!aContainingBlock || aContainingBlock->IsViewportFrame() ||
+           IsInitialContainingBlock(aContainingBlock));
+}
+
+bool IsAnchorLaidOutStrictlyBeforeElement(const nsIFrame* aPossibleAnchorFrame,
+                                          const nsIFrame* aPositionedFrame) {
+  
+  
+  const size_t positionedTopLayerIndex = GetTopLayerIndex(aPositionedFrame);
+  const size_t anchorTopLayerIndex = GetTopLayerIndex(aPossibleAnchorFrame);
+
+  if (anchorTopLayerIndex != positionedTopLayerIndex) {
+    return anchorTopLayerIndex < positionedTopLayerIndex;
+  }
+
+  
+  
+  const nsIFrame* positionedContainingBlock = aPositionedFrame->GetParent();
+  const nsIFrame* anchorContainingBlock =
+      aPossibleAnchorFrame->GetContainingBlock();
+
+  
+  
+  
+  
+  if (anchorContainingBlock != positionedContainingBlock) {
+    
+    
+    if (positionedContainingBlock->IsViewportFrame() &&
+        !anchorContainingBlock->IsViewportFrame()) {
+      return true;
+    }
+
+    auto isLastContainingBlockOrderable =
+        [&aPositionedFrame, &anchorContainingBlock,
+         &positionedContainingBlock]() -> bool {
+      const nsIFrame* it = anchorContainingBlock;
+      while (it) {
+        const nsIFrame* parentContainingBlock = it->GetContainingBlock();
+        if (!parentContainingBlock) {
+          return false;
+        }
+
+        if (parentContainingBlock == positionedContainingBlock) {
+          return !parentContainingBlock->IsAbsPosContainingBlock() ||
+                 nsLayoutUtils::CompareTreePosition(
+                     parentContainingBlock, aPositionedFrame, nullptr) < 0;
+        }
+
+        it = parentContainingBlock;
+      }
+
+      return false;
+    };
+
+    
+    
+    
+    
+    
+    const bool isAnchorContainingBlockGenerated =
+        IsContainingBlockGeneratedByElement(anchorContainingBlock);
+    if (isAnchorContainingBlockGenerated &&
+        IsInitialContainingBlock(positionedContainingBlock)) {
+      return isLastContainingBlockOrderable();
+    }
+
+    
+    
+    
+    
+    
+    
+    if (isAnchorContainingBlockGenerated &&
+        IsContainingBlockGeneratedByElement(positionedContainingBlock)) {
+      return isLastContainingBlockOrderable();
+    }
+
+    return false;
+  }
+
+  
+  
+  
+  const bool isAnchorAbsolutelyPositioned =
+      aPossibleAnchorFrame->IsAbsolutelyPositioned();
+  if (isAnchorAbsolutelyPositioned) {
+    
+    
+    return nsLayoutUtils::CompareTreePosition(aPossibleAnchorFrame,
+                                              aPositionedFrame, nullptr) < 0;
+  }
+
+  
+  
+  return !isAnchorAbsolutelyPositioned;
 }
 
 bool IsPositionedElementAlsoSkippedWhenAnchorIsSkipped(
