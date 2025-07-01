@@ -793,33 +793,26 @@ struct nsGridContainerFrame::GridItemInfo {
     
     
     eEndSideBaseline = 0x20,
-
-    
-    
-    
-    
-    eLastBaselineSharingGroup = 0x40,
-
     eAllBaselineBits = eIsBaselineAligned | eSelfBaseline | eContentBaseline |
-                       eEndSideBaseline | eLastBaselineSharingGroup,
+                       eEndSideBaseline,
 
     
     
     
     
-    eContentBasedAutoMinSize = 0x80,
+    eContentBasedAutoMinSize = 0x40,
     
-    eClampMarginBoxMinSize = 0x100,
-    eIsSubgrid = 0x200,
+    eClampMarginBoxMinSize = 0x80,
+    eIsSubgrid = 0x100,
     
     
-    eStartEdge = 0x400,
-    eEndEdge = 0x800,
+    eStartEdge = 0x200,
+    eEndEdge = 0x400,
     eEdgeBits = eStartEdge | eEndEdge,
     
-    eAutoPlacement = 0x1000,
+    eAutoPlacement = 0x800,
     
-    eIsLastItemInMasonryTrack = 0x2000,
+    eIsLastItemInMasonryTrack = 0x1000,
 
     
     eTrackSizingBits =
@@ -4441,11 +4434,6 @@ static void AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
     flags |= AlignJustifyFlags::SameSide;
   }
 
-  if (aGridItem.mState[LogicalAxis::Block] &
-      GridItemInfo::eLastBaselineSharingGroup) {
-    flags |= AlignJustifyFlags::LastBaselineSharingGroup;
-  }
-
   
   if (aAlignSelf == StyleAlignFlags::LEFT ||
       aAlignSelf == StyleAlignFlags::RIGHT) {
@@ -4482,11 +4470,6 @@ static void JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
   WritingMode childWM = aRI.GetWritingMode();
   if (aCBWM.ParallelAxisStartsOnSameSide(LogicalAxis::Inline, childWM)) {
     flags |= AlignJustifyFlags::SameSide;
-  }
-
-  if (aGridItem.mState[LogicalAxis::Inline] &
-      GridItemInfo::eLastBaselineSharingGroup) {
-    flags |= AlignJustifyFlags::LastBaselineSharingGroup;
   }
 
   if (MOZ_LIKELY(aJustifySelf == StyleAlignFlags::NORMAL)) {
@@ -6633,20 +6616,10 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
       BaselineSharingGroup baselineAlignment = isFirstBaseline
                                                    ? BaselineSharingGroup::First
                                                    : BaselineSharingGroup::Last;
-      
-      
-      
-      auto baselineWM = WritingMode::DetermineWritingModeForBaselineSynthesis(
-          containerWM, childWM, GetOrthogonalAxis(mAxis));
-
-      auto sameSideInBaselineWM =
-          containerWM.ParallelAxisStartsOnSameSide(mAxis, baselineWM);
-      auto baselineSharingGroup = BaselineSharingGroup::First;
-      if (sameSideInBaselineWM != isFirstBaseline) {
-        baselineSharingGroup = BaselineSharingGroup::Last;
-        state |= ItemState::eLastBaselineSharingGroup;
-      }
-
+      auto sameSide = containerWM.ParallelAxisStartsOnSameSide(mAxis, childWM);
+      BaselineSharingGroup baselineSharingGroup =
+          isFirstBaseline == sameSide ? BaselineSharingGroup::First
+                                      : BaselineSharingGroup::Last;
       
       
 
@@ -6721,20 +6694,27 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
             } else {
               
               
+              bool isInverted =
+                  (mAxis == LogicalAxis::Block)
+                      ? containerWM.IsLineInverted()
+                      : (!containerWM.IsVertical() && containerWM.IsBidiLTR());
+
+              
+              
+              bool isLineUnderSameSide = sameSide && !isInverted;
+
               
               
               
               
               
               
-              
-              
-              
-              
-              
-              baseline.emplace((isFirstBaseline == baselineWM.IsLineInverted())
-                                   ? 0
-                                   : frameSize);
+              const bool baselineOffsetIsFrameSize =
+                  itemHasBaselineParallelToTrack
+                      ? (!childWM.IsLineInverted() == isFirstBaseline)
+                      : (isLineUnderSameSide == isFirstBaseline);
+
+              baseline.emplace(baselineOffsetIsFrameSize ? frameSize : 0);
             }
           }
         }

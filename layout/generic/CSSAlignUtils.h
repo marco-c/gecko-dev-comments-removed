@@ -35,10 +35,6 @@ class CSSAlignUtils {
     
     
     AligningMarginBox = 1 << 3,
-    
-    
-    
-    LastBaselineSharingGroup = 1 << 4,
   };
 
   
