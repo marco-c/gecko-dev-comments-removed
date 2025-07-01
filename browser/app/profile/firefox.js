@@ -2654,10 +2654,6 @@ pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
 
-pref("signon.management.page.os-auth.locked.enabled", false);
-pref("extensions.formautofill.creditCards.os-auth.locked.enabled", false);
-
-
 
 
 pref("signon.management.page.breachAlertUrl",
