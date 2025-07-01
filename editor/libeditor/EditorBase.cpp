@@ -4237,9 +4237,9 @@ void EditorBase::OnCompositionEnd(
     return;
   }
 
-  EditAction editAction = aCompositionEndEvent.mData.IsEmpty()
-                              ? EditAction::eCancelComposition
-                              : EditAction::eCommitComposition;
+  const EditAction editAction = aCompositionEndEvent.mData.IsEmpty()
+                                    ? EditAction::eCancelComposition
+                                    : EditAction::eCommitComposition;
   AutoEditActionDataSetter editActionData(*this, editAction);
   
   
@@ -4252,18 +4252,45 @@ void EditorBase::OnCompositionEnd(
     editActionData.SetData(aCompositionEndEvent.mData);
   }
 
+  const RefPtr<PlaceholderTransaction> placeholderTransaction =
+      [&]() -> PlaceholderTransaction* {
+    if (!mTransactionManager) {
+      return nullptr;
+    }
+    const nsCOMPtr<nsITransaction> transaction =
+        mTransactionManager->PeekUndoStack();
+    if (MOZ_UNLIKELY(!transaction)) {
+      return nullptr;
+    }
+    const RefPtr<EditTransactionBase> transactionBase =
+        transaction->GetAsEditTransactionBase();
+    if (MOZ_UNLIKELY(!transactionBase)) {
+      return nullptr;
+    }
+    return transactionBase->GetAsPlaceholderTransaction();
+  }();
   
   
-  if (mTransactionManager) {
-    if (nsCOMPtr<nsITransaction> transaction =
-            mTransactionManager->PeekUndoStack()) {
-      if (RefPtr<EditTransactionBase> transactionBase =
-              transaction->GetAsEditTransactionBase()) {
-        if (PlaceholderTransaction* placeholderTransaction =
-                transactionBase->GetAsPlaceholderTransaction()) {
-          placeholderTransaction->Commit();
-        }
-      }
+  if (placeholderTransaction) {
+    placeholderTransaction->Commit();
+  }
+
+  
+  
+  
+  
+  if (editAction == EditAction::eCancelComposition && placeholderTransaction) {
+    const nsTArray<OwningNonNull<EditTransactionBase>>& childTransactions =
+        placeholderTransaction->ChildTransactions();
+    MOZ_ASSERT(!childTransactions.IsEmpty());
+    
+    
+    
+    
+    if (childTransactions[0]->GetAsCompositionTransaction()) {
+      nsCOMPtr<nsITransaction> transaction =
+          mTransactionManager->PopUndoStack();
+      MOZ_DIAGNOSTIC_ASSERT(transaction == placeholderTransaction);
     }
   }
 

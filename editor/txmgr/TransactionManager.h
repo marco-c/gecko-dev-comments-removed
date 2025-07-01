@@ -54,6 +54,12 @@ class TransactionManager final : public nsITransactionManager,
     return true;
   }
 
+  
+
+
+
+  already_AddRefed<nsITransaction> PopUndoStack();
+
   void Attach(HTMLEditor& aHTMLEditor);
   void Detach(const HTMLEditor& aHTMLEditor);
 
