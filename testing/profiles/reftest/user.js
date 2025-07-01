@@ -58,6 +58,18 @@ user_pref("layout.testing.overlay-scrollbars.always-visible", true);
 user_pref("ui.scrollbarFadeDuration", 0);
 
 
+user_pref("widget.gtk.theme-scrollbar-colors.enabled", false);
+user_pref("widget.disable-dark-scrollbar", true);
+
+user_pref("gfx.font_rendering.ahem_antialias_none", true);
+
+
+user_pref("gfx.font_loader.delay", 0);
+
+
+user_pref("gfx.bundled-fonts.activate", 1);
+
+
 user_pref("layout.image.eager_broken_image_icon", true);
 user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.xml");
 

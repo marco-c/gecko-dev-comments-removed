@@ -459,16 +459,6 @@ class RefTest:
         prefs["reftest.focusFilterMode"] = options.focusFilterMode
         prefs["reftest.logLevel"] = options.log_tbpl_level or "info"
         prefs["reftest.suite"] = options.suite
-        prefs["gfx.font_rendering.ahem_antialias_none"] = True
-        
-        
-        prefs["gfx.font_loader.delay"] = 0
-        
-        
-        prefs["gfx.bundled-fonts.activate"] = 1
-        
-        prefs["widget.disable-dark-scrollbar"] = True
-
         prefs["sandbox.mozinfo"] = json.dumps(mozinfo.info)
 
         
