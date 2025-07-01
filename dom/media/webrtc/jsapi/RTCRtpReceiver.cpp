@@ -394,19 +394,22 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               local.mPacketsDiscarded.Construct(audioStats->packets_discarded);
               local.mBytesReceived.Construct(
                   audioStats->payload_bytes_received);
-              
-              
-              
-              
-              
-              
-              
-              
-              
+              if (audioStats->estimated_playout_ntp_timestamp_ms) {
+                local.mEstimatedPlayoutTimestamp.Construct(
+                    RTCStatsTimestamp::FromNtp(
+                        aConduit->GetTimestampMaker(),
+                        webrtc::Timestamp::Millis(
+                            *audioStats->estimated_playout_ntp_timestamp_ms))
+                        .ToDom());
+              }
               local.mJitterBufferDelay.Construct(
                   audioStats->jitter_buffer_delay_seconds);
+              local.mJitterBufferTargetDelay.Construct(
+                  audioStats->jitter_buffer_target_delay_seconds);
               local.mJitterBufferEmittedCount.Construct(
                   audioStats->jitter_buffer_emitted_count);
+              local.mJitterBufferMinimumDelay.Construct(
+                  audioStats->jitter_buffer_minimum_delay_seconds);
               local.mTotalSamplesReceived.Construct(
                   audioStats->total_samples_received);
               local.mConcealedSamples.Construct(audioStats->concealed_samples);
@@ -512,6 +515,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
 
               
               local.mFramesDecoded.Construct(videoStats->frames_decoded);
+              local.mKeyFramesDecoded.Construct(
+                  videoStats->frame_counts.key_frames);
 
               local.mFramesPerSecond.Construct(videoStats->decode_frame_rate);
               local.mFrameWidth.Construct(videoStats->width);
@@ -523,8 +528,12 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                   videoStats->frame_counts.delta_frames);
               local.mJitterBufferDelay.Construct(
                   videoStats->jitter_buffer_delay.seconds<double>());
+              local.mJitterBufferTargetDelay.Construct(
+                  videoStats->jitter_buffer_target_delay.seconds<double>());
               local.mJitterBufferEmittedCount.Construct(
                   videoStats->jitter_buffer_emitted_count);
+              local.mJitterBufferMinimumDelay.Construct(
+                  videoStats->jitter_buffer_minimum_delay.seconds<double>());
 
               if (videoStats->qp_sum) {
                 local.mQpSum.Construct(videoStats->qp_sum.value());
@@ -535,6 +544,13 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                   videoStats->total_inter_frame_delay);
               local.mTotalSquaredInterFrameDelay.Construct(
                   videoStats->total_squared_inter_frame_delay);
+              local.mPauseCount.Construct(videoStats->pause_count);
+              local.mTotalPausesDuration.Construct(
+                  double(videoStats->total_pauses_duration_ms) / 1000.0);
+              local.mFreezeCount.Construct(videoStats->freeze_count);
+              local.mTotalFreezesDuration.Construct(
+                  double(videoStats->total_freezes_duration_ms) / 1000.0);
+
               if (videoStats->rtp_stats.last_packet_received.has_value()) {
                 local.mLastPacketReceivedTimestamp.Construct(
                     RTCStatsTimestamp::FromNtp(
@@ -549,17 +565,19 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                   videoStats->rtp_stats.packet_counter.padding_bytes);
               local.mTotalProcessingDelay.Construct(
                   videoStats->total_processing_delay.seconds<double>());
+              local.mFramesAssembledFromMultiplePackets.Construct(
+                  videoStats->frames_assembled_from_multiple_packets);
+              local.mTotalAssemblyTime.Construct(
+                  videoStats->total_assembly_time.seconds<double>());
               
-
-
-
-
-
-
-
-
-
-
+              if (videoStats->estimated_playout_ntp_timestamp_ms.value_or(0)) {
+                local.mEstimatedPlayoutTimestamp.Construct(
+                    RTCStatsTimestamp::FromNtp(
+                        aConduit->GetTimestampMaker(),
+                        webrtc::Timestamp::Millis(
+                            *videoStats->estimated_playout_ntp_timestamp_ms))
+                        .ToDom());
+              }
               
               
               local.mFramesDropped.Construct(videoStats->frames_dropped);
@@ -567,6 +585,18 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                       std::move(local), fallible)) {
                 mozalloc_handle_oom(0);
               }
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
             });
             return RTCStatsPromise::CreateAndResolve(std::move(report),
                                                      __func__);
