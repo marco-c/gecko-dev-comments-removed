@@ -15,8 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 
 
-
-add_task(async function click_toolbar_dropmarker() {
+add_task(async function test_header_content() {
   let dropmarker = document.getElementById(
     lazy.IPProtectionWidget.WIDGET_ID + "-dropmarker"
   );
@@ -35,14 +34,7 @@ add_task(async function click_toolbar_dropmarker() {
     BrowserTestUtils.isVisible(header),
     "ipprotection-header component should be present"
   );
-
-  let component = panelView.querySelector(
-    lazy.IPProtectionPanel.CONTENT_TAGNAME
-  );
-  Assert.ok(
-    BrowserTestUtils.isVisible(component),
-    "ipprotection-content component should be present"
-  );
+  Assert.ok(header.titleEl, "ipprotection-header title should be present");
 
   
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
