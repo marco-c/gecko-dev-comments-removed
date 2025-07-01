@@ -3,7 +3,8 @@
 
 
 
-const NS_ERROR_STORAGE_BUSY = SpecialPowers.Cr.NS_ERROR_STORAGE_BUSY;
+
+var NS_ERROR_STORAGE_BUSY = SpecialPowers.Cr.NS_ERROR_STORAGE_BUSY;
 
 loadScript("dom/quota/test/common/global.js");
 

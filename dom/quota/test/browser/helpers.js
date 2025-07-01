@@ -3,16 +3,13 @@
 
 
 
-
-const depth = "../../../../";
-
 var testGenerator;
 var testResult;
 
 loadScript("dom/quota/test/common/nestedtest.js");
 
 function loadScript(path) {
-  const url = new URL(depth + path, window.location.href);
+  const url = new URL(path, "chrome://mochitests/content/browser/");
   SpecialPowers.Services.scriptloader.loadSubScript(url.href, this);
 }
 

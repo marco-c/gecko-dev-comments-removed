@@ -14,7 +14,11 @@ loadScript("dom/quota/test/common/mochitest.js");
 
 function loadScript(path) {
   const url = new URL(depth + path, window.location.href);
-  SpecialPowers.Services.scriptloader.loadSubScript(url.href, this);
+  const request = new XMLHttpRequest();
+  request.open("GET", url, false); 
+  request.send(null);
+  
+  window.eval(request.responseText); 
 }
 
 function loadWorkerScript(path) {
