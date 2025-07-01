@@ -59,6 +59,7 @@ IdentityCredentialRequestManager::GetTokenFromPopup(
           }
           
           
+          
           dom::CanonicalBrowsingContext* chromeBC =
               bc->TopCrossChromeBoundary();
           if (!chromeBC) {
