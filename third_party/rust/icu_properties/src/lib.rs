@@ -52,7 +52,7 @@
 
 
 
-#![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -62,55 +62,39 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
 #![warn(missing_docs)]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "bidi")]
-pub mod bidi;
+mod code_point_set;
+pub use code_point_set::{CodePointSetData, CodePointSetDataBorrowed};
+mod code_point_map;
+pub use code_point_map::{CodePointMapData, CodePointMapDataBorrowed};
+mod emoji;
+pub use emoji::{EmojiSetData, EmojiSetDataBorrowed};
+mod names;
+pub use names::{
+    PropertyNamesLong, PropertyNamesLongBorrowed, PropertyNamesShort, PropertyNamesShortBorrowed,
+    PropertyParser, PropertyParserBorrowed,
+};
+mod runtime;
 
-mod error;
-pub mod maps;
 
 
 
 
-
-mod props;
-
-pub mod bidi_data;
-pub mod exemplar_chars;
+pub mod props;
 pub mod provider;
-pub(crate) mod runtime;
-#[allow(clippy::exhaustive_structs)] 
 pub mod script;
-pub mod sets;
+
+mod bidi;
 mod trievalue;
 
-pub use props::{
-    BidiClass, CanonicalCombiningClass, EastAsianWidth, GeneralCategory, GeneralCategoryGroup,
-    GraphemeClusterBreak, HangulSyllableType, IndicSyllabicCategory, JoiningType, LineBreak,
-    Script, SentenceBreak, WordBreak,
-};
-
-
-pub mod names {
-    pub use crate::props::{
-        PropertyEnumToValueNameLinearMapper, PropertyEnumToValueNameLinearMapperBorrowed,
-    };
-    pub use crate::props::{
-        PropertyEnumToValueNameLinearTiny4Mapper, PropertyEnumToValueNameLinearTiny4MapperBorrowed,
-    };
-    pub use crate::props::{
-        PropertyEnumToValueNameSparseMapper, PropertyEnumToValueNameSparseMapperBorrowed,
-    };
-    pub use crate::props::{PropertyValueNameToEnumMapper, PropertyValueNameToEnumMapperBorrowed};
+mod private {
+    pub trait Sealed {}
 }
-
-pub use error::PropertiesError;
-
-#[doc(no_inline)]
-pub use PropertiesError as Error;

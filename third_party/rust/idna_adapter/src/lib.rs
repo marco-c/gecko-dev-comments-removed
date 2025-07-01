@@ -22,89 +22,88 @@
 
 #![no_std]
 
-use icu_normalizer::properties::CanonicalCombiningClassMap;
-use icu_normalizer::uts46::Uts46Mapper;
-use icu_properties::maps::CodePointMapDataBorrowed;
-use icu_properties::CanonicalCombiningClass;
-use icu_properties::GeneralCategory;
+use icu_normalizer::properties::CanonicalCombiningClassMapBorrowed;
+use icu_normalizer::uts46::Uts46MapperBorrowed;
+use icu_properties::props::GeneralCategory;
+use icu_properties::CodePointMapDataBorrowed;
 
 
-const fn joining_type_to_mask(jt: icu_properties::JoiningType) -> u32 {
-    1u32 << jt.0
+const fn joining_type_to_mask(jt: icu_properties::props::JoiningType) -> u32 {
+    1u32 << jt.to_icu4c_value()
 }
 
 
 pub const LEFT_OR_DUAL_JOINING_MASK: JoiningTypeMask = JoiningTypeMask(
-    joining_type_to_mask(icu_properties::JoiningType::LeftJoining)
-        | joining_type_to_mask(icu_properties::JoiningType::DualJoining),
+    joining_type_to_mask(icu_properties::props::JoiningType::LeftJoining)
+        | joining_type_to_mask(icu_properties::props::JoiningType::DualJoining),
 );
 
 
 pub const RIGHT_OR_DUAL_JOINING_MASK: JoiningTypeMask = JoiningTypeMask(
-    joining_type_to_mask(icu_properties::JoiningType::RightJoining)
-        | joining_type_to_mask(icu_properties::JoiningType::DualJoining),
+    joining_type_to_mask(icu_properties::props::JoiningType::RightJoining)
+        | joining_type_to_mask(icu_properties::props::JoiningType::DualJoining),
 );
 
 
-const fn bidi_class_to_mask(bc: icu_properties::BidiClass) -> u32 {
-    1u32 << bc.0
+const fn bidi_class_to_mask(bc: icu_properties::props::BidiClass) -> u32 {
+    1u32 << bc.to_icu4c_value()
 }
 
 
 pub const RTL_MASK: BidiClassMask = BidiClassMask(
-    bidi_class_to_mask(icu_properties::BidiClass::RightToLeft)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicLetter)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicNumber),
+    bidi_class_to_mask(icu_properties::props::BidiClass::RightToLeft)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicLetter)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicNumber),
 );
 
 
 
 pub const FIRST_BC_MASK: BidiClassMask = BidiClassMask(
-    bidi_class_to_mask(icu_properties::BidiClass::LeftToRight)
-        | bidi_class_to_mask(icu_properties::BidiClass::RightToLeft)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicLetter),
+    bidi_class_to_mask(icu_properties::props::BidiClass::LeftToRight)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::RightToLeft)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicLetter),
 );
 
 
 
 pub const LAST_LTR_MASK: BidiClassMask = BidiClassMask(
-    bidi_class_to_mask(icu_properties::BidiClass::LeftToRight)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanNumber),
+    bidi_class_to_mask(icu_properties::props::BidiClass::LeftToRight)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanNumber),
 );
 
 
 
 pub const LAST_RTL_MASK: BidiClassMask = BidiClassMask(
-    bidi_class_to_mask(icu_properties::BidiClass::RightToLeft)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicLetter)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanNumber)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicNumber),
+    bidi_class_to_mask(icu_properties::props::BidiClass::RightToLeft)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicLetter)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanNumber)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicNumber),
 );
 
 
 pub const MIDDLE_LTR_MASK: BidiClassMask = BidiClassMask(
-    bidi_class_to_mask(icu_properties::BidiClass::LeftToRight)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanNumber)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanSeparator)
-        | bidi_class_to_mask(icu_properties::BidiClass::CommonSeparator)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanTerminator)
-        | bidi_class_to_mask(icu_properties::BidiClass::OtherNeutral)
-        | bidi_class_to_mask(icu_properties::BidiClass::BoundaryNeutral)
-        | bidi_class_to_mask(icu_properties::BidiClass::NonspacingMark),
+    bidi_class_to_mask(icu_properties::props::BidiClass::LeftToRight)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanNumber)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanSeparator)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::CommonSeparator)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanTerminator)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::OtherNeutral)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::BoundaryNeutral)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::NonspacingMark),
 );
 
 
 pub const MIDDLE_RTL_MASK: BidiClassMask = BidiClassMask(
-    bidi_class_to_mask(icu_properties::BidiClass::RightToLeft)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicLetter)
-        | bidi_class_to_mask(icu_properties::BidiClass::ArabicNumber)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanNumber)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanSeparator)
-        | bidi_class_to_mask(icu_properties::BidiClass::CommonSeparator)
-        | bidi_class_to_mask(icu_properties::BidiClass::EuropeanTerminator)
-        | bidi_class_to_mask(icu_properties::BidiClass::OtherNeutral)
-        | bidi_class_to_mask(icu_properties::BidiClass::BoundaryNeutral)
-        | bidi_class_to_mask(icu_properties::BidiClass::NonspacingMark),
+    bidi_class_to_mask(icu_properties::props::BidiClass::RightToLeft)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicLetter)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::ArabicNumber)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanNumber)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanSeparator)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::CommonSeparator)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::EuropeanTerminator)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::OtherNeutral)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::BoundaryNeutral)
+        | bidi_class_to_mask(icu_properties::props::BidiClass::NonspacingMark),
 );
 
 
@@ -120,7 +119,7 @@ const MARK_MASK: u32 = general_category_to_mask(GeneralCategory::NonspacingMark)
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
-pub struct JoiningType(icu_properties::JoiningType);
+pub struct JoiningType(icu_properties::props::JoiningType);
 
 impl JoiningType {
     
@@ -132,7 +131,7 @@ impl JoiningType {
     
     #[inline(always)]
     pub fn is_transparent(self) -> bool {
-        self.0 == icu_properties::JoiningType::Transparent
+        self.0 == icu_properties::props::JoiningType::Transparent
     }
 }
 
@@ -153,7 +152,7 @@ impl JoiningTypeMask {
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
-pub struct BidiClass(icu_properties::BidiClass);
+pub struct BidiClass(icu_properties::props::BidiClass);
 
 impl BidiClass {
     
@@ -165,25 +164,25 @@ impl BidiClass {
     
     #[inline(always)]
     pub fn is_ltr(self) -> bool {
-        self.0 == icu_properties::BidiClass::LeftToRight
+        self.0 == icu_properties::props::BidiClass::LeftToRight
     }
 
     
     #[inline(always)]
     pub fn is_nonspacing_mark(self) -> bool {
-        self.0 == icu_properties::BidiClass::NonspacingMark
+        self.0 == icu_properties::props::BidiClass::NonspacingMark
     }
 
     
     #[inline(always)]
     pub fn is_european_number(self) -> bool {
-        self.0 == icu_properties::BidiClass::EuropeanNumber
+        self.0 == icu_properties::props::BidiClass::EuropeanNumber
     }
 
     
     #[inline(always)]
     pub fn is_arabic_number(self) -> bool {
-        self.0 == icu_properties::BidiClass::ArabicNumber
+        self.0 == icu_properties::props::BidiClass::ArabicNumber
     }
 }
 
@@ -203,11 +202,11 @@ impl BidiClassMask {
 
 
 pub struct Adapter {
-    mapper: Uts46Mapper,
-    canonical_combining_class: CanonicalCombiningClassMap,
+    mapper: Uts46MapperBorrowed<'static>,
+    canonical_combining_class: CanonicalCombiningClassMapBorrowed<'static>,
     general_category: CodePointMapDataBorrowed<'static, GeneralCategory>,
-    bidi_class: CodePointMapDataBorrowed<'static, icu_properties::BidiClass>,
-    joining_type: CodePointMapDataBorrowed<'static, icu_properties::JoiningType>,
+    bidi_class: CodePointMapDataBorrowed<'static, icu_properties::props::BidiClass>,
+    joining_type: CodePointMapDataBorrowed<'static, icu_properties::props::JoiningType>,
 }
 
 #[cfg(feature = "compiled_data")]
@@ -223,18 +222,19 @@ impl Adapter {
     #[inline(always)]
     pub const fn new() -> Self {
         Self {
-            mapper: Uts46Mapper::new(),
-            canonical_combining_class: CanonicalCombiningClassMap::new(),
-            general_category: icu_properties::maps::general_category(),
-            bidi_class: icu_properties::maps::bidi_class(),
-            joining_type: icu_properties::maps::joining_type(),
+            mapper: Uts46MapperBorrowed::new(),
+            canonical_combining_class: CanonicalCombiningClassMapBorrowed::new(),
+            general_category: icu_properties::CodePointMapData::<GeneralCategory>::new(),
+            bidi_class: icu_properties::CodePointMapData::<icu_properties::props::BidiClass>::new(),
+            joining_type:
+                icu_properties::CodePointMapData::<icu_properties::props::JoiningType>::new(),
         }
     }
 
     
     #[inline(always)]
     pub fn is_virama(&self, c: char) -> bool {
-        self.canonical_combining_class.get(c) == CanonicalCombiningClass::Virama
+        self.canonical_combining_class.get_u8(c) == 9
     }
 
     

@@ -1,7 +1,7 @@
 use super::lifetimes::{Lifetimes, LinkedLifetimes};
 use super::{
     Borrow, EnumDef, EnumId, Everywhere, OpaqueDef, OpaqueId, OpaqueOwner, OutStructDef,
-    OutputOnly, ReturnableStructDef, StructDef, TyPosition, TypeContext,
+    OutputOnly, ReturnableStructDef, StructDef, TraitId, TyPosition, TypeContext,
 };
 
 
@@ -22,6 +22,19 @@ pub struct StructPath<P: TyPosition = Everywhere> {
     pub lifetimes: Lifetimes,
     pub tcx_id: P::StructId,
 }
+
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct TraitPath {
+    pub lifetimes: Lifetimes,
+    pub tcx_id: TraitId,
+}
+
+
+
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub enum NoTraitPath {}
 
 
 
@@ -56,6 +69,10 @@ pub struct NonOptional;
 impl<Owner: OpaqueOwner> OpaquePath<Optional, Owner> {
     pub fn is_optional(&self) -> bool {
         self.optional.0
+    }
+
+    pub fn is_owned(&self) -> bool {
+        self.owner.is_owned()
     }
 }
 
@@ -196,5 +213,12 @@ impl EnumPath {
     
     pub fn resolve<'tcx>(&self, tcx: &'tcx TypeContext) -> &'tcx EnumDef {
         tcx.resolve_enum(self.tcx_id)
+    }
+}
+
+impl TraitPath {
+    
+    pub(super) fn new(lifetimes: Lifetimes, tcx_id: TraitId) -> Self {
+        Self { lifetimes, tcx_id }
     }
 }

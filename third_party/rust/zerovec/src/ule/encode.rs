@@ -5,11 +5,22 @@
 use crate::ule::*;
 use crate::varzerovec::VarZeroVecFormat;
 use crate::{VarZeroSlice, VarZeroVec, ZeroSlice, ZeroVec};
+#[cfg(feature = "alloc")]
 use alloc::borrow::{Cow, ToOwned};
+#[cfg(feature = "alloc")]
 use alloc::boxed::Box;
+#[cfg(feature = "alloc")]
 use alloc::string::String;
+#[cfg(feature = "alloc")]
 use alloc::{vec, vec::Vec};
+#[cfg(feature = "alloc")]
 use core::mem;
+
+
+
+
+
+
 
 
 
@@ -81,7 +92,8 @@ pub unsafe trait EncodeAsVarULE<T: VarULE + ?Sized> {
 
 
 
-pub fn encode_varule_to_box<S: EncodeAsVarULE<T>, T: VarULE + ?Sized>(x: &S) -> Box<T> {
+#[cfg(feature = "alloc")]
+pub fn encode_varule_to_box<S: EncodeAsVarULE<T> + ?Sized, T: VarULE + ?Sized>(x: &S) -> Box<T> {
     
     let mut vec: Vec<u8> = vec![0; x.encode_var_ule_len()];
     x.encode_var_ule_write(&mut vec);
@@ -89,7 +101,7 @@ pub fn encode_varule_to_box<S: EncodeAsVarULE<T>, T: VarULE + ?Sized>(x: &S) -> 
     unsafe {
         
         
-        let ptr: *mut T = T::from_byte_slice_unchecked(&boxed) as *const T as *mut T;
+        let ptr: *mut T = T::from_bytes_unchecked(&boxed) as *const T as *mut T;
 
         
         Box::from_raw(ptr)
@@ -98,32 +110,55 @@ pub fn encode_varule_to_box<S: EncodeAsVarULE<T>, T: VarULE + ?Sized>(x: &S) -> 
 
 unsafe impl<T: VarULE + ?Sized> EncodeAsVarULE<T> for T {
     fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
-        cb(&[T::as_byte_slice(self)])
+        cb(&[T::as_bytes(self)])
     }
 }
 
 unsafe impl<T: VarULE + ?Sized> EncodeAsVarULE<T> for &'_ T {
     fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
-        cb(&[T::as_byte_slice(self)])
+        cb(&[T::as_bytes(self)])
     }
 }
 
+unsafe impl<T: VarULE + ?Sized> EncodeAsVarULE<T> for &'_ &'_ T {
+    fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
+        cb(&[T::as_bytes(self)])
+    }
+}
+
+#[cfg(feature = "alloc")]
 unsafe impl<T: VarULE + ?Sized> EncodeAsVarULE<T> for Cow<'_, T>
 where
     T: ToOwned,
 {
     fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
-        cb(&[T::as_byte_slice(self.as_ref())])
+        cb(&[T::as_bytes(self.as_ref())])
     }
 }
 
+#[cfg(feature = "alloc")]
 unsafe impl<T: VarULE + ?Sized> EncodeAsVarULE<T> for Box<T> {
     fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
-        cb(&[T::as_byte_slice(self)])
+        cb(&[T::as_bytes(self)])
     }
 }
 
+#[cfg(feature = "alloc")]
+unsafe impl<T: VarULE + ?Sized> EncodeAsVarULE<T> for &'_ Box<T> {
+    fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
+        cb(&[T::as_bytes(self)])
+    }
+}
+
+#[cfg(feature = "alloc")]
 unsafe impl EncodeAsVarULE<str> for String {
+    fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
+        cb(&[self.as_bytes()])
+    }
+}
+
+#[cfg(feature = "alloc")]
+unsafe impl EncodeAsVarULE<str> for &'_ String {
     fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
         cb(&[self.as_bytes()])
     }
@@ -131,12 +166,13 @@ unsafe impl EncodeAsVarULE<str> for String {
 
 
 
+#[cfg(feature = "alloc")]
 unsafe impl<T> EncodeAsVarULE<[T]> for Vec<T>
 where
     T: ULE,
 {
     fn encode_var_ule_as_slices<R>(&self, cb: impl FnOnce(&[&[u8]]) -> R) -> R {
-        cb(&[<[T] as VarULE>::as_byte_slice(self)])
+        cb(&[<[T] as VarULE>::as_bytes(self)])
     }
 }
 
@@ -160,11 +196,12 @@ where
         debug_assert_eq!(self.len() * S, dst.len());
         for (item, ref mut chunk) in self.iter().zip(dst.chunks_mut(S)) {
             let ule = item.to_unaligned();
-            chunk.copy_from_slice(ULE::as_byte_slice(core::slice::from_ref(&ule)));
+            chunk.copy_from_slice(ULE::slice_as_bytes(core::slice::from_ref(&ule)));
         }
     }
 }
 
+#[cfg(feature = "alloc")]
 unsafe impl<T> EncodeAsVarULE<ZeroSlice<T>> for Vec<T>
 where
     T: AsULE + 'static,
@@ -226,6 +263,7 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 unsafe impl<T, E, F> EncodeAsVarULE<VarZeroSlice<T, F>> for Vec<E>
 where
     T: VarULE + ?Sized,

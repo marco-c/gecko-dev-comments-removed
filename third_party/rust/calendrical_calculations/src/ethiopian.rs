@@ -11,7 +11,7 @@ use crate::helpers::I32CastError;
 use crate::rata_die::RataDie;
 
 const ETHIOPIC_TO_COPTIC_OFFSET: i64 =
-    super::coptic::COPTIC_EPOCH.const_diff(crate::julian::fixed_from_julian(8, 8, 29));
+    super::coptic::COPTIC_EPOCH.until(crate::julian::fixed_from_julian(8, 8, 29));
 
 
 pub fn fixed_from_ethiopian(year: i32, month: u8, day: u8) -> RataDie {

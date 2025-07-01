@@ -8,10 +8,9 @@
 
 
 #![no_main] 
+icu_benchmark_macros::instrument!();
 
-icu_benchmark_macros::static_setup!();
-
-use icu_locid::subtags::{language, Language};
+use icu_locale_core::subtags::{language, Language};
 use litemap::LiteMap;
 
 const DATA: [(Language, &str); 11] = [
@@ -28,19 +27,10 @@ const DATA: [(Language, &str); 11] = [
     (language!("tr"), "Turkish"),
 ];
 
-#[no_mangle]
-fn main(_argc: isize, _argv: *const *const u8) -> isize {
-    icu_benchmark_macros::main_setup!();
+fn main() {
+    let map = LiteMap::<Language, &str>::from_iter(DATA);
 
-    let mut map = LiteMap::new_vec();
-    
-    for (lang, name) in DATA.iter() {
-        map.try_append(lang, name).ok_or(()).unwrap_err();
-    }
-
-    assert_eq!(11, map.len());
-    assert_eq!(Some(&&"Thai"), map.get(&language!("th")));
-    assert_eq!(None, map.get(&language!("de")));
-
-    0
+    assert!(map.len() == 11);
+    assert!(map.get(&language!("th")) == Some(&"Thai"));
+    assert!(map.get(&language!("de")).is_none());
 }

@@ -55,34 +55,28 @@
 
 extern crate alloc;
 
+#[cfg(feature = "alloc")]
 #[macro_use]
 mod builder;
+#[cfg(feature = "alloc")]
 mod conversions;
 mod cpinvlist;
 mod utils;
 
-use alloc::vec::Vec;
-
+#[cfg(feature = "alloc")]
 pub use builder::CodePointInversionListBuilder;
 pub use cpinvlist::CodePointInversionList;
 pub use cpinvlist::CodePointInversionListULE;
 use displaydoc::Display;
 
+#[derive(Display, Debug)]
 
+#[cfg_attr(feature = "alloc", displaydoc("Invalid set: {0:?}"))]
+pub struct InvalidSetError(
+    #[cfg(feature = "alloc")] pub alloc::vec::Vec<potential_utf::PotentialCodePoint>,
+);
 
 
 #[derive(Display, Debug)]
-pub enum CodePointInversionListError {
-    
-    #[displaydoc("Invalid set: {0:?}")]
-    InvalidSet(Vec<u32>),
-    
-    #[displaydoc("Invalid range: {0}..{1}")]
-    InvalidRange(u32, u32),
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for CodePointInversionListError {}
-
-#[doc(no_inline)]
-pub use CodePointInversionListError as Error;
+#[displaydoc("Invalid range: {0}..{1}")]
+pub struct RangeError(pub u32, pub u32);

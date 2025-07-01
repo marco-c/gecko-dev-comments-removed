@@ -233,7 +233,7 @@ impl YearInfo {
         
         
         
-        if ḥalakim > ḥal!(7 - 18 - 0) {
+        if ḥalakim >= ḥal!(7 - 18 - 0) {
             weeks_since_beharad += 1;
         }
 
@@ -313,6 +313,8 @@ impl YearInfo {
         HEBREW_CALENDAR_EPOCH + days_since_beharad
     }
 }
+
+
 
 
 
@@ -675,7 +677,7 @@ impl Keviyah {
         
         
         
-        if ḥalakim > ḥal!(7 - 18 - 0) {
+        if ḥalakim >= ḥal!(7 - 18 - 0) {
             weeks_since_beharad += 1;
         }
 
@@ -719,7 +721,6 @@ impl Keviyah {
         }
     }
 }
-
 
 
 
@@ -1037,6 +1038,30 @@ mod test {
             } else {
                 assert_eq!(num_months, 12, "{year0}");
             }
+        }
+    }
+    #[test]
+    fn test_issue_6262() {
+        
+        
+
+        let rds = [
+            
+            (26310435, 75795),
+            
+            (69174713, 193152),
+        ];
+
+        for (rd, expected_year) in rds {
+            let rd = RataDie::new(rd);
+            let (yi, year) = YearInfo::year_containing_rd(rd);
+            assert_eq!(year, expected_year);
+
+            let yi_recomputed = yi.keviyah.year_info(year);
+            assert_eq!(yi, yi_recomputed);
+            
+            let (_weeks, ḥalakim) = molad_details(year);
+            assert_eq!(ḥalakim, ḥal!(7 - 18 - 0));
         }
     }
 }

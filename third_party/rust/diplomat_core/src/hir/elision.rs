@@ -114,7 +114,6 @@ pub trait LifetimeLowerer {
     
     
     
-
     
     
     fn lower_lifetimes(
@@ -143,7 +142,6 @@ pub trait LifetimeLowerer {
     
     
     
-
     fn lower_generics(
         &mut self,
         lifetimes: &[ast::Lifetime],
@@ -430,7 +428,7 @@ impl LifetimeLowerer for &ast::LifetimeEnv {
 
 #[cfg(test)]
 mod tests {
-    use strck_ident::IntoCk;
+    use strck::IntoCk;
 
     
     macro_rules! tcx {
@@ -445,10 +443,13 @@ mod tests {
 
             env.insert(crate::ast::Path::empty(), top_symbols);
 
+            let mut backend = crate::hir::BasicAttributeValidator::new("test-backend");
+            backend.support.static_slices = true;
+
             // Don't run validation: it will error on elision. We want this code to support
             // elision even if we don't actually allow it, since good diagnostics involve understanding
             // broken code.
-            let (_, tcx) = crate::hir::TypeContext::from_ast_without_validation(&env, crate::hir::BasicAttributeValidator::new("test-backend")).unwrap();
+            let (_, tcx) = crate::hir::TypeContext::from_ast_without_validation(&env, Default::default(), backend).unwrap();
 
             tcx
         }}
@@ -473,11 +474,11 @@ mod tests {
             mod ffi {
                 #[diplomat::opaque]
                 struct Opaque<'a> {
-                    s: &'a DiplomatStr,
+                    s: DiplomatStrSlice<'a>,
                 }
 
                 struct Struct<'a> {
-                    s: &'a DiplomatStr,
+                    s:  DiplomatStrSlice<'a>,
                 }
 
                 #[diplomat::out]
@@ -548,12 +549,12 @@ mod tests {
                 struct Input<'p, 'q> {
                     p_data: &'p Opaque,
                     q_data: &'q Opaque,
-                    name: &'static DiplomatStr,
+                    name: DiplomatStrSlice<'static>,
                     inner: Inner<'q>,
                 }
 
                 struct Inner<'a> {
-                    more_data: &'a DiplomatStr,
+                    more_data: DiplomatStrSlice<'a>,
                 }
 
                 struct Output<'p,'q> {

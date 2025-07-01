@@ -4,86 +4,111 @@
 
 
 
-use crate::error::CalendarError;
-use core::convert::TryFrom;
-use core::convert::TryInto;
+#[doc(no_inline)]
+pub use calendrical_calculations::rata_die::RataDie;
 use core::fmt;
-use core::num::NonZeroU8;
-use core::str::FromStr;
 use tinystr::TinyAsciiStr;
 use tinystr::{TinyStr16, TinyStr4};
 use zerovec::maps::ZeroMapKV;
 use zerovec::ule::AsULE;
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[non_exhaustive]
+pub enum YearInfo {
+    
+    Era(EraYear),
+    
+    
+    
+    
+    Cyclic(CyclicYear),
+}
 
+impl From<EraYear> for YearInfo {
+    fn from(value: EraYear) -> Self {
+        Self::Era(value)
+    }
+}
 
+impl From<CyclicYear> for YearInfo {
+    fn from(value: CyclicYear) -> Self {
+        Self::Cyclic(value)
+    }
+}
+
+impl YearInfo {
+    
+    
+    
+    pub fn era_year_or_related_iso(self) -> i32 {
+        match self {
+            YearInfo::Era(e) => e.year,
+            YearInfo::Cyclic(c) => c.related_iso,
+        }
+    }
+
+    
+    pub fn era(self) -> Option<EraYear> {
+        match self {
+            Self::Era(e) => Some(e),
+            Self::Cyclic(_) => None,
+        }
+    }
+
+    
+    pub fn cyclic(self) -> Option<CyclicYear> {
+        match self {
+            Self::Era(_) => None,
+            Self::Cyclic(c) => Some(c),
+        }
+    }
+}
 
 
 
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-#[allow(clippy::exhaustive_structs)] 
-pub struct Era(pub TinyStr16);
-
-impl From<TinyStr16> for Era {
-    fn from(x: TinyStr16) -> Self {
-        Self(x)
-    }
+#[allow(clippy::exhaustive_enums)] 
+pub enum YearAmbiguity {
+    
+    Unambiguous,
+    
+    CenturyRequired,
+    
+    EraRequired,
+    
+    EraAndCenturyRequired,
 }
-
-impl FromStr for Era {
-    type Err = <TinyStr16 as FromStr>::Err;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.parse().map(Self)
-    }
-}
-
-
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[non_exhaustive]
-pub struct FormattableYear {
+pub struct EraYear {
+    
+    pub year: i32,
+    
+    pub era: TinyStr16,
     
     
     
     
     
-    pub era: Era,
-
     
-    pub number: i32,
-
+    pub era_index: Option<u8>,
     
-    
-    
-    
-    
-    pub cyclic: Option<NonZeroU8>,
-
-    
-    
-    
-    
-    
-    pub related_iso: Option<i32>,
+    pub ambiguity: YearAmbiguity,
 }
 
-impl FormattableYear {
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[non_exhaustive]
+pub struct CyclicYear {
     
+    pub year: u8,
     
-    
-    
-    pub fn new(era: Era, number: i32, cyclic: Option<NonZeroU8>) -> Self {
-        Self {
-            era,
-            number,
-            cyclic,
-            related_iso: None,
-        }
-    }
+    pub related_iso: i32,
 }
 
 
@@ -98,11 +123,8 @@ impl FormattableYear {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(clippy::exhaustive_structs)] 
-#[cfg_attr(
-    feature = "datagen",
-    derive(serde::Serialize, databake::Bake),
-    databake(path = icu_calendar::types),
-)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_calendar::types))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct MonthCode(pub TinyStr4);
 
@@ -113,7 +135,7 @@ impl MonthCode {
     pub fn get_normal_if_leap(self) -> Option<MonthCode> {
         let bytes = self.0.all_bytes();
         if bytes[3] == b'L' {
-            Some(MonthCode(TinyAsciiStr::from_bytes(&bytes[0..3]).ok()?))
+            Some(MonthCode(TinyAsciiStr::try_from_utf8(&bytes[0..3]).ok()?))
         } else {
             None
         }
@@ -141,8 +163,7 @@ impl MonthCode {
     
     
     
-    #[cfg(test)] 
-    pub(crate) fn new_normal(number: u8) -> Option<Self> {
+    pub fn new_normal(number: u8) -> Option<Self> {
         let tens = number / 10;
         let ones = number % 10;
         if tens > 9 {
@@ -192,74 +213,72 @@ impl fmt::Display for MonthCode {
     }
 }
 
-impl From<TinyStr4> for MonthCode {
-    fn from(x: TinyStr4) -> Self {
-        Self(x)
-    }
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[non_exhaustive]
+pub struct MonthInfo {
+    
+    
+    
+    
+    pub ordinal: u8,
+
+    
+    
+    
+    
+    
+    pub standard_code: MonthCode,
+    
+    
+    
+    
+    
+    
+    pub formatting_code: MonthCode,
 }
-impl FromStr for MonthCode {
-    type Err = <TinyStr4 as FromStr>::Err;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.parse().map(Self)
+
+impl MonthInfo {
+    
+    
+    
+    pub fn month_number(self) -> u8 {
+        self.standard_code
+            .parsed()
+            .map(|(i, _)| i)
+            .unwrap_or(self.ordinal)
+    }
+
+    
+    pub fn is_leap(self) -> bool {
+        self.standard_code.parsed().map(|(_, l)| l).unwrap_or(false)
     }
 }
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[allow(clippy::exhaustive_structs)] 
-pub struct FormattableMonth {
-    
-    
-    
-    
-    pub ordinal: u32,
+pub struct DayOfYear(pub u16);
 
+
+#[allow(clippy::exhaustive_structs)] 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct DayOfMonth(pub u8);
+
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(clippy::exhaustive_structs)] 
+pub struct IsoWeekOfYear {
     
+    pub week_number: u8,
     
-    
-    
-    
-    
-    pub code: MonthCode,
+    pub iso_year: i32,
 }
 
 
-
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-#[allow(clippy::exhaustive_structs)] 
-pub struct DayOfYearInfo {
-    
-    pub day_of_year: u16,
-    
-    pub days_in_year: u16,
-    
-    pub prev_year: FormattableYear,
-    
-    pub days_in_prev_year: u16,
-    
-    pub next_year: FormattableYear,
-}
-
-
-#[allow(clippy::exhaustive_structs)] 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct DayOfMonth(pub u32);
-
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[allow(clippy::exhaustive_structs)] 
-pub struct WeekOfMonth(pub u32);
-
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[allow(clippy::exhaustive_structs)] 
-pub struct WeekOfYear(pub u32);
-
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[allow(clippy::exhaustive_structs)] 
-pub struct DayOfWeekInMonth(pub u32);
+pub struct DayOfWeekInMonth(pub u8);
 
 impl From<DayOfMonth> for DayOfWeekInMonth {
     fn from(day_of_month: DayOfMonth) -> Self {
@@ -278,472 +297,6 @@ fn test_day_of_week_in_month() {
 
 
 
-macro_rules! dt_unit {
-    ($name:ident, $storage:ident, $value:expr, $docs:expr) => {
-        #[doc=$docs]
-        #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
-        pub struct $name($storage);
-
-        impl $name {
-            /// Gets the numeric value for this component.
-            pub const fn number(self) -> $storage {
-                self.0
-            }
-
-            /// Creates a new value at 0.
-            pub const fn zero() -> $name {
-                Self(0)
-            }
-        }
-
-        impl FromStr for $name {
-            type Err = CalendarError;
-
-            fn from_str(input: &str) -> Result<Self, Self::Err> {
-                let val: $storage = input.parse()?;
-                if val > $value {
-                    Err(CalendarError::Overflow {
-                        field: "$name",
-                        max: $value,
-                    })
-                } else {
-                    Ok(Self(val))
-                }
-            }
-        }
-
-        impl TryFrom<$storage> for $name {
-            type Error = CalendarError;
-
-            fn try_from(input: $storage) -> Result<Self, Self::Error> {
-                if input > $value {
-                    Err(CalendarError::Overflow {
-                        field: "$name",
-                        max: $value,
-                    })
-                } else {
-                    Ok(Self(input))
-                }
-            }
-        }
-
-        impl TryFrom<usize> for $name {
-            type Error = CalendarError;
-
-            fn try_from(input: usize) -> Result<Self, Self::Error> {
-                if input > $value {
-                    Err(CalendarError::Overflow {
-                        field: "$name",
-                        max: $value,
-                    })
-                } else {
-                    Ok(Self(input as $storage))
-                }
-            }
-        }
-
-        impl From<$name> for $storage {
-            fn from(input: $name) -> Self {
-                input.0
-            }
-        }
-
-        impl From<$name> for usize {
-            fn from(input: $name) -> Self {
-                input.0 as Self
-            }
-        }
-
-        impl $name {
-            /// Attempts to add two values.
-            /// Returns `Some` if the sum is within bounds.
-            /// Returns `None` if the sum is out of bounds.
-            pub fn try_add(self, other: $storage) -> Option<Self> {
-                let sum = self.0.saturating_add(other);
-                if sum > $value {
-                    None
-                } else {
-                    Some(Self(sum))
-                }
-            }
-
-            /// Attempts to subtract two values.
-            /// Returns `Some` if the difference is within bounds.
-            /// Returns `None` if the difference is out of bounds.
-            pub fn try_sub(self, other: $storage) -> Option<Self> {
-                self.0.checked_sub(other).map(Self)
-            }
-        }
-    };
-}
-
-dt_unit!(
-    IsoHour,
-    u8,
-    24,
-    "An ISO-8601 hour component, for use with ISO calendars.
-
-Must be within inclusive bounds `[0, 24]`. The value could be equal to 24 to
-denote the end of a day, with the writing 24:00:00. It corresponds to the same
-time as the next day at 00:00:00."
-);
-
-dt_unit!(
-    IsoMinute,
-    u8,
-    60,
-    "An ISO-8601 minute component, for use with ISO calendars.
-
-Must be within inclusive bounds `[0, 60]`. The value could be equal to 60 to
-denote the end of an hour, with the writing 12:60:00. This example corresponds
-to the same time as 13:00:00. This is an extension to ISO 8601."
-);
-
-dt_unit!(
-    IsoSecond,
-    u8,
-    61,
-    "An ISO-8601 second component, for use with ISO calendars.
-
-Must be within inclusive bounds `[0, 61]`. `60` accommodates for leap seconds.
-
-The value could also be equal to 60 or 61, to indicate the end of a leap second,
-with the writing `23:59:61.000000000Z` or `23:59:60.000000000Z`. These examples,
-if used with this goal, would correspond to the same time as the next day, at
-time `00:00:00.000000000Z`. This is an extension to ISO 8601."
-);
-
-dt_unit!(
-    NanoSecond,
-    u32,
-    999_999_999,
-    "A fractional second component, stored as nanoseconds.
-
-Must be within inclusive bounds `[0, 999_999_999]`."
-);
-
-#[test]
-fn test_iso_hour_arithmetic() {
-    const HOUR_MAX: u8 = 24;
-    const HOUR_VALUE: u8 = 5;
-    let hour = IsoHour(HOUR_VALUE);
-
-    
-    assert_eq!(
-        hour.try_add(HOUR_VALUE - 1),
-        Some(IsoHour(HOUR_VALUE + (HOUR_VALUE - 1)))
-    );
-    assert_eq!(
-        hour.try_sub(HOUR_VALUE - 1),
-        Some(IsoHour(HOUR_VALUE - (HOUR_VALUE - 1)))
-    );
-
-    
-    assert_eq!(hour.try_add(HOUR_MAX - HOUR_VALUE), Some(IsoHour(HOUR_MAX)));
-    assert_eq!(hour.try_sub(HOUR_VALUE), Some(IsoHour(0)));
-
-    
-    assert_eq!(hour.try_add(1 + HOUR_MAX - HOUR_VALUE), None);
-    assert_eq!(hour.try_sub(1 + HOUR_VALUE), None);
-}
-
-#[test]
-fn test_iso_minute_arithmetic() {
-    const MINUTE_MAX: u8 = 60;
-    const MINUTE_VALUE: u8 = 5;
-    let minute = IsoMinute(MINUTE_VALUE);
-
-    
-    assert_eq!(
-        minute.try_add(MINUTE_VALUE - 1),
-        Some(IsoMinute(MINUTE_VALUE + (MINUTE_VALUE - 1)))
-    );
-    assert_eq!(
-        minute.try_sub(MINUTE_VALUE - 1),
-        Some(IsoMinute(MINUTE_VALUE - (MINUTE_VALUE - 1)))
-    );
-
-    
-    assert_eq!(
-        minute.try_add(MINUTE_MAX - MINUTE_VALUE),
-        Some(IsoMinute(MINUTE_MAX))
-    );
-    assert_eq!(minute.try_sub(MINUTE_VALUE), Some(IsoMinute(0)));
-
-    
-    assert_eq!(minute.try_add(1 + MINUTE_MAX - MINUTE_VALUE), None);
-    assert_eq!(minute.try_sub(1 + MINUTE_VALUE), None);
-}
-
-#[test]
-fn test_iso_second_arithmetic() {
-    const SECOND_MAX: u8 = 61;
-    const SECOND_VALUE: u8 = 5;
-    let second = IsoSecond(SECOND_VALUE);
-
-    
-    assert_eq!(
-        second.try_add(SECOND_VALUE - 1),
-        Some(IsoSecond(SECOND_VALUE + (SECOND_VALUE - 1)))
-    );
-    assert_eq!(
-        second.try_sub(SECOND_VALUE - 1),
-        Some(IsoSecond(SECOND_VALUE - (SECOND_VALUE - 1)))
-    );
-
-    
-    assert_eq!(
-        second.try_add(SECOND_MAX - SECOND_VALUE),
-        Some(IsoSecond(SECOND_MAX))
-    );
-    assert_eq!(second.try_sub(SECOND_VALUE), Some(IsoSecond(0)));
-
-    
-    assert_eq!(second.try_add(1 + SECOND_MAX - SECOND_VALUE), None);
-    assert_eq!(second.try_sub(1 + SECOND_VALUE), None);
-}
-
-#[test]
-fn test_iso_nano_second_arithmetic() {
-    const NANO_SECOND_MAX: u32 = 999_999_999;
-    const NANO_SECOND_VALUE: u32 = 5;
-    let nano_second = NanoSecond(NANO_SECOND_VALUE);
-
-    
-    assert_eq!(
-        nano_second.try_add(NANO_SECOND_VALUE - 1),
-        Some(NanoSecond(NANO_SECOND_VALUE + (NANO_SECOND_VALUE - 1)))
-    );
-    assert_eq!(
-        nano_second.try_sub(NANO_SECOND_VALUE - 1),
-        Some(NanoSecond(NANO_SECOND_VALUE - (NANO_SECOND_VALUE - 1)))
-    );
-
-    
-    assert_eq!(
-        nano_second.try_add(NANO_SECOND_MAX - NANO_SECOND_VALUE),
-        Some(NanoSecond(NANO_SECOND_MAX))
-    );
-    assert_eq!(nano_second.try_sub(NANO_SECOND_VALUE), Some(NanoSecond(0)));
-
-    
-    assert_eq!(
-        nano_second.try_add(1 + NANO_SECOND_MAX - NANO_SECOND_VALUE),
-        None
-    );
-    assert_eq!(nano_second.try_sub(1 + NANO_SECOND_VALUE), None);
-}
-
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[allow(clippy::exhaustive_structs)] 
-pub struct Time {
-    
-    pub hour: IsoHour,
-
-    
-    pub minute: IsoMinute,
-
-    
-    pub second: IsoSecond,
-
-    
-    pub nanosecond: NanoSecond,
-}
-
-impl Time {
-    
-    pub const fn new(
-        hour: IsoHour,
-        minute: IsoMinute,
-        second: IsoSecond,
-        nanosecond: NanoSecond,
-    ) -> Self {
-        Self {
-            hour,
-            minute,
-            second,
-            nanosecond,
-        }
-    }
-
-    
-    pub const fn midnight() -> Self {
-        Self {
-            hour: IsoHour::zero(),
-            minute: IsoMinute::zero(),
-            second: IsoSecond::zero(),
-            nanosecond: NanoSecond::zero(),
-        }
-    }
-
-    
-    pub fn try_new(
-        hour: u8,
-        minute: u8,
-        second: u8,
-        nanosecond: u32,
-    ) -> Result<Self, CalendarError> {
-        Ok(Self {
-            hour: hour.try_into()?,
-            minute: minute.try_into()?,
-            second: second.try_into()?,
-            nanosecond: nanosecond.try_into()?,
-        })
-    }
-
-    
-    
-    pub(crate) fn from_minute_with_remainder_days(minute: i32) -> (Time, i32) {
-        let (extra_days, minute_in_day) = (minute.div_euclid(1440), minute.rem_euclid(1440));
-        let (hours, minutes) = (minute_in_day / 60, minute_in_day % 60);
-        #[allow(clippy::unwrap_used)] 
-        (
-            Self {
-                hour: (hours as u8).try_into().unwrap(),
-                minute: (minutes as u8).try_into().unwrap(),
-                second: IsoSecond::zero(),
-                nanosecond: NanoSecond::zero(),
-            },
-            extra_days,
-        )
-    }
-}
-
-#[test]
-fn test_from_minute_with_remainder_days() {
-    #[derive(Debug)]
-    struct TestCase {
-        minute: i32,
-        expected_time: Time,
-        expected_remainder: i32,
-    }
-    let zero_time = Time::new(
-        IsoHour::zero(),
-        IsoMinute::zero(),
-        IsoSecond::zero(),
-        NanoSecond::zero(),
-    );
-    let first_minute_in_day = Time::new(
-        IsoHour::zero(),
-        IsoMinute::try_from(1u8).unwrap(),
-        IsoSecond::zero(),
-        NanoSecond::zero(),
-    );
-    let last_minute_in_day = Time::new(
-        IsoHour::try_from(23u8).unwrap(),
-        IsoMinute::try_from(59u8).unwrap(),
-        IsoSecond::zero(),
-        NanoSecond::zero(),
-    );
-    let cases = [
-        TestCase {
-            minute: 0,
-            expected_time: zero_time,
-            expected_remainder: 0,
-        },
-        TestCase {
-            minute: 30,
-            expected_time: Time::new(
-                IsoHour::zero(),
-                IsoMinute::try_from(30u8).unwrap(),
-                IsoSecond::zero(),
-                NanoSecond::zero(),
-            ),
-            expected_remainder: 0,
-        },
-        TestCase {
-            minute: 60,
-            expected_time: Time::new(
-                IsoHour::try_from(1u8).unwrap(),
-                IsoMinute::zero(),
-                IsoSecond::zero(),
-                NanoSecond::zero(),
-            ),
-            expected_remainder: 0,
-        },
-        TestCase {
-            minute: 90,
-            expected_time: Time::new(
-                IsoHour::try_from(1u8).unwrap(),
-                IsoMinute::try_from(30u8).unwrap(),
-                IsoSecond::zero(),
-                NanoSecond::zero(),
-            ),
-            expected_remainder: 0,
-        },
-        TestCase {
-            minute: 1439,
-            expected_time: last_minute_in_day,
-            expected_remainder: 0,
-        },
-        TestCase {
-            minute: 1440,
-            expected_time: Time::new(
-                IsoHour::zero(),
-                IsoMinute::zero(),
-                IsoSecond::zero(),
-                NanoSecond::zero(),
-            ),
-            expected_remainder: 1,
-        },
-        TestCase {
-            minute: 1441,
-            expected_time: first_minute_in_day,
-            expected_remainder: 1,
-        },
-        TestCase {
-            minute: i32::MAX,
-            expected_time: Time::new(
-                IsoHour::try_from(2u8).unwrap(),
-                IsoMinute::try_from(7u8).unwrap(),
-                IsoSecond::zero(),
-                NanoSecond::zero(),
-            ),
-            expected_remainder: 1491308,
-        },
-        TestCase {
-            minute: -1,
-            expected_time: last_minute_in_day,
-            expected_remainder: -1,
-        },
-        TestCase {
-            minute: -1439,
-            expected_time: first_minute_in_day,
-            expected_remainder: -1,
-        },
-        TestCase {
-            minute: -1440,
-            expected_time: zero_time,
-            expected_remainder: -1,
-        },
-        TestCase {
-            minute: -1441,
-            expected_time: last_minute_in_day,
-            expected_remainder: -2,
-        },
-        TestCase {
-            minute: i32::MIN,
-            expected_time: Time::new(
-                IsoHour::try_from(21u8).unwrap(),
-                IsoMinute::try_from(52u8).unwrap(),
-                IsoSecond::zero(),
-                NanoSecond::zero(),
-            ),
-            expected_remainder: -1491309,
-        },
-    ];
-    for cas in cases {
-        let (actual_time, actual_remainder) = Time::from_minute_with_remainder_days(cas.minute);
-        assert_eq!(actual_time, cas.expected_time, "{cas:?}");
-        assert_eq!(actual_remainder, cas.expected_remainder, "{cas:?}");
-    }
-}
-
-
-
-
-
 
 
 
@@ -755,14 +308,11 @@ fn test_from_minute_with_remainder_days() {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(missing_docs)] 
 #[repr(i8)]
-#[cfg_attr(
-    feature = "datagen",
-    derive(serde::Serialize, databake::Bake),
-    databake(path = icu_calendar::types),
-)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_calendar::types))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[allow(clippy::exhaustive_enums)] 
-pub enum IsoWeekday {
+pub enum Weekday {
     Monday = 1,
     Tuesday,
     Wednesday,
@@ -772,23 +322,13 @@ pub enum IsoWeekday {
     Sunday,
 }
 
-impl From<usize> for IsoWeekday {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn from(input: usize) -> Self {
-        use IsoWeekday::*;
-        match input % 7 {
+
+const SUNDAY: RataDie = RataDie::new(0);
+
+impl From<RataDie> for Weekday {
+    fn from(value: RataDie) -> Self {
+        use Weekday::*;
+        match (value - SUNDAY).rem_euclid(7) {
             0 => Sunday,
             1 => Monday,
             2 => Tuesday,
@@ -801,10 +341,27 @@ impl From<usize> for IsoWeekday {
     }
 }
 
-impl IsoWeekday {
+impl Weekday {
     
-    pub(crate) fn next_day(self) -> IsoWeekday {
-        use IsoWeekday::*;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_days_since_sunday(input: isize) -> Self {
+        (SUNDAY + input as i64).into()
+    }
+
+    
+    pub(crate) fn next_day(self) -> Weekday {
+        use Weekday::*;
         match self {
             Monday => Tuesday,
             Tuesday => Wednesday,

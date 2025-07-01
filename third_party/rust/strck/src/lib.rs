@@ -105,8 +105,11 @@
 
 
 
+
 use core::{borrow, cmp, fmt, hash, marker, ops, str};
 
+#[cfg(feature = "ident")]
+pub mod ident;
 mod partial_eq;
 #[cfg(feature = "serde")]
 mod serde;
@@ -247,26 +250,17 @@ impl<I: Invariant, B: AsRef<str>> Check<I, B> {
     pub fn from_buf(buf: B) -> Result<Self, I::Error> {
         I::check(buf.as_ref())?;
 
-        
-        unsafe { Ok(Self::from_buf_unchecked(buf)) }
-    }
-
-    
-    
-    
-    
-    
-    pub unsafe fn from_buf_unchecked(buf: B) -> Self {
-        Check {
+        Ok(Check {
             _marker: marker::PhantomData,
             buf,
-        }
+        })
     }
 
     
     pub fn as_ck(&self) -> &Ck<I> {
         
-        unsafe { Ck::from_str_unchecked(self.buf.as_ref()) }
+        
+        unsafe { core::mem::transmute(self.buf.as_ref()) }
     }
 
     
@@ -292,7 +286,7 @@ where
     B2: AsRef<str>,
 {
     fn eq(&self, other: &Check<I, B2>) -> bool {
-        self == other
+        self.as_str() == other.as_str()
     }
 }
 
@@ -383,17 +377,7 @@ impl<I: Invariant> Ck<I> {
         I::check(slice)?;
 
         
-        unsafe { Ok(Self::from_str_unchecked(slice)) }
-    }
-
-    
-    
-    
-    
-    
-    pub unsafe fn from_str_unchecked(slice: &str) -> &Self {
-        
-        core::mem::transmute(slice)
+        unsafe { Ok(core::mem::transmute::<&str, &Ck<I>>(slice)) }
     }
 
     
@@ -401,8 +385,10 @@ impl<I: Invariant> Ck<I> {
     where
         B: AsRef<str> + From<&'a str>,
     {
-        
-        unsafe { Check::from_buf_unchecked(self.as_str().into()) }
+        Check {
+            _marker: marker::PhantomData,
+            buf: self.as_str().into(),
+        }
     }
 
     
@@ -425,7 +411,7 @@ impl<I: Invariant> PartialEq for Ck<I> {
 
 impl<I: Invariant> PartialOrd for Ck<I> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        self.slice.partial_cmp(&other.slice)
+        Some(self.cmp(other))
     }
 }
 
@@ -501,8 +487,58 @@ mod tests {
     #[test]
     fn test_debug_impl() {
         let this = "this".ck::<NoInvariant>().unwrap();
-        let fmt_debug = format!("{:?}", this);
+        let fmt_debug = format!("{this:?}");
 
         assert_eq!(fmt_debug, "\"this\"");
+    }
+
+    #[test]
+    fn test_ck_partial_eq() {
+        let this = "this".ck::<NoInvariant>().unwrap();
+        let still_this = "this".ck::<NoInvariant>().unwrap();
+        let other = "other".ck::<NoInvariant>().unwrap();
+
+        
+        assert_ne!(this, other);
+        assert_ne!(this, &other);
+        assert_ne!(&this, other);
+        assert_ne!(&this, &other);
+
+        
+        assert_eq!(this, still_this);
+        assert_eq!(this, &still_this);
+        assert_eq!(&this, still_this);
+        assert_eq!(&this, &still_this);
+
+        
+        assert_eq!(this, this);
+        assert_eq!(this, &this);
+        assert_eq!(&this, this);
+        assert_eq!(&this, &this);
+    }
+
+    #[test]
+    fn test_check_partial_eq() {
+        let this = "this".check::<NoInvariant>().unwrap();
+        let still_this = "this".check::<NoInvariant>().unwrap();
+        let other = "other".check::<NoInvariant>().unwrap();
+
+        
+        assert_ne!(this, other);
+        assert_ne!(this, &other);
+        assert_ne!(&this, other);
+        assert_ne!(&this, &other);
+
+        
+        assert_eq!(this, still_this);
+        assert_eq!(this, &still_this);
+        assert_eq!(&this, still_this);
+        assert_eq!(&this, &still_this);
+
+        
+        assert_eq!(this, this);
+        assert_eq!(this, &this);
+        assert_eq!(&this, this);
+        assert_eq!(&this, &this);
     }
 }

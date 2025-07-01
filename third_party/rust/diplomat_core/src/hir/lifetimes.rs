@@ -48,7 +48,6 @@ impl LifetimeEnv {
 
     
     
-
     pub fn all_shorter_lifetimes(
         &self,
         lt: impl Borrow<Lifetime>,

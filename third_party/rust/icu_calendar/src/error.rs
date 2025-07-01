@@ -2,97 +2,91 @@
 
 
 
+use crate::types::MonthCode;
 use displaydoc::Display;
-use icu_provider::DataError;
-use tinystr::{tinystr, TinyStr16, TinyStr4};
-use writeable::Writeable;
 
-#[cfg(feature = "std")]
-impl std::error::Error for CalendarError {}
+#[derive(Debug, Copy, Clone, PartialEq, Display)]
 
-
-
-
-#[derive(Display, Debug, Copy, Clone, PartialEq)]
 #[non_exhaustive]
-pub enum CalendarError {
+pub enum DateError {
     
-    #[displaydoc("Could not parse as integer")]
-    Parse,
-    
-    #[displaydoc("{field} must be between 0-{max}")]
-    Overflow {
+    #[displaydoc("The {field} = {value} argument is out of range {min}..={max}")]
+    Range {
         
         field: &'static str,
         
-        max: usize,
-    },
-    #[displaydoc("{field} must be between {min}-0")]
-    
-    Underflow {
+        value: i32,
         
-        field: &'static str,
+        min: i32,
         
-        min: isize,
+        max: i32,
     },
     
+    #[displaydoc("Unknown era")]
+    UnknownEra,
     
-    OutOfRange,
-    
-    #[displaydoc("No era named {0} for calendar {1}")]
-    UnknownEra(TinyStr16, &'static str),
-    
-    #[displaydoc("No month code named {0} for calendar {1}")]
-    UnknownMonthCode(TinyStr4, &'static str),
-    
-    #[displaydoc("No value for {0}")]
-    MissingInput(&'static str),
-    
-    #[displaydoc("AnyCalendar does not support calendar {0}")]
-    UnknownAnyCalendarKind(TinyStr16),
-    
-    #[displaydoc("An operation required a calendar but a calendar was not provided")]
-    MissingCalendar,
-    
-    #[displaydoc("{0}")]
-    Data(DataError),
+    #[displaydoc("Unknown month code {0:?}")]
+    UnknownMonthCode(MonthCode),
 }
 
-impl From<core::num::ParseIntError> for CalendarError {
-    fn from(_: core::num::ParseIntError) -> Self {
-        CalendarError::Parse
+impl core::error::Error for DateError {}
+
+#[derive(Debug, Copy, Clone, PartialEq, Display)]
+
+#[displaydoc("The {field} = {value} argument is out of range {min}..={max}")]
+#[allow(clippy::exhaustive_structs)]
+pub struct RangeError {
+    
+    pub field: &'static str,
+    
+    pub value: i32,
+    
+    pub min: i32,
+    
+    pub max: i32,
+}
+
+impl core::error::Error for RangeError {}
+
+impl From<RangeError> for DateError {
+    fn from(value: RangeError) -> Self {
+        let RangeError {
+            field,
+            value,
+            min,
+            max,
+        } = value;
+        DateError::Range {
+            field,
+            value,
+            min,
+            max,
+        }
     }
 }
 
-impl From<DataError> for CalendarError {
-    fn from(e: DataError) -> Self {
-        CalendarError::Data(e)
-    }
-}
+pub(crate) fn year_check(
+    year: i32,
+    bounds: impl core::ops::RangeBounds<i32>,
+) -> Result<i32, RangeError> {
+    use core::ops::Bound::*;
 
-impl CalendarError {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn unknown_any_calendar_kind(description: impl Writeable) -> Self {
-        let tiny = description
-            .write_to_string()
-            .get(0..16)
-            .and_then(|x| TinyStr16::from_str(x).ok())
-            .unwrap_or(tinystr!(16, "invalid"));
-        Self::UnknownAnyCalendarKind(tiny)
+    if !bounds.contains(&year) {
+        return Err(RangeError {
+            field: "year",
+            value: year,
+            min: match bounds.start_bound() {
+                Included(&m) => m,
+                Excluded(&m) => m + 1,
+                Unbounded => i32::MIN,
+            },
+            max: match bounds.end_bound() {
+                Included(&m) => m,
+                Excluded(&m) => m - 1,
+                Unbounded => i32::MAX,
+            },
+        });
     }
+
+    Ok(year)
 }

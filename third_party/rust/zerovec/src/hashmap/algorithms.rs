@@ -19,6 +19,7 @@ const SEED: u64 = 0xaabbccdd;
 
 
 
+
 pub const fn split_hash64(hash: u64, m: usize) -> (usize, u32, u32) {
     (
         ((hash >> 48) as usize % m),
@@ -44,6 +45,7 @@ pub fn compute_index(f: (u32, u32), d: (u32, u32), m: u32) -> Option<usize> {
         Some((f.1.wrapping_mul(d.0).wrapping_add(f.0).wrapping_add(d.1) % m) as usize)
     }
 }
+
 
 
 

@@ -5,13 +5,13 @@
 
 
 
-use crate::error::PropertiesError;
 use crate::props::Script;
-use crate::props::ScriptULE;
 use crate::provider::*;
 
+#[cfg(feature = "alloc")]
 use core::iter::FromIterator;
 use core::ops::RangeInclusive;
+#[cfg(feature = "alloc")]
 use icu_collections::codepointinvlist::CodePointInversionList;
 use icu_provider::prelude::*;
 use zerovec::{ule::AsULE, ZeroSlice};
@@ -49,7 +49,7 @@ impl ScriptWithExt {
 }
 
 impl AsULE for ScriptWithExt {
-    type ULE = ScriptULE;
+    type ULE = <u16 as AsULE>::ULE;
 
     #[inline]
     fn to_unaligned(self) -> Self::ULE {
@@ -194,10 +194,12 @@ impl<'a> ScriptExtensionsSet<'a> {
     
     
     
+    
     pub fn contains(&self, x: &Script) -> bool {
         ZeroSlice::binary_search(self.values, x).is_ok()
     }
 
+    
     
     
     
@@ -218,14 +220,12 @@ impl<'a> ScriptExtensionsSet<'a> {
     }
 
     
-    
-    #[doc(hidden)]
+    #[doc(hidden)] 
     pub fn array_len(&self) -> usize {
         self.values.len()
     }
     
-    
-    #[doc(hidden)]
+    #[doc(hidden)] 
     pub fn array_get(&self, index: usize) -> Option<Script> {
         self.values.get(index)
     }
@@ -235,19 +235,105 @@ impl<'a> ScriptExtensionsSet<'a> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct ScriptWithExtensions {
-    data: DataPayload<ScriptWithExtensionsPropertyV1Marker>,
+    data: DataPayload<PropertyScriptWithExtensionsV1>,
 }
 
 
 
 #[derive(Clone, Copy, Debug)]
 pub struct ScriptWithExtensionsBorrowed<'a> {
-    data: &'a ScriptWithExtensionsPropertyV1<'a>,
+    data: &'a ScriptWithExtensionsProperty<'a>,
 }
 
 impl ScriptWithExtensions {
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new() -> ScriptWithExtensionsBorrowed<'static> {
+        ScriptWithExtensionsBorrowed::new()
+    }
+
+    icu_provider::gen_buffer_data_constructors!(
+        () -> result: Result<ScriptWithExtensions, DataError>,
+        functions: [
+            new: skip,
+            try_new_with_buffer_provider,
+            try_new_unstable,
+            Self,
+        ]
+    );
+
+    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new)]
+    pub fn try_new_unstable(
+        provider: &(impl DataProvider<PropertyScriptWithExtensionsV1> + ?Sized),
+    ) -> Result<Self, DataError> {
+        Ok(ScriptWithExtensions::from_data(
+            provider.load(Default::default())?.payload,
+        ))
+    }
+
     
     
     
@@ -262,7 +348,7 @@ impl ScriptWithExtensions {
     
     
     
-    pub fn from_data(data: DataPayload<ScriptWithExtensionsPropertyV1Marker>) -> Self {
+    pub(crate) fn from_data(data: DataPayload<PropertyScriptWithExtensionsV1>) -> Self {
         Self { data }
     }
 }
@@ -301,7 +387,13 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
     
     
     
-    pub fn get_script_val(self, code_point: u32) -> Script {
+    
+    pub fn get_script_val(self, ch: char) -> Script {
+        self.get_script_val32(ch as u32)
+    }
+
+    
+    pub fn get_script_val32(self, code_point: u32) -> Script {
         let sc_with_ext = self.data.trie.get32(code_point);
 
         if sc_with_ext.is_other() {
@@ -395,7 +487,13 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
     
     
     
-    pub fn get_script_extensions_val(self, code_point: u32) -> ScriptExtensionsSet<'a> {
+    
+    pub fn get_script_extensions_val(self, ch: char) -> ScriptExtensionsSet<'a> {
+        self.get_script_extensions_val32(ch as u32)
+    }
+
+    
+    pub fn get_script_extensions_val32(self, code_point: u32) -> ScriptExtensionsSet<'a> {
         let sc_with_ext_ule = self.data.trie.get32_ule(code_point);
 
         ScriptExtensionsSet {
@@ -439,7 +537,13 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
     
     
     
-    pub fn has_script(self, code_point: u32, script: Script) -> bool {
+    
+    pub fn has_script(self, ch: char, script: Script) -> bool {
+        self.has_script32(ch as u32, script)
+    }
+
+    
+    pub fn has_script32(self, code_point: u32, script: Script) -> bool {
         let sc_with_ext_ule = if let Some(scwe_ule) = self.data.trie.get32_ule(code_point) {
             scwe_ule
         } else {
@@ -457,6 +561,7 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
         }
     }
 
+    
     
     
     
@@ -544,12 +649,33 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
     
     
     
+    
+    #[cfg(feature = "alloc")]
     pub fn get_script_extensions_set(self, script: Script) -> CodePointInversionList<'a> {
         CodePointInversionList::from_iter(self.get_script_extensions_ranges(script))
     }
 }
 
+#[cfg(feature = "compiled_data")]
+impl Default for ScriptWithExtensionsBorrowed<'static> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ScriptWithExtensionsBorrowed<'static> {
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub fn new() -> Self {
+        Self {
+            data: crate::provider::Baked::SINGLETON_PROPERTY_SCRIPT_WITH_EXTENSIONS_V1,
+        }
+    }
+
     
     
     
@@ -561,91 +687,27 @@ impl ScriptWithExtensionsBorrowed<'static> {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "compiled_data")]
-pub const fn script_with_extensions() -> ScriptWithExtensionsBorrowed<'static> {
-    ScriptWithExtensionsBorrowed {
-        data: crate::provider::Baked::SINGLETON_PROPS_SCX_V1,
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    
+    fn test_scx_regression_6041() {
+        let scripts = ScriptWithExtensions::new()
+            .get_script_extensions_val('\u{2bc}')
+            .iter()
+            .collect::<Vec<_>>();
+        assert_eq!(
+            scripts,
+            [
+                Script::Bengali,
+                Script::Cyrillic,
+                Script::Devanagari,
+                Script::Latin,
+                Script::Thai,
+                Script::Lisu,
+                Script::Toto
+            ]
+        );
     }
-}
-
-icu_provider::gen_any_buffer_data_constructors!(
-    locale: skip,
-    options: skip,
-    result: Result<ScriptWithExtensions, PropertiesError>,
-    #[cfg(skip)]
-    functions: [
-        script_with_extensions,
-        load_script_with_extensions_with_any_provider,
-        load_script_with_extensions_with_buffer_provider,
-        load_script_with_extensions_unstable,
-    ]
-);
-
-#[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, script_with_extensions)]
-pub fn load_script_with_extensions_unstable(
-    provider: &(impl DataProvider<ScriptWithExtensionsPropertyV1Marker> + ?Sized),
-) -> Result<ScriptWithExtensions, PropertiesError> {
-    Ok(ScriptWithExtensions::from_data(
-        provider
-            .load(Default::default())
-            .and_then(DataResponse::take_payload)?,
-    ))
 }

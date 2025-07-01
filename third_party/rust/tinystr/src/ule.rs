@@ -3,8 +3,10 @@
 
 
 use crate::{TinyAsciiStr, UnvalidatedTinyAsciiStr};
+#[cfg(feature = "alloc")]
 use zerovec::maps::ZeroMapKV;
 use zerovec::ule::*;
+#[cfg(feature = "alloc")]
 use zerovec::{ZeroSlice, ZeroVec};
 
 
@@ -18,17 +20,22 @@ use zerovec::{ZeroSlice, ZeroVec};
 
 unsafe impl<const N: usize> ULE for TinyAsciiStr<N> {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         if bytes.len() % N != 0 {
-            return Err(ZeroVecError::length::<Self>(bytes.len()));
+            return Err(UleError::length::<Self>(bytes.len()));
         }
         
         for chunk in bytes.chunks_exact(N) {
-            let _ = TinyAsciiStr::<N>::from_bytes_inner(chunk, 0, N, true)
-                .map_err(|_| ZeroVecError::parse::<Self>())?;
+            let _ = TinyAsciiStr::<N>::try_from_utf8_inner(chunk, true)
+                .map_err(|_| UleError::parse::<Self>())?;
         }
         Ok(())
     }
+}
+
+impl<const N: usize> NicheBytes<N> for TinyAsciiStr<N> {
+    
+    const NICHE_BIT_PATTERN: [u8; N] = [255; N];
 }
 
 impl<const N: usize> AsULE for TinyAsciiStr<N> {
@@ -45,6 +52,7 @@ impl<const N: usize> AsULE for TinyAsciiStr<N> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a, const N: usize> ZeroMapKV<'a> for TinyAsciiStr<N> {
     type Container = ZeroVec<'a, TinyAsciiStr<N>>;
     type Slice = ZeroSlice<TinyAsciiStr<N>>;
@@ -63,9 +71,9 @@ impl<'a, const N: usize> ZeroMapKV<'a> for TinyAsciiStr<N> {
 
 unsafe impl<const N: usize> ULE for UnvalidatedTinyAsciiStr<N> {
     #[inline]
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError> {
         if bytes.len() % N != 0 {
-            return Err(ZeroVecError::length::<Self>(bytes.len()));
+            return Err(UleError::length::<Self>(bytes.len()));
         }
         Ok(())
     }
@@ -85,6 +93,7 @@ impl<const N: usize> AsULE for UnvalidatedTinyAsciiStr<N> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a, const N: usize> ZeroMapKV<'a> for UnvalidatedTinyAsciiStr<N> {
     type Container = ZeroVec<'a, UnvalidatedTinyAsciiStr<N>>;
     type Slice = ZeroSlice<UnvalidatedTinyAsciiStr<N>>;
@@ -107,7 +116,7 @@ mod test {
 
         let bytes = vec.as_bytes();
 
-        let vec: ZeroVec<TinyAsciiStr<7>> = ZeroVec::parse_byte_slice(bytes).unwrap();
+        let vec: ZeroVec<TinyAsciiStr<7>> = ZeroVec::parse_bytes(bytes).unwrap();
 
         assert_eq!(&*vec.get(0).unwrap(), "foobar");
         assert_eq!(&*vec.get(1).unwrap(), "baz");

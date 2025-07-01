@@ -11,7 +11,7 @@ use icu_provider::prelude::*;
 
 pub trait ForkByErrorPredicate {
     
-    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingDataKey;
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MarkerNotFound;
 
     
     
@@ -28,11 +28,7 @@ pub trait ForkByErrorPredicate {
     
     
     
-    
-    
-    
-    
-    fn test(&self, key: DataKey, req: Option<DataRequest>, err: DataError) -> bool;
+    fn test(&self, marker: DataMarkerInfo, req: Option<DataRequest>, err: DataError) -> bool;
 }
 
 
@@ -43,17 +39,17 @@ pub trait ForkByErrorPredicate {
 
 #[derive(Debug, PartialEq, Eq)]
 #[non_exhaustive] 
-pub struct MissingDataKeyPredicate;
+pub struct MarkerNotFoundPredicate;
 
-impl ForkByErrorPredicate for MissingDataKeyPredicate {
-    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingDataKey;
+impl ForkByErrorPredicate for MarkerNotFoundPredicate {
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MarkerNotFound;
 
     #[inline]
-    fn test(&self, _: DataKey, _: Option<DataRequest>, err: DataError) -> bool {
+    fn test(&self, _: DataMarkerInfo, _: Option<DataRequest>, err: DataError) -> bool {
         matches!(
             err,
             DataError {
-                kind: DataErrorKind::MissingDataKey,
+                kind: DataErrorKind::MarkerNotFound,
                 ..
             }
         )
@@ -125,19 +121,13 @@ impl ForkByErrorPredicate for MissingDataKeyPredicate {
 
 #[derive(Debug, PartialEq, Eq)]
 #[allow(clippy::exhaustive_structs)] 
-pub struct MissingLocalePredicate;
+pub struct IdentifierNotFoundPredicate;
 
-impl ForkByErrorPredicate for MissingLocalePredicate {
-    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingLocale;
+impl ForkByErrorPredicate for IdentifierNotFoundPredicate {
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::IdentifierNotFound;
 
     #[inline]
-    fn test(&self, _: DataKey, _: Option<DataRequest>, err: DataError) -> bool {
-        matches!(
-            err,
-            DataError {
-                kind: DataErrorKind::MissingLocale,
-                ..
-            }
-        )
+    fn test(&self, _: DataMarkerInfo, _: Option<DataRequest>, err: DataError) -> bool {
+        Err::<(), _>(err).allow_identifier_not_found().is_ok()
     }
 }

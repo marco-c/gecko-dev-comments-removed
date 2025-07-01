@@ -3,7 +3,7 @@
 
 
 
-#![cfg_attr(all(not(test), not(doc)), no_std)]
+#![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -13,9 +13,11 @@
         clippy::panic,
         clippy::exhaustive_structs,
         clippy::exhaustive_enums,
+        clippy::trivially_copy_pass_by_ref,
         missing_debug_implementations,
     )
 )]
+
 
 
 
@@ -73,12 +75,15 @@ mod impls;
 mod ops;
 mod parts_write_adapter;
 mod testing;
+mod to_string_or_borrow;
 mod try_writeable;
 
 use alloc::borrow::Cow;
 use alloc::string::String;
 use core::fmt;
 
+pub use cmp::{cmp_str, cmp_utf8};
+pub use to_string_or_borrow::to_string_or_borrow;
 pub use try_writeable::TryWriteable;
 
 
@@ -86,14 +91,38 @@ pub mod adapters {
     use super::*;
 
     pub use parts_write_adapter::CoreWriteAsPartsWrite;
+    pub use parts_write_adapter::WithPart;
     pub use try_writeable::TryWriteableInfallibleAsWriteable;
     pub use try_writeable::WriteableAsTryWriteableInfallible;
+
+    #[derive(Debug)]
+    #[allow(clippy::exhaustive_structs)] 
+    pub struct LossyWrap<T>(pub T);
+
+    impl<T: TryWriteable> Writeable for LossyWrap<T> {
+        fn write_to<W: fmt::Write + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+            let _ = self.0.try_write_to(sink)?;
+            Ok(())
+        }
+
+        fn writeable_length_hint(&self) -> LengthHint {
+            self.0.writeable_length_hint()
+        }
+    }
+
+    impl<T: TryWriteable> fmt::Display for LossyWrap<T> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let _ = self.0.try_write_to(f)?;
+            Ok(())
+        }
+    }
 }
 
-#[doc(hidden)]
+#[doc(hidden)] 
 pub mod _internal {
     pub use super::testing::try_writeable_to_parts_for_test;
     pub use super::testing::writeable_to_parts_for_test;
+    pub use alloc::string::String;
 }
 
 
@@ -180,6 +209,8 @@ impl LengthHint {
 
 
 
+
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[allow(clippy::exhaustive_structs)] 
 pub struct Part {
@@ -201,6 +232,7 @@ impl Part {
 pub trait PartsWrite: fmt::Write {
     type SubPartsWrite: PartsWrite + ?Sized;
 
+    
     fn with_part(
         &mut self,
         part: Part,
@@ -279,52 +311,11 @@ pub trait Writeable {
         let _ = self.write_to(&mut output);
         Cow::Owned(output)
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
-        let mut wc = cmp::WriteComparator::new(other);
-        let _ = self.write_to(&mut wc);
-        wc.finish().reverse()
-    }
 }
+
+
+
+
 
 
 
@@ -333,7 +324,7 @@ pub trait Writeable {
 
 #[macro_export]
 macro_rules! impl_display_with_writeable {
-    ($type:ty) => {
+    (@display, $type:ty) => {
         /// This trait is implemented for compatibility with [`fmt!`](alloc::fmt).
         /// To create a string, [`Writeable::write_to_string`] is usually more efficient.
         impl core::fmt::Display for $type {
@@ -343,8 +334,20 @@ macro_rules! impl_display_with_writeable {
             }
         }
     };
+    ($type:ty) => {
+        $crate::impl_display_with_writeable!(@display, $type);
+        impl $type {
+            /// Converts the given value to a `String`.
+            ///
+            /// Under the hood, this uses an efficient [`Writeable`] implementation.
+            /// However, in order to avoid allocating a string, it is more efficient
+            /// to use [`Writeable`] directly.
+            pub fn to_string(&self) -> $crate::_internal::String {
+                $crate::Writeable::write_to_string(self).into_owned()
+            }
+        }
+    };
 }
-
 
 
 
@@ -435,14 +438,6 @@ macro_rules! assert_writeable_eq {
             );
         }
         assert_eq!(actual_writeable.to_string(), $expected_str);
-        let ordering = $crate::Writeable::writeable_cmp_bytes(actual_writeable, $expected_str.as_bytes());
-        assert_eq!(ordering, core::cmp::Ordering::Equal, $($arg)*);
-        let ordering = $crate::Writeable::writeable_cmp_bytes(actual_writeable, "\u{10FFFF}".as_bytes());
-        assert_eq!(ordering, core::cmp::Ordering::Less, $($arg)*);
-        if $expected_str != "" {
-            let ordering = $crate::Writeable::writeable_cmp_bytes(actual_writeable, "".as_bytes());
-            assert_eq!(ordering, core::cmp::Ordering::Greater, $($arg)*);
-        }
         actual_parts // return for assert_writeable_parts_eq
     }};
 }

@@ -26,6 +26,7 @@ use core::ops::{Deref, DerefMut};
 
 
 
+
 #[repr(transparent)]
 pub(crate) struct KindaSortaDangling<T: 'static> {
     
@@ -77,17 +78,17 @@ impl<T: 'static> DerefMut for KindaSortaDangling<T> {
 impl<T: 'static> Drop for KindaSortaDangling<T> {
     #[inline]
     fn drop(&mut self) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             self.dangle.as_mut_ptr().drop_in_place();
         }
     }

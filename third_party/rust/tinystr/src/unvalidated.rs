@@ -2,8 +2,8 @@
 
 
 
+use crate::ParseError;
 use crate::TinyAsciiStr;
-use crate::TinyStrError;
 use core::fmt;
 
 
@@ -29,12 +29,13 @@ impl<const N: usize> fmt::Debug for UnvalidatedTinyAsciiStr<N> {
 impl<const N: usize> UnvalidatedTinyAsciiStr<N> {
     #[inline]
     
-    pub fn try_into_tinystr(&self) -> Result<TinyAsciiStr<N>, TinyStrError> {
+    pub fn try_into_tinystr(self) -> Result<TinyAsciiStr<N>, ParseError> {
         TinyAsciiStr::try_from_raw(self.0)
     }
 
-    #[doc(hidden)]
-    pub const fn from_bytes_unchecked(bytes: [u8; N]) -> Self {
+    #[inline]
+    
+    pub const fn from_utf8_unchecked(bytes: [u8; N]) -> Self {
         Self(bytes)
     }
 }

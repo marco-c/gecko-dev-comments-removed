@@ -5,7 +5,7 @@ use crate::ast::attrs::{AttrInheritContext, DiplomatBackendAttrCfg, StandardAttr
 use crate::hir::lowering::ErrorStore;
 use crate::hir::{
     EnumVariant, LoweringError, Method, Mutability, OpaqueId, ReturnType, SelfType, SuccessType,
-    Type, TypeDef, TypeId,
+    TraitDef, Type, TypeDef, TypeId,
 };
 use syn::Meta;
 
@@ -41,7 +41,63 @@ pub struct Attrs {
     
     
     pub special_method: Option<SpecialMethod>,
+    
+    pub custom_errors: bool,
+
+    
+    
+    
+    pub demo_attrs: DemoInfo,
 }
+
+
+
+
+#[non_exhaustive]
+#[derive(Clone, Default, Debug)]
+pub struct DemoInputCFG {
+    
+    
+    
+    
+    pub label: String,
+
+    
+    
+    
+    
+    pub default_value: String,
+}
+
+#[non_exhaustive]
+#[derive(Clone, Default, Debug)]
+pub struct DemoInfo {
+    
+    pub generate: bool,
+
+    
+    
+    
+    pub default_constructor: bool,
+
+    
+    pub external: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub custom_func: Option<String>,
+
+    
+    pub input_cfg: DemoInputCFG,
+}
+
+
 
 
 #[non_exhaustive]
@@ -77,6 +133,66 @@ pub enum SpecialMethod {
     Iterable,
     
     Indexer,
+
+    
+    Add,
+    Sub,
+    Mul,
+    Div,
+
+    
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+}
+
+impl SpecialMethod {
+    pub fn from_path_and_meta(path: &str, meta: &Meta) -> Result<Option<Self>, LoweringError> {
+        let parse_meta = |meta| match StandardAttribute::from_meta(meta) {
+            Ok(StandardAttribute::String(s)) => Ok(Some(s)),
+            Ok(StandardAttribute::Empty) => Ok(None),
+            Ok(_) | Err(_) => Err(LoweringError::Other(format!(
+                "`{path}` must have a single string parameter or no parameter"
+            ))),
+        };
+
+        match path {
+            "constructor" => Ok(Some(Self::Constructor)),
+            "named_constructor" => Ok(Some(Self::NamedConstructor(parse_meta(meta)?))),
+            "getter" => Ok(Some(Self::Getter(parse_meta(meta)?))),
+            "setter" => Ok(Some(Self::Setter(parse_meta(meta)?))),
+            "stringifier" => Ok(Some(Self::Stringifier)),
+            "comparison" => Ok(Some(Self::Comparison)),
+            "iterator" => Ok(Some(Self::Iterator)),
+            "iterable" => Ok(Some(Self::Iterable)),
+            "indexer" => Ok(Some(Self::Indexer)),
+            "add" => Ok(Some(Self::Add)),
+            "sub" => Ok(Some(Self::Sub)),
+            "mul" => Ok(Some(Self::Mul)),
+            "div" => Ok(Some(Self::Div)),
+            "add_assign" => Ok(Some(Self::AddAssign)),
+            "sub_assign" => Ok(Some(Self::SubAssign)),
+            "mul_assign" => Ok(Some(Self::MulAssign)),
+            "div_assign" => Ok(Some(Self::DivAssign)),
+            _ => Ok(None),
+        }
+    }
+    
+    pub fn operator_str(&self) -> Option<&str> {
+        match self {
+            SpecialMethod::Add => Some("+"),
+            SpecialMethod::Sub => Some("-"),
+            SpecialMethod::Mul => Some("*"),
+            SpecialMethod::Div => Some("/"),
+            SpecialMethod::AddAssign => Some("+="),
+            SpecialMethod::SubAssign => Some("-="),
+            SpecialMethod::MulAssign => Some("*="),
+            SpecialMethod::DivAssign => Some("/="),
+            SpecialMethod::Indexer => Some("[]"),
+            _ => None,
+        }
+    }
 }
 
 
@@ -99,11 +215,27 @@ pub struct SpecialMethodPresence {
 #[derive(Debug)]
 pub enum AttributeContext<'a, 'b> {
     Type(TypeDef<'a>),
+    Trait(&'a TraitDef),
     EnumVariant(&'a EnumVariant),
     Method(&'a Method, TypeId, &'b mut SpecialMethodPresence),
     Module,
+    Param,
+    SelfParam,
+    Field,
 }
 
+fn maybe_error_unsupported(
+    auto_found: bool,
+    attribute: &str,
+    backend: &str,
+    errors: &mut ErrorStore,
+) {
+    if !auto_found {
+        errors.push(LoweringError::Other(format!(
+            "`{attribute}` not supported in backend {backend}"
+        )));
+    }
+}
 impl Attrs {
     pub fn from_ast(
         ast: &ast::Attrs,
@@ -119,54 +251,78 @@ impl Attrs {
         let support = validator.attrs_supported();
         let backend = validator.primary_name();
         for attr in &ast.attrs {
-            let satisfies = match validator.satisfies_cfg(&attr.cfg) {
-                Ok(satisfies) => satisfies,
+            let mut auto_found = false;
+            match validator.satisfies_cfg(&attr.cfg, Some(&mut auto_found)) {
+                Ok(satisfies) if !satisfies => continue,
                 Err(e) => {
                     errors.push(e);
                     continue;
                 }
+                Ok(_) => {}
             };
-            if satisfies {
-                let path = attr.meta.path();
-                if let Some(path) = path.get_ident() {
-                    if path == "disable" {
-                        if let Meta::Path(_) = attr.meta {
-                            if this.disable {
-                                errors.push(LoweringError::Other(
-                                    "Duplicate `disable` attribute".into(),
-                                ));
-                            } else if !support.disabling {
-                                errors.push(LoweringError::Other(format!(
-                                    "`disable` not supported in backend {backend}"
-                                )))
-                            } else {
-                                this.disable = true;
-                            }
-                        } else {
-                            errors.push(LoweringError::Other(
-                                "`disable` must be a simple path".into(),
-                            ))
-                        }
-                    } else if path == "rename" {
-                        match RenameAttr::from_meta(&attr.meta) {
-                            Ok(rename) => {
-                                
-                                
-                                
-                                this.rename.extend(&rename);
-                            }
-                            Err(e) => errors.push(LoweringError::Other(format!(
-                                "`rename` attr failed to parse: {e:?}"
-                            ))),
-                        }
-                    } else if path == "namespace" {
-                        if !support.namespacing {
+
+            let path = attr.meta.path();
+            if let Some(path) = path.get_ident() {
+                let path = path.to_string();
+
+                let warn_auto = |errors: &mut ErrorStore| {
+                    if auto_found {
+                        errors.push(LoweringError::Other(format!(
+                            "Diplomat attribute {path:?} gated on 'auto' but is not one that works with 'auto'"
+                        )));
+                    }
+                };
+
+                
+                if support.check_string(&path) == Some(false) {
+                    maybe_error_unsupported(auto_found, &path, backend, errors);
+                    continue;
+                }
+
+                match SpecialMethod::from_path_and_meta(&path, &attr.meta) {
+                    Ok(Some(kind)) => {
+                        if let Some(ref existing) = this.special_method {
                             errors.push(LoweringError::Other(format!(
-                                "`namespace` not supported in backend {backend}"
-                            )));
-                            continue;
+                                    "Multiple special method markers found on the same method, found {path} and {existing:?}"
+                                )));
+                        } else {
+                            this.special_method = Some(kind);
                         }
-                        match StandardAttribute::from_meta(&attr.meta) {
+                    }
+                    Err(error) => errors.push(error),
+                    Ok(None) => match path.as_str() {
+                        
+                        "disable" => {
+                            if let Meta::Path(_) = attr.meta {
+                                if this.disable {
+                                    errors.push(LoweringError::Other(
+                                        "Duplicate `disable` attribute".into(),
+                                    ));
+                                } else {
+                                    this.disable = true;
+                                }
+                            } else {
+                                errors.push(LoweringError::Other(
+                                    "`disable` must be a simple path".into(),
+                                ))
+                            }
+                            warn_auto(errors);
+                        }
+                        "rename" => {
+                            match RenameAttr::from_meta(&attr.meta) {
+                                Ok(rename) => {
+                                    
+                                    
+                                    
+                                    this.rename.extend(&rename);
+                                }
+                                Err(e) => errors.push(LoweringError::Other(format!(
+                                    "`rename` attr failed to parse: {e:?}"
+                                ))),
+                            }
+                            warn_auto(errors);
+                        }
+                        "namespace" => match StandardAttribute::from_meta(&attr.meta) {
                             Ok(StandardAttribute::String(s)) if s.is_empty() => {
                                 this.namespace = None
                             }
@@ -175,118 +331,92 @@ impl Attrs {
                                 errors.push(LoweringError::Other(
                                     "`namespace` must have a single string parameter".to_string(),
                                 ));
-                                continue;
                             }
+                        },
+                        "error" => {
+                            this.custom_errors = true;
                         }
-                    } else if path == "constructor"
-                        || path == "stringifier"
-                        || path == "comparison"
-                        || path == "iterable"
-                        || path == "iterator"
-                        || path == "indexer"
-                    {
-                        if let Some(ref existing) = this.special_method {
+                        _ => {
                             errors.push(LoweringError::Other(format!(
-                            "Multiple special method markers found on the same method, found {path} and {existing:?}"
-                        )));
-                            continue;
+                                "Unknown diplomat attribute {path}: expected one of: `disable, rename, namespace, constructor, stringifier, comparison, named_constructor, getter, setter, indexer, error`"
+                            )));
                         }
-                        let kind = if path == "constructor" {
-                            if !support.constructors {
-                                errors.push(LoweringError::Other(format!(
-                                    "constructor not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Constructor
-                        } else if path == "stringifier" {
-                            if !support.stringifiers {
-                                errors.push(LoweringError::Other(format!(
-                                    "stringifier not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Stringifier
-                        } else if path == "iterable" {
-                            if !support.iterables {
-                                errors.push(LoweringError::Other(format!(
-                                    "iterable not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Iterable
-                        } else if path == "iterator" {
-                            if !support.iterators {
-                                errors.push(LoweringError::Other(format!(
-                                    "iterator not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Iterator
-                        } else if path == "indexer" {
-                            if !support.indexing {
-                                errors.push(LoweringError::Other(format!(
-                                    "indexing not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Indexer
-                        } else {
-                            if !support.comparators {
-                                errors.push(LoweringError::Other(format!(
-                                    "comparison overload not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Comparison
-                        };
+                    },
+                }
+            }
+        }
 
-                        this.special_method = Some(kind);
-                    } else if path == "named_constructor" || path == "getter" || path == "setter" {
-                        if let Some(ref existing) = this.special_method {
-                            errors.push(LoweringError::Other(format!(
-                            "Multiple special method markers found on the same method, found {path} and {existing:?}"
-                        )));
-                            continue;
-                        }
-                        let kind = if path == "named_constructor" {
-                            if !support.named_constructors {
-                                errors.push(LoweringError::Other(format!(
-                                    "named constructors not supported in backend {backend}"
+        for attr in &ast.demo_attrs {
+            let path = attr.meta.path();
+            if let Some(path_ident) = path.get_ident() {
+                if path_ident == "external" {
+                    this.demo_attrs.external = true;
+                } else if path_ident == "default_constructor" {
+                    this.demo_attrs.default_constructor = true;
+                } else if path_ident == "generate" {
+                    this.demo_attrs.generate = true;
+                } else if path_ident == "input" {
+                    let meta_list = attr
+                        .meta
+                        .require_list()
+                        .expect("Could not get MetaList, expected #[diplomat::demo(input(...))]");
+
+                    meta_list
+                        .parse_nested_meta(|meta| {
+                            if meta.path.is_ident("label") {
+                                let value = meta.value()?;
+                                let s: syn::LitStr = value.parse()?;
+                                this.demo_attrs.input_cfg.label = s.value();
+                                Ok(())
+                            } else if meta.path.is_ident("default_value") {
+                                let value = meta.value()?;
+
+                                let str_val: String;
+
+                                let ahead = value.lookahead1();
+                                if ahead.peek(syn::LitFloat) {
+                                    let s: syn::LitFloat = value.parse()?;
+                                    str_val = s.base10_parse::<f64>()?.to_string();
+                                } else if ahead.peek(syn::LitInt) {
+                                    let s: syn::LitInt = value.parse()?;
+                                    str_val = s.base10_parse::<i64>()?.to_string();
+                                } else {
+                                    let s: syn::LitStr = value.parse()?;
+                                    str_val = s.value();
+                                }
+                                this.demo_attrs.input_cfg.default_value = str_val;
+                                Ok(())
+                            } else {
+                                Err(meta.error(format!(
+                                    "Unsupported ident {:?}",
+                                    meta.path.get_ident()
                                 )))
                             }
-                            SpecialMethod::NamedConstructor
-                        } else if path == "getter" {
-                            if !support.accessors {
-                                errors.push(LoweringError::Other(format!(
-                                    "accessors not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Getter
+                        })
+                        .expect("Could not read input(...)");
+                } else if path_ident == "custom_func" {
+                    let v = &attr.meta.require_name_value().unwrap().value;
+
+                    if let syn::Expr::Lit(s) = v {
+                        if let syn::Lit::Str(string) = &s.lit {
+                            this.demo_attrs.custom_func = Some(string.value());
                         } else {
-                            if !support.accessors {
-                                errors.push(LoweringError::Other(format!(
-                                    "accessors not supported in backend {backend}"
-                                )))
-                            }
-                            SpecialMethod::Setter
-                        };
-                        match StandardAttribute::from_meta(&attr.meta) {
-                            Ok(StandardAttribute::String(s)) => {
-                                this.special_method = Some(kind(Some(s)))
-                            }
-                            Ok(StandardAttribute::Empty) => this.special_method = Some(kind(None)),
-                            Ok(_) | Err(_) => {
-                                errors.push(LoweringError::Other(format!(
-                                    "`{path}` must have a single string parameter or no parameter",
-                                )));
-                                continue;
-                            }
+                            errors.push(LoweringError::Other(format!(
+                                "#[diplomat::demo(custom_func={s:?}) must be a literal string."
+                            )));
                         }
                     } else {
                         errors.push(LoweringError::Other(format!(
-                        "Unknown diplomat attribute {path}: expected one of: `disable, rename, namespace, constructor, stringifier, comparison, named_constructor, getter, setter, indexer`"
-                    )));
+                            "#[diplomat::demo(custom_func={v:?}) must be a literal string."
+                        )));
                     }
                 } else {
                     errors.push(LoweringError::Other(format!(
-                        "Unknown diplomat attribute {path:?}: expected one of: `disable, rename, namespace, constructor, stringifier, comparison, named_constructor, getter, setter, indexer`"
+                        "Unknown demo_attr: {path_ident:?}"
                     )));
                 }
+            } else {
+                errors.push(LoweringError::Other(format!("Unknown demo_attr: {path:?}")));
             }
         }
 
@@ -304,9 +434,11 @@ impl Attrs {
         let Attrs {
             disable,
             namespace,
-            rename: _,
-            abi_rename: _,
+            rename,
+            abi_rename,
             special_method,
+            custom_errors,
+            demo_attrs: _,
         } = &self;
 
         if *disable && matches!(context, AttributeContext::EnumVariant(..)) {
@@ -319,18 +451,33 @@ impl Attrs {
             if let AttributeContext::Method(method, self_id, ref mut special_method_presence) =
                 context
             {
+                let check_param_count = |name: &str, count: usize, errors: &mut ErrorStore| {
+                    if method.params.len() != count {
+                        errors.push(LoweringError::Other(format!(
+                            "{name} must have exactly {count} parameter{}",
+                            if count == 1 { "" } else { "s" }
+                        )))
+                    }
+                };
+                let check_self_param = |name: &str, need_self: bool, errors: &mut ErrorStore| {
+                    if method.param_self.is_some() != need_self {
+                        errors.push(LoweringError::Other(format!(
+                            "{name} must{} accept a self parameter",
+                            if need_self { "" } else { " not" }
+                        )));
+                    }
+                };
                 match special {
                     SpecialMethod::Constructor | SpecialMethod::NamedConstructor(..) => {
-                        if method.param_self.is_some() {
-                            errors.push(LoweringError::Other(
-                                "Constructors must not accept a self parameter".to_string(),
-                            ))
-                        }
+                        check_self_param("Constructors", false, errors);
                         let output = method.output.success_type();
                         match method.output {
                             ReturnType::Infallible(_) => (),
                             ReturnType::Fallible(..) => {
-                                if !validator.attrs_supported().fallible_constructors {
+                                
+                                if validator.attrs_supported().constructors
+                                    && !validator.attrs_supported().fallible_constructors
+                                {
                                     errors.push(LoweringError::Other(
                                         "This backend doesn't support fallible constructors"
                                             .to_string(),
@@ -359,6 +506,11 @@ impl Attrs {
                             errors
                                 .push(LoweringError::Other("Getter cannot have parameters".into()));
                         }
+                        if method.param_self.is_none()
+                            && !validator.attrs_supported().static_accessors
+                        {
+                            errors.push(LoweringError::Other(format!("No self parameter on Getter {} but static_acessors are not supported",method.name.as_str())));
+                        }
 
                         
                     }
@@ -367,12 +519,12 @@ impl Attrs {
                         if !matches!(method.output.success_type(), SuccessType::Unit) {
                             errors.push(LoweringError::Other("Setters must return unit".into()));
                         }
-                        if method.params.len() != 1 {
-                            errors.push(LoweringError::Other(
-                                "Setter must have exactly one parameter".into(),
-                            ))
+                        if method.param_self.is_none()
+                            && !validator.attrs_supported().static_accessors
+                        {
+                            errors.push(LoweringError::Other(format!("No self parameter on Setter {} but static_acessors are not supported",method.name.as_str())));
                         }
-
+                        check_param_count("Setter", 1, errors);
                         
                     }
                     SpecialMethod::Stringifier => {
@@ -380,18 +532,14 @@ impl Attrs {
                             errors
                                 .push(LoweringError::Other("Getter cannot have parameters".into()));
                         }
-                        if !matches!(method.output.success_type(), SuccessType::Writeable) {
+                        if !matches!(method.output.success_type(), SuccessType::Write) {
                             errors.push(LoweringError::Other(
-                                "Stringifier must return Writeable".into(),
+                                "Stringifier must return string".into(),
                             ));
                         }
                     }
                     SpecialMethod::Comparison => {
-                        if method.params.len() != 1 {
-                            errors.push(LoweringError::Other(
-                                "Comparator must have single parameter".into(),
-                            ));
-                        }
+                        check_param_count("Comparator", 1, errors);
                         if special_method_presence.comparator {
                             errors.push(LoweringError::Other(
                                 "Cannot define two comparators on the same type".into(),
@@ -401,6 +549,8 @@ impl Attrs {
                         
                         const COMPARATOR_ERROR: &str =
                             "Comparator's parameter must be identical to self";
+                        check_self_param("Comparators", true, errors);
+
                         if let Some(ref selfty) = method.param_self {
                             if let Some(param) = method.params.first() {
                                 match (&selfty.ty, &param.ty) {
@@ -446,9 +596,6 @@ impl Attrs {
                                     }
                                 }
                             }
-                        } else {
-                            errors
-                                .push(LoweringError::Other("Comparator must be non-static".into()));
                         }
                     }
                     SpecialMethod::Iterator => {
@@ -457,11 +604,7 @@ impl Attrs {
                                 "Cannot mark type as iterator twice".into(),
                             ));
                         }
-                        if !method.params.is_empty() {
-                            errors.push(LoweringError::Other(
-                                "Iterators cannot take parameters".into(),
-                            ))
-                        }
+                        check_param_count("Iterator", 0, errors);
                         
                         
                         
@@ -470,14 +613,13 @@ impl Attrs {
                         
                         
                         
+                        check_self_param("Iterator", true, errors);
                         if let Some(this) = &method.param_self {
                             if !matches!(this.ty, SelfType::Opaque(..)) {
                                 errors.push(LoweringError::Other(
                                     "Iterators only allowed on opaques".into(),
                                 ))
                             }
-                        } else {
-                            errors.push(LoweringError::Other("Iterators must take self".into()))
                         }
 
                         if let ReturnType::Nullable(ref o) = method.output {
@@ -513,14 +655,8 @@ impl Attrs {
                                 "Cannot mark type as iterable twice".into(),
                             ));
                         }
-                        if !method.params.is_empty() {
-                            errors.push(LoweringError::Other(
-                                "Iterables cannot take parameters".into(),
-                            ))
-                        }
-                        if method.param_self.is_none() {
-                            errors.push(LoweringError::Other("Iterables must take self".into()))
-                        }
+                        check_param_count("Iterator", 0, errors);
+                        check_self_param("Iterables", true, errors);
 
                         match method.output.success_type() {
                             SuccessType::OutType(ty) => {
@@ -538,14 +674,60 @@ impl Attrs {
                         }
                     }
                     SpecialMethod::Indexer => {
-                        if method.params.len() != 1 {
-                            errors.push(LoweringError::Other(
-                                "Indexer must have exactly one parameter".into(),
-                            ));
-                        }
+                        check_param_count("Indexer", 1, errors);
+                        check_self_param("Indexer", true, errors);
 
                         if method.output.success_type().is_unit() {
                             errors.push(LoweringError::Other("Indexer must return a value".into()));
+                        }
+                    }
+                    e @ (SpecialMethod::Add
+                    | SpecialMethod::Sub
+                    | SpecialMethod::Mul
+                    | SpecialMethod::Div) => {
+                        let name = match e {
+                            SpecialMethod::Add => "Add",
+                            SpecialMethod::Sub => "Sub",
+                            SpecialMethod::Mul => "Mul",
+                            SpecialMethod::Div => "Div",
+                            _ => unreachable!(),
+                        };
+
+                        check_param_count(name, 1, errors);
+                        check_self_param(name, true, errors);
+
+                        if method.output.success_type().is_unit() {
+                            errors
+                                .push(LoweringError::Other(format!("{name} must return a value")));
+                        }
+                    }
+                    e @ (SpecialMethod::AddAssign
+                    | SpecialMethod::SubAssign
+                    | SpecialMethod::MulAssign
+                    | SpecialMethod::DivAssign) => {
+                        let name = match e {
+                            SpecialMethod::AddAssign => "AddAssign",
+                            SpecialMethod::SubAssign => "SubAssign",
+                            SpecialMethod::MulAssign => "MulAssign",
+                            SpecialMethod::DivAssign => "DivAssign",
+                            _ => unreachable!(),
+                        };
+                        check_param_count(name, 1, errors);
+                        check_self_param(name, true, errors);
+                        if let Some(self_param) = &method.param_self {
+                            if matches!(self_param.ty, SelfType::Struct(_) | SelfType::Enum(_)) {
+                                errors.push(LoweringError::Other("*Assign arithmetic operations not allowed on non-opaque types. \
+                                     Use the non-mutating arithmetic operators instead".to_string()));
+                            } else if self_param.ty.is_immutably_borrowed() {
+                                errors.push(LoweringError::Other(format!(
+                                    "{name} must take self by mutable reference"
+                                )));
+                            }
+                        }
+                        if !method.output.success_type().is_unit() {
+                            errors.push(LoweringError::Other(format!(
+                                "{name} must not return a value"
+                            )));
                         }
                     }
                 }
@@ -562,6 +744,46 @@ impl Attrs {
         {
             errors.push(LoweringError::Other(
                 "`namespace` can only be used on types".to_string(),
+            ));
+        }
+
+        if matches!(
+            context,
+            AttributeContext::Param | AttributeContext::SelfParam | AttributeContext::Field
+        ) {
+            if *disable {
+                errors.push(LoweringError::Other(format!(
+                    "`disable`s cannot be used on an {context:?}."
+                )));
+            }
+
+            if namespace.is_some() {
+                errors.push(LoweringError::Other(format!(
+                    "`namespace` cannot be used on an {context:?}."
+                )));
+            }
+
+            if !rename.is_empty() || !abi_rename.is_empty() {
+                errors.push(LoweringError::Other(format!(
+                    "`rename`s cannot be used on an {context:?}."
+                )));
+            }
+
+            if special_method.is_some() {
+                errors.push(LoweringError::Other(format!(
+                    "{context:?} cannot be special methods."
+                )));
+            }
+        }
+
+        if *custom_errors
+            && !matches!(
+                context,
+                AttributeContext::Type(..) | AttributeContext::Trait(..)
+            )
+        {
+            errors.push(LoweringError::Other(
+                "`error` can only be used on types".to_string(),
             ));
         }
     }
@@ -592,46 +814,153 @@ impl Attrs {
             abi_rename: Default::default(),
             
             special_method: None,
+            
+            custom_errors: false,
+            demo_attrs: Default::default(),
         }
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[non_exhaustive]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct BackendAttrSupport {
-    pub disabling: bool,
-    pub renaming: bool,
+    
     pub namespacing: bool,
-    pub constructors: bool,
-    pub named_constructors: bool,
-    pub fallible_constructors: bool,
-    pub accessors: bool,
-    pub stringifiers: bool,
-    pub comparators: bool,
+    
+    
     pub memory_sharing: bool,
+    
+    
+    pub non_exhaustive_structs: bool,
+    
+    pub method_overloading: bool,
+    
+    pub utf8_strings: bool,
+    
+    pub utf16_strings: bool,
+    
+    pub static_slices: bool,
+
+    
+    
+    pub constructors: bool,
+    
+    pub named_constructors: bool,
+    
+    
+    
+    pub fallible_constructors: bool,
+    
+    pub accessors: bool,
+    
+    pub static_accessors: bool,
+    
+    pub stringifiers: bool,
+    
+    pub comparators: bool,
+    
     pub iterators: bool,
+    
     pub iterables: bool,
+    
     pub indexing: bool,
     
+    pub arithmetic: bool,
+    
+    pub option: bool,
+    
+    pub callbacks: bool,
+    
+    pub traits: bool,
+    
+    pub custom_errors: bool,
+    
+    pub traits_are_send: bool,
+    
+    pub traits_are_sync: bool,
 }
 
 impl BackendAttrSupport {
     #[cfg(test)]
     fn all_true() -> Self {
         Self {
-            disabling: true,
-            renaming: true,
             namespacing: true,
+            memory_sharing: true,
+            non_exhaustive_structs: true,
+            method_overloading: true,
+            utf8_strings: true,
+            utf16_strings: true,
+            static_slices: true,
+
             constructors: true,
             named_constructors: true,
             fallible_constructors: true,
+            static_accessors: true,
             accessors: true,
             stringifiers: true,
             comparators: true,
-            memory_sharing: true,
             iterators: true,
             iterables: true,
             indexing: true,
+            arithmetic: true,
+            option: true,
+            callbacks: true,
+            traits: true,
+            custom_errors: true,
+            traits_are_send: true,
+            traits_are_sync: true,
+        }
+    }
+
+    fn check_string(&self, v: &str) -> Option<bool> {
+        match v {
+            "namespacing" => Some(self.namespacing),
+            "memory_sharing" => Some(self.memory_sharing),
+            "non_exhaustive_structs" => Some(self.non_exhaustive_structs),
+            "method_overloading" => Some(self.method_overloading),
+            "utf8_strings" => Some(self.utf8_strings),
+            "utf16_strings" => Some(self.utf16_strings),
+            "static_slices" => Some(self.static_slices),
+            "constructors" => Some(self.constructors),
+            "named_constructors" => Some(self.named_constructors),
+            "fallible_constructors" => Some(self.fallible_constructors),
+            "accessors" => Some(self.accessors),
+            "stringifiers" => Some(self.stringifiers),
+            "comparators" => Some(self.comparators),
+            "iterators" => Some(self.iterators),
+            "iterables" => Some(self.iterables),
+            "indexing" => Some(self.indexing),
+            "arithmetic" => Some(self.arithmetic),
+            "option" => Some(self.option),
+            "callbacks" => Some(self.callbacks),
+            "traits" => Some(self.traits),
+            "custom_errors" => Some(self.custom_errors),
+            "traits_are_send" => Some(self.traits_are_send),
+            "traits_are_sync" => Some(self.traits_are_sync),
+            _ => None,
         }
     }
 }
@@ -650,12 +979,21 @@ pub trait AttributeValidator {
     fn attrs_supported(&self) -> BackendAttrSupport;
 
     
-    fn satisfies_cfg(&self, cfg: &DiplomatBackendAttrCfg) -> Result<bool, LoweringError> {
+    
+    
+    
+    fn satisfies_cfg(
+        &self,
+        cfg: &DiplomatBackendAttrCfg,
+        mut auto_found: Option<&mut bool>,
+    ) -> Result<bool, LoweringError> {
         Ok(match *cfg {
-            DiplomatBackendAttrCfg::Not(ref c) => !self.satisfies_cfg(c)?,
+            DiplomatBackendAttrCfg::Not(ref c) => !self.satisfies_cfg(c, None)?,
             DiplomatBackendAttrCfg::Any(ref cs) => {
+                #[allow(clippy::needless_option_as_deref)]
+                
                 for c in cs {
-                    if self.satisfies_cfg(c)? {
+                    if self.satisfies_cfg(c, auto_found.as_deref_mut())? {
                         return Ok(true);
                     }
                 }
@@ -663,11 +1001,19 @@ pub trait AttributeValidator {
             }
             DiplomatBackendAttrCfg::All(ref cs) => {
                 for c in cs {
-                    if !self.satisfies_cfg(c)? {
+                    if !self.satisfies_cfg(c, None)? {
                         return Ok(false);
                     }
                 }
                 true
+            }
+            DiplomatBackendAttrCfg::Auto => {
+                if let Some(found) = auto_found {
+                    *found = true;
+                    return Ok(true);
+                } else {
+                    return Err(LoweringError::Other("auto in diplomat::attr() is only allowed at the top level and within `any`".into()));
+                }
             }
             DiplomatBackendAttrCfg::Star => true,
             DiplomatBackendAttrCfg::BackendName(ref n) => self.is_backend(n),
@@ -727,34 +1073,58 @@ impl AttributeValidator for BasicAttributeValidator {
         Ok(if name == "supports" {
             
             let BackendAttrSupport {
-                disabling,
-                renaming,
                 namespacing,
+                memory_sharing,
+                non_exhaustive_structs,
+                method_overloading,
+                utf8_strings,
+                utf16_strings,
+                static_slices,
+
                 constructors,
                 named_constructors,
                 fallible_constructors,
                 accessors,
+                static_accessors,
                 stringifiers,
                 comparators,
-                memory_sharing,
                 iterators,
                 iterables,
                 indexing,
+                arithmetic,
+                option,
+                callbacks,
+                traits,
+                custom_errors,
+                traits_are_send,
+                traits_are_sync,
             } = self.support;
             match value {
-                "disabling" => disabling,
-                "renaming" => renaming,
                 "namespacing" => namespacing,
+                "memory_sharing" => memory_sharing,
+                "non_exhaustive_structs" => non_exhaustive_structs,
+                "method_overloading" => method_overloading,
+                "utf8_strings" => utf8_strings,
+                "utf16_strings" => utf16_strings,
+                "static_slices" => static_slices,
+
                 "constructors" => constructors,
                 "named_constructors" => named_constructors,
                 "fallible_constructors" => fallible_constructors,
                 "accessors" => accessors,
+                "static_accessors" => static_accessors,
                 "stringifiers" => stringifiers,
                 "comparators" => comparators,
-                "memory_sharing" => memory_sharing,
                 "iterators" => iterators,
                 "iterables" => iterables,
                 "indexing" => indexing,
+                "arithmetic" => arithmetic,
+                "option" => option,
+                "callbacks" => callbacks,
+                "traits" => traits,
+                "custom_errors" => custom_errors,
+                "traits_are_send" => traits_are_send,
+                "traits_are_sync" => traits_are_sync,
                 _ => {
                     return Err(LoweringError::Other(format!(
                         "Unknown supports = value found: {value}"
@@ -778,17 +1148,14 @@ mod tests {
     use std::fmt::Write;
 
     macro_rules! uitest_lowering_attr {
-        ($($file:tt)*) => {
+        ($attrs:expr, $($file:tt)*) => {
             let parsed: syn::File = syn::parse_quote! { $($file)* };
-            let custom_types = crate::ast::File::from(&parsed);
-            let env = custom_types.all_types();
 
             let mut output = String::new();
 
-
             let mut attr_validator = hir::BasicAttributeValidator::new("tests");
-            attr_validator.support = hir::BackendAttrSupport::all_true();
-            match hir::TypeContext::from_ast(&env, attr_validator) {
+            attr_validator.support = $attrs;
+            match hir::TypeContext::from_syn(&parsed, Default::default(), attr_validator) {
                 Ok(_context) => (),
                 Err(e) => {
                     for (ctx, err) in e {
@@ -803,8 +1170,41 @@ mod tests {
     }
 
     #[test]
+    fn test_auto() {
+        uitest_lowering_attr! { hir::BackendAttrSupport { comparators: true, ..Default::default()},
+            #[diplomat::bridge]
+            mod ffi {
+                use std::cmp;
+
+                #[diplomat::opaque]
+                #[diplomat::attr(auto, namespace = "should_not_show_up")]
+                struct Opaque;
+
+
+                impl Opaque {
+                    #[diplomat::attr(auto, comparison)]
+                    pub fn comparator_static(&self, other: &Opaque) -> cmp::Ordering {
+                        todo!()
+                    }
+                    #[diplomat::attr(*, iterator)]
+                    pub fn next(&mut self) -> Option<u8> {
+                        self.0.next()
+                    }
+                    #[diplomat::attr(auto, rename = "bar")]
+                    pub fn auto_doesnt_work_on_renames(&self) {
+                    }
+                    #[diplomat::attr(auto, disable)]
+                    pub fn auto_doesnt_work_on_disables(&self) {
+                    }
+                }
+
+            }
+        }
+    }
+
+    #[test]
     fn test_comparator() {
-        uitest_lowering_attr! {
+        uitest_lowering_attr! { hir::BackendAttrSupport::all_true(),
             #[diplomat::bridge]
             mod ffi {
                 use std::cmp;
@@ -818,23 +1218,23 @@ mod tests {
 
 
                 impl Opaque {
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparator_static(other: &Opaque) -> cmp::Ordering {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparator_none(&self) -> cmp::Ordering {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparator_othertype(other: Struct) -> cmp::Ordering {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparator_badreturn(&self, other: &Opaque) -> u8 {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparison_correct(&self, other: &Opaque) -> cmp::Ordering {
                         todo!()
                     }
@@ -844,22 +1244,22 @@ mod tests {
                     pub fn ordering_wrong(&self, other: cmp::Ordering) {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparison_mut(&self, other: &mut Opaque) -> cmp::Ordering {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparison_opt(&self, other: Option<&Opaque>) -> cmp::Ordering {
                         todo!()
                     }
                 }
 
                 impl Struct {
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparison_other(self, other: &Opaque) -> cmp::Ordering {
                         todo!()
                     }
-                    #[diplomat::attr(*, comparison)]
+                    #[diplomat::attr(auto, comparison)]
                     pub fn comparison_correct(self, other: Self) -> cmp::Ordering {
                         todo!()
                     }
@@ -870,7 +1270,7 @@ mod tests {
 
     #[test]
     fn test_iterator() {
-        uitest_lowering_attr! {
+        uitest_lowering_attr! { hir::BackendAttrSupport::all_true(),
             #[diplomat::bridge]
             mod ffi {
 
@@ -881,14 +1281,14 @@ mod tests {
 
 
                 impl Opaque {
-                    #[diplomat::attr(*, iterable)]
+                    #[diplomat::attr(auto, iterable)]
                     pub fn iterable<'a>(&'a self) -> Box<OpaqueIterator<'a>> {
                         Box::new(OpaqueIterator(self.0.iter()))
                     }
                 }
 
                 impl OpaqueIterator {
-                    #[diplomat::attr(*, iterator)]
+                    #[diplomat::attr(auto, iterator)]
                     pub fn next(&mut self) -> Option<u8> {
                         self.0.next()
                     }
@@ -898,12 +1298,12 @@ mod tests {
                 struct Broken;
 
                 impl Broken {
-                    #[diplomat::attr(*, iterable)]
+                    #[diplomat::attr(auto, iterable)]
                     pub fn iterable_no_return(&self) {}
-                    #[diplomat::attr(*, iterable)]
+                    #[diplomat::attr(auto, iterable)]
                     pub fn iterable_no_self() -> Box<BrokenIterator> { todo!() }
 
-                    #[diplomat::attr(*, iterable)]
+                    #[diplomat::attr(auto, iterable)]
                     pub fn iterable_non_custom(&self) -> u8 { todo!() }
                 }
 
@@ -911,14 +1311,55 @@ mod tests {
                 struct BrokenIterator;
 
                 impl BrokenIterator {
-                    #[diplomat::attr(*, iterator)]
+                    #[diplomat::attr(auto, iterator)]
                     pub fn iterator_no_return(&self) {}
-                    #[diplomat::attr(*, iterator)]
+                    #[diplomat::attr(auto, iterator)]
                     pub fn iterator_no_self() -> Option<u8> { todo!() }
 
-                    #[diplomat::attr(*, iterator)]
+                    #[diplomat::attr(auto, iterator)]
                     pub fn iterator_no_option(&self) -> u8 { todo!() }
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn test_unsupported_features() {
+        uitest_lowering_attr! { hir::BackendAttrSupport::default(),
+            #[diplomat::bridge]
+            mod ffi {
+                use std::cmp;
+                use diplomat_runtime::DiplomatOption;
+
+                #[diplomat::opaque]
+                struct Opaque;
+
+                struct Struct {
+                    pub a: u8,
+                    pub b: u8,
+                    pub c: DiplomatOption<u8>,
+                }
+
+                struct Struct2 {
+                    pub a: DiplomatOption<Struct>,
+                }
+
+                #[diplomat::out]
+                struct OutStruct {
+                    pub option: DiplomatOption<u8>
+                }
+
+
+                impl Opaque {
+                    pub fn take_option(&self, option: DiplomatOption<u8>) {
+                        todo!()
+                    }
+                    // Always ok since this translates to a Resulty return
+                    pub fn returning_option_is_ok(&self) -> Option<u8> {
+                        todo!()
+                    }
+                }
+
             }
         }
     }

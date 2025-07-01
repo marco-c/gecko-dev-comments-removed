@@ -1,4 +1,4 @@
-use crate::astronomy::{self, Astronomical, Location, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR};
+use crate::astronomy::{self, Astronomical, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR};
 use crate::helpers::i64_to_i32;
 use crate::iso::{fixed_from_iso, iso_from_fixed};
 use crate::rata_die::{Moment, RataDie};
@@ -20,7 +20,7 @@ pub trait ChineseBased {
     
     
     
-    fn location(fixed: RataDie) -> Location;
+    fn utc_offset(fixed: RataDie) -> f64;
 
     
     
@@ -28,96 +28,17 @@ pub trait ChineseBased {
     const EPOCH: RataDie;
 
     
-    const EPOCH_ISO: i32;
-
-    
     const DEBUG_NAME: &'static str;
-
-    
-    fn extended_from_iso(iso_year: i32) -> i32 {
-        iso_year - Self::EPOCH_ISO + 1
-    }
-    
-    fn iso_from_extended(extended_year: i32) -> i32 {
-        extended_year - 1 + Self::EPOCH_ISO
-    }
 }
 
 
-const CHINESE_EPOCH: RataDie = RataDie::new(-963099); 
-const CHINESE_EPOCH_ISO: i32 = -2636;
+pub fn extended_from_iso<C: ChineseBased>(iso_year: i32) -> i32 {
+    iso_year - const { crate::iso::iso_year_from_fixed(C::EPOCH) as i32 - 1 }
+}
 
-
-
-
-
-
-
-
-const UTC_OFFSET_PRE_1929: f64 = (1397.0 / 180.0) / 24.0;
-const UTC_OFFSET_POST_1929: f64 = 8.0 / 24.0;
-
-const CHINESE_LOCATION_PRE_1929: Location =
-    Location::new_unchecked(39.0, 116.0, 43.5, UTC_OFFSET_PRE_1929);
-const CHINESE_LOCATION_POST_1929: Location =
-    Location::new_unchecked(39.0, 116.0, 43.5, UTC_OFFSET_POST_1929);
-
-
-const KOREAN_EPOCH: RataDie = RataDie::new(-852065); 
-const KOREAN_EPOCH_ISO: i32 = -2332; 
-
-
-
-
-
-
-
-
-const UTC_OFFSET_ORIGINAL: f64 = (3809.0 / 450.0) / 24.0;
-const UTC_OFFSET_1908: f64 = 8.5 / 24.0;
-const UTC_OFFSET_1912: f64 = 9.0 / 24.0;
-const UTC_OFFSET_1954: f64 = 8.5 / 24.0;
-const UTC_OFFSET_1961: f64 = 9.0 / 24.0;
-
-const FIXED_1908: RataDie = RataDie::new(696608); 
-const FIXED_1912: RataDie = RataDie::new(697978); 
-const FIXED_1954: RataDie = RataDie::new(713398); 
-const FIXED_1961: RataDie = RataDie::new(716097); 
-
-const KOREAN_LATITUDE: f64 = 37.0 + (34.0 / 60.0);
-const KOREAN_LONGITUDE: f64 = 126.0 + (58.0 / 60.0);
-const KOREAN_ELEVATION: f64 = 0.0;
-
-const KOREAN_LOCATION_ORIGINAL: Location = Location::new_unchecked(
-    KOREAN_LATITUDE,
-    KOREAN_LONGITUDE,
-    KOREAN_ELEVATION,
-    UTC_OFFSET_ORIGINAL,
-);
-const KOREAN_LOCATION_1908: Location = Location::new_unchecked(
-    KOREAN_LATITUDE,
-    KOREAN_LONGITUDE,
-    KOREAN_ELEVATION,
-    UTC_OFFSET_1908,
-);
-const KOREAN_LOCATION_1912: Location = Location::new_unchecked(
-    KOREAN_LATITUDE,
-    KOREAN_LONGITUDE,
-    KOREAN_ELEVATION,
-    UTC_OFFSET_1912,
-);
-const KOREAN_LOCATION_1954: Location = Location::new_unchecked(
-    KOREAN_LATITUDE,
-    KOREAN_LONGITUDE,
-    KOREAN_ELEVATION,
-    UTC_OFFSET_1954,
-);
-const KOREAN_LOCATION_1961: Location = Location::new_unchecked(
-    KOREAN_LATITUDE,
-    KOREAN_LONGITUDE,
-    KOREAN_ELEVATION,
-    UTC_OFFSET_1961,
-);
+pub fn iso_from_extended<C: ChineseBased>(extended_year: i32) -> i32 {
+    extended_year + const { crate::iso::iso_year_from_fixed(C::EPOCH) as i32 - 1 }
+}
 
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
@@ -130,37 +51,44 @@ pub struct Chinese;
 pub struct Dangi;
 
 impl ChineseBased for Chinese {
-    fn location(fixed: RataDie) -> Location {
-        let year = crate::iso::iso_year_from_fixed(fixed);
-        if year < 1929 {
-            CHINESE_LOCATION_PRE_1929
+    fn utc_offset(fixed: RataDie) -> f64 {
+        use crate::iso::const_fixed_from_iso as iso;
+        
+        
+        
+        if fixed < const { iso(1929, 1, 1) } {
+            1397.0 / 180.0 / 24.0
         } else {
-            CHINESE_LOCATION_POST_1929
+            8.0 / 24.0
         }
     }
 
-    const EPOCH: RataDie = CHINESE_EPOCH;
-    const EPOCH_ISO: i32 = CHINESE_EPOCH_ISO;
+    
+    const EPOCH: RataDie = crate::iso::const_fixed_from_iso(-2636, 2, 15);
     const DEBUG_NAME: &'static str = "chinese";
 }
 
 impl ChineseBased for Dangi {
-    fn location(fixed: RataDie) -> Location {
-        if fixed < FIXED_1908 {
-            KOREAN_LOCATION_ORIGINAL
-        } else if fixed < FIXED_1912 {
-            KOREAN_LOCATION_1908
-        } else if fixed < FIXED_1954 {
-            KOREAN_LOCATION_1912
-        } else if fixed < FIXED_1961 {
-            KOREAN_LOCATION_1954
+    fn utc_offset(fixed: RataDie) -> f64 {
+        use crate::iso::const_fixed_from_iso as iso;
+        
+        
+        
+        if fixed < const { iso(1908, 4, 1) } {
+            3809.0 / 450.0 / 24.0
+        } else if fixed < const { iso(1912, 1, 1) } {
+            8.5 / 24.0
+        } else if fixed < const { iso(1954, 3, 21) } {
+            9.0 / 24.0
+        } else if fixed < const { iso(1961, 8, 10) } {
+            8.5 / 24.0
         } else {
-            KOREAN_LOCATION_1961
+            9.0 / 24.0
         }
     }
 
-    const EPOCH: RataDie = KOREAN_EPOCH;
-    const EPOCH_ISO: i32 = KOREAN_EPOCH_ISO;
+    
+    const EPOCH: RataDie = crate::iso::const_fixed_from_iso(-2332, 2, 15);
     const DEBUG_NAME: &'static str = "dangi";
 }
 
@@ -215,8 +143,7 @@ impl YearBounds {
 
 pub(crate) fn major_solar_term_from_fixed<C: ChineseBased>(date: RataDie) -> u32 {
     let moment: Moment = date.as_moment();
-    let location = C::location(date);
-    let universal: Moment = Location::universal_from_standard(moment, location);
+    let universal = moment - C::utc_offset(date);
     let solar_longitude =
         i64_to_i32(Astronomical::solar_longitude(Astronomical::julian_centuries(universal)) as i64);
     debug_assert!(
@@ -235,8 +162,8 @@ pub(crate) fn major_solar_term_from_fixed<C: ChineseBased>(date: RataDie) -> u32
 
 pub(crate) fn new_moon_on_or_after<C: ChineseBased>(moment: Moment) -> RataDie {
     let new_moon_moment = Astronomical::new_moon_at_or_after(midnight::<C>(moment));
-    let location = C::location(new_moon_moment.as_rata_die());
-    Location::standard_from_universal(new_moon_moment, location).as_rata_die()
+    let utc_offset = C::utc_offset(new_moon_moment.as_rata_die());
+    (new_moon_moment + utc_offset).as_rata_die()
 }
 
 
@@ -245,8 +172,8 @@ pub(crate) fn new_moon_on_or_after<C: ChineseBased>(moment: Moment) -> RataDie {
 
 pub(crate) fn new_moon_before<C: ChineseBased>(moment: Moment) -> RataDie {
     let new_moon_moment = Astronomical::new_moon_before(midnight::<C>(moment));
-    let location = C::location(new_moon_moment.as_rata_die());
-    Location::standard_from_universal(new_moon_moment, location).as_rata_die()
+    let utc_offset = C::utc_offset(new_moon_moment.as_rata_die());
+    (new_moon_moment + utc_offset).as_rata_die()
 }
 
 
@@ -254,7 +181,7 @@ pub(crate) fn new_moon_before<C: ChineseBased>(moment: Moment) -> RataDie {
 
 
 pub(crate) fn midnight<C: ChineseBased>(moment: Moment) -> Moment {
-    Location::universal_from_standard(moment, C::location(moment.as_rata_die()))
+    moment - C::utc_offset(moment.as_rata_die())
 }
 
 
@@ -388,6 +315,8 @@ pub(crate) fn new_year_on_or_before_fixed_date<C: ChineseBased>(
 
 
 
+
+
 pub fn fixed_mid_year_from_year<C: ChineseBased>(elapsed_years: i32) -> RataDie {
     let cycle = (elapsed_years - 1).div_euclid(60) + 1;
     let year = (elapsed_years - 1).rem_euclid(60) + 1;
@@ -492,6 +421,7 @@ pub fn chinese_based_date_from_fixed<C: ChineseBased>(date: RataDie) -> ChineseF
 
 
 
+
 pub fn get_leap_month_from_new_year<C: ChineseBased>(new_year: RataDie) -> u8 {
     let mut cur = new_year;
     let mut result = 1;
@@ -509,6 +439,8 @@ pub fn get_leap_month_from_new_year<C: ChineseBased>(new_year: RataDie) -> u8 {
     debug_assert!(result < MAX_ITERS_FOR_MONTHS_OF_YEAR, "The given year was not a leap year and an unexpected number of iterations occurred searching for a leap month.");
     result
 }
+
+
 
 
 
@@ -550,10 +482,11 @@ pub fn days_in_prev_year<C: ChineseBased>(new_year: RataDie) -> u16 {
 
 
 
+
 pub fn month_structure_for_year<C: ChineseBased>(
     new_year: RataDie,
     next_new_year: RataDie,
-) -> ([bool; 13], Option<NonZeroU8>) {
+) -> ([bool; 13], Option<u8>) {
     let mut ret = [false; 13];
 
     let mut current_month_start = new_year;
@@ -564,7 +497,7 @@ pub fn month_structure_for_year<C: ChineseBased>(
         let next_month_major_solar_term = major_solar_term_from_fixed::<C>(next_month_start);
 
         if next_month_major_solar_term == current_month_major_solar_term {
-            leap_month_index = NonZeroU8::new(i + 1);
+            leap_month_index = Some(i + 1);
         }
 
         let diff = next_month_start - current_month_start;
@@ -597,7 +530,7 @@ pub fn month_structure_for_year<C: ChineseBased>(
         }
     }
     if current_month_start != next_new_year && leap_month_index.is_none() {
-        leap_month_index = NonZeroU8::new(13); 
+        leap_month_index = Some(13); 
         debug_assert!(
             major_solar_term_from_fixed::<C>(current_month_start) == current_month_major_solar_term,
             "A leap month is required here, but it had a major solar term!"
@@ -622,6 +555,18 @@ mod test {
 
     use super::*;
     use crate::rata_die::Moment;
+
+    #[test]
+    fn check_epochs() {
+        assert_eq!(
+            YearBounds::compute::<Dangi>(Dangi::EPOCH).new_year,
+            Dangi::EPOCH
+        );
+        assert_eq!(
+            YearBounds::compute::<Chinese>(Chinese::EPOCH).new_year,
+            Chinese::EPOCH
+        );
+    }
 
     #[test]
     fn test_chinese_new_moon_directionality() {

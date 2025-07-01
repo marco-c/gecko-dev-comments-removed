@@ -20,22 +20,22 @@ mod niche;
 mod option;
 mod plain;
 mod slices;
-mod unvalidated;
+#[cfg(test)]
+pub mod test_utils;
 
 pub mod tuple;
-pub use super::ZeroVecError;
+pub mod tuplevar;
+pub mod vartuple;
 pub use chars::CharULE;
-pub use encode::{encode_varule_to_box, EncodeAsVarULE};
+#[cfg(feature = "alloc")]
+pub use encode::encode_varule_to_box;
+pub use encode::EncodeAsVarULE;
 pub use multi::MultiFieldsULE;
 pub use niche::{NicheBytes, NichedOption, NichedOptionULE};
 pub use option::{OptionULE, OptionVarULE};
 pub use plain::RawBytesULE;
-pub use unvalidated::{UnvalidatedChar, UnvalidatedStr};
 
-use alloc::alloc::Layout;
-use alloc::borrow::ToOwned;
-use alloc::boxed::Box;
-use core::{mem, slice};
+use core::{any, fmt, mem, slice};
 
 
 
@@ -86,7 +86,7 @@ where
     
     
     
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError>;
+    fn validate_bytes(bytes: &[u8]) -> Result<(), UleError>;
 
     
     
@@ -98,10 +98,10 @@ where
     
     
     
-    fn parse_byte_slice(bytes: &[u8]) -> Result<&[Self], ZeroVecError> {
-        Self::validate_byte_slice(bytes)?;
+    fn parse_bytes_to_slice(bytes: &[u8]) -> Result<&[Self], UleError> {
+        Self::validate_bytes(bytes)?;
         debug_assert_eq!(bytes.len() % mem::size_of::<Self>(), 0);
-        Ok(unsafe { Self::from_byte_slice_unchecked(bytes) })
+        Ok(unsafe { Self::slice_from_bytes_unchecked(bytes) })
     }
 
     
@@ -129,7 +129,7 @@ where
     
     
     #[inline]
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &[Self] {
+    unsafe fn slice_from_bytes_unchecked(bytes: &[u8]) -> &[Self] {
         let data = bytes.as_ptr();
         let len = bytes.len() / mem::size_of::<Self>();
         debug_assert_eq!(bytes.len() % mem::size_of::<Self>(), 0);
@@ -148,7 +148,7 @@ where
     
     #[inline]
     #[allow(clippy::wrong_self_convention)] 
-    fn as_byte_slice(slice: &[Self]) -> &[u8] {
+    fn slice_as_bytes(slice: &[Self]) -> &[u8] {
         unsafe {
             slice::from_raw_parts(slice as *const [Self] as *const u8, mem::size_of_val(slice))
         }
@@ -187,6 +187,8 @@ pub trait AsULE: Copy {
     
     fn from_unaligned(unaligned: Self::ULE) -> Self;
 }
+
+
 
 
 
@@ -298,7 +300,7 @@ pub unsafe trait VarULE: 'static {
     
     
     
-    fn validate_byte_slice(_bytes: &[u8]) -> Result<(), ZeroVecError>;
+    fn validate_bytes(_bytes: &[u8]) -> Result<(), UleError>;
 
     
     
@@ -311,9 +313,9 @@ pub unsafe trait VarULE: 'static {
     
     
     
-    fn parse_byte_slice(bytes: &[u8]) -> Result<&Self, ZeroVecError> {
-        Self::validate_byte_slice(bytes)?;
-        let result = unsafe { Self::from_byte_slice_unchecked(bytes) };
+    fn parse_bytes(bytes: &[u8]) -> Result<&Self, UleError> {
+        Self::validate_bytes(bytes)?;
+        let result = unsafe { Self::from_bytes_unchecked(bytes) };
         debug_assert_eq!(mem::size_of_val(result), mem::size_of_val(bytes));
         Ok(result)
     }
@@ -338,7 +340,7 @@ pub unsafe trait VarULE: 'static {
     
     
     
-    unsafe fn from_byte_slice_unchecked(bytes: &[u8]) -> &Self;
+    unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self;
 
     
     
@@ -349,19 +351,22 @@ pub unsafe trait VarULE: 'static {
     
     
     #[inline]
-    fn as_byte_slice(&self) -> &[u8] {
+    fn as_bytes(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self as *const Self as *const u8, mem::size_of_val(self)) }
     }
 
     
     #[inline]
-    fn to_boxed(&self) -> Box<Self> {
-        let bytesvec = self.as_byte_slice().to_owned().into_boxed_slice();
+    #[cfg(feature = "alloc")]
+    fn to_boxed(&self) -> alloc::boxed::Box<Self> {
+        use alloc::borrow::ToOwned;
+        use alloc::boxed::Box;
+        use core::alloc::Layout;
+        let bytesvec = self.as_bytes().to_owned().into_boxed_slice();
         let bytesvec = mem::ManuallyDrop::new(bytesvec);
         unsafe {
             
-            let ptr: *mut Self =
-                Self::from_byte_slice_unchecked(&bytesvec) as *const Self as *mut Self;
+            let ptr: *mut Self = Self::from_bytes_unchecked(&bytesvec) as *const Self as *mut Self;
             assert_eq!(Layout::for_value(&*ptr), Layout::for_value(&**bytesvec));
             
             Box::from_raw(ptr)
@@ -392,3 +397,55 @@ pub use zerovec_derive::ULE;
 
 #[cfg(feature = "derive")]
 pub use zerovec_derive::VarULE;
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum UleError {
+    
+    
+    
+    
+    
+    
+    InvalidLength { ty: &'static str, len: usize },
+    
+    
+    
+    
+    
+    
+    ParseError { ty: &'static str },
+}
+
+impl fmt::Display for UleError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        match *self {
+            UleError::InvalidLength { ty, len } => {
+                write!(f, "Invalid length {len} for slice of type {ty}")
+            }
+            UleError::ParseError { ty } => {
+                write!(f, "Could not parse bytes to slice of type {ty}")
+            }
+        }
+    }
+}
+
+impl UleError {
+    
+    pub fn parse<T: ?Sized + 'static>() -> UleError {
+        UleError::ParseError {
+            ty: any::type_name::<T>(),
+        }
+    }
+
+    
+    pub fn length<T: ?Sized + 'static>(len: usize) -> UleError {
+        UleError::InvalidLength {
+            ty: any::type_name::<T>(),
+            len,
+        }
+    }
+}
+
+impl core::error::Error for UleError {}

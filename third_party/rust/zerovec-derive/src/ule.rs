@@ -58,11 +58,11 @@ pub fn derive_impl(input: &DeriveInput) -> TokenStream2 {
     quote! {
         unsafe impl zerovec::ule::ULE for #name {
             #[inline]
-            fn validate_byte_slice(bytes: &[u8]) -> Result<(), zerovec::ZeroVecError> {
+            fn validate_bytes(bytes: &[u8]) -> Result<(), zerovec::ule::UleError> {
                 const SIZE: usize = ::core::mem::size_of::<#name>();
                 #[allow(clippy::modulo_one)]
                 if bytes.len() % SIZE != 0 {
-                    return Err(zerovec::ZeroVecError::length::<Self>(bytes.len()));
+                    return Err(zerovec::ule::UleError::length::<Self>(bytes.len()));
                 }
                 // Validate the bytes
                 #[allow(clippy::indexing_slicing)] // We're slicing a chunk of known size
@@ -86,8 +86,11 @@ pub(crate) fn generate_ule_validators(
     utils::generate_per_field_offsets(fields, false, |field, prev_offset_ident, size_ident| {
         let ty = &field.field.ty;
         quote! {
-            #[allow(clippy::indexing_slicing)] // generate_per_field_offsets produces valid indices
-            <#ty as zerovec::ule::ULE>::validate_byte_slice(&bytes[#prev_offset_ident .. #prev_offset_ident + #size_ident])?;
+            if let Some(bytes) = bytes.get(#prev_offset_ident .. #prev_offset_ident + #size_ident) {
+                <#ty as zerovec::ule::ULE>::validate_bytes(bytes)?;
+            } else {
+                return Err(zerovec::ule::UleError::parse::<Self>());
+            }
         }
     })
 }

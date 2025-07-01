@@ -8,7 +8,8 @@
 #![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
 
 use icu_provider::prelude::*;
-use zerovec::{ule::UnvalidatedStr, ZeroMap, ZeroVec};
+use potential_utf::PotentialUtf8;
+use zerovec::{ZeroMap, ZeroVec};
 
 
 
@@ -85,6 +86,13 @@ macro_rules! lstm_matrix {
                 }
             }
         }
+
+        #[cfg(feature = "datagen")]
+        impl databake::BakeSize for $name<'_> {
+            fn borrows_size(&self) -> usize {
+                self.data.borrows_size()
+            }
+        }
     };
 }
 
@@ -93,11 +101,8 @@ lstm_matrix!(LstmMatrix2, 2);
 lstm_matrix!(LstmMatrix3, 3);
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-#[cfg_attr(
-    feature = "datagen",
-    derive(serde::Serialize,databake::Bake),
-    databake(path = icu_segmenter::provider),
-)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_segmenter::provider))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 
 
@@ -127,7 +132,7 @@ pub struct LstmDataFloat32<'data> {
     
     pub(crate) model: ModelType,
     
-    pub(crate) dic: ZeroMap<'data, UnvalidatedStr, u16>,
+    pub(crate) dic: ZeroMap<'data, PotentialUtf8, u16>,
     
     pub(crate) embedding: LstmMatrix2<'data>,
     
@@ -153,7 +158,7 @@ impl<'data> LstmDataFloat32<'data> {
     #[allow(clippy::too_many_arguments)] 
     pub const fn from_parts_unchecked(
         model: ModelType,
-        dic: ZeroMap<'data, UnvalidatedStr, u16>,
+        dic: ZeroMap<'data, PotentialUtf8, u16>,
         embedding: LstmMatrix2<'data>,
         fw_w: LstmMatrix3<'data>,
         fw_u: LstmMatrix3<'data>,
@@ -184,7 +189,7 @@ impl<'data> LstmDataFloat32<'data> {
     #[allow(clippy::too_many_arguments)] 
     pub fn try_from_parts(
         model: ModelType,
-        dic: ZeroMap<'data, UnvalidatedStr, u16>,
+        dic: ZeroMap<'data, PotentialUtf8, u16>,
         embedding: LstmMatrix2<'data>,
         fw_w: LstmMatrix3<'data>,
         fw_u: LstmMatrix3<'data>,
@@ -245,7 +250,7 @@ impl<'de: 'data, 'data> serde::Deserialize<'de> for LstmDataFloat32<'data> {
         struct Raw<'data> {
             model: ModelType,
             #[cfg_attr(feature = "serde", serde(borrow))]
-            dic: ZeroMap<'data, UnvalidatedStr, u16>,
+            dic: ZeroMap<'data, PotentialUtf8, u16>,
             #[cfg_attr(feature = "serde", serde(borrow))]
             embedding: LstmMatrix2<'data>,
             #[cfg_attr(feature = "serde", serde(borrow))]
@@ -318,6 +323,22 @@ impl databake::Bake for LstmDataFloat32<'_> {
     }
 }
 
+#[cfg(feature = "datagen")]
+impl databake::BakeSize for LstmDataFloat32<'_> {
+    fn borrows_size(&self) -> usize {
+        self.model.borrows_size()
+            + self.dic.borrows_size()
+            + self.embedding.borrows_size()
+            + self.fw_w.borrows_size()
+            + self.fw_u.borrows_size()
+            + self.fw_b.borrows_size()
+            + self.bw_w.borrows_size()
+            + self.bw_u.borrows_size()
+            + self.bw_b.borrows_size()
+            + self.time_w.borrows_size()
+            + self.time_b.borrows_size()
+    }
+}
 
 
 
@@ -333,20 +354,22 @@ impl databake::Bake for LstmDataFloat32<'_> {
 
 
 
-#[icu_provider::data_struct(LstmForWordLineAutoV1Marker = "segmenter/lstm/wl_auto@1")]
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(
-    feature = "datagen", 
-    derive(serde::Serialize, databake::Bake),
-    databake(path = icu_segmenter::provider),
-)]
+
+#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_segmenter::provider))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[yoke(prove_covariance_manually)]
 #[non_exhaustive]
-pub enum LstmDataV1<'data> {
+pub enum LstmData<'data> {
     
     Float32(#[cfg_attr(feature = "serde", serde(borrow))] LstmDataFloat32<'data>),
     
     
     
 }
+
+icu_provider::data_struct!(
+    LstmData<'_>,
+    #[cfg(feature = "datagen")]
+);

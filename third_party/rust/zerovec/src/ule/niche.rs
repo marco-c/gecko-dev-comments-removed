@@ -4,6 +4,11 @@
 
 use core::{marker::Copy, mem::size_of};
 
+#[cfg(feature = "alloc")]
+use crate::map::ZeroMapKV;
+#[cfg(feature = "alloc")]
+use crate::{ZeroSlice, ZeroVec};
+
 use super::{AsULE, ULE};
 
 
@@ -20,7 +25,6 @@ use super::{AsULE, ULE};
 pub trait NicheBytes<const N: usize> {
     const NICHE_BIT_PATTERN: [u8; N];
 }
-
 
 
 
@@ -85,6 +89,18 @@ impl<U: NicheBytes<N> + ULE, const N: usize> NichedOptionULE<U, N> {
             }
         }
     }
+
+    
+    pub fn as_ref(&self) -> Option<&U> {
+        
+        unsafe {
+            if self.niche == <U as NicheBytes<N>>::NICHE_BIT_PATTERN {
+                None
+            } else {
+                Some(&self.valid)
+            }
+        }
+    }
 }
 
 impl<U: NicheBytes<N> + ULE, const N: usize> Copy for NichedOptionULE<U, N> {}
@@ -116,7 +132,7 @@ impl<U: NicheBytes<N> + ULE + Eq, const N: usize> Eq for NichedOptionULE<U, N> {
 
 
 unsafe impl<U: NicheBytes<N> + ULE, const N: usize> ULE for NichedOptionULE<U, N> {
-    fn validate_byte_slice(bytes: &[u8]) -> Result<(), crate::ZeroVecError> {
+    fn validate_bytes(bytes: &[u8]) -> Result<(), crate::ule::UleError> {
         let size = size_of::<Self>();
         
         
@@ -124,7 +140,7 @@ unsafe impl<U: NicheBytes<N> + ULE, const N: usize> ULE for NichedOptionULE<U, N
 
         
         if bytes.len() % size != 0 {
-            return Err(crate::ZeroVecError::length::<Self>(bytes.len()));
+            return Err(crate::ule::UleError::length::<Self>(bytes.len()));
         }
         bytes.chunks(size).try_for_each(|chunk| {
             
@@ -132,7 +148,7 @@ unsafe impl<U: NicheBytes<N> + ULE, const N: usize> ULE for NichedOptionULE<U, N
             if chunk == <U as NicheBytes<N>>::NICHE_BIT_PATTERN {
                 Ok(())
             } else {
-                U::validate_byte_slice(chunk)
+                U::validate_bytes(chunk)
             }
         })
     }
@@ -141,26 +157,16 @@ unsafe impl<U: NicheBytes<N> + ULE, const N: usize> ULE for NichedOptionULE<U, N
 
 
 
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-#[non_exhaustive]
+#[allow(clippy::exhaustive_structs)] 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NichedOption<U, const N: usize>(pub Option<U>);
-
-impl<U, const N: usize> NichedOption<U, N> {
-    pub const fn new(o: Option<U>) -> Self {
-        Self(o)
-    }
-}
 
 impl<U, const N: usize> Default for NichedOption<U, N> {
     fn default() -> Self {
         Self(None)
-    }
-}
-
-impl<U, const N: usize> From<Option<U>> for NichedOption<U, N> {
-    fn from(o: Option<U>) -> Self {
-        Self(o)
     }
 }
 
@@ -176,5 +182,25 @@ where
 
     fn from_unaligned(unaligned: Self::ULE) -> Self {
         Self(unaligned.get().map(U::from_unaligned))
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<'a, T: AsULE + 'static, const N: usize> ZeroMapKV<'a> for NichedOption<T, N>
+where
+    T::ULE: NicheBytes<N>,
+{
+    type Container = ZeroVec<'a, NichedOption<T, N>>;
+    type Slice = ZeroSlice<NichedOption<T, N>>;
+    type GetType = <NichedOption<T, N> as AsULE>::ULE;
+    type OwnedType = Self;
+}
+
+impl<T, const N: usize> IntoIterator for NichedOption<T, N> {
+    type IntoIter = <Option<T> as IntoIterator>::IntoIter;
+    type Item = T;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

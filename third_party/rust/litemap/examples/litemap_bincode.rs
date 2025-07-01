@@ -6,8 +6,7 @@
 
 
 #![no_main] 
-
-icu_benchmark_macros::static_setup!();
+icu_benchmark_macros::instrument!();
 
 use litemap::LiteMap;
 
@@ -52,15 +51,10 @@ fn generate() {
     println!("{buf:?}");
 }
 
-#[no_mangle]
-fn main(_argc: isize, _argv: *const *const u8) -> isize {
-    icu_benchmark_macros::main_setup!();
-
+fn main() {
     
     
 
     let map: LiteMap<&str, &str> = bincode::deserialize(&BINCODE).unwrap();
     assert_eq!(map.get("tr"), Some(&"Turkish"));
-
-    0
 }
