@@ -164,6 +164,10 @@ add_task(async function test_findmarks_vertical() {
     const marks = await getMarks(browser, true, true);
     Assert.equal(marks.length, 3, `marks count with text "tex"`);
     for (const markPos of marks) {
+      
+      
+      
+      
       Assert.ok(
         0 <= markPos <= maxMarkPos,
         `mark position ${markPos} should be in the range 0 ~ ${maxMarkPos}`
@@ -233,7 +237,7 @@ async function getMarks(browser, increase, shouldBeOnHScrollbar = false) {
   
   
   if (increase) {
-    Assert.ok(results.count > gUpdateCount, "expected events count");
+    Assert.greater(results.count, gUpdateCount, "expected events count");
 
     Assert.strictEqual(
       results.onHorizontalScrollbar,

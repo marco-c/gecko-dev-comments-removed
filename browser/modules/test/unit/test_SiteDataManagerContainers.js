@@ -89,10 +89,14 @@ add_task(async function testGetSitesByContainers() {
     "Has correct usage for example.com^userContextId=1"
   );
 
-  Assert.ok(
-    typeof site1Container1.lastAccessed.getDate == "function",
+  Assert.equal(
+    typeof site1Container1.lastAccessed.getDate,
+    "function",
     "lastAccessed for example.com^userContextId=1 is a Date"
   );
+  
+  
+  
   Assert.ok(
     site1Container1.lastAccessed > Date.now() - 60 * 1000,
     "lastAccessed for example.com^userContextId=1 happened recently"
@@ -110,8 +114,9 @@ add_task(async function testGetSitesByContainers() {
     "Has correct usage for example.org^userContextId=2"
   );
 
-  Assert.ok(
-    typeof site1Container2.lastAccessed.getDate == "function",
+  Assert.equal(
+    typeof site1Container2.lastAccessed.getDate,
+    "function",
     "lastAccessed for example.com^userContextId=2 is a Date"
   );
 
@@ -127,10 +132,14 @@ add_task(async function testGetSitesByContainers() {
     "Has correct usage for example.org^userContextId=3"
   );
 
-  Assert.ok(
-    typeof site2Container3.lastAccessed.getDate == "function",
+  Assert.equal(
+    typeof site2Container3.lastAccessed.getDate,
+    "function",
     "lastAccessed for example.org^userContextId=3 is a Date"
   );
+  
+  
+  
   Assert.ok(
     site2Container3.lastAccessed > Date.now() - 60 * 1000,
     "lastAccessed for example.org^userContextId=3 happened recently"
