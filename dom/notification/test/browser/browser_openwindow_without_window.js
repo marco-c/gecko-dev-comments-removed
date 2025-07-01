@@ -46,31 +46,12 @@ add_setup(() => {
   BrowserTestUtils.concealWindow(window, { signal });
 });
 
-let configs = [
-  {
-    permanentPbm: false,
-    browserStartup: 1,
-  },
-  {
-    permanentPbm: true,
-    browserStartup: 1,
-  },
-  {
-    permanentPbm: false,
-    browserStartup: 3,
-  },
-];
-
-for (let { permanentPbm, browserStartup } of configs) {
+for (let permanentPbm of [false, true]) {
   add_task(async function () {
     info(`Test with PBM: ${permanentPbm}`);
-    info(`Test with startup behavior: ${browserStartup}`);
 
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.privatebrowsing.autostart", permanentPbm],
-        ["browser.startup.page", browserStartup],
-      ],
+      set: [["browser.privatebrowsing.autostart", permanentPbm]],
     });
 
     let win = await BrowserTestUtils.openNewBrowserWindow();
@@ -105,14 +86,7 @@ for (let { permanentPbm, browserStartup } of configs) {
     registerCleanupFunction(() => SpecialPowers.removeAllServiceWorkerData());
 
     
-    
-    
-    let closedPromise = BrowserTestUtils.windowClosed(win);
-    win.BrowserCommands.tryToCloseWindow();
-    await closedPromise;
-
-    
-    SessionStartup.resetForTest();
+    await BrowserTestUtils.closeWindow(win);
 
     let newWinPromise = BrowserTestUtils.waitForNewWindow({
       url: OPEN_URI,

@@ -215,16 +215,6 @@ static Result<Ok, nsresult> OpenNewWindow(
     nsOpenWindowInfo* aOpenWindowInfo) {
   nsresult rv;
 
-  
-  
-  nsAutoCString uriToLoad;
-  MOZ_TRY(aArgsValidated.uri->GetSpec(uriToLoad));
-
-  nsCOMPtr<nsISupportsCString> nsUriToLoad =
-      do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID, &rv);
-  MOZ_TRY(rv);
-  MOZ_TRY(nsUriToLoad->SetData(uriToLoad));
-
   nsCOMPtr<nsISupportsPRBool> nsFalse =
       do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID, &rv);
   MOZ_TRY(rv);
@@ -237,7 +227,7 @@ static Result<Ok, nsresult> OpenNewWindow(
 
   nsCOMPtr<nsIMutableArray> args = do_CreateInstance(NS_ARRAY_CONTRACTID);
   
-  args->AppendElement(nsUriToLoad);               
+  args->AppendElement(nullptr);                   
   args->AppendElement(nullptr);                   
   args->AppendElement(nullptr);                   
   args->AppendElement(nullptr);                   
@@ -320,7 +310,7 @@ void OpenWindow(const ClientOpenWindowArgsParsed& aArgsValidated,
 
 void WaitForLoad(const ClientOpenWindowArgsParsed& aArgsValidated,
                  BrowsingContext* aBrowsingContext,
-                 ClientOpPromise::Private* aPromise, bool aShouldLoadURI) {
+                 ClientOpPromise::Private* aPromise) {
   MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
 
   RefPtr<ClientOpPromise::Private> promise = aPromise;
@@ -352,27 +342,24 @@ void WaitForLoad(const ClientOpenWindowArgsParsed& aArgsValidated,
     return;
   }
 
-  if (aShouldLoadURI) {
-    
-    RefPtr<nsDocShellLoadState> loadState =
-        new nsDocShellLoadState(aArgsValidated.uri);
-    loadState->SetTriggeringPrincipal(aArgsValidated.principal);
-    loadState->SetFirstParty(true);
-    loadState->SetLoadFlags(
-        nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL);
-    loadState->SetTriggeringRemoteType(
-        aArgsValidated.originContent
-            ? aArgsValidated.originContent->GetRemoteType()
-            : NOT_REMOTE_TYPE);
+  
+  RefPtr<nsDocShellLoadState> loadState =
+      new nsDocShellLoadState(aArgsValidated.uri);
+  loadState->SetTriggeringPrincipal(aArgsValidated.principal);
+  loadState->SetFirstParty(true);
+  loadState->SetLoadFlags(
+      nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL);
+  loadState->SetTriggeringRemoteType(
+      aArgsValidated.originContent
+          ? aArgsValidated.originContent->GetRemoteType()
+          : NOT_REMOTE_TYPE);
 
-    rv = aBrowsingContext->LoadURI(loadState, true);
-    if (NS_FAILED(rv)) {
-      CopyableErrorResult result;
-      result.ThrowInvalidStateError(
-          "Unable to start the load of the actual URI");
-      promise->Reject(result, __func__);
-      return;
-    }
+  rv = aBrowsingContext->LoadURI(loadState, true);
+  if (NS_FAILED(rv)) {
+    CopyableErrorResult result;
+    result.ThrowInvalidStateError("Unable to start the load of the actual URI");
+    promise->Reject(result, __func__);
+    return;
   }
 
   
@@ -384,7 +371,8 @@ void WaitForLoad(const ClientOpenWindowArgsParsed& aArgsValidated,
 
 #ifdef MOZ_GECKOVIEW
 void GeckoViewOpenWindow(const ClientOpenWindowArgsParsed& aArgsValidated,
-                         nsOpenWindowInfo* aOpenInfo, ErrorResult& aRv) {
+                         nsOpenWindowInfo* aOpenInfo, BrowsingContext** aBC,
+                         ErrorResult& aRv) {
   MOZ_ASSERT(aOpenInfo);
 
   
@@ -499,13 +487,11 @@ RefPtr<ClientOpPromise> ClientOpenWindow(
 
   RefPtr<BrowsingContext> bc;
   IgnoredErrorResult errResult;
-  bool shouldLoadURI = true;
 #ifdef MOZ_GECKOVIEW
   
-  GeckoViewOpenWindow(argsValidated, openInfo, errResult);
+  GeckoViewOpenWindow(argsValidated, openInfo, getter_AddRefs(bc), errResult);
 #else
   OpenWindow(argsValidated, openInfo, getter_AddRefs(bc), errResult);
-  shouldLoadURI = !!bc;
 #endif
   if (NS_WARN_IF(errResult.Failed())) {
     promise->Reject(errResult, __func__);
@@ -514,9 +500,8 @@ RefPtr<ClientOpPromise> ClientOpenWindow(
 
   browsingContextReadyPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [argsValidated, promise,
-       shouldLoadURI](const RefPtr<BrowsingContext>& aBC) {
-        WaitForLoad(argsValidated, aBC, promise, shouldLoadURI);
+      [argsValidated, promise](const RefPtr<BrowsingContext>& aBC) {
+        WaitForLoad(argsValidated, aBC, promise);
       },
       [promise]() {
         
