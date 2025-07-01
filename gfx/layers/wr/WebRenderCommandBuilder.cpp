@@ -2002,14 +2002,15 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     
     
     if (XRE_IsParentProcess() && !aWrappingItem &&
-        itemType == DisplayItemType::TYPE_BACKGROUND_COLOR &&
-        !item->GetActiveScrolledRoot() &&
-        item->GetClip().GetRoundedRectCount() == 0) {
+        (itemType == DisplayItemType::TYPE_BACKGROUND_COLOR ||
+         itemType == DisplayItemType::TYPE_SOLID_COLOR ||
+         itemType == DisplayItemType::TYPE_BACKGROUND) &&
+        !item->GetActiveScrolledRoot()) {
       bool snap;
       nsRegion opaque = item->GetOpaqueRegion(aDisplayListBuilder, &snap);
       if (opaque.GetNumRects() == 1) {
-        nsRect clippedOpaque =
-            item->GetClip().ApplyNonRoundedIntersection(opaque.GetBounds());
+        const nsRect clippedOpaque =
+            item->GetClip().ApproximateIntersectInward(opaque.GetBounds());
         if (!clippedOpaque.IsEmpty()) {
           aDisplayListBuilder->AddWindowOpaqueRegion(item->Frame(),
                                                      clippedOpaque);
