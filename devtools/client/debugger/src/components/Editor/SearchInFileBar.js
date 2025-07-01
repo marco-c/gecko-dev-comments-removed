@@ -191,7 +191,7 @@ class SearchInFileBar extends Component {
     const results = find(ctx, query, true, modifiers, {
       shouldScroll,
     });
-    this.setSearchResults(results, matches);
+    this.setSearchResults(results, matches, shouldScroll);
   };
 
   traverseResults = (e, reverse = false) => {
@@ -216,7 +216,7 @@ class SearchInFileBar extends Component {
     if (modifiers) {
       const findArgs = [ctx, query, true, modifiers];
       const results = reverse ? findPrev(...findArgs) : findNext(...findArgs);
-      this.setSearchResults(results, matches);
+      this.setSearchResults(results, matches, true);
     }
   };
 
@@ -227,7 +227,8 @@ class SearchInFileBar extends Component {
 
 
 
-  setSearchResults(results, matches) {
+
+  setSearchResults(results, matches, shouldScroll) {
     if (!results) {
       this.setState({
         results: {
@@ -249,7 +250,12 @@ class SearchInFileBar extends Component {
       return false;
     });
 
-    this.setCursorLocation(line, ch, matchContent);
+    
+    
+    
+    if (shouldScroll) {
+      this.setCursorLocation(line, ch, matchContent);
+    }
     this.setState({
       results: {
         matches,
@@ -261,6 +267,7 @@ class SearchInFileBar extends Component {
   }
 
   
+
 
 
 
@@ -284,7 +291,8 @@ class SearchInFileBar extends Component {
 
         
         
-        scroll: false,
+        
+        scroll: true,
       }
     );
   };

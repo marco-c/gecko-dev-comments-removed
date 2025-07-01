@@ -322,10 +322,20 @@ class DebuggerPanel {
     
     await this.toolbox.selectTool("jsdebugger", reason);
 
-    await this._actions.selectSpecificLocation(originalLocation);
+    const hasLogpoint = this._selectors.hasLogpoint(
+      this._getState(),
+      originalLocation
+    );
+    await this._actions.selectLocation(originalLocation, {
+      
+      
+      keepContext: false,
+      
+      highlight: !hasLogpoint,
+    });
 
     
-    if (this._selectors.hasLogpoint(this._getState(), originalLocation)) {
+    if (hasLogpoint) {
       this._actions.openConditionalPanel(originalLocation, true);
     }
 

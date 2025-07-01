@@ -198,8 +198,9 @@ function assertClass(el, className, exists = true) {
   }
 }
 
-function waitForSelectedLocation(dbg, line, column) {
-  return waitForState(dbg, () => {
+async function waitForSelectedLocation(dbg, line, column) {
+  
+  await waitForState(dbg, () => {
     const location = dbg.selectors.getSelectedLocation();
     return (
       location &&
@@ -208,6 +209,22 @@ function waitForSelectedLocation(dbg, line, column) {
       
       (typeof column == "number" ? location.column + 1 == column : true)
     );
+  });
+
+  
+  await waitFor(function () {
+    const cursor = getCMEditor(dbg).getSelectionCursor();
+    if (!cursor) {
+      return false;
+    }
+    if (line && cursor.from.line != line) {
+      return false;
+    }
+    
+    if (column && cursor.from.ch + 1 != column) {
+      return false;
+    }
+    return true;
   });
 }
 
