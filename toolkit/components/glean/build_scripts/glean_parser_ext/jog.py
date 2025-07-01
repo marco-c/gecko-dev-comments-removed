@@ -45,8 +45,6 @@ known_extra_args = [
     "histogram_type",
     "numerators",
     "ordered_labels",
-    "ordered_keys",
-    "ordered_categories",
 ]
 
 

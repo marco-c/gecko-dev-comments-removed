@@ -88,15 +88,7 @@ def yaml_load(stream):
 
     def _construct_mapping_adding_line(loader, node):
         loader.flatten_mapping(node)
-        pairs = loader.construct_pairs(node)
-
-        
-        mapping = DictWrapper()
-        for pair in pairs:
-            if pair[0] in mapping:
-                mapping.duplicate = pair[0]
-            mapping[pair[0]] = pair[1]
-
+        mapping = DictWrapper(loader.construct_pairs(node))
         mapping.defined_in = {"line": node.start_mark.line}
         return mapping
 
