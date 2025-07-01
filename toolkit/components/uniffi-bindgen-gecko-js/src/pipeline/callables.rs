@@ -137,7 +137,23 @@ fn handle_callable(
     }
 
     
-    match async_wrappers.get(&spec) {
+    let config = match async_wrappers.get(&spec) {
+        Some(config) => Some(config),
+        
+        None => match &callable.kind {
+            CallableKind::Method {
+                interface_name: parent,
+                ..
+            }
+            | CallableKind::Constructor {
+                interface_name: parent,
+                ..
+            }
+            | CallableKind::VTableMethod { trait_name: parent } => async_wrappers.get(parent),
+            _ => None,
+        },
+    };
+    match config {
         Some(ConcrrencyMode::Sync) => {
             callable.is_js_async = false;
             callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
