@@ -449,9 +449,8 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     
     
     mStateManager.DiscardImagesInTransaction(resourceUpdates);
+    WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
   }
-
-  WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
 
   
   
