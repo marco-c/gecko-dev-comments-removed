@@ -601,7 +601,7 @@ class HTMLEditUtils final {
 
 
   template <typename EditorDOMPointType>
-  static bool IsVisiblePreformattedNewLine(
+  [[nodiscard]] static bool IsVisiblePreformattedNewLine(
       const EditorDOMPointType& aPoint,
       Element** aFollowingBlockElement = nullptr) {
     if (aFollowingBlockElement) {
@@ -620,12 +620,14 @@ class HTMLEditUtils final {
       }
       const nsTextFragment& textFragment =
           aPoint.template ContainerAs<Text>()->TextFragment();
-      for (uint32_t offset = aPoint.Offset() + 1;
-           offset < textFragment.GetLength(); ++offset) {
-        char16_t ch = textFragment.CharAt(AssertedCast<int32_t>(offset));
-        if (nsCRT::IsAsciiSpace(ch) && ch != HTMLEditUtils::kNewLine) {
-          continue;  
-        }
+      const uint32_t nextVisibleCharOffset = textFragment.FindNonWhitespaceChar(
+          EditorUtils::IsNewLinePreformatted(
+              *aPoint.template ContainerAs<Text>())
+              ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
+                                  WhitespaceOption::NewLineIsSignificant}
+              : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
+          aPoint.Offset() + 1);
+      if (nextVisibleCharOffset != nsTextFragment::kNotFound) {
         return true;  
       }
     }
