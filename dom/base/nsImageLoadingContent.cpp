@@ -42,6 +42,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_image.h"
+#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/SVGImageFrame.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/dom/BindContext.h"
@@ -92,6 +93,45 @@ static void PrintReqURL(imgIRequest* req) {
 }
 #endif 
 
+class ImageLoadTask : public MicroTaskRunnable {
+ public:
+  ImageLoadTask(nsImageLoadingContent* aElement, bool aAlwaysLoad,
+                bool aUseUrgentStartForChannel)
+      : mElement(aElement),
+        mDocument(aElement->AsContent()->OwnerDoc()),
+        mAlwaysLoad(aAlwaysLoad),
+        mUseUrgentStartForChannel(aUseUrgentStartForChannel) {
+    mDocument->BlockOnload();
+  }
+
+  void Run(AutoSlowOperation& aAso) override {
+    if (mElement->mPendingImageLoadTask == this) {
+      JSCallingLocation::AutoFallback fallback(&mCallingLocation);
+      mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
+      mElement->ClearImageLoadTask();
+      mElement->LoadSelectedImage(mAlwaysLoad,  false);
+    }
+    mDocument->UnblockOnload(false);
+  }
+
+  bool Suppressed() override {
+    nsIGlobalObject* global = mElement->AsContent()->GetOwnerGlobal();
+    return global && global->IsInSyncOperation();
+  }
+
+  bool AlwaysLoad() const { return mAlwaysLoad; }
+
+ private:
+  ~ImageLoadTask() = default;
+  const RefPtr<nsImageLoadingContent> mElement;
+  const RefPtr<dom::Document> mDocument;
+  const JSCallingLocation mCallingLocation{JSCallingLocation::Get()};
+  const bool mAlwaysLoad;
+  
+  
+  const bool mUseUrgentStartForChannel;
+};
+
 nsImageLoadingContent::nsImageLoadingContent()
     : mObserverList(nullptr),
       mOutstandingDecodePromises(0),
@@ -99,7 +139,6 @@ nsImageLoadingContent::nsImageLoadingContent()
       mLoadingEnabled(true),
       mUseUrgentStartForChannel(false),
       mLazyLoading(false),
-      mHasPendingLoadTask(false),
       mSyncDecodingHint(false),
       mInDocResponsiveContent(false),
       mCurrentRequestRegistered(false),
@@ -128,6 +167,88 @@ nsImageLoadingContent::~nsImageLoadingContent() {
   MOZ_ASSERT(mOutstandingDecodePromises == 0,
              "Decode promises still unfulfilled?");
   MOZ_ASSERT(mDecodePromises.IsEmpty(), "Decode promises still unfulfilled?");
+}
+
+void nsImageLoadingContent::QueueImageTask(
+    nsIURI* aSrcURI, nsIPrincipal* aSrcTriggeringPrincipal, bool aForceAsync,
+    bool aAlwaysLoad, bool aNotify) {
+  
+  
+  
+  
+  
+  if (!LoadingEnabled() || !GetOurOwnerDoc()->ShouldLoadImages()) {
+    return;
+  }
+
+  
+  
+  const bool alwaysLoad = aAlwaysLoad || (mPendingImageLoadTask &&
+                                          mPendingImageLoadTask->AlwaysLoad());
+
+  
+  const bool shouldLoadSync = [&] {
+    if (aForceAsync) {
+      return false;
+    }
+    if (!aSrcURI) {
+      
+      
+      
+      return !!mCurrentRequest;
+    }
+    if (AsContent()->IsSVGElement()) {
+      if (GetOurOwnerDoc()->IsBeingUsedAsImage()) {
+        return true;
+      }
+      if (StaticPrefs::svg_image_element_force_sync_load()) {
+        return true;
+      }
+    }
+    return nsContentUtils::IsImageAvailable(
+        AsContent(), aSrcURI, aSrcTriggeringPrincipal, GetCORSMode());
+  }();
+
+  if (shouldLoadSync) {
+    if (!nsContentUtils::IsSafeToRunScript()) {
+      
+      
+      
+      void (nsImageLoadingContent::*fp)(nsIURI*, nsIPrincipal*, bool, bool,
+                                        bool) =
+          &nsImageLoadingContent::QueueImageTask;
+      nsContentUtils::AddScriptRunner(
+          NewRunnableMethod<nsIURI*, nsIPrincipal*, bool, bool, bool>(
+              "nsImageLoadingContent::QueueImageTask", this, fp, aSrcURI,
+              aSrcTriggeringPrincipal, aForceAsync, aAlwaysLoad,
+               true));
+      return;
+    }
+
+    ClearImageLoadTask();
+    LoadSelectedImage(alwaysLoad, mLazyLoading && aSrcURI);
+    return;
+  }
+
+  if (mLazyLoading) {
+    
+    
+    
+    
+    return;
+  }
+
+  RefPtr task = new ImageLoadTask(this, alwaysLoad, mUseUrgentStartForChannel);
+  mPendingImageLoadTask = task;
+  
+  UpdateImageState(aNotify);
+  
+  
+  CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
+}
+
+void nsImageLoadingContent::ClearImageLoadTask() {
+  mPendingImageLoadTask = nullptr;
 }
 
 
@@ -1392,7 +1513,7 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
 void nsImageLoadingContent::UpdateImageState(bool aNotify) {
   Element* thisElement = AsContent()->AsElement();
   const bool isBroken = [&] {
-    if (mLazyLoading || mHasPendingLoadTask) {
+    if (mLazyLoading || mPendingImageLoadTask) {
       return false;
     }
     if (!mCurrentRequest) {
