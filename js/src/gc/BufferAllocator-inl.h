@@ -57,7 +57,11 @@ inline size_t BufferAllocator::GetGoodAllocSize(size_t requiredBytes) {
   }
 
   
-  return mozilla::RoundUpPow2(requiredBytes);
+  if (IsSmallAllocSize(requiredBytes)) {
+    return mozilla::RoundUpPow2(requiredBytes);
+  }
+
+  return MediumBufferSize(requiredBytes).get();
 }
 
 
