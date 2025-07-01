@@ -412,14 +412,15 @@ bool gfxFontEntry::TryGetColorGlyphs() {
 class gfxFontEntry::FontTableBlobData {
  public:
   explicit FontTableBlobData(nsTArray<uint8_t>&& aBuffer)
-      : mTableData(std::move(aBuffer)), mHashtable(nullptr), mHashKey(0) {
+      : mTableData(std::move(aBuffer)), mFontEntry(nullptr), mHashKey(0) {
     MOZ_COUNT_CTOR(FontTableBlobData);
   }
 
   ~FontTableBlobData() {
     MOZ_COUNT_DTOR(FontTableBlobData);
-    if (mHashtable && mHashKey) {
-      mHashtable->RemoveEntry(mHashKey);
+    if (mFontEntry && mHashKey) {
+      AutoWriteLock lock(mFontEntry->mLock);
+      mFontEntry->mFontTableCache->RemoveEntry(mHashKey);
     }
   }
 
@@ -431,16 +432,15 @@ class gfxFontEntry::FontTableBlobData {
 
   
   
-  void ManageHashEntry(nsTHashtable<FontTableHashEntry>* aHashtable,
-                       uint32_t aHashKey) {
-    mHashtable = aHashtable;
+  void ManageHashEntry(gfxFontEntry* aFontEntry, uint32_t aHashKey) {
+    mFontEntry = aFontEntry;
     mHashKey = aHashKey;
   }
 
   
   
   void ForgetHashEntry() {
-    mHashtable = nullptr;
+    mFontEntry = nullptr;
     mHashKey = 0;
   }
 
@@ -457,7 +457,8 @@ class gfxFontEntry::FontTableBlobData {
 
   
   
-  nsTHashtable<FontTableHashEntry>* mHashtable;
+  
+  gfxFontEntry* mFontEntry;
   uint32_t mHashKey;
 
   
@@ -465,7 +466,7 @@ class gfxFontEntry::FontTableBlobData {
 };
 
 hb_blob_t* gfxFontEntry::FontTableHashEntry::ShareTableAndGetBlob(
-    nsTArray<uint8_t>&& aTable, nsTHashtable<FontTableHashEntry>* aHashtable) {
+    nsTArray<uint8_t>&& aTable, gfxFontEntry* aFontEntry) {
   Clear();
   
   mSharedBlobData = new FontTableBlobData(std::move(aTable));
@@ -483,7 +484,7 @@ hb_blob_t* gfxFontEntry::FontTableHashEntry::ShareTableAndGetBlob(
 
   
   
-  mSharedBlobData->ManageHashEntry(aHashtable, GetKey());
+  mSharedBlobData->ManageHashEntry(aFontEntry, GetKey());
   return mBlob;
 }
 
@@ -546,8 +547,7 @@ hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
     return nullptr;
   }
 
-  return entry->ShareTableAndGetBlob(std::move(*aBuffer),
-                                     mFontTableCache.get());
+  return entry->ShareTableAndGetBlob(std::move(*aBuffer), this);
 }
 
 already_AddRefed<gfxCharacterMap> gfxFontEntry::GetCMAPFromFontInfo(

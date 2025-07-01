@@ -878,9 +878,8 @@ class gfxFontEntry {
     
     
     
-    hb_blob_t* ShareTableAndGetBlob(
-        nsTArray<uint8_t>&& aTable,
-        nsTHashtable<FontTableHashEntry>* aHashtable);
+    hb_blob_t* ShareTableAndGetBlob(nsTArray<uint8_t>&& aTable,
+                                    gfxFontEntry* aFontEntry);
 
     
     
