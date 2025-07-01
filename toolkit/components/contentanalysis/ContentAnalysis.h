@@ -279,6 +279,13 @@ class ContentAnalysis final : public nsIContentAnalysis,
   static constexpr const char* kKnownClipboardTypes[] = {
       kTextMime, kHTMLMime, kCustomTypesMime, kFileMime};
 
+  
+  
+  bool GetCreatingClientForTest() {
+    AssertIsOnMainThread();
+    return mCreatingClient;
+  }
+
  private:
   virtual ~ContentAnalysis();
   
