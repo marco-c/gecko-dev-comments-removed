@@ -1190,7 +1190,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   
   
-  if (mType != ObjectType::Fallback) {
+  if (mType != ObjectType::Fallback && mURI) {
     ObjectType type = ObjectType::Fallback;
     for (const auto& candidate :
          {"about", "blob", "chrome", "data", "file", "http", "https"}) {
