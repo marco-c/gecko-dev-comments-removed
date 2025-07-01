@@ -1359,7 +1359,7 @@ void LIRGenerator::visitCompare(MCompare* comp) {
       JSLinearString* linear = &constant->toString()->asLinear();
 
       if (IsEqualityOp(comp->jsop())) {
-        if (MacroAssembler::canCompareStringCharsInline(linear)) {
+        if (MacroAssembler::canCompareStringCharsInline(&linear->asOffThreadAtom())) {
           auto* lir = new (alloc()) LCompareSInline(useRegister(input), linear);
           define(lir, comp);
           assignSafepoint(lir, comp);
@@ -3048,7 +3048,7 @@ void LIRGenerator::visitStringStartsWith(MStringStartsWith* ins) {
   if (searchStr->isConstant()) {
     JSLinearString* linear = &searchStr->toConstant()->toString()->asLinear();
 
-    if (MacroAssembler::canCompareStringCharsInline(linear)) {
+    if (MacroAssembler::canCompareStringCharsInline(&linear->asOffThreadAtom())) {
       auto* lir = new (alloc())
           LStringStartsWithInline(useRegister(string), temp(), linear);
       define(lir, ins);
@@ -3073,7 +3073,7 @@ void LIRGenerator::visitStringEndsWith(MStringEndsWith* ins) {
   if (searchStr->isConstant()) {
     JSLinearString* linear = &searchStr->toConstant()->toString()->asLinear();
 
-    if (MacroAssembler::canCompareStringCharsInline(linear)) {
+    if (MacroAssembler::canCompareStringCharsInline(&linear->asOffThreadAtom())) {
       auto* lir = new (alloc())
           LStringEndsWithInline(useRegister(string), temp(), linear);
       define(lir, ins);
@@ -7463,6 +7463,18 @@ void LIRGenerator::visitLoadWrapperTarget(MLoadWrapperTarget* ins) {
   if (ins->fallible()) {
     assignSnapshot(lir, ins->bailoutKind());
   }
+  define(lir, ins);
+}
+
+void LIRGenerator::visitLoadGetterSetterFunction(
+    MLoadGetterSetterFunction* ins) {
+  MDefinition* getterSetter = ins->getterSetter();
+
+  LDefinition classGuardTemp =
+      ins->needsClassGuard() ? temp() : LDefinition::BogusTemp();
+  auto* lir = new (alloc())
+      LLoadGetterSetterFunction(useBoxAtStart(getterSetter), classGuardTemp);
+  assignSnapshot(lir, ins->bailoutKind());
   define(lir, ins);
 }
 

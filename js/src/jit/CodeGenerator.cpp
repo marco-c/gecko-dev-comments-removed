@@ -4948,8 +4948,8 @@ void CodeGenerator::visitGuardSpecificAtom(LGuardSpecificAtom* guard) {
   volatileRegs.takeUnchecked(scratch);
 
   Label bail;
-  masm.guardSpecificAtom(str, guard->mir()->atom(), scratch, volatileRegs,
-                         &bail);
+  masm.guardSpecificAtom(str, &guard->mir()->atom()->asOffThreadAtom(), scratch,
+                         volatileRegs, &bail);
   bailoutFrom(&bail, guard->snapshot());
 }
 
@@ -12288,10 +12288,11 @@ void CodeGenerator::visitCompareSInline(LCompareSInline* lir) {
 
   
   Register stringChars = output;
-  masm.loadStringCharsForCompare(input, str, stringChars, ool->entry());
+  masm.loadStringCharsForCompare(input, &str->asOffThreadAtom(), stringChars,
+                                 ool->entry());
 
   
-  masm.compareStringChars(op, stringChars, str, output);
+  masm.compareStringChars(op, stringChars, &str->asOffThreadAtom(), output);
 
   masm.bind(ool->rejoin());
 }
@@ -14371,10 +14372,12 @@ void CodeGenerator::visitStringStartsWithInline(LStringStartsWithInline* lir) {
 
   
   Register stringChars = output;
-  masm.loadStringCharsForCompare(temp, searchString, stringChars, ool->entry());
+  masm.loadStringCharsForCompare(temp, &searchString->asOffThreadAtom(),
+                                 stringChars, ool->entry());
 
   
-  masm.compareStringChars(JSOp::Eq, stringChars, searchString, output);
+  masm.compareStringChars(JSOp::Eq, stringChars,
+                          &searchString->asOffThreadAtom(), output);
 
   masm.bind(ool->rejoin());
 }
@@ -14452,7 +14455,8 @@ void CodeGenerator::visitStringEndsWithInline(LStringEndsWithInline* lir) {
 
   
   Register stringChars = output;
-  masm.loadStringCharsForCompare(temp, searchString, stringChars, ool->entry());
+  masm.loadStringCharsForCompare(temp, &searchString->asOffThreadAtom(),
+                                 stringChars, ool->entry());
 
   
   masm.loadStringLength(temp, temp);
@@ -14460,7 +14464,8 @@ void CodeGenerator::visitStringEndsWithInline(LStringEndsWithInline* lir) {
   masm.addToCharPtr(stringChars, temp, encoding);
 
   
-  masm.compareStringChars(JSOp::Eq, stringChars, searchString, output);
+  masm.compareStringChars(JSOp::Eq, stringChars,
+                          &searchString->asOffThreadAtom(), output);
 
   masm.bind(ool->rejoin());
 }

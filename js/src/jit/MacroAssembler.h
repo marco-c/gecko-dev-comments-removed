@@ -213,8 +213,6 @@
 #define PER_SHARED_ARCH DEFINED_ON(ALL_SHARED_ARCH)
 #define OOL_IN_HEADER
 
-class JSLinearString;
-
 namespace JS {
 struct ExpandoAndGeneration;
 }
@@ -5066,7 +5064,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void loadJitActivation(Register dest);
 
-  void guardSpecificAtom(Register str, JSAtom* atom, Register scratch,
+  void guardSpecificAtom(Register str, JSOffThreadAtom* atom, Register scratch,
                          const LiveRegisterSet& volatileRegs, Label* fail);
 
   void guardStringToInt32(Register str, Register output, Register scratch,
@@ -5622,21 +5620,21 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
  private:
   void branchIfNotStringCharsEquals(Register stringChars,
-                                    const JSLinearString* linear, Label* label);
+                                    const JSOffThreadAtom* str, Label* label);
 
  public:
   
   
-  static bool canCompareStringCharsInline(const JSLinearString* linear);
+  static bool canCompareStringCharsInline(const JSOffThreadAtom* str);
 
   
-  void loadStringCharsForCompare(Register input, const JSLinearString* linear,
+  void loadStringCharsForCompare(Register input, const JSOffThreadAtom* str,
                                  Register stringChars, Label* fail);
 
   
   
   void compareStringChars(JSOp op, Register stringChars,
-                          const JSLinearString* linear, Register result);
+                          const JSOffThreadAtom* str, Register result);
 
   
   
