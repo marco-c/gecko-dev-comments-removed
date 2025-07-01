@@ -30,90 +30,37 @@ using namespace mozilla;
 #  include <windows.h>
 #  include <mmsystem.h>
 
+static constexpr UINT kTimerPeriodHiRes = 1;
+static constexpr UINT kTimerPeriodLowRes = 16;
 
 
-class WindowsTimerFrequencyManager {
- public:
-  WindowsTimerFrequencyManager(const hal::ProcessPriority processPriority)
-      : mTimerPeriodEvalInterval(
-            TimeDuration::FromSeconds(kTimerPeriodEvalIntervalSec)),
-        mNextTimerPeriodEval(TimeStamp::Now() + mTimerPeriodEvalInterval),
-        mLastTimePeriodSet(ComputeDesiredTimerPeriod(processPriority)),
-        mAdjustTimerPeriod(
-            StaticPrefs::timer_auto_increase_timer_resolution()) {
-    if (mAdjustTimerPeriod) {
-      timeBeginPeriod(mLastTimePeriodSet);
-    }
-  }
+static constexpr UINT GetDesiredTimerPeriod(const bool aOnBatteryPower,
+                                            const bool aLowProcessPriority) {
+  const bool useLowResTimer = aOnBatteryPower || aLowProcessPriority;
+  return useLowResTimer ? kTimerPeriodLowRes : kTimerPeriodHiRes;
+}
 
-  ~WindowsTimerFrequencyManager() {
-    
-    if (mAdjustTimerPeriod) {
-      timeEndPeriod(mLastTimePeriodSet);
-    }
-  }
+static_assert(GetDesiredTimerPeriod(true, false) == kTimerPeriodLowRes);
+static_assert(GetDesiredTimerPeriod(false, true) == kTimerPeriodLowRes);
+static_assert(GetDesiredTimerPeriod(true, true) == kTimerPeriodLowRes);
+static_assert(GetDesiredTimerPeriod(false, false) == kTimerPeriodHiRes);
 
-  void Update(const TimeStamp now, const hal::ProcessPriority processPriority) {
-    if (now >= mNextTimerPeriodEval) {
-      const UINT newTimePeriod = ComputeDesiredTimerPeriod(processPriority);
-      if (newTimePeriod != mLastTimePeriodSet) {
-        if (mAdjustTimerPeriod) {
-          timeEndPeriod(mLastTimePeriodSet);
-          timeBeginPeriod(newTimePeriod);
-        }
-        mLastTimePeriodSet = newTimePeriod;
-      }
-      mNextTimerPeriodEval = now + mTimerPeriodEvalInterval;
-    }
-  }
-
- private:
-  const TimeDuration mTimerPeriodEvalInterval;
-  TimeStamp mNextTimerPeriodEval;
-  UINT mLastTimePeriodSet;
+UINT TimerThread::ComputeDesiredTimerPeriod() const {
+  const bool lowPriorityProcess =
+      mCachedPriority.load(std::memory_order_relaxed) <
+      hal::PROCESS_PRIORITY_FOREGROUND;
 
   
   
-  const bool mAdjustTimerPeriod;
-
   
   
-  static constexpr float kTimerPeriodEvalIntervalSec = 2.0f;
+  SYSTEM_POWER_STATUS status;
+  const bool onBatteryPower = !lowPriorityProcess &&
+                              GetSystemPowerStatus(&status) &&
+                              (status.ACLineStatus == 0);
 
-  static constexpr UINT kTimerPeriodHiRes = 1;
-  static constexpr UINT kTimerPeriodLowRes = 16;
-
-  
-  static constexpr UINT GetDesiredTimerPeriod(const bool aOnBatteryPower,
-                                              const bool aLowProcessPriority) {
-    const bool useLowResTimer = aOnBatteryPower || aLowProcessPriority;
-    return useLowResTimer ? kTimerPeriodLowRes : kTimerPeriodHiRes;
-  }
-
-  static constexpr void StaticUnitTests() {
-    static_assert(GetDesiredTimerPeriod(true, false) == kTimerPeriodLowRes);
-    static_assert(GetDesiredTimerPeriod(false, true) == kTimerPeriodLowRes);
-    static_assert(GetDesiredTimerPeriod(true, true) == kTimerPeriodLowRes);
-    static_assert(GetDesiredTimerPeriod(false, false) == kTimerPeriodHiRes);
-  }
-
-  static UINT ComputeDesiredTimerPeriod(
-      const hal::ProcessPriority processPriority) {
-    const bool lowPriorityProcess =
-        processPriority < hal::PROCESS_PRIORITY_FOREGROUND;
-
-    
-    
-    
-    
-    SYSTEM_POWER_STATUS status;
-    const bool onBatteryPower = !lowPriorityProcess &&
-                                GetSystemPowerStatus(&status) &&
-                                (status.ACLineStatus == 0);
-
-    return GetDesiredTimerPeriod(onBatteryPower, lowPriorityProcess);
-  }
-};
+  return GetDesiredTimerPeriod(onBatteryPower, lowPriorityProcess);
+}
 #endif
 
 
@@ -715,11 +662,9 @@ size_t TimerThread::ComputeTimerInsertionIndex(const TimeStamp& timeout) const {
 TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
-  if (mTimers.IsEmpty()) {
-    return TimeStamp{};
-  }
-
   
+  
+  MOZ_ASSERT(!mTimers.IsEmpty());
   MOZ_ASSERT(mTimers[0].Value());
 
   
@@ -790,106 +735,6 @@ TimeDuration TimerThread::ComputeAcceptableFiringDelay(
   return std::clamp(tmp, minDelay, maxDelay);
 }
 
-uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
-  RemoveLeadingCanceledTimersInternal();
-
-  uint64_t timersFired = 0;
-  TimeStamp lastNow = TimeStamp::Now();
-
-  
-  
-  
-  while (!mTimers.IsEmpty()) {
-    Entry& frontEntry = mTimers[0];
-
-    if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
-      
-      
-      
-      
-      lastNow = TimeStamp::Now();
-      if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
-        break;
-      }
-    }
-
-    
-    
-    
-    
-    
-    RefPtr<nsTimerImpl> timerRef(frontEntry.Take());
-    RemoveFirstTimerInternal();
-
-    
-    
-    
-    {
-      ++timersFired;
-      LogTimerEvent::Run run(timerRef.get());
-      PostTimerEvent(timerRef.forget());
-    }
-
-    
-    
-    
-    if (mShutdown) {
-      break;
-    }
-
-    RemoveLeadingCanceledTimersInternal();
-  }
-
-  return timersFired;
-}
-
-
-
-
-class TelemetryQueue {
- public:
-  TelemetryQueue() {
-    mQueuedTimersFiredPerWakeup.SetLengthAndRetainStorage(
-        kMaxQueuedTimersFired);
-  }
-
-  ~TelemetryQueue() {
-    
-    if (mQueuedTimersFiredCount != 0) {
-      mQueuedTimersFiredPerWakeup.SetLengthAndRetainStorage(
-          mQueuedTimersFiredCount);
-      glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
-          mQueuedTimersFiredPerWakeup);
-    }
-  }
-
-  void AccumulateAndMaybeSendTelemetry(uint64_t timersFiredThisWakeup) {
-    mQueuedTimersFiredPerWakeup[mQueuedTimersFiredCount] =
-        timersFiredThisWakeup;
-    ++mQueuedTimersFiredCount;
-    if (mQueuedTimersFiredCount == kMaxQueuedTimersFired) {
-      glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
-          mQueuedTimersFiredPerWakeup);
-      mQueuedTimersFiredCount = 0;
-    }
-  }
-
- private:
-  static constexpr size_t kMaxQueuedTimersFired = 128;
-  AutoTArray<uint64_t, kMaxQueuedTimersFired> mQueuedTimersFiredPerWakeup;
-  size_t mQueuedTimersFiredCount = 0;
-};
-
-void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
-  mWaiting = true;
-  mNotified = false;
-  {
-    AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
-    mMonitor.Wait(aWaitFor);
-  }
-  mWaiting = false;
-}
-
 NS_IMETHODIMP
 TimerThread::Run() {
   MonitorAutoLock lock(mMonitor);
@@ -902,23 +747,53 @@ TimerThread::Run() {
   const TimeDuration normalAllowedEarlyFiring =
       TimeDuration::FromMicroseconds(mAllowedEarlyFiringMicroseconds);
 
-  TelemetryQueue telemetryQueue;
+  
+  
+  
+  static constexpr size_t kMaxQueuedTimerFired = 128;
+  size_t queuedTimerFiredCount = 0;
+  AutoTArray<uint64_t, kMaxQueuedTimerFired> queuedTimersFiredPerWakeup;
+  queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(kMaxQueuedTimerFired);
 
 #ifdef XP_WIN
-  WindowsTimerFrequencyManager wTFM{
-      mCachedPriority.load(std::memory_order_relaxed)};
+  
+  
+  static constexpr float kTimerPeriodEvalIntervalSec = 2.0f;
+  const TimeDuration timerPeriodEvalInterval =
+      TimeDuration::FromSeconds(kTimerPeriodEvalIntervalSec);
+  TimeStamp nextTimerPeriodEval = TimeStamp::Now() + timerPeriodEvalInterval;
+
+  
+  
+  const bool adjustTimerPeriod =
+      StaticPrefs::timer_auto_increase_timer_resolution();
+  UINT lastTimePeriodSet = ComputeDesiredTimerPeriod();
+
+  if (adjustTimerPeriod) {
+    timeBeginPeriod(lastTimePeriodSet);
+  }
 #endif
 
+  uint64_t timersFiredThisWakeup = 0;
   while (!mShutdown) {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
+
+    
+    TimeDuration waitFor;
 
 #ifdef DEBUG
     VerifyTimerListConsistency();
 #endif
 
-    TimeDuration waitFor;
-    if (!mSleeping) {
+    if (mSleeping) {
+      
+      uint32_t milliseconds = 100;
+      if (chaosModeActive) {
+        milliseconds = ChaosMode::randomUint32LessThan(200);
+      }
+      waitFor = TimeDuration::FromMilliseconds(milliseconds);
+    } else {
       
       
       const TimeDuration allowedEarlyFiring =
@@ -927,40 +802,115 @@ TimerThread::Run() {
               : TimeDuration::FromMicroseconds(ChaosMode::randomUint32LessThan(
                     4 * mAllowedEarlyFiringMicroseconds));
 
-      
-      const TimeDuration chaosWaitDelay =
-          !chaosModeActive ? TimeDuration::Zero()
-                           : TimeDuration::FromMicroseconds(
-                                 ChaosMode::randomInt32InRange(-10000, 10000));
+      waitFor = TimeDuration::Forever();
+      TimeStamp now = TimeStamp::Now();
 
-      const uint64_t timersFiredThisWakeup = FireDueTimers(allowedEarlyFiring);
-
-      
-      
-      
-      if (mShutdown) {
-        break;
+#ifdef XP_WIN
+      if (now >= nextTimerPeriodEval) {
+        const UINT newTimePeriod = ComputeDesiredTimerPeriod();
+        if (newTimePeriod != lastTimePeriodSet) {
+          if (adjustTimerPeriod) {
+            timeEndPeriod(lastTimePeriodSet);
+            timeBeginPeriod(newTimePeriod);
+          }
+          lastTimePeriodSet = newTimePeriod;
+        }
+        nextTimerPeriodEval = now + timerPeriodEvalInterval;
       }
-
-      
-      const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
-      mIntendedWakeupTime = wakeupTime;
-
-      
-      
-      telemetryQueue.AccumulateAndMaybeSendTelemetry(timersFiredThisWakeup);
-
-#if TIMER_THREAD_STATISTICS
-      CollectTimersFiredStatistics(timersFiredThisWakeup);
 #endif
 
-      
-      
-      const TimeStamp now = TimeStamp::Now();
-      waitFor = !wakeupTime.IsNull()
-                    ? std::max(TimeDuration::Zero(),
-                               wakeupTime + chaosWaitDelay - now)
-                    : TimeDuration::Forever();
+#if TIMER_THREAD_STATISTICS
+      if (!mNotified && !mIntendedWakeupTime.IsNull() &&
+          now < mIntendedWakeupTime) {
+        ++mEarlyWakeups;
+        const double earlinessms = (mIntendedWakeupTime - now).ToMilliseconds();
+        mTotalEarlyWakeupTime += earlinessms;
+      }
+#endif
+
+      RemoveLeadingCanceledTimersInternal();
+
+      if (!mTimers.IsEmpty()) {
+        if (now + allowedEarlyFiring >= mTimers[0].Value()->mTimeout) {
+        next:
+          
+          
+          
+          
+          
+
+          RefPtr<nsTimerImpl> timerRef(mTimers[0].Take());
+          RemoveFirstTimerInternal();
+          MOZ_LOG(GetTimerLog(), LogLevel::Debug,
+                  ("Timer thread woke up %fms from when it was supposed to\n",
+                   fabs((now - timerRef->mTimeout).ToMilliseconds())));
+
+          
+          
+          
+          {
+            ++timersFiredThisWakeup;
+            LogTimerEvent::Run run(timerRef.get());
+            PostTimerEvent(timerRef.forget());
+          }
+
+          if (mShutdown) {
+            break;
+          }
+
+          
+          
+          now = TimeStamp::Now();
+        }
+      }
+
+      RemoveLeadingCanceledTimersInternal();
+
+      if (!mTimers.IsEmpty()) {
+        TimeStamp timeout = mTimers[0].Value()->mTimeout;
+
+        
+        
+        
+        
+        
+        
+        
+        const TimeDuration timeToNextTimer = timeout - now;
+
+        if (timeToNextTimer < allowedEarlyFiring) {
+          goto next;  
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
+        waitFor = wakeupTime - now;
+
+        
+        
+        MOZ_ASSERT(!waitFor.IsZero());
+
+        
+        
+        const TimeDuration chaosWaitDelay =
+            !chaosModeActive
+                ? TimeDuration::Zero()
+                : TimeDuration::FromMicroseconds(
+                      ChaosMode::randomInt32InRange(-10000, 10000));
+        waitFor = std::max(TimeDuration::Zero(), waitFor + chaosWaitDelay);
+
+        mIntendedWakeupTime = wakeupTime;
+      } else {
+        mIntendedWakeupTime = TimeStamp{};
+      }
 
       if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
         if (waitFor == TimeDuration::Forever())
@@ -969,26 +919,67 @@ TimerThread::Run() {
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
-
-#ifdef XP_WIN
-      wTFM.Update(now, mCachedPriority.load(std::memory_order_relaxed));
-#endif
-    } else {
-      mIntendedWakeupTime = TimeStamp{};
-      
-      uint32_t milliseconds = 100;
-      if (chaosModeActive) {
-        milliseconds = ChaosMode::randomUint32LessThan(200);
-      }
-      waitFor = TimeDuration::FromMilliseconds(milliseconds);
     }
 
-    Wait(waitFor);
+    {
+      
+      
+      queuedTimersFiredPerWakeup[queuedTimerFiredCount] = timersFiredThisWakeup;
+      ++queuedTimerFiredCount;
+      if (queuedTimerFiredCount == kMaxQueuedTimerFired) {
+        glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
+            queuedTimersFiredPerWakeup);
+        queuedTimerFiredCount = 0;
+      }
+    }
 
 #if TIMER_THREAD_STATISTICS
-    CollectWakeupStatistics();
+    {
+      size_t bucketIndex = 0;
+      while (bucketIndex < sTimersFiredPerWakeupBucketCount - 1 &&
+             timersFiredThisWakeup >
+                 sTimersFiredPerWakeupThresholds[bucketIndex]) {
+        ++bucketIndex;
+      }
+      MOZ_ASSERT(bucketIndex < sTimersFiredPerWakeupBucketCount);
+      ++mTimersFiredPerWakeup[bucketIndex];
+
+      ++mTotalWakeupCount;
+      if (mNotified) {
+        ++mTimersFiredPerNotifiedWakeup[bucketIndex];
+        ++mTotalNotifiedWakeupCount;
+      } else {
+        ++mTimersFiredPerUnnotifiedWakeup[bucketIndex];
+        ++mTotalUnnotifiedWakeupCount;
+      }
+    }
 #endif
+
+    timersFiredThisWakeup = 0;
+
+    mWaiting = true;
+    mNotified = false;
+
+    {
+      AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
+      mMonitor.Wait(waitFor);
+    }
+    mWaiting = false;
   }
+
+  
+  if (queuedTimerFiredCount != 0) {
+    queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(queuedTimerFiredCount);
+    glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
+        queuedTimersFiredPerWakeup);
+  }
+
+#ifdef XP_WIN
+  
+  if (adjustTimerPeriod) {
+    timeEndPeriod(lastTimePeriodSet);
+  }
+#endif
 
   return NS_OK;
 }
@@ -1392,41 +1383,6 @@ uint32_t TimerThread::AllowedEarlyFiringMicroseconds() {
 }
 
 #if TIMER_THREAD_STATISTICS
-void TimerThread::CollectTimersFiredStatistics(uint64_t timersFiredThisWakeup) {
-  mMonitor.AssertCurrentThreadOwns();
-
-  size_t bucketIndex = 0;
-  while (bucketIndex < sTimersFiredPerWakeupBucketCount - 1 &&
-         timersFiredThisWakeup > sTimersFiredPerWakeupThresholds[bucketIndex]) {
-    ++bucketIndex;
-  }
-  MOZ_ASSERT(bucketIndex < sTimersFiredPerWakeupBucketCount);
-  ++mTimersFiredPerWakeup[bucketIndex];
-
-  ++mTotalWakeupCount;
-  if (mNotified) {
-    ++mTimersFiredPerNotifiedWakeup[bucketIndex];
-    ++mTotalNotifiedWakeupCount;
-  } else {
-    ++mTimersFiredPerUnnotifiedWakeup[bucketIndex];
-    ++mTotalUnnotifiedWakeupCount;
-  }
-}
-
-void TimerThread::CollectWakeupStatistics() {
-  mMonitor.AssertCurrentThreadOwns();
-
-  
-  
-  const TimeStamp now = TimeStamp::Now();
-  if (!mNotified && !mIntendedWakeupTime.IsNull() &&
-      now < mIntendedWakeupTime) {
-    ++mEarlyWakeups;
-    const double earlinessms = (mIntendedWakeupTime - now).ToMilliseconds();
-    mTotalEarlyWakeupTime += earlinessms;
-  }
-}
-
 void TimerThread::PrintStatistics() const {
   mMonitor.AssertCurrentThreadOwns();
 

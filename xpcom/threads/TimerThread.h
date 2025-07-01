@@ -166,7 +166,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   
-  
   TimeStamp ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
 
   
@@ -181,15 +180,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
                                             TimeDuration minDelay,
                                             TimeDuration maxDelay) const;
 
-  
-  
-  
-  uint64_t FireDueTimers(TimeDuration aAllowedEarlyFiring)
-      MOZ_REQUIRES(mMonitor);
-
-  
-  
-  void Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor);
+#ifdef XP_WIN
+  UINT ComputeDesiredTimerPeriod() const;
+#endif
 
 #ifdef DEBUG
   
@@ -247,10 +240,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   mutable size_t mEarlyWakeups MOZ_GUARDED_BY(mMonitor) = 0;
   mutable double mTotalEarlyWakeupTime MOZ_GUARDED_BY(mMonitor) = 0.0;
-
-  void CollectTimersFiredStatistics(uint64_t timersFiredThisWakeup);
-
-  void CollectWakeupStatistics();
 
   void PrintStatistics() const;
 #endif
