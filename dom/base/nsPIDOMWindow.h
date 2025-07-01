@@ -640,12 +640,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   mozilla::dom::CloseWatcherManager* EnsureCloseWatcherManager();
 
-  
-  void NotifyCloseWatcherAdded();
-
-  
-  void NotifyCloseWatcherRemoved();
-
  protected:
   void CreatePerformanceObjectIfNeeded();
 
