@@ -48,11 +48,11 @@ class IdentityCredential final : public Credential {
       const GlobalObject& aGlobal,
       const IdentityCredentialDisconnectOptions& aOptions, ErrorResult& aRv);
   
-  void GetToken(nsACString& aToken) const;
-  void SetToken(const nsACString& aToken);
+  void GetToken(nsAString& aToken) const;
+  void SetToken(const nsAString& aToken);
 
  private:
-  nsCString mToken;
+  nsAutoString mToken;
 };
 }  
 
