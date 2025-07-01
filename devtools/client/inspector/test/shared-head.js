@@ -695,8 +695,8 @@ function getRuleViewSelector(view, selectorText) {
 
 
 function getRuleViewLinkByIndex(view, index) {
-  const ruleEl = view.styleDocument.querySelectorAll(".ruleview-rule")[index];
-  return ruleEl.querySelector(".ruleview-rule-source");
+  const links = view.styleDocument.querySelectorAll(".ruleview-rule-source");
+  return links[index];
 }
 
 
