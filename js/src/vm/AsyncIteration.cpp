@@ -314,14 +314,14 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 [[nodiscard]] static bool AsyncGeneratorYield(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
   
-  generator->setSuspendedYield();
-
-  
   
   
   if (!AsyncGeneratorCompleteStepNormal(cx, generator, value, false)) {
     return false;
   }
+
+  
+  generator->setSuspendedYield();
 
   
   return AsyncGeneratorDrainQueue(cx, generator);
