@@ -221,6 +221,9 @@ add_task(async function test_invalid_cookie_fix() {
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 5);
 
   
+  await promise_close_profile();
+
+  
   {
     const dbConnection = Services.storage.openDatabase(
       do_get_cookie_file(profile)
@@ -277,6 +280,7 @@ add_task(async function test_invalid_cookie_fix() {
   }
 
   
+  await promise_load_profile();
   Services.cookies.removeAll();
   do_close_profile();
 });
