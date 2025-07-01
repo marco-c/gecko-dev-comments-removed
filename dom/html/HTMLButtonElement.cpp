@@ -267,34 +267,108 @@ void EndSubmitClick(EventChainVisitor& aVisitor) {
   }
 }
 
+
 void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
   if (!aVisitor.mPresContext) {
     
     return;
   }
 
-  if (!IsDisabled()) {
-    if (mForm) {
-      
-      RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
-      if (mType == FormControlType::ButtonReset) {
-        form->MaybeReset(this);
-        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-      } else if (mType == FormControlType::ButtonSubmit) {
-        form->MaybeSubmit(this);
-        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-      }
-      
-      
+  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
+
+  
+  if (IsDisabled()) {
+    return;
+  }
+
+  
+
+  
+  if (mForm) {
+    
+    RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
+    
+    
+    
+    if (mType == FormControlType::ButtonSubmit) {
+      form->MaybeSubmit(this);
+      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      return;
     }
-    if (!GetCommandForElement()) {
-      HandlePopoverTargetAction();
-    } else {
-      HandleCommandForAction();
+    
+    
+    if (mType == FormControlType::ButtonReset) {
+      form->MaybeReset(this);
+      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      return;
+    }
+    
+    
+    
+    if (!HasAttr(nsGkAtoms::type)) {
+      return;
     }
   }
 
-  EndSubmitClick(aVisitor);
+  
+  
+  RefPtr<Element> target = GetCommandForElement();
+
+  
+  if (target) {
+    
+    const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::command);
+    nsAtom* commandRaw = attr ? attr->GetAtomValue() : nsGkAtoms::_empty;
+    Command command = GetCommand(commandRaw);
+
+    
+    if (command == Command::Invalid) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (command != Command::Custom && !target->IsValidCommandAction(command)) {
+      return;
+    }
+
+    
+    
+    
+    
+    CommandEventInit init;
+    commandRaw->ToString(init.mCommand);
+    init.mSource = this;
+    init.mCancelable = true;
+    init.mComposed = true;
+    RefPtr<Event> event = CommandEvent::Constructor(this, u"command"_ns, init);
+    event->SetTrusted(true);
+    event->SetTarget(target);
+    EventDispatcher::DispatchDOMEvent(target, nullptr, event, nullptr, nullptr);
+
+    
+    
+    
+    if (event->DefaultPrevented() || !target->IsInComposedDoc() ||
+        command == Command::Custom) {
+      return;
+    }
+
+    
+    target->HandleCommandInternal(this, command, IgnoreErrors());
+
+  } else {
+    
+    
+    HandlePopoverTargetAction();
+  }
 }
 
 void HTMLButtonElement::LegacyCanceledActivationBehavior(
@@ -437,49 +511,6 @@ void HTMLButtonElement::UpdateValidityElementStates(bool aNotify) {
   } else {
     AddStatesSilently(ElementState::INVALID | ElementState::USER_INVALID);
   }
-}
-
-void HTMLButtonElement::HandleCommandForAction() {
-  RefPtr<Element> invokee = GetCommandForElement();
-
-  if (!invokee) {
-    return;
-  }
-
-  
-  const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::command);
-
-  nsAtom* actionRaw = attr ? attr->GetAtomValue() : nsGkAtoms::_empty;
-  Command action = GetCommand(actionRaw);
-
-  
-  
-  if (action != Command::Custom && !invokee->IsValidCommandAction(action)) {
-    return;
-  }
-
-  
-  
-  
-  
-  CommandEventInit init;
-  actionRaw->ToString(init.mCommand);
-  init.mSource = this;
-  init.mCancelable = true;
-  init.mComposed = true;
-  RefPtr<Event> event = CommandEvent::Constructor(this, u"command"_ns, init);
-  event->SetTrusted(true);
-  event->SetTarget(invokee);
-
-  EventDispatcher::DispatchDOMEvent(invokee, nullptr, event, nullptr, nullptr);
-
-  
-  
-  if (action == Command::Custom || event->DefaultPrevented()) {
-    return;
-  }
-
-  invokee->HandleCommandInternal(this, action, IgnoreErrors());
 }
 
 void HTMLButtonElement::GetCommand(nsAString& aValue) const {
