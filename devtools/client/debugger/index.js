@@ -16,6 +16,9 @@ try {
   globalThis.Debugger = globalThis.browserLoader.require(
     "devtools/client/debugger/src/main"
   );
+  
+  
+  globalThis.browserLoaderRequire = globalThis.browserLoader.require;
 } catch (e) {
   dump("Exception happened while loading the debugger:\n");
   dump(e + "\n");
