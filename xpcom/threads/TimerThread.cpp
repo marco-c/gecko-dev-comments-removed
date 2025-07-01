@@ -916,6 +916,7 @@ TimerThread::Run() {
     VerifyTimerListConsistency();
 #endif
 
+    TimeDuration waitFor;
     if (!mSleeping) {
       
       
@@ -956,10 +957,10 @@ TimerThread::Run() {
       
       
       const TimeStamp now = TimeStamp::Now();
-      const TimeDuration waitFor =
-          !wakeupTime.IsNull() ? std::max(TimeDuration::Zero(),
-                                          wakeupTime + chaosWaitDelay - now)
-                               : TimeDuration::Forever();
+      waitFor = !wakeupTime.IsNull()
+                    ? std::max(TimeDuration::Zero(),
+                               wakeupTime + chaosWaitDelay - now)
+                    : TimeDuration::Forever();
 
       if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
         if (waitFor == TimeDuration::Forever())
@@ -972,14 +973,6 @@ TimerThread::Run() {
 #ifdef XP_WIN
       wTFM.Update(now, mCachedPriority.load(std::memory_order_relaxed));
 #endif
-
-      
-      
-      Wait(waitFor);
-
-#if TIMER_THREAD_STATISTICS
-      CollectWakeupStatistics();
-#endif
     } else {
       mIntendedWakeupTime = TimeStamp{};
       
@@ -987,9 +980,14 @@ TimerThread::Run() {
       if (chaosModeActive) {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
-      const TimeDuration waitFor = TimeDuration::FromMilliseconds(milliseconds);
-      Wait(waitFor);
+      waitFor = TimeDuration::FromMilliseconds(milliseconds);
     }
+
+    Wait(waitFor);
+
+#if TIMER_THREAD_STATISTICS
+    CollectWakeupStatistics();
+#endif
   }
 
   return NS_OK;
