@@ -163,6 +163,18 @@ public:
     }
   }
 
+#if OPENTELEMETRY_ABI_VERSION_NO >= 2
+  
+
+
+
+
+
+
+
+  bool Enabled() const noexcept { return OPENTELEMETRY_ATOMIC_READ_8(&this->enabled_) != 0; }
+#endif
+
 #if OPENTELEMETRY_ABI_VERSION_NO == 1
 
   
@@ -197,6 +209,36 @@ public:
   virtual void CloseWithMicroseconds(uint64_t timeout) noexcept = 0;
 
 #endif 
+
+protected:
+#if OPENTELEMETRY_ABI_VERSION_NO >= 2
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void UpdateEnabled(const bool enabled) noexcept
+  {
+    OPENTELEMETRY_ATOMIC_WRITE_8(&this->enabled_, enabled);
+  }
+#endif
+
+private:
+#if OPENTELEMETRY_ABI_VERSION_NO >= 2
+  
+  
+  
+  
+  mutable bool enabled_ = true;
+#endif
 };
 }  
 OPENTELEMETRY_END_NAMESPACE

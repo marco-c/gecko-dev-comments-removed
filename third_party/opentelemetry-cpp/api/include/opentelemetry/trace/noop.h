@@ -96,6 +96,13 @@ class OPENTELEMETRY_EXPORT NoopTracer final : public Tracer,
 {
 public:
   
+  NoopTracer()
+  {
+#if OPENTELEMETRY_ABI_VERSION_NO >= 2
+    UpdateEnabled(false);
+#endif
+  }
+
   nostd::shared_ptr<Span> StartSpan(nostd::string_view ,
                                     const common::KeyValueIterable & ,
                                     const SpanContextKeyValueIterable & ,
@@ -114,7 +121,7 @@ public:
 
   void CloseWithMicroseconds(uint64_t ) noexcept override {}
 
-#endif
+#endif 
 };
 
 

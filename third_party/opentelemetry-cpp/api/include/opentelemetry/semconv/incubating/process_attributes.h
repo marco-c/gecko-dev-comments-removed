@@ -40,7 +40,9 @@ static constexpr const char *kProcessCommand = "process.command";
 
 
 
+
 static constexpr const char *kProcessCommandArgs = "process.command_args";
+
 
 
 
@@ -66,6 +68,18 @@ OPENTELEMETRY_DEPRECATED static constexpr const char *kProcessCpuState = "proces
 
 
 static constexpr const char *kProcessCreationTime = "process.creation.time";
+
+
+
+
+
+
+
+
+
+
+
+static constexpr const char *kProcessEnvironmentVariable = "process.environment_variable";
 
 
 
