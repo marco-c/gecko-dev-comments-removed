@@ -371,7 +371,15 @@ nsresult ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
 
 
 
-  if (aStatus != NS_ERROR_PARSED_DATA_CACHED && aStatus != NS_BINDING_ABORTED) {
+
+
+
+  
+  
+  nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
+  if (aStatus != NS_ERROR_PARSED_DATA_CACHED && aStatus != NS_BINDING_ABORTED &&
+      hc) {
+    
     auto lengthAndOffset = mCacheStream.GetLengthAndOffset();
     int64_t length = lengthAndOffset.mLength;
     int64_t offset = lengthAndOffset.mOffset;
