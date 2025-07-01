@@ -9,7 +9,7 @@ const subdomainOrigin =
   'https://{{hosts[][www2]}}:{{ports[https][0]}}';
 const crossSiteOrigin =
   'https://{{hosts[alt][]}}:{{ports[https][0]}}';
-const subomdainCrossSiteOrigin =
+const subdomainCrossSiteOrigin =
   'https://{{hosts[alt][www2]}}:{{ports[https][0]}}';
 
 
@@ -31,24 +31,23 @@ const subomdainCrossSiteOrigin =
 
 function getUrl(cacheHelper, {
     subdomain = false,
-    secondOrigin = false,
+    crossSite = false,
     cache = false,
     clear = null,
     clearFirst = null,
     response = "single_html",
     iframe = null,
 }) {
-    let url = "https://";
-    if (subdomain && secondOrigin) {
-        url += "{{hosts[alt][www2]}}";
+    let url;
+    if (subdomain && crossSite) {
+        url = subdomainCrossSiteOrigin;
     } else if (subdomain) { 
-        url += "{{hosts[][www2]}}";
-    } else if (secondOrigin) { 
-        url += "{{hosts[alt][]}}";
+        url = subdomainOrigin;
+    } else if (crossSite) { 
+        url = crossSiteOrigin;
     } else { 
-        url += "{{hosts[][]}}";
+        url = sameOrigin;
     }
-    url += ":{{ports[https][0]}}";
     url += "/clear-site-data/support/clear-site-data-cache.py";
     url = new URL(url);
     let params = new URLSearchParams();
