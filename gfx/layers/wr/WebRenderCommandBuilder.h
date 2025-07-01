@@ -220,6 +220,10 @@ class WebRenderCommandBuilder final {
 
   bool mApzEnabled;
 
+  bool mComputingOpaqueRegion;
+
+  nsPoint mOpaqueRegionOffset;
+
  public:
   
   
