@@ -135,13 +135,60 @@ static RefPtr<gfx::DataSourceSurface> CaptureFallbackSnapshot(
 
 
 
-static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
-  const auto& name = aFrame->StyleUIReset()->mViewTransitionName;
+
+template <typename IDGenerator>
+static already_AddRefed<nsAtom> DocumentScopedTransitionNameForWithGenerator(
+    nsIFrame* aFrame, IDGenerator&& aFunc) {
   
-  if (name.IsNone() || name.IsMatchElement()) {
+  const auto& computed = aFrame->StyleUIReset()->mViewTransitionName;
+
+  
+  if (computed.IsNone()) {
     return nullptr;
   }
-  return name.AsIdent().AsAtom();
+
+  
+  if (computed.IsIdent()) {
+    return RefPtr<nsAtom>{computed.AsIdent().AsAtom()}.forget();
+  }
+
+  
+  
+  
+  MOZ_ASSERT(computed.IsMatchElement());
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  nsIContent* content = aFrame->GetContent();
+  if (MOZ_UNLIKELY(!content || !content->IsElement())) {
+    return nullptr;
+  }
+
+  
+  
+  Maybe<uint64_t> id = aFunc(content->AsElement());
+  if (!id) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  nsCString name;
+  
+  
+  name.AppendLiteral("-ua-view-transition-name-");
+  name.AppendInt(*id);
+  return NS_Atomize(name);
 }
 
 static StyleViewTransitionClass DocumentScopedClassListFor(
@@ -355,8 +402,10 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
   MOZ_ASSERT(aFrame);
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION));
 
-  nsAtom* name = DocumentScopedTransitionNameFor(aFrame);
-  if (NS_WARN_IF(name->IsEmpty())) {
+  RefPtr<nsAtom> name = DocumentScopedTransitionNameForWithGenerator(
+      aFrame,
+      [this](Element* aElement) { return GetElementIdentifier(aElement); });
+  if (NS_WARN_IF(!name)) {
     return nullptr;
   }
   const bool isOld = mPhase < Phase::Animating;
@@ -1200,7 +1249,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   
   nsTHashSet<nsAtom*> usedTransitionNames;
   
-  AutoTArray<std::pair<nsIFrame*, nsAtom*>, 32> captureElements;
+  AutoTArray<std::pair<nsIFrame*, RefPtr<nsAtom>>, 32> captureElements;
 
   
   
@@ -1214,7 +1263,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   
   Maybe<SkipTransitionReason> result;
   ForEachFrame(mDocument, [&](nsIFrame* aFrame) {
-    auto* name = DocumentScopedTransitionNameFor(aFrame);
+    RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
       
       
@@ -1231,12 +1280,16 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     }
     if (!usedTransitionNames.EnsureInserted(name)) {
       
+      
+      MOZ_ASSERT(!aFrame->StyleUIReset()->mViewTransitionName.IsMatchElement());
+
+      
       result.emplace(
           SkipTransitionReason::DuplicateTransitionNameCapturingOldState);
       return false;
     }
     SetCaptured(aFrame, true);
-    captureElements.AppendElement(std::make_pair(aFrame, name));
+    captureElements.AppendElement(std::make_pair(aFrame, std::move(name)));
     return true;
   });
 
@@ -1289,7 +1342,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
   Maybe<SkipTransitionReason> result;
   ForEachFrame(mDocument, [&](nsIFrame* aFrame) {
     
-    auto* name = DocumentScopedTransitionNameFor(aFrame);
+    RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
       return true;
     }
@@ -1303,6 +1356,9 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
       return true;
     }
     if (!usedTransitionNames.EnsureInserted(name)) {
+      
+      
+      MOZ_ASSERT(!aFrame->StyleUIReset()->mViewTransitionName.IsMatchElement());
       result.emplace(
           SkipTransitionReason::DuplicateTransitionNameCapturingNewState);
       return false;
@@ -1313,7 +1369,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
       return MakeUnique<CapturedElement>();
     });
     if (!wasPresent) {
-      mNames.AppendElement(name);
+      mNames.AppendElement(std::move(name));
     }
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
     
@@ -1681,6 +1737,25 @@ void ViewTransition::SkipTransition(
       finished->MaybeResolveWithUndefined();
     }
   }
+}
+
+Maybe<uint64_t> ViewTransition::GetElementIdentifier(Element* aElement) const {
+  return mElementIdentifiers.MaybeGet(aElement);
+}
+
+uint64_t ViewTransition::EnsureElementIdentifier(Element* aElement) {
+  static uint64_t sLastIdentifier = 0;
+  return mElementIdentifiers.WithEntryHandle(aElement, [&](auto&& entry) {
+    return entry.OrInsertWith([&]() { return sLastIdentifier++; });
+  });
+}
+
+already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
+    nsIFrame* aFrame) {
+  return DocumentScopedTransitionNameForWithGenerator(
+      aFrame, [this](Element* aElement) {
+        return Some(EnsureElementIdentifier(aElement));
+      });
 }
 
 JSObject* ViewTransition::WrapObject(JSContext* aCx,
