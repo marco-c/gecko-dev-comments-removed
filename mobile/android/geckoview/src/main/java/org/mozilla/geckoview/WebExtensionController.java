@@ -329,11 +329,38 @@ public class WebExtensionController {
 
 
 
+
+
     @Nullable
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-on-optional-prompt", version = 144)
     default GeckoResult<AllowOrDeny> onOptionalPrompt(
         final @NonNull WebExtension extension,
         final @NonNull String[] permissions,
         final @NonNull String[] origins) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Nullable
+    default GeckoResult<AllowOrDeny> onOptionalPrompt(
+        final @NonNull WebExtension extension,
+        final @NonNull String[] permissions,
+        final @NonNull String[] origins,
+        final @NonNull String[] dataCollectionPermissions) {
       return null;
     }
   }
@@ -1342,8 +1369,22 @@ public class WebExtensionController {
     final String[] permissions =
         message.bundle.getBundle("permissions").getStringArray("permissions");
     final String[] origins = message.bundle.getBundle("permissions").getStringArray("origins");
-    final GeckoResult<AllowOrDeny> promptResponse =
+
+    
+    
+    
+    GeckoResult<AllowOrDeny> promptResponse =
         mPromptDelegate.onOptionalPrompt(extension, permissions, origins);
+
+    if (promptResponse == null) {
+      final String[] dataCollectionPermissions =
+          message.bundle.getBundle("permissions").getStringArray("data_collection");
+
+      promptResponse =
+          mPromptDelegate.onOptionalPrompt(
+              extension, permissions, origins, dataCollectionPermissions);
+    }
+
     if (promptResponse == null) {
       return;
     }
