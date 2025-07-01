@@ -136,7 +136,7 @@ impl MidirWrapper {
 
     
     fn is_microsoft_synth_output(port: &MidiPortWrapper) -> bool {
-        (port.input() == false) && (port.name == "Microsoft GS Wavetable Synth")
+        !port.input() && (port.name == "Microsoft GS Wavetable Synth")
     }
 
     fn open_port(
