@@ -10,7 +10,6 @@
 #include "MFTEncoder.h"
 #include "MediaData.h"
 #include "mozilla/Logging.h"
-#include "mozilla/gfx/gfxVars.h"
 
 using mozilla::media::EncodeSupport;
 using mozilla::media::EncodeSupportSet;
@@ -34,19 +33,6 @@ GUID CodecToSubtype(CodecType aCodec) {
   }
 }
 
-static bool CanUseWMFHwEncoder(CodecType aCodec) {
-  switch (aCodec) {
-    case CodecType::H264:
-      return gfx::gfxVars::UseH264HwEncode();
-    case CodecType::VP8:
-      return gfx::gfxVars::UseVP8HwEncode();
-    case CodecType::VP9:
-      return gfx::gfxVars::UseVP9HwEncode();
-    default:
-      return false;
-  }
-}
-
 EncodeSupportSet CanCreateWMFEncoder(
     CodecType aCodec, const gfx::IntSize& aFrameSize,
     const EncoderConfig::CodecSpecific& aCodecSpecific) {
@@ -56,13 +42,10 @@ EncodeSupportSet CanCreateWMFEncoder(
       return;
     }
     
-    if (CanUseWMFHwEncoder(aCodec)) {
-      auto hwEnc =
-          MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
-      if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec), aFrameSize,
-                                  aCodecSpecific))) {
-        supports += EncodeSupport::HardwareEncode;
-      }
+    auto hwEnc = MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
+    if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec), aFrameSize,
+                                aCodecSpecific))) {
+      supports += EncodeSupport::HardwareEncode;
     }
     
     auto swEnc = MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
