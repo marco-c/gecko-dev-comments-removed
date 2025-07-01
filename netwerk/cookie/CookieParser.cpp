@@ -558,8 +558,7 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     
     
 
-    aCookieData.expiry() =
-        CookieCommons::MaybeReduceExpiry(aCurrentTime, expires);
+    aCookieData.expiry() = CookieCommons::MaybeCapExpiry(aCurrentTime, expires);
     return false;
   }
 
