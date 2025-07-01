@@ -505,8 +505,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static bool OffMainThreadCompositingEnabled();
 
-  void UpdateCanUseHardwareVideoDecoding();
-
   inline static void EnsureCMSInitialized() {
     if (MOZ_UNLIKELY(!gCMSInitialized)) {
       MaybeInitializeCMS();
@@ -923,8 +921,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static mozilla::gfx::BackendType BackendTypeForName(const nsCString& aName);
 
-  virtual bool CanUseHardwareVideoDecoding();
-
   int8_t mAllowDownloadableFonts;
 
   
@@ -968,6 +964,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void InitCompositorAccelerationPrefs();
   void InitGPUProcessPrefs();
   virtual void InitPlatformGPUProcessPrefs() {}
+  virtual void InitPlatformHardwareVideoConfig() {}
 
   
   static void ReportTelemetry();
