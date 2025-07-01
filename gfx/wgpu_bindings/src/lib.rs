@@ -2,6 +2,7 @@
 
 
 
+use crate::command::{RecordedComputePass, RecordedRenderPass};
 use crate::error::ErrorBufferType;
 use wgc::id;
 
@@ -123,6 +124,8 @@ enum Message<'a> {
         id::CommandEncoderId,
         wgt::CommandBufferDescriptor<wgc::Label<'a>>,
     ),
+    ReplayRenderPass(id::DeviceId, id::CommandEncoderId, RecordedRenderPass),
+    ReplayComputePass(id::DeviceId, id::CommandEncoderId, RecordedComputePass),
 
     DestroyBuffer(id::BufferId),
     DestroyTexture(id::TextureId),
