@@ -715,12 +715,6 @@ static bool PrepareForSetTargetAPZCNotification(
   if (!guidIsValid) {
     return false;
   }
-
-  
-  if (MOZ_UNLIKELY(aRootFrame->PresShell()->IsDocumentLoading())) {
-    aRootFrame->PresShell()->SuppressDisplayport(false);
-  }
-
   if (DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(dpElement)) {
     
     
