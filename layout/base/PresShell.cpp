@@ -9593,7 +9593,7 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
         
         
         
-        Document::AsyncExitFullscreen(nullptr);
+        Document::AsyncExitFullscreen(root);
       }
     }
   }
