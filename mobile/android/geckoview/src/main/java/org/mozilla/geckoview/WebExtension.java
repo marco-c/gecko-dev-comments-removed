@@ -104,30 +104,6 @@ public class WebExtension {
   private static final String LOGTAG = "WebExtension";
 
   
-
-
-
-
-
-
-
-  public static final List<String> DATA_COLLECTION_PERMISSIONS =
-      List.of(
-          "authenticationInfo",
-          "bookmarksInfo",
-          "browsingActivity",
-          "financialAndPaymentInfo",
-          "healthInfo",
-          "locationInfo",
-          "none",
-          "personalCommunications",
-          "personallyIdentifyingInfo",
-          "searchTerms",
-          "technicalAndInteraction",
-          "websiteActivity",
-          "websiteContent");
-
-  
   public static class Flags {
     
 
