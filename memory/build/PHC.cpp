@@ -669,10 +669,6 @@ class PHCRegion {
 
 
 
-using PHCLock = const MutexAutoLock&;
-
-
-
 
 class PHC {
  public:
@@ -696,29 +692,29 @@ class PHC {
     
     MutexAutoLock lock(mMutex);
 
-    ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
+    ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64()));
 
     for (uintptr_t i = 0; i < kNumAllocPages; i++) {
-      AppendPageToFreeList(lock, i);
+      AppendPageToFreeList(i);
     }
   }
 
-  uint64_t Random64(PHCLock) { return mRNG.next(); }
+  uint64_t Random64() MOZ_REQUIRES(mMutex) { return mRNG.next(); }
 
   
   
-  uint8_t* AllocPageBaseAddr(PHCLock, uintptr_t aIndex) {
+  uint8_t* AllocPageBaseAddr(uintptr_t aIndex) MOZ_REQUIRES(mMutex) {
     return mAllocPages[aIndex].mBaseAddr;
   }
 
-  Maybe<arena_id_t> PageArena(PHCLock aLock, uintptr_t aIndex) {
+  Maybe<arena_id_t> PageArena(uintptr_t aIndex) MOZ_REQUIRES(mMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
     page.AssertInUse();
 
     return page.mArenaId;
   }
 
-  size_t PageUsableSize(PHCLock aLock, uintptr_t aIndex) {
+  size_t PageUsableSize(uintptr_t aIndex) MOZ_REQUIRES(mMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
     page.AssertInUse();
 
@@ -726,7 +722,7 @@ class PHC {
   }
 
   
-  size_t FragmentationBytes() const {
+  size_t FragmentationBytes() const MOZ_REQUIRES(mMutex) {
     size_t sum = 0;
     for (const auto& page : mAllocPages) {
       sum += page.FragmentationBytes();
@@ -735,7 +731,7 @@ class PHC {
   }
 
   
-  size_t AllocatedBytes() {
+  size_t AllocatedBytes() MOZ_EXCLUDES(mMutex) {
     MutexAutoLock lock(mMutex);
 
     size_t allocated = 0;
@@ -747,33 +743,33 @@ class PHC {
     return allocated;
   }
 
-  void SetPageInUse(PHCLock aLock, uintptr_t aIndex,
-                    const Maybe<arena_id_t>& aArenaId, uint8_t* aBaseAddr,
-                    const StackTrace& aAllocStack) {
+  void SetPageInUse(uintptr_t aIndex, const Maybe<arena_id_t>& aArenaId,
+                    uint8_t* aBaseAddr, const StackTrace& aAllocStack)
+      MOZ_REQUIRES(mMutex) {
     mAllocPages[aIndex].SetInUse(aArenaId, aBaseAddr, aAllocStack);
   }
 
 #if PHC_LOGGING
-  Time GetFreeTime(uintptr_t aIndex) const {
+  Time GetFreeTime(uintptr_t aIndex) const MOZ_REQUIRES(mMutex) {
     return mAllocPages[aIndex].mFreeTime;
   }
 #endif
 
-  void ResizePageInUse(PHCLock aLock, uintptr_t aIndex,
-                       const Maybe<arena_id_t>& aArenaId, uint8_t* aNewBaseAddr,
-                       const StackTrace& aAllocStack) {
+  void ResizePageInUse(uintptr_t aIndex, const Maybe<arena_id_t>& aArenaId,
+                       uint8_t* aNewBaseAddr, const StackTrace& aAllocStack)
+      MOZ_REQUIRES(mMutex) {
     mAllocPages[aIndex].ResizeInUse(aArenaId, aNewBaseAddr, aAllocStack);
   };
 
-  void SetPageFreed(PHCLock aLock, uintptr_t aIndex,
-                    const Maybe<arena_id_t>& aArenaId,
-                    const StackTrace& aFreeStack, Delay aReuseDelay) {
+  void SetPageFreed(uintptr_t aIndex, const Maybe<arena_id_t>& aArenaId,
+                    const StackTrace& aFreeStack, Delay aReuseDelay)
+      MOZ_REQUIRES(mMutex) {
     AllocPageInfo& page = mAllocPages[aIndex];
 
     page.SetPageFreed(aArenaId, aFreeStack, aReuseDelay, Now());
 
     MOZ_ASSERT(!page.mNextPage);
-    AppendPageToFreeList(aLock, aIndex);
+    AppendPageToFreeList(aIndex);
   }
 
   static void CrashOnGuardPage(void* aPtr) {
@@ -785,8 +781,7 @@ class PHC {
     MOZ_CRASH("unreachable");
   }
 
-  void EnsureValidAndInUse(PHCLock, void* aPtr, uintptr_t aIndex)
-      MOZ_REQUIRES(mMutex) {
+  void EnsureValidAndInUse(void* aPtr, uintptr_t aIndex) MOZ_REQUIRES(mMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
 
     
@@ -809,7 +804,7 @@ class PHC {
   
   
   void FillAddrInfo(uintptr_t aIndex, const void* aBaseAddr, bool isGuardPage,
-                    phc::AddrInfo& aOut) {
+                    phc::AddrInfo& aOut) MOZ_REQUIRES(mMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
     if (isGuardPage) {
       aOut.mKind = phc::AddrInfo::Kind::GuardPage;
@@ -837,8 +832,8 @@ class PHC {
     aOut.mFreeStack = page.mFreeStack;
   }
 
-  void FillJemallocPtrInfo(PHCLock, const void* aPtr, uintptr_t aIndex,
-                           jemalloc_ptr_info_t* aInfo) {
+  void FillJemallocPtrInfo(const void* aPtr, uintptr_t aIndex,
+                           jemalloc_ptr_info_t* aInfo) MOZ_REQUIRES(mMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
     switch (page.mState) {
       case AllocPageState::NeverAllocated:
@@ -889,15 +884,18 @@ class PHC {
   static void postfork_child() { PHC::sPHC->mMutex.Init(); }
 #endif
 
+  void IncPageAllocHits() MOZ_REQUIRES(mMutex) {
 #if PHC_LOGGING
-  void IncPageAllocHits(PHCLock) { mPageAllocHits++; }
-  void IncPageAllocMisses(PHCLock) { mPageAllocMisses++; }
-#else
-  void IncPageAllocHits(PHCLock) {}
-  void IncPageAllocMisses(PHCLock) {}
+    mPageAllocHits++;
 #endif
+  }
+  void IncPageAllocMisses() MOZ_REQUIRES(mMutex) {
+#if PHC_LOGGING
+    mPageAllocMisses++;
+#endif
+  }
 
-  phc::PHCStats GetPageStats(PHCLock) {
+  phc::PHCStats GetPageStats() MOZ_REQUIRES(mMutex) {
     phc::PHCStats stats;
 
     for (const auto& page : mAllocPages) {
@@ -911,16 +909,18 @@ class PHC {
   }
 
 #if PHC_LOGGING
-  size_t PageAllocHits(PHCLock) { return mPageAllocHits; }
-  size_t PageAllocAttempts(PHCLock) {
+  size_t PageAllocHits() MOZ_REQUIRES(mMutex) { return mPageAllocHits; }
+  size_t PageAllocAttempts() MOZ_REQUIRES(mMutex) {
     return mPageAllocHits + mPageAllocMisses;
   }
 
   
-  size_t PageAllocHitRate(PHCLock) {
+  size_t PageAllocHitRate() MOZ_REQUIRES(mMutex) {
     return mPageAllocHits * 100 / (mPageAllocHits + mPageAllocMisses);
   }
 #endif
+
+  void LogNoAlloc(size_t aReqSize, size_t aAlignment, Delay newAllocDelay);
 
   
   bool ShouldMakeNewAllocations() const {
@@ -932,20 +932,19 @@ class PHC {
     if (mPhcState != PHCState::Enabled && aState == PHCState::Enabled) {
       MutexAutoLock lock(mMutex);
       
-      ResetRNG(lock);
-
-      ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
+      ResetRNG();
+      ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64()));
     }
 
     mPhcState = aState;
   }
 
-  void ResetRNG(MutexAutoLock&) {
+  void ResetRNG() MOZ_REQUIRES(mMutex) {
     mRNG = non_crypto::XorShift128PlusRNG(RandomSeed<0>(), RandomSeed<1>());
   }
 
   void SetProbabilities(int64_t aAvgDelayFirst, int64_t aAvgDelayNormal,
-                        int64_t aAvgDelayPageReuse) {
+                        int64_t aAvgDelayPageReuse) MOZ_EXCLUDES(mMutex) {
     MutexAutoLock lock(mMutex);
 
     mAvgFirstAllocDelay = CheckProbability(aAvgDelayFirst);
@@ -1086,8 +1085,7 @@ class PHC {
 
   static Delay LastDelay() { return tlsLastDelay.get(); }
 
-  Maybe<uintptr_t> PopNextFreeIfAllocatable(const MutexAutoLock& lock,
-                                            Time now) {
+  Maybe<uintptr_t> PopNextFreeIfAllocatable(Time now) MOZ_REQUIRES(mMutex) {
     if (!mFreePageListHead) {
       return Nothing();
     }
@@ -1111,7 +1109,7 @@ class PHC {
     return Some(index);
   }
 
-  void UnpopNextFree(const MutexAutoLock& lock, uintptr_t index) {
+  void UnpopNextFree(uintptr_t index) MOZ_REQUIRES(mMutex) {
     AllocPageInfo& page = mAllocPages[index];
     MOZ_ASSERT(!page.mNextPage);
 
@@ -1122,7 +1120,7 @@ class PHC {
     }
   }
 
-  void AppendPageToFreeList(const MutexAutoLock& lock, uintptr_t aIndex) {
+  void AppendPageToFreeList(uintptr_t aIndex) MOZ_REQUIRES(mMutex) {
     MOZ_RELEASE_ASSERT(aIndex < kNumAllocPages);
     AllocPageInfo& page = mAllocPages[aIndex];
     MOZ_ASSERT(!page.mNextPage);
@@ -1186,21 +1184,21 @@ class PHC {
   
   
   
-  non_crypto::XorShift128PlusRNG mRNG;
+  non_crypto::XorShift128PlusRNG mRNG MOZ_GUARDED_BY(mMutex);
 
   
   
   
   
-  Maybe<uintptr_t> mFreePageListHead;
-  Maybe<uintptr_t> mFreePageListTail;
+  Maybe<uintptr_t> mFreePageListHead MOZ_GUARDED_BY(mMutex);
+  Maybe<uintptr_t> mFreePageListTail MOZ_GUARDED_BY(mMutex);
 
 #if PHC_LOGGING
   
   
   
-  size_t mPageAllocHits = 0;
-  size_t mPageAllocMisses = 0;
+  size_t mPageAllocHits MOZ_GUARDED_BY(mMutex) = 0;
+  size_t mPageAllocMisses MOZ_GUARDED_BY(mMutex) = 0;
 #endif
 
   
@@ -1209,11 +1207,12 @@ class PHC {
   
   
   
-  alignas(kCacheLineSize) Delay mAvgFirstAllocDelay = 64 * 1024;
+  alignas(kCacheLineSize) Delay mAvgFirstAllocDelay
+      MOZ_GUARDED_BY(mMutex) = 64 * 1024;
 
   
   
-  Delay mAvgAllocDelay = 16 * 1024;
+  Delay mAvgAllocDelay MOZ_GUARDED_BY(mMutex) = 16 * 1024;
 
   
   
@@ -1221,7 +1220,7 @@ class PHC {
   
   
   
-  Delay mAvgPageReuseDelay = 256 * 1024;
+  Delay mAvgPageReuseDelay MOZ_GUARDED_BY(mMutex) = 256 * 1024;
 
   
   
@@ -1288,14 +1287,14 @@ class PHC {
   
   static PHC_THREAD_LOCAL(Delay) tlsLastDelay;
 
-  AllocPageInfo mAllocPages[kNumAllocPages];
+  AllocPageInfo mAllocPages[kNumAllocPages] MOZ_GUARDED_BY(mMutex);
 
  public:
-  Delay GetAvgAllocDelay(const MutexAutoLock&) { return mAvgAllocDelay; }
-  Delay GetAvgFirstAllocDelay(const MutexAutoLock&) {
+  Delay GetAvgAllocDelay() MOZ_REQUIRES(mMutex) { return mAvgAllocDelay; }
+  Delay GetAvgFirstAllocDelay() MOZ_REQUIRES(mMutex) {
     return mAvgFirstAllocDelay;
   }
-  Delay GetAvgPageReuseDelay(const MutexAutoLock&) {
+  Delay GetAvgPageReuseDelay() MOZ_REQUIRES(mMutex) {
     return mAvgPageReuseDelay;
   }
 
@@ -1330,8 +1329,7 @@ PHCRegion::PHCRegion()
 
 
 
-static void PHCCrash(PHCLock, const char* aMessage)
-    MOZ_REQUIRES(PHC::sPHC->mMutex) {
+static void PHCCrash(const char* aMessage) MOZ_REQUIRES(PHC::sPHC->mMutex) {
   PHC::sPHC->mMutex.Unlock();
   MOZ_CRASH_UNSAFE(aMessage);
 }
@@ -1412,17 +1410,17 @@ static MOZ_ALWAYS_INLINE bool ShouldPageAllocHot(size_t aReqSize) {
   return true;
 }
 
-static void LogNoAlloc(PHCLock& aLock, size_t aReqSize, size_t aAlignment,
-                       Delay newAllocDelay) {
+void PHC::LogNoAlloc(size_t aReqSize, size_t aAlignment, Delay newAllocDelay)
+    MOZ_REQUIRES(mMutex) {
   
 #if PHC_LOGGING
-  phc::PHCStats stats = PHC::sPHC->GetPageStats(aLock);
+  phc::PHCStats stats = GetPageStats();
 #endif
   LOG("No PageAlloc(%zu, %zu), sAllocDelay <- %zu, fullness %zu/%zu/%zu, "
       "hits %zu/%zu (%zu%%)\n",
       aReqSize, aAlignment, size_t(newAllocDelay), stats.mSlotsAllocated,
-      stats.mSlotsFreed, kNumAllocPages, PHC::sPHC->PageAllocHits(aLock),
-      PHC::sPHC->PageAllocAttempts(aLock), PHC::sPHC->PageAllocHitRate(aLock));
+      stats.mSlotsFreed, kNumAllocPages, PageAllocHits(), PageAllocAttempts(),
+      PageAllocHitRate());
 }
 
 
@@ -1468,8 +1466,8 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 
   Time now = PHC::Now();
 
-  Delay newAllocDelay = Rnd64ToDelay(PHC::sPHC->GetAvgAllocDelay(lock),
-                                     PHC::sPHC->Random64(lock));
+  Delay newAllocDelay =
+      Rnd64ToDelay(PHC::sPHC->GetAvgAllocDelay(), PHC::sPHC->Random64());
   if (!PHC::sPHC->SetNewAllocDelay(newAllocDelay)) {
     return nullptr;
   }
@@ -1478,10 +1476,10 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   
   
 
-  Maybe<uintptr_t> mb_index = PHC::sPHC->PopNextFreeIfAllocatable(lock, now);
+  Maybe<uintptr_t> mb_index = PHC::sPHC->PopNextFreeIfAllocatable(now);
   if (!mb_index) {
-    PHC::sPHC->IncPageAllocMisses(lock);
-    LogNoAlloc(lock, aReqSize, aAlignment, newAllocDelay);
+    PHC::sPHC->IncPageAllocMisses();
+    PHC::sPHC->LogNoAlloc(aReqSize, aAlignment, newAllocDelay);
     return nullptr;
   }
   uintptr_t index = mb_index.value();
@@ -1499,9 +1497,9 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 #endif
 
   if (!ok) {
-    PHC::sPHC->UnpopNextFree(lock, index);
-    PHC::sPHC->IncPageAllocMisses(lock);
-    LogNoAlloc(lock, aReqSize, aAlignment, newAllocDelay);
+    PHC::sPHC->UnpopNextFree(index);
+    PHC::sPHC->IncPageAllocMisses();
+    PHC::sPHC->LogNoAlloc(aReqSize, aAlignment, newAllocDelay);
     return nullptr;
   }
 
@@ -1521,7 +1519,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   lifetime = then != 0 ? now - then : 0;
 #endif
 
-  PHC::sPHC->SetPageInUse(lock, index, aArenaId, ptr, allocStack);
+  PHC::sPHC->SetPageInUse(index, aArenaId, ptr, allocStack);
 
   if (aZero) {
     memset(ptr, 0, usableSize);
@@ -1531,39 +1529,38 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 #endif
   }
 
-  PHC::sPHC->IncPageAllocHits(lock);
+  PHC::sPHC->IncPageAllocHits();
 #if PHC_LOGGING
-  phc::PHCStats stats = PHC::sPHC->GetPageStats(lock);
+  phc::PHCStats stats = PHC::sPHC->GetPageStats();
 #endif
   LOG("PageAlloc(%zu, %zu) -> %p[%zu]/%p (%zu) (z%zu), sAllocDelay <- %zu, "
       "fullness %zu/%zu/%zu, hits %zu/%zu (%zu%%), lifetime %zu\n",
       aReqSize, aAlignment, pagePtr, index, ptr, usableSize,
       size_t(newAllocDelay), size_t(PHC::SharedAllocDelay()),
       stats.mSlotsAllocated, stats.mSlotsFreed, kNumAllocPages,
-      PHC::sPHC->PageAllocHits(lock), PHC::sPHC->PageAllocAttempts(lock),
-      PHC::sPHC->PageAllocHitRate(lock), lifetime);
+      PHC::sPHC->PageAllocHits(), PHC::sPHC->PageAllocAttempts(),
+      PHC::sPHC->PageAllocHitRate(), lifetime);
 
   return ptr;
 }
 
-static void FreePage(PHCLock aLock, uintptr_t aIndex,
-                     const Maybe<arena_id_t>& aArenaId,
+static void FreePage(uintptr_t aIndex, const Maybe<arena_id_t>& aArenaId,
                      const StackTrace& aFreeStack, Delay aReuseDelay)
     MOZ_REQUIRES(PHC::sPHC->mMutex) {
   void* pagePtr = PHC::sRegion->AllocPagePtr(aIndex);
 
 #ifdef XP_WIN
   if (!VirtualFree(pagePtr, kPageSize, MEM_DECOMMIT)) {
-    PHCCrash(aLock, "VirtualFree failed");
+    PHCCrash("VirtualFree failed");
   }
 #else
   if (mmap(pagePtr, kPageSize, PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON,
            -1, 0) == MAP_FAILED) {
-    PHCCrash(aLock, "mmap failed");
+    PHCCrash("mmap failed");
   }
 #endif
 
-  PHC::sPHC->SetPageFreed(aLock, aIndex, aArenaId, aFreeStack, aReuseDelay);
+  PHC::sPHC->SetPageFreed(aIndex, aArenaId, aFreeStack, aReuseDelay);
 }
 
 
@@ -1590,10 +1587,10 @@ inline void* MozJemallocPHC::malloc(size_t aReqSize) {
   return PageMalloc(Nothing(), aReqSize);
 }
 
-static Delay ReuseDelay(PHCLock aLock) {
-  Delay avg_reuse_delay = PHC::sPHC->GetAvgPageReuseDelay(aLock);
+static Delay ReuseDelay() MOZ_REQUIRES(PHC::sPHC->mMutex) {
+  Delay avg_reuse_delay = PHC::sPHC->GetAvgPageReuseDelay();
   return (avg_reuse_delay / 2) +
-         Rnd64ToDelay(avg_reuse_delay / 2, PHC::sPHC->Random64(aLock));
+         Rnd64ToDelay(avg_reuse_delay / 2, PHC::sPHC->Random64());
 }
 
 
@@ -1692,7 +1689,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
   MutexAutoLock lock(PHC::sPHC->mMutex);
 
   
-  PHC::sPHC->EnsureValidAndInUse(lock, aOldPtr, index);
+  PHC::sPHC->EnsureValidAndInUse(aOldPtr, index);
 
   if (aNewSize <= kPageSize && PHC::sPHC->ShouldMakeNewAllocations()) {
     
@@ -1703,12 +1700,12 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
     
     
     
-    size_t oldUsableSize = PHC::sPHC->PageUsableSize(lock, index);
+    size_t oldUsableSize = PHC::sPHC->PageUsableSize(index);
     size_t newUsableSize = MozJemalloc::malloc_good_size(aNewSize);
     uint8_t* pagePtr = PHC::sRegion->AllocPagePtr(index);
     uint8_t* newPtr = pagePtr + kPageSize - newUsableSize;
     memmove(newPtr, aOldPtr, std::min(oldUsableSize, aNewSize));
-    PHC::sPHC->ResizePageInUse(lock, index, aArenaId, newPtr, stack);
+    PHC::sPHC->ResizePageInUse(index, aArenaId, newPtr, stack);
     LOG("PageRealloc-Reuse(%p, %zu) -> %p\n", aOldPtr, aNewSize, newPtr);
     return Some(newPtr);
   }
@@ -1719,7 +1716,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
   if (aArenaId.isSome()) {
     newPtr = MozJemalloc::moz_arena_malloc(*aArenaId, aNewSize);
   } else {
-    Maybe<arena_id_t> oldArenaId = PHC::sPHC->PageArena(lock, index);
+    Maybe<arena_id_t> oldArenaId = PHC::sPHC->PageArena(index);
     newPtr = (oldArenaId.isSome()
                   ? MozJemalloc::moz_arena_malloc(*oldArenaId, aNewSize)
                   : MozJemalloc::malloc(aNewSize));
@@ -1728,14 +1725,14 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
     return Some(nullptr);
   }
 
-  Delay reuseDelay = ReuseDelay(lock);
+  Delay reuseDelay = ReuseDelay();
 
   
   
   
-  size_t oldUsableSize = PHC::sPHC->PageUsableSize(lock, index);
+  size_t oldUsableSize = PHC::sPHC->PageUsableSize(index);
   memcpy(newPtr, aOldPtr, std::min(oldUsableSize, aNewSize));
-  FreePage(lock, index, aArenaId, stack, reuseDelay);
+  FreePage(index, aArenaId, stack, reuseDelay);
   LOG("PageRealloc-Free(%p[%zu], %zu) -> %p, %zu delay, reuse at ~%zu\n",
       aOldPtr, index, aNewSize, newPtr, size_t(reuseDelay),
       size_t(PHC::Now()) + reuseDelay);
@@ -1784,14 +1781,14 @@ static void DoPageFree(const Maybe<arena_id_t>& aArenaId, void* aPtr) {
   MutexAutoLock lock(PHC::sPHC->mMutex);
 
   
-  PHC::sPHC->EnsureValidAndInUse(lock, aPtr, index);
+  PHC::sPHC->EnsureValidAndInUse(aPtr, index);
 
   
-  Delay reuseDelay = ReuseDelay(lock);
-  FreePage(lock, index, aArenaId, freeStack, reuseDelay);
+  Delay reuseDelay = ReuseDelay();
+  FreePage(index, aArenaId, freeStack, reuseDelay);
 
 #if PHC_LOGGING
-  phc::PHCStats stats = PHC::sPHC->GetPageStats(lock);
+  phc::PHCStats stats = PHC::sPHC->GetPageStats();
 #endif
   LOG("PageFree(%p[%zu]), %zu delay, reuse at ~%zu, fullness %zu/%zu/%zu\n",
       aPtr, index, size_t(reuseDelay), size_t(PHC::Now()) + reuseDelay,
@@ -1870,13 +1867,13 @@ inline size_t MozJemallocPHC::malloc_usable_size(usable_ptr_t aPtr) {
 
   MutexAutoLock lock(PHC::sPHC->mMutex);
 
-  void* pageBaseAddr = PHC::sPHC->AllocPageBaseAddr(lock, index);
+  void* pageBaseAddr = PHC::sPHC->AllocPageBaseAddr(index);
 
   if (MOZ_UNLIKELY(aPtr < pageBaseAddr)) {
     return 0;
   }
 
-  return PHC::sPHC->PageUsableSize(lock, index);
+  return PHC::sPHC->PageUsableSize(index);
 }
 
 static size_t metadata_size() {
@@ -1950,7 +1947,7 @@ inline void MozJemallocPHC::jemalloc_ptr_info(const void* aPtr,
 
   MutexAutoLock lock(PHC::sPHC->mMutex);
 
-  PHC::sPHC->FillJemallocPtrInfo(lock, aPtr, index, aInfo);
+  PHC::sPHC->FillJemallocPtrInfo(aPtr, index, aInfo);
 #if DEBUG
   LOG("JemallocPtrInfo(%p[%zu]) -> {%zu, %p, %zu, %zu}\n", aPtr, index,
       size_t(aInfo->tag), aInfo->addr, aInfo->size, aInfo->arenaId);
@@ -2078,7 +2075,7 @@ void GetPHCStats(PHCStats& aStats) {
 
   MutexAutoLock lock(PHC::sPHC->mMutex);
 
-  aStats = PHC::sPHC->GetPageStats(lock);
+  aStats = PHC::sPHC->GetPageStats();
 }
 
 
