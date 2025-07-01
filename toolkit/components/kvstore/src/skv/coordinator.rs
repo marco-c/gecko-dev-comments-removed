@@ -84,7 +84,7 @@ impl Coordinator {
     
     pub fn get_or_create() -> &'static Self {
         static COORDINATOR: OnceLock<Coordinator> = OnceLock::new();
-        COORDINATOR.get_or_init(|| Coordinator::new())
+        COORDINATOR.get_or_init(Coordinator::new)
     }
 
     
