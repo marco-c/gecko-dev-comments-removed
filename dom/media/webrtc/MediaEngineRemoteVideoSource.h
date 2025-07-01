@@ -224,7 +224,9 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   
   
+  
   webrtc::CaptureCapability mCapability;
+  DistanceCalculation mCalculation;
 
   
 
