@@ -16,7 +16,7 @@ use api::{FramePublishId, PrimitiveKeyKind, RenderReasons};
 use api::units::*;
 use api::channel::{single_msg_channel, Sender, Receiver};
 use crate::bump_allocator::ChunkPool;
-use crate::AsyncPropertySampler;
+use crate::{AsyncPropertySampler, GenerateFrameParams};
 use crate::box_shadow::BoxShadow;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use crate::render_api::CaptureBits;
@@ -1063,11 +1063,8 @@ impl RenderBackend {
                 txn.resource_updates.take(),
                 txn.frame_ops.take(),
                 txn.notifications.take(),
-                txn.render_frame,
-                txn.present,
-                txn.tracked,
+                txn.generate_frame.as_ref(),
                 RenderReasons::SCENE,
-                None,
                 txn.invalidate_rendered_frame,
                 frame_counter,
                 has_built_scene,
@@ -1404,7 +1401,7 @@ impl RenderBackend {
 
         let mut built_frame = false;
         for mut txn in txns {
-            if txn.generate_frame.as_bool() {
+            if txn.generate_frame.is_some() {
                 txn.profile.end_time(profiler::API_SEND_TIME);
             }
 
@@ -1415,11 +1412,8 @@ impl RenderBackend {
                 txn.resource_updates.take(),
                 txn.frame_ops.take(),
                 txn.notifications.take(),
-                txn.generate_frame.as_bool(),
-                txn.generate_frame.present(),
-                txn.generate_frame.tracked(),
+                txn.generate_frame.as_ref(),
                 txn.render_reasons,
-                txn.generate_frame.id(),
                 txn.invalidate_rendered_frame,
                 frame_counter,
                 false,
@@ -1456,11 +1450,8 @@ impl RenderBackend {
                     Vec::default(),
                     Vec::default(),
                     Vec::default(),
-                    false,
-                    false,
-                    false,
-                    RenderReasons::empty(),
                     None,
+                    RenderReasons::empty(),
                     false,
                     frame_counter,
                     false,
@@ -1480,11 +1471,8 @@ impl RenderBackend {
         resource_updates: Vec<ResourceUpdate>,
         mut frame_ops: Vec<FrameMsg>,
         mut notifications: Vec<NotificationRequest>,
-        mut render_frame: bool,
-        mut present: bool,
-        tracked: bool,
+        generate_frame: Option<&GenerateFrameParams>,
         render_reasons: RenderReasons,
-        generated_frame_id: Option<u64>,
         invalidate_rendered_frame: bool,
         frame_counter: &mut u32,
         has_built_scene: bool,
@@ -1492,10 +1480,39 @@ impl RenderBackend {
     ) -> bool {
         let update_doc_start = precise_time_ns();
 
-        let requested_frame = render_frame;
-
+        let requested_frame = generate_frame.is_some();
         let requires_frame_build = self.requires_frame_build();
+
         let doc = self.documents.get_mut(&document_id).unwrap();
+
+        doc.has_built_scene |= has_built_scene;
+        if doc.dynamic_properties.flush_pending_updates() {
+            doc.frame_is_valid = false;
+            doc.hit_tester_is_valid = false;
+        }
+
+        for update in &resource_updates {
+            if let ResourceUpdate::UpdateImage(..) = update {
+                doc.frame_is_valid = false;
+            }
+        }
+
+        
+        
+        
+        let mut render_frame = requested_frame && doc.can_render();
+
+        
+        
+        
+        
+        
+        let build_frame = (render_frame && !doc.frame_is_valid && doc.has_pixels())
+            || (requires_frame_build && doc.can_render());
+
+        
+        
+        let present = generate_frame.map(|params| params.present).unwrap_or(build_frame);
 
         
         
@@ -1504,11 +1521,10 @@ impl RenderBackend {
         
         if requested_frame {
             if let Some(ref sampler) = self.sampler {
+                let generated_frame_id = generate_frame.map(|params| params.id);
                 frame_ops.append(&mut sampler.sample(document_id, generated_frame_id));
             }
         }
-
-        doc.has_built_scene |= has_built_scene;
 
         
         
@@ -1518,36 +1534,10 @@ impl RenderBackend {
             scroll |= op.scroll;
         }
 
-        for update in &resource_updates {
-            if let ResourceUpdate::UpdateImage(..) = update {
-                doc.frame_is_valid = false;
-            }
-        }
-
         self.resource_cache.post_scene_building_update(
             resource_updates,
             &mut doc.profile,
         );
-
-        if doc.dynamic_properties.flush_pending_updates() {
-            doc.frame_is_valid = false;
-            doc.hit_tester_is_valid = false;
-        }
-
-        if !doc.can_render() {
-            
-            
-            
-            render_frame = false;
-        }
-
-        
-        
-        
-        
-        
-        let build_frame = (render_frame && !doc.frame_is_valid && doc.has_pixels()) ||
-            (requires_frame_build && doc.can_render());
 
         
         
@@ -1561,14 +1551,6 @@ impl RenderBackend {
         }
 
         if build_frame {
-            if !requested_frame {
-                
-                
-                
-                
-                present = true;
-            }
-
             if start_time.is_some() {
               Telemetry::record_time_to_frame_build(Duration::from_nanos(precise_time_ns() - start_time.unwrap()));
             }
@@ -1699,7 +1681,7 @@ impl RenderBackend {
                 present,
                 render: render_frame,
                 scrolled: scroll,
-                tracked,
+                tracked: generate_frame.map_or(false, |params| params.tracked),
             };
             self.notifier.new_frame_ready(document_id, self.frame_publish_id, &params);
         }
