@@ -1741,8 +1741,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
 
   
   
-  const unsigned offsetFromFPToCallerStackArgs =
-      sizeof(FrameWithInstances) - jit::ShadowStackSpace;
+  const unsigned offsetFromFPToCallerStackArgs = sizeof(Frame);
 
   
   
@@ -1751,7 +1750,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
             funcImportIndex);
 
   ArgTypeVector args(funcType);
-  for (ABIArgIter i(args, ABIKind::System); !i.done(); i++) {
+  for (ABIArgIter i(args, ABIKind::Wasm); !i.done(); i++) {
     Address dst(masm.getStackPointer(), argOffset + i.index() * sizeof(Value));
 
     MIRType type = i.mirType();

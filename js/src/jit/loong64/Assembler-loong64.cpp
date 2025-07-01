@@ -20,18 +20,6 @@ using mozilla::DebugOnly;
 using namespace js;
 using namespace js::jit;
 
-
-
-
-void ABIArgGenerator::startWasm() {
-  stackOffset_ += wasm::FrameWithInstances::sizeOfInstanceFields();
-}
-
-
-
-
-
-
 ABIArg ABIArgGenerator::next(MIRType type) {
   switch (type) {
     case MIRType::Int32:
@@ -54,7 +42,12 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       if (floatRegIndex_ == NumFloatArgRegs) {
         
         
-        MOZ_ASSERT(kind_ == ABIKind::Wasm);
+        
+        if (kind_ == ABIKind::System && intRegIndex_ != NumIntArgRegs) {
+          current_ = ABIArg(Register::FromCode(intRegIndex_ + a0.encoding()));
+          intRegIndex_++;
+          break;
+        }
         current_ = ABIArg(stackOffset_);
         stackOffset_ += sizeof(double);
         break;
