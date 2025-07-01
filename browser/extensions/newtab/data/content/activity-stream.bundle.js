@@ -11538,6 +11538,7 @@ function MessageWrapper({
 
 
 
+
 const CardSections_PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const PREF_SECTIONS_CARDS_THUMBS_UP_DOWN_ENABLED = "discoverystream.sections.cards.thumbsUpDown.enabled";
 const PREF_SECTIONS_PERSONALIZATION_ENABLED = "discoverystream.sections.personalization.enabled";
@@ -11553,7 +11554,11 @@ const CardSections_PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.positio
 const CardSections_PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
 const PREF_REFINED_CARDS_ENABLED = "discoverystream.refinedCardsLayout.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
-function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
+const CardSections_PREF_TRENDING_SEARCH = "trendingSearch.enabled";
+const CardSections_PREF_TRENDING_SEARCH_SYSTEM = "system.trendingSearch.enabled";
+const CardSections_PREF_SEARCH_ENGINE = "trendingSearch.defaultSearchEngine";
+const CardSections_PREF_TRENDING_SEARCH_VARIANT = "trendingSearch.variant";
+function getLayoutData(responsiveLayouts, index, refinedCardsLayout, sectionKey) {
   let layoutData = {
     classNames: [],
     imageSizes: {}
@@ -11561,9 +11566,19 @@ function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
   responsiveLayouts.forEach(layout => {
     layout.tiles.forEach((tile, tileIndex) => {
       if (tile.position === index) {
-        layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
-        layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
-        layoutData.imageSizes[layout.columnCount] = tile.size;
+        
+        
+        
+        if (sectionKey === "top_stories_section" && tileIndex === 0) {
+          
+          layoutData.classNames.push(`col-${layout.columnCount}-medium`);
+          layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
+          layoutData.imageSizes[layout.columnCount] = "medium";
+        } else {
+          layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
+          layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
+          layoutData.imageSizes[layout.columnCount] = tile.size;
+        }
 
         
         
@@ -11638,6 +11653,9 @@ function CardSection({
   const selectedTopics = prefs[CardSections_PREF_TOPICS_SELECTED];
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
+  const trendingEnabled = prefs[CardSections_PREF_TRENDING_SEARCH] && prefs[CardSections_PREF_TRENDING_SEARCH_SYSTEM] && prefs[CardSections_PREF_SEARCH_ENGINE]?.toLowerCase() === "google";
+  const trendingVariant = prefs[CardSections_PREF_TRENDING_SEARCH_VARIANT];
+  const shouldShowTrendingSearch = trendingEnabled && trendingVariant === "b";
   const {
     saveToPocketCard
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
@@ -11769,16 +11787,17 @@ function CardSection({
   }, subtitle)), mayHaveSectionsPersonalization ? sectionContextWrapper : null), external_React_default().createElement("div", {
     className: `ds-section-grid ds-card-grid`
   }, section.data.slice(0, maxTile).map((rec, index) => {
+    const layoutData = getLayoutData(responsiveLayouts, index, refinedCardsLayout, shouldShowTrendingSearch && sectionKey);
     const {
       classNames,
       imageSizes
-    } = getLayoutData(responsiveLayouts, index, refinedCardsLayout);
+    } = layoutData;
     if (!rec || rec.placeholder) {
       return external_React_default().createElement(PlaceholderDSCard, {
         key: `dscard-${index}`
       });
     }
-    return external_React_default().createElement(DSCard, {
+    const card = external_React_default().createElement(DSCard, {
       key: `dscard-${rec.id}`,
       pos: rec.pos,
       flightId: rec.flight_id,
@@ -11830,6 +11849,9 @@ function CardSection({
       sectionFollowed: following,
       isTimeSensitive: rec.isTimeSensitive
     });
+    return index === 0 && shouldShowTrendingSearch && sectionKey === "top_stories_section" ? [card, external_React_default().createElement(TrendingSearches, {
+      key: "trending"
+    })] : [card];
   })));
 }
 function CardSections({
