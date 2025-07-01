@@ -9,9 +9,8 @@ const { FormAutofillUtils } = ChromeUtils.importESModule(
 
 
 add_task(async function test_creditCards_os_auth_disabled_for_new_profile() {
-  Assert.equal(
-    FormAutofillUtils.getOSAuthEnabled(),
-    AppConstants.NIGHTLY_BUILD,
+  Assert.ok(
+    !FormAutofillUtils.getOSAuthEnabled(),
     "OS Auth should be disabled for credit cards by default for a new profile."
   );
 
@@ -22,10 +21,9 @@ add_task(async function test_creditCards_os_auth_disabled_for_new_profile() {
     "Pref should be locked"
   );
 
-  Assert.equal(
-    LoginHelper.getOSAuthEnabled(),
-    AppConstants.NIGHTLY_BUILD,
-    "OS Auth should be disabled for passwords by default for a new profile."
+  Assert.ok(
+    !LoginHelper.getOSAuthEnabled(),
+    "OS Auth should be disabled for passwords by default."
   );
 
   Assert.ok(
