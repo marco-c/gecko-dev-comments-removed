@@ -45,12 +45,12 @@ class TextDirectiveCreator {
 
 
   static Result<nsCString, ErrorResult> CreateTextDirectiveFromRange(
-      Document* aDocument, AbstractRange* aInputRange);
+      Document& aDocument, AbstractRange* aInputRange);
 
   virtual ~TextDirectiveCreator() = default;
 
  protected:
-  TextDirectiveCreator(Document* aDocument, AbstractRange* aRange);
+  TextDirectiveCreator(Document& aDocument, AbstractRange* aRange);
 
   
 
@@ -77,7 +77,7 @@ class TextDirectiveCreator {
 
 
   static Result<UniquePtr<TextDirectiveCreator>, ErrorResult> CreateInstance(
-      Document* aDocument, AbstractRange* aRange);
+      Document& aDocument, AbstractRange* aRange);
 
   
 
@@ -210,8 +210,8 @@ class TextDirectiveCreator {
   nsString mSuffixFoldCaseContent;
   nsTArray<uint32_t> mSuffixWordEndDistances;
 
-  NotNull<RefPtr<Document>> mDocument;
-  NotNull<RefPtr<AbstractRange>> mRange;
+  Document& mDocument;
+  RefPtr<AbstractRange> mRange;
 
   
 
