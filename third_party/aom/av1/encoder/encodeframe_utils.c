@@ -46,7 +46,8 @@ void av1_set_ssim_rdmult(const AV1_COMP *const cpi, int *errorperbit,
   
   assert(bsize_base >= BLOCK_8X8);
   assert(cpi->oxcf.tune_cfg.tuning == AOM_TUNE_SSIM ||
-         cpi->oxcf.tune_cfg.tuning == AOM_TUNE_IQ);
+         cpi->oxcf.tune_cfg.tuning == AOM_TUNE_IQ ||
+         cpi->oxcf.tune_cfg.tuning == AOM_TUNE_SSIMULACRA2);
 
   for (row = mi_row / num_mi_w;
        row < num_rows && row < mi_row / num_mi_w + num_brows; ++row) {
@@ -221,7 +222,8 @@ void av1_update_state(const AV1_COMP *const cpi, ThreadData *td,
   
   if (seg->enabled) {
     
-    if (cpi->oxcf.q_cfg.aq_mode == COMPLEXITY_AQ) {
+    
+    if (cpi->oxcf.q_cfg.aq_mode == COMPLEXITY_AQ || cpi->roi.enabled) {
       const uint8_t *const map =
           seg->update_map ? cpi->enc_seg.map : cm->last_frame_seg_map;
       mi_addr->segment_id =
@@ -229,7 +231,7 @@ void av1_update_state(const AV1_COMP *const cpi, ThreadData *td,
     }
     
     
-    if (cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ &&
+    if (cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ && !cpi->roi.enabled &&
         mi_addr->segment_id != AM_SEGMENT_ID_INACTIVE &&
         !cpi->rc.rtc_external_ratectrl) {
       av1_cyclic_refresh_update_segment(cpi, x, mi_row, mi_col, bsize,
@@ -293,7 +295,8 @@ void av1_update_state(const AV1_COMP *const cpi, ThreadData *td,
     for (x_idx = 0; x_idx < cols; x_idx++) xd->mi[x_idx + y * mis] = mi_addr;
   }
 
-  if (cpi->oxcf.q_cfg.aq_mode)
+  if (cpi->oxcf.q_cfg.aq_mode ||
+      (cpi->roi.enabled && cpi->roi.delta_qp_enabled))
     av1_init_plane_quantizers(cpi, x, mi_addr->segment_id, 0);
 
   if (dry_run) return;

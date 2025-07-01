@@ -165,7 +165,7 @@ void av1_cyclic_reset_segment_skip(const AV1_COMP *cpi, MACROBLOCK *const x,
 
   assert(cm->seg.enabled);
 
-  if (!cr->skip_over4x4) {
+  if (!cr->skip_over4x4 && !cpi->roi.reference_enabled) {
     mbmi->segment_id =
         av1_get_spatial_seg_pred(cm, xd, &cdf_num, cr->skip_over4x4);
     if (prev_segment_id != mbmi->segment_id) {
@@ -434,13 +434,13 @@ void av1_cyclic_refresh_update_parameters(AV1_COMP *const cpi) {
   
   
   
-  cr->skip_over4x4 = (cpi->oxcf.speed > 9) ? 1 : 0;
+  cr->skip_over4x4 = (cpi->oxcf.speed > 9 && !cpi->roi.enabled) ? 1 : 0;
 
   
   cr->apply_cyclic_refresh = 1;
   if (frame_is_intra_only(cm) || is_lossless_requested(&cpi->oxcf.rc_cfg) ||
-      cpi->rc.high_motion_content_screen_rtc || scene_change_detected ||
-      svc->temporal_layer_id > 0 ||
+      cpi->roi.enabled || cpi->rc.high_motion_content_screen_rtc ||
+      scene_change_detected || svc->temporal_layer_id > 0 ||
       svc->prev_number_spatial_layers != svc->number_spatial_layers ||
       p_rc->avg_frame_qindex[INTER_FRAME] < qp_thresh ||
       (svc->number_spatial_layers > 1 &&
@@ -566,14 +566,14 @@ void av1_cyclic_refresh_setup(AV1_COMP *const cpi) {
   const FRAME_TYPE frame_type = cm->current_frame.frame_type;
 
   
-  
-  const int resolution_change =
-      cm->prev_frame &&
-      (cm->width != cm->prev_frame->width ||
-       cm->height != cm->prev_frame->height) &&
-      cpi->svc.prev_number_spatial_layers == cpi->svc.number_spatial_layers;
+  const int resolution_change = !cpi->rc.rtc_external_ratectrl &&
+                                cm->prev_frame &&
+                                cpi->svc.number_spatial_layers == 1 &&
+                                (cm->width != cm->prev_frame->width ||
+                                 cm->height != cm->prev_frame->height);
 
-  if (resolution_change) cyclic_refresh_reset_resize(cpi);
+  if (resolution_change && cpi->svc.temporal_layer_id == 0)
+    cyclic_refresh_reset_resize(cpi);
   if (!cr->apply_cyclic_refresh) {
     
     

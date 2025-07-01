@@ -3336,8 +3336,13 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
       
       
       if (cm->seq_params->bit_depth == 8) {
-        const int sw_row = (cpi->rc.frame_source_sad > 20000) ? 512 : 192;
-        const int sw_col = (cpi->rc.frame_source_sad > 20000) ? 512 : 160;
+        int sw_row = (cpi->rc.frame_source_sad > 20000) ? 512 : 192;
+        int sw_col = (cpi->rc.frame_source_sad > 20000) ? 512 : 160;
+        if (cm->width * cm->height >= 3840 * 2160 &&
+            cpi->svc.number_temporal_layers > 1) {
+          sw_row = sw_row << 1;
+          sw_col = sw_col << 1;
+        }
         const int num_pts =
             unscaled_src->y_width * unscaled_src->y_height >= 1920 * 1080 ? 3
                                                                           : 1;
@@ -3578,6 +3583,7 @@ static void resize_reset_rc(AV1_COMP *cpi, int resize_width, int resize_height,
 
 
 
+
 static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi) {
   const AV1_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -3601,7 +3607,12 @@ static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi) {
 
   
   
-  if (cpi->rc.frames_since_key > cpi->framerate) {
+  
+  
+  if (cpi->rc.frames_since_key > cpi->framerate &&
+      (cpi->oxcf.tune_cfg.content != AOM_CONTENT_SCREEN ||
+       cpi->oxcf.q_cfg.aq_mode != CYCLIC_REFRESH_AQ ||
+       cpi->cyclic_refresh->counter_encode_maxq_scene_change > 4)) {
     const int window = AOMMIN(30, (int)(2 * cpi->framerate));
     rc->resize_avg_qp += p_rc->last_q[INTER_FRAME];
     if (cpi->ppi->p_rc.buffer_level <
@@ -3701,7 +3712,7 @@ static bool set_flag_rps_bias_recovery_frame(const AV1_COMP *const cpi) {
     int min_dist = av1_svc_get_min_ref_dist(cpi);
     
     
-    if (min_dist != INT_MAX && min_dist > 4) return true;
+    if (min_dist != INT_MAX && min_dist >= 4) return true;
   }
   return false;
 }
