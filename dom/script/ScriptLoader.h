@@ -794,16 +794,37 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   Document* mDocument;  
   nsCOMArray<nsIScriptLoaderObserver> mObservers;
+
+  
+  
+  
+
+  
+  
   ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
+
   
   
   ScriptLoadRequestList mLoadingAsyncRequests;
+
+  
   
   
   ScriptLoadRequestList mLoadedAsyncRequests;
+
+  
+  
   ScriptLoadRequestList mDeferRequests;
+
+  
+  
   ScriptLoadRequestList mXSLTRequests;
+
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
+
+  
+  
+  
   ScriptLoadRequestList mOffThreadCompilingRequests;
 
   
