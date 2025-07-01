@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/PWebIdentity.h"
 #include "mozilla/dom/PWebIdentityParent.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 
 namespace mozilla::dom {
 
@@ -18,6 +19,14 @@ class WebIdentityParent final : public PWebIdentityParent {
  public:
   WebIdentityParent() = default;
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  CanonicalBrowsingContext* MaybeBrowsingContext() {
+    WindowGlobalParent* manager = static_cast<WindowGlobalParent*>(Manager());
+    if (!manager) {
+      return nullptr;
+    }
+    return manager->BrowsingContext();
+  }
 
   mozilla::ipc::IPCResult RecvGetIdentityCredential(
       IdentityCredentialRequestOptions&& aOptions,
@@ -35,6 +44,10 @@ class WebIdentityParent final : public PWebIdentityParent {
 
   mozilla::ipc::IPCResult RecvPreventSilentAccess(
       const PreventSilentAccessResolver& aResolver);
+
+  mozilla::ipc::IPCResult RecvResolveContinuationWindow(
+      nsCString&& aToken, IdentityResolveOptions&& aOptions,
+      const ResolveContinuationWindowResolver& aResolver);
 
  private:
   ~WebIdentityParent() = default;
@@ -68,9 +81,11 @@ using GetIdentityProviderRequestOptionsWithManifestPromise =
 using GetAccountListPromise = MozPromise<
     std::tuple<IdentityProviderAPIConfig, IdentityProviderAccountList>,
     nsresult, true>;
-using GetTokenPromise =
-    MozPromise<std::tuple<IdentityProviderToken, IdentityProviderAccount>,
+using GetIdentityAssertionPromise =
+    MozPromise<std::tuple<IdentityAssertionResponse, IdentityProviderAccount>,
                nsresult, true>;
+using GetTokenPromise =
+    MozPromise<std::tuple<nsCString, nsCString>, nsresult, true>;
 using GetAccountPromise =
     MozPromise<std::tuple<IdentityProviderAPIConfig, IdentityProviderAccount>,
                nsresult, true>;
@@ -78,7 +93,7 @@ using GetMetadataPromise =
     MozPromise<IdentityProviderClientMetadata, nsresult, true>;
 
 RefPtr<GetIPCIdentityCredentialPromise> GetCredentialInMainProcess(
-    nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
+    nsIPrincipal* aPrincipal, WebIdentityParent* aRelyingParty,
     IdentityCredentialRequestOptions&& aOptions,
     const CredentialMediationRequirement& aMediationRequirement,
     bool aHasUserActivation);
@@ -109,7 +124,7 @@ Maybe<IdentityProviderRequestOptionsWithManifest> SkipAccountChooser(
 
 
 RefPtr<GetIPCIdentityCredentialPromise> DiscoverFromExternalSourceInMainProcess(
-    nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
+    nsIPrincipal* aPrincipal, WebIdentityParent* aRelyingParty,
     const IdentityCredentialRequestOptions& aOptions,
     const CredentialMediationRequirement& aMediationRequirement);
 
@@ -130,7 +145,7 @@ RefPtr<GetIPCIdentityCredentialPromise> DiscoverFromExternalSourceInMainProcess(
 
 
 RefPtr<GetIPCIdentityCredentialPromise> CreateCredentialDuringDiscovery(
-    nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
+    nsIPrincipal* aPrincipal, WebIdentityParent* aRelyingParty,
     const IdentityProviderRequestOptions& aProvider,
     const IdentityProviderAPIConfig& aManifest,
     const CredentialMediationRequirement& aMediationRequirement);
@@ -207,27 +222,10 @@ RefPtr<GetAccountListPromise> FetchAccountList(
 
 
 RefPtr<GetTokenPromise> FetchToken(
-    nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
+    nsIPrincipal* aPrincipal, WebIdentityParent* aRelyingParty,
+    const IdentityProviderRequestOptions& aProvider,
     const IdentityProviderAPIConfig& aManifest,
     const IdentityProviderAccount& aAccount);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-RefPtr<GetMetadataPromise> FetchMetadata(
-    nsIPrincipal* aPrincipal, const IdentityProviderRequestOptions& aProvider,
-    const IdentityProviderAPIConfig& aManifest);
 
 
 
@@ -277,16 +275,8 @@ RefPtr<GetAccountPromise> PromptUserToSelectAccount(
 
 
 
-
-
-
-
-
-RefPtr<GetAccountPromise> PromptUserWithPolicy(
-    BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
-    const IdentityProviderAccount& aAccount,
-    const IdentityProviderAPIConfig& aManifest,
-    const IdentityProviderRequestOptions& aProvider);
+nsresult LinkAccount(nsIPrincipal* aPrincipal, const nsCString& aAccountId,
+                     const IdentityProviderRequestOptions& aProvider);
 
 
 
@@ -300,6 +290,10 @@ void CloseUserInterface(BrowsingContext* aBrowsingContext);
 RefPtr<MozPromise<bool, nsresult, true>> DisconnectInMainProcess(
     nsIPrincipal* aDocumentPrincipal,
     const IdentityCredentialDisconnectOptions& aOptions);
+
+RefPtr<GetTokenPromise> AuthorizationPopupForToken(
+    nsIURI* aContinueURI, WebIdentityParent* aRelyingParty,
+    const IdentityProviderAccount& aAccount);
 
 }  
 

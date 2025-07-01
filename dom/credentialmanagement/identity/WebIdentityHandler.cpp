@@ -161,6 +161,34 @@ void WebIdentityHandler::SetLoginStatus(const LoginStatus& aStatus,
       });
 }
 
+RefPtr<MozPromise<nsresult, nsresult, true>>
+WebIdentityHandler::ResolveContinuationWindow(
+    const nsACString& aToken, const IdentityResolveOptions& aOptions) {
+  
+  
+  
+  RefPtr<MozPromise<nsresult, nsresult, true>::Private> promise =
+      new MozPromise<nsresult, nsresult, true>::Private(__func__);
+  mActor->SendResolveContinuationWindow(aToken, aOptions)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise](const WebIdentityChild::ResolveContinuationWindowPromise::
+                        ResolveValueType& aResult) {
+            
+            if (NS_SUCCEEDED(aResult)) {
+              promise->Resolve(aResult, __func__);
+            } else {
+              promise->Reject(aResult, __func__);
+            }
+          },
+          [promise](const WebIdentityChild::ResolveContinuationWindowPromise::
+                        RejectValueType& aResult) {
+            
+            promise->Reject(nsresult::NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
+          });
+  return promise.forget();
+}
+
 void WebIdentityHandler::ActorDestroyed() {
   MOZ_ASSERT(NS_IsMainThread());
   mActor = nullptr;
