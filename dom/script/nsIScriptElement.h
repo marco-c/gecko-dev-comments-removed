@@ -58,6 +58,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
         mDefer(false),
         mAsync(false),
         mExternal(false),
+        mIsTrusted(true),
         mKind(JS::loader::ScriptKind::eClassic),
         mParserCreated(aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT
                            ? mozilla::dom::NOT_FROM_PARSER
@@ -339,6 +340,12 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
   bool mExternal;
+
+  
+
+
+
+  bool mIsTrusted;
 
   
 

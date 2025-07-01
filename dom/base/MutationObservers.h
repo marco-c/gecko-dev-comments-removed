@@ -84,8 +84,11 @@ class MutationObservers {
 
 
 
+
+
   static void NotifyContentAppended(nsIContent* aContainer,
-                                    nsIContent* aFirstNewContent);
+                                    nsIContent* aFirstNewContent,
+                                    const ContentAppendInfo&);
 
   
 
@@ -93,9 +96,10 @@ class MutationObservers {
 
 
 
-  static void NotifyContentInserted(nsINode* aContainer, nsIContent* aChild);
-  
 
+  static void NotifyContentInserted(nsINode* aContainer, nsIContent* aChild,
+                                    const ContentInsertInfo&);
+  
 
 
 
@@ -104,7 +108,7 @@ class MutationObservers {
 
   static void NotifyContentWillBeRemoved(nsINode* aContainer,
                                          nsIContent* aChild,
-                                         const BatchRemovalState*);
+                                         const ContentRemoveInfo&);
 
   
 
