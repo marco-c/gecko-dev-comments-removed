@@ -431,6 +431,86 @@ class PtrKind {
     detail::ThreadLocal<T, detail::ThreadLocalKeyStorage>
 #endif
 
+enum class AllocPageState {
+  NeverAllocated = 0,
+  InUse = 1,
+  Freed = 2,
+};
+
+
+class AllocPageInfo {
+ public:
+  AllocPageInfo()
+      : mState(AllocPageState::NeverAllocated),
+        mBaseAddr(nullptr),
+        mReuseTime(0) {}
+
+  
+  AllocPageState mState;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<arena_id_t> mArenaId;
+
+  
+  
+  
+  
+  uint8_t* mBaseAddr;
+
+  
+  
+  
+  size_t UsableSize() const {
+    return mState == AllocPageState::NeverAllocated
+               ? 0
+               : kPageSize -
+                     (reinterpret_cast<uintptr_t>(mBaseAddr) & (kPageSize - 1));
+  }
+
+  
+  size_t FragmentationBytes() const {
+    MOZ_ASSERT(kPageSize >= UsableSize());
+    return mState == AllocPageState::InUse ? kPageSize - UsableSize() : 0;
+  }
+
+  
+  
+  
+  Maybe<StackTrace> mAllocStack;
+
+  
+  
+  
+  Maybe<StackTrace> mFreeStack;
+
+  
+  
+  
+  
+  
+  Time mReuseTime;
+
+  
+  Maybe<uintptr_t> mNextPage;
+};
+
 
 
 
@@ -501,86 +581,6 @@ using PHCLock = const MutexAutoLock&;
 
 
 class PHC {
-  enum class AllocPageState {
-    NeverAllocated = 0,
-    InUse = 1,
-    Freed = 2,
-  };
-
-  
-  class AllocPageInfo {
-   public:
-    AllocPageInfo()
-        : mState(AllocPageState::NeverAllocated),
-          mBaseAddr(nullptr),
-          mReuseTime(0) {}
-
-    
-    AllocPageState mState;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Maybe<arena_id_t> mArenaId;
-
-    
-    
-    
-    
-    uint8_t* mBaseAddr;
-
-    
-    
-    
-    size_t UsableSize() const {
-      return mState == AllocPageState::NeverAllocated
-                 ? 0
-                 : kPageSize - (reinterpret_cast<uintptr_t>(mBaseAddr) &
-                                (kPageSize - 1));
-    }
-
-    
-    size_t FragmentationBytes() const {
-      MOZ_ASSERT(kPageSize >= UsableSize());
-      return mState == AllocPageState::InUse ? kPageSize - UsableSize() : 0;
-    }
-
-    
-    
-    
-    Maybe<StackTrace> mAllocStack;
-
-    
-    
-    
-    Maybe<StackTrace> mFreeStack;
-
-    
-    
-    
-    
-    
-    Time mReuseTime;
-
-    
-    Maybe<uintptr_t> mNextPage;
-  };
-
  public:
   
   
