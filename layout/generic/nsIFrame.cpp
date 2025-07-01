@@ -3204,6 +3204,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
+  bool addBackdropRoot =
+      bool(disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT);
+
   if (aBuilder->IsForPainting() && disp->mWillChange.bits) {
     aBuilder->AddToWillChangeBudget(this, GetSize());
   }
@@ -3609,9 +3612,10 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   if (aBuilder->ContainsBlendMode()) {
-    resultList.AppendToTop(nsDisplayBlendContainer::CreateForMixBlendMode(
+    resultList.AppendToTop(nsDisplayBlendContainer::Create(
         aBuilder, this, &resultList, containerItemASR));
     createdContainer = true;
+    addBackdropRoot = false;
   }
 
   if (usingBackdropFilter) {
@@ -3620,6 +3624,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     resultList.AppendNewToTop<nsDisplayBackdropFilters>(
         aBuilder, this, &resultList, backdropRect, this);
     createdContainer = true;
+    addBackdropRoot = false;
   }
 
   
@@ -3661,6 +3666,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
       resultList.AppendNewToTop<nsDisplayMasksAndClipPaths>(
           aBuilder, this, &resultList, maskASR, usingBackdropFilter);
       createdContainer = true;
+      addBackdropRoot = false;
     }
 
     
@@ -3682,6 +3688,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
         aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
         needsActiveOpacityLayer, usingBackdropFilter);
     createdContainer = true;
+    addBackdropRoot = false;
   }
 
   
@@ -3733,6 +3740,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
       if (separator) {
         createdContainer = true;
+        addBackdropRoot = false;
       }
 
       resultList.AppendToTop(&participants);
@@ -3890,11 +3898,18 @@ void nsIFrame::BuildDisplayListForStackingContext(
     resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
         aBuilder, this, &resultList, nullptr,  false);
     createdContainer = true;
+    addBackdropRoot = false;
     
     
     if (clipCapturedBy == ContainerItemType::ViewTransitionCapture) {
       clipState.Restore();
     }
+  }
+
+  if (addBackdropRoot) {
+    resultList.AppendToTop(nsDisplayBlendContainer::Create(
+        aBuilder, this, &resultList, containerItemASR));
+    createdContainer = true;
   }
 
   if (aBuilder->IsReusingStackingContextItems()) {

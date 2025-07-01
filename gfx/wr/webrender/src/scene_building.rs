@@ -2362,6 +2362,12 @@ impl<'a> SceneBuilder<'a> {
         let mut blit_reason = BlitReason::empty();
 
         
+        
+        if flags.contains(StackingContextFlags::IS_BACKDROP_ROOT) {
+            blit_reason = BlitReason::BACKDROP;
+        }
+
+        
         if composite_ops.snapshot.is_some() {
             blit_reason = BlitReason::SNAPSHOT;
         }
