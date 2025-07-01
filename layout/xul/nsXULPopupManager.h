@@ -56,6 +56,7 @@ class nsIDocShellTreeItem;
 class nsMenuPopupFrame;
 class nsPIDOMWindowOuter;
 class nsRefreshDriver;
+class PopupQueue;
 
 namespace mozilla {
 class PresShell;
@@ -777,7 +778,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void BeginShowingPopup(
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool BeginShowingPopup(
       const PendingPopup& aPendingPopup, bool aIsContextMenu,
       bool aSelectFirstItem);
 
@@ -869,6 +873,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsMenuChainItem* FindPopup(Element* aPopup) const;
 
   
+  void DismissQueueableShownPopups();
+
+  
   nsCOMPtr<mozilla::dom::EventTarget> mKeyListener;
 
   
@@ -906,6 +913,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   nsTHashMap<RefPtr<mozilla::dom::Element>, nsPopupState>
       mNativeMenuSubmenuStates;
+
+  
+  RefPtr<PopupQueue> mPopupQueue;
 };
 
 #endif
