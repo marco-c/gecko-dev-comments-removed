@@ -1,5 +1,6 @@
 use crate::io::{Interest, PollEvented, ReadBuf, Ready};
 use crate::net::unix::SocketAddr;
+use crate::util::check_socket_for_blocking;
 
 use std::fmt;
 use std::io;
@@ -7,7 +8,7 @@ use std::net::Shutdown;
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
 use std::os::unix::net;
 use std::path::Path;
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 
 cfg_io_util! {
     use bytes::BufMut;
@@ -22,6 +23,8 @@ cfg_net_unix! {
     /// This type does not provide a `split` method, because this functionality
     /// can be achieved by wrapping the socket in an [`Arc`]. Note that you do
     /// not need a `Mutex` to share the `UnixDatagram` — an `Arc<UnixDatagram>`
+    
+    
     
     
     
@@ -388,6 +391,7 @@ impl UnixDatagram {
     
     
     
+    
     pub fn bind<P>(path: P) -> io::Result<UnixDatagram>
     where
         P: AsRef<Path>,
@@ -396,6 +400,7 @@ impl UnixDatagram {
         UnixDatagram::new(socket)
     }
 
+    
     
     
     
@@ -477,8 +482,15 @@ impl UnixDatagram {
     
     
     
+    
+    
+    
+    
+    
     #[track_caller]
     pub fn from_std(datagram: net::UnixDatagram) -> io::Result<UnixDatagram> {
+        check_socket_for_blocking(&datagram)?;
+
         let socket = mio::net::UnixDatagram::from_std(datagram);
         let io = PollEvented::new(socket)?;
         Ok(UnixDatagram { io })
@@ -517,6 +529,7 @@ impl UnixDatagram {
         Ok(UnixDatagram { io })
     }
 
+    
     
     
     
@@ -590,10 +603,12 @@ impl UnixDatagram {
     
     
     
+    
     pub fn connect<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         self.io.connect(path)
     }
 
+    
     
     
     
@@ -723,6 +738,7 @@ impl UnixDatagram {
             .try_io(Interest::WRITABLE, || self.io.send_to(buf, target))
     }
 
+    
     
     
     
@@ -887,6 +903,7 @@ impl UnixDatagram {
         /// # use std::error::Error;
         /// # #[tokio::main]
         /// # async fn main() -> Result<(), Box<dyn Error>> {
+        /// # if cfg!(miri) { return Ok(()); } // No `socket` in miri.
         /// use tokio::net::UnixDatagram;
         /// use tempfile::tempdir;
         ///
@@ -1003,6 +1020,7 @@ impl UnixDatagram {
         /// # use std::error::Error;
         /// # #[tokio::main]
         /// # async fn main() -> Result<(), Box<dyn Error>> {
+        /// # if cfg!(miri) { return Ok(()); } // No SOCK_DGRAM for `socketpair` in miri.
         /// use tokio::net::UnixDatagram;
         ///
         /// // Create the pair of sockets
@@ -1079,6 +1097,7 @@ impl UnixDatagram {
     
     
     
+    
     pub async fn send_to<P>(&self, buf: &[u8], target: P) -> io::Result<usize>
     where
         P: AsRef<Path>,
@@ -1089,6 +1108,7 @@ impl UnixDatagram {
             .await
     }
 
+    
     
     
     
@@ -1451,10 +1471,14 @@ impl UnixDatagram {
     
     
     
+    
+    
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io.local_addr().map(SocketAddr)
     }
 
+    
+    
     
     
     
@@ -1523,10 +1547,12 @@ impl UnixDatagram {
     
     
     
+    
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.io.take_error()
     }
 
+    
     
     
     

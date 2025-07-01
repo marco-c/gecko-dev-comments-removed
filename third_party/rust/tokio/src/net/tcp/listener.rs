@@ -1,5 +1,6 @@
 use crate::io::{Interest, PollEvented};
 use crate::net::tcp::TcpStream;
+use crate::util::check_socket_for_blocking;
 
 cfg_not_wasi! {
     use crate::net::{to_socket_addrs, ToSocketAddrs};
@@ -8,7 +9,7 @@ cfg_not_wasi! {
 use std::fmt;
 use std::io;
 use std::net::{self, SocketAddr};
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 
 cfg_net! {
     /// A TCP socket server, listening for connections.
@@ -84,11 +85,11 @@ impl TcpListener {
         ///
         /// ```no_run
         /// use tokio::net::TcpListener;
-        ///
         /// use std::io;
         ///
         /// #[tokio::main]
         /// async fn main() -> io::Result<()> {
+        /// #   if cfg!(miri) { return Ok(()); } // No `socket` in miri.
         ///     let listener = TcpListener::bind("127.0.0.1:2345").await?;
         ///
         ///     // use the listener
@@ -233,8 +234,14 @@ impl TcpListener {
     
     
     
+    
+    
+    
+    
     #[track_caller]
     pub fn from_std(listener: net::TcpListener) -> io::Result<TcpListener> {
+        check_socket_for_blocking(&listener)?;
+
         let io = mio::net::TcpListener::from_std(listener);
         let io = PollEvented::new(io)?;
         Ok(TcpListener { io })

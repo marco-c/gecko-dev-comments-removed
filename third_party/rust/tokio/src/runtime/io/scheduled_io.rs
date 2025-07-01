@@ -187,8 +187,7 @@ impl Default for ScheduledIo {
 
 impl ScheduledIo {
     pub(crate) fn token(&self) -> mio::Token {
-        
-        mio::Token(self as *const _ as usize)
+        mio::Token(super::EXPOSE_IO.expose_provenance(self))
     }
 
     
@@ -207,43 +206,23 @@ impl ScheduledIo {
     
     
     
-    pub(super) fn set_readiness(&self, tick: Tick, f: impl Fn(Ready) -> Ready) {
-        let mut current = self.readiness.load(Acquire);
-
-        
-        debug_assert!(SHUTDOWN.unpack(current) == 0 || matches!(tick, Tick::Clear(_)));
-
-        loop {
+    pub(super) fn set_readiness(&self, tick_op: Tick, f: impl Fn(Ready) -> Ready) {
+        let _ = self.readiness.fetch_update(AcqRel, Acquire, |curr| {
             
-            
-            let current_readiness = Ready::from_usize(current);
-            let new = f(current_readiness);
+            debug_assert!(SHUTDOWN.unpack(curr) == 0 || matches!(tick_op, Tick::Clear(_)));
 
-            let new_tick = match tick {
-                Tick::Set => {
-                    let current = TICK.unpack(current);
-                    current.wrapping_add(1) % (TICK.max_value() + 1)
-                }
-                Tick::Clear(t) => {
-                    if TICK.unpack(current) as u8 != t {
-                        
-                        return;
-                    }
+            const MAX_TICK: usize = TICK.max_value() + 1;
+            let tick = TICK.unpack(curr);
 
-                    t as usize
-                }
-            };
-            let next = TICK.pack(new_tick, new.as_usize());
-
-            match self
-                .readiness
-                .compare_exchange(current, next, AcqRel, Acquire)
-            {
-                Ok(_) => return,
+            let new_tick = match tick_op {
                 
-                Err(actual) => current = actual,
-            }
-        }
+                Tick::Clear(t) if tick as u8 != t => return None,
+                Tick::Clear(t) => t as usize,
+                Tick::Set => tick.wrapping_add(1) % MAX_TICK,
+            };
+            let ready = Ready::from_usize(READINESS.unpack(curr));
+            Some(TICK.pack(new_tick, f(ready).as_usize()))
+        });
     }
 
     
@@ -336,22 +315,16 @@ impl ScheduledIo {
         if ready.is_empty() && !is_shutdown {
             
             let mut waiters = self.waiters.lock();
-            let slot = match direction {
+            let waker = match direction {
                 Direction::Read => &mut waiters.reader,
                 Direction::Write => &mut waiters.writer,
             };
 
             
             
-            match slot {
-                Some(existing) => {
-                    if !existing.will_wake(cx.waker()) {
-                        existing.clone_from(cx.waker());
-                    }
-                }
-                None => {
-                    *slot = Some(cx.waker().clone());
-                }
+            match waker {
+                Some(waker) => waker.clone_from(cx.waker()),
+                None => *waker = Some(cx.waker().clone()),
             }
 
             
@@ -466,12 +439,11 @@ impl Future for Readiness<'_> {
                 State::Init => {
                     
                     let curr = scheduled_io.readiness.load(SeqCst);
-                    let ready = Ready::from_usize(READINESS.unpack(curr));
                     let is_shutdown = SHUTDOWN.unpack(curr) != 0;
 
                     
                     let interest = unsafe { (*waiter.get()).interest };
-                    let ready = ready.intersection(interest);
+                    let ready = Ready::from_usize(READINESS.unpack(curr)).intersection(interest);
 
                     if !ready.is_empty() || is_shutdown {
                         
@@ -539,10 +511,7 @@ impl Future for Readiness<'_> {
                         *state = State::Done;
                     } else {
                         
-                        if !w.waker.as_ref().unwrap().will_wake(cx.waker()) {
-                            w.waker = Some(cx.waker().clone());
-                        }
-
+                        w.waker.as_mut().unwrap().clone_from(cx.waker());
                         return Poll::Pending;
                     }
 
@@ -567,8 +536,7 @@ impl Future for Readiness<'_> {
 
                     
                     
-                    let curr_ready = Ready::from_usize(READINESS.unpack(curr));
-                    let ready = curr_ready.intersection(w.interest);
+                    let ready = Ready::from_usize(READINESS.unpack(curr)).intersection(w.interest);
 
                     return Poll::Ready(ReadyEvent {
                         tick,

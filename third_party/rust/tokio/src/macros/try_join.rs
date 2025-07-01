@@ -1,115 +1,127 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[macro_export]
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
-macro_rules! try_join {
+macro_rules! doc {
+    ($try_join:item) => {
+        /// Waits on multiple concurrent branches, returning when **all** branches
+        /// complete with `Ok(_)` or on the first `Err(_)`.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[macro_export]
+        #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+        $try_join
+    };
+}
+
+#[cfg(doc)]
+doc! {macro_rules! try_join {
+    ($($future:expr),*) => { unimplemented!() }
+}}
+
+#[cfg(not(doc))]
+doc! {macro_rules! try_join {
     (@ {
-        
-        
+        // One `_` for each branch in the `try_join!` macro. This is not used once
+        // normalization is complete.
         ( $($count:tt)* )
 
-        
+        // The expression `0+1+1+ ... +1` equal to the number of branches.
         ( $($total:tt)* )
 
-        
+        // Normalized try_join! branches
         $( ( $($skip:tt)* ) $e:expr, )*
 
     }) => {{
@@ -202,17 +214,17 @@ macro_rules! try_join {
         }).await
     }};
 
-    
+    // ===== Normalize =====
 
     (@ { ( $($s:tt)* ) ( $($n:tt)* ) $($t:tt)* } $e:expr, $($r:tt)* ) => {
       $crate::try_join!(@{ ($($s)* _) ($($n)* + 1) $($t)* ($($s)*) $e, } $($r)*)
     };
 
-    
+    // ===== Entry point =====
 
     ( $($e:expr),+ $(,)?) => {
         $crate::try_join!(@{ () (0) } $($e,)*)
     };
 
     () => { async { Ok(()) }.await }
-}
+}}

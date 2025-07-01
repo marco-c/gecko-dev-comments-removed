@@ -16,7 +16,7 @@ impl Pack {
 
     
     pub(crate) const fn then(&self, width: u32) -> Pack {
-        let shift = pointer_width() - self.mask.leading_zeros();
+        let shift = usize::BITS - self.mask.leading_zeros();
         let mask = mask_for(width) << shift;
 
         Pack { mask, shift }
@@ -24,7 +24,7 @@ impl Pack {
 
     
     pub(crate) const fn width(&self) -> u32 {
-        pointer_width() - (self.mask >> self.shift).leading_zeros()
+        usize::BITS - (self.mask >> self.shift).leading_zeros()
     }
 
     
@@ -50,11 +50,6 @@ impl fmt::Debug for Pack {
             self.mask, self.shift
         )
     }
-}
-
-
-pub(crate) const fn pointer_width() -> u32 {
-    std::mem::size_of::<usize>() as u32 * 8
 }
 
 

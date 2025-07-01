@@ -2,6 +2,7 @@
 #![cfg(feature = "full")]
 #![cfg(unix)]
 #![cfg(panic = "unwind")]
+#![cfg(not(miri))] 
 
 use std::error::Error;
 use tokio::runtime::Builder;

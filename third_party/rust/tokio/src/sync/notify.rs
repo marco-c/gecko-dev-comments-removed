@@ -379,6 +379,7 @@ impl Drop for NotifyWaitersList<'_> {
 
 
 #[derive(Debug)]
+#[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct Notified<'a> {
     
     notify: &'a Notify,
@@ -1041,7 +1042,7 @@ impl Notified<'_> {
                     #[cfg(tokio_taskdump)]
                     if let Some(waker) = waker {
                         let mut ctx = Context::from_waker(waker);
-                        ready!(crate::trace::trace_leaf(&mut ctx));
+                        std::task::ready!(crate::trace::trace_leaf(&mut ctx));
                     }
 
                     if waiter.notification.load(Acquire).is_some() {
@@ -1135,7 +1136,7 @@ impl Notified<'_> {
                     #[cfg(tokio_taskdump)]
                     if let Some(waker) = waker {
                         let mut ctx = Context::from_waker(waker);
-                        ready!(crate::trace::trace_leaf(&mut ctx));
+                        std::task::ready!(crate::trace::trace_leaf(&mut ctx));
                     }
                     return Poll::Ready(());
                 }

@@ -5,7 +5,7 @@ use std::future::Future;
 use std::marker::PhantomData;
 use std::panic::{RefUnwindSafe, UnwindSafe};
 use std::pin::Pin;
-use std::task::{Context, Poll, Waker};
+use std::task::{ready, Context, Poll, Waker};
 
 cfg_rt! {
     /// An owned permission to join on a task (await its termination).
@@ -296,6 +296,7 @@ impl<T> JoinHandle<T> {
     
     
     
+    #[must_use = "abort handles do nothing unless `.abort` is called"]
     pub fn abort_handle(&self) -> super::AbortHandle {
         self.raw.ref_inc();
         super::AbortHandle::new(self.raw)
@@ -305,13 +306,6 @@ impl<T> JoinHandle<T> {
     
     
     
-    
-    
-    
-    
-    
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub fn id(&self) -> super::Id {
         
         unsafe { Header::get_id(self.raw.header_ptr()) }
@@ -328,7 +322,7 @@ impl<T> Future for JoinHandle<T> {
         let mut ret = Poll::Pending;
 
         
-        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+        let coop = ready!(crate::task::coop::poll_proceed(cx));
 
         
         

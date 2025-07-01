@@ -4,6 +4,7 @@ use crate::runtime::task::state::{Snapshot, State};
 use crate::runtime::task::waker::waker_ref;
 use crate::runtime::task::{Id, JoinError, Notified, RawTask, Schedule, Task};
 
+use crate::runtime::TaskMeta;
 use std::any::Any;
 use std::mem;
 use std::mem::ManuallyDrop;
@@ -285,7 +286,9 @@ where
     pub(super) fn drop_join_handle_slow(self) {
         
         
-        if self.state().unset_join_interested().is_err() {
+        let transition = self.state().transition_to_join_handle_dropped();
+
+        if transition.drop_output {
             
             
             
@@ -300,6 +303,23 @@ where
             }));
         }
 
+        if transition.drop_waker {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            unsafe { self.trailer().set_waker(None) };
+        }
+
         
         self.drop_reference();
     }
@@ -310,7 +330,6 @@ where
     fn complete(self) {
         
         
-
         let snapshot = self.state().transition_to_complete();
 
         
@@ -320,14 +339,42 @@ where
                 
                 
                 
+                
                 self.core().drop_future_or_output();
             } else if snapshot.is_join_waker_set() {
                 
                 
                 
                 self.trailer().wake_join();
+
+                
+                
+                
+                
+                if !self
+                    .state()
+                    .unset_waker_after_complete()
+                    .is_join_interested()
+                {
+                    
+                    
+                    unsafe { self.trailer().set_waker(None) };
+                }
             }
         }));
+
+        
+        
+        
+        
+        if let Some(f) = self.trailer().hooks.task_terminate_callback.as_ref() {
+            let _ = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+                f(&TaskMeta {
+                    id: self.core().task_id,
+                    _phantom: Default::default(),
+                })
+            }));
+        }
 
         
         let num_release = self.release();

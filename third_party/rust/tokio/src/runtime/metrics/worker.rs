@@ -1,9 +1,12 @@
-use crate::runtime::metrics::Histogram;
 use crate::runtime::Config;
 use crate::util::metric_atomics::{MetricAtomicU64, MetricAtomicUsize};
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Mutex;
 use std::thread::ThreadId;
+
+cfg_unstable_metrics! {
+    use crate::runtime::metrics::Histogram;
+}
 
 
 
@@ -16,73 +19,92 @@ use std::thread::ThreadId;
 #[repr(align(128))]
 pub(crate) struct WorkerMetrics {
     
-    pub(crate) park_count: MetricAtomicU64,
-
-    
-    pub(crate) park_unpark_count: MetricAtomicU64,
-
-    
-    pub(crate) noop_count: MetricAtomicU64,
-
-    
-    pub(crate) steal_count: MetricAtomicU64,
-
-    
-    pub(crate) steal_operations: MetricAtomicU64,
-
-    
-    pub(crate) poll_count: MetricAtomicU64,
-
-    
-    pub(crate) mean_poll_time: MetricAtomicU64,
-
-    
     pub(crate) busy_duration_total: MetricAtomicU64,
-
-    
-    pub(crate) local_schedule_count: MetricAtomicU64,
-
-    
-    pub(crate) overflow_count: MetricAtomicU64,
 
     
     
     pub(crate) queue_depth: MetricAtomicUsize,
 
     
-    pub(super) poll_count_histogram: Option<Histogram>,
+    thread_id: Mutex<Option<ThreadId>>,
 
     
-    thread_id: Mutex<Option<ThreadId>>,
+    pub(crate) park_count: MetricAtomicU64,
+
+    
+    pub(crate) park_unpark_count: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) noop_count: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) steal_count: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) steal_operations: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) poll_count: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) mean_poll_time: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) local_schedule_count: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(crate) overflow_count: MetricAtomicU64,
+
+    #[cfg(tokio_unstable)]
+    
+    pub(super) poll_count_histogram: Option<Histogram>,
 }
 
 impl WorkerMetrics {
-    pub(crate) fn from_config(config: &Config) -> WorkerMetrics {
-        let mut worker_metrics = WorkerMetrics::new();
-        worker_metrics.poll_count_histogram = config
-            .metrics_poll_count_histogram
-            .as_ref()
-            .map(|histogram_builder| histogram_builder.build());
-        worker_metrics
-    }
-
     pub(crate) fn new() -> WorkerMetrics {
         WorkerMetrics::default()
-    }
-
-    pub(crate) fn queue_depth(&self) -> usize {
-        self.queue_depth.load(Relaxed)
     }
 
     pub(crate) fn set_queue_depth(&self, len: usize) {
         self.queue_depth.store(len, Relaxed);
     }
 
-    pub(crate) fn thread_id(&self) -> Option<ThreadId> {
-        *self.thread_id.lock().unwrap()
-    }
-
     pub(crate) fn set_thread_id(&self, thread_id: ThreadId) {
         *self.thread_id.lock().unwrap() = Some(thread_id);
+    }
+
+    cfg_metrics_variant! {
+        stable: {
+            pub(crate) fn from_config(_: &Config) -> WorkerMetrics {
+                WorkerMetrics::new()
+            }
+        },
+        unstable: {
+            pub(crate) fn from_config(config: &Config) -> WorkerMetrics {
+                let mut worker_metrics = WorkerMetrics::new();
+                worker_metrics.poll_count_histogram = config
+                    .metrics_poll_count_histogram
+                    .as_ref()
+                    .map(|histogram_builder| histogram_builder.build());
+                worker_metrics
+            }
+        }
+    }
+
+    cfg_unstable_metrics! {
+        pub(crate) fn queue_depth(&self) -> usize {
+            self.queue_depth.load(Relaxed)
+        }
+
+        pub(crate) fn thread_id(&self) -> Option<ThreadId> {
+            *self.thread_id.lock().unwrap()
+        }
     }
 }

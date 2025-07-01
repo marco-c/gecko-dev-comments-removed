@@ -1,13 +1,13 @@
 
 
-use crate::io::{AsyncRead, AsyncWrite, ReadBuf};
+use crate::io::{split, AsyncRead, AsyncWrite, ReadBuf, ReadHalf, WriteHalf};
 use crate::loom::sync::Mutex;
 
 use bytes::{Buf, BytesMut};
 use std::{
     pin::Pin,
     sync::Arc,
-    task::{self, Poll, Waker},
+    task::{self, ready, Poll, Waker},
 };
 
 
@@ -47,15 +47,34 @@ use std::{
 #[derive(Debug)]
 #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
 pub struct DuplexStream {
-    read: Arc<Mutex<Pipe>>,
-    write: Arc<Mutex<Pipe>>,
+    read: Arc<Mutex<SimplexStream>>,
+    write: Arc<Mutex<SimplexStream>>,
 }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
-struct Pipe {
+#[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
+pub struct SimplexStream {
     
     
     
@@ -83,8 +102,8 @@ struct Pipe {
 
 #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
 pub fn duplex(max_buf_size: usize) -> (DuplexStream, DuplexStream) {
-    let one = Arc::new(Mutex::new(Pipe::new(max_buf_size)));
-    let two = Arc::new(Mutex::new(Pipe::new(max_buf_size)));
+    let one = Arc::new(Mutex::new(SimplexStream::new_unsplit(max_buf_size)));
+    let two = Arc::new(Mutex::new(SimplexStream::new_unsplit(max_buf_size)));
 
     (
         DuplexStream {
@@ -163,9 +182,45 @@ impl Drop for DuplexStream {
 
 
 
-impl Pipe {
-    fn new(max_buf_size: usize) -> Self {
-        Pipe {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
+pub fn simplex(max_buf_size: usize) -> (ReadHalf<SimplexStream>, WriteHalf<SimplexStream>) {
+    split(SimplexStream::new_unsplit(max_buf_size))
+}
+
+impl SimplexStream {
+    
+    
+    
+    
+    
+    #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
+    pub fn new_unsplit(max_buf_size: usize) -> SimplexStream {
+        SimplexStream {
             buffer: BytesMut::new(),
             is_closed: false,
             max_buf_size,
@@ -269,7 +324,7 @@ impl Pipe {
     }
 }
 
-impl AsyncRead for Pipe {
+impl AsyncRead for SimplexStream {
     cfg_coop! {
         fn poll_read(
             self: Pin<&mut Self>,
@@ -277,7 +332,7 @@ impl AsyncRead for Pipe {
             buf: &mut ReadBuf<'_>,
         ) -> Poll<std::io::Result<()>> {
             ready!(crate::trace::trace_leaf(cx));
-            let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+            let coop = ready!(crate::task::coop::poll_proceed(cx));
 
             let ret = self.poll_read_internal(cx, buf);
             if ret.is_ready() {
@@ -299,7 +354,7 @@ impl AsyncRead for Pipe {
     }
 }
 
-impl AsyncWrite for Pipe {
+impl AsyncWrite for SimplexStream {
     cfg_coop! {
         fn poll_write(
             self: Pin<&mut Self>,
@@ -307,7 +362,7 @@ impl AsyncWrite for Pipe {
             buf: &[u8],
         ) -> Poll<std::io::Result<usize>> {
             ready!(crate::trace::trace_leaf(cx));
-            let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+            let coop = ready!(crate::task::coop::poll_proceed(cx));
 
             let ret = self.poll_write_internal(cx, buf);
             if ret.is_ready() {
@@ -335,7 +390,7 @@ impl AsyncWrite for Pipe {
             bufs: &[std::io::IoSlice<'_>],
         ) -> Poll<Result<usize, std::io::Error>> {
             ready!(crate::trace::trace_leaf(cx));
-            let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+            let coop = ready!(crate::task::coop::poll_proceed(cx));
 
             let ret = self.poll_write_vectored_internal(cx, bufs);
             if ret.is_ready() {

@@ -17,7 +17,7 @@ cfg_io_util! {
 }
 
 
-#[cfg(not(docsrs))]
+#[cfg(windows)]
 mod doc {
     pub(super) use crate::os::windows::ffi::OsStrExt;
     pub(super) mod windows_sys {
@@ -30,7 +30,7 @@ mod doc {
 }
 
 
-#[cfg(docsrs)]
+#[cfg(not(windows))]
 mod doc {
     pub(super) mod mio_windows {
         pub type NamedPipe = crate::doc::NotDefinedHere;

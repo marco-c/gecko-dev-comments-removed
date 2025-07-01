@@ -7,7 +7,7 @@
 
 
 
-#![cfg(all(unix, not(target_os = "freebsd")))]
+#![cfg(all(unix, not(target_os = "freebsd"), not(miri)))]
 
 use std::process::Stdio;
 use std::time::Duration;

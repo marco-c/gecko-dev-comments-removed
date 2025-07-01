@@ -1,8 +1,9 @@
-#![allow(unknown_lints, unexpected_cfgs)]
 #![warn(rust_2018_idioms)]
 #![cfg(feature = "full")]
 
+use std::sync::Arc;
 use tokio::runtime::Runtime;
+use tokio::sync::{mpsc, Barrier};
 
 #[test]
 #[cfg_attr(panic = "abort", ignore)]
@@ -63,6 +64,40 @@ fn interleave_then_enter() {
     
     let rt3 = rt();
     let _enter = rt3.enter();
+}
+
+
+#[test]
+fn drop_tasks_with_reference_cycle() {
+    rt().block_on(async {
+        let (tx, mut rx) = mpsc::channel(1);
+
+        let barrier = Arc::new(Barrier::new(3));
+        let barrier_a = barrier.clone();
+        let barrier_b = barrier.clone();
+
+        let a = tokio::spawn(async move {
+            let b = rx.recv().await.unwrap();
+
+            
+            
+            futures::future::select(b, std::future::ready(())).await;
+
+            barrier_a.wait().await;
+        });
+
+        let b = tokio::spawn(async move {
+            
+            
+            futures::future::select(a, std::future::ready(())).await;
+
+            barrier_b.wait().await;
+        });
+
+        tx.send(b).await.unwrap();
+
+        barrier.wait().await;
+    });
 }
 
 #[cfg(tokio_unstable)]

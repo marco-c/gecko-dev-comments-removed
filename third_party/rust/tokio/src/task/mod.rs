@@ -266,61 +266,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 cfg_rt! {
     pub use crate::runtime::task::{JoinError, JoinHandle};
 
@@ -337,17 +282,22 @@ cfg_rt! {
     mod yield_now;
     pub use yield_now::yield_now;
 
-    mod consume_budget;
-    pub use consume_budget::consume_budget;
+    pub mod coop;
+    #[doc(hidden)]
+    #[deprecated = "Moved to tokio::task::coop::consume_budget"]
+    pub use coop::consume_budget;
+    #[doc(hidden)]
+    #[deprecated = "Moved to tokio::task::coop::unconstrained"]
+    pub use coop::unconstrained;
+    #[doc(hidden)]
+    #[deprecated = "Moved to tokio::task::coop::Unconstrained"]
+    pub use coop::Unconstrained;
 
     mod local;
     pub use local::{spawn_local, LocalSet, LocalEnterGuard};
 
     mod task_local;
     pub use task_local::LocalKey;
-
-    mod unconstrained;
-    pub use unconstrained::{unconstrained, Unconstrained};
 
     #[doc(inline)]
     pub use join_set::JoinSet;
@@ -359,9 +309,7 @@ cfg_rt! {
     #[cfg(tokio_unstable)]
     pub mod join_set;
 
-    cfg_unstable! {
-        pub use crate::runtime::task::{Id, id, try_id};
-    }
+    pub use crate::runtime::task::{Id, id, try_id};
 
     cfg_trace! {
         mod builder;
@@ -372,4 +320,8 @@ cfg_rt! {
     pub mod futures {
         pub use super::task_local::TaskLocalFuture;
     }
+}
+
+cfg_not_rt! {
+    pub(crate) mod coop;
 }

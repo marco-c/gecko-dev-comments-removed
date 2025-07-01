@@ -173,6 +173,7 @@ async fn write_order() {
 
 
 #[cfg(all(feature = "full", not(target_os = "wasi")))] 
+#[cfg_attr(miri, ignore)] 
 #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn multithreaded() {
     use futures::stream::{self, StreamExt};

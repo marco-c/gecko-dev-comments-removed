@@ -3,7 +3,7 @@ use crate::io::{AsyncRead, AsyncWrite, ReadBuf};
 use std::future::Future;
 use std::io;
 use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 
 #[derive(Debug)]
 pub(super) struct CopyBuffer {
@@ -94,7 +94,7 @@ impl CopyBuffer {
             feature = "time",
         ))]
         
-        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+        let coop = ready!(crate::task::coop::poll_proceed(cx));
         loop {
             
             

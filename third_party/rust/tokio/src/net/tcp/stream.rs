@@ -1,18 +1,19 @@
 cfg_not_wasi! {
-    use crate::future::poll_fn;
     use crate::net::{to_socket_addrs, ToSocketAddrs};
+    use std::future::poll_fn;
     use std::time::Duration;
 }
 
 use crate::io::{AsyncRead, AsyncWrite, Interest, PollEvented, ReadBuf, Ready};
 use crate::net::tcp::split::{split, ReadHalf, WriteHalf};
 use crate::net::tcp::split_owned::{split_owned, OwnedReadHalf, OwnedWriteHalf};
+use crate::util::check_socket_for_blocking;
 
 use std::fmt;
 use std::io;
 use std::net::{Shutdown, SocketAddr};
 use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 
 cfg_io_util! {
     use bytes::BufMut;
@@ -198,13 +199,20 @@ impl TcpStream {
     
     
     
+    
+    
+    
+    
     #[track_caller]
     pub fn from_std(stream: std::net::TcpStream) -> io::Result<TcpStream> {
+        check_socket_for_blocking(&stream)?;
+
         let io = mio::net::TcpStream::from_std(stream);
         let io = PollEvented::new(io)?;
         Ok(TcpStream { io })
     }
 
+    
     
     
     
@@ -1104,8 +1112,16 @@ impl TcpStream {
     
     
     
+    
+    
+    
+    
+    
     pub(super) fn shutdown_std(&self, how: Shutdown) -> io::Result<()> {
-        self.io.shutdown(how)
+        match self.io.shutdown(how) {
+            Err(err) if err.kind() == std::io::ErrorKind::NotConnected => Ok(()),
+            result => result,
+        }
     }
 
     

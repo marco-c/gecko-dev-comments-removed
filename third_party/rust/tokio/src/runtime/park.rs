@@ -65,12 +65,7 @@ impl ParkThread {
     pub(crate) fn park_timeout(&mut self, duration: Duration) {
         #[cfg(loom)]
         CURRENT_THREAD_PARK_COUNT.with(|count| count.fetch_add(1, SeqCst));
-
-        
-        #[cfg(not(target_family = "wasm"))]
         self.inner.park_timeout(duration);
-        #[cfg(target_family = "wasm")]
-        std::thread::sleep(duration);
     }
 
     pub(crate) fn shutdown(&mut self) {
@@ -109,7 +104,7 @@ impl Inner {
 
                 return;
             }
-            Err(actual) => panic!("inconsistent park state; actual = {}", actual),
+            Err(actual) => panic!("inconsistent park state; actual = {actual}"),
         }
 
         loop {
@@ -155,19 +150,27 @@ impl Inner {
 
                 return;
             }
-            Err(actual) => panic!("inconsistent park_timeout state; actual = {}", actual),
+            Err(actual) => panic!("inconsistent park_timeout state; actual = {actual}"),
         }
 
+        #[cfg(not(all(target_family = "wasm", not(target_feature = "atomics"))))]
         
         
         
         
         let (_m, _result) = self.condvar.wait_timeout(m, dur).unwrap();
 
+        #[cfg(all(target_family = "wasm", not(target_feature = "atomics")))]
+        
+        {
+            let _m = m;
+            std::thread::sleep(dur);
+        }
+
         match self.state.swap(EMPTY, SeqCst) {
             NOTIFIED => {} 
             PARKED => {}   
-            n => panic!("inconsistent park_timeout state: {}", n),
+            n => panic!("inconsistent park_timeout state: {n}"),
         }
     }
 
@@ -278,7 +281,7 @@ impl CachedParkThread {
         pin!(f);
 
         loop {
-            if let Ready(v) = crate::runtime::coop::budget(|| f.as_mut().poll(&mut cx)) {
+            if let Ready(v) = crate::task::coop::budget(|| f.as_mut().poll(&mut cx)) {
                 return Ok(v);
             }
 

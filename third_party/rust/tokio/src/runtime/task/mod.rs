@@ -166,6 +166,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(tokio_unstable), allow(dead_code))]
 
 mod core;
@@ -210,6 +224,7 @@ use crate::future::Future;
 use crate::util::linked_list;
 use crate::util::sharded_list;
 
+use crate::runtime::TaskCallback;
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 use std::{fmt, mem};
@@ -241,6 +256,13 @@ pub(crate) struct LocalNotified<S: 'static> {
     _not_send: PhantomData<*const ()>,
 }
 
+impl<S> LocalNotified<S> {
+    #[cfg(tokio_unstable)]
+    pub(crate) fn task_id(&self) -> Id {
+        self.task.id()
+    }
+}
+
 
 
 pub(crate) struct UnownedTask<S: 'static> {
@@ -255,6 +277,12 @@ unsafe impl<S> Sync for UnownedTask<S> {}
 
 pub(crate) type Result<T> = std::result::Result<T, JoinError>;
 
+
+#[derive(Clone)]
+pub(crate) struct TaskHarnessScheduleHooks {
+    pub(crate) task_terminate_callback: Option<TaskCallback>,
+}
+
 pub(crate) trait Schedule: Sync + Sized + 'static {
     
     
@@ -265,6 +293,8 @@ pub(crate) trait Schedule: Sync + Sized + 'static {
 
     
     fn schedule(&self, task: Notified<Self>);
+
+    fn hooks(&self) -> TaskHarnessScheduleHooks;
 
     
     
@@ -363,6 +393,16 @@ impl<S: 'static> Task<S> {
         self.raw.header_ptr()
     }
 
+    
+    
+    
+    
+    #[cfg(tokio_unstable)]
+    pub(crate) fn id(&self) -> crate::task::Id {
+        
+        unsafe { Header::get_id(self.raw.header_ptr()) }
+    }
+
     cfg_taskdump! {
         /// Notify the task for task dumping.
         ///
@@ -377,22 +417,18 @@ impl<S: 'static> Task<S> {
             }
         }
 
-        /// Returns a [task ID] that uniquely identifies this task relative to other
-        /// currently spawned tasks.
-        ///
-        /// [task ID]: crate::task::Id
-        #[cfg(tokio_unstable)]
-        #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
-        pub(crate) fn id(&self) -> crate::task::Id {
-            // Safety: The header pointer is valid.
-            unsafe { Header::get_id(self.raw.header_ptr()) }
-        }
     }
 }
 
 impl<S: 'static> Notified<S> {
     fn header(&self) -> &Header {
         self.0.header()
+    }
+
+    #[cfg(tokio_unstable)]
+    #[allow(dead_code)]
+    pub(crate) fn task_id(&self) -> crate::task::Id {
+        self.0.id()
     }
 }
 
@@ -532,6 +568,6 @@ unsafe impl<S> sharded_list::ShardedListItem for Task<S> {
     unsafe fn get_shard_id(target: NonNull<Self::Target>) -> usize {
         
         let task_id = unsafe { Header::get_id(target) };
-        task_id.0 as usize
+        task_id.0.get() as usize
     }
 }

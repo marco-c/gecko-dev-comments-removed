@@ -1,4 +1,3 @@
-#![allow(unknown_lints, unexpected_cfgs)]
 #![allow(
     clippy::cognitive_complexity,
     clippy::large_enum_variant,
@@ -19,6 +18,15 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, allow(unused_attributes))]
 #![cfg_attr(loom, allow(dead_code, unreachable_pub))]
+#![cfg_attr(windows, allow(rustdoc::broken_intra_doc_links))]
+
+
+
+
+
+
+
+
 
 
 
@@ -625,15 +633,15 @@ pub mod stream {}
 
 
 
-#[cfg(docsrs)]
+#[cfg(all(docsrs, unix))]
 pub mod doc;
 
 #[cfg(any(feature = "net", feature = "fs"))]
-#[cfg(docsrs)]
+#[cfg(all(docsrs, unix))]
 #[allow(unused)]
 pub(crate) use self::doc::os;
 
-#[cfg(not(docsrs))]
+#[cfg(not(all(docsrs, unix)))]
 #[allow(unused)]
 pub(crate) use std::os;
 

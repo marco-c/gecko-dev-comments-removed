@@ -112,6 +112,7 @@
 
 
 use crate::sync::notify::Notify;
+use crate::task::coop::cooperative;
 
 use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::atomic::Ordering::{AcqRel, Relaxed};
@@ -575,7 +576,7 @@ impl<T> Receiver<T> {
     
     
     pub fn borrow(&self) -> Ref<'_, T> {
-        let inner = self.shared.value.read().unwrap();
+        let inner = self.shared.value.read();
 
         
         
@@ -622,7 +623,7 @@ impl<T> Receiver<T> {
     
     
     pub fn borrow_and_update(&mut self) -> Ref<'_, T> {
-        let inner = self.shared.value.read().unwrap();
+        let inner = self.shared.value.read();
 
         
         
@@ -743,7 +744,7 @@ impl<T> Receiver<T> {
     
     
     pub async fn changed(&mut self) -> Result<(), error::RecvError> {
-        changed_impl(&self.shared, &mut self.version).await
+        cooperative(changed_impl(&self.shared, &mut self.version)).await
     }
 
     
@@ -806,14 +807,28 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub async fn wait_for(
+        &mut self,
+        f: impl FnMut(&T) -> bool,
+    ) -> Result<Ref<'_, T>, error::RecvError> {
+        cooperative(self.wait_for_inner(f)).await
+    }
+
+    async fn wait_for_inner(
         &mut self,
         mut f: impl FnMut(&T) -> bool,
     ) -> Result<Ref<'_, T>, error::RecvError> {
         let mut closed = false;
         loop {
             {
-                let inner = self.shared.value.read().unwrap();
+                let inner = self.shared.value.read();
 
                 let new_version = self.shared.state.load().version();
                 let has_changed = self.version != new_version;
@@ -1087,7 +1102,7 @@ impl<T> Sender<T> {
     {
         {
             
-            let mut lock = self.shared.value.write().unwrap();
+            let mut lock = self.shared.value.write();
 
             
             let result = panic::catch_unwind(panic::AssertUnwindSafe(|| modify(&mut lock)));
@@ -1164,7 +1179,7 @@ impl<T> Sender<T> {
     
     
     pub fn borrow(&self) -> Ref<'_, T> {
-        let inner = self.shared.value.read().unwrap();
+        let inner = self.shared.value.read();
 
         
         let has_changed = false;
@@ -1224,19 +1239,22 @@ impl<T> Sender<T> {
     
     
     pub async fn closed(&self) {
-        crate::trace::async_trace_leaf().await;
+        cooperative(async {
+            crate::trace::async_trace_leaf().await;
 
-        while self.receiver_count() > 0 {
-            let notified = self.shared.notify_tx.notified();
+            while self.receiver_count() > 0 {
+                let notified = self.shared.notify_tx.notified();
 
-            if self.receiver_count() == 0 {
-                return;
+                if self.receiver_count() == 0 {
+                    return;
+                }
+
+                notified.await;
+                
+                
             }
-
-            notified.await;
-            
-            
-        }
+        })
+        .await;
     }
 
     
@@ -1323,6 +1341,29 @@ impl<T> Sender<T> {
     
     pub fn receiver_count(&self) -> usize {
         self.shared.ref_count_rx.load(Relaxed)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn sender_count(&self) -> usize {
+        self.shared.ref_count_tx.load(Relaxed)
     }
 
     

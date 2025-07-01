@@ -24,11 +24,5 @@ use std::path::Path;
 
 pub async fn try_exists(path: impl AsRef<Path>) -> io::Result<bool> {
     let path = path.as_ref().to_owned();
-    
-    
-    match asyncify(move || std::fs::metadata(path)).await {
-        Ok(_) => Ok(true),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(error) => Err(error),
-    }
+    asyncify(move || path.try_exists()).await
 }

@@ -1,6 +1,7 @@
 use std::cell::UnsafeCell;
 use std::fmt;
 use std::ops;
+use std::panic;
 
 
 pub(crate) struct AtomicUsize {
@@ -9,6 +10,8 @@ pub(crate) struct AtomicUsize {
 
 unsafe impl Send for AtomicUsize {}
 unsafe impl Sync for AtomicUsize {}
+impl panic::RefUnwindSafe for AtomicUsize {}
+impl panic::UnwindSafe for AtomicUsize {}
 
 impl AtomicUsize {
     pub(crate) const fn new(val: usize) -> AtomicUsize {
@@ -23,8 +26,7 @@ impl AtomicUsize {
     
     
     pub(crate) unsafe fn unsync_load(&self) -> usize {
-        
-        self.load(std::sync::atomic::Ordering::Relaxed)
+        core::ptr::read(self.inner.get() as *const usize)
     }
 
     pub(crate) fn with_mut<R>(&mut self, f: impl FnOnce(&mut usize) -> R) -> R {

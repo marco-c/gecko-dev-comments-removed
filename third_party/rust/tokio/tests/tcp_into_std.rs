@@ -1,5 +1,6 @@
 #![warn(rust_2018_idioms)]
-#![cfg(all(feature = "full", not(target_os = "wasi")))] 
+#![cfg(all(feature = "full", not(target_os = "wasi"), not(miri)))] 
+                                                                   
 
 use std::io::Read;
 use std::io::Result;

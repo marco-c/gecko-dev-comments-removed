@@ -89,6 +89,12 @@ pub(crate) enum TransitionToNotifiedByRef {
     Submit,
 }
 
+#[must_use]
+pub(super) struct TransitionToJoinHandleDrop {
+    pub(super) drop_waker: bool,
+    pub(super) drop_output: bool,
+}
+
 
 
 impl State {
@@ -375,18 +381,41 @@ impl State {
     
     
     
-    pub(super) fn unset_join_interested(&self) -> UpdateResult {
-        self.fetch_update(|curr| {
-            assert!(curr.is_join_interested());
+    pub(super) fn transition_to_join_handle_dropped(&self) -> TransitionToJoinHandleDrop {
+        self.fetch_update_action(|mut snapshot| {
+            assert!(snapshot.is_join_interested());
 
-            if curr.is_complete() {
-                return None;
+            let mut transition = TransitionToJoinHandleDrop {
+                drop_waker: false,
+                drop_output: false,
+            };
+
+            snapshot.unset_join_interested();
+
+            if !snapshot.is_complete() {
+                
+                
+                
+                
+                snapshot.unset_join_waker();
+            } else {
+                
+                
+                transition.drop_output = true;
             }
 
-            let mut next = curr;
-            next.unset_join_interested();
+            if !snapshot.is_join_waker_set() {
+                
+                
+                
+                
+                
+                
+                
+                transition.drop_waker = true;
+            }
 
-            Some(next)
+            (transition, Some(snapshot))
         })
     }
 
@@ -417,17 +446,30 @@ impl State {
     pub(super) fn unset_waker(&self) -> UpdateResult {
         self.fetch_update(|curr| {
             assert!(curr.is_join_interested());
-            assert!(curr.is_join_waker_set());
 
             if curr.is_complete() {
                 return None;
             }
+
+            
+            
+            assert!(curr.is_join_waker_set());
 
             let mut next = curr;
             next.unset_join_waker();
 
             Some(next)
         })
+    }
+
+    
+    
+    
+    pub(super) fn unset_waker_after_complete(&self) -> Snapshot {
+        let prev = Snapshot(self.val.fetch_and(!JOIN_WAKER, AcqRel));
+        assert!(prev.is_complete());
+        assert!(prev.is_join_waker_set());
+        Snapshot(prev.0 & !JOIN_WAKER)
     }
 
     pub(super) fn ref_inc(&self) {

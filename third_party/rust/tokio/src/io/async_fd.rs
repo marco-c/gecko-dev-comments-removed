@@ -7,7 +7,9 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 use std::os::unix::io::{AsRawFd, RawFd};
-use std::{task::Context, task::Poll};
+use std::task::{ready, Context, Poll};
+
+
 
 
 
@@ -700,11 +702,25 @@ impl<T: AsRawFd> AsyncFd<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[allow(clippy::needless_lifetimes)] 
     pub async fn readable<'a>(&'a self) -> io::Result<AsyncFdReadyGuard<'a, T>> {
         self.ready(Interest::READABLE).await
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -724,11 +740,25 @@ impl<T: AsRawFd> AsyncFd<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[allow(clippy::needless_lifetimes)] 
     pub async fn writable<'a>(&'a self) -> io::Result<AsyncFdReadyGuard<'a, T>> {
         self.ready(Interest::WRITABLE).await
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -841,6 +871,56 @@ impl<T: AsRawFd> AsyncFd<T> {
         self.registration
             .async_io(interest, || f(self.inner.as_mut().unwrap()))
             .await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_io<R>(
+        &self,
+        interest: Interest,
+        f: impl FnOnce(&T) -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.registration
+            .try_io(interest, || f(self.inner.as_ref().unwrap()))
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn try_io_mut<R>(
+        &mut self,
+        interest: Interest,
+        f: impl FnOnce(&mut T) -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.registration
+            .try_io(interest, || f(self.inner.as_mut().unwrap()))
     }
 }
 

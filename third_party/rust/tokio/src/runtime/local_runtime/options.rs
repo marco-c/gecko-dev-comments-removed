@@ -1,0 +1,12 @@
+use std::marker::PhantomData;
+
+
+
+
+
+#[derive(Default, Debug)]
+#[non_exhaustive]
+pub struct LocalOptions {
+    
+    _phantom: PhantomData<*mut u8>,
+}

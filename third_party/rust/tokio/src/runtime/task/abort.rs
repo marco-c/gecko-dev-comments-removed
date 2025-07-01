@@ -69,13 +69,6 @@ impl AbortHandle {
     
     
     
-    
-    
-    
-    
-    
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub fn id(&self) -> super::Id {
         
         unsafe { Header::get_id(self.raw.header_ptr()) }

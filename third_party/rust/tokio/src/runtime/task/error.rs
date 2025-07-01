@@ -124,13 +124,6 @@ impl JoinError {
     
     
     
-    
-    
-    
-    
-    
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub fn id(&self) -> Id {
         self.id
     }
@@ -140,7 +133,18 @@ impl fmt::Display for JoinError {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.repr {
             Repr::Cancelled => write!(fmt, "task {} was cancelled", self.id),
-            Repr::Panic(_) => write!(fmt, "task {} panicked", self.id),
+            Repr::Panic(p) => match panic_payload_as_str(p) {
+                Some(panic_str) => {
+                    write!(
+                        fmt,
+                        "task {} panicked with message {:?}",
+                        self.id, panic_str
+                    )
+                }
+                None => {
+                    write!(fmt, "task {} panicked", self.id)
+                }
+            },
         }
     }
 }
@@ -149,7 +153,12 @@ impl fmt::Debug for JoinError {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.repr {
             Repr::Cancelled => write!(fmt, "JoinError::Cancelled({:?})", self.id),
-            Repr::Panic(_) => write!(fmt, "JoinError::Panic({:?}, ...)", self.id),
+            Repr::Panic(p) => match panic_payload_as_str(p) {
+                Some(panic_str) => {
+                    write!(fmt, "JoinError::Panic({:?}, {:?}, ...)", self.id, panic_str)
+                }
+                None => write!(fmt, "JoinError::Panic({:?}, ...)", self.id),
+            },
         }
     }
 }
@@ -166,4 +175,21 @@ impl From<JoinError> for io::Error {
             },
         )
     }
+}
+
+fn panic_payload_as_str(payload: &SyncWrapper<Box<dyn Any + Send>>) -> Option<&str> {
+    
+    
+    
+    
+    
+    if let Some(s) = payload.downcast_ref_sync::<String>() {
+        return Some(s);
+    }
+
+    if let Some(s) = payload.downcast_ref_sync::<&'static str>() {
+        return Some(s);
+    }
+
+    None
 }

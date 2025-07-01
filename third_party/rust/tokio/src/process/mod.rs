@@ -249,9 +249,8 @@ use std::future::Future;
 use std::io;
 use std::path::Path;
 use std::pin::Pin;
-use std::process::{Command as StdCommand, ExitStatus, Output, Stdio};
-use std::task::Context;
-use std::task::Poll;
+use std::process::{Child as StdChild, Command as StdCommand, ExitStatus, Output, Stdio};
+use std::task::{ready, Context, Poll};
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
@@ -329,6 +328,15 @@ impl Command {
     
     pub fn as_std_mut(&mut self) -> &mut StdCommand {
         &mut self.std
+    }
+
+    
+    
+    
+    
+    
+    pub fn into_std(self) -> StdCommand {
+        self.std
     }
 
     
@@ -771,9 +779,14 @@ impl Command {
     
     
     
+    
+    
+    
+    
+    
+    
     #[cfg(unix)]
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(all(unix, tokio_unstable))))]
+    #[cfg_attr(docsrs, doc(cfg(unix)))]
     pub fn process_group(&mut self, pgroup: i32) -> &mut Command {
         self.std.process_group(pgroup);
         self
@@ -846,8 +859,98 @@ impl Command {
     
     
     
+    #[inline]
     pub fn spawn(&mut self) -> io::Result<Child> {
-        imp::spawn_child(&mut self.std).map(|spawned_child| Child {
+        
+        let child = self.std.spawn()?;
+        self.build_child(child)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
+    #[inline]
+    pub fn spawn_with(
+        &mut self,
+        with: impl Fn(&mut StdCommand) -> io::Result<StdChild>,
+    ) -> io::Result<Child> {
+        
+        let child = with(&mut self.std)?;
+        self.build_child(child)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn build_child(&self, child: StdChild) -> io::Result<Child> {
+        let spawned_child = imp::build_child(child)?;
+
+        Ok(Child {
             child: FusedChild::Child(ChildDropGuard {
                 inner: spawned_child.child,
                 kill_on_drop: self.kill_on_drop,
@@ -967,6 +1070,26 @@ impl Command {
 
         async { child?.wait_with_output().await }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_kill_on_drop(&self) -> bool {
+        self.kill_on_drop
+    }
 }
 
 impl From<StdCommand> for Command {
@@ -1014,7 +1137,7 @@ where
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         ready!(crate::trace::trace_leaf(cx));
         
-        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+        let coop = ready!(crate::task::coop::poll_proceed(cx));
 
         let ret = Pin::new(&mut self.inner).poll(cx);
 
@@ -1124,13 +1247,57 @@ impl Child {
     pub fn start_kill(&mut self) -> io::Result<()> {
         match &mut self.child {
             FusedChild::Child(child) => child.kill(),
-            FusedChild::Done(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "invalid argument: can't kill an exited process",
-            )),
+            FusedChild::Done(_) => Ok(()),
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1162,6 +1329,7 @@ impl Child {
         Ok(())
     }
 
+    
     
     
     

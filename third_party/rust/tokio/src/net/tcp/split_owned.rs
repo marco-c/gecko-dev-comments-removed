@@ -8,11 +8,11 @@
 
 
 
-use crate::future::poll_fn;
 use crate::io::{AsyncRead, AsyncWrite, Interest, ReadBuf, Ready};
 use crate::net::TcpStream;
 
 use std::error::Error;
+use std::future::poll_fn;
 use std::net::{Shutdown, SocketAddr};
 use std::pin::Pin;
 use std::sync::Arc;

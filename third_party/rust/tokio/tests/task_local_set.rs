@@ -1,4 +1,3 @@
-#![allow(unknown_lints, unexpected_cfgs)]
 #![warn(rust_2018_idioms)]
 #![cfg(feature = "full")]
 
@@ -385,9 +384,8 @@ fn with_timeout(timeout: Duration, f: impl FnOnce() + Send + 'static) {
     
     match done_rx.recv_timeout(timeout) {
         Err(RecvTimeoutError::Timeout) => panic!(
-            "test did not complete within {:?} seconds, \
+            "test did not complete within {timeout:?} seconds, \
              we have (probably) entered an infinite loop!",
-            timeout,
         ),
         
         

@@ -6,7 +6,7 @@ use pin_project_lite::pin_project;
 use std::future::Future;
 use std::panic::Location;
 use std::pin::Pin;
-use std::task::{self, Poll};
+use std::task::{self, ready, Poll};
 
 
 
@@ -62,8 +62,6 @@ use std::task::{self, Poll};
 pub fn sleep_until(deadline: Instant) -> Sleep {
     Sleep::new_timeout(deadline, trace::caller_location())
 }
-
-
 
 
 
@@ -267,6 +265,7 @@ impl Sleep {
 
             let location = location.expect("should have location if tracing");
             let resource_span = tracing::trace_span!(
+                parent: None,
                 "runtime.resource",
                 concrete_type = "Sleep",
                 kind = "timer",
@@ -406,11 +405,11 @@ impl Sleep {
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         let coop = ready!(trace_poll_op!(
             "poll_elapsed",
-            crate::runtime::coop::poll_proceed(cx),
+            crate::task::coop::poll_proceed(cx),
         ));
 
         #[cfg(any(not(tokio_unstable), not(feature = "tracing")))]
-        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+        let coop = ready!(crate::task::coop::poll_proceed(cx));
 
         let result = me.entry.poll_elapsed(cx).map(move |r| {
             coop.made_progress();
@@ -446,7 +445,7 @@ impl Future for Sleep {
         let _ao_poll_span = self.inner.ctx.async_op_poll_span.clone().entered();
         match ready!(self.as_mut().poll_elapsed(cx)) {
             Ok(()) => Poll::Ready(()),
-            Err(e) => panic!("timer error: {}", e),
+            Err(e) => panic!("timer error: {e}"),
         }
     }
 }

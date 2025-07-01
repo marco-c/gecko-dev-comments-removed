@@ -59,8 +59,7 @@ async fn open_options_mode() {
     
     assert!(
         mode.contains("mode: 420 ") || mode.contains("mode: 0o000644 "),
-        "mode is: {}",
-        mode
+        "mode is: {mode}"
     );
 }
 

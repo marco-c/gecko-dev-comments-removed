@@ -2,7 +2,7 @@
     any(not(all(tokio_unstable, feature = "full")), target_family = "wasm"),
     allow(dead_code)
 )]
-use crate::runtime::Callback;
+use crate::runtime::{Callback, TaskCallback};
 use crate::util::RngSeedGenerator;
 
 pub(crate) struct Config {
@@ -13,13 +13,24 @@ pub(crate) struct Config {
     pub(crate) event_interval: u32,
 
     
-    pub(crate) local_queue_capacity: usize,
-
-    
     pub(crate) before_park: Option<Callback>,
 
     
     pub(crate) after_unpark: Option<Callback>,
+
+    
+    pub(crate) before_spawn: Option<TaskCallback>,
+
+    
+    pub(crate) after_termination: Option<TaskCallback>,
+
+    
+    #[cfg(tokio_unstable)]
+    pub(crate) before_poll: Option<TaskCallback>,
+
+    
+    #[cfg(tokio_unstable)]
+    pub(crate) after_poll: Option<TaskCallback>,
 
     
     

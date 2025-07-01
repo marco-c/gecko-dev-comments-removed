@@ -135,7 +135,7 @@ use std::mem::MaybeUninit;
 use std::pin::Pin;
 use std::sync::atomic::Ordering::{self, AcqRel, Acquire};
 use std::task::Poll::{Pending, Ready};
-use std::task::{Context, Poll, Waker};
+use std::task::{ready, Context, Poll, Waker};
 
 
 
@@ -698,7 +698,7 @@ impl<T> Sender<T> {
     
     
     pub async fn closed(&mut self) {
-        use crate::future::poll_fn;
+        use std::future::poll_fn;
 
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         let resource_span = self.resource_span.clone();
@@ -794,7 +794,7 @@ impl<T> Sender<T> {
         ready!(crate::trace::trace_leaf(cx));
 
         
-        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+        let coop = ready!(crate::task::coop::poll_proceed(cx));
 
         let inner = self.inner.as_ref().unwrap();
 
@@ -985,6 +985,149 @@ impl<T> Receiver<T> {
     
     
     
+    pub fn is_terminated(&self) -> bool {
+        self.inner.is_none()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_empty(&self) -> bool {
+        let Some(inner) = self.inner.as_ref() else {
+            
+            return true;
+        };
+
+        let state = State::load(&inner.state, Acquire);
+        if state.is_complete() {
+            
+            
+            
+            
+            
+            
+            
+            unsafe { !inner.has_value() }
+        } else {
+            
+            true
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1106,10 +1249,10 @@ impl<T> Future for Receiver<T> {
 
         let ret = if let Some(inner) = self.as_ref().get_ref().inner.as_ref() {
             #[cfg(all(tokio_unstable, feature = "tracing"))]
-            let res = ready!(trace_poll_op!("poll_recv", inner.poll_recv(cx)))?;
+            let res = ready!(trace_poll_op!("poll_recv", inner.poll_recv(cx))).map_err(Into::into);
 
             #[cfg(any(not(tokio_unstable), not(feature = "tracing")))]
-            let res = ready!(inner.poll_recv(cx))?;
+            let res = ready!(inner.poll_recv(cx)).map_err(Into::into);
 
             res
         } else {
@@ -1117,7 +1260,7 @@ impl<T> Future for Receiver<T> {
         };
 
         self.inner = None;
-        Ready(Ok(ret))
+        Ready(ret)
     }
 }
 
@@ -1142,7 +1285,7 @@ impl<T> Inner<T> {
     fn poll_recv(&self, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
         ready!(crate::trace::trace_leaf(cx));
         
-        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+        let coop = ready!(crate::task::coop::poll_proceed(cx));
 
         
         let mut state = State::load(&self.state, Acquire);
@@ -1232,6 +1375,19 @@ impl<T> Inner<T> {
     
     unsafe fn consume_value(&self) -> Option<T> {
         self.value.with_mut(|ptr| (*ptr).take())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn has_value(&self) -> bool {
+        self.value.with(|ptr| (*ptr).is_some())
     }
 }
 

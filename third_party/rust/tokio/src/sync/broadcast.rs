@@ -118,7 +118,8 @@
 
 use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::{AtomicBool, AtomicUsize};
-use crate::loom::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
+use crate::loom::sync::{Arc, Mutex, MutexGuard};
+use crate::task::coop::cooperative;
 use crate::util::linked_list::{self, GuardedLinkedList, LinkedList};
 use crate::util::WakeList;
 
@@ -127,8 +128,8 @@ use std::future::Future;
 use std::marker::PhantomPinned;
 use std::pin::Pin;
 use std::ptr::NonNull;
-use std::sync::atomic::Ordering::{Acquire, Relaxed, Release, SeqCst};
-use std::task::{Context, Poll, Waker};
+use std::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release, SeqCst};
+use std::task::{ready, Context, Poll, Waker};
 
 
 
@@ -162,6 +163,40 @@ use std::task::{Context, Poll, Waker};
 
 
 pub struct Sender<T> {
+    shared: Arc<Shared<T>>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct WeakSender<T> {
     shared: Arc<Shared<T>>,
 }
 
@@ -254,7 +289,7 @@ pub mod error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
                 RecvError::Closed => write!(f, "channel closed"),
-                RecvError::Lagged(amt) => write!(f, "channel lagged by {}", amt),
+                RecvError::Lagged(amt) => write!(f, "channel lagged by {amt}"),
             }
         }
     }
@@ -290,7 +325,7 @@ pub mod error {
             match self {
                 TryRecvError::Empty => write!(f, "channel empty"),
                 TryRecvError::Closed => write!(f, "channel closed"),
-                TryRecvError::Lagged(amt) => write!(f, "channel lagged by {}", amt),
+                TryRecvError::Lagged(amt) => write!(f, "channel lagged by {amt}"),
             }
         }
     }
@@ -300,10 +335,12 @@ pub mod error {
 
 use self::error::{RecvError, SendError, TryRecvError};
 
+use super::Notify;
+
 
 struct Shared<T> {
     
-    buffer: Box<[RwLock<Slot<T>>]>,
+    buffer: Box<[Mutex<Slot<T>>]>,
 
     
     mask: usize,
@@ -313,6 +350,12 @@ struct Shared<T> {
 
     
     num_tx: AtomicUsize,
+
+    
+    num_weak_tx: AtomicUsize,
+
+    
+    notify_last_rx_drop: Notify,
 }
 
 
@@ -347,7 +390,7 @@ struct Slot<T> {
     
     
     
-    val: UnsafeCell<Option<T>>,
+    val: Option<T>,
 }
 
 
@@ -385,7 +428,7 @@ generate_addr_of_methods! {
 }
 
 struct RecvGuard<'a, T> {
-    slot: RwLockReadGuard<'a, Slot<T>>,
+    slot: MutexGuard<'a, Slot<T>>,
 }
 
 
@@ -394,11 +437,15 @@ struct Recv<'a, T> {
     receiver: &'a mut Receiver<T>,
 
     
-    waiter: UnsafeCell<Waiter>,
+    waiter: WaiterCell,
 }
 
-unsafe impl<'a, T: Send> Send for Recv<'a, T> {}
-unsafe impl<'a, T: Send> Sync for Recv<'a, T> {}
+
+
+struct WaiterCell(UnsafeCell<Waiter>);
+
+unsafe impl Send for WaiterCell {}
+unsafe impl Sync for WaiterCell {}
 
 
 const MAX_RECEIVERS: usize = usize::MAX >> 2;
@@ -466,12 +513,6 @@ pub fn channel<T: Clone>(capacity: usize) -> (Sender<T>, Receiver<T>) {
     (tx, rx)
 }
 
-unsafe impl<T: Send> Send for Sender<T> {}
-unsafe impl<T: Send> Sync for Sender<T> {}
-
-unsafe impl<T: Send> Send for Receiver<T> {}
-unsafe impl<T: Send> Sync for Receiver<T> {}
-
 impl<T> Sender<T> {
     
     
@@ -510,10 +551,10 @@ impl<T> Sender<T> {
         let mut buffer = Vec::with_capacity(capacity);
 
         for i in 0..capacity {
-            buffer.push(RwLock::new(Slot {
+            buffer.push(Mutex::new(Slot {
                 rem: AtomicUsize::new(0),
                 pos: (i as u64).wrapping_sub(capacity as u64),
-                val: UnsafeCell::new(None),
+                val: None,
             }));
         }
 
@@ -527,6 +568,8 @@ impl<T> Sender<T> {
                 waiters: LinkedList::new(),
             }),
             num_tx: AtomicUsize::new(1),
+            num_weak_tx: AtomicUsize::new(0),
+            notify_last_rx_drop: Notify::new(),
         });
 
         Sender { shared }
@@ -599,7 +642,7 @@ impl<T> Sender<T> {
         tail.pos = tail.pos.wrapping_add(1);
 
         
-        let mut slot = self.shared.buffer[idx].write().unwrap();
+        let mut slot = self.shared.buffer[idx].lock();
 
         
         slot.pos = pos;
@@ -608,7 +651,7 @@ impl<T> Sender<T> {
         slot.rem.with_mut(|v| *v = rem);
 
         
-        slot.val = UnsafeCell::new(Some(value));
+        slot.val = Some(value);
 
         
         drop(slot);
@@ -647,6 +690,18 @@ impl<T> Sender<T> {
     pub fn subscribe(&self) -> Receiver<T> {
         let shared = self.shared.clone();
         new_receiver(shared)
+    }
+
+    
+    
+    
+    
+    #[must_use = "Downgrade creates a WeakSender without destroying the original non-weak sender."]
+    pub fn downgrade(&self) -> WeakSender<T> {
+        self.shared.num_weak_tx.fetch_add(1, Relaxed);
+        WeakSender {
+            shared: self.shared.clone(),
+        }
     }
 
     
@@ -695,7 +750,7 @@ impl<T> Sender<T> {
         while low < high {
             let mid = low + (high - low) / 2;
             let idx = base_idx.wrapping_add(mid) & self.shared.mask;
-            if self.shared.buffer[idx].read().unwrap().rem.load(SeqCst) == 0 {
+            if self.shared.buffer[idx].lock().rem.load(SeqCst) == 0 {
                 low = mid + 1;
             } else {
                 high = mid;
@@ -737,7 +792,7 @@ impl<T> Sender<T> {
         let tail = self.shared.tail.lock();
 
         let idx = (tail.pos.wrapping_sub(1) & self.shared.mask as u64) as usize;
-        self.shared.buffer[idx].read().unwrap().rem.load(SeqCst) == 0
+        self.shared.buffer[idx].lock().rem.load(SeqCst) == 0
     }
 
     
@@ -804,11 +859,62 @@ impl<T> Sender<T> {
         Arc::ptr_eq(&self.shared, &other.shared)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn closed(&self) {
+        loop {
+            let notified = self.shared.notify_last_rx_drop.notified();
+
+            {
+                
+                let tail = self.shared.tail.lock();
+                if tail.closed {
+                    return;
+                }
+            }
+
+            notified.await;
+        }
+    }
+
     fn close_channel(&self) {
         let mut tail = self.shared.tail.lock();
         tail.closed = true;
 
         self.shared.notify_rx(tail);
+    }
+
+    
+    pub fn strong_count(&self) -> usize {
+        self.shared.num_tx.load(Acquire)
+    }
+
+    
+    pub fn weak_count(&self) -> usize {
+        self.shared.num_weak_tx.load(Acquire)
     }
 }
 
@@ -818,8 +924,14 @@ fn new_receiver<T>(shared: Arc<Shared<T>>) -> Receiver<T> {
 
     assert!(tail.rx_cnt != MAX_RECEIVERS, "max receivers");
 
-    tail.rx_cnt = tail.rx_cnt.checked_add(1).expect("overflow");
+    if tail.rx_cnt == 0 {
+        
+        
+        
+        tail.closed = false;
+    }
 
+    tail.rx_cnt = tail.rx_cnt.checked_add(1).expect("overflow");
     let next = tail.pos;
 
     drop(tail);
@@ -944,7 +1056,7 @@ impl<T> Shared<T> {
 impl<T> Clone for Sender<T> {
     fn clone(&self) -> Sender<T> {
         let shared = self.shared.clone();
-        shared.num_tx.fetch_add(1, SeqCst);
+        shared.num_tx.fetch_add(1, Relaxed);
 
         Sender { shared }
     }
@@ -952,9 +1064,65 @@ impl<T> Clone for Sender<T> {
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
-        if 1 == self.shared.num_tx.fetch_sub(1, SeqCst) {
+        if 1 == self.shared.num_tx.fetch_sub(1, AcqRel) {
             self.close_channel();
         }
+    }
+}
+
+impl<T> WeakSender<T> {
+    
+    
+    
+    
+    #[must_use]
+    pub fn upgrade(&self) -> Option<Sender<T>> {
+        let mut tx_count = self.shared.num_tx.load(Acquire);
+
+        loop {
+            if tx_count == 0 {
+                
+                return None;
+            }
+
+            match self
+                .shared
+                .num_tx
+                .compare_exchange_weak(tx_count, tx_count + 1, Relaxed, Acquire)
+            {
+                Ok(_) => {
+                    return Some(Sender {
+                        shared: self.shared.clone(),
+                    })
+                }
+                Err(prev_count) => tx_count = prev_count,
+            }
+        }
+    }
+
+    
+    pub fn strong_count(&self) -> usize {
+        self.shared.num_tx.load(Acquire)
+    }
+
+    
+    pub fn weak_count(&self) -> usize {
+        self.shared.num_weak_tx.load(Acquire)
+    }
+}
+
+impl<T> Clone for WeakSender<T> {
+    fn clone(&self) -> WeakSender<T> {
+        let shared = self.shared.clone();
+        shared.num_weak_tx.fetch_add(1, Relaxed);
+
+        Self { shared }
+    }
+}
+
+impl<T> Drop for WeakSender<T> {
+    fn drop(&mut self) {
+        self.shared.num_weak_tx.fetch_sub(1, AcqRel);
     }
 }
 
@@ -1057,7 +1225,7 @@ impl<T> Receiver<T> {
         let idx = (self.next & self.shared.mask as u64) as usize;
 
         
-        let mut slot = self.shared.buffer[idx].read().unwrap();
+        let mut slot = self.shared.buffer[idx].lock();
 
         if slot.pos != self.next {
             
@@ -1074,7 +1242,7 @@ impl<T> Receiver<T> {
             let mut tail = self.shared.tail.lock();
 
             
-            slot = self.shared.buffer[idx].read().unwrap();
+            slot = self.shared.buffer[idx].lock();
 
             
             
@@ -1158,6 +1326,42 @@ impl<T> Receiver<T> {
         self.next = self.next.wrapping_add(1);
 
         Ok(RecvGuard { slot })
+    }
+
+    
+    pub fn sender_strong_count(&self) -> usize {
+        self.shared.num_tx.load(Acquire)
+    }
+
+    
+    pub fn sender_weak_count(&self) -> usize {
+        self.shared.num_weak_tx.load(Acquire)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_closed(&self) -> bool {
+        
+        self.shared.num_tx.load(Acquire) == 0
     }
 }
 
@@ -1262,8 +1466,7 @@ impl<T: Clone> Receiver<T> {
     
     
     pub async fn recv(&mut self) -> Result<T, RecvError> {
-        let fut = Recv::new(self);
-        fut.await
+        cooperative(Recv::new(self)).await
     }
 
     
@@ -1346,6 +1549,12 @@ impl<T> Drop for Receiver<T> {
 
         tail.rx_cnt -= 1;
         let until = tail.pos;
+        let remaining_rx = tail.rx_cnt;
+
+        if remaining_rx == 0 {
+            self.shared.notify_last_rx_drop.notify_waiters();
+            tail.closed = true;
+        }
 
         drop(tail);
 
@@ -1367,12 +1576,12 @@ impl<'a, T> Recv<'a, T> {
     fn new(receiver: &'a mut Receiver<T>) -> Recv<'a, T> {
         Recv {
             receiver,
-            waiter: UnsafeCell::new(Waiter {
+            waiter: WaiterCell(UnsafeCell::new(Waiter {
                 queued: AtomicBool::new(false),
                 waker: None,
                 pointers: linked_list::Pointers::new(),
                 _p: PhantomPinned,
-            }),
+            })),
         }
     }
 
@@ -1384,7 +1593,7 @@ impl<'a, T> Recv<'a, T> {
             is_unpin::<&mut Receiver<T>>();
 
             let me = self.get_unchecked_mut();
-            (me.receiver, &me.waiter)
+            (me.receiver, &me.waiter.0)
         }
     }
 }
@@ -1418,6 +1627,7 @@ impl<'a, T> Drop for Recv<'a, T> {
         
         let queued = self
             .waiter
+            .0
             .with(|ptr| unsafe { (*ptr).queued.load(Acquire) });
 
         
@@ -1432,6 +1642,7 @@ impl<'a, T> Drop for Recv<'a, T> {
             
             let queued = self
                 .waiter
+                .0
                 .with_mut(|ptr| unsafe { (*ptr).queued.load(Relaxed) });
 
             if queued {
@@ -1440,7 +1651,7 @@ impl<'a, T> Drop for Recv<'a, T> {
                 
                 
                 unsafe {
-                    self.waiter.with_mut(|ptr| {
+                    self.waiter.0.with_mut(|ptr| {
                         tail.waiters.remove((&mut *ptr).into());
                     });
                 }
@@ -1475,6 +1686,12 @@ impl<T> fmt::Debug for Sender<T> {
     }
 }
 
+impl<T> fmt::Debug for WeakSender<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(fmt, "broadcast::WeakSender")
+    }
+}
+
 impl<T> fmt::Debug for Receiver<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "broadcast::Receiver")
@@ -1486,7 +1703,7 @@ impl<'a, T> RecvGuard<'a, T> {
     where
         T: Clone,
     {
-        self.slot.val.with(|ptr| unsafe { (*ptr).clone() })
+        self.slot.val.clone()
     }
 }
 
@@ -1494,8 +1711,7 @@ impl<'a, T> Drop for RecvGuard<'a, T> {
     fn drop(&mut self) {
         
         if 1 == self.slot.rem.fetch_sub(1, SeqCst) {
-            
-            self.slot.val.with_mut(|ptr| unsafe { *ptr = None });
+            self.slot.val = None;
         }
     }
 }

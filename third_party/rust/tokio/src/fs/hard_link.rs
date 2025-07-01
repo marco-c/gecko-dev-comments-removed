@@ -36,9 +36,9 @@ use std::path::Path;
 
 
 
-pub async fn hard_link(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let src = src.as_ref().to_owned();
-    let dst = dst.as_ref().to_owned();
+pub async fn hard_link(original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+    let original = original.as_ref().to_owned();
+    let link = link.as_ref().to_owned();
 
-    asyncify(move || std::fs::hard_link(src, dst)).await
+    asyncify(move || std::fs::hard_link(original, link)).await
 }

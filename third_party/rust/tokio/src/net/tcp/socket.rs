@@ -469,6 +469,7 @@ impl TcpSocket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
+        target_os = "haiku"
     )))]
     #[cfg_attr(
         docsrs,
@@ -477,6 +478,7 @@ impl TcpSocket {
             target_os = "redox",
             target_os = "solaris",
             target_os = "illumos",
+            target_os = "haiku"
         ))))
     )]
     pub fn tos(&self) -> io::Result<u32> {
@@ -496,6 +498,7 @@ impl TcpSocket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
+        target_os = "haiku"
     )))]
     #[cfg_attr(
         docsrs,
@@ -504,6 +507,7 @@ impl TcpSocket {
             target_os = "redox",
             target_os = "solaris",
             target_os = "illumos",
+            target_os = "haiku"
         ))))
     )]
     pub fn set_tos(&self, tos: u32) -> io::Result<()> {
@@ -752,6 +756,7 @@ impl TcpSocket {
     
     
     
+    
     pub fn from_std_stream(std_stream: std::net::TcpStream) -> TcpSocket {
         #[cfg(unix)]
         {
@@ -787,6 +792,9 @@ impl fmt::Debug for TcpSocket {
     }
 }
 
+
+
+#[cfg(unix)]
 cfg_unix! {
     impl AsRawFd for TcpSocket {
         fn as_raw_fd(&self) -> RawFd {

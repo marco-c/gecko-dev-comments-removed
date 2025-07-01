@@ -3,6 +3,8 @@
 
 
 
+use std::any::Any;
+
 pub(crate) struct SyncWrapper<T> {
     value: T,
 }
@@ -22,5 +24,14 @@ impl<T> SyncWrapper<T> {
 
     pub(crate) fn into_inner(self) -> T {
         self.value
+    }
+}
+
+impl SyncWrapper<Box<dyn Any + Send>> {
+    
+    pub(crate) fn downcast_ref_sync<T: Any + Sync>(&self) -> Option<&T> {
+        
+        
+        self.value.downcast_ref()
     }
 }

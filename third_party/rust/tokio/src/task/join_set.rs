@@ -4,13 +4,12 @@
 
 
 
-use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::{fmt, panic};
 
 use crate::runtime::Handle;
-#[cfg(tokio_unstable)]
 use crate::task::Id;
 use crate::task::{unconstrained, AbortHandle, JoinError, JoinHandle, LocalSet};
 use crate::util::IdleNotifiedSet;
@@ -281,7 +280,7 @@ impl<T: 'static> JoinSet<T> {
     
     
     pub async fn join_next(&mut self) -> Option<Result<T, JoinError>> {
-        crate::future::poll_fn(|cx| self.poll_join_next(cx)).await
+        std::future::poll_fn(|cx| self.poll_join_next(cx)).await
     }
 
     
@@ -300,10 +299,8 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub async fn join_next_with_id(&mut self) -> Option<Result<(Id, T), JoinError>> {
-        crate::future::poll_fn(|cx| self.poll_join_next_with_id(cx)).await
+        std::future::poll_fn(|cx| self.poll_join_next_with_id(cx)).await
     }
 
     
@@ -338,8 +335,6 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub fn try_join_next_with_id(&mut self) -> Option<Result<(Id, T), JoinError>> {
         
         loop {
@@ -372,6 +367,79 @@ impl<T: 'static> JoinSet<T> {
     pub async fn shutdown(&mut self) {
         self.abort_all();
         while self.join_next().await.is_some() {}
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn join_all(mut self) -> Vec<T> {
+        let mut output = Vec::with_capacity(self.len());
+
+        while let Some(res) = self.join_next().await {
+            match res {
+                Ok(t) => output.push(t),
+                Err(err) if err.is_panic() => panic::resume_unwind(err.into_panic()),
+                Err(err) => panic!("{err}"),
+            }
+        }
+        output
     }
 
     
@@ -471,8 +539,6 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub fn poll_join_next_with_id(
         &mut self,
         cx: &mut Context<'_>,

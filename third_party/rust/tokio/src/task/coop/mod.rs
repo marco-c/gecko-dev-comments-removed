@@ -1,10 +1,70 @@
 #![cfg_attr(not(feature = "full"), allow(dead_code))]
+#![cfg_attr(not(feature = "rt"), allow(unreachable_pub))]
 
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cfg_rt! {
+    mod consume_budget;
+    pub use consume_budget::consume_budget;
+
+    mod unconstrained;
+    pub use unconstrained::{unconstrained, Unconstrained};
+}
 
 
 
@@ -57,7 +117,7 @@ impl Budget {
     }
 
     
-    pub(super) const fn unconstrained() -> Budget {
+    pub(crate) const fn unconstrained() -> Budget {
         Budget(None)
     }
 
@@ -107,8 +167,60 @@ fn with_budget<R>(budget: Budget, f: impl FnOnce() -> R) -> R {
     f()
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[inline(always)]
-pub(crate) fn has_budget_remaining() -> bool {
+#[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
+pub fn has_budget_remaining() -> bool {
     
     
     context::budget(|cell| cell.get().has_remaining()).unwrap_or(true)
@@ -135,8 +247,11 @@ cfg_rt! {
 }
 
 cfg_coop! {
+    use pin_project_lite::pin_project;
     use std::cell::Cell;
-    use std::task::{Context, Poll};
+    use std::future::Future;
+    use std::pin::Pin;
+    use std::task::{ready, Context, Poll};
 
     #[must_use]
     pub(crate) struct RestoreOnPending(Cell<Budget>);
@@ -190,10 +305,25 @@ cfg_coop! {
 
                 Poll::Ready(restore)
             } else {
-                cx.waker().wake_by_ref();
+                register_waker(cx);
                 Poll::Pending
             }
         }).unwrap_or(Poll::Ready(RestoreOnPending(Cell::new(Budget::unconstrained()))))
+    }
+
+    /// Returns `Poll::Ready` if the current task has budget to consume, and `Poll::Pending` otherwise.
+    ///
+    /// Note that in contrast to `poll_proceed`, this method does not consume any budget and is used when
+    /// polling for budget availability.
+    #[inline]
+    pub(crate) fn poll_budget_available(cx: &mut Context<'_>) -> Poll<()> {
+        if has_budget_remaining() {
+            Poll::Ready(())
+        } else {
+            register_waker(cx);
+
+            Poll::Pending
+        }
     }
 
     cfg_rt! {
@@ -210,11 +340,19 @@ cfg_coop! {
             #[inline(always)]
             fn inc_budget_forced_yield_count() {}
         }
+
+        fn register_waker(cx: &mut Context<'_>) {
+            context::defer(cx.waker());
+        }
     }
 
     cfg_not_rt! {
         #[inline(always)]
         fn inc_budget_forced_yield_count() {}
+
+        fn register_waker(cx: &mut Context<'_>) {
+            cx.waker().wake_by_ref()
+        }
     }
 
     impl Budget {
@@ -240,6 +378,44 @@ cfg_coop! {
             self.0.is_none()
         }
     }
+
+    pin_project! {
+        /// Future wrapper to ensure cooperative scheduling.
+        ///
+        /// When being polled `poll_proceed` is called before the inner future is polled to check
+        /// if the inner future has exceeded its budget. If the inner future resolves, this will
+        /// automatically call `RestoreOnPending::made_progress` before resolving this future with
+        /// the result of the inner one. If polling the inner future is pending, polling this future
+        /// type will also return a `Poll::Pending`.
+        #[must_use = "futures do nothing unless polled"]
+        pub(crate) struct Coop<F: Future> {
+            #[pin]
+            pub(crate) fut: F,
+        }
+    }
+
+    impl<F: Future> Future for Coop<F> {
+        type Output = F::Output;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let coop = ready!(poll_proceed(cx));
+            let me = self.project();
+            if let Poll::Ready(ret) = me.fut.poll(cx) {
+                coop.made_progress();
+                Poll::Ready(ret)
+            } else {
+                Poll::Pending
+            }
+        }
+    }
+
+    /// Run a future with a budget constraint for cooperative scheduling.
+    /// If the future exceeds its budget while being polled, control is yielded back to the
+    /// runtime.
+    #[inline]
+    pub(crate) fn cooperative<F: Future>(fut: F) -> Coop<F> {
+        Coop { fut }
+    }
 }
 
 #[cfg(all(test, not(loom)))]
@@ -255,7 +431,7 @@ mod test {
 
     #[test]
     fn budgeting() {
-        use futures::future::poll_fn;
+        use std::future::poll_fn;
         use tokio_test::*;
 
         assert!(get().0.is_none());
@@ -312,7 +488,7 @@ mod test {
             }
 
             let mut task = task::spawn(poll_fn(|cx| {
-                let coop = ready!(poll_proceed(cx));
+                let coop = std::task::ready!(poll_proceed(cx));
                 coop.made_progress();
                 Poll::Ready(())
             }));

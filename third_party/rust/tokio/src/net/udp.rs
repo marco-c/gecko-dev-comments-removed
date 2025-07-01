@@ -1,10 +1,11 @@
 use crate::io::{Interest, PollEvented, ReadBuf, Ready};
 use crate::net::{to_socket_addrs, ToSocketAddrs};
+use crate::util::check_socket_for_blocking;
 
 use std::fmt;
 use std::io;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 
 cfg_io_util! {
     use bytes::BufMut;
@@ -145,6 +146,7 @@ impl UdpSocket {
     
     
     
+    
     pub async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
         let addrs = to_socket_addrs(addr).await?;
         let mut last_err = None;
@@ -217,8 +219,14 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
     #[track_caller]
     pub fn from_std(socket: net::UdpSocket) -> io::Result<UdpSocket> {
+        check_socket_for_blocking(&socket)?;
+
         let io = mio::net::UdpSocket::from_std(socket);
         UdpSocket::new(io)
     }
@@ -290,6 +298,7 @@ impl UdpSocket {
         self.io.local_addr()
     }
 
+    
     
     
     
@@ -1162,8 +1171,8 @@ impl UdpSocket {
     
     
     
-    pub async fn send_to<A: ToSocketAddrs>(&self, buf: &[u8], target: A) -> io::Result<usize> {
-        let mut addrs = to_socket_addrs(target).await?;
+    pub async fn send_to<A: ToSocketAddrs>(&self, buf: &[u8], addr: A) -> io::Result<usize> {
+        let mut addrs = to_socket_addrs(addr).await?;
 
         match addrs.next() {
             Some(target) => self.send_to_addr(buf, target).await,
@@ -1544,6 +1553,148 @@ impl UdpSocket {
     
     
     
+    pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.io
+            .registration()
+            .async_io(Interest::READABLE, || self.io.peek(buf))
+            .await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_peek(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<()>> {
+        #[allow(clippy::blocks_in_conditions)]
+        let n = ready!(self.io.registration().poll_read_io(cx, || {
+            // Safety: will not read the maybe uninitialized bytes.
+            let b = unsafe {
+                &mut *(buf.unfilled_mut() as *mut [std::mem::MaybeUninit<u8>] as *mut [u8])
+            };
+
+            self.io.peek(b)
+        }))?;
+
+        
+        unsafe {
+            buf.assume_init(n);
+        }
+        buf.advance(n);
+        Poll::Ready(Ok(()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.io
+            .registration()
+            .try_io(Interest::READABLE, || self.io.peek(buf))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub async fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.io
@@ -1864,6 +2015,7 @@ impl UdpSocket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
+        target_os = "haiku"
     )))]
     #[cfg_attr(
         docsrs,
@@ -1872,6 +2024,7 @@ impl UdpSocket {
             target_os = "redox",
             target_os = "solaris",
             target_os = "illumos",
+            target_os = "haiku"
         ))))
     )]
     pub fn tos(&self) -> io::Result<u32> {
@@ -1891,6 +2044,7 @@ impl UdpSocket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
+        target_os = "haiku"
     )))]
     #[cfg_attr(
         docsrs,
@@ -1899,6 +2053,7 @@ impl UdpSocket {
             target_os = "redox",
             target_os = "solaris",
             target_os = "illumos",
+            target_os = "haiku"
         ))))
     )]
     pub fn set_tos(&self, tos: u32) -> io::Result<()> {
@@ -1971,6 +2126,7 @@ impl UdpSocket {
         self.io.leave_multicast_v6(multiaddr, interface)
     }
 
+    
     
     
     

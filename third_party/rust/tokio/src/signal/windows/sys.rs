@@ -33,6 +33,21 @@ fn new(signum: u32) -> io::Result<RxFuture> {
     Ok(RxFuture::new(rx))
 }
 
+fn event_requires_infinite_sleep_in_handler(signum: u32) -> bool {
+    
+    
+    
+    
+    
+    
+    match signum {
+        console::CTRL_CLOSE_EVENT => true,
+        console::CTRL_LOGOFF_EVENT => true,
+        console::CTRL_SHUTDOWN_EVENT => true,
+        _ => false,
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct OsStorage {
     ctrl_break: EventInfo,
@@ -114,7 +129,15 @@ unsafe extern "system" fn handler(ty: u32) -> BOOL {
     
     
     
-    if globals.broadcast() {
+    let event_was_handled = globals.broadcast();
+
+    if event_was_handled && event_requires_infinite_sleep_in_handler(ty) {
+        loop {
+            std::thread::park();
+        }
+    }
+
+    if event_was_handled {
         1
     } else {
         
@@ -130,6 +153,16 @@ mod tests {
 
     use tokio_test::{assert_ok, assert_pending, assert_ready_ok, task};
 
+    unsafe fn raise_event(signum: u32) {
+        if event_requires_infinite_sleep_in_handler(signum) {
+            
+            
+            std::thread::spawn(move || super::handler(signum));
+        } else {
+            super::handler(signum);
+        }
+    }
+
     #[test]
     fn ctrl_c() {
         let rt = rt();
@@ -143,7 +176,7 @@ mod tests {
         
         
         unsafe {
-            super::handler(console::CTRL_C_EVENT);
+            raise_event(console::CTRL_C_EVENT);
         }
 
         assert_ready_ok!(ctrl_c.poll());
@@ -160,7 +193,7 @@ mod tests {
             
             
             unsafe {
-                super::handler(console::CTRL_BREAK_EVENT);
+                raise_event(console::CTRL_BREAK_EVENT);
             }
 
             ctrl_break.recv().await.unwrap();
@@ -178,7 +211,7 @@ mod tests {
             
             
             unsafe {
-                super::handler(console::CTRL_CLOSE_EVENT);
+                raise_event(console::CTRL_CLOSE_EVENT);
             }
 
             ctrl_close.recv().await.unwrap();
@@ -196,7 +229,7 @@ mod tests {
             
             
             unsafe {
-                super::handler(console::CTRL_SHUTDOWN_EVENT);
+                raise_event(console::CTRL_SHUTDOWN_EVENT);
             }
 
             ctrl_shutdown.recv().await.unwrap();
@@ -214,7 +247,7 @@ mod tests {
             
             
             unsafe {
-                super::handler(console::CTRL_LOGOFF_EVENT);
+                raise_event(console::CTRL_LOGOFF_EVENT);
             }
 
             ctrl_logoff.recv().await.unwrap();

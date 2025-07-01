@@ -1,6 +1,6 @@
 use crate::runtime::context;
 
-use std::fmt;
+use std::{fmt, num::NonZeroU64};
 
 
 
@@ -15,16 +15,9 @@ use std::fmt;
 
 
 
-
-
-
-
-
-
-#[cfg_attr(docsrs, doc(cfg(all(feature = "rt", tokio_unstable))))]
-#[cfg_attr(not(tokio_unstable), allow(unreachable_pub))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "rt"))))]
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-pub struct Id(pub(crate) u64);
+pub struct Id(pub(crate) NonZeroU64);
 
 
 
@@ -36,12 +29,6 @@ pub struct Id(pub(crate) u64);
 
 
 
-
-
-
-
-
-#[cfg_attr(not(tokio_unstable), allow(unreachable_pub))]
 #[track_caller]
 pub fn id() -> Id {
     context::current_task_id().expect("Can't get a task id when not inside a task")
@@ -55,12 +42,6 @@ pub fn id() -> Id {
 
 
 
-
-
-
-
-
-#[cfg_attr(not(tokio_unstable), allow(unreachable_pub))]
 #[track_caller]
 pub fn try_id() -> Option<Id> {
     context::current_task_id()
@@ -78,21 +59,22 @@ impl Id {
         use crate::loom::sync::atomic::StaticAtomicU64;
 
         #[cfg(all(test, loom))]
-        {
-            crate::loom::lazy_static! {
-                static ref NEXT_ID: StaticAtomicU64 = StaticAtomicU64::new(1);
-            }
-            Self(NEXT_ID.fetch_add(1, Relaxed))
+        crate::loom::lazy_static! {
+            static ref NEXT_ID: StaticAtomicU64 = StaticAtomicU64::new(1);
         }
 
         #[cfg(not(all(test, loom)))]
-        {
-            static NEXT_ID: StaticAtomicU64 = StaticAtomicU64::new(1);
-            Self(NEXT_ID.fetch_add(1, Relaxed))
+        static NEXT_ID: StaticAtomicU64 = StaticAtomicU64::new(1);
+
+        loop {
+            let id = NEXT_ID.fetch_add(1, Relaxed);
+            if let Some(id) = NonZeroU64::new(id) {
+                return Self(id);
+            }
         }
     }
 
     pub(crate) fn as_u64(&self) -> u64 {
-        self.0
+        self.0.get()
     }
 }

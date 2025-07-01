@@ -11,9 +11,9 @@ use std::path::Path;
 
 
 
-pub async fn symlink_dir(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let src = src.as_ref().to_owned();
-    let dst = dst.as_ref().to_owned();
+pub async fn symlink_dir(original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+    let original = original.as_ref().to_owned();
+    let link = link.as_ref().to_owned();
 
-    asyncify(move || std::os::windows::fs::symlink_dir(src, dst)).await
+    asyncify(move || std::os::windows::fs::symlink_dir(original, link)).await
 }

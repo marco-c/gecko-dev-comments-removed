@@ -1,69 +1,81 @@
+macro_rules! doc {
+    ($join:item) => {
+        /// Waits on multiple concurrent branches, returning when **all** branches
+        /// complete.
+        ///
+        /// The `join!` macro must be used inside of async functions, closures, and
+        /// blocks.
+        ///
+        /// The `join!` macro takes a list of async expressions and evaluates them
+        /// concurrently on the same task. Each async expression evaluates to a future
+        /// and the futures from each expression are multiplexed on the current task.
+        ///
+        /// When working with async expressions returning `Result`, `join!` will wait
+        /// for **all** branches complete regardless if any complete with `Err`. Use
+        /// [`try_join!`] to return early when `Err` is encountered.
+        ///
+        /// [`try_join!`]: crate::try_join
+        ///
+        /// # Notes
+        ///
+        /// The supplied futures are stored inline and do not require allocating a
+        /// `Vec`.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[macro_export]
+        #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+        $join
+    };
+}
 
+#[cfg(doc)]
+doc! {macro_rules! join {
+    ($($future:expr),*) => { unimplemented!() }
+}}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[macro_export]
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
-macro_rules! join {
+#[cfg(not(doc))]
+doc! {macro_rules! join {
     (@ {
-        
-        
+        // One `_` for each branch in the `join!` macro. This is not used once
+        // normalization is complete.
         ( $($count:tt)* )
 
-        
+        // The expression `0+1+1+ ... +1` equal to the number of branches.
         ( $($total:tt)* )
 
-        
+        // Normalized join! branches
         $( ( $($skip:tt)* ) $e:expr, )*
 
     }) => {{
@@ -150,17 +162,17 @@ macro_rules! join {
         }).await
     }};
 
-    
+    // ===== Normalize =====
 
     (@ { ( $($s:tt)* ) ( $($n:tt)* ) $($t:tt)* } $e:expr, $($r:tt)* ) => {
         $crate::join!(@{ ($($s)* _) ($($n)* + 1) $($t)* ($($s)*) $e, } $($r)*)
     };
 
-    
+    // ===== Entry point =====
 
     ( $($e:expr),+ $(,)?) => {
         $crate::join!(@{ () (0) } $($e,)*)
     };
 
     () => { async {}.await }
-}
+}}

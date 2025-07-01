@@ -154,7 +154,7 @@ impl Driver {
                 
                 
             }
-            Err(e) => panic!("unexpected error when polling the I/O driver: {:?}", e),
+            Err(e) => panic!("unexpected error when polling the I/O driver: {e:?}"),
         }
 
         
@@ -168,8 +168,7 @@ impl Driver {
                 self.signal_ready = true;
             } else {
                 let ready = Ready::from_mio(event);
-                
-                let ptr: *const ScheduledIo = token.0 as *const _;
+                let ptr = super::EXPOSE_IO.from_exposed_addr(token.0);
 
                 
                 

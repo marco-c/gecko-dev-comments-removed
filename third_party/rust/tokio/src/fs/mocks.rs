@@ -62,6 +62,13 @@ impl Read for MockFile {
 
 impl Read for &'_ MockFile {
     fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
+        
+        
+        
+        
+        
+        
+        dst.fill(0);
         self.inner_read(dst)
     }
 }
@@ -129,7 +136,7 @@ impl<T> Future for JoinHandle<T> {
 
         match Pin::new(&mut self.rx).poll(cx) {
             Poll::Ready(Ok(v)) => Poll::Ready(Ok(v)),
-            Poll::Ready(Err(e)) => panic!("error = {:?}", e),
+            Poll::Ready(Err(e)) => panic!("error = {e:?}"),
             Poll::Pending => Poll::Pending,
         }
     }
