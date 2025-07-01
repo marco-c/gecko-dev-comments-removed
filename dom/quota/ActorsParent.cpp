@@ -6107,21 +6107,21 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
     QM_TRY_INSPECT(const bool& created, EnsureOriginDirectory(*directory));
 
     QM_TRY_INSPECT(
-        const int64_t& timestamp,
+        const FullOriginMetadata& fullOriginMetadata,
         ([this, created, &directory,
-          &aOriginMetadata]() -> Result<int64_t, nsresult> {
+          &aOriginMetadata]() -> Result<FullOriginMetadata, nsresult> {
           if (created) {
-            const int64_t timestamp = PR_Now();
+            FullOriginMetadata fullOriginMetadata{
+                aOriginMetadata,
+                OriginStateMetadata{ PR_Now(),
+                                     false,
+                                     true}};
 
             
-            QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(
-                *directory,
-                FullOriginMetadata{
-                    aOriginMetadata,
-                    OriginStateMetadata{timestamp,  false,
-                                         true}})));
+            QM_TRY(MOZ_TO_RESULT(
+                CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
 
-            return timestamp;
+            return fullOriginMetadata;
           }
 
           
@@ -6130,14 +6130,10 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
 
           MOZ_ASSERT(metadata.mLastAccessTime <= PR_Now());
 
-          return metadata.mLastAccessTime;
+          return metadata;
         }()));
 
-    QM_TRY(MOZ_TO_RESULT(InitializeOrigin(
-        directory,
-        FullOriginMetadata{aOriginMetadata,
-                           OriginStateMetadata{timestamp,  false,
-                                                true}})));
+    QM_TRY(MOZ_TO_RESULT(InitializeOrigin(directory, fullOriginMetadata)));
 
     mInitializedOriginsInternal.AppendElement(aOriginMetadata.mOrigin);
 
@@ -6285,16 +6281,15 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
       return std::pair(std::move(directory), false);
     }
 
-    if (!aCreateIfNonExistent) {
-      const int64_t timestamp = PR_Now();
+    FullOriginMetadata fullOriginMetadata{
+        aOriginMetadata, OriginStateMetadata{ PR_Now(),
+                                              false,
+                                              false}};
 
-      InitQuotaForOrigin(
-          FullOriginMetadata{
-              aOriginMetadata,
-              OriginStateMetadata{timestamp,  false,
-                                   false}},
-          ClientUsageArray(),  0,
-           false);
+    if (!aCreateIfNonExistent) {
+      InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
+                          0,
+                          false);
 
       return std::pair(std::move(directory), false);
     }
@@ -6302,12 +6297,6 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     QM_TRY_INSPECT(const bool& created, EnsureOriginDirectory(*directory));
 
     if (created) {
-      const int64_t timestamp = PR_Now();
-
-      FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
-          aOriginMetadata, OriginStateMetadata{timestamp,  false,
-                                                false}};
-
       
       
       
@@ -6315,11 +6304,8 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
       AddTemporaryOrigin(fullOriginMetadata);
 
       
-      QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(
-          *directory, FullOriginMetadata{
-                          aOriginMetadata,
-                          OriginStateMetadata{timestamp,  false,
-                                               false}})));
+      QM_TRY(MOZ_TO_RESULT(
+          CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
 
       
       InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
