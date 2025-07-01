@@ -444,20 +444,14 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     mStateManager.mAsyncResourceUpdates.reset();
   }
 
-  if (aRenderOffscreen) {
-    
-    
-    
-    
-    
-    mStateManager.DiscardUnusedImagesInTransaction(resourceUpdates);
-  } else {
+  if (!aRenderOffscreen) {
     
     
     
     mStateManager.DiscardImagesInTransaction(resourceUpdates);
-    WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
   }
+
+  WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
 
   
   

@@ -23,6 +23,10 @@ struct Keyframe;
 struct PseudoStyleRequest;
 struct StyleLockedDeclarationBlock;
 
+namespace gfx {
+class DataSourceSurface;
+}
+
 namespace layers {
 class RenderRootStateManager;
 }
@@ -100,19 +104,9 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
 
   Maybe<nsSize> GetOldSize(nsAtom* aName) const;
   Maybe<nsSize> GetNewSize(nsAtom* aName) const;
-  
-  
-  
-  const wr::ImageKey* GetOrCreateOldImageKey(nsAtom* aName,
-                                             layers::RenderRootStateManager*,
-                                             wr::IpcResourceUpdateQueue&) const;
-  
-  
-  
-  
-  const wr::ImageKey* ReadOldImageKey(nsAtom* aName,
-                                      layers::RenderRootStateManager*,
-                                      wr::IpcResourceUpdateQueue&) const;
+  const wr::ImageKey* GetOldImageKey(nsAtom* aName,
+                                     layers::RenderRootStateManager*,
+                                     wr::IpcResourceUpdateQueue&) const;
   const wr::ImageKey* GetNewImageKey(nsAtom* aName) const;
   const wr::ImageKey* GetImageKeyForCapturedFrame(
       nsIFrame* aFrame, layers::RenderRootStateManager*,
