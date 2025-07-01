@@ -3581,7 +3581,8 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
     FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
         originMetadata,
-        OriginStateMetadata{timestamp, accessed,  true}};
+        OriginStateMetadata{timestamp, accessed,  true},
+        ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
       
@@ -3609,8 +3610,7 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         
         
 
-        aQuotaManager.InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
-                                          0);
+        aQuotaManager.InitQuotaForOrigin(fullOriginMetadata);
       }
     }
   } else {

@@ -298,6 +298,14 @@ const int32_t kCacheVersion = 2;
 
 
 
+
+
+const uint32_t kMetadataSentinel = 0xABCD1234;
+
+
+
+
+
 int32_t MakeStorageVersion(uint32_t aMajorStorageVersion,
                            uint32_t aMinorStorageVersion) {
   return int32_t((aMajorStorageVersion << 16) + aMinorStorageVersion);
@@ -2559,9 +2567,7 @@ void QuotaManager::Shutdown() {
 }
 
 void QuotaManager::InitQuotaForOrigin(
-    const FullOriginMetadata& aFullOriginMetadata,
-    const ClientUsageArray& aClientUsages, uint64_t aUsageBytes,
-    bool aDirectoryExists) {
+    const FullOriginMetadata& aFullOriginMetadata, bool aDirectoryExists) {
   AssertIsOnIOThread();
   MOZ_ASSERT(IsBestEffortPersistenceType(aFullOriginMetadata.mPersistenceType));
 
@@ -2574,8 +2580,9 @@ void QuotaManager::InitQuotaForOrigin(
   groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
       groupInfo, aFullOriginMetadata.mOrigin,
       aFullOriginMetadata.mStorageOrigin, aFullOriginMetadata.mIsPrivate,
-      aClientUsages, aUsageBytes, aFullOriginMetadata.mLastAccessTime,
-      aFullOriginMetadata.mPersisted, aDirectoryExists));
+      aFullOriginMetadata.mClientUsages, aFullOriginMetadata.mOriginUsage,
+      aFullOriginMetadata.mLastAccessTime, aFullOriginMetadata.mPersisted,
+      aDirectoryExists));
 }
 
 void QuotaManager::DecreaseUsageForClient(const ClientMetadata& aClientMetadata,
@@ -2823,8 +2830,18 @@ nsresult QuotaManager::LoadQuota() {
           ClientUsageArray clientUsages;
           QM_TRY(MOZ_TO_RESULT(clientUsages.Deserialize(clientUsagesText)));
 
-          QM_TRY_INSPECT(const int64_t& usage,
+          fullOriginMetadata.mClientUsages = clientUsages;
+
+          QM_TRY_INSPECT(fullOriginMetadata.mOriginUsage,
                          MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 5));
+
+          
+          
+          
+          
+          
+          fullOriginMetadata.mQuotaVersion = kNoQuotaVersion;
+
           QM_TRY_UNWRAP(fullOriginMetadata.mLastAccessTime,
                         MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 6));
           QM_TRY_UNWRAP(fullOriginMetadata.mAccessed,
@@ -2906,6 +2923,19 @@ nsresult QuotaManager::LoadQuota() {
             QM_TRY(OkIf(fullOriginMetadata.mIsPrivate == metadata.mIsPrivate),
                    Err(NS_ERROR_FAILURE));
 
+            
+            
+            
+            
+
+            
+            
+            
+
+            
+            
+            
+
             MaybeCollectUnaccessedOrigin(metadata);
 
             AddTemporaryOrigin(metadata);
@@ -2916,7 +2946,7 @@ nsresult QuotaManager::LoadQuota() {
 
             AddTemporaryOrigin(fullOriginMetadata);
 
-            InitQuotaForOrigin(fullOriginMetadata, clientUsages, usage);
+            InitQuotaForOrigin(fullOriginMetadata);
           }
 
           return Ok{};
@@ -3428,7 +3458,8 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
         });
 
     FullOriginMetadata fullOriginMetadata{
-        aOriginMetadata, OriginStateMetadata{timestamp, accessed, persisted}};
+        aOriginMetadata, OriginStateMetadata{timestamp, accessed, persisted},
+        ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     
     
@@ -3489,6 +3520,17 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
   
   
   QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aFullOriginMetadata.mIsPrivate)));
+
+  QM_TRY(MOZ_TO_RESULT(stream->Write32(kMetadataSentinel)));
+
+  QM_TRY(MOZ_TO_RESULT(stream->Write32(aFullOriginMetadata.mQuotaVersion)));
+
+  QM_TRY(MOZ_TO_RESULT(stream->Write64(aFullOriginMetadata.mOriginUsage)));
+
+  nsCString clientUsagesText;
+  aFullOriginMetadata.mClientUsages.Serialize(clientUsagesText);
+
+  QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(clientUsagesText.get())));
 
   QM_TRY(MOZ_TO_RESULT(stream->Flush()));
 
@@ -3567,11 +3609,32 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, ReadBoolean));
   Unused << unusedData3;
 
-  QM_VERBOSEONLY_TRY_UNWRAP(const auto unexpectedData,
+  QM_VERBOSEONLY_TRY_UNWRAP(const auto sentinel,
                             MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read32));
 
-  if (unexpectedData) {
-    QM_TRY(MOZ_TO_RESULT(false));
+  if (sentinel) {
+    if (sentinel.ref() != kMetadataSentinel) {
+      QM_TRY(MOZ_TO_RESULT(false));
+    }
+
+    QM_TRY_UNWRAP(fullOriginMetadata.mQuotaVersion,
+                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read32));
+
+    QM_TRY_UNWRAP(fullOriginMetadata.mOriginUsage,
+                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read64));
+
+    QM_TRY_INSPECT(const auto& clientUsagesText,
+                   MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsCString, binaryStream,
+                                                     ReadCString));
+
+    ClientUsageArray clientUsages;
+    QM_TRY(MOZ_TO_RESULT(clientUsages.Deserialize(clientUsagesText)));
+
+    fullOriginMetadata.mClientUsages = clientUsages;
+  } else {
+    fullOriginMetadata.mQuotaVersion = kNoQuotaVersion;
+    fullOriginMetadata.mOriginUsage = 0;
+    fullOriginMetadata.mClientUsages = ClientUsageArray();
   }
 
   QM_TRY(MOZ_TO_RESULT(binaryStream->Close()));
@@ -4143,7 +4206,15 @@ nsresult QuotaManager::InitializeOrigin(
 
     QM_TRY(OkIf(usage.isValid()), NS_ERROR_FAILURE);
 
-    InitQuotaForOrigin(aFullOriginMetadata, clientUsages, usage.value());
+    FullOriginMetadata fullOriginMetadata = aFullOriginMetadata.Clone();
+
+    fullOriginMetadata.mAccessed = false;
+
+    fullOriginMetadata.mQuotaVersion = kCurrentQuotaVersion;
+    fullOriginMetadata.mOriginUsage = usage.value();
+    fullOriginMetadata.mClientUsages = clientUsages;
+
+    InitQuotaForOrigin(fullOriginMetadata);
   }
 
   SleepIfEnabled(
@@ -6115,7 +6186,8 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
                 aOriginMetadata,
                 OriginStateMetadata{ PR_Now(),
                                      false,
-                                     true}};
+                                     true},
+                ClientUsageArray(),  0, kCurrentQuotaVersion};
 
             
             QM_TRY(MOZ_TO_RESULT(
@@ -6282,14 +6354,14 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     }
 
     FullOriginMetadata fullOriginMetadata{
-        aOriginMetadata, OriginStateMetadata{ PR_Now(),
-                                              false,
-                                              false}};
+        aOriginMetadata,
+        OriginStateMetadata{ PR_Now(),
+                             false,
+                             false},
+        ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     if (!aCreateIfNonExistent) {
-      InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
-                          0,
-                          false);
+      InitQuotaForOrigin(fullOriginMetadata,  false);
 
       return std::pair(std::move(directory), false);
     }
@@ -6308,8 +6380,7 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
           CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
 
       
-      InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
-                          0);
+      InitQuotaForOrigin(fullOriginMetadata);
     } else {
       QM_TRY_INSPECT(const auto& metadata,
                      LoadFullOriginMetadataWithRestore(directory));
@@ -9721,7 +9792,9 @@ nsresult RestoreDirectoryMetadata2Helper::ProcessOriginDirectory(
       FullOriginMetadata{aOriginProps.mOriginMetadata,
                          OriginStateMetadata{aOriginProps.mTimestamp,
                                               true,
-                                              false}})));
+                                              false},
+                         ClientUsageArray(),  0,
+                         kNoQuotaVersion})));
 
   return NS_OK;
 }

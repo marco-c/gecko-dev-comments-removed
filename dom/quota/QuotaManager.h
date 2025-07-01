@@ -210,8 +210,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
   void InitQuotaForOrigin(const FullOriginMetadata& aFullOriginMetadata,
-                          const ClientUsageArray& aClientUsages,
-                          uint64_t aUsageBytes, bool aDirectoryExists = true);
+                          bool aDirectoryExists = true);
 
   
   void DecreaseUsageForClient(const ClientMetadata& aClientMetadata,

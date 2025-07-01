@@ -25,6 +25,46 @@ constexpr auto kSQLiteSuffix = u".sqlite"_ns;
 
 constexpr nsLiteralCString kUUIDOriginScheme = "uuid"_ns;
 
+
+
+
+
+
+
+
+
+
+
+const uint32_t kNoQuotaVersion = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const uint32_t kCurrentQuotaVersion = 1;
+
 }  
 
 #endif  
