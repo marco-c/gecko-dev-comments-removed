@@ -177,8 +177,8 @@ class MediaEngineSourceInterface {
 
 
   virtual uint32_t GetBestFitnessDistance(
-      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets)
-      const = 0;
+      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
+      const MediaEnginePrefs& aPrefs) const = 0;
 
   
 
@@ -245,8 +245,8 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   
   uint32_t GetBestFitnessDistance(
-      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets)
-      const override {
+      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
+      const MediaEnginePrefs& aPrefs) const override {
     return 0;
   }
 
