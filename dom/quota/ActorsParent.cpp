@@ -4278,6 +4278,30 @@ nsresult QuotaManager::InitializeOrigin(
     fullOriginMetadata.mOriginUsage = usage.value();
     fullOriginMetadata.mClientUsages = clientUsages;
 
+    if (StaticPrefs::
+            dom_quotaManager_originInitialization_updateOriginMetadata() &&
+        !fullOriginMetadata.Equals(aFullOriginMetadata)) {
+      
+      
+      
+
+      if (fullOriginMetadata.EqualsIgnoringOriginState(aFullOriginMetadata)) {
+        
+        
+
+        QM_TRY(MOZ_TO_RESULT(
+            SaveDirectoryMetadataHeader(*aDirectory, fullOriginMetadata)));
+
+      } else {
+        
+        
+        
+
+        QM_TRY(MOZ_TO_RESULT(
+            CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
+      }
+    }
+
     InitQuotaForOrigin(fullOriginMetadata);
   }
 
