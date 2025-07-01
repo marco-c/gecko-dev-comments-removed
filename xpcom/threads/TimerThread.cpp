@@ -807,14 +807,7 @@ TimerThread::Run() {
     VerifyTimerListConsistency();
 #endif
 
-    if (mSleeping) {
-      
-      uint32_t milliseconds = 100;
-      if (chaosModeActive) {
-        milliseconds = ChaosMode::randomUint32LessThan(200);
-      }
-      waitFor = TimeDuration::FromMilliseconds(milliseconds);
-    } else {
+    if (!mSleeping) {
       
       
       const TimeDuration allowedEarlyFiring =
@@ -935,6 +928,13 @@ TimerThread::Run() {
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
+    } else {
+      
+      uint32_t milliseconds = 100;
+      if (chaosModeActive) {
+        milliseconds = ChaosMode::randomUint32LessThan(200);
+      }
+      waitFor = TimeDuration::FromMilliseconds(milliseconds);
     }
 
     
