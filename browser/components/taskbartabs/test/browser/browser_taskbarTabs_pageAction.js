@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
+  TaskbarTabsPageAction:
+    "resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs",
 });
 
 sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
@@ -142,6 +144,34 @@ add_task(async function test_taskbar_tabs_page_action() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+});
+
+add_task(async function testRightClick() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: window.gBrowser,
+    url: BASE_URL,
+  });
+  
+  
+  
+  
+  
+  await TaskbarTabsPageAction.handleEvent({
+    type: "click",
+    button: 2,
+    target: document.getElementById("taskbar-tabs-button"),
+  });
+
+  const uri = Services.io.newURI(BASE_URL);
+  const taskbarTab = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+  is(
+    await TaskbarTabs.getCountForId(taskbarTab.id),
+    0,
+    "right-click did nothing"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
 });
 
 
