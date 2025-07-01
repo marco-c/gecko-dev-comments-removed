@@ -253,10 +253,12 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
         }));
   }
 
+  const bool isSending = mTransceiver->HasBeenUsedToSend();
+
   promises.AppendElement(InvokeAsync(
       mPipeline->mCallThread, __func__,
       [pipeline = mPipeline, trackName, mid = std::move(mid),
-       videoSsrcToRidMap = std::move(videoSsrcToRidMap),
+       videoSsrcToRidMap = std::move(videoSsrcToRidMap), isSending,
        audioCodec = mAudioCodec.Ref()] {
         auto report = MakeUnique<dom::RTCStatsCollection>();
         auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
@@ -265,7 +267,8 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
         nsString kind = asVideo.isNothing() ? u"audio"_ns : u"video"_ns;
         nsString idstr = kind + u"_"_ns;
         idstr.AppendInt(static_cast<uint32_t>(pipeline->Level()));
-
+        const bool isSendStable =
+            !pipeline->mConduit->IsShutdown() && isSending;
         for (uint32_t ssrc : pipeline->mConduit->GetLocalSSRCs()) {
           nsString localId = u"outbound_rtp_"_ns + idstr + u"_"_ns;
           localId.AppendInt(ssrc);
@@ -353,7 +356,8 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
               return;
             }
 
-            if (audioStats->packets_sent == 0) {
+            if (!isSendStable) {
+              
               
               
               
@@ -439,7 +443,7 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
               streamStats = Some(kv->second);
             }
 
-            if (!streamStats) {
+            if (!streamStats || !isSendStable) {
               
               
               
@@ -453,11 +457,6 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
                     streamStats->rtp_stats.Add(kv->second.rtp_stats);
                   }
                 });
-
-            if (streamStats->rtp_stats.first_packet_time ==
-                webrtc::Timestamp::PlusInfinity()) {
-              return;
-            }
 
             
             

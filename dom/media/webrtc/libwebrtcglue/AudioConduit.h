@@ -118,6 +118,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   RefPtr<GenericPromise> Shutdown() override;
 
+  
+  bool IsShutdown() const override;
+
   WebrtcAudioConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread);
 
@@ -195,6 +198,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void DeleteSendStream();
   void CreateRecvStream();
   void DeleteRecvStream();
+
+  
+  
+  void SetIsShutdown();
 
   
   
@@ -316,6 +323,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   MediaEventListener mReceiverRtpEventListener;   
   MediaEventListener mReceiverRtcpEventListener;  
   MediaEventListener mSenderRtcpEventListener;    
+
+  
+  
+  bool mIsShutdown = false;
 };
 
 }  

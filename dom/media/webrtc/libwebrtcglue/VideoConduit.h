@@ -133,6 +133,9 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
   RefPtr<GenericPromise> Shutdown() override;
 
+  
+  bool IsShutdown() const override;
+
   bool Denoising() const { return mDenoising; }
 
   uint8_t SpatialLayers() const { return mSpatialLayers; }
@@ -262,6 +265,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   void DeleteSendStream();
   void CreateRecvStream();
   void DeleteRecvStream();
+
+  
+  
+  void SetIsShutdown();
 
   void DeliverPacket(rtc::CopyOnWriteBuffer packet, PacketType type) override;
 
@@ -523,6 +530,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   MediaEventListener mReceiverRtpEventListener;   
   MediaEventListener mReceiverRtcpEventListener;  
   MediaEventListener mSenderRtcpEventListener;    
+
+  
+  
+  bool mIsShutdown = false;
 };
 }  
 

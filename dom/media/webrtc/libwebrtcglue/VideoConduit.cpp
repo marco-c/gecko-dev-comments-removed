@@ -1402,8 +1402,20 @@ RefPtr<GenericPromise> WebrtcVideoConduit::Shutdown() {
         
         mTransitionalSendStreamStats = Nothing();
 
+        SetIsShutdown();
+
         return GenericPromise::CreateAndResolve(true, __func__);
       });
+}
+
+bool WebrtcVideoConduit::IsShutdown() const {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  return mIsShutdown;
+}
+
+void WebrtcVideoConduit::SetIsShutdown() {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  mIsShutdown = true;
 }
 
 webrtc::VideoCodecMode WebrtcVideoConduit::CodecMode() const {
