@@ -13,6 +13,8 @@
 
 
 
+
+
 function navigateToJavascriptURL(reportOnly) {
     const params = new URLSearchParams(location.search);
 
@@ -82,6 +84,13 @@ function navigateToJavascriptURL(reportOnly) {
             submit.formTarget = target;
 
             return submit;
+        }
+
+        if (!!params.get("area")) {
+            const area = document.getElementById("area");
+            area.href = javaScriptURL;
+            area.target = target;
+            return area;
         }
 
         const anchor = document.getElementById("anchor");
