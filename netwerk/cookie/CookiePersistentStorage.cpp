@@ -2385,64 +2385,17 @@ void CookiePersistentStorage::CollectCookieJarSizeData() {
 void CookiePersistentStorage::RecordValidationTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<CookieService> cs = CookieService::GetSingleton();
-  if (!cs) {
-    
-    return;
-  }
+  nsTArray<RefPtr<nsICookie>> cookies;
+  GetAll(cookies);
 
-  struct CookieToAdd {
-    nsCString mBaseDomain;
-    OriginAttributes mOriginAttributes;
-    RefPtr<Cookie> mCookie;
-  };
+  for (nsICookie* rawCookie : cookies) {
+    Cookie* cookie = Cookie::Cast(rawCookie);
 
-  nsTArray<CookieToAdd> list;
-
-  for (const auto& entry : mHostTable) {
-    const CookieEntry::ArrayType& cookies = entry.GetCookies();
-    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-      Cookie* cookie = cookies[i];
-
-      RefPtr<CookieValidation> validation =
-          CookieValidation::Validate(cookie->ToIPC());
-      mozilla::glean::networking::cookie_db_validation
-          .Get(ValidationErrorToLabel(validation->Result()))
-          .Add(1);
-
-      
-      
-      switch (validation->Result()) {
-        case nsICookieValidation::eRejectedNoneRequiresSecure: {
-          RefPtr<Cookie> newCookie =
-              Cookie::Create(cookie->ToIPC(), entry.mOriginAttributes);
-          MOZ_ASSERT(newCookie);
-
-          newCookie->SetSameSite(nsICookie::SAMESITE_UNSET);
-          newCookie->SetCreationTime(cookie->CreationTime());
-
-          list.AppendElement(CookieToAdd{entry.mBaseDomain,
-                                         entry.mOriginAttributes, newCookie});
-          break;
-        }
-
-        default:
-          
-          break;
-      }
-    }
-  }
-
-  for (CookieToAdd& data : list) {
-    AddCookie(nullptr, data.mBaseDomain, data.mOriginAttributes, data.mCookie,
-              data.mCookie->CreationTime(), nullptr, VoidCString(), true,
-              !data.mOriginAttributes.mPartitionKey.IsEmpty(), nullptr,
-              nullptr);
-  }
-
-  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
-  if (os) {
-    os->NotifyObservers(nullptr, "cookies-validated", nullptr);
+    RefPtr<CookieValidation> validation =
+        CookieValidation::Validate(cookie->ToIPC());
+    mozilla::glean::networking::cookie_db_validation
+        .Get(ValidationErrorToLabel(validation->Result()))
+        .Add(1);
   }
 }
 
