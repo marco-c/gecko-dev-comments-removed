@@ -229,6 +229,9 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   DistanceCalculation mCalculation;
 
   
+  UniquePtr<MediaEnginePrefs> mPrefs;
+
+  
 
 
 
