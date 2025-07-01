@@ -737,12 +737,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
         return NS_ERROR_FAILURE;
       }
       break;
-    case ColorID::ThemedScrollbarInactive:
-      aColor = mThemedScrollbarInactive;
-      if (!ShouldUseThemedScrollbarColor(aID, aColor, mIsDark)) {
-        return NS_ERROR_FAILURE;
-      }
-      break;
     case ColorID::ThemedScrollbarThumb:
       aColor = mThemedScrollbarThumb;
       if (!ShouldUseThemedScrollbarColor(aID, aColor, mIsDark)) {
@@ -757,12 +751,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       break;
     case ColorID::ThemedScrollbarThumbActive:
       aColor = mThemedScrollbarThumbActive;
-      if (!ShouldUseThemedScrollbarColor(aID, aColor, mIsDark)) {
-        return NS_ERROR_FAILURE;
-      }
-      break;
-    case ColorID::ThemedScrollbarThumbInactive:
-      aColor = mThemedScrollbarThumbInactive;
       if (!ShouldUseThemedScrollbarColor(aID, aColor, mIsDark)) {
         return NS_ERROR_FAILURE;
       }
@@ -2131,85 +2119,7 @@ void nsLookAndFeel::PerThemeData::Init() {
 
   mIsDark = GetThemeIsDark();
 
-  GdkRGBA color;
-  
-  
-  style = GetStyleContext(MOZ_GTK_SCROLLBAR_VERTICAL);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  mThemedScrollbar = GDK_RGBA_TO_NS_RGBA(color);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
-                                         &color);
-  mThemedScrollbarInactive = GDK_RGBA_TO_NS_RGBA(color);
-
-  style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  mThemedScrollbar =
-      NS_ComposeColors(mThemedScrollbar, GDK_RGBA_TO_NS_RGBA(color));
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
-                                         &color);
-  mThemedScrollbarInactive =
-      NS_ComposeColors(mThemedScrollbarInactive, GDK_RGBA_TO_NS_RGBA(color));
-
-  style = GetStyleContext(MOZ_GTK_SCROLLBAR_THUMB_VERTICAL);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  mThemedScrollbarThumb = GDK_RGBA_TO_NS_RGBA(color);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
-                                         &color);
-  mThemedScrollbarThumbHover = GDK_RGBA_TO_NS_RGBA(color);
-  gtk_style_context_get_background_color(
-      style, GtkStateFlags(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE),
-      &color);
-  mThemedScrollbarThumbActive = GDK_RGBA_TO_NS_RGBA(color);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
-                                         &color);
-  mThemedScrollbarThumbInactive = GDK_RGBA_TO_NS_RGBA(color);
-
-  
-  const bool fallbackToUnthemedColors = [&] {
-    if (!StaticPrefs::widget_gtk_theme_scrollbar_colors_enabled()) {
-      return true;
-    }
-
-    if (!ShouldHonorThemeScrollbarColors()) {
-      return true;
-    }
-    
-    
-    if (!NS_GET_A(mThemedScrollbarThumb) ||
-        !NS_GET_A(mThemedScrollbarThumbHover) ||
-        !NS_GET_A(mThemedScrollbarThumbActive)) {
-      return true;
-    }
-    
-    
-    if (mThemedScrollbar == mThemedScrollbarThumb &&
-        NS_GET_A(mThemedScrollbar) == 0xff) {
-      return true;
-    }
-    return false;
-  }();
-
-  if (fallbackToUnthemedColors) {
-    if (mIsDark) {
-      
-      mThemedScrollbar = NS_RGB(0x31, 0x31, 0x31);
-      mThemedScrollbarInactive = NS_RGB(0x2d, 0x2d, 0x2d);
-      mThemedScrollbarThumb = NS_RGB(0xa3, 0xa4, 0xa4);
-      mThemedScrollbarThumbInactive = NS_RGB(0x59, 0x5a, 0x5a);
-    } else {
-      
-      mThemedScrollbar = NS_RGB(0xce, 0xce, 0xce);
-      mThemedScrollbarInactive = NS_RGB(0xec, 0xed, 0xef);
-      mThemedScrollbarThumb = NS_RGB(0x82, 0x81, 0x7e);
-      mThemedScrollbarThumbInactive = NS_RGB(0xce, 0xcf, 0xce);
-    }
-
-    mThemedScrollbarThumbHover = ThemeColors::AdjustUnthemedScrollbarThumbColor(
-        mThemedScrollbarThumb, dom::ElementState::HOVER);
-    mThemedScrollbarThumbActive =
-        ThemeColors::AdjustUnthemedScrollbarThumbColor(
-            mThemedScrollbarThumb, dom::ElementState::ACTIVE);
-  }
+  GdkRGBA color{};
 
   
   
@@ -2240,6 +2150,77 @@ void nsLookAndFeel::PerThemeData::Init() {
   style = GetStyleContext(MOZ_GTK_TOOLTIP);
   mInfo.mBg = GetBackgroundColor(style, mInfo.mFg);
   mTooltipRadius = GetBorderRadius(style);
+
+  
+  
+  {
+    style = GetStyleContext(MOZ_GTK_SCROLLBAR_VERTICAL);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                           &color);
+    mThemedScrollbar = GDK_RGBA_TO_NS_RGBA(color);
+
+    style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                           &color);
+    mThemedScrollbar =
+        NS_ComposeColors(mThemedScrollbar, GDK_RGBA_TO_NS_RGBA(color));
+
+    style = GetStyleContext(MOZ_GTK_SCROLLBAR_THUMB_VERTICAL);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                           &color);
+    mThemedScrollbarThumb = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
+                                           &color);
+    mThemedScrollbarThumbHover = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(
+        style, GtkStateFlags(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE),
+        &color);
+    mThemedScrollbarThumbActive = GDK_RGBA_TO_NS_RGBA(color);
+
+    
+    const bool fallbackToUnthemedColors = [&] {
+      if (!StaticPrefs::widget_gtk_theme_scrollbar_colors_enabled()) {
+        return true;
+      }
+
+      if (!ShouldHonorThemeScrollbarColors()) {
+        return true;
+      }
+      
+      
+      if (!NS_GET_A(mThemedScrollbarThumb) ||
+          !NS_GET_A(mThemedScrollbarThumbHover) ||
+          !NS_GET_A(mThemedScrollbarThumbActive)) {
+        return true;
+      }
+      
+      
+      if (mThemedScrollbar == mThemedScrollbarThumb &&
+          NS_GET_A(mThemedScrollbar) == 0xff) {
+        return true;
+      }
+      return false;
+    }();
+
+    if (fallbackToUnthemedColors) {
+      if (mIsDark) {
+        
+        mThemedScrollbar = NS_RGB(0x31, 0x31, 0x31);
+        mThemedScrollbarThumb = NS_RGB(0xa3, 0xa4, 0xa4);
+      } else {
+        
+        mThemedScrollbar = NS_RGB(0xce, 0xce, 0xce);
+        mThemedScrollbarThumb = NS_RGB(0x82, 0x81, 0x7e);
+      }
+
+      mThemedScrollbarThumbHover =
+          ThemeColors::AdjustUnthemedScrollbarThumbColor(
+              mThemedScrollbarThumb, dom::ElementState::HOVER);
+      mThemedScrollbarThumbActive =
+          ThemeColors::AdjustUnthemedScrollbarThumbColor(
+              mThemedScrollbarThumb, dom::ElementState::ACTIVE);
+    }
+  }
 
   style = GetStyleContext(MOZ_GTK_MENUITEM);
   {
