@@ -24,10 +24,6 @@
 #include <math.h>
 #include <dlfcn.h>
 
-static ToolbarGTKMetrics sToolbarMetrics;
-
-using mozilla::Span;
-
 #if 0
 
 
@@ -47,84 +43,8 @@ style_path_print(GtkStyleContext *context)
 void moz_gtk_init() { moz_gtk_refresh(); }
 
 void moz_gtk_refresh() {
-  sToolbarMetrics.initialized = false;
-
   
   ResetWidgetCache();
-}
-
-size_t GetGtkHeaderBarButtonLayout(Span<ButtonLayout> aButtonLayout,
-                                   bool* aReversedButtonsPlacement) {
-  gchar* decorationLayoutSetting = nullptr;
-  GtkSettings* settings = gtk_settings_get_default();
-  g_object_get(settings, "gtk-decoration-layout", &decorationLayoutSetting,
-               nullptr);
-  auto free = mozilla::MakeScopeExit([&] { g_free(decorationLayoutSetting); });
-
-  
-  const gchar* decorationLayout = "menu:minimize,maximize,close";
-  if (decorationLayoutSetting) {
-    decorationLayout = decorationLayoutSetting;
-  }
-
-  
-  
-  if (aReversedButtonsPlacement) {
-    const char* closeButton = strstr(decorationLayout, "close");
-    const char* separator = strchr(decorationLayout, ':');
-    *aReversedButtonsPlacement =
-        closeButton && separator && closeButton < separator;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aButtonLayout.IsEmpty()) {
-    return 0;
-  }
-
-  nsDependentCSubstring layout(decorationLayout, strlen(decorationLayout));
-
-  size_t activeButtons = 0;
-  for (const auto& part : layout.Split(':')) {
-    for (const auto& button : part.Split(',')) {
-      if (button.EqualsLiteral("close")) {
-        aButtonLayout[activeButtons++] = {ButtonLayout::Type::Close};
-      } else if (button.EqualsLiteral("minimize")) {
-        aButtonLayout[activeButtons++] = {ButtonLayout::Type::Minimize};
-      } else if (button.EqualsLiteral("maximize")) {
-        aButtonLayout[activeButtons++] = {ButtonLayout::Type::Maximize};
-      }
-      if (activeButtons == aButtonLayout.Length()) {
-        return activeButtons;
-      }
-    }
-  }
-  return activeButtons;
-}
-
-static void EnsureToolbarMetrics() {
-  if (sToolbarMetrics.initialized) {
-    return;
-  }
-  sToolbarMetrics = {};
-
-  
-  
-  gint spacing = 6;
-  g_object_get(GetWidget(MOZ_GTK_HEADER_BAR), "spacing", &spacing, nullptr);
-  sToolbarMetrics.inlineSpacing += spacing;
-  sToolbarMetrics.initialized = true;
-}
-
-gint moz_gtk_get_titlebar_button_spacing() {
-  EnsureToolbarMetrics();
-  return sToolbarMetrics.inlineSpacing;
 }
 
 static void moz_gtk_window_decoration_paint(cairo_t* cr,
@@ -162,9 +82,7 @@ void moz_gtk_widget_paint(cairo_t* cr, const GtkDrawingParams* aParams) {
   }
 }
 
-gint moz_gtk_shutdown() {
+void moz_gtk_shutdown() {
   
   ResetWidgetCache();
-
-  return MOZ_GTK_SUCCESS;
 }
