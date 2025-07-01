@@ -2034,7 +2034,7 @@ pref("nimbus.profilesdatastoreservice.enabled", true);
 
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUIILD)
 pref("nimbus.profilesdatastoreservice.read.enabled", true);
 #else
 pref("nimbus.profilesdatastoreservice.read.enabled", false);
