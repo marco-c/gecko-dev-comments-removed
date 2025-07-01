@@ -1,4 +1,90 @@
 
+function setWindowLocationToJavaScriptURLCode() {       
+
+  window.location = `javascript:${kJavaScriptURLCode}`; 
+}
+
+const kJavaScriptURLCode = `executeJavaScript()${';'.repeat(100)}`;
+
+function createDefaultPolicy(defaultpolicy) {
+  if (!defaultpolicy) {
+    return;
+  }
+  trustedTypes.createPolicy("default", {
+    createScript: s => {
+      switch (defaultpolicy) {
+      case "replace":
+        return s.replace("continue", "defaultpolicywashere");
+      case "replace-js-execution":
+        return s.replace("executeJavaScript", "executeModifiedJavaScript");
+      case "throw":
+        throw new Error("Exception in createScript()");
+      case "make-invalid":
+        return "//make:invalid/";
+      }
+    },
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function setLocationToJavaScriptURL(defaultpolicy) {
+  window.javaScriptExecuted = false;
+  window.executeJavaScript = function() {
+    window.javaScriptExecuted = true;
+  }
+  window.modifiedJavaScriptExecuted = false;
+  window.executeModifiedJavaScript = function() {
+    window.modifiedJavaScriptExecuted = true;
+  }
+
+  createDefaultPolicy(defaultpolicy);
+
+  let {violations, exception} =
+      await trusted_type_violations_and_exception_for(async _ => {
+        setWindowLocationToJavaScriptURLCode();
+        
+        
+        
+        if (window.requestIdleCallback) {
+          await new Promise(resolve => requestIdleCallback(resolve));
+        }
+      });
+
+  return {
+    exception: exception,
+    javaScriptExecuted: window.javaScriptExecuted,
+    modifiedJavaScriptExecuted: window.modifiedJavaScriptExecuted,
+    
+    
+    violations: violations.map(violation => {
+      const clonedViolation = {};
+      for (const field of ["originalPolicy",
+                           "violatedDirective",
+                           "disposition",
+                           "sample",
+                           "lineNumber",
+                           "columnNumber"]) {
+        clonedViolation[field] = violation[field];
+      }
+      return clonedViolation;
+    }),
+  };
+}
+
+
 
 
 
@@ -18,20 +104,7 @@
 function navigateToJavascriptURL(reportOnly) {
     const params = new URLSearchParams(location.search);
 
-    if (!!params.get("defaultpolicy")) {
-        trustedTypes.createPolicy("default", {
-            createScript: s => {
-                switch (params.get("defaultpolicy")) {
-                    case "replace":
-                        return s.replace("continue", "defaultpolicywashere");
-                    case "throw":
-                        throw new Error("Exception in createScript()");
-                    case "make-invalid":
-                        return "//make:invalid/";
-                }
-            },
-        });
-    }
+    createDefaultPolicy(params.get("defaultpolicy"));
 
     function bounceEventToOpener(e) {
         const msg = {};
