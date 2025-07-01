@@ -140,19 +140,17 @@ RuleEditor.prototype = {
     this.element.style.position = "relative";
 
     
-    this.source = createChild(this.element, "div", {
-      class: "ruleview-rule-source theme-link",
-    });
-    this.source.addEventListener("click", this._onSourceClick);
-
     
-    
-    const sourceLabel = this.doc.createElement(
-      this.rule.domRule.type === ELEMENT_STYLE ? "span" : "a"
-    );
-    sourceLabel.classList.add("ruleview-rule-source-label");
-    this.source.appendChild(sourceLabel);
+    if (this.rule.domRule.type !== ELEMENT_STYLE) {
+      this.source = createChild(this.element, "div", {
+        class: "ruleview-rule-source theme-link",
+      });
+      this.source.addEventListener("click", this._onSourceClick);
 
+      const sourceLabel = this.doc.createElement("a");
+      sourceLabel.classList.add("ruleview-rule-source-label");
+      this.source.appendChild(sourceLabel);
+    }
     this.updateSourceLink();
 
     if (this.rule.domRule.ancestorData.length) {
@@ -496,13 +494,14 @@ RuleEditor.prototype = {
 
 
   _onToolChanged() {
+    if (!this.source) {
+      return;
+    }
+
     
     
     
-    
-    if (this.source.getAttribute("unselectable") === "permanent") {
-      
-    } else if (this.toolbox.isToolRegistered("styleeditor")) {
+    if (this.toolbox.isToolRegistered("styleeditor")) {
       this.source.removeAttribute("unselectable");
     } else {
       this.source.setAttribute("unselectable", "true");
@@ -574,38 +573,31 @@ RuleEditor.prototype = {
   },
 
   updateSourceLink() {
-    if (this.rule.isSystem) {
-      const sourceLabel = this.element.querySelector(
-        ".ruleview-rule-source-label"
-      );
-      const uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
-      sourceLabel.textContent = uaLabel + " " + this.rule.title;
-      sourceLabel.setAttribute("href", this.rule.sheet?.href);
-    } else {
-      this._updateLocation(null);
-    }
-
-    if (
-      this.rule.sheet &&
-      !this.rule.isSystem &&
-      this.rule.domRule.type !== ELEMENT_STYLE
-    ) {
-      
-      
-      if (this._unsubscribeSourceMap) {
-        this._unsubscribeSourceMap();
+    if (this.source) {
+      if (this.rule.isSystem) {
+        const sourceLabel = this.element.querySelector(
+          ".ruleview-rule-source-label"
+        );
+        const uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
+        sourceLabel.textContent = uaLabel + " " + this.rule.title;
+        sourceLabel.setAttribute("href", this.rule.sheet?.href);
+      } else {
+        this._updateLocation(null);
       }
-      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
-        this.rule.sheet.resourceId,
-        this.rule.ruleLine,
-        this.rule.ruleColumn,
-        this._updateLocation
-      );
-      
-      this._onToolChanged();
-    } else if (this.rule.domRule.type === ELEMENT_STYLE) {
-      this.source.setAttribute("unselectable", "permanent");
-    } else {
+
+      if (this.rule.sheet && !this.rule.isSystem) {
+        
+        
+        if (this._unsubscribeSourceMap) {
+          this._unsubscribeSourceMap();
+        }
+        this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
+          this.rule.sheet.resourceId,
+          this.rule.ruleLine,
+          this.rule.ruleColumn,
+          this._updateLocation
+        );
+      }
       
       this._onToolChanged();
     }
