@@ -753,7 +753,12 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  return true;
+#else
   return false;
+#endif
 }
 
 
