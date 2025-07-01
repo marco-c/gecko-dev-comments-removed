@@ -211,16 +211,16 @@ const statsExpectedByType = {
       "bytesReceived",
       "lastPacketSentTimestamp",
       "lastPacketReceivedTimestamp",
+      "totalRoundTripTime",
+      "currentRoundTripTime",
+      "responsesReceived",
     ],
     optional: ["selected"],
     unimplemented: [
-      "totalRoundTripTime",
-      "currentRoundTripTime",
       "availableOutgoingBitrate",
       "availableIncomingBitrate",
       "requestsReceived",
       "requestsSent",
-      "responsesReceived",
       "responsesSent",
       "retransmissionsReceived",
       "retransmissionsSent",
@@ -1416,6 +1416,28 @@ function pedanticChecks(report) {
         stat.writable,
         `${stat.type}.writable is true. value=${stat.writable} ` +
           `(${stat.kind})`
+      );
+
+      
+      ok(
+        stat.totalRoundTripTime !== undefined && stat.totalRoundTripTime >= 0,
+        `${stat.type}.totalRoundTripTime has a value. value=` +
+          `${stat.totalRoundTripTime} (${stat.kind})`
+      );
+
+      
+      ok(
+        stat.currentRoundTripTime !== undefined &&
+          stat.currentRoundTripTime >= 0,
+        `${stat.type}.currentRoundTripTime has a value. value=` +
+          `${stat.currentRoundTripTime} (${stat.kind})`
+      );
+
+      
+      ok(
+        stat.responsesReceived !== undefined && stat.responsesReceived >= 0,
+        `${stat.type}.responsesReceived has a value. value=` +
+          `${stat.responsesReceived} (${stat.kind})`
       );
 
       
