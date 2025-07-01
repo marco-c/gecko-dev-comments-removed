@@ -50,16 +50,9 @@ impl ErrorBuffer {
     
     
     pub(crate) fn init(&mut self, error: impl HasErrorBufferType, device_id: wgc::id::DeviceId) {
-        use std::fmt::Write;
-
         unsafe { *self.device_id = device_id };
 
-        let mut message = format!("{}", error);
-        let mut e = error.source();
-        while let Some(source) = e {
-            write!(message, ", caused by: {}", source).unwrap();
-            e = source.source();
-        }
+        let message = error_to_string(&error);
 
         let err_ty = error.error_type();
         
@@ -98,6 +91,17 @@ impl ErrorBuffer {
             *self.message.add(length) = 0;
         }
     }
+}
+
+pub fn error_to_string(error: impl Error) -> String {
+    use std::fmt::Write;
+    let mut message = format!("{}", error);
+    let mut e = error.source();
+    while let Some(source) = e {
+        write!(message, ", caused by: {}", source).unwrap();
+        e = source.source();
+    }
+    message
 }
 
 
@@ -443,10 +447,9 @@ mod foreign {
     impl HasErrorBufferType for DeviceError {
         fn error_type(&self) -> ErrorBufferType {
             match self {
-                DeviceError::Invalid(_) | DeviceError::DeviceMismatch(_) => {
-                    ErrorBufferType::Validation
-                }
-                DeviceError::Lost => ErrorBufferType::DeviceLost,
+                DeviceError::DeviceMismatch(_) => ErrorBufferType::Validation,
+                DeviceError::Invalid(_) 
+                | DeviceError::Lost => ErrorBufferType::DeviceLost,
                 DeviceError::OutOfMemory => ErrorBufferType::OutOfMemory,
                 DeviceError::ResourceCreationFailed => ErrorBufferType::Internal,
                 _ => ErrorBufferType::Internal,
