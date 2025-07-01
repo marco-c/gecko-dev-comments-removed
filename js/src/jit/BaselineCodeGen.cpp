@@ -1290,14 +1290,14 @@ void BaselineCompilerCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
 
   
   
-  
   Label notInlined, done;
-  masm.movePtr(ImmPtr(runtime->addressOfInlinedICScript()), scratch);
-  Address inlinedAddr(scratch, 0);
-  masm.branchPtr(Assembler::Equal, inlinedAddr, ImmWord(0), &notInlined);
-  masm.loadPtr(inlinedAddr, scratch2);
-  masm.storePtr(scratch2, frame.addressOfICScript());
-  masm.storePtr(ImmPtr(nullptr), inlinedAddr);
+  masm.branchTest32(Assembler::Zero, frame.addressOfDescriptor(),
+                    Imm32(FrameDescriptor::HasInlinedICScript), &notInlined);
+  masm.loadPtr(Address(FramePointer, 0), scratch);
+  masm.loadPtr(
+      Address(scratch, BaselineStubFrameLayout::InlinedICScriptOffsetFromFP),
+      scratch);
+  masm.storePtr(scratch, frame.addressOfICScript());
   masm.jump(&done);
 
   
