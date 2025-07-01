@@ -125,7 +125,11 @@ add_task(async function test_multi_action_set_pref_ordered_execution() {
   await originalHandleAction(action, browser);
   let duration = Date.now() - start;
   
-  Assert.ok(duration >= 130, "Ordered execution should take at least 130ms");
+  Assert.greaterOrEqual(
+    duration,
+    130,
+    "Ordered execution should take at least 130ms"
+  );
   Assert.deepEqual(
     callOrder,
     ["first", "second", "third"],

@@ -183,7 +183,7 @@ add_task(async function test_createNiceUniqueFile() {
   
   tempFile.leafName = new Array(256).join("T") + ".txt";
   var newFile = DownloadPaths.createNiceUniqueFile(tempFile);
-  Assert.ok(newFile.leafName.length < tempFile.leafName.length);
+  Assert.less(newFile.leafName.length, tempFile.leafName.length);
   Assert.equal(newFile.leafName.slice(-4), ".txt");
 
   

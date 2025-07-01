@@ -296,7 +296,7 @@ add_task(async function test_resourceAuthenticatorSkew() {
   
   
   Assert.equal(getTimestamp(authHeader), now - 12 * HOUR_MS);
-  Assert.ok(getTimestampDelta(authHeader, now) - 12 * HOUR_MS < 2 * MINUTE_MS);
+  Assert.less(getTimestampDelta(authHeader, now) - 12 * HOUR_MS, 2 * MINUTE_MS);
 });
 
 add_task(async function test_RESTResourceAuthenticatorSkew() {
@@ -344,7 +344,7 @@ add_task(async function test_RESTResourceAuthenticatorSkew() {
   
   
   Assert.equal(getTimestamp(authHeader), now - 12 * HOUR_MS);
-  Assert.ok(getTimestampDelta(authHeader, now) - 12 * HOUR_MS < 2 * MINUTE_MS);
+  Assert.less(getTimestampDelta(authHeader, now) - 12 * HOUR_MS, 2 * MINUTE_MS);
 });
 
 add_task(async function test_ensureLoggedIn() {
@@ -435,7 +435,7 @@ add_task(async function test_tokenExpiration() {
     },
     writable: true,
   });
-  Assert.ok(bimExp._token.expiration < bimExp._now());
+  Assert.less(bimExp._token.expiration, bimExp._now());
   _("... means SyncAuthManager knows to re-fetch it on the next call.");
   Assert.ok(!bimExp._hasValidToken());
 });
@@ -572,7 +572,7 @@ add_task(async function test_getTokenErrorWithRetry() {
   
   Assert.equal(Status.login, LOGIN_FAILED_NETWORK_ERROR, "login was rejected");
   
-  Assert.ok(Status.backoffInterval >= 100000);
+  Assert.greaterOrEqual(Status.backoffInterval, 100000);
 
   _("Arrange for a 200 with an X-Backoff header.");
   Status.backoffInterval = 0;
@@ -590,7 +590,7 @@ add_task(async function test_getTokenErrorWithRetry() {
   );
 
   
-  Assert.ok(Status.backoffInterval >= 200000);
+  Assert.greaterOrEqual(Status.backoffInterval, 200000);
 });
 
 add_task(async function test_getKeysErrorWithBackoff() {
@@ -630,7 +630,7 @@ add_task(async function test_getKeysErrorWithBackoff() {
   
   Assert.equal(Status.login, LOGIN_FAILED_NETWORK_ERROR, "login was rejected");
   
-  Assert.ok(Status.backoffInterval >= 100000);
+  Assert.greaterOrEqual(Status.backoffInterval, 100000);
 });
 
 add_task(async function test_getKeysErrorWithRetry() {
@@ -668,7 +668,7 @@ add_task(async function test_getKeysErrorWithRetry() {
   
   Assert.equal(Status.login, LOGIN_FAILED_NETWORK_ERROR, "login was rejected");
   
-  Assert.ok(Status.backoffInterval >= 100000);
+  Assert.greaterOrEqual(Status.backoffInterval, 100000);
 });
 
 add_task(async function test_getHAWKErrors() {

@@ -70,7 +70,7 @@ add_task(async function test_fetch_existent() {
       }
 
       
-      Assert.ok(typeof pageInfo.frecency === "number");
+      Assert.strictEqual(typeof pageInfo.frecency, "number");
       delete pageInfo.frecency;
 
       

@@ -179,7 +179,7 @@ add_task(function test_DownloadError() {
 
   error = new DownloadError({ result: Cr.NS_ERROR_NOT_RESUMABLE });
   Assert.equal(error.result, Cr.NS_ERROR_NOT_RESUMABLE);
-  Assert.ok(error.message.indexOf("Exception") > 0);
+  Assert.greater(error.message.indexOf("Exception"), 0);
 
   
   error = new DownloadError({

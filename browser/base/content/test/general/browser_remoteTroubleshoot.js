@@ -40,8 +40,9 @@ add_task(async function () {
   
   let got = await promiseNewChannelResponse(TEST_URI_GOOD);
   
-  Assert.ok(
-    got.errno === 2,
+  Assert.strictEqual(
+    got.errno,
+    2,
     "should have failed with errno 2, no such channel"
   );
 
@@ -101,8 +102,9 @@ add_task(async function () {
 
   
   got = await promiseNewChannelResponse(TEST_URI_BAD);
-  Assert.ok(
-    got.errno === 2,
+  Assert.strictEqual(
+    got.errno,
+    2,
     "should have failed with errno 2, no such channel"
   );
 });

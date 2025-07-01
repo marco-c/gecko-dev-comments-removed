@@ -72,8 +72,9 @@ function run_test() {
     Services.perms.testPermissionFromPrincipal(principal, "camera"),
     Services.perms.DENY_ACTION
   );
-  Assert.ok(
-    Services.perms.getPermissionObject(principal, "camera", false) != null
+  Assert.notEqual(
+    Services.perms.getPermissionObject(principal, "camera", false),
+    null
   );
 
   

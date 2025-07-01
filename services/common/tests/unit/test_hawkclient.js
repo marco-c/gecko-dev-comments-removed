@@ -22,7 +22,7 @@ initTestLogging("Trace");
 add_task(function test_now() {
   let client = new HawkClient("https://example.com");
 
-  Assert.ok(client.now() - Date.now() < SECOND_MS);
+  Assert.less(client.now() - Date.now(), SECOND_MS);
 });
 
 add_task(function test_updateClockOffset() {
@@ -44,7 +44,7 @@ add_task(function test_updateClockOffset() {
   
   
   
-  Assert.ok(Math.abs(client.localtimeOffsetMsec + HOUR_MS) <= SECOND_MS);
+  Assert.lessOrEqual(Math.abs(client.localtimeOffsetMsec + HOUR_MS), SECOND_MS);
 });
 
 add_task(async function test_authenticated_get_request() {
@@ -232,7 +232,7 @@ add_task(async function test_offset_after_request() {
 
   await client.request("/foo", method, TEST_CREDS);
   
-  Assert.ok(Math.abs(client.localtimeOffsetMsec + HOUR_MS) < SECOND_MS);
+  Assert.less(Math.abs(client.localtimeOffsetMsec + HOUR_MS), SECOND_MS);
 
   await promiseStopServer(server);
 });
@@ -274,7 +274,7 @@ add_task(async function test_offset_in_hawk_header() {
 
   
   
-  Assert.ok(Math.abs(client.localtimeOffsetMsec + 12 * HOUR_MS) < MINUTE_MS);
+  Assert.less(Math.abs(client.localtimeOffsetMsec + 12 * HOUR_MS), MINUTE_MS);
   await client.request("/second", method, TEST_CREDS);
 
   await promiseStopServer(server);
@@ -319,13 +319,13 @@ add_task(async function test_retry_request_on_fail() {
       
       
       attempts += 1;
-      Assert.ok(attempts <= 2);
+      Assert.lessOrEqual(attempts, 2);
 
       let delta = getTimestampDelta(request.getHeader("Authorization"));
 
       
       if (attempts === 1) {
-        Assert.ok(delta > MINUTE_MS);
+        Assert.greater(delta, MINUTE_MS);
         let message = "never!!!";
         response.setStatusLine(request.httpVersion, 401, "Unauthorized");
         response.bodyOutputStream.write(message, message.length);
@@ -333,7 +333,7 @@ add_task(async function test_retry_request_on_fail() {
       }
 
       
-      Assert.ok(delta < MINUTE_MS);
+      Assert.less(delta, MINUTE_MS);
       let message = "i love you!!!";
       response.setStatusLine(request.httpVersion, 200, "OK");
       response.bodyOutputStream.write(message, message.length);
@@ -373,7 +373,7 @@ add_task(async function test_multiple_401_retry_once() {
       
       attempts += 1;
 
-      Assert.ok(attempts <= 2);
+      Assert.lessOrEqual(attempts, 2);
 
       let message = "never!!!";
       response.setStatusLine(request.httpVersion, 401, "Unauthorized");
@@ -456,14 +456,14 @@ add_task(async function test_401_then_500() {
       
       
       attempts += 1;
-      Assert.ok(attempts <= 2);
+      Assert.lessOrEqual(attempts, 2);
 
       let delta = getTimestampDelta(request.getHeader("Authorization"));
 
       
       
       if (attempts === 1) {
-        Assert.ok(delta > MINUTE_MS);
+        Assert.greater(delta, MINUTE_MS);
         let message = "never!!!";
         response.setStatusLine(request.httpVersion, 401, "Unauthorized");
         response.bodyOutputStream.write(message, message.length);
@@ -472,7 +472,7 @@ add_task(async function test_401_then_500() {
 
       
       
-      Assert.ok(delta < MINUTE_MS);
+      Assert.less(delta, MINUTE_MS);
       let message = "Cannot get ye flask.";
       response.setStatusLine(request.httpVersion, 500, "Internal server error");
       response.bodyOutputStream.write(message, message.length);

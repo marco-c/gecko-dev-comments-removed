@@ -66,7 +66,7 @@ Http3Listener.prototype = {
     if (this.amount > 500000) {
       
       
-      Assert.ok(this.onProgressNotificationCount > 10);
+      Assert.greater(this.onProgressNotificationCount, 10);
     }
     this.finish();
   },

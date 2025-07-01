@@ -266,8 +266,8 @@ add_task(async function test_processIncoming_createFromServer() {
     await engine._processIncoming();
 
     
-    Assert.ok((await engine.getLastSync()) > 0);
-    Assert.ok(engine.lastModified > 0);
+    Assert.greater(await engine.getLastSync(), 0);
+    Assert.greater(engine.lastModified, 0);
 
     
     Assert.equal(engine._store.items.flying, "LNER Class A3 4472");
@@ -367,14 +367,14 @@ add_task(async function test_processIncoming_reconcile() {
     Assert.equal(engine._store.items.updateclient, "Got data?");
     Assert.equal(engine._store.items.nukeme, "Nuke me!");
     let changes = await engine._tracker.getChangedIDs();
-    Assert.ok(changes.olderidentical > 0);
+    Assert.greater(changes.olderidentical, 0);
 
     await engine._syncStartup();
     await engine._processIncoming();
 
     
-    Assert.ok((await engine.getLastSync()) > 0);
-    Assert.ok(engine.lastModified > 0);
+    Assert.greater(await engine.getLastSync(), 0);
+    Assert.greater(engine.lastModified, 0);
 
     
     Assert.equal(engine._store.items.newrecord, "New stuff...");

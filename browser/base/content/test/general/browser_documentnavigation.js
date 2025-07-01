@@ -175,8 +175,9 @@ add_task(async function () {
 
   
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
-    Assert.ok(
-      content.document.activeElement == content.document.documentElement,
+    Assert.equal(
+      content.document.activeElement,
+      content.document.documentElement,
       "basic focus again content page with button focused child root is focused"
     );
   });

@@ -131,8 +131,9 @@ add_task(
     const { cleanup } = await NimbusTestUtils.setupTest();
     await lazy.DAPVisitCounter.startup();
 
-    Assert.ok(
-      lazy.DAPVisitCounter.dapReportContoller === null,
+    Assert.strictEqual(
+      lazy.DAPVisitCounter.dapReportContoller,
+      null,
       "dapReportContoller should not exist before enrollment"
     );
 
@@ -153,15 +154,16 @@ add_task(
       },
     });
 
-    Assert.ok(
-      lazy.DAPVisitCounter.dapReportContoller !== null,
+    Assert.notStrictEqual(
+      lazy.DAPVisitCounter.dapReportContoller,
+      null,
       "dapReportContoller should be active"
     );
 
     
     const db = await openDatabase();
     let numRecords = await getReportCount(db);
-    Assert.ok(numRecords == 0, "Should be no pending reports");
+    Assert.equal(numRecords, 0, "Should be no pending reports");
 
     
     let uri = NetUtil.newURI("http://www.mozilla.org/");
@@ -174,18 +176,18 @@ add_task(
 
     
     numRecords = await getReportCount(db);
-    Assert.ok(numRecords == 1, "Should be 1 pending report");
+    Assert.equal(numRecords, 1, "Should be 1 pending report");
 
     
     await lazy.DAPVisitCounter.dapReportContoller.submit(1000, "unit-test");
 
     
     numRecords = await getReportCount(db);
-    Assert.ok(numRecords == 0, "Should be 0 pending reports");
+    Assert.equal(numRecords, 0, "Should be 0 pending reports");
 
     
     numRecords = await getFreqCapCount(db);
-    Assert.ok(numRecords == 1, "Should be 1 cap entry");
+    Assert.equal(numRecords, 1, "Should be 1 cap entry");
 
     
     await doExperimentCleanup();
@@ -197,11 +199,11 @@ add_task(
 
     
     numRecords = await getFreqCapCount(db);
-    Assert.ok(numRecords == 0, "Should be 0 cap entries");
+    Assert.equal(numRecords, 0, "Should be 0 cap entries");
 
     
     numRecords = await getReportCount(db);
-    Assert.ok(numRecords == 0, "Should be 0 pending reports");
+    Assert.equal(numRecords, 0, "Should be 0 pending reports");
 
     
     
@@ -212,8 +214,9 @@ add_task(
       [1126, 1126, 1126],
       "Should have one report on enrollment, second for triggered submission, third on unenrollment"
     );
-    Assert.ok(
-      lazy.DAPVisitCounter.dapReportContoller === null,
+    Assert.strictEqual(
+      lazy.DAPVisitCounter.dapReportContoller,
+      null,
       "dapReportContoller should not exist after unenrollment"
     );
 

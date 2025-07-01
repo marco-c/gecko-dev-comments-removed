@@ -9,12 +9,12 @@ add_task(async function test() {
   
   
   var pm = Services.perms;
-  Assert.ok(pm.all.length === 0);
+  Assert.strictEqual(pm.all.length, 0);
 
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   
-  Assert.ok(pm.all.length === 0);
+  Assert.strictEqual(pm.all.length, 0);
 
   
   var file = dir.clone();
