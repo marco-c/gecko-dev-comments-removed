@@ -3,10 +3,9 @@
 
 "use strict";
 
-const { AboutNewTabRedirectorParent, AboutNewTabRedirectorChild } =
-  ChromeUtils.importESModule(
-    "resource:///modules/AboutNewTabRedirector.sys.mjs"
-  );
+const { AboutNewTabRedirectorChild } = ChromeUtils.importESModule(
+  "resource:///modules/AboutNewTabRedirector.sys.mjs"
+);
 
 const { NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
@@ -19,7 +18,12 @@ const BLANK_TAB_URI = Services.io.newURI(
   "chrome://browser/content/blanktab.html"
 );
 
-const PARENT_INSTANCE = new AboutNewTabRedirectorParent();
+
+
+
+const PARENT_INSTANCE = Cc[
+  "@mozilla.org/network/protocol/about;1?what=newtab"
+].getService(Ci.nsIAboutModule).wrappedJSObject;
 const CHILD_INSTANCE = new AboutNewTabRedirectorChild();
 
 

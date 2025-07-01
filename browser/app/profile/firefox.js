@@ -2016,6 +2016,9 @@ pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=adm");
 
 
+pref("browser.newtabpage.resource-mapping.log", false);
+
+
 pref("browser.aboutwelcome.enabled", true);
 
 pref("browser.aboutwelcome.screens", "");

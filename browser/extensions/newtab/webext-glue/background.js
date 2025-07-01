@@ -11,9 +11,4 @@ browser.runtime.onUpdateAvailable.addListener(_details => {
   
   
   
-  
-  
-  
-  
-  browser.builtin.newtab.handleUpdateAvailable();
 });
