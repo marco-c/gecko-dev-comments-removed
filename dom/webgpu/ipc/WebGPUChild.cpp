@@ -450,14 +450,19 @@ void WebGPUChild::ActorDestroy(ActorDestroyReason) {
 void WebGPUChild::ClearAllPendingPromises() {
   
   {
-    for (auto& pending_promise : mPendingRequestAdapterPromises) {
+    while (!mPendingRequestAdapterPromises.empty()) {
+      auto pending_promise = std::move(mPendingRequestAdapterPromises.front());
+      mPendingRequestAdapterPromises.pop_front();
+
       pending_promise.promise->MaybeResolve(JS::NullHandleValue);
     }
-    mPendingRequestAdapterPromises.clear();
   }
   
   {
-    for (auto& pending_promise : mPendingRequestDevicePromises) {
+    while (!mPendingRequestDevicePromises.empty()) {
+      auto pending_promise = std::move(mPendingRequestDevicePromises.front());
+      mPendingRequestDevicePromises.pop_front();
+
       RefPtr<Device> device =
           new Device(pending_promise.adapter, pending_promise.device_id,
                      pending_promise.queue_id, pending_promise.features,
@@ -466,18 +471,22 @@ void WebGPUChild::ClearAllPendingPromises() {
       device->ResolveLost(Nothing(), u"WebGPUChild destroyed"_ns);
       pending_promise.promise->MaybeResolve(device);
     }
-    mPendingRequestDevicePromises.clear();
   }
   
   {
-    for (auto& pending_promise : mPendingPopErrorScopePromises) {
+    while (!mPendingPopErrorScopePromises.empty()) {
+      auto pending_promise = std::move(mPendingPopErrorScopePromises.front());
+      mPendingPopErrorScopePromises.pop_front();
+
       pending_promise.promise->MaybeResolve(JS::NullHandleValue);
     }
-    mPendingPopErrorScopePromises.clear();
   }
   
   {
-    for (auto& pending_promise : mPendingCreatePipelinePromises) {
+    while (!mPendingCreatePipelinePromises.empty()) {
+      auto pending_promise = std::move(mPendingCreatePipelinePromises.front());
+      mPendingCreatePipelinePromises.pop_front();
+
       if (pending_promise.is_render_pipeline) {
         RefPtr<RenderPipeline> object = new RenderPipeline(
             pending_promise.device, pending_promise.pipeline_id,
@@ -494,42 +503,51 @@ void WebGPUChild::ClearAllPendingPromises() {
         pending_promise.promise->MaybeResolve(object);
       }
     }
-    mPendingCreatePipelinePromises.clear();
   }
   
   
   {
-    for (auto& pending_promise : mPendingCreateShaderModulePromises) {
+    while (!mPendingCreateShaderModulePromises.empty()) {
+      auto pending_promise =
+          std::move(mPendingCreateShaderModulePromises.front());
+      mPendingCreateShaderModulePromises.pop_front();
+
       nsTArray<WebGPUCompilationMessage> messages;
       RefPtr<CompilationInfo> infoObject(
           new CompilationInfo(pending_promise.device));
       infoObject->SetMessages(messages);
       pending_promise.promise->MaybeResolve(infoObject);
     }
-    mPendingCreateShaderModulePromises.clear();
   }
   
   {
-    for (auto& pending_promises : mPendingBufferMapPromises) {
-      for (auto& pending_promise : pending_promises.second) {
-        
-        if (pending_promise.promise->State() !=
-            dom::Promise::PromiseState::Pending) {
-          continue;
-        }
-        pending_promise.buffer->RejectMapRequestWithAbortError(
-            pending_promise.promise);
+    while (!mPendingBufferMapPromises.empty()) {
+      auto pending_promises = mPendingBufferMapPromises.begin();
+      auto pending_promise = std::move(pending_promises->second.front());
+      pending_promises->second.pop_front();
+      if (pending_promises->second.empty()) {
+        mPendingBufferMapPromises.erase(pending_promises->first);
       }
+
+      
+      if (pending_promise.promise->State() !=
+          dom::Promise::PromiseState::Pending) {
+        continue;
+      }
+      pending_promise.buffer->RejectMapRequestWithAbortError(
+          pending_promise.promise);
     }
-    mPendingBufferMapPromises.clear();
   }
   
   
   {
-    for (auto& pending_promise : mPendingOnSubmittedWorkDonePromises) {
+    while (!mPendingOnSubmittedWorkDonePromises.empty()) {
+      auto pending_promise =
+          std::move(mPendingOnSubmittedWorkDonePromises.front());
+      mPendingOnSubmittedWorkDonePromises.pop_front();
+
       pending_promise->MaybeResolveWithUndefined();
     }
-    mPendingOnSubmittedWorkDonePromises.clear();
   }
 }
 
