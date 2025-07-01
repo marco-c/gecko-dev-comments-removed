@@ -229,14 +229,16 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
   LOGWAYLAND("    gtk wl_surface %p ID %d\n", (void*)parentSurface,
              wl_proxy_get_id((struct wl_proxy*)parentSurface));
 
+  nsWindow* window = moz_container_get_nsWindow(container);
+  MOZ_RELEASE_ASSERT(window);
+
   
   gfx::IntPoint subsurfacePosition;
   if (aPosition) {
     subsurfacePosition = *aPosition;
   } else {
-    int x = 0, y = 0;
-    moz_container_get_nsWindow(container)->GetCSDDecorationOffset(&x, &y);
-    subsurfacePosition = gfx::IntPoint(x, y);
+    auto gdkPoint = window->GetCsdOffsetInGdkCoords();
+    subsurfacePosition = gfx::IntPoint(gdkPoint.x, gdkPoint.y);
   }
 
   if (!surface->MapLocked(lock, parentSurface, subsurfacePosition)) {
@@ -245,9 +247,6 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
 
   surface->AddOpaqueSurfaceHandlerLocked(lock, gdkWindow,
                                           true);
-
-  nsWindow* window = moz_container_get_nsWindow(container);
-  MOZ_RELEASE_ASSERT(window);
 
   GtkWindow* parent =
       gtk_window_get_transient_for(GTK_WINDOW(window->GetGtkWidget()));
@@ -273,10 +272,8 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
     surface->EnableCeiledScaleLocked(lock);
   }
 
-  if (MOZ_WL_CONTAINER(container)->opaque_region_needs_updates) {
-    surface->SetOpaqueRegionLocked(lock,
-                                   window->GetOpaqueRegion().ToUnknownRegion());
-  }
+  surface->SetOpaqueRegionLocked(lock,
+                                 window->GetOpaqueRegion().ToUnknownRegion());
   surface->DisableUserInputLocked(lock);
 
   
@@ -306,22 +303,10 @@ struct wl_egl_window* moz_container_wayland_get_egl_window(
   return MOZ_WL_SURFACE(container)->GetEGLWindow(unscaledSize);
 }
 
-gboolean moz_container_wayland_has_egl_window(MozContainer* container) {
-  return MOZ_WL_SURFACE(container)->HasEGLWindow();
-}
-
 void moz_container_wayland_update_opaque_region(MozContainer* container) {
-  MOZ_WL_CONTAINER(container)->opaque_region_needs_updates = true;
-
-  
-  
-  
-  if (MOZ_WL_SURFACE(container)->HasEGLWindow()) {
-    MOZ_WL_CONTAINER(container)->opaque_region_needs_updates = false;
-    nsWindow* window = moz_container_get_nsWindow(container);
-    MOZ_WL_SURFACE(container)->SetOpaqueRegion(
-        window->GetOpaqueRegion().ToUnknownRegion());
-  }
+  nsWindow* window = moz_container_get_nsWindow(container);
+  MOZ_WL_SURFACE(container)->SetOpaqueRegion(
+      window->GetOpaqueRegion().ToUnknownRegion());
 }
 
 gboolean moz_container_wayland_can_draw(MozContainer* container) {
