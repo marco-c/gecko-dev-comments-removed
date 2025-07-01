@@ -101,6 +101,13 @@ class MediaStreamTrackSource : public nsISupports {
 
 
 
+    virtual void ConstraintsChanged(
+        const MediaTrackConstraints& aConstraints) = 0;
+
+    
+
+
+
     virtual void OverrideEnded() = 0;
 
    protected:
@@ -170,7 +177,7 @@ class MediaStreamTrackSource : public nsISupports {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  typedef MozPromise<bool , RefPtr<MediaMgrError>, true>
+  typedef MozPromise<bool , RefPtr<MediaMgrError>, false>
       ApplyConstraintsPromise;
 
   
@@ -305,6 +312,22 @@ class MediaStreamTrackSource : public nsISupports {
         continue;
       }
       sink->MutedChanged(aNewState);
+    }
+  }
+
+  
+
+
+
+  void ConstraintsChanged(const MediaTrackConstraints& aConstraints) {
+    MOZ_ASSERT(NS_IsMainThread());
+    for (auto& sink : mSinks.Clone()) {
+      if (!sink) {
+        DebugOnly<bool> removed = mSinks.RemoveElement(sink);
+        MOZ_ASSERT(!removed, "Sink was not explicitly removed");
+        continue;
+      }
+      sink->ConstraintsChanged(aConstraints);
     }
   }
 
@@ -598,6 +621,11 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
 
 
   void MutedChanged(bool aNewState);
+
+  
+
+
+  void ConstraintsChanged(const MediaTrackConstraints& aConstraints);
 
   
 
