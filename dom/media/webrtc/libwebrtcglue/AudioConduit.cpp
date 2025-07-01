@@ -148,6 +148,8 @@ RefPtr<GenericPromise> WebrtcAudioConduit::Shutdown() {
           DeleteSendStream();
           DeleteRecvStream();
         }
+        
+        mTransitionalSendStreamStats = Nothing();
 
         return GenericPromise::CreateAndResolve(
             true, "WebrtcAudioConduit::Shutdown (call thread)");
@@ -391,6 +393,9 @@ void WebrtcAudioConduit::OnControlConfigChange() {
       CreateRecvStream();
     }
     if (sendStreamRecreationNeeded) {
+      if (mControl.mTransmitting) {
+        MemoSendStreamStats();
+      }
       DeleteSendStream();
     }
     if (mControl.mTransmitting) {
@@ -480,8 +485,11 @@ Maybe<webrtc::AudioSendStream::Stats> WebrtcAudioConduit::GetSenderStats()
     const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mSendStream) {
-    return Nothing();
+    
+    return mTransitionalSendStreamStats;
   }
+  
+  mTransitionalSendStreamStats = Nothing();
   return Some(mSendStream->GetStats());
 }
 
@@ -963,6 +971,16 @@ void WebrtcAudioConduit::DeleteSendStream() {
 
   
   mRtpSendBaseSeqs.clear();
+}
+
+void WebrtcAudioConduit::MemoSendStreamStats() {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  
+  
+  if (mControl.mTransmitting && mSendStream) {
+    const auto stats = mSendStream->GetStats();
+    mTransitionalSendStreamStats = Some(stats);
+  }
 }
 
 void WebrtcAudioConduit::CreateSendStream() {

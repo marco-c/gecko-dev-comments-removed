@@ -671,6 +671,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         
         
         
+        MemoSendStreamStats();
         DeleteSendStream();
       }
       mControl.mConfiguredSendCodec = codecConfig;
@@ -922,6 +923,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
     }
     if (sendStreamRecreationNeeded) {
       encoderReconfigureNeeded = false;
+      MemoSendStreamStats();
       DeleteSendStream();
     }
     if (mControl.mTransmitting) {
@@ -991,13 +993,25 @@ void WebrtcVideoConduit::DeleteSendStream() {
   if (!mSendStream) {
     return;
   }
-
   mCall->Call()->DestroyVideoSendStream(mSendStream);
   mEngineTransmitting = false;
   mSendStream = nullptr;
 
   
   mRtpSendBaseSeqs.clear();
+}
+
+void WebrtcVideoConduit::MemoSendStreamStats() {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  
+  
+  if (mControl.mTransmitting && mSendStream) {
+    const auto stats = mSendStream->GetStats();
+    
+    if (stats.substreams.size()) {
+      mTransitionalSendStreamStats = Some(stats);
+    }
+  }
 }
 
 void WebrtcVideoConduit::CreateSendStream() {
@@ -1239,6 +1253,15 @@ Maybe<webrtc::VideoSendStream::Stats> WebrtcVideoConduit::GetSenderStats()
   if (!mSendStream) {
     return Nothing();
   }
+  auto stats = mSendStream->GetStats();
+  if (stats.substreams.empty()) {
+    if (!mTransitionalSendStreamStats) {
+      CSFLogError(LOGTAG, "%s: No SSRC in send stream stats", __FUNCTION__);
+    }
+    return mTransitionalSendStreamStats;
+  }
+  
+  mTransitionalSendStreamStats = Nothing();
   return Some(mSendStream->GetStats());
 }
 
@@ -1376,6 +1399,8 @@ RefPtr<GenericPromise> WebrtcVideoConduit::Shutdown() {
           DeleteSendStream();
           DeleteRecvStream();
         }
+        
+        mTransitionalSendStreamStats = Nothing();
 
         return GenericPromise::CreateAndResolve(true, __func__);
       });

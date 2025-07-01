@@ -188,6 +188,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   static webrtc::SdpAudioFormat CodecConfigToLibwebrtcFormat(
       const AudioCodecConfig& aConfig);
 
+  
+  void MemoSendStreamStats();
+
   void CreateSendStream();
   void DeleteSendStream();
   void CreateRecvStream();
@@ -291,6 +294,14 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   
   
   std::vector<webrtc::RtpSource> mRtpSources;
+
+  
+  
+  
+  
+  
+  
+  mutable Maybe<webrtc::AudioSendStream::Stats> mTransitionalSendStreamStats;
 
   
   Atomic<bool> mTransportActive = Atomic<bool>(false);

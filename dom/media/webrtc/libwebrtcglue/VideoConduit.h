@@ -255,6 +255,9 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   void VideoLatencyUpdate(uint64_t aNewSample);
 
+  
+  void MemoSendStreamStats();
+
   void CreateSendStream();
   void DeleteSendStream();
   void CreateRecvStream();
@@ -496,6 +499,16 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   
   std::vector<webrtc::RtpSource> mRtpSources;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable Maybe<webrtc::VideoSendStream::Stats> mTransitionalSendStreamStats;
 
   
   Atomic<bool> mTransportActive = Atomic<bool>(false);
