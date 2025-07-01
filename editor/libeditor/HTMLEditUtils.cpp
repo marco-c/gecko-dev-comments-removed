@@ -844,7 +844,7 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
   if (!followedByBlockBoundary) {
     return EditorDOMPoint();
   }
-  const bool followingBlockBoundaryOrCollapsibleWhiteSpace = [&]() {
+  const bool isFollowingBlockBoundary = [&]() {
     if (point.GetContainer() == maybeNonEditableBlock &&
         point.IsStartOfContainer()) {
       return true;
@@ -861,25 +861,11 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
       
       return true;
     }
-    if (HTMLEditUtils::IsBlockElement(
-            *previousVisibleLeafOrChildBlock,
-            BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-      
-      return true;
-    }
-    Text* const previousVisibleText =
-        Text::FromNode(previousVisibleLeafOrChildBlock);
-    if (!previousVisibleText) {
-      
-      return false;
-    }
-    MOZ_ASSERT(previousVisibleText->TextDataLength());
-    
-    
-    return EditorRawDOMPoint::AtEndOf(*previousVisibleText)
-        .IsPreviousCharASCIISpace();
+    return HTMLEditUtils::IsBlockElement(
+        *previousVisibleLeafOrChildBlock,
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
   }();
-  if (!followingBlockBoundaryOrCollapsibleWhiteSpace) {
+  if (!isFollowingBlockBoundary) {
     return EditorDOMPoint();
   }
   AdjustPointToInsertPaddingLineBreak(preferredPaddingLineBreakPoint,
