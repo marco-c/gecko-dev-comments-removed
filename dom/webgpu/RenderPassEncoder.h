@@ -7,6 +7,7 @@
 #define GPU_RenderPassEncoder_H_
 
 #include "mozilla/dom/TypedArray.h"
+#include "CanvasContext.h"
 #include "ObjectModel.h"
 
 namespace mozilla {
@@ -60,6 +61,10 @@ class RenderPassEncoder final : public ObjectBase,
   nsTArray<RefPtr<const RenderBundle>> mUsedRenderBundles;
 
   
+  
+  CanvasContextArray mUsedCanvasContexts;
+
+  
  private:
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const uint32_t* aDynamicOffsets,
@@ -108,6 +113,11 @@ class RenderPassEncoder final : public ObjectBase,
       const dom::Sequence<OwningNonNull<RenderBundle>>& aBundles);
 
   void End();
+
+  
+  mozilla::Span<const WeakPtr<CanvasContext>> GetCanvasContexts() const {
+    return mUsedCanvasContexts;
+  }
 };
 
 }  
