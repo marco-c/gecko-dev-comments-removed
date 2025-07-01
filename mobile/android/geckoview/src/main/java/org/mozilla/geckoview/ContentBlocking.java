@@ -354,18 +354,6 @@ public class ContentBlocking {
         getSettings().setCookieBannerDetectOnlyMode(enabled);
         return this;
       }
-
-      
-
-
-
-
-
-      public @NonNull Builder bounceTrackingProtectionMode(
-          final @CBCBounceTrackingProtectionMode int mode) {
-        getSettings().setBounceTrackingProtectionMode(mode);
-        return this;
-      }
     }
 
      final Pref<String> mAt =
@@ -442,11 +430,6 @@ public class ContentBlocking {
 
      final Pref<String> mQueryParameterStrippingStripList =
         new Pref<>("privacy.query_stripping.strip_list", "");
-
-     final Pref<Integer> mBounceTrackingProtectionMode =
-        new Pref<Integer>(
-            "privacy.bounceTrackingProtection.mode",
-            BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED);
 
      final Pref<Boolean> mEtb =
         new Pref<Boolean>("privacy.trackingprotection.emailtracking.enabled", false);
@@ -1045,28 +1028,6 @@ public class ContentBlocking {
             return new Settings[size];
           }
         };
-
-    
-
-
-
-
-
-    public @CBCBounceTrackingProtectionMode int getBounceTrackingProtectionMode() {
-      return mapToBounceTrackingProtectionMode(mBounceTrackingProtectionMode.get());
-    }
-
-    
-
-
-
-
-
-    public @NonNull Settings setBounceTrackingProtectionMode(
-        final @CBCBounceTrackingProtectionMode int mode) {
-      mBounceTrackingProtectionMode.commit(mode);
-      return this;
-    }
   }
 
   
@@ -2093,49 +2054,4 @@ public class ContentBlocking {
     CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT,
   })
   public @interface CBCookieBannerMode {}
-
-  
-  public static class BounceTrackingProtectionMode {
-    
-    public static final int BOUNCE_TRACKING_PROTECTION_MODE_DISABLED = 0;
-
-    
-    public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED = 1;
-
-    
-
-
-
-    public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY = 2;
-
-    
-
-
-
-    public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_DRY_RUN = 3;
-
-    protected BounceTrackingProtectionMode() {}
-  }
-
-  @Retention(RetentionPolicy.SOURCE)
-  @IntDef({
-    BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED,
-    BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED,
-    BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY,
-    BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_DRY_RUN,
-  })
-  public @interface CBCBounceTrackingProtectionMode {}
-
-  
-  private static final int mapToBounceTrackingProtectionMode(final int value) {
-    switch (value) {
-      case BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED:
-      case BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED:
-      case BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY:
-      case BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_DRY_RUN:
-        return value;
-      default:
-        return BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED;
-    }
-  }
 }
