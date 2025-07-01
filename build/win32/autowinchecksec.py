@@ -7,11 +7,11 @@
 
 
 
-import json
 import subprocess
 import sys
 
 import buildconfig
+from mozfile import json
 
 
 if len(sys.argv) != 2:
@@ -60,7 +60,7 @@ checks = [
     "seh",
 ]
 
-if buildconfig.substs["CPU_ARCH"] == "x86":
+if buildconfig.substs["TARGET_CPU"] == "x86":
     checks += [
         "safeSEH",
     ]

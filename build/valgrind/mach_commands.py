@@ -2,7 +2,6 @@
 
 
 
-import json
 import logging
 import os
 import time
@@ -11,6 +10,7 @@ import mozinfo
 from mach.decorators import Command, CommandArgument
 from mozbuild.base import BinaryNotFoundException
 from mozbuild.base import MachCommandConditions as conditions
+from mozfile import json
 
 
 def is_valgrind_build(cls):
