@@ -179,10 +179,46 @@ bool IsAnchorLaidOutStrictlyBeforeElement(const nsIFrame* aPossibleAnchorFrame,
   return !isAnchorAbsolutelyPositioned;
 }
 
+
+
+
 bool IsPositionedElementAlsoSkippedWhenAnchorIsSkipped(
-    const nsIFrame* ,
-    const nsIFrame* ) {
-  return true;  
+    const nsIFrame* aPossibleAnchorFrame, const nsIFrame* aPositionedFrame) {
+  
+  
+  if (aPossibleAnchorFrame->HidesContentForLayout()) {
+    return false;
+  }
+
+  
+  
+  const nsIFrame* visibilityAncestor = aPossibleAnchorFrame->GetParent();
+  while (visibilityAncestor) {
+    
+    
+    if (visibilityAncestor->HidesContentForLayout()) {
+      break;
+    }
+
+    visibilityAncestor = visibilityAncestor->GetParent();
+  }
+
+  
+  
+  if (aPositionedFrame->HidesContentForLayout()) {
+    return false;
+  }
+
+  const nsIFrame* ancestor = aPositionedFrame;
+  while (ancestor) {
+    if (ancestor->HidesContentForLayout()) {
+      return ancestor == visibilityAncestor;
+    }
+
+    ancestor = ancestor->GetParent();
+  }
+
+  return true;
 }
 
 bool IsAcceptableAnchorElement(const nsIFrame* aPossibleAnchorFrame,
