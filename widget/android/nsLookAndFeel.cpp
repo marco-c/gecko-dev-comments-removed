@@ -133,7 +133,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
   switch (aID) {
       
       
-    case ColorID::ThemedScrollbarThumbInactive:
     case ColorID::ThemedScrollbarThumb:
       
       
