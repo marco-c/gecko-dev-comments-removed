@@ -782,6 +782,18 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
       def->block()->insertAfter(def->toInstruction(), sim->toInstruction());
     }
 
+    
+    
+    
+    
+    
+    if (def->isGuardRangeBailouts() && def->block()->info().compilingWasm()) {
+      def->setNotGuardRangeBailoutsUnchecked();
+    }
+    if (sim->isGuardRangeBailouts() && sim->block()->info().compilingWasm()) {
+      sim->setNotGuardRangeBailoutsUnchecked();
+    }
+
 #ifdef JS_JITSPEW
     JitSpew(JitSpew_GVN, "      Folded %s%u to %s%u", def->opName(), def->id(),
             sim->opName(), sim->id());
