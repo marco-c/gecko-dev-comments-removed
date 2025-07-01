@@ -1528,8 +1528,9 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
     
     case UDAT_ERA_FIELD:
         {
-            if (typeid(cal) == typeid(ChineseCalendar) ||
-                typeid(cal) == typeid(DangiCalendar)) {
+            const char* type = cal.getType();
+            if (strcmp(type, "chinese") == 0 ||
+                strcmp(type, "dangi") == 0) {
                 zeroPaddingNumber(currentNumberFormat,appendTo, value, 1, 9); 
             } else {
                 if (count == 5) {
