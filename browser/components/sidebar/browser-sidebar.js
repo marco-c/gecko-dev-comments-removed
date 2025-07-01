@@ -533,12 +533,7 @@ var SidebarController = {
     if (this.inSingleTabWindow) {
       return null;
     }
-    let snapshot = this._state.getProperties();
-    
-    if (!this._state.panelOpen) {
-      delete snapshot.command;
-    }
-    return snapshot;
+    return this._state.getProperties();
   },
 
   
