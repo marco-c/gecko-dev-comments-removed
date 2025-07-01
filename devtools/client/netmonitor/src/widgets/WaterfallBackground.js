@@ -159,7 +159,8 @@ class WaterfallBackground {
       
       
       
-      colorStr || "#000"
+      colorStr || "#000",
+      document
     );
     return [r, g, b, a * 255];
   }

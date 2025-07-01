@@ -343,7 +343,7 @@ function fontFamily(aComputedStyle) {
 
 
 function getSystemColor(aColor) {
-  let { r, g, b, a } = InspectorUtils.colorToRGBA(aColor);
+  let { r, g, b, a } = InspectorUtils.colorToRGBA(aColor, document);
   return a == 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
