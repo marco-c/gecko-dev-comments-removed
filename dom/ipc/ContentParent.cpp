@@ -6280,18 +6280,37 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
   }
 #endif
 
-  mozilla::glean::perf::PageLoadExtra extra =
-      aPageloadEventData.ToPageLoadExtra();
-  mozilla::glean::perf::page_load.Record(mozilla::Some(extra));
-
   
-  if (++sPageLoadEventCounter >= 10) {
-    Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThreadQueue(
+  
+  
+  
+  if (aPageloadEventData.HasDomain()) {
+    
+    mozilla::glean::perf::PageLoadDomainExtra extra =
+        aPageloadEventData.ToPageLoadDomainExtra();
+    mozilla::glean::perf::page_load_domain.Record(mozilla::Some(extra));
+
+    
+    
+    NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
         NS_NewRunnableFunction(
-            "PageLoadPingIdleTask",
-            [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
-        EventQueuePriority::Idle)));
-    sPageLoadEventCounter = 0;
+            "PageLoadDomainPingIdleTask",
+            [] { mozilla::glean_pings::PageloadDomain.Submit("pageload"_ns); }),
+        EventQueuePriority::Idle));
+  } else {
+    mozilla::glean::perf::PageLoadExtra extra =
+        aPageloadEventData.ToPageLoadExtra();
+    mozilla::glean::perf::page_load.Record(mozilla::Some(extra));
+
+    
+    if (++sPageLoadEventCounter >= 10) {
+      NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+          NS_NewRunnableFunction(
+              "PageLoadPingIdleTask",
+              [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
+          EventQueuePriority::Idle));
+      sPageLoadEventCounter = 0;
+    }
   }
   return IPC_OK();
 }

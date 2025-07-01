@@ -2075,9 +2075,14 @@ void Document::RecordPageLoadEventTelemetry() {
     return;
   }
 
-  auto pageloadEventType =
-      mozilla::performance::pageload_event::GetPageloadEventType();
+  
+  if (IsInPrivateBrowsing()) {
+    return;
+  }
 
+  auto pageloadEventType = performance::pageload_event::GetPageloadEventType();
+
+  
   if (pageloadEventType == mozilla::PageloadEventType::kNone) {
     return;
   }
@@ -2123,17 +2128,45 @@ void Document::RecordPageLoadEventTelemetry() {
 
   nsCOMPtr<nsIEffectiveTLDService> tldService =
       mozilla::components::EffectiveTLD::Service();
-  if (tldService && mReferrerInfo &&
-      (docshell->GetLoadType() & nsIDocShell::LOAD_CMD_NORMAL)) {
-    nsAutoCString currentBaseDomain, referrerBaseDomain;
-    nsCOMPtr<nsIURI> referrerURI = mReferrerInfo->GetComputedReferrer();
-    if (referrerURI) {
-      auto result = NS_SUCCEEDED(
-          tldService->GetBaseDomain(referrerURI, 0, referrerBaseDomain));
-      if (result) {
-        bool sameOrigin = false;
-        NodePrincipal()->IsSameOrigin(referrerURI, &sameOrigin);
-        mPageloadEventData.set_sameOriginNav(sameOrigin);
+
+  nsresult rv = NS_OK;
+  if (tldService) {
+    if (mReferrerInfo &&
+        (docshell->GetLoadType() & nsIDocShell::LOAD_CMD_NORMAL)) {
+      nsAutoCString currentBaseDomain, referrerBaseDomain;
+      nsCOMPtr<nsIURI> referrerURI = mReferrerInfo->GetComputedReferrer();
+      if (referrerURI) {
+        rv = tldService->GetBaseDomain(referrerURI, 0, referrerBaseDomain);
+        if (NS_SUCCEEDED(rv)) {
+          bool sameOrigin = false;
+          NodePrincipal()->IsSameOrigin(referrerURI, &sameOrigin);
+          mPageloadEventData.set_sameOriginNav(sameOrigin);
+        }
+      }
+    }
+
+    
+    
+    if (pageloadEventType == PageloadEventType::kDomain) {
+      
+      
+      nsCOMPtr<nsIURI> currentURI = GetDomainURI();
+      bool hasKnownPublicSuffix = false;
+      rv = tldService->HasKnownPublicSuffix(currentURI, &hasKnownPublicSuffix);
+      if (NS_FAILED(rv) || !hasKnownPublicSuffix) {
+        return;
+      }
+
+      
+      nsAutoCString currentBaseDomain;
+      rv = tldService->GetBaseDomain(currentURI, 0, currentBaseDomain);
+      if (NS_FAILED(rv)) {
+        return;
+      }
+
+      
+      if (!mPageloadEventData.MaybeSetDomain(currentBaseDomain)) {
+        return;
       }
     }
   }
@@ -17051,6 +17084,12 @@ void Document::ReportShadowedHTMLDocumentProperties() {
 }
 
 void Document::ReportLCP() {
+  
+  
+  if (mPageloadEventData.HasDomain()) {
+    return;
+  }
+
   const nsDOMNavigationTiming* timing = GetNavigationTiming();
 
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() || !timing ||
