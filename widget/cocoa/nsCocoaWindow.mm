@@ -6846,6 +6846,13 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 + (void)paintMenubarForWindow:(NSWindow*)aWindow {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
+  if (!NSApp.active) {
+    
+    
+    
+    return;
+  }
+
   
   
   id windowDelegate = [aWindow delegate];

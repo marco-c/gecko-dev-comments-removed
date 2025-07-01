@@ -328,6 +328,13 @@ BOOL nsCocoaUtils::ShouldRestoreStateDueToLaunchAtLogin() {
 void nsCocoaUtils::PrepareForNativeAppModalDialog() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
+  if (!NSApp.active) {
+    
+    
+    
+    return;
+  }
+
   
   
   

@@ -463,6 +463,13 @@ static bool RemoveProblematicMenuItems(NSMenu* aMenu) {
 nsresult nsMenuBarX::Paint() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+  if (!NSApp.active && gSomeMenuBarPainted) {
+    
+    
+    
+    return NS_OK;
+  }
+
   
   
   
