@@ -6922,12 +6922,17 @@ class MSpectreMaskIndex
 
 
 class MLoadElement : public MBinaryInstruction, public NoTypePolicy::Data {
-  MLoadElement(MDefinition* elements, MDefinition* index)
-      : MBinaryInstruction(classOpcode, elements, index) {
-    
-    
-    
-    setGuard();
+  bool needsHoleCheck_;
+
+  MLoadElement(MDefinition* elements, MDefinition* index, bool needsHoleCheck)
+      : MBinaryInstruction(classOpcode, elements, index),
+        needsHoleCheck_(needsHoleCheck) {
+    if (needsHoleCheck) {
+      
+      
+      
+      setGuard();
+    }
     setResultType(MIRType::Value);
     setMovable();
     MOZ_ASSERT(elements->type() == MIRType::Elements);
@@ -6938,6 +6943,8 @@ class MLoadElement : public MBinaryInstruction, public NoTypePolicy::Data {
   INSTRUCTION_HEADER(LoadElement)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, elements), (1, index))
+
+  bool needsHoleCheck() const { return needsHoleCheck_; }
 
   bool congruentTo(const MDefinition* ins) const override {
     return congruentIfOperandsEqual(ins);

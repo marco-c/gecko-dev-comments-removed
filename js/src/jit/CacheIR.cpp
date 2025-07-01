@@ -554,14 +554,6 @@ static bool IsCacheableGetPropSlot(NativeObject* obj, NativeObject* holder,
   return prop.isDataProperty();
 }
 
-enum class NativeGetPropKind {
-  None,
-  Missing,
-  Slot,
-  NativeGetter,
-  ScriptedGetter,
-};
-
 static NativeGetPropKind IsCacheableGetPropCall(NativeObject* obj,
                                                 NativeObject* holder,
                                                 PropertyInfo prop,
@@ -945,16 +937,25 @@ static void EmitMissingPropResult(CacheIRWriter& writer, NativeObject* obj,
   writer.loadUndefinedResult();
 }
 
-static void EmitCallGetterResultNoGuards(JSContext* cx, CacheIRWriter& writer,
-                                         NativeGetPropKind kind,
-                                         NativeObject* obj,
-                                         NativeObject* holder,
-                                         PropertyInfo prop,
-                                         ValOperandId receiverId) {
+static ValOperandId EmitLoadSlot(CacheIRWriter& writer, NativeObject* holder,
+                                 ObjOperandId holderId, uint32_t slot) {
+  if (holder->isFixedSlot(slot)) {
+    return writer.loadFixedSlot(holderId,
+                                NativeObject::getFixedSlotOffset(slot));
+  }
+  size_t dynamicSlotIndex = holder->dynamicSlotIndex(slot);
+  return writer.loadDynamicSlot(holderId, dynamicSlotIndex);
+}
+
+void IRGenerator::emitCallGetterResultNoGuards(NativeGetPropKind kind,
+                                               NativeObject* obj,
+                                               NativeObject* holder,
+                                               PropertyInfo prop,
+                                               ValOperandId receiverId) {
   MOZ_ASSERT(IsCacheableGetPropCall(obj, holder, prop) == kind);
 
   JSFunction* target = &holder->getGetter(prop)->as<JSFunction>();
-  bool sameRealm = cx->realm() == target->realm();
+  bool sameRealm = cx_->realm() == target->realm();
 
   switch (kind) {
     case NativeGetPropKind::NativeGetter: {
@@ -975,12 +976,31 @@ static void EmitCallGetterResultNoGuards(JSContext* cx, CacheIRWriter& writer,
   }
 }
 
+static bool FunctionHasStableBaseScript(JSFunction* fun) {
+  
+  
+  
+  if (!fun->hasBaseScript()) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  if (fun->isSelfHostedBuiltin() && !fun->isLambda()) {
+    return false;
+  }
+  return true;
+}
 
 
-static void EmitGuardGetterSetterSlot(CacheIRWriter& writer,
-                                      NativeObject* holder, PropertyInfo prop,
-                                      ObjOperandId holderId,
-                                      bool holderIsConstant = false) {
+
+void IRGenerator::emitGuardGetterSetterSlot(NativeObject* holder,
+                                            PropertyInfo prop,
+                                            ObjOperandId holderId,
+                                            AccessorKind kind,
+                                            bool holderIsConstant) {
   
   
   
@@ -989,6 +1009,27 @@ static void EmitGuardGetterSetterSlot(CacheIRWriter& writer,
   }
 
   size_t slot = prop.slot();
+
+  
+  
+  
+  if (!isFirstStub_) {
+    bool isGetter = kind == AccessorKind::Getter;
+    JSObject* accessor =
+        isGetter ? holder->getGetter(prop) : holder->getSetter(prop);
+    JSFunction* fun = &accessor->as<JSFunction>();
+    if (FunctionHasStableBaseScript(fun)) {
+      bool needsClassGuard = holder->hasNonFunctionAccessor();
+      ValOperandId getterSetterId =
+          EmitLoadSlot(writer, holder, holderId, slot);
+      ObjOperandId functionId = writer.loadGetterSetterFunction(
+          getterSetterId, isGetter, needsClassGuard);
+      writer.saveScriptedGetterSetterCallee(functionId);
+      writer.guardFunctionScript(functionId, fun->baseScript());
+      return;
+    }
+  }
+
   Value slotVal = holder->getSlot(slot);
   MOZ_ASSERT(slotVal.isPrivateGCThing());
 
@@ -1001,17 +1042,18 @@ static void EmitGuardGetterSetterSlot(CacheIRWriter& writer,
   }
 }
 
-static void EmitCallGetterResultGuards(CacheIRWriter& writer, NativeObject* obj,
-                                       NativeObject* holder, HandleId id,
-                                       PropertyInfo prop, ObjOperandId objId,
-                                       ICState::Mode mode) {
+void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
+                                                    NativeObject* holder,
+                                                    HandleId id,
+                                                    PropertyInfo prop,
+                                                    ObjOperandId objId) {
   
   
   
 
   MOZ_ASSERT(holder->containsPure(id, prop));
 
-  if (mode == ICState::Mode::Specialized || IsWindow(obj)) {
+  if (mode_ == ICState::Mode::Specialized || IsWindow(obj)) {
     TestMatchingNativeReceiver(writer, obj, objId);
 
     if (obj != holder) {
@@ -1021,10 +1063,10 @@ static void EmitCallGetterResultGuards(CacheIRWriter& writer, NativeObject* obj,
       ObjOperandId holderId = writer.loadObject(holder);
       TestMatchingHolder(writer, holder, holderId);
 
-      EmitGuardGetterSetterSlot(writer, holder, prop, holderId,
+      emitGuardGetterSetterSlot(holder, prop, holderId, AccessorKind::Getter,
                                  true);
     } else {
-      EmitGuardGetterSetterSlot(writer, holder, prop, objId);
+      emitGuardGetterSetterSlot(holder, prop, objId, AccessorKind::Getter);
     }
   } else {
     GetterSetter* gs = holder->getGetterSetter(prop);
@@ -1032,13 +1074,14 @@ static void EmitCallGetterResultGuards(CacheIRWriter& writer, NativeObject* obj,
   }
 }
 
-static void EmitCallGetterResult(JSContext* cx, CacheIRWriter& writer,
-                                 NativeGetPropKind kind, NativeObject* obj,
-                                 NativeObject* holder, HandleId id,
-                                 PropertyInfo prop, ObjOperandId objId,
-                                 ValOperandId receiverId, ICState::Mode mode) {
-  EmitCallGetterResultGuards(writer, obj, holder, id, prop, objId, mode);
-  EmitCallGetterResultNoGuards(cx, writer, kind, obj, holder, prop, receiverId);
+void GetPropIRGenerator::emitCallGetterResult(NativeGetPropKind kind,
+                                              NativeObject* obj,
+                                              NativeObject* holder, HandleId id,
+                                              PropertyInfo prop,
+                                              ObjOperandId objId,
+                                              ValOperandId receiverId) {
+  emitCallGetterResultGuards(obj, holder, id, prop, objId);
+  emitCallGetterResultNoGuards(kind, obj, holder, prop, receiverId);
 }
 
 static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
@@ -1102,35 +1145,23 @@ static bool CanAttachDOMGetterSetter(JSContext* cx, JSJitInfo::OpType type,
   return CanAttachDOMCall(cx, type, obj, fun, mode);
 }
 
-static void EmitCallDOMGetterResultNoGuards(CacheIRWriter& writer,
-                                            NativeObject* holder,
-                                            PropertyInfo prop,
-                                            ObjOperandId objId) {
+void IRGenerator::emitCallDOMGetterResultNoGuards(NativeObject* holder,
+                                                  PropertyInfo prop,
+                                                  ObjOperandId objId) {
   JSFunction* getter = &holder->getGetter(prop)->as<JSFunction>();
   writer.callDOMGetterResult(objId, getter->jitInfo());
   writer.returnFromIC();
 }
 
-static void EmitCallDOMGetterResult(JSContext* cx, CacheIRWriter& writer,
-                                    NativeObject* obj, NativeObject* holder,
-                                    HandleId id, PropertyInfo prop,
-                                    ObjOperandId objId) {
+void GetPropIRGenerator::emitCallDOMGetterResult(NativeObject* obj,
+                                                 NativeObject* holder,
+                                                 HandleId id, PropertyInfo prop,
+                                                 ObjOperandId objId) {
   
   
   
-  EmitCallGetterResultGuards(writer, obj, holder, id, prop, objId,
-                             ICState::Mode::Specialized);
-  EmitCallDOMGetterResultNoGuards(writer, holder, prop, objId);
-}
-
-static ValOperandId EmitLoadSlot(CacheIRWriter& writer, NativeObject* holder,
-                                 ObjOperandId holderId, uint32_t slot) {
-  if (holder->isFixedSlot(slot)) {
-    return writer.loadFixedSlot(holderId,
-                                NativeObject::getFixedSlotOffset(slot));
-  }
-  size_t dynamicSlotIndex = holder->dynamicSlotIndex(slot);
-  return writer.loadDynamicSlot(holderId, dynamicSlotIndex);
+  emitCallGetterResultGuards(obj, holder, id, prop, objId);
+  emitCallDOMGetterResultNoGuards(holder, prop, objId);
 }
 
 void GetPropIRGenerator::attachMegamorphicNativeSlot(ObjOperandId objId,
@@ -1228,14 +1259,13 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
 
       if (!isSuper() && CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, nobj,
                                                  holder, *prop, mode_)) {
-        EmitCallDOMGetterResult(cx_, writer, nobj, holder, id, *prop, objId);
+        emitCallDOMGetterResult(nobj, holder, id, *prop, objId);
 
         trackAttached("GetProp.DOMGetter");
         return AttachDecision::Attach;
       }
 
-      EmitCallGetterResult(cx_, writer, kind, nobj, holder, id, *prop, objId,
-                           receiverId, mode_);
+      emitCallGetterResult(kind, nobj, holder, id, *prop, objId, receiverId);
 
       trackAttached("GetProp.NativeGetter");
       return AttachDecision::Attach;
@@ -1364,14 +1394,13 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
       if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, windowObj, holder,
                                    *prop, mode_)) {
         MOZ_ASSERT(!needsWindowProxy);
-        EmitCallDOMGetterResult(cx_, writer, windowObj, holder, id, *prop,
-                                windowObjId);
+        emitCallDOMGetterResult(windowObj, holder, id, *prop, windowObjId);
         trackAttached("GetProp.WindowProxyDOMGetter");
       } else {
         ValOperandId receiverId =
             writer.boxObject(needsWindowProxy ? objId : windowObjId);
-        EmitCallGetterResult(cx_, writer, kind, windowObj, holder, id, *prop,
-                             windowObjId, receiverId, mode_);
+        emitCallGetterResult(kind, windowObj, holder, id, *prop, windowObjId,
+                             receiverId);
         trackAttached("GetProp.WindowProxyGetter");
       }
 
@@ -1833,9 +1862,10 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyExpando(
     
     MOZ_ASSERT(kind == NativeGetPropKind::NativeGetter ||
                kind == NativeGetPropKind::ScriptedGetter);
-    EmitGuardGetterSetterSlot(writer, nativeExpandoObj, *prop, expandoObjId);
-    EmitCallGetterResultNoGuards(cx_, writer, kind, nativeExpandoObj,
-                                 nativeExpandoObj, *prop, receiverId);
+    emitGuardGetterSetterSlot(nativeExpandoObj, *prop, expandoObjId,
+                              AccessorKind::Getter);
+    emitCallGetterResultNoGuards(kind, nativeExpandoObj, nativeExpandoObj,
+                                 *prop, receiverId);
   }
 
   trackAttached("GetProp.DOMProxyExpando");
@@ -1982,10 +2012,10 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
       MOZ_ASSERT(kind == NativeGetPropKind::NativeGetter ||
                  kind == NativeGetPropKind::ScriptedGetter);
       MOZ_ASSERT(!isSuper());
-      EmitGuardGetterSetterSlot(writer, holder, *prop, holderId,
+      emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Getter,
                                  true);
-      EmitCallGetterResultNoGuards(cx_, writer, kind, nativeProtoObj, holder,
-                                   *prop, receiverId);
+      emitCallGetterResultNoGuards(kind, nativeProtoObj, holder, *prop,
+                                   receiverId);
     }
   } else {
     
@@ -2251,7 +2281,7 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArray(HandleObject obj,
   maybeEmitIdGuard(id);
   
   
-  EmitCallGetterResultGuards(writer, tarr, holder, id, *prop, objId, mode_);
+  emitCallGetterResultGuards(tarr, holder, id, *prop, objId);
   if (isLength) {
     size_t length = tarr->length().valueOr(0);
     if (!tarr->is<ResizableTypedArrayObject>()) {
@@ -2359,7 +2389,7 @@ AttachDecision GetPropIRGenerator::tryAttachDataView(HandleObject obj,
   maybeEmitIdGuard(id);
   
   
-  EmitCallGetterResultGuards(writer, dv, holder, id, *prop, objId, mode_);
+  emitCallGetterResultGuards(dv, holder, id, *prop, objId);
 
   
   if (!dv->is<ImmutableDataViewObject>()) {
@@ -2451,7 +2481,7 @@ AttachDecision GetPropIRGenerator::tryAttachArrayBufferMaybeShared(
   maybeEmitIdGuard(id);
   
   
-  EmitCallGetterResultGuards(writer, buf, holder, id, *prop, objId, mode_);
+  emitCallGetterResultGuards(buf, holder, id, *prop, objId);
   if (!buf->is<GrowableSharedArrayBufferObject>()) {
     if (buf->byteLength() <= INT32_MAX) {
       writer.loadArrayBufferByteLengthInt32Result(objId);
@@ -2505,7 +2535,7 @@ AttachDecision GetPropIRGenerator::tryAttachRegExp(HandleObject obj,
   maybeEmitIdGuard(id);
   
   
-  EmitCallGetterResultGuards(writer, regExp, holder, id, *prop, objId, mode_);
+  emitCallGetterResultGuards(regExp, holder, id, *prop, objId);
 
   writer.regExpFlagResult(objId, flags.value());
   writer.returnFromIC();
@@ -2552,7 +2582,7 @@ AttachDecision GetPropIRGenerator::tryAttachMap(HandleObject obj,
 
   
   
-  EmitCallGetterResultGuards(writer, mapObj, holder, id, *prop, objId, mode_);
+  emitCallGetterResultGuards(mapObj, holder, id, *prop, objId);
 
   writer.mapSizeResult(objId);
   writer.returnFromIC();
@@ -2599,7 +2629,7 @@ AttachDecision GetPropIRGenerator::tryAttachSet(HandleObject obj,
 
   
   
-  EmitCallGetterResultGuards(writer, setObj, holder, id, *prop, objId, mode_);
+  emitCallGetterResultGuards(setObj, holder, id, *prop, objId);
 
   writer.setSizeResult(objId);
   writer.returnFromIC();
@@ -2823,8 +2853,7 @@ AttachDecision GetPropIRGenerator::tryAttachPrimitive(ValOperandId valId,
       maybeEmitIdGuard(id);
 
       ObjOperandId protoId = writer.loadObject(nproto);
-      EmitCallGetterResult(cx_, writer, kind, nproto, holder, id, *prop,
-                           protoId, valId, mode_);
+      emitCallGetterResult(kind, nproto, holder, id, *prop, protoId, valId);
 
       trackAttached("GetProp.PrimitiveGetter");
       return AttachDecision::Attach;
@@ -3129,7 +3158,8 @@ AttachDecision GetPropIRGenerator::tryAttachDenseElement(
   } else {
     TestMatchingNativeReceiver(writer, nobj, objId);
   }
-  writer.loadDenseElementResult(objId, indexId);
+  bool expectPackedElements = nobj->denseElementsArePacked();
+  writer.loadDenseElementResult(objId, indexId, expectPackedElements);
   writer.returnFromIC();
 
   trackAttached("GetProp.DenseElement");
@@ -3636,12 +3666,12 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
     
     ObjOperandId holderId = writer.loadObject(holder);
     writer.guardShape(holderId, holder->shape());
-    EmitGuardGetterSetterSlot(writer, holder, *prop, holderId,
+    emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Getter,
                                true);
   } else {
     
     
-    EmitGuardGetterSetterSlot(writer, holder, *prop, globalId,
+    emitGuardGetterSetterSlot(holder, *prop, globalId, AccessorKind::Getter,
                                true);
   }
 
@@ -3649,7 +3679,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
                                mode_)) {
     
     MOZ_ASSERT(!needsWindowProxy);
-    EmitCallDOMGetterResultNoGuards(writer, holder, *prop, globalId);
+    emitCallDOMGetterResultNoGuards(holder, *prop, globalId);
     trackAttached("GetName.GlobalNameDOMGetter");
   } else {
     ObjOperandId receiverObjId;
@@ -3660,8 +3690,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
       receiverObjId = globalId;
     }
     ValOperandId receiverId = writer.boxObject(receiverObjId);
-    EmitCallGetterResultNoGuards(cx_, writer, kind, global, holder, *prop,
-                                 receiverId);
+    emitCallGetterResultNoGuards(kind, global, holder, *prop, receiverId);
     trackAttached("GetName.GlobalNameGetter");
   }
 
@@ -4825,12 +4854,13 @@ static bool CanAttachSetter(JSContext* cx, jsbytecode* pc, JSObject* obj,
   return true;
 }
 
-static void EmitCallSetterNoGuards(JSContext* cx, CacheIRWriter& writer,
-                                   NativeObject* obj, NativeObject* holder,
-                                   PropertyInfo prop, ObjOperandId receiverId,
-                                   ValOperandId rhsId) {
+void SetPropIRGenerator::emitCallSetterNoGuards(NativeObject* obj,
+                                                NativeObject* holder,
+                                                PropertyInfo prop,
+                                                ObjOperandId receiverId,
+                                                ValOperandId rhsId) {
   JSFunction* target = &holder->getSetter(prop)->as<JSFunction>();
-  bool sameRealm = cx->realm() == target->realm();
+  bool sameRealm = cx_->realm() == target->realm();
 
   if (target->isNativeWithoutJitEntry()) {
     MOZ_ASSERT(IsCacheableSetPropCallNative(obj, holder, prop));
@@ -4844,11 +4874,12 @@ static void EmitCallSetterNoGuards(JSContext* cx, CacheIRWriter& writer,
   writer.returnFromIC();
 }
 
-static void EmitCallDOMSetterNoGuards(JSContext* cx, CacheIRWriter& writer,
-                                      NativeObject* holder, PropertyInfo prop,
-                                      ObjOperandId objId, ValOperandId rhsId) {
+void SetPropIRGenerator::emitCallDOMSetterNoGuards(NativeObject* holder,
+                                                   PropertyInfo prop,
+                                                   ObjOperandId objId,
+                                                   ValOperandId rhsId) {
   JSFunction* setter = &holder->getSetter(prop)->as<JSFunction>();
-  MOZ_ASSERT(cx->realm() == setter->realm());
+  MOZ_ASSERT(cx_->realm() == setter->realm());
 
   writer.callDOMSetter(objId, setter->jitInfo(), rhsId);
   writer.returnFromIC();
@@ -4886,10 +4917,10 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
       ObjOperandId holderId = writer.loadObject(holder);
       TestMatchingHolder(writer, holder, holderId);
 
-      EmitGuardGetterSetterSlot(writer, holder, *prop, holderId,
+      emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Setter,
                                  true);
     } else {
-      EmitGuardGetterSetterSlot(writer, holder, *prop, objId);
+      emitGuardGetterSetterSlot(holder, *prop, objId, AccessorKind::Setter);
     }
   } else {
     GetterSetter* gs = holder->getGetterSetter(*prop);
@@ -4899,7 +4930,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Setter, nobj, holder, *prop,
                                mode_)) {
     MOZ_ASSERT(!needsWindowProxy);
-    EmitCallDOMSetterNoGuards(cx_, writer, holder, *prop, objId, rhsId);
+    emitCallDOMSetterNoGuards(holder, *prop, objId, rhsId);
 
     trackAttached("SetProp.DOMSetter");
     return AttachDecision::Attach;
@@ -4912,7 +4943,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
   } else {
     receiverId = objId;
   }
-  EmitCallSetterNoGuards(cx_, writer, nobj, holder, *prop, receiverId, rhsId);
+  emitCallSetterNoGuards(nobj, holder, *prop, receiverId, rhsId);
 
   trackAttached("SetProp.Setter");
   return AttachDecision::Attach;
@@ -5351,13 +5382,13 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyUnshadowed(
   ObjOperandId holderId = writer.loadObject(holder);
   TestMatchingHolder(writer, holder, holderId);
 
-  EmitGuardGetterSetterSlot(writer, holder, *prop, holderId,
+  emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Setter,
                              true);
 
   
   
   
-  EmitCallSetterNoGuards(cx_, writer, nproto, holder, *prop, objId, rhsId);
+  emitCallSetterNoGuards(nproto, holder, *prop, objId, rhsId);
 
   trackAttached("SetProp.DOMProxyUnshadowed");
   return AttachDecision::Attach;
@@ -5409,9 +5440,10 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyExpando(
         obj, objId, expandoVal, nativeExpandoObj);
 
     MOZ_ASSERT(holder == nativeExpandoObj);
-    EmitGuardGetterSetterSlot(writer, nativeExpandoObj, *prop, expandoObjId);
-    EmitCallSetterNoGuards(cx_, writer, nativeExpandoObj, nativeExpandoObj,
-                           *prop, objId, rhsId);
+    emitGuardGetterSetterSlot(nativeExpandoObj, *prop, expandoObjId,
+                              AccessorKind::Setter);
+    emitCallSetterNoGuards(nativeExpandoObj, nativeExpandoObj, *prop, objId,
+                           rhsId);
     trackAttached("SetProp.DOMProxyExpandoSetter");
     return AttachDecision::Attach;
   }
@@ -6633,14 +6665,7 @@ void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
   
   
   
-  
-  
-  
-  
-  
-  
-  if (isFirstStub_ || !callee->hasBaseScript() ||
-      (callee->isSelfHostedBuiltin() && !callee->isLambda())) {
+  if (isFirstStub_ || !FunctionHasStableBaseScript(callee)) {
     writer.guardSpecificFunction(calleeId, callee);
   } else {
     MOZ_ASSERT_IF(callee->isSelfHostedBuiltin(),

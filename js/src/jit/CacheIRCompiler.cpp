@@ -4980,7 +4980,8 @@ bool CacheIRCompiler::emitLoadArgumentsObjectArgExistsResult(
 }
 
 bool CacheIRCompiler::emitLoadDenseElementResult(ObjOperandId objId,
-                                                 Int32OperandId indexId) {
+                                                 Int32OperandId indexId,
+                                                 bool expectPackedElements) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   Register obj = allocator.useRegister(masm, objId);
@@ -5000,9 +5001,19 @@ bool CacheIRCompiler::emitLoadDenseElementResult(ObjOperandId objId,
   Address initLength(scratch1, ObjectElements::offsetOfInitializedLength());
   masm.spectreBoundsCheck32(index, initLength, scratch2, failure->label());
 
-  
+  if (expectPackedElements) {
+    Address flags(scratch1, ObjectElements::offsetOfFlags());
+    masm.branchTest32(Assembler::NonZero, flags,
+                      Imm32(ObjectElements::NON_PACKED), failure->label());
+  }
+
   BaseObjectElementIndex element(scratch1, index);
-  masm.branchTestMagic(Assembler::Equal, element, failure->label());
+
+  
+  if (!expectPackedElements) {
+    masm.branchTestMagic(Assembler::Equal, element, failure->label());
+  }
+
   masm.loadTypedOrValue(element, output);
   return true;
 }
@@ -9309,6 +9320,36 @@ bool CacheIRCompiler::emitMegamorphicStoreSlot(ObjOperandId objId,
 
   using Fn = bool (*)(JSContext*, HandleObject, HandleId, HandleValue, bool);
   callvm.callNoResult<Fn, SetPropertyMegamorphic<false>>();
+  return true;
+}
+
+bool CacheIRCompiler::emitLoadGetterSetterFunction(ValOperandId getterSetterId,
+                                                   bool isGetter,
+                                                   bool needsClassGuard,
+                                                   ObjOperandId resultId) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+
+  ValueOperand getterSetter = allocator.useValueRegister(masm, getterSetterId);
+  Register output = allocator.defineRegister(masm, resultId);
+  AutoScratchRegister scratch(allocator, masm);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  masm.unboxNonDouble(getterSetter, output, JSVAL_TYPE_PRIVATE_GCTHING);
+
+  size_t offset = isGetter ? GetterSetter::offsetOfGetter()
+                           : GetterSetter::offsetOfSetter();
+  masm.loadPtr(Address(output, offset), output);
+
+  masm.branchTestPtr(Assembler::Zero, output, output, failure->label());
+  if (needsClassGuard) {
+    masm.branchTestObjIsFunction(Assembler::NotEqual, output, scratch, output,
+                                 failure->label());
+  }
+
   return true;
 }
 
