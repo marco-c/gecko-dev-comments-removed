@@ -848,17 +848,6 @@ void Animation::CommitStyles(ErrorResult& aRv) {
 
   
   
-  auto computedTimingWithEndpointIncluded =
-      keyframeEffect->GetComputedTiming(nullptr, EndpointBehavior::Inclusive);
-  auto computedTimingWithEndpointExcluded =
-      keyframeEffect->GetComputedTiming(nullptr, EndpointBehavior::Exclusive);
-  if (computedTimingWithEndpointIncluded.mProgress !=
-      computedTimingWithEndpointExcluded.mProgress) {
-    doc->SetUseCounter(eUseCounter_custom_CommitStylesNonFillingFinalValue);
-  }
-
-  
-  
   
   
   mozAutoDocUpdate autoUpdate(target.mElement->OwnerDoc(), true);
