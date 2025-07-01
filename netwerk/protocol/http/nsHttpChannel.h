@@ -223,6 +223,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult ContinueConnect();
 
   [[nodiscard]] nsresult StartRedirectChannelToURI(nsIURI*, uint32_t);
+  [[nodiscard]] nsresult StartRedirectChannelToURI(
+      nsIURI*, uint32_t, std::function<void(nsIChannel*)>&&);
 
   SnifferCategoryType GetSnifferCategoryType() const {
     return mSnifferCategoryType;
@@ -838,6 +840,21 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   Maybe<nsCOMPtr<nsIDNSHTTPSSVCRecord>> mHTTPSSVCRecord;
+
+  enum class EssentialDomainCategory {
+    SubAddonsMozillaOrg,
+    AddonsMozillaOrg,
+    Aus5MozillaOrg,
+    RemoteSettings,
+    Telemetry,
+    Other,
+  };
+
+  
+  
+  
+  Maybe<EssentialDomainCategory> mEssentialDomainCategory;
+  static EssentialDomainCategory GetEssentialDomainCategory(nsCString& domain);
 
  protected:
   virtual void DoNotifyListenerCleanup() override;
