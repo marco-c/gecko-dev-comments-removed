@@ -11,6 +11,26 @@ pub fn pass(module: &mut Module) -> Result<()> {
     module.visit_mut(|cbi: &mut CallbackInterface| {
         cbi.vtable.interface_name = cbi.name.clone();
         cbi.vtable.callback_interface = true;
+        cbi.interface_base_class = InterfaceBaseClass {
+            name: cbi.name.clone(),
+            methods: cbi
+                .vtable
+                .methods
+                .iter()
+                .cloned()
+                .map(|vtable_meth| {
+                    Method {
+                        name: vtable_meth.callable.name.clone(),
+                        
+                        docstring: None,
+                        callable: vtable_meth.callable,
+                        ..Method::default()
+                    }
+                })
+                .collect(),
+            docstring: cbi.docstring.clone(),
+            ..InterfaceBaseClass::default()
+        };
     });
     
     module.visit_mut(|vtable: &mut VTable| {
