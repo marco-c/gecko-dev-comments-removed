@@ -811,6 +811,38 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
 
   
   
+  auto getCapabilitiesResult = dom::Nullable<dom::RTCRtpCapabilities>();
+  GetCapabilities(aKind, getCapabilitiesResult, sdp::Direction::kSend);
+  MOZ_ASSERT(!getCapabilitiesResult.IsNull());
+  if (NS_WARN_IF(getCapabilitiesResult.IsNull())) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  const auto& codecs = getCapabilitiesResult.Value().mCodecs;
+  for (const auto& encoding : sendEncodings) {
+    bool found = false;
+    if (encoding.mCodec.WasPassed()) {
+      for (const auto& codec : codecs) {
+        if (DoesCodecParameterMatchCodec(encoding.mCodec.Value(), codec)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const auto mime = NS_LossyConvertUTF16toASCII(encoding.mCodec.Value().mMimeType);
+        std::stringstream ss;
+        ss << "Codec " << mime
+           << " does not match any codec "
+              "in GetCapabilities";
+        nsCString errorStr(ss.str().c_str());
+        aRv.ThrowOperationError(errorStr);
+        return nullptr;
+      }
+    }
+  }
+
+  
+  
   
   
 
@@ -828,8 +860,12 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
   
   
   
-  RTCRtpSender::CheckAndRectifyEncodings(sendEncodings,
-                                         *type == SdpMediaSection::kVideo, aRv);
+
+  RTCRtpSender::CheckAndRectifyEncodings(
+      sendEncodings, *type == SdpMediaSection::kVideo,
+      
+      Optional<Sequence<RTCRtpCodecParameters>>(), false, false,
+      MatchGetCapabilities::NO, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
