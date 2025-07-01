@@ -16,39 +16,43 @@ namespace jit {
 
 class IonScript;
 
-class RecompileInfo {
+
+
+
+class IonScriptKey {
   JSScript* script_;
   IonCompilationId id_;
 
  public:
-  RecompileInfo(JSScript* script, IonCompilationId id)
+  IonScriptKey(JSScript* script, IonCompilationId id)
       : script_(script), id_(id) {}
 
   JSScript* script() const { return script_; }
 
+  
+  
   IonScript* maybeIonScriptToInvalidate() const;
 
   bool traceWeak(JSTracer* trc);
 
-  bool operator==(const RecompileInfo& other) const {
+  bool operator==(const IonScriptKey& other) const {
     return script_ == other.script_ && id_ == other.id_;
   }
 };
 
 
 
-using RecompileInfoVector = JS::GCVector<RecompileInfo, 1, SystemAllocPolicy>;
+using IonScriptKeyVector = JS::GCVector<IonScriptKey, 1, SystemAllocPolicy>;
 
 
 void InvalidateAll(JS::GCContext* gcx, JS::Zone* zone);
 void FinishInvalidation(JS::GCContext* gcx, JSScript* script);
 
 
-void AddPendingInvalidation(jit::RecompileInfoVector& invalid,
-                            JSScript* script);
+void AddPendingInvalidation(jit::IonScriptKeyVector& invalid, JSScript* script);
 
 
-void Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
+void Invalidate(JSContext* cx, const IonScriptKeyVector& invalid,
                 bool resetUses = true, bool cancelOffThread = true);
 void Invalidate(JSContext* cx, JSScript* script, bool resetUses = true,
                 bool cancelOffThread = true);

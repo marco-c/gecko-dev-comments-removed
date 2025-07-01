@@ -3262,7 +3262,7 @@ static inline void MarkJitScriptActiveIfObservable(
 
 static bool AppendAndInvalidateScript(JSContext* cx, Zone* zone,
                                       JSScript* script,
-                                      jit::RecompileInfoVector& invalid,
+                                      jit::IonScriptKeyVector& invalid,
                                       Vector<JSScript*>& scripts) {
   
   
@@ -3289,7 +3289,7 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
   
   
   {
-    RecompileInfoVector invalid;
+    IonScriptKeyVector invalid;
     if (JSScript* script = obs.singleScriptForZoneInvalidation()) {
       if (obs.shouldRecompileOrInvalidate(script)) {
         if (!AppendAndInvalidateScript(cx, zone, script, invalid, scripts)) {
