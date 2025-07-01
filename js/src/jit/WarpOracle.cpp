@@ -1024,6 +1024,13 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
     return false;
   }
 
+  
+  
+  
+  if (!targetScript->hasBaselineScript()) {
+    return false;
+  }
+
   bool isTrialInlined =
       fallbackStub->trialInliningState() == TrialInliningState::Inlined;
   MOZ_ASSERT_IF(!isTrialInlined, fallbackStub->trialInliningState() ==
