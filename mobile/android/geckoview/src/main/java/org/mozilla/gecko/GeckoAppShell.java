@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko;
 
@@ -78,9 +78,9 @@ import org.mozilla.geckoview.R;
 public class GeckoAppShell {
   private static final String LOGTAG = "GeckoAppShell";
 
-  
-
-
+  /*
+   * Keep these values consistent with |SensorType| in HalSensor.h
+   */
   public static final int SENSOR_ORIENTATION = 0;
   public static final int SENSOR_ACCELERATION = 1;
   public static final int SENSOR_PROXIMITY = 2;
@@ -90,10 +90,10 @@ public class GeckoAppShell {
   public static final int SENSOR_ROTATION_VECTOR = 6;
   public static final int SENSOR_GAME_ROTATION_VECTOR = 7;
 
-  
+  // We have static members only.
   private GeckoAppShell() {}
 
-  
+  // Name for app-scoped prefs
   public static final String APP_PREFS_NAME = "GeckoApp";
 
   private static class GeckoCrashHandler extends CrashHandler {
@@ -126,8 +126,8 @@ public class GeckoAppShell {
           final SharedPreferences.Editor editor = prefs.edit();
           editor.putBoolean(PREFS_OOM_EXCEPTION, true);
 
-          
-          
+          // Synchronously write to disk so we know it's done before we
+          // shutdown
           editor.commit();
         }
 
@@ -136,10 +136,10 @@ public class GeckoAppShell {
       } catch (final Throwable e) {
       }
 
-      
-      
+      // reportJavaCrash should have caused us to hard crash. If we're still here,
+      // it probably means Gecko is not loaded, and we should do something else.
       if (BuildConfig.MOZ_CRASHREPORTER && BuildConfig.MOZILLA_OFFICIAL) {
-        
+        // Only use Java crash reporter if enabled on official build.
         return super.reportException(thread, exc);
       }
       return false;
@@ -186,14 +186,14 @@ public class GeckoAppShell {
   private static volatile boolean locationListeningRequested = false;
   private static volatile boolean locationPaused = false;
 
-  
+  // See also HardwareUtils.LOW_MEMORY_THRESHOLD_MB.
   private static final int HIGH_MEMORY_DEVICE_THRESHOLD_MB = 768;
 
-  
-
-
-
-
+  /*
+   * Device RAM threshold requirement for adding additional headers.
+   * Keep in sync with RAM_THRESHOLD_MEGABYTES defined in
+   * https://searchfox.org/mozilla-central/rev/55944eaee1e358b5443eaedc8adcd37e3fd23fd3/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/FenixApplication.kt#120
+   */
   private static final int ADDITIONAL_SEARCH_HEADER_RAM_THRESHOLD_MEGABYTES = 1024;
 
   private static int sDensityDpi;
@@ -202,12 +202,12 @@ public class GeckoAppShell {
   private static boolean sUseMaxScreenDepth;
   private static Float sScreenRefreshRate;
 
-  
+  /* Is the value in sVibrationEndTime valid? */
   private static boolean sVibrationMaybePlaying;
 
-  
-
-
+  /* Time (in System.nanoTime() units) when the currently-playing vibration
+   * is scheduled to end.  This value is valid only when
+   * sVibrationMaybePlaying is true. */
   private static long sVibrationEndTime;
 
   private static Sensor gAccelerometerSensor;
@@ -218,18 +218,18 @@ public class GeckoAppShell {
   private static Sensor gRotationVectorSensor;
   private static Sensor gGameRotationVectorSensor;
 
-  
-
-
-
+  /*
+   * Keep in sync with constants found here:
+   * http://searchfox.org/mozilla-central/source/uriloader/base/nsIWebProgressListener.idl
+   */
   public static final int WPL_STATE_START = 0x00000001;
   public static final int WPL_STATE_STOP = 0x00000010;
   public static final int WPL_STATE_IS_DOCUMENT = 0x00020000;
   public static final int WPL_STATE_IS_NETWORK = 0x00040000;
 
-  
-
-
+  /* Keep in sync with constants found here:
+    http://searchfox.org/mozilla-central/source/netwerk/base/nsINetworkLinkService.idl
+  */
   public static final int LINK_TYPE_UNKNOWN = 0;
   public static final int LINK_TYPE_ETHERNET = 1;
   public static final int LINK_TYPE_USB = 2;
@@ -239,11 +239,11 @@ public class GeckoAppShell {
 
   public static final String PREFS_OOM_EXCEPTION = "OOMException";
 
-  
+  /* The Android-side API: API methods that Android calls */
 
-  
+  // helper methods
   @WrapForJNI
-   static native void reportJavaCrash(Throwable exc, String stackTrace);
+  /* package */ static native void reportJavaCrash(Throwable exc, String stackTrace);
 
   private static Rect sScreenSizeOverride;
 
@@ -274,9 +274,9 @@ public class GeckoAppShell {
     }
   }
 
-  
-
-
+  /*
+   *  The Gecko-side API: API methods that Gecko calls
+   */
 
   @WrapForJNI(exceptionMode = "ignore")
   private static String getExceptionStackTrace(final Throwable e) {
@@ -297,7 +297,7 @@ public class GeckoAppShell {
 
   private static Location determineReliableLocation(
       @NotNull final Location locA, @NotNull final Location locB) {
-    
+    // The 6 seconds were chosen arbitrarily
     final long closeTime = 6000000000L;
     final boolean isNearSameTime =
         Math.abs((locA.getElapsedRealtimeNanos() - locB.getElapsedRealtimeNanos())) <= closeTime;
@@ -309,7 +309,7 @@ public class GeckoAppShell {
     return isAMoreRecent ? locA : locB;
   }
 
-  
+  // Permissions are explicitly checked when requesting content permission.
   @SuppressLint("MissingPermission")
   private static @Nullable Location getLastKnownLocation(final LocationManager lm) {
     Location lastKnownLocation = null;
@@ -330,20 +330,20 @@ public class GeckoAppShell {
     return lastKnownLocation;
   }
 
-  
+  // Toggles the location listeners on/off, which will then provide/stop location information
   @WrapForJNI(calledFrom = "gecko")
   private static synchronized boolean enableLocationUpdates(final boolean enable) {
     locationListeningRequested = enable;
     final boolean canListen = updateLocationListeners();
-    
+    // canListen will be true even if paused. During paused, we keep requesting status.
     if (!canListen && locationListeningRequested) {
-      
+      // Didn't successfully start listener when requested
       locationListeningRequested = false;
     }
     return canListen;
   }
 
-  
+  // Permissions are explicitly checked when requesting content permission.
   @SuppressLint("MissingPermission")
   private static synchronized boolean updateLocationListeners() {
     final boolean shouldListen = locationListeningRequested && !locationPaused;
@@ -354,7 +354,7 @@ public class GeckoAppShell {
 
     if (!shouldListen) {
       if (!locationListeningRequested) {
-        
+        // We are paused, so stop listening.
         lm.removeUpdates(sAndroidListeners);
       }
       return true;
@@ -404,10 +404,10 @@ public class GeckoAppShell {
     try {
       return (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
     } catch (final NoSuchFieldError e) {
-      
-      
-      
-      
+      // Some Tegras throw exceptions about missing the CONTROL_LOCATION_UPDATES permission,
+      // which allows enabling/disabling location update notifications from the cell radio.
+      // CONTROL_LOCATION_UPDATES is not for use by normal applications, but we might be
+      // hitting this problem if the Tegras are confused about missing cell radios.
       Log.e(LOGTAG, "LOCATION_SERVICE not found?!", e);
       return null;
     }
@@ -419,11 +419,11 @@ public class GeckoAppShell {
   }
 
   @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-   static native void onSensorChanged(
+  /* package */ static native void onSensorChanged(
       int halType, float x, float y, float z, float w, long time);
 
   @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
-   static native void onLocationChanged(
+  /* package */ static native void onLocationChanged(
       double latitude,
       double longitude,
       double altitude,
@@ -441,7 +441,7 @@ public class GeckoAppShell {
       final int sensorType = s.sensor.getType();
       int halType = 0;
       float x = 0.0f, y = 0.0f, z = 0.0f, w = 0.0f;
-      
+      // SensorEvent timestamp is in nanoseconds, Gecko expects microseconds.
       final long time = s.timestamp / 1000;
 
       switch (sensorType) {
@@ -473,7 +473,7 @@ public class GeckoAppShell {
           break;
 
         case Sensor.TYPE_ROTATION_VECTOR:
-        case Sensor.TYPE_GAME_ROTATION_VECTOR: 
+        case Sensor.TYPE_GAME_ROTATION_VECTOR: // API >= 18
           halType =
               (sensorType == Sensor.TYPE_ROTATION_VECTOR
                   ? SENSOR_ROTATION_VECTOR
@@ -484,9 +484,9 @@ public class GeckoAppShell {
           if (s.values.length >= 4) {
             w = s.values[3];
           } else {
-            
-            
-            
+            // s.values[3] was optional in API <= 18, so we need to compute it
+            // The values form a unit quaternion, so we can compute the angle of
+            // rotation purely based on the given 3 values.
             w =
                 1.0f
                     - s.values[0] * s.values[0]
@@ -500,10 +500,10 @@ public class GeckoAppShell {
       GeckoAppShell.onSensorChanged(halType, x, y, z, w, time);
     }
 
-    
+    // Geolocation.
     @Override
     public void onLocationChanged(final Location location) {
-      
+      // No logging here: user-identifying information.
 
       final double altitude = location.hasAltitude() ? location.getAltitude() : Double.NaN;
 
@@ -518,8 +518,8 @@ public class GeckoAppShell {
 
       final float heading = location.hasBearing() ? location.getBearing() : Float.NaN;
 
-      
-      
+      // nsGeoPositionCoords will convert NaNs to null for optional
+      // properties of the JavaScript Coordinates object.
       GeckoAppShell.onLocationChanged(
           location.getLatitude(),
           location.getLongitude(),
@@ -544,31 +544,31 @@ public class GeckoAppShell {
 
   private static SimpleArrayMap<String, PowerManager.WakeLock> sWakeLocks;
 
-  
+  /** Wake-lock for the CPU. */
   static final String WAKE_LOCK_CPU = "cpu";
 
-  
+  /** Wake-lock for the screen. */
   static final String WAKE_LOCK_SCREEN = "screen";
 
-  
+  /** Wake-lock for the audio-playing, eqaul to LOCK_CPU. */
   static final String WAKE_LOCK_AUDIO_PLAYING = "audio-playing";
 
-  
+  /** Wake-lock for the video-playing, eqaul to LOCK_SCREEN.. */
   static final String WAKE_LOCK_VIDEO_PLAYING = "video-playing";
 
   static final int WAKE_LOCKS_COUNT = 2;
 
-  
+  /** No one holds the wake-lock. */
   static final int WAKE_LOCK_STATE_UNLOCKED = 0;
 
-  
+  /** The wake-lock is held by a foreground window. */
   static final int WAKE_LOCK_STATE_LOCKED_FOREGROUND = 1;
 
-  
+  /** The wake-lock is held by a background window. */
   static final int WAKE_LOCK_STATE_LOCKED_BACKGROUND = 2;
 
-  @SuppressLint("Wakelock") 
-  
+  @SuppressLint("Wakelock") // We keep the wake lock independent from the function
+  // scope, so we need to suppress the linter warning.
   private static void setWakeLockState(final String lock, final int state) {
     if (sWakeLocks == null) {
       sWakeLocks = new SimpleArrayMap<>(WAKE_LOCKS_COUNT);
@@ -576,7 +576,7 @@ public class GeckoAppShell {
 
     PowerManager.WakeLock wl = sWakeLocks.get(lock);
 
-    
+    // we should still hold the lock for background audio.
     if (WAKE_LOCK_AUDIO_PLAYING.equals(lock) && state == WAKE_LOCK_STATE_LOCKED_BACKGROUND) {
       return;
     }
@@ -588,8 +588,8 @@ public class GeckoAppShell {
       if (WAKE_LOCK_CPU.equals(lock) || WAKE_LOCK_AUDIO_PLAYING.equals(lock)) {
         wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lock);
       } else if (WAKE_LOCK_SCREEN.equals(lock) || WAKE_LOCK_VIDEO_PLAYING.equals(lock)) {
-        
-        
+        // ON_AFTER_RELEASE is set, the user activity timer will be reset when the
+        // WakeLock is released, causing the illumination to remain on a bit longer.
         wl =
             pm.newWakeLock(
                 PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, lock);
@@ -624,7 +624,7 @@ public class GeckoAppShell {
         if (gGameRotationVectorSensor != null) {
           break;
         }
-        
+      // Fallthrough
 
       case SENSOR_ROTATION_VECTOR:
         if (gRotationVectorSensor == null) {
@@ -637,7 +637,7 @@ public class GeckoAppShell {
         if (gRotationVectorSensor != null) {
           break;
         }
-        
+      // Fallthrough
 
       case SENSOR_ORIENTATION:
         if (gOrientationSensor == null) {
@@ -705,14 +705,14 @@ public class GeckoAppShell {
           sm.unregisterListener(sAndroidListeners, gGameRotationVectorSensor);
           break;
         }
-        
+      // Fallthrough
 
       case SENSOR_ROTATION_VECTOR:
         if (gRotationVectorSensor != null) {
           sm.unregisterListener(sAndroidListeners, gRotationVectorSensor);
           break;
         }
-        
+      // Fallthrough
 
       case SENSOR_ORIENTATION:
         if (gOrientationSensor != null) {
@@ -759,12 +759,12 @@ public class GeckoAppShell {
 
   @WrapForJNI(calledFrom = "gecko")
   private static boolean hasHWVP8Encoder() {
-    return HardwareCodecCapabilityUtils.hasHWVP8(true );
+    return HardwareCodecCapabilityUtils.hasHWVP8(true /* aIsEncoder */);
   }
 
   @WrapForJNI(calledFrom = "gecko")
   private static boolean hasHWVP8Decoder() {
-    return HardwareCodecCapabilityUtils.hasHWVP8(false );
+    return HardwareCodecCapabilityUtils.hasHWVP8(false /* aIsEncoder */);
   }
 
   @WrapForJNI(calledFrom = "gecko")
@@ -795,20 +795,20 @@ public class GeckoAppShell {
   @WrapForJNI(dispatchTo = "gecko")
   private static native void notifyAlertListener(String name, String topic, String action);
 
-  
-
-
-
+  /**
+   * Called by the NotificationListener to notify Gecko that a previously shown notification has
+   * been closed.
+   */
   public static void onNotificationClose(final String name) {
     if (GeckoThread.isRunning()) {
       notifyAlertListener(name, "alertfinished", null);
     }
   }
 
-  
-
-
-
+  /**
+   * Called by the NotificationListener to notify Gecko that a previously shown notification has
+   * been clicked on.
+   */
   public static void onNotificationClick(final String name, @Nullable final String action) {
     if (GeckoThread.isRunning()) {
       notifyAlertListener(name, "alertclickcallback", action);
@@ -869,7 +869,7 @@ public class GeckoAppShell {
       final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
       final ActivityManager am =
           (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-      am.getMemoryInfo(memInfo); 
+      am.getMemoryInfo(memInfo); // `getMemoryInfo()` returns a value in B. Convert to MB.
       sTotalRam = (int) (memInfo.totalMem / (1024 * 1024));
       Log.d(LOGTAG, "System memory: " + sTotalRam + "MB.");
     }
@@ -891,7 +891,7 @@ public class GeckoAppShell {
     sUseMaxScreenDepth = enable;
   }
 
-  
+  /** Returns the colour depth of the default screen. This will either be 32, 24 or 16. */
   @WrapForJNI(calledFrom = "gecko")
   public static synchronized int getScreenDepth() {
     if (sScreenDepth == 0) {
@@ -918,10 +918,10 @@ public class GeckoAppShell {
     final WindowManager wm =
         (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
     final float refreshRate = wm.getDefaultDisplay().getRefreshRate();
-    
-    
+    // Android 11+ supports multiple refresh rate. So we have to get refresh rate per call.
+    // https://source.android.com/docs/core/graphics/multiple-refresh-rate
     if (Build.VERSION.SDK_INT < 30) {
-      
+      // Until Android 10, refresh rate is fixed, so we can cache it.
       sScreenRefreshRate = Float.valueOf(refreshRate);
     }
     return refreshRate;
@@ -956,8 +956,8 @@ public class GeckoAppShell {
 
   @WrapForJNI(calledFrom = "gecko")
   private static void performHapticFeedback(final boolean aIsLongPress) {
-    
-    
+    // Don't perform haptic feedback if a vibration is currently playing,
+    // because the haptic feedback will nuke the vibration.
     if (!sVibrationMaybePlaying || System.nanoTime() >= sVibrationEndTime) {
       final int[] pattern;
       if (aIsLongPress) {
@@ -975,7 +975,7 @@ public class GeckoAppShell {
     return (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
   }
 
-  
+  // Helper method to convert integer array to long array.
   private static long[] convertIntToLongArray(final int[] input) {
     final long[] output = new long[input.length];
     for (int i = 0; i < input.length; i++) {
@@ -984,7 +984,7 @@ public class GeckoAppShell {
     return output;
   }
 
-  
+  // Vibrate only if haptic feedback is enabled.
   private static void vibrateOnHapticFeedbackEnabled(final int[] milliseconds) {
     if (Settings.System.getInt(
             getApplicationContext().getContentResolver(),
@@ -1014,8 +1014,8 @@ public class GeckoAppShell {
   @SuppressLint("MissingPermission")
   @WrapForJNI(calledFrom = "gecko")
   private static void vibrate(final long[] pattern, final int repeat) {
-    
-    
+    // If pattern.length is odd, the last element in the pattern is a
+    // meaningless delay, so don't include it in vibrationDuration.
     long vibrationDuration = 0;
     final int iterLen = pattern.length & ~1;
     for (int i = 0; i < iterLen; i++) {
@@ -1122,7 +1122,7 @@ public class GeckoAppShell {
   @SuppressLint("ResourceType")
   @WrapForJNI(calledFrom = "gecko")
   private static int[] getSystemColors() {
-    
+    // attrsAppearance[] must correspond to AndroidSystemColors structure in android/nsLookAndFeel.h
     final int[] attrsAppearance = {
       android.R.attr.textColorPrimary,
       android.R.attr.textColorPrimaryInverse,
@@ -1166,9 +1166,9 @@ public class GeckoAppShell {
       return null;
     }
 
-    
-    
-    
+    // TODO(m_kato):
+    // Android 16 will have `layout related APIs such as setLayoutLabelNonLocalized
+    // to get keyboard layout label.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       return ims.getLanguageTag();
     } else {
@@ -1192,7 +1192,7 @@ public class GeckoAppShell {
       final PackageManager pm = getApplicationContext().getPackageManager();
       Drawable icon = getDrawableForExtension(pm, resolvedExt);
       if (icon == null) {
-        
+        // Use a generic icon.
         icon =
             ResourcesCompat.getDrawable(
                 getApplicationContext().getResources(),
@@ -1280,9 +1280,9 @@ public class GeckoAppShell {
     sApplicationContext = context;
   }
 
-  
-
-
+  /*
+   * Battery API related methods.
+   */
   @WrapForJNI(calledFrom = "gecko")
   private static void enableBatteryNotifications() {
     GeckoBatteryManager.enableNotifications();
@@ -1298,7 +1298,7 @@ public class GeckoAppShell {
     return GeckoBatteryManager.getCurrentInformation(getApplicationContext());
   }
 
-  
+  /* Called by JNI from AndroidBridge, and by reflection from tests/BaseTest.java.in */
   @WrapForJNI(calledFrom = "gecko")
   @RobocopTarget
   public static boolean isTablet() {
@@ -1331,7 +1331,7 @@ public class GeckoAppShell {
     return GeckoScreenOrientation.getInstance().getScreenOrientation().value;
   }
 
-   static int getRotation() {
+  /* package */ static int getRotation() {
     return sScreenCompat.getRotation();
   }
 
@@ -1382,24 +1382,24 @@ public class GeckoAppShell {
   private static int getMaxTouchPoints() {
     final PackageManager pm = getApplicationContext().getPackageManager();
     if (pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND)) {
-      
+      // at least, 5+ fingers.
       return 5;
     } else if (pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT)) {
-      
+      // at least, 2+ fingers.
       return 2;
     } else if (pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH)) {
-      
+      // 2 fingers
       return 2;
     } else if (pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
-      
+      // 1 finger
       return 1;
     }
     return 0;
   }
 
-  
-
-
+  /*
+   * Keep in sync with PointerCapabilities in ServoTypes.h
+   */
   private static final int NO_POINTER = 0x00000000;
   private static final int COARSE_POINTER = 0x00000001;
   private static final int FINE_POINTER = 0x00000002;
@@ -1409,10 +1409,10 @@ public class GeckoAppShell {
     int result = NO_POINTER;
     final int sources = inputDevice.getSources();
 
-    
-    
-    
-    
+    // Blink checks fine pointer at first, then it check coarse pointer.
+    // So, we should use same order for compatibility.
+    // Also, if using Chrome OS, source may be SOURCE_MOUSE | SOURCE_TOUCHSCREEN | SOURCE_STYLUS
+    // even if no touch screen. So we shouldn't check TOUCHSCREEN at first.
 
     if (hasInputDeviceSource(sources, InputDevice.SOURCE_MOUSE)
         || hasInputDeviceSource(sources, InputDevice.SOURCE_STYLUS)
@@ -1435,7 +1435,7 @@ public class GeckoAppShell {
   }
 
   @WrapForJNI(calledFrom = "gecko")
-  
+  // For any-pointer and any-hover media queries features.
   private static int getAllPointerCapabilities() {
     int result = NO_POINTER;
 
@@ -1451,9 +1451,9 @@ public class GeckoAppShell {
     return result;
   }
 
-  
-
-
+  /*
+   * Keep in sync with PointingDevices in LookAndFeel.h
+   */
   private static final int POINTING_DEVICE_NONE = 0x00000000;
   private static final int POINTING_DEVICE_MOUSE = 0x00000001;
   private static final int POINTING_DEVICE_TOUCH = 0x00000002;
@@ -1463,11 +1463,11 @@ public class GeckoAppShell {
     int result = POINTING_DEVICE_NONE;
     final int sources = inputDevice.getSources();
 
-    
-    
-    
-    
-    
+    // TODO(krosylight): For now this code is for telemetry purpose, but ultimately we want to
+    // replace the capabilities code above and move the capabilities computation into layout. We'll
+    // then have to add all the extra devices too that are not mouse/touch/pen. (Bug 1918207)
+    // We don't treat other devices properly for pointerType after all:
+    // https://searchfox.org/mozilla-central/rev/3b59c739df66574d94022a684596845cd05e7c65/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/PanZoomController.java#749-761
 
     if (hasInputDeviceSource(sources, InputDevice.SOURCE_MOUSE)) {
       result |= POINTING_DEVICE_MOUSE;
@@ -1487,7 +1487,7 @@ public class GeckoAppShell {
   }
 
   @WrapForJNI(calledFrom = "gecko")
-  
+  // For pointing devices telemetry.
   private static int getPointingDeviceKinds() {
     int result = POINTING_DEVICE_NONE;
 
@@ -1572,7 +1572,7 @@ public class GeckoAppShell {
     }
   }
 
-   static Rect getScreenSizeIgnoreOverride() {
+  /* package */ static Rect getScreenSizeIgnoreOverride() {
     return sScreenCompat.getScreenSize();
   }
 
@@ -1628,8 +1628,8 @@ public class GeckoAppShell {
     try {
       if (on) {
         Log.e(LOGTAG, "Setting communication mode ON");
-        
-        
+        // This shouldn't throw, but does throw NullPointerException on a very
+        // small number of devices.
         am.startBluetoothSco();
         am.setBluetoothScoOn(true);
       } else {
@@ -1644,7 +1644,7 @@ public class GeckoAppShell {
 
   @WrapForJNI
   public static String[] getDefaultLocales() {
-    
+    // XXX We may have to convert some language codes such as "id" vs "in".
     if (Build.VERSION.SDK_INT >= 24) {
       final LocaleList localeList = LocaleList.getDefault();
       final String[] locales = new String[localeList.size()];
@@ -1679,7 +1679,7 @@ public class GeckoAppShell {
   @WrapForJNI(calledFrom = "gecko")
   private static int getMemoryUsage(final String stateName) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      
+      // No API to get Java heap usages.
       return -1;
     }
 
@@ -1707,8 +1707,8 @@ public class GeckoAppShell {
 
   @SuppressLint("NewApi")
   public static boolean isIsolatedProcess() {
-    
-    
+    // This method was added in SDK 16 but remained hidden until SDK 28, meaning we are okay to call
+    // this on any SDK level but must suppress the new API lint.
     return android.os.Process.isIsolated();
   }
 

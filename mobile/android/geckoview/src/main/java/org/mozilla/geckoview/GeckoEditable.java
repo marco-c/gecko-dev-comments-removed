@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.geckoview;
 
@@ -55,68 +55,68 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEContextFlags;
 import org.mozilla.geckoview.SessionTextInput.EditableListener.IMENotificationType;
 import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
-
-
-
-
- final class GeckoEditable extends IGeckoEditableParent.Stub
+/**
+ * GeckoEditable implements only some functions of Editable The field mText contains the actual
+ * underlying SpannableStringBuilder/Editable that contains our text.
+ */
+/* package */ final class GeckoEditable extends IGeckoEditableParent.Stub
     implements InvocationHandler, Editable, SessionTextInput.EditableClient {
 
   private static final boolean DEBUG = false;
   private static final String LOGTAG = "GeckoEditable";
   private static final long DISMISS_VKB_DELAY_MS = 100;
 
-  
+  // Filters to implement Editable's filtering functionality
   private InputFilter[] mFilters;
 
-  
-
-
-
-   final WeakReference<GeckoSession> mSession;
+  /**
+   * We need a WeakReference here to avoid unnecessary retention of the GeckoSession. Passing
+   * objects around via JNI seems to confuse the GC into thinking we have a native GC root.
+   */
+  /* package */ final WeakReference<GeckoSession> mSession;
 
   private final AsyncText mText;
   private final Editable mProxy;
   private final ConcurrentLinkedQueue<Action> mActions;
   private KeyCharacterMap mKeyMap;
 
-  
-  
-  
+  // mIcRunHandler is the Handler that currently runs Gecko-to-IC Runnables
+  // mIcPostHandler is the Handler to post Gecko-to-IC Runnables to
+  // The two can be different when switching from one handler to another
   private Handler mIcRunHandler;
   private Handler mIcPostHandler;
 
-  
-   IGeckoEditableChild mDefaultChild; 
-  
-   IGeckoEditableChild mFocusedChild; 
-   IBinder mFocusedToken; 
-   SessionTextInput.EditableListener mListener;
+  // Parent process child used as a default for key events.
+  /* package */ IGeckoEditableChild mDefaultChild; // Used by IC thread.
+  // Parent or content process child that has the focus.
+  /* package */ IGeckoEditableChild mFocusedChild; // Used by IC thread.
+  /* package */ IBinder mFocusedToken; // Used by Gecko/binder thread.
+  /* package */ SessionTextInput.EditableListener mListener;
 
-   boolean mInBatchMode; 
-   boolean mNeedSync; 
-  
-  private boolean mNeedUpdateComposition; 
-  private boolean mSuppressKeyUp; 
+  /* package */ boolean mInBatchMode; // Used by IC thread
+  /* package */ boolean mNeedSync; // Used by IC thread
+  // Gecko side needs an updated composition from Java;
+  private boolean mNeedUpdateComposition; // Used by IC thread
+  private boolean mSuppressKeyUp; // Used by IC thread
 
   @IMEState
-  private int mIMEState = 
+  private int mIMEState = // Used by IC thread.
       SessionTextInput.EditableListener.IME_STATE_DISABLED;
 
-  private String mIMETypeHint = ""; 
-  private String mIMEModeHint = ""; 
-  private String mIMEActionHint = ""; 
-  private String mIMEAutocapitalize = ""; 
-  private boolean mIMEAutocorrect = false; 
-  @IMEContextFlags private int mIMEFlags; 
+  private String mIMETypeHint = ""; // Used by IC/UI thread.
+  private String mIMEModeHint = ""; // Used by IC thread.
+  private String mIMEActionHint = ""; // Used by IC thread.
+  private String mIMEAutocapitalize = ""; // Used by IC thread.
+  private boolean mIMEAutocorrect = false; // Used by IC thread.
+  @IMEContextFlags private int mIMEFlags; // Used by IC thread.
 
-  private boolean mIgnoreSelectionChange; 
-  
-  
-  private int mLastTextChangeStart = Integer.MAX_VALUE; 
-  private int mLastTextChangeOldEnd = -1; 
-  private int mLastTextChangeNewEnd = -1; 
-  private boolean mLastTextChangeReplacedSelection; 
+  private boolean mIgnoreSelectionChange; // Used by Gecko thread
+  // Combined offsets from the previous batch of onTextChange calls; valid
+  // between the onTextChange calls and the next onSelectionChange call.
+  private int mLastTextChangeStart = Integer.MAX_VALUE; // Used by Gecko thread
+  private int mLastTextChangeOldEnd = -1; // Used by Gecko thread
+  private int mLastTextChangeNewEnd = -1; // Used by Gecko thread
+  private boolean mLastTextChangeReplacedSelection; // Used by Gecko thread
 
   private static class HideSoftInputTask implements Runnable {
     private GeckoSession mSession;
@@ -145,9 +145,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
   private HideSoftInputTask mHideSoftInputTask;
 
-  
-  
-   final AtomicInteger mSoftInputReentrancyGuard = new AtomicInteger();
+  // Prevent showSoftInput and hideSoftInput from being called multiple times in a row,
+  // including reentrant calls on some devices. Used by UI/IC thread.
+  /* package */ final AtomicInteger mSoftInputReentrancyGuard = new AtomicInteger();
 
   private static final int IME_RANGE_CARETPOSITION = 1;
   private static final int IME_RANGE_RAWINPUT = 2;
@@ -174,14 +174,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final int savedMetaState,
       final boolean isSynthesizedImeKey)
       throws RemoteException {
-    
-    
-    
-    
-    
-    
-    
-    
+    // Use a separate action argument so we can override the key's original action,
+    // e.g. change ACTION_MULTIPLE to ACTION_DOWN. That way we don't have to allocate
+    // a new key event just to change its action field.
+    //
+    // Normally we expect event.getMetaState() to reflect the current meta-state; however,
+    // some software-generated key events may not have event.getMetaState() set, e.g. key
+    // events from Swype. Therefore, it's necessary to combine the key's meta-states
+    // with the meta-states that we keep separately in KeyListener
     final int metaState = event.getMetaState() | savedMetaState;
     final int unmodifiedMetaState =
         metaState & ~(KeyEvent.META_ALT_MASK | KeyEvent.META_CTRL_MASK | KeyEvent.META_META_MASK);
@@ -193,18 +193,18 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
             ? unicodeChar
             : unmodifiedMetaState != metaState ? unmodifiedUnicodeChar : 0;
 
-    
-    
+    // If a modifier (e.g. meta key) caused a different character to be entered, we
+    // drop that modifier from the metastate for the generated keypress event.
     final int keyPressMetaState =
         (unicodeChar >= ' ' && unicodeChar != unmodifiedUnicodeChar)
             ? unmodifiedMetaState
             : metaState;
 
-    
-    
-    
-    
-    
+    // For synthesized keys, ignore modifier metastates from the synthesized event,
+    // because the synthesized modifier metastates don't reflect the actual state of
+    // the meta keys (bug 1387889). For example, the Latin sharp S (U+00DF) is
+    // synthesized as Alt+S, but we don't want the Alt metastate because the Alt key
+    // is not actually pressed in this case.
     final int keyUpDownMetaState =
         isSynthesizedImeKey ? (unmodifiedMetaState | savedMetaState) : metaState;
 
@@ -222,42 +222,42 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         event);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Class that encapsulates asynchronous text editing. There are two copies of the text, a current
+   * copy and a shadow copy. Both can be modified independently through the current*** and shadow***
+   * methods, respectively. The current copy can only be modified on the Gecko side and reflects the
+   * authoritative version of the text. The shadow copy can only be modified on the IC side and
+   * reflects what we think the current text is. Periodically, the shadow copy can be synced to the
+   * current copy through syncShadowText, so the shadow copy once again refers to the same text as
+   * the current copy.
+   */
   private final class AsyncText {
-    
-    
+    // The current text is the update-to-date version of the text, and is only updated
+    // on the Gecko side.
     private final SpannableStringBuilder mCurrentText = new SpannableStringBuilder();
-    
-    
+    // Track changes on the current side for syncing purposes.
+    // Start of the changed range in current text since last sync.
     private int mCurrentStart = Integer.MAX_VALUE;
-    
+    // End of the changed range (before the change) in current text since last sync.
     private int mCurrentOldEnd;
-    
+    // End of the changed range (after the change) in current text since last sync.
     private int mCurrentNewEnd;
-    
+    // Track selection changes separately.
     private boolean mCurrentSelectionChanged;
 
-    
-    
+    // The shadow text is what we think the current text is on the Java side, and is
+    // periodically synced with the current text.
     private final SpannableStringBuilder mShadowText = new SpannableStringBuilder();
-    
-    
+    // Track changes on the shadow side for syncing purposes.
+    // Start of the changed range in shadow text since last sync.
     private int mShadowStart = Integer.MAX_VALUE;
-    
+    // End of the changed range (before the change) in shadow text since last sync.
     private int mShadowOldEnd;
-    
+    // End of the changed range (after the change) in shadow text since last sync.
     private int mShadowNewEnd;
 
     private void addCurrentChangeLocked(final int start, final int oldEnd, final int newEnd) {
-      
+      // Merge the new change into any existing change.
       mCurrentStart = Math.min(mCurrentStart, start);
       mCurrentOldEnd += Math.max(0, oldEnd - mCurrentNewEnd);
       mCurrentNewEnd = newEnd + Math.max(0, mCurrentNewEnd - oldEnd);
@@ -265,26 +265,26 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
     public synchronized void currentReplace(
         final int start, final int end, final CharSequence newText) {
-      
+      // On Gecko or binder thread.
       mCurrentText.replace(start, end, newText);
       addCurrentChangeLocked(start, end, start + newText.length());
     }
 
     public synchronized void currentSetSelection(final int start, final int end) {
-      
+      // On Gecko or binder thread.
       Selection.setSelection(mCurrentText, start, end);
       mCurrentSelectionChanged = true;
     }
 
     public synchronized void currentSetSpan(
         final Object obj, final int start, final int end, final int flags) {
-      
+      // On Gecko or binder thread.
       mCurrentText.setSpan(obj, start, end, flags);
       addCurrentChangeLocked(start, end, end);
     }
 
     public synchronized void currentRemoveSpan(final Object obj) {
-      
+      // On Gecko or binder thread.
       if (obj == null) {
         mCurrentText.clearSpans();
         addCurrentChangeLocked(0, mCurrentText.length(), mCurrentText.length());
@@ -299,15 +299,15 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       addCurrentChangeLocked(start, end, end);
     }
 
-    
-    
+    // Return Spanned instead of Editable because the returned object is supposed to
+    // be read-only. Editing should be done through one of the current*** methods.
     public Spanned getCurrentText() {
-      
+      // On Gecko or binder thread.
       return mCurrentText;
     }
 
     private void addShadowChange(final int start, final int oldEnd, final int newEnd) {
-      
+      // Merge the new change into any existing change.
       mShadowStart = Math.min(mShadowStart, start);
       mShadowOldEnd += Math.max(0, oldEnd - mShadowNewEnd);
       mShadowNewEnd = newEnd + Math.max(0, mShadowNewEnd - oldEnd);
@@ -347,8 +347,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       addShadowChange(start, end, end);
     }
 
-    
-    
+    // Return Spanned instead of Editable because the returned object is supposed to
+    // be read-only. Editing should be done through one of the shadow*** methods.
     public Spanned getShadowText() {
       if (DEBUG) {
         assertOnIcThread();
@@ -356,12 +356,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       return mShadowText;
     }
 
-    
-
-
-
-
-
+    /**
+     * Check whether we are currently discarding the composition. It means that shadow text has
+     * composition, but current text has no composition. So syncShadowText will discard composition.
+     *
+     * @return true if discarding composition
+     */
     private boolean isDiscardingComposition() {
       if (!isComposing(mShadowText)) {
         return false;
@@ -376,7 +376,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       }
 
       if (mCurrentStart > mCurrentOldEnd && mShadowStart > mShadowOldEnd) {
-        
+        // Still check selection changes.
         if (!mCurrentSelectionChanged) {
           return;
         }
@@ -397,13 +397,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         }
       }
 
-      
-      
+      // Copy the portion of the current text that has changed over to the shadow
+      // text, with consideration for any concurrent changes in the shadow text.
       final int start = Math.min(mShadowStart, mCurrentStart);
       final int shadowEnd = mShadowNewEnd + Math.max(0, mCurrentOldEnd - mShadowOldEnd);
       final int currentEnd = mCurrentNewEnd + Math.max(0, mShadowOldEnd - mCurrentOldEnd);
 
-      
+      // Remove existing spans that may no longer be in the new text.
       Object[] spans = mShadowText.getSpans(start, shadowEnd, Object.class);
       for (final Object span : spans) {
         mShadowText.removeSpan(span);
@@ -411,8 +411,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
       mShadowText.replace(start, shadowEnd, mCurrentText, start, currentEnd);
 
-      
-      
+      // The replace() call may not have copied all affected spans, so we re-copy all the
+      // spans manually just in case. Expand bounds by 1 so we get all the spans.
       spans =
           mCurrentText.getSpans(
               Math.max(start - 1, 0),
@@ -429,14 +429,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
             mCurrentText.getSpanFlags(span));
       }
 
-      
-      
+      // SpannableStringBuilder has some internal logic to fix up selections, but we
+      // don't want that, so we always fix up the selection a second time.
       final int selStart = Selection.getSelectionStart(mCurrentText);
       final int selEnd = Selection.getSelectionEnd(mCurrentText);
       Selection.setSelection(mShadowText, selStart, selEnd);
 
       if (DEBUG && !checkEqualText(mShadowText, mCurrentText)) {
-        
+        // Sanity check.
         throw new IllegalStateException(
             "Failed to sync: "
                 + mShadowStart
@@ -453,8 +453,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       }
 
       if (listener != null) {
-        
-        
+        // Call onTextChange after selection fix-up but before we call
+        // onSelectionChange.
         listener.onTextChange();
 
         if (mCurrentSelectionChanged
@@ -464,7 +464,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         }
       }
 
-      
+      // These values ensure the first change is properly added.
       mCurrentStart = mShadowStart = Integer.MAX_VALUE;
       mCurrentOldEnd = mShadowOldEnd = 0;
       mCurrentNewEnd = mShadowNewEnd = 0;
@@ -497,28 +497,28 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         }
         continue o1loop;
       }
-      
+      // o1 not found in o2s.
       return false;
     }
     return true;
   }
 
-  
+  /* An action that alters the Editable
 
-
-
-
-
+     Each action corresponds to a Gecko event. While the Gecko event is being sent to the Gecko
+     thread, the action stays on top of mActions queue. After the Gecko event is processed and
+     replied, the action is removed from the queue
+  */
   private static final class Action {
-    
+    // For input events (keypress, etc.); use with onImeSynchronize
     static final int TYPE_EVENT = 0;
-    
+    // For Editable.replace() call; use with onImeReplaceText
     static final int TYPE_REPLACE_TEXT = 1;
-    
+    // For Editable.setSpan() call; use with onImeSynchronize
     static final int TYPE_SET_SPAN = 2;
-    
+    // For Editable.removeSpan() call; use with onImeSynchronize
     static final int TYPE_REMOVE_SPAN = 3;
-    
+    // For switching handler; use with onImeSynchronize
     static final int TYPE_SET_HANDLER = 4;
 
     final int mType;
@@ -602,9 +602,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         throw new IllegalStateException("Action not processed");
     }
 
-    
-    
-    
+    // Always perform actions on the shadow text side above, so we still act as a
+    // valid Editable object, but don't send the actions to Gecko below if we haven't
+    // been focused or initialized, or we've been destroyed.
     if (mFocusedChild == null || mListener == null) {
       return;
     }
@@ -615,7 +615,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       icPerformAction(action);
     } catch (final RemoteException e) {
       Log.e(LOGTAG, "Remote call failed", e);
-      
+      // Undo the offer.
       mActions.remove(action);
     }
   }
@@ -664,39 +664,39 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           break;
         }
       case Action.TYPE_REPLACE_TEXT:
-        
-        
+        // Always sync text after a replace action, so that if the Gecko
+        // text is not changed, we will revert the shadow text to before.
         mNeedSync = true;
 
-        
-        
+        // Because we get composition styling here essentially for free,
+        // we don't need to check if we're in batch mode.
         if (icMaybeSendComposition(action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
           mFocusedChild.onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString());
           break;
         }
 
-        
+        // Since we don't have a composition, we can try sending key events.
         sendCharKeyEvents(action);
 
-        
-        
-        
-        
-        
+        // onImeReplaceText will set the selection range. But we don't
+        // know whether event state manager is processing text and
+        // selection. So current shadow may not be synchronized with
+        // Gecko's text and selection. So we have to avoid unnecessary
+        // selection update.
         final int selStartOnShadow = Selection.getSelectionStart(mText.getShadowText());
         final int selEndOnShadow = Selection.getSelectionEnd(mText.getShadowText());
         int actionStart = action.mStart;
         int actionEnd = action.mEnd;
-        
-        
-        
-        
-        
+        // If action range is collapsed and selection of shadow text is
+        // collapsed, we may try to dispatch keypress on current caret
+        // position. Action range is previous range before dispatching
+        // keypress, and shadow range is new range after dispatching
+        // it.
         if (action.mStart == action.mEnd
             && selStartOnShadow == selEndOnShadow
             && action.mStart == selStartOnShadow + action.mSequence.toString().length()) {
-          
-          
+          // Replacing range is same value as current shadow's selection.
+          // So it is unnecessary to update the selection on Gecko.
           actionStart = -1;
           actionEnd = -1;
         }
@@ -714,9 +714,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         mKeyMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
       }
     } catch (final Exception e) {
-      
-      
-      
+      // KeyCharacterMap.UnavailableException is not found on Gingerbread;
+      // besides, it seems like HC and ICS will throw something other than
+      // KeyCharacterMap.UnavailableException; so use a generic Exception here
       return null;
     }
     final KeyEvent[] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
@@ -731,8 +731,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         || (action.mSequence instanceof Spannable
             && ((Spannable) action.mSequence).nextSpanTransition(-1, Integer.MAX_VALUE, null)
                 < Integer.MAX_VALUE)) {
-      
-      
+      // Spans are not preserved when we use key events,
+      // so we need the sequence to not have any spans
       return;
     }
     final KeyEvent[] keyEvents = synthesizeKeyEvents(action.mSequence);
@@ -753,14 +753,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           mFocusedChild,
           event,
           event.getAction(),
-           0, 
+          /* metaState */ 0, /* isSynthesizedImeKey */
           true);
     }
   }
 
   public GeckoEditable(@NonNull final GeckoSession session) {
     if (DEBUG) {
-      
+      // Called by SessionTextInput.
       ThreadUtils.assertOnUiThread();
     }
 
@@ -775,10 +775,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     mIcRunHandler = mIcPostHandler = ThreadUtils.getUiHandler();
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void setDefaultChild(final IGeckoEditableChild child) {
     if (DEBUG) {
-      
+      // On Gecko or binder thread.
       Log.d(LOGTAG, "setDefaultEditableChild " + child);
     }
     mDefaultChild = child;
@@ -786,7 +786,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
   public void setListener(final SessionTextInput.EditableListener newListener) {
     if (DEBUG) {
-      
+      // Called by SessionTextInput.
       ThreadUtils.assertOnUiThread();
       Log.d(LOGTAG, "setListener " + newListener);
     }
@@ -820,7 +820,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
   }
 
-  
+  // Flags for icMaybeSendComposition
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -831,23 +831,23 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       })
   public @interface CompositionFlags {}
 
-  
-  
+  // If text has composing spans, treat the entire text as a Gecko composition,
+  // instead of just the spanned part.
   private static final int SEND_COMPOSITION_USE_ENTIRE_TEXT = 1 << 0;
-  
-  
+  // Notify Gecko of the new composition ranges;
+  // otherwise, the caller is responsible for notifying Gecko.
   private static final int SEND_COMPOSITION_NOTIFY_GECKO = 1 << 1;
-  
-  
+  // Keep the current composition when updating;
+  // composition is not updated if there is no current composition.
   private static final int SEND_COMPOSITION_KEEP_CURRENT = 1 << 2;
 
-  
-
-
-
-
-
-
+  /**
+   * Send composition ranges to Gecko if the text has composing spans.
+   *
+   * @param sequence Text with possible composing spans
+   * @param flags Bitmask of SEND_COMPOSITION_* flags for updating composition.
+   * @return Whether there was a composition
+   */
   private boolean icMaybeSendComposition(
       final CharSequence sequence, @CompositionFlags final int flags) throws RemoteException {
     final boolean useEntireText = (flags & SEND_COMPOSITION_USE_ENTIRE_TEXT) != 0;
@@ -856,8 +856,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final int updateFlags = keepCurrent ? GeckoEditableChild.FLAG_KEEP_CURRENT_COMPOSITION : 0;
 
     if (!keepCurrent) {
-      
-      
+      // If keepCurrent is true, the composition may not actually be updated;
+      // so we may still need to update the composition in the future.
       mNeedUpdateComposition = false;
     }
 
@@ -871,8 +871,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       int composingStart = useEntireText ? 0 : Integer.MAX_VALUE;
       int composingEnd = useEntireText ? text.length() : 0;
 
-      
-      
+      // Find existence and range of any composing spans (spans with the
+      // SPAN_COMPOSING flag set).
       for (final Object span : spans) {
         if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) == 0) {
           continue;
@@ -892,11 +892,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
       if (found) {
         if (selStart < composingStart || selEnd > composingEnd) {
-          
-          
-          
-          
-          
+          // GBoard will set caret position that is out of composing
+          // range. Unfortunately, Gecko doesn't support this caret
+          // position. So we shouldn't set composing range data now.
+          // But this is temporary composing range, then GBoard will
+          // set valid range soon.
           if (DEBUG) {
             final StringBuilder sb =
                 new StringBuilder("icSendComposition(): invalid caret position. ");
@@ -921,16 +921,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
 
     if (notifyGecko) {
-      
+      // Set the selection by using a composition without ranges.
       final Spanned currentText = mText.getCurrentText();
       if (Selection.getSelectionStart(currentText) != selStart
           || Selection.getSelectionEnd(currentText) != selEnd) {
-        
-        
-        
-        
-        
-        
+        // Gecko's selection is different of requested selection, so
+        // we have to set selection of Gecko side.
+        // If selection is same, it is unnecessary to update it.
+        // This may be race with Gecko's updating selection via
+        // JavaScript or keyboard event. But we don't know whether
+        // Gecko is during updating selection.
         mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
       }
     }
@@ -982,8 +982,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     int rangeStart = composingStart;
     final TextPaint tp = new TextPaint();
     final TextPaint emptyTp = new TextPaint();
-    
-    
+    // set initial foreground color to 0, because we check for tp.getColor() == 0
+    // below to decide whether to pass a foreground color to Gecko
     emptyTp.setColor(0);
     do {
       final int rangeType;
@@ -1021,13 +1021,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         int tpUnderlineColor = 0;
         float tpUnderlineThickness = 0.0f;
 
-        
+        // These TextPaint fields only exist on Android ICS+ and are not in the SDK.
         tpUnderlineColor = (Integer) getField(tp, "underlineColor", 0);
         tpUnderlineThickness = (Float) getField(tp, "underlineThickness", 0.0f);
         if (tpUnderlineColor != 0) {
           rangeStyles |= IME_RANGE_UNDERLINE | IME_RANGE_LINECOLOR;
           rangeLineColor = tpUnderlineColor;
-          
+          // Approximately translate underline thickness to what Gecko understands
           if (tpUnderlineThickness <= 0.5f) {
             rangeLineStyle = IME_RANGE_LINE_DOTTED;
           } else {
@@ -1076,14 +1076,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     } while (rangeStart < composingEnd);
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public void sendKeyEvent(
       final @Nullable View view, final int action, final @NonNull KeyEvent event) {
     final Editable editable = mProxy;
     final KeyListener keyListener = TextKeyListener.getInstance();
     final KeyEvent translatedEvent = translateKey(event.getKeyCode(), event);
 
-    
+    // We only let TextKeyListener do UI things on the UI thread.
     final View v = ThreadUtils.isOnUiThread() ? view : null;
     final int keyCode = translatedEvent.getKeyCode();
     final boolean handled;
@@ -1105,9 +1105,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
     if (action == KeyEvent.ACTION_DOWN) {
       if (!handled) {
-        
-        
-        
+        // Usually, the down key listener call above adjusts meta states for us.
+        // However, if the call didn't handle the event, we have to manually
+        // adjust meta states so the meta states remain consistent.
         TextKeyListener.adjustMetaAfterKeypress(editable);
       }
       setSuppressKeyUp(false);
@@ -1119,30 +1119,30 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       assertOnIcThread();
       Log.d(LOGTAG, "sendKeyEvent(" + event + ", " + action + ", " + metaState + ")");
     }
-    
-
-
-
-
-
-
-
+    /*
+       We are actually sending two events to Gecko here,
+       1. Event from the event parameter (key event)
+       2. Sync event from the icOfferAction call
+       The first event is a normal event that does not reply back to us,
+       the second sync event will have a reply, during which we see that there is a pending
+       event-type action, and update the shadow text accordingly.
+    */
     try {
       if (mFocusedChild == null) {
         if (mDefaultChild == null) {
           Log.w(LOGTAG, "Discarding key event");
           return;
         }
-        
-        onKeyEvent(mDefaultChild, event, action, metaState,  false);
+        // Not focused; send simple key event to chrome window.
+        onKeyEvent(mDefaultChild, event, action, metaState, /* isSynthesizedImeKey */ false);
         return;
       }
 
-      
-      
-      
-      
-      
+      // Most IMEs handle arrow key, then set caret position. But GBoard
+      // doesn't handle it. GBoard will dispatch KeyEvent for arrow left/right
+      // even if having IME composition.
+      // Since Gecko doesn't dispatch keypress during IME composition due to
+      // DOM UI events spec, we have to emulate arrow key's behaviour.
       boolean commitCompositionBeforeKeyEvent = action == KeyEvent.ACTION_DOWN;
       if (isComposing(mText.getShadowText())
           && action == KeyEvent.ACTION_DOWN
@@ -1150,8 +1150,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         final int selStart = Selection.getSelectionStart(mText.getShadowText());
         final int selEnd = Selection.getSelectionEnd(mText.getShadowText());
         if (selStart == selEnd) {
-          
-          
+          // If dispatching arrow left/right key into composition,
+          // we update IME caret.
           switch (event.getKeyCode()) {
             case KeyEvent.KEYCODE_DPAD_LEFT:
               if (getComposingStart(mText.getShadowText()) < selStart) {
@@ -1159,7 +1159,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                 mNeedUpdateComposition = true;
                 commitCompositionBeforeKeyEvent = false;
               } else if (selStart == 0) {
-                
+                // Keep current composition
                 commitCompositionBeforeKeyEvent = false;
               }
               break;
@@ -1169,7 +1169,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                 mNeedUpdateComposition = true;
                 commitCompositionBeforeKeyEvent = false;
               } else if (selEnd == mText.getShadowText().length()) {
-                
+                // Keep current composition
                 commitCompositionBeforeKeyEvent = false;
               }
               break;
@@ -1177,7 +1177,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         }
       }
 
-      
+      // Focused; key event may go to chrome window or to content window.
       if (mNeedUpdateComposition) {
         icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO);
       }
@@ -1185,7 +1185,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       if (commitCompositionBeforeKeyEvent) {
         mFocusedChild.onImeRequestCommit();
       }
-      onKeyEvent(mFocusedChild, event, action, metaState,  false);
+      onKeyEvent(mFocusedChild, event, action, metaState, /* isSynthesizedImeKey */ false);
       icOfferAction(new Action(Action.TYPE_EVENT));
     } catch (final RemoteException e) {
       Log.e(LOGTAG, "Remote call failed", e);
@@ -1197,25 +1197,25 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       return true;
     }
 
-    
+    // Preserve enter and tab keys for the browser
     if (keyCode == KeyEvent.KEYCODE_ENTER
         || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
         || keyCode == KeyEvent.KEYCODE_TAB) {
       return true;
     }
-    
-    
+    // BaseKeyListener returns false even if it handled these keys for us,
+    // so we skip the key listener entirely and handle these ourselves
     return keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL;
   }
 
   private static KeyEvent translateSonyXperiaGamepadKeys(final int keyCode, final KeyEvent event) {
-    
-    
+    // The cross and circle button mappings may be swapped in the different regions so
+    // determine if they are swapped so the proper key codes can be mapped to the keys
     final boolean areKeysSwapped = areSonyXperiaGamepadKeysSwapped();
 
     int translatedKeyCode = keyCode;
-    
-    
+    // If a Sony Xperia, remap the cross and circle buttons to buttons
+    // A and B for the gamepad API
     switch (keyCode) {
       case KeyEvent.KEYCODE_BACK:
         translatedKeyCode =
@@ -1243,9 +1243,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   }
 
   private static boolean areSonyXperiaGamepadKeysSwapped() {
-    
-    
-    
+    // The cross and circle buttons on Sony Xperia phones are swapped
+    // in different regions
+    // http://developer.sonymobile.com/2011/02/13/xperia-play-game-keys/
     final char DEFAULT_O_BUTTON_LABEL = 0x25CB;
 
     boolean swapped = false;
@@ -1270,26 +1270,26 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return event;
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public Editable getEditable() {
     if (!onIcThread()) {
-      
+      // Android may be holding an old InputConnection; ignore
       if (DEBUG) {
         Log.i(LOGTAG, "getEditable() called on non-IC thread");
       }
       return null;
     }
     if (mListener == null) {
-      
+      // We haven't initialized or we've been destroyed.
       return null;
     }
     return mProxy;
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public void setBatchMode(final boolean inBatchMode) {
     if (!onIcThread()) {
-      
+      // Android may be holding an old InputConnection; ignore
       if (DEBUG) {
         Log.i(LOGTAG, "setBatchMode() called on non-IC thread");
       }
@@ -1299,12 +1299,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     mInBatchMode = inBatchMode;
 
     if (!inBatchMode && mFocusedChild != null) {
-      
-      
-      
-      
-      
-      
+      // We may not commit composition on Gecko even if Java side has
+      // no composition. So we have to sync composition state with Gecko
+      // when batch edit is done.
+      //
+      // i.e. Although finishComposingText removes composing span, we
+      // don't commit current composition yet.
       final Editable editable = getEditable();
       if (editable != null && !isComposing(editable)) {
         try {
@@ -1313,7 +1313,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           Log.e(LOGTAG, "Remote call failed", e);
         }
       }
-      
+      // Committing composition doesn't change text, so we can sync shadow text.
     }
 
     if (!inBatchMode && mNeedSync) {
@@ -1321,9 +1321,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
   }
 
-   void icSyncShadowText() {
+  /* package */ void icSyncShadowText() {
     if (mListener == null) {
-      
+      // Not yet attached or already destroyed.
       return;
     }
 
@@ -1340,12 +1340,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     if (DEBUG) {
       assertOnIcThread();
     }
-    
-    
+    // Suppress key up event generated as a result of
+    // translating characters to key events
     mSuppressKeyUp = suppress;
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public Handler setInputConnectionHandler(final Handler handler) {
     if (handler == mIcRunHandler) {
       return mIcRunHandler;
@@ -1354,21 +1354,21 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       assertOnIcThread();
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // There are three threads at this point: Gecko thread, old IC thread, and new IC
+    // thread, and we want to safely switch from old IC thread to new IC thread.
+    // We first send a TYPE_SET_HANDLER action to the Gecko thread; this ensures that
+    // the Gecko thread is stopped at a known point. At the same time, the old IC
+    // thread blocks on the action; this ensures that the old IC thread is stopped at
+    // a known point. Finally, inside the Gecko thread, we post a Runnable to the old
+    // IC thread; this Runnable switches from old IC thread to new IC thread. We
+    // switch IC thread on the old IC thread to ensure any pending Runnables on the
+    // old IC thread are processed before we switch over. Inside the Gecko thread, we
+    // also post a Runnable to the new IC thread; this Runnable blocks until the
+    // switch is complete; this ensures that the new IC thread won't accept
+    // InputConnection calls until after the switch.
 
     handler.post(
-        new Runnable() { 
+        new Runnable() { // Make the new IC thread wait.
           @Override
           public void run() {
             synchronized (handler) {
@@ -1386,12 +1386,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return handler;
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public void postToInputConnection(final Runnable runnable) {
     mIcPostHandler.post(runnable);
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public void requestCursorUpdates(@CursorMonitorMode final int requestMode) {
     try {
       if (mFocusedChild != null) {
@@ -1402,7 +1402,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
   }
 
-  @Override 
+  @Override // SessionTextInput.EditableClient
   public void insertImage(final @NonNull byte[] data, final @NonNull String mimeType) {
     if (mFocusedChild == null) {
       return;
@@ -1416,9 +1416,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   }
 
   private void geckoSetIcHandler(final Handler newHandler) {
-    
+    // On Gecko or binder thread.
     mIcPostHandler.post(
-        new Runnable() { 
+        new Runnable() { // posting to old IC thread
           @Override
           public void run() {
             synchronized (newHandler) {
@@ -1428,14 +1428,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           }
         });
 
-    
-    
-    
+    // At this point, all future Runnables should be posted to the new IC thread, but
+    // we don't switch mIcRunHandler yet because there may be pending Runnables on the
+    // old IC thread still waiting to run.
     mIcPostHandler = newHandler;
   }
 
   private void geckoActionReply(final Action action) {
-    
+    // On Gecko or binder thread.
     if (action == null) {
       Log.w(LOGTAG, "Mismatched reply");
       return;
@@ -1452,7 +1452,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
               || mLastTextChangeNewEnd > currentText.length()
               || action.mStart < mLastTextChangeStart
               || actionNewEnd > mLastTextChangeNewEnd) {
-            
+            // Replace-text action doesn't match our text change.
             break;
           }
 
@@ -1468,25 +1468,25 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
             }
           }
           if (indexInText < 0) {
-            
+            // Replace-text action doesn't match our current text.
             break;
           }
 
           final int selStart = Selection.getSelectionStart(currentText);
           final int selEnd = Selection.getSelectionEnd(currentText);
 
-          
-          
+          // Replace-text action matches our current text; copy the new spans to the
+          // current text.
           mText.currentReplace(
               indexInText, indexInText + action.mSequence.length(), action.mSequence);
-          
+          // Make sure selection is preserved.
           mText.currentSetSelection(selStart, selEnd);
 
-          
-          
-          
-          
-          
+          // The text change is caused by the replace-text event. If the text change
+          // replaced the previous selection, we need to rely on Gecko for an updated
+          // selection, so don't ignore selection change. However, if the text change
+          // did not replace the previous selection, we can ignore the Gecko selection
+          // in favor of the Java selection.
           mIgnoreSelectionChange = !mLastTextChangeReplacedSelection;
           break;
         }
@@ -1506,8 +1506,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                 || action.mSpanObject == Selection.SELECTION_END)
             && (action.mStart < mLastTextChangeStart && action.mEnd < mLastTextChangeStart
                 || action.mStart > mLastTextChangeOldEnd && action.mEnd > mLastTextChangeOldEnd)) {
-          
-          
+          // Use the Java selection if, between text-change notification and replace-text
+          // processing, we specifically set the selection to outside the replaced range.
           mLastTextChangeReplacedSelection = false;
         }
         mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
@@ -1524,7 +1524,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   }
 
   private synchronized boolean binderCheckToken(final IBinder token, final boolean allowNull) {
-    
+    // Verify that we're getting an IME notification from the currently focused child.
     if (mFocusedToken == token || (mFocusedToken == null && allowNull)) {
       return true;
     }
@@ -1532,11 +1532,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return false;
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void notifyIME(final IGeckoEditableChild child, @IMENotificationType final int type) {
-    
+    // On Gecko or binder thread.
     if (DEBUG) {
-      
+      // NOTIFY_IME_REPLY_EVENT is logged separately, inside geckoActionReply()
       if (type != SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
         Log.d(
             LOGTAG,
@@ -1550,7 +1550,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_TOKEN) {
       synchronized (this) {
         if (mFocusedToken != null && mFocusedToken != token && mFocusedToken.pingBinder()) {
-          
+          // Focused child already exists and is alive.
           Log.w(LOGTAG, "Already focused");
           return;
         }
@@ -1558,9 +1558,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         return;
       }
     } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB) {
-      
+      // Always from parent process.
       ThreadUtils.assertOnGeckoThread();
-    } else if (!binderCheckToken(token,  false)) {
+    } else if (!binderCheckToken(token, /* allowNull */ false)) {
       return;
     }
 
@@ -1573,7 +1573,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
       geckoActionReply(mActions.poll());
       if (!mActions.isEmpty()) {
-        
+        // Only post to IC thread below when the queue is empty.
         return;
       }
     }
@@ -1587,7 +1587,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         });
   }
 
-   void icNotifyIME(
+  /* package */ void icNotifyIME(
       final IGeckoEditableChild child, @IMENotificationType final int type) {
     if (DEBUG) {
       assertOnIcThread();
@@ -1607,23 +1607,23 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           mHideSoftInputTask = null;
         }
         if (mFocusedChild != null) {
-          
+          // Already focused, so blur first.
           icRestartInput(
-              GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,  false);
+              GeckoSession.TextInputDelegate.RESTART_REASON_BLUR, /* toggleSoftInput */ false);
         }
 
         mFocusedChild = child;
         mNeedSync = false;
-        mText.syncShadowText( null);
+        mText.syncShadowText(/* listener */ null);
 
-        
-        
-        
+        // Most of the time notifyIMEContext comes _before_ notifyIME, but sometimes it
+        // comes _after_ notifyIME. In that case, the state is disabled here, and
+        // notifyIMEContext is responsible for calling restartInput.
         if (mIMEState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
           mIMEState = SessionTextInput.EditableListener.IME_STATE_UNKNOWN;
         } else {
           icRestartInput(
-              GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,  true);
+              GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS, /* toggleSoftInput */ true);
         }
         break;
 
@@ -1631,32 +1631,32 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         if (mFocusedChild != null) {
           mFocusedChild = null;
           icRestartInput(
-              GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,  true);
+              GeckoSession.TextInputDelegate.RESTART_REASON_BLUR, /* toggleSoftInput */ true);
         }
         break;
 
       case SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB:
-        toggleSoftInput( true, mIMEState);
-        return; 
+        toggleSoftInput(/* force */ true, mIMEState);
+        return; // Don't notify listener.
 
       case SessionTextInput.EditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION:
         {
-          
-          
-          
-          
-          
-          
-          
+          // Gecko already committed its composition. However, Android keyboards
+          // have trouble dealing with us removing the composition manually on the
+          // Java side. Therefore, we keep the composition intact on the Java side.
+          // The text content should still be in-sync on both sides.
+          //
+          // Nevertheless, if we somehow lost the composition, we must force the
+          // keyboard to reset.
           if (isComposing(mText.getShadowText())) {
-            
-            return; 
+            // Still have composition; no need to reset.
+            return; // Don't notify listener.
           }
-          
+          // No longer have composition; perform reset.
           icRestartInput(
               GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
-               false);
-          return; 
+              /* toggleSoftInput */ false);
+          return; // Don't notify listener.
         }
 
       case SessionTextInput.EditableListener.NOTIFY_IME_OF_TOKEN:
@@ -1671,7 +1671,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void notifyIMEContext(
       final IBinder token,
       @IMEState final int state,
@@ -1681,7 +1681,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final String autocapitalize,
       final boolean autocorrect,
       @IMEContextFlags final int flags) {
-    
+    // On Gecko or binder thread.
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("notifyIMEContext(");
       sb.append(getConstantName(SessionTextInput.EditableListener.class, "IME_STATE_", state))
@@ -1699,11 +1699,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       Log.d(LOGTAG, sb.toString());
     }
 
-    
-    
-    
-    
-    if (token != mDefaultChild.asBinder() && !binderCheckToken(token,  false)) {
+    // Regular notifyIMEContext calls all come from the parent process (with the default child),
+    // so always allow calls from there. We can get additional notifyIMEContext calls during
+    // a session transfer; calls in those cases can come from child processes, and we must
+    // perform a token check in that situation.
+    if (token != mDefaultChild.asBinder() && !binderCheckToken(token, /* allowNull */ false)) {
       return;
     }
 
@@ -1717,7 +1717,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         });
   }
 
-   void icNotifyIMEContext(
+  /* package */ void icNotifyIMEContext(
       @IMEState final int originalState,
       final String typeHint,
       final String modeHint,
@@ -1729,9 +1729,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       assertOnIcThread();
     }
 
-    
-    
-    
+    // For some input type we will use a widget to display the ui, for those we must not
+    // display the ime. We can display a widget for date and time types and, if the sdk version
+    // is 11 or greater, for datetime/month/week as well.
     final int state;
     if ((typeHint != null
             && (typeHint.equalsIgnoreCase("date")
@@ -1759,7 +1759,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
 
     if (mFocusedChild == null) {
-      
+      // We have no focus.
       return;
     }
 
@@ -1778,33 +1778,33 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           || (oldState == SessionTextInput.EditableListener.IME_STATE_DISABLED
               && (state == SessionTextInput.EditableListener.IME_STATE_ENABLED
                   || state == SessionTextInput.EditableListener.IME_STATE_PASSWORD))) {
-        
-        
+        // Even if focus isn't changed, software keyboard state is changed.
+        // We have to show or dismiss it.
         icRestartInput(
             GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
-             true);
+            /* toggleSoftInput */ true);
         return;
       }
     }
 
     if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-      
-      
-      
+      // When focus is being lost, icNotifyIME with NOTIFY_IME_OF_BLUR
+      // will dismiss it.
+      // So ignore to control software keyboard at this time.
       return;
     }
 
-    
-    
-    
-    
+    // We changed state while focused. If the old state is unknown, it means this
+    // notifyIMEContext call came _after_ the notifyIME call, so we need to call
+    // restartInput(FOCUS) here (see comment in icNotifyIME). Otherwise, this change
+    // counts as a content change.
     if (oldState == SessionTextInput.EditableListener.IME_STATE_UNKNOWN) {
       icRestartInput(
-          GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,  true);
+          GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS, /* toggleSoftInput */ true);
     } else if (oldState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
       icRestartInput(
           GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
-           false);
+          /* toggleSoftInput */ false);
     }
   }
 
@@ -1837,11 +1837,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                     int state = mIMEState;
                     if (reason == GeckoSession.TextInputDelegate.RESTART_REASON_BLUR
                         && mFocusedChild == null) {
-                      
-                      
+                      // On blur, notifyIMEContext() is called after notifyIME(). Therefore,
+                      // mIMEState is not up-to-date here and we need to override it.
                       state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
                     }
-                    toggleSoftInput( false, state);
+                    toggleSoftInput(/* force */ false, state);
                   }
                 });
           }
@@ -1857,26 +1857,26 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     boolean autocorrect = mIMEAutocorrect;
     final int flags = mIMEFlags;
 
-    
+    // Some keyboards require us to fill out outAttrs even if we return null.
     outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
     outAttrs.actionLabel = null;
 
     if (modeHint.equals("none")) {
-      
+      // inputmode=none hides VKB at force.
       outAttrs.inputType = InputType.TYPE_NULL;
-      toggleSoftInput( true, SessionTextInput.EditableListener.IME_STATE_DISABLED);
+      toggleSoftInput(/* force */ true, SessionTextInput.EditableListener.IME_STATE_DISABLED);
       return;
     }
 
     if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
       outAttrs.inputType = InputType.TYPE_NULL;
-      toggleSoftInput( false, state);
+      toggleSoftInput(/* force */ false, state);
       return;
     }
 
-    
-    
-    
+    // We give priority to typeHint so that content authors can't annoy
+    // users by doing dumb things like opening the numeric keyboard for
+    // an email form field.
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
     if (state == SessionTextInput.EditableListener.IME_STATE_PASSWORD
         || "password".equalsIgnoreCase(typeHint)) {
@@ -1893,7 +1893,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
               | InputType.TYPE_NUMBER_VARIATION_NORMAL
               | InputType.TYPE_NUMBER_FLAG_DECIMAL;
     } else {
-      
+      // We look at modeHint
       if (modeHint.equals("tel")) {
         outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
       } else if (modeHint.equals("url")) {
@@ -1905,13 +1905,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       } else if (modeHint.equals("decimal")) {
         outAttrs.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
       } else {
-        
+        // TYPE_TEXT_FLAG_IME_MULTI_LINE flag makes the fullscreen IME line wrap
         outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
       }
     }
 
-    
-    
+    // Even if dom.forms.autocorrect is false, we shouldn't set auto correct flag for email, url and
+    // password.
     final int validation = outAttrs.inputType & InputType.TYPE_MASK_VARIATION;
     if (validation == InputType.TYPE_TEXT_VARIATION_PASSWORD
         || validation == InputType.TYPE_TEXT_VARIATION_URI
@@ -1927,7 +1927,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     if (autocapitalize.equals("characters")) {
       outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
     } else if (autocapitalize.equals("none")) {
-      
+      // not set anymore.
     } else if (autocapitalize.equals("sentences")) {
       outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
     } else if (autocapitalize.equals("words")) {
@@ -1935,8 +1935,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     } else if (modeHint.length() == 0
         && (outAttrs.inputType & InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE) != 0
         && !typeHint.equalsIgnoreCase("text")) {
-      
-      
+      // auto-capitalized mode is the default for types other than text (bug 871884)
+      // except to password, url and email.
       outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
     }
 
@@ -1955,7 +1955,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     } else if (actionHint.equals("send")) {
       outAttrs.imeOptions = EditorInfo.IME_ACTION_SEND;
     } else if (actionHint.equals("maybenext")) {
-      
+      // this should be low priority as "maybenext" is internal type
       outAttrs.imeOptions = EditorInfo.IME_ACTION_NEXT;
     } else if (actionHint.length() > 0) {
       if (DEBUG) Log.w(LOGTAG, "Unexpected actionHint=\"" + actionHint + "\"");
@@ -1967,7 +1967,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1 && typeHint.length() == 0) {
-      
+      // contenteditable allows image insertion.
       outAttrs.contentMimeTypes = new String[] {"image/gif", "image/jpeg", "image/png"};
     }
 
@@ -1978,10 +1978,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       outAttrs.setInitialSurroundingText(currentText);
     }
 
-    toggleSoftInput( false, state);
+    toggleSoftInput(/* force */ false, state);
   }
 
-   void toggleSoftInput(final boolean force, @IMEState final int state) {
+  /* package */ void toggleSoftInput(final boolean force, @IMEState final int state) {
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("toggleSoftInput(force=");
       sb.append(force)
@@ -1991,18 +1991,18 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       Log.d(LOGTAG, sb.toString());
     }
 
-    
+    // Can be called from UI or IC thread.
     final int flags = mIMEFlags;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // There are three paths that toggleSoftInput() can be called:
+    // 1) through calling restartInput(), which then indirectly calls
+    //    onCreateInputConnection() and then toggleSoftInput().
+    // 2) through calling toggleSoftInput() directly from restartInput().
+    //    This path is the fallback in case 1) does not happen.
+    // 3) through a system-generated onCreateInputConnection() call when the activity
+    //    is restored from background, which then calls toggleSoftInput().
+    // mSoftInputReentrancyGuard is needed to ensure that between the different paths,
+    // the soft input is only toggled exactly once.
 
     ThreadUtils.runOnUiThread(
         new Runnable() {
@@ -2012,10 +2012,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
               final int reentrancyGuard = mSoftInputReentrancyGuard.incrementAndGet();
               final boolean isReentrant = reentrancyGuard > 1;
 
-              
-              
-              
-              
+              // When using Find In Page, we can still receive notifyIMEContext calls due to the
+              // selection changing when highlighting. However in this case we don't want to
+              // show/hide the keyboard because the find box has the focus and is taking input from
+              // the keyboard.
               final GeckoSession session = mSession.get();
 
               if (session == null) {
@@ -2054,13 +2054,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
               }
               {
                 final GeckoBundle bundle = new GeckoBundle();
-                
-                
-                
-                
-                
-                
-                
+                // This bit is subtle. We want to force-zoom to the input
+                // if we're _not_ force-showing the virtual keyboard.
+                //
+                // We only force-show the virtual keyboard as a result of
+                // something that _doesn't_ switch the focus, and we don't
+                // want to move the view out of the focused editor unless
+                // we _actually_ show toggle the keyboard.
                 bundle.putBoolean("force", !force);
                 session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", bundle);
               }
@@ -2072,10 +2072,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         });
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void onSelectionChange(
       final IBinder token, final int start, final int end, final boolean causedOnlyByComposition) {
-    
+    // On Gecko or binder thread.
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("onSelectionChange(");
       sb.append(start)
@@ -2087,7 +2087,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       Log.d(LOGTAG, sb.toString());
     }
 
-    if (!binderCheckToken(token,  false)) {
+    if (!binderCheckToken(token, /* allowNull */ false)) {
       return;
     }
 
@@ -2097,21 +2097,21 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       mText.currentSetSelection(start, end);
     }
 
-    
-    
+    // We receive selection change notification after receiving replies for pending
+    // events, so we can reset text change bounds at this point.
     mLastTextChangeStart = Integer.MAX_VALUE;
     mLastTextChangeOldEnd = -1;
     mLastTextChangeNewEnd = -1;
     mLastTextChangeReplacedSelection = false;
 
     if (causedOnlyByComposition) {
-      
-      
+      // It is unnecessary to sync shadow text since this change is by composition from Java
+      // side.
       return;
     }
 
-    
-    
+    // It is ready to synchronize Java text with Gecko text when no more input events is
+    // dispatched.
     mIcPostHandler.post(
         new Runnable() {
           @Override
@@ -2126,14 +2126,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         && TextUtils.regionMatches(mText.getCurrentText(), start, newText, 0, oldEnd - start);
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void onTextChange(
       final IBinder token,
       final CharSequence text,
       final int start,
       final int unboundedOldEnd,
       final boolean causedOnlyByComposition) {
-    
+    // On Gecko or binder thread.
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("onTextChange(");
       debugAppend(sb, text)
@@ -2145,14 +2145,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       Log.d(LOGTAG, sb.toString());
     }
 
-    if (!binderCheckToken(token,  false)) {
+    if (!binderCheckToken(token, /* allowNull */ false)) {
       return;
     }
 
     if (unboundedOldEnd >= Integer.MAX_VALUE / 2) {
-      
-      
-      
+      // Integer.MAX_VALUE / 2 is a magic number to synchronize all.
+      // (See GeckoEditableSupport::FlushIMEText.)
+      // Previous text transactions are unnecessary now, so we have to ignore it.
       mActions.clear();
     }
 
@@ -2161,13 +2161,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final int newEnd = start + text.length();
 
     if (start == 0 && unboundedOldEnd > currentLength && !causedOnlyByComposition) {
-      
-      
-      
+      // | oldEnd > currentLength | signals entire text is cleared (e.g. for
+      // newly-focused editors). Simply replace the text in that case; replace in
+      // two steps to properly clear composing spans that span the whole range.
       mText.currentReplace(0, currentLength, "");
       mText.currentReplace(0, 0, text);
 
-      
+      // Don't ignore the next selection change because we are re-syncing with Gecko
       mIgnoreSelectionChange = false;
 
       mLastTextChangeStart = Integer.MAX_VALUE;
@@ -2180,14 +2180,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final int selStart = Selection.getSelectionStart(currentText);
       final int selEnd = Selection.getSelectionEnd(currentText);
 
-      
-      
-      
+      // True if the selection was in the middle of the replaced text; in that case
+      // we don't know where to place the selection after replacement, and must rely
+      // on the Gecko selection.
       mLastTextChangeReplacedSelection |=
           (selStart >= start && selStart <= oldEnd) || (selEnd >= start && selEnd <= oldEnd);
 
-      
-      
+      // Gecko side initiated the text change. Replace in two steps to properly
+      // clear composing spans that span the whole range.
       mText.currentReplace(start, oldEnd, "");
       mText.currentReplace(start, start, text);
 
@@ -2196,9 +2196,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
 
     } else {
-      
-      
-      
+      // Nothing to do because the text is the same. This could happen when
+      // the composition is updated for example, in which case we want to keep the
+      // Java selection.
       final Action action = mActions.peek();
       mIgnoreSelectionChange =
           mIgnoreSelectionChange
@@ -2212,13 +2212,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
     }
 
-    
-    
+    // onTextChange is always followed by onSelectionChange, so we let
+    // onSelectionChange schedule a shadow text sync.
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void onDefaultKeyEvent(final IBinder token, final KeyEvent event) {
-    
+    // On Gecko or binder thread.
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("onDefaultKeyEvent(");
       sb.append("action=")
@@ -2239,8 +2239,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       Log.d(LOGTAG, sb.toString());
     }
 
-    
-    if (!binderCheckToken(token,  true)) {
+    // Allow default key processing even if we're not focused.
+    if (!binderCheckToken(token, /* allowNull */ true)) {
       return;
     }
 
@@ -2256,15 +2256,15 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         });
   }
 
-  @Override 
+  @Override // IGeckoEditableParent
   public void updateCompositionRects(
       final IBinder token, final RectF[] rects, final RectF caretRect) {
-    
+    // On Gecko or binder thread.
     if (DEBUG) {
       Log.d(LOGTAG, "updateCompositionRects(rects.length = " + rects.length + ")");
     }
 
-    if (!binderCheckToken(token,  false)) {
+    if (!binderCheckToken(token, /* allowNull */ false)) {
       return;
     }
 
@@ -2280,7 +2280,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         });
   }
 
-  
+  // InvocationHandler interface
 
   static String getConstantName(final Class<?> cls, final String prefix, final Object value) {
     for (final Field fld : cls.getDeclaredFields()) {
@@ -2343,13 +2343,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final Object target;
     final Class<?> methodInterface = method.getDeclaringClass();
     if (DEBUG) {
-      
+      // Editable methods should all be called from the IC thread
       assertOnIcThread();
     }
     if (methodInterface == Editable.class
         || methodInterface == Appendable.class
         || methodInterface == Spannable.class) {
-      
+      // Method alters the Editable; route calls to our implementation
       target = this;
     } else {
       target = mText.getShadowText();
@@ -2377,7 +2377,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return ret;
   }
 
-  
+  // Spannable interface
 
   @Override
   public void removeSpan(final Object what) {
@@ -2397,7 +2397,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     icOfferAction(Action.newSetSpan(what, start, end, flags));
   }
 
-  
+  // Appendable interface
 
   @Override
   public Editable append(final CharSequence text) {
@@ -2414,7 +2414,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return replace(mProxy.length(), mProxy.length(), String.valueOf(text), 0, 1);
   }
 
-  
+  // Editable interface
 
   @Override
   public InputFilter[] getFilters() {
@@ -2428,10 +2428,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
   @Override
   public void clearSpans() {
-    
-
+    /* XXX this clears the selection spans too,
+    but there is no way to clear the corresponding selection in Gecko */
     Log.w(LOGTAG, "selection cleared with clearSpans()");
-    icOfferAction(Action.newRemoveSpan( null));
+    icOfferAction(Action.newRemoveSpan(/* what */ null));
   }
 
   @Override
@@ -2448,7 +2448,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       text = text.subSequence(start, end);
     }
     if (mFilters != null) {
-      
+      // Filter text before sending the request to Gecko
       for (int i = 0; i < mFilters.length; ++i) {
         final CharSequence cs = mFilters[i].filter(text, 0, text.length(), mProxy, st, en);
         if (cs != null) {
@@ -2457,7 +2457,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       }
     }
     if (text == source) {
-      
+      // Always create a copy
       text = new SpannableString(source);
     }
     icOfferAction(Action.newReplaceText(text, Math.min(st, en), Math.max(st, en)));
@@ -2489,17 +2489,17 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return replace(st, en, text, 0, text.length());
   }
 
-  
+  /* GetChars interface */
 
   @Override
   public void getChars(final int start, final int end, final char[] dest, final int destoff) {
-    
-
-
+    /* overridden Editable interface methods in GeckoEditable must not be called directly
+    outside of GeckoEditable. Instead, the call must go through mProxy, which ensures
+    that Java is properly synchronized with Gecko */
     throw new UnsupportedOperationException("method must be called through mProxy");
   }
 
-  
+  /* Spanned interface */
 
   @Override
   public int getSpanEnd(final Object tag) {
@@ -2522,12 +2522,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   }
 
   @Override
-  @SuppressWarnings("rawtypes") 
+  @SuppressWarnings("rawtypes") // nextSpanTransition uses raw Class in its Android declaration
   public int nextSpanTransition(final int start, final int limit, final Class type) {
     throw new UnsupportedOperationException("method must be called through mProxy");
   }
 
-  
+  /* CharSequence interface */
 
   @Override
   public char charAt(final int index) {
@@ -2570,7 +2570,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final int repeatCount,
       final @NonNull KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_UNKNOWN) {
-      
+      // KEYCODE_UNKNOWN means the characters are in KeyEvent.getCharacters()
       final String str = event.getCharacters();
       for (int i = 0; i < str.length(); i++) {
         final KeyEvent charEvent = getCharKeyEvent(str.charAt(i));
@@ -2597,11 +2597,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     return false;
   }
 
-  
+  /** Get a key that represents a given character. */
   private static KeyEvent getCharKeyEvent(final char c) {
     final long time = SystemClock.uptimeMillis();
     return new KeyEvent(
-        time, time, KeyEvent.ACTION_MULTIPLE, KeyEvent.KEYCODE_UNKNOWN,  0) {
+        time, time, KeyEvent.ACTION_MULTIPLE, KeyEvent.KEYCODE_UNKNOWN, /* repeat */ 0) {
       @Override
       public int getUnicodeChar() {
         return c;
@@ -2642,7 +2642,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       case KeyEvent.KEYCODE_VOLUME_DOWN:
       case KeyEvent.KEYCODE_VOLUME_MUTE:
       case KeyEvent.KEYCODE_SEARCH:
-        
+      // ignore HEADSETHOOK to allow hold-for-voice-search to work
       case KeyEvent.KEYCODE_HEADSETHOOK:
         return false;
     }
