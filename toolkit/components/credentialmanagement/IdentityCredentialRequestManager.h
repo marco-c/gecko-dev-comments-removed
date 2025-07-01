@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_IDENTITYCREDENTIALREQUESTMANAGER_H_
 #define MOZILLA_IDENTITYCREDENTIALREQUESTMANAGER_H_
@@ -32,6 +32,8 @@ class IdentityCredentialRequestManager final : nsISupports {
                              const nsCString& aToken,
                              const dom::IdentityResolveOptions& aOptions);
 
+  bool IsActivePopup(dom::WebIdentityParent* aPopupWindow);
+
  private:
   static StaticRefPtr<IdentityCredentialRequestManager> sSingleton;
   IdentityCredentialRequestManager() {};
@@ -43,6 +45,6 @@ class IdentityCredentialRequestManager final : nsISupports {
       mPendingTokenRequests;
 };
 
-}  
+}  // namespace mozilla
 
-#endif 
+#endif /* MOZILLA_IDENTITYCREDENTIALSTORAGESERVICE_H_ */
