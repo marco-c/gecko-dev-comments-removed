@@ -586,14 +586,7 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
     } else if (status == NS_NET_STATUS_RESOLVED_HOST) {
       SetDomainLookupEnd(TimeStamp::Now());
     } else if (status == NS_NET_STATUS_CONNECTING_TO) {
-      TimeStamp tnow = TimeStamp::Now();
-      {
-        MutexAutoLock lock(mLock);
-        mTimings.connectStart = tnow;
-        if (mConnInfo->IsHttp3()) {
-          mTimings.secureConnectionStart = tnow;
-        }
-      }
+      SetConnectStart(TimeStamp::Now());
     } else if (status == NS_NET_STATUS_CONNECTED_TO) {
       TimeStamp tnow = TimeStamp::Now();
       SetConnectEnd(tnow, true);
@@ -611,16 +604,6 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
     } else if (status == NS_NET_STATUS_SENDING_TO) {
       
       SetRequestStart(TimeStamp::Now(), true);
-    }
-  }
-
-  
-  
-  
-  
-  if ((mEarlyDataDisposition == EARLY_SENT) && mConnInfo->IsHttp3()) {
-    if (status == NS_NET_STATUS_CONNECTED_TO) {
-      SetConnectEnd(TimeStamp::Now(), true);
     }
   }
 
