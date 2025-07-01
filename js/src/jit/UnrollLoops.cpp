@@ -1164,6 +1164,25 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
       MOZ_ASSERT(valueTable.get(cix, vix)->op() ==
                  valueTable.get(0, vix)->op());
     }
+
+    
+    
+    
+    for (vix = 0; vix < numValuesInOriginal; vix++) {
+      MDefinition* clonedInsn = valueTable.get(cix, vix);
+      MDefinition* originalDep = clonedInsn->dependency();
+      if (originalDep) {
+        mozilla::Maybe<size_t> originalInsnIndex =
+            valueTable.findInRow(0, originalDep);
+        if (originalInsnIndex.isSome()) {
+          
+          
+          MDefinition* clonedDep =
+              valueTable.get(cix, originalInsnIndex.value());
+          clonedInsn->setDependency(clonedDep);
+        }
+      }
+    }
   }
 
 #ifdef JS_JITSPEW
