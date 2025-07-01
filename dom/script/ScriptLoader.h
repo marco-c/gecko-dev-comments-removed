@@ -781,6 +781,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
   
+  
+  
+  
   void CalculateBytecodeCacheFlag(ScriptLoadRequest* aRequest);
 
   void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
@@ -825,6 +828,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   ScriptLoadRequestList mOffThreadCompilingRequests;
+
+  
+  
+  
+  
+  ScriptLoadRequestList mBytecodeEncodableDependencyModules;
 
   
   
