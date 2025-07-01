@@ -822,7 +822,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   mozilla::TimeStamp mRedirectEndTimeStamp;
 
-  PRTime mChannelCreationTime;
+  PRTime mChannelCreationTime{0};
   TimeStamp mChannelCreationTimestamp;
   TimeStamp mAsyncOpenTime;
   TimeStamp mCacheReadStart;
@@ -838,35 +838,36 @@ class HttpBaseChannel : public nsHashPropertyBag,
   TimeStamp mOnStopRequestStartTime;
   
   
-  TimingStruct mTransactionTimings;
+  TimingStruct mTransactionTimings{};
 
   
   
-  nsILoadInfo::CrossOriginOpenerPolicy mComputedCrossOriginOpenerPolicy;
+  nsILoadInfo::CrossOriginOpenerPolicy mComputedCrossOriginOpenerPolicy{
+      nsILoadInfo::OPENER_POLICY_UNSAFE_NONE};
 
-  uint64_t mStartPos;
-  uint64_t mTransferSize;
-  uint64_t mRequestSize;
-  uint64_t mDecodedBodySize;
+  uint64_t mStartPos{UINT64_MAX};
+  uint64_t mTransferSize{0};
+  uint64_t mRequestSize{0};
+  uint64_t mDecodedBodySize{0};
   
-  bool mSupportsHTTP3;
-  uint64_t mEncodedBodySize;
-  uint64_t mRequestContextID;
+  bool mSupportsHTTP3{false};
+  uint64_t mEncodedBodySize{0};
+  uint64_t mRequestContextID{0};
   
   
-  uint64_t mContentWindowId;
-  uint64_t mBrowserId;
-  int64_t mAltDataLength;
-  uint64_t mChannelId;
-  uint64_t mReqContentLength;
+  uint64_t mContentWindowId{0};
+  uint64_t mBrowserId{0};
+  int64_t mAltDataLength{-1};
+  uint64_t mChannelId{0};
+  uint64_t mReqContentLength{0};
 
-  Atomic<nsresult, ReleaseAcquire> mStatus;
+  Atomic<nsresult, ReleaseAcquire> mStatus{NS_OK};
 
   
   
-  Atomic<bool, ReleaseAcquire> mCanceled;
-  Atomic<uint32_t, ReleaseAcquire> mFirstPartyClassificationFlags;
-  Atomic<uint32_t, ReleaseAcquire> mThirdPartyClassificationFlags;
+  Atomic<bool, ReleaseAcquire> mCanceled{false};
+  Atomic<uint32_t, ReleaseAcquire> mFirstPartyClassificationFlags{0};
+  Atomic<uint32_t, ReleaseAcquire> mThirdPartyClassificationFlags{0};
 
   
   
@@ -874,8 +875,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   UniquePtr<ProfileChunkedBuffer> mSource;
 
-  uint32_t mLoadFlags;
-  uint32_t mCaps;
+  uint32_t mLoadFlags{LOAD_NORMAL};
+  uint32_t mCaps{0};
 
   ClassOfService mClassOfService;
   
@@ -1004,34 +1005,34 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   
-  uint32_t mTlsFlags;
+  uint32_t mTlsFlags{0};
 
   
-  uint32_t mSuspendCount;
+  uint32_t mSuspendCount{0};
 
   
-  uint32_t mInitialRwin;
+  uint32_t mInitialRwin{0};
 
-  uint32_t mProxyResolveFlags;
+  uint32_t mProxyResolveFlags{0};
 
-  uint32_t mContentDispositionHint;
+  uint32_t mContentDispositionHint{UINT32_MAX};
 
   dom::RequestMode mRequestMode;
-  uint32_t mRedirectMode;
+  uint32_t mRedirectMode{nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW};
 
   
   
   
-  uint32_t mLastRedirectFlags;
+  uint32_t mLastRedirectFlags{0};
 
-  int16_t mPriority;
+  int16_t mPriority{PRIORITY_NORMAL};
   uint8_t mRedirectionLimit;
 
   
   
-  int8_t mRedirectCount;
+  int8_t mRedirectCount{0};
   
-  int8_t mInternalRedirectCount;
+  int8_t mInternalRedirectCount{0};
 
   enum class SnifferCategoryType {
     NetContent = 0,
@@ -1043,14 +1044,14 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   const bool mCachedOpaqueResponseBlockingPref;
-  bool mChannelBlockedByOpaqueResponse;
+  bool mChannelBlockedByOpaqueResponse{false};
 
-  bool mDummyChannelForCachedResource;
+  bool mDummyChannelForCachedResource{false};
 
-  bool mHasContentDecompressed;
+  bool mHasContentDecompressed{false};
 
   
-  bool mRenderBlocking;
+  bool mRenderBlocking{false};
 
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields3, 8, (
