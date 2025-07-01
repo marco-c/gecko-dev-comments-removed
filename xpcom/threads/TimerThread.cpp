@@ -735,6 +735,18 @@ TimeDuration TimerThread::ComputeAcceptableFiringDelay(
   return std::clamp(tmp, minDelay, maxDelay);
 }
 
+void MOZ_ALWAYS_INLINE TimerThread::AccumulateAndMaybeSendTelemetry(
+    const uint64_t timersFiredThisWakeup, size_t& queuedTimersFiredCount,
+    AutoTArray<uint64_t, kMaxQueuedTimersFired>& queuedTimersFiredPerWakeup) {
+  queuedTimersFiredPerWakeup[queuedTimersFiredCount] = timersFiredThisWakeup;
+  ++queuedTimersFiredCount;
+  if (queuedTimersFiredCount == kMaxQueuedTimersFired) {
+    glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
+        queuedTimersFiredPerWakeup);
+    queuedTimersFiredCount = 0;
+  }
+}
+
 NS_IMETHODIMP
 TimerThread::Run() {
   MonitorAutoLock lock(mMonitor);
@@ -750,10 +762,9 @@ TimerThread::Run() {
   
   
   
-  static constexpr size_t kMaxQueuedTimerFired = 128;
-  size_t queuedTimerFiredCount = 0;
-  AutoTArray<uint64_t, kMaxQueuedTimerFired> queuedTimersFiredPerWakeup;
-  queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(kMaxQueuedTimerFired);
+  size_t queuedTimersFiredCount = 0;
+  AutoTArray<uint64_t, kMaxQueuedTimersFired> queuedTimersFiredPerWakeup;
+  queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(kMaxQueuedTimersFired);
 
 #ifdef XP_WIN
   
@@ -921,17 +932,11 @@ TimerThread::Run() {
       }
     }
 
-    {
-      
-      
-      queuedTimersFiredPerWakeup[queuedTimerFiredCount] = timersFiredThisWakeup;
-      ++queuedTimerFiredCount;
-      if (queuedTimerFiredCount == kMaxQueuedTimerFired) {
-        glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
-            queuedTimersFiredPerWakeup);
-        queuedTimerFiredCount = 0;
-      }
-    }
+    
+    
+    AccumulateAndMaybeSendTelemetry(timersFiredThisWakeup,
+                                    queuedTimersFiredCount,
+                                    queuedTimersFiredPerWakeup);
 
 #if TIMER_THREAD_STATISTICS
     {
@@ -968,8 +973,9 @@ TimerThread::Run() {
   }
 
   
-  if (queuedTimerFiredCount != 0) {
-    queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(queuedTimerFiredCount);
+  if (queuedTimersFiredCount != 0) {
+    queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(
+        queuedTimersFiredCount);
     glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
         queuedTimersFiredPerWakeup);
   }
