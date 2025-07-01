@@ -49,6 +49,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "nsContentUtils.h"
+#include "imgLoader.h"
 
 mozilla::LazyLogModule nsURILoader::mLog("URILoader");
 
@@ -409,25 +410,25 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
   
   
   
-  
-  
-  
-  
-  
-  bool forceExternalHandling = false;
-  if (!(mFlags & nsIURILoader::DONT_RETARGET)) {
-    uint32_t disposition;
-    rv = aChannel->GetContentDisposition(&disposition);
+  uint32_t disposition;
+  rv = aChannel->GetContentDisposition(&disposition);
 
-    if (NS_SUCCEEDED(rv) && disposition == nsIChannel::DISPOSITION_ATTACHMENT) {
-      forceExternalHandling = true;
-    }
-  }
+  bool forceExternalHandling =
+      NS_SUCCEEDED(rv) && disposition == nsIChannel::DISPOSITION_ATTACHMENT;
 
   LOG(("  forceExternalHandling: %s", forceExternalHandling ? "yes" : "no"));
   LOG(("  IsSandboxed: %s", IsSandboxed(aChannel) ? "yes" : "no"));
   LOG(("  IsContentPDF: %s",
        IsContentPDF(aChannel, mContentType) ? "yes" : "no"));
+
+  
+  
+  if (forceExternalHandling && (mFlags & nsIURILoader::IS_OBJECT_EMBED) &&
+      (imgLoader::SupportImageWithMimeType(mContentType) ||
+       IsContentPDF(aChannel, mContentType))) {
+    LOG(("Handling pdf/image MIME internally for object/embed element"));
+    forceExternalHandling = false;
+  }
 
   bool maybeForceInternalHandling =
       forceExternalHandling &&
@@ -435,8 +436,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
 
   
   
-  if ((maybeForceInternalHandling || IsSandboxed(aChannel)) &&
-      IsContentPDF(aChannel, mContentType)) {
+  if (maybeForceInternalHandling && IsContentPDF(aChannel, mContentType)) {
     
     
     
