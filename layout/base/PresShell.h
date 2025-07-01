@@ -99,6 +99,7 @@ class ProfileChunkedBuffer;
 class ScrollContainerFrame;
 class StyleSheet;
 
+struct AutoConnectedAncestorTracker;
 struct PointerInfo;
 
 #ifdef ACCESSIBILITY
@@ -879,9 +880,12 @@ class PresShell final : public nsStubDocumentObserver,
 
   void AddAutoWeakFrame(AutoWeakFrame* aWeakFrame);
   void AddWeakFrame(WeakFrame* aWeakFrame);
+  void AddConnectedAncestorTracker(AutoConnectedAncestorTracker& aTracker);
 
   void RemoveAutoWeakFrame(AutoWeakFrame* aWeakFrame);
   void RemoveWeakFrame(WeakFrame* aWeakFrame);
+  void RemoveConnectedAncestorTracker(
+      const AutoConnectedAncestorTracker& aTracker);
 
   
 
@@ -3181,7 +3185,9 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   
-  AutoWeakFrame* mAutoWeakFrames;
+  AutoWeakFrame* mAutoWeakFrames = nullptr;
+
+  AutoConnectedAncestorTracker* mLastConnectedAncestorTracker = nullptr;
 
   
   nsTHashSet<WeakFrame*> mWeakFrames;

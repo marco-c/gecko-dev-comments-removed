@@ -1181,9 +1181,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
 
 
-
-  MOZ_CAN_RUN_SCRIPT
-  void MaybeFirePointerCancel(WidgetInputEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT void MaybeDispatchPointerCancel(
+      const WidgetInputEvent& aSourceEvent, nsIContent& aTargetContent);
 
   
 

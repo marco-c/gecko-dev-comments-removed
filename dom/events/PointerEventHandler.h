@@ -20,6 +20,7 @@
 
 #include "mozilla/layers/InputAPZContext.h"
 
+class AutoWeakFrame;
 class nsIFrame;
 class nsIContent;
 class nsPresContext;
@@ -190,6 +191,71 @@ class PointerEventHandler final {
 
   
   static bool IsPointerEventImplicitCaptureForTouchEnabled();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchPointerEventWithTarget(
+      EventMessage aPointerEventMessage,
+      const WidgetMouseEvent& aMouseOrPointerEvent,
+      const AutoWeakFrame& aTargetWeakFrame, nsIContent* aTargetContent,
+      nsEventStatus* aStatus = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchPointerEventWithTarget(
+      EventMessage aPointerEventMessage, const WidgetTouchEvent& aTouchEvent,
+      size_t aTouchIndex, const AutoWeakFrame& aTargetWeakFrame,
+      nsIContent* aTargetContent, nsEventStatus* aStatus = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchPointerEventWithTarget(
+      WidgetPointerEvent& aPointerEvent, const AutoWeakFrame& aTargetWeakFrame,
+      nsIContent* aTargetContent, nsEventStatus* aStatus = nullptr);
 
   
 
@@ -441,7 +507,7 @@ class PointerEventHandler final {
       const WidgetMouseEvent* aEvent);
 
   static void InitPointerEventFromMouse(WidgetPointerEvent* aPointerEvent,
-                                        WidgetMouseEvent* aMouseEvent,
+                                        const WidgetMouseEvent* aMouseEvent,
                                         EventMessage aMessage);
 
   static void InitPointerEventFromTouch(WidgetPointerEvent& aPointerEvent,

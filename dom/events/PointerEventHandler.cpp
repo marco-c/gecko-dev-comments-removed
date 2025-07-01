@@ -8,6 +8,7 @@
 
 #include "PointerEvent.h"
 #include "PointerLockManager.h"
+#include "mozilla/ConnectedAncestorTracker.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_ui.h"
@@ -886,7 +887,7 @@ void PointerEventHandler::PostHandlePointerEventsPreventDefault(
 
 
 void PointerEventHandler::InitPointerEventFromMouse(
-    WidgetPointerEvent* aPointerEvent, WidgetMouseEvent* aMouseEvent,
+    WidgetPointerEvent* aPointerEvent, const WidgetMouseEvent* aMouseEvent,
     EventMessage aMessage) {
   MOZ_ASSERT(aPointerEvent);
   MOZ_ASSERT(aMouseEvent);
@@ -1012,6 +1013,123 @@ bool PointerEventHandler::NeedToDispatchPointerRawUpdate(
       aDocument ? aDocument->GetInnerWindow() : nullptr;
   return innerWindow && innerWindow->HasPointerRawUpdateEventListeners() &&
          innerWindow->IsSecureContext();
+}
+
+
+nsresult PointerEventHandler::DispatchPointerEventWithTarget(
+    EventMessage aPointerEventMessage,
+    const WidgetMouseEvent& aMouseOrPointerEvent,
+    const AutoWeakFrame& aTargetWeakFrame, nsIContent* aTargetContent,
+    nsEventStatus* aStatus ) {
+  Maybe<WidgetPointerEvent> pointerEvent;
+  if (aMouseOrPointerEvent.mClass == ePointerEventClass) {
+    pointerEvent.emplace(aPointerEventMessage,
+                         *aMouseOrPointerEvent.AsPointerEvent());
+  } else {
+    pointerEvent.emplace(aMouseOrPointerEvent);
+    PointerEventHandler::InitPointerEventFromMouse(
+        pointerEvent.ptr(), &aMouseOrPointerEvent, ePointerCancel);
+  }
+  pointerEvent->convertToPointer = false;
+
+  return DispatchPointerEventWithTarget(pointerEvent.ref(), aTargetWeakFrame,
+                                        aTargetContent, aStatus);
+}
+
+
+nsresult PointerEventHandler::DispatchPointerEventWithTarget(
+    EventMessage aPointerEventMessage, const WidgetTouchEvent& aTouchEvent,
+    size_t aTouchIndex, const AutoWeakFrame& aTargetWeakFrame,
+    nsIContent* aTargetContent, nsEventStatus* aStatus ) {
+  WidgetPointerEvent pointerEvent(aTouchEvent.IsTrusted(), aPointerEventMessage,
+                                  aTouchEvent.mWidget);
+  PointerEventHandler::InitPointerEventFromTouch(
+      pointerEvent, aTouchEvent, *aTouchEvent.mTouches[aTouchIndex]);
+  pointerEvent.convertToPointer = false;
+
+  return DispatchPointerEventWithTarget(pointerEvent, aTargetWeakFrame,
+                                        aTargetContent, aStatus);
+}
+
+
+nsresult PointerEventHandler::DispatchPointerEventWithTarget(
+    WidgetPointerEvent& aPointerEvent, const AutoWeakFrame& aTargetWeakFrame,
+    nsIContent* aTargetContent, nsEventStatus* aStatus ) {
+  if (aStatus) {
+    *aStatus = nsEventStatus_eIgnore;
+  }
+
+  AutoWeakFrame targetWeakFrame(aTargetWeakFrame);
+  nsCOMPtr<nsIContent> targetContent = aTargetContent;
+  if (targetWeakFrame) {
+    MOZ_ASSERT_IF(
+        targetContent,
+        targetContent == targetWeakFrame->GetContentForEvent(&aPointerEvent));
+    if (!targetContent) {
+      targetContent = targetWeakFrame->GetContentForEvent(&aPointerEvent);
+      if (NS_WARN_IF(!targetContent)) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+  } else if (NS_WARN_IF(!targetContent)) {
+    return NS_ERROR_FAILURE;
+  }
+  const RefPtr<PresShell> presShell =
+      targetWeakFrame ? targetWeakFrame->PresShell()
+                      : targetContent->OwnerDoc()->GetPresShell();
+  if (NS_WARN_IF(!presShell)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  switch (aPointerEvent.mMessage) {
+    case ePointerGotCapture:
+    case ePointerLostCapture:
+    case ePointerClick:
+    case ePointerAuxClick:
+    case eContextMenu:
+      break;
+    default: {
+      Maybe<AutoConnectedAncestorTracker> trackTargetContent;
+      if (targetContent->IsInComposedDoc()) {
+        trackTargetContent.emplace(*targetContent);
+      }
+      CheckPointerCaptureState(&aPointerEvent);
+      
+      
+      if (trackTargetContent && trackTargetContent->ContentWasRemoved()) {
+        MOZ_ASSERT(!targetWeakFrame);
+        targetContent = trackTargetContent->GetConnectedContent();
+        if (NS_WARN_IF(!targetContent)) {
+          targetWeakFrame = nullptr;
+          
+          
+          
+          return NS_ERROR_FAILURE;
+        }
+      }
+      break;
+    }
+  }
+
+  
+  
+  
+
+  
+  
+
+  nsEventStatus dummyStatus = nsEventStatus_eIgnore;
+  nsresult rv = presShell->HandleEventWithTarget(
+      &aPointerEvent, targetWeakFrame, targetContent,
+      aStatus ? aStatus : &dummyStatus);
+
+  
+  
+
+  return rv;
 }
 
 

@@ -8,6 +8,7 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/ConnectedAncestorTracker.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventForwards.h"
@@ -2621,53 +2622,34 @@ void EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent) {
   }
 }
 
-void EventStateManager::MaybeFirePointerCancel(WidgetInputEvent* aEvent) {
+void EventStateManager::MaybeDispatchPointerCancel(
+    const WidgetInputEvent& aSourceEvent, nsIContent& aTargetContent) {
   
   
-  MOZ_ASSERT_IF(aEvent->AsMouseEvent(), aEvent->AsMouseEvent()->IsReal());
-  
-  
-  
-  MOZ_ASSERT(mCurrentTarget);
-
-  RefPtr<PresShell> presShell = mPresContext->GetPresShell();
   AutoWeakFrame targetFrame = mCurrentTarget;
-  if (!presShell || !targetFrame) {
+  const auto restoreCurrentTarget =
+      MakeScopeExit([&]() { mCurrentTarget = targetFrame; });
+
+  const RefPtr<Element> targetElement =
+      aTargetContent.GetAsElementOrParentElement();
+  
+  
+  if (NS_WARN_IF(!targetElement)) {
     return;
   }
 
-  nsCOMPtr<nsIContent> content = targetFrame->GetContentForEvent(aEvent);
-  
-  
-  if (NS_WARN_IF(!content)) {
-    return;
-  }
-
-  nsEventStatus status = nsEventStatus_eIgnore;
-
-  if (WidgetMouseEvent* aMouseEvent = aEvent->AsMouseEvent()) {
-    WidgetPointerEvent event(*aMouseEvent);
-    PointerEventHandler::InitPointerEventFromMouse(&event, aMouseEvent,
-                                                   ePointerCancel);
-
-    event.convertToPointer = false;
-    presShell->HandleEventWithTarget(&event, targetFrame, content, &status);
-  } else if (WidgetTouchEvent* aTouchEvent = aEvent->AsTouchEvent()) {
-    WidgetPointerEvent event(aTouchEvent->IsTrusted(), ePointerCancel,
-                             aTouchEvent->mWidget);
-
-    PointerEventHandler::InitPointerEventFromTouch(event, *aTouchEvent,
-                                                   *aTouchEvent->mTouches[0]);
-
-    event.convertToPointer = false;
-    presShell->HandleEventWithTarget(&event, targetFrame, content, &status);
+  if (const WidgetMouseEvent* const mouseEvent = aSourceEvent.AsMouseEvent()) {
+    PointerEventHandler::DispatchPointerEventWithTarget(
+        ePointerCancel, *mouseEvent, AutoWeakFrame{}, targetElement);
+  } else if (const WidgetTouchEvent* const touchEvent =
+                 aSourceEvent.AsTouchEvent()) {
+    PointerEventHandler::DispatchPointerEventWithTarget(
+        ePointerCancel, *touchEvent, 0, AutoWeakFrame{}, targetElement);
   } else {
-    MOZ_ASSERT(false);
+    MOZ_ASSERT_UNREACHABLE(
+        "MaybeDispatchPointerCancel() should be called with a mouse event or a "
+        "touch event");
   }
-
-  
-  
-  mCurrentTarget = targetFrame;
 }
 
 bool EventStateManager::IsEventOutsideDragThreshold(
@@ -2816,7 +2798,9 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
   
   StopTrackingDragGesture(false);
 
-  if (!targetContent) return;
+  if (MOZ_UNLIKELY(!targetContent)) {
+    return;
+  }
 
   
   
@@ -2851,34 +2835,40 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
   
   nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
 
-  
-  mCurrentTargetContent = targetContent;
+  {
+    AutoConnectedAncestorTracker trackTargetContent(*targetContent);
+    
+    mCurrentTargetContent = targetContent;
 
-  
-  nsEventStatus status = nsEventStatus_eIgnore;
-  EventDispatcher::Dispatch(targetContent, aPresContext, &startEvent, nullptr,
-                            &status);
+    
+    nsEventStatus status = nsEventStatus_eIgnore;
+    EventDispatcher::Dispatch(targetContent, aPresContext, &startEvent, nullptr,
+                              &status);
 
-  WidgetDragEvent* event = &startEvent;
+    WidgetDragEvent* event = &startEvent;
 
-  nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-  
-  
-  if (observerService) {
-    observerService->NotifyObservers(dataTransfer, "on-datatransfer-available",
-                                     nullptr);
-  }
+    
+    
+    if (nsCOMPtr<nsIObserverService> observerService =
+            mozilla::services::GetObserverService()) {
+      observerService->NotifyObservers(dataTransfer,
+                                       "on-datatransfer-available", nullptr);
+    }
 
-  if (status != nsEventStatus_eConsumeNoDefault) {
-    bool dragStarted = DoDefaultDragStart(aPresContext, event, dataTransfer,
-                                          allowEmptyDataTransfer, targetContent,
-                                          selection, remoteDragStartData,
-                                          principal, csp, cookieJarSettings);
-    if (dragStarted) {
-      sActiveESM = nullptr;
-      MaybeFirePointerCancel(aEvent);
-      aEvent->StopPropagation();
+    if (status != nsEventStatus_eConsumeNoDefault) {
+      bool dragStarted = DoDefaultDragStart(
+          aPresContext, event, dataTransfer, allowEmptyDataTransfer,
+          targetContent, selection, remoteDragStartData, principal, csp,
+          cookieJarSettings);
+      if (dragStarted) {
+        sActiveESM = nullptr;
+        aEvent->StopPropagation();
+        
+        
+        if ((targetContent = trackTargetContent.GetConnectedContent())) {
+          MaybeDispatchPointerCancel(*aEvent, *targetContent);
+        }
+      }
     }
   }
 
