@@ -125,6 +125,9 @@ pub enum GenerateFrame {
         
         
         present: bool,
+        
+        
+        tracked: bool,
     },
     
     No,
@@ -144,6 +147,15 @@ impl GenerateFrame {
     pub fn present(&self) -> bool {
         match self {
             GenerateFrame::Yes { present, .. } => *present,
+            GenerateFrame::No => false,
+        }
+    }
+
+    
+    
+    pub fn tracked(&self) -> bool {
+        match self {
+            GenerateFrame::Yes { tracked, .. } => *tracked,
             GenerateFrame::No => false,
         }
     }
@@ -375,8 +387,8 @@ impl Transaction {
     
     
     
-    pub fn generate_frame(&mut self, id: u64, present: bool, reasons: RenderReasons) {
-        self.generate_frame = GenerateFrame::Yes{ id, present };
+    pub fn generate_frame(&mut self, id: u64, present: bool, tracked: bool, reasons: RenderReasons) {
+        self.generate_frame = GenerateFrame::Yes{ id, present, tracked };
         self.render_reasons |= reasons;
     }
 

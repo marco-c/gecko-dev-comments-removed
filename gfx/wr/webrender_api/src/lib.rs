@@ -264,6 +264,10 @@ pub struct FrameReadyParams {
     pub present: bool,
     pub render: bool,
     pub scrolled: bool,
+    
+    
+    
+    pub tracked: bool,
 }
 
 
