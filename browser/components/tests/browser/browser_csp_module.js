@@ -45,8 +45,7 @@ add_task(async function test_data_url_script() {
 
 add_task(function test_eval_in_module() {
   
-  
-  if (AppConstants.DEBUG || !AppConstants.NIGHTLY_BUILD) {
+  if (AppConstants.DEBUG) {
     ok(true, "Don't crash");
     return;
   }
