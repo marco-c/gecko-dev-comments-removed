@@ -143,6 +143,14 @@ struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
            static_cast<const OriginStateMetadata&>(*this).Equals(
                static_cast<const OriginStateMetadata&>(aOther));
   }
+
+  
+  
+  
+  FullOriginMetadata Clone() const {
+    return {static_cast<const OriginMetadata&>(*this),
+            static_cast<const OriginStateMetadata&>(*this)};
+  }
 };
 
 struct OriginUsageMetadata : FullOriginMetadata {
