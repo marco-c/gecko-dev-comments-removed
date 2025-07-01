@@ -1,0 +1,25 @@
+
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+export class LocaleFallbackPriority {
+
+    static fromValue(value: LocaleFallbackPriority | string): LocaleFallbackPriority;
+
+    get value(): string;
+
+    get ffiValue(): number;
+
+    static Language : LocaleFallbackPriority;
+    static Region : LocaleFallbackPriority;
+
+
+    constructor(value: LocaleFallbackPriority | string );
+}

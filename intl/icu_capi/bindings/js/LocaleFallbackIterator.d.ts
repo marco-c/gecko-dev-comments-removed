@@ -1,0 +1,18 @@
+
+import type { Locale } from "./Locale"
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+export class LocaleFallbackIterator {
+    get ffiValue(): pointer;
+
+
+    next(): IteratorResult<Locale>;
+}

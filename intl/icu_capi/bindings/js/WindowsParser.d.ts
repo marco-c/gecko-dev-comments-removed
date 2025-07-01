@@ -1,0 +1,35 @@
+
+import type { DataError } from "./DataError"
+import type { DataProvider } from "./DataProvider"
+import type { TimeZone } from "./TimeZone"
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+
+
+
+export class WindowsParser {
+    get ffiValue(): pointer;
+
+
+    
+
+
+
+
+    static createWithProvider(provider: DataProvider): WindowsParser;
+
+    
+
+
+    parse(value: string, region: string): TimeZone | null;
+
+    constructor();
+}

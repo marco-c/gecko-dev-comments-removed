@@ -1,0 +1,40 @@
+
+import type { BidiParagraph } from "./BidiParagraph"
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+export class BidiInfo {
+    get ffiValue(): pointer;
+
+
+    
+
+
+    get paragraphCount(): number;
+
+    
+
+
+    paragraphAt(n: number): BidiParagraph | null;
+
+    
+
+
+    get size(): number;
+
+    
+
+
+
+
+
+
+    levelAt(pos: number): number;
+}

@@ -1,0 +1,18 @@
+
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+
+
+
+export class MeasureUnit {
+    get ffiValue(): pointer;
+
+}

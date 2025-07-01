@@ -3,6 +3,8 @@
 
 
 #[diplomat::bridge]
+#[diplomat::abi_rename = "icu4x_{0}_mv1"]
+#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
     use alloc::boxed::Box;
     use core::ops::RangeInclusive;
@@ -16,15 +18,17 @@ pub mod ffi {
     
     #[diplomat::out]
     pub struct CodePointRangeIteratorResult {
-        pub start: u32,
-        pub end: u32,
+        pub start: DiplomatChar,
+        pub end: DiplomatChar,
         pub done: bool,
     }
 
     
     
     #[diplomat::opaque]
-    pub struct CodePointRangeIterator<'a>(pub Box<dyn Iterator<Item = RangeInclusive<u32>> + 'a>);
+    pub struct CodePointRangeIterator<'a>(
+        pub Box<dyn Iterator<Item = RangeInclusive<DiplomatChar>> + 'a>,
+    );
 
     impl<'a> CodePointRangeIterator<'a> {
         

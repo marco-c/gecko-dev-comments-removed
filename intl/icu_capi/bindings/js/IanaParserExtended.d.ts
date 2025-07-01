@@ -1,0 +1,47 @@
+
+import type { DataError } from "./DataError"
+import type { DataProvider } from "./DataProvider"
+import type { TimeZoneAndCanonicalAndNormalized } from "./TimeZoneAndCanonicalAndNormalized"
+import type { TimeZoneAndCanonicalAndNormalizedIterator } from "./TimeZoneAndCanonicalAndNormalizedIterator"
+import type { TimeZoneAndCanonicalIterator } from "./TimeZoneAndCanonicalIterator"
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+
+
+
+
+export class IanaParserExtended {
+    get ffiValue(): pointer;
+
+
+    
+
+
+
+
+    static createWithProvider(provider: DataProvider): IanaParserExtended;
+
+    
+
+
+    parse(value: string): TimeZoneAndCanonicalAndNormalized;
+
+    
+
+
+    iter(): TimeZoneAndCanonicalIterator;
+
+    
+
+
+    iterAll(): TimeZoneAndCanonicalAndNormalizedIterator;
+
+    constructor();
+}

@@ -3,22 +3,17 @@
 
 
 #[diplomat::bridge]
+#[diplomat::abi_rename = "icu4x_{0}_mv1"]
+#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
     use alloc::boxed::Box;
     use alloc::vec::Vec;
-
     use core::fmt::Write;
-    use icu_properties::bidi::BidiClassAdapter;
-    use icu_properties::maps;
-    use icu_properties::BidiClass;
-    use unicode_bidi::BidiInfo;
-    use unicode_bidi::Level;
-    use unicode_bidi::Paragraph;
 
-    use crate::errors::ffi::ICU4XError;
-    use crate::provider::ffi::ICU4XDataProvider;
+    #[cfg(feature = "buffer_provider")]
+    use crate::unstable::{errors::ffi::DataError, provider::ffi::DataProvider};
 
-    pub enum ICU4XBidiDirection {
+    pub enum BidiDirection {
         Ltr,
         Rtl,
         Mixed,
@@ -26,22 +21,27 @@ pub mod ffi {
 
     #[diplomat::opaque]
     
-    #[diplomat::rust_link(icu::properties::bidi::BidiClassAdapter, Struct)]
-    
-    pub struct ICU4XBidi(pub maps::CodePointMapData<BidiClass>);
+    #[diplomat::rust_link(icu::properties::props::BidiClass, Struct)]
+    pub struct Bidi(pub icu_properties::CodePointMapData<icu_properties::props::BidiClass>);
 
-    impl ICU4XBidi {
+    impl Bidi {
         
-        #[diplomat::rust_link(icu::properties::bidi::BidiClassAdapter::new, FnInStruct)]
-        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
-        pub fn create(provider: &ICU4XDataProvider) -> Result<Box<ICU4XBidi>, ICU4XError> {
-            Ok(Box::new(ICU4XBidi(call_constructor_unstable!(
-                maps::bidi_class [m => Ok(m.static_to_owned())],
-                maps::load_bidi_class,
-                provider,
-            )?)))
+        #[diplomat::attr(auto, constructor)]
+        #[cfg(feature = "compiled_data")]
+        pub fn create() -> Box<Bidi> {
+            Box::new(Bidi(
+                icu_properties::CodePointMapData::new().static_to_owned(),
+            ))
         }
 
+        
+        #[diplomat::attr(all(supports = fallible_constructors, supports = named_constructors), named_constructor = "with_provider")]
+        #[cfg(feature = "buffer_provider")]
+        pub fn create_with_provider(provider: &DataProvider) -> Result<Box<Bidi>, DataError> {
+            Ok(Box::new(Bidi(
+                icu_properties::CodePointMapData::try_new_unstable(&provider.get_unstable()?)?,
+            )))
+        }
         
         
         
@@ -49,26 +49,26 @@ pub mod ffi {
         
         #[diplomat::rust_link(unicode_bidi::BidiInfo::new_with_data_source, FnInStruct)]
         #[diplomat::rust_link(
-            icu::properties::bidi::BidiClassAdapter::bidi_class,
+            icu::properties::CodePointMapDataBorrowed::bidi_class,
             FnInStruct,
             hidden
         )]
-        #[diplomat::attr(dart, disable)]
-        pub fn for_text<'text>(
+        #[diplomat::attr(not(supports = utf8_strings), disable)]
+        #[diplomat::attr(*, rename = "for_text")]
+        pub fn for_text_utf8<'text>(
             &self,
             text: &'text DiplomatStr,
-            default_level: u8,
-        ) -> Option<Box<ICU4XBidiInfo<'text>>> {
+            default_level: Option<u8>,
+        ) -> Option<Box<BidiInfo<'text>>> {
             let text = core::str::from_utf8(text).ok()?;
 
-            let data = self.0.as_borrowed();
-            let adapter = BidiClassAdapter::new(data);
-
-            Some(Box::new(ICU4XBidiInfo(BidiInfo::new_with_data_source(
-                &adapter,
-                text,
-                Level::new(default_level).ok(),
-            ))))
+            Some(Box::new(BidiInfo(
+                unicode_bidi::BidiInfo::new_with_data_source(
+                    &self.0.as_borrowed(),
+                    text,
+                    default_level.and_then(|l| unicode_bidi::Level::new(l).ok()),
+                ),
+            )))
         }
 
         
@@ -76,25 +76,22 @@ pub mod ffi {
         
         #[diplomat::rust_link(unicode_bidi::BidiInfo::new_with_data_source, FnInStruct)]
         #[diplomat::rust_link(
-            icu::properties::bidi::BidiClassAdapter::bidi_class,
+            icu::properties::CodePointMapDataBorrowed::bidi_class,
             FnInStruct,
             hidden
         )]
-        #[diplomat::attr(not(dart), disable)]
-        #[diplomat::attr(*, rename = "for_text")]
-        #[diplomat::skip_if_ast]
+        
+        #[diplomat::attr(supports = utf8_strings, disable)]
+        #[diplomat::attr(supports = utf16_strings, rename = "for_text")]
         pub fn for_text_valid_utf8<'text>(
             &self,
             text: &'text str,
-            default_level: u8,
-        ) -> Box<ICU4XBidiInfo<'text>> {
-            let data = self.0.as_borrowed();
-            let adapter = BidiClassAdapter::new(data);
-
-            Box::new(ICU4XBidiInfo(BidiInfo::new_with_data_source(
-                &adapter,
+            default_level: Option<u8>,
+        ) -> Box<BidiInfo<'text>> {
+            Box::new(BidiInfo(unicode_bidi::BidiInfo::new_with_data_source(
+                &self.0.as_borrowed(),
                 text,
-                Level::new(default_level).ok(),
+                default_level.and_then(|l| unicode_bidi::Level::new(l).ok()),
             )))
         }
 
@@ -107,9 +104,11 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(unicode_bidi::BidiInfo::reorder_visual, FnInStruct)]
-        pub fn reorder_visual(&self, levels: &[u8]) -> Box<ICU4XReorderedIndexMap> {
-            let levels = Level::from_slice_unchecked(levels);
-            Box::new(ICU4XReorderedIndexMap(BidiInfo::reorder_visual(levels)))
+        pub fn reorder_visual(&self, levels: &[u8]) -> Box<ReorderedIndexMap> {
+            let levels = unicode_bidi::Level::from_slice_unchecked(levels);
+            Box::new(ReorderedIndexMap(unicode_bidi::BidiInfo::reorder_visual(
+                levels,
+            )))
         }
 
         
@@ -117,7 +116,9 @@ pub mod ffi {
         
         #[diplomat::rust_link(unicode_bidi::Level::is_rtl, FnInStruct)]
         pub fn level_is_rtl(level: u8) -> bool {
-            Level::new(level).unwrap_or_else(|_| Level::ltr()).is_rtl()
+            unicode_bidi::Level::new(level)
+                .unwrap_or_else(|_| unicode_bidi::Level::ltr())
+                .is_rtl()
         }
 
         
@@ -125,19 +126,21 @@ pub mod ffi {
         
         #[diplomat::rust_link(unicode_bidi::Level::is_ltr, FnInStruct)]
         pub fn level_is_ltr(level: u8) -> bool {
-            Level::new(level).unwrap_or_else(|_| Level::ltr()).is_ltr()
+            unicode_bidi::Level::new(level)
+                .unwrap_or_else(|_| unicode_bidi::Level::ltr())
+                .is_ltr()
         }
 
         
         #[diplomat::rust_link(unicode_bidi::Level::rtl, FnInStruct)]
         pub fn level_rtl() -> u8 {
-            Level::rtl().number()
+            unicode_bidi::Level::rtl().number()
         }
 
         
         #[diplomat::rust_link(unicode_bidi::Level::ltr, FnInStruct)]
         pub fn level_ltr() -> u8 {
-            Level::ltr().number()
+            unicode_bidi::Level::ltr().number()
         }
     }
 
@@ -147,23 +150,23 @@ pub mod ffi {
     
     
     #[diplomat::opaque]
-    pub struct ICU4XReorderedIndexMap(pub Vec<usize>);
+    pub struct ReorderedIndexMap(pub Vec<usize>);
 
-    impl ICU4XReorderedIndexMap {
+    impl ReorderedIndexMap {
         
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn as_slice<'a>(&'a self) -> &'a [usize] {
             &self.0
         }
 
         
-        #[diplomat::attr(supports = accessors, getter = "length")]
+        #[diplomat::attr(auto, getter = "length")]
         pub fn len(&self) -> usize {
             self.0.len()
         }
 
         
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn is_empty(&self) -> bool {
             self.0.is_empty()
         }
@@ -171,7 +174,7 @@ pub mod ffi {
         
         
         
-        #[diplomat::attr(supports = indexing, indexer)]
+        #[diplomat::attr(auto, indexer)]
         pub fn get(&self, index: usize) -> usize {
             self.0.get(index).copied().unwrap_or(0)
         }
@@ -180,25 +183,25 @@ pub mod ffi {
     
     #[diplomat::rust_link(unicode_bidi::BidiInfo, Struct)]
     #[diplomat::opaque]
-    pub struct ICU4XBidiInfo<'text>(pub BidiInfo<'text>);
+    pub struct BidiInfo<'text>(pub unicode_bidi::BidiInfo<'text>);
 
-    impl<'text> ICU4XBidiInfo<'text> {
+    impl<'text> BidiInfo<'text> {
         
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn paragraph_count(&self) -> usize {
             self.0.paragraphs.len()
         }
 
         
-        pub fn paragraph_at(&'text self, n: usize) -> Option<Box<ICU4XBidiParagraph<'text>>> {
+        pub fn paragraph_at(&'text self, n: usize) -> Option<Box<BidiParagraph<'text>>> {
             self.0
                 .paragraphs
                 .get(n)
-                .map(|p| Box::new(ICU4XBidiParagraph(Paragraph::new(&self.0, p))))
+                .map(|p| Box::new(BidiParagraph(unicode_bidi::Paragraph::new(&self.0, p))))
         }
 
         
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn size(&self) -> usize {
             self.0.levels.len()
         }
@@ -219,46 +222,44 @@ pub mod ffi {
 
     
     #[diplomat::opaque]
-    pub struct ICU4XBidiParagraph<'info>(pub Paragraph<'info, 'info>);
+    pub struct BidiParagraph<'info>(pub unicode_bidi::Paragraph<'info, 'info>);
 
-    impl<'info> ICU4XBidiParagraph<'info> {
+    impl<'info> BidiParagraph<'info> {
         
         
         
         
         
-        pub fn set_paragraph_in_text(&mut self, n: usize) -> Result<(), ICU4XError> {
-            let para = self
-                .0
-                .info
-                .paragraphs
-                .get(n)
-                .ok_or(ICU4XError::OutOfBoundsError)?;
-            self.0 = Paragraph::new(self.0.info, para);
-            Ok(())
+        pub fn set_paragraph_in_text(&mut self, n: usize) -> bool {
+            let Some(para) = self.0.info.paragraphs.get(n) else {
+                return false;
+            };
+            self.0 = unicode_bidi::Paragraph::new(self.0.info, para);
+            true
         }
+
         #[diplomat::rust_link(unicode_bidi::Paragraph::level_at, FnInStruct)]
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         
-        pub fn direction(&self) -> ICU4XBidiDirection {
+        pub fn direction(&self) -> BidiDirection {
             self.0.direction().into()
         }
 
         
         #[diplomat::rust_link(unicode_bidi::ParagraphInfo::len, FnInStruct)]
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn size(&self) -> usize {
             self.0.para.len()
         }
 
         
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn range_start(&self) -> usize {
             self.0.para.range.start
         }
 
         
-        #[diplomat::attr(supports = accessors, getter)]
+        #[diplomat::attr(auto, getter)]
         pub fn range_end(&self) -> usize {
             self.0.para.range.end
         }
@@ -266,14 +267,15 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(unicode_bidi::Paragraph::level_at, FnInStruct)]
+        #[diplomat::attr(demo_gen, disable)]
         pub fn reorder_line(
             &self,
             range_start: usize,
             range_end: usize,
-            out: &mut DiplomatWriteable,
-        ) -> Result<(), ICU4XError> {
+            out: &mut DiplomatWrite,
+        ) -> Option<()> {
             if range_start < self.range_start() || range_end > self.range_end() {
-                return Err(ICU4XError::OutOfBoundsError);
+                return None;
             }
 
             let info = self.0.info;
@@ -281,7 +283,9 @@ pub mod ffi {
 
             let reordered = info.reorder_line(para, range_start..range_end);
 
-            Ok(out.write_str(&reordered)?)
+            let _infallible = out.write_str(&reordered);
+
+            Some(())
         }
 
         
@@ -302,7 +306,7 @@ pub mod ffi {
 
 use unicode_bidi::Direction;
 
-impl From<Direction> for ffi::ICU4XBidiDirection {
+impl From<Direction> for ffi::BidiDirection {
     fn from(other: Direction) -> Self {
         match other {
             Direction::Ltr => Self::Ltr,
