@@ -176,6 +176,11 @@ struct BufferChunk : public ChunkBase,
   size_t findNextAllocated(uintptr_t offset) const;
   size_t findPrevAllocated(uintptr_t offset) const;
 
+  
+  using FreeRegion = BufferAllocator::FreeRegion;
+  FreeRegion* findFollowingFreeRegion(uintptr_t startAddr);
+  FreeRegion* findPrecedingFreeRegion(uintptr_t endAddr);
+
   bool isPointerWithinAllocation(void* ptr) const;
 
  private:
@@ -2056,13 +2061,13 @@ void BufferAllocator::freeMedium(void* alloc) {
   } else {
     
     
-    region = findFollowingFreeRegion(endAddr);
+    region = chunk->findFollowingFreeRegion(endAddr);
     MOZ_ASSERT(region->startAddr == endAddr);
     updateFreeRegionStart(freeLists, region, startAddr);
   }
 
   
-  FreeRegion* precRegion = findPrecedingFreeRegion(startAddr);
+  FreeRegion* precRegion = chunk->findPrecedingFreeRegion(startAddr);
   if (precRegion) {
     if (freeLists) {
       size_t sizeClass = SizeClassForFreeRegion(precRegion->size());
@@ -2193,7 +2198,7 @@ bool BufferAllocator::growMedium(void* alloc, size_t newBytes) {
     return false;  
   }
 
-  FreeRegion* region = findFollowingFreeRegion(endAddr);
+  FreeRegion* region = chunk->findFollowingFreeRegion(endAddr);
   MOZ_ASSERT(region->startAddr == endAddr);
 
   size_t extraBytes = newBytes - currentBytes;
@@ -2275,7 +2280,7 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t newBytes) {
   }
 
   
-  FreeRegion* region = findFollowingFreeRegion(chunkAddr + oldEndOffset);
+  FreeRegion* region = chunk->findFollowingFreeRegion(chunkAddr + oldEndOffset);
   MOZ_ASSERT(region->startAddr == chunkAddr + oldEndOffset);
   updateFreeRegionStart(freeLists, region, chunkAddr + newEndOffset);
 
@@ -2295,7 +2300,7 @@ BufferAllocator::FreeLists* BufferAllocator::getChunkFreeLists(
   return &mediumFreeLists.ref();
 }
 
-BufferAllocator::FreeRegion* BufferAllocator::findFollowingFreeRegion(
+BufferAllocator::FreeRegion* BufferChunk::findFollowingFreeRegion(
     uintptr_t startAddr) {
   
   
@@ -2305,18 +2310,17 @@ BufferAllocator::FreeRegion* BufferAllocator::findFollowingFreeRegion(
   MOZ_ASSERT(offset < ChunkSize);
   MOZ_ASSERT((offset % MinMediumAllocSize) == 0);
 
-  BufferChunk* chunk = BufferChunk::from(reinterpret_cast<void*>(startAddr));
-  MOZ_ASSERT(!chunk->isAllocated(offset));  
-  offset = chunk->findNextAllocated(offset);
+  MOZ_ASSERT(!isAllocated(offset));  
+  offset = findNextAllocated(offset);
   MOZ_ASSERT(offset <= ChunkSize);
 
-  auto* region = FreeRegion::fromEndOffset(chunk, offset);
+  auto* region = FreeRegion::fromEndOffset(this, offset);
   MOZ_ASSERT(region->startAddr == startAddr);
 
   return region;
 }
 
-BufferAllocator::FreeRegion* BufferAllocator::findPrecedingFreeRegion(
+BufferAllocator::FreeRegion* BufferChunk::findPrecedingFreeRegion(
     uintptr_t endAddr) {
   
   
@@ -2330,14 +2334,13 @@ BufferAllocator::FreeRegion* BufferAllocator::findPrecedingFreeRegion(
     return nullptr;  
   }
 
-  BufferChunk* chunk = BufferChunk::from(reinterpret_cast<void*>(endAddr));
-  MOZ_ASSERT(!chunk->isAllocated(offset));
-  offset = chunk->findPrevAllocated(offset);
+  MOZ_ASSERT(!isAllocated(offset));
+  offset = findPrevAllocated(offset);
 
   if (offset != ChunkSize) {
     
-    const void* alloc = chunk->ptrFromOffset(offset);
-    size_t bytes = chunk->allocBytes(alloc);
+    const void* alloc = ptrFromOffset(offset);
+    size_t bytes = allocBytes(alloc);
     MOZ_ASSERT(uintptr_t(alloc) + bytes <= endAddr);
     if (uintptr_t(alloc) + bytes == endAddr) {
       
@@ -2350,11 +2353,11 @@ BufferAllocator::FreeRegion* BufferAllocator::findPrecedingFreeRegion(
 #ifdef DEBUG
   region->check();
   if (offset != ChunkSize) {
-    const void* alloc = chunk->ptrFromOffset(offset);
-    size_t bytes = chunk->allocBytes(alloc);
+    const void* alloc = ptrFromOffset(offset);
+    size_t bytes = allocBytes(alloc);
     MOZ_ASSERT(region->startAddr == uintptr_t(alloc) + bytes);
   } else {
-    MOZ_ASSERT(region->startAddr == uintptr_t(chunk) + FirstMediumAllocOffset);
+    MOZ_ASSERT(region->startAddr == uintptr_t(this) + FirstMediumAllocOffset);
   }
 #endif
 
