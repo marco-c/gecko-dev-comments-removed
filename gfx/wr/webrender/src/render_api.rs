@@ -114,24 +114,58 @@ impl fmt::Debug for ResourceUpdate {
 }
 
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-pub struct GenerateFrameParams {
+
+#[derive(Clone, Debug)]
+pub enum GenerateFrame {
     
+    Yes {
+        
+        
+        id: u64,
+        
+        
+        present: bool,
+        
+        
+        tracked: bool,
+    },
     
-    pub id: u64,
-    
-    
-    pub present: bool,
-    
-    
-    
-    pub tracked: bool,
+    No,
 }
 
-impl Default for GenerateFrameParams {
-    fn default() -> Self {
-        GenerateFrameParams { id: 0, present: true, tracked: false }
+impl GenerateFrame {
+    
+    pub fn as_bool(&self) -> bool {
+        match self {
+            GenerateFrame::Yes { .. } => true,
+            GenerateFrame::No => false,
+        }
+    }
+
+    
+    
+    pub fn present(&self) -> bool {
+        match self {
+            GenerateFrame::Yes { present, .. } => *present,
+            GenerateFrame::No => false,
+        }
+    }
+
+    
+    
+    pub fn tracked(&self) -> bool {
+        match self {
+            GenerateFrame::Yes { tracked, .. } => *tracked,
+            GenerateFrame::No => false,
+        }
+    }
+
+    
+    pub fn id(&self) -> Option<u64> {
+        match self {
+            GenerateFrame::Yes { id, .. } => Some(*id),
+            GenerateFrame::No => None,
+        }
     }
 }
 
@@ -164,7 +198,7 @@ pub struct Transaction {
     
     
     
-    generate_frame: Option<GenerateFrameParams>,
+    generate_frame: GenerateFrame,
 
     
     creation_time: u64,
@@ -188,7 +222,7 @@ impl Transaction {
             resource_updates: Vec::new(),
             notifications: Vec::new(),
             use_scene_builder_thread: true,
-            generate_frame: None,
+            generate_frame: GenerateFrame::No,
             creation_time: precise_time_ns(),
             invalidate_rendered_frame: false,
             low_priority: false,
@@ -215,7 +249,7 @@ impl Transaction {
 
     
     pub fn is_empty(&self) -> bool {
-        self.generate_frame.is_none() &&
+        !self.generate_frame.as_bool() &&
             !self.invalidate_rendered_frame &&
             self.scene_ops.is_empty() &&
             self.frame_ops.is_empty() &&
@@ -353,8 +387,8 @@ impl Transaction {
     
     
     
-    pub fn generate_frame(&mut self, params: &GenerateFrameParams, reasons: RenderReasons) {
-        self.generate_frame = Some(*params);
+    pub fn generate_frame(&mut self, id: u64, present: bool, tracked: bool, reasons: RenderReasons) {
+        self.generate_frame = GenerateFrame::Yes{ id, present, tracked };
         self.render_reasons |= reasons;
     }
 
@@ -600,7 +634,7 @@ pub struct TransactionMsg {
     
     pub resource_updates: Vec<ResourceUpdate>,
     
-    pub generate_frame: Option<GenerateFrameParams>,
+    pub generate_frame: GenerateFrame,
     
     pub creation_time: Option<u64>,
     
@@ -651,7 +685,7 @@ impl fmt::Debug for TransactionMsg {
 impl TransactionMsg {
     
     pub fn is_empty(&self) -> bool {
-        self.generate_frame.is_none() &&
+        !self.generate_frame.as_bool() &&
             !self.invalidate_rendered_frame &&
             self.scene_ops.is_empty() &&
             self.frame_ops.is_empty() &&
@@ -1257,7 +1291,7 @@ impl RenderApi {
             frame_ops: vec![msg],
             resource_updates: Vec::new(),
             notifications: Vec::new(),
-            generate_frame: None,
+            generate_frame: GenerateFrame::No,
             creation_time: None,
             invalidate_rendered_frame: false,
             use_scene_builder_thread: false,
@@ -1286,7 +1320,7 @@ impl RenderApi {
 
         self.resources.update(&mut transaction);
 
-        if transaction.generate_frame.is_some() {
+        if transaction.generate_frame.as_bool() {
             transaction.profile.start_time(profiler::API_SEND_TIME);
             transaction.profile.start_time(profiler::TOTAL_FRAME_CPU_TIME);
         }
