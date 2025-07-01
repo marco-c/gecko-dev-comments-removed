@@ -51,17 +51,6 @@ struct MozGtkSize {
   }
 };
 
-#define TOOLBAR_BUTTONS 3
-struct ToolbarGTKMetrics {
-  bool initialized = false;
-  gint inlineSpacing = 0;
-};
-
-struct CSDWindowDecorationSize {
-  bool initialized;
-  GtkBorder decorationSize;
-};
-
 
 #define MOZ_GTK_SUCCESS 0
 #define MOZ_GTK_UNKNOWN_WIDGET -1
@@ -129,13 +118,6 @@ enum WidgetNodeType : int {
 
 
 
-struct ButtonLayout {
-  enum class Type { Close, Minimize, Maximize };
-  Type mType;
-};
-
-
-
 
 
 
@@ -150,9 +132,7 @@ void moz_gtk_refresh();
 
 
 
-
-
-gint moz_gtk_shutdown();
+void moz_gtk_shutdown();
 
 
 
@@ -167,22 +147,5 @@ struct GtkDrawingParams {
 
 
 void moz_gtk_widget_paint(cairo_t* cr, const GtkDrawingParams* aParams);
-
-
-
-gint moz_gtk_get_titlebar_button_spacing();
-
-
-
-
-
-
-
-
-
-
-
-size_t GetGtkHeaderBarButtonLayout(mozilla::Span<ButtonLayout>,
-                                   bool* aReversedButtonsPlacement);
 
 #endif
