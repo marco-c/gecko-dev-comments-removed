@@ -235,36 +235,12 @@ nsresult XRE_GetBinaryPath(nsIFile** aResult);
 
 
 
-
-
-
 enum NSLocationType {
   NS_APP_LOCATION,
   NS_EXTENSION_LOCATION,
-  NS_SKIN_LOCATION,
-  NS_BOOTSTRAPPED_LOCATION
 };
 
 nsresult XRE_AddManifestLocation(NSLocationType aType, nsIFile* aLocation);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult XRE_AddJarManifestLocation(NSLocationType aType, nsIFile* aLocation);
 
 
 

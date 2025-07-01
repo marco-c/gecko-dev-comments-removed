@@ -7,24 +7,8 @@ const SIMPLE_HTML = "data:text/html,<html><head></head><body></body></html>";
 
 
 
-function getManifestDir() {
-  let path = getTestFilePath("browser_docshell_type_editor");
-  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-  file.initWithPath(path);
-  return file;
-}
-
-
-
-
-
-
 add_task(async function () {
   info("docshell of appType APP_TYPE_EDITOR can access privileged images.");
-
-  
-  let manifestDir = getManifestDir();
-  Components.manager.addBootstrappedManifestLocation(manifestDir);
 
   await BrowserTestUtils.withNewTab(
     {
@@ -62,23 +46,17 @@ add_task(async function () {
             resolve();
           };
           doc.body.appendChild(image);
-          image.src = "chrome://test1/skin/privileged.png";
+          image.src = "chrome://mozapps/skin/extensions/extension.svg";
         });
       });
     }
   );
-
-  Components.manager.removeBootstrappedManifestLocation(manifestDir);
 });
 
 add_task(async function () {
   info(
     "docshell of appType APP_TYPE_UNKNOWN can *not* access privileged images."
   );
-
-  
-  let manifestDir = getManifestDir();
-  Components.manager.addBootstrappedManifestLocation(manifestDir);
 
   await BrowserTestUtils.withNewTab(
     {
@@ -124,11 +102,10 @@ add_task(async function () {
           doc.body.appendChild(image);
           
           
-          image.wrappedJSObject.src = "chrome://test1/skin/privileged.png";
+          image.wrappedJSObject.src =
+            "chrome://mozapps/skin/extensions/extension.svg";
         });
       });
     }
   );
-
-  Components.manager.removeBootstrappedManifestLocation(manifestDir);
 });
