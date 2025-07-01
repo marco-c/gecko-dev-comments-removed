@@ -130,6 +130,25 @@ static RefPtr<gfx::DataSourceSurface> CaptureFallbackSnapshot(
   return surf->GetDataSurface();
 }
 
+
+
+
+
+
+static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
+  const auto& name = aFrame->StyleUIReset()->mViewTransitionName;
+  
+  if (name.IsNone() || name.IsMatchElement()) {
+    return nullptr;
+  }
+  return name.AsIdent().AsAtom();
+}
+
+static StyleViewTransitionClass DocumentScopedClassListFor(
+    const nsIFrame* aFrame) {
+  return aFrame->StyleUIReset()->mViewTransitionClass;
+}
+
 static constexpr wr::ImageKey kNoKey{{0}, 0};
 
 struct OldSnapshotData {
@@ -336,7 +355,7 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
   MOZ_ASSERT(aFrame);
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION));
 
-  nsAtom* name = aFrame->StyleUIReset()->mViewTransitionName._0.AsAtom();
+  nsAtom* name = DocumentScopedTransitionNameFor(aFrame);
   if (NS_WARN_IF(name->IsEmpty())) {
     return nullptr;
   }
@@ -1171,23 +1190,6 @@ static void ForEachFrame(Document* aDoc, const Callback& aCb) {
     return;
   }
   ForEachChildFrame(root, aCb);
-}
-
-
-
-
-
-
-static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
-  auto* name = aFrame->StyleUIReset()->mViewTransitionName._0.AsAtom();
-  if (name->IsEmpty()) {
-    return nullptr;
-  }
-  return name;
-}
-static StyleViewTransitionClass DocumentScopedClassListFor(
-    const nsIFrame* aFrame) {
-  return aFrame->StyleUIReset()->mViewTransitionClass;
 }
 
 
