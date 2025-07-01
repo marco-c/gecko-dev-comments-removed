@@ -735,6 +735,59 @@ TimeDuration TimerThread::ComputeAcceptableFiringDelay(
   return std::clamp(tmp, minDelay, maxDelay);
 }
 
+uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
+  RemoveLeadingCanceledTimersInternal();
+
+  uint64_t timersFired = 0;
+  TimeStamp lastNow = TimeStamp::Now();
+
+  
+  
+  
+  while (!mTimers.IsEmpty()) {
+    Entry& frontEntry = mTimers[0];
+
+    if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
+      
+      
+      
+      
+      lastNow = TimeStamp::Now();
+      if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
+        break;
+      }
+    }
+
+    
+    
+    
+    
+    
+    RefPtr<nsTimerImpl> timerRef(frontEntry.Take());
+    RemoveFirstTimerInternal();
+
+    
+    
+    
+    {
+      ++timersFired;
+      LogTimerEvent::Run run(timerRef.get());
+      PostTimerEvent(timerRef.forget());
+    }
+
+    
+    
+    
+    if (mShutdown) {
+      break;
+    }
+
+    RemoveLeadingCanceledTimersInternal();
+  }
+
+  return timersFired;
+}
+
 void MOZ_ALWAYS_INLINE TimerThread::AccumulateAndMaybeSendTelemetry(
     const uint64_t timersFiredThisWakeup, size_t& queuedTimersFiredCount,
     AutoTArray<uint64_t, kMaxQueuedTimersFired>& queuedTimersFiredPerWakeup) {
@@ -795,13 +848,9 @@ TimerThread::Run() {
   }
 #endif
 
-  uint64_t timersFiredThisWakeup = 0;
   while (!mShutdown) {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
-
-    
-    TimeDuration waitFor;
 
 #ifdef DEBUG
     VerifyTimerListConsistency();
@@ -816,8 +865,51 @@ TimerThread::Run() {
               : TimeDuration::FromMicroseconds(ChaosMode::randomUint32LessThan(
                     4 * mAllowedEarlyFiringMicroseconds));
 
-      waitFor = TimeDuration::Forever();
-      TimeStamp now = TimeStamp::Now();
+      
+      const TimeDuration chaosWaitDelay =
+          !chaosModeActive ? TimeDuration::Zero()
+                           : TimeDuration::FromMicroseconds(
+                                 ChaosMode::randomInt32InRange(-10000, 10000));
+
+      const uint64_t timersFiredThisWakeup = FireDueTimers(allowedEarlyFiring);
+
+      
+      
+      
+      if (mShutdown) {
+        break;
+      }
+
+      
+      const TimeStamp wakeupTime =
+          !mTimers.IsEmpty() ? ComputeWakeupTimeFromTimers() : TimeStamp{};
+      mIntendedWakeupTime = wakeupTime;
+
+      
+      
+      AccumulateAndMaybeSendTelemetry(timersFiredThisWakeup,
+                                      queuedTimersFiredCount,
+                                      queuedTimersFiredPerWakeup);
+
+#if TIMER_THREAD_STATISTICS
+      CollectTimersFiredStatistics(timersFiredThisWakeup);
+#endif
+
+      
+      
+      const TimeStamp now = TimeStamp::Now();
+      const TimeDuration waitFor =
+          !wakeupTime.IsNull() ? std::max(TimeDuration::Zero(),
+                                          wakeupTime + chaosWaitDelay - now)
+                               : TimeDuration::Forever();
+
+      if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
+        if (waitFor == TimeDuration::Forever())
+          MOZ_LOG(GetTimerLog(), LogLevel::Debug, ("waiting forever\n"));
+        else
+          MOZ_LOG(GetTimerLog(), LogLevel::Debug,
+                  ("waiting for %f\n", waitFor.ToMilliseconds()));
+      }
 
 #ifdef XP_WIN
       if (now >= nextTimerPeriodEval) {
@@ -833,123 +925,23 @@ TimerThread::Run() {
       }
 #endif
 
+      
+      
+      Wait(waitFor);
+
 #if TIMER_THREAD_STATISTICS
       CollectWakeupStatistics();
 #endif
-
-      RemoveLeadingCanceledTimersInternal();
-
-      if (!mTimers.IsEmpty()) {
-        if (now + allowedEarlyFiring >= mTimers[0].Value()->mTimeout) {
-        next:
-          
-          
-          
-          
-          
-
-          RefPtr<nsTimerImpl> timerRef(mTimers[0].Take());
-          RemoveFirstTimerInternal();
-          MOZ_LOG(GetTimerLog(), LogLevel::Debug,
-                  ("Timer thread woke up %fms from when it was supposed to\n",
-                   fabs((now - timerRef->mTimeout).ToMilliseconds())));
-
-          
-          
-          
-          {
-            ++timersFiredThisWakeup;
-            LogTimerEvent::Run run(timerRef.get());
-            PostTimerEvent(timerRef.forget());
-          }
-
-          if (mShutdown) {
-            break;
-          }
-
-          
-          
-          now = TimeStamp::Now();
-        }
-      }
-
-      RemoveLeadingCanceledTimersInternal();
-
-      if (!mTimers.IsEmpty()) {
-        TimeStamp timeout = mTimers[0].Value()->mTimeout;
-
-        
-        
-        
-        
-        
-        
-        
-        const TimeDuration timeToNextTimer = timeout - now;
-
-        if (timeToNextTimer < allowedEarlyFiring) {
-          goto next;  
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
-        waitFor = wakeupTime - now;
-
-        
-        
-        MOZ_ASSERT(!waitFor.IsZero());
-
-        
-        
-        const TimeDuration chaosWaitDelay =
-            !chaosModeActive
-                ? TimeDuration::Zero()
-                : TimeDuration::FromMicroseconds(
-                      ChaosMode::randomInt32InRange(-10000, 10000));
-        waitFor = std::max(TimeDuration::Zero(), waitFor + chaosWaitDelay);
-
-        mIntendedWakeupTime = wakeupTime;
-      } else {
-        mIntendedWakeupTime = TimeStamp{};
-      }
-
-      if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
-        if (waitFor == TimeDuration::Forever())
-          MOZ_LOG(GetTimerLog(), LogLevel::Debug, ("waiting forever\n"));
-        else
-          MOZ_LOG(GetTimerLog(), LogLevel::Debug,
-                  ("waiting for %f\n", waitFor.ToMilliseconds()));
-      }
     } else {
+      mIntendedWakeupTime = TimeStamp{};
       
       uint32_t milliseconds = 100;
       if (chaosModeActive) {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
-      waitFor = TimeDuration::FromMilliseconds(milliseconds);
+      const TimeDuration waitFor = TimeDuration::FromMilliseconds(milliseconds);
+      Wait(waitFor);
     }
-
-    
-    
-    AccumulateAndMaybeSendTelemetry(timersFiredThisWakeup,
-                                    queuedTimersFiredCount,
-                                    queuedTimersFiredPerWakeup);
-
-#if TIMER_THREAD_STATISTICS
-    CollectTimersFiredStatistics(timersFiredThisWakeup);
-#endif
-
-    timersFiredThisWakeup = 0;
-
-    Wait(waitFor);
   }
 
   
