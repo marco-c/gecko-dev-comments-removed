@@ -168,18 +168,6 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs, rustdoc::broken_intra_doc_links)]
 #![warn(missing_debug_implementations)]
-
-
-
-
-#![allow(renamed_and_removed_lints)]
-
-
-
-
-
-
-#![allow(mutable_borrow_reservation_conflict)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(any(test, feature = "std"))]
@@ -328,6 +316,9 @@ pub fn is_escapeable_character(c: char) -> bool {
     
     match c {
         '0'..='9' | 'A'..='Z' | 'a'..='z' => false,
+        
+        
+        
         
         
         

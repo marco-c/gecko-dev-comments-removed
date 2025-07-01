@@ -36,14 +36,9 @@
 
 
 
-
 #[cfg(feature = "dfa-build")]
 use core::iter;
-use core::{
-    convert::{TryFrom, TryInto},
-    fmt,
-    mem::size_of,
-};
+use core::{fmt, mem::size_of};
 
 #[cfg(feature = "dfa-build")]
 use alloc::{vec, vec::Vec};
@@ -52,7 +47,7 @@ use alloc::{vec, vec::Vec};
 use crate::dfa::dense::{self, BuildError};
 use crate::{
     dfa::{
-        automaton::{fmt_state_indicator, Automaton},
+        automaton::{fmt_state_indicator, Automaton, StartError},
         dense::Flags,
         special::Special,
         StartKind, DEAD,
@@ -63,15 +58,14 @@ use crate::{
         int::{Pointer, Usize, U16, U32},
         prefilter::Prefilter,
         primitives::{PatternID, StateID},
-        search::{Anchored, Input, MatchError},
-        start::{Start, StartByteMap},
+        search::Anchored,
+        start::{self, Start, StartByteMap},
         wire::{self, DeserializeError, Endian, SerializeError},
     },
 };
 
 const LABEL: &str = "rust-regex-automata-dfa-sparse";
 const VERSION: u32 = 2;
-
 
 
 
@@ -155,8 +149,6 @@ impl DFA<Vec<u8>> {
     
     
     
-    
-    
     #[cfg(feature = "syntax")]
     pub fn new(pattern: &str) -> Result<DFA<Vec<u8>>, BuildError> {
         dense::Builder::new()
@@ -164,8 +156,6 @@ impl DFA<Vec<u8>> {
             .and_then(|dense| dense.to_sparse())
     }
 
-    
-    
     
     
     
@@ -536,7 +526,6 @@ impl<T: AsRef<[u8]>> DFA<T> {
     
     
     
-    
     #[cfg(feature = "dfa-build")]
     pub fn to_bytes_little_endian(&self) -> Vec<u8> {
         self.to_bytes::<wire::LE>()
@@ -578,13 +567,11 @@ impl<T: AsRef<[u8]>> DFA<T> {
     
     
     
-    
     #[cfg(feature = "dfa-build")]
     pub fn to_bytes_big_endian(&self) -> Vec<u8> {
         self.to_bytes::<wire::BE>()
     }
 
-    
     
     
     
@@ -1001,8 +988,8 @@ impl<'a> DFA<&'a [u8]> {
         
         
         let (dfa, nread) = unsafe { DFA::from_bytes_unchecked(slice)? };
-        dfa.tt.validate(&dfa.special)?;
-        dfa.st.validate(&dfa.special, &dfa.tt)?;
+        let seen = dfa.tt.validate(&dfa.special)?;
+        dfa.st.validate(&dfa.special, &seen)?;
         
         
         Ok((dfa, nread))
@@ -1207,35 +1194,21 @@ unsafe impl<T: AsRef<[u8]>> Automaton for DFA<T> {
     }
 
     #[inline]
-    fn start_state_forward(
+    fn start_state(
         &self,
-        input: &Input<'_>,
-    ) -> Result<StateID, MatchError> {
-        if !self.quitset.is_empty() && input.start() > 0 {
-            let offset = input.start() - 1;
-            let byte = input.haystack()[offset];
-            if self.quitset.contains(byte) {
-                return Err(MatchError::quit(byte, offset));
+        config: &start::Config,
+    ) -> Result<StateID, StartError> {
+        let anchored = config.get_anchored();
+        let start = match config.get_look_behind() {
+            None => Start::Text,
+            Some(byte) => {
+                if !self.quitset.is_empty() && self.quitset.contains(byte) {
+                    return Err(StartError::quit(byte));
+                }
+                self.st.start_map.get(byte)
             }
-        }
-        let start = self.st.start_map.fwd(&input);
-        self.st.start(input, start)
-    }
-
-    #[inline]
-    fn start_state_reverse(
-        &self,
-        input: &Input<'_>,
-    ) -> Result<StateID, MatchError> {
-        if !self.quitset.is_empty() && input.end() < input.haystack().len() {
-            let offset = input.end();
-            let byte = input.haystack()[offset];
-            if self.quitset.contains(byte) {
-                return Err(MatchError::quit(byte, offset));
-            }
-        }
-        let start = self.st.start_map.rev(&input);
-        self.st.start(input, start)
+        };
+        self.st.start(anchored, start)
     }
 
     #[inline]
@@ -1411,63 +1384,8 @@ impl<T: AsRef<[u8]>> Transitions<T> {
     
     
     
-    fn validate(&self, sp: &Special) -> Result<(), DeserializeError> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        struct Seen {
-            #[cfg(feature = "alloc")]
-            set: alloc::collections::BTreeSet<StateID>,
-            #[cfg(not(feature = "alloc"))]
-            set: core::marker::PhantomData<StateID>,
-        }
-
-        #[cfg(feature = "alloc")]
-        impl Seen {
-            fn new() -> Seen {
-                Seen { set: alloc::collections::BTreeSet::new() }
-            }
-            fn insert(&mut self, id: StateID) {
-                self.set.insert(id);
-            }
-            fn contains(&self, id: &StateID) -> bool {
-                self.set.contains(id)
-            }
-        }
-
-        #[cfg(not(feature = "alloc"))]
-        impl Seen {
-            fn new() -> Seen {
-                Seen { set: core::marker::PhantomData }
-            }
-            fn insert(&mut self, _id: StateID) {}
-            fn contains(&self, _id: &StateID) -> bool {
-                false
-            }
-        }
-
-        let mut verified: Seen = Seen::new();
+    fn validate(&self, sp: &Special) -> Result<Seen, DeserializeError> {
+        let mut verified = Seen::new();
         
         
         
@@ -1544,7 +1462,7 @@ impl<T: AsRef<[u8]>> Transitions<T> {
                 "mismatching sparse state length",
             ));
         }
-        Ok(())
+        Ok(verified)
     }
 
     
@@ -1682,7 +1600,7 @@ impl<T: AsRef<[u8]>> Transitions<T> {
             let state = &state[nr..];
             if npats == 0 {
                 return Err(DeserializeError::generic(
-                    "state marked as a match, but has no pattern IDs",
+                    "state marked as a match, but pattern length is zero",
                 ));
             }
 
@@ -1704,6 +1622,21 @@ impl<T: AsRef<[u8]>> Transitions<T> {
         } else {
             (&[][..], state)
         };
+        if is_match && pattern_ids.is_empty() {
+            return Err(DeserializeError::generic(
+                "state marked as a match, but has no pattern IDs",
+            ));
+        }
+        if sp.is_match_state(id) && pattern_ids.is_empty() {
+            return Err(DeserializeError::generic(
+                "state marked special as a match, but has no pattern IDs",
+            ));
+        }
+        if sp.is_match_state(id) != is_match {
+            return Err(DeserializeError::generic(
+                "whether state is a match or not is inconsistent",
+            ));
+        }
 
         
         
@@ -2084,27 +2017,18 @@ impl<T: AsRef<[u8]>> StartTable<T> {
     fn validate(
         &self,
         sp: &Special,
-        trans: &Transitions<T>,
+        seen: &Seen,
     ) -> Result<(), DeserializeError> {
         for (id, _, _) in self.iter() {
+            if !seen.contains(&id) {
+                return Err(DeserializeError::generic(
+                    "found invalid start state ID",
+                ));
+            }
             if sp.is_match_state(id) {
                 return Err(DeserializeError::generic(
                     "start states cannot be match states",
                 ));
-            }
-            
-            let state = trans.try_state(sp, id)?;
-            
-            
-            
-            
-            
-            
-            
-            
-            for i in 0..state.ntrans {
-                let to = state.next_at(i);
-                let _ = trans.try_state(sp, to)?;
             }
         }
         Ok(())
@@ -2145,28 +2069,27 @@ impl<T: AsRef<[u8]>> StartTable<T> {
     
     fn start(
         &self,
-        input: &Input<'_>,
+        anchored: Anchored,
         start: Start,
-    ) -> Result<StateID, MatchError> {
+    ) -> Result<StateID, StartError> {
         let start_index = start.as_usize();
-        let mode = input.get_anchored();
-        let index = match mode {
+        let index = match anchored {
             Anchored::No => {
                 if !self.kind.has_unanchored() {
-                    return Err(MatchError::unsupported_anchored(mode));
+                    return Err(StartError::unsupported_anchored(anchored));
                 }
                 start_index
             }
             Anchored::Yes => {
                 if !self.kind.has_anchored() {
-                    return Err(MatchError::unsupported_anchored(mode));
+                    return Err(StartError::unsupported_anchored(anchored));
                 }
                 self.stride + start_index
             }
             Anchored::Pattern(pid) => {
                 let len = match self.pattern_len {
                     None => {
-                        return Err(MatchError::unsupported_anchored(mode))
+                        return Err(StartError::unsupported_anchored(anchored))
                     }
                     Some(len) => len,
                 };
@@ -2558,6 +2481,62 @@ impl<'a> fmt::Debug for StateMut<'a> {
             accel: self.accel,
         };
         fmt::Debug::fmt(&state, f)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+struct Seen {
+    #[cfg(feature = "alloc")]
+    set: alloc::collections::BTreeSet<StateID>,
+    #[cfg(not(feature = "alloc"))]
+    set: core::marker::PhantomData<StateID>,
+}
+
+#[cfg(feature = "alloc")]
+impl Seen {
+    fn new() -> Seen {
+        Seen { set: alloc::collections::BTreeSet::new() }
+    }
+    fn insert(&mut self, id: StateID) {
+        self.set.insert(id);
+    }
+    fn contains(&self, id: &StateID) -> bool {
+        self.set.contains(id)
+    }
+}
+
+#[cfg(not(feature = "alloc"))]
+impl Seen {
+    fn new() -> Seen {
+        Seen { set: core::marker::PhantomData }
+    }
+    fn insert(&mut self, _id: StateID) {}
+    fn contains(&self, _id: &StateID) -> bool {
+        true
     }
 }
 

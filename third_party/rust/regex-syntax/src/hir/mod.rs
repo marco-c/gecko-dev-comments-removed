@@ -322,6 +322,22 @@ impl Hir {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn literal<B: Into<Box<[u8]>>>(lit: B) -> Hir {
         let bytes = lit.into();
@@ -642,16 +658,12 @@ impl Hir {
     #[inline]
     pub fn dot(dot: Dot) -> Hir {
         match dot {
-            Dot::AnyChar => {
-                let mut cls = ClassUnicode::empty();
-                cls.push(ClassUnicodeRange::new('\0', '\u{10FFFF}'));
-                Hir::class(Class::Unicode(cls))
-            }
-            Dot::AnyByte => {
-                let mut cls = ClassBytes::empty();
-                cls.push(ClassBytesRange::new(b'\0', b'\xFF'));
-                Hir::class(Class::Bytes(cls))
-            }
+            Dot::AnyChar => Hir::class(Class::Unicode(ClassUnicode::new([
+                ClassUnicodeRange::new('\0', '\u{10FFFF}'),
+            ]))),
+            Dot::AnyByte => Hir::class(Class::Bytes(ClassBytes::new([
+                ClassBytesRange::new(b'\0', b'\xFF'),
+            ]))),
             Dot::AnyCharExcept(ch) => {
                 let mut cls =
                     ClassUnicode::new([ClassUnicodeRange::new(ch, ch)]);
@@ -659,17 +671,17 @@ impl Hir {
                 Hir::class(Class::Unicode(cls))
             }
             Dot::AnyCharExceptLF => {
-                let mut cls = ClassUnicode::empty();
-                cls.push(ClassUnicodeRange::new('\0', '\x09'));
-                cls.push(ClassUnicodeRange::new('\x0B', '\u{10FFFF}'));
-                Hir::class(Class::Unicode(cls))
+                Hir::class(Class::Unicode(ClassUnicode::new([
+                    ClassUnicodeRange::new('\0', '\x09'),
+                    ClassUnicodeRange::new('\x0B', '\u{10FFFF}'),
+                ])))
             }
             Dot::AnyCharExceptCRLF => {
-                let mut cls = ClassUnicode::empty();
-                cls.push(ClassUnicodeRange::new('\0', '\x09'));
-                cls.push(ClassUnicodeRange::new('\x0B', '\x0C'));
-                cls.push(ClassUnicodeRange::new('\x0E', '\u{10FFFF}'));
-                Hir::class(Class::Unicode(cls))
+                Hir::class(Class::Unicode(ClassUnicode::new([
+                    ClassUnicodeRange::new('\0', '\x09'),
+                    ClassUnicodeRange::new('\x0B', '\x0C'),
+                    ClassUnicodeRange::new('\x0E', '\u{10FFFF}'),
+                ])))
             }
             Dot::AnyByteExcept(byte) => {
                 let mut cls =
@@ -678,17 +690,17 @@ impl Hir {
                 Hir::class(Class::Bytes(cls))
             }
             Dot::AnyByteExceptLF => {
-                let mut cls = ClassBytes::empty();
-                cls.push(ClassBytesRange::new(b'\0', b'\x09'));
-                cls.push(ClassBytesRange::new(b'\x0B', b'\xFF'));
-                Hir::class(Class::Bytes(cls))
+                Hir::class(Class::Bytes(ClassBytes::new([
+                    ClassBytesRange::new(b'\0', b'\x09'),
+                    ClassBytesRange::new(b'\x0B', b'\xFF'),
+                ])))
             }
             Dot::AnyByteExceptCRLF => {
-                let mut cls = ClassBytes::empty();
-                cls.push(ClassBytesRange::new(b'\0', b'\x09'));
-                cls.push(ClassBytesRange::new(b'\x0B', b'\x0C'));
-                cls.push(ClassBytesRange::new(b'\x0E', b'\xFF'));
-                Hir::class(Class::Bytes(cls))
+                Hir::class(Class::Bytes(ClassBytes::new([
+                    ClassBytesRange::new(b'\0', b'\x09'),
+                    ClassBytesRange::new(b'\x0B', b'\x0C'),
+                    ClassBytesRange::new(b'\x0E', b'\xFF'),
+                ])))
             }
         }
     }
@@ -793,6 +805,11 @@ impl core::fmt::Debug for Literal {
         crate::debug::Bytes(&self.0).fmt(f)
     }
 }
+
+
+
+
+
 
 
 
@@ -1328,6 +1345,7 @@ impl ClassUnicodeRange {
 
 
 
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClassBytes {
     set: IntervalSet<ClassBytesRange>,
@@ -1629,6 +1647,42 @@ pub enum Look {
     WordUnicode = 1 << 8,
     
     WordUnicodeNegate = 1 << 9,
+    
+    
+    
+    
+    WordStartAscii = 1 << 10,
+    
+    
+    
+    
+    WordEndAscii = 1 << 11,
+    
+    
+    
+    
+    WordStartUnicode = 1 << 12,
+    
+    
+    
+    
+    WordEndUnicode = 1 << 13,
+    
+    
+    
+    WordStartHalfAscii = 1 << 14,
+    
+    
+    
+    WordEndHalfAscii = 1 << 15,
+    
+    
+    
+    WordStartHalfUnicode = 1 << 16,
+    
+    
+    
+    WordEndHalfUnicode = 1 << 17,
 }
 
 impl Look {
@@ -1650,6 +1704,14 @@ impl Look {
             Look::WordAsciiNegate => Look::WordAsciiNegate,
             Look::WordUnicode => Look::WordUnicode,
             Look::WordUnicodeNegate => Look::WordUnicodeNegate,
+            Look::WordStartAscii => Look::WordEndAscii,
+            Look::WordEndAscii => Look::WordStartAscii,
+            Look::WordStartUnicode => Look::WordEndUnicode,
+            Look::WordEndUnicode => Look::WordStartUnicode,
+            Look::WordStartHalfAscii => Look::WordEndHalfAscii,
+            Look::WordEndHalfAscii => Look::WordStartHalfAscii,
+            Look::WordStartHalfUnicode => Look::WordEndHalfUnicode,
+            Look::WordEndHalfUnicode => Look::WordStartHalfUnicode,
         }
     }
 
@@ -1658,28 +1720,36 @@ impl Look {
     
     
     #[inline]
-    pub const fn as_repr(self) -> u16 {
+    pub const fn as_repr(self) -> u32 {
         
         
-        self as u16
+        self as u32
     }
 
     
     
     
     #[inline]
-    pub const fn from_repr(repr: u16) -> Option<Look> {
+    pub const fn from_repr(repr: u32) -> Option<Look> {
         match repr {
-            0b00_0000_0001 => Some(Look::Start),
-            0b00_0000_0010 => Some(Look::End),
-            0b00_0000_0100 => Some(Look::StartLF),
-            0b00_0000_1000 => Some(Look::EndLF),
-            0b00_0001_0000 => Some(Look::StartCRLF),
-            0b00_0010_0000 => Some(Look::EndCRLF),
-            0b00_0100_0000 => Some(Look::WordAscii),
-            0b00_1000_0000 => Some(Look::WordAsciiNegate),
-            0b01_0000_0000 => Some(Look::WordUnicode),
-            0b10_0000_0000 => Some(Look::WordUnicodeNegate),
+            0b00_0000_0000_0000_0001 => Some(Look::Start),
+            0b00_0000_0000_0000_0010 => Some(Look::End),
+            0b00_0000_0000_0000_0100 => Some(Look::StartLF),
+            0b00_0000_0000_0000_1000 => Some(Look::EndLF),
+            0b00_0000_0000_0001_0000 => Some(Look::StartCRLF),
+            0b00_0000_0000_0010_0000 => Some(Look::EndCRLF),
+            0b00_0000_0000_0100_0000 => Some(Look::WordAscii),
+            0b00_0000_0000_1000_0000 => Some(Look::WordAsciiNegate),
+            0b00_0000_0001_0000_0000 => Some(Look::WordUnicode),
+            0b00_0000_0010_0000_0000 => Some(Look::WordUnicodeNegate),
+            0b00_0000_0100_0000_0000 => Some(Look::WordStartAscii),
+            0b00_0000_1000_0000_0000 => Some(Look::WordEndAscii),
+            0b00_0001_0000_0000_0000 => Some(Look::WordStartUnicode),
+            0b00_0010_0000_0000_0000 => Some(Look::WordEndUnicode),
+            0b00_0100_0000_0000_0000 => Some(Look::WordStartHalfAscii),
+            0b00_1000_0000_0000_0000 => Some(Look::WordEndHalfAscii),
+            0b01_0000_0000_0000_0000 => Some(Look::WordStartHalfUnicode),
+            0b10_0000_0000_0000_0000 => Some(Look::WordEndHalfUnicode),
             _ => None,
         }
     }
@@ -1704,6 +1774,14 @@ impl Look {
             Look::WordAsciiNegate => 'B',
             Look::WordUnicode => '𝛃',
             Look::WordUnicodeNegate => '𝚩',
+            Look::WordStartAscii => '<',
+            Look::WordEndAscii => '>',
+            Look::WordStartUnicode => '〈',
+            Look::WordEndUnicode => '〉',
+            Look::WordStartHalfAscii => '◁',
+            Look::WordEndHalfAscii => '▷',
+            Look::WordStartHalfUnicode => '◀',
+            Look::WordEndHalfUnicode => '▶',
         }
     }
 }
@@ -2594,7 +2672,7 @@ pub struct LookSet {
     
     
     
-    pub bits: u16,
+    pub bits: u32,
 }
 
 impl LookSet {
@@ -2697,13 +2775,22 @@ impl LookSet {
     pub fn contains_word_unicode(self) -> bool {
         self.contains(Look::WordUnicode)
             || self.contains(Look::WordUnicodeNegate)
+            || self.contains(Look::WordStartUnicode)
+            || self.contains(Look::WordEndUnicode)
+            || self.contains(Look::WordStartHalfUnicode)
+            || self.contains(Look::WordEndHalfUnicode)
     }
 
     
     
     #[inline]
     pub fn contains_word_ascii(self) -> bool {
-        self.contains(Look::WordAscii) || self.contains(Look::WordAsciiNegate)
+        self.contains(Look::WordAscii)
+            || self.contains(Look::WordAsciiNegate)
+            || self.contains(Look::WordStartAscii)
+            || self.contains(Look::WordEndAscii)
+            || self.contains(Look::WordStartHalfAscii)
+            || self.contains(Look::WordEndHalfAscii)
     }
 
     
@@ -2790,7 +2877,7 @@ impl LookSet {
     
     #[inline]
     pub fn read_repr(slice: &[u8]) -> LookSet {
-        let bits = u16::from_ne_bytes(slice[..2].try_into().unwrap());
+        let bits = u32::from_ne_bytes(slice[..4].try_into().unwrap());
         LookSet { bits }
     }
 
@@ -2805,6 +2892,8 @@ impl LookSet {
         let raw = self.bits.to_ne_bytes();
         slice[0] = raw[0];
         slice[1] = raw[1];
+        slice[2] = raw[2];
+        slice[3] = raw[3];
     }
 }
 
@@ -2838,8 +2927,8 @@ impl Iterator for LookSetIter {
         }
         
         
-        let repr = u16::try_from(self.set.bits.trailing_zeros()).unwrap();
-        let look = Look::from_repr(1 << repr)?;
+        let bit = u16::try_from(self.set.bits.trailing_zeros()).unwrap();
+        let look = Look::from_repr(1 << bit)?;
         self.set = self.set.remove(look);
         Some(look)
     }
@@ -3761,7 +3850,7 @@ mod tests {
         assert_eq!(0, set.iter().count());
 
         let set = LookSet::full();
-        assert_eq!(10, set.iter().count());
+        assert_eq!(18, set.iter().count());
 
         let set =
             LookSet::empty().insert(Look::StartLF).insert(Look::WordUnicode);
@@ -3779,6 +3868,6 @@ mod tests {
         let res = format!("{:?}", LookSet::empty());
         assert_eq!("∅", res);
         let res = format!("{:?}", LookSet::full());
-        assert_eq!("Az^$rRbB𝛃𝚩", res);
+        assert_eq!("Az^$rRbB𝛃𝚩<>〈〉◁▷◀▶", res);
     }
 }

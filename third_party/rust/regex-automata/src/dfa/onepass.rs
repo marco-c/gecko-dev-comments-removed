@@ -521,7 +521,7 @@ struct InternalBuilder<'a> {
 
 impl<'a> InternalBuilder<'a> {
     
-    fn new(config: Config, nfa: &'a NFA) -> InternalBuilder {
+    fn new(config: Config, nfa: &'a NFA) -> InternalBuilder<'a> {
         let classes = if !config.get_byte_classes() {
             
             
@@ -2585,6 +2585,7 @@ impl Cache {
 
 
 
+
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct Transition(u64);
 
@@ -2741,7 +2742,7 @@ impl PatternEpsilons {
     fn set_epsilons(self, epsilons: Epsilons) -> PatternEpsilons {
         PatternEpsilons(
             (self.0 & PatternEpsilons::PATTERN_ID_MASK)
-                | u64::from(epsilons.0),
+                | (u64::from(epsilons.0) & PatternEpsilons::EPSILONS_MASK),
         )
     }
 }
@@ -2814,12 +2815,15 @@ impl Epsilons {
 
     
     fn looks(self) -> LookSet {
-        LookSet { bits: (self.0 & Epsilons::LOOK_MASK).low_u16() }
+        LookSet { bits: (self.0 & Epsilons::LOOK_MASK).low_u32() }
     }
 
     
     fn set_looks(self, look_set: LookSet) -> Epsilons {
-        Epsilons((self.0 & Epsilons::SLOT_MASK) | u64::from(look_set.bits))
+        Epsilons(
+            (self.0 & Epsilons::SLOT_MASK)
+                | (u64::from(look_set.bits) & Epsilons::LOOK_MASK),
+        )
     }
 }
 

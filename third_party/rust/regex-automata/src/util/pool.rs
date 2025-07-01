@@ -177,6 +177,7 @@ impl<T: Send, F: Fn() -> T> Pool<T, F> {
     
     
     
+    #[inline]
     pub fn get(&self) -> PoolGuard<'_, T, F> {
         PoolGuard(self.0.get())
     }
@@ -200,6 +201,7 @@ impl<'a, T: Send, F: Fn() -> T> PoolGuard<'a, T, F> {
     
     
     
+    #[inline]
     pub fn put(this: PoolGuard<'_, T, F>) {
         inner::PoolGuard::put(this.0);
     }
@@ -208,12 +210,14 @@ impl<'a, T: Send, F: Fn() -> T> PoolGuard<'a, T, F> {
 impl<'a, T: Send, F: Fn() -> T> core::ops::Deref for PoolGuard<'a, T, F> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &T {
         self.0.value()
     }
 }
 
 impl<'a, T: Send, F: Fn() -> T> core::ops::DerefMut for PoolGuard<'a, T, F> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut T {
         self.0.value_mut()
     }
@@ -268,6 +272,64 @@ mod inner {
     
     static THREAD_ID_DROPPED: usize = 2;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const MAX_POOL_STACKS: usize = 8;
+
     thread_local!(
         /// A thread local used to assign an ID to a thread.
         static THREAD_ID: usize = {
@@ -298,13 +360,28 @@ mod inner {
     
     
     
+    #[derive(Debug)]
+    #[repr(C, align(64))]
+    struct CacheLine<T>(T);
+
+    
+    
+    
+    
+    
+    
+    
     pub(super) struct Pool<T, F> {
         
         
-        stack: Mutex<Vec<Box<T>>>,
-        
-        
         create: F,
+        
+        
+        
+        
+        
+        
+        stacks: Vec<CacheLine<Mutex<Vec<Box<T>>>>>,
         
         
         
@@ -360,6 +437,14 @@ mod inner {
     
     
     
+    impl<T: UnwindSafe, F: UnwindSafe + RefUnwindSafe> UnwindSafe for Pool<T, F> {}
+
+    
+    
+    
+    
+    
+    
     
     impl<T: UnwindSafe, F: UnwindSafe + RefUnwindSafe> RefUnwindSafe
         for Pool<T, F>
@@ -375,15 +460,53 @@ mod inner {
             
             
             
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let mut stacks = Vec::with_capacity(MAX_POOL_STACKS);
+            for _ in 0..stacks.capacity() {
+                stacks.push(CacheLine(Mutex::new(vec![])));
+            }
             let owner = AtomicUsize::new(THREAD_ID_UNOWNED);
             let owner_val = UnsafeCell::new(None); 
-            Pool { stack: Mutex::new(vec![]), create, owner, owner_val }
+            Pool { create, stacks, owner, owner_val }
         }
     }
 
     impl<T: Send, F: Fn() -> T> Pool<T, F> {
         
         
+        #[inline]
         pub(super) fn get(&self) -> PoolGuard<'_, T, F> {
             
             
@@ -401,6 +524,9 @@ mod inner {
             let caller = THREAD_ID.with(|id| *id);
             let owner = self.owner.load(Ordering::Acquire);
             if caller == owner {
+                
+                
+                
                 self.owner.store(THREAD_ID_INUSE, Ordering::Release);
                 return self.guard_owned(caller);
             }
@@ -444,37 +570,86 @@ mod inner {
                     return self.guard_owned(caller);
                 }
             }
-            let mut stack = self.stack.lock().unwrap();
-            let value = match stack.pop() {
-                None => Box::new((self.create)()),
-                Some(value) => value,
-            };
-            self.guard_stack(value)
+            let stack_id = caller % self.stacks.len();
+            
+            
+            
+            
+            
+            for _ in 0..1 {
+                let mut stack = match self.stacks[stack_id].0.try_lock() {
+                    Err(_) => continue,
+                    Ok(stack) => stack,
+                };
+                if let Some(value) = stack.pop() {
+                    return self.guard_stack(value);
+                }
+                
+                
+                drop(stack);
+                let value = Box::new((self.create)());
+                return self.guard_stack(value);
+            }
+            
+            
+            
+            
+            self.guard_stack_transient(Box::new((self.create)()))
         }
 
         
         
         
+        #[inline]
         fn put_value(&self, value: Box<T>) {
-            let mut stack = self.stack.lock().unwrap();
-            stack.push(value);
+            let caller = THREAD_ID.with(|id| *id);
+            let stack_id = caller % self.stacks.len();
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            for _ in 0..10 {
+                let mut stack = match self.stacks[stack_id].0.try_lock() {
+                    Err(_) => continue,
+                    Ok(stack) => stack,
+                };
+                stack.push(value);
+                return;
+            }
         }
 
         
+        #[inline]
         fn guard_owned(&self, caller: usize) -> PoolGuard<'_, T, F> {
-            PoolGuard { pool: self, value: Err(caller) }
+            PoolGuard { pool: self, value: Err(caller), discard: false }
         }
 
         
+        #[inline]
         fn guard_stack(&self, value: Box<T>) -> PoolGuard<'_, T, F> {
-            PoolGuard { pool: self, value: Ok(value) }
+            PoolGuard { pool: self, value: Ok(value), discard: false }
+        }
+
+        
+        
+        
+        #[inline]
+        fn guard_stack_transient(&self, value: Box<T>) -> PoolGuard<'_, T, F> {
+            PoolGuard { pool: self, value: Ok(value), discard: true }
         }
     }
 
     impl<T: core::fmt::Debug, F> core::fmt::Debug for Pool<T, F> {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             f.debug_struct("Pool")
-                .field("stack", &self.stack)
+                .field("stacks", &self.stacks)
                 .field("owner", &self.owner)
                 .field("owner_val", &self.owner_val)
                 .finish()
@@ -490,10 +665,17 @@ mod inner {
         
         
         value: Result<Box<T>, usize>,
+        
+        
+        
+        
+        
+        discard: bool,
     }
 
     impl<'a, T: Send, F: Fn() -> T> PoolGuard<'a, T, F> {
         
+        #[inline]
         pub(super) fn value(&self) -> &T {
             match self.value {
                 Ok(ref v) => &**v,
@@ -518,6 +700,7 @@ mod inner {
         }
 
         
+        #[inline]
         pub(super) fn value_mut(&mut self) -> &mut T {
             match self.value {
                 Ok(ref mut v) => &mut **v,
@@ -542,6 +725,7 @@ mod inner {
         }
 
         
+        #[inline]
         pub(super) fn put(this: PoolGuard<'_, T, F>) {
             
             
@@ -557,7 +741,17 @@ mod inner {
         #[inline(always)]
         fn put_imp(&mut self) {
             match core::mem::replace(&mut self.value, Err(THREAD_ID_DROPPED)) {
-                Ok(value) => self.pool.put_value(value),
+                Ok(value) => {
+                    
+                    
+                    
+                    
+                    
+                    if self.discard {
+                        return;
+                    }
+                    self.pool.put_value(value);
+                }
                 
                 
                 
@@ -580,6 +774,7 @@ mod inner {
     }
 
     impl<'a, T: Send, F: Fn() -> T> Drop for PoolGuard<'a, T, F> {
+        #[inline]
         fn drop(&mut self) {
             self.put_imp();
         }
@@ -657,6 +852,7 @@ mod inner {
     impl<T: Send, F: Fn() -> T> Pool<T, F> {
         
         
+        #[inline]
         pub(super) fn get(&self) -> PoolGuard<'_, T, F> {
             let mut stack = self.stack.lock();
             let value = match stack.pop() {
@@ -666,6 +862,7 @@ mod inner {
             PoolGuard { pool: self, value: Some(value) }
         }
 
+        #[inline]
         fn put(&self, guard: PoolGuard<'_, T, F>) {
             let mut guard = core::mem::ManuallyDrop::new(guard);
             if let Some(value) = guard.value.take() {
@@ -676,6 +873,7 @@ mod inner {
         
         
         
+        #[inline]
         fn put_value(&self, value: Box<T>) {
             let mut stack = self.stack.lock();
             stack.push(value);
@@ -698,16 +896,19 @@ mod inner {
 
     impl<'a, T: Send, F: Fn() -> T> PoolGuard<'a, T, F> {
         
+        #[inline]
         pub(super) fn value(&self) -> &T {
             self.value.as_deref().unwrap()
         }
 
         
+        #[inline]
         pub(super) fn value_mut(&mut self) -> &mut T {
             self.value.as_deref_mut().unwrap()
         }
 
         
+        #[inline]
         pub(super) fn put(this: PoolGuard<'_, T, F>) {
             
             
@@ -729,6 +930,7 @@ mod inner {
     }
 
     impl<'a, T: Send, F: Fn() -> T> Drop for PoolGuard<'a, T, F> {
+        #[inline]
         fn drop(&mut self) {
             self.put_imp();
         }
@@ -782,6 +984,7 @@ mod inner {
         
         
         
+        #[inline]
         fn lock(&self) -> MutexGuard<'_, T> {
             while self
                 .locked
@@ -814,18 +1017,21 @@ mod inner {
     impl<'a, T> core::ops::Deref for MutexGuard<'a, T> {
         type Target = T;
 
+        #[inline]
         fn deref(&self) -> &T {
             self.data
         }
     }
 
     impl<'a, T> core::ops::DerefMut for MutexGuard<'a, T> {
+        #[inline]
         fn deref_mut(&mut self) -> &mut T {
             self.data
         }
     }
 
     impl<'a, T> Drop for MutexGuard<'a, T> {
+        #[inline]
         fn drop(&mut self) {
             
             

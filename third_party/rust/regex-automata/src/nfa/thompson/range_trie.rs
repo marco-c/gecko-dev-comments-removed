@@ -141,7 +141,7 @@
 
 
 
-use core::{cell::RefCell, convert::TryFrom, fmt, mem, ops::RangeInclusive};
+use core::{cell::RefCell, fmt, mem, ops::RangeInclusive};
 
 use alloc::{format, string::String, vec, vec::Vec};
 
@@ -915,10 +915,6 @@ fn intersects(r1: Utf8Range, r2: Utf8Range) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use core::ops::RangeInclusive;
-
-    use regex_syntax::utf8::Utf8Range;
-
     use super::*;
 
     fn r(range: RangeInclusive<u8>) -> Utf8Range {

@@ -320,7 +320,7 @@
 
 #[cfg(feature = "dfa-search")]
 pub use crate::dfa::{
-    automaton::{Automaton, OverlappingState},
+    automaton::{Automaton, OverlappingState, StartError},
     start::StartKind,
 };
 

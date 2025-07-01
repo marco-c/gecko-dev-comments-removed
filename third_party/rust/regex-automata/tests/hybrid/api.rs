@@ -55,7 +55,7 @@ fn too_many_cache_resets_cause_quit() -> Result<(), Box<dyn Error>> {
     let mut cache = dfa.create_cache();
 
     let haystack = "a".repeat(101).into_bytes();
-    let err = MatchError::gave_up(25);
+    let err = MatchError::gave_up(24);
     
     
     
@@ -83,7 +83,7 @@ fn too_many_cache_resets_cause_quit() -> Result<(), Box<dyn Error>> {
     
     
     cache.reset(&dfa);
-    let err = MatchError::gave_up(27);
+    let err = MatchError::gave_up(26);
     assert_eq!(
         Err(err),
         dfa.try_search_fwd(&mut cache, &Input::new(&haystack))

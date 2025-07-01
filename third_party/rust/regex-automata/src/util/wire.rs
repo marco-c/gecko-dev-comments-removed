@@ -41,11 +41,7 @@
 
 
 
-use core::{
-    cmp,
-    convert::{TryFrom, TryInto},
-    mem::size_of,
-};
+use core::{cmp, mem::size_of};
 
 #[cfg(feature = "alloc")]
 use alloc::{vec, vec::Vec};
@@ -870,11 +866,6 @@ pub(crate) trait Endian {
     
     
     
-    fn write_u64(n: u64, dst: &mut [u8]);
-
-    
-    
-    
     fn write_u128(n: u128, dst: &mut [u8]);
 }
 
@@ -897,10 +888,6 @@ impl Endian for LE {
         dst[..4].copy_from_slice(&n.to_le_bytes());
     }
 
-    fn write_u64(n: u64, dst: &mut [u8]) {
-        dst[..8].copy_from_slice(&n.to_le_bytes());
-    }
-
     fn write_u128(n: u128, dst: &mut [u8]) {
         dst[..16].copy_from_slice(&n.to_le_bytes());
     }
@@ -913,10 +900,6 @@ impl Endian for BE {
 
     fn write_u32(n: u32, dst: &mut [u8]) {
         dst[..4].copy_from_slice(&n.to_be_bytes());
-    }
-
-    fn write_u64(n: u64, dst: &mut [u8]) {
-        dst[..8].copy_from_slice(&n.to_be_bytes());
     }
 
     fn write_u128(n: u128, dst: &mut [u8]) {
