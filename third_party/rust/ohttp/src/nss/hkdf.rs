@@ -80,7 +80,7 @@ impl Hkdf {
             bExpand: CK_BBOOL::from(false),
             prfHashMechanism: self.mech(),
             ulSaltType: CK_ULONG::from(salt_type),
-            pSalt: salt.as_ptr() as *mut _, 
+            pSalt: salt.as_ptr().cast_mut(), 
             ulSaltLen: CK_ULONG::try_from(salt.len()).unwrap(),
             hSaltKey: CK_OBJECT_HANDLE::from(CK_INVALID_HANDLE),
             pInfo: null_mut(),
@@ -118,7 +118,7 @@ impl Hkdf {
             pSalt: null_mut(),
             ulSaltLen: 0,
             hSaltKey: CK_OBJECT_HANDLE::from(CK_INVALID_HANDLE),
-            pInfo: info.as_ptr() as *mut _, 
+            pInfo: info.as_ptr().cast_mut(), 
             ulInfoLen: CK_ULONG::try_from(info.len()).unwrap(),
         }
     }
