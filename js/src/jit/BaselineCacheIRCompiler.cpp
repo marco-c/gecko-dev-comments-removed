@@ -591,7 +591,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
   }
 
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
+  masm.Push(FrameDescriptor(FrameType::BaselineStub,  0));
 
   
   Label noUnderflow;
@@ -1697,7 +1697,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
   masm.Push(callee);
 
   
-  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  1);
+  masm.Push(FrameDescriptor(FrameType::BaselineStub,  1));
 
   if (isInlined) {
     
@@ -3406,7 +3406,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   
   masm.push(argcReg);
 
-  masm.pushFrameDescriptor(FrameType::BaselineStub);
+  masm.push(FrameDescriptor(FrameType::BaselineStub));
   masm.push(ICTailCallReg);
   masm.push(FramePointer);
   masm.loadJSContext(scratch);
@@ -3960,7 +3960,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedProxyGetShared(
   masm.loadJitCodeRaw(callee, code);
 
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, 3);
+  masm.Push(FrameDescriptor(FrameType::BaselineStub, 3));
 
   masm.callJit(code);
 
@@ -4368,7 +4368,7 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
   }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
+  masm.Push(FrameDescriptor(FrameType::BaselineStub,  0));
 
   masm.callJit(code);
 

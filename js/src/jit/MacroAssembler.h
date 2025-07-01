@@ -239,6 +239,7 @@ enum class Trap;
 namespace jit {
 
 
+class FrameDescriptor;
 enum class ExitFrameType : uint8_t;
 
 class AutoSaveLiveRegisters;
@@ -556,6 +557,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void PushEmptyRooted(VMFunctionData::RootType rootType);
   inline CodeOffset PushWithPatch(ImmWord word);
   inline CodeOffset PushWithPatch(ImmPtr imm);
+
+  using MacroAssemblerSpecific::push;
 
   void Pop(const Operand op) DEFINED_ON(x86_shared);
   void Pop(Register reg) PER_SHARED_ARCH;
@@ -892,15 +895,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  inline void pushFrameDescriptor(FrameType type);
-  inline void PushFrameDescriptor(FrameType type);
+  inline void push(FrameDescriptor descriptor);
+  inline void Push(FrameDescriptor descriptor);
 
   
   
-  inline void pushFrameDescriptorForJitCall(FrameType type, uint32_t argc);
   inline void pushFrameDescriptorForJitCall(FrameType type, Register argc,
                                             Register scratch);
-  inline void PushFrameDescriptorForJitCall(FrameType type, uint32_t argc);
   inline void PushFrameDescriptorForJitCall(FrameType type, Register argc,
                                             Register scratch);
 
