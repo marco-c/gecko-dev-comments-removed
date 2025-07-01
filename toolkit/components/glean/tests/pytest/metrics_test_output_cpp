@@ -27,7 +27,7 @@ namespace test {
 
 
 
-  constexpr impl::CounterMetric counter_metric(2);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> counter_metric(2);
 
   
 
@@ -70,7 +70,7 @@ namespace test {
 
 
 
-  constexpr impl::Labeled<impl::CounterMetric, DynamicLabel> labeled_counter_metric(6);
+  constexpr impl::Labeled<impl::CounterMetric<impl::CounterType::eBaseOrLabeled>, DynamicLabel> labeled_counter_metric(6);
 
   
 
@@ -84,7 +84,7 @@ namespace test {
 
 
 
-  constexpr impl::Labeled<impl::CounterMetric, LabeledCounterMetricLabelsLabel> labeled_counter_metric_labels(7);
+  constexpr impl::Labeled<impl::CounterMetric<impl::CounterType::eBaseOrLabeled>, LabeledCounterMetricLabelsLabel> labeled_counter_metric_labels(7);
 
   
 
@@ -169,6 +169,12 @@ namespace test_nested {
 
 
 
+  constexpr impl::DualLabeledCounterMetric a_dual_labeled_counter(18);
+
+  
+
+
+
   struct AnObjectObjectItem {
     Maybe<nsCString> colour;
     Maybe<int64_t> diameter;
@@ -179,14 +185,14 @@ namespace test_nested {
   
 
 
-  constexpr impl::ObjectMetric<AnObjectObject, struct AnObjectObjectTag> an_object(18);
+  constexpr impl::ObjectMetric<AnObjectObject, struct AnObjectObjectTag> an_object(19);
 
   
 
 
 
 
-  constexpr impl::DatetimeMetric datetime_metric(19);
+  constexpr impl::DatetimeMetric datetime_metric(20);
 
   
 
@@ -195,7 +201,7 @@ namespace test_nested {
 
 
 
-  constexpr impl::EventMetric<NoExtraKeys> event_metric(20);
+  constexpr impl::EventMetric<NoExtraKeys> event_metric(21);
 
   
 
@@ -232,56 +238,56 @@ namespace test_nested {
 
 
 
-  constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(21);
+  constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(22);
 
   
 
 
 
 
-  constexpr impl::DenominatorMetric external_denominator(22);
+  constexpr impl::DenominatorMetric external_denominator(23);
 
   
 
 
 
 
-  constexpr impl::CounterMetric optimizable_counter_metric(23);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> optimizable_counter_metric(24);
 
   
 
 
 
 
-  constexpr impl::CounterMetric optimizable_disabled_counter_metric(24);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> optimizable_disabled_counter_metric(25);
 
   
 
 
 
 
-  constexpr impl::QuantityMetric quantity_metric(25);
+  constexpr impl::QuantityMetric quantity_metric(26);
 
   
 
 
 
 
-  constexpr impl::RateMetric rate_metric(26);
+  constexpr impl::RateMetric rate_metric(27);
 
   
 
 
 
 
-  constexpr impl::NumeratorMetric rate_with_external_denominator(27);
+  constexpr impl::NumeratorMetric rate_with_external_denominator(28);
 
   
 
 
 
 
-  constexpr impl::UuidMetric uuid_metric(28);
+  constexpr impl::UuidMetric uuid_metric(29);
 }
 
 template <>
@@ -321,28 +327,28 @@ namespace test2 {
 
 
 
-  constexpr impl::BooleanMetric boolean_metric(29);
+  constexpr impl::BooleanMetric boolean_metric(30);
 
   
 
 
 
 
-  constexpr impl::CounterMetric counter_metric(30);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> counter_metric(31);
 
   
 
 
 
 
-  constexpr impl::CustomDistributionMetric custom_distribution_metric(31);
+  constexpr impl::CustomDistributionMetric custom_distribution_metric(32);
 
   
 
 
 
 
-  constexpr impl::Labeled<impl::BooleanMetric, DynamicLabel> labeled_boolean_metric(32);
+  constexpr impl::Labeled<impl::BooleanMetric, DynamicLabel> labeled_boolean_metric(33);
 
   
 
@@ -364,14 +370,14 @@ namespace test2 {
 
 
 
-  constexpr impl::Labeled<impl::BooleanMetric, LabeledBooleanMetricLabelsLabel> labeled_boolean_metric_labels(33);
+  constexpr impl::Labeled<impl::BooleanMetric, LabeledBooleanMetricLabelsLabel> labeled_boolean_metric_labels(34);
 
   
 
 
 
 
-  constexpr impl::Labeled<impl::CounterMetric, DynamicLabel> labeled_counter_metric(34);
+  constexpr impl::Labeled<impl::CounterMetric<impl::CounterType::eBaseOrLabeled>, DynamicLabel> labeled_counter_metric(35);
 
   
 
@@ -385,14 +391,14 @@ namespace test2 {
 
 
 
-  constexpr impl::Labeled<impl::CounterMetric, LabeledCounterMetricLabelsLabel> labeled_counter_metric_labels(35);
+  constexpr impl::Labeled<impl::CounterMetric<impl::CounterType::eBaseOrLabeled>, LabeledCounterMetricLabelsLabel> labeled_counter_metric_labels(36);
 
   
 
 
 
 
-  constexpr impl::Labeled<impl::StringMetric, DynamicLabel> labeled_string_metric(36);
+  constexpr impl::Labeled<impl::StringMetric, DynamicLabel> labeled_string_metric(37);
 
   
 
@@ -406,63 +412,63 @@ namespace test2 {
 
 
 
-  constexpr impl::Labeled<impl::StringMetric, LabeledStringMetricLabelsLabel> labeled_string_metric_labels(37);
+  constexpr impl::Labeled<impl::StringMetric, LabeledStringMetricLabelsLabel> labeled_string_metric_labels(38);
 
   
 
 
 
 
-  constexpr impl::MemoryDistributionMetric memory_distribution_metric(38);
+  constexpr impl::MemoryDistributionMetric memory_distribution_metric(39);
 
   
 
 
 
 
-  constexpr impl::StringListMetric string_list_metric(39);
+  constexpr impl::StringListMetric string_list_metric(40);
 
   
 
 
 
 
-  constexpr impl::StringMetric string_metric(40);
+  constexpr impl::StringMetric string_metric(41);
 
   
 
 
 
 
-  constexpr impl::TextMetric text_metric(41);
+  constexpr impl::TextMetric text_metric(42);
 
   
 
 
 
 
-  constexpr impl::TimespanMetric timespan_metric(42);
+  constexpr impl::TimespanMetric timespan_metric(43);
 
   
 
 
 
 
-  constexpr impl::TimingDistributionMetric timing_distribution_metric(43);
+  constexpr impl::TimingDistributionMetric timing_distribution_metric(44);
 
   
 
 
 
 
-  constexpr impl::BooleanMetric unordered_boolean_metric(44);
+  constexpr impl::BooleanMetric unordered_boolean_metric(45);
 
   
 
 
 
 
-  constexpr impl::Labeled<impl::BooleanMetric, DynamicLabel> unordered_labeled_boolean_metric(45);
+  constexpr impl::Labeled<impl::BooleanMetric, DynamicLabel> unordered_labeled_boolean_metric(46);
 }
 
 namespace test2_nested {
@@ -480,14 +486,14 @@ namespace test2_nested {
   
 
 
-  constexpr impl::ObjectMetric<AnObjectObject, struct AnObjectObjectTag> an_object(46);
+  constexpr impl::ObjectMetric<AnObjectObject, struct AnObjectObjectTag> an_object(47);
 
   
 
 
 
 
-  constexpr impl::DatetimeMetric datetime_metric(47);
+  constexpr impl::DatetimeMetric datetime_metric(48);
 
   
 
@@ -496,7 +502,7 @@ namespace test2_nested {
 
 
 
-  constexpr impl::EventMetric<NoExtraKeys> event_metric(48);
+  constexpr impl::EventMetric<NoExtraKeys> event_metric(49);
 
   
 
@@ -523,56 +529,56 @@ namespace test2_nested {
 
 
 
-  constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(49);
+  constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(50);
 
   
 
 
 
 
-  constexpr impl::CounterMetric external_denominator(50);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> external_denominator(51);
 
   
 
 
 
 
-  constexpr impl::CounterMetric optimizable_counter_metric(51);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> optimizable_counter_metric(52);
 
   
 
 
 
 
-  constexpr impl::CounterMetric optimizable_disabled_counter_metric(52);
+  constexpr impl::CounterMetric<impl::CounterType::eBaseOrLabeled> optimizable_disabled_counter_metric(53);
 
   
 
 
 
 
-  constexpr impl::QuantityMetric quantity_metric(53);
+  constexpr impl::QuantityMetric quantity_metric(54);
 
   
 
 
 
 
-  constexpr impl::RateMetric rate_metric(54);
+  constexpr impl::RateMetric rate_metric(55);
 
   
 
 
 
 
-  constexpr impl::NumeratorMetric rate_with_external_denominator(55);
+  constexpr impl::NumeratorMetric rate_with_external_denominator(56);
 
   
 
 
 
 
-  constexpr impl::UuidMetric uuid_metric(56);
+  constexpr impl::UuidMetric uuid_metric(57);
 }
 
 template <>

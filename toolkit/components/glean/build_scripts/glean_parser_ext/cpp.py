@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 """
 Outputter to generate C++ code for metrics.
@@ -18,26 +18,30 @@ def type_name(obj):
     """
 
     if getattr(obj, "labeled", False):
-        class_name = util.Camelize(obj.type[8:])  # strips "labeled_" off the front.
+        class_name = util.Camelize(obj.type[8:])  
         label_enum = "DynamicLabel"
         if obj.labels and len(obj.labels):
             label_enum = f"{util.Camelize(obj.name)}Label"
+        if class_name == "Counter":
+            return f"Labeled<impl::{class_name}Metric<impl::CounterType::eBaseOrLabeled>, {label_enum}>"
         return f"Labeled<impl::{class_name}Metric, {label_enum}>"
-    generate_enums = getattr(obj, "_generate_enums", [])  # Extra Keys? Reasons?
+    generate_enums = getattr(obj, "_generate_enums", [])  
     if len(generate_enums):
         for name, _ in generate_enums:
             if not len(getattr(obj, name)) and isinstance(obj, metrics.Event):
                 return util.Camelize(obj.type) + "Metric<NoExtraKeys>"
             else:
-                # we always use the `extra` suffix,
-                # because we only expose the new event API
+                
+                
                 suffix = "Extra"
                 return f"{util.Camelize(obj.type)}Metric<{util.Camelize(obj.name) + suffix}>"
-    generate_structure = getattr(obj, "_generate_structure", [])  # Object metric?
+    generate_structure = getattr(obj, "_generate_structure", [])  
     if len(generate_structure):
         generic = util.Camelize(obj.name) + "Object"
         tag = generic + "Tag"
         return f"ObjectMetric<{generic}, struct {tag}>"
+    if obj.type == "counter":
+        return "CounterMetric<impl::CounterType::eBaseOrLabeled>"
     return util.Camelize(obj.type) + "Metric"
 
 
@@ -123,7 +127,7 @@ def output_cpp(objs, output_fd, options={}):
     :param options: options dictionary.
     """
 
-    # Monkeypatch util.get_jinja2_template to find templates nearby
+    
 
     def get_local_template(template_name, filters=()):
         env = jinja2.Environment(
