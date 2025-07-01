@@ -56,7 +56,7 @@
 #include "builtin/Promise.h"
 #include "builtin/TestingUtility.h"  
 #include "builtin/WeakMapObject.h"
-#include "ds/IdValuePair.h"          
+#include "ds/IdValuePair.h"               
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
 #include "gc/GC.h"
@@ -9053,7 +9053,7 @@ static bool GetPrefValue(JSContext* cx, unsigned argc, Value* vp) {
 
   
 #define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
-  if (StringEqualsAscii(name, NAME)) {                            \
+  if (StringEqualsLiteral(name, NAME)) {                          \
     setReturnValue(JS::Prefs::CPP_NAME());                        \
     return true;                                                  \
   }
