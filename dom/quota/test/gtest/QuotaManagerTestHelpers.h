@@ -10,6 +10,7 @@ namespace mozilla::dom::quota {
 
 struct PrincipalMetadata;
 struct OriginMetadata;
+struct OriginStateMetadata;
 struct FullOriginMetadata;
 
 namespace test {
@@ -51,6 +52,32 @@ PrincipalMetadata GetPrincipalMetadata(const nsCString& aGroupNoSuffix,
 PrincipalMetadata GetPrincipalMetadata(const nsCString& aOriginSuffix,
                                        const nsCString& aGroupNoSuffix,
                                        const nsCString& aOriginNoSuffix);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PrincipalMetadata GetPrincipalMetadata(const nsCString& aOriginSuffix,
+                                       const nsCString& aGroupNoSuffix,
+                                       const nsCString& aOriginNoSuffix,
+                                       bool aIsPrivate);
 
 
 
