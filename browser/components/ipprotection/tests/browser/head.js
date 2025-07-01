@@ -1,0 +1,13 @@
+
+
+
+
+function waitForPanelEvent(document, eventName) {
+  return BrowserTestUtils.waitForEvent(document, eventName, false, event => {
+    if (event.target.getAttribute("viewId") === "PanelUI-ipprotection") {
+      return true;
+    }
+    return false;
+  });
+}
+
