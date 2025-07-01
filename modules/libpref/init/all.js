@@ -4127,3 +4127,7 @@ pref("privacy.query_stripping.strip_on_share.canDisable", true);
 
 pref("captchadetection.loglevel", "Warn");
 pref("captchadetection.actor.enabled", true);
+
+
+
+pref("general.smoothScroll", true, sticky);

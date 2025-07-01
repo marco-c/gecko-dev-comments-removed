@@ -23,6 +23,7 @@ IGNORE_PREFS = {
     "apz.fling_curve_function_y2",  
     "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",  
     "extensions.backgroundServiceWorker.enabled",  
+    "general.smoothScroll",  
 }
 
 
