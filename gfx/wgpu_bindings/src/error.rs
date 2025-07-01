@@ -12,7 +12,9 @@ use std::{
     ptr,
 };
 
+use nsstring::nsCString;
 use serde::{Deserialize, Serialize};
+use wgc::id;
 
 
 
@@ -90,6 +92,45 @@ impl ErrorBuffer {
             ptr::copy_nonoverlapping(message.as_ptr(), self.message as *mut u8, length);
             *self.message.add(length) = 0;
         }
+    }
+}
+
+pub struct OwnedErrorBuffer {
+    device_id: Option<id::DeviceId>,
+    ty: ErrorBufferType,
+    message: nsCString,
+}
+
+impl OwnedErrorBuffer {
+    pub fn new() -> Self {
+        Self {
+            device_id: None,
+            ty: ErrorBufferType::None,
+            message: nsCString::new(),
+        }
+    }
+
+    pub(crate) fn init(&mut self, error: impl HasErrorBufferType, device_id: id::DeviceId) {
+        assert!(self.device_id.is_none());
+
+        let ty = error.error_type();
+        match ty {
+            ErrorBufferType::None => panic!(),
+            ErrorBufferType::DeviceLost => return, 
+            ErrorBufferType::Internal => {}
+            ErrorBufferType::OutOfMemory => {}
+            ErrorBufferType::Validation => {}
+        }
+
+        self.device_id = Some(device_id);
+        self.ty = ty;
+
+        let message = error_to_string(&error);
+        self.message = nsCString::from(message);
+    }
+
+    pub(crate) fn get_inner_data(&self) -> Option<(id::DeviceId, ErrorBufferType, &nsCString)> {
+        Some((self.device_id?, self.ty, &self.message))
     }
 }
 
