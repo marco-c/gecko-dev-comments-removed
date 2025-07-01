@@ -564,7 +564,7 @@ Arena* ArenaChunk::fetchNextFreeArena(GCRuntime* gc) {
 
 
 ArenaChunk* GCRuntime::getOrAllocChunk(StallAndRetry stallAndRetry,
-                                        AutoLockGCBgAlloc& lock) {
+                                       AutoLockGCBgAlloc& lock) {
   ArenaChunk* chunk;
   if (!emptyChunks(lock).empty()) {
     chunk = emptyChunks(lock).head();
