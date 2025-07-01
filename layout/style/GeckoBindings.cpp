@@ -1911,10 +1911,10 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
   const auto* containingBlock = aPositioned->GetParent();
   auto rect = [&]() -> Maybe<nsRect> {
     if (aCBRectIsvalid) {
-      nsRect result = anchor->GetRectRelativeToSelf();
-      nsLayoutUtils::TransformRect(anchor, containingBlock, result);
+      const nsRect result = anchor->GetRectRelativeToSelf();
+      const auto offset = anchor->GetOffsetTo(containingBlock);
       
-      return Some(result);
+      return Some(result + offset);
     }
 
     
@@ -1934,10 +1934,9 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
 
     
     
-    nsRect rectToContainerChild = anchor->GetRectRelativeToSelf();
-    nsLayoutUtils::TransformRect(anchor, containerChild, rectToContainerChild);
-
-    return Some(rectToContainerChild + containerChild->GetPosition());
+    const nsRect rectToContainerChild = anchor->GetRectRelativeToSelf();
+    const auto offset = anchor->GetOffsetTo(containerChild);
+    return Some(rectToContainerChild + offset + containerChild->GetPosition());
   }();
   return rect.map([&](const nsRect& aRect) {
     
