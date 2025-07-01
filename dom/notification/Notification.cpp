@@ -37,18 +37,6 @@ namespace mozilla::dom {
 
 using namespace notification;
 
-struct NotificationStrings {
-  const nsString mID;
-  const nsString mTitle;
-  const nsString mDir;
-  const nsString mLang;
-  const nsString mBody;
-  const nsString mTag;
-  const nsString mIcon;
-  const nsString mData;
-  const nsString mServiceWorkerRegistrationScope;
-};
-
 class NotificationPermissionRequest : public ContentPermissionRequestBase,
                                       public nsIRunnable,
                                       public nsINamed {
@@ -581,32 +569,24 @@ nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
     return rv;
   }
 
-  nsCOMPtr<nsIURI> baseUri = nullptr;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  auto encoding = UTF_8_ENCODING;
-
-  if (nsCOMPtr<nsPIDOMWindowInner> window = aGlobal->GetAsInnerWindow()) {
-    if (RefPtr<Document> doc = window->GetExtantDoc()) {
-      baseUri = doc->GetBaseURI();
-      encoding = doc->GetDocumentCharacterSet();
-    } else {
-      NS_WARNING("No document found for main thread notification!");
-      return NS_ERROR_FAILURE;
-    }
-  } else if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
-    baseUri = workerPrivate->GetBaseURI();
-  }
-
+  nsCOMPtr<nsIURI> baseUri = aGlobal->GetBaseURI();
   if (!baseUri) {
     return rv;
+  }
+
+  auto encoding = UTF_8_ENCODING;
+
+  
+  
+  if (!StaticPrefs::dom_webnotifications_icon_encoding_utf8_enabled()) {
+    if (nsCOMPtr<nsPIDOMWindowInner> window = aGlobal->GetAsInnerWindow()) {
+      if (RefPtr<Document> doc = window->GetExtantDoc()) {
+        encoding = doc->GetDocumentCharacterSet();
+      } else {
+        NS_WARNING("No document found for main thread notification!");
+        return NS_ERROR_FAILURE;
+      }
+    }
   }
 
   nsCOMPtr<nsIURI> srcUri;
@@ -619,6 +599,8 @@ nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
     CopyUTF8toUTF16(src, aDecodedUrl);
   }
 
+  
+  
   if (encoding == UTF_8_ENCODING) {
     return rv;
   }
