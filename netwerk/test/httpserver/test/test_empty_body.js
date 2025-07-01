@@ -41,7 +41,7 @@ function run_test() {
 
 
 function ensureEmpty(ch) {
-  Assert.ok(ch.contentLength == 0);
+  Assert.equal(ch.contentLength, 0);
 }
 
 

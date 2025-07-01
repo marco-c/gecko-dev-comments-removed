@@ -25,7 +25,7 @@ add_test(function test_simple() {
       Assert.ok(timer instanceof Ci.nsITimer);
       
       
-      Assert.ok(Date.now() > t0);
+      Assert.greater(Date.now(), t0);
       run_next_test();
     },
     delay,
@@ -43,7 +43,7 @@ add_test(function test_delay() {
   function callback() {
     
     
-    Assert.ok(Date.now() - t0 > delay);
+    Assert.greater(Date.now() - t0, delay);
     run_next_test();
   }
   CommonUtils.namedTimer(callback, delay, that, "_zetimer");

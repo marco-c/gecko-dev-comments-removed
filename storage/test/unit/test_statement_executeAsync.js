@@ -916,7 +916,7 @@ function test_bind_empty_array() {
 function test_multiple_results() {
   let expectedResults = getTableRowCount("test");
   
-  Assert.ok(expectedResults > 1);
+  Assert.greater(expectedResults, 1);
 
   
   let stmt = makeTestStatement("SELECT * FROM test");

@@ -182,8 +182,9 @@ async function do_noExposure(showExposureResults) {
   for (let i = 0; i < MAX_RESULT_COUNT; i++) {
     let row = rows.children[i];
     Assert.ok(BrowserTestUtils.isVisible(row), `rows[${i}] should be visible`);
-    Assert.ok(
-      row.result.type == UrlbarUtils.RESULT_TYPE.SEARCH,
+    Assert.equal(
+      row.result.type,
+      UrlbarUtils.RESULT_TYPE.SEARCH,
       `rows[${i}].result.type should be SEARCH`
     );
     
@@ -665,8 +666,9 @@ async function do_exposure_append_full(showExposureResults) {
   for (let i = 0; i < MAX_RESULT_COUNT; i++) {
     let row = rows.children[i];
     Assert.ok(BrowserTestUtils.isVisible(row), `rows[${i}] should be visible`);
-    Assert.ok(
-      row.result.type == UrlbarUtils.RESULT_TYPE.SEARCH,
+    Assert.equal(
+      row.result.type,
+      UrlbarUtils.RESULT_TYPE.SEARCH,
       `rows[${i}].result.type should be SEARCH`
     );
     
@@ -903,8 +905,9 @@ async function do_exposure_append_full_twice(showExposureResults) {
   for (let i = 0; i < MAX_RESULT_COUNT; i++) {
     let row = rows.children[i];
     Assert.ok(BrowserTestUtils.isVisible(row), `rows[${i}] should be visible`);
-    Assert.ok(
-      row.result.type == UrlbarUtils.RESULT_TYPE.SEARCH,
+    Assert.equal(
+      row.result.type,
+      UrlbarUtils.RESULT_TYPE.SEARCH,
       `rows[${i}].result.type should be SEARCH`
     );
     

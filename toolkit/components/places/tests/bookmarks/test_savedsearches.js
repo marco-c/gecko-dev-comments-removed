@@ -53,7 +53,7 @@ add_task(async function test_savedsearches_bookmarks() {
     for (let i = 0; i < cc; i++) {
       let node = rootNode.getChild(i);
       
-      Assert.ok(node.itemId > 0);
+      Assert.greater(node.itemId, 0);
       
       node.QueryInterface(Ci.nsINavHistoryContainerResultNode);
       Assert.equal(node.containerOpen, false);
@@ -81,7 +81,7 @@ add_task(async function test_savedsearches_bookmarks() {
       
       Assert.equal(node.type, node.RESULT_TYPE_QUERY);
       
-      Assert.ok(node.itemId > 0);
+      Assert.greater(node.itemId, 0);
       node.QueryInterface(Ci.nsINavHistoryContainerResultNode);
       node.containerOpen = true;
 

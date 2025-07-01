@@ -111,7 +111,7 @@ function promiseVerifyContents(aFile, aExpectedContents) {
         } else {
           
           Assert.equal(contents.length, aExpectedContents.length);
-          Assert.ok(contents == aExpectedContents);
+          Assert.equal(contents, aExpectedContents);
         }
         resolve();
       }

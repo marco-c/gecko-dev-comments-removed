@@ -160,12 +160,12 @@ add_task(async function testSupportedVdafs() {
   
   const db = await openDatabase();
   let numRecords = await getReportCount(db);
-  Assert.ok(numRecords == 0, "Should be no pending reports");
+  Assert.equal(numRecords, 0, "Should be no pending reports");
 
   
   await dapReportContoller.recordMeasurement(histogram_task._taskId, 1);
   numRecords = await getReportCount(db);
-  Assert.ok(numRecords == 1, "Should be 1 pending report");
+  Assert.equal(numRecords, 1, "Should be 1 pending report");
 
   let report = await dapReportContoller.getReportToSubmit(
     histogram_task._taskId
@@ -188,12 +188,13 @@ add_task(async function testSupportedVdafs() {
 
   
   numRecords = await getReportCount(db);
-  Assert.ok(numRecords == 0, "Should be 0 pending reports after submit");
+  Assert.equal(numRecords, 0, "Should be 0 pending reports after submit");
 
   
   numRecords = await getFreqCapCount(db);
-  Assert.ok(
-    numRecords == 1,
+  Assert.equal(
+    numRecords,
+    1,
     "Frequency capping should indicate a report has been submitted"
   );
   let freqCap = await dapReportContoller.getFreqCap(histogram_task._taskId);
@@ -210,8 +211,9 @@ add_task(async function testSupportedVdafs() {
   
   await dapReportContoller.recordMeasurement(histogram_task._taskId, 2);
   numRecords = await getReportCount(db);
-  Assert.ok(
-    numRecords == 0,
+  Assert.equal(
+    numRecords,
+    0,
     "Should be 0 pending reports due to submission with freq cap window"
   );
 
@@ -222,7 +224,7 @@ add_task(async function testSupportedVdafs() {
   await dapReportContoller.recordMeasurement(histogram_task._taskId, 3);
 
   numRecords = await getReportCount(db);
-  Assert.ok(numRecords == 1, "Should be 1 pending report");
+  Assert.equal(numRecords, 1, "Should be 1 pending report");
   report = await dapReportContoller.getReportToSubmit(histogram_task._taskId);
   expectedReport = {
     taskId: histogram_task._taskId,
@@ -241,14 +243,15 @@ add_task(async function testSupportedVdafs() {
   await dapReportContoller.submit(1000, "unit-test");
 
   numRecords = await getReportCount(db);
-  Assert.ok(
-    numRecords == 0,
+  Assert.equal(
+    numRecords,
+    0,
     "Should be 0 pending reports since now() is beyond the freq cap window"
   );
 
   
   numRecords = await getFreqCapCount(db);
-  Assert.ok(numRecords == 1, "Should be 1 cap entry");
+  Assert.equal(numRecords, 1, "Should be 1 cap entry");
   freqCap = await dapReportContoller.getFreqCap(histogram_task._taskId);
   expectedFreqCap = {
     taskId: histogram_task._taskId,
@@ -265,11 +268,11 @@ add_task(async function testSupportedVdafs() {
 
   
   numRecords = await getFreqCapCount(db);
-  Assert.ok(numRecords == 0, "Should be 0 freq cap entries after cleanup");
+  Assert.equal(numRecords, 0, "Should be 0 freq cap entries after cleanup");
 
   
   numRecords = await getReportCount(db);
-  Assert.ok(numRecords == 0, "Should be 0 pending reports after cleanup");
+  Assert.equal(numRecords, 0, "Should be 0 pending reports after cleanup");
 
   
   

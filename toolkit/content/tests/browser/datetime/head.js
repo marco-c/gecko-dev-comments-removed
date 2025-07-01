@@ -425,8 +425,9 @@ async function verifyPickerPosition(browsingContext, inputId) {
   function is_close(got, exp, msg) {
     
     
-    Assert.ok(
-      Math.abs(got - exp) < 1,
+    Assert.less(
+      Math.abs(got - exp),
+      1,
       msg + ": " + got + " should be equal(-ish) to " + exp
     );
   }

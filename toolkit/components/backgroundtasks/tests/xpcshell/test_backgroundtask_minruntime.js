@@ -1,0 +1,22 @@
+
+
+
+
+
+
+"use strict";
+
+add_task(async function test_backgroundtask_minruntime() {
+  let startTime = new Date().getTime();
+  let exitCode = await do_backgroundtask("minruntime");
+  Assert.equal(0, exitCode);
+  let finishTime = new Date().getTime();
+
+  
+  
+  Assert.greater(
+    finishTime - startTime,
+    1800,
+    "Runtime was at least 2 seconds (approximately)."
+  );
+});

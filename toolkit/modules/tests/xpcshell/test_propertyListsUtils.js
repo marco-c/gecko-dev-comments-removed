@@ -106,7 +106,7 @@ function readPropertyList(aFile, aCallback) {
     
     
     
-    Assert.ok(aPropertyListRoot !== null);
+    Assert.notStrictEqual(aPropertyListRoot, null);
     aCallback(aPropertyListRoot);
     run_next_test();
   });

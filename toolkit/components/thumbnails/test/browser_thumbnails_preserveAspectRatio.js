@@ -73,7 +73,11 @@ async function testPreserveAspectRatio(
       
       
       let deviation = Math.abs(expectedHeight - canvas.height) / expectedHeight;
-      Assert.ok(deviation < 0.01, "canvas height within 1% of expected height");
+      Assert.less(
+        deviation,
+        0.01,
+        "canvas height within 1% of expected height"
+      );
     }
   );
 }

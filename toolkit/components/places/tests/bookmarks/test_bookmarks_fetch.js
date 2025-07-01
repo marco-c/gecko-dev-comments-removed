@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 var gAccumulator = {
   get callback() {
@@ -196,9 +196,9 @@ add_task(async function fetch_folder() {
   checkBookmarkObject(bm1);
   Assert.deepEqual(bm1.dateAdded, bm1.lastModified);
 
-  // Inserting a child updates both the childCount and lastModified of bm1,
-  // though the bm1 object is static once fetched, thus later we'll manually
-  // update it.
+  
+  
+  
   await PlacesUtils.bookmarks.insert({
     parentGuid: bm1.guid,
     url: "https://www.mozilla.org/",
@@ -234,8 +234,8 @@ add_task(async function fetch_folder_empty_title() {
   checkBookmarkObject(bm2);
 
   Assert.equal(bm2.childCount, 0);
-  // Insert doesn't populate childCount (it would always be 0 anyway), so set
-  // it to be able to just use deepEqual.
+  
+  
   bm1.childCount = bm2.childCount;
 
   Assert.deepEqual(bm1, bm2);
@@ -301,7 +301,7 @@ add_task(async function fetch_byguid_prefix() {
   checkBookmarkObject(bm3);
   Assert.ok(bm3.guid.startsWith(PREFIX));
 
-  // Bookmark 4 doesn't have the same guid prefix, so it shouldn't be returned in the results.
+  
   let bm4 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://bm3.example.com/",
@@ -317,8 +317,8 @@ add_task(async function fetch_byguid_prefix() {
 
   Assert.equal(gAccumulator.results.length, 3);
 
-  // The results are returned by most recent first, so the first bookmark
-  // inserted is the last one in the returned array.
+  
+  
   Assert.deepEqual(bm1, gAccumulator.results[2]);
   Assert.deepEqual(bm2, gAccumulator.results[1]);
   Assert.equal(gAccumulator.results[0].childCount, 1);
@@ -426,7 +426,7 @@ add_task(async function fetch_byurl() {
   });
   checkBookmarkObject(bm1);
 
-  // Also ensure that fecth-by-url excludes the tags folder.
+  
   PlacesUtils.tagging.tagURI(bm1.url.URI, ["Test Tag"]);
 
   let bm2 = await PlacesUtils.bookmarks.fetch(
@@ -461,21 +461,21 @@ add_task(async function fetch_byurl() {
   gAccumulator.results.forEach(checkBookmarkObject);
   Assert.deepEqual(gAccumulator.results[0], bm4);
 
-  // After an update the returned bookmark should change.
+  
   await PlacesUtils.bookmarks.update({ guid: bm1.guid, title: "new title" });
   let bm5 = await PlacesUtils.bookmarks.fetch(
     { url: bm1.url },
     gAccumulator.callback
   );
   checkBookmarkObject(bm5);
-  // Cannot use deepEqual cause lastModified changed.
+  
   Assert.equal(bm1.guid, bm5.guid);
-  Assert.ok(bm5.lastModified > bm1.lastModified);
+  Assert.greater(bm5.lastModified, bm1.lastModified);
   Assert.equal(gAccumulator.results.length, 2);
   gAccumulator.results.forEach(checkBookmarkObject);
   Assert.deepEqual(gAccumulator.results[0], bm5);
 
-  // cleanup
+  
   PlacesUtils.tagging.untagURI(bm1.url.URI, ["Test Tag"]);
 });
 

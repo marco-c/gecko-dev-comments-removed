@@ -24,7 +24,7 @@ function run_test() {
       pumpReadStream(is, function (read) {
         Assert.equal(read.length, kChunkSize + 10);
         is.close();
-        Assert.ok(read == payload); 
+        Assert.equal(read, payload); 
         finish_cache2_test();
       });
     })

@@ -196,8 +196,9 @@ async function testFileAccessAllPlatforms() {
       
       
       varDir.normalize();
-      Assert.ok(
-        varDir.path === "/private/var",
+      Assert.strictEqual(
+        varDir.path,
+        "/private/var",
         "/var resolves to /private/var"
       );
     }

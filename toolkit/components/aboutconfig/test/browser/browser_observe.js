@@ -64,7 +64,7 @@ add_task(async function test_observe_add_user_pref() {
         row.editColumnButton.click();
       }
       Assert.equal(row.value, "" + value);
-      Assert.ok(Preferences.get(PREF_NEW) === value);
+      Assert.strictEqual(Preferences.get(PREF_NEW), value);
 
       
       Preferences.reset(PREF_NEW);

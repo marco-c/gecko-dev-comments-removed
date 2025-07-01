@@ -362,7 +362,7 @@ function test_executing_finalizers(size, tc, cleanup) {
   trigger_gc(); 
 
   
-  Assert.ok(count_finalized(size, tc) > 0);
+  Assert.greater(count_finalized(size, tc), 0);
 }
 
 

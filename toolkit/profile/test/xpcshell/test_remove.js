@@ -22,8 +22,9 @@ function compareLists(service, knownProfiles) {
     
     
     
-    Assert.ok(
-      serviceProfiles[i] === knownProfiles[i],
+    Assert.strictEqual(
+      serviceProfiles[i],
+      knownProfiles[i],
       `Should have the right profile in position ${i}.`
     );
   }

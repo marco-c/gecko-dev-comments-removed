@@ -14,7 +14,7 @@ function run_test() {
 
   
   
-  Assert.ok(testStr.length > 1024 * 10);
+  Assert.greater(testStr.length, 1024 * 10);
   var pipe = Cc["@mozilla.org/pipe;1"].createInstance(Ci.nsIPipe);
   pipe.init(true, true, 1024, 0xffffffff, null);
 

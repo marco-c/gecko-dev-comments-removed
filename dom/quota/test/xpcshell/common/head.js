@@ -46,8 +46,9 @@ if (!this.runTest) {
     
     
     
-    Assert.ok(
-      typeof testSteps === "function",
+    Assert.strictEqual(
+      typeof testSteps,
+      "function",
       "There should be a testSteps function"
     );
     if (testSteps.constructor.name === "AsyncFunction") {
@@ -64,8 +65,9 @@ if (!this.runTest) {
       
       run_next_test();
     } else {
-      Assert.ok(
-        testSteps.constructor.name === "GeneratorFunction",
+      Assert.strictEqual(
+        testSteps.constructor.name,
+        "GeneratorFunction",
         "Unsupported function type"
       );
 

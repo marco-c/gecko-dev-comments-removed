@@ -152,8 +152,9 @@ add_task(async function test_can_get_results_from_callback() {
   
   
   for (let property of ["width", "height"]) {
-    Assert.ok(
-      rect[property] > 0,
+    Assert.greater(
+      rect[property],
+      0,
       `Rect property ${property} > 0 (${rect[property]})`
     );
   }
