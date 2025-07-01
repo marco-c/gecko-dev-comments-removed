@@ -2892,10 +2892,7 @@ var gPrivacyPane = {
   async changeMasterPassword() {
     
     
-    if (
-      !LoginHelper.isPrimaryPasswordSet() &&
-      LoginHelper.getOSAuthEnabled(LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF)
-    ) {
+    if (!LoginHelper.isPrimaryPasswordSet() && LoginHelper.getOSAuthEnabled()) {
       
       
       let messageId =
@@ -3047,10 +3044,7 @@ var gPrivacyPane = {
     }
 
     
-    LoginHelper.setOSAuthEnabled(
-      LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF,
-      osReauthCheckbox.checked
-    );
+    LoginHelper.setOSAuthEnabled(osReauthCheckbox.checked);
 
     Glean.pwmgr.requireOsReauthToggle.record({
       toggle_state: osReauthCheckbox.checked,
@@ -3067,10 +3061,7 @@ var gPrivacyPane = {
       return;
     }
 
-    osReauthCheckbox.setAttribute(
-      "checked",
-      LoginHelper.getOSAuthEnabled(LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF)
-    );
+    osReauthCheckbox.setAttribute("checked", LoginHelper.getOSAuthEnabled());
 
     setEventListener(
       "osReauthCheckbox",
