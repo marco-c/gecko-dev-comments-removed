@@ -522,7 +522,8 @@ NS_NewChannelWithTriggeringPrincipal(
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
 
   
-  if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT &&
+  
+  if (!nsContentUtils::IsNonSubresourceInternalPolicyType(aContentPolicyType) &&
       aTriggeringPrincipal &&
       StaticPrefs::privacy_antitracking_isolateContentScriptResources() &&
       nsContentUtils::IsExpandedPrincipal(aTriggeringPrincipal)) {
