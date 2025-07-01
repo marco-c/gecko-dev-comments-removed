@@ -424,7 +424,8 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
   }
 
   nsAutoCString hwFailure;
-  if (!manager->IsHardwareAccelerated(hwFailure)) {
+  bool isHardwareAccelerated = manager->IsHardwareAccelerated(hwFailure);
+  if (!isHardwareAccelerated) {
     
     
     WmfDecoderModuleMarkerAndLog(
@@ -438,6 +439,16 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
         "WMFDecoderModule::CreateVideoDecoder success for manager with "
         "description %s",
         manager->GetDescriptionName().get());
+  }
+
+  
+  
+  
+  if (XRE_IsGPUProcess() && !isHardwareAccelerated) {
+    WmfDecoderModuleMarkerAndLog("WMFVDecoderCreation Blocked",
+                                 "SW decoder is not allowed in the GPU "
+                                 "process");
+    return nullptr;
   }
 
   RefPtr<MediaDataDecoder> decoder = new WMFMediaDataDecoder(manager.release());
