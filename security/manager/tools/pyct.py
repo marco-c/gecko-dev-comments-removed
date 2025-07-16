@@ -16,6 +16,7 @@ to the output object. The specification is as follows:
 timestamp:<YYYYMMDD>
 [key:<key specification>]
 [tamper]
+[leafIndex:<leaf index>]
 certificate:
 <certificate specification>
 
@@ -48,7 +49,7 @@ class InvalidKeyError(Exception):
         self.key = key
 
     def __str__(self):
-        return 'Invalid key: "%s"' % str(self.key)
+        return f'Invalid key: "{str(self.key)}"'
 
 
 class UnknownSignedEntryType(Exception):
@@ -58,7 +59,7 @@ class UnknownSignedEntryType(Exception):
         self.signedEntry = signedEntry
 
     def __str__(self):
-        return 'Unknown SignedEntry type: "%s"' % str(self.signedEntry)
+        return f'Unknown SignedEntry type: "{str(self.signedEntry)}"'
 
 
 class SignedEntry:
@@ -84,16 +85,16 @@ class X509Entry(SignedEntry):
 class SCT:
     """SCT represents a Signed Certificate Timestamp."""
 
-    def __init__(self, key, date, signedEntry):
+    def __init__(self, key, date, signedEntry, leafIndex=None):
         self.key = key
         self.timestamp = calendar.timegm(date.timetuple()) * 1000
         self.signedEntry = signedEntry
         self.tamper = False
+        self.leafIndex = leafIndex
 
     def signAndEncode(self):
         """Returns a signed and encoded representation of the
         SCT as a string."""
-        
         
         
         
@@ -125,7 +126,18 @@ class SCT:
             )
         else:
             raise UnknownSignedEntryType(self.signedEntry)
-        data = b"\0\0" + timestamp + b"\0" + entry_with_type + b"\0\0"
+        extensions = []
+        if self.leafIndex:
+            
+            
+            
+            
+            extensions = [b"\0\0\5" + self.leafIndex.to_bytes(5, byteorder="big")]
+        extensionsLength = sum(map(len, extensions))
+        extensionsEncoded = extensionsLength.to_bytes(2, byteorder="big") + b"".join(
+            extensions
+        )
+        data = b"\0\0" + timestamp + b"\0" + entry_with_type + extensionsEncoded
         if isinstance(self.key, pykey.ECCKey):
             signatureByte = b"\3"
         elif isinstance(self.key, pykey.RSAKey):
@@ -147,7 +159,6 @@ class SCT:
         
         
         
-        
         hasher = hashlib.sha256()
         hasher.update(encoder.encode(self.key.asSubjectPublicKeyInfo()))
         key_id = hasher.digest()
@@ -156,7 +167,8 @@ class SCT:
             b"\0"
             + key_id
             + timestamp
-            + b"\0\0\4"
+            + extensionsEncoded
+            + b"\4"
             + signatureByte
             + signature_len_prefix
             + signature
@@ -168,26 +180,30 @@ class SCT:
         certificateSpecification = StringIO()
         readingCertificateSpecification = False
         tamper = False
+        leafIndex = None
         for line in specStream.readlines():
-            line = line.strip()
+            lineStripped = line.strip()
             if readingCertificateSpecification:
-                print(line, file=certificateSpecification)
-            elif line == "certificate:":
+                print(lineStripped, file=certificateSpecification)
+            elif lineStripped == "certificate:":
                 readingCertificateSpecification = True
-            elif line.startswith("key:"):
-                key = pykey.keyFromSpecification(line[len("key:") :])
-            elif line.startswith("timestamp:"):
+            elif lineStripped.startswith("key:"):
+                key = pykey.keyFromSpecification(lineStripped[len("key:") :])
+            elif lineStripped.startswith("timestamp:"):
                 timestamp = datetime.datetime.strptime(
-                    line[len("timestamp:") :], "%Y%m%d"
+                    lineStripped[len("timestamp:") :], "%Y%m%d"
                 )
-            elif line == "tamper":
+            elif lineStripped == "tamper":
                 tamper = True
+            elif lineStripped.startswith("leafIndex:"):
+                leafIndex = int(lineStripped[len("leafIndex:") :])
             else:
-                raise pycert.UnknownParameterTypeError(line)
+                raise pycert.UnknownParameterTypeError(lineStripped)
         certificateSpecification.seek(0)
         certificate = pycert.Certificate(certificateSpecification).toDER()
         sct = SCT(key, timestamp, X509Entry(certificate))
         sct.tamper = tamper
+        sct.leafIndex = leafIndex
         return sct
 
 

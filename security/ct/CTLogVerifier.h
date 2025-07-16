@@ -31,8 +31,9 @@ class CTLogVerifier {
   
   
   
+  
   CTLogVerifier(CTLogOperatorId operatorId, CTLogState logState,
-                uint64_t timestamp);
+                CTLogFormat logFormat, uint64_t timestamp);
 
   
   
@@ -46,6 +47,7 @@ class CTLogVerifier {
 
   CTLogOperatorId operatorId() const { return mOperatorId; }
   CTLogState state() const { return mState; }
+  CTLogFormat format() const { return mFormat; }
   uint64_t timestamp() const { return mTimestamp; }
 
   
@@ -74,6 +76,7 @@ class CTLogVerifier {
   DigitallySigned::SignatureAlgorithm mSignatureAlgorithm;
   CTLogOperatorId mOperatorId;
   CTLogState mState;
+  CTLogFormat mFormat;
   uint64_t mTimestamp;
 };
 

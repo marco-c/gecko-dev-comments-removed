@@ -8,6 +8,7 @@
 #define SignedCertificateTimestamp_h
 
 #include "Buffer.h"
+#include "mozilla/Maybe.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
 
@@ -65,12 +66,17 @@ struct SignedCertificateTimestamp {
     V1 = 0,
   };
 
+  pkix::Result DecodeExtensions();
+
   Version version;
   Buffer logId;
   
   
   uint64_t timestamp;
   Buffer extensions;
+  
+  
+  Maybe<uint64_t> leafIndex;
   DigitallySigned signature;
 };
 
