@@ -12,6 +12,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Types.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 class BitReader;
@@ -72,6 +73,17 @@ enum NAL_TYPES {
   H264_NAL_AUXILIARY_SLICE = 19,
   H264_NAL_SLICE_EXT = 20,
   H264_NAL_SLICE_EXT_DVC = 21,
+};
+
+
+struct MOZ_STACK_CLASS H264NALU final {
+  H264NALU(const uint8_t* aData MOZ_LIFETIME_BOUND, uint32_t aByteCount);
+  H264NALU() = default;
+
+  uint8_t mNalUnitType;
+  
+  
+  const Span<const uint8_t> mNALU;
 };
 
 
@@ -572,8 +584,45 @@ class H264 {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct AVCCConfig final {
  public:
+  
+  
   static Result<AVCCConfig, nsresult> Parse(
       const mozilla::MediaRawData* aSample);
   static Result<AVCCConfig, nsresult> Parse(
@@ -586,7 +635,17 @@ struct AVCCConfig final {
   uint8_t mProfileCompatibility;
   uint8_t mAVCLevelIndication;
   uint8_t mLengthSizeMinusOne;
-  uint8_t mNumSPS;
+  nsTArray<H264NALU> mSPSs;
+  nsTArray<H264NALU> mPPSs;
+  
+  Maybe<uint8_t> mChromaFormat;
+  Maybe<uint8_t> mBitDepthLumaMinus8;
+  Maybe<uint8_t> mBitDepthChromaMinus8;
+  nsTArray<H264NALU> mSPSExts;
+
+  uint32_t NumSPS() const { return mSPSs.Length(); }
+  uint32_t NumPPS() const { return mPPSs.Length(); }
+  uint32_t NumSPSExt() const { return mSPSExts.Length(); }
 
  private:
   AVCCConfig() = default;

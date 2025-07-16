@@ -366,26 +366,278 @@ TEST(AnnexB, HVCCToAnnexBConversion)
 
 TEST(H264, AVCCParsingSuccess)
 {
-  auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
-  uint8_t avccBytesBuffer[] = {
-      1 ,
-      0x64 ,
-      0 ,
-      40 ,
-      0xfc | 3 ,
-      0xe0 ,
-      0 
-  };
-  extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
-  auto rv = AVCCConfig::Parse(extradata);
-  EXPECT_TRUE(rv.isOk());
-  const auto avcc = rv.unwrap();
-  EXPECT_EQ(avcc.mConfigurationVersion, 1);
-  EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
-  EXPECT_EQ(avcc.mProfileCompatibility, 0);
-  EXPECT_EQ(avcc.mAVCLevelIndication, 40);
-  EXPECT_EQ(avcc.NALUSize(), 4);
-  EXPECT_EQ(avcc.mNumSPS, 0);
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    uint8_t avccBytesBuffer[] = {
+        1 ,
+        0x64 ,
+        0 ,
+        40 ,
+        0xfc | 3 ,
+        0xe0 ,
+        0 
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 40);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 0u);
+    EXPECT_EQ(avcc.NumPPS(), 0u);
+    EXPECT_TRUE(avcc.mChromaFormat.isNothing());
+    EXPECT_TRUE(avcc.mBitDepthLumaMinus8.isNothing());
+    EXPECT_TRUE(avcc.mBitDepthChromaMinus8.isNothing());
+    EXPECT_EQ(avcc.NumSPSExt(), 0u);
+    EXPECT_EQ(avcc.mSPSExts.Length(), 0u);
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        
+        0x01,
+        
+        0x64,
+        
+        0x00,
+        
+        0x1E,
+        
+        0xFF,
+        
+        0xE1,
+        
+        0x00,
+        0x04,
+        
+        0x67,
+        0x64,
+        0x00,
+        0x1F,
+        
+        0x01,
+        
+        0x00,
+        0x02,
+        
+        0x68,
+        0xCE,
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 0x1E);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 1u);
+    EXPECT_EQ(avcc.NumPPS(), 1u);
+    EXPECT_TRUE(avcc.mChromaFormat.isNothing());
+    EXPECT_TRUE(avcc.mBitDepthLumaMinus8.isNothing());
+    EXPECT_TRUE(avcc.mBitDepthChromaMinus8.isNothing());
+    EXPECT_EQ(avcc.NumSPSExt(), 0u);
+    EXPECT_EQ(avcc.mSPSExts.Length(), 0u);
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        
+        0x01,
+        
+        0x64,
+        
+        0x00,
+        
+        0x1E,
+        
+        0xFF,
+        
+        0xE1,
+        
+        0x00, 0x04,
+        
+        0x67, 0x64, 0x00, 0x1F,
+        
+        0x01,
+        
+        0x00, 0x02,
+        
+        0x68, 0xCE,
+        
+        0xFC,
+        
+        0xF8,
+        
+        0xF8,
+        
+        0x01,
+        
+        0x00, 0x03,
+        
+        0x6D, 0xB2, 0x20};
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 0x1E);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 1u);
+    EXPECT_EQ(avcc.NumPPS(), 1u);
+    EXPECT_EQ(*avcc.mChromaFormat, 0);
+    EXPECT_EQ(*avcc.mBitDepthLumaMinus8, 0);
+    EXPECT_EQ(*avcc.mBitDepthChromaMinus8, 0);
+    EXPECT_EQ(avcc.NumSPSExt(), 1u);
+  }
+  
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00, 0x01,        
+        0x67,              
+        0x01,              
+        0x00, 0x01,        
+        0x68,              
+        0xFC,              
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 0x1E);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 1u);
+    EXPECT_EQ(avcc.NumPPS(), 1u);
+    EXPECT_TRUE(avcc.mChromaFormat.isNothing());
+    EXPECT_TRUE(avcc.mBitDepthLumaMinus8.isNothing());
+    EXPECT_TRUE(avcc.mBitDepthChromaMinus8.isNothing());
+    EXPECT_EQ(avcc.NumSPSExt(), 0u);
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00, 0x01,        
+        0x67,              
+        0x01,              
+        0x00, 0x01,        
+        0x68,              
+        0xFC,              
+        0xF8,              
+        0xF8,              
+        0x01,              
+        0x00, 0x04,        
+        0x6A, 0x01         
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 0x1E);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 1u);
+    EXPECT_EQ(avcc.NumPPS(), 1u);
+    EXPECT_EQ(*avcc.mChromaFormat, 0);
+    EXPECT_EQ(*avcc.mBitDepthLumaMinus8, 0);
+    EXPECT_EQ(*avcc.mBitDepthChromaMinus8, 0);
+    EXPECT_EQ(avcc.NumSPSExt(), 0u);
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00, 0x01,        
+        0x67,              
+        0x01,              
+        0x00, 0x01,        
+        0x68,              
+        0xFC,              
+        0xF8,              
+        0xF8,              
+        0x01,              
+        0x00,              
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 0x1E);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 1u);
+    EXPECT_EQ(avcc.NumPPS(), 1u);
+    EXPECT_EQ(*avcc.mChromaFormat, 0);
+    EXPECT_EQ(*avcc.mBitDepthLumaMinus8, 0);
+    EXPECT_EQ(*avcc.mBitDepthChromaMinus8, 0);
+    EXPECT_EQ(avcc.NumSPSExt(), 0u);
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00, 0x01,        
+        0x67,              
+        0x01,              
+        0x00, 0x01,        
+        0x68,              
+        0xFC,              
+        0xF8,              
+        0xF8,              
+        0x01,              
+        0x00, 0x03,        
+        0x77, 0xB2, 0x20,  
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isOk());
+    const auto avcc = res.unwrap();
+    EXPECT_EQ(avcc.mConfigurationVersion, 1);
+    EXPECT_EQ(avcc.mAVCProfileIndication, 0x64);
+    EXPECT_EQ(avcc.mProfileCompatibility, 0);
+    EXPECT_EQ(avcc.mAVCLevelIndication, 0x1E);
+    EXPECT_EQ(avcc.NALUSize(), 4);
+    EXPECT_EQ(avcc.NumSPS(), 1u);
+    EXPECT_EQ(avcc.NumPPS(), 1u);
+    EXPECT_EQ(*avcc.mChromaFormat, 0);
+    EXPECT_EQ(*avcc.mBitDepthLumaMinus8, 0);
+    EXPECT_EQ(*avcc.mBitDepthChromaMinus8, 0);
+    EXPECT_EQ(avcc.NumSPSExt(), 0u);
+  }
 }
 
 TEST(H264, AVCCParsingFailure)
@@ -420,6 +672,50 @@ TEST(H264, AVCCParsingFailure)
     extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
     auto avcc = AVCCConfig::Parse(extradata);
     EXPECT_TRUE(avcc.isErr());
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00,              
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isErr());
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00, 0x04,        
+        0x67, 0x42         
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isErr());
+  }
+  {
+    
+    auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+    const uint8_t avccBytesBuffer[] = {
+        0x01,              
+        0x64, 0x00, 0x1E,  
+        0xFF,              
+        0xE1,              
+        0x00, 0x02,        
+        0x55, 0xCE,        
+    };
+    extradata->AppendElements(avccBytesBuffer, std::size(avccBytesBuffer));
+    auto res = AVCCConfig::Parse(extradata);
+    EXPECT_TRUE(res.isErr());
   }
 }
 
