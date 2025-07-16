@@ -17,6 +17,9 @@
         <label class="tab-group-label" role="button"/>
       </vbox>
       <html:slot/>
+      <vbox class="tab-group-overflow-count-container" pack="center">
+        <label class="tab-group-overflow-count"></label>
+      </vbox>
       `;
 
     
@@ -24,6 +27,9 @@
 
     
     #labelElement;
+
+    
+    #overflowContainer;
 
     
     #colorCode;
@@ -78,7 +84,11 @@
       this.#updateLabelAriaAttributes();
       this.#updateCollapsedAriaAttributes();
 
-      this.addEventListener("TabSelect", this);
+      this.#overflowContainer = this.querySelector(
+        ".tab-group-overflow-count-container"
+      );
+
+      this.ownerGlobal.addEventListener("TabSelect", this);
 
       let tabGroupCreateDetail = this.#wasCreatedByAdoption
         ? { isAdoptingGroup: true }
@@ -96,7 +106,12 @@
     }
 
     disconnectedCallback() {
+      this.ownerGlobal.removeEventListener("TabSelect", this);
       this.#tabChangeObserver?.disconnect();
+    }
+
+    appendChild(node) {
+      return this.insertBefore(node, this.#overflowContainer);
     }
 
     #observeTabChanges() {
@@ -112,14 +127,32 @@
               "browser-tabgroup-removed-from-dom"
             );
           } else {
-            
-            
             let tabs = this.tabs;
             let tabCount = tabs.length;
             tabs.forEach((tab, index) => {
+              if (tab.selected) {
+                this.hasActiveTab = true;
+              }
+
+              
+              
               tab.setAttribute("aria-posinset", index + 1);
               tab.setAttribute("aria-setsize", tabCount);
             });
+
+            
+            
+            
+            let overflowCountLabel = this.#overflowContainer.querySelector(
+              ".tab-group-overflow-count"
+            );
+            if (tabCount > 1) {
+              overflowCountLabel.textContent = `+${tabCount - 1}`;
+              this.toggleAttribute("hasmultipletabs", true);
+            } else {
+              overflowCountLabel.textContent = "";
+              this.toggleAttribute("hasmultipletabs", false);
+            }
           }
         });
       }
@@ -158,6 +191,14 @@
 
     set id(val) {
       this.setAttribute("id", val);
+    }
+
+    get hasActiveTab() {
+      return this.hasAttribute("hasactivetab");
+    }
+
+    set hasActiveTab(val) {
+      this.toggleAttribute("hasactivetab", val);
     }
 
     get label() {
@@ -346,8 +387,8 @@
       }
     }
 
-    on_TabSelect() {
-      this.collapsed = false;
+    on_TabSelect(event) {
+      this.hasActiveTab = event.target.group === this;
     }
 
     
