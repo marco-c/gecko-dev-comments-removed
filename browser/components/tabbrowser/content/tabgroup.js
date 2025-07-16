@@ -61,6 +61,10 @@
       
       this.#observeTabChanges();
 
+      
+      
+      this.ownerGlobal.addEventListener("TabSelect", this);
+
       if (this._initialized) {
         return;
       }
@@ -94,8 +98,6 @@
       this.#overflowCountLabel = this.#overflowContainer.querySelector(
         ".tab-group-overflow-count"
       );
-
-      this.ownerGlobal.addEventListener("TabSelect", this);
 
       let tabGroupCreateDetail = this.#wasCreatedByAdoption
         ? { isAdoptingGroup: true }
