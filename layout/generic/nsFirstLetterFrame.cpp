@@ -173,15 +173,15 @@ bool nsFirstLetterFrame::UseTightBounds() const {
   const auto wm = GetWritingMode();
   const auto* styleMargin = StyleMargin();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-  const auto bStart = styleMargin->GetMargin(LogicalSide::BStart, wm,
-                                             anchorResolutionParams.mPosition);
+  const auto bStart =
+      styleMargin->GetMargin(LogicalSide::BStart, wm, anchorResolutionParams);
   
   
   if (bStart->ConvertsToLength() && bStart->ToLength() < 0) {
     return false;
   }
-  const auto bEnd = styleMargin->GetMargin(LogicalSide::BEnd, wm,
-                                           anchorResolutionParams.mPosition);
+  const auto bEnd =
+      styleMargin->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams);
   return !(bEnd->ConvertsToLength() && bEnd->ToLength() < 0);
 }
 

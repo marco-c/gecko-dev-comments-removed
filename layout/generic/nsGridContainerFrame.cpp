@@ -10709,7 +10709,7 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
 
   const auto wm = aChild->GetWritingMode();
   if (aChild->StyleMargin()->HasAuto(aAxis, wm,
-                                     aChild->StyleDisplay()->mPosition)) {
+                                     AnchorPosResolutionParams::From(aChild))) {
     
     
     return false;
