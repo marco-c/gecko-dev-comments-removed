@@ -1604,6 +1604,11 @@ void BrowserChild::HandleMouseRawUpdateEvent(
   }
   WidgetMouseEvent mouseRawUpdateEvent(aPendingMouseEvent);
   mouseRawUpdateEvent.mMessage = eMouseRawUpdate;
+  
+  
+  
+  
+  mouseRawUpdateEvent.mButton = MouseButton::eNotPressed;
   mouseRawUpdateEvent.mCoalescedWidgetEvents = nullptr;
   mouseRawUpdateEvent.convertToPointer = true;
   

@@ -7619,6 +7619,15 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
     WidgetMouseEvent mouseRawUpdateEvent(*mouseEvent);
     mouseRawUpdateEvent.mMessage = eMouseRawUpdate;
     mouseRawUpdateEvent.mCoalescedWidgetEvents = nullptr;
+    
+    
+    
+    
+    
+    if (mouseEvent->mMessage != eMouseDown &&
+        mouseEvent->mMessage != eMouseUp) {
+      mouseRawUpdateEvent.mButton = MouseButton::eNotPressed;
+    }
     nsEventStatus rawUpdateStatus = nsEventStatus_eIgnore;
     EventHandler eventHandler(*this);
     return eventHandler.HandleEvent(aWeakFrameForPresShell,
