@@ -143,8 +143,14 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
         return NS_OK;
       }
       extra_data = aSample->mExtraData;
-    } else if (H264::CompareExtraData(extra_data, mCurrentConfig.mExtraData)) {
-      return NS_OK;
+    } else {
+      
+#ifdef MOZ_WMF_MEDIA_ENGINE
+      extra_data = MergeParameterSetsWhenInbandSPSExists(extra_data);
+#endif
+      if (H264::CompareExtraData(extra_data, mCurrentConfig.mExtraData)) {
+        return NS_OK;
+      }
     }
 
     
@@ -232,6 +238,54 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     mCurrentConfig.mExtraData = aExtraData;
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
   }
+
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  
+  
+  
+  
+  
+  RefPtr<MediaByteBuffer> MergeParameterSetsWhenInbandSPSExists(
+      MediaByteBuffer* aExtraData) const {
+    
+    
+    if (!mIsMediaEnginePlayback) {
+      return aExtraData;
+    }
+
+    auto res = AVCCConfig::Parse(aExtraData);
+    MOZ_ASSERT(res.isOk());
+    auto avccNew = res.unwrap();
+    if (avccNew.NumPPS() != 0) {
+      
+      return aExtraData;
+    }
+
+    
+    
+    
+    
+    res = AVCCConfig::Parse(mCurrentConfig.mExtraData);
+    if (res.isErr()) {
+      return aExtraData;
+    }
+    const auto avccOld = res.unwrap();
+    if (avccOld.NumPPS() == 0) {
+      
+      return aExtraData;
+    }
+
+    
+    MOZ_ASSERT(avccNew.NumPPS() == 0 && avccOld.NumPPS() != 0);
+    avccNew.mPPSs.AppendElements(avccOld.mPPSs);
+    if (RefPtr<MediaByteBuffer> newExtraData = avccNew.CreateNewExtraData()) {
+      LOG("Refining extradata by inserting PPS to ensure both SPS and PPS "
+          "are present");
+      return newExtraData;
+    }
+    return aExtraData;
+  }
+#endif
 
   VideoInfo mCurrentConfig;
   uint32_t mStreamID = 0;

@@ -647,6 +647,12 @@ struct AVCCConfig final {
   uint32_t NumPPS() const { return mPPSs.Length(); }
   uint32_t NumSPSExt() const { return mSPSExts.Length(); }
 
+  
+  
+  
+  
+  already_AddRefed<mozilla::MediaByteBuffer> CreateNewExtraData() const;
+
  private:
   AVCCConfig() = default;
 };
