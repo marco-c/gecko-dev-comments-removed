@@ -348,7 +348,7 @@ size_t VectorImage::SizeOfSourceWithComputedFallback(
     return 0;  
   }
 
-  SVGDocument* doc = mSVGDocumentWrapper->GetDocument();
+  RefPtr<SVGDocument> doc = mSVGDocumentWrapper->GetDocument();
   if (!doc) {
     return 0;  
   }
