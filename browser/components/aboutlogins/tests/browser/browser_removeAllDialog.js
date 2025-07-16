@@ -1,6 +1,6 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
+/* eslint-disable mozilla/no-arbitrary-setTimeout */
 
 async function openRemoveAllDialog(browser) {
   await SimpleTest.promiseFocus(browser);
@@ -78,7 +78,7 @@ async function waitForRemoveAllLogins() {
 }
 
 add_setup(async function () {
-  
+  // Undo mocking from head.js
   sinon.restore();
 
   let oldPrefValue = LoginHelper.getOSAuthEnabled();
@@ -90,7 +90,7 @@ add_setup(async function () {
   registerCleanupFunction(async () => {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
     Services.logins.removeAllUserFacingLogins();
-    LoginHelper.setOSAuthEnabled(PASSWORDS_OS_REAUTH_PREF, oldPrefValue);
+    LoginHelper.setOSAuthEnabled(oldPrefValue);
   });
   TEST_LOGIN1 = await addLogin(TEST_LOGIN1);
 });
