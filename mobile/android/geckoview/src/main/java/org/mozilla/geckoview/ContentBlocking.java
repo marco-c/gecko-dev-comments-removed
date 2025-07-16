@@ -366,6 +366,31 @@ public class ContentBlocking {
         getSettings().setBounceTrackingProtectionMode(mode);
         return this;
       }
+
+      
+
+
+
+
+
+
+      public @NonNull Builder allowListBaselineTrackingProtection(final boolean enabled) {
+        getSettings().setAllowListBaselineTrackingProtection(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+
+
+      public @NonNull Builder allowListConvenienceTrackingProtection(final boolean enabled) {
+        getSettings().setAllowListConvenienceTrackingProtection(enabled);
+        return this;
+      }
     }
 
      final Pref<String> mAt =
@@ -413,6 +438,12 @@ public class ContentBlocking {
 
      final Pref<String> mEtpCategory =
         new Pref<String>("browser.contentblocking.category", "standard");
+
+     final Pref<Boolean> mAllowListBaselineTrackingProtection =
+        new Pref<Boolean>("privacy.trackingprotection.allow_list.baseline.enabled", true);
+
+     final Pref<Boolean> mAllowListConvenienceTrackingProtection =
+        new Pref<Boolean>("privacy.trackingprotection.allow_list.convenience.enabled", false);
 
      final Pref<Integer> mCbhMode =
         new Pref<Integer>(
@@ -1065,6 +1096,46 @@ public class ContentBlocking {
     public @NonNull Settings setBounceTrackingProtectionMode(
         final @CBCBounceTrackingProtectionMode int mode) {
       mBounceTrackingProtectionMode.commit(mode);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getAllowListBaselineTrackingProtection() {
+      return mAllowListBaselineTrackingProtection.get();
+    }
+
+    
+
+
+
+
+    public boolean getAllowListConvenienceTrackingProtection() {
+      return mAllowListConvenienceTrackingProtection.get();
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setAllowListBaselineTrackingProtection(final boolean enabled) {
+      mAllowListBaselineTrackingProtection.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setAllowListConvenienceTrackingProtection(final boolean enabled) {
+      mAllowListConvenienceTrackingProtection.commit(enabled);
       return this;
     }
   }
