@@ -367,7 +367,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
   mozilla::dom::ElementInternals* GetInternals() const;
 
-  bool IsFormAssociatedCustomElements() const;
+  bool IsFormAssociatedCustomElement() const;
 
   
   virtual bool IsDisabledForEvents(mozilla::WidgetEvent* aEvent) {
