@@ -15,20 +15,17 @@ use std::{
 };
 
 use enum_map::EnumMap;
-use neqo_common::{qwarn, IpTosDscp, IpTosEcn};
+use neqo_common::{qwarn, Dscp, Ecn};
 use strum::IntoEnumIterator as _;
 
-use crate::{
-    ecn,
-    packet::{PacketNumber, PacketType},
-};
+use crate::{ecn, packet};
 
 pub const MAX_PTO_COUNTS: usize = 16;
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct FrameStats {
     pub ack: usize,
-    pub largest_acknowledged: PacketNumber,
+    pub largest_acknowledged: packet::Number,
 
     pub crypto: usize,
     pub stream: usize,
@@ -141,7 +138,7 @@ pub struct DatagramStats {
 
 
 #[derive(Default, Clone, PartialEq, Eq)]
-pub struct EcnCount(EnumMap<PacketType, ecn::Count>);
+pub struct EcnCount(EnumMap<packet::Type, ecn::Count>);
 
 impl Debug for EcnCount {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -157,7 +154,7 @@ impl Debug for EcnCount {
 }
 
 impl Deref for EcnCount {
-    type Target = EnumMap<PacketType, ecn::Count>;
+    type Target = EnumMap<packet::Type, ecn::Count>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -171,10 +168,10 @@ impl DerefMut for EcnCount {
 
 
 #[derive(Default, Clone, PartialEq, Eq)]
-pub struct EcnTransitions(EnumMap<IpTosEcn, EnumMap<IpTosEcn, Option<(PacketType, PacketNumber)>>>);
+pub struct EcnTransitions(EnumMap<Ecn, EnumMap<Ecn, Option<(packet::Type, packet::Number)>>>);
 
 impl Deref for EcnTransitions {
-    type Target = EnumMap<IpTosEcn, EnumMap<IpTosEcn, Option<(PacketType, PacketNumber)>>>;
+    type Target = EnumMap<Ecn, EnumMap<Ecn, Option<(packet::Type, packet::Number)>>>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -188,13 +185,13 @@ impl DerefMut for EcnTransitions {
 
 impl Debug for EcnTransitions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for from in IpTosEcn::iter() {
+        for from in Ecn::iter() {
             
             if self.0[from].iter().all(|(_, v)| v.is_none()) {
                 continue;
             }
             write!(f, "      First {from:?} ")?;
-            for to in IpTosEcn::iter() {
+            for to in Ecn::iter() {
                 
                 if let Some(pkt) = self.0[from][to] {
                     write!(f, "to {to:?} {pkt:?} ")?;
@@ -208,7 +205,7 @@ impl Debug for EcnTransitions {
 
 
 #[derive(Default, Clone, PartialEq, Eq)]
-pub struct DscpCount(EnumMap<IpTosDscp, usize>);
+pub struct DscpCount(EnumMap<Dscp, usize>);
 
 impl Debug for DscpCount {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -224,7 +221,7 @@ impl Debug for DscpCount {
 }
 
 impl Deref for DscpCount {
-    type Target = EnumMap<IpTosDscp, usize>;
+    type Target = EnumMap<Dscp, usize>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -259,6 +256,8 @@ pub struct Stats {
     
     
     pub pto_ack: usize,
+    
+    pub unacked_range_dropped: usize,
     
     pub pmtud_tx: usize,
     
@@ -318,7 +317,7 @@ pub struct Stats {
     
     pub ecn_rx: EcnCount,
     
-    pub ecn_last_mark: Option<IpTosEcn>,
+    pub ecn_last_mark: Option<Ecn>,
     pub ecn_rx_transition: EcnTransitions,
 
     
@@ -330,7 +329,7 @@ impl Stats {
         self.info = info;
     }
 
-    pub fn pkt_dropped(&mut self, reason: impl AsRef<str>) {
+    pub fn pkt_dropped<A: AsRef<str>>(&mut self, reason: A) {
         self.dropped_rx += 1;
         qwarn!(
             "[{}] Dropped received packet: {}; Total: {}",
@@ -367,8 +366,8 @@ impl Debug for Stats {
         )?;
         writeln!(
             f,
-            "  tx: {} lost {} lateack {} ptoack {}",
-            self.packets_tx, self.lost, self.late_ack, self.pto_ack
+            "  tx: {} lost {} lateack {} ptoack {} unackdrop {}",
+            self.packets_tx, self.lost, self.late_ack, self.pto_ack, self.unacked_range_dropped
         )?;
         writeln!(
             f,

@@ -6,7 +6,7 @@
 
 
 
-use neqo_common::{hex, qlog::NeqoQlog};
+use neqo_common::{hex, qlog::Qlog};
 use qlog::events::{
     qpack::{QPackInstruction, QpackInstructionParsed, QpackInstructionTypeName},
     EventData, RawInfo,
@@ -15,7 +15,7 @@ use qlog::events::{
 
 
 
-pub fn qpack_read_insert_count_increment_instruction(qlog: &NeqoQlog, increment: u64, data: &[u8]) {
+pub fn qpack_read_insert_count_increment_instruction(qlog: &Qlog, increment: u64, data: &[u8]) {
     qlog.add_event_data_now(|| {
         let raw = RawInfo {
             length: Some(8),

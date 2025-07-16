@@ -6,8 +6,8 @@
 
 
 
-use crate::packet::PacketBuilder;
+use crate::packet;
 
 pub trait FrameWriter {
-    fn write_frames(&mut self, builder: &mut PacketBuilder);
+    fn write_frames(&mut self, builder: &mut packet::Builder<&mut Vec<u8>>);
 }

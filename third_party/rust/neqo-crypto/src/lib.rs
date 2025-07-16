@@ -118,9 +118,9 @@ fn init_once(db: Option<PathBuf>) -> Res<NssLoaded> {
 
     let state = if let Some(path) = db {
         if !path.is_dir() {
-            return Err(Error::InternalError);
+            return Err(Error::Internal);
         }
-        let pathstr = path.to_str().ok_or(Error::InternalError)?;
+        let pathstr = path.to_str().ok_or(Error::Internal)?;
         let dircstr = CString::new(pathstr)?;
         let empty = CString::new("")?;
         secstatus_to_res(unsafe {
@@ -168,8 +168,8 @@ pub fn init() -> Res<()> {
 
 pub fn init_db<P: Into<PathBuf>>(dir: P) -> Res<()> {
     
-    let dir = env::var("NSS_DB_PATH")
-        .unwrap_or(dir.into().to_str().ok_or(Error::InternalError)?.to_string());
+    let dir =
+        env::var("NSS_DB_PATH").unwrap_or(dir.into().to_str().ok_or(Error::Internal)?.to_string());
     let res = INITIALIZED.get_or_init(|| init_once(Some(dir.into())));
     res.as_ref().map(|_| ()).map_err(Clone::clone)
 }

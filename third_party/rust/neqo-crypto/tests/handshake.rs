@@ -19,10 +19,6 @@ use test_fixture::{anti_replay, fixture_init, now};
 #[allow(
     clippy::allow_attributes,
     clippy::missing_panics_doc,
-    reason = "OK for tests."
-)]
-#[allow(
-    clippy::allow_attributes,
     clippy::missing_errors_doc,
     reason = "OK for tests."
 )]
@@ -52,22 +48,27 @@ fn handshake(now: Instant, client: &mut SecretAgent, server: &mut SecretAgent) {
     let mut records = a.handshake_raw(now, None).unwrap();
     let is_done = |agent: &mut SecretAgent| agent.state().is_final();
     while !is_done(b) {
-        records = if let Ok(r) = forward_records(now, b, records) {
-            r
-        } else {
+        let Ok(r) = forward_records(now, b, records) else {
             
             
             return;
         };
+        records = r;
 
         if *b.state() == HandshakeState::AuthenticationPending {
             b.authenticated(AuthenticationStatus::Ok);
-            records = if let Ok(r) = b.handshake_raw(now, None) {
-                r
-            } else {
-                
-                return;
-            }
+            let Ok(r) = b.handshake_raw(now, None) else {
+                return; 
+            };
+            records = r;
+        } else {
+            assert!(
+                !matches!(
+                    b.state(),
+                    HandshakeState::EchFallbackAuthenticationPending(_)
+                ),
+                "ECH fallback not supported"
+            );
         }
         mem::swap(&mut a, &mut b);
     }

@@ -10,10 +10,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{qdebug, qinfo};
+use neqo_common::{qdebug, qinfo, Buffer};
 use static_assertions::const_assert;
 
-use crate::{frame::FrameType, packet::PacketBuilder, recovery::SentPacket, Stats};
+use crate::{frame::FrameType, packet, recovery::sent, Stats};
 
 
 
@@ -117,7 +117,7 @@ impl Pmtud {
     }
 
     
-    pub fn send_probe(&mut self, builder: &mut PacketBuilder, stats: &mut Stats) {
+    pub fn send_probe<B: Buffer>(&mut self, builder: &mut packet::Builder<B>, stats: &mut Stats) {
         
         
         builder.encode_varint(FrameType::Ping);
@@ -137,28 +137,33 @@ impl Pmtud {
     
     
     
-    pub fn is_probe_filter(&self) -> impl Fn(&SentPacket) -> bool {
+    pub fn is_probe_filter(&self) -> impl Fn(&sent::Packet) -> bool {
         let probe_state = self.probe_state;
         let probe_size = self.probe_size();
 
-        move |p: &SentPacket| -> bool { probe_state == Probe::Sent && p.len() == probe_size }
+        move |p: &sent::Packet| -> bool { probe_state == Probe::Sent && p.len() == probe_size }
     }
 
     
-    fn is_probe(&self, p: &SentPacket) -> bool {
+    fn is_probe(&self, p: &sent::Packet) -> bool {
         self.is_probe_filter()(p)
     }
 
     
-    fn count_probes(&self, pkts: &[SentPacket]) -> usize {
+    fn count_probes(&self, pkts: &[sent::Packet]) -> usize {
         pkts.iter().filter(|p| self.is_probe(p)).count()
     }
 
     
     
-    pub fn on_packets_acked(&mut self, acked_pkts: &[SentPacket], now: Instant, stats: &mut Stats) {
+    pub fn on_packets_acked(
+        &mut self,
+        acked_pkts: &[sent::Packet],
+        now: Instant,
+        stats: &mut Stats,
+    ) {
         
-        let Some(max_len) = acked_pkts.iter().map(SentPacket::len).max() else {
+        let Some(max_len) = acked_pkts.iter().map(sent::Packet::len).max() else {
             
             return;
         };
@@ -206,7 +211,7 @@ impl Pmtud {
     
     pub fn on_packets_lost(
         &mut self,
-        lost_packets: &[SentPacket],
+        lost_packets: &[sent::Packet],
         stats: &mut Stats,
         now: Instant,
     ) {
@@ -341,9 +346,9 @@ mod tests {
 
     use crate::{
         crypto::CryptoDxState,
-        packet::{PacketBuilder, PacketType},
+        packet,
         pmtud::{Probe, PMTU_RAISE_TIMER, SEARCH_TABLE_LEN},
-        recovery::{SendProfile, SentPacket},
+        recovery::{self, sent, SendProfile},
         Pmtud, Stats,
     };
 
@@ -357,8 +362,15 @@ mod tests {
         Some(u16::MAX as usize),
     ];
 
-    const fn make_sentpacket(pn: u64, now: Instant, len: usize) -> SentPacket {
-        SentPacket::new(PacketType::Short, pn, now, true, Vec::new(), len)
+    const fn make_sent_packet(pn: u64, now: Instant, len: usize) -> sent::Packet {
+        sent::Packet::new(
+            packet::Type::Short,
+            pn,
+            now,
+            true,
+            recovery::Tokens::new(),
+            len,
+        )
     }
 
     
@@ -386,13 +398,20 @@ mod tests {
         mtu: usize,
         now: Instant,
     ) {
+        const AEAD_EXPANSION: usize = 16;
+
         let stats_before = stats.clone();
 
         
-        let mut builder = PacketBuilder::short(Encoder::new(), false, None::<&[u8]>);
+        let profile = SendProfile::new_limited(pmtud.plpmtu());
+        let limit = if pmtud.needs_probe() {
+            pmtud.probe_size() - AEAD_EXPANSION
+        } else {
+            profile.limit() - AEAD_EXPANSION
+        };
+        let mut builder = packet::Builder::short(Encoder::new(), false, None::<&[u8]>, limit);
         let pn = prot.next_pn();
         builder.pn(pn, 4);
-        builder.set_initial_limit(&SendProfile::new_limited(pmtud.plpmtu()), 16, pmtud);
         builder.enable_padding(true);
         pmtud.send_probe(&mut builder, stats);
         builder.pad();
@@ -401,7 +420,7 @@ mod tests {
         assert!(!pmtud.needs_probe());
         assert_eq!(stats_before.pmtud_tx + 1, stats.pmtud_tx);
 
-        let packet = make_sentpacket(pn, now, encoder.len());
+        let packet = make_sent_packet(pn, now, encoder.len());
         if encoder.len() + Pmtud::header_size(addr) <= mtu {
             pmtud.on_packets_acked(&[packet], now, stats);
             assert_eq!(stats_before.pmtud_ack + 1, stats.pmtud_ack);
@@ -566,12 +585,12 @@ mod tests {
 
         
         
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 100)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 100)], &mut stats, now);
         assert_eq!([0; SEARCH_TABLE_LEN], pmtud.loss_counts);
 
         
         
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 100_000)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 100_000)], &mut stats, now);
         assert_eq!([0; SEARCH_TABLE_LEN], pmtud.loss_counts);
 
         pmtud.loss_counts.fill(0); 
@@ -579,25 +598,28 @@ mod tests {
         
         let plen = MTU - pmtud.header_size;
         let mut expected_lc = search_table_inc(&pmtud, &pmtud.loss_counts, plen);
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, plen)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, plen)], &mut stats, now);
         assert_eq!(expected_lc, pmtud.loss_counts);
 
         
         expected_lc = search_table_inc(&pmtud, &expected_lc, 2000);
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 2000)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 2000)], &mut stats, now);
         assert_eq!(expected_lc, pmtud.loss_counts);
 
         
         
         expected_lc = search_table_inc(&pmtud, &expected_lc, 5000);
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 5000)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 5000)], &mut stats, now);
         assert_mtu(&pmtud, 4095);
         expected_lc.fill(0); 
 
         
         expected_lc = search_table_inc(&pmtud, &expected_lc, 4000);
         pmtud.on_packets_lost(
-            &[make_sentpacket(0, now, 4000), make_sentpacket(1, now, 4000)],
+            &[
+                make_sent_packet(0, now, 4000),
+                make_sent_packet(1, now, 4000),
+            ],
             &mut stats,
             now,
         );
@@ -606,7 +628,10 @@ mod tests {
         
         expected_lc = search_table_inc(&pmtud, &expected_lc, 2000);
         pmtud.on_packets_lost(
-            &[make_sentpacket(0, now, 2000), make_sentpacket(1, now, 2000)],
+            &[
+                make_sent_packet(0, now, 2000),
+                make_sent_packet(1, now, 2000),
+            ],
             &mut stats,
             now,
         );
@@ -616,7 +641,10 @@ mod tests {
         
         let plen = MTU - pmtud.header_size;
         pmtud.on_packets_lost(
-            &[make_sentpacket(0, now, plen), make_sentpacket(1, now, plen)],
+            &[
+                make_sent_packet(0, now, plen),
+                make_sent_packet(1, now, plen),
+            ],
             &mut stats,
             now,
         );
@@ -650,12 +678,12 @@ mod tests {
 
         
         
-        pmtud.on_packets_acked(&[make_sentpacket(0, now, 100)], now, &mut stats);
+        pmtud.on_packets_acked(&[make_sent_packet(0, now, 100)], now, &mut stats);
         assert_eq!([0; SEARCH_TABLE_LEN], pmtud.loss_counts);
 
         
         
-        pmtud.on_packets_acked(&[make_sentpacket(0, now, 100_000)], now, &mut stats);
+        pmtud.on_packets_acked(&[make_sent_packet(0, now, 100_000)], now, &mut stats);
         assert_eq!([0; SEARCH_TABLE_LEN], pmtud.loss_counts);
 
         pmtud.loss_counts.fill(0); 
@@ -666,39 +694,39 @@ mod tests {
 
         
         let mut expected_lc = search_table_inc(&pmtud, &pmtud.loss_counts, 4000);
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 4000)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 4000)], &mut stats, now);
         assert_eq!(expected_lc, pmtud.loss_counts);
 
         
-        pmtud.on_packets_acked(&[make_sentpacket(0, now, 5000)], now, &mut stats);
+        pmtud.on_packets_acked(&[make_sent_packet(0, now, 5000)], now, &mut stats);
         expected_lc = search_table_zero(&pmtud, &pmtud.loss_counts, 5000);
         assert_eq!(expected_lc, pmtud.loss_counts);
 
         
         
         expected_lc = search_table_inc(&pmtud, &expected_lc, 4000);
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 4000)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 4000)], &mut stats, now);
         assert_eq!(expected_lc, pmtud.loss_counts);
 
         
-        pmtud.on_packets_acked(&[make_sentpacket(0, now, 8000)], now, &mut stats);
+        pmtud.on_packets_acked(&[make_sent_packet(0, now, 8000)], now, &mut stats);
         expected_lc = search_table_zero(&pmtud, &pmtud.loss_counts, 8000);
         assert_eq!(expected_lc, pmtud.loss_counts);
 
         
         
         
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 9000)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 9000)], &mut stats, now);
 
         for _ in 0..2 {
             
             expected_lc = search_table_inc(&pmtud, &pmtud.loss_counts, 1400);
-            pmtud.on_packets_lost(&[make_sentpacket(0, now, 1400)], &mut stats, now);
+            pmtud.on_packets_lost(&[make_sent_packet(0, now, 1400)], &mut stats, now);
             assert_eq!(expected_lc, pmtud.loss_counts);
         }
 
         
-        pmtud.on_packets_lost(&[make_sentpacket(0, now, 1400)], &mut stats, now);
+        pmtud.on_packets_lost(&[make_sent_packet(0, now, 1400)], &mut stats, now);
 
         
         

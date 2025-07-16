@@ -6,14 +6,14 @@
 
 
 
-use neqo_common::qlog::NeqoQlog;
+use neqo_common::qlog::Qlog;
 use neqo_transport::StreamId;
 use qlog::events::{DataRecipient, EventData};
 
 
 
 
-pub fn h3_data_moved_up(qlog: &NeqoQlog, stream_id: StreamId, amount: usize) {
+pub fn h3_data_moved_up(qlog: &Qlog, stream_id: StreamId, amount: usize) {
     qlog.add_event_data_now(|| {
         let ev_data = EventData::DataMoved(qlog::events::quic::DataMoved {
             stream_id: Some(stream_id.as_u64()),
@@ -31,7 +31,7 @@ pub fn h3_data_moved_up(qlog: &NeqoQlog, stream_id: StreamId, amount: usize) {
 
 
 
-pub fn h3_data_moved_down(qlog: &NeqoQlog, stream_id: StreamId, amount: usize) {
+pub fn h3_data_moved_down(qlog: &Qlog, stream_id: StreamId, amount: usize) {
     qlog.add_event_data_now(|| {
         let ev_data = EventData::DataMoved(qlog::events::quic::DataMoved {
             stream_id: Some(stream_id.as_u64()),

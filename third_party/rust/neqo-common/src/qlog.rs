@@ -4,11 +4,6 @@
 
 
 
-#![allow(
-    clippy::module_name_repetitions,
-    reason = "<https://github.com/mozilla/neqo/issues/2284#issuecomment-2782711813>"
-)]
-
 use std::{
     cell::RefCell,
     fmt::{self, Display},
@@ -26,27 +21,27 @@ use qlog::{
 use crate::Role;
 
 #[derive(Debug, Clone, Default)]
-pub struct NeqoQlog {
-    inner: Rc<RefCell<Option<NeqoQlogShared>>>,
+pub struct Qlog {
+    inner: Rc<RefCell<Option<SharedStreamer>>>,
 }
 
-pub struct NeqoQlogShared {
+pub struct SharedStreamer {
     qlog_path: PathBuf,
     streamer: QlogStreamer,
 }
 
-impl NeqoQlog {
+impl Qlog {
     
     
     
     
     
-    pub fn enabled_with_file(
+    pub fn enabled_with_file<D: Display>(
         mut qlog_path: PathBuf,
         role: Role,
         title: Option<String>,
         description: Option<String>,
-        file_prefix: impl Display,
+        file_prefix: D,
     ) -> Result<Self, qlog::Error> {
         qlog_path.push(format!("{file_prefix}.sqlog"));
 
@@ -80,7 +75,7 @@ impl NeqoQlog {
         streamer.start_log()?;
 
         Ok(Self {
-            inner: Rc::new(RefCell::new(Some(NeqoQlogShared {
+            inner: Rc::new(RefCell::new(Some(SharedStreamer {
                 qlog_path,
                 streamer,
             }))),
@@ -88,7 +83,7 @@ impl NeqoQlog {
     }
 
     #[must_use]
-    pub fn inner(&self) -> Rc<RefCell<Option<NeqoQlogShared>>> {
+    pub fn inner(&self) -> Rc<RefCell<Option<SharedStreamer>>> {
         Rc::clone(&self.inner)
     }
 
@@ -160,16 +155,16 @@ impl NeqoQlog {
     }
 }
 
-impl fmt::Debug for NeqoQlogShared {
+impl fmt::Debug for SharedStreamer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "NeqoQlog writing to {}", self.qlog_path.display())
+        write!(f, "Qlog writing to {}", self.qlog_path.display())
     }
 }
 
-impl Drop for NeqoQlogShared {
+impl Drop for SharedStreamer {
     fn drop(&mut self) {
         if let Err(e) = self.streamer.finish_log() {
-            log::error!("Error dropping NeqoQlog: {e}");
+            log::error!("Error dropping Qlog: {e}");
         }
     }
 }

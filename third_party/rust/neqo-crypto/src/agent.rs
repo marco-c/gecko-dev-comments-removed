@@ -4,10 +4,6 @@
 
 
 
-#![allow(
-    clippy::module_name_repetitions,
-    reason = "<https://github.com/mozilla/neqo/issues/2284#issuecomment-2782711813>"
-)]
 #![expect(
     clippy::unwrap_used,
     reason = "Let's assume the use of `unwrap` was checked when the use of `unsafe` was reviewed."
@@ -21,8 +17,9 @@ use std::{
     ops::{Deref, DerefMut},
     os::raw::{c_uint, c_void},
     pin::Pin,
-    ptr::{null, null_mut},
+    ptr::{null, null_mut, NonNull},
     rc::Rc,
+    slice,
     time::Instant,
 };
 
@@ -41,7 +38,7 @@ use crate::{
     },
     ech,
     err::{is_blocked, secstatus_to_res, Error, PRErrorCode, Res},
-    ext::{ExtensionHandler, ExtensionTracker},
+    ext::{ExtensionHandler, ExtensionTracker, SSL_CallExtensionWriterOnEchInner},
     null_safe_slice,
     p11::{self, PrivateKey, PublicKey},
     prio,
@@ -50,6 +47,145 @@ use crate::{
     ssl::{self, PRBool},
     time::{Time, TimeHolder},
 };
+
+
+
+trait UnsafeCertCompression {
+    extern "C" fn decode_callback(
+        input: *const ssl::SECItem,
+        output: *mut ::std::os::raw::c_uchar,
+        output_len: usize,
+        used_len: *mut usize,
+    ) -> ssl::SECStatus;
+
+    extern "C" fn encode_callback(
+        input: *const ssl::SECItem,
+        output: *mut ssl::SECItem,
+    ) -> ssl::SECStatus;
+}
+
+
+
+pub trait CertificateCompressor {
+    
+    const ID: u16;
+    
+    const NAME: &CStr;
+    
+    
+    
+    
+    const ENABLE_ENCODING: bool = false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn encode(input: &[u8], output: &mut [u8]) -> Res<usize> {
+        let len = std::cmp::min(input.len(), output.len());
+        output[..len].copy_from_slice(&input[..len]);
+        Ok(len)
+    }
+
+    
+    
+    
+    
+    
+    
+    fn decode(input: &[u8], output: &mut [u8]) -> Res<()>;
+}
+
+
+
+impl<T: CertificateCompressor> UnsafeCertCompression for T {
+    extern "C" fn decode_callback(
+        input: *const ssl::SECItem,
+        output: *mut ::std::os::raw::c_uchar,
+        output_len: usize,
+        used_len: *mut usize,
+    ) -> ssl::SECStatus {
+        let Some(input) = NonNull::new(input.cast_mut()) else {
+            return ssl::SECFailure;
+        };
+        if unsafe { input.as_ref().data.is_null() || input.as_ref().len == 0 } {
+            return ssl::SECFailure;
+        }
+
+        let input_slice = unsafe { null_safe_slice(input.as_ref().data, input.as_ref().len) };
+        let output_slice = unsafe { slice::from_raw_parts_mut(output, output_len) };
+
+        if T::decode(input_slice, output_slice).is_err() {
+            return ssl::SECFailure;
+        }
+
+        unsafe {
+            *used_len = output_len;
+        }
+        ssl::SECSuccess
+    }
+
+    extern "C" fn encode_callback(
+        input: *const ssl::SECItem,
+        output: *mut ssl::SECItem,
+    ) -> ssl::SECStatus {
+        let Some(input) = NonNull::new(input.cast_mut()) else {
+            return ssl::SECFailure;
+        };
+
+        let (input_data, input_len) = unsafe {
+            let input_ref = input.as_ref();
+            (input_ref.data, input_ref.len)
+        };
+
+        if input_data.is_null() || input_len == 0 {
+            return ssl::SECFailure;
+        }
+        let input_slice = unsafe { null_safe_slice(input_data, input_len) };
+
+        unsafe {
+            p11::SECITEM_AllocItem(
+                null_mut(),
+                
+                output.cast::<p11::SECItemStr>(),
+                
+                
+                input_len + 1,
+            );
+        }
+
+        if unsafe { (*output).data.is_null() } {
+            return ssl::SECFailure;
+        }
+
+        let Ok(output_len) = (unsafe { (*output).len.try_into() }) else {
+            return ssl::SECFailure;
+        };
+
+        let output_slice = unsafe { slice::from_raw_parts_mut((*output).data, output_len) };
+
+        let Ok(encoded_len) = T::encode(input_slice, output_slice) else {
+            return ssl::SECFailure;
+        };
+
+        if encoded_len == 0 || encoded_len > output_len {
+            return ssl::SECFailure;
+        }
+
+        let Ok(encoded_len) = encoded_len.try_into() else {
+            return ssl::SECFailure;
+        };
+
+        unsafe {
+            (*output).len = encoded_len;
+        }
+        ssl::SECSuccess
+    }
+}
 
 
 const MAX_TICKETS: usize = 4;
@@ -112,7 +248,7 @@ fn get_alpn(fd: *mut ssl::PRFileDesc, pre: bool) -> Res<Option<String>> {
             chosen.truncate(usize::try_from(chosen_len)?);
             Some(match String::from_utf8(chosen) {
                 Ok(a) => a,
-                Err(_) => return Err(Error::InternalError),
+                Err(_) => return Err(Error::Internal),
             })
         }
         _ => None,
@@ -286,6 +422,7 @@ impl SecretAgentInfo {
 
 
 #[derive(Debug)]
+#[expect(clippy::module_name_repetitions, reason = "This is OK.")]
 pub struct SecretAgent {
     fd: *mut ssl::PRFileDesc,
     secrets: SecretHolder,
@@ -443,7 +580,7 @@ impl SecretAgent {
     pub fn set_ciphers(&mut self, ciphers: &[Cipher]) -> Res<()> {
         if self.state != HandshakeState::New {
             qwarn!("[{self}] Cannot enable ciphers in state {:?}", self.state);
-            return Err(Error::InternalError);
+            return Err(Error::Internal);
         }
 
         let all_ciphers = unsafe { ssl::SSL_GetImplementedCiphers() };
@@ -535,7 +672,7 @@ impl SecretAgent {
     
     
     
-    pub fn set_alpn(&mut self, protocols: &[impl AsRef<str>]) -> Res<()> {
+    pub fn set_alpn<A: AsRef<str>>(&mut self, protocols: &[A]) -> Res<()> {
         
         let mut encoded_len = protocols.len();
         for v in protocols {
@@ -555,7 +692,7 @@ impl SecretAgent {
 
         
         
-        let (first, rest) = protocols.split_first().ok_or(Error::InternalError)?;
+        let (first, rest) = protocols.split_first().ok_or(Error::Internal)?;
         for v in rest {
             add(v.as_ref());
         }
@@ -581,12 +718,36 @@ impl SecretAgent {
     
     
     
+    pub fn set_certificate_compression<T: CertificateCompressor>(&mut self) -> Res<()> {
+        if T::ID == 0 {
+            return Err(Error::InvalidCertificateCompressionID);
+        }
+
+        let compressor: ssl::SSLCertificateCompressionAlgorithm =
+            ssl::SSLCertificateCompressionAlgorithm {
+                id: T::ID,
+                name: T::NAME.as_ptr(),
+                encode: T::ENABLE_ENCODING.then_some(<T as UnsafeCertCompression>::encode_callback),
+                decode: Some(<T as UnsafeCertCompression>::decode_callback),
+            };
+        unsafe { ssl::SSL_SetCertificateCompressionAlgorithm(self.fd, compressor) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn extension_handler(
         &mut self,
         ext: Extension,
         handler: Rc<RefCell<dyn ExtensionHandler>>,
     ) -> Res<()> {
-        let tracker = unsafe { ExtensionTracker::new(self.fd, ext, handler) }?;
+        let tracker = unsafe { ExtensionTracker::new(self.fd, ext, handler)? };
         self.extension_handlers.push(tracker);
         Ok(())
     }
@@ -639,8 +800,8 @@ impl SecretAgent {
 
     
     #[must_use]
-    pub fn alert(&self) -> Option<&Alert> {
-        (*self.alert).as_ref()
+    pub fn alert(&self) -> Option<Alert> {
+        *self.alert
     }
 
     
@@ -769,7 +930,7 @@ impl SecretAgent {
         }
         #[expect(
             clippy::branches_sharing_code,
-            reason = "Moving the PR_Close call after the conditional crashes things?!"
+            reason = "The PR_Close calls cannot be run after dropping the returned values."
         )]
         if self.raw == Some(true) {
             
@@ -870,7 +1031,7 @@ impl Client {
     
     
     
-    pub fn new(server_name: impl Into<String>, grease: bool) -> Res<Self> {
+    pub fn new<I: Into<String>>(server_name: I, grease: bool) -> Res<Self> {
         let server_name = server_name.into();
         let mut agent = SecretAgent::new()?;
         let url = CString::new(server_name.as_bytes())?;
@@ -958,7 +1119,7 @@ impl Client {
     
     
     
-    pub fn enable_resumption(&mut self, token: impl AsRef<[u8]>) -> Res<()> {
+    pub fn enable_resumption<A: AsRef<[u8]>>(&mut self, token: A) -> Res<()> {
         unsafe {
             ssl::SSL_SetResumptionToken(
                 self.agent.fd,
@@ -981,7 +1142,7 @@ impl Client {
     
     
     
-    pub fn enable_ech(&mut self, ech_config_list: impl AsRef<[u8]>) -> Res<()> {
+    pub fn enable_ech<A: AsRef<[u8]>>(&mut self, ech_config_list: A) -> Res<()> {
         let config = ech_config_list.as_ref();
         qdebug!("[{self}] Enable ECH for a server: {}", hex_with_len(config));
         self.ech_config = Vec::from(config);
@@ -993,7 +1154,15 @@ impl Client {
                     self.agent.fd,
                     config.as_ptr(),
                     c_uint::try_from(config.len())?,
-                )
+                )?;
+                
+                
+                
+                
+                
+                
+                
+                SSL_CallExtensionWriterOnEchInner(self.fd, PRBool::from(true))
             }
         }
     }
@@ -1075,7 +1244,7 @@ impl Server {
     
     
     
-    pub fn new(certificates: &[impl AsRef<str>]) -> Res<Self> {
+    pub fn new<A: AsRef<str>>(certificates: &[A]) -> Res<Self> {
         let mut agent = SecretAgent::new()?;
 
         for n in certificates {
@@ -1126,7 +1295,7 @@ impl Server {
                 
                 
                 assert!(tok.len() <= usize::try_from(retry_token_max).unwrap());
-                let slc = std::slice::from_raw_parts_mut(retry_token, tok.len());
+                let slc = slice::from_raw_parts_mut(retry_token, tok.len());
                 slc.copy_from_slice(&tok);
                 *retry_token_len = c_uint::try_from(tok.len()).unwrap();
                 ssl::SSLHelloRetryRequestAction::ssl_hello_retry_request

@@ -4,11 +4,6 @@
 
 
 
-#![allow(
-    clippy::module_name_repetitions,
-    reason = "<https://github.com/mozilla/neqo/issues/2284#issuecomment-2782711813>"
-)]
-
 use std::{
     cell::RefCell,
     fmt::{self, Debug},
@@ -44,7 +39,7 @@ experimental_api!(SSL_HkdfExpandLabelWithMech(
 ));
 
 #[derive(Clone)]
-pub enum HpKey {
+pub enum Key {
     
     
     
@@ -55,13 +50,13 @@ pub enum HpKey {
     Chacha(SymKey),
 }
 
-impl Debug for HpKey {
+impl Debug for Key {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "HpKey")
+        write!(f, "hp::Key")
     }
 }
 
-impl HpKey {
+impl Key {
     pub const SAMPLE_SIZE: usize = 16;
 
     
@@ -102,7 +97,7 @@ impl HpKey {
                 &mut secret,
             )
         }?;
-        let key = SymKey::from_ptr(secret).or(Err(Error::HkdfError))?;
+        let key = SymKey::from_ptr(secret).or(Err(Error::Hkdf))?;
 
         let res = match cipher {
             TLS_AES_128_GCM_SHA256 | TLS_AES_256_GCM_SHA384 => {
@@ -114,7 +109,7 @@ impl HpKey {
                         &Item::wrap(&ZERO[..0])?, 
                     )
                 };
-                let context = Context::from_ptr(context_ptr).or(Err(Error::CipherInitFailure))?;
+                let context = Context::from_ptr(context_ptr).or(Err(Error::CipherInit))?;
                 Self::Aes(Rc::new(RefCell::new(context)))
             }
             TLS_CHACHA20_POLY1305_SHA256 => Self::Chacha(key),

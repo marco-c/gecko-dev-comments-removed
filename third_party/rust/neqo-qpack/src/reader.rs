@@ -4,17 +4,12 @@
 
 
 
-#![allow(
-    clippy::module_name_repetitions,
-    reason = "<https://github.com/mozilla/neqo/issues/2284#issuecomment-2782711813>"
-)]
-
 use std::{mem, str};
 
 use neqo_common::{qdebug, qerror};
 use neqo_transport::{Connection, StreamId};
 
-use crate::{huffman::decode_huffman, prefix::Prefix, Error, Res};
+use crate::{huffman, prefix::Prefix, Error, Res};
 
 pub trait ReadByte {
     
@@ -74,7 +69,7 @@ pub(crate) struct ReceiverBufferWrapper<'a> {
 impl ReadByte for ReceiverBufferWrapper<'_> {
     fn read_byte(&mut self) -> Res<u8> {
         if self.offset == self.buf.len() {
-            Err(Error::DecompressionFailed)
+            Err(Error::Decompression)
         } else {
             let b = self.buf[self.offset];
             self.offset += 1;
@@ -90,7 +85,7 @@ impl<'a> ReceiverBufferWrapper<'a> {
 
     pub const fn peek(&self) -> Res<u8> {
         if self.offset == self.buf.len() {
-            Err(Error::DecompressionFailed)
+            Err(Error::Decompression)
         } else {
             Ok(self.buf[self.offset])
         }
@@ -133,9 +128,9 @@ impl<'a> ReceiverBufferWrapper<'a> {
         let length: usize = int_reader
             .read(self)?
             .try_into()
-            .or(Err(Error::DecompressionFailed))?;
+            .or(Err(Error::Decompression))?;
         if use_huffman {
-            Ok(parse_utf8(&decode_huffman(self.slice(length)?)?)?.to_string())
+            Ok(parse_utf8(&huffman::decode(self.slice(length)?)?)?.to_string())
         } else {
             Ok(parse_utf8(self.slice(length)?)?.to_string())
         }
@@ -143,7 +138,7 @@ impl<'a> ReceiverBufferWrapper<'a> {
 
     fn slice(&mut self, len: usize) -> Res<&[u8]> {
         if self.offset + len > self.buf.len() {
-            Err(Error::DecompressionFailed)
+            Err(Error::Decompression)
         } else {
             let start = self.offset;
             self.offset += len;
@@ -154,6 +149,7 @@ impl<'a> ReceiverBufferWrapper<'a> {
 
 
 #[derive(Debug)]
+#[expect(clippy::module_name_repetitions, reason = "This is OK.")]
 pub struct IntReader {
     value: u64,
     cnt: u8,
@@ -248,6 +244,7 @@ enum LiteralReaderState {
 
 
 #[derive(Debug, Default)]
+#[expect(clippy::module_name_repetitions, reason = "This is OK.")]
 pub struct LiteralReader {
     state: LiteralReaderState,
     literal: Vec<u8>,
@@ -313,7 +310,7 @@ impl LiteralReader {
                     if *offset == self.literal.len() {
                         self.state = LiteralReaderState::Done;
                         if self.use_huffman {
-                            break Ok(decode_huffman(&self.literal)?);
+                            break Ok(huffman::decode(&self.literal)?);
                         }
                         break Ok(mem::take(&mut self.literal));
                     }
@@ -588,7 +585,7 @@ mod tests {
         let (buf, prefix_len, _) = &TEST_CASES_NUMBERS[4];
         let mut buffer = ReceiverBufferWrapper::new(&buf[..1]);
         let mut reader = IntReader::new(buffer.read_byte().unwrap(), *prefix_len);
-        assert_eq!(reader.read(&mut buffer), Err(Error::DecompressionFailed));
+        assert_eq!(reader.read(&mut buffer), Err(Error::Decompression));
     }
 
     #[test]
@@ -597,7 +594,7 @@ mod tests {
         let mut buffer = ReceiverBufferWrapper::new(&buf[..6]);
         assert_eq!(
             buffer.read_literal_from_buffer(*prefix_len),
-            Err(Error::DecompressionFailed)
+            Err(Error::Decompression)
         );
     }
 }

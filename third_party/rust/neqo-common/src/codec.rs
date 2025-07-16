@@ -4,7 +4,10 @@
 
 
 
-use std::fmt::{self, Debug, Formatter, Write};
+use std::{
+    fmt::{self, Debug, Formatter, Write},
+    io::{self, Cursor},
+};
 
 use crate::hex_with_len;
 
@@ -19,8 +22,8 @@ pub struct Decoder<'a> {
 impl<'a> Decoder<'a> {
     
     #[must_use]
-    pub const fn new(buf: &[u8]) -> Decoder {
-        Decoder { buf, offset: 0 }
+    pub const fn new(buf: &'a [u8]) -> Self {
+        Self { buf, offset: 0 }
     }
 
     
@@ -197,110 +200,58 @@ impl<'b> PartialEq<Decoder<'b>> for Decoder<'_> {
 }
 
 
-#[derive(Clone, Default, PartialEq, Eq)]
-pub struct Encoder {
-    buf: Vec<u8>,
+#[derive(Clone, PartialEq, Eq)]
+pub struct Encoder<B = Vec<u8>> {
+    buf: B,
+    
+    
+    
+    start: usize,
 }
 
-impl Encoder {
+impl<B: Buffer> Encoder<B> {
     
-    
-    
-    
-    
-    #[must_use]
-    pub const fn varint_len(v: u64) -> usize {
-        match () {
-            () if v < (1 << 6) => 1,
-            () if v < (1 << 14) => 2,
-            () if v < (1 << 30) => 4,
-            () if v < (1 << 62) => 8,
-            () => panic!("Varint value too large"),
-        }
-    }
-
-    
-    
-    
-    
-    
-    #[must_use]
-    pub fn vvec_len(len: usize) -> usize {
-        Self::varint_len(u64::try_from(len).expect("usize should fit into u64")) + len
-    }
-
-    
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    
-    #[must_use]
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            buf: Vec::with_capacity(capacity),
-        }
-    }
-
-    
-    
-    #[must_use]
-    pub fn capacity(&self) -> usize {
-        self.buf.capacity()
-    }
-
     
     
     #[must_use]
     pub fn len(&self) -> usize {
-        self.buf.len()
+        self.buf.position() - self.start
     }
 
     
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.buf.is_empty()
+        self.len() == 0
     }
 
     
     
     #[must_use]
-    pub fn as_decoder(&self) -> Decoder {
-        Decoder::new(self.as_ref())
+    pub fn as_decoder(&self) -> Decoder<'_> {
+        Decoder::new(self.buf.as_slice())
     }
 
     
     
     
     
-    
-    #[cfg(any(test, feature = "test-fixture"))]
-    #[must_use]
-    pub fn from_hex(s: impl AsRef<str>) -> Self {
-        let s = s.as_ref();
-        assert_eq!(s.len() % 2, 0, "Needs to be even length");
-
-        let cap = s.len() / 2;
-        let mut enc = Self::with_capacity(cap);
-
-        for i in 0..cap {
-            #[expect(clippy::unwrap_used, reason = "Only used in tests.")]
-            let v = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap();
-            enc.encode_byte(v);
-        }
-        enc
-    }
-
     
     pub fn encode(&mut self, data: &[u8]) -> &mut Self {
-        self.buf.extend_from_slice(data.as_ref());
+        self.buf
+            .write_all(data)
+            .expect("Buffer has enough capacity.");
         self
     }
 
     
+    
+    
+    
+    
     pub fn encode_byte(&mut self, data: u8) -> &mut Self {
-        self.buf.push(data);
+        self.buf
+            .write_all(&[data])
+            .expect("Buffer has enough capacity.");
         self
     }
 
@@ -358,13 +309,14 @@ impl Encoder {
         reason = "AND'ing with 0xff makes this OK."
     )]
     pub fn encode_vec_with<F: FnOnce(&mut Self)>(&mut self, n: usize, f: F) -> &mut Self {
-        let start = self.buf.len();
-        self.buf.resize(self.buf.len() + n, 0);
+        let start = self.buf.position();
+        self.pad_to(n, 0);
         f(self);
-        let len = self.buf.len() - start - n;
+        let len = self.buf.position() - start - n;
         assert!(len < (1 << (n * 8)));
         for i in 0..n {
-            self.buf[start + i] = ((len >> (8 * (n - i - 1))) & 0xff) as u8;
+            self.buf
+                .write_at(start + i, ((len >> (8 * (n - i - 1))) & 0xff) as u8);
         }
         self
     }
@@ -385,11 +337,13 @@ impl Encoder {
     
     
     pub fn encode_vvec_with<F: FnOnce(&mut Self)>(&mut self, f: F) -> &mut Self {
-        let start = self.buf.len();
+        let start = self.buf.position();
         
-        self.buf.resize(self.buf.len() + 1, 0);
+        self.buf
+            .write_all(&[0])
+            .expect("Buffer has enough capacity.");
         f(self);
-        let len = self.buf.len() - start - 1;
+        let len = self.buf.position() - start - 1;
 
         
         
@@ -405,7 +359,7 @@ impl Encoder {
 
         let v = u64::try_from(len).expect("encoded value fits in a u64");
         
-        self.buf[start] = (v & 0xff) as u8;
+        self.buf.write_at(start, (v & 0xff) as u8);
         let (count, bits) = match () {
             
             () if v < (1 << 6) => return self,
@@ -417,19 +371,94 @@ impl Encoder {
         
         self.encode_uint(count, (v >> 8) | bits);
         
-        self.buf[start..].rotate_right(count);
+        self.buf.rotate_right(start, count);
         self
     }
 
     
     pub fn truncate(&mut self, len: usize) {
-        self.buf.truncate(len);
+        self.buf.truncate(len + self.start);
     }
 
     
     pub fn pad_to(&mut self, len: usize, v: u8) {
-        if len > self.buf.len() {
-            self.buf.resize(len, v);
+        let buffer_len = self.start + len;
+        if buffer_len > self.buf.position() {
+            self.buf.pad_to(buffer_len, v);
+        }
+    }
+}
+
+impl Encoder<Vec<u8>> {
+    
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    
+    
+    
+    
+    
+    #[must_use]
+    pub const fn varint_len(v: u64) -> usize {
+        match () {
+            () if v < (1 << 6) => 1,
+            () if v < (1 << 14) => 2,
+            () if v < (1 << 30) => 4,
+            () if v < (1 << 62) => 8,
+            () => panic!("Varint value too large"),
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn vvec_len(len: usize) -> usize {
+        Self::varint_len(u64::try_from(len).expect("usize should fit into u64")) + len
+    }
+
+    
+    #[must_use]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            buf: Vec::with_capacity(capacity),
+            start: 0,
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(any(test, feature = "test-fixture"))]
+    #[must_use]
+    pub fn from_hex<A: AsRef<str>>(s: A) -> Self {
+        let s = s.as_ref();
+        assert_eq!(s.len() % 2, 0, "Needs to be even length");
+
+        let cap = s.len() / 2;
+        let mut enc = Self::with_capacity(cap);
+
+        for i in 0..cap {
+            #[expect(clippy::unwrap_used, reason = "Only used in tests.")]
+            let v = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap();
+            enc.encode_byte(v);
+        }
+        enc
+    }
+}
+
+impl Default for Encoder {
+    fn default() -> Self {
+        Self {
+            buf: Vec::new(),
+            start: 0,
         }
     }
 }
@@ -440,15 +469,15 @@ impl Debug for Encoder {
     }
 }
 
-impl AsRef<[u8]> for Encoder {
+impl<B: Buffer> AsRef<[u8]> for Encoder<B> {
     fn as_ref(&self) -> &[u8] {
-        self.buf.as_ref()
+        &self.buf.as_slice()[self.start..]
     }
 }
 
-impl AsMut<[u8]> for Encoder {
+impl<B: Buffer> AsMut<[u8]> for Encoder<B> {
     fn as_mut(&mut self) -> &mut [u8] {
-        self.buf.as_mut()
+        &mut self.buf.as_mut()[self.start..]
     }
 }
 
@@ -462,6 +491,7 @@ impl From<&[u8]> for Encoder {
     fn from(buf: &[u8]) -> Self {
         Self {
             buf: Vec::from(buf),
+            start: 0,
         }
     }
 }
@@ -472,16 +502,177 @@ impl From<Encoder> for Vec<u8> {
     }
 }
 
-impl Write for Encoder {
+#[expect(
+    clippy::unwrap_in_result,
+    reason = "successful writing to buffer needs to be guaranteed by caller"
+)]
+impl<B: io::Write> Write for Encoder<B> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.buf.extend_from_slice(s.as_bytes());
+        self.buf
+            .write_all(s.as_bytes())
+            .expect("Buffer has enough capacity.");
         Ok(())
+    }
+}
+
+#[expect(clippy::unnecessary_safety_doc, reason = "relevant for created object")]
+impl<'a> Encoder<Cursor<&'a mut [u8]>> {
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn new_borrowed_slice(buf: &'a mut [u8]) -> Self {
+        Encoder {
+            buf: Cursor::new(buf),
+            start: 0,
+        }
+    }
+}
+
+impl<'a> Encoder<&'a mut Vec<u8>> {
+    #[must_use]
+    pub fn new_borrowed_vec(buf: &'a mut Vec<u8>) -> Self {
+        Encoder {
+            start: buf.position(),
+            buf,
+        }
+    }
+}
+
+
+
+
+
+
+
+pub trait Buffer: io::Write {
+    fn position(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.position() == 0
+    }
+
+    fn as_slice(&self) -> &[u8];
+
+    fn as_mut(&mut self) -> &mut [u8];
+
+    fn truncate(&mut self, len: usize);
+
+    fn pad_to(&mut self, n: usize, v: u8);
+
+    
+
+    fn write_at(&mut self, pos: usize, data: u8);
+
+    fn rotate_right(&mut self, start: usize, count: usize);
+}
+
+impl Buffer for Vec<u8> {
+    fn position(&self) -> usize {
+        self.len()
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        self.as_ref()
+    }
+
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.as_mut_slice()
+    }
+
+    fn truncate(&mut self, len: usize) {
+        Self::truncate(self, len);
+    }
+
+    fn pad_to(&mut self, n: usize, v: u8) {
+        self.resize(n, v);
+    }
+
+    fn write_at(&mut self, pos: usize, data: u8) {
+        self[pos] = data;
+    }
+
+    fn rotate_right(&mut self, start: usize, count: usize) {
+        self[start..].rotate_right(count);
+    }
+}
+
+impl Buffer for &mut Vec<u8> {
+    fn position(&self) -> usize {
+        Vec::len(self)
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        self.as_ref()
+    }
+
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.as_mut_slice()
+    }
+
+    fn truncate(&mut self, len: usize) {
+        Vec::truncate(self, len);
+    }
+
+    fn pad_to(&mut self, n: usize, v: u8) {
+        self.resize(n, v);
+    }
+
+    fn write_at(&mut self, pos: usize, data: u8) {
+        self[pos] = data;
+    }
+
+    fn rotate_right(&mut self, start: usize, count: usize) {
+        self[start..].rotate_right(count);
+    }
+}
+
+impl Buffer for Cursor<&mut [u8]> {
+    fn position(&self) -> usize {
+        usize::try_from(self.position()).expect("memory allocation not to exceed usize")
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        &self.get_ref()[..Buffer::position(self)]
+    }
+
+    fn as_mut(&mut self) -> &mut [u8] {
+        let len = Buffer::position(self);
+        &mut self.get_mut()[..len]
+    }
+
+    fn truncate(&mut self, len: usize) {
+        let old_position = Buffer::position(self);
+        if len < old_position {
+            self.set_position(u64::try_from(len).expect("Position cannot exceed u64"));
+            self.get_mut()[len..old_position].fill(0);
+        }
+    }
+
+    fn pad_to(&mut self, n: usize, v: u8) {
+        let start = usize::try_from(self.position()).expect("Buffer length does not exceed usize");
+
+        self.get_mut()[start..n].fill(v);
+        self.set_position(u64::try_from(n).expect("Position cannot exceed u64"));
+    }
+
+    fn write_at(&mut self, pos: usize, data: u8) {
+        self.get_mut()[pos] = data;
+    }
+
+    fn rotate_right(&mut self, start: usize, count: usize) {
+        let len = Buffer::position(self);
+        self.get_mut()[start..len].rotate_right(count);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Decoder, Encoder};
+    use std::io::Cursor;
+
+    use super::{Buffer, Decoder, Encoder};
 
     #[test]
     fn decode() {
@@ -868,5 +1059,97 @@ mod tests {
         assert_eq!(enc, Encoder::from_hex("0102340000"));
         enc.pad_to(7, 0xc2);
         assert_eq!(enc, Encoder::from_hex("0102340000c2c2"));
+    }
+
+    #[test]
+    fn buffer_write_zeroes() {
+        fn check_write_zeroes<B: Buffer>(mut buf: B) {
+            const NUM_BYTES: usize = 5;
+
+            assert!(buf.is_empty());
+
+            buf.pad_to(NUM_BYTES, 0);
+
+            assert_eq!(buf.position(), NUM_BYTES);
+            let written = &buf.as_slice()[..NUM_BYTES];
+            assert!(written.iter().all(|&b| b == 0));
+        }
+
+        check_write_zeroes(Vec::<u8>::new());
+
+        let mut buf = Vec::<u8>::new();
+        check_write_zeroes(&mut buf);
+
+        let mut buf = [0; 16];
+        check_write_zeroes(Cursor::new(&mut buf[..]));
+    }
+
+    #[test]
+    fn buffer_rotate_right() {
+        fn check_rotate_right<B: Buffer>(mut buf: B) {
+            const DATA: [u8; 5] = [1, 2, 3, 4, 5];
+            const EXPECTED: [u8; 5] = [1, 4, 5, 2, 3];
+            const START: usize = 1;
+            const COUNT: usize = 2;
+
+            buf.write_all(&DATA).expect("Buffer has enough capacity.");
+
+            buf.rotate_right(START, COUNT);
+
+            assert_eq!(&buf.as_slice()[..EXPECTED.len()], EXPECTED);
+        }
+
+        check_rotate_right(Vec::<u8>::new());
+
+        let mut buf = Vec::<u8>::new();
+        check_rotate_right(&mut buf);
+
+        let mut buf = [0; 16];
+        check_rotate_right(Cursor::new(&mut buf[..]));
+    }
+
+    #[test]
+    fn encoder_as_mut() {
+        fn check_as_mut<B: Buffer>(mut enc: Encoder<B>) {
+            enc.encode_byte(41);
+            enc.as_mut()[0] = 42;
+            assert_eq!(enc.as_ref(), &[42]);
+        }
+
+        check_as_mut(Encoder::default());
+
+        let mut buf = Vec::<u8>::new();
+        check_as_mut(Encoder::new_borrowed_vec(&mut buf));
+
+        let mut buf = [0; 16];
+        check_as_mut(Encoder::new_borrowed_slice(&mut buf[..]));
+    }
+
+    
+    
+    #[test]
+    fn buffer_vs_encoder_len() {
+        let mut non_empty_vec = vec![1, 2, 3, 4];
+        assert_eq!(non_empty_vec.len(), Buffer::position(&non_empty_vec));
+
+        let mut enc = Encoder::new_borrowed_vec(&mut non_empty_vec);
+        assert!(enc.is_empty());
+        enc.encode_byte(5);
+        assert_eq!(enc.len(), 1);
+
+        assert_eq!(non_empty_vec.len(), 5);
+        assert_eq!(non_empty_vec.len(), Buffer::position(&non_empty_vec));
+    }
+
+    
+    
+    
+    
+    
+    #[test]
+    fn buffer_position() {
+        let mut a = [0; 16];
+        let buf = Cursor::new(&mut a[..]);
+        assert_eq!(Buffer::position(&buf), 0);
     }
 }
