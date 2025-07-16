@@ -8177,7 +8177,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
     }
   }
 
-  nscolor bgcolor = NS_RGBA(0, 0, 0, 0);
+  SingleCanvasBackground canvasBg = {};
   bool isUnderHiddenEmbedderElement = false;
   
   nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
@@ -8189,7 +8189,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
     
     
     if (PresShell* presShell = viewer->GetPresShell()) {
-      bgcolor = presShell->GetCanvasBackground();
+      canvasBg = presShell->GetViewportCanvasBackground();
       isUnderHiddenEmbedderElement = presShell->IsUnderHiddenEmbedderElement();
     }
 
@@ -8238,7 +8238,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
   
   
   if (RefPtr<PresShell> presShell = mDocumentViewer->GetPresShell()) {
-    presShell->SetCanvasBackground(bgcolor);
+    presShell->SetViewportCanvasBackground(canvasBg);
     presShell->ActivenessMaybeChanged();
     if (isUnderHiddenEmbedderElement) {
       presShell->SetIsUnderHiddenEmbedderElement(isUnderHiddenEmbedderElement);
