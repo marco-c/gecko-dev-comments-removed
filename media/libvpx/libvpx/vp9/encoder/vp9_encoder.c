@@ -5039,8 +5039,7 @@ static void spatial_denoise_frame(VP9_COMP *cpi) {
   
   const int q = (int)(vp9_convert_qindex_to_q(twopass->active_worst_quality,
                                               cm->bit_depth));
-  int strength =
-      VPXMAX(oxcf->arnr_strength >> 2, VPXMIN(oxcf->arnr_strength, (q >> 4)));
+  int strength = clamp(q >> 4, oxcf->arnr_strength >> 2, oxcf->arnr_strength);
 
   
   spatial_denoise_buffer(cpi, src->y_buffer, src->y_stride, src->y_width,
