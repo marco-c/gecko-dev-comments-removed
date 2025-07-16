@@ -90,7 +90,7 @@ using GetIdentityAssertionPromise =
 using GetTokenPromise =
     MozPromise<std::tuple<nsCString, nsCString>, nsresult, true>;
 using GetAccountPromise =
-    MozPromise<std::tuple<IdentityProviderAPIConfig, IdentityProviderAccount>,
+    MozPromise<std::tuple<IdentityProviderAPIConfig, IdentityProviderAccount, bool>,
                nsresult, true>;
 using GetMetadataPromise =
     MozPromise<IdentityProviderClientMetadata, nsresult, true>;
@@ -224,11 +224,14 @@ RefPtr<GetAccountListPromise> FetchAccountList(
 
 
 
+
+
 RefPtr<GetTokenPromise> FetchToken(
     nsIPrincipal* aPrincipal, WebIdentityParent* aRelyingParty,
     const IdentityProviderRequestOptions& aProvider,
     const IdentityProviderAPIConfig& aManifest,
-    const IdentityProviderAccount& aAccount);
+    const IdentityProviderAccount& aAccount,
+    const bool aIsAutoSelected);
 
 
 
