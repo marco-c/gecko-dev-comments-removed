@@ -729,7 +729,7 @@ static ArrayObject* AvailableTimeZones(JSContext* cx) {
     validatedTimeZone = iter.get();
 
     
-    auto* timeZone = intl::CanonicalizeTimeZone(cx, validatedTimeZone);
+    auto* timeZone = sharedIntlData.canonicalizeTimeZone(cx, validatedTimeZone);
     if (!timeZone) {
       return nullptr;
     }

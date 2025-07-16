@@ -212,13 +212,6 @@ class SharedIntlData {
 
 
 
-  bool validateTimeZoneName(JSContext* cx, JS::Handle<JSLinearString*> timeZone,
-                            JS::MutableHandle<JSAtom*> result);
-
-  
-
-
-
   JSLinearString* canonicalizeTimeZone(JSContext* cx,
                                        JS::Handle<JSLinearString*> timeZone);
 
