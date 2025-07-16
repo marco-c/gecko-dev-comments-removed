@@ -986,7 +986,7 @@ HRESULT MFTEncoder::Drain(nsTArray<OutputSample>& aOutput) {
       [[fallthrough]];  
     case DrainState::DRAINING:
       
-      while (mOutputs.Length() == 0 && mDrainState != DrainState::DRAINED) {
+      while (mDrainState != DrainState::DRAINED) {
         if (mEventSource.IsSync()) {
           
           
