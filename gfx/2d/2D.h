@@ -2002,7 +2002,8 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   already_AddRefed<SourceSurface> ResolveFilterInput(
       const Path* aPath, const Pattern& aPattern, const IntRect& aSourceRect,
       const Matrix& aDestTransform, const DrawOptions& aOptions = DrawOptions(),
-      const StrokeOptions* aStrokeOptions = nullptr);
+      const StrokeOptions* aStrokeOptions = nullptr,
+      SurfaceFormat aFormat = SurfaceFormat::B8G8R8A8);
 
   
 
