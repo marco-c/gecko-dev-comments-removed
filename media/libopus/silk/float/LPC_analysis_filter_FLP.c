@@ -246,4 +246,3 @@ void silk_LPC_analysis_filter_FLP(
     
     silk_memset( r_LPC, 0, Order * sizeof( silk_float ) );
 }
-

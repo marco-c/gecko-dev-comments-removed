@@ -57,4 +57,3 @@ typedef struct _silk_resampler_state_struct{
 }
 #endif
 #endif 
-
