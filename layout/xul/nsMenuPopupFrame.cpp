@@ -141,16 +141,29 @@ static nsIWidget::InputRegion ComputeInputRegion(const ComputedStyle& aStyle,
               .Truncated()};
 }
 
+bool nsMenuPopupFrame::IsDragPopup() const {
+  return !mInContentShell && mPopupType == PopupType::Panel &&
+         mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                            nsGkAtoms::drag, eIgnoreCase);
+}
+
 bool nsMenuPopupFrame::ShouldHaveWidgetWhenHidden() const {
-  
-  
-  
-  
-  
-  
-  
-  
-  return mContent->AsElement()->HasAttr(nsGkAtoms::neverhidden);
+  if (mContent->AsElement()->HasAttr(nsGkAtoms::neverhidden)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+  if (IsDragPopup()) {
+    
+    return true;
+  }
+  return false;
 }
 
 void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -302,15 +315,7 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
   widgetData.mBorderStyle = widget::BorderStyle::Default;
   widgetData.mClipSiblings = true;
   widgetData.mPopupHint = mPopupType;
-
-  if (!mInContentShell) {
-    
-    if (mPopupType == PopupType::Panel &&
-        mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                           nsGkAtoms::drag, eIgnoreCase)) {
-      widgetData.mIsDragPopup = true;
-    }
-  }
+  widgetData.mIsDragPopup = IsDragPopup();
 
   const bool remote = HasRemoteContent();
 

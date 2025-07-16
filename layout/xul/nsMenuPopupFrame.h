@@ -203,6 +203,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   bool HasRemoteContent() const;
 
   
+  bool IsDragPopup() const;
+
+  
   bool ShouldHaveWidgetWhenHidden() const;
 
   
