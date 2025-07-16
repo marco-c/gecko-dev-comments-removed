@@ -452,7 +452,7 @@ class Http2Session final : public ASpdySession,
   
   
   
-  nsTHashMap<nsUint32HashKey, Http2StreamBase*> mStreamIDHash;
+  nsTHashMap<nsUint32HashKey, WeakPtr<Http2StreamBase>> mStreamIDHash;
   nsRefPtrHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2StreamBase>
       mStreamTransactionHash;
   nsTArray<RefPtr<Http2StreamTunnel>> mTunnelStreams;
@@ -491,14 +491,14 @@ class Http2Session final : public ASpdySession,
   
   
   
-  Http2StreamBase* mInputFrameDataStream;
+  WeakPtr<Http2StreamBase> mInputFrameDataStream;
 
   
   
   
   
   
-  Http2StreamBase* mNeedsCleanup;
+  WeakPtr<Http2StreamBase> mNeedsCleanup;
 
   
   uint32_t mDownstreamRstReason;
