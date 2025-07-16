@@ -637,6 +637,13 @@ export class GPUTestBase extends Fixture<GPUTestSubcaseBatchState> {
     }
   }
 
+  skipIfTextureFormatDoesNotSupportCopyTextureToBuffer(format: GPUTextureFormat) {
+    this.skipIf(
+      !this.canCallCopyTextureToBufferWithTextureFormat(format),
+      `can not use copyTextureToBuffer with ${format}`
+    );
+  }
+
   
   skipIfLanguageFeatureNotSupported(langFeature: WGSLLanguageFeature) {
     if (!this.hasLanguageFeature(langFeature)) {

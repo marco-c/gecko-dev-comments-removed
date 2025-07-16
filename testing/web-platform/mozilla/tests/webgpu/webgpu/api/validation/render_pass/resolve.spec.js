@@ -34,6 +34,7 @@ Test various validation behaviors when a resolveTarget is provided.
 paramsSimple([
 
 { _valid: true },
+{ bindTextureResource: true, _valid: true },
 
 { colorAttachmentSamples: 1, _valid: false },
 
@@ -78,6 +79,7 @@ paramsSimple([
 ).
 fn((t) => {
   const {
+    bindTextureResource = false,
     colorAttachmentFormat = 'rgba8unorm',
     resolveTargetFormat = 'rgba8unorm',
     otherAttachmentFormat = 'rgba8unorm',
@@ -139,6 +141,8 @@ fn((t) => {
           storeOp: 'discard',
           resolveTarget: resolveTargetInvalid ?
           vtu.getErrorTextureView(t) :
+          bindTextureResource ?
+          resolveTarget :
           resolveTarget.createView({
             dimension: resolveTargetViewArrayLayerCount === 1 ? '2d' : '2d-array',
             mipLevelCount: resolveTargetViewMipCount,
