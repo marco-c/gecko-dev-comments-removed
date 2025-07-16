@@ -530,24 +530,62 @@ void nsTimerImpl::CancelImpl(bool aClearITimer) {
 
 nsresult nsTimerImpl::SetDelay(uint32_t aDelay) {
   MutexAutoLock lock(mMutex);
-  if (GetCallback().is<UnknownCallback>() && !IsRepeating()) {
-    
-    
-    NS_ERROR(
-        "nsITimer->SetDelay() called when the "
-        "one-shot timer is not set up.");
-    return NS_ERROR_NOT_INITIALIZED;
-  }
 
   
-  
-  
+  if (!IsRepeating()) {
+    if (GetCallback().is<UnknownCallback>()) {
+      
+      
+      NS_ERROR(
+          "nsITimer->SetDelay() called when the "
+          "one-shot timer is not set up.");
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+#ifdef DEBUG
+    bool onTargetThread = mEventTarget && mEventTarget->IsOnCurrentThread();
+    if (!onTargetThread) {
+      NS_WARNING(
+          "nsITimer->SetDelay() on a ONE_SHOT timer should only be called from "
+          "the target thread!");
+    }
+#endif
+    if (mFiring) {
+      
+      
+      
+      
+#ifdef DEBUG
+      if (onTargetThread) {
+        NS_ERROR(
+            "nsITimer->SetDelay() while firing will not re-schedule a ONE_SHOT "
+            "timer. Please re-initialize.");
+      }
+#endif
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+  }
 
   bool reAdd = false;
   reAdd = NS_SUCCEEDED(gThreadWrapper.RemoveTimer(this, lock));
 
   mDelay = TimeDuration::FromMilliseconds(aDelay);
   mTimeout = TimeStamp::Now() + mDelay;
+
+  
+  
+  
+  
+
+  if (!IsRepeating()) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!mFiring && !GetCallback().is<UnknownCallback>());
+    mTimerSeq = ++sLastTimerSeq;
+    reAdd = true;
+  }
 
   if (reAdd) {
     gThreadWrapper.AddTimer(this, lock);
