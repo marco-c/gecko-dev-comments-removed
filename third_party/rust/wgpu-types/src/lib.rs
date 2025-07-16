@@ -606,6 +606,22 @@ pub struct Limits {
     
     
     pub max_non_sampler_bindings: u32,
+    
+    
+    
+    pub max_blas_primitive_count: u32,
+    
+    
+    
+    pub max_blas_geometry_count: u32,
+    
+    
+    
+    pub max_tlas_instance_count: u32,
+    
+    
+    
+    pub max_acceleration_structures_per_shader_stage: u32,
 }
 
 impl Default for Limits {
@@ -615,6 +631,10 @@ impl Default for Limits {
 }
 
 impl Limits {
+    
+    
+    
+    
     
     
     
@@ -702,9 +722,17 @@ impl Limits {
             max_subgroup_size: 0,
             max_push_constant_size: 0,
             max_non_sampler_bindings: 1_000_000,
+            max_blas_primitive_count: 0,
+            max_blas_geometry_count: 0,
+            max_tlas_instance_count: 0,
+            max_acceleration_structures_per_shader_stage: 0,
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -809,6 +837,10 @@ impl Limits {
     
     
     
+    
+    
+    
+    
     #[must_use]
     pub const fn downlevel_webgl2_defaults() -> Self {
         Self {
@@ -858,6 +890,32 @@ impl Limits {
         Self {
             min_uniform_buffer_offset_alignment: other.min_uniform_buffer_offset_alignment,
             min_storage_buffer_offset_alignment: other.min_storage_buffer_offset_alignment,
+            ..self
+        }
+    }
+
+    
+    #[must_use]
+    pub const fn using_minimum_supported_acceleration_structure_values(self) -> Self {
+        Self {
+            max_blas_geometry_count: (1 << 24) - 1, 
+            max_tlas_instance_count: (1 << 24) - 1, 
+            max_blas_primitive_count: 1 << 28,      
+            max_acceleration_structures_per_shader_stage: 16, 
+            ..self
+        }
+    }
+
+    
+    
+    #[must_use]
+    pub const fn using_acceleration_structure_values(self, other: Self) -> Self {
+        Self {
+            max_blas_geometry_count: other.max_blas_geometry_count,
+            max_tlas_instance_count: other.max_tlas_instance_count,
+            max_blas_primitive_count: other.max_blas_primitive_count,
+            max_acceleration_structures_per_shader_stage: other
+                .max_acceleration_structures_per_shader_stage,
             ..self
         }
     }
@@ -941,6 +999,9 @@ impl Limits {
         }
         compare!(max_push_constant_size, Less);
         compare!(max_non_sampler_bindings, Less);
+        compare!(max_blas_primitive_count, Less);
+        compare!(max_blas_geometry_count, Less);
+        compare!(max_tlas_instance_count, Less);
     }
 }
 

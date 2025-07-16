@@ -5,6 +5,15 @@ use core::mem::MaybeUninit;
 
 use ash::{ext, khr, vk};
 
+macro_rules! to_u64 {
+    ($expr:expr) => {{
+        #[allow(trivial_numeric_casts)]
+        let expr = $expr as u64;
+        assert!(size_of_val(&expr) <= size_of::<u64>());
+        expr
+    }};
+}
+
 impl super::Instance {
     
     
@@ -79,10 +88,16 @@ impl super::Instance {
 
             
             
+            
+            
+            
+            
+            
+            
             #[allow(clippy::useless_conversion)]
             if [primary_devid, render_devid]
-                .map(u64::from)
-                .contains(&drm_stat.st_rdev)
+                .map(|devid| to_u64!(devid))
+                .contains(&to_u64!(drm_stat.st_rdev))
             {
                 physical_device = Some(device)
             }
