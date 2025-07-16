@@ -70,7 +70,6 @@ struct NavigationAPIMethodTracker final : public nsISupports {
 
   
   void NotifyAboutCommittedToEntry(NavigationHistoryEntry* aNHE) {
-    MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
     
     mCommittedToEntry = aNHE;
     if (mSerializedState) {
@@ -86,7 +85,6 @@ struct NavigationAPIMethodTracker final : public nsISupports {
 
   
   void ResolveFinishedPromise() {
-    MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
     
     MOZ_DIAGNOSTIC_ASSERT(mCommittedToEntry);
     
@@ -97,8 +95,6 @@ struct NavigationAPIMethodTracker final : public nsISupports {
 
   
   void RejectFinishedPromise(JS::Handle<JS::Value> aException) {
-    MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
-    MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
     
     mCommittedPromise->MaybeReject(aException);
     
@@ -390,11 +386,9 @@ static void CreateResultFromAPIMethodTracker(
   
   MOZ_ASSERT(aApiMethodTracker);
   aResult.mCommitted.Reset();
-  aResult.mCommitted.Construct(
-      OwningNonNull<Promise>(*aApiMethodTracker->mCommittedPromise));
+  aResult.mCommitted.Construct(aApiMethodTracker->mCommittedPromise.forget());
   aResult.mFinished.Reset();
-  aResult.mFinished.Construct(
-      OwningNonNull<Promise>(*aApiMethodTracker->mFinishedPromise));
+  aResult.mFinished.Construct(aApiMethodTracker->mFinishedPromise.forget());
 }
 
 bool Navigation::CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(
