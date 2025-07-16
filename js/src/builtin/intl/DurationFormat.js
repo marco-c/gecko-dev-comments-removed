@@ -1245,58 +1245,6 @@ function PartitionDurationFormatPattern(
 
 
 
-function Intl_DurationFormat_format(durationLike) {
-  
-  var df = this;
-
-  
-  if (!IsObject(df) || (df = intl_GuardToDurationFormat(df)) === null) {
-    return callFunction(
-      intl_CallDurationFormatMethodIfWrapped,
-      this,
-      durationLike,
-      "Intl_DurationFormat_format"
-    );
-  }
-
-  
-  var duration = ToTemporalDuration(durationLike);
-
-  
-  return PartitionDurationFormatPattern(
-    df,
-    duration,
-     false
-  );
-}
-
-
-
-
-function Intl_DurationFormat_formatToParts(durationLike) {
-  
-  var df = this;
-
-  
-  if (!IsObject(df) || (df = intl_GuardToDurationFormat(df)) === null) {
-    return callFunction(
-      intl_CallDurationFormatMethodIfWrapped,
-      this,
-      durationLike,
-      "Intl_DurationFormat_formatToParts"
-    );
-  }
-
-  
-  var duration = ToTemporalDuration(durationLike);
-
-  
-  return PartitionDurationFormatPattern(df, duration,  true);
-}
-
-
-
-
 function Intl_DurationFormat_resolvedOptions() {
   
   var durationFormat = this;
