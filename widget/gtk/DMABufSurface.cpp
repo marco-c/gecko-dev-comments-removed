@@ -57,14 +57,6 @@
 #include "mozilla/gfx/gfxVars.h"
 
 
-
-
-
-
-
-
-
-
 #if defined(__cplusplus)
 #  define EGL_CAST(type, value) (static_cast<type>(value))
 #else
@@ -138,7 +130,7 @@ static const std::string FormatEGLError(EGLint err) {
 
 MOZ_RUNINIT static RefPtr<GLContext> sSnapshotContext;
 static StaticMutex sSnapshotContextMutex MOZ_UNANNOTATED;
-static Atomic<int> gNewSurfaceUID(1);
+MOZ_RUNINIT static Atomic<int> gNewSurfaceUID(getpid());
 
 
 
