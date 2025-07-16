@@ -1320,38 +1320,6 @@ bool ModuleLoaderBase::InstantiateModuleGraph(ModuleLoadRequest* aRequest) {
   return true;
 }
 
-nsresult ModuleLoaderBase::InitDebuggerDataForModuleGraph(
-    JSContext* aCx, ModuleLoadRequest* aRequest) {
-  
-  
-  
-  
-
-  MOZ_ASSERT(aRequest);
-
-  ModuleScript* moduleScript = aRequest->mModuleScript;
-  if (moduleScript->DebuggerDataInitialized()) {
-    return NS_OK;
-  }
-
-  for (ModuleLoadRequest* childRequest : aRequest->mImports) {
-    nsresult rv = InitDebuggerDataForModuleGraph(aCx, childRequest);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  JS::Rooted<JSObject*> module(aCx, moduleScript->ModuleRecord());
-  MOZ_ASSERT(module);
-
-  
-  JS::Rooted<JSScript*> script(aCx, JS::GetModuleScript(module));
-  if (script) {
-    JS::ExposeScriptToDebugger(aCx, script);
-  }
-
-  moduleScript->SetDebuggerDataInitialized();
-  return NS_OK;
-}
-
 void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   if (!aRequest->mModuleScript) {
     FinishDynamicImportAndReject(aRequest, NS_ERROR_FAILURE);
@@ -1436,9 +1404,6 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     return NS_OK;
   }
 
-  nsresult rv = InitDebuggerDataForModuleGraph(aCx, aRequest);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   if (aRequest->HasScriptLoadContext()) {
     TRACE_FOR_TEST(aRequest, "scriptloader_evaluate_module");
   }
@@ -1453,6 +1418,7 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   
   MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(aCx));
 
+  nsresult rv = NS_OK;
   if (!ok || IsModuleEvaluationAborted(aRequest)) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
     

@@ -204,13 +204,6 @@ extern JS_PUBLIC_API JSFunction* CompileFunctionUtf8(
 
 
 
-extern JS_PUBLIC_API void ExposeScriptToDebugger(JSContext* cx,
-                                                 Handle<JSScript*> script);
-
-
-
-
-
 
 
 
