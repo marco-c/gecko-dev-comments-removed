@@ -8,6 +8,10 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TEST_CHAT_PROVIDER_URL = "http://mochi.test:8888/";
 
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("sidebar.old-sidebar.has-used");
+});
+
 
 
 
