@@ -481,6 +481,9 @@ void GatherCertificateTransparencyTelemetry(
   for (size_t i = 0; i < info.verifyResult.sctsWithInvalidTimestamps; ++i) {
     glean::ssl::scts_verification_status.AccumulateSingleSample(4);
   }
+  for (size_t i = 0; i < info.verifyResult.sctsWithDistrustedTimestamps; ++i) {
+    glean::ssl::scts_verification_status.AccumulateSingleSample(6);
+  }
 
   
   for (size_t i = 0; i < info.verifyResult.embeddedSCTs; ++i) {

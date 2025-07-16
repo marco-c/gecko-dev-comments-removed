@@ -61,10 +61,15 @@ class MultiLogCTVerifier {
   
   
   
+  
+  
+  
+  
   pkix::Result Verify(pkix::Input cert, pkix::Input issuerSubjectPublicKeyInfo,
                       pkix::Input sctListFromCert,
                       pkix::Input sctListFromOCSPResponse,
                       pkix::Input sctListFromTLSExtension, pkix::Time time,
+                      Maybe<pkix::Time> distrustAfterTime,
                       CTVerifyResult& result);
 
  private:
@@ -73,13 +78,15 @@ class MultiLogCTVerifier {
   
   pkix::Result VerifySCTs(pkix::Input encodedSctList,
                           const LogEntry& expectedEntry, SCTOrigin origin,
-                          pkix::Time time, CTVerifyResult& result);
+                          pkix::Time time, Maybe<pkix::Time> distrustAfterTime,
+                          CTVerifyResult& result);
 
   
   
   pkix::Result VerifySingleSCT(SignedCertificateTimestamp&& sct,
                                const ct::LogEntry& expectedEntry,
                                SCTOrigin origin, pkix::Time time,
+                               Maybe<pkix::Time> distrustAfterTime,
                                CTVerifyResult& result);
 
   

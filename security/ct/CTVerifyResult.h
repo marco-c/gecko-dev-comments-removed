@@ -66,6 +66,9 @@ class CTVerifyResult {
   size_t sctsWithInvalidSignatures;
   
   size_t sctsWithInvalidTimestamps;
+  
+  
+  size_t sctsWithDistrustedTimestamps;
 
   
   size_t embeddedSCTs;
