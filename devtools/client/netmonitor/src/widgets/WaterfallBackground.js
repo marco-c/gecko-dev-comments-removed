@@ -156,12 +156,12 @@ class WaterfallBackground {
       document.ownerGlobal
     );
     const { r, g, b, a } =
-      InspectorUtils.colorToRGBA(colorStr) ||
+      InspectorUtils.colorToRGBA(colorStr, document) ||
       
       
       
       
-      InspectorUtils.colorToRGBA("#888");
+      InspectorUtils.colorToRGBA("#888", document);
     return [r, g, b, a * 255];
   }
 

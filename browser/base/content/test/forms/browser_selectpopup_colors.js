@@ -256,12 +256,12 @@ function rgbaToString(parsedColor) {
 }
 
 function testOptionColors(test, index, item) {
-  // The label contains a JSON string of the expected colors for
-  // `color` and `background-color`.
+  
+  
   let expected = JSON.parse(item.label);
 
-  // Press Down to move the selected item to the next item in the
-  // list and check the colors of this item when it's not selected.
+  
+  
   EventUtils.synthesizeKey("KEY_ArrowDown");
 
   if (expected.end) {
@@ -313,7 +313,7 @@ function computeLabels(tab) {
         ) {
           any = true;
           expected[color] = _rgbaToString(
-            InspectorUtils.colorToRGBA(expected[color])
+            InspectorUtils.colorToRGBA(expected[color], content.document)
           );
         }
       }
@@ -406,9 +406,9 @@ async function testSelectColors(selectID, itemCount, options) {
   }
 
   if (!options.skipSelectColorTest.background) {
-    // Combine the select popup's backgroundColor and the
-    // backgroundImage color to get the color that is seen by
-    // the user.
+    
+    
+    
     let base = getComputedStyle(arrowSB).backgroundColor;
     if (base == "rgba(0, 0, 0, 0)") {
       base = getComputedStyle(selectPopup).backgroundColor;
@@ -456,7 +456,7 @@ async function testSelectColors(selectID, itemCount, options) {
   }
 }
 
-// System colors may be different in content pages and chrome pages.
+
 let kDefaultSelectStyles = {};
 
 add_setup(async function () {
@@ -481,14 +481,14 @@ add_setup(async function () {
   );
 });
 
-// This test checks when a <select> element has styles applied to <option>s within it.
+
 add_task(async function test_colors_applied_to_popup_items() {
   await testSelectColors("PAGECONTENT_COLORS", 7, {
     skipSelectColorTest: true,
   });
 });
 
-// This test checks when a <select> element has styles applied to itself.
+
 add_task(async function test_colors_applied_to_popup() {
   let options = {
     selectColor: "rgb(255, 255, 255)",
@@ -497,7 +497,7 @@ add_task(async function test_colors_applied_to_popup() {
   await testSelectColors("PAGECONTENT_COLORS_ON_SELECT", 4, options);
 });
 
-// This test checks when a <select> element has a transparent background applied to itself.
+
 add_task(async function test_transparent_applied_to_popup() {
   let options = {
     unstyled: true,
@@ -506,13 +506,13 @@ add_task(async function test_transparent_applied_to_popup() {
   await testSelectColors("TRANSPARENT_SELECT", 2, options);
 });
 
-// This test checks when a <select> element has a background set, and the
-// options have their own background set which is equal to the default
-// user-agent background color, but should be used because the select
-// background color has been changed.
+
+
+
+
 add_task(async function test_options_inverted_from_select_background() {
-  // The popup has a black background and white text, but the
-  // options inside of it have flipped the colors.
+  
+  
   let options = {
     selectColor: "rgb(255, 255, 255)",
     selectBgColor: "rgb(0, 0, 0)",
@@ -524,21 +524,21 @@ add_task(async function test_options_inverted_from_select_background() {
   );
 });
 
-// This test checks when a <select> element has a background set using !important,
-// which was affecting how we calculated the user-agent styling.
+
+
 add_task(async function test_select_background_using_important() {
   await testSelectColors("GENERIC_OPTION_STYLED_AS_IMPORTANT", 2, {
     skipSelectColorTest: true,
   });
 });
 
-// This test checks when a <select> element has a background set, and the
-// options have their own background set which is equal to the default
-// user-agent background color, but should be used because the select
-// background color has been changed.
+
+
+
+
 add_task(async function test_translucent_select_becomes_opaque() {
-  // The popup is requested to show a translucent background
-  // but we apply the requested background color on the system's base color.
+  
+  
   let options = {
     selectColor: "rgb(0, 0, 0)",
     selectBgColor: "rgb(255, 255, 255)",
@@ -546,12 +546,12 @@ add_task(async function test_translucent_select_becomes_opaque() {
   await testSelectColors("TRANSLUCENT_SELECT_BECOMES_OPAQUE", 2, options);
 });
 
-// This test checks when a popup has a translucent background color,
-// and that the color painted to the screen of the translucent background
-// matches what the user expects.
+
+
+
 add_task(async function test_translucent_select_applies_on_base_color() {
-  // The popup is requested to show a translucent background
-  // but we apply the requested background color on the system's base color.
+  
+  
   let options = {
     selectColor: "rgb(0, 0, 0)",
     selectBgColor: "rgb(255, 115, 115)",
@@ -721,7 +721,7 @@ add_task(
     );
 
     let sheet = stylesheetEl.sheet;
-    /* Check that the rules are what we expect: There are three different option styles (even though there are 6 options, plus the select rules). */
+    
     let expectedSelectors = [
       "#ContentSelectDropdown .ContentSelectDropdown-item-0",
       "#ContentSelectDropdown .ContentSelectDropdown-item-1",
@@ -797,18 +797,26 @@ add_task(async function test_scrollbar_props() {
 
 if (AppConstants.platform == "win") {
   add_task(async function test_darkmode() {
-    let lightSelectColor = rgbaToString(InspectorUtils.colorToRGBA("MenuText"));
-    let lightSelectBgColor = rgbaToString(InspectorUtils.colorToRGBA("Menu"));
+    let lightSelectColor = rgbaToString(
+      InspectorUtils.colorToRGBA("MenuText", document)
+    );
+    let lightSelectBgColor = rgbaToString(
+      InspectorUtils.colorToRGBA("Menu", document)
+    );
 
-    // Force dark mode:
+    
     let darkModeQuery = matchMedia("(prefers-color-scheme: dark)");
     let darkModeChange = BrowserTestUtils.waitForEvent(darkModeQuery, "change");
     await SpecialPowers.pushPrefEnv({ set: [["ui.systemUsesDarkTheme", 1]] });
     await darkModeChange;
 
-    // Determine colours from the main context menu:
-    let darkSelectColor = rgbaToString(InspectorUtils.colorToRGBA("MenuText"));
-    let darkSelectBgColor = rgbaToString(InspectorUtils.colorToRGBA("Menu"));
+    
+    let darkSelectColor = rgbaToString(
+      InspectorUtils.colorToRGBA("MenuText", document)
+    );
+    let darkSelectBgColor = rgbaToString(
+      InspectorUtils.colorToRGBA("Menu", document)
+    );
 
     isnot(lightSelectColor, darkSelectColor);
     isnot(lightSelectBgColor, darkSelectBgColor);
@@ -834,9 +842,9 @@ if (AppConstants.platform == "win") {
       gSelects.IDENTICAL_BG_DIFF_FG_OPTION_DARKMODE
     ));
 
-    // Custom styling on the options enforces using the select styling, too,
-    // even if it matched the UA style. They'll be overridden on individual
-    // options where necessary.
+    
+    
+    
     await testSelectColors("IDENTICAL_BG_DIFF_FG_OPTION_DARKMODE", 3, {
       selectColor: "rgb(0, 0, 0)",
       selectBgColor: "rgb(255, 255, 255)",
@@ -847,9 +855,9 @@ if (AppConstants.platform == "win") {
 
     ({ tab } = await openSelectPopup(gSelects.SPLIT_FG_BG_OPTION_DARKMODE));
 
-    // Like the previous case, but here the bg colour is defined on the
-    // select, and the fg colour on the option. The behaviour should be the
-    // same.
+    
+    
+    
     await testSelectColors("SPLIT_FG_BG_OPTION_DARKMODE", 3, {
       selectColor: "rgb(0, 0, 0)",
       selectBgColor: "rgb(255, 255, 255)",
