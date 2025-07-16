@@ -1258,6 +1258,8 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
 
 
 
+
+
   async function doBaseTest({
     featureId,
     pref,
@@ -1703,6 +1705,14 @@ add_task(async function test_prefChange() {
     Services.telemetry.snapshotEvents(
       Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
        true
+    );
+
+    Services.fog.applyServerKnobsConfig(
+      JSON.stringify({
+        metrics_enabled: {
+          "nimbus_events.enrollment_status": true,
+        },
+      })
     );
 
     const { manager, cleanup } = await setupTest();
@@ -3549,15 +3559,15 @@ add_task(async function testDb() {
     }
   );
 
-  const setPrefs = JSON.parse(result.getResultByName("setPrefs"));
+  const enrollmentPrefs = JSON.parse(result.getResultByName("setPrefs"));
   const enrollment = manager.store.get("slug");
 
   Assert.deepEqual(
-    setPrefs,
+    enrollmentPrefs,
     enrollment.prefs,
     "setPrefs stored in the database"
   );
-  Assert.deepEqual(setPrefs, [
+  Assert.deepEqual(enrollmentPrefs, [
     {
       name: "nimbus.qa.pref-1",
       branch: "default",
