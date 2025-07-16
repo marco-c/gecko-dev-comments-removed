@@ -135,6 +135,13 @@
 
 
 
+
+
+
+
+
+
+
     async appendNotification(
       aType,
       aNotification,
@@ -223,6 +230,30 @@
         newitem.setAttribute("type", "info");
       } else {
         newitem.setAttribute("type", "warning");
+      }
+
+      
+      const CONFIGURABLE_NOTIFICATION_STYLES = [
+        "background-color",
+        "font-size",
+      ];
+
+      const CONFIGURED_STYLES = aNotification.style || {};
+      for (let prop of Object.keys(CONFIGURED_STYLES)) {
+        if (!CONFIGURABLE_NOTIFICATION_STYLES.includes(prop)) {
+          continue;
+        }
+
+        if (prop === "background-color") {
+          
+          
+          newitem.style.setProperty(
+            "--info-bar-background-color-configurable",
+            aNotification.style["background-color"]
+          );
+        } else {
+          newitem.style[prop] = aNotification.style[prop];
+        }
       }
 
       
