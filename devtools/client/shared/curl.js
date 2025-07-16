@@ -484,7 +484,7 @@ const CurlUtils = {
         
         
         
-        .replace(/\r?\n/g, "^\n\n") +
+        .replace(/\r?\n|\r/g, "^\n\n") +
       encapsChars
     );
   },
