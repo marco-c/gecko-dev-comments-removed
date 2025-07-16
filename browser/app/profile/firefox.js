@@ -2056,6 +2056,14 @@ pref("nimbus.profilesdatastoreservice.read.enabled", false);
 
 
 
+#if defined(NIGHTLY_BUILD)
+pref("nimbus.profilesdatastoreservice.sync.enabled", true);
+#else
+pref("nimbus.profilesdatastoreservice.sync.enabled", false);
+#endif
+
+
+
 
 
 #if defined(MOZ_ARTIFACT_BUILDS)
