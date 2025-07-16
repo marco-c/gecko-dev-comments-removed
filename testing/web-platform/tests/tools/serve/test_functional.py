@@ -56,8 +56,13 @@ def test_subprocess_exit(server_subprocesses, tempfile_name):
         
         
         
+        config = {
+            "browser_host": "localhost",
+            "alternate_hosts": {"alt": "127.0.0.1"},
+            "check_subdomains": False,
+        }
         with open(tempfile_name, 'w') as handle:
-            json.dump({"check_subdomains": False, "bind_address": False}, handle)
+            json.dump(config, handle)
 
         
         
