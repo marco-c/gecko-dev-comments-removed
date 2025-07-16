@@ -1101,45 +1101,26 @@ class TargetCommand extends EventEmitter {
 
 
   navigateTo(url, waitForLoad = true) {
-    if (this.descriptorFront.traits.supportsNavigation) {
-      return this.descriptorFront.navigateTo(url, waitForLoad);
+    if (!this.descriptorFront.traits.supportsNavigation) {
+      throw new Error("Descriptor doesn't support navigation");
     }
 
-    
-    
-    
-    
-    
-    
-    return this.targetFront.navigateTo({ url });
+    return this.descriptorFront.navigateTo(url, waitForLoad);
   }
 
   goBack() {
-    if (this.descriptorFront.traits.supportsNavigation) {
-      return this.descriptorFront.goBack();
+    if (!this.descriptorFront.traits.supportsNavigation) {
+      throw new Error("Descriptor doesn't support navigation");
     }
 
-    
-    
-    
-    
-    
-    
-    return this.targetFront.goBack();
+    return this.descriptorFront.goBack();
   }
 
   goForward() {
-    if (this.descriptorFront.traits.supportsNavigation) {
-      return this.descriptorFront.goForward();
+    if (!this.descriptorFront.traits.supportsNavigation) {
+      throw new Error("Descriptor doesn't support navigation");
     }
-
-    
-    
-    
-    
-    
-    
-    return this.targetFront.goForward();
+    return this.descriptorFront.goForward();
   }
 
   
