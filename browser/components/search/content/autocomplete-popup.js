@@ -229,6 +229,18 @@
       }
     }
 
+    
+
+
+
+    #currentEngineName;
+
+    
+
+
+
+
+
     async updateHeader(engine) {
       if (!engine) {
         if (PrivateBrowsingUtils.isWindowPrivate(window)) {
@@ -237,8 +249,18 @@
           engine = await Services.search.getDefault();
         }
       }
+      this.#currentEngineName = engine.name;
 
       let uri = await engine.getIconURL();
+
+      
+      
+      
+      
+      if (engine.name != this.#currentEngineName) {
+        return;
+      }
+
       if (uri) {
         this.setAttribute("src", uri);
       } else {

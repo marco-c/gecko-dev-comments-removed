@@ -80,11 +80,18 @@ function promiseEvent(aTarget, aEventName, aPreventDefault) {
 }
 
 
-function getOneOffs() {
+
+
+async function getOneOffs() {
+  
   let oneOffs = [];
   let searchPopup = document.getElementById("PopupSearchAutoComplete");
+  if (searchPopup.oneOffButtons._rebuilding) {
+    await promiseEvent(searchPopup.oneOffButtons, "rebuild");
+  }
   let oneOffsContainer = searchPopup.searchOneOffsContainer;
   let oneOff = oneOffsContainer.querySelector(".search-panel-one-offs");
+
   for (oneOff = oneOff.firstChild; oneOff; oneOff = oneOff.nextSibling) {
     if (oneOff.nodeType == Node.ELEMENT_NODE) {
       oneOffs.push(oneOff);

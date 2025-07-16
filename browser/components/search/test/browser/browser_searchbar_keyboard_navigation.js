@@ -40,10 +40,6 @@ async function checkHeader(engine) {
 }
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   searchbar = await gCUITestUtils.addSearchBar();
   textbox = searchbar.textbox;
 
@@ -86,7 +82,7 @@ add_task(async function test_arrows() {
   
   
   
-  let oneOffs = getOneOffs();
+  let oneOffs = await getOneOffs();
   Assert.greaterOrEqual(
     oneOffs.length,
     4,
@@ -95,6 +91,7 @@ add_task(async function test_arrows() {
 
   ok(!textbox.selectedButton, "no one-off button should be selected");
 
+  await checkHeader(Services.search.defaultEngine);
   
   for (let i = 0; i < kValues.length; ++i) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -222,7 +219,7 @@ add_task(async function test_tab() {
     "the search bar should be focused"
   ); 
 
-  let oneOffs = getOneOffs();
+  let oneOffs = await getOneOffs();
   ok(!textbox.selectedButton, "no one-off button should be selected");
 
   
@@ -264,7 +261,7 @@ add_task(async function test_shift_tab() {
   searchbar.focus();
   await promise;
 
-  let oneOffs = getOneOffs();
+  let oneOffs = await getOneOffs();
   ok(!textbox.selectedButton, "no one-off button should be selected");
 
   
@@ -344,7 +341,7 @@ add_task(async function test_alt_down() {
 
   
   
-  let oneOffs = getOneOffs();
+  let oneOffs = await getOneOffs();
   for (let i = 0; i < oneOffs.length; ++i) {
     EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
     is(
@@ -390,7 +387,7 @@ add_task(async function test_alt_up() {
 
   
   
-  let oneOffs = getOneOffs();
+  let oneOffs = await getOneOffs();
   for (let i = oneOffs.length - 1; i >= 0; --i) {
     EventUtils.synthesizeKey("KEY_ArrowUp", { altKey: true });
     is(
@@ -502,7 +499,7 @@ add_task(async function test_tab_and_arrows() {
 
   
   
-  let oneOffs = getOneOffs();
+  let oneOffs = await getOneOffs();
   EventUtils.synthesizeKey("KEY_Tab");
   is(
     textbox.selectedButton,
@@ -623,7 +620,7 @@ add_task(async function test_open_search() {
 
   
   EventUtils.synthesizeKey("KEY_ArrowUp");
-  const allOneOffs = getOneOffs();
+  const allOneOffs = await getOneOffs();
   is(
     textbox.selectedButton,
     allOneOffs[allOneOffs.length - engines.length - 1],
