@@ -67,14 +67,6 @@ function promiseEvent(event, target, capture = false) {
   });
 }
 
-
-
-
-
-
-
-
-
 function installPromptHandler(info) {
   const install = this;
 
