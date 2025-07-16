@@ -4,6 +4,7 @@
 
 "use strict";
 
+const LINE_BREAK_RE = /\r\n?|\n|\u2028|\u2029/;
 const MAX_DATA_URL_LENGTH = 40;
 
 
@@ -333,6 +334,8 @@ function prettifyCSS(text, ruleCount) {
   
   let isCloseBrace;
   
+  let isNewLine;
+  
   
   let lastWasWS;
   
@@ -394,7 +397,16 @@ function prettifyCSS(text, ruleCount) {
         break;
       }
 
-      if (token.tokenType !== "WhiteSpace") {
+      if (token.tokenType === "WhiteSpace") {
+        if (LINE_BREAK_RE.test(token.text)) {
+          
+          
+          
+          
+          isNewLine = true;
+          break;
+        }
+      } else {
         anyNonWS = true;
       }
 
@@ -433,6 +445,7 @@ function prettifyCSS(text, ruleCount) {
     endIndex = undefined;
     anyNonWS = false;
     isCloseBrace = false;
+    isNewLine = false;
     lastWasWS = false;
 
     
@@ -445,6 +458,9 @@ function prettifyCSS(text, ruleCount) {
         
       } else {
         result = result + indent + text.substring(startIndex, endIndex);
+        if (isNewLine) {
+          lineOffset = lineOffset - 1;
+        }
         if (isCloseBrace) {
           result += prettifyCSS.LINE_SEPARATOR;
           lineOffset = lineOffset + 1;
