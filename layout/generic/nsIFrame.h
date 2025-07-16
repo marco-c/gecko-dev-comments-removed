@@ -4761,6 +4761,9 @@ class nsIFrame : public nsQueryFrame {
   inline bool IsColumnSpanInMulticolSubtree() const;
 
   
+  inline bool HasAnchorPosReference() const;
+
+  
 
 
 
