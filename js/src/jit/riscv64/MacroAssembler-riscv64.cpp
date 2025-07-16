@@ -1676,12 +1676,11 @@ void MacroAssemblerRiscv64Compat::loadInt32OrDouble(const Address& src,
   
   UseScratchRegisterScope temps(this);
   Register ScratchRegister = temps.Acquire();
-  Register SecondScratchReg = temps.Acquire();
   loadPtr(Address(src.base, src.offset), ScratchRegister);
-  srli(SecondScratchReg, ScratchRegister, JSVAL_TAG_SHIFT);
-  asMasm().branchTestInt32(Assembler::NotEqual, SecondScratchReg, &notInt32);
-  loadPtr(Address(src.base, src.offset), SecondScratchReg);
-  convertInt32ToDouble(SecondScratchReg, dest);
+  srli(ScratchRegister, ScratchRegister, JSVAL_TAG_SHIFT);
+  asMasm().branchTestInt32(Assembler::NotEqual, ScratchRegister, &notInt32);
+  loadPtr(Address(src.base, src.offset), ScratchRegister);
+  convertInt32ToDouble(ScratchRegister, dest);
   ma_branch(&end);
 
   
@@ -1696,25 +1695,24 @@ void MacroAssemblerRiscv64Compat::loadInt32OrDouble(const BaseIndex& addr,
 
   UseScratchRegisterScope temps(this);
   Register ScratchRegister = temps.Acquire();
-  Register SecondScratchReg = temps.Acquire();
   
-  computeScaledAddress(addr, SecondScratchReg);
+  computeScaledAddress(addr, ScratchRegister);
   
-  loadPtr(Address(SecondScratchReg, 0), ScratchRegister);
-  srli(SecondScratchReg, ScratchRegister, JSVAL_TAG_SHIFT);
-  asMasm().branchTestInt32(Assembler::NotEqual, SecondScratchReg, &notInt32);
+  loadPtr(Address(ScratchRegister, 0), ScratchRegister);
+  srli(ScratchRegister, ScratchRegister, JSVAL_TAG_SHIFT);
+  asMasm().branchTestInt32(Assembler::NotEqual, ScratchRegister, &notInt32);
 
-  computeScaledAddress(addr, SecondScratchReg);
-  loadPtr(Address(SecondScratchReg, 0), SecondScratchReg);
-  convertInt32ToDouble(SecondScratchReg, dest);
+  computeScaledAddress(addr, ScratchRegister);
+  loadPtr(Address(ScratchRegister, 0), ScratchRegister);
+  convertInt32ToDouble(ScratchRegister, dest);
   ma_branch(&end);
 
   
   bind(&notInt32);
   
   
-  computeScaledAddress(addr, SecondScratchReg);
-  unboxDouble(Address(SecondScratchReg, 0), dest);
+  computeScaledAddress(addr, ScratchRegister);
+  unboxDouble(Address(ScratchRegister, 0), dest);
   bind(&end);
 }
 
