@@ -67,6 +67,12 @@ class GlobalIntlData {
 
 
 
+  GCPtr<JSObject*> timeZoneObject_;
+
+  
+
+
+
 
   GCPtr<JSLinearString*> collatorLocale_;
 
@@ -136,6 +142,16 @@ class GlobalIntlData {
 
 
   temporal::TimeZoneObject* getOrCreateDefaultTimeZone(JSContext* cx);
+
+  
+
+
+
+
+
+  temporal::TimeZoneObject* getOrCreateTimeZone(
+      JSContext* cx, JS::Handle<JSLinearString*> identifier,
+      JS::Handle<JSLinearString*> primaryIdentifier);
 
   
 
