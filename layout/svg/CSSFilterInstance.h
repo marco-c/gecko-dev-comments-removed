@@ -102,12 +102,6 @@ class CSSFilterInstance {
   
 
 
-
-  sRGBColor ToAttributeColor(nscolor aColor);
-
-  
-
-
   Size BlurRadiusToFilterSpace(nscoord aRadiusInFrameSpace);
 
   
