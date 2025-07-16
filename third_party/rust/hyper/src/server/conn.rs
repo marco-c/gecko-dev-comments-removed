@@ -58,11 +58,22 @@ use crate::error::{Kind, Parse};
 #[cfg(feature = "http1")]
 use crate::upgrade::Upgraded;
 
+#[cfg(all(feature = "backports", feature = "http1"))]
+pub mod http1;
+#[cfg(all(feature = "backports", feature = "http2"))]
+pub mod http2;
+
 cfg_feature! {
     #![any(feature = "http1", feature = "http2")]
 
     use std::error::Error as StdError;
     use std::fmt;
+    use std::task::{Context, Poll};
+    use std::pin::Pin;
+    use std::future::Future;
+    use std::marker::Unpin;
+    #[cfg(not(all(feature = "http1", feature = "http2")))]
+    use std::convert::Infallible;
 
     use bytes::Bytes;
     use pin_project_lite::pin_project;
@@ -71,9 +82,6 @@ cfg_feature! {
 
     pub use super::server::Connecting;
     use crate::body::{Body, HttpBody};
-    use crate::common::{task, Future, Pin, Poll, Unpin};
-    #[cfg(not(all(feature = "http1", feature = "http2")))]
-    use crate::common::Never;
     use crate::common::exec::{ConnStreamExec, Exec};
     use crate::proto;
     use crate::service::HttpService;
@@ -93,6 +101,12 @@ pub use super::tcp::{AddrIncoming, AddrStream};
 #[derive(Clone, Debug)]
 #[cfg(any(feature = "http1", feature = "http2"))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "http1", feature = "http2"))))]
+#[cfg_attr(
+    feature = "deprecated",
+    deprecated(
+        note = "This struct will be replaced with `server::conn::http1::Builder` and `server::conn::http2::Builder` in 1.0, enable the \"backports\" feature to use them now."
+    )
+)]
 pub struct Http<E = Exec> {
     pub(crate) exec: E,
     h1_half_close: bool,
@@ -145,14 +159,14 @@ type Http1Dispatcher<T, B, S> =
     proto::h1::Dispatcher<proto::h1::dispatch::Server<S, Body>, B, T, proto::ServerTransaction>;
 
 #[cfg(all(not(feature = "http1"), feature = "http2"))]
-type Http1Dispatcher<T, B, S> = (Never, PhantomData<(T, Box<Pin<B>>, Box<Pin<S>>)>);
+type Http1Dispatcher<T, B, S> = (Infallible, PhantomData<(T, Box<Pin<B>>, Box<Pin<S>>)>);
 
 #[cfg(feature = "http2")]
 type Http2Server<T, B, S, E> = proto::h2::Server<Rewind<T>, S, B, E>;
 
 #[cfg(all(not(feature = "http2"), feature = "http1"))]
 type Http2Server<T, B, S, E> = (
-    Never,
+    Infallible,
     PhantomData<(T, Box<Pin<S>>, Box<Pin<B>>, Box<Pin<E>>)>,
 );
 
@@ -208,6 +222,12 @@ impl<E> Unpin for Fallback<E> {}
 #[derive(Debug)]
 #[cfg(any(feature = "http1", feature = "http2"))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "http1", feature = "http2"))))]
+#[cfg_attr(
+    feature = "deprecated",
+    deprecated(
+        note = "This struct will be replaced with `server::conn::http1::Parts` in 1.0, enable the \"backports\" feature to use them now."
+    )
+)]
 pub struct Parts<T, S> {
     
     pub io: T,
@@ -227,6 +247,7 @@ pub struct Parts<T, S> {
 
 
 
+#[cfg_attr(feature = "deprecated", allow(deprecated))]
 #[cfg(any(feature = "http1", feature = "http2"))]
 impl Http {
     
@@ -250,6 +271,7 @@ impl Http {
     }
 }
 
+#[cfg_attr(feature = "deprecated", allow(deprecated))]
 #[cfg(any(feature = "http1", feature = "http2"))]
 impl<E> Http<E> {
     
@@ -372,6 +394,40 @@ impl<E> Http<E> {
                 self.mode = ConnectionMode::Fallback;
             }
         }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "http2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
+    pub fn http2_max_pending_accept_reset_streams(
+        &mut self,
+        max: impl Into<Option<usize>>,
+    ) -> &mut Self {
+        self.h2_builder.max_pending_accept_reset_streams = max.into();
+
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "http2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
+    pub fn http2_max_local_error_reset_streams(
+        &mut self,
+        max: impl Into<Option<usize>>,
+    ) -> &mut Self {
+        self.h2_builder.max_local_error_reset_streams = max.into();
+
         self
     }
 
@@ -733,6 +789,7 @@ where
     
     
     
+    #[cfg_attr(feature = "deprecated", allow(deprecated))]
     pub fn into_parts(self) -> Parts<I, S> {
         self.try_into_parts()
             .unwrap_or_else(|| panic!("h2 cannot into_inner"))
@@ -741,6 +798,7 @@ where
     
     
     
+    #[cfg_attr(feature = "deprecated", allow(deprecated))]
     pub fn try_into_parts(self) -> Option<Parts<I, S>> {
         match self.conn.unwrap() {
             #[cfg(feature = "http1")]
@@ -767,12 +825,7 @@ where
     
     
     
-    pub fn poll_without_shutdown(&mut self, cx: &mut task::Context<'_>) -> Poll<crate::Result<()>>
-    where
-        S: Unpin,
-        S::Future: Unpin,
-        B: Unpin,
-    {
+    pub fn poll_without_shutdown(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<()>> {
         loop {
             match *self.conn.as_mut().unwrap() {
                 #[cfg(feature = "http1")]
@@ -808,16 +861,17 @@ where
     
     
     
-    pub fn without_shutdown(self) -> impl Future<Output = crate::Result<Parts<I, S>>>
-    where
-        S: Unpin,
-        S::Future: Unpin,
-        B: Unpin,
-    {
+    #[cfg_attr(feature = "deprecated", allow(deprecated))]
+    pub fn without_shutdown(self) -> impl Future<Output = crate::Result<Parts<I, S>>> {
         let mut conn = Some(self);
         futures_util::future::poll_fn(move |cx| {
             ready!(conn.as_mut().unwrap().poll_without_shutdown(cx))?;
-            Poll::Ready(conn.take().unwrap().try_into_parts().ok_or_else(crate::Error::new_without_shutdown_not_h1))
+            Poll::Ready(
+                conn.take()
+                    .unwrap()
+                    .try_into_parts()
+                    .ok_or_else(crate::Error::new_without_shutdown_not_h1),
+            )
         })
     }
 
@@ -860,14 +914,14 @@ impl<I, B, S, E> Future for Connection<I, S, E>
 where
     S: HttpService<Body, ResBody = B>,
     S::Error: Into<Box<dyn StdError + Send + Sync>>,
-    I: AsyncRead + AsyncWrite + Unpin + 'static,
+    I: AsyncRead + AsyncWrite + Unpin,
     B: HttpBody + 'static,
     B::Error: Into<Box<dyn StdError + Send + Sync>>,
     E: ConnStreamExec<S::Future, B>,
 {
     type Output = crate::Result<()>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         loop {
             match ready!(Pin::new(self.conn.as_mut().unwrap()).poll(cx)) {
                 Ok(done) => {
@@ -946,7 +1000,7 @@ where
 {
     type Output = crate::Result<proto::Dispatched>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.project() {
             #[cfg(feature = "http1")]
             ProtoServerProj::H1 { h1, .. } => h1.poll(cx),
@@ -1007,7 +1061,7 @@ mod upgrades {
     {
         type Output = crate::Result<()>;
 
-        fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
             loop {
                 match ready!(Pin::new(self.inner.conn.as_mut().unwrap()).poll(cx)) {
                     Ok(proto::Dispatched::Shutdown) => return Poll::Ready(Ok(())),

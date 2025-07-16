@@ -80,8 +80,13 @@
 
 
 use std::fmt;
+use std::fmt::{Debug, Formatter};
+use std::ops::Deref;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use ::http::Extensions;
+use tokio::sync::watch;
 
 cfg_feature! {
     #![feature = "tcp"]
@@ -113,6 +118,147 @@ pub struct Connected {
     pub(super) alpn: Alpn,
     pub(super) is_proxied: bool,
     pub(super) extra: Option<Extra>,
+    pub(super) poisoned: PoisonPill,
+}
+
+#[derive(Clone)]
+pub(crate) struct PoisonPill {
+    poisoned: Arc<AtomicBool>,
+}
+
+impl Debug for PoisonPill {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        
+        write!(
+            f,
+            "PoisonPill@{:p} {{ poisoned: {} }}",
+            self.poisoned,
+            self.poisoned.load(Ordering::Relaxed)
+        )
+    }
+}
+
+impl PoisonPill {
+    pub(crate) fn healthy() -> Self {
+        Self {
+            poisoned: Arc::new(AtomicBool::new(false)),
+        }
+    }
+    pub(crate) fn poison(&self) {
+        self.poisoned.store(true, Ordering::Relaxed)
+    }
+
+    pub(crate) fn poisoned(&self) -> bool {
+        self.poisoned.load(Ordering::Relaxed)
+    }
+}
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct CaptureConnection {
+    rx: watch::Receiver<Option<Connected>>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn capture_connection<B>(request: &mut crate::http::Request<B>) -> CaptureConnection {
+    let (tx, rx) = CaptureConnection::new();
+    request.extensions_mut().insert(tx);
+    rx
+}
+
+
+
+
+#[derive(Clone)]
+pub(crate) struct CaptureConnectionExtension {
+    tx: Arc<watch::Sender<Option<Connected>>>,
+}
+
+impl CaptureConnectionExtension {
+    pub(crate) fn set(&self, connected: &Connected) {
+        self.tx.send_replace(Some(connected.clone()));
+    }
+}
+
+impl CaptureConnection {
+    
+    pub(crate) fn new() -> (CaptureConnectionExtension, Self) {
+        let (tx, rx) = watch::channel(None);
+        (
+            CaptureConnectionExtension { tx: Arc::new(tx) },
+            CaptureConnection { rx },
+        )
+    }
+
+    
+    pub fn connection_metadata(&self) -> impl Deref<Target = Option<Connected>> + '_ {
+        self.rx.borrow()
+    }
+
+    
+    
+    
+    
+    pub async fn wait_for_connection_metadata(
+        &mut self,
+    ) -> impl Deref<Target = Option<Connected>> + '_ {
+        if self.rx.borrow().is_some() {
+            return self.rx.borrow();
+        }
+        let _ = self.rx.changed().await;
+        self.rx.borrow()
+    }
 }
 
 pub(super) struct Extra(Box<dyn ExtraInner>);
@@ -130,6 +276,7 @@ impl Connected {
             alpn: Alpn::None,
             is_proxied: false,
             extra: None,
+            poisoned: PoisonPill::healthy(),
         }
     }
 
@@ -191,12 +338,22 @@ impl Connected {
 
     
     
-    #[cfg(feature = "http2")]
+    
+    pub fn poison(&self) {
+        self.poisoned.poison();
+        tracing::debug!(
+            poison_pill = ?self.poisoned, "connection was poisoned"
+        );
+    }
+
+    
+    
     pub(super) fn clone(&self) -> Connected {
         Connected {
             alpn: self.alpn.clone(),
             is_proxied: self.is_proxied,
             extra: self.extra.clone(),
+            poisoned: self.poisoned.clone(),
         }
     }
 }
@@ -270,12 +427,13 @@ where
 #[cfg(any(feature = "http1", feature = "http2"))]
 pub(super) mod sealed {
     use std::error::Error as StdError;
+    use std::future::Future;
+    use std::marker::Unpin;
 
     use ::http::Uri;
     use tokio::io::{AsyncRead, AsyncWrite};
 
     use super::Connection;
-    use crate::common::{Future, Unpin};
 
     
     
@@ -296,6 +454,7 @@ pub(super) mod sealed {
         fn connect(self, internal_only: Internal, dst: Uri) -> <Self::_Svc as ConnectSvc>::Future;
     }
 
+    #[allow(unreachable_pub)]
     pub trait ConnectSvc {
         type Connection: AsyncRead + AsyncWrite + Connection + Unpin + Send + 'static;
         type Error: Into<Box<dyn StdError + Send + Sync>>;
@@ -351,6 +510,7 @@ pub(super) mod sealed {
 #[cfg(test)]
 mod tests {
     use super::Connected;
+    use crate::client::connect::CaptureConnection;
 
     #[derive(Clone, Debug, PartialEq)]
     struct Ex1(usize);
@@ -408,5 +568,73 @@ mod tests {
 
         assert_eq!(ex2.get::<Ex1>(), Some(&Ex1(99)));
         assert_eq!(ex2.get::<Ex2>(), Some(&Ex2("hiccup")));
+    }
+
+    #[test]
+    fn test_sync_capture_connection() {
+        let (tx, rx) = CaptureConnection::new();
+        assert!(
+            rx.connection_metadata().is_none(),
+            "connection has not been set"
+        );
+        tx.set(&Connected::new().proxy(true));
+        assert_eq!(
+            rx.connection_metadata()
+                .as_ref()
+                .expect("connected should be set")
+                .is_proxied(),
+            true
+        );
+
+        
+        assert_eq!(
+            rx.connection_metadata()
+                .as_ref()
+                .expect("connected should be set")
+                .is_proxied(),
+            true
+        );
+    }
+
+    #[tokio::test]
+    async fn async_capture_connection() {
+        let (tx, mut rx) = CaptureConnection::new();
+        assert!(
+            rx.connection_metadata().is_none(),
+            "connection has not been set"
+        );
+        let test_task = tokio::spawn(async move {
+            assert_eq!(
+                rx.wait_for_connection_metadata()
+                    .await
+                    .as_ref()
+                    .expect("connection should be set")
+                    .is_proxied(),
+                true
+            );
+            
+            assert!(
+                rx.wait_for_connection_metadata().await.is_some(),
+                "should be awaitable multiple times"
+            );
+
+            assert_eq!(rx.connection_metadata().is_some(), true);
+        });
+        
+        assert_eq!(test_task.is_finished(), false);
+        tx.set(&Connected::new().proxy(true));
+
+        assert!(test_task.await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn capture_connection_sender_side_dropped() {
+        let (tx, mut rx) = CaptureConnection::new();
+        assert!(
+            rx.connection_metadata().is_none(),
+            "connection has not been set"
+        );
+        drop(tx);
+        assert!(rx.wait_for_connection_metadata().await.is_none());
     }
 }

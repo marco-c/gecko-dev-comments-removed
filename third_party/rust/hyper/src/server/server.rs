@@ -1,8 +1,11 @@
 use std::error::Error as StdError;
 use std::fmt;
+use std::future::Future;
+use std::marker::Unpin;
 #[cfg(feature = "tcp")]
 use std::net::{SocketAddr, TcpListener as StdTcpListener};
-
+use std::pin::Pin;
+use std::task::{Context, Poll};
 #[cfg(feature = "tcp")]
 use std::time::Duration;
 
@@ -17,7 +20,6 @@ use super::tcp::AddrIncoming;
 use crate::body::{Body, HttpBody};
 use crate::common::exec::Exec;
 use crate::common::exec::{ConnStreamExec, NewSvcExec};
-use crate::common::{task, Future, Pin, Poll, Unpin};
 
 
 use super::conn::{Connection, Http as Http_, UpgradeableConnection};
@@ -162,7 +164,7 @@ where
 
     fn poll_next_(
         self: Pin<&mut Self>,
-        cx: &mut task::Context<'_>,
+        cx: &mut Context<'_>,
     ) -> Poll<Option<crate::Result<Connecting<IO, S::Future, E>>>> {
         let me = self.project();
         match ready!(me.make_service.poll_ready_ref(cx)) {
@@ -188,7 +190,7 @@ where
 
     pub(super) fn poll_watch<W>(
         mut self: Pin<&mut Self>,
-        cx: &mut task::Context<'_>,
+        cx: &mut Context<'_>,
         watcher: &W,
     ) -> Poll<crate::Result<()>>
     where
@@ -221,7 +223,7 @@ where
 {
     type Output = crate::Result<()>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.poll_watch(cx, &NoopWatcher)
     }
 }
@@ -370,6 +372,33 @@ impl<I, E> Builder<I, E> {
     #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
     pub fn http2_only(mut self, val: bool) -> Self {
         self.protocol.http2_only(val);
+        self
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "http2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
+    pub fn http2_max_pending_accept_reset_streams(mut self, max: impl Into<Option<usize>>) -> Self {
+        self.protocol.http2_max_pending_accept_reset_streams(max);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "http2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
+    pub fn http2_max_local_error_reset_streams(mut self, max: impl Into<Option<usize>>) -> Self {
+        self.protocol.http2_max_local_error_reset_streams(max);
         self
     }
 
@@ -617,6 +646,14 @@ impl<E> Builder<AddrIncoming, E> {
         self.incoming.set_sleep_on_errors(val);
         self
     }
+
+    
+    
+    
+    
+    pub fn local_addr(&self) -> SocketAddr {
+        self.incoming.local_addr()
+    }
 }
 
 
@@ -655,13 +692,17 @@ where
 
 pub(crate) mod new_svc {
     use std::error::Error as StdError;
+    use std::future::Future;
+    use std::marker::Unpin;
+    use std::pin::Pin;
+    use std::task::{Context, Poll};
+
     use tokio::io::{AsyncRead, AsyncWrite};
     use tracing::debug;
 
     use super::{Connecting, Watcher};
     use crate::body::{Body, HttpBody};
     use crate::common::exec::ConnStreamExec;
-    use crate::common::{task, Future, Pin, Poll, Unpin};
     use crate::service::HttpService;
     use pin_project_lite::pin_project;
 
@@ -722,7 +763,7 @@ pub(crate) mod new_svc {
     {
         type Output = ();
 
-        fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
             
             
             
@@ -790,7 +831,7 @@ where
 {
     type Output = Result<Connection<I, S, E>, FE>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut me = self.project();
         let service = ready!(me.future.poll(cx))?;
         let io = Option::take(&mut me.io).expect("polled after complete");
