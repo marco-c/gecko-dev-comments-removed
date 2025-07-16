@@ -1171,23 +1171,73 @@ const StyleLockedDeclarationBlock* ViewTransition::GetDynamicRuleFor(
 }
 
 
+
+
+
+static void CollectDescendantStackingContexts(nsIFrame* aStackingContextRoot,
+                                              nsTArray<nsIFrame*>& aList) {
+  for (auto& [list, id] : aStackingContextRoot->ChildLists()) {
+    for (nsIFrame* f : list) {
+      
+      
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (f->Style()->IsRootElementStyle() || f->IsStackingContext()) {
+        aList.AppendElement(f);
+        
+        continue;
+      }
+
+      
+      
+      if (f->IsHiddenByContentVisibilityOnAnyAncestor()) {
+        continue;
+      }
+
+      
+      
+      CollectDescendantStackingContexts(f, aList);
+    }
+  }
+}
+
+struct ZOrderComparator {
+  bool LessThan(const nsIFrame* aLeft, const nsIFrame* aRight) const {
+    return aLeft->ZIndex().valueOr(0) < aRight->ZIndex().valueOr(0);
+  }
+};
+
 template <typename Callback>
-static bool ForEachChildFrame(nsIFrame* aFrame, const Callback& aCb) {
-  if (!aCb(aFrame)) {
+static bool ForEachDescendantWithViewTransitionNameInPaintOrder(
+    nsIFrame* aFrame, const Callback& aCb) {
+  
+  if (!aFrame->StyleUIReset()->mViewTransitionName.IsNone() && !aCb(aFrame)) {
     return false;
   }
-  for (auto& [list, id] : aFrame->ChildLists()) {
-    for (nsIFrame* f : list) {
-      if (!ForEachChildFrame(f, aCb)) {
-        return false;
-      }
+
+  nsTArray<nsIFrame*> descendantStackingContexts;
+  CollectDescendantStackingContexts(aFrame, descendantStackingContexts);
+  
+  descendantStackingContexts.StableSort(ZOrderComparator());
+
+  for (nsIFrame* f : descendantStackingContexts) {
+    if (!ForEachDescendantWithViewTransitionNameInPaintOrder(f, aCb)) {
+      return false;
     }
   }
   return true;
 }
 
 template <typename Callback>
-static void ForEachFrame(Document* aDoc, const Callback& aCb) {
+static void ForEachFrameWithViewTransitionName(Document* aDoc,
+                                               const Callback& aCb) {
   PresShell* ps = aDoc->GetPresShell();
   if (!ps) {
     return;
@@ -1196,7 +1246,7 @@ static void ForEachFrame(Document* aDoc, const Callback& aCb) {
   if (!root) {
     return;
   }
-  ForEachChildFrame(root, aCb);
+  ForEachDescendantWithViewTransitionNameInPaintOrder(root, aCb);
 }
 
 
@@ -1220,14 +1270,9 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   
   
   Maybe<SkipTransitionReason> result;
-  ForEachFrame(mDocument, [&](nsIFrame* aFrame) {
+  ForEachFrameWithViewTransitionName(mDocument, [&](nsIFrame* aFrame) {
     RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
-      
-      
-      return true;
-    }
-    if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
       
       
       return true;
@@ -1297,15 +1342,10 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
 Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
   nsTHashSet<nsAtom*> usedTransitionNames;
   Maybe<SkipTransitionReason> result;
-  ForEachFrame(mDocument, [&](nsIFrame* aFrame) {
+  ForEachFrameWithViewTransitionName(mDocument, [&](nsIFrame* aFrame) {
     
     RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
-      return true;
-    }
-    if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
-      
-      
       return true;
     }
     if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
