@@ -1099,464 +1099,349 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     return rv;
   }
 
-  class MOZ_STACK_CLASS AutoBlockElementsJoiner final {
+  class MOZ_STACK_CLASS AutoBlockElementsJoiner;
+  class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter;
+
+  const AutoDeleteRangesHandler* const mParent;
+  nsIEditor::EDirection mOriginalDirectionAndAmount;
+  nsIEditor::EStripWrappers mOriginalStripWrappers;
+};
+
+
+
+
+
+
+class MOZ_STACK_CLASS
+HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner final {
+ public:
+  AutoBlockElementsJoiner() = delete;
+  explicit AutoBlockElementsJoiner(
+      AutoDeleteRangesHandler& aDeleteRangesHandler)
+      : mDeleteRangesHandler(&aDeleteRangesHandler),
+        mDeleteRangesHandlerConst(aDeleteRangesHandler) {}
+  explicit AutoBlockElementsJoiner(
+      const AutoDeleteRangesHandler& aDeleteRangesHandler)
+      : mDeleteRangesHandler(nullptr),
+        mDeleteRangesHandlerConst(aDeleteRangesHandler) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool PrepareToDeleteAtCurrentBlockBoundary(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      Element& aCurrentBlockElement, const EditorDOMPoint& aCaretPoint,
+      const Element& aEditingHost);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool PrepareToDeleteAtOtherBlockBoundary(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      Element& aOtherBlockElement, const EditorDOMPoint& aCaretPoint,
+      const WSRunScanner& aWSRunScannerAtCaret);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool PrepareToDeleteNonCollapsedRange(
+      const HTMLEditor& aHTMLEditor, const nsRange& aRangeToDelete,
+      const Element& aEditingHost);
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
+      HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers,
+      const EditorDOMPoint& aCaretPoint, nsRange& aRangeToDelete,
+      const Element& aEditingHost);
+
+  nsresult ComputeRangeToDelete(const HTMLEditor& aHTMLEditor,
+                                nsIEditor::EDirection aDirectionAndAmount,
+                                const EditorDOMPoint& aCaretPoint,
+                                nsRange& aRangeToDelete,
+                                const Element& aEditingHost) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
+      HTMLEditor& aHTMLEditor,
+      const LimitersAndCaretData& aLimitersAndCaretData,
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
+      const Element& aEditingHost);
+
+  nsresult ComputeRangeToDelete(
+      const HTMLEditor& aHTMLEditor,
+      const AutoClonedSelectionRangeArray& aRangesToDelete,
+      nsIEditor::EDirection aDirectionAndAmount, nsRange& aRangeToDelete,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
+      const Element& aEditingHost) const;
+
+  [[nodiscard]] nsIContent* GetLeafContentInOtherBlockElement() const {
+    MOZ_ASSERT(mMode == Mode::JoinOtherBlock);
+    return mLeafContentInOtherBlock;
+  }
+
+ private:
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleDeleteAtCurrentBlockBoundary(HTMLEditor& aHTMLEditor,
+                                     nsIEditor::EDirection aDirectionAndAmount,
+                                     const EditorDOMPoint& aCaretPoint,
+                                     const Element& aEditingHost);
+  nsresult ComputeRangeToDeleteAtCurrentBlockBoundary(
+      const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
+      nsRange& aRangeToDelete, const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleDeleteAtOtherBlockBoundary(HTMLEditor& aHTMLEditor,
+                                   nsIEditor::EDirection aDirectionAndAmount,
+                                   nsIEditor::EStripWrappers aStripWrappers,
+                                   const EditorDOMPoint& aCaretPoint,
+                                   nsRange& aRangeToDelete,
+                                   const Element& aEditingHost);
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult ComputeRangeToDeleteAtOtherBlockBoundary(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      const EditorDOMPoint& aCaretPoint, nsRange& aRangeToDelete,
+      const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  JoinBlockElementsInSameParent(
+      HTMLEditor& aHTMLEditor,
+      const LimitersAndCaretData& aLimitersAndCaretData,
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
+      const Element& aEditingHost);
+  nsresult ComputeRangeToJoinBlockElementsInSameParent(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      nsRange& aRangeToDelete, const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleDeleteLineBreak(HTMLEditor& aHTMLEditor,
+                        nsIEditor::EDirection aDirectionAndAmount,
+                        const EditorDOMPoint& aCaretPoint,
+                        const Element& aEditingHost);
+  enum class ComputeRangeFor : bool { GetTargetRanges, ToDeleteTheRange };
+  nsresult ComputeRangeToDeleteLineBreak(
+      const HTMLEditor& aHTMLEditor, nsRange& aRangeToDelete,
+      const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  DeleteContentInRange(HTMLEditor& aHTMLEditor,
+                       const LimitersAndCaretData& aLimitersAndCaretData,
+                       nsIEditor::EDirection aDirectionAndAmount,
+                       nsIEditor::EStripWrappers aStripWrappers,
+                       nsRange& aRangeToDelete, const Element& aEditingHost);
+  nsresult ComputeRangeToDeleteContentInRange(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      nsRange& aRange, const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleDeleteNonCollapsedRange(
+      HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
+      const Element& aEditingHost);
+  nsresult ComputeRangeToDeleteNonCollapsedRange(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      nsRange& aRangeToDelete,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
+      const Element& aEditingHost) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  JoinNodesDeepWithTransaction(HTMLEditor& aHTMLEditor,
+                               nsIContent& aLeftContent,
+                               nsIContent& aRightContent);
+
+  enum class PutCaretTo : bool { StartOfRange, EndOfRange };
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
+  DeleteNodesEntirelyInRangeButKeepTableStructure(
+      HTMLEditor& aHTMLEditor,
+      const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContent,
+      PutCaretTo aPutCaretTo);
+  [[nodiscard]] bool
+  NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
+      const HTMLEditor& aHTMLEditor,
+      const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
+      const;
+  Result<bool, nsresult>
+  ComputeRangeToDeleteNodesEntirelyInRangeButKeepTableStructure(
+      const HTMLEditor& aHTMLEditor, nsRange& aRange,
+      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
+      const;
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
+  DeleteContentButKeepTableStructure(HTMLEditor& aHTMLEditor,
+                                     nsIContent& aContent);
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
+  DeleteTextAtStartAndEndOfRange(HTMLEditor& aHTMLEditor, nsRange& aRange,
+                                 PutCaretTo aPutCaretTo);
+
+  
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static Result<Element*, nsresult>
+  GetMostDistantBlockAncestorIfPointIsStartAtBlock(
+      const EditorDOMPointType& aPoint, const Element& aEditingHost,
+      const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+  void ExtendRangeToDeleteNonCollapsedRange(
+      const HTMLEditor& aHTMLEditor, nsRange& aRangeToDelete,
+      const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
+
+  class MOZ_STACK_CLASS AutoInclusiveAncestorBlockElementsJoiner final {
    public:
-    AutoBlockElementsJoiner() = delete;
-    explicit AutoBlockElementsJoiner(
-        AutoDeleteRangesHandler& aDeleteRangesHandler)
-        : mDeleteRangesHandler(&aDeleteRangesHandler),
-          mDeleteRangesHandlerConst(aDeleteRangesHandler) {}
-    explicit AutoBlockElementsJoiner(
-        const AutoDeleteRangesHandler& aDeleteRangesHandler)
-        : mDeleteRangesHandler(nullptr),
-          mDeleteRangesHandlerConst(aDeleteRangesHandler) {}
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] bool PrepareToDeleteAtCurrentBlockBoundary(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount,
-        Element& aCurrentBlockElement, const EditorDOMPoint& aCaretPoint,
-        const Element& aEditingHost);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] bool PrepareToDeleteAtOtherBlockBoundary(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount, Element& aOtherBlockElement,
-        const EditorDOMPoint& aCaretPoint,
-        const WSRunScanner& aWSRunScannerAtCaret);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] bool PrepareToDeleteNonCollapsedRange(
-        const HTMLEditor& aHTMLEditor, const nsRange& aRangeToDelete,
-        const Element& aEditingHost);
-
-    
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-        nsIEditor::EStripWrappers aStripWrappers,
-        const EditorDOMPoint& aCaretPoint, nsRange& aRangeToDelete,
-        const Element& aEditingHost);
-
-    nsresult ComputeRangeToDelete(const HTMLEditor& aHTMLEditor,
-                                  nsIEditor::EDirection aDirectionAndAmount,
-                                  const EditorDOMPoint& aCaretPoint,
-                                  nsRange& aRangeToDelete,
-                                  const Element& aEditingHost) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
-        HTMLEditor& aHTMLEditor,
-        const LimitersAndCaretData& aLimitersAndCaretData,
-        nsIEditor::EDirection aDirectionAndAmount,
-        nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
-        const Element& aEditingHost);
-
-    nsresult ComputeRangeToDelete(
-        const HTMLEditor& aHTMLEditor,
-        const AutoClonedSelectionRangeArray& aRangesToDelete,
-        nsIEditor::EDirection aDirectionAndAmount, nsRange& aRangeToDelete,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
-        const Element& aEditingHost) const;
-
-    [[nodiscard]] nsIContent* GetLeafContentInOtherBlockElement() const {
-      MOZ_ASSERT(mMode == Mode::JoinOtherBlock);
-      return mLeafContentInOtherBlock;
+    AutoInclusiveAncestorBlockElementsJoiner() = delete;
+    AutoInclusiveAncestorBlockElementsJoiner(
+        nsIContent& aInclusiveDescendantOfLeftBlockElement,
+        nsIContent& aInclusiveDescendantOfRightBlockElement)
+        : mInclusiveDescendantOfLeftBlockElement(
+              aInclusiveDescendantOfLeftBlockElement),
+          mInclusiveDescendantOfRightBlockElement(
+              aInclusiveDescendantOfRightBlockElement),
+          mCanJoinBlocks(false),
+          mFallbackToDeleteLeafContent(false) {}
+
+    [[nodiscard]] bool IsSet() const {
+      return mLeftBlockElement && mRightBlockElement;
+    }
+    [[nodiscard]] bool IsSameBlockElement() const {
+      return mLeftBlockElement && mLeftBlockElement == mRightBlockElement;
     }
 
-   private:
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-    HandleDeleteAtCurrentBlockBoundary(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-        const EditorDOMPoint& aCaretPoint, const Element& aEditingHost);
-    nsresult ComputeRangeToDeleteAtCurrentBlockBoundary(
+    
+
+
+
+    [[nodiscard]] Result<bool, nsresult> Prepare(const HTMLEditor& aHTMLEditor,
+                                                 const Element& aEditingHost);
+
+    
+
+
+    [[nodiscard]] bool CanJoinBlocks() const { return mCanJoinBlocks; }
+
+    
+
+
+
+
+
+    [[nodiscard]] bool ShouldDeleteLeafContentInstead() const {
+      MOZ_ASSERT(CanJoinBlocks());
+      return mFallbackToDeleteLeafContent;
+    }
+
+    
+
+
+
+
+    [[nodiscard]] nsresult ComputeRangeToDelete(
         const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
-        nsRange& aRangeToDelete, const Element& aEditingHost) const;
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-    HandleDeleteAtOtherBlockBoundary(HTMLEditor& aHTMLEditor,
-                                     nsIEditor::EDirection aDirectionAndAmount,
-                                     nsIEditor::EStripWrappers aStripWrappers,
-                                     const EditorDOMPoint& aCaretPoint,
-                                     nsRange& aRangeToDelete,
-                                     const Element& aEditingHost);
-    
-    
-    
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-    ComputeRangeToDeleteAtOtherBlockBoundary(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount,
-        const EditorDOMPoint& aCaretPoint, nsRange& aRangeToDelete,
-        const Element& aEditingHost) const;
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-    JoinBlockElementsInSameParent(
-        HTMLEditor& aHTMLEditor,
-        const LimitersAndCaretData& aLimitersAndCaretData,
-        nsIEditor::EDirection aDirectionAndAmount,
-        nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
-        const Element& aEditingHost);
-    nsresult ComputeRangeToJoinBlockElementsInSameParent(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount, nsRange& aRangeToDelete,
-        const Element& aEditingHost) const;
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-    HandleDeleteLineBreak(HTMLEditor& aHTMLEditor,
-                          nsIEditor::EDirection aDirectionAndAmount,
-                          const EditorDOMPoint& aCaretPoint,
-                          const Element& aEditingHost);
-    enum class ComputeRangeFor : bool { GetTargetRanges, ToDeleteTheRange };
-    nsresult ComputeRangeToDeleteLineBreak(
-        const HTMLEditor& aHTMLEditor, nsRange& aRangeToDelete,
-        const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-    DeleteContentInRange(HTMLEditor& aHTMLEditor,
-                         const LimitersAndCaretData& aLimitersAndCaretData,
-                         nsIEditor::EDirection aDirectionAndAmount,
-                         nsIEditor::EStripWrappers aStripWrappers,
-                         nsRange& aRangeToDelete, const Element& aEditingHost);
-    nsresult ComputeRangeToDeleteContentInRange(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount, nsRange& aRange,
-        const Element& aEditingHost) const;
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
-    HandleDeleteNonCollapsedRange(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-        nsIEditor::EStripWrappers aStripWrappers, nsRange& aRangeToDelete,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
-        const Element& aEditingHost);
-    nsresult ComputeRangeToDeleteNonCollapsedRange(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount, nsRange& aRangeToDelete,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed,
-        const Element& aEditingHost) const;
+        nsRange& aRangeToDelete) const;
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-    JoinNodesDeepWithTransaction(HTMLEditor& aHTMLEditor,
-                                 nsIContent& aLeftContent,
-                                 nsIContent& aRightContent);
-
-    enum class PutCaretTo : bool { StartOfRange, EndOfRange };
-
-    
-
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
-    DeleteNodesEntirelyInRangeButKeepTableStructure(
-        HTMLEditor& aHTMLEditor,
-        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContent,
-        PutCaretTo aPutCaretTo);
-    [[nodiscard]] bool
-    NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
-        const HTMLEditor& aHTMLEditor,
-        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
-        const;
-    Result<bool, nsresult>
-    ComputeRangeToDeleteNodesEntirelyInRangeButKeepTableStructure(
-        const HTMLEditor& aHTMLEditor, nsRange& aRange,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
-        const;
-
-    
-
-
-
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
-    DeleteContentButKeepTableStructure(HTMLEditor& aHTMLEditor,
-                                       nsIContent& aContent);
-
-    
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
-    DeleteTextAtStartAndEndOfRange(HTMLEditor& aHTMLEditor, nsRange& aRange,
-                                   PutCaretTo aPutCaretTo);
-
-    
-
-
-
-
-
-    template <typename EditorDOMPointType>
-    [[nodiscard]] static Result<Element*, nsresult>
-    GetMostDistantBlockAncestorIfPointIsStartAtBlock(
-        const EditorDOMPointType& aPoint, const Element& aEditingHost,
-        const Element* aAncestorLimiter = nullptr);
-
-    
-
-
-
-
-    void ExtendRangeToDeleteNonCollapsedRange(
-        const HTMLEditor& aHTMLEditor, nsRange& aRangeToDelete,
-        const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
-
-    class MOZ_STACK_CLASS AutoInclusiveAncestorBlockElementsJoiner final {
-     public:
-      AutoInclusiveAncestorBlockElementsJoiner() = delete;
-      AutoInclusiveAncestorBlockElementsJoiner(
-          nsIContent& aInclusiveDescendantOfLeftBlockElement,
-          nsIContent& aInclusiveDescendantOfRightBlockElement)
-          : mInclusiveDescendantOfLeftBlockElement(
-                aInclusiveDescendantOfLeftBlockElement),
-            mInclusiveDescendantOfRightBlockElement(
-                aInclusiveDescendantOfRightBlockElement),
-            mCanJoinBlocks(false),
-            mFallbackToDeleteLeafContent(false) {}
-
-      [[nodiscard]] bool IsSet() const {
-        return mLeftBlockElement && mRightBlockElement;
-      }
-      [[nodiscard]] bool IsSameBlockElement() const {
-        return mLeftBlockElement && mLeftBlockElement == mRightBlockElement;
-      }
-
-      
-
-
-
-      [[nodiscard]] Result<bool, nsresult> Prepare(
-          const HTMLEditor& aHTMLEditor, const Element& aEditingHost);
-
-      
-
-
-      [[nodiscard]] bool CanJoinBlocks() const { return mCanJoinBlocks; }
-
-      
-
-
-
-
-
-      [[nodiscard]] bool ShouldDeleteLeafContentInstead() const {
-        MOZ_ASSERT(CanJoinBlocks());
-        return mFallbackToDeleteLeafContent;
-      }
-
-      
-
-
-
-
-      [[nodiscard]] nsresult ComputeRangeToDelete(
-          const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
-          nsRange& aRangeToDelete) const;
-
-      
-
-
-
-
-
-
-
-
-
-
-      [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult> Run(
-          HTMLEditor& aHTMLEditor, const Element& aEditingHost);
-
-     private:
-      
-
-
-
-
-
-
-      [[nodiscard]] bool CanMergeLeftAndRightBlockElements() const {
-        if (!IsSet()) {
-          return false;
-        }
-        
-        if (mPointContainingTheOtherBlockElement.GetContainer() ==
-            mRightBlockElement) {
-          return mNewListElementTagNameOfRightListElement.isSome();
-        }
-        
-        if (mPointContainingTheOtherBlockElement.GetContainer() ==
-            mLeftBlockElement) {
-          return mNewListElementTagNameOfRightListElement.isSome() &&
-                 mRightBlockElement->GetChildCount();
-        }
-        MOZ_ASSERT(!mPointContainingTheOtherBlockElement.IsSet());
-        
-        return mNewListElementTagNameOfRightListElement.isSome() ||
-               (mLeftBlockElement->NodeInfo()->NameAtom() ==
-                    mRightBlockElement->NodeInfo()->NameAtom() &&
-                EditorUtils::GetComputedWhiteSpaceStyles(*mLeftBlockElement) ==
-                    EditorUtils::GetComputedWhiteSpaceStyles(
-                        *mRightBlockElement));
-      }
-
-      OwningNonNull<nsIContent> mInclusiveDescendantOfLeftBlockElement;
-      OwningNonNull<nsIContent> mInclusiveDescendantOfRightBlockElement;
-      RefPtr<Element> mLeftBlockElement;
-      RefPtr<Element> mRightBlockElement;
-      Maybe<nsAtom*> mNewListElementTagNameOfRightListElement;
-      EditorDOMPoint mPointContainingTheOtherBlockElement;
-      RefPtr<dom::HTMLBRElement> mPrecedingInvisibleBRElement;
-      bool mCanJoinBlocks;
-      bool mFallbackToDeleteLeafContent;
-    };  
-        
-
-    enum class Mode {
-      NotInitialized,
-      JoinCurrentBlock,
-      JoinOtherBlock,
-      JoinBlocksInSameParent,
-      DeleteBRElement,
-      
-      
-      DeletePrecedingBRElementOfBlock,
-      
-      
-      DeletePrecedingPreformattedLineBreak,
-      DeleteContentInRange,
-      DeleteNonCollapsedRange,
-      
-      
-      DeletePrecedingLinesAndContentInRange,
-    };
-    AutoDeleteRangesHandler* mDeleteRangesHandler;
-    const AutoDeleteRangesHandler& mDeleteRangesHandlerConst;
-    nsCOMPtr<nsIContent> mLeftContent;
-    nsCOMPtr<nsIContent> mRightContent;
-    nsCOMPtr<nsIContent> mLeafContentInOtherBlock;
-    
-    
-    
-    AutoTArray<OwningNonNull<nsIContent>, 8> mSkippedInvisibleContents;
-    RefPtr<dom::HTMLBRElement> mBRElement;
-    EditorDOMPointInText mPreformattedLineBreak;
-    Mode mMode = Mode::NotInitialized;
-  };  
-
-  class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
-   public:
-    
-
-
-
-
-
-
-
-    [[nodiscard]] Element* ScanEmptyBlockInclusiveAncestor(
-        const HTMLEditor& aHTMLEditor, nsIContent& aStartContent);
-
-    
-
-
-
-    nsresult ComputeTargetRanges(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount, const Element& aEditingHost,
-        AutoClonedSelectionRangeArray& aRangesToDelete) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1568,8 +1453,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult> Run(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-        const Element& aEditingHost);
+        HTMLEditor& aHTMLEditor, const Element& aEditingHost);
 
    private:
     
@@ -1579,34 +1463,158 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
+    [[nodiscard]] bool CanMergeLeftAndRightBlockElements() const {
+      if (!IsSet()) {
+        return false;
+      }
+      
+      if (mPointContainingTheOtherBlockElement.GetContainer() ==
+          mRightBlockElement) {
+        return mNewListElementTagNameOfRightListElement.isSome();
+      }
+      
+      if (mPointContainingTheOtherBlockElement.GetContainer() ==
+          mLeftBlockElement) {
+        return mNewListElementTagNameOfRightListElement.isSome() &&
+               mRightBlockElement->GetChildCount();
+      }
+      MOZ_ASSERT(!mPointContainingTheOtherBlockElement.IsSet());
+      
+      return mNewListElementTagNameOfRightListElement.isSome() ||
+             (mLeftBlockElement->NodeInfo()->NameAtom() ==
+                  mRightBlockElement->NodeInfo()->NameAtom() &&
+              EditorUtils::GetComputedWhiteSpaceStyles(*mLeftBlockElement) ==
+                  EditorUtils::GetComputedWhiteSpaceStyles(
+                      *mRightBlockElement));
+    }
 
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
-    MaybeReplaceSubListWithNewListItem(HTMLEditor& aHTMLEditor);
-
-    
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
-    MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor);
-
-    
-
-
-
-    [[nodiscard]] Result<CaretPoint, nsresult> GetNewCaretPosition(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount) const;
-
-    RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
+    OwningNonNull<nsIContent> mInclusiveDescendantOfLeftBlockElement;
+    OwningNonNull<nsIContent> mInclusiveDescendantOfRightBlockElement;
+    RefPtr<Element> mLeftBlockElement;
+    RefPtr<Element> mRightBlockElement;
+    Maybe<nsAtom*> mNewListElementTagNameOfRightListElement;
+    EditorDOMPoint mPointContainingTheOtherBlockElement;
+    RefPtr<dom::HTMLBRElement> mPrecedingInvisibleBRElement;
+    bool mCanJoinBlocks;
+    bool mFallbackToDeleteLeafContent;
   };  
+      
 
-  const AutoDeleteRangesHandler* const mParent;
-  nsIEditor::EDirection mOriginalDirectionAndAmount;
-  nsIEditor::EStripWrappers mOriginalStripWrappers;
+  enum class Mode {
+    NotInitialized,
+    JoinCurrentBlock,
+    JoinOtherBlock,
+    JoinBlocksInSameParent,
+    DeleteBRElement,
+    
+    
+    DeletePrecedingBRElementOfBlock,
+    
+    
+    DeletePrecedingPreformattedLineBreak,
+    DeleteContentInRange,
+    DeleteNonCollapsedRange,
+    
+    
+    DeletePrecedingLinesAndContentInRange,
+  };
+  AutoDeleteRangesHandler* mDeleteRangesHandler;
+  const AutoDeleteRangesHandler& mDeleteRangesHandlerConst;
+  nsCOMPtr<nsIContent> mLeftContent;
+  nsCOMPtr<nsIContent> mRightContent;
+  nsCOMPtr<nsIContent> mLeafContentInOtherBlock;
+  
+  
+  
+  AutoTArray<OwningNonNull<nsIContent>, 8> mSkippedInvisibleContents;
+  RefPtr<dom::HTMLBRElement> mBRElement;
+  EditorDOMPointInText mPreformattedLineBreak;
+  Mode mMode = Mode::NotInitialized;
+};
+
+
+
+
+class MOZ_STACK_CLASS
+HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter final {
+ public:
+  
+
+
+
+
+
+
+
+  [[nodiscard]] Element* ScanEmptyBlockInclusiveAncestor(
+      const HTMLEditor& aHTMLEditor, nsIContent& aStartContent);
+
+  
+
+
+
+  nsresult ComputeTargetRanges(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      const Element& aEditingHost,
+      AutoClonedSelectionRangeArray& aRangesToDelete) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult> Run(
+      HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      const Element& aEditingHost);
+
+ private:
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<DeleteRangeResult, nsresult>
+  MaybeReplaceSubListWithNewListItem(HTMLEditor& aHTMLEditor);
+
+  
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
+  MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor);
+
+  
+
+
+
+  [[nodiscard]] Result<CaretPoint, nsresult> GetNewCaretPosition(
+      const HTMLEditor& aHTMLEditor,
+      nsIEditor::EDirection aDirectionAndAmount) const;
+
+  RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
 };
 
 
