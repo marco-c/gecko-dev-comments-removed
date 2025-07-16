@@ -79,7 +79,19 @@ uint64_t XULTabAccessible::NativeState() const {
 
 uint64_t XULTabAccessible::NativeInteractiveState() const {
   uint64_t state = LocalAccessible::NativeInteractiveState();
-  return (state & states::UNAVAILABLE) ? state : state | states::SELECTABLE;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return (state & states::UNAVAILABLE)
+             ? state
+             : state | states::SELECTABLE | states::FOCUSABLE;
 }
 
 Relation XULTabAccessible::RelationByType(RelationType aType) const {
