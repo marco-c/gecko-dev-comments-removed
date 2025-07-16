@@ -297,11 +297,6 @@ interface nsITelemetry : nsISupports
 
 
 
-
-
-
-
-
   [implicit_jscontext]
   jsval getKeyedHistogramById(in ACString id);
 

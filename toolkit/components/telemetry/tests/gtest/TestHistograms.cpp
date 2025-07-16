@@ -59,8 +59,8 @@ TEST_F(TelemetryTestFixture, AccumulateKeyedCountHistogram) {
                        "TELEMETRY_TEST_KEYED_COUNT"_ns, true);
 
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_COUNT, "sample"_ns,
-                        kExpectedValue);
+  TelemetryHistogram::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
+                                 "sample"_ns, kExpectedValue);
 
   
   JS::Rooted<JS::Value> snapshot(cx.GetJSContext());
@@ -98,11 +98,12 @@ TEST_F(TelemetryTestFixture, TestKeyedKeysHistogram) {
 
   
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "not-allowed"_ns,
-                        1);
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "testkey"_ns, 0);
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "CommonKey"_ns,
-                        1);
+  TelemetryHistogram::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
+                                 "not-allowed"_ns, 1);
+  TelemetryHistogram::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
+                                 "testkey"_ns, 0);
+  TelemetryHistogram::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
+                                 "CommonKey"_ns, 1);
 
   
   JS::Rooted<JS::Value> snapshot(cx.GetJSContext());
@@ -191,6 +192,13 @@ TEST_F(TelemetryTestFixture, AccumulateCategoricalHistogram) {
       << "The histogram is not returning expected value";
 }
 
+template <class E>
+void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
+  TelemetryHistogram::Accumulate(static_cast<Telemetry::HistogramID>(
+                                     Telemetry::CategoricalLabelId<E>::value),
+                                 key, static_cast<uint32_t>(enumValue));
+};
+
 TEST_F(TelemetryTestFixture, AccumulateKeyedCategoricalHistogram) {
   const uint32_t kSampleExpectedValue = 2;
   const uint32_t kOtherSampleExpectedValue = 1;
@@ -202,15 +210,15 @@ TEST_F(TelemetryTestFixture, AccumulateKeyedCategoricalHistogram) {
 
   
   
-  Telemetry::AccumulateCategoricalKeyed(
+  AccumulateCategoricalKeyed(
       "sample"_ns,
       Telemetry::LABELS_TELEMETRY_TEST_KEYED_CATEGORICAL::CommonLabel);
   
-  Telemetry::AccumulateCategoricalKeyed(
+  AccumulateCategoricalKeyed(
       "sample"_ns,
       Telemetry::LABELS_TELEMETRY_TEST_KEYED_CATEGORICAL::CommonLabel);
   
-  Telemetry::AccumulateCategoricalKeyed(
+  AccumulateCategoricalKeyed(
       "other-sample"_ns,
       Telemetry::LABELS_TELEMETRY_TEST_KEYED_CATEGORICAL::CommonLabel);
 
