@@ -130,6 +130,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void InitControl(AudioConduitControlInterface* aControl) override;
 
   
+  MediaConduitErrorCode Init();
+
+  
   void OnDtmfEvent(const DtmfEvent& aEvent);
 
   
@@ -170,7 +173,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   }
   MediaEventSource<void>& RtpPacketEvent() override { return mRtpPacketEvent; }
 
-  std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const override;
+  const std::vector<webrtc::RtpSource>& GetUpstreamRtpSources() const override;
 
  private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
@@ -299,8 +302,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   std::map<uint32_t, uint16_t> mRtpSendBaseSeqs_n;
 
   
+  Canonical<std::vector<webrtc::RtpSource>> mCanonicalRtpSources;
+
   
-  std::vector<webrtc::RtpSource> mRtpSources;
+  Mirror<std::vector<webrtc::RtpSource>> mRtpSources;
 
   
   

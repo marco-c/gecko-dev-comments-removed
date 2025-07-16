@@ -241,7 +241,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
         aEvent.Connect(mCallThread, this, &WebrtcVideoConduit::OnRtcpReceived);
   }
 
-  std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const override;
+  const std::vector<webrtc::RtpSource>& GetUpstreamRtpSources() const override;
 
   void RequestKeyFrame(FrameTransformerProxy* aProxy) override;
   void GenerateKeyFrame(const Maybe<std::string>& aRid,
@@ -504,8 +504,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   dom::RTCVideoFrameHistoryInternal mReceivedFrameHistory;
 
   
+  Canonical<std::vector<webrtc::RtpSource>> mCanonicalRtpSources;
+
   
-  std::vector<webrtc::RtpSource> mRtpSources;
+  Mirror<std::vector<webrtc::RtpSource>> mRtpSources;
 
   
   
