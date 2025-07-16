@@ -2859,7 +2859,6 @@ bool CompilationStencil::delazifySelfHostedFunction(
   ScopeIndex scopeLimit = (range.limit < scriptData.size())
                               ? getOutermostScope(range.limit)
                               : ScopeIndex(scopeData.size());
-  Rooted<JSAtom*> jitCacheKey(cx, name);
 
   
   
@@ -2940,6 +2939,8 @@ bool CompilationStencil::delazifySelfHostedFunction(
   }
 
   if (JS::Prefs::experimental_self_hosted_cache()) {
+    Rooted<JSRuntime::JitCacheKey> jitCacheKey(cx, name, script->isDebuggee());
+
     
     
     
