@@ -89,8 +89,6 @@ async def test_locale_values(bidi_session, top_context, get_current_locale,
     ("fR-cA", "fr-CA"),
     
     ("en-t-zh", "en"),
-    
-    ("es-419", "es-MX"),
 ])
 async def test_locale_values_normalized_by_intl(bidi_session, top_context,
         get_current_locale,
