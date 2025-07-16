@@ -43,31 +43,18 @@
       {
         lwtProperty: "ntp_text",
         processColor(rgbaChannels, element) {
-          
-          
-          
-          let browserStyle =
-            element.ownerGlobal?.docShell?.chromeEventHandler.style;
-
           element.toggleAttribute("lwt-newtab", !!rgbaChannels);
           if (!rgbaChannels) {
             element.toggleAttribute(
               "lwt-newtab-brighttext",
               prefersDarkQuery.matches
             );
-            if (browserStyle) {
-              browserStyle.colorScheme = "";
-            }
             return null;
           }
 
           const { r, g, b, a } = rgbaChannels;
           let darkMode = !_isTextColorDark(r, g, b);
           element.toggleAttribute("lwt-newtab-brighttext", darkMode);
-          if (browserStyle) {
-            browserStyle.colorScheme = darkMode ? "dark" : "light";
-          }
-
           return `rgba(${r}, ${g}, ${b}, ${a})`;
         },
       },
