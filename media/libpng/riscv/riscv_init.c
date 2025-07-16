@@ -16,20 +16,6 @@
 
 #include <riscv_vector.h>
 
-#ifdef PNG_RISCV_RVV_CHECK_SUPPORTED 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <signal.h>
 
 #ifndef PNG_RISCV_RVV_FILE
@@ -40,11 +26,10 @@
 #  endif
 #endif
 
-static int png_have_rvv(png_structp png_ptr);
+static int png_have_rvv();
 #ifdef PNG_RISCV_RVV_FILE
 #  include PNG_RISCV_RVV_FILE
 #endif
-#endif 
 
 #ifndef PNG_ALIGNED_MEMORY_SUPPORTED
 #  error "ALIGNED_MEMORY is required; set: -DPNG_ALIGNED_MEMORY_SUPPORTED"
@@ -53,58 +38,15 @@ static int png_have_rvv(png_structp png_ptr);
 void
 png_init_filter_functions_rvv(png_structp pp, unsigned int bpp)
 {
-   
-
-
-
-
-
    png_debug(1, "in png_init_filter_functions_rvv");
-#ifdef PNG_RISCV_RVV_API_SUPPORTED
-   switch ((pp->options >> PNG_RISCV_RVV) & 3)
-   {
-      case PNG_OPTION_UNSET:
-         
 
+   static volatile sig_atomic_t no_rvv = -1; 
 
+   if (no_rvv < 0)
+      no_rvv = !png_have_rvv();
 
-
-#endif
-#ifdef PNG_RISCV_RVV_CHECK_SUPPORTED
-         {
-            static volatile sig_atomic_t no_rvv = -1; 
-
-            if (no_rvv < 0)
-               no_rvv = !png_have_rvv(pp);
-
-            if (no_rvv)
-               return;
-         }
-#ifdef PNG_RISCV_RVV_API_SUPPORTED
-         break;
-#endif
-#endif 
-
-#ifdef PNG_RISCV_RVV_API_SUPPORTED
-      default: 
-         return;
-
-      case PNG_OPTION_ON:
-         
-         break;
-   }
-#endif 
-
-   
-
-
-
-
-
-
-
-
-
+   if (no_rvv)
+      return;
 
    pp->read_filter[PNG_FILTER_VALUE_UP-1] = png_read_filter_row_up_rvv;
 
@@ -123,4 +65,4 @@ png_init_filter_functions_rvv(png_structp pp, unsigned int bpp)
 }
 
 #endif 
-#endif
+#endif 

@@ -51,21 +51,22 @@ png_read_filter_row_sub_rvv(size_t len, size_t bpp, unsigned char* row)
 
 
 
-   asm volatile ("vsetvli      zero, %0, e8, m1" : : "r" (bpp));
+   size_t vl = __riscv_vsetvl_e8m1(bpp);
 
    
-   asm volatile ("vle8.v       v0, (%0)" : : "r" (row));
+   vuint8m1_t a = __riscv_vle8_v_u8m1(row, vl);
    row += bpp;
 
    while (row < rp_end)
    {
       
-      asm volatile ("vle8.v       v8, (%0)" : : "r" (row));
-      
-      asm volatile ("vadd.vv      v0, v0, v8");
+      vuint8m1_t x = __riscv_vle8_v_u8m1(row, vl);
 
       
-      asm volatile ("vse8.v       v0, (%0)" : : "r" (row));
+      a = __riscv_vadd_vv_u8m1(a, x, vl);
+
+      
+      __riscv_vse8_v_u8m1(row, a, vl);
       row += bpp;
    }
 }
@@ -110,44 +111,46 @@ png_read_filter_row_avg_rvv(size_t len, size_t bpp, unsigned char* row,
 
    
 
-   asm volatile ("vsetvli      zero, %0, e8, m1" : : "r" (bpp));
+   size_t vl = __riscv_vsetvl_e8m1(bpp);
 
    
-   asm volatile ("vle8.v       v4, (%0)" : : "r" (prev_row));
+   vuint8m1_t b = __riscv_vle8_v_u8m1(prev_row, vl);
    prev_row += bpp;
 
    
-   asm volatile ("vle8.v       v8, (%0)" : : "r" (row));
+   vuint8m1_t x = __riscv_vle8_v_u8m1(row, vl);
 
    
-   asm volatile ("vsrl.vi      v4, v4, 1");
-   
-   asm volatile ("vadd.vv      v2, v4, v8");
+   b = __riscv_vsrl_vx_u8m1(b, 1, vl);
 
    
-   asm volatile ("vse8.v       v2, (%0)" : : "r" (row));
+   vuint8m1_t a = __riscv_vadd_vv_u8m1(b, x, vl);
+
+   
+   __riscv_vse8_v_u8m1(row, a, vl);
    row += bpp;
 
    
-
    while (row < rp_end)
    {
       
-      asm volatile ("vle8.v       v4, (%0)" : : "r" (prev_row));
+      b = __riscv_vle8_v_u8m1(prev_row, vl);
       prev_row += bpp;
 
       
-      asm volatile ("vle8.v       v8, (%0)" : : "r" (row));
+      x = __riscv_vle8_v_u8m1(row, vl);
 
       
-      asm volatile ("vwaddu.vv    v12, v2, v4"); 
-      
-      asm volatile ("vnsrl.wi     v2, v12, 1");  
-      
-      asm volatile ("vadd.vv      v2, v2, v8");
+      vuint16m2_t tmp = __riscv_vwaddu_vv_u16m2(a, b, vl);
 
       
-      asm volatile ("vse8.v       v2, (%0)" : : "r" (row));
+      a = __riscv_vnsrl_wx_u8m1(tmp, 1, vl);
+
+      
+      a = __riscv_vadd_vv_u8m1(a, x, vl);
+
+      
+      __riscv_vse8_v_u8m1(row, a, vl);
       row += bpp;
    }
 }
@@ -205,18 +208,14 @@ static inline vint16m1_t
 abs_diff(vuint16m1_t a, vuint16m1_t b, size_t vl)
 {
    vint16m1_t diff = __riscv_vreinterpret_v_u16m1_i16m1(__riscv_vsub_vv_u16m1(a, b, vl));
-   vint16m1_t neg = __riscv_vneg_v_i16m1(diff, vl);
-
-   return __riscv_vmax_vv_i16m1(diff, neg, vl);
+   vbool16_t mask = __riscv_vmslt_vx_i16m1_b16(diff, 0, vl);
+   return __riscv_vrsub_vx_i16m1_m(mask, diff, 0, vl);
 }
 
 static inline vint16m1_t
 abs_sum(vint16m1_t a, vint16m1_t b, size_t vl)
 {
-   vint16m1_t sum = __riscv_vadd_vv_i16m1(a, b, vl);
-   vint16m1_t neg = __riscv_vneg_v_i16m1(sum, vl);
-
-   return __riscv_vmax_vv_i16m1(sum, neg, vl);
+   return __riscv_vadd_vv_i16m1(a, b, vl);
 }
 
 static inline void
@@ -237,63 +236,56 @@ png_read_filter_row_paeth_rvv(size_t len, size_t bpp, unsigned char* row,
 
 
 
-
-
-
-
    
 
-   asm volatile ("vsetvli      zero, %0, e8, m1" : : "r" (bpp));
+   size_t vl = __riscv_vsetvl_e8m1(bpp);
 
    
-   asm volatile ("vle8.v       v2, (%0)" : : "r" (row));
-   asm volatile ("vle8.v       v6, (%0)" : : "r" (prev));
-   prev += bpp;
-   asm volatile ("vadd.vv      v2, v2, v6");
+   vuint8m1_t a = __riscv_vle8_v_u8m1(row, vl);
 
    
-   asm volatile ("vse8.v       v2, (%0)" : : "r" (row));
+   vuint8m1_t c = __riscv_vle8_v_u8m1(prev, vl);
+
+   
+   a = __riscv_vadd_vv_u8m1(a, c, vl);
+
+   
+   __riscv_vse8_v_u8m1(row, a, vl);
    row += bpp;
+   prev += bpp;
 
    
+
    while (row < rp_end)
    {
       
-      asm volatile ("vle8.v       v4, (%0)" : : "r" (prev));
+      vuint8m1_t b = __riscv_vle8_v_u8m1(prev, vl);
       prev += bpp;
 
       
-      asm volatile ("vle8.v       v8, (%0)" : : "r" (row));
+      vuint8m1_t x = __riscv_vle8_v_u8m1(row, vl);
 
       
-      
-      asm volatile ("vwsubu.vv    v12, v4, v6");
-      
-      asm volatile ("vwsubu.vv    v24, v2, v6");
+      vuint16m2_t p_wide = __riscv_vwsubu_vv_u16m2(b, c, vl);
+      vuint16m2_t pc_wide = __riscv_vwsubu_vv_u16m2(a, c, vl);
 
       
-      asm volatile ("vsetvli      zero, %0, e16, m2" : : "r" (bpp));
+      size_t vl16 = __riscv_vsetvl_e16m2(bpp);
+      vint16m2_t p = __riscv_vreinterpret_v_u16m2_i16m2(p_wide);
+      vint16m2_t pc = __riscv_vreinterpret_v_u16m2_i16m2(pc_wide);
 
       
-      asm volatile ("vmv.v.v      v16, v12");             
-      asm volatile ("vmslt.vx     v0, v16, zero");        
-      asm volatile ("vrsub.vx     v16, v16, zero, v0.t"); 
-
-
+      vbool8_t p_neg_mask = __riscv_vmslt_vx_i16m2_b8(p, 0, vl16);
+      vint16m2_t pa = __riscv_vrsub_vx_i16m2_m(p_neg_mask, p, 0, vl16);
 
       
-      asm volatile ("vmv.v.v      v20, v24");             
-      asm volatile ("vmslt.vx     v0, v20, zero");        
-      asm volatile ("vrsub.vx     v20, v20, zero, v0.t"); 
-
-
+      vbool8_t pc_neg_mask = __riscv_vmslt_vx_i16m2_b8(pc, 0, vl16);
+      vint16m2_t pb = __riscv_vrsub_vx_i16m2_m(pc_neg_mask, pc, 0, vl16);
 
       
-      asm volatile ("vadd.vv      v24, v24, v12");        
-      asm volatile ("vmslt.vx     v0, v24, zero");        
-      asm volatile ("vrsub.vx     v24, v24, zero, v0.t"); 
-
-
+      vint16m2_t p_plus_pc = __riscv_vadd_vv_i16m2(p, pc, vl16);
+      vbool8_t p_plus_pc_neg_mask = __riscv_vmslt_vx_i16m2_b8(p_plus_pc, 0, vl16);
+      pc = __riscv_vrsub_vx_i16m2_m(p_plus_pc_neg_mask, p_plus_pc, 0, vl16);
 
       
 
@@ -302,46 +294,40 @@ png_read_filter_row_paeth_rvv(size_t len, size_t bpp, unsigned char* row,
 
 
 
-
-      asm volatile ("vmslt.vv     v0, v20, v16");         
-      asm volatile ("vmerge.vvm   v16, v16, v20, v0");    
+      
+      vbool8_t pa_le_pb = __riscv_vmsle_vv_i16m2_b8(pa, pb, vl16);
+      vbool8_t pa_le_pc = __riscv_vmsle_vv_i16m2_b8(pa, pc, vl16);
+      vbool8_t pb_le_pc = __riscv_vmsle_vv_i16m2_b8(pb, pc, vl16);
 
       
-
-
-
-
-
-
-      asm volatile ("vmslt.vv     v31, v24, v16");        
+      vbool8_t use_a = __riscv_vmand_mm_b8(pa_le_pb, pa_le_pc, vl16);
 
       
-      asm volatile ("vsetvli      zero, %0, e8, m1" : : "r" (bpp));
+      vbool8_t not_use_a = __riscv_vmnot_m_b8(use_a, vl16);
+      vbool8_t use_b = __riscv_vmand_mm_b8(not_use_a, pb_le_pc, vl16);
 
       
-      asm volatile ("vmerge.vvm   v2, v2, v4, v0");       
+      vl = __riscv_vsetvl_e8m1(bpp);
 
       
-      asm volatile ("vmand.mm     v0, v31, v31");         
-
-
-
-
-      asm volatile ("vmerge.vvm   v2, v2, v6, v0");       
+      vuint8m1_t result = a;
+      result = __riscv_vmerge_vvm_u8m1(result, b, use_b, vl);
 
       
-      asm volatile ("vadd.vv      v2, v2, v8");
+      vbool8_t use_c = __riscv_vmnand_mm_b8(__riscv_vmor_mm_b8(use_a, use_b, vl), __riscv_vmor_mm_b8(use_a, use_b, vl), vl);
+      result = __riscv_vmerge_vvm_u8m1(result, c, use_c, vl);
 
       
-      asm volatile ("vse8.v       v2, (%0)" : : "r" (row));
+      a = __riscv_vadd_vv_u8m1(result, x, vl);
+
+      
+      __riscv_vse8_v_u8m1(row, a, vl);
       row += bpp;
 
       
-      
-      asm volatile ("vmv.v.v      v6, v4");
+      c = b;
    }
 }
-
 void
 png_read_filter_row_paeth3_rvv(png_row_infop row_info, png_bytep row,
     png_const_bytep prev_row)
@@ -349,8 +335,6 @@ png_read_filter_row_paeth3_rvv(png_row_infop row_info, png_bytep row,
    size_t len = row_info->rowbytes;
 
    png_read_filter_row_paeth_rvv(len, 3, row, prev_row);
-
-   PNG_UNUSED(prev_row)
 }
 
 void
@@ -360,8 +344,6 @@ png_read_filter_row_paeth4_rvv(png_row_infop row_info, png_bytep row,
    size_t len = row_info->rowbytes;
 
    png_read_filter_row_paeth_rvv(len, 4, row, prev_row);
-
-   PNG_UNUSED(prev_row)
 }
 
 #endif 
