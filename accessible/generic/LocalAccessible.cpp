@@ -1260,7 +1260,7 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
     
     
     const auto margin =
-        f->StyleMargin()->GetMargin(aSide, f->StyleDisplay()->mPosition);
+        f->StyleMargin()->GetMargin(aSide, AnchorPosResolutionParams::From(f));
     if (margin->ConvertsToLength()) {
       return margin->AsLengthPercentage().ToLengthInCSSPixels();
     }
