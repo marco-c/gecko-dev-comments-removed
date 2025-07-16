@@ -655,9 +655,21 @@ function accessibleTask(doc, task, options = {}) {
   
   
   
+  let name = task.name;
+  if (name) {
+    if (options.chrome) {
+      name += "_chrome";
+    } else if (options.iframe) {
+      name += "_iframe";
+    } else if (options.remoteIframe) {
+      name += "_remoteIframe";
+    } else {
+      name += "_topLevel";
+    }
+  }
   
   
-  Object.defineProperty(wrapped, "name", { value: task.name });
+  Object.defineProperty(wrapped, "name", { value: name });
   return wrapped;
 }
 
