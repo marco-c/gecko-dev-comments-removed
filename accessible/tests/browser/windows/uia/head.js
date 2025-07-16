@@ -44,6 +44,16 @@ function addUiaTask(doc, task, options = {}) {
       info(shouldEnable ? "Gecko UIA enabled" : "Gecko UIA disabled");
       await task(browser, docAcc, topDocAcc);
     }
+    
+    
+    
+    
+    
+    let name = task.name;
+    if (name) {
+      name += shouldEnable ? "_uiaEnabled" : "_uiaDisabled";
+    }
+    Object.defineProperty(uiaTask, "name", { value: name });
     addAccessibleTask(doc, uiaTask, options);
   }
 
