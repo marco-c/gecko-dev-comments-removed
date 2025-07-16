@@ -145,7 +145,11 @@ class DataChannelConnection : public net::NeckoTargetHolder {
     virtual ~DataConnectionListener() = default;
 
     
-    virtual void NotifyDataChannel(already_AddRefed<DataChannel> channel) = 0;
+    virtual void NotifyDataChannel(
+        already_AddRefed<DataChannel> aChannel, const nsAString& aLabel,
+        bool aOrdered, mozilla::dom::Nullable<uint16_t> aMaxLifeTime,
+        mozilla::dom::Nullable<uint16_t> aMaxRetransmits,
+        const nsAString& aProtocol, bool aNegotiated) = 0;
 
     
     virtual void NotifyDataChannelOpen(DataChannel* aChannel) = 0;
@@ -423,16 +427,6 @@ class DataChannel {
 
   
   void SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv);
-
-  DataChannelReliabilityPolicy GetType() const { return mPrPolicy; }
-
-  dom::Nullable<uint16_t> GetMaxPacketLifeTime() const;
-
-  dom::Nullable<uint16_t> GetMaxRetransmits() const;
-
-  bool GetNegotiated() const { return mNegotiated; }
-
-  bool GetOrdered() const { return mOrdered; }
 
   void IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv);
   void DecrementBufferedAmount(uint32_t aSize);

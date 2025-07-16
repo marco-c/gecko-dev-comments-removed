@@ -769,15 +769,6 @@ DataChannelWrapper.prototype = {
 
 
 
-  get reliable() {
-    return this._channel.reliable;
-  },
-
-  
-
-
-
-
   get ordered() {
     return this._channel.ordered;
   },

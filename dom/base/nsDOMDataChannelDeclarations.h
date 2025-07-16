@@ -11,16 +11,22 @@
 
 
 #include "nsCOMPtr.h"
+#include "nsStringFwd.h"
+#include "mozilla/dom/Nullable.h"
 
 namespace mozilla {
 class DataChannel;
-}
+}  
 
 class nsDOMDataChannel;
 class nsPIDOMWindowInner;
 
 nsresult NS_NewDOMDataChannel(
-    already_AddRefed<mozilla::DataChannel>&& dataChannel,
-    nsPIDOMWindowInner* aWindow, nsDOMDataChannel** domDataChannel);
+    already_AddRefed<mozilla::DataChannel>&& aDataChannel,
+    const nsAString& aLabel, bool aOrdered,
+    mozilla::dom::Nullable<uint16_t> aMaxLifeTime,
+    mozilla::dom::Nullable<uint16_t> aMaxRetransmits,
+    const nsAString& aProtocol, bool aNegotiated, nsPIDOMWindowInner* aWindow,
+    nsDOMDataChannel** aDomDataChannel);
 
 #endif  
