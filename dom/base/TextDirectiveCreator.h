@@ -44,13 +44,17 @@ class TextDirectiveCreator {
 
 
 
+
+
   static Result<nsCString, ErrorResult> CreateTextDirectiveFromRange(
-      Document* aDocument, AbstractRange* aInputRange);
+      Document* aDocument, AbstractRange* aInputRange,
+      const TimeoutWatchdog* aWatchdog);
 
   virtual ~TextDirectiveCreator() = default;
 
  protected:
-  TextDirectiveCreator(Document* aDocument, AbstractRange* aRange);
+  TextDirectiveCreator(Document* aDocument, AbstractRange* aRange,
+                       const TimeoutWatchdog* aWatchdog);
 
   
 
@@ -77,7 +81,8 @@ class TextDirectiveCreator {
 
 
   static Result<UniquePtr<TextDirectiveCreator>, ErrorResult> CreateInstance(
-      Document* aDocument, AbstractRange* aRange);
+      Document* aDocument, AbstractRange* aRange,
+      const TimeoutWatchdog* aWatchdog);
 
   
 
@@ -220,7 +225,7 @@ class TextDirectiveCreator {
 
 
 
-  TimeoutWatchdog mWatchdog;
+  RefPtr<const TimeoutWatchdog> mWatchdog;
 
   nsContentUtils::NodeIndexCache mNodeIndexCache;
 };
