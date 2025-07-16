@@ -155,7 +155,16 @@ add_task(async function testBlackBoxOnToolboxRestart() {
   const dbg2 = createDebuggerContext(toolbox);
   await waitForSelectedSource(dbg2, findSource(dbg2, "simple4.js"));
 
+  
+  
+  
+  const onBlackboxDone = waitForDispatch(dbg2.store, "BLACKBOX_SOURCE_RANGES");
   await reloadBrowser();
+
+  info("Wait for the blackbox action to complete");
+  await onBlackboxDone;
+  await waitForRequestsToSettle(dbg);
+
   
   await wait(1000);
 
