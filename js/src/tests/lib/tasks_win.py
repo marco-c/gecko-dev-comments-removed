@@ -90,8 +90,8 @@ def _do_work(
         
         
         system_encoding = "mbcs" if sys.platform == "win32" else "utf-8"
-        out = out.decode(system_encoding)
-        err = err.decode(system_encoding)
+        out = out.decode(system_encoding, errors="replace")
+        err = err.decode(system_encoding, errors="replace")
         qWatch.put(TaskFinishedMarker)
 
         
