@@ -13,9 +13,6 @@ const ABOUT_NEWTAB_NAME = "remotenewtab.content-signature.mozilla.org";
 var VERIFICATION_HISTOGRAM = Services.telemetry.getHistogramById(
   "CONTENT_SIGNATURE_VERIFICATION_STATUS"
 );
-var ERROR_HISTOGRAM = Services.telemetry.getKeyedHistogramById(
-  "CONTENT_SIGNATURE_VERIFICATION_ERRORS"
-);
 
 
 
@@ -45,17 +42,31 @@ function loadChain(prefix, names) {
 }
 
 function check_telemetry(expected_index, expected, expectedId) {
+  let labels = [
+    null,
+    "invalid",
+    null,
+    "otherError",
+    "expiredCert",
+    "certNotValidYet",
+    "buildCertChainFailed",
+    "eeCertForWrongHost",
+    "extractKeyError",
+    "vfyContextError",
+  ];
+
   for (let i = 0; i < 10; i++) {
     let expected_value = 0;
     if (i == expected_index) {
       expected_value = expected;
-    }
-    let errorSnapshot = ERROR_HISTOGRAM.snapshot();
-    for (let k in errorSnapshot) {
-      
-      
-      equal(k, expectedId);
-      equal(errorSnapshot[k].values[i] || 0, expected_value);
+      if (labels[expected_index]) {
+        equal(
+          Glean.security.contentSignatureVerificationErrors
+            .get(expectedId, labels[expected_index])
+            .testGetValue(),
+          expected_value
+        );
+      }
     }
     equal(
       VERIFICATION_HISTOGRAM.snapshot().values[i] || 0,
@@ -69,8 +80,14 @@ function check_telemetry(expected_index, expected, expectedId) {
     );
   }
   VERIFICATION_HISTOGRAM.clear();
-  ERROR_HISTOGRAM.clear();
+  Services.fog.testResetFOG();
 }
+
+add_setup(function () {
+  do_get_profile();
+
+  Services.fog.initializeFOG();
+});
 
 add_task(async function run_test() {
   
