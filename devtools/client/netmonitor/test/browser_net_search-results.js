@@ -238,12 +238,25 @@ add_task(async function () {
 
   
   const firstContentMatch = contentMatches[0];
+  ok(
+    document.querySelector(".treeRow.selected.opened"),
+    "The previous line, which is the selected line, is expanded to show the result row"
+  );
   await checkContentMenuCopy(firstContentMatch, matchingUrls[0], monitor);
 
   
   const secondResourceMatch = resourceMatches[1];
   await checkResourceMenuCopyUrl(secondResourceMatch, matchingUrls[1], monitor);
+
+  
   await checkResourceMenuResend(secondResourceMatch, monitor);
+
+  
+  ok(
+    document.querySelector(".treeRow.selected.opened"),
+    "The previous line is still expanded after having added a new request is the result list"
+  );
+
   await checkResourceMenuBlockUnblock(
     secondResourceMatch,
     matchingUrls[1],

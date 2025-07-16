@@ -101,6 +101,7 @@ class SearchPanel extends Component {
     this.onClickTreeRow = this.onClickTreeRow.bind(this);
     this.onContextMenuTreeRow = this.onContextMenuTreeRow.bind(this);
     this.provider = SearchProvider;
+    this.expandedNodes = new Set();
   }
 
   componentDidMount() {
@@ -241,6 +242,10 @@ class SearchPanel extends Component {
       object: results,
       provider: this.provider,
       expandableStrings: false,
+      
+      
+      
+      expandedNodes: this.expandedNodes,
       renderLabelCell: this.renderLabel,
       onContextMenuRow: this.onContextMenuTreeRow,
       columns: [],
