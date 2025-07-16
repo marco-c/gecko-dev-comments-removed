@@ -29,16 +29,16 @@ class LocationBase {
  public:
   
   void Replace(const nsACString& aUrl, nsIPrincipal& aSubjectPrincipal,
-               ErrorResult& aRv);
+               ErrorResult& aError);
 
   void SetHref(const nsACString& aHref, nsIPrincipal& aSubjectPrincipal,
-               ErrorResult& aRv);
+               ErrorResult& aError);
 
  protected:
   virtual BrowsingContext* GetBrowsingContext() = 0;
   virtual nsIDocShell* GetDocShell() = 0;
 
-  void SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
+  void SetURI(nsIURI* aURL, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
               bool aReplace = false);
   void SetHrefWithBase(const nsACString& aHref, nsIURI* aBase,
                        nsIPrincipal& aSubjectPrincipal, bool aReplace,
@@ -51,6 +51,12 @@ class LocationBase {
   
   
   nsIURI* GetSourceBaseURL();
+
+  
+  
+  
+  already_AddRefed<nsDocShellLoadState> CheckURL(
+      nsIURI* url, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
 };
 
 }  
