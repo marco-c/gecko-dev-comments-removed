@@ -1077,7 +1077,18 @@ MarkupView.prototype = {
 
     const slotted = selection.isSlotted();
     const smoothScroll = reason === "reveal-from-slot";
-    const onShow = this.showNode(selection.nodeFront, { slotted, smoothScroll })
+    const selectionSearchQuery = selection.getSearchQuery();
+
+    const onShow = this.showNode(selection.nodeFront, {
+      slotted,
+      smoothScroll,
+      
+      
+      
+      
+      
+      scroll: !selectionSearchQuery,
+    })
       .then(() => {
         
         if (this._destroyed) {
@@ -1088,7 +1099,7 @@ MarkupView.prototype = {
         const container = this.getContainer(selection.nodeFront, slotted);
         this._markContainerAsSelected(container);
         this._updateSearchResultsHighlightingInSelectedNode(
-          selection.getSearchQuery()
+          selectionSearchQuery
         );
 
         
@@ -1109,6 +1120,20 @@ MarkupView.prototype = {
     }
 
     return highlights.get(highlightName);
+  },
+
+  
+
+
+  _getSelectionController() {
+    if (!this._selectionController) {
+      
+      this._selectionController = this.win.docShell
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsISelectionDisplay)
+        .QueryInterface(Ci.nsISelectionController);
+    }
+    return this._selectionController;
   },
 
   
@@ -1136,6 +1161,8 @@ MarkupView.prototype = {
     searchQuery = searchQuery.toLowerCase();
     const searchQueryLength = searchQuery.length;
     let currentNode = treeWalker.nextNode();
+    let scrolled = false;
+
     while (currentNode) {
       const text = currentNode.textContent.toLowerCase();
       let startPos = 0;
@@ -1152,9 +1179,46 @@ MarkupView.prototype = {
         searchHighlight.add(range);
 
         startPos = index + searchQuery.length;
+
+        
+        if (!scrolled) {
+          
+          
+          
+          const selection = this.win.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          const selectionController = this._getSelectionController();
+          selectionController.scrollSelectionIntoView(
+            selectionController.SELECTION_NORMAL,
+            selectionController.SELECTION_ON,
+            selectionController.SCROLL_SYNCHRONOUS |
+              selectionController.SCROLL_VERTICAL_CENTER
+          );
+          selection.removeAllRanges();
+          scrolled = true;
+        }
       }
 
       currentNode = treeWalker.nextNode();
+    }
+
+    
+    
+    
+    if (!scrolled) {
+      const container = this.getContainer(
+        this.inspector.selection.nodeFront,
+        this.inspector.selection.isSlotted()
+      );
+      scrollIntoViewIfNeeded(
+        container.editor.elt,
+        
+        true,
+        
+        false
+      );
     }
   },
 
@@ -1771,11 +1835,22 @@ MarkupView.prototype = {
 
 
 
-  showNode(node, { centered = true, slotted, smoothScroll = false } = {}) {
-    if (slotted && !this.hasContainer(node, slotted)) {
+
+
+
+
+
+
+
+
+  showNode(
+    nodeFront,
+    { centered = true, scroll = true, slotted, smoothScroll = false } = {}
+  ) {
+    if (slotted && !this.hasContainer(nodeFront, slotted)) {
       throw new Error("Tried to show a slotted node not previously imported");
     } else {
-      this._ensureNodeImported(node);
+      this._ensureNodeImported(nodeFront);
     }
 
     return this._waitForChildren()
@@ -1783,10 +1858,14 @@ MarkupView.prototype = {
         if (this._destroyed) {
           return Promise.reject("markupview destroyed");
         }
-        return this._ensureVisible(node);
+        return this._ensureVisible(nodeFront);
       })
       .then(() => {
-        const container = this.getContainer(node, slotted);
+        if (!scroll) {
+          return;
+        }
+
+        const container = this.getContainer(nodeFront, slotted);
         scrollIntoViewIfNeeded(container.editor.elt, centered, smoothScroll);
       }, this._handleRejectionIfNotDestroyed);
   },
@@ -2642,6 +2721,7 @@ MarkupView.prototype = {
     this._elt.innerHTML = "";
     this._elt = null;
 
+    this._selectionController = null;
     this.controllerWindow = null;
     this.doc = null;
     this.highlighters = null;
