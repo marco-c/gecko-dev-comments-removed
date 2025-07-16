@@ -77,6 +77,7 @@ class SendSinkProxy : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
 
 class WebrtcVideoConduit : public VideoSessionConduit,
                            public webrtc::RtcpEventObserver {
+  friend class RecvSinkProxy;
   friend class SendSinkProxy;
 
  public:
@@ -242,7 +243,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   }
 
   AbstractCanonical<Maybe<gfx::IntSize>>* CanonicalReceivingSize() override {
-    return &mCanonicalReceivingSize;
+    return &mReceivingSize;
   }
 
   const std::vector<webrtc::RtpSource>& GetUpstreamRtpSources() const override;
@@ -302,6 +303,9 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
 
   
+  const RefPtr<AbstractThread> mFrameRecvThread;
+
+  
   
   nsCOMPtr<nsISerialEventTarget> mFrameSendingThread;
 
@@ -351,11 +355,8 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   } mControl;
 
   
-  Maybe<gfx::IntSize> mReceivingSize;
-
   
-  
-  Canonical<Maybe<gfx::IntSize>> mCanonicalReceivingSize;
+  Canonical<Maybe<gfx::IntSize>> mReceivingSize;
 
   
   
