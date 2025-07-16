@@ -428,11 +428,11 @@ let interfaceNamesInGlobalScope = [
   
   "SubtleCrypto",
   
-  { name: "TaskController", nightly: true },
+  "TaskController",
   
-  { name: "TaskPriorityChangeEvent", nightly: true },
+  "TaskPriorityChangeEvent",
   
-  { name: "TaskSignal", nightly: true },
+  "TaskSignal",
   
   "TextDecoder",
   
