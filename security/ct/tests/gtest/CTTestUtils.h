@@ -41,11 +41,6 @@ Buffer GetTestDigitallySignedData();
 
 
 Buffer GetTestSignedCertificateTimestamp();
-Buffer GetTestSignedCertificateTimestampWithLeafIndexExtension();
-Buffer GetTestSignedCertificateTimestampWithTwoLeafIndexExtensions();
-Buffer GetTestSignedCertificateTimestampWithUnknownExtension();
-Buffer GetTestSignedCertificateTimestampWithUnknownAndLeafIndexExtensions();
-Buffer GetTestSignedCertificateTimestampWithTooShortExtension();
 
 
 Buffer GetTestInclusionProof();
