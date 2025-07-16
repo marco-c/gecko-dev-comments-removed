@@ -373,12 +373,14 @@ nsClipboard::GetNativeClipboardSequenceNumber(ClipboardType aWhichClipboard) {
 
 bool nsClipboard::HasSuitableData(int32_t aWhichClipboard,
                                   const nsACString& aFlavor) {
-  MOZ_CLIPBOARD_LOG("nsClipboard::HasSuitableData");
+  MOZ_CLIPBOARD_LOG("%s for %s", __FUNCTION__, PromiseFlatCString(aFlavor).get());
 
   auto targets = mContext->GetTargets(aWhichClipboard);
   if (!targets) {
     MOZ_CLIPBOARD_LOG("    X11: no targes at clipboard (null), quit.\n");
-    return false;
+    
+    
+    return aFlavor.EqualsLiteral(kTextMime);
   }
 
   for (const auto& atom : targets.AsSpan()) {
@@ -400,6 +402,7 @@ bool nsClipboard::HasSuitableData(int32_t aWhichClipboard,
         strncmp(atom_name.get(), "video/", 6) == 0) {
       continue;
     }
+    
     
     
     MOZ_CLIPBOARD_LOG(
