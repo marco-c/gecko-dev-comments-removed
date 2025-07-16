@@ -1824,6 +1824,14 @@ static bool GetTemporalRelativeToOption(
 
       
       matchBehaviour = MatchBehaviour::MatchMinutes;
+
+      
+      if (parsed.timeZone().constructed<OffsetTimeZone>()) {
+        
+        if (parsed.timeZone().ref<OffsetTimeZone>().hasSubMinutePrecision) {
+          matchBehaviour = MatchBehaviour::MatchExactly;
+        }
+      }
     } else {
       MOZ_ASSERT(!timeZone);
     }
