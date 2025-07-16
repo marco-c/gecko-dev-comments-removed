@@ -69,7 +69,10 @@ add_task(async function keySelection() {
 
   await withProvider(result, async () => {
     
-    let expectedClassNames = ["urlbarView-row-inner", "urlbarView-button-menu"];
+    let expectedClassNames = [
+      "urlbarView-row-inner",
+      "urlbarView-button-result-menu",
+    ];
 
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -144,7 +147,7 @@ async function checkBestMatchRow({ result, hasHelpUrl = false }) {
     "Row URL is correct"
   );
 
-  let button = row._buttons.get("menu");
+  let button = row._buttons.get("result-menu");
   Assert.equal(
     !!result.payload.helpUrl,
     hasHelpUrl,
