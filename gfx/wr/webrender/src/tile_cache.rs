@@ -29,7 +29,7 @@ use std::mem;
 
 
 
-const MAX_CACHE_SLICES: usize = 12;
+const MAX_CACHE_SLICES: usize = 16;
 
 struct SliceDescriptor {
     prim_list: PrimitiveList,
