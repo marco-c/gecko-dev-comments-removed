@@ -1,7 +1,7 @@
 
-
-
-
+// Copyright 2022 the V8 project authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "jit/riscv64/extension/extension-riscv-v.h"
 
@@ -13,7 +13,7 @@
 namespace js {
 namespace jit {
 
-
+// RVV
 
 void AssemblerRISCVV::vredmaxu_vs(VRegister vd, VRegister vs2, VRegister vs1,
                                   MaskType mask) {
@@ -161,9 +161,9 @@ void AssemblerRISCVV::vid_v(VRegister vd, MaskType mask) {
       GenInstrV(funct6, OP_MVV, vd, vs1, vs2, mask);                \
     }
 
-
-
-
+// void GenInstrV(uint8_t funct6, OpcodeRISCVV opcode, VRegister vd, Register
+// rs1,
+//                  VRegister vs2, MaskType mask = NoMask);
 #  define DEFINE_OPMVX(name, funct6)                                           \
     void AssemblerRISCVV::name##_vx(VRegister vd, VRegister vs2, Register rs1, \
                                     MaskType mask) {                           \
@@ -194,7 +194,7 @@ void AssemblerRISCVV::vid_v(VRegister vd, MaskType mask) {
       GenInstrV(funct6, OP_FVF, vd, fs1, vs2, mask);                \
     }
 
-
+// vector integer extension
 #  define DEFINE_OPMVV_VIE(name, vs1)                                        \
     void AssemblerRISCVV::name(VRegister vd, VRegister vs2, MaskType mask) { \
       GenInstrV(VXUNARY0_FUNCT6, OP_MVV, vd, vs1, vs2, mask);                \
@@ -327,7 +327,7 @@ DEFINE_OPFVV(vmfle, VMFLE_FUNCT6)
 DEFINE_OPFVV(vfmax, VFMAX_FUNCT6)
 DEFINE_OPFVV(vfmin, VFMIN_FUNCT6)
 
-
+// Vector Widening Floating-Point Add/Subtract Instructions
 DEFINE_OPFVV(vfwadd, VFWADD_FUNCT6)
 DEFINE_OPFVF(vfwadd, VFWADD_FUNCT6)
 DEFINE_OPFVV(vfwsub, VFWSUB_FUNCT6)
@@ -337,11 +337,11 @@ DEFINE_OPFWF(vfwadd, VFWADD_W_FUNCT6)
 DEFINE_OPFWV(vfwsub, VFWSUB_W_FUNCT6)
 DEFINE_OPFWF(vfwsub, VFWSUB_W_FUNCT6)
 
-
+// Vector Widening Floating-Point Reduction Instructions
 DEFINE_OPFVV(vfwredusum, VFWREDUSUM_FUNCT6)
 DEFINE_OPFVV(vfwredosum, VFWREDOSUM_FUNCT6)
 
-
+// Vector Widening Floating-Point Multiply
 DEFINE_OPFVV(vfwmul, VFWMUL_FUNCT6)
 DEFINE_OPFVF(vfwmul, VFWMUL_FUNCT6)
 
@@ -354,7 +354,7 @@ DEFINE_OPFVF(vfsngjn, VFSGNJN_FUNCT6)
 DEFINE_OPFVV(vfsngjx, VFSGNJX_FUNCT6)
 DEFINE_OPFVF(vfsngjx, VFSGNJX_FUNCT6)
 
-
+// Vector Single-Width Floating-Point Fused Multiply-Add Instructions
 DEFINE_OPFVV_FMA(vfmadd, VFMADD_FUNCT6)
 DEFINE_OPFVF_FMA(vfmadd, VFMADD_FUNCT6)
 DEFINE_OPFVV_FMA(vfmsub, VFMSUB_FUNCT6)
@@ -372,7 +372,7 @@ DEFINE_OPFVF_FMA(vfnmacc, VFNMACC_FUNCT6)
 DEFINE_OPFVV_FMA(vfnmsac, VFNMSAC_FUNCT6)
 DEFINE_OPFVF_FMA(vfnmsac, VFNMSAC_FUNCT6)
 
-
+// Vector Widening Floating-Point Fused Multiply-Add Instructions
 DEFINE_OPFVV_FMA(vfwmacc, VFWMACC_FUNCT6)
 DEFINE_OPFVF_FMA(vfwmacc, VFWMACC_FUNCT6)
 DEFINE_OPFVV_FMA(vfwnmacc, VFWNMACC_FUNCT6)
@@ -382,7 +382,7 @@ DEFINE_OPFVF_FMA(vfwmsac, VFWMSAC_FUNCT6)
 DEFINE_OPFVV_FMA(vfwnmsac, VFWNMSAC_FUNCT6)
 DEFINE_OPFVF_FMA(vfwnmsac, VFWNMSAC_FUNCT6)
 
-
+// Vector Narrowing Fixed-Point Clip Instructions
 DEFINE_OPIVV(vnclip, VNCLIP_FUNCT6)
 DEFINE_OPIVX(vnclip, VNCLIP_FUNCT6)
 DEFINE_OPIVI(vnclip, VNCLIP_FUNCT6)
@@ -390,7 +390,7 @@ DEFINE_OPIVV(vnclipu, VNCLIPU_FUNCT6)
 DEFINE_OPIVX(vnclipu, VNCLIPU_FUNCT6)
 DEFINE_OPIVI(vnclipu, VNCLIPU_FUNCT6)
 
-
+// Vector Integer Extension
 DEFINE_OPMVV_VIE(vzext_vf8, 0b00010)
 DEFINE_OPMVV_VIE(vsext_vf8, 0b00011)
 DEFINE_OPMVV_VIE(vzext_vf4, 0b00100)
@@ -455,7 +455,7 @@ uint8_t vsew_switch(VSew vsew) {
   return width;
 }
 
-
+// OPIVV OPFVV OPMVV
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                                 VRegister vd, VRegister vs1, VRegister vs2,
                                 MaskType mask) {
@@ -477,7 +477,7 @@ void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                 ((vs2.code() & 0x1F) << kRvvVs2Shift);
   emit(instr);
 }
-
+// OPMVV OPFVV
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                                 Register rd, VRegister vs1, VRegister vs2,
                                 MaskType mask) {
@@ -489,19 +489,19 @@ void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
   emit(instr);
 }
 
-
+// OPFVV
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                                 FPURegister fd, VRegister vs1, VRegister vs2,
                                 MaskType mask) {
   MOZ_ASSERT(opcode == OP_FVV);
   Instr instr = (funct6 << kRvvFunct6Shift) | opcode | (mask << kRvvVmShift) |
-                ((fd.code() & 0x1F) << kRvvVdShift) |
+                ((fd.encoding() & 0x1F) << kRvvVdShift) |
                 ((vs1.code() & 0x1F) << kRvvVs1Shift) |
                 ((vs2.code() & 0x1F) << kRvvVs2Shift);
   emit(instr);
 }
 
-
+// OPIVX OPMVX
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                                 VRegister vd, Register rs1, VRegister vs2,
                                 MaskType mask) {
@@ -513,19 +513,19 @@ void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
   emit(instr);
 }
 
-
+// OPFVF
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                                 VRegister vd, FPURegister fs1, VRegister vs2,
                                 MaskType mask) {
   MOZ_ASSERT(opcode == OP_FVF);
   Instr instr = (funct6 << kRvvFunct6Shift) | opcode | (mask << kRvvVmShift) |
                 ((vd.code() & 0x1F) << kRvvVdShift) |
-                ((fs1.code() & 0x1F) << kRvvRs1Shift) |
+                ((fs1.encoding() & 0x1F) << kRvvRs1Shift) |
                 ((vs2.code() & 0x1F) << kRvvVs2Shift);
   emit(instr);
 }
 
-
+// OPMVX
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, Register rd, Register rs1,
                                 VRegister vs2, MaskType mask) {
   Instr instr = (funct6 << kRvvFunct6Shift) | OP_MVX | (mask << kRvvVmShift) |
@@ -534,7 +534,7 @@ void AssemblerRISCVV::GenInstrV(uint8_t funct6, Register rd, Register rs1,
                 ((vs2.code() & 0x1F) << kRvvVs2Shift);
   emit(instr);
 }
-
+// OPIVI
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, VRegister vd, int8_t imm5,
                                 VRegister vs2, MaskType mask) {
   MOZ_ASSERT(is_uint5(imm5) || is_int5(imm5));
@@ -545,7 +545,7 @@ void AssemblerRISCVV::GenInstrV(uint8_t funct6, VRegister vd, int8_t imm5,
   emit(instr);
 }
 
-
+// VL VS
 void AssemblerRISCVV::GenInstrV(BaseOpcode opcode, uint8_t width, VRegister vd,
                                 Register rs1, uint8_t umop, MaskType mask,
                                 uint8_t IsMop, bool IsMew, uint8_t Nf) {
@@ -574,7 +574,7 @@ void AssemblerRISCVV::GenInstrV(BaseOpcode opcode, uint8_t width, VRegister vd,
                 ((Nf << kRvvNfShift) & kRvvNfMask);
   emit(instr);
 }
-
+// VL VS AMO
 void AssemblerRISCVV::GenInstrV(BaseOpcode opcode, uint8_t width, VRegister vd,
                                 Register rs1, VRegister vs2, MaskType mask,
                                 uint8_t IsMop, bool IsMew, uint8_t Nf) {
@@ -589,7 +589,7 @@ void AssemblerRISCVV::GenInstrV(BaseOpcode opcode, uint8_t width, VRegister vd,
                 ((Nf << kRvvNfShift) & kRvvNfMask);
   emit(instr);
 }
-
+// vmv_xs vcpop_m vfirst_m
 void AssemblerRISCVV::GenInstrV(uint8_t funct6, OpcodeRISCVV opcode,
                                 Register rd, uint8_t vs1, VRegister vs2,
                                 MaskType mask) {
@@ -886,6 +886,6 @@ LoadStoreLaneParams::LoadStoreLaneParams(MachineRepresentation rep,
   }
 }
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 #endif
