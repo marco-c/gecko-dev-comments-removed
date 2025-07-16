@@ -1574,7 +1574,14 @@ bool MissingEnvironmentKey::initFromEnvironmentIter(JSContext* cx,
 
   
   
-  MOZ_ASSERT(env);
+  
+  
+  
+  
+  if (!env) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
 
   if (!gc::GetOrCreateUniqueId(env, &nearestEnvId_)) {
     ReportOutOfMemory(cx);
