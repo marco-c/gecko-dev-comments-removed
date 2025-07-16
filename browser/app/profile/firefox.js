@@ -2765,7 +2765,8 @@ pref("screenshots.browser.component.preventContentEvents", true);
 
 
 
-pref("browser.screenshots.folderList", 1);
+
+pref("browser.screenshots.folderList", 4);
 pref("browser.screenshots.dir", "");
 
 
