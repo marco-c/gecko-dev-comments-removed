@@ -8761,7 +8761,7 @@ void Document::CreateCustomContentContainerIfNeeded() {
     return;
   }
   RefPtr root = GetRootElement();
-  if (NS_WARN_IF(!root)) {
+  if (!root) {
     
     return;
   }
