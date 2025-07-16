@@ -9,6 +9,19 @@ use heck::{ToSnakeCase, ToUpperCamelCase};
 
 pub fn pass(root: &mut Root) -> Result<()> {
     root.visit_mut(|int: &mut Interface| {
+        match &int.imp {
+            ObjectImpl::Struct | ObjectImpl::Trait => {
+                
+                int.js_class_name = int.name.clone();
+            }
+            ObjectImpl::CallbackTrait => {
+                
+                
+                int.js_class_name = format!("{}Impl", int.name);
+            }
+        };
+
+        
         let int_ffi_converter = format!("FfiConverter{}", int.self_type.canonical_name);
         int.visit_mut(|callable_kind: &mut CallableKind| {
             if let CallableKind::Method { ffi_converter, .. } = callable_kind {
