@@ -1616,7 +1616,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   nsCSSFrameConstructor* frameConstructor = presContext->FrameConstructor();
 
   bool didUpdateCursor = false;
-  presContext->PresShell()->AssertNoAnchorPosAnchorChanges();
+
   for (size_t i = 0; i < aChangeList.Length(); ++i) {
     
     
@@ -1928,7 +1928,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       frame->UpdateVisibleDescendantsState();
     }
   }
-  presContext->PresShell()->MergeAnchorPosAnchorChanges();
 
   aChangeList.Clear();
   FlushOverflowChangedTracker();
@@ -3277,7 +3276,6 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     
     ReentrantChangeList newChanges;
     mReentrantChanges = &newChanges;
-    presShell->AssertNoAnchorPosAnchorChanges();
 
     {
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
@@ -3300,8 +3298,6 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
         }
       }
     }
-
-    presShell->MergeAnchorPosAnchorChanges();
 
     doc->ClearServoRestyleRoot();
     ClearSnapshots();
