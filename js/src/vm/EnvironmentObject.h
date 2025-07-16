@@ -1262,23 +1262,57 @@ class MOZ_RAII EnvironmentIter {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MissingEnvironmentKey {
   friend class LiveEnvironmentVal;
 
+  
+  
   AbstractFramePtr frame_;
+
+  
+  
+  
+  WeakHeapPtr<EnvironmentObject*> nearestEnv_;
+
+  
+  
   Scope* scope_;
 
  public:
-  explicit MissingEnvironmentKey(const EnvironmentIter& ei)
-      : frame_(ei.maybeInitialFrame()), scope_(ei.maybeScope()) {}
+  MissingEnvironmentKey(JSContext* cx, const EnvironmentIter& ei);
 
   MissingEnvironmentKey(AbstractFramePtr frame, Scope* scope)
-      : frame_(frame), scope_(scope) {}
+      : frame_(frame), nearestEnv_(nullptr), scope_(scope) {
+    MOZ_ASSERT(frame);
+  }
 
   AbstractFramePtr frame() const { return frame_; }
+  WeakHeapPtr<EnvironmentObject*>& nearestEnvRaw() { return nearestEnv_; }
+  EnvironmentObject* nearestEnvUnbarriered() const {
+    return nearestEnv_.unbarrieredGet();
+  }
   Scope* scope() const { return scope_; }
 
   void updateScope(Scope* scope) { scope_ = scope; }
+  void updateNearestEnv(EnvironmentObject* env) { nearestEnv_ = env; }
   void updateFrame(AbstractFramePtr frame) { frame_ = frame; }
 
   
@@ -1286,7 +1320,8 @@ class MissingEnvironmentKey {
   static HashNumber hash(MissingEnvironmentKey sk);
   static bool match(MissingEnvironmentKey sk1, MissingEnvironmentKey sk2);
   bool operator!=(const MissingEnvironmentKey& other) const {
-    return frame_ != other.frame_ || scope_ != other.scope_;
+    return frame_ != other.frame_ || nearestEnv_ != other.nearestEnv_ ||
+           scope_ != other.scope_;
   }
   static void rekey(MissingEnvironmentKey& k,
                     const MissingEnvironmentKey& newKey) {
@@ -1300,13 +1335,17 @@ class LiveEnvironmentVal {
   friend class MissingEnvironmentKey;
 
   AbstractFramePtr frame_;
+  
+  uintptr_t padding_ = 0;
   HeapPtr<Scope*> scope_;
 
   static void staticAsserts();
 
  public:
   explicit LiveEnvironmentVal(const EnvironmentIter& ei)
-      : frame_(ei.initialFrame()), scope_(ei.maybeScope()) {}
+      : frame_(ei.initialFrame()), scope_(ei.maybeScope()) {
+    (void)padding_;
+  }
 
   AbstractFramePtr frame() const { return frame_; }
 
