@@ -418,7 +418,6 @@ void BaselineCompilerHandler::maybeDisableIon() {
   if (analysis_.isInliningDisabled()) {
     script()->setUninlineable();
   }
-  script()->jitScript()->setRanBytecodeAnalysis();
 }
 
 
@@ -818,7 +817,7 @@ void BaselineCompilerCodeGen::storeFrameSizeAndPushDescriptor(
   masm.store32(Imm32(frame.frameSize()), frame.addressOfDebugFrameSize());
 #endif
 
-  masm.push(FrameDescriptor(FrameType::BaselineJS));
+  masm.pushFrameDescriptor(FrameType::BaselineJS);
 }
 
 template <>
@@ -833,7 +832,7 @@ void BaselineInterpreterCodeGen::storeFrameSizeAndPushDescriptor(
   masm.store32(scratch, frame.addressOfDebugFrameSize());
 #endif
 
-  masm.push(FrameDescriptor(FrameType::BaselineJS));
+  masm.pushFrameDescriptor(FrameType::BaselineJS);
 }
 
 static uint32_t GetVMFunctionArgSize(const VMFunctionData& fun) {
@@ -868,7 +867,7 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
     uint32_t frameBaseSize = BaselineFrame::frameSizeForNumValueSlots(0);
     masm.store32(Imm32(frameBaseSize), frame.addressOfDebugFrameSize());
 #endif
-    masm.push(FrameDescriptor(FrameType::BaselineJS));
+    masm.pushFrameDescriptor(FrameType::BaselineJS);
   }
   
   masm.call(code);
@@ -1291,14 +1290,14 @@ void BaselineCompilerCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
 
   
   
+  
   Label notInlined, done;
-  masm.branchTest32(Assembler::Zero, frame.addressOfDescriptor(),
-                    Imm32(FrameDescriptor::HasInlinedICScript), &notInlined);
-  masm.loadPtr(Address(FramePointer, 0), scratch);
-  masm.loadPtr(
-      Address(scratch, BaselineStubFrameLayout::InlinedICScriptOffsetFromFP),
-      scratch);
-  masm.storePtr(scratch, frame.addressOfICScript());
+  masm.movePtr(ImmPtr(runtime->addressOfInlinedICScript()), scratch);
+  Address inlinedAddr(scratch, 0);
+  masm.branchPtr(Assembler::Equal, inlinedAddr, ImmWord(0), &notInlined);
+  masm.loadPtr(inlinedAddr, scratch2);
+  masm.storePtr(scratch2, frame.addressOfICScript());
+  masm.storePtr(ImmPtr(nullptr), inlinedAddr);
   masm.jump(&done);
 
   
@@ -1357,21 +1356,9 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   masm.storePtr(scratch1, frame.addressOfInterpreterScript());
 
   
-  Label inlined, haveICScript;
-  masm.branchTest32(Assembler::NonZero, frame.addressOfDescriptor(),
-                    Imm32(FrameDescriptor::HasInlinedICScript), &inlined);
   masm.loadJitScript(scratch1, scratch2);
   masm.computeEffectiveAddress(Address(scratch2, JitScript::offsetOfICScript()),
                                scratch2);
-  masm.jump(&haveICScript);
-  masm.bind(&inlined);
-  masm.loadPtr(Address(FramePointer, 0), scratch2);
-  masm.loadPtr(
-      Address(scratch2, BaselineStubFrameLayout::InlinedICScriptOffsetFromFP),
-      scratch2);
-  masm.bind(&haveICScript);
-
-  
   masm.storePtr(scratch2, frame.addressOfICScript());
   masm.computeEffectiveAddress(Address(scratch2, ICScript::offsetOfICEntries()),
                                scratch2);
@@ -1747,11 +1734,6 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
-  
-  if (!JitOptions.baselineJit) {
-    return true;
-  }
-
   Register scriptReg = R2.scratchReg();
   Register countReg = R0.scratchReg();
 
@@ -6443,7 +6425,7 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
 #endif
 
   masm.PushCalleeToken(callee,  false);
-  masm.push(FrameDescriptor(FrameType::BaselineJS,  0));
+  masm.pushFrameDescriptorForJitCall(FrameType::BaselineJS,  0);
 
   
   MOZ_ASSERT(masm.framePushed() == sizeof(uintptr_t));

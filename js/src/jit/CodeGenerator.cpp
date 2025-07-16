@@ -349,7 +349,7 @@ void CodeGenerator::callVMInternal(VMFunctionId id, LInstruction* ins) {
 #endif
 
   
-  masm.Push(FrameDescriptor(FrameType::IonJS));
+  masm.PushFrameDescriptor(FrameType::IonJS);
 
   
   
@@ -6386,7 +6386,7 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   Label invokeFunctionVMEntry;
   bindLabelToOffset(&invokeFunctionVMEntry, invokeFunctionOffset);
 
-  masm.push(FrameDescriptor(FrameType::IonJS));
+  masm.pushFrameDescriptor(FrameType::IonJS);
 #ifndef JS_USE_LINK_REGISTER
   masm.push(returnAddrReg);
 #endif
@@ -6425,7 +6425,7 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
 
   
   
-  masm.push(FrameDescriptor(FrameType::IonJS));
+  masm.pushFrameDescriptor(FrameType::IonJS);
 #ifdef JS_USE_LINK_REGISTER
   masm.pushReturnAddress();
 #else
@@ -6667,7 +6667,7 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
 
   
   masm.PushCalleeToken(calleereg, call->mir()->isConstructing());
-  masm.Push(FrameDescriptor(FrameType::IonJS, call->numActualArgs()));
+  masm.PushFrameDescriptorForJitCall(FrameType::IonJS, call->numActualArgs());
 
   
   ensureOsiSpace();

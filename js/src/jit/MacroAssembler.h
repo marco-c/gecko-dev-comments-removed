@@ -239,7 +239,6 @@ enum class Trap;
 namespace jit {
 
 
-class FrameDescriptor;
 enum class ExitFrameType : uint8_t;
 
 class AutoSaveLiveRegisters;
@@ -557,8 +556,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void PushEmptyRooted(VMFunctionData::RootType rootType);
   inline CodeOffset PushWithPatch(ImmWord word);
   inline CodeOffset PushWithPatch(ImmPtr imm);
-
-  using MacroAssemblerSpecific::push;
 
   void Pop(const Operand op) DEFINED_ON(x86_shared);
   void Pop(Register reg) PER_SHARED_ARCH;
@@ -895,17 +892,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  inline void push(FrameDescriptor descriptor);
-  inline void Push(FrameDescriptor descriptor);
+  inline void pushFrameDescriptor(FrameType type);
+  inline void PushFrameDescriptor(FrameType type);
 
   
   
+  inline void pushFrameDescriptorForJitCall(FrameType type, uint32_t argc);
   inline void pushFrameDescriptorForJitCall(FrameType type, Register argc,
-                                            Register scratch,
-                                            bool hasInlineICScript = false);
+                                            Register scratch);
+  inline void PushFrameDescriptorForJitCall(FrameType type, uint32_t argc);
   inline void PushFrameDescriptorForJitCall(FrameType type, Register argc,
-                                            Register scratch,
-                                            bool hasInlineICScript = false);
+                                            Register scratch);
 
   
   inline void loadNumActualArgs(Register framePtr, Register dest);
@@ -5891,7 +5888,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
  public:
   void loadJitCodeRaw(Register func, Register dest);
-  void loadJitCodeRawNoIon(Register func, Register dest, Register scratch);
+  void loadBaselineJitCodeRaw(Register func, Register dest,
+                              Label* failure = nullptr);
+  void storeICScriptInJSContext(Register icScript);
 
   void loadBaselineFramePtr(Register framePtr, Register dest);
 

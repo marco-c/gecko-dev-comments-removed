@@ -31,7 +31,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
 #endif
 
   
-  masm.push(FrameDescriptor(FrameType::BaselineJS));
+  masm.pushFrameDescriptor(FrameType::BaselineJS);
 
   MOZ_ASSERT(ICTailCallReg == ra);
   
@@ -64,7 +64,7 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   
 
   
-  masm.Push(FrameDescriptor(FrameType::BaselineJS));
+  masm.PushFrameDescriptor(FrameType::BaselineJS);
   masm.Push(ICTailCallReg);
 
   

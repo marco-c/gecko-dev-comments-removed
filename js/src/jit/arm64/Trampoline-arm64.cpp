@@ -216,7 +216,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.subFromStackPtr(scratch);
 
     
-    masm.push(FrameDescriptor(FrameType::BaselineJS));
+    masm.pushFrameDescriptor(FrameType::BaselineJS);
     masm.push(xzr);  
     masm.push(FramePointer);
     
@@ -509,8 +509,16 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
       argumentsRectifierReturnOffset_ = masm.callJitNoProfiler(r3);
       break;
     case ArgumentsRectifierKind::TrialInlining:
-      masm.loadJitCodeRawNoIon(r5, r3, r0);
+      Label noBaselineScript, done;
+      masm.loadBaselineJitCodeRaw(r5, r3, &noBaselineScript);
       masm.callJitNoProfiler(r3);
+      masm.jump(&done);
+
+      
+      masm.bind(&noBaselineScript);
+      masm.loadJitCodeRaw(r5, r3);
+      masm.callJitNoProfiler(r3);
+      masm.bind(&done);
       break;
   }
 
