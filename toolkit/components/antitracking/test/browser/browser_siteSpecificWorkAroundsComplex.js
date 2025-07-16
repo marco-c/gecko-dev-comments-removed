@@ -76,6 +76,9 @@ add_setup(async function () {
       ["urlclassifier.trackingSkipURLs", ""],
       
       ["browser.contentblocking.category", "standard"],
+      
+      ["privacy.trackingprotection.allow_list.baseline.enabled", true],
+      ["privacy.trackingprotection.allow_list.convenience.enabled", true],
     ],
   });
 
