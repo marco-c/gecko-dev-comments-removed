@@ -26,7 +26,7 @@ class TalosRunner(MozbuildObject):
         3. Run mozharness
         """
         
-        max_py_major, max_py_minor = 3, 11
+        max_py_major, max_py_minor = 3, 12
         sys_maj, sys_min = sys.version_info.major, sys.version_info.minor
         if sys_min > max_py_minor:
             raise PythonVersionException(
