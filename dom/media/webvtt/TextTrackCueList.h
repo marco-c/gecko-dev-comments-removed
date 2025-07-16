@@ -10,6 +10,7 @@
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsTHashSet.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
@@ -64,6 +65,9 @@ class TextTrackCueList final : public nsISupports, public nsWrapperCache {
   
   
   nsTArray<RefPtr<TextTrackCue>> mList;
+
+  
+  nsTHashSet<TextTrackCue*> mCueSet;
 };
 
 }  
