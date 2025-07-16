@@ -19,6 +19,7 @@
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
 #include "nsXULPopupManager.h"
+#include "nsExpirationState.h"
 
 #include "nsBlockFrame.h"
 
@@ -204,7 +205,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   bool HasRemoteContent() const;
 
   
-  bool ShouldCreateWidgetUpfront() const;
+  bool ShouldHaveWidgetWhenHidden() const;
 
   
   bool ShouldExpandToInflowParentOrAnchor() const;
@@ -556,6 +557,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
     mAPZFocusSequenceNumber = aNewNumber;
   }
 
+  void DestroyWidgetIfNeeded();
+  nsExpirationState* GetExpirationState() { return &mExpirationState; }
+
  protected:
   nsString mIncrementalString;  
 
@@ -659,8 +663,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   nsRect mOverrideConstraintRect;
 
-  static mozilla::TimeStamp sLastKeyTime;
+  nsExpirationState mExpirationState;
 
+  static mozilla::TimeStamp sLastKeyTime;
 };  
 
 #endif

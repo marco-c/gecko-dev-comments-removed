@@ -667,6 +667,12 @@ Tester.prototype = {
 
       
       
+      if (name == "PopupExpirationTracker") {
+        continue;
+      }
+
+      
+      
       if (name == "nsHttpConnectionMgr") {
         continue;
       }
