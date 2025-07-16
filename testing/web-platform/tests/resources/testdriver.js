@@ -264,6 +264,246 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_service: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_service(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_characteristic: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_characteristic(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_characteristic_response: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_characteristic_response(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_descriptor: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_descriptor(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_descriptor_response: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_descriptor_response(params);
+                },
+                
+
+
+
                 request_device_prompt_updated: {
                     
 
@@ -388,6 +628,140 @@
                             const remove_handler =
                                 window.test_driver_internal.bidi.bluetooth
                                     .gatt_connection_attempted.on(event => {
+                                    resolve(event);
+                                    remove_handler();
+                                });
+                        });
+                    },
+                },
+                
+
+
+
+                characteristic_event_generated: {
+                    
+
+
+
+
+
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    subscribe: async function(params = {}) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .characteristic_event_generated.subscribe(params);
+                    },
+                    
+
+
+
+
+
+
+
+
+                    on: function(callback) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .characteristic_event_generated.on(callback);
+                    },
+                    
+
+
+
+
+
+
+                    once: function() {
+                        assertBidiIsEnabled();
+                        return new Promise(resolve => {
+                            const remove_handler =
+                                window.test_driver_internal.bidi.bluetooth
+                                    .characteristic_event_generated.on(event => {
+                                    resolve(event);
+                                    remove_handler();
+                                });
+                        });
+                    },
+                },
+                
+
+
+
+                descriptor_event_generated: {
+                    
+
+
+
+
+
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    subscribe: async function(params = {}) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .descriptor_event_generated.subscribe(params);
+                    },
+                    
+
+
+
+
+
+
+
+
+                    on: function(callback) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .descriptor_event_generated.on(callback);
+                    },
+                    
+
+
+
+
+
+
+                    once: function() {
+                        assertBidiIsEnabled();
+                        return new Promise(resolve => {
+                            const remove_handler =
+                                window.test_driver_internal.bidi.bluetooth
+                                    .descriptor_event_generated.on(event => {
                                     resolve(event);
                                     remove_handler();
                                 });
@@ -1780,6 +2154,26 @@
                     on() {
                         throw new Error(
                             'bidi.bluetooth.gatt_connection_attempted.on is not implemented by testdriver-vendor.js');
+                    }
+                },
+                characteristic_event_generated: {
+                    async subscribe() {
+                        throw new Error(
+                            'bidi.bluetooth.characteristic_event_generated.subscribe is not implemented by testdriver-vendor.js');
+                    },
+                    on() {
+                        throw new Error(
+                            'bidi.bluetooth.characteristic_event_generated.on is not implemented by testdriver-vendor.js');
+                    }
+                },
+                descriptor_event_generated: {
+                    async subscribe() {
+                        throw new Error(
+                            'bidi.bluetooth.descriptor_event_generated.subscribe is not implemented by testdriver-vendor.js');
+                    },
+                    on() {
+                        throw new Error(
+                            'bidi.bluetooth.descriptor_event_generated.on is not implemented by testdriver-vendor.js');
                     }
                 }
             },
