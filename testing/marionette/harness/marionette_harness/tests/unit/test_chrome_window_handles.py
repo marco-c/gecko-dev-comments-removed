@@ -2,15 +2,23 @@
 
 
 
+import os
+import sys
+
 from marionette_driver import errors
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 
-class TestWindowHandles(WindowManagerMixin, MarionetteTestCase):
+sys.path.append(os.path.dirname(__file__))
+
+from chrome_handler_mixin import ChromeHandlerMixin
+
+
+class TestWindowHandles(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestWindowHandles, self).setUp()
 
-        self.chrome_dialog = "chrome://remote/content/marionette/test.xhtml"
+        self.chrome_dialog = self.chrome_base_url + "test.xhtml"
 
         self.marionette.set_context("chrome")
 

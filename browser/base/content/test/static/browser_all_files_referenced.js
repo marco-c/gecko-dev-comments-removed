@@ -250,11 +250,6 @@ var allowlist = [
     platforms: ["linux", "macosx"],
   },
   
-  { file: "chrome://remote/content/marionette/test_dialog.properties" },
-  { file: "chrome://remote/content/marionette/test_dialog.xhtml" },
-  { file: "chrome://remote/content/marionette/test_xul.xhtml" },
-  { file: "chrome://remote/content/marionette/test.xhtml" },
-  
   { file: "chrome://pippki/content/resetpassword.xhtml" },
   
   { file: "resource://gre/modules/Manifest.sys.mjs" },
