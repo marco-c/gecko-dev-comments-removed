@@ -3667,7 +3667,7 @@ class MOZ_RAII AutoContainsBlendModeCapturer {
 
 void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
     nsDisplayListBuilder* aBuilder, nsDisplayListCollection& aSet,
-    bool aCreateAsyncZoom,
+    bool aCreateAsyncZoom, bool aCapturedByViewTransition,
     AutoContainsBlendModeCapturer* aAsyncZoomBlendCapture,
     const nsRect& aAsyncZoomClipRect, nscoord* aRadii) {
   if (!mIsRoot) {
@@ -3684,38 +3684,49 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
     }
   };
 
-  if (rootStyleFrame &&
-      rootStyleFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION)) {
-    SerializeList();
-    rootResultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
-        aBuilder, this, &rootResultList, nullptr,  true);
-  }
+  
+  
+  
+  ViewportFrame* viewportParent = do_QueryFrame(GetParent());
+  {
+    nsDisplayListBuilder::AutoEnterViewTransitionCapture
+        inViewTransitionCaptureSetter(aBuilder, aCapturedByViewTransition);
+    nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
+        aBuilder);
+    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+    if (aBuilder->IsInViewTransitionCapture()) {
+      asrSetter.SetCurrentActiveScrolledRoot(nullptr);
+      clipState.Clear();
+    }
+    if (viewportParent) {
+      bool topLayerIsOpaque = false;
+      if (nsDisplayWrapList* topLayerWrapList =
+              viewportParent->BuildDisplayListForContentTopLayer(
+                  aBuilder, &topLayerIsOpaque)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (topLayerIsOpaque && !serializedList &&
+            PresContext()->IsRootContentDocumentInProcess()) {
+          aSet.DeleteAll(aBuilder);
+        }
+        if (serializedList) {
+          rootResultList.AppendToTop(topLayerWrapList);
+        } else {
+          aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
+        }
+      }
+    }
 
-  
-  
-  
-  if (ViewportFrame* viewport = do_QueryFrame(GetParent())) {
-    bool topLayerIsOpaque = false;
-    if (nsDisplayWrapList* topLayerWrapList =
-            viewport->BuildDisplayListForTopLayer(aBuilder,
-                                                  &topLayerIsOpaque)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (topLayerIsOpaque && !serializedList &&
-          PresContext()->IsRootContentDocumentInProcess()) {
-        aSet.DeleteAll(aBuilder);
-      }
-      if (serializedList) {
-        rootResultList.AppendToTop(topLayerWrapList);
-      } else {
-        aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
-      }
+    if (aCapturedByViewTransition) {
+      SerializeList();
+      rootResultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+          aBuilder, this, &rootResultList, nullptr,  true);
     }
   }
 
@@ -3737,6 +3748,18 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
           GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
       rootResultList.AppendNewToTop<nsDisplayBackdropFilters>(
           aBuilder, this, &rootResultList, backdropRect, rootStyleFrame);
+    }
+  }
+
+  if (viewportParent) {
+    if (nsDisplayWrapList* topLayerWrapList =
+            viewportParent->BuildDisplayListForViewTransitionsAndNACTopLayer(
+                aBuilder)) {
+      if (serializedList) {
+        rootResultList.AppendToTop(topLayerWrapList);
+      } else {
+        aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
+      }
     }
   }
 
@@ -3893,8 +3916,9 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 
     MaybeCreateTopLayerAndWrapRootItems(aBuilder, set,
-                                         false, nullptr,
-                                        nsRect(), nullptr);
+                                         false,
+                                         false,
+                                        nullptr, nsRect(), nullptr);
 
     if (addScrollBars) {
       
@@ -4233,8 +4257,8 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   MaybeCreateTopLayerAndWrapRootItems(
-      aBuilder, set, willBuildAsyncZoomContainer, &blendCapture, clipRect,
-      haveRadii ? radii : nullptr);
+      aBuilder, set, willBuildAsyncZoomContainer, capturedByViewTransition,
+      &blendCapture, clipRect, haveRadii ? radii : nullptr);
 
   
   

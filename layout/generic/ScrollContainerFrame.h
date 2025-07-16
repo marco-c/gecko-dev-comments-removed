@@ -1108,6 +1108,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   void MaybeCreateTopLayerAndWrapRootItems(
       nsDisplayListBuilder*, nsDisplayListCollection&, bool aCreateAsyncZoom,
+      bool aCapturedByViewTransition,
       AutoContainsBlendModeCapturer* aAsyncZoomBlendCapture,
       const nsRect& aAsyncZoomClipRect, nscoord* aRadii);
 

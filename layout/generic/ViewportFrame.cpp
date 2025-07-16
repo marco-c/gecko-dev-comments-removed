@@ -26,7 +26,22 @@
 #include "MobileViewportManager.h"
 
 using namespace mozilla;
-typedef nsAbsoluteContainingBlock::AbsPosReflowFlags AbsPosReflowFlags;
+
+using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
+
+
+static constexpr uint16_t kFirstTopLayerIndex = 2;
+enum class TopLayerIndex : uint16_t {
+  
+  Content = kFirstTopLayerIndex,
+  
+  
+  
+  
+  
+  
+  ViewTransitionsAndAnonymousContent,
+};
 
 ViewportFrame* NS_NewViewportFrame(PresShell* aPresShell,
                                    ComputedStyle* aStyle) {
@@ -69,10 +84,14 @@ void ViewportFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   if (!kid->IsScrollContainerFrame()) {
     bool isOpaque = false;
-    if (auto* list = BuildDisplayListForTopLayer(aBuilder, &isOpaque)) {
+    if (auto* list = BuildDisplayListForContentTopLayer(aBuilder, &isOpaque)) {
       if (isOpaque) {
         set.DeleteAll(aBuilder);
       }
+      set.PositionedDescendants()->AppendToTop(list);
+    }
+    if (auto* list =
+            BuildDisplayListForViewTransitionsAndNACTopLayer(aBuilder)) {
       set.PositionedDescendants()->AppendToTop(list);
     }
   }
@@ -96,9 +115,8 @@ static void BuildDisplayListForTopLayerFrame(nsDisplayListBuilder* aBuilder,
   nsRect dirty;
   DisplayListClipState::AutoSaveRestore clipState(aBuilder);
   nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(aBuilder);
-  nsDisplayListBuilder::OutOfFlowDisplayData* savedOutOfFlowData =
-      nsDisplayListBuilder::GetOutOfFlowData(aFrame);
-  if (savedOutOfFlowData) {
+  if (auto* savedOutOfFlowData =
+          nsDisplayListBuilder::GetOutOfFlowData(aFrame)) {
     visible =
         savedOutOfFlowData->GetVisibleRectForFrame(aBuilder, aFrame, &dirty);
     
@@ -107,13 +125,22 @@ static void BuildDisplayListForTopLayerFrame(nsDisplayListBuilder* aBuilder,
     
     
     
-    
-    clipState.SetClipChainForContainingBlockDescendants(
-        savedOutOfFlowData->mCombinedClipChain);
-    asrSetter.SetCurrentActiveScrolledRoot(
-        savedOutOfFlowData->mContainingBlockActiveScrolledRoot);
-    asrSetter.SetCurrentScrollParentId(savedOutOfFlowData->mScrollParentId);
+    if (!aBuilder->IsInViewTransitionCapture()) {
+      
+      
+      
+      
+      
+      
+      
+      clipState.SetClipChainForContainingBlockDescendants(
+          savedOutOfFlowData->mCombinedClipChain);
+      asrSetter.SetCurrentActiveScrolledRoot(
+          savedOutOfFlowData->mContainingBlockActiveScrolledRoot);
+      asrSetter.SetCurrentScrollParentId(savedOutOfFlowData->mScrollParentId);
+    }
   }
+
   nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
       aBuilder, aFrame, visible, dirty);
 
@@ -159,10 +186,32 @@ static bool BackdropListIsOpaque(ViewportFrame* aFrame,
   return opaque.Contains(aFrame->GetRect());
 }
 
-nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
+nsDisplayWrapList* ViewportFrame::MaybeWrapTopLayerList(
+    nsDisplayListBuilder* aBuilder, uint16_t aIndex,
+    nsDisplayList& aTopLayerList) {
+  if (aTopLayerList.IsEmpty()) {
+    return nullptr;
+  }
+  nsPoint offset = aBuilder->GetCurrentFrame()->GetOffsetTo(this);
+  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
+      aBuilder, this, aBuilder->GetVisibleRect() + offset,
+      aBuilder->GetDirtyRect() + offset);
+  
+  
+  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapper>(
+      aBuilder, this, aIndex, &aTopLayerList,
+      aBuilder->CurrentActiveScrolledRoot(), false);
+  if (!wrapList) {
+    return nullptr;
+  }
+  wrapList->SetOverrideZIndex(
+      std::numeric_limits<decltype(wrapList->ZIndex())>::max());
+  return wrapList;
+}
+
+nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
     nsDisplayListBuilder* aBuilder, bool* aIsOpaque) {
   nsDisplayList topLayerList(aBuilder);
-
   auto* doc = PresContext()->Document();
 
   nsTArray<dom::Element*> topLayer = doc->GetTopLayer();
@@ -219,6 +268,15 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
     BuildDisplayListForTopLayerFrame(aBuilder, frame, &topLayerList);
   }
 
+  return MaybeWrapTopLayerList(aBuilder, uint16_t(TopLayerIndex::Content),
+                               topLayerList);
+}
+
+nsDisplayWrapList*
+ViewportFrame::BuildDisplayListForViewTransitionsAndNACTopLayer(
+    nsDisplayListBuilder* aBuilder) {
+  nsDisplayList topLayerList(aBuilder);
+  auto* doc = PresContext()->Document();
   if (dom::ViewTransition* vt = doc->GetActiveViewTransition()) {
     if (dom::Element* root = vt->GetSnapshotContainingBlock()) {
       if (nsIFrame* frame = root->GetPrimaryFrame()) {
@@ -238,24 +296,10 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
       BuildDisplayListForTopLayerFrame(aBuilder, frame, &topLayerList);
     }
   }
-  if (topLayerList.IsEmpty()) {
-    return nullptr;
-  }
-  nsPoint offset = aBuilder->GetCurrentFrame()->GetOffsetTo(this);
-  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
-      aBuilder, this, aBuilder->GetVisibleRect() + offset,
-      aBuilder->GetDirtyRect() + offset);
-  
-  
-  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapper>(
-      aBuilder, this, 2, &topLayerList, aBuilder->CurrentActiveScrolledRoot(),
-      false);
-  if (!wrapList) {
-    return nullptr;
-  }
-  wrapList->SetOverrideZIndex(
-      std::numeric_limits<decltype(wrapList->ZIndex())>::max());
-  return wrapList;
+
+  return MaybeWrapTopLayerList(
+      aBuilder, uint16_t(TopLayerIndex::ViewTransitionsAndAnonymousContent),
+      topLayerList);
 }
 
 #ifdef DEBUG
