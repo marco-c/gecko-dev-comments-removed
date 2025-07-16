@@ -125,6 +125,18 @@ add_task(async function test_allTabsView() {
     "data:text/plain,tab4",
   ]);
 
+  gBrowser.selectedTab = tabs[0]; 
+  await assertTabMenuContains([
+    "New Tab",
+    "data:text/plain,tab5",
+    "Test Group",
+    "data:text/plain,tab1", 
+    
+    "Unnamed Group",
+    "data:text/plain,tab3",
+    "data:text/plain,tab4",
+  ]);
+
   for (let tab of tabs) {
     BrowserTestUtils.removeTab(tab);
   }
