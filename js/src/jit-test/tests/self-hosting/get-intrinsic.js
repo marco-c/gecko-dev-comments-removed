@@ -2,7 +2,7 @@
 var intrinsic_names = [
     "IsConstructor",    
     "ArrayMap",         
-    "globalMapIterationResultPair",  
+    "localeCache",      
 ];
 
 for (var name of intrinsic_names) {

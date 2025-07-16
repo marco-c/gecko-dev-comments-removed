@@ -13,9 +13,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/DateTimeFormat.h"
 #include "builtin/intl/FormatBuffer.h"
-#include "builtin/intl/IntlObject.h"
 #include "builtin/intl/NumberFormat.h"
-#include "builtin/temporal/TimeZone.h"
 #include "gc/Tracer.h"
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
@@ -60,9 +58,6 @@ bool js::intl::GlobalIntlData::ensureRuntimeDefaultLocale(JSContext* cx) {
     }
 
     
-    defaultLocale_ = nullptr;
-
-    
     resetCollator();
     resetNumberFormat();
     resetDateTimeFormat();
@@ -71,60 +66,41 @@ bool js::intl::GlobalIntlData::ensureRuntimeDefaultLocale(JSContext* cx) {
   return true;
 }
 
+static bool StringEqualsTwoByte(const JSLinearString* str,
+                                mozilla::Span<const char16_t> chars) {
+  if (str->length() != chars.size()) {
+    return false;
+  }
+
+  JS::AutoCheckCannotGC nogc;
+  return str->hasLatin1Chars()
+             ? EqualChars(str->latin1Chars(nogc), chars.data(), chars.size())
+             : EqualChars(str->twoByteChars(nogc), chars.data(), chars.size());
+}
+
 bool js::intl::GlobalIntlData::ensureRuntimeDefaultTimeZone(JSContext* cx) {
-  TimeZoneIdentifierVector timeZoneId;
-  if (!DateTimeInfo::timeZoneId(DateTimeInfo::forceUTC(cx->realm()),
-                                timeZoneId)) {
-    ReportOutOfMemory(cx);
+  FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> timeZone(cx);
+  auto result =
+      DateTimeInfo::timeZoneId(DateTimeInfo::forceUTC(cx->realm()), timeZone);
+  if (result.isErr()) {
+    ReportInternalError(cx, result.unwrapErr());
     return false;
   }
 
   if (!runtimeDefaultTimeZone_ ||
-      !StringEqualsAscii(runtimeDefaultTimeZone_, timeZoneId.begin(),
-                         timeZoneId.length())) {
-    runtimeDefaultTimeZone_ = NewStringCopy<CanGC>(
-        cx, static_cast<mozilla::Span<const char>>(timeZoneId));
-    if (!runtimeDefaultTimeZone_) {
+      !StringEqualsTwoByte(runtimeDefaultTimeZone_, timeZone)) {
+    JSLinearString* str = timeZone.toString(cx);
+    if (!str) {
       return false;
     }
 
-    
-    defaultTimeZone_ = nullptr;
-    defaultTimeZoneObject_ = nullptr;
+    runtimeDefaultTimeZone_ = str;
 
     
     resetDateTimeFormat();
   }
 
   return true;
-}
-
-JSLinearString* js::intl::GlobalIntlData::defaultLocale(JSContext* cx) {
-  
-  if (!ensureRuntimeDefaultLocale(cx)) {
-    return nullptr;
-  }
-
-  
-  if (!defaultLocale_) {
-    
-    defaultLocale_ = ComputeDefaultLocale(cx);
-  }
-  return defaultLocale_;
-}
-
-JSLinearString* js::intl::GlobalIntlData::defaultTimeZone(JSContext* cx) {
-  
-  if (!ensureRuntimeDefaultTimeZone(cx)) {
-    return nullptr;
-  }
-
-  
-  if (!defaultTimeZone_) {
-    
-    defaultTimeZone_ = temporal::ComputeSystemTimeZoneIdentifier(cx);
-  }
-  return defaultTimeZone_;
 }
 
 static inline bool EqualLocale(const JSLinearString* str1,
@@ -249,68 +225,11 @@ DateTimeFormatObject* js::intl::GlobalIntlData::getOrCreateDateTimeFormat(
   return &dtfObject->as<DateTimeFormatObject>();
 }
 
-temporal::TimeZoneObject* js::intl::GlobalIntlData::getOrCreateDefaultTimeZone(
-    JSContext* cx) {
-  
-  if (!ensureRuntimeDefaultTimeZone(cx)) {
-    return nullptr;
-  }
-
-  
-  if (!defaultTimeZoneObject_) {
-    Rooted<JSLinearString*> identifier(cx, defaultTimeZone(cx));
-    if (!identifier) {
-      return nullptr;
-    }
-
-    auto* timeZone = temporal::CreateTimeZoneObject(cx, identifier, identifier);
-    if (!timeZone) {
-      return nullptr;
-    }
-    defaultTimeZoneObject_ = timeZone;
-  }
-
-  return &defaultTimeZoneObject_->as<temporal::TimeZoneObject>();
-}
-
-temporal::TimeZoneObject* js::intl::GlobalIntlData::getOrCreateTimeZone(
-    JSContext* cx, Handle<JSLinearString*> identifier,
-    Handle<JSLinearString*> primaryIdentifier) {
-  
-  if (timeZoneObject_) {
-    auto* timeZone = &timeZoneObject_->as<temporal::TimeZoneObject>();
-    if (EqualStrings(timeZone->identifier(), identifier)) {
-      
-      MOZ_ASSERT(
-          EqualStrings(timeZone->primaryIdentifier(), primaryIdentifier));
-
-      
-      return timeZone;
-    }
-  }
-
-  
-  auto* timeZone =
-      temporal::CreateTimeZoneObject(cx, identifier, primaryIdentifier);
-  if (!timeZone) {
-    return nullptr;
-  }
-  timeZoneObject_ = timeZone;
-
-  return &timeZone->as<temporal::TimeZoneObject>();
-}
-
 void js::intl::GlobalIntlData::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &runtimeDefaultLocale_,
                     "GlobalIntlData::runtimeDefaultLocale_");
-  TraceNullableEdge(trc, &defaultLocale_, "GlobalIntlData::defaultLocale_");
-
   TraceNullableEdge(trc, &runtimeDefaultTimeZone_,
                     "GlobalIntlData::runtimeDefaultTimeZone_");
-  TraceNullableEdge(trc, &defaultTimeZone_, "GlobalIntlData::defaultTimeZone_");
-  TraceNullableEdge(trc, &defaultTimeZoneObject_,
-                    "GlobalIntlData::defaultTimeZoneObject_");
-  TraceNullableEdge(trc, &timeZoneObject_, "GlobalIntlData::timeZoneObject_");
 
   TraceNullableEdge(trc, &collatorLocale_, "GlobalIntlData::collatorLocale_");
   TraceNullableEdge(trc, &collator_, "GlobalIntlData::collator_");

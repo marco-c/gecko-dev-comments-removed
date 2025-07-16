@@ -142,6 +142,38 @@ function IsASCIIAlphaString(s) {
   return true;
 }
 
+var localeCache = {
+  runtimeDefaultLocale: undefined,
+  defaultLocale: undefined,
+};
+
+
+
+
+
+
+function DefaultLocale() {
+  if (intl_IsRuntimeDefaultLocale(localeCache.runtimeDefaultLocale)) {
+    return localeCache.defaultLocale;
+  }
+
+  
+  var runtimeDefaultLocale = intl_RuntimeDefaultLocale();
+  var locale = intl_supportedLocaleOrFallback(runtimeDefaultLocale);
+
+  assertIsValidAndCanonicalLanguageTag(locale, "the computed default locale");
+  assert(
+    startOfUnicodeExtensions(locale) < 0,
+    "the computed default locale must not contain a Unicode extension sequence"
+  );
+
+  
+  localeCache.defaultLocale = locale;
+  localeCache.runtimeDefaultLocale = runtimeDefaultLocale;
+
+  return locale;
+}
+
 
 
 
@@ -217,7 +249,7 @@ function CanonicalizeLocaleList(locales) {
 
 
 function BestAvailableLocale(availableLocales, locale) {
-  return intl_BestAvailableLocale(availableLocales, locale, intl_DefaultLocale());
+  return intl_BestAvailableLocale(availableLocales, locale, DefaultLocale());
 }
 
 
@@ -273,7 +305,7 @@ function LookupMatcher(availableLocales, requestedLocales) {
   }
 
   
-  result.locale = intl_DefaultLocale();
+  result.locale = DefaultLocale();
 
   
   return result;

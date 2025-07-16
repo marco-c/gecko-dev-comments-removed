@@ -9,8 +9,6 @@
 
 #include "js/TypeDecls.h"
 
-class JSLinearString;
-
 namespace js {
 
 extern const JSClass IntlClass;
@@ -65,19 +63,20 @@ extern const JSClass IntlClass;
 
 
 
+[[nodiscard]] extern bool intl_supportedLocaleOrFallback(JSContext* cx,
+                                                         unsigned argc,
+                                                         JS::Value* vp);
+
+
+
+
+
+
+
+
 [[nodiscard]] extern bool intl_SupportedValuesOf(JSContext* cx, unsigned argc,
                                                  JS::Value* vp);
 
-namespace intl {
-
-
-
-
-
-
-JSLinearString* ComputeDefaultLocale(JSContext* cx);
-
-}  
 }  
 
 #endif 
