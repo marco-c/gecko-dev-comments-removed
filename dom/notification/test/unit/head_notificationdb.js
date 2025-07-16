@@ -30,32 +30,6 @@ var calendarNotification = getNotificationObject(
 );
 
 
-function startNotificationDB() {
-  ChromeUtils.importESModule(
-    "moz-src:///dom/notification/MemoryNotificationDB.sys.mjs"
-  );
-  ChromeUtils.importESModule(
-    "moz-src:///dom/notification/NotificationDB.sys.mjs"
-  );
-}
-
-
-async function addAndSend(msg, reply, callback, payload) {
-  const { promise, resolve, reject } = Promise.withResolvers();
-  let handler = {
-    receiveMessage(message) {
-      if (message.name === reply) {
-        Services.cpmm.removeMessageListener(reply, handler);
-        Promise.resolve(callback(message)).then(resolve, reject);
-      }
-    },
-  };
-  Services.cpmm.addMessageListener(reply, handler);
-  Services.cpmm.sendAsyncMessage(msg, payload);
-  return promise;
-}
-
-
 function compareNotification(notif1, notif2) {
   
   for (let prop in notif1) {
