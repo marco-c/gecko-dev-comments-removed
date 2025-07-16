@@ -10,7 +10,9 @@
   };
   self.uniqueNameByQuery = () => {
     const prefix = new URL(location.href).searchParams.get('prefix');
-    return `${prefix}-${++res_num}`;
+    
+    
+    return `${prefix}-${++res_num}-${Math.random()}`;
   }
 
   
