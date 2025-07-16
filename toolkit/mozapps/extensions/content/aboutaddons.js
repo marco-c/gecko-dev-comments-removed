@@ -125,11 +125,23 @@ function getUpdateInstall(addon) {
 }
 
 function isManualUpdate(install) {
+  const isExistingHidden = install.existingAddon?.hidden;
+  
+  
+  
+  const isNewHidden = install.addon?.hidden;
+  
+  
+  
+  
+  
+  if (isExistingHidden && isNewHidden) {
+    return false;
+  }
   let isManual =
     install.existingAddon &&
     !AddonManager.shouldAutoUpdate(install.existingAddon);
-  let isExtension =
-    install.existingAddon && install.existingAddon.type == "extension";
+  let isExtension = install.existingAddon?.type == "extension";
   return (
     (isManual && isInState(install, "available")) ||
     (isExtension && isInState(install, "postponed"))
