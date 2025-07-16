@@ -10833,6 +10833,7 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     "SectionTitle",
     "Signup",
     "Navigation",
+    "Widgets",
     "CardGrid",
     "CollectionCardGrid",
     "HorizontalRule",
@@ -12045,6 +12046,53 @@ function CardSections({
 
 
 
+function Lists() {
+  return external_React_default().createElement("div", {
+    className: "lists"
+  }, "Lists Widget");
+}
+
+;
+
+
+
+
+
+function FocusTimer() {
+  return external_React_default().createElement("div", {
+    className: "focus-timer"
+  }, "FocusTimer Widget");
+}
+
+;
+
+
+
+
+
+
+
+
+const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
+const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
+const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
+const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
+function Widgets() {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const listsEnabled = prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED] && prefs[PREF_WIDGETS_LISTS_ENABLED];
+  const timerEnabled = prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED] && prefs[PREF_WIDGETS_TIMER_ENABLED];
+  return external_React_default().createElement("div", {
+    className: "widgets-container"
+  }, listsEnabled && external_React_default().createElement(Lists, null), timerEnabled && external_React_default().createElement(FocusTimer, null));
+}
+
+;
+
+
+
+
+
+
 
 
 
@@ -12243,6 +12291,8 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
         return external_React_default().createElement(PrivacyLink, {
           properties: component.properties
         });
+      case "Widgets":
+        return external_React_default().createElement(Widgets, null);
       default:
         return external_React_default().createElement("div", null, component.type);
     }
@@ -12309,6 +12359,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
 
     
     const topSites = extractComponent("TopSites");
+    const widgets = extractComponent("Widgets");
     const sponsoredCollection = extractComponent("CollectionCardGrid");
     const message = extractComponent("Message") || {
       header: {
@@ -12349,6 +12400,10 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       width: 12,
       components: [topSites],
       sectionType: "topsites"
+    }]), widgets && this.renderLayout([{
+      width: 12,
+      components: [widgets],
+      sectionType: "widgets"
     }]), sponsoredCollection && this.renderLayout([{
       width: 12,
       components: [sponsoredCollection]
@@ -12382,9 +12437,9 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     const styles = [];
     let [data] = layoutRender;
     
-    const topsitesClass = data.sectionType ? "ds-layout-topsites" : "";
+    const sectionClass = data.sectionType ? `ds-layout-${data.sectionType}` : "";
     return external_React_default().createElement("div", {
-      className: `discovery-stream ds-layout ${topsitesClass}`
+      className: `discovery-stream ds-layout ${sectionClass}`
     }, layoutRender.map((row, rowIndex) => external_React_default().createElement("div", {
       key: `row-${rowIndex}`,
       className: `ds-column ds-column-${row.width}`
