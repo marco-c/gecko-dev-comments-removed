@@ -634,6 +634,32 @@ static bool IsLineBreakContinuation(nsTextFrame* aContinuation) {
   return AreFramesOnDifferentLines(aContinuation, prev);
 }
 
+static bool IsCaretValid(TextLeafPoint aPoint) {
+  Accessible* acc = aPoint.mAcc;
+  if (!acc->IsHyperText()) {
+    acc = acc->Parent();
+  }
+  if (!(acc->State() & states::EDITABLE)) {
+    return true;
+  }
+  
+  Accessible* focus = FocusMgr() ? FocusMgr()->FocusedAccessible() : nullptr;
+  if (!focus) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return focus->State() & states::EDITABLE;
+}
+
 
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
@@ -1077,6 +1103,9 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
           "Got HyperText CaretOffset but ToTextLeafPoint failed");
       return point;
     }
+    if (!IsCaretValid(point)) {
+      return TextLeafPoint();
+    }
     nsIFrame* frame = ht->GetFrame();
     RefPtr<nsFrameSelection> sel = frame ? frame->GetFrameSelection() : nullptr;
     if (sel && sel->GetHint() == CaretAssociationHint::Before) {
@@ -1113,6 +1142,16 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
     return TextLeafPoint();
   }
   TextLeafPoint point = ht->ToTextLeafPoint(htOffset);
+  if (!point) {
+    
+    
+    
+    
+    return point;
+  }
+  if (!IsCaretValid(point)) {
+    return TextLeafPoint();
+  }
   point.mIsEndOfLineInsertionPoint = remoteDoc->IsCaretAtEndOfLine();
   return point;
 }
