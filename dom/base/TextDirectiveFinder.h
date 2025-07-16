@@ -30,6 +30,7 @@ class TextDirectiveFinder final {
  public:
   ~TextDirectiveFinder();
 
+  void Traverse(nsCycleCollectionTraversalCallback& aCallback);
   
 
 
@@ -65,5 +66,12 @@ class TextDirectiveFinder final {
   int64_t mFoundDirectiveCount{0};
 };
 }  
+
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    mozilla::dom::TextDirectiveFinder& aField, const char* aName,
+    uint32_t aFlags = 0) {
+  aField.Traverse(aCallback);
+}
 
 #endif
