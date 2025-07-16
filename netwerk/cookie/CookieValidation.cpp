@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CookieValidation.h"
 #include "CookieLogging.h"
@@ -15,71 +15,12 @@ constexpr uint32_t kMaxBytesPerPath = 1024;
 
 using namespace mozilla::net;
 
-namespace {
-
-struct CookiePrefix {
-  nsCString mPrefix;
-  std::function<bool(const CookieStruct&, bool)> mCallback;
-};
-
-CookiePrefix gCookiePrefixes[] = {
-    {"__Secure-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       return aSecureRequest && aCookieData.isSecure();
-     }},
-
-    {"__Host-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.host()[0] != '.' &&
-              aCookieData.path().EqualsLiteral("/");
-     }},
-
-    {"__Http-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.isHttpOnly();
-     }},
-
-    {"__HostHttp-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.isHttpOnly() && aCookieData.host()[0] != '.' &&
-              aCookieData.path().EqualsLiteral("/");
-     }},
-};
-
-CookiePrefix* FindCookiePrefix(const nsACString& aString) {
-  for (CookiePrefix& prefix : gCookiePrefixes) {
-    if (StringBeginsWith(aString, prefix.mPrefix,
-                         nsCaseInsensitiveCStringComparator)) {
-      return &prefix;
-    }
-  }
-
-  return nullptr;
-}
-
-}  
-
 NS_IMPL_ISUPPORTS(CookieValidation, nsICookieValidation)
 
 CookieValidation::CookieValidation(const CookieStruct& aCookieData)
     : mCookieData(aCookieData) {}
 
-
+// static
 already_AddRefed<CookieValidation> CookieValidation::Validate(
     const CookieStruct& aCookieData) {
   RefPtr<CookieValidation> cv = new CookieValidation(aCookieData);
@@ -87,7 +28,7 @@ already_AddRefed<CookieValidation> CookieValidation::Validate(
   return cv.forget();
 }
 
-
+// static
 already_AddRefed<CookieValidation> CookieValidation::ValidateForHost(
     const CookieStruct& aCookieData, nsIURI* aHostURI,
     const nsACString& aBaseDomain, bool aRequireHostMatch, bool aFromHttp) {
@@ -97,7 +38,7 @@ already_AddRefed<CookieValidation> CookieValidation::ValidateForHost(
   return cv.forget();
 }
 
-
+// static
 already_AddRefed<CookieValidation> CookieValidation::ValidateInContext(
     const CookieStruct& aCookieData, nsIURI* aHostURI,
     const nsACString& aBaseDomain, bool aRequireHostMatch, bool aFromHttp,
@@ -113,13 +54,13 @@ already_AddRefed<CookieValidation> CookieValidation::ValidateInContext(
 void CookieValidation::ValidateInternal() {
   MOZ_ASSERT(mResult == eOK);
 
-  
+  // reject cookie if name and value are empty, per RFC6265bis
   if (mCookieData.name().IsEmpty() && mCookieData.value().IsEmpty()) {
     mResult = eRejectedEmptyNameAndValue;
     return;
   }
 
-  
+  // reject cookie if it's over the size limit, per RFC2109
   if (!CheckNameAndValueSize(mCookieData)) {
     mResult = eRejectedNameValueOversize;
     return;
@@ -150,14 +91,16 @@ void CookieValidation::ValidateInternal() {
     return;
   }
 
-  
-  if (mCookieData.name().IsEmpty() && !!FindCookiePrefix(mCookieData.value())) {
+  // If a cookie is nameless, then its value must not start with
+  // `__Host-` or `__Secure-`
+  if (mCookieData.name().IsEmpty() && (HasSecurePrefix(mCookieData.value()) ||
+                                       HasHostPrefix(mCookieData.value()))) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
 
-  
-  
+  // If same-site is explicitly set to 'none' but this is not a secure context,
+  // let's abort the parsing.
   if (!mCookieData.isSecure() &&
       mCookieData.sameSite() == nsICookie::SAMESITE_NONE) {
     if (StaticPrefs::network_cookie_sameSite_noneRequiresSecure()) {
@@ -165,11 +108,11 @@ void CookieValidation::ValidateInternal() {
       return;
     }
 
-    
+    // Still warn about the missing Secure attribute when not enforcing.
     mWarnings.mSameSiteNoneRequiresSecureForBeta = true;
   }
 
-  
+  // This part checks if the caleers have set the expiry value to max 400 days.
   if (!mCookieData.isSession()) {
     int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
     int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
@@ -198,7 +141,7 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
     return;
   }
 
-  
+  // if the new cookie is httponly, make sure we're not coming from script
   if (!aFromHttp && mCookieData.isHttpOnly()) {
     mResult = eRejectedHttpOnlyButFromScript;
     return;
@@ -207,19 +150,14 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
   bool potentiallyTrustworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
-  
-  
-  
-  
-  
   if (!CheckPrefixes(mCookieData, potentiallyTrustworthy)) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
 
-  
-  
-  
+  // If the new cookie is non-https and wants to set secure flag,
+  // browser have to ignore this new cookie.
+  // (draft-ietf-httpbis-cookie-alone section 3.1)
   if (mCookieData.isSecure() && !potentiallyTrustworthy) {
     mResult = eRejectedSecureButNonHttps;
     return;
@@ -250,8 +188,8 @@ void CookieValidation::ValidateInContextInternal(
     return;
   }
 
-  
-  
+  // If the cookie is same-site but in a cross site context, browser must
+  // ignore the cookie.
   bool laxByDefault =
       StaticPrefs::network_cookie_sameSite_laxByDefault() &&
       !nsContentUtils::IsURIInPrefList(
@@ -267,9 +205,9 @@ void CookieValidation::ValidateInContextInternal(
     return;
   }
 
-  
-  
-  
+  // Ensure the partitioned cookie is set with the secure attribute if CHIPS
+  // is enabled. This check should be part of ValidateInternal but it's not
+  // because of bug 1965880.
   if (StaticPrefs::network_cookie_CHIPS_enabled() &&
       mCookieData.isPartitioned() && !mCookieData.isSecure()) {
     mResult = eRejectedPartitionedRequiresSecure;
@@ -284,70 +222,103 @@ CookieValidation::GetResult(nsICookieValidation::ValidationError* aRetval) {
   return NS_OK;
 }
 
-
+// static
 bool CookieValidation::CheckDomain(const CookieStruct& aCookieData,
                                    nsIURI* aHostURI,
                                    const nsACString& aBaseDomain,
                                    bool aRequireHostMatch) {
-  
-  
-  
-  
+  // Note: The logic in this function is mirrored in
+  // toolkit/components/extensions/ext-cookies.js:checkSetCookiePermissions().
+  // If it changes, please update that function, or file a bug for someone
+  // else to do so.
 
   if (aCookieData.host().IsEmpty()) {
     return false;
   }
 
-  
+  // get host from aHostURI
   nsAutoCString hostFromURI;
   nsContentUtils::GetHostOrIPv6WithBrackets(aHostURI, hostFromURI);
 
-  
-  
-  
-  
-  
+  // check whether the host is either an IP address, an alias such as
+  // 'localhost', an eTLD such as 'co.uk', or the empty string. in these
+  // cases, require an exact string match for the domain, and leave the cookie
+  // as a non-domain one. bug 105917 originally noted the requirement to deal
+  // with IP addresses.
   if (aRequireHostMatch) {
     return hostFromURI.Equals(aCookieData.host());
   }
 
   nsCString cookieHost = aCookieData.host();
-  
+  // Tolerate leading '.' characters, but not if it's otherwise an empty host.
   if (aCookieData.host().Length() > 1 && aCookieData.host().First() == '.') {
     cookieHost.Cut(0, 1);
   }
 
-  
-  
+  // ensure the proposed domain is derived from the base domain; and also
+  // that the host domain is derived from the proposed domain (per RFC2109).
   if (CookieCommons::IsSubdomainOf(cookieHost, aBaseDomain) &&
       CookieCommons::IsSubdomainOf(hostFromURI, cookieHost)) {
     return true;
   }
 
-  
-
-
-
-
-
-
+  /*
+   * note: RFC2109 section 4.3.2 requires that we check the following:
+   * that the portion of host not in domain does not contain a dot.
+   * this prevents hosts of the form x.y.co.nz from setting cookies in the
+   * entire .co.nz domain. however, it's only a only a partial solution and
+   * it breaks sites (IE doesn't enforce it), so we don't perform this check.
+   */
   return false;
 }
 
+// static
+bool CookieValidation::HasSecurePrefix(const nsACString& aString) {
+  return StringBeginsWith(aString, "__Secure-"_ns,
+                          nsCaseInsensitiveCStringComparator);
+}
 
+// static
+bool CookieValidation::HasHostPrefix(const nsACString& aString) {
+  return StringBeginsWith(aString, "__Host-"_ns,
+                          nsCaseInsensitiveCStringComparator);
+}
 
-
-
-
+// CheckPrefixes
+//
+// Reject cookies whose name starts with the magic prefixes from
+// https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis
+// if they do not meet the criteria required by the prefix.
 bool CookieValidation::CheckPrefixes(const CookieStruct& aCookieData,
                                      bool aSecureRequest) {
-  CookiePrefix* prefix = FindCookiePrefix(aCookieData.name());
-  if (!prefix) {
-    
+  bool hasSecurePrefix = HasSecurePrefix(aCookieData.name());
+  bool hasHostPrefix = HasHostPrefix(aCookieData.name());
+
+  if (!hasSecurePrefix && !hasHostPrefix) {
+    // not one of the magic prefixes: carry on
     return true;
   }
 
-  return prefix->mCallback(aCookieData, aSecureRequest);
+  if (!aSecureRequest || !aCookieData.isSecure()) {
+    // the magic prefixes may only be used from a secure request and
+    // the secure attribute must be set on the cookie
+    return false;
+  }
+
+  if (hasHostPrefix) {
+    // The host prefix requires that the path is "/" and that the cookie had no
+    // domain attribute. FixDomain() and FixPath() from CookieParser MUST be
+    // run first to make sure invalid attributes are rejected and to
+    // regularlize them. In particular all explicit domain attributes result in
+    // a host that starts with a dot, and if the host doesn't start with a dot
+    // it correctly matches the true host.
+    if (aCookieData.host()[0] == '.' ||
+        !aCookieData.path().EqualsLiteral("/")) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void CookieValidation::RetrieveErrorLogData(uint32_t* aFlags,
@@ -525,9 +496,9 @@ CookieValidation::GetErrorString(nsAString& aResult) {
       nsContentUtils::eNECKO_PROPERTIES_en_US, key.get(), params, aResult);
 }
 
-
+// static
 bool CookieValidation::CheckNameAndValueSize(const CookieStruct& aCookieData) {
-  
+  // reject cookie if it's over the size limit, per RFC2109
   return (aCookieData.name().Length() + aCookieData.value().Length()) <=
          kMaxBytesPerCookie;
 }
@@ -564,10 +535,10 @@ bool CookieValidation::CheckValue(const CookieStruct& aCookieData) {
     return false;
   }
 
-  
-  
-  
-  
+  // reject cookie if value contains an RFC 6265 disallowed character - see
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1191423
+  // NOTE: this is not the full set of characters disallowed by 6265 - notably
+  // 0x09, 0x20, 0x22, 0x2C, and 0x5C are missing from this list.
   const char illegalCharacters[] = {
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0A, 0x0B, 0x0C,
       0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
