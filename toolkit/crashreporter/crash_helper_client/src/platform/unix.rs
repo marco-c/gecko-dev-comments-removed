@@ -3,8 +3,13 @@
 
 
 use anyhow::Result;
-use crash_helper_common::{BreakpadChar, BreakpadData, IPCChannel, IPCConnector, IPCListener};
-use nix::unistd::{execv, fork, getpid, ForkResult};
+use crash_helper_common::{
+    ignore_eintr, BreakpadChar, BreakpadData, IPCChannel, IPCConnector, IPCListener,
+};
+use nix::{
+    sys::wait::waitpid,
+    unistd::{execv, fork, getpid, setsid, ForkResult},
+};
 use std::ffi::{CStr, CString};
 
 use crate::CrashHelperClient;
@@ -17,7 +22,7 @@ impl CrashHelperClient {
     ) -> Result<CrashHelperClient> {
         let channel = IPCChannel::new()?;
         let (listener, server_endpoint, client_endpoint) = channel.deconstruct();
-        let _pid = CrashHelperClient::spawn_crash_helper(
+        CrashHelperClient::spawn_crash_helper(
             program,
             breakpad_data,
             minidump_path,
@@ -27,8 +32,6 @@ impl CrashHelperClient {
 
         Ok(CrashHelperClient {
             connector: client_endpoint,
-            #[cfg(target_os = "linux")]
-            pid: _pid,
         })
     }
 
@@ -38,37 +41,64 @@ impl CrashHelperClient {
         minidump_path: *const BreakpadChar,
         listener: IPCListener,
         endpoint: IPCConnector,
-    ) -> Result<nix::libc::pid_t> {
+    ) -> Result<()> {
         let parent_pid = getpid().to_string();
         let parent_pid_arg = unsafe { CString::from_vec_unchecked(parent_pid.into_bytes()) };
         let pid = unsafe { fork() }?;
 
-        
         match pid {
             ForkResult::Child => {
-                let program = unsafe { CStr::from_ptr(program) };
-                let breakpad_data_arg =
-                    unsafe { CString::from_vec_unchecked(breakpad_data.to_string().into_bytes()) };
-                let minidump_path = unsafe { CStr::from_ptr(minidump_path) };
-                let listener_arg = listener.serialize();
-                let endpoint_arg = endpoint.serialize();
-
-                let _ = execv(
-                    program,
-                    &[
-                        program,
-                        &parent_pid_arg,
-                        &breakpad_data_arg,
-                        minidump_path,
-                        &listener_arg,
-                        &endpoint_arg,
-                    ],
-                );
+                
+                
+                
+                
+                
+                
+                
+                
+                let _ = setsid();
 
                 
-                unsafe { nix::libc::_exit(1) };
+                
+                let pid = unsafe { fork() }.unwrap();
+
+                match pid {
+                    ForkResult::Child => {
+                        let program = unsafe { CStr::from_ptr(program) };
+                        let breakpad_data_arg = unsafe {
+                            CString::from_vec_unchecked(breakpad_data.to_string().into_bytes())
+                        };
+                        let minidump_path = unsafe { CStr::from_ptr(minidump_path) };
+                        let listener_arg = listener.serialize();
+                        let endpoint_arg = endpoint.serialize();
+
+                        let _ = execv(
+                            program,
+                            &[
+                                program,
+                                &parent_pid_arg,
+                                &breakpad_data_arg,
+                                minidump_path,
+                                &listener_arg,
+                                &endpoint_arg,
+                            ],
+                        );
+
+                        
+                        unsafe { nix::libc::_exit(1) };
+                    }
+                    _ => unsafe {
+                        
+                        nix::libc::_exit(0);
+                    },
+                }
             }
-            ForkResult::Parent { child } => Ok(child.as_raw()),
+            ForkResult::Parent { child } => {
+                
+                
+                ignore_eintr!(waitpid(child, None))?;
+                Ok(())
+            }
         }
     }
 }
