@@ -40,8 +40,22 @@ class Virtualenv:
 
     @property
     def broken_link(self):
-        python_link = os.path.join(self.path, ".Python")
-        return os.path.lexists(python_link) and not os.path.exists(python_link)
+        
+        virtualenv_python_link = os.path.join(self.path, ".Python")
+        if os.path.lexists(virtualenv_python_link) and not os.path.exists(virtualenv_python_link):
+            return True
+
+        
+        if not os.path.exists(self.bin_path):
+            return True
+
+        with os.scandir(self.bin_path) as it:
+            for entry in it:
+                
+                if entry.is_symlink() and not os.path.exists(entry.path):
+                    return True
+
+        return False
 
     def create(self):
         if os.path.exists(self.path):
