@@ -8,6 +8,8 @@
 #include "mozilla/Sprintf.h"
 
 #include <stdarg.h>
+#include <string.h>
+#include "fmt/format.h"
 
 MOZ_BEGIN_EXTERN_C
 
@@ -44,6 +46,31 @@ MFBT_API MOZ_COLD MOZ_NEVER_INLINE MOZ_FORMAT_PRINTF(1, 2) const
 }
 
 MOZ_END_EXTERN_C
+
+#ifdef __cplusplus
+
+namespace mozilla::detail {
+
+template <typename... Args>
+const char* CrashFmtImpl(const char* format, Args&&... args) {
+  if (!sCrashing.compareExchange(false, true)) {
+    
+    
+    MOZ_RELEASE_ASSERT(false);
+  }
+
+  
+  auto result =
+      fmt::vformat_to_n(sPrintfCrashReason, sPrintfCrashReasonSize - 1, format,
+                        fmt::make_format_args(args...));
+  sPrintfCrashReason[result.size] = '\0';
+
+  return sPrintfCrashReason;
+}
+
+}  
+
+#endif
 
 MFBT_API MOZ_NORETURN MOZ_COLD void mozilla::detail::InvalidArrayIndex_CRASH(
     size_t aIndex, size_t aLength) {
