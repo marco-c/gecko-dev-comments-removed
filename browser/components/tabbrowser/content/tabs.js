@@ -2197,11 +2197,18 @@
       this.arrowScrollbox.scrollbox.style.height = unpinnedRect.height + "px";
       this.arrowScrollbox.scrollbox.style.width = unpinnedRect.width + "px";
 
+      const pinnedTabsOrigBounds = new Map();
+
       for (let t of allTabs) {
         if (isTabGroupLabel(t)) {
           t = t.parentElement;
         }
         let tabRect = window.windowUtils.getBoundsWithoutFlushing(t);
+
+        
+        if (isGrid && t.pinned) {
+          pinnedTabsOrigBounds.set(t, tabRect);
+        }
         
         
         t.style.maxWidth = tabRect.width + "px";
@@ -2313,31 +2320,19 @@
       };
 
       let setGridElPosition = el => {
-        let originalIndex = tab._tPos;
-        let shiftNumber = this.#maxTabsPerRow - movingTabs.length;
-        let shiftSizeX = rect.width * movingTabs.length;
-        let shiftSizeY = rect.height;
-        let shift;
-        if (el._tPos > originalIndex) {
+        let origBounds = pinnedTabsOrigBounds.get(el);
+        if (!origBounds) {
           
-          let tabRow = Math.floor(el._tPos / this.#maxTabsPerRow);
-          let shiftedTabRow = Math.floor(
-            (el._tPos - movingTabs.length) / this.#maxTabsPerRow
-          );
-          if (el._tPos && tabRow != shiftedTabRow) {
-            shift = [
-              this.#rtlMode
-                ? rect.width * shiftNumber
-                : -rect.width * shiftNumber,
-              shiftSizeY,
-            ];
-          } else {
-            shift = [this.#rtlMode ? -shiftSizeX : shiftSizeX, 0];
-          }
-          let [shiftX, shiftY] = shift;
-          el.style.left = shiftX + "px";
-          el.style.top = shiftY + "px";
+          return;
         }
+        
+        
+        let newBounds = el.getBoundingClientRect();
+        let shiftX = origBounds.x - newBounds.x;
+        let shiftY = origBounds.y - newBounds.y;
+
+        el.style.left = shiftX + "px";
+        el.style.top = shiftY + "px";
       };
 
       
