@@ -2,17 +2,23 @@
 
 
 
+import os
+import sys
+
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 
-class TestPageSourceChrome(WindowManagerMixin, MarionetteTestCase):
+sys.path.append(os.path.dirname(__file__))
+
+from chrome_handler_mixin import ChromeHandlerMixin
+
+
+class TestPageSourceChrome(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestPageSourceChrome, self).setUp()
         self.marionette.set_context("chrome")
 
-        new_window = self.open_chrome_window(
-            "chrome://remote/content/marionette/test_xul.xhtml"
-        )
+        new_window = self.open_chrome_window(self.chrome_base_url + "test_xul.xhtml")
         self.marionette.switch_to_window(new_window)
 
     def tearDown(self):

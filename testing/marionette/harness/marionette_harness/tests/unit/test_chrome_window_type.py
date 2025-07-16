@@ -2,10 +2,18 @@
 
 
 
+import os
+import sys
+
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 
-class TestWindowTypeChrome(WindowManagerMixin, MarionetteTestCase):
+sys.path.append(os.path.dirname(__file__))
+
+from chrome_handler_mixin import ChromeHandlerMixin
+
+
+class TestWindowTypeChrome(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestWindowTypeChrome, self).setUp()
 
@@ -17,7 +25,7 @@ class TestWindowTypeChrome(WindowManagerMixin, MarionetteTestCase):
         super(TestWindowTypeChrome, self).tearDown()
 
     def test_get_window_type(self):
-        win = self.open_chrome_window("chrome://remote/content/marionette/test.xhtml")
+        win = self.open_chrome_window(self.chrome_base_url + "test.xhtml")
         self.marionette.switch_to_window(win)
 
         window_type = self.marionette.execute_script(

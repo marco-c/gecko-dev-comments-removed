@@ -2,20 +2,25 @@
 
 
 
+import os
+import sys
+
 from marionette_driver import By
 from marionette_driver.errors import JavascriptException
-
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 
-class TestSwitchFrameChrome(WindowManagerMixin, MarionetteTestCase):
+sys.path.append(os.path.dirname(__file__))
+
+from chrome_handler_mixin import ChromeHandlerMixin
+
+
+class TestSwitchFrameChrome(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestSwitchFrameChrome, self).setUp()
         self.marionette.set_context("chrome")
 
-        new_window = self.open_chrome_window(
-            "chrome://remote/content/marionette/test.xhtml"
-        )
+        new_window = self.open_chrome_window(self.chrome_base_url + "test.xhtml")
         self.marionette.switch_to_window(new_window)
         self.assertNotEqual(
             self.start_window, self.marionette.current_chrome_window_handle
