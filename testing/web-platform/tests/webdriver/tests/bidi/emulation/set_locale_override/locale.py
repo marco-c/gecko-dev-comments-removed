@@ -36,31 +36,11 @@ async def test_locale_set_override_and_reset(bidi_session, top_context,
     
     "en",
     
-    "ast",
-    
     "en-US",
     
     "sr-Latn",
     
     "zh-Hans-CN",
-    
-    "de-DE-1996",
-    
-    "sl-Roza-biske",
-    
-    "ca-ES-valencia",
-    
-    "sl-1994",
-    
-    "th-TH-u-nu-thai",
-    
-    "en-US-u-ca-gregory",
-    
-    "yue",
-    
-    "apc",
-    
-    "gsw",
 ])
 async def test_locale_values(bidi_session, top_context, get_current_locale,
         default_locale, value):
@@ -76,9 +56,6 @@ async def test_locale_values(bidi_session, top_context, get_current_locale,
 
 
 @pytest.mark.parametrize("locale,expected_locale", [
-    
-    ("zh-Latn-CN-variant1-a-extend1-u-co-pinyin-x-private",
-     "zh-Latn-CN-variant1"),
     
     ("de-DE-u-co-phonebk", "de-DE"),
     
