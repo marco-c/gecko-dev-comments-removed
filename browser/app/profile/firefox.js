@@ -667,6 +667,12 @@ pref("browser.urlbar.merino.providers", "");
 pref("browser.urlbar.merino.clientVariants", "");
 
 
+pref("browser.urlbar.merino.ohttpConfigURL", "");
+
+
+pref("browser.urlbar.merino.ohttpRelayURL", "");
+
+
 pref("browser.urlbar.contextualSearch.enabled", true);
 
 
