@@ -1980,12 +1980,6 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
     return;
   }
 
-  
-  
-  if (StringBeginsWith(spec, "chrome://remote/content/marionette/"_ns)) {
-    return;
-  }
-
   if (xpc::IsInAutomation()) {
     
     static nsLiteralCString sAllowedTestPathsWithNoCSP[] = {
