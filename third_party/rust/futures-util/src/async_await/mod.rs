@@ -31,9 +31,11 @@ mod select_mod;
 pub use self::select_mod::*;
 
 
+#[cfg(feature = "std")]
 #[cfg(feature = "async-await-macro")]
 mod stream_select_mod;
 #[allow(unreachable_pub)] 
+#[cfg(feature = "std")]
 #[cfg(feature = "async-await-macro")]
 pub use self::stream_select_mod::*;
 

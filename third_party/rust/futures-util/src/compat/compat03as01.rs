@@ -15,6 +15,7 @@ use futures_sink::Sink as Sink03;
 use std::marker::PhantomData;
 use std::{mem, pin::Pin, sync::Arc, task::Context};
 
+#[allow(clippy::too_long_first_doc_paragraph)] 
 
 
 
@@ -156,7 +157,7 @@ impl Current {
 
     fn as_waker(&self) -> WakerRef<'_> {
         unsafe fn ptr_to_current<'a>(ptr: *const ()) -> &'a Current {
-            &*(ptr as *const Current)
+            unsafe { &*(ptr as *const Current) }
         }
         fn current_to_ptr(current: &Current) -> *const () {
             current as *const Current as *const ()
@@ -166,13 +167,15 @@ impl Current {
             
             
             
-            mem::transmute::<task03::Waker, RawWaker>(task03::waker(Arc::new(
-                ptr_to_current(ptr).clone(),
-            )))
+            unsafe {
+                mem::transmute::<task03::Waker, RawWaker>(task03::waker(Arc::new(
+                    ptr_to_current(ptr).clone(),
+                )))
+            }
         }
         unsafe fn drop(_: *const ()) {}
         unsafe fn wake(ptr: *const ()) {
-            ptr_to_current(ptr).0.notify()
+            unsafe { ptr_to_current(ptr).0.notify() }
         }
 
         let ptr = current_to_ptr(self);

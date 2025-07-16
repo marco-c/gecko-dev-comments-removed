@@ -5,7 +5,7 @@ use core::sync::atomic::{AtomicBool, AtomicPtr};
 
 use super::abort::abort;
 use super::ReadyToRunQueue;
-use crate::task::{waker_ref, ArcWake, WakerRef};
+use crate::task::ArcWake;
 
 pub(super) struct Task<Fut> {
     
@@ -77,8 +77,8 @@ impl<Fut> ArcWake for Task<Fut> {
 
 impl<Fut> Task<Fut> {
     
-    pub(super) fn waker_ref(this: &Arc<Self>) -> WakerRef<'_> {
-        waker_ref(this)
+    pub(super) unsafe fn waker_ref(this: &Arc<Self>) -> waker_ref::WakerRef<'_> {
+        unsafe { waker_ref::waker_ref(this) }
     }
 
     
@@ -121,5 +121,94 @@ impl<Fut> Drop for Task<Fut> {
                 abort("future still here when dropping");
             }
         }
+    }
+}
+
+mod waker_ref {
+    use alloc::sync::Arc;
+    use core::marker::PhantomData;
+    use core::mem;
+    use core::mem::ManuallyDrop;
+    use core::ops::Deref;
+    use core::task::{RawWaker, RawWakerVTable, Waker};
+    use futures_task::ArcWake;
+
+    pub(crate) struct WakerRef<'a> {
+        waker: ManuallyDrop<Waker>,
+        _marker: PhantomData<&'a ()>,
+    }
+
+    impl WakerRef<'_> {
+        #[inline]
+        fn new_unowned(waker: ManuallyDrop<Waker>) -> Self {
+            Self { waker, _marker: PhantomData }
+        }
+    }
+
+    impl Deref for WakerRef<'_> {
+        type Target = Waker;
+
+        #[inline]
+        fn deref(&self) -> &Waker {
+            &self.waker
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub(crate) unsafe fn waker_ref<W>(wake: &Arc<W>) -> WakerRef<'_>
+    where
+        W: ArcWake,
+    {
+        
+        
+        let ptr = Arc::as_ptr(wake).cast::<()>();
+
+        let waker =
+            ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<W>())) });
+        WakerRef::new_unowned(waker)
+    }
+
+    fn waker_vtable<W: ArcWake>() -> &'static RawWakerVTable {
+        &RawWakerVTable::new(
+            clone_arc_raw::<W>,
+            wake_arc_raw::<W>,
+            wake_by_ref_arc_raw::<W>,
+            drop_arc_raw::<W>,
+        )
+    }
+
+    
+    
+
+    unsafe fn increase_refcount<T: ArcWake>(data: *const ()) {
+        
+        let arc = mem::ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data.cast::<T>()) });
+        
+        let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
+    }
+
+    unsafe fn clone_arc_raw<T: ArcWake>(data: *const ()) -> RawWaker {
+        unsafe { increase_refcount::<T>(data) }
+        RawWaker::new(data, waker_vtable::<T>())
+    }
+
+    unsafe fn wake_arc_raw<T: ArcWake>(data: *const ()) {
+        let arc: Arc<T> = unsafe { Arc::from_raw(data.cast::<T>()) };
+        ArcWake::wake(arc);
+    }
+
+    unsafe fn wake_by_ref_arc_raw<T: ArcWake>(data: *const ()) {
+        
+        let arc = mem::ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data.cast::<T>()) });
+        ArcWake::wake_by_ref(&arc);
+    }
+
+    unsafe fn drop_arc_raw<T: ArcWake>(data: *const ()) {
+        drop(unsafe { Arc::<T>::from_raw(data.cast::<T>()) })
     }
 }

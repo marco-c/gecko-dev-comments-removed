@@ -31,6 +31,13 @@ pub(super) fn split<T: AsyncRead + AsyncWrite>(t: T) -> (ReadHalf<T>, WriteHalf<
     (ReadHalf { handle: a }, WriteHalf { handle: b })
 }
 
+impl<T> ReadHalf<T> {
+    
+    pub fn is_pair_of(&self, other: &WriteHalf<T>) -> bool {
+        self.handle.is_pair_of(&other.handle)
+    }
+}
+
 impl<T: Unpin> ReadHalf<T> {
     
     
@@ -38,7 +45,14 @@ impl<T: Unpin> ReadHalf<T> {
     pub fn reunite(self, other: WriteHalf<T>) -> Result<T, ReuniteError<T>> {
         self.handle
             .reunite(other.handle)
-            .map_err(|err| ReuniteError(ReadHalf { handle: err.0 }, WriteHalf { handle: err.1 }))
+            .map_err(|err| ReuniteError(Self { handle: err.0 }, WriteHalf { handle: err.1 }))
+    }
+}
+
+impl<T> WriteHalf<T> {
+    
+    pub fn is_pair_of(&self, other: &ReadHalf<T>) -> bool {
+        self.handle.is_pair_of(&other.handle)
     }
 }
 

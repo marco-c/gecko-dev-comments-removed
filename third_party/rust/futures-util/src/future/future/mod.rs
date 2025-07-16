@@ -478,10 +478,6 @@ pub trait FutureExt: Future {
     
     
     
-    
-    
-    
-    
     #[cfg(feature = "std")]
     fn shared(self) -> Shared<Self>
     where

@@ -3,10 +3,7 @@
 
 
 
-#![cfg_attr(not(feature = "std"), no_std)]
-#![warn(missing_debug_implementations, missing_docs, rust_2018_idioms, unreachable_pub)]
-
-#![cfg_attr(test, warn(single_use_lifetimes))]
+#![no_std]
 #![doc(test(
     no_crate_inject,
     attr(
@@ -14,9 +11,12 @@
         allow(dead_code, unused_assignments, unused_variables)
     )
 ))]
+#![warn(missing_docs, )] 
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 use core::ops::DerefMut;
 use core::pin::Pin;

@@ -10,6 +10,23 @@ pub struct Iter<I> {
     iter: I,
 }
 
+impl<I> Iter<I> {
+    
+    pub fn get_ref(&self) -> &I {
+        &self.iter
+    }
+
+    
+    pub fn get_mut(&mut self) -> &mut I {
+        &mut self.iter
+    }
+
+    
+    pub fn into_inner(self) -> I {
+        self.iter
+    }
+}
+
 impl<I> Unpin for Iter<I> {}
 
 

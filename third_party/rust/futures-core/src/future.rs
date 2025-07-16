@@ -9,8 +9,18 @@ pub use core::future::Future;
 
 
 
+
+
+
+
+
 #[cfg(feature = "alloc")]
 pub type BoxFuture<'a, T> = Pin<alloc::boxed::Box<dyn Future<Output = T> + Send + 'a>>;
+
+
+
+
+
 
 
 #[cfg(feature = "alloc")]

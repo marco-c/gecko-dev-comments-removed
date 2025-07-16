@@ -127,6 +127,7 @@ pub struct Sender<T>(Option<BoundedSenderInner<T>>);
 
 pub struct UnboundedSender<T>(Option<UnboundedSenderInner<T>>);
 
+#[allow(dead_code)]
 trait AssertKinds: Send + Sync + Clone {}
 impl AssertKinds for UnboundedSender<u32> {}
 
@@ -302,7 +303,7 @@ struct State {
 }
 
 
-const OPEN_MASK: usize = usize::max_value() - (usize::max_value() >> 1);
+const OPEN_MASK: usize = usize::MAX - (usize::MAX >> 1);
 
 
 
@@ -334,7 +335,6 @@ impl SenderTask {
         }
     }
 }
-
 
 
 
@@ -841,6 +841,20 @@ impl<T> UnboundedSender<T> {
 
         let ptr = self.0.as_ref().map(|inner| inner.ptr());
         ptr.hash(hasher);
+    }
+
+    
+    pub fn len(&self) -> usize {
+        if let Some(sender) = &self.0 {
+            decode_state(sender.inner.state.load(SeqCst)).num_messages
+        } else {
+            0
+        }
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

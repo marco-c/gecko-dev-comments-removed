@@ -1,6 +1,5 @@
 
 
-#![warn(rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
 #![doc(test(
     no_crate_inject,
     attr(
@@ -8,11 +7,6 @@
         allow(dead_code, unused_assignments, unused_variables)
     )
 ))]
-
-
-
-#[allow(unused_extern_crates)]
-extern crate proc_macro;
 
 use proc_macro::TokenStream;
 

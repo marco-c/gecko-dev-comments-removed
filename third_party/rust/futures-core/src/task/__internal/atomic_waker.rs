@@ -206,6 +206,7 @@ impl AtomicWaker {
     
     pub const fn new() -> Self {
         
+        #[allow(dead_code)]
         trait AssertSync: Sync {}
         impl AssertSync for Waker {}
 

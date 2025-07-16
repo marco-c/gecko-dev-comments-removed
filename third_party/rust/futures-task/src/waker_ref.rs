@@ -54,7 +54,7 @@ impl Deref for WakerRef<'_> {
 #[inline]
 pub fn waker_ref<W>(wake: &Arc<W>) -> WakerRef<'_>
 where
-    W: ArcWake,
+    W: ArcWake + 'static,
 {
     
     

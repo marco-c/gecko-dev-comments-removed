@@ -25,13 +25,13 @@ pub struct LineWriter<W: AsyncWrite> {
 impl<W: AsyncWrite> LineWriter<W> {
     
     
-    pub fn new(inner: W) -> LineWriter<W> {
-        LineWriter::with_capacity(1024, inner)
+    pub fn new(inner: W) -> Self {
+        Self::with_capacity(1024, inner)
     }
 
     
-    pub fn with_capacity(capacity: usize, inner: W) -> LineWriter<W> {
-        LineWriter { buf_writer: BufWriter::with_capacity(capacity, inner) }
+    pub fn with_capacity(capacity: usize, inner: W) -> Self {
+        Self { buf_writer: BufWriter::with_capacity(capacity, inner) }
     }
 
     

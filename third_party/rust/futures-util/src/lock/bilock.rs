@@ -150,13 +150,18 @@ impl<T> BiLock<T> {
     }
 
     
+    pub fn is_pair_of(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.arc, &other.arc)
+    }
+
+    
     
     
     pub fn reunite(self, other: Self) -> Result<T, ReuniteError<T>>
     where
         T: Unpin,
     {
-        if Arc::ptr_eq(&self.arc, &other.arc) {
+        if self.is_pair_of(&other) {
             drop(other);
             let inner = Arc::try_unwrap(self.arc)
                 .ok()

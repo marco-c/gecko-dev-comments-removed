@@ -4,8 +4,10 @@ use futures_core::ready;
 use futures_core::task::{Context, Poll};
 use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite, IoSliceMut, SeekFrom};
 use pin_project_lite::pin_project;
+use std::boxed::Box;
 use std::io::{self, Read};
 use std::pin::Pin;
+use std::vec;
 use std::{cmp, fmt};
 
 pin_project! {
@@ -46,14 +48,13 @@ impl<R: AsyncRead> BufReader<R> {
 
     
     pub fn with_capacity(capacity: usize, inner: R) -> Self {
-        unsafe {
-            let mut buffer = Vec::with_capacity(capacity);
-            buffer.set_len(capacity);
-            super::initialize(&inner, &mut buffer);
-            Self { inner, buffer: buffer.into_boxed_slice(), pos: 0, cap: 0 }
-        }
+        
+        let buffer = vec![0; capacity];
+        Self { inner, buffer: buffer.into_boxed_slice(), pos: 0, cap: 0 }
     }
+}
 
+impl<R> BufReader<R> {
     delegate_access_inner!(inner, R, ());
 
     

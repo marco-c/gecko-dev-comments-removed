@@ -89,10 +89,10 @@ mod try_flatten;
 #[allow(unreachable_pub)] 
 pub use self::try_flatten::TryFlatten;
 
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 mod try_flatten_unordered;
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 #[allow(unreachable_pub)] 
 pub use self::try_flatten_unordered::TryFlattenUnordered;
@@ -111,6 +111,12 @@ mod try_chunks;
 #[allow(unreachable_pub)] 
 pub use self::try_chunks::{TryChunks, TryChunksError};
 
+#[cfg(feature = "alloc")]
+mod try_ready_chunks;
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::try_ready_chunks::{TryReadyChunks, TryReadyChunksError};
+
 mod try_fold;
 #[allow(unreachable_pub)] 
 pub use self::try_fold::TryFold;
@@ -127,26 +133,26 @@ mod try_take_while;
 #[allow(unreachable_pub)] 
 pub use self::try_take_while::TryTakeWhile;
 
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 mod try_buffer_unordered;
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 #[allow(unreachable_pub)] 
 pub use self::try_buffer_unordered::TryBufferUnordered;
 
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 mod try_buffered;
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 #[allow(unreachable_pub)] 
 pub use self::try_buffered::TryBuffered;
 
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 mod try_for_each_concurrent;
-#[cfg(not(futures_no_atomic_cas))]
+#[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
 #[cfg(feature = "alloc")]
 #[allow(unreachable_pub)] 
 pub use self::try_for_each_concurrent::TryForEachConcurrent;
@@ -159,6 +165,14 @@ mod into_async_read;
 #[cfg(feature = "std")]
 #[allow(unreachable_pub)] 
 pub use self::into_async_read::IntoAsyncRead;
+
+mod try_all;
+#[allow(unreachable_pub)] 
+pub use self::try_all::TryAll;
+
+mod try_any;
+#[allow(unreachable_pub)] 
+pub use self::try_any::TryAny;
 
 impl<S: ?Sized + TryStream> TryStreamExt for S {}
 
@@ -537,7 +551,7 @@ pub trait TryStreamExt: TryStream {
     
     
     
-    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
     #[cfg(feature = "alloc")]
     fn try_for_each_concurrent<Fut, F>(
         self,
@@ -670,6 +684,55 @@ pub trait TryStreamExt: TryStream {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    fn try_ready_chunks(self, capacity: usize) -> TryReadyChunks<Self>
+    where
+        Self: Sized,
+    {
+        assert_stream::<Result<Vec<Self::Ok>, TryReadyChunksError<Self::Ok, Self::Error>>, _>(
+            TryReadyChunks::new(self, capacity),
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn try_filter<Fut, F>(self, f: F) -> TryFilter<Self, Fut, F>
     where
         Fut: Future<Output = bool>,
@@ -764,7 +827,7 @@ pub trait TryStreamExt: TryStream {
     
     
     
-    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
     #[cfg(feature = "alloc")]
     fn try_flatten_unordered(self, limit: impl Into<Option<usize>>) -> TryFlattenUnordered<Self>
     where
@@ -966,7 +1029,7 @@ pub trait TryStreamExt: TryStream {
     
     
     
-    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
     #[cfg(feature = "alloc")]
     fn try_buffer_unordered(self, n: usize) -> TryBufferUnordered<Self>
     where
@@ -1042,7 +1105,7 @@ pub trait TryStreamExt: TryStream {
     
     
     
-    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg_attr(target_os = "none", cfg(target_has_atomic = "ptr"))]
     #[cfg(feature = "alloc")]
     fn try_buffered(self, n: usize) -> TryBuffered<Self>
     where
@@ -1126,5 +1189,63 @@ pub trait TryStreamExt: TryStream {
         Self::Ok: AsRef<[u8]>,
     {
         crate::io::assert_read(IntoAsyncRead::new(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_all<Fut, F>(self, f: F) -> TryAll<Self, Fut, F>
+    where
+        Self: Sized,
+        F: FnMut(Self::Ok) -> Fut,
+        Fut: Future<Output = bool>,
+    {
+        assert_future::<Result<bool, Self::Error>, _>(TryAll::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_any<Fut, F>(self, f: F) -> TryAny<Self, Fut, F>
+    where
+        Self: Sized,
+        F: FnMut(Self::Ok) -> Fut,
+        Fut: Future<Output = bool>,
+    {
+        assert_future::<Result<bool, Self::Error>, _>(TryAny::new(self, f))
     }
 }

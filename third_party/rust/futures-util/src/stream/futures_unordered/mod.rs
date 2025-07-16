@@ -62,7 +62,7 @@ pub struct FuturesUnordered<Fut> {
 }
 
 unsafe impl<Fut: Send> Send for FuturesUnordered<Fut> {}
-unsafe impl<Fut: Sync> Sync for FuturesUnordered<Fut> {}
+unsafe impl<Fut: Send + Sync> Sync for FuturesUnordered<Fut> {}
 impl<Fut> Unpin for FuturesUnordered<Fut> {}
 
 impl Spawn for FuturesUnordered<FutureObj<'_, ()>> {
@@ -260,25 +260,32 @@ impl<Fut> FuturesUnordered<Fut> {
         
         
         
-        unsafe {
-            
-            
-            *task.future.get() = None;
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let md_slot;
+        let task = if prev {
+            md_slot = mem::ManuallyDrop::new(task);
+            &*md_slot
+        } else {
+            &task
+        };
 
         
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        if prev {
-            mem::forget(task);
+        unsafe {
+            
+            
+            *task.future.get() = None;
         }
     }
 
@@ -324,35 +331,37 @@ impl<Fut> FuturesUnordered<Fut> {
     
     
     unsafe fn unlink(&mut self, task: *const Task<Fut>) -> Arc<Task<Fut>> {
-        
-        
-        let head = *self.head_all.get_mut();
-        debug_assert!(!head.is_null());
-        let new_len = *(*head).len_all.get() - 1;
+        unsafe {
+            
+            
+            let head = *self.head_all.get_mut();
+            debug_assert!(!head.is_null());
+            let new_len = *(*head).len_all.get() - 1;
 
-        let task = Arc::from_raw(task);
-        let next = task.next_all.load(Relaxed);
-        let prev = *task.prev_all.get();
-        task.next_all.store(self.pending_next_all(), Relaxed);
-        *task.prev_all.get() = ptr::null_mut();
+            let task = Arc::from_raw(task);
+            let next = task.next_all.load(Relaxed);
+            let prev = *task.prev_all.get();
+            task.next_all.store(self.pending_next_all(), Relaxed);
+            *task.prev_all.get() = ptr::null_mut();
 
-        if !next.is_null() {
-            *(*next).prev_all.get() = prev;
+            if !next.is_null() {
+                *(*next).prev_all.get() = prev;
+            }
+
+            if !prev.is_null() {
+                (*prev).next_all.store(next, Relaxed);
+            } else {
+                *self.head_all.get_mut() = next;
+            }
+
+            
+            let head = *self.head_all.get_mut();
+            if !head.is_null() {
+                *(*head).len_all.get() = new_len;
+            }
+
+            task
         }
-
-        if !prev.is_null() {
-            (*prev).next_all.store(next, Relaxed);
-        } else {
-            *self.head_all.get_mut() = next;
-        }
-
-        
-        let head = *self.head_all.get_mut();
-        if !head.is_null() {
-            *(*head).len_all.get() = new_len;
-        }
-
-        task
     }
 
     
@@ -509,7 +518,8 @@ impl<Fut: Future> Stream for FuturesUnordered<Fut> {
                 
                 
                 task.woken.store(false, Relaxed);
-                let waker = Task::waker_ref(task);
+                
+                let waker = unsafe { Task::waker_ref(task) };
                 let mut cx = Context::from_waker(&waker);
 
                 
@@ -558,20 +568,7 @@ impl<Fut> Debug for FuturesUnordered<Fut> {
 impl<Fut> FuturesUnordered<Fut> {
     
     pub fn clear(&mut self) {
-        self.clear_head_all();
-
-        
-        unsafe { self.ready_to_run_queue.clear() };
-
-        self.is_terminated.store(false, Relaxed);
-    }
-
-    fn clear_head_all(&mut self) {
-        while !self.head_all.get_mut().is_null() {
-            let head = *self.head_all.get_mut();
-            let task = unsafe { self.unlink(head) };
-            self.release_task(task);
-        }
+        *self = Self::new();
     }
 }
 
@@ -581,7 +578,23 @@ impl<Fut> Drop for FuturesUnordered<Fut> {
         
         
         
-        self.clear_head_all();
+        struct LeakQueueOnDrop<'a, Fut>(&'a mut FuturesUnordered<Fut>);
+        impl<Fut> Drop for LeakQueueOnDrop<'_, Fut> {
+            fn drop(&mut self) {
+                mem::forget(Arc::clone(&self.0.ready_to_run_queue));
+            }
+        }
+        let guard = LeakQueueOnDrop(self);
+        
+        
+        
+        
+        while !guard.0.head_all.get_mut().is_null() {
+            let head = *guard.0.head_all.get_mut();
+            let task = unsafe { guard.0.unlink(head) };
+            guard.0.release_task(task);
+        }
+        mem::forget(guard); 
 
         
         
