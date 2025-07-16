@@ -8,28 +8,28 @@ use std::borrow::Borrow;
 use std::fmt;
 
 
-pub struct Scope<'scope, 'errors, R, M> {
+pub struct Scope<'bundle, 'ast, 'args, 'errors, R, M> {
     
-    pub bundle: &'scope FluentBundle<R, M>,
+    pub bundle: &'bundle FluentBundle<R, M>,
     
-    pub(super) args: Option<&'scope FluentArgs<'scope>>,
+    pub(super) args: Option<&'args FluentArgs<'args>>,
     
-    pub(super) local_args: Option<FluentArgs<'scope>>,
+    pub(super) local_args: Option<FluentArgs<'bundle>>,
     
     
     pub(super) placeables: u8,
     
-    travelled: smallvec::SmallVec<[&'scope ast::Pattern<&'scope str>; 2]>,
+    traveled: smallvec::SmallVec<[&'ast ast::Pattern<&'bundle str>; 2]>,
     
     pub errors: Option<&'errors mut Vec<FluentError>>,
     
     pub dirty: bool,
 }
 
-impl<'scope, 'errors, R, M> Scope<'scope, 'errors, R, M> {
+impl<'bundle, 'ast, 'args, 'errors, R, M> Scope<'bundle, 'ast, 'args, 'errors, R, M> {
     pub fn new(
-        bundle: &'scope FluentBundle<R, M>,
-        args: Option<&'scope FluentArgs>,
+        bundle: &'bundle FluentBundle<R, M>,
+        args: Option<&'args FluentArgs>,
         errors: Option<&'errors mut Vec<FluentError>>,
     ) -> Self {
         Scope {
@@ -37,7 +37,7 @@ impl<'scope, 'errors, R, M> Scope<'scope, 'errors, R, M> {
             args,
             local_args: None,
             placeables: 0,
-            travelled: Default::default(),
+            traveled: Default::default(),
             errors,
             dirty: false,
         }
@@ -54,20 +54,19 @@ impl<'scope, 'errors, R, M> Scope<'scope, 'errors, R, M> {
     
     
     
-    
     pub fn maybe_track<W>(
         &mut self,
         w: &mut W,
-        pattern: &'scope ast::Pattern<&str>,
-        exp: &'scope ast::Expression<&str>,
+        pattern: &'ast ast::Pattern<&'bundle str>,
+        exp: &'ast ast::Expression<&'bundle str>,
     ) -> fmt::Result
     where
         R: Borrow<FluentResource>,
         W: fmt::Write,
         M: MemoizerKind,
     {
-        if self.travelled.is_empty() {
-            self.travelled.push(pattern);
+        if self.traveled.is_empty() {
+            self.traveled.push(pattern);
         }
         exp.write(w, self)?;
         if self.dirty {
@@ -82,23 +81,23 @@ impl<'scope, 'errors, R, M> Scope<'scope, 'errors, R, M> {
     pub fn track<W>(
         &mut self,
         w: &mut W,
-        pattern: &'scope ast::Pattern<&str>,
-        exp: &ast::InlineExpression<&str>,
+        pattern: &'ast ast::Pattern<&'bundle str>,
+        exp: &'ast ast::InlineExpression<&'bundle str>,
     ) -> fmt::Result
     where
         R: Borrow<FluentResource>,
         W: fmt::Write,
         M: MemoizerKind,
     {
-        if self.travelled.contains(&pattern) {
+        if self.traveled.contains(&pattern) {
             self.add_error(ResolverError::Cyclic);
             w.write_char('{')?;
             exp.write_error(w)?;
             w.write_char('}')
         } else {
-            self.travelled.push(pattern);
+            self.traveled.push(pattern);
             let result = pattern.write(w, self);
-            self.travelled.pop();
+            self.traveled.pop();
             result
         }
     }
@@ -119,8 +118,8 @@ impl<'scope, 'errors, R, M> Scope<'scope, 'errors, R, M> {
 
     pub fn get_arguments(
         &mut self,
-        arguments: Option<&'scope ast::CallArguments<&'scope str>>,
-    ) -> (Vec<FluentValue<'scope>>, FluentArgs<'scope>)
+        arguments: Option<&'ast ast::CallArguments<&'bundle str>>,
+    ) -> (Vec<FluentValue<'bundle>>, FluentArgs<'bundle>)
     where
         R: Borrow<FluentResource>,
         M: MemoizerKind,

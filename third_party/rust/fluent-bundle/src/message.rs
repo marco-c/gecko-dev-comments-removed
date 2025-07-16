@@ -69,7 +69,7 @@ impl<'m> FluentAttribute<'m> {
     
     
     pub fn id(&self) -> &'m str {
-        &self.node.id.name
+        self.node.id.name
     }
 
     

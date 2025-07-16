@@ -66,12 +66,12 @@ fn get_available_locales() -> io::Result<Vec<LanguageIdentifier>> {
     Ok(locales)
 }
 
-fn resolve_app_locales<'l>(args: &[String]) -> Vec<LanguageIdentifier> {
+fn resolve_app_locales(args: &[String]) -> Vec<LanguageIdentifier> {
     let default_locale = langid!("en-US");
     let available = get_available_locales().expect("Retrieving available locales failed.");
 
     let requested: Vec<LanguageIdentifier> = args.get(2).map_or(vec![], |arg| {
-        arg.split(",")
+        arg.split(',')
             .map(|s| s.parse().expect("Parsing locale failed."))
             .collect()
     });
@@ -122,7 +122,7 @@ fn main() {
     let mut errors = vec![];
 
     match args.get(1) {
-        Some(input) => match isize::from_str(&input) {
+        Some(input) => match isize::from_str(input) {
             Ok(i) => {
                 let mut args = FluentArgs::new();
                 args.set("input", i);

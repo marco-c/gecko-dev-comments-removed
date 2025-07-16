@@ -6,6 +6,23 @@ use std::collections::hash_map;
 use std::marker::PhantomData;
 
 
+pub struct KvPair(TypeId, Box<dyn Any>);
+
+impl KvPair {
+    pub fn new<T: 'static>(value: T) -> Self {
+        KvPair(TypeId::of::<T>(), Box::new(value))
+    }
+
+    pub fn extract<T: 'static>(self) -> Result<T, Self> {
+        let KvPair(key, value) = self;
+        value
+            .downcast()
+            .map(|boxed| *boxed)
+            .map_err(|e| KvPair(key, e))
+    }
+}
+
+
 #[derive(Debug)]
 pub struct OccupiedEntry<'a, T> {
     data: hash_map::OccupiedEntry<'a, TypeId, Box<dyn Any>>,
@@ -31,7 +48,11 @@ impl<'a, T: 'static> OccupiedEntry<'a, T> {
 
     
     pub fn insert(&mut self, value: T) -> T {
-        self.data.insert(Box::new(value)).downcast().map(|boxed| *boxed).unwrap()
+        self.data
+            .insert(Box::new(value))
+            .downcast()
+            .map(|boxed| *boxed)
+            .unwrap()
     }
 
     
@@ -97,16 +118,29 @@ impl TypeMap {
     
     
     
+    pub fn insert_kv_pair(&mut self, KvPair(key, value): KvPair) -> Option<KvPair> {
+        self.map
+            .get_or_insert_with(FxHashMap::default)
+            .insert(key, value)
+            .map(|old_value| KvPair(key, old_value))
+    }
+
+    
+    
+    
     pub fn insert<T: 'static>(&mut self, val: T) -> Option<T> {
         self.map
-            .get_or_insert_with(|| FxHashMap::default())
+            .get_or_insert_with(FxHashMap::default)
             .insert(TypeId::of::<T>(), Box::new(val))
             .and_then(|boxed| boxed.downcast().ok().map(|boxed| *boxed))
     }
 
     
     pub fn contains<T: 'static>(&self) -> bool {
-        self.map.as_ref().and_then(|m| m.get(&TypeId::of::<T>())).is_some()
+        self.map
+            .as_ref()
+            .and_then(|m| m.get(&TypeId::of::<T>()))
+            .is_some()
     }
 
     
@@ -143,13 +177,19 @@ impl TypeMap {
 
     
     pub fn entry<T: 'static>(&mut self) -> Entry<T> {
-        match self.map.get_or_insert_with(|| FxHashMap::default()).entry(TypeId::of::<T>()) {
-            hash_map::Entry::Occupied(e) => {
-                Entry::Occupied(OccupiedEntry { data: e, marker: PhantomData })
-            }
-            hash_map::Entry::Vacant(e) => {
-                Entry::Vacant(VacantEntry { data: e, marker: PhantomData })
-            }
+        match self
+            .map
+            .get_or_insert_with(FxHashMap::default)
+            .entry(TypeId::of::<T>())
+        {
+            hash_map::Entry::Occupied(e) => Entry::Occupied(OccupiedEntry {
+                data: e,
+                marker: PhantomData,
+            }),
+            hash_map::Entry::Vacant(e) => Entry::Vacant(VacantEntry {
+                data: e,
+                marker: PhantomData,
+            }),
         }
     }
 }
@@ -163,6 +203,27 @@ pub mod concurrent {
 
     use std::collections::hash_map;
     use std::marker::PhantomData;
+
+    
+    pub struct KvPair(TypeId, Box<dyn Any + Send + Sync>);
+
+    impl KvPair {
+        pub fn new<T: 'static + Send + Sync>(value: T) -> Self {
+            KvPair(TypeId::of::<T>(), Box::new(value))
+        }
+
+        pub fn extract<T: 'static + Send + Sync>(self) -> Result<T, Self> {
+            let KvPair(key, value) = self;
+            if value.is::<T>() {
+                Ok((value as Box<dyn Any>)
+                    .downcast()
+                    .map(|boxed| *boxed)
+                    .unwrap())
+            } else {
+                Err(KvPair(key, value))
+            }
+        }
+    }
 
     
     #[derive(Debug)]
@@ -198,7 +259,10 @@ pub mod concurrent {
 
         
         pub fn remove(self) -> T {
-            (self.data.remove() as Box<dyn Any>).downcast().map(|boxed| *boxed).unwrap()
+            (self.data.remove() as Box<dyn Any>)
+                .downcast()
+                .map(|boxed| *boxed)
+                .unwrap()
         }
     }
 
@@ -259,16 +323,29 @@ pub mod concurrent {
         
         
         
+        pub fn insert_kv_pair(&mut self, KvPair(key, value): KvPair) -> Option<KvPair> {
+            self.map
+                .get_or_insert_with(FxHashMap::default)
+                .insert(key, value)
+                .map(|old_value| KvPair(key, old_value))
+        }
+
+        
+        
+        
         pub fn insert<T: Send + Sync + 'static>(&mut self, val: T) -> Option<T> {
             self.map
-                .get_or_insert_with(|| FxHashMap::default())
+                .get_or_insert_with(FxHashMap::default)
                 .insert(TypeId::of::<T>(), Box::new(val))
                 .and_then(|boxed| (boxed as Box<dyn Any>).downcast().ok().map(|boxed| *boxed))
         }
 
         
         pub fn contains<T: 'static>(&self) -> bool {
-            self.map.as_ref().and_then(|m| m.get(&TypeId::of::<T>())).is_some()
+            self.map
+                .as_ref()
+                .and_then(|m| m.get(&TypeId::of::<T>()))
+                .is_some()
         }
 
         
@@ -305,13 +382,19 @@ pub mod concurrent {
 
         
         pub fn entry<T: 'static + Send + Sync>(&mut self) -> Entry<T> {
-            match self.map.get_or_insert_with(|| FxHashMap::default()).entry(TypeId::of::<T>()) {
-                hash_map::Entry::Occupied(e) => {
-                    Entry::Occupied(OccupiedEntry { data: e, marker: PhantomData })
-                }
-                hash_map::Entry::Vacant(e) => {
-                    Entry::Vacant(VacantEntry { data: e, marker: PhantomData })
-                }
+            match self
+                .map
+                .get_or_insert_with(FxHashMap::default)
+                .entry(TypeId::of::<T>())
+            {
+                hash_map::Entry::Occupied(e) => Entry::Occupied(OccupiedEntry {
+                    data: e,
+                    marker: PhantomData,
+                }),
+                hash_map::Entry::Vacant(e) => Entry::Vacant(VacantEntry {
+                    data: e,
+                    marker: PhantomData,
+                }),
             }
         }
     }
@@ -341,7 +424,7 @@ fn test_type_map() {
 
     let entry = map.entry::<MyType2>();
 
-    let mut v = entry.or_insert_with(MyType2::default);
+    let v = entry.or_insert_with(MyType2::default);
 
     v.0 = "Hello".into();
 

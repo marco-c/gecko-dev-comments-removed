@@ -99,8 +99,9 @@
 
 
 mod args;
+pub mod builtins;
 pub mod bundle;
-mod concurrent;
+pub mod concurrent;
 mod entry;
 mod errors;
 #[doc(hidden)]

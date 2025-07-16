@@ -1,6 +1,10 @@
+#![allow(clippy::missing_safety_doc, clippy::needless_lifetimes)]
+
+use core::cell::UnsafeCell;
 use core::marker::PhantomData;
-use core::mem::{self, transmute};
+use core::mem;
 use core::ptr::{drop_in_place, read, NonNull};
+use core::sync::atomic::{AtomicBool, Ordering};
 
 extern crate alloc;
 
@@ -53,22 +57,19 @@ impl<ContainedIn, Owner, DependentStatic> UnsafeSelfCell<ContainedIn, Owner, Dep
     
 
     pub unsafe fn borrow_owner<'a, Dependent>(&'a self) -> &'a Owner {
-        let joined_ptr =
-            transmute::<NonNull<u8>, NonNull<JoinedCell<Owner, Dependent>>>(self.joined_void_ptr);
+        let joined_ptr = self.joined_void_ptr.cast::<JoinedCell<Owner, Dependent>>();
 
         &(*joined_ptr.as_ptr()).owner
     }
 
     pub unsafe fn borrow_dependent<'a, Dependent>(&'a self) -> &'a Dependent {
-        let joined_ptr =
-            transmute::<NonNull<u8>, NonNull<JoinedCell<Owner, Dependent>>>(self.joined_void_ptr);
+        let joined_ptr = self.joined_void_ptr.cast::<JoinedCell<Owner, Dependent>>();
 
         &(*joined_ptr.as_ptr()).dependent
     }
 
     pub unsafe fn borrow_mut<'a, Dependent>(&'a mut self) -> (&'a Owner, &'a mut Dependent) {
-        let joined_ptr =
-            transmute::<NonNull<u8>, NonNull<JoinedCell<Owner, Dependent>>>(self.joined_void_ptr);
+        let joined_ptr = self.joined_void_ptr.cast::<JoinedCell<Owner, Dependent>>();
 
         
         
@@ -81,8 +82,7 @@ impl<ContainedIn, Owner, DependentStatic> UnsafeSelfCell<ContainedIn, Owner, Dep
 
     
     pub unsafe fn drop_joined<Dependent>(&mut self) {
-        let joined_ptr =
-            transmute::<NonNull<u8>, NonNull<JoinedCell<Owner, Dependent>>>(self.joined_void_ptr);
+        let joined_ptr = self.joined_void_ptr.cast::<JoinedCell<Owner, Dependent>>();
 
         
         let _guard = OwnerAndCellDropGuard { joined_ptr };
@@ -98,8 +98,7 @@ impl<ContainedIn, Owner, DependentStatic> UnsafeSelfCell<ContainedIn, Owner, Dep
     }
 
     pub unsafe fn into_owner<Dependent>(self) -> Owner {
-        let joined_ptr =
-            transmute::<NonNull<u8>, NonNull<JoinedCell<Owner, Dependent>>>(self.joined_void_ptr);
+        let joined_ptr = self.joined_void_ptr.cast::<JoinedCell<Owner, Dependent>>();
 
         
         let drop_guard = OwnerAndCellDropGuard::new(joined_ptr);
@@ -170,9 +169,7 @@ impl<Owner, Dependent> Drop for OwnerAndCellDropGuard<Owner, Dependent> {
 
         
         let _guard = DeallocGuard {
-            ptr: unsafe {
-                transmute::<*mut JoinedCell<Owner, Dependent>, *mut u8>(self.joined_ptr.as_ptr())
-            },
+            ptr: self.joined_ptr.as_ptr() as *mut u8,
             layout: Layout::new::<JoinedCell<Owner, Dependent>>(),
         };
 
@@ -228,3 +225,88 @@ impl<Owner, Dependent> JoinedCell<Owner, Dependent> {
         (owner_ptr, dependent_ptr)
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct MutBorrow<T> {
+    
+    is_locked: AtomicBool,
+    value: UnsafeCell<T>,
+}
+
+impl<T> MutBorrow<T> {
+    
+    pub fn new(value: T) -> Self {
+        
+        
+        Self {
+            is_locked: AtomicBool::new(false),
+            value: UnsafeCell::new(value),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::mut_from_ref)]
+    pub fn borrow_mut(&self) -> &mut T {
+        
+        
+        
+        let was_locked = self.is_locked.swap(true, Ordering::Relaxed);
+
+        if was_locked {
+            panic!("Tried to access locked MutBorrow")
+        } else {
+            
+            
+            
+            unsafe { &mut *self.value.get() }
+        }
+    }
+
+    
+    pub fn into_inner(self) -> T {
+        self.value.into_inner()
+    }
+}
+
+
+
+
+
+
+
+unsafe impl<T: Send> Sync for MutBorrow<T> {}

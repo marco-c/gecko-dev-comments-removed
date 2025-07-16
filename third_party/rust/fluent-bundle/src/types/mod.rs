@@ -28,9 +28,19 @@ use crate::memoizer::MemoizerKind;
 use crate::resolver::Scope;
 use crate::resource::FluentResource;
 
+
+
 pub trait FluentType: fmt::Debug + AnyEq + 'static {
+    
     fn duplicate(&self) -> Box<dyn FluentType + Send>;
+
+    
+    
     fn as_string(&self, intls: &intl_memoizer::IntlLangMemoizer) -> Cow<'static, str>;
+
+    
+    
+    
     fn as_string_threadsafe(
         &self,
         intls: &intl_memoizer::concurrent::IntlLangMemoizer,
@@ -50,9 +60,7 @@ pub trait AnyEq: Any + 'static {
 
 impl<T: Any + PartialEq> AnyEq for T {
     fn equals(&self, other: &dyn Any) -> bool {
-        other
-            .downcast_ref::<Self>()
-            .map_or(false, |that| self == that)
+        other.downcast_ref::<Self>() == Some(self)
     }
     fn as_any(&self) -> &dyn Any {
         self
@@ -74,7 +82,7 @@ pub enum FluentValue<'source> {
     Error,
 }
 
-impl<'s> PartialEq for FluentValue<'s> {
+impl PartialEq for FluentValue<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (FluentValue::String(s), FluentValue::String(s2)) => s == s2,
@@ -85,7 +93,7 @@ impl<'s> PartialEq for FluentValue<'s> {
     }
 }
 
-impl<'s> Clone for FluentValue<'s> {
+impl Clone for FluentValue<'_> {
     fn clone(&self) -> Self {
         match self {
             FluentValue::String(s) => FluentValue::String(s.clone()),
@@ -101,15 +109,71 @@ impl<'s> Clone for FluentValue<'s> {
 }
 
 impl<'source> FluentValue<'source> {
-    pub fn try_number<S: ToString>(v: S) -> Self {
-        let s = v.to_string();
-        if let Ok(num) = FluentNumber::from_str(&s) {
-            num.into()
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_number(value: &'source str) -> Self {
+        if let Ok(number) = FluentNumber::from_str(value) {
+            number.into()
         } else {
-            s.into()
+            value.into()
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn matches<R: Borrow<FluentResource>, M>(
         &self,
         other: &FluentValue,
@@ -119,9 +183,9 @@ impl<'source> FluentValue<'source> {
         M: MemoizerKind,
     {
         match (self, other) {
-            (&FluentValue::String(ref a), &FluentValue::String(ref b)) => a == b,
-            (&FluentValue::Number(ref a), &FluentValue::Number(ref b)) => a == b,
-            (&FluentValue::String(ref a), &FluentValue::Number(ref b)) => {
+            (FluentValue::String(a), FluentValue::String(b)) => a == b,
+            (FluentValue::Number(a), FluentValue::Number(b)) => a == b,
+            (FluentValue::String(a), FluentValue::Number(b)) => {
                 let cat = match a.as_ref() {
                     "zero" => PluralCategory::ZERO,
                     "one" => PluralCategory::ONE,
@@ -131,19 +195,25 @@ impl<'source> FluentValue<'source> {
                     "other" => PluralCategory::OTHER,
                     _ => return false,
                 };
+                
+                
+                let r#type = match b.options.r#type {
+                    FluentNumberType::Cardinal => PluralRuleType::CARDINAL,
+                    FluentNumberType::Ordinal => PluralRuleType::ORDINAL,
+                };
                 scope
                     .bundle
                     .intls
-                    .with_try_get_threadsafe::<PluralRules, _, _>(
-                        (PluralRuleType::CARDINAL,),
-                        |pr| pr.0.select(b) == Ok(cat),
-                    )
+                    .with_try_get_threadsafe::<PluralRules, _, _>((r#type,), |pr| {
+                        pr.0.select(b) == Ok(cat)
+                    })
                     .unwrap()
             }
             _ => false,
         }
     }
 
+    
     pub fn write<W, R, M>(&self, w: &mut W, scope: &Scope<R, M>) -> fmt::Result
     where
         W: fmt::Write,
@@ -164,6 +234,10 @@ impl<'source> FluentValue<'source> {
         }
     }
 
+    
+    
+    
+    
     pub fn as_string<R: Borrow<FluentResource>, M>(&self, scope: &Scope<R, M>) -> Cow<'source, str>
     where
         M: MemoizerKind,
@@ -181,10 +255,48 @@ impl<'source> FluentValue<'source> {
             FluentValue::None => "".into(),
         }
     }
+
+    
+    
+    
+    
+    pub fn into_string<R: Borrow<FluentResource>, M>(self, scope: &Scope<R, M>) -> Cow<'source, str>
+    where
+        M: MemoizerKind,
+    {
+        if let Some(formatter) = &scope.bundle.formatter {
+            if let Some(val) = formatter(&self, &scope.bundle.intls) {
+                return val.into();
+            }
+        }
+        match self {
+            FluentValue::String(s) => s,
+            FluentValue::Number(n) => n.as_string(),
+            FluentValue::Custom(s) => scope.bundle.intls.stringify_value(s.as_ref()),
+            FluentValue::Error => "".into(),
+            FluentValue::None => "".into(),
+        }
+    }
+
+    pub fn into_owned<'a>(&self) -> FluentValue<'a> {
+        match self {
+            FluentValue::String(str) => FluentValue::String(Cow::from(str.to_string())),
+            FluentValue::Number(s) => FluentValue::Number(s.clone()),
+            FluentValue::Custom(s) => FluentValue::Custom(s.duplicate()),
+            FluentValue::Error => FluentValue::Error,
+            FluentValue::None => FluentValue::None,
+        }
+    }
 }
 
-impl<'source> From<String> for FluentValue<'source> {
+impl From<String> for FluentValue<'_> {
     fn from(s: String) -> Self {
+        FluentValue::String(s.into())
+    }
+}
+
+impl<'source> From<&'source String> for FluentValue<'source> {
+    fn from(s: &'source String) -> Self {
         FluentValue::String(s.into())
     }
 }
@@ -198,5 +310,17 @@ impl<'source> From<&'source str> for FluentValue<'source> {
 impl<'source> From<Cow<'source, str>> for FluentValue<'source> {
     fn from(s: Cow<'source, str>) -> Self {
         FluentValue::String(s)
+    }
+}
+
+impl<'source, T> From<Option<T>> for FluentValue<'source>
+where
+    T: Into<FluentValue<'source>>,
+{
+    fn from(v: Option<T>) -> Self {
+        match v {
+            Some(v) => v.into(),
+            None => FluentValue::None,
+        }
     }
 }

@@ -1,5 +1,6 @@
 
 
+
 use std::borrow::Borrow;
 
 use fluent_syntax::ast;
@@ -12,24 +13,34 @@ use crate::types::FluentValue;
 pub type FluentFunction =
     Box<dyn for<'a> Fn(&[FluentValue<'a>], &FluentArgs) -> FluentValue<'a> + Send + Sync>;
 
+type ResourceIdx = usize;
+type EntryIdx = usize;
+
+
+
 pub enum Entry {
-    Message((usize, usize)),
-    Term((usize, usize)),
+    Message((ResourceIdx, EntryIdx)),
+    Term((ResourceIdx, EntryIdx)),
     Function(FluentFunction),
 }
 
 pub trait GetEntry {
+    
     fn get_entry_message(&self, id: &str) -> Option<&ast::Message<&str>>;
+
+    
     fn get_entry_term(&self, id: &str) -> Option<&ast::Term<&str>>;
+
+    
     fn get_entry_function(&self, id: &str) -> Option<&FluentFunction>;
 }
 
-impl<'bundle, R: Borrow<FluentResource>, M> GetEntry for FluentBundle<R, M> {
+impl<R: Borrow<FluentResource>, M> GetEntry for FluentBundle<R, M> {
     fn get_entry_message(&self, id: &str) -> Option<&ast::Message<&str>> {
         self.entries.get(id).and_then(|ref entry| match entry {
-            Entry::Message(pos) => {
-                let res = self.resources.get(pos.0)?.borrow();
-                if let ast::Entry::Message(ref msg) = res.get_entry(pos.1)? {
+            Entry::Message((resource_idx, entry_idx)) => {
+                let res = self.resources.get(*resource_idx)?.borrow();
+                if let ast::Entry::Message(ref msg) = res.get_entry(*entry_idx)? {
                     Some(msg)
                 } else {
                     None
@@ -41,9 +52,9 @@ impl<'bundle, R: Borrow<FluentResource>, M> GetEntry for FluentBundle<R, M> {
 
     fn get_entry_term(&self, id: &str) -> Option<&ast::Term<&str>> {
         self.entries.get(id).and_then(|ref entry| match entry {
-            Entry::Term(pos) => {
-                let res = self.resources.get(pos.0)?.borrow();
-                if let ast::Entry::Term(ref msg) = res.get_entry(pos.1)? {
+            Entry::Term((resource_idx, entry_idx)) => {
+                let res = self.resources.get(*resource_idx)?.borrow();
+                if let ast::Entry::Term(ref msg) = res.get_entry(*entry_idx)? {
                     Some(msg)
                 } else {
                     None

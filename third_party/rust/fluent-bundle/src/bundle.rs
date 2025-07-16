@@ -131,6 +131,8 @@ use crate::types::FluentValue;
 
 
 
+
+
 pub struct FluentBundle<R, M> {
     pub locales: Vec<LanguageIdentifier>,
     pub(crate) resources: Vec<R>,
@@ -482,8 +484,8 @@ impl<R, M> FluentBundle<R, M> {
     
     pub fn format_pattern<'bundle>(
         &'bundle self,
-        pattern: &'bundle ast::Pattern<&str>,
-        args: Option<&'bundle FluentArgs>,
+        pattern: &'bundle ast::Pattern<&'bundle str>,
+        args: Option<&FluentArgs>,
         errors: &mut Vec<FluentError>,
     ) -> Cow<'bundle, str>
     where
@@ -492,7 +494,7 @@ impl<R, M> FluentBundle<R, M> {
     {
         let mut scope = Scope::new(self, args, Some(errors));
         let value = pattern.resolve(&mut scope);
-        value.as_string(&scope)
+        value.into_string(&scope)
     }
 
     
@@ -545,6 +547,61 @@ impl<R, M> FluentBundle<R, M> {
             }),
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_builtins(&mut self) -> Result<(), FluentError> {
+        self.add_function("NUMBER", crate::builtins::NUMBER)?;
+        
+
+        Ok(())
+    }
 }
 
 impl<R> Default for FluentBundle<R, IntlLangMemoizer> {
@@ -575,7 +632,7 @@ impl<R> FluentBundle<R, IntlLangMemoizer> {
     
     
     pub fn new(locales: Vec<LanguageIdentifier>) -> Self {
-        let first_locale = locales.get(0).cloned().unwrap_or_default();
+        let first_locale = locales.first().cloned().unwrap_or_default();
         Self {
             locales,
             resources: vec![],

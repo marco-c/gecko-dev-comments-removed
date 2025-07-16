@@ -2,11 +2,19 @@ use intl_memoizer::{concurrent::IntlLangMemoizer, Memoizable};
 use rustc_hash::FxHashMap;
 use unic_langid::LanguageIdentifier;
 
-use crate::bundle::FluentBundle;
 use crate::memoizer::MemoizerKind;
 use crate::types::FluentType;
 
-impl<R> FluentBundle<R, IntlLangMemoizer> {
+
+
+
+
+
+
+
+pub type FluentBundle<R> = crate::bundle::FluentBundle<R, IntlLangMemoizer>;
+
+impl<R> FluentBundle<R> {
     
     
     
@@ -22,7 +30,7 @@ impl<R> FluentBundle<R, IntlLangMemoizer> {
     
     
     pub fn new_concurrent(locales: Vec<LanguageIdentifier>) -> Self {
-        let first_locale = locales.get(0).cloned().unwrap_or_default();
+        let first_locale = locales.first().cloned().unwrap_or_default();
         Self {
             locales,
             resources: vec![],

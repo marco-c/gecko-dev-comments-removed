@@ -1,3 +1,11 @@
+
+
+
+
+
+
+
+
 use std::fs;
 use std::io;
 
@@ -17,7 +25,9 @@ fn main() {
 
     for sample in samples {
         let path = format!("./benches/{}.ftl", sample);
-        let source = read_file(&path).unwrap();
+        let source = read_file(&path).expect(
+            "Could not read the benches file. Are you running this from the correct directory? It must be run from `{PROJECT_ROOT}/fluent-syntax`",
+        );
         let ast = parse(source).unwrap();
         let target_json = serde_json::to_string_pretty(&ast).unwrap();
         let new_path = format!("./tests/fixtures/benches/{}.json", sample);

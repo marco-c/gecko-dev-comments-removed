@@ -92,7 +92,7 @@ use thiserror::Error;
 
 
 
-#[derive(Error, Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, Error, PartialEq)]
 #[error("{}", self.kind)]
 pub struct ParserError {
     
@@ -122,7 +122,7 @@ macro_rules! error {
 }
 
 
-#[derive(Error, Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, Error, PartialEq)]
 pub enum ErrorKind {
     #[error("Expected a token starting with \"{0}\"")]
     ExpectedToken(char),

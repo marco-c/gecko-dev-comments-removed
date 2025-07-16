@@ -1,5 +1,8 @@
+
 use super::*;
 use std::sync::Mutex;
+
+
 
 #[derive(Debug)]
 pub struct IntlLangMemoizer {
@@ -8,6 +11,7 @@ pub struct IntlLangMemoizer {
 }
 
 impl IntlLangMemoizer {
+    
     pub fn new(lang: LanguageIdentifier) -> Self {
         Self {
             lang,
@@ -15,6 +19,9 @@ impl IntlLangMemoizer {
         }
     }
 
+    
+    
+    
     pub fn with_try_get<I, R, U>(&self, args: I::Args, cb: U) -> Result<R, I::Error>
     where
         Self: Sized,
@@ -34,6 +41,6 @@ impl IntlLangMemoizer {
                 entry.insert(val)
             }
         };
-        Ok(cb(&e))
+        Ok(cb(e))
     }
 }

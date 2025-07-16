@@ -2,7 +2,7 @@ use crate::resolver::ResolverError;
 use fluent_syntax::parser::ParserError;
 use std::error::Error;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EntryKind {
     Message,
     Term,
@@ -23,7 +23,7 @@ impl std::fmt::Display for EntryKind {
 
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FluentError {
     
     

@@ -1,3 +1,9 @@
+
+
+
+
+
+
 use std::cell::RefCell;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -7,13 +13,165 @@ use unic_langid::LanguageIdentifier;
 
 pub mod concurrent;
 
+
+
 pub trait Memoizable {
+    
     type Args: 'static + Eq + Hash + Clone;
+
+    
     type Error;
+
+    
+    
     fn construct(lang: LanguageIdentifier, args: Self::Args) -> Result<Self, Self::Error>
     where
         Self: std::marker::Sized;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Debug)]
 pub struct IntlLangMemoizer {
@@ -22,6 +180,8 @@ pub struct IntlLangMemoizer {
 }
 
 impl IntlLangMemoizer {
+    
+    
     pub fn new(lang: LanguageIdentifier) -> Self {
         Self {
             lang,
@@ -29,7 +189,23 @@ impl IntlLangMemoizer {
         }
     }
 
-    pub fn with_try_get<I, R, U>(&self, args: I::Args, cb: U) -> Result<R, I::Error>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_try_get<I, R, U>(&self, construct_args: I::Args, callback: U) -> Result<R, I::Error>
     where
         Self: Sized,
         I: Memoizable + 'static,
@@ -43,16 +219,107 @@ impl IntlLangMemoizer {
             .entry::<HashMap<I::Args, I>>()
             .or_insert_with(HashMap::new);
 
-        let e = match cache.entry(args.clone()) {
+        let e = match cache.entry(construct_args.clone()) {
             Entry::Occupied(entry) => entry.into_mut(),
             Entry::Vacant(entry) => {
-                let val = I::construct(self.lang.clone(), args)?;
+                let val = I::construct(self.lang.clone(), construct_args)?;
                 entry.insert(val)
             }
         };
-        Ok(cb(&e))
+        Ok(callback(e))
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Default)]
 pub struct IntlMemoizer {
@@ -60,6 +327,9 @@ pub struct IntlMemoizer {
 }
 
 impl IntlMemoizer {
+    
+    
+    
     pub fn get_for_lang(&mut self, lang: LanguageIdentifier) -> Rc<IntlLangMemoizer> {
         match self.map.entry(lang.clone()) {
             Entry::Vacant(empty) => {
@@ -85,6 +355,7 @@ mod tests {
     use super::*;
     use fluent_langneg::{negotiate_languages, NegotiationStrategy};
     use intl_pluralrules::{PluralCategory, PluralRuleType, PluralRules as IntlPluralRules};
+    use std::{sync::Arc, thread};
 
     struct PluralRules(pub IntlPluralRules);
 
@@ -115,7 +386,7 @@ mod tests {
     }
 
     #[test]
-    fn it_works() {
+    fn test_single_thread() {
         let lang: LanguageIdentifier = "en".parse().unwrap();
 
         let mut memoizer = IntlMemoizer::default();
@@ -129,11 +400,35 @@ mod tests {
         }
 
         {
-            let en_memoizer = memoizer.get_for_lang(lang.clone());
+            let en_memoizer = memoizer.get_for_lang(lang);
 
             let result = en_memoizer
                 .with_try_get::<PluralRules, _, _>((PluralRuleType::CARDINAL,), |cb| cb.0.select(5))
                 .unwrap();
+            assert_eq!(result, Ok(PluralCategory::OTHER));
+        }
+    }
+
+    #[test]
+    fn test_concurrent() {
+        let lang: LanguageIdentifier = "en".parse().unwrap();
+        let memoizer = Arc::new(concurrent::IntlLangMemoizer::new(lang));
+        let mut threads = vec![];
+
+        
+        for _ in 0..4 {
+            let memoizer = Arc::clone(&memoizer);
+            threads.push(thread::spawn(move || {
+                memoizer
+                    .with_try_get::<PluralRules, _, _>((PluralRuleType::CARDINAL,), |cb| {
+                        cb.0.select(5)
+                    })
+                    .expect("Failed to get a PluralRules result.")
+            }));
+        }
+
+        for thread in threads.drain(..) {
+            let result = thread.join().expect("Failed to join thread.");
             assert_eq!(result, Ok(PluralCategory::OTHER));
         }
     }

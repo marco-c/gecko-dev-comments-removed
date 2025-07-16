@@ -1,0 +1,175 @@
+#![no_std]
+#![deny(warnings, missing_docs, missing_debug_implementations)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+mod pin_mut;
+mod pin_ref;
+
+use core::cell::{BorrowError, BorrowMutError, Ref, RefCell, RefMut};
+use core::pin::Pin;
+
+pub use crate::pin_mut::PinMut;
+pub use crate::pin_ref::PinRef;
+
+
+
+
+
+
+
+#[derive(Default, Clone, Ord, PartialOrd, Eq, PartialEq, Debug)]
+pub struct PinCell<T: ?Sized> {
+    inner: RefCell<T>,
+}
+
+impl<T> PinCell<T> {
+    
+    pub const fn new(value: T) -> PinCell<T> {
+        PinCell {
+            inner: RefCell::new(value),
+        }
+    }
+}
+
+impl<T: ?Sized> PinCell<T> {
+    
+    
+    
+    
+    
+    pub fn borrow(&self) -> Ref<'_, T> {
+        self.inner.borrow()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_borrow(&self) -> Result<Ref<'_, T>, BorrowError> {
+        self.inner.try_borrow()
+    }
+
+    
+    
+    
+    
+    
+    pub fn borrow_mut<'a>(self: Pin<&'a Self>) -> PinMut<'a, T> {
+        self.try_borrow_mut().expect("already borrowed")
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_borrow_mut<'a>(self: Pin<&'a Self>) -> Result<PinMut<'a, T>, BorrowMutError> {
+        let ref_mut: RefMut<'a, T> = Pin::get_ref(self).inner.try_borrow_mut()?;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let pin_ref_mut: Pin<RefMut<'a, T>> = unsafe { Pin::new_unchecked(ref_mut) };
+
+        Ok(PinMut { inner: pin_ref_mut })
+    }
+
+    
+    
+    
+    
+    
+    pub fn borrow_pin<'a>(self: Pin<&'a Self>) -> PinRef<'a, T> {
+        self.try_borrow_pin().expect("already mutably borrowed")
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_borrow_pin<'a>(self: Pin<&'a Self>) -> Result<PinRef<'a, T>, BorrowError> {
+        let r: Ref<'a, T> = Pin::get_ref(self).inner.try_borrow()?;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let pin_ref: Pin<Ref<'a, T>> = unsafe { Pin::new_unchecked(r) };
+
+        Ok(PinRef { inner: pin_ref })
+    }
+
+    
+    pub fn as_ptr(&self) -> *mut T {
+        self.inner.as_ptr()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut T {
+        self.inner.get_mut()
+    }
+}
+
+impl<T> From<T> for PinCell<T> {
+    fn from(value: T) -> PinCell<T> {
+        PinCell::new(value)
+    }
+}
+
+impl<T> From<RefCell<T>> for PinCell<T> {
+    fn from(cell: RefCell<T>) -> PinCell<T> {
+        PinCell { inner: cell }
+    }
+}
+
+impl<T> Into<RefCell<T>> for PinCell<T> {
+    fn into(self) -> RefCell<T> {
+        self.inner
+    }
+}
+
+

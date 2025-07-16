@@ -1,7 +1,10 @@
 use fluent_syntax::ast::InlineExpression;
 use std::error::Error;
 
-#[derive(Debug, PartialEq, Clone)]
+
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReferenceKind {
     Function {
         id: String,
@@ -44,7 +47,9 @@ where
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResolverError {
     Reference(ReferenceKind),
     NoValue(String),

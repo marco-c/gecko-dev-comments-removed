@@ -75,10 +75,6 @@
 
 
 
-
-
-
-
 pub use fluent_bundle::*;
 
 
@@ -96,7 +92,7 @@ pub use fluent_bundle::*;
 
 #[macro_export]
 macro_rules! fluent_args {
-    ( $($key:expr => $value:expr),* ) => {
+    ( $($key:expr => $value:expr),* $(,)? ) => {
         {
             let mut args: $crate::FluentArgs = $crate::FluentArgs::new();
             $(
