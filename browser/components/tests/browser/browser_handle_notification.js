@@ -105,17 +105,19 @@ add_task(async function test_user_context() {
   registerCleanupFunction(() => BrowserTestUtils.removeTab(newTab));
   ok(newTab, "New tab should be opened.");
 
-  
-  
-  is(newTab.userContextId, 0, "The default user context ID is used (for now).");
+  is(newTab.userContextId, 1, "The correct user context ID is used.");
 });
 
 add_task(async function test_basic_initial_load() {
-  let newWinPromise = BrowserTestUtils.waitForNewWindow({
-    url: "https://example.com/",
-    anyWindow: true,
-  });
+  let controller = new AbortController();
+  let { signal } = controller;
 
+  BrowserTestUtils.concealWindow(window, { signal });
+
+  
+  let newWinPromise = BrowserTestUtils.waitForNewWindow();
+
+  
   simulateNotificationClickWithNewWindow({
     action: "",
     origin: "https://example.com",
@@ -123,5 +125,22 @@ add_task(async function test_basic_initial_load() {
 
   let newWin = await newWinPromise;
   ok(newWin, "New window should be opened.");
+
+  
+  let newTab = newWin.gBrowser.tabs.find(
+    tab => tab.linkedBrowser.currentURI.spec === "https://example.com/"
+  );
+
+  
+  if (!newTab) {
+    newTab = await BrowserTestUtils.waitForNewTab(
+      newWin.gBrowser,
+      "https://example.com/"
+    );
+  }
+
+  ok(newTab, "New tab should be opened.");
   BrowserTestUtils.closeWindow(newWin);
+
+  controller.abort();
 });
