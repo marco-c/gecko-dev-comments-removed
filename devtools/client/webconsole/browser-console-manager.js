@@ -29,18 +29,16 @@ const BC_WINDOW_FEATURES =
   "chrome,titlebar,toolbar,centerscreen,resizable,dialog=no";
 
 class BrowserConsoleManager {
-  constructor() {
-    this._browserConsole = null;
-    this._browserConsoleInitializing = null;
-    this._browerConsoleSessionState = false;
-  }
+  #browserConsole = null;
+  #browserConsoleInitializing = null;
+  #browserConsoleSessionState = false;
 
   storeBrowserConsoleSessionState() {
-    this._browerConsoleSessionState = !!this.getBrowserConsole();
+    this.#browserConsoleSessionState = !!this.getBrowserConsole();
   }
 
   getBrowserConsoleSessionState() {
-    return this._browerConsoleSessionState;
+    return this.#browserConsoleSessionState;
   }
 
   
@@ -53,7 +51,7 @@ class BrowserConsoleManager {
 
   async openBrowserConsole(win) {
     const hud = new BrowserConsole(this.commands, win, win);
-    this._browserConsole = hud;
+    this.#browserConsole = hud;
     await hud.init();
     return hud;
   }
@@ -62,18 +60,18 @@ class BrowserConsoleManager {
 
 
   async closeBrowserConsole() {
-    if (!this._browserConsole) {
+    if (!this.#browserConsole) {
       return;
     }
 
     
     
     try {
-      await this._browserConsole.destroy();
+      await this.#browserConsole.destroy();
     } catch (e) {
       console.error(e);
     }
-    this._browserConsole = null;
+    this.#browserConsole = null;
 
     await this.commands.destroy();
     this.commands = null;
@@ -83,17 +81,17 @@ class BrowserConsoleManager {
 
 
   async toggleBrowserConsole() {
-    if (this._browserConsole) {
+    if (this.#browserConsole) {
       return this.closeBrowserConsole();
     }
 
-    if (this._browserConsoleInitializing) {
-      return this._browserConsoleInitializing;
+    if (this.#browserConsoleInitializing) {
+      return this.#browserConsoleInitializing;
     }
 
     
     
-    this._browserConsoleInitializing = (async () => {
+    this.#browserConsoleInitializing = (async () => {
       this.commands = await CommandsFactory.forBrowserConsole();
       const win = await this.openWindow();
       const browserConsole = await this.openBrowserConsole(win);
@@ -101,13 +99,13 @@ class BrowserConsoleManager {
     })();
 
     try {
-      const browserConsole = await this._browserConsoleInitializing;
-      this._browserConsoleInitializing = null;
+      const browserConsole = await this.#browserConsoleInitializing;
+      this.#browserConsoleInitializing = null;
       return browserConsole;
     } catch (e) {
       
       
-      this._browserConsoleInitializing = null;
+      this.#browserConsoleInitializing = null;
       throw e;
     }
   }
@@ -157,7 +155,7 @@ class BrowserConsoleManager {
 
 
   getBrowserConsole() {
-    return this._browserConsole;
+    return this.#browserConsole;
   }
 
   
