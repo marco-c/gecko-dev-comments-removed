@@ -3,11 +3,14 @@
 
 
 use anyhow::Result;
-use crash_helper_common::{
-    errors::IPCError, messages, wait_for_events, IPCConnector, IPCEvent, IPCListener,
-};
+use crash_helper_common::{errors::IPCError, messages, IPCConnector, IPCEvent, IPCListener};
 
 use crate::crash_generation::CrashGenerator;
+
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+mod unix;
+#[cfg(target_os = "windows")]
+mod windows;
 
 #[derive(PartialEq)]
 pub enum IPCServerState {
@@ -15,16 +18,32 @@ pub enum IPCServerState {
     ClientDisconnected,
 }
 
+#[derive(PartialEq)]
+enum IPCEndpoint {
+    Parent, 
+    #[allow(dead_code)]
+    Child, 
+    External, 
+}
+
+struct IPCConnection {
+    connector: IPCConnector,
+    endpoint: IPCEndpoint,
+}
+
 pub(crate) struct IPCServer {
     listener: IPCListener,
-    connectors: Vec<IPCConnector>,
+    connections: Vec<IPCConnection>,
 }
 
 impl IPCServer {
     pub(crate) fn new(listener: IPCListener, connector: IPCConnector) -> IPCServer {
         IPCServer {
             listener,
-            connectors: vec![connector],
+            connections: vec![IPCConnection {
+                connector,
+                endpoint: IPCEndpoint::Parent,
+            }],
         }
     }
 
@@ -32,7 +51,7 @@ impl IPCServer {
         &mut self,
         generator: &mut CrashGenerator,
     ) -> Result<IPCServerState, IPCError> {
-        let events = wait_for_events(&mut self.listener, &mut self.connectors)?;
+        let events = self.wait_for_events()?;
 
         
         
@@ -40,14 +59,17 @@ impl IPCServer {
         for event in events.into_iter().rev() {
             match event {
                 IPCEvent::Connect(connector) => {
-                    self.connectors.push(connector);
+                    self.connections.push(IPCConnection {
+                        connector,
+                        endpoint: IPCEndpoint::External,
+                    });
                 }
                 IPCEvent::Header(index, header) => {
-                    let connector = self
-                        .connectors
+                    let connection = self
+                        .connections
                         .get_mut(index)
                         .expect("Invalid connector index");
-                    let res = Self::handle_message(connector, &header, generator);
+                    let res = Self::handle_message(connection, &header, generator);
                     if let Err(error) = res {
                         log::error!(
                             "Error {error} while handling a message of {:?} kind",
@@ -56,13 +78,10 @@ impl IPCServer {
                     }
                 }
                 IPCEvent::Disconnect(index) => {
-                    
-                    if index == 0 {
+                    let connection = self.connections.remove(index);
+                    if connection.endpoint == IPCEndpoint::Parent {
                         
                         return Ok(IPCServerState::ClientDisconnected);
-                    } else {
-                        
-                        let _ = self.connectors.remove(index);
                     }
                 }
             }
@@ -72,13 +91,18 @@ impl IPCServer {
     }
 
     fn handle_message(
-        connector: &mut IPCConnector,
+        connection: &mut IPCConnection,
         header: &messages::Header,
         generator: &mut CrashGenerator,
     ) -> Result<()> {
+        let connector = &mut connection.connector;
         let (data, ancillary_data) = connector.recv(header.size)?;
 
-        let reply = generator.client_message(header.kind, &data, ancillary_data)?;
+        let reply = match connection.endpoint {
+            IPCEndpoint::Parent => generator.parent_message(header.kind, &data, ancillary_data),
+            IPCEndpoint::Child => generator.child_message(header.kind, &data, ancillary_data),
+            IPCEndpoint::External => generator.external_message(header.kind, &data, ancillary_data),
+        }?;
 
         if let Some(reply) = reply {
             connector.send_message(reply.as_ref())?;

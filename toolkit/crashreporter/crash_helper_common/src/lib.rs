@@ -11,7 +11,6 @@ mod breakpad;
 mod ipc_channel;
 mod ipc_connector;
 mod ipc_listener;
-mod ipc_poller;
 mod platform;
 
 use errors::MessageError;
@@ -21,7 +20,6 @@ pub use crate::breakpad::{AncillaryData, BreakpadChar, BreakpadData, BreakpadRaw
 pub use crate::ipc_channel::IPCChannel;
 pub use crate::ipc_connector::{IPCConnector, IPCEvent};
 pub use crate::ipc_listener::IPCListener;
-pub use crate::ipc_poller::wait_for_events;
 
 
 
