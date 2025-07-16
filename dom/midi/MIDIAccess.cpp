@@ -202,7 +202,7 @@ void MIDIAccess::MaybeCreateMIDIPort(const MIDIPortInfo& aInfo,
 
 
 void MIDIAccess::Notify(const MIDIPortList& aEvent) {
-  LOG("MIDIAcess::Notify");
+  LOG("MIDIAccess::Notify");
   if (!GetOwnerWindow()) {
     
     return;
