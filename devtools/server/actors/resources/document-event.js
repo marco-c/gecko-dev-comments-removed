@@ -24,6 +24,12 @@ class DocumentEventWatcher {
     if (isWorker) {
       return;
     }
+    
+    
+    
+    if (!targetActor.window) {
+      return;
+    }
 
     const onDocumentEvent = (
       name,
