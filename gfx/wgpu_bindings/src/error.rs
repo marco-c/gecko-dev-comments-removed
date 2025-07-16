@@ -6,6 +6,7 @@
 
 
 use std::{
+    borrow::Cow,
     error::Error,
     fmt::{self, Display, Formatter},
     os::raw::c_char,
@@ -163,7 +164,7 @@ pub(crate) enum ErrorBufferType {
 
 #[derive(Clone, Debug)]
 pub(crate) struct ErrMsg {
-    pub(crate) message: String,
+    pub(crate) message: Cow<'static, str>,
     pub(crate) r#type: ErrorType,
 }
 
