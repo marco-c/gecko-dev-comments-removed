@@ -949,40 +949,19 @@ DOMMatrix* DOMMatrix::RotateSelf(double aRotX, const Optional<double>& aRotY,
   return this;
 }
 
-
 DOMMatrix* DOMMatrix::RotateAxisAngleSelf(double aX, double aY, double aZ,
                                           double aAngle) {
-  
   if (fmod(aAngle, 360) == 0) {
     return this;
   }
 
   aAngle *= radPerDegree;
 
-  
-  
-  
-  
+  Ensure3DMatrix();
   gfx::Matrix4x4Double m;
   m.SetRotateAxisAngle(aX, aY, aZ, aAngle);
 
-  
-  
-  
-  
-  if (mMatrix3D || aX != 0 || aY != 0) {
-    Ensure3DMatrix();
-    *mMatrix3D = m * *mMatrix3D;
-    return this;
-  }
-
-  gfx::Matrix4x4Double result = m * gfx::Matrix4x4Double::From2D(*mMatrix2D);
-  mMatrix2D->_11 = result._11;
-  mMatrix2D->_12 = result._12;
-  mMatrix2D->_21 = result._21;
-  mMatrix2D->_22 = result._22;
-  mMatrix2D->_31 = result._31;
-  mMatrix2D->_32 = result._32;
+  *mMatrix3D = m * *mMatrix3D;
 
   return this;
 }
