@@ -174,12 +174,12 @@ add_task(async function removesAllHighlightsWithEmptyFragment() {
       );
 
       let removeAllHighlights = contextMenu.querySelector(
-        "#context-remove-all-highlights"
+        "#context-remove-highlight"
       );
-      ok(removeAllHighlights, '"Remove all Highlights" menu item is present');
+      ok(removeAllHighlights, '"Remove Highlight" menu item is present');
       ok(
         BrowserTestUtils.isVisible(removeAllHighlights),
-        '"Remove all Highlights" menu item is visible'
+        '"Remove Highlight" menu item is visible'
       );
       let awaitLocationChange = BrowserTestUtils.waitForLocationChange(
         gBrowser,
@@ -238,12 +238,12 @@ add_task(async function removesAllHighlightsWithNonEmptyFragment() {
       );
 
       let removeAllHighlights = contextMenu.querySelector(
-        "#context-remove-all-highlights"
+        "#context-remove-highlight"
       );
-      ok(removeAllHighlights, '"Remove all Highlights" menu item is present');
+      ok(removeAllHighlights, '"Remove Highlight" menu item is present');
       ok(
         BrowserTestUtils.isVisible(removeAllHighlights),
-        '"Remove all Highlights" menu item is visible'
+        '"Remove Highlight" menu item is visible'
       );
       let awaitLocationChange = BrowserTestUtils.waitForLocationChange(
         gBrowser,
