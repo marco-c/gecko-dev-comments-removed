@@ -32,6 +32,12 @@ class BitReader {
   CheckedUint64 ReadULEB128();
 
   
+  
+  
+  
+  size_t AdvanceBits(size_t aNum);
+
+  
   size_t BitCount() const;
   
   size_t BitsLeft() const;

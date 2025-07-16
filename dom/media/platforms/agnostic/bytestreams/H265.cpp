@@ -158,13 +158,8 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
       const uint8_t* currentPtr =
           aExtraData->Elements() + reader.BitCount() / 8;
       H265NALU nalu(currentPtr, nalUnitLength);
-      
-      uint32_t nalSize = nalUnitLength * 8;
-      while (nalSize > 0) {
-        uint32_t readBits = nalSize > 32 ? 32 : nalSize;
-        reader.ReadBits(readBits);
-        nalSize -= readBits;
-      }
+      uint32_t nalBitsLength = nalUnitLength * 8;
+      Unused << reader.AdvanceBits(nalBitsLength);
       
       
       if (nalu.IsSPS() || nalu.IsPPS() || nalu.IsVPS() || nalu.IsSEI()) {
