@@ -18,7 +18,7 @@
 #include "threading/ExclusiveData.h"
 
 #if JS_HAS_INTL_API
-#  include "mozilla/intl/ICU4CGlue.h"
+#  include "mozilla/intl/ICUError.h"
 #  include "mozilla/intl/TimeZone.h"
 #endif
 
@@ -68,6 +68,12 @@ enum class ResetTimeZoneMode : bool {
 extern void ResetTimeZoneInternal(ResetTimeZoneMode mode);
 
 using TimeZoneDisplayNameVector = Vector<char16_t, 100, SystemAllocPolicy>;
+
+#if JS_HAS_INTL_API
+using TimeZoneIdentifierVector =
+    Vector<char, mozilla::intl::TimeZone::TimeZoneIdentifierLength,
+           SystemAllocPolicy>;
+#endif
 
 
 
@@ -220,11 +226,9 @@ class DateTimeInfo {
   
 
 
-
-  template <typename B>
-  static mozilla::intl::ICUResult timeZoneId(ForceUTC forceUTC, B& buffer) {
+  static bool timeZoneId(ForceUTC forceUTC, TimeZoneIdentifierVector& result) {
     auto guard = acquireLockWithValidTimeZone(forceUTC);
-    return guard->timeZone()->GetId(buffer);
+    return guard->internalTimeZoneId(result);
   }
 
   
@@ -349,6 +353,11 @@ class DateTimeInfo {
   
 
 
+  JS::UniqueChars timeZoneId_;
+
+  
+
+
 
   JS::UniqueChars locale_;
   JS::UniqueTwoByteChars standardName_;
@@ -409,6 +418,8 @@ class DateTimeInfo {
 
   bool internalTimeZoneDisplayName(TimeZoneDisplayNameVector& result,
                                    int64_t utcMilliseconds, const char* locale);
+
+  bool internalTimeZoneId(TimeZoneIdentifierVector& result);
 
   mozilla::intl::TimeZone* timeZone();
 #endif 
