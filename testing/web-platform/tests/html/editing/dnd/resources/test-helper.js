@@ -27,6 +27,8 @@ const movePointerToCenter = (element, iframe, actions) => {
 
 
 
+
+
 function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
   dragIframe = undefined, dropIframe = undefined) {
   promise_test((t) => new Promise(async (resolve, reject) => {
