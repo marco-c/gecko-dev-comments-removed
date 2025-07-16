@@ -269,10 +269,8 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
     : mWorkerPrivate(aWorkerPrivate),
       mClientSource(std::move(aClientSource)),
       mSerialEventTarget(aWorkerPrivate->HybridEventTarget()) {
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    mTimeoutManager = MakeUnique<dom::TimeoutManager>(
-        *this,  0, mSerialEventTarget);
-  }
+  mTimeoutManager = MakeUnique<dom::TimeoutManager>(
+      *this,  0, mSerialEventTarget);
   LOG(("WorkerGlobalScopeBase::WorkerGlobalScopeBase [%p]", this));
   MOZ_ASSERT(mWorkerPrivate);
 #ifdef DEBUG
