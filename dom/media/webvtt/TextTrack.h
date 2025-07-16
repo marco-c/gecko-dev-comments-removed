@@ -72,7 +72,7 @@ class TextTrack final : public DOMEventTargetHelper {
   }
 
   TextTrackCueList* GetActiveCues();
-  void GetActiveCueArray(nsTArray<RefPtr<TextTrackCue> >& aCues);
+  void GetActiveCueArray(nsTArray<RefPtr<TextTrackCue>>& aCues);
 
   TextTrackReadyState ReadyState() const;
   void SetReadyState(TextTrackReadyState aState);
@@ -110,8 +110,8 @@ class TextTrack final : public DOMEventTargetHelper {
   
   
   
-  void GetCurrentCuesAndOtherCues(RefPtr<TextTrackCueList>& aCurrentCues,
-                                  RefPtr<TextTrackCueList>& aOtherCues,
+  void GetCurrentCuesAndOtherCues(nsTArray<RefPtr<TextTrackCue>>* aCurrentCues,
+                                  nsTArray<RefPtr<TextTrackCue>>* aOtherCues,
                                   const media::TimeInterval& aInterval) const;
 
   void ClearAllCues();
