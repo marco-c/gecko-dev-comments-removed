@@ -38,7 +38,11 @@ function addUiaTask(doc, task, options = {}) {
   function addTask(shouldEnable) {
     async function uiaTask(browser, docAcc, topDocAcc) {
       await SpecialPowers.pushPrefEnv({
-        set: [["accessibility.uia.enable", shouldEnable ? 2 : 0]],
+        
+        
+        
+        
+        set: [["accessibility.uia.enable", shouldEnable ? 1 : 0]],
       });
       gIsUiaEnabled = shouldEnable;
       info(shouldEnable ? "Gecko UIA enabled" : "Gecko UIA disabled");
