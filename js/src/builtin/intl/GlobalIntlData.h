@@ -18,6 +18,10 @@ namespace js {
 class CollatorObject;
 class DateTimeFormatObject;
 class NumberFormatObject;
+
+namespace temporal {
+class TimeZoneObject;
+}
 }  
 
 namespace js::intl {
@@ -53,6 +57,11 @@ class GlobalIntlData {
 
 
   GCPtr<JSLinearString*> defaultTimeZone_;
+
+  
+
+
+  GCPtr<JSObject*> defaultTimeZoneObject_;
 
   
 
@@ -121,6 +130,12 @@ class GlobalIntlData {
 
 
   JSLinearString* defaultTimeZone(JSContext* cx);
+
+  
+
+
+
+  temporal::TimeZoneObject* getOrCreateDefaultTimeZone(JSContext* cx);
 
   
 

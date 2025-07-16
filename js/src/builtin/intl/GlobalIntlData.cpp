@@ -90,6 +90,7 @@ bool js::intl::GlobalIntlData::ensureRuntimeDefaultTimeZone(JSContext* cx) {
 
     
     defaultTimeZone_ = nullptr;
+    defaultTimeZoneObject_ = nullptr;
 
     
     resetDateTimeFormat();
@@ -248,6 +249,30 @@ DateTimeFormatObject* js::intl::GlobalIntlData::getOrCreateDateTimeFormat(
   return &dtfObject->as<DateTimeFormatObject>();
 }
 
+temporal::TimeZoneObject* js::intl::GlobalIntlData::getOrCreateDefaultTimeZone(
+    JSContext* cx) {
+  
+  if (!ensureRuntimeDefaultTimeZone(cx)) {
+    return nullptr;
+  }
+
+  
+  if (!defaultTimeZoneObject_) {
+    Rooted<JSLinearString*> identifier(cx, defaultTimeZone(cx));
+    if (!identifier) {
+      return nullptr;
+    }
+
+    auto* timeZone = temporal::CreateTimeZoneObject(cx, identifier, identifier);
+    if (!timeZone) {
+      return nullptr;
+    }
+    defaultTimeZoneObject_ = timeZone;
+  }
+
+  return &defaultTimeZoneObject_->as<temporal::TimeZoneObject>();
+}
+
 void js::intl::GlobalIntlData::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &runtimeDefaultLocale_,
                     "GlobalIntlData::runtimeDefaultLocale_");
@@ -256,6 +281,8 @@ void js::intl::GlobalIntlData::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &runtimeDefaultTimeZone_,
                     "GlobalIntlData::runtimeDefaultTimeZone_");
   TraceNullableEdge(trc, &defaultTimeZone_, "GlobalIntlData::defaultTimeZone_");
+  TraceNullableEdge(trc, &defaultTimeZoneObject_,
+                    "GlobalIntlData::defaultTimeZoneObject_");
 
   TraceNullableEdge(trc, &collatorLocale_, "GlobalIntlData::collatorLocale_");
   TraceNullableEdge(trc, &collator_, "GlobalIntlData::collator_");

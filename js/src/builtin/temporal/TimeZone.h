@@ -264,6 +264,14 @@ enum class TemporalDisambiguation;
 
 
 
+
+TimeZoneObject* CreateTimeZoneObject(
+    JSContext* cx, JS::Handle<JSLinearString*> identifier,
+    JS::Handle<JSLinearString*> primaryIdentifier);
+
+
+
+
 JSLinearString* ComputeSystemTimeZoneIdentifier(JSContext* cx);
 
 
