@@ -435,21 +435,6 @@ pub trait TElement:
     }
 
     
-    fn before_pseudo_element(&self) -> Option<Self> {
-        None
-    }
-
-    
-    fn after_pseudo_element(&self) -> Option<Self> {
-        None
-    }
-
-    
-    fn marker_pseudo_element(&self) -> Option<Self> {
-        None
-    }
-
-    
     
     fn each_anonymous_content_child<F>(&self, _f: F)
     where
