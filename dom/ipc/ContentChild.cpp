@@ -77,6 +77,7 @@
 #include "mozilla/dom/JSProcessActorChild.h"
 #include "mozilla/dom/LSObject.h"
 #include "mozilla/dom/MemoryReportRequest.h"
+#include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/PSessionStorageObserverChild.h"
 #include "mozilla/dom/PostMessageEvent.h"
 #include "mozilla/dom/PushNotifier.h"
@@ -4360,11 +4361,12 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchLocationChangeEvent(
 
 mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
     const MaybeDiscarded<BrowsingContext>& aStartingAt,
+    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     DispatchBeforeUnloadToSubtreeResolver&& aResolver) {
   if (aStartingAt.IsNullOrDiscarded()) {
     aResolver(nsIDocumentViewer::eAllowNavigation);
   } else {
-    DispatchBeforeUnloadToSubtree(aStartingAt.get(), std::move(aResolver));
+    DispatchBeforeUnloadToSubtree(aStartingAt.get(), aInfo, aResolver);
   }
   return IPC_OK();
 }
@@ -4378,17 +4380,39 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
 
  void ContentChild::DispatchBeforeUnloadToSubtree(
     BrowsingContext* aStartingAt,
+    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     const DispatchBeforeUnloadToSubtreeResolver& aResolver) {
+  bool block = false;
   bool resolved = false;
 
-  aStartingAt->PreOrderWalk([&](dom::BrowsingContext* aBC) {
+  aStartingAt->PreOrderWalk([&](const RefPtr<dom::BrowsingContext>&
+                                    aBC) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
     if (aBC->GetDocShell()) {
       nsCOMPtr<nsIDocumentViewer> viewer;
       aBC->GetDocShell()->GetDocViewer(getter_AddRefs(viewer));
-      if (viewer &&
-          viewer->DispatchBeforeUnload() ==
-              nsIDocumentViewer::eRequestBlockNavigation &&
-          !resolved) {
+      if (viewer && viewer->DispatchBeforeUnload() ==
+                        nsIDocumentViewer::eRequestBlockNavigation) {
+        block = true;
+      } else if (aBC->IsTop() && aInfo) {
+        
+        
+        
+        
+        
+        
+        if (RefPtr<nsPIDOMWindowInner> activeWindow =
+                nsDocShell::Cast(aBC->GetDocShell())->GetActiveWindow()) {
+          if (RefPtr navigation = activeWindow->Navigation()) {
+            if (AutoJSAPI jsapi; jsapi.Init(activeWindow)) {
+              
+              block = !navigation->FireTraverseNavigateEvent(jsapi.cx(), *aInfo,
+                                                             Nothing());
+            }
+          }
+        }
+      }
+
+      if (!resolved && block) {
         
         
         

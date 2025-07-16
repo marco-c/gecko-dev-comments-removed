@@ -310,23 +310,48 @@ bool WindowGlobalChild::IsProcessRoot() {
   return !BrowsingContext()->GetEmbedderElement();
 }
 
+
+
 void WindowGlobalChild::BeforeUnloadAdded() {
   
   if (mBeforeUnloadListeners == 0 && CanSend()) {
-    Unused << mWindowContext->SetHasBeforeUnload(true);
+    Unused << mWindowContext->SetNeedsBeforeUnload(true);
   }
 
   mBeforeUnloadListeners++;
   MOZ_ASSERT(mBeforeUnloadListeners > 0);
 }
 
+
+
 void WindowGlobalChild::BeforeUnloadRemoved() {
   mBeforeUnloadListeners--;
   MOZ_ASSERT(mBeforeUnloadListeners >= 0);
 
   if (mBeforeUnloadListeners == 0) {
-    Unused << mWindowContext->SetHasBeforeUnload(false);
+    Unused << mWindowContext->SetNeedsBeforeUnload(false);
   }
+}
+
+
+
+
+
+
+
+void WindowGlobalChild::NavigateAdded() {
+  if (!BrowsingContext()->IsTop()) {
+    return;
+  }
+  BeforeUnloadAdded();
+}
+
+
+void WindowGlobalChild::NavigateRemoved() {
+  if (!BrowsingContext()->IsTop()) {
+    return;
+  }
+  BeforeUnloadRemoved();
 }
 
 void WindowGlobalChild::Destroy() {
