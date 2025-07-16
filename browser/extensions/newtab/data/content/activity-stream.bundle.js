@@ -4950,6 +4950,7 @@ function TrendingSearches() {
   } = TrendingSearch;
   const variant = prefs[PREF_TRENDING_VARIANT];
   let resultRef = (0,external_React_namespaceObject.useRef)([]);
+  let contextMenuHost = (0,external_React_namespaceObject.useRef)(null);
   const TRENDING_SEARCH_CONTEXT_MENU_OPTIONS = ["TrendingSearchDismiss", "TrendingSearchLearnMore"];
   function onArrowClick() {
     dispatch(actionCreators.AlsoToMain({
@@ -4968,9 +4969,36 @@ function TrendingSearches() {
       }
     }));
   }
+
+  
+  
+  const handleContextMenuShow = () => {
+    const host = contextMenuHost.current;
+    const isRTL = document.dir === "rtl"; 
+    const checkRect = host.getBoundingClientRect();
+    const maxBounds = 200;
+
+    
+    const checkBounds = isRTL ? checkRect.left <= maxBounds : window.innerWidth - checkRect.right <= maxBounds;
+    if (checkBounds) {
+      host.classList.add("last-item");
+    }
+  };
+  const handleContextMenuUpdate = () => {
+    const host = contextMenuHost.current;
+    if (!host) {
+      return;
+    }
+    host.classList.remove("last-item");
+  };
   const toggleContextMenu = isKeyBoard => {
     setShowContextMenu(!showContextMenu);
     setIsKeyboardAccess(isKeyBoard);
+    if (!showContextMenu) {
+      handleContextMenuShow();
+    } else {
+      handleContextMenuUpdate();
+    }
   };
   function onContextMenuClick(e) {
     e.preventDefault();
@@ -5061,6 +5089,7 @@ function TrendingSearches() {
     return external_React_default().createElement("div", {
       ref: el => {
         ref.current = [el];
+        contextMenuHost.current = el;
       },
       className: "trending-searches-list-view"
     }, external_React_default().createElement("div", {
