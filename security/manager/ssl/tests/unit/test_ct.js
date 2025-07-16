@@ -53,6 +53,12 @@ function add_tests_in_mode(mode) {
   );
   
   add_ct_test(
+    "ct-tiled-valid.example.com",
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT,
+    true
+  );
+  
+  add_ct_test(
     "ct-insufficient-scts.example.com",
     Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS,
     mode == CT_MODE_COLLECT_TELEMETRY
