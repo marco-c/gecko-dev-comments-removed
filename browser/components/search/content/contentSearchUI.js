@@ -34,19 +34,15 @@ this.ContentSearchUIController = (function () {
 
 
 
-
-
   function ContentSearchUIController(
     inputElement,
     tableParent,
     healthReportKey,
-    searchPurpose,
     idPrefix = ""
   ) {
     this.input = inputElement;
     this._idPrefix = idPrefix;
     this._healthReportKey = healthReportKey;
-    this._searchPurpose = searchPurpose;
     this._isPrivateEngine = false;
 
     let tableID = idPrefix + "searchSuggestionTable";
@@ -288,7 +284,6 @@ this.ContentSearchUIController = (function () {
         engineName: this.selectedEngineName,
         searchString: searchTerms,
         healthReportKey: this._healthReportKey,
-        searchPurpose: this._searchPurpose,
         originalEvent: {
           shiftKey: aEvent.shiftKey,
           ctrlKey: aEvent.ctrlKey,
