@@ -318,35 +318,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 #undef ERROR_EVENT
 #undef FORWARDED_EVENT
 #undef EVENT
-  mozilla::dom::Element* GetOffsetParent() {
-    mozilla::CSSIntRect rcFrame;
-    return GetOffsetRect(rcFrame);
-  }
-  int32_t OffsetTop() {
-    mozilla::CSSIntRect rcFrame;
-    GetOffsetRect(rcFrame);
-
-    return rcFrame.y;
-  }
-  int32_t OffsetLeft() {
-    mozilla::CSSIntRect rcFrame;
-    GetOffsetRect(rcFrame);
-
-    return rcFrame.x;
-  }
-  int32_t OffsetWidth() {
-    mozilla::CSSIntRect rcFrame;
-    GetOffsetRect(rcFrame);
-
-    return rcFrame.Width();
-  }
-  int32_t OffsetHeight() {
-    mozilla::CSSIntRect rcFrame;
-    GetOffsetRect(rcFrame);
-
-    return rcFrame.Height();
-  }
-
   
   
   
@@ -962,14 +933,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
   virtual already_AddRefed<mozilla::EditorBase> GetAssociatedEditor();
-
-  
-
-
-
-
-
-  mozilla::dom::Element* GetOffsetRect(mozilla::CSSIntRect& aRect);
 
   
 

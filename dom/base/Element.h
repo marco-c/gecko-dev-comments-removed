@@ -1613,6 +1613,38 @@ class Element : public FragmentOrElement {
 
   MOZ_CAN_RUN_SCRIPT double CurrentCSSZoom();
 
+  Element* GetOffsetParent() {
+    CSSIntRect rcFrame;
+    return GetOffsetRect(rcFrame);
+  }
+  int32_t OffsetTop() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.y;
+  }
+  int32_t OffsetLeft() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.x;
+  }
+  int32_t OffsetWidth() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.Width();
+  }
+  int32_t OffsetHeight() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.Height();
+  }
+  
+
+
+
+
+
+  Element* GetOffsetRect(CSSIntRect& aRect);
+
   
   
   
