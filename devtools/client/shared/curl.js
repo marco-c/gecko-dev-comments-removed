@@ -422,9 +422,8 @@ const CurlUtils = {
     }
 
     
-    const winSpecialCharsRegEx = /([&\|])/g;
-
-    if (/[^\x20-\x7E]|\'/.test(str)) {
+    
+    if (/[^\x20-\x7E]|!|\'/.test(str)) {
       
       return (
         "$'" +
@@ -434,14 +433,13 @@ const CurlUtils = {
           .replace(/\n/g, "\\n")
           .replace(/\r/g, "\\r")
           .replace(/!/g, "\\041")
-          .replace(winSpecialCharsRegEx, "^$1")
           .replace(/[^\x20-\x7E]/g, escapeCharacter) +
         "'"
       );
     }
 
     
-    return "'" + str.replace(winSpecialCharsRegEx, "^$1") + "'";
+    return "'" + str + "'";
   },
 
   
