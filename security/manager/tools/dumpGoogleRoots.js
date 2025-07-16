@@ -14,6 +14,7 @@
 
 
 Services.prefs.setBoolPref("network.process.enabled", false);
+Services.prefs.setBoolPref("network.xhr.block_sync_system_requests", false);
 
 function downloadRoots() {
   let req = new XMLHttpRequest();
