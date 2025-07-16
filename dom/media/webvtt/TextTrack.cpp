@@ -277,9 +277,10 @@ void TextTrack::NotifyCueActiveStateChanged(TextTrackCue* aCue) {
   }
 }
 
-void TextTrack::GetOverlappingCurrentAndOtherCues(
-    CueBuckets* aCurrentCues, CueBuckets* aOtherCues,
-    const media::TimeInterval& aInterval) const {
+void TextTrack::GetOverlappingCurrentOtherAndMissCues(
+    CueBuckets* aCurrentCues, CueBuckets* aOtherCues, CueBuckets* aMissCues,
+    const media::TimeInterval& aInterval,
+    const Maybe<double>& aLastTime) const {
   const HTMLMediaElement* mediaElement = GetMediaElement();
   if (!mediaElement || Mode() == TextTrackMode::Disabled ||
       mCueList->IsEmpty()) {
@@ -328,13 +329,17 @@ void TextTrack::GetOverlappingCurrentAndOtherCues(
       
       
       
+      
       if (cueEnd < cueStart) {
         
         
         if (aInterval.Contains(media::TimeUnit::FromSeconds(cueStart))) {
-          WEBVTT_LOG("[Negative duration] Add cue %p [%f:%f] to other cue list",
-                     cue, cueStart, cueEnd);
+          WEBVTT_LOG(
+              "[Negative duration] Add cue %p [%f:%f] to other cues and "
+              "missing cues list",
+              cue, cueStart, cueEnd);
           aOtherCues->AddCue(cue);
+          aMissCues->AddCue(cue);
         }
         continue;
       }
@@ -346,6 +351,11 @@ void TextTrack::GetOverlappingCurrentAndOtherCues(
       }
       WEBVTT_LOG("Add cue %p [%f:%f] to other cue list", cue, cueStart, cueEnd);
       aOtherCues->AddCue(cue);
+      if (aLastTime && cueStart >= *aLastTime && cueEnd <= playbackTime) {
+        WEBVTT_LOG("Add cue %p [%f:%f] to missing cues list", cue, cueStart,
+                   cueEnd);
+        aMissCues->AddCue(cue);
+      }
     }
   }
 }

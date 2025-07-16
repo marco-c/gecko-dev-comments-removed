@@ -141,9 +141,12 @@ class TextTrack final : public DOMEventTargetHelper {
   
   
   
-  void GetOverlappingCurrentAndOtherCues(
-      CueBuckets* aCurrentCues, CueBuckets* aOtherCues,
-      const media::TimeInterval& aInterval) const;
+  
+  
+  void GetOverlappingCurrentOtherAndMissCues(
+      CueBuckets* aCurrentCues, CueBuckets* aOtherCues, CueBuckets* aMissCues,
+      const media::TimeInterval& aInterval,
+      const Maybe<double>& aLastTime) const;
 
   void ClearAllCues();
 
