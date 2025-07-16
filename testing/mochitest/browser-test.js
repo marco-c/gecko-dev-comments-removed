@@ -1006,6 +1006,8 @@ Tester.prototype = {
         );
       }
 
+      this.PromiseTestUtils.assertNoUncaughtRejections();
+
       
       let name = this.currentTest.path;
       name = name.slice(name.lastIndexOf("/") + 1);
