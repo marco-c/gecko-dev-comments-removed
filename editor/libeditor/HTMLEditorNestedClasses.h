@@ -529,12 +529,20 @@ class MOZ_STACK_CLASS HTMLEditor::AutoListElementCreator final {
 
 class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
  public:
-  explicit AutoInsertParagraphHandler() = default;
+  AutoInsertParagraphHandler() = delete;
   AutoInsertParagraphHandler(const AutoInsertParagraphHandler&) = delete;
   AutoInsertParagraphHandler(AutoInsertParagraphHandler&&) = delete;
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run(
-      HTMLEditor& aHTMLEditor, const Element& aEditingHost);
+  MOZ_CAN_RUN_SCRIPT explicit AutoInsertParagraphHandler(
+      HTMLEditor& aHTMLEditor, const Element& aEditingHost)
+      : mHTMLEditor(aHTMLEditor),
+        mEditingHost(aEditingHost),
+        mDefaultParagraphSeparatorTagName(
+            aHTMLEditor.DefaultParagraphSeparatorTagName()),
+        mDefaultParagraphSeparator(aHTMLEditor.GetDefaultParagraphSeparator()) {
+  }
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult> Run();
 
  private:
   
@@ -552,12 +560,10 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
-  SplitParagraphWithTransaction(HTMLEditor& aHTMLEditor, Element& aParentDivOrP,
+  SplitParagraphWithTransaction(Element& aParentDivOrP,
                                 const EditorDOMPoint& aStartOfRightNode,
-                                dom::HTMLBRElement* aMayBecomeVisibleBRElement,
-                                const Element& aEditingHost);
+                                dom::HTMLBRElement* aMayBecomeVisibleBRElement);
 
   
 
@@ -576,11 +582,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
-  HandleInParagraph(HTMLEditor& aHTMLEditor, Element& aParentDivOrP,
-                    const EditorDOMPoint& aCandidatePointToSplit,
-                    const Element& aEditingHost);
+  HandleInParagraph(Element& aParentDivOrP,
+                    const EditorDOMPoint& aCandidatePointToSplit);
 
   
 
@@ -595,7 +599,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertParagraphResult, nsresult>
-  HandleInHeadingElement(HTMLEditor& aHTMLEditor, Element& aHeadingElement,
+  HandleInHeadingElement(Element& aHeadingElement,
                          const EditorDOMPoint& aPointToSplit);
 
   
@@ -608,11 +612,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertParagraphResult, nsresult>
-  HandleInListItemElement(HTMLEditor& aHTMLEditor, Element& aListItemElement,
-                          const EditorDOMPoint& aPointToSplit,
-                          const Element& aEditingHost);
+  HandleInListItemElement(Element& aListItemElement,
+                          const EditorDOMPoint& aPointToSplit);
 
   
 
@@ -623,7 +625,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  HandleInMailCiteElement(HTMLEditor& aHTMLEditor, Element& aMailCiteElement,
+  HandleInMailCiteElement(Element& aMailCiteElement,
                           const EditorDOMPoint& aPointToSplit);
 
   
@@ -636,34 +638,29 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  InsertBRElement(HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToBreak,
-                  const Element& aEditingHost);
+  InsertBRElement(const EditorDOMPoint& aPointToBreak);
 
   
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT bool ShouldInsertLineBreakInstead(
-      HTMLEditor& aHTMLEditor, const Element* aEditableBlockElement,
-      const EditorDOMPoint& aCandidatePointToSplit,
-      ParagraphSeparator aDefaultParagraphSeparator,
-      const Element& aEditingHost);
+      const Element* aEditableBlockElement,
+      const EditorDOMPoint& aCandidatePointToSplit);
 
   
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertBRElementIfEmptyBlockElement(
-      HTMLEditor& aHTMLEditor, Element& aMaybeBlockElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  InsertBRElementIfEmptyBlockElement(Element& aMaybeBlockElement);
 
   
 
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
-  SplitMailCiteElement(HTMLEditor& aHTMLEditor,
-                       const EditorDOMPoint& aPointToSplit,
+  SplitMailCiteElement(const EditorDOMPoint& aPointToSplit,
                        Element& aMailCiteElement);
 
   
@@ -673,8 +670,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MaybeInsertPaddingBRElementToInlineMailCiteElement(
-      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsertBRElement,
-      Element& aMailCiteElement);
+      const EditorDOMPoint& aPointToInsertBRElement, Element& aMailCiteElement);
 
   
 
@@ -690,9 +686,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret(
-      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCandidatePointToPutCaret,
+      const EditorDOMPoint& aCandidatePointToPutCaret,
       const Element* aBlockElementShouldHaveCaret,
       const SuggestCaretOptions& aOptions);
 
@@ -700,9 +696,14 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-  [[nodiscard]] static EditorDOMPoint GetBetterSplitPointToAvoidToContinueLink(
-      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCandidatePointToSplit,
+  [[nodiscard]] EditorDOMPoint GetBetterSplitPointToAvoidToContinueLink(
+      const EditorDOMPoint& aCandidatePointToSplit,
       const Element& aElementToSplit);
+
+  MOZ_KNOWN_LIVE HTMLEditor& mHTMLEditor;
+  MOZ_KNOWN_LIVE const Element& mEditingHost;
+  MOZ_KNOWN_LIVE nsStaticAtom& mDefaultParagraphSeparatorTagName;
+  const ParagraphSeparator mDefaultParagraphSeparator;
 };
 
 
