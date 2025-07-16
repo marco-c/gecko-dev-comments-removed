@@ -99,9 +99,28 @@ enum RejectFunctionSlots {
   RejectFunctionSlot_ResolveFunction,
 };
 
+
+
+
 enum PromiseCombinatorElementFunctionSlots {
-  PromiseCombinatorElementFunctionSlot_Data = 0,
-  PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
+  
+  
+  
+  
+  
+  
+  
+  
+  PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc = 0,
+
+  
+  
+  
+  
+  
+  
+  
+  PromiseCombinatorElementFunctionSlot_Data
 };
 
 enum ReactionJobSlots {
@@ -4047,16 +4066,20 @@ static JSFunction* NewPromiseCombinatorElementFunction(
     return nullptr;
   }
 
-  fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                      ObjectValue(*dataHolder));
+  
+  
   if (maybeResolveFunc.isObject()) {
     fn->setExtendedSlot(
         PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
         maybeResolveFunc);
+    fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
+                        NullValue());
   } else {
     fn->setExtendedSlot(
         PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
         Int32Value(index));
+    fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
+                        ObjectValue(*dataHolder));
   }
   return fn;
 }
@@ -4095,23 +4118,29 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   
   JSFunction* fn = &args.callee().as<JSFunction>();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   constexpr size_t indexOrResolveFuncSlot =
       PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc;
   if (fn->getExtendedSlot(indexOrResolveFuncSlot).isObject()) {
+    
+    
     Value slotVal = fn->getExtendedSlot(indexOrResolveFuncSlot);
     fn = &slotVal.toObject().as<JSFunction>();
   }
   MOZ_RELEASE_ASSERT(fn->getExtendedSlot(indexOrResolveFuncSlot).isInt32());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
   const Value& dataVal =
       fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
   if (dataVal.isUndefined()) {
@@ -4492,19 +4521,6 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   Rooted<PromiseCombinatorElements> values(cx);
   if (!GetPromiseCombinatorElements(cx, data, &values)) {
     return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!values.unwrappedArray()->getDenseElement(index).isUndefined()) {
-    args.rval().setUndefined();
-    return true;
   }
 
   
