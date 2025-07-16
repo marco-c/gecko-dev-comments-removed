@@ -3681,6 +3681,16 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   if (!StaticPrefs::network_lna_enabled()) {
     return true;
   }
+
+  
+  
+  {
+    mozilla::MutexAutoLock lock(mLock);
+    if (mTargetIpAddressSpace == nsILoadInfo::Unknown) {
+      mTargetIpAddressSpace = aTargetIpAddressSpace;
+    }
+  }
+
   
   
   
@@ -3711,12 +3721,6 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   }
 
   return true;
-}
-
-void nsHttpTransaction::SetTargetIpAddressSpace(
-    nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) {
-  mozilla::MutexAutoLock lock(mLock);
-  mTargetIpAddressSpace = aTargetIpAddressSpace;
 }
 
 }  

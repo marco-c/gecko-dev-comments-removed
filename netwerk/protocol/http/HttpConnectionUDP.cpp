@@ -212,6 +212,9 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
   NetAddr peerAddr;
   if (!transCI->UsingProxy() && hTrans &&
       NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+    
+    
+    
     if (!hTrans->AllowedToConnectToIpAddressSpace(
             peerAddr.GetIpAddressSpace())) {
       

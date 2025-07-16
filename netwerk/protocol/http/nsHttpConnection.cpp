@@ -660,7 +660,6 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
     
     
     NetAddr peerAddr;
-
     if (NS_SUCCEEDED(GetPeerAddr(&peerAddr)) &&
         !httpTrans->AllowedToConnectToIpAddressSpace(
             peerAddr.GetIpAddressSpace())) {
