@@ -13,6 +13,10 @@ class FakeIPProtectionPanelElement {
     this.isConnected = false;
   }
 
+  requestUpdate() {
+    
+  }
+
   closest() {
     return {
       state: "open",
