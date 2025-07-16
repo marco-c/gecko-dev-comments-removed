@@ -4,9 +4,6 @@
 template<class T>
 class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { T mForceInst; }; 
 
-template<class T>
-struct MOZ_NEEDS_MEMMOVABLE_TYPE PtrMover { T* mForceInst; };
-
 namespace std {
 
 
@@ -50,35 +47,14 @@ struct has_trivial_move {
   has_trivial_move(const has_trivial_move&) = default;
   has_trivial_move& operator=(const has_trivial_move&) = default;
 };
-
-template<class T>
-struct default_delete {
-  void operator()( T* ptr ) { delete ptr; }
-};
-
-template <typename T, typename D=default_delete<T>>
-struct unique_ptr { 
-  T * ptr;
-  D del;
-  unique_ptr() = default;
-  unique_ptr(T *p);
-  unique_ptr(unique_ptr const&) = delete;
-  unique_ptr(unique_ptr &&);
-  ~unique_ptr();
-};
 }
 
 class HasString { std::string m; }; 
 
-template<class T>
-struct custom_deleter : std::default_delete<T> {
-  std::string m = {};
-};
-
 MOZ_RUNINIT  static Mover<std::string> bad; 
 MOZ_RUNINIT  static Mover<HasString> bad_mem; 
 static Mover<std::pair<bool, int>> good;
-MOZ_RUNINIT static Mover<std::pair<bool, std::string>> not_good; 
+MOZ_RUNINIT  static Mover<std::pair<bool, std::string>> not_good; 
 
 MOZ_RUNINIT  static Mover<std::has_nontrivial_dtor> nontrivial_dtor; 
 static Mover<std::has_nontrivial_copy> nontrivial_copy; 
@@ -93,13 +69,3 @@ static Mover<std::pair<bool, std::has_nontrivial_move>> pair_nontrivial_move;
 static Mover<std::pair<bool, std::has_trivial_dtor>> pair_trivial_dtor;
 static Mover<std::pair<bool, std::has_trivial_copy>> pair_trivial_copy;
 static Mover<std::pair<bool, std::has_trivial_move>> pair_trivial_move;
-
-MOZ_RUNINIT static Mover<std::unique_ptr<int>> a_good_unique_ptr;
-
-
-MOZ_RUNINIT static Mover<std::unique_ptr<std::string>> another_good_unique_ptr;
-MOZ_RUNINIT static Mover<std::unique_ptr<std::string, custom_deleter<std::string>>> bad_unique_ptr; 
-
-struct Fwd;
-
-static PtrMover<std::unique_ptr<Fwd>> bad_fwd_unique_ptr;
