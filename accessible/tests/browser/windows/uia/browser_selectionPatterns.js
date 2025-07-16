@@ -152,7 +152,7 @@ addUiaTask(SNIPPET, async function testSelection(browser) {
 
 
 
-addUiaTask(SNIPPET, async function testSelection() {
+addUiaTask(SNIPPET, async function testSelection(browser) {
   await definePyVar("doc", `getDocUia()`);
   await testPatternAbsent("selectList", "SelectionItem");
   await testSelectionItemProps("sl1", true, "selectList");
@@ -186,8 +186,25 @@ addUiaTask(SNIPPET, async function testSelection() {
   ok(true, "sm3 got ElementRemovedFromSelection event");
   await testSelectionItemProps("sm3", false, "selectMulti");
 
-  await testSelectionItemProps("t1", false, "tablist");
   await testSelectionItemProps("t2", true, "tablist");
+  await testSelectionItemProps("t1", false, "tablist");
+  
+  if (gIsUiaEnabled) {
+    info("Calling Select on t1");
+    
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("t1").addEventListener("click", evt => {
+        evt.target.ariaSelected = "true";
+        content.document.getElementById("t2").ariaSelected = "false";
+      });
+    });
+    await setUpWaitForUiaEvent("SelectionItem_ElementSelected", "t1");
+    await runPython(`pattern.Select()`);
+    await waitForUiaEvent();
+    ok(true, "t1 got ElementSelected event");
+    await testSelectionItemProps("t1", true, "tablist");
+    await testSelectionItemProps("t2", false, "tablist");
+  }
 
   
   
