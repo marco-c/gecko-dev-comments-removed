@@ -46,7 +46,13 @@ static constexpr nsAttrValue::EnumTableEntry kButtonTypeTable[] = {
 };
 
 
-static constexpr const nsAttrValue::EnumTableEntry* kButtonDefaultType =
+
+static constexpr const nsAttrValue::EnumTableEntry* kButtonButtonType =
+    &kButtonTypeTable[0];
+
+
+
+static constexpr const nsAttrValue::EnumTableEntry* kButtonSubmitType =
     &kButtonTypeTable[2];
 
 
@@ -55,7 +61,7 @@ HTMLButtonElement::HTMLButtonElement(
     FromParser aFromParser)
     : nsGenericHTMLFormControlElementWithState(
           std::move(aNodeInfo), aFromParser,
-          FormControlType(kButtonDefaultType->value)),
+          FormControlType(kButtonSubmitType->value)),
       mDisabledChanged(false),
       mInInternalActivate(false),
       mInhibitStateRestoration(aFromParser & FROM_PARSER_FRAGMENT) {
@@ -108,8 +114,28 @@ void HTMLButtonElement::GetFormMethod(nsAString& aFormMethod) {
   GetEnumAttr(nsGkAtoms::formmethod, "", kFormDefaultMethod->tag, aFormMethod);
 }
 
+bool HTMLButtonElement::InAutoState() const {
+  const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::type);
+  return (!attr || attr->Type() != nsAttrValue::eEnum);
+}
+
+
+const nsAttrValue::EnumTableEntry* HTMLButtonElement::ResolveAutoState() const {
+  
+  
+  
+  
+  if (StaticPrefs::dom_element_commandfor_enabled() &&
+      (HasAttr(nsGkAtoms::commandfor) || HasAttr(nsGkAtoms::command))) {
+    return kButtonButtonType;
+  }
+  return kButtonSubmitType;
+}
+
 void HTMLButtonElement::GetType(nsAString& aType) {
-  GetEnumAttr(nsGkAtoms::type, kButtonDefaultType->tag, aType);
+  aType.Truncate();
+  GetEnumAttr(nsGkAtoms::type, ResolveAutoState()->tag, aType);
+  MOZ_ASSERT(aType.Length() > 0);
 }
 
 int32_t HTMLButtonElement::TabIndexDefault() { return 0; }
@@ -131,8 +157,7 @@ bool HTMLButtonElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                        nsAttrValue& aResult) {
   if (aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::type) {
-      return aResult.ParseEnumValue(aValue, kButtonTypeTable, false,
-                                    kButtonDefaultType);
+      return aResult.ParseEnumValue(aValue, kButtonTypeTable, false);
     }
 
     if (aAttribute == nsGkAtoms::formmethod) {
@@ -303,9 +328,7 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
       return;
     }
     
-    
-    
-    if (!HasAttr(nsGkAtoms::type)) {
+    if (InAutoState()) {
       return;
     }
   }
@@ -456,14 +479,28 @@ void HTMLButtonElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                      bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::type) {
-      if (aValue) {
+      if (aValue && aValue->Type() == nsAttrValue::eEnum) {
         mType = FormControlType(aValue->GetEnumValue());
       } else {
-        mType = FormControlType(kButtonDefaultType->value);
+        mType = FormControlType(ResolveAutoState()->value);
       }
     }
 
-    if (aName == nsGkAtoms::type || aName == nsGkAtoms::disabled) {
+    
+    
+    if (StaticPrefs::dom_element_commandfor_enabled() &&
+        (aName == nsGkAtoms::command || aName == nsGkAtoms::commandfor)) {
+      if (InAutoState()) {
+        mType = FormControlType(ResolveAutoState()->value);
+      }
+    }
+
+    MOZ_ASSERT(mType == FormControlType::ButtonButton ||
+               mType == FormControlType::ButtonSubmit ||
+               mType == FormControlType::ButtonReset);
+
+    if (aName == nsGkAtoms::type || aName == nsGkAtoms::disabled ||
+        aName == nsGkAtoms::command || aName == nsGkAtoms::commandfor) {
       if (aName == nsGkAtoms::disabled) {
         
         
