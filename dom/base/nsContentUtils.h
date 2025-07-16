@@ -896,6 +896,10 @@ class nsContentUtils {
  public:
   
 
+  static mozilla::Maybe<double> ParseHTMLFloatingPointNumber(const nsAString&);
+
+  
+
 
 
 
