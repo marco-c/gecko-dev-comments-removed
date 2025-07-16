@@ -9,14 +9,6 @@ const {
   webExtensionInspectedWindowSpec,
 } = require("resource://devtools/shared/specs/addon/webextension-inspected-window.js");
 
-ChromeUtils.defineESModuleGetters(
-  this,
-  {
-    ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
-  },
-  { global: "contextual" }
-);
-
 const {
   DevToolsServer,
 } = require("resource://devtools/server/devtools-server.js");
@@ -155,7 +147,7 @@ function extensionAllowedToInspectPrincipal(
     return true;
   }
 
-  if (ExtensionUtils.isExtensionUrl(principalURI)) {
+  if (principalURI.schemeIs("moz-extension")) {
     
     
     
