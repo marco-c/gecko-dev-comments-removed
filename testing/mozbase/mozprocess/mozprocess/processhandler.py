@@ -1096,11 +1096,22 @@ class ProcessReader:
 
     def _read_stream(self, stream, queue, callback):
         sentinel = "" if isinstance(stream, io.TextIOBase) else b""
-        for line in iter(stream.readline, sentinel):
-            queue.put((line, callback))
+        try:
+            for line in iter(stream.readline, sentinel):
+                queue.put((line, callback))
+        except ValueError as e:
+            if "I/O operation on closed file" in str(e):
+                
+                pass
+            else:
+                raise
         
         queue.put((b"", None))
-        stream.close()
+        try:
+            stream.close()
+        except ValueError:
+            
+            pass
 
     def start(self, proc):
         queue = Queue()
