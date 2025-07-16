@@ -171,6 +171,8 @@ class GeckoInstance:
         
         "signon.rememberSignons": False,
         
+        
+        "termsofuse.bypassNotification": True,
         "toolkit.startup.max_resumed_crashes": -1,
         
         "toolkit.telemetry.server": "https://%(server)s/telemetry-dummy/",

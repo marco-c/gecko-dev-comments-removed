@@ -1760,6 +1760,27 @@ pref("browser.newtab.preload", true);
 #endif
 
 
+
+
+pref("termsofuse.acceptedVersion", 0);
+
+pref("termsofuse.acceptedDate", "0");
+
+
+
+pref("termsofuse.currentVersion", 4);
+
+
+pref("termsofuse.minimumVersion", 4);
+
+
+#ifdef MOZILLA_OFFICIAL
+  pref("termsofuse.bypassNotification", false);
+#else
+  pref("termsofuse.bypassNotification", true);
+#endif
+
+
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.enabled", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-a", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-b", false);

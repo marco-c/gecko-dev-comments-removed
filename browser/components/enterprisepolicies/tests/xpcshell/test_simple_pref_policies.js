@@ -1178,8 +1178,7 @@ const POLICIES_TESTS = [
       SkipTermsOfUse: true,
     },
     lockedPrefs: {
-      "datareporting.policy.dataSubmissionPolicyAcceptedVersion": 999,
-      
+      "termsofuse.acceptedVersion": 999,
       
       
     },

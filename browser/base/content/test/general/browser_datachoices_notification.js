@@ -97,33 +97,10 @@ async function triggerInfoBar(expectedTimeoutMs) {
   showInfobarCallback();
 }
 
-var checkInfobarButton = async function (aNotification) {
-  
-  let buttons = aNotification.buttonContainer.getElementsByTagName("button");
-  Assert.equal(
-    buttons.length,
-    1,
-    "There is 1 button in the data reporting notification."
-  );
-  let button = buttons[0];
-
-  let openPrefsPromise = BrowserTestUtils.waitForLocationChange(
-    gBrowser,
-    "about:preferences#privacy"
-  );
-
-  
-  button.click();
-
-  
-  await openPrefsPromise;
-};
-
 add_setup(async function () {
   const isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
   const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, true);
   const currentPolicyVersion = Preferences.get(PREF_CURRENT_POLICY_VERSION, 1);
-  const TOSEnabled = Preferences.get(PREF_TOS_ENABLED, false);
 
   
   registerCleanupFunction(() => {
@@ -131,7 +108,10 @@ add_setup(async function () {
     Preferences.set(PREF_BYPASS_NOTIFICATION, bypassNotification);
     Preferences.set(PREF_CURRENT_POLICY_VERSION, currentPolicyVersion);
     Preferences.reset(PREF_TELEMETRY_LOG_LEVEL);
-    Preferences.set(PREF_TOS_ENABLED, TOSEnabled);
+    Preferences.reset(PREF_ACCEPTED_POLICY_VERSION);
+    Preferences.reset(PREF_ACCEPTED_POLICY_DATE);
+    Preferences.reset(PREF_TOS_ENABLED);
+    Preferences.reset("browser.policies.alternatePath");
     return closeAllNotifications();
   });
 
@@ -165,7 +145,7 @@ function assertCoherentInitialState() {
     "No date should be set on init."
   );
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "User not notified about datareporting policy."
   );
 }
@@ -201,11 +181,13 @@ add_task(async function test_single_window() {
     "User should be allowed to upload now."
   );
 
-  await promiseNextTick();
-  let promiseClosed = promiseWaitForNotificationClose(
-    gNotificationBox.currentNotification
-  );
-  await checkInfobarButton(gNotificationBox.currentNotification);
+  
+  
+  let notifications = gNotificationBox.allNotifications;
+  Assert.equal(notifications.length, 1, "One notification present to close");
+  let notification = notifications[0];
+  let promiseClosed = promiseWaitForNotificationClose(notification);
+  notification.close();
   await promiseClosed;
 
   Assert.equal(
@@ -217,7 +199,7 @@ add_task(async function test_single_window() {
   
   Assert.ok(TelemetryReportingPolicy.canUpload());
   Assert.equal(
-    TelemetryReportingPolicy.testIsUserNotified(),
+    TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     true,
     "User notified about datareporting policy."
   );

@@ -9,6 +9,7 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
+  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
@@ -292,12 +293,42 @@ async function loadAddonManager(...args) {
 
   
   
-  const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"]);
-  AddonTestUtils.registerDirectory("XREAppFeat", distroDir);
-  await AddonTestUtils.overrideBuiltIns({
-    system: ["tel-system-xpi@tests.mozilla.org"],
-  });
-  return AddonTestUtils.promiseStartupManager();
+
+  
+  let scopes = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_APPLICATION;
+  Services.prefs.setIntPref("extensions.enabledScopes", scopes);
+
+  
+  
+  Services.prefs.setBoolPref(
+    "extensions.skipInstallDefaultThemeForTests",
+    true
+  );
+
+  
+  
+  const addon_id = "tel-system-xpi@tests.mozilla.org";
+  const addon_version = "1.0";
+  const addon_res_url_path = "telemetry-test-builtin-addon";
+  
+  
+  
+  const xpi = do_get_file("system.xpi");
+  let base = Services.io.newURI(`jar:file:${xpi.path}!/`);
+  let resProto = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
+  resProto.setSubstitution(addon_res_url_path, base);
+  let builtins = [
+    {
+      addon_id,
+      addon_version,
+      res_url: `resource://${addon_res_url_path}/`,
+    },
+  ];
+  await AddonTestUtils.overrideBuiltIns({ builtins });
+  await AddonTestUtils.promiseStartupManager();
+  return { builtins };
 }
 
 function finishAddonManagerStartup() {
@@ -496,6 +527,17 @@ function setEmptyPrefWatchlist() {
   );
 }
 
+
+
+function maybeUnlockAppUpdateChannelPref() {
+  if (Services.prefs.getDefaultBranch("").prefIsLocked("app.update.channel")) {
+    Services.prefs.getDefaultBranch("").unlockPref("app.update.channel");
+    registerCleanupFunction(() => {
+      Services.prefs.getDefaultBranch("").lockPref("app.update.channel");
+    });
+  }
+}
+
 if (runningInParent) {
   
   Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");
@@ -582,6 +624,3 @@ const DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC =
 const PLUGIN2_NAME = "Quicktime";
 const PLUGIN2_DESC = "A mock Quicktime plugin";
 const PLUGIN2_VERSION = "2.3";
-
-
-const SYSTEM_ADDON_INSTALL_DATE = Date.now();
