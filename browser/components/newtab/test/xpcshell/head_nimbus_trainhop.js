@@ -46,6 +46,10 @@ NimbusTestUtils.init(this);
 const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
 Services.prefs.setStringPref(TRAINHOP_XPI_BASE_URL_PREF, "http://example.com/");
 
+
+AddonTestUtils.usePrivilegedSignatures = addonId =>
+  addonId === BUILTIN_ADDON_ID ? "system" : false;
+
 add_setup(async function nimbusTestsSetup() {
   const { cleanup: nimbusTestCleanup } = await NimbusTestUtils.setupTest();
   registerCleanupFunction(nimbusTestCleanup);
