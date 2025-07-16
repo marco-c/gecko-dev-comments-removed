@@ -581,22 +581,6 @@ function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function synthesizeTouch(
   aTarget,
   aOffsetX,
@@ -877,6 +861,7 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
 
 
 
+
 function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
   let utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
@@ -957,6 +942,10 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
 
   const modifiers = _parseModifiers(aEvent, aWindow);
 
+  const asyncOption = aEvent.asyncEnabled
+    ? utils.ASYNC_ENABLED
+    : utils.ASYNC_DISABLED;
+
   const args = [
     idArray,
     leftArray,
@@ -969,6 +958,7 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
     tiltYArray,
     twistArray,
     modifiers,
+    asyncOption,
   ];
 
   const sender =
@@ -994,6 +984,14 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
     aWindow
   );
 }
+
+
+
+
+
+
+
+
 function synthesizeTouchAtCenter(aTarget, aEvent = {}, aWindow = window) {
   var rect = aTarget.getBoundingClientRect();
   synthesizeTouchAtPoint(
