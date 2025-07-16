@@ -2,21 +2,20 @@
 
 
 
-
 'use strict';
+
 
 
 
 promise_test(async t => {
   
+  assert_implements_optional(await Writer.availability() == 'downloadable');
+  assert_false(navigator.userActivation.isActive);
   await promise_rejects_dom(t, 'NotAllowedError', Writer.create());
-
-  
-  await createWriter();
+  await test_driver.bless('Writer.create', Writer.create);
 
   
   assert_equals(await Writer.availability(), 'available');
-
-  
+  assert_false(navigator.userActivation.isActive);
   await Writer.create();
-}, 'Writer.create() requires user activation when availability is "downloadable"');
+}, 'Create requires user activation when availability is "downloadable"');

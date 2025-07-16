@@ -2,21 +2,20 @@
 
 
 
-
 'use strict';
+
 
 
 
 promise_test(async t => {
   
+  assert_implements_optional(await Summarizer.availability() == 'downloadable');
+  assert_false(navigator.userActivation.isActive);
   await promise_rejects_dom(t, 'NotAllowedError', Summarizer.create());
-
-  
-  await createSummarizer();
+  await test_driver.bless('Summarizer.create', Summarizer.create);
 
   
   assert_equals(await Summarizer.availability(), 'available');
-
-  
+  assert_false(navigator.userActivation.isActive);
   await Summarizer.create();
-}, 'Summarizer.create() requires user activation when availability is "downloadable"');
+}, 'Create requires user activation when availability is "downloadable"');

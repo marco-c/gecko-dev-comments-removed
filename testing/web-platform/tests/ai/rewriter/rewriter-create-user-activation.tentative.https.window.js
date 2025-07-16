@@ -2,21 +2,20 @@
 
 
 
-
 'use strict';
+
 
 
 
 promise_test(async t => {
   
+  assert_implements_optional(await Rewriter.availability() == 'downloadable');
+  assert_false(navigator.userActivation.isActive);
   await promise_rejects_dom(t, 'NotAllowedError', Rewriter.create());
-
-  
-  await createRewriter();
+  await test_driver.bless('Rewriter.create', Rewriter.create);
 
   
   assert_equals(await Rewriter.availability(), 'available');
-
-  
+  assert_false(navigator.userActivation.isActive);
   await Rewriter.create();
-}, 'Rewriter.create() requires user activation when availability is "downloadable"');
+}, 'Create requires user activation when availability is "downloadable"');
