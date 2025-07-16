@@ -63,5 +63,13 @@ if CONFIG["CC_TYPE"] == "clang-cl":
 else:
     WIN32_EXE_LDFLAGS += ["-municode"]
 
+
+
+
+
+if not CONFIG["MOZ_DEBUG"]:
+    WINCONSOLE = False
+
+
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Default Browser Agent")
