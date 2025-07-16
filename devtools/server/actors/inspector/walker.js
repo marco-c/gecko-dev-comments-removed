@@ -1176,8 +1176,16 @@ class WalkerActor extends Actor {
     
     
     const seenNodes = new Set();
-    for (const result of results) {
-      seenNodes.add(result.node);
+    for (const { node } of results) {
+      const isInlinedTextNode =
+        node.nodeType === Node.TEXT_NODE &&
+        node.parentElement &&
+        this.inlineTextChild(node.parentElement);
+
+      
+      
+      
+      seenNodes.add(isInlinedTextNode ? node.parentElement : node);
     }
 
     const nodeList = new NodeListActor(this, Array.from(seenNodes));
