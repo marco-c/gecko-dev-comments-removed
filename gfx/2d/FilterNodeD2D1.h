@@ -63,7 +63,6 @@ class FilterNodeD2D1 : public FilterNode {
  protected:
   friend class DrawTargetD2D1;
   friend class DrawTargetD2D;
-  friend class FilterNodeConvolveD2D1;
 
   void InitUnmappedProperties();
 
@@ -77,12 +76,50 @@ class FilterNodeD2D1 : public FilterNode {
   using FilterNode::SetInput;
 };
 
-class FilterNodeConvolveD2D1 : public FilterNodeD2D1 {
+
+
+
+
+
+
+
+
+
+
+
+class FilterNodeRenderRectD2D1 : public FilterNodeD2D1 {
+ public:
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(FilterNodeRenderRectD2D1, override)
+  FilterNodeRenderRectD2D1(ID2D1DeviceContext* aDC, FilterType aType);
+
+  void SetInput(uint32_t aIndex, FilterNode* aFilter) override;
+
+ protected:
+  virtual void UpdateChain() = 0;
+  void UpdateRenderRect();
+
+  RefPtr<ID2D1Effect> mExtendInputEffect;
+  RefPtr<ID2D1Effect> mBorderEffect;
+  IntRect mRenderRect;
+};
+
+class FilterNodeLightingD2D1 : public FilterNodeRenderRectD2D1 {
+ public:
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(FilterNodeLightingD2D1, override)
+  FilterNodeLightingD2D1(ID2D1DeviceContext* aDC, FilterType aType);
+
+  void SetAttribute(uint32_t aIndex, const IntRect& aValue) override;
+
+  ID2D1Effect* InputEffect() override;
+
+ private:
+  void UpdateChain() override;
+};
+
+class FilterNodeConvolveD2D1 : public FilterNodeRenderRectD2D1 {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(FilterNodeConvolveD2D1, override)
   explicit FilterNodeConvolveD2D1(ID2D1DeviceContext* aDC);
-
-  void SetInput(uint32_t aIndex, FilterNode* aFilter) override;
 
   void SetAttribute(uint32_t aIndex, uint32_t aValue) override;
   void SetAttribute(uint32_t aIndex, const IntSize& aValue) override;
@@ -95,16 +132,12 @@ class FilterNodeConvolveD2D1 : public FilterNodeD2D1 {
   using FilterNode::SetAttribute;
   using FilterNode::SetInput;
 
-  void UpdateChain();
+  void UpdateChain() override;
   void UpdateOffset();
-  void UpdateRenderRect();
 
-  RefPtr<ID2D1Effect> mExtendInputEffect;
-  RefPtr<ID2D1Effect> mBorderEffect;
   ConvolveMatrixEdgeMode mEdgeMode;
   IntPoint mTarget;
   IntSize mKernelSize;
-  IntRect mRenderRect;
 };
 
 class FilterNodeOpacityD2D1 : public FilterNodeD2D1 {
