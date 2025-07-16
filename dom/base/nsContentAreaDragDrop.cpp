@@ -339,45 +339,48 @@ void DragDataProducer::CreateLinkText(const nsAString& inURL,
 
 nsresult DragDataProducer::GetImageData(imgIContainer* aImage,
                                         imgIRequest* aRequest) {
+  MOZ_ASSERT(aImage);
+  MOZ_ASSERT(aRequest);
+
   nsCOMPtr<nsIURI> imgUri = aRequest->GetURI();
+  if (!imgUri) {
+    return NS_ERROR_FAILURE;
+  }
 
-  nsCOMPtr<nsIURL> imgUrl(do_QueryInterface(imgUri));
-  if (imgUrl) {
-    nsAutoCString spec;
-    nsresult rv = imgUrl->GetSpec(spec);
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoCString spec;
+  nsresult rv = imgUri->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    CopyUTF8toUTF16(spec, mImageSourceString);
+  
+  CopyUTF8toUTF16(spec, mImageSourceString);
 
-    nsCString mimeType;
-    aRequest->GetMimeType(getter_Copies(mimeType));
+  nsCString mimeType;
+  aRequest->GetMimeType(getter_Copies(mimeType));
 
-    nsAutoCString fileName;
-    aRequest->GetFileName(fileName);
+  nsAutoCString fileName;
+  aRequest->GetFileName(fileName);
 
 #if defined(XP_MACOSX)
-    
-    
-    
-    
-    CopyUTF8toUTF16(mimeType, mImageRequestMime);
-    CopyUTF8toUTF16(fileName, mImageDestFileName);
+  
+  
+  
+  
+  CopyUTF8toUTF16(mimeType, mImageRequestMime);
+  CopyUTF8toUTF16(fileName, mImageDestFileName);
 #else
-    nsCOMPtr<nsIMIMEService> mimeService = do_GetService("@mozilla.org/mime;1");
-    if (NS_WARN_IF(!mimeService)) {
-      return NS_ERROR_FAILURE;
-    }
+  nsCOMPtr<nsIMIMEService> mimeService = do_GetService("@mozilla.org/mime;1");
+  if (NS_WARN_IF(!mimeService)) {
+    return NS_ERROR_FAILURE;
+  }
 
-    CopyUTF8toUTF16(fileName, mImageDestFileName);
-    mimeService->ValidateFileNameForSaving(mImageDestFileName, mimeType,
-                                           nsIMIMEService::VALIDATE_DEFAULT,
-                                           mImageDestFileName);
+  CopyUTF8toUTF16(fileName, mImageDestFileName);
+  mimeService->ValidateFileNameForSaving(mImageDestFileName, mimeType,
+                                         nsIMIMEService::VALIDATE_DEFAULT,
+                                         mImageDestFileName);
 #endif
 
-    
-    mImage = aImage;
-  }
+  
+  mImage = aImage;
 
   return NS_OK;
 }
