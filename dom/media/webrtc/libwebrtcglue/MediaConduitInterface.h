@@ -72,13 +72,6 @@ class VideoRenderer {
 
 
 
-  virtual void FrameSizeChange(unsigned int width, unsigned int height) = 0;
-
-  
-
-
-
-
 
 
 
@@ -397,6 +390,7 @@ class VideoSessionConduit : public MediaSessionConduit {
   virtual Maybe<Ssrc> GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const = 0;
 
   virtual Maybe<gfx::IntSize> GetLastResolution() const = 0;
+  virtual AbstractCanonical<Maybe<gfx::IntSize>>* CanonicalReceivingSize() = 0;
 
   virtual void RequestKeyFrame(FrameTransformerProxy* aProxy) = 0;
   virtual void GenerateKeyFrame(const Maybe<std::string>& aRid,

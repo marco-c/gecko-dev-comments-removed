@@ -241,6 +241,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
         aEvent.Connect(mCallThread, this, &WebrtcVideoConduit::OnRtcpReceived);
   }
 
+  AbstractCanonical<Maybe<gfx::IntSize>>* CanonicalReceivingSize() override {
+    return &mCanonicalReceivingSize;
+  }
+
   const std::vector<webrtc::RtpSource>& GetUpstreamRtpSources() const override;
 
   void RequestKeyFrame(FrameTransformerProxy* aProxy) override;
@@ -286,10 +290,9 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   RefPtr<mozilla::VideoRenderer> mRenderer;
 
   
-  unsigned short mReceivingWidth = 0;
-
   
-  unsigned short mReceivingHeight = 0;
+  
+  const RefPtr<WebrtcCallWrapper> mCall;
 
   
   const nsCOMPtr<nsISerialEventTarget> mCallThread;
@@ -348,6 +351,13 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   } mControl;
 
   
+  Maybe<gfx::IntSize> mReceivingSize;
+
+  
+  
+  Canonical<Maybe<gfx::IntSize>> mCanonicalReceivingSize;
+
+  
   
   WatchManager<WebrtcVideoConduit> mWatchManager;
 
@@ -398,7 +408,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   webrtc::VideoSendStream* mSendStream = nullptr;
 
   
-  
   Maybe<gfx::IntSize> mLastSize;
 
   
@@ -441,11 +450,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
   
   uint16_t mJitterBufferTargetMs = 0;
-
-  
-  
-  
-  const RefPtr<WebrtcCallWrapper> mCall;
 
   
   

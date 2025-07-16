@@ -190,7 +190,7 @@ class MediaStreamTrackSource : public nsISupports {
   
 
 
-  virtual void GetSettings(dom::MediaTrackSettings& aResult) {};
+  virtual void GetSettings(dom::MediaTrackSettings& aResult) = 0;
 
   virtual void GetCapabilities(dom::MediaTrackCapabilities& aResult) {};
 
