@@ -6309,8 +6309,24 @@ void PresShell::ClearApproximatelyVisibleFramesList(
   mApproximatelyVisibleFrames.Clear();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void PresShell::MarkFramesInSubtreeApproximatelyVisible(
-    nsIFrame* aFrame, const nsRect& aRect, bool aRemoveOnly ) {
+    nsIFrame* aFrame, const nsRect& aRect, const nsRect& aPreserve3DRect,
+    bool aRemoveOnly ) {
   MOZ_DIAGNOSTIC_ASSERT(aFrame, "aFrame arg should be a valid frame pointer");
   MOZ_ASSERT(aFrame->PresShell() == this, "wrong presshell");
 
@@ -6384,8 +6400,6 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
     rect = scrollFrame->ExpandRectToNearlyVisible(rect);
   }
 
-  bool preserves3DChildren = aFrame->Extend3DContext();
-
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
       
@@ -6393,25 +6407,38 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
       
       
       MOZ_DIAGNOSTIC_ASSERT(child, "shouldn't have null values in child lists");
+
+      const bool extend3DContext = child->Extend3DContext();
+      const bool combines3DTransformWithAncestors =
+          (extend3DContext || child->IsTransformed()) &&
+          child->Combines3DTransformWithAncestors();
+
       nsRect r = rect - child->GetPosition();
-      if (!r.IntersectRect(r, child->InkOverflowRect())) {
-        continue;
-      }
-      if (child->IsTransformed()) {
-        
-        
-        if (!preserves3DChildren ||
-            !child->Combines3DTransformWithAncestors()) {
-          const nsRect overflow = child->InkOverflowRectRelativeToSelf();
-          nsRect out;
-          if (nsDisplayTransform::UntransformRect(r, overflow, child, &out)) {
-            r = out;
-          } else {
-            r.SetEmpty();
-          }
+      if (!combines3DTransformWithAncestors) {
+        if (!r.IntersectRect(r, child->InkOverflowRect())) {
+          continue;
         }
       }
-      MarkFramesInSubtreeApproximatelyVisible(child, r, aRemoveOnly);
+
+      nsRect newPreserve3DRect = aPreserve3DRect;
+      if (extend3DContext && !combines3DTransformWithAncestors) {
+        newPreserve3DRect = r;
+      }
+
+      if (child->IsTransformed()) {
+        if (combines3DTransformWithAncestors) {
+          r = newPreserve3DRect;
+        }
+        const nsRect overflow = child->InkOverflowRectRelativeToSelf();
+        nsRect out;
+        if (nsDisplayTransform::UntransformRect(r, overflow, child, &out)) {
+          r = out;
+        } else {
+          r.SetEmpty();
+        }
+      }
+      MarkFramesInSubtreeApproximatelyVisible(child, r, newPreserve3DRect,
+                                              aRemoveOnly);
     }
   }
 }
@@ -6452,7 +6479,7 @@ void PresShell::RebuildApproximateFrameVisibility(
     vis = vis.Intersect(visibleRect.valueOr(nsRect()));
   }
 
-  MarkFramesInSubtreeApproximatelyVisible(rootFrame, vis, aRemoveOnly);
+  MarkFramesInSubtreeApproximatelyVisible(rootFrame, vis, vis, aRemoveOnly);
 
   DecApproximateVisibleCount(oldApproximatelyVisibleFrames);
 }
