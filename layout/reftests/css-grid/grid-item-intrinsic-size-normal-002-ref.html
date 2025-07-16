@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>Reference: stretching intrinsic size items with 'normal' and/or 'stretch' and min/max-size, with Automatic Minimum Size clamping</title>
@@ -51,7 +51,7 @@ iframe {
 <div class="grid r wi"><iframe class="na"></iframe></div>
 <div class="grid r"><iframe class="na mxw2"></iframe></div>
 
-<pre></pre>
+<pre><!--min-height:20px--></pre>
 <div class="grid h22 r wi" style="margin-right:0"><iframe class="h20"></iframe></div>
 <div class="grid h22 r"><iframe class="mh20 mxw10"></iframe></div>
 <div class="grid h22 r wi"><iframe class="start mh20"></iframe></div>
@@ -61,7 +61,7 @@ iframe {
 <div class="grid h22 r wi"><iframe class="na mh20"></iframe></div>
 <div class="grid h22 r"><iframe class="na mh20 mxw10"></iframe></div>
 
-<pre></pre>
+<pre><!--min-height:0--></pre>
 <div class="grid r wi"><iframe class="mh0"></iframe></div>
 <div class="grid r"><iframe class="mh0 mxw10"></iframe></div>
 <div class="grid r wi"><iframe class="start mh0"></iframe></div>
@@ -71,7 +71,7 @@ iframe {
 <div class="grid r wi"><iframe class="na mh0"></iframe></div>
 <div class="grid r"><iframe class="na mh0 mxw2"></iframe></div>
 
-<pre></pre>
+<pre><!----></pre>
 
 <div class="grid w4"><iframe></iframe></div>
 <div class="grid w4"><iframe class="mxw2"></iframe></div>
@@ -82,7 +82,7 @@ iframe {
 <div class="grid w4"><iframe class="na"></iframe></div>
 <div class="grid w4"><iframe class="na mxw2"></iframe></div>
 
-<pre></pre>
+<pre><!--min-width:20px--></pre>
 <div class="grid w22"><iframe class="mw20"></iframe></div>
 <div class="grid w22"><iframe class="mw20 mxh10"></iframe></div>
 <div class="grid w22"><iframe class="start mw20"></iframe></div>
@@ -92,7 +92,7 @@ iframe {
 <div class="grid w22"><iframe class="na mw20"></iframe></div>
 <div class="grid w22" style="margin-top:5px"><iframe class="na mw20 mxh10 mxw10"></iframe></div>
 
-<pre></pre>
+<pre><!--min-width:0--></pre>
 <div class="grid w4"><iframe class="mw0"></iframe></div>
 <div class="grid w4"><iframe class="mw0 mxh10"></iframe></div>
 <div class="grid w4"><iframe class="start mw0"></iframe></div>
@@ -102,7 +102,7 @@ iframe {
 <div class="grid w4"><iframe class="na mw0 mxw10"></iframe></div>
 <div class="grid w4" style="margin-top:5px"><iframe class="na mw0 mxh10"></iframe></div>
 
-<pre></pre>
+<pre><!--width:20px--></pre>
 
 <div class="grid r"><iframe class="w20"></iframe></div>
 <div class="grid r"><iframe class="w20 mxh10"></iframe></div>
@@ -113,7 +113,7 @@ iframe {
 <div class="grid r"><iframe class="na w20"></iframe></div>
 <div class="grid r"><iframe class="na w20 mxh2"></iframe></div>
 
-<pre></pre>
+<pre><!--width:20px--></pre>
 
 <div class="grid w22"><iframe class="start w20"></iframe></div>
 <div class="grid w22"><iframe class="start w20 mxh10"></iframe></div>
@@ -124,7 +124,7 @@ iframe {
 <div class="grid w22"><iframe class="na w20"></iframe></div>
 <div class="grid w22"><iframe class="na w20 mxh10"></iframe></div>
 
-<pre></pre>
+<pre><!--height:20px--></pre>
 
 <div class="grid h22 r wi"><iframe class="h20"></iframe></div>
 <div class="grid h22 r"><iframe class="h20 mxw10"></iframe></div>
@@ -135,7 +135,7 @@ iframe {
 <div class="grid h22 r wi"><iframe class="an h20"></iframe></div>
 <div class="grid h22 r"><iframe class="an h20 mxw10"></iframe></div>
 
-<pre></pre>
+<pre><!--height:20px--></pre>
 
 <div class="grid h32 w4"><iframe class="h20"></iframe></div>
 <div class="grid h32 w4"><iframe class="h20 mxw2"></iframe></div>
@@ -194,13 +194,13 @@ var iframeSizes = [
   ['10px', '10px'],
   ['10px', '150px'],
   ['300px', '10px'],
-  ['20px', '2px'],
-  ['20px', '2px'],
+  ['20px', '150px'],
+  ['20px', '10px'],
   ['20px', '150px'],
   ['20px', '10px'],
   ['20px', '2px'],
   ['20px', '2px'],
-  ['20px', '2px'],
+  ['20px', '150px'],
   ['20px', '2px'],
   ['20px', '150px'],
   ['20px', '10px'],
@@ -208,24 +208,24 @@ var iframeSizes = [
   ['20px', '10px'],
   ['20px', '30px'],
   ['20px', '10px'],
-  ['20px', '30px'],
+  ['20px', '150px'],
   ['20px', '10px'],
-  ['30px', '20px'],
+  ['300px', '20px'],
   ['10px', '20px'],
   ['300px', '20px'],
   ['10px', '20px'],
   ['30px', '20px'],
   ['10px', '20px'],
-  ['30px', '20px'],
+  ['300px', '20px'],
   ['10px', '20px'],
-  ['2px', '20px'],
+  ['300px', '20px'],
   ['2px', '20px'],
   ['300px', '20px'],
   ['10px', '20px'],
   ['2px', '20px'],
   ['2px', '20px'],
-  ['2px', '20px'],
-  ['2px', '20px'],
+  ['300px', '20px'],
+  ['10px', '20px'],
 ];
 
 var iframes = document.querySelectorAll('iframe');

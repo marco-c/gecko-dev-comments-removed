@@ -10728,8 +10728,13 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
   const auto alignment = (aAxis == LogicalAxis::Inline) == !isOrthogonal
                              ? pos->UsedJustifySelf(Style())._0
                              : pos->UsedAlignSelf(Style())._0;
-  return alignment == StyleAlignFlags::NORMAL ||
-         alignment == StyleAlignFlags::STRETCH;
+  
+  
+  
+  if (MOZ_LIKELY(alignment == StyleAlignFlags::NORMAL)) {
+    return !aChild->HasReplacedSizing();
+  }
+  return alignment == StyleAlignFlags::STRETCH;
 }
 
 bool nsGridContainerFrame::ShouldInhibitSubgridDueToIFC(
