@@ -739,17 +739,14 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
   
   
   
-  if (mScrollWatchTimer) {
-    mScrollWatchTimer->SetDelay(kScrollEventInterval);
-  } else {
-    NS_NewTimerWithFuncCallback(getter_AddRefs(mScrollWatchTimer),
-                                ScrollTimerCallback, this, kScrollEventInterval,
-                                nsITimer::TYPE_ONE_SHOT,
-                                "a11y::DocAccessible::ScrollPositionDidChange");
-    if (mScrollWatchTimer) {
-      NS_ADDREF_THIS();  
-    }
+  if (!mScrollWatchTimer) {
+    
+    mScrollWatchTimer = NS_NewTimer();
+    NS_ADDREF_THIS();  
   }
+  mScrollWatchTimer->InitWithNamedFuncCallback(
+      ScrollTimerCallback, this, kScrollEventInterval, nsITimer::TYPE_ONE_SHOT,
+      "a11y::DocAccessible::ScrollPositionDidChange");
 }
 
 std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
