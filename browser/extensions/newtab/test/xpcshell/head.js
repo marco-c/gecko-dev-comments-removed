@@ -8,6 +8,8 @@
 
 
 
+
+
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -80,3 +82,36 @@ add_setup(async function head_initialize() {
   }
   AboutNewTab.init();
 });
+
+
+
+
+
+
+
+
+
+
+function assertNewTabResourceMapping(expectedRootURISpec = null) {
+  const resProto = Cc[
+    "@mozilla.org/network/protocol;1?name=resource"
+  ].getService(Ci.nsIResProtocolHandler);
+  const chromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+    Ci.nsIChromeRegistry
+  );
+  const expectedSpec =
+    expectedRootURISpec ??
+    `${resProto.getSubstitution("builtin-addons").spec}newtab/`;
+  Assert.equal(
+    resProto.getSubstitution("newtab")?.spec,
+    expectedSpec,
+    "Got the expected resource://newtab/ substitution"
+  );
+  Assert.equal(
+    chromeRegistry.convertChromeURL(
+      Services.io.newURI("chrome://newtab/content/css/")
+    )?.spec,
+    `${expectedSpec}data/css/`,
+    "Got the expected chrome://newtab/content substitution"
+  );
+}

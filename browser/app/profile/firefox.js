@@ -2027,6 +2027,9 @@ pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=a
 pref("browser.newtabpage.resource-mapping.log", false);
 
 
+pref("browser.newtabpage.trainhopAddon.xpiBaseURL", "https://archive.mozilla.org/pub/system-addons/newtab/");
+
+
 pref("browser.aboutwelcome.enabled", true);
 
 pref("browser.aboutwelcome.screens", "");
