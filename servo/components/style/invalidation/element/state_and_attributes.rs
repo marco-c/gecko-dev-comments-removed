@@ -551,7 +551,7 @@ where
             if let Some(ref next) = dependency.next {
                 
                 
-                self.scan_dependency(next);
+                self.scan_dependency(&next.as_ref().slice()[0]);
             } else {
                 self.invalidates_self = true;
             }
