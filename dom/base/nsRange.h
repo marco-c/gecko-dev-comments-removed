@@ -41,11 +41,6 @@ enum class RangeBehaviour : uint8_t {
   
   KeepDefaultRangeAndCrossShadowBoundaryRanges,
   
-  
-  
-  
-  MergeDefaultRangeAndCrossShadowBoundaryRanges,
-  
   CollapseDefaultRange,
   
   CollapseDefaultRangeAndCrossShadowBoundaryRanges
@@ -88,13 +83,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
     return nsRange::Create(aAbstractRange->StartRef(), aAbstractRange->EndRef(),
                            aRv);
   }
-  static already_AddRefed<nsRange> Create(nsINode* aStartContainer,
-                                          uint32_t aStartOffset,
-                                          nsINode* aEndContainer,
-                                          uint32_t aEndOffset,
-                                          ErrorResult& aRv) {
+  static already_AddRefed<nsRange> Create(
+      nsINode* aStartContainer, uint32_t aStartOffset, nsINode* aEndContainer,
+      uint32_t aEndOffset, ErrorResult& aRv,
+      AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
+          AllowRangeCrossShadowBoundary::No) {
     return nsRange::Create(RawRangeBoundary(aStartContainer, aStartOffset),
-                           RawRangeBoundary(aEndContainer, aEndOffset), aRv);
+                           RawRangeBoundary(aEndContainer, aEndOffset), aRv,
+                           aAllowCrossShadowBoundary);
   }
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   static already_AddRefed<nsRange> Create(
@@ -438,7 +434,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   void ResetCrossShadowBoundaryRange() { mCrossShadowBoundaryRange = nullptr; }
 
-#ifdef DEBUG
   bool CrossShadowBoundaryRangeCollapsed() const {
     MOZ_ASSERT(mCrossShadowBoundaryRange);
 
@@ -448,7 +443,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
             mCrossShadowBoundaryRange->StartOffset() ==
                 mCrossShadowBoundaryRange->EndOffset());
   }
-#endif
 
   
 

@@ -372,10 +372,12 @@ nsresult AbstractRange::SetStartAndEndInternal(
       
       
       
-      if (!IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
+      if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
+          !IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
         aRange->AsDynamicRange()
-            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(aStartBoundary,
-                                                             aEndBoundary);
+            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+                aStartBoundary.AsRangeBoundaryInFlatTree(),
+                aEndBoundary.AsRangeBoundaryInFlatTree());
       }
     }
     return NS_OK;
@@ -402,6 +404,16 @@ nsresult AbstractRange::SetStartAndEndInternal(
 
   
   aRange->DoSetRange(aStartBoundary, aEndBoundary, newStartRoot);
+
+  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
+      aRange->IsDynamicRange()) {
+    auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
+    auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
+
+    aRange->AsDynamicRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+        startInFlat, endInFlat);
+  }
+
   return NS_OK;
 }
 
