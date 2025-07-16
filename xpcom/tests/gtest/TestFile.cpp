@@ -363,6 +363,44 @@ static bool TestParent(nsIFile* aBase, nsIFile* aStart) {
 }
 
 
+static bool TestContains(nsIFile* aBase) {
+  nsCOMPtr<nsIFile> sub = NewFile(aBase);
+  if (!sub) return false;
+  nsresult rv = sub->AppendNative(nsDependentCString("sub"));
+  if (!VerifyResult(rv, "AppendNative sub")) return false;
+
+  nsCOMPtr<nsIFile> subSlashSub = NewFile(sub);
+  if (!subSlashSub) return false;
+  rv = subSlashSub->AppendNative(nsDependentCString("sub"));
+  if (!VerifyResult(rv, "AppendNative sub/sub")) return false;
+
+  nsCOMPtr<nsIFile> subsub = NewFile(aBase);
+  if (!subsub) return false;
+  rv = subsub->AppendNative(nsDependentCString("subsub"));
+  if (!VerifyResult(rv, "AppendNative subsub")) return false;
+
+  bool contains;
+  rv = sub->Contains(subsub, &contains);
+  VerifyResult(rv, "sub contains subsub");
+  EXPECT_FALSE(contains) << "sub contains subsub is false";
+
+  rv = sub->Contains(sub, &contains);
+  VerifyResult(rv, "sub contains sub (itself)");
+  EXPECT_FALSE(contains) << "sub contains sub (itself) is false";
+
+  rv = sub->Contains(subSlashSub, &contains);
+  VerifyResult(rv, "sub contains sub/sub");
+  EXPECT_TRUE(contains) << "sub contains sub/sub is true";
+
+  
+  rv = sub->Contains(nullptr, &contains);
+  EXPECT_NS_FAILED(rv) << "Contains null fails";
+  EXPECT_EQ(rv, NS_ERROR_INVALID_ARG) << "rv for contains(null)";
+
+  return true;
+}
+
+
 static bool TestNormalizeNativePath(nsIFile* aBase, nsIFile* aStart) {
   nsCOMPtr<nsIFile> file = NewFile(aStart);
   if (!file) return false;
@@ -472,6 +510,9 @@ static void SetupAndTestFunctions(const nsAString& aDirName,
   
   ASSERT_TRUE(TestInvalidFileName(base, "a/b"));
   ASSERT_TRUE(TestParent(base, subdir));
+
+  
+  ASSERT_TRUE(TestContains(base));
 
   
   ASSERT_TRUE(TestCreate(base, "file.txt", nsIFile::NORMAL_FILE_TYPE, 0600));
