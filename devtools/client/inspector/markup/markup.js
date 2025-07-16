@@ -307,6 +307,8 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._onToolboxPickerCanceled = this._onToolboxPickerCanceled.bind(this);
   this._onToolboxPickerHover = this._onToolboxPickerHover.bind(this);
   this._onDomMutation = this._onDomMutation.bind(this);
+  this._updateSearchResultsHighlightingInSelectedNode =
+    this._updateSearchResultsHighlightingInSelectedNode.bind(this);
 
   
   this._elt.addEventListener("blur", this._onBlur, true);
@@ -316,6 +318,10 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._elt.addEventListener("mouseout", this._onMouseOut);
   this._frame.addEventListener("focus", this._onFocus);
   this.inspector.selection.on("new-node-front", this._onNewSelection);
+  this.inspector.on(
+    "search-cleared",
+    this._updateSearchResultsHighlightingInSelectedNode
+  );
   this._unsubscribeFromToolboxStore = this.inspector.toolbox.store.subscribe(
     this._onDomMutation
   );
@@ -1081,6 +1087,9 @@ MarkupView.prototype = {
         
         const container = this.getContainer(selection.nodeFront, slotted);
         this._markContainerAsSelected(container);
+        this._updateSearchResultsHighlightingInSelectedNode(
+          selection.getSearchQuery()
+        );
 
         
         this.maybeNavigateToNewSelection();
@@ -1089,6 +1098,64 @@ MarkupView.prototype = {
       .catch(this._handleRejectionIfNotDestroyed);
 
     Promise.all([onShowBoxModel, onShow]).then(done);
+  },
+
+  _getSearchResultsHighlight() {
+    const highlightName = "devtools-search";
+    const highlights = this.win.CSS.highlights;
+
+    if (!highlights.has(highlightName)) {
+      highlights.set(highlightName, new this.win.Highlight());
+    }
+
+    return highlights.get(highlightName);
+  },
+
+  
+
+
+
+
+
+  _updateSearchResultsHighlightingInSelectedNode(searchQuery) {
+    
+    const searchHighlight = this._getSearchResultsHighlight();
+    searchHighlight.clear();
+
+    
+    
+    if (!this._selectedContainer || !searchQuery) {
+      return;
+    }
+
+    
+    const treeWalker = this.doc.createTreeWalker(
+      this._selectedContainer.tagLine,
+      NodeFilter.SHOW_TEXT
+    );
+    searchQuery = searchQuery.toLowerCase();
+    const searchQueryLength = searchQuery.length;
+    let currentNode = treeWalker.nextNode();
+    while (currentNode) {
+      const text = currentNode.textContent.toLowerCase();
+      let startPos = 0;
+      while (startPos < text.length) {
+        const index = text.indexOf(searchQuery, startPos);
+        if (index === -1) {
+          break;
+        }
+
+        const range = new this.win.Range();
+        range.setStart(currentNode, index);
+        range.setEnd(currentNode, index + searchQueryLength);
+
+        searchHighlight.add(range);
+
+        startPos = index + searchQuery.length;
+      }
+
+      currentNode = treeWalker.nextNode();
+    }
   },
 
   
@@ -2522,6 +2589,10 @@ MarkupView.prototype = {
     this._frame.removeEventListener("focus", this._onFocus);
     this._unsubscribeFromToolboxStore();
     this.inspector.selection.off("new-node-front", this._onNewSelection);
+    this.inspector.off(
+      "search-cleared",
+      this._updateSearchResultsHighlightingInSelectedNode
+    );
     this.resourceCommand.unwatchResources(
       [this.resourceCommand.TYPES.ROOT_NODE],
       { onAvailable: this._onResourceAvailable }
