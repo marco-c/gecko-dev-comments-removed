@@ -49,7 +49,8 @@ test_newtab({
   before: setDefaultTopSites,
   
   test: async function defaultTopSites_dismiss() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
+    const siteSelector =
+      ".top-site-outer:not(.search-shortcut, .placeholder, .add-button)";
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(siteSelector),
       "Topsite tippytop icon not found"
