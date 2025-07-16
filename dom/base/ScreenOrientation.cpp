@@ -217,6 +217,15 @@ ScreenOrientation::LockOrientationTask::Run() {
               return;
             }
 
+            if (aValue.IsReject()) {
+              
+              
+              
+              self->mPromise->MaybeReject(aValue.RejectValue());
+              self->mDocument->ClearOrientationPendingPromise();
+              return;
+            }
+
             if (!self->mDocument || !self->mDocument->IsFullyActive()) {
               
               
@@ -243,27 +252,22 @@ ScreenOrientation::LockOrientationTask::Run() {
               
               return;
             }
-            if (aValue.IsResolve()) {
-              
-              
-              if (BrowsingContext* bc = self->mDocument->GetBrowsingContext()) {
-                OrientationType currentOrientationType =
-                    bc->GetCurrentOrientationType();
-                if ((previousOrientationType == currentOrientationType &&
-                     self->OrientationLockContains(currentOrientationType)) ||
-                    (self->mOrientationLock ==
-                         hal::ScreenOrientation::Default &&
-                     bc->GetCurrentOrientationAngle() == 0)) {
-                  
-                  
-                  self->mPromise->MaybeResolveWithUndefined();
-                  self->mDocument->ClearOrientationPendingPromise();
-                }
+
+            
+            
+            if (BrowsingContext* bc = self->mDocument->GetBrowsingContext()) {
+              OrientationType currentOrientationType =
+                  bc->GetCurrentOrientationType();
+              if ((previousOrientationType == currentOrientationType &&
+                   self->OrientationLockContains(currentOrientationType)) ||
+                  (self->mOrientationLock == hal::ScreenOrientation::Default &&
+                   bc->GetCurrentOrientationAngle() == 0)) {
+                
+                
+                self->mPromise->MaybeResolveWithUndefined();
+                self->mDocument->ClearOrientationPendingPromise();
               }
-              return;
             }
-            self->mPromise->MaybeReject(aValue.RejectValue());
-            self->mDocument->ClearOrientationPendingPromise();
           });
 
   return NS_OK;
