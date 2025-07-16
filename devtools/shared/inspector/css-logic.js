@@ -4,6 +4,7 @@
 
 "use strict";
 
+const LINE_BREAK_RE = /\r\n?|\n|\u2028|\u2029/;
 const MAX_DATA_URL_LENGTH = 40;
 
 
@@ -394,7 +395,15 @@ function prettifyCSS(text, ruleCount) {
         break;
       }
 
-      if (token.tokenType !== "WhiteSpace") {
+      if (token.tokenType === "WhiteSpace") {
+        if (LINE_BREAK_RE.test(token.text)) {
+          
+          
+          
+          
+          break;
+        }
+      } else {
         anyNonWS = true;
       }
 
