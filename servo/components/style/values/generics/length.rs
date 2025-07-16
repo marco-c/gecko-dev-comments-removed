@@ -445,15 +445,6 @@ where
         )
     }
 }
-impl<LengthPercentage> GenericAnchorSizeFunction<LengthPercentage> {
-    
-    pub fn valid_for(
-        &self,
-        position_property: PositionProperty,
-    ) -> bool {
-        position_property.is_absolutely_positioned()
-    }
-}
 
 
 pub enum AnchorResolutionResult<'a, LengthPercentage> {
@@ -511,6 +502,19 @@ impl<LengthPercentage> GenericAnchorSizeFunction<LengthPercentage>
                 fallback: fallback.into(),
             })
         })
+    }
+
+    
+    pub fn resolve<'a>(
+        &'a self,
+        position_property: PositionProperty,
+    ) -> AnchorResolutionResult<'a, LengthPercentage> {
+        if !position_property.is_absolutely_positioned() {
+            return AnchorResolutionResult::new_anchor_invalid(self.fallback.as_ref());
+        }
+
+        
+        AnchorResolutionResult::new_anchor_invalid(self.fallback.as_ref())
     }
 }
 
