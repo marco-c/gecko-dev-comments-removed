@@ -2,22 +2,14 @@
 
 
 
-import os
-import sys
-
 from marionette_harness import MarionetteTestCase, parameterized, WindowManagerMixin
 
 
-sys.path.append(os.path.dirname(__file__))
-
-from chrome_handler_mixin import ChromeHandlerMixin
-
-
-PAGE_XHTML = "test.xhtml"
-PAGE_XUL = "test_xul.xhtml"
+PAGE_XHTML = "chrome://remote/content/marionette/test.xhtml"
+PAGE_XUL = "chrome://remote/content/marionette/test_xul.xhtml"
 
 
-class TestTitleChrome(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
+class TestTitleChrome(WindowManagerMixin, MarionetteTestCase):
     def tearDown(self):
         try:
             self.close_all_windows()
@@ -27,7 +19,7 @@ class TestTitleChrome(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase
     @parameterized("XUL", PAGE_XUL)
     @parameterized("XHTML", PAGE_XHTML)
     def test_get_title(self, chrome_url):
-        win = self.open_chrome_window(self.chrome_base_url + chrome_url)
+        win = self.open_chrome_window(chrome_url)
         self.marionette.switch_to_window(win)
 
         with self.marionette.using_context("chrome"):

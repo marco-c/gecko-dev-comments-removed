@@ -2,25 +2,20 @@
 
 
 
-import os
-import sys
-
 from marionette_driver.by import By
+
 from marionette_harness import MarionetteTestCase, skip, WindowManagerMixin
 
 
-sys.path.append(os.path.dirname(__file__))
-
-from chrome_handler_mixin import ChromeHandlerMixin
-
-
-class TestElementState(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
+class TestElementState(WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestElementState, self).setUp()
 
         self.marionette.set_context("chrome")
 
-        self.win = self.open_chrome_window(self.chrome_base_url + "test.xhtml")
+        self.win = self.open_chrome_window(
+            "chrome://remote/content/marionette/test.xhtml"
+        )
         self.marionette.switch_to_window(self.win)
 
     def tearDown(self):

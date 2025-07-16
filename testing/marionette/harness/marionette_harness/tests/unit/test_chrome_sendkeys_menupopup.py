@@ -2,28 +2,25 @@
 
 
 
-import os
-import sys
+from urllib.parse import quote
 
 from marionette_driver import By, errors, Wait
 from marionette_driver.keys import Keys
+
 from marionette_harness import (
     MarionetteTestCase,
     WindowManagerMixin,
 )
 
 
-sys.path.append(os.path.dirname(__file__))
-
-from chrome_handler_mixin import ChromeHandlerMixin
-
-
-class TestSendkeysMenupopup(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
+class TestSendkeysMenupopup(WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestSendkeysMenupopup, self).setUp()
 
         self.marionette.set_context("chrome")
-        new_window = self.open_chrome_window(self.chrome_base_url + "test_xul.xhtml")
+        new_window = self.open_chrome_window(
+            "chrome://remote/content/marionette/test_xul.xhtml"
+        )
         self.marionette.switch_to_window(new_window)
 
         self.click_el = self.marionette.find_element(By.ID, "options-button")

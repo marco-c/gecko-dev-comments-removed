@@ -2,23 +2,13 @@
 
 
 
-import os
-import sys
-
 from marionette_driver import By
 from marionette_driver.errors import NoSuchWindowException
 
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 
-sys.path.append(os.path.dirname(__file__))
-
-from chrome_handler_mixin import ChromeHandlerMixin
-
-
-class TestNoSuchWindowContent(
-    ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase
-):
+class TestNoSuchWindowContent(WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestNoSuchWindowContent, self).setUp()
 
@@ -47,7 +37,9 @@ class TestNoSuchWindowContent(
             self.marionette.switch_to_window(new_window)
 
     def test_closed_chrome_window_while_in_frame(self):
-        new_window = self.open_chrome_window(self.chrome_base_url + "test.xhtml")
+        new_window = self.open_chrome_window(
+            "chrome://remote/content/marionette/test.xhtml"
+        )
         self.marionette.switch_to_window(new_window)
 
         with self.marionette.using_context("chrome"):

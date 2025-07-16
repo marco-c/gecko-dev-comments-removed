@@ -2,21 +2,12 @@
 
 
 
-import os
-import sys
-
 from marionette_driver.errors import NoSuchWindowException
+
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 
-sys.path.append(os.path.dirname(__file__))
-
-from chrome_handler_mixin import ChromeHandlerMixin
-
-
-class TestGetCurrentUrlChrome(
-    ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase
-):
+class TestGetCurrentUrlChrome(WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestGetCurrentUrlChrome, self).setUp()
         self.marionette.set_context("chrome")
@@ -36,7 +27,7 @@ class TestGetCurrentUrlChrome(
         self.assertEqual(self.marionette.get_url(), chrome_url)
 
     def test_no_browser_window(self):
-        win = self.open_chrome_window(self.chrome_base_url + "test.xhtml")
+        win = self.open_chrome_window("chrome://remote/content/marionette/test.xhtml")
         self.marionette.switch_to_window(win)
 
         chrome_url = self.marionette.execute_script("return window.location.href;")

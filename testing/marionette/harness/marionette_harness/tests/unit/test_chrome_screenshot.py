@@ -2,8 +2,11 @@
 
 
 
+import base64
 import os
 import sys
+
+import mozinfo
 
 from marionette_driver import By
 from marionette_driver.errors import NoSuchWindowException
@@ -12,13 +15,10 @@ from marionette_harness import WindowManagerMixin
 
 sys.path.append(os.path.dirname(__file__))
 
-from chrome_handler_mixin import ChromeHandlerMixin
-from test_screenshot import ScreenCaptureTestCase
+from test_screenshot import inline, ScreenCaptureTestCase
 
 
-class TestScreenCaptureChrome(
-    ChromeHandlerMixin, WindowManagerMixin, ScreenCaptureTestCase
-):
+class TestScreenCaptureChrome(WindowManagerMixin, ScreenCaptureTestCase):
     def setUp(self):
         super(TestScreenCaptureChrome, self).setUp()
         self.marionette.set_context("chrome")
@@ -40,7 +40,9 @@ class TestScreenCaptureChrome(
         )
 
     def open_dialog(self):
-        return self.open_chrome_window(self.chrome_base_url + "test_dialog.xhtml")
+        return self.open_chrome_window(
+            "chrome://remote/content/marionette/test_dialog.xhtml"
+        )
 
     def test_capture_different_context(self):
         """Check that screenshots in content and chrome are different."""
