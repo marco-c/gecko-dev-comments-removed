@@ -11,11 +11,16 @@
 
 
 
+#include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "src/dec/vp8i_dec.h"
 #include "src/dec/webpi_dec.h"
+#include "src/utils/rescaler_utils.h"
 #include "src/utils/utils.h"
+#include "src/webp/decode.h"
+#include "src/webp/types.h"
 
 
 
@@ -28,8 +33,7 @@ static const uint8_t kModeBpp[MODE_LAST] = {
 
 
 
-
-static int IsValidColorspace(int webp_csp_mode) {
+int IsValidColorspace(int webp_csp_mode) {
   return (webp_csp_mode >= MODE_RGB && webp_csp_mode < MODE_LAST);
 }
 

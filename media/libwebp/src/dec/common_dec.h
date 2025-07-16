@@ -51,4 +51,7 @@ enum { MB_FEATURE_TREE_PROBS = 3,
        NUM_PROBAS = 11
      };
 
+
+int IsValidColorspace(int webp_csp_mode);
+
 #endif  

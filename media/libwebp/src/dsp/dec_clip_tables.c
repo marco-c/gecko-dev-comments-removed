@@ -11,6 +11,8 @@
 
 
 
+#include "src/dsp/cpu.h"
+#include "src/webp/types.h"
 #include "src/dsp/dsp.h"
 
 

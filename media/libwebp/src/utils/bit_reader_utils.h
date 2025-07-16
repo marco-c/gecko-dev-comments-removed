@@ -16,6 +16,8 @@
 #define WEBP_UTILS_BIT_READER_UTILS_H_
 
 #include <assert.h>
+#include <stddef.h>
+
 #ifdef _MSC_VER
 #include <stdlib.h>  
 #endif
@@ -94,14 +96,14 @@ typedef uint32_t range_t;
 typedef struct VP8BitReader VP8BitReader;
 struct VP8BitReader {
   
-  bit_t value_;               
-  range_t range_;             
-  int bits_;                  
+  bit_t value;               
+  range_t range;             
+  int bits;                  
   
-  const uint8_t* buf_;        
-  const uint8_t* buf_end_;    
-  const uint8_t* buf_max_;    
-  int eof_;                   
+  const uint8_t* buf;        
+  const uint8_t* buf_end;    
+  const uint8_t* buf_max;    
+  int eof;                   
 };
 
 
@@ -141,12 +143,12 @@ int32_t VP8GetSignedValue(VP8BitReader* const br, int num_bits,
 typedef uint64_t vp8l_val_t;  
 
 typedef struct {
-  vp8l_val_t     val_;        
-  const uint8_t* buf_;        
-  size_t         len_;        
-  size_t         pos_;        
-  int            bit_pos_;    
-  int            eos_;        
+  vp8l_val_t     val;        
+  const uint8_t* buf;        
+  size_t         len;        
+  size_t         pos;        
+  int            bit_pos;    
+  int            eos;        
 } VP8LBitReader;
 
 void VP8LInitBitReader(VP8LBitReader* const br,
@@ -165,14 +167,14 @@ uint32_t VP8LReadBits(VP8LBitReader* const br, int n_bits);
 
 
 static WEBP_INLINE uint32_t VP8LPrefetchBits(VP8LBitReader* const br) {
-  return (uint32_t)(br->val_ >> (br->bit_pos_ & (VP8L_LBITS - 1)));
+  return (uint32_t)(br->val >> (br->bit_pos & (VP8L_LBITS - 1)));
 }
 
 
 
 static WEBP_INLINE int VP8LIsEndOfStream(const VP8LBitReader* const br) {
-  assert(br->pos_ <= br->len_);
-  return br->eos_ || ((br->pos_ == br->len_) && (br->bit_pos_ > VP8L_LBITS));
+  assert(br->pos <= br->len);
+  return br->eos || ((br->pos == br->len) && (br->bit_pos > VP8L_LBITS));
 }
 
 
@@ -180,14 +182,14 @@ static WEBP_INLINE int VP8LIsEndOfStream(const VP8LBitReader* const br) {
 
 
 static WEBP_INLINE void VP8LSetBitPos(VP8LBitReader* const br, int val) {
-  br->bit_pos_ = val;
+  br->bit_pos = val;
 }
 
 
 
 extern void VP8LDoFillBitWindow(VP8LBitReader* const br);
 static WEBP_INLINE void VP8LFillBitWindow(VP8LBitReader* const br) {
-  if (br->bit_pos_ >= VP8L_WBITS) VP8LDoFillBitWindow(br);
+  if (br->bit_pos >= VP8L_WBITS) VP8LDoFillBitWindow(br);
 }
 
 #ifdef __cplusplus

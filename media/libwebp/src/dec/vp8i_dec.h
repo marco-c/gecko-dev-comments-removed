@@ -15,12 +15,16 @@
 #define WEBP_DEC_VP8I_DEC_H_
 
 #include <string.h>     
+
 #include "src/dec/common_dec.h"
+#include "src/dec/vp8_dec.h"
 #include "src/dec/vp8li_dec.h"
+#include "src/dec/webpi_dec.h"
+#include "src/dsp/dsp.h"
 #include "src/utils/bit_reader_utils.h"
 #include "src/utils/random_utils.h"
 #include "src/utils/thread_utils.h"
-#include "src/dsp/dsp.h"
+#include "src/webp/decode.h"
 #include "src/webp/types.h"
 
 #ifdef __cplusplus
@@ -32,7 +36,7 @@ extern "C" {
 
 
 #define DEC_MAJ_VERSION 1
-#define DEC_MIN_VERSION 5
+#define DEC_MIN_VERSION 6
 #define DEC_REV_VERSION 0
 
 
@@ -69,85 +73,85 @@ extern "C" {
 
 
 typedef struct {
-  uint8_t key_frame_;
-  uint8_t profile_;
-  uint8_t show_;
-  uint32_t partition_length_;
+  uint8_t key_frame;
+  uint8_t profile;
+  uint8_t show;
+  uint32_t partition_length;
 } VP8FrameHeader;
 
 typedef struct {
-  uint16_t width_;
-  uint16_t height_;
-  uint8_t xscale_;
-  uint8_t yscale_;
-  uint8_t colorspace_;   
-  uint8_t clamp_type_;
+  uint16_t width;
+  uint16_t height;
+  uint8_t xscale;
+  uint8_t yscale;
+  uint8_t colorspace;   
+  uint8_t clamp_type;
 } VP8PictureHeader;
 
 
 typedef struct {
-  int use_segment_;
-  int update_map_;        
-  int absolute_delta_;    
-  int8_t quantizer_[NUM_MB_SEGMENTS];        
-  int8_t filter_strength_[NUM_MB_SEGMENTS];  
+  int use_segment;
+  int update_map;        
+  int absolute_delta;    
+  int8_t quantizer[NUM_MB_SEGMENTS];        
+  int8_t filter_strength[NUM_MB_SEGMENTS];  
 } VP8SegmentHeader;
 
 
 typedef uint8_t VP8ProbaArray[NUM_PROBAS];
 
 typedef struct {   
-  VP8ProbaArray probas_[NUM_CTX];
+  VP8ProbaArray probas[NUM_CTX];
 } VP8BandProbas;
 
 
 typedef struct {
-  uint8_t segments_[MB_FEATURE_TREE_PROBS];
+  uint8_t segments[MB_FEATURE_TREE_PROBS];
   
-  VP8BandProbas bands_[NUM_TYPES][NUM_BANDS];
-  const VP8BandProbas* bands_ptr_[NUM_TYPES][16 + 1];
+  VP8BandProbas bands[NUM_TYPES][NUM_BANDS];
+  const VP8BandProbas* bands_ptr[NUM_TYPES][16 + 1];
 } VP8Proba;
 
 
 typedef struct {
-  int simple_;                  
-  int level_;                   
-  int sharpness_;               
-  int use_lf_delta_;
-  int ref_lf_delta_[NUM_REF_LF_DELTAS];
-  int mode_lf_delta_[NUM_MODE_LF_DELTAS];
+  int simple;                  
+  int level;                   
+  int sharpness;               
+  int use_lf_delta;
+  int ref_lf_delta[NUM_REF_LF_DELTAS];
+  int mode_lf_delta[NUM_MODE_LF_DELTAS];
 } VP8FilterHeader;
 
 
 
 
 typedef struct {  
-  uint8_t f_limit_;      
-  uint8_t f_ilevel_;     
-  uint8_t f_inner_;      
-  uint8_t hev_thresh_;   
+  uint8_t f_limit;      
+  uint8_t f_ilevel;     
+  uint8_t f_inner;      
+  uint8_t hev_thresh;   
 } VP8FInfo;
 
 typedef struct {  
-  uint8_t nz_;        
-  uint8_t nz_dc_;     
+  uint8_t nz;        
+  uint8_t nz_dc;     
 } VP8MB;
 
 
 typedef int quant_t[2];      
 typedef struct {
-  quant_t y1_mat_, y2_mat_, uv_mat_;
+  quant_t y1_mat, y2_mat, uv_mat;
 
-  int uv_quant_;   
-  int dither_;     
+  int uv_quant;   
+  int dither;     
 } VP8QuantMatrix;
 
 
 typedef struct {
-  int16_t coeffs_[384];   
-  uint8_t is_i4x4_;       
-  uint8_t imodes_[16];    
-  uint8_t uvmode_;        
+  int16_t coeffs[384];   
+  uint8_t is_i4x4;       
+  uint8_t imodes[16];    
+  uint8_t uvmode;        
   
   
   
@@ -155,21 +159,21 @@ typedef struct {
   
   
   
-  uint32_t non_zero_y_;
-  uint32_t non_zero_uv_;
-  uint8_t dither_;      
-  uint8_t skip_;
-  uint8_t segment_;
+  uint32_t non_zero_y;
+  uint32_t non_zero_uv;
+  uint8_t dither;      
+  uint8_t skip;
+  uint8_t segment;
 } VP8MBData;
 
 
 typedef struct {
-  int id_;              
-  int mb_y_;            
-  int filter_row_;      
-  VP8FInfo* f_info_;    
-  VP8MBData* mb_data_;  
-  VP8Io io_;            
+  int id;              
+  int mb_y;            
+  int filter_row;      
+  VP8FInfo* f_info;    
+  VP8MBData* mb_data;  
+  VP8Io io;            
 } VP8ThreadContext;
 
 
@@ -181,89 +185,89 @@ typedef struct {
 
 
 struct VP8Decoder {
-  VP8StatusCode status_;
-  int ready_;     
-  const char* error_msg_;  
+  VP8StatusCode status;
+  int ready;     
+  const char* error_msg;  
 
   
-  VP8BitReader br_;
-  int incremental_;  
+  VP8BitReader br;
+  int incremental;  
 
   
-  VP8FrameHeader   frm_hdr_;
-  VP8PictureHeader pic_hdr_;
-  VP8FilterHeader  filter_hdr_;
-  VP8SegmentHeader segment_hdr_;
+  VP8FrameHeader   frm_hdr;
+  VP8PictureHeader pic_hdr;
+  VP8FilterHeader  filter_hdr;
+  VP8SegmentHeader segment_hdr;
 
   
-  WebPWorker worker_;
-  int mt_method_;      
-                       
-  int cache_id_;       
-  int num_caches_;     
-  VP8ThreadContext thread_ctx_;  
+  WebPWorker worker;
+  int mt_method;      
+                      
+  int cache_id;       
+  int num_caches;     
+  VP8ThreadContext thread_ctx;  
 
   
-  int mb_w_, mb_h_;
+  int mb_w, mb_h;
 
   
-  int tl_mb_x_, tl_mb_y_;  
-  int br_mb_x_, br_mb_y_;  
+  int tl_mb_x, tl_mb_y;  
+  int br_mb_x, br_mb_y;  
 
   
-  uint32_t num_parts_minus_one_;
+  uint32_t num_parts_minus_one;
   
-  VP8BitReader parts_[MAX_NUM_PARTITIONS];
-
-  
-  int dither_;                
-  VP8Random dithering_rg_;    
+  VP8BitReader parts[MAX_NUM_PARTITIONS];
 
   
-  VP8QuantMatrix dqm_[NUM_MB_SEGMENTS];
+  int dither;                
+  VP8Random dithering_rg;    
 
   
-  VP8Proba proba_;
-  int use_skip_proba_;
-  uint8_t skip_p_;
+  VP8QuantMatrix dqm[NUM_MB_SEGMENTS];
 
   
-  uint8_t* intra_t_;      
-  uint8_t  intra_l_[4];   
-
-  VP8TopSamples* yuv_t_;  
-
-  VP8MB* mb_info_;        
-  VP8FInfo* f_info_;      
-  uint8_t* yuv_b_;        
-
-  uint8_t* cache_y_;      
-  uint8_t* cache_u_;
-  uint8_t* cache_v_;
-  int cache_y_stride_;
-  int cache_uv_stride_;
+  VP8Proba proba;
+  int use_skip_proba;
+  uint8_t skip_p;
 
   
-  void* mem_;
-  size_t mem_size_;
+  uint8_t* intra_t;      
+  uint8_t  intra_l[4];   
+
+  VP8TopSamples* yuv_t;  
+
+  VP8MB* mb_info;        
+  VP8FInfo* f_info;      
+  uint8_t* yuv_b;        
+
+  uint8_t* cache_y;      
+  uint8_t* cache_u;
+  uint8_t* cache_v;
+  int cache_y_stride;
+  int cache_uv_stride;
 
   
-  int mb_x_, mb_y_;       
-  VP8MBData* mb_data_;    
+  void* mem;
+  size_t mem_size;
 
   
-  int filter_type_;                          
-  VP8FInfo fstrengths_[NUM_MB_SEGMENTS][2];  
+  int mb_x, mb_y;        
+  VP8MBData* mb_data;    
 
   
-  struct ALPHDecoder* alph_dec_;  
-  const uint8_t* alpha_data_;     
-  size_t alpha_data_size_;
-  int is_alpha_decoded_;      
-  uint8_t* alpha_plane_mem_;  
-  uint8_t* alpha_plane_;      
-  const uint8_t* alpha_prev_line_;  
-  int alpha_dithering_;       
+  int filter_type;                          
+  VP8FInfo fstrengths[NUM_MB_SEGMENTS][2];  
+
+  
+  struct ALPHDecoder* alph_dec;  
+  const uint8_t* alpha_data;     
+  size_t alpha_data_size;
+  int is_alpha_decoded;      
+  uint8_t* alpha_plane_mem;  
+  uint8_t* alpha_plane;      
+  const uint8_t* alpha_prev_line;  
+  int alpha_dithering;       
 };
 
 

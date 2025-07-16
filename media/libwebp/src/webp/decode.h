@@ -14,13 +14,15 @@
 #ifndef WEBP_WEBP_DECODE_H_
 #define WEBP_WEBP_DECODE_H_
 
+#include <stddef.h>
+
 #include "./types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define WEBP_DECODER_ABI_VERSION 0x0209    // MAJOR(8b) + MINOR(8b)
+#define WEBP_DECODER_ABI_VERSION 0x0210    // MAJOR(8b) + MINOR(8b)
 
 
 
@@ -452,6 +454,8 @@ struct WebPDecoderOptions {
   int crop_width, crop_height;        
   int use_scaling;                    
   int scaled_width, scaled_height;    
+                                      
+                                      
   int use_threads;                    
   int dithering_strength;             
   int flip;                           
@@ -478,6 +482,11 @@ WEBP_NODISCARD static WEBP_INLINE int WebPInitDecoderConfig(
     WebPDecoderConfig* config) {
   return WebPInitDecoderConfigInternal(config, WEBP_DECODER_ABI_VERSION);
 }
+
+
+
+WEBP_NODISCARD WEBP_EXTERN int WebPValidateDecoderConfig(
+    const WebPDecoderConfig* config);
 
 
 

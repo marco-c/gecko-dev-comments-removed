@@ -11,10 +11,14 @@
 
 
 
+#include <assert.h>
+#include <stddef.h>
+
+#include "src/dsp/cpu.h"
+#include "src/webp/types.h"
 #include "src/dsp/dsp.h"
 #include "src/dsp/yuv.h"
-
-#include <assert.h>
+#include "src/webp/decode.h"
 
 
 

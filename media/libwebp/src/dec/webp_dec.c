@@ -11,15 +11,20 @@
 
 
 
+#include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "src/dec/common_dec.h"
 #include "src/dec/vp8_dec.h"
 #include "src/dec/vp8i_dec.h"
 #include "src/dec/vp8li_dec.h"
 #include "src/dec/webpi_dec.h"
+#include "src/utils/rescaler_utils.h"
 #include "src/utils/utils.h"
-#include "src/webp/mux_types.h"  
 #include "src/webp/decode.h"
+#include "src/webp/format_constants.h"
+#include "src/webp/mux_types.h"  
 #include "src/webp/types.h"
 
 
@@ -475,23 +480,23 @@ WEBP_NODISCARD static VP8StatusCode DecodeInto(const uint8_t* const data,
     if (dec == NULL) {
       return VP8_STATUS_OUT_OF_MEMORY;
     }
-    dec->alpha_data_ = headers.alpha_data;
-    dec->alpha_data_size_ = headers.alpha_data_size;
+    dec->alpha_data = headers.alpha_data;
+    dec->alpha_data_size = headers.alpha_data_size;
 
     
     if (!VP8GetHeaders(dec, &io)) {
-      status = dec->status_;   
+      status = dec->status;   
     } else {
       
       status = WebPAllocateDecBuffer(io.width, io.height, params->options,
                                      params->output);
       if (status == VP8_STATUS_OK) {  
         
-        dec->mt_method_ = VP8GetThreadMethod(params->options, &headers,
-                                             io.width, io.height);
+        dec->mt_method = VP8GetThreadMethod(params->options, &headers,
+                                            io.width, io.height);
         VP8InitDithering(params->options, dec);
         if (!VP8Decode(dec, &io)) {
-          status = dec->status_;
+          status = dec->status;
         }
       }
     }
@@ -502,14 +507,14 @@ WEBP_NODISCARD static VP8StatusCode DecodeInto(const uint8_t* const data,
       return VP8_STATUS_OUT_OF_MEMORY;
     }
     if (!VP8LDecodeHeader(dec, &io)) {
-      status = dec->status_;   
+      status = dec->status;   
     } else {
       
       status = WebPAllocateDecBuffer(io.width, io.height, params->options,
                                      params->output);
       if (status == VP8_STATUS_OK) {  
         if (!VP8LDecodeImage(dec)) {
-          status = dec->status_;
+          status = dec->status;
         }
       }
     }
@@ -747,6 +752,61 @@ int WebPInitDecoderConfigInternal(WebPDecoderConfig* config,
   return 1;
 }
 
+static int WebPCheckCropDimensionsBasic(int x, int y, int w, int h) {
+  return !(x < 0 || y < 0 || w <= 0 || h <= 0);
+}
+
+int WebPValidateDecoderConfig(const WebPDecoderConfig* config) {
+  const WebPDecoderOptions* options;
+  if (config == NULL) return 0;
+  if (!IsValidColorspace(config->output.colorspace)) {
+    return 0;
+  }
+
+  options = &config->options;
+  
+  
+
+  
+  if (options->use_cropping && !WebPCheckCropDimensionsBasic(
+                                   options->crop_left, options->crop_top,
+                                   options->crop_width, options->crop_height)) {
+    return 0;
+  }
+  
+  if (options->use_scaling &&
+      (options->scaled_width < 0 || options->scaled_height < 0 ||
+       (options->scaled_width == 0 && options->scaled_height == 0))) {
+    return 0;
+  }
+
+  
+  if (config->input.width > 0 || config->input.height > 0) {
+    int scaled_width = options->scaled_width;
+    int scaled_height = options->scaled_height;
+    if (options->use_cropping &&
+        !WebPCheckCropDimensions(config->input.width, config->input.height,
+                                 options->crop_left, options->crop_top,
+                                 options->crop_width, options->crop_height)) {
+      return 0;
+    }
+    if (options->use_scaling && !WebPRescalerGetScaledDimensions(
+                                    config->input.width, config->input.height,
+                                    &scaled_width, &scaled_height)) {
+      return 0;
+    }
+  }
+
+  
+  if (options->dithering_strength < 0 || options->dithering_strength > 100 ||
+      options->alpha_dithering_strength < 0 ||
+      options->alpha_dithering_strength > 100) {
+    return 0;
+  }
+
+  return 1;
+}
+
 VP8StatusCode WebPGetFeaturesInternal(const uint8_t* data, size_t data_size,
                                       WebPBitstreamFeatures* features,
                                       int version) {
@@ -806,8 +866,8 @@ VP8StatusCode WebPDecode(const uint8_t* data, size_t data_size,
 
 int WebPCheckCropDimensions(int image_width, int image_height,
                             int x, int y, int w, int h) {
-  return !(x < 0 || y < 0 || w <= 0 || h <= 0 ||
-           x >= image_width || w > image_width || w > image_width - x ||
+  return WebPCheckCropDimensionsBasic(x, y, w, h) &&
+         !(x >= image_width || w > image_width || w > image_width - x ||
            y >= image_height || h > image_height || h > image_height - y);
 }
 

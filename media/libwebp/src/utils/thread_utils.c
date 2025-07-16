@@ -13,6 +13,7 @@
 
 #include <assert.h>
 #include <string.h>   
+
 #include "src/utils/thread_utils.h"
 #include "src/utils/utils.h"
 
@@ -29,9 +30,9 @@ typedef CRITICAL_SECTION pthread_mutex_t;
 typedef CONDITION_VARIABLE pthread_cond_t;
 #else
 typedef struct {
-  HANDLE waiting_sem_;
-  HANDLE received_sem_;
-  HANDLE signal_event_;
+  HANDLE waiting_sem;
+  HANDLE received_sem;
+  HANDLE signal_event;
 } pthread_cond_t;
 #endif  
 
@@ -51,9 +52,9 @@ typedef struct {
 #endif  
 
 typedef struct {
-  pthread_mutex_t mutex_;
-  pthread_cond_t  condition_;
-  pthread_t       thread_;
+  pthread_mutex_t mutex;
+  pthread_cond_t  condition;
+  pthread_t       thread;
 } WebPWorkerImpl;
 
 #if defined(_WIN32)
@@ -133,9 +134,9 @@ static int pthread_cond_destroy(pthread_cond_t* const condition) {
 #ifdef USE_WINDOWS_CONDITION_VARIABLE
   (void)condition;
 #else
-  ok &= (CloseHandle(condition->waiting_sem_) != 0);
-  ok &= (CloseHandle(condition->received_sem_) != 0);
-  ok &= (CloseHandle(condition->signal_event_) != 0);
+  ok &= (CloseHandle(condition->waiting_sem) != 0);
+  ok &= (CloseHandle(condition->received_sem) != 0);
+  ok &= (CloseHandle(condition->signal_event) != 0);
 #endif
   return !ok;
 }
@@ -145,12 +146,12 @@ static int pthread_cond_init(pthread_cond_t* const condition, void* cond_attr) {
 #ifdef USE_WINDOWS_CONDITION_VARIABLE
   InitializeConditionVariable(condition);
 #else
-  condition->waiting_sem_ = CreateSemaphore(NULL, 0, 1, NULL);
-  condition->received_sem_ = CreateSemaphore(NULL, 0, 1, NULL);
-  condition->signal_event_ = CreateEvent(NULL, FALSE, FALSE, NULL);
-  if (condition->waiting_sem_ == NULL ||
-      condition->received_sem_ == NULL ||
-      condition->signal_event_ == NULL) {
+  condition->waiting_sem = CreateSemaphore(NULL, 0, 1, NULL);
+  condition->received_sem = CreateSemaphore(NULL, 0, 1, NULL);
+  condition->signal_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+  if (condition->waiting_sem == NULL ||
+      condition->received_sem == NULL ||
+      condition->signal_event == NULL) {
     pthread_cond_destroy(condition);
     return 1;
   }
@@ -163,12 +164,12 @@ static int pthread_cond_signal(pthread_cond_t* const condition) {
 #ifdef USE_WINDOWS_CONDITION_VARIABLE
   WakeConditionVariable(condition);
 #else
-  if (WaitForSingleObject(condition->waiting_sem_, 0) == WAIT_OBJECT_0) {
+  if (WaitForSingleObject(condition->waiting_sem, 0) == WAIT_OBJECT_0) {
     
-    ok = SetEvent(condition->signal_event_);
+    ok = SetEvent(condition->signal_event);
     
     
-    ok &= (WaitForSingleObject(condition->received_sem_, INFINITE) !=
+    ok &= (WaitForSingleObject(condition->received_sem, INFINITE) !=
            WAIT_OBJECT_0);
   }
 #endif
@@ -183,12 +184,12 @@ static int pthread_cond_wait(pthread_cond_t* const condition,
 #else
   
   
-  if (!ReleaseSemaphore(condition->waiting_sem_, 1, NULL)) return 1;
+  if (!ReleaseSemaphore(condition->waiting_sem, 1, NULL)) return 1;
   
   pthread_mutex_unlock(mutex);
-  ok = (WaitForSingleObject(condition->signal_event_, INFINITE) ==
+  ok = (WaitForSingleObject(condition->signal_event, INFINITE) ==
         WAIT_OBJECT_0);
-  ok &= ReleaseSemaphore(condition->received_sem_, 1, NULL);
+  ok &= ReleaseSemaphore(condition->received_sem, 1, NULL);
   pthread_mutex_lock(mutex);
 #endif
   return !ok;
@@ -203,17 +204,17 @@ static int pthread_cond_wait(pthread_cond_t* const condition,
 
 static THREADFN ThreadLoop(void* ptr) {
   WebPWorker* const worker = (WebPWorker*)ptr;
-  WebPWorkerImpl* const impl = (WebPWorkerImpl*)worker->impl_;
+  WebPWorkerImpl* const impl = (WebPWorkerImpl*)worker->impl;
   int done = 0;
   while (!done) {
-    pthread_mutex_lock(&impl->mutex_);
-    while (worker->status_ == OK) {   
-      pthread_cond_wait(&impl->condition_, &impl->mutex_);
+    pthread_mutex_lock(&impl->mutex);
+    while (worker->status == OK) {   
+      pthread_cond_wait(&impl->condition, &impl->mutex);
     }
-    if (worker->status_ == WORK) {
+    if (worker->status == WORK) {
       WebPGetWorkerInterface()->Execute(worker);
-      worker->status_ = OK;
-    } else if (worker->status_ == NOT_OK) {   
+      worker->status = OK;
+    } else if (worker->status == NOT_OK) {   
       done = 1;
     }
     
@@ -221,8 +222,8 @@ static THREADFN ThreadLoop(void* ptr) {
     
     
     
-    pthread_mutex_unlock(&impl->mutex_);
-    pthread_cond_signal(&impl->condition_);
+    pthread_mutex_unlock(&impl->mutex);
+    pthread_cond_signal(&impl->condition);
   }
   return THREAD_RETURN(NULL);    
 }
@@ -232,28 +233,28 @@ static void ChangeState(WebPWorker* const worker, WebPWorkerStatus new_status) {
   
   
   
-  WebPWorkerImpl* const impl = (WebPWorkerImpl*)worker->impl_;
+  WebPWorkerImpl* const impl = (WebPWorkerImpl*)worker->impl;
   if (impl == NULL) return;
 
-  pthread_mutex_lock(&impl->mutex_);
-  if (worker->status_ >= OK) {
+  pthread_mutex_lock(&impl->mutex);
+  if (worker->status >= OK) {
     
-    while (worker->status_ != OK) {
-      pthread_cond_wait(&impl->condition_, &impl->mutex_);
+    while (worker->status != OK) {
+      pthread_cond_wait(&impl->condition, &impl->mutex);
     }
     
     if (new_status != OK) {
-      worker->status_ = new_status;
+      worker->status = new_status;
       
       
       
       
-      pthread_mutex_unlock(&impl->mutex_);
-      pthread_cond_signal(&impl->condition_);
+      pthread_mutex_unlock(&impl->mutex);
+      pthread_cond_signal(&impl->condition);
       return;
     }
   }
-  pthread_mutex_unlock(&impl->mutex_);
+  pthread_mutex_unlock(&impl->mutex);
 }
 
 #endif  
@@ -262,54 +263,54 @@ static void ChangeState(WebPWorker* const worker, WebPWorkerStatus new_status) {
 
 static void Init(WebPWorker* const worker) {
   memset(worker, 0, sizeof(*worker));
-  worker->status_ = NOT_OK;
+  worker->status = NOT_OK;
 }
 
 static int Sync(WebPWorker* const worker) {
 #ifdef WEBP_USE_THREAD
   ChangeState(worker, OK);
 #endif
-  assert(worker->status_ <= OK);
+  assert(worker->status <= OK);
   return !worker->had_error;
 }
 
 static int Reset(WebPWorker* const worker) {
   int ok = 1;
   worker->had_error = 0;
-  if (worker->status_ < OK) {
+  if (worker->status < OK) {
 #ifdef WEBP_USE_THREAD
     WebPWorkerImpl* const impl =
         (WebPWorkerImpl*)WebPSafeCalloc(1, sizeof(WebPWorkerImpl));
-    worker->impl_ = (void*)impl;
-    if (worker->impl_ == NULL) {
+    worker->impl = (void*)impl;
+    if (worker->impl == NULL) {
       return 0;
     }
-    if (pthread_mutex_init(&impl->mutex_, NULL)) {
+    if (pthread_mutex_init(&impl->mutex, NULL)) {
       goto Error;
     }
-    if (pthread_cond_init(&impl->condition_, NULL)) {
-      pthread_mutex_destroy(&impl->mutex_);
+    if (pthread_cond_init(&impl->condition, NULL)) {
+      pthread_mutex_destroy(&impl->mutex);
       goto Error;
     }
-    pthread_mutex_lock(&impl->mutex_);
-    ok = !pthread_create(&impl->thread_, NULL, ThreadLoop, worker);
-    if (ok) worker->status_ = OK;
-    pthread_mutex_unlock(&impl->mutex_);
+    pthread_mutex_lock(&impl->mutex);
+    ok = !pthread_create(&impl->thread, NULL, ThreadLoop, worker);
+    if (ok) worker->status = OK;
+    pthread_mutex_unlock(&impl->mutex);
     if (!ok) {
-      pthread_mutex_destroy(&impl->mutex_);
-      pthread_cond_destroy(&impl->condition_);
+      pthread_mutex_destroy(&impl->mutex);
+      pthread_cond_destroy(&impl->condition);
  Error:
       WebPSafeFree(impl);
-      worker->impl_ = NULL;
+      worker->impl = NULL;
       return 0;
     }
 #else
-    worker->status_ = OK;
+    worker->status = OK;
 #endif
-  } else if (worker->status_ > OK) {
+  } else if (worker->status > OK) {
     ok = Sync(worker);
   }
-  assert(!ok || (worker->status_ == OK));
+  assert(!ok || (worker->status == OK));
   return ok;
 }
 
@@ -329,20 +330,20 @@ static void Launch(WebPWorker* const worker) {
 
 static void End(WebPWorker* const worker) {
 #ifdef WEBP_USE_THREAD
-  if (worker->impl_ != NULL) {
-    WebPWorkerImpl* const impl = (WebPWorkerImpl*)worker->impl_;
+  if (worker->impl != NULL) {
+    WebPWorkerImpl* const impl = (WebPWorkerImpl*)worker->impl;
     ChangeState(worker, NOT_OK);
-    pthread_join(impl->thread_, NULL);
-    pthread_mutex_destroy(&impl->mutex_);
-    pthread_cond_destroy(&impl->condition_);
+    pthread_join(impl->thread, NULL);
+    pthread_mutex_destroy(&impl->mutex);
+    pthread_cond_destroy(&impl->condition);
     WebPSafeFree(impl);
-    worker->impl_ = NULL;
+    worker->impl = NULL;
   }
 #else
-  worker->status_ = NOT_OK;
-  assert(worker->impl_ == NULL);
+  worker->status = NOT_OK;
+  assert(worker->impl == NULL);
 #endif
-  assert(worker->status_ == NOT_OK);
+  assert(worker->status == NOT_OK);
 }
 
 

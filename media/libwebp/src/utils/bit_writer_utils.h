@@ -14,6 +14,8 @@
 #ifndef WEBP_UTILS_BIT_WRITER_UTILS_H_
 #define WEBP_UTILS_BIT_WRITER_UTILS_H_
 
+#include <stddef.h>
+
 #include "src/webp/types.h"
 
 #ifdef __cplusplus
@@ -25,14 +27,14 @@ extern "C" {
 
 typedef struct VP8BitWriter VP8BitWriter;
 struct VP8BitWriter {
-  int32_t  range_;      
-  int32_t  value_;
-  int      run_;        
-  int      nb_bits_;    
-  uint8_t* buf_;        
-  size_t   pos_;
-  size_t   max_pos_;
-  int      error_;      
+  int32_t  range;      
+  int32_t  value;
+  int      run;        
+  int      nb_bits;    
+  uint8_t* buf;        
+  size_t   pos;
+  size_t   max_pos;
+  int      error;      
 };
 
 
@@ -54,17 +56,17 @@ int VP8BitWriterAppend(VP8BitWriter* const bw,
 
 
 static WEBP_INLINE uint64_t VP8BitWriterPos(const VP8BitWriter* const bw) {
-  const uint64_t nb_bits = 8 + bw->nb_bits_;   
-  return (bw->pos_ + bw->run_) * 8 + nb_bits;
+  const uint64_t nb_bits = 8 + bw->nb_bits;   
+  return (bw->pos + bw->run) * 8 + nb_bits;
 }
 
 
 static WEBP_INLINE uint8_t* VP8BitWriterBuf(const VP8BitWriter* const bw) {
-  return bw->buf_;
+  return bw->buf;
 }
 
 static WEBP_INLINE size_t VP8BitWriterSize(const VP8BitWriter* const bw) {
-  return bw->pos_;
+  return bw->pos;
 }
 
 
@@ -87,21 +89,21 @@ typedef uint16_t vp8l_wtype_t;
 #endif
 
 typedef struct {
-  vp8l_atype_t bits_;   
-  int          used_;   
-  uint8_t*     buf_;    
-  uint8_t*     cur_;    
-  uint8_t*     end_;    
+  vp8l_atype_t bits;   
+  int          used;   
+  uint8_t*     buf;    
+  uint8_t*     cur;    
+  uint8_t*     end;    
 
   
   
   
   
-  int error_;
+  int error;
 } VP8LBitWriter;
 
 static WEBP_INLINE size_t VP8LBitWriterNumBytes(const VP8LBitWriter* const bw) {
-  return (bw->cur_ - bw->buf_) + ((bw->used_ + 7) >> 3);
+  return (bw->cur - bw->buf) + ((bw->used + 7) >> 3);
 }
 
 
@@ -134,11 +136,11 @@ static WEBP_INLINE void VP8LPutBits(VP8LBitWriter* const bw,
                                     uint32_t bits, int n_bits) {
   if (sizeof(vp8l_wtype_t) == 4) {
     if (n_bits > 0) {
-      if (bw->used_ >= 32) {
+      if (bw->used >= 32) {
         VP8LPutBitsFlushBits(bw);
       }
-      bw->bits_ |= (vp8l_atype_t)bits << bw->used_;
-      bw->used_ += n_bits;
+      bw->bits |= (vp8l_atype_t)bits << bw->used;
+      bw->used += n_bits;
     }
   } else {
     VP8LPutBitsInternal(bw, bits, n_bits);

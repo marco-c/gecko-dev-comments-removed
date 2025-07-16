@@ -18,11 +18,15 @@
 #include "src/webp/config.h"
 #endif
 
+#include <stddef.h>
+
+
 
 #ifndef WEBP_NEAR_LOSSLESS
 #define WEBP_NEAR_LOSSLESS 1
 #endif
 
+#include "src/webp/types.h"
 #include "src/enc/backward_references_enc.h"
 #include "src/enc/histogram_enc.h"
 #include "src/utils/bit_writer_utils.h"
@@ -44,39 +48,39 @@ typedef enum {
 } VP8LEncoderARGBContent;
 
 typedef struct {
-  const WebPConfig* config_;      
-  const WebPPicture* pic_;        
+  const WebPConfig* config;      
+  const WebPPicture* pic;        
 
-  uint32_t* argb_;                       
-  VP8LEncoderARGBContent argb_content_;  
-  uint32_t* argb_scratch_;               
-                                         
-  uint32_t* transform_data_;             
-  uint32_t* transform_mem_;              
-  size_t    transform_mem_size_;         
+  uint32_t* argb;                       
+  VP8LEncoderARGBContent argb_content;  
+  uint32_t* argb_scratch;               
+                                        
+  uint32_t* transform_data;             
+  uint32_t* transform_mem;              
+  size_t    transform_mem_size;         
 
-  int       current_width_;       
-
-  
-  int histo_bits_;
-  int predictor_transform_bits_;    
-  int cross_color_transform_bits_;  
-  int cache_bits_;        
+  int       current_width;       
 
   
-  int use_cross_color_;
-  int use_subtract_green_;
-  int use_predict_;
-  int use_palette_;
-  int palette_size_;
-  uint32_t palette_[MAX_PALETTE_SIZE];
-  
-  uint32_t palette_sorted_[MAX_PALETTE_SIZE];
+  int histo_bits;
+  int predictor_transform_bits;    
+  int cross_color_transform_bits;  
+  int cache_bits;        
 
   
-  struct VP8LBackwardRefs refs_[4];  
-  VP8LHashChain hash_chain_;         
-                                     
+  int use_cross_color;
+  int use_subtract_green;
+  int use_predict;
+  int use_palette;
+  int palette_size;
+  uint32_t palette[MAX_PALETTE_SIZE];
+  
+  uint32_t palette_sorted[MAX_PALETTE_SIZE];
+
+  
+  struct VP8LBackwardRefs refs[4];  
+  VP8LHashChain hash_chain;         
+                                    
 } VP8LEncoder;
 
 

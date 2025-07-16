@@ -16,10 +16,15 @@
 #define WEBP_DEC_VP8LI_DEC_H_
 
 #include <string.h>     
+
+#include "src/dec/vp8_dec.h"
 #include "src/dec/webpi_dec.h"
 #include "src/utils/bit_reader_utils.h"
 #include "src/utils/color_cache_utils.h"
 #include "src/utils/huffman_utils.h"
+#include "src/utils/rescaler_utils.h"
+#include "src/webp/decode.h"
+#include "src/webp/format_constants.h"
 #include "src/webp/types.h"
 
 #ifdef __cplusplus
@@ -34,58 +39,58 @@ typedef enum {
 
 typedef struct VP8LTransform VP8LTransform;
 struct VP8LTransform {
-  VP8LImageTransformType type_;   
-  int                    bits_;   
-  int                    xsize_;  
-  int                    ysize_;  
-  uint32_t*              data_;   
+  VP8LImageTransformType type;   
+  int                    bits;   
+  int                    xsize;  
+  int                    ysize;  
+  uint32_t*              data;   
 };
 
 typedef struct {
-  int             color_cache_size_;
-  VP8LColorCache  color_cache_;
-  VP8LColorCache  saved_color_cache_;  
+  int             color_cache_size;
+  VP8LColorCache  color_cache;
+  VP8LColorCache  saved_color_cache;  
 
-  int             huffman_mask_;
-  int             huffman_subsample_bits_;
-  int             huffman_xsize_;
-  uint32_t*       huffman_image_;
-  int             num_htree_groups_;
-  HTreeGroup*     htree_groups_;
-  HuffmanTables   huffman_tables_;
+  int             huffman_mask;
+  int             huffman_subsample_bits;
+  int             huffman_xsize;
+  uint32_t*       huffman_image;
+  int             num_htree_groups;
+  HTreeGroup*     htree_groups;
+  HuffmanTables   huffman_tables;
 } VP8LMetadata;
 
 typedef struct VP8LDecoder VP8LDecoder;
 struct VP8LDecoder {
-  VP8StatusCode    status_;
-  VP8LDecodeState  state_;
-  VP8Io*           io_;
+  VP8StatusCode    status;
+  VP8LDecodeState  state;
+  VP8Io*           io;
 
-  const WebPDecBuffer* output_;    
+  const WebPDecBuffer* output;    
 
-  uint32_t*        pixels_;        
-                                   
-  uint32_t*        argb_cache_;    
+  uint32_t*        pixels;        
+                                  
+  uint32_t*        argb_cache;    
 
-  VP8LBitReader    br_;
-  int              incremental_;   
-  VP8LBitReader    saved_br_;      
-  int              saved_last_pixel_;
+  VP8LBitReader    br;
+  int              incremental;   
+  VP8LBitReader    saved_br;      
+  int              saved_last_pixel;
 
-  int              width_;
-  int              height_;
-  int              last_row_;      
-  int              last_pixel_;    
-                                   
-                                   
-  int              last_out_row_;  
+  int              width;
+  int              height;
+  int              last_row;      
+  int              last_pixel;    
+                                  
+                                  
+  int              last_out_row;  
 
-  VP8LMetadata     hdr_;
+  VP8LMetadata     hdr;
 
-  int              next_transform_;
-  VP8LTransform    transforms_[NUM_TRANSFORMS];
+  int              next_transform;
+  VP8LTransform    transforms[NUM_TRANSFORMS];
   
-  uint32_t         transforms_seen_;
+  uint32_t         transforms_seen;
 
   uint8_t*         rescaler_memory;  
   WebPRescaler*    rescaler;         

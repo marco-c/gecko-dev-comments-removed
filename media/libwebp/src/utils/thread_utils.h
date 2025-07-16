@@ -37,8 +37,8 @@ typedef int (*WebPWorkerHook)(void*, void*);
 
 
 typedef struct {
-  void* impl_;            
-  WebPWorkerStatus status_;
+  void* impl;             
+  WebPWorkerStatus status;
   WebPWorkerHook hook;    
   void* data1;            
   void* data2;            

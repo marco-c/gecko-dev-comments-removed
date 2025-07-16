@@ -15,9 +15,10 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include "src/webp/types.h"
+
 #include "src/webp/encode.h"
 #include "src/webp/format_constants.h"
+#include "src/webp/types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -126,10 +127,10 @@ struct VP8LHashChain {
   
   
   
-  uint32_t* offset_length_;
+  uint32_t* offset_length;
   
   
-  int size_;
+  int size;
 };
 
 
@@ -143,12 +144,12 @@ void VP8LHashChainClear(VP8LHashChain* const p);
 
 static WEBP_INLINE int VP8LHashChainFindOffset(const VP8LHashChain* const p,
                                                const int base_position) {
-  return p->offset_length_[base_position] >> MAX_LENGTH_BITS;
+  return p->offset_length[base_position] >> MAX_LENGTH_BITS;
 }
 
 static WEBP_INLINE int VP8LHashChainFindLength(const VP8LHashChain* const p,
                                                const int base_position) {
-  return p->offset_length_[base_position] & ((1U << MAX_LENGTH_BITS) - 1);
+  return p->offset_length[base_position] & ((1U << MAX_LENGTH_BITS) - 1);
 }
 
 static WEBP_INLINE void VP8LHashChainFindCopy(const VP8LHashChain* const p,
@@ -170,12 +171,12 @@ typedef struct VP8LBackwardRefs VP8LBackwardRefs;
 
 
 struct VP8LBackwardRefs {
-  int block_size_;               
-  int error_;                    
-  PixOrCopyBlock* refs_;         
-  PixOrCopyBlock** tail_;        
-  PixOrCopyBlock* free_blocks_;  
-  PixOrCopyBlock* last_block_;   
+  int block_size;               
+  int error;                    
+  PixOrCopyBlock* refs;         
+  PixOrCopyBlock** tail;        
+  PixOrCopyBlock* free_blocks;  
+  PixOrCopyBlock* last_block;   
 };
 
 
@@ -189,8 +190,8 @@ typedef struct {
   
   PixOrCopy* cur_pos;           
   
-  PixOrCopyBlock* cur_block_;   
-  const PixOrCopy* last_pos_;   
+  PixOrCopyBlock* cur_block;    
+  const PixOrCopy* last_pos;    
 } VP8LRefsCursor;
 
 
@@ -205,7 +206,7 @@ void VP8LRefsCursorNextBlock(VP8LRefsCursor* const c);
 static WEBP_INLINE void VP8LRefsCursorNext(VP8LRefsCursor* const c) {
   assert(c != NULL);
   assert(VP8LRefsCursorOk(c));
-  if (++c->cur_pos == c->last_pos_) VP8LRefsCursorNextBlock(c);
+  if (++c->cur_pos == c->last_pos) VP8LRefsCursorNextBlock(c);
 }
 
 

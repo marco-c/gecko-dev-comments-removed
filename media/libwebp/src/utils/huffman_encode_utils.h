@@ -35,10 +35,10 @@ typedef struct {
 
 
 typedef struct {
-  uint32_t total_count_;   
-  int value_;              
-  int pool_index_left_;    
-  int pool_index_right_;   
+  uint32_t total_count;   
+  int value;              
+  int pool_index_left;    
+  int pool_index_right;   
 } HuffmanTree;
 
 

@@ -15,6 +15,7 @@
 #define WEBP_ENC_VP8I_ENC_H_
 
 #include <string.h>     
+
 #include "src/dec/common_dec.h"
 #include "src/dsp/cpu.h"
 #include "src/dsp/dsp.h"
@@ -22,6 +23,7 @@
 #include "src/utils/thread_utils.h"
 #include "src/utils/utils.h"
 #include "src/webp/encode.h"
+#include "src/webp/types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +34,7 @@ extern "C" {
 
 
 #define ENC_MAJ_VERSION 1
-#define ENC_MIN_VERSION 5
+#define ENC_MIN_VERSION 6
 #define ENC_REV_VERSION 0
 
 enum { MAX_LF_LEVELS = 64,       
@@ -138,32 +140,32 @@ typedef struct VP8Encoder VP8Encoder;
 
 
 typedef struct {
-  int num_segments_;      
-  int update_map_;        
+  int num_segments;       
+  int update_map;         
                           
-  int size_;              
+  int size;               
 } VP8EncSegmentHeader;
 
 
 typedef struct {
-  uint8_t segments_[3];     
-  uint8_t skip_proba_;      
-  ProbaArray coeffs_[NUM_TYPES][NUM_BANDS];      
-  StatsArray stats_[NUM_TYPES][NUM_BANDS];       
-  CostArray level_cost_[NUM_TYPES][NUM_BANDS];   
-  CostArrayMap remapped_costs_[NUM_TYPES];       
-  int dirty_;               
-  int use_skip_proba_;      
-  int nb_skip_;             
+  uint8_t segments[3];     
+  uint8_t skip_proba;      
+  ProbaArray coeffs[NUM_TYPES][NUM_BANDS];      
+  StatsArray stats[NUM_TYPES][NUM_BANDS];       
+  CostArray level_cost[NUM_TYPES][NUM_BANDS];   
+  CostArrayMap remapped_costs[NUM_TYPES];       
+  int dirty;               
+  int use_skip_proba;      
+  int nb_skip;             
 } VP8EncProba;
 
 
 
 typedef struct {
-  int simple_;             
-  int level_;              
-  int sharpness_;          
-  int i4x4_lf_delta_;      
+  int simple;             
+  int level;              
+  int sharpness;          
+  int i4x4_lf_delta;      
 } VP8EncFilterHeader;
 
 
@@ -171,37 +173,37 @@ typedef struct {
 
 typedef struct {
   
-  unsigned int type_:2;     
-  unsigned int uv_mode_:2;
-  unsigned int skip_:1;
-  unsigned int segment_:2;
-  uint8_t alpha_;      
+  unsigned int type:2;     
+  unsigned int uv_mode:2;
+  unsigned int skip:1;
+  unsigned int segment:2;
+  uint8_t alpha;      
 } VP8MBInfo;
 
 typedef struct VP8Matrix {
-  uint16_t q_[16];        
-  uint16_t iq_[16];       
-  uint32_t bias_[16];     
-  uint32_t zthresh_[16];  
-  uint16_t sharpen_[16];  
+  uint16_t q[16];        
+  uint16_t iq[16];       
+  uint32_t bias[16];     
+  uint32_t zthresh[16];  
+  uint16_t sharpen[16];  
 } VP8Matrix;
 
 typedef struct {
-  VP8Matrix y1_, y2_, uv_;  
-  int alpha_;      
+  VP8Matrix y1, y2, uv;  
+  int alpha;       
                    
-  int beta_;       
-  int quant_;      
-  int fstrength_;  
-  int max_edge_;   
-  int min_disto_;  
+  int beta;        
+  int quant;       
+  int fstrength;   
+  int max_edge;    
+  int min_disto;   
   
-  int lambda_i16_, lambda_i4_, lambda_uv_;
-  int lambda_mode_, lambda_trellis_, tlambda_;
-  int lambda_trellis_i16_, lambda_trellis_i4_, lambda_trellis_uv_;
+  int lambda_i16, lambda_i4, lambda_uv;
+  int lambda_mode, lambda_trellis, tlambda;
+  int lambda_trellis_i16, lambda_trellis_i4, lambda_trellis_uv;
 
   
-  score_t i4_penalty_;   
+  score_t i4_penalty;   
 } VP8SegmentInfo;
 
 typedef int8_t DError[2 ][2 ];
@@ -224,48 +226,48 @@ typedef struct {
 
 
 typedef struct {
-  int x_, y_;                      
-  uint8_t*      yuv_in_;           
-  uint8_t*      yuv_out_;          
-  uint8_t*      yuv_out2_;         
-  uint8_t*      yuv_p_;            
-  VP8Encoder*   enc_;              
-  VP8MBInfo*    mb_;               
-  VP8BitWriter* bw_;               
-  uint8_t*      preds_;            
-  uint32_t*     nz_;               
+  int x, y;                       
+  uint8_t*      yuv_in;           
+  uint8_t*      yuv_out;          
+  uint8_t*      yuv_out2;         
+  uint8_t*      yuv_p;            
+  VP8Encoder*   enc;              
+  VP8MBInfo*    mb;               
+  VP8BitWriter* bw;               
+  uint8_t*      preds;            
+  uint32_t*     nz;               
 #if WEBP_AARCH64 && BPS == 32
-  uint8_t       i4_boundary_[40];  
+  uint8_t       i4_boundary[40];  
 #else
-  uint8_t       i4_boundary_[37];  
+  uint8_t       i4_boundary[37];  
 #endif
-  uint8_t*      i4_top_;           
-  int           i4_;               
-  int           top_nz_[9];        
-  int           left_nz_[9];       
-  uint64_t      bit_count_[4][3];  
-  uint64_t      luma_bits_;        
-  uint64_t      uv_bits_;          
-  LFStats*      lf_stats_;         
-  int           do_trellis_;       
-  int           count_down_;       
-  int           count_down0_;      
-  int           percent0_;         
+  uint8_t*      i4_top;           
+  int           i4;               
+  int           top_nz[9];        
+  int           left_nz[9];       
+  uint64_t      bit_count[4][3];  
+  uint64_t      luma_bits;        
+  uint64_t      uv_bits;          
+  LFStats*      lf_stats;         
+  int           do_trellis;       
+  int           count_down;       
+  int           count_down0;      
+  int           percent0;         
 
-  DError        left_derr_;        
-  DError*       top_derr_;         
+  DError        left_derr;        
+  DError*       top_derr;         
 
-  uint8_t* y_left_;    
-  uint8_t* u_left_;    
-  uint8_t* v_left_;    
+  uint8_t* y_left;    
+  uint8_t* u_left;    
+  uint8_t* v_left;    
 
-  uint8_t* y_top_;     
-  uint8_t* uv_top_;    
+  uint8_t* y_top;     
+  uint8_t* uv_top;    
 
   
-  uint8_t yuv_left_mem_[17 + 16 + 16 + 8 + WEBP_ALIGN_CST];
+  uint8_t yuv_left_mem[17 + 16 + 16 + 8 + WEBP_ALIGN_CST];
   
-  uint8_t yuv_mem_[3 * YUV_SIZE_ENC + PRED_SIZE_ENC + WEBP_ALIGN_CST];
+  uint8_t yuv_mem[3 * YUV_SIZE_ENC + PRED_SIZE_ENC + WEBP_ALIGN_CST];
 } VP8EncIterator;
 
   
@@ -285,6 +287,7 @@ void VP8IteratorImport(VP8EncIterator* const it, uint8_t* const tmp_32);
 void VP8IteratorExport(const VP8EncIterator* const it);
 
 int VP8IteratorNext(VP8EncIterator* const it);
+
 
 void VP8IteratorSaveBoundary(VP8EncIterator* const it);
 
@@ -313,13 +316,13 @@ typedef struct VP8Tokens VP8Tokens;
 
 typedef struct {
 #if !defined(DISABLE_TOKEN_BUFFER)
-  VP8Tokens* pages_;        
-  VP8Tokens** last_page_;   
-  uint16_t* tokens_;        
-  int left_;                
-  int page_size_;           
+  VP8Tokens* pages;        
+  VP8Tokens** last_page;   
+  uint16_t* tokens;        
+  int left;                
+  int page_size;           
 #endif
-  int error_;         
+  int error;         
 } VP8TBuffer;
 
 
@@ -346,72 +349,72 @@ size_t VP8EstimateTokenSize(VP8TBuffer* const b, const uint8_t* const probas);
 
 
 struct VP8Encoder {
-  const WebPConfig* config_;    
-  WebPPicture* pic_;            
+  const WebPConfig* config;    
+  WebPPicture* pic;            
 
   
-  VP8EncFilterHeader   filter_hdr_;     
-  VP8EncSegmentHeader  segment_hdr_;    
+  VP8EncFilterHeader   filter_hdr;     
+  VP8EncSegmentHeader  segment_hdr;    
 
-  int profile_;                      
-
-  
-  int mb_w_, mb_h_;
-  int preds_w_;   
+  int profile;                      
 
   
-  int num_parts_;
+  int mb_w, mb_h;
+  int preds_w;   
 
   
-  VP8BitWriter bw_;                         
-  VP8BitWriter parts_[MAX_NUM_PARTITIONS];  
-  VP8TBuffer tokens_;                       
-
-  int percent_;                             
+  int num_parts;
 
   
-  int has_alpha_;
-  uint8_t* alpha_data_;       
-  uint32_t alpha_data_size_;
-  WebPWorker alpha_worker_;
+  VP8BitWriter bw;                         
+  VP8BitWriter parts[MAX_NUM_PARTITIONS];  
+  VP8TBuffer tokens;                       
+
+  int percent;                             
 
   
-  VP8SegmentInfo dqm_[NUM_MB_SEGMENTS];
-  int base_quant_;                 
+  int has_alpha;
+  uint8_t* alpha_data;       
+  uint32_t alpha_data_size;
+  WebPWorker alpha_worker;
+
+  
+  VP8SegmentInfo dqm[NUM_MB_SEGMENTS];
+  int base_quant;                  
                                    
-  int alpha_;                      
-  int uv_alpha_;                   
+  int alpha;                       
+  int uv_alpha;                    
   
-  int dq_y1_dc_;
-  int dq_y2_dc_, dq_y2_ac_;
-  int dq_uv_dc_, dq_uv_ac_;
+  int dq_y1_dc;
+  int dq_y2_dc, dq_y2_ac;
+  int dq_uv_dc, dq_uv_ac;
 
   
-  VP8EncProba proba_;
-  uint64_t    sse_[4];      
-  uint64_t    sse_count_;   
-  int         coded_size_;
-  int         residual_bytes_[3][4];
-  int         block_count_[3];
+  VP8EncProba proba;
+  uint64_t    sse[4];      
+  uint64_t    sse_count;   
+  int         coded_size;
+  int         residual_bytes[3][4];
+  int         block_count[3];
 
   
-  int method_;               
-  VP8RDLevel rd_opt_level_;  
-  int max_i4_header_bits_;   
-  int mb_header_limit_;      
-  int thread_level_;         
-  int do_search_;            
-  int use_tokens_;           
+  int method;               
+  VP8RDLevel rd_opt_level;  
+  int max_i4_header_bits;   
+  int mb_header_limit;      
+  int thread_level;         
+  int do_search;            
+  int use_tokens;           
 
   
-  VP8MBInfo* mb_info_;   
-  uint8_t*   preds_;     
-  uint32_t*  nz_;        
-  uint8_t*   y_top_;     
-  uint8_t*   uv_top_;    
-                         
-  LFStats*   lf_stats_;  
-  DError*    top_derr_;  
+  VP8MBInfo* mb_info;   
+  uint8_t*   preds;     
+  uint32_t*  nz;        
+  uint8_t*   y_top;     
+  uint8_t*   uv_top;    
+                        
+  LFStats*   lf_stats;  
+  DError*    top_derr;  
 };
 
 

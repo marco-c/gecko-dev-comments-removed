@@ -14,7 +14,10 @@
 #ifndef WEBP_DEC_ALPHAI_DEC_H_
 #define WEBP_DEC_ALPHAI_DEC_H_
 
+#include "src/dec/vp8_dec.h"
+#include "src/webp/types.h"
 #include "src/dec/webpi_dec.h"
+#include "src/dsp/dsp.h"
 #include "src/utils/filters_utils.h"
 
 #ifdef __cplusplus
@@ -25,18 +28,18 @@ struct VP8LDecoder;
 
 typedef struct ALPHDecoder ALPHDecoder;
 struct ALPHDecoder {
-  int width_;
-  int height_;
-  int method_;
-  WEBP_FILTER_TYPE filter_;
-  int pre_processing_;
-  struct VP8LDecoder* vp8l_dec_;
-  VP8Io io_;
-  int use_8b_decode_;  
+  int width;
+  int height;
+  int method;
+  WEBP_FILTER_TYPE filter;
+  int pre_processing;
+  struct VP8LDecoder* vp8l_dec;
+  VP8Io io;
+  int use_8b_decode;   
                        
                        
-  uint8_t* output_;
-  const uint8_t* prev_line_;   
+  uint8_t* output;
+  const uint8_t* prev_line;   
 };
 
 

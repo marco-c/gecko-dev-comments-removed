@@ -12,7 +12,11 @@
 
 
 #include <assert.h>
+#include <stddef.h>
+
+#include "src/dsp/cpu.h"
 #include "src/dsp/dsp.h"
+#include "src/webp/types.h"
 
 
 #if !defined(USE_TABLES_FOR_ALPHA_MULT)
