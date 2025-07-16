@@ -6,7 +6,7 @@
 #ifndef nsDocShellTelemetryUtils_h__
 #define nsDocShellTelemetryUtils_h__
 
-#include "mozilla/Telemetry.h"
+#include "nsLiteralString.h"
 
 namespace mozilla {
 namespace dom {
@@ -16,7 +16,7 @@ namespace dom {
 
 
 
-Telemetry::LABELS_PAGE_LOAD_ERROR LoadErrorToTelemetryLabel(nsresult aRv);
+nsLiteralCString LoadErrorToTelemetryLabel(nsresult aRv);
 }  
 }  
 #endif  
