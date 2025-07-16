@@ -423,11 +423,14 @@ static Result<Ok, nsCString> IsSupported(
                            aCodecSpecific.is<H264Specific>() &&
                            aCodecSpecific.as<H264Specific>().mProfile ==
                                H264_PROFILE::H264_PROFILE_HIGH;
+  
   bool isFrameSizeGreaterThan4K =
       aFrameSize.width > 3840 || aFrameSize.height > 2160;
 
   
-  if (aFactory.mProvider == MFTEncoder::Factory::Provider::HW_AMD &&
+  
+  
+  if (aFactory.mProvider != MFTEncoder::Factory::Provider::SW &&
       isH264HighProfile && isFrameSizeGreaterThan4K) {
     return Err(nsFmtCString(
         FMT_STRING(
