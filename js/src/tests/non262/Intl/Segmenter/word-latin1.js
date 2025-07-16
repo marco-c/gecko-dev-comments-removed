@@ -206,5 +206,20 @@ assertSegments("_'_", ["_", "'", "_"]);
 assertEq(new Intl.Segmenter("en-posix").resolvedOptions().locale, "en");
 assertEq(new Intl.Segmenter("en-u-va-posix").resolvedOptions().locale, "en");
 
+
+{
+  
+  let string = "Word:with:colon";
+
+  let english = new Intl.Segmenter("en", {granularity: "word"});
+  let svenska = new Intl.Segmenter("sv", {granularity: "word"});
+
+  
+  assertEq([...english.segment(string)].length, 5);
+
+  
+  assertEq([...svenska.segment(string)].length, 1);
+}
+
 if (typeof reportCompare === "function")
   reportCompare(0, 0);
