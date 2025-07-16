@@ -376,7 +376,7 @@ nsTimerImpl::nsTimerImpl(nsITimer* aTimer, nsIEventTarget* aTarget)
     : mEventTarget(aTarget),
       mIsInTimerThread(false),
       mType(0),
-      mGeneration(0),
+      mTimerSeq(0),
       mITimer(aTimer),
       mMutex("nsTimerImpl::mMutex"),
       mCallback(UnknownCallback{}),
@@ -417,7 +417,6 @@ nsresult nsTimerImpl::InitCommon(const TimeDuration& aDelay, uint32_t aType,
   
   
   std::swap(mCallback, newCallback);
-  ++mGeneration;
 
   mType = (uint8_t)aType;
   mDelay = aDelay;
@@ -508,7 +507,6 @@ void nsTimerImpl::CancelImpl(bool aClearITimer) {
     
     
     std::swap(cbTrash, mCallback);
-    ++mGeneration;
 
     
     
@@ -612,7 +610,7 @@ nsresult nsTimerImpl::GetAllowedEarlyFiringMicroseconds(uint32_t* aValueOut) {
   return NS_OK;
 }
 
-void nsTimerImpl::Fire(int32_t aGeneration) {
+void nsTimerImpl::Fire(uint64_t aTimerSeq) {
   uint8_t oldType;
   uint32_t oldDelay;
   TimeStamp oldTimeout;
@@ -623,7 +621,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
     
     
     MutexAutoLock lock(mMutex);
-    if (aGeneration != mGeneration) {
+    if (aTimerSeq != mTimerSeq) {
       
       
       return;
@@ -684,7 +682,8 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
   TimeStamp now = TimeStamp::Now();
 
   MutexAutoLock lock(mMutex);
-  if (aGeneration == mGeneration) {
+  
+  if (aTimerSeq == mTimerSeq) {
     if (IsRepeating()) {
       
       if (IsSlack()) {
