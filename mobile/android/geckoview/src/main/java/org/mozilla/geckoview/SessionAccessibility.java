@@ -521,7 +521,12 @@ public class SessionAccessibility {
     private static native void toggleNativeAccessibility(boolean enable);
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
+
   public boolean onMotionEvent(final @NonNull MotionEvent event) {
     ThreadUtils.assertOnUiThread();
 
@@ -537,6 +542,10 @@ public class SessionAccessibility {
     if ((action != MotionEvent.ACTION_HOVER_MOVE)
         && (action != MotionEvent.ACTION_HOVER_ENTER)
         && (action != MotionEvent.ACTION_HOVER_EXIT)) {
+      return false;
+    }
+
+    if (!mAttached) {
       return false;
     }
 
