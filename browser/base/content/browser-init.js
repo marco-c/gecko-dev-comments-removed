@@ -890,7 +890,7 @@ var gBrowserInit = {
     });
 
     scheduleIdleTask(
-      () => {
+      async () => {
         
         
         
@@ -898,14 +898,14 @@ var gBrowserInit = {
         
         try {
           DownloadsCommon.initializeAllDataLinks();
-          ChromeUtils.importESModule(
-            "resource:///modules/DownloadsTaskbar.sys.mjs"
-          ).DownloadsTaskbar.registerIndicator(window);
           if (AppConstants.platform == "macosx") {
             ChromeUtils.importESModule(
               "resource:///modules/DownloadsMacFinderProgress.sys.mjs"
             ).DownloadsMacFinderProgress.register();
           }
+          await ChromeUtils.importESModule(
+            "resource:///modules/DownloadsTaskbar.sys.mjs"
+          ).DownloadsTaskbar.registerIndicator(window);
         } catch (ex) {
           console.error(ex);
         }
