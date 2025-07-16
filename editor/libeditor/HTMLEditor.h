@@ -1239,46 +1239,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  HandleInsertParagraphInMailCiteElement(Element& aMailCiteElement,
-                                         const EditorDOMPoint& aPointToSplit);
-
-  
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
-                        const Element& aEditingHost);
-
-  
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
-                       const Element& aEditingHost);
-
-  
-
-
-
-
-
-
-
-
 
 
 
@@ -1714,83 +1674,8 @@ class HTMLEditor final : public EditorBase,
                               nsIEditor::EStripWrappers aStripWrappers,
                               AutoClonedRangeArray& aRangesToDelete) override;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
-  SplitParagraphWithTransaction(Element& aParentDivOrP,
-                                const EditorDOMPoint& aStartOfRightNode,
-                                dom::HTMLBRElement* aMayBecomeVisibleBRElement,
-                                const Element& aEditingHost);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
-  HandleInsertParagraphInParagraph(Element& aParentDivOrP,
-                                   const EditorDOMPoint& aCandidatePointToSplit,
-                                   const Element& aEditingHost);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertParagraphResult, nsresult>
-  HandleInsertParagraphInHeadingElement(Element& aHeadingElement,
-                                        const EditorDOMPoint& aPointToSplit);
-
-  
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertParagraphResult, nsresult>
-  HandleInsertParagraphInListItemElement(Element& aListItemElement,
-                                         const EditorDOMPoint& aPointToSplit,
-                                         const Element& aEditingHost);
+  class AutoInsertParagraphHandler;
+  class AutoInsertLineBreakHandler;
 
   
 
