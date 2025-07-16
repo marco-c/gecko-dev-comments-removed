@@ -100,3 +100,7 @@ object_store_get_all_test_setup(
         transaction.oncomplete = test.step_func_done();
       });
     }, 'Get all values with transaction.commit()');
+
+get_all_with_invalid_keys_test(
+    'getAll',  'out-of-line',  undefined,
+     false, 'Get all values with invalid query keys');

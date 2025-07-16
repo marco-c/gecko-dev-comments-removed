@@ -118,3 +118,7 @@ index_get_all_values_with_options_test(
 get_all_with_options_and_count_test(
     'getAll',  'out-of-line',  'test_idx',
     'Get all values with both options and count');
+
+get_all_with_invalid_keys_test(
+    'getAll',  'out-of-line',  'test_idx',
+     true, 'Get all values with invalid query keys');

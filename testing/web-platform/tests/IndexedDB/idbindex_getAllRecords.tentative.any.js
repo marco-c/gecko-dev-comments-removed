@@ -119,3 +119,7 @@ index_get_all_records_test(
       count: 4
     },
     'Direction, query and count');
+
+get_all_with_invalid_keys_test(
+    'getAllRecords',  'out-of-line',  'test_idx',
+     true, 'Get all records with invalid query keys');

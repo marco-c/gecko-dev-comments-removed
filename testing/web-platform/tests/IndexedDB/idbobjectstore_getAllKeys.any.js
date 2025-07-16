@@ -74,3 +74,7 @@ object_store_get_all_keys_test(
      'out-of-line',
      {query: IDBKeyRange.lowerBound('zz')},
     'Query with empty range where lowerBound < last key');
+
+get_all_with_invalid_keys_test(
+    'getAllKeys',  'out-of-line',  undefined,
+     false, 'Get all keys with invalid query keys');
