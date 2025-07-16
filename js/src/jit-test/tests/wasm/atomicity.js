@@ -38,7 +38,7 @@ if (getCoreCount() < NUMAGENTS) {
 
 
 if (getBuildConfiguration("arm-simulator") || getBuildConfiguration("arm64-simulator") ||
-    getBuildConfiguration("mips64-simulator"))
+    getBuildConfiguration("mips64-simulator") || getBuildConfiguration("riscv64-simulator"))
 {
     if (DEBUG > 0)
         print("Atomicity test disabled on simulator");
