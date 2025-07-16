@@ -108,6 +108,10 @@ bool wasm::InCompiledCode(void* pc) {
 }
 
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
+#  if defined(__riscv)
+
+static const size_t MinAddressBitsForHugeMemory = 47;
+#  else
 
 
 
@@ -119,6 +123,7 @@ bool wasm::InCompiledCode(void* pc) {
 
 
 static const size_t MinAddressBitsForHugeMemory = 38;
+#  endif
 
 
 
