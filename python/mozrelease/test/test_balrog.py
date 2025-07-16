@@ -2,11 +2,11 @@
 
 
 
-import json
 from pathlib import Path
 
 import mozunit
 import pytest
+from mozfile import json
 from mozilla_version.gecko import GeckoVersion
 
 from mozrelease.balrog import generate_update_properties
