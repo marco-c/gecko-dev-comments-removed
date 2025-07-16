@@ -2947,17 +2947,6 @@ void ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
   ProcessChild::QuickExit();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvShutdownConfirmedHP() {
-  ProcessChild::AppendToIPCShutdownStateAnnotation(
-      "RecvShutdownConfirmedHP entry"_ns);
-
-  
-  
-  
-
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
   ProcessChild::AppendToIPCShutdownStateAnnotation("RecvShutdown entry"_ns);
 

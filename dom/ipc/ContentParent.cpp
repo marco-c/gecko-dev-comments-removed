@@ -1659,9 +1659,6 @@ bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
         }
 
         
-        
-        Unused << SendShutdownConfirmedHP();
-        
         if (SendShutdown()) {
           MaybeLogBlockShutdownDiagnostics(
               this, "ShutDownProcess: Sent shutdown message.", __FILE__,
