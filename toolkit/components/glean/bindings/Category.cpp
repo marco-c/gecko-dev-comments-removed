@@ -4,6 +4,7 @@
 
 
 
+#include "bindings/private/Common.h"
 #include "mozilla/dom/GleanBinding.h"
 #include "mozilla/glean/bindings/Glean.h"
 #include "mozilla/glean/bindings/Category.h"
@@ -28,6 +29,8 @@ JSObject* Category::WrapObject(JSContext* aCx,
 
 already_AddRefed<GleanMetric> Category::NamedGetter(const nsAString& aName,
                                                     bool& aFound) {
+  MOZ_ASSERT(IsCamelCase(aName), "NamedGetter expects CamelCase");
+
   aFound = false;
 
   nsCString metricName;

@@ -18,6 +18,7 @@ namespace mozilla::glean {
 
 
 void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg);
+bool IsCamelCase(const nsAString& aStr);
 
 }  
 
