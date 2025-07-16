@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/WebGPUBinding.h"
 #include "CanvasContext.h"
@@ -37,7 +37,7 @@ inline void ImplCycleCollectionUnlink(dom::GPUCanvasConfiguration& aField) {
   aField.UnlinkForCC();
 }
 
-
+// -
 
 template <class T>
 inline void ImplCycleCollectionTraverse(
@@ -53,9 +53,9 @@ inline void ImplCycleCollectionUnlink(std::unique_ptr<T>& aField) {
   aField = nullptr;
 }
 
-}  
+}  // namespace mozilla
 
-
+// -
 
 namespace mozilla::webgpu {
 
@@ -73,7 +73,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CanvasContext)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-
+// -
 
 CanvasContext::CanvasContext() = default;
 
@@ -89,7 +89,7 @@ JSObject* CanvasContext::WrapObject(JSContext* aCx,
   return dom::GPUCanvasContext_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-
+// -
 
 void CanvasContext::GetCanvas(
     dom::OwningHTMLCanvasElementOrOffscreenCanvas& aRetVal) const {
@@ -104,15 +104,15 @@ void CanvasContext::GetCanvas(
   }
 }
 
-
-
+// Note: `SetDimensions` assumes it can ignore this `ErrorResult` because the
+// format is already validated. Revisit if adding other error cases.
 void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
                               ErrorResult& aRv) {
   Unconfigure();
 
-  
-  
-  
+  // Only the three formats explicitly listed are permitted here (one of which
+  // is not yet supported).
+  // https://www.w3.org/TR/webgpu/#supported-context-formats
   switch (aConfig.mFormat) {
     case dom::GPUTextureFormat::Rgba8unorm:
       mGfxFormat = gfx::SurfaceFormat::R8G8B8A8;
@@ -135,43 +135,43 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
 
   mConfiguration.reset(new dom::GPUCanvasConfiguration(aConfig));
   mRemoteTextureOwnerId = Some(layers::RemoteTextureOwnerId::GetNext());
-  mUseSharedTextureInSwapChain =
-      aConfig.mDevice->mSupportSharedTextureInSwapChain;
-  if (mUseSharedTextureInSwapChain) {
-    bool client_can_use = wgpu_client_use_shared_texture_in_swapChain(
+  mUseExternalTextureInSwapChain =
+      aConfig.mDevice->mSupportExternalTextureInSwapChain;
+  if (mUseExternalTextureInSwapChain) {
+    bool client_can_use = wgpu_client_use_external_texture_in_swapChain(
         ConvertTextureFormat(aConfig.mFormat));
     if (!client_can_use) {
-      gfxCriticalNote << "WebGPU: disabling SharedTexture swapchain: \n"
+      gfxCriticalNote << "WebGPU: disabling ExternalTexture swapchain: \n"
                          "canvas configuration format not supported";
-      mUseSharedTextureInSwapChain = false;
+      mUseExternalTextureInSwapChain = false;
     }
   }
   if (!gfx::gfxVars::AllowWebGPUPresentWithoutReadback()) {
     gfxCriticalNote
-        << "WebGPU: disabling SharedTexture swapchain: \n"
+        << "WebGPU: disabling ExternalTexture swapchain: \n"
            "`dom.webgpu.allow-present-without-readback` pref is false";
-    mUseSharedTextureInSwapChain = false;
+    mUseExternalTextureInSwapChain = false;
   }
 #ifdef XP_WIN
-  
-  
+  // When WebRender does not use hardware acceleration, disable external texture
+  // in swap chain. Since compositor device might not exist.
   if (gfx::gfxVars::UseSoftwareWebRender() &&
       !gfx::gfxVars::AllowSoftwareWebRenderD3D11()) {
-    gfxCriticalNote << "WebGPU: disabling SharedTexture swapchain: \n"
+    gfxCriticalNote << "WebGPU: disabling ExternalTexture swapchain: \n"
                        "WebRender is not using hardware acceleration";
-    mUseSharedTextureInSwapChain = false;
+    mUseExternalTextureInSwapChain = false;
   }
 #elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
-  
+  // When DMABufDevice is not enabled, disable external texture in swap chain.
   const auto& modifiers = gfx::gfxVars::DMABufModifiersARGB();
   if (modifiers.IsEmpty()) {
-    gfxCriticalNote << "WebGPU: disabling SharedTexture swapchain: \n"
+    gfxCriticalNote << "WebGPU: disabling ExternalTexture swapchain: \n"
                        "missing GBM_FORMAT_ARGB8888 dmabuf format";
-    mUseSharedTextureInSwapChain = false;
+    mUseExternalTextureInSwapChain = false;
   }
 #endif
 
-  
+  // buffer count doesn't matter much, will be created on demand
   const size_t maxBufferCount = 10;
   for (size_t i = 0; i < maxBufferCount; ++i) {
     mBufferIds.AppendElement(ffi::wgpu_client_make_buffer_id(
@@ -180,7 +180,7 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
 
   mCurrentTexture = aConfig.mDevice->InitSwapChain(
       mConfiguration.get(), mRemoteTextureOwnerId.ref(), mBufferIds,
-      mUseSharedTextureInSwapChain, mGfxFormat, mCanvasSize);
+      mUseExternalTextureInSwapChain, mGfxFormat, mCanvasSize);
   if (!mCurrentTexture) {
     Unconfigure();
     return;
@@ -217,14 +217,14 @@ void CanvasContext::Unconfigure() {
 
 NS_IMETHODIMP CanvasContext::SetDimensions(int32_t aWidth, int32_t aHeight) {
   const auto newSize = gfx::IntSize{aWidth, aHeight};
-  if (newSize == mCanvasSize) return NS_OK;  
+  if (newSize == mCanvasSize) return NS_OK;  // No-op no-change resizes.
 
   mCanvasSize = newSize;
   if (mConfiguration) {
     const auto copy = dom::GPUCanvasConfiguration{
-        *mConfiguration};  
-    
-    
+        *mConfiguration};  // So we can't null it out on ourselves.
+    // The format in `mConfiguration` was already validated, we won't get an
+    // error here.
     Configure(copy, IgnoredErrorResult());
   }
   return NS_OK;
@@ -291,7 +291,7 @@ Maybe<layers::SurfaceDescriptor> CanvasContext::SwapChainPresent() {
   mLastRemoteTextureId = Some(layers::RemoteTextureId::GetNext());
   mBridge->SwapChainPresent(mCurrentTexture->mId, *mLastRemoteTextureId,
                             *mRemoteTextureOwnerId);
-  if (mUseSharedTextureInSwapChain) {
+  if (mUseExternalTextureInSwapChain) {
     mCurrentTexture->Destroy();
     mNewTextureRequested = true;
   }
@@ -314,7 +314,7 @@ bool CanvasContext::UpdateWebRenderCanvasData(
 
   renderer = aCanvasData->CreateCanvasRenderer();
   if (!InitializeCanvasRenderer(aBuilder, renderer)) {
-    
+    // Clear CanvasRenderer of WebRenderCanvasData
     aCanvasData->ClearCanvasRenderer();
     return false;
   }
@@ -360,12 +360,12 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
 
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     gfxUtils::GetImageBufferWithRandomNoise(dataSurface,
-                                             true,
+                                            /* aIsAlphaPremultiplied */ true,
                                             GetCookieJarSettings(),
                                             PrincipalOrNull(), &*out_format);
   }
 
-  return gfxUtils::GetImageBuffer(dataSurface,  true,
+  return gfxUtils::GetImageBuffer(dataSurface, /* aIsAlphaPremultiplied */ true,
                                   &*out_format);
 }
 
@@ -382,11 +382,11 @@ NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
 
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     return gfxUtils::GetInputStreamWithRandomNoise(
-        dataSurface,  true, aMimeType,
+        dataSurface, /* aIsAlphaPremultiplied */ true, aMimeType,
         aEncoderOptions, GetCookieJarSettings(), PrincipalOrNull(), aStream);
   }
 
-  return gfxUtils::GetInputStream(dataSurface,  true,
+  return gfxUtils::GetInputStream(dataSurface, /* aIsAlphaPremultiplied */ true,
                                   aMimeType, aEncoderOptions, aStream);
 }
 
@@ -427,20 +427,20 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
   MOZ_ASSERT(mRemoteTextureOwnerId.isSome());
 
-  
-  
+  // The parent side needs to create a command encoder which will be submitted
+  // and dropped right away so we create and release an encoder ID here.
   RawId encoderId = ffi::wgpu_client_make_encoder_id(mBridge->GetClient());
   RefPtr<gfx::DataSourceSurface> snapshot =
       cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
-                      Some(encoderId), snapshotFormat,  false,
-                       false);
+                      Some(encoderId), snapshotFormat, /* aPremultiply */ false,
+                      /* aYFlip */ false);
   ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(), encoderId);
   if (!snapshot) {
     return nullptr;
   }
 
-  
-  
+  // Clear alpha channel to 0xFF / 1.0 for opaque contexts.
+  // https://www.w3.org/TR/webgpu/#abstract-opdef-get-a-copy-of-the-image-contents-of-a-context
   if (isOpaque) {
     gfx::DataSourceSurface::ScopedMap map(snapshot,
                                           gfx::DataSourceSurface::WRITE);
@@ -480,9 +480,9 @@ void CanvasContext::ForceNewFrame() {
     return;
   }
 
-  
-  
-  
+  // Force a new frame to be built, which will execute the
+  // `CanvasContextType::WebGPU` switch case in `CreateWebRenderCommands` and
+  // populate the WR user data.
   if (mCanvasElement) {
     mCanvasElement->InvalidateCanvas();
   } else if (mOffscreenCanvas) {
@@ -507,4 +507,4 @@ void CanvasContext::InvalidateCanvasContent() {
   }
 }
 
-}  
+}  // namespace mozilla::webgpu
