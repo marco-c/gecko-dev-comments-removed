@@ -160,9 +160,8 @@ class BaselineCodeGen {
 
   bool emitSuspend(JSOp op);
 
-  template <typename F>
-  [[nodiscard]] bool emitAfterYieldDebugInstrumentation(const F& ifDebuggee,
-                                                        Register scratch);
+  [[nodiscard]] bool emitAfterYieldDebugInstrumentation(Register scratch);
+  [[nodiscard]] bool emitDebugAfterYield();
 
   
   
