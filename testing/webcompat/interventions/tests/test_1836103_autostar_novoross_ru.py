@@ -1,13 +1,39 @@
+import asyncio
+
 import pytest
 
 URL = "https://autostar-novoross.ru/"
 IFRAME_CSS = "iframe[src*='google.com/maps']"
+RENEW_TEXT = "402 Please renew your subscription"
 
 
 async def map_is_correct_height(client):
-    await client.navigate(URL)
-    iframe = client.await_css(IFRAME_CSS)
-    assert iframe
+    
+    
+    await client.make_preload_script("delete navigator.__proto__.webdriver")
+
+    
+    for _ in range(10):
+        await client.navigate(URL)
+        iframe, renew = client.await_first_element_of(
+            [
+                client.css(IFRAME_CSS),
+                client.text(RENEW_TEXT),
+            ],
+            is_displayed=True,
+        )
+
+        if iframe:
+            break
+
+        await asyncio.sleep(1)
+
+    if not iframe:
+        pytest.xfail(
+            "Site is repeatedly giving a '402 please renew your subscription' message. Try testing manually."
+        )
+        return
+
     return client.execute_script(
         """
        const iframe = arguments[0];
