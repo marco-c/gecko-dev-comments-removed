@@ -1,0 +1,21 @@
+
+
+
+
+'use strict';
+
+
+
+idl_test(['web-bluetooth'], ['dom', 'html', 'permissions'], idl_array => {
+  try {
+    self.event = new BluetoothAdvertisingEvent('type');
+  } catch (e) {
+    
+  }
+
+  idl_array.add_objects({
+    Navigator: ['navigator'],
+    Bluetooth: ['navigator.bluetooth'],
+    BluetoothAdvertisingEvent: ['event'],
+  });
+});

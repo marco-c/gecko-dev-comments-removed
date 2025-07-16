@@ -398,11 +398,8 @@ async function setUpPreconnectedFakeDevice(setupOptionsOverride) {
 
   
   if (Object.keys(setupOptions.requestDeviceOptions).length !== 0) {
-    const prompt_promise = selectFirstDeviceOnDevicePromptUpdated();
-    [preconnectedDevice.device] = await Promise.all([
-      requestDeviceWithTrustedClick(setupOptions.requestDeviceOptions),
-      prompt_promise
-    ]);
+    preconnectedDevice.device =
+        await requestDeviceWithTrustedClick(setupOptions.requestDeviceOptions);
   }
 
   

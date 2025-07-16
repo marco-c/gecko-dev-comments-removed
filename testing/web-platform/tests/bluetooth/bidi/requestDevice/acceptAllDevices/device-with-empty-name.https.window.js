@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Device with empty name and no UUIDs nearby. Should be ' +
     'found if acceptAllDevices is true.';
