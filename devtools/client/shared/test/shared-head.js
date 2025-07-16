@@ -1469,7 +1469,12 @@ function pushPref(preferenceName, value) {
   return SpecialPowers.pushPrefEnv(options);
 }
 
-async function closeToolbox() {
+
+
+
+async function closeToolboxIfOpen() {
+  
+  
   await gDevTools.closeToolboxForTab(gBrowser.selectedTab);
 }
 

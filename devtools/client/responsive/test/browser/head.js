@@ -153,7 +153,12 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
     }
 
     if (!onlyPrefAndTask) {
+      
+      
+      await closeToolboxIfOpen();
+
       await closeRDM(tab);
+
       if (postTask) {
         await postTask({
           message,

@@ -15,7 +15,7 @@ add_task(async function () {
   let hud = await openNewTabAndConsole(TEST_URI_NOT_REPLACED);
 
   await testWarningNotPresent(hud);
-  await closeToolbox();
+  await closeToolboxIfOpen();
 
   
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(
