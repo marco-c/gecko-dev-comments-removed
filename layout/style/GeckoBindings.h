@@ -634,6 +634,27 @@ bool Gecko_GetAnchorPosOffset(
     mozilla::StyleAnchorSideKeyword aAnchorSideKeyword, float aPercentage,
     mozilla::Length* aOut);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
+                            const nsAtom* aAnchorName,
+                            mozilla::StylePhysicalAxis aPropAxis,
+                            mozilla::StyleAnchorSizeKeyword aAnchorSizeKeyword,
+                            mozilla::Length* aOut);
+
 }  
 
 #endif  
