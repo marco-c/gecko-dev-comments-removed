@@ -334,6 +334,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
       const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary,
       const nsINode* aRootNode, bool aNotInsertedYet = false);
 
+  using ElementHandler = void (*)(mozilla::dom::Element*);
   
 
 
@@ -342,7 +343,13 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
+
+
+
+
+
   void CutContents(mozilla::dom::DocumentFragment** aFragment,
+                   ElementHandler aElementHandler,
                    ErrorResult& aRv);
 
   static nsresult CloneParentsBetween(nsINode* aAncestor, nsINode* aNode,
@@ -506,6 +513,20 @@ class nsRange final : public mozilla::dom::AbstractRange,
     return mCrossShadowBoundaryRange ? mCrossShadowBoundaryRange->EndRef()
                                      : EndRef();
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void SuppressContentsForPrintSelection(ErrorResult& aRv);
 
  protected:
   

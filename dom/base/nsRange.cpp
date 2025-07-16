@@ -1795,7 +1795,15 @@ static bool ValidateCurrentNode(nsRange* aRange, RangeSubtreeIterator& aIter) {
   return !before && !after;
 }
 
-void nsRange::CutContents(DocumentFragment** aFragment, ErrorResult& aRv) {
+void nsRange::CutContents(DocumentFragment** aFragment,
+                          ElementHandler aElementHandler, ErrorResult& aRv) {
+  if (aFragment && aElementHandler) {
+    
+    
+    MOZ_ASSERT_UNREACHABLE("Not handling both aFragment and aElementHandler");
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
   if (aFragment) {
     *aFragment = nullptr;
   }
@@ -2044,7 +2052,23 @@ void nsRange::CutContents(DocumentFragment** aFragment, ErrorResult& aRv) {
     if (!handled) {
       
       
-      nodeToResult = node;
+      if (aElementHandler && node->IsElement()) {
+        
+        MOZ_ASSERT(!aFragment, "Fragment requested when ElementHandler given?");
+        nsMutationGuard guard;
+        auto* element = node->AsElement();
+        aElementHandler(element);
+        
+        
+        if (guard.Mutated(0)) {
+          aRv.Throw(NS_ERROR_UNEXPECTED);
+          return;
+        }
+        handled = true;
+      } else {
+        
+        nodeToResult = node;
+      }
     }
 
     uint32_t parentCount = 0;
@@ -2144,11 +2168,13 @@ void nsRange::CutContents(DocumentFragment** aFragment, ErrorResult& aRv) {
   }
 }
 
-void nsRange::DeleteContents(ErrorResult& aRv) { CutContents(nullptr, aRv); }
+void nsRange::DeleteContents(ErrorResult& aRv) {
+  CutContents(nullptr, nullptr, aRv);
+}
 
 already_AddRefed<DocumentFragment> nsRange::ExtractContents(ErrorResult& rv) {
   RefPtr<DocumentFragment> fragment;
-  CutContents(getter_AddRefs(fragment), rv);
+  CutContents(getter_AddRefs(fragment), nullptr, rv);
   return fragment.forget();
 }
 
@@ -3188,6 +3214,19 @@ nsINode* nsRange::GetRegisteredClosestCommonInclusiveAncestor() {
              "in selection");
   MOZ_ASSERT(mRegisteredClosestCommonInclusiveAncestor);
   return mRegisteredClosestCommonInclusiveAncestor;
+}
+
+void nsRange::SuppressContentsForPrintSelection(ErrorResult& aRv) {
+  CutContents(
+      nullptr,
+      [](Element* aElement) {
+        
+        
+        
+        
+        aElement->AddStates(ElementState::SUPPRESS_FOR_PRINT_SELECTION);
+      },
+      aRv);
 }
 
 
