@@ -1,3 +1,8 @@
+
+
+
+"use strict";
+
 const PAGE_URI =
   "https://example.com/browser/dom/notification/test/browser/empty.html";
 const OPEN_URI =
@@ -35,15 +40,11 @@ add_setup(() => {
     mockAlertsService
   );
 
-  let controller = new AbortController();
-  let { signal } = controller;
-
   registerCleanupFunction(() => {
     MockRegistrar.unregister(mockCid);
-    controller.abort();
   });
 
-  BrowserTestUtils.concealWindow(window, { signal });
+  BrowserTestUtils.concealWindow(window, { signal: testSignal });
 });
 
 let configs = [

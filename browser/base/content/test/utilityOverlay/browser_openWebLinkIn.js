@@ -128,9 +128,6 @@ add_task(async function test_open_non_private_tab_from_private_window() {
 });
 
 add_task(async function test_open_non_private_tab_from_only_private_window() {
-  let controller = new AbortController();
-  let { signal } = controller;
-
   const privateWindow = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });
@@ -138,7 +135,7 @@ add_task(async function test_open_non_private_tab_from_only_private_window() {
   
   
   
-  BrowserTestUtils.concealWindow(window, { signal });
+  BrowserTestUtils.concealWindow(window, { signal: testSignal });
 
   
   const waitForWindowPromise = BrowserTestUtils.waitForNewWindow({
@@ -164,6 +161,4 @@ add_task(async function test_open_non_private_tab_from_only_private_window() {
 
   await BrowserTestUtils.closeWindow(nonPrivateWindow);
   await BrowserTestUtils.closeWindow(privateWindow);
-
-  controller.abort();
 });
