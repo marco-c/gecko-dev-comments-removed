@@ -98,9 +98,6 @@ NS_QUERYFRAME_HEAD(nsMenuPopupFrame)
   NS_QUERYFRAME_ENTRY(nsMenuPopupFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsBlockFrame)
 
-
-
-
 nsMenuPopupFrame::nsMenuPopupFrame(ComputedStyle* aStyle,
                                    nsPresContext* aPresContext)
     : nsBlockFrame(aStyle, aPresContext, kClassID) {}
@@ -122,15 +119,15 @@ static nsIWidget::InputRegion ComputeInputRegion(const ComputedStyle& aStyle,
 }
 
 bool nsMenuPopupFrame::ShouldCreateWidgetUpfront() const {
-  if (mPopupType != PopupType::Menu) {
-    
-    
-    return mContent->AsElement()->HasAttr(nsGkAtoms::type);
-  }
-
   
   
-  return ShouldExpandToInflowParentOrAnchor();
+  
+  
+  
+  
+  
+  
+  return mContent->AsElement()->HasAttr(nsGkAtoms::neverhidden);
 }
 
 void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -164,11 +161,6 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     }
   }
 
-  
-  
-  
-  
-  
   if (!ourView->HasWidget() && ShouldCreateWidgetUpfront()) {
     CreateWidgetForView(ourView);
   }
