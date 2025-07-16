@@ -811,6 +811,39 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     return nullptr;
   }
 
+  if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(httpChannel);
+
+    nsCOMPtr<nsIPrincipal> partitionedPrincipal;
+
+    Unused << StoragePrincipalHelper::GetPrincipal(
+        httpChannel, StoragePrincipalHelper::ePartitionedPrincipal,
+        getter_AddRefs(partitionedPrincipal));
+
+    aLoadState->SetPartitionedPrincipalToInherit(partitionedPrincipal);
+  }
+
   if (documentContext && aLoadState->LoadType() != LOAD_ERROR_PAGE &&
       mozilla::SessionHistoryInParent()) {
     
@@ -873,24 +906,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     if (cos && aUrgentStart) {
       cos->AddClassFlags(nsIClassOfService::UrgentStart);
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(httpChannel);
   }
 
   
