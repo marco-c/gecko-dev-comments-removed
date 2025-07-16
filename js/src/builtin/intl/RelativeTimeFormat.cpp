@@ -155,30 +155,13 @@ void js::RelativeTimeFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 
 static mozilla::intl::RelativeTimeFormat* NewRelativeTimeFormatter(
     JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat) {
+  RootedValue value(cx);
   RootedObject internals(cx, intl::GetInternalsObject(cx, relativeTimeFormat));
   if (!internals) {
     return nullptr;
   }
 
-  RootedValue value(cx);
-
-  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
-    return nullptr;
-  }
-
   
-
-  mozilla::intl::Locale tag;
-  {
-    Rooted<JSLinearString*> locale(cx, value.toString()->ensureLinear(cx));
-    if (!locale) {
-      return nullptr;
-    }
-
-    if (!intl::ParseLocale(cx, locale, tag)) {
-      return nullptr;
-    }
-  }
 
   JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
 
@@ -198,21 +181,7 @@ static mozilla::intl::RelativeTimeFormat* NewRelativeTimeFormatter(
     }
   }
 
-  
-  
-  
-  
-  if (!intl::ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
-    return nullptr;
-  }
-
-  intl::FormatBuffer<char> buffer(cx);
-  if (auto result = tag.ToString(buffer); result.isErr()) {
-    intl::ReportInternalError(cx, result.unwrapErr());
-    return nullptr;
-  }
-
-  UniqueChars locale = buffer.extractStringZ();
+  UniqueChars locale = intl::FormatLocale(cx, internals, keywords);
   if (!locale) {
     return nullptr;
   }
