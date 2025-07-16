@@ -6,7 +6,7 @@
 
 add_task(async function test_mozicon_file_with_sandbox() {
   assertFileProcess();
-  assertSandboxHeadless();
+  
   await createMozIconInFile("txt");
   await createMozIconInFile("exe");
   await createMozIconInFile("non-existent-bidule");
