@@ -9159,6 +9159,12 @@ var TabContextMenu = {
       !this.contextTab.pinned || !this.multiselected;
 
     
+    TabContextMenu.GenAI.buildTabMenu(
+      document.getElementById("context_askChat"),
+      this
+    );
+
+    
     let contextMoveTabOptions = document.getElementById(
       "context_moveTabOptions"
     );
@@ -9525,3 +9531,7 @@ var TabContextMenu = {
     }
   },
 };
+
+ChromeUtils.defineESModuleGetters(TabContextMenu, {
+  GenAI: "resource:///modules/GenAI.sys.mjs",
+});
