@@ -15,6 +15,65 @@ constexpr uint32_t kMaxBytesPerPath = 1024;
 
 using namespace mozilla::net;
 
+namespace {
+
+struct CookiePrefix {
+  nsCString mPrefix;
+  std::function<bool(const CookieStruct&, bool)> mCallback;
+};
+
+CookiePrefix gCookiePrefixes[] = {
+    {"__Secure-"_ns,
+     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
+       
+       
+       return aSecureRequest && aCookieData.isSecure();
+     }},
+
+    {"__Host-"_ns,
+     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
+       
+       
+       
+       return aSecureRequest && aCookieData.isSecure() &&
+              aCookieData.host()[0] != '.' &&
+              aCookieData.path().EqualsLiteral("/");
+     }},
+
+    {"__Http-"_ns,
+     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
+       
+       
+       
+       return aSecureRequest && aCookieData.isSecure() &&
+              aCookieData.isHttpOnly();
+     }},
+
+    {"__HostHttp-"_ns,
+     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
+       
+       
+       
+       
+       return aSecureRequest && aCookieData.isSecure() &&
+              aCookieData.isHttpOnly() && aCookieData.host()[0] != '.' &&
+              aCookieData.path().EqualsLiteral("/");
+     }},
+};
+
+CookiePrefix* FindCookiePrefix(const nsACString& aString) {
+  for (CookiePrefix& prefix : gCookiePrefixes) {
+    if (StringBeginsWith(aString, prefix.mPrefix,
+                         nsCaseInsensitiveCStringComparator)) {
+      return &prefix;
+    }
+  }
+
+  return nullptr;
+}
+
+}  
+
 NS_IMPL_ISUPPORTS(CookieValidation, nsICookieValidation)
 
 CookieValidation::CookieValidation(const CookieStruct& aCookieData)
@@ -92,9 +151,7 @@ void CookieValidation::ValidateInternal() {
   }
 
   
-  
-  if (mCookieData.name().IsEmpty() && (HasSecurePrefix(mCookieData.value()) ||
-                                       HasHostPrefix(mCookieData.value()))) {
+  if (mCookieData.name().IsEmpty() && !!FindCookiePrefix(mCookieData.value())) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
@@ -150,6 +207,11 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
   bool potentiallyTrustworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
+  
+  
+  
+  
+  
   if (!CheckPrefixes(mCookieData, potentiallyTrustworthy)) {
     mResult = eRejectedInvalidPrefix;
     return;
@@ -273,52 +335,19 @@ bool CookieValidation::CheckDomain(const CookieStruct& aCookieData,
 }
 
 
-bool CookieValidation::HasSecurePrefix(const nsACString& aString) {
-  return StringBeginsWith(aString, "__Secure-"_ns,
-                          nsCaseInsensitiveCStringComparator);
-}
-
-
-bool CookieValidation::HasHostPrefix(const nsACString& aString) {
-  return StringBeginsWith(aString, "__Host-"_ns,
-                          nsCaseInsensitiveCStringComparator);
-}
-
-
 
 
 
 
 bool CookieValidation::CheckPrefixes(const CookieStruct& aCookieData,
                                      bool aSecureRequest) {
-  bool hasSecurePrefix = HasSecurePrefix(aCookieData.name());
-  bool hasHostPrefix = HasHostPrefix(aCookieData.name());
-
-  if (!hasSecurePrefix && !hasHostPrefix) {
+  CookiePrefix* prefix = FindCookiePrefix(aCookieData.name());
+  if (!prefix) {
     
     return true;
   }
 
-  if (!aSecureRequest || !aCookieData.isSecure()) {
-    
-    
-    return false;
-  }
-
-  if (hasHostPrefix) {
-    
-    
-    
-    
-    
-    
-    if (aCookieData.host()[0] == '.' ||
-        !aCookieData.path().EqualsLiteral("/")) {
-      return false;
-    }
-  }
-
-  return true;
+  return prefix->mCallback(aCookieData, aSecureRequest);
 }
 
 void CookieValidation::RetrieveErrorLogData(uint32_t* aFlags,

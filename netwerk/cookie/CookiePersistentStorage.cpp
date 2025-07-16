@@ -28,10 +28,6 @@
 #include "nsVariant.h"
 #include "prprf.h"
 
-
-
-#define HTTP_ONLY_PREFIX "#HttpOnly_"
-
 constexpr auto COOKIES_SCHEMA_VERSION = 16;
 
 
