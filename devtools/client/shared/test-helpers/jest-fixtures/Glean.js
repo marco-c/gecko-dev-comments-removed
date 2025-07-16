@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  devtoolsConsole: {
+    javascriptErrorDisplayed: new Proxy(
+      {},
+      {
+        get: () => ({ add: () => {} }),
+      }
+    ),
+  },
+};
