@@ -6,7 +6,6 @@
 
 #include "NSSErrorsService.h"
 #include "mozilla/glean/DomSecurityMetrics.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozpkix/pkixnss.h"
@@ -244,8 +243,9 @@ void nsHTTPSOnlyStreamListener::RecordUpgradeTelemetry(nsIRequest* request,
 
   
   
-  mozilla::Telemetry::Accumulate(
-      mozilla::Telemetry::HTTPS_ONLY_MODE_UPGRADE_TYPE, typeKey, success);
+  mozilla::glean::security::https_only_mode_upgrade_type
+      .Get(typeKey, success ? "true"_ns : "false"_ns)
+      .Add();
 }
 
 void nsHTTPSOnlyStreamListener::LogUpgradeFailure(nsIRequest* request,
