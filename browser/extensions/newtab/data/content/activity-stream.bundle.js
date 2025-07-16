@@ -14613,6 +14613,7 @@ function DownloadMobilePromoHighlight({
 
 
 
+
 function WallpaperFeatureHighlight({
   position,
   dispatch,
@@ -14634,12 +14635,17 @@ function WallpaperFeatureHighlight({
     handleClick(elementId);
     onDismiss();
   }, [dispatch, onDismiss, handleClick]);
+
+  
+  const {
+    messageData
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   return external_React_default().createElement("div", {
     className: "wallpaper-feature-highlight"
   }, external_React_default().createElement(FeatureHighlight, {
     position: position,
     "data-l10n-id": "feature-highlight-wallpaper",
-    feature: "FEATURE_HIGHLIGHT_WALLPAPER",
+    feature: messageData.content.feature,
     dispatch: dispatch,
     message: external_React_default().createElement("div", {
       className: "wallpaper-feature-highlight-content"
@@ -14650,16 +14656,16 @@ function WallpaperFeatureHighlight({
       height: "195"
     }), external_React_default().createElement("p", {
       className: "title",
-      "data-l10n-id": "newtab-custom-wallpaper-title"
+      "data-l10n-id": messageData.content.title
     }), external_React_default().createElement("p", {
       className: "subtitle",
-      "data-l10n-id": "newtab-custom-wallpaper-subtitle"
+      "data-l10n-id": messageData.content.subtitle
     }), external_React_default().createElement("span", {
       className: "button-wrapper"
     }, external_React_default().createElement("moz-button", {
       type: "default",
       onClick: () => onToggleClick("open-customize-menu"),
-      "data-l10n-id": "newtab-custom-wallpaper-cta"
+      "data-l10n-id": messageData.content.cta
     }))),
     toggle: external_React_default().createElement("div", {
       className: "icon icon-help"
