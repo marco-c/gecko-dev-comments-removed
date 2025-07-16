@@ -209,7 +209,6 @@ class TextDirectiveCreator {
   nsTArray<uint32_t> mPrefixWordBeginDistances;
 
   nsString mStartContent;
-  nsString mStartFoldCaseContent;
 
   nsString mSuffixContent;
   nsString mSuffixFoldCaseContent;
@@ -253,8 +252,26 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
   Maybe<TextDirective> FindShortestCombination() const override;
 
   nsString mEndContent;
+  
+  
+  
+  nsString mStartFoldCaseContent;
   nsString mEndFoldCaseContent;
 
+  
+  
+  nsString mFirstWordOfStartContent;
+  nsString mLastWordOfEndContent;
+
+  
+  
+  
+  
+  uint32_t mStartFirstWordLengthIncludingWhitespace = 0;
+  uint32_t mEndLastWordLengthIncludingWhitespace = 0;
+
+  
+  
   nsTArray<uint32_t> mStartWordEndDistances;
   nsTArray<uint32_t> mEndWordBeginDistances;
 
