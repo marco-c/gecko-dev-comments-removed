@@ -49,6 +49,7 @@
 #include "mozilla/dom/DOMSecurityMonitor.h"
 #include "mozilla/dom/JSExecutionUtils.h"  
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "nsContentSecurityManager.h"
 #include "DefaultURI.h"
@@ -274,7 +275,10 @@ nsresult JSURLInputStream::EvaluateScript(
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      loadInfo->GetPolicyContainerToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(policyContainer);
 
   if (!AllowedByCSP(csp, mURL, aJSCallingLocation)) {
     return NS_ERROR_DOM_RETVAL_UNDEFINED;
@@ -325,7 +329,8 @@ nsresult JSURLInputStream::EvaluateScript(
     
     
     if (targetDoc->NodePrincipal()->Subsumes(loadInfo->TriggeringPrincipal())) {
-      nsCOMPtr<nsIContentSecurityPolicy> targetCSP = targetDoc->GetCsp();
+      nsCOMPtr<nsIContentSecurityPolicy> targetCSP =
+          PolicyContainer::GetCSP(targetDoc->GetPolicyContainer());
       if (!AllowedByCSP(targetCSP, mURL, aJSCallingLocation)) {
         return NS_ERROR_DOM_RETVAL_UNDEFINED;
       }

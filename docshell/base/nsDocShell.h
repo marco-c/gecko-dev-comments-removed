@@ -65,6 +65,7 @@ class nsIDocShellTreeOwner;
 class nsIDocumentViewer;
 class nsIHttpChannel;
 class nsIMutableArray;
+class nsIPolicyContainer;
 class nsIPrompt;
 class nsIStringBundle;
 class nsIURIFixup;
@@ -238,7 +239,7 @@ class nsDocShell final : public nsDocLoader,
                        bool aIsUserTriggered,
                        mozilla::dom::UserNavigationInvolvement aUserInvolvement,
                        nsIPrincipal* aTriggeringPrincipal,
-                       nsIContentSecurityPolicy* aCsp);
+                       nsIPolicyContainer* aPolicyContainer);
   
 
 
@@ -578,7 +579,8 @@ class nsDocShell final : public nsDocLoader,
   
   nsresult CreateAboutBlankDocumentViewer(
       nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
-      nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI, bool aIsInitialDocument,
+      nsIPolicyContainer* aPolicyContainer, nsIURI* aBaseURI,
+      bool aIsInitialDocument,
       const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP =
           mozilla::Nothing(),
       bool aTryToSaveOldPresentation = true, bool aCheckPermitUnload = true,
@@ -618,13 +620,13 @@ class nsDocShell final : public nsDocLoader,
                                nsIPrincipal* aTriggeringPrincipal,
                                nsIPrincipal* aPrincipalToInherit,
                                nsIPrincipal* aPartitionedPrincipalToInherit,
-                               nsIContentSecurityPolicy* aCsp,
+                               nsIPolicyContainer* aPolicyContainer,
                                bool aCloneChildren, nsISHEntry** aNewEntry);
 
   void UpdateActiveEntry(
       bool aReplace, const mozilla::Maybe<nsPoint>& aPreviousScrollPos,
       nsIURI* aURI, nsIURI* aOriginalURI, nsIReferrerInfo* aReferrerInfo,
-      nsIPrincipal* aTriggeringPrincipal, nsIContentSecurityPolicy* aCsp,
+      nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
       const nsAString& aTitle, bool aScrollRestorationIsManual,
       nsIStructuredCloneContainer* aData, bool aURIWasModified);
 
@@ -738,7 +740,7 @@ class nsDocShell final : public nsDocLoader,
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIPrincipal* aPrincipalToInherit,
                 nsIPrincipal* aPartitionedPrincipalToInherit,
-                nsIContentSecurityPolicy* aCsp, bool aAddToGlobalHistory,
+                nsIPolicyContainer* aPolicyContainer, bool aAddToGlobalHistory,
                 bool aCloneSHChildren);
 
  public:

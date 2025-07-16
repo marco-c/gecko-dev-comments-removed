@@ -780,10 +780,6 @@ class Document : public nsINode,
 
 
 
-  
-  nsIContentSecurityPolicy* GetCsp() const;
-  void SetCsp(nsIContentSecurityPolicy* aCSP);
-
   nsIContentSecurityPolicy* GetPreloadCsp() const;
   void SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP);
 
@@ -794,10 +790,7 @@ class Document : public nsINode,
 
   void ApplySettingsFromCSP(bool aSpeculative);
 
-  
-  IntegrityPolicy* GetIntegrityPolicy() const { return nullptr; }
-
-  PolicyContainer* GetPolicyContainer() const;
+  nsIPolicyContainer* GetPolicyContainer() const;
   void SetPolicyContainer(nsIPolicyContainer* aPolicyContainer);
 
   already_AddRefed<nsIParser> CreatorParserOrNull() {

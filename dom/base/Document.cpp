@@ -3689,7 +3689,10 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      loadInfo->GetPolicyContainerToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit =
+      PolicyContainer::GetCSP(policyContainer);
   if (cspToInherit) {
     cspToInherit->EnsureIPCPoliciesRead();
   }
@@ -3758,15 +3761,6 @@ void Document::SetLoadedAsData(bool aLoadedAsData,
       }
     }
   }
-}
-
-nsIContentSecurityPolicy* Document::GetCsp() const {
-  
-  return nullptr;
-}
-
-void Document::SetCsp(nsIContentSecurityPolicy* aCSP) {
-  
 }
 
 nsIContentSecurityPolicy* Document::GetPreloadCsp() const {
@@ -3860,10 +3854,12 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
 }
 
 nsresult Document::InitPolicyContainer(nsIChannel* aChannel) {
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   bool shouldInherit = CSP_ShouldResponseInheritCSP(aChannel);
   if (shouldInherit) {
-    
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        loadInfo->GetPolicyContainerToInherit();
+    mPolicyContainer = PolicyContainer::Cast(policyContainer);
   }
 
   if (!mPolicyContainer) {
@@ -3879,6 +3875,10 @@ void Document::SetPolicyContainer(nsIPolicyContainer* aPolicyContainer) {
   mHasPolicyWithRequireTrustedTypesForDirective =
       csp && csp->GetRequireTrustedTypesForDirectiveState() !=
                  RequireTrustedTypesForDirectiveState::NONE;
+}
+
+nsIPolicyContainer* Document::GetPolicyContainer() const {
+  return mPolicyContainer;
 }
 
 nsresult Document::InitCSP(nsIChannel* aChannel) {
@@ -4024,7 +4024,7 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
   MOZ_ASSERT(mPolicyContainer,
              "Policy container must be initialized before IntegrityPolicy!");
 
-    if (mPolicyContainer->IntegrityPolicy()) {
+  if (mPolicyContainer->IntegrityPolicy()) {
     
     return NS_OK;
   }
@@ -4046,7 +4046,7 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
 
   RefPtr<IntegrityPolicy> integrityPolicy;
   rv = IntegrityPolicy::ParseHeaders(headerValue, headerROValue,
-                                       getter_AddRefs(integrityPolicy));
+                                     getter_AddRefs(integrityPolicy));
   NS_ENSURE_SUCCESS(rv, rv);
 
   mPolicyContainer->SetIntegrityPolicy(integrityPolicy);
@@ -8293,7 +8293,8 @@ void Document::SetScriptGlobalObject(
   
   
   
-  if (nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer) {
+  if (nsIContentSecurityPolicy* csp =
+          PolicyContainer::GetCSP(mPolicyContainer)) {
     nsCSPContext::Cast(csp)->flushConsoleMessages();
   }
 
@@ -12714,8 +12715,7 @@ nsresult Document::CloneDocHelper(Document* clone) const {
           mTiming->CloneNavigationTime(nsDocShell::Cast(clone->GetDocShell()));
       clone->SetNavigationTiming(timing);
     }
-    nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
-    clone->SetCsp(csp);
+    clone->SetPolicyContainer(mPolicyContainer);
   }
 
   

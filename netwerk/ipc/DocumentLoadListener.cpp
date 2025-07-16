@@ -2571,8 +2571,9 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
 
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
-  loadState->SetCsp(cspToInherit);
+  nsCOMPtr<nsIPolicyContainer> policyContainerToInherit =
+      loadInfo->GetPolicyContainerToInherit();
+  loadState->SetPolicyContainer(policyContainerToInherit);
 
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = loadInfo->TriggeringPrincipal();
   loadState->SetTriggeringPrincipal(triggeringPrincipal);

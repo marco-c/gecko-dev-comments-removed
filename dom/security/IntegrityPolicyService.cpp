@@ -14,6 +14,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/Logging.h"
@@ -145,13 +146,10 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
   }
 
   
-  
-  
-  
-  RefPtr<mozilla::dom::Document> doc;
-  aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
-  if (!doc) {
-    LOG("ShouldLoad: [{}] No document", static_cast<void*>(aLoadInfo));
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  if (!policyContainer) {
+    LOG("ShouldLoad: [{}] No policy container", static_cast<void*>(aLoadInfo));
     return false;
   }
 
@@ -159,7 +157,8 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
   
   
   
-  RefPtr<IntegrityPolicy> policy = doc->GetIntegrityPolicy();
+  RefPtr<IntegrityPolicy> policy = IntegrityPolicy::Cast(
+      PolicyContainer::Cast(policyContainer)->IntegrityPolicy());
   if (!policy) {
     
     

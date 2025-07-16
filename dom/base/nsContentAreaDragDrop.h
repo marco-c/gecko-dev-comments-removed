@@ -11,7 +11,7 @@
 
 #include "nsITransferable.h"
 
-class nsIContentSecurityPolicy;
+class nsIPolicyContainer;
 class nsICookieJarSettings;
 class nsPIDOMWindowOuter;
 class nsITransferable;
@@ -57,7 +57,7 @@ class nsContentAreaDragDrop {
                               bool* aCanDrag,
                               mozilla::dom::Selection** aSelection,
                               nsIContent** aDragNode,
-                              nsIContentSecurityPolicy** aCsp,
+                              nsIPolicyContainer** aPolicyContainer,
                               nsICookieJarSettings** aCookieJarSettings);
 };
 

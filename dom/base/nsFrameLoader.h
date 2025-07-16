@@ -202,8 +202,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
+
   nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
-                   nsIContentSecurityPolicy* aCsp, bool aOriginalSrc,
+                   nsIPolicyContainer* aPolicyContainer, bool aOriginalSrc,
                    bool aShouldCheckForRecursion);
 
   
@@ -384,7 +385,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void ApplySandboxFlags(uint32_t sandboxFlags);
 
   void GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal,
-              nsIContentSecurityPolicy** aCsp);
+              nsIPolicyContainer** aPolicyContainer);
 
   
   nsresult GetWindowDimensions(mozilla::LayoutDeviceIntRect& aRect);
@@ -497,7 +498,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   RefPtr<mozilla::dom::BrowsingContext> mPendingBrowsingContext;
   nsCOMPtr<nsIURI> mURIToLoad;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
   nsCOMPtr<nsIOpenWindowInfo> mOpenWindowInfo;
   mozilla::dom::Element* mOwnerContent;  
 

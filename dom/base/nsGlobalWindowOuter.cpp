@@ -1756,7 +1756,7 @@ bool nsGlobalWindowOuter::WouldReuseInnerWindow(Document* aNewDocument) {
 }
 
 void nsGlobalWindowOuter::SetInitialPrincipal(
-    nsIPrincipal* aNewWindowPrincipal, nsIContentSecurityPolicy* aCSP,
+    nsIPrincipal* aNewWindowPrincipal, nsIPolicyContainer* aPolicyContainer,
     const Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP) {
   
   
@@ -1791,7 +1791,7 @@ void nsGlobalWindowOuter::SetInitialPrincipal(
   
   nsDocShell::Cast(GetDocShell())
       ->CreateAboutBlankDocumentViewer(aNewWindowPrincipal, aNewWindowPrincipal,
-                                       aCSP, nullptr,
+                                       aPolicyContainer, nullptr,
                                         true, aCOEP);
 
   if (mDoc) {

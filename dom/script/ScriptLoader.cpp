@@ -42,6 +42,7 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/JSExecutionUtils.h"  
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ScriptDecoding.h"    
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SRILogHelper.h"
@@ -1039,7 +1040,8 @@ bool ScriptLoader::PreloadURIComparator::Equals(const PreloadInfo& aPi,
 static bool CSPAllowsInlineScript(nsIScriptElement* aElement,
                                   const nsAString& aNonce,
                                   Document* aDocument) {
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(aDocument->GetPolicyContainer());
   if (!csp) {
     
     return true;

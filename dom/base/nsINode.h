@@ -51,6 +51,7 @@ class nsIHTMLCollection;
 class nsMultiMutationObserver;
 class nsINode;
 class nsINodeList;
+class nsIPolicyContainer;
 class nsIPrincipal;
 class nsIURI;
 class nsNodeSupportsWeakRefTearoff;
@@ -1132,7 +1133,7 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
-  nsIContentSecurityPolicy* GetCsp() const;
+  nsIPolicyContainer* GetPolicyContainer() const;
 
   
 

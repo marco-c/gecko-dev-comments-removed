@@ -7,6 +7,7 @@
 include "mozilla/dom/DomSecurityIPCUtils.h";
 include "mozilla/GfxMessageUtils.h";
 include "mozilla/dom/CSPMessageUtils.h";
+include "mozilla/dom/PolicyContainerMessageUtils.h";
 include "mozilla/dom/DocShellMessageUtils.h";
 include "mozilla/dom/NavigationAPIIPCUtils.h";
 include "mozilla/dom/PermissionMessageUtils.h";
@@ -52,7 +53,7 @@ using nsILoadInfo::SchemelessInputType from "nsILoadInfo.h";
 [RefCounted] using class nsIPrincipal from "nsIPrincipal.h";
 using mozilla::dom::MaybeDiscardedBrowsingContext from "mozilla/dom/BrowsingContext.h";
 [RefCounted] using class nsIURI from "nsIURI.h";
-[RefCounted] using class nsIContentSecurityPolicy from "nsIContentSecurityPolicy.h";
+[RefCounted] using class nsIPolicyContainer from "nsIPolicyContainer.h";
 [RefCounted] using class nsIInputStream from "mozilla/ipc/IPCStreamUtils.h";
 [RefCounted] using class nsIReferrerInfo from "nsIReferrerInfo.h";
 [RefCounted] using class nsIVariant from "nsIVariant.h";
@@ -170,7 +171,7 @@ struct DocShellLoadStateInit
   
   
   
-  nullable nsIContentSecurityPolicy Csp;
+  nullable nsIPolicyContainer PolicyContainer;
   nullable nsIInputStream PostDataStream;
   nullable nsIInputStream HeadersStream;
   nullable nsIURI UnstrippedURI;

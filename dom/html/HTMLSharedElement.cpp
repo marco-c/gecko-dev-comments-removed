@@ -12,6 +12,7 @@
 #include "mozilla/dom/HTMLHtmlElementBinding.h"
 #include "mozilla/dom/HTMLParamElementBinding.h"
 #include "mozilla/dom/HTMLQuoteElementBinding.h"
+#include "mozilla/dom/PolicyContainer.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "nsContentUtils.h"
@@ -94,7 +95,8 @@ static void SetBaseURIUsingFirstBaseWithHref(Document* aDocument,
       }
 
       
-      nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
+      nsCOMPtr<nsIContentSecurityPolicy> csp =
+          PolicyContainer::GetCSP(aDocument->GetPolicyContainer());
       if (csp && newBaseURI) {
         
         

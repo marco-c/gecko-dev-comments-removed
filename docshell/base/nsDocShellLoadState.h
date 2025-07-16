@@ -22,7 +22,6 @@
 #include "nsDocShellLoadTypes.h"
 #include "nsTArrayForwardDeclare.h"
 
-class nsIContentSecurityPolicy;
 class nsIInputStream;
 class nsISHEntry;
 class nsIURI;
@@ -132,9 +131,9 @@ class nsDocShellLoadState final {
   void SetTriggeringClassificationFlags(
       mozilla::net::ClassificationFlags aFlags);
 
-  nsIContentSecurityPolicy* Csp() const;
+  nsIPolicyContainer* PolicyContainer() const;
 
-  void SetCsp(nsIContentSecurityPolicy* aCsp);
+  void SetPolicyContainer(nsIPolicyContainer* aPolicyContainer);
 
   bool InheritPrincipal() const;
 
@@ -498,7 +497,8 @@ class nsDocShellLoadState final {
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
 
   
   

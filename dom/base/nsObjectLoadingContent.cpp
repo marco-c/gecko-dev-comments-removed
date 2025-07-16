@@ -68,6 +68,7 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/net/DocumentChannel.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/PresShell.h"
@@ -1439,10 +1440,12 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   
   
   
-  RefPtr<nsCSPContext> cspToInherit;
-  if (nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp()) {
-    cspToInherit = new nsCSPContext();
-    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
+  RefPtr<PolicyContainer> policyContainerToInherit;
+  if (nsCOMPtr<nsIPolicyContainer> policyContainer =
+          doc->GetPolicyContainer()) {
+    policyContainerToInherit = new PolicyContainer();
+    policyContainerToInherit->InitFromOther(
+        PolicyContainer::Cast(policyContainer.get()));
   }
 
   
@@ -1467,8 +1470,8 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   
   
   
-  if (cspToInherit) {
-    loadInfo->SetCSPToInherit(cspToInherit);
+  if (policyContainerToInherit) {
+    loadInfo->SetPolicyContainerToInherit(policyContainerToInherit);
   }
 
   if (DocumentChannel::CanUseDocumentChannel(mURI) &&
@@ -1478,8 +1481,8 @@ nsresult nsObjectLoadingContent::OpenChannel() {
     RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(mURI);
     loadState->SetPrincipalToInherit(el->NodePrincipal());
     loadState->SetTriggeringPrincipal(loadInfo->TriggeringPrincipal());
-    if (cspToInherit) {
-      loadState->SetCsp(cspToInherit);
+    if (policyContainerToInherit) {
+      loadState->SetPolicyContainer(policyContainerToInherit);
     }
     loadState->SetTriggeringSandboxFlags(sandboxFlags);
 

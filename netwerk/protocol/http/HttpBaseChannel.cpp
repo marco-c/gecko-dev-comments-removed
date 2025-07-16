@@ -44,6 +44,7 @@
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -4418,7 +4419,10 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
     
     
     
-    nsCOMPtr<nsIContentSecurityPolicy> csp = newLoadInfo->GetCspToInherit();
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        newLoadInfo->GetPolicyContainerToInherit();
+    nsCOMPtr<nsIContentSecurityPolicy> csp =
+        PolicyContainer::GetCSP(policyContainer);
     if (csp) {
       bool upgradeInsecureRequests = false;
       csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
