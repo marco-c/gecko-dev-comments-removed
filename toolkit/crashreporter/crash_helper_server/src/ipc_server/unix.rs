@@ -30,6 +30,23 @@ impl IPCServer {
             
             let revents = pollfd.revents().unwrap();
 
+            if revents.contains(PollFlags::POLLHUP) {
+                if index > 0 {
+                    events.push(IPCEvent::Disconnect(index - 1));
+                    
+                    
+                    
+                    
+                    
+                    
+                    continue;
+                } else {
+                    
+                    
+                    return Err(IPCError::System(Errno::EFAULT));
+                }
+            }
+
             if revents.contains(PollFlags::POLLIN) {
                 if index == 0 {
                     if let Ok(connector) = self.listener.accept() {
@@ -47,16 +64,6 @@ impl IPCServer {
                         
                         events.push(IPCEvent::Header(index - 1, header));
                     }
-                }
-            }
-
-            if revents.contains(PollFlags::POLLHUP) {
-                if index > 0 {
-                    events.push(IPCEvent::Disconnect(index - 1));
-                } else {
-                    
-                    
-                    return Err(IPCError::System(Errno::EFAULT));
                 }
             }
 

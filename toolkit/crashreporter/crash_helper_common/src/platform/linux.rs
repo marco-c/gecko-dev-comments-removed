@@ -2,26 +2,20 @@
 
 
 
-use crate::{ignore_eintr, AncillaryData, Pid};
+use crate::Pid;
 
 use nix::{
-    cmsg_space,
-    errno::Errno,
     fcntl::{
         fcntl,
         FcntlArg::{F_GETFL, F_SETFD, F_SETFL},
         FdFlag, OFlag,
     },
-    sys::socket::{
-        recvmsg, sendmsg, socket, socketpair, AddressFamily, ControlMessage, ControlMessageOwned,
-        MsgFlags, SockFlag, SockType, UnixAddr,
-    },
+    sys::socket::{socket, socketpair, AddressFamily, SockFlag, SockType, UnixAddr},
     Result,
 };
 use std::{
     env,
-    io::{IoSlice, IoSliceMut},
-    os::fd::{AsRawFd, BorrowedFd, OwnedFd, RawFd},
+    os::fd::{AsRawFd, BorrowedFd, OwnedFd},
 };
 
 pub(crate) fn unix_socket() -> Result<OwnedFd> {
@@ -60,59 +54,4 @@ pub(crate) fn server_addr(pid: Pid) -> Result<UnixAddr> {
         format!("gecko-crash-helper-pipe.{pid:}")
     };
     UnixAddr::new_abstract(server_name.as_bytes())
-}
-
-pub(crate) fn send_nonblock(socket: RawFd, buff: &[u8], fd: Option<AncillaryData>) -> Result<()> {
-    let iov = [IoSlice::new(buff)];
-    let scm_fds: Vec<i32> = fd.map_or(vec![], |fd| vec![fd]);
-    let scm = ControlMessage::ScmRights(&scm_fds);
-
-    let res = ignore_eintr!(sendmsg::<()>(socket, &iov, &[scm], MsgFlags::empty(), None));
-
-    match res {
-        Ok(bytes_sent) => {
-            if bytes_sent == buff.len() {
-                Ok(())
-            } else {
-                
-                
-                Err(Errno::EMSGSIZE)
-            }
-        }
-        Err(code) => Err(code),
-    }
-}
-
-pub(crate) fn recv_nonblock(
-    socket: RawFd,
-    expected_size: usize,
-) -> Result<(Vec<u8>, Option<AncillaryData>)> {
-    let mut buff: Vec<u8> = vec![0; expected_size];
-    let mut cmsg_buffer = cmsg_space!(RawFd);
-    let mut iov = [IoSliceMut::new(&mut buff)];
-
-    let res = ignore_eintr!(recvmsg::<()>(
-        socket,
-        &mut iov,
-        Some(&mut cmsg_buffer),
-        MsgFlags::empty(),
-    ))?;
-
-    let fd = if let Some(cmsg) = res.cmsgs()?.next() {
-        if let ControlMessageOwned::ScmRights(fds) = cmsg {
-            fds.first().copied()
-        } else {
-            return Err(Errno::EBADMSG);
-        }
-    } else {
-        None
-    };
-
-    if res.bytes != expected_size {
-        
-        
-        return Err(Errno::EBADMSG);
-    }
-
-    Ok((buff, fd))
 }
