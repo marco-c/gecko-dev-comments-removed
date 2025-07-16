@@ -771,6 +771,7 @@ uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
   
   while (!mTimers.IsEmpty()) {
     Entry& frontEntry = mTimers[0];
+    MOZ_ASSERT(frontEntry.IsTimerInThreadAndUnchanged());
 
     if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
       
@@ -1134,8 +1135,7 @@ bool TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
 
   
 
-  const TimeStamp& timeout = aTimer.mTimeout;
-  const size_t insertionIndex = ComputeTimerInsertionIndex(timeout);
+  const size_t insertionIndex = ComputeTimerInsertionIndex(aTimer.mTimeout);
 
   if (insertionIndex != 0 && !mTimers[insertionIndex - 1].Value()) {
     

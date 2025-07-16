@@ -170,8 +170,7 @@ class nsTimerImpl {
   
   
   
-  
-  mozilla::TimeStamp mTimeout;
+  mozilla::TimeStamp mTimeout MOZ_GUARDED_BY(mMutex);
 
   RefPtr<nsITimer> mITimer MOZ_GUARDED_BY(mMutex);
   mozilla::Mutex mMutex;
