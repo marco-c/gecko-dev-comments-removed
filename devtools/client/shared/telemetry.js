@@ -40,6 +40,7 @@ class Telemetry {
 
     
     this.msSystemNow = this.msSystemNow.bind(this);
+    this.getKeyedHistogramById = this.getKeyedHistogramById.bind(this);
     this.recordEvent = this.recordEvent.bind(this);
     this.preparePendingEvent = this.preparePendingEvent.bind(this);
     this.addEventProperty = this.addEventProperty.bind(this);
@@ -78,6 +79,33 @@ class Telemetry {
 
   msSinceProcessStart() {
     return Services.telemetry.msSinceProcessStart();
+  }
+
+  
+
+
+
+
+
+  getKeyedHistogramById(histogramId) {
+    let histogram = null;
+
+    if (histogramId) {
+      try {
+        histogram = Services.telemetry.getKeyedHistogramById(histogramId);
+      } catch (e) {
+        dump(
+          `Warning: An attempt was made to write to the ${histogramId} ` +
+            `histogram, which is not defined in Histograms.json\n` +
+            `CALLER: ${getCaller()}`
+        );
+      }
+    }
+    return (
+      histogram || {
+        add: () => {},
+      }
+    );
   }
 
   
