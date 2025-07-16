@@ -277,17 +277,6 @@ class nsDisplayTableItem;
 class RetainedDisplayList;
 
 
-enum class StackingContextBits : uint8_t {
-  
-  
-  
-  ContainsMixBlendMode = 1 << 0,
-  
-  ContainsBackdropFilter = 1 << 1,
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StackingContextBits);
-
-
 
 
 
@@ -1509,29 +1498,20 @@ class nsDisplayListBuilder {
                                     : mWindowOpaqueRegion;
   }
 
-  StackingContextBits GetStackingContextBits() const {
-    return mStackingContextBits;
+  
+
+
+
+
+  void SetContainsBlendMode(bool aContainsBlendMode) {
+    mContainsBlendMode = aContainsBlendMode;
   }
-  void SetStackingContextBits(StackingContextBits aBits) {
-    mStackingContextBits = aBits;
+  bool ContainsBlendMode() const { return mContainsBlendMode; }
+
+  void SetContainsBackdropFilter(bool aContainsBackdropFilter) {
+    mContainsBackdropFilter = aContainsBackdropFilter;
   }
-  void AddStackingContextBits(StackingContextBits aBits) {
-    mStackingContextBits |= aBits;
-  }
-  void ClearStackingContextBits(StackingContextBits aBits) {
-    mStackingContextBits &= ~aBits;
-  }
-  void ClearStackingContextBits() {
-    mStackingContextBits = StackingContextBits(0);
-  }
-  bool ContainsBlendMode() const {
-    return bool(mStackingContextBits &
-                StackingContextBits::ContainsMixBlendMode);
-  }
-  bool ContainsBackdropFilter() const {
-    return bool(mStackingContextBits &
-                StackingContextBits::ContainsBackdropFilter);
-  }
+  bool ContainsBackdropFilter() const { return mContainsBackdropFilter; }
 
   DisplayListClipState& ClipState() { return mClipState; }
   const ActiveScrolledRoot* CurrentActiveScrolledRoot() {
@@ -1922,7 +1902,8 @@ class nsDisplayListBuilder {
 
   uint32_t mNumActiveScrollframesEncountered = 0;
 
-  StackingContextBits mStackingContextBits{0};
+  bool mContainsBlendMode;
+  bool mContainsBackdropFilter;
   bool mIsBuildingScrollbar;
   bool mCurrentScrollbarWillHaveLayer;
   bool mBuildCaret;
