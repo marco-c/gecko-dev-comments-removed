@@ -2762,11 +2762,9 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
     
     
     if (bounceTrackingState) {
-      DebugOnly<nsresult> rv =
-          bounceTrackingState->OnDocumentStartRequest(mChannel);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "BounceTrackingState::OnDocumentStartRequest failed.");
+      
+      
+      Unused << bounceTrackingState->OnDocumentStartRequest(mChannel);
 
       DynamicFpiNavigationHeuristic::MaybeGrantStorageAccess(loadingContext,
                                                              mChannel);
