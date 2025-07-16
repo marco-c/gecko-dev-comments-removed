@@ -292,6 +292,14 @@ bool ToTemporalTimeZone(JSContext* cx, JS::Handle<ParsedTimeZone> string,
 
 
 
+
+
+JSLinearString* ToValidCanonicalTimeZoneIdentifier(
+    JSContext* cx, JS::Handle<JSString*> timeZone);
+
+
+
+
 bool TimeZoneEquals(const TimeZoneValue& one, const TimeZoneValue& two);
 
 

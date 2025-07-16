@@ -155,29 +155,6 @@ class DateTimeFormatObject : public NativeObject {
 
 
 
-
-[[nodiscard]] extern bool intl_IsValidTimeZoneName(JSContext* cx, unsigned argc,
-                                                   JS::Value* vp);
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_canonicalizeTimeZone(JSContext* cx,
-                                                    unsigned argc,
-                                                    JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
 [[nodiscard]] extern bool intl_FormatDateTime(JSContext* cx, unsigned argc,
                                               JS::Value* vp);
 
