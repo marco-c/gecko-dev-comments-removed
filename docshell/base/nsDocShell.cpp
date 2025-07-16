@@ -5625,16 +5625,8 @@ nsresult nsDocShell::Embed(nsIDocumentViewer* aDocumentViewer,
       }
     }
 
-    nsCOMPtr<nsIPrincipal> partitionedPrincipal;
-    RefPtr<Document> doc = GetDocument();
-    if (doc) {
-      partitionedPrincipal = doc->PartitionedPrincipal();
-    }
-
     MOZ_LOG(gSHLog, LogLevel::Debug, ("document %p Embed", this));
-
-    MoveLoadingToActiveEntry(expired, cacheKey, aPreviousURI,
-                             partitionedPrincipal);
+    MoveLoadingToActiveEntry(expired, cacheKey, aPreviousURI);
   }
 
   bool updateHistory = true;
@@ -9210,8 +9202,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
         mActiveEntry->SetCacheKey(cacheKey);
       }
 
-      mActiveEntry->SetPartitionedPrincipalToInherit(
-          doc->PartitionedPrincipal());
       
       
       
@@ -9219,7 +9209,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
           *mLoadingEntry, mLoadType, mCurrentURI, previousActiveEntry.get(),
           true,
           
-          false, cacheKey, doc->PartitionedPrincipal());
+          false, cacheKey);
       
 
       
@@ -9280,9 +9270,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       
       
       mActiveEntry->SetTitle(mTitle);
-
-      mActiveEntry->SetPartitionedPrincipalToInherit(
-          doc->PartitionedPrincipal());
 
       if (scrollRestorationIsManual.isSome()) {
         mActiveEntry->SetScrollRestorationIsManual(
@@ -11908,7 +11895,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
                          referrerInfo,
                          aDocument->NodePrincipal(),
                         csp, title, scrollRestorationIsManual, aData,
-                        uriWasModified, aDocument->PartitionedPrincipal());
+                        uriWasModified);
     } else {
       
       
@@ -11962,7 +11949,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
          referrerInfo, aDocument->NodePrincipal(),
         aDocument->GetCsp(), title,
         mActiveEntry && mActiveEntry->GetScrollRestorationIsManual(), aData,
-        uriWasModified, aDocument->PartitionedPrincipal());
+        uriWasModified);
   } else {
     
     newSHEntry = mOSHE;
@@ -12415,8 +12402,7 @@ void nsDocShell::UpdateActiveEntry(
     nsIURI* aOriginalURI, nsIReferrerInfo* aReferrerInfo,
     nsIPrincipal* aTriggeringPrincipal, nsIContentSecurityPolicy* aCsp,
     const nsAString& aTitle, bool aScrollRestorationIsManual,
-    nsIStructuredCloneContainer* aData, bool aURIWasModified,
-    nsIPrincipal* aPartitionedPrincipal) {
+    nsIStructuredCloneContainer* aData, bool aURIWasModified) {
   MOZ_ASSERT(mozilla::SessionHistoryInParent());
   MOZ_ASSERT(aURI, "uri is null");
   MOZ_ASSERT(mLoadType == LOAD_PUSHSTATE,
@@ -12452,7 +12438,6 @@ void nsDocShell::UpdateActiveEntry(
   mActiveEntry->SetStateData(static_cast<nsStructuredCloneContainer*>(aData));
   mActiveEntry->SetURIWasModified(aURIWasModified);
   mActiveEntry->SetScrollRestorationIsManual(aScrollRestorationIsManual);
-  mActiveEntry->SetPartitionedPrincipalToInherit(aPartitionedPrincipal);
 
   if (replace) {
     mBrowsingContext->ReplaceActiveSessionHistoryEntry(mActiveEntry.get());
@@ -14218,8 +14203,7 @@ void nsDocShell::SetLoadingSessionHistoryInfo(
 }
 
 void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
-                                          nsIURI* aPreviousURI,
-                                          nsIPrincipal* aPartitionedPrincipal) {
+                                          nsIURI* aPreviousURI) {
   MOZ_ASSERT(mozilla::SessionHistoryInParent());
 
   MOZ_LOG(gSHLog, LogLevel::Debug,
@@ -14234,8 +14218,6 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
             ("Moving the loading entry to the active entry on nsDocShell %p "
              "to %s",
              this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
-    mLoadingEntry->mInfo.SetPartitionedPrincipalToInherit(
-        aPartitionedPrincipal);
     mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
     mLoadingEntry.swap(loadingEntry);
     if (!mActiveEntryIsLoadingFromSessionHistory) {
@@ -14258,7 +14240,6 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
       mActiveEntry->SetCacheKey(aCacheKey);
     }
 
-    mActiveEntry->SetPartitionedPrincipalToInherit(aPartitionedPrincipal);
     MOZ_ASSERT(loadingEntry);
     uint32_t loadType =
         mLoadType == LOAD_ERROR_PAGE ? mFailedLoadType : mLoadType;
@@ -14269,7 +14250,7 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
       
       mBrowsingContext->SessionHistoryCommit(
           *loadingEntry, loadType, aPreviousURI, previousActiveEntry.get(),
-          false, aExpired, aCacheKey, aPartitionedPrincipal);
+          false, aExpired, aCacheKey);
     }
 
     

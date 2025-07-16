@@ -877,8 +877,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                             uint32_t aLoadType, nsIURI* aCurrentURI,
                             SessionHistoryInfo* aPreviousActiveEntry,
                             bool aCloneEntryChildren, bool aChannelExpired,
-                            uint32_t aCacheKey,
-                            nsIPrincipal* aPartitionedPrincipal);
+                            uint32_t aCacheKey);
 
   
   
