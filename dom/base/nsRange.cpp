@@ -2054,10 +2054,12 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       
       if (aElementHandler && node->IsElement()) {
         
+        
         MOZ_ASSERT(!aFragment, "Fragment requested when ElementHandler given?");
         nsMutationGuard guard;
         auto* element = node->AsElement();
         aElementHandler(element);
+        
         
         
         if (guard.Mutated(0)) {
@@ -3220,6 +3222,7 @@ void nsRange::SuppressContentsForPrintSelection(ErrorResult& aRv) {
   CutContents(
       nullptr,
       [](Element* aElement) {
+        
         
         
         
