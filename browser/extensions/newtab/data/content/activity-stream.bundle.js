@@ -13647,7 +13647,14 @@ class _Search extends (external_React_default()).PureComponent {
       
       
       
-      window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey);
+      
+      
+      const searchSource = IS_NEWTAB ? "newtab" : "homepage";
+
+      
+      
+      
+      window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey, searchSource);
       addEventListener("ContentSearchClient", this);
     } else {
       window.gContentSearchController = null;

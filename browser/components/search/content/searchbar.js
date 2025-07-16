@@ -378,7 +378,7 @@
         );
       }
 
-      let submission = engine.getSubmission(aData, null);
+      let submission = engine.getSubmission(aData, null, "searchbar");
 
       
       const details = {
