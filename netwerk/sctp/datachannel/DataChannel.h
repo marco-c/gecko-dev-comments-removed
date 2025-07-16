@@ -146,10 +146,10 @@ class DataChannelConnection : public net::NeckoTargetHolder {
 
     
     virtual void NotifyDataChannel(
-        already_AddRefed<DataChannel> aChannel, const nsAString& aLabel,
+        already_AddRefed<DataChannel> aChannel, const nsACString& aLabel,
         bool aOrdered, mozilla::dom::Nullable<uint16_t> aMaxLifeTime,
         mozilla::dom::Nullable<uint16_t> aMaxRetransmits,
-        const nsAString& aProtocol, bool aNegotiated) = 0;
+        const nsACString& aProtocol, bool aNegotiated) = 0;
 
     
     virtual void NotifyDataChannelOpen(DataChannel* aChannel) = 0;

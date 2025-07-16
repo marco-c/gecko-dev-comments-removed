@@ -641,10 +641,9 @@ void DataChannelConnection::HandleOpenRequestMessage(
           
           
           
-          mListener->NotifyDataChannel(do_AddRef(channel),
-                                       NS_ConvertUTF8toUTF16(label), ordered,
-                                       maxLifeTime, maxRetransmits,
-                                       NS_ConvertUTF8toUTF16(protocol), false);
+          mListener->NotifyDataChannel(do_AddRef(channel), label, ordered,
+                                       maxLifeTime, maxRetransmits, protocol,
+                                       false);
           
           channel->AnnounceOpen();
         }
