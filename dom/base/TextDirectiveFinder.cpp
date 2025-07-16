@@ -7,6 +7,7 @@
 #include "Document.h"
 #include "TextDirectiveUtil.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "nsFind.h"
 #include "nsRange.h"
 #include "fragmentdirectives_ffi_generated.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
@@ -125,7 +126,11 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
   if (rv.Failed()) {
     return nullptr;
   }
+
   nsContentUtils::NodeIndexCache nodeIndexCache;
+  RefPtr<nsFind> finder = new nsFind();
+  finder->SetNodeIndexCache(&nodeIndexCache);
+
   
   while (!searchRange->Collapsed()) {
     
@@ -136,8 +141,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       RefPtr<nsRange> prefixMatch = TextDirectiveUtil::FindStringInRange(
-          searchRange->StartRef(), searchRange->EndRef(), aTextDirective.prefix,
-          true, false, &nodeIndexCache);
+          finder, searchRange->StartRef(), searchRange->EndRef(),
+          aTextDirective.prefix, true, false);
       
       if (!prefixMatch) {
         TEXT_FRAGMENT_LOG(
@@ -203,8 +208,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       potentialMatch = TextDirectiveUtil::FindStringInRange(
-          matchRange->StartRef(), matchRange->EndRef(), aTextDirective.start,
-          false, mustEndAtWordBoundary);
+          finder, matchRange->StartRef(), matchRange->EndRef(),
+          aTextDirective.start, false, mustEndAtWordBoundary);
       
       
       
@@ -240,8 +245,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       potentialMatch = TextDirectiveUtil::FindStringInRange(
-          searchRange->StartRef(), searchRange->EndRef(), aTextDirective.start,
-          true, mustEndAtWordBoundary, &nodeIndexCache);
+          finder, searchRange->StartRef(), searchRange->EndRef(),
+          aTextDirective.start, true, mustEndAtWordBoundary);
       
       if (!potentialMatch) {
         TEXT_FRAGMENT_LOG(
@@ -289,8 +294,9 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         
         
         RefPtr<nsRange> endMatch = TextDirectiveUtil::FindStringInRange(
-            rangeEndSearchRange->StartRef(), rangeEndSearchRange->EndRef(),
-            aTextDirective.end, true, mustEndAtWordBoundary, &nodeIndexCache);
+            finder, rangeEndSearchRange->StartRef(),
+            rangeEndSearchRange->EndRef(), aTextDirective.end, true,
+            mustEndAtWordBoundary);
         
         if (!endMatch) {
           TEXT_FRAGMENT_LOG(
@@ -333,8 +339,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       RefPtr<nsRange> suffixMatch = TextDirectiveUtil::FindStringInRange(
-          suffixRange->StartRef(), suffixRange->EndRef(), aTextDirective.suffix,
-          false, true);
+          finder, suffixRange->StartRef(), suffixRange->EndRef(),
+          aTextDirective.suffix, false, true);
       
       
       

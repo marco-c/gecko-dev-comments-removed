@@ -19,6 +19,7 @@
 
 class nsIURI;
 class nsINode;
+class nsFind;
 class nsRange;
 struct TextDirective;
 
@@ -61,10 +62,12 @@ class TextDirectiveUtil final {
 
 
 
-  static RefPtr<nsRange> FindStringInRange(
-      const RangeBoundary& aSearchStart, const RangeBoundary& aSearchEnd,
-      const nsAString& aQuery, bool aWordStartBounded, bool aWordEndBounded,
-      nsContentUtils::NodeIndexCache* aCache = nullptr);
+  static RefPtr<nsRange> FindStringInRange(nsFind* aFinder,
+                                           const RangeBoundary& aSearchStart,
+                                           const RangeBoundary& aSearchEnd,
+                                           const nsAString& aQuery,
+                                           bool aWordStartBounded,
+                                           bool aWordEndBounded);
 
   
 
