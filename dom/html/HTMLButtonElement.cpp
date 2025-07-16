@@ -53,6 +53,7 @@ static constexpr nsAttrValue::EnumTableEntry kButtonCommandTable[] = {
     
     {"open", Element::Command::Open},
 
+    {"request-close", Element::Command::RequestClose},
     {"show-modal", Element::Command::ShowModal},
     {"show-popover", Element::Command::ShowPopover},
 
