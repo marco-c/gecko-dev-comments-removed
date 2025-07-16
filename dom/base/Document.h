@@ -132,6 +132,7 @@ class InfallibleAllocPolicy;
 class JSObject;
 class JSTracer;
 class PLDHashTable;
+class PolicyContainer;
 class gfxUserFontSet;
 class mozIDOMWindowProxy;
 class nsCachableElementsByNameNodeList;
@@ -167,6 +168,7 @@ class nsIInputStream;
 class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
 class nsIPermissionDelegateHandler;
+class nsIPolicyContainer;
 class nsIRadioVisitor;
 class nsIRequest;
 class nsIRunnable;
@@ -778,6 +780,7 @@ class Document : public nsINode,
 
 
 
+  
   nsIContentSecurityPolicy* GetCsp() const;
   void SetCsp(nsIContentSecurityPolicy* aCSP);
 
@@ -791,7 +794,11 @@ class Document : public nsINode,
 
   void ApplySettingsFromCSP(bool aSpeculative);
 
-  IntegrityPolicy* GetIntegrityPolicy() const { return mIntegrityPolicy; }
+  
+  IntegrityPolicy* GetIntegrityPolicy() const { return nullptr; }
+
+  PolicyContainer* GetPolicyContainer() const;
+  void SetPolicyContainer(nsIPolicyContainer* aPolicyContainer);
 
   already_AddRefed<nsIParser> CreatorParserOrNull() {
     nsCOMPtr<nsIParser> parser = mParser;
@@ -1529,6 +1536,7 @@ class Document : public nsINode,
  protected:
   friend class nsUnblockOnloadEvent;
 
+  nsresult InitPolicyContainer(nsIChannel* aChannel);
   nsresult InitCSP(nsIChannel* aChannel);
   nsresult InitIntegrityPolicy(nsIChannel* aChannel);
   nsresult InitCOEP(nsIChannel* aChannel);
@@ -5189,12 +5197,8 @@ class Document : public nsINode,
   
   nsCOMPtr<nsIChannel> mChannel;
 
-  
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
-  RefPtr<IntegrityPolicy> mIntegrityPolicy;
+  RefPtr<PolicyContainer> mPolicyContainer;
 
  private:
   nsCString mContentType;
