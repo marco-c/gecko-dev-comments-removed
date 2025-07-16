@@ -356,8 +356,9 @@ constexpr int MAX_TEXEL_OFFSET = 8;
 
 
 
-static const uint32_t
-    zeroFetchBuf[MAX_TEXEL_OFFSET * sizeof(Float) / sizeof(uint32_t)] = {0};
+ALIGNED_DECL(
+    16, static const uint32_t zeroFetchBuf[MAX_TEXEL_OFFSET * sizeof(Float) /
+                                           sizeof(uint32_t)]) = {0};
 
 struct FetchScalar {
   const uint32_t* buf;
