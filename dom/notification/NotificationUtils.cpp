@@ -377,15 +377,6 @@ NS_IMETHODIMP NotificationStorageEntry::GetActions(
   return NS_OK;
 }
 
-NS_IMETHODIMP NotificationStorageEntry::GetServiceWorkerRegistrationScope(
-    nsAString& aScope) {
-  
-  
-  
-  aScope.SetIsVoid(true);
-  return NS_OK;
-}
-
 Result<IPCNotification, nsresult> NotificationStorageEntry::ToIPC(
     nsINotificationStorageEntry& aEntry) {
   IPCNotification notification;
