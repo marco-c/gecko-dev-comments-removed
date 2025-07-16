@@ -88,15 +88,6 @@ class HyperTextAccessibleBase {
 
 
 
-
-
-  virtual std::pair<mozilla::LayoutDeviceIntRect, nsIWidget*>
-  GetCaretRect() = 0;
-
-  
-
-
-
   virtual int32_t CaretLineNumber();
 
   

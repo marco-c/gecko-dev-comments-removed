@@ -386,6 +386,7 @@ mozilla::ipc::IPCResult DocAccessibleChild::RecvScrollToPoint(
 }
 
 LayoutDeviceIntRect DocAccessibleChild::GetCaretRectFor(const uint64_t& aID) {
+#if defined(XP_WIN)
   LocalAccessible* target;
 
   if (aID) {
@@ -401,7 +402,13 @@ LayoutDeviceIntRect DocAccessibleChild::GetCaretRectFor(const uint64_t& aID) {
     return LayoutDeviceIntRect();
   }
 
-  return text->GetCaretRect().first;
+  nsIWidget* widget = nullptr;
+  return text->GetCaretRect(&widget);
+#else
+  
+  
+  return LayoutDeviceIntRect();
+#endif  
 }
 
 bool DocAccessibleChild::SendFocusEvent(const uint64_t& aID) {

@@ -1068,9 +1068,14 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     }
     case nsIAccessibleEvent::EVENT_FOCUS: {
       LayoutDeviceIntRect rect;
+      
+      
+#ifdef XP_WIN
       if (HyperTextAccessible* text = target->AsHyperText()) {
-        rect = text->GetCaretRect().first;
+        nsIWidget* widget = nullptr;
+        rect = text->GetCaretRect(&widget);
       }
+#endif
       PlatformFocusEvent(target, rect);
       break;
     }

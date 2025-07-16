@@ -145,8 +145,14 @@ class HyperTextAccessible : public AccessibleWrap,
 
   virtual int32_t CaretOffset() const override;
 
-  virtual std::pair<mozilla::LayoutDeviceIntRect, nsIWidget*> GetCaretRect()
-      override;
+  
+
+
+
+
+
+
+  mozilla::LayoutDeviceIntRect GetCaretRect(nsIWidget** aWidget);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual bool RemoveFromSelection(
       int32_t aSelectionNum) override;
