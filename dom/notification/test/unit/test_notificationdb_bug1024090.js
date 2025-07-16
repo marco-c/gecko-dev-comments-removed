@@ -1,40 +1,59 @@
 "use strict";
 
-
-
-
-
-let db;
-
-add_setup(async function run_test() {
+function run_test() {
   do_get_profile();
-
-  db = ChromeUtils.importESModule(
-    "moz-src:///dom/notification/NotificationDB.sys.mjs"
-  ).db;
-});
+  run_next_test();
+}
 
 
-add_task(async function test_bug1024090() {
+add_test(function test_bug1024090_purge() {
   const NOTIFICATION_STORE_PATH = PathUtils.join(
     PathUtils.profileDir,
     "notificationstore"
   );
-  await IOUtils.remove(NOTIFICATION_STORE_PATH, {
-    recursive: true,
-  });
-  ok(true, "Notification database cleaned.");
-  info("Cleanup steps completed: " + NOTIFICATION_STORE_PATH);
+  let cleanup = IOUtils.remove(NOTIFICATION_STORE_PATH, { recursive: true });
+  cleanup
+    .then(
+      function onSuccess() {
+        ok(true, "Notification database cleaned.");
+      },
+      function onError(reason) {
+        ok(false, "Notification database error when cleaning: " + reason);
+      }
+    )
+    .then(function next() {
+      info("Cleanup steps completed: " + NOTIFICATION_STORE_PATH);
+      startNotificationDB();
+      run_next_test();
+    });
+});
 
-  
-  await db.queueTask("save", {
+
+add_test(function test_bug1024090_send_one() {
+  let requestID = 1;
+  let msgReply = "Notification:Save:Return:OK";
+  let msgHandler = function (message) {
+    equal(requestID, message.data.requestID, "Checking requestID");
+  };
+
+  addAndSend("Notification:Save", msgReply, msgHandler, {
     origin: systemNotification.origin,
     notification: systemNotification,
+    requestID,
   });
+});
 
-  let notifications = await db.queueTask("getall", {
+
+add_test(function test_bug1024090_get_one() {
+  let requestID = 2;
+  let msgReply = "Notification:GetAll:Return:OK";
+  let msgHandler = function (message) {
+    equal(requestID, message.data.requestID, "Checking requestID");
+    equal(1, message.data.notifications.length, "One notification stored");
+  };
+
+  addAndSend("Notification:GetAll", msgReply, msgHandler, {
     origin: systemNotification.origin,
+    requestID,
   });
-
-  equal(1, notifications.length, "One notification stored");
 });
