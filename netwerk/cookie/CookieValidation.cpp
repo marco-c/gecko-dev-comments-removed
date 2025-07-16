@@ -6,6 +6,7 @@
 #include "CookieValidation.h"
 #include "CookieLogging.h"
 #include "CookieService.h"
+#include "CookiePrefixes.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/StaticPrefs_network.h"
 
@@ -14,65 +15,6 @@ constexpr uint32_t kMaxBytesPerDomain = 1024;
 constexpr uint32_t kMaxBytesPerPath = 1024;
 
 using namespace mozilla::net;
-
-namespace {
-
-struct CookiePrefix {
-  nsCString mPrefix;
-  std::function<bool(const CookieStruct&, bool)> mCallback;
-};
-
-MOZ_RUNINIT CookiePrefix gCookiePrefixes[] = {
-    {"__Secure-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       return aSecureRequest && aCookieData.isSecure();
-     }},
-
-    {"__Host-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.host()[0] != '.' &&
-              aCookieData.path().EqualsLiteral("/");
-     }},
-
-    {"__Http-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.isHttpOnly();
-     }},
-
-    {"__HostHttp-"_ns,
-     [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.isHttpOnly() && aCookieData.host()[0] != '.' &&
-              aCookieData.path().EqualsLiteral("/");
-     }},
-};
-
-CookiePrefix* FindCookiePrefix(const nsACString& aString) {
-  for (CookiePrefix& prefix : gCookiePrefixes) {
-    if (StringBeginsWith(aString, prefix.mPrefix,
-                         nsCaseInsensitiveCStringComparator)) {
-      return &prefix;
-    }
-  }
-
-  return nullptr;
-}
-
-}  
 
 NS_IMPL_ISUPPORTS(CookieValidation, nsICookieValidation)
 
@@ -151,7 +93,8 @@ void CookieValidation::ValidateInternal() {
   }
 
   
-  if (mCookieData.name().IsEmpty() && !!FindCookiePrefix(mCookieData.value())) {
+  if (mCookieData.name().IsEmpty() &&
+      CookiePrefixes::Has(mCookieData.value())) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
@@ -212,7 +155,7 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
   
   
   
-  if (!CheckPrefixes(mCookieData, potentiallyTrustworthy)) {
+  if (!CookiePrefixes::Check(mCookieData, potentiallyTrustworthy)) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
@@ -332,22 +275,6 @@ bool CookieValidation::CheckDomain(const CookieStruct& aCookieData,
 
 
   return false;
-}
-
-
-
-
-
-
-bool CookieValidation::CheckPrefixes(const CookieStruct& aCookieData,
-                                     bool aSecureRequest) {
-  CookiePrefix* prefix = FindCookiePrefix(aCookieData.name());
-  if (!prefix) {
-    
-    return true;
-  }
-
-  return prefix->mCallback(aCookieData, aSecureRequest);
 }
 
 void CookieValidation::RetrieveErrorLogData(uint32_t* aFlags,
