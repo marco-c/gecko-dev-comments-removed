@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_QUOTA_CLIENTUSAGEARAY_H_
-#define DOM_QUOTA_CLIENTUSAGEARAY_H_
+#ifndef DOM_QUOTA_CLIENTUSAGEARRAY_H_
+#define DOM_QUOTA_CLIENTUSAGEARRAY_H_
 
 #include <cstdint>
 #include "mozilla/Maybe.h"
