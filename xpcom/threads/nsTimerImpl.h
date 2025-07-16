@@ -132,7 +132,10 @@ class nsTimerImpl {
   void GetName(nsACString& aName, const mozilla::MutexAutoLock& aProofOfLock)
       MOZ_REQUIRES(mMutex);
 
+  
   bool IsInTimerThread() const { return mIsInTimerThread; }
+
+  
   void SetIsInTimerThread(bool aIsInTimerThread) {
     mIsInTimerThread = aIsInTimerThread;
   }
@@ -150,10 +153,6 @@ class nsTimerImpl {
                                    const mozilla::TimeDuration& aDelay,
                                    uint32_t aType, const char* aNameString);
 
-  
-  
-  
-  
   
   
   
