@@ -68,6 +68,7 @@ included_inclnames_to_ignore = set(
         "icu4x/Date.hpp",  
         "icu4x/GraphemeClusterSegmenter.hpp",  
         "icu4x/IsoDate.hpp",  
+        "icu4x/Locale.hpp",  
         "icu4x/SentenceSegmenter.hpp",  
         "icu4x/WordSegmenter.hpp",  
         "jit/ABIFunctionTypeGenerated.h",  
