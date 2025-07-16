@@ -256,11 +256,7 @@ pref("extensions.webextOptionalPermissionPrompts", true);
 pref("extensions.webextensions.early_background_wakeup_on_request", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.dataCollectionPermissions.enabled", true);
-#else
-  pref("extensions.dataCollectionPermissions.enabled", false);
-#endif
+pref("extensions.dataCollectionPermissions.enabled", true);
 
 
 pref("formhelper.autozoom", true);
