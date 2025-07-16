@@ -280,16 +280,27 @@ nsSyncLoader::GetInterface(const nsIID& aIID, void** aResult) {
 
 
 nsresult nsSyncLoadService::LoadDocument(
-    nsIURI* aURI, nsContentPolicyType aContentPolicyType,
+    nsIURI* aURI, nsContentPolicyType aContentPolicyType, Document* aLoaderDoc,
     nsIPrincipal* aLoaderPrincipal, nsSecurityFlags aSecurityFlags,
     nsILoadGroup* aLoadGroup, nsICookieJarSettings* aCookieJarSettings,
     bool aForceToXML, ReferrerPolicy aReferrerPolicy, Document** aResult) {
+  MOZ_ASSERT(!!aLoaderPrincipal != !!aLoaderDoc);
+
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv =
-      NS_NewChannel(getter_AddRefs(channel), aURI, aLoaderPrincipal,
-                    aSecurityFlags, aContentPolicyType, aCookieJarSettings,
-                    nullptr,  
-                    aLoadGroup);
+  nsresult rv;
+  if (aLoaderDoc) {
+    MOZ_ASSERT(!aCookieJarSettings);
+    rv = NS_NewChannel(getter_AddRefs(channel), aURI, aLoaderDoc,
+                       aSecurityFlags, aContentPolicyType,
+                       nullptr,  
+                       aLoadGroup);
+  } else {
+    rv = NS_NewChannel(getter_AddRefs(channel), aURI, aLoaderPrincipal,
+                       aSecurityFlags, aContentPolicyType, aCookieJarSettings,
+                       nullptr,  
+                       aLoadGroup);
+  }
+
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!aForceToXML) {
