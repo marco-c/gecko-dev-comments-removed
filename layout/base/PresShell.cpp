@@ -830,6 +830,7 @@ PresShell::PresShell(Document* aDocument)
       mDocumentLoading(false),
       mNoDelayedMouseEvents(false),
       mNoDelayedKeyEvents(false),
+      mNoDelayedSingleTap(false),
       mApproximateFrameVisibilityVisited(false),
       mIsLastChromeOnlyEscapeKeyConsumed(false),
       mHasReceivedPaintMessage(false),
@@ -8722,7 +8723,8 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
     return false;
   }
 
-  if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
+  if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent() &&
+      aGUIEvent->mMessage != eTouchStart) {
     return false;
   }
 
@@ -8738,22 +8740,57 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
 
   RefPtr<PresShell> ps = aFrameToHandleEvent->PresShell();
 
-  if (aGUIEvent->mMessage == eMouseDown) {
-    ps->mNoDelayedMouseEvents = true;
-  } else if (!ps->mNoDelayedMouseEvents) {
-    if (aGUIEvent->mMessage == eMouseUp ||
-        aGUIEvent->mMessage == eMouseExitFromWidget) {
+  switch (aGUIEvent->mMessage) {
+    case eTouchStart: {
+      
+      
+      
+      const WidgetTouchEvent* const touchEvent = aGUIEvent->AsTouchEvent();
+      if (touchEvent->mTouches.Length() == 1) {
+        ps->mNoDelayedSingleTap = true;
+      }
+      
+      
+      return false;
+    }
+    case eMouseDown: {
+      
+      
+      
+      
+      
+      const WidgetMouseEvent* const mouseEvent = aGUIEvent->AsMouseEvent();
+      if (ps->mNoDelayedSingleTap ||
+          mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        ps->mNoDelayedMouseEvents = true;
+        break;
+      }
+      
+      [[fallthrough]];
+    }
+    case eMouseUp:
+    case eMouseExitFromWidget: {
+      if (ps->mNoDelayedMouseEvents) {
+        break;
+      }
       UniquePtr<DelayedMouseEvent> delayedMouseEvent =
           MakeUnique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedMouseEvent));
+      break;
     }
-    
-    
-    else if (aGUIEvent->mMessage == eContextMenu) {
+    case eContextMenu: {
+      if (ps->mNoDelayedMouseEvents) {
+        break;
+      }
+      
+      
       UniquePtr<DelayedPointerEvent> delayedPointerEvent =
           MakeUnique<DelayedPointerEvent>(aGUIEvent->AsPointerEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedPointerEvent));
+      break;
     }
+    default:
+      break;
   }
 
   
@@ -10500,6 +10537,7 @@ void PresShell::Freeze(bool aIncludeSubDocuments) {
 void PresShell::FireOrClearDelayedEvents(bool aFireEvents) {
   mNoDelayedMouseEvents = false;
   mNoDelayedKeyEvents = false;
+  mNoDelayedSingleTap = false;
   if (!aFireEvents) {
     mDelayedEvents.Clear();
     return;
