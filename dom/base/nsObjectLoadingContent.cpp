@@ -1460,6 +1460,13 @@ nsresult nsObjectLoadingContent::OpenChannel() {
     loadInfo->SetPrincipalToInherit(el->NodePrincipal());
   }
 
+  
+  
+  
+  
+  
+  
+  
   if (cspToInherit) {
     loadInfo->SetCSPToInherit(cspToInherit);
   }
@@ -1510,36 +1517,17 @@ nsresult nsObjectLoadingContent::OpenChannel() {
                                loadFlags,             
                                nullptr);              
     NS_ENSURE_SUCCESS(rv, rv);
-
-    if (inheritAttrs) {
-      nsCOMPtr<nsILoadInfo> loadinfo = chan->LoadInfo();
-      loadinfo->SetPrincipalToInherit(el->NodePrincipal());
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    if (cspToInherit) {
-      nsCOMPtr<nsILoadInfo> loadinfo = chan->LoadInfo();
-      static_cast<LoadInfo*>(loadinfo.get())->SetCSPToInherit(cspToInherit);
-    }
   };
 
   
-  nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));
-  if (httpChan) {
+  if (nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(chan)) {
     auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
 
     rv = httpChan->SetReferrerInfoWithoutClone(referrerInfo);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
-    nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChan));
-    if (timedChannel) {
+    if (nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(httpChan)) {
       timedChannel->SetInitiatorType(el->LocalName());
     }
 
@@ -1547,12 +1535,6 @@ nsresult nsObjectLoadingContent::OpenChannel() {
     if (cos && UserActivation::IsHandlingUserInput()) {
       cos->AddClassFlags(nsIClassOfService::UrgentStart);
     }
-  }
-
-  nsCOMPtr<nsIScriptChannel> scriptChannel = do_QueryInterface(chan);
-  if (scriptChannel) {
-    
-    scriptChannel->SetExecutionPolicy(nsIScriptChannel::EXECUTE_NORMAL);
   }
 
   
