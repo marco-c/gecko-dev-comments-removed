@@ -178,7 +178,16 @@ void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
       
       
       
-      CaptureFrameState(nsPlaceholderFrame::GetRealFrameFor(child), aState);
+      nsIFrame* realChild = nsPlaceholderFrame::GetRealFrameFor(child);
+      
+      
+      
+      
+      
+      
+      if (MOZ_LIKELY(realChild)) {
+        CaptureFrameState(realChild, aState);
+      }
     }
   }
 }
