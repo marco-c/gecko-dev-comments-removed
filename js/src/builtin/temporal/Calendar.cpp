@@ -1442,16 +1442,9 @@ static constexpr size_t ICUEraNameMaxLength() {
 }
 #endif
 
-
-
-
-
-static bool CalendarDateEra(JSContext* cx, CalendarId calendar,
-                            const icu4x::capi::Date* date, EraCode* result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
+class EraName {
   
-  constexpr size_t MaxLength = 15;
+  static constexpr size_t MaxLength = 7;
 #ifdef IMPLEMENTS_DR2126
 
 
@@ -1472,16 +1465,38 @@ static bool CalendarDateEra(JSContext* cx, CalendarId calendar,
 
   
   char buf[MaxLength + 1] = {};
-  auto writable = diplomat::capi::diplomat_simple_write(buf, std::size(buf));
+  size_t length = 0;
 
-  icu4x::capi::icu4x_Date_era_mv1(date, &writable);
-  MOZ_ASSERT(writable.buf == buf, "unexpected buffer relocation");
+ public:
+  explicit EraName(const icu4x::capi::Date* date) {
+    auto writable = diplomat::capi::diplomat_simple_write(buf, std::size(buf));
 
-  auto dateEra = std::string_view{writable.buf, writable.len};
+    icu4x::capi::icu4x_Date_era_mv1(date, &writable);
+    MOZ_ASSERT(writable.buf == buf, "unexpected buffer relocation");
+
+    length = writable.len;
+  }
+
+  bool operator==(std::string_view sv) const {
+    return std::string_view{buf, length} == sv;
+  }
+
+  bool operator!=(std::string_view sv) const { return !(*this == sv); }
+};
+
+
+
+
+
+static bool CalendarDateEra(JSContext* cx, CalendarId calendar,
+                            const icu4x::capi::Date* date, EraCode* result) {
+  MOZ_ASSERT(calendar != CalendarId::ISO8601);
+
+  auto eraName = EraName(date);
 
   
   for (auto era : CalendarEras(calendar)) {
-    if (IcuEraName(calendar, era) == dateEra) {
+    if (eraName == IcuEraName(calendar, era)) {
       *result = era;
       return true;
     }
