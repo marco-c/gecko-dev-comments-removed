@@ -2029,3 +2029,11 @@ bool Gecko_GetAnchorPosOffset(
   *aOut = Length::FromPixels(CSSPixel::FromAppUnits(result));
   return true;
 }
+
+bool Gecko_GetAnchorPosSize(
+    const AnchorPosResolutionParams* , const nsAtom* ,
+    mozilla::StylePhysicalAxis ,
+    mozilla::StyleAnchorSizeKeyword ,
+    mozilla::Length* ) {
+  return false;
+}
