@@ -204,6 +204,7 @@ impl RenderTaskCache {
             render_task.uv_rect_kind(),
             Eviction::Auto,
             TargetShader::Default,
+            false,
         );
 
         

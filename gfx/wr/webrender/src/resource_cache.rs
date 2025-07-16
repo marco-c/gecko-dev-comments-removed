@@ -696,6 +696,11 @@ impl ResourceCache {
 
         
         
+        
+        let force_standalone_texture = true;
+
+        
+        
         let user_data = [0.0; 4];
         self.texture_cache.update(
             &mut info.texture_cache_handle,
@@ -709,6 +714,7 @@ impl ResourceCache {
             render_task.uv_rect_kind(),
             Eviction::Manual,
             TargetShader::Default,
+            force_standalone_texture,
         );
 
         
@@ -1504,6 +1510,7 @@ impl ResourceCache {
                             UvRectKind::Rect,
                             Eviction::Auto,
                             TargetShader::Text,
+                            false,
                         );
                         GlyphCacheEntry::Cached(CachedGlyphInfo {
                             texture_cache_handle,
@@ -1547,6 +1554,7 @@ impl ResourceCache {
                 UvRectKind::Rect,
                 Eviction::Manual,
                 TargetShader::Default,
+                false,
             );
         }
 
@@ -1664,6 +1672,7 @@ impl ResourceCache {
                     UvRectKind::Rect,
                     eviction,
                     TargetShader::Default,
+                    false,
                 );
             }
         }
