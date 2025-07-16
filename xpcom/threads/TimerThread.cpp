@@ -608,7 +608,7 @@ nsresult TimerThread::Shutdown() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  nsTArray<RefPtr<nsTimerImpl>> timers;
+  nsTArray<Entry> timers;
   {
     
     MonitorAutoLock lock(mMonitor);
@@ -627,19 +627,23 @@ nsresult TimerThread::Shutdown() {
     
     
     
-    timers.SetCapacity(mTimers.Length());
-    for (Entry& entry : mTimers) {
-      if (entry.Value()) {
-        timers.AppendElement(entry.Take());
+    timers = std::move(mTimers);
+    MOZ_ASSERT(mTimers.IsEmpty());
+
+    
+    
+    for (auto& entry : timers) {
+      
+      if (entry.mTimerImpl) {
+        entry.mTimerImpl->SetIsInTimerThread(false);
       }
     }
-
-    mTimers.Clear();
   }
 
-  for (const RefPtr<nsTimerImpl>& timer : timers) {
-    MOZ_ASSERT(timer);
-    timer->Cancel();
+  for (const auto& entry : timers) {
+    if (entry.mTimerImpl) {
+      entry.mTimerImpl->Cancel();
+    }
   }
 
   mThread->Shutdown();  
@@ -673,8 +677,8 @@ size_t TimerThread::ComputeTimerInsertionIndex(const TimeStamp& timeout) const {
 
   size_t firstGtIndex = 0;
   while (firstGtIndex < timerCount &&
-         (!mTimers[firstGtIndex].Value() ||
-          mTimers[firstGtIndex].Timeout() <= timeout)) {
+         (!mTimers[firstGtIndex].mTimerImpl ||
+          mTimers[firstGtIndex].mTimeout <= timeout)) {
     ++firstGtIndex;
   }
 
@@ -689,7 +693,7 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   }
 
   
-  MOZ_ASSERT(mTimers[0].Value());
+  MOZ_ASSERT(mTimers[0].mTimerImpl);
 
   
   
@@ -698,7 +702,7 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
   
-  TimeStamp bundleWakeup = mTimers[0].Timeout();
+  TimeStamp bundleWakeup = mTimers[0].mTimeout;
 
   
   
@@ -708,19 +712,19 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
       StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
   TimeStamp cutoffTime =
-      bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].Delay(),
+      bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
                                                   minTimerDelay, maxTimerDelay);
 
   const size_t timerCount = mTimers.Length();
   for (size_t entryIndex = 1; entryIndex < timerCount; ++entryIndex) {
     const Entry& curEntry = mTimers[entryIndex];
-    const nsTimerImpl* curTimer = curEntry.Value();
+    const nsTimerImpl* curTimer = curEntry.mTimerImpl;
     if (!curTimer) {
       
       continue;
     }
 
-    const TimeStamp curTimerDue = curEntry.Timeout();
+    const TimeStamp curTimerDue = curEntry.mTimeout;
     if (curTimerDue > cutoffTime) {
       
       break;
@@ -731,7 +735,7 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
     bundleWakeup = curTimerDue;
     cutoffTime = std::min(
         curTimerDue + ComputeAcceptableFiringDelay(
-                          curEntry.Delay(), minTimerDelay, maxTimerDelay),
+                          curEntry.mDelay, minTimerDelay, maxTimerDelay),
         cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
@@ -739,8 +743,8 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
 #if !defined(XP_WIN)
   
   
-  MOZ_ASSERT(bundleWakeup - mTimers[0].Timeout() <=
-             ComputeAcceptableFiringDelay(mTimers[0].Delay(), minTimerDelay,
+  MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <=
+             ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
 #endif
 
@@ -772,13 +776,13 @@ uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
     Entry& frontEntry = mTimers[0];
     MOZ_ASSERT(frontEntry.IsTimerInThreadAndUnchanged());
 
-    if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
+    if (lastNow + aAllowedEarlyFiring < frontEntry.mTimeout) {
       
       
       
       
       lastNow = TimeStamp::Now();
-      if (lastNow + aAllowedEarlyFiring < frontEntry.Timeout()) {
+      if (lastNow + aAllowedEarlyFiring < frontEntry.mTimeout) {
         break;
       }
     }
@@ -786,19 +790,13 @@ uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
     
     
     
-    
-    
-    RefPtr<nsTimerImpl> timerRef(frontEntry.Take());
-    uint64_t seq = mTimers[0].Sequence();
-    RemoveFirstTimerInternal();
-
-    
-    
-    
     {
       ++timersFired;
-      LogTimerEvent::Run run(timerRef.get());
-      PostTimerEvent(timerRef.forget(), seq);
+      LogTimerEvent::Run run(frontEntry.mTimerImpl.get());
+      PostTimerEvent(frontEntry);
+      
+      
+      
     }
 
     
@@ -965,6 +963,10 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_AddTimer);
 
+  if (mShutdown) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (!aTimer->mEventTarget) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -1002,10 +1004,11 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   ++mTotalTimersAdded;
 #endif
 
+  MOZ_ASSERT(!aTimer->IsInTimerThread());
+
   
-  if (!AddTimerInternal(*aTimer)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  AddTimerInternal(*aTimer);
+  aTimer->SetIsInTimerThread(true);
 
   if (wakeUpTimerThread) {
     mNotified = true;
@@ -1042,6 +1045,7 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
   if (!wasInThread) {
     return NS_ERROR_NOT_AVAILABLE;
   }
+  aTimer->SetIsInTimerThread(false);
 
 #if TIMER_THREAD_STATISTICS
   ++mTotalTimersRemoved;
@@ -1090,9 +1094,9 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
   AUTO_TIMERS_STATS(TimerThread_FindNextFireTimeForCurrentThread);
 
   for (const Entry& entry : mTimers) {
-    const nsTimerImpl* timer = entry.Value();
+    const nsTimerImpl* timer = entry.mTimerImpl;
     if (timer) {
-      if (entry.Timeout() > aDefault) {
+      if (entry.mTimeout > aDefault) {
         return aDefault;
       }
 
@@ -1102,7 +1106,7 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
         nsresult rv =
             timer->mEventTarget->IsOnCurrentThread(&isOnCurrentThread);
         if (NS_SUCCEEDED(rv) && isOnCurrentThread) {
-          return entry.Timeout();
+          return entry.mTimeout;
         }
       }
 
@@ -1124,85 +1128,51 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
 
 
 
-bool TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
+void TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
   mMonitor.AssertCurrentThreadOwns();
   aTimer.mMutex.AssertCurrentThreadOwns();
   AUTO_TIMERS_STATS(TimerThread_AddTimerInternal);
-  if (mShutdown) {
-    return false;
-  }
-
   LogTimerEvent::LogDispatch(&aTimer);
 
   
 
-  const size_t insertionIndex = ComputeTimerInsertionIndex(aTimer.mTimeout);
+  
+  Entry toBeAdded{aTimer};
+  size_t insertAt = ComputeTimerInsertionIndex(aTimer.mTimeout);
 
-  if (insertionIndex != 0 && !mTimers[insertionIndex - 1].Value()) {
+  if (insertAt > 0 && !mTimers[insertAt - 1].mTimerImpl) {
     
     
-    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_overwrite_before);
-    mTimers[insertionIndex - 1] = Entry{aTimer};
-    return true;
+    
+    
+    
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_ReuseBefore);
+    mTimers[insertAt - 1] = std::move(toBeAdded);
+    return;
   }
 
-  const size_t length = mTimers.Length();
-  if (insertionIndex == length) {
-    
-    
-    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_append);
-    return mTimers.AppendElement(Entry{aTimer}, mozilla::fallible);
-  }
+  bool usedEmptySlot = false;
 
-  if (!mTimers[insertionIndex].Value()) {
+  if (insertAt < mTimers.Length()) {
     
-    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_overwrite);
-    mTimers[insertionIndex] = Entry{aTimer};
-    return true;
-  }
-
-  
-  AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_insert);
-  
-  
-  if (length == mTimers.Capacity() && mTimers[length - 1].Value()) {
-    
-    
-    
-    
-    
-    
-    
-    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_insert_expand);
-    if (!mTimers.AppendElement(
-            Entry{mTimers[length - 1].Timeout() +
-                  TimeDuration::FromSeconds(365.0 * 24.0 * 60.0 * 60.0)},
-            mozilla::fallible)) {
-      return false;
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_ShiftAndFindEmptySlot);
+    Span<Entry> tail = Span{mTimers}.From(insertAt);
+    for (Entry& e : tail) {
+      if (!e.mTimerImpl) {
+        e = std::move(toBeAdded);
+        usedEmptySlot = true;
+        break;
+      }
+      std::swap(e, toBeAdded);
     }
   }
 
-  
-  
-  Entry extractedEntry = std::exchange(mTimers[insertionIndex], Entry{aTimer});
-  
-  for (size_t i = insertionIndex + 1; i < length; ++i) {
-    Entry& entryRef = mTimers[i];
-    if (!entryRef.Value()) {
-      
-      COUNT_TIMERS_STATS(TimerThread_AddTimerInternal_insert_overwrite);
-      entryRef = std::move(extractedEntry);
-      return true;
-    }
+  if (!usedEmptySlot) {
     
-    COUNT_TIMERS_STATS(TimerThread_AddTimerInternal_insert_shifts);
-    std::swap(entryRef, extractedEntry);
+    
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_Expand);
+    mTimers.AppendElement(std::move(toBeAdded));
   }
-  
-  
-  COUNT_TIMERS_STATS(TimerThread_AddTimerInternal_insert_append);
-  mTimers.AppendElement(std::move(extractedEntry));
-  return true;
 }
 
 
@@ -1220,13 +1190,12 @@ bool TimerThread::RemoveTimerInternal(nsTimerImpl& aTimer) {
 
   AUTO_TIMERS_STATS(TimerThread_RemoveTimerInternal_in_list);
   for (auto& entry : mTimers) {
-    if (entry.Value() == &aTimer) {
-      entry.Forget();
+    if (entry.mTimerImpl == &aTimer) {
+      entry.mTimerImpl = nullptr;
       return true;
     }
   }
-  MOZ_ASSERT(!aTimer.IsInTimerThread(),
-             "Not found in the list but it should be!?");
+  MOZ_ASSERT_UNREACHABLE("Not found in the list but it should be!?");
   return false;
 }
 
@@ -1235,25 +1204,18 @@ void TimerThread::RemoveLeadingCanceledTimersInternal() {
   AUTO_TIMERS_STATS(TimerThread_RemoveLeadingCanceledTimersInternal);
 
   size_t toRemove = 0;
-  while (toRemove < mTimers.Length() && !mTimers[toRemove].Value()) {
+  while (toRemove < mTimers.Length() && !mTimers[toRemove].mTimerImpl) {
     ++toRemove;
   }
   mTimers.RemoveElementsAt(0, toRemove);
 }
 
-void TimerThread::RemoveFirstTimerInternal() {
-  mMonitor.AssertCurrentThreadOwns();
-  AUTO_TIMERS_STATS(TimerThread_RemoveFirstTimerInternal);
-  MOZ_ASSERT(!mTimers.IsEmpty());
-  mTimers.RemoveElementAt(0);
-}
-
-void TimerThread::PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef,
-                                 uint64_t aTimerSeq) {
+void TimerThread::PostTimerEvent(Entry& aPostMe) {
   mMonitor.AssertCurrentThreadOwns();
   AUTO_TIMERS_STATS(TimerThread_PostTimerEvent);
 
-  RefPtr<nsTimerImpl> timer(aTimerRef);
+  RefPtr<nsTimerImpl> timer(std::move(aPostMe.mTimerImpl));
+  timer->SetIsInTimerThread(false);
 
 #if TIMER_THREAD_STATISTICS
   const double actualFiringDelay =
@@ -1287,26 +1249,17 @@ void TimerThread::PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef,
     return;
   }
   RefPtr<nsTimerEvent> event = ::new (KnownNotNull, p)
-      nsTimerEvent(timer.forget(), aTimerSeq, mProfilerThreadId);
+      nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
 
-  nsresult rv;
   {
     
     
     MonitorAutoUnlock unlock(mMonitor);
-    rv = target->Dispatch(event, NS_DISPATCH_NORMAL);
-    if (NS_FAILED(rv)) {
-      timer = event->ForgetTimer();
+    if (NS_WARN_IF(NS_FAILED(target->Dispatch(event, NS_DISPATCH_NORMAL)))) {
       
       
       
-      
-      
-      
-      
-      MutexAutoLock lock1(timer.get()->mMutex);
-      MonitorAutoLock lock2(mMonitor);
-      RemoveTimerInternal(*timer);
+      RefPtr<nsTimerImpl> dropMe = event->ForgetTimer();
     }
   }
 }
@@ -1542,7 +1495,7 @@ nsresult TimerThread::GetTimers(nsTArray<RefPtr<nsITimer>>& aRetVal) {
   {
     MonitorAutoLock lock(mMonitor);
     for (const auto& entry : mTimers) {
-      nsTimerImpl* timer = entry.Value();
+      nsTimerImpl* timer = entry.mTimerImpl;
       if (!timer) {
         continue;
       }

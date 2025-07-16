@@ -65,16 +65,11 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   bool mInitialized;
 
   
-  
-  bool AddTimerInternal(nsTimerImpl& aTimer) MOZ_REQUIRES(mMonitor);
+  void AddTimerInternal(nsTimerImpl& aTimer) MOZ_REQUIRES(mMonitor);
   bool RemoveTimerInternal(nsTimerImpl& aTimer)
       MOZ_REQUIRES(mMonitor, aTimer.mMutex);
   void RemoveLeadingCanceledTimersInternal() MOZ_REQUIRES(mMonitor);
-  void RemoveFirstTimerInternal() MOZ_REQUIRES(mMonitor);
   nsresult Init() MOZ_REQUIRES(mMonitor);
-
-  void PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef,
-                      uint64_t aTimerSeq) MOZ_REQUIRES(mMonitor);
 
   
   
@@ -96,60 +91,18 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   bool mNotified MOZ_GUARDED_BY(mMonitor);
   bool mSleeping MOZ_GUARDED_BY(mMonitor);
 
-  class Entry final {
-   public:
+  struct Entry final {
     explicit Entry(nsTimerImpl& aTimerImpl)
         : mTimeout(aTimerImpl.mTimeout),
           mDelay(aTimerImpl.mDelay),
           mTimerSeq(aTimerImpl.mTimerSeq),
-          mTimerImpl(&aTimerImpl) {
-      aTimerImpl.SetIsInTimerThread(true);
-    }
-
-    
-    
-    
-    explicit Entry(TimeStamp aTimeout)
-        : mTimeout(std::move(aTimeout)), mTimerSeq(0), mTimerImpl(nullptr) {}
+          mTimerImpl(&aTimerImpl) {}
 
     
     Entry(const Entry&) = delete;
     Entry& operator=(const Entry&) = delete;
-
-    
     Entry(Entry&&) = default;
     Entry& operator=(Entry&&) = default;
-
-    ~Entry() {
-      if (mTimerImpl) {
-        mTimerImpl->mMutex.AssertCurrentThreadOwns();
-        mTimerImpl->SetIsInTimerThread(false);
-      }
-    }
-
-    nsTimerImpl* Value() const { return mTimerImpl; }
-
-    void Forget() {
-      if (MOZ_UNLIKELY(!mTimerImpl)) {
-        return;
-      }
-      mTimerImpl->mMutex.AssertCurrentThreadOwns();
-      mTimerImpl->SetIsInTimerThread(false);
-      mTimerImpl = nullptr;
-    }
-
-    
-    already_AddRefed<nsTimerImpl> Take() {
-      if (MOZ_LIKELY(mTimerImpl)) {
-        MOZ_ASSERT(mTimerImpl->IsInTimerThread());
-        mTimerImpl->SetIsInTimerThread(false);
-      }
-      return mTimerImpl.forget();
-    }
-
-    const TimeStamp& Timeout() const { return mTimeout; }
-    const TimeDuration& Delay() const { return mDelay; }
-    uint64_t Sequence() const { return mTimerSeq; }
 
 #ifdef DEBUG
     
@@ -161,7 +114,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     }
 #endif
 
-   private:
     
     
     
@@ -171,6 +123,8 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
     RefPtr<nsTimerImpl> mTimerImpl;
   };
+
+  void PostTimerEvent(Entry& aPostMe) MOZ_REQUIRES(mMonitor);
 
   
   
