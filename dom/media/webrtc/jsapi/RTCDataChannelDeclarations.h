@@ -1,0 +1,35 @@
+
+
+
+
+
+
+#ifndef RTCDataChannelDeclarations_h
+#define RTCDataChannelDeclarations_h
+
+
+
+
+#include "nsCOMPtr.h"
+#include "nsStringFwd.h"
+#include "mozilla/dom/Nullable.h"
+
+class nsPIDOMWindowInner;
+
+namespace mozilla {
+class DataChannel;
+
+namespace dom {
+class RTCDataChannel;
+
+nsresult NS_NewDOMDataChannel(already_AddRefed<DataChannel>&& aDataChannel,
+                              const nsAString& aLabel, bool aOrdered,
+                              Nullable<uint16_t> aMaxLifeTime,
+                              Nullable<uint16_t> aMaxRetransmits,
+                              const nsAString& aProtocol, bool aNegotiated,
+                              nsPIDOMWindowInner* aWindow,
+                              RTCDataChannel** aDomDataChannel);
+
+}  
+}  
+#endif  

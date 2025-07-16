@@ -62,7 +62,6 @@ class AFakePCObserver;
 #endif
 }  
 
-class nsDOMDataChannel;
 class nsIPrincipal;
 
 namespace mozilla {
@@ -78,6 +77,7 @@ class SharedWebrtcState;
 namespace dom {
 class RTCCertificate;
 struct RTCConfiguration;
+class RTCDataChannel;
 struct RTCRtpSourceEntry;
 struct RTCIceServer;
 struct RTCOfferOptions;
@@ -115,22 +115,20 @@ typedef struct Timecard Timecard;
 
 namespace mozilla {
 
-using mozilla::DtlsIdentity;
-using mozilla::ErrorResult;
-using mozilla::PeerIdentity;
-using mozilla::dom::PeerConnectionObserver;
-using mozilla::dom::RTCConfiguration;
-using mozilla::dom::RTCIceServer;
-using mozilla::dom::RTCOfferOptions;
+using dom::PeerConnectionObserver;
+using dom::RTCConfiguration;
+using dom::RTCDataChannel;
+using dom::RTCIceServer;
+using dom::RTCOfferOptions;
 
 class PeerConnectionWrapper;
 class RemoteSourceStreamInfo;
 
 
-class PCUuidGenerator : public mozilla::JsepUuidGenerator {
+class PCUuidGenerator : public JsepUuidGenerator {
  public:
   virtual bool Generate(std::string* idp) override;
-  virtual mozilla::JsepUuidGenerator* Clone() const override {
+  virtual JsepUuidGenerator* Clone() const override {
     return new PCUuidGenerator(*this);
   }
 
@@ -173,12 +171,11 @@ struct PeerConnectionAutoTimer {
 class PeerConnectionImpl final
     : public nsISupports,
       public nsWrapperCache,
-      public mozilla::DataChannelConnection::DataConnectionListener {
+      public DataChannelConnection::DataConnectionListener {
   struct Internal;  
 
  public:
-  explicit PeerConnectionImpl(
-      const mozilla::dom::GlobalObject* aGlobal = nullptr);
+  explicit PeerConnectionImpl(const dom::GlobalObject* aGlobal = nullptr);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PeerConnectionImpl)
@@ -194,7 +191,7 @@ class PeerConnectionImpl final
   nsPIDOMWindowInner* GetParentObject() const;
 
   static already_AddRefed<PeerConnectionImpl> Constructor(
-      const mozilla::dom::GlobalObject& aGlobal);
+      const dom::GlobalObject& aGlobal);
 
   static DefaultCodecPreferences GetDefaultCodecPreferences(
       const OverrideRtxPreference aOverrideRtxPreference =
@@ -204,8 +201,8 @@ class PeerConnectionImpl final
   
   void NotifyDataChannel(already_AddRefed<DataChannel> aChannel,
                          const nsAString& aLabel, bool aOrdered,
-                         mozilla::dom::Nullable<uint16_t> aMaxLifeTime,
-                         mozilla::dom::Nullable<uint16_t> aMaxRetransmits,
+                         dom::Nullable<uint16_t> aMaxLifeTime,
+                         dom::Nullable<uint16_t> aMaxRetransmits,
                          const nsAString& aProtocol, bool aNegotiated)
       
       
@@ -256,8 +253,8 @@ class PeerConnectionImpl final
   void Initialize(PeerConnectionObserver& aObserver,
                   nsGlobalWindowInner& aWindow, ErrorResult& rv);
 
-  void SetCertificate(mozilla::dom::RTCCertificate& aCertificate);
-  const RefPtr<mozilla::dom::RTCCertificate>& Certificate() const;
+  void SetCertificate(dom::RTCCertificate& aCertificate);
+  const RefPtr<dom::RTCCertificate>& Certificate() const;
   
   RefPtr<DtlsIdentity> Identity() const;
 
@@ -269,7 +266,7 @@ class PeerConnectionImpl final
   NS_IMETHODIMP CreateAnswer();
   void CreateAnswer(ErrorResult& rv) { rv = CreateAnswer(); }
 
-  NS_IMETHODIMP CreateOffer(const mozilla::JsepOfferOptions& aConstraints);
+  NS_IMETHODIMP CreateOffer(const JsepOfferOptions& aConstraints);
 
   NS_IMETHODIMP SetLocalDescription(int32_t aAction, const char* aSDP);
 
@@ -376,32 +373,30 @@ class PeerConnectionImpl final
   dom::Nullable<bool> GetCurrentOfferer() const;
   dom::Nullable<bool> GetPendingOfferer() const;
 
-  NS_IMETHODIMP SignalingState(mozilla::dom::RTCSignalingState* aState);
+  NS_IMETHODIMP SignalingState(dom::RTCSignalingState* aState);
 
-  mozilla::dom::RTCSignalingState SignalingState() {
-    mozilla::dom::RTCSignalingState state;
+  dom::RTCSignalingState SignalingState() {
+    dom::RTCSignalingState state;
     SignalingState(&state);
     return state;
   }
 
-  NS_IMETHODIMP IceConnectionState(mozilla::dom::RTCIceConnectionState* aState);
+  NS_IMETHODIMP IceConnectionState(dom::RTCIceConnectionState* aState);
 
-  mozilla::dom::RTCIceConnectionState IceConnectionState() {
-    mozilla::dom::RTCIceConnectionState state;
+  dom::RTCIceConnectionState IceConnectionState() {
+    dom::RTCIceConnectionState state;
     IceConnectionState(&state);
     return state;
   }
 
-  NS_IMETHODIMP IceGatheringState(mozilla::dom::RTCIceGatheringState* aState);
+  NS_IMETHODIMP IceGatheringState(dom::RTCIceGatheringState* aState);
 
-  mozilla::dom::RTCIceGatheringState IceGatheringState() {
-    return mIceGatheringState;
-  }
+  dom::RTCIceGatheringState IceGatheringState() { return mIceGatheringState; }
 
-  NS_IMETHODIMP ConnectionState(mozilla::dom::RTCPeerConnectionState* aState);
+  NS_IMETHODIMP ConnectionState(dom::RTCPeerConnectionState* aState);
 
-  mozilla::dom::RTCPeerConnectionState ConnectionState() {
-    mozilla::dom::RTCPeerConnectionState state;
+  dom::RTCPeerConnectionState ConnectionState() {
+    dom::RTCPeerConnectionState state;
     ConnectionState(&state);
     return state;
   }
@@ -430,7 +425,7 @@ class PeerConnectionImpl final
 
   nsresult MaybeInitializeDataChannel();
 
-  NS_IMETHODIMP_TO_ERRORRESULT_RETREF(nsDOMDataChannel, CreateDataChannel,
+  NS_IMETHODIMP_TO_ERRORRESULT_RETREF(RTCDataChannel, CreateDataChannel,
                                       ErrorResult& rv, const nsAString& aLabel,
                                       const nsAString& aProtocol,
                                       uint16_t aType, bool outOfOrderAllowed,
@@ -671,13 +666,13 @@ class PeerConnectionImpl final
   
   dom::RTCConfigurationInternal mJsConfiguration;
 
-  mozilla::dom::RTCSignalingState mSignalingState;
+  dom::RTCSignalingState mSignalingState;
 
   
-  mozilla::dom::RTCIceConnectionState mIceConnectionState;
-  mozilla::dom::RTCIceGatheringState mIceGatheringState;
+  dom::RTCIceConnectionState mIceConnectionState;
+  dom::RTCIceGatheringState mIceGatheringState;
 
-  mozilla::dom::RTCPeerConnectionState mConnectionState;
+  dom::RTCPeerConnectionState mConnectionState;
 
   RefPtr<PeerConnectionObserver> mPCObserver;
 
@@ -687,7 +682,7 @@ class PeerConnectionImpl final
   std::string mLocalRequestedSDP;
   std::string mRemoteRequestedSDP;
   
-  mozilla::dom::Sequence<mozilla::dom::RTCSdpHistoryEntryInternal> mSdpHistory;
+  dom::Sequence<dom::RTCSdpHistoryEntryInternal> mSdpHistory;
   std::string mPendingLocalDescription;
   std::string mPendingRemoteDescription;
   std::string mCurrentLocalDescription;
@@ -704,7 +699,7 @@ class PeerConnectionImpl final
   
   RefPtr<PeerIdentity> mPeerIdentity;
   
-  RefPtr<mozilla::dom::RTCCertificate> mCertificate;
+  RefPtr<dom::RTCCertificate> mCertificate;
   
   
   
@@ -725,7 +720,7 @@ class PeerConnectionImpl final
   nsCOMPtr<nsISerialEventTarget> mSTSThread;
 
   
-  RefPtr<mozilla::DataChannelConnection> mDataConnection;
+  RefPtr<DataChannelConnection> mDataConnection;
   unsigned int mDataChannelsOpened = 0;
   unsigned int mDataChannelsClosed = 0;
 
@@ -733,14 +728,14 @@ class PeerConnectionImpl final
   RefPtr<MediaTransportHandler> mTransportHandler;
 
   
-  mozilla::UniquePtr<PCUuidGenerator> mUuidGen;
-  mozilla::UniquePtr<mozilla::JsepSession> mJsepSession;
+  UniquePtr<PCUuidGenerator> mUuidGen;
+  UniquePtr<JsepSession> mJsepSession;
   
   
   
   
   
-  mozilla::UniquePtr<mozilla::JsepSession> mUncommittedJsepSession;
+  UniquePtr<JsepSession> mUncommittedJsepSession;
   unsigned long mIceRestartCount;
   unsigned long mIceRollbackCount;
 
@@ -756,7 +751,7 @@ class PeerConnectionImpl final
   bool mDisableLongTermStats = false;
 
   
-  mozilla::TimeStamp mIceStartTime;
+  TimeStamp mIceStartTime;
   
   static std::map<uint64_t, PeerConnectionAutoTimer> sCallDurationTimers;
 
@@ -797,8 +792,7 @@ class PeerConnectionImpl final
     void OnMDNSQueryComplete(const nsCString& hostname,
                              const Maybe<nsCString>& address) override;
 
-    void OnStunAddrsAvailable(
-        const mozilla::net::NrIceStunAddrArray& addrs) override;
+    void OnStunAddrsAvailable(const net::NrIceStunAddrArray& addrs) override;
 
    private:
     
