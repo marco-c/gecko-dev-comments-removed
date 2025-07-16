@@ -1,16 +1,16 @@
-/* Any copyright is dedicated to the Public Domain.
-https://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
-/* import-globals-from ../../../../extensions/newtab/test/xpcshell/head.js */
 
-/* import-globals-from head_nimbus_trainhop.js */
+
+
 
 add_task(async function test_download_and_staged_install_trainhop_addon() {
   Services.fog.testResetFOG();
 
-  // Sanity check (verifies built-in add-on resources have been mapped).
+  
   assertNewTabResourceMapping();
   await asyncAssertNewTabAddon({
     locationName: BUILTIN_LOCATION_NAME,
@@ -22,20 +22,22 @@ add_task(async function test_download_and_staged_install_trainhop_addon() {
   const { nimbusFeatureCleanup } = await setupNimbusTrainhopAddon({
     updateAddonVersion,
   });
+  assertTrainhopAddonVersionPref(updateAddonVersion);
 
-  await AboutNewTabResourceMapping.installTrainhopAddon();
+  await AboutNewTabResourceMapping.updateTrainhopAddonState();
   const { pendingInstall } = await asyncAssertNimbusTrainhopAddonStaged({
     updateAddonVersion,
   });
 
-  // Verify that we are still using the New Tab resources from the builtin add-on.
+  
   assertNewTabResourceMapping();
-  // Verify that no exposure event has been recorded until the New Tab resources
-  // for the train-hop add-on version are actually in use.
+  
+  
   assertTrainhopAddonNimbusExposure({ expectedExposure: false });
 
   await cancelPendingInstall(pendingInstall);
   await nimbusFeatureCleanup();
+  assertTrainhopAddonVersionPref("");
 });
 
 add_task(async function test_trainhop_addon_download_errors() {
@@ -59,8 +61,8 @@ add_task(async function test_trainhop_addon_download_errors() {
       browser_specific_settings: {
         gecko: { id: BUILTIN_ADDON_ID },
       },
-      // Invalid manifest property that is expected to hit a manifest
-      // validation error.
+      
+      
       background: { scripts: "it-should-be-an-array.js" },
     },
   });
@@ -95,7 +97,7 @@ add_task(async function test_trainhop_addon_download_errors() {
 
     info("Trigger download and install train-hop add-on version");
     const promiseTrainhopRequest =
-      AboutNewTabResourceMapping.installTrainhopAddon();
+      AboutNewTabResourceMapping.updateTrainhopAddonState();
 
     info("Wait for AddonManager onDownloadFailed");
     const [install] = await promiseDownloadFailed;
@@ -105,7 +107,7 @@ add_task(async function test_trainhop_addon_download_errors() {
       "Expect install state to be STATE_DOWNLOAD_FAILED"
     );
 
-    info("Wait for installTrainhopAddon call to be resolved as expected");
+    info("Wait for updateTrainhopAddonState call to be resolved as expected");
     await promiseTrainhopRequest;
 
     Assert.deepEqual(
@@ -137,7 +139,7 @@ add_task(async function test_trainhop_cancel_on_version_check() {
   }) {
     Services.fog.testResetFOG();
     info(message);
-    // Sanity check (verifies built-in add-on resources have been mapped).
+    
     assertNewTabResourceMapping();
     assertTrainhopAddonNimbusExposure({ expectedExposure: false });
 
@@ -148,7 +150,7 @@ add_task(async function test_trainhop_cancel_on_version_check() {
       updateAddonVersion,
     });
 
-    await AboutNewTabResourceMapping.installTrainhopAddon();
+    await AboutNewTabResourceMapping.updateTrainhopAddonState();
     Assert.deepEqual(
       await AddonManager.getAllInstalls(),
       [],
@@ -160,7 +162,7 @@ add_task(async function test_trainhop_cancel_on_version_check() {
       locationName: "app-builtin-addons",
       version: BUILTIN_ADDON_VERSION,
     });
-    // Verify that we are still using the New Tab resources from the builtin add-on.
+    
     assertNewTabResourceMapping();
     assertTrainhopAddonNimbusExposure({ expectedExposure: false });
 
@@ -169,26 +171,28 @@ add_task(async function test_trainhop_cancel_on_version_check() {
 });
 
 add_task(async function test_trainhop_addon_after_browser_restart() {
-  // Sanity check (verifies built-in add-on resources have been mapped).
+  
   assertNewTabResourceMapping();
   await asyncAssertNewTabAddon({
     locationName: BUILTIN_LOCATION_NAME,
   });
+  assertTrainhopAddonVersionPref("");
 
   const updateAddonVersion = `${BUILTIN_ADDON_VERSION}.123`;
 
   const { nimbusFeatureCleanup } = await setupNimbusTrainhopAddon({
     updateAddonVersion,
   });
+  assertTrainhopAddonVersionPref(updateAddonVersion);
 
-  await AboutNewTabResourceMapping.installTrainhopAddon();
+  await AboutNewTabResourceMapping.updateTrainhopAddonState();
   await asyncAssertNimbusTrainhopAddonStaged({
     updateAddonVersion,
   });
-  // Verify that we are still using the New Tab resources from the builtin add-on.
+  
   assertNewTabResourceMapping();
 
-  // Mock browser restart scenario.
+  
   const aboutNewTabUninit = async () => {
     AboutNewTab.uninit();
     AboutNewTabResourceMapping.initialized = false;
@@ -197,11 +201,14 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
     AboutNewTabResourceMapping._addonListener = null;
   };
 
+  info(
+    "Simulated browser restart while train-hop add-on is pending installation"
+  );
   await aboutNewTabUninit();
   await AddonTestUtils.promiseRestartManager();
   AboutNewTab.init();
 
-  const trainhopAddon = await asyncAssertNewTabAddon({
+  await asyncAssertNewTabAddon({
     locationName: PROFILE_LOCATION_NAME,
     version: updateAddonVersion,
   });
@@ -220,7 +227,7 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
     "Expect no pending install to be found"
   );
 
-  await AboutNewTabResourceMapping.installTrainhopAddon();
+  await AboutNewTabResourceMapping.updateTrainhopAddonState();
   Assert.deepEqual(
     await AddonManager.getAllInstalls(),
     [],
@@ -228,10 +235,38 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
   );
 
   assertTrainhopAddonNimbusExposure({ expectedExposure: true });
+  assertTrainhopAddonVersionPref(updateAddonVersion);
 
-  // Test case cleanup.
+  info("Simulate newtabTrainhopAddon nimbus feature unenrolled");
+  await nimbusFeatureCleanup();
+  assertTrainhopAddonVersionPref("");
+
+  
+  
+  await AboutNewTabResourceMapping.updateTrainhopAddonState();
+  assertNewTabResourceMapping(trainhopAddonPolicy.extension.rootURI.spec);
+  await asyncAssertNewTabAddon({
+    locationName: PROFILE_LOCATION_NAME,
+    version: updateAddonVersion,
+  });
+
+  info(
+    "Simulated browser restart while newtabTrainhopAddon nimbus feature is unenrolled"
+  );
   await aboutNewTabUninit();
-  await trainhopAddon.uninstall();
+  await AddonTestUtils.promiseRestartManager();
+  AboutNewTab.init();
+
+  
+  assertNewTabResourceMapping();
+  await AboutNewTabResourceMapping.updateTrainhopAddonState();
+  await asyncAssertNewTabAddon({
+    locationName: BUILTIN_LOCATION_NAME,
+    version: BUILTIN_ADDON_VERSION,
+  });
+
+  
+  await aboutNewTabUninit();
   AboutNewTab.init();
   await nimbusFeatureCleanup();
 });
