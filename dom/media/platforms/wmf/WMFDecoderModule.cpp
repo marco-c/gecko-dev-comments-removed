@@ -86,7 +86,7 @@ static bool IsRemoteAcceleratedCompositor(
 }
 
 
-void WMFDecoderModule::Init(Config aConfig) {
+void WMFDecoderModule::Init() {
   
   if (XRE_IsContentProcess()) {
     
@@ -96,14 +96,6 @@ void WMFDecoderModule::Init(Config aConfig) {
   } else if (XRE_IsGPUProcess()) {
     
     sDXVAEnabled = true;
-    if (aConfig == Config::ForceEnableHEVC) {
-      WmfDecoderModuleMarkerAndLog(
-          "ReportHardwareSupport",
-          "Enable HEVC for reporting hardware support telemetry");
-      sForceEnableHEVC = true;
-    } else {
-      sForceEnableHEVC = false;
-    }
   } else if (XRE_IsRDDProcess()) {
     
     
@@ -260,7 +252,7 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
                               MFVideoFormat_NV12);
 #endif
     case WMFStreamType::HEVC:
-      if (!WMFDecoderModule::IsHEVCSupported() || !sDXVAEnabled) {
+      if (!StaticPrefs::media_hevc_enabled() || !sDXVAEnabled) {
         return E_FAIL;
       }
       return aDecoder->Create(MFT_CATEGORY_VIDEO_DECODER, MFVideoFormat_HEVC,
@@ -304,7 +296,7 @@ bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
       break;
 #endif
     case WMFStreamType::HEVC:
-      if (!WMFDecoderModule::IsHEVCSupported()) {
+      if (!StaticPrefs::media_hevc_enabled()) {
         return false;
       }
       break;
@@ -497,14 +489,6 @@ media::DecodeSupportSet WMFDecoderModule::SupportsMimeType(
        !supports.isEmpty() ? "supports" : "rejects", aMimeType.BeginReading()));
   return supports;
 }
-
-
-bool WMFDecoderModule::IsHEVCSupported() {
-  return sForceEnableHEVC || StaticPrefs::media_hevc_enabled();
-}
-
-
-void WMFDecoderModule::DisableForceEnableHEVC() { sForceEnableHEVC = false; }
 
 }  
 
