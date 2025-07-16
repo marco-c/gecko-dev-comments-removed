@@ -96,8 +96,10 @@ bool DocumentTimeline::TracksWallclockTime() const {
 
 TimeStamp DocumentTimeline::GetCurrentTimeStamp() const {
   nsRefreshDriver* refreshDriver = GetRefreshDriver();
-  return refreshDriver ? refreshDriver->MostRecentRefresh()
-                       : mLastRefreshDriverTime;
+  TimeStamp result = refreshDriver ? refreshDriver->MostRecentRefresh()
+                                   : mLastRefreshDriverTime;
+
+  return EnsureValidTimestamp(result);
 }
 
 void DocumentTimeline::UpdateLastRefreshDriverTime() {
@@ -108,6 +110,15 @@ void DocumentTimeline::UpdateLastRefreshDriverTime() {
     return mLastRefreshDriverTime;
   }();
 
+  result = EnsureValidTimestamp(result);
+
+  if (!result.IsNull()) {
+    mLastRefreshDriverTime = result;
+  }
+}
+
+TimeStamp DocumentTimeline::EnsureValidTimestamp(
+    const TimeStamp& aTimestamp) const {
   if (nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming()) {
     
     
@@ -119,14 +130,12 @@ void DocumentTimeline::UpdateLastRefreshDriverTime() {
     
     
     
-    if (result.IsNull() || result < timing->GetNavigationStartTimeStamp()) {
-      result = timing->GetNavigationStartTimeStamp();
+    if (aTimestamp.IsNull() ||
+        aTimestamp < timing->GetNavigationStartTimeStamp()) {
+      return timing->GetNavigationStartTimeStamp();
     }
   }
-
-  if (!result.IsNull()) {
-    mLastRefreshDriverTime = result;
-  }
+  return aTimestamp;
 }
 
 Nullable<TimeDuration> DocumentTimeline::ToTimelineTime(
