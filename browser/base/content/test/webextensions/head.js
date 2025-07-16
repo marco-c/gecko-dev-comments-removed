@@ -693,6 +693,8 @@ add_setup(async function head_setup() {
   let addons = await AddonManager.getAllAddons();
   let existingAddons = new Set(addons.map(a => a.id));
 
+  let uuids = Services.prefs.getStringPref("extensions.webextensions.uuids");
+
   registerCleanupFunction(async function () {
     if (testCleanup) {
       await testCleanup();
@@ -708,5 +710,11 @@ add_setup(async function head_setup() {
         await addon.uninstall();
       }
     }
+    
+    is(
+      Services.prefs.getStringPref("extensions.webextensions.uuids"),
+      uuids,
+      "No unexpected changes to extensions.webextensions.uuid"
+    );
   });
 });
