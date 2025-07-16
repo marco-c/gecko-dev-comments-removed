@@ -14993,6 +14993,13 @@ class BaseContent extends (external_React_default()).PureComponent {
         const uploadedWallpaperUrl = URL.createObjectURL(uploadedWallpaper);
         __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper", `url(${uploadedWallpaperUrl})`);
         __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-color", "transparent");
+
+        
+        if (this.state.colorMode) {
+          this.setState(prevState => ({
+            wallpaperTheme: prevState.colorMode
+          }));
+        }
       } catch (e) {}
       return;
     }
