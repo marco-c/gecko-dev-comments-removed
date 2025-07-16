@@ -70,7 +70,9 @@ class nsTimerImpl {
   void SetDelayInternal(uint32_t aDelay, TimeStamp aBase = TimeStamp::Now());
   void CancelImpl(bool aClearITimer);
 
-  void Fire(uint64_t aTimerSeq);
+  void Fire(int32_t aGeneration);
+
+  int32_t GetGeneration() { return mGeneration; }
 
   struct UnknownCallback {};
 
@@ -132,17 +134,9 @@ class nsTimerImpl {
   void GetName(nsACString& aName, const mozilla::MutexAutoLock& aProofOfLock)
       MOZ_REQUIRES(mMutex);
 
-  
   bool IsInTimerThread() const { return mIsInTimerThread; }
-
-  
   void SetIsInTimerThread(bool aIsInTimerThread) {
     mIsInTimerThread = aIsInTimerThread;
-  }
-
-  void SetTimerSequence(uint64_t aTimerSeq) {
-    mMutex.AssertCurrentThreadOwns();
-    mTimerSeq = aTimerSeq;
   }
 
   nsCOMPtr<nsIEventTarget> mEventTarget;
@@ -156,6 +150,10 @@ class nsTimerImpl {
   
   
   
+  
+  
+  
+  
   bool mIsInTimerThread;
 
   
@@ -166,13 +164,14 @@ class nsTimerImpl {
   
   
   
-  uint64_t mTimerSeq MOZ_GUARDED_BY(mMutex);
+  int32_t mGeneration;
 
   mozilla::TimeDuration mDelay MOZ_GUARDED_BY(mMutex);
   
   
   
-  mozilla::TimeStamp mTimeout MOZ_GUARDED_BY(mMutex);
+  
+  mozilla::TimeStamp mTimeout;
 
   RefPtr<nsITimer> mITimer MOZ_GUARDED_BY(mMutex);
   mozilla::Mutex mMutex;
