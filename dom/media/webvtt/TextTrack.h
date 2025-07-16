@@ -104,14 +104,35 @@ class TextTrack final : public DOMEventTargetHelper {
   
   void NotifyCueActiveStateChanged(TextTrackCue* aCue);
 
+  enum class CueActivityState : uint8_t { Inactive = 0, Active, All, Count };
+  class CueBuckets final {
+   public:
+    void AddCue(TextTrackCue* aCue);
+
+    nsTArray<RefPtr<TextTrackCue>>& ActiveCues() {
+      return mCues[static_cast<size_t>(CueActivityState::Active)];
+    }
+
+    nsTArray<RefPtr<TextTrackCue>>& InactiveCues() {
+      return mCues[static_cast<size_t>(CueActivityState::Inactive)];
+    }
+
+    nsTArray<RefPtr<TextTrackCue>>& AllCues() {
+      return mCues[static_cast<size_t>(CueActivityState::All)];
+    }
+
+   private:
+    nsTArray<RefPtr<TextTrackCue>>
+        mCues[static_cast<size_t>(CueActivityState::Count)];
+  };
+
   
   
   
   
   
   void GetOverlappingCurrentAndOtherCues(
-      nsTArray<RefPtr<TextTrackCue>>* aCurrentCues,
-      nsTArray<RefPtr<TextTrackCue>>* aOtherCues,
+      CueBuckets* aCurrentCues, CueBuckets* aOtherCues,
       const media::TimeInterval& aInterval) const;
 
   void ClearAllCues();
