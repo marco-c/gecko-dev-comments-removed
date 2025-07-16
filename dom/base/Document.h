@@ -4100,6 +4100,10 @@ class Document : public nsINode,
 
   
   
+  void AnimatedImageStateMaybeChanged(bool aAnimating);
+
+  
+  
   void SetCssUseCounterBits();
 
   void ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,

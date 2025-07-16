@@ -252,6 +252,9 @@ interface imgIRequest : nsIRequest
   void decrementAnimationConsumers();
 
   
+  [infallible] readonly attribute boolean hasAnimationConsumers;
+
+  
 
 
 

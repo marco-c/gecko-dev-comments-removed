@@ -14308,6 +14308,7 @@ void Document::WarnOnceAbout(
 
 void Document::TrackImage(imgIRequest* aImage) {
   MOZ_ASSERT(aImage);
+  bool newAnimation = false;
   mTrackedImages.WithEntryHandle(aImage, [&](auto&& entry) {
     if (entry) {
       
@@ -14326,9 +14327,13 @@ void Document::TrackImage(imgIRequest* aImage) {
       
       if (mAnimatingImages) {
         aImage->IncrementAnimationConsumers();
+        newAnimation = true;
       }
     }
   });
+  if (newAnimation) {
+    AnimatedImageStateMaybeChanged(true);
+  }
 }
 
 void Document::UntrackImage(imgIRequest* aImage,
@@ -14358,6 +14363,7 @@ void Document::UntrackImage(imgIRequest* aImage,
   
   if (mAnimatingImages) {
     aImage->DecrementAnimationConsumers();
+    AnimatedImageStateMaybeChanged(false);
   }
 
   if (aRequestDiscard == RequestDiscard::Yes) {
@@ -14421,8 +14427,27 @@ void Document::SetImageAnimationState(bool aAnimating) {
     }
   }
 
+  AnimatedImageStateMaybeChanged(aAnimating);
+
   
   mAnimatingImages = aAnimating;
+}
+
+void Document::AnimatedImageStateMaybeChanged(bool aAnimating) {
+  auto* ps = GetPresShell();
+  if (!ps) {
+    return;
+  }
+  auto* pc = ps->GetPresContext();
+  if (!pc) {
+    return;
+  }
+  auto* rd = pc->RefreshDriver();
+  if (aAnimating) {
+    rd->StartTimerForAnimatedImagesIfNeeded();
+  } else {
+    rd->StopTimerForAnimatedImagesIfNeeded();
+  }
 }
 
 void Document::ScheduleSVGUseElementShadowTreeUpdate(
