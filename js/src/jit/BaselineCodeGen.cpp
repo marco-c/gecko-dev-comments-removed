@@ -6205,7 +6205,8 @@ bool BaselineCompilerCodeGen::emitAfterYieldDebugInstrumentation(Register) {
 }
 
 template <>
-bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(Register scratch) {
+bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
+    Register scratch) {
   
   
 
@@ -6309,7 +6310,8 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   masm.bind(&noBaselineScript);
 
   
-  masm.or32(Imm32(BaselineFrame::RUNNING_IN_INTERPRETER), frame.addressOfFlags());
+  masm.or32(Imm32(BaselineFrame::RUNNING_IN_INTERPRETER),
+            frame.addressOfFlags());
   
 
   
@@ -6685,10 +6687,11 @@ bool BaselineCompilerCodeGen::emit_AfterYield() {
   }
 
   if (handler.realmIndependentJitcode()) {
-    masm.or32(Imm32(BaselineFrame::Flags::REALM_INDEPENDENT), frame.addressOfFlags());
+    masm.or32(Imm32(BaselineFrame::Flags::REALM_INDEPENDENT),
+              frame.addressOfFlags());
   }
 
-  return emitAfterYieldDebugInstrumentation( R0.scratchReg());
+  return emitAfterYieldDebugInstrumentation(R0.scratchReg());
 }
 
 template <>
@@ -6697,7 +6700,7 @@ bool BaselineInterpreterCodeGen::emit_AfterYield() {
     return false;
   }
 
-  return emitAfterYieldDebugInstrumentation( R0.scratchReg());
+  return emitAfterYieldDebugInstrumentation(R0.scratchReg());
 }
 
 template <typename Handler>
