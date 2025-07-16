@@ -15313,7 +15313,8 @@ class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
         )
 
     def definition_body(self):
-        names = set()
+        
+        names = {"constructor", "__proto__"}
 
         iface = self.descriptor.interface
         while iface:
