@@ -1792,7 +1792,11 @@ pref("extensions.browser_style_mv3.same_as_mv2", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("extensions.cookie.rejectWhenInvalid", true);
+#else
 pref("extensions.cookie.rejectWhenInvalid", false);
+#endif
 
 
 pref("extensions.ml.enabled", true);
