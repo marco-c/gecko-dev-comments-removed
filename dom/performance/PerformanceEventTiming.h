@@ -73,7 +73,9 @@ class PerformanceEventTiming final
   nsINode* GetTarget() const;
 
   void SetDuration(const DOMHighResTimeStamp aDuration) {
-    mDuration = aDuration;
+    
+    
+    mDuration = std::round(aDuration / 8) * 8;
   }
 
   
