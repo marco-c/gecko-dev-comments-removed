@@ -670,21 +670,6 @@ struct IntervalComparator {
 
 }  
 
-size_t TimerThread::ComputeTimerInsertionIndex(const TimeStamp& timeout) const {
-  mMonitor.AssertCurrentThreadOwns();
-
-  const size_t timerCount = mTimers.Length();
-
-  size_t firstGtIndex = 0;
-  while (firstGtIndex < timerCount &&
-         (!mTimers[firstGtIndex].mTimerImpl ||
-          mTimers[firstGtIndex].mTimeout <= timeout)) {
-    ++firstGtIndex;
-  }
-
-  return firstGtIndex;
-}
-
 TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
@@ -1129,6 +1114,14 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
   return aDefault;
 }
 
+void TimerThread::AssertTimersSortedAndUnique() {
+  MOZ_ASSERT(std::is_sorted(mTimers.begin(), mTimers.end()),
+             "mTimers must be sorted.");
+  MOZ_ASSERT(
+      std::adjacent_find(mTimers.begin(), mTimers.end()) == mTimers.end(),
+      "mTimers must not contain duplicate entries.");
+}
+
 
 
 void TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
@@ -1138,10 +1131,8 @@ void TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
   LogTimerEvent::LogDispatch(&aTimer);
 
   
-
-  
   Entry toBeAdded{aTimer};
-  size_t insertAt = ComputeTimerInsertionIndex(aTimer.mTimeout);
+  size_t insertAt = mTimers.IndexOfFirstElementGt(toBeAdded);
 
   if (insertAt > 0 && !mTimers[insertAt - 1].mTimerImpl) {
     
@@ -1151,6 +1142,7 @@ void TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
     
     AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_ReuseBefore);
     mTimers[insertAt - 1] = std::move(toBeAdded);
+    AssertTimersSortedAndUnique();
     return;
   }
 
@@ -1176,6 +1168,8 @@ void TimerThread::AddTimerInternal(nsTimerImpl& aTimer) {
     AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_Expand);
     mTimers.AppendElement(std::move(toBeAdded));
   }
+
+  AssertTimersSortedAndUnique();
 }
 
 
@@ -1189,15 +1183,15 @@ bool TimerThread::RemoveTimerInternal(nsTimerImpl& aTimer) {
     return false;
   }
 
-  
-
-  AUTO_TIMERS_STATS(TimerThread_RemoveTimerInternal_in_list);
-  for (auto& entry : mTimers) {
-    if (entry.mTimerImpl == &aTimer) {
-      entry.mTimerImpl = nullptr;
-      return true;
-    }
+  size_t removeAt = mTimers.BinaryIndexOf(EntryKey{aTimer});
+  if (removeAt != nsTArray<Entry>::NoIndex) {
+    MOZ_ASSERT(mTimers[removeAt].mTimerImpl == &aTimer);
+    
+    mTimers[removeAt].mTimerImpl = nullptr;
+    AssertTimersSortedAndUnique();
+    return true;
   }
+
   MOZ_ASSERT_UNREACHABLE("Not found in the list but it should be!?");
   return false;
 }
@@ -1205,6 +1199,9 @@ bool TimerThread::RemoveTimerInternal(nsTimerImpl& aTimer) {
 void TimerThread::RemoveLeadingCanceledTimersInternal() {
   mMonitor.AssertCurrentThreadOwns();
   AUTO_TIMERS_STATS(TimerThread_RemoveLeadingCanceledTimersInternal);
+
+  
+  AssertTimersSortedAndUnique();
 
   size_t toRemove = 0;
   while (toRemove < mTimers.Length() && !mTimers[toRemove].mTimerImpl) {

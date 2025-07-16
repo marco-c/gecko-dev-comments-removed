@@ -70,6 +70,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       MOZ_REQUIRES(mMonitor, aTimer.mMutex);
   void RemoveLeadingCanceledTimersInternal() MOZ_REQUIRES(mMonitor);
   nsresult Init() MOZ_REQUIRES(mMonitor);
+  void AssertTimersSortedAndUnique() MOZ_REQUIRES(mMonitor);
 
   
   
@@ -91,11 +92,37 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   bool mNotified MOZ_GUARDED_BY(mMonitor);
   bool mSleeping MOZ_GUARDED_BY(mMonitor);
 
-  struct Entry final {
+  struct EntryKey {
+    explicit EntryKey(nsTimerImpl& aTimerImpl)
+        : mTimeout(aTimerImpl.mTimeout), mTimerSeq(aTimerImpl.mTimerSeq) {}
+
+    
+    
+    
+    
+    
+    
+    
+
+    bool operator==(const EntryKey& aRhs) const {
+      return (mTimeout == aRhs.mTimeout && mTimerSeq == aRhs.mTimerSeq);
+    }
+
+    bool operator<(const EntryKey& aRhs) const {
+      if (mTimeout == aRhs.mTimeout) {
+        return mTimerSeq < aRhs.mTimerSeq;
+      }
+      return mTimeout < aRhs.mTimeout;
+    }
+
+    TimeStamp mTimeout;
+    uint64_t mTimerSeq;
+  };
+
+  struct Entry final : EntryKey {
     explicit Entry(nsTimerImpl& aTimerImpl)
-        : mTimeout(aTimerImpl.mTimeout),
+        : EntryKey(aTimerImpl),
           mDelay(aTimerImpl.mDelay),
-          mTimerSeq(aTimerImpl.mTimerSeq),
           mTimerImpl(&aTimerImpl) {}
 
     
@@ -114,22 +141,11 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     }
 #endif
 
-    
-    
-    
-    TimeStamp mTimeout;
     TimeDuration mDelay;
-    uint64_t mTimerSeq;
-
     RefPtr<nsTimerImpl> mTimerImpl;
   };
 
   void PostTimerEvent(Entry& aPostMe) MOZ_REQUIRES(mMonitor);
-
-  
-  
-  size_t ComputeTimerInsertionIndex(const TimeStamp& timeout) const
-      MOZ_REQUIRES(mMonitor);
 
   
   
@@ -160,7 +176,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   void Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor);
 
-  
   
   
   
