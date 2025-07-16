@@ -3987,6 +3987,9 @@
       
       let itemAfter = allItems.at(index);
 
+      if (pinned && !itemAfter?.pinned) {
+        itemAfter = null;
+      }
       
       
       tab.initialize();
@@ -4018,7 +4021,10 @@
         this.tabContainer.insertBefore(tab, itemAfter.group);
       } else {
         
-        this.tabContainer.insertBefore(tab, itemAfter);
+        const tabContainer = pinned
+          ? this.tabContainer.pinnedTabsContainer
+          : this.tabContainer;
+        tabContainer.insertBefore(tab, itemAfter);
       }
 
       this._updateTabsAfterInsert();
@@ -5905,6 +5911,7 @@
       if (!tabs.includes(selectedTab)) {
         selectedTab = tabs[0];
       }
+
       let win = this.replaceTabWithWindow(selectedTab, aOptions);
       win.addEventListener(
         "before-initial-tab-adopted",
@@ -5919,6 +5926,7 @@
                 continue;
               }
             }
+
             ++tabIndex;
           }
           
@@ -6391,6 +6399,9 @@
         createLazyBrowser,
       };
 
+      
+      
+      
       let numPinned = this.pinnedTabCount;
       if (index < numPinned || (aTab.pinned && index == numPinned)) {
         params.pinned = true;
