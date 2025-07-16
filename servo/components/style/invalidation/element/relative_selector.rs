@@ -93,6 +93,7 @@ impl<'a, E: TElement> OptimizationContext<'a, E> {
         element: E,
         host: Option<OpaqueElement>,
         dependency: &Dependency,
+        leftmost_collapse_offset: usize,
     ) -> bool {
         if is_subtree {
             
@@ -133,8 +134,8 @@ impl<'a, E: TElement> OptimizationContext<'a, E> {
                 }
             }
         }
-        let is_rightmost = dependency.selector_offset == 0;
-        if !is_rightmost {
+        let dependency_is_rightmost = dependency.selector_offset == 0;
+        if !dependency_is_rightmost {
             let combinator = dependency
                 .selector
                 .combinator_at_match_order(dependency.selector_offset - 1);
@@ -149,6 +150,19 @@ impl<'a, E: TElement> OptimizationContext<'a, E> {
                 return true;
             }
         }
+
+        
+        
+        
+        
+        
+        if dependency_is_rightmost &&
+            leftmost_collapse_offset != dependency.selector_offset &&
+            self.sibling_traversal_map.next_sibling_for(&element).is_some()
+        {
+            return false;
+        }
+
         let mut caches = SelectorCaches::default();
         let mut matching_context = MatchingContext::new(
             MatchingMode::Normal,
@@ -261,6 +275,10 @@ where
     host: Option<OpaqueElement>,
     
     dependency: &'a Dependency,
+    
+    
+    
+    leftmost_collapse_offset: usize,
 }
 
 impl<'a, E> AlreadyInvalidatedEntry<'a, E>
@@ -272,6 +290,7 @@ where
             element,
             host,
             dependency,
+            leftmost_collapse_offset: dependency.selector_offset,
         }
     }
 
@@ -287,7 +306,10 @@ where
                 element,
                 host,
                 dependency,
+                leftmost_collapse_offset: self.leftmost_collapse_offset,
             };
+        } else if self.leftmost_collapse_offset < dependency.selector_offset {
+            self.leftmost_collapse_offset = dependency.selector_offset;
         }
     }
 }
@@ -473,6 +495,7 @@ where
                             invalidation.element,
                             invalidation.host,
                             invalidation.dependency,
+                            invalidation.leftmost_collapse_offset,
                         ) {
                             continue;
                         }
