@@ -449,7 +449,8 @@ template <TextScanDirection direction>
 }
 
 template <TextScanDirection direction>
-void LogCommonSubstringLengths(const nsAString& aReferenceString,
+void LogCommonSubstringLengths(const char* aFunc,
+                               const nsAString& aReferenceString,
                                const nsTArray<nsString>& aTextContentPieces,
                                uint32_t aCommonLength) {
   if (!TextDirectiveUtil::ShouldLog()) {
@@ -465,27 +466,27 @@ void LogCommonSubstringLengths(const nsAString& aReferenceString,
   concatenatedTextContents.CompressWhitespace();
   const uint32_t maxLength =
       std::max(aReferenceString.Length(), concatenatedTextContents.Length());
-  TEXT_FRAGMENT_LOG("Direction: {}.",
-                    direction == TextScanDirection::Left ? "left" : "right");
+  TEXT_FRAGMENT_LOG_FN("Direction: {}.", aFunc,
+                       direction == TextScanDirection::Left ? "left" : "right");
 
   if constexpr (direction == TextScanDirection::Left) {
-    TEXT_FRAGMENT_LOG("Ref:    {:>{}}", NS_ConvertUTF16toUTF8(aReferenceString),
-                      maxLength);
-    TEXT_FRAGMENT_LOG("Other:  {:>{}}",
-                      NS_ConvertUTF16toUTF8(concatenatedTextContents),
-                      maxLength);
-    TEXT_FRAGMENT_LOG(
-        "Common: {:>{}} ({} chars)",
+    TEXT_FRAGMENT_LOG_FN("Ref:    {:>{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(aReferenceString), maxLength);
+    TEXT_FRAGMENT_LOG_FN("Other:  {:>{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(concatenatedTextContents),
+                         maxLength);
+    TEXT_FRAGMENT_LOG_FN(
+        "Common: {:>{}} ({} chars)", aFunc,
         NS_ConvertUTF16toUTF8(Substring(aReferenceString, aCommonLength)),
         maxLength, aCommonLength);
   } else {
-    TEXT_FRAGMENT_LOG("Ref:    {:<{}}", NS_ConvertUTF16toUTF8(aReferenceString),
-                      maxLength);
-    TEXT_FRAGMENT_LOG("Other:  {:<{}}",
-                      NS_ConvertUTF16toUTF8(concatenatedTextContents),
-                      maxLength);
-    TEXT_FRAGMENT_LOG(
-        "Common: {:<{}} ({} chars)",
+    TEXT_FRAGMENT_LOG_FN("Ref:    {:<{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(aReferenceString), maxLength);
+    TEXT_FRAGMENT_LOG_FN("Other:  {:<{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(concatenatedTextContents),
+                         maxLength);
+    TEXT_FRAGMENT_LOG_FN(
+        "Common: {:<{}} ({} chars)", aFunc,
         NS_ConvertUTF16toUTF8(Substring(aReferenceString, 0, aCommonLength)),
         maxLength, aCommonLength);
   }
@@ -502,23 +503,20 @@ template <TextScanDirection direction>
   
   constexpr uint32_t kMaxWordCount = 32;
   AutoTArray<uint32_t, kMaxWordCount> wordBoundaryDistances;
-  uint32_t pos = 0;
+  uint32_t pos =
+      direction == TextScanDirection::Left ? aString.Length() - 1 : 0;
+
+  
   while (pos < aString.Length() &&
          wordBoundaryDistances.Length() < kMaxWordCount) {
     auto [wordBegin, wordEnd] = intl::WordBreaker::FindWord(aString, pos);
     if constexpr (direction == TextScanDirection::Left) {
-      
-      
-      
       wordBoundaryDistances.AppendElement(aString.Length() - wordBegin);
+      pos = wordBegin - 1;
     } else {
       wordBoundaryDistances.AppendElement(wordEnd);
+      pos = wordEnd + 1;
     }
-    pos = wordEnd + 1;
-  }
-  if constexpr (direction == TextScanDirection::Left) {
-    
-    wordBoundaryDistances.Reverse();
   }
   return std::move(wordBoundaryDistances);
 }
@@ -604,7 +602,7 @@ template <TextScanDirection direction>
       } else {
         commonLength = referenceStringPosition;
       }
-      LogCommonSubstringLengths<direction>(aReferenceString,
+      LogCommonSubstringLengths<direction>(__FUNCTION__, aReferenceString,
                                            textContentForLogging, commonLength);
       return commonLength;
     }
