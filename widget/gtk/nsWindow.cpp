@@ -1957,7 +1957,9 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         return false;
       }
-      if (popup->WaylandPopupFitsToplevelWindow()) {
+      if (popup->WaylandPopupIsFirst() &&
+          popup->WaylandPopupFitsToplevelWindow()) {
+        
         
         
         
