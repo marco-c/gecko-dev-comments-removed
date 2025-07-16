@@ -9,6 +9,7 @@
 #ifndef mozilla_CSSAlignUtils_h
 #define mozilla_CSSAlignUtils_h
 
+#include "mozilla/EnumSet.h"
 #include "mozilla/WritingModes.h"
 
 namespace mozilla {
@@ -21,25 +22,29 @@ class CSSAlignUtils {
   
 
 
-  enum class AlignJustifyFlags {
-    NoFlags = 0,
+  enum class AlignJustifyFlag {
     
-    OverflowSafe = 1 << 0,
-    
-    
-    SameSide = 1 << 1,
+    OverflowSafe,
+
     
     
-    
-    IgnoreAutoMargins = 1 << 2,
-    
-    
-    AligningMarginBox = 1 << 3,
+    SameSide,
+
     
     
     
-    LastBaselineSharingGroup = 1 << 4,
+    IgnoreAutoMargins,
+
+    
+    
+    AligningMarginBox,
+
+    
+    
+    
+    LastBaselineSharingGroup,
   };
+  using AlignJustifyFlags = EnumSet<AlignJustifyFlag>;
 
   
 
@@ -64,8 +69,6 @@ class CSSAlignUtils {
                                   const ReflowInput& aRI,
                                   const LogicalSize& aChildSize);
 };
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSAlignUtils::AlignJustifyFlags)
 
 }  
 

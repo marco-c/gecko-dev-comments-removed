@@ -30,12 +30,7 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
                  aAlignment != StyleAlignFlags::RIGHT,
              "caller should map that to the corresponding START/END");
 
-  
-  const bool isOverflowSafe = !!(aFlags & AlignJustifyFlags::OverflowSafe);
-  const bool isSameSide = !!(aFlags & AlignJustifyFlags::SameSide);
-
-  const bool isFirstBaselineSharingGroup =
-      !(aFlags & AlignJustifyFlags::LastBaselineSharingGroup);
+  const bool isSameSide = aFlags.contains(AlignJustifyFlag::SameSide);
 
   StyleAlignFlags alignment = aAlignment;
   
@@ -59,9 +54,10 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   WritingMode wm = aRI.GetWritingMode();
   
   
-  const LogicalMargin margin = aFlags & AlignJustifyFlags::AligningMarginBox
-                                   ? LogicalMargin{wm}
-                                   : aRI.ComputedLogicalMargin(wm);
+  const LogicalMargin margin =
+      aFlags.contains(AlignJustifyFlag::AligningMarginBox)
+          ? LogicalMargin(wm)
+          : aRI.ComputedLogicalMargin(wm);
   const auto startSide = MakeLogicalSide(
       aAxis, MOZ_LIKELY(isSameSide) ? LogicalEdge::Start : LogicalEdge::End);
   const nscoord marginStart = margin.Side(startSide, wm);
@@ -72,8 +68,8 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   bool hasAutoMarginEnd;
   const auto* styleMargin = aRI.mStyleMargin;
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(&aRI);
-  if (aFlags & (AlignJustifyFlags::IgnoreAutoMargins |
-                AlignJustifyFlags::AligningMarginBox)) {
+  if (aFlags.contains(AlignJustifyFlag::IgnoreAutoMargins) ||
+      aFlags.contains(AlignJustifyFlag::AligningMarginBox)) {
     
     
     hasAutoMarginStart = hasAutoMarginEnd = false;
@@ -100,7 +96,8 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   
   
   
-  if ((MOZ_UNLIKELY(isOverflowSafe) && alignment != StyleAlignFlags::START) ||
+  if ((MOZ_UNLIKELY(aFlags.contains(AlignJustifyFlag::OverflowSafe)) &&
+       alignment != StyleAlignFlags::START) ||
       hasAutoMarginStart || hasAutoMarginEnd) {
     nscoord space =
         SpaceToFill(wm, aChildSize, marginStart + marginEnd, aAxis, aCBSize);
@@ -124,6 +121,8 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   nscoord offset = 0;
   if (alignment == StyleAlignFlags::BASELINE ||
       alignment == StyleAlignFlags::LAST_BASELINE) {
+    const bool isFirstBaselineSharingGroup =
+        !aFlags.contains(AlignJustifyFlag::LastBaselineSharingGroup);
     if (MOZ_LIKELY(isFirstBaselineSharingGroup)) {
       offset = marginStart + aBaselineAdjust;
     } else {
