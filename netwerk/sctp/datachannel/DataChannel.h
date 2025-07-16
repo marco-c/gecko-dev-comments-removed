@@ -413,7 +413,7 @@ class DataChannel {
   void Close();
 
   
-  void SetListener(DataChannelListener* aListener, nsISupports* aContext);
+  void SetListener(DataChannelListener* aListener);
 
   
   static void SendErrnoToErrorResult(int error, size_t aMessageSize,
@@ -473,7 +473,6 @@ class DataChannel {
 
   
   DataChannelListener* mListener = nullptr;
-  nsCOMPtr<nsISupports> mContext;
   bool mEverOpened = false;
   const nsCString mLabel;
   const nsCString mProtocol;
