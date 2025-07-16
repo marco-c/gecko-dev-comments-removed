@@ -154,10 +154,17 @@ AndroidAlerts::CloseAlert(const nsAString& aAlertName, bool aContextClosed) {
     return NS_OK;
   }
 
-  Maybe<AndroidNotificationTuple> tuple =
-      sNotificationMap->MaybeGet(aAlertName);
+  Maybe<AndroidNotificationTuple> tuple = sNotificationMap->Extract(aAlertName);
   if (!tuple) {
     return NS_OK;
+  }
+
+  if (tuple->mObserver) {
+    
+    
+    
+    
+    tuple->mObserver->Observe(nullptr, "alertfinished", nullptr);
   }
 
   java::GeckoRuntime::LocalRef runtime = java::GeckoRuntime::GetInstance();
