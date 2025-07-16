@@ -299,8 +299,12 @@ void SVGForeignObjectFrame::NotifySVGChanged(uint32_t aFlags) {
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
     
     
-    if (StylePosition()->GetWidth(anchorResolutionParams)->HasPercent() ||
-        StylePosition()->GetHeight(anchorResolutionParams)->HasPercent()) {
+    if (StylePosition()
+            ->GetWidth(anchorResolutionParams.mPosition)
+            ->HasPercent() ||
+        StylePosition()
+            ->GetHeight(anchorResolutionParams.mPosition)
+            ->HasPercent()) {
       needNewBounds = true;
       needReflow = true;
     }

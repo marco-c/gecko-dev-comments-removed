@@ -3290,8 +3290,8 @@ class nsIFrame : public nsQueryFrame {
   
   
   bool HasIntrinsicKeywordForBSize() const {
-    const auto bSize = StylePosition()->BSize(
-        GetWritingMode(), AnchorPosResolutionParams::From(this));
+    const auto bSize =
+        StylePosition()->BSize(GetWritingMode(), StyleDisplay()->mPosition);
     return IsIntrinsicKeyword(*bSize);
   }
 

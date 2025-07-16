@@ -1914,8 +1914,8 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
         
         
         
-        const auto margin =
-            ctx->StyleMargin()->GetMargin(aSide, anchorResolutionParams);
+        const auto margin = ctx->StyleMargin()->GetMargin(
+            aSide, anchorResolutionParams.mPosition);
         if (!margin->ConvertsToLength() ||
             margin->AsLengthPercentage().ToLength() != 0) {
           return true;

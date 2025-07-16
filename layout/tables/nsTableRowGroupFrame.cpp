@@ -400,7 +400,7 @@ void nsTableRowGroupFrame::ReflowChildren(
           
           const nsStylePosition* stylePos = StylePosition();
           if (tableFrame->IsAutoBSize(wm) &&
-              !stylePos->BSize(wm, AnchorPosResolutionParams::From(this))
+              !stylePos->BSize(wm, StyleDisplay()->mPosition)
                    ->ConvertsToLength()) {
             
             

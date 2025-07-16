@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/InspectorUtils.h"
 
@@ -84,8 +84,8 @@ static nsPresContext* EnsureSafeToHandOutRules(Element& aElement) {
 
 static already_AddRefed<const ComputedStyle> GetStartingStyle(
     Element& aElement) {
-  // If this element is unstyled, or it doesn't have matched rules in
-  // @starting-style, we return.
+  
+  
   if (!Servo_Element_MayHaveStartingStyle(&aElement)) {
     return nullptr;
   }
@@ -114,11 +114,11 @@ static already_AddRefed<const ComputedStyle> GetCleanComputedStyleForElement(
   return nsComputedDOMStyle::GetComputedStyle(aElement, aPseudo);
 }
 
-/* static */
+
 void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
                                        Document& aDocument, bool aDocumentOnly,
                                        nsTArray<RefPtr<StyleSheet>>& aResult) {
-  // Get the agent, then user and finally xbl sheets in the style set.
+  
   PresShell* presShell = aDocument.GetPresShell();
   nsTHashSet<StyleSheet*> sheetSet;
 
@@ -139,8 +139,8 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
     AutoTArray<StyleSheet*, 32> nonDocumentSheets;
     styleSet->AppendAllNonDocumentAuthorSheets(nonDocumentSheets);
 
-    // The non-document stylesheet array can have duplicates due to adopted
-    // stylesheets.
+    
+    
     nsTHashSet<StyleSheet*> sheetSet;
     for (StyleSheet* sheet : nonDocumentSheets) {
       if (sheetSet.EnsureInserted(sheet)) {
@@ -149,7 +149,7 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
     }
   }
 
-  // Get the document sheets.
+  
   for (size_t i = 0; i < aDocument.SheetCount(); i++) {
     aResult.AppendElement(aDocument.SheetAt(i));
   }
@@ -166,17 +166,17 @@ bool InspectorUtils::IsIgnorableWhitespace(CharacterData& aDataNode) {
     return false;
   }
 
-  // Okay.  We have only white space.  Let's check the white-space
-  // property now and make sure that this isn't preformatted text...
+  
+  
   if (nsIFrame* frame = aDataNode.GetPrimaryFrame()) {
     return !frame->StyleText()->WhiteSpaceIsSignificant();
   }
 
-  // empty inter-tag text node without frame, e.g., in between <table>\n<tr>
+  
   return true;
 }
 
-/* static */
+
 nsINode* InspectorUtils::GetParentForNode(nsINode& aNode,
                                           bool aShowingAnonymousContent) {
   if (nsINode* parent = aNode.GetParentNode()) {
@@ -187,14 +187,14 @@ nsINode* InspectorUtils::GetParentForNode(nsINode& aNode,
   }
   if (aShowingAnonymousContent) {
     if (auto* frag = DocumentFragment::FromNode(aNode)) {
-      // This deals with shadow roots and HTMLTemplateElement.content.
+      
       return frag->GetHost();
     }
   }
   return nullptr;
 }
 
-/* static */
+
 void InspectorUtils::GetChildrenForNode(nsINode& aNode,
                                         bool aShowingAnonymousContent,
                                         bool aIncludeAssignedNodes,
@@ -203,7 +203,7 @@ void InspectorUtils::GetChildrenForNode(nsINode& aNode,
   if (aIncludeSubdocuments) {
     if (auto* doc = inLayoutUtils::GetSubDocumentFor(&aNode)) {
       aResult.AppendElement(doc);
-      // XXX Do we really want to early-return?
+      
       return;
     }
   }
@@ -218,7 +218,7 @@ void InspectorUtils::GetChildrenForNode(nsINode& aNode,
 
   if (auto* tmpl = HTMLTemplateElement::FromNode(aNode)) {
     aResult.AppendElement(tmpl->Content());
-    // XXX Do we really want to early-return?
+    
     return;
   }
 
@@ -309,7 +309,7 @@ class ReadOnlyInspectorDeclaration final : public nsDOMCSSDeclaration {
                        JS::Handle<JSObject*> aGivenProto) final {
     return CSS2Properties_Binding::Wrap(aCx, this, aGivenProto);
   }
-  // These ones are a bit sad, but matches e.g. nsComputedDOMStyle.
+  
   nsresult SetCSSDeclaration(DeclarationBlock* aDecl,
                              MutationClosureData*) final {
     MOZ_CRASH("called ReadOnlyInspectorDeclaration::SetCSSDeclaration");
@@ -356,12 +356,12 @@ static void GetCSSRulesFromComputedValues(
     maps.AppendElement(map);
   }
 
-  // Now shadow DOM stuff...
+  
   if (auto* shadow = aElement.GetShadowRoot()) {
     maps.AppendElement(&shadow->ServoStyleRuleMap());
   }
 
-  // Now NAC:
+  
   for (auto* el = aElement.GetClosestNativeAnonymousSubtreeRootParentOrHost();
        el; el = el->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
     if (auto* shadow = el->GetShadowRoot()) {
@@ -374,7 +374,7 @@ static void GetCSSRulesFromComputedValues(
     maps.AppendElement(&shadow->ServoStyleRuleMap());
   }
 
-  // Rules from the assigned slot.
+  
   for (auto* slot = aElement.GetAssignedSlot(); slot;
        slot = slot->GetAssignedSlot()) {
     if (auto* shadow = slot->GetContainingShadow()) {
@@ -382,7 +382,7 @@ static void GetCSSRulesFromComputedValues(
     }
   }
 
-  // Find matching rules in the table.
+  
   for (const StyleMatchingDeclarationBlock& block : Reversed(rawDecls)) {
     bool found = false;
     for (ServoStyleRuleMap* map : maps) {
@@ -422,7 +422,7 @@ static void GetCSSRulesFromComputedValues(
   }
 }
 
-/* static */
+
 void InspectorUtils::GetMatchingCSSRules(
     GlobalObject& aGlobalObject, Element& aElement, const nsAString& aPseudo,
     bool aIncludeVisitedStyle, bool aWithStartingStyle,
@@ -438,16 +438,16 @@ void InspectorUtils::GetMatchingCSSRules(
     computedStyle = GetStartingStyle(aElement);
   }
 
-  // Note: GetStartingStyle() return nullptr if this element doesn't have rules
-  // inside @starting-style. For this case, we would like to return the primay
-  // rules of this element.
+  
+  
+  
   if (!computedStyle) {
     computedStyle = GetCleanComputedStyleForElement(&aElement, *pseudo);
   }
 
   if (!computedStyle) {
-    // This can fail for elements that are not in the document or
-    // if the document they're in doesn't have a presshell.  Bail out.
+    
+    
     return;
   }
 
@@ -460,7 +460,7 @@ void InspectorUtils::GetMatchingCSSRules(
   GetCSSRulesFromComputedValues(aElement, computedStyle, aResult);
 }
 
-/* static */
+
 uint32_t InspectorUtils::GetRuleLine(GlobalObject& aGlobal, css::Rule& aRule) {
   uint32_t line = aRule.GetLineNumber();
   if (StyleSheet* sheet = aRule.GetStyleSheet()) {
@@ -471,16 +471,16 @@ uint32_t InspectorUtils::GetRuleLine(GlobalObject& aGlobal, css::Rule& aRule) {
   return line;
 }
 
-/* static */
+
 uint32_t InspectorUtils::GetRuleColumn(GlobalObject& aGlobal,
                                        css::Rule& aRule) {
   return aRule.GetColumnNumber();
 }
 
-/* static */
+
 uint32_t InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal,
                                              css::Rule& aRule) {
-  // Rule lines are 0-based, but inspector wants 1-based.
+  
   return aRule.GetLineNumber() + 1;
 }
 
@@ -526,7 +526,7 @@ void InspectorUtils::GetRuleIndex(GlobalObject& aGlobal, css::Rule& aRule,
   } while (currentRule);
 }
 
-/* static */
+
 bool InspectorUtils::HasRulesModifiedByCSSOM(GlobalObject& aGlobal,
                                              StyleSheet& aSheet) {
   return aSheet.HasModifiedRulesForDevtools();
@@ -538,12 +538,12 @@ static uint32_t CollectAtRules(ServoCSSRuleList& aRuleList,
   uint32_t ruleCount = len;
   for (uint32_t i = 0; i < len; ++i) {
     css::Rule* rule = aRuleList.GetRule(i);
-    // This collect rules we want to display in Devtools Style Editor toolbar.
-    // When adding a new StyleCssRuleType, put it in the "default" list, and
-    // file a new bug with
-    // https://bugzilla.mozilla.org/enter_bug.cgi?product=DevTools&component=Style%20Editor&short_desc=Consider%20displaying%20new%20XXX%20rule%20type%20in%20at-rules%20sidebar
-    // so the DevTools team gets notified and can decide if it should be
-    // displayed.
+    
+    
+    
+    
+    
+    
     switch (rule->Type()) {
       case StyleCssRuleType::Media:
       case StyleCssRuleType::Supports:
@@ -588,7 +588,7 @@ void InspectorUtils::GetStyleSheetRuleCountAndAtRules(
       CollectAtRules(*aSheet.GetCssRulesInternal(), aResult.mAtRules);
 }
 
-/* static */
+
 bool InspectorUtils::IsInheritedProperty(GlobalObject& aGlobalObject,
                                          Document& aDocument,
                                          const nsACString& aPropertyName) {
@@ -596,7 +596,7 @@ bool InspectorUtils::IsInheritedProperty(GlobalObject& aGlobalObject,
                                     &aPropertyName);
 }
 
-/* static */
+
 void InspectorUtils::GetCSSPropertyNames(GlobalObject& aGlobalObject,
                                          const PropertyNamesOptions& aOptions,
                                          nsTArray<nsString>& aResult) {
@@ -634,7 +634,7 @@ void InspectorUtils::GetCSSPropertyNames(GlobalObject& aGlobalObject,
   }
 }
 
-/* static */
+
 void InspectorUtils::GetCSSPropertyPrefs(GlobalObject& aGlobalObject,
                                          nsTArray<PropertyPref>& aResult) {
   for (const auto* src = nsCSSProps::kPropertyPrefTable;
@@ -646,7 +646,7 @@ void InspectorUtils::GetCSSPropertyPrefs(GlobalObject& aGlobalObject,
   }
 }
 
-/* static */
+
 void InspectorUtils::GetSubpropertiesForCSSProperty(GlobalObject& aGlobal,
                                                     const nsACString& aProperty,
                                                     nsTArray<nsString>& aResult,
@@ -677,7 +677,7 @@ void InspectorUtils::GetSubpropertiesForCSSProperty(GlobalObject& aGlobal,
   }
 }
 
-/* static */
+
 bool InspectorUtils::CssPropertyIsShorthand(GlobalObject& aGlobalObject,
                                             const nsACString& aProperty,
                                             ErrorResult& aRv) {
@@ -689,10 +689,10 @@ bool InspectorUtils::CssPropertyIsShorthand(GlobalObject& aGlobalObject,
   return isShorthand;
 }
 
-// This should match the constants in specified_value_info.rs
-//
-// Once we can use bitflags in consts, we can also cbindgen that and use them
-// here instead.
+
+
+
+
 static uint8_t ToServoCssType(InspectorPropertyType aType) {
   switch (aType) {
     case InspectorPropertyType::Color:
@@ -727,7 +727,7 @@ bool InspectorUtils::CssPropertySupportsType(GlobalObject& aGlobalObject,
   return result;
 }
 
-/* static */
+
 void InspectorUtils::GetCSSValuesForProperty(GlobalObject& aGlobalObject,
                                              const nsACString& aProperty,
                                              nsTArray<nsString>& aResult,
@@ -739,13 +739,13 @@ void InspectorUtils::GetCSSValuesForProperty(GlobalObject& aGlobalObject,
   }
 }
 
-/* static */
+
 void InspectorUtils::RgbToColorName(GlobalObject&, uint8_t aR, uint8_t aG,
                                     uint8_t aB, nsACString& aColorName) {
   Servo_SlowRgbToColorName(aR, aG, aB, &aColorName);
 }
 
-/* static */
+
 void InspectorUtils::ColorToRGBA(GlobalObject& aGlobal,
                                  const nsACString& aColorString,
                                  Nullable<InspectorRGBATuple>& aResult) {
@@ -784,7 +784,7 @@ void InspectorUtils::ColorToRGBA(GlobalObject& aGlobal,
   tuple.mA = nsStyleUtil::ColorComponentToFloat(NS_GET_A(color));
 }
 
-/* static */
+
 void InspectorUtils::ColorTo(GlobalObject&, const nsACString& aFromColor,
                              const nsACString& aToColorSpace,
                              Nullable<InspectorColorToResult>& aResult) {
@@ -804,13 +804,13 @@ void InspectorUtils::ColorTo(GlobalObject&, const nsACString& aFromColor,
   result.mAdjusted = resultAdjusted;
 }
 
-/* static */
+
 bool InspectorUtils::IsValidCSSColor(GlobalObject& aGlobalObject,
                                      const nsACString& aColorString) {
   return ServoCSSParser::IsValidCSSColor(aColorString);
 }
 
-/* static */
+
 bool InspectorUtils::SetContentState(GlobalObject& aGlobalObject,
                                      Element& aElement, uint64_t aState,
                                      ErrorResult& aRv) {
@@ -824,7 +824,7 @@ bool InspectorUtils::SetContentState(GlobalObject& aGlobalObject,
   return esm->SetContentState(&aElement, state);
 }
 
-/* static */
+
 bool InspectorUtils::RemoveContentState(GlobalObject& aGlobalObject,
                                         Element& aElement, uint64_t aState,
                                         bool aClearActiveDocument,
@@ -850,15 +850,15 @@ bool InspectorUtils::RemoveContentState(GlobalObject& aGlobalObject,
   return result;
 }
 
-/* static */
+
 uint64_t InspectorUtils::GetContentState(GlobalObject& aGlobalObject,
                                          Element& aElement) {
-  // NOTE: if this method is removed,
-  // please remove GetInternalValue from ElementState
+  
+  
   return aElement.State().GetInternalValue();
 }
 
-/* static */
+
 void InspectorUtils::GetUsedFontFaces(GlobalObject& aGlobalObject,
                                       nsRange& aRange, uint32_t aMaxRanges,
                                       bool aSkipCollapsedWhitespace,
@@ -880,7 +880,7 @@ static ElementState GetStatesForPseudoClass(const nsAString& aStatePseudo) {
   return ElementState(Servo_PseudoClass_GetStates(&statePseudo));
 }
 
-/* static */
+
 void InspectorUtils::GetCSSPseudoElementNames(GlobalObject& aGlobalObject,
                                               nsTArray<nsString>& aResult) {
   const auto kPseudoCount =
@@ -891,14 +891,14 @@ void InspectorUtils::GetCSSPseudoElementNames(GlobalObject& aGlobalObject,
       continue;
     }
     auto& string = *aResult.AppendElement();
-    // Use two semi-colons (though internally we use one).
+    
     string.Append(u':');
     nsAtom* atom = nsCSSPseudoElements::GetPseudoAtom(type);
     string.Append(nsDependentAtomString(atom));
   }
 }
 
-/* static */
+
 void InspectorUtils::AddPseudoClassLock(GlobalObject& aGlobalObject,
                                         Element& aElement,
                                         const nsAString& aPseudoClass,
@@ -911,7 +911,7 @@ void InspectorUtils::AddPseudoClassLock(GlobalObject& aGlobalObject,
   aElement.LockStyleStates(state, aEnabled);
 }
 
-/* static */
+
 void InspectorUtils::RemovePseudoClassLock(GlobalObject& aGlobal,
                                            Element& aElement,
                                            const nsAString& aPseudoClass) {
@@ -923,7 +923,7 @@ void InspectorUtils::RemovePseudoClassLock(GlobalObject& aGlobal,
   aElement.UnlockStyleStates(state);
 }
 
-/* static */
+
 bool InspectorUtils::HasPseudoClassLock(GlobalObject& aGlobalObject,
                                         Element& aElement,
                                         const nsAString& aPseudoClass) {
@@ -936,13 +936,13 @@ bool InspectorUtils::HasPseudoClassLock(GlobalObject& aGlobalObject,
   return locks.HasAllStates(state);
 }
 
-/* static */
+
 void InspectorUtils::ClearPseudoClassLocks(GlobalObject& aGlobalObject,
                                            Element& aElement) {
   aElement.ClearStyleStateLocks();
 }
 
-/* static */
+
 void InspectorUtils::ParseStyleSheet(GlobalObject& aGlobalObject,
                                      StyleSheet& aSheet,
                                      const nsACString& aInput,
@@ -965,11 +965,11 @@ bool InspectorUtils::IsCustomElementName(GlobalObject&, const nsAString& aName,
 }
 
 bool InspectorUtils::IsElementThemed(GlobalObject&, Element& aElement) {
-  // IsThemed will check if the native theme supports the widget using
-  // ThemeSupportsWidget which in turn will check that the widget is not
-  // already styled by content through nsNativeTheme::IsWidgetStyled. We
-  // assume that if the native theme styles the widget and the author did not
-  // override the appropriate styles, the theme will provide focus styling.
+  
+  
+  
+  
+  
   nsIFrame* frame = aElement.GetPrimaryFrame(FlushType::Frames);
   return frame && frame->IsThemed();
 }
@@ -1001,9 +1001,9 @@ void InspectorUtils::GetBlockLineCounts(GlobalObject& aGlobal,
     return;
   }
 
-  // If CSS columns were specified on the actual block element (rather than an
-  // ancestor block, GetPrimaryFrame will return its ColumnSetWrapperFrame, and
-  // we need to drill down to the actual block that contains the lines.
+  
+  
+  
   if (block->IsColumnSetWrapperFrame()) {
     nsIFrame* firstChild = block->PrincipalChildList().FirstChild();
     if (!firstChild->IsColumnSetFrame()) {
@@ -1032,8 +1032,10 @@ static bool FrameHasSpecifiedSize(const nsIFrame* aFrame) {
   const nsStylePosition* stylePos = aFrame->StylePosition();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(aFrame);
 
-  return stylePos->ISize(wm, anchorResolutionParams)->IsLengthPercentage() ||
-         stylePos->BSize(wm, anchorResolutionParams)->IsLengthPercentage();
+  return stylePos->ISize(wm, anchorResolutionParams.mPosition)
+             ->IsLengthPercentage() ||
+         stylePos->BSize(wm, anchorResolutionParams.mPosition)
+             ->IsLengthPercentage();
 }
 
 static bool IsFrameOutsideOfAncestor(const nsIFrame* aFrame,
@@ -1043,15 +1045,15 @@ static bool IsFrameOutsideOfAncestor(const nsIFrame* aFrame,
       aFrame, aFrame->ScrollableOverflowRect(), RelativeTo{aAncestorFrame},
       nullptr, nullptr, false, nullptr);
 
-  // We use nsRect::SaturatingUnionEdges because it correctly handles the case
-  // of a zero-width or zero-height frame, which we still want to consider as
-  // contributing to the union.
+  
+  
+  
   nsRect unionizedRect =
       frameRectInAncestorSpace.SaturatingUnionEdges(aAncestorRect);
 
-  // If frameRectInAncestorSpace is inside aAncestorRect then union of
-  // frameRectInAncestorSpace and aAncestorRect should be equal to aAncestorRect
-  // hence if it is equal, then false should be returned.
+  
+  
+  
 
   return !(unionizedRect == aAncestorRect);
 }
@@ -1063,18 +1065,18 @@ static void AddOverflowingChildrenOfElement(const nsIFrame* aFrame,
   MOZ_ASSERT(aFrame, "we assume the passed-in frame is non-null");
   for (const auto& childList : aFrame->ChildLists()) {
     for (const nsIFrame* child : childList.mList) {
-      // We want to identify if the child or any of its children have a
-      // frame that is outside of aAncestorFrame. Ideally, child would have
-      // a frame rect that encompasses all of its children, but this is not
-      // guaranteed by the frame tree. So instead we first check other
-      // conditions that indicate child is an interesting frame:
-      //
-      // 1) child has a specified size
-      // 2) none of child's children are implicated
-      //
-      // If either of these conditions are true, we *then* check if child's
-      // frame is outside of aAncestorFrame, and if so, we add child's content
-      // to aList.
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
       if (FrameHasSpecifiedSize(child) &&
           IsFrameOutsideOfAncestor(child, aAncestorFrame, aRect)) {
@@ -1085,8 +1087,8 @@ static void AddOverflowingChildrenOfElement(const nsIFrame* aFrame,
       uint32_t currListLength = aList.Length();
       AddOverflowingChildrenOfElement(child, aAncestorFrame, aRect, aList);
 
-      // If child is a leaf node, length of aList should remain same after
-      // calling AddOverflowingChildrenOfElement on it.
+      
+      
       if (currListLength == aList.Length() &&
           IsFrameOutsideOfAncestor(child, aAncestorFrame, aRect)) {
         aList.MaybeAppendElement(child->GetContent());
@@ -1100,7 +1102,7 @@ already_AddRefed<nsINodeList> InspectorUtils::GetOverflowingChildrenOfElement(
   auto list = MakeRefPtr<nsSimpleContentList>(&aElement);
   const ScrollContainerFrame* scrollContainerFrame =
       aElement.GetScrollContainerFrame();
-  // Element must be a ScrollContainerFrame.
+  
   if (!scrollContainerFrame) {
     return list.forget();
   }
@@ -1112,7 +1114,7 @@ already_AddRefed<nsINodeList> InspectorUtils::GetOverflowingChildrenOfElement(
   return list.forget();
 }
 
-/* static */
+
 void InspectorUtils::GetRegisteredCssHighlights(GlobalObject& aGlobalObject,
                                                 Document& aDocument,
                                                 bool aActiveOnly,
@@ -1126,22 +1128,22 @@ void InspectorUtils::GetRegisteredCssHighlights(GlobalObject& aGlobalObject,
   }
 }
 
-/* static */
+
 void InspectorUtils::GetCSSRegisteredProperties(
     GlobalObject& aGlobalObject, Document& aDocument,
     nsTArray<InspectorCSSPropertyDefinition>& aResult) {
   nsTArray<StylePropDef> result;
 
   ServoStyleSet& styleSet = aDocument.EnsureStyleSet();
-  // Update the rules before looking up @property rules.
+  
   styleSet.UpdateStylistIfNeeded();
 
   Servo_GetRegisteredCustomProperties(styleSet.RawData(), &result);
   for (const auto& propDef : result) {
     InspectorCSSPropertyDefinition& property = *aResult.AppendElement();
 
-    // Servo does not include the "--" prefix in the property definition name.
-    // Add it back as it's easier for DevTools to handle them _with_ "--".
+    
+    
     property.mName.AssignLiteral("--");
     property.mName.Append(nsAtomCString(propDef.name.AsAtom()));
     property.mSyntax.Append(propDef.syntax);
@@ -1155,13 +1157,13 @@ void InspectorUtils::GetCSSRegisteredProperties(
   }
 }
 
-/* static */
+
 void InspectorUtils::GetCSSRegisteredProperty(
     GlobalObject& aGlobalObject, Document& aDocument, const nsACString& aName,
     Nullable<InspectorCSSPropertyDefinition>& aResult) {
   StylePropDef result{StyleAtom(NS_Atomize(aName))};
 
-  // Update the rules before looking up @property rules.
+  
   ServoStyleSet& styleSet = aDocument.EnsureStyleSet();
   styleSet.UpdateStylistIfNeeded();
 
@@ -1172,8 +1174,8 @@ void InspectorUtils::GetCSSRegisteredProperty(
 
   InspectorCSSPropertyDefinition& propDef = aResult.SetValue();
 
-  // Servo does not include the "--" prefix in the property definition name.
-  // Add it back as it's easier for DevTools to handle them _with_ "--".
+  
+  
   propDef.mName.AssignLiteral("--");
   propDef.mName.Append(nsAtomCString(result.name.AsAtom()));
   propDef.mSyntax.Append(result.syntax);
@@ -1186,7 +1188,7 @@ void InspectorUtils::GetCSSRegisteredProperty(
   propDef.mFromJS = result.from_js;
 }
 
-/* static */
+
 bool InspectorUtils::ValueMatchesSyntax(GlobalObject&, Document& aDocument,
                                         const nsACString& aValue,
                                         const nsACString& aSyntax) {
@@ -1194,14 +1196,14 @@ bool InspectorUtils::ValueMatchesSyntax(GlobalObject&, Document& aDocument,
                                     aDocument.DefaultStyleAttrURLData());
 }
 
-/* static */
+
 void InspectorUtils::GetRuleBodyText(GlobalObject&,
                                      const nsACString& aInitialText,
                                      nsACString& aBodyText) {
   Servo_GetRuleBodyText(&aInitialText, &aBodyText);
 }
 
-/* static */
+
 void InspectorUtils::ReplaceBlockRuleBodyTextInStylesheet(
     GlobalObject&, const nsACString& aStyleSheetText, uint32_t aLine,
     uint32_t aColumn, const nsACString& aNewBodyText,
@@ -1255,4 +1257,4 @@ void InspectorUtils::SetDynamicToolbarMaxHeight(
 
   parent->DynamicToolbarMaxHeightChanged(aHeight);
 }
-}  // namespace mozilla::dom
+}  
