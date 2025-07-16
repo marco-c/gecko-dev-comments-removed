@@ -342,11 +342,7 @@ class WalkerActor extends Actor {
         "CSSPrefersColorScheme",
         null
       ),
-      traits: {
-        
-        
-        getSuggestionsForQueryWithoutCount: true,
-      },
+      traits: {},
     };
   }
 

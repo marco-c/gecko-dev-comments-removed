@@ -903,14 +903,8 @@ class CSSCompleter {
     const query = this.selector;
     const completion = [];
 
-    
-    
-    const suggestionNewShape =
-      this.walker.traits.getSuggestionsForQueryWithoutCount;
-
     for (const suggestion of suggestions) {
-      let value = suggestion[0];
-      const state = suggestionNewShape ? suggestion[1] : suggestion[2];
+      let [value, state] = suggestion;
 
       switch (this.selectorState) {
         case CSSCompleter.CSS_SELECTOR_STATE_ID:

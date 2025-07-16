@@ -134,13 +134,8 @@ class InspectorCommand {
           state
         );
 
-        
-        
-        const suggestionNewShape =
-          walker.traits.getSuggestionsForQueryWithoutCount;
         for (const suggestion of suggestions) {
-          const value = suggestion[0];
-          const type = suggestionNewShape ? suggestion[1] : suggestion[2];
+          const [value, type] = suggestion;
 
           
           const existing = mergedSuggestions.some(
