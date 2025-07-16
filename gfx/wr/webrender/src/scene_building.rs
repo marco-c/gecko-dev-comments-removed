@@ -2398,30 +2398,27 @@ impl<'a> SceneBuilder<'a> {
         
         if flags.contains(StackingContextFlags::IS_BLEND_CONTAINER) {
             
-            match self.sc_stack.last() {
-                Some(_) => {
+            if !self.sc_stack.is_empty() {
+                
+                
+                blit_reason |= BlitReason::ISOLATE;
+                is_redundant = false;
+            } else {
+                
+                
+                
+                if self.tile_cache_builder.is_current_slice_empty() &&
+                   self.spatial_tree.is_root_coord_system(spatial_node_index) &&
+                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners)
+                {
+                    self.add_tile_cache_barrier_if_needed(SliceFlags::IS_ATOMIC);
+                    self.tile_cache_builder.make_current_slice_atomic();
+                } else {
+                    
                     
                     
                     blit_reason |= BlitReason::ISOLATE;
                     is_redundant = false;
-                }
-                None => {
-                    
-                    
-                    
-                    if self.tile_cache_builder.is_current_slice_empty() &&
-                       self.spatial_tree.is_root_coord_system(spatial_node_index) &&
-                       !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners)
-                    {
-                        self.add_tile_cache_barrier_if_needed(SliceFlags::IS_ATOMIC);
-                        self.tile_cache_builder.make_current_slice_atomic();
-                    } else {
-                        
-                        
-                        
-                        blit_reason |= BlitReason::ISOLATE;
-                        is_redundant = false;
-                    }
                 }
             }
         }
