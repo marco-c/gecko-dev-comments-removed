@@ -122,14 +122,6 @@ Preferences.addAll([
     id: "privacy.trackingprotection.emailtracking.pbmode.enabled",
     type: "bool",
   },
-  {
-    id: "privacy.trackingprotection.allow_list.baseline.enabled",
-    type: "bool",
-  },
-  {
-    id: "privacy.trackingprotection.allow_list.convenience.enabled",
-    type: "bool",
-  },
 
   
   { id: "privacy.fingerprintingProtection", type: "bool" },
@@ -1227,10 +1219,6 @@ var gPrivacyPane = {
       document.getElementById("historyMode").disabled =
         privateBrowsingPref.value;
     }
-
-    setSyncFromPrefListener("contentBlockingBaselineExceptionsCustom", () =>
-      this.readBaselineExceptionState()
-    );
 
     
     this.initHttpsOnly();
@@ -3536,24 +3524,5 @@ var gPrivacyPane = {
   updateProfilesPrivacyInfo() {
     let profilesInfo = document.getElementById("preferences-privacy-profiles");
     profilesInfo.hidden = !SelectableProfileService.isEnabled;
-  },
-
-  
-
-
-
-
-  readBaselineExceptionState() {
-    const isBaselineEnabled = Preferences.get(
-      "privacy.trackingprotection.allow_list.baseline.enabled"
-    ).value;
-
-    
-    if (!isBaselineEnabled) {
-      Services.prefs.setBoolPref(
-        "privacy.trackingprotection.allow_list.convenience.enabled",
-        false
-      );
-    }
   },
 };
