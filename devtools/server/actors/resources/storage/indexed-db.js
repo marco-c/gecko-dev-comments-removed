@@ -767,12 +767,12 @@ class IndexedDBStorageActor extends BaseStorageActor {
 
   async getNameFromDatabaseFile(path) {
     let connection = null;
-    let retryCount = 0;
 
     
     
     
-    while (!connection && retryCount++ < 25) {
+    
+    for (let retries = 0; !connection && retries < 25; retries++) {
       try {
         connection = await lazy.Sqlite.openConnection({ path });
       } catch (ex) {
@@ -781,17 +781,29 @@ class IndexedDBStorageActor extends BaseStorageActor {
       }
     }
 
-    if (!connection) {
+    
+    if (connection === null) {
+      console.error("Unable to open Sqlite connection to path: " + path);
       return null;
     }
 
-    const rows = await connection.execute("SELECT name FROM database");
-    if (rows.length != 1) {
-      return null;
+    
+    let name = undefined;
+    for (let retries = 0; name === undefined && retries < 25; retries++) {
+      try {
+        const rows = await connection.execute("SELECT name FROM database");
+        name = rows[0].getResultByName("name");
+      } catch {
+        
+        await sleep(100);
+      }
     }
 
-    const name = rows[0].getResultByName("name");
+    if (!name) {
+      console.error("Unable to get the database name for path: " + path);
+    }
 
+    
     await connection.close();
 
     return name;
