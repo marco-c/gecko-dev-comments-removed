@@ -201,33 +201,33 @@ function runBfcacheTest(params, description) {
 
 async function claim(t, worker) {
   const channel = new MessageChannel();
-  const saw_message = new Promise(function(resolve) {
+  const sawMessage = new Promise(function(resolve) {
     channel.port1.onmessage = t.step_func(function(e) {
       assert_equals(e.data, 'PASS', 'Worker call to claim() should fulfill.');
       resolve();
     });
   });
   worker.postMessage({type: "claim", port: channel.port2}, [channel.port2]);
-  await saw_message;
+  await sawMessage;
 }
 
 
 async function storeClients(t, worker) {
   const channel = new MessageChannel();
-  const saw_message = new Promise(function(resolve) {
+  const sawMessage = new Promise(function(resolve) {
     channel.port1.onmessage = t.step_func(function(e) {
       assert_equals(e.data, 'PASS', 'storeClients');
       resolve();
     });
   });
   worker.postMessage({type: "storeClients", port: channel.port2}, [channel.port2]);
-  await saw_message;
+  await sawMessage;
 }
 
 
 async function postMessageToStoredClients(t, worker) {
   const channel = new MessageChannel();
-  const saw_message = new Promise(function(resolve) {
+  const sawMessage = new Promise(function(resolve) {
     channel.port1.onmessage = t.step_func(function(e) {
       assert_equals(e.data, 'PASS', 'postMessageToStoredClients');
       resolve();
@@ -235,5 +235,46 @@ async function postMessageToStoredClients(t, worker) {
   });
   worker.postMessage({type: "postMessageToStoredClients",
                       port: channel.port2}, [channel.port2]);
-  await saw_message;
+  await sawMessage;
+}
+
+
+async function postMessageViaTransferredPort(t, worker) {
+  const channel = new MessageChannel();
+  const sawMessage = new Promise(resolve => {
+    channel.port1.onmessage = t.step_func(e => {
+      assert_equals(e.data, 'PASS', 'SW should confirm message was sent.');
+      resolve();
+    });
+  });
+  worker.postMessage(
+      {type: 'postMessageViaTransferredPort', port: channel.port2},
+      [channel.port2]);
+  await sawMessage;
+}
+
+
+async function createServiceWorkerControlledPage(
+    t,
+    workerUrl =
+        '/html/browsers/browsing-the-web/back-forward-cache/resources/service-worker.js?pipe=header(Service-Worker-Allowed,/)',
+    scope = '/') {
+  const registration =
+      await service_worker_unregister_and_register(t, workerUrl, scope);
+  t.add_cleanup(() => registration.unregister());
+  await wait_for_state(t, registration.installing, 'activated');
+  const controllerChanged = new Promise(
+      resolve => navigator.serviceWorker.oncontrollerchange = resolve);
+  await claim(t, registration.active);
+  await controllerChanged;
+
+  const rcHelper = new RemoteContextHelper();
+  const page = await rcHelper.addWindow(
+       {},  {features: 'noopener'});
+  assert_true(
+      await page.executeScript(
+          () => (navigator.serviceWorker.controller !== null)),
+      'Page should be controlled before navigation');
+
+  return {registration, page};
 }
