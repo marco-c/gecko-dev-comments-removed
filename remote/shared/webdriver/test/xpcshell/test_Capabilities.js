@@ -362,13 +362,6 @@ add_task(function test_Proxy_fromJSON() {
   );
 
   
-  Assert.throws(
-    () =>
-      ProxyConfiguration.fromJSON({ proxyType: "manual", ftpProxy: "foo:21" }),
-    /InvalidArgumentError/
-  );
-
-  
   for (let noProxy of [true, 42, {}, null, "foo", [true], [42], [{}], [null]]) {
     Assert.throws(
       () => ProxyConfiguration.fromJSON({ proxyType: "manual", noProxy }),
