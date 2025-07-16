@@ -21,6 +21,12 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
 
 
+
+
+
+
+
+@ExperimentalGeckoViewApi
 public class GeckoPreferenceController {
   private static final String LOGTAG = "GeckoPreference";
   private static final boolean DEBUG = false;
