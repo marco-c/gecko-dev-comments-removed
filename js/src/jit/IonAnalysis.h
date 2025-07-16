@@ -195,30 +195,31 @@ class CompileInfo;
 
 
 
+
 void DumpHashedPointer(GenericPrinter& out, const void* p);
 
 
 void DumpMIRDefinitionID(GenericPrinter& out, const MDefinition* def,
-                         bool showHashedPointers = false);
+                         bool showDetails = false);
 
 void DumpMIRDefinition(GenericPrinter& out, const MDefinition* def,
-                       bool showHashedPointers = false);
+                       bool showDetails = false);
 
 
 void DumpMIRBlockID(GenericPrinter& out, const MBasicBlock* block,
-                    bool showHashedPointers = false);
+                    bool showDetails = false);
 
 void DumpMIRBlock(GenericPrinter& out, MBasicBlock* block,
-                  bool showHashedPointers = false);
+                  bool showDetails = false);
 
 
 void DumpMIRGraph(GenericPrinter& out, MIRGraph& graph,
-                  bool showHashedPointers = false);
+                  bool showDetails = false);
 
 
 void DumpMIRExpressions(GenericPrinter& out, MIRGraph& graph,
                         const CompileInfo& info, const char* phase,
-                        bool showHashedPointers = false);
+                        bool showDetails = false);
 }  
 }  
 

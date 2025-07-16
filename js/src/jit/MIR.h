@@ -723,6 +723,8 @@ class MDefinition : public MNode {
   MIR_FLAG_LIST(FLAG_ACCESSOR)
 #undef FLAG_ACCESSOR
 
+  bool hasAnyFlags() const { return flags_ != 0; }
+
   
   
   
