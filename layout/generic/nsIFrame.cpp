@@ -2879,31 +2879,16 @@ static bool BuilderHasScrolledClip(nsDisplayListBuilder* aBuilder) {
          currentASR;
 }
 
-class AutoSaveRestoreContainsBlendMode {
+class AutoTrackStackingContextBits {
   nsDisplayListBuilder& mBuilder;
-  bool mSavedContainsBlendMode;
+  StackingContextBits mSavedBits;
 
  public:
-  explicit AutoSaveRestoreContainsBlendMode(nsDisplayListBuilder& aBuilder)
-      : mBuilder(aBuilder),
-        mSavedContainsBlendMode(aBuilder.ContainsBlendMode()) {}
+  explicit AutoTrackStackingContextBits(nsDisplayListBuilder& aBuilder)
+      : mBuilder(aBuilder), mSavedBits(aBuilder.GetStackingContextBits()) {}
 
-  ~AutoSaveRestoreContainsBlendMode() {
-    mBuilder.SetContainsBlendMode(mSavedContainsBlendMode);
-  }
-};
-
-class AutoSaveRestoreContainsBackdropFilter {
-  nsDisplayListBuilder& mBuilder;
-  bool mSavedContainsBackdropFilter;
-
- public:
-  explicit AutoSaveRestoreContainsBackdropFilter(nsDisplayListBuilder& aBuilder)
-      : mBuilder(aBuilder),
-        mSavedContainsBackdropFilter(aBuilder.ContainsBackdropFilter()) {}
-
-  ~AutoSaveRestoreContainsBackdropFilter() {
-    mBuilder.SetContainsBackdropFilter(mSavedContainsBackdropFilter);
+  ~AutoTrackStackingContextBits() {
+    mBuilder.SetStackingContextBits(mSavedBits);
   }
 };
 
@@ -3271,27 +3256,22 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   const bool useBlendMode = effects->mMixBlendMode != StyleBlend::Normal;
   if (useBlendMode) {
-    aBuilder->SetContainsBlendMode(true);
+    aBuilder->AddStackingContextBits(StackingContextBits::ContainsMixBlendMode);
   }
 
   
   
-  
-  AutoSaveRestoreContainsBlendMode autoRestoreBlendMode(*aBuilder);
-  aBuilder->SetContainsBlendMode(false);
-
-  
-  
-  bool usingBackdropFilter = effects->HasBackdropFilters() &&
-                             IsVisibleForPainting() &&
-                             !style.IsRootElementStyle();
+  const bool usingBackdropFilter = effects->HasBackdropFilters() &&
+                                   IsVisibleForPainting() &&
+                                   !style.IsRootElementStyle();
 
   if (usingBackdropFilter) {
-    aBuilder->SetContainsBackdropFilter(true);
+    aBuilder->AddStackingContextBits(
+        StackingContextBits::ContainsBackdropFilter);
   }
 
-  AutoSaveRestoreContainsBackdropFilter autoRestoreBackdropFilter(*aBuilder);
-  aBuilder->SetContainsBackdropFilter(false);
+  AutoTrackStackingContextBits autoRestoreStackingContextBits(*aBuilder);
+  aBuilder->ClearStackingContextBits();
 
   nsRect visibleRectOutsideTransform = visibleRect;
   nsDisplayTransform::PrerenderInfo prerenderInfo;
