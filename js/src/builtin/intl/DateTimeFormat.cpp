@@ -444,12 +444,28 @@ static UniqueChars DateTimeFormatLocale(
     JSContext* cx, HandleObject internals,
     mozilla::Maybe<mozilla::intl::DateTimeFormat::HourCycle> hourCycle =
         mozilla::Nothing()) {
+  RootedValue value(cx);
+  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
+    return nullptr;
+  }
+
   
   
+
+  mozilla::intl::Locale tag;
+  {
+    Rooted<JSLinearString*> locale(cx, value.toString()->ensureLinear(cx));
+    if (!locale) {
+      return nullptr;
+    }
+
+    if (!intl::ParseLocale(cx, locale, tag)) {
+      return nullptr;
+    }
+  }
 
   JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
 
-  RootedValue value(cx);
   if (!GetProperty(cx, internals, internals, cx->names().calendar, &value)) {
     return nullptr;
   }
@@ -503,7 +519,20 @@ static UniqueChars DateTimeFormatLocale(
     }
   }
 
-  return intl::FormatLocale(cx, internals, keywords);
+  
+  
+  
+  
+  if (!intl::ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
+    return nullptr;
+  }
+
+  FormatBuffer<char> buffer(cx);
+  if (auto result = tag.ToString(buffer); result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
+  }
+  return buffer.extractStringZ();
 }
 
 static bool AssignTextComponent(
