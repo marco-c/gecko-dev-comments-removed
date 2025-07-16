@@ -2218,6 +2218,13 @@
         isTabGroupLabel(tab) ? tab.parentElement : tab
       );
       let { movingTabs } = tab._dragData;
+      
+      
+      
+      
+      let movingTabsOffsetX = window.windowUtils.getBoundsWithoutFlushing(
+        tab.offsetParent
+      ).x;
 
       let movingTabsIndex = movingTabs.findIndex(t => t._tPos == tab._tPos);
       
@@ -2238,21 +2245,24 @@
             
             movingTab.style.top = event.clientY - rect.height * 2.5 + "px";
           } else {
-            movingTab.style.left = rect.left + "px";
+            movingTab.style.left = rect.left - movingTabsOffsetX + "px";
             movingTab.style.height = rect.height + "px";
           }
         } else if (isGrid) {
           movingTab.style.top = rect.top - rect.height + "px";
-          movingTab.style.left = rect.left + position + "px";
+          movingTab.style.left =
+            rect.left - movingTabsOffsetX + position + "px";
           position += rect.width;
         } else if (this.verticalMode) {
           movingTab.style.top = rect.top + position - rect.height + "px";
           position += rect.height;
         } else if (this.#rtlMode) {
-          movingTab.style.left = rect.left - position + "px";
+          movingTab.style.left =
+            rect.left - movingTabsOffsetX - position + "px";
           position -= rect.width;
         } else {
-          movingTab.style.left = rect.left + position + "px";
+          movingTab.style.left =
+            rect.left - movingTabsOffsetX + position + "px";
           position += rect.width;
         }
       }
@@ -2273,10 +2283,12 @@
           movingTab.style.top = rect.top + position + "px";
           position -= rect.height;
         } else if (this.#rtlMode) {
-          movingTab.style.left = rect.left - position + "px";
+          movingTab.style.left =
+            rect.left - movingTabsOffsetX - position + "px";
           position += rect.width;
         } else {
-          movingTab.style.left = rect.left + position + "px";
+          movingTab.style.left =
+            rect.left - movingTabsOffsetX + position + "px";
           position -= rect.width;
         }
       }
