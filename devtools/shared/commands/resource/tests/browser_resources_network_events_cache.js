@@ -93,7 +93,14 @@ async function testNetworkEventResourcesWithCachedRequest(options) {
     r => (resolveCachedRequestAvailable = r)
   );
   const onAvailableToPopulateInternalCache = () => {};
-  const onUpdatedToPopulateInternalCache = resolveCachedRequestAvailable;
+
+  
+  const onUpdatedToPopulateInternalCache = resourceUpdates => {
+    if (resourceUpdates[0].update.resourceUpdates.responseEndAvailable) {
+      resolveCachedRequestAvailable();
+    }
+  };
+
   await resourceCommand.watchResources([resourceCommand.TYPES.NETWORK_EVENT], {
     ignoreExistingResources: true,
     onAvailable: onAvailableToPopulateInternalCache,
@@ -178,7 +185,6 @@ async function testNetworkEventResourcesWithCachedRequest(options) {
   }
 
   info("Check the resources on updated");
-
   await waitUntil(
     () =>
       Object.keys(actualResourcesOnUpdated).length ==

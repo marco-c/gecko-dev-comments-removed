@@ -45,7 +45,9 @@ add_task(async function () {
 
   await Promise.all(requests);
 
-  EXPECTED_REQUESTS.forEach(({ status }, i) => {
+  for (const [i, { status }] of EXPECTED_REQUESTS.entries()) {
+    
+    await waitForRequestData(store, ["status"], null, i);
     const item = getSortedRequests(store.getState())[i];
 
     is(
@@ -63,7 +65,7 @@ add_task(async function () {
       0,
       `Request #${i} has a stacktrace with ${stackLen} items`
     );
-  });
+  }
 
   
   wait = waitForNetworkEvents(monitor, 1);

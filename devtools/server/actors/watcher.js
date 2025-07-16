@@ -27,6 +27,12 @@ const {
 
 loader.lazyRequireGetter(
   this,
+  "throttle",
+  "resource://devtools/shared/throttle.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "NetworkParentActor",
   "resource://devtools/server/actors/network-monitor/network-parent.js",
   true
@@ -55,6 +61,8 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/thread-configuration.js",
   true
 );
+
+const RESOURCES_THROTTLING_DELAY = 100;
 
 exports.WatcherActor = class WatcherActor extends Actor {
   
@@ -101,6 +109,19 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
     
     
+    this.#throttledResources = {
+      available: [],
+      updated: [],
+      destroyed: [],
+    };
+
+    this.#throttledEmitResources = throttle(
+      this.emitResources.bind(this),
+      RESOURCES_THROTTLING_DELAY
+    );
+
+    
+    
     
     this._earlyIframeTargets = {};
 
@@ -125,6 +146,9 @@ exports.WatcherActor = class WatcherActor extends Actor {
         ? "BrowserToolboxDevToolsProcess"
         : "DevToolsProcess";
   }
+
+  #throttledResources;
+  #throttledEmitResources;
 
   get sessionContext() {
     return this._sessionContext;
@@ -212,6 +236,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
       traits: {
         ...this.sessionContext.supportedTargets,
         resources: this.sessionContext.supportedResources,
+        
+        multipleNetworkEventUpdates: true,
       },
     };
   }
@@ -478,7 +504,53 @@ exports.WatcherActor = class WatcherActor extends Actor {
       return;
     }
 
-    this.emit(`resources-${updateType}-array`, [[resourceType, resources]]);
+    const shouldEmitSynchronously =
+      resourceType == Resources.TYPES.DOCUMENT_EVENT &&
+      resources.some(resource => resource.name == "will-navigate");
+
+    
+    
+    const lastResourceInThrottleCache =
+      this.#throttledResources[updateType].at(-1);
+    if (
+      lastResourceInThrottleCache &&
+      lastResourceInThrottleCache[0] === resourceType
+    ) {
+      lastResourceInThrottleCache[1].push.apply(
+        lastResourceInThrottleCache[1],
+        resources
+      );
+    } else {
+      
+      this.#throttledResources[updateType].push([resourceType, resources]);
+    }
+
+    
+    
+    
+    
+    if (shouldEmitSynchronously) {
+      this.emitResources();
+    } else {
+      this.#throttledEmitResources();
+    }
+  }
+
+  
+
+
+  emitResources() {
+    if (this.isDestroyed()) {
+      return;
+    }
+    for (const updateType of ["available", "updated", "destroyed"]) {
+      const resources = this.#throttledResources[updateType];
+      if (!resources.length) {
+        continue;
+      }
+      this.#throttledResources[updateType] = [];
+      this.emit(`resources-${updateType}-array`, resources);
+    }
   }
 
   

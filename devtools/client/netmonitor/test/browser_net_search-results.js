@@ -207,6 +207,9 @@ add_task(async function () {
   EventUtils.synthesizeKey("KEY_Enter");
 
   
+  await waitForAllNetworkUpdateEvents();
+
+  
   await waitForDOMIfNeeded(
     document,
     ".search-panel-content .treeRow.resourceRow",

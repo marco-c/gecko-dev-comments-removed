@@ -450,23 +450,31 @@ class FirefoxDataProvider {
 
 
 
-  async onNetworkResourceUpdated(resource) {
+
+  async onNetworkResourceUpdated(resource, update) {
     
     if (resource?.mimeType?.includes("text/event-stream")) {
       await this.setEventStreamFlag(resource.actor);
     }
 
-    this.pendingRequests.delete(resource.actor);
     if (this.actionsEnabled && this.actions.updateRequest) {
       await this.actions.updateRequest(resource.actor, resource, true);
     }
 
     
-    
-    
-    
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, resource.actor);
-    this.emit(EVENTS.PAYLOAD_READY, resource);
+    if (
+      
+      
+      
+      !this.commands.watcherFront.traits.multipleNetworkEventUpdates ||
+      (this.commands.watcherFront.traits.multipleNetworkEventUpdates &&
+        update.resourceUpdates.responseEndAvailable)
+    ) {
+      this.pendingRequests.delete(resource.actor);
+      
+      this.emit(EVENTS.PAYLOAD_READY, resource);
+    }
   }
 
   
