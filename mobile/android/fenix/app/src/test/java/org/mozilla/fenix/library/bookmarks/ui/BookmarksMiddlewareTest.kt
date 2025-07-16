@@ -19,6 +19,7 @@ import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.any
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
+import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -93,6 +94,20 @@ class BookmarksMiddlewareTest {
         openTab = { _, _ -> }
         lastSavedFolderCache = mock()
         saveSortOrder = { }
+    }
+
+    @Test
+    fun `GIVEN a nested bookmark structure WHEN SelectAll is clicked THEN all bookmarks are selected and reflected in state`() = runTestOnMain {
+        val tree = generateBookmarkTree()
+        `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
+        `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(tree)
+        val middleware = buildMiddleware()
+        val store = middleware.makeStore()
+        `when`(bookmarksStorage.countBookmarksInTrees(store.state.bookmarkItems.map { it.guid })).thenReturn(35u)
+        store.dispatch(BookmarksListMenuAction.SelectAll)
+        store.waitUntilIdle()
+        assertEquals(store.state.selectedItems.size, store.state.bookmarkItems.size)
+        assertEquals(35, store.state.recursiveSelectedCount)
     }
 
     @Test
@@ -353,6 +368,24 @@ class BookmarksMiddlewareTest {
         store.dispatch(SearchClicked)
 
         assertTrue(navigated)
+    }
+
+    @Test
+    fun `GIVEN new search UX is used WHEN search button is clicked THEN don't navigate to search`() {
+        var navigated = false
+        navigateToSearch = { navigated = true }
+        val middleware = buildMiddleware(useNewSearchUX = true)
+        val captorMiddleware = CaptureActionsMiddleware<BookmarksState, BookmarksAction>()
+        val store = BookmarksStore(
+            initialState = BookmarksState.default,
+            middleware = listOf(middleware, captorMiddleware),
+        ).also {
+            it.waitUntilIdle()
+        }
+
+        store.dispatch(SearchClicked)
+
+        assertFalse(navigated)
     }
 
     @Test
@@ -1431,13 +1464,16 @@ class BookmarksMiddlewareTest {
         assertEquals(newFolderTitle, store.state.bookmarksEditBookmarkState?.folder?.title)
     }
 
-    private fun buildMiddleware() = BookmarksMiddleware(
+    private fun buildMiddleware(
+        useNewSearchUX: Boolean = false,
+    ) = BookmarksMiddleware(
         bookmarksStorage = bookmarksStorage,
         clipboardManager = clipboardManager,
         addNewTabUseCase = addNewTabUseCase,
         getNavController = { navController },
         exitBookmarks = exitBookmarks,
         wasPreviousAppDestinationHome = wasPreviousAppDestinationHome,
+        useNewSearchUX = useNewSearchUX,
         navigateToSearch = navigateToSearch,
         navigateToSignIntoSync = navigateToSignIntoSync,
         shareBookmarks = shareBookmarks,
