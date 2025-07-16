@@ -1772,9 +1772,18 @@ Maybe<nsRect> nsMenuPopupFrame::GetConstraintRect(
   
   
   
-  
-  
-  if (!IS_WAYLAND_DISPLAY()) {
+  if (IS_WAYLAND_DISPLAY()) {
+    
+    
+    
+    
+    
+    
+    
+    if (mPopupType == PopupType::Tooltip) {
+      AddConstraint(aRootScreenRect);
+    }
+  } else {
     const DesktopToLayoutDeviceScale scale =
         pc->DeviceContext()->GetDesktopToDeviceScale();
     
