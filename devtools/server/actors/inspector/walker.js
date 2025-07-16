@@ -728,7 +728,7 @@ class WalkerActor extends Actor {
 
 
 
-  inlineTextChild({ rawNode }) {
+  inlineTextChild(rawNode) {
     
     if (
       isMarkerPseudoElement(rawNode) ||
@@ -2278,7 +2278,7 @@ class WalkerActor extends Actor {
         mutation.removed = removedActors;
         mutation.added = addedActors;
 
-        const inlineTextChild = this.inlineTextChild(targetActor);
+        const inlineTextChild = this.inlineTextChild(targetActor.rawNode);
         if (inlineTextChild) {
           mutation.inlineTextChild = inlineTextChild.form();
         }
@@ -2315,7 +2315,7 @@ class WalkerActor extends Actor {
       return;
     }
 
-    const inlineTextChild = this.inlineTextChild(parentActor);
+    const inlineTextChild = this.inlineTextChild(parentActor.rawNode);
     this.queueMutation({
       type: "inlineTextChild",
       target: parentActor.actorID,
