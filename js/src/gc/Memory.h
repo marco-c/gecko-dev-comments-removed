@@ -55,6 +55,11 @@ void UnmapPages(void* region, size_t length);
 
 
 
+
+void MapStack(size_t stackSize);
+
+
+
 bool DecommitEnabled();
 
 
