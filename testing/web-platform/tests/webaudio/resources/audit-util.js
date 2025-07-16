@@ -193,3 +193,29 @@ function computeSNR(actual, expected) {
 
   return signalPower / noisePower;
 }
+
+
+
+
+
+
+
+
+
+
+function assert_constant_value(array, value, messagePrefix = '') {
+  for (let i = 0; i < array.length; ++i) {
+    if (Number.isNaN(value)) {
+      assert_true(
+        Number.isNaN(array[i]),
+        `${messagePrefix} entry ${i} should be NaN`
+      );
+    } else {
+      assert_equals(
+        array[i],
+        value,
+        `${messagePrefix} entry ${i} should be ${value}`
+      );
+    }
+  }
+}
