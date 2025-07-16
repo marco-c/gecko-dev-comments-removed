@@ -60,6 +60,8 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
 
   
 
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
  protected:
   virtual ~StylePropertyMapReadOnly() = default;
 
