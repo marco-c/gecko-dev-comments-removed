@@ -681,8 +681,25 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsresult DoURILoad(nsDocShellLoadState* aLoadState,
-                     mozilla::Maybe<uint32_t> aCacheKey, nsIRequest** aRequest);
+  MOZ_CAN_RUN_SCRIPT nsresult DoURILoad(nsDocShellLoadState* aLoadState,
+                                        mozilla::Maybe<uint32_t> aCacheKey,
+                                        nsIRequest** aRequest);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT nsresult PerformTrustedTypesPreNavigationCheck(
+      nsDocShellLoadState* aLoadState, nsGlobalWindowInner* aWindow) const;
 
   static nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                       nsIChannel* aChannel);
