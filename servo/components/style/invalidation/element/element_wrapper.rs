@@ -225,6 +225,15 @@ where
             },
 
             
+            NonTSPseudoClass::Heading(ref levels) => {
+                return levels.matches_state(
+                    self.snapshot()
+                        .and_then(|s| s.state())
+                        .unwrap_or_else(|| self.element.state()),
+                );
+            },
+
+            
             NonTSPseudoClass::CustomState(ref state) => return self.has_custom_state(&state.0),
 
             _ => {},
