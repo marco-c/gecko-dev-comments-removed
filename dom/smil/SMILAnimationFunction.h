@@ -140,8 +140,9 @@ class SMILAnimationFunction {
 
 
 
-  int8_t CompareTo(const SMILAnimationFunction* aOther,
-                   nsContentUtils::NodeIndexCache& aCache) const;
+
+  int32_t CompareTo(const SMILAnimationFunction* aOther,
+                    nsContentUtils::NodeIndexCache& aCache) const;
 
   
 
