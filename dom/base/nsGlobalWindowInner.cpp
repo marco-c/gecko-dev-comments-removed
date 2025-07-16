@@ -4985,6 +4985,11 @@ void nsGlobalWindowInner::FireOfflineStatusEventIfChanged() {
     return;
   }
 
+  if (ShouldResistFingerprinting(RFPTarget::NetworkConnection)) {
+    
+    return;
+  }
+
   mWasOffline = !mWasOffline;
 
   nsAutoString name;

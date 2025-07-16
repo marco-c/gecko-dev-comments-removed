@@ -582,6 +582,11 @@ bool Navigator::CookieEnabled() {
 }
 
 bool Navigator::OnLine() {
+  if (nsContentUtils::ShouldResistFingerprinting(
+          GetDocShell(), RFPTarget::NetworkConnection)) {
+    return true;
+  }
+
   if (mWindow) {
     
     BrowsingContext* bc = mWindow->GetBrowsingContext();
