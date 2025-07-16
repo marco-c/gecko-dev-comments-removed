@@ -1733,6 +1733,24 @@ export const kTextureFormatsTier1EnablesStorageReadOnlyWriteOnly = [
 'rg11b10ufloat'];
 
 
+export const kTextureFormatsTier2EnablesStorageReadWrite = [
+'r8unorm',
+'r8uint',
+'r8sint',
+'rgba8unorm',
+'rgba8uint',
+'rgba8sint',
+'r16uint',
+'r16sint',
+'r16float',
+'rgba16uint',
+'rgba16sint',
+'rgba16float',
+'rgba32uint',
+'rgba32sint',
+'rgba32float'];
+
+
 
 
 export const kPossibleStorageTextureFormats = [
@@ -1745,7 +1763,9 @@ export const kPossibleStorageTextureFormats = [
 
 
 export const kPossibleReadWriteStorageTextureFormats = [
-...kPossibleStorageTextureFormats.filter((f) => kTextureFormatInfo[f].color?.readWriteStorage)];
+...kPossibleStorageTextureFormats.filter((f) => kTextureFormatInfo[f].color?.readWriteStorage),
+
+...kTextureFormatsTier2EnablesStorageReadWrite];
 
 
 
@@ -2175,6 +2195,10 @@ function isTextureFormatTier1EnablesStorageReadOnlyWriteOnly(format) {
   return kTextureFormatsTier1EnablesStorageReadOnlyWriteOnly.includes(format);
 }
 
+function isTextureFormatTier2EnablesStorageReadWrite(format) {
+  return kTextureFormatsTier2EnablesStorageReadWrite.includes(format);
+}
+
 export function canCopyToAspectOfTextureFormat(format, aspect) {
   const info = kTextureFormatInfo[format];
   switch (aspect) {
@@ -2389,7 +2413,10 @@ export function isTextureFormatPossiblyStorageReadable(format) {
 
 
 export function isTextureFormatPossiblyStorageReadWritable(format) {
-  return !!kTextureFormatInfo[format].color?.readWriteStorage;
+  return (
+    !!kTextureFormatInfo[format].color?.readWriteStorage ||
+    isTextureFormatTier2EnablesStorageReadWrite(format));
+
 }
 
 export function is16Float(format) {
@@ -2426,7 +2453,7 @@ export const kCompatModeUnsupportedStorageTextureFormats = [
 
 
 
-export function isTextureFormatUsableAsStorageFormat(
+function isTextureFormatUsableAsWriteOnlyStorageTexture(
 device,
 format)
 {
@@ -2456,6 +2483,52 @@ format)
 
 
 
+export function isTextureFormatUsableWithStorageAccessMode(
+device,
+format,
+access)
+{
+  switch (access) {
+    case 'read':
+    case 'read-only':
+      return isTextureFormatUsableAsReadOnlyStorageTexture(device, format);
+    case 'write':
+    case 'write-only':
+      return isTextureFormatUsableAsWriteOnlyStorageTexture(device, format);
+    case 'read_write':
+    case 'read-write':
+      return isTextureFormatUsableAsReadWriteStorageTexture(device, format);
+  }
+}
+
+
+
+
+
+
+
+
+function isTextureFormatUsableAsReadOnlyStorageTexture(
+device,
+format)
+{
+  
+  if (format === 'bgra8unorm') {
+    return false;
+  }
+  
+  
+  return isTextureFormatUsableAsWriteOnlyStorageTexture(device, format);
+}
+
+
+
+
+
+
+
+
+
 
 export function isTextureFormatUsableAsStorageFormatInCreateShaderModule(
 device,
@@ -2468,14 +2541,14 @@ format)
   return !!(info.color?.storage || info.depth?.storage || info.stencil?.storage);
 }
 
-export function isTextureFormatUsableAsReadWriteStorageTexture(
+function isTextureFormatUsableAsReadWriteStorageTexture(
 device,
 format)
 {
-  return (
-    isTextureFormatUsableAsStorageFormat(device, format) &&
-    !!kTextureFormatInfo[format].color?.readWriteStorage);
-
+  if (isTextureFormatTier2EnablesStorageReadWrite(format)) {
+    return device.features.has('texture-formats-tier2');
+  }
+  return !!kTextureFormatInfo[format].color?.readWriteStorage;
 }
 
 export function isRegularTextureFormat(format) {
