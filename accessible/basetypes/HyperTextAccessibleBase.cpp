@@ -329,12 +329,15 @@ TextLeafPoint HyperTextAccessibleBase::ToTextLeafPoint(int32_t aOffset,
   if (!child) {
     return TextLeafPoint();
   }
-  if (HyperTextAccessibleBase* childHt = child->AsHyperTextBase()) {
-    return childHt->ToTextLeafPoint(
-        aDescendToEnd ? static_cast<int32_t>(childHt->CharacterCount()) : 0,
-        aDescendToEnd);
-  }
   int32_t offset = aOffset - GetChildOffset(child);
+  if (HyperTextAccessibleBase* childHt = child->AsHyperTextBase()) {
+    
+    MOZ_ASSERT(offset == 0 || offset == 1);
+    
+    const bool end = aDescendToEnd || offset == 1;
+    return childHt->ToTextLeafPoint(
+        end ? static_cast<int32_t>(childHt->CharacterCount()) : 0, end);
+  }
   return TextLeafPoint(child, offset);
 }
 
