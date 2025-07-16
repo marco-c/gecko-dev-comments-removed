@@ -1771,7 +1771,7 @@ void HTMLInputElement::SetValue(Decimal aValue, CallerType aCallerType) {
   }
 
   nsAutoString value;
-  mInputType->ConvertNumberToString(aValue, value);
+  mInputType->ConvertNumberToString(aValue, InputType::Localized::No, value);
   SetValue(value, aCallerType, IgnoreErrors());
 }
 
@@ -3462,7 +3462,8 @@ void HTMLInputElement::CancelRangeThumbDrag(bool aIsForUserEvent) {
     
     
     nsAutoString val;
-    mInputType->ConvertNumberToString(mRangeThumbDragStartValue, val);
+    mInputType->ConvertNumberToString(mRangeThumbDragStartValue,
+                                      InputType::Localized::No, val);
     
     
     SetValueInternal(val, {ValueSetterOption::BySetUserInputAPI,
@@ -3486,7 +3487,7 @@ void HTMLInputElement::SetValueOfRangeForUserEvent(
   Decimal oldValue = GetValueAsDecimal();
 
   nsAutoString val;
-  mInputType->ConvertNumberToString(aValue, val);
+  mInputType->ConvertNumberToString(aValue, InputType::Localized::No, val);
   
   
   SetValueInternal(val, {ValueSetterOption::BySetUserInputAPI,
@@ -3572,7 +3573,7 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
   }
 
   nsAutoString newVal;
-  mInputType->ConvertNumberToString(newValue, newVal);
+  mInputType->ConvertNumberToString(newValue, InputType::Localized::No, newVal);
   
   
   SetValueInternal(newVal, {ValueSetterOption::BySetUserInputAPI,
@@ -4854,22 +4855,10 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
           aValue);
     } break;
     case FormControlType::InputNumber: {
-      if (aKind == SanitizationKind::ForValueSetter && !aValue.IsEmpty() &&
-          (aValue.First() == '+' || aValue.Last() == '.')) {
-        
-        
-        
-        
-        
-        
-        
-        
-        aValue.Truncate();
-        return;
-      }
-
-      InputType::StringToNumberResult result =
-          mInputType->ConvertStringToNumber(aValue);
+      auto result =
+          aKind == SanitizationKind::ForValueSetter
+              ? InputType::StringToNumberResult{StringToDecimal(aValue)}
+              : mInputType->ConvertStringToNumber(aValue);
       if (!result.mResult.isFinite()) {
         aValue.Truncate();
         return;
@@ -4897,7 +4886,8 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
           
           
           nsString localizedValue;
-          mInputType->ConvertNumberToString(result.mResult, localizedValue);
+          mInputType->ConvertNumberToString(
+              result.mResult, InputType::Localized::Yes, localizedValue);
           if (!StringToDecimal(localizedValue).isFinite()) {
             aValue = std::move(localizedValue);
           }

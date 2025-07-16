@@ -95,6 +95,7 @@ class InputType {
   virtual StringToNumberResult ConvertStringToNumber(
       const nsAString& aValue) const;
 
+  enum class Localized : bool { No = false, Yes };
   
 
 
@@ -106,7 +107,9 @@ class InputType {
 
 
 
+
   virtual bool ConvertNumberToString(Decimal aValue,
+                                     Localized,
                                      nsAString& aResultString) const;
 
  protected:
