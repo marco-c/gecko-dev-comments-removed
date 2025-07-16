@@ -555,6 +555,27 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleInsertBRElement(
+      const EditorDOMPoint& aPointToInsert,
+      const Element* aBlockElementWhichShouldHaveCaret = nullptr);
+
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleInsertLinefeed(const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -648,12 +669,17 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
       const Element* aEditableBlockElement,
       const EditorDOMPoint& aCandidatePointToSplit);
 
+  enum class InsertBRElementIntoEmptyBlock : bool { Start, End };
+
   
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  InsertBRElementIfEmptyBlockElement(Element& aMaybeBlockElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
+  InsertBRElementIfEmptyBlockElement(
+      Element& aMaybeBlockElement,
+      InsertBRElementIntoEmptyBlock aInsertBRElementIntoEmptyBlock,
+      BlockInlineCheck aBlockInlineCheck);
 
   
 
@@ -711,12 +737,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 class MOZ_STACK_CLASS HTMLEditor::AutoInsertLineBreakHandler final {
  public:
-  explicit AutoInsertLineBreakHandler() = default;
+  AutoInsertLineBreakHandler() = delete;
   AutoInsertLineBreakHandler(const AutoInsertLineBreakHandler&) = delete;
   AutoInsertLineBreakHandler(AutoInsertLineBreakHandler&&) = delete;
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult Run(HTMLEditor& aHTMLEditor,
-                                                const Element& aEditingHost);
+  MOZ_CAN_RUN_SCRIPT explicit AutoInsertLineBreakHandler(
+      HTMLEditor& aHTMLEditor, const Element& aEditingHost)
+      : mHTMLEditor(aHTMLEditor), mEditingHost(aEditingHost) {}
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult Run();
 
  private:
   
@@ -731,7 +760,20 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertLineBreakHandler final {
   InsertLinefeed(HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToBreak,
                  const Element& aEditingHost);
 
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleInsertBRElement();
+
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleInsertLinefeed();
+
   friend class AutoInsertParagraphHandler;
+
+  MOZ_KNOWN_LIVE HTMLEditor& mHTMLEditor;
+  MOZ_KNOWN_LIVE const Element& mEditingHost;
 };
 
 
