@@ -52,6 +52,11 @@ class GlobalIntlData {
   
 
 
+  GCPtr<JSLinearString*> defaultTimeZone_;
+
+  
+
+
 
 
   GCPtr<JSLinearString*> collatorLocale_;
@@ -110,6 +115,12 @@ class GlobalIntlData {
 
 
   JSLinearString* defaultLocale(JSContext* cx);
+
+  
+
+
+
+  JSLinearString* defaultTimeZone(JSContext* cx);
 
   
 

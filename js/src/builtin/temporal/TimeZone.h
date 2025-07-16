@@ -264,6 +264,11 @@ enum class TemporalDisambiguation;
 
 
 
+JSLinearString* ComputeSystemTimeZoneIdentifier(JSContext* cx);
+
+
+
+
 JSLinearString* SystemTimeZoneIdentifier(JSContext* cx);
 
 

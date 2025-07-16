@@ -337,7 +337,7 @@ static bool SystemTimeZoneOffset(JSContext* cx, int32_t* offset) {
 
 
 
-JSLinearString* js::temporal::SystemTimeZoneIdentifier(JSContext* cx) {
+JSLinearString* js::temporal::ComputeSystemTimeZoneIdentifier(JSContext* cx) {
   TimeZoneIdentifierVector timeZoneId;
   if (!DateTimeInfo::timeZoneId(DateTimeInfo::forceUTC(cx->realm()),
                                 timeZoneId)) {
@@ -359,9 +359,6 @@ JSLinearString* js::temporal::SystemTimeZoneIdentifier(JSContext* cx) {
   if (validTimeZone) {
     return CanonicalizeTimeZoneName(cx, validTimeZone);
   }
-
-  
-  
 
   
   
@@ -405,6 +402,15 @@ JSLinearString* js::temporal::SystemTimeZoneIdentifier(JSContext* cx) {
 
   
   return cx->names().UTC;
+}
+
+
+
+
+
+
+JSLinearString* js::temporal::SystemTimeZoneIdentifier(JSContext* cx) {
+  return cx->global()->globalIntlData().defaultTimeZone(cx);
 }
 
 
