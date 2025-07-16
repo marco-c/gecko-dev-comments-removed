@@ -589,7 +589,17 @@ void HTMLButtonElement::GetCommand(nsAString& aCommand) const {
 Element::Command HTMLButtonElement::GetCommand() const {
   if (const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::command)) {
     if (attr->Type() == nsAttrValue::eEnum) {
-      return Command(attr->GetEnumValue());
+      auto command = Command(attr->GetEnumValue());
+      
+      
+      
+      
+      
+      if ((command == Command::Open || command == Command::Toggle) &&
+          !StaticPrefs::dom_element_commandfor_on_details_enabled()) {
+        return Command::Invalid;
+      }
+      return command;
     }
     if (StringBeginsWith(attr->GetStringValue(), u"--"_ns)) {
       return Command::Custom;
