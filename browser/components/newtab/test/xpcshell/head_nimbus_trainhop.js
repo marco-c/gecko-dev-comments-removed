@@ -259,3 +259,12 @@ async function cancelPendingInstall(pendingInstall) {
   pendingInstall.cancel();
   await cancelDeferred.promise;
 }
+
+
+function mockAboutNewTabUninit() {
+  AboutNewTab.uninit();
+  AboutNewTabResourceMapping.initialized = false;
+  AboutNewTabResourceMapping._rootURISpec = null;
+  AboutNewTabResourceMapping._addonVersion = null;
+  AboutNewTabResourceMapping._addonListener = null;
+}
