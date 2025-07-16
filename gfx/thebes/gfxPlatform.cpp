@@ -921,6 +921,13 @@ void gfxPlatform::Init() {
   gPlatform->InitBackdropFilterConfig();
   gPlatform->InitAcceleratedCanvas2DConfig();
 
+  if (XRE_IsParentProcess()) {
+    
+    Preferences::RegisterCallbackAndCall(
+        VideoDecodingFailedChangedCallback,
+        "media.hardware-video-decoding.failed");
+  }
+
 #if defined(XP_WIN)
   
   
@@ -2401,37 +2408,12 @@ gfxImageFormat gfxPlatform::OptimalFormatForContent(gfxContentType aContent) {
 
 static mozilla::Atomic<bool> sLayersAccelerationPrefsInitialized(false);
 
-static void VideoDecodingFailedChangedCallback(const char* aPref, void*) {
+
+void gfxPlatform::VideoDecodingFailedChangedCallback(const char* aPref, void*) {
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  
-  
-  
-  FeatureState& featureDec =
-      gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_DECODING);
-  FeatureState& featureEnc =
-      gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_ENCODING);
-  if (Preferences::GetBool(aPref, false)) {
-    featureDec.ForceDisable(FeatureStatus::Unavailable,
-                            "Force disabled by failed sanity test",
-                            "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
-    featureEnc.ForceDisable(FeatureStatus::Unavailable,
-                            "Force disabled by failed sanity test",
-                            "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
+  if (gPlatform) {
+    gPlatform->InitHardwareVideoConfig();
   }
-
-  gfxVars::SetCanUseHardwareVideoDecoding(featureDec.IsEnabled());
-  gfxVars::SetCanUseHardwareVideoEncoding(featureEnc.IsEnabled());
-
-#ifdef MOZ_WMF_CDM
-  FeatureState& featureHWDRM = gfxConfig::GetFeature(Feature::WMF_HW_DRM);
-  if (!featureDec.IsEnabled()) {
-    featureHWDRM.ForceDisable(FeatureStatus::Unavailable,
-                              "Force disabled by no hardware video decoding",
-                              "FEATURE_FAILURE_NO_HARDWARE_VIDEO_DECODING"_ns);
-  }
-  gfxVars::SetUseWMFHWDWM(featureHWDRM.IsEnabled());
-#endif
 }
 
 void gfxPlatform::UpdateForceSubpixelAAWherePossible() {
@@ -2985,6 +2967,7 @@ void gfxPlatform::InitHardwareVideoConfig() {
 
   FeatureState& featureDec =
       gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_DECODING);
+  featureDec.Reset();
   featureDec.EnableByDefault();
 
   if (!StaticPrefs::media_hardware_video_decoding_enabled_AtStartup()) {
@@ -3028,6 +3011,7 @@ void gfxPlatform::InitHardwareVideoConfig() {
 
   FeatureState& featureEnc =
       gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_ENCODING);
+  featureEnc.Reset();
   featureEnc.EnableByDefault();
 
   if (!StaticPrefs::media_hardware_video_encoding_enabled_AtStartup()) {
@@ -3073,6 +3057,7 @@ void gfxPlatform::InitHardwareVideoConfig() {
 
 #ifdef MOZ_WMF_CDM
   FeatureState& featureHWDRM = gfxConfig::GetFeature(Feature::WMF_HW_DRM);
+  featureHWDRM.Reset();
   featureHWDRM.EnableByDefault();
   if (StaticPrefs::media_wmf_media_engine_enabled() != 1 &&
       StaticPrefs::media_wmf_media_engine_enabled() != 2) {
@@ -3096,36 +3081,33 @@ void gfxPlatform::InitHardwareVideoConfig() {
   gfxVars::SetUseWMFHWDWM(featureHWDRM.IsEnabled());
 #endif
 
-  
-  if (!featureDec.IsEnabled() && !featureEnc.IsEnabled()) {
-    return;
-  }
-
   gfxVars::SetCanUseHardwareVideoDecoding(featureDec.IsEnabled());
   gfxVars::SetCanUseHardwareVideoEncoding(featureEnc.IsEnabled());
 
-  
-  Preferences::RegisterCallbackAndCall(VideoDecodingFailedChangedCallback,
-                                       "media.hardware-video-decoding.failed");
-
-#define CODEC_HW_FEATURE_SETUP(name)                                         \
-  FeatureState& featureDec##name =                                           \
-      gfxConfig::GetFeature(Feature::name##_HW_DECODE);                      \
-  featureDec##name.EnableByDefault();                                        \
-  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_##name##_HW_DECODE, &message, \
-                           failureId)) {                                     \
-    featureDec##name.Disable(FeatureStatus::Blocklisted, message.get(),      \
-                             failureId);                                     \
-  }                                                                          \
-  gfxVars::SetUse##name##HwDecode(featureDec##name.IsEnabled());             \
-  FeatureState& featureEnc##name =                                           \
-      gfxConfig::GetFeature(Feature::name##_HW_ENCODE);                      \
-  featureEnc##name.EnableByDefault();                                        \
-  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_##name##_HW_ENCODE, &message, \
-                           failureId)) {                                     \
-    featureEnc##name.Disable(FeatureStatus::Blocklisted, message.get(),      \
-                             failureId);                                     \
-  }                                                                          \
+#define CODEC_HW_FEATURE_SETUP(name)                                           \
+  FeatureState& featureDec##name =                                             \
+      gfxConfig::GetFeature(Feature::name##_HW_DECODE);                        \
+  featureDec##name.Reset();                                                    \
+  if (featureDec.IsEnabled()) {                                                \
+    featureDec##name.EnableByDefault();                                        \
+    if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_##name##_HW_DECODE, &message, \
+                             failureId)) {                                     \
+      featureDec##name.Disable(FeatureStatus::Blocklisted, message.get(),      \
+                               failureId);                                     \
+    }                                                                          \
+  }                                                                            \
+  gfxVars::SetUse##name##HwDecode(featureDec##name.IsEnabled());               \
+  FeatureState& featureEnc##name =                                             \
+      gfxConfig::GetFeature(Feature::name##_HW_ENCODE);                        \
+  featureEnc##name.Reset();                                                    \
+  if (featureEnc.IsEnabled()) {                                                \
+    featureEnc##name.EnableByDefault();                                        \
+    if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_##name##_HW_ENCODE, &message, \
+                             failureId)) {                                     \
+      featureEnc##name.Disable(FeatureStatus::Blocklisted, message.get(),      \
+                               failureId);                                     \
+    }                                                                          \
+  }                                                                            \
   gfxVars::SetUse##name##HwEncode(featureEnc##name.IsEnabled());
 
   CODEC_HW_FEATURE_SETUP(AV1)

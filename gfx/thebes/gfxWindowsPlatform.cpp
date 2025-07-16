@@ -1954,11 +1954,7 @@ void gfxWindowsPlatform::ImportGPUDeviceData(
   }
 
   
-  InitPlatformHardwareVideoConfig();
-  gfxVars::SetCanUseHardwareVideoDecoding(
-      gfxConfig::IsEnabled(Feature::HARDWARE_VIDEO_DECODING));
-  gfxVars::SetCanUseHardwareVideoEncoding(
-      gfxConfig::IsEnabled(Feature::HARDWARE_VIDEO_ENCODING));
+  InitHardwareVideoConfig();
 
   
   
