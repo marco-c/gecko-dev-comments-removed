@@ -182,6 +182,10 @@ class CookieCommons final {
   
   
   static bool IsSubdomainOf(const nsACString& a, const nsACString& b);
+
+  
+  
+  static int64_t GetCurrentTimeFromChannel(nsIChannel* aChannel);
 };
 
 }  
