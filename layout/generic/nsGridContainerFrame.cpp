@@ -5988,7 +5988,6 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
       size = 0;
     } else {
       
-      
       nscoord availISize = INFINITE_ISIZE_COORD;
       nscoord availBSize = NS_UNCONSTRAINEDSIZE;
       
