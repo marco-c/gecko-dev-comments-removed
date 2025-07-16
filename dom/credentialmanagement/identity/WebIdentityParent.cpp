@@ -577,13 +577,16 @@ RefPtr<GetIPCIdentityCredentialPromise> CreateCredentialDuringDiscovery(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [argumentPrincipal,
-           aProvider](const std::tuple<nsCString, nsCString>& promiseResult) {
+           aProvider](const std::tuple<nsCString, nsCString, const bool>& promiseResult) {
             nsCString token;
             nsCString accountId;
-            std::tie(token, accountId) = promiseResult;
+            bool isAutoSelected;
+            std::tie(token, accountId, isAutoSelected) = promiseResult;
             IPCIdentityCredential credential;
             credential.token() = Some(token);
             credential.id() = NS_ConvertUTF8toUTF16(accountId);
+            credential.isAutoSelected() = isAutoSelected;
+            credential.configURL() = aProvider.mConfigURL;
             
             
             nsresult rv = LinkAccount(argumentPrincipal, accountId, aProvider);
@@ -821,12 +824,12 @@ RefPtr<GetTokenPromise> FetchToken(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [aAccount, idpURI,
-           relyingParty](const IdentityAssertionResponse& response) {
+           relyingParty, isAutoSelected](const IdentityAssertionResponse& response) {
             
             if (response.mToken.WasPassed()) {
               return GetTokenPromise::CreateAndResolve(
                   std::make_tuple(response.mToken.Value(),
-                                  NS_ConvertUTF16toUTF8(aAccount.mId)),
+                                  NS_ConvertUTF16toUTF8(aAccount.mId), isAutoSelected),
                   __func__);
             }
             
@@ -853,7 +856,7 @@ RefPtr<GetTokenPromise> FetchToken(
             }
             
             return AuthorizationPopupForToken(continueURI, relyingParty,
-                                              aAccount);
+                                              aAccount, isAutoSelected);
           },
           [](nsresult error) {
             return GetTokenPromise::CreateAndReject(error, __func__);
@@ -862,7 +865,7 @@ RefPtr<GetTokenPromise> FetchToken(
 
 RefPtr<GetTokenPromise> AuthorizationPopupForToken(
     nsIURI* aContinueURI, WebIdentityParent* aRelyingParty,
-    const IdentityProviderAccount& aAccount) {
+    const IdentityProviderAccount& aAccount, const bool isAutoSelected) {
   MOZ_ASSERT(aContinueURI);
   IdentityCredentialRequestManager* requestManager =
       IdentityCredentialRequestManager::GetInstance();
@@ -876,7 +879,7 @@ RefPtr<GetTokenPromise> AuthorizationPopupForToken(
   return requestManager->GetTokenFromPopup(aRelyingParty, aContinueURI)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [aAccount](
+          [aAccount, isAutoSelected](
               const std::tuple<nsCString, Maybe<nsCString>>& promiseResult) {
             
             
@@ -886,11 +889,11 @@ RefPtr<GetTokenPromise> AuthorizationPopupForToken(
             std::tie(token, overridingAccountId) = promiseResult;
             if (overridingAccountId.isSome()) {
               return GetTokenPromise::CreateAndResolve(
-                  std::make_tuple(token, overridingAccountId.value()),
+                  std::make_tuple(token, overridingAccountId.value(), isAutoSelected),
                   __func__);
             }
             return GetTokenPromise::CreateAndResolve(
-                std::make_tuple(token, NS_ConvertUTF16toUTF8(aAccount.mId)),
+                std::make_tuple(token, NS_ConvertUTF16toUTF8(aAccount.mId), isAutoSelected),
                 __func__);
           },
           [](nsresult rv) {
