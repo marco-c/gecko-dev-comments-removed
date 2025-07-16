@@ -20,6 +20,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +81,6 @@ import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
-import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
@@ -112,7 +112,6 @@ import org.mozilla.fenix.session.VisibilityLifecycleCallback
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -274,7 +273,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         registerActivityLifecycleCallbacks(visibilityLifecycleCallback)
         registerActivityLifecycleCallbacks(MarkersActivityLifecycleCallbacks(components.core.engine))
 
-        components.performance.startupStateDetector.registerInAppOnCreate(this)
         components.appStartReasonProvider.registerInAppOnCreate(this)
         components.startupActivityLog.registerInAppOnCreate(this)
         initVisualCompletenessQueueAndQueueTasks()
@@ -288,6 +286,10 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         )
 
         components.analytics.metricsStorage.tryRegisterAsUsageRecorder(this)
+
+        CoroutineScope(IO).launch {
+            components.useCases.wallpaperUseCases.fetchCurrentWallpaperUseCase.invoke()
+        }
     }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
@@ -746,12 +748,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             defaultBrowser.set(browsersCache.all(applicationContext).isDefaultBrowser)
             mozillaProductDetector.getMozillaBrowserDefault(applicationContext)?.also {
                 defaultMozBrowser.set(it)
-            }
-
-            if (settings.contileContextId.isEmpty()) {
-                settings.contileContextId = TopSites.contextId.generateAndSet().toString()
-            } else {
-                TopSites.contextId.set(UUID.fromString(settings.contileContextId))
             }
 
             mozillaProducts.set(
