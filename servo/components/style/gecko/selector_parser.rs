@@ -201,9 +201,6 @@ impl NonTSPseudoClass {
     
     #[inline]
     fn is_enabled_in_content(&self) -> bool {
-        if matches!(*self, Self::HasSlotted) {
-            return static_prefs::pref!("layout.css.has-slotted-selector.enabled");
-        }
         if matches!(*self, Self::ActiveViewTransition) {
             return static_prefs::pref!("dom.viewTransitions.enabled");
         }
