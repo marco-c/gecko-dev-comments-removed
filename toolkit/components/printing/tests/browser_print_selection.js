@@ -11,7 +11,11 @@ const sources = [
 
 async function getPreviewText(previewBrowser) {
   return SpecialPowers.spawn(previewBrowser, [], function () {
-    return content.document.body.textContent;
+    
+    
+    
+    
+    return content.document.body.innerText;
   });
 }
 
