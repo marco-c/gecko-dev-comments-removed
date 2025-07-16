@@ -355,11 +355,6 @@ class WalkerSearch {
           node,
           type,
         });
-
-        
-        
-        
-        break;
       }
     }
 
