@@ -130,6 +130,8 @@ NS_EVENT_MESSAGE_FIRST_LAST(ePointerEvent, ePointerMove, ePointerLostCapture)
 
 NS_EVENT_MESSAGE(eContextMenu)
 
+NS_EVENT_MESSAGE(eCommand)
+
 NS_EVENT_MESSAGE(eCueChange)
 
 NS_EVENT_MESSAGE(eBeforeToggle)
@@ -262,9 +264,6 @@ NS_EVENT_MESSAGE(eContentVisibilityAutoStateChange)
 
 NS_EVENT_MESSAGE(eSVGLoad)
 NS_EVENT_MESSAGE(eSVGScroll)
-
-
-NS_EVENT_MESSAGE(eXULCommand)
 
 
 NS_EVENT_MESSAGE(eCopy)
