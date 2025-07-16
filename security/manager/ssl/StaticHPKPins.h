@@ -1,208 +1,208 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/*****************************************************************************/
+/* This is an automatically generated file. If you're not                    */
+/* PublicKeyPinningService.cpp, you shouldn't be #including it.              */
+/*****************************************************************************/
 #include <stdint.h>
-
+/* AffirmTrust Commercial */
 static const char kAffirmTrust_CommercialFingerprint[] =
   "bEZLmlsjOl6HTadlwm8EUBDS3c/0V5TwtMfkqvpQFJU=";
 
-
+/* AffirmTrust Networking */
 static const char kAffirmTrust_NetworkingFingerprint[] =
   "lAcq0/WPcPkwmOWl9sBMlscQvYSdgxhJGa6Q64kK5AA=";
 
-
+/* AffirmTrust Premium */
 static const char kAffirmTrust_PremiumFingerprint[] =
   "x/Q7TPW3FWgpT4IrU3YmBfbd0Vyt7Oc56eLDy6YenWc=";
 
-
+/* AffirmTrust Premium ECC */
 static const char kAffirmTrust_Premium_ECCFingerprint[] =
   "MhmwkRT/SVo+tusAwu/qs0ACrl8KVsdnnqCHo/oDfk8=";
 
-
+/* Baltimore CyberTrust Root */
 static const char kBaltimore_CyberTrust_RootFingerprint[] =
   "Y9mvm0exBk1JoQ57f9Vm28jKo5lFm/woKcVxrYxu80o=";
 
-
+/* COMODO Certification Authority */
 static const char kCOMODO_Certification_AuthorityFingerprint[] =
   "AG1751Vd2CAmRCxPGieoDomhmJy4ezREjtIZTBgZbV4=";
 
-
+/* COMODO ECC Certification Authority */
 static const char kCOMODO_ECC_Certification_AuthorityFingerprint[] =
   "58qRu/uxh4gFezqAcERupSkRYBlBAvfcw7mEjGPLnNU=";
 
-
+/* COMODO RSA Certification Authority */
 static const char kCOMODO_RSA_Certification_AuthorityFingerprint[] =
   "grX4Ta9HpZx6tSHkmCrvpApTQGo67CYDnvprLg5yRME=";
 
-
+/* Comodo AAA Services root */
 static const char kComodo_AAA_Services_rootFingerprint[] =
   "vRU+17BDT2iGsXvOi76E7TQMcTLXAqj0+jGPdW7L1vM=";
 
-
+/* DigiCert Assured ID Root CA */
 static const char kDigiCert_Assured_ID_Root_CAFingerprint[] =
   "I/Lt/z7ekCWanjD0Cvj5EqXls2lOaThEA0H2Bg4BT/o=";
 
-
+/* DigiCert Assured ID Root G2 */
 static const char kDigiCert_Assured_ID_Root_G2Fingerprint[] =
   "8ca6Zwz8iOTfUpc8rkIPCgid1HQUT+WAbEIAZOFZEik=";
 
-
+/* DigiCert Assured ID Root G3 */
 static const char kDigiCert_Assured_ID_Root_G3Fingerprint[] =
   "Fe7TOVlLME+M+Ee0dzcdjW/sYfTbKwGvWJ58U7Ncrkw=";
 
-
+/* DigiCert Global Root CA */
 static const char kDigiCert_Global_Root_CAFingerprint[] =
   "r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E=";
 
-
+/* DigiCert Global Root G2 */
 static const char kDigiCert_Global_Root_G2Fingerprint[] =
   "i7WTqTvh0OioIruIfFR4kMPnBqrS2rdiVPl/s2uC/CY=";
 
-
+/* DigiCert Global Root G3 */
 static const char kDigiCert_Global_Root_G3Fingerprint[] =
   "uUwZgwDOxcBXrQcntwu+kYFpkiVkOaezL0WYEZ3anJc=";
 
-
+/* DigiCert High Assurance EV Root CA */
 static const char kDigiCert_High_Assurance_EV_Root_CAFingerprint[] =
   "WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=";
 
-
+/* DigiCert TLS ECC P384 Root G5 */
 static const char kDigiCert_TLS_ECC_P384_Root_G5Fingerprint[] =
   "oC+voZLIy4HLE0FVT5wFtxzKKokLDRKY1oNkfJYe+98=";
 
-
+/* DigiCert TLS RSA4096 Root G5 */
 static const char kDigiCert_TLS_RSA4096_Root_G5Fingerprint[] =
   "ape1HIIZ6T5d7GS61YBs3rD4NVvkfnVwELcCRW4Bqv0=";
 
-
+/* DigiCert Trusted Root G4 */
 static const char kDigiCert_Trusted_Root_G4Fingerprint[] =
   "Wd8xe/qfTwq3ylFNd3IpaqLHZbh2ZNCLluVzmeNkcpw=";
 
-
+/* End Entity Test Cert */
 static const char kEnd_Entity_Test_CertFingerprint[] =
   "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=";
 
-
+/* Entrust Root Certification Authority */
 static const char kEntrust_Root_Certification_AuthorityFingerprint[] =
   "bb+uANN7nNc/j7R95lkXrwDg3d9C286sIMF8AnXuIJU=";
 
-
+/* Entrust Root Certification Authority - EC1 */
 static const char kEntrust_Root_Certification_Authority___EC1Fingerprint[] =
   "/qK31kX7pz11PB7Jp4cMQOH3sMVh6Se5hb9xGGbjbyI=";
 
-
+/* Entrust Root Certification Authority - G2 */
 static const char kEntrust_Root_Certification_Authority___G2Fingerprint[] =
   "du6FkDdMcVQ3u8prumAo6t3i3G27uMP2EOhR8R0at/U=";
 
-
+/* Entrust.net Premium 2048 Secure Server CA */
 static const char kEntrust_net_Premium_2048_Secure_Server_CAFingerprint[] =
   "HqPF5D7WbC2imDpCpKebHpBnhs6fG1hiFBmgBGOofTg=";
 
-
+/* FacebookBackup */
 static const char kFacebookBackupFingerprint[] =
   "q4PO2G2cbkZhZ82+JgmRUyGMoAeozA+BSXVXQWB8XWQ=";
 
-
+/* GOOGLE_PIN_DigiCertECCSecureServerCA */
 static const char kGOOGLE_PIN_DigiCertECCSecureServerCAFingerprint[] =
   "PZXN3lRAy+8tBKk2Ox6F7jIlnzr2Yzmwqc3JnyfXoCw=";
 
-
+/* GOOGLE_PIN_SymantecClass3EVG3 */
 static const char kGOOGLE_PIN_SymantecClass3EVG3Fingerprint[] =
   "gMxWOrX4PMQesK9qFNbYBxjBfjUvlkn/vN1n+L9lE5E=";
 
-
+/* GTS Root R1 */
 static const char kGTS_Root_R1Fingerprint[] =
   "hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgfaAp63Gc=";
 
-
+/* GTS Root R2 */
 static const char kGTS_Root_R2Fingerprint[] =
   "Vfd95BwDeSQo+NUYxVEEIlvkOlWY2SalKK1lPhzOx78=";
 
-
+/* GTS Root R3 */
 static const char kGTS_Root_R3Fingerprint[] =
   "QXnt2YHvdHR3tJYmQIr0Paosp6t/nggsEGD4QJZ3Q0g=";
 
-
+/* GTS Root R4 */
 static const char kGTS_Root_R4Fingerprint[] =
   "mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=";
 
-
+/* GlobalSign ECC Root CA - R4 */
 static const char kGlobalSign_ECC_Root_CA___R4Fingerprint[] =
   "CLOmM1/OXvSPjw5UOYbAf9GKOxImEp9hhku9W90fHMk=";
 
-
+/* GlobalSign ECC Root CA - R5 */
 static const char kGlobalSign_ECC_Root_CA___R5Fingerprint[] =
   "fg6tdrtoGdwvVFEahDVPboswe53YIFjqbABPAdndpd8=";
 
-
+/* GlobalSign Root CA */
 static const char kGlobalSign_Root_CAFingerprint[] =
   "K87oWBWM9UZfyddvDfoxL+8lpNyoUB2ptGtn0fv6G2Q=";
 
-
+/* GlobalSign Root CA - R3 */
 static const char kGlobalSign_Root_CA___R3Fingerprint[] =
   "cGuxAXyFXFkWm61cF4HPWX8S0srS9j0aSqN0k4AP+4A=";
 
-
+/* GlobalSign Root CA - R6 */
 static const char kGlobalSign_Root_CA___R6Fingerprint[] =
   "aCdH+LpiG4fN07wpXtXKvOciocDANj0daLOJKNJ4fx4=";
 
-
+/* GlobalSign Root R46 */
 static const char kGlobalSign_Root_R46Fingerprint[] =
   "rn+WLLnmp9v3uDP7GPqbcaiRdd+UnCMrap73yz3yu/w=";
 
-
+/* Go Daddy Class 2 CA */
 static const char kGo_Daddy_Class_2_CAFingerprint[] =
   "VjLZe/p3W/PJnd6lL8JVNBCGQBZynFLdZSTIqcO0SJ8=";
 
-
+/* Go Daddy Root Certificate Authority - G2 */
 static const char kGo_Daddy_Root_Certificate_Authority___G2Fingerprint[] =
   "Ko8tivDrEjiY90yGasP6ZpBU4jwXvHqVvQI0GS3GNdA=";
 
-
+/* GoogleBackup2048 */
 static const char kGoogleBackup2048Fingerprint[] =
   "IPMbDAjLVSGntGO3WP53X/zilCVndez5YJ2+vJvhJsA=";
 
-
+/* ISRG Root X1 */
 static const char kISRG_Root_X1Fingerprint[] =
   "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=";
 
-
+/* ISRG Root X2 */
 static const char kISRG_Root_X2Fingerprint[] =
   "diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI=";
 
-
+/* Starfield Class 2 CA */
 static const char kStarfield_Class_2_CAFingerprint[] =
   "FfFKxFycfaIz00eRZOgTf+Ne4POK6FgYPwhBDqgqxLQ=";
 
-
+/* Starfield Root Certificate Authority - G2 */
 static const char kStarfield_Root_Certificate_Authority___G2Fingerprint[] =
   "gI1os/q0iEpflxrOfRBVDXqVoWN3Tz7Dav/7IT++THQ=";
 
-
+/* TestSPKI */
 static const char kTestSPKIFingerprint[] =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
-
+/* USERTrust ECC Certification Authority */
 static const char kUSERTrust_ECC_Certification_AuthorityFingerprint[] =
   "ICGRfpgmOUXIWcQ/HXPLQTkFPEFPoDyjvH7ohhQpjzs=";
 
-
+/* USERTrust RSA Certification Authority */
 static const char kUSERTrust_RSA_Certification_AuthorityFingerprint[] =
   "x4QzPSC810K5/cMjb05Qm4k3Bw5zBn4lTdO/nEW/Td4=";
 
-
+/* Pinsets are each an ordered list by the actual value of the fingerprint */
 struct StaticFingerprints {
-  
+  // See bug 1338873 about making these fields const.
   size_t size;
   const char* const* data;
 };
 
-
+/* PreloadedHPKPins.json pinsets */
 static const char* const kPinset_google_root_pems_Data[] = {
   kEntrust_Root_Certification_Authority___EC1Fingerprint,
   kCOMODO_ECC_Certification_AuthorityFingerprint,
@@ -267,7 +267,7 @@ static const StaticFingerprints kPinset_mozilla_test = {
   kPinset_mozilla_test_Data
 };
 
-
+/* Chrome static pinsets */
 static const char* const kPinset_test_Data[] = {
   kTestSPKIFingerprint,
 };
@@ -316,9 +316,9 @@ static const StaticFingerprints kPinset_facebook = {
   kPinset_facebook_Data
 };
 
-
+/* Domainlist */
 struct TransportSecurityPreload {
-  
+  // See bug 1338873 about making these fields const.
   const char* mHost;
   bool mIncludeSubdomains;
   bool mTestMode;
@@ -327,7 +327,7 @@ struct TransportSecurityPreload {
   const StaticFingerprints* pinset;
 };
 
-
+/* Sort hostnames for binary search. */
 static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "2mdn.net", true, false, false, -1, &kPinset_google_root_pems },
   { "accounts.firefox.com", true, false, true, 4, &kPinset_mozilla_services },
@@ -732,8 +732,8 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "ytimg.com", true, false, false, -1, &kPinset_google_root_pems },
 };
 
-
+// Pinning Preload List Length = 401;
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1760012114547000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1760354906917000);
