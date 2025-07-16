@@ -613,9 +613,6 @@ def enable_code_coverage(config, tasks):
             task["instance-size"] = "xlarge-noscratch"
             if "jittest" in task["test-name"]:
                 task["instance-size"] = "xlarge"
-            elif task["suite"] == "xpcshell" and "linux" in task["build-platform"]:
-                
-                task["instance-size"] = "large-dw"
 
             
             if "mac" in task["build-platform"]:
