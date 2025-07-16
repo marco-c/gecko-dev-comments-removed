@@ -147,6 +147,16 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     const TimeStamp& Timeout() const { return mTimeout; }
     const TimeDuration& Delay() const { return mDelay; }
 
+#ifdef DEBUG
+    
+    
+    
+    bool IsTimerInThreadAndUnchanged() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+      return (mTimerImpl && mTimerImpl->IsInTimerThread() &&
+              mTimerImpl->mTimeout == mTimeout);
+    }
+#endif
+
    private:
     
     
