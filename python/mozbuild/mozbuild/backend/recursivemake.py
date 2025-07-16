@@ -522,6 +522,12 @@ class RecursiveMakeBackend(MakeBackend):
                     backend_file.write("%s := %s\n" % (k, path))
                 else:
                     backend_file.write("%s := %s\n" % (k, v))
+
+            
+            
+            if "XPI_PKGNAME" in obj.variables:
+                self._no_skip["tools"].add(backend_file.relobjdir)
+
         elif isinstance(obj, HostDefines):
             self._process_defines(obj, backend_file, which="HOST_DEFINES")
         elif isinstance(obj, Defines):
@@ -991,29 +997,19 @@ class RecursiveMakeBackend(MakeBackend):
                 obj.config = bf.environment
                 self._create_makefile(obj, stub=stub)
                 with open(obj.output_path, encoding="utf-8") as fh:
+                    topobjdir = self.environment.topobjdir
                     content = fh.read()
                     
                     
-                    
-                    for t in ("XPI_PKGNAME", "tools"):
-                        if t not in content:
-                            continue
-                        if t == "tools" and not re.search(
-                            r"(?:^|\s)tools.*::", content, re.M
-                        ):
-                            continue
-                        if objdir == self.environment.topobjdir:
-                            continue
-                        self._no_skip["tools"].add(
-                            mozpath.relpath(objdir, self.environment.topobjdir)
-                        )
+                    if objdir != topobjdir and re.search(
+                        r"(?:^|\s)tools.*::", content, re.M
+                    ):
+                        self._no_skip["tools"].add(mozpath.relpath(objdir, topobjdir))
 
                     
                     
                     if re.search(r"(?:^|\s)check.*::", content, re.M):
-                        self._no_skip["check"].add(
-                            mozpath.relpath(objdir, self.environment.topobjdir)
-                        )
+                        self._no_skip["check"].add(mozpath.relpath(objdir, topobjdir))
 
                     
                     
