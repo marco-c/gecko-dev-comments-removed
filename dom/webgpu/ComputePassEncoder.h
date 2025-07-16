@@ -51,6 +51,10 @@ class ComputePassEncoder final : public ObjectBase,
   nsTArray<RefPtr<const ComputePipeline>> mUsedPipelines;
 
   
+  
+  CanvasContextArray mUsedCanvasContexts;
+
+  
  private:
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const uint32_t* aDynamicOffsets,
@@ -79,6 +83,11 @@ class ComputePassEncoder final : public ObjectBase,
   void InsertDebugMarker(const nsAString& aString);
 
   void End();
+
+  
+  mozilla::Span<const WeakPtr<CanvasContext>> GetCanvasContexts() const {
+    return mUsedCanvasContexts;
+  }
 };
 
 }  
