@@ -223,6 +223,15 @@ tests.push({
     hasTelemetryId(engines, "Google", "google-b-lm"),
 });
 
+tests.push({
+  region: "ru",
+  distribution: "mint-001",
+  test: engines =>
+    hasDefault(engines, "Google") &&
+    hasEnginesFirst(engines, ["Google"]) &&
+    hasTelemetryId(engines, "Google", "google-com-nocodes"),
+});
+
 
 
 tests.push({
@@ -238,6 +247,16 @@ tests.push({
     hasDefault(engines, "Google") &&
     hasEnginesFirst(engines, ["Google"]) &&
     hasTelemetryId(engines, "Google", "google-b-vv"),
+});
+
+tests.push({
+  region: "ru",
+  distribution: "vivo-001",
+  application: "firefox-android",
+  test: engines =>
+    hasDefault(engines, "Google") &&
+    hasEnginesFirst(engines, ["Google"]) &&
+    hasTelemetryId(engines, "Google", "google-com-nocodes"),
 });
 
 
@@ -267,6 +286,16 @@ tests.push({
     hasDefault(engines, "Google") &&
     hasEnginesFirst(engines, ["Google"]) &&
     hasTelemetryId(engines, "Bing", "bing-MZTOF"),
+});
+
+tests.push({
+  region: "ru",
+  distribution: "dt-001",
+  application: "firefox-android",
+  test: engines =>
+    hasDefault(engines, "Google") &&
+    hasEnginesFirst(engines, ["Google"]) &&
+    hasTelemetryId(engines, "Google", "google-com-nocodes"),
 });
 
 function hasURLs(engines, engineName, url, suggestURL) {
