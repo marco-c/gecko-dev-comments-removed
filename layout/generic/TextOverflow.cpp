@@ -838,8 +838,7 @@ bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
 
   
   
-  if (aBlockFrame->GetParent() &&
-      aBlockFrame->GetParent()->IsComboboxControlFrame()) {
+  if (aBlockFrame->IsComboboxControlFrame()) {
     return false;
   }
 

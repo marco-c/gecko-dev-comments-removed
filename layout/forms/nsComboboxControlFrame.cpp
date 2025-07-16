@@ -13,35 +13,20 @@
 #include "gfxUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Likely.h"
-#include "mozilla/LookAndFeel.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsCOMPtr.h"
-#include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
-#include "nsDeviceContext.h"
-#include "nsDisplayList.h"
-#include "nsFocusManager.h"
 #include "nsGkAtoms.h"
-#include "nsHTMLParts.h"
-#include "nsIFormControl.h"
-#include "nsILayoutHistoryState.h"
 #include "nsISelectControlFrame.h"
 #include "nsITheme.h"
 #include "nsLayoutUtils.h"
-#include "nsListControlFrame.h"
-#include "nsNodeInfoManager.h"
-#include "nsPIDOMWindow.h"
 #include "nsStyleConsts.h"
 #include "nsTextFrameUtils.h"
 #include "nsTextNode.h"
 #include "nsTextRunTransformations.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -68,24 +53,22 @@ nsComboboxControlFrame::RedisplayTextEvent::Run() {
 
 nsComboboxControlFrame* NS_NewComboboxControlFrame(PresShell* aPresShell,
                                                    ComputedStyle* aStyle) {
-  nsComboboxControlFrame* it = new (aPresShell)
+  return new (aPresShell)
       nsComboboxControlFrame(aStyle, aPresShell->GetPresContext());
-  return it;
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsComboboxControlFrame)
 
 nsComboboxControlFrame::nsComboboxControlFrame(ComputedStyle* aStyle,
                                                nsPresContext* aPresContext)
-    : nsHTMLButtonControlFrame(aStyle, aPresContext, kClassID) {}
+    : ButtonControlFrame(aStyle, aPresContext, kClassID) {}
 
 nsComboboxControlFrame::~nsComboboxControlFrame() = default;
 
 NS_QUERYFRAME_HEAD(nsComboboxControlFrame)
   NS_QUERYFRAME_ENTRY(nsComboboxControlFrame)
-  NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
   NS_QUERYFRAME_ENTRY(nsISelectControlFrame)
-NS_QUERYFRAME_TAIL_INHERITING(nsHTMLButtonControlFrame)
+NS_QUERYFRAME_TAIL_INHERITING(ButtonControlFrame)
 
 #ifdef ACCESSIBILITY
 a11y::AccType nsComboboxControlFrame::AccessibleType() {
@@ -219,7 +202,8 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
                                     ReflowOutput& aDesiredSize,
                                     const ReflowInput& aReflowInput,
                                     nsReflowStatus& aStatus) {
-  MarkInReflow();
+  
+  
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   
 
@@ -233,6 +217,7 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   
   mDisplayedIndex = Select().SelectedIndex();
 
+  
   
   
   RedisplayText();
@@ -252,15 +237,16 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
     mDisplayISize += padding.IEnd(wm);
   }
 
-  nsHTMLButtonControlFrame::Reflow(aPresContext, aDesiredSize, aReflowInput,
-                                   aStatus);
+  ButtonControlFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  
+  
+  aStatus.Reset();
 }
 
 void nsComboboxControlFrame::Init(nsIContent* aContent,
                                   nsContainerFrame* aParent,
                                   nsIFrame* aPrevInFlow) {
-  nsHTMLButtonControlFrame::Init(aContent, aParent, aPrevInFlow);
-
+  ButtonControlFrame::Init(aContent, aParent, aPrevInFlow);
   mEventListener = new HTMLSelectEventListener(
       Select(), HTMLSelectEventListener::SelectType::Combobox);
 }
@@ -272,37 +258,33 @@ nsresult nsComboboxControlFrame::RedisplaySelectedText() {
 }
 
 nsresult nsComboboxControlFrame::RedisplayText() {
-  nsString previewValue;
-  nsString previousText(mDisplayedOptionTextOrPreview);
+  nsAutoString currentLabel;
+  mDisplayLabel->GetFirstChild()->AsText()->GetData(currentLabel);
 
-  Select().GetPreviewValue(previewValue);
-  
-  if (!previewValue.IsEmpty()) {
-    mDisplayedOptionTextOrPreview = previewValue;
-  } else if (mDisplayedIndex != -1 && !StyleContent()->mContent.IsNone()) {
-    GetOptionText(mDisplayedIndex, mDisplayedOptionTextOrPreview);
-  } else {
-    mDisplayedOptionTextOrPreview.Truncate();
-  }
+  nsAutoString newLabel;
+  GetLabelText(newLabel);
 
   
-  nsresult rv = NS_OK;
-  if (!previousText.Equals(mDisplayedOptionTextOrPreview)) {
-    
-    
-    
+  
+  mRedisplayTextEvent.Revoke();
 
-    
-    
-    mRedisplayTextEvent.Revoke();
-
-    NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
-                 "If we happen to run our redisplay event now, we might kill "
-                 "ourselves!");
-    mRedisplayTextEvent = new RedisplayTextEvent(this);
-    nsContentUtils::AddScriptRunner(mRedisplayTextEvent.get());
+  if (currentLabel == newLabel) {
+    return NS_OK;
   }
-  return rv;
+
+  NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
+               "If we happen to run our redisplay event now, we might kill "
+               "ourselves!");
+  mRedisplayTextEvent = new RedisplayTextEvent(this);
+  nsContentUtils::AddScriptRunner(mRedisplayTextEvent.get());
+  return NS_OK;
+}
+
+void nsComboboxControlFrame::UpdateLabelText() {
+  RefPtr<dom::Text> displayContent = mDisplayLabel->GetFirstChild()->AsText();
+  nsAutoString newLabel;
+  GetLabelText(newLabel);
+  displayContent->SetText(newLabel, true);
 }
 
 void nsComboboxControlFrame::HandleRedisplayTextEvent() {
@@ -318,25 +300,20 @@ void nsComboboxControlFrame::HandleRedisplayTextEvent() {
     return;
   }
   mRedisplayTextEvent.Forget();
-  ActuallyDisplayText(true);
+  UpdateLabelText();
   
 }
 
-void nsComboboxControlFrame::ActuallyDisplayText(bool aNotify) {
-  RefPtr<dom::Text> displayContent = mDisplayLabel->GetFirstChild()->AsText();
+void nsComboboxControlFrame::GetLabelText(nsAString& aLabel) {
+  Select().GetPreviewValue(aLabel);
   
-  
-  
-  
-  
-  
-  
-  
-  
-  displayContent->SetText(mDisplayedOptionTextOrPreview.IsEmpty()
-                              ? u"\ufeff"_ns
-                              : mDisplayedOptionTextOrPreview,
-                          aNotify);
+  if (!aLabel.IsEmpty()) {
+    return;
+  }
+  if (mDisplayedIndex != -1 && !StyleContent()->mContent.IsNone()) {
+    GetOptionText(mDisplayedIndex, aLabel);
+  }
+  EnsureNonEmptyLabel(aLabel);
 }
 
 bool nsComboboxControlFrame::IsDroppedDown() const {
@@ -395,28 +372,21 @@ nsresult nsComboboxControlFrame::HandleEvent(nsPresContext* aPresContext,
     return NS_OK;
   }
 
-  return nsHTMLButtonControlFrame::HandleEvent(aPresContext, aEvent,
-                                               aEventStatus);
+  return ButtonControlFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
 }
 
 nsresult nsComboboxControlFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   dom::Document* doc = mContent->OwnerDoc();
   mDisplayLabel = doc->CreateHTMLElement(nsGkAtoms::label);
-
   {
     RefPtr<nsTextNode> text = doc->CreateEmptyTextNode();
     mDisplayLabel->AppendChildTo(text, false, IgnoreErrors());
+    
+    UpdateLabelText();
   }
-
-  
-  mDisplayedIndex = Select().SelectedIndex();
-  if (mDisplayedIndex != -1) {
-    GetOptionText(mDisplayedIndex, mDisplayedOptionTextOrPreview);
-  }
-  ActuallyDisplayText(false);
-
   aElements.AppendElement(mDisplayLabel);
+
   if (HasDropDownButton()) {
     mButtonContent = mContent->OwnerDoc()->CreateHTMLElement(nsGkAtoms::button);
     {
@@ -481,8 +451,7 @@ void ComboboxLabelFrame::Reflow(nsPresContext* aPresContext,
                                 nsReflowStatus& aStatus) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
-  const nsComboboxControlFrame* combobox =
-      do_QueryFrame(GetParent()->GetParent());
+  const nsComboboxControlFrame* combobox = do_QueryFrame(GetParent());
   MOZ_ASSERT(combobox, "Combobox's frame tree is wrong!");
   MOZ_ASSERT(aReflowInput.ComputedPhysicalBorderPadding() == nsMargin(),
              "We shouldn't have border and padding in UA!");
@@ -508,7 +477,7 @@ void nsComboboxControlFrame::Destroy(DestroyContext& aContext) {
 
   aContext.AddAnonymousContent(mDisplayLabel.forget());
   aContext.AddAnonymousContent(mButtonContent.forget());
-  nsHTMLButtonControlFrame::Destroy(aContext);
+  ButtonControlFrame::Destroy(aContext);
 }
 
 

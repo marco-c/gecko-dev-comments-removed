@@ -596,6 +596,9 @@ void nsBlockFrame::InvalidateFrameWithRect(const nsRect& aRect,
 
 nscoord nsBlockFrame::SynthesizeFallbackBaseline(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+  if (IsButtonLike() && StyleDisplay()->IsInlineOutsideStyle()) {
+    return Baseline::SynthesizeBOffsetFromContentBox(this, aWM, aBaselineGroup);
+  }
   return Baseline::SynthesizeBOffsetFromMarginBox(this, aWM, aBaselineGroup);
 }
 
@@ -662,13 +665,21 @@ Maybe<nscoord> nsBlockFrame::GetNaturalBaselineBOffset(
     return Nothing{};
   }
 
-  if (aBaselineGroup == BaselineSharingGroup::First) {
-    return GetBaselineBOffset(LinesBegin(), LinesEnd(), aWM, aBaselineGroup,
-                              aExportContext);
+  Maybe<nscoord> offset =
+      aBaselineGroup == BaselineSharingGroup::First
+          ? GetBaselineBOffset(LinesBegin(), LinesEnd(), aWM, aBaselineGroup,
+                               aExportContext)
+          : GetBaselineBOffset(LinesRBegin(), LinesREnd(), aWM, aBaselineGroup,
+                               aExportContext);
+  if (!offset && IsButtonLike() && !mLines.empty()) {
+    
+    
+    nscoord bEnd = mLines.back()->BEnd();
+    offset.emplace(aBaselineGroup == BaselineSharingGroup::Last
+                       ? BSize(aWM) - bEnd
+                       : bEnd);
   }
-
-  return GetBaselineBOffset(LinesRBegin(), LinesREnd(), aWM, aBaselineGroup,
-                            aExportContext);
+  return offset;
 }
 
 nscoord nsBlockFrame::GetCaretBaseline() const {
@@ -2263,7 +2274,8 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     aMetrics.mCarriedOutBEndMargin.Zero();
-  } else if (Maybe<nscoord> containBSize = ContainIntrinsicBSize()) {
+  } else if (Maybe<nscoord> containBSize = ContainIntrinsicBSize(
+                 IsComboboxControlFrame() ? aReflowInput.GetLineHeight() : 0)) {
     
     
     
@@ -2397,7 +2409,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 void nsBlockFrame::AlignContent(BlockReflowState& aState,
                                 ReflowOutput& aMetrics,
                                 nscoord aBEndEdgeOfChildren) {
-  StyleAlignFlags alignment = StylePosition()->mAlignContent.primary;
+  StyleAlignFlags alignment = EffectiveAlignContent();
   alignment &= ~StyleAlignFlags::FLAG_BITS;
 
   
@@ -2423,7 +2435,8 @@ void nsBlockFrame::AlignContent(BlockReflowState& aState,
   if ((isCentered || isEndAlign) && !mLines.empty() &&
       aState.mReflowStatus.IsFullyComplete() && !GetPrevInFlow()) {
     nscoord availB = aState.mReflowInput.AvailableBSize();
-    nscoord endB = aMetrics.BSize(wm) - aState.BorderPadding().BEnd(wm);
+    nscoord endB =
+        aMetrics.Size(wm).BSize(wm) - aState.BorderPadding().BEnd(wm);
     shift = std::min(availB, endB) - aBEndEdgeOfChildren;
 
     
@@ -2646,6 +2659,13 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
   
   
   const auto wm = GetWritingMode();
+
+  
+  
+  
+  
+  aAsIfScrolled = aAsIfScrolled && !IsButtonControlFrame();
+
   
   
   
@@ -6765,7 +6785,6 @@ static bool AnonymousBoxIsBFC(const ComputedStyle* aStyle) {
   switch (aStyle->GetPseudoType()) {
     case PseudoStyleType::fieldsetContent:
     case PseudoStyleType::columnContent:
-    case PseudoStyleType::buttonContent:
     case PseudoStyleType::cellContent:
     case PseudoStyleType::scrolledContent:
     case PseudoStyleType::anonymousItem:
@@ -6788,8 +6807,6 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
          disp->mContainerType != StyleContainerType::Normal ||
          disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
          disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
-         aStyle->StylePosition()->mAlignContent.primary !=
-             StyleAlignFlags::NORMAL ||
          aStyle->IsRootElementStyle() || AnonymousBoxIsBFC(aStyle);
 }
 
@@ -6819,6 +6836,10 @@ static bool EstablishesBFC(const nsBlockFrame* aFrame) {
   }
 
   if (aFrame->IsColumnSpan()) {
+    return true;
+  }
+
+  if (aFrame->IsContentAligned()) {
     return true;
   }
 
@@ -8122,27 +8143,31 @@ a11y::AccType nsBlockFrame::AccessibleType() {
     return a11y::eHTMLHRType;
   }
 
-  if (!HasMarker() || !PresContext()) {
-    
-    if (!mContent->GetParent()) {
-      
-      
-      
-      return a11y::eNoType;
-    }
+  if (IsButtonLike()) {
+    return a11y::eHTMLButtonType;
+  }
 
-    if (mContent == mContent->OwnerDoc()->GetBody()) {
-      
-      
-      return a11y::eNoType;
-    }
-
+  if (HasMarker()) {
     
-    return a11y::eHyperTextType;
+    return a11y::eHTMLLiType;
   }
 
   
-  return a11y::eHTMLLiType;
+  if (!mContent->GetParent()) {
+    
+    
+    
+    return a11y::eNoType;
+  }
+
+  if (mContent == mContent->OwnerDoc()->GetBody()) {
+    
+    
+    return a11y::eNoType;
+  }
+
+  
+  return a11y::eHyperTextType;
 }
 #endif
 
@@ -8312,8 +8337,6 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
          (pseudo == PseudoStyleType::cellContent &&
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
          pseudo == PseudoStyleType::fieldsetContent ||
-         (pseudo == PseudoStyleType::buttonContent &&
-          !GetParent()->IsComboboxControlFrame()) ||
          pseudo == PseudoStyleType::columnContent ||
          (pseudo == PseudoStyleType::scrolledContent &&
           !GetParent()->IsListControlFrame()) ||

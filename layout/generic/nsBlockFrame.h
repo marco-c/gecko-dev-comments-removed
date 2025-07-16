@@ -530,24 +530,34 @@ class nsBlockFrame : public nsContainerFrame {
 
   nsresult ResolveBidi();
 
-  
-
-
-
-
-
-
-
-  bool IsVisualFormControl(nsPresContext* aPresContext);
-
-  
-  bool IsAligned() const {
-    return StylePosition()->mAlignContent.primary !=
-           mozilla::StyleAlignFlags::NORMAL;
+ public:
+  bool IsButtonControlFrame() const {
+    return IsInputButtonControlFrame() || IsColorControlFrame() ||
+           IsComboboxControlFrame();
   }
 
+  bool IsButtonLike() const {
+    if (!Style()->IsAnonBox() && mContent->IsHTMLElement(nsGkAtoms::button)) {
+      return true;
+    }
+    return IsButtonControlFrame();
+  }
+
+  
+  mozilla::StyleAlignFlags EffectiveAlignContent() const {
+    if (IsButtonLike()) {
+      return mozilla::StyleAlignFlags::CENTER;
+    }
+    return StylePosition()->mAlignContent.primary;
+  }
+
+  bool IsContentAligned() const {
+    return EffectiveAlignContent() != mozilla::StyleAlignFlags::NORMAL;
+  }
+
+ protected:
   nscoord GetAlignContentShift() const {
-    return IsAligned() ? GetProperty(AlignContentShift()) : 0;
+    return IsContentAligned() ? GetProperty(AlignContentShift()) : 0;
   }
 
   

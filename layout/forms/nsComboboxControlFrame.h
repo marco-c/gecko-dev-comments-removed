@@ -7,8 +7,8 @@
 #ifndef nsComboboxControlFrame_h___
 #define nsComboboxControlFrame_h___
 
+#include "ButtonControlFrame.h"
 #include "mozilla/Attributes.h"
-#include "nsHTMLButtonControlFrame.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIRollupListener.h"
 #include "nsISelectControlFrame.h"
@@ -23,8 +23,7 @@ class HTMLSelectElement;
 }
 }  
 
-class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
-                                     public nsIAnonymousContentCreator,
+class nsComboboxControlFrame final : public mozilla::ButtonControlFrame,
                                      public nsISelectControlFrame {
   using Element = mozilla::dom::Element;
 
@@ -48,10 +47,8 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
 
   nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                          mozilla::IntrinsicISizeType aType) final;
-
-  
-  
-  nsContainerFrame* GetContentInsertionFrame() override { return this; }
+  void GetLabelText(nsAString&);
+  void UpdateLabelText();
 
   void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput, nsReflowStatus& aStatus) final;
@@ -98,16 +95,6 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
   bool HasDropDownButton() const;
   nscoord DropDownButtonISize();
 
-  enum DropDownPositionState {
-    
-    eDropDownPositionSuppressed,
-    
-    eDropDownPositionPendingResize,
-    
-    eDropDownPositionFinal
-  };
-  DropDownPositionState AbsolutelyPositionDropDown();
-
   enum class Type { Longest, Current };
   nscoord GetOptionISize(gfxContext*, Type) const;
 
@@ -125,11 +112,13 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
 
   nsresult RedisplayText();
   void HandleRedisplayTextEvent();
-  void ActuallyDisplayText(bool aNotify);
 
   mozilla::dom::HTMLSelectElement& Select() const;
   void GetOptionText(uint32_t aIndex, nsAString& aText) const;
 
+  
+  
+  
   RefPtr<Element> mDisplayLabel;   
   RefPtr<Element> mButtonContent;  
   nsRevocableEventPtr<RedisplayTextEvent> mRedisplayTextEvent;
@@ -138,7 +127,6 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
   
   nscoord mDisplayISize = 0;
   int32_t mDisplayedIndex = -1;
-  nsString mDisplayedOptionTextOrPreview;
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 };
 

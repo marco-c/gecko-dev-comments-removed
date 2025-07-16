@@ -4864,6 +4864,42 @@ static bool IsUnderlineRight(const ComputedStyle& aStyle) {
          nsStyleUtil::MatchesLanguagePrefix(langAtom, u"mn");
 }
 
+static bool FrameStopsLineDecorationPropagation(nsIFrame* aFrame,
+                                                nsBlockFrame* aFrameAsBlock,
+                                                nsCompatibility aCompatMode) {
+  MOZ_ASSERT_IF(aFrameAsBlock, aFrameAsBlock == aFrame);
+  
+  
+  
+  mozilla::StyleDisplay display = aFrame->GetDisplay();
+  
+  if (aFrameAsBlock && aFrameAsBlock->IsButtonLike()) {
+    display = aFrame->StyleDisplay()->mOriginalDisplay;
+  }
+  if (!display.IsInlineFlow() &&
+      (!display.IsRuby() ||
+       display == mozilla::StyleDisplay::RubyTextContainer) &&
+      display.IsInlineOutside()) {
+    return true;
+  }
+  
+  if (aCompatMode == eCompatibility_NavQuirks &&
+      aFrame->GetContent()->IsHTMLElement(nsGkAtoms::table)) {
+    return true;
+  }
+  
+  
+  if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    return true;
+  }
+  
+  
+  if (aFrame->IsSVGOuterSVGFrame()) {
+    return true;
+  }
+  return false;
+}
+
 void nsTextFrame::GetTextDecorations(
     nsPresContext* aPresContext,
     nsTextFrame::TextDecorationColorResolution aColorResolution,
@@ -5035,34 +5071,7 @@ void nsTextFrame::GetTextDecorations(
             !ignoreSubproperties));
       }
     }
-
-    
-    
-    
-    
-    mozilla::StyleDisplay display = f->GetDisplay();
-    if (!display.IsInlineFlow() &&
-        (!display.IsRuby() ||
-         display == mozilla::StyleDisplay::RubyTextContainer) &&
-        display.IsInlineOutside()) {
-      break;
-    }
-
-    
-    if (compatMode == eCompatibility_NavQuirks &&
-        f->GetContent()->IsHTMLElement(nsGkAtoms::table)) {
-      break;
-    }
-
-    
-    
-    if (f->IsFloating() || f->IsAbsolutelyPositioned()) {
-      break;
-    }
-
-    
-    
-    if (f->IsSVGOuterSVGFrame()) {
+    if (FrameStopsLineDecorationPropagation(f, fBlock, compatMode)) {
       break;
     }
   }

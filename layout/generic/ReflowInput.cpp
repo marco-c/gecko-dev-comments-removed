@@ -2951,7 +2951,6 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
 
   
   const nsStyleMargin* styleMargin = mFrame->StyleMargin();
-
   nsMargin margin;
   const bool isLayoutDependent = !styleMargin->GetMargin(margin);
   if (isLayoutDependent) {

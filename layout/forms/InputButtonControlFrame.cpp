@@ -1,0 +1,175 @@
+
+
+
+
+
+
+#include "ButtonControlFrame.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "nsContentUtils.h"
+#include "nsIFormControl.h"
+#include "nsTextNode.h"
+
+using namespace mozilla;
+
+namespace mozilla {
+
+
+class InputButtonControlFrame final : public ButtonControlFrame {
+ public:
+  InputButtonControlFrame(ComputedStyle* aStyle, nsPresContext* aPc)
+      : ButtonControlFrame(aStyle, aPc, kClassID) {}
+
+  NS_DECL_FRAMEARENA_HELPERS(InputButtonControlFrame)
+
+#ifdef DEBUG_FRAME_DUMP
+  nsresult GetFrameName(nsAString& aResult) const override {
+    return MakeFrameName(u"InputButtonControl"_ns, aResult);
+  }
+#endif
+
+  void Destroy(DestroyContext&) override;
+
+  
+  nsresult CreateAnonymousContent(nsTArray<ContentInfo>&) override;
+  void AppendAnonymousContentTo(nsTArray<nsIContent*>&,
+                                uint32_t aFilter) override;
+
+ protected:
+  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                            int32_t aModType) override;
+  void GetDefaultLabel(nsAString&) const;
+  void GetLabel(nsAString& aLabel);
+  void UpdateLabel();
+
+  RefPtr<nsTextNode> mTextContent;
+};
+
+NS_IMPL_FRAMEARENA_HELPERS(InputButtonControlFrame);
+
+void InputButtonControlFrame::Destroy(DestroyContext& aContext) {
+  aContext.AddAnonymousContent(mTextContent.forget());
+  ButtonControlFrame::Destroy(aContext);
+}
+
+
+
+nsresult InputButtonControlFrame::CreateAnonymousContent(
+    nsTArray<ContentInfo>& aElements) {
+  nsAutoString label;
+  GetLabel(label);
+
+  
+  mTextContent = new (mContent->NodeInfo()->NodeInfoManager())
+      nsTextNode(mContent->NodeInfo()->NodeInfoManager());
+
+  
+  mTextContent->SetText(label, false);
+  aElements.AppendElement(mTextContent);
+  return NS_OK;
+}
+
+void InputButtonControlFrame::AppendAnonymousContentTo(
+    nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
+  if (mTextContent) {
+    aElements.AppendElement(mTextContent);
+  }
+}
+
+
+
+
+
+
+
+void InputButtonControlFrame::GetDefaultLabel(nsAString& aLabel) const {
+  const auto* form = nsIFormControl::FromNode(mContent);
+  MOZ_ASSERT(form);
+
+  auto type = form->ControlType();
+  nsCString prop;
+  if (type == FormControlType::InputReset) {
+    prop.AssignLiteral("Reset");
+  } else if (type == FormControlType::InputSubmit) {
+    prop.AssignLiteral("Submit");
+  } else {
+    aLabel.Truncate();
+    return;
+  }
+
+  if (NS_FAILED(nsContentUtils::GetMaybeLocalizedString(
+          nsContentUtils::eFORMS_PROPERTIES, prop.get(), mContent->OwnerDoc(),
+          aLabel))) {
+    
+    CopyUTF8toUTF16(prop, aLabel);
+  }
+}
+
+void InputButtonControlFrame::GetLabel(nsAString& aLabel) {
+  
+  
+  auto* elt = dom::HTMLInputElement::FromNode(mContent);
+  if (elt && elt->HasAttr(nsGkAtoms::value)) {
+    elt->GetValue(aLabel, dom::CallerType::System);
+  } else {
+    
+    
+    
+    
+    GetDefaultLabel(aLabel);
+  }
+
+  
+  if (!StyleText()->WhiteSpaceIsSignificant()) {
+    aLabel.CompressWhitespace();
+  } else if (aLabel.Length() > 2 && aLabel.First() == ' ' &&
+             aLabel.CharAt(aLabel.Length() - 1) == ' ') {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aLabel.Cut(0, 1);
+    aLabel.Truncate(aLabel.Length() - 1);
+  }
+}
+
+void InputButtonControlFrame::UpdateLabel() {
+  if (!mTextContent) {
+    return;
+  }
+  nsAutoString label;
+  GetLabel(label);
+  mTextContent->SetText(label, true);
+}
+
+nsresult InputButtonControlFrame::AttributeChanged(int32_t aNameSpaceID,
+                                                   nsAtom* aAttribute,
+                                                   int32_t aModType) {
+  
+  if (nsGkAtoms::value == aAttribute) {
+    UpdateLabel();
+  }
+  return nsBlockFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
+}
+
+}  
+
+nsIFrame* NS_NewInputButtonControlFrame(PresShell* aPresShell,
+                                        ComputedStyle* aStyle) {
+  return new (aPresShell)
+      InputButtonControlFrame(aStyle, aPresShell->GetPresContext());
+}

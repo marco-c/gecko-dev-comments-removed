@@ -720,6 +720,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 #define FCDATA_USE_CHILD_ITEMS 0x10000
   
+  
 
 
 
@@ -727,13 +728,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
 
 #define FCDATA_IS_SVG_TEXT 0x80000
-  
-
-
-
-
-
-#define FCDATA_ALLOW_GRID_FLEX_COLUMN 0x200000
   
 
 
@@ -1434,6 +1428,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                                      ComputedStyle&);
   static const FrameConstructionData* FindImgData(const Element&,
                                                   ComputedStyle&);
+  static const FrameConstructionData* FindHTMLButtonData(const Element&,
+                                                         ComputedStyle&);
   static const FrameConstructionData* FindGeneratedImageData(const Element&,
                                                              ComputedStyle&);
   static const FrameConstructionData* FindImgControlData(const Element&,

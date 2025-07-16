@@ -31,7 +31,6 @@
 #include "nsCSSFrameConstructor.h"
 #include "nsDisplayList.h"
 #include "nsFieldSetFrame.h"
-#include "nsHTMLButtonControlFrame.h"
 #include "nsHashKeys.h"
 #include "nsIFrameInlines.h"  
 #include "nsLayoutUtils.h"
@@ -4097,8 +4096,6 @@ static Subgrid* SubgridComputeMarginBorderPadding(
           aGridItem.mFrame->GetScrollTargetFrame()) {
     scroller = true;
     outerFrame = scrollContainerFrame;
-  } else if (nsHTMLButtonControlFrame* f = do_QueryFrame(aGridItem.mFrame)) {
-    outerFrame = f;
   }
 
   if (outerFrame) {
