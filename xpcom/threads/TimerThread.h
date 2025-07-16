@@ -73,8 +73,8 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   void RemoveFirstTimerInternal() MOZ_REQUIRES(mMonitor);
   nsresult Init() MOZ_REQUIRES(mMonitor);
 
-  void PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef)
-      MOZ_REQUIRES(mMonitor);
+  void PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef,
+                      uint64_t aTimerSeq) MOZ_REQUIRES(mMonitor);
 
   
   
@@ -101,13 +101,16 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     explicit Entry(nsTimerImpl& aTimerImpl)
         : mTimeout(aTimerImpl.mTimeout),
           mDelay(aTimerImpl.mDelay),
+          mTimerSeq(aTimerImpl.mTimerSeq),
           mTimerImpl(&aTimerImpl) {
       aTimerImpl.SetIsInTimerThread(true);
     }
 
     
+    
+    
     explicit Entry(TimeStamp aTimeout)
-        : mTimeout(std::move(aTimeout)), mTimerImpl(nullptr) {}
+        : mTimeout(std::move(aTimeout)), mTimerSeq(0), mTimerImpl(nullptr) {}
 
     
     Entry(const Entry&) = delete;
@@ -146,6 +149,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
     const TimeStamp& Timeout() const { return mTimeout; }
     const TimeDuration& Delay() const { return mDelay; }
+    uint64_t Sequence() const { return mTimerSeq; }
 
 #ifdef DEBUG
     
@@ -163,6 +167,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     
     TimeStamp mTimeout;
     TimeDuration mDelay;
+    uint64_t mTimerSeq;
 
     RefPtr<nsTimerImpl> mTimerImpl;
   };

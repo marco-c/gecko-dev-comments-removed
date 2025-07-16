@@ -70,9 +70,7 @@ class nsTimerImpl {
   void SetDelayInternal(uint32_t aDelay, TimeStamp aBase = TimeStamp::Now());
   void CancelImpl(bool aClearITimer);
 
-  void Fire(int32_t aGeneration);
-
-  int32_t GetGeneration() { return mGeneration; }
+  void Fire(uint64_t aTimerSeq);
 
   struct UnknownCallback {};
 
@@ -164,7 +162,7 @@ class nsTimerImpl {
   
   
   
-  int32_t mGeneration;
+  uint64_t mTimerSeq MOZ_GUARDED_BY(mMutex);
 
   mozilla::TimeDuration mDelay MOZ_GUARDED_BY(mMutex);
   

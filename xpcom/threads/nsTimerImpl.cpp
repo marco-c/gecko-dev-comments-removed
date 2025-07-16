@@ -34,9 +34,16 @@
 using mozilla::Atomic;
 using mozilla::LogLevel;
 using mozilla::MakeRefPtr;
+using mozilla::MemoryOrdering;
 using mozilla::MutexAutoLock;
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;
+
+
+
+
+
+static Atomic<uint64_t, MemoryOrdering::Relaxed> sLastTimerSeq{0};
 
 
 
@@ -376,7 +383,7 @@ nsTimerImpl::nsTimerImpl(nsITimer* aTimer, nsIEventTarget* aTarget)
     : mEventTarget(aTarget),
       mIsInTimerThread(false),
       mType(0),
-      mGeneration(0),
+      mTimerSeq(0),
       mITimer(aTimer),
       mMutex("nsTimerImpl::mMutex"),
       mCallback(UnknownCallback{}),
@@ -417,8 +424,7 @@ nsresult nsTimerImpl::InitCommon(const TimeDuration& aDelay, uint32_t aType,
   
   
   std::swap(mCallback, newCallback);
-  ++mGeneration;
-
+  mTimerSeq = ++sLastTimerSeq;
   mType = (uint8_t)aType;
   mDelay = aDelay;
   mTimeout = TimeStamp::Now() + mDelay;
@@ -508,7 +514,7 @@ void nsTimerImpl::CancelImpl(bool aClearITimer) {
     
     
     std::swap(cbTrash, mCallback);
-    ++mGeneration;
+    mTimerSeq = 0;
 
     
     
@@ -532,6 +538,10 @@ nsresult nsTimerImpl::SetDelay(uint32_t aDelay) {
         "one-shot timer is not set up.");
     return NS_ERROR_NOT_INITIALIZED;
   }
+
+  
+  
+  
 
   bool reAdd = false;
   reAdd = NS_SUCCEEDED(gThreadWrapper.RemoveTimer(this, lock));
@@ -612,7 +622,7 @@ nsresult nsTimerImpl::GetAllowedEarlyFiringMicroseconds(uint32_t* aValueOut) {
   return NS_OK;
 }
 
-void nsTimerImpl::Fire(int32_t aGeneration) {
+void nsTimerImpl::Fire(uint64_t aTimerSeq) {
   uint8_t oldType;
   uint32_t oldDelay;
   TimeStamp oldTimeout;
@@ -623,7 +633,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
     
     
     MutexAutoLock lock(mMutex);
-    if (aGeneration != mGeneration) {
+    if (aTimerSeq != mTimerSeq) {
       
       
       return;
@@ -684,7 +694,8 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
   TimeStamp now = TimeStamp::Now();
 
   MutexAutoLock lock(mMutex);
-  if (aGeneration == mGeneration) {
+  
+  if (aTimerSeq == mTimerSeq) {
     if (IsRepeating()) {
       
       if (IsSlack()) {
@@ -702,6 +713,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
           mTimeout = now;
         }
       }
+      MOZ_ASSERT(!mCallback.is<UnknownCallback>());
       gThreadWrapper.AddTimer(this, lock);
     } else {
       
