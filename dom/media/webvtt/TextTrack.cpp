@@ -293,6 +293,7 @@ void TextTrack::GetOverlappingCurrentOtherAndMissCues(
   
   MOZ_ASSERT(aCurrentCues && aOtherCues);
   const double playbackTime = mediaElement->CurrentTime();
+  const double intervalStart = aInterval.mStart.ToSeconds();
   const double intervalEnd = aInterval.mEnd.ToSeconds();
 
   if (intervalEnd < (*mCueList)[0]->StartTime()) {
@@ -333,7 +334,7 @@ void TextTrack::GetOverlappingCurrentOtherAndMissCues(
       if (cueEnd < cueStart) {
         
         
-        if (aInterval.Contains(media::TimeUnit::FromSeconds(cueStart))) {
+        if (intervalStart <= cueStart && cueStart < intervalEnd) {
           WEBVTT_LOG(
               "[Negative duration] Add cue %p [%f:%f] to other cues and "
               "missing cues list",
@@ -343,10 +344,8 @@ void TextTrack::GetOverlappingCurrentOtherAndMissCues(
         }
         continue;
       }
-      media::TimeInterval cueInterval(media::TimeUnit::FromSeconds(cueStart),
-                                      media::TimeUnit::FromSeconds(cueEnd));
       
-      if (!aInterval.Touches(cueInterval)) {
+      if (cueEnd < intervalStart || cueStart > intervalEnd) {
         continue;
       }
       WEBVTT_LOG("Add cue %p [%f:%f] to other cue list", cue, cueStart, cueEnd);
