@@ -12897,6 +12897,12 @@ void PresShell::EventHandler::EventTargetData::
     MOZ_ASSERT(mContent == mFrame->GetContentForEvent(aGUIEvent));
     return;
   }
+  
+  
+  if (mContent->IsHTMLElement(nsGkAtoms::area)) {
+    MOZ_ASSERT(mContent->GetPrimaryFrame() == mFrame);
+    return;
+  }
 
   
   
