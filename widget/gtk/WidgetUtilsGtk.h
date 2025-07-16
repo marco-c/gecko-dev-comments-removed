@@ -38,8 +38,8 @@ bool IsXWaylandProtocol();
 GdkDevice* GdkGetPointer();
 
 
-void SetLastMousePressEvent(GdkEvent*);
-GdkEvent* GetLastMousePressEvent();
+void SetLastPointerDownEvent(GdkEvent*);
+GdkEvent* GetLastPointerDownEvent();
 
 
 const char* GetSnapInstanceName();
