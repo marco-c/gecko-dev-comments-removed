@@ -40,6 +40,7 @@ pub struct AtomicCell<T> {
     
     
     
+    
     value: UnsafeCell<MaybeUninit<T>>,
 }
 
@@ -1000,7 +1001,6 @@ fn lock(addr: usize) -> &'static SeqLock {
     
     
     const LEN: usize = 67;
-    #[allow(clippy::declare_interior_mutable_const)]
     const L: CachePadded<SeqLock> = CachePadded::new(SeqLock::new());
     static LOCKS: [CachePadded<SeqLock>; LEN] = [L; LEN];
 

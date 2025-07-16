@@ -16,6 +16,7 @@ pub enum ArchiveOffset {
     #[default]
     Detect,
     
+    #[deprecated(since = "2.3.0", note = "use `Detect` instead")]
     FromCentralDirectory,
     
     Known(u64),

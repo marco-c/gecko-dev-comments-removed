@@ -1,6 +1,10 @@
 
 
 
+pub(crate) const MAX_DEPTH: usize = 20;
+
+
+
 
 
 
@@ -9,13 +13,34 @@
 
 
 #[inline]
+#[deprecated(note = "use `try_recursion_guard` instead")]
 pub fn recursion_guard(
     depth: usize,
     f: impl FnOnce(usize) -> (usize, Option<usize>),
 ) -> (usize, Option<usize>) {
-    const MAX_DEPTH: usize = 20;
     if depth > MAX_DEPTH {
         (0, None)
+    } else {
+        f(depth + 1)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn try_recursion_guard(
+    depth: usize,
+    f: impl FnOnce(usize) -> Result<(usize, Option<usize>), crate::MaxRecursionReached>,
+) -> Result<(usize, Option<usize>), crate::MaxRecursionReached> {
+    if depth > MAX_DEPTH {
+        Err(crate::MaxRecursionReached {})
     } else {
         f(depth + 1)
     }

@@ -81,6 +81,7 @@ use core::ops::{Deref, DerefMut};
     any(
         target_arch = "x86_64",
         target_arch = "aarch64",
+        target_arch = "arm64ec",
         target_arch = "powerpc64",
     ),
     repr(align(128))
@@ -130,6 +131,7 @@ use core::ops::{Deref, DerefMut};
     not(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
+        target_arch = "arm64ec",
         target_arch = "powerpc64",
         target_arch = "arm",
         target_arch = "mips",
