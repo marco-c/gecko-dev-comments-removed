@@ -2246,15 +2246,15 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   const auto anchorResolutionParams =
       AnchorPosResolutionParams::From(&aFlexItemReflowInput);
   mHasAnyAutoMargin =
-      styleMargin->HasInlineAxisAuto(mCBWM, anchorResolutionParams.mPosition) ||
-      styleMargin->HasBlockAxisAuto(mCBWM, anchorResolutionParams.mPosition);
+      styleMargin->HasInlineAxisAuto(mCBWM, anchorResolutionParams) ||
+      styleMargin->HasBlockAxisAuto(mCBWM, anchorResolutionParams);
 
   
   
 #ifdef DEBUG
   {
     for (const auto side : LogicalSides::All) {
-      if (styleMargin->GetMargin(side, mCBWM, anchorResolutionParams.mPosition)
+      if (styleMargin->GetMargin(side, mCBWM, anchorResolutionParams)
               ->IsAuto()) {
         MOZ_ASSERT(GetMarginComponentForSide(side) == 0,
                    "Someone else tried to resolve our auto margin");
@@ -2494,8 +2494,7 @@ uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(mFrame);
   for (const auto edge : {LogicalEdge::Start, LogicalEdge::End}) {
     const auto side = MakeLogicalSide(aAxis, edge);
-    if (styleMargin->GetMargin(side, mCBWM, anchorResolutionParams.mPosition)
-            ->IsAuto()) {
+    if (styleMargin->GetMargin(side, mCBWM, anchorResolutionParams)->IsAuto()) {
       numAutoMargins++;
     }
   }
@@ -3591,8 +3590,7 @@ void MainAxisPositionTracker::ResolveAutoMarginsInMainAxis(FlexItem& aItem) {
     const auto anchorResolutionParams =
         AnchorPosResolutionParams::From(aItem.Frame());
     for (const auto side : {StartSide(), EndSide()}) {
-      if (styleMargin->GetMargin(side, mWM, anchorResolutionParams.mPosition)
-              ->IsAuto()) {
+      if (styleMargin->GetMargin(side, mWM, anchorResolutionParams)->IsAuto()) {
         
         
         nscoord curAutoMarginSize =
@@ -3991,8 +3989,7 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
   const auto anchorResolutionParams =
       AnchorPosResolutionParams::From(aItem.Frame());
   for (const auto side : {StartSide(), EndSide()}) {
-    if (styleMargin->GetMargin(side, mWM, anchorResolutionParams.mPosition)
-            ->IsAuto()) {
+    if (styleMargin->GetMargin(side, mWM, anchorResolutionParams)->IsAuto()) {
       MOZ_ASSERT(aItem.GetMarginComponentForSide(side) == 0,
                  "Expecting auto margins to have value '0' before we "
                  "update them");
@@ -6538,8 +6535,9 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
     const auto childWM = childFrame->GetWritingMode();
     const IntrinsicSizeInput childInput(aInput, childWM, flexWM);
     const auto* styleFrame = nsLayoutUtils::GetStyleFrame(childFrame);
+    const auto childAnchorResolutionParams =
+        AnchorPosResolutionParams::From(styleFrame);
     const auto* childStylePos = styleFrame->StylePosition();
-    const auto childPositionProperty = styleFrame->StyleDisplay()->mPosition;
 
     
     
@@ -6573,9 +6571,10 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       [[maybe_unused]] auto [alignSelf, flags] =
           UsedAlignSelfAndFlagsForItem(childFrame);
       if (alignSelf != StyleAlignFlags::STRETCH ||
-          !childStylePos->BSize(flexWM, childPositionProperty)->IsAuto() ||
-          childFrame->StyleMargin()->HasBlockAxisAuto(flexWM,
-                                                      childPositionProperty)) {
+          !childStylePos->BSize(flexWM, childAnchorResolutionParams.mPosition)
+               ->IsAuto() ||
+          childFrame->StyleMargin()->HasBlockAxisAuto(
+              flexWM, childAnchorResolutionParams)) {
         
         
         

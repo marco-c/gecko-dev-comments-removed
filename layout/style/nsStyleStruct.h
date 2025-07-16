@@ -451,24 +451,20 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   
   
   inline bool HasBlockAxisAuto(mozilla::WritingMode aWM,
-                               mozilla::StylePositionProperty aPosition) const;
+                               const AnchorPosResolutionParams& aParams) const;
   inline bool HasInlineAxisAuto(mozilla::WritingMode aWM,
-                                mozilla::StylePositionProperty aPosition) const;
+                                const AnchorPosResolutionParams& aParams) const;
   inline bool HasAuto(mozilla::LogicalAxis, mozilla::WritingMode,
-                      mozilla::StylePositionProperty) const;
+                      const AnchorPosResolutionParams& aParams) const;
 
   
   
   
   
   AnchorResolvedMargin GetMargin(
-      mozilla::Side aSide, mozilla::StylePositionProperty aPosition) const {
+      mozilla::Side aSide, const AnchorPosResolutionParams& aParams) const {
     return AnchorResolvedMarginHelper::FromUnresolved(
-        mMargin.Get(aSide), mozilla::ToStylePhysicalAxis(aSide),
-        {
-            nullptr,
-            aPosition,
-        });
+        mMargin.Get(aSide), mozilla::ToStylePhysicalAxis(aSide), aParams);
   }
 
   bool MarginEquals(const nsStyleMargin& aOther) const {
@@ -484,7 +480,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   
   inline AnchorResolvedMargin GetMargin(
       mozilla::LogicalSide aSide, mozilla::WritingMode aWM,
-      mozilla::StylePositionProperty aPosition) const;
+      const AnchorPosResolutionParams& aParams) const;
 
   mozilla::StyleRect<mozilla::StyleMargin> mMargin;
   mozilla::StyleRect<mozilla::StyleLength> mScrollMargin;

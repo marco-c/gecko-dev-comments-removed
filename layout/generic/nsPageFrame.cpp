@@ -127,8 +127,7 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
       AnchorPosResolutionParams::From(&kidReflowInput);
   if (mPD->mPrintSettings->GetHonorPageRuleMargins()) {
     for (const auto side : mozilla::AllPhysicalSides()) {
-      if (!kidReflowInput.mStyleMargin
-               ->GetMargin(side, anchorResolutionParams.mPosition)
+      if (!kidReflowInput.mStyleMargin->GetMargin(side, anchorResolutionParams)
                ->IsAuto()) {
         
         
