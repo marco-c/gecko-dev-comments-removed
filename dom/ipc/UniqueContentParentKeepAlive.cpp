@@ -9,16 +9,22 @@
 
 namespace mozilla::dom {
 
-void ContentParentKeepAliveDeleter::operator()(ContentParent* aProcess) {
+void ContentParentKeepAliveDeleter::operator()(ContentParent*& aProcess) {
   AssertIsOnMainThread();
   if (RefPtr<ContentParent> process = dont_AddRef(aProcess)) {
+    
+    
+    aProcess = nullptr;
     process->RemoveKeepAlive(mBrowserId);
   }
 }
 
 void ContentParentKeepAliveDeleter::operator()(
-    ThreadsafeContentParentHandle* aHandle) {
+    ThreadsafeContentParentHandle*& aHandle) {
   if (RefPtr<ThreadsafeContentParentHandle> handle = dont_AddRef(aHandle)) {
+    
+    
+    aHandle = nullptr;
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "ThreadsafeContentParentKeepAliveDeleter",
         [handle = std::move(handle), browserId = mBrowserId]() {

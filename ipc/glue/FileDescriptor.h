@@ -27,7 +27,7 @@ class FileDescriptor {
   typedef base::ProcessId ProcessId;
 
   using UniquePlatformHandle = mozilla::UniqueFileHandle;
-  using PlatformHandleType = UniquePlatformHandle::ElementType;
+  using PlatformHandleType = UniquePlatformHandle::element_type;
 
   
   struct IPDLPrivate {};
