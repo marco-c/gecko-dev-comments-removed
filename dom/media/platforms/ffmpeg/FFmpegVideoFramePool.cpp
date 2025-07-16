@@ -123,7 +123,11 @@ void VideoFrameSurface<LIBAV_VER>::ReleaseVAAPIData(bool aForFrameRecycle) {
   }
 
   mHoldByFFmpeg = false;
-  mSurface->ReleaseSurface();
+
+  
+  if (aForFrameRecycle) {
+    mSurface->ReleaseSurface();
+  }
 
   if (aForFrameRecycle && IsUsedByRenderer()) {
     NS_WARNING("Reusing live dmabuf surface, visual glitches ahead");
