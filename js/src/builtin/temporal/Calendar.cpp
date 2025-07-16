@@ -1089,6 +1089,14 @@ static bool JapaneseEraYearToCommonEraYear(
   return true;
 }
 
+static constexpr int32_t ethiopianYearsFromCreationToIncarnation = 5500;
+
+static int32_t FromAmeteAlemToAmeteMihret(int32_t year) {
+  
+  
+  return year - ethiopianYearsFromCreationToIncarnation;
+}
+
 static UniqueICU4XDate CreateDateFromCodes(
     JSContext* cx, CalendarId calendarId, const icu4x::capi::Calendar* calendar,
     EraYear eraYear, MonthCode monthCode, int32_t day,
@@ -1515,55 +1523,91 @@ static bool CalendarDateYear(JSContext* cx, CalendarId calendar,
                              const icu4x::capi::Date* date, int32_t* result) {
   MOZ_ASSERT(calendar != CalendarId::ISO8601);
 
-  
-  
-  
-  
-
-  if (!CalendarEraRelevant(calendar)) {
-    int32_t year = icu4x::capi::icu4x_Date_era_year_or_related_iso_mv1(date);
-    *result = year;
-    return true;
-  }
-
-  if (calendar != CalendarId::Japanese) {
-    MOZ_ASSERT(CalendarEras(calendar).size() == 2);
-
-    int32_t year = icu4x::capi::icu4x_Date_era_year_or_related_iso_mv1(date);
-    MOZ_ASSERT(year > 0, "era years are strictly positive in ICU4X");
-
-    EraCode era;
-    if (!CalendarDateEra(cx, calendar, date, &era)) {
-      return false;
+  switch (calendar) {
+    case CalendarId::ISO8601:
+    case CalendarId::Buddhist:
+    case CalendarId::Coptic:
+    case CalendarId::EthiopianAmeteAlem:
+    case CalendarId::Hebrew:
+    case CalendarId::Indian:
+    case CalendarId::Persian:
+    case CalendarId::Gregorian:
+    case CalendarId::Islamic:
+    case CalendarId::IslamicCivil:
+    case CalendarId::IslamicRGSA:
+    case CalendarId::IslamicTabular:
+    case CalendarId::IslamicUmmAlQura:
+    case CalendarId::Japanese: {
+      *result = icu4x::capi::icu4x_Date_extended_year_mv1(date);
+      return true;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (era == EraCode::Inverse) {
-      year = -(year - 1);
-    } else {
-      MOZ_ASSERT(era == EraCode::Standard);
+    case CalendarId::Chinese:
+    case CalendarId::Dangi: {
+      
+      *result = icu4x::capi::icu4x_Date_era_year_or_related_iso_mv1(date);
+      return true;
     }
 
-    *result = year;
-    return true;
+    case CalendarId::Ethiopian: {
+      
+      
+      
+      
+      
+      
+
+      int32_t year = icu4x::capi::icu4x_Date_extended_year_mv1(date);
+
+      auto eraName = EraName(date);
+      MOZ_ASSERT(
+          eraName == IcuEraName(CalendarId::Ethiopian, EraCode::Standard) ||
+          eraName ==
+              IcuEraName(CalendarId::EthiopianAmeteAlem, EraCode::Standard));
+
+      
+      if (eraName ==
+          IcuEraName(CalendarId::EthiopianAmeteAlem, EraCode::Standard)) {
+        year = FromAmeteAlemToAmeteMihret(year);
+      }
+
+      *result = year;
+      return true;
+    }
+
+    case CalendarId::ROC: {
+      static_assert(CalendarEras(CalendarId::ROC).size() == 2);
+
+      
+      
+      
+      
+
+      int32_t year = icu4x::capi::icu4x_Date_era_year_or_related_iso_mv1(date);
+      MOZ_ASSERT(year > 0, "era years are strictly positive in ICU4X");
+
+      auto eraName = EraName(date);
+      MOZ_ASSERT(eraName == IcuEraName(CalendarId::ROC, EraCode::Standard) ||
+                 eraName == IcuEraName(CalendarId::ROC, EraCode::Inverse));
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (eraName == IcuEraName(CalendarId::ROC, EraCode::Inverse)) {
+        year = -(year - 1);
+      }
+
+      *result = year;
+      return true;
+    }
   }
-
-  
-  UniqueICU4XIsoDate isoDate{icu4x::capi::icu4x_Date_to_iso_mv1(date)};
-  int32_t isoYear = icu4x::capi::icu4x_IsoDate_year_mv1(isoDate.get());
-
-  *result = isoYear;
-  return true;
+  MOZ_CRASH("invalid calendar id");
 }
 
 
