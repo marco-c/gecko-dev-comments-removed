@@ -4971,6 +4971,10 @@
       if (newTab) {
         this.addTrustedTab(BROWSER_NEW_TAB_URL, {
           skipAnimation: true,
+          
+          
+          
+          tabIndex: 0,
         });
       } else {
         TabBarVisibility.update();
