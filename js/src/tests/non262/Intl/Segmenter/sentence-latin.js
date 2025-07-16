@@ -86,7 +86,10 @@ for (let [string, words] of Object.entries(strings)) {
   assertEq([...english.segment(string)].length, 1);
 
   
-  assertEq([...greek.segment(string)].length, 2);
+  
+
+  
+  assertEq([...greek.segment(string)].length, 1);
 }
 
 if (typeof reportCompare === "function")
