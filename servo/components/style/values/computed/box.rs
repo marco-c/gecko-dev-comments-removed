@@ -5,7 +5,6 @@
 
 
 use crate::values::animated::{Animate, Procedure, ToAnimatedValue};
-use crate::values::computed::font::FixedPoint;
 use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
 use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
@@ -119,20 +118,11 @@ impl ToComputedValue for specified::Resize {
 }
 
 
-pub const ZOOM_FRACTION_BITS: u16 = 6;
-
-
-pub type ZoomFixedPoint = FixedPoint<u16, ZOOM_FRACTION_BITS>;
-
-
-
-
 #[derive(
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
-    Hash,
     MallocSizeOf,
     PartialEq,
     PartialOrd,
@@ -140,7 +130,7 @@ pub type ZoomFixedPoint = FixedPoint<u16, ZOOM_FRACTION_BITS>;
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
-pub struct Zoom(ZoomFixedPoint);
+pub struct Zoom(f32);
 
 impl ToComputedValue for specified::Zoom {
     type ComputedValue = Zoom;
@@ -156,7 +146,7 @@ impl ToComputedValue for specified::Zoom {
             
             return Zoom::ONE;
         }
-        Zoom(ZoomFixedPoint::from_float(n))
+        Zoom(n)
     }
 
     #[inline]
@@ -188,19 +178,17 @@ impl ToAnimatedValue for Zoom {
 
     #[inline]
     fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        Zoom(ZoomFixedPoint::from_float(animated.max(0.0)))
+        Zoom(animated.max(0.0))
     }
 }
 
 impl Zoom {
     
-    pub const ONE: Zoom = Zoom(ZoomFixedPoint {
-        value: 1 << ZOOM_FRACTION_BITS,
-    });
+    pub const ONE: Zoom = Zoom(1.0);
 
     
     
-    pub const DOCUMENT: Zoom = Zoom(ZoomFixedPoint { value: 0 });
+    pub const DOCUMENT: Zoom = Zoom(0.0);
 
     
     #[inline]
@@ -217,16 +205,16 @@ impl Zoom {
     
     #[inline]
     pub fn inverted(&self) -> Option<Self> {
-        if self.0.value == 0 {
+        if self.0 == 0.0 {
             return None;
         }
-        Some(Self(Self::ONE.0 / self.0))
+        Some(Self(1. / self.0))
     }
 
     
     #[inline]
     pub fn value(&self) -> f32 {
-        self.0.to_float()
+        self.0
     }
 
     
@@ -256,7 +244,7 @@ impl Zoom {
     #[inline]
     pub fn unzoom(self, value: f32) -> f32 {
         
-        if self == Self::ONE || self.0.value == 0 {
+        if self == Self::ONE || self.0 == 0.0 {
             return value;
         }
         value / self.value()

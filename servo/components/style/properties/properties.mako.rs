@@ -1708,13 +1708,13 @@ pub struct ComputedValuesInner {
     custom_properties: crate::custom_properties::ComputedCustomProperties,
 
     
-    pub writing_mode: WritingMode,
-
-    
     pub effective_zoom: computed::Zoom,
 
     
     pub flags: ComputedValueFlags,
+
+    
+    pub writing_mode: WritingMode,
 
     
     
@@ -2966,7 +2966,7 @@ macro_rules! longhand_properties_idents {
 
 
 #[cfg(feature = "gecko")]
-size_of_test!(ComputedValues, 240);
+size_of_test!(ComputedValues, 248);
 #[cfg(feature = "servo")]
 size_of_test!(ComputedValues, 208);
 
