@@ -171,6 +171,10 @@ pub(crate) struct JSONEngineVariant {
 
     
     
+    pub is_new_until: Option<String>,
+
+    
+    
     #[serde(default)]
     pub optional: bool,
 

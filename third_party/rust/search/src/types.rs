@@ -184,6 +184,10 @@ pub struct SearchEngineDefinition {
     pub identifier: String,
 
     
+    
+    pub is_new_until: Option<String>,
+
+    
     pub name: String,
 
     
