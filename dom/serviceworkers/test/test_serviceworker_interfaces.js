@@ -414,7 +414,7 @@ let interfaceNamesInGlobalScope = [
   
   "Response",
   
-  { name: "Scheduler", nightly: true },
+  "Scheduler",
   
   "ServiceWorker",
   
