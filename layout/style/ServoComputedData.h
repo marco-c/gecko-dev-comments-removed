@@ -74,15 +74,6 @@ class ServoComputedData {
 
  private:
   mozilla::ServoComputedCustomProperties custom_properties;
-  
-  
-  
-  mozilla::ServoRuleNode rules;
-  
-  
-  
-  const mozilla::ComputedStyle* visited_style;
-  
   mozilla::ServoWritingMode writing_mode;
   
   
@@ -94,8 +85,15 @@ class ServoComputedData {
   
   
   mozilla::StyleZoom effective_zoom;
-  
   mozilla::StyleComputedValueFlags flags;
+  
+  
+  
+  mozilla::ServoRuleNode rules;
+  
+  
+  
+  const mozilla::ComputedStyle* visited_style;
 
   
   
