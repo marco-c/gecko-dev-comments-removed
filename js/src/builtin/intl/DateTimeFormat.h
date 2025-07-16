@@ -174,32 +174,6 @@ class DateTimeFormatObject : public NativeObject {
 
 
 
-[[nodiscard]] extern bool intl_defaultTimeZone(JSContext* cx, unsigned argc,
-                                               JS::Value* vp);
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_defaultTimeZoneOffset(JSContext* cx,
-                                                     unsigned argc,
-                                                     JS::Value* vp);
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_isDefaultTimeZone(JSContext* cx, unsigned argc,
-                                                 JS::Value* vp);
-
-
-
-
-
-
 
 
 

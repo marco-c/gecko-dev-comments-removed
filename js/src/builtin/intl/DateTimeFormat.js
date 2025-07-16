@@ -206,63 +206,6 @@ function CanonicalizeTimeZoneName(timeZone) {
   return ianaTimeZone;
 }
 
-var timeZoneCache = {
-  icuDefaultTimeZone: undefined,
-  defaultTimeZone: undefined,
-};
-
-
-
-
-
-
-
-
-function DefaultTimeZone() {
-  if (intl_isDefaultTimeZone(timeZoneCache.icuDefaultTimeZone)) {
-    return timeZoneCache.defaultTimeZone;
-  }
-
-  
-  var icuDefaultTimeZone = intl_defaultTimeZone();
-  var timeZone = intl_IsValidTimeZoneName(icuDefaultTimeZone);
-  if (timeZone === null) {
-    
-    
-    
-    var msPerHour = 60 * 60 * 1000;
-    var offset = intl_defaultTimeZoneOffset();
-    assert(
-      offset === (offset | 0),
-      "milliseconds offset shouldn't be able to exceed int32_t range"
-    );
-    var offsetHours = offset / msPerHour;
-    var offsetHoursFraction = offset % msPerHour;
-    if (offsetHoursFraction === 0) {
-      
-      
-      timeZone =
-        "Etc/GMT" + (offsetHours < 0 ? "+" : "-") + std_Math_abs(offsetHours);
-
-      
-      timeZone = intl_IsValidTimeZoneName(timeZone);
-    }
-
-    
-    if (timeZone === null) {
-      timeZone = "UTC";
-    }
-  }
-
-  
-  var defaultTimeZone = CanonicalizeTimeZoneName(timeZone);
-
-  timeZoneCache.defaultTimeZone = defaultTimeZone;
-  timeZoneCache.icuDefaultTimeZone = icuDefaultTimeZone;
-
-  return defaultTimeZone;
-}
-
 
 
 
@@ -545,7 +488,7 @@ function InitializeDateTimeFormat(
     if (toLocaleStringTimeZone !== undefined) {
       timeZone = toLocaleStringTimeZone;
     } else {
-      timeZone = DefaultTimeZone();
+      timeZone = intl_DefaultTimeZone();
     }
 
     
