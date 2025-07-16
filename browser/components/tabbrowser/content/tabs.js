@@ -2173,18 +2173,11 @@
       this.arrowScrollbox.scrollbox.style.height = unpinnedRect.height + "px";
       this.arrowScrollbox.scrollbox.style.width = unpinnedRect.width + "px";
 
-      const pinnedTabsOrigBounds = new Map();
-
       for (let t of allTabs) {
         if (isTabGroupLabel(t)) {
           t = t.parentElement;
         }
         let tabRect = window.windowUtils.getBoundsWithoutFlushing(t);
-
-        
-        if (isGrid && t.pinned) {
-          pinnedTabsOrigBounds.set(t, tabRect);
-        }
         
         
         t.style.maxWidth = tabRect.width + "px";
@@ -2194,13 +2187,6 @@
         isTabGroupLabel(tab) ? tab.parentElement : tab
       );
       let { movingTabs } = tab._dragData;
-      
-      
-      
-      
-      let movingTabsOffsetX = window.windowUtils.getBoundsWithoutFlushing(
-        tab.offsetParent
-      ).x;
 
       let movingTabsIndex = movingTabs.findIndex(t => t._tPos == tab._tPos);
       
@@ -2221,24 +2207,21 @@
             
             movingTab.style.top = event.clientY - rect.height * 2.5 + "px";
           } else {
-            movingTab.style.left = rect.left - movingTabsOffsetX + "px";
+            movingTab.style.left = rect.left + "px";
             movingTab.style.height = rect.height + "px";
           }
         } else if (isGrid) {
           movingTab.style.top = rect.top - rect.height + "px";
-          movingTab.style.left =
-            rect.left - movingTabsOffsetX + position + "px";
+          movingTab.style.left = rect.left + position + "px";
           position += rect.width;
         } else if (this.verticalMode) {
           movingTab.style.top = rect.top + position - rect.height + "px";
           position += rect.height;
         } else if (this.#rtlMode) {
-          movingTab.style.left =
-            rect.left - movingTabsOffsetX - position + "px";
+          movingTab.style.left = rect.left - position + "px";
           position -= rect.width;
         } else {
-          movingTab.style.left =
-            rect.left - movingTabsOffsetX + position + "px";
+          movingTab.style.left = rect.left + position + "px";
           position += rect.width;
         }
       }
@@ -2259,12 +2242,10 @@
           movingTab.style.top = rect.top + position + "px";
           position -= rect.height;
         } else if (this.#rtlMode) {
-          movingTab.style.left =
-            rect.left - movingTabsOffsetX - position + "px";
+          movingTab.style.left = rect.left - position + "px";
           position += rect.width;
         } else {
-          movingTab.style.left =
-            rect.left - movingTabsOffsetX + position + "px";
+          movingTab.style.left = rect.left + position + "px";
           position -= rect.width;
         }
       }
@@ -2308,19 +2289,31 @@
       };
 
       let setGridElPosition = el => {
-        let origBounds = pinnedTabsOrigBounds.get(el);
-        if (!origBounds) {
+        let originalIndex = tab._tPos;
+        let shiftNumber = this.#maxTabsPerRow - movingTabs.length;
+        let shiftSizeX = rect.width * movingTabs.length;
+        let shiftSizeY = rect.height;
+        let shift;
+        if (el._tPos > originalIndex) {
           
-          return;
+          let tabRow = Math.floor(el._tPos / this.#maxTabsPerRow);
+          let shiftedTabRow = Math.floor(
+            (el._tPos - movingTabs.length) / this.#maxTabsPerRow
+          );
+          if (el._tPos && tabRow != shiftedTabRow) {
+            shift = [
+              this.#rtlMode
+                ? rect.width * shiftNumber
+                : -rect.width * shiftNumber,
+              shiftSizeY,
+            ];
+          } else {
+            shift = [this.#rtlMode ? -shiftSizeX : shiftSizeX, 0];
+          }
+          let [shiftX, shiftY] = shift;
+          el.style.left = shiftX + "px";
+          el.style.top = shiftY + "px";
         }
-        
-        
-        let newBounds = el.getBoundingClientRect();
-        let shiftX = origBounds.x - newBounds.x;
-        let shiftY = origBounds.y - newBounds.y;
-
-        el.style.left = shiftX + "px";
-        el.style.top = shiftY + "px";
       };
 
       
