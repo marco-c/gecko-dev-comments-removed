@@ -20,7 +20,7 @@
 #ifdef XP_WIN
 #  include <cstdint>
 #endif
-#if defined(XP_DARWIN) && !defined(RUST_BINDGEN)
+#if defined(XP_DARWIN)
 #  include <mach/mach.h>
 #endif
 
@@ -93,29 +93,28 @@ struct FreePolicy {
   void operator()(const void* ptr) { free(const_cast<void*>(ptr)); }
 };
 
-#if !defined(RUST_BINDGEN)
-#  if defined(XP_WIN)
+#if defined(XP_WIN)
 
 
 typedef void* FileHandleType;
-#  elif defined(XP_UNIX)
+#elif defined(XP_UNIX)
 typedef int FileHandleType;
-#  else
-#    error "Unsupported OS?"
-#  endif
+#else
+#  error "Unsupported OS?"
+#endif
 
 struct FileHandleHelper {
   MOZ_IMPLICIT FileHandleHelper(FileHandleType aHandle) : mHandle(aHandle) {
-#  if defined(XP_UNIX) && (defined(DEBUG) || defined(FUZZING))
+#if defined(XP_UNIX) && (defined(DEBUG) || defined(FUZZING))
     MOZ_RELEASE_ASSERT(aHandle == kInvalidHandle || aHandle > 2);
-#  endif
+#endif
   }
 
   MOZ_IMPLICIT constexpr FileHandleHelper(std::nullptr_t)
       : mHandle(kInvalidHandle) {}
 
   bool operator!=(std::nullptr_t) const {
-#  ifdef XP_WIN
+#ifdef XP_WIN
     
     
     
@@ -124,20 +123,20 @@ struct FileHandleHelper {
     if (mHandle == (void*)-1) {
       return false;
     }
-#  endif
+#endif
     return mHandle != kInvalidHandle;
   }
 
   operator FileHandleType() const { return mHandle; }
 
-#  ifdef XP_WIN
+#ifdef XP_WIN
   
   
   
   operator std::intptr_t() const {
     return reinterpret_cast<std::intptr_t>(mHandle);
   }
-#  endif
+#endif
 
   
   
@@ -149,13 +148,13 @@ struct FileHandleHelper {
  private:
   FileHandleType mHandle;
 
-#  ifdef XP_WIN
+#ifdef XP_WIN
   
   
   static constexpr FileHandleType kInvalidHandle = nullptr;
-#  else
+#else
   static constexpr FileHandleType kInvalidHandle = -1;
-#  endif
+#endif
 };
 
 struct FileHandleDeleter {
@@ -163,9 +162,8 @@ struct FileHandleDeleter {
   using receiver = FileHandleType;
   MFBT_API void operator()(FileHandleHelper aHelper);
 };
-#endif
 
-#if defined(XP_DARWIN) && !defined(RUST_BINDGEN)
+#if defined(XP_DARWIN)
 struct MachPortHelper {
   MOZ_IMPLICIT MachPortHelper(mach_port_t aPort) : mPort(aPort) {}
 
@@ -217,22 +215,20 @@ struct MachPortSetDeleter {
 template <typename T>
 using UniqueFreePtr = UniquePtr<T, detail::FreePolicy<T>>;
 
-#if !defined(RUST_BINDGEN)
 
 
 using UniqueFileHandle =
     UniquePtr<detail::FileHandleType, detail::FileHandleDeleter>;
 
-#  ifndef __wasm__
+#ifndef __wasm__
 
 MFBT_API UniqueFileHandle DuplicateFileHandle(detail::FileHandleType aFile);
 inline UniqueFileHandle DuplicateFileHandle(const UniqueFileHandle& aFile) {
   return DuplicateFileHandle(aFile.get());
 }
-#  endif
 #endif
 
-#if defined(XP_DARWIN) && !defined(RUST_BINDGEN)
+#if defined(XP_DARWIN)
 
 using UniqueMachSendRight =
     UniquePtr<mach_port_t, detail::MachSendRightDeleter>;

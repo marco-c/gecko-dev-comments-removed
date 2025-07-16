@@ -34,12 +34,7 @@ enum class Type {
   Freezable,
 };
 
-
-
-
-#if defined(RUST_BINDGEN)
-using PlatformHandle = void*;
-#elif defined(XP_DARWIN)
+#if defined(XP_DARWIN)
 using PlatformHandle = mozilla::UniqueMachSendRight;
 #else
 using PlatformHandle = mozilla::UniqueFileHandle;
