@@ -432,12 +432,12 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   
 
   
-  if (parsed.isUTC()) {
+  if (parsed.timeZone().constructed<UTCTimeZone>()) {
     offsetBehaviour = OffsetBehaviour::Exact;
   }
 
   
-  else if (!parsed.hasOffset()) {
+  else if (parsed.timeZone().empty()) {
     offsetBehaviour = OffsetBehaviour::Wall;
   }
 
@@ -460,28 +460,28 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   auto [disambiguation, offsetOption, overflow] = resolvedOptions;
 
   
+  const auto& isoDateTime = parsed.dateTime();
 
   
   int64_t offsetNanoseconds = 0;
 
   
   if (offsetBehaviour == OffsetBehaviour::Option) {
-    MOZ_ASSERT(parsed.hasOffset());
-    offsetNanoseconds = parsed.timeZoneOffset();
+    MOZ_ASSERT(parsed.timeZone().constructed<OffsetTimeZone>());
+    offsetNanoseconds = parsed.timeZone().ref<OffsetTimeZone>().offset;
   }
 
   
   EpochNanoseconds epochNanoseconds;
   if (parsed.isStartOfDay()) {
-    if (!InterpretISODateTimeOffset(cx, parsed.dateTime().date, offsetBehaviour,
-                                    offsetNanoseconds, timeZone, disambiguation,
-                                    offsetOption, matchBehaviour,
-                                    &epochNanoseconds)) {
+    if (!InterpretISODateTimeOffset(
+            cx, isoDateTime.date, offsetBehaviour, offsetNanoseconds, timeZone,
+            disambiguation, offsetOption, matchBehaviour, &epochNanoseconds)) {
       return false;
     }
   } else {
     if (!InterpretISODateTimeOffset(
-            cx, parsed.dateTime(), offsetBehaviour, offsetNanoseconds, timeZone,
+            cx, isoDateTime, offsetBehaviour, offsetNanoseconds, timeZone,
             disambiguation, offsetOption, matchBehaviour, &epochNanoseconds)) {
       return false;
     }
