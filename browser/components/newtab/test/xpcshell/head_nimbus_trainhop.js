@@ -19,12 +19,15 @@
 
 
 
+
+
 const {
   AboutNewTabResourceMapping,
   BUILTIN_ADDON_ID,
   TRAINHOP_NIMBUS_FEATURE_ID,
   TRAINHOP_XPI_BASE_URL_PREF,
-  TRAINHOP_SCHEDULED_UPDATE_STATE_PREF,
+  TRAINHOP_SCHEDULED_UPDATE_STATE_TIMEOUT_PREF,
+  TRAINHOP_SCHEDULED_UPDATE_STATE_DELAY_PREF,
 } = ChromeUtils.importESModule(
   "resource:///modules/AboutNewTabResourceMapping.sys.mjs"
 );
