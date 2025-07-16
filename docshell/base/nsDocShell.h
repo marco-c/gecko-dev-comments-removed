@@ -184,6 +184,8 @@ class nsDocShell final : public nsDocLoader,
 
   bool Initialize();
 
+  using nsIWebNavigation::Stop;
+
   NS_IMETHOD Stop() override {
     
     
