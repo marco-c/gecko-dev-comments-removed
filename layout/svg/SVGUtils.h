@@ -57,12 +57,6 @@ class GeneralPattern;
 }  
 }  
 
-
-
-
-
-#define NS_SVG_OFFSCREEN_MAX_DIMENSION 4096
-
 #define SVG_HIT_TEST_FILL 0x01
 #define SVG_HIT_TEST_STROKE 0x02
 
