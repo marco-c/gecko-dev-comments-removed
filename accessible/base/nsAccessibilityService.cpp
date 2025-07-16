@@ -167,9 +167,7 @@ static bool SendCacheDomainRequestToAllContentProcesses(
 
 static bool MustBeGenericAccessible(nsIContent* aContent,
                                     DocAccessible* aDocument) {
-  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement() ||
-      aContent == aDocument->DocumentNode()->GetRootElement()) {
-    
+  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement()) {
     
     
     
