@@ -40,7 +40,6 @@ mozilla::glean::application_reputation::Server2Label HTTPStatusToLabel(
 
 
 
-mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_VERDICT_2
-VerdictToLabel(uint32_t aVerdict);
+nsLiteralCString VerdictToLabel(uint32_t aVerdict);
 
 #endif  
