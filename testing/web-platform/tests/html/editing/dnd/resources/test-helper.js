@@ -3,20 +3,22 @@
 
 
 
-const getElemCenterInIframe  = (element, iframe) => {
+const getElemCenterInIframe = (element, iframe) => {
   const elemClientRect = element.getBoundingClientRect();
   const frameClientRect = iframe.getBoundingClientRect();
-  const centerX = frameClientRect.left + (elemClientRect.left + elemClientRect.right) / 2;
-  const centerY = frameClientRect.top + (elemClientRect.top + elemClientRect.bottom) / 2;
+  const centerX = frameClientRect.left + (elemClientRect.left + elemClientRect
+    .right) / 2;
+  const centerY = frameClientRect.top + (elemClientRect.top + elemClientRect
+    .bottom) / 2;
   return [centerX, centerY];
 };
 
 
 
 const movePointerToCenter = (element, iframe, actions) => {
-return (iframe == undefined) ?
-                actions.pointerMove(0, 0, {origin: element}) :
-                actions.pointerMove(...getElemCenterInIframe(element, iframe))
+  return (iframe == undefined) ? actions.pointerMove(0, 0, {
+    origin: element
+  }) : actions.pointerMove(...getElemCenterInIframe(element, iframe))
 }
 
 
@@ -25,7 +27,8 @@ return (iframe == undefined) ?
 
 
 
-function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription, iframe = undefined) {
+function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
+  dragIframe = undefined, dropIframe = undefined) {
   promise_test((t) => new Promise(async (resolve, reject) => {
     dropElement.addEventListener('drop', t.step_func((event) => {
       if (onDropCallBack(event) == true) {
@@ -35,11 +38,12 @@ function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
       }
     }));
     try {
-      var actions = new test_driver.Actions()
-        .pointerMove(0, 0, {origin: dragElement})
+      var actions = new test_driver.Actions();
+      actions = movePointerToCenter(dragElement, dragIframe, actions)
         .pointerDown();
-      actions = movePointerToCenter(dropElement, iframe, actions);
-      await actions.pointerUp().send();
+      actions = movePointerToCenter(dropElement, dropIframe, actions)
+        .pointerUp();
+      await actions.send();
     } catch (e) {
       reject(e);
     }
