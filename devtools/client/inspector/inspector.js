@@ -785,10 +785,6 @@ Inspector.prototype = {
   },
 
   _clearSearchResultsLabel(result) {
-    
-    
-    
-    this.emit("search-cleared");
     return this._updateSearchResultsLabel(result, true);
   },
 

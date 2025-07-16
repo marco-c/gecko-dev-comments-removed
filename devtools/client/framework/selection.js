@@ -72,8 +72,6 @@ class Selection extends EventEmitter {
   
   #isSlotted = false;
 
-  #searchQuery;
-
   #onMutations = mutations => {
     let attributeChange = false;
     let pseudoChange = false;
@@ -185,12 +183,7 @@ class Selection extends EventEmitter {
 
 
 
-
-
-  setNodeFront(
-    nodeFront,
-    { reason = "unknown", isSlotted = false, searchQuery = null } = {}
-  ) {
+  setNodeFront(nodeFront, { reason = "unknown", isSlotted = false } = {}) {
     this.reason = reason;
 
     
@@ -209,7 +202,6 @@ class Selection extends EventEmitter {
     this.emit("node-front-will-unset");
 
     this.#isSlotted = isSlotted;
-    this.#searchQuery = searchQuery;
     this.#nodeFront = nodeFront;
 
     if (nodeFront) {
@@ -383,10 +375,6 @@ class Selection extends EventEmitter {
 
   supportsScrollIntoView() {
     return this.isElementNode();
-  }
-
-  getSearchQuery() {
-    return this.#searchQuery;
   }
 }
 
