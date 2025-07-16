@@ -112,6 +112,13 @@ gyp_vars["enable_draft_hpke"] = 1
 gyp_vars["iphone_deployment_target"] = "doesntmatter"
 
 
+
+
+
+
+gyp_vars["use_pkcs5_pbkd2_params2_only"] = 1
+
+
 if (
     CONFIG["TARGET_CPU"] == "x86_64"
     and CONFIG["CC_TYPE"] == "clang"
