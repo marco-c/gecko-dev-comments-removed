@@ -411,11 +411,6 @@ interface nsIHttpChannelInternal : nsISupports
     
 
 
-    [must_use] attribute AString integrityMetadata;
-
-    
-
-
     [must_use] readonly attribute ACString connectionInfoHashKey;
 
     
