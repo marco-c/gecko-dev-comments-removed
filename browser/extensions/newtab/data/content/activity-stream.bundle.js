@@ -11400,7 +11400,6 @@ const PersonalizedCard = ({
 
 
 
-
 function FollowSectionButtonHighlight({
   arrowPosition,
   position,
@@ -11408,43 +11407,19 @@ function FollowSectionButtonHighlight({
   dispatch,
   handleDismiss,
   handleBlock,
-  isIntersecting,
   feature
 }) {
-  const FEATURE_ID = feature;
   const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
-    
-    
-    dispatch(actionCreators.DiscoveryStreamUserEvent({
-      event: "FEATURE_HIGHLIGHT_DISMISS",
-      source: "FEATURE_HIGHLIGHT",
-      value: {
-        feature: FEATURE_ID
-      }
-    }));
     handleDismiss();
     handleBlock();
-  }, [dispatch, FEATURE_ID, handleDismiss, handleBlock]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (isIntersecting) {
-      
-      
-      dispatch(actionCreators.DiscoveryStreamUserEvent({
-        event: "FEATURE_HIGHLIGHT_IMPRESSION",
-        source: "FEATURE_HIGHLIGHT",
-        value: {
-          feature: FEATURE_ID
-        }
-      }));
-    }
-  }, [dispatch, FEATURE_ID, isIntersecting]);
+  }, [handleDismiss, handleBlock]);
   return external_React_default().createElement("div", {
     className: "follow-section-button-highlight"
   }, external_React_default().createElement(FeatureHighlight, {
     position: position,
     arrowPosition: arrowPosition,
     verticalPosition: verticalPosition,
-    feature: FEATURE_ID,
+    feature: feature,
     dispatch: dispatch,
     message: external_React_default().createElement("div", {
       className: "follow-section-button-highlight-content"
