@@ -1874,23 +1874,12 @@ nsresult nsHttpChannel::InitTransaction() {
     }
   }
 
-  RefPtr<mozilla::dom::BrowsingContext> bc;
-  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
-
-  nsILoadInfo::IPAddressSpace parentAddressSpace =
-      nsILoadInfo::IPAddressSpace::Unknown;
-  if (!bc) {
-    parentAddressSpace = mLoadInfo->GetParentIpAddressSpace();
-  } else {
-    parentAddressSpace = bc->GetCurrentIPAddressSpace();
-  }
-
   rv = mTransaction->Init(
       mCaps, mConnectionInfo, &mRequestHead, mUploadStream, mReqContentLength,
       LoadUploadStreamHasHeaders(), GetCurrentSerialEventTarget(), callbacks,
       this, mBrowserId, category, mRequestContext, mClassOfService,
       mInitialRwin, LoadResponseTimeoutEnabled(), mChannelId,
-      std::move(observer), parentAddressSpace, perms);
+      std::move(observer), mLoadInfo->GetParentIpAddressSpace(), perms);
   if (NS_FAILED(rv)) {
     mTransaction = nullptr;
     return rv;
@@ -8122,14 +8111,9 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
                                       mEffectiveTRRMode, mTRRSkipReason,
                                       echConfigUsed);
     
-    
-    
-    
-    if (!mProxyInfo || xpc::IsInAutomation()) {
+    if (!mProxyInfo) {
       
       
-      nsAutoCString addrPort;
-      mPeerAddr.ToAddrPortString(addrPort);
       nsILoadInfo::IPAddressSpace docAddressSpace =
           mPeerAddr.GetIpAddressSpace();
       ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
