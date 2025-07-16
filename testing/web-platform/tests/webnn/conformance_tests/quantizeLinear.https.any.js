@@ -619,7 +619,7 @@ if (navigator.ml) {
   quantizeLinearTests.forEach((test) => {
     webnn_conformance_test(
         buildAndExecuteGraph, getQuantizeLinearPrecisionTolerance, test,
-         true);
+        true);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));

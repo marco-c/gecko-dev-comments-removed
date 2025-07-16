@@ -19,13 +19,6 @@
 
 
 
-const getReductionOperatorsPrecisionTolerance = (graphResources) => {
-  return {
-    metricType: 'ULP',
-    value: getReducedElementCount(graphResources) * 2 + 1,
-  };
-};
-
 const reduceL2Tests = [
   
   {
@@ -1135,8 +1128,7 @@ const reduceL2Tests = [
 
 if (navigator.ml) {
   reduceL2Tests.forEach((test) => {
-    webnn_conformance_test(
-        buildAndExecuteGraph, getReductionOperatorsPrecisionTolerance, test);
+    webnn_conformance_test(buildAndExecuteGraph, getPrecisionTolerance, test);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));

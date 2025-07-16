@@ -415,7 +415,7 @@ const logicalXorTests = [
 if (navigator.ml) {
   logicalXorTests.forEach((test) => {
     webnn_conformance_test(
-        buildAndExecuteGraph, getPrecisionTolerance, test,
+        buildAndExecuteGraph, getZeroULPTolerance, test,
         true);
   });
 } else {

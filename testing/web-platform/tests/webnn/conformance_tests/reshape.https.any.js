@@ -14,7 +14,6 @@
 
 
 
-
 const reshapeTests = [
   {
     'name': 'reshape float32 tensor to a new shape (reorder all dimensions)',
@@ -2364,7 +2363,7 @@ const reshapeTests = [
 
 if (navigator.ml) {
   reshapeTests.forEach((test) => {
-    webnn_conformance_test(buildAndExecuteGraph, getPrecisionTolerance, test);
+    webnn_conformance_test(buildAndExecuteGraph, getZeroULPTolerance, test);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));
