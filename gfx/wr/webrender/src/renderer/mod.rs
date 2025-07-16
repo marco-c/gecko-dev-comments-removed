@@ -2691,6 +2691,16 @@ impl Renderer {
             let dest_task_rect = dest_task.get_target_rect().to_f32();
 
             
+            
+            
+            
+            
+            let dest_task_rect = DeviceRect::from_origin_and_size(
+                dest_task_rect.min,
+                dest_info.content_size.to_f32(),
+            );
+
+            
             let wanted_rect = DeviceRect::from_origin_and_size(
                 dest_info.content_origin,
                 dest_task_rect.size().to_f32(),

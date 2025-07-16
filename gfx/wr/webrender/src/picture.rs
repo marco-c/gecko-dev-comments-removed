@@ -5723,6 +5723,7 @@ impl PicturePrimitive {
                                                 Some(clear_color),
                                                 cmd_buffer_index,
                                                 false,
+                                                None,
                                             )
                                         ),
                                     );
@@ -5774,6 +5775,7 @@ impl PicturePrimitive {
                                                 Some(clear_color),
                                                 cmd_buffer_index,
                                                 false,
+                                                None,
                                             )
                                         ),
                                     );
@@ -6039,7 +6041,18 @@ impl PicturePrimitive {
                             blur_std_deviation,
                         );
 
+                        
+                        
+                        
+                        
+                        let clear_color = if adjusted_size == original_size {
+                            None
+                        } else {
+                            Some(ColorF::TRANSPARENT)
+                        };
+
                         let cmd_buffer_index = frame_state.cmd_buffers.create_cmd_buffer();
+                        let adjusted_size = adjusted_size.to_i32();
 
                         
                         
@@ -6060,9 +6073,10 @@ impl PicturePrimitive {
                                     device_pixel_scale,
                                     None,
                                     None,
-                                    None,
+                                    clear_color,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    Some(original_size.round().to_i32()),
                                 )
                             ).with_uv_rect_kind(uv_rect_kind)
                         );
@@ -6115,6 +6129,7 @@ impl PicturePrimitive {
                                     None,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    None,
                                 ),
                             ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                         );
@@ -6265,6 +6280,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6303,6 +6319,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6341,6 +6358,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6380,6 +6398,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6424,6 +6443,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6455,6 +6475,7 @@ impl PicturePrimitive {
                                     None,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    None,
                                 )
                             ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                         );
@@ -6520,6 +6541,7 @@ impl PicturePrimitive {
                                     None,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    None,
                                 )
                             )
                         );
