@@ -3204,8 +3204,15 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
+  
+  
+  
+  bool hasViewTransitionName = style.StyleUIReset()->HasViewTransitionName() &&
+                               !style.IsRootElementStyle();
+
   bool addBackdropRoot =
-      bool(disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT);
+      (disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT) ||
+      hasViewTransitionName;
 
   if (aBuilder->IsForPainting() && disp->mWillChange.bits) {
     aBuilder->AddToWillChangeBudget(this, GetSize());
@@ -3686,7 +3693,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
         nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
     resultList.AppendNewToTop<nsDisplayOpacity>(
         aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
-        needsActiveOpacityLayer, usingBackdropFilter);
+        needsActiveOpacityLayer, usingBackdropFilter, addBackdropRoot);
     createdContainer = true;
     addBackdropRoot = false;
   }
