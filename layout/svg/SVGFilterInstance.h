@@ -108,6 +108,8 @@ class SVGFilterInstance {
       nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
       nsTArray<RefPtr<SourceSurface>>& aInputImages, bool aInputIsTainted);
 
+  float GetPrimitiveUserSpaceUnitValue(uint8_t aCtxType) const;
+
   float GetPrimitiveNumber(uint8_t aCtxType,
                            const SVGAnimatedNumber* aNumber) const {
     return GetPrimitiveNumber(aCtxType, aNumber->GetAnimValue());
@@ -124,6 +126,12 @@ class SVGFilterInstance {
 
 
   Point3D ConvertLocation(const Point3D& aPoint) const;
+
+  
+
+
+
+  float UserSpaceToFilterSpace(uint8_t aCtxType, float aValue) const;
 
   
 
