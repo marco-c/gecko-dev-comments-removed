@@ -949,7 +949,7 @@ FilterNodeConvolveD2D1::FilterNodeConvolveD2D1(ID2D1DeviceContext* aDC)
   mBorderEffect->SetInputEffect(0, mExtendInputEffect.get());
 
   UpdateChain();
-  UpdateSourceRect();
+  UpdateRenderRect();
 }
 
 void FilterNodeConvolveD2D1::SetInput(uint32_t aIndex, FilterNode* aFilter) {
@@ -1035,14 +1035,14 @@ void FilterNodeConvolveD2D1::SetAttribute(uint32_t aIndex,
 
 void FilterNodeConvolveD2D1::SetAttribute(uint32_t aIndex,
                                           const IntRect& aValue) {
-  if (aIndex != ATT_CONVOLVE_MATRIX_SOURCE_RECT) {
+  if (aIndex != ATT_CONVOLVE_MATRIX_RENDER_RECT) {
     MOZ_ASSERT(false);
     return;
   }
 
-  mSourceRect = aValue;
+  mRenderRect = aValue;
 
-  UpdateSourceRect();
+  UpdateRenderRect();
 }
 
 void FilterNodeConvolveD2D1::UpdateOffset() {
@@ -1053,11 +1053,11 @@ void FilterNodeConvolveD2D1::UpdateOffset() {
   mEffect->SetValue(D2D1_CONVOLVEMATRIX_PROP_KERNEL_OFFSET, vector);
 }
 
-void FilterNodeConvolveD2D1::UpdateSourceRect() {
+void FilterNodeConvolveD2D1::UpdateRenderRect() {
   mExtendInputEffect->SetValue(
       EXTENDINPUT_PROP_OUTPUT_RECT,
-      D2D1::Vector4F(Float(mSourceRect.X()), Float(mSourceRect.Y()),
-                     Float(mSourceRect.XMost()), Float(mSourceRect.YMost())));
+      D2D1::Vector4F(Float(mRenderRect.X()), Float(mRenderRect.Y()),
+                     Float(mRenderRect.XMost()), Float(mRenderRect.YMost())));
 }
 
 FilterNodeExtendInputAdapterD2D1::FilterNodeExtendInputAdapterD2D1(
