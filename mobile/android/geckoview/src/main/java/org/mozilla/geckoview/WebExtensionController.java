@@ -307,12 +307,37 @@ public class WebExtensionController {
 
 
 
+
+
     @Nullable
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-on-update-prompt", version = 144)
     default GeckoResult<AllowOrDeny> onUpdatePrompt(
         @NonNull final WebExtension currentlyInstalled,
         @NonNull final WebExtension updatedExtension,
         @NonNull final String[] newPermissions,
         @NonNull final String[] newOrigins) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @Nullable
+    default GeckoResult<AllowOrDeny> onUpdatePrompt(
+        @NonNull final WebExtension extension,
+        @NonNull final String[] newPermissions,
+        @NonNull final String[] newOrigins,
+        @NonNull final String[] newDataCollectionPermissions) {
       return null;
     }
 
@@ -1328,9 +1353,21 @@ public class WebExtensionController {
       return;
     }
 
-    final GeckoResult<AllowOrDeny> promptResponse =
+    
+    
+    
+    GeckoResult<AllowOrDeny> promptResponse =
         mPromptDelegate.onUpdatePrompt(
             currentExtension, updatedExtension, newPermissions, newOrigins);
+
+    if (promptResponse == null) {
+      final String[] newDataCollectionPermissions =
+          message.getStringArray("newDataCollectionPermissions");
+      promptResponse =
+          mPromptDelegate.onUpdatePrompt(
+              updatedExtension, newPermissions, newOrigins, newDataCollectionPermissions);
+    }
+
     if (promptResponse == null) {
       return;
     }
