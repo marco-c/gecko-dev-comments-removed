@@ -168,7 +168,9 @@ nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
     
     
     if (isize.IsExplicitlySet() ||
-        StylePosition()->ISize(wm, StyleDisplay()->mPosition)->HasPercent() ||
+        StylePosition()
+            ->ISize(wm, AnchorPosResolutionParams::From(this))
+            ->HasPercent() ||
         !GetAspectRatio()) {
       result = wm.IsVertical() ? kFallbackIntrinsicSize.height
                                : kFallbackIntrinsicSize.width;

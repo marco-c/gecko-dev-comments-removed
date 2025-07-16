@@ -1447,8 +1447,8 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
     
     
     const auto& flexBasis = stylePos->mFlexBasis;
-    const auto styleMainSize = stylePos->Size(aAxisTracker.MainAxis(), flexWM,
-                                              anchorResolutionParams.mPosition);
+    const auto styleMainSize =
+        stylePos->Size(aAxisTracker.MainAxis(), flexWM, anchorResolutionParams);
     if (IsUsedFlexBasisContent(flexBasis, *styleMainSize)) {
       
       
@@ -1585,7 +1585,7 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
   const auto anchorResolutionParams =
       AnchorPosResolutionParams::From(&aItemReflowInput);
   const auto mainStyleSize = aItemReflowInput.mStylePosition->Size(
-      aAxisTracker.MainAxis(), cbWM, anchorResolutionParams.mPosition);
+      aAxisTracker.MainAxis(), cbWM, anchorResolutionParams);
   const auto maxMainStyleSize = aItemReflowInput.mStylePosition->MaxSize(
       aAxisTracker.MainAxis(), cbWM, anchorResolutionParams.mPosition);
   const auto boxSizingAdjust =
@@ -2355,7 +2355,8 @@ bool FlexItem::IsMinSizeAutoResolutionNeeded() const {
   
   
   const auto mainMinSize = Frame()->StylePosition()->MinSize(
-      MainAxis(), ContainingBlockWM(), Frame()->StyleDisplay()->mPosition);
+      MainAxis(), ContainingBlockWM(),
+      AnchorPosResolutionParams::From(Frame()));
 
   
   
@@ -2436,8 +2437,8 @@ bool FlexItem::IsCrossSizeAuto() const {
   
   
   return IsInlineAxisCrossAxis()
-             ? stylePos->ISize(mWM, anchorResolutionParams.mPosition)->IsAuto()
-             : stylePos->BSize(mWM, anchorResolutionParams.mPosition)->IsAuto();
+             ? stylePos->ISize(mWM, anchorResolutionParams)->IsAuto()
+             : stylePos->BSize(mWM, anchorResolutionParams)->IsAuto();
 }
 
 bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
@@ -2454,12 +2455,12 @@ bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
   
   
   if (IsInlineAxisCrossAxis()) {
-    return !pos->ISize(itemWM, anchorResolutionParams.mPosition)->IsAuto();
+    return !pos->ISize(itemWM, anchorResolutionParams)->IsAuto();
   }
 
   nscoord cbBSize = aItemReflowInput.mContainingBlockSize.BSize(itemWM);
   return !nsLayoutUtils::IsAutoBSize(
-      *pos->BSize(itemWM, anchorResolutionParams.mPosition), cbBSize);
+      *pos->BSize(itemWM, anchorResolutionParams), cbBSize);
 }
 
 void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
@@ -2476,7 +2477,8 @@ void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
       nsFlexContainerFrame::IsUsedFlexBasisContent(
           aItemReflowInput.mStylePosition->mFlexBasis,
           *aItemReflowInput.mStylePosition->Size(
-              MainAxis(), mCBWM, aItemReflowInput.mStyleDisplay->mPosition)) &&
+              MainAxis(), mCBWM,
+              AnchorPosResolutionParams::From(&aItemReflowInput))) &&
       IsCrossSizeDefinite(aItemReflowInput)) {
     const LogicalSize contentBoxSizeToBoxSizingAdjust =
         aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
@@ -4665,8 +4667,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   const auto anchorResolutionParams =
       AnchorPosOffsetResolutionParams::UseCBFrameSize(
           AnchorPosResolutionParams::From(this));
-  const auto bsize =
-      stylePos->BSize(wm, anchorResolutionParams.mBaseParams.mPosition);
+  const auto bsize = stylePos->BSize(wm, anchorResolutionParams.mBaseParams);
   if (bsize->HasPercent() ||
       (StyleDisplay()->IsAbsolutelyPositionedStyle() &&
        (bsize->IsAuto() || !bsize->IsLengthPercentage()) &&
@@ -6571,7 +6572,7 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       [[maybe_unused]] auto [alignSelf, flags] =
           UsedAlignSelfAndFlagsForItem(childFrame);
       if (alignSelf != StyleAlignFlags::STRETCH ||
-          !childStylePos->BSize(flexWM, childAnchorResolutionParams.mPosition)
+          !childStylePos->BSize(flexWM, childAnchorResolutionParams)
                ->IsAuto() ||
           childFrame->StyleMargin()->HasBlockAxisAuto(
               flexWM, childAnchorResolutionParams)) {
