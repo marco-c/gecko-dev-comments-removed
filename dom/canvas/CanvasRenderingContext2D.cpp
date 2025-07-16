@@ -762,11 +762,6 @@ class AdjustedTarget {
       return;
     }
     if (applyFilter) {
-      
-      if (aAllowOptimization && !mShadowTarget) {
-        mOptimizeFilter = true;
-      }
-
       bounds.RoundOut();
 
       if (!mTarget) {
@@ -776,6 +771,12 @@ class AdjustedTarget {
       if (!bounds.ToIntRect(&intBounds)) {
         return;
       }
+
+      
+      if (aAllowOptimization && !mShadowTarget) {
+        mOptimizeFilter = true;
+      }
+
       mFilterTarget = MakeUnique<AdjustedTargetForFilter>(
           aCtx, mTarget, offsetToFinalDT, intBounds,
           gfx::RoundedToInt(boundsAfterFilter), mUsedOperation,
