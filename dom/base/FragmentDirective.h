@@ -143,9 +143,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
 
-
-
-  already_AddRefed<Promise> CreateTextDirective(nsRange& aRange);
+  already_AddRefed<Promise> CreateTextDirectiveForSelection();
 
  private:
   RefPtr<Document> mDocument;
