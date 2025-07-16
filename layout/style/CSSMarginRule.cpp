@@ -5,10 +5,10 @@
 
 
 #include "mozilla/dom/CSSMarginRule.h"
-#include "mozilla/dom/CSSMarginRuleBinding.h"
 
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSMarginRuleBinding.h"
 
 namespace mozilla::dom {
 

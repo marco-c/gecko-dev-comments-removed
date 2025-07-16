@@ -5,6 +5,7 @@
 
 
 #include "ScrollAnimationMSDPhysics.h"
+
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/ToString.h"

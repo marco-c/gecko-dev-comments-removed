@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSSLayerBlockRule.h"
-#include "mozilla/dom/CSSLayerBlockRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSLayerBlockRuleBinding.h"
 
 namespace mozilla::dom {
 

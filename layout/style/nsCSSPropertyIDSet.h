@@ -7,8 +7,9 @@
 #ifndef nsCSSPropertyIDSet_h__
 #define nsCSSPropertyIDSet_h__
 
-#include <initializer_list>
 #include <limits.h>  
+
+#include <initializer_list>
 #include <ostream>
 
 #include "mozilla/ArrayUtils.h"
@@ -16,8 +17,8 @@
 
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/CompositorAnimatableProperties.h"
-#include "nsCSSProps.h"  
 #include "nsCSSPropertyID.h"
+#include "nsCSSProps.h"  
 
 
 

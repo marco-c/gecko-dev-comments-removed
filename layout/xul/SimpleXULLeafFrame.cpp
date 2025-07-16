@@ -6,6 +6,7 @@
 
 
 #include "SimpleXULLeafFrame.h"
+
 #include "mozilla/PresShell.h"
 
 nsIFrame* NS_NewSimpleXULLeafFrame(mozilla::PresShell* aPresShell,

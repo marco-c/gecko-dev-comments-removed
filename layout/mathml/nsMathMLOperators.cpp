@@ -5,16 +5,16 @@
 
 
 #include "nsMathMLOperators.h"
-#include "nsCOMPtr.h"
-#include "nsTHashMap.h"
-#include "nsHashKeys.h"
-#include "nsNetUtil.h"
-#include "nsTArray.h"
 
 #include "mozilla/intl/UnicodeProperties.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsHashKeys.h"
 #include "nsIPersistentProperties2.h"
 #include "nsISimpleEnumerator.h"
-#include "nsCRT.h"
+#include "nsNetUtil.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
 
 
 struct OperatorData {

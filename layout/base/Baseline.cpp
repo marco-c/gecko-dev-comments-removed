@@ -3,6 +3,7 @@
 
 
 #include "Baseline.h"
+
 #include "nsIFrame.h"
 
 namespace mozilla {

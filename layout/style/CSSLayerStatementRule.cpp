@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSSLayerStatementRule.h"
-#include "mozilla/dom/CSSLayerStatementRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSLayerStatementRuleBinding.h"
 
 namespace mozilla::dom {
 

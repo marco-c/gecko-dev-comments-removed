@@ -5,8 +5,9 @@
 
 
 #include "PopupQueue.h"
-#include "mozilla/dom/Element.h"
+
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/Element.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla;

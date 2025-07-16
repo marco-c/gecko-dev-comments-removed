@@ -5,11 +5,12 @@
 
 
 #include "nsGfxButtonControlFrame.h"
-#include "nsIFormControl.h"
-#include "nsGkAtoms.h"
+
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
+#include "nsIFormControl.h"
 #include "nsTextNode.h"
 
 using namespace mozilla;

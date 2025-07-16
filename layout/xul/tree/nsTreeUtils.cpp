@@ -4,14 +4,15 @@
 
 
 
-#include "nsReadableUtils.h"
 #include "nsTreeUtils.h"
+
 #include "ChildIterator.h"
-#include "nsCRT.h"
 #include "nsAtom.h"
-#include "nsNameSpaceManager.h"
+#include "nsCRT.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
+#include "nsNameSpaceManager.h"
+#include "nsReadableUtils.h"
 
 using namespace mozilla;
 

@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSSStartingStyleRule.h"
-#include "mozilla/dom/CSSStartingStyleRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSStartingStyleRuleBinding.h"
 
 namespace mozilla::dom {
 

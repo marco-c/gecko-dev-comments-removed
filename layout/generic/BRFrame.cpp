@@ -6,11 +6,11 @@
 
 
 
+#include "gfxContext.h"
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
-#include "gfxContext.h"
 #include "nsBlockFrame.h"
 #include "nsCOMPtr.h"
 #include "nsComputedDOMStyle.h"

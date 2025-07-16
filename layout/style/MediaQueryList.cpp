@@ -7,12 +7,13 @@
 
 
 #include "mozilla/dom/MediaQueryList.h"
-#include "mozilla/dom/MediaQueryListEvent.h"
-#include "mozilla/dom/MediaList.h"
+
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/EventTargetBinding.h"
+#include "mozilla/dom/MediaList.h"
+#include "mozilla/dom/MediaQueryListEvent.h"
 #include "nsPresContext.h"
-#include "mozilla/dom/Document.h"
 
 namespace mozilla::dom {
 

@@ -2,9 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "UniqueOrNonOwningPtr.h"
+#include "gtest/gtest.h"
 
 using mozilla::MakeUniqueOfUniqueOrNonOwning;
 using mozilla::UniqueOrNonOwningPtr;

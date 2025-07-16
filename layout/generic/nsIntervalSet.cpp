@@ -7,8 +7,10 @@
 
 
 #include "nsIntervalSet.h"
-#include <new>
+
 #include <algorithm>
+#include <new>
+
 #include "mozilla/PresShell.h"  
 
 using namespace mozilla;

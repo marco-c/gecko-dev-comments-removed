@@ -11,9 +11,9 @@
 
 
 #include "nsCOMPtr.h"
-#include "nsViewManager.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeOwner.h"
+#include "nsViewManager.h"
 
 class nsIContent;
 class nsPresContext;

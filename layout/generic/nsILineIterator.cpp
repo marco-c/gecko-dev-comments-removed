@@ -5,6 +5,7 @@
 
 
 #include "nsILineIterator.h"
+
 #include "nsIFrame.h"
 
 namespace mozilla {

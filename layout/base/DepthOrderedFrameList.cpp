@@ -5,8 +5,9 @@
 
 
 #include "DepthOrderedFrameList.h"
-#include "nsIFrame.h"
+
 #include "nsContainerFrame.h"
+#include "nsIFrame.h"
 
 namespace mozilla {
 

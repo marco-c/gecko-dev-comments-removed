@@ -5,15 +5,16 @@
 
 
 #include "MiddleCroppingBlockFrame.h"
-#include "nsTextFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsTextNode.h"
-#include "nsLineLayout.h"
+
 #include "gfxContext.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/intl/Segmenter.h"
 #include "mozilla/ReflowInput.h"
 #include "mozilla/ReflowOutput.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/intl/Segmenter.h"
+#include "nsLayoutUtils.h"
+#include "nsLineLayout.h"
+#include "nsTextFrame.h"
+#include "nsTextNode.h"
 
 namespace mozilla {
 

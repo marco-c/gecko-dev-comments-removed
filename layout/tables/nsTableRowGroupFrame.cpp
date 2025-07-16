@@ -4,27 +4,26 @@
 
 #include "nsTableRowGroupFrame.h"
 
+#include <algorithm>
+
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
-
 #include "nsCOMPtr.h"
-#include "nsTableRowFrame.h"
-#include "nsTableFrame.h"
-#include "nsTableCellFrame.h"
-#include "nsPresContext.h"
-#include "nsStyleConsts.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsCSSRendering.h"
+#include "nsCellMap.h"  
+#include "nsDisplayList.h"
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
-#include "nsGkAtoms.h"
-#include "nsCSSRendering.h"
-#include "nsHTMLParts.h"
-#include "nsCSSFrameConstructor.h"
-#include "nsDisplayList.h"
-
-#include "nsCellMap.h"  
-#include <algorithm>
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTableCellFrame.h"
+#include "nsTableFrame.h"
+#include "nsTableRowFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::layout;

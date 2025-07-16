@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSSScopeRule.h"
-#include "mozilla/dom/CSSScopeRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSScopeRuleBinding.h"
 
 namespace mozilla::dom {
 

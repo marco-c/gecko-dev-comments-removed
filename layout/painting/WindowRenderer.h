@@ -7,13 +7,13 @@
 #ifndef MOZILLA_PAINTING_WINDOWRENDERER_H
 #define MOZILLA_PAINTING_WINDOWRENDERER_H
 
-#include "mozilla/webrender/webrender_ffi.h"
-#include "mozilla/layers/LayersTypes.h"
-#include "mozilla/dom/Animation.h"  
-#include "mozilla/layers/ScrollableLayerGuid.h"  
-#include "mozilla/ScrollPositionUpdate.h"  
-#include "nsRefPtrHashtable.h"             
 #include "gfxContext.h"
+#include "mozilla/ScrollPositionUpdate.h"  
+#include "mozilla/dom/Animation.h"         
+#include "mozilla/layers/LayersTypes.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/webrender/webrender_ffi.h"
+#include "nsRefPtrHashtable.h"  
 
 namespace mozilla {
 namespace layers {

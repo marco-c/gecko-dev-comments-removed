@@ -5,13 +5,14 @@
 
 
 #include "mozilla/AnimationCollection.h"
+
 #include <type_traits>
 
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/RestyleManager.h"
-#include "nsDOMMutationObserver.h"      
 #include "mozilla/dom/CSSAnimation.h"   
 #include "mozilla/dom/CSSTransition.h"  
+#include "nsDOMMutationObserver.h"      
 
 namespace mozilla {
 

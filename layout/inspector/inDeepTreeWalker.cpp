@@ -5,19 +5,18 @@
 
 
 #include "inDeepTreeWalker.h"
-#include "inLayoutUtils.h"
 
+#include "ChildIterator.h"
+#include "inLayoutUtils.h"
 #include "mozilla/Try.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/InspectorUtils.h"
 #include "mozilla/dom/NodeFilterBinding.h"
-
-#include "nsString.h"
-#include "nsServiceManagerUtils.h"
 #include "nsIContent.h"
-#include "ChildIterator.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
 
 using mozilla::dom::InspectorUtils;
 

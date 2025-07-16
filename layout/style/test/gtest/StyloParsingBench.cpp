@@ -4,19 +4,18 @@
 
 
 
-#include "gtest/gtest.h"
-#include "gtest/MozGTestBench.h"
-#include "nsString.h"
 #include "ExampleStylesheet.h"
+#include "ReferrerInfo.h"
 #include "ServoBindings.h"
-#include "mozilla/dom/DOMString.h"
+#include "gtest/MozGTestBench.h"
+#include "gtest/gtest.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/Utf8.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/Utf8.h"
 #include "mozilla/css/SheetParsingMode.h"
-#include "ReferrerInfo.h"
+#include "mozilla/dom/DOMString.h"
 #include "nsCSSValue.h"
-#include "ReferrerInfo.h"
+#include "nsString.h"
 
 using namespace mozilla;
 using namespace mozilla::css;

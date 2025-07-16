@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSSFontPaletteValuesRule.h"
-#include "mozilla/dom/CSSFontPaletteValuesRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSFontPaletteValuesRuleBinding.h"
 
 namespace mozilla::dom {
 

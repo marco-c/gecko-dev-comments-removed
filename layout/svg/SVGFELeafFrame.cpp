@@ -5,13 +5,13 @@
 
 
 
+#include "ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/dom/SVGFilters.h"
-#include "ComputedStyle.h"
 #include "nsContainerFrame.h"
-#include "nsIFrame.h"
 #include "nsGkAtoms.h"
+#include "nsIFrame.h"
 
 using namespace mozilla::dom;
 

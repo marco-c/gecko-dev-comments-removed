@@ -4,11 +4,11 @@
 
 
 #include "mozilla/dom/CSSPositionTryRule.h"
-#include "mozilla/dom/CSSPositionTryRuleBinding.h"
-#include "mozilla/dom/CSSPositionTryDescriptorsBinding.h"
 
-#include "mozilla/ServoBindings.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSPositionTryDescriptorsBinding.h"
+#include "mozilla/dom/CSSPositionTryRuleBinding.h"
 
 namespace mozilla::dom {
 

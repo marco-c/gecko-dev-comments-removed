@@ -5,16 +5,17 @@
 
 
 #include "nsLayoutDebugCLH.h"
+
 #include "mozIDOMWindow.h"
 #include "nsArray.h"
-#include "nsString.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
-#include "nsIWindowWatcher.h"
-#include "nsISupportsPrimitives.h"
+#include "nsComponentManagerUtils.h"
 #include "nsICommandLine.h"
+#include "nsISupportsPrimitives.h"
 #include "nsIURI.h"
+#include "nsIWindowWatcher.h"
 #include "nsServiceManagerUtils.h"
+#include "nsString.h"
 
 nsLayoutDebugCLH::nsLayoutDebugCLH() = default;
 

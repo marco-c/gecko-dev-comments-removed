@@ -8,11 +8,12 @@
 #define nsFrameList_h___
 
 #include <stdio.h> 
-#include "nsDebug.h"
-#include "nsTArray.h"
+
 #include "mozilla/EnumSet.h"
 #include "mozilla/FunctionTypeTraits.h"
 #include "mozilla/RefPtr.h"
+#include "nsDebug.h"
+#include "nsTArray.h"
 
 #if defined(DEBUG) || defined(MOZ_DUMP_PAINTING) || defined(MOZ_LAYOUT_DEBUGGER)
 

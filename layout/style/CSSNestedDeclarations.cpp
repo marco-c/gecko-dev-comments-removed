@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/CSSNestedDeclarations.h"
-#include "mozilla/dom/CSSNestedDeclarationsBinding.h"
 
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/dom/CSSNestedDeclarationsBinding.h"
 
 namespace mozilla::dom {
 

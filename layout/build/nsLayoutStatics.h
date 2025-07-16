@@ -7,10 +7,10 @@
 #ifndef nsLayoutStatics_h__
 #define nsLayoutStatics_h__
 
-#include "nscore.h"
 #include "MainThreadUtils.h"
-#include "nsISupportsImpl.h"
 #include "nsDebug.h"
+#include "nsISupportsImpl.h"
+#include "nscore.h"
 
 
 

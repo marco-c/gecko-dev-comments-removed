@@ -4,13 +4,12 @@
 
 
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
 #include <string>
 
 #include "AccessibleCaret.h"
 #include "AccessibleCaretManager.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 
 using ::testing::_;

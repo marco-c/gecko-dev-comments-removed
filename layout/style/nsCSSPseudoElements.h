@@ -9,11 +9,11 @@
 #ifndef nsCSSPseudoElements_h___
 #define nsCSSPseudoElements_h___
 
-#include "nsGkAtoms.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "nsGkAtoms.h"
 
 
 
@@ -21,18 +21,6 @@
 
 
 #define CSS_PSEUDO_ELEMENT_IS_CSS2 (1 << 0)
-
-
-
-
-
-
-
-
-#define CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS (1 << 1)
-
-
-#define CSS_PSEUDO_ELEMENT_SUPPORTS_STYLE_ATTRIBUTE (1 << 2)
 
 
 
@@ -92,16 +80,6 @@ class nsCSSPseudoElements {
   
   
   static nsAtom* GetPseudoAtom(Type aType);
-
-  static bool PseudoElementContainsElements(const Type aType) {
-    return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS);
-  }
-
-  static bool PseudoElementSupportsStyleAttribute(const Type aType) {
-    MOZ_ASSERT(aType < Type::CSSPseudoElementsEnd);
-    return PseudoElementHasFlags(aType,
-                                 CSS_PSEUDO_ELEMENT_SUPPORTS_STYLE_ATTRIBUTE);
-  }
 
   static bool PseudoElementSupportsUserActionState(const Type aType);
 

@@ -4,21 +4,22 @@
 
 
 
-#include "nsNameSpaceManager.h"
-#include "nsGkAtoms.h"
-#include "nsTreeUtils.h"
 #include "nsTreeContentView.h"
+
 #include "ChildIterator.h"
-#include "nsError.h"
-#include "nsXULSortService.h"
-#include "nsTreeBodyFrame.h"
-#include "nsTreeColumns.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/TreeContentViewBinding.h"
 #include "mozilla/dom/XULTreeElement.h"
+#include "nsError.h"
+#include "nsGkAtoms.h"
+#include "nsNameSpaceManager.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/dom/Document.h"
+#include "nsTreeBodyFrame.h"
+#include "nsTreeColumns.h"
+#include "nsTreeUtils.h"
+#include "nsXULSortService.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

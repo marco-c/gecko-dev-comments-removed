@@ -5,11 +5,12 @@
 
 
 #include "FontFaceSetWorkerImpl.h"
+
 #include "mozilla/FontLoaderUtils.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
-#include "mozilla/LoadInfo.h"
 #include "nsContentPolicyUtils.h"
 #include "nsFontFaceLoader.h"
 #include "nsINetworkPredictor.h"

@@ -14,13 +14,13 @@
 
 #include <ostream>
 
-#include "nsString.h"
-#include "nsCSSPropertyID.h"
-#include "nsStyleStructFwd.h"
-#include "mozilla/UseCounter.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/CSSPropFlags.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/UseCounter.h"
+#include "nsCSSPropertyID.h"
+#include "nsString.h"
+#include "nsStyleStructFwd.h"
 
 
 

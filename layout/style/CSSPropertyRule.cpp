@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSSPropertyRule.h"
-#include "mozilla/dom/CSSPropertyRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSPropertyRuleBinding.h"
 
 namespace mozilla::dom {
 

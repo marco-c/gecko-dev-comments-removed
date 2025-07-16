@@ -11,27 +11,23 @@
 
 #include "nsCSSProps.h"
 
+#include "gfxPlatform.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
-
-#include "gfxPlatform.h"
-#include "nsLayoutUtils.h"
-#include "nsIWidget.h"
-#include "nsStyleConsts.h"  
-
-#include "mozilla/dom/Animation.h"
-#include "mozilla/dom/AnimationEffectBinding.h"  
-#include "mozilla/gfx/gfxVars.h"                 
-#include "mozilla/gfx/gfxVarReceiver.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/LookAndFeel.h"  
-
-#include "nsString.h"
-#include "nsStaticNameTable.h"
-
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/Animation.h"
+#include "mozilla/dom/AnimationEffectBinding.h"  
+#include "mozilla/gfx/gfxVarReceiver.h"
+#include "mozilla/gfx/gfxVars.h"  
+#include "nsIWidget.h"
+#include "nsLayoutUtils.h"
+#include "nsStaticNameTable.h"
+#include "nsString.h"
+#include "nsStyleConsts.h"  
 
 using namespace mozilla;
 

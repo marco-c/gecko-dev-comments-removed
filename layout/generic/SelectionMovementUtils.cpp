@@ -4,8 +4,10 @@
 
 
 
-#include "ErrorList.h"
 #include "SelectionMovementUtils.h"
+
+#include "ErrorList.h"
+#include "WordMovementType.h"
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
@@ -16,8 +18,8 @@
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiPresUtils.h"
 #include "nsBlockFrame.h"
-#include "nsCaret.h"
 #include "nsCOMPtr.h"
+#include "nsCaret.h"
 #include "nsFrameSelection.h"
 #include "nsFrameTraversal.h"
 #include "nsIContent.h"
@@ -26,7 +28,6 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsTextFrame.h"
-#include "WordMovementType.h"
 
 namespace mozilla {
 using namespace dom;

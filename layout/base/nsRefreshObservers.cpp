@@ -5,8 +5,9 @@
 
 
 #include "nsRefreshObservers.h"
-#include "nsPresContext.h"
+
 #include "mozilla/Likely.h"
+#include "nsPresContext.h"
 
 namespace mozilla {
 

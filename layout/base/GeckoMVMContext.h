@@ -6,7 +6,6 @@
 #define GeckoMVMContext_h_
 
 #include "MVMContext.h"
-
 #include "mozilla/Attributes.h"  
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"

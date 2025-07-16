@@ -4,14 +4,12 @@
 
 
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
 #include <iostream>
 #include <string>
 
 #include "AccessibleCaretManager.h"
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/MouseEvents.h"

@@ -5,9 +5,9 @@
 
 
 
-#include "base/process_util.h"
-
 #include "LayoutLogging.h"
+
+#include "base/process_util.h"
 
 namespace mozilla {
 namespace detail {

@@ -4,10 +4,9 @@
 
 
 
-#include "mozilla/StyleColorInlines.h"
-
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/StyleColorInlines.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsIFrame.h"
 #include "nsStyleStruct.h"

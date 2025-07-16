@@ -5,8 +5,8 @@
 
 
 
-#include "gfxRect.h"
 #include "SVGGFrame.h"
+#include "gfxRect.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGContainerFrame.h"
 #include "mozilla/SVGObserverUtils.h"

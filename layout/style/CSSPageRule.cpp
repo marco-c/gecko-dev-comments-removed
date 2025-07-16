@@ -5,11 +5,11 @@
 
 
 #include "mozilla/dom/CSSPageRule.h"
-#include "mozilla/dom/CSSPageRuleBinding.h"
-#include "mozilla/dom/CSSPageDescriptorsBinding.h"
 
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSPageDescriptorsBinding.h"
+#include "mozilla/dom/CSSPageRuleBinding.h"
 
 namespace mozilla::dom {
 

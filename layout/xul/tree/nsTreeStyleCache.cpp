@@ -5,9 +5,10 @@
 
 
 #include "nsTreeStyleCache.h"
+
 #include "mozilla/ComputedStyleInlines.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/dom/Element.h"
 #include "nsPresContextInlines.h"
 
 using namespace mozilla;

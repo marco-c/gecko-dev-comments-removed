@@ -8,8 +8,8 @@
 #include "SVGGFrame.h"
 
 
-#include "mozilla/dom/SVGElement.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/SVGElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
 
