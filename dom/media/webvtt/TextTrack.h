@@ -109,10 +109,10 @@ class TextTrack final : public DOMEventTargetHelper {
   
   
   
-  
-  void GetCurrentCuesAndOtherCues(nsTArray<RefPtr<TextTrackCue>>* aCurrentCues,
-                                  nsTArray<RefPtr<TextTrackCue>>* aOtherCues,
-                                  const media::TimeInterval& aInterval) const;
+  void GetOverlappingCurrentAndOtherCues(
+      nsTArray<RefPtr<TextTrackCue>>* aCurrentCues,
+      nsTArray<RefPtr<TextTrackCue>>* aOtherCues,
+      const media::TimeInterval& aInterval) const;
 
   void ClearAllCues();
 
