@@ -6,6 +6,7 @@ mod compute;
 mod compute_command;
 mod draw;
 mod memory_init;
+mod pass;
 mod query;
 mod ray_tracing;
 mod render;
@@ -45,6 +46,8 @@ use crate::storage::Storage;
 use crate::track::{DeviceTracker, ResourceUsageCompatibilityError, Tracker, UsageScope};
 use crate::{api_log, global::Global, id, resource_log, Label};
 use crate::{hal_label, LabelHelpers};
+
+use wgt::error::{ErrorType, WebGpuError};
 
 use thiserror::Error;
 
@@ -191,6 +194,7 @@ impl CommandEncoderStatus {
     
     
     
+    
     fn lock_encoder(&mut self) -> Result<(), EncoderStateError> {
         match mem::replace(self, Self::Transitioning) {
             Self::Recording(inner) => {
@@ -218,23 +222,42 @@ impl CommandEncoderStatus {
     
     
     
-    fn unlock_encoder(&mut self) -> Result<RecordingGuard<'_>, EncoderStateError> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn unlock_and_record<
+        F: FnOnce(&mut CommandBufferMutable) -> Result<(), E>,
+        E: Clone + Into<CommandEncoderError>,
+    >(
+        &mut self,
+        f: F,
+    ) -> Result<(), EncoderStateError> {
         match mem::replace(self, Self::Transitioning) {
             Self::Locked(inner) => {
                 *self = Self::Recording(inner);
-                Ok(RecordingGuard { inner: self })
+                RecordingGuard { inner: self }.record(f);
+                Ok(())
             }
             st @ Self::Finished(_) => {
-                
-                
-                
                 *self = st;
                 Err(EncoderStateError::Ended)
             }
-            Self::Recording(_) => Err(self.invalidate(EncoderStateError::Unlocked)),
+            Self::Recording(_) => {
+                *self = Self::Error(EncoderStateError::Unlocked.into());
+                Err(EncoderStateError::Unlocked)
+            }
             st @ Self::Error(_) => {
+                
+                
                 *self = st;
-                Err(EncoderStateError::Invalid)
+                Ok(())
             }
             Self::Transitioning => unreachable!(),
         }
@@ -783,15 +806,16 @@ impl CommandBuffer {
 }
 
 impl CommandBuffer {
-    pub fn take_finished<'a>(&'a self) -> Result<CommandBufferMutable, InvalidResourceError> {
+    pub fn take_finished(&self) -> Result<CommandBufferMutable, CommandEncoderError> {
         use CommandEncoderStatus as St;
         match mem::replace(
             &mut *self.data.lock(),
             CommandEncoderStatus::Error(EncoderStateError::Submitted.into()),
         ) {
             St::Finished(command_buffer_mutable) => Ok(command_buffer_mutable),
-            St::Recording(_) | St::Locked(_) | St::Error(_) => {
-                Err(InvalidResourceError(self.error_ident()))
+            St::Error(err) => Err(err),
+            St::Recording(_) | St::Locked(_) => {
+                Err(InvalidResourceError(self.error_ident()).into())
             }
             St::Transitioning => unreachable!(),
         }
@@ -817,8 +841,18 @@ crate::impl_storage_item!(CommandBuffer);
 #[doc(hidden)]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct BasePass<C> {
+pub struct BasePass<C, E> {
     pub label: Option<String>,
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(skip, default = "Option::default"))]
+    pub error: Option<E>,
 
     
     pub commands: Vec<C>,
@@ -842,10 +876,22 @@ pub struct BasePass<C> {
     pub push_constant_data: Vec<u32>,
 }
 
-impl<C: Clone> BasePass<C> {
+impl<C: Clone, E: Clone> BasePass<C, E> {
     fn new(label: &Label) -> Self {
         Self {
             label: label.as_deref().map(str::to_owned),
+            error: None,
+            commands: Vec::new(),
+            dynamic_offsets: Vec::new(),
+            string_data: Vec::new(),
+            push_constant_data: Vec::new(),
+        }
+    }
+
+    fn new_invalid(label: &Label, err: E) -> Self {
+        Self {
+            label: label.as_deref().map(str::to_owned),
+            error: Some(err),
             commands: Vec::new(),
             dynamic_offsets: Vec::new(),
             string_data: Vec::new(),
@@ -853,6 +899,66 @@ impl<C: Clone> BasePass<C> {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+macro_rules! pass_base {
+    ($pass:expr, $scope:expr $(,)?) => {
+        match (&$pass.parent, &$pass.base.error) {
+            // Pass is ended
+            (&None, _) => return Err(EncoderStateError::Ended).map_pass_err($scope),
+            // Pass is invalid
+            (&Some(_), &Some(_)) => return Ok(()),
+            // Pass is open and valid
+            (&Some(_), &None) => &mut $pass.base,
+        }
+    };
+}
+pub(crate) use pass_base;
+
+
+
+
+
+
+
+
+
+
+
+
+macro_rules! pass_try {
+    ($base:expr, $scope:expr, $res:expr $(,)?) => {
+        match $res.map_pass_err($scope) {
+            Ok(val) => val,
+            Err(err) => {
+                $base.error.get_or_insert(err);
+                return Ok(());
+            }
+        }
+    };
+}
+pub(crate) use pass_try;
 
 
 
@@ -896,6 +1002,18 @@ pub enum EncoderStateError {
     Submitted,
 }
 
+impl WebGpuError for EncoderStateError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        match self {
+            EncoderStateError::Invalid
+            | EncoderStateError::Ended
+            | EncoderStateError::Locked
+            | EncoderStateError::Unlocked
+            | EncoderStateError::Submitted => ErrorType::Validation,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
 pub enum CommandEncoderError {
@@ -903,10 +1021,6 @@ pub enum CommandEncoderError {
     State(#[from] EncoderStateError),
     #[error(transparent)]
     Device(#[from] DeviceError),
-    #[error(transparent)]
-    InvalidColorAttachment(#[from] ColorAttachmentError),
-    #[error(transparent)]
-    InvalidAttachment(#[from] AttachmentError),
     #[error(transparent)]
     InvalidResource(#[from] InvalidResourceError),
     #[error(transparent)]
@@ -925,14 +1039,69 @@ pub enum CommandEncoderError {
     BuildAccelerationStructure(#[from] BuildAccelerationStructureError),
     #[error(transparent)]
     TransitionResources(#[from] TransitionResourcesError),
+    #[error(transparent)]
+    ComputePass(#[from] ComputePassError),
+    #[error(transparent)]
+    RenderPass(#[from] RenderPassError),
+}
+
+impl CommandEncoderError {
+    fn is_destroyed_error(&self) -> bool {
+        matches!(
+            self,
+            Self::DestroyedResource(_)
+                | Self::Clear(ClearError::DestroyedResource(_))
+                | Self::Query(QueryError::DestroyedResource(_))
+                | Self::ComputePass(ComputePassError {
+                    inner: ComputePassErrorInner::DestroyedResource(_),
+                    ..
+                })
+                | Self::RenderPass(RenderPassError {
+                    inner: RenderPassErrorInner::DestroyedResource(_),
+                    ..
+                })
+        )
+    }
+}
+
+impl WebGpuError for CommandEncoderError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        let e: &dyn WebGpuError = match self {
+            Self::Device(e) => e,
+            Self::InvalidResource(e) => e,
+            Self::MissingFeatures(e) => e,
+            Self::State(e) => e,
+            Self::DestroyedResource(e) => e,
+            Self::Transfer(e) => e,
+            Self::Clear(e) => e,
+            Self::Query(e) => e,
+            Self::BuildAccelerationStructure(e) => e,
+            Self::TransitionResources(e) => e,
+            Self::ResourceUsage(e) => e,
+            Self::ComputePass(e) => e,
+            Self::RenderPass(e) => e,
+        };
+        e.webgpu_error_type()
+    }
+}
+
+#[derive(Clone, Debug, Error)]
+#[non_exhaustive]
+pub enum TimestampWritesError {
     #[error(
         "begin and end indices of pass timestamp writes are both set to {idx}, which is not allowed"
     )]
-    TimestampWriteIndicesEqual { idx: u32 },
-    #[error(transparent)]
-    TimestampWritesInvalid(#[from] QueryUseError),
+    IndicesEqual { idx: u32 },
     #[error("no begin or end indices were specified for pass timestamp writes, expected at least one to be set")]
-    TimestampWriteIndicesMissing,
+    IndicesMissing,
+}
+
+impl WebGpuError for TimestampWritesError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        match self {
+            Self::IndicesEqual { .. } | Self::IndicesMissing => ErrorType::Validation,
+        }
+    }
 }
 
 impl Global {
@@ -947,9 +1116,11 @@ impl Global {
 
         let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
 
+        
+        
         let error = match cmd_buf.data.lock().finish() {
-            Ok(_) => None,
-            Err(e) => Some(e),
+            Err(e) if !e.is_destroyed_error() => Some(e),
+            _ => None,
         };
 
         (encoder_id.into_command_buffer_id(), error)
@@ -972,6 +1143,8 @@ impl Global {
             if let Some(ref mut list) = cmd_buf_data.commands {
                 list.push(TraceCommand::PushDebugGroup(label.to_owned()));
             }
+
+            cmd_buf.device.check_is_valid()?;
 
             let cmd_buf_raw = cmd_buf_data.encoder.open()?;
             if !cmd_buf
@@ -1006,6 +1179,8 @@ impl Global {
                 list.push(TraceCommand::InsertDebugMarker(label.to_owned()));
             }
 
+            cmd_buf.device.check_is_valid()?;
+
             if !cmd_buf
                 .device
                 .instance_flags
@@ -1038,6 +1213,8 @@ impl Global {
                 list.push(TraceCommand::PopDebugGroup);
             }
 
+            cmd_buf.device.check_is_valid()?;
+
             let cmd_buf_raw = cmd_buf_data.encoder.open()?;
             if !cmd_buf
                 .device
@@ -1053,11 +1230,18 @@ impl Global {
         })
     }
 
-    fn validate_pass_timestamp_writes(
+    fn validate_pass_timestamp_writes<E>(
         device: &Device,
         query_sets: &Storage<Fallible<QuerySet>>,
         timestamp_writes: &PassTimestampWrites,
-    ) -> Result<ArcPassTimestampWrites, CommandEncoderError> {
+    ) -> Result<ArcPassTimestampWrites, E>
+    where
+        E: From<TimestampWritesError>
+            + From<QueryUseError>
+            + From<DeviceError>
+            + From<MissingFeatures>
+            + From<InvalidResourceError>,
+    {
         let &PassTimestampWrites {
             query_set,
             beginning_of_pass_write_index,
@@ -1079,7 +1263,7 @@ impl Global {
 
         if let Some((begin, end)) = beginning_of_pass_write_index.zip(end_of_pass_write_index) {
             if begin == end {
-                return Err(CommandEncoderError::TimestampWriteIndicesEqual { idx: begin });
+                return Err(TimestampWritesError::IndicesEqual { idx: begin }.into());
             }
         }
 
@@ -1087,7 +1271,7 @@ impl Global {
             .or(end_of_pass_write_index)
             .is_none()
         {
-            return Err(CommandEncoderError::TimestampWriteIndicesMissing);
+            return Err(TimestampWritesError::IndicesMissing.into());
         }
 
         Ok(ArcPassTimestampWrites {
@@ -1194,6 +1378,7 @@ impl Default for BindGroupStateChange {
     }
 }
 
+
 trait MapPassErr<T> {
     fn map_pass_err(self, scope: PassErrorScope) -> T;
 }
@@ -1207,6 +1392,12 @@ where
     }
 }
 
+impl MapPassErr<PassStateError> for EncoderStateError {
+    fn map_pass_err(self, scope: PassErrorScope) -> PassStateError {
+        PassStateError { scope, inner: self }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum DrawKind {
     Draw,
@@ -1214,6 +1405,15 @@ pub enum DrawKind {
     MultiDrawIndirect,
     MultiDrawIndirectCount,
 }
+
+
+
+
+
+
+
+
+
 
 #[derive(Clone, Copy, Debug, Error)]
 pub enum PassErrorScope {
@@ -1265,4 +1465,20 @@ pub enum PassErrorScope {
     PopDebugGroup,
     #[error("In a insert_debug_marker command")]
     InsertDebugMarker,
+}
+
+
+#[derive(Clone, Debug, Error)]
+#[error("{scope}")]
+pub struct PassStateError {
+    pub scope: PassErrorScope,
+    #[source]
+    pub(super) inner: EncoderStateError,
+}
+
+impl WebGpuError for PassStateError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        let Self { scope: _, inner } = self;
+        inner.webgpu_error_type()
+    }
 }

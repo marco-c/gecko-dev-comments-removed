@@ -36,7 +36,7 @@ mod semaphore_list;
 pub use adapter::PhysicalDeviceFeatures;
 
 use alloc::{boxed::Box, ffi::CString, sync::Arc, vec::Vec};
-use core::{borrow::Borrow, ffi::CStr, fmt, mem, num::NonZeroU32};
+use core::{borrow::Borrow, ffi::CStr, fmt, marker::PhantomData, mem, num::NonZeroU32};
 
 use arrayvec::ArrayVec;
 use ash::{ext, khr, vk};
@@ -1500,3 +1500,65 @@ struct RawTlasInstance {
     shader_binding_table_record_offset_and_flags: u32,
     acceleration_structure_reference: u64,
 }
+
+
+pub struct CreateDeviceCallbackArgs<'arg, 'pnext, 'this>
+where
+    'this: 'pnext,
+{
+    
+    
+    pub extensions: &'arg mut Vec<&'static CStr>,
+    
+    pub device_features: &'arg mut PhysicalDeviceFeatures,
+    
+    pub queue_create_infos: &'arg mut Vec<vk::DeviceQueueCreateInfo<'pnext>>,
+    
+    
+    
+    pub create_info: &'arg mut vk::DeviceCreateInfo<'pnext>,
+    
+    
+    
+    _phantom: PhantomData<&'this ()>,
+}
+
+
+
+
+
+
+
+
+pub type CreateDeviceCallback<'this> =
+    dyn for<'arg, 'pnext> FnOnce(CreateDeviceCallbackArgs<'arg, 'pnext, 'this>) + 'this;
+
+
+pub struct CreateInstanceCallbackArgs<'arg, 'pnext, 'this>
+where
+    'this: 'pnext,
+{
+    
+    
+    pub extensions: &'arg mut Vec<&'static CStr>,
+    
+    
+    
+    pub create_info: &'arg mut vk::InstanceCreateInfo<'pnext>,
+    
+    pub entry: &'arg ash::Entry,
+    
+    
+    
+    _phantom: PhantomData<&'this ()>,
+}
+
+
+
+
+
+
+
+
+pub type CreateInstanceCallback<'this> =
+    dyn for<'arg, 'pnext> FnOnce(CreateInstanceCallbackArgs<'arg, 'pnext, 'this>) + 'this;
