@@ -705,6 +705,9 @@ class nsINode : public mozilla::dom::EventTarget {
   nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
 
   
+  nsINode* GetChildAtInFlatTree(uint32_t aIndex) const;
+
+  
 
 
 
