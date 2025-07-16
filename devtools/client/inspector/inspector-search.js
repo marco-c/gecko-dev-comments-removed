@@ -137,6 +137,18 @@ InspectorSearch.prototype = {
       this._onSearch(event.shiftKey);
       event.preventDefault();
     }
+
+    
+    
+    
+    
+    if (
+      event.keyCode === KeyCodes.DOM_VK_ESCAPE &&
+      this.autocompleter.searchPopup?.isOpen
+    ) {
+      event.preventDefault();
+      this.autocompleter.hidePopup();
+    }
   },
 
   findNext() {
@@ -533,6 +545,8 @@ class SelectorAutocompleter extends EventEmitter {
 
     if (
       
+      
+      !query ||
       
       query.endsWith("*") ||
       
