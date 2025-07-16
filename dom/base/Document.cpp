@@ -200,7 +200,6 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
-#include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/InspectorUtils.h"
 #include "mozilla/dom/InteractiveWidget.h"
 #include "mozilla/dom/Link.h"
@@ -1442,6 +1441,8 @@ Document::Document(const char* aContentType)
       mValidMinScale(false),
       mValidMaxScale(false),
       mWidthStrEmpty(false),
+      mLockingImages(false),
+      mAnimatingImages(true),
       mParserAborted(false),
       mReportedDocumentUseCounters(false),
       mHasReportedShadowDOMUsage(false),
@@ -2510,6 +2511,9 @@ Document::~Document() {
   if (mPermissionDelegateHandler) {
     mPermissionDelegateHandler->DropDocumentReference();
   }
+
+  SetLockingImages(false);
+  SetImageAnimationState(false);
 
   mHeaderData = nullptr;
 
@@ -7532,7 +7536,9 @@ void Document::DeletePresShell() {
   
   
   
-  ImageTracker()->RequestDiscardAll();
+  for (imgIRequest* image : mTrackedImages.Keys()) {
+    image->RequestDiscard();
+  }
 
   
   
@@ -12375,7 +12381,7 @@ void Document::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
   
   if (!inFrameLoaderSwap) {
     if (aPersisted) {
-      ImageTracker()->SetAnimatingState(true);
+      SetImageAnimationState(true);
     }
 
     
@@ -12454,7 +12460,7 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
     if (aPersisted) {
       
       
-      ImageTracker()->SetAnimatingState(false);
+      SetImageAnimationState(false);
     }
 
     
@@ -14300,11 +14306,123 @@ void Document::WarnOnceAbout(
                                   kDocumentWarnings[aWarning], aParams);
 }
 
-mozilla::dom::ImageTracker* Document::ImageTracker() {
-  if (!mImageTracker) {
-    mImageTracker = new mozilla::dom::ImageTracker;
+void Document::TrackImage(imgIRequest* aImage) {
+  MOZ_ASSERT(aImage);
+  mTrackedImages.WithEntryHandle(aImage, [&](auto&& entry) {
+    if (entry) {
+      
+      uint32_t oldCount = entry.Data();
+      MOZ_ASSERT(oldCount > 0, "Entry in the image tracker with count 0!");
+      entry.Data() = oldCount + 1;
+    } else {
+      
+      entry.Insert(1);
+
+      
+      if (mLockingImages) {
+        aImage->LockImage();
+      }
+
+      
+      if (mAnimatingImages) {
+        aImage->IncrementAnimationConsumers();
+      }
+    }
+  });
+}
+
+void Document::UntrackImage(imgIRequest* aImage,
+                            RequestDiscard aRequestDiscard) {
+  MOZ_ASSERT(aImage);
+
+  
+  auto entry = mTrackedImages.Lookup(aImage);
+  if (!entry) {
+    MOZ_ASSERT_UNREACHABLE("Removing image that wasn't in the tracker!");
+    return;
   }
-  return mImageTracker;
+  MOZ_ASSERT(entry.Data() > 0, "Entry in the image tracker with count 0!");
+  
+  if (--entry.Data() == 0) {
+    entry.Remove();
+  } else {
+    return;
+  }
+
+  
+  
+  if (mLockingImages) {
+    aImage->UnlockImage();
+  }
+
+  
+  if (mAnimatingImages) {
+    aImage->DecrementAnimationConsumers();
+  }
+
+  if (aRequestDiscard == RequestDiscard::Yes) {
+    
+    
+    aImage->RequestDiscard();
+  }
+}
+
+void Document::PropagateMediaFeatureChangeToTrackedImages(
+    const MediaFeatureChange& aChange) {
+  
+  
+  
+  nsTHashSet<nsRefPtrHashKey<imgIContainer>> images;
+  for (imgIRequest* req : mTrackedImages.Keys()) {
+    nsCOMPtr<imgIContainer> image;
+    req->GetImage(getter_AddRefs(image));
+    if (!image) {
+      continue;
+    }
+    image = image->Unwrap();
+    images.Insert(image);
+  }
+  for (imgIContainer* image : images) {
+    image->MediaFeatureValuesChangedAllDocuments(aChange);
+  }
+}
+
+void Document::SetLockingImages(bool aLocking) {
+  
+  if (mLockingImages == aLocking) {
+    return;
+  }
+
+  
+  for (imgIRequest* image : mTrackedImages.Keys()) {
+    if (aLocking) {
+      image->LockImage();
+    } else {
+      image->UnlockImage();
+    }
+  }
+
+  
+  mLockingImages = aLocking;
+}
+
+void Document::SetImageAnimationState(bool aAnimating) {
+  
+  if (mAnimatingImages == aAnimating) {
+    return;
+  }
+
+  
+  for (imgIRequest* image : mTrackedImages.Keys()) {
+    if (aAnimating) {
+      image->IncrementAnimationConsumers();
+    } else {
+      image->DecrementAnimationConsumers();
+    }
+  }
+
+  
+  mAnimatingImages = aAnimating;
 }
 
 void Document::ScheduleSVGUseElementShadowTreeUpdate(

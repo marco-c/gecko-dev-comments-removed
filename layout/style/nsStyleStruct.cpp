@@ -33,7 +33,6 @@
 #include "mozilla/dom/AnimationEffectBinding.h"    
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/ImageTracker.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/GeckoBindings.h"
@@ -131,7 +130,6 @@ void StyleComputedUrl::ResolveImage(Document& aDocument,
   
   data.resolved_image->BoostPriority(imgIRequest::CATEGORY_FRAME_STYLE);
 }
-
 
 
 

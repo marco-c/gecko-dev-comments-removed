@@ -96,7 +96,6 @@
 #include "mozilla/dom/PerformancePaintTiming.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "MobileViewportManager.h"
-#include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/InteractiveWidget.h"
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessible.h"
@@ -2100,7 +2099,7 @@ void nsPresContext::MediaFeatureValuesChanged(
   if (aPropagation & MediaFeatureChangePropagation::Images) {
     
     
-    mDocument->ImageTracker()->MediaFeatureValuesChangedAllDocuments(aChange);
+    mDocument->PropagateMediaFeatureChangeToTrackedImages(aChange);
   }
 
   if (aPropagation & MediaFeatureChangePropagation::SubDocuments) {

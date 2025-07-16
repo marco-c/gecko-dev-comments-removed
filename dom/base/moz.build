@@ -1,8 +1,8 @@
-
-
-
-
-
+# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("*Selection*"):
     BUG_COMPONENT = ("Core", "DOM: Selection")
@@ -16,7 +16,7 @@ if CONFIG["FUZZING"]:
     if CONFIG["FUZZING_INTERFACES"]:
         TEST_DIRS += ["fuzztest"]
 
-
+# Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 XPIDL_SOURCES += [
@@ -70,11 +70,11 @@ EXPORTS += [
     "nsDOMString.h",
     "nsDOMTokenList.h",
     "nsFocusManager.h",
-    "nsFrameLoader.h",  
+    "nsFrameLoader.h",  # Because binding headers include it.
     "nsFrameLoaderOwner.h",
     "nsFrameMessageManager.h",
-    "nsGlobalWindowInner.h",  
-    "nsGlobalWindowOuter.h",  
+    "nsGlobalWindowInner.h",  # Because binding headers include it.
+    "nsGlobalWindowOuter.h",  # Because binding headers include it.
     "nsIAnimationObserver.h",
     "nsIContent.h",
     "nsIContentInlines.h",
@@ -204,7 +204,6 @@ EXPORTS.mozilla.dom += [
     "IdleRequest.h",
     "IDTracker.h",
     "ImageEncoder.h",
-    "ImageTracker.h",
     "InteractiveWidget.h",
     "IntlUtils.h",
     "JSExecutionUtils.h",
@@ -382,7 +381,6 @@ UNIFIED_SOURCES += [
     "IdleRequest.cpp",
     "IDTracker.cpp",
     "ImageEncoder.cpp",
-    "ImageTracker.cpp",
     "InProcessBrowserChildMessageManager.cpp",
     "IntlUtils.cpp",
     "JSExecutionUtils.cpp",
@@ -517,9 +515,9 @@ if CONFIG["MOZ_PLACES"]:
         "PlacesWeakCallbackWrapper.cpp",
     ]
 
-
-
-
+# on win32 if we add these files to UNIFIED_SOURCES then the compiler generates
+# larger stack frames for some recursive functions that cause us to hit stack
+# overflows (see bug 1824565)
 if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["TARGET_CPU"] == "x86":
     SOURCES += [
         "CompressionStream.cpp",
@@ -531,35 +529,35 @@ else:
         "DecompressionStream.cpp",
     ]
 
-
+# these files couldn't be in UNIFIED_SOURCES for now for reasons given below:
 SOURCES += [
-    
+    # Several conflicts with other bindings.
     "DOMIntersectionObserver.cpp",
-    
+    # Because of OS X headers.
     "nsContentUtils.cpp",
-    
+    # this file doesn't like windows.h
     "nsDOMWindowUtils.cpp",
-    
+    # Conflicts with windows.h's definition of SendMessage.
     "nsFrameMessageManager.cpp",
-    
+    # These files have a #error "Never include unwrapped windows.h in this file!"
     "nsGlobalWindowInner.cpp",
     "nsGlobalWindowOuter.cpp",
-    
+    # Conflicts with windows.h's definition of LoadImage.
     "nsImageLoadingContent.cpp",
-    
+    # Because of OS X headers.
     "nsObjectLoadingContent.cpp",
-    
+    # nsPluginArray.cpp includes npapi.h indirectly, and that includes a lot of system headers
     "nsPluginArray.cpp",
 ]
 
-
-
+# Are we targeting x86-32 or x86-64?  If so, we want to include SSE2 code for
+# nsTextFragment.cpp
 if CONFIG["INTEL_ARCHITECTURE"]:
     SOURCES += ["nsTextFragmentSSE2.cpp"]
     SOURCES["nsTextFragmentSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
 
-
-
+# Are we targeting PowerPC? If so, we can enable a SIMD version for
+# nsTextFragment.cpp as well.
 if CONFIG["TARGET_CPU"].startswith("ppc"):
     SOURCES += ["nsTextFragmentVMX.cpp"]
     SOURCES["nsTextFragmentVMX.cpp"].flags += CONFIG["PPC_VMX_FLAGS"]

@@ -258,7 +258,6 @@ class HTMLDialogElement;
 class HTMLSharedElement;
 class HTMLVideoElement;
 class HTMLImageElement;
-class ImageTracker;
 class IntegrityPolicy;
 enum class InteractiveWidget : uint8_t;
 struct LifecycleCallbackArgs;
@@ -3169,7 +3168,20 @@ class Document : public nsINode,
   
   bool InUnlinkOrDeletion() { return mInUnlinkOrDeletion; }
 
-  dom::ImageTracker* ImageTracker();
+  void TrackImage(imgIRequest*);
+  enum class RequestDiscard : bool { No = false, Yes };
+  void UntrackImage(imgIRequest*, RequestDiscard = RequestDiscard::No);
+
+  
+  
+  bool GetLockingImages() const { return mLockingImages; }
+  void SetLockingImages(bool);
+
+  
+  
+  
+  void SetImageAnimationState(bool);
+  void PropagateMediaFeatureChangeToTrackedImages(const MediaFeatureChange&);
 
   
   
@@ -4697,7 +4709,7 @@ class Document : public nsINode,
   RefPtr<AttributeStyles> mAttributeStyles;
 
   
-  RefPtr<dom::ImageTracker> mImageTracker;
+  nsTHashMap<nsPtrHashKey<imgIRequest>, uint32_t> mTrackedImages;
 
   
   
@@ -4973,6 +4985,9 @@ class Document : public nsINode,
   bool mValidMinScale : 1;
   bool mValidMaxScale : 1;
   bool mWidthStrEmpty : 1;
+
+  bool mLockingImages : 1;
+  bool mAnimatingImages : 1;
 
   
   
