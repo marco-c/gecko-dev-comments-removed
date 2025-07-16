@@ -110,6 +110,7 @@ UNIFIED_SOURCES += [
 
 SOURCES += [
     "DrawTargetWebgl.cpp",  
+    "FilterNodeWebgl.cpp",
     "ImageUtils.cpp",
     "OffscreenCanvasDisplayHelper.cpp",  
     "OffscreenCanvasRenderingContext2D.cpp",  

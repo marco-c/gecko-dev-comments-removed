@@ -406,9 +406,9 @@ class FilterSupport {
 
   static void RenderFilterDescription(
       DrawTarget* aDT, const FilterDescription& aFilter,
-      const Rect& aRenderRect, SourceSurface* aSourceGraphic,
-      const IntRect& aSourceGraphicRect, SourceSurface* aFillPaint,
-      const IntRect& aFillPaintRect, SourceSurface* aStrokePaint,
+      const Rect& aRenderRect, RefPtr<FilterNode> aSourceGraphic,
+      const IntRect& aSourceGraphicRect, RefPtr<FilterNode> aFillPaint,
+      const IntRect& aFillPaintRect, RefPtr<FilterNode> aStrokePaint,
       const IntRect& aStrokePaintRect,
       nsTArray<RefPtr<SourceSurface>>& aAdditionalImages,
       const Point& aDestPoint, const DrawOptions& aOptions = DrawOptions());

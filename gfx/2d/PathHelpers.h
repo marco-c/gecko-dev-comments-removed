@@ -153,6 +153,11 @@ void EllipseToBezier(T* aSink, const Point& aOrigin, const Size& aRadius) {
   }
 }
 
+inline already_AddRefed<Path> MakeEmptyPath(const DrawTarget& aDrawTarget) {
+  RefPtr<PathBuilder> builder = aDrawTarget.CreatePathBuilder();
+  return builder->Finish();
+}
+
 
 
 
