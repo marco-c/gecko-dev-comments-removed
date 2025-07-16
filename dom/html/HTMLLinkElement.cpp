@@ -740,4 +740,11 @@ bool HTMLLinkElement::IsPotentiallyRenderBlocking() {
   
 }
 
+nsresult HTMLLinkElement::CopyInnerTo(HTMLLinkElement* aDest) {
+  nsresult rv = Element::CopyInnerTo(aDest);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MaybeStartCopyStyleSheetTo(aDest, aDest->OwnerDoc());
+  return NS_OK;
+}
+
 }  

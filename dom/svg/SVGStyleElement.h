@@ -86,6 +86,7 @@ class SVGStyleElement final : public SVGStyleElementBase,
 
 
   void ContentChanged(nsIContent* aContent);
+  nsresult CopyInnerTo(SVGStyleElement* aDest);
 };
 
 }  

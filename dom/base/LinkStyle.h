@@ -279,6 +279,23 @@ class LinkStyle {
                                               nsICSSLoaderObserver*,
                                               ForceUpdate);
 
+  
+
+
+
+
+
+
+
+  void MaybeStartCopyStyleSheetTo(LinkStyle* aDest, Document* aDoc) const;
+
+  
+
+
+
+
+  void MaybeFinishCopyStyleSheet(Document* aDocument);
+
   void BindToTree();
 
   RefPtr<mozilla::StyleSheet> mStyleSheet;

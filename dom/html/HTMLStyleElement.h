@@ -99,6 +99,7 @@ class HTMLStyleElement final : public nsGenericHTMLElement,
 
 
   void ContentChanged(nsIContent* aContent);
+  nsresult CopyInnerTo(HTMLStyleElement* aDest);
 
   RefPtr<nsDOMTokenList> mBlocking;
 };

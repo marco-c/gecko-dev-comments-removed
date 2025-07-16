@@ -460,6 +460,9 @@ class Loader final {
 
   bool ShouldBypassCache() const;
 
+  
+  void InsertSheetInTree(StyleSheet& aSheet);
+
   enum class PendingLoad { No, Yes };
 
  private:
@@ -556,8 +559,6 @@ class Loader final {
                             const nsAString& aMediaString, dom::MediaList*,
                             IsAlternate, IsExplicitlyEnabled);
 
-  
-  void InsertSheetInTree(StyleSheet& aSheet);
   
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
