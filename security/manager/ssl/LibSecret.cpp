@@ -228,11 +228,17 @@ nsresult LibSecret::RetrieveSecret(const nsACString& aLabel,
                                   nullptr,  
                                   getter_Transfers(error), "string",
                                   PromiseFlatCString(aLabel).get(), nullptr));
-  if (error || !s) {
-    MOZ_LOG(gLibSecretLog, LogLevel::Debug,
-            ("Error retrieving secret or didn't find it"));
+  if (error) {
+    
+    
+    MOZ_LOG(gLibSecretLog, LogLevel::Debug, ("Error retrieving secret"));
     return NS_ERROR_FAILURE;
   }
+  if (!s) {
+    MOZ_LOG(gLibSecretLog, LogLevel::Debug, ("Key not found in key store"));
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   
   
   
