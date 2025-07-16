@@ -1332,12 +1332,6 @@ void GetJarPrefix(bool aInIsolatedMozBrowser, nsACString& aJarPrefix) {
 
 
 Result<uint64_t, nsresult> GetTemporaryStorageLimit(nsIFile& aStorageDir) {
-  if (nsContentUtils::ShouldResistFingerprinting(
-          "The storage limit is set only once and not webpage specific.",
-          RFPTarget::DiskStorageLimit)) {
-    return nsRFPService::GetSpoofedStorageLimit();
-  }
-
   
   
   if (StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit() >= 0) {
@@ -7513,21 +7507,17 @@ void QuotaManager::SetThumbnailPrivateIdentityId(
   }
 }
 
-
-uint64_t QuotaManager::GetGroupLimitForLimit(uint64_t aLimit) {
-  
-  
-  
-  
-  const auto x = std::min<uint64_t>(aLimit / 5, 10 GB);
-
-  
-  
-  return std::min<uint64_t>(aLimit, std::max<uint64_t>(x, 10 MB));
-}
-
 uint64_t QuotaManager::GetGroupLimit() const {
-  return GetGroupLimitForLimit(mTemporaryStorageLimit);
+  
+  
+  
+  
+  const auto x = std::min<uint64_t>(mTemporaryStorageLimit / 5, 10 GB);
+
+  
+  
+  return std::min<uint64_t>(mTemporaryStorageLimit,
+                            std::max<uint64_t>(x, 10 MB));
 }
 
 Maybe<OriginStateMetadata> QuotaManager::GetOriginStateMetadata(
