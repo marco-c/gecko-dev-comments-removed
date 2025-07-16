@@ -12,7 +12,9 @@
 
 #include <stdint.h>
 
+#include "js/AllocPolicy.h"
 #include "js/Utility.h"
+#include "js/Vector.h"
 #include "threading/ExclusiveData.h"
 
 #if JS_HAS_INTL_API
@@ -64,6 +66,8 @@ enum class ResetTimeZoneMode : bool {
 
 
 extern void ResetTimeZoneInternal(ResetTimeZoneMode mode);
+
+using TimeZoneDisplayNameVector = Vector<char16_t, 100, SystemAllocPolicy>;
 
 
 
@@ -206,14 +210,11 @@ class DateTimeInfo {
 
 
 
-
-
-  static bool timeZoneDisplayName(ForceUTC forceUTC, char16_t* buf,
-                                  size_t buflen, int64_t utcMilliseconds,
-                                  const char* locale) {
+  static bool timeZoneDisplayName(ForceUTC forceUTC,
+                                  TimeZoneDisplayNameVector& result,
+                                  int64_t utcMilliseconds, const char* locale) {
     auto guard = acquireLockWithValidTimeZone(forceUTC);
-    return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds,
-                                              locale);
+    return guard->internalTimeZoneDisplayName(result, utcMilliseconds, locale);
   }
 
   
@@ -406,7 +407,7 @@ class DateTimeInfo {
   int32_t internalGetOffsetMilliseconds(int64_t milliseconds,
                                         TimeZoneOffset offset);
 
-  bool internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
+  bool internalTimeZoneDisplayName(TimeZoneDisplayNameVector& result,
                                    int64_t utcMilliseconds, const char* locale);
 
   mozilla::intl::TimeZone* timeZone();
