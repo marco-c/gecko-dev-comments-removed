@@ -25,6 +25,17 @@ const startup = new DevToolsStartup();
 
 startup.initialized = true;
 
+registerCleanupFunction(() => {
+  for (const pref of [
+    "devtools.debugger.pending-selected-location",
+    "devtools.debugger.prefs-schema-version",
+    "devtools.everOpened",
+    "devtools.toolbox.selectedTool",
+  ]) {
+    Services.prefs.clearUserPref(pref);
+  }
+});
+
 add_task(async function ignoredUrls() {
   const tabCount = gBrowser.tabs.length;
 

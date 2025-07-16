@@ -75,8 +75,3 @@ function waitForClassMutation(target) {
     observer.observe(target, { attributes: true });
   });
 }
-
-registerCleanupFunction(function () {
-  
-  Services.prefs.clearUserPref("devtools.toolbox.host");
-});

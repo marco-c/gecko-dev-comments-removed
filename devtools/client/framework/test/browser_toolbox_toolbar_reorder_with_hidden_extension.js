@@ -142,10 +142,6 @@ add_task(async function () {
   
   await pushPref("devtools.application.enabled", true);
 
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("devtools.toolbox.tabsOrder");
-  });
-
   const extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
     manifest: {

@@ -22,6 +22,7 @@ async function testForGivenDir(dir) {
   
   
   Services.prefs.clearUserPref("devtools.netmonitor.visibleColumns");
+
   const initialColumnData = Services.prefs.getCharPref(
     "devtools.netmonitor.columnsData"
   );

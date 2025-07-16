@@ -40,9 +40,9 @@ Services.scriptloader.loadSubScript(
 
 
 registerCleanupFunction(() => {
-  info("finish() was called, cleaning up and clearing debugger preferences...");
-  Services.prefs.clearUserPref("devtools.debugger.map-scopes-enabled");
-  Services.prefs.clearUserPref("devtools.debugger.show-content-scripts");
+  for (const pref of ["logging.console", "logging.PageMessages"]) {
+    Services.prefs.clearUserPref(pref);
+  }
 });
 
 

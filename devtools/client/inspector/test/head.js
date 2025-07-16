@@ -14,9 +14,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/shared-head.js",
   this
@@ -25,11 +22,6 @@ Services.scriptloader.loadSubScript(
 const INSPECTOR_L10N = new LocalizationHelper(
   "devtools/client/locales/inspector.properties"
 );
-
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.inspector.activeSidebar");
-  Services.prefs.clearUserPref("devtools.inspector.selectedSidebar");
-});
 
 registerCleanupFunction(function () {
   

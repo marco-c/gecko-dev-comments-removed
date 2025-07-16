@@ -19,10 +19,6 @@ Services.scriptloader.loadSubScript(
 
 
 registerCleanupFunction(async function () {
-  
-  
-  Services.prefs.clearUserPref("devtools.toolbox.selectedTool");
-
   try {
     const {
       adbAddon,

@@ -45,15 +45,6 @@ registerCleanupFunction(async function () {
   
   
   Services.cookies.removeAll();
-
-  Services.prefs.clearUserPref("devtools.webconsole.ui.filterbar");
-
-  
-  
-  await SpecialPowers.flushPrefEnv();
-  Services.prefs.getChildList("devtools.webconsole.filter").forEach(pref => {
-    Services.prefs.clearUserPref(pref);
-  });
 });
 
 

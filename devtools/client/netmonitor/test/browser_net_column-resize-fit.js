@@ -10,6 +10,7 @@ add_task(async function () {
   
   
   Services.prefs.clearUserPref("devtools.netmonitor.visibleColumns");
+
   
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,

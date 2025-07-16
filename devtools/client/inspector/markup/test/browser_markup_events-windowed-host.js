@@ -9,11 +9,6 @@
 
 const TEST_URL = URL_ROOT + "doc_markup_events-overflow.html";
 
-registerCleanupFunction(() => {
-  
-  Services.prefs.clearUserPref("devtools.toolbox.host");
-});
-
 add_task(async function () {
   info(
     "Switch to 2 pane inspector to avoid sidebar width issues with opening events"

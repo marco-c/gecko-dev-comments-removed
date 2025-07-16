@@ -31,7 +31,4 @@ add_task(async function testTracingValues() {
     `⟶ interpreter λ bar(1, \nArray [ "array" ]\n, \nObject { attribute: 3 }\n, 4n, Infinity, Symbol("6"), "7")`,
     "The argument were printed for bar()"
   );
-
-  
-  Services.prefs.clearUserPref("devtools.debugger.javascript-tracing-values");
 });

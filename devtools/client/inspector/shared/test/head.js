@@ -31,12 +31,6 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(
 
 
 
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.defaultColorUnit");
-});
-
-
-
 
 
 

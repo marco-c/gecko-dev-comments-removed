@@ -13,10 +13,6 @@ var { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 add_task(async function () {
   
   
-  Services.prefs.clearUserPref("devtools.toolbox.selectedTool");
-
-  
-  
   
   info("Test toggle using CTRL+SHIFT+I/CMD+ALT+I");
   await testToggle("I", {

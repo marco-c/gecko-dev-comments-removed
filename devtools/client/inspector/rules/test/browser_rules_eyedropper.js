@@ -33,11 +33,6 @@ const ORIGINAL_COLOR = "rgb(255, 0, 153)";
 
 const EXPECTED_COLOR = "rgb(255, 255, 85)";
 
-registerCleanupFunction(() => {
-  
-  Services.prefs.clearUserPref("devtools.toolbox.host");
-});
-
 add_task(async function () {
   info("Add the test tab, open the rule-view and select the test node");
 

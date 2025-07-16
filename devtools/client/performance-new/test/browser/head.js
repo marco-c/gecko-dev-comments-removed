@@ -11,6 +11,30 @@ const PrefsPresets = ChromeUtils.importESModule(
   "resource://devtools/shared/performance-new/prefs-presets.sys.mjs"
 );
 
+
+const devtoolsPreferences = Services.prefs.getBranch("devtools");
+const alreadySetPreferences = new Set();
+for (const pref of devtoolsPreferences.getChildList("")) {
+  if (devtoolsPreferences.prefHasUserValue(pref)) {
+    alreadySetPreferences.add(pref);
+  }
+}
+
+
+registerCleanupFunction(async () => {
+  await SpecialPowers.flushPrefEnv();
+
+  
+  for (const pref of devtoolsPreferences.getChildList("")) {
+    if (
+      devtoolsPreferences.prefHasUserValue(pref) &&
+      !alreadySetPreferences.has(pref)
+    ) {
+      devtoolsPreferences.clearUserPref(pref);
+    }
+  }
+});
+
 registerCleanupFunction(() => {
   PrefsPresets.revertRecordingSettings();
 });

@@ -19,13 +19,6 @@ const ANIMATION_L10N = new LocalizationHelper(
 
 
 
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.toolsidebar-width.inspector");
-});
-
-
-
-
 
 
 

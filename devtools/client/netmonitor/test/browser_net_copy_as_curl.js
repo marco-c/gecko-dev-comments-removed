@@ -14,7 +14,7 @@ add_task(async function () {
     requestCount: 1,
   });
   
-  Services.prefs.setBoolPref("network.http.idempotencyKey.enabled", false);
+  await pushPref("network.http.idempotencyKey.enabled", false);
   info("Starting test... ");
 
   

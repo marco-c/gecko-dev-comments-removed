@@ -10,6 +10,40 @@
 
 
 
+
+const devtoolsPreferences = Services.prefs.getBranch("devtools");
+const alreadySetPreferences = new Set();
+for (const pref of devtoolsPreferences.getChildList("")) {
+  if (devtoolsPreferences.prefHasUserValue(pref)) {
+    alreadySetPreferences.add(pref);
+  }
+}
+
+async function resetPreferencesModifiedDuringTest() {
+  if (!isXpcshell) {
+    await SpecialPowers.flushPrefEnv();
+  }
+
+  
+  for (const pref of devtoolsPreferences.getChildList("")) {
+    if (
+      devtoolsPreferences.prefHasUserValue(pref) &&
+      !alreadySetPreferences.has(pref)
+    ) {
+      devtoolsPreferences.clearUserPref(pref);
+    }
+  }
+
+  
+  for (const pref of [
+    "browser.firefox-view.view-count",
+    "extensions.ui.lastCategory",
+    "sidebar.old-sidebar.has-used",
+  ]) {
+    Services.prefs.clearUserPref(pref);
+  }
+}
+
 const isMochitest = "gTestPath" in this;
 const isXpcshell = !isMochitest;
 if (isXpcshell) {
@@ -270,11 +304,13 @@ registerCleanupFunction(() => {
   ConsoleAPIStorage.removeLogEventListener(onConsoleMessage);
 });
 
-Services.prefs.setBoolPref("devtools.inspector.three-pane-enabled", true);
 
 
-
-Services.prefs.setBoolPref("dom.ipc.processPrelaunch.enabled", false);
+add_setup(async () => {
+  if (!isXpcshell) {
+    await pushPref("dom.ipc.processPrelaunch.enabled", false);
+  }
+});
 
 
 
@@ -286,20 +322,6 @@ Services.prefs.setBoolPref(
 
 
 Services.prefs.setBoolPref("devtools.testing.testScopes", true);
-
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.dump.emit");
-  Services.prefs.clearUserPref("devtools.inspector.three-pane-enabled");
-  Services.prefs.clearUserPref("dom.ipc.processPrelaunch.enabled");
-  Services.prefs.clearUserPref("devtools.toolbox.host");
-  Services.prefs.clearUserPref("devtools.toolbox.previousHost");
-  Services.prefs.clearUserPref("devtools.toolbox.splitconsole.open");
-  Services.prefs.clearUserPref("devtools.toolbox.splitconsoleHeight");
-  Services.prefs.clearUserPref(
-    "devtools.inspector.simple-highlighters.message-dismissed"
-  );
-  Services.prefs.clearUserPref("devtools.testing.testScopes");
-});
 
 var {
   BrowserConsoleManager,
@@ -338,6 +360,10 @@ registerCleanupFunction(async function cleanup() {
       conn.close();
     }
   }
+
+  
+  
+  await resetPreferencesModifiedDuringTest();
 });
 
 async function safeCloseBrowserConsole({ clearOutput = false } = {}) {
