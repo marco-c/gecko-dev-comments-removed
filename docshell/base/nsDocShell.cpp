@@ -84,6 +84,8 @@
 #include "mozilla/dom/SessionStoreChangeListener.h"
 #include "mozilla/dom/SessionStoreChild.h"
 #include "mozilla/dom/SessionStoreUtils.h"
+#include "mozilla/dom/TrustedTypeUtils.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/UserActivation.h"
@@ -9964,6 +9966,12 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     if (NS_ERROR_UNKNOWN_PROTOCOL == rv) {
       return NS_OK;
     }
+
+    
+    
+    if (NS_ERROR_DOM_SECURITY_ERR == rv) {
+      return NS_OK;
+    }
   }
 
   return rv;
@@ -10461,6 +10469,81 @@ bool nsDocShell::IsAboutBlankLoadOntoInitialAboutBlank(
           mDocumentViewer->GetDocument()->IsInitialDocument());
 }
 
+nsresult nsDocShell::PerformTrustedTypesPreNavigationCheck(
+    nsDocShellLoadState* aLoadState, nsGlobalWindowInner* aWindow) const {
+  MOZ_ASSERT(aWindow);
+  RefPtr<nsIContentSecurityPolicy> csp = aWindow->GetCsp();
+  if (csp->GetRequireTrustedTypesForDirectiveState() ==
+      RequireTrustedTypesForDirectiveState::NONE) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  bool shouldBlockOnError = csp->GetRequireTrustedTypesForDirectiveState() ==
+                            RequireTrustedTypesForDirectiveState::ENFORCE;
+
+  
+  
+  nsAutoCString urlString;
+  aLoadState->URI()->GetSpec(urlString);
+
+  
+  
+  constexpr auto javascriptScheme = "javascript:"_ns;
+  const nsDependentCSubstring encodedScriptSource =
+      Substring(urlString, javascriptScheme.Length());
+
+  
+  
+  Maybe<nsAutoString> compliantStringHolder;
+  NS_ConvertUTF8toUTF16 encodedScriptSourceUTF16(encodedScriptSource);
+  constexpr nsLiteralString sink = u"Location href"_ns;
+  auto reportPreNavigationCheckViolations = [&csp, &sink,
+                                             &encodedScriptSourceUTF16] {
+    
+    
+    
+    
+    auto location = JSCallingLocation::Get();
+    TrustedTypeUtils::ReportSinkTypeMismatchViolations(
+        csp, nullptr , location.FileName(),
+        location.mLine, location.mColumn, sink, kTrustedTypesOnlySinkGroup,
+        encodedScriptSourceUTF16);
+  };
+  ErrorResult error;
+  auto convertedScriptSource =
+      TrustedTypeUtils::GetConvertedScriptSourceForPreNavigationCheck(
+          *aWindow, encodedScriptSourceUTF16, sink, compliantStringHolder,
+          error);
+  error.WouldReportJSException();
+  if (error.Failed()) {
+    reportPreNavigationCheckViolations();
+    if (shouldBlockOnError) {
+      RETURN_NSRESULT_ON_FAILURE(error);
+    }
+    error.SuppressException();
+    return NS_OK;
+  }
+
+  
+  
+  urlString = javascriptScheme + NS_ConvertUTF16toUTF8(*convertedScriptSource);
+
+  
+  nsCOMPtr<nsIURI> newURL;
+  nsresult rv = NS_NewURI(getter_AddRefs(newURL), urlString);
+  if (NS_FAILED(rv)) {
+    reportPreNavigationCheckViolations();
+    return shouldBlockOnError ? rv : NS_OK;
+  }
+
+  
+  aLoadState->SetURI(newURL);
+  return NS_OK;
+}
+
 nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                                Maybe<uint32_t> aCacheKey,
                                nsIRequest** aRequest) {
@@ -10485,6 +10568,32 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   nsresult rv;
   nsContentPolicyType contentPolicyType = DetermineContentType();
 
+  auto getSourceWindowContext = [this, &aLoadState] {
+    const MaybeDiscardedBrowsingContext& sourceBC =
+        aLoadState->SourceBrowsingContext();
+    if (!sourceBC.IsNullOrDiscarded()) {
+      if (WindowContext* wc = sourceBC.get()->GetCurrentWindowContext()) {
+        return wc;
+      }
+    }
+    WindowContext* wc = mBrowsingContext->GetParentWindowContext();
+    MOZ_ASSERT(wc);
+    return wc;
+  };
+
+  if (aLoadState->URI()->SchemeIs("javascript")) {
+    RefPtr<nsGlobalWindowInner> window =
+        getSourceWindowContext()->GetInnerWindow();
+    rv = PerformTrustedTypesPreNavigationCheck(aLoadState, window);
+    
+    if (mIsBeingDestroyed) {
+      return NS_OK;
+    }
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_DOM_SECURITY_ERR;
+    }
+  }
+
   if (IsSubframe()) {
     MOZ_ASSERT(contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
                    contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME,
@@ -10496,18 +10605,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
         
         
         
-        WindowContext* sourceWindowContext = [&] {
-          const MaybeDiscardedBrowsingContext& sourceBC =
-              aLoadState->SourceBrowsingContext();
-          if (!sourceBC.IsNullOrDiscarded()) {
-            if (WindowContext* wc = sourceBC.get()->GetCurrentWindowContext()) {
-              return wc;
-            }
-          }
-          return mBrowsingContext->GetParentWindowContext();
-        }();
-
-        MOZ_ASSERT(sourceWindowContext);
+        WindowContext* sourceWindowContext = getSourceWindowContext();
         
         
         
