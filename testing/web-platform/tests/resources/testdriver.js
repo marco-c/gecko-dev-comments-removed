@@ -819,6 +819,34 @@
                     return window.test_driver_internal.bidi.emulation.set_geolocation_override(
                         params);
                 },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                set_locale_override: function (params) {
+                    assertBidiIsEnabled();
+                    return window.test_driver_internal.bidi.emulation.set_locale_override(
+                        params);
+                }
             },
             
 
@@ -2181,6 +2209,10 @@
                 set_geolocation_override: function (params) {
                     throw new Error(
                         "bidi.emulation.set_geolocation_override is not implemented by testdriver-vendor.js");
+                },
+                set_locale_override: function (params) {
+                    throw new Error(
+                        "bidi.emulation.set_locale_override is not implemented by testdriver-vendor.js");
                 }
             },
             log: {
