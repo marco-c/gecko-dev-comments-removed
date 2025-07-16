@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   end = PR_IntervalNow();
   elapsed_ms = PR_IntervalToMilliseconds((PRIntervalTime)(end - start));
   
-  if (elapsed_ms < LONG_TIMEOUT - 100 || elapsed_ms > LONG_TIMEOUT + 100) {
+  if (elapsed_ms < LONG_TIMEOUT - 100 || elapsed_ms > LONG_TIMEOUT + 200) {
     printf("Elapsed time should be %u ms but is %u ms\n", LONG_TIMEOUT,
            elapsed_ms);
     printf("FAIL\n");

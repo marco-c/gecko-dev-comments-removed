@@ -1889,6 +1889,12 @@ PR_FormatTimeUSEnglish(char* buf, PRUint32 bufSize, const char* format,
           ADDSTR(bufPtr, bufSize, tmpBuf);
           break;
 
+        case 'e':
+          
+          PR_snprintf(tmpBuf, tmpBufSize, "%2ld", time->tm_mday);
+          ADDSTR(bufPtr, bufSize, tmpBuf);
+          break;
+
         case 'H':
           
           PR_snprintf(tmpBuf, tmpBufSize, "%.2ld", time->tm_hour);

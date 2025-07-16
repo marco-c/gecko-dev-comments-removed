@@ -147,7 +147,6 @@ int main(int argc, char** argv) {
 
 
   PR_SetError(0, 0);
-  PR_STDIO_INIT();
 
   
 
