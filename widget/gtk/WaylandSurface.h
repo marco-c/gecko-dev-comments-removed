@@ -261,6 +261,8 @@ class WaylandSurface final {
 
   void AssertCurrentThreadOwnsMutex();
 
+  void ForceCommit() { mSurfaceNeedsCommit = true; }
+
  private:
   ~WaylandSurface();
 
@@ -331,7 +333,13 @@ class WaylandSurface final {
 
   
   wl_surface* mSurface = nullptr;
-  bool mSurfaceNeedsCommit = false;
+  mozilla::Atomic<bool, mozilla::Relaxed> mSurfaceNeedsCommit{false};
+
+  
+  
+  
+  bool mSubsurfaceDesync = true;
+
   wl_subsurface* mSubsurface = nullptr;
   gfx::IntPoint mSubsurfacePosition{-1, -1};
 
