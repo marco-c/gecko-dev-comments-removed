@@ -1930,6 +1930,12 @@ pref("browser.newtabpage.activity-stream.discoverystream.sections.personalizatio
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.user.enabled", true);
 
+
+pref("browser.newtabpage.activity-stream.discoverystream.shortcuts.personalization.region-config", "");
+
+pref("browser.newtabpage.activity-stream.discoverystream.shortcuts.personalization.locale-config", "en-US,en-GB,en-CA");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.model.override", "");
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker.enabled", false);
