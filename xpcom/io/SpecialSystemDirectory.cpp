@@ -102,34 +102,6 @@ static nsresult GetWindowsFolder(int aFolder, nsIFile** aFile) {
 
 
 
-static nsresult GetLibrarySaveToPath(int aFallbackFolderId,
-                                     REFKNOWNFOLDERID aFolderId,
-                                     nsIFile** aFile) {
-  RefPtr<IShellLibrary> shellLib;
-  RefPtr<IShellItem> savePath;
-  SHLoadLibraryFromKnownFolder(aFolderId, STGM_READ, IID_IShellLibrary,
-                               getter_AddRefs(shellLib));
-
-  if (shellLib && SUCCEEDED(shellLib->GetDefaultSaveFolder(
-                      DSFT_DETECT, IID_IShellItem, getter_AddRefs(savePath)))) {
-    wchar_t* str = nullptr;
-    if (SUCCEEDED(savePath->GetDisplayName(SIGDN_FILESYSPATH, &str))) {
-      nsAutoString path;
-      path.Assign(str);
-      path.Append('\\');
-      nsresult rv = NS_NewLocalFile(path, aFile);
-      CoTaskMemFree(str);
-      return rv;
-    }
-  }
-
-  return GetWindowsFolder(aFallbackFolderId, aFile);
-}
-
-
-
-
-
 
 static nsresult GetRegWindowsAppDataFolder(bool aLocal, nsIFile** aFile) {
   HKEY key;
@@ -680,8 +652,7 @@ nsresult GetSpecialSystemDirectory(SystemDirectories aSystemSystemDirectory,
       return rv;
     }
     case Win_Documents: {
-      return GetLibrarySaveToPath(CSIDL_MYDOCUMENTS, FOLDERID_DocumentsLibrary,
-                                  aFile);
+      return GetKnownFolder(FOLDERID_Documents, aFile);
     }
 #endif  
 
