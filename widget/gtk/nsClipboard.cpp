@@ -373,7 +373,8 @@ nsClipboard::GetNativeClipboardSequenceNumber(ClipboardType aWhichClipboard) {
 
 bool nsClipboard::HasSuitableData(int32_t aWhichClipboard,
                                   const nsACString& aFlavor) {
-  MOZ_CLIPBOARD_LOG("%s for %s", __FUNCTION__, PromiseFlatCString(aFlavor).get());
+  MOZ_CLIPBOARD_LOG("%s for %s", __FUNCTION__,
+                    PromiseFlatCString(aFlavor).get());
 
   auto targets = mContext->GetTargets(aWhichClipboard);
   if (!targets) {
