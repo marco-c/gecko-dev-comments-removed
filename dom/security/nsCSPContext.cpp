@@ -2152,6 +2152,15 @@ void CSPReportRedirectSink::SetInterceptController(
 
 NS_IMETHODIMP
 nsCSPContext::Read(nsIObjectInputStream* aStream) {
+  return ReadImpl(aStream, false);
+}
+
+nsresult nsCSPContext::PolicyContainerRead(nsIObjectInputStream* aInputStream) {
+  return ReadImpl(aInputStream, true);
+}
+
+nsresult nsCSPContext::ReadImpl(nsIObjectInputStream* aStream,
+                                bool aForPolicyContainer) {
   CSPCONTEXTLOG(("nsCSPContext::Read"));
 
   nsresult rv;
@@ -2179,29 +2188,57 @@ nsCSPContext::Read(nsIObjectInputStream* aStream) {
     return NS_OK;
   }
 
+  if (aForPolicyContainer) {
+    return TryReadPolicies(PolicyDataVersion::Post136, aStream, numPolicies,
+                           true);
+  }
+
   
   
   nsTArray<uint8_t> data;
   rv = NS_ConsumeStream(aStream, UINT32_MAX, data);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  auto createStreamFromData =
+      [&data]() -> already_AddRefed<nsIObjectInputStream> {
+    nsCOMPtr<nsIInputStream> binaryStream;
+    nsresult rv = NS_NewByteInputStream(
+        getter_AddRefs(binaryStream),
+        Span(reinterpret_cast<const char*>(data.Elements()), data.Length()),
+        NS_ASSIGNMENT_DEPEND);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
+    nsCOMPtr<nsIObjectInputStream> stream =
+        NS_NewObjectInputStream(binaryStream);
+
+    return stream.forget();
+  };
+
   
   
   
-  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Post136, Span(data),
-                                   numPolicies))) {
+
+  nsCOMPtr<nsIObjectInputStream> stream = createStreamFromData();
+  NS_ENSURE_TRUE(stream, NS_ERROR_FAILURE);
+
+  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Post136, stream,
+                                   numPolicies, false))) {
     CSPCONTEXTLOG(("nsCSPContext::Read: Data was in version ::Post136."));
     return NS_OK;
   }
 
-  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Pre136, Span(data),
-                                   numPolicies))) {
+  stream = createStreamFromData();
+  NS_ENSURE_TRUE(stream, NS_ERROR_FAILURE);
+  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Pre136, stream,
+                                   numPolicies, false))) {
     CSPCONTEXTLOG(("nsCSPContext::Read: Data was in version ::Pre136."));
     return NS_OK;
   }
 
-  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::V138_9PreRelease,
-                                   Span(data), numPolicies))) {
+  stream = createStreamFromData();
+  NS_ENSURE_TRUE(stream, NS_ERROR_FAILURE);
+  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::V138_9PreRelease, stream,
+                                   numPolicies, false))) {
     CSPCONTEXTLOG(
         ("nsCSPContext::Read: Data was in version ::V138_9PreRelease."));
     return NS_OK;
@@ -2212,21 +2249,13 @@ nsCSPContext::Read(nsIObjectInputStream* aStream) {
 }
 
 nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
-                                       Span<const uint8_t> aData,
-                                       uint32_t aNumPolicies) {
-  nsCOMPtr<nsIInputStream> binaryStream;
-  nsresult rv = NS_NewByteInputStream(
-      getter_AddRefs(binaryStream),
-      Span(reinterpret_cast<const char*>(aData.Elements()), aData.Length()),
-      NS_ASSIGNMENT_DEPEND);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIObjectInputStream> stream = NS_NewObjectInputStream(binaryStream);
-
+                                       nsIObjectInputStream* aStream,
+                                       uint32_t aNumPolicies,
+                                       bool aForPolicyContainer) {
   
-  auto ReadBooleanSafe = [stream](bool* aBoolean) {
+  auto ReadBooleanSafe = [aStream](bool* aBoolean) {
     uint8_t raw = 0;
-    nsresult rv = stream->Read8(&raw);
+    nsresult rv = aStream->Read8(&raw);
     NS_ENSURE_SUCCESS(rv, rv);
     if (!(raw == 0 || raw == 1)) {
       CSPCONTEXTLOG(("nsCSPContext::TryReadPolicies: Bad boolean value"));
@@ -2242,7 +2271,7 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
   while (aNumPolicies > 0) {
     aNumPolicies--;
 
-    rv = stream->ReadString(policyString);
+    nsresult rv = aStream->ReadString(policyString);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2276,7 +2305,7 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
       
       
       uint32_t numExpressions;
-      rv = stream->Read32(&numExpressions);
+      rv = aStream->Read32(&numExpressions);
       NS_ENSURE_SUCCESS(rv, rv);
       
       
@@ -2291,11 +2320,14 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
   }
 
   
-  uint64_t available = 0;
-  rv = stream->Available(&available);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (available) {
-    return NS_ERROR_FAILURE;
+  if (!aForPolicyContainer) {
+    
+    uint64_t available = 0;
+    nsresult rv = aStream->Available(&available);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (available) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   
