@@ -40,6 +40,11 @@ class GlobalIntlData {
   
 
 
+  GCPtr<JSLinearString*> defaultLocale_;
+
+  
+
+
 
 
   GCPtr<JSLinearString*> runtimeDefaultTimeZone_;
@@ -101,6 +106,11 @@ class GlobalIntlData {
   GCPtr<JSObject*> dateTimeFormatToLocaleTime_;
 
  public:
+  
+
+
+  JSLinearString* defaultLocale(JSContext* cx);
+
   
 
 

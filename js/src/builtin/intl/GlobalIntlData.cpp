@@ -13,6 +13,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/DateTimeFormat.h"
 #include "builtin/intl/FormatBuffer.h"
+#include "builtin/intl/IntlObject.h"
 #include "builtin/intl/NumberFormat.h"
 #include "gc/Tracer.h"
 #include "js/RootingAPI.h"
@@ -58,6 +59,9 @@ bool js::intl::GlobalIntlData::ensureRuntimeDefaultLocale(JSContext* cx) {
     }
 
     
+    defaultLocale_ = nullptr;
+
+    
     resetCollator();
     resetNumberFormat();
     resetDateTimeFormat();
@@ -88,6 +92,20 @@ bool js::intl::GlobalIntlData::ensureRuntimeDefaultTimeZone(JSContext* cx) {
   }
 
   return true;
+}
+
+JSLinearString* js::intl::GlobalIntlData::defaultLocale(JSContext* cx) {
+  
+  if (!ensureRuntimeDefaultLocale(cx)) {
+    return nullptr;
+  }
+
+  
+  if (!defaultLocale_) {
+    
+    defaultLocale_ = ComputeDefaultLocale(cx);
+  }
+  return defaultLocale_;
 }
 
 static inline bool EqualLocale(const JSLinearString* str1,
@@ -215,6 +233,8 @@ DateTimeFormatObject* js::intl::GlobalIntlData::getOrCreateDateTimeFormat(
 void js::intl::GlobalIntlData::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &runtimeDefaultLocale_,
                     "GlobalIntlData::runtimeDefaultLocale_");
+  TraceNullableEdge(trc, &defaultLocale_, "GlobalIntlData::defaultLocale_");
+
   TraceNullableEdge(trc, &runtimeDefaultTimeZone_,
                     "GlobalIntlData::runtimeDefaultTimeZone_");
 
