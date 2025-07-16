@@ -3780,10 +3780,9 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
       
       
       
-      nsDisplayItem* blendContainer =
-          nsDisplayBlendContainer::CreateForMixBlendMode(
-              aBuilder, this, &rootResultList,
-              aBuilder->CurrentActiveScrolledRoot());
+      nsDisplayItem* blendContainer = nsDisplayBlendContainer::Create(
+          aBuilder, this, &rootResultList,
+          aBuilder->CurrentActiveScrolledRoot());
       rootResultList.AppendToTop(blendContainer);
 
       

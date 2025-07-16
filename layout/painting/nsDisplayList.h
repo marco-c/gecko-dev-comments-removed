@@ -1625,6 +1625,8 @@ class nsDisplayListBuilder {
   }
   void UpdateShouldBuildAsyncZoomContainer();
 
+  void UpdateShouldBuildBackdropRootContainer();
+
   bool ShouldRebuildDisplayListDueToPrefChange();
 
   
@@ -5324,7 +5326,7 @@ class nsDisplayTableBlendMode final : public nsDisplayBlendMode {
 
 class nsDisplayBlendContainer : public nsDisplayWrapList {
  public:
-  static nsDisplayBlendContainer* CreateForMixBlendMode(
+  static nsDisplayBlendContainer* Create(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot);
 
@@ -5332,10 +5334,6 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
       nsIFrame* aSecondaryFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot);
-
-  static nsDisplayBlendContainer* CreateForBackdropRoot(
-      nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
-      const ActiveScrolledRoot* aActiveScrolledRoot, bool aNeedsBackdropRoot);
 
   MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayBlendContainer)
 
@@ -5353,45 +5351,32 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
     
     return HasDifferentFrame(aItem) && HasSameTypeAndClip(aItem) &&
            HasSameContent(aItem) &&
-           mBlendContainerType ==
+           mIsForBackground ==
                static_cast<const nsDisplayBlendContainer*>(aItem)
-                   ->mBlendContainerType;
+                   ->mIsForBackground;
   }
 
   bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override {
-    return !CreatesStackingContextHelper();
+    return false;
   }
 
-  bool CreatesStackingContextHelper() override {
-    return mBlendContainerType != BlendContainerType::BackdropRootNothing;
-  }
+  bool CreatesStackingContextHelper() override { return true; }
 
  protected:
-  enum class BlendContainerType : uint8_t {
-    
-    MixBlendMode,
-    
-    BackgroundBlendMode,
-    
-    
-    
-    BackdropRootNothing,
-    
-    BackdropRootNeedsContainer,
-  };
-
   nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                           nsDisplayList* aList,
                           const ActiveScrolledRoot* aActiveScrolledRoot,
-                          BlendContainerType aBlendContainerType);
+                          bool aIsForBackground);
   nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder,
                           const nsDisplayBlendContainer& aOther)
       : nsDisplayWrapList(aBuilder, aOther),
-        mBlendContainerType(aOther.mBlendContainerType) {
+        mIsForBackground(aOther.mIsForBackground) {
     MOZ_COUNT_CTOR(nsDisplayBlendContainer);
   }
 
-  BlendContainerType mBlendContainerType;
+  
+  
+  bool mIsForBackground;
 
  private:
   NS_DISPLAY_ALLOW_CLONING()
@@ -5417,10 +5402,9 @@ class nsDisplayTableBlendContainer final : public nsDisplayBlendContainer {
   nsDisplayTableBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                                nsDisplayList* aList,
                                const ActiveScrolledRoot* aActiveScrolledRoot,
-                               BlendContainerType aBlendContainerType,
-                               nsIFrame* aAncestorFrame)
+                               bool aIsForBackground, nsIFrame* aAncestorFrame)
       : nsDisplayBlendContainer(aBuilder, aFrame, aList, aActiveScrolledRoot,
-                                aBlendContainerType),
+                                aIsForBackground),
         mAncestorFrame(aAncestorFrame) {
     if (aBuilder->IsRetainingDisplayList()) {
       mAncestorFrame->AddDisplayItem(this);
