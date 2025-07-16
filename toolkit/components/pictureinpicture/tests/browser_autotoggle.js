@@ -7,6 +7,8 @@ const MIN_DURATION_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.min-video-secs";
 const ALWAYS_SHOW_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.always-show";
+const VIDEO_TOGGLE_ENABLED_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.enabled";
 
 add_setup(async () => {
   const PIP_ON_TAB_SWITCH_ENABLED_PREF =
@@ -65,6 +67,50 @@ add_task(async function autopip_and_focus() {
 
   is(Services.focus.activeWindow, win1, "First window is still focused");
   blurAborter.abort();
+
+  
+  let pipClosed = BrowserTestUtils.domWindowClosed(pipWin);
+  await BrowserTestUtils.switchTab(win1.gBrowser, secondTab);
+  ok(await pipClosed, "PiP window automatically closed.");
+
+  await BrowserTestUtils.closeWindow(win1);
+});
+
+
+
+
+
+add_task(async function autopip_video_toggle_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[VIDEO_TOGGLE_ENABLED_PREF, false]],
+  });
+
+  
+  let win1 = await BrowserTestUtils.openNewBrowserWindow();
+  let firstTab = win1.gBrowser.selectedTab;
+
+  
+  let pipTab = await BrowserTestUtils.openNewForegroundTab(
+    win1.gBrowser,
+    TEST_PAGE
+  );
+  let browser = pipTab.linkedBrowser;
+  let secondTab = win1.gBrowser.selectedTab;
+
+  
+  let videoID = "with-controls";
+  await ensureVideosReady(browser);
+  await SpecialPowers.spawn(browser, [videoID], async videoID => {
+    await content.document.getElementById(videoID).play();
+  });
+
+  
+  let domWindowOpened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
+
+  
+  await BrowserTestUtils.switchTab(win1.gBrowser, firstTab);
+  let pipWin = await domWindowOpened;
+  ok(pipWin, "PiP window automatically opened.");
 
   
   let pipClosed = BrowserTestUtils.domWindowClosed(pipWin);
