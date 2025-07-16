@@ -60,17 +60,44 @@ class Font extends PureComponent {
       return null;
     }
 
+    const { isFontFaceRuleExpanded } = this.state;
+
     
     
     
     const leading = ruleText.substring(0, ruleText.indexOf("{") + 1);
-    const body = ruleText.substring(
-      ruleText.indexOf("{") + 1,
-      ruleText.lastIndexOf("}")
-    );
+
     const trailing = ruleText.substring(ruleText.lastIndexOf("}"));
 
-    const { isFontFaceRuleExpanded } = this.state;
+    let body;
+    if (isFontFaceRuleExpanded) {
+      const ruleBodyText = ruleText
+        .substring(ruleText.indexOf("{") + 1, ruleText.lastIndexOf("}"))
+        .trim();
+
+      const indent = "  ";
+      body = "\n";
+      const lexer = new InspectorCSSParser(ruleBodyText);
+      let token;
+      let isNewLine = true;
+      while ((token = lexer.nextToken())) {
+        if (isNewLine) {
+          
+          
+          if (token.tokenType === "WhiteSpace") {
+            continue;
+          }
+          body += indent;
+          isNewLine = false;
+        }
+
+        body += token.text;
+        if (token.tokenType === "Semicolon") {
+          body += "\n";
+          isNewLine = true;
+        }
+      }
+    }
 
     return dom.pre(
       {
