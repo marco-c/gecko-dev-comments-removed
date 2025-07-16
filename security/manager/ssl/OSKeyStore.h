@@ -33,7 +33,7 @@ class AbstractOSKeyStore {
 
   
   
-  virtual bool SecretAvailable(const nsACString& label);
+  virtual nsresult SecretAvailable(const nsACString& label);
   
   
   
