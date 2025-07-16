@@ -14,6 +14,7 @@
 #ifndef NSSDEVT_H
 #include "nssdevt.h"
 #endif 
+#include "pkcs11t.h"
 
 PR_BEGIN_EXTERN_C
 
@@ -24,12 +25,11 @@ PR_BEGIN_EXTERN_C
 
 
 NSS_EXTERN NSSAlgorithmAndParameters *
-NSSAlgorithmAndParameters_CreateSHA1Digest(
-    NSSArena *arenaOpt);
+NSSAlgorithmAndParameters_CreateDigest(
+    NSSArena *arenaOpt, CK_MECHANISM_TYPE type);
 
-NSS_EXTERN NSSAlgorithmAndParameters *
-NSSAlgorithmAndParameters_CreateMD5Digest(
-    NSSArena *arenaOpt);
+NSS_EXTERN PRStatus
+NSSAlgorithm_DigestBuf(CK_MECHANISM_TYPE type, NSSItem *input, NSSItem *output);
 
 PR_END_EXTERN_C
 

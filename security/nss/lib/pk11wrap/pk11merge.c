@@ -106,6 +106,32 @@ pk11_copyAttributes(PLArenaPool *arena,
     return rv;
 }
 
+static CK_OBJECT_CLASS
+pk11_getClassFromTemplate(CK_ATTRIBUTE *template, CK_ULONG tsize)
+{
+    CK_ULONG i;
+    for (i = 0; i < tsize; i++) {
+        if ((template[i].type == CKA_CLASS) &&
+            template[i].ulValueLen == sizeof(CK_OBJECT_CLASS)) {
+            return *(CK_OBJECT_CLASS *)template[i].pValue;
+        }
+    }
+    return CK_INVALID_HANDLE;
+}
+
+static void
+pk11_setClassInTemplate(CK_ATTRIBUTE *template, CK_ULONG tsize,
+                        CK_OBJECT_CLASS objClass)
+{
+    CK_ULONG i;
+    for (i = 0; i < tsize; i++) {
+        if ((template[i].type == CKA_CLASS) &&
+            template[i].ulValueLen == sizeof(objClass)) {
+            PORT_Memcpy(template[i].pValue, &objClass, sizeof(objClass));
+        }
+    }
+}
+
 
 
 
@@ -117,6 +143,7 @@ pk11_matchAcrossTokens(PLArenaPool *arena, PK11SlotInfo *targetSlot,
 {
 
     CK_RV crv;
+    CK_OBJECT_CLASS objclass = CK_INVALID_HANDLE;
     *peer = CK_INVALID_HANDLE;
 
     crv = PK11_GetAttributes(arena, sourceSlot, id, template, tsize);
@@ -131,7 +158,20 @@ pk11_matchAcrossTokens(PLArenaPool *arena, PK11SlotInfo *targetSlot,
         goto loser;
     }
 
+    
+
+    objclass = pk11_getClassFromTemplate(template, tsize);
+    if (objclass == CKO_NSS_TRUST) {
+        pk11_setClassInTemplate(template, tsize, CKO_TRUST);
+        objclass = CKO_TRUST;
+    }
+
     *peer = pk11_FindObjectByTemplate(targetSlot, template, tsize);
+    
+    if ((*peer == CK_INVALID_HANDLE && objclass == CKO_TRUST)) {
+        pk11_setClassInTemplate(template, tsize, CKO_NSS_TRUST);
+        *peer = pk11_FindObjectByTemplate(targetSlot, template, tsize);
+    }
     return SECSuccess;
 
 loser:
@@ -1025,16 +1065,16 @@ done:
 PRBool
 pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 {
-    CK_ULONG targetTrust = (target->ulValueLen == sizeof(CK_LONG)) ? *(CK_ULONG *)target->pValue
-                                                                   : CKT_NSS_TRUST_UNKNOWN;
-    CK_ULONG sourceTrust = (source->ulValueLen == sizeof(CK_LONG)) ? *(CK_ULONG *)source->pValue
-                                                                   : CKT_NSS_TRUST_UNKNOWN;
+    CK_TRUST targetTrust = (target->ulValueLen == sizeof(CK_TRUST)) ? *(CK_TRUST *)target->pValue : CKT_TRUST_UNKNOWN;
+    CK_TRUST sourceTrust = (source->ulValueLen == sizeof(CK_TRUST)) ? *(CK_TRUST *)source->pValue : CKT_TRUST_UNKNOWN;
 
     
 
 
 
 
+
+    
 
 
 
@@ -1042,12 +1082,13 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
         return USE_TARGET; 
     }
 
-    if (sourceTrust == CKT_NSS_TRUST_UNKNOWN) {
+    
+    if ((sourceTrust == CKT_TRUST_UNKNOWN) || (sourceTrust == CKT_NSS_TRUST_UNKNOWN)) {
         return USE_TARGET;
     }
 
     
-    if (targetTrust == CKT_NSS_TRUST_UNKNOWN) {
+    if ((targetTrust == CKT_TRUST_UNKNOWN) || (targetTrust == CKT_NSS_TRUST_UNKNOWN)) {
         
         return USE_SOURCE;
     }
@@ -1060,11 +1101,14 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 
 
 
-    if ((sourceTrust == CKT_NSS_MUST_VERIFY_TRUST) ||
+    if ((sourceTrust == CKT_TRUST_MUST_VERIFY_TRUST) ||
+        (sourceTrust == CKT_NSS_MUST_VERIFY_TRUST) ||
         (sourceTrust == CKT_NSS_VALID_DELEGATOR)) {
+
         return USE_TARGET;
     }
-    if ((targetTrust == CKT_NSS_MUST_VERIFY_TRUST) ||
+    if ((targetTrust == CKT_TRUST_MUST_VERIFY_TRUST) ||
+        (targetTrust == CKT_NSS_MUST_VERIFY_TRUST) ||
         (targetTrust == CKT_NSS_VALID_DELEGATOR)) {
         
         return USE_SOURCE;
@@ -1076,9 +1120,59 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 
 
 
+
+void
+pk11_map_trust_entry(CK_OBJECT_CLASS targetClass, CK_ATTRIBUTE *template)
+{
+    CK_TRUST trust;
+    CK_TRUST newTrust;
+
+    if (template->ulValueLen != sizeof(CK_TRUST)) {
+        return;
+    }
+    trust = *(CK_TRUST *)template->pValue;
+    newTrust = (targetClass == CKO_TRUST) ? CKT_TRUST_UNKNOWN
+                                          : CKT_NSS_TRUST_UNKNOWN;
+
+    switch (trust) {
+        case CKT_NSS_TRUSTED:
+        case CKT_TRUSTED:
+            newTrust = (targetClass == CKO_TRUST) ? CKT_TRUSTED
+                                                  : CKT_NSS_TRUSTED;
+            break;
+        case CKT_NSS_TRUSTED_DELEGATOR:
+        case CKT_TRUST_ANCHOR:
+            newTrust = (targetClass == CKO_TRUST) ? CKT_TRUST_ANCHOR
+                                                  : CKT_NSS_TRUSTED_DELEGATOR;
+            break;
+        case CKT_NSS_VALID_DELEGATOR:
+            newTrust = (targetClass == CKO_TRUST) ? CKT_TRUST_MUST_VERIFY_TRUST
+                                                  : CKT_NSS_VALID_DELEGATOR;
+            break;
+        case CKT_NSS_MUST_VERIFY_TRUST:
+        case CKT_TRUST_MUST_VERIFY_TRUST:
+            newTrust = (targetClass == CKO_TRUST) ? CKT_TRUST_MUST_VERIFY_TRUST
+                                                  : CKT_NSS_MUST_VERIFY_TRUST;
+            break;
+        case CKT_NSS_NOT_TRUSTED:
+        case CKT_NOT_TRUSTED:
+            newTrust = (targetClass == CKO_TRUST) ? CKT_NOT_TRUSTED
+                                                  : CKT_NSS_NOT_TRUSTED;
+            break;
+        default: 
+            break;
+    }
+    PORT_Memcpy(template->pValue, &newTrust, sizeof(newTrust));
+    return;
+}
+
+
+
+
 static SECStatus
 pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-                CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                CK_OBJECT_HANDLE id, CK_OBJECT_CLASS sourceClass,
+                void *targetPwArg, void *sourcePwArg)
 {
     CK_OBJECT_HANDLE targetTrustID;
     PLArenaPool *arena = NULL;
@@ -1091,7 +1185,9 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
     };
     CK_ULONG trustTemplateCount =
         sizeof(trustTemplate) / sizeof(trustTemplate[0]);
-    CK_ATTRIBUTE trustCopyTemplate[] = {
+    CK_ATTRIBUTE *trustCopyTemplate = NULL;
+    CK_ULONG trustCopyTemplateCount = 0;
+    CK_ATTRIBUTE nssTrustCopyTemplate[] = {
         { CKA_CLASS, NULL, 0 },
         { CKA_TOKEN, NULL, 0 },
         { CKA_LABEL, NULL, 0 },
@@ -1099,16 +1195,32 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
         { CKA_MODIFIABLE, NULL, 0 },
         { CKA_ISSUER, NULL, 0 },
         { CKA_SERIAL_NUMBER, NULL, 0 },
-        { CKA_CERT_SHA1_HASH, NULL, 0 },
-        { CKA_CERT_MD5_HASH, NULL, 0 },
-        { CKA_TRUST_SERVER_AUTH, NULL, 0 },
-        { CKA_TRUST_CLIENT_AUTH, NULL, 0 },
-        { CKA_TRUST_CODE_SIGNING, NULL, 0 },
-        { CKA_TRUST_EMAIL_PROTECTION, NULL, 0 },
-        { CKA_TRUST_STEP_UP_APPROVED, NULL, 0 }
+        { CKA_NSS_CERT_SHA1_HASH, NULL, 0 },
+        { CKA_NSS_CERT_MD5_HASH, NULL, 0 },
+        { CKA_NSS_TRUST_SERVER_AUTH, NULL, 0 },
+        { CKA_NSS_TRUST_CLIENT_AUTH, NULL, 0 },
+        { CKA_NSS_TRUST_CODE_SIGNING, NULL, 0 },
+        { CKA_NSS_TRUST_EMAIL_PROTECTION, NULL, 0 },
+        { CKA_NSS_TRUST_STEP_UP_APPROVED, NULL, 0 }
     };
-    CK_ULONG trustCopyTemplateCount =
-        sizeof(trustCopyTemplate) / sizeof(trustCopyTemplate[0]);
+    CK_ULONG nssTrustCopyTemplateCount = PR_ARRAY_SIZE(nssTrustCopyTemplate);
+    CK_ATTRIBUTE pkcsTrustCopyTemplate[] = {
+        { CKA_CLASS, NULL, 0 },
+        { CKA_TOKEN, NULL, 0 },
+        { CKA_LABEL, NULL, 0 },
+        { CKA_PRIVATE, NULL, 0 },
+        { CKA_MODIFIABLE, NULL, 0 },
+        { CKA_ISSUER, NULL, 0 },
+        { CKA_SERIAL_NUMBER, NULL, 0 },
+        { CKA_HASH_OF_CERTIFICATE, NULL, 0 },
+        { CKA_NAME_HASH_ALGORITHM, NULL, 0 },
+        { CKA_PKCS_TRUST_SERVER_AUTH, NULL, 0 },
+        { CKA_PKCS_TRUST_CLIENT_AUTH, NULL, 0 },
+        { CKA_PKCS_TRUST_CODE_SIGNING, NULL, 0 },
+        { CKA_PKCS_TRUST_EMAIL_PROTECTION, NULL, 0 },
+    };
+    CK_ULONG pkcsTrustCopyTemplateCount = PR_ARRAY_SIZE(pkcsTrustCopyTemplate);
+    CK_OBJECT_CLASS targetClass;
 
     arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
@@ -1121,23 +1233,35 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
     if (rv != SECSuccess) {
         goto done;
     }
+    targetClass = pk11_getClassFromTemplate(trustTemplate, trustTemplateCount);
     if (targetTrustID != CK_INVALID_HANDLE) {
         
-        CK_ATTRIBUTE_TYPE trustAttrs[] = {
-            CKA_TRUST_SERVER_AUTH, CKA_TRUST_CLIENT_AUTH,
-            CKA_TRUST_CODE_SIGNING, CKA_TRUST_EMAIL_PROTECTION,
-            CKA_TRUST_IPSEC_TUNNEL, CKA_TRUST_IPSEC_USER,
-            CKA_TRUST_TIME_STAMPING
+        CK_ATTRIBUTE_TYPE nssTrustAttrs[] = {
+            CKA_NSS_TRUST_SERVER_AUTH, CKA_NSS_TRUST_CLIENT_AUTH,
+            CKA_NSS_TRUST_CODE_SIGNING, CKA_NSS_TRUST_EMAIL_PROTECTION,
+            CKA_NSS_TRUST_IPSEC_TUNNEL, CKA_NSS_TRUST_TIME_STAMPING
         };
-        CK_ULONG trustAttrsCount =
-            sizeof(trustAttrs) / sizeof(trustAttrs[0]);
+        CK_ATTRIBUTE_TYPE pkcsTrustAttrs[] = {
+            CKA_PKCS_TRUST_SERVER_AUTH, CKA_PKCS_TRUST_CLIENT_AUTH,
+            CKA_PKCS_TRUST_CODE_SIGNING, CKA_PKCS_TRUST_EMAIL_PROTECTION,
+            CKA_TRUST_IPSEC_IKE, CKA_PKCS_TRUST_TIME_STAMPING
+        };
+        CK_ULONG trustAttrsCount = PR_ARRAY_SIZE(pkcsTrustAttrs);
 
         CK_ULONG i;
         CK_ATTRIBUTE targetTemplate, sourceTemplate;
 
+        PORT_Assert(trustAttrsCount == PR_ARRAY_SIZE(nssTrustAttrs));
+
         
         for (i = 0; i < trustAttrsCount; i++) {
-            targetTemplate.type = sourceTemplate.type = trustAttrs[i];
+            targetTemplate.type = (targetClass == CKO_TRUST)
+                                      ? nssTrustAttrs[i]
+                                      : pkcsTrustAttrs[i];
+            targetTemplate.type = (sourceClass == CKO_TRUST)
+                                      ? nssTrustAttrs[i]
+                                      : pkcsTrustAttrs[i];
+
             targetTemplate.pValue = sourceTemplate.pValue = NULL;
             targetTemplate.ulValueLen = sourceTemplate.ulValueLen = 0;
             PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
@@ -1145,6 +1269,35 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
                                &targetTemplate, 1);
             if (pk11_mergeTrustEntry(&targetTemplate, &sourceTemplate)) {
                 
+                SECStatus lrv;
+
+                
+                if (sourceClass != targetClass) {
+                    pk11_map_trust_entry(targetClass, &sourceTemplate);
+                }
+
+                lrv = pk11_setAttributes(targetSlot, targetTrustID,
+                                         &sourceTemplate, 1);
+                if (lrv != SECSuccess) {
+                    rv = SECFailure;
+                    error = PORT_GetError();
+                }
+            }
+        }
+
+        
+
+        if ((sourceClass == CKO_NSS_TRUST) && (targetClass == CKO_NSS_TRUST)) {
+            
+            sourceTemplate.type = CKA_NSS_TRUST_STEP_UP_APPROVED;
+            sourceTemplate.pValue = NULL;
+            sourceTemplate.ulValueLen = 0;
+
+            
+            PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
+            if ((sourceTemplate.ulValueLen == sizeof(CK_BBOOL)) &&
+                (sourceTemplate.pValue) &&
+                (*(CK_BBOOL *)sourceTemplate.pValue == CK_TRUE)) {
                 SECStatus lrv = pk11_setAttributes(targetSlot, targetTrustID,
                                                    &sourceTemplate, 1);
                 if (lrv != SECSuccess) {
@@ -1154,28 +1307,15 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
             }
         }
 
-        
-        sourceTemplate.type = CKA_TRUST_STEP_UP_APPROVED;
-        sourceTemplate.pValue = NULL;
-        sourceTemplate.ulValueLen = 0;
-
-        
-        PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
-        if ((sourceTemplate.ulValueLen == sizeof(CK_BBOOL)) &&
-            (sourceTemplate.pValue) &&
-            (*(CK_BBOOL *)sourceTemplate.pValue == CK_TRUE)) {
-            SECStatus lrv = pk11_setAttributes(targetSlot, targetTrustID,
-                                               &sourceTemplate, 1);
-            if (lrv != SECSuccess) {
-                rv = SECFailure;
-                error = PORT_GetError();
-            }
-        }
-
         goto done;
     }
 
     
+    trustCopyTemplate = (sourceClass == CKO_TRUST) ? pkcsTrustCopyTemplate
+                                                   : nssTrustCopyTemplate;
+    trustCopyTemplateCount = (sourceClass == CKO_TRUST)
+                                 ? pkcsTrustCopyTemplateCount
+                                 : nssTrustCopyTemplateCount;
     rv = pk11_copyAttributes(arena, targetSlot, targetTrustID, sourceSlot, id,
                              trustCopyTemplate, trustCopyTemplateCount);
 done:
@@ -1217,8 +1357,9 @@ pk11_mergeObject(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
             return pk11_mergeCert(targetSlot, sourceSlot, id,
                                   targetPwArg, sourcePwArg);
         case CKO_NSS_TRUST:
+        case CKO_TRUST:
             return pk11_mergeTrust(targetSlot, sourceSlot, id,
-                                   targetPwArg, sourcePwArg);
+                                   objClass, targetPwArg, sourcePwArg);
         case CKO_PUBLIC_KEY:
             return pk11_mergePublicKey(targetSlot, sourceSlot, id,
                                        targetPwArg, sourcePwArg);
