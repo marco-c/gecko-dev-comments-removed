@@ -191,13 +191,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   void Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor);
 
-#ifdef DEBUG
-  
-  
-  
-  void VerifyTimerListConsistency() const MOZ_REQUIRES(mMonitor);
-#endif
-
   
   
   
