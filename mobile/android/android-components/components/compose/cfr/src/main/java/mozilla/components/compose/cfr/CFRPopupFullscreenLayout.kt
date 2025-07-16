@@ -11,7 +11,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.annotation.Px
 import androidx.annotation.VisibleForTesting
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalConfiguration
@@ -148,6 +148,8 @@ internal class CFRPopupFullscreenLayout(
     }
 
     @Composable
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1957792
+    @Suppress("ConfigurationScreenWidthHeight")
     override fun Content() {
         val anchorLocation = IntArray(2).apply {
             anchor.getLocationInWindow(this)
