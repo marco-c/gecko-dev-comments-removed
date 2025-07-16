@@ -398,17 +398,10 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
 
   
   
-  
   DocAccessible* targetDocument = target->Document();
-  MOZ_ASSERT(targetDocument);
-  LocalAccessible* anchorJump = targetDocument->AnchorJump();
-  if (anchorJump) {
-    if (target == targetDocument || target->IsNonInteractive()) {
-      
-      
-      nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_START,
-                              anchorJump, aEvent->FromUserInput());
-    }
+  if (!targetDocument->ProcessAnchorJump()) {
+    
+    
     targetDocument->SetAnchorJump(nullptr);
   }
 }

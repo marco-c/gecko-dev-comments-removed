@@ -3133,3 +3133,25 @@ void DocAccessible::AttrElementChanged(dom::Element* aElement, nsAtom* aAttr) {
   AttributeChanged(aElement, kNameSpaceID_None, aAttr,
                    dom::MutationEvent_Binding::MODIFICATION, nullptr);
 }
+
+bool DocAccessible::ProcessAnchorJump() {
+  if (!mAnchorJumpElm) {
+    return true;
+  }
+  LocalAccessible* target = GetAccessibleOrContainer(mAnchorJumpElm);
+  if (!target) {
+    
+    mAnchorJumpElm = nullptr;
+    return true;
+  }
+  const Accessible* focusedAcc = FocusMgr()->FocusedAccessible();
+  if (!focusedAcc || (focusedAcc != this && !focusedAcc->IsNonInteractive())) {
+    
+    
+    return false;
+  }
+  nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_START, target);
+  
+  mAnchorJumpElm = nullptr;
+  return true;
+}

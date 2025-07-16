@@ -492,7 +492,7 @@ void NotificationController::ScheduleProcessing() {
 
 
 
-bool NotificationController::IsUpdatePending() {
+bool NotificationController::IsUpdatePending() const {
   return mPresShell->NeedStyleFlush() || mPresShell->NeedLayoutFlush() ||
          mObservingState == eRefreshProcessingForUpdate || WaitingForParent() ||
          mContentInsertions.Count() != 0 || mNotifications.Length() != 0 ||
@@ -500,7 +500,7 @@ bool NotificationController::IsUpdatePending() {
          !mDocument->HasLoadState(DocAccessible::eTreeConstructed);
 }
 
-bool NotificationController::WaitingForParent() {
+bool NotificationController::WaitingForParent() const {
   DocAccessible* parentdoc = mDocument->ParentDocument();
   if (!parentdoc) {
     return false;
@@ -1050,6 +1050,11 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   }
 
   ProcessEventQueue();
+  if (mDocument) {
+    
+    
+    mDocument->ProcessAnchorJump();
+  }
 
   if (mDocument && mDocument->IPCDoc()) {
     

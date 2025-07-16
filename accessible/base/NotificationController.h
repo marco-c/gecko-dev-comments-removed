@@ -244,6 +244,11 @@ class NotificationController final : public EventQueue,
   }
 #endif
 
+  
+
+
+  bool IsUpdatePending() const;
+
  protected:
   virtual ~NotificationController();
 
@@ -253,13 +258,8 @@ class NotificationController final : public EventQueue,
   
 
 
-  bool IsUpdatePending();
 
-  
-
-
-
-  bool WaitingForParent();
+  bool WaitingForParent() const;
 
  private:
   NotificationController(const NotificationController&);

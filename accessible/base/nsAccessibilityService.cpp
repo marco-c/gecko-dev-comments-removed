@@ -562,27 +562,15 @@ void nsAccessibilityService::NotifyOfAnchorJumpTo(nsIContent* aTargetNode) {
   if (!document) {
     return;
   }
+  document->SetAnchorJump(aTargetNode);
   
   
-  const Accessible* focusedAcc = FocusedAccessible();
-  if (focusedAcc &&
-      (focusedAcc == document || focusedAcc->IsNonInteractive())) {
-    LocalAccessible* targetAcc =
-        document->GetAccessibleOrContainer(aTargetNode);
-    
-    
-    
-    if (targetAcc && !targetAcc->IsDoc()) {
-      nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_START,
-                              targetAcc);
-      document->SetAnchorJump(nullptr);
-    } else {
-      
-      
-      document->SetAnchorJump(aTargetNode);
-    }
-  } else {
-    document->SetAnchorJump(aTargetNode);
+  
+  
+  
+  
+  if (!document->Controller()->IsUpdatePending()) {
+    document->ProcessAnchorJump();
   }
 }
 
