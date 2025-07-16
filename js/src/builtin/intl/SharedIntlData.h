@@ -8,6 +8,7 @@
 #define builtin_intl_SharedIntlData_h
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stddef.h>
@@ -69,6 +70,11 @@ class SharedIntlData {
         : isLatin1(true), length(length) {
       latin1Chars = reinterpret_cast<const JS::Latin1Char*>(chars);
     }
+
+    LinearStringLookup(const char16_t* chars, size_t length)
+        : isLatin1(false), length(length) {
+      twoByteChars = chars;
+    }
   };
 
  public:
@@ -99,15 +105,28 @@ class SharedIntlData {
 
   using TimeZoneName = JSAtom*;
 
-  struct TimeZoneHasher {
+  struct AvailableTimeZoneHasher {
     struct Lookup : LinearStringLookup {
       explicit Lookup(const JSLinearString* timeZone);
+      Lookup(const char* chars, size_t length);
+      Lookup(const char16_t* chars, size_t length);
     };
 
     static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
     static bool match(TimeZoneName key, const Lookup& lookup);
   };
 
+  struct TimeZoneHasher {
+    using Lookup = TimeZoneName;
+
+    static js::HashNumber hash(const Lookup& lookup) { return lookup->hash(); }
+    static bool match(TimeZoneName key, const Lookup& lookup) {
+      return key == lookup;
+    }
+  };
+
+  using AvailableTimeZoneSet =
+      GCHashSet<TimeZoneName, AvailableTimeZoneHasher, SystemAllocPolicy>;
   using TimeZoneSet =
       GCHashSet<TimeZoneName, TimeZoneHasher, SystemAllocPolicy>;
   using TimeZoneMap =
@@ -122,7 +141,7 @@ class SharedIntlData {
 
 
 
-  TimeZoneSet availableTimeZones;
+  AvailableTimeZoneSet availableTimeZones;
 
   
 
@@ -149,6 +168,7 @@ class SharedIntlData {
 
 
 
+
   TimeZoneMap ianaLinksCanonicalizedDifferentlyByICU;
 
   bool timeZoneDataInitialized = false;
@@ -159,30 +179,77 @@ class SharedIntlData {
 
   bool ensureTimeZones(JSContext* cx);
 
+  
+
+
+
+
+
+
+
+  JSAtom* tryCanonicalizeTimeZoneConsistentWithIANA(JSAtom* availableTimeZone);
+
+  
+
+
+
+  JSAtom* canonicalizeAvailableTimeZone(JSContext* cx,
+                                        JS::Handle<JSAtom*> availableTimeZone);
+
+  
+
+
+
+
+
+  bool validateAndCanonicalizeTimeZone(
+      JSContext* cx, const AvailableTimeZoneSet::Lookup& lookup,
+      JS::MutableHandle<JSAtom*> identifier,
+      JS::MutableHandle<JSAtom*> primary);
+
  public:
   
 
 
 
-  bool validateTimeZoneName(JSContext* cx, JS::Handle<JSString*> timeZone,
+  bool validateTimeZoneName(JSContext* cx, JS::Handle<JSLinearString*> timeZone,
                             JS::MutableHandle<JSAtom*> result);
 
   
 
 
 
-
-
-
-  bool tryCanonicalizeTimeZoneConsistentWithIANA(
-      JSContext* cx, JS::Handle<JSString*> timeZone,
-      JS::MutableHandle<JSAtom*> result);
+  JSLinearString* canonicalizeTimeZone(JSContext* cx,
+                                       JS::Handle<JSLinearString*> timeZone);
 
   
 
 
 
-  JS::Result<TimeZoneSet::Iterator> availableTimeZonesIteration(JSContext* cx);
+
+
+  bool validateAndCanonicalizeTimeZone(JSContext* cx,
+                                       JS::Handle<JSLinearString*> timeZone,
+                                       JS::MutableHandle<JSAtom*> identifier,
+                                       JS::MutableHandle<JSAtom*> primary);
+
+  
+
+
+
+
+
+  bool validateAndCanonicalizeTimeZone(JSContext* cx,
+                                       mozilla::Span<const char> timeZone,
+                                       JS::MutableHandle<JSAtom*> identifier,
+                                       JS::MutableHandle<JSAtom*> primary);
+
+  
+
+
+
+  JS::Result<AvailableTimeZoneSet::Iterator> availableTimeZonesIteration(
+      JSContext* cx);
 
  private:
   using Locale = JSAtom*;
