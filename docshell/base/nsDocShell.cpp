@@ -12505,48 +12505,6 @@ nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
   return LoadHistoryEntry(loadState, aLoadType, aEntry.mLoadingCurrentEntry);
 }
 
-void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
-  if (!Navigation::IsAPIEnabled()) {
-    return;
-  }
-
-  BrowsingContext* browsingContext = GetBrowsingContext();
-  if (!browsingContext || !browsingContext->IsTop()) {
-    return;
-  }
-  if (!mActiveEntry) {
-    return;
-  }
-
-  if (aLoadState->GetLoadingSessionHistoryInfo()->mInfo.SharedId() ==
-      mActiveEntry->SharedId()) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> oldPrincipal = BasePrincipal::CreateContentPrincipal(
-      aLoadState->GetLoadingSessionHistoryInfo()->mInfo.GetResultPrincipalURI(),
-      OriginAttributes{});
-
-  nsCOMPtr<nsIPrincipal> currentPrincipal =
-      BasePrincipal::CreateContentPrincipal(
-          mActiveEntry->GetResultPrincipalURI(), OriginAttributes{});
-
-  if (!oldPrincipal->Equals(currentPrincipal)) {
-    return;
-  }
-
-  if (RefPtr window = GetActiveWindow()) {
-    if (RefPtr navigation = window->Navigation()) {
-      if (AutoJSAPI jsapi; jsapi.Init(window)) {
-        
-        navigation->FireTraverseNavigateEvent(
-            jsapi.cx(), aLoadState->GetLoadingSessionHistoryInfo()->mInfo,
-            Nothing());
-      }
-    }
-  }
-}
-
 nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
                                       uint32_t aLoadType,
                                       bool aLoadingCurrentEntry) {
@@ -12557,8 +12515,6 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
   
   
   aLoadState->SetLoadType(aLoadType);
-
-  SetOngoingNavigation(Some(OngoingNavigation::Traversal));
 
   nsresult rv;
   if (aLoadState->URI()->SchemeIs("javascript")) {
@@ -12614,8 +12570,6 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
   if (!aLoadState->TriggeringPrincipal()) {
     return NS_ERROR_FAILURE;
   }
-
-  MaybeFireTraverseHistory(aLoadState);
 
   return InternalLoad(aLoadState);  
 }

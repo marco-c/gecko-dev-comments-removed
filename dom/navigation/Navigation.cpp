@@ -37,7 +37,6 @@
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowContext.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 
 mozilla::LazyLogModule gNavigationLog("Navigation");
 
@@ -152,26 +151,6 @@ Navigation::Navigation(nsPIDOMWindowInner* aWindow)
 JSObject* Navigation::WrapObject(JSContext* aCx,
                                  JS::Handle<JSObject*> aGivenProto) {
   return Navigation_Binding::Wrap(aCx, this, aGivenProto);
-}
-
-void Navigation::EventListenerAdded(nsAtom* aType) {
-  if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
-    if (WindowGlobalChild* windowGlobal = window->GetWindowGlobalChild()) {
-      windowGlobal->NavigateAdded();
-    }
-  }
-
-  EventTarget::EventListenerAdded(aType);
-}
-
-void Navigation::EventListenerRemoved(nsAtom* aType) {
-  if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
-    if (WindowGlobalChild* windowGlobal = window->GetWindowGlobalChild()) {
-      windowGlobal->NavigateRemoved();
-    }
-  }
-
-  EventTarget::EventListenerRemoved(aType);
 }
 
 
@@ -561,7 +540,7 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
 
 
 bool Navigation::FireTraverseNavigateEvent(
-    JSContext* aCx, const SessionHistoryInfo& aDestinationSessionHistoryInfo,
+    JSContext* aCx, SessionHistoryInfo* aDestinationSessionHistoryInfo,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   
   
@@ -583,18 +562,18 @@ bool Navigation::FireTraverseNavigateEvent(
       ToMaybeRef(
           nsDocShell::Cast(nsContentUtils::GetDocShellForEventTarget(this)))
           .andThen([](auto& aDocShell) {
-            return ToMaybeRef(aDocShell.GetActiveSessionHistoryInfo());
+            return ToMaybeRef(aDocShell.GetLoadingSessionHistoryInfo());
           })
           .map([aDestinationSessionHistoryInfo](auto& aSessionHistoryInfo) {
-            return aDestinationSessionHistoryInfo.SharesDocumentWith(
-                aSessionHistoryInfo);
+            return aDestinationSessionHistoryInfo->SharesDocumentWith(
+                aSessionHistoryInfo.mInfo);
           })
           .valueOr(false);
 
   
   RefPtr<NavigationDestination> destination =
       MakeAndAddRef<NavigationDestination>(
-          GetOwnerGlobal(), aDestinationSessionHistoryInfo.GetURI(),
+          GetOwnerGlobal(), aDestinationSessionHistoryInfo->GetURI(),
           destinationNHE, state, isSameDocument);
 
   
@@ -818,7 +797,7 @@ bool Navigation::InnerFireNavigateEvent(
   }
 
   
-  MOZ_DIAGNOSTIC_ASSERT(!destinationKey || !destinationKey->Equals(nsID{}));
+  MOZ_DIAGNOSTIC_ASSERT(!destinationKey || destinationKey->Equals(nsID{}));
 
   
   PromoteUpcomingAPIMethodTrackerToOngoing(std::move(destinationKey));
@@ -1135,9 +1114,9 @@ bool Navigation::InnerFireNavigateEvent(
 }
 
 NavigationHistoryEntry* Navigation::FindNavigationHistoryEntry(
-    const SessionHistoryInfo& aSessionHistoryInfo) const {
+    SessionHistoryInfo* aSessionHistoryInfo) const {
   for (const auto& navigationHistoryEntry : mEntries) {
-    if (navigationHistoryEntry->IsSameEntry(&aSessionHistoryInfo)) {
+    if (navigationHistoryEntry->IsSameEntry(aSessionHistoryInfo)) {
       return navigationHistoryEntry;
     }
   }
