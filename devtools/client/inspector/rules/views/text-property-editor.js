@@ -181,6 +181,9 @@ TextPropertyEditor.prototype = {
 
 
   _create() {
+    const win = this.doc.defaultView;
+    this.abortController = new win.AbortController();
+
     this.element = this.doc.createElementNS(HTML_NS, "div");
     this.element.setAttribute("role", "listitem");
     this.element.classList.add("ruleview-property");
@@ -225,7 +228,10 @@ TextPropertyEditor.prototype = {
       class: "ruleview-expander theme-twisty",
       title: SHORTHAND_EXPANDER_TOOLTIP,
     });
-    this.expander.addEventListener("click", this._onExpandClicked, true);
+    this.expander.addEventListener("click", this._onExpandClicked, {
+      capture: true,
+      signal: this.abortController.signal,
+    });
 
     
     
@@ -282,10 +288,14 @@ TextPropertyEditor.prototype = {
       title: l10n("rule.filterProperty.title"),
     });
 
-    this.filterProperty.addEventListener("click", event => {
-      this.ruleEditor.ruleView.setFilterStyles("`" + this.prop.name + "`");
-      event.stopPropagation();
-    });
+    this.filterProperty.addEventListener(
+      "click",
+      event => {
+        this.ruleEditor.ruleView.setFilterStyles("`" + this.prop.name + "`");
+        event.stopPropagation();
+      },
+      { signal: this.abortController.signal }
+    );
 
     
     
@@ -301,18 +311,28 @@ TextPropertyEditor.prototype = {
 
     
     if (this.ruleEditor.isEditable) {
-      this.enable.addEventListener("click", this._onEnableClicked, true);
-      this.enable.addEventListener("change", this._onEnableChanged, true);
-
-      this.nameContainer.addEventListener("click", event => {
-        
-        event.stopPropagation();
-
-        
-        if (event.target === this.nameContainer) {
-          this.nameSpan.click();
-        }
+      this.enable.addEventListener("click", this._onEnableClicked, {
+        signal: this.abortController.signal,
+        capture: true,
       });
+      this.enable.addEventListener("change", this._onEnableChanged, {
+        signal: this.abortController.signal,
+        capture: true,
+      });
+
+      this.nameContainer.addEventListener(
+        "click",
+        event => {
+          
+          event.stopPropagation();
+
+          
+          if (event.target === this.nameContainer) {
+            this.nameSpan.click();
+          }
+        },
+        { signal: this.abortController.signal }
+      );
 
       const getCssVariables = () =>
         this.rule.elementStyle.getAllCustomProperties(this.rule.pseudoElement);
@@ -342,78 +362,110 @@ TextPropertyEditor.prototype = {
       
       this.nameContainer.addEventListener(
         "paste",
-        blurOnMultipleProperties(this.cssProperties)
+        blurOnMultipleProperties(this.cssProperties),
+        { signal: this.abortController.signal }
       );
 
-      this.valueContainer.addEventListener("click", event => {
-        
-        event.stopPropagation();
-
-        
-        if (event.target === this.valueContainer) {
-          this.valueSpan.click();
-        }
-      });
-
-      
-      
-      
-      
-      
-      
-      
-      
-      this.valueSpan.addEventListener("mousedown", event => {
-        const clickedEl = event.target;
-        if (clickedEl === this.valueSpan) {
-          return;
-        }
-        this._hasPendingClick = true;
-
-        const matchedSelector = ACTIONABLE_ELEMENTS_SELECTORS.find(selector =>
-          clickedEl.matches(selector)
-        );
-        if (matchedSelector) {
-          const similarElements = [
-            ...this.valueSpan.querySelectorAll(matchedSelector),
-          ];
-          this._clickedElementOptions = {
-            selector: matchedSelector,
-            index: similarElements.indexOf(clickedEl),
-          };
-        }
-      });
-
-      this.valueSpan.addEventListener("pointerup", () => {
-        
-        if (this._hasDragged) {
-          return;
-        }
-        this._clickedElementOptions = null;
-        this._hasPendingClick = false;
-      });
-
-      this.valueSpan.addEventListener("click", event => {
-        if (this._hasPendingClick) {
+      this.valueContainer.addEventListener(
+        "click",
+        event => {
           
-          
-          
-          
-          event.stopImmediatePropagation();
-          return;
-        }
-        const target = event.target;
-
-        if (target.nodeName === "a") {
           event.stopPropagation();
-          event.preventDefault();
-          openContentLink(target.href);
-        }
-      });
+
+          
+          if (event.target === this.valueContainer) {
+            this.valueSpan.click();
+          }
+        },
+        { signal: this.abortController.signal }
+      );
+
+      
+      
+      
+      
+      
+      
+      
+      
+      this.valueSpan.addEventListener(
+        "mousedown",
+        event => {
+          const clickedEl = event.target;
+          if (clickedEl === this.valueSpan) {
+            return;
+          }
+          this._hasPendingClick = true;
+
+          const matchedSelector = ACTIONABLE_ELEMENTS_SELECTORS.find(selector =>
+            clickedEl.matches(selector)
+          );
+          if (matchedSelector) {
+            const similarElements = [
+              ...this.valueSpan.querySelectorAll(matchedSelector),
+            ];
+            this._clickedElementOptions = {
+              selector: matchedSelector,
+              index: similarElements.indexOf(clickedEl),
+            };
+          }
+        },
+        { signal: this.abortController.signal }
+      );
+
+      this.valueSpan.addEventListener(
+        "pointerup",
+        () => {
+          
+          if (this._hasDragged) {
+            return;
+          }
+          this._clickedElementOptions = null;
+          this._hasPendingClick = false;
+        },
+        { signal: this.abortController.signal }
+      );
+
+      
+      
+      win.addEventListener(
+        "click",
+        event => {
+          
+          if (!this.valueSpan.contains(event.target)) {
+            return;
+          }
+
+          if (this._hasPendingClick) {
+            
+            
+            
+            
+            event.stopImmediatePropagation();
+            return;
+          }
+
+          const target = event.target;
+          if (target.nodeName === "a") {
+            event.stopPropagation();
+            event.preventDefault();
+            openContentLink(target.href, {
+              relatedToCurrent: true,
+              inBackground:
+                event.button === 1 ||
+                (lazy.AppConstants.platform === "macosx"
+                  ? event.metaKey
+                  : event.ctrlKey),
+            });
+          }
+        },
+        { signal: this.abortController.signal, capture: true }
+      );
 
       this.ruleView.on(
         "draggable-preference-updated",
-        this._onDraggablePreferenceChanged
+        this._onDraggablePreferenceChanged,
+        { signal: this.abortController.signal }
       );
       if (this._isDraggableProperty(this.prop)) {
         this._addDraggingCapability();
@@ -1246,10 +1298,10 @@ TextPropertyEditor.prototype = {
       }
     }
 
-    this.ruleView.off(
-      "draggable-preference-updated",
-      this._onDraggablePreferenceChanged
-    );
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
 
     this.element.remove();
     this.ruleEditor.rule.editClosestTextProperty(this.prop, direction);
