@@ -44,6 +44,8 @@ class WaylandShmPool {
   ipc::SharedMemoryMapping mShm;
 };
 
+class BufferTransaction;
+
 class WaylandBuffer {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaylandBuffer);
@@ -65,29 +67,15 @@ class WaylandBuffer {
     mIsAttachedToCompositor = true;
   }
 
-  bool IsAttachedToSurface(WaylandSurface* aWaylandSurface);
-
-  bool Matches(uintptr_t aWlBufferID) { return aWlBufferID == mWLBufferID; }
-  uintptr_t GetWlBufferID() { return mWLBufferID; }
-
-  
-  wl_buffer* BorrowBuffer(const WaylandSurfaceLock& aSurfaceLock);
-
-  
-  void ReturnBufferDetached(const WaylandSurfaceLock& aSurfaceLock);
-
-  
-  void ReturnBufferAttached(WaylandSurfaceLock& aSurfaceLock);
-
-  void ClearSyncHandler();
+  BufferTransaction* GetTransaction();
+  void RemoveTransaction(RefPtr<BufferTransaction> aTransaction);
 
 #ifdef MOZ_LOGGING
   virtual void DumpToFile(const char* aHint) = 0;
 #endif
 
   
-  
-  wl_buffer* CreateAndTakeWLBuffer();
+  virtual wl_buffer* CreateWlBuffer() = 0;
 
   
   void SetExternalWLBuffer(wl_buffer* aWLBuffer);
@@ -97,30 +85,11 @@ class WaylandBuffer {
   virtual ~WaylandBuffer() = default;
 
   
-  virtual bool CreateWlBuffer() = 0;
+  
+  
+  wl_buffer* mExternalWlBuffer = nullptr;
 
-  
-  
-  
-  void DeleteWlBuffer();
-
-  
-  wl_callback* mBufferDeleteSyncCallback = nullptr;
-
-  
-  
-  wl_buffer* mWLBuffer = nullptr;
-  uintptr_t mWLBufferID = 0;
-
-  
-  
-  
-  bool mManagingWLBuffer = true;
-
-  
-  
-  
-  RefPtr<WaylandSurface> mAttachedToSurface;
+  AutoTArray<RefPtr<BufferTransaction>, 3> mBufferTransactions;
 
   
   
@@ -160,8 +129,7 @@ class WaylandBufferSHM final : public WaylandBuffer {
   void DumpToFile(const char* aHint) override;
 #endif
 
- protected:
-  bool CreateWlBuffer() override;
+  wl_buffer* CreateWlBuffer() override;
 
  private:
   explicit WaylandBufferSHM(const LayoutDeviceIntSize& aSize);
@@ -194,8 +162,7 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
   void DumpToFile(const char* aHint) override;
 #endif
 
- protected:
-  bool CreateWlBuffer() override;
+  wl_buffer* CreateWlBuffer() override;
 
  private:
   explicit WaylandBufferDMABUF(const LayoutDeviceIntSize& aSize);
@@ -217,6 +184,48 @@ class WaylandBufferDMABUFHolder final {
   wl_buffer* mWLBuffer = nullptr;
   uint32_t mUID = 0;
   uint32_t mPID = 0;
+};
+
+
+
+
+
+
+
+class BufferTransaction {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BufferTransaction);
+
+  BufferTransaction(WaylandBuffer* aBuffer, wl_buffer* aWLBuffer,
+                    bool aIsExternalBuffer);
+
+  wl_buffer* BufferBorrowLocked(const WaylandSurfaceLock& aSurfaceLock);
+
+  void BufferDetachCallback();
+  void BufferDeleteCallback();
+
+  bool IsFinished() { return mBufferState == BufferState::Detached; }
+
+  enum class BufferState {
+    Detached,
+    Deleted,
+    WaitingForDetach,
+    WaitingForDelete
+  };
+
+  void DeleteTransactionLocked(const WaylandSurfaceLock& aSurfaceLock);
+
+ private:
+  ~BufferTransaction();
+
+  void WlBufferDeleteLocked(const WaylandSurfaceLock& aSurfaceLock);
+  void DeleteLocked(const WaylandSurfaceLock& aSurfaceLock);
+
+  RefPtr<WaylandSurface> mSurface;
+  RefPtr<WaylandBuffer> mBuffer;
+
+  BufferState mBufferState{BufferState::Detached};
+  wl_buffer* mWLBuffer = nullptr;
+  bool mIsExternalBuffer = false;
 };
 
 }  

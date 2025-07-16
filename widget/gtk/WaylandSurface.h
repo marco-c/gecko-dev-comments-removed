@@ -26,6 +26,7 @@ class MessageLoop;
 namespace mozilla::widget {
 
 class WaylandBuffer;
+class BufferTransaction;
 
 
 
@@ -126,16 +127,12 @@ class WaylandSurface final {
   
   
   bool AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
-                    RefPtr<WaylandBuffer> aWaylandBuffer);
+                    RefPtr<WaylandBuffer> aBuffer);
 
   
   
   
   void RemoveAttachedBufferLocked(const WaylandSurfaceLock& aProofOfLock);
-
-  
-  
-  void BufferFreeCallbackHandler(uintptr_t aWlBufferID, bool aWlBufferDelete);
 
   
   
@@ -283,9 +280,7 @@ class WaylandSurface final {
               bool aForceDisplayFlush);
 
   
-  
-  
-  void ReleaseAllWaylandBuffersLocked(WaylandSurfaceLock& aSurfaceLock);
+  void ReleaseAllWaylandTransactionsLocked(WaylandSurfaceLock& aSurfaceLock);
 
   void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
   void ClearFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
@@ -346,7 +341,7 @@ class WaylandSurface final {
   
   
   
-  AutoTArray<RefPtr<WaylandBuffer>, 3> mAttachedBuffers;
+  AutoTArray<RefPtr<BufferTransaction>, 3> mBufferTransactions;
 
   
   
