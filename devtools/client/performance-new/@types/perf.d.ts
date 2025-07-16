@@ -47,6 +47,7 @@ export interface Commands {
   targetCommand: {
     targetFront: {
       
+      
       getTrait(
         traitName: "useBulkTransferForPerformanceProfile"
       ): boolean | undefined;
