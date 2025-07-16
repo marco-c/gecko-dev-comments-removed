@@ -2553,47 +2553,31 @@ nsWindow::WaylandPopupGetPositionFromLayout() {
   LOG("  parentRect gravity: %d anchor gravity: %d\n", rectAnchor, menuAnchor);
 
   
+  const int8_t position = popupFrame->GetAlignmentPosition();
   
-  
-  GdkAnchorHints hints =
-      GdkAnchorHints(GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE_X | GDK_ANCHOR_RESIZE);
-
-  
-  int8_t position = popupFrame->GetAlignmentPosition();
-  if (position >= POPUPPOSITION_BEFORESTART &&
-      position <= POPUPPOSITION_AFTEREND) {
-    hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE_X);
-  }
-  
-  if (position >= POPUPPOSITION_STARTBEFORE &&
-      position <= POPUPPOSITION_ENDAFTER) {
-    hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE_Y);
-  }
-
-  FlipType flipType = popupFrame->GetFlipType();
-  if (rectAnchor == GDK_GRAVITY_CENTER && menuAnchor == GDK_GRAVITY_CENTER) {
+  const auto hints = GdkAnchorHints([&] {
     
-    hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE);
-  } else {
-    switch (flipType) {
-      case FlipType::Both:
-      case FlipType::Default:
-        hints = GdkAnchorHints(hints | GDK_ANCHOR_FLIP);
-        break;
-      case FlipType::Slide:
-        hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE);
-        break;
-      case FlipType::None:
-        break;
+    
+    
+    if (mPopupType == PopupType::Tooltip) {
+      return GDK_ANCHOR_FLIP_Y | GDK_ANCHOR_SLIDE;
     }
-  }
-
-  
-  
-  
-  if (mPopupType == PopupType::Tooltip) {
-    hints = GdkAnchorHints(GDK_ANCHOR_FLIP_Y | GDK_ANCHOR_SLIDE);
-  }
+    
+    
+    
+    
+    
+    
+    
+    
+    const bool slideVertical =
+        (position >= POPUPPOSITION_STARTBEFORE &&
+         position <= POPUPPOSITION_ENDAFTER) ||
+        popupFrame->GetFlipType() == FlipType::Slide ||
+        (rectAnchor == GDK_GRAVITY_CENTER && menuAnchor == GDK_GRAVITY_CENTER);
+    return GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE_X |
+           (slideVertical ? GDK_ANCHOR_SLIDE_Y : 0) | GDK_ANCHOR_RESIZE;
+  }());
 
   return {
       anchorRect,
