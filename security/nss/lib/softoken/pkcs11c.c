@@ -5011,8 +5011,7 @@ loser:
     return crv;
 }
 
-#define PAIRWISE_DIGEST_LENGTH SHA1_LENGTH /* 160-bits */
-#define PAIRWISE_MESSAGE_LENGTH 20         /* 160-bits */
+#define PAIRWISE_MESSAGE_LENGTH 20 /* 160-bits */
 
 
 
@@ -5064,11 +5063,8 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
     unsigned char *text_compared;
     CK_ULONG bytes_encrypted;
     CK_ULONG bytes_compared;
-    CK_ULONG pairwise_digest_length = PAIRWISE_DIGEST_LENGTH;
 
     
-    
-    unsigned char *known_digest = (unsigned char *)"Mozilla Rules the World through NSS!";
     unsigned char *signature;
     CK_ULONG signature_length;
 
@@ -5085,6 +5081,14 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
             modulusLen--;
         }
         sftk_FreeAttribute(attribute);
+#if RSA_MIN_MODULUS_BITS < 1023
+        
+
+
+        if ((modulusLen < 1023) && !sftk_isFIPS(slot->slotID)) {
+            return CKR_OK;
+        }
+#endif
     } else if (keyType == CKK_DSA) {
         SFTKAttribute *attribute;
 
@@ -5115,7 +5119,15 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
             return CKR_DEVICE_ERROR;
         }
         bytes_encrypted = modulusLen;
-        mech.mechanism = CKM_RSA_PKCS;
+        mech.mechanism = CKM_RSA_PKCS_OAEP;
+        CK_RSA_PKCS_OAEP_PARAMS oaepParams;
+        oaepParams.hashAlg = CKM_SHA256;
+        oaepParams.mgf = CKG_MGF1_SHA256;
+        oaepParams.source = CKZ_DATA_SPECIFIED;
+        oaepParams.pSourceData = NULL;
+        oaepParams.ulSourceDataLen = 0;
+        mech.pParameter = &oaepParams;
+        mech.ulParameterLen = sizeof(oaepParams);
 
         
         ciphertext = (unsigned char *)PORT_ZAlloc(bytes_encrypted);
@@ -5224,20 +5236,25 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
     }
 
     if (canSignVerify) {
+        CK_RSA_PKCS_PSS_PARAMS pssParams;
         
         switch (keyType) {
             case CKK_RSA:
                 signature_length = modulusLen;
-                mech.mechanism = CKM_RSA_PKCS;
+                mech.mechanism = CKM_SHA256_RSA_PKCS_PSS;
+                pssParams.hashAlg = CKM_SHA256;
+                pssParams.mgf = CKG_MGF1_SHA256;
+                pssParams.sLen = 0;
+                mech.pParameter = &pssParams;
+                mech.ulParameterLen = sizeof(pssParams);
                 break;
             case CKK_DSA:
                 signature_length = DSA_MAX_SIGNATURE_LEN;
-                pairwise_digest_length = subPrimeLen;
-                mech.mechanism = CKM_DSA;
+                mech.mechanism = CKM_DSA_SHA256;
                 break;
             case CKK_EC:
                 signature_length = MAX_ECKEY_LEN * 2;
-                mech.mechanism = CKM_ECDSA;
+                mech.mechanism = CKM_ECDSA_SHA256;
                 break;
             case CKK_EC_EDWARDS:
                 signature_length = ED25519_SIGN_LEN;
@@ -5261,8 +5278,8 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
         }
 
         crv = NSC_Sign(hSession,
-                       known_digest,
-                       pairwise_digest_length,
+                       known_message,
+                       PAIRWISE_MESSAGE_LENGTH,
                        signature,
                        &signature_length);
         if (crv != CKR_OK) {
@@ -5271,8 +5288,8 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
         }
 
         
-        if ((signature_length >= pairwise_digest_length) &&
-            (PORT_Memcmp(known_digest, signature + (signature_length - pairwise_digest_length), pairwise_digest_length) == 0)) {
+        if ((signature_length >= PAIRWISE_MESSAGE_LENGTH) &&
+            (PORT_Memcmp(known_message, signature + (signature_length - PAIRWISE_MESSAGE_LENGTH), PAIRWISE_MESSAGE_LENGTH) == 0)) {
             PORT_Free(signature);
             return CKR_GENERAL_ERROR;
         }
@@ -5285,8 +5302,8 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
         }
 
         crv = NSC_Verify(hSession,
-                         known_digest,
-                         pairwise_digest_length,
+                         known_message,
+                         PAIRWISE_MESSAGE_LENGTH,
                          signature,
                          signature_length);
 
