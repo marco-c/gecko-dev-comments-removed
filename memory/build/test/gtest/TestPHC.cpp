@@ -370,16 +370,20 @@ TEST(PHC, TestPHCDisablingGlobal)
   free(s);
 }
 
+size_t GetNumAvailable() {
+  mozilla::phc::PHCStats stats;
+  GetPHCStats(stats);
+  return stats.mSlotsFreed + stats.mSlotsUnused;
+}
+
 TEST(PHC, TestPHCExhaustion)
 {
   
-#if defined(XP_DARWIN) && defined(__aarch64__)
-  const unsigned NUM_ALLOCATIONS = 1024;
-#else
-  const unsigned NUM_ALLOCATIONS = 4096;
-#endif
-  uint8_t* allocations[NUM_ALLOCATIONS];
-  const unsigned REQUIRED_ALLOCATIONS = NUM_ALLOCATIONS - 50;
+  size_t num_allocations = GetNumAvailable();
+
+  mozilla::phc::DisablePHCOnCurrentThread();
+  std::vector<uint8_t*> allocations(num_allocations);
+  mozilla::phc::ReenablePHCOnCurrentThread();
 
   
   
@@ -387,32 +391,25 @@ TEST(PHC, TestPHCExhaustion)
   
   mozilla::phc::SetPHCProbabilities(64, 64, 0);
 
-  unsigned last_allocation;
-  for (unsigned i = 0; i < NUM_ALLOCATIONS; i++) {
-    allocations[i] = GetPHCAllocation(128);
-    last_allocation = i;
-    if (i < REQUIRED_ALLOCATIONS) {
-      
-      
-      
-      ASSERT_TRUE(allocations[i]);
-    } else if (!allocations[i]) {
-      
-      last_allocation--;
-      break;
-    }
-    TestInUseAllocation(allocations[i], 128);
+  for (auto& a : allocations) {
+    a = GetPHCAllocation(128);
+    ASSERT_TRUE(a);
+    TestInUseAllocation(a, 128);
   }
 
+  
+  ASSERT_EQ(0ul, GetNumAvailable());
   
   ASSERT_FALSE(GetPHCAllocation(128));
 
-  for (unsigned i = 0; i <= last_allocation; i++) {
-    free(allocations[i]);
-    TestFreedAllocation(allocations[i], 128);
+  for (auto& a : allocations) {
+    free(a);
+    TestFreedAllocation(a, 128);
   }
 
   
+  
+  ASSERT_TRUE(GetNumAvailable() != 0);
   
   uint8_t* r = GetPHCAllocation(128);
   ASSERT_TRUE(!!r);
