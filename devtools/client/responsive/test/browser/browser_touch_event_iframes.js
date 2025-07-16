@@ -218,6 +218,10 @@ for (const mvcontent of META_VIEWPORT_CONTENTS) {
                   content.requestAnimationFrame(resolve);
                 });
               });
+              
+              await SpecialPowers.spawn(host, [], async () => {
+                await SpecialPowers.contentTransformsReceived(content);
+              });
 
               
               
