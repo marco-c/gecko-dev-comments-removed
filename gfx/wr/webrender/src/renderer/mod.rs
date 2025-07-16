@@ -2322,7 +2322,8 @@ impl Renderer {
     ) {
         self.device.disable_depth_write();
 
-        {
+        let has_prim_instances = prim_instances.iter().any(|map| !map.is_empty());
+        if has_prim_instances || !prim_instances_with_scissor.is_empty() {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_INDIRECT_PRIM);
 
             self.set_blend(false, FramebufferKind::Other);
@@ -4695,13 +4696,16 @@ impl Renderer {
         );
 
         
-        {
+        let has_primary_clips = !target.clip_batcher.primary_clips.is_empty();
+        let has_secondary_clips = !target.clip_batcher.secondary_clips.is_empty();
+        let has_clip_masks = !target.clip_masks.is_empty();
+        if has_primary_clips | has_secondary_clips | has_clip_masks {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_CACHE_CLIP);
 
             
             
 
-            if !target.clip_batcher.primary_clips.is_empty() {
+            if has_primary_clips {
                 
                 
                 
@@ -4713,7 +4717,7 @@ impl Renderer {
                 );
             }
 
-            if !target.clip_batcher.secondary_clips.is_empty() {
+            if has_secondary_clips {
                 
                 
                 self.set_blend(true, FramebufferKind::Other);
@@ -4725,12 +4729,14 @@ impl Renderer {
                 );
             }
 
-            self.handle_clips(
-                &draw_target,
-                &target.clip_masks,
-                &projection,
-                stats,
-            );
+            if has_clip_masks {
+                self.handle_clips(
+                    &draw_target,
+                    &target.clip_masks,
+                    &projection,
+                    stats,
+                );
+            }
         }
 
         if needs_depth {
