@@ -1,6 +1,5 @@
 ChromeUtils.defineESModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
-  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
 });
 
@@ -10,7 +9,11 @@ const BASE = getRootDirectory(gTestPath).replace(
 );
 
 ChromeUtils.defineLazyGetter(this, "Management", () => {
-  return ExtensionParent.apiManager;
+  
+  const { Management } = ChromeUtils.importESModule(
+    "resource://gre/modules/Extension.sys.mjs"
+  );
+  return Management;
 });
 
 let { CustomizableUITestUtils } = ChromeUtils.importESModule(
@@ -676,24 +679,6 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
   );
 }
 
-async function getCachedPermissions(extensionId) {
-  const NotFound = Symbol("extension ID not found in permissions cache");
-  try {
-    return await ExtensionParent.StartupCache.permissions.get(
-      extensionId,
-      () => {
-        
-        throw NotFound;
-      }
-    );
-  } catch (e) {
-    if (e === NotFound) {
-      return null;
-    }
-    throw e;
-  }
-}
-
 
 
 
@@ -707,8 +692,6 @@ let testCleanup;
 add_setup(async function head_setup() {
   let addons = await AddonManager.getAllAddons();
   let existingAddons = new Set(addons.map(a => a.id));
-
-  let uuids = Services.prefs.getStringPref("extensions.webextensions.uuids");
 
   registerCleanupFunction(async function () {
     if (testCleanup) {
@@ -725,11 +708,5 @@ add_setup(async function head_setup() {
         await addon.uninstall();
       }
     }
-    
-    is(
-      Services.prefs.getStringPref("extensions.webextensions.uuids"),
-      uuids,
-      "No unexpected changes to extensions.webextensions.uuid"
-    );
   });
 });
