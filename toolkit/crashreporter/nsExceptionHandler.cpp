@@ -258,8 +258,6 @@ static char* androidUserSerial = nullptr;
 static const char* androidStartServiceCommand = nullptr;
 #endif
 
-static Maybe<ProcessId> gCrashHelperPid;
-
 
 static Mutex* notesFieldLock;
 static nsCString* notesField = nullptr;
@@ -1721,20 +1719,16 @@ static bool IsCrashingException(EXCEPTION_POINTERS* exinfo) {
 
 
 
-static void PrepareForMinidump() {
+static void PrepareForMinidump(bool isChildProcess = true) {
   mozilla::IOInterposer::Disable();
   ReleaseResources();
-#if defined(XP_WIN)
-#  if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-  DllBlocklist_Shutdown();
-#  endif
-#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
-  if (gCrashHelperPid.isSome()) {
-    
-    
-    Unused << prctl(PR_SET_PTRACER, gCrashHelperPid.value());
+
+  if (isChildProcess) {
+    crash_helper_wait_for_rendezvous();
   }
-#endif
+#if defined(XP_WIN) && defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
+  DllBlocklist_Shutdown();
+#endif  
 }
 
 #ifdef XP_WIN
@@ -1750,7 +1744,7 @@ static ExceptionHandler::FilterResult Filter(void* context,
     return ExceptionHandler::FilterResult::ContinueSearch;
   }
 
-  PrepareForMinidump();
+  PrepareForMinidump( false);
   return ExceptionHandler::FilterResult::HandleException;
 }
 
@@ -1795,7 +1789,7 @@ static MINIDUMP_TYPE GetMinidumpType() {
 #else
 
 static bool Filter(void* context) {
-  PrepareForMinidump();
+  PrepareForMinidump( false);
   return true;
 }
 
@@ -3343,18 +3337,19 @@ CrashPipeType GetChildNotificationPipe() {
 #endif
 }
 
-#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+UniqueFileHandle RegisterChildIPCChannel() {
+  if (gCrashHelperClient) {
+    AncillaryData ipc_endpoint = register_child_ipc_channel(gCrashHelperClient);
+    return UniqueFileHandle{ipc_endpoint};
+  }
 
-ProcessId GetCrashHelperPid() {
-  return base::kInvalidProcessId;
+  return UniqueFileHandle();
 }
 
-#endif  
-
 bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe,
-                               Maybe<ProcessId> aCrashHelperPid) {
+                               UniqueFileHandle aCrashHelperPipe) {
   MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
-  gCrashHelperPid = aCrashHelperPid;
+  crash_helper_rendezvous(aCrashHelperPipe.release());
   RegisterRuntimeExceptionModule();
   InitializeAppNotes();
   RegisterAnnotations();

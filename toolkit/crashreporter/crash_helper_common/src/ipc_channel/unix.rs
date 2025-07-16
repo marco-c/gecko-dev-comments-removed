@@ -43,3 +43,30 @@ impl IPCChannel {
         (self.listener, self.server_endpoint, self.client_endpoint)
     }
 }
+
+pub struct IPCClientChannel {
+    client_endpoint: IPCConnector,
+    server_endpoint: IPCConnector,
+}
+
+impl IPCClientChannel {
+    
+    
+    pub fn new() -> Result<IPCClientChannel, IPCError> {
+        let pair = unix_socketpair().map_err(IPCError::System)?;
+        let client_endpoint = IPCConnector::from_fd(pair.0)?;
+        let server_endpoint = IPCConnector::from_fd(pair.1)?;
+
+        Ok(IPCClientChannel {
+            client_endpoint,
+            server_endpoint,
+        })
+    }
+
+    
+    
+    
+    pub fn deconstruct(self) -> (IPCConnector, IPCConnector) {
+        (self.server_endpoint, self.client_endpoint)
+    }
+}

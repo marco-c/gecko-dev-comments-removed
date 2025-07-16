@@ -17,10 +17,10 @@ use errors::MessageError;
 
 
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
-pub use crate::ipc_channel::IPCChannel;
+pub use crate::ipc_channel::{IPCChannel, IPCClientChannel};
 pub use crate::ipc_connector::{AncillaryData, IPCConnector, IPCEvent, INVALID_ANCILLARY_DATA};
 pub use crate::ipc_listener::IPCListener;
-pub use crate::platform::ProcessHandle;
+pub use crate::platform::{server_addr, ProcessHandle};
 
 
 

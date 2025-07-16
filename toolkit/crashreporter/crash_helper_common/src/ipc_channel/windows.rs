@@ -2,9 +2,15 @@
 
 
 
-use std::process;
+use std::{ffi::CString, hash::RandomState, process};
 
-use crate::{errors::IPCError, IPCConnector, IPCListener, Pid};
+use windows_sys::Win32::Foundation::ERROR_ACCESS_DENIED;
+
+use crate::{
+    errors::IPCError,
+    platform::windows::{get_last_error, server_addr},
+    IPCConnector, IPCListener, Pid,
+};
 
 pub struct IPCChannel {
     listener: IPCListener,
@@ -18,9 +24,9 @@ impl IPCChannel {
     
     pub fn new() -> Result<IPCChannel, IPCError> {
         let pid = process::id() as Pid;
-        let mut listener = IPCListener::new(pid)?;
+        let mut listener = IPCListener::new(server_addr(pid))?;
         listener.listen()?;
-        let client_endpoint = IPCConnector::connect(pid)?;
+        let client_endpoint = IPCConnector::connect(listener.address())?;
         let server_endpoint = listener.accept()?;
 
         Ok(IPCChannel {
@@ -35,5 +41,58 @@ impl IPCChannel {
     
     pub fn deconstruct(self) -> (IPCListener, IPCConnector, IPCConnector) {
         (self.listener, self.server_endpoint, self.client_endpoint)
+    }
+}
+
+pub struct IPCClientChannel {
+    client_endpoint: IPCConnector,
+    server_endpoint: IPCConnector,
+}
+
+impl IPCClientChannel {
+    
+    
+    pub fn new() -> Result<IPCClientChannel, IPCError> {
+        let mut listener = Self::create_listener()?;
+        listener.listen()?;
+        let client_endpoint = IPCConnector::connect(listener.address())?;
+        let server_endpoint = listener.accept()?;
+
+        Ok(IPCClientChannel {
+            client_endpoint,
+            server_endpoint,
+        })
+    }
+
+    fn create_listener() -> Result<IPCListener, IPCError> {
+        const ATTEMPTS: u32 = 5;
+
+        
+        
+        for _i in 0..ATTEMPTS {
+            use std::hash::{BuildHasher, Hasher};
+            let random_id = RandomState::new().build_hasher().finish();
+
+            let pipe_name = CString::new(format!(
+                "\\\\.\\pipe\\gecko-crash-helper-child-pipe.{random_id:}"
+            ))
+            .unwrap();
+            match IPCListener::new(pipe_name) {
+                Ok(listener) => return Ok(listener),
+                Err(_error @ IPCError::System(ERROR_ACCESS_DENIED)) => {} 
+                Err(error) => return Err(error),
+            }
+        }
+
+        
+        
+        Err(IPCError::System(get_last_error()))
+    }
+
+    
+    
+    
+    pub fn deconstruct(self) -> (IPCConnector, IPCConnector) {
+        (self.server_endpoint, self.client_endpoint)
     }
 }

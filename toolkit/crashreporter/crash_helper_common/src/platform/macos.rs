@@ -72,7 +72,7 @@ pub(crate) fn set_socket_cloexec(socket: BorrowedFd) -> Result<()> {
     fcntl(socket.as_raw_fd(), F_SETFD(FdFlag::FD_CLOEXEC)).map(|_res| ())
 }
 
-pub(crate) fn server_addr(pid: Pid) -> Result<UnixAddr> {
+pub fn server_addr(pid: Pid) -> Result<UnixAddr> {
     
     
     let server_name = format!("/tmp/gecko-crash-helper-pipe.{pid:}");
