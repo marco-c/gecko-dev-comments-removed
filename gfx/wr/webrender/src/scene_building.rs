@@ -53,6 +53,7 @@ use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
 use crate::clip::{ClipInternData, ClipNodeId, ClipLeafId};
 use crate::clip::{PolygonDataHandle, ClipTreeBuilder};
+use crate::gpu_types::BlurEdgeMode;
 use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::{SceneSpatialTree, SpatialNodeContainer, SpatialNodeIndex, get_external_scroll_offset};
 use crate::frame_builder::FrameBuilderConfig;
@@ -2707,7 +2708,7 @@ impl<'a> SceneBuilder<'a> {
             stacking_context.composite_ops.filters,
             stacking_context.composite_ops.filter_primitives,
             stacking_context.composite_ops.filter_datas,
-            None,
+            false,
             spatial_node_context_offset,
         );
 
@@ -3071,6 +3072,7 @@ impl<'a> SceneBuilder<'a> {
                         width: std_deviation,
                         height: std_deviation,
                         should_inflate: pending_shadow.should_inflate,
+                        edge_mode: BlurEdgeMode::Duplicate,
                     };
                     let blur_is_noop = blur_filter.is_noop();
 
@@ -3859,7 +3861,7 @@ impl<'a> SceneBuilder<'a> {
             filters,
             filter_primitives,
             filter_datas,
-            Some(false),
+            true,
             LayoutVector2D::zero(),
         );
 
@@ -3958,7 +3960,7 @@ impl<'a> SceneBuilder<'a> {
         mut filter_ops: Vec<Filter>,
         mut filter_primitives: Vec<FilterPrimitive>,
         filter_datas: Vec<FilterData>,
-        should_inflate_override: Option<bool>,
+        is_backdrop_filter: bool,
         context_offset: LayoutVector2D,
     ) -> PictureChainBuilder {
         
@@ -4498,9 +4500,10 @@ impl<'a> SceneBuilder<'a> {
                         
                         
                         
-                        if let Some(should_inflate_override) = should_inflate_override {
-                            if let Filter::Blur { ref mut should_inflate, .. } = filter {
-                                *should_inflate = should_inflate_override;
+                        if is_backdrop_filter {
+                            if let Filter::Blur { ref mut should_inflate, ref mut edge_mode, .. } = filter {
+                                *should_inflate = false;
+                                *edge_mode = BlurEdgeMode::Mirror;
                             }
                         }
 
