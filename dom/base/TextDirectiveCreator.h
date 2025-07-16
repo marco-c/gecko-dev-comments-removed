@@ -204,6 +204,21 @@ class TextDirectiveCreator {
       const nsTArray<uint32_t>& aFirstExtendedToWordBoundaries,
       const nsTArray<uint32_t>& aSecondExtendedToWordBoundaries);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr uint32_t kMaxContextTermLength = 1024;
+
   nsString mPrefixContent;
   nsString mPrefixFoldCaseContent;
   nsTArray<uint32_t> mPrefixWordBeginDistances;

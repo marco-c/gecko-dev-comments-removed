@@ -495,20 +495,12 @@ void LogCommonSubstringLengths(const char* aFunc,
 template <TextScanDirection direction>
  nsTArray<uint32_t> TextDirectiveUtil::ComputeWordBoundaryDistances(
     const nsAString& aString) {
-  
-  
-  
-  
-  
-  
-  constexpr uint32_t kMaxWordCount = 32;
-  AutoTArray<uint32_t, kMaxWordCount> wordBoundaryDistances;
+  AutoTArray<uint32_t, 32> wordBoundaryDistances;
   uint32_t pos =
       direction == TextScanDirection::Left ? aString.Length() - 1 : 0;
 
   
-  while (pos < aString.Length() &&
-         wordBoundaryDistances.Length() < kMaxWordCount) {
+  while (pos < aString.Length()) {
     auto [wordBegin, wordEnd] = intl::WordBreaker::FindWord(aString, pos);
     if constexpr (direction == TextScanDirection::Left) {
       wordBoundaryDistances.AppendElement(aString.Length() - wordBegin);
