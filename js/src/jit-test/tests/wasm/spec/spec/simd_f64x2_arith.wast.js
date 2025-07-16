@@ -31756,7 +31756,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.neg-arg-empty (result v128)
+    (func \$f64x2.neg-arg-empty (result v128)
       (f64x2.neg)
     )
   )`),
@@ -31766,7 +31766,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.sqrt-arg-empty (result v128)
+    (func \$f64x2.sqrt-arg-empty (result v128)
       (f64x2.sqrt)
     )
   )`),
@@ -31776,7 +31776,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.add-1st-arg-empty (result v128)
+    (func \$f64x2.add-1st-arg-empty (result v128)
       (f64x2.add (v128.const f64x2 0 0))
     )
   )`),
@@ -31786,7 +31786,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.add-arg-empty (result v128)
+    (func \$f64x2.add-arg-empty (result v128)
       (f64x2.add)
     )
   )`),
@@ -31796,7 +31796,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.sub-1st-arg-empty (result v128)
+    (func \$f64x2.sub-1st-arg-empty (result v128)
       (f64x2.sub (v128.const f64x2 0 0))
     )
   )`),
@@ -31806,7 +31806,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.sub-arg-empty (result v128)
+    (func \$f64x2.sub-arg-empty (result v128)
       (f64x2.sub)
     )
   )`),
@@ -31816,7 +31816,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.mul-1st-arg-empty (result v128)
+    (func \$f64x2.mul-1st-arg-empty (result v128)
       (f64x2.mul (v128.const f64x2 0 0))
     )
   )`),
@@ -31826,7 +31826,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.mul-arg-empty (result v128)
+    (func \$f64x2.mul-arg-empty (result v128)
       (f64x2.mul)
     )
   )`),
@@ -31836,7 +31836,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.div-1st-arg-empty (result v128)
+    (func \$f64x2.div-1st-arg-empty (result v128)
       (f64x2.div (v128.const f64x2 0 0))
     )
   )`),
@@ -31846,7 +31846,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.div-arg-empty (result v128)
+    (func \$f64x2.div-arg-empty (result v128)
       (f64x2.div)
     )
   )`),

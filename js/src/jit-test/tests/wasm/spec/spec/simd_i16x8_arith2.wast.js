@@ -1062,7 +1062,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.min_s-1st-arg-empty (result v128)
+    (func \$i16x8.min_s-1st-arg-empty (result v128)
       (i16x8.min_s (v128.const i16x8 0 0 0 0 0 0 0 0))
     )
   )`),
@@ -1072,7 +1072,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.min_s-arg-empty (result v128)
+    (func \$i16x8.min_s-arg-empty (result v128)
       (i16x8.min_s)
     )
   )`),
@@ -1082,7 +1082,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.min_u-1st-arg-empty (result v128)
+    (func \$i16x8.min_u-1st-arg-empty (result v128)
       (i16x8.min_u (v128.const i16x8 0 0 0 0 0 0 0 0))
     )
   )`),
@@ -1092,7 +1092,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.min_u-arg-empty (result v128)
+    (func \$i16x8.min_u-arg-empty (result v128)
       (i16x8.min_u)
     )
   )`),
@@ -1102,7 +1102,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.max_s-1st-arg-empty (result v128)
+    (func \$i16x8.max_s-1st-arg-empty (result v128)
       (i16x8.max_s (v128.const i16x8 0 0 0 0 0 0 0 0))
     )
   )`),
@@ -1112,7 +1112,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.max_s-arg-empty (result v128)
+    (func \$i16x8.max_s-arg-empty (result v128)
       (i16x8.max_s)
     )
   )`),
@@ -1122,7 +1122,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.max_u-1st-arg-empty (result v128)
+    (func \$i16x8.max_u-1st-arg-empty (result v128)
       (i16x8.max_u (v128.const i16x8 0 0 0 0 0 0 0 0))
     )
   )`),
@@ -1132,7 +1132,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.max_u-arg-empty (result v128)
+    (func \$i16x8.max_u-arg-empty (result v128)
       (i16x8.max_u)
     )
   )`),
@@ -1142,7 +1142,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.avgr_u-1st-arg-empty (result v128)
+    (func \$i16x8.avgr_u-1st-arg-empty (result v128)
       (i16x8.avgr_u (v128.const i16x8 0 0 0 0 0 0 0 0))
     )
   )`),
@@ -1152,7 +1152,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.avgr_u-arg-empty (result v128)
+    (func \$i16x8.avgr_u-arg-empty (result v128)
       (i16x8.avgr_u)
     )
   )`),
@@ -1162,7 +1162,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.abs-arg-empty (result v128)
+    (func \$i16x8.abs-arg-empty (result v128)
       (i16x8.abs)
     )
   )`),

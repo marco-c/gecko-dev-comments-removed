@@ -128,7 +128,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i64x2.abs-arg-empty (result v128)
+    (func \$i64x2.abs-arg-empty (result v128)
       (i64x2.abs)
     )
   )`),

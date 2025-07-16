@@ -2172,7 +2172,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.ceil-arg-empty (result v128)
+    (func \$f64x2.ceil-arg-empty (result v128)
       (f64x2.ceil)
     )
   )`),
@@ -2182,7 +2182,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.floor-arg-empty (result v128)
+    (func \$f64x2.floor-arg-empty (result v128)
       (f64x2.floor)
     )
   )`),
@@ -2192,7 +2192,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.trunc-arg-empty (result v128)
+    (func \$f64x2.trunc-arg-empty (result v128)
       (f64x2.trunc)
     )
   )`),
@@ -2202,7 +2202,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$f64x2.nearest-arg-empty (result v128)
+    (func \$f64x2.nearest-arg-empty (result v128)
       (f64x2.nearest)
     )
   )`),

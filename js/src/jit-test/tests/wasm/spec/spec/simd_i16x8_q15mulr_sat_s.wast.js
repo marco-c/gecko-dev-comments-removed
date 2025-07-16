@@ -265,7 +265,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.q15mulr_sat_s-1st-arg-empty (result v128)
+    (func \$i16x8.q15mulr_sat_s-1st-arg-empty (result v128)
       (i16x8.q15mulr_sat_s (v128.const i16x8 0 0 0 0 0 0 0 0))
     )
   )`),
@@ -275,7 +275,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (func $$i16x8.q15mulr_sat_s-arg-empty (result v128)
+    (func \$i16x8.q15mulr_sat_s-arg-empty (result v128)
       (i16x8.q15mulr_sat_s)
     )
   )`),
