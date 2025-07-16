@@ -61,6 +61,14 @@ enum class TrustedType : int8_t {
 };
 nsString GetTrustedTypeName(TrustedType aTrustedType);
 
+void ReportSinkTypeMismatchViolations(nsIContentSecurityPolicy* aCSP,
+                                      nsICSPEventListener* aCSPEventListener,
+                                      const nsCString& aFileName,
+                                      uint32_t aLine, uint32_t aColumn,
+                                      const nsAString& aSink,
+                                      const nsAString& aSinkGroup,
+                                      const nsAString& aSource);
+
 
 
 
@@ -172,6 +180,16 @@ AreArgumentsTrustedForEnsureCSPDoesNotBlockStringCompilation(
     JS::Handle<JSString*> aBodyString,
     JS::Handle<JS::StackGCVector<JS::Value>> aParameterArgs,
     JS::Handle<JS::Value> aBodyArg, ErrorResult& aError);
+
+
+
+
+
+MOZ_CAN_RUN_SCRIPT const nsAString*
+GetConvertedScriptSourceForPreNavigationCheck(
+    nsIGlobalObject& aGlobalObject, const nsAString& aEncodedScriptSource,
+    const nsAString& aSink, Maybe<nsAutoString>& aResultHolder,
+    ErrorResult& aError);
 
 }  
 
