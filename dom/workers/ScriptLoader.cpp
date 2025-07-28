@@ -1191,7 +1191,8 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     
     
     
-    if (request->mModuleScript->HasParseError()) {
+    if (request->mModuleScript->HasParseError() ||
+        request->mModuleScript->HasErrorToRethrow()) {
       
       
       mRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
