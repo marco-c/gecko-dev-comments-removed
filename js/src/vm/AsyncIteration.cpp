@@ -368,8 +368,6 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
   
   
-  generator->setSuspendedYield();
-
   
   
   
@@ -394,7 +392,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     CompletionKind completionKind = next->completionKind();
 
-    MOZ_ASSERT(generator->isSuspendedYield());
+    generator->setSuspendedYield();
 
     RootedValue argument(cx, next->completionValue());
 
@@ -412,7 +410,11 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
         return false;
       }
     }
+
+    return true;
   }
+
+  generator->setSuspendedYield();
 
   return true;
 }
