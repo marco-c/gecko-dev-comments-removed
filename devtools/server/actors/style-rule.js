@@ -499,10 +499,18 @@ class StyleRuleActor extends Actor {
         
         
         
-        decl.isValid = InspectorUtils.supports(
-          `${decl.name}:${decl.value}`,
-          supportsOptions
-        );
+        decl.isValid =
+          
+          
+          
+          
+          
+          
+          this.ruleClassName === PRES_HINTS ||
+          InspectorUtils.supports(
+            `${decl.name}:${decl.value}`,
+            supportsOptions
+          );
         
         decl.isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
         
