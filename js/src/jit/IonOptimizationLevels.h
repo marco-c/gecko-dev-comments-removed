@@ -45,9 +45,6 @@ class OptimizationInfo {
   bool ama_;
 
   
-  bool edgeCaseAnalysis_;
-
-  
   bool eliminateRedundantChecks_;
 
   
@@ -91,7 +88,6 @@ class OptimizationInfo {
       : level_(OptimizationLevel::Normal),
         eaa_(false),
         ama_(false),
-        edgeCaseAnalysis_(false),
         eliminateRedundantChecks_(false),
         eliminateRedundantShapeGuards_(false),
         eliminateRedundantGCBarriers_(false),
@@ -111,7 +107,6 @@ class OptimizationInfo {
 
     autoTruncate_ = true;
     eaa_ = true;
-    edgeCaseAnalysis_ = true;
     eliminateRedundantChecks_ = true;
     eliminateRedundantShapeGuards_ = true;
     eliminateRedundantGCBarriers_ = true;
@@ -137,7 +132,6 @@ class OptimizationInfo {
 
     ama_ = true;
     autoTruncate_ = false;
-    edgeCaseAnalysis_ = false;
     eliminateRedundantChecks_ = false;
     eliminateRedundantShapeGuards_ = false;
     eliminateRedundantGCBarriers_ = false;
@@ -180,10 +174,6 @@ class OptimizationInfo {
   bool eaaEnabled() const { return eaa_ && !JitOptions.disableEaa; }
 
   bool amaEnabled() const { return ama_ && !JitOptions.disableAma; }
-
-  bool edgeCaseAnalysisEnabled() const {
-    return edgeCaseAnalysis_ && !JitOptions.disableEdgeCaseAnalysis;
-  }
 
   bool eliminateRedundantChecksEnabled() const {
     return eliminateRedundantChecks_;

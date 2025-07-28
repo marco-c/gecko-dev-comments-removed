@@ -551,10 +551,6 @@ MDefinition* MInstruction::foldsToStore(TempAllocator& alloc) {
   return value;
 }
 
-void MDefinition::analyzeEdgeCasesForward() {}
-
-void MDefinition::analyzeEdgeCasesBackward() {}
-
 void MInstruction::setResumePoint(MResumePoint* resumePoint) {
   MOZ_ASSERT(!resumePoint_);
   resumePoint_ = resumePoint;
@@ -3687,54 +3683,6 @@ MDefinition* MDiv::foldsTo(TempAllocator& alloc) {
   return this;
 }
 
-void MDiv::analyzeEdgeCasesForward() {
-  
-  if (type() != MIRType::Int32) {
-    return;
-  }
-
-  MOZ_ASSERT(lhs()->type() == MIRType::Int32);
-  MOZ_ASSERT(rhs()->type() == MIRType::Int32);
-
-  
-  if (rhs()->isConstant() && !rhs()->toConstant()->isInt32(0)) {
-    canBeDivideByZero_ = false;
-  }
-
-  
-  
-  if (lhs()->isConstant() && !lhs()->toConstant()->isInt32(INT32_MIN)) {
-    canBeNegativeOverflow_ = false;
-  }
-
-  
-  if (rhs()->isConstant() && !rhs()->toConstant()->isInt32(-1)) {
-    canBeNegativeOverflow_ = false;
-  }
-
-  
-  if (lhs()->isConstant() && !lhs()->toConstant()->isInt32(0)) {
-    setCanBeNegativeZero(false);
-  }
-
-  
-  if (rhs()->isConstant() && rhs()->type() == MIRType::Int32) {
-    if (rhs()->toConstant()->toInt32() >= 0) {
-      setCanBeNegativeZero(false);
-    }
-  }
-}
-
-void MDiv::analyzeEdgeCasesBackward() {
-  
-  
-  
-  
-  if (canBeNegativeZero_ && !NeedNegativeZeroCheck(this)) {
-    setCanBeNegativeZero(false);
-  }
-}
-
 bool MDiv::fallible() const { return !isTruncated(); }
 
 MDefinition* MMod::foldsTo(TempAllocator& alloc) {
@@ -3750,24 +3698,6 @@ MDefinition* MMod::foldsTo(TempAllocator& alloc) {
     }
   }
   return this;
-}
-
-void MMod::analyzeEdgeCasesForward() {
-  
-  if (type() != MIRType::Int32) {
-    return;
-  }
-
-  if (rhs()->isConstant() && !rhs()->toConstant()->isInt32(0)) {
-    canBeDivideByZero_ = false;
-  }
-
-  if (rhs()->isConstant()) {
-    int32_t n = rhs()->toConstant()->toInt32();
-    if (n > 0 && !IsPowerOfTwo(uint32_t(n))) {
-      canBePowerOfTwoDivisor_ = false;
-    }
-  }
 }
 
 bool MMod::fallible() const {
@@ -3868,34 +3798,6 @@ MDefinition* MMul::foldsTo(TempAllocator& alloc) {
   }
 
   return this;
-}
-
-void MMul::analyzeEdgeCasesForward() {
-  
-  
-  if (type() != MIRType::Int32) {
-    return;
-  }
-
-  
-  if (lhs()->isConstant() && lhs()->type() == MIRType::Int32) {
-    if (lhs()->toConstant()->toInt32() > 0) {
-      setCanBeNegativeZero(false);
-    }
-  }
-
-  
-  if (rhs()->isConstant() && rhs()->type() == MIRType::Int32) {
-    if (rhs()->toConstant()->toInt32() > 0) {
-      setCanBeNegativeZero(false);
-    }
-  }
-}
-
-void MMul::analyzeEdgeCasesBackward() {
-  if (canBeNegativeZero() && !NeedNegativeZeroCheck(this)) {
-    setCanBeNegativeZero(false);
-  }
 }
 
 bool MMul::canOverflow() const {
@@ -4436,12 +4338,6 @@ MDefinition* MBooleanToInt32::foldsTo(TempAllocator& alloc) {
   }
 
   return this;
-}
-
-void MToNumberInt32::analyzeEdgeCasesBackward() {
-  if (!NeedNegativeZeroCheck(this)) {
-    setNeedsNegativeZeroCheck(false);
-  }
 }
 
 MDefinition* MTruncateToInt32::foldsTo(TempAllocator& alloc) {
