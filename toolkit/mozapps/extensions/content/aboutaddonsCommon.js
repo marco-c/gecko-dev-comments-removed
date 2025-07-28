@@ -88,6 +88,15 @@ function installPromptHandler(info) {
     return Promise.resolve();
   }
 
+  
+  
+  
+  
+  
+  const updateIsMigratingToDataCollectionPerms =
+    !info.existingAddon.hasDataCollectionPermissions &&
+    info.install.addonHasPreviousConsent;
+
   let newPerms = info.addon.userPermissions;
 
   let difference = Extension.comparePermissions(oldPerms, newPerms);
@@ -96,7 +105,8 @@ function installPromptHandler(info) {
   if (
     !difference.origins.length &&
     !difference.permissions.length &&
-    !difference.data_collection.length
+    (updateIsMigratingToDataCollectionPerms ||
+      !difference.data_collection.length)
   ) {
     return Promise.resolve();
   }
