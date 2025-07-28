@@ -1105,6 +1105,11 @@ var gPrivacyPane = {
       gPrivacyPane.showLocationExceptions
     );
     setEventListener(
+      "localHostSettingsButton",
+      "command",
+      gPrivacyPane.showLocalHostExceptions
+    );
+    setEventListener(
       "xrSettingsButton",
       "command",
       gPrivacyPane.showXRExceptions
@@ -2692,6 +2697,22 @@ var gPrivacyPane = {
 
   showLocationExceptions() {
     let params = { permissionType: "geo" };
+
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/sitePermissions.xhtml",
+      { features: "resizable=yes" },
+      params
+    );
+  },
+
+  
+
+  
+
+
+
+  showLocalHostExceptions() {
+    let params = { permissionType: "localhost" };
 
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/sitePermissions.xhtml",

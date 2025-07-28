@@ -255,10 +255,10 @@ nsContentPermissionUtils::CreateContentPermissionRequestParent(
 
 nsresult nsContentPermissionUtils::AskPermission(
     nsIContentPermissionRequest* aRequest, nsPIDOMWindowInner* aWindow) {
-  NS_ENSURE_STATE(aWindow && aWindow->IsCurrentInnerWindow());
-
   
   if (XRE_IsContentProcess()) {
+    NS_ENSURE_STATE(aWindow && aWindow->IsCurrentInnerWindow());
+
     RefPtr<RemotePermissionRequest> req =
         new RemotePermissionRequest(aRequest, aWindow);
 
