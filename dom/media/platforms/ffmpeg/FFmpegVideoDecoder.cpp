@@ -1125,6 +1125,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
         aId, flag);
   });
 
+#ifdef MOZ_FFMPEG_USE_INPUT_INFO_MAP
+  InsertInputInfo(aSample);
+#endif
+
 #if LIBAVCODEC_VERSION_MAJOR >= 58
   packet->duration = aSample->mDuration.ToMicroseconds();
   int res = mLib->avcodec_send_packet(mCodecContext, packet);
@@ -1228,14 +1232,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
     }
   } while (true);
 #else
-  
-  
-  
-  
-  
-  mDurationMap.Insert(aSample->mTimecode.ToMicroseconds(),
-                      aSample->mDuration.ToMicroseconds());
-
   if (!PrepareFrame()) {
     NS_WARNING("FFmpeg decoder failed to allocate frame.");
     return MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__);
@@ -1271,21 +1267,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
   
   int64_t pts =
       mPtsContext.GuessCorrectPts(GetFramePts(mFrame), mFrame->pkt_dts);
-  
-  
-  
 
-  int64_t duration;
-  if (!mDurationMap.Find(mFrame->pkt_dts, duration)) {
-    NS_WARNING("Unable to retrieve duration from map");
-    duration = aSample->mDuration.ToMicroseconds();
-    
-    
-    
-    mDurationMap.Clear();
-  }
+  InputInfo info(aSample);
+  TakeInputInfo(mFrame, info);
 
-  MediaResult rv = CreateImage(aSample->mOffset, pts, duration, aResults);
+  MediaResult rv = CreateImage(aSample->mOffset, pts, info.mDuration, aResults);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1733,6 +1719,8 @@ FFmpegVideoDecoder<LIBAV_VER>::ProcessFlush() {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 #if LIBAVCODEC_VERSION_MAJOR < 58
   mPtsContext.Reset();
+#endif
+#ifdef MOZ_FFMPEG_USE_DURATION_MAP
   mDurationMap.Clear();
 #endif
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
