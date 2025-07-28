@@ -17,8 +17,8 @@ pub(crate) struct EventArgs {
 #[derive(Clone, Default, Debug)]
 pub(crate) struct InstrumentArgs {
     level: Option<Level>,
-    pub(crate) name: Option<LitStr>,
-    target: Option<LitStr>,
+    pub(crate) name: Option<LitStrOrIdent>,
+    target: Option<LitStrOrIdent>,
     pub(crate) parent: Option<Expr>,
     pub(crate) follows_from: Option<Expr>,
     pub(crate) skips: HashSet<Ident>,
@@ -84,6 +84,8 @@ impl Parse for InstrumentArgs {
                 let name = input.parse::<StrArg<kw::name>>()?.value;
                 args.name = Some(name);
             } else if lookahead.peek(LitStr) {
+                
+                
                 
                 
                 
@@ -211,8 +213,32 @@ impl Parse for EventArgs {
     }
 }
 
+#[derive(Debug, Clone)]
+pub(super) enum LitStrOrIdent {
+    LitStr(LitStr),
+    Ident(Ident),
+}
+
+impl ToTokens for LitStrOrIdent {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            LitStrOrIdent::LitStr(target) => target.to_tokens(tokens),
+            LitStrOrIdent::Ident(ident) => ident.to_tokens(tokens),
+        }
+    }
+}
+
+impl Parse for LitStrOrIdent {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        input
+            .parse::<LitStr>()
+            .map(LitStrOrIdent::LitStr)
+            .or_else(|_| input.parse::<Ident>().map(LitStrOrIdent::Ident))
+    }
+}
+
 struct StrArg<T> {
-    value: LitStr,
+    value: LitStrOrIdent,
     _p: std::marker::PhantomData<T>,
 }
 
@@ -268,17 +294,12 @@ impl Parse for Skips {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Default)]
 pub(crate) enum FormatMode {
+    #[default]
     Default,
     Display,
     Debug,
-}
-
-impl Default for FormatMode {
-    fn default() -> Self {
-        FormatMode::Default
-    }
 }
 
 #[derive(Clone, Debug)]

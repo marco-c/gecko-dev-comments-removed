@@ -116,7 +116,6 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/tracing-core/0.1.22")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/tokio-rs/tracing/master/assets/logo-type.png",
     issue_tracker_base_url = "https://github.com/tokio-rs/tracing/issues/"
@@ -129,7 +128,6 @@
     rust_2018_idioms,
     unreachable_pub,
     bad_style,
-    const_err,
     dead_code,
     improper_ctypes,
     non_shorthand_field_patterns,
@@ -137,7 +135,8 @@
     overflowing_literals,
     path_statements,
     patterns_in_fns_without_body,
-    private_in_public,
+    private_interfaces,
+    private_bounds,
     unconditional_recursion,
     unused,
     unused_allocation,
@@ -147,6 +146,14 @@
 )]
 #[cfg(not(feature = "std"))]
 extern crate alloc;
+
+#[doc(hidden)]
+pub mod __macro_support {
+    
+    
+    
+    pub use core::{file, line, module_path, option::Option};
+}
 
 
 
@@ -245,9 +252,9 @@ macro_rules! metadata {
             $name,
             $target,
             $level,
-            Some(file!()),
-            Some(line!()),
-            Some(module_path!()),
+            $crate::__macro_support::Option::Some($crate::__macro_support::file!()),
+            $crate::__macro_support::Option::Some($crate::__macro_support::line!()),
+            $crate::__macro_support::Option::Some($crate::__macro_support::module_path!()),
             $crate::field::FieldSet::new($fields, $crate::identify_callsite!($callsite)),
             $kind,
         )

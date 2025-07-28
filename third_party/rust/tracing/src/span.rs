@@ -1104,20 +1104,14 @@ impl Span {
 
     
     
-    pub fn field<Q: ?Sized>(&self, field: &Q) -> Option<field::Field>
-    where
-        Q: field::AsField,
-    {
+    pub fn field<Q: field::AsField + ?Sized>(&self, field: &Q) -> Option<field::Field> {
         self.metadata().and_then(|meta| field.as_field(meta))
     }
 
     
     
     #[inline]
-    pub fn has_field<Q: ?Sized>(&self, field: &Q) -> bool
-    where
-        Q: field::AsField,
-    {
+    pub fn has_field<Q: field::AsField + ?Sized>(&self, field: &Q) -> bool {
         self.field(field).is_some()
     }
 
@@ -1191,11 +1185,11 @@ impl Span {
     
     
     
-    pub fn record<Q: ?Sized, V>(&self, field: &Q, value: V) -> &Self
-    where
-        Q: field::AsField,
-        V: field::Value,
-    {
+    pub fn record<Q: field::AsField + ?Sized, V: field::Value>(
+        &self,
+        field: &Q,
+        value: V,
+    ) -> &Self {
         if let Some(meta) = self.meta {
             if let Some(field) = field.as_field(meta) {
                 self.record_all(
@@ -1607,17 +1601,9 @@ unsafe impl Sync for PhantomNotSend {}
 mod test {
     use super::*;
 
-    trait AssertSend: Send {}
-    impl AssertSend for Span {}
-
-    trait AssertSync: Sync {}
-    impl AssertSync for Span {}
-    impl AssertSync for Entered<'_> {}
-    impl AssertSync for EnteredSpan {}
-
     #[test]
     fn test_record_backwards_compat() {
-        Span::current().record("some-key", &"some text");
-        Span::current().record("some-key", &false);
+        Span::current().record("some-key", "some text");
+        Span::current().record("some-key", false);
     }
 }

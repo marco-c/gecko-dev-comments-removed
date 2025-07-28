@@ -1,9 +1,13 @@
-use crate::stdlib::pin::Pin;
-use crate::stdlib::task::{Context, Poll};
-use crate::stdlib::{future::Future, marker::Sized};
 use crate::{
     dispatcher::{self, Dispatch},
     span::Span,
+};
+use core::{
+    future::Future,
+    marker::Sized,
+    mem::ManuallyDrop,
+    pin::Pin,
+    task::{Context, Poll},
 };
 use pin_project_lite::pin_project;
 
@@ -80,7 +84,10 @@ pub trait Instrument: Sized {
     
     
     fn instrument(self, span: Span) -> Instrumented<Self> {
-        Instrumented { inner: self, span }
+        Instrumented {
+            inner: ManuallyDrop::new(self),
+            span,
+        }
     }
 
     
@@ -252,12 +259,54 @@ pin_project! {
     ///
     /// [`Future`]: std::future::Future
     /// [`Span`]: crate::Span
+    #[project = InstrumentedProj]
+    #[project_ref = InstrumentedProjRef]
     #[derive(Debug, Clone)]
     #[must_use = "futures do nothing unless you `.await` or poll them"]
     pub struct Instrumented<T> {
+        // `ManuallyDrop` is used here to to enter instrument `Drop` by entering
+        // `Span` and executing `ManuallyDrop::drop`.
         #[pin]
-        inner: T,
+        inner: ManuallyDrop<T>,
         span: Span,
+    }
+
+    impl<T> PinnedDrop for Instrumented<T> {
+        fn drop(this: Pin<&mut Self>) {
+            let this = this.project();
+            let _enter = this.span.enter();
+            // SAFETY: 1. `Pin::get_unchecked_mut()` is safe, because this isn't
+            //             different from wrapping `T` in `Option` and calling
+            //             `Pin::set(&mut this.inner, None)`, except avoiding
+            //             additional memory overhead.
+            //         2. `ManuallyDrop::drop()` is safe, because
+            //            `PinnedDrop::drop()` is guaranteed to be called only
+            //            once.
+            unsafe { ManuallyDrop::drop(this.inner.get_unchecked_mut()) }
+        }
+    }
+}
+
+impl<'a, T> InstrumentedProj<'a, T> {
+    
+    
+    fn span_and_inner_pin_mut(self) -> (&'a mut Span, Pin<&'a mut T>) {
+        
+        
+        
+        let inner = unsafe { self.inner.map_unchecked_mut(|v| &mut **v) };
+        (self.span, inner)
+    }
+}
+
+impl<'a, T> InstrumentedProjRef<'a, T> {
+    
+    fn span_and_inner_pin_ref(self) -> (&'a Span, Pin<&'a T>) {
+        
+        
+        
+        let inner = unsafe { self.inner.map_unchecked(|v| &**v) };
+        (self.span, inner)
     }
 }
 
@@ -267,9 +316,9 @@ impl<T: Future> Future for Instrumented<T> {
     type Output = T::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-        let _enter = this.span.enter();
-        this.inner.poll(cx)
+        let (span, inner) = self.project().span_and_inner_pin_mut();
+        let _enter = span.enter();
+        inner.poll(cx)
     }
 }
 
@@ -298,19 +347,29 @@ impl<T> Instrumented<T> {
 
     
     pub fn inner_pin_ref(self: Pin<&Self>) -> Pin<&T> {
-        self.project_ref().inner
+        self.project_ref().span_and_inner_pin_ref().1
     }
 
     
     pub fn inner_pin_mut(self: Pin<&mut Self>) -> Pin<&mut T> {
-        self.project().inner
+        self.project().span_and_inner_pin_mut().1
     }
 
     
     
     
     pub fn into_inner(self) -> T {
-        self.inner
+        
+        
+        let this = ManuallyDrop::new(self);
+        let span: *const Span = &this.span;
+        let inner: *const ManuallyDrop<T> = &this.inner;
+        
+        
+        
+        let _span = unsafe { span.read() };
+        let inner = unsafe { inner.read() };
+        ManuallyDrop::into_inner(inner)
     }
 }
 

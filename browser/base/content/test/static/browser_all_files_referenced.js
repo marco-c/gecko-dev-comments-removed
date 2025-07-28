@@ -119,6 +119,9 @@ var gExceptionPaths = [
   "resource://builtin-addons/newtab/",
   "resource://newtab/",
   "chrome://newtab/",
+
+  
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/tests/generated/",
 ];
 
 
@@ -324,6 +327,11 @@ var allowlist = [
 
   
   { file: "chrome://browser/content/places/interactionsViewer.html" },
+
+  
+  {
+    file: "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTracing.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {

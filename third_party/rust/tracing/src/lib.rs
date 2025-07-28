@@ -898,9 +898,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg), deny(rustdoc::broken_intra_doc_links))]
-#![doc(html_root_url = "https://docs.rs/tracing/0.1.37")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/tokio-rs/tracing/master/assets/logo-type.png",
     issue_tracker_base_url = "https://github.com/tokio-rs/tracing/issues/"
@@ -911,7 +924,6 @@
     rust_2018_idioms,
     unreachable_pub,
     bad_style,
-    const_err,
     dead_code,
     improper_ctypes,
     non_shorthand_field_patterns,
@@ -919,7 +931,8 @@
     overflowing_literals,
     path_statements,
     patterns_in_fns_without_body,
-    private_in_public,
+    private_interfaces,
+    private_bounds,
     unconditional_recursion,
     unused,
     unused_allocation,
@@ -974,7 +987,10 @@ pub mod subscriber;
 pub mod __macro_support {
     pub use crate::callsite::Callsite;
     use crate::{subscriber::Interest, Metadata};
-    pub use core::concat;
+    
+    
+    
+    pub use core::{concat, file, format_args, iter::Iterator, line, option::Option};
 
     
     

@@ -1,0 +1,16 @@
+
+
+
+
+
+pub fn initialize_tracing() {
+    use tracing_subscriber::prelude::*;
+    tracing_subscriber::registry()
+        
+        
+        .with(tracing_support::simple_event_layer())
+        
+        
+        
+        .init();
+}

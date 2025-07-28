@@ -234,7 +234,6 @@ pub struct Level(LevelInner);
 
 
 
-
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct LevelFilter(Option<Level>);
@@ -273,6 +272,7 @@ impl<'a> Metadata<'a> {
     }
 
     
+    #[inline]
     pub fn fields(&self) -> &field::FieldSet {
         &self.fields
     }
