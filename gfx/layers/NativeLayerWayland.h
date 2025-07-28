@@ -38,6 +38,8 @@ struct LayerState {
   
   
   bool mMutatedFrontBuffer : 1;
+  
+  bool mRendered : 1;
 
   
   
@@ -47,6 +49,7 @@ struct LayerState {
     mMutatedStackingOrder = true;
     mMutatedPlacement = true;
     mMutatedFrontBuffer = true;
+    mRendered = false;
   }
 };
 
@@ -180,7 +183,7 @@ class NativeLayerWayland : public NativeLayer {
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
 
-  void UpdateLayer(int aScale);
+  void RenderLayer(int aScale);
   
   GpuFence* GetGpuFence() override { return nullptr; }
 
@@ -236,7 +239,7 @@ class NativeLayerWayland : public NativeLayer {
                       int aScale);
   void UpdateLayerPlacementLocked(
       const widget::WaylandSurfaceLock& aProofOfLock);
-  virtual void CommitFrontBufferToScreenLocked(
+  virtual bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) = 0;
 
  protected:
@@ -321,7 +324,7 @@ class NativeLayerWaylandRender final : public NativeLayerWayland {
                                 bool aForce) override;
   void HandlePartialUpdateLocked(
       const widget::WaylandSurfaceLock& aProofOfLock);
-  void CommitFrontBufferToScreenLocked(
+  bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) override;
 
   const RefPtr<SurfacePoolHandleWayland> mSurfacePoolHandle;
@@ -354,7 +357,7 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
   void DiscardBackbuffersLocked(const widget::WaylandSurfaceLock& aProofOfLock,
                                 bool aForce) override;
   void FreeUnusedBackBuffers();
-  void CommitFrontBufferToScreenLocked(
+  bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) override;
 
   RefPtr<wr::RenderDMABUFTextureHost> mTextureHost;
