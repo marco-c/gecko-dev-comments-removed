@@ -896,6 +896,10 @@ void nsIFrame::Destroy(DestroyContext& aContext) {
     }
   }
 
+  if (HasAnchorPosReference()) {
+    ps->RemoveAnchorPosPositioned(this);
+  }
+
   
   
   
