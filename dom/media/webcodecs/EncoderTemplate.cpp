@@ -5,17 +5,21 @@
 
 
 #include "EncoderTemplate.h"
+#include <type_traits>
 
 #include "EncoderTypes.h"
+#include "WebCodecsUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/VideoFrame.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsGkAtoms.h"
+#include "nsRFPService.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 
@@ -124,6 +128,11 @@ void EncoderTemplate<EncoderType>::Configure(const ConfigType& aConfig,
   if (!config) {
     CloseInternal(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return;
+  }
+
+  
+  if constexpr (std::is_same_v<ConfigType, VideoEncoderConfig>) {
+    ApplyResistFingerprintingIfNeeded(config, GetOwnerGlobal());
   }
 
   mState = CodecState::Configured;
@@ -327,7 +336,7 @@ void EncoderTemplate<VideoEncoderTraits>::OutputEncodedVideoData(
   JSContext* cx = jsapi.cx();
 
   RefPtr<EncodedVideoChunkOutputCallback> cb(mOutputCallback);
-  for (auto& data : aData) {
+  for (const auto& data : aData) {
     
     
     
@@ -387,7 +396,7 @@ void EncoderTemplate<AudioEncoderTraits>::OutputEncodedAudioData(
   JSContext* cx = jsapi.cx();
 
   RefPtr<EncodedAudioChunkOutputCallback> cb(mOutputCallback);
-  for (auto& data : aData) {
+  for (const auto& data : aData) {
     
     
     

@@ -48,7 +48,7 @@ enum class BitrateMode { Constant, Variable };
 
 enum class ScalabilityMode { None, L1T2, L1T3 };
 
-enum class HardwarePreference { RequireHardware, RequireSoftware, None };
+enum class HardwarePreference { None, RequireHardware, RequireSoftware };
 
 
 const char* GetCodecTypeString(const CodecType& aCodecType);
@@ -255,8 +255,8 @@ class EncoderConfig final {
   uint32_t mMaxBitrate{};
   Usage mUsage{};
   
-  HardwarePreference mHardwarePreference{};
-  SampleFormat mFormat{};
+  HardwarePreference mHardwarePreference{HardwarePreference::None};
+  SampleFormat mFormat;
   ScalabilityMode mScalabilityMode{};
   uint32_t mFramerate{};
   size_t mKeyframeInterval{};

@@ -52,6 +52,7 @@ EncodeSupportSet AndroidEncoderModule::Supports(
   if (aConfig.mScalabilityMode != ScalabilityMode::None) {
     return EncodeSupportSet{};
   }
+  
   return SupportsCodec(aConfig.mCodec);
 }
 
