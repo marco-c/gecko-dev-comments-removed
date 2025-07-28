@@ -704,8 +704,8 @@ UiaTextRange::GetBoundingRectangles(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
 
   
   nsTArray<LayoutDeviceIntRect> lineRects = range.LineRects();
-  if (lineRects.IsEmpty() && !mIsEndOfLineInsertionPoint &&
-      range.Start() == range.End()) {
+  TextLeafPoint start = range.Start();
+  if (lineRects.IsEmpty() && start == range.End()) {
     
     
     
@@ -713,10 +713,34 @@ UiaTextRange::GetBoundingRectangles(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
     
     
     
-    
-    
-    
-    lineRects.AppendElement(range.Start().CharBounds());
+    LayoutDeviceIntRect charBounds;
+    bool maybeUseCaretRect;
+    if (mIsEndOfLineInsertionPoint) {
+      
+      
+      maybeUseCaretRect = true;
+    } else {
+      charBounds = start.CharBounds();
+      
+      
+      
+      
+      maybeUseCaretRect = charBounds.IsEmpty();
+    }
+    if (maybeUseCaretRect && start == TextLeafPoint::GetCaret(start.mAcc)) {
+      
+      HyperTextAccessibleBase* ht = start.mAcc->AsHyperTextBase();
+      if (!ht) {
+        Accessible* parent = start.mAcc->Parent();
+        if (parent) {
+          ht = parent->AsHyperTextBase();
+        }
+      }
+      if (ht) {
+        charBounds = ht->GetCaretRect().first;
+      }
+    }
+    lineRects.AppendElement(charBounds);
   }
 
   
