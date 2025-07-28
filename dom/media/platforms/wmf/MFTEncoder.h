@@ -143,6 +143,10 @@ class MFTEncoder final {
 
   
   
+  HRESULT UpdateOutputType();
+
+  
+  
   using AsyncMFTResult = Result<bool, HRESULT>;
   AsyncMFTResult AttemptEnableAsync();
   HRESULT GetStreamIDs();
