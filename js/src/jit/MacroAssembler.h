@@ -3717,16 +3717,18 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   void wasmBoundsCheck32(Condition cond, Register index,
-                         Register boundsCheckLimit, Label* ok) PER_SHARED_ARCH;
+                         Register boundsCheckLimit,
+                         Label* label) PER_SHARED_ARCH;
 
   void wasmBoundsCheck32(Condition cond, Register index,
-                         Address boundsCheckLimit, Label* ok) PER_SHARED_ARCH;
+                         Address boundsCheckLimit,
+                         Label* label) PER_SHARED_ARCH;
 
   void wasmBoundsCheck64(Condition cond, Register64 index,
-                         Register64 boundsCheckLimit, Label* ok) PER_ARCH;
+                         Register64 boundsCheckLimit, Label* label) PER_ARCH;
 
   void wasmBoundsCheck64(Condition cond, Register64 index,
-                         Address boundsCheckLimit, Label* ok) PER_ARCH;
+                         Address boundsCheckLimit, Label* label) PER_ARCH;
 
   
   void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr,
@@ -3902,10 +3904,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void wasmCallIndirect(const wasm::CallSiteDesc& desc,
                         const wasm::CalleeDesc& callee,
-                        Label* boundsCheckFailedLabel,
-                        Label* nullCheckFailedLabel,
-                        mozilla::Maybe<uint32_t> tableSize,
-                        CodeOffset* fastCallOffset, CodeOffset* slowCallOffset);
+                        Label* nullCheckFailedLabel, CodeOffset* fastCallOffset,
+                        CodeOffset* slowCallOffset);
 
   
   
@@ -3915,9 +3915,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void wasmReturnCallIndirect(const wasm::CallSiteDesc& desc,
                               const wasm::CalleeDesc& callee,
-                              Label* boundsCheckFailedLabel,
                               Label* nullCheckFailedLabel,
-                              mozilla::Maybe<uint32_t> tableSize,
                               const ReturnCallAdjustmentInfo& retCallInfo);
 
   

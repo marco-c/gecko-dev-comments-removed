@@ -167,7 +167,9 @@ struct MemoryInstanceData {
 
 struct TableInstanceData {
   
-  uint32_t length;
+  
+  
+  uint64_t length;
 
   
   

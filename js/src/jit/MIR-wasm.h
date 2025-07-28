@@ -751,7 +751,7 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
     Memory0,
     
     
-    Unknown
+    Unknown,
   };
 
  private:
