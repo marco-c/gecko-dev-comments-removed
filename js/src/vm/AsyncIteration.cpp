@@ -387,48 +387,46 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
   
   
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-
   if (!generator->isQueueEmpty()) {
-    Rooted<AsyncGeneratorRequest*> next(
+    
+    
+    Rooted<AsyncGeneratorRequest*> toYield(
         cx, AsyncGeneratorObject::peekRequest(generator));
-    if (!next) {
+    if (!toYield) {
       return false;
     }
 
-    CompletionKind completionKind = next->completionKind();
+    CompletionKind completionKind = toYield->completionKind();
 
     generator->setSuspendedYield();
 
-    RootedValue completionValue(cx, next->completionValue());
+    
+    RootedValue completionValue(cx, toYield->completionValue());
 
+    
+    
     return AsyncGeneratorUnwrapYieldResumption(cx, generator, completionKind,
                                                completionValue);
   }
 
+  
+  
   generator->setSuspendedYield();
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
 
   return true;
 }
