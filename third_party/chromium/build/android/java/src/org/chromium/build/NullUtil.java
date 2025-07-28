@@ -23,6 +23,26 @@ public class NullUtil {
 
 
 
+
+
+    @SuppressWarnings("NullAway") 
+    @Contract("null -> fail") 
+    public static <T> T assertNonNull(@Nullable T object) {
+        assert object != null;
+        return object;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
     @SuppressWarnings("NullAway") 
     @Contract("null -> fail") 
     public static <T> T assumeNonNull(@Nullable T object) {

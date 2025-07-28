@@ -5,6 +5,7 @@
 """Wrapper script around TraceEventAdder script."""
 
 import argparse
+import logging
 import sys
 import tempfile
 import os
@@ -19,6 +20,7 @@ _MAX_CMDLINE = 10000
 
 
 def main(argv):
+  build_utils.InitLogging('TRACE_EVENT_REWRITER_DEBUG')
   argv = build_utils.ExpandFileArgs(argv[1:])
   parser = argparse.ArgumentParser()
   action_helpers.add_depfile_arg(parser)
@@ -47,10 +49,13 @@ def main(argv):
   if sum(len(x) for x in cmd) > _MAX_CMDLINE:
     
     
-    args_file = tempfile.NamedTemporaryFile(mode='w')
+    is_debug = logging.getLogger().isEnabledFor(logging.DEBUG)
+    args_file = tempfile.NamedTemporaryFile(mode='w', delete=not is_debug)
     args_file.write('\n'.join(cmd[3:]))
     args_file.flush()
     cmd[3:] = ['@' + args_file.name]
+
+  logging.debug(' '.join(cmd))
 
   build_utils.CheckOutput(cmd, print_stdout=True)
 

@@ -17,7 +17,6 @@ import sys
 
 
 
-
 def SplitVersion(version):
   """Splits the Xcode version to 3 values.
 
@@ -135,8 +134,13 @@ def main():
                       help='Value of gn $root_build_dir')
   parser.add_argument('platform',
                       choices=[
-                          'iphoneos', 'iphonesimulator', 'macosx', 'watchos',
-                          'watchsimulator'
+                          'appletvos',
+                          'appletvsimulator',
+                          'iphoneos',
+                          'iphonesimulator',
+                          'macosx',
+                          'watchos',
+                          'watchsimulator',
                       ])
   args = parser.parse_args()
   if args.developer_dir:

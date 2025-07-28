@@ -55,10 +55,6 @@ _IGNORE_WARNINGS = (
         r'PaymentRequest[BH]',
     ]) + ')',
     
-    r'OnBackAnimationCallback',
-    
-    r'Missing class android.adservices.common.AdServicesOutcomeReceiver',
-    
     r'FastServiceLoader\.class:.*Could not inline ServiceLoader\.load',
     
     r'(?:GeneratedExtensionRegistryLoader|ExtensionRegistryLite)\.class:.*Could not inline ServiceLoader\.load',  
@@ -80,9 +76,6 @@ _IGNORE_WARNINGS = (
     
     
     r'Warning in .*:androidx/test/espresso/.*/guava/collect/.*',
-
-    
-    r'AppSearchDocumentClassMap\.class:.*Could not inline ServiceLoader\.load',
 )
 
 _BLOCKLISTED_EXPECTATION_PATHS = [
@@ -103,8 +96,8 @@ def _ParseOptions():
                       help='Path to our custom R8 wrapper to use.')
   parser.add_argument('--input-paths',
                       action='append',
-                      required=True,
-                      help='GN-list of .jar files to optimize.')
+                      help='GN-list of .jar files to optimize, excluding'
+                      ' those --feature-jars.')
   parser.add_argument('--output-path', help='Path to the generated .jar file.')
   parser.add_argument('--tracerefs-json-out')
   parser.add_argument(
@@ -240,7 +233,6 @@ def _ParseOptions():
       options.sdk_extension_jars)
   options.proguard_configs = action_helpers.parse_gn_list(
       options.proguard_configs)
-  options.input_paths = action_helpers.parse_gn_list(options.input_paths)
   options.extra_mapping_output_paths = action_helpers.parse_gn_list(
       options.extra_mapping_output_paths)
   if os.environ.get('R8_VERBOSE') == '1':
@@ -256,6 +248,13 @@ def _ParseOptions():
     options.feature_jars = [
         action_helpers.parse_gn_list(x) for x in options.feature_jars
     ]
+    assert not options.input_paths
+    input_paths = set()
+    for jar_paths in options.feature_jars:
+      input_paths.update(jar_paths)
+    options.input_paths = sorted(input_paths)
+  else:
+    options.input_paths = action_helpers.parse_gn_list(options.input_paths)
 
   split_map = {}
   if options.uses_split:
@@ -331,14 +330,14 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
                                       parent_name=parent_name)
         split_contexts_by_name[name] = split_context
     else:
-      
       split_contexts_by_name['base'] = _SplitContext('base',
-                                                     options.output_path, [],
+                                                     options.output_path,
+                                                     options.input_paths,
                                                      tmp_output)
     base_context = split_contexts_by_name['base']
 
     
-    cmd = build_utils.JavaCmd(xmx='3G') + [
+    cmd = build_utils.JavaCmd(xmx='4G') + [
         
         
         '-Dcom.android.tools.r8.experimental.enablewhyareyounotinlining=1',
@@ -424,12 +423,6 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
           '--startup-profile',
           options.input_art_profile,
       ]
-
-    
-    extra_jars = set(options.input_paths)
-    for split_context in split_contexts_by_name.values():
-      extra_jars -= split_context.input_jars
-    base_context.input_jars.update(extra_jars)
 
     for split_context in split_contexts_by_name.values():
       if split_context is base_context:

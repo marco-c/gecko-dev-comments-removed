@@ -75,7 +75,6 @@ _ALLOWLISTED_NON_BASE_SERVICES = {
     'androidx.pdf.service.PdfDocumentServiceImpl',
     'androidx.pdf.service.PdfDocumentService',
     
-    'androidx.room.MultiInstanceInvalidationService',
     'com.google.apps.tiktok.concurrent.AndroidFuturesService',
     'com.google.apps.tiktok.concurrent.InternalForegroundService',
 }

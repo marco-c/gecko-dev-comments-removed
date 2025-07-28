@@ -101,6 +101,8 @@ class LocalMachineJunitTestRun(test_run.TestRun):
   def _CreateJvmArgsList(self, for_listing=False, allow_debugging=True):
     
     jvm_args = [
+        
+        '-XX:+EnableDynamicAgentLoading',
         '-Drobolectric.dependency.dir=%s' %
         self._test_instance.robolectric_runtime_deps_dir,
         '-Ddir.source.root=%s' % constants.DIR_SOURCE_ROOT,

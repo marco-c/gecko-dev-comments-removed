@@ -29,7 +29,10 @@ DEFAULT_IGNORE_WARNINGS = (
     
     
     
-    r'Running R8 version main', )
+    r'Running R8 version main',
+    
+    r'The companion object Companion could not be found',
+)
 
 _MERGE_SERVICE_ENTRIES = (
     

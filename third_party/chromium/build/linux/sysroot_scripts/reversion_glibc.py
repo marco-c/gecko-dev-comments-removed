@@ -40,6 +40,12 @@ def reversion_glibc(bin_file: str) -> None:
     for line in stdout.decode("utf-8").split("\n"):
         cols = re.split("\s+", line)
         
+        
+        
+        if len(cols) > 7 and cols[7] == "[<localentry>:":
+            cols.pop(7)
+            cols.pop(7)
+        
         if len(cols) < 9:
             continue
 

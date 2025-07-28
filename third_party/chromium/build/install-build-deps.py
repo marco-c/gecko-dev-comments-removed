@@ -436,6 +436,12 @@ def lib_list():
   else:
     packages.append("libasound2")
 
+  
+  if package_exists("libgraphene-1.0-0"):
+    packages.append("libgraphene-1.0-0")
+  if package_exists("mutter-common"):
+    packages.append("mutter-common")
+
   return packages
 
 

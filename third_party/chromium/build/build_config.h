@@ -77,6 +77,9 @@
 #if defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST
 #define OS_IOS_MACCATALYST
 #endif  
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+#define OS_IOS_TVOS 1
+#endif  
 #if defined(TARGET_OS_WATCH) && TARGET_OS_WATCH
 #define OS_WATCHOS 1
 #endif  
@@ -200,6 +203,12 @@
 #define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (0)
+#endif
+
+#if defined(OS_IOS_TVOS)
+#define BUILDFLAG_INTERNAL_IS_IOS_TVOS() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_IOS_TVOS() (0)
 #endif
 
 #if defined(OS_LINUX)
@@ -408,16 +417,16 @@
 
 
 #if !defined(CPU_ARM_NEON)
-#if defined(__arm__)
-#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && \
-    !defined(__VFP_FP__) && !defined(_WIN32_WCE) && !defined(ANDROID)
-#error Chromium does not support middle endian architecture
-#endif
-#if defined(__ARM_NEON__)
+#if defined(ARCH_CPU_ARM_FAMILY) && \
+    (defined(__ARM_NEON__) || defined(__ARM_NEON))
 #define CPU_ARM_NEON 1
 #endif
 #endif  
-#endif  
+
+
+#if defined(ARCH_CPU_ARM64) && !defined(CPU_ARM_NEON)
+#error "AArch64 mandates NEON, should be detected"
+#endif
 
 #if !defined(HAVE_MIPS_MSA_INTRINSICS)
 #if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)

@@ -38,6 +38,7 @@ def run_jdeps(filepath: pathlib.Path,
   cmd = [
       str(jdeps_path),
       '-verbose:class',
+      '-filter:none',  
       '--multi-release',  
       'base',
       str(filepath),

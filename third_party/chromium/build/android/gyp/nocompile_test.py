@@ -157,6 +157,9 @@ def main():
       'treat_warnings_as_errors = true',
       
       'use_remoteexec = false',
+      'use_reclient = false',
+      
+      'android_static_analysis = "on"',
   ]
   _copy_and_append_gn_args(options.gn_args_path, out_gn_args_path,
                            extra_gn_args)
