@@ -342,8 +342,13 @@ float SVGGradientFrame::GetLengthValue(const SVGAnimatedLength& aLength) {
   NS_ASSERTION(gradientUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX,
                "Unknown gradientUnits type");
 
+  if (aLength.IsPercentage()) {
+    
+    
+    return aLength.GetAnimValInSpecifiedUnits() / 100.0f;
+  }
   return aLength.GetAnimValueWithZoom(
-      static_cast<SVGViewportElement*>(nullptr));
+      static_cast<dom::SVGElement*>(GetContent()));
 }
 
 SVGGradientFrame* SVGGradientFrame::GetReferencedGradient() {
