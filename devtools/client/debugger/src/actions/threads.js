@@ -11,7 +11,7 @@ export function addTarget(targetFront) {
 }
 
 export function removeTarget(targetFront) {
-  return ({ getState, dispatch }) => {
+  return async ({ getState, dispatch }) => {
     const threadActorID = targetFront.targetForm.threadActor;
 
     
@@ -35,7 +35,7 @@ export function removeTarget(targetFront) {
     });
     
     
-    dispatch(removeSources(sources, actors));
+    await dispatch(removeSources(sources, actors));
   };
 }
 

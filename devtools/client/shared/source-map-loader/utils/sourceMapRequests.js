@@ -88,9 +88,22 @@ function setSourceMap(generatedId, request) {
   );
 }
 
+
+
+
+
+
+
+function clearSourceMapForSources(generatedIds) {
+  for (const generatedId of generatedIds) {
+    sourceMapRequests.delete(generatedId);
+  }
+}
+
 module.exports = {
   clearSourceMaps,
   getSourceMapWithMetadata,
   getSourceMap,
   setSourceMap,
+  clearSourceMapForSources,
 };

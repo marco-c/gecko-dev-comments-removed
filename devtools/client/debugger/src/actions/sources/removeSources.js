@@ -3,9 +3,10 @@
 
 
 import { getEditor } from "../../utils/editor/index";
+import { getGeneratedSource } from "../../selectors/index";
 
 export function removeSources(sources, actors) {
-  return ({ parserWorker, dispatch }) => {
+  return async ({ parserWorker, dispatch, getState, sourceMapLoader }) => {
     
     
     dispatch({
@@ -22,5 +23,20 @@ export function removeSources(sources, actors) {
     
     const editor = getEditor();
     editor.clearSources(sourceIds);
+
+    
+    const state = getState();
+    const generatedSourceIds = new Set();
+    for (const source of sources) {
+      if (source.isOriginal) {
+        const generatedSource = getGeneratedSource(state, source);
+        if (generatedSource) {
+          generatedSourceIds.add(generatedSource.id);
+        }
+      }
+    }
+    await sourceMapLoader.clearSourceMapForGeneratedSources(
+      Array.from(generatedSourceIds)
+    );
   };
 }

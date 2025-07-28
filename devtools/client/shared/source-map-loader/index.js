@@ -118,6 +118,9 @@ class SourceMapLoader extends WorkerDispatcher {
 
     return rv;
   }
+  clearSourceMapForGeneratedSources = this.task(
+    "clearSourceMapForGeneratedSources"
+  );
 
   destroy() {
     
