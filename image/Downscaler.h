@@ -77,7 +77,7 @@ class Downscaler {
 
   nsresult BeginFrame(const nsIntSize& aOriginalSize,
                       const Maybe<nsIntRect>& aFrameRect,
-                      uint8_t* aOutputBuffer, gfx::SurfaceFormat aFormat,
+                      uint8_t* aOutputBuffer, bool aHasAlpha,
                       bool aFlipVertically = false);
 
   bool IsFrameComplete() const {
@@ -136,7 +136,7 @@ class Downscaler {
   int32_t mCurrentOutLine;
   int32_t mCurrentInLine;
 
-  gfx::SurfaceFormat mFormat;
+  bool mHasAlpha : 1;
   bool mFlipVertically : 1;
 };
 

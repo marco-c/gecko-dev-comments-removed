@@ -499,10 +499,10 @@ LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
     if (NS_WARN_IF(!mMaskBuffer)) {
       return Transition::TerminateFailure();
     }
-    nsresult rv = mDownscaler->BeginFrame(
-        mDirEntry->mSize.ToUnknownSize(), Nothing(), mMaskBuffer.get(),
-         gfx::SurfaceFormat::B8G8R8A8,
-         true);
+    nsresult rv = mDownscaler->BeginFrame(mDirEntry->mSize.ToUnknownSize(),
+                                          Nothing(), mMaskBuffer.get(),
+                                           true,
+                                           true);
     if (NS_FAILED(rv)) {
       return Transition::TerminateFailure();
     }
