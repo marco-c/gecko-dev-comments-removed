@@ -201,7 +201,7 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   
   
   
-  rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+  scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
       target_width, target_height, stride_y, stride_uv, stride_uv);
 
   libyuv::RotationMode rotation_mode = libyuv::kRotate0;

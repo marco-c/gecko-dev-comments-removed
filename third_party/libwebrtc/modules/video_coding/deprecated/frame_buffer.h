@@ -80,7 +80,7 @@ class VCMFrameBuffer : public VCMEncodedFrame {
   VCMFrameBufferStateEnum _state;  
   
   
-  rtc::scoped_refptr<EncodedImageBuffer> encoded_image_buffer_;
+  scoped_refptr<EncodedImageBuffer> encoded_image_buffer_;
   VCMSessionInfo _sessionInfo;
   uint16_t _nackCount;
   int64_t _latestPacketTimeMs;

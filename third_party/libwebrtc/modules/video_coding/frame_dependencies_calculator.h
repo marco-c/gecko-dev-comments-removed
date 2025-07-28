@@ -32,7 +32,7 @@ class FrameDependenciesCalculator {
   
   absl::InlinedVector<int64_t, 5> FromBuffersUsage(
       int64_t frame_id,
-      rtc::ArrayView<const CodecBufferUsage> buffers_usage);
+      ArrayView<const CodecBufferUsage> buffers_usage);
 
  private:
   struct BufferUsage {

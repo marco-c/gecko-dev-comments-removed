@@ -128,7 +128,7 @@ std::optional<EncodedImage> IvfFileReader::NextFrame() {
     return std::nullopt;
   }
 
-  rtc::scoped_refptr<EncodedImageBuffer> payload = EncodedImageBuffer::Create();
+  scoped_refptr<EncodedImageBuffer> payload = EncodedImageBuffer::Create();
   std::vector<size_t> layer_sizes;
   
   

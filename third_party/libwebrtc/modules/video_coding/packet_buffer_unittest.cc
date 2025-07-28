@@ -48,7 +48,7 @@ void IgnoreResult(PacketBuffer::InsertResult ) {}
 
 
 std::vector<uint16_t> StartSeqNums(
-    rtc::ArrayView<const std::unique_ptr<PacketBuffer::Packet>> packets) {
+    ArrayView<const std::unique_ptr<PacketBuffer::Packet>> packets) {
   std::vector<uint16_t> result;
   bool frame_boundary = true;
   for (const auto& packet : packets) {
@@ -117,7 +117,7 @@ class PacketBufferTest : public ::testing::Test {
                                   IsKeyFrame keyframe,  
                                   IsFirst first,  
                                   IsLast last,    
-                                  rtc::ArrayView<const uint8_t> data = {},
+                                  ArrayView<const uint8_t> data = {},
                                   uint32_t timestamp = 123u) {  
     auto packet = std::make_unique<PacketBuffer::Packet>();
     packet->video_header.codec = kVideoCodecGeneric;
@@ -421,7 +421,7 @@ class PacketBufferH264Test : public PacketBufferTest {
       IsFirst first,        
       IsLast last,          
       uint32_t timestamp,   
-      rtc::ArrayView<const uint8_t> data = {},
+      ArrayView<const uint8_t> data = {},
       uint32_t width = 0,      
       uint32_t height = 0,     
       bool generic = false) {  
@@ -459,7 +459,7 @@ class PacketBufferH264Test : public PacketBufferTest {
       IsFirst first,        
       IsLast last,          
       uint32_t timestamp,   
-      rtc::ArrayView<const uint8_t> data = {},
+      ArrayView<const uint8_t> data = {},
       uint32_t width = 0,     
       uint32_t height = 0) {  
     auto packet = std::make_unique<PacketBuffer::Packet>();
@@ -533,7 +533,7 @@ TEST_P(PacketBufferH264ParameterizedTest, GetBitstreamOneFrameFullBuffer) {
 
 TEST_P(PacketBufferH264ParameterizedTest, GetBitstreamBufferPadding) {
   int64_t seq_num = Rand();
-  rtc::CopyOnWriteBuffer data = "some plain old data";
+  CopyOnWriteBuffer data = "some plain old data";
 
   auto packet = std::make_unique<PacketBuffer::Packet>();
   auto& h264_header =

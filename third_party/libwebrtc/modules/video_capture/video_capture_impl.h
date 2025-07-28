@@ -45,9 +45,9 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
 
 
 
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
+  static scoped_refptr<VideoCaptureModule> Create(
       const char* deviceUniqueIdUTF8);
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
+  static scoped_refptr<VideoCaptureModule> Create(
       VideoCaptureOptions* options,
       const char* deviceUniqueIdUTF8);
 

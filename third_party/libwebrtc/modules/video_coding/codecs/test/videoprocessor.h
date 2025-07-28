@@ -245,7 +245,7 @@ class VideoProcessor {
   
   std::vector<size_t> last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   
-  std::vector<rtc::scoped_refptr<I420Buffer>> last_decoded_frame_buffer_
+  std::vector<scoped_refptr<I420Buffer>> last_decoded_frame_buffer_
       RTC_GUARDED_BY(sequence_checker_);
 
   

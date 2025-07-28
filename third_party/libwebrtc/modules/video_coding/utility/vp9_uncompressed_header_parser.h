@@ -151,7 +151,7 @@ struct Vp9UncompressedHeader {
 
 
 std::optional<Vp9UncompressedHeader> ParseUncompressedVp9Header(
-    rtc::ArrayView<const uint8_t> buf);
+    ArrayView<const uint8_t> buf);
 
 }  
 

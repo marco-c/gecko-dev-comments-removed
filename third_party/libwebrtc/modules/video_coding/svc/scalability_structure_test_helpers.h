@@ -43,8 +43,7 @@ class ScalabilityStructureWrapper {
   
   
   
-  bool FrameReferencesAreValid(
-      rtc::ArrayView<const GenericFrameInfo> frames) const;
+  bool FrameReferencesAreValid(ArrayView<const GenericFrameInfo> frames) const;
 
  private:
   ScalableVideoController& structure_controller_;

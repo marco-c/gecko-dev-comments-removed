@@ -69,7 +69,7 @@ HRESULT CopyMediaType(AM_MEDIA_TYPE* target, const AM_MEDIA_TYPE* source);
 
 
 template <class T>
-HRESULT GetComInterface(IUnknown* object, rtc::scoped_refptr<T>* ptr) {
+HRESULT GetComInterface(IUnknown* object, webrtc::scoped_refptr<T>* ptr) {
   
   
   

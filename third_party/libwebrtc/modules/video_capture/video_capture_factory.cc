@@ -14,12 +14,12 @@
 
 namespace webrtc {
 
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
+scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
     [[maybe_unused]] const char* deviceUniqueIdUTF8) {
   return videocapturemodule::VideoCaptureImpl::Create(deviceUniqueIdUTF8);
 }
 
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
+scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
     [[maybe_unused]] VideoCaptureOptions* options,
     [[maybe_unused]] const char* deviceUniqueIdUTF8) {
 

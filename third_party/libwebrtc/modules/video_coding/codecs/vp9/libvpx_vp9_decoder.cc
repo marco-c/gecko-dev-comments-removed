@@ -210,7 +210,7 @@ int LibvpxVp9Decoder::Decode(const EncodedImage& input_image,
   if (input_image._frameType == VideoFrameType::kVideoFrameKey) {
     std::optional<Vp9UncompressedHeader> frame_info =
         ParseUncompressedVp9Header(
-            rtc::MakeArrayView(input_image.data(), input_image.size()));
+            MakeArrayView(input_image.data(), input_image.size()));
     if (frame_info) {
       RenderResolution frame_resolution(frame_info->frame_width,
                                         frame_info->frame_height);
@@ -278,12 +278,12 @@ int LibvpxVp9Decoder::ReturnFrame(
   
   
   
-  rtc::scoped_refptr<Vp9FrameBufferPool::Vp9FrameBuffer> img_buffer(
+  scoped_refptr<Vp9FrameBufferPool::Vp9FrameBuffer> img_buffer(
       static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv));
 
   
   
-  rtc::scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
+  scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
   switch (img->fmt) {
     case VPX_IMG_FMT_I420:
       img_wrapped_buffer = WrapI420Buffer(

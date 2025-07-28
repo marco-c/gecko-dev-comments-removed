@@ -68,18 +68,17 @@ constexpr size_t kDefaultMaxNumBuffers = 68;
 
 class Vp9FrameBufferPool {
  public:
-  class Vp9FrameBuffer final
-      : public rtc::RefCountedNonVirtual<Vp9FrameBuffer> {
+  class Vp9FrameBuffer final : public RefCountedNonVirtual<Vp9FrameBuffer> {
    public:
     uint8_t* GetData();
     size_t GetDataSize() const;
     void SetSize(size_t size);
 
-    using rtc::RefCountedNonVirtual<Vp9FrameBuffer>::HasOneRef;
+    using RefCountedNonVirtual<Vp9FrameBuffer>::HasOneRef;
 
    private:
     
-    rtc::Buffer data_;
+    Buffer data_;
   };
 
   
@@ -89,7 +88,7 @@ class Vp9FrameBufferPool {
   
   
   
-  rtc::scoped_refptr<Vp9FrameBuffer> GetFrameBuffer(size_t min_size);
+  scoped_refptr<Vp9FrameBuffer> GetFrameBuffer(size_t min_size);
   
   int GetNumBuffersInUse() const;
   
@@ -125,7 +124,7 @@ class Vp9FrameBufferPool {
   
   mutable Mutex buffers_lock_;
   
-  std::vector<rtc::scoped_refptr<Vp9FrameBuffer>> allocated_buffers_
+  std::vector<scoped_refptr<Vp9FrameBuffer>> allocated_buffers_
       RTC_GUARDED_BY(buffers_lock_);
   size_t max_num_buffers_ = kDefaultMaxNumBuffers;
 };

@@ -111,8 +111,8 @@ class LibvpxVp8Encoder : public VideoEncoder {
   
   
   
-  std::vector<rtc::scoped_refptr<VideoFrameBuffer>> PrepareBuffers(
-      rtc::scoped_refptr<VideoFrameBuffer> buffer);
+  std::vector<scoped_refptr<VideoFrameBuffer>> PrepareBuffers(
+      scoped_refptr<VideoFrameBuffer> buffer);
 
   const Environment env_;
   const std::unique_ptr<LibvpxInterface> libvpx_;

@@ -67,7 +67,7 @@ void ScalabilityStructureWrapper::GenerateFrames(
 }
 
 bool ScalabilityStructureWrapper::FrameReferencesAreValid(
-    rtc::ArrayView<const GenericFrameInfo> frames) const {
+    ArrayView<const GenericFrameInfo> frames) const {
   bool valid = true;
   
   std::bitset<8> buffer_contains_frame;

@@ -20,13 +20,13 @@ VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
   return DeviceInfoDS::Create();
 }
 
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
     const char* device_id) {
   if (device_id == nullptr)
     return nullptr;
 
   
-  auto capture = rtc::make_ref_counted<VideoCaptureDS>();
+  auto capture = webrtc::make_ref_counted<VideoCaptureDS>();
   if (capture->Init(device_id) != 0) {
     return nullptr;
   }

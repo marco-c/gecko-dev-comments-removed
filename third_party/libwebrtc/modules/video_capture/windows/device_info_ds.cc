@@ -110,7 +110,7 @@ DeviceInfoDS::DeviceInfoDS()
       RTC_DLOG(LS_INFO) << __FUNCTION__
                         << ": CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)"
                            " => RPC_E_CHANGED_MODE, error 0x"
-                        << rtc::ToHex(hr);
+                        << webrtc::ToHex(hr);
     }
   }
 
@@ -156,7 +156,7 @@ int32_t DeviceInfoDS::Init() {
                                 IID_ICreateDevEnum, (void**)&_dsDevEnum);
   if (hr != NOERROR) {
     RTC_LOG(LS_INFO) << "Failed to create CLSID_SystemDeviceEnum, error 0x"
-                     << rtc::ToHex(hr);
+                     << webrtc::ToHex(hr);
     return -1;
   }
   return 0;
@@ -173,7 +173,8 @@ int32_t DeviceInfoDS::GetDeviceName(uint32_t deviceNumber,
                                     uint32_t deviceUniqueIdUTF8Length,
                                     char* productUniqueIdUTF8,
                                     uint32_t productUniqueIdUTF8Length,
-                                    pid_t* pid) {
+                                    pid_t* pid,
+                                    bool* deviceIsPlaceholder) {
   MutexLock lock(&_apiLock);
   const int32_t result = GetDeviceInfo(
       deviceNumber, deviceNameUTF8, deviceNameLength, deviceUniqueIdUTF8,
@@ -196,7 +197,7 @@ int32_t DeviceInfoDS::GetDeviceInfo(uint32_t deviceNumber,
                                                  &_dsMonikerDevEnum, 0);
   if (hr != NOERROR) {
     RTC_LOG(LS_INFO) << "Failed to enumerate CLSID_SystemDeviceEnum, error 0x"
-                     << rtc::ToHex(hr) << ". No webcam exist?";
+                     << webrtc::ToHex(hr) << ". No webcam exist?";
     return 0;
   }
 
@@ -288,7 +289,7 @@ IBaseFilter* DeviceInfoDS::GetDeviceFilter(const char* deviceUniqueIdUTF8,
                                                  &_dsMonikerDevEnum, 0);
   if (hr != NOERROR) {
     RTC_LOG(LS_INFO) << "Failed to enumerate CLSID_SystemDeviceEnum, error 0x"
-                     << rtc::ToHex(hr) << ". No webcam exist?";
+                     << webrtc::ToHex(hr) << ". No webcam exist?";
     return 0;
   }
   _dsMonikerDevEnum->Reset();
