@@ -1817,6 +1817,7 @@ class WebExtensionTest : BaseSessionTest() {
                 assertEquals(notification.imageUrl, "https://example.com/img.svg")
                 
                 assertEquals(notification.source, null)
+                notification.show()
             }
         })
 
