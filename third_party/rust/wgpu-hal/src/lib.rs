@@ -297,7 +297,7 @@ use core::{
     borrow::Borrow,
     error::Error,
     fmt,
-    num::NonZeroU32,
+    num::{NonZeroU32, NonZeroU64},
     ops::{Range, RangeInclusive},
     ptr::NonNull,
 };
@@ -1998,19 +1998,37 @@ pub struct PipelineLayoutDescriptor<'a, B: DynBindGroupLayout + ?Sized> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct BufferBinding<'a, B: DynBuffer + ?Sized> {
     
-    pub buffer: &'a B,
+    
+    
+    
+    
+    pub(crate) buffer: &'a B,
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -2024,12 +2042,71 @@ pub struct BufferBinding<'a, B: DynBuffer + ?Sized> {
     pub size: Option<wgt::BufferSize>,
 }
 
-impl<'a, T: DynBuffer + ?Sized> Clone for BufferBinding<'a, T> {
+
+impl<B: DynBuffer + ?Sized> Clone for BufferBinding<'_, B> {
     fn clone(&self) -> Self {
         BufferBinding {
             buffer: self.buffer,
             offset: self.offset,
             size: self.size,
+        }
+    }
+}
+
+
+
+
+pub trait ShouldBeNonZeroExt {
+    fn get(&self) -> u64;
+}
+
+impl ShouldBeNonZeroExt for NonZeroU64 {
+    fn get(&self) -> u64 {
+        NonZeroU64::get(*self)
+    }
+}
+
+impl ShouldBeNonZeroExt for u64 {
+    fn get(&self) -> u64 {
+        *self
+    }
+}
+
+impl ShouldBeNonZeroExt for Option<NonZeroU64> {
+    fn get(&self) -> u64 {
+        match *self {
+            Some(non_zero) => non_zero.get(),
+            None => 0,
+        }
+    }
+}
+
+impl<'a, B: DynBuffer + ?Sized> BufferBinding<'a, B> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new_unchecked<S: Into<Option<NonZeroU64>>>(
+        buffer: &'a B,
+        offset: wgt::BufferAddress,
+        size: S,
+    ) -> Self {
+        Self {
+            buffer,
+            offset,
+            size: size.into(),
         }
     }
 }

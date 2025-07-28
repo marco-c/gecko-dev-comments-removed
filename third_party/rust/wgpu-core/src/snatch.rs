@@ -1,9 +1,9 @@
-use core::{cell::UnsafeCell, fmt};
+use core::{cell::UnsafeCell, fmt, mem::ManuallyDrop};
 
-use crate::lock::{rank, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::lock::{rank, RankData, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 
-pub struct SnatchGuard<'a>(#[expect(dead_code)] RwLockReadGuard<'a, ()>);
+pub struct SnatchGuard<'a>(RwLockReadGuard<'a, ()>);
 
 pub struct ExclusiveSnatchGuard<'a>(#[expect(dead_code)] RwLockWriteGuard<'a, ()>);
 
@@ -157,6 +157,33 @@ impl SnatchLock {
     pub fn write(&self) -> ExclusiveSnatchGuard {
         LockTrace::enter("write");
         ExclusiveSnatchGuard(self.lock.write())
+    }
+
+    #[track_caller]
+    pub unsafe fn force_unlock_read(&self, data: RankData) {
+        
+        
+        
+        LockTrace::exit();
+        unsafe { self.lock.force_unlock_read(data) };
+    }
+}
+
+impl SnatchGuard<'_> {
+    
+    
+    
+    
+    pub fn forget(this: Self) -> RankData {
+        
+        let manually_drop = ManuallyDrop::new(this);
+
+        
+        
+        
+        let inner_guard = unsafe { core::ptr::read(&manually_drop.0) };
+
+        RwLockReadGuard::forget(inner_guard)
     }
 }
 
