@@ -241,7 +241,7 @@ function update(state = initialSourcesState(), action) {
       };
     }
 
-    case "REMOVE_THREAD": {
+    case "REMOVE_SOURCES": {
       return removeSourcesAndActors(state, action);
     }
   }
@@ -330,6 +330,34 @@ function removeSourcesAndActors(state, action) {
 
     if (removedSource.isOriginal) {
       mutableOriginalBreakableLines.delete(sourceId);
+      
+      
+      const generatedSourceId = originalToGeneratedId(sourceId);
+      let originalSourceIds = mutableOriginalSources.get(generatedSourceId);
+      if (originalSourceIds) {
+        originalSourceIds = originalSourceIds.filter(id => id != sourceId);
+        mutableOriginalSources.set(generatedSourceId, originalSourceIds);
+      }
+
+      
+      
+      
+      
+      
+      const generatedBreakpointPositions =
+        mutableBreakpointPositions.get(generatedSourceId);
+      if (generatedBreakpointPositions) {
+        for (const line in generatedBreakpointPositions) {
+          for (const position of generatedBreakpointPositions[line]) {
+            
+            
+            
+            if (position.location.source == removedSource) {
+              position.location = position.generatedLocation;
+            }
+          }
+        }
+      }
     }
 
     mutableBreakpointPositions.delete(sourceId);

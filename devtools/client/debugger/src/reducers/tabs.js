@@ -37,8 +37,8 @@ function update(state = initialTabState(), action) {
     case "INSERT_SOURCE_ACTORS":
       return addVisibleTabsForSourceActors(state, action.sourceActors);
 
-    case "REMOVE_THREAD": {
-      return resetTabsForThread(state, action.threadActorID);
+    case "REMOVE_SOURCES": {
+      return resetTabsForRemovedSources(state, action);
     }
 
     default:
@@ -118,7 +118,7 @@ function removeSourcesFromTabList(state, { sources }) {
   return { tabs: newTabs };
 }
 
-function resetTabsForThread(state, threadActorID) {
+function resetTabsForRemovedSources(state, { sources }) {
   let changed = false;
   
   
@@ -126,7 +126,7 @@ function resetTabsForThread(state, threadActorID) {
   
   
   const tabs = state.tabs.map(tab => {
-    if (tab.sourceActor?.thread != threadActorID) {
+    if (!sources.includes(tab.source)) {
       return tab;
     }
     changed = true;
