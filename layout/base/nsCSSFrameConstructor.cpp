@@ -4581,14 +4581,13 @@ void nsCSSFrameConstructor::FlushAccumulatedBlock(
 
 
 
-#define SIMPLE_MATHML_CREATE(_tag, _func)             \
-  {                                                   \
-    nsGkAtoms::_tag, {                                \
-      _func, FCDATA_DISALLOW_OUT_OF_FLOW |            \
-                 FCDATA_FORCE_NULL_ABSPOS_CONTAINER | \
-                 FCDATA_WRAP_KIDS_IN_BLOCKS           \
-    }                                                 \
+#define MATHML_DATA(_func)                                                    \
+  FrameConstructionData {                                                     \
+    _func, FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_FORCE_NULL_ABSPOS_CONTAINER | \
+               FCDATA_WRAP_KIDS_IN_BLOCKS                                     \
   }
+
+#define SIMPLE_MATHML_CREATE(_tag, _func) {nsGkAtoms::_tag, MATHML_DATA(_func)}
 
 
 const nsCSSFrameConstructor::FrameConstructionData*
@@ -4616,6 +4615,14 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
         FCDATA_FORCE_NULL_ABSPOS_CONTAINER | FCDATA_IS_LINE_PARTICIPANT |
             FCDATA_WRAP_KIDS_IN_BLOCKS);
     return &sInlineMathData;
+  }
+
+  
+  
+  
+  if (tag == nsGkAtoms::mtable || tag == nsGkAtoms::mtr ||
+      tag == nsGkAtoms::mlabeledtr || tag == nsGkAtoms::mtd) {
+    return nullptr;
   }
 
   static constexpr FrameConstructionDataByTag sMathMLData[] = {
@@ -4649,7 +4656,18 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
       SIMPLE_MATHML_CREATE(menclose, NS_NewMathMLmencloseFrame),
       SIMPLE_MATHML_CREATE(semantics, NS_NewMathMLmrowFrame)};
 
-  return FindDataByTag(aElement, aStyle, sMathMLData, std::size(sMathMLData));
+  if (const auto* data = FindDataByTag(aElement, aStyle, sMathMLData,
+                                       std::size(sMathMLData))) {
+    return data;
+  }
+  if (!StaticPrefs::mathml_unknown_mrow_enabled()) {
+    return nullptr;
+  }
+  
+  
+  static constexpr FrameConstructionData sMrowData =
+      MATHML_DATA(NS_NewMathMLmrowFrame);
+  return &sMrowData;
 }
 
 nsContainerFrame* nsCSSFrameConstructor::ConstructFrameWithAnonymousChild(
