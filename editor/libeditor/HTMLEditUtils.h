@@ -1724,6 +1724,8 @@ class HTMLEditUtils final {
     
     ClosestBlockElement,
     
+    ClosestContainerElement,
+    
     
     MostDistantInlineElementInBlock,
     
