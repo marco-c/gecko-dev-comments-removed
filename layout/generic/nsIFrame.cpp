@@ -209,22 +209,6 @@ struct nsContentAndOffset {
 #include "nsILineIterator.h"
 #include "prenv.h"
 
-
-
-template <typename T>
-static void SetOrUpdateRectValuedProperty(
-    nsIFrame* aFrame, FrameProperties::Descriptor<T> aProperty,
-    const nsRect& aNewValue) {
-  bool found;
-  nsRect* rectStorage = aFrame->GetProperty(aProperty, &found);
-  if (!found) {
-    rectStorage = new nsRect(aNewValue);
-    aFrame->AddProperty(aProperty, rectStorage);
-  } else {
-    *rectStorage = aNewValue;
-  }
-}
-
 FrameDestroyContext::~FrameDestroyContext() {
   for (auto& content : mozilla::Reversed(mAnonymousContent)) {
     mPresShell->NativeAnonymousContentWillBeRemoved(content);
@@ -8344,8 +8328,8 @@ static nsRect ComputeEffectsRect(nsIFrame* aFrame, const nsRect& aOverflowRect,
     
     
     if (aFrame->StyleEffects()->HasFilters()) {
-      SetOrUpdateRectValuedProperty(aFrame, nsIFrame::PreEffectsBBoxProperty(),
-                                    r);
+      aFrame->SetOrUpdateDeletableProperty(nsIFrame::PreEffectsBBoxProperty(),
+                                           r);
       r = SVGUtils::GetPostFilterInkOverflowRect(aFrame, aOverflowRect);
     }
     return r;
@@ -8383,8 +8367,7 @@ static nsRect ComputeEffectsRect(nsIFrame* aFrame, const nsRect& aOverflowRect,
   
 
   if (SVGIntegrationUtils::UsingOverflowAffectingEffects(aFrame)) {
-    SetOrUpdateRectValuedProperty(aFrame, nsIFrame::PreEffectsBBoxProperty(),
-                                  r);
+    aFrame->SetOrUpdateDeletableProperty(nsIFrame::PreEffectsBBoxProperty(), r);
     r = SVGIntegrationUtils::ComputePostEffectsInkOverflowRect(aFrame, r);
   }
 
@@ -10818,8 +10801,8 @@ static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
   if (innerRect == aFrame->GetRectRelativeToSelf()) {
     aFrame->RemoveProperty(nsIFrame::OutlineInnerRectProperty());
   } else {
-    SetOrUpdateRectValuedProperty(aFrame, nsIFrame::OutlineInnerRectProperty(),
-                                  innerRect);
+    aFrame->SetOrUpdateDeletableProperty(nsIFrame::OutlineInnerRectProperty(),
+                                         innerRect);
   }
 
   nsRect outerRect(innerRect);
