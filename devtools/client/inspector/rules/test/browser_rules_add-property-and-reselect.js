@@ -38,8 +38,9 @@ async function setPropertyOnAllRules(view, inspector) {
   await Promise.all([onMutation, onRuleViewRefreshed]);
 
   
-  const allRules = view._elementStyle.rules;
-
+  
+  const allRules = getAllEditableRules(view);
+  is(allRules.length, 6, "We have the expected number of rules");
   for (let i = 1; i < allRules.length; i++) {
     info(`Adding font-weight:bold in rule ${i}`);
     const rule = allRules[i];
@@ -53,9 +54,15 @@ async function setPropertyOnAllRules(view, inspector) {
   }
 }
 
+function getAllEditableRules(view) {
+  return [...view._elementStyle.rules].filter(rule => rule.editor.isEditable);
+}
+
 function checkPropertyOnAllRules(view) {
-  for (const rule of view._elementStyle.rules) {
-    const lastProperty = rule.textProps[rule.textProps.length - 1];
+  const allRules = getAllEditableRules(view);
+  is(allRules.length, 6, "We have the expected number of rules");
+  for (const rule of allRules) {
+    const lastProperty = rule.textProps.at(-1);
 
     is(lastProperty.name, "font-weight", "Last property name is font-weight");
     is(lastProperty.value, "bold", "Last property value is bold");

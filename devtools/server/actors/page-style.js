@@ -899,14 +899,18 @@ class PageStyleActor extends Actor {
     
     for (let i = domRules.length - 1; i >= 0; i--) {
       const domRule = domRules[i];
-      if (domRule.declarationOrigin) {
-        
+      const isSystem =
+        domRule.parentStyleSheet &&
+        SharedCssLogic.isAgentStylesheet(domRule.parentStyleSheet);
+
+      
+      
+      if (
+        domRule.declarationOrigin &&
+        domRule.declarationOrigin !== "pres-hints"
+      ) {
         continue;
       }
-
-      const isSystem = SharedCssLogic.isAgentStylesheet(
-        domRule.parentStyleSheet
-      );
 
       if (isSystem && options.filter != SharedCssLogic.FILTER.UA) {
         continue;

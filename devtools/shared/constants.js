@@ -116,6 +116,7 @@ const COMPATIBILITY_ISSUE_TYPE = {
 
 
 const ELEMENT_STYLE = 100;
+const PRES_HINTS = 200;
 
 
 
@@ -162,5 +163,6 @@ module.exports = {
   MESSAGE_CATEGORY,
   style: {
     ELEMENT_STYLE,
+    PRES_HINTS,
   },
 };

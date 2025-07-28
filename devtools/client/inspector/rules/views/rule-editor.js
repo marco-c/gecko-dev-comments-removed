@@ -9,7 +9,7 @@ const {
   PSEUDO_CLASSES,
 } = require("resource://devtools/shared/css/constants.js");
 const {
-  style: { ELEMENT_STYLE },
+  style: { ELEMENT_STYLE, PRES_HINTS },
 } = require("resource://devtools/shared/constants.js");
 const Rule = require("resource://devtools/client/inspector/rules/models/rule.js");
 const {
@@ -78,7 +78,7 @@ function RuleEditor(ruleView, rule, options = {}) {
   this.rule = rule;
   this.options = options;
 
-  this.isEditable = !rule.isSystem;
+  this.isEditable = rule.isEditable();
   
   
   this.isEditing = false;
@@ -144,7 +144,10 @@ RuleEditor.prototype = {
 
     
     
-    if (this.rule.domRule.type !== ELEMENT_STYLE) {
+    if (
+      this.rule.domRule.type !== ELEMENT_STYLE &&
+      this.rule.domRule.type !== PRES_HINTS
+    ) {
       this.source = createChild(this.element, "div", {
         class: "ruleview-rule-source theme-link",
       });
@@ -331,7 +334,10 @@ RuleEditor.prototype = {
       tabindex: this.isSelectorEditable ? "0" : "-1",
     });
 
-    if (this.rule.domRule.type === ELEMENT_STYLE) {
+    if (
+      this.rule.domRule.type === ELEMENT_STYLE ||
+      this.rule.domRule.type === PRES_HINTS
+    ) {
       this.selectorText.classList.add("alternative-selector");
     }
 
@@ -629,7 +635,10 @@ RuleEditor.prototype = {
     
     
     
-    if (this.rule.domRule.type === ELEMENT_STYLE) {
+    if (
+      this.rule.domRule.type === ELEMENT_STYLE ||
+      this.rule.domRule.type === PRES_HINTS
+    ) {
       this.selectorText.textContent = this.rule.selectorText;
     } else if (this.rule.domRule.type === CSSRule.KEYFRAME_RULE) {
       this.selectorText.textContent = this.rule.domRule.keyText;
