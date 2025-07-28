@@ -15,7 +15,9 @@ import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -112,12 +114,19 @@ public class GeckoPreferenceController {
   @AnyThread
   public static @NonNull GeckoResult<Void> setGeckoPref(
       @NonNull final String prefName, @NonNull final String value, @PrefBranch final int branch) {
-    final GeckoBundle bundle = new GeckoBundle(1);
-    bundle.putString("pref", prefName);
-    bundle.putString("value", value);
-    bundle.putString("branch", toBranchString(branch));
-    bundle.putInt("type", PREF_TYPE_STRING);
-    return EventDispatcher.getInstance().queryVoid(SET_PREF, bundle);
+    final var pref = SetGeckoPreference.setStringPref(prefName, value, branch);
+    final GeckoBundle requestBundle = new GeckoBundle(1);
+    requestBundle.putBundleArray("prefs", List.of(pref.toBundle()));
+    return EventDispatcher.getInstance()
+        .queryBundle(SET_PREF, requestBundle)
+        .map(
+            result -> {
+              if (GeckoPreferenceController.parseResponseFromSetting(result)) {
+                return null;
+              }
+              throw new Exception("Unable to set preference.");
+            },
+            exception -> new Exception("Could not retrieve the results."));
   }
 
   
@@ -136,12 +145,19 @@ public class GeckoPreferenceController {
   @AnyThread
   public static @NonNull GeckoResult<Void> setGeckoPref(
       @NonNull final String prefName, @NonNull final Integer value, @PrefBranch final int branch) {
-    final GeckoBundle bundle = new GeckoBundle(1);
-    bundle.putString("pref", prefName);
-    bundle.putInt("value", value);
-    bundle.putString("branch", toBranchString(branch));
-    bundle.putInt("type", PREF_TYPE_INT);
-    return EventDispatcher.getInstance().queryVoid(SET_PREF, bundle);
+    final var pref = SetGeckoPreference.setIntPref(prefName, value, branch);
+    final GeckoBundle requestBundle = new GeckoBundle(1);
+    requestBundle.putBundleArray("prefs", List.of(pref.toBundle()));
+    return EventDispatcher.getInstance()
+        .queryBundle(SET_PREF, requestBundle)
+        .map(
+            result -> {
+              if (GeckoPreferenceController.parseResponseFromSetting(result)) {
+                return null;
+              }
+              throw new Exception("Unable to set preference.");
+            },
+            exception -> new Exception("Could not retrieve the results."));
   }
 
   
@@ -160,12 +176,87 @@ public class GeckoPreferenceController {
   @AnyThread
   public static @NonNull GeckoResult<Void> setGeckoPref(
       @NonNull final String prefName, @NonNull final Boolean value, @PrefBranch final int branch) {
-    final GeckoBundle bundle = new GeckoBundle(1);
-    bundle.putString("pref", prefName);
-    bundle.putBoolean("value", value);
-    bundle.putString("branch", toBranchString(branch));
-    bundle.putInt("type", PREF_TYPE_BOOL);
-    return EventDispatcher.getInstance().queryVoid(SET_PREF, bundle);
+    final var pref = SetGeckoPreference.setBoolPref(prefName, value, branch);
+    final GeckoBundle requestBundle = new GeckoBundle(1);
+    requestBundle.putBundleArray("prefs", List.of(pref.toBundle()));
+    return EventDispatcher.getInstance()
+        .queryBundle(SET_PREF, requestBundle)
+        .map(
+            result -> {
+              if (GeckoPreferenceController.parseResponseFromSetting(result)) {
+                return null;
+              }
+              throw new Exception("Unable to set preference.");
+            },
+            exception -> new Exception("Could not retrieve the results."));
+  }
+
+  
+
+
+
+
+
+
+
+  private static boolean parseResponseFromSetting(final GeckoBundle result) throws Exception {
+    if (result == null) {
+      throw new Exception("Received a null result message.");
+    }
+    final GeckoBundle[] resultsBundle = result.getBundleArray("prefs");
+    if (resultsBundle == null) {
+      throw new Exception("Received a null result bundle.");
+    }
+    boolean isSet = false;
+    if (resultsBundle.length == 1) {
+      isSet = resultsBundle[0].getBoolean("isSet");
+    }
+    return isSet;
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public static @NonNull GeckoResult<Map<String, Boolean>> setGeckoPrefs(
+      @NonNull final List<SetGeckoPreference<?>> prefs) {
+    final List<GeckoBundle> itemBundles = new ArrayList<>(prefs.size());
+    for (final SetGeckoPreference<?> pref : prefs) {
+      itemBundles.add(pref.toBundle());
+    }
+
+    final GeckoBundle requestBundle = new GeckoBundle(1);
+    requestBundle.putBundleArray("prefs", itemBundles);
+
+    return EventDispatcher.getInstance()
+        .queryBundle(SET_PREF, requestBundle)
+        .map(
+            result -> {
+              if (result == null) {
+                throw new Exception("Received a null result message.");
+              }
+              final GeckoBundle[] resultsBundle = result.getBundleArray("prefs");
+              if (resultsBundle == null) {
+                throw new Exception("Received a null result bundle.");
+              }
+
+              final Map<String, Boolean> resultMap = new HashMap<>(resultsBundle.length);
+              for (final var resultBundle : resultsBundle) {
+                final String pref = resultBundle.getString("pref");
+                final boolean isSet = resultBundle.getBoolean("isSet");
+
+                if (pref == null) {
+                  throw new Exception("Received a null preference name.");
+                } else {
+                  resultMap.put(pref, isSet);
+                }
+              }
+              return resultMap;
+            },
+            exception -> new Exception("Could not retrieve the results."));
   }
 
   
@@ -342,6 +433,122 @@ public class GeckoPreferenceController {
       default:
         Log.w(LOGTAG, "Tried to convert an unknown pref branch of " + prefBranch + " !");
         return "default";
+    }
+  }
+
+  
+
+
+
+
+  public static class SetGeckoPreference<T> {
+    public final @NonNull String pref;
+    public final @NonNull T value;
+    public final @PrefBranch int branch;
+    public final @PrefType int type;
+
+    
+
+
+
+
+
+
+
+    private SetGeckoPreference(
+        @NonNull final String pref,
+        @NonNull final T value,
+        @PrefBranch final int branch,
+        @PrefType final int type) {
+      this.pref = pref;
+      this.value = value;
+      this.branch = branch;
+      this.type = type;
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull SetGeckoPreference<String> setStringPref(
+        @NonNull final String pref, @NonNull final String value, @PrefBranch final int branch) {
+      return new SetGeckoPreference<>(pref, value, branch, PREF_TYPE_STRING);
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull SetGeckoPreference<Integer> setIntPref(
+        @NonNull final String pref, @NonNull final Integer value, @PrefBranch final int branch) {
+      return new SetGeckoPreference<>(pref, value, branch, PREF_TYPE_INT);
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull SetGeckoPreference<Boolean> setBoolPref(
+        @NonNull final String pref, @NonNull final Boolean value, @PrefBranch final int branch) {
+      return new SetGeckoPreference<>(pref, value, branch, PREF_TYPE_BOOL);
+    }
+
+    
+
+
+
+
+    @AnyThread
+    @NonNull
+    
+    GeckoBundle toBundle() {
+      final GeckoBundle bundle = new GeckoBundle(4);
+      bundle.putString("pref", this.pref);
+      bundle.putString("branch", toBranchString(this.branch));
+      bundle.putInt("type", this.type);
+
+      switch (this.type) {
+        case PREF_TYPE_INVALID:
+          {
+            bundle.putString("value", null);
+            return bundle;
+          }
+        case PREF_TYPE_STRING:
+          {
+            bundle.putString("value", (String) this.value);
+            return bundle;
+          }
+        case PREF_TYPE_BOOL:
+          {
+            bundle.putBoolean("value", (boolean) this.value);
+            return bundle;
+          }
+        case PREF_TYPE_INT:
+          {
+            bundle.putInt("value", (int) this.value);
+            return bundle;
+          }
+        default:
+          {
+            bundle.putString("value", null);
+            return bundle;
+          }
+      }
     }
   }
 
