@@ -12264,14 +12264,27 @@ function Lists({
       setNewTask("");
     }
   }
-  function updateTask(e, selectedTask) {
+  function updateTask(updatedTask) {
     const selectedTasks = lists[selected].tasks;
-    const updatedTask = {
-      ...selectedTask,
-      completed: e.target.checked
-    };
     
     const updatedTasks = selectedTasks.map(task => task.id === updatedTask.id ? updatedTask : task);
+    const updatedLists = {
+      ...lists,
+      [selected]: {
+        ...lists[selected],
+        tasks: updatedTasks
+      }
+    };
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_LISTS_UPDATE,
+      data: updatedLists
+    }));
+  }
+  function deleteTask(task) {
+    const selectedTasks = lists[selected].tasks;
+    const updatedTasks = selectedTasks.filter(({
+      id
+    }) => id !== task.id);
     const updatedLists = {
       ...lists,
       [selected]: {
@@ -12307,32 +12320,85 @@ function Lists({
   }
   return lists ? external_React_default().createElement("article", {
     className: "lists"
+  }, external_React_default().createElement("div", {
+    className: "select-wrapper"
   }, external_React_default().createElement("moz-select", {
     value: selected
   }, Object.entries(lists).map(([key, list]) => external_React_default().createElement("moz-option", {
     key: key,
     value: key,
     label: list.label
-  }))), external_React_default().createElement("div", {
+  }))), external_React_default().createElement("moz-button", {
+    className: "lists-panel-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "lists-panel",
+    type: "ghost"
+  }), external_React_default().createElement("panel-list", {
+    id: "lists-panel"
+  }, external_React_default().createElement("panel-item", null, "Edit name"), external_React_default().createElement("panel-item", null, "Create a new list"), external_React_default().createElement("panel-item", null, "Hide To Do list"), external_React_default().createElement("panel-item", null, "Learn more"), external_React_default().createElement("panel-item", null, "Copy to clipboard"))), external_React_default().createElement("div", {
     className: "add-task-container"
-  }, external_React_default().createElement("input", {
+  }, external_React_default().createElement("span", {
+    className: "icon icon-add"
+  }), external_React_default().createElement("input", {
     ref: inputRef,
     onChange: e => setNewTask(e.target.value),
     value: newTask,
-    placeholder: "Enter task",
-    onKeyDown: handleKeyDown
-  })), lists[selected]?.tasks.length >= 1 ? external_React_default().createElement("moz-reorderable-list", {
+    placeholder: "Add a task",
+    className: "add-task-input",
+    onKeyDown: handleKeyDown,
+    type: "text",
+    maxLength: 100
+  })), external_React_default().createElement("div", {
+    className: "task-list-wrapper"
+  }, lists[selected]?.tasks.length >= 1 ? external_React_default().createElement("moz-reorderable-list", {
     itemSelector: "fieldset .task-item"
-  }, external_React_default().createElement("fieldset", null, lists[selected].tasks.map((task, idx) => {
-    return external_React_default().createElement("label", {
-      key: idx,
-      className: "task-item"
-    }, external_React_default().createElement("input", {
-      type: "checkbox",
-      onChange: e => updateTask(e, task),
-      checked: task.completed
-    }), external_React_default().createElement("span", null, task.value));
-  }))) : external_React_default().createElement("div", null, external_React_default().createElement("p", null, "The list is empty. For now \uD83E\uDD8A"))) : null;
+  }, external_React_default().createElement("fieldset", null, lists[selected].tasks.map(task => external_React_default().createElement(ListItem, {
+    task: task,
+    key: task.id,
+    updateTask: updateTask,
+    deleteTask: deleteTask
+  })))) : external_React_default().createElement("p", {
+    className: "empty-list-text"
+  }, "The list is empty. For now \uD83E\uDD8A"))) : null;
+}
+function ListItem({
+  task,
+  updateTask,
+  deleteTask
+}) {
+  const [shouldAnimate, setShouldAnimate] = (0,external_React_namespaceObject.useState)(false);
+  function handleCheckboxChange(e) {
+    const {
+      checked
+    } = e.target;
+    const updatedTask = {
+      ...task,
+      completed: e.target.checked
+    };
+    updateTask(updatedTask);
+    setShouldAnimate(checked);
+  }
+  return external_React_default().createElement("div", {
+    className: "task-item"
+  }, external_React_default().createElement("div", {
+    className: "checkbox-wrapper"
+  }, external_React_default().createElement("input", {
+    type: "checkbox",
+    onChange: handleCheckboxChange,
+    checked: task.completed
+  }), external_React_default().createElement("span", {
+    className: `task-label ${task.completed && shouldAnimate ? "animate-strike" : ""}`,
+    title: task.value
+  }, task.value)), external_React_default().createElement("moz-button", {
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: `panel-task-${task.id}`,
+    type: "ghost"
+  }), external_React_default().createElement("panel-list", {
+    id: `panel-task-${task.id}`
+  }, external_React_default().createElement("panel-item", null, "Move up"), external_React_default().createElement("panel-item", null, "Move down"), external_React_default().createElement("panel-item", null, "Edit"), external_React_default().createElement("panel-item", {
+    className: "delete-item",
+    onClick: () => deleteTask(task)
+  }, "Delete item")));
 }
 
 ;
