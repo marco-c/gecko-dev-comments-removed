@@ -43,7 +43,7 @@ class RTC_EXPORT SpsParser {
   };
 
   
-  static std::optional<SpsState> ParseSps(rtc::ArrayView<const uint8_t> data);
+  static std::optional<SpsState> ParseSps(ArrayView<const uint8_t> data);
 
  protected:
   

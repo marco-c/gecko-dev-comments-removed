@@ -44,17 +44,17 @@ class RTC_EXPORT H265PpsParser {
   };
 
   
-  static std::optional<PpsState> ParsePps(rtc::ArrayView<const uint8_t> data,
+  static std::optional<PpsState> ParsePps(ArrayView<const uint8_t> data,
                                           const H265SpsParser::SpsState* sps);
   
   static inline std::optional<PpsState> ParsePps(
       const uint8_t* data,
       size_t length,
       const H265SpsParser::SpsState* sps) {
-    return ParsePps(rtc::MakeArrayView(data, length), sps);
+    return ParsePps(MakeArrayView(data, length), sps);
   }
 
-  static bool ParsePpsIds(rtc::ArrayView<const uint8_t> data,
+  static bool ParsePpsIds(ArrayView<const uint8_t> data,
                           uint32_t* pps_id,
                           uint32_t* sps_id);
   
@@ -62,14 +62,14 @@ class RTC_EXPORT H265PpsParser {
                                  size_t length,
                                  uint32_t* pps_id,
                                  uint32_t* sps_id) {
-    return ParsePpsIds(rtc::MakeArrayView(data, length), pps_id, sps_id);
+    return ParsePpsIds(MakeArrayView(data, length), pps_id, sps_id);
   }
 
  protected:
   
   
   static std::optional<PpsState> ParseInternal(
-      rtc::ArrayView<const uint8_t> buffer,
+      ArrayView<const uint8_t> buffer,
       const H265SpsParser::SpsState* sps);
   static bool ParsePpsIdsInternal(BitstreamReader& reader,
                                   uint32_t& pps_id,

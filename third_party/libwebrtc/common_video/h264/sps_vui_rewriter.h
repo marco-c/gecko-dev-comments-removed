@@ -43,23 +43,23 @@ class SpsVuiRewriter : private SpsParser {
   
   
   
-  static ParseResult ParseAndRewriteSps(rtc::ArrayView<const uint8_t> buffer,
+  static ParseResult ParseAndRewriteSps(ArrayView<const uint8_t> buffer,
                                         std::optional<SpsParser::SpsState>* sps,
                                         const ColorSpace* color_space,
-                                        rtc::Buffer* destination,
+                                        Buffer* destination,
                                         Direction Direction);
 
   
   
-  static rtc::Buffer ParseOutgoingBitstreamAndRewrite(
-      rtc::ArrayView<const uint8_t> buffer,
+  static Buffer ParseOutgoingBitstreamAndRewrite(
+      ArrayView<const uint8_t> buffer,
       const ColorSpace* color_space);
 
  private:
-  static ParseResult ParseAndRewriteSps(rtc::ArrayView<const uint8_t> buffer,
+  static ParseResult ParseAndRewriteSps(ArrayView<const uint8_t> buffer,
                                         std::optional<SpsParser::SpsState>* sps,
                                         const ColorSpace* color_space,
-                                        rtc::Buffer* destination);
+                                        Buffer* destination);
 
   static void UpdateStats(ParseResult result, Direction direction);
 };

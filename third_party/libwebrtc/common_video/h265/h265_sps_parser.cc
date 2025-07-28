@@ -104,7 +104,7 @@ size_t H265SpsParser::GetDpbMaxPicBuf(int general_profile_idc) {
 
 
 std::optional<H265SpsParser::SpsState> H265SpsParser::ParseSps(
-    rtc::ArrayView<const uint8_t> data) {
+    ArrayView<const uint8_t> data) {
   return ParseSpsInternal(H265::ParseRbsp(data));
 }
 
@@ -385,7 +385,7 @@ H265SpsParser::ParseProfileTierLevel(bool profile_present,
 }
 
 std::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsInternal(
-    rtc::ArrayView<const uint8_t> buffer) {
+    ArrayView<const uint8_t> buffer) {
   BitstreamReader reader(buffer);
 
   

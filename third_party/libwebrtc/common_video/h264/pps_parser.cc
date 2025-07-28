@@ -30,14 +30,14 @@ constexpr int kMinPicInitQpDeltaValue = -26;
 
 
 std::optional<PpsParser::PpsState> PpsParser::ParsePps(
-    rtc::ArrayView<const uint8_t> data) {
+    ArrayView<const uint8_t> data) {
   
   
   
   return ParseInternal(H264::ParseRbsp(data));
 }
 
-bool PpsParser::ParsePpsIds(rtc::ArrayView<const uint8_t> data,
+bool PpsParser::ParsePpsIds(ArrayView<const uint8_t> data,
                             uint32_t* pps_id,
                             uint32_t* sps_id) {
   RTC_DCHECK(pps_id);
@@ -53,7 +53,7 @@ bool PpsParser::ParsePpsIds(rtc::ArrayView<const uint8_t> data,
 }
 
 std::optional<PpsParser::SliceHeader> PpsParser::ParseSliceHeader(
-    rtc::ArrayView<const uint8_t> data) {
+    ArrayView<const uint8_t> data) {
   std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data);
   BitstreamReader slice_reader(unpacked_buffer);
   PpsParser::SliceHeader slice_header;
@@ -74,7 +74,7 @@ std::optional<PpsParser::SliceHeader> PpsParser::ParseSliceHeader(
 }
 
 std::optional<PpsParser::PpsState> PpsParser::ParseInternal(
-    rtc::ArrayView<const uint8_t> buffer) {
+    ArrayView<const uint8_t> buffer) {
   BitstreamReader reader(buffer);
   PpsState pps;
   pps.id = reader.ReadExponentialGolomb();

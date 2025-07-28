@@ -104,11 +104,11 @@ class RTC_EXPORT H265SpsParser {
   };
 
   
-  static std::optional<SpsState> ParseSps(rtc::ArrayView<const uint8_t> data);
+  static std::optional<SpsState> ParseSps(ArrayView<const uint8_t> data);
   
   static inline std::optional<SpsState> ParseSps(const uint8_t* data,
                                                  size_t length) {
-    return ParseSps(rtc::MakeArrayView(data, length));
+    return ParseSps(MakeArrayView(data, length));
   }
 
   static bool ParseScalingListData(BitstreamReader& reader);
@@ -129,7 +129,7 @@ class RTC_EXPORT H265SpsParser {
   
   
   static std::optional<SpsState> ParseSpsInternal(
-      rtc::ArrayView<const uint8_t> buffer);
+      ArrayView<const uint8_t> buffer);
 
   
   static int GetMaxLumaPs(int general_level_idc);

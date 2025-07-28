@@ -46,13 +46,13 @@ class VideoFrameBufferPool {
   
   
   
-  rtc::scoped_refptr<I420Buffer> CreateI420Buffer(int width, int height);
-  rtc::scoped_refptr<I422Buffer> CreateI422Buffer(int width, int height);
-  rtc::scoped_refptr<I444Buffer> CreateI444Buffer(int width, int height);
-  rtc::scoped_refptr<I010Buffer> CreateI010Buffer(int width, int height);
-  rtc::scoped_refptr<I210Buffer> CreateI210Buffer(int width, int height);
-  rtc::scoped_refptr<I410Buffer> CreateI410Buffer(int width, int height);
-  rtc::scoped_refptr<NV12Buffer> CreateNV12Buffer(int width, int height);
+  scoped_refptr<I420Buffer> CreateI420Buffer(int width, int height);
+  scoped_refptr<I422Buffer> CreateI422Buffer(int width, int height);
+  scoped_refptr<I444Buffer> CreateI444Buffer(int width, int height);
+  scoped_refptr<I010Buffer> CreateI010Buffer(int width, int height);
+  scoped_refptr<I210Buffer> CreateI210Buffer(int width, int height);
+  scoped_refptr<I410Buffer> CreateI410Buffer(int width, int height);
+  scoped_refptr<NV12Buffer> CreateNV12Buffer(int width, int height);
 
   
   
@@ -64,11 +64,11 @@ class VideoFrameBufferPool {
   void Release();
 
  private:
-  rtc::scoped_refptr<VideoFrameBuffer>
+  scoped_refptr<VideoFrameBuffer>
   GetExistingBuffer(int width, int height, VideoFrameBuffer::Type type);
 
   RaceChecker race_checker_;
-  std::list<rtc::scoped_refptr<VideoFrameBuffer>> buffers_;
+  std::list<scoped_refptr<VideoFrameBuffer>> buffers_;
   
   
   

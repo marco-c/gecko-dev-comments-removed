@@ -67,7 +67,7 @@ size_t CalcBufferSize(VideoType type, int width, int height);
 
 
 
-int ExtractBuffer(const rtc::scoped_refptr<I420BufferInterface>& input_frame,
+int ExtractBuffer(const scoped_refptr<I420BufferInterface>& input_frame,
                   size_t size,
                   uint8_t* buffer);
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
@@ -84,7 +84,7 @@ int ConvertFromI420(const VideoFrame& src_frame,
                     int dst_sample_size,
                     uint8_t* dst_frame);
 
-rtc::scoped_refptr<I420BufferInterface> ScaleVideoFrameBuffer(
+scoped_refptr<I420BufferInterface> ScaleVideoFrameBuffer(
     const I420BufferInterface& source,
     int dst_width,
     int dst_height);

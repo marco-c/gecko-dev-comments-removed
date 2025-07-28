@@ -63,7 +63,7 @@ namespace webrtc {
 
 
 std::optional<H265PpsParser::PpsState> H265PpsParser::ParsePps(
-    rtc::ArrayView<const uint8_t> data,
+    ArrayView<const uint8_t> data,
     const H265SpsParser::SpsState* sps) {
   
   
@@ -71,7 +71,7 @@ std::optional<H265PpsParser::PpsState> H265PpsParser::ParsePps(
   return ParseInternal(H265::ParseRbsp(data), sps);
 }
 
-bool H265PpsParser::ParsePpsIds(rtc::ArrayView<const uint8_t> data,
+bool H265PpsParser::ParsePpsIds(ArrayView<const uint8_t> data,
                                 uint32_t* pps_id,
                                 uint32_t* sps_id) {
   RTC_DCHECK(pps_id);
@@ -89,7 +89,7 @@ bool H265PpsParser::ParsePpsIds(rtc::ArrayView<const uint8_t> data,
 }
 
 std::optional<H265PpsParser::PpsState> H265PpsParser::ParseInternal(
-    rtc::ArrayView<const uint8_t> buffer,
+    ArrayView<const uint8_t> buffer,
     const H265SpsParser::SpsState* sps) {
   BitstreamReader reader(buffer);
   PpsState pps;

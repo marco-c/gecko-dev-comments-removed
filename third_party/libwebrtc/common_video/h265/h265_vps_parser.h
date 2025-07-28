@@ -30,18 +30,17 @@ class RTC_EXPORT H265VpsParser {
   };
 
   
-  static std::optional<VpsState> ParseVps(rtc::ArrayView<const uint8_t> data);
+  static std::optional<VpsState> ParseVps(ArrayView<const uint8_t> data);
   
   static inline std::optional<VpsState> ParseVps(const uint8_t* data,
                                                  size_t length) {
-    return ParseVps(rtc::MakeArrayView(data, length));
+    return ParseVps(MakeArrayView(data, length));
   }
 
  protected:
   
   
-  static std::optional<VpsState> ParseInternal(
-      rtc::ArrayView<const uint8_t> buffer);
+  static std::optional<VpsState> ParseInternal(ArrayView<const uint8_t> buffer);
 };
 
 }  
