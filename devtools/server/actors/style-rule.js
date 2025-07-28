@@ -389,13 +389,13 @@ class StyleRuleActor extends Actor {
     
     
     form.authoredText = this.authoredText;
+    form.cssText = this._getCssText();
 
     switch (this.ruleClassName) {
       case "CSSNestedDeclarations":
         form.isNestedDeclarations = true;
         form.selectors = [];
         form.selectorsSpecificity = [];
-        form.cssText = this.rawStyle.cssText || "";
         break;
       case "CSSStyleRule":
         form.selectors = [];
@@ -416,7 +416,6 @@ class StyleRuleActor extends Actor {
         if (selectorWarnings.length) {
           form.selectorWarnings = selectorWarnings;
         }
-        form.cssText = this.rawStyle.cssText || "";
         break;
       case ELEMENT_STYLE:
         
@@ -424,7 +423,6 @@ class StyleRuleActor extends Actor {
         
         const doc = this.rawNode.ownerDocument;
         form.href = doc.location ? doc.location.href : "";
-        form.cssText = this.rawStyle.cssText || "";
         form.authoredText = this.rawNode.getAttribute("style");
         break;
       case "CSSCharsetRule":
@@ -434,11 +432,9 @@ class StyleRuleActor extends Actor {
         form.href = this.rawRule.href;
         break;
       case "CSSKeyframesRule":
-        form.cssText = this.rawRule.cssText;
         form.name = this.rawRule.name;
         break;
       case "CSSKeyframeRule":
-        form.cssText = this.rawStyle.cssText || "";
         form.keyText = this.rawRule.keyText || "";
         break;
     }
@@ -447,16 +443,9 @@ class StyleRuleActor extends Actor {
     
     
     if (form.authoredText || form.cssText) {
-      
-      const cssText =
-        typeof form.authoredText === "string"
-          ? form.authoredText
-          : form.cssText;
-      const declarations = parseNamedDeclarations(
-        isCssPropertyKnown,
-        cssText,
-        true
-      );
+      const declarations = this.parseRuleDeclarations({
+        parseComments: true,
+      });
       const el = this.currentlySelectedElement;
       const style = this.currentlySelectedElementComputedStyle;
 
@@ -575,6 +564,47 @@ class StyleRuleActor extends Actor {
     }
 
     return form;
+  }
+
+  
+
+
+
+
+  _getCssText() {
+    switch (this.ruleClassName) {
+      case "CSSNestedDeclarations":
+      case "CSSStyleRule":
+      case ELEMENT_STYLE:
+        return this.rawStyle.cssText || "";
+      case "CSSKeyframesRule":
+      case "CSSKeyframeRule":
+        return this.rawRule.cssText;
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+  parseRuleDeclarations({ parseComments }) {
+    const authoredText =
+      this.ruleClassName === ELEMENT_STYLE
+        ? this.rawNode.getAttribute("style")
+        : this.authoredText;
+
+    
+    const cssText =
+      typeof authoredText === "string" ? authoredText : this._getCssText();
+    if (!cssText) {
+      return [];
+    }
+
+    return parseNamedDeclarations(isCssPropertyKnown, cssText, parseComments);
   }
 
   

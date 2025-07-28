@@ -127,35 +127,28 @@ class CompatibilityActor extends Actor {
       skipPseudo: false,
     });
 
-    const declarationBlocks = styles.entries
-      .map(({ rule }) => {
-        
-        
-        
-        const declarations = rule.form().declarations;
-        if (!declarations) {
-          return null;
-        }
-        return declarations.filter(d => !d.commentOffsets);
-      })
-      .filter(declarations => declarations && declarations.length);
+    const declarations = [];
+    const propertyNames = new Set();
 
-    return declarationBlocks
-      .map(declarationBlock =>
-        mdnCompatibility.getCSSDeclarationBlockIssues(
-          declarationBlock,
-          targetBrowsers
-        )
-      )
-      .flat()
-      .reduce((issues, issue) => {
+    for (const { rule } of styles.entries) {
+      for (const declaration of rule.parseRuleDeclarations({
+        parseComments: false,
+      })) {
         
-        return issues.find(
-          i => i.type === issue.type && i.property === issue.property
-        )
-          ? issues
-          : [...issues, issue];
-      }, []);
+        
+        
+        if (propertyNames.has(declaration.name)) {
+          continue;
+        }
+        propertyNames.add(declaration.name);
+        declarations.push(declaration);
+      }
+    }
+
+    return mdnCompatibility.getCSSDeclarationBlockIssues(
+      declarations,
+      targetBrowsers
+    );
   }
 }
 
