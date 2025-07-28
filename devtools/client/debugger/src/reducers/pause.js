@@ -145,21 +145,20 @@ function update(state = initialPauseState(), action) {
     }
 
     case "REMOVE_THREAD": {
-      const { threadActorID } = action;
       if (
-        threadActorID in state.threads ||
-        threadActorID == state.threadcx.thread
+        action.threadActorID in state.threads ||
+        action.threadActorID == state.threadcx.thread
       ) {
         
         const threads = { ...state.threads };
-        delete threads[threadActorID];
+        delete threads[action.threadActorID];
         let threadcx = state.threadcx;
 
         
         
         
         
-        if (state.threadcx.thread == threadActorID) {
+        if (state.threadcx.thread == action.threadActorID) {
           threadcx = {
             ...threadcx,
             thread: Object.keys(threads)[0],

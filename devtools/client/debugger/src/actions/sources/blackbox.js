@@ -7,6 +7,7 @@
 
 
 
+import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { recordEvent } from "../../utils/telemetry";
 import { toggleBreakpoints } from "../breakpoints/index";
 import {
@@ -28,7 +29,7 @@ export async function blackboxSourceActorsForSource(
   
   
   if (source.isOriginal) {
-    sourceId = source.generatedSource.id;
+    sourceId = originalToGeneratedId(source.id);
     const range = await sourceMapLoader.getFileGeneratedRange(source.id);
     ranges = [];
     if (range) {

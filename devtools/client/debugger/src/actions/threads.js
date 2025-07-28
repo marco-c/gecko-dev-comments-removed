@@ -4,14 +4,14 @@
 
 import { createThread } from "../client/firefox/create";
 import { getSourcesToRemoveForThread } from "../selectors/index";
-import { removeSources } from "./sources/removeSources";
+import { getEditor } from "../utils/editor/index";
 
 export function addTarget(targetFront) {
   return { type: "INSERT_THREAD", newThread: createThread(targetFront) };
 }
 
 export function removeTarget(targetFront) {
-  return async ({ getState, dispatch }) => {
+  return ({ getState, dispatch, parserWorker }) => {
     const threadActorID = targetFront.targetForm.threadActor;
 
     
@@ -29,13 +29,19 @@ export function removeTarget(targetFront) {
     
     
     
+    
+    
+    
     dispatch({
       type: "REMOVE_THREAD",
       threadActorID,
+      actors,
+      sources,
     });
-    
-    
-    await dispatch(removeSources(sources, actors));
+    const sourceIds = sources.map(source => source.id);
+    parserWorker.clearSources(sourceIds);
+    const editor = getEditor();
+    editor.clearSources(sourceIds);
   };
 }
 

@@ -3,6 +3,7 @@
 
 
 import { createSelector } from "devtools/client/shared/vendor/reselect";
+import { getPrettySourceURL } from "../utils/source";
 
 import { getSpecificSourceByURL } from "./sources";
 import { isSimilarTab } from "../utils/tabs";
@@ -18,32 +19,13 @@ export const getSourcesForTabs = createSelector(getSourceTabs, sourceTabs => {
   return sourceTabs.map(tab => tab.source);
 });
 
-export function tabExists(state, source) {
-  
-  
-  return getSourceTabs(state).some(
-    tab =>
-      tab.source.id == source.id ||
-      (tab.source.generatedSource?.id == source.id &&
-        tab.source.isPrettyPrinted)
-  );
+export function tabExists(state, sourceId) {
+  return !!getSourceTabs(state).find(tab => tab.source.id == sourceId);
 }
 
-
-
-
-
-
-
 export function hasPrettyTab(state, source) {
-  return getTabs(state).some(tab => {
-    
-    
-    return (
-      (tab.source?.generatedSource == source && tab.source.isPrettyPrinted) ||
-      (tab.isPrettyPrinted && tab.source == source)
-    );
-  });
+  const prettyUrl = getPrettySourceURL(source.url);
+  return getTabs(state).some(tab => tab.url === prettyUrl);
 }
 
 

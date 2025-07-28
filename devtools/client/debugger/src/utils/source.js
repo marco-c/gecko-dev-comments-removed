@@ -161,6 +161,14 @@ export function isJavaScript(source, content) {
   );
 }
 
+
+
+
+
+export function isPretty(source) {
+  return isPrettyURL(source.url);
+}
+
 export function isPrettyURL(url) {
   return url ? url.endsWith(":formatted") : false;
 }
@@ -343,12 +351,25 @@ export function getTextAtPosition(sourceId, asyncContent, location) {
 
 
 
-export function getSourceClassnames(source, isBlackBoxed) {
+
+
+export function getSourceClassnames(
+  source,
+  isBlackBoxed,
+  hasPrettyTab = false
+) {
   
   const defaultClassName = "file";
 
   if (!source || !source.url) {
     return defaultClassName;
+  }
+
+  
+  
+  
+  if (isPretty(source) || hasPrettyTab) {
+    return "prettyPrint";
   }
 
   if (isBlackBoxed) {
