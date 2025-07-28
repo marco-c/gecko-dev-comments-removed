@@ -3453,31 +3453,6 @@ void MacroAssembler::loadResizableArrayBufferViewLengthIntPtr(
   bind(&done);
 }
 
-void MacroAssembler::loadResizableTypedArrayByteOffsetMaybeOutOfBoundsIntPtr(
-    Register obj, Register output, Register scratch) {
-  
-  
-
-  loadArrayBufferViewByteOffsetIntPtr(obj, output);
-
-  
-  Label done;
-  branchPtr(Assembler::NotEqual, output, ImmWord(0), &done);
-
-  
-  loadPrivate(Address(obj, ArrayBufferViewObject::initialByteOffsetOffset()),
-              output);
-  branchPtr(Assembler::Equal, output, ImmWord(0), &done);
-
-  
-  branchIfHasAttachedArrayBuffer(obj, scratch, &done);
-
-  
-  movePtr(ImmWord(0), output);
-
-  bind(&done);
-}
-
 void MacroAssembler::dateFillLocalTimeSlots(
     Register obj, Register scratch, const LiveRegisterSet& volatileRegs) {
   

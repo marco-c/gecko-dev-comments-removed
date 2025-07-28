@@ -11087,68 +11087,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArrayConstructor() {
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteOffset() {
-  
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
-
-  auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
-
-  
-  initializeInputOperand();
-
-  
-
-  ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-
-  EmitGuardTypedArray(writer, tarr, objArgId);
-
-  size_t byteOffset = tarr->byteOffsetMaybeOutOfBounds();
-  if (!tarr->is<ResizableTypedArrayObject>()) {
-    if (byteOffset <= INT32_MAX) {
-      writer.arrayBufferViewByteOffsetInt32Result(objArgId);
-    } else {
-      writer.arrayBufferViewByteOffsetDoubleResult(objArgId);
-    }
-  } else {
-    if (byteOffset <= INT32_MAX) {
-      writer.resizableTypedArrayByteOffsetMaybeOutOfBoundsInt32Result(objArgId);
-    } else {
-      writer.resizableTypedArrayByteOffsetMaybeOutOfBoundsDoubleResult(
-          objArgId);
-    }
-  }
-
-  writer.returnFromIC();
-
-  trackAttached("IntrinsicTypedArrayByteOffset");
-  return AttachDecision::Attach;
-}
-
-AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayElementSize() {
-  
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
-
-  
-  initializeInputOperand();
-
-  
-
-  ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-  writer.typedArrayElementSizeResult(objArgId);
-  writer.returnFromIC();
-
-  trackAttached("TypedArrayElementSize");
-  return AttachDecision::Attach;
-}
-
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
-    bool isPossiblyWrapped, bool allowOutOfBounds) {
+    bool isPossiblyWrapped) {
   
   
   MOZ_ASSERT(args_.length() == 1);
@@ -11164,15 +11104,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
   auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
 
   
-  
   auto length = tarr->length();
   if (length.isNothing() && !tarr->hasDetachedBuffer()) {
     MOZ_ASSERT(tarr->is<ResizableTypedArrayObject>());
     MOZ_ASSERT(tarr->isOutOfBounds());
 
-    if (!allowOutOfBounds) {
-      return AttachDecision::NoAction;
-    }
+    return AttachDecision::NoAction;
   }
 
   
@@ -11196,9 +11133,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
       writer.loadArrayBufferViewLengthDoubleResult(objArgId);
     }
   } else {
-    if (!allowOutOfBounds) {
-      writer.guardResizableArrayBufferViewInBoundsOrDetached(objArgId);
-    }
+    writer.guardResizableArrayBufferViewInBoundsOrDetached(objArgId);
 
     if (length.valueOr(0) <= INT32_MAX) {
       writer.resizableTypedArrayLengthInt32Result(objArgId);
@@ -12573,19 +12508,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachIsTypedArray( true);
     case InlinableNative::IntrinsicIsTypedArrayConstructor:
       return tryAttachIsTypedArrayConstructor();
-    case InlinableNative::IntrinsicTypedArrayByteOffset:
-      return tryAttachTypedArrayByteOffset();
-    case InlinableNative::IntrinsicTypedArrayElementSize:
-      return tryAttachTypedArrayElementSize();
     case InlinableNative::IntrinsicTypedArrayLength:
-      return tryAttachTypedArrayLength( false,
-                                        false);
-    case InlinableNative::IntrinsicTypedArrayLengthZeroOnOutOfBounds:
-      return tryAttachTypedArrayLength( false,
-                                        true);
+      return tryAttachTypedArrayLength( false);
     case InlinableNative::IntrinsicPossiblyWrappedTypedArrayLength:
-      return tryAttachTypedArrayLength( true,
-                                        false);
+      return tryAttachTypedArrayLength( true);
 
     
     case InlinableNative::ReflectGetPrototypeOf:

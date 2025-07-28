@@ -6581,13 +6581,6 @@ AliasSet MGuardHasAttachedArrayBuffer::getAliasSet() const {
   return AliasSet::Load(AliasSet::ObjectFields | AliasSet::FixedSlot);
 }
 
-AliasSet MResizableTypedArrayByteOffsetMaybeOutOfBounds::getAliasSet() const {
-  
-  
-  return AliasSet::Load(AliasSet::ArrayBufferViewLengthOrOffset |
-                        AliasSet::ObjectFields | AliasSet::FixedSlot);
-}
-
 AliasSet MResizableTypedArrayLength::getAliasSet() const {
   
   

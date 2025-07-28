@@ -127,30 +127,6 @@ function TypedArraySpeciesConstructor(obj) {
 
 
 
-function ValidateTypedArray(obj) {
-  if (IsObject(obj)) {
-    
-    if (IsTypedArray(obj)) {
-      
-      EnsureAttachedArrayBuffer(obj);
-      return;
-    }
-
-    
-    if (IsPossiblyWrappedTypedArray(obj)) {
-      if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj)) {
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-      }
-      return;
-    }
-  }
-
-  
-  ThrowTypeError(JSMSG_NON_TYPED_ARRAY_RETURNED);
-}
-
-
-
 function ValidateWritableTypedArray(obj) {
   if (IsObject(obj)) {
     
@@ -203,55 +179,6 @@ function TypedArrayCreateWithLength(constructor, length) {
 
 
 
-function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
-  
-  var newTypedArray = constructContentFunction(
-    constructor,
-    constructor,
-    buffer,
-    byteOffset,
-    length
-  );
-
-  
-  ValidateTypedArray(newTypedArray);
-
-  
-  
-  PossiblyWrappedTypedArrayLength(newTypedArray);
-
-  
-
-  
-  return newTypedArray;
-}
-
-
-
-function TypedArrayCreateWithResizableBuffer(constructor, buffer, byteOffset) {
-  
-  var newTypedArray = constructContentFunction(
-    constructor,
-    constructor,
-    buffer,
-    byteOffset
-  );
-
-  
-  ValidateTypedArray(newTypedArray);
-
-  
-  
-  PossiblyWrappedTypedArrayLength(newTypedArray);
-
-  
-
-  
-  return newTypedArray;
-}
-
-
-
 function TypedArraySpeciesCreateWithLength(exemplar, length) {
   
 
@@ -260,39 +187,6 @@ function TypedArraySpeciesCreateWithLength(exemplar, length) {
 
   
   return TypedArrayCreateWithLength(C, length);
-}
-
-
-
-function TypedArraySpeciesCreateWithBuffer(
-  exemplar,
-  buffer,
-  byteOffset,
-  length
-) {
-  
-
-  
-  var C = TypedArraySpeciesConstructor(exemplar);
-
-  
-  return TypedArrayCreateWithBuffer(C, buffer, byteOffset, length);
-}
-
-
-
-function TypedArraySpeciesCreateWithResizableBuffer(
-  exemplar,
-  buffer,
-  byteOffset
-) {
-  
-
-  
-  var C = TypedArraySpeciesConstructor(exemplar);
-
-  
-  return TypedArrayCreateWithResizableBuffer(C, buffer, byteOffset);
 }
 
 
