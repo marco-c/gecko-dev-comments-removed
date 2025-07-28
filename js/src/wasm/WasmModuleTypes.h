@@ -844,14 +844,10 @@ struct MemoryDesc {
   }
 
   
-  uint64_t initialLength32() const {
-    MOZ_ASSERT(addressType() == AddressType::I32);
+  uint64_t initialLength() const {
     
-    return limits.initial * PageSize;
-  }
-
-  uint64_t initialLength64() const {
-    MOZ_ASSERT(addressType() == AddressType::I64);
+    MOZ_ASSERT_IF(addressType() == AddressType::I64,
+                  limits.initial <= UINT64_MAX / PageSize);
     return limits.initial * PageSize;
   }
 

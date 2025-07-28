@@ -9,12 +9,35 @@
 #include "jit/JitSpewer.h"
 #include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
+#include "wasm/WasmMetadata.h"
+
+using mozilla::HashGeneric;
 
 using namespace js;
 using namespace js::jit;
 
-using LastSeenMap = js::HashMap<uint32_t, MDefinition*, DefaultHasher<uint32_t>,
-                                SystemAllocPolicy>;
+struct LastCheckedKey {
+  
+  MWasmBoundsCheck::Target target;
+
+  
+  uint32_t targetIndex;
+
+  
+  uint32_t addressID;
+
+  using Lookup = LastCheckedKey;
+  static HashNumber hash(const Lookup& l) {
+    return HashGeneric(l.target, l.targetIndex, l.addressID);
+  }
+  static bool match(const LastCheckedKey& lhs, const Lookup& rhs) {
+    return lhs.target == rhs.target && lhs.targetIndex == rhs.targetIndex &&
+           lhs.addressID == rhs.addressID;
+  }
+};
+
+using LastCheckedMap = js::HashMap<LastCheckedKey, MWasmBoundsCheck*,
+                                   LastCheckedKey, SystemAllocPolicy>;
 
 
 
@@ -31,7 +54,7 @@ using LastSeenMap = js::HashMap<uint32_t, MDefinition*, DefaultHasher<uint32_t>,
 bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_WasmBCE, "Begin");
   
-  LastSeenMap lastSeen;
+  LastCheckedMap lastChecked;
 
   for (ReversePostorderIterator bIter(graph.rpoBegin());
        bIter != graph.rpoEnd(); bIter++) {
@@ -39,97 +62,82 @@ bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
     for (MDefinitionIterator dIter(block); dIter;) {
       MDefinition* def = *dIter++;
 
-      switch (def->op()) {
-        case MDefinition::Opcode::WasmBoundsCheck: {
-          MWasmBoundsCheck* bc = def->toWasmBoundsCheck();
-          MDefinition* addr = bc->index();
+      if (!def->isWasmBoundsCheck()) {
+        continue;
+      }
 
-          
-          
-          if (!bc->isMemory0()) {
-            continue;
+      MWasmBoundsCheck* bc = def->toWasmBoundsCheck();
+      MDefinition* addr = bc->index();
+
+      if (bc->target() == MWasmBoundsCheck::Other) {
+        continue;
+      }
+
+      if (addr->isConstant()) {
+        
+        
+
+        uint64_t addrConstantValue = UINT64_MAX;
+        switch (addr->type()) {
+          case MIRType::Int32: {
+            addrConstantValue = addr->toConstant()->toInt32();
+          } break;
+          case MIRType::Int64: {
+            addrConstantValue = addr->toConstant()->toInt64();
+          } break;
+          default:
+            break;
+        }
+
+        uint64_t initialLength = 0;
+        switch (bc->target()) {
+          case MWasmBoundsCheck::Memory: {
+            initialLength = mir->wasmCodeMeta()
+                                ->memories[bc->targetIndex()]
+                                .initialLength();
+          } break;
+          case MWasmBoundsCheck::Table: {
+            initialLength =
+                mir->wasmCodeMeta()->tables[bc->targetIndex()].initialLength();
+          } break;
+          default:
+            MOZ_CRASH();
+        }
+
+        if (addrConstantValue < initialLength) {
+          bc->setRedundant();
+          if (JitOptions.spectreIndexMasking) {
+            bc->replaceAllUsesWith(addr);
+          } else {
+            MOZ_ASSERT(!bc->hasUses());
           }
+        }
+      } else {
+        
+        
 
+        LastCheckedKey key = (LastCheckedKey){
+            .target = bc->target(),
+            .targetIndex = bc->targetIndex(),
+            .addressID = addr->id(),
+        };
+        LastCheckedMap::AddPtr ptr = lastChecked.lookupForAdd(key);
+        if (!ptr) {
           
-          
-          
-          
-          
-
-          if (addr->isConstant() &&
-              ((addr->toConstant()->type() == MIRType::Int32 &&
-                uint64_t(addr->toConstant()->toInt32()) <
-                    mir->minWasmMemory0Length()) ||
-               (addr->toConstant()->type() == MIRType::Int64 &&
-                uint64_t(addr->toConstant()->toInt64()) <
-                    mir->minWasmMemory0Length()))) {
+          if (!lastChecked.add(ptr, key, bc)) {
+            return false;
+          }
+        } else {
+          MWasmBoundsCheck* prevCheckOfSameAddr = ptr->value();
+          if (prevCheckOfSameAddr->block()->dominates(block)) {
             bc->setRedundant();
             if (JitOptions.spectreIndexMasking) {
-              bc->replaceAllUsesWith(addr);
+              bc->replaceAllUsesWith(prevCheckOfSameAddr);
             } else {
               MOZ_ASSERT(!bc->hasUses());
             }
-          } else {
-            LastSeenMap::AddPtr ptr = lastSeen.lookupForAdd(addr->id());
-            if (ptr) {
-              MDefinition* prevCheckOrPhi = ptr->value();
-              if (prevCheckOrPhi->block()->dominates(block)) {
-                bc->setRedundant();
-                if (JitOptions.spectreIndexMasking) {
-                  bc->replaceAllUsesWith(prevCheckOrPhi);
-                } else {
-                  MOZ_ASSERT(!bc->hasUses());
-                }
-              }
-            } else {
-              if (!lastSeen.add(ptr, addr->id(), def)) {
-                return false;
-              }
-            }
           }
-          break;
         }
-        case MDefinition::Opcode::Phi: {
-          MPhi* phi = def->toPhi();
-          bool phiChecked = true;
-
-          MOZ_ASSERT(phi->numOperands() > 0);
-
-          
-          
-          
-          
-          
-          
-          
-          for (int i = 0, nOps = phi->numOperands(); i < nOps; i++) {
-            MDefinition* src = phi->getOperand(i);
-
-            if (JitOptions.spectreIndexMasking) {
-              if (src->isWasmBoundsCheck()) {
-                src = src->toWasmBoundsCheck()->index();
-              }
-            } else {
-              MOZ_ASSERT(!src->isWasmBoundsCheck());
-            }
-
-            LastSeenMap::Ptr checkPtr = lastSeen.lookup(src->id());
-            if (!checkPtr || !checkPtr->value()->block()->dominates(block)) {
-              phiChecked = false;
-              break;
-            }
-          }
-
-          if (phiChecked) {
-            if (!lastSeen.put(def->id(), def)) {
-              return false;
-            }
-          }
-
-          break;
-        }
-        default:
-          break;
       }
     }
   }
