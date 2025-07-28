@@ -2246,16 +2246,18 @@
         t.style.maxWidth = tabRect.width + "px";
       }
 
-      let rect = window.windowUtils.getBoundsWithoutFlushing(
-        isTabGroupLabel(tab) ? tab.parentElement : tab
-      );
+      
+      
+      let tabStripItemElement = isTabGroupLabel(tab) ? tab.parentElement : tab;
+      let rect =
+        window.windowUtils.getBoundsWithoutFlushing(tabStripItemElement);
       let { movingTabs } = tab._dragData;
       
       
       
       
       let movingTabsOffsetX = window.windowUtils.getBoundsWithoutFlushing(
-        tab.offsetParent
+        tabStripItemElement.offsetParent
       ).x;
 
       let movingTabsIndex = movingTabs.findIndex(t => t._tPos == tab._tPos);
