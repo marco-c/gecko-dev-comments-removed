@@ -160,6 +160,9 @@ class SSLStreamAdapter : public StreamInterface {
   virtual void SetInitialRetransmissionTimeout(int timeout_ms) = 0;
 
   
+  virtual void SetMTU(int mtu) = 0;
+
+  
   
   
   
