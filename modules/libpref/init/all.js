@@ -3137,7 +3137,6 @@ pref("extensions.originControls.grantByDefault", true);
 pref("extensions.webextensions.protocol.remote", true);
 
 
-pref("extensions.webextensions.userScripts.enabled", true);
 pref("extensions.userScripts.mv3.enabled", true);
 
 
