@@ -216,13 +216,6 @@ bool ThrowInvalidThis(JSContext* aCx, const JS::CallArgs& aArgs,
                           NamesOfInterfacesWithProtos(aProtoId));
 }
 
-bool ThrowNoSetterArg(JSContext* aCx, const JS::CallArgs& aArgs,
-                      prototypes::ID aProtoId) {
-  nsPrintfCString errorMessage("%s attribute setter",
-                               NamesOfInterfacesWithProtos(aProtoId));
-  return aArgs.requireAtLeast(aCx, errorMessage.get(), 1);
-}
-
 }  
 
 namespace binding_danger {
@@ -3246,13 +3239,23 @@ bool GenericSetter(JSContext* cx, unsigned argc, JS::Value* vp) {
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
     }
   }
-  if (args.length() == 0) {
-    return ThrowNoSetterArg(cx, args, protoID);
-  }
   MOZ_ASSERT(info->type() == JSJitInfo::Setter);
   JSJitSetterOp setter = info->setter;
-  if (!setter(cx, obj, self, JSJitSetterCallArgs(args))) {
-    return false;
+
+  
+  
+  
+  
+  
+  if (args.length() == 0) {
+    JS::Rooted<JS::Value> undef(cx);
+    if (!setter(cx, obj, self, JSJitSetterCallArgs(&undef))) {
+      return false;
+    }
+  } else {
+    if (!setter(cx, obj, self, JSJitSetterCallArgs(args))) {
+      return false;
+    }
   }
   args.rval().setUndefined();
 #ifdef DEBUG
