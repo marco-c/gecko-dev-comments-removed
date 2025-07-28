@@ -33,18 +33,6 @@ MOZ_RUNINIT class _InitFuzzer {
 static void DeinitXPCOM() { InitLibFuzzer.DeinitXPCOM(); }
 
 int FuzzerRunner::Run(int* argc, char*** argv) {
-  
-
-
-
-
-
-
-
-
-  InitLibFuzzer.InitXPCOM();
-  std::atexit(DeinitXPCOM);
-
   const char* fuzzerEnv = getenv("FUZZER");
 
   if (!fuzzerEnv) {
@@ -64,6 +52,18 @@ int FuzzerRunner::Run(int* argc, char*** argv) {
     exit(0);
   }
 
+  
+
+
+
+
+
+
+
+
+  InitLibFuzzer.InitXPCOM();
+  std::atexit(DeinitXPCOM);
+
   FuzzerFunctions funcs =
       FuzzerRegistry::getInstance().getModuleFunctions(moduleNameStr);
   FuzzerInitFunc initFunc = funcs.first;
@@ -72,12 +72,14 @@ int FuzzerRunner::Run(int* argc, char*** argv) {
     int ret = initFunc(argc, argv);
     if (ret) {
       fprintf(stderr, "Fuzzing Interface: Error: Initialize callback failed\n");
+      InitLibFuzzer.DeinitXPCOM();
       exit(1);
     }
   }
 
   if (!testingFunc) {
     fprintf(stderr, "Fuzzing Interface: Error: No testing callback found\n");
+    InitLibFuzzer.DeinitXPCOM();
     exit(1);
   }
 
