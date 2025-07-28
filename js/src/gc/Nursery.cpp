@@ -1396,12 +1396,6 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   stats().beginNurseryCollection();
   gcprobes::MinorGCStart();
 
-  if (stats().bufferAllocStatsEnabled() && runtime()->isMainRuntime()) {
-    stats().maybePrintProfileHeaders();
-    BufferAllocator::printStats(gc, gc->stats().creationTime(), false,
-                                gc->stats().profileFile());
-  }
-
   gc->callNurseryCollectionCallbacks(
       JS::GCNurseryProgress::GC_NURSERY_COLLECTION_START, reason);
 
@@ -1422,6 +1416,12 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   
   
   joinSweepTask();
+
+  if (stats().bufferAllocStatsEnabled() && runtime()->isMainRuntime()) {
+    stats().maybePrintProfileHeaders();
+    BufferAllocator::printStats(gc, gc->stats().creationTime(), false,
+                                gc->stats().profileFile());
+  }
 
   
   
