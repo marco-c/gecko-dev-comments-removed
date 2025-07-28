@@ -622,6 +622,12 @@ struct FrameMetrics {
   
   
   
+  
+  
+  
+  
+  
+  
   CSSRect mLayoutViewport;
 
   
