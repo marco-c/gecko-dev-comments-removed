@@ -5,7 +5,7 @@
 
 
 
-async function $AsyncDisposableStackDisposeAsync() {
+async function AsyncDisposableStackDisposeAsyncImpl() {
   
   var asyncDisposableStack = this;
 
@@ -50,5 +50,9 @@ async function $AsyncDisposableStackDisposeAsync() {
   
   
   return undefined;
+}
+
+function $AsyncDisposableStackDisposeAsync() {
+  return callFunction(AsyncDisposableStackDisposeAsyncImpl, this);
 }
 SetCanonicalName($AsyncDisposableStackDisposeAsync, "disposeAsync");
