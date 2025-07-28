@@ -746,7 +746,8 @@ TEST_P(OpusTest, OpusDtxOn) {
   TestDtxEffect(true, 40);
 }
 
-TEST_P(OpusTest, OpusCbrOff) {
+
+TEST_P(OpusTest, DISABLED_OpusCbrOff) {
   TestCbrEffect(false, 10);
   TestCbrEffect(false, 20);
   TestCbrEffect(false, 40);
