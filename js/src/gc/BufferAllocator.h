@@ -196,8 +196,8 @@ struct SmallBufferRegion;
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinSmallAllocShift = 4;    
-  static constexpr size_t MinMediumAllocShift = 8;   
-  static constexpr size_t MaxMediumAllocShift = 19;  
+  static constexpr size_t MinMediumAllocShift = 12;  
+  static constexpr size_t MinLargeAllocShift = 20;   
 
   
   
@@ -205,7 +205,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static_assert(MinSizeClassShift >= MinSmallAllocShift);
 
   static constexpr size_t AllocSizeClasses =
-      MaxMediumAllocShift - MinSizeClassShift + 1;
+      MinLargeAllocShift - MinSizeClassShift;
 
   
   class AutoLock : public LockGuard<Mutex> {
