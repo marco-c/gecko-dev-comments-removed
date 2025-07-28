@@ -6139,9 +6139,14 @@ struct CachedIntrinsicSizes {
         
         if (!isAuto ||
             (aGridItem.mState[aAxis] & ItemState::eContentBasedAutoMinSize)) {
-          s += nsLayoutUtils::MinSizeContributionForAxis(
+          nscoord contrib = nsLayoutUtils::MinSizeContributionForAxis(
               containerWM.PhysicalAxis(aAxis), rc, child,
               IntrinsicISizeType::MinISize, aPercentageBasis);
+          if (contrib == NS_UNCONSTRAINEDSIZE) {
+            s = contrib;
+          } else {
+            s += contrib;
+          }
 
           if ((axisInItemWM == LogicalAxis::Inline &&
                nsIFrame::ToExtremumLength(*styleMinSize)) ||
