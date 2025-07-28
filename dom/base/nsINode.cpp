@@ -1706,8 +1706,7 @@ static nsresult UpdateGlobalsInSubtree(nsIContent* aRoot) {
 }
 
 void nsINode::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                bool aNotify, ErrorResult& aRv,
-                                nsINode* aOldParent) {
+                                bool aNotify, ErrorResult& aRv) {
   if (!IsContainerNode()) {
     aRv.ThrowHierarchyRequestError(
         "Parent is not a Document, DocumentFragment, or Element node.");
@@ -1742,7 +1741,6 @@ void nsINode::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
   
   bool wasInNACScope = ShouldUseNACScope(aKid);
   BindContext context(*this);
-  context.SetIsMove(aOldParent != nullptr);
   aRv = aKid->BindToTree(context, *this);
   if (!aRv.Failed() && !wasInNACScope && ShouldUseNACScope(aKid)) {
     MOZ_ASSERT(ShouldUseNACScope(this),
@@ -1765,13 +1763,9 @@ void nsINode::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
     
     
     if (parent && !aBeforeThis) {
-      ContentAppendInfo info;
-      info.mOldParent = aOldParent;
-      MutationObservers::NotifyContentAppended(parent, aKid, info);
+      MutationObservers::NotifyContentAppended(parent, aKid, {});
     } else {
-      ContentInsertInfo info;
-      info.mOldParent = aOldParent;
-      MutationObservers::NotifyContentInserted(this, aKid, info);
+      MutationObservers::NotifyContentInserted(this, aKid, {});
     }
 
     if (nsContentUtils::WantMutationEvents(
@@ -2375,94 +2369,8 @@ void nsINode::ReplaceChildren(nsINode* aNode, ErrorResult& aRv) {
   }
 }
 
-static bool IsDoctypeOrHasFollowingDoctype(nsINode* aNode) {
-  for (; aNode; aNode = aNode->GetNextSibling()) {
-    if (aNode->NodeType() == nsINode::DOCUMENT_TYPE_NODE) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-void nsINode::MoveBefore(nsINode& aNode, nsINode* aChild, ErrorResult& aRv) {
-  nsINode* referenceChild = aChild;
-  if (referenceChild == &aNode) {
-    referenceChild = aNode.GetNextSibling();
-  }
-
-  
-  
-  
-  nsINode& newParent = *this;
-  GetRootNodeOptions options;
-  options.mComposed = true;
-  if (newParent.GetRootNode(options) != aNode.GetRootNode(options)) {
-    aRv.ThrowHierarchyRequestError("Different root node.");
-    return;
-  }
-
-  
-  if (nsContentUtils::ContentIsHostIncludingDescendantOf(&newParent, &aNode)) {
-    aRv.ThrowHierarchyRequestError("Node is an ancestor of the new parent.");
-    return;
-  }
-
-  
-  if (referenceChild && referenceChild->GetParentNode() != &newParent) {
-    aRv.ThrowNotFoundError("Wrong reference child.");
-    return;
-  }
-
-  
-  if (!aNode.IsElement() && !aNode.IsCharacterData()) {
-    aRv.ThrowHierarchyRequestError("Wrong type of node.");
-    return;
-  }
-
-  
-  if (aNode.IsText() && newParent.IsDocument()) {
-    aRv.ThrowHierarchyRequestError(
-        "Can't move a text node to be a child of a document.");
-    return;
-  }
-
-  
-  if (newParent.IsDocument() && aNode.IsElement() &&
-      (newParent.AsDocument()->GetRootElement() ||
-       IsDoctypeOrHasFollowingDoctype(referenceChild))) {
-    aRv.ThrowHierarchyRequestError(
-        "Can't move an element to be a child of the document.");
-    return;
-  }
-
-  
-  nsINode* oldParent = aNode.GetParentNode();
-
-  
-  MOZ_ASSERT(oldParent);
-
-  
-  
-  
-  
-  mozAutoDocUpdate updateBatch(GetComposedDoc(), true);
-  RefPtr<Document> doc = OwnerDoc();
-  bool oldMutationFlag = doc->FireMutationEvents();
-  doc->SetFireMutationEvents(false);
-  oldParent->RemoveChildNode(aNode.AsContent(), true, nullptr, &newParent);
-
-  
-  InsertChildBefore(aNode.AsContent(),
-                    referenceChild ? referenceChild->AsContent() : nullptr,
-                    true, aRv, oldParent);
-  doc->SetFireMutationEvents(oldMutationFlag);
-}
-
 void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                              const BatchRemovalState* aState,
-                              nsINode* aNewParent) {
+                              const BatchRemovalState* aState) {
   
   
   
@@ -2475,10 +2383,7 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify,
   mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
 
   if (aNotify) {
-    ContentRemoveInfo info;
-    info.mBatchRemovalState = aState;
-    info.mNewParent = aNewParent;
-    MutationObservers::NotifyContentWillBeRemoved(this, aKid, info);
+    MutationObservers::NotifyContentWillBeRemoved(this, aKid, {aState});
   }
 
   
@@ -2487,7 +2392,7 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify,
 
   
   InvalidateChildNodes();
-  aKid->UnbindFromTree(aNewParent);
+  aKid->UnbindFromTree();
 }
 
 

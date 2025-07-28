@@ -209,13 +209,6 @@ void ShadowRoot::InvalidateStyleAndLayoutOnSubtree(Element* aElement) {
     return;
   }
 
-  if (!aElement->IsInComposedDoc()) {
-    
-    
-    
-    return;
-  }
-
   PresShell* presShell = doc->GetPresShell();
   if (!presShell) {
     return;

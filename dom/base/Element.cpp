@@ -1537,7 +1537,7 @@ void Element::UnattachShadow() {
     
     [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
       if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-        fm->ContentRemoved(doc, shadowRoot, {});
+        fm->ContentRemoved(doc, shadowRoot);
       }
     }();
   }
@@ -2201,8 +2201,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
   MOZ_ASSERT(!!GetParent() == aParent.IsContent());
 
-  MOZ_ASSERT_IF(!aContext.IsMove(),
-                !HasAnyOfFlags(Element::kAllServoDescendantBits));
+  MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
 
   
   if (aParent.IsInUncomposedDoc() || aParent.IsInShadowTree()) {
@@ -2237,9 +2236,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     if (CustomElementData* data = GetCustomElementData()) {
       if (data->mState == CustomElementData::State::eCustom) {
         nsContentUtils::EnqueueLifecycleCallback(
-            aContext.IsMove() ? ElementCallbackType::eConnectedMove
-                              : ElementCallbackType::eConnected,
-            this, {});
+            ElementCallbackType::eConnected, this, {});
       } else {
         
         nsContentUtils::TryToUpgradeElement(this);
@@ -2358,7 +2355,7 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   if (HasPointerLock()) {
     PointerLockManager::Unlock("Element::UnbindFromTree");
   }
-  if (!aContext.IsMove() && mState.HasState(ElementState::FULLSCREEN)) {
+  if (mState.HasState(ElementState::FULLSCREEN)) {
     
     
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
@@ -2369,9 +2366,8 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   }
 
   MOZ_ASSERT_IF(HasServoData(), document);
-  MOZ_ASSERT_IF(HasServoData() && !aContext.IsMove(),
-                IsInNativeAnonymousSubtree());
-  if (document && !aContext.IsMove()) {
+  MOZ_ASSERT_IF(HasServoData(), IsInNativeAnonymousSubtree());
+  if (document) {
     ClearServoData(document);
   }
 
@@ -2386,10 +2382,8 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   
   
   
-  if (!aContext.IsMove()) {
-    if (auto* data = GetAnimationData()) {
-      data->ClearAllAnimationCollections();
-    }
+  if (auto* data = GetAnimationData()) {
+    data->ClearAllAnimationCollections();
   }
 
   if (nullParent) {
@@ -2446,10 +2440,8 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     
     if (CustomElementData* data = GetCustomElementData()) {
       if (data->mState == CustomElementData::State::eCustom) {
-        if (!aContext.IsMove()) {
-          nsContentUtils::EnqueueLifecycleCallback(
-              ElementCallbackType::eDisconnected, this, {});
-        }
+        nsContentUtils::EnqueueLifecycleCallback(
+            ElementCallbackType::eDisconnected, this, {});
       } else {
         
         
@@ -2487,9 +2479,8 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     shadowRoot->Unbind();
   }
 
-  MOZ_ASSERT_IF(!aContext.IsMove(), !HasAnyOfFlags(kAllServoDescendantBits));
-  MOZ_ASSERT_IF(!aContext.IsMove(),
-                !document || document->GetServoRestyleRoot() != this);
+  MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits));
+  MOZ_ASSERT(!document || document->GetServoRestyleRoot() != this);
 }
 
 UniquePtr<SMILAttr> Element::GetAnimatedAttr(int32_t aNamespaceID,

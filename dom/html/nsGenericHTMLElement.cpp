@@ -414,8 +414,8 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
 
   
   
-  if (!aContext.IsMove() && HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) &&
-      IsInComposedDoc() && OwnerDoc()->GetBrowsingContext()) {
+  if (HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) && IsInComposedDoc() &&
+      OwnerDoc()->GetBrowsingContext()) {
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "nsGenericHTMLElement::ResetNonce::Runnable",
         [self = RefPtr<nsGenericHTMLElement>(this)]() {
@@ -443,7 +443,7 @@ void nsGenericHTMLElement::UnbindFromTree(UnbindContext& aContext) {
     
     
     
-    if (!aContext.IsMove() && GetPopoverData()) {
+    if (GetPopoverData()) {
       HidePopoverWithoutRunningScript();
     }
     RegUnRegAccessKey(false);

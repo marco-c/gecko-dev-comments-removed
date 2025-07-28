@@ -5,13 +5,11 @@
 
 
 #include "mozilla/dom/HTMLDialogElement.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLDialogElementBinding.h"
-#include "mozilla/dom/UnbindContext.h"
 
 #include "nsIDOMEventListener.h"
 #include "nsContentUtils.h"
@@ -330,7 +328,7 @@ nsresult HTMLDialogElement::BindToTree(BindContext& aContext,
 
   
   
-  if (Open() && !aContext.IsMove()) {
+  if (Open()) {
     
     SetupSteps();
   }
@@ -339,20 +337,18 @@ nsresult HTMLDialogElement::BindToTree(BindContext& aContext,
 }
 
 void HTMLDialogElement::UnbindFromTree(UnbindContext& aContext) {
-  if (!aContext.IsMove()) {
+  
+  
+  if (Open()) {
     
-    
-    if (Open()) {
-      
-      CleanupSteps();
-    }
-
-    
-    
-    RemoveFromTopLayerIfNeeded();
-
-    
+    CleanupSteps();
   }
+
+  
+  
+  RemoveFromTopLayerIfNeeded();
+
+  
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 }

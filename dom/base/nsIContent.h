@@ -114,7 +114,7 @@ class nsIContent : public nsINode {
 
 
   virtual void UnbindFromTree(UnbindContext&) = 0;
-  void UnbindFromTree(nsINode* aNewParent = nullptr);
+  void UnbindFromTree();
 
   enum {
     
