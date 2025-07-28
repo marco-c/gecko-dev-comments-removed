@@ -707,15 +707,11 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     nsCOMPtr<nsIURI> referrer =
         mWorkerRef->Private()->GetReferrerInfo()->GetOriginalReferrer();
 
-    RefPtr<JS::loader::VisitedURLSet> visitedSet =
-        ModuleLoadRequest::NewVisitedSetForTopLevelImport(
-            uri, JS::ModuleType::JavaScript);
-
     
     request = new ModuleLoadRequest(
         uri, JS::ModuleType::JavaScript, referrerPolicy, fetchOptions,
         SRIMetadata(), referrer, loadContext, ModuleLoadRequest::Kind::TopLevel,
-        moduleLoader, visitedSet, nullptr);
+        moduleLoader, nullptr);
   }
 
   

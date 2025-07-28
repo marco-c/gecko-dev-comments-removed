@@ -24,15 +24,6 @@ class ModuleLoaderBase;
 
 
 
-class VisitedURLSet : public nsTHashtable<ModuleMapKey> {
-  NS_INLINE_DECL_REFCOUNTING(VisitedURLSet)
-
- private:
-  ~VisitedURLSet() = default;
-};
-
-
-
 
 
 class ModuleLoadRequest final : public ScriptLoadRequest {
@@ -68,11 +59,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     LoadContextBase* aContext, Kind aKind,
-                    ModuleLoaderBase* aLoader, VisitedURLSet* aVisitedSet,
-                    ModuleLoadRequest* aRootModule);
-
-  static VisitedURLSet* NewVisitedSetForTopLevelImport(
-      nsIURI* aURI, JS::ModuleType aModuleType);
+                    ModuleLoaderBase* aLoader, ModuleLoadRequest* aRootModule);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
 
@@ -171,10 +158,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   
   
   size_t mAwaitingImports = 0;
-
-  
-  
-  RefPtr<VisitedURLSet> mVisitedSet;
 
   
   RefPtr<LoadedScript> mDynamicReferencingScript;
