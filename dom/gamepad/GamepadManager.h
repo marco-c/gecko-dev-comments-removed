@@ -49,9 +49,8 @@ class GamepadManager final : public nsIObserver {
   
   void AddGamepad(GamepadHandle aHandle, const nsAString& aID,
                   GamepadMappingType aMapping, GamepadHand aHand,
-                  uint32_t aDisplayID, uint32_t aNumButtons, uint32_t aNumAxes,
-                  uint32_t aNumHaptics, uint32_t aNumLightIndicator,
-                  uint32_t aNumTouchEvents);
+                  uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics,
+                  uint32_t aNumLightIndicator, uint32_t aNumTouchEvents);
 
   
   void RemoveGamepad(GamepadHandle aHandle);

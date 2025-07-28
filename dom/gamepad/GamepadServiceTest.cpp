@@ -124,8 +124,7 @@ already_AddRefed<Promise> GamepadServiceTest::AddGamepad(
   
   GamepadHandle gamepadHandle{1, GamepadHandleKind::GamepadPlatformManager};
 
-  
-  GamepadAdded a(nsString(aID), aMapping, aHand, 0, aNumButtons, aNumAxes,
+  GamepadAdded a(nsString(aID), aMapping, aHand, aNumButtons, aNumAxes,
                  aNumHaptics, aNumLightIndicator, aNumTouchEvents);
   GamepadChangeEventBody body(a);
   GamepadChangeEvent e(gamepadHandle, body);
