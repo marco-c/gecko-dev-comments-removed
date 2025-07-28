@@ -263,8 +263,6 @@ class DecoderTemplate : public DOMEventTargetHelper {
   
   
   RefPtr<ThreadSafeWorkerRef> mWorkerRef;
-
-  AsyncDurationTracker mAsyncDurationTracker;
 };
 
 }  
