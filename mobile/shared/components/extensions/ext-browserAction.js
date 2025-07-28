@@ -129,6 +129,15 @@ this.browserAction = class extends ExtensionAPIPersistent {
         },
       };
     },
+    onUserSettingsChanged() {
+      
+      
+      
+      return {
+        unregister: () => {},
+        convert() {},
+      };
+    },
   };
 
   getAPI(context) {
@@ -148,6 +157,15 @@ this.browserAction = class extends ExtensionAPIPersistent {
           module: "browserAction",
           event: "onClicked",
           inputHandling: true,
+          extensionApi: this,
+        }).api(),
+
+        onUserSettingsChanged: new EventManager({
+          context,
+          
+          
+          module: "browserAction",
+          event: "onUserSettingsChanged",
           extensionApi: this,
         }).api(),
 

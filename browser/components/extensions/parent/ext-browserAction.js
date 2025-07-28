@@ -994,6 +994,37 @@ this.browserAction = class extends ExtensionAPIPersistent {
         },
       };
     },
+    onUserSettingsChanged({ fire }) {
+      let listener = {
+        onWidgetRemoved: (widgetId, oldArea) => {
+          if (widgetId !== this.id) {
+            return;
+          }
+
+          if (oldArea === CustomizableUI.AREA_ADDONS) {
+            fire.async({ isOnToolbar: true });
+          }
+        },
+        onWidgetAdded: (widgetId, newArea) => {
+          if (widgetId !== this.id) {
+            return;
+          }
+
+          if (newArea === CustomizableUI.AREA_ADDONS) {
+            fire.async({ isOnToolbar: false });
+          }
+        },
+      };
+      CustomizableUI.addListener(listener);
+      return {
+        unregister: () => {
+          CustomizableUI.removeListener(listener);
+        },
+        convert(newFire) {
+          fire = newFire;
+        },
+      };
+    },
   };
 
   getAPI(context) {
@@ -1012,6 +1043,15 @@ this.browserAction = class extends ExtensionAPIPersistent {
           module: "browserAction",
           event: "onClicked",
           inputHandling: true,
+          extensionApi: this,
+        }).api(),
+
+        onUserSettingsChanged: new EventManager({
+          context,
+          
+          
+          module: "browserAction",
+          event: "onUserSettingsChanged",
           extensionApi: this,
         }).api(),
 
