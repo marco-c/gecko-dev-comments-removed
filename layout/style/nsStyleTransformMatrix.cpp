@@ -83,12 +83,6 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
               bboxInAppUnits.height};
     }
     case StyleTransformBox::BorderBox:
-      if (!StaticPrefs::layout_css_transform_box_content_stroke_enabled()) {
-        
-        
-        return computeViewBox();
-      }
-      [[fallthrough]];
     case StyleTransformBox::StrokeBox: {
       
       
