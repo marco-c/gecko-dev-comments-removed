@@ -163,6 +163,14 @@ bool DelazificationContext::init(
     return false;
   }
 
+  
+  
+  auto indexesGuard = stencils->ensureRelativeIndexes(&fc_);
+  if (!indexesGuard) {
+    return false;
+  }
+  indexesGuard_.emplace(std::move(indexesGuard));
+
   switch (options.eagerDelazificationStrategy()) {
     case JS::DelazificationOption::OnDemandOnly:
       

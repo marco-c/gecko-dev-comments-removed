@@ -1474,6 +1474,22 @@ struct ScriptIndexes {
   ScriptIndex indexInEnclosing;
 };
 
+struct RelativeIndexes {
+  
+  ExclusiveData<size_t> consumers_;
+
+  
+  
+  
+  
+  Vector<ScriptIndexes, 0, js::SystemAllocPolicy> indexes_;
+
+  RelativeIndexes() : consumers_(mutexid::StencilCache), indexes_() {}
+
+  ScriptIndexes& operator[](size_t i) { return indexes_[i]; }
+  const ScriptIndexes& operator[](size_t i) const { return indexes_[i]; }
+};
+
 
 
 
@@ -1536,12 +1552,39 @@ struct InitialStencilAndDelazifications {
   
   
   
-  Vector<ScriptIndexes, 0, js::SystemAllocPolicy> relativeIndexes_;
+  RelativeIndexes relativeIndexes_;
 
   mutable mozilla::Atomic<uintptr_t> refCount_{0};
 
+ public:
+  class RelativeIndexesGuard {
+    friend struct InitialStencilAndDelazifications;
+    RefPtr<InitialStencilAndDelazifications> stencils_;
+
+    explicit RelativeIndexesGuard(InitialStencilAndDelazifications* stencils)
+        : stencils_(stencils)
+    {}
+   public:
+    RelativeIndexesGuard() : stencils_(nullptr) {}
+
+    RelativeIndexesGuard(RelativeIndexesGuard&& src)
+      : stencils_(std::move(src.stencils_))
+    {
+    }
+
+    ~RelativeIndexesGuard() {
+      if (stencils_) {
+        stencils_->decrementRelativeIndexesConsumer();
+        stencils_ = nullptr;
+      }
+    };
+    explicit operator bool() { return bool(stencils_); }
+  };
+
+ private:
   
-  void initRelativeIndexes();
+  void decrementRelativeIndexesConsumer();
+  friend class RelativeIndexesGuard;
 
  public:
   InitialStencilAndDelazifications() = default;
@@ -1552,6 +1595,8 @@ struct InitialStencilAndDelazifications {
 
   [[nodiscard]] bool init(FrontendContext* fc,
                           const CompilationStencil* initial);
+
+  [[nodiscard]] RelativeIndexesGuard ensureRelativeIndexes(FrontendContext* fc);
 
   
   
