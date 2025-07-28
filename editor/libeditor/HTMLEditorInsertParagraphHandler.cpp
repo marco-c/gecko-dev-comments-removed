@@ -415,11 +415,10 @@ HTMLEditor::AutoInsertParagraphHandler::Run() {
       (mDefaultParagraphSeparator != ParagraphSeparator::br &&
        editableBlockElement->IsAnyOfHTMLElements(nsGkAtoms::p,
                                                  nsGkAtoms::div))) {
-    const EditorDOMPoint pointToSplit =
-        GetBetterSplitPointToAvoidToContinueLink(
-            insertedPaddingBRElement ? EditorDOMPoint(insertedPaddingBRElement)
-                                     : pointToInsert,
-            *editableBlockElement);
+    const EditorDOMPoint pointToSplit = GetBetterPointToSplitParagraph(
+        *editableBlockElement, insertedPaddingBRElement
+                                   ? EditorDOMPoint(insertedPaddingBRElement)
+                                   : pointToInsert);
     if (ShouldCreateNewParagraph(*editableBlockElement, pointToSplit)) {
       MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
       
@@ -1349,10 +1348,10 @@ bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
 }
 
 
-EditorDOMPoint HTMLEditor::AutoInsertParagraphHandler::
-    GetBetterSplitPointToAvoidToContinueLink(
-        const EditorDOMPoint& aCandidatePointToSplit,
-        const Element& aElementToSplit) {
+EditorDOMPoint
+HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
+    const Element& aBlockElementToSplit,
+    const EditorDOMPoint& aCandidatePointToSplit) {
   EditorDOMPoint pointToSplit = [&]() MOZ_NEVER_INLINE_DEBUG {
     
     
@@ -1363,7 +1362,7 @@ EditorDOMPoint HTMLEditor::AutoInsertParagraphHandler::
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
               WSRunScanner::Scan::All, aCandidatePointToSplit,
               BlockInlineCheck::UseComputedDisplayOutsideStyle,
-              &aElementToSplit);
+              &aBlockElementToSplit);
       if (prevVisibleThing.GetContent() &&
           
           prevVisibleThing.GetContent() !=
@@ -1398,14 +1397,15 @@ EditorDOMPoint HTMLEditor::AutoInsertParagraphHandler::
     WSScanResult nextVisibleThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
             WSRunScanner::Scan::All, aCandidatePointToSplit,
-            BlockInlineCheck::UseComputedDisplayOutsideStyle, &aElementToSplit);
+            BlockInlineCheck::UseComputedDisplayOutsideStyle,
+            &aBlockElementToSplit);
     if (nextVisibleThing.ReachedInvisibleBRElement()) {
       nextVisibleThing =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
               WSRunScanner::Scan::All,
               nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
               BlockInlineCheck::UseComputedDisplayOutsideStyle,
-              &aElementToSplit);
+              &aBlockElementToSplit);
     }
     if (nextVisibleThing.GetContent() &&
         
@@ -1444,7 +1444,7 @@ EditorDOMPoint HTMLEditor::AutoInsertParagraphHandler::
   
   
   for (const nsIContent* container = pointToSplit.ContainerAs<nsIContent>();
-       container && container != &aElementToSplit &&
+       container && container != &aBlockElementToSplit &&
        !HTMLEditUtils::IsSplittableNode(*container);
        container = container->GetParent()) {
     pointToSplit = pointToSplit.ParentPoint();
@@ -2009,184 +2009,99 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
         std::move(pointToPutCaret));
   }
 
+  const EditorDOMPoint pointToSplit =
+      GetBetterPointToSplitParagraph(aListItemElement, aPointToSplit);
+  MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
   
   
   
-  Result<EditorDOMPoint, nsresult> preparationResult =
-      WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
-          mHTMLEditor, aPointToSplit, aListItemElement);
-  if (preparationResult.isErr()) {
+  Result<SplitNodeResult, nsresult> splitListItemResultOrError =
+      SplitParagraphWithTransaction(aListItemElement, pointToSplit);
+  if (MOZ_UNLIKELY(splitListItemResultOrError.isErr())) {
     NS_WARNING(
-        "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() failed");
-    return Err(preparationResult.unwrapErr());
+        "AutoInsertParagraphHandler::SplitParagraphWithTransaction() failed");
+    return splitListItemResultOrError.propagateErr();
   }
-  EditorDOMPoint pointToSplit = preparationResult.unwrap();
-  MOZ_ASSERT(pointToSplit.IsInContentNode());
-
-  
-  Result<SplitNodeResult, nsresult> splitListItemResult =
-      mHTMLEditor.SplitNodeDeepWithTransaction(
-          aListItemElement, pointToSplit,
-          SplitAtEdges::eAllowToCreateEmptyContainer);
-  if (MOZ_UNLIKELY(splitListItemResult.isErr())) {
-    NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
-    return splitListItemResult.propagateErr();
-  }
-  SplitNodeResult unwrappedSplitListItemElement = splitListItemResult.unwrap();
-  unwrappedSplitListItemElement.IgnoreCaretPointSuggestion();
+  SplitNodeResult splitListItemElement = splitListItemResultOrError.unwrap();
+  EditorDOMPoint pointToPutCaret = splitListItemElement.UnwrapCaretPoint();
   if (MOZ_UNLIKELY(!aListItemElement.GetParent())) {
     NS_WARNING("Somebody disconnected the target listitem from the parent");
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   
-  if (MOZ_UNLIKELY(!unwrappedSplitListItemElement.DidSplit()) ||
-      NS_WARN_IF(!unwrappedSplitListItemElement.GetNewContentAs<Element>()) ||
-      NS_WARN_IF(
-          !unwrappedSplitListItemElement.GetOriginalContentAs<Element>())) {
-    NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() didn't split");
+  if (MOZ_UNLIKELY(!splitListItemElement.DidSplit()) ||
+      NS_WARN_IF(!splitListItemElement.GetNewContentAs<Element>()) ||
+      NS_WARN_IF(!splitListItemElement.GetOriginalContentAs<Element>())) {
+    NS_WARNING(
+        "AutoInsertParagraphHandler::SplitParagraphWithTransaction() didn't "
+        "split the listitem");
     return Err(NS_ERROR_FAILURE);
   }
-
   
   
   
   auto& leftListItemElement =
-      *unwrappedSplitListItemElement.GetPreviousContentAs<Element>();
+      *splitListItemElement.GetPreviousContentAs<Element>();
   auto& rightListItemElement =
-      *unwrappedSplitListItemElement.GetNextContentAs<Element>();
+      *splitListItemElement.GetNextContentAs<Element>();
 
   
   
   
   if (HTMLEditUtils::IsEmptyNode(
           leftListItemElement,
-          {EmptyCheckOption::TreatSingleBRElementAsVisible,
-           EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-    Result<CreateElementResult, nsresult> insertPaddingBRElementResult =
-        mHTMLEditor.InsertPaddingBRElementForEmptyLastLineWithTransaction(
-            EditorDOMPoint(&leftListItemElement, 0u));
-    if (MOZ_UNLIKELY(insertPaddingBRElementResult.isErr())) {
-      NS_WARNING(
-          "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
-          ") failed");
-      return insertPaddingBRElementResult.propagateErr();
-    }
-    
-    
-    insertPaddingBRElementResult.inspect().IgnoreCaretPointSuggestion();
+          {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
     return InsertParagraphResult(&rightListItemElement,
-                                 EditorDOMPoint(&rightListItemElement, 0u));
+                                 std::move(pointToPutCaret));
   }
 
-  if (HTMLEditUtils::IsEmptyNode(
+  if (aListItemElement.IsHTMLElement(nsGkAtoms::li) ||
+      !HTMLEditUtils::IsEmptyNode(
           rightListItemElement,
           {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-    
-    
-    
-    if (aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt)) {
-      nsStaticAtom& nextDefinitionListItemTagName =
-          aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
-                                                        : *nsGkAtoms::dt;
-      
-      
-      Result<CreateElementResult, nsresult> createNewListItemElementResult =
-          mHTMLEditor.CreateAndInsertElement(
-              WithTransaction::Yes,
-              MOZ_KnownLive(nextDefinitionListItemTagName),
-              EditorDOMPoint::After(rightListItemElement));
-      if (MOZ_UNLIKELY(createNewListItemElementResult.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
-        return createNewListItemElementResult.propagateErr();
-      }
-      CreateElementResult unwrappedCreateNewListItemElementResult =
-          createNewListItemElementResult.unwrap();
-      unwrappedCreateNewListItemElementResult.IgnoreCaretPointSuggestion();
-      RefPtr<Element> newListItemElement =
-          unwrappedCreateNewListItemElementResult.UnwrapNewNode();
-      MOZ_ASSERT(newListItemElement);
-      
-      
-      nsresult rv = mHTMLEditor.DeleteNodeWithTransaction(
-          MOZ_KnownLive(rightListItemElement));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-        return Err(rv);
-      }
-      EditorDOMPoint pointToPutCaret(newListItemElement, 0u);
-      return InsertParagraphResult(std::move(newListItemElement),
-                                   std::move(pointToPutCaret));
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
-        mHTMLEditor.CopyLastEditableChildStylesWithTransaction(
-            MOZ_KnownLive(leftListItemElement),
-            MOZ_KnownLive(rightListItemElement), mEditingHost);
-    if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-      NS_WARNING(
-          "HTMLEditor::CopyLastEditableChildStylesWithTransaction() failed");
-      return pointToPutCaretOrError.propagateErr();
-    }
     return InsertParagraphResult(&rightListItemElement,
-                                 pointToPutCaretOrError.unwrap());
+                                 std::move(pointToPutCaret));
   }
 
   
   
   
-  const WSScanResult forwardScanFromStartOfListItemResult =
-      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes,
-          EditorRawDOMPoint(&rightListItemElement, 0u),
-          BlockInlineCheck::UseComputedDisplayStyle);
-  if (MOZ_UNLIKELY(forwardScanFromStartOfListItemResult.Failed())) {
-    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
-    return Err(NS_ERROR_FAILURE);
+  
+  
+  MOZ_ASSERT(
+      aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt));
+  nsStaticAtom& nextDefinitionListItemTagName =
+      aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
+                                                    : *nsGkAtoms::dt;
+  
+  
+  Result<CreateElementResult, nsresult> createNewListItemElementResult =
+      mHTMLEditor.CreateAndInsertElement(
+          WithTransaction::Yes, MOZ_KnownLive(nextDefinitionListItemTagName),
+          EditorDOMPoint::After(rightListItemElement),
+          HTMLEditor::InsertNewBRElement);
+  if (MOZ_UNLIKELY(createNewListItemElementResult.isErr())) {
+    NS_WARNING(
+        "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
+    return createNewListItemElementResult.propagateErr();
   }
-  if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
-      forwardScanFromStartOfListItemResult.ReachedBRElement() ||
-      forwardScanFromStartOfListItemResult.ReachedHRElement()) {
-    auto atFoundElement = forwardScanFromStartOfListItemResult
-                              .PointAtReachedContent<EditorDOMPoint>();
-    if (NS_WARN_IF(!atFoundElement.IsSetAndValid())) {
-      return Err(NS_ERROR_FAILURE);
-    }
-    return InsertParagraphResult(&rightListItemElement,
-                                 std::move(atFoundElement));
+  CreateElementResult unwrappedCreateNewListItemElementResult =
+      createNewListItemElementResult.unwrap();
+  unwrappedCreateNewListItemElementResult.IgnoreCaretPointSuggestion();
+  RefPtr<Element> newListItemElement =
+      unwrappedCreateNewListItemElementResult.UnwrapNewNode();
+  MOZ_ASSERT(newListItemElement);
+  
+  
+  nsresult rv = mHTMLEditor.DeleteNodeWithTransaction(
+      MOZ_KnownLive(rightListItemElement));
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    return Err(rv);
   }
-
-  
-  
-  if (forwardScanFromStartOfListItemResult.ReachedBlockBoundary() ||
-      
-      
-      
-      
-      
-      forwardScanFromStartOfListItemResult.ReachedInlineEditingHostBoundary()) {
-    return InsertParagraphResult(
-        &rightListItemElement,
-        HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
-            forwardScanFromStartOfListItemResult.GetContent()
-                ? *forwardScanFromStartOfListItemResult.GetContent()
-                : rightListItemElement));
-  }
-
-  
-  
-  
-  return InsertParagraphResult(&rightListItemElement,
-                               forwardScanFromStartOfListItemResult
-                                   .PointAtReachedContent<EditorDOMPoint>());
+  return InsertParagraphResult(std::move(newListItemElement),
+                               EditorDOMPoint(newListItemElement, 0u));
 }
 
 }  
