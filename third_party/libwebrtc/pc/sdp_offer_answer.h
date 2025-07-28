@@ -39,6 +39,7 @@
 #include "api/uma_metrics.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "media/base/media_channel.h"
+#include "media/base/media_engine.h"
 #include "media/base/stream_params.h"
 #include "p2p/base/port_allocator.h"
 #include "pc/codec_vendor.h"
@@ -183,6 +184,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   }
 
   SdpMungingType sdp_munging_type() const { return last_sdp_munging_type_; }
+  void DisableSdpMungingChecksForTesting() {
+    disable_sdp_munging_checks_ = true;
+  }
 
  private:
   class RemoteDescriptionOperation;
@@ -559,6 +563,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   AddIceCandidateResult AddIceCandidateInternal(
       const IceCandidateInterface* candidate);
 
+  void ReportInitialSdpMunging(bool had_local_description, SdpType type);
+
   
   
   MediaEngineInterface* media_engine() const;
@@ -681,6 +687,11 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   std::optional<bool> initial_offerer_ RTC_GUARDED_BY(signaling_thread());
+
+  
+  
+  
+  bool disable_sdp_munging_checks_ = false;
 
   WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
       RTC_GUARDED_BY(signaling_thread());
