@@ -9346,10 +9346,11 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       onClick: onClick,
       draggable: true,
       "data-is-sponsored-link": !!link.sponsored_tile_id,
-      title: title,
       onFocus: this.props.onFocus
     }, isAddButton && {
       ...addButtonTitlel10n
+    }, !isAddButton && {
+      title
     }), shortcutsRefresh && link.isPinned && external_React_default().createElement("div", {
       className: "icon icon-pin-small"
     }), external_React_default().createElement("div", {
