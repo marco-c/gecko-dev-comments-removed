@@ -488,6 +488,15 @@ class AsyncGeneratorObject : public AbstractGeneratorObject {
     return queue()->getDenseInitializedLength() == 0;
   }
 
+#ifdef DEBUG
+  bool isQueueLengthOne() const {
+    if (isSingleQueue()) {
+      return !isSingleQueueEmpty();
+    }
+    return queue()->getDenseInitializedLength() == 1;
+  }
+#endif
+
   
   
   

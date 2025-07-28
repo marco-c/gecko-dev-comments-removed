@@ -385,7 +385,17 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
   
 
-  return AsyncGeneratorDrainQueue(cx, generator);
+  if (!generator->isQueueEmpty()) {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
@@ -903,15 +913,29 @@ bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
+  bool wasQueueEmpty = generator->isQueueEmpty();
+
   if (!AsyncGeneratorEnqueue(cx, generator, CompletionKind::Normal,
                              completionValue, resultPromise)) {
     return false;
   }
-  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn() &&
-      !generator->isAwaitingReturn()) {
+  if (generator->isCompleted() && wasQueueEmpty) {
+    MOZ_ASSERT(generator->isQueueLengthOne());
     if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
+  } else if (generator->isCompleted()) {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else if (generator->isSuspendedStart() || generator->isSuspendedYield()) {
+    MOZ_ASSERT(generator->isQueueLengthOne());
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else {
+    MOZ_ASSERT(generator->isExecuting() || generator->isAwaitingYieldReturn() ||
+               generator->isAwaitingReturn());
   }
 
   
@@ -958,6 +982,8 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  bool wasQueueEmpty = generator->isQueueEmpty();
+
   
   
   
@@ -976,11 +1002,24 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
-  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn() &&
-      !generator->isAwaitingReturn()) {
+  if (generator->isSuspendedStart() ||
+      (generator->isCompleted() && wasQueueEmpty)) {
+    MOZ_ASSERT(generator->isQueueLengthOne());
     if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
+  } else if (generator->isCompleted()) {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else if (generator->isSuspendedYield()) {
+    MOZ_ASSERT(generator->isQueueLengthOne());
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else {
+    MOZ_ASSERT(generator->isExecuting() || generator->isAwaitingYieldReturn() ||
+               generator->isAwaitingReturn());
   }
 
   
@@ -1041,15 +1080,30 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
+  bool wasQueueEmpty = generator->isQueueEmpty();
+
   if (!AsyncGeneratorEnqueue(cx, generator, CompletionKind::Throw,
                              completionValue, resultPromise)) {
     return false;
   }
-  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn() &&
-      !generator->isAwaitingReturn()) {
+  if (generator->isSuspendedStart() ||
+      (generator->isCompleted() && wasQueueEmpty)) {
+    MOZ_ASSERT(generator->isQueueLengthOne());
     if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
+  } else if (generator->isCompleted()) {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else if (generator->isSuspendedYield()) {
+    MOZ_ASSERT(generator->isQueueLengthOne());
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
+      return false;
+    }
+  } else {
+    MOZ_ASSERT(generator->isExecuting() || generator->isAwaitingYieldReturn() ||
+               generator->isAwaitingReturn());
   }
 
   
