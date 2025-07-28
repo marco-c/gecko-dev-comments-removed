@@ -192,7 +192,10 @@ class Device final : public DOMEventTargetHelper {
   IMPL_EVENT_HANDLER(uncapturederror)
 };
 
-MOZ_CAN_RUN_SCRIPT void reportCompilationMessagesToConsole(
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
+void reportCompilationMessagesToConsole(
     const RefPtr<ShaderModule>& aShaderModule,
     const nsTArray<WebGPUCompilationMessage>& aMessages);
 
