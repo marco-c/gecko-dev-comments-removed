@@ -36,13 +36,14 @@ class RequestOrUTF8String;
 class Response;
 
 namespace cache {
-
+class BoundStorageKeyChild;
 class CacheChild;
 class CacheStorageChild;
 class CacheQueryParams;
 class CacheReadStream;
 class CacheRequest;
 class CacheResponse;
+class CacheStorageChild;
 class HeadersEntry;
 
 
@@ -61,6 +62,12 @@ class CacheChildListener : public Listener {
 class CacheStorageChildListener : public Listener {
  public:
   virtual void OnActorDestroy(CacheStorageChild* aActor) = 0;
+};
+
+
+class BoundStorageKeyChildListener : public Listener {
+ public:
+   virtual void OnActorDestroy(BoundStorageKeyChild* aActor) = 0;
 };
 
 class TypeUtils {
