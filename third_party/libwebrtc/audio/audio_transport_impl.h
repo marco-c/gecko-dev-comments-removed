@@ -107,7 +107,7 @@ class AudioTransportImpl : public AudioTransport {
 
   
 
-  rtc::scoped_refptr<AudioMixer> mixer_;
+  scoped_refptr<AudioMixer> mixer_;
   AudioFrame mixed_frame_;
   
   PushResampler<int16_t> render_resampler_;

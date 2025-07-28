@@ -52,7 +52,7 @@ class AudioIngress : public AudioMixer::Source {
   AudioIngress(const Environment& env,
                RtpRtcpInterface* rtp_rtcp,
                ReceiveStatistics* receive_statistics,
-               rtc::scoped_refptr<AudioDecoderFactory> decoder_factory);
+               scoped_refptr<AudioDecoderFactory> decoder_factory);
   ~AudioIngress() override;
 
   
@@ -70,8 +70,8 @@ class AudioIngress : public AudioMixer::Source {
   void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
 
   
-  void ReceivedRTPPacket(rtc::ArrayView<const uint8_t> rtp_packet);
-  void ReceivedRTCPPacket(rtc::ArrayView<const uint8_t> rtcp_packet);
+  void ReceivedRTPPacket(ArrayView<const uint8_t> rtp_packet);
+  void ReceivedRTCPPacket(ArrayView<const uint8_t> rtcp_packet);
 
   
   
