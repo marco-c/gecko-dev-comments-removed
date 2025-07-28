@@ -450,6 +450,16 @@ bool DtlsTransportInternalImpl::SetupDtls() {
     downward_ = downward_ptr;
   }
 
+  
+  
+  if (dtls_in_stun_) {
+    
+    
+    
+    const int kDtlsMtu = 800;
+    dtls_->SetMTU(kDtlsMtu);
+  }
+
   dtls_->SetIdentity(local_certificate_->identity()->Clone());
   dtls_->SetMaxProtocolVersion(ssl_max_version_);
   dtls_->SetServerRole(*dtls_role_);
