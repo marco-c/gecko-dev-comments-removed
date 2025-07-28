@@ -27,12 +27,17 @@ const MODIFIED_PREFS = Object.freeze([
   kPrefCustomizationState,
   kPrefCustomizationHorizontalTabstrip,
   kPrefCustomizationNavBarWhenVerticalTabs,
+  "sidebar.new-sidebar.has-used",
 ]);
 
-
-for (const pref of MODIFIED_PREFS) {
-  Services.prefs.clearUserPref(pref);
+function clearModifiedPrefs() {
+  for (const pref of MODIFIED_PREFS) {
+    Services.prefs.clearUserPref(pref);
+  }
 }
+
+
+clearModifiedPrefs();
 
 
 const extData = {
@@ -107,6 +112,7 @@ registerCleanupFunction(async () => {
   await resetSidebarToInitialState();
   
   Services.fog.testResetFOG();
+  clearModifiedPrefs();
 });
 
 function waitForBrowserWindowActive(win) {
@@ -194,4 +200,90 @@ function cleanUpExtraTabs() {
   while (window.gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(window.gBrowser.tabs.at(-1));
   }
+}
+
+async function showHistorySidebar({ waitForPendingHistory = true } = {}) {
+  if (SidebarController.currentID !== "viewHistorySidebar") {
+    await SidebarController.show("viewHistorySidebar");
+  }
+  const { contentDocument, contentWindow } = SidebarController.browser;
+  const component = contentDocument.querySelector("sidebar-history");
+  if (waitForPendingHistory) {
+    await BrowserTestUtils.waitForCondition(
+      () => !component.controller.isHistoryPending
+    );
+  }
+  await component.updateComplete;
+  return { component, contentWindow };
+}
+
+
+
+
+
+
+async function populateHistory() {
+  const URLs = [
+    "http://mochi.test:8888/browser/",
+    "https://www.example.com/",
+    "https://example.net/",
+    "https://example.org/",
+  ];
+
+  const today = new Date();
+  const yesterday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - 1
+  );
+  
+  
+  const lastMonth = new Date(today.getFullYear(), today.getMonth(), -2);
+
+  const dates = [today, yesterday, lastMonth];
+  await PlacesUtils.history.clear();
+  const pageInfos = URLs.flatMap((url, i) =>
+    dates.map(date => ({
+      url,
+      title: `Example Domain ${i}`,
+      visits: [{ date }],
+    }))
+  );
+  await PlacesUtils.history.insertMany(pageInfos);
+  return { URLs, dates };
+}
+
+
+
+
+
+
+
+
+async function focusWithKeyboard(element, keyCode, contentWindow) {
+  await SimpleTest.promiseFocus(contentWindow);
+  const focused = BrowserTestUtils.waitForEvent(
+    element,
+    "focus",
+    contentWindow
+  );
+  EventUtils.synthesizeKey(keyCode, {}, contentWindow);
+  await focused;
+}
+
+
+
+
+
+
+
+async function waitForPageLoadTask(pageLoadTask, expectedUrl) {
+  const promiseTabOpen = BrowserTestUtils.waitForEvent(
+    window.gBrowser.tabContainer,
+    "TabOpen"
+  );
+  await pageLoadTask();
+  await promiseTabOpen;
+  await BrowserTestUtils.browserLoaded(window.gBrowser, false, expectedUrl);
+  info(`Navigated to ${expectedUrl}.`);
 }
