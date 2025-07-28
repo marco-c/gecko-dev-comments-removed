@@ -71,20 +71,23 @@ enum class ModuleType : uint32_t {
 
 
 
-using ModuleResolveHook = JSObject* (*)(JSContext* cx,
-                                        Handle<Value> referencingPrivate,
-                                        Handle<JSObject*> moduleRequest);
+
+
+using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSObject*> referrer,
+                                Handle<Value> referencingPrivate,
+                                Handle<JSObject*> moduleRequest,
+                                Handle<Value> statePrivate,
+                                Handle<JSObject*> promise);
 
 
 
 
-extern JS_PUBLIC_API ModuleResolveHook GetModuleResolveHook(JSRuntime* rt);
+extern JS_PUBLIC_API ModuleLoadHook GetModuleLoadHook(JSRuntime* rt);
 
 
 
 
-extern JS_PUBLIC_API void SetModuleResolveHook(JSRuntime* rt,
-                                               ModuleResolveHook func);
+extern JS_PUBLIC_API void SetModuleLoadHook(JSRuntime* rt, ModuleLoadHook func);
 
 using LoadModuleResolvedCallback =
     std::function<bool(JSContext* cx, JS::Handle<JS::Value> hostDefined)>;
@@ -116,45 +119,6 @@ extern JS_PUBLIC_API ModuleMetadataHook GetModuleMetadataHook(JSRuntime* rt);
 
 extern JS_PUBLIC_API void SetModuleMetadataHook(JSRuntime* rt,
                                                 ModuleMetadataHook func);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-using ModuleDynamicImportHook = bool (*)(JSContext* cx,
-                                         Handle<Value> referencingPrivate,
-                                         Handle<JSObject*> moduleRequest,
-                                         Handle<JSObject*> promise);
-
-
-
-
-extern JS_PUBLIC_API ModuleDynamicImportHook
-GetModuleDynamicImportHook(JSRuntime* rt);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void SetModuleDynamicImportHook(
-    JSRuntime* rt, ModuleDynamicImportHook func);
 
 
 

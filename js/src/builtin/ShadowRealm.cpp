@@ -412,15 +412,9 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
 
   Handle<PromiseObject*> promise = promiseObject.as<PromiseObject>();
 
-  JS::ModuleDynamicImportHook importHook =
-      cx->runtime()->moduleDynamicImportHook;
-
-  if (!importHook) {
-    
-    
-    JS_ReportErrorASCII(
-        cx,
-        "Dynamic module import is disabled or not supported in this context");
+  JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
+  if (!moduleLoadHook) {
+    JS_ReportErrorASCII(cx, "Module load hook not set");
     if (!RejectPromiseWithPendingError(cx, promise)) {
       return nullptr;
     }
@@ -479,13 +473,8 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
     
     
     Rooted<Value> referencingPrivate(cx, script->sourceObject()->getPrivate());
-    if (!importHook(cx, referencingPrivate, moduleRequest, promise)) {
-      
-      
-      if (!cx->isExceptionPending() ||
-          !RejectPromiseWithPendingError(cx, promise)) {
-        return nullptr;
-      }
+    if (!moduleLoadHook(cx, nullptr, referencingPrivate, moduleRequest,
+                        UndefinedHandleValue, promise)) {
       return promise;
     }
 

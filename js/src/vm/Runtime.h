@@ -1093,16 +1093,11 @@ struct JSRuntime {
   js::MainThreadData<uint32_t> moduleAsyncEvaluatingPostOrder;
 
   
-  js::MainThreadData<JS::ModuleResolveHook> moduleResolveHook;
+  js::MainThreadData<JS::ModuleLoadHook> moduleLoadHook;
 
   
   
   js::MainThreadData<JS::ModuleMetadataHook> moduleMetadataHook;
-
-  
-  
-  
-  mozilla::Atomic<JS::ModuleDynamicImportHook> moduleDynamicImportHook;
 
   
   js::MainThreadData<JS::ScriptPrivateReferenceHook> scriptPrivateAddRefHook;
