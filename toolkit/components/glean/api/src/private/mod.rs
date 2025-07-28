@@ -154,6 +154,44 @@ pub(crate) mod profiler_utils {
     #[allow(deprecated)] 
     pub(crate) fn local_now_with_offset() -> chrono::DateTime<chrono::FixedOffset> {
         use chrono::{DateTime, Local};
+        #[cfg(target_os = "windows")]
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            use chrono::{FixedOffset, Utc};
+
+            
+            let tm = time::now();
+            
+            
+            let offset = tm.tm_utcoff;
+            if let None = FixedOffset::east_opt(offset) {
+                log::warn!(
+                    "Detected invalid timezone offset: {}. Using UTC fallback.",
+                    offset
+                );
+                let now: DateTime<Utc> = Utc::now();
+                let utc_offset = FixedOffset::east(0);
+                return now.with_timezone(&utc_offset);
+            }
+        }
+
         let now: DateTime<Local> = Local::now();
         now.with_timezone(now.offset())
     }

@@ -858,8 +858,7 @@ impl DateTime<Utc> {
     }
 
     
-    pub const UNIX_EPOCH: Self =
-        expect(NaiveDate::from_ymd_opt(1970, 1, 1), "").and_time(NaiveTime::MIN).and_utc();
+    pub const UNIX_EPOCH: Self = Self { datetime: NaiveDateTime::UNIX_EPOCH, offset: Utc };
 }
 
 impl Default for DateTime<Utc> {
