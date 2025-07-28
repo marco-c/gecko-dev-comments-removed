@@ -372,8 +372,6 @@ class UniqueStacks final : public mozilla::FailureLatch {
     return *mUniqueStrings;
   }
 
-  [[nodiscard]] nsCString& TracedValues() { return mTracedValues; }
-
   
   
   [[nodiscard]] nsAutoCString FunctionNameOrAddress(void* aPC);
@@ -385,7 +383,6 @@ class UniqueStacks final : public mozilla::FailureLatch {
   void StreamStack(const StackKey& aStack);
 
   mozilla::UniquePtr<UniqueJSONStrings> mUniqueStrings;
-  nsCString mTracedValues;
 
   ProfilerCodeAddressService* mCodeAddressService = nullptr;
 
