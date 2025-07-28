@@ -90,6 +90,11 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   Maybe<gfx::IntSize> DetectVideoSizeChange();
   void NotifyVideoResizing();
 
+#ifdef MOZ_WMF_CDM
+  
+  void NotifyDisableHWDRM();
+#endif
+
   
   
   static inline uint64_t sMediaEngineIdx = 0;

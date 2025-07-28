@@ -103,6 +103,14 @@ using MFMediaEngineError = MF_MEDIA_ENGINE_ERR;
 
 inline constexpr HRESULT DRM_E_TEE_INVALID_HWDRM_STATE =
     static_cast<HRESULT>(0x8004CD12);
+
+
+
+
+
+
+inline constexpr HRESULT MSPR_E_NO_DECRYPTOR_AVAILABLE =
+    static_cast<HRESULT>(0x8004B895);
 #endif
 
 const char* MediaEventTypeToStr(MediaEventType aType);
