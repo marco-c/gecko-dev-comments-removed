@@ -221,7 +221,11 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
   RemoteAccessible* newProxy;
   if ((newProxy = GetAccessible(aAccData.ID()))) {
     
-    MOZ_ASSERT(!newProxy->RemoteParent());
+    if (newProxy->RemoteParent()) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Attempt to move RemoteAccessible which still has a parent!");
+      return nullptr;
+    }
     return newProxy;
   }
 
