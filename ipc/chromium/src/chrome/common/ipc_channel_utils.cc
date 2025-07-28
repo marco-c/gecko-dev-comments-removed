@@ -30,7 +30,7 @@ void AddIPCProfilerMarker(const Message& aMessage, int32_t aOtherPid,
     }
 
     
-    [[maybe_unused]] const mozilla::TimeStamp now = mozilla::TimeStamp::Now();
+    const mozilla::TimeStamp now = mozilla::TimeStamp::Now();
     bool isThreadBeingProfiled =
         profiler_thread_is_being_profiled_for_markers();
     PROFILER_MARKER(
