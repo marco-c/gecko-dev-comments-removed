@@ -151,6 +151,17 @@ typedef struct {
 #ifdef ENABLE_OSCE
     
     opus_int osce_method;
+
+#ifdef ENABLE_OSCE_BWE
+    
+    opus_int enable_osce_bwe;
+
+    
+    opus_int osce_extended_mode;
+
+    
+    opus_int prev_osce_extended_mode;
+#endif
 #endif
 } silk_DecControlStruct;
 

@@ -173,6 +173,8 @@ extern "C" {
 #define OPUS_GET_DRED_DURATION_REQUEST 4051
 #define OPUS_SET_DNN_BLOB_REQUEST 4052
 
+#define OPUS_SET_OSCE_BWE_REQUEST 4054
+#define OPUS_GET_OSCE_BWE_REQUEST 4055
 
 
 #define OPUS_HAVE_OPUS_PROJECTION_H
@@ -798,6 +800,19 @@ extern "C" {
 
 
 #define OPUS_GET_PITCH(x) OPUS_GET_PITCH_REQUEST, __opus_check_int_ptr(x)
+
+
+
+
+
+
+ #define OPUS_SET_OSCE_BWE(x) OPUS_SET_OSCE_BWE_REQUEST, __opus_check_int(x)
+
+
+
+
+ #define OPUS_GET_OSCE_BWE(x) OPUS_GET_OSCE_BWE_REQUEST, __opus_check_int_ptr(x)
+
 
 
 
