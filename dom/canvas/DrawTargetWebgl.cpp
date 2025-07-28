@@ -3403,37 +3403,35 @@ already_AddRefed<SourceSurface> SharedContextWebgl::DownscaleBlurInput(
     }
   }
 
-  IntSize scaleFactor(1, 1);
+  
+  
+  
+  IntRect sourceRect = aSourceRect;
+  RefPtr<SourceSurface> fullSurface = aSurface;
   for (int i = 0; i < aIters; ++i) {
-    if ((2 << i) <= aSourceRect.width) {
-      scaleFactor.width *= 2;
+    IntSize halfSize = (sourceRect.Size() + IntSize(1, 1)) / 2;
+    RefPtr<DrawTarget> halfDT = Factory::CreateDrawTarget(
+        BackendType::SKIA, halfSize, aSurface->GetFormat());
+    if (!halfDT) {
+      break;
     }
-    if ((2 << i) <= aSourceRect.height) {
-      scaleFactor.height *= 2;
+    halfDT->DrawSurface(
+        fullSurface, Rect(halfDT->GetRect()), Rect(sourceRect),
+        DrawSurfaceOptions(SamplingFilter::LINEAR),
+        DrawOptions(1.0f, aSurface->GetFormat() == SurfaceFormat::A8
+                              ? CompositionOp::OP_OVER
+                              : CompositionOp::OP_SOURCE));
+    RefPtr<SourceSurface> halfSurface = halfDT->Snapshot();
+    if (!halfSurface) {
+      break;
     }
+    fullSurface = halfSurface;
+    sourceRect = halfSurface->GetRect();
   }
-  IntSize scaleSize =
-      (aSourceRect.Size() + scaleFactor - IntSize(1, 1)) / scaleFactor;
-  if (RefPtr<DataSourceSurface> fullData = aSurface->GetDataSurface()) {
-    
-    
-    
-    if (RefPtr<DataSourceSurface> scaleData = Factory::CreateDataSourceSurface(
-            scaleSize, aSurface->GetFormat(), false)) {
-      DataSourceSurface::ScopedMap srcMap(fullData, DataSourceSurface::READ);
-      DataSourceSurface::ScopedMap dstMap(scaleData, DataSourceSurface::WRITE);
-      if (srcMap.IsMapped() && dstMap.IsMapped()) {
-        if (Scale(srcMap.GetData() + aSourceRect.y * srcMap.GetStride() +
-                      aSourceRect.x * BytesPerPixel(aSurface->GetFormat()),
-                  aSourceRect.width, aSourceRect.height, srcMap.GetStride(),
-                  dstMap.GetData(), scaleSize.width, scaleSize.height,
-                  dstMap.GetStride(), aSurface->GetFormat())) {
-          return scaleData.forget();
-        }
-      }
-    }
+  if (sourceRect.IsEqualEdges(aSourceRect)) {
+    return nullptr;
   }
-  return nullptr;
+  return fullSurface.forget();
 }
 
 

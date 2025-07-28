@@ -16,6 +16,7 @@
 
 namespace skia {
 
+using mozilla::gfx::BytesPerPixel;
 using mozilla::gfx::IsOpaque;
 using mozilla::gfx::SurfaceFormat;
 
@@ -615,7 +616,8 @@ bool BGRAConvolve2D(const unsigned char* sourceData, int sourceByteRowStride,
 
   
   
-  MOZ_ASSERT(outputByteRowStride >= filterX.numValues() * 4);
+  MOZ_ASSERT(outputByteRowStride >=
+             filterX.numValues() * BytesPerPixel(format));
   int numOutputRows = filterY.numValues();
 
   
