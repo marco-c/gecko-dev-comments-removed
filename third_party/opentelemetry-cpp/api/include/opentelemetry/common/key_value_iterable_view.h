@@ -133,13 +133,14 @@ inline static const common::KeyValueIterable &MakeAttributes(
 
 
 
+
 template <
     class ArgumentType,
     nostd::enable_if_t<common::detail::is_key_value_iterable<ArgumentType>::value> * = nullptr>
 inline static common::KeyValueIterableView<ArgumentType> MakeAttributes(
-    const ArgumentType &arg) noexcept
+    const ArgumentType &attributes) noexcept
 {
-  return common::KeyValueIterableView<ArgumentType>(arg);
+  return common::KeyValueIterableView<ArgumentType>(attributes);
 }
 
 }  

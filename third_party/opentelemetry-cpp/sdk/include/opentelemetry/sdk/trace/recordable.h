@@ -138,7 +138,6 @@ public:
   
 
 
-
   virtual void SetTraceFlags(opentelemetry::trace::TraceFlags ) noexcept {}
 
   

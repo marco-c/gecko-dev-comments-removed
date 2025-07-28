@@ -46,10 +46,9 @@ public:
 
 
 
-
-
   bool ForEachKeyValue(
-      nostd::function_ref<bool(nostd::string_view, common::AttributeValue)>) const noexcept override
+      nostd::function_ref<bool(nostd::string_view, common::AttributeValue)> )
+      const noexcept override
   {
     return true;
   }

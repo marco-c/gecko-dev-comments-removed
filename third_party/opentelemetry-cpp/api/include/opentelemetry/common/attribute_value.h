@@ -34,6 +34,7 @@ namespace common
 
 
 
+
 using AttributeValue =
     nostd::variant<bool,
                    int32_t,
@@ -54,8 +55,6 @@ using AttributeValue =
                    
                    
                    nostd::span<const uint64_t>,
-                   
-                   
                    nostd::span<const uint8_t>>;
 
 enum AttributeType
