@@ -492,6 +492,7 @@ var ctrlTab = {
     );
     this.canvasHeight = Math.round(this.canvasWidth * tabPreviews.aspectRatio);
     this.updatePreviews();
+    this._trackMouseOver = false;
     this._selectedIndex = 1;
     gBrowser.warmupTab(this.selected._tab);
 
@@ -546,7 +547,6 @@ var ctrlTab = {
     
     
     
-    this._trackMouseOver = false;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (this.isOpen) {
