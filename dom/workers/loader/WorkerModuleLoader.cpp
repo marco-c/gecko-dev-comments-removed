@@ -41,8 +41,11 @@ nsIURI* WorkerModuleLoader::GetBaseURI() const {
 }
 
 already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
-    nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent,
-    const mozilla::dom::SRIMetadata& aSriMetadata) {
+    nsIURI* aURI, JS::ModuleType aModuleType,
+    JS::loader::ModuleScript* aReferrerScript,
+    const mozilla::dom::SRIMetadata& aSriMetadata,
+    JS::loader::LoadContextBase* aLoadContext,
+    JS::loader::ModuleLoaderBase* aLoader) {
   
   
   
@@ -51,14 +54,16 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
   
   Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
 
+  WorkerLoadContext* context = aLoadContext->AsWorkerContext();
   RefPtr<WorkerLoadContext> loadContext = new WorkerLoadContext(
-      WorkerLoadContext::Kind::StaticImport, clientInfo,
-      aParent->GetWorkerLoadContext()->mScriptLoader,
-      aParent->GetWorkerLoadContext()->mOnlyExistingCachedResourcesAllowed);
+      WorkerLoadContext::Kind::StaticImport, clientInfo, context->mScriptLoader,
+      context->mOnlyExistingCachedResourcesAllowed);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aModuleType, aParent->ReferrerPolicy(), aParent->mFetchOptions,
-      SRIMetadata(), aParent->mURI, loadContext,
-      ModuleLoadRequest::Kind::StaticImport, this, aParent->GetRootModule());
+      aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
+      aReferrerScript->GetFetchOptions(), SRIMetadata(),
+      aReferrerScript->GetURI(), loadContext,
+      ModuleLoadRequest::Kind::StaticImport, this,
+      aLoadContext->mRequest->AsModuleRequest()->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
   request->NoCacheEntryFound();

@@ -117,6 +117,14 @@ extern JS_PUBLIC_API bool LoadRequestedModules(
 
 
 
+extern JS_PUBLIC_API void GetLoadingModuleHostDefinedValue(
+    JSContext* cx, Handle<Value> statePrivate,
+    MutableHandleValue hostDefinedOut);
+
+
+
+
+
 
 
 
