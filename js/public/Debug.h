@@ -22,6 +22,7 @@
 #include "js/GCAPI.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
+#include "js/Value.h"
 
 namespace js {
 class Debugger;
@@ -73,6 +74,220 @@ extern JS_PUBLIC_API bool JS_TracerEndTracing(JSContext* cx);
 namespace JS {
 
 
+enum class TracerStringEncoding {
+  Latin1,
+  TwoByte,
+  UTF8,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ValueSummary {
+  enum Flags : uint8_t {
+    
+    
+    
+    GENERIC_OBJECT_HAS_DENSE_ELEMENTS = 1,
+
+    
+    SYMBOL_NO_DESCRIPTION = 1,
+
+    
+    
+    
+    NUMBER_IS_OUT_OF_LINE_MAGIC = 0xf,
+  };
+
+  
+  
+  
+  static const uint32_t VERSION = 1;
+
+  
+  
+  static const int32_t MIN_INLINE_INT = -1;
+  static const int32_t MAX_INLINE_INT = 13;
+
+  
+  static const size_t SMALL_STRING_LENGTH_LIMIT = 512;
+
+  
+  
+  
+  
+  static const size_t MAX_COLLECTION_VALUES = 16;
+
+  
+  JS::ValueType type : 4;
+
+  
+  uint8_t flags : 4;
+
+  
+  
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ObjectSummary {
+  
+  
+  static const uint8_t GETTER_SETTER_MAGIC = 0xf0;
+
+  enum class Kind : uint8_t {
+    NotImplemented,
+    ArrayLike,
+    MapLike,
+    Function,
+    WrappedPrimitiveObject,
+    GenericObject,
+    ProxyObject,
+    External,
+  };
+
+  Kind kind;
+
+  
+  
+};
+
+
 
 
 
@@ -97,6 +312,13 @@ struct ExecutionTrace {
     Ion = 2,
     Wasm = 3,
   };
+
+  
+  
+  static const uint32_t MAX_ARGUMENTS_TO_RECORD = 4;
+  static const int32_t ZERO_ARGUMENTS_MAGIC = -2;
+  static const int32_t EXPIRED_VALUES_MAGIC = -1;
+  static const int32_t FUNCTION_LEAVE_VALUES = -1;
 
   struct TracedEvent {
     EventKind kind;
@@ -124,6 +346,22 @@ struct ExecutionTrace {
         
         
         uint32_t functionNameId;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        int32_t values;
       } functionEvent;
 
       
@@ -135,6 +373,55 @@ struct ExecutionTrace {
     double time;
   };
 
+  
+  
+  
+  struct ShapeSummary {
+    
+    
+    uint32_t id;
+
+    
+    
+    uint32_t numProperties;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    size_t stringBufferOffset;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  };
+
   struct TracedJSContext {
     mozilla::baseprofiler::BaseProfilerThreadId id;
 
@@ -143,6 +430,14 @@ struct ExecutionTrace {
 
     
     mozilla::HashMap<uint32_t, size_t> atoms;
+
+    
+    
+    
+    mozilla::Vector<uint8_t> valueBuffer;
+
+    
+    mozilla::Vector<ShapeSummary> shapeSummaries;
 
     mozilla::Vector<TracedEvent> events;
   };
@@ -158,6 +453,45 @@ struct ExecutionTrace {
 
 
 extern JS_PUBLIC_API bool JS_TracerSnapshotTrace(JS::ExecutionTrace& trace);
+
+
+
+
+
+
+struct JS_TracerSummaryWriterImpl;
+
+struct JS_PUBLIC_API JS_TracerSummaryWriter {
+  JS_TracerSummaryWriterImpl* impl;
+
+  void writeUint8(uint8_t val);
+  void writeUint16(uint16_t val);
+  void writeUint32(uint32_t val);
+  void writeUint64(uint64_t val);
+
+  void writeInt8(int8_t val);
+  void writeInt16(int16_t val);
+  void writeInt32(int32_t val);
+  void writeInt64(int64_t val);
+
+  void writeUTF8String(const char* val);
+  void writeTwoByteString(const char16_t* val);
+
+  bool writeValue(JSContext* cx, JS::Handle<JS::Value> val);
+};
+
+
+
+
+
+
+using CustomObjectSummaryCallback = bool (*)(JSContext*,
+                                             JS::Handle<JSObject*> obj,
+                                             bool nested,
+                                             JS_TracerSummaryWriter* writer);
+
+extern JS_PUBLIC_API void JS_SetCustomObjectSummaryCallback(
+    JSContext* cx, CustomObjectSummaryCallback callback);
 
 #endif 
 
