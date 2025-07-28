@@ -68,6 +68,9 @@ class DtlsStunPiggybackController {
   void ClearCachedPacketForTesting();
 
   
+  void Flush();
+
+  
   
   std::optional<absl::string_view> GetDataToPiggyback(
       StunMessageType stun_message_type);
@@ -82,6 +85,7 @@ class DtlsStunPiggybackController {
 
  private:
   State state_ RTC_GUARDED_BY(sequence_checker_) = State::TENTATIVE;
+  bool writing_packets_ RTC_GUARDED_BY(sequence_checker_) = false;
   rtc::Buffer pending_packet_ RTC_GUARDED_BY(sequence_checker_);
   absl::AnyInvocable<void(rtc::ArrayView<const uint8_t>)> dtls_data_callback_;
   absl::AnyInvocable<void()> disable_piggybacking_callback_;

@@ -156,8 +156,9 @@ rtc::StreamResult StreamInterfaceChannel::Write(
 bool StreamInterfaceChannel::Flush() {
   RTC_DCHECK_RUN_ON(&callback_sequence_);
 
-  
-  
+  if (dtls_stun_piggyback_controller_) {
+    dtls_stun_piggyback_controller_->Flush();
+  }
   return false;
 }
 

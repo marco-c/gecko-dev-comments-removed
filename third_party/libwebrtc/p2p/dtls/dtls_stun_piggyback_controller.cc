@@ -64,12 +64,25 @@ void DtlsStunPiggybackController::CapturePacket(
 
   
   
+  
+  if (!writing_packets_) {
+    pending_packet_.Clear();
+    writing_packets_ = true;
+  }
+
+  
+  
   pending_packet_.SetData(data);
 }
 
 void DtlsStunPiggybackController::ClearCachedPacketForTesting() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   pending_packet_.Clear();
+}
+
+void DtlsStunPiggybackController::Flush() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  writing_packets_ = false;
 }
 
 std::optional<absl::string_view>
@@ -79,6 +92,9 @@ DtlsStunPiggybackController::GetDataToPiggyback(
   RTC_DCHECK(stun_message_type == STUN_BINDING_REQUEST ||
              stun_message_type == STUN_BINDING_RESPONSE ||
              stun_message_type == STUN_BINDING_INDICATION);
+
+  
+  RTC_DCHECK(!writing_packets_);
 
   if (state_ == State::COMPLETE) {
     return std::nullopt;
