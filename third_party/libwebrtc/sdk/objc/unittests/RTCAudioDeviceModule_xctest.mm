@@ -129,7 +129,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 @interface RTCAudioDeviceModuleTests : XCTestCase {
   bool _testEnabled;
-  rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule;
+  webrtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule;
   MockAudioTransport mock;
 }
 
@@ -263,7 +263,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
   XCTSkipIf(!_testEnabled);
   
   
-  rtc::scoped_refptr<webrtc::AudioDeviceModule> secondAudioDeviceModule =
+  webrtc::scoped_refptr<webrtc::AudioDeviceModule> secondAudioDeviceModule =
       webrtc::CreateAudioDeviceModule();
   XCTAssertNotEqual(secondAudioDeviceModule.get(), nullptr);
   XCTAssertEqual(0, secondAudioDeviceModule->Init());

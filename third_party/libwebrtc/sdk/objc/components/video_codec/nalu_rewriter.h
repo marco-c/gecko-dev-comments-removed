@@ -29,7 +29,7 @@ namespace webrtc {
 
 bool H264CMSampleBufferToAnnexBBuffer(CMSampleBufferRef avcc_sample_buffer,
                                       bool is_keyframe,
-                                      rtc::Buffer* annexb_buffer);
+                                      webrtc::Buffer* annexb_buffer);
 
 
 

@@ -30,7 +30,7 @@ class NetworkMonitorObserver {
   
   
   virtual void OnPathUpdate(
-      std::map<std::string, rtc::AdapterType, rtc::AbslStringViewCmp>
+      std::map<std::string, webrtc::AdapterType, webrtc::AbslStringViewCmp>
           adapter_type_by_name) = 0;
 
  protected:

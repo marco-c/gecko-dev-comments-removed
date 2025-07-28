@@ -237,7 +237,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   SequenceChecker io_thread_checker_;
 
   
-  rtc::Thread* thread_;
+  webrtc::Thread* thread_;
 
   
   
@@ -280,7 +280,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   
   
   
-  rtc::BufferT<int16_t> record_audio_buffer_;
+  webrtc::BufferT<int16_t> record_audio_buffer_;
 
   
   std::atomic<int> recording_;
@@ -320,7 +320,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int64_t last_output_volume_change_time_ RTC_GUARDED_BY(thread_);
 
   
-  rtc::scoped_refptr<PendingTaskSafetyFlag> safety_ =
+  webrtc::scoped_refptr<PendingTaskSafetyFlag> safety_ =
       PendingTaskSafetyFlag::Create();
 
   

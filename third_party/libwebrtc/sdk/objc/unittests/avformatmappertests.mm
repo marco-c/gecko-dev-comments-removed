@@ -22,11 +22,11 @@ static const int kFormatHeight = 987;
 static const int kFramerate = 30;
 
 
-static cricket::VideoFormat expectedFormat =
-    cricket::VideoFormat(kFormatWidth,
-                         kFormatHeight,
-                         cricket::VideoFormat::FpsToInterval(kFramerate),
-                         cricket::FOURCC_NV12);
+static webrtc::VideoFormat expectedFormat =
+    webrtc::VideoFormat(kFormatWidth,
+                        kFormatHeight,
+                        webrtc::VideoFormat::FpsToInterval(kFramerate),
+                        webrtc::FOURCC_NV12);
 
 
 
@@ -118,7 +118,7 @@ TEST(AVFormatMapperTest, SuportedCricketFormatsWithInvalidFramerateFormats) {
   OCMStub([mockDevice formats]).andReturn(@[ mock ]);
 
   
-  std::set<cricket::VideoFormat> result =
+  std::set<webrtc::VideoFormat> result =
       webrtc::GetSupportedVideoFormatsForDevice(mockDevice);
 
   
@@ -135,7 +135,7 @@ TEST(AVFormatMapperTest, SuportedCricketFormatsWithInvalidFormats) {
   OCMStub([mockDevice formats]).andReturn(@[ mock ]);
 
   
-  std::set<cricket::VideoFormat> result =
+  std::set<webrtc::VideoFormat> result =
       webrtc::GetSupportedVideoFormatsForDevice(mockDevice);
 
   
@@ -151,7 +151,7 @@ TEST(AVFormatMapperTest, SuportedCricketFormats) {
   OCMStub([mockDevice formats]).andReturn(@[ mock ]);
 
   
-  std::set<cricket::VideoFormat> result =
+  std::set<webrtc::VideoFormat> result =
       webrtc::GetSupportedVideoFormatsForDevice(mockDevice);
 
   
@@ -202,8 +202,8 @@ TEST(AVFormatMapperTest, SetFormatWhenDeviceCannotLock) {
   [[[mockDevice stub] andReturn:@[]] formats];
 
   
-  bool resultFormat = webrtc::SetFormatForCaptureDevice(
-      mockDevice, nil, cricket::VideoFormat());
+  bool resultFormat =
+      webrtc::SetFormatForCaptureDevice(mockDevice, nil, webrtc::VideoFormat());
 
   
   EXPECT_FALSE(resultFormat);
@@ -222,8 +222,8 @@ TEST(AVFormatMapperTest, SetFormatWhenFormatIsIncompatible) {
   OCMExpect([mockDevice unlockForConfiguration]);
 
   
-  bool resultFormat = webrtc::SetFormatForCaptureDevice(
-      mockDevice, nil, cricket::VideoFormat());
+  bool resultFormat =
+      webrtc::SetFormatForCaptureDevice(mockDevice, nil, webrtc::VideoFormat());
 
   
   EXPECT_FALSE(resultFormat);

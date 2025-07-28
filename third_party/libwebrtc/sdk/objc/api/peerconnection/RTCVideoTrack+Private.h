@@ -19,7 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 
     
     @property(nonatomic, readonly)
-        rtc::scoped_refptr<webrtc::VideoTrackInterface> nativeVideoTrack;
+        webrtc::scoped_refptr<webrtc::VideoTrackInterface>
+            nativeVideoTrack;
 
 
 - (instancetype)initWithFactory:

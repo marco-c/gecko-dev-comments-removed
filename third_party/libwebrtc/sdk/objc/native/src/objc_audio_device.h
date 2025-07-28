@@ -274,7 +274,7 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
   std::unique_ptr<FineAudioBuffer> playout_fine_audio_buffer_;
 
   
-  rtc::BufferT<int16_t> record_audio_buffer_;
+  webrtc::BufferT<int16_t> record_audio_buffer_;
 
   
   ObjCAudioDeviceDelegate* audio_device_delegate_;
