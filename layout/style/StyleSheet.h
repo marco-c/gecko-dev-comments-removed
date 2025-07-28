@@ -137,8 +137,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
-  void FinishAsyncParse(already_AddRefed<StyleStylesheetContents>,
-                        UniquePtr<StyleUseCounters>);
+  void FinishAsyncParse(already_AddRefed<StyleStylesheetContents>);
 
   
   
@@ -157,9 +156,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
     return Inner().mContents;
   }
 
-  const StyleUseCounters* GetStyleUseCounters() const {
-    return Inner().mUseCounters.get();
-  }
+  const StyleUseCounters* UseCounters() const;
+  void PropagateUseCountersTo(dom::Document*) const;
 
   URLExtraData* URLData() const { return Inner().mURLData; }
 

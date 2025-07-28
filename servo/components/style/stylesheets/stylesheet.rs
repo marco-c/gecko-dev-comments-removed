@@ -65,6 +65,8 @@ pub struct StylesheetContents {
     pub source_map_url: RwLock<Option<String>>,
     
     pub source_url: RwLock<Option<String>>,
+    
+    pub use_counters: UseCounters,
 
     
     
@@ -82,10 +84,10 @@ impl StylesheetContents {
         stylesheet_loader: Option<&dyn StylesheetLoader>,
         error_reporter: Option<&dyn ParseErrorReporter>,
         quirks_mode: QuirksMode,
-        use_counters: Option<&UseCounters>,
         allow_import_rules: AllowImportRules,
         sanitization_data: Option<&mut SanitizationData>,
     ) -> Arc<Self> {
+        let use_counters = UseCounters::default();
         let (namespaces, rules, source_map_url, source_url) = Stylesheet::parse_rules(
             css,
             &url_data,
@@ -94,7 +96,7 @@ impl StylesheetContents {
             stylesheet_loader,
             error_reporter,
             quirks_mode,
-            use_counters,
+            Some(&use_counters),
             allow_import_rules,
             sanitization_data,
         );
@@ -107,6 +109,7 @@ impl StylesheetContents {
             quirks_mode,
             source_map_url: RwLock::new(source_map_url),
             source_url: RwLock::new(source_url),
+            use_counters,
             _forbid_construction: (),
         })
     }
@@ -137,6 +140,7 @@ impl StylesheetContents {
             quirks_mode,
             source_map_url: RwLock::new(None),
             source_url: RwLock::new(None),
+            use_counters: UseCounters::default(),
             _forbid_construction: (),
         })
     }
@@ -179,6 +183,7 @@ impl DeepCloneWithLock for StylesheetContents {
             namespaces: RwLock::new((*self.namespaces.read()).clone()),
             source_map_url: RwLock::new((*self.source_map_url.read()).clone()),
             source_url: RwLock::new((*self.source_url.read()).clone()),
+            use_counters: self.use_counters.clone(),
             _forbid_construction: (),
         }
     }
@@ -405,7 +410,7 @@ impl Stylesheet {
         error_reporter: Option<&dyn ParseErrorReporter>,
         allow_import_rules: AllowImportRules,
     ) {
-        
+        let use_counters = UseCounters::default();
         let (namespaces, rules, source_map_url, source_url) = Self::parse_rules(
             css,
             &url_data,
@@ -414,7 +419,7 @@ impl Stylesheet {
             stylesheet_loader,
             error_reporter,
             existing.contents.quirks_mode,
-             None,
+            Some(&use_counters),
             allow_import_rules,
              None,
         );
@@ -427,6 +432,7 @@ impl Stylesheet {
         *existing.contents.rules.write_with(&mut guard) = CssRules(rules);
         *existing.contents.source_map_url.write() = source_map_url;
         *existing.contents.source_url.write() = source_url;
+        existing.contents.use_counters.merge(&use_counters);
     }
 
     fn parse_rules(
@@ -531,7 +537,6 @@ impl Stylesheet {
             stylesheet_loader,
             error_reporter,
             quirks_mode,
-             None,
             allow_import_rules,
              None,
         );

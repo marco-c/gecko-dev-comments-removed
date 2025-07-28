@@ -14,14 +14,14 @@ const BITS_PER_ENTRY: usize = 64;
 const BITS_PER_ENTRY: usize = 32;
 
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone)]
 pub struct CountedUnknownPropertyUseCounters {
     storage:
         [Cell<usize>; (property_counts::COUNTED_UNKNOWN - 1 + BITS_PER_ENTRY) / BITS_PER_ENTRY],
 }
 
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone)]
 pub struct NonCustomPropertyUseCounters {
     storage: [Cell<usize>; (property_counts::NON_CUSTOM - 1 + BITS_PER_ENTRY) / BITS_PER_ENTRY],
 }
@@ -73,7 +73,7 @@ impl NonCustomPropertyUseCounters {
 }
 
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone)]
 pub struct UseCounters {
     
     
