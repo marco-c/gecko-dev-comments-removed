@@ -31,6 +31,7 @@ class FrontendContext;
 
 
 struct DelazifyStrategy {
+  using ScriptStencilRef = frontend::ScriptStencilRef;
   using ScriptIndex = frontend::ScriptIndex;
   using InitialStencilAndDelazifications =
       frontend::InitialStencilAndDelazifications;
@@ -43,7 +44,7 @@ struct DelazifyStrategy {
 
   
   
-  virtual ScriptIndex next() = 0;
+  virtual ScriptStencilRef next() = 0;
 
   
   
@@ -53,8 +54,7 @@ struct DelazifyStrategy {
   
   
   
-  [[nodiscard]] virtual bool insert(ScriptIndex index,
-                                    frontend::ScriptStencilRef& ref) = 0;
+  [[nodiscard]] virtual bool insert(ScriptStencilRef& ref) = 0;
 
   
   
@@ -63,10 +63,7 @@ struct DelazifyStrategy {
   
   
   
-  [[nodiscard]] bool add(FrontendContext* fc,
-                         const InitialStencilAndDelazifications& stencils,
-                         const frontend::CompilationStencil& stencil,
-                         ScriptIndex index);
+  [[nodiscard]] bool add(FrontendContext* fc, ScriptStencilRef& ref);
 };
 
 
@@ -81,13 +78,13 @@ struct DelazifyStrategy {
 
 
 struct DepthFirstDelazification final : public DelazifyStrategy {
-  Vector<ScriptIndex, 0, SystemAllocPolicy> stack;
+  Vector<frontend::ScriptStencilRef, 0, SystemAllocPolicy> stack;
 
   bool done() const override { return stack.empty(); }
-  ScriptIndex next() override { return stack.popCopy(); }
+  ScriptStencilRef next() override { return stack.popCopy(); }
   void clear() override { return stack.clear(); }
-  bool insert(ScriptIndex index, frontend::ScriptStencilRef&) override {
-    return stack.append(index);
+  bool insert(frontend::ScriptStencilRef& ref) override {
+    return stack.append(ref);
   }
 };
 
@@ -97,12 +94,12 @@ struct DepthFirstDelazification final : public DelazifyStrategy {
 
 struct LargeFirstDelazification final : public DelazifyStrategy {
   using SourceSize = uint32_t;
-  Vector<std::pair<SourceSize, ScriptIndex>, 0, SystemAllocPolicy> heap;
+  Vector<std::pair<SourceSize, ScriptStencilRef>, 0, SystemAllocPolicy> heap;
 
   bool done() const override { return heap.empty(); }
-  ScriptIndex next() override;
+  ScriptStencilRef next() override;
   void clear() override { return heap.clear(); }
-  bool insert(ScriptIndex, frontend::ScriptStencilRef&) override;
+  bool insert(frontend::ScriptStencilRef&) override;
 };
 
 class DelazificationContext {
@@ -110,10 +107,6 @@ class DelazificationContext {
 
   
   UniquePtr<DelazifyStrategy> strategy_;
-
-  
-  
-  frontend::CompilationStencilMerger merger_;
 
   RefPtr<frontend::InitialStencilAndDelazifications> stencils_;
 

@@ -79,6 +79,7 @@ struct PreallocatedCompilationGCOutput;
 class ScriptStencilIterable;
 struct InputName;
 class ScopeBindingCache;
+struct ScriptStencilRef;
 
 
 
@@ -89,11 +90,25 @@ struct FakeStencilGlobalScope {};
 
 struct ScopeStencilRef {
   const InitialStencilAndDelazifications& stencils_;
-  const CompilationStencil& context_;
+  
+  
+  const ScriptIndex scriptIndex_;
+  
+  
   const ScopeIndex scopeIndex_;
 
   
   inline const ScopeStencil& scope() const;
+  
+  inline ScriptStencilRef script() const;
+
+  
+  
+  inline const ScriptStencilExtra& functionScriptExtra() const;
+
+  
+  
+  inline const CompilationStencil* context() const;
 };
 
 
@@ -116,8 +131,8 @@ class InputScope {
 
   
   
-  InputScope(const InitialStencilAndDelazifications& stencils, const CompilationStencil& context, ScopeIndex scopeIndex)
-      : scope_(ScopeStencilRef{stencils, context, scopeIndex}) {}
+  InputScope(const InitialStencilAndDelazifications& stencils, ScriptIndex scriptIndex, ScopeIndex scopeIndex)
+      : scope_(ScopeStencilRef{stencils, scriptIndex, scopeIndex}) {}
 
   
   
@@ -189,7 +204,7 @@ class InputScope {
                               break;
                             }
                             new (&it) ScopeStencilRef{ref.stencils_,
-                                                      ref.context_,
+                                                      ref.scriptIndex_,
                                                       scope.enclosing()};
                           }
                           return false;
@@ -221,7 +236,7 @@ class InputScope {
             if (!scope.hasEnclosing()) {
               break;
             }
-            new (&it) ScopeStencilRef{ref.stencils_, ref.context_,
+            new (&it) ScopeStencilRef{ref.stencils_, ref.scriptIndex_,
                                       scope.enclosing()};
           }
           return length;
@@ -260,11 +275,45 @@ class InputScope {
 
 struct ScriptStencilRef {
   const InitialStencilAndDelazifications& stencils_;
-  const CompilationStencil& context_;
+  
   const ScriptIndex scriptIndex_;
 
-  inline const ScriptStencil& scriptData() const;
+  
+  
+  inline ScriptStencilRef topLevelScript() const;
+
+  
+  
+  inline ScriptStencilRef enclosingScript() const;
+
+  
+  
+  
+  
+  
+  inline const ScriptStencil& scriptDataFromEnclosing() const;
+
+  
+  
+  
+  
+  inline const ScriptStencil& scriptDataFromInitial() const;
+
+  
+  inline bool isEagerlyCompiledInInitial() const;
+
+  
   inline const ScriptStencilExtra& scriptExtra() const;
+
+  
+  
+  
+  inline mozilla::Span<TaggedScriptThingIndex> gcThingsFromInitial() const;
+
+  
+  
+  inline const CompilationStencil* context() const;
+  inline const CompilationStencil* maybeContext() const;
 };
 
 
@@ -280,8 +329,8 @@ class InputScript {
   
   
   InputScript(const InitialStencilAndDelazifications& stencils,
-              const CompilationStencil& context, ScriptIndex scriptIndex)
-      : script_(ScriptStencilRef{stencils, context, scriptIndex}) {}
+              ScriptIndex scriptIndex)
+      : script_(ScriptStencilRef{stencils, scriptIndex}) {}
 
   const InputScriptStorage& raw() const { return script_; }
   InputScriptStorage& raw() { return script_; }
@@ -303,7 +352,8 @@ class InputScript {
     return script_.match(
         [](const BaseScript* ptr) { return ptr->function()->flags(); },
         [](const ScriptStencilRef& ref) {
-          return ref.scriptData().functionFlags;
+          auto& scriptData = ref.scriptDataFromEnclosing();
+          return scriptData.functionFlags;
         });
   }
   bool hasPrivateScriptData() const {
@@ -311,7 +361,8 @@ class InputScript {
         [](const BaseScript* ptr) { return ptr->hasPrivateScriptData(); },
         [](const ScriptStencilRef& ref) {
           
-          return ref.scriptData().hasGCThings() ||
+          auto& scriptData = ref.scriptDataFromEnclosing();
+          return scriptData.hasGCThings() ||
                  ref.scriptExtra().useMemberInitializers();
         });
   }
@@ -324,10 +375,12 @@ class InputScript {
           
           
           
-          MOZ_RELEASE_ASSERT(!ref.scriptData().hasSharedData());
-          MOZ_ASSERT(ref.scriptData().hasLazyFunctionEnclosingScopeIndex());
-          auto scopeIndex = ref.scriptData().lazyFunctionEnclosingScopeIndex();
-          return InputScope(ref.stencils_, ref.context_, scopeIndex);
+          auto enclosing = ref.enclosingScript();
+          auto& scriptData = ref.scriptDataFromEnclosing();
+          MOZ_RELEASE_ASSERT(!scriptData.hasSharedData());
+          MOZ_ASSERT(scriptData.hasLazyFunctionEnclosingScopeIndex());
+          auto scopeIndex = scriptData.lazyFunctionEnclosingScopeIndex();
+          return InputScope(ref.stencils_, enclosing.scriptIndex_, scopeIndex);
         });
   }
   MemberInitializers getMemberInitializers() const {
@@ -420,10 +473,10 @@ struct InputName {
 
   InputName(Scope*, JSAtom* ptr) : variant_(ptr) {}
   InputName(const ScopeStencilRef& scope, TaggedParserAtomIndex index)
-      : variant_(NameStencilRef{scope.context_, index}) {}
+      : variant_(NameStencilRef{*scope.context(), index}) {}
   InputName(BaseScript*, JSAtom* ptr) : variant_(ptr) {}
   InputName(const ScriptStencilRef& script, TaggedParserAtomIndex index)
-      : variant_(NameStencilRef{script.context_, index}) {}
+      : variant_(NameStencilRef{*script.context(), index}) {}
 
   
   InputName(const FakeStencilGlobalScope&, TaggedParserAtomIndex)
@@ -772,11 +825,10 @@ struct CompilationInput {
   }
 
   void initFromStencil(const InitialStencilAndDelazifications& stencils,
-                       const CompilationStencil& context,
                        ScriptIndex scriptIndex,
                        ScriptSource* ss) {
     target = CompilationTarget::Delazification;
-    lazy_ = InputScript(stencils, context, scriptIndex);
+    lazy_ = InputScript(stencils, scriptIndex);
     source = ss;
     enclosingScope = lazy_.enclosingScope();
   }
@@ -2275,8 +2327,29 @@ struct CompilationStencilMerger {
   }
 };
 
+ScriptStencilRef ScopeStencilRef::script() const {
+  return ScriptStencilRef{stencils_, scriptIndex_};
+}
+
+const CompilationStencil* ScopeStencilRef::context() const {
+  return script().context();
+}
+
 const ScopeStencil& ScopeStencilRef::scope() const {
-  return context_.scopeData[scopeIndex_];
+  return context()->scopeData[scopeIndex_];
+}
+
+const ScriptStencilExtra& ScopeStencilRef::functionScriptExtra() const {
+  MOZ_ASSERT(scope().isFunction());
+  
+  
+  ScriptIndex functionIndexInContext = scope().functionIndex();
+  
+  ScriptIndex functionIndexInInitial =
+    stencils_.getInitialIndexFor(scriptIndex_, functionIndexInContext);
+  
+  ScriptStencilRef function{stencils_, functionIndexInInitial};
+  return function.scriptExtra();
 }
 
 InputScope InputScope::enclosing() const {
@@ -2286,9 +2359,53 @@ InputScope InputScope::enclosing() const {
         return InputScope(ptr->enclosing());
       },
       [](const ScopeStencilRef& ref) {
-        if (ref.scope().hasEnclosing()) {
-          return InputScope(ref.stencils_, ref.context_, ref.scope().enclosing());
+        auto& scope = ref.scope();
+        if (scope.hasEnclosing()) {
+#ifdef DEBUG
+          
+          
+          if (ref.scriptIndex_ != 0) {
+            auto enclosingScript = ref.script().enclosingScript();
+            bool same = ref.context() == enclosingScript.context();
+            MOZ_ASSERT(same == ref.script().isEagerlyCompiledInInitial());
+          }
+#endif
+
+          
+          ScriptIndex scriptIndex = ref.scriptIndex_;
+
+          
+          
+          
+          
+          
+          
+          
+          if (ref.script().isEagerlyCompiledInInitial()) {
+            auto gcThingsFromContext = ref.script().gcThingsFromInitial();
+            if (gcThingsFromContext[0].toScope() == ref.scopeIndex_) {
+              scriptIndex = ref.script().enclosingScript().scriptIndex_;
+            }
+          }
+
+          return InputScope(ref.stencils_, scriptIndex, scope.enclosing());
         }
+
+        
+        
+        
+        
+        
+        
+        
+        if (!ref.script().isEagerlyCompiledInInitial()) {
+          auto enclosing = ref.script().enclosingScript();
+          auto& scriptData = ref.script().scriptDataFromEnclosing();
+          MOZ_ASSERT(scriptData.hasLazyFunctionEnclosingScopeIndex());
+          return InputScope(ref.stencils_, enclosing.scriptIndex_,
+                            scriptData.lazyFunctionEnclosingScopeIndex());
+        }
+
         
         
         
@@ -2308,8 +2425,16 @@ FunctionFlags InputScope::functionFlags() const {
       },
       [](const ScopeStencilRef& ref) {
         MOZ_ASSERT(ref.scope().isFunction());
-        ScriptIndex scriptIndex = ref.scope().functionIndex();
-        ScriptStencil& data = ref.context_.scriptData[scriptIndex];
+        ScriptIndex functionIndexInContext = ref.scope().functionIndex();
+        
+        
+        
+        
+        
+        
+        
+        ScriptStencil& data =
+            ref.context()->scriptData[functionIndexInContext];
         return data.functionFlags;
       },
       [](const FakeStencilGlobalScope&) -> FunctionFlags {
@@ -2324,10 +2449,7 @@ ImmutableScriptFlags InputScope::immutableFlags() const {
         return fun->baseScript()->immutableFlags();
       },
       [](const ScopeStencilRef& ref) {
-        MOZ_ASSERT(ref.scope().isFunction());
-        ScriptIndex scriptIndex = ref.scope().functionIndex();
-        ScriptStencilExtra& extra = ref.context_.scriptExtra[scriptIndex];
-        return extra.immutableFlags;
+        return ref.functionScriptExtra().immutableFlags;
       },
       [](const FakeStencilGlobalScope&) -> ImmutableScriptFlags {
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("No immutableFlags on global.");
@@ -2341,10 +2463,7 @@ MemberInitializers InputScope::getMemberInitializers() const {
         return fun->baseScript()->getMemberInitializers();
       },
       [](const ScopeStencilRef& ref) {
-        MOZ_ASSERT(ref.scope().isFunction());
-        ScriptIndex scriptIndex = ref.scope().functionIndex();
-        ScriptStencilExtra& extra = ref.context_.scriptExtra[scriptIndex];
-        return extra.memberInitializers();
+        return ref.functionScriptExtra().memberInitializers();
       },
       [](const FakeStencilGlobalScope&) -> MemberInitializers {
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
@@ -2352,12 +2471,64 @@ MemberInitializers InputScope::getMemberInitializers() const {
       });
 }
 
-const ScriptStencil& ScriptStencilRef::scriptData() const {
-  return context_.scriptData[scriptIndex_];
+ScriptStencilRef ScriptStencilRef::topLevelScript() const {
+  return ScriptStencilRef{stencils_, ScriptIndex(0)};
+}
+
+ScriptStencilRef ScriptStencilRef::enclosingScript() const {
+  auto indexes = stencils_.getRelativeIndexesAt(scriptIndex_);
+  ScriptStencilRef enclosing{stencils_, indexes.enclosingIndexInInitial};
+  return enclosing;
+}
+
+const ScriptStencil& ScriptStencilRef::scriptDataFromInitial() const {
+  return stencils_.getInitial()->scriptData[scriptIndex_];
+}
+
+bool ScriptStencilRef::isEagerlyCompiledInInitial() const {
+  return scriptDataFromInitial().hasSharedData();
+}
+
+const ScriptStencil& ScriptStencilRef::scriptDataFromEnclosing() const {
+  
+  if (scriptIndex_ == 0) {
+    return stencils_.getInitial()->scriptData[0];
+  }
+  
+  auto indexes = stencils_.getRelativeIndexesAt(scriptIndex_);
+  ScriptStencilRef enclosing{stencils_, indexes.enclosingIndexInInitial};
+  return enclosing.context()->scriptData[indexes.indexInEnclosing];
+}
+
+mozilla::Span<TaggedScriptThingIndex>
+ScriptStencilRef::gcThingsFromInitial() const {
+  return scriptDataFromInitial().gcthings(*stencils_.getInitial());
 }
 
 const ScriptStencilExtra& ScriptStencilRef::scriptExtra() const {
-  return context_.scriptExtra[scriptIndex_];
+  return stencils_.getInitial()->scriptExtra[scriptIndex_];
+}
+
+const CompilationStencil* ScriptStencilRef::context() const {
+  
+  
+  
+  if (isEagerlyCompiledInInitial()) {
+    return stencils_.getInitial();
+  }
+  const auto* delazification = stencils_.getDelazificationAt(scriptIndex_);
+  MOZ_ASSERT(delazification);
+  return delazification;
+}
+
+const CompilationStencil* ScriptStencilRef::maybeContext() const {
+  
+  
+  
+  if (isEagerlyCompiledInInitial()) {
+    return stencils_.getInitial();
+  }
+  return stencils_.getDelazificationAt(scriptIndex_);
 }
 
 }  
