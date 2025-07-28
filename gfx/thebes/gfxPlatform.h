@@ -967,6 +967,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void InitGPUProcessPrefs();
   virtual void InitPlatformGPUProcessPrefs() {}
   virtual void InitPlatformHardwareVideoConfig() {}
+  virtual void InitPlatformHardwarDRMConfig() {}
 
   
   static void ReportTelemetry();
