@@ -548,7 +548,7 @@ class CycleCollectedJSRuntime {
   
   
   
-  void PrepareWaitingZonesForGC();
+  void PrepareWaitingZonesForGC(JS::GCReason aReason);
 
   
   
