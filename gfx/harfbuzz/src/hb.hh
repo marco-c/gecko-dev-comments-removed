@@ -314,6 +314,10 @@
 #endif
 #endif
 
+#ifndef HB_HOT
+#define HB_HOT __attribute__((hot))
+#endif
+
 
 
 

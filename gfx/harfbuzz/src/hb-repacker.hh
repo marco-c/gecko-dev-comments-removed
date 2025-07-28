@@ -266,7 +266,7 @@ bool _resolve_shared_overflow(const hb_vector_t<graph::overflow_record_t>& overf
     result = sorted_graph.duplicate(&parents, r.child);
   }
 
-  if (result == (unsigned) -1) return result;
+  if (result == (unsigned) -1) return false;
 
   if (parents.get_population() > 1) {
     
@@ -283,7 +283,7 @@ bool _resolve_shared_overflow(const hb_vector_t<graph::overflow_record_t>& overf
     sorted_graph.vertices_[result].give_max_priority();
   }
 
-  return result;
+  return true;
 }
 
 static inline
@@ -302,8 +302,11 @@ bool _process_overflows (const hb_vector_t<graph::overflow_record_t>& overflows,
     {
       
       
-      if (!_resolve_shared_overflow(overflows, i, sorted_graph)) continue;
-      return true;
+      if (_resolve_shared_overflow(overflows, i, sorted_graph))
+        return true;
+
+      
+      
     }
 
     if (child.is_leaf () && !priority_bumped_parents.has (r.parent))

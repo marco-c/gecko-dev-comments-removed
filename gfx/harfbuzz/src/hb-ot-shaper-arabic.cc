@@ -654,7 +654,7 @@ postprocess_glyphs_arabic (const hb_ot_shape_plan_t *plan,
 
 
 
-static hb_codepoint_t
+static const hb_codepoint_t
 modifier_combining_marks[] =
 {
   0x0654u, 

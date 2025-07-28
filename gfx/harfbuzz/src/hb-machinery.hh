@@ -67,12 +67,14 @@ static inline Type& StructAtOffsetUnaligned(void *P, unsigned int offset)
 
 
 
-template<typename Type, typename TObject>
-static inline const Type& StructAfter(const TObject &X)
-{ return StructAtOffset<Type>(&X, X.get_size()); }
-template<typename Type, typename TObject>
-static inline Type& StructAfter(TObject &X)
-{ return StructAtOffset<Type>(&X, X.get_size()); }
+
+
+template <typename Type, typename TObject, typename ...Ts>
+static inline const Type& StructAfter(const TObject &X, Ts... args)
+{ return StructAtOffset<Type>(&X, X.get_size(args...)); }
+template <typename Type, typename TObject, typename ...Ts>
+static inline Type& StructAfter(TObject &X, Ts... args)
+{ return StructAtOffset<Type>(&X, X.get_size(args...)); }
 
 
 
@@ -130,7 +132,6 @@ static inline Type& StructAfter(TObject &X)
 #define DEFINE_SIZE_ARRAY_SIZED(size, array) \
   unsigned int get_size () const { return (size - (array).min_size + (array).get_size ()); } \
   DEFINE_SIZE_ARRAY(size, array)
-
 
 
 

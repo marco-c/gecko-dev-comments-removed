@@ -42,7 +42,8 @@ IGNORED_SYMBOLS += [
     "_ZN3std3sys3pal4unix4args3imp15ARGV_INIT_ARRAY.*",  
     "_ZN3std3sys4args4unix3imp15ARGV_INIT_ARRAY.*",  
     "_ZN17compiler_builtins.*",  
-    '_hb_harfruzz_.*_rs',
+    ".*__rustc.*",  
+    '_hb_harfrust_.*_rs',
 ]
 
 IGNORED_SYMBOLS = "|".join(IGNORED_SYMBOLS)

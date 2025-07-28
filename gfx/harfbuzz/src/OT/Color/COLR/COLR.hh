@@ -104,7 +104,7 @@ public:
     foreground (foreground_),
     instancer (instancer_)
   {
-    if (font->is_synthetic ())
+    if (font->is_synthetic)
     {
       font = hb_font_create_sub_font (font);
       hb_font_set_synthetic_bold (font, 0, 0, true);
@@ -1075,9 +1075,9 @@ struct PaintTranslate
     float ddx = dx + c->instancer (varIdxBase, 0);
     float ddy = dy + c->instancer (varIdxBase, 1);
 
-    bool p1 = c->funcs->push_translate (c->data, ddx, ddy);
+    c->funcs->push_translate (c->data, ddx, ddy);
     c->recurse (this+src);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1124,9 +1124,9 @@ struct PaintScale
     float sx = scaleX.to_float (c->instancer (varIdxBase, 0));
     float sy = scaleY.to_float (c->instancer (varIdxBase, 1));
 
-    bool p1 = c->funcs->push_scale (c->data, sx, sy);
+    c->funcs->push_scale (c->data, sx, sy);
     c->recurse (this+src);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1177,13 +1177,9 @@ struct PaintScaleAroundCenter
     float tCenterX = centerX + c->instancer (varIdxBase, 2);
     float tCenterY = centerY + c->instancer (varIdxBase, 3);
 
-    bool p1 = c->funcs->push_translate (c->data, +tCenterX, +tCenterY);
-    bool p2 = c->funcs->push_scale (c->data, sx, sy);
-    bool p3 = c->funcs->push_translate (c->data, -tCenterX, -tCenterY);
+    c->funcs->push_scale_around_center (c->data, sx, sy, tCenterX, tCenterY);
     c->recurse (this+src);
-    if (p3) c->funcs->pop_transform (c->data);
-    if (p2) c->funcs->pop_transform (c->data);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1228,9 +1224,9 @@ struct PaintScaleUniform
     TRACE_PAINT (this);
     float s = scale.to_float (c->instancer (varIdxBase, 0));
 
-    bool p1 = c->funcs->push_scale (c->data, s, s);
+    c->funcs->push_scale (c->data, s, s);
     c->recurse (this+src);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1278,13 +1274,9 @@ struct PaintScaleUniformAroundCenter
     float tCenterX = centerX + c->instancer (varIdxBase, 1);
     float tCenterY = centerY + c->instancer (varIdxBase, 2);
 
-    bool p1 = c->funcs->push_translate (c->data, +tCenterX, +tCenterY);
-    bool p2 = c->funcs->push_scale (c->data, s, s);
-    bool p3 = c->funcs->push_translate (c->data, -tCenterX, -tCenterY);
+    c->funcs->push_scale_around_center (c->data, s, s, tCenterX, tCenterY);
     c->recurse (this+src);
-    if (p3) c->funcs->pop_transform (c->data);
-    if (p2) c->funcs->pop_transform (c->data);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1328,9 +1320,9 @@ struct PaintRotate
     TRACE_PAINT (this);
     float a = angle.to_float (c->instancer (varIdxBase, 0));
 
-    bool p1 = c->funcs->push_rotate (c->data, a);
+    c->funcs->push_rotate (c->data, a);
     c->recurse (this+src);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1378,13 +1370,9 @@ struct PaintRotateAroundCenter
     float tCenterX = centerX + c->instancer (varIdxBase, 1);
     float tCenterY = centerY + c->instancer (varIdxBase, 2);
 
-    bool p1 = c->funcs->push_translate (c->data, +tCenterX, +tCenterY);
-    bool p2 = c->funcs->push_rotate (c->data, a);
-    bool p3 = c->funcs->push_translate (c->data, -tCenterX, -tCenterY);
+    c->funcs->push_rotate_around_center (c->data, a, tCenterX, tCenterY);
     c->recurse (this+src);
-    if (p3) c->funcs->pop_transform (c->data);
-    if (p2) c->funcs->pop_transform (c->data);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1432,9 +1420,9 @@ struct PaintSkew
     float sx = xSkewAngle.to_float(c->instancer (varIdxBase, 0));
     float sy = ySkewAngle.to_float(c->instancer (varIdxBase, 1));
 
-    bool p1 = c->funcs->push_skew (c->data, sx, sy);
+    c->funcs->push_skew (c->data, sx, sy);
     c->recurse (this+src);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -1485,13 +1473,9 @@ struct PaintSkewAroundCenter
     float tCenterX = centerX + c->instancer (varIdxBase, 2);
     float tCenterY = centerY + c->instancer (varIdxBase, 3);
 
-    bool p1 = c->funcs->push_translate (c->data, +tCenterX, +tCenterY);
-    bool p2 = c->funcs->push_skew (c->data, sx, sy);
-    bool p3 = c->funcs->push_translate (c->data, -tCenterX, -tCenterY);
+    c->funcs->push_skew_around_center (c->data, sx, sy, tCenterX, tCenterY);
     c->recurse (this+src);
-    if (p3) c->funcs->pop_transform (c->data);
-    if (p2) c->funcs->pop_transform (c->data);
-    if (p1) c->funcs->pop_transform (c->data);
+    c->funcs->pop_transform (c->data);
   }
 
   HBUINT8		format; 
@@ -2693,7 +2677,8 @@ struct COLR
   {
     ItemVarStoreInstancer instancer (get_var_store_ptr (),
 				     get_delta_set_index_map_ptr (),
-				     hb_array (font->coords, font->num_coords));
+				     hb_array (font->coords,
+					       font->has_nonzero_coords ? font->num_coords : 0));
     hb_paint_context_t c (this, funcs, data, font, palette_index, foreground, instancer);
 
     hb_decycler_node_t node (c.glyphs_decycler);
