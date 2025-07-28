@@ -61,7 +61,7 @@ void DtlsStunPiggybackController::SetDtlsHandshakeComplete(bool is_dtls_client,
 
 void DtlsStunPiggybackController::CapturePacket(ArrayView<const uint8_t> data) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  if (!webrtc::IsDtlsPacket(data)) {
+  if (!IsDtlsPacket(data)) {
     return;
   }
 
@@ -133,8 +133,6 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     const StunByteStringAttribute* ack) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
-  data_recv_count_ += (data != nullptr);
-
   
   
   if (state_ == State::OFF || state_ == State::COMPLETE) {
@@ -171,14 +169,14 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
       
       absl::flat_hash_set<uint32_t> acked_packets;
       {
-        webrtc::ByteBufferReader ack_reader(ack->array_view());
+        ByteBufferReader ack_reader(ack->array_view());
         uint32_t packet_hash;
         while (ack_reader.ReadUInt32(&packet_hash)) {
           acked_packets.insert(packet_hash);
         }
       }
       RTC_LOG(LS_VERBOSE) << "DTLS-STUN piggybacking ACK: "
-                          << webrtc::StrJoin(acked_packets, ",");
+                          << StrJoin(acked_packets, ",");
 
       
       pending_packets_.Prune(acked_packets);
@@ -201,6 +199,13 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   if (!data || data->length() == 0) {
     return;
   }
+
+  
+  if (!IsDtlsPacket(data->array_view())) {
+    RTC_LOG(LS_WARNING) << "Dropping non-DTLS data.";
+    return;
+  }
+  data_recv_count_++;
 
   
   
