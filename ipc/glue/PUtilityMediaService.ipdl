@@ -22,7 +22,7 @@ namespace ipc {
 
 
 [ParentProc=Utility, ChildProc=Parent]
-protocol PUtilityAudioDecoder
+protocol PUtilityMediaService
 {
 parent:
   async NewContentRemoteMediaManager(

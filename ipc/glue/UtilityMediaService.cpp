@@ -5,7 +5,7 @@
 
 
 #include "mozilla/ProcInfo.h"
-#include "mozilla/ipc/UtilityAudioDecoder.h"
+#include "mozilla/ipc/UtilityMediaService.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
 

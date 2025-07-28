@@ -3,15 +3,15 @@
 
 
 
-#ifndef _include_ipc_glue_UtilityAudioDecoderParent_h_
-#define _include_ipc_glue_UtilityAudioDecoderParent_h_
+#ifndef _include_ipc_glue_UtilityMediaServiceParent_h_
+#define _include_ipc_glue_UtilityMediaServiceParent_h_
 
 #include "mozilla/PRemoteMediaManagerParent.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/UniquePtr.h"
 
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/ipc/PUtilityAudioDecoderParent.h"
+#include "mozilla/ipc/PUtilityMediaServiceParent.h"
 
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 
@@ -21,17 +21,17 @@ namespace mozilla::ipc {
 
 
 
-class UtilityAudioDecoderParent final : public PUtilityAudioDecoderParent {
+class UtilityMediaServiceParent final : public PUtilityMediaServiceParent {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UtilityAudioDecoderParent, override);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UtilityMediaServiceParent, override);
 
-  explicit UtilityAudioDecoderParent(
+  explicit UtilityMediaServiceParent(
       nsTArray<mozilla::gfx::GfxVarUpdate>&& aUpdates);
 
   static void GenericPreloadForSandbox();
   static void WMFPreloadForSandbox();
 
-  void Start(Endpoint<PUtilityAudioDecoderParent>&& aEndpoint);
+  void Start(Endpoint<PUtilityMediaServiceParent>&& aEndpoint);
 
   mozilla::ipc::IPCResult RecvNewContentRemoteMediaManager(
       Endpoint<PRemoteMediaManagerParent>&& aEndpoint,
@@ -53,7 +53,7 @@ class UtilityAudioDecoderParent final : public PUtilityAudioDecoderParent {
 #endif
 
  private:
-  ~UtilityAudioDecoderParent();
+  ~UtilityMediaServiceParent();
 
   const SandboxingKind mKind;
   TimeStamp mAudioDecoderParentStart;

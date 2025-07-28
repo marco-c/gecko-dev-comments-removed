@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_ipc_glue_UtilityAudioDecoderChild_h__
-#define _include_ipc_glue_UtilityAudioDecoderChild_h__
+#ifndef _include_ipc_glue_UtilityMediaServiceChild_h__
+#define _include_ipc_glue_UtilityMediaServiceChild_h__
 
 #include "mozilla/ProcInfo.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -13,8 +13,8 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
-#include "mozilla/ipc/UtilityAudioDecoder.h"
-#include "mozilla/ipc/PUtilityAudioDecoderChild.h"
+#include "mozilla/ipc/UtilityMediaService.h"
+#include "mozilla/ipc/PUtilityMediaServiceChild.h"
 
 #ifdef MOZ_WMF_MEDIA_ENGINE
 #  include "mozilla/gfx/GPUProcessListener.h"
@@ -25,9 +25,9 @@
 
 namespace mozilla::ipc {
 
-class UtilityAudioDecoderChildShutdownObserver : public nsIObserver {
+class UtilityMediaServiceChildShutdownObserver : public nsIObserver {
  public:
-  explicit UtilityAudioDecoderChildShutdownObserver(SandboxingKind aKind)
+  explicit UtilityMediaServiceChildShutdownObserver(SandboxingKind aKind)
       : mSandbox(aKind) {};
 
   NS_DECL_ISUPPORTS
@@ -36,14 +36,14 @@ class UtilityAudioDecoderChildShutdownObserver : public nsIObserver {
                      const char16_t* aData) override;
 
  private:
-  virtual ~UtilityAudioDecoderChildShutdownObserver() = default;
+  virtual ~UtilityMediaServiceChildShutdownObserver() = default;
 
   const SandboxingKind mSandbox;
 };
 
 
 
-class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
+class UtilityMediaServiceChild final : public PUtilityMediaServiceChild
 #ifdef MOZ_WMF_MEDIA_ENGINE
     ,
                                        public gfx::gfxVarReceiver,
@@ -51,7 +51,7 @@ class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
 #endif
 {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UtilityAudioDecoderChild, override);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UtilityMediaServiceChild, override);
   mozilla::ipc::IPCResult RecvUpdateMediaCodecsSupported(
       const RemoteMediaIn& aLocation,
       const media::MediaCodecsSupported& aSupported);
@@ -62,11 +62,11 @@ class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
 
   void ActorDestroy(ActorDestroyReason aReason) override;
 
-  void Bind(Endpoint<PUtilityAudioDecoderChild>&& aEndpoint);
+  void Bind(Endpoint<PUtilityMediaServiceChild>&& aEndpoint);
 
   static void Shutdown(SandboxingKind aKind);
 
-  static RefPtr<UtilityAudioDecoderChild> GetSingleton(SandboxingKind aKind);
+  static RefPtr<UtilityMediaServiceChild> GetSingleton(SandboxingKind aKind);
 
 #ifdef MOZ_WMF_MEDIA_ENGINE
   mozilla::ipc::IPCResult RecvCompleteCreatedVideoBridge();
@@ -85,8 +85,8 @@ class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
 #endif
 
  private:
-  explicit UtilityAudioDecoderChild(SandboxingKind aKind);
-  ~UtilityAudioDecoderChild() = default;
+  explicit UtilityMediaServiceChild(SandboxingKind aKind);
+  ~UtilityMediaServiceChild() = default;
 
   const SandboxingKind mSandbox;
 

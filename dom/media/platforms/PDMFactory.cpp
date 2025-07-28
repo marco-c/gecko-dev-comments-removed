@@ -34,7 +34,7 @@
 #include "nsIXULRuntime.h"  
 #include "nsPrintfCString.h"
 
-#include "mozilla/ipc/UtilityAudioDecoderParent.h"
+#include "mozilla/ipc/UtilityMediaServiceParent.h"
 
 #ifdef XP_WIN
 #  include "WMFDecoderModule.h"
