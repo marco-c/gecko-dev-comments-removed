@@ -2691,12 +2691,7 @@ CSSIntRect nsRFPService::GetSpoofedScreenAvailSize(const nsRect& aRect,
 
 
 uint64_t nsRFPService::GetSpoofedStorageLimit() {
-  uint64_t gib = 1024ULL * 1024ULL * 1024ULL;  
-#ifdef ANDROID
-  uint64_t limit = 32ULL * gib;  
-#else
-  uint64_t limit = 50ULL * gib;  
-#endif
+  uint64_t limit = 50ULL * 1024ULL * 1024ULL * 1024ULL;  
   MOZ_ASSERT(limit / 5 ==
              dom::quota::QuotaManager::GetGroupLimitForLimit(limit));
 
