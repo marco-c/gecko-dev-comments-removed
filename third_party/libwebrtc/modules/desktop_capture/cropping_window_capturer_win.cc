@@ -152,7 +152,7 @@ class CroppingWindowCapturerWin : public CroppingWindowCapturer {
 
   bool enumerate_current_process_windows_;
 
-  rtc::scoped_refptr<FullScreenWindowDetector> full_screen_window_detector_;
+  webrtc::scoped_refptr<FullScreenWindowDetector> full_screen_window_detector_;
 
   
   mutable bool fullscreen_usage_logged_ = false;

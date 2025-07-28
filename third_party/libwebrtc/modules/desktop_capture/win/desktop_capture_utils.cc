@@ -19,7 +19,7 @@ namespace utils {
 
 std::string ComErrorToString(const _com_error& error) {
   char buffer[1024];
-  rtc::SimpleStringBuilder string_builder(buffer);
+  webrtc::SimpleStringBuilder string_builder(buffer);
   
   _bstr_t error_message(error.ErrorMessage());
   string_builder.AppendFormat("HRESULT: 0x%08X, Message: %s", error.Error(),

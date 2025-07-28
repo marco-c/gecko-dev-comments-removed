@@ -31,7 +31,7 @@ namespace webrtc {
 
 
 bool RTC_EXPORT
-GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
+GetWindowList(webrtc::FunctionView<bool(CFDictionaryRef)> on_window,
               bool ignore_minimized,
               bool only_zero_layer);
 

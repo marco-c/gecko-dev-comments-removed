@@ -29,8 +29,7 @@ typedef union _XEvent XEvent;
 namespace webrtc {
 
 
-class RTC_EXPORT SharedXDisplay
-    : public rtc::RefCountedNonVirtual<SharedXDisplay> {
+class RTC_EXPORT SharedXDisplay : public RefCountedNonVirtual<SharedXDisplay> {
  public:
   class XEventHandler {
    public:
@@ -43,12 +42,11 @@ class RTC_EXPORT SharedXDisplay
   
   
   
-  static rtc::scoped_refptr<SharedXDisplay> Create(
-      absl::string_view display_name);
+  static scoped_refptr<SharedXDisplay> Create(absl::string_view display_name);
 
   
   
-  static rtc::scoped_refptr<SharedXDisplay> CreateDefault();
+  static scoped_refptr<SharedXDisplay> CreateDefault();
 
   Display* display() { return display_; }
 

@@ -25,7 +25,7 @@ namespace webrtc {
 
 
 class DesktopConfigurationMonitor final
-    : public rtc::RefCountedNonVirtual<DesktopConfigurationMonitor> {
+    : public webrtc::RefCountedNonVirtual<DesktopConfigurationMonitor> {
  public:
   DesktopConfigurationMonitor();
   ~DesktopConfigurationMonitor();
