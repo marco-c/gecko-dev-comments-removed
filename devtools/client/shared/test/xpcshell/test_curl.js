@@ -347,9 +347,7 @@ const QUOTE = isWin() ? '^"' : "'";
 function quote(str) {
   let escaped;
   if (isWin()) {
-    escaped = str
-      .replace(new RegExp(QUOTE, "g"), `${QUOTE}${QUOTE}`)
-      .replace(/"/g, '\\"');
+    escaped = str.replace(new RegExp('"', "g"), `^\\${QUOTE}`);
   } else {
     escaped = str.replace(new RegExp(QUOTE, "g"), `\\${QUOTE}`);
   }
@@ -359,9 +357,7 @@ function quote(str) {
 function escapeNewline(txt) {
   if (isWin()) {
     
-    
-    
-    return txt.replace(/\r?\n/g, "^\n\n");
+    return txt.replace(/[\r\n]{1,2}/g, '"^$&$&"');
   }
   return txt.replace(/\r/g, "\\r").replace(/\n/g, "\\n");
 }
@@ -397,6 +393,7 @@ function parseCurl(curlCmd) {
   
   
   
-  const matchRe = /[-A-Za-z1-9]+(?: ([\^\\"']+)(?:\\\1|.)*?\1)?/g;
+  
+  const matchRe = /[-\.A-Za-z1-9]+(?: ([\^\"']+)(?:\\\1|.)*?\1)?/g;
   return curlCmd.match(matchRe);
 }
