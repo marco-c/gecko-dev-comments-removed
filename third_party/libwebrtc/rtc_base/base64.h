@@ -14,25 +14,31 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <vector>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 
 namespace webrtc {
 
-std::string Base64Encode(ArrayView<const uint8_t> data);
+inline std::string Base64Encode(ArrayView<const uint8_t> data) {
+  return absl::Base64Escape(absl::string_view(
+      reinterpret_cast<const char*>(data.data()), data.size()));
+}
+
+inline std::string Base64Encode(absl::string_view data) {
+  return absl::Base64Escape(data);
+}
 
 enum class Base64DecodeOptions {
   kStrict,
-
   
   kForgiving,
 };
 
 
 
-std::optional<std::vector<uint8_t>> Base64Decode(
+std::optional<std::string> Base64Decode(
     absl::string_view data,
     Base64DecodeOptions options = Base64DecodeOptions::kStrict);
 
