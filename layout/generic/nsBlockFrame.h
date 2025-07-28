@@ -537,8 +537,14 @@ class nsBlockFrame : public nsContainerFrame {
   }
 
   bool IsButtonLike() const {
-    if (!Style()->IsAnonBox() && mContent->IsHTMLElement(nsGkAtoms::button)) {
-      return true;
+    if (mContent->IsHTMLElement(nsGkAtoms::button)) {
+      
+      
+      
+      
+      auto pseudoType = Style()->GetPseudoType();
+      return !mozilla::PseudoStyle::IsAnonBox(pseudoType) ||
+             pseudoType == mozilla::PseudoStyleType::scrolledContent;
     }
     return IsButtonControlFrame();
   }
