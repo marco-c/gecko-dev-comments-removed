@@ -503,6 +503,11 @@ class ModuleLoaderBase : public nsISupports {
 
   void InstantiateAndEvaluateDynamicImport(ModuleLoadRequest* aRequest);
 
+  static bool OnLoadRequestedModulesResolved(JSContext* cx, unsigned argc,
+                                             Value* vp);
+  static bool OnLoadRequestedModulesRejected(JSContext* cx, unsigned argc,
+                                             Value* vp);
+
   
 
 
@@ -547,12 +552,25 @@ class ModuleLoaderBase : public nsISupports {
   bool IsFetchingAndHasWaitingRequest(ModuleLoadRequest* aRequest);
 
   
-  enum { ModulePrivateSlot = 0, SlotCount };
+  enum class ImportMetaSlots : uint32_t { ModulePrivateSlot = 0, SlotCount };
 
   
   static const uint32_t ImportMetaResolveNumArgs = 1;
   
   static const uint32_t ImportMetaResolveSpecifierArg = 0;
+
+  
+  enum class OnLoadRequestedModulesSlot : uint8_t {
+    HostDefinedSlot = 0,
+    SlotCount
+  };
+
+  
+  static const uint32_t OnLoadRequestedModulesResolvedNumArgs = 0;
+  static const uint32_t OnLoadRequestedModulesRejectedNumArgs = 1;
+
+  
+  static const uint32_t OnLoadRequestedModulesRejectedErrorArg = 0;
 
  public:
   static mozilla::LazyLogModule gCspPRLog;
