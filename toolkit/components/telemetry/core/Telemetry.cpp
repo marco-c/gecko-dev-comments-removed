@@ -167,8 +167,6 @@ class TelemetryImpl final : public nsITelemetry, public nsIMemoryReporter {
   bool GetSQLStats(JSContext* cx, JS::MutableHandle<JS::Value> ret,
                    bool includePrivateSql);
 
-  void ReadLateWritesStacks(nsIFile* aProfileDir);
-
   static StaticDataMutex<TelemetryImpl*> sTelemetry;
   AutoHashtable<SlowSQLEntryType> mPrivateSQL;
   AutoHashtable<SlowSQLEntryType> mSanitizedSQL;
@@ -176,8 +174,6 @@ class TelemetryImpl final : public nsITelemetry, public nsIMemoryReporter {
   Atomic<bool, SequentiallyConsistent> mCanRecordBase;
   Atomic<bool, SequentiallyConsistent> mCanRecordExtended;
 
-  CombinedStacks
-      mLateWritesStacks;  
   bool mCachedTelemetryData;
   uint32_t mLastShutdownTime;
   uint32_t mFailedLockCount;
@@ -222,10 +218,6 @@ TelemetryImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
                    sTelemetryIOObserver->SizeOfIncludingThis(aMallocSizeOf),
                    "Memory used by the Telemetry IO Observer");
   }
-
-  COLLECT_REPORT("explicit/telemetry/LateWritesStacks",
-                 mLateWritesStacks.SizeOfExcludingThis(),
-                 "Memory used by the Telemetry LateWrites Stack capturer");
 
   COLLECT_REPORT("explicit/telemetry/Callbacks",
                  mCallbacks.ShallowSizeOfExcludingThis(aMallocSizeOf),
@@ -302,16 +294,14 @@ nsresult GetFailedProfileLockFile(nsIFile** aFile, nsIFile* aProfileDir) {
 class nsFetchTelemetryData : public Runnable {
  public:
   nsFetchTelemetryData(PathCharPtr aShutdownTimeFilename,
-                       nsIFile* aFailedProfileLockFile, nsIFile* aProfileDir)
+                       nsIFile* aFailedProfileLockFile)
       : mozilla::Runnable("nsFetchTelemetryData"),
         mShutdownTimeFilename(aShutdownTimeFilename),
-        mFailedProfileLockFile(aFailedProfileLockFile),
-        mProfileDir(aProfileDir) {}
+        mFailedProfileLockFile(aFailedProfileLockFile) {}
 
  private:
   PathCharPtr mShutdownTimeFilename;
   nsCOMPtr<nsIFile> mFailedProfileLockFile;
-  nsCOMPtr<nsIFile> mProfileDir;
 
  public:
   void MainThread() {
@@ -334,7 +324,6 @@ class nsFetchTelemetryData : public Runnable {
       auto telemetry = lock.ref();
       telemetry->mFailedLockCount = failedLockCount;
       telemetry->mLastShutdownTime = lastShutdownDuration;
-      telemetry->ReadLateWritesStacks(mProfileDir);
     }
 
     glean::browser_timings::last_shutdown.Set(lastShutdownDuration);
@@ -483,8 +472,8 @@ TelemetryImpl::AsyncFetchTelemetryData(
 
   mCallbacks.AppendObject(aCallback);
 
-  nsCOMPtr<nsIRunnable> event = new nsFetchTelemetryData(
-      shutdownTimeFilename, failedProfileLockFile, profileDir);
+  nsCOMPtr<nsIRunnable> event =
+      new nsFetchTelemetryData(shutdownTimeFilename, failedProfileLockFile);
 
   targetThread->Dispatch(event, NS_DISPATCH_NORMAL);
   return NS_OK;
@@ -676,144 +665,6 @@ TelemetryImpl::GetAreUntrustedModuleLoadEventsReady(bool* ret) {
 #else
   return NS_ERROR_NOT_IMPLEMENTED;
 #endif
-}
-
-static bool IsValidBreakpadId(const std::string& breakpadId) {
-  if (breakpadId.size() < 33) {
-    return false;
-  }
-  for (char c : breakpadId) {
-    if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-static void ReadStack(PathCharPtr aFileName,
-                      Telemetry::ProcessedStack& aStack) {
-  IFStream file(aFileName);
-
-  size_t numModules;
-  file >> numModules;
-  if (file.fail()) {
-    return;
-  }
-
-  char newline = file.get();
-  if (file.fail() || newline != '\n') {
-    return;
-  }
-
-  Telemetry::ProcessedStack stack;
-  for (size_t i = 0; i < numModules; ++i) {
-    std::string breakpadId;
-    file >> breakpadId;
-    if (file.fail() || !IsValidBreakpadId(breakpadId)) {
-      return;
-    }
-
-    char space = file.get();
-    if (file.fail() || space != ' ') {
-      return;
-    }
-
-    std::string moduleName;
-    getline(file, moduleName);
-    if (file.fail() || moduleName[0] == ' ') {
-      return;
-    }
-
-    Telemetry::ProcessedStack::Module module = {
-        NS_ConvertUTF8toUTF16(moduleName.c_str()),
-        nsCString(breakpadId.c_str(), breakpadId.size()),
-    };
-    stack.AddModule(module);
-  }
-
-  size_t numFrames;
-  file >> numFrames;
-  if (file.fail()) {
-    return;
-  }
-
-  newline = file.get();
-  if (file.fail() || newline != '\n') {
-    return;
-  }
-
-  for (size_t i = 0; i < numFrames; ++i) {
-    uint16_t index;
-    file >> index;
-    uintptr_t offset;
-    file >> std::hex >> offset >> std::dec;
-    if (file.fail()) {
-      return;
-    }
-
-    Telemetry::ProcessedStack::Frame frame = {offset, index};
-    stack.AddFrame(frame);
-  }
-
-  aStack = stack;
-}
-
-void TelemetryImpl::ReadLateWritesStacks(nsIFile* aProfileDir) {
-  nsCOMPtr<nsIDirectoryEnumerator> files;
-  if (NS_FAILED(aProfileDir->GetDirectoryEntries(getter_AddRefs(files)))) {
-    return;
-  }
-
-  constexpr auto prefix = u"Telemetry.LateWriteFinal-"_ns;
-  nsCOMPtr<nsIFile> file;
-  while (NS_SUCCEEDED(files->GetNextFile(getter_AddRefs(file))) && file) {
-    nsAutoString leafName;
-    if (NS_FAILED(file->GetLeafName(leafName)) ||
-        !StringBeginsWith(leafName, prefix)) {
-      continue;
-    }
-
-    Telemetry::ProcessedStack stack;
-    ReadStack(file->NativePath().get(), stack);
-    if (stack.GetStackSize() != 0) {
-      mLateWritesStacks.AddStack(stack);
-    }
-    
-    file->Remove(false);
-  }
-}
-
-NS_IMETHODIMP
-TelemetryImpl::GetLateWrites(JSContext* cx, JS::MutableHandle<JS::Value> ret) {
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  JSObject* report;
-  if (!mCachedTelemetryData) {
-    CombinedStacks empty;
-    report = CreateJSStackObject(cx, empty);
-  } else {
-    report = CreateJSStackObject(cx, mLateWritesStacks);
-  }
-
-  if (report == nullptr) {
-    return NS_ERROR_FAILURE;
-  }
-
-  ret.setObject(*report);
-  return NS_OK;
 }
 
 NS_IMETHODIMP
