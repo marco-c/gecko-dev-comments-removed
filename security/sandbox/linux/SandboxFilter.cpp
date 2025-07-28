@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <linux/ioctl.h>
 #include <linux/ipc.h>
+#include <linux/memfd.h>
+#include <linux/mman.h>
 #include <linux/net.h>
 #include <linux/sched.h>
 #include <string.h>
@@ -113,6 +115,16 @@ static_assert(F_GET_SEALS == (F_LINUX_SPECIFIC_BASE + 10));
 #else
 static_assert(MADV_GUARD_INSTALL == 102);
 static_assert(MADV_GUARD_REMOVE == 103);
+#endif
+
+
+#ifndef MFD_HUGETLB
+#  define MFD_HUGETLB 4U
+#  define MFD_HUGE_MASK MAP_HUGE_MASK
+#  define MFD_HUGE_SHIFT MAP_HUGE_SHIFT
+#else
+static_assert(MFD_HUGE_MASK == MAP_HUGE_MASK);
+static_assert(MFD_HUGE_SHIFT == MAP_HUGE_SHIFT);
 #endif
 
 
@@ -1121,13 +1133,29 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Allow();
 
         
-      CASES_FOR_mmap:
+      CASES_FOR_mmap: {
+        Arg<int> flags(3);
+        
+        
+        static constexpr int kBadFlags =
+            MAP_HUGETLB | (MAP_HUGE_MASK << MAP_HUGE_SHIFT);
+        
+        
+        
+        
+        return If((flags & kBadFlags) != 0, Error(ENOSYS)).Else(Allow());
+      }
       case __NR_munmap:
         return Allow();
 
         
-      case __NR_memfd_create:
-        return Allow();
+      case __NR_memfd_create: {
+        Arg<unsigned> flags(1);
+        
+        static constexpr int kBadFlags =
+            MFD_HUGETLB | (MFD_HUGE_MASK << MFD_HUGE_SHIFT);
+        return If((flags & kBadFlags) != 0, Error(ENOSYS)).Else(Allow());
+      }
 
         
       case __NR_mprotect:
