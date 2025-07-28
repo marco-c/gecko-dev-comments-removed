@@ -80,6 +80,10 @@ class WebAuthnRegisterResult final : public nsIWebAuthnRegisterResult {
     }
     mAuthenticatorAttachment =
         Some(aResponse->AuthenticatorAttachment()->ToString());
+    if (aResponse->CredProps()) {
+      mCredPropsRk = Some(java::sdk::Boolean::Ref::From(aResponse->CredProps())
+                              ->BooleanValue());
+    }
   }
 #endif
 
@@ -189,12 +193,14 @@ class WebAuthnSignResult final : public nsIWebAuthnSignResult {
                      const nsTArray<uint8_t>& aSignature,
                      const nsTArray<uint8_t>& aUserHandle,
                      const Maybe<nsString>& aAuthenticatorAttachment,
+                     const Maybe<bool>& aUsedAppId,
                      const Maybe<nsTArray<uint8_t>>& aLargeBlobValue,
                      const Maybe<bool>& aLargeBlobWritten,
                      const Maybe<nsTArray<uint8_t>>& aPrfFirst,
                      const Maybe<nsTArray<uint8_t>>& aPrfSecond)
       : mClientDataJSON(aClientDataJSON),
         mAuthenticatorAttachment(aAuthenticatorAttachment),
+        mUsedAppId(aUsedAppId),
         mLargeBlobWritten(aLargeBlobWritten) {
     mAuthenticatorData.AppendElements(aAuthenticatorData);
     mCredentialId.AppendElements(aCredentialId);
