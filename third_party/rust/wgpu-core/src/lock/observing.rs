@@ -38,8 +38,6 @@ use std::{
 use super::rank::{LockRank, LockRankSet};
 use crate::FastHashSet;
 
-pub type RankData = Option<HeldLock>;
-
 
 
 
@@ -161,27 +159,6 @@ impl<T> RwLock<T> {
             inner: self.inner.write(),
             _state: LockStateGuard { saved },
         }
-    }
-
-    
-    
-    
-    
-    pub unsafe fn force_unlock_read(&self, data: RankData) {
-        release(data);
-        unsafe { self.inner.force_unlock_read() };
-    }
-}
-
-impl<'a, T> RwLockReadGuard<'a, T> {
-    
-    
-    
-    
-    pub fn forget(this: Self) -> RankData {
-        core::mem::forget(this.inner);
-
-        this._state.saved
     }
 }
 
@@ -339,7 +316,7 @@ enum ThreadState {
 
 
 #[derive(Debug, Copy, Clone)]
-pub struct HeldLock {
+struct HeldLock {
     
     rank: LockRank,
 

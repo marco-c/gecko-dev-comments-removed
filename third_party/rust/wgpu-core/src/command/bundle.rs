@@ -93,7 +93,6 @@ use core::{
 use arrayvec::ArrayVec;
 use thiserror::Error;
 
-use wgpu_hal::ShouldBeNonZeroExt;
 use wgt::error::{ErrorType, WebGpuError};
 
 use crate::{
@@ -112,7 +111,7 @@ use crate::{
     pipeline::{PipelineFlags, RenderPipeline, VertexStep},
     resource::{
         Buffer, DestroyedResourceError, Fallible, InvalidResourceError, Labeled, ParentDevice,
-        RawResourceAccess, TrackingData,
+        TrackingData,
     },
     resource_log,
     snatch::SnatchGuard,
@@ -603,7 +602,6 @@ fn set_pipeline(
     Ok(())
 }
 
-
 fn set_index_buffer(
     state: &mut State,
     buffer_guard: &crate::storage::Storage<Fallible<Buffer>>,
@@ -622,19 +620,20 @@ fn set_index_buffer(
     buffer.same_device(&state.device)?;
     buffer.check_usage(wgt::BufferUsages::INDEX)?;
 
-    let end = offset + buffer.resolve_binding_size(offset, size)?;
-
+    let end = match size {
+        Some(s) => offset + s.get(),
+        None => buffer.size,
+    };
     state
         .buffer_memory_init_actions
         .extend(buffer.initialization_status.read().create_action(
             &buffer,
-            offset..end.get(),
+            offset..end,
             MemoryInitKind::NeedsInitializedMemory,
         ));
-    state.set_index_buffer(buffer, index_format, offset..end.get());
+    state.set_index_buffer(buffer, index_format, offset..end);
     Ok(())
 }
-
 
 fn set_vertex_buffer(
     state: &mut State,
@@ -663,16 +662,18 @@ fn set_vertex_buffer(
     buffer.same_device(&state.device)?;
     buffer.check_usage(wgt::BufferUsages::VERTEX)?;
 
-    let end = offset + buffer.resolve_binding_size(offset, size)?;
-
+    let end = match size {
+        Some(s) => offset + s.get(),
+        None => buffer.size,
+    };
     state
         .buffer_memory_init_actions
         .extend(buffer.initialization_status.read().create_action(
             &buffer,
-            offset..end.get(),
+            offset..end,
             MemoryInitKind::NeedsInitializedMemory,
         ));
-    state.vertex[slot as usize] = Some(VertexState::new(buffer, offset..end.get()));
+    state.vertex[slot as usize] = Some(VertexState::new(buffer, offset..end));
     Ok(())
 }
 
@@ -964,9 +965,11 @@ impl RenderBundle {
                     size,
                 } => {
                     let buffer = buffer.try_raw(snatch_guard)?;
-                    
-                    
-                    let bb = hal::BufferBinding::new_unchecked(buffer, *offset, *size);
+                    let bb = hal::BufferBinding {
+                        buffer,
+                        offset: *offset,
+                        size: *size,
+                    };
                     unsafe { raw.set_index_buffer(bb, *index_format) };
                 }
                 Cmd::SetVertexBuffer {
@@ -976,9 +979,11 @@ impl RenderBundle {
                     size,
                 } => {
                     let buffer = buffer.try_raw(snatch_guard)?;
-                    
-                    
-                    let bb = hal::BufferBinding::new_unchecked(buffer, *offset, *size);
+                    let bb = hal::BufferBinding {
+                        buffer,
+                        offset: *offset,
+                        size: *size,
+                    };
                     unsafe { raw.set_vertex_buffer(*slot, bb) };
                 }
                 Cmd::SetPushConstant {
@@ -1126,9 +1131,6 @@ crate::impl_trackable!(RenderBundle);
 
 
 
-
-
-
 #[derive(Debug)]
 struct IndexState {
     buffer: Arc<Buffer>,
@@ -1150,30 +1152,19 @@ impl IndexState {
     
     
     fn flush(&mut self) -> Option<ArcRenderCommand> {
-        
-        let binding_size = self
-            .range
-            .end
-            .checked_sub(self.range.start)
-            .filter(|_| self.range.end <= self.buffer.size)
-            .expect("index range must be contained in buffer");
-
         if self.is_dirty {
             self.is_dirty = false;
             Some(ArcRenderCommand::SetIndexBuffer {
                 buffer: self.buffer.clone(),
                 index_format: self.format,
                 offset: self.range.start,
-                size: NonZeroU64::new(binding_size),
+                size: wgt::BufferSize::new(self.range.end - self.range.start),
             })
         } else {
             None
         }
     }
 }
-
-
-
 
 
 
@@ -1192,9 +1183,6 @@ struct VertexState {
 }
 
 impl VertexState {
-    
-    
-    
     fn new(buffer: Arc<Buffer>, range: Range<wgt::BufferAddress>) -> Self {
         Self {
             buffer,
@@ -1207,20 +1195,13 @@ impl VertexState {
     
     
     fn flush(&mut self, slot: u32) -> Option<ArcRenderCommand> {
-        let binding_size = self
-            .range
-            .end
-            .checked_sub(self.range.start)
-            .filter(|_| self.range.end <= self.buffer.size)
-            .expect("vertex range must be contained in buffer");
-
         if self.is_dirty {
             self.is_dirty = false;
             Some(ArcRenderCommand::SetVertexBuffer {
                 slot,
                 buffer: self.buffer.clone(),
                 offset: self.range.start,
-                size: NonZeroU64::new(binding_size),
+                size: wgt::BufferSize::new(self.range.end - self.range.start),
             })
         } else {
             None
