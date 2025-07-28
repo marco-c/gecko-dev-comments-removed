@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-
+#include "api/array_view.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
@@ -28,9 +28,9 @@
 #include "modules/desktop_capture/mock_desktop_capturer_callback.h"
 #include "modules/desktop_capture/rgba_color.h"
 #include "modules/desktop_capture/screen_drawer.h"
+#include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/third_party/base64/base64.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -213,14 +213,13 @@ class ScreenCapturerIntegrationTest : public ::testing::Test {
                                drawer->MayDrawIncompleteShapes())) {
           capturers[j] = nullptr;
           succeeded_capturers++;
-        }
-        
-        
-        
-        else if (i == wait_capture_round - 1) {
-          std::string result;
-          Base64::EncodeFromArray(
-              frame->data(), frame->size().height() * frame->stride(), &result);
+        } else if (i == wait_capture_round - 1) {
+          
+          
+          
+          ArrayView<const uint8_t> frame_data(
+              frame->data(), frame->size().height() * frame->stride());
+          std::string result = Base64Encode(frame_data);
           std::cout << frame->size().width() << " x " << frame->size().height()
                     << std::endl;
           
