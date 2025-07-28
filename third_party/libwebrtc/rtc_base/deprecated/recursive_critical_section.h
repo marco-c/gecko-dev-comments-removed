@@ -81,7 +81,7 @@ class RTC_LOCKABLE RecursiveCriticalSection {
 #else
   mutable pthread_mutex_t mutex_;
 #endif
-  mutable rtc::PlatformThreadRef thread_;  
+  mutable PlatformThreadRef thread_;  
   mutable int recursion_count_;       
 #else  
 #error Unsupported platform.

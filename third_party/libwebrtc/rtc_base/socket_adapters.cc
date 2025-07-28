@@ -137,7 +137,7 @@ static const uint8_t kSslClientHello[] = {
 };
 
 
-rtc::ArrayView<const uint8_t> AsyncSSLSocket::SslClientHello() {
+ArrayView<const uint8_t> AsyncSSLSocket::SslClientHello() {
   
   
   return {kSslClientHello, sizeof(kSslClientHello)};
@@ -165,7 +165,7 @@ static const uint8_t kSslServerHello[] = {
 };
 
 
-rtc::ArrayView<const uint8_t> AsyncSSLSocket::SslServerHello() {
+ArrayView<const uint8_t> AsyncSSLSocket::SslServerHello() {
   return {kSslServerHello, sizeof(kSslServerHello)};
 }
 

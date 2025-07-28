@@ -129,7 +129,7 @@ static constexpr uint8_t kEcnMask = 0x03;
 
 #if defined(WEBRTC_POSIX)
 
-rtc::EcnMarking EcnFromDs(uint8_t ds) {
+webrtc::EcnMarking EcnFromDs(uint8_t ds) {
   
   constexpr uint8_t ECN_ECT1 = 0x01;
   constexpr uint8_t ECN_ECT0 = 0x02;
@@ -137,15 +137,15 @@ rtc::EcnMarking EcnFromDs(uint8_t ds) {
   const uint8_t ecn = ds & kEcnMask;
 
   if (ecn == ECN_ECT1) {
-    return rtc::EcnMarking::kEct1;
+    return webrtc::EcnMarking::kEct1;
   }
   if (ecn == ECN_ECT0) {
-    return rtc::EcnMarking::kEct0;
+    return webrtc::EcnMarking::kEct0;
   }
   if (ecn == ECN_CE) {
-    return rtc::EcnMarking::kCe;
+    return webrtc::EcnMarking::kCe;
   }
-  return rtc::EcnMarking::kNotEct;
+  return webrtc::EcnMarking::kNotEct;
 }
 
 #endif
@@ -1829,7 +1829,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
   int64_t msStop = -1;
   if (cmsWait != kForeverMs) {
     msWait = cmsWait;
-    msStop = rtc::TimeAfter(cmsWait);
+    msStop = webrtc::TimeAfter(cmsWait);
   }
 
   std::vector<pollfd> pollfds;
@@ -1837,7 +1837,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
 
   while (fWait_) {
     {
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       current_dispatcher_keys_.clear();
       pollfds.clear();
       pollfds.reserve(dispatcher_by_key_.size());
@@ -1871,7 +1871,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
       return true;
     } else {
       
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       
       
       
@@ -1884,7 +1884,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
     }
 
     if (cmsWait != kForeverMs) {
-      msWait = rtc::TimeDiff(msStop, rtc::TimeMillis());
+      msWait = webrtc::TimeDiff(msStop, webrtc::TimeMillis());
       if (msWait < 0) {
         
         return true;
@@ -1909,7 +1909,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
   int cmsWait = ToCmsWait(max_wait_duration);
   int64_t cmsTotal = cmsWait;
   int64_t cmsElapsed = 0;
-  int64_t msStart = rtc::Time();
+  int64_t msStart = webrtc::Time();
 
   fWait_ = true;
   while (fWait_) {
@@ -1919,7 +1919,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
     events.push_back(socket_ev_);
 
     {
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       
       
       
@@ -1975,7 +1975,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
       return true;
     } else {
       
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       int index = dw - WSA_WAIT_EVENT_0;
       if (index > 0) {
         --index;  
@@ -2068,7 +2068,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
     
     if (!fWait_)
       break;
-    cmsElapsed = rtc::TimeSince(msStart);
+    cmsElapsed = webrtc::TimeSince(msStart);
     if ((cmsWait != kForeverMs) && (cmsElapsed >= cmsWait)) {
       break;
     }

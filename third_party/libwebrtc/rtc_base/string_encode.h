@@ -36,13 +36,13 @@ std::string hex_encode(absl::string_view str);
 std::string hex_encode_with_delimiter(absl::string_view source, char delimiter);
 
 
-size_t hex_decode(rtc::ArrayView<char> buffer, absl::string_view source);
+size_t hex_decode(ArrayView<char> buffer, absl::string_view source);
 
 
 
 
 
-size_t hex_decode_with_delimiter(rtc::ArrayView<char> buffer,
+size_t hex_decode_with_delimiter(ArrayView<char> buffer,
                                  absl::string_view source,
                                  char delimiter);
 

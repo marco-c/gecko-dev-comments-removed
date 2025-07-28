@@ -111,8 +111,7 @@ class OperationWithFunctor final : public Operation {
 
 
 
-class OperationsChain final
-    : public rtc::RefCountedNonVirtual<OperationsChain> {
+class OperationsChain final : public RefCountedNonVirtual<OperationsChain> {
  public:
   static scoped_refptr<OperationsChain> Create();
   ~OperationsChain();

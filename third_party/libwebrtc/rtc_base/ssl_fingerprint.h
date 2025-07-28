@@ -53,7 +53,7 @@ struct RTC_EXPORT SSLFingerprint {
       const RTCCertificate& cert);
 
   SSLFingerprint(absl::string_view algorithm,
-                 rtc::ArrayView<const uint8_t> digest_view);
+                 ArrayView<const uint8_t> digest_view);
   
   SSLFingerprint(absl::string_view algorithm,
                  const uint8_t* digest_in,

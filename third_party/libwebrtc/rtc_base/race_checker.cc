@@ -25,7 +25,7 @@ RaceChecker::RaceChecker() {}
 
 
 bool RaceChecker::Acquire() const {
-  const rtc::PlatformThreadRef current_thread = CurrentThreadRef();
+  const PlatformThreadRef current_thread = CurrentThreadRef();
   
   const int current_access_count = access_count_;
   access_count_ = access_count_ + 1;
@@ -34,7 +34,7 @@ bool RaceChecker::Acquire() const {
   
   
   
-  const rtc::PlatformThreadRef accessing_thread = accessing_thread_;
+  const PlatformThreadRef accessing_thread = accessing_thread_;
   return IsThreadRefEqual(accessing_thread, current_thread);
 }
 

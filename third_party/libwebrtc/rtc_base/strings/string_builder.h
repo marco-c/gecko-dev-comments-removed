@@ -29,7 +29,7 @@ namespace webrtc {
 
 class SimpleStringBuilder {
  public:
-  explicit SimpleStringBuilder(rtc::ArrayView<char> buffer);
+  explicit SimpleStringBuilder(ArrayView<char> buffer);
   SimpleStringBuilder(const SimpleStringBuilder&) = delete;
   SimpleStringBuilder& operator=(const SimpleStringBuilder&) = delete;
 
@@ -70,7 +70,7 @@ class SimpleStringBuilder {
   
   
   
-  const rtc::ArrayView<char> buffer_;
+  const ArrayView<char> buffer_;
 
   
   

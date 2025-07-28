@@ -59,8 +59,8 @@ class BufferedReadAdapter : public AsyncSocketAdapter {
 
 class AsyncSSLSocket : public BufferedReadAdapter {
  public:
-  static rtc::ArrayView<const uint8_t> SslClientHello();
-  static rtc::ArrayView<const uint8_t> SslServerHello();
+  static ArrayView<const uint8_t> SslClientHello();
+  static ArrayView<const uint8_t> SslServerHello();
 
   explicit AsyncSSLSocket(Socket* socket);
 

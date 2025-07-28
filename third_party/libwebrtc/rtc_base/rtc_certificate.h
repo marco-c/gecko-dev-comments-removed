@@ -49,7 +49,7 @@ class RTCCertificatePEM {
 
 
 class RTC_EXPORT RTCCertificate final
-    : public rtc::RefCountedNonVirtual<RTCCertificate> {
+    : public RefCountedNonVirtual<RTCCertificate> {
  public:
   
   static scoped_refptr<RTCCertificate> Create(
@@ -61,8 +61,8 @@ class RTC_EXPORT RTCCertificate final
   
   bool HasExpired(uint64_t now) const;
 
-  const rtc::SSLCertificate& GetSSLCertificate() const;
-  const rtc::SSLCertChain& GetSSLCertificateChain() const;
+  const SSLCertificate& GetSSLCertificate() const;
+  const SSLCertChain& GetSSLCertificateChain() const;
 
   
   

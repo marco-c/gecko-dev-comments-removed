@@ -193,7 +193,7 @@ void ThreadManager::ProcessAllMessageQueuesInternal() {
     }
   }
 
-  Thread* current = rtc::Thread::Current();
+  Thread* current = Thread::Current();
   
   
   
@@ -265,7 +265,7 @@ void ThreadManager::SetCurrentThread(Thread* thread) {
   SetCurrentThreadInternal(thread);
 }
 
-void rtc::ThreadManager::ChangeCurrentThreadForTest(Thread* thread) {
+void ThreadManager::ChangeCurrentThreadForTest(Thread* thread) {
   SetCurrentThreadInternal(thread);
 }
 
@@ -929,8 +929,8 @@ AutoSocketServerThread::AutoSocketServerThread(SocketServer* ss)
   old_thread_ = ThreadManager::Instance()->CurrentThread();
   
   
-  rtc::ThreadManager::Instance()->SetCurrentThread(nullptr);
-  rtc::ThreadManager::Instance()->SetCurrentThread(this);
+  ThreadManager::Instance()->SetCurrentThread(nullptr);
+  ThreadManager::Instance()->SetCurrentThread(this);
   if (old_thread_) {
     ThreadManager::Remove(old_thread_);
   }
@@ -944,8 +944,8 @@ AutoSocketServerThread::~AutoSocketServerThread() {
   
   Stop();
   DoDestroy();
-  rtc::ThreadManager::Instance()->SetCurrentThread(nullptr);
-  rtc::ThreadManager::Instance()->SetCurrentThread(old_thread_);
+  ThreadManager::Instance()->SetCurrentThread(nullptr);
+  ThreadManager::Instance()->SetCurrentThread(old_thread_);
   if (old_thread_) {
     ThreadManager::Add(old_thread_);
   }

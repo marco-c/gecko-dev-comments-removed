@@ -34,7 +34,7 @@ class RTC_LOCKABLE RaceChecker {
 
   
   mutable volatile int access_count_ = 0;
-  mutable volatile rtc::PlatformThreadRef accessing_thread_;
+  mutable volatile PlatformThreadRef accessing_thread_;
 };
 
 namespace internal {

@@ -37,7 +37,7 @@ class RTC_EXPORT ReceivedIpPacket {
 
   
   
-  ReceivedIpPacket(rtc::ArrayView<const uint8_t> payload,
+  ReceivedIpPacket(ArrayView<const uint8_t> payload,
                    const webrtc::SocketAddress& source_address,
                    std::optional<webrtc::Timestamp> arrival_time = std::nullopt,
                    EcnMarking ecn = EcnMarking::kNotEct,
@@ -49,7 +49,7 @@ class RTC_EXPORT ReceivedIpPacket {
   const webrtc::SocketAddress& source_address() const {
     return source_address_;
   }
-  rtc::ArrayView<const uint8_t> payload() const { return payload_; }
+  ArrayView<const uint8_t> payload() const { return payload_; }
 
   
   
@@ -78,7 +78,7 @@ class RTC_EXPORT ReceivedIpPacket {
       const webrtc::SocketAddress& = webrtc::SocketAddress());
 
  private:
-  rtc::ArrayView<const uint8_t> payload_;
+  ArrayView<const uint8_t> payload_;
   std::optional<webrtc::Timestamp> arrival_time_;
   const webrtc::SocketAddress& source_address_;
   EcnMarking ecn_;

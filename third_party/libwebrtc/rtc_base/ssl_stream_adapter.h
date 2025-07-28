@@ -189,7 +189,7 @@ class SSLStreamAdapter : public StreamInterface {
   
   virtual SSLPeerCertificateDigestError SetPeerCertificateDigest(
       absl::string_view digest_alg,
-      rtc::ArrayView<const uint8_t> digest_val) = 0;
+      ArrayView<const uint8_t> digest_val) = 0;
   [[deprecated(
       "Use SetPeerCertificateDigest with ArrayView instead")]] virtual bool
   SetPeerCertificateDigest(absl::string_view digest_alg,
@@ -218,7 +218,7 @@ class SSLStreamAdapter : public StreamInterface {
 
   
   virtual bool ExportSrtpKeyingMaterial(
-      rtc::ZeroOnFreeBuffer<uint8_t>& keying_material) = 0;
+      ZeroOnFreeBuffer<uint8_t>& keying_material) = 0;
 
   
   virtual uint16_t GetPeerSignatureAlgorithm() const = 0;

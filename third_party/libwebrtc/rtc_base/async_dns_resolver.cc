@@ -30,7 +30,7 @@ namespace {
 #ifdef __native_client__
 int ResolveHostname(absl::string_view hostname,
                     int family,
-                    std::vector<rtc::IPAddress>* addresses) {
+                    std::vector<webrtc::IPAddress>* addresses) {
   RTC_DCHECK_NOTREACHED();
   RTC_LOG(LS_WARNING) << "ResolveHostname() is not implemented for NaCl";
   return -1;
@@ -99,15 +99,15 @@ void PostTaskToGlobalQueue(
 
 }  
 
-class AsyncDnsResolver::State : public rtc::RefCountedBase {
+class AsyncDnsResolver::State : public RefCountedBase {
  public:
   enum class Status {
     kActive,    
     kFinished,  
     kDead       
   };
-  static rtc::scoped_refptr<AsyncDnsResolver::State> Create() {
-    return rtc::make_ref_counted<AsyncDnsResolver::State>();
+  static scoped_refptr<AsyncDnsResolver::State> Create() {
+    return make_ref_counted<AsyncDnsResolver::State>();
   }
 
   

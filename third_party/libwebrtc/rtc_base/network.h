@@ -421,7 +421,7 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   
   
-  static bool IsVpnMacAddress(rtc::ArrayView<const uint8_t> address);
+  static bool IsVpnMacAddress(ArrayView<const uint8_t> address);
 
  protected:
   

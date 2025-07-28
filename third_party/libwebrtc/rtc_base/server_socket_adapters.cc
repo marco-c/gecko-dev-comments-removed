@@ -29,7 +29,7 @@ AsyncSSLServerSocket::AsyncSSLServerSocket(Socket* socket)
 
 void AsyncSSLServerSocket::ProcessInput(char* data, size_t* len) {
   
-  const rtc::ArrayView<const uint8_t> client_hello =
+  const ArrayView<const uint8_t> client_hello =
       AsyncSSLSocket::SslClientHello();
   if (*len < client_hello.size()) {
     return;
@@ -46,7 +46,7 @@ void AsyncSSLServerSocket::ProcessInput(char* data, size_t* len) {
   
   RTC_DCHECK(*len == 0);
 
-  const rtc::ArrayView<const uint8_t> server_hello =
+  const ArrayView<const uint8_t> server_hello =
       AsyncSSLSocket::SslServerHello();
   
   DirectSend(server_hello.data(), server_hello.size());

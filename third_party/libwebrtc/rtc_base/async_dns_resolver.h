@@ -54,7 +54,7 @@ class RTC_EXPORT AsyncDnsResolver : public AsyncDnsResolverInterface {
  private:
   class State;
   ScopedTaskSafety safety_;          
-  rtc::scoped_refptr<State> state_;  
+  scoped_refptr<State> state_;       
   AsyncDnsResolverResultImpl result_;
   absl::AnyInvocable<void()> callback_;
 };
