@@ -130,7 +130,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   
   RefPtr<ProcessHandlePromise> WhenProcessHandleReady();
 
-  bool InitializeChannel(IPC::Channel::ChannelHandle* aClientHandle);
+  void InitializeChannel(IPC::Channel::ChannelHandle&& aServerHandle);
 
   virtual bool CanShutdown() { return true; }
 

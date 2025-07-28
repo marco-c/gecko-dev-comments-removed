@@ -91,25 +91,22 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   
   
   
-  
-  
-  bool InviteChildProcess(GeckoChildProcessHost* aChildProcessHost,
-                          IPC::Channel::ChannelHandle* aClientHandle,
-                          ScopedPort* aInitialPort, NodeChannel** aNodeChannel);
+  std::tuple<ScopedPort, RefPtr<NodeChannel>> InviteChildProcess(
+      UniquePtr<IPC::Channel> aChannel,
+      GeckoChildProcessHost* aChildProcessHost);
 
   
-  static void InitBrokerProcess(const IPC::Channel::ChannelKind* aChannelKind);
+  static void InitBrokerProcess();
 
   
-  static ScopedPort InitChildProcess(
-      IPC::Channel::ChannelHandle&& aChannelHandle, base::ProcessId aParentPid);
+  static ScopedPort InitChildProcess(UniquePtr<IPC::Channel> aChannel,
+                                     base::ProcessId aParentPid);
 
   
   static void CleanUp();
 
  private:
-  NodeController(const NodeName& aName,
-                 const IPC::Channel::ChannelKind* aChannelKind);
+  explicit NodeController(const NodeName& aName);
   ~NodeController();
 
   UniquePtr<IPC::Message> SerializeEventMessage(
@@ -150,7 +147,6 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
 
   const NodeName mName;
   const UniquePtr<Node> mNode;
-  const IPC::Channel::ChannelKind* const mChannelKind;
 
   template <class T>
   using NodeMap = nsTHashMap<NodeNameHashKey, T>;

@@ -127,6 +127,7 @@ namespace {
 static AtExitManager* sExitManager;
 static MessageLoop* sMessageLoop;
 static bool sCommandLineWasInitialized;
+static IOThreadParent* sIOThread;
 static mozilla::BackgroundHangMonitor* sMainHangMonitor;
 
 } 
@@ -313,6 +314,13 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
     messageLoop->set_thread_name("Gecko_Child");
     messageLoop->set_hang_timeouts(128, 8192);
   }
+
+  
+  
+  if (XRE_IsParentProcess()) {
+    sIOThread = new IOThreadParent();
+  }
+  MOZ_ASSERT(mozilla::ipc::IOThread::Get(), "An IOThread has been started");
 
   
   rv = nsThreadManager::get().Init();
@@ -811,7 +819,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   NS_IF_RELEASE(gDebug);
 
-  mozilla::ipc::IOThread::Shutdown();
+  delete sIOThread;
+  sIOThread = nullptr;
 
   delete sMessageLoop;
   sMessageLoop = nullptr;

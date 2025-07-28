@@ -9,10 +9,8 @@
 
 #include <cstdint>
 #include <queue>
-#include <variant>
 #include "base/basictypes.h"
 #include "base/process.h"
-#include "mozilla/EventTargetAndLockCapability.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WeakPtr.h"
@@ -31,19 +29,13 @@ class MessageWriter;
 
 
 class Channel {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
-      Channel, IOThread().GetEventTarget());
+  
+  friend class ChannelTest;
 
+ public:
   
   
-  using ChannelHandle =
-      std::variant<std::monostate, mozilla::UniqueFileHandle
-#if defined(XP_DARWIN)
-                   ,
-                   mozilla::UniqueMachSendRight, mozilla::UniqueMachReceiveRight
-#endif
-                   >;
+  using ChannelHandle = mozilla::UniqueFileHandle;
 
   
   
@@ -65,7 +57,7 @@ class Channel {
     virtual void OnChannelError() {}
   };
 
-  enum Mode { MODE_BROKER_SERVER, MODE_BROKER_CLIENT, MODE_PEER };
+  enum Mode { MODE_SERVER, MODE_CLIENT };
 
   enum {
 
@@ -85,38 +77,21 @@ class Channel {
 
   
   
-  struct ChannelKind {
-    
-    
-    bool (*create_raw_pipe)(ChannelHandle* server, ChannelHandle* client);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Channel(ChannelHandle pipe, Mode mode, base::ProcessId other_pid);
 
-    
-    
-    uint32_t (*num_relayed_attachments)(const IPC::Message& message);
-
-    
-    bool (*is_valid_handle)(const ChannelHandle& handle);
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static already_AddRefed<Channel> Create(ChannelHandle pipe, Mode mode,
-                                          base::ProcessId other_pid);
-
-  Channel(const Channel&) = delete;
-  Channel& operator=(const Channel&) = delete;
+  ~Channel();
 
   
   
@@ -126,20 +101,10 @@ class Channel {
   
   
   
-  virtual bool Connect(Listener* listener) MOZ_EXCLUDES(SendMutex()) = 0;
+  bool Connect(Listener* listener);
 
   
-  virtual void Close() MOZ_EXCLUDES(SendMutex()) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual bool Send(mozilla::UniquePtr<Message> message)
-      MOZ_EXCLUDES(SendMutex()) = 0;
+  void Close();
 
   
   
@@ -147,40 +112,44 @@ class Channel {
   
   
   
-  virtual void SetOtherPid(base::ProcessId other_pid)
-      MOZ_EXCLUDES(SendMutex()) = 0;
+  
+  bool Send(mozilla::UniquePtr<Message> message);
+
+  
+  
+  
+  
+  
+  
+  void SetOtherPid(base::ProcessId other_pid);
+
+  
+  
+  bool IsClosed() const;
 
 #if defined(XP_DARWIN)
   
-  virtual void SetOtherMachTask(task_t task) MOZ_EXCLUDES(SendMutex()) = 0;
+  void SetOtherMachTask(task_t task);
+
+  
+  
+  
+  void StartAcceptingMachPorts(Mode mode);
+#elif defined(XP_WIN)
+  
+  
+  
+  void StartAcceptingHandles(Mode mode);
 #endif
 
   
-  virtual const ChannelKind* GetKind() const = 0;
+  
+  static bool CreateRawPipe(ChannelHandle* server, ChannelHandle* client);
 
- protected:
-  Channel();
-  virtual ~Channel();
-
+ private:
   
-  
-  const mozilla::EventTargetCapability<nsISerialEventTarget>& IOThread() const
-      MOZ_RETURN_CAPABILITY(chan_cap_.Target()) {
-    return chan_cap_.Target();
-  }
-
-  
-  
-  mozilla::Mutex& SendMutex() MOZ_RETURN_CAPABILITY(chan_cap_.Lock()) {
-    return chan_cap_.Lock();
-  }
-
-  
-  
-  
-  
-  mozilla::EventTargetAndLockCapability<nsISerialEventTarget, mozilla::Mutex>
-      chan_cap_;
+  class ChannelImpl;
+  RefPtr<ChannelImpl> channel_impl_;
 
   enum {
 #if defined(XP_DARWIN)
