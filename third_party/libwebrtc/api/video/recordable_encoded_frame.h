@@ -18,6 +18,7 @@
 #include "api/video/color_space.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_codec_type.h"
+#include "api/video/video_rotation.h"
 
 namespace webrtc {
 
@@ -42,6 +43,14 @@ class RecordableEncodedFrame {
   
   
   virtual std::optional<webrtc::ColorSpace> color_space() const = 0;
+
+  
+  
+  
+  
+  virtual std::optional<webrtc::VideoRotation> video_rotation() const {
+    return std::nullopt;
+  }
 
   
   virtual VideoCodecType codec() const = 0;
