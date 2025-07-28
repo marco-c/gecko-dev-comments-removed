@@ -624,6 +624,13 @@ customElements.setElementCreationCallback("fxa-menu-message", () => {
   );
 });
 
+customElements.setElementCreationCallback("webrtc-preview", () => {
+  ChromeUtils.importESModule(
+    "chrome://browser/content/webrtc/webrtc-preview.mjs",
+    { global: "current" }
+  );
+});
+
 var gBrowser;
 var gContextMenu = null; 
 var gMultiProcessBrowser = window.docShell.QueryInterface(
