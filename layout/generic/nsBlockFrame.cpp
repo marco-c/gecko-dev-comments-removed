@@ -6809,7 +6809,8 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   
   const auto* disp = aStyle->StyleDisplay();
   return disp->IsContainPaint() || disp->IsContainLayout() ||
-         disp->mContainerType != StyleContainerType::Normal ||
+         disp->mContainerType &
+             (StyleContainerType::SIZE | StyleContainerType::INLINE_SIZE) ||
          disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
          disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
          aStyle->IsRootElementStyle() || AnonymousBoxIsBFC(aStyle);

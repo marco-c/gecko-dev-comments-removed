@@ -1274,27 +1274,52 @@ pub enum ContentVisibility {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(u8)]
-#[allow(missing_docs)]
+#[css(bitflags(
+    single = "normal",
+    mixed = "size,inline-size,scroll-state",
+    validate_mixed = "Self::validate_mixed_flags",
+))]
+#[repr(C)]
 
-pub enum ContainerType {
-    
-    Normal,
-    
-    InlineSize,
-    
-    Size,
+
+
+
+
+
+pub struct ContainerType(u8);
+bitflags! {
+    impl ContainerType: u8 {
+        /// The `normal` variant.
+        const NORMAL = 0;
+        /// The `inline-size` variant.
+        const INLINE_SIZE = 1 << 0;
+        /// The `size` variant.
+        const SIZE = 1 << 1;
+        /// The `scroll-state` variant.
+        const SCROLL_STATE = 1 << 2;
+    }
 }
 
 impl ContainerType {
+    fn validate_mixed_flags(&self) -> bool {
+        
+        if self.contains(Self::SIZE | Self::INLINE_SIZE) {
+            return false;
+        }
+        if self.contains(Self::SCROLL_STATE) && !static_prefs::pref!("layout.css.scroll-state.enabled") {
+            return false;
+        }
+        true
+    }
+
     
     pub fn is_normal(self) -> bool {
-        self == Self::Normal
+        self == Self::NORMAL
     }
 
     
     pub fn is_size_container_type(self) -> bool {
-        !self.is_normal()
+        self.intersects(Self::SIZE | Self::INLINE_SIZE)
     }
 }
 
