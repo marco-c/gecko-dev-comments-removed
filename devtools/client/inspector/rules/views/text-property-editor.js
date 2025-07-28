@@ -103,55 +103,55 @@ const IS_DRAGGING_CLASSNAME = "ruleview-propertyvalue-dragging";
 
 
 
-function TextPropertyEditor(ruleEditor, property) {
-  this.ruleEditor = ruleEditor;
-  this.ruleView = this.ruleEditor.ruleView;
-  this.cssProperties = this.ruleView.cssProperties;
-  this.doc = this.ruleEditor.doc;
-  this.popup = this.ruleView.popup;
-  this.prop = property;
-  this.prop.editor = this;
-  this.browserWindow = this.doc.defaultView.top;
+class TextPropertyEditor {
+  constructor(ruleEditor, property) {
+    this.ruleEditor = ruleEditor;
+    this.ruleView = this.ruleEditor.ruleView;
+    this.cssProperties = this.ruleView.cssProperties;
+    this.doc = this.ruleEditor.doc;
+    this.popup = this.ruleView.popup;
+    this.prop = property;
+    this.prop.editor = this;
+    this.browserWindow = this.doc.defaultView.top;
 
-  this._populatedComputed = false;
-  this._hasPendingClick = false;
-  this._clickedElementOptions = null;
+    this._populatedComputed = false;
+    this._hasPendingClick = false;
+    this._clickedElementOptions = null;
 
-  this.toolbox = this.ruleView.inspector.toolbox;
-  this.telemetry = this.toolbox.telemetry;
+    this.toolbox = this.ruleView.inspector.toolbox;
+    this.telemetry = this.toolbox.telemetry;
 
-  this._isDragging = false;
-  this._capturingPointerId = null;
-  this._hasDragged = false;
-  this._draggingController = null;
-  this._draggingValueCache = null;
+    this._isDragging = false;
+    this._capturingPointerId = null;
+    this._hasDragged = false;
+    this._draggingController = null;
+    this._draggingValueCache = null;
 
-  this.getGridlineNames = this.getGridlineNames.bind(this);
-  this.update = this.update.bind(this);
-  this.updatePropertyState = this.updatePropertyState.bind(this);
-  this._onDraggablePreferenceChanged =
-    this._onDraggablePreferenceChanged.bind(this);
-  this._onEnableChanged = this._onEnableChanged.bind(this);
-  this._onEnableClicked = this._onEnableClicked.bind(this);
-  this._onExpandClicked = this._onExpandClicked.bind(this);
-  this._onNameDone = this._onNameDone.bind(this);
-  this._onStartEditing = this._onStartEditing.bind(this);
-  this._onSwatchCommit = this._onSwatchCommit.bind(this);
-  this._onSwatchPreview = this._onSwatchPreview.bind(this);
-  this._onSwatchRevert = this._onSwatchRevert.bind(this);
-  this._onValidate = this.ruleView.debounce(this._previewValue, 10, this);
-  this._onValueDone = this._onValueDone.bind(this);
+    this.getGridlineNames = this.getGridlineNames.bind(this);
+    this.update = this.update.bind(this);
+    this.updatePropertyState = this.updatePropertyState.bind(this);
+    this._onDraggablePreferenceChanged =
+      this._onDraggablePreferenceChanged.bind(this);
+    this._onEnableChanged = this._onEnableChanged.bind(this);
+    this._onEnableClicked = this._onEnableClicked.bind(this);
+    this._onExpandClicked = this._onExpandClicked.bind(this);
+    this._onNameDone = this._onNameDone.bind(this);
+    this._onStartEditing = this._onStartEditing.bind(this);
+    this._onSwatchCommit = this._onSwatchCommit.bind(this);
+    this._onSwatchPreview = this._onSwatchPreview.bind(this);
+    this._onSwatchRevert = this._onSwatchRevert.bind(this);
+    this._onValidate = this.ruleView.debounce(this._previewValue, 10, this);
+    this._onValueDone = this._onValueDone.bind(this);
 
-  this._draggingOnPointerDown = this._draggingOnPointerDown.bind(this);
-  this._draggingOnMouseMove = throttle(this._draggingOnMouseMove, 30, this);
-  this._draggingOnPointerUp = this._draggingOnPointerUp.bind(this);
-  this._draggingOnKeydown = this._draggingOnKeydown.bind(this);
+    this._draggingOnPointerDown = this._draggingOnPointerDown.bind(this);
+    this._draggingOnMouseMove = throttle(this._draggingOnMouseMove, 30, this);
+    this._draggingOnPointerUp = this._draggingOnPointerUp.bind(this);
+    this._draggingOnKeydown = this._draggingOnKeydown.bind(this);
 
-  this._create();
-  this.update();
-}
+    this._create();
+    this.update();
+  }
 
-TextPropertyEditor.prototype = {
   
 
 
@@ -163,19 +163,19 @@ TextPropertyEditor.prototype = {
         this.ruleView.tooltips.isEditing
       ) || this.popup.isOpen
     );
-  },
+  }
 
   
 
 
   get rule() {
     return this.prop.rule;
-  },
+  }
 
   
   get _DRAGGING_DEADZONE_DISTANCE() {
     return DRAGGING_DEADZONE_DISTANCE;
-  },
+  }
 
   
 
@@ -514,7 +514,7 @@ TextPropertyEditor.prototype = {
         inputAriaLabelledBy: this.nameSpan.id,
       });
     }
-  },
+  }
 
   
 
@@ -588,7 +588,7 @@ TextPropertyEditor.prototype = {
     
     this.ruleView.inspector.emit("grid-line-names-updated");
     return gridLineNames;
-  },
+  }
 
   
 
@@ -602,7 +602,7 @@ TextPropertyEditor.prototype = {
       return domRule.href || domRule.nodeHref;
     }
     return undefined;
-  },
+  }
 
   
 
@@ -912,14 +912,14 @@ TextPropertyEditor.prototype = {
         elementToFocus.focus();
       }
     }
-  },
+  }
 
   _onStartEditing() {
     this.element.classList.remove("ruleview-overridden");
     this.filterProperty.hidden = true;
     this.enable.style.visibility = "hidden";
     this.expander.style.display = "none";
-  },
+  }
 
   get shouldShowComputedExpander() {
     
@@ -932,7 +932,7 @@ TextPropertyEditor.prototype = {
       this.prop.computed.some(c => c.name !== this.prop.name) &&
       !this.prop.computed.every(c => !c.value)
     );
-  },
+  }
 
   
 
@@ -984,7 +984,7 @@ TextPropertyEditor.prototype = {
 
     this.updatePropertyUsedIndicator();
     this.updatePropertyCompatibilityIndicator();
-  },
+  }
 
   updatePropertyUsedIndicator() {
     const { used } = this.prop.isUsed();
@@ -996,7 +996,7 @@ TextPropertyEditor.prototype = {
       this.element.classList.add("unused");
       this.unusedState.hidden = false;
     }
-  },
+  }
 
   async updatePropertyCompatibilityIndicator() {
     const { isCompatible } = await this.prop.isCompatible();
@@ -1006,7 +1006,7 @@ TextPropertyEditor.prototype = {
     } else {
       this.compatibilityState.hidden = false;
     }
-  },
+  }
 
   
 
@@ -1024,7 +1024,7 @@ TextPropertyEditor.prototype = {
     if (this.expander.getAttribute("aria-expanded" === "true")) {
       this._populateComputed();
     }
-  },
+  }
 
   
 
@@ -1050,7 +1050,7 @@ TextPropertyEditor.prototype = {
         "ruleview-computed"
       );
     }
-  },
+  }
 
   
 
@@ -1062,7 +1062,7 @@ TextPropertyEditor.prototype = {
 
     this._populatedShorthandOverridden = false;
     this._populateShorthandOverridden();
-  },
+  }
 
   
 
@@ -1090,7 +1090,7 @@ TextPropertyEditor.prototype = {
         "ruleview-overridden-item"
       );
     }
-  },
+  }
 
   
 
@@ -1136,7 +1136,7 @@ TextPropertyEditor.prototype = {
     appendText(propertyContainer, ";");
 
     return li;
-  },
+  }
 
   
 
@@ -1148,14 +1148,14 @@ TextPropertyEditor.prototype = {
     } else {
       this._removeDraggingCapacity();
     }
-  },
+  }
 
   
 
 
   _onEnableClicked(event) {
     event.stopPropagation();
-  },
+  }
 
   
 
@@ -1164,7 +1164,7 @@ TextPropertyEditor.prototype = {
     this.prop.setEnabled(this.enable.checked);
     event.stopPropagation();
     this.telemetry.recordEvent("edit_rule", "ruleview");
-  },
+  }
 
   
 
@@ -1191,7 +1191,7 @@ TextPropertyEditor.prototype = {
     }
 
     event.stopPropagation();
-  },
+  }
 
   
 
@@ -1204,7 +1204,7 @@ TextPropertyEditor.prototype = {
       this.computed.setAttribute("filter-open", "");
       this._populateComputed();
     }
-  },
+  }
 
   
 
@@ -1215,7 +1215,7 @@ TextPropertyEditor.prototype = {
     if (!this.computed.hasAttribute("user-open")) {
       this.expander.setAttribute("aria-expanded", "false");
     }
-  },
+  }
 
   
 
@@ -1275,7 +1275,7 @@ TextPropertyEditor.prototype = {
         this.ruleEditor.addProperties(properties.slice(1), this.prop);
       }
     }
-  },
+  }
 
   
 
@@ -1308,7 +1308,7 @@ TextPropertyEditor.prototype = {
     this.nameSpan.textProperty = null;
     this.valueSpan.textProperty = null;
     this.prop.remove();
-  },
+  }
 
   
 
@@ -1388,7 +1388,7 @@ TextPropertyEditor.prototype = {
     }
 
     return onPropertySet;
-  },
+  }
 
   
 
@@ -1396,14 +1396,14 @@ TextPropertyEditor.prototype = {
   _onSwatchCommit() {
     this._onValueDone(this.valueSpan.textContent, true);
     this.update();
-  },
+  }
 
   
 
 
   _onSwatchPreview() {
     this._previewValue(this.valueSpan.textContent);
-  },
+  }
 
   
 
@@ -1412,7 +1412,7 @@ TextPropertyEditor.prototype = {
   _onSwatchRevert() {
     this._previewValue(this.prop.value, true);
     this.update();
-  },
+  }
 
   
 
@@ -1459,7 +1459,7 @@ TextPropertyEditor.prototype = {
       propertiesToAdd,
       firstValue,
     };
-  },
+  }
 
   
 
@@ -1482,7 +1482,7 @@ TextPropertyEditor.prototype = {
       val.value,
       val.priority
     );
-  },
+  }
 
   
 
@@ -1495,7 +1495,7 @@ TextPropertyEditor.prototype = {
     const modifier =
       lazy.AppConstants.platform === "macosx" ? "altKey" : "ctrlKey";
     return event[modifier] === true;
-  },
+  }
 
   
 
@@ -1510,7 +1510,7 @@ TextPropertyEditor.prototype = {
     const cssDimensionRegex =
       /^(?<value>[+-]?(\d*\.)?\d+(e[+-]?\d+)?)(?<unit>(%|[a-zA-Z]+))$/;
     return value.match(cssDimensionRegex);
-  },
+  }
 
   
 
@@ -1539,7 +1539,7 @@ TextPropertyEditor.prototype = {
 
     const dimensionMatchObj = this._parseDimension(textProperty.value);
     return !!dimensionMatchObj;
-  },
+  }
 
   _draggingOnPointerDown(event) {
     
@@ -1585,7 +1585,7 @@ TextPropertyEditor.prototype = {
     this.valueSpan.addEventListener("keydown", this._draggingOnKeydown, {
       signal,
     });
-  },
+  }
 
   _draggingOnMouseMove(event) {
     if (!this._isDragging) {
@@ -1633,7 +1633,7 @@ TextPropertyEditor.prototype = {
       .setValue(roundedValue + unit, this.prop.priority)
       .then(() => this.ruleView.emitForTests("property-updated-by-dragging"));
     this._hasDragged = true;
-  },
+  }
 
   _draggingOnPointerUp() {
     if (!this._isDragging) {
@@ -1644,7 +1644,7 @@ TextPropertyEditor.prototype = {
       this.prop.setEnabled(true);
     }
     this._onStopDragging();
-  },
+  }
 
   _draggingOnKeydown(event) {
     if (event.key == "Escape") {
@@ -1652,7 +1652,7 @@ TextPropertyEditor.prototype = {
       this._onStopDragging();
       event.preventDefault();
     }
-  },
+  }
 
   _onStopDragging() {
     
@@ -1675,7 +1675,7 @@ TextPropertyEditor.prototype = {
     }
     this.valueSpan.classList.remove(IS_DRAGGING_CLASSNAME);
     this._draggingController.abort();
-  },
+  }
 
   
 
@@ -1691,7 +1691,7 @@ TextPropertyEditor.prototype = {
       this._draggingOnPointerDown,
       { passive: true }
     );
-  },
+  }
 
   _removeDraggingCapacity() {
     if (!this.valueSpan.classList.contains(DRAGGABLE_VALUE_CLASSNAME)) {
@@ -1704,7 +1704,7 @@ TextPropertyEditor.prototype = {
       this._draggingOnPointerDown,
       { passive: true }
     );
-  },
+  }
 
   
 
@@ -1714,7 +1714,7 @@ TextPropertyEditor.prototype = {
 
   isValid() {
     return this.prop.isValid();
-  },
+  }
 
   
 
@@ -1722,11 +1722,11 @@ TextPropertyEditor.prototype = {
 
   isNameValid() {
     return this.prop.isNameValid();
-  },
+  }
 
   isInvalidAtComputedValueTime() {
     return this.prop.isInvalidAtComputedValueTime();
-  },
+  }
 
   
 
@@ -1763,7 +1763,7 @@ TextPropertyEditor.prototype = {
           `\n${quoteSymbolsUsed[i]}` + line.join(" ") + quoteSymbolsUsed[i]
       )
       .join(" ");
-  },
-};
+  }
+}
 
 module.exports = TextPropertyEditor;
