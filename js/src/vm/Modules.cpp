@@ -50,6 +50,10 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
                            MutableHandle<Value> rval);
 static bool SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
                                     MutableHandle<Value> rval);
+static bool ContinueModuleLoading(JSContext* cx,
+                                  Handle<GraphLoadingStateRecordObject*> state,
+                                  Handle<JSObject*> moduleCompletion,
+                                  Handle<Value> error);
 
 
 
@@ -1387,11 +1391,28 @@ static bool InnerModuleLoading(JSContext* cx,
     
     Rooted<ModuleRequestObject*> moduleRequest(cx);
     Rooted<ModuleObject*> recordModule(cx);
+    Rooted<JSAtom*> invalidKey(cx);
     for (const RequestedModule& request : module->requestedModules()) {
       moduleRequest = request.moduleRequest();
+
       
-      
-      if (auto record = module->loadedModules().lookup(moduleRequest)) {
+      if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
+        UniqueChars printableKey = AtomToPrintableString(
+            cx, moduleRequest->getFirstUnsupportedAttributeKey());
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr,
+            JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
+            printableKey ? printableKey.get() : "");
+
+        JS::ExceptionStack exnStack(cx);
+        if (!JS::StealPendingExceptionStack(cx, &exnStack)) {
+          return false;
+        }
+
+        ContinueModuleLoading(cx, state, nullptr, exnStack.exception());
+      } else if (auto record = module->loadedModules().lookup(moduleRequest)) {
+        
+        
         
         
         recordModule = record->value();
@@ -1670,23 +1691,8 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
+    
     required = request.moduleRequest();
-
-    
-    
-    
-    if (required->hasFirstUnsupportedAttributeKey()) {
-      UniqueChars printableKey = AtomToPrintableString(
-          cx, required->getFirstUnsupportedAttributeKey());
-      JS_ReportErrorNumberASCII(
-          cx, GetErrorMessage, nullptr,
-          JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
-          printableKey ? printableKey.get() : "");
-
-      return false;
-    }
-
-    
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
