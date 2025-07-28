@@ -396,6 +396,7 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   
   
   nsIUDPSocket* mSocket;
+  uint32_t mTrrStreams = 0;
 };
 
 }  
