@@ -35,7 +35,6 @@
 #include "nsContentUtils.h"
 
 class nsIEditor;
-class nsIRadioVisitor;
 
 namespace mozilla {
 
@@ -295,6 +294,7 @@ class HTMLInputElement final : public TextControlElement,
   void AddToRadioGroup();
   void RemoveFromRadioGroup();
   void DisconnectRadioGroupContainer();
+  void UpdateRadioGroupState();
 
   
 
@@ -994,13 +994,8 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  nsresult VisitGroup(nsIRadioVisitor* aVisitor);
-
-  
-
-
-
-  void VisitGroup(const RadioGroupContainer::VisitCallback& aCallback);
+  template <typename VisitCallback>
+  void VisitGroup(VisitCallback&& aCallback, bool aSkipThis = true);
 
   
 
@@ -1008,13 +1003,6 @@ class HTMLInputElement final : public TextControlElement,
 
   void DoSetChecked(bool aValue, bool aNotify, bool aSetValueChanged,
                     bool aUpdateOtherElement = true);
-
-  
-
-
-
-
-  void DoSetCheckedChanged(bool aCheckedChanged, bool aNotify);
 
   
 
