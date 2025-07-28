@@ -382,3 +382,6 @@ void TextTrack::CueBuckets::AddCue(TextTrackCue* aCue) {
 }
 
 }  
+
+#undef WEBVTT_LOG
+#undef WEBVTT_LOGV
