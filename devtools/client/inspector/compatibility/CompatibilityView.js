@@ -162,17 +162,29 @@ class CompatibilityView {
   };
 
   #onMarkupMutation = mutations => {
-    const attributeMutation = mutations.filter(
-      mutation =>
+    
+    
+    
+    const targetsWithAttributeMutation = new Set();
+    const childListMutation = [];
+
+    for (const mutation of mutations) {
+      if (
         mutation.type === "attributes" &&
         (mutation.attributeName === "style" ||
           mutation.attributeName === "class")
-    );
-    const childListMutation = mutations.filter(
-      mutation => mutation.type === "childList"
-    );
+      ) {
+        targetsWithAttributeMutation.add(mutation.target);
+      }
+      if (mutation.type === "childList") {
+        childListMutation.push(mutation);
+      }
+    }
 
-    if (attributeMutation.length === 0 && childListMutation.length === 0) {
+    if (
+      targetsWithAttributeMutation.size === 0 &&
+      childListMutation.length === 0
+    ) {
       return;
     }
 
@@ -187,7 +199,7 @@ class CompatibilityView {
     
     
     
-    for (const { target } of attributeMutation) {
+    for (const target of targetsWithAttributeMutation) {
       this.inspector.store.dispatch(updateNode(target));
     }
 
