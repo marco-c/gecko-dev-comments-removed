@@ -800,11 +800,49 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         .Default(InvalidSyscall());
   }
 
+  virtual BoolExpr MsgFlagsAllowed(const Arg<int>& aFlags) const {
+    
+    
+    
+    static constexpr int kNeeded =
+        MSG_DONTWAIT | MSG_NOSIGNAL | MSG_CMSG_CLOEXEC;
+
+    
+    
+    
+    
+    static constexpr int kHarmless = MSG_PEEK | MSG_WAITALL | MSG_TRUNC;
+
+    static constexpr int kAllowed = kNeeded | kHarmless;
+    return (aFlags & ~kAllowed) == 0;
+  }
+
+  static ResultExpr UnpackSocketcallOrAllow() {
+    
+    if (HasSeparateSocketCalls()) {
+      
+      
+      
+      return Trap(SocketcallUnpackTrap, nullptr);
+    }
+    
+    
+    return Allow();
+  }
+
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
       case SYS_RECVMSG:
       case SYS_SENDMSG:
+        if (aHasArgs) {
+          Arg<int> flags(2);
+          return Some(
+              If(MsgFlagsAllowed(flags), Allow()).Else(InvalidSyscall()));
+        }
+        return Some(UnpackSocketcallOrAllow());
+
+        
         
         
         
@@ -813,7 +851,12 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case SYS_SENDTO:
       case SYS_RECV:
       case SYS_SEND:
-        return Some(Allow());
+        if (aHasArgs) {
+          Arg<int> flags(3);
+          return Some(
+              If(MsgFlagsAllowed(flags), Allow()).Else(InvalidSyscall()));
+        }
+        return Some(UnpackSocketcallOrAllow());
 
       case SYS_SOCKETPAIR: {
         
@@ -822,17 +865,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         if (!mBroker && !mAllowUnsafeSocketPair) {
           return Nothing();
         }
-        
         if (!aHasArgs) {
-          
-          
-          
-          if (HasSeparateSocketCalls()) {
-            return Some(Trap(SocketcallUnpackTrap, nullptr));
-          }
-          
-          
-          return Some(Allow());
+          return Some(UnpackSocketcallOrAllow());
         }
         Arg<int> domain(0), type(1);
         return Some(
@@ -2126,6 +2160,13 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
     }
   }
 
+  BoolExpr MsgFlagsAllowed(const Arg<int>& aFlags) const override {
+    
+    
+    
+    return BoolConst(true);
+  }
+
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
@@ -2137,11 +2178,14 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
       
       
       case SYS_RECVMMSG:
-        return Some(Allow());
-
       
       case SYS_SENDMMSG:
-        return Some(Allow());
+        if (aHasArgs) {
+          Arg<int> flags(3);
+          return Some(
+              If(MsgFlagsAllowed(flags), Allow()).Else(InvalidSyscall()));
+        }
+        return Some(UnpackSocketcallOrAllow());
 
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
