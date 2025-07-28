@@ -3584,7 +3584,8 @@ static void resize_reset_rc(AV1_COMP *cpi, int resize_width, int resize_height,
 
 
 
-static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi) {
+
+static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi, int one_half_only) {
   const AV1_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   PRIMARY_RATE_CONTROL *const p_rc = &cpi->ppi->p_rc;
@@ -3609,11 +3610,8 @@ static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi) {
   
   
   
-  if (cpi->rc.frames_since_key > cpi->framerate &&
-      (cpi->oxcf.tune_cfg.content != AOM_CONTENT_SCREEN ||
-       cpi->oxcf.q_cfg.aq_mode != CYCLIC_REFRESH_AQ ||
-       cpi->cyclic_refresh->counter_encode_maxq_scene_change > 4)) {
-    const int window = AOMMIN(30, (int)(2 * cpi->framerate));
+  if (rc->frames_since_key > cpi->framerate && !rc->high_source_sad) {
+    const int window = AOMMAX(60, (int)(3 * cpi->framerate));
     rc->resize_avg_qp += p_rc->last_q[INTER_FRAME];
     if (cpi->ppi->p_rc.buffer_level <
         (int)(30 * p_rc->optimal_buffer_level / 100))
@@ -3633,13 +3631,14 @@ static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi) {
           resize_action = DOWN_ONEHALF;
           rc->resize_state = ONE_HALF;
         } else if (rc->resize_state == ORIG) {
-          resize_action = DOWN_THREEFOUR;
-          rc->resize_state = THREE_QUARTER;
+          resize_action = one_half_only ? DOWN_ONEHALF : DOWN_THREEFOUR;
+          rc->resize_state = one_half_only ? ONE_HALF : THREE_QUARTER;
         }
       } else if (rc->resize_state != ORIG &&
                  avg_qp < avg_qp_thr1 * cpi->rc.worst_quality / 100) {
         if (rc->resize_state == THREE_QUARTER ||
-            avg_qp < avg_qp_thr2 * cpi->rc.worst_quality / 100) {
+            avg_qp < avg_qp_thr2 * cpi->rc.worst_quality / 100 ||
+            one_half_only) {
           resize_action = UP_ORIG;
           rc->resize_state = ORIG;
         } else if (rc->resize_state == ONE_HALF) {
@@ -3816,7 +3815,7 @@ void av1_get_one_pass_rt_params(AV1_COMP *cpi, FRAME_TYPE *const frame_type,
   
   if (cpi->oxcf.resize_cfg.resize_mode == RESIZE_DYNAMIC) {
     if (svc->number_spatial_layers == 1 && svc->temporal_layer_id == 0)
-      dynamic_resize_one_pass_cbr(cpi);
+      dynamic_resize_one_pass_cbr(cpi, 1);
     if (rc->resize_state == THREE_QUARTER) {
       resize_pending_params->width = (3 + cpi->oxcf.frm_dim_cfg.width * 3) >> 2;
       resize_pending_params->height =

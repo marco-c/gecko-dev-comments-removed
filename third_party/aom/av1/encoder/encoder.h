@@ -836,6 +836,11 @@ typedef struct {
   
 
 
+  bool enable_adaptive_sharpness;
+
+  
+
+
 
 
 

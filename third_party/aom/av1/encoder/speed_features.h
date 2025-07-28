@@ -490,6 +490,13 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
 
 
   int ref_frame_mvs_lvl;
+
+  
+
+
+
+
+  int screen_detection_mode2_fast_detection;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 
@@ -902,6 +909,21 @@ typedef struct MV_SPEED_FEATURES {
 
   
   int use_intrabc;
+
+  
+  
+  
+  int prune_intrabc_candidate_block_hash_search;
+
+  
+  
+  
+  int intrabc_search_level;
+
+  
+  
+  
+  int hash_max_8x8_intrabc_blocks;
 
   
   
@@ -1632,6 +1654,11 @@ typedef struct REAL_TIME_SPEED_FEATURES {
 
   
   int use_nonrd_pick_mode;
+
+  
+  
+  
+  int discount_color_cost;
 
   
   int use_nonrd_altref_frame;

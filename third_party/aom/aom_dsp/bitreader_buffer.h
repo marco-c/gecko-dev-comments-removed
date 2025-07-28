@@ -38,6 +38,9 @@ int aom_rb_read_bit(struct aom_read_bit_buffer *rb);
 
 int aom_rb_read_literal(struct aom_read_bit_buffer *rb, int bits);
 
+
+
+
 uint32_t aom_rb_read_uvlc(struct aom_read_bit_buffer *rb);
 
 #if CONFIG_AV1_DECODER

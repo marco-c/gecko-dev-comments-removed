@@ -624,7 +624,7 @@ static void inspect(void *pbi, void *data) {
   (void)data;
   
   
-  char *buffer = aom_malloc(MAX_BUFFER);
+  char *buffer = malloc(MAX_BUFFER);
   if (!buffer) {
     fprintf(stderr, "Error allocating inspect info buffer\n");
     abort();
@@ -742,7 +742,7 @@ static void inspect(void *pbi, void *data) {
   buf += put_str(buf, "},\n");
   *(buf++) = 0;
   on_frame_decoded_dump(buffer);
-  aom_free(buffer);
+  free(buffer);
 }
 
 static void ifd_init_cb(void) {

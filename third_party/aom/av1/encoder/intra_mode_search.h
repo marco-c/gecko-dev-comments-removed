@@ -15,6 +15,8 @@
 #ifndef AOM_AV1_ENCODER_INTRA_MODE_SEARCH_H_
 #define AOM_AV1_ENCODER_INTRA_MODE_SEARCH_H_
 
+#include <stdbool.h>
+
 #include "av1/encoder/encoder.h"
 
 #ifdef __cplusplus
@@ -286,11 +288,26 @@ void av1_count_colors_highbd(const uint8_t *src8, int stride, int rows,
 
 
 
+
+
+
+
+
+
+
+
+bool av1_count_colors_with_threshold(const uint8_t *src, int stride, int rows,
+                                     int cols, int num_colors_threshold,
+                                     int *num_colors);
+
+
+
 static inline void init_intra_mode_search_state(
     IntraModeSearchState *intra_search_state) {
   memset(intra_search_state, 0, sizeof(*intra_search_state));
   intra_search_state->rate_uv_intra = INT_MAX;
 }
+
 
 
 

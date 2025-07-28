@@ -9,6 +9,7 @@
 
 
 #include <immintrin.h>
+#include <stdint.h>
 
 #include "config/aom_dsp_rtcd.h"
 

@@ -1601,6 +1601,15 @@ enum aome_enc_control_id {
   AV1E_SET_SCREEN_CONTENT_DETECTION_MODE = 171,
 
   
+
+
+
+
+
+
+  AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS = 172,
+
+  
   
   
 };
@@ -1629,9 +1638,6 @@ typedef enum aom_scaling_mode_1d {
 
 
 #define AOM_MAX_SEGMENTS 8
-
-
-
 
 
 
@@ -1698,6 +1704,7 @@ typedef enum {
   AOM_TIMING_EQUAL,
   AOM_TIMING_DEC_MODEL
 } aom_timing_info_type_t;
+
 
 
 
@@ -2339,6 +2346,9 @@ AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_LOW_COMPLEXITY_DECODE, unsigned int)
 AOM_CTRL_USE_TYPE(AV1E_SET_SCREEN_CONTENT_DETECTION_MODE,
                   int) 
 #define AOM_CTRL_SET_SCREEN_CONTENT_DETECTION_MODE
+
+AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, unsigned int)
+#define AOM_CTRL_AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS
 
 
 

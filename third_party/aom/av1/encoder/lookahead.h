@@ -66,11 +66,13 @@ struct lookahead_ctx {
 
 
 
-struct lookahead_ctx *av1_lookahead_init(
-    unsigned int width, unsigned int height, unsigned int subsampling_x,
-    unsigned int subsampling_y, int use_highbitdepth, unsigned int depth,
-    const int border_in_pixels, int byte_alignment, int num_lap_buffers,
-    bool is_all_intra, bool alloc_pyramid);
+struct lookahead_ctx *av1_lookahead_init(int width, int height,
+                                         int subsampling_x, int subsampling_y,
+                                         int use_highbitdepth, int depth,
+                                         const int border_in_pixels,
+                                         int byte_alignment,
+                                         int num_lap_buffers, bool is_all_intra,
+                                         bool alloc_pyramid);
 
 
 
@@ -124,8 +126,7 @@ struct lookahead_entry *av1_lookahead_peek(struct lookahead_ctx *ctx, int index,
 
 
 
-unsigned int av1_lookahead_depth(struct lookahead_ctx *ctx,
-                                 COMPRESSOR_STAGE stage);
+int av1_lookahead_depth(struct lookahead_ctx *ctx, COMPRESSOR_STAGE stage);
 
 
 
