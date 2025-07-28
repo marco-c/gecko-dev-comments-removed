@@ -180,7 +180,7 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
     return stun_port_->request_manager().HasRequestForTest(msg_type);
   }
 
-  void SetNetworkType(rtc::AdapterType adapter_type) {
+  void SetNetworkType(webrtc::AdapterType adapter_type) {
     network_->set_type(adapter_type);
   }
 
@@ -227,7 +227,8 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
     }
     ASSERT_TRUE(socket_ != NULL);
     socket_->RegisterReceivedPacketCallback(
-        [&](rtc::AsyncPacketSocket* socket, const rtc::ReceivedPacket& packet) {
+        [&](webrtc::AsyncPacketSocket* socket,
+            const webrtc::ReceivedIpPacket& packet) {
           OnReadPacket(socket, packet);
         });
     ServerAddresses stun_servers;
@@ -251,13 +252,13 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
   void PrepareAddress() { stun_port_->PrepareAddress(); }
 
   void OnReadPacket(webrtc::AsyncPacketSocket* socket,
-                    const rtc::ReceivedPacket& packet) {
+                    const webrtc::ReceivedIpPacket& packet) {
     stun_port_->HandleIncomingPacket(socket, packet);
   }
 
   void SendData(const char* data, size_t len) {
     stun_port_->HandleIncomingPacket(
-        socket_.get(), rtc::ReceivedPacket::CreateFromLegacy(
+        socket_.get(), webrtc::ReceivedIpPacket::CreateFromLegacy(
                            data, len,  -1,
                            webrtc::SocketAddress("22.22.22.22", 0)));
   }
@@ -544,7 +545,7 @@ TEST_F(StunPortTestWithRealClock,
 
   
   
-  std::string data = "some random data, sending to cricket::Port.";
+  std::string data = "some random data, sending to webrtc::Port.";
   SendData(data.c_str(), data.length());
   
 }
@@ -652,12 +653,12 @@ TEST_F(StunPortTest, TestStunPortGetStunKeepaliveLifetime) {
   CreateStunPort(kStunServerAddr1);
   EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
   
-  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  SetNetworkType(webrtc::ADAPTER_TYPE_CELLULAR);
   EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
             port()->stun_keepalive_lifetime());
 
   
-  SetNetworkType(rtc::ADAPTER_TYPE_WIFI);
+  SetNetworkType(webrtc::ADAPTER_TYPE_WIFI);
   CreateStunPort(kStunServerAddr2);
   EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
 }
@@ -670,12 +671,12 @@ TEST_F(StunPortTest, TestUdpPortGetStunKeepaliveLifetime) {
   CreateSharedUdpPort(kStunServerAddr1, nullptr);
   EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
   
-  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  SetNetworkType(webrtc::ADAPTER_TYPE_CELLULAR);
   EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
             port()->stun_keepalive_lifetime());
 
   
-  SetNetworkType(rtc::ADAPTER_TYPE_WIFI);
+  SetNetworkType(webrtc::ADAPTER_TYPE_WIFI);
   CreateSharedUdpPort(kStunServerAddr2, nullptr);
   EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
 }
@@ -724,7 +725,9 @@ class MockAsyncPacketSocket : public webrtc::AsyncPacketSocket {
   MOCK_METHOD(SocketAddress, GetRemoteAddress, (), (const, override));
   MOCK_METHOD(int,
               Send,
-              (const void* pv, size_t cb, const rtc::PacketOptions& options),
+              (const void* pv,
+               size_t cb,
+               const webrtc::AsyncSocketPacketOptions& options),
               (override));
 
   MOCK_METHOD(int,
@@ -732,7 +735,7 @@ class MockAsyncPacketSocket : public webrtc::AsyncPacketSocket {
               (const void* pv,
                size_t cb,
                const SocketAddress& addr,
-               const rtc::PacketOptions& options),
+               const webrtc::AsyncSocketPacketOptions& options),
               (override));
   MOCK_METHOD(int, Close, (), (override));
   MOCK_METHOD(State, GetState, (), (const, override));
@@ -758,17 +761,19 @@ TEST_F(StunPortTest, TestStunPacketsHaveDscpPacketOption) {
   EXPECT_CALL(*socket, SetOption(_, _)).WillRepeatedly(Return(0));
 
   
-  EXPECT_CALL(*socket, SendTo(_, _, _,
-                              ::testing::Field(&rtc::PacketOptions::dscp,
-                                               Eq(rtc::DSCP_NO_CHANGE))))
+  EXPECT_CALL(*socket,
+              SendTo(_, _, _,
+                     ::testing::Field(&webrtc::AsyncSocketPacketOptions::dscp,
+                                      Eq(webrtc::DSCP_NO_CHANGE))))
       .WillOnce(Return(100));
   PrepareAddress();
 
   
-  port()->SetOption(webrtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
-  EXPECT_CALL(*socket, SendTo(_, _, _,
-                              ::testing::Field(&rtc::PacketOptions::dscp,
-                                               Eq(rtc::DSCP_AF41))))
+  port()->SetOption(webrtc::Socket::OPT_DSCP, webrtc::DSCP_AF41);
+  EXPECT_CALL(*socket,
+              SendTo(_, _, _,
+                     ::testing::Field(&webrtc::AsyncSocketPacketOptions::dscp,
+                                      Eq(webrtc::DSCP_AF41))))
       .WillRepeatedly(Return(100));
   EXPECT_THAT(
       webrtc::WaitUntil([&] { return done(); }, IsTrue(),

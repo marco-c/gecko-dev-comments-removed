@@ -61,8 +61,8 @@ enum IceConnectionState {
 };
 
 struct IceTransportStats {
-  cricket::CandidateStatsList candidate_stats_list;
-  cricket::ConnectionInfos connection_infos;
+  CandidateStatsList candidate_stats_list;
+  ConnectionInfos connection_infos;
   
   
   
@@ -417,7 +417,7 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   CallbackList<IceTransportInternal*,
                const StunDictionaryView&,
-               rtc::ArrayView<uint16_t>>
+               ArrayView<uint16_t>>
       dictionary_view_updated_callback_list_;
   CallbackList<IceTransportInternal*, const StunDictionaryWriter&>
       dictionary_writer_synced_callback_list_;

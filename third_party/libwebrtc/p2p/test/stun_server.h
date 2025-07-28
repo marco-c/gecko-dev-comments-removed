@@ -36,7 +36,7 @@ class StunServer {
 
  protected:
   
-  void OnPacket(AsyncPacketSocket* socket, const rtc::ReceivedPacket& packet);
+  void OnPacket(AsyncPacketSocket* socket, const ReceivedIpPacket& packet);
 
   
   virtual void OnBindingRequest(StunMessage* msg, const SocketAddress& addr);

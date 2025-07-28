@@ -105,13 +105,13 @@ class IceControllerInterface {
   virtual void OnConnectionDestroyed(const Connection* connection) = 0;
 
   
-  virtual rtc::ArrayView<const Connection* const> GetConnections() const {
+  virtual ArrayView<const Connection* const> GetConnections() const {
     
     RTC_CHECK_NOTREACHED();
     return {};
   }
   
-  virtual rtc::ArrayView<const Connection*> connections() const {
+  virtual ArrayView<const Connection*> connections() const {
     
     RTC_CHECK_NOTREACHED();
     return {};

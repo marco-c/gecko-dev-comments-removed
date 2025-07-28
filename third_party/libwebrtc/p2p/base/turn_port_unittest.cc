@@ -245,7 +245,7 @@ class TurnPortTest : public ::testing::Test,
   }
   void OnUdpPortComplete(Port* port) { udp_ready_ = true; }
   void OnSocketReadPacket(AsyncPacketSocket* socket,
-                          const rtc::ReceivedPacket& packet) {
+                          const ReceivedIpPacket& packet) {
     turn_port_->HandleIncomingPacket(socket, packet);
   }
   void OnTurnPortDestroyed(PortInterface* port) { turn_port_destroyed_ = true; }
@@ -322,7 +322,7 @@ class TurnPortTest : public ::testing::Test,
       return false;
     }
     
-    turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+    turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     turn_port_->SetIceTiebreaker(kTiebreakerDefault);
     ConnectSignals();
 
@@ -346,8 +346,7 @@ class TurnPortTest : public ::testing::Test,
           SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
       ASSERT_TRUE(socket_ != NULL);
       socket_->RegisterReceivedPacketCallback(
-          [&](rtc::AsyncPacketSocket* socket,
-              const rtc::ReceivedPacket& packet) {
+          [&](AsyncPacketSocket* socket, const ReceivedIpPacket& packet) {
             OnSocketReadPacket(socket, packet);
           });
     }
@@ -365,7 +364,7 @@ class TurnPortTest : public ::testing::Test,
     args.turn_customizer = turn_customizer_.get();
     turn_port_ = TurnPort::Create(args, socket_.get());
     
-    turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+    turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     turn_port_->SetIceTiebreaker(kTiebreakerDefault);
     ConnectSignals();
   }
@@ -394,7 +393,7 @@ class TurnPortTest : public ::testing::Test,
                                  .ice_password = kIcePwd2},
                                 0, 0, false, std::nullopt);
     
-    udp_port_->SetIceRole(cricket::ICEROLE_CONTROLLED);
+    udp_port_->SetIceRole(ICEROLE_CONTROLLED);
     udp_port_->SetIceTiebreaker(kTiebreakerDefault);
     udp_port_->SignalPortComplete.connect(this,
                                           &TurnPortTest::OnUdpPortComplete);
@@ -803,16 +802,14 @@ class TurnPortTest : public ::testing::Test,
     ASSERT_TRUE(conn1 != NULL);
     ASSERT_TRUE(conn2 != NULL);
     conn1->RegisterReceivedPacketCallback(
-        [&](cricket::Connection* connection,
-            const rtc::ReceivedPacket& packet) {
+        [&](Connection* connection, const ReceivedIpPacket& packet) {
           turn_packets_.push_back(
               Buffer(packet.payload().data(), packet.payload().size()));
         });
     conn1->SignalDestroyed.connect(this,
                                    &TurnPortTest::OnConnectionSignalDestroyed);
     conn2->RegisterReceivedPacketCallback(
-        [&](cricket::Connection* connection,
-            const rtc::ReceivedPacket& packet) {
+        [&](Connection* connection, const ReceivedIpPacket& packet) {
           udp_packets_.push_back(
               Buffer(packet.payload().data(), packet.payload().size()));
         });
@@ -880,16 +877,14 @@ class TurnPortTest : public ::testing::Test,
     ASSERT_TRUE(conn1 != NULL);
     ASSERT_TRUE(conn2 != NULL);
     conn1->RegisterReceivedPacketCallback(
-        [&](cricket::Connection* connection,
-            const rtc::ReceivedPacket& packet) {
+        [&](Connection* connection, const ReceivedIpPacket& packet) {
           turn_packets_.push_back(
               Buffer(packet.payload().data(), packet.payload().size()));
         });
     conn1->SignalDestroyed.connect(this,
                                    &TurnPortTest::OnConnectionSignalDestroyed);
     conn2->RegisterReceivedPacketCallback(
-        [&](cricket::Connection* connection,
-            const rtc::ReceivedPacket& packet) {
+        [&](Connection* connection, const ReceivedIpPacket& packet) {
           udp_packets_.push_back(
               Buffer(packet.payload().data(), packet.payload().size()));
         });
@@ -959,7 +954,7 @@ class TurnPortTest : public ::testing::Test,
   bool turn_refresh_success_ = false;
   std::vector<Buffer> turn_packets_;
   std::vector<Buffer> udp_packets_;
-  rtc::PacketOptions options;
+  AsyncSocketPacketOptions options;
   std::unique_ptr<TurnCustomizer> turn_customizer_;
   IceCandidateErrorEvent error_event_;
 
@@ -1044,7 +1039,7 @@ class TurnLoggingIdValidator : public StunMessageObserver {
       }
     }
   }
-  void ReceivedChannelData(rtc::ArrayView<const uint8_t> packet) override {}
+  void ReceivedChannelData(ArrayView<const uint8_t> packet) override {}
 
  private:
   const char* expect_val_;
@@ -1392,7 +1387,7 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   std::string test_packet = "Test packet";
   EXPECT_FALSE(turn_port_->HandleIncomingPacket(
       socket_.get(),
-      rtc::ReceivedPacket::CreateFromLegacy(
+      ReceivedIpPacket::CreateFromLegacy(
           test_packet.data(), test_packet.size(), webrtc::TimeMicros(),
           SocketAddress(kTurnUdpExtAddr.ipaddr(), 0))));
 }
@@ -1765,7 +1760,7 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
   
 
   conn2->RegisterReceivedPacketCallback(
-      [&](cricket::Connection* connection, const rtc::ReceivedPacket& packet) {
+      [&](Connection* connection, const ReceivedIpPacket& packet) {
         
         
         udp_packets_.push_back(
@@ -2007,7 +2002,7 @@ class MessageObserver : public StunMessageObserver {
     }
   }
 
-  void ReceivedChannelData(rtc::ArrayView<const uint8_t> payload) override {
+  void ReceivedChannelData(ArrayView<const uint8_t> payload) override {
     if (channel_data_counter_ != nullptr) {
       (*channel_data_counter_)++;
     }

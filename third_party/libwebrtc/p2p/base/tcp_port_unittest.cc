@@ -255,7 +255,7 @@ class SentPacketCounter : public sigslot::has_slots<> {
   int sent_packets() const { return sent_packets_; }
 
  private:
-  void OnSentPacket(const rtc::SentPacket&) { ++sent_packets_; }
+  void OnSentPacket(const webrtc::SentPacketInfo&) { ++sent_packets_; }
 
   int sent_packets_ = 0;
 };
@@ -265,8 +265,8 @@ class SentPacketCounter : public sigslot::has_slots<> {
 TEST_F(TCPPortTest, SignalSentPacket) {
   std::unique_ptr<TCPPort> client(CreateTCPPort(kLocalAddr));
   std::unique_ptr<TCPPort> server(CreateTCPPort(kRemoteAddr));
-  client->SetIceRole(cricket::ICEROLE_CONTROLLING);
-  server->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  client->SetIceRole(webrtc::ICEROLE_CONTROLLING);
+  server->SetIceRole(webrtc::ICEROLE_CONTROLLED);
   client->PrepareAddress();
   server->PrepareAddress();
 
@@ -306,8 +306,10 @@ TEST_F(TCPPortTest, SignalSentPacket) {
   SentPacketCounter server_counter(server.get());
   static const char kData[] = "hello";
   for (int i = 0; i < 10; ++i) {
-    client_conn->Send(&kData, sizeof(kData), rtc::PacketOptions());
-    server_conn->Send(&kData, sizeof(kData), rtc::PacketOptions());
+    client_conn->Send(&kData, sizeof(kData),
+                      webrtc::AsyncSocketPacketOptions());
+    server_conn->Send(&kData, sizeof(kData),
+                      webrtc::AsyncSocketPacketOptions());
   }
   EXPECT_THAT(
       webrtc::WaitUntil([&] { return client_counter.sent_packets(); }, Eq(10),
@@ -327,8 +329,8 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   constexpr int kServerPort = 123;
   std::unique_ptr<TCPPort> server(
       CreateTCPPort(kRemoteAddr, true, kServerPort));
-  client->SetIceRole(cricket::ICEROLE_CONTROLLING);
-  server->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  client->SetIceRole(webrtc::ICEROLE_CONTROLLING);
+  server->SetIceRole(webrtc::ICEROLE_CONTROLLED);
   client->PrepareAddress();
   server->PrepareAddress();
 
@@ -361,7 +363,8 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
 
   SentPacketCounter client_counter(client.get());
   static const char kData[] = "hello";
-  int result = client_conn->Send(&kData, sizeof(kData), rtc::PacketOptions());
+  int result = client_conn->Send(&kData, sizeof(kData),
+                                 webrtc::AsyncSocketPacketOptions());
   EXPECT_EQ(result, 6);
 
   
@@ -374,12 +377,13 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
 
   
   server = CreateTCPPort(kRemoteAddr, true, kServerPort);
-  server->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  server->SetIceRole(webrtc::ICEROLE_CONTROLLED);
   server->PrepareAddress();
 
   
   
-  result = client_conn->Send(&kData, sizeof(kData), rtc::PacketOptions());
+  result = client_conn->Send(&kData, sizeof(kData),
+                             webrtc::AsyncSocketPacketOptions());
   EXPECT_EQ(result, SOCKET_ERROR);
   ASSERT_THAT(
       webrtc::WaitUntil([&] { return client_conn->connected(); }, IsTrue(),
@@ -389,7 +393,8 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   EXPECT_TRUE(client_conn->writable());
   for (int i = 0; i < 10; ++i) {
     
-    EXPECT_EQ(client_conn->Send(&kData, sizeof(kData), rtc::PacketOptions()),
+    EXPECT_EQ(client_conn->Send(&kData, sizeof(kData),
+                                webrtc::AsyncSocketPacketOptions()),
               SOCKET_ERROR);
   }
   
@@ -430,7 +435,8 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   
   
   for (int i = 0; i < 5; ++i) {
-    EXPECT_EQ(client_conn->Send(&kData, sizeof(kData), rtc::PacketOptions()),
+    EXPECT_EQ(client_conn->Send(&kData, sizeof(kData),
+                                webrtc::AsyncSocketPacketOptions()),
               6);
   }
   EXPECT_THAT(webrtc::WaitUntil(

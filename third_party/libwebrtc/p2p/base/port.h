@@ -294,7 +294,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   virtual bool HandleIncomingPacket(AsyncPacketSocket* socket,
-                                    const rtc::ReceivedPacket& packet);
+                                    const ReceivedIpPacket& packet);
 
   
   
@@ -341,7 +341,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   virtual void OnSentPacket(AsyncPacketSocket* socket,
-                            const rtc::SentPacket& sent_packet) = 0;
+                            const SentPacketInfo& sent_packet) = 0;
 
   
   void OnReadyToSend();
@@ -383,16 +383,16 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  void OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType proto);
+  void OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto);
 
   [[deprecated(
-      "Use OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType "
+      "Use OnReadPacket(const webrtc::ReceivedIpPacket& packet, ProtocolType "
       "proto)")]] void
   OnReadPacket(const char* data,
                size_t size,
                const SocketAddress& addr,
                ProtocolType proto) {
-    OnReadPacket(rtc::ReceivedPacket::CreateFromLegacy(
+    OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
                      data, size,  -1, addr),
                  proto);
   }

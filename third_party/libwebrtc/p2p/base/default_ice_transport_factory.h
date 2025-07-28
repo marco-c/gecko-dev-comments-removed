@@ -48,7 +48,7 @@ class DefaultIceTransportFactory : public IceTransportFactory {
   ~DefaultIceTransportFactory() = default;
 
   
-  rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
+  scoped_refptr<IceTransportInterface> CreateIceTransport(
       const std::string& transport_name,
       int component,
       IceTransportInit init) override;

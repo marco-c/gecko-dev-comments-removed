@@ -87,9 +87,9 @@ class NATServer {
 
   
   void OnInternalUDPPacket(AsyncPacketSocket* socket,
-                           const rtc::ReceivedPacket& packet);
+                           const ReceivedIpPacket& packet);
   void OnExternalUDPPacket(AsyncPacketSocket* socket,
-                           const rtc::ReceivedPacket& packet);
+                           const ReceivedIpPacket& packet);
 
  private:
   typedef std::set<SocketAddress, AddrCmp> AddressSet;

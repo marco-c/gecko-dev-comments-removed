@@ -157,7 +157,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   bool CandidatesAllocationDone() const override;
   void RegatherOnFailedNetworks() override;
   void GetCandidateStatsFromReadyPorts(
-      cricket::CandidateStatsList* candidate_stats_list) const override;
+      CandidateStatsList* candidate_stats_list) const override;
   void SetStunKeepaliveIntervalForReadyPorts(
       const std::optional<int>& stun_keepalive_interval) override;
   void PruneAllPorts() override;
@@ -301,7 +301,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
 struct RTC_EXPORT PortConfiguration {
   
   SocketAddress stun_address;
-  cricket::ServerAddresses stun_servers;
+  ServerAddresses stun_servers;
   std::string username;
   std::string password;
   bool use_turn_server_as_stun_server_disabled = false;
@@ -309,14 +309,14 @@ struct RTC_EXPORT PortConfiguration {
   typedef std::vector<RelayServerConfig> RelayList;
   RelayList relays;
 
-  PortConfiguration(const cricket::ServerAddresses& stun_servers,
+  PortConfiguration(const ServerAddresses& stun_servers,
                     absl::string_view username,
                     absl::string_view password,
                     const FieldTrialsView* field_trials = nullptr);
 
   
   
-  cricket::ServerAddresses StunServers();
+  ServerAddresses StunServers();
 
   
   void AddRelay(const RelayServerConfig& config);
@@ -327,7 +327,7 @@ struct RTC_EXPORT PortConfiguration {
   bool SupportsProtocol(ProtocolType type) const;
   
   
-  cricket::ServerAddresses GetRelayServerAddresses(ProtocolType type) const;
+  ServerAddresses GetRelayServerAddresses(ProtocolType type) const;
 };
 
 
@@ -388,8 +388,7 @@ class AllocationSequence {
   void CreateStunPorts();
   void CreateRelayPorts();
 
-  void OnReadPacket(AsyncPacketSocket* socket,
-                    const rtc::ReceivedPacket& packet);
+  void OnReadPacket(AsyncPacketSocket* socket, const ReceivedIpPacket& packet);
 
   void OnPortDestroyed(PortInterface* port);
 

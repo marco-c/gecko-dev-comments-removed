@@ -118,7 +118,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   P2PTransportChannel& operator=(const P2PTransportChannel&) = delete;
 
   
-  cricket::IceTransportState GetState() const override;
+  IceTransportStateInternal GetState() const override;
   IceTransportState GetIceTransportState() const override;
 
   const std::string& transport_name() const override;
@@ -150,7 +150,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   int SendPacket(const char* data,
                  size_t len,
-                 const rtc::PacketOptions& options,
+                 const AsyncSocketPacketOptions& options,
                  int flags) override;
   int SetOption(Socket::Option opt, int value) override;
   bool GetOption(Socket::Option opt, int* value) override;
@@ -169,9 +169,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void SwitchSelectedConnection(const Connection* connection,
                                 IceSwitchReason reason) override;
   void ForgetLearnedStateForConnections(
-      rtc::ArrayView<const Connection* const> connections) override;
+      ArrayView<const Connection* const> connections) override;
   bool PruneConnections(
-      rtc::ArrayView<const Connection* const> connections) override;
+      ArrayView<const Connection* const> connections) override;
 
   
   
@@ -215,7 +215,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void MarkConnectionPinged(Connection* conn);
 
   
-  rtc::ArrayView<Connection* const> connections() const;
+  ArrayView<Connection* const> connections() const;
   void RemoveConnectionForTest(Connection* connection);
 
   
@@ -292,7 +292,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   
   
-  cricket::IceTransportState ComputeState() const;
+  IceTransportStateInternal ComputeState() const;
   IceTransportState ComputeIceTransportState() const;
 
   bool CreateConnections(const Candidate& remote_candidate,
@@ -337,8 +337,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void OnRoleConflict(PortInterface* port);
 
   void OnConnectionStateChange(Connection* connection);
-  void OnReadPacket(Connection* connection, const rtc::ReceivedPacket& packet);
-  void OnSentPacket(const rtc::SentPacket& sent_packet);
+  void OnReadPacket(Connection* connection, const ReceivedIpPacket& packet);
+  void OnSentPacket(const SentPacketInfo& sent_packet);
   void OnReadyToSend(Connection* connection);
   void OnConnectionDestroyed(Connection* connection);
 
@@ -449,8 +449,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   int weak_ping_interval_ RTC_GUARDED_BY(network_thread_) = WEAK_PING_INTERVAL;
   
   
-  cricket::IceTransportState state_ RTC_GUARDED_BY(network_thread_) =
-      cricket::IceTransportState::STATE_INIT;
+  IceTransportStateInternal state_ RTC_GUARDED_BY(network_thread_) =
+      IceTransportStateInternal::STATE_INIT;
   IceTransportState standardized_state_ RTC_GUARDED_BY(network_thread_) =
       IceTransportState::kNew;
   IceConfig config_ RTC_GUARDED_BY(network_thread_);

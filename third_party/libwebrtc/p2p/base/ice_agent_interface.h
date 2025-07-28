@@ -63,7 +63,7 @@ class IceAgentInterface {
   
   
   virtual void ForgetLearnedStateForConnections(
-      rtc::ArrayView<const Connection* const> connections) = 0;
+      ArrayView<const Connection* const> connections) = 0;
 
   
   virtual void SendPingRequest(const Connection* connection) = 0;
@@ -75,7 +75,7 @@ class IceAgentInterface {
   
   
   virtual bool PruneConnections(
-      rtc::ArrayView<const Connection* const> connections) = 0;
+      ArrayView<const Connection* const> connections) = 0;
 };
 
 }  

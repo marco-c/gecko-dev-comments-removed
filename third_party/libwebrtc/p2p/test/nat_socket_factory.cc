@@ -68,7 +68,7 @@ size_t PackAddressForNAT(char* buf,
 
 
 
-size_t UnpackAddressFromNAT(rtc::ArrayView<const uint8_t> buf,
+size_t UnpackAddressFromNAT(ArrayView<const uint8_t> buf,
                             SocketAddress* remote_addr) {
   RTC_CHECK(buf.size() >= 8);
   RTC_DCHECK(buf.data()[0] == 0);

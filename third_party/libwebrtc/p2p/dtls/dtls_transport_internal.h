@@ -90,7 +90,7 @@ class DtlsTransportInternal : public PacketTransportInternal {
 
   
   virtual bool ExportSrtpKeyingMaterial(
-      rtc::ZeroOnFreeBuffer<uint8_t>& keying_material) = 0;
+      ZeroOnFreeBuffer<uint8_t>& keying_material) = 0;
 
   
   ABSL_DEPRECATED("Use SetRemoteParameters instead.")
