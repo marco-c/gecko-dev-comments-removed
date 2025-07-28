@@ -38,6 +38,16 @@ struct LayerState {
   
   
   bool mMutatedFrontBuffer : 1;
+
+  
+  
+  void InvalidateAll() {
+    mIsVisible = false;
+    mMutatedVisibility = true;
+    mMutatedStackingOrder = true;
+    mMutatedPlacement = true;
+    mMutatedFrontBuffer = true;
+  }
 };
 
 class NativeLayerRootWayland final : public NativeLayerRoot {
