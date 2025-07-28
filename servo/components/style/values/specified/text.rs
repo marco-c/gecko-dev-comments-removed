@@ -967,18 +967,11 @@ impl Parse for TextIndent {
                 }
             }
 
-            if static_prefs::pref!("layout.css.text-indent-keywords.enabled") {
-                
-                try_match_ident_ignore_ascii_case! { input,
-                    "hanging" if !hanging => hanging = true,
-                    "each-line" if !each_line => each_line = true,
-                }
-                continue;
+            
+            try_match_ident_ignore_ascii_case! { input,
+                "hanging" if !hanging => hanging = true,
+                "each-line" if !each_line => each_line = true,
             }
-
-            
-            
-            break;
         }
 
         
