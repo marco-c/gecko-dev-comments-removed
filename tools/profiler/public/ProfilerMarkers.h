@@ -330,6 +330,7 @@ struct SimplePayloadMarkerTemplate
 
 
 
+
 #define PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL(markerName, categoryName,  \
                                                   label, ...)                \
   do {                                                                       \
