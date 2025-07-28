@@ -2497,7 +2497,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheHit,
+      nsICacheInfoChannel::kCacheHit,
        78,
        false,
        nsIClassOfService::Leader,
@@ -2524,7 +2524,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheUnresolved,
+      nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
        nsIClassOfService::Follower,
@@ -2557,7 +2557,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheUnresolved,
+      nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
        nsIClassOfService::Speculative,
@@ -2589,7 +2589,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheUnresolved,
+      nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
        nsIClassOfService::Background,
@@ -2621,7 +2621,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheUnresolved,
+      nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
        nsIClassOfService::Unblocked |
@@ -2653,7 +2653,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheUnresolved,
+      nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
        nsIClassOfService::Unblocked |
@@ -2685,7 +2685,7 @@ TEST(GeckoProfiler, Markers)
        ts2,
        56,
       
-      net::kCacheUnresolved,
+      nsICacheInfoChannel::kCacheUnresolved,
        78,
        true,
        nsIClassOfService::Tail,
