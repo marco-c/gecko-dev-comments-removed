@@ -1761,7 +1761,7 @@ CssRuleView.prototype = {
     let isComputedHighlighted = false;
 
     
-    editor._populateComputed();
+    editor.populateComputed();
     for (const computed of editor.prop.computed) {
       if (computed.element) {
         
