@@ -1183,14 +1183,13 @@ bool nsCSPContext::ShouldThrottleReport(
   
   const uint32_t kLimitCount =
       StaticPrefs::security_csp_reporting_limit_count();
-  const uint32_t kTimeSpanSeconds =
-      StaticPrefs::security_csp_reporting_limit_timespan();
 
   
-  if (kLimitCount == 0 || kTimeSpanSeconds == 0) {
+  if (kLimitCount == 0) {
     return false;
   }
 
+  const uint32_t kTimeSpanSeconds = 2;
   TimeDuration throttleSpan = TimeDuration::FromSeconds(kTimeSpanSeconds);
   if (mSendReportLimitSpanStart.IsNull() ||
       ((TimeStamp::Now() - mSendReportLimitSpanStart) > throttleSpan)) {
