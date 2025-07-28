@@ -24,6 +24,10 @@ class IOThread : private base::Thread {
   static IOThread* Get() { return sSingleton; }
 
   
+  static void Startup();
+  static void Shutdown();
+
+  
   
   nsISerialEventTarget* GetEventTarget() {
     return base::Thread::message_loop()->SerialEventTarget();
@@ -50,13 +54,15 @@ class IOThread : private base::Thread {
 
 
 class IOThreadParent : public IOThread {
- public:
-  IOThreadParent();
-  ~IOThreadParent();
-
  protected:
   void Init() override;
   void CleanUp() override;
+
+ private:
+  friend class IOThread;
+
+  IOThreadParent();
+  ~IOThreadParent();
 };
 
 
