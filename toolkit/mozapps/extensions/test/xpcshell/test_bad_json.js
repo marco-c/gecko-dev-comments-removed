@@ -5,11 +5,6 @@
 
 
 
-add_setup(() => {
-  do_get_profile();
-  Services.fog.initializeFOG();
-});
-
 add_task(async function () {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
@@ -43,6 +38,4 @@ add_task(async function () {
   let data = await IOUtils.readJSON(gExtensionsJSON.path);
   Assert.ok("schemaVersion" in data);
   Assert.equal(data.addons[0].id, ID);
-
-  Assert.equal(Glean.xpiDatabase.startupError.testGetValue(), "other");
 });

@@ -264,6 +264,18 @@ interface nsITelemetry : nsISupports
 
 
 
+  [implicit_jscontext]
+  readonly attribute jsval lateWrites;
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -350,6 +362,7 @@ interface nsITelemetry : nsISupports
   readonly attribute boolean isOfficialTelemetry;
 
   
+
 
 
 
