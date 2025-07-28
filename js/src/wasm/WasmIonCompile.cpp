@@ -4873,7 +4873,7 @@ class FunctionCompiler {
       uint32_t lineOrBytecode, StorageType type, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
       uint32_t offset, uint32_t fieldIndex, bool needsTrapInfo,
-      WasmPreBarrierKind preBarrierKind) {
+      WasmPreBarrierKind preBarrierKind, WasmPostBarrierKind postBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
     MOZ_ASSERT(type.widenToValType().toMIRType() == value->type());
@@ -4916,7 +4916,16 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     
-    return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
+    switch (postBarrierKind) {
+      case WasmPostBarrierKind::WholeCell:
+        return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
+      case WasmPostBarrierKind::Edge:
+        MOZ_CRASH("WasmPostBarrierKind::Edge not supported");
+      case WasmPostBarrierKind::None:
+        return true;
+      default:
+        MOZ_CRASH("Bad postBarrierKind");
+    }
   }
 
   
@@ -4927,7 +4936,8 @@ class FunctionCompiler {
   [[nodiscard]] bool writeGcValueAtBasePlusScaledIndex(
       uint32_t lineOrBytecode, StorageType type, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
-      uint32_t scale, MDefinition* index, WasmPreBarrierKind preBarrierKind) {
+      uint32_t scale, MDefinition* index, WasmPreBarrierKind preBarrierKind,
+      WasmPostBarrierKind postBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
     MOZ_ASSERT(type.widenToValType().toMIRType() == value->type());
@@ -4963,8 +4973,17 @@ class FunctionCompiler {
     }
     curBlock_->add(store);
 
-    return postBarrierEdgeAtIndex(lineOrBytecode, keepAlive, base, index,
-                                  sizeof(void*), value);
+    switch (postBarrierKind) {
+      case WasmPostBarrierKind::WholeCell:
+        return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
+      case WasmPostBarrierKind::Edge:
+        return postBarrierEdgeAtIndex(lineOrBytecode, keepAlive, base, index,
+                                      sizeof(void*), value);
+      case WasmPostBarrierKind::None:
+        return true;
+      default:
+        MOZ_CRASH("Bad postBarrierKind");
+    }
   }
 
   
@@ -5141,7 +5160,8 @@ class FunctionCompiler {
 
     return writeGcValueAtBasePlusOffset(
         lineOrBytecode, fieldType, structObject, fieldAliasSet, value, base,
-        areaOffset, fieldIndex, needsTrapInfo, preBarrierKind);
+        areaOffset, fieldIndex, needsTrapInfo, preBarrierKind,
+        WasmPostBarrierKind::WholeCell);
   }
 
   
@@ -5331,7 +5351,8 @@ class FunctionCompiler {
                                const ArrayType& arrayType,
                                MDefinition* arrayObject, MDefinition* index,
                                MDefinition* numElements, MDefinition* val,
-                               WasmPreBarrierKind preBarrierKind) {
+                               WasmPreBarrierKind preBarrierKind,
+                               WasmPostBarrierKind postBarrierKind) {
     mozilla::DebugOnly<MIRType> valMIRType = val->type();
     StorageType elemType = arrayType.elementType();
     MOZ_ASSERT(elemType.widenToValType().toMIRType() == valMIRType);
@@ -5417,7 +5438,8 @@ class FunctionCompiler {
 
     if (!writeGcValueAtBasePlusScaledIndex(
             lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea,
-            val, arrayBase, elemSize, indexPhi, preBarrierKind)) {
+            val, arrayBase, elemSize, indexPhi, preBarrierKind,
+            postBarrierKind)) {
       return false;
     }
 
@@ -5447,36 +5469,6 @@ class FunctionCompiler {
 
     curBlock_ = afterBlock;
     return true;
-  }
-
-  
-  
-  [[nodiscard]] MDefinition* createArrayNewCallAndLoop(uint32_t lineOrBytecode,
-                                                       uint32_t typeIndex,
-                                                       uint32_t allocSiteIndex,
-                                                       MDefinition* numElements,
-                                                       MDefinition* fillValue) {
-    
-    MDefinition* arrayObject =
-        createArrayObject(typeIndex, allocSiteIndex, numElements,
-                          false);
-    if (!arrayObject) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-
-    const ArrayType& arrayType = (*codeMeta().types)[typeIndex].arrayType();
-    if (!fillArray(lineOrBytecode, arrayType, arrayObject, constantI32(0),
-                   numElements, fillValue, WasmPreBarrierKind::None)) {
-      return nullptr;
-    }
-
-    return arrayObject;
   }
 
   [[nodiscard]] bool createArrayCopy(uint32_t lineOrBytecode,
@@ -5614,7 +5606,8 @@ class FunctionCompiler {
     curBlock_->add(boundsCheck);
 
     return fillArray(lineOrBytecode, arrayType, arrayObject, index, numElements,
-                     val, WasmPreBarrierKind::Normal);
+                     val, WasmPreBarrierKind::Normal,
+                     WasmPostBarrierKind::Edge);
   }
 
   
@@ -8802,11 +8795,26 @@ bool FunctionCompiler::emitArrayNew() {
   }
 
   
-  
-  MDefinition* arrayObject = createArrayNewCallAndLoop(
-      lineOrBytecode, typeIndex, allocSiteIndex, numElements, fillValue);
+  MDefinition* arrayObject =
+      createArrayObject(typeIndex, allocSiteIndex, numElements,
+                        false);
   if (!arrayObject) {
     return false;
+  }
+
+  const ArrayType& arrayType = (*codeMeta().types)[typeIndex].arrayType();
+  if (!fillArray(lineOrBytecode, arrayType, arrayObject, constantI32(0),
+                 numElements, fillValue, WasmPreBarrierKind::None,
+                 WasmPostBarrierKind::None)) {
+    return false;
+  }
+
+  if (arrayType.elementType().isRefRepr()) {
+    
+    
+    if (!postBarrierWholeCell(lineOrBytecode, arrayObject, fillValue)) {
+      return false;
+    }
   }
 
   iter().setResult(arrayObject);
@@ -8899,7 +8907,7 @@ bool FunctionCompiler::emitArrayNewFixed() {
     if (!writeGcValueAtBasePlusOffset(
             lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea,
             values[numElements - 1 - i], base, i * elemSize, i, false,
-            WasmPreBarrierKind::None)) {
+            WasmPreBarrierKind::None, WasmPostBarrierKind::WholeCell)) {
       return false;
     }
   }
@@ -9106,7 +9114,8 @@ bool FunctionCompiler::emitArraySet() {
 
   return writeGcValueAtBasePlusScaledIndex(
       lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea, value,
-      base, elemSize, index, WasmPreBarrierKind::Normal);
+      base, elemSize, index, WasmPreBarrierKind::Normal,
+      WasmPostBarrierKind::Edge);
 }
 
 bool FunctionCompiler::emitArrayGet(FieldWideningOp wideningOp) {

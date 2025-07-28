@@ -7386,17 +7386,20 @@ bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
   masm.storePtr(value, Address(valueAddr, 0));
 
   
-  if (postBarrierKind == PostBarrierKind::Imprecise) {
-    return emitPostBarrierEdgeImprecise(object, valueAddr, value);
+  switch (postBarrierKind) {
+    case PostBarrierKind::None:
+      freePtr(valueAddr);
+      return true;
+    case PostBarrierKind::Imprecise:
+      return emitPostBarrierEdgeImprecise(object, valueAddr, value);
+    case PostBarrierKind::Precise:
+      return emitPostBarrierEdgePrecise(object, valueAddr, prevValue, value);
+    case PostBarrierKind::WholeCell:
+      
+      return emitPostBarrierWholeCell(object.value(), value, valueAddr);
+    default:
+      MOZ_CRASH("unknown barrier kind");
   }
-  if (postBarrierKind == PostBarrierKind::Precise) {
-    return emitPostBarrierEdgePrecise(object, valueAddr, prevValue, value);
-  }
-  if (postBarrierKind == PostBarrierKind::WholeCell) {
-    
-    return emitPostBarrierWholeCell(object.value(), value, valueAddr);
-  }
-  MOZ_CRASH("unknown barrier kind");
 }
 
 void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
@@ -7684,7 +7687,8 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
 
 bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
                                   const ArrayType& arrayType, AnyReg value,
-                                  PreBarrierKind preBarrierKind) {
+                                  PreBarrierKind preBarrierKind,
+                                  PostBarrierKind postBarrierKind) {
   
   
   
@@ -7724,7 +7728,7 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
 
   
   if (!emitBarrieredStore(Some(object), valueAddr, value.ref(), preBarrierKind,
-                          PostBarrierKind::Imprecise)) {
+                          postBarrierKind)) {
     return false;
   }
 
@@ -8239,7 +8243,7 @@ bool BaseCompiler::emitArrayNew() {
 
   
   if (!emitGcArraySet(object, rdata, numElements, arrayType, value,
-                      PreBarrierKind::None)) {
+                      PreBarrierKind::None, PostBarrierKind::None)) {
     return false;
   }
 
@@ -8247,9 +8251,18 @@ bool BaseCompiler::emitArrayNew() {
   masm.branch32(Assembler::GreaterThan, numElements, Imm32(0), &loop);
   masm.bind(&done);
 
+  if (arrayType.elementType().isRefRepr()) {
+    
+    
+    if (!emitPostBarrierWholeCell(object, value.ref(), rdata)) {
+      return false;
+    }
+  } else {
+    freePtr(rdata);
+  }
+
   freeI32(numElements);
   freeAny(value);
-  freePtr(rdata);
   pushRef(object);
 
   return true;
@@ -8317,7 +8330,7 @@ bool BaseCompiler::emitArrayNewFixed() {
       freePtr(RegPtr(PreBarrierReg));
     }
     if (!emitGcArraySet(object, rdata, index, arrayType, value,
-                        PreBarrierKind::None)) {
+                        PreBarrierKind::None, PostBarrierKind::WholeCell)) {
       return false;
     }
     freeI32(index);
@@ -8540,7 +8553,7 @@ bool BaseCompiler::emitArraySet() {
   
   
   if (!emitGcArraySet(rp, rdata, index, arrayType, value,
-                      PreBarrierKind::Normal)) {
+                      PreBarrierKind::Normal, PostBarrierKind::Imprecise)) {
     return false;
   }
 
@@ -8835,7 +8848,7 @@ bool BaseCompiler::emitArrayFill() {
 
   
   if (!emitGcArraySet(rp, rdata, numElements, arrayType, value,
-                      PreBarrierKind::None)) {
+                      PreBarrierKind::None, PostBarrierKind::Imprecise)) {
     return false;
   }
 

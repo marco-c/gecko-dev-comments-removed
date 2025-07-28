@@ -1512,6 +1512,9 @@ class MWasmDerivedIndexPointer : public MBinaryInstruction,
 enum class WasmPreBarrierKind : uint8_t { None, Normal };
 
 
+enum class WasmPostBarrierKind : uint8_t { None, Edge, WholeCell };
+
+
 
 
 
@@ -1562,6 +1565,8 @@ class MWasmPostWriteBarrierWholeCell : public MTernaryInstruction,
   MWasmPostWriteBarrierWholeCell(MDefinition* instance, MDefinition* object,
                                  MDefinition* value)
       : MTernaryInstruction(classOpcode, instance, object, value) {
+    MOZ_ASSERT(object->type() == MIRType::WasmAnyRef);
+    MOZ_ASSERT(value->type() == MIRType::WasmAnyRef);
     setGuard();
   }
 
@@ -1585,6 +1590,8 @@ class MWasmPostWriteBarrierEdgeAtIndex : public MAryInstruction<5>,
                                    MDefinition* valueBase, MDefinition* index,
                                    uint32_t scale, MDefinition* value)
       : MAryInstruction<5>(classOpcode), elemSize_(scale) {
+    MOZ_ASSERT(object->type() == MIRType::WasmAnyRef);
+    MOZ_ASSERT(value->type() == MIRType::WasmAnyRef);
     initOperand(0, instance);
     initOperand(1, object);
     initOperand(2, valueBase);

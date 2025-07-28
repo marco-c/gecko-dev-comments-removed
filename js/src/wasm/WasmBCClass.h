@@ -193,6 +193,8 @@ enum class PreBarrierKind {
 
 enum class PostBarrierKind {
   
+  None,
+  
   
   Imprecise,
   
@@ -1846,7 +1848,8 @@ struct BaseCompiler final {
 
   [[nodiscard]] bool emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
                                     const ArrayType& array, AnyReg value,
-                                    PreBarrierKind preBarrierKind);
+                                    PreBarrierKind preBarrierKind,
+                                    PostBarrierKind postBarrierKind);
 
 #ifdef ENABLE_WASM_SIMD
   void emitVectorAndNot();
