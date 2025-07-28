@@ -28,15 +28,15 @@ namespace test {
 
 
 std::vector<size_t> FindMatchingFrameIndices(
-    const rtc::scoped_refptr<Video>& reference_video,
-    const rtc::scoped_refptr<Video>& test_video);
+    const scoped_refptr<Video>& reference_video,
+    const scoped_refptr<Video>& test_video);
 
 
 
 
 
-rtc::scoped_refptr<Video> ReorderVideo(const rtc::scoped_refptr<Video>& video,
-                                       const std::vector<size_t>& indices);
+scoped_refptr<Video> ReorderVideo(const scoped_refptr<Video>& video,
+                                  const std::vector<size_t>& indices);
 
 
 
@@ -46,13 +46,13 @@ rtc::scoped_refptr<Video> ReorderVideo(const rtc::scoped_refptr<Video>& video,
 
 
 
-rtc::scoped_refptr<Video> GenerateAlignedReferenceVideo(
-    const rtc::scoped_refptr<Video>& reference_video,
-    const rtc::scoped_refptr<Video>& test_video);
+scoped_refptr<Video> GenerateAlignedReferenceVideo(
+    const scoped_refptr<Video>& reference_video,
+    const scoped_refptr<Video>& test_video);
 
 
-rtc::scoped_refptr<Video> GenerateAlignedReferenceVideo(
-    const rtc::scoped_refptr<Video>& reference_video,
+scoped_refptr<Video> GenerateAlignedReferenceVideo(
+    const scoped_refptr<Video>& reference_video,
     const std::vector<size_t>& indices);
 
 }  

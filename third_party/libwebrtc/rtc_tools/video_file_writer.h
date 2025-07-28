@@ -19,17 +19,17 @@ namespace webrtc {
 namespace test {
 
 
-void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
+void WriteVideoToFile(const scoped_refptr<Video>& video,
                       const std::string& file_name,
                       int fps);
 
 
-void WriteY4mVideoToFile(const rtc::scoped_refptr<Video>& video,
+void WriteY4mVideoToFile(const scoped_refptr<Video>& video,
                          const std::string& file_name,
                          int fps);
 
 
-void WriteYuvVideoToFile(const rtc::scoped_refptr<Video>& video,
+void WriteYuvVideoToFile(const scoped_refptr<Video>& video,
                          const std::string& file_name,
                          int fps);
 

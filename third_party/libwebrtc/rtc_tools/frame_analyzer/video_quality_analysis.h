@@ -53,19 +53,19 @@ struct ResultsContainer {
 
 
 std::vector<AnalysisResult> RunAnalysis(
-    const rtc::scoped_refptr<webrtc::test::Video>& reference_video,
-    const rtc::scoped_refptr<webrtc::test::Video>& test_video,
+    const scoped_refptr<webrtc::test::Video>& reference_video,
+    const scoped_refptr<webrtc::test::Video>& test_video,
     const std::vector<size_t>& test_frame_indices);
 
 
 
-double Psnr(const rtc::scoped_refptr<I420BufferInterface>& ref_buffer,
-            const rtc::scoped_refptr<I420BufferInterface>& test_buffer);
+double Psnr(const scoped_refptr<I420BufferInterface>& ref_buffer,
+            const scoped_refptr<I420BufferInterface>& test_buffer);
 
 
 
-double Ssim(const rtc::scoped_refptr<I420BufferInterface>& ref_buffer,
-            const rtc::scoped_refptr<I420BufferInterface>& test_buffer);
+double Ssim(const scoped_refptr<I420BufferInterface>& ref_buffer,
+            const scoped_refptr<I420BufferInterface>& test_buffer);
 
 
 

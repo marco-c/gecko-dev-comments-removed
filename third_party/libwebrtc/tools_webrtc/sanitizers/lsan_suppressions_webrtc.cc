@@ -51,16 +51,16 @@ char kLSanDefaultSuppressions[] =
 
     
     
-    "leak:rtc::unstarted_task_test_DoNotDeleteTask2_Test::TestBody\n"
-    "leak:rtc::HttpServer::HandleConnection\n"
-    "leak:rtc::HttpServer::Connection::onHttpHeaderComplete\n"
-    "leak:rtc::HttpResponseData::set_success\n"
-    "leak:rtc::HttpData::changeHeader\n"
+    "leak:webrtc::unstarted_task_test_DoNotDeleteTask2_Test::TestBody\n"
+    "leak:webrtc::HttpServer::HandleConnection\n"
+    "leak:webrtc::HttpServer::Connection::onHttpHeaderComplete\n"
+    "leak:webrtc::HttpResponseData::set_success\n"
+    "leak:webrtc::HttpData::changeHeader\n"
     
     "leak:StartDNSLookup\n"
 
     
-    "leak:cricket::FakeNetworkInterface::SetOption\n"
+    "leak:webrtc::FakeNetworkInterface::SetOption\n"
     "leak:CodecTest_TestCodecOperators_Test::TestBody\n"
     "leak:VideoEngineTest*::ConstrainNewCodecBody\n"
     "leak:VideoMediaChannelTest*::AddRemoveRecvStreams\n"
@@ -73,7 +73,7 @@ char kLSanDefaultSuppressions[] =
 
     
     
-    "leak:cricket::FakeVideoMediaChannel::~FakeVideoMediaChannel\n"
+    "leak:webrtc::FakeVideoMediaChannel::~FakeVideoMediaChannel\n"
     "leak:DtmfSenderTest_InsertEmptyTonesToCancelPreviousTask_Test::TestBody\n"
     "leak:sigslot::_signal_base2*::~_signal_base2\n"
     "leak:testing::internal::CmpHelperEQ\n"

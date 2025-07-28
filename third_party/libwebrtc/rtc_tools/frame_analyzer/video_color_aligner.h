@@ -27,23 +27,22 @@ using ColorTransformationMatrix = std::array<std::array<float, 4>, 3>;
 
 
 ColorTransformationMatrix CalculateColorTransformationMatrix(
-    const rtc::scoped_refptr<Video>& reference_video,
-    const rtc::scoped_refptr<Video>& test_video);
+    const scoped_refptr<Video>& reference_video,
+    const scoped_refptr<Video>& test_video);
 
 
 ColorTransformationMatrix CalculateColorTransformationMatrix(
-    const rtc::scoped_refptr<I420BufferInterface>& reference_frame,
-    const rtc::scoped_refptr<I420BufferInterface>& test_frame);
+    const scoped_refptr<I420BufferInterface>& reference_frame,
+    const scoped_refptr<I420BufferInterface>& test_frame);
 
 
-rtc::scoped_refptr<Video> AdjustColors(
+scoped_refptr<Video> AdjustColors(const ColorTransformationMatrix& color_matrix,
+                                  const scoped_refptr<Video>& video);
+
+
+scoped_refptr<I420BufferInterface> AdjustColors(
     const ColorTransformationMatrix& color_matrix,
-    const rtc::scoped_refptr<Video>& video);
-
-
-rtc::scoped_refptr<I420BufferInterface> AdjustColors(
-    const ColorTransformationMatrix& color_matrix,
-    const rtc::scoped_refptr<I420BufferInterface>& frame);
+    const scoped_refptr<I420BufferInterface>& frame);
 
 }  
 }  

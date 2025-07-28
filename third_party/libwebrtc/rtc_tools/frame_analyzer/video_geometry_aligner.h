@@ -28,28 +28,27 @@ struct CropRegion {
 
 
 
-rtc::scoped_refptr<I420BufferInterface> CropAndZoom(
+scoped_refptr<I420BufferInterface> CropAndZoom(
     const CropRegion& crop_region,
-    const rtc::scoped_refptr<I420BufferInterface>& frame);
+    const scoped_refptr<I420BufferInterface>& frame);
 
 
 
 CropRegion CalculateCropRegion(
-    const rtc::scoped_refptr<I420BufferInterface>& reference_frame,
-    const rtc::scoped_refptr<I420BufferInterface>& test_frame);
+    const scoped_refptr<I420BufferInterface>& reference_frame,
+    const scoped_refptr<I420BufferInterface>& test_frame);
 
 
 
 
-rtc::scoped_refptr<I420BufferInterface> AdjustCropping(
-    const rtc::scoped_refptr<I420BufferInterface>& reference_frame,
-    const rtc::scoped_refptr<I420BufferInterface>& test_frame);
+scoped_refptr<I420BufferInterface> AdjustCropping(
+    const scoped_refptr<I420BufferInterface>& reference_frame,
+    const scoped_refptr<I420BufferInterface>& test_frame);
 
 
 
-rtc::scoped_refptr<Video> AdjustCropping(
-    const rtc::scoped_refptr<Video>& reference_video,
-    const rtc::scoped_refptr<Video>& test_video);
+scoped_refptr<Video> AdjustCropping(const scoped_refptr<Video>& reference_video,
+                                    const scoped_refptr<Video>& test_video);
 
 }  
 }  

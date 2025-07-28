@@ -91,10 +91,10 @@ class RtpGenerator final : public webrtc::Transport {
   
   
   
-  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
+  bool SendRtp(ArrayView<const uint8_t> packet,
                const webrtc::PacketOptions& options) override;
   
-  bool SendRtcp(rtc::ArrayView<const uint8_t> packet) override;
+  bool SendRtcp(ArrayView<const uint8_t> packet) override;
   
   int GetMaxDuration() const;
   
