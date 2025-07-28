@@ -118,19 +118,19 @@ class AndroidVoipClient : public webrtc::Transport {
   void Delete(JNIEnv* env);
 
   
-  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
+  bool SendRtp(webrtc::ArrayView<const uint8_t> packet,
                const webrtc::PacketOptions& options) override;
-  bool SendRtcp(rtc::ArrayView<const uint8_t> packet) override;
+  bool SendRtcp(webrtc::ArrayView<const uint8_t> packet) override;
 
-  void OnSignalReadRTPPacket(rtc::AsyncPacketSocket* socket,
-                             const rtc::ReceivedPacket& packet);
-  void OnSignalReadRTCPPacket(rtc::AsyncPacketSocket* socket,
-                              const rtc::ReceivedPacket& packet);
+  void OnSignalReadRTPPacket(webrtc::AsyncPacketSocket* socket,
+                             const webrtc::ReceivedIpPacket& packet);
+  void OnSignalReadRTCPPacket(webrtc::AsyncPacketSocket* socket,
+                              const webrtc::ReceivedIpPacket& packet);
 
  private:
   AndroidVoipClient(JNIEnv* env,
                     const jni_zero::JavaParamRef<jobject>& j_voip_client)
-      : voip_thread_(rtc::Thread::CreateWithSocketServer()),
+      : voip_thread_(webrtc::Thread::CreateWithSocketServer()),
         j_voip_client_(env, j_voip_client) {}
 
   void Init(JNIEnv* env,
@@ -154,7 +154,7 @@ class AndroidVoipClient : public webrtc::Transport {
   void LogChannelStatistics(JNIEnv* env);
 
   
-  std::unique_ptr<rtc::Thread> voip_thread_;
+  std::unique_ptr<webrtc::Thread> voip_thread_;
   
   
   jni_zero::ScopedJavaGlobalRef<jobject> j_voip_client_
@@ -170,13 +170,14 @@ class AndroidVoipClient : public webrtc::Transport {
   
   std::optional<webrtc::ChannelId> channel_ RTC_GUARDED_BY(voip_thread_);
   
-  std::unique_ptr<rtc::AsyncUDPSocket> rtp_socket_ RTC_GUARDED_BY(voip_thread_);
-  std::unique_ptr<rtc::AsyncUDPSocket> rtcp_socket_
+  std::unique_ptr<webrtc::AsyncUDPSocket> rtp_socket_
       RTC_GUARDED_BY(voip_thread_);
-  rtc::SocketAddress rtp_local_address_ RTC_GUARDED_BY(voip_thread_);
-  rtc::SocketAddress rtcp_local_address_ RTC_GUARDED_BY(voip_thread_);
-  rtc::SocketAddress rtp_remote_address_ RTC_GUARDED_BY(voip_thread_);
-  rtc::SocketAddress rtcp_remote_address_ RTC_GUARDED_BY(voip_thread_);
+  std::unique_ptr<webrtc::AsyncUDPSocket> rtcp_socket_
+      RTC_GUARDED_BY(voip_thread_);
+  webrtc::SocketAddress rtp_local_address_ RTC_GUARDED_BY(voip_thread_);
+  webrtc::SocketAddress rtcp_local_address_ RTC_GUARDED_BY(voip_thread_);
+  webrtc::SocketAddress rtp_remote_address_ RTC_GUARDED_BY(voip_thread_);
+  webrtc::SocketAddress rtcp_remote_address_ RTC_GUARDED_BY(voip_thread_);
 };
 
 }  
