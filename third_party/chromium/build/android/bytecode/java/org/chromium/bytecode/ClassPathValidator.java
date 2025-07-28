@@ -71,6 +71,11 @@ public class ClassPathValidator {
             
             return;
         }
+        if (className.matches("^android\\b.*")) {
+            
+            
+            return;
+        }
         try {
             classLoader.loadClass(className.replace('/', '.'));
         } catch (ClassNotFoundException e) {

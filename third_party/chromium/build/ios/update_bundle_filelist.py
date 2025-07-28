@@ -58,6 +58,9 @@ _HEADER_PATTERN = re.compile(r"""# Copyright [0-9]+ The Chromium Authors
 
 _HEADER_HEIGHT = 6
 
+_START_IGNORE_EXPANSIONS_OUTSIDE_GLOBLIST_DIR = '# push(ignore-relative)'
+_STOP_IGNORE_EXPANSIONS_OUTSIDE_GLOBLIST_DIR = '# pop(ignore-relative)'
+
 
 def parse_filelist(filelist_name):
   try:
@@ -123,60 +126,76 @@ def combine_potentially_repository_root_relative_paths(a, b):
 
 
 def parse_and_expand_globlist(globlist_name, glob_root):
-  try:
+  
+  if glob_root.endswith('/'):
+    glob_root = glob_root[:-1]
+
+  check_expansions_outside_globlist_dir = True
+  globlist_dir = os.path.dirname(globlist_name)
+
+  with open(globlist_name) as globlist:
     
-    if glob_root.endswith('/'):
-      glob_root = glob_root[:-1]
-
-    with open(globlist_name) as globlist:
-      
-      
-      files = set()
-      for g in globlist:
-        g = g.strip()
-
-        
-        if not g or g.startswith('#'):
-          continue
-
-        
-        is_exclusion = g.startswith('-')
-        if is_exclusion:
-          g = g[1:]
-
-        (combined,
-         root_relative) = combine_potentially_repository_root_relative_paths(
-             glob_root, g)
-
-        prefix_size = len(glob_root)
-        if not root_relative:
-          
-          prefix_size += 1
-
-        expansion = glob.glob(combined, recursive=True)
-
-        
-        expansion = [f for f in expansion if os.path.isfile(f)]
-
-        
-        expansion = [f[prefix_size:] for f in expansion]
-
-        
-        expansion = [f.replace('\\', '/') for f in expansion]
-
-        
-        
-        if is_exclusion:
-          files = files.difference(expansion)
-        else:
-          files = files.union(expansion)
+    
+    
+    files = set()
+    to_check = set()
+    for g in globlist:
+      g = g.strip()
 
       
-      return sorted(files)
+      if not g:
+        continue
 
-  except Exception as e:
-    print_error(f'Could not read glob list: {globlist_name}', f'{type(e)}: {e}')
-    return []
+      
+      if g == _START_IGNORE_EXPANSIONS_OUTSIDE_GLOBLIST_DIR:
+        check_expansions_outside_globlist_dir = False
+      elif g == _STOP_IGNORE_EXPANSIONS_OUTSIDE_GLOBLIST_DIR:
+        check_expansions_outside_globlist_dir = True
+
+      
+      if not g or g.startswith('#'):
+        continue
+
+      
+      is_exclusion = g.startswith('-')
+      if is_exclusion:
+        g = g[1:]
+
+      (combined,
+       root_relative) = combine_potentially_repository_root_relative_paths(
+           glob_root, g)
+
+      prefix_size = len(glob_root)
+      if not root_relative:
+        
+        prefix_size += 1
+
+      expansion = glob.glob(combined, recursive=True)
+
+      
+      expansion = [f for f in expansion if os.path.isfile(f)]
+
+      if check_expansions_outside_globlist_dir:
+        for f in expansion:
+          relative = os.path.relpath(f, globlist_dir)
+          if relative.startswith('..'):
+            raise Exception(f'Globlist expansion outside globlist dir: {f}')
+
+      
+      expansion = [f[prefix_size:] for f in expansion]
+
+      
+      expansion = [f.replace('\\', '/') for f in expansion]
+
+      
+      
+      if is_exclusion:
+        files = files.difference(expansion)
+      else:
+        files = files.union(expansion)
+
+    
+    return sorted(files)
 
 
 def compare_lists(a, b):
@@ -203,7 +222,14 @@ def write_filelist(filelist_name, files, header):
 
 
 def process_filelist(filelist, globlist, globroot, check=False, verbose=False):
-  files_from_globlist = parse_and_expand_globlist(globlist, globroot)
+  files_from_globlist = []
+  try:
+    files_from_globlist = parse_and_expand_globlist(globlist, globroot)
+  except Exception as e:
+    if verbose:
+      print_error(f'Could not read glob list: {globlist}', f'{type(e)}: {e}')
+    return 1
+
   (files, header) = parse_filelist(filelist)
 
   (additions, removals) = compare_lists(files, files_from_globlist)
