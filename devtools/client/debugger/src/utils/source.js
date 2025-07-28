@@ -161,14 +161,6 @@ export function isJavaScript(source, content) {
   );
 }
 
-
-
-
-
-export function isPretty(source) {
-  return isPrettyURL(source.url);
-}
-
 export function isPrettyURL(url) {
   return url ? url.endsWith(":formatted") : false;
 }
@@ -368,7 +360,7 @@ export function getSourceClassnames(
   
   
   
-  if (isPretty(source) || hasPrettyTab) {
+  if (source.isPrettyPrinted || hasPrettyTab) {
     return "prettyPrint";
   }
 
