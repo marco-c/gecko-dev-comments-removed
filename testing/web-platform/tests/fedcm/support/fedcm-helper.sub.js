@@ -181,7 +181,7 @@ export function request_options_with_domain_hint(manifest_filename, domain_hint)
 }
 
 export function fedcm_get_dialog_type_promise(t) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     async function helper() {
       
       
@@ -189,12 +189,18 @@ export function fedcm_get_dialog_type_promise(t) {
         const type = await window.test_driver.get_fedcm_dialog_type();
         resolve(type);
       } catch (ex) {
-        t.step_timeout(helper, 100);
+        if (String(ex).includes("no such alert")) {
+          t.step_timeout(helper, 100);
+        } else {
+          reject(ex);
+        }
       }
     }
+
     helper();
   });
 }
+
 
 export async function fedcm_settles_without_dialog(t, cred_promise) {
   let dialog_promise = fedcm_get_dialog_type_promise(t);
