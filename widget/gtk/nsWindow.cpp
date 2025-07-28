@@ -3390,9 +3390,8 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
 
   
   
-  
   auto unconstrainedBounds = mBounds;
-  ConstrainSize(&mBounds.width, &mBounds.height);
+  mBounds.SizeTo(GetSafeWindowSize(mBounds.Size()));
 
   LOG("bounds: %s -> %s (%s unconstrained)", ToString(oldBounds).c_str(),
       ToString(mBounds).c_str(), ToString(unconstrainedBounds).c_str());
