@@ -9,6 +9,7 @@
 
 #include "nsCOMPtr.h"
 #include "LocalAccessible.h"
+#include "mozilla/a11y/RemoteAccessible.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/StaticPtr.h"
@@ -34,6 +35,20 @@ class AccessibleWrap : public LocalAccessible {
  public:
   
   virtual void Shutdown() override;
+
+  
+  
+
+
+
+
+
+
+  static void UpdateSystemCaretFor(Accessible* aAccessible,
+                                   const LayoutDeviceIntRect& aCaretRect);
+  static void UpdateSystemCaretFor(LocalAccessible* aAccessible);
+  static void UpdateSystemCaretFor(RemoteAccessible* aProxy,
+                                   const LayoutDeviceIntRect& aCaretRect);
 
  public:
   
