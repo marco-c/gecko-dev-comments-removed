@@ -3149,7 +3149,7 @@ pref("devtools.browserconsole.input.editorWidth", 0);
 pref("devtools.webconsole.input.editorOnboarding", true);
 
 
-pref("devtools.webconsole.groupWarningMessages", true);
+pref("devtools.webconsole.groupSimilarMessages", true);
 
 
 pref("devtools.browserconsole.enableNetworkMonitoring", false);

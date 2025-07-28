@@ -63,15 +63,51 @@ describe("Message reducer:", () => {
       const packet2 = clonePacket(packet);
 
       
-      packet.timeStamp = 1;
-      packet2.timeStamp = 2;
+      packet.timeStamp += 1;
+      packet2.timeStamp += 2;
       dispatch(actions.messagesAdd([packet, packet2]));
 
-      const messages = getMutableMessagesById(getState());
+      let messages = getMutableMessagesById(getState());
 
       expect(messages.size).toBe(1);
-      const repeat = getAllRepeatById(getState());
+      let repeat = getAllRepeatById(getState());
+      expect(Object.keys(repeat).length).toBe(1);
       expect(repeat[getFirstMessage(getState()).id]).toBe(4);
+
+      
+      dispatch(actions.groupSimilarMessagesToggle());
+      const packet3 = clonePacket(packet);
+      const packet4 = clonePacket(packet);
+      packet3.timeStamp += 3;
+      packet4.timeStamp += 4;
+      dispatch(actions.messagesAdd([packet3, packet4]));
+
+      messages = getMutableMessagesById(getState());
+      
+      expect(messages.size).toBe(3);
+      repeat = getAllRepeatById(getState());
+      
+      expect(Object.keys(repeat).length).toBe(1);
+      expect(repeat[getFirstMessage(getState()).id]).toBe(4);
+
+      
+      dispatch(actions.groupSimilarMessagesToggle());
+      const packet5 = clonePacket(packet);
+      const packet6 = clonePacket(packet);
+      packet3.timeStamp += 5;
+      packet4.timeStamp += 6;
+      dispatch(actions.messagesAdd([packet5, packet6]));
+
+      messages = getMutableMessagesById(getState());
+      
+      expect(messages.size).toBe(3);
+      repeat = getAllRepeatById(getState());
+      
+      expect(Object.keys(repeat).length).toBe(2);
+      
+      expect(repeat[getFirstMessage(getState()).id]).toBe(4);
+      
+      expect(repeat[getLastMessage(getState()).id]).toBe(3);
     });
 
     it("doesn't increment repeat on same log message with different locations", () => {

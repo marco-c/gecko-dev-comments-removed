@@ -156,6 +156,8 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 
   if (lastMessage && mutableMessagesById.size > 0) {
     if (
+      
+      prefsState.groupSimilar &&
       lastMessage.groupId === currentGroup &&
       areMessagesSimilar(lastMessage, newMessage)
     ) {
@@ -182,8 +184,7 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   const warningGroupType = getWarningGroupType(newMessage);
 
   
-  
-  if (prefsState.groupWarnings && warningGroupType !== null) {
+  if (prefsState.groupSimilar && warningGroupType !== null) {
     const warningGroupMessageId = getParentWarningGroupMessageId(newMessage);
 
     
@@ -658,10 +659,10 @@ function messages(
         frontsToRelease: [],
       };
 
-    case constants.WARNING_GROUPS_TOGGLE:
+    case constants.GROUP_SIMILAR_MESSAGES_TOGGLE:
       
       
-      if (!prefsState.groupWarnings && state.warningGroupsById.size === 0) {
+      if (!prefsState.groupSimilar && state.warningGroupsById.size === 0) {
         return state;
       }
 
@@ -714,7 +715,7 @@ function messages(
         uiState,
         
         
-        forceTimestampSort: !prefsState.groupWarnings,
+        forceTimestampSort: !prefsState.groupSimilar,
       });
 
     case constants.MESSAGE_REMOVE:
@@ -835,7 +836,7 @@ function setVisibleMessages({
   maybeSortVisibleMessages(
     newState,
     
-    prefsState.groupWarnings,
+    prefsState.groupSimilar,
     forceTimestampSort
   );
 
@@ -1703,7 +1704,7 @@ function shouldGroupWarningMessages(
   }
 
   
-  if (!prefsState.groupWarnings) {
+  if (!prefsState.groupSimilar) {
     return false;
   }
 
