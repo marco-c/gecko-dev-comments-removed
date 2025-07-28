@@ -2483,27 +2483,65 @@ bool BufferAllocator::useAvailableChunk(size_t sizeClass, size_t maxSizeClass) {
 
 bool BufferAllocator::useAvailableChunk(size_t sizeClass, size_t maxSizeClass,
                                         ChunkLists& src, BufferChunkList& dst) {
-  sizeClass = src.getFirstAvailableSizeClass(sizeClass, maxSizeClass);
-  MOZ_ASSERT(sizeClass != FullChunkSizeClass);
-  if (sizeClass == SIZE_MAX) {
-    return false;
-  }
-
-  BufferChunk* chunk = src.popFirstChunk(sizeClass);
-  MOZ_ASSERT(chunk->ownsFreeLists);
-  MOZ_ASSERT(chunk->freeLists.ref().hasSizeClass(sizeClass));
-  MOZ_ASSERT(chunk->sizeClassForAvailableLists() == sizeClass);
-  MOZ_ASSERT(chunk->freeLists.ref().getFirstAvailableSizeClass(
-                 sizeClass, maxSizeClass) <= maxSizeClass);
-
-  dst.pushBack(chunk);
-  freeLists.ref().append(std::move(chunk->freeLists.ref()));
-  chunk->ownsFreeLists = false;
-  chunk->freeLists.ref().assertEmpty();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   MOZ_ASSERT(freeLists.ref().getFirstAvailableSizeClass(
-                 sizeClass, maxSizeClass) <= maxSizeClass);
-  return true;
+                 sizeClass, maxSizeClass) == SIZE_MAX);
+
+  SizeClassBitSet sizeClasses = getChunkSizeClassesToMove(maxSizeClass, src);
+  for (auto i = BitSetIter(sizeClasses); !i.done(); i.next()) {
+    MOZ_ASSERT(i <= maxSizeClass);
+    MOZ_ASSERT(!freeLists.ref().hasSizeClass(i));
+
+    BufferChunk* chunk = src.popFirstChunk(i);
+    MOZ_ASSERT(chunk->ownsFreeLists);
+    MOZ_ASSERT(chunk->freeLists.ref().hasSizeClass(i));
+
+    dst.pushBack(chunk);
+    freeLists.ref().append(std::move(chunk->freeLists.ref()));
+    chunk->ownsFreeLists = false;
+    chunk->freeLists.ref().assertEmpty();
+
+    if (i >= sizeClass) {
+      
+      
+      MOZ_ASSERT(freeLists.ref().getFirstAvailableSizeClass(
+                     sizeClass, maxSizeClass) != SIZE_MAX);
+      return true;
+    }
+  }
+
+  MOZ_ASSERT(freeLists.ref().getFirstAvailableSizeClass(
+                 sizeClass, maxSizeClass) == SIZE_MAX);
+  return false;
+}
+
+BufferAllocator::SizeClassBitSet BufferAllocator::getChunkSizeClassesToMove(
+    size_t maxSizeClass, ChunkLists& src) const {
+  
+  
+  
+  
+  
+  
+  SizeClassBitSet result;
+  auto& sizeClasses = result.Storage()[0];
+  auto& srcAvailable = src.availableSizeClasses().Storage()[0];
+  auto& freeAvailable = freeLists.ref().availableSizeClasses().Storage()[0];
+  sizeClasses = srcAvailable & ~freeAvailable & BitMask(maxSizeClass + 1);
+  return result;
 }
 
 
