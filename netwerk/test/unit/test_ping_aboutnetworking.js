@@ -58,15 +58,10 @@ function run_test() {
   ps.setBoolPref("network.notify.changed", false);
   
   ps.setBoolPref("network.proxy.allow_hijacking_localhost", true);
-  ps.setBoolPref(
-    "network.proxy.testing_localhost_is_secure_when_hijacked",
-    false
-  );
 
   registerCleanupFunction(function () {
     ps.clearUserPref("network.notify.changed");
     ps.clearUserPref("network.proxy.allow_hijacking_localhost");
-    ps.clearUserPref("network.proxy.testing_localhost_is_secure_when_hijacked");
   });
 
   let serverSocket = Cc["@mozilla.org/network/server-socket;1"].createInstance(
