@@ -136,23 +136,28 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                  bool aIsThirdParty, dom::BrowsingContext* aBrowsingContext,
                  const nsID* aOperationID = nullptr);
 
-  
-  bool RemoveCookiesFromBackUntilUnderLimit(
-      nsTArray<CookieListIter>& aCookieListIter, Cookie* aCookie,
-      const nsACString& aBaseDomain, nsCOMPtr<nsIArray>& aPurgedList);
+  uint32_t RemoveOldestCookies(CookieEntry* aEntry, bool aSecure,
+                               uint32_t aBytesToRemove,
+                               nsCOMPtr<nsIArray>& aPurgedList);
+  void RemoveCookiesFromBack(nsTArray<CookieListIter>& aCookieIters,
+                             nsCOMPtr<nsIArray>& aPurgedList);
 
-  void RemoveOlderCookiesUntilUnderLimit(CookieEntry* aEntry, Cookie* aCookie,
-                                         const nsACString& aBaseDomain,
-                                         nsCOMPtr<nsIArray>& aPurgedList);
+  void RemoveOlderCookiesByBytes(CookieEntry* aEntry, uint32_t removeBytes,
+                                 nsCOMPtr<nsIArray>& aPurgedList);
 
   
   
   
   
   
-  int32_t PartitionLimitExceededBytes(Cookie* aCookie,
-                                      const nsACString& aBaseDomain,
-                                      bool aHardMax);
+  
+  struct ChipsLimitExcess {
+    uint32_t hard;
+    uint32_t soft;  
+  };
+
+  ChipsLimitExcess PartitionLimitExceededBytes(Cookie* aCookie,
+                                               const nsACString& aBaseDomain);
 
   static void CreateOrUpdatePurgeList(nsCOMPtr<nsIArray>& aPurgedList,
                                       nsICookie* aCookie);

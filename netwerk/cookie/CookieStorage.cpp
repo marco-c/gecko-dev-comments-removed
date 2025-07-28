@@ -35,6 +35,7 @@
 
 
 static const uint32_t kChipsPartitionByteCapacityDefault = 10240;
+static const double kChipsHardLimitFactor = 1.2;
 
 namespace mozilla {
 namespace net {
@@ -527,73 +528,106 @@ void CookieStorage::NotifyChanged(nsISupports* aSubject,
   NotifyChangedInternal(notification, aOldCookieIsSession);
 }
 
-
-bool CookieStorage::RemoveCookiesFromBackUntilUnderLimit(
-    nsTArray<CookieListIter>& aCookieListIter, Cookie* aCookie,
-    const nsACString& aBaseDomain, nsCOMPtr<nsIArray>& aPurgedList) {
-
-  MOZ_ASSERT(aCookie);
-  auto it = aCookieListIter.rbegin();
-  while (it != aCookieListIter.rend()) {
-    RefPtr<Cookie> evictedCookie = (*it).Cookie();
-    COOKIE_LOGEVICTED(evictedCookie,
-                      "Too many cookie bytes for this partition");
+void CookieStorage::RemoveCookiesFromBack(
+    nsTArray<CookieListIter>& aCookieIters, nsCOMPtr<nsIArray>& aPurgedList) {
+  for (auto it = aCookieIters.rbegin(); it != aCookieIters.rend(); ++it) {
+    RefPtr<Cookie> cookie = (*it).Cookie();
+    MOZ_ASSERT(cookie);
+    COOKIE_LOGEVICTED(cookie, "Too many cookie bytes for this partition");
     RemoveCookieFromList(*it);
-    CreateOrUpdatePurgeList(aPurgedList, evictedCookie);
+    CreateOrUpdatePurgeList(aPurgedList, cookie);
+
+    
+    
+    
+    
+    
+    
     MOZ_ASSERT((*it).entry);
-    if (PartitionLimitExceededBytes(aCookie, aBaseDomain, false) <= 0) {
-      return true;
-    }
   }
-  return false;
 }
 
-void CookieStorage::RemoveOlderCookiesUntilUnderLimit(
-    CookieEntry* aEntry, Cookie* aCookie, const nsACString& aBaseDomain,
-    nsCOMPtr<nsIArray>& aPurgedList) {
-  MOZ_ASSERT(aEntry);
-  
-  
-  
+uint32_t CookieStorage::RemoveOldestCookies(CookieEntry* aEntry, bool aSecure,
+                                            uint32_t aBytesToRemove,
+                                            nsCOMPtr<nsIArray>& aPurgedList) {
   const CookieEntry::ArrayType& cookies = aEntry->GetCookies();
   using MaybePurgeList = nsTArray<CookieListIter>;
-  MaybePurgeList maybePurgeListInsecure(aEntry->GetCookies().Length());
-  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-    CookieListIter iter(aEntry, i);
-    if (!iter.Cookie()->IsSecure()) {
-      maybePurgeListInsecure.AppendElement(iter);
-    }
-  }
-  maybePurgeListInsecure.Sort(CompareCookiesByAge());
-  maybePurgeListInsecure.Reverse();
-  bool underLimit = RemoveCookiesFromBackUntilUnderLimit(
-      maybePurgeListInsecure, aCookie, aBaseDomain, aPurgedList);
 
   
-  if (!underLimit) {
-    MOZ_LOG(gCookieLog, LogLevel::Debug,
-            ("Still too many cookies for partition, purging secure\n"));
-    MaybePurgeList maybePurgeList(aEntry->GetCookies().Length());
-    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-      CookieListIter iter(aEntry, i);
+  
+  
+  MaybePurgeList maybePurgeList(aEntry->GetCookies().Length());
+  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+    CookieListIter iter(aEntry, i);
+    
+    
+    
+    
+    if (aSecure || !iter.Cookie()->IsSecure()) {
       maybePurgeList.AppendElement(iter);
     }
-    maybePurgeList.Sort(CompareCookiesByAge());
-    maybePurgeList.Reverse();
-    Unused << RemoveCookiesFromBackUntilUnderLimit(maybePurgeList, aCookie,
-                                                   aBaseDomain, aPurgedList);
+  }
+
+  
+  
+  
+  
+  maybePurgeList.Sort(CompareCookiesByAge());
+
+  
+  uint32_t bytesRemoved = 0;
+  uint32_t count = 0;
+  for (auto iter : maybePurgeList) {
+    bytesRemoved += iter.Cookie()->NameAndValueBytes();
+    count++;
+    if (bytesRemoved >= static_cast<uint32_t>(aBytesToRemove)) {
+      maybePurgeList.SetLength(count);
+      break;
+    }
+  }
+  
+  
+  
+  maybePurgeList.Sort(CompareCookiesByIndex());
+  RemoveCookiesFromBack(maybePurgeList, aPurgedList);
+  return bytesRemoved;
+}
+
+void CookieStorage::RemoveOlderCookiesByBytes(CookieEntry* aEntry,
+                                              uint32_t removeBytes,
+                                              nsCOMPtr<nsIArray>& aPurgedList) {
+  MOZ_ASSERT(aEntry);
+
+  
+  
+  uint32_t bytesRemoved =
+      RemoveOldestCookies(aEntry, false, removeBytes, aPurgedList);
+
+  
+  if (bytesRemoved <= removeBytes) {
+    
+    MOZ_LOG(gCookieLog, LogLevel::Debug,
+            ("Still too many cookies for partition, purging secure\n"));
+    uint32_t bytesStillToRemove = removeBytes - bytesRemoved;
+    RemoveOldestCookies(aEntry, true, bytesStillToRemove, aPurgedList);
   }
 }
 
-int32_t CookieStorage::PartitionLimitExceededBytes(
-    Cookie* aCookie, const nsACString& aBaseDomain, bool aHardMax) {
-  uint32_t newCount = CountCookieBytesNotMatchingCookie(*aCookie, aBaseDomain) +
-                      aCookie->NameAndValueBytes();
-  double factor = aHardMax ? 1.2 : 1;
+CookieStorage::ChipsLimitExcess CookieStorage::PartitionLimitExceededBytes(
+    Cookie* aCookie, const nsACString& aBaseDomain) {
+  uint32_t newByteCount =
+      CountCookieBytesNotMatchingCookie(*aCookie, aBaseDomain) +
+      aCookie->NameAndValueBytes();
+  ChipsLimitExcess res{.hard = 0, .soft = 0};
+  uint32_t softLimit =
+      StaticPrefs::network_cookie_chips_partitionLimitByteCapacity();
   
-  return static_cast<int32_t>(
-      newCount -
-      StaticPrefs::network_cookie_chips_partitionLimitByteCapacity() * factor);
+  uint32_t hardLimit = static_cast<uint32_t>(softLimit * kChipsHardLimitFactor);
+  if (newByteCount > hardLimit) {
+    res.hard = newByteCount - hardLimit;
+    res.soft = newByteCount - softLimit;
+  }
+  return res;
 }
 
 
@@ -748,19 +782,18 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
       CookieEntry* entry =
           mHostTable.GetEntry(CookieKey(aBaseDomain, aOriginAttributes));
       if (entry) {
-        int32_t exceededBytes =
-            PartitionLimitExceededBytes(aCookie, aBaseDomain, true);
-        if (exceededBytes > 0) {
+        ChipsLimitExcess exceededBytes =
+            PartitionLimitExceededBytes(aCookie, aBaseDomain);
+        if (exceededBytes.hard > 0) {
           MOZ_LOG(gCookieLog, LogLevel::Debug,
                   ("Partition byte limit exceeded on cookie overwrite\n"));
           if (!StaticPrefs::network_cookie_chips_partitionLimitDryRun()) {
-            RemoveOlderCookiesUntilUnderLimit(entry, aCookie, aBaseDomain,
-                                              purgedList);
+            RemoveOlderCookiesByBytes(entry, exceededBytes.soft, purgedList);
           }
           if (StaticPrefs::network_cookie_chips_partitionLimitByteCapacity() ==
               kChipsPartitionByteCapacityDefault) {
             mozilla::glean::networking::cookie_chips_partition_limit_overflow
-                .AccumulateSingleSample(exceededBytes);
+                .AccumulateSingleSample(exceededBytes.hard);
           }
         }
       }
@@ -776,7 +809,7 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
     
     CookieEntry* entry =
         mHostTable.GetEntry(CookieKey(aBaseDomain, aOriginAttributes));
-    int32_t partitionLimitExceededBytes = 0;
+    ChipsLimitExcess partitionLimitExceededBytes{};
     
     if (entry && entry->GetCookies().Length() >= mMaxCookiesPerHost) {
       nsTArray<CookieListIter> removedIterList;
@@ -820,18 +853,20 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
     } else if (CookieCommons::ChipsLimitEnabledAndChipsCookie(
                    *aCookie, aBrowsingContext) &&
                entry &&
-               (partitionLimitExceededBytes = PartitionLimitExceededBytes(
-                    aCookie, aBaseDomain, true)) > 0) {
+               (partitionLimitExceededBytes =
+                    PartitionLimitExceededBytes(aCookie, aBaseDomain))
+                       .hard > 0) {
       MOZ_LOG(gCookieLog, LogLevel::Debug,
               ("Partition byte limit exceeded on cookie add\n"));
+
       if (!StaticPrefs::network_cookie_chips_partitionLimitDryRun()) {
-        RemoveOlderCookiesUntilUnderLimit(entry, aCookie, aBaseDomain,
-                                          purgedList);
+        RemoveOlderCookiesByBytes(entry, partitionLimitExceededBytes.soft,
+                                  purgedList);
       }
       if (StaticPrefs::network_cookie_chips_partitionLimitByteCapacity() ==
           kChipsPartitionByteCapacityDefault) {
         mozilla::glean::networking::cookie_chips_partition_limit_overflow
-            .AccumulateSingleSample(partitionLimitExceededBytes);
+            .AccumulateSingleSample(partitionLimitExceededBytes.hard);
       }
     } else if (mCookieCount >= ADD_TEN_PERCENT(mMaxNumberOfCookies)) {
       int64_t maxAge = aCurrentTimeInUsec - mCookieOldestTime;
