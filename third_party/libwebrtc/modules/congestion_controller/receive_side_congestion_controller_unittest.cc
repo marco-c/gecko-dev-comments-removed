@@ -95,7 +95,7 @@ TEST(ReceiveSideCongestionControllerTest,
 void CheckRfc8888Feedback(
     const std::vector<std::unique_ptr<rtcp::RtcpPacket>>& rtcp_packets) {
   ASSERT_THAT(rtcp_packets, SizeIs(1));
-  rtc::Buffer buffer = rtcp_packets[0]->Build();
+  Buffer buffer = rtcp_packets[0]->Build();
   rtcp::CommonHeader header;
   EXPECT_TRUE(header.Parse(buffer.data(), buffer.size()));
   
