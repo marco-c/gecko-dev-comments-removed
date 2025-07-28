@@ -785,7 +785,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
     return FromStringInternal(time_string, false, parsed_time);
   }
 
-#if !defined(MOZ_ZUCCHINI)
   
   
   
@@ -804,7 +803,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   Time UTCMidnight() const { return Midnight(false); }
   Time LocalMidnight() const { return Midnight(true); }
-#endif  
 
   
   

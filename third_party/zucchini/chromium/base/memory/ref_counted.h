@@ -77,30 +77,12 @@ class BASE_EXPORT RefCountedBase {
 #if DCHECK_IS_ON()
     DCHECK(!in_dtor_);
     if (ref_count_ == 0)
-#if defined(MOZ_ZUCCHINI)
-    {
-#endif
       in_dtor_ = true;
-#if defined(MOZ_ZUCCHINI)
-    }
-#endif  
 
     if (ref_count_ >= 1)
-#if defined(MOZ_ZUCCHINI)
-    {
-#endif
       DCHECK(CalledOnValidSequence());
-#if defined(MOZ_ZUCCHINI)
-    }
-#endif  
     if (ref_count_ == 1)
-#if defined(MOZ_ZUCCHINI)
-    {
-#endif
       sequence_checker_.DetachFromSequence();
-#if defined(MOZ_ZUCCHINI)
-    }
-#endif  
 #endif
 
     return ref_count_ == 0;

@@ -28,14 +28,12 @@ namespace internal {
 
 
 
-#if !defined(MOZ_ZUCCHINI)
 constexpr size_t kAlignment =
     std::max(alignof(max_align_t),
              static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__));
 static_assert(kAlignment <= 16,
               "PartitionAlloc doesn't support a fundamental alignment larger "
               "than 16 bytes.");
-#endif  
 
 struct SlotSpanMetadata;
 class PA_LOCKABLE Lock;

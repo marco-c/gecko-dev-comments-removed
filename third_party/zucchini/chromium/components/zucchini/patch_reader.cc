@@ -344,11 +344,7 @@ bool EnsemblePatchReader::Initialize(BufferSource* source) {
   }
   if (header_.major_version != kMajorVersion) {
     LOG(ERROR) << "Patch major version doesn't match. Expected: "
-#if !defined(MOZ_ZUCCHINI)
                << kMajorVersion << ", Actual: " << header_.major_version << ".";
-#else
-               << static_cast<uint16_t>(kMajorVersion) << ", Actual: " << header_.major_version << ".";
-#endif   
     return false;
   }
   

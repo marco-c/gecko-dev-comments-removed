@@ -202,11 +202,7 @@ class BASE_EXPORT FilePath {
   FilePath(FilePath&& that) noexcept;
   
   
-#if !defined(MOZ_ZUCCHINI)
   FilePath& operator=(FilePath&& that) noexcept;
-#else
-  FilePath& operator=(FilePath&& that);
-#endif  
 
   bool operator==(const FilePath& that) const;
 

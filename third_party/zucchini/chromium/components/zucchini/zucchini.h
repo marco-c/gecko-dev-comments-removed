@@ -11,10 +11,6 @@
 #include "components/zucchini/patch_reader.h"
 #include "components/zucchini/patch_writer.h"
 
-#if defined(MOZ_ZUCCHINI)
-#  include "mozilla/moz_zucchini.h"
-#endif  
-
 
 
 
@@ -23,7 +19,6 @@
 
 namespace zucchini {
 
-#if !defined(MOZ_ZUCCHINI)
 namespace status {
 
 
@@ -43,7 +38,6 @@ enum Code {
 };
 
 }  
-#endif  
 
 
 
