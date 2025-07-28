@@ -1293,10 +1293,14 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     nsIFrame::RenderedText text = frame->GetRenderedText(
         0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
         nsIFrame::TrailingWhitespace::DontTrim);
+    auto cssAlt = CssAltContent(content);
     
     
     if (text.mString.IsEmpty() ||
-        nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(frame) ||
+        (nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(frame) &&
+         
+         
+         !cssAlt) ||
         (aContext->IsTableRow() &&
          nsCoreUtils::IsWhitespaceString(text.mString))) {
       if (aIsSubtreeHidden) *aIsSubtreeHidden = true;
@@ -1307,7 +1311,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     newAcc = CreateAccessibleByFrameType(frame, content, aContext);
     MOZ_ASSERT(newAcc, "Accessible not created for text node!");
     document->BindToDocument(newAcc, nullptr);
-    if (auto cssAlt = CssAltContent(content)) {
+    if (cssAlt) {
       nsAutoString text;
       cssAlt.AppendToString(text);
       newAcc->AsTextLeaf()->SetText(text);
