@@ -7,7 +7,6 @@
 
 
 
-import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { prefs } from "../utils/prefs";
 import { createPendingSelectedLocation } from "../utils/location";
 
@@ -271,7 +270,7 @@ function addSources(state, sources) {
 
     
     if (source.isOriginal) {
-      const generatedSourceId = originalToGeneratedId(source.id);
+      const generatedSourceId = source.generatedSource.id;
       let originalSourceIds =
         state.mutableOriginalSources.get(generatedSourceId);
       if (!originalSourceIds) {
@@ -332,7 +331,7 @@ function removeSourcesAndActors(state, action) {
       mutableOriginalBreakableLines.delete(sourceId);
       
       
-      const generatedSourceId = originalToGeneratedId(sourceId);
+      const generatedSourceId = removedSource.generatedSource.id;
       let originalSourceIds = mutableOriginalSources.get(generatedSourceId);
       if (originalSourceIds) {
         originalSourceIds = originalSourceIds.filter(id => id != sourceId);

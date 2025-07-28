@@ -2,13 +2,12 @@
 
 
 
-import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { getSelectedLocation } from "./sources";
 import { getSelectedFrame } from "./pause";
 
 function getGeneratedId(source) {
   if (source.isOriginal) {
-    return originalToGeneratedId(source.id);
+    return source.generatedSource.id;
   }
 
   return source.id;

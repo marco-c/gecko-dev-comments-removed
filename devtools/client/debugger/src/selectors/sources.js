@@ -9,7 +9,6 @@ import { getPrettySourceURL, isJavaScript } from "../utils/source";
 import { findPosition } from "../utils/breakpoint/breakpointPositions";
 import { isFulfilled } from "../utils/async-value";
 
-import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { prefs } from "../utils/prefs";
 import { UNDEFINED_LOCATION, NO_LOCATION } from "../reducers/sources";
 
@@ -66,18 +65,6 @@ function getOriginalSourceByURL(state, url) {
 
 export function getGeneratedSourceByURL(state, url) {
   return getSpecificSourceByURL(state, url, false);
-}
-
-export function getGeneratedSource(state, source) {
-  if (!source) {
-    return null;
-  }
-
-  if (!source.isOriginal) {
-    return source;
-  }
-
-  return getSourceFromId(state, originalToGeneratedId(source.id));
 }
 
 export function getPendingSelectedLocation(state) {
@@ -153,14 +140,14 @@ export function getSelectedMappedSource(state) {
     return null;
   }
 
-  const mappedSource = getGeneratedSource(state, selectedLocation.source);
   
   
-  
-  if (mappedSource == selectedLocation.source) {
+  if (!selectedLocation.source.isOriginal) {
     return null;
   }
-  return mappedSource || null;
+
+  
+  return selectedLocation.source.generatedSource;
 }
 
 
@@ -225,7 +212,7 @@ export function getFirstSourceActorForGeneratedSource(
     return null;
   }
   if (source.isOriginal) {
-    source = getSource(state, originalToGeneratedId(source.id));
+    source = source.generatedSource;
   }
   const actors = getSourceActorsForSource(state, source.id);
   if (threadId) {

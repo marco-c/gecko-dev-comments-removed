@@ -245,6 +245,7 @@ function createSourceObject({
   isPrettyPrinted = false,
   isOriginal = false,
   isHTML = false,
+  generatedSource = null,
 }) {
   const displayURL = getDisplayURL(url, extensionName);
   return {
@@ -299,6 +300,9 @@ function createSourceObject({
 
     
     isOriginal,
+
+    
+    generatedSource,
   };
 }
 
@@ -314,11 +318,14 @@ function createSourceObject({
 
 
 
-export function createSourceMapOriginalSource(id, url) {
+
+
+export function createSourceMapOriginalSource(id, url, generatedSource) {
   return createSourceObject({
     id,
     url,
     isOriginal: true,
+    generatedSource,
   });
 }
 
@@ -335,12 +342,15 @@ export function createSourceMapOriginalSource(id, url) {
 
 
 
-export function createPrettyPrintOriginalSource(id, url) {
+
+
+export function createPrettyPrintOriginalSource(id, url, generatedSource) {
   return createSourceObject({
     id,
     url,
     isOriginal: true,
     isPrettyPrinted: true,
+    generatedSource,
   });
 }
 
