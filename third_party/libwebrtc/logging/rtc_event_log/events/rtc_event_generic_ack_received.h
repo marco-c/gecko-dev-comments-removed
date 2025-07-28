@@ -83,7 +83,7 @@ class RtcEventGenericAckReceived final : public RtcEvent {
     return receive_acked_packet_time_ms_;
   }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }

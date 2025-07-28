@@ -53,7 +53,7 @@ class RtcEventAudioReceiveStreamConfig final : public RtcEvent {
 
   const rtclog::StreamConfig& config() const { return *config_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }

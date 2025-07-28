@@ -62,7 +62,7 @@ class RtcEventGenericPacketReceived final : public RtcEvent {
   
   size_t packet_length() const { return packet_length_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }

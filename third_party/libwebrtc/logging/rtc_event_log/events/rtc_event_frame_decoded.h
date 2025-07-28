@@ -65,7 +65,7 @@ class RtcEventFrameDecoded final : public RtcEvent {
   VideoCodecType codec() const { return codec_; }
   uint8_t qp() const { return qp_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }

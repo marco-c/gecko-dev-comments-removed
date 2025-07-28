@@ -53,7 +53,7 @@ class RtcEventRouteChange final : public RtcEvent {
   bool connected() const { return connected_; }
   uint32_t overhead() const { return overhead_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }

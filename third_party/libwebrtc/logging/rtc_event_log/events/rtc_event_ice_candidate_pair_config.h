@@ -118,7 +118,7 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
     return candidate_pair_desc_;
   }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }

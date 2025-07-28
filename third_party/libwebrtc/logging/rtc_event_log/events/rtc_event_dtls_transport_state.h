@@ -50,7 +50,7 @@ class RtcEventDtlsTransportState : public RtcEvent {
     return dtls_transport_state_;
   }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
+  static std::string Encode(ArrayView<const RtcEvent*> ) {
     
     return "";
   }
