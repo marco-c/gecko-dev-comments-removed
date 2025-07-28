@@ -3,7 +3,6 @@
 
 import argparse
 import os
-import re
 import shutil
 
 from run_operations import run_git, run_shell
@@ -34,43 +33,24 @@ def fetch_repo(github_path, force_fetch, tar_path):
         else:
             print("Cloning github repo")
             run_shell(
-                f"git clone https://github.com/mozilla/libwebrtc {github_path}",
+                f"git clone https://webrtc.googlesource.com/src {github_path}",
                 capture_output,
             )
 
     
-    stdout_lines = run_git("git config --local --list", github_path)
-    stdout_lines = [
-        path for path in stdout_lines if re.findall("^remote.upstream.url.*", path)
-    ]
-    if len(stdout_lines) == 0:
-        print("Fetching upstream")
-        run_git("git checkout master", github_path)
-        run_git(
-            "git remote add upstream https://webrtc.googlesource.com/src", github_path
-        )
-        run_git("git fetch upstream", github_path)
-    else:
-        print(
-            "Upstream remote (https://webrtc.googlesource.com/src) already configured"
-        )
-
-    
     run_git("git checkout master", github_path)
-    
-    run_git("git merge upstream/master", github_path)
 
     
     stdout_lines = run_git(
-        "git config --local --get-all remote.upstream.fetch", github_path
+        "git config --local --get-all remote.origin.fetch", github_path
     )
     if len(stdout_lines) == 1:
         print("Fetching upstream branch-heads")
         run_git(
-            "git config --local --add remote.upstream.fetch +refs/branch-heads/*:refs/remotes/branch-heads/*",
+            "git config --local --add remote.origin.fetch +refs/branch-heads/*:refs/remotes/branch-heads/*",
             github_path,
         )
-        run_git("git fetch upstream", github_path)
+        run_git("git fetch", github_path)
     else:
         print("Upstream remote branch-heads already configured")
 
