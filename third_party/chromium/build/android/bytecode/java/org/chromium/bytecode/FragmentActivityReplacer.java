@@ -13,6 +13,7 @@ import org.objectweb.asm.commons.Remapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 
 
@@ -75,11 +76,29 @@ public class FragmentActivityReplacer extends ByteCodeRewriter {
 
 
     private static class InvocationReplacer extends ClassVisitor {
+        
+
+
+
+
+
+        private static class ResourceStubbingClassLoader extends ClassLoader {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+                if (name.matches(".*\\.R(\\$.+)?")) {
+                    return Object.class;
+                }
+                return super.findClass(name);
+            }
+        }
+
         private final boolean mSingleAndroidX;
+        private final ClassLoader mClassLoader;
 
         private InvocationReplacer(ClassVisitor baseVisitor, boolean singleAndroidX) {
             super(Opcodes.ASM7, baseVisitor);
             mSingleAndroidX = singleAndroidX;
+            mClassLoader = new ResourceStubbingClassLoader();
         }
 
         @Override
@@ -90,6 +109,28 @@ public class FragmentActivityReplacer extends ByteCodeRewriter {
                 @Override
                 public void visitMethodInsn(int opcode, String owner, String name,
                         String descriptor, boolean isInterface) {
+                    
+                    if (isActivityGetterInvocation(opcode, owner, name, descriptor)) {
+                        super.visitMethodInsn(
+                                opcode, owner, name, NEW_METHOD_DESCRIPTOR, isInterface);
+                        if (mSingleAndroidX) {
+                            super.visitTypeInsn(
+                                    Opcodes.CHECKCAST, "androidx/fragment/app/FragmentActivity");
+                        }
+                    } else if (isDowncastableFragmentActivityMethodInvocation(
+                                       opcode, owner, name, descriptor)) {
+                        
+                        
+                        
+                        super.visitMethodInsn(
+                                opcode, "android/app/Activity", name, descriptor, isInterface);
+                    } else {
+                        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                    }
+                }
+
+                private boolean isActivityGetterInvocation(
+                        int opcode, String owner, String name, String descriptor) {
                     boolean isFragmentGetActivity = name.equals(GET_ACTIVITY_METHOD_NAME)
                             && descriptor.equals(OLD_METHOD_DESCRIPTOR)
                             && isFragmentSubclass(owner);
@@ -100,39 +141,63 @@ public class FragmentActivityReplacer extends ByteCodeRewriter {
                             name.equals(GET_LIFECYCLE_ACTIVITY_METHOD_NAME)
                             && descriptor.equals(OLD_METHOD_DESCRIPTOR)
                             && owner.equals(SUPPORT_LIFECYCLE_FRAGMENT_IMPL_BINARY_NAME);
-                    if ((opcode == Opcodes.INVOKEVIRTUAL || opcode == Opcodes.INVOKESPECIAL)
+                    return (opcode == Opcodes.INVOKEVIRTUAL || opcode == Opcodes.INVOKESPECIAL)
                             && (isFragmentGetActivity || isFragmentRequireActivity
-                                    || isSupportLifecycleFragmentImplGetLifecycleActivity)) {
-                        super.visitMethodInsn(
-                                opcode, owner, name, NEW_METHOD_DESCRIPTOR, isInterface);
-                        if (mSingleAndroidX) {
-                            super.visitTypeInsn(
-                                    Opcodes.CHECKCAST, "androidx/fragment/app/FragmentActivity");
+                                    || isSupportLifecycleFragmentImplGetLifecycleActivity);
+                }
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                private boolean isDowncastableFragmentActivityMethodInvocation(
+                        int opcode, String owner, String name, String descriptor) {
+                    
+                    if (!(opcode == Opcodes.INVOKEVIRTUAL || opcode == Opcodes.INVOKESPECIAL)
+                            || !owner.equals("androidx/fragment/app/FragmentActivity")) {
+                        return false;
+                    }
+                    try {
+                        
+                        Class<?> activity = mClassLoader.loadClass("android.app.Activity");
+                        for (Method activityMethod : activity.getMethods()) {
+                            if (activityMethod.getName().equals(name)
+                                    && Type.getMethodDescriptor(activityMethod)
+                                               .equals(descriptor)) {
+                                return true;
+                            }
                         }
-                    } else {
-                        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                        return false;
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(e);
                     }
                 }
 
                 private boolean isFragmentSubclass(String internalType) {
                     
                     
-                    
-                    ClassLoader resourceStubbingClassLoader = new ClassLoader() {
-                        @Override
-                        protected Class<?> findClass(String name) throws ClassNotFoundException {
-                            if (name.matches(".*\\.R(\\$.+)?")) {
-                                return Object.class;
-                            }
-                            return super.findClass(name);
-                        }
-                    };
-
-                    
-                    
                     try {
                         String binaryName = Type.getObjectType(internalType).getClassName();
-                        Class<?> clazz = resourceStubbingClassLoader.loadClass(binaryName);
+                        Class<?> clazz = mClassLoader.loadClass(binaryName);
                         while (clazz != null) {
                             if (clazz.getName().equals("androidx.fragment.app.Fragment")) {
                                 return true;

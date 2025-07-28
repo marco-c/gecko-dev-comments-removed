@@ -98,6 +98,9 @@ def place_nomedia_on_device(dev, device_root):
   dev.WriteFile('%s/.nomedia' % device_root, 'https://crbug.com/796640')
 
 
+
+
+
 class LocalDeviceEnvironment(environment.Environment):
 
   def __init__(self, args, output_manager, _error_func):

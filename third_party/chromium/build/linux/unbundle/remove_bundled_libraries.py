@@ -9,8 +9,6 @@ Removes bundled libraries to make sure they are not used.
 See README for more details.
 """
 
-from __future__ import print_function
-
 import optparse
 import os.path
 import sys

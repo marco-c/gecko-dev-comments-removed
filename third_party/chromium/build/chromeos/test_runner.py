@@ -9,7 +9,6 @@ import collections
 import json
 import logging
 import os
-import pipes
 import re
 import shutil
 import signal
@@ -36,10 +35,9 @@ from pylib.results import json_results
 sys.path.insert(0, os.path.join(CHROMIUM_SRC_PATH, 'build', 'util'))
 from lib.results import result_sink  
 
-if six.PY2:
-  import subprocess32 as subprocess  
-else:
-  import subprocess  
+assert not six.PY2, 'Py2 not supported for this file.'
+
+import subprocess  
 
 DEFAULT_CROS_CACHE = os.path.abspath(
     os.path.join(CHROMIUM_SRC_PATH, 'build', 'cros_cache'))
@@ -132,20 +130,6 @@ class RemoteTest:
       self._test_cmd += ['--flash']
       if args.public_image:
         self._test_cmd += ['--public-image']
-
-    
-    
-    
-    
-    
-    
-    self._llvm_profile_var = None
-    if os.environ.get('LLVM_PROFILE_FILE'):
-      _, llvm_profile_file = os.path.split(os.environ['LLVM_PROFILE_FILE'])
-      self._llvm_profile_var = '/tmp/profraw/%s' % llvm_profile_file
-
-      
-      self._test_cmd += ['--results-src', '/tmp/profraw']
 
     self._test_env = setup_env()
 
@@ -255,7 +239,15 @@ class RemoteTest:
     for dirpath, _, filenames in os.walk(path):
       for f in filenames:
         artifact_path = os.path.join(dirpath, f)
-        artifacts[os.path.relpath(artifact_path, path)] = {
+        artifact_id = os.path.relpath(artifact_path, path)
+        
+        
+        
+        
+        
+        artifact_id = artifact_id.encode('ascii', 'replace').decode()
+        artifact_id = artifact_id.replace('\\', '?')
+        artifacts[artifact_id] = {
             'filePath': artifact_path,
         }
     return artifacts
@@ -282,7 +274,7 @@ class TastTest(RemoteTest):
           'lacros-chrome deployment uses --nostrip by default, so it cannot '
           'be specificed with --deploy-lacros.')
 
-    if not self._llvm_profile_var and not self._logs_dir:
+    if not self._logs_dir:
       
       
       raise TestFormatError(
@@ -325,85 +317,48 @@ class TastTest(RemoteTest):
     ] + self._additional_args
 
     
-    
-    
-    if self._llvm_profile_var:
-      
-      
-      device_test_script_contents = self.BASIC_SHELL_SCRIPT[:]
-      device_test_script_contents += [
-          'echo "LLVM_PROFILE_FILE=%s" >> /etc/chrome_dev.conf' %
-          (self._llvm_profile_var)
-      ]
-
-      local_test_runner_cmd = ['local_test_runner', '-waituntilready']
-      if self._use_vm:
-        
-        
-        local_test_runner_cmd.append('-extrauseflags=tast_vm')
-      if self._attr_expr:
-        local_test_runner_cmd.append(pipes.quote(self._attr_expr))
-      else:
-        local_test_runner_cmd.extend(self._tests)
-      device_test_script_contents.append(' '.join(local_test_runner_cmd))
-
-      self._on_device_script = self.write_test_script_to_disk(
-          device_test_script_contents)
-
+    if self._logs_dir:
       self._test_cmd += [
-          '--files',
-          os.path.relpath(self._on_device_script), '--',
-          './' + os.path.relpath(self._on_device_script, self._path_to_outdir)
+          '--results-dir',
+          self._logs_dir,
       ]
+    self._test_cmd += [
+        '--tast-total-shards=%d' % self._test_launcher_total_shards,
+        '--tast-shard-index=%d' % self._test_launcher_shard_index,
+    ]
+    
+    
+    
+    if self._gtest_style_filter:
+      if self._attr_expr or self._tests:
+        logging.warning(
+            'Presence of --gtest_filter will cause the specified Tast expr'
+            ' or test list to be ignored.')
+      names = []
+      for test in self._gtest_style_filter.split(':'):
+        names.append('"name:%s"' % test)
+      self._attr_expr = '(' + ' || '.join(names) + ')'
+
+    if self._attr_expr:
+      
+      
+      
+      
+      self._test_cmd.append('--tast=%s' % self._attr_expr)
     else:
-      
-      if self._logs_dir:
-        self._test_cmd += [
-            '--results-dir',
-            self._logs_dir,
-        ]
-      self._test_cmd += [
-          '--tast-total-shards=%d' % self._test_launcher_total_shards,
-          '--tast-shard-index=%d' % self._test_launcher_shard_index,
-      ]
-      
-      
-      
-      if self._gtest_style_filter:
-        if self._attr_expr or self._tests:
-          logging.warning(
-              'Presence of --gtest_filter will cause the specified Tast expr'
-              ' or test list to be ignored.')
-        names = []
-        for test in self._gtest_style_filter.split(':'):
-          names.append('"name:%s"' % test)
-        self._attr_expr = '(' + ' || '.join(names) + ')'
+      self._test_cmd.append('--tast')
+      self._test_cmd.extend(self._tests)
 
-      if self._attr_expr:
-        
-        
-        
-        
-        self._test_cmd.append('--tast=%s' % self._attr_expr)
-      else:
-        self._test_cmd.append('--tast')
-        self._test_cmd.extend(self._tests)
+    for v in self._tast_vars or []:
+      self._test_cmd.extend(['--tast-var', v])
 
-      for v in self._tast_vars or []:
-        self._test_cmd.extend(['--tast-var', v])
-
-      
-      
-      
-      if not self._deploy_lacros and not self._should_strip:
-        self._test_cmd.append('--nostrip')
+    
+    
+    
+    if not self._deploy_lacros and not self._should_strip:
+      self._test_cmd.append('--nostrip')
 
   def post_run(self, return_code):
-    
-    
-    if self._llvm_profile_var:
-      return super().post_run(return_code)
-
     tast_results_path = os.path.join(self._logs_dir, 'streamed_results.jsonl')
     if not os.path.exists(tast_results_path):
       logging.error(
@@ -441,9 +396,8 @@ class TastTest(RemoteTest):
         primary_error_message = errors[0]['reason']
         for err in errors:
           error_log += err['stack'] + '\n'
-      error_log += (
-          "\nIf you're unsure why this test failed, consult the steps "
-          'outlined in\n%s\n' % TAST_DEBUG_DOC)
+      debug_link = ("If you're unsure why this test failed, consult the steps "
+                    'outlined <a href="%s">here</a>.' % TAST_DEBUG_DOC)
       base_result = base_test_result.BaseTestResult(
           test['name'], result, duration=duration_ms, log=error_log)
       suite_results.AddResult(base_result)
@@ -461,7 +415,8 @@ class TastTest(RemoteTest):
             error_log,
             None,
             artifacts=artifacts,
-            failure_reason=primary_error_message)
+            failure_reason=primary_error_message,
+            html_artifact=debug_link)
 
     if self._rdb_client and self._logs_dir:
       
@@ -593,11 +548,6 @@ class GTestTest(RemoteTest):
     
     
     device_test_script_contents = self.BASIC_SHELL_SCRIPT[:]
-    if self._llvm_profile_var:
-      device_test_script_contents += [
-          'export LLVM_PROFILE_FILE=%s' % self._llvm_profile_var,
-      ]
-
     for var_name, var_val in self._env_vars:
       device_test_script_contents += ['export %s=%s' % (var_name, var_val)]
 
@@ -672,9 +622,6 @@ class GTestTest(RemoteTest):
               os.path.abspath(
                   os.path.join(self._path_to_outdir, self._vpython_dir)),
               CHROMIUM_SRC_PATH))
-      
-      
-      runtime_files.append('.vpython')
 
     for f in runtime_files:
       self._test_cmd.extend(['--files', f])

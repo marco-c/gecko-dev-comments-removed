@@ -20,7 +20,9 @@ _EMPTY_JAR_SIZE = 22
 def main():
   
   
-  ijar_bin, in_jar, out_jar = sys.argv[1:]
+  if len(sys.argv) != 4:
+    raise ValueError('unexpected arguments were given. %s' % sys.argv)
+  ijar_bin, in_jar, out_jar = sys.argv[1], sys.argv[2], sys.argv[3]
   with build_utils.AtomicOutput(out_jar) as f:
     
     if os.path.getsize(in_jar) <= _EMPTY_JAR_SIZE:

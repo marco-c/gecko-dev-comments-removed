@@ -80,7 +80,8 @@ def _GenerateProjectFile(android_manifest,
                          resource_sources=None,
                          custom_lint_jars=None,
                          custom_annotation_zips=None,
-                         android_sdk_version=None):
+                         android_sdk_version=None,
+                         baseline_path=None):
   project = ElementTree.Element('project')
   root = ElementTree.SubElement(project, 'root')
   
@@ -88,6 +89,9 @@ def _GenerateProjectFile(android_manifest,
   sdk = ElementTree.SubElement(project, 'sdk')
   
   sdk.set('dir', os.path.abspath(android_sdk_root))
+  if baseline_path is not None:
+    baseline = ElementTree.SubElement(project, 'baseline')
+    baseline.set('file', baseline_path)
   cache = ElementTree.SubElement(project, 'cache')
   cache.set('dir', cache_dir)
   main_module = ElementTree.SubElement(project, 'module')
@@ -163,12 +167,6 @@ def _GenerateAndroidManifest(original_manifest_path, extra_manifest_paths,
     for node in extra_app_node:
       app_node.append(node)
 
-  if app_node.find(
-      '{%s}allowBackup' % manifest_utils.ANDROID_NAMESPACE) is None:
-    
-    
-    app_node.set('{%s}allowBackup' % manifest_utils.ANDROID_NAMESPACE, 'false')
-
   uses_sdk = manifest.find('./uses-sdk')
   if uses_sdk is None:
     uses_sdk = ElementTree.Element('uses-sdk')
@@ -191,7 +189,8 @@ def _WriteXmlFile(root, path):
             root, encoding='utf-8')).toprettyxml(indent='  ').encode('utf-8'))
 
 
-def _RunLint(lint_binary_path,
+def _RunLint(create_cache,
+             lint_binary_path,
              backported_methods_path,
              config_path,
              manifest_path,
@@ -212,15 +211,28 @@ def _RunLint(lint_binary_path,
              warnings_as_errors=False):
   logging.info('Lint starting')
 
+  if create_cache:
+    
+    
+    logging.info('Clearing cache dir %s before creating cache.', cache_dir)
+    shutil.rmtree(cache_dir, ignore_errors=True)
+    os.makedirs(cache_dir)
+
   cmd = [
       lint_binary_path,
+      
+      
+      
+      
+      
+      
+      
+      
       '--quiet',  
       '--disable',
       ','.join(_DISABLED_ALWAYS),
   ]
 
-  if baseline:
-    cmd.extend(['--baseline', baseline])
   if testonly_target:
     cmd.extend(['--disable', ','.join(_DISABLED_FOR_TESTS)])
 
@@ -264,10 +276,6 @@ def _RunLint(lint_binary_path,
   if aars:
     for aar in aars:
       
-      
-      if 'androidx' in aar:
-        continue
-      
       aar_dir = os.path.join(aar_root_dir,
                              os.path.splitext(_SrcRelative(aar))[0])
       shutil.rmtree(aar_dir, True)
@@ -300,7 +308,7 @@ def _RunLint(lint_binary_path,
                                            classpath, srcjar_sources,
                                            resource_sources, custom_lint_jars,
                                            custom_annotation_zips,
-                                           android_sdk_version)
+                                           android_sdk_version, baseline)
 
   project_xml_path = os.path.join(lint_gen_dir, 'project.xml')
   _WriteXmlFile(project_file_root, project_xml_path)
@@ -366,6 +374,9 @@ def _ParseArgs(argv):
   parser.add_argument('--skip-build-server',
                       action='store_true',
                       help='Avoid using the build server.')
+  parser.add_argument('--use-build-server',
+                      action='store_true',
+                      help='Always use the build server.')
   parser.add_argument('--lint-binary-path',
                       required=True,
                       help='Path to lint executable.')
@@ -446,8 +457,10 @@ def main():
   
   
   if (not args.create_cache and not args.skip_build_server
-      and server_utils.MaybeRunCommand(
-          name=args.target_name, argv=sys.argv, stamp_file=args.stamp)):
+      and server_utils.MaybeRunCommand(name=args.target_name,
+                                       argv=sys.argv,
+                                       stamp_file=args.stamp,
+                                       force=args.use_build_server)):
     return
 
   sources = []
@@ -464,7 +477,8 @@ def main():
                            ])
   depfile_deps = [p for p in possible_depfile_deps if p]
 
-  _RunLint(args.lint_binary_path,
+  _RunLint(args.create_cache,
+           args.lint_binary_path,
            args.backported_methods,
            args.config_path,
            args.manifest_path,

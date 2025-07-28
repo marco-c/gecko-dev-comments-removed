@@ -20,7 +20,7 @@ def ParseFilterFile(input_lines):
   syntax that |input_lines| are expected to follow.
 
   See
-  https://github.com/google/googletest/blob/master/docs/advanced.md#running-a-subset-of-the-tests
+  https://github.com/google/googletest/blob/main/docs/advanced.md#running-a-subset-of-the-tests
   for description of the syntax that --gtest_filter argument should follow.
 
   Args:
@@ -130,9 +130,9 @@ def InitializeFilterFromArgs(args):
     return test_filter
 
   
-  for test_filter_file in args.test_filter_files:
+  for test_filter_files in args.test_filter_files:
     
-    for test_filter_file in test_filter_file.split(';'):
+    for test_filter_file in test_filter_files.split(';'):
       
       with open(test_filter_file, 'r') as f:
         positive_file_patterns, negative_file_patterns = ParseFilterFile(f)

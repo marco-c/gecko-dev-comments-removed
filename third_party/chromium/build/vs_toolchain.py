@@ -38,15 +38,20 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 json_data_file = os.path.join(script_dir, 'win_toolchain.json')
 
 
+
+
 MSVS_VERSIONS = collections.OrderedDict([
-  ('2019', '16.0'),
-  ('2017', '15.0'),
+    ('2019', '16.0'),  
+    ('2022', '17.0'),
+    ('2017', '15.0'),
 ])
 
 
+
 MSVC_TOOLSET_VERSION = {
-   '2019' : 'VC142',
-   '2017' : 'VC141',
+    '2022': 'VC143',
+    '2019': 'VC142',
+    '2017': 'VC141',
 }
 
 def _HostIsWindows():
@@ -172,7 +177,11 @@ def GetVisualStudioVersion():
       available_versions.append(version)
       break
     
-    path = os.path.expandvars('%ProgramFiles(x86)%' +
+    if version >= '2022':
+      program_files_path_variable = '%ProgramFiles%'
+    else:
+      program_files_path_variable = '%ProgramFiles(x86)%'
+    path = os.path.expandvars(program_files_path_variable +
                               '/Microsoft Visual Studio/%s' % version)
     if path and any(
         os.path.exists(os.path.join(path, edition))
@@ -199,23 +208,26 @@ def DetectVisualStudioPath():
   
   
   
-  for path in (
-      os.environ.get('vs%s_install' % version_as_year),
-      os.path.expandvars('%ProgramFiles(x86)%' +
-                         '/Microsoft Visual Studio/%s/Enterprise' %
-                         version_as_year),
-      os.path.expandvars('%ProgramFiles(x86)%' +
-                         '/Microsoft Visual Studio/%s/Professional' %
-                         version_as_year),
-      os.path.expandvars('%ProgramFiles(x86)%' +
-                         '/Microsoft Visual Studio/%s/Community' %
-                         version_as_year),
-      os.path.expandvars('%ProgramFiles(x86)%' +
-                         '/Microsoft Visual Studio/%s/Preview' %
-                         version_as_year),
-      os.path.expandvars('%ProgramFiles(x86)%' +
-                         '/Microsoft Visual Studio/%s/BuildTools' %
-                         version_as_year)):
+  if version_as_year >= '2022':
+    program_files_path_variable = '%ProgramFiles%'
+  else:
+    program_files_path_variable = '%ProgramFiles(x86)%'
+  for path in (os.environ.get('vs%s_install' % version_as_year),
+               os.path.expandvars(program_files_path_variable +
+                                  '/Microsoft Visual Studio/%s/Enterprise' %
+                                  version_as_year),
+               os.path.expandvars(program_files_path_variable +
+                                  '/Microsoft Visual Studio/%s/Professional' %
+                                  version_as_year),
+               os.path.expandvars(program_files_path_variable +
+                                  '/Microsoft Visual Studio/%s/Community' %
+                                  version_as_year),
+               os.path.expandvars(program_files_path_variable +
+                                  '/Microsoft Visual Studio/%s/Preview' %
+                                  version_as_year),
+               os.path.expandvars(program_files_path_variable +
+                                  '/Microsoft Visual Studio/%s/BuildTools' %
+                                  version_as_year)):
     if path and os.path.exists(path):
       return path
 

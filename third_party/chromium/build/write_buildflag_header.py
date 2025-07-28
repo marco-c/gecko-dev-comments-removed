@@ -91,13 +91,5 @@ def WriteHeader(options):
     output_file.write('\n#endif  // %s\n' % options.header_guard)
 
 
-if os.name == 'nt':
-  major, minor, build, platform, service_pack = sys.getwindowsversion()
-  
-  
-  if major < 6 or (major == 6 and minor < 2):
-    raise Exception(
-        'Unsupported OS. Building Chromium requires Windows 10. %s detected.' %
-        str(sys.getwindowsversion()))
 options = GetOptions()
 WriteHeader(options)

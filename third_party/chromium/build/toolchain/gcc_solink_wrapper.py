@@ -21,6 +21,8 @@ import wrapper_utils
 
 def CollectSONAME(args):
   """Replaces: readelf -d $sofile | grep SONAME"""
+  
+  
   toc = ''
   readelf = subprocess.Popen(wrapper_utils.CommandToRun(
       [args.readelf, '-d', args.sofile]),
@@ -80,6 +82,13 @@ def InterceptFlag(flag, command):
   return ret
 
 
+def SafeDelete(path):
+  try:
+    os.unlink(path)
+  except OSError:
+    pass
+
+
 def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument('--readelf',
@@ -120,7 +129,7 @@ def main():
 
   
   
-  link_only = InterceptFlag('--link-only', args.command)
+  partitioned_library = InterceptFlag('--partitioned-library', args.command)
   collect_inputs_only = InterceptFlag('--collect-inputs-only', args.command)
 
   
@@ -136,20 +145,21 @@ def main():
   
   
   
-  if link_only or collect_inputs_only:
+  if collect_inputs_only or partitioned_library:
     open(args.output, 'w').close()
     open(args.tocfile, 'w').close()
-    if args.dwp:
-      open(args.sofile + '.dwp', 'w').close()
 
   
   
   
   if collect_inputs_only:
-    with open(args.sofile, 'w') as f:
-      CollectInputs(f, args.command)
     if args.map_file:
       open(args.map_file, 'w').close()
+    if args.dwp:
+      open(args.sofile + '.dwp', 'w').close()
+
+    with open(args.sofile, 'w') as f:
+      CollectInputs(f, args.command)
     return 0
 
   
@@ -158,7 +168,7 @@ def main():
                                                     env=fast_env,
                                                     map_file=args.map_file)
 
-  if result != 0 or link_only:
+  if result != 0:
     return result
 
   
@@ -166,29 +176,32 @@ def main():
   if args.dwp:
     
     
-    with open(os.devnull, "w") as devnull:
-      dwp_proc = subprocess.Popen(wrapper_utils.CommandToRun(
-          [args.dwp, '-e', args.sofile, '-o', args.sofile + '.dwp']),
-                                  stdout=devnull,
-                                  stderr=subprocess.STDOUT)
+    SafeDelete(args.sofile + '.dwp')
+    
+    dwp_proc = subprocess.Popen(wrapper_utils.CommandToRun(
+        [args.dwp, '-e', args.sofile, '-o', args.sofile + '.dwp']),
+                                stderr=subprocess.DEVNULL)
 
-  
-  result, toc = CollectTOC(args)
-  if result != 0:
-    return result
+  if not partitioned_library:
+    
+    result, toc = CollectTOC(args)
+    if result != 0:
+      return result
 
-  
-  
-  UpdateTOC(args.tocfile, toc)
+    
+    
+    UpdateTOC(args.tocfile, toc)
 
-  
-  if args.strip:
-    result = subprocess.call(wrapper_utils.CommandToRun(
-        [args.strip, '-o', args.output, args.sofile]))
+    
+    if args.strip:
+      result = subprocess.call(
+          wrapper_utils.CommandToRun(
+              [args.strip, '-o', args.output, args.sofile]))
 
   if dwp_proc:
     dwp_result = dwp_proc.wait()
     if dwp_result != 0:
+      sys.stderr.write('dwp failed with error code {}\n'.format(dwp_result))
       return dwp_result
 
   return result

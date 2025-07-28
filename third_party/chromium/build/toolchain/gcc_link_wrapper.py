@@ -69,12 +69,9 @@ def main():
     if args.unstripped_file:
       exe_file = args.unstripped_file
     
-    
-    with open(os.devnull, "w") as devnull:
-      dwp_proc = subprocess.Popen(wrapper_utils.CommandToRun(
-          [args.dwp, '-e', exe_file, '-o', exe_file + '.dwp']),
-                                  stdout=devnull,
-                                  stderr=subprocess.STDOUT)
+    dwp_proc = subprocess.Popen(wrapper_utils.CommandToRun(
+        [args.dwp, '-e', exe_file, '-o', exe_file + '.dwp']),
+                                stderr=subprocess.DEVNULL)
 
   
   if args.strip:

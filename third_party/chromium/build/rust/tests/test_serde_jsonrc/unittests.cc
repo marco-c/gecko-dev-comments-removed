@@ -1,0 +1,10 @@
+
+
+
+
+#include "build/rust/tests/test_serde_jsonrc/lib.rs.h"
+#include "testing/gtest/include/gtest/gtest.h"
+
+TEST(RustTest, SerdeJsonTest) {
+  EXPECT_EQ(true, serde_works());
+}

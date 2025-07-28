@@ -3,7 +3,7 @@
 
 
 
-class TestInstance(object):
+class TestInstance:
   """A type of test.
 
   This is expected to handle all logic that is test-type specific but

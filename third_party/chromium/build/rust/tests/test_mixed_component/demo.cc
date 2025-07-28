@@ -1,0 +1,13 @@
+
+
+
+
+#include <iostream>
+#include "component.h"
+
+int main(int argc, const char* argv[]) {
+  
+  
+  std::cout << "1 + 1 = " << bilingual_math(1, 1) << std::endl;
+  return 0;
+}

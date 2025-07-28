@@ -33,6 +33,9 @@ ERRORPRONE_CHECKS_TO_APPLY = []
 ERRORPRONE_WARNINGS_TO_DISABLE = [
     
     
+    'InlineMeInliner',
+    
+    
     'InvalidParam',
     'InvalidLink',
     'InvalidInlineTag',
@@ -44,6 +47,7 @@ ERRORPRONE_WARNINGS_TO_DISABLE = [
     'UnescapedEntity',
     'NonCanonicalType',
     'AlmostJavadoc',
+    'ReturnValueIgnored',
     
     'InlineMeSuggester',
     'DoNotClaimAnnotations',
@@ -56,6 +60,8 @@ ERRORPRONE_WARNINGS_TO_DISABLE = [
     'StaticMockMember',
     'MissingSuperCall',
     'ToStringReturnsNull',
+    
+    'MalformedInlineTag',
     
     'DoubleBraceInitialization',
     
@@ -178,6 +184,9 @@ ERRORPRONE_WARNINGS_TO_DISABLE = [
     'RemoveUnusedImports',
     
     'UnnecessaryParentheses',
+    
+    
+    'UnicodeEscape',
 ]
 
 
@@ -242,6 +251,10 @@ def _ParsePackageAndClassNames(java_file):
       
       
       l = re.sub(r'^(?://.*|/?\*.*?(?:\*/\s*|$))', '', l)
+      
+      
+      
+      l = re.sub('(?:".*?")', '', l)
 
       m = re.match(r'package\s+(.*?);', l)
       if m and not package_name:
@@ -260,7 +273,7 @@ def _ProcessJavaFileForInfo(java_file):
   return java_file, package_name, class_names
 
 
-class _InfoFileContext(object):
+class _InfoFileContext:
   """Manages the creation of the class->source file .info file."""
 
   def __init__(self, chromium_code, excluded_globs):
@@ -325,10 +338,9 @@ class _InfoFileContext(object):
                                                       class_names, source):
           if self._ShouldIncludeInJarInfo(fully_qualified_name):
             ret[fully_qualified_name] = java_file
-    self._pool.terminate()
     return ret
 
-  def __del__(self):
+  def Close(self):
     
     
     if self._pool is not None:
@@ -459,6 +471,7 @@ def _RunCompiler(changes,
   temp_dir = jar_path + '.staging'
   shutil.rmtree(temp_dir, True)
   os.makedirs(temp_dir)
+  info_file_context = None
   try:
     classes_dir = os.path.join(temp_dir, 'classes')
     service_provider_configuration = os.path.join(
@@ -469,7 +482,7 @@ def _RunCompiler(changes,
 
       if enable_partial_javac:
         all_changed_paths_are_java = all(
-            [p.endswith(".java") for p in changes.IterChangedPaths()])
+            p.endswith(".java") for p in changes.IterChangedPaths())
         if (all_changed_paths_are_java and not changes.HasStringChanges()
             and os.path.exists(jar_path)
             and (jar_info_path is None or os.path.exists(jar_info_path))):
@@ -560,6 +573,8 @@ def _RunCompiler(changes,
 
     logging.info('Completed all steps in _RunCompiler')
   finally:
+    if info_file_context:
+      info_file_context.Close()
     shutil.rmtree(temp_dir)
 
 
@@ -571,6 +586,9 @@ def _ParseOptions(argv):
   parser.add_option('--skip-build-server',
                     action='store_true',
                     help='Avoid using the build server.')
+  parser.add_option('--use-build-server',
+                    action='store_true',
+                    help='Always use the build server.')
   parser.add_option(
       '--java-srcjars',
       action='append',
@@ -679,7 +697,8 @@ def main(argv):
   if (options.enable_errorprone and not options.skip_build_server
       and server_utils.MaybeRunCommand(name=options.target_name,
                                        argv=sys.argv,
-                                       stamp_file=options.jar_path)):
+                                       stamp_file=options.jar_path,
+                                       force=options.use_build_server)):
     return
 
   javac_cmd = []

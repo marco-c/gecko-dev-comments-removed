@@ -40,8 +40,10 @@ def LoadPList(path):
 
 
 
+
 MAC_BINARIES_LABEL = 'infra_internal/ios/xcode/xcode_binaries/mac-amd64'
-MAC_BINARIES_TAG = 'pBipKbKSkYGXpuOBm4-8zuvfIGeFtpGbQ4IHM9YW0xMC'
+MAC_BINARIES_TAG = 'fE3bk9-nINNxwK4pUcZYcJlGZ-9KSirXzoQuzuvoHV8C'
+
 
 
 

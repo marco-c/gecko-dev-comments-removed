@@ -8,8 +8,6 @@ Replaces GN files in tree with files from here that
 make the build use system libraries.
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import shutil

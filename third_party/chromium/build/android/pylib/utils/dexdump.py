@@ -42,7 +42,7 @@ def Dump(apk_path):
                                            dexfile_dir,
                                            pattern='*classes*.dex'):
       output_xml = cmd_helper.GetCmdOutput(
-          [DEXDUMP_PATH, '-l', 'xml', dex_file])
+          [DEXDUMP_PATH, '-j', '-l', 'xml', dex_file])
       
       
       

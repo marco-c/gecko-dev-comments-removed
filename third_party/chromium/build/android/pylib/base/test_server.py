@@ -2,7 +2,8 @@
 
 
 
-class TestServer(object):
+
+class TestServer:
   """Base class for any server that needs to be set up for the tests."""
 
   def __init__(self, *args, **kwargs):

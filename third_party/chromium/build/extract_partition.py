@@ -147,7 +147,7 @@ def main():
       required=True,
       help='Stripped output file',
       metavar='FILE')
-  parser.add_argument('--dwp', help='Path to dwp binary', metavar='FILE')
+  parser.add_argument('--split-dwarf', action='store_true')
   parser.add_argument('input', help='Input file')
   args = parser.parse_args()
 
@@ -160,14 +160,16 @@ def main():
       args.stripped_output,
   ])
 
-  if args.dwp:
-    dwp_args = [
-        args.dwp, '-e', args.unstripped_output, '-o',
-        args.unstripped_output + '.dwp'
-    ]
-    
-    
-    subprocess.check_output(dwp_args, stderr=subprocess.STDOUT)
+  
+  
+  if args.split_dwarf:
+    dest = args.unstripped_output + '.dwp'
+    try:
+      os.unlink(dest)
+    except OSError:
+      pass
+    relpath = os.path.relpath(args.input + '.dwp', os.path.dirname(dest))
+    os.symlink(relpath, dest)
 
 
 if __name__ == '__main__':

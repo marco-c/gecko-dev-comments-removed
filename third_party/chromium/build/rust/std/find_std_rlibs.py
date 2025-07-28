@@ -8,6 +8,7 @@
 
 import argparse
 import os
+import stat
 import sys
 import shutil
 import subprocess
@@ -38,6 +39,8 @@ def main():
   parser.add_argument("--skip-stdlibs",
                       help="Standard library files to skip",
                       default="")
+  parser.add_argument("--expected-rustc-version",
+                      help="The string we expect to be reported by 'rustc -V'")
   args = parser.parse_args()
   
   if args.stdlibs:
@@ -47,6 +50,16 @@ def main():
   rlibs_to_skip = [expand_name(x) for x in args.skip_stdlibs.split(',')]
   
   rustc = os.path.join(args.rust_bin_dir, "rustc")
+  if args.expected_rustc_version:
+    proc = subprocess.run([rustc, "-V"], capture_output=True, text=True)
+    proc.check_returncode()
+    rustc_version = proc.stdout.rstrip()
+    if rustc_version != args.expected_rustc_version:
+      raise Exception("gn arguments state that the rustc_version is %s "
+                      "but it was actually %s. Please adjust your "
+                      "gn arguments to match." %
+                      (args.expected_rustc_version, rustc_version))
+  
   rustc_args = [rustc, "--print", "target-libdir"]
   if args.target:
     rustc_args.extend(["--target", args.target])
@@ -85,7 +98,10 @@ def main():
         outfile = os.path.join(str.encode(args.output), concise_name)
         depfile.write(" %s" % (infile.decode()))
         if (not os.path.exists(outfile)
-            or os.stat(infile).st_mtime > os.stat(outfile).st_mtime):
+            or os.stat(infile).st_mtime != os.stat(outfile).st_mtime):
+          if os.path.exists(outfile):
+            st = os.stat(outfile)
+            os.chmod(outfile, st.st_mode | stat.S_IWUSR)
           shutil.copy(infile, outfile)
     depfile.write("\n")
     if rlibs_expected:

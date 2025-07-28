@@ -43,7 +43,7 @@
 
 #if defined(COMPILER_GCC)
 
-#if defined(OS_NACL)
+#if BUILDFLAG(IS_NACL)
 
 
 #define TRAP_SEQUENCE1_() __builtin_trap()
@@ -57,7 +57,7 @@
 
 #define TRAP_SEQUENCE1_() asm volatile("int3")
 
-#if defined(OS_APPLE)
+#if BUILDFLAG(IS_APPLE)
 
 
 #define TRAP_SEQUENCE2_() asm volatile("")
@@ -136,7 +136,7 @@
 
 
 
-#if !defined(COMPILER_GCC)
+#if !defined(COMPILER_GCC) || defined(__clang__)
 
 #define WRAPPED_TRAP_SEQUENCE_() TRAP_SEQUENCE_()
 

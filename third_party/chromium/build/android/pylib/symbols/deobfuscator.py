@@ -19,7 +19,7 @@ _PROCESS_START_TIMEOUT = 10.0
 _MAX_RESTARTS = 10  
 
 
-class Deobfuscator(object):
+class Deobfuscator:
   def __init__(self, mapping_path):
     script_path = os.path.join(constants.DIR_SOURCE_ROOT, 'build', 'android',
                                'stacktrace', 'java_deobfuscate.py')
@@ -136,7 +136,7 @@ class Deobfuscator(object):
       self.Close()
 
 
-class DeobfuscatorPool(object):
+class DeobfuscatorPool:
   
   
   

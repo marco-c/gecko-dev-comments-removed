@@ -54,7 +54,7 @@ def ConvertTrieToFlatPaths(trie, prefix=None):
     if prefix:
       name = prefix + '/' + name
 
-    if len(data) and not 'results' in data:
+    if len(data) != 0 and not 'results' in data:
       result.update(ConvertTrieToFlatPaths(data, name))
     else:
       result[name] = data
@@ -97,7 +97,7 @@ def TestTimingsTrie(individual_test_timings):
   return trie
 
 
-class TestResult(object):
+class TestResult:
   """A simple class that represents a single test result."""
 
   
@@ -112,7 +112,7 @@ class TestResult(object):
     try:
       test_name = test.split('.')[1]
     except IndexError:
-      _log.warn('Invalid test name: %s.', test)
+      _log.warning('Invalid test name: %s.', test)
 
     if test_name.startswith('FAILS_'):
       self.modifier = self.FAILS
@@ -127,7 +127,7 @@ class TestResult(object):
     return self.failed or self.modifier == self.DISABLED
 
 
-class JSONResultsGeneratorBase(object):
+class JSONResultsGeneratorBase:
   """A JSON results generator for generic tests."""
 
   MAX_NUMBER_OF_BUILD_RESULTS_TO_LOG = 750
@@ -237,9 +237,10 @@ class JSONResultsGeneratorBase(object):
         
         
         
-        _log.error('Archive directory is inaccessible. Not '
-                   'modifying or clobbering the results.json '
-                   'file: ' + str(error))
+        _log.error(
+            'Archive directory is inaccessible. Not '
+            'modifying or clobbering the results.json '
+            'file: %s', error)
         return None
 
     builder_name = self._builder_name
@@ -321,7 +322,7 @@ class JSONResultsGeneratorBase(object):
 
   def _GetFailedTestNames(self):
     """Returns a set of failed test names."""
-    return set([r.test_name for r in self._test_results if r.failed])
+    return set(r.test_name for r in self._test_results if r.failed)
 
   def _GetModifierChar(self, test_name):
     """Returns a single char (e.g. SKIP_RESULT, FAIL_RESULT,
@@ -384,7 +385,6 @@ class JSONResultsGeneratorBase(object):
                          quote(self._builder_name), self.RESULTS_FILENAME,
                          quote(self._test_type), quote(self._master_name)))
 
-    
     try:
       
       results_file = urlopen(results_file_url)
@@ -396,7 +396,6 @@ class JSONResultsGeneratorBase(object):
         error = http_error
     except URLError as url_error:
       error = url_error
-    
 
     if old_results:
       
@@ -470,7 +469,7 @@ class JSONResultsGeneratorBase(object):
       encoded_results: run-length encoded results. An array of arrays, e.g.
           [[3,'A'],[1,'Q']] encodes AAAQ.
     """
-    if len(encoded_results) and item == encoded_results[0][1]:
+    if len(encoded_results) != 0 and item == encoded_results[0][1]:
       num_results = encoded_results[0][0]
       if num_results <= self.MAX_NUMBER_OF_BUILD_RESULTS_TO_LOG:
         encoded_results[0][0] = num_results + 1
@@ -521,7 +520,7 @@ class JSONResultsGeneratorBase(object):
         this_test[segment] = {}
       this_test = this_test[segment]
 
-    if not len(this_test):
+    if len(this_test) == 0:
       self._PopulateResultsAndTimesJSON(this_test)
 
     if self.RESULTS in this_test:
@@ -624,7 +623,7 @@ class JSONResultsGeneratorBase(object):
     return len(results) == 1 and results[0][1] == result_type
 
 
-class _FileUploader(object):
+class _FileUploader:
 
   def __init__(self, url, timeout_seconds):
     self._url = url
@@ -633,7 +632,7 @@ class _FileUploader(object):
   def UploadAsMultipartFormData(self, files, attrs):
     file_objs = []
     for filename, path in files:
-      with file(path, 'rb') as fp:
+      with open(path, 'rb') as fp:
         file_objs.append(('file', filename, fp.read()))
 
     
@@ -649,8 +648,9 @@ class _FileUploader(object):
         request = Request(self._url, data, {'Content-Type': content_type})
         return urlopen(request)
       except HTTPError as e:
-        _log.warn("Received HTTP status %s loading \"%s\".  "
-                  'Retrying in 10 seconds...', e.code, e.filename)
+        _log.warning(
+            'Received HTTP status %s loading "%s".  '
+            'Retrying in 10 seconds...', e.code, e.filename)
         time.sleep(10)
 
 

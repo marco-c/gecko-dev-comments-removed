@@ -203,7 +203,10 @@ def _GenerateBundleConfigJson(uncompressed_assets, compress_dex,
   if not compress_dex:
     
     
-    uncompressed_globs.extend('classes*.dex')
+    
+    
+    
+    uncompressed_globs.append('classesX.dex')
 
   data = {
       'optimizations': {

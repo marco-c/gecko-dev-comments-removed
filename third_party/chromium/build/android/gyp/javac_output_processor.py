@@ -25,7 +25,9 @@ import lookup_dep
 
 class JavacOutputProcessor:
   def __init__(self, target_name):
-    self._target_name = target_name
+    self._target_name = self._RemoveSuffixesIfPresent(
+        ["__compile_java", "__errorprone", "__header"], target_name)
+    self._suggested_deps = set()
 
     
     fileline_prefix = (
@@ -40,8 +42,7 @@ class JavacOutputProcessor:
     
     
     
-    self._please_add_dep_re = re.compile(
-        r'(?P<full_message>Please add //[\w/:]+ dep to //[\w/:]+.*)$')
+    self._please_add_dep_re = re.compile(r'(?P<full_message>Hint:.*)$')
 
     
     
@@ -80,7 +81,13 @@ class JavacOutputProcessor:
       - Suggests GN dep to add for 'unresolved symbol in Java import' errors.
       """
     lines = self._ElaborateLinesForUnknownSymbol(iter(lines))
-    return (self._ApplyColors(l) for l in lines)
+    for line in lines:
+      yield self._ApplyColors(line)
+    if self._suggested_deps:
+      
+      yield "Full list of deps to add to {}:".format(self._target_name)
+      for dep in sorted(self._suggested_deps):
+        yield '    "{}",'.format(dep)
 
   def _ElaborateLinesForUnknownSymbol(self, lines):
     """ Elaborates passed-in javac output for unresolved symbols.
@@ -152,15 +159,14 @@ class JavacOutputProcessor:
 
     suggested_target = suggested_deps[0].target
 
-    target_name = self._RemoveSuffixesIfPresent(
-        ["__compile_java", "__errorprone", "__header"], self._target_name)
     if not has_missing_symbol_in_error_msg:
       line = "{} {}".format(line, class_to_lookup)
 
+    self._suggested_deps.add(suggested_target)
     return [
         line,
-        "Please add {} dep to {}. ".format(suggested_target, target_name) +
-        "File a crbug if this suggestion is incorrect.",
+        'Hint: Add "{}" to deps of {}'.format(suggested_target,
+                                              self._target_name),
     ]
 
   @staticmethod

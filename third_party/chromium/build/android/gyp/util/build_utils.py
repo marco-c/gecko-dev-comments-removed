@@ -190,7 +190,7 @@ class CalledProcessError(Exception):
   exits with a non-zero exit code."""
 
   def __init__(self, cwd, args, output):
-    super(CalledProcessError, self).__init__()
+    super().__init__()
     self.cwd = cwd
     self.args = args
     self.output = output
@@ -399,11 +399,9 @@ def HermeticZipInfo(*args, **kwargs):
   
   
   
-  date_time = None
+  date_time = kwargs.get('date_time')
   if len(args) >= 2:
     date_time = args[1]
-  elif 'date_time' in kwargs:
-    date_time = kwargs['date_time']
   if not date_time:
     kwargs['date_time'] = HermeticDateTime()
   ret = zipfile.ZipInfo(*args, **kwargs)
