@@ -146,6 +146,15 @@ void LIRGeneratorX86Shared::lowerForALU(LInstructionHelper<1, 2, 0>* ins,
   ins->setOperand(1, willHaveDifferentLIRNodes(lhs, rhs)
                          ? useOrConstant(rhs)
                          : useOrConstantAtStart(rhs));
+  if (MOZ_UNLIKELY(mir->isAdd() && mir->type() == MIRType::Int32 &&
+                   mir->getOperand(1)->isConstant() &&
+                   !mir->toAdd()->fallible())) {
+    
+    
+    
+    define(ins, mir);
+    return;
+  }
   defineReuseInput(ins, mir, 0);
 }
 
