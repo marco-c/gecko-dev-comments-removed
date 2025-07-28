@@ -13,13 +13,10 @@ public interface WebNotificationDelegate {
 
 
 
-
-
   @AnyThread
   default void onShowNotification(@NonNull final WebNotification notification) {}
 
   
-
 
 
 
