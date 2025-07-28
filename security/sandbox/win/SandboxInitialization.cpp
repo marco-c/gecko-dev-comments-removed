@@ -114,7 +114,9 @@ static bool ShouldDisableHandleVerifier() {
   
   
   
-  return false;
+  
+  
+  return !!getenv("MOZ_RUN_GTEST");
 #else
   return !getenv("MOZ_ENABLE_HANDLE_VERIFIER");
 #endif
