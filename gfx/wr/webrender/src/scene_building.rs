@@ -4127,9 +4127,13 @@ impl<'a> SceneBuilder<'a> {
                                 
                                 
                                 
+                                
+                                
+                                
+                                
                                 let creates_pixels =
                                     if let Some(a) = filter_data.r_values.get(3) {
-                                        *a != 0.0
+                                        *a >= (0.5/255.0)
                                     } else {
                                         false
                                     };
