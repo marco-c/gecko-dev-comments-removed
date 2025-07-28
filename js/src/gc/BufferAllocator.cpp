@@ -119,6 +119,37 @@ struct BufferAllocator::FreeRegion
 };
 
 
+template <size_t N>
+class BitSetIter {
+  const mozilla::BitSet<N>& bitset;
+  size_t bit = 0;
+
+ public:
+  explicit BitSetIter(const mozilla::BitSet<N>& bitset) : bitset(bitset) {
+    MOZ_ASSERT(!done());
+    if (!bitset[bit]) {
+      next();
+    }
+  }
+  bool done() const {
+    MOZ_ASSERT(bit <= N || bit == SIZE_MAX);
+    return bit >= N;
+  }
+  void next() {
+    MOZ_ASSERT(!done());
+    bit++;
+    if (bit != N) {
+      bit = bitset.FindNext(bit);
+    }
+  }
+  size_t get() const {
+    MOZ_ASSERT(!done());
+    return bit;
+  }
+  operator size_t() const { return get(); }
+};
+
+
 
 struct BufferChunk : public ChunkBase,
                      public SlimLinkedListElement<BufferChunk> {
@@ -226,34 +257,19 @@ bool BufferChunk::isValidOffset(uintptr_t offset) {
 }
 #endif
 
-class BufferChunk::AllocIter {
+class BufferChunk::AllocIter : public BitSetIter<MaxAllocsPerChunk> {
   BufferChunk* chunk;
-  size_t bit = 0;
 
  public:
-  explicit AllocIter(BufferChunk* chunk) : chunk(chunk) {
-    MOZ_ASSERT(!chunk->allocBitmap.ref()[bit]);
-    next();
-  }
-  bool done() const {
-    MOZ_ASSERT(bit <= MaxAllocsPerChunk || bit == SIZE_MAX);
-    return bit >= MaxAllocsPerChunk;
-  }
-  void next() {
-    MOZ_ASSERT(!done());
-    bit++;
-    if (bit != MaxAllocsPerChunk) {
-      bit = chunk->allocBitmap.ref().FindNext(bit);
-    }
-  }
+  explicit AllocIter(BufferChunk* chunk)
+      : BitSetIter(chunk->allocBitmap.ref()), chunk(chunk) {}
   size_t getOffset() const {
-    MOZ_ASSERT(!done());
-    return bit * MediumAllocGranularity;
+    return BitSetIter::get() * MediumAllocGranularity;
   }
   void* get() const {
     return reinterpret_cast<void*>(uintptr_t(chunk) + getOffset());
   }
-  operator void*() { return get(); }
+  operator void*() const { return get(); }
 };
 
 class BufferChunk::SmallRegionIter {
