@@ -128,11 +128,17 @@ class WaylandSurface final {
   
   bool AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
                     RefPtr<WaylandBuffer> aBuffer);
+  bool IsBufferAttached(WaylandBuffer* aBuffer);
 
   
   
   
   void RemoveAttachedBufferLocked(const WaylandSurfaceLock& aProofOfLock);
+
+  
+  
+  void RemoveTransactionLocked(const WaylandSurfaceLock& aSurfaceLock,
+                               RefPtr<BufferTransaction> aTransaction);
 
   
   
@@ -281,6 +287,8 @@ class WaylandSurface final {
   void Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
               bool aForceDisplayFlush);
 
+  BufferTransaction* GetNextTransactionLocked(
+      const WaylandSurfaceLock& aSurfaceLock, WaylandBuffer* aBuffer);
   
   void ReleaseAllWaylandTransactionsLocked(WaylandSurfaceLock& aSurfaceLock);
 
@@ -350,6 +358,7 @@ class WaylandSurface final {
   
   
   AutoTArray<RefPtr<BufferTransaction>, 3> mBufferTransactions;
+  uintptr_t mLatestAttachedBuffer = 0;
 
   
   
