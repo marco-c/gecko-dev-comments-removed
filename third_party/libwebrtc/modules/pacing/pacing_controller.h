@@ -58,7 +58,7 @@ class PacingController {
     
     virtual void OnAbortedRetransmissions(
         uint32_t ,
-        rtc::ArrayView<const uint16_t> ) {}
+        ArrayView<const uint16_t> ) {}
     virtual std::optional<uint32_t> GetRtxSsrcForMedia(
         uint32_t ) const {
       return std::nullopt;
@@ -133,7 +133,7 @@ class PacingController {
   void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet);
 
   void CreateProbeClusters(
-      rtc::ArrayView<const ProbeClusterConfig> probe_cluster_configs);
+      ArrayView<const ProbeClusterConfig> probe_cluster_configs);
 
   void Pause();   
   void Resume();  
