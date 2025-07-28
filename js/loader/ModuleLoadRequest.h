@@ -131,6 +131,10 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void AssertAllImportsCancelled() const;
 
  public:
+  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
+    mReferrerPolicy = aReferrerPolicy;
+  }
+
   
   const bool mIsTopLevel;
 
